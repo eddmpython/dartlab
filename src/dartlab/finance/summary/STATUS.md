@@ -13,12 +13,17 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 | bridgeMatcher.py | 4단계 숫자 브릿지 매칭 알고리즘 |
 | segmentation.py | 전환점 탐지, 구간 분리 |
 | pipeline.py | analyze(), loadYearData() 오케스트레이터 |
-| API_SPEC.md | API 스펙 |
+
+## API
+```python
+from dartlab.finance.summary import analyze
+result = analyze("005930")  # stockCode
+```
 
 ## 의존
+- `dartlab.core.dataLoader` — loadData, extractCorpName, PERIOD_KINDS
 - `dartlab.core.reportSelector` — 보고서 선택
 - `dartlab.core.tableParser` — 테이블 파싱, 금액/단위 처리
-- `dartlab.core.constants` — ASSET_TOTAL_KEYWORDS, UNIT_SCALE
 
 ## 검증
 - 실험 001~006 기반, 158개 기업 구간 내 97.7%, 오매칭 0.07%
@@ -26,3 +31,4 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 ## 현황
 - 2026-03-06: 패키지 초기 구축 (004_fullPipeline.py 기반)
 - 2026-03-06: core/ 분리 (공통 모듈), finance/summary/ 재배치
+- 2026-03-06: stockCode 시그니처 전환, core 유틸 사용

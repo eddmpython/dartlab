@@ -1,20 +1,14 @@
 import re
-from pathlib import Path
 
 import polars as pl
 
-from dartlab.finance.summary.types import AnalysisResult, YearAccounts
+from dartlab.core.dataLoader import PERIOD_KINDS, loadData, extractCorpName
 from dartlab.core.reportSelector import selectReport, parsePeriodKey
-from dartlab.finance.summary.contentExtractor import extractSummaryContent
 from dartlab.core.tableParser import extractAccounts
-from dartlab.finance.summary.bridgeMatcher import numberBridgeMatch, _periodToIndex
+from dartlab.finance.summary.bridgeMatcher import numberBridgeMatch, periodToIndex
+from dartlab.finance.summary.contentExtractor import extractSummaryContent
 from dartlab.finance.summary.segmentation import detectBreakpoints
-
-_PERIOD_KINDS = {
-    "y": ["annual"],
-    "q": ["Q1", "semi", "Q3", "annual"],
-    "h": ["semi", "annual"],
-}
+from dartlab.finance.summary.types import AnalysisResult, YearAccounts
 
 
 def loadYearData(
@@ -27,7 +21,7 @@ def loadYearData(
         df: 전체 DataFrame
         period: "y" | "q" | "h"
     """
-    kinds = _PERIOD_KINDS.get(period, _PERIOD_KINDS["y"])
+    kinds = PERIOD_KINDS.get(period, PERIOD_KINDS["y"])
     yearData: dict[str, YearAccounts] = {}
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
@@ -60,7 +54,7 @@ def loadYearData(
 
 def _sortPeriodKeys(keys: list[str]) -> list[str]:
     """period key 목록을 최신 → 과거 순으로 정렬."""
-    return sorted(keys, key=_periodToIndex, reverse=True)
+    return sorted(keys, key=periodToIndex, reverse=True)
 
 
 def _extractYear(periodKey: str) -> int:
@@ -69,30 +63,22 @@ def _extractYear(periodKey: str) -> int:
 
 
 def analyze(
-    source: str | Path | pl.DataFrame,
+    stockCode: str,
     ifrsOnly: bool = True,
     period: str = "y",
 ) -> AnalysisResult | None:
     """단일 기업 분석: 기간별 매칭률, 전환점 탐지, 구간 분리.
 
     Args:
-        source: parquet 파일 경로 또는 polars DataFrame
+        stockCode: 종목코드 (6자리)
         ifrsOnly: True면 K-IFRS 이후(2011~)만 분석
         period: "y" | "q" | "h"
 
     Returns:
         AnalysisResult 또는 데이터 부족 시 None
     """
-    if isinstance(source, (str, Path)):
-        df = pl.read_parquet(str(source))
-    else:
-        df = source
-
-    corpName = None
-    if "corp_name" in df.columns:
-        names = df["corp_name"].unique().to_list()
-        if names:
-            corpName = names[0]
+    df = loadData(stockCode)
+    corpName = extractCorpName(df)
 
     yearData = loadYearData(df, period=period)
 
@@ -169,14 +155,14 @@ def _buildDataFrameBridge(
     nameChains: dict[str, dict[str, float | None]] = {}
     accountOrder: list[str] = []
 
-    yearIndexMap = {y: _periodToIndex(y) for y in sortedYears}
+    yearIndexMap = {y: periodToIndex(y) for y in sortedYears}
 
     for seg in segments:
         if seg.nYears < 1:
             continue
 
-        startIdx = _periodToIndex(seg.startYear)
-        endIdx = _periodToIndex(seg.endYear)
+        startIdx = periodToIndex(seg.startYear)
+        endIdx = periodToIndex(seg.endYear)
 
         segYears = []
         for y in sortedYears:

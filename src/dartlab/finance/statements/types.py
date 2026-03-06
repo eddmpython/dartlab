@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class StatementsResult:
     corpName: str | None
     period: str  # "y" | "q" | "h"
-    nPeriods: int
+    nYears: int
     BS: pl.DataFrame | None = None  # 재무상태표
     IS: pl.DataFrame | None = None  # 손익계산서
     CF: pl.DataFrame | None = None  # 현금흐름표

@@ -1,47 +1,31 @@
 """부문별 보고 추출 파이프라인."""
 
-from pathlib import Path
-
 import polars as pl
 
+from dartlab.core.dataLoader import PERIOD_KINDS, loadData, extractCorpName
+from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import selectReport
-from dartlab.finance.segment.extractor import extractNotesContent, findSegmentSection
 from dartlab.finance.segment.parser import parseSegmentTables
 from dartlab.finance.segment.types import SegmentsResult, SegmentTable
 
 
-_PERIOD_KINDS = {
-    "y": ["annual"],
-    "q": ["Q1", "semi", "Q3", "annual"],
-    "h": ["semi", "annual"],
-}
-
-
 def segments(
-    source: str | Path | pl.DataFrame,
+    stockCode: str,
     period: str = "y",
 ) -> SegmentsResult | None:
     """연결재무제표 주석에서 부문별 보고 데이터 추출.
 
     Args:
-        source: parquet 파일 경로 또는 polars DataFrame
+        stockCode: 종목코드 (6자리)
         period: "y" (연간) | "q" (분기) | "h" (반기)
 
     Returns:
         SegmentsResult 또는 데이터 부족 시 None
     """
-    if isinstance(source, (str, Path)):
-        df = pl.read_parquet(str(source))
-    else:
-        df = source
+    df = loadData(stockCode)
+    corpName = extractCorpName(df)
 
-    corpName = None
-    if "corp_name" in df.columns:
-        names = df["corp_name"].unique().to_list()
-        if names:
-            corpName = names[0]
-
-    kinds = _PERIOD_KINDS.get(period, _PERIOD_KINDS["y"])
+    kinds = PERIOD_KINDS.get(period, PERIOD_KINDS["y"])
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
     allTables: dict[str, list[SegmentTable]] = {}
@@ -56,7 +40,7 @@ def segments(
             if not contents:
                 continue
 
-            section = findSegmentSection(contents)
+            section = findNumberedSection(contents, "부문")
             if section is None:
                 continue
 
@@ -73,6 +57,7 @@ def segments(
     return SegmentsResult(
         corpName=corpName,
         nYears=len(allTables),
+        period=period,
         tables=allTables,
         revenue=revenue,
     )

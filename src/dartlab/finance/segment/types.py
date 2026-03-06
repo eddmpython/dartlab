@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -27,5 +27,6 @@ class SegmentsResult:
 
     corpName: str | None
     nYears: int
-    tables: dict[str, list[SegmentTable]]  # {year: [tables]}
+    period: str = "y"  # "y" | "q" | "h"
+    tables: dict[str, list[SegmentTable]] | None = None  # {year: [tables]}
     revenue: pl.DataFrame | None = None

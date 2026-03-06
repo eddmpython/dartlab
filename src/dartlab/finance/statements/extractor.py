@@ -58,7 +58,9 @@ def splitStatements(content: str) -> dict[str, str]:
     seen: dict[str, int] = {}
     uniqueHeaders: list[tuple[int, str]] = []
     for idx, key in headers:
-        if key not in seen:
+        if key in seen:
+            uniqueHeaders[seen[key]] = (idx, key)
+        else:
             seen[key] = len(uniqueHeaders)
             uniqueHeaders.append((idx, key))
 

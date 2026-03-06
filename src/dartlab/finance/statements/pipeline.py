@@ -1,49 +1,33 @@
 """연결재무제표 기반 재무제표 추출 파이프라인."""
 
-from pathlib import Path
-
 import polars as pl
 
+from dartlab.core.dataLoader import PERIOD_KINDS, loadData, extractCorpName
 from dartlab.core.reportSelector import selectReport, parsePeriodKey
 from dartlab.core.tableParser import extractAccounts
 from dartlab.finance.statements.extractor import extractConsolidatedContent, splitStatements
 from dartlab.finance.statements.types import StatementsResult
 
 
-_PERIOD_KINDS = {
-    "y": ["annual"],
-    "q": ["Q1", "semi", "Q3", "annual"],
-    "h": ["semi", "annual"],
-}
-
-
 def statements(
-    source: str | Path | pl.DataFrame,
+    stockCode: str,
     ifrsOnly: bool = True,
     period: str = "y",
 ) -> StatementsResult | None:
     """연결재무제표에서 BS, IS, CF 시계열 DataFrame 추출.
 
     Args:
-        source: parquet 파일 경로 또는 polars DataFrame
+        stockCode: 종목코드 (6자리)
         ifrsOnly: True면 K-IFRS 이후(2011~)만
         period: "y" | "q" | "h"
 
     Returns:
         StatementsResult 또는 데이터 부족 시 None
     """
-    if isinstance(source, (str, Path)):
-        df = pl.read_parquet(str(source))
-    else:
-        df = source
+    df = loadData(stockCode)
+    corpName = extractCorpName(df)
 
-    corpName = None
-    if "corp_name" in df.columns:
-        names = df["corp_name"].unique().to_list()
-        if names:
-            corpName = names[0]
-
-    kinds = _PERIOD_KINDS.get(period, _PERIOD_KINDS["y"])
+    kinds = PERIOD_KINDS.get(period, PERIOD_KINDS["y"])
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
     # 기간별 각 제표 데이터 수집
@@ -93,7 +77,7 @@ def statements(
     return StatementsResult(
         corpName=corpName,
         period=period,
-        nPeriods=len(allKeys),
+        nYears=len(allKeys),
         BS=_buildDf(allKeys, bsData),
         IS=_buildDf(allKeys, isData),
         CF=_buildDf(allKeys, cfData),
