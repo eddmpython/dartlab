@@ -9,27 +9,27 @@ if TYPE_CHECKING:
 
 @dataclass
 class YearAccounts:
-    year: str
+    year: str  # "2024" 또는 "2024Q1"
     accounts: dict[str, list[float | None]]
     order: list[str]
 
 
 @dataclass
 class BridgeResult:
-    curYear: str
+    curYear: str  # period key
     prevYear: str
     rate: float
     matched: int
     total: int
-    yearGap: int
+    yearGap: int  # annual: 연도차, quarterly: 분기차
     pairs: dict[str, str]
 
 
 @dataclass
 class Segment:
-    startYear: str
+    startYear: str  # period key
     endYear: str
-    nYears: int
+    nYears: int  # period 수
     matched: int
     total: int
     rate: float | None
@@ -38,7 +38,7 @@ class Segment:
 @dataclass
 class AnalysisResult:
     corpName: str | None
-    nYears: int
+    nYears: int  # period 수
     nPairs: int
     nBreakpoints: int
     nSegments: int
@@ -52,4 +52,7 @@ class AnalysisResult:
     breakpoints: list[BridgeResult]
     pairResults: list[BridgeResult]
     yearAccounts: dict[str, YearAccounts]
-    dataframe: pl.DataFrame | None = None
+    period: str = "y"  # "y" | "q" | "h"
+    FS: pl.DataFrame | None = None  # 전체 재무제표 (BS + PNL)
+    BS: pl.DataFrame | None = None  # 재무상태표
+    PNL: pl.DataFrame | None = None  # 손익계산서

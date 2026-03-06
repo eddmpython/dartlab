@@ -15,3 +15,11 @@ CLAUDE.md
 
 # Data (available via gh release)
 data/
+
+# Landing page build artifacts
+landing/build/
+landing/.svelte-kit/
+landing/node_modules/
+
+# MkDocs build
+site/

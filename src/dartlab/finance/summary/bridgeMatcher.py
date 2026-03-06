@@ -1,3 +1,5 @@
+import re
+
 from dartlab.finance.summary.constants import (
     EXACT_MATCH_TOLERANCE,
     RESTATEMENT_NAME_SIMILARITY,
@@ -6,6 +8,30 @@ from dartlab.finance.summary.constants import (
     NAME_CHANGE_AMOUNT_TOLERANCE,
 )
 from dartlab.finance.summary.types import BridgeResult
+
+_QUARTER_ORDER = {"Q1": 1, "Q2": 2, "Q3": 3, "Q4": 4}
+
+
+def _periodToIndex(key: str) -> int:
+    """period key → 정렬용 인덱스. "2024" → 2024*4+4, "2024Q1" → 2024*4+1."""
+    m = re.match(r"^(\d{4})(Q[1-4])?$", key)
+    if not m:
+        return 0
+    year = int(m.group(1))
+    q = _QUARTER_ORDER.get(m.group(2), 4) if m.group(2) else 4
+    return year * 4 + q
+
+
+def _periodGap(cur: str, prev: str) -> int:
+    """두 period key 사이의 gap. annual이면 연도차, quarterly면 분기차."""
+    if not cur or not prev:
+        return 0
+    if "Q" not in cur and "Q" not in prev:
+        try:
+            return int(cur) - int(prev)
+        except ValueError:
+            return 0
+    return _periodToIndex(cur) - _periodToIndex(prev)
 
 
 def nameSimilarity(a: str, b: str) -> float:
@@ -151,7 +177,7 @@ def numberBridgeMatch(
                     break
 
     rate = matched / total if total > 0 else 0.0
-    yearGap = int(curYear) - int(prevYear) if curYear and prevYear else 0
+    yearGap = _periodGap(curYear, prevYear)
 
     return BridgeResult(
         curYear=curYear,
