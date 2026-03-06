@@ -151,7 +151,7 @@ def analyze(
     else:
         analysisResult.FS = _buildDataFrameDirect(sortedYears, yearData)
 
-    analysisResult.BS, analysisResult.PNL = _splitBsIs(analysisResult.FS)
+    analysisResult.BS, analysisResult.IS = _splitBsIs(analysisResult.FS)
     return analysisResult
 
 

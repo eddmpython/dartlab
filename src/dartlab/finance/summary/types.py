@@ -53,6 +53,6 @@ class AnalysisResult:
     pairResults: list[BridgeResult]
     yearAccounts: dict[str, YearAccounts]
     period: str = "y"  # "y" | "q" | "h"
-    FS: pl.DataFrame | None = None  # 전체 재무제표 (BS + PNL)
+    FS: pl.DataFrame | None = None  # 전체 재무제표 (BS + IS)
     BS: pl.DataFrame | None = None  # 재무상태표
-    PNL: pl.DataFrame | None = None  # 손익계산서
+    IS: pl.DataFrame | None = None  # 손익계산서
