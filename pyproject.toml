@@ -55,3 +55,6 @@ ignore = ["E402", "E501", "E741", "F841"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = []
