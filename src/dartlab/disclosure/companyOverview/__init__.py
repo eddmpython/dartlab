@@ -1,7 +1,7 @@
 """회사의 개요 분석 모듈."""
 
-from dartlab.finance.companyOverview.pipeline import companyOverview
-from dartlab.finance.companyOverview.types import (
+from dartlab.disclosure.companyOverview.pipeline import companyOverview
+from dartlab.disclosure.companyOverview.types import (
     CreditRating,
     OverviewResult,
 )

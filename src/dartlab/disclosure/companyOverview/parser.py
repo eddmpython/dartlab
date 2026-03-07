@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from dartlab.finance.companyOverview.types import CreditRating
+from dartlab.disclosure.companyOverview.types import CreditRating
 
 # ── 필드 존재 여부 판별 키워드 ──
 

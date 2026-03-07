@@ -354,7 +354,7 @@ class Company:
         from dartlab.finance.affiliate import affiliates
         return affiliates(self.stockCode, period=period)
 
-    # ── 사업의 내용 ──
+    # ── 공시 서술 (disclosure) ──
 
     def business(self):
         """사업의 내용 섹션 추출 + 연도별 변경 탐지.
@@ -366,10 +366,8 @@ class Company:
             - changes: 연도별 변경 정보 (BusinessChange)
               changedPct > 30 이면 유의미한 변화 시점
         """
-        from dartlab.finance.business import business
+        from dartlab.disclosure.business import business
         return business(self.stockCode)
-
-    # ── 회사의 개요 ──
 
     def overview(self):
         """회사의 개요 정량 데이터 추출.
@@ -383,10 +381,8 @@ class Company:
             - missing: 원문에 해당 항목이 없는 필드 목록
             - failed: 항목은 있지만 파싱 실패한 필드 목록
         """
-        from dartlab.finance.companyOverview import companyOverview
+        from dartlab.disclosure.companyOverview import companyOverview
         return companyOverview(self.stockCode)
-
-    # ── 기타 ──
 
     def mdna(self):
         """이사의 경영진단 및 분석의견 (MD&A) 텍스트 추출.
@@ -397,7 +393,7 @@ class Company:
               각 섹션은 category(overview, forecast, financials 등)로 분류
             - overview: 개요 텍스트 (테이블 제외)
         """
-        from dartlab.finance.mdna import mdna
+        from dartlab.disclosure.mdna import mdna
         return mdna(self.stockCode)
 
     def rawMaterial(self):
@@ -409,5 +405,5 @@ class Company:
             - equipment: 유형자산 기말잔액 (Equipment)
             - capexItems: 시설투자 항목 목록 (CapexItem)
         """
-        from dartlab.finance.rawMaterial import rawMaterial
+        from dartlab.disclosure.rawMaterial import rawMaterial
         return rawMaterial(self.stockCode)

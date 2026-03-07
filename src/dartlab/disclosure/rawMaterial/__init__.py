@@ -1,5 +1,5 @@
-from dartlab.finance.rawMaterial.pipeline import rawMaterial
-from dartlab.finance.rawMaterial.types import (
+from dartlab.disclosure.rawMaterial.pipeline import rawMaterial
+from dartlab.disclosure.rawMaterial.types import (
     CapexItem,
     Equipment,
     RawMaterial,

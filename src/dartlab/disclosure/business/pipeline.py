@@ -4,12 +4,12 @@ import polars as pl
 
 from dartlab.core.dataLoader import loadData, extractCorpName
 from dartlab.core.reportSelector import selectReport, extractReportYear
-from dartlab.finance.business.parser import (
+from dartlab.disclosure.business.parser import (
     extractFromSubSections,
     extractFromUnified,
     computeChanges,
 )
-from dartlab.finance.business.types import (
+from dartlab.disclosure.business.types import (
     BusinessSection,
     BusinessChange,
     BusinessResult,

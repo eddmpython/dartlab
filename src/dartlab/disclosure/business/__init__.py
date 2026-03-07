@@ -1,7 +1,7 @@
 """사업의 내용 분석 모듈."""
 
-from dartlab.finance.business.pipeline import business
-from dartlab.finance.business.types import (
+from dartlab.disclosure.business.pipeline import business
+from dartlab.disclosure.business.types import (
     BusinessSection,
     BusinessChange,
     BusinessResult,

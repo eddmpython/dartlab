@@ -4,12 +4,12 @@ import polars as pl
 
 from dartlab.core.dataLoader import loadData, extractCorpName
 from dartlab.core.reportSelector import selectReport, extractReportYear
-from dartlab.finance.rawMaterial.parser import (
+from dartlab.disclosure.rawMaterial.parser import (
     parseCapex,
     parseEquipment,
     parseRawMaterials,
 )
-from dartlab.finance.rawMaterial.types import (
+from dartlab.disclosure.rawMaterial.types import (
     CapexItem,
     Equipment,
     RawMaterial,

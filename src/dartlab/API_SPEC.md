@@ -9,29 +9,47 @@
 - 시계열 모듈은 `nYears` (기간 수) 포함, 스냅샷 모듈은 `year` (기준연도) 포함
 - period 파라미터를 받는 모듈만 `period` 필드 포함
 
+## 패키지 구조
+
+```
+dartlab/
+├── core/          # 데이터 로딩, 보고서 선택, 테이블 파싱
+├── finance/       # 정량 재무 데이터 (11개 모듈)
+├── disclosure/    # 공시 서술형 섹션 (4개 모듈)
+└── company.py     # 통합 접근 래퍼
+```
+
+- `finance/` — 숫자·테이블 중심: 재무제표, 배당, 주주, 자본, 부문별 매출 등
+- `disclosure/` — 텍스트·서술 중심: 사업의 내용, 경영진단의견, 원재료, 회사의 개요 등
+
 ## Company 클래스
 
 ```python
 from dartlab import Company
 
 c = Company("005930")       # 생성 시 데이터 로딩 + 기업명 추출
+c = Company("삼성전자")      # 회사명으로도 생성 가능
 c.corpName                  # "삼성전자"
 ```
 
-종목코드 하나로 16개 분석 모듈에 접근하는 통합 래퍼.
+종목코드 하나로 15개 분석 모듈에 접근하는 통합 래퍼.
 각 메서드는 기존 pipeline 함수에 `stockCode`를 넘기는 얇은 래퍼다.
 
 ### 인덱스·메타
 
 | 메서드 | 파라미터 | 반환 타입 | 설명 |
 |--------|----------|-----------|------|
+| `Company.listing()` | forceRefresh | DataFrame | KRX 전체 상장법인 목록 (static) |
+| `Company.search()` | keyword | DataFrame | 회사명 부분 검색 (static) |
 | `Company.status()` | - | DataFrame | 로컬 보유 전체 종목 인덱스 (static) |
+| `Company.resolve()` | codeOrName | str \| None | 종목코드/회사명 → 종목코드 변환 (static) |
+| `Company.codeName()` | stockCode | str \| None | 종목코드 → 회사명 변환 (static) |
 | `docs()` | - | DataFrame | 이 종목의 공시 문서 목록 + DART 뷰어 링크 |
 
 `status()` 반환 컬럼: `stockCode, corpName, rows, yearFrom, yearTo, nDocs`
 `docs()` 반환 컬럼: `year, reportType, rceptDate, rceptNo, dartUrl`
 
-### 분석 메서드
+### 분석 메서드 — finance
 
 | 메서드 | 파라미터 | 반환 타입 | 설명 |
 |--------|----------|-----------|------|
@@ -47,6 +65,11 @@ c.corpName                  # "삼성전자"
 | `subsidiary()` | - | SubsidiaryResult | 타법인출자 현황 |
 | `bond()` | - | BondResult | 채무증권 발행실적 |
 | `affiliates()` | period | AffiliatesResult | 관계기업 투자 |
+
+### 분석 메서드 — disclosure
+
+| 메서드 | 파라미터 | 반환 타입 | 설명 |
+|--------|----------|-----------|------|
 | `business()` | - | BusinessResult | 사업의 내용 섹션 + 변경 탐지 |
 | `overview()` | - | OverviewResult | 회사의 개요 정량 데이터 |
 | `mdna()` | - | MdnaResult | 경영진단 및 분석의견 |
@@ -54,7 +77,11 @@ c.corpName                  # "삼성전자"
 
 모든 메서드는 데이터 부족 시 `None`을 반환한다.
 
-## finance.summary
+---
+
+## finance 모듈
+
+### finance.summary
 
 ```python
 from dartlab.finance.summary import analyze
@@ -63,7 +90,7 @@ result = analyze("005930")
 result = analyze("005930", ifrsOnly=True, period="y")
 ```
 
-### analyze(stockCode, ifrsOnly=True, period="y") -> AnalysisResult | None
+#### analyze(stockCode, ifrsOnly=True, period="y") -> AnalysisResult | None
 
 요약재무정보 시계열 추출 + 브릿지 매칭 + 전환점 탐지.
 
@@ -73,7 +100,7 @@ result = analyze("005930", ifrsOnly=True, period="y")
 | ifrsOnly | bool | True | K-IFRS 이후(2011~)만 분석 |
 | period | str | "y" | "y" (연간) \| "q" (분기) \| "h" (반기) |
 
-### AnalysisResult
+#### AnalysisResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -88,7 +115,7 @@ result = analyze("005930", ifrsOnly=True, period="y")
 | BS | DataFrame \| None | 재무상태표 |
 | IS | DataFrame \| None | 손익계산서 |
 
-## finance.statements
+### finance.statements
 
 ```python
 from dartlab.finance.statements import statements
@@ -97,7 +124,7 @@ result = statements("005930")
 result = statements("005930", ifrsOnly=True, period="y")
 ```
 
-### statements(stockCode, ifrsOnly=True, period="y") -> StatementsResult | None
+#### statements(stockCode, ifrsOnly=True, period="y") -> StatementsResult | None
 
 연결재무제표에서 BS, IS, CF 시계열 DataFrame 추출.
 
@@ -107,7 +134,7 @@ result = statements("005930", ifrsOnly=True, period="y")
 | ifrsOnly | bool | True | K-IFRS 이후(2011~)만 |
 | period | str | "y" | "y" \| "q" \| "h" |
 
-### StatementsResult
+#### StatementsResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -118,7 +145,7 @@ result = statements("005930", ifrsOnly=True, period="y")
 | IS | DataFrame \| None | 손익계산서 |
 | CF | DataFrame \| None | 현금흐름표 |
 
-## finance.segment
+### finance.segment
 
 ```python
 from dartlab.finance.segment import segments
@@ -127,7 +154,7 @@ result = segments("005930")
 result = segments("005930", period="y")
 ```
 
-### segments(stockCode, period="y") -> SegmentsResult | None
+#### segments(stockCode, period="y") -> SegmentsResult | None
 
 연결재무제표 주석에서 부문별 보고 데이터 추출.
 
@@ -136,7 +163,7 @@ result = segments("005930", period="y")
 | stockCode | str | - | 종목코드 (6자리) |
 | period | str | "y" | "y" \| "q" \| "h" |
 
-### SegmentsResult
+#### SegmentsResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -146,7 +173,7 @@ result = segments("005930", period="y")
 | tables | dict[str, list[SegmentTable]] | {year: [tables]} |
 | revenue | DataFrame \| None | 부문별 매출 시계열 |
 
-## finance.affiliate
+### finance.affiliate
 
 ```python
 from dartlab.finance.affiliate import affiliates
@@ -155,7 +182,7 @@ result = affiliates("005930")
 result = affiliates("005930", period="y")
 ```
 
-### affiliates(stockCode, period="y") -> AffiliatesResult | None
+#### affiliates(stockCode, period="y") -> AffiliatesResult | None
 
 연결재무제표 주석에서 관계기업/공동기업 투자 데이터 추출.
 
@@ -164,7 +191,7 @@ result = affiliates("005930", period="y")
 | stockCode | str | - | 종목코드 (6자리) |
 | period | str | "y" | "y" \| "q" \| "h" |
 
-### AffiliatesResult
+#### AffiliatesResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -175,7 +202,7 @@ result = affiliates("005930", period="y")
 | movements | dict[str, list[AffiliateMovement]] | {year: [movements]} |
 | movementDf | DataFrame \| None | 기업별 변동 시계열 |
 
-## finance.dividend
+### finance.dividend
 
 ```python
 from dartlab.finance.dividend import dividend
@@ -183,7 +210,7 @@ from dartlab.finance.dividend import dividend
 result = dividend("005930")
 ```
 
-### dividend(stockCode) -> DividendResult | None
+#### dividend(stockCode) -> DividendResult | None
 
 사업보고서 "배당에 관한 사항"에서 배당지표 시계열 추출.
 
@@ -191,7 +218,7 @@ result = dividend("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### DividendResult
+#### DividendResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -199,7 +226,7 @@ result = dividend("005930")
 | nYears | int | 연도 수 |
 | timeSeries | DataFrame \| None | 배당 시계열 (year, netIncome, eps, totalDividend, payoutRatio, dividendYield, dps, dpsPreferred) |
 
-## finance.employee
+### finance.employee
 
 ```python
 from dartlab.finance.employee import employee
@@ -207,7 +234,7 @@ from dartlab.finance.employee import employee
 result = employee("005930")
 ```
 
-### employee(stockCode) -> EmployeeResult | None
+#### employee(stockCode) -> EmployeeResult | None
 
 사업보고서 "직원 등의 현황"에서 직원 현황 시계열 추출.
 
@@ -215,7 +242,7 @@ result = employee("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### EmployeeResult
+#### EmployeeResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -223,7 +250,7 @@ result = employee("005930")
 | nYears | int | 연도 수 |
 | timeSeries | DataFrame \| None | 직원 시계열 (year, totalEmployees, avgTenure, totalSalary, avgSalary) |
 
-## finance.majorHolder
+### finance.majorHolder
 
 ```python
 from dartlab.finance.majorHolder import majorHolder, holderOverview
@@ -232,15 +259,11 @@ result = majorHolder("005930")
 overview = holderOverview("005930")
 ```
 
-### majorHolder(stockCode) -> MajorHolderResult | None
+#### majorHolder(stockCode) -> MajorHolderResult | None
 
 사업보고서 "주주에 관한 사항"에서 최대주주 현황 시계열 추출.
 
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-
-### MajorHolderResult
+#### MajorHolderResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -252,15 +275,11 @@ overview = holderOverview("005930")
 | holders | list[Holder] | 최신 연도 특수관계인 목록 |
 | timeSeries | DataFrame \| None | 최대주주 시계열 (year, majorHolder, majorRatio, totalRatio, holderCount) |
 
-### holderOverview(stockCode) -> HolderOverview | None
+#### holderOverview(stockCode) -> HolderOverview | None
 
 사업보고서에서 5% 이상 주주, 소액주주, 의결권 현황 추출.
 
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-
-### HolderOverview
+#### HolderOverview
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -270,7 +289,7 @@ overview = holderOverview("005930")
 | minority | Minority \| None | 소액주주 현황 |
 | voting | VotingRights \| None | 의결권 현황 |
 
-### Minority
+#### Minority
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -281,7 +300,7 @@ overview = holderOverview("005930")
 | totalShares | int | 총 발행주식수 |
 | sharePct | float | 소액주주 주식 비율 (%) |
 
-### VotingRights
+#### VotingRights
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -292,7 +311,7 @@ overview = holderOverview("005930")
 | restoredCommon/Pref | float \| None | 의결권 부활 |
 | votableCommon/Pref | float \| None | 의결권 행사 가능 주식수 |
 
-## finance.subsidiary
+### finance.subsidiary
 
 ```python
 from dartlab.finance.subsidiary import subsidiary
@@ -300,15 +319,11 @@ from dartlab.finance.subsidiary import subsidiary
 result = subsidiary("005930")
 ```
 
-### subsidiary(stockCode) -> SubsidiaryResult | None
+#### subsidiary(stockCode) -> SubsidiaryResult | None
 
 사업보고서 "타법인출자 현황(상세)"에서 자회사/투자 포트폴리오 데이터 추출.
 
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-
-### SubsidiaryInvestment
+#### SubsidiaryInvestment
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -329,7 +344,7 @@ result = subsidiary("005930")
 | totalAssets | float \| None | 피투자법인 총자산 |
 | netIncome | float \| None | 피투자법인 당기순손익 |
 
-### SubsidiaryResult
+#### SubsidiaryResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -338,7 +353,7 @@ result = subsidiary("005930")
 | investments | list[SubsidiaryInvestment] | 최신 연도 투자 목록 |
 | timeSeries | DataFrame \| None | 투자 시계열 (year, totalCount, listedCount, unlistedCount, totalBook) |
 
-## finance.shareCapital
+### finance.shareCapital
 
 ```python
 from dartlab.finance.shareCapital import shareCapital
@@ -346,15 +361,11 @@ from dartlab.finance.shareCapital import shareCapital
 result = shareCapital("005930")
 ```
 
-### shareCapital(stockCode) -> ShareCapitalResult | None
+#### shareCapital(stockCode) -> ShareCapitalResult | None
 
 사업보고서 "주식의 총수 등"에서 발행주식/자기주식/유통주식 데이터 추출.
 
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-
-### ShareCapitalResult
+#### ShareCapitalResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -369,7 +380,7 @@ result = shareCapital("005930")
 | treasuryRatio | float \| None | 자기주식 보유비율 (%) |
 | timeSeries | DataFrame \| None | 주식 시계열 (year, outstandingShares, treasuryShares, floatingShares, treasuryRatio) |
 
-## finance.bond
+### finance.bond
 
 ```python
 from dartlab.finance.bond import bond
@@ -377,15 +388,11 @@ from dartlab.finance.bond import bond
 result = bond("005930")
 ```
 
-### bond(stockCode) -> BondResult | None
+#### bond(stockCode) -> BondResult | None
 
 사업보고서 "증권의 발행을 통한 자금조달에 관한 사항"에서 채무증권 발행실적 추출.
 
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-
-### BondIssuance
+#### BondIssuance
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -400,7 +407,7 @@ result = bond("005930")
 | redeemed | str \| None | 상환여부 |
 | underwriter | str \| None | 주관회사 |
 
-### BondResult
+#### BondResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -409,15 +416,47 @@ result = bond("005930")
 | issuances | list[BondIssuance] | 최신 연도 채무증권 목록 |
 | timeSeries | DataFrame \| None | 채무증권 시계열 (year, totalIssuances, totalAmount, unredeemedCount) |
 
-## finance.business
+### finance.costByNature
 
 ```python
-from dartlab.finance.business import business
+from dartlab.finance.costByNature import costByNature
+
+result = costByNature("005930")
+result = costByNature("005930", period="y")
+```
+
+#### costByNature(stockCode, period="y") -> CostByNatureResult | None
+
+연결재무제표 주석에서 비용의 성격별 분류 시계열 추출.
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| stockCode | str | - | 종목코드 (6자리) |
+| period | str | "y" | "y" (연간) \| "q" (분기) \| "h" (반기) |
+
+#### CostByNatureResult
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| corpName | str \| None | 기업명 |
+| nYears | int | 기간 수 |
+| timeSeries | DataFrame \| None | 비용 시계열 (account, 연도별 금액) |
+| crossCheck | dict | 교차검증 결과 {연도: {matches, mismatches}} |
+| ratios | DataFrame \| None | 비용 구성비 (year, account, amount, ratio) |
+
+---
+
+## disclosure 모듈
+
+### disclosure.business
+
+```python
+from dartlab.disclosure.business import business
 
 result = business("005930")
 ```
 
-### business(stockCode) -> BusinessResult | None
+#### business(stockCode) -> BusinessResult | None
 
 사업보고서 "II. 사업의 내용"에서 하위 섹션 추출 + 연도별 변경 탐지.
 
@@ -425,7 +464,7 @@ result = business("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### BusinessSection
+#### BusinessSection
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -434,7 +473,7 @@ result = business("005930")
 | chars | int | 텍스트 길이 |
 | text | str | 섹션 전체 내용 |
 
-### BusinessChange
+#### BusinessChange
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -444,7 +483,7 @@ result = business("005930")
 | removed | int | 삭제된 줄 수 |
 | totalChars | int | 해당 연도 텍스트 총 길이 |
 
-### BusinessResult
+#### BusinessResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -453,15 +492,15 @@ result = business("005930")
 | sections | list[BusinessSection] | 하위 섹션 목록 |
 | changes | list[BusinessChange] | 연도별 변경 정보 |
 
-## finance.companyOverview
+### disclosure.companyOverview
 
 ```python
-from dartlab.finance.companyOverview import companyOverview
+from dartlab.disclosure.companyOverview import companyOverview
 
 result = companyOverview("005930")
 ```
 
-### companyOverview(stockCode) -> OverviewResult | None
+#### companyOverview(stockCode) -> OverviewResult | None
 
 사업보고서 "I. 회사의 개요" → "1. 회사의 개요"에서 정량 데이터 추출.
 
@@ -469,14 +508,14 @@ result = companyOverview("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### CreditRating
+#### CreditRating
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | agency | str | 평가기관 (한국신용평가, Moody's 등) |
 | grade | str | 신용등급 (AA+, Aa2 등) |
 
-### OverviewResult
+#### OverviewResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -493,15 +532,15 @@ result = companyOverview("005930")
 | missing | list[str] | 원문에 해당 항목이 없는 필드 |
 | failed | list[str] | 항목은 있지만 파싱 실패한 필드 |
 
-## finance.mdna
+### disclosure.mdna
 
 ```python
-from dartlab.finance.mdna import mdna
+from dartlab.disclosure.mdna import mdna
 
 result = mdna("005930")
 ```
 
-### mdna(stockCode) -> MdnaResult | None
+#### mdna(stockCode) -> MdnaResult | None
 
 사업보고서 "이사의 경영진단 및 분석의견"에서 MD&A 텍스트 추출.
 
@@ -509,7 +548,7 @@ result = mdna("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### MdnaSection
+#### MdnaSection
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -519,7 +558,7 @@ result = mdna("005930")
 | textLines | int | 텍스트 줄 수 |
 | tableLines | int | 테이블 줄 수 |
 
-### MdnaResult
+#### MdnaResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -528,15 +567,15 @@ result = mdna("005930")
 | sections | list[MdnaSection] | 최신 연도 섹션 목록 |
 | overview | str \| None | 개요 텍스트 (테이블 제외) |
 
-## finance.rawMaterial
+### disclosure.rawMaterial
 
 ```python
-from dartlab.finance.rawMaterial import rawMaterial
+from dartlab.disclosure.rawMaterial import rawMaterial
 
 result = rawMaterial("005930")
 ```
 
-### rawMaterial(stockCode) -> RawMaterialResult | None
+#### rawMaterial(stockCode) -> RawMaterialResult | None
 
 사업보고서 "원재료 및 생산설비" 섹션에서 원재료 매입, 유형자산, 시설투자 추출.
 
@@ -544,7 +583,7 @@ result = rawMaterial("005930")
 |----------|------|--------|------|
 | stockCode | str | - | 종목코드 (6자리) |
 
-### RawMaterialResult
+#### RawMaterialResult
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -554,7 +593,7 @@ result = rawMaterial("005930")
 | equipment | Equipment \| None | 유형자산 기말잔액 |
 | capexItems | list[CapexItem] | 시설투자 항목 목록 |
 
-### RawMaterial
+#### RawMaterial
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -565,7 +604,7 @@ result = rawMaterial("005930")
 | ratio | float \| None | 비율 (%) |
 | supplier | str \| None | 매입처/비고 |
 
-### Equipment
+#### Equipment
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -577,37 +616,9 @@ result = rawMaterial("005930")
 | depreciation | float \| None | 감가상각비 |
 | capex | float \| None | 자본적지출 |
 
-### CapexItem
+#### CapexItem
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | segment | str | 구분/사업부문 |
 | amount | float | 투자금액 |
-
-## finance.costByNature
-
-```python
-from dartlab.finance.costByNature import costByNature
-
-result = costByNature("005930")
-result = costByNature("005930", period="y")
-```
-
-### costByNature(stockCode, period="y") -> CostByNatureResult | None
-
-연결재무제표 주석에서 비용의 성격별 분류 시계열 추출.
-
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| stockCode | str | - | 종목코드 (6자리) |
-| period | str | "y" | "y" (연간) \| "q" (분기) \| "h" (반기) |
-
-### CostByNatureResult
-
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| corpName | str \| None | 기업명 |
-| nYears | int | 기간 수 |
-| timeSeries | DataFrame \| None | 비용 시계열 (account, 연도별 금액) |
-| crossCheck | dict | 교차검증 결과 {연도: {matches, mismatches}} |
-| ratios | DataFrame \| None | 비용 구성비 (year, account, amount, ratio) |
