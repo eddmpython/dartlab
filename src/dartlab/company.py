@@ -5,12 +5,15 @@
     from dartlab import Company
 
     c = Company("005930")
+    c = Company("삼성전자")
     c.corpName                         # "삼성전자"
     c.dividend()                       # DividendResult | None
     c.statements(period="q")           # StatementsResult (분기)
 """
 
 from __future__ import annotations
+
+import re
 
 import polars as pl
 
@@ -23,11 +26,18 @@ from dartlab.core.dataLoader import (
     loadData,
     extractCorpName,
 )
+from dartlab.core.kindList import (
+    getKindList,
+    codeToName,
+    nameToCode,
+    searchName,
+)
 
 
 class Company:
-    """종목코드 하나로 전체 분석에 접근.
+    """종목코드 또는 회사명으로 전체 분석에 접근.
 
+    종목코드(6자리 숫자) 또는 회사명을 넘기면 자동으로 변환한다.
     생성 시 parquet 데이터를 로딩하고 기업명을 추출한다.
     로컬에 데이터가 없으면 GitHub Release에서 자동 다운로드한다.
 
@@ -38,23 +48,90 @@ class Company:
     Example::
 
         c = Company("005930")
+        c = Company("삼성전자")
         print(c)                    # Company(005930, 삼성전자)
         result = c.statements()     # StatementsResult
         result.BS                   # 재무상태표 DataFrame
 
+        Company.search("삼성")       # KIND 목록에서 검색
+        Company.listing()           # KRX 전체 상장법인 목록
         Company.status()            # 로컬 보유 전체 종목 인덱스
         c.docs()                    # 이 종목의 문서 목록 + DART 뷰어 링크
     """
 
-    def __init__(self, stockCode: str):
-        self.stockCode = stockCode
-        df = loadData(stockCode)
+    def __init__(self, codeOrName: str):
+        if re.match(r"^\d{6}$", codeOrName):
+            self.stockCode = codeOrName
+        else:
+            code = nameToCode(codeOrName)
+            if code is None:
+                raise ValueError(f"'{codeOrName}'에 해당하는 종목을 찾을 수 없음")
+            self.stockCode = code
+        df = loadData(self.stockCode)
         self.corpName = extractCorpName(df)
 
     def __repr__(self):
         return f"Company({self.stockCode}, {self.corpName})"
 
     # ── 인덱스·메타 ──
+
+    @staticmethod
+    def listing(*, forceRefresh: bool = False) -> pl.DataFrame:
+        """KRX 전체 상장법인 목록 (KIND 기준).
+
+        Args:
+            forceRefresh: True면 캐시 무시하고 KIND API 재요청.
+
+        Returns:
+            DataFrame (회사명, 종목코드, 업종, 주요제품, 상장일, 결산월, ...).
+
+        Example::
+
+            df = Company.listing()
+            print(df.head(3))
+        """
+        return getKindList(forceRefresh=forceRefresh)
+
+    @staticmethod
+    def search(keyword: str) -> pl.DataFrame:
+        """회사명 부분 검색 (KIND 목록 기준).
+
+        Args:
+            keyword: 검색 키워드 (예: "삼성", "반도체").
+
+        Returns:
+            매칭된 종목 DataFrame (회사명, 종목코드, ...).
+
+        Example::
+
+            Company.search("삼성")
+            # ┌──────────────┬──────────┬─────────┐
+            # │ 회사명       ┆ 종목코드 ┆ 업종    │
+            # ├──────────────┼──────────┼─────────┤
+            # │ 삼성전자     ┆ 005930   ┆ ...     │
+            # │ 삼성SDI      ┆ 006400   ┆ ...     │
+            # └──────────────┴──────────┴─────────┘
+        """
+        return searchName(keyword)
+
+    @staticmethod
+    def resolve(codeOrName: str) -> str | None:
+        """종목코드 또는 회사명 → 종목코드 변환.
+
+        Args:
+            codeOrName: 6자리 종목코드 또는 회사명.
+
+        Returns:
+            종목코드 (str) 또는 None.
+        """
+        if re.match(r"^\d{6}$", codeOrName):
+            return codeOrName
+        return nameToCode(codeOrName)
+
+    @staticmethod
+    def codeName(stockCode: str) -> str | None:
+        """종목코드 → 회사명 변환."""
+        return codeToName(stockCode)
 
     @staticmethod
     def status() -> pl.DataFrame:

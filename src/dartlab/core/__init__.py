@@ -6,6 +6,12 @@ from dartlab.core.dataLoader import (
     loadData,
     extractCorpName,
 )
+from dartlab.core.kindList import (
+    getKindList,
+    codeToName,
+    nameToCode,
+    searchName,
+)
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import selectReport, extractReportYear
 from dartlab.core.tableParser import extractTables, parseAmount, detectUnit, extractAccounts
@@ -17,6 +23,10 @@ __all__ = [
     "buildIndex",
     "loadData",
     "extractCorpName",
+    "getKindList",
+    "codeToName",
+    "nameToCode",
+    "searchName",
     "extractNotesContent",
     "findNumberedSection",
     "selectReport",

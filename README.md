@@ -249,6 +249,8 @@ result = dividend("005930")
 
 ## 데이터
 
+DartLab이 제공하는 데이터는 DART 공시 원문을 eddmpython의 노하우로 상세하게 파싱하여 만든 구조화 데이터다. 단순 API 호출 결과가 아니라 문서 구조를 분석하고 항목별로 분류·정제한 결과물이다.
+
 각 Parquet 파일에는 하나의 기업에 대한 모든 공시 문서가 들어있다:
 
 - **메타데이터**: 종목코드, 회사명, 보고서 유형, 제출일, 사업연도
@@ -256,6 +258,10 @@ result = dividend("005930")
 - **텍스트 데이터**: 사업의 내용, 감사의견, 위험관리, 임원/주주 현황
 
 [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-v1)에 260개 이상의 상장 기업 데이터가 있다. `loadData()`는 로컬에 파일이 없으면 자동으로 다운로드한다.
+
+> **데이터 업데이트 주기**
+>
+> 비용이 발생하는 프록시를 사용하지 않고 직접 수집하고 있어서 데이터 업데이트가 매우 느리다. 새로운 종목 추가나 최신 공시 반영에 시간이 걸릴 수 있다.
 
 ```python
 from dartlab.core import downloadAll

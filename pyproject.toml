@@ -33,6 +33,7 @@ classifiers = [
 dependencies = [
     "alive-progress>=3.3.0",
     "polars>=1.0.0",
+    "requests>=2.32.5",
 ]
 
 [project.urls]
