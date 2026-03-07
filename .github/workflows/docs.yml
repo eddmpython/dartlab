@@ -1,4 +1,4 @@
-name: Deploy Docs
+name: Deploy Site
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
     paths:
       - 'landing/**'
       - 'docs/**'
-      - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -30,32 +29,16 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build SvelteKit site
+      - name: Build site
         working-directory: landing
         run: |
           npm ci
           BASE_PATH=/dartlab npm run build
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Build MkDocs site
-        run: |
-          pip install mkdocs mkdocs-material pymdown-extensions
-          mkdocs build --strict
-
-      - name: Prepare deploy directory
-        run: |
-          mkdir -p _deploy
-          cp -r landing/build/* _deploy/
-          cp -r site _deploy/docs
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _deploy/
+          path: landing/build/
 
   deploy:
     needs: build

@@ -40,21 +40,24 @@ def extractTables(content: str) -> list[dict]:
 
 
 def parseAmount(text: str) -> float | None:
-    """금액 문자열 → float. △와 () 음수 처리."""
-    if not text or text.strip() in ("", "-", "　", "―", "–"):
+    """금액/숫자 문자열 → float. 음수 마커(△, ▲, 괄호) 처리."""
+    if not text or text.strip() in ("", "-", "\u3000", "\u2015", "\u2013"):
         return None
-    cleaned = text.strip()
-    isNegative = "△" in cleaned or "(" in cleaned
-    cleaned = cleaned.replace("△", "").replace(",", "").replace(" ", "")
-    cleaned = cleaned.replace("(", "").replace(")", "")
+    cleaned = text.strip().replace(",", "").replace(" ", "")
+    if re.match(r"^\(주\d*\)$", cleaned):
+        return None
+    isNeg = "△" in cleaned or "▲" in cleaned or (
+        cleaned.startswith("(") and cleaned.endswith(")")
+    )
+    cleaned = re.sub(r"[△▲\(\)]", "", cleaned)
     cleaned = re.sub(r"[^\d.]", "", cleaned)
+    if not cleaned or cleaned.count(".") > 1:
+        return None
+    cleaned = cleaned.strip(".")
     if not cleaned:
         return None
-    try:
-        val = float(cleaned)
-        return -val if isNegative else val
-    except ValueError:
-        return None
+    val = float(cleaned)
+    return -val if isNeg else val
 
 
 def detectUnit(content: str) -> float:

@@ -1,11 +1,20 @@
-from dartlab.core.dataLoader import DATA_DIR, PERIOD_KINDS, loadData, extractCorpName
+from dartlab.core.dataLoader import (
+    DATA_DIR,
+    DART_VIEWER,
+    PERIOD_KINDS,
+    buildIndex,
+    loadData,
+    extractCorpName,
+)
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-from dartlab.core.reportSelector import selectReport
+from dartlab.core.reportSelector import selectReport, extractReportYear
 from dartlab.core.tableParser import extractTables, parseAmount, detectUnit, extractAccounts
 
 __all__ = [
     "DATA_DIR",
+    "DART_VIEWER",
     "PERIOD_KINDS",
+    "buildIndex",
     "loadData",
     "extractCorpName",
     "extractNotesContent",
@@ -15,4 +24,5 @@ __all__ = [
     "parseAmount",
     "detectUnit",
     "extractAccounts",
+    "extractReportYear",
 ]

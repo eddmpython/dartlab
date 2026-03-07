@@ -1,42 +1,102 @@
+---
+title: 빠른 시작
+---
+
 # 빠른 시작
 
-## 요약 재무정보 시계열 추출
+## Company 클래스
 
-DartLab의 핵심 기능은 DART 공시에서 요약재무정보를 시계열로 추출하는 것이다.
+모든 분석의 진입점이다. 종목코드를 넣으면 데이터를 자동으로 로드한다.
 
-### 기본 사용법
+```python
+from dartlab import Company
+
+samsung = Company("005930")
+samsung.corpName  # "삼성전자"
+```
+
+## 요약 재무정보
+
+Bridge Matching으로 계정명 변경을 추적하면서 시계열을 생성한다.
+
+```python
+result = samsung.analyze()
+
+result.FS    # 전체 재무제표 시계열 (Polars DataFrame)
+result.BS    # 재무상태표
+result.IS    # 손익계산서
+```
+
+분기별 데이터도 가능하다:
+
+```python
+result = samsung.analyze(period="q")  # 분기별
+result = samsung.analyze(period="h")  # 반기별
+```
+
+## 연결 재무제표
+
+재무상태표, 손익계산서, 현금흐름표 상세 항목을 추출한다.
+
+```python
+result = samsung.statements()
+
+result.BS    # 재무상태표
+result.IS    # 손익계산서
+result.CF    # 현금흐름표
+```
+
+## 배당
+
+```python
+result = samsung.dividend()
+result.timeSeries
+# year, netIncome, eps, totalDividend, payoutRatio, dividendYield, dps
+```
+
+## 직원 현황
+
+```python
+result = samsung.employee()
+result.timeSeries
+# year, totalEmployees, avgTenure, totalSalary, avgSalary
+```
+
+## 최대주주
+
+```python
+result = samsung.majorHolder()
+result.majorHolder   # "이재용"
+result.majorRatio    # 20.76
+result.timeSeries    # 지분율 시계열
+```
+
+## 함수 직접 호출
+
+Company를 거치지 않고 모듈 함수를 직접 호출할 수도 있다.
 
 ```python
 from dartlab.finance.summary import analyze
+from dartlab.finance.statements import statements
 
-result = analyze("data/docsData/005930.parquet")
+result = analyze("005930")
+result = statements("005930")
 ```
 
-### 결과 탐색
+## 보유 데이터 확인
 
 ```python
-# 전체 시계열 — Polars DataFrame
-print(result.dataframe)
-# shape: (N, M) — 행은 계정명, 열은 연도
-```
+# 로컬에 있는 전체 종목 인덱스
+index = Company.status()
+print(index)
+# stockCode, corpName, rows, yearFrom, yearTo, nDocs
 
-### 개별 연도 접근
-
-```python
-for year in result.years:
-    print(f"{year.period}: {len(year.accounts)}개 계정")
-```
-
-### 브릿지 매칭
-
-연도 간 계정명이 변경되더라도 Bridge Matching으로 자동 연결한다.
-
-```python
-for bridge in result.bridges:
-    print(f"{bridge.fromPeriod} → {bridge.toPeriod}: {bridge.matchCount}개 매칭")
+# 특정 종목의 공시 목록
+docs = samsung.docs()
+print(docs)
 ```
 
 ## 다음 단계
 
-- [API 레퍼런스](../api/finance-summary.md) — 전체 API 문서
-- [사용 가이드](../user-guide/bridge-matching.md) — Bridge Matching 상세 설명
+- [Bridge Matching](../user-guide/bridge-matching.md)
+- [전체 API Reference](../api/overview.md)

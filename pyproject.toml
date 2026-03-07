@@ -31,6 +31,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "alive-progress>=3.3.0",
     "polars>=1.0.0",
 ]
 

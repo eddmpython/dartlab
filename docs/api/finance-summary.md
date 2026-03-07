@@ -1,77 +1,90 @@
-# Finance Summary API
+---
+title: finance.summary
+---
 
-## `analyze(path)`
+# finance.summary
 
-DART 공시 Parquet 파일에서 요약재무정보를 시계열로 추출한다.
+요약재무정보를 시계열로 추출한다. Bridge Matching으로 계정명 변경을 자동 추적한다.
 
-### 파라미터
-
-| 이름 | 타입 | 설명 |
-|------|------|------|
-| `path` | `str \| Path` | Parquet 파일 경로 |
-
-### 반환
-
-`AnalysisResult` 객체
-
-### 사용 예제
+## `analyze(stockCode, ifrsOnly=True, period="y")`
 
 ```python
 from dartlab.finance.summary import analyze
 
-result = analyze("data/docsData/005930.parquet")
-print(result.dataframe)
+result = analyze("005930")
 ```
 
----
+### 파라미터
 
-## `AnalysisResult`
+| 이름 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `stockCode` | `str` | | 종목코드 (6자리) |
+| `ifrsOnly` | `bool` | `True` | K-IFRS 기간만 분석 |
+| `period` | `str` | `"y"` | `"y"` 연간, `"q"` 분기, `"h"` 반기 |
 
-분석 결과를 담는 데이터 클래스.
+### 반환
 
-### 속성
+`AnalysisResult | None`
 
-| 이름 | 타입 | 설명 |
+## AnalysisResult
+
+| 속성 | 타입 | 설명 |
 |------|------|------|
-| `dataframe` | `polars.DataFrame` | 계정명 × 연도 시계열 |
-| `years` | `list[YearAccounts]` | 연도별 계정 데이터 |
-| `bridges` | `list[BridgeResult]` | 연도 간 브릿지 매칭 결과 |
+| `corpName` | `str \| None` | 기업명 |
+| `nYears` | `int` | 분석 연도 수 |
+| `nPairs` | `int` | 브릿지 쌍 수 |
+| `nBreakpoints` | `int` | 변경점 수 |
+| `nSegments` | `int` | 연속 구간 수 |
+| `allRate` | `float \| None` | 전체 매칭률 |
+| `allMatched` | `int` | 전체 매칭된 계정 수 |
+| `allTotal` | `int` | 전체 계정 수 |
+| `contRate` | `float \| None` | 최장 연속 구간 매칭률 |
+| `segments` | `list[Segment]` | 구간 목록 |
+| `breakpoints` | `list[BridgeResult]` | 변경점 목록 |
+| `pairResults` | `list[BridgeResult]` | 개별 브릿지 결과 |
+| `yearAccounts` | `dict[str, YearAccounts]` | 연도별 계정 데이터 |
+| `period` | `str` | 분석 기간 |
+| `FS` | `pl.DataFrame \| None` | 전체 재무제표 시계열 |
+| `BS` | `pl.DataFrame \| None` | 재무상태표 |
+| `IS` | `pl.DataFrame \| None` | 손익계산서 |
 
----
+## BridgeResult
 
-## `YearAccounts`
-
-개별 연도의 계정 데이터.
-
-### 속성
-
-| 이름 | 타입 | 설명 |
+| 속성 | 타입 | 설명 |
 |------|------|------|
-| `period` | `str` | 사업연도 (예: "2023") |
-| `accounts` | `dict[str, int]` | 계정명 → 금액 |
+| `curYear` | `str` | 당기 |
+| `prevYear` | `str` | 전기 |
+| `rate` | `float` | 매칭률 |
+| `matched` | `int` | 매칭된 계정 수 |
+| `total` | `int` | 전체 계정 수 |
+| `yearGap` | `int` | 연도 차이 |
+| `pairs` | `dict[str, str]` | 매칭 쌍 (당기계정 → 전기계정) |
 
----
+## Segment
 
-## `BridgeResult`
-
-연도 간 계정 매칭 결과.
-
-### 속성
-
-| 이름 | 타입 | 설명 |
+| 속성 | 타입 | 설명 |
 |------|------|------|
-| `fromPeriod` | `str` | 시작 연도 |
-| `toPeriod` | `str` | 종료 연도 |
-| `matchCount` | `int` | 매칭된 계정 수 |
+| `startYear` | `str` | 시작 연도 |
+| `endYear` | `str` | 종료 연도 |
+| `nYears` | `int` | 연도 수 |
+| `rate` | `float \| None` | 구간 평균 매칭률 |
 
----
+## 사용 예제
 
-## 상수
+```python
+from dartlab import Company
 
-### `CORE_ACCOUNTS`
+c = Company("005930")
+result = c.analyze()
 
-핵심 계정 목록. 시계열 연속성을 우선 보장하는 계정들.
+# DataFrame 출력
+print(result.FS)
 
-### `BREAKPOINT_THRESHOLD`
+# 브릿지 결과
+for pair in result.pairResults:
+    print(f"{pair.prevYear} → {pair.curYear}: {pair.rate:.1%}")
 
-변경점 판단 임계값. 매칭률이 이 값 아래로 떨어지면 breakpoint로 판단.
+# 변경점 확인
+for bp in result.breakpoints:
+    print(f"변경점: {bp.prevYear} → {bp.curYear}")
+```

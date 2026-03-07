@@ -1,29 +1,40 @@
+---
+title: DartLab
+---
+
 # DartLab
 
-**DART 공시 문서를 완벽하게 분석하는 Python 라이브러리**
+DART 공시 문서의 재무제표, 주석, 텍스트를 파싱하고 시계열로 정렬하는 Python 라이브러리.
 
-DartLab은 DART 공시의 숫자와 텍스트를 모두 파싱하고,
-분기·반기·사업보고서를 시계열로 정렬하여 기업 분석의 새로운 차원을 연다.
+## 무엇을 할 수 있나
 
-## 주요 기능
+종목코드 하나면 된다. 14개 분석 모듈이 공시 문서에서 데이터를 추출하고 시계열로 정렬한다.
 
-| 레이어 | 설명 | 상태 |
-|--------|------|------|
-| **정량 분석** | Bridge Matching으로 분기별 실적 역산 | 출시됨 |
-| **정성 분석** | 텍스트 시계열 비교 및 변경점 추적 | 개발 중 |
-| **교차 검증** | 숫자와 텍스트의 연결 분석 | 개발 중 |
+| 분류 | 모듈 | 설명 |
+|------|------|------|
+| 재무제표 | summary, statements, segment, costByNature | 요약재무정보, BS/IS/CF, 부문별 매출, 비용구조 |
+| 주주/자본 | majorHolder, shareCapital | 최대주주, 의결권, 발행/유통주식 |
+| 사업 현황 | dividend, employee, subsidiary, affiliate, bond, rawMaterial | 배당, 직원, 출자, 관계기업, 채무증권, 설비 |
+| 텍스트 | mdna | 이사의 경영진단 및 분석의견 |
+
+데이터가 로컬에 없으면 GitHub Releases에서 자동으로 다운로드한다.
 
 ## 빠른 시작
 
-```bash
-pip install dartlab
-```
-
 ```python
-from dartlab.finance.summary import analyze
+from dartlab import Company
 
-result = analyze("data/docsData/005930.parquet")
-print(result.dataframe)
+samsung = Company("005930")
+
+result = samsung.analyze()
+result.FS    # 전체 재무제표 시계열 (Polars DataFrame)
+result.BS    # 재무상태표
+result.IS    # 손익계산서
 ```
 
-자세한 내용은 [시작하기](getting-started/installation.md)를 참고하세요.
+## 다음 단계
+
+- [설치](getting-started/installation.md)
+- [빠른 시작](getting-started/quickstart.md)
+- [Bridge Matching](user-guide/bridge-matching.md)
+- [API Reference](api/overview.md)

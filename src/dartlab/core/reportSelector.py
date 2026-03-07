@@ -58,6 +58,14 @@ def parsePeriodKey(reportType: str) -> str | None:
     return None
 
 
+def extractReportYear(reportType: str) -> int | None:
+    """사업보고서 (2024.12) → 2024"""
+    m = re.search(r"\((\d{4})\.\d{2}\)", reportType)
+    if m:
+        return int(m.group(1))
+    return None
+
+
 _REPORT_KIND_MAP = {
     "annual": "사업보고서",
     "Q1": r"분기보고서.*\d{4}\.03",
