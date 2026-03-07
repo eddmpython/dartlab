@@ -34,7 +34,7 @@
 		"description": "DART 공시 문서를 완벽하게 분석하는 Python 라이브러리 — 숫자와 텍스트 모두",
 		"url": "https://eddmpython.github.io/dartlab/",
 		"downloadUrl": "https://pypi.org/project/dartlab/",
-		"softwareVersion": "0.1.0",
+		"softwareVersion": "0.1.2",
 		"author": { "@type": "Person", "name": "eddmpython", "url": "https://github.com/eddmpython" },
 		"offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
 		"license": "https://opensource.org/licenses/MIT",

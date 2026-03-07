@@ -3,7 +3,7 @@ export const brand = {
 	tagline: '공시의 숫자 너머를 읽다',
 	taglineEn: 'Read Beyond the Numbers',
 	description: 'DART 공시 문서를 완벽하게 분석하는 Python 라이브러리',
-	version: '0.1.0',
+	version: '0.1.2',
 	url: 'https://eddmpython.github.io/dartlab/',
 	repo: 'https://github.com/eddmpython/dartlab',
 	pypi: 'https://pypi.org/project/dartlab/',

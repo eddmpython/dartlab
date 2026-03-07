@@ -29,8 +29,8 @@
 			<div>
 				<div class="text-xs font-semibold text-dl-text-muted mb-3 uppercase tracking-wider">문서</div>
 				<div class="space-y-2">
-					<a href="https://eddmpython.github.io/dartlab/docs/" class="block text-sm text-dl-text-dim hover:text-dl-text transition-colors">시작하기</a>
-					<a href="https://eddmpython.github.io/dartlab/docs/" class="block text-sm text-dl-text-dim hover:text-dl-text transition-colors">API 레퍼런스</a>
+					<a href="{base}/docs/" class="block text-sm text-dl-text-dim hover:text-dl-text transition-colors">시작하기</a>
+					<a href="{base}/docs/" class="block text-sm text-dl-text-dim hover:text-dl-text transition-colors">API 레퍼런스</a>
 				</div>
 			</div>
 
