@@ -277,6 +277,21 @@ class Company:
         from dartlab.finance.affiliate import affiliates
         return affiliates(self.stockCode, period=period)
 
+    # ── 사업의 내용 ──
+
+    def business(self):
+        """사업의 내용 섹션 추출 + 연도별 변경 탐지.
+
+        Returns:
+            BusinessResult | None.
+            - sections: 하위 섹션 목록 (BusinessSection)
+              각 섹션은 key(overview, products, materials, sales, risk, rnd, etc, financial)로 분류
+            - changes: 연도별 변경 정보 (BusinessChange)
+              changedPct > 30 이면 유의미한 변화 시점
+        """
+        from dartlab.finance.business import business
+        return business(self.stockCode)
+
     # ── 기타 ──
 
     def mdna(self):

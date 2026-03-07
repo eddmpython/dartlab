@@ -23,7 +23,8 @@
 </p>
 
 <p>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-v1">데이터</a>
+<a href="https://github.com/eddmpython/dartlab/releases/tag/data-v1">데이터</a> ·
+<a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 </div>
@@ -266,20 +267,22 @@ downloadAll()  # 전체 데이터 일괄 다운로드
 
 DartLab의 최종 목표는 **공시 데이터의 완전한 활용**이다.
 
-**현재 (v0.1.x)** — 개별 기업 분석
+**현재 (v0.1.x)** — 문서 파싱 도구
 - 14개 분석 모듈로 단일 기업의 재무제표, 주석, 텍스트를 시계열로 추출
 - Bridge Matching으로 동일 기업 내 계정명 변경 자동 추적
 - 260+ 상장사 데이터 제공
+- DART 공시 문서를 구조화된 데이터로 파싱하는 도구를 만드는 단계
 
 **다음 단계** — 기업 간 비교
 - 계정 표준화 엔진 도입 (eddmpython 타 프로젝트의 계정 매핑 노하우 활용)
 - 전체 상장사 재무제표의 95% 이상 교차 비교 커버리지 목표
 - 업종별, 규모별 그룹 비교 및 시장 전체 스크리닝
 
-**텍스트 분석 고도화** — 별도 프로젝트 연계
-- 현재 별도 프로젝트에서 전문 텍스트 분석 모듈을 개발 중
+**텍스트 분석 고도화** — AI + 별도 프로젝트 연계
+- 현재 별도 프로젝트에서 전문 텍스트 이해 패키지를 개발 중
 - 공시 문서 텍스트의 시계열 비교, 섹션별 변경 추적, 의미 분석 등
-- 완성 후 DartLab에 통합 배치 예정
+- 추후 AI와 eddmpython의 텍스트 이해 패키지를 결합하여, 공시 문서의 모든 경우에 대응되는 범용 헬퍼로 DartLab에 투입할 예정
+- 현재 DartLab이 파싱한 구조화 데이터 위에서 동작하는 지능형 분석 레이어가 최종 형태
 
 **최종 목표** — 정량·정성 교차 검증
 - 정량 변동과 정성 변화의 연결 (실적 악화 ↔ 위험 요인 텍스트 변화)
@@ -297,6 +300,12 @@ DartLab의 최종 목표는 **공시 데이터의 완전한 활용**이다.
 - [ ] 텍스트 분석 모듈 통합 (별도 프로젝트에서 배치 예정)
 - [ ] 정량 + 정성 교차 검증
 - [ ] 시각화
+
+## Sponsor
+
+<a href="https://buymeacoffee.com/eddmpython">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="180"/>
+</a>
 
 ## 라이선스
 

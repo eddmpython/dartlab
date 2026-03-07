@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui/card';
+	import { Check, Copy } from 'lucide-svelte';
+
 	let copiedIdx = $state(-1);
 
 	const commands = [
@@ -16,6 +19,7 @@
 <section id="install" class="py-24 px-6">
 	<div class="mx-auto max-w-2xl">
 		<div class="text-center mb-12">
+			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">Get Started</span>
 			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">설치</h2>
 			<p class="text-dl-text-muted text-lg">설치 후 바로 분석을 시작할 수 있다</p>
 		</div>
@@ -36,12 +40,12 @@
 						>
 						<button
 							onclick={() => copy(i)}
-							class="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-dl-text-dim hover:text-dl-text transition-colors"
+							class="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-dl-text-dim hover:text-dl-text transition-colors cursor-pointer"
 						>
 							{#if copiedIdx === i}
-								<svg class="w-3.5 h-3.5 text-dl-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+								<Check class="w-3.5 h-3.5 text-dl-success" />
 							{:else}
-								<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+								<Copy class="w-3.5 h-3.5" />
 							{/if}
 						</button>
 					</div>
@@ -53,7 +57,7 @@
 			{/each}
 		</div>
 
-		<div class="mt-8 p-6 rounded-xl bg-dl-bg-card border border-dl-border">
+		<Card class="mt-8">
 			<div class="text-xs font-mono text-dl-primary mb-3">자동 다운로드</div>
 			<p class="text-sm text-dl-text-muted leading-relaxed mb-4">
 				데이터를 별도로 준비할 필요 없다. 종목코드를 넘기면 로컬에 없는 데이터는
@@ -61,20 +65,17 @@
 			</p>
 			<div class="font-mono text-sm leading-7">
 				<div>
-					<span style="color:#c678dd">from</span>
+					<span class="text-purple-400">from</span>
 					<span class="text-dl-text"> dartlab </span>
-					<span style="color:#c678dd">import</span>
-					<span class="text-dl-text"> Company</span>
+					<span class="text-purple-400">import</span>
+					<span class="text-cyan-400"> Company</span>
 				</div>
 				<div class="mt-1">
 					<span class="text-dl-text">c = </span>
-					<span style="color:#61afef">Company</span>
-					<span class="text-dl-text">(</span>
-					<span style="color:#98c379">"005930"</span>
-					<span class="text-dl-text">)</span>
-					<span class="text-dl-text-dim">  # 없으면 자동 다운로드</span>
+					<span class="text-cyan-400">Company</span><span class="text-dl-text-muted">(</span><span class="text-emerald-400">"005930"</span><span class="text-dl-text-muted">)</span>
+					<span class="text-dl-text-dim">&nbsp;&nbsp;# 없으면 자동 다운로드</span>
 				</div>
 			</div>
-		</div>
+		</Card>
 	</div>
 </section>

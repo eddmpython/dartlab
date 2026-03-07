@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <section class="py-24 px-6">
@@ -15,18 +16,8 @@
 				<p class="text-dl-text-muted mb-8">숫자 너머의 이야기를 읽어보세요.</p>
 
 				<div class="flex flex-wrap items-center justify-center gap-4">
-					<a
-						href="#install"
-						class="px-6 py-3 rounded-xl bg-gradient-to-r from-dl-primary to-dl-primary-dark text-dl-bg-dark font-semibold text-sm shadow-lg shadow-dl-primary/20 hover:shadow-dl-primary/40 hover:-translate-y-0.5 transition-all"
-					>
-						설치하기
-					</a>
-					<a
-						href="{base}/docs/"
-						class="px-6 py-3 rounded-xl bg-dl-bg-card border border-dl-border text-dl-text-muted font-medium text-sm hover:text-dl-text hover:-translate-y-0.5 transition-all"
-					>
-						문서 보기 →
-					</a>
+					<Button href="#install">설치하기</Button>
+					<Button variant="secondary" href="{base}/docs/">문서 보기 →</Button>
 				</div>
 			</div>
 		</div>

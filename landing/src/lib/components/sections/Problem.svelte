@@ -1,3 +1,7 @@
+<script lang="ts">
+	import { Card } from '$lib/components/ui/card';
+</script>
+
 <section class="py-24 px-6">
 	<div class="mx-auto max-w-4xl">
 		<div class="text-center mb-16">
@@ -6,7 +10,7 @@
 		</div>
 
 		<div class="grid md:grid-cols-2 gap-6">
-			<div class="p-6 rounded-2xl bg-dl-bg-card border border-dl-border">
+			<Card hover={false}>
 				<div class="text-xs font-mono text-dl-text-dim mb-4 uppercase tracking-wider">기존 도구</div>
 				<div class="space-y-3 font-mono text-sm">
 					<div class="flex items-center gap-3 text-dl-text-muted">
@@ -35,9 +39,9 @@
 						<span class="text-dl-warning">✗</span> 텍스트 변경 추적
 					</div>
 				</div>
-			</div>
+			</Card>
 
-			<div class="p-6 rounded-2xl bg-gradient-to-br from-dl-bg-card to-dl-bg-card border border-dl-primary/30 ring-1 ring-dl-primary/10">
+			<Card hover={false} class="border-dl-primary/30 ring-1 ring-dl-primary/10 bg-gradient-to-br from-dl-bg-card to-dl-bg-card">
 				<div class="text-xs font-mono text-dl-primary mb-4 uppercase tracking-wider">DartLab</div>
 				<div class="space-y-3 font-mono text-sm">
 					<div class="flex items-center gap-3 text-dl-text">
@@ -69,7 +73,7 @@
 						<span class="text-dl-accent">✓</span> 정량·정성 교차 검증
 					</div>
 				</div>
-			</div>
+			</Card>
 		</div>
 	</div>
 </section>

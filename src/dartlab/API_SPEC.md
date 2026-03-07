@@ -5,7 +5,9 @@
 - 모든 pipeline 함수는 `stockCode: str` (6자리 종목코드)를 첫 번째 인자로 받는다
 - 내부에서 `core.loadData(stockCode)` → DataFrame 로딩
 - 반환 타입은 각 모듈의 Result dataclass 또는 None (데이터 부족 시)
-- 모든 Result는 `corpName`, `nYears`, `period` 필드를 공통으로 가진다
+- 모든 Result는 `corpName` 필드를 공통으로 가진다
+- 시계열 모듈은 `nYears` (기간 수) 포함, 스냅샷 모듈은 `year` (기준연도) 포함
+- period 파라미터를 받는 모듈만 `period` 필드 포함
 
 ## Company 클래스
 
@@ -16,7 +18,7 @@ c = Company("005930")       # 생성 시 데이터 로딩 + 기업명 추출
 c.corpName                  # "삼성전자"
 ```
 
-종목코드 하나로 14개 분석 모듈에 접근하는 통합 래퍼.
+종목코드 하나로 15개 분석 모듈에 접근하는 통합 래퍼.
 각 메서드는 기존 pipeline 함수에 `stockCode`를 넘기는 얇은 래퍼다.
 
 ### 인덱스·메타
@@ -45,6 +47,7 @@ c.corpName                  # "삼성전자"
 | `subsidiary()` | - | SubsidiaryResult | 타법인출자 현황 |
 | `bond()` | - | BondResult | 채무증권 발행실적 |
 | `affiliates()` | period | AffiliatesResult | 관계기업 투자 |
+| `business()` | - | BusinessResult | 사업의 내용 섹션 + 변경 탐지 |
 | `mdna()` | - | MdnaResult | 경영진단 및 분석의견 |
 | `rawMaterial()` | - | RawMaterialResult | 원재료·유형자산·시설투자 |
 
@@ -404,6 +407,50 @@ result = bond("005930")
 | nYears | int | 연도 수 |
 | issuances | list[BondIssuance] | 최신 연도 채무증권 목록 |
 | timeSeries | DataFrame \| None | 채무증권 시계열 (year, totalIssuances, totalAmount, unredeemedCount) |
+
+## finance.business
+
+```python
+from dartlab.finance.business import business
+
+result = business("005930")
+```
+
+### business(stockCode) -> BusinessResult | None
+
+사업보고서 "II. 사업의 내용"에서 하위 섹션 추출 + 연도별 변경 탐지.
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| stockCode | str | - | 종목코드 (6자리) |
+
+### BusinessSection
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| key | str | 분류 키 (overview, products, materials, sales, risk, rnd, etc, financial) |
+| title | str | 원본 섹션 제목 |
+| chars | int | 텍스트 길이 |
+| text | str | 섹션 전체 내용 |
+
+### BusinessChange
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| year | int | 변경 감지 연도 |
+| changedPct | float | 변경률 (%) — 30 초과 시 유의미한 변화 |
+| added | int | 추가된 줄 수 |
+| removed | int | 삭제된 줄 수 |
+| totalChars | int | 해당 연도 텍스트 총 길이 |
+
+### BusinessResult
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| corpName | str \| None | 기업명 |
+| year | int | 기준 사업연도 (최신) |
+| sections | list[BusinessSection] | 하위 섹션 목록 |
+| changes | list[BusinessChange] | 연도별 변경 정보 |
 
 ## finance.mdna
 

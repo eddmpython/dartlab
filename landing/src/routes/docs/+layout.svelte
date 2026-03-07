@@ -44,7 +44,7 @@
 	<header class="docs-header">
 		<div class="header-inner">
 			<a href="{base}/" class="logo">
-				<span class="logo-icon">D</span>
+				<img src="{base}/icon-final.png" alt="DartLab" width="24" height="24" />
 				<span class="logo-text">DartLab</span>
 			</a>
 			<nav class="header-nav">
@@ -133,17 +133,8 @@
 		gap: 0.5rem;
 		text-decoration: none;
 	}
-	.logo-icon {
-		width: 28px;
-		height: 28px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: linear-gradient(135deg, #f59e0b, #fbbf24);
-		color: #0c0a09;
-		font-weight: 800;
-		font-size: 0.9rem;
-		border-radius: 6px;
+	.logo img {
+		border-radius: 4px;
 	}
 	.logo-text {
 		font-weight: 700;
