@@ -8,7 +8,7 @@
 	<div class="mx-auto max-w-5xl">
 		<div class="text-center mb-16">
 			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">Architecture</span>
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">세 가지 분석 레이어</h2>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">전자공시를 분석하는 세 가지 레이어</h2>
 			<p class="text-dl-text-muted text-lg">숫자에서 텍스트로, 텍스트에서 인사이트로</p>
 		</div>
 

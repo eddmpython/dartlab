@@ -18,7 +18,7 @@ c = Company("005930")       # 생성 시 데이터 로딩 + 기업명 추출
 c.corpName                  # "삼성전자"
 ```
 
-종목코드 하나로 15개 분석 모듈에 접근하는 통합 래퍼.
+종목코드 하나로 16개 분석 모듈에 접근하는 통합 래퍼.
 각 메서드는 기존 pipeline 함수에 `stockCode`를 넘기는 얇은 래퍼다.
 
 ### 인덱스·메타
@@ -48,6 +48,7 @@ c.corpName                  # "삼성전자"
 | `bond()` | - | BondResult | 채무증권 발행실적 |
 | `affiliates()` | period | AffiliatesResult | 관계기업 투자 |
 | `business()` | - | BusinessResult | 사업의 내용 섹션 + 변경 탐지 |
+| `overview()` | - | OverviewResult | 회사의 개요 정량 데이터 |
 | `mdna()` | - | MdnaResult | 경영진단 및 분석의견 |
 | `rawMaterial()` | - | RawMaterialResult | 원재료·유형자산·시설투자 |
 
@@ -451,6 +452,46 @@ result = business("005930")
 | year | int | 기준 사업연도 (최신) |
 | sections | list[BusinessSection] | 하위 섹션 목록 |
 | changes | list[BusinessChange] | 연도별 변경 정보 |
+
+## finance.companyOverview
+
+```python
+from dartlab.finance.companyOverview import companyOverview
+
+result = companyOverview("005930")
+```
+
+### companyOverview(stockCode) -> OverviewResult | None
+
+사업보고서 "I. 회사의 개요" → "1. 회사의 개요"에서 정량 데이터 추출.
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| stockCode | str | - | 종목코드 (6자리) |
+
+### CreditRating
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| agency | str | 평가기관 (한국신용평가, Moody's 등) |
+| grade | str | 신용등급 (AA+, Aa2 등) |
+
+### OverviewResult
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| corpName | str \| None | 기업명 |
+| year | int | 기준 사업연도 |
+| founded | str \| None | 설립일자 (YYYY-MM-DD) |
+| address | str \| None | 본사 주소 |
+| homepage | str \| None | 홈페이지 URL |
+| subsidiaryCount | int \| None | 연결대상 종속기업 수 |
+| isSME | bool \| None | 중소기업 해당 여부 |
+| isVenture | bool \| None | 벤처기업 해당 여부 |
+| creditRatings | list[CreditRating] | 신용등급 목록 |
+| listedDate | str \| None | 상장일 (YYYY-MM-DD) |
+| missing | list[str] | 원문에 해당 항목이 없는 필드 |
+| failed | list[str] | 항목은 있지만 파싱 실패한 필드 |
 
 ## finance.mdna
 

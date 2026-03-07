@@ -45,23 +45,27 @@
 
 ### 003 — 전 종목 최종 커버리지
 
-총 267종목 → 파싱 성공 227 / 실패 40 (사업보고서 미보유)
+총 267종목 → 파싱 성공 227 / None 40 (사업보고서 미보유)
 
-| 필드 | 성공 | 비율 | 비고 |
-|------|------|------|------|
-| isVenture | 227 | 100.0% | 전 종목 |
-| founded | 212 | 93.4% | 15종목 원문에 없음 |
-| address | 204 | 89.9% | 23종목 서술형 미매칭 |
-| homepage | 204 | 89.9% | address와 동일 범위 |
-| listedDate | 200 | 88.1% | 27종목 원문에 없음 |
-| subsidiaryCount | 52 | 22.9% | 합계 표 있는 종목만 |
-| creditRatings | 49 | 21.6% | 신용등급 보유 기업만 |
-| isSME | 34 | 15.0% | 해당 항목 있는 종목만 |
+| 필드 | 성공 | Missing | Failed | 비고 |
+|------|------|---------|--------|------|
+| isSME | 227 | 0 | 0 | 전 종목 100% |
+| isVenture | 227 | 0 | 0 | 전 종목 100% |
+| subsidiaryCount | 220 | 0 | 7 | 합계 표 + 0건 처리 포함 |
+| founded | 212 | 15 | 0 | 원문에 없는 종목만 missing |
+| address | 204 | 12 | 11 | 7패턴 fallback |
+| homepage | 204 | 13 | 10 | 6패턴 fallback |
+| listedDate | 200 | 0 | 27 | 원문 형식 다양 |
+| creditRatings | 102 | 69 | 56 | 신용등급 보유+파싱 가능 기업 |
+
+missing/failed 구분:
+- missing: 원문에 해당 항목 자체가 없는 필드 (예: "해당사항 없음")
+- failed: 항목은 있지만 파싱 실패한 필드
 
 creditRatings 검증:
 - 삼성전자: Moody's Aa2, S&P AA- ✓
 - SK하이닉스: 국내 AA×3, Moody's Baa2, S&P BBB, Fitch BBB ✓
-- 유진증권: A2+×3사 ✓
+- NAVER: 한국기업평가 AA+, 한국신용평가 AA+ ✓
 - 신한지주: AAA×3사 ✓
 - 등급 설명표 오탐 제거 ✓
 
@@ -74,8 +78,15 @@ address 검증: 30종목 샘플 오탐 0건
 주요 설계:
 - address: 7패턴 fallback (표, 괄호, 공백변형, 본점소재지, 따옴표 서술)
 - homepage: 6패턴 fallback (URL, 표, 괄호, www)
-- subsidiaryCount: 합계 표(기말값) 우선 → 서술 fallback
-- creditRatings: 등급 설명표 컷오프 → 범위표기 제거 → 서술문 → 현등급표 → 이력 최신행
+- subsidiaryCount: 합계 표(기말값) 우선 → 전부 대시(0건) → 서술 fallback
+- creditRatings: 섹션경계 컷오프 → 해당없음 감지 → 등급 설명표 컷오프 → 범위표기 제거 → (Stable)/부정적 제거 → 날짜 정규화 → 서술문 → 현등급표 → 이력 최신행
+- isSME: 다중 파이프 테이블 형식 지원 (`| 여부 | | 미해당 |`)
 - founded: 설립일자 키워드 → 서술형 "YYYY년 M월 D일 설립" fallback
+- 지원 신용평가 기관: 한국신용평가, 한국기업평가, NICE/나이스신용평가, 서울신용평가, 한국평가데이터, 한국기업데이터, 나이스디앤비, Moody's, S&P, Fitch, 한기평, 한신평, NICE신평
 
-## 배치 준비 완료
+## 배치 완료
+
+- `src/dartlab/finance/companyOverview/` 패키지 생성
+- `Company.overview()` 메서드 추가
+- `finance/__init__.py` 전 모듈(15개) 등록
+- `API_SPEC.md` 업데이트

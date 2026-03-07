@@ -369,6 +369,23 @@ class Company:
         from dartlab.finance.business import business
         return business(self.stockCode)
 
+    # ── 회사의 개요 ──
+
+    def overview(self):
+        """회사의 개요 정량 데이터 추출.
+
+        Returns:
+            OverviewResult | None.
+            - founded/address/homepage/listedDate: 기본 정보
+            - subsidiaryCount: 종속기업 수
+            - isSME/isVenture: 중소기업/벤처기업 해당 여부
+            - creditRatings: 신용등급 목록 (CreditRating)
+            - missing: 원문에 해당 항목이 없는 필드 목록
+            - failed: 항목은 있지만 파싱 실패한 필드 목록
+        """
+        from dartlab.finance.companyOverview import companyOverview
+        return companyOverview(self.stockCode)
+
     # ── 기타 ──
 
     def mdna(self):

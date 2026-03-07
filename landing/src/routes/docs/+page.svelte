@@ -4,12 +4,14 @@
 </script>
 
 <svelte:head>
-	<title>문서 - DartLab</title>
+	<title>DartLab 문서 — DART 전자공시 분석 가이드</title>
+	<meta name="description" content="DartLab 설치부터 API 레퍼런스까지. DART 전자공시 문서를 파싱하고 재무제표를 시계열로 정렬하는 방법을 안내한다." />
+	<link rel="canonical" href="https://eddmpython.github.io/dartlab/docs/" />
 </svelte:head>
 
 <div class="docs-index">
 	<h1>DartLab 문서</h1>
-	<p class="subtitle">DART 공시 문서를 파싱하고 시계열로 정렬하는 Python 라이브러리</p>
+	<p class="subtitle">DART 전자공시 문서를 파싱하고 시계열로 정렬하는 Python 라이브러리</p>
 
 	<div class="cards">
 		{#each navigation as section}

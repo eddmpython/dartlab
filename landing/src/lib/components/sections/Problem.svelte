@@ -5,7 +5,7 @@
 <section class="py-24 px-6">
 	<div class="mx-auto max-w-4xl">
 		<div class="text-center mb-16">
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">공시의 99%는 버려지고 있다</h2>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">전자공시의 99%는 버려지고 있다</h2>
 			<p class="text-dl-text-muted text-lg">대부분의 도구는 숫자 몇 개만 뽑아간다. 나머지는?</p>
 		</div>
 

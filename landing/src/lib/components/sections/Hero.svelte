@@ -29,7 +29,7 @@
 		</h1>
 
 		<p class="text-lg md:text-xl text-dl-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-			DART 공시 문서를 완벽하게 분석하는 Python 라이브러리.<br />
+			DART 전자공시 문서를 완벽하게 분석하는 Python 라이브러리.<br />
 			<span class="text-dl-text font-medium">숫자는 결과이고, 텍스트는 원인이다.</span> DartLab은 둘 다 읽는다.
 		</p>
 

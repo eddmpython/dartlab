@@ -96,7 +96,12 @@
 </script>
 
 <svelte:head>
-	<title>{data.metadata?.title ?? 'Docs'} - DartLab</title>
+	<title>{data.metadata?.title ?? 'Docs'} — DartLab 전자공시 분석</title>
+	{#if data.metadata?.description}
+		<meta name="description" content={data.metadata.description} />
+	{:else}
+		<meta name="description" content="DartLab {data.metadata?.title ?? ''} — DART 전자공시 문서 분석 Python 라이브러리 문서." />
+	{/if}
 </svelte:head>
 
 <div class="doc-page">
