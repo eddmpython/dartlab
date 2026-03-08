@@ -1,6 +1,5 @@
 from dartlab.core.dataLoader import (
     DART_VIEWER,
-    DATA_DIR,
     PERIOD_KINDS,
     buildIndex,
     extractCorpName,
@@ -17,7 +16,6 @@ from dartlab.core.reportSelector import extractReportYear, selectReport
 from dartlab.core.tableParser import detectUnit, extractAccounts, extractTables, parseAmount
 
 __all__ = [
-    "DATA_DIR",
     "DART_VIEWER",
     "PERIOD_KINDS",
     "buildIndex",

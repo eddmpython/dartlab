@@ -42,50 +42,50 @@ from dartlab.notes import Notes
 # (모듈 import 경로, 함수명, 한글 라벨, primary DataFrame 추출)
 _MODULE_REGISTRY: list[tuple[str, str, str, Any]] = [
     # 재무제표
-    ("dartlab.finance.summary", "fsSummary", "요약재무정보", None),
-    ("dartlab.finance.statements", "statements", "재무제표", None),
-    ("dartlab.finance.segment", "segments", "부문정보", lambda r: r.revenue),
-    ("dartlab.finance.tangibleAsset", "tangibleAsset", "유형자산", lambda r: r.movementDf),
-    ("dartlab.finance.costByNature", "costByNature", "비용성격별분류", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.summary", "fsSummary", "요약재무정보", None),
+    ("dartlab.engines.docsParser.finance.statements", "statements", "재무제표", None),
+    ("dartlab.engines.docsParser.finance.segment", "segments", "부문정보", lambda r: r.revenue),
+    ("dartlab.engines.docsParser.finance.tangibleAsset", "tangibleAsset", "유형자산", lambda r: r.movementDf),
+    ("dartlab.engines.docsParser.finance.costByNature", "costByNature", "비용성격별분류", lambda r: r.timeSeries),
     # 정기보고서
-    ("dartlab.finance.dividend", "dividend", "배당", lambda r: r.timeSeries),
-    ("dartlab.finance.majorHolder", "majorHolder", "최대주주", lambda r: r.timeSeries),
-    ("dartlab.finance.employee", "employee", "직원현황", lambda r: r.timeSeries),
-    ("dartlab.finance.subsidiary", "subsidiary", "자회사투자", lambda r: r.timeSeries),
-    ("dartlab.finance.bond", "bond", "채무증권", lambda r: r.timeSeries),
-    ("dartlab.finance.shareCapital", "shareCapital", "주식현황", lambda r: r.timeSeries),
-    ("dartlab.finance.executive", "executive", "임원현황", lambda r: r.executiveDf),
-    ("dartlab.finance.executivePay", "executivePay", "임원보수", lambda r: r.payByTypeDf),
-    ("dartlab.finance.audit", "audit", "감사의견", lambda r: r.opinionDf),
-    ("dartlab.finance.boardOfDirectors", "boardOfDirectors", "이사회", lambda r: r.boardDf),
-    ("dartlab.finance.capitalChange", "capitalChange", "자본변동", lambda r: r.capitalDf),
-    ("dartlab.finance.contingentLiability", "contingentLiability", "우발부채", lambda r: r.guaranteeDf),
-    ("dartlab.finance.internalControl", "internalControl", "내부통제", lambda r: r.controlDf),
-    ("dartlab.finance.relatedPartyTx", "relatedPartyTx", "관계자거래", lambda r: r.revenueTxDf),
-    ("dartlab.finance.rnd", "rnd", "R&D", lambda r: r.rndDf),
-    ("dartlab.finance.sanction", "sanction", "제재현황", lambda r: r.sanctionDf),
-    ("dartlab.finance.affiliateGroup", "affiliateGroup", "계열사", lambda r: r.affiliateDf),
-    ("dartlab.finance.fundraising", "fundraising", "증자감자", lambda r: r.issuanceDf),
-    ("dartlab.finance.productService", "productService", "주요제품", lambda r: r.productDf),
-    ("dartlab.finance.salesOrder", "salesOrder", "매출수주", lambda r: r.salesDf),
-    ("dartlab.finance.riskDerivative", "riskDerivative", "위험관리", lambda r: r.fxDf),
-    ("dartlab.finance.articlesOfIncorporation", "articlesOfIncorporation", "정관", lambda r: r.changesDf),
-    ("dartlab.finance.otherFinance", "otherFinance", "기타재무", lambda r: r.badDebtDf),
-    ("dartlab.finance.companyHistory", "companyHistory", "연혁", lambda r: r.eventsDf),
-    ("dartlab.finance.shareholderMeeting", "shareholderMeeting", "주주총회", lambda r: r.agendaDf),
-    ("dartlab.finance.auditSystem", "auditSystem", "감사제도", lambda r: r.committeeDf),
-    ("dartlab.finance.investmentInOther", "investmentInOther", "타법인출자", lambda r: r.investmentDf),
-    ("dartlab.finance.companyOverviewDetail", "companyOverviewDetail", "회사개요",
+    ("dartlab.engines.docsParser.finance.dividend", "dividend", "배당", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.majorHolder", "majorHolder", "최대주주", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.employee", "employee", "직원현황", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.subsidiary", "subsidiary", "자회사투자", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.bond", "bond", "채무증권", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.shareCapital", "shareCapital", "주식현황", lambda r: r.timeSeries),
+    ("dartlab.engines.docsParser.finance.executive", "executive", "임원현황", lambda r: r.executiveDf),
+    ("dartlab.engines.docsParser.finance.executivePay", "executivePay", "임원보수", lambda r: r.payByTypeDf),
+    ("dartlab.engines.docsParser.finance.audit", "audit", "감사의견", lambda r: r.opinionDf),
+    ("dartlab.engines.docsParser.finance.boardOfDirectors", "boardOfDirectors", "이사회", lambda r: r.boardDf),
+    ("dartlab.engines.docsParser.finance.capitalChange", "capitalChange", "자본변동", lambda r: r.capitalDf),
+    ("dartlab.engines.docsParser.finance.contingentLiability", "contingentLiability", "우발부채", lambda r: r.guaranteeDf),
+    ("dartlab.engines.docsParser.finance.internalControl", "internalControl", "내부통제", lambda r: r.controlDf),
+    ("dartlab.engines.docsParser.finance.relatedPartyTx", "relatedPartyTx", "관계자거래", lambda r: r.revenueTxDf),
+    ("dartlab.engines.docsParser.finance.rnd", "rnd", "R&D", lambda r: r.rndDf),
+    ("dartlab.engines.docsParser.finance.sanction", "sanction", "제재현황", lambda r: r.sanctionDf),
+    ("dartlab.engines.docsParser.finance.affiliateGroup", "affiliateGroup", "계열사", lambda r: r.affiliateDf),
+    ("dartlab.engines.docsParser.finance.fundraising", "fundraising", "증자감자", lambda r: r.issuanceDf),
+    ("dartlab.engines.docsParser.finance.productService", "productService", "주요제품", lambda r: r.productDf),
+    ("dartlab.engines.docsParser.finance.salesOrder", "salesOrder", "매출수주", lambda r: r.salesDf),
+    ("dartlab.engines.docsParser.finance.riskDerivative", "riskDerivative", "위험관리", lambda r: r.fxDf),
+    ("dartlab.engines.docsParser.finance.articlesOfIncorporation", "articlesOfIncorporation", "정관", lambda r: r.changesDf),
+    ("dartlab.engines.docsParser.finance.otherFinance", "otherFinance", "기타재무", lambda r: r.badDebtDf),
+    ("dartlab.engines.docsParser.finance.companyHistory", "companyHistory", "연혁", lambda r: r.eventsDf),
+    ("dartlab.engines.docsParser.finance.shareholderMeeting", "shareholderMeeting", "주주총회", lambda r: r.agendaDf),
+    ("dartlab.engines.docsParser.finance.auditSystem", "auditSystem", "감사제도", lambda r: r.committeeDf),
+    ("dartlab.engines.docsParser.finance.investmentInOther", "investmentInOther", "타법인출자", lambda r: r.investmentDf),
+    ("dartlab.engines.docsParser.finance.companyOverviewDetail", "companyOverviewDetail", "회사개요",
      lambda r: {
          "foundedDate": r.foundedDate, "listedDate": r.listedDate,
          "address": r.address, "ceo": r.ceo,
          "mainBusiness": r.mainBusiness, "website": r.website,
      }),
     # 공시 서술
-    ("dartlab.disclosure.business", "business", "사업의내용", lambda r: r.sections),
-    ("dartlab.disclosure.companyOverview", "companyOverview", "회사개요정량", None),
-    ("dartlab.disclosure.mdna", "mdna", "MD&A", lambda r: r.overview),
-    ("dartlab.disclosure.rawMaterial", "rawMaterial", "원재료설비", None),
+    ("dartlab.engines.docsParser.disclosure.business", "business", "사업의내용", lambda r: r.sections),
+    ("dartlab.engines.docsParser.disclosure.companyOverview", "companyOverview", "회사개요정량", None),
+    ("dartlab.engines.docsParser.disclosure.mdna", "mdna", "MD&A", lambda r: r.overview),
+    ("dartlab.engines.docsParser.disclosure.rawMaterial", "rawMaterial", "원재료설비", None),
 ]
 
 # 모듈명 → 레지스트리 인덱스
@@ -180,7 +180,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         result = _import_and_call(
-            "dartlab.finance.notesDetail", "notesDetail",
+            "dartlab.engines.docsParser.finance.notesDetail", "notesDetail",
             self.stockCode, keyword=keyword,
         )
         self._cache[cacheKey] = result
@@ -453,7 +453,7 @@ class Company:
         if config.verbose:
             print(f"  ▶ {self.corpName} · 주주현황")
         result = _import_and_call(
-            "dartlab.finance.majorHolder", "holderOverview", self.stockCode,
+            "dartlab.engines.docsParser.finance.majorHolder", "holderOverview", self.stockCode,
         )
         self._cache[cacheKey] = result
         return result

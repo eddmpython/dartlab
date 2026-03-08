@@ -2,7 +2,7 @@
 
 import sys
 
-from dartlab import config, core, disclosure, finance
+from dartlab import config, core, engines
 from dartlab.company import Company
 from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
 
@@ -25,8 +25,7 @@ sys.modules[__name__].__class__ = _Module
 __all__ = [
     "config",
     "core",
-    "finance",
-    "disclosure",
+    "engines",
     "Company",
     "verbose",
     "getKindList",
