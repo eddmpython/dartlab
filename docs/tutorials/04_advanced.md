@@ -6,11 +6,13 @@ title: "4. Advanced Analysis"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_advanced.ipynb)
 
-주석 세부항목, 유형자산 변동표, 관계기업 분석 등 심화 모듈을 다룬다. 이 튜토리얼에서 다루는 내용은 다음과 같다.
+K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석, 거버넌스 분석 등 심화 모듈을 다룬다.
 
-- 주석 세부항목 (23개 키워드)
+- Notes 통합 접근 (12개 항목)
 - 유형자산 변동표
 - 관계기업·공동기업 투자
+- 이사회와 감사제도
+- 거버넌스·리스크 분석
 - 여러 종목 비교 분석
 
 ## 준비
@@ -18,35 +20,66 @@ title: "4. Advanced Analysis"
 ```python
 from dartlab import Company
 
-samsung = Company("005930")
+c = Company("005930")
 ```
 
-## 주석 세부항목
+## K-IFRS 주석 — Notes
 
-재무제표 주석에서 특정 항목의 상세 테이블을 추출한다. 23개 키워드를 지원한다.
+`c.notes`로 12개 K-IFRS 주석 항목에 통합 접근한다. 영문 속성과 한글 키 모두 지원한다.
+
+### 영문 속성으로 접근
 
 ```python
-result = samsung.notesDetail("재고자산")
-
-print(result.tableDf)  # 항목별 시계열
+c.notes.inventory          # 재고자산 DataFrame
+c.notes.receivables        # 매출채권
+c.notes.borrowings         # 차입금
+c.notes.tangibleAsset      # 유형자산 변동표
+c.notes.intangibleAsset    # 무형자산
+c.notes.provisions         # 충당부채
+c.notes.eps                # 주당이익
+c.notes.lease              # 리스
+c.notes.investmentProperty # 투자부동산
+c.notes.affiliates         # 관계기업
+c.notes.segments           # 부문정보
+c.notes.costByNature       # 비용의 성격별 분류
 ```
 
-### 지원 키워드
+### 한글 키로 접근
 
-| 키워드 | 설명 |
-|--------|------|
-| `재고자산` | 제품, 상품, 원재료, 재공품 등 |
-| `주당이익` | 기본주당이익, 희석주당이익 |
-| `충당부채` | 제품보증, 소송, 복구 등 |
-| `차입금` | 단기·장기 차입금 상세 |
-| `매출채권` | 매출채권, 대손충당금 |
-| `리스` | 사용권자산, 리스부채 |
-| `투자부동산` | 투자부동산 변동 |
-| `무형자산` | 영업권, 소프트웨어, 특허 등 |
+```python
+c.notes["재고자산"]         # c.notes.inventory와 동일
+c.notes["차입금"]           # c.notes.borrowings와 동일
+c.notes["유형자산"]         # c.notes.tangibleAsset과 동일
+```
+
+### 전체 조회
+
+```python
+c.notes.keys()       # ['receivables', 'inventory', 'tangibleAsset', ...]
+c.notes.keys_kr()    # ['매출채권', '재고자산', '유형자산', ...]
+c.notes.all()        # 모든 항목을 dict로 반환
+```
+
+### Notes 미등록 키워드 직접 조회
+
+12개 주요 키워드 외에도 23개 키워드를 지원한다. 미등록 키워드는 `get()`으로 직접 호출한다.
+
+```python
+result = c.get("notesDetail", keyword="법인세")
+print(result.tableDf)
+
+result = c.get("notesDetail", keyword="특수관계자")
+print(result.tableDf)
+```
+
+전체 23개 키워드: `재고자산`, `주당이익`, `충당부채`, `차입금`, `매출채권`, `리스`, `투자부동산`, `무형자산`, `법인세`, `특수관계자`, `약정사항`, `금융자산`, `공정가치`, `이익잉여금`, `금융부채`, `기타포괄손익`, `사채`, `종업원급여`, `퇴직급여`, `확정급여`, `재무위험`, `우발부채`, `담보`
 
 ### 연도별 상세 테이블
 
+Notes는 DataFrame만 반환하지만, 원본 Result를 통해 연도별 상세 테이블도 접근 가능하다.
+
 ```python
+result = c.get("notesDetail", keyword="재고자산")
 for year, periods in result.tables.items():
     for p in periods:
         print(f"[{year}] {p.period} (패턴: {p.pattern})")
@@ -54,28 +87,19 @@ for year, periods in result.tables.items():
             print(f"  {item.name}: {item.values}")
 ```
 
-### 분기별 분석
-
-```python
-result = samsung.notesDetail("재고자산", period="q")
-print(result.tableDf)
-```
-
 ## 유형자산 변동표
 
-토지, 건물, 기계장치 등 카테고리별 취득·처분·감가상각을 추적한다.
+Notes에서도 접근 가능하고, property로도 접근 가능하다.
 
 ```python
-result = samsung.tangibleAsset()
+# Notes 경유
+c.notes.tangibleAsset   # 카테고리별 기초/기말 시계열 DataFrame
 
+# get()으로 전체 Result
+result = c.get("tangibleAsset")
 result.reliability  # "high" 또는 "low"
 result.warnings     # 신뢰도 관련 경고
-```
-
-### 변동 시계열
-
-```python
-print(result.movementDf)  # 카테고리별 기초/기말 시계열
+result.movementDf   # 카테고리별 기초/기말 시계열
 ```
 
 ### 연도별 상세 변동
@@ -91,90 +115,140 @@ for year, movements in result.movements.items():
 
 ## 관계기업·공동기업
 
-관계기업의 지분율, 장부가, 변동내역을 분석한다.
+Notes에서도 접근 가능하다.
 
 ```python
-result = samsung.affiliates()
+# Notes 경유
+c.notes.affiliates   # 변동 시계열 DataFrame
 
-print(result.movementDf)  # 변동 시계열
-```
-
-### 연도별 프로필
-
-```python
+# get()으로 전체 Result
+result = c.get("affiliates")
 for year, profiles in result.profiles.items():
     for p in profiles:
         print(f"[{year}] {p.name}: {p.ratio}%, 장부가 {p.bookValue}")
 ```
 
-### 분기별 분석
+## 이사회
 
 ```python
-result = samsung.affiliates(period="q")
+c.boardOfDirectors
+# year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
+```
+
+위원회 구성도 확인 가능하다.
+
+```python
+result = c.get("boardOfDirectors")
+print(result.committeeDf)   # committeeName | composition | members
+```
+
+## 감사제도
+
+```python
+c.auditSystem
+# name | role | detail
+```
+
+감사활동 내역도 확인 가능하다.
+
+```python
+result = c.get("auditSystem")
+print(result.activityDf)   # date | agenda | result
+```
+
+## 내부통제
+
+```python
+c.internalControl
+# year | opinion | auditor | hasWeakness
+```
+
+## 거버넌스·리스크 종합
+
+```python
+# 관계자거래
+c.relatedPartyTx
+# year | entity | sales | purchases
+
+# 우발부채
+c.contingentLiability
+# year | totalGuaranteeAmount
+
+# 제재 현황
+c.sanction
+# year | date | agency | action | amount
+
+# 위험관리
+c.riskDerivative
+# currency | upImpact | downImpact
 ```
 
 ## 여러 종목 비교
 
-여러 종목을 분석해서 비교하는 패턴이다.
+property 접근으로 간결하게 비교 분석할 수 있다.
 
 ```python
 import polars as pl
 
 codes = ["005930", "000660", "035420"]
-names = []
-revenues = []
+rows = []
 
 for code in codes:
     c = Company(code)
-    result = c.fsSummary()
-    if result and result.IS is not None:
-        names.append(result.corpName)
-        last_row = result.IS.row(-1, named=True)
-        revenues.append(last_row.get("매출액") or last_row.get("수익(매출액)"))
-
-comparison = pl.DataFrame({
-    "기업": names,
-    "최근 매출액": revenues
-})
-print(comparison)
+    rows.append({
+        "기업": c.corpName,
+        "재고자산": c.notes.inventory,
+        "유형자산": c.notes.tangibleAsset,
+    })
 ```
 
-### 배당 비교
+### 매출액 비교
 
 ```python
-dividends = []
+revenues = []
 for code in codes:
     c = Company(code)
-    result = c.dividend()
-    if result and result.timeSeries is not None:
-        last = result.timeSeries.row(-1, named=True)
-        dividends.append({
+    bs = c.BS
+    if bs is not None:
+        last_row = bs.row(-1, named=True)
+        revenues.append({
             "기업": c.corpName,
-            "DPS": last.get("dps"),
-            "배당수익률": last.get("dividendYield"),
-            "배당성향": last.get("payoutRatio")
+            "자산총계": last_row.get("자산총계"),
         })
 
-print(pl.DataFrame(dividends))
+print(pl.DataFrame(revenues))
 ```
 
-## 함수 직접 호출
+## Result 객체 접근
 
-Company 클래스를 거치지 않고 모듈 함수를 직접 호출할 수도 있다.
+property는 대표 DataFrame 하나를 반환한다. 모듈의 전체 데이터가 필요하면 `get()`을 사용한다.
 
 ```python
-from dartlab.finance.summary import fsSummary
-from dartlab.finance.statements import statements
-from dartlab.finance.dividend import dividend
-from dartlab.finance.notesDetail import notesDetail
+# property → 대표 DataFrame
+c.audit   # opinionDf만 반환
 
-result = fsSummary("005930")
-result = statements("005930", period="q")
-result = dividend("005930")
-result = notesDetail("005930", "재고자산")
+# get() → 전체 Result 객체
+result = c.get("audit")
+result.opinionDf   # 감사의견
+result.feeDf       # 감사보수
+```
+
+## 전체 일괄 조회
+
+```python
+d = c.all()
+
+# 재무제표
+d["BS"], d["IS"], d["CF"]
+
+# 정기보고서
+d["dividend"], d["employee"], d["majorHolder"]
+
+# K-IFRS 주석
+d["notes"]["inventory"], d["notes"]["borrowings"]
 ```
 
 ## 다음 단계
 
-- [API Overview](../api/overview) — 전체 메서드 목록과 파라미터 상세
+- [API Overview](../api/overview) — property 전체 목록과 파라미터 상세
 - [Bridge Matching](../user-guide/bridge-matching) — 매칭 알고리즘 상세

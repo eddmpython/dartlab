@@ -20,7 +20,7 @@ export const navigation: NavItem[] = [
 			{ title: 'Overview', href: '/docs/api/overview' },
 			{ title: 'finance.summary', href: '/docs/api/finance-summary' },
 			{ title: 'finance.statements', href: '/docs/api/finance-statements' },
-			{ title: 'Other Modules', href: '/docs/api/finance-others' }
+			{ title: 'All Modules', href: '/docs/api/finance-others' }
 		]
 	},
 	{
