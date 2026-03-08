@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" fill="none">
+  <defs>
+    <linearGradient id="bg4a" x1="0" y1="0" x2="800" y2="340">
+      <stop offset="0%" stop-color="#0a0e17"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="340" rx="16" fill="url(#bg4a)"/>
+
+  <text x="400" y="36" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="16" font-weight="700">사업보고서 읽기 전략 — 리스크부터 확인한다</text>
+
+  <!-- Step boxes -->
+  <!-- Step 1 -->
+  <rect x="30" y="60" width="140" height="120" rx="10" fill="#1e293b" stroke="#ea4647" stroke-width="2"/>
+  <text x="100" y="84" text-anchor="middle" fill="#ea4647" font-family="system-ui" font-size="12" font-weight="700">1순위</text>
+  <text x="100" y="106" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">감사의견</text>
+  <text x="100" y="124" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">신뢰할 수 있는가?</text>
+  <text x="100" y="148" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">우발부채</text>
+  <text x="100" y="166" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">숨겨진 폭탄?</text>
+
+  <!-- Arrow -->
+  <path d="M175 120 L195 120" stroke="#475569" stroke-width="2" marker-end="url(#arr4)"/>
+  <defs><marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#475569"/></marker></defs>
+
+  <!-- Step 2 -->
+  <rect x="200" y="60" width="140" height="120" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+  <text x="270" y="84" text-anchor="middle" fill="#f59e0b" font-family="system-ui" font-size="12" font-weight="700">2순위</text>
+  <text x="270" y="106" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">사업의 내용</text>
+  <text x="270" y="124" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">시장·원재료·가동률</text>
+  <text x="270" y="148" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">MD&A</text>
+  <text x="270" y="166" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">경영진 설명</text>
+
+  <!-- Arrow -->
+  <path d="M345 120 L365 120" stroke="#475569" stroke-width="2" marker-end="url(#arr4)"/>
+
+  <!-- Step 3 -->
+  <rect x="370" y="60" width="140" height="120" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <text x="440" y="84" text-anchor="middle" fill="#3b82f6" font-family="system-ui" font-size="12" font-weight="700">3순위</text>
+  <text x="440" y="106" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">주주 현황</text>
+  <text x="440" y="124" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">지배구조</text>
+  <text x="440" y="148" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">특수관계자 거래</text>
+  <text x="440" y="166" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">터널링 감시</text>
+
+  <!-- Arrow -->
+  <path d="M515 120 L535 120" stroke="#475569" stroke-width="2" marker-end="url(#arr4)"/>
+
+  <!-- Step 4 -->
+  <rect x="540" y="60" width="140" height="120" rx="10" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <text x="610" y="84" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="12" font-weight="700">4순위</text>
+  <text x="610" y="106" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">임원·직원</text>
+  <text x="610" y="124" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">보상 구조</text>
+  <text x="610" y="148" text-anchor="middle" fill="#f1f5f9" font-family="system-ui" font-size="13" font-weight="600">주석 상세</text>
+  <text x="610" y="166" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">필요시 참고</text>
+
+  <!-- Bottom: page distribution bar -->
+  <text x="30" y="210" fill="#94a3b8" font-family="system-ui" font-size="11">사업보고서 250페이지 중 —</text>
+
+  <!-- Stacked bar -->
+  <rect x="30" y="224" width="90" height="28" rx="4" fill="#ea4647" opacity="0.8"/>
+  <text x="75" y="243" text-anchor="middle" fill="#fff" font-family="system-ui" font-size="10" font-weight="600">재무제표 30p</text>
+
+  <rect x="122" y="224" width="260" height="28" rx="4" fill="#3b82f6" opacity="0.6"/>
+  <text x="252" y="243" text-anchor="middle" fill="#fff" font-family="system-ui" font-size="10" font-weight="600">주석 80p</text>
+
+  <rect x="384" y="224" width="200" height="28" rx="4" fill="#f59e0b" opacity="0.5"/>
+  <text x="484" y="243" text-anchor="middle" fill="#fff" font-family="system-ui" font-size="10" font-weight="600">사업 내용 · MD&A 70p</text>
+
+  <rect x="586" y="224" width="184" height="28" rx="4" fill="#64748b" opacity="0.5"/>
+  <text x="678" y="243" text-anchor="middle" fill="#fff" font-family="system-ui" font-size="10" font-weight="600">지배구조 · 기타 70p</text>
+
+  <!-- Note -->
+  <text x="30" y="278" fill="#64748b" font-family="system-ui" font-size="11">대부분의 투자자는 30페이지(재무제표)만 보고 닫는다.</text>
+  <text x="30" y="296" fill="#94a3b8" font-family="system-ui" font-size="11" font-weight="600">나머지 220페이지에 숫자가 말해주지 않는 이야기가 있다.</text>
+
+  <!-- Time estimate -->
+  <rect x="540" y="270" width="230" height="50" rx="8" fill="#1e293b" stroke="#475569"/>
+  <text x="655" y="291" text-anchor="middle" fill="#f59e0b" font-family="system-ui" font-size="11" font-weight="700">핵심만 읽으면 ~45분</text>
+  <text x="655" y="309" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="10">감사 3분 + 소송 5분 + 사업 15분 + MD&A 10분 + 지배 8분</text>
+</svg>

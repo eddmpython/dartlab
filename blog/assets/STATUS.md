@@ -30,3 +30,7 @@
 - `003-beyond-numbers-hero.svg` — Numbers Only vs Full Picture
 - `003-same-numbers-different-stories.svg` — 같은 숫자, 다른 이야기 4가지
 - `003-analysis-depth-pyramid.svg` — 분석 깊이 5단계 피라미드
+
+### 004 — 사업보고서 텍스트, 이렇게 읽는다
+- `004-reading-strategy.svg` — 읽기 전략 (우선순위별 4단계 + 페이지 분포)
+- `004-industry-reading-focus.svg` — 업종별 핵심 읽기 포인트 6개 업종
