@@ -8,6 +8,7 @@ const modules = import.meta.glob('@blog/*.md', { eager: true }) as Record<
 function normalizePath(rawPath: string): string {
 	return rawPath
 		.replace(/^.*?\/blog\//, '')
+		.replace(/^\d+-/, '')
 		.replace(/\.md$/, '');
 }
 
