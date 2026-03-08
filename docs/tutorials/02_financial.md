@@ -11,11 +11,15 @@ title: "2. Financial Deep Dive"
 - 배당 시계열 (DPS, 배당수익률, 배당성향)
 - 직원 현황 (인원, 평균연봉, 근속연수)
 - 최대주주와 지분 구조
+- 주주 종합 현황
+- 주식의 총수와 자기주식
 - 부문별 매출
 - 비용의 성격별 분류
-- 주식의 총수와 자기주식
 - 임원 현황과 보수
+- 감사의견과 감사보수
 - 채무증권과 타법인 출자
+
+---
 
 ## 준비
 
@@ -24,6 +28,8 @@ from dartlab import Company
 
 c = Company("005930")
 ```
+
+---
 
 ## 배당
 
@@ -34,6 +40,18 @@ c.dividend
 
 연도별 DPS, 배당수익률, 배당성향을 시계열로 확인한다. 당기순이익 대비 배당성향 추이를 한눈에 볼 수 있다.
 
+```python
+# 최근 배당 정보 확인
+div = c.dividend
+if div is not None:
+    last = div.row(-1, named=True)
+    print(f"DPS: {last['dps']}원")
+    print(f"배당수익률: {last['dividendYield']}%")
+    print(f"배당성향: {last['payoutRatio']}%")
+```
+
+---
+
 ## 직원 현황
 
 ```python
@@ -42,6 +60,8 @@ c.employee
 ```
 
 총 직원수, 평균 근속연수, 연간 급여 총액, 1인당 평균 연봉의 시계열이다.
+
+---
 
 ## 최대주주
 
@@ -64,6 +84,8 @@ for h in result.holders:
     print(f"{h.name} ({h.relation}): {h.ratioEnd}%")
 ```
 
+---
+
 ## 주주 종합 현황
 
 5% 이상 주주, 소액주주, 의결권 현황을 종합적으로 조회한다.
@@ -74,9 +96,14 @@ result = c.holderOverview
 for bh in result.bigHolders:
     print(f"{bh.name}: {bh.ratio}%")
 
-print(f"소액주주 비율: {result.minority.ratio}%")
-print(f"의결권 행사 가능: {result.voting.exercisableShares}")
+if result.minority:
+    print(f"소액주주 비율: {result.minority.ratio}%")
+
+if result.voting:
+    print(f"의결권 행사 가능: {result.voting.exercisableShares}")
 ```
+
+---
 
 ## 주식의 총수
 
@@ -89,9 +116,12 @@ c.shareCapital
 
 ```python
 result = c.get("shareCapital")
-result.authorizedShares    # 발행할 주식의 총수
-result.treasuryRatio       # 자사주 비율
+print(f"발행주식: {result.issuedShares:,.0f}")
+print(f"자기주식: {result.treasuryShares:,.0f}")
+print(f"자사주 비율: {result.treasuryRatio:.2%}")
 ```
+
+---
 
 ## 부문별 매출
 
@@ -106,10 +136,14 @@ c.notes.segments
 
 ```python
 result = c.get("segments")
+print(result.revenue)   # 부문별 매출 시계열
+
 for year, tables in result.tables.items():
     for t in tables:
         print(f"[{year}] {t.tableType}: {t.columns}")
 ```
+
+---
 
 ## 비용의 성격별 분류
 
@@ -124,9 +158,12 @@ c.notes.costByNature
 
 ```python
 result = c.get("costByNature")
+print(result.timeSeries)  # 비용 시계열
 print(result.ratios)      # 구성비
 print(result.crossCheck)  # 교차 검증 결과
 ```
+
+---
 
 ## 임원 현황
 
@@ -136,6 +173,16 @@ c.executive
 ```
 
 등기임원 구성의 시계열이다. 사내이사/사외이사 비율, 성별 구성 등을 추적한다.
+
+미등기임원 보수는 `get()`으로:
+
+```python
+result = c.get("executive")
+print(result.executiveDf)   # 등기임원 시계열
+print(result.unregPayDf)    # 미등기임원 보수
+```
+
+---
 
 ## 임원 보수
 
@@ -148,8 +195,11 @@ c.executivePay
 
 ```python
 result = c.get("executivePay")
-print(result.topPayDf)   # 5억 초과 개인별 보수
+print(result.payByTypeDf)   # 유형별 보수
+print(result.topPayDf)      # 5억 초과 개인별 보수
 ```
+
+---
 
 ## 감사의견
 
@@ -162,8 +212,11 @@ c.audit
 
 ```python
 result = c.get("audit")
-print(result.feeDf)   # 감사보수 시계열
+print(result.opinionDf)   # 감사의견 시계열
+print(result.feeDf)        # 감사보수 시계열
 ```
+
+---
 
 ## 채무증권
 
@@ -174,12 +227,32 @@ c.bond
 
 회사채, 기업어음 등 채무증권 발행 현황의 시계열이다.
 
+`get()`으로 개별 발행 내역:
+
+```python
+result = c.get("bond")
+for b in result.issuances[:5]:
+    print(f"{b.bondType} | {b.amount}백만원 | {b.interestRate}")
+```
+
+---
+
 ## 자회사
 
 ```python
 c.subsidiary
 # year | totalCount | listedCount | unlistedCount | totalBook
 ```
+
+`get()`으로 개별 투자법인:
+
+```python
+result = c.get("subsidiary")
+for inv in result.investments[:5]:
+    print(f"{inv.name}: {inv.endRatio}%, 장부가 {inv.endBook}")
+```
+
+---
 
 ## 여러 종목 비교
 
@@ -205,6 +278,8 @@ for code in codes:
 
 print(pl.DataFrame(rows))
 ```
+
+---
 
 ## 다음 단계
 

@@ -13,6 +13,9 @@ title: "3. Disclosure Text"
 - 회사의 개요 (설립일, 신용등급, 중소기업 여부)
 - 회사 기본정보 (설립일, 상장일, 대표이사)
 - 원재료·설비투자 현황
+- 회사 연혁
+
+---
 
 ## 준비
 
@@ -21,6 +24,8 @@ from dartlab import Company
 
 c = Company("005930")
 ```
+
+---
 
 ## 사업의 내용
 
@@ -35,18 +40,27 @@ for s in sections:
     print("---")
 ```
 
-주요 섹션 key 목록은 다음과 같다.
+### 주요 섹션 key
 
-| key | 설명 |
-|-----|------|
-| `overview` | 사업 개요 |
-| `products` | 주요 제품·서비스 |
-| `materials` | 원재료·가격변동 |
-| `sales` | 매출·수주 현황 |
-| `risk` | 위험 요인 |
-| `rnd` | 연구개발 현황 |
-| `financial` | 재무 관련 사항 |
-| `etc` | 기타 참고사항 |
+| key | 설명 | 주요 내용 |
+|-----|------|-----------|
+| `overview` | 사업 개요 | 회사 소개, 주요 사업 영역 |
+| `products` | 주요 제품·서비스 | 제품별 매출 비중, 가격 동향 |
+| `materials` | 원재료·가격변동 | 주요 원재료, 조달 현황 |
+| `sales` | 매출·수주 현황 | 부문별 매출, 수주 잔고 |
+| `risk` | 위험 요인 | 산업 리스크, 회사 고유 리스크 |
+| `rnd` | 연구개발 현황 | R&D 투자, 연구 인력 |
+| `financial` | 재무 관련 사항 | 재무 건전성, 자금 조달 |
+| `etc` | 기타 참고사항 | 그 밖의 중요 사항 |
+
+### 특정 섹션 찾기
+
+```python
+# 사업 개요만 읽기
+overview = next((s for s in c.business if s.key == "overview"), None)
+if overview:
+    print(overview.text[:500])
+```
 
 ### 연도별 변경 탐지
 
@@ -54,9 +68,15 @@ for s in sections:
 
 ```python
 result = c.get("business")
+
+# 변경 이력
 for change in result.changes:
-    print(f"{change.year}: 변경 {change.changedPct:.1%} | +{change.added}자 -{change.removed}자 | 총 {change.totalChars}자")
+    print(f"{change.year}: 변경 {change.changedPct:.1%} | +{change.added:,}자 -{change.removed:,}자 | 총 {change.totalChars:,}자")
 ```
+
+> 변경률이 높은 해에는 사업 구조 변경, 신사업 진출, 위험 요인 추가 등이 있을 수 있다.
+
+---
 
 ## 경영진단 및 분석의견 (MD&A)
 
@@ -77,14 +97,16 @@ for section in result.sections:
     print("---")
 ```
 
-주요 category 목록은 다음과 같다.
+### 주요 category
 
-| category | 설명 |
-|----------|------|
-| `overview` | 개요 |
-| `forecast` | 전망 |
-| `financials` | 재무 상태 |
-| `liquidity` | 유동성·자금 |
+| category | 설명 | 포함 내용 |
+|----------|------|-----------|
+| `overview` | 개요 | 사업 현황 요약 |
+| `forecast` | 전망 | 향후 사업 전망 |
+| `financials` | 재무 상태 | 재무제표 분석 |
+| `liquidity` | 유동성·자금 | 자금 조달, 현금 흐름 |
+
+---
 
 ## 회사의 개요 (정량)
 
@@ -93,13 +115,13 @@ for section in result.sections:
 ```python
 result = c.overview
 
-result.founded          # 설립 연도
-result.address          # 소재지
-result.homepage         # 홈페이지
-result.subsidiaryCount  # 종속회사 수
-result.isSME            # 중소기업 여부
-result.isVenture        # 벤처기업 여부
-result.listedDate       # 상장일
+print(f"설립: {result.founded}")
+print(f"소재지: {result.address}")
+print(f"홈페이지: {result.homepage}")
+print(f"종속회사: {result.subsidiaryCount}개")
+print(f"중소기업: {result.isSME}")
+print(f"벤처기업: {result.isVenture}")
+print(f"상장일: {result.listedDate}")
 ```
 
 ### 신용등급
@@ -118,20 +140,24 @@ print(f"원문에 없음: {result.missing}")
 print(f"파싱 실패: {result.failed}")
 ```
 
+---
+
 ## 회사 기본정보 (companyOverviewDetail)
 
-설립일, 상장일, 대표이사, 본점소재지 등을 dict로 반환한다. 산문형 문서도 regex fallback으로 추출한다.
+설립일, 상장일, 대표이사, 본점소재지 등을 dict로 반환한다.
 
 ```python
 info = c.companyOverviewDetail
 
-info["foundedDate"]    # "1969-01-13"
-info["listedDate"]     # "1975-06-11"
-info["ceo"]            # 대표이사
-info["address"]        # 본점소재지
-info["mainBusiness"]   # 주요사업
-info["website"]        # 홈페이지 URL
+print(f"설립일: {info['foundedDate']}")
+print(f"상장일: {info['listedDate']}")
+print(f"대표이사: {info['ceo']}")
+print(f"소재지: {info['address']}")
+print(f"주요사업: {info['mainBusiness']}")
+print(f"홈페이지: {info['website']}")
 ```
+
+---
 
 ## 원재료·설비투자
 
@@ -163,6 +189,8 @@ for item in result.capexItems:
     print(f"{item.segment}: {item.amount}백만원")
 ```
 
+---
+
 ## 회사 연혁
 
 ```python
@@ -171,6 +199,8 @@ c.companyHistory
 ```
 
 주요 연혁 이벤트를 날짜별로 정리한 DataFrame이다.
+
+---
 
 ## 다음 단계
 
