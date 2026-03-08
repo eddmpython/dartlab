@@ -221,7 +221,7 @@
 		display: grid;
 		grid-template-columns: 200px 1fr 200px;
 		gap: 0;
-		max-width: 1200px;
+		max-width: 1280px;
 		margin: 0 auto;
 		padding: 0 1.5rem;
 	}
@@ -230,9 +230,7 @@
 
 	.blog-post-col {
 		min-width: 0;
-		max-width: 720px;
 		width: 100%;
-		margin: 0 auto;
 		padding: 0 2rem;
 	}
 
