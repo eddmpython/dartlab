@@ -14,7 +14,7 @@
 		'Project': [
 			{ label: 'GitHub', href: brand.repo },
 			{ label: 'PyPI', href: brand.pypi },
-			{ label: 'Data', href: `${brand.repo}/releases/tag/data-v1` },
+			{ label: 'Data', href: `${brand.repo}/releases/tag/${brand.data.docs.tag}` },
 			{ label: 'Issues', href: `${brand.repo}/issues` }
 		],
 		'eddmpython': [

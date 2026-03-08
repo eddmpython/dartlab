@@ -3,6 +3,7 @@
 	import { base } from '$app/paths';
 	import { navigation, type NavItem } from '$lib/docs/navigation';
 	import { Github, Menu, X, ChevronRight, ChevronDown } from 'lucide-svelte';
+	import DocFooter from '$lib/components/DocFooter.svelte';
 
 	let { children } = $props();
 	let mobileNavOpen = $state(false);
@@ -156,6 +157,7 @@
 			<div class="dl-docs-content">
 				{@render children()}
 			</div>
+			<DocFooter />
 		</main>
 	</div>
 </div>
@@ -351,8 +353,8 @@
 	.dl-docs-content :global(h2) {
 		font-size: 1.5rem;
 		font-weight: 700;
-		margin-top: 2.5rem;
-		margin-bottom: 0.75rem;
+		margin-top: 3.5rem;
+		margin-bottom: 1rem;
 		padding-bottom: 0.5rem;
 		border-bottom: 1px solid rgba(168, 162, 158, 0.1);
 		color: #fafaf9;
@@ -361,8 +363,8 @@
 	.dl-docs-content :global(h3) {
 		font-size: 1.2rem;
 		font-weight: 600;
-		margin-top: 2rem;
-		margin-bottom: 0.5rem;
+		margin-top: 2.5rem;
+		margin-bottom: 0.75rem;
 		color: #e7e5e4;
 	}
 
@@ -462,7 +464,7 @@
 	.dl-docs-content :global(hr) {
 		border: none;
 		border-top: 1px solid rgba(168, 162, 158, 0.1);
-		margin: 2rem 0;
+		margin: 3rem 0;
 	}
 
 	.dl-docs-content :global(img) { max-width: 100%; border-radius: 8px; }

@@ -31,7 +31,7 @@ uv add dartlab
 
 ## 데이터
 
-DartLab은 DART 공시 원문을 파싱한 Parquet 파일을 사용한다. [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-v1)에 260개 이상의 상장 기업 데이터가 있다.
+DartLab은 DART 공시 원문을 파싱한 Parquet 파일을 사용한다. [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs)에 260개 이상의 상장 기업 데이터가 있다.
 
 데이터를 직접 다운로드할 필요는 없다. `Company("005930")` 처럼 호출하면 로컬에 파일이 없을 때 **자동으로 다운로드**한다.
 
@@ -54,7 +54,7 @@ c = Company("005930")   # 로컬에 없으면 자동 다운로드
 ```bash
 mkdir -p data/docsData
 curl -L -o data/docsData/005930.parquet \
-  "https://github.com/eddmpython/dartlab/releases/download/data-v1/005930.parquet"
+  "https://github.com/eddmpython/dartlab/releases/download/data-docs/005930.parquet"
 ```
 
 전체 일괄 다운로드 (260+ 종목):

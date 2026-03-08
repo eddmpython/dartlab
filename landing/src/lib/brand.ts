@@ -9,6 +9,11 @@ export const brand = {
 	coffee: 'https://buymeacoffee.com/eddmpython',
 	author: 'eddmpython',
 
+	data: {
+		docs: { tag: 'data-docs', label: 'DART 공시 문서 데이터' },
+		finance: { tag: 'data-finance', label: '재무 숫자 데이터' },
+	},
+
 	color: {
 		primary: '#ea4647',
 		primaryDark: '#c83232',
