@@ -2,11 +2,11 @@
 
 <br>
 
-<img alt="DartLab" src=".github/assets/logo.png" width="160">
+<img alt="DartLab" src=".github/assets/logo.png" width="180">
 
 <h3>DartLab</h3>
 
-<p>숫자만 읽는 시대는 끝났다 — DART 공시의 숫자와 텍스트를 모두 읽는다</p>
+<p><b>숫자만 읽는 시대는 끝났다</b> — DART 공시의 숫자와 텍스트를 모두 읽는다</p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>

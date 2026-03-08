@@ -56,7 +56,7 @@
 		<div class="dl-docs-header-inner">
 			<div class="dl-docs-header-left">
 				<a href="{base}/" class="dl-docs-logo">
-					<img src="{base}/avatar.png" alt="DartLab" width="24" height="24" class="dl-docs-logo-img" />
+					<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-docs-logo-img" />
 					<span class="dl-docs-logo-text">DartLab</span>
 				</a>
 				<span class="dl-docs-divider">/</span>

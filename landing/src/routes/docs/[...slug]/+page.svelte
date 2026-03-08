@@ -272,8 +272,8 @@
 	}
 
 	.doc-toc-item.active {
-		color: #f59e0b;
-		border-left-color: #f59e0b;
+		color: #ea4647;
+		border-left-color: #ea4647;
 	}
 
 	.doc-toc-item.h3 {
@@ -298,9 +298,9 @@
 		z-index: 1;
 	}
 	:global(.copy-btn:hover) {
-		background: rgba(245, 158, 11, 0.2);
-		color: #f59e0b;
-		border-color: rgba(245, 158, 11, 0.4);
+		background: rgba(234, 70, 71, 0.2);
+		color: #ea4647;
+		border-color: rgba(234, 70, 71, 0.4);
 	}
 	:global(div:hover > .copy-btn) {
 		opacity: 1;
@@ -329,8 +329,8 @@
 	}
 
 	.doc-pagination-link:hover {
-		border-color: #f59e0b;
-		color: #f59e0b;
+		border-color: #ea4647;
+		color: #ea4647;
 	}
 
 	.doc-pagination-link.next {

@@ -63,63 +63,12 @@ const mkdocsCss = `[data-md-color-scheme="slate"] {
 }
 `;
 
-const heroSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" fill="none">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="200" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="${colors.bgDark}"/>
-      <stop offset="100%" stop-color="${colors.bgCard}"/>
-    </linearGradient>
-    <linearGradient id="red" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="${colors.primary}"/>
-      <stop offset="100%" stop-color="${colors.primaryLight}"/>
-    </linearGradient>
-    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="${colors.accent}"/>
-      <stop offset="100%" stop-color="${colors.accentLight}"/>
-    </linearGradient>
-    <linearGradient id="textGrad" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="${colors.primary}"/>
-      <stop offset="50%" stop-color="${colors.primaryLight}"/>
-      <stop offset="100%" stop-color="${colors.primary}"/>
-    </linearGradient>
-  </defs>
-
-  <rect width="800" height="200" rx="16" fill="url(#bg)"/>
-
-  <rect x="40" y="60" width="3" height="80" rx="1.5" fill="url(#red)" opacity="0.6"/>
-  <rect x="50" y="45" width="3" height="110" rx="1.5" fill="url(#red)" opacity="0.4"/>
-  <rect x="60" y="70" width="3" height="60" rx="1.5" fill="url(#orange)" opacity="0.5"/>
-  <rect x="70" y="50" width="3" height="100" rx="1.5" fill="url(#red)" opacity="0.3"/>
-  <rect x="80" y="65" width="3" height="70" rx="1.5" fill="url(#orange)" opacity="0.4"/>
-  <rect x="90" y="55" width="3" height="90" rx="1.5" fill="url(#red)" opacity="0.5"/>
-  <rect x="100" y="75" width="3" height="50" rx="1.5" fill="url(#orange)" opacity="0.3"/>
-
-  <text x="140" y="105" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="56" font-weight="800" fill="url(#textGrad)">DartLab</text>
-
-  <line x1="420" y1="70" x2="420" y2="130" stroke="${colors.border}" stroke-width="1"/>
-
-  <text x="445" y="92" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="18" font-weight="500" fill="${colors.textMuted}">Comprehensive DART disclosure</text>
-  <text x="445" y="120" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="18" font-weight="500" fill="${colors.textMuted}">analysis in Python</text>
-
-  <rect x="640" y="75" width="130" height="28" rx="14" fill="${colors.border}"/>
-  <text x="705" y="94" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="13" font-weight="600" fill="${colors.primary}" text-anchor="middle">Numbers + Text</text>
-
-  <rect x="640" y="110" width="130" height="28" rx="14" fill="${colors.border}"/>
-  <text x="705" y="129" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="13" font-weight="600" fill="${colors.accent}" text-anchor="middle">Time Series</text>
-</svg>
-`;
-
 writeFileSync(resolve(__dirname, '..', 'src', 'app.css'), appCss);
 
 const mkdocsDir = resolve(__dirname, '..', '..', 'docs', 'stylesheets');
 mkdirSync(mkdocsDir, { recursive: true });
 writeFileSync(resolve(mkdocsDir, 'theme.css'), mkdocsCss);
 
-const assetsDir = resolve(__dirname, '..', '..', 'assets');
-mkdirSync(assetsDir, { recursive: true });
-writeFileSync(resolve(assetsDir, 'hero.svg'), heroSvg);
-
 console.log('Brand synced:');
 console.log('  -> landing/src/app.css');
 console.log('  -> docs/stylesheets/theme.css');
-console.log('  -> assets/hero.svg');

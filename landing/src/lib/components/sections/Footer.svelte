@@ -39,7 +39,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-5 gap-8 mb-10">
 			<div class="md:col-span-1">
 				<div class="flex items-center gap-1.5 mb-3">
-					<img src="{base}/avatar.png" alt="DartLab" width="28" height="28" class="rounded-full" />
+					<img src="{base}/avatar.png" alt="DartLab" width="32" height="32" class="rounded-full" />
 					<strong class="text-dl-text text-lg">DartLab</strong>
 				</div>
 				<p class="text-sm text-dl-text-dim leading-relaxed mb-4">{brand.description}</p>
