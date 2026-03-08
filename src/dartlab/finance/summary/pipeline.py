@@ -62,7 +62,7 @@ def _extractYear(periodKey: str) -> int:
     return int(periodKey[:4])
 
 
-def analyze(
+def fsSummary(
     stockCode: str,
     ifrsOnly: bool = True,
     period: str = "y",

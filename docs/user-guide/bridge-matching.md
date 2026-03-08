@@ -38,7 +38,7 @@ DART 공시의 요약재무정보는 매년 계정명이 미세하게 바뀐다.
 from dartlab import Company
 
 samsung = Company("005930")
-result = samsung.analyze()
+result = samsung.fsSummary()
 
 # 전체 통계
 print(f"분석 연도: {result.nYears}년")
@@ -64,8 +64,8 @@ for bp in result.breakpoints:
 연간뿐 아니라 분기/반기 데이터에도 적용된다. 분기 데이터는 누적값에서 개별 분기를 역산한다.
 
 ```python
-result = samsung.analyze(period="q")  # 분기별
-result = samsung.analyze(period="h")  # 반기별
+result = samsung.fsSummary(period="q")  # 분기별
+result = samsung.fsSummary(period="h")  # 반기별
 ```
 
 분기별 분석에서는 Bridge Matching 대신 직접 매칭을 사용한다 (동일 연도 내 계정명이 동일하므로).

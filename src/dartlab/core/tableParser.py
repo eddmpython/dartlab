@@ -431,11 +431,16 @@ def extractAccounts(content: str) -> tuple[dict[str, list[float | None]], list[s
             if re.match(r"^\d{4}년", name):
                 continue
             name = re.sub(r"(?<=[\uAC00-\uD7A3])\s+(?=[\uAC00-\uD7A3])", "", name)
+            name = re.sub(r"[\[\]ㆍ·]", "", name).strip()
+            if not name:
+                continue
             amounts = [parseAmount(cell) for cell in row[1:]]
             if all(a is None for a in amounts):
                 continue
             if unit != 1.0:
                 amounts = [a * unit if a is not None else None for a in amounts]
+            if name in result:
+                continue
             result[name] = amounts
             order.append(name)
     return result, order

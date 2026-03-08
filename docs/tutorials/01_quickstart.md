@@ -45,10 +45,10 @@ print(docs)
 
 ## 요약재무정보 분석
 
-`analyze()`는 Bridge Matching으로 계정명 변경을 추적하면서 시계열을 생성한다.
+`fsSummary()`는 Bridge Matching으로 계정명 변경을 추적하면서 시계열을 생성한다.
 
 ```python
-result = samsung.analyze()
+result = samsung.fsSummary()
 
 result.corpName      # "삼성전자"
 result.nYears        # 분석 연도 수
@@ -104,9 +104,9 @@ print(result.CF)  # 현금흐름표 — 영업/투자/재무
 `period` 파라미터로 분석 단위를 변경한다.
 
 ```python
-quarterly = samsung.analyze(period="q")   # 분기별
-semiannual = samsung.analyze(period="h")  # 반기별
-annual = samsung.analyze(period="y")      # 연간 (기본값)
+quarterly = samsung.fsSummary(period="q")   # 분기별
+semiannual = samsung.fsSummary(period="h")  # 반기별
+annual = samsung.fsSummary(period="y")      # 연간 (기본값)
 ```
 
 | 값 | 의미 | 포함 보고서 |

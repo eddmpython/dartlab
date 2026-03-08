@@ -1,23 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-	--color-dl-primary: #2dd4bf;
-	--color-dl-primary-dark: #14b8a6;
-	--color-dl-primary-light: #5eead4;
-	--color-dl-accent: #818cf8;
-	--color-dl-accent-light: #a5b4fc;
-	--color-dl-bg-dark: #0a0f1a;
-	--color-dl-bg-darker: #060a12;
-	--color-dl-bg-card: #111827;
-	--color-dl-bg-card-hover: #1f2937;
+	--color-dl-primary: #ea4647;
+	--color-dl-primary-dark: #c83232;
+	--color-dl-primary-light: #f87171;
+	--color-dl-accent: #fb923c;
+	--color-dl-accent-light: #fdba74;
+	--color-dl-bg-dark: #050811;
+	--color-dl-bg-darker: #030509;
+	--color-dl-bg-card: #0f1219;
+	--color-dl-bg-card-hover: #1a1f2b;
 	--color-dl-text: #f1f5f9;
 	--color-dl-text-muted: #94a3b8;
 	--color-dl-text-dim: #64748b;
-	--color-dl-border: #1e293b;
+	--color-dl-border: #1e2433;
 	--color-dl-success: #34d399;
-	--color-dl-warning: #f87171;
+	--color-dl-warning: #fbbf24;
 	--color-dl-coffee: #ffdd00;
 
 	--font-sans: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+	--animate-float: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-8px); }
 }

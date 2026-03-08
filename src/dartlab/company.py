@@ -188,7 +188,7 @@ class Company:
 
     # ── 재무제표 ──
 
-    def analyze(self, ifrsOnly: bool = True, period: str = "y"):
+    def fsSummary(self, ifrsOnly: bool = True, period: str = "y"):
         """요약재무정보 시계열 + 브릿지 매칭 + 전환점 탐지.
 
         Args:
@@ -202,8 +202,8 @@ class Company:
             - segments: 연속 구간 목록
             - breakpoints: 계정과목 전환점 목록
         """
-        from dartlab.finance.summary import analyze
-        return analyze(self.stockCode, ifrsOnly=ifrsOnly, period=period)
+        from dartlab.finance.summary import fsSummary
+        return fsSummary(self.stockCode, ifrsOnly=ifrsOnly, period=period)
 
     def statements(
         self,

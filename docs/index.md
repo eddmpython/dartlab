@@ -27,7 +27,7 @@ from dartlab import Company
 
 samsung = Company("005930")
 
-result = samsung.analyze()
+result = samsung.fsSummary()
 result.FS    # 전체 재무제표 시계열 (Polars DataFrame)
 result.BS    # 재무상태표
 result.IS    # 손익계산서

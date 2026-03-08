@@ -56,7 +56,7 @@
 		<div class="dl-docs-header-inner">
 			<div class="dl-docs-header-left">
 				<a href="{base}/" class="dl-docs-logo">
-					<img src="{base}/icon-final.png" alt="DartLab" width="24" height="24" class="dl-docs-logo-img" />
+					<img src="{base}/avatar.png" alt="DartLab" width="24" height="24" class="dl-docs-logo-img" />
 					<span class="dl-docs-logo-text">DartLab</span>
 				</a>
 				<span class="dl-docs-divider">/</span>
@@ -163,7 +163,7 @@
 <style>
 	:global(body) {
 		margin: 0;
-		background: #0c0a09;
+		background: #050811;
 		color: #fafaf9;
 	}
 
@@ -207,7 +207,7 @@
 		font-size: 1.05rem;
 	}
 
-	.dl-docs-logo-img { border-radius: 4px; }
+	.dl-docs-logo-img { border-radius: 50%; }
 
 	.dl-docs-divider {
 		color: #44403c;
@@ -299,7 +299,7 @@
 		background: rgba(168, 162, 158, 0.05);
 	}
 	.dl-sidebar-section-btn.active {
-		color: #f59e0b;
+		color: #ea4647;
 	}
 
 	.dl-sidebar-items {
@@ -321,9 +321,9 @@
 		background: rgba(168, 162, 158, 0.05);
 	}
 	.dl-sidebar-item.active {
-		color: #f59e0b;
-		background: rgba(245, 158, 11, 0.06);
-		border-left-color: #f59e0b;
+		color: #ea4647;
+		background: rgba(234, 70, 71, 0.06);
+		border-left-color: #ea4647;
 	}
 
 	.dl-sidebar-standalone {
@@ -380,7 +380,7 @@
 		margin-bottom: 1rem;
 	}
 
-	.dl-docs-content :global(a) { color: #f59e0b; text-decoration: none; }
+	.dl-docs-content :global(a) { color: #ea4647; text-decoration: none; }
 	.dl-docs-content :global(a:hover) { text-decoration: underline; }
 
 	.dl-docs-content :global(strong) { color: #e7e5e4; }
@@ -450,10 +450,10 @@
 	}
 
 	.dl-docs-content :global(blockquote) {
-		border-left: 3px solid #f59e0b;
+		border-left: 3px solid #ea4647;
 		padding: 0.5rem 1rem;
 		margin: 1rem 0;
-		background: rgba(245, 158, 11, 0.05);
+		background: rgba(234, 70, 71, 0.05);
 		border-radius: 0 6px 6px 0;
 	}
 
@@ -500,7 +500,7 @@
 		border-bottom: 1px solid rgba(168, 162, 158, 0.05);
 	}
 	.dl-docs-mobile-link:hover { color: #fafaf9; }
-	.dl-docs-mobile-link.active { color: #f59e0b; }
+	.dl-docs-mobile-link.active { color: #ea4647; }
 
 	@media (max-width: 1024px) {
 		.dl-docs-body {

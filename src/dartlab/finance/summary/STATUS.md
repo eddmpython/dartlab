@@ -6,18 +6,18 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 ## 파일 목록
 | 파일 | 설명 |
 |------|------|
-| __init__.py | 공개 API (analyze, loadYearData, 타입) |
+| __init__.py | 공개 API (fsSummary, loadYearData, 타입) |
 | constants.py | 매칭 임계값, 핵심 계정 목록 |
 | types.py | dataclass (AnalysisResult, Segment, BridgeResult, YearAccounts) |
 | contentExtractor.py | 요약재무정보 영역 추출 (연결 우선) |
 | bridgeMatcher.py | 4단계 숫자 브릿지 매칭 알고리즘 |
 | segmentation.py | 전환점 탐지, 구간 분리 |
-| pipeline.py | analyze(), loadYearData() 오케스트레이터 |
+| pipeline.py | fsSummary(), loadYearData() 오케스트레이터 |
 
 ## API
 ```python
-from dartlab.finance.summary import analyze
-result = analyze("005930")  # stockCode
+from dartlab.finance.summary import fsSummary
+result = fsSummary("005930")  # stockCode
 ```
 
 ## 의존

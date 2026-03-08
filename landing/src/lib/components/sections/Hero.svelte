@@ -7,14 +7,24 @@
 
 <section class="relative pt-32 pb-20 px-6 overflow-hidden">
 	<div
-		class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.08)_0%,_transparent_60%)]"
+		class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(234,70,71,0.08)_0%,_transparent_60%)]"
 	></div>
 	<div
 		class="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] pointer-events-none"
-		style="background: radial-gradient(ellipse at 30% 50%, rgba(45,212,191,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(129,140,248,0.03) 0%, transparent 50%);"
+		style="background: radial-gradient(ellipse at 30% 50%, rgba(234,70,71,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(251,146,60,0.03) 0%, transparent 50%);"
 	></div>
 
 	<div class="relative mx-auto max-w-4xl text-center">
+		<div class="mb-6 flex justify-center">
+			<img
+				src="{base}/avatar.png"
+				alt="DartLab mascot"
+				width="120"
+				height="120"
+				class="rounded-full drop-shadow-[0_0_24px_rgba(234,70,71,0.3)] hover:drop-shadow-[0_0_32px_rgba(234,70,71,0.5)] transition-all duration-300 hover:scale-105 animate-float"
+			/>
+		</div>
+
 		<Badge variant="success" class="mb-8">
 			<span class="w-1.5 h-1.5 rounded-full bg-dl-success animate-pulse"></span>
 			v{brand.version} — 18 Analysis Modules

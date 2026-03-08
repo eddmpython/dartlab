@@ -60,5 +60,6 @@ addopts = "-v --tb=short"
 
 [dependency-groups]
 dev = [
+    "pillow>=12.1.1",
     "pytest>=9.0.2",
 ]

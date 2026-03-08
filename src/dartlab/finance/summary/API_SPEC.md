@@ -6,10 +6,10 @@ DART 공시 요약재무제표에서 숫자 브릿지 매칭으로 계정명을 
 
 ## 함수
 
-### analyze
+### fsSummary
 
 ```python
-dartlab.analyze(
+dartlab.fsSummary(
     source: str | Path | pl.DataFrame,
     ifrsOnly: bool = True,
 ) -> AnalysisResult | None
@@ -28,7 +28,7 @@ dartlab.analyze(
 ```python
 import dartlab
 
-result = dartlab.analyze("data/docsData/005930.parquet")
+result = dartlab.fsSummary("data/docsData/005930.parquet")
 print(f"{result.corpName}: {result.nYears}년, 매칭률 {result.allRate:.1%}")
 print(f"구간 수: {result.nSegments}, 전환점: {result.nBreakpoints}")
 

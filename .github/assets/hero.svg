@@ -1,170 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" fill="none">
   <defs>
-    <linearGradient id="amber-glow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.8" />
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ea4647"/>
+      <stop offset="100%" stop-color="#f87171"/>
     </linearGradient>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0c0a09;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#0c0a09;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1c1917;stop-opacity:1" />
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#fdba74"/>
     </linearGradient>
-    <linearGradient id="line-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
-      <stop offset="60%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.6" />
+    <linearGradient id="textGrad" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ea4647"/>
+      <stop offset="50%" stop-color="#f87171"/>
+      <stop offset="100%" stop-color="#ea4647"/>
     </linearGradient>
-    <linearGradient id="area-amber" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.25" />
-      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.02" />
-    </linearGradient>
-    <linearGradient id="area-blue" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.2" />
-      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.02" />
-    </linearGradient>
-    <linearGradient id="divider-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0" />
-      <stop offset="30%" style="stop-color:#f59e0b;stop-opacity:0.3" />
-      <stop offset="70%" style="stop-color:#3b82f6;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
-    </linearGradient>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#f59e0b" flood-opacity="0.4"/>
-    </filter>
-    <filter id="glow-filter">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="line-glow">
-      <feGaussianBlur stdDeviation="2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="800" height="340" rx="16" fill="url(#bg)"/>
+  <rect width="800" height="200" rx="16" fill="url(#bg)"/>
 
-  <!-- Subtle grid -->
-  <g opacity="0.04">
-    <line x1="0" y1="40" x2="800" y2="40" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="80" x2="800" y2="80" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="120" x2="800" y2="120" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="160" x2="800" y2="160" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="200" x2="800" y2="200" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="240" x2="800" y2="240" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="280" x2="800" y2="280" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="0" y1="320" x2="800" y2="320" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="100" y1="0" x2="100" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="200" y1="0" x2="200" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="300" y1="0" x2="300" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="400" y1="0" x2="400" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="500" y1="0" x2="500" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="600" y1="0" x2="600" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-    <line x1="700" y1="0" x2="700" y2="340" stroke="#f59e0b" stroke-width="0.5"/>
-  </g>
+  <rect x="40" y="60" width="3" height="80" rx="1.5" fill="url(#red)" opacity="0.6"/>
+  <rect x="50" y="45" width="3" height="110" rx="1.5" fill="url(#red)" opacity="0.4"/>
+  <rect x="60" y="70" width="3" height="60" rx="1.5" fill="url(#orange)" opacity="0.5"/>
+  <rect x="70" y="50" width="3" height="100" rx="1.5" fill="url(#red)" opacity="0.3"/>
+  <rect x="80" y="65" width="3" height="70" rx="1.5" fill="url(#orange)" opacity="0.4"/>
+  <rect x="90" y="55" width="3" height="90" rx="1.5" fill="url(#red)" opacity="0.5"/>
+  <rect x="100" y="75" width="3" height="50" rx="1.5" fill="url(#orange)" opacity="0.3"/>
 
-  <!-- Decorative bar chart (left) -->
-  <g opacity="0.12" filter="url(#glow-filter)">
-    <rect x="50" y="55" width="5" height="90" rx="2.5" fill="#f59e0b"/>
-    <rect x="62" y="40" width="5" height="115" rx="2.5" fill="#fbbf24"/>
-    <rect x="74" y="65" width="5" height="70" rx="2.5" fill="#3b82f6"/>
-    <rect x="86" y="45" width="5" height="105" rx="2.5" fill="#f59e0b"/>
-    <rect x="98" y="60" width="5" height="80" rx="2.5" fill="#60a5fa"/>
-    <rect x="110" y="50" width="5" height="95" rx="2.5" fill="#fbbf24"/>
-  </g>
+  <text x="140" y="105" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="56" font-weight="800" fill="url(#textGrad)">DartLab</text>
 
-  <!-- Document icons (right) -->
-  <g opacity="0.1">
-    <rect x="700" y="45" width="26" height="34" rx="3" stroke="#f59e0b" stroke-width="1" fill="none"/>
-    <line x1="706" y1="54" x2="720" y2="54" stroke="#f59e0b" stroke-width="0.8"/>
-    <line x1="706" y1="60" x2="716" y2="60" stroke="#f59e0b" stroke-width="0.8"/>
-    <line x1="706" y1="66" x2="718" y2="66" stroke="#f59e0b" stroke-width="0.8"/>
-    <rect x="733" y="60" width="26" height="34" rx="3" stroke="#3b82f6" stroke-width="1" fill="none"/>
-    <line x1="739" y1="69" x2="753" y2="69" stroke="#3b82f6" stroke-width="0.8"/>
-    <line x1="739" y1="75" x2="749" y2="75" stroke="#3b82f6" stroke-width="0.8"/>
-    <line x1="739" y1="81" x2="751" y2="81" stroke="#3b82f6" stroke-width="0.8"/>
-  </g>
+  <line x1="420" y1="70" x2="420" y2="130" stroke="#1e2433" stroke-width="1"/>
 
-  <!-- Orbital rings -->
-  <ellipse cx="400" cy="90" rx="340" ry="22" stroke="url(#accent)" stroke-width="0.7" fill="none" opacity="0.1"/>
-  <ellipse cx="400" cy="90" rx="290" ry="40" stroke="url(#accent)" stroke-width="0.5" fill="none" opacity="0.06" transform="rotate(-6, 400, 90)"/>
+  <text x="445" y="92" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="18" font-weight="500" fill="#94a3b8">Comprehensive DART disclosure</text>
+  <text x="445" y="120" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="18" font-weight="500" fill="#94a3b8">analysis in Python</text>
 
-  <!-- Main title -->
-  <text x="400" y="112" font-family="'Segoe UI', 'SF Pro Display', -apple-system, sans-serif" font-size="80" font-weight="800" fill="url(#amber-glow)" filter="url(#shadow)" letter-spacing="-2" text-anchor="middle">DartLab</text>
+  <rect x="640" y="75" width="130" height="28" rx="14" fill="#1e2433"/>
+  <text x="705" y="94" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="13" font-weight="600" fill="#ea4647" text-anchor="middle">Numbers + Text</text>
 
-  <!-- Tagline -->
-  <text x="400" y="150" font-family="'Segoe UI', 'SF Pro Display', -apple-system, sans-serif" font-size="13" fill="#a8a29e" text-anchor="middle" letter-spacing="6" font-weight="300">READ BEYOND THE NUMBERS</text>
-
-  <!-- Decorative dots -->
-  <circle cx="60" cy="25" r="2" fill="#f59e0b" opacity="0.3"/>
-  <circle cx="90" cy="40" r="1.5" fill="#3b82f6" opacity="0.2"/>
-  <circle cx="740" cy="140" r="2" fill="#f59e0b" opacity="0.3"/>
-  <circle cx="760" cy="150" r="1.5" fill="#3b82f6" opacity="0.2"/>
-
-  <!-- Divider -->
-  <line x1="60" y1="180" x2="740" y2="180" stroke="url(#divider-grad)" stroke-width="1"/>
-
-  <!-- ===== LOWER: DUAL TIMELINE ===== -->
-
-  <!-- Financial data area -->
-  <path d="M 60 270 Q 100 252, 140 262 Q 180 272, 220 255 Q 260 238, 300 252 Q 340 265, 380 248 Q 420 235, 460 245 Q 480 252, 500 248 L 500 305 L 60 305 Z" fill="url(#area-amber)"/>
-
-  <!-- Financial data line (amber) -->
-  <path d="M 60 270 Q 100 252, 140 262 Q 180 272, 220 255 Q 260 238, 300 252 Q 340 265, 380 248 Q 420 235, 460 245 Q 480 252, 500 248"
-        stroke="url(#line-amber)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#line-glow)"/>
-
-  <!-- Text changes line (blue, step) -->
-  <path d="M 60 285 L 140 285 L 140 275 L 220 275 L 220 285 L 300 285 L 300 265 L 380 265 L 380 272 L 460 272 L 460 262 L 500 262"
-        stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7" filter="url(#line-glow)"/>
-
-  <!-- Text changes area -->
-  <path d="M 300 265 L 380 265 L 380 272 L 460 272 L 460 262 L 500 262 L 500 305 L 300 305 Z" fill="url(#area-blue)" opacity="0.5"/>
-
-  <!-- Cross-validation zone -->
-  <rect x="350" y="195" width="50" height="115" rx="4" fill="#f59e0b" opacity="0.04"/>
-  <line x1="375" y1="195" x2="375" y2="310" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,4" opacity="0.15"/>
-
-  <!-- Financial data points -->
-  <circle cx="140" cy="262" r="2.5" fill="#f59e0b" opacity="0.5"/>
-  <circle cx="220" cy="255" r="2.5" fill="#f59e0b" opacity="0.55"/>
-  <circle cx="300" cy="252" r="2.5" fill="#f59e0b" opacity="0.6"/>
-  <circle cx="380" cy="248" r="2.5" fill="#fbbf24" opacity="0.65"/>
-  <circle cx="460" cy="245" r="2.5" fill="#fbbf24" opacity="0.7"/>
-  <circle cx="500" cy="248" r="3.5" fill="#fbbf24" opacity="0.9"/>
-
-  <!-- Text change points -->
-  <circle cx="300" cy="265" r="2.5" fill="#3b82f6" opacity="0.5"/>
-  <circle cx="460" cy="262" r="2.5" fill="#3b82f6" opacity="0.55"/>
-
-  <!-- Continuation (dashed) -->
-  <g opacity="0.25">
-    <path d="M 500 248 L 560 240 L 620 244 L 680 232 L 730 238" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round"/>
-    <path d="M 500 262 L 560 258 L 620 252 L 680 256 L 730 248" stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round"/>
-    <polygon points="730,238 724,233 724,243" fill="#f59e0b" opacity="0.5"/>
-    <polygon points="730,248 724,243 724,253" fill="#3b82f6" opacity="0.5"/>
-  </g>
-
-  <!-- Period labels -->
-  <text x="140" y="322" font-family="'Segoe UI', sans-serif" font-size="9" fill="#57534e" text-anchor="middle">Q1</text>
-  <text x="260" y="322" font-family="'Segoe UI', sans-serif" font-size="9" fill="#57534e" text-anchor="middle">Q2</text>
-  <text x="380" y="322" font-family="'Segoe UI', sans-serif" font-size="9" fill="#57534e" text-anchor="middle">Q3</text>
-  <text x="500" y="322" font-family="'Segoe UI', sans-serif" font-size="9" fill="#57534e" text-anchor="middle">Q4</text>
-
-  <!-- Legend -->
-  <rect x="560" y="272" width="160" height="42" rx="6" stroke="#292524" stroke-width="0.5" fill="none" opacity="0.5"/>
-  <line x1="572" y1="286" x2="597" y2="286" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
-  <text x="604" y="289" font-family="'Segoe UI', sans-serif" font-size="9" fill="#a8a29e">Financial Data</text>
-  <line x1="572" y1="302" x2="597" y2="302" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
-  <text x="604" y="305" font-family="'Segoe UI', sans-serif" font-size="9" fill="#a8a29e">Text Changes</text>
+  <rect x="640" y="110" width="130" height="28" rx="14" fill="#1e2433"/>
+  <text x="705" y="129" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="13" font-weight="600" fill="#fb923c" text-anchor="middle">Time Series</text>
 </svg>

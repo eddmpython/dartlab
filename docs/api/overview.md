@@ -29,7 +29,7 @@ c.stockCode     # "005930"
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
 | `.docs()` | `pl.DataFrame` | 공시 목록 + DART 뷰어 링크 |
-| `.analyze(period="y")` | `AnalysisResult` | 요약재무정보 시계열 |
+| `.fsSummary(period="y")` | `AnalysisResult` | 요약재무정보 시계열 |
 | `.statements(period="y")` | `StatementsResult` | 연결재무제표 BS/IS/CF |
 | `.segments(period="y")` | `SegmentsResult` | 부문별 매출 |
 | `.costByNature(period="y")` | `CostByNatureResult` | 비용의 성격별 분류 |
@@ -51,7 +51,7 @@ c.stockCode     # "005930"
 ## 함수 직접 호출
 
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 from dartlab.finance.statements import statements
 from dartlab.finance.dividend import dividend
 from dartlab.finance.employee import employee
@@ -82,7 +82,7 @@ downloadAll()            # 전체 데이터 일괄 다운로드
 
 ## period 파라미터
 
-`analyze`, `statements`, `segments`, `costByNature`, `affiliates`, `notesDetail`은 `period` 파라미터를 지원한다.
+`fsSummary`, `statements`, `segments`, `costByNature`, `affiliates`, `notesDetail`은 `period` 파라미터를 지원한다.
 
 | 값 | 의미 | 포함 보고서 |
 |-----|------|------------|

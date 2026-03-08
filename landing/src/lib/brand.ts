@@ -10,21 +10,21 @@ export const brand = {
 	author: 'eddmpython',
 
 	color: {
-		primary: '#2dd4bf',
-		primaryDark: '#14b8a6',
-		primaryLight: '#5eead4',
-		accent: '#818cf8',
-		accentLight: '#a5b4fc',
-		bgDark: '#0a0f1a',
-		bgDarker: '#060a12',
-		bgCard: '#111827',
-		bgCardHover: '#1f2937',
+		primary: '#ea4647',
+		primaryDark: '#c83232',
+		primaryLight: '#f87171',
+		accent: '#fb923c',
+		accentLight: '#fdba74',
+		bgDark: '#050811',
+		bgDarker: '#030509',
+		bgCard: '#0f1219',
+		bgCardHover: '#1a1f2b',
 		text: '#f1f5f9',
 		textMuted: '#94a3b8',
 		textDim: '#64748b',
-		border: '#1e293b',
+		border: '#1e2433',
 		success: '#34d399',
-		warning: '#f87171',
+		warning: '#fbbf24',
 		coffee: '#ffdd00'
 	}
 } as const;

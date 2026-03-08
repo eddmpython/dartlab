@@ -126,7 +126,7 @@ revenues = []
 
 for code in codes:
     c = Company(code)
-    result = c.analyze()
+    result = c.fsSummary()
     if result and result.IS is not None:
         names.append(result.corpName)
         last_row = result.IS.row(-1, named=True)
@@ -163,12 +163,12 @@ print(pl.DataFrame(dividends))
 Company 클래스를 거치지 않고 모듈 함수를 직접 호출할 수도 있다.
 
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 from dartlab.finance.statements import statements
 from dartlab.finance.dividend import dividend
 from dartlab.finance.notesDetail import notesDetail
 
-result = analyze("005930")
+result = fsSummary("005930")
 result = statements("005930", period="q")
 result = dividend("005930")
 result = notesDetail("005930", "재고자산")

@@ -20,7 +20,7 @@ samsung.corpName  # "삼성전자"
 Bridge Matching으로 계정명 변경을 추적하면서 시계열을 생성한다.
 
 ```python
-result = samsung.analyze()
+result = samsung.fsSummary()
 
 result.FS    # 전체 재무제표 시계열 (Polars DataFrame)
 result.BS    # 재무상태표
@@ -30,8 +30,8 @@ result.IS    # 손익계산서
 분기별 데이터도 가능하다.
 
 ```python
-result = samsung.analyze(period="q")  # 분기별
-result = samsung.analyze(period="h")  # 반기별
+result = samsung.fsSummary(period="q")  # 분기별
+result = samsung.fsSummary(period="h")  # 반기별
 ```
 
 ## 연결 재무제표
@@ -76,10 +76,10 @@ result.timeSeries    # 지분율 시계열
 Company를 거치지 않고 모듈 함수를 직접 호출할 수도 있다.
 
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 from dartlab.finance.statements import statements
 
-result = analyze("005930")
+result = fsSummary("005930")
 result = statements("005930")
 ```
 

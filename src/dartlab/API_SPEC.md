@@ -53,7 +53,7 @@ c.corpName                  # "삼성전자"
 
 | 메서드 | 파라미터 | 반환 타입 | 설명 |
 |--------|----------|-----------|------|
-| `analyze()` | ifrsOnly, period | AnalysisResult | 요약재무정보 + 브릿지 매칭 + 전환점 |
+| `fsSummary()` | ifrsOnly, period | AnalysisResult | 요약재무정보 + 브릿지 매칭 + 전환점 |
 | `statements()` | ifrsOnly, period | StatementsResult | BS·IS·CF 시계열 |
 | `segments()` | period | SegmentsResult | 부문별 보고 |
 | `costByNature()` | period | CostByNatureResult | 비용의 성격별 분류 |
@@ -84,13 +84,13 @@ c.corpName                  # "삼성전자"
 ### finance.summary
 
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 
-result = analyze("005930")
-result = analyze("005930", ifrsOnly=True, period="y")
+result = fsSummary("005930")
+result = fsSummary("005930", ifrsOnly=True, period="y")
 ```
 
-#### analyze(stockCode, ifrsOnly=True, period="y") -> AnalysisResult | None
+#### fsSummary(stockCode, ifrsOnly=True, period="y") -> AnalysisResult | None
 
 요약재무정보 시계열 추출 + 브릿지 매칭 + 전환점 탐지.
 

@@ -40,6 +40,12 @@ ${cssVars}
 
 \t--font-sans: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 \t--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+\t--animate-float: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+\t0%, 100% { transform: translateY(0); }
+\t50% { transform: translateY(-8px); }
 }
 `;
 
@@ -63,11 +69,11 @@ const heroSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" f
       <stop offset="0%" stop-color="${colors.bgDark}"/>
       <stop offset="100%" stop-color="${colors.bgCard}"/>
     </linearGradient>
-    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="${colors.primary}"/>
       <stop offset="100%" stop-color="${colors.primaryLight}"/>
     </linearGradient>
-    <linearGradient id="indigo" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="${colors.accent}"/>
       <stop offset="100%" stop-color="${colors.accentLight}"/>
     </linearGradient>
@@ -80,13 +86,13 @@ const heroSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" f
 
   <rect width="800" height="200" rx="16" fill="url(#bg)"/>
 
-  <rect x="40" y="60" width="3" height="80" rx="1.5" fill="url(#teal)" opacity="0.6"/>
-  <rect x="50" y="45" width="3" height="110" rx="1.5" fill="url(#teal)" opacity="0.4"/>
-  <rect x="60" y="70" width="3" height="60" rx="1.5" fill="url(#indigo)" opacity="0.5"/>
-  <rect x="70" y="50" width="3" height="100" rx="1.5" fill="url(#teal)" opacity="0.3"/>
-  <rect x="80" y="65" width="3" height="70" rx="1.5" fill="url(#indigo)" opacity="0.4"/>
-  <rect x="90" y="55" width="3" height="90" rx="1.5" fill="url(#teal)" opacity="0.5"/>
-  <rect x="100" y="75" width="3" height="50" rx="1.5" fill="url(#indigo)" opacity="0.3"/>
+  <rect x="40" y="60" width="3" height="80" rx="1.5" fill="url(#red)" opacity="0.6"/>
+  <rect x="50" y="45" width="3" height="110" rx="1.5" fill="url(#red)" opacity="0.4"/>
+  <rect x="60" y="70" width="3" height="60" rx="1.5" fill="url(#orange)" opacity="0.5"/>
+  <rect x="70" y="50" width="3" height="100" rx="1.5" fill="url(#red)" opacity="0.3"/>
+  <rect x="80" y="65" width="3" height="70" rx="1.5" fill="url(#orange)" opacity="0.4"/>
+  <rect x="90" y="55" width="3" height="90" rx="1.5" fill="url(#red)" opacity="0.5"/>
+  <rect x="100" y="75" width="3" height="50" rx="1.5" fill="url(#orange)" opacity="0.3"/>
 
   <text x="140" y="105" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-size="56" font-weight="800" fill="url(#textGrad)">DartLab</text>
 

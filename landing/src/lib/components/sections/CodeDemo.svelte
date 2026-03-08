@@ -15,26 +15,26 @@
 				<span class="text-purple-400">from</span> <span class="text-dl-text">dartlab</span> <span class="text-purple-400">import</span> <span class="text-cyan-400">Company</span><br /><br />
 				<span class="text-dl-text">samsung</span> <span class="text-dl-text-muted">=</span> <span class="text-cyan-400">Company</span><span class="text-dl-text-muted">(</span><span class="text-emerald-400">"005930"</span><span class="text-dl-text-muted">)</span><br />
 				<span class="text-dl-text">result</span> <span class="text-dl-text-muted">=</span> <span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">analyze</span><span class="text-dl-text-muted">()</span><br /><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">FS</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# time series</span><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">allRate</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# match rate</span><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">breakpoints</span> <span class="text-dl-text-dim">&nbsp;# breakpoints</span>
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">FS</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# time series</span><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">allRate</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# match rate</span><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">breakpoints</span> <span class="text-dl-text-dim">&nbsp;# breakpoints</span>
 			</CodeWindow>
 
 			<CodeWindow title="holder.py">
 				<span class="text-dl-text">result</span> <span class="text-dl-text-muted">=</span> <span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">majorHolder</span><span class="text-dl-text-muted">()</span><br /><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">majorHolder</span> <span class="text-dl-text-dim">&nbsp;# name</span><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">majorRatio</span> <span class="text-dl-text-dim">&nbsp;&nbsp;# 20.76</span><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">timeSeries</span> <span class="text-dl-text-dim">&nbsp;&nbsp;# stake history</span><br /><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">majorHolder</span> <span class="text-dl-text-dim">&nbsp;# name</span><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">majorRatio</span> <span class="text-dl-text-dim">&nbsp;&nbsp;# 20.76</span><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">timeSeries</span> <span class="text-dl-text-dim">&nbsp;&nbsp;# stake history</span><br /><br />
 				<span class="text-dl-text">div</span> <span class="text-dl-text-muted">=</span> <span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">dividend</span><span class="text-dl-text-muted">()</span><br />
-				<span class="text-dl-text">div</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">timeSeries</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;# DPS, yield</span>
+				<span class="text-dl-text">div</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">timeSeries</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;&nbsp;# DPS, yield</span>
 			</CodeWindow>
 
 			<CodeWindow title="mdna.py">
 				<span class="text-dl-text">result</span> <span class="text-dl-text-muted">=</span> <span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">mdna</span><span class="text-dl-text-muted">()</span><br /><br />
-				<span class="text-purple-400">for</span> <span class="text-dl-text">section</span> <span class="text-purple-400">in</span> <span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">sections</span><span class="text-dl-text-muted">:</span><br />
-				<span class="text-dl-text">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="text-cyan-400">print</span><span class="text-dl-text-muted">(</span><span class="text-dl-text">section</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">category</span><span class="text-dl-text-muted">)</span><br />
-				<span class="text-dl-text">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="text-cyan-400">print</span><span class="text-dl-text-muted">(</span><span class="text-dl-text">section</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">text</span><span class="text-dl-text-muted">[:</span><span class="text-orange-400">200</span><span class="text-dl-text-muted">])</span><br /><br />
-				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-teal-300">overview</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;# biz overview</span>
+				<span class="text-purple-400">for</span> <span class="text-dl-text">section</span> <span class="text-purple-400">in</span> <span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">sections</span><span class="text-dl-text-muted">:</span><br />
+				<span class="text-dl-text">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="text-cyan-400">print</span><span class="text-dl-text-muted">(</span><span class="text-dl-text">section</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">category</span><span class="text-dl-text-muted">)</span><br />
+				<span class="text-dl-text">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="text-cyan-400">print</span><span class="text-dl-text-muted">(</span><span class="text-dl-text">section</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">text</span><span class="text-dl-text-muted">[:</span><span class="text-orange-400">200</span><span class="text-dl-text-muted">])</span><br /><br />
+				<span class="text-dl-text">result</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">overview</span> <span class="text-dl-text-dim">&nbsp;&nbsp;&nbsp;# biz overview</span>
 			</CodeWindow>
 		</div>
 	</div>

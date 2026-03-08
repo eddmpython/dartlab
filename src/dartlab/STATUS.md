@@ -19,12 +19,12 @@ dartlab/
 
 ## API 요약
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 from dartlab.finance.statements import statements
 from dartlab.finance.segment import segments
 from dartlab.finance.affiliate import affiliates
 
-result = analyze("005930")       # 요약재무정보 시계열
+result = fsSummary("005930")     # 요약재무정보 시계열
 result = statements("005930")    # BS, IS, CF
 result = segments("005930")      # 부문별 보고
 result = affiliates("005930")    # 관계기업 투자

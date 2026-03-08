@@ -6,12 +6,12 @@ title: finance.summary
 
 요약재무정보를 시계열로 추출한다. Bridge Matching으로 계정명 변경을 자동 추적한다.
 
-## `analyze(stockCode, ifrsOnly=True, period="y")`
+## `fsSummary(stockCode, ifrsOnly=True, period="y")`
 
 ```python
-from dartlab.finance.summary import analyze
+from dartlab.finance.summary import fsSummary
 
-result = analyze("005930")
+result = fsSummary("005930")
 ```
 
 ### 파라미터
@@ -75,7 +75,7 @@ result = analyze("005930")
 from dartlab import Company
 
 c = Company("005930")
-result = c.analyze()
+result = c.fsSummary()
 
 # DataFrame 출력
 print(result.FS)
