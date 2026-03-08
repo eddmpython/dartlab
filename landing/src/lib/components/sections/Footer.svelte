@@ -20,7 +20,8 @@
 		'eddmpython': [
 			{ label: 'GitHub Profile', href: 'https://github.com/eddmpython' },
 			{ label: 'PyPI Profile', href: 'https://pypi.org/user/eddmpython/' },
-			{ label: 'vectrix', href: 'https://github.com/eddmpython/vectrix' }
+			{ label: 'vectrix', href: 'https://eddmpython.github.io/vectrix/' },
+			{ label: 'tradix', href: 'https://github.com/eddmpython/tradix' }
 		],
 		'Connect': [
 			{ label: 'YouTube', href: 'https://www.youtube.com/@eddmpython' },

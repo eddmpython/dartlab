@@ -13,7 +13,7 @@ export const posts: PostMeta[] = [
 		date: '2026-03-08',
 		description:
 			'영업이익 30% 성장, PER 10배 — 이 숫자만 보고 투자를 결정하는가? 같은 숫자 뒤에 전혀 다른 이야기가 숨어 있다. 감사의견, 주석, 지배구조, 공시 텍스트까지 봐야 비로소 완전한 그림이 나온다.',
-		thumbnail: '/avatar-study.png'
+		thumbnail: '/avatar-celebrate.png'
 	},
 	{
 		slug: 'opendart-review',
