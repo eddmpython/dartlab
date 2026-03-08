@@ -157,9 +157,10 @@
 			<div class="dl-docs-content">
 				{@render children()}
 			</div>
-			<Footer />
 		</main>
 	</div>
+
+	<Footer />
 </div>
 
 <style>

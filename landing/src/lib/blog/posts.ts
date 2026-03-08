@@ -28,3 +28,12 @@ export const posts: PostMeta[] = [
 export function getPost(slug: string): PostMeta | undefined {
 	return posts.find((p) => p.slug === slug);
 }
+
+export function findPrevNext(slug: string): { prev?: PostMeta; next?: PostMeta } {
+	const idx = posts.findIndex((p) => p.slug === slug);
+	if (idx === -1) return {};
+	return {
+		prev: idx < posts.length - 1 ? posts[idx + 1] : undefined,
+		next: idx > 0 ? posts[idx - 1] : undefined
+	};
+}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { getPost } from '$lib/blog/posts';
-	import { Calendar } from 'lucide-svelte';
+	import { getPost, findPrevNext } from '$lib/blog/posts';
+	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { onMount, tick } from 'svelte';
 
 	let { data } = $props();
@@ -98,6 +98,9 @@
 	const Component = $derived(data.component);
 	const meta = $derived(data.metadata ?? {});
 	const postInfo = $derived(getPost(data.slug));
+	const prevNext = $derived(findPrevNext(data.slug));
+
+	let giscusEl: HTMLElement | undefined = $state();
 
 	$effect(() => {
 		if (!mounted) return;
@@ -125,6 +128,27 @@
 			el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
 	}
+
+	$effect(() => {
+		if (!giscusEl || !mounted) return;
+		giscusEl.innerHTML = '';
+		const script = document.createElement('script');
+		script.src = 'https://giscus.app/client.js';
+		script.setAttribute('data-repo', 'eddmpython/dartlab');
+		script.setAttribute('data-repo-id', 'R_kgDORgID2A');
+		script.setAttribute('data-category', 'General');
+		script.setAttribute('data-category-id', 'DIC_kwDORgID2M4C38mI');
+		script.setAttribute('data-mapping', 'pathname');
+		script.setAttribute('data-strict', '0');
+		script.setAttribute('data-reactions-enabled', '1');
+		script.setAttribute('data-emit-metadata', '0');
+		script.setAttribute('data-input-position', 'top');
+		script.setAttribute('data-theme', 'dark_dimmed');
+		script.setAttribute('data-lang', 'ko');
+		script.setAttribute('crossorigin', 'anonymous');
+		script.async = true;
+		giscusEl.appendChild(script);
+	});
 </script>
 
 <svelte:head>
@@ -173,6 +197,29 @@
 				{/if}
 			</article>
 
+			{#if prevNext.prev || prevNext.next}
+				<nav class="post-nav">
+					{#if prevNext.prev}
+						<a href="{base}/blog/{prevNext.prev.slug}" class="post-nav-link prev">
+							<span class="post-nav-label"><ChevronLeft size={14} /> 이전 포스트</span>
+							<span class="post-nav-title">{prevNext.prev.title}</span>
+						</a>
+					{:else}
+						<div></div>
+					{/if}
+					{#if prevNext.next}
+						<a href="{base}/blog/{prevNext.next.slug}" class="post-nav-link next">
+							<span class="post-nav-label">다음 포스트 <ChevronRight size={14} /></span>
+							<span class="post-nav-title">{prevNext.next.title}</span>
+						</a>
+					{:else}
+						<div></div>
+					{/if}
+				</nav>
+			{/if}
+
+			<div class="giscus-container" bind:this={giscusEl}></div>
+
 			<footer class="post-footer">
 				<a href="{base}/blog/" class="back-link">&larr; 모든 포스트 보기</a>
 			</footer>
@@ -216,17 +263,15 @@
 	.not-found a { color: #ea4647; text-decoration: none; }
 
 	.blog-post-layout {
-		display: grid;
-		grid-template-columns: 1fr 200px;
-		gap: 0;
+		position: relative;
 		max-width: 1280px;
 		margin: 0 auto;
 		padding: 0 1.5rem;
 	}
 
 	.blog-post-col {
-		min-width: 0;
-		width: 100%;
+		max-width: 1060px;
+		margin: 0 auto;
 		padding: 0 2rem;
 	}
 
@@ -415,9 +460,10 @@
 
 	/* ToC */
 	.blog-toc {
-		position: sticky;
+		position: fixed;
 		top: 72px;
-		height: fit-content;
+		right: calc((100vw - 1280px) / 2 + 1.5rem);
+		width: 200px;
 		max-height: calc(100vh - 90px);
 		overflow-y: auto;
 		scrollbar-width: thin;
@@ -463,11 +509,62 @@
 	.blog-toc-item.active { color: #ea4647; border-left-color: #ea4647; }
 	.blog-toc-item.h3 { padding-left: 1.1rem; font-size: 0.72rem; }
 
-	/* Footer */
-	.post-footer {
+	/* Prev/Next navigation */
+	.post-nav {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
 		margin-top: 3rem;
 		padding-top: 1.5rem;
 		border-top: 1px solid rgba(30, 36, 51, 0.8);
+	}
+
+	.post-nav-link {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 1rem;
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		border-radius: 8px;
+		text-decoration: none;
+		transition: all 0.15s;
+	}
+	.post-nav-link:hover {
+		border-color: rgba(234, 70, 71, 0.3);
+		background: rgba(234, 70, 71, 0.03);
+	}
+
+	.post-nav-link.next { text-align: right; }
+
+	.post-nav-label {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		color: #64748b;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.post-nav-link.next .post-nav-label { justify-content: flex-end; }
+
+	.post-nav-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #e2e8f0;
+	}
+	.post-nav-link:hover .post-nav-title { color: #ea4647; }
+
+	/* Giscus */
+	.giscus-container {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(30, 36, 51, 0.8);
+	}
+
+	/* Footer */
+	.post-footer {
+		margin-top: 2rem;
+		padding-top: 1.5rem;
 	}
 
 	.back-link {
@@ -478,12 +575,13 @@
 	}
 	.back-link:hover { color: #ea4647; }
 
-	@media (max-width: 1100px) {
-		.blog-post-layout {
-			grid-template-columns: 1fr;
-			padding: 0 1rem;
-		}
+	@media (max-width: 1400px) {
 		.blog-toc { display: none; }
+	}
+
+	@media (max-width: 1100px) {
+		.blog-post-layout { padding: 0 1rem; }
 		.blog-post-col { padding: 0; }
+		.post-nav { grid-template-columns: 1fr; }
 	}
 </style>
