@@ -451,7 +451,7 @@
 		margin: 3rem 0;
 	}
 
-	.blog-article :global(img) { max-width: 100%; border-radius: 8px; }
+	.blog-article :global(img) { max-width: 100%; border-radius: 8px; display: block; margin: 1.5rem auto; }
 
 	/* Copy button */
 	:global(.copy-btn) {
