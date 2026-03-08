@@ -144,6 +144,8 @@
 	</div>
 {:else}
 	<div class="blog-post-layout">
+		<div class="blog-spacer"></div>
+
 		<div class="blog-post-col">
 			<header class="post-header">
 				{#if postInfo?.thumbnail}
@@ -178,8 +180,8 @@
 			</footer>
 		</div>
 
-		{#if tocItems.length > 0}
-			<aside class="blog-toc">
+		<aside class="blog-toc">
+			{#if tocItems.length > 0}
 				<div class="blog-toc-inner">
 					<span class="blog-toc-heading">On this page</span>
 					<nav class="blog-toc-list">
@@ -195,8 +197,8 @@
 						{/each}
 					</nav>
 				</div>
-			</aside>
-		{/if}
+			{/if}
+		</aside>
 	</div>
 {/if}
 
@@ -217,17 +219,21 @@
 
 	.blog-post-layout {
 		display: grid;
-		grid-template-columns: 1fr 200px;
-		gap: 3rem;
-		max-width: 960px;
+		grid-template-columns: 200px 1fr 200px;
+		gap: 0;
+		max-width: 1200px;
 		margin: 0 auto;
-		justify-content: center;
+		padding: 0 1.5rem;
 	}
+
+	.blog-spacer { }
 
 	.blog-post-col {
 		min-width: 0;
 		max-width: 720px;
+		width: 100%;
 		margin: 0 auto;
+		padding: 0 2rem;
 	}
 
 	/* Post header */
@@ -479,7 +485,12 @@
 	.back-link:hover { color: #ea4647; }
 
 	@media (max-width: 1100px) {
-		.blog-post-layout { grid-template-columns: 1fr; }
+		.blog-post-layout {
+			grid-template-columns: 1fr;
+			padding: 0 1rem;
+		}
+		.blog-spacer { display: none; }
 		.blog-toc { display: none; }
+		.blog-post-col { padding: 0; }
 	}
 </style>
