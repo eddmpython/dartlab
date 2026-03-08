@@ -20,6 +20,7 @@ data/
 landing/build/
 landing/.svelte-kit/
 landing/node_modules/
+landing/static/blog/assets/
 
 # MkDocs build
 site/

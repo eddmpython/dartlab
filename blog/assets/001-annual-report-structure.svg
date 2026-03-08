@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="bg1b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="12" fill="url(#bg1b)"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Annual Report Structure</text>
+  <text x="400" y="54" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">12 sections mandated by FSS — same format for all listed companies</text>
+
+  <!-- Left column -->
+  <rect x="40" y="74" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="55" y="95" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">I.</text>
+  <text x="80" y="95" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Company Overview</text>
+  <text x="375" y="95" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">History, Capital, Shares</text>
+
+  <rect x="40" y="112" width="350" height="32" rx="6" fill="rgba(234,70,71,0.04)" stroke="rgba(234,70,71,0.15)" stroke-width="1"/>
+  <text x="55" y="133" font-family="'JetBrains Mono', monospace" font-size="11" fill="#ea4647">II.</text>
+  <text x="80" y="133" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#f87171">Business Description</text>
+  <text x="375" y="133" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Market, Products, Risks</text>
+
+  <rect x="40" y="150" width="350" height="32" rx="6" fill="rgba(234,70,71,0.04)" stroke="rgba(234,70,71,0.15)" stroke-width="1"/>
+  <text x="55" y="171" font-family="'JetBrains Mono', monospace" font-size="11" fill="#ea4647">III.</text>
+  <text x="80" y="171" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#f87171">Financial Matters</text>
+  <text x="375" y="171" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">BS, IS, CF + 40 Notes</text>
+
+  <rect x="40" y="188" width="350" height="32" rx="6" fill="rgba(251,146,60,0.04)" stroke="rgba(251,146,60,0.15)" stroke-width="1"/>
+  <text x="55" y="209" font-family="'JetBrains Mono', monospace" font-size="11" fill="#fb923c">IV.</text>
+  <text x="80" y="209" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fdba74">MD&amp;A</text>
+  <text x="375" y="209" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Management Commentary</text>
+
+  <rect x="40" y="226" width="350" height="32" rx="6" fill="rgba(251,191,36,0.04)" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+  <text x="55" y="247" font-family="'JetBrains Mono', monospace" font-size="11" fill="#fbbf24">V.</text>
+  <text x="80" y="247" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fde68a">Audit Opinion</text>
+  <text x="375" y="247" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">External Auditor's View</text>
+
+  <rect x="40" y="264" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="55" y="285" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">VI.</text>
+  <text x="80" y="285" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Board of Directors</text>
+  <text x="375" y="285" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Governance Structure</text>
+
+  <!-- Right column -->
+  <rect x="410" y="74" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="425" y="95" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">VII.</text>
+  <text x="460" y="95" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Shareholders</text>
+  <text x="745" y="95" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Major Holders, Ownership</text>
+
+  <rect x="410" y="112" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="425" y="133" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">VIII.</text>
+  <text x="460" y="133" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Executives &amp; Employees</text>
+  <text x="745" y="133" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Headcount, Compensation</text>
+
+  <rect x="410" y="150" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="425" y="171" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">IX.</text>
+  <text x="460" y="171" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Affiliates</text>
+  <text x="745" y="171" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Subsidiaries, Cross-holdings</text>
+
+  <rect x="410" y="188" width="350" height="32" rx="6" fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.15)" stroke-width="1"/>
+  <text x="425" y="209" font-family="'JetBrains Mono', monospace" font-size="11" fill="#8b5cf6">X.</text>
+  <text x="460" y="209" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#a78bfa">Related Party Transactions</text>
+  <text x="745" y="209" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Tunneling Detection</text>
+
+  <rect x="410" y="226" width="350" height="32" rx="6" fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.15)" stroke-width="1"/>
+  <text x="425" y="247" font-family="'JetBrains Mono', monospace" font-size="11" fill="#8b5cf6">XI.</text>
+  <text x="460" y="247" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#a78bfa">Investor Protection</text>
+  <text x="745" y="247" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Contingent Liabilities, Lawsuits</text>
+
+  <rect x="410" y="264" width="350" height="32" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="425" y="285" font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b">XII.</text>
+  <text x="460" y="285" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">Detailed Schedules</text>
+  <text x="745" y="285" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Subsidiary Details, R&amp;D</text>
+
+  <!-- Legend -->
+  <text x="400" y="330" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#64748b">Data Types</text>
+
+  <rect x="110" y="345" width="12" height="12" rx="3" fill="rgba(234,70,71,0.15)" stroke="rgba(234,70,71,0.4)" stroke-width="1"/>
+  <text x="130" y="356" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">Quantitative (Financial Statements)</text>
+
+  <rect x="360" y="345" width="12" height="12" rx="3" fill="rgba(251,146,60,0.15)" stroke="rgba(251,146,60,0.4)" stroke-width="1"/>
+  <text x="380" y="356" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">Text (Management Narrative)</text>
+
+  <rect x="110" y="368" width="12" height="12" rx="3" fill="rgba(251,191,36,0.15)" stroke="rgba(251,191,36,0.4)" stroke-width="1"/>
+  <text x="130" y="379" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">External Verification</text>
+
+  <rect x="360" y="368" width="12" height="12" rx="3" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" stroke-width="1"/>
+  <text x="380" y="379" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">Governance &amp; Risk</text>
+
+  <!-- Cumulative period diagram -->
+  <text x="400" y="420" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#f1f5f9">Quarterly Cumulative Reporting</text>
+  <text x="400" y="438" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Income Statement &amp; Cash Flow are cumulative from Jan 1</text>
+
+  <rect x="100" y="455" width="130" height="24" rx="4" fill="rgba(234,70,71,0.08)" stroke="rgba(234,70,71,0.2)" stroke-width="1"/>
+  <text x="165" y="471" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#f87171">Q1</text>
+
+  <rect x="100" y="455" width="270" height="24" rx="4" fill="none" stroke="rgba(251,146,60,0.3)" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="365" y="471" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#fb923c">Q1 + Q2</text>
+
+  <rect x="100" y="485" width="420" height="24" rx="4" fill="none" stroke="rgba(251,191,36,0.3)" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="515" y="501" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#fbbf24">Q1 + Q2 + Q3</text>
+
+  <rect x="100" y="485" width="590" height="24" rx="4" fill="none" stroke="rgba(139,92,246,0.3)" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="685" y="501" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#a78bfa">Q1 + Q2 + Q3 + Q4</text>
+</svg>

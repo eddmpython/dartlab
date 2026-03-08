@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" fill="none">
+  <defs>
+    <linearGradient id="bg2a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="280" rx="12" fill="url(#bg2a)"/>
+  <rect x="0.5" y="0.5" width="799" height="279" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">DART Timeline — 27 Years of Evolution</text>
+
+  <!-- Timeline line -->
+  <line x1="60" y1="90" x2="740" y2="90" stroke="#1e2433" stroke-width="2"/>
+
+  <!-- 1999 -->
+  <circle cx="100" cy="90" r="6" fill="#ea4647" stroke="#050811" stroke-width="2"/>
+  <text x="100" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#ea4647">1999</text>
+  <text x="100" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#e2e8f0">DART</text>
+  <text x="100" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">Service Launch</text>
+
+  <!-- 2001 -->
+  <circle cx="210" cy="90" r="4" fill="#64748b"/>
+  <text x="210" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#64748b">2001</text>
+  <text x="210" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Full Electronic</text>
+  <text x="210" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">Paper abolished</text>
+
+  <!-- 2007 -->
+  <circle cx="330" cy="90" r="6" fill="#fb923c" stroke="#050811" stroke-width="2"/>
+  <text x="330" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#fb923c">2007</text>
+  <text x="330" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#e2e8f0">XBRL</text>
+  <text x="330" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">World's first</text>
+
+  <!-- 2013 -->
+  <circle cx="440" cy="90" r="4" fill="#64748b"/>
+  <text x="440" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#64748b">2013</text>
+  <text x="440" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Open API v1</text>
+  <text x="440" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">First API access</text>
+
+  <!-- 2020 -->
+  <circle cx="560" cy="90" r="6" fill="#fbbf24" stroke="#050811" stroke-width="2"/>
+  <text x="560" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#fbbf24">2020</text>
+  <text x="560" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#e2e8f0">Open DART</text>
+  <text x="560" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">83 APIs, 7M+ docs</text>
+
+  <!-- 2027 -->
+  <circle cx="700" cy="90" r="6" fill="#8b5cf6" stroke="#050811" stroke-width="2"/>
+  <text x="700" y="76" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#8b5cf6">2027</text>
+  <text x="700" y="115" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#e2e8f0">Full XBRL</text>
+  <text x="700" y="129" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">All listed companies</text>
+
+  <!-- Bottom stats -->
+  <rect x="80" y="160" width="180" height="90" rx="8" fill="rgba(234,70,71,0.04)" stroke="rgba(234,70,71,0.15)" stroke-width="1"/>
+  <text x="170" y="185" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#ea4647">7M+</text>
+  <text x="170" y="205" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">Disclosure Documents</text>
+  <text x="170" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Since 1999</text>
+
+  <rect x="310" y="160" width="180" height="90" rx="8" fill="rgba(251,146,60,0.04)" stroke="rgba(251,146,60,0.15)" stroke-width="1"/>
+  <text x="400" y="185" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#fb923c">83</text>
+  <text x="400" y="205" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">API Endpoints</text>
+  <text x="400" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">6 Categories</text>
+
+  <rect x="540" y="160" width="180" height="90" rx="8" fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.15)" stroke-width="1"/>
+  <text x="630" y="185" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#8b5cf6">8,000+</text>
+  <text x="630" y="205" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">XBRL Taxonomy Items</text>
+  <text x="630" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569">Up from 920 initially</text>
+</svg>

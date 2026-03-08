@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"prebuild": "node scripts/syncBrand.js",
+		"prebuild": "node scripts/syncBrand.js && node scripts/syncBlogAssets.js",
 		"build": "vite build",
 		"postbuild": "node scripts/postbuild.js",
 		"sync-brand": "node scripts/syncBrand.js",

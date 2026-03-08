@@ -13,7 +13,7 @@ thumbnail: /avatar-study.png
 
 문제는 **숫자가 말해주는 건 "무엇이 일어났는가"뿐**이라는 것이다. "왜 일어났는가", "이 숫자를 신뢰할 수 있는가", "앞으로도 이어질 것인가"는 숫자 안에 없다.
 
-![Numbers Only vs Full Picture](/blog/assets/beyond-numbers-hero.svg)
+![Numbers Only vs Full Picture](/blog/assets/003-beyond-numbers-hero.svg)
 
 ---
 
@@ -38,7 +38,7 @@ thumbnail: /avatar-study.png
 
 ## 같은 숫자, 다른 이야기
 
-![Same Numbers, Different Stories](/blog/assets/same-numbers-different-stories.svg)
+![Same Numbers, Different Stories](/blog/assets/003-same-numbers-different-stories.svg)
 
 구체적인 상황으로 보자.
 
@@ -260,7 +260,7 @@ c.business     # 사업의 내용 — 시장 환경, 경쟁, 원재료
 
 ## 정리
 
-![Depth of Analysis](/blog/assets/analysis-depth-pyramid.svg)
+![Depth of Analysis](/blog/assets/003-analysis-depth-pyramid.svg)
 
 재무제표는 시작이다. 끝이 아니다.
 

@@ -9,6 +9,8 @@ thumbnail: /avatar-chart.png
 
 한국에서 공시 데이터를 프로그래밍으로 다루려면 반드시 거쳐야 하는 곳이 OpenDART다. 무료로 방대한 데이터를 제공하지만, 실제로 써보면 불편한 점도 적지 않다. 솔직하게 리뷰해보겠다.
 
+![DART Timeline](/blog/assets/002-dart-timeline.svg)
+
 ---
 
 ## DART의 역사
@@ -49,6 +51,8 @@ OpenDART를 이해하려면 DART 자체의 역사부터 봐야 한다.
 2020년 1월 21일, 기존 오픈API와 공시정보 활용마당을 통합·확대 개편한 **Open DART** 시범서비스가 시작됐다. 시범 운영 기간(약 3개월) 동안 약 2,500명의 이용자가 총 2,770만 건의 공시정보를 활용했다. 일평균 36만 건이다.
 
 2020년 4월 20일, 공식 서비스가 시작됐다. 현재 720만 건 이상의 공시문서에 접근 가능하며, **83개 API 엔드포인트**를 6개 카테고리로 제공한다.
+
+![OpenDART API Categories](/blog/assets/002-api-categories.svg)
 
 | 카테고리 | API 수 | 주요 내용 |
 |----------|--------|-----------|
@@ -222,6 +226,8 @@ LG에너지솔루션: "매출"
 ## 다른 나라와 비교하면
 
 OpenDART의 위치를 객관적으로 파악하려면 다른 나라의 전자공시 API와 비교해볼 필요가 있다.
+
+![OpenDART vs SEC EDGAR](/blog/assets/002-opendart-vs-edgar.svg)
 
 ### SEC EDGAR (미국)
 

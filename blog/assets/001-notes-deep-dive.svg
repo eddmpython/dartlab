@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" fill="none">
+  <defs>
+    <linearGradient id="bg1c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="360" rx="12" fill="url(#bg1c)"/>
+  <rect x="0.5" y="0.5" width="799" height="359" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Financial Statement Notes — The Real Detail</text>
+  <text x="400" y="54" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">30~45 items mandated by K-IFRS. Most people skip them.</text>
+
+  <!-- Left: Summary line -->
+  <rect x="40" y="75" width="240" height="260" rx="10" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)" stroke-width="1"/>
+  <text x="160" y="100" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.06em">BALANCE SHEET</text>
+
+  <text x="60" y="130" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">Inventory</text>
+  <text x="260" y="130" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">&#8361;1.0T</text>
+  <line x1="55" y1="140" x2="265" y2="140" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="60" y="162" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">Borrowings</text>
+  <text x="260" y="162" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">&#8361;500B</text>
+  <line x1="55" y1="172" x2="265" y2="172" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="60" y="194" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">Tangible Assets</text>
+  <text x="260" y="194" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">&#8361;3.2T</text>
+  <line x1="55" y1="204" x2="265" y2="204" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="60" y="226" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">Provisions</text>
+  <text x="260" y="226" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">&#8361;80B</text>
+
+  <text x="160" y="310" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569">Just one line per item</text>
+
+  <!-- Arrow -->
+  <line x1="295" y1="200" x2="350" y2="200" stroke="#ea4647" stroke-width="1.5" stroke-linecap="round"/>
+  <polygon points="350,196 360,200 350,204" fill="#ea4647"/>
+  <text x="327" y="190" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#ea4647">Notes</text>
+
+  <!-- Right: Expanded notes -->
+  <rect x="370" y="75" width="390" height="260" rx="10" fill="rgba(234,70,71,0.03)" stroke="rgba(234,70,71,0.15)" stroke-width="1"/>
+  <text x="565" y="100" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#ea4647" letter-spacing="0.06em">NOTES DETAIL</text>
+
+  <!-- Note 14: Inventory -->
+  <circle cx="390" cy="126" r="3" fill="#f87171"/>
+  <text x="400" y="130" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#f87171">Note 14 — Inventory</text>
+  <text x="400" y="146" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Raw materials &#8361;300B / WIP &#8361;200B / Finished &#8361;500B</text>
+  <text x="400" y="160" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fb923c">Write-down loss: &#8361;45B (+120% YoY)</text>
+
+  <!-- Note 22: Borrowings -->
+  <circle cx="390" cy="184" r="3" fill="#fbbf24"/>
+  <text x="400" y="188" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#fbbf24">Note 22 — Borrowings</text>
+  <text x="400" y="204" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Bank A: 4.2% due 2026 / Bank B: 5.1% due 2025</text>
+  <text x="400" y="218" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fb923c">70% maturing within 12 months</text>
+
+  <!-- Note 16: Tangible -->
+  <circle cx="390" cy="242" r="3" fill="#34d399"/>
+  <text x="400" y="246" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#34d399">Note 16 — Tangible Assets</text>
+  <text x="400" y="262" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Land &#8361;800B / Building &#8361;1.2T / Machinery &#8361;1.0T</text>
+  <text x="400" y="276" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Capex this year: &#8361;450B (+30%)</text>
+
+  <!-- Note 26: Provisions -->
+  <circle cx="390" cy="300" r="3" fill="#8b5cf6"/>
+  <text x="400" y="304" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8b5cf6">Note 26 — Provisions</text>
+  <text x="400" y="320" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Warranty &#8361;30B / Litigation &#8361;50B (new lawsuit filed)</text>
+</svg>
