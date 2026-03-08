@@ -7,7 +7,7 @@ const buildDir = resolve(__dirname, '..', 'build');
 const projectRoot = resolve(__dirname, '..', '..');
 const basePath = process.env.BASE_PATH || '';
 const siteUrl = 'https://eddmpython.github.io/dartlab';
-const target = `${basePath}/docs/getting-started/installation`;
+const target = `${basePath}/docs/getting-started/quickstart`;
 
 const docsDir = resolve(buildDir, 'docs');
 
