@@ -9,7 +9,7 @@ from dartlab.engines import llmAnalyzer as llm
 
 
 class _Module(sys.modules[__name__].__class__):
-    """dartlab.verbose 프록시."""
+    """dartlab.verbose / dartlab.dataDir 프록시."""
 
     @property
     def verbose(self):
@@ -19,17 +19,22 @@ class _Module(sys.modules[__name__].__class__):
     def verbose(self, value):
         config.verbose = value
 
+    @property
+    def dataDir(self):
+        return config.dataDir
+
+    @dataDir.setter
+    def dataDir(self, value):
+        config.dataDir = str(value)
+
 
 sys.modules[__name__].__class__ = _Module
 
 
 __all__ = [
-    "config",
-    "core",
-    "engines",
-    "llm",
     "Company",
     "verbose",
+    "dataDir",
     "getKindList",
     "codeToName",
     "nameToCode",

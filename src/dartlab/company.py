@@ -112,13 +112,101 @@ def _import_and_call(modulePath: str, funcName: str, stockCode: str, **kwargs) -
     return func(stockCode, **kwargs)
 
 
-def _checkLocal(stockCode: str, category: str) -> bool:
-    """로컬에 parquet 파일이 있는지 확인 (다운로드 없이)."""
+def _ensureData(stockCode: str, category: str) -> bool:
+    """로컬에 parquet이 있으면 True, 없으면 다운로드 시도 후 결과 반환."""
+    from dartlab.core.dataLoader import _dataDir, _download
     from dartlab.core.dataConfig import DATA_RELEASES
-    from pathlib import Path
-    dataRoot = Path(__file__).resolve().parents[2] / "data"
-    dirName = DATA_RELEASES[category]["dir"]
-    return (dataRoot / dirName / f"{stockCode}.parquet").exists()
+    dest = _dataDir(category) / f"{stockCode}.parquet"
+    if dest.exists():
+        return True
+    try:
+        _download(stockCode, dest, category)
+        label = DATA_RELEASES[category]["label"]
+        print(f"[dartlab] {stockCode} ({label}) 다운로드 완료")
+        return True
+    except (OSError, RuntimeError):
+        return False
+
+
+class _ReportAccessor:
+    """Company.report 네임스페이스 — reportEngine pivot 결과 접근."""
+
+    def __init__(self, company: Company):
+        self._company = company
+        self._cache: dict[str, Any] = {}
+
+    def _pivot(self, name: str) -> Any:
+        if name in self._cache:
+            return self._cache[name]
+        from dartlab.engines.reportEngine import (
+            pivotDividend,
+            pivotEmployee,
+            pivotMajorHolder,
+            pivotExecutive,
+            pivotAudit,
+        )
+        funcs = {
+            "dividend": pivotDividend,
+            "employee": pivotEmployee,
+            "majorHolder": pivotMajorHolder,
+            "executive": pivotExecutive,
+            "audit": pivotAudit,
+        }
+        func = funcs.get(name)
+        if func is None:
+            return None
+        result = func(self._company.stockCode)
+        self._cache[name] = result
+        return result
+
+    def extract(self, apiType: str) -> pl.DataFrame | None:
+        """apiType별 정제된 DataFrame 반환."""
+        cacheKey = f"_extract_{apiType}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.reportEngine import extractClean
+        result = extractClean(self._company.stockCode, apiType)
+        self._cache[cacheKey] = result
+        return result
+
+    def extractAnnual(self, apiType: str, quarterNum: int | None = None) -> pl.DataFrame | None:
+        """apiType별 연간 DataFrame 반환."""
+        cacheKey = f"_annual_{apiType}_{quarterNum}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.reportEngine import extractAnnual as _extractAnnual
+        result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
+        self._cache[cacheKey] = result
+        return result
+
+    @property
+    def dividend(self):
+        """배당 시계열 (DividendResult)."""
+        return self._pivot("dividend")
+
+    @property
+    def employee(self):
+        """직원현황 시계열 (EmployeeResult)."""
+        return self._pivot("employee")
+
+    @property
+    def majorHolder(self):
+        """최대주주현황 시계열 (MajorHolderResult)."""
+        return self._pivot("majorHolder")
+
+    @property
+    def executive(self):
+        """임원현황 (ExecutiveResult)."""
+        return self._pivot("executive")
+
+    @property
+    def audit(self):
+        """감사의견 시계열 (AuditResult)."""
+        return self._pivot("audit")
+
+    def __repr__(self):
+        from dartlab.engines.reportEngine.types import API_TYPES
+        return f"ReportAccessor({len(API_TYPES)} apiTypes)"
 
 
 class Company:
@@ -148,9 +236,9 @@ class Company:
             self.stockCode = code
         self._cache: dict[str, Any] = {}
 
-        self._hasDocs = _checkLocal(self.stockCode, "docs")
-        self._hasFinance = _checkLocal(self.stockCode, "finance")
-        self._hasReport = _checkLocal(self.stockCode, "report")
+        self._hasDocs = _ensureData(self.stockCode, "docs")
+        self._hasFinance = _ensureData(self.stockCode, "finance")
+        self._hasReport = _ensureData(self.stockCode, "report")
 
         if self._hasDocs:
             df = loadData(self.stockCode, category="docs")
@@ -166,10 +254,11 @@ class Company:
             else:
                 self._hasFinance = False
 
-        if not self._hasDocs and not self._hasFinance:
-            raise ValueError(f"'{self.stockCode}' 데이터 없음 (docs/finance 모두 없음)")
+        if not self._hasDocs and not self._hasFinance and not self._hasReport:
+            raise ValueError(f"'{self.stockCode}' 데이터 없음 (docs/finance/report 모두 없음)")
 
         self.notes = Notes(self) if self._hasDocs else None
+        self.report = _ReportAccessor(self) if self._hasReport else None
 
     def __repr__(self):
         from dartlab import config

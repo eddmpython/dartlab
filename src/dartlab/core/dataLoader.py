@@ -16,7 +16,10 @@ from dartlab.core.dataConfig import (
     shardAllTags,
 )
 
-_DATA_ROOT = Path(__file__).resolve().parents[3] / "data"
+
+def _getDataRoot() -> Path:
+    from dartlab import config
+    return Path(config.dataDir)
 
 _DOWNLOAD_TIMEOUT = 30
 
@@ -28,7 +31,7 @@ PERIOD_KINDS = {
 
 
 def _dataDir(category: str = "docs") -> Path:
-    return _DATA_ROOT / DATA_RELEASES[category]["dir"]
+    return _getDataRoot() / DATA_RELEASES[category]["dir"]
 
 
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:

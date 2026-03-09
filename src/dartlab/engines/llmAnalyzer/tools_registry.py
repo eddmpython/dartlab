@@ -349,6 +349,41 @@ def register_defaults(company: Any) -> None:
 		},
 	)
 
+	# 7b. get_report_data: 정기보고서 데이터 조회
+	def get_report_data(api_type: str) -> str:
+		"""reportEngine의 apiType별 정제 데이터를 조회합니다."""
+		report = getattr(company, "report", None)
+		if report is None:
+			return "정기보고서 데이터가 없습니다."
+		df = report.extract(api_type)
+		if df is None:
+			from dartlab.engines.reportEngine.types import API_TYPE_LABELS
+			available = ", ".join(f"`{k}` ({v})" for k, v in list(API_TYPE_LABELS.items())[:10])
+			return f"'{api_type}' 데이터가 없습니다. 사용 가능한 타입 예시: {available}"
+		return _df_to_md(df)
+
+	register_tool(
+		"get_report_data",
+		get_report_data,
+		"OpenDART 정기보고서 API 데이터를 조회합니다. "
+		"api_type 예시: dividend(배당), employee(직원현황), executive(임원현황), "
+		"majorHolder(최대주주), auditOpinion(감사의견), capitalChange(증자감자), "
+		"corporateBond(회사채), stockTotal(주식총수), treasuryStock(자기주식), "
+		"investedCompany(타법인출자), outsideDirector(사외이사), "
+		"executivePayAllTotal(임원보수전체), topPay(5억이상 개인보수). "
+		"docsParser와 다르게 정기보고서 API의 표준화된 수치를 제공합니다.",
+		{
+			"type": "object",
+			"properties": {
+				"api_type": {
+					"type": "string",
+					"description": "조회할 API 타입 (예: dividend, employee, majorHolder)",
+				},
+			},
+			"required": ["api_type"],
+		},
+	)
+
 	# 7. get_company_info: 기업 기본 정보
 	def get_company_info() -> str:
 		info_parts = [
