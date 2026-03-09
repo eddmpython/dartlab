@@ -5,6 +5,23 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-03-09
+
+### Added
+
+**LLM 분석 품질 개선**
+- Compact 프롬프트에 Few-Shot 예시 5종, 교차검증 규칙, 토픽 가이드 추가
+- compact 모드 컨텍스트 압축 (연도 4년 제한, 비율 핵심 7개, 리포트 축약) — 전체 52.9% 압축
+- 복합 질문 다중 분류 (`_classify_question_multi`) — "수익성과 배당" 같은 질문 지원
+- Self-Critique 인프라 (2-pass 검증 구조, UI 옵션 연동 예정)
+- 응답 메타데이터 추출 (등급, 시그널, 테이블 수) → SSE done 이벤트 포함
+
+**reportEngine — 정기보고서 정규화 엔진**
+- 배당, 임원, 직원, 감사, 자기주식 데이터 추출·피벗
+- Company 클래스에 `report` property 통합
+- agent tools_registry에 report 관련 도구 함수 추가
+- `dartlab.dataDir` property 추가 (데이터 디렉토리 설정)
+
 ## [0.2.0] - 2026-03-08
 
 엔진 분류 리팩토링 — `finance/`와 `disclosure/`를 `engines/docsParser/` 아래로 이동. 향후 정량 데이터 엔진, 전체 종목 비교 엔진 등 다른 엔진을 추가할 수 있는 구조로 전환.
