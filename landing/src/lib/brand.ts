@@ -7,7 +7,7 @@ export const brand = {
 	repo: 'https://github.com/eddmpython/dartlab',
 	pypi: 'https://pypi.org/project/dartlab/',
 	coffee: 'https://buymeacoffee.com/eddmpython',
-	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab-Setup.exe',
+	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe',
 	author: 'eddmpython',
 
 	data: {
