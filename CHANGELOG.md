@@ -5,6 +5,39 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-09
+
+### Changed
+
+**엔진 레이어 아키텍처 리팩토링 (Breaking Change)**
+- `engines/` 디렉토리를 L1(데이터소스)/L2(분석)/L3(AI) 3계층으로 재편
+- `engines/docsParser/` → `engines/dart/docs/`
+- `engines/financeEngine/` → `engines/dart/finance/`
+- `engines/reportEngine/` → `engines/dart/report/`
+- `engines/sectorEngine/` → `engines/sector/`
+- `engines/insightEngine/` → `engines/insight/` (rank 분리)
+- `engines/llmAnalyzer/` → `engines/ai/`
+- 모든 import 경로가 변경됨 (하위 호환 alias 미제공)
+
+### Added
+
+**섹터 분류 엔진 (engines/sector)**
+- WICS 11섹터 분류 (수동 오버라이드 → 키워드 → KSIC 3단계)
+- 섹터별 밸류에이션 파라미터 (할인율, PER/PBR/EV-EBITDA 멀티플)
+
+**인사이트 등급 확장 (engines/insight)**
+- 섹터 감지 (금융/비금융 자동 판별) + 섹터 벤치마크 기반 상대평가
+- 7영역 등급에 섹터 상대 등급 반영
+
+**시장 규모 순위 (engines/rank)**
+- 매출/자산/성장률 3축 전체 순위 + 섹터 내 순위
+- JSON 캐시 기반 조회 (빌드 ~2분, 이후 즉시)
+
+**문서 전면 업데이트**
+- API_SPEC.md에 report/sector/insight/rank 스펙 추가
+- README Roadmap에 새 엔진 반영
+- GitHub Pages docs 핵심 기능 목록 갱신
+
 ## [0.2.5] - 2026-03-09
 
 ### Changed

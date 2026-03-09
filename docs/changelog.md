@@ -9,6 +9,21 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-09
+
+### Changed
+
+**엔진 레이어 아키텍처 리팩토링 (Breaking Change)**
+- `engines/` 디렉토리를 L1(데이터소스)/L2(분석)/L3(AI) 3계층으로 재편
+- 모든 import 경로 변경 (docsParser→dart/docs, financeEngine→dart/finance, reportEngine→dart/report, sectorEngine→sector, insightEngine→insight, llmAnalyzer→ai)
+
+### Added
+
+**섹터 분류 (engines/sector)** — WICS 11섹터, 3단계 분류 + 밸류에이션 파라미터
+**인사이트 확장 (engines/insight)** — 섹터 벤치마크 상대평가, 금융/비금융 자동 판별
+**시장 순위 (engines/rank)** — 매출/자산/성장률 전체+섹터 내 순위
+**문서 갱신** — API_SPEC, README, docs 전면 업데이트
+
 ## [0.2.5] - 2026-03-09
 
 ### Changed
