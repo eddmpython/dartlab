@@ -61,12 +61,14 @@ def main():
 	ai_parser.add_argument("--port", type=int, default=8400, help="포트 번호 (기본: 8400)")
 	ai_parser.add_argument("--host", default="0.0.0.0", help="호스트 (기본: 0.0.0.0)")
 	ai_parser.add_argument("--dev", action="store_true", help="개발 모드 (Svelte dev 서버 동시 실행)")
+	ai_parser.add_argument("--no-browser", action="store_true", help="브라우저 자동 열기 비활성화")
 
 	# ── dartlab ui (별칭, 하위 호환) ──
 	ui_parser = sub.add_parser("ui")
 	ui_parser.add_argument("--port", type=int, default=8400)
 	ui_parser.add_argument("--host", default="0.0.0.0")
 	ui_parser.add_argument("--dev", action="store_true")
+	ui_parser.add_argument("--no-browser", action="store_true")
 
 	args = parser.parse_args()
 
@@ -340,15 +342,15 @@ def _cmd_ui(args):
 		print(f"  {url}")
 		print()
 
-	# 브라우저 자동 열기
-	def open_browser():
-		import time
-		time.sleep(1.5)
-		target = "http://localhost:5400" if args.dev else url
-		webbrowser.open(target)
+	if not getattr(args, "no_browser", False):
+		def open_browser():
+			import time
+			time.sleep(1.5)
+			target = "http://localhost:5400" if args.dev else url
+			webbrowser.open(target)
 
-	import threading
-	threading.Thread(target=open_browser, daemon=True).start()
+		import threading
+		threading.Thread(target=open_browser, daemon=True).start()
 
 	from dartlab.server import run_server
 	run_server(host=host, port=port)
