@@ -2,11 +2,12 @@ export const brand = {
 	name: 'DartLab',
 	tagline: 'Read Beyond the Numbers',
 	description: 'A Python library for comprehensive DART disclosure analysis',
-	version: '0.2.0',
+	version: '0.2.5',
 	url: 'https://eddmpython.github.io/dartlab/',
 	repo: 'https://github.com/eddmpython/dartlab',
 	pypi: 'https://pypi.org/project/dartlab/',
 	coffee: 'https://buymeacoffee.com/eddmpython',
+	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab-Setup.exe',
 	author: 'eddmpython',
 
 	data: {

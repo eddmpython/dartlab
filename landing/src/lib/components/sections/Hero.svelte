@@ -3,6 +3,7 @@
 	import { brand } from '$lib/brand';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Download } from 'lucide-svelte';
 </script>
 
 <section class="relative pt-32 pb-20 px-6 overflow-hidden">
@@ -43,11 +44,15 @@
 			<span class="text-dl-text font-medium">Numbers are the result, text is the cause.</span> DartLab reads both.
 		</p>
 
-		<div class="flex flex-wrap items-center justify-center gap-4 mb-16">
-			<Button href="#install">Get Started</Button>
-			<Button variant="secondary" href="{base}/docs/">Documentation →</Button>
-			<Button variant="secondary" href={brand.repo} target="_blank" rel="noopener">GitHub →</Button>
+		<div class="flex flex-wrap items-center justify-center gap-4 mb-6">
+			<Button href={brand.desktop}>
+				<Download class="w-4 h-4 mr-1.5" />
+				Windows Download
+			</Button>
+			<Button variant="secondary" href="#install">pip / uv Install</Button>
+			<Button variant="secondary" href="{base}/docs/">Docs →</Button>
 		</div>
+		<p class="text-xs text-dl-text-dim mb-16">2MB — Python, Ollama 자동 설치 — 더블클릭으로 AI 기업분석</p>
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
 			{#each [
