@@ -342,7 +342,8 @@ def _cmd_ui(args):
 		print(f"  {url}")
 		print()
 
-	if not getattr(args, "no_browser", False):
+	import os
+	if not getattr(args, "no_browser", False) and not os.environ.get("DARTLAB_NO_BROWSER"):
 		def open_browser():
 			import time
 			time.sleep(1.5)
