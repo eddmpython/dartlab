@@ -30,7 +30,25 @@
 
 DartLab is a Python library for parsing and analyzing [DART (Data Analysis, Retrieval and Transfer System)](https://dart.fss.or.kr/) — Korea's official electronic disclosure system. It extracts **both financial numbers and narrative text** from corporate filings.
 
-All data is accessed through simple properties on a `Company` object, following the yfinance-style API.
+### Account Standardization
+
+Every listed company in Korea reports financials through XBRL, but each company uses **different account IDs and names** for the same economic concept. "Revenue" alone appears as dozens of variations across 2,700+ companies.
+
+DartLab maintains its own **unified account schema** — built through a 7-stage mapping pipeline covering 34,000+ learned synonyms. The result: **98.7% of all financial statement rows** (15.8 million rows tested) across 2,700+ companies are successfully mapped to standardized accounts. This means you can directly compare Samsung Electronics' revenue with any other listed company using the same `revenue` key.
+
+```
+Raw XBRL (company-specific)          DartLab (standardized)
+─────────────────────────────        ──────────────────────
+ifrs-full_Revenue                 →  revenue
+dart_OperatingIncomeLoss          →  operating_income
+dart_ConstructionRevenue          →  revenue
+ifrs_ProfitLoss                   →  net_income
+매출액, 수익(매출액), 영업수익     →  revenue
+```
+
+### 40 Parsing Modules
+
+One stock code is all you need. 40 modules extract structured DataFrames from disclosure filings — financial statements, notes, dividends, executives, governance, risk, and narrative text. All accessed through simple properties on a `Company` object, following the yfinance-style API.
 
 ## Installation
 
@@ -99,7 +117,7 @@ c.CF    # Cash Flow Statement (DataFrame)
 
 ### Cross-Company Comparable Time Series
 
-OpenDART financial data is mapped to standardized accounts, enabling **cross-company quarterly time series**.
+Every company's XBRL data is mapped through the unified account schema (98.7% coverage), then converted to **standalone quarterly time series**. Cumulative figures from semi-annual and annual reports are reverse-engineered into individual quarters.
 
 ```python
 series, periods = c.timeseries
@@ -115,7 +133,7 @@ r.debtRatio         # 27.4 (%)
 r.fcf               # Free Cash Flow (KRW)
 ```
 
-2,700+ listed companies are normalized to the same snakeId schema, making any pair of companies directly comparable.
+2,700+ listed companies share the same snakeId schema. Compare any two companies directly — no manual mapping required.
 
 ### Summary Financials with Bridge Matching
 

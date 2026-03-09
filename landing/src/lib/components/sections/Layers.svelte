@@ -20,12 +20,12 @@
 				<div class="text-xs font-mono text-dl-primary mb-2">Layer 1</div>
 				<h3 class="text-lg font-bold text-dl-text mb-2">Quantitative Analysis</h3>
 				<p class="text-sm text-dl-text-muted leading-relaxed mb-4">
-					Bridge Matching reverse-calculates individual quarters from cumulative statements. 14 modules, 260+ listed companies.
+					34,000+ learned synonyms map 98.7% of XBRL accounts to a unified schema. 40 modules, 2,700+ listed companies cross-comparable.
 				</p>
 				<div class="space-y-2 text-xs text-dl-text-dim">
 					<div class="flex items-center gap-2">
 						<span class="w-1 h-1 rounded-full bg-dl-primary"></span>
-						Auto-tracks account name changes
+						7-stage account standardization pipeline
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="w-1 h-1 rounded-full bg-dl-primary"></span>
@@ -33,7 +33,7 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="w-1 h-1 rounded-full bg-dl-primary"></span>
-						Breakpoint auto-detection
+						Bridge Matching across K-IFRS revisions
 					</div>
 				</div>
 				<div class="mt-4 pt-3 border-t border-dl-border">
