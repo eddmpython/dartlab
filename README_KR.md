@@ -28,12 +28,32 @@
 
 ## 설치
 
-```bash
-pip install dartlab
-```
+> **[uv](https://docs.astral.sh/uv/)**가 필요하다 — Rust로 만든 Python 패키지 매니저. Python 버전 관리와 가상환경을 자동으로 처리한다.
 
 ```bash
-uv add dartlab
+# 1. uv 설치 (이미 있으면 건너뛴다)
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 프로젝트 생성
+uv init my-analysis && cd my-analysis
+
+# 3. DartLab 설치 — 필요한 옵션을 선택한다
+uv add dartlab              # 기본 (재무제표 파싱)
+uv add dartlab[ai]          # + AI 기업분석 웹 인터페이스 (dartlab ai)
+uv add dartlab[llm]         # + OpenAI/Ollama LLM (CLI에서 분석)
+uv add dartlab[charts]      # + Plotly 차트
+uv add dartlab[all]         # 전부 포함
+
+# 4. 설치 확인
+uv run python -c "from dartlab import Company; print(Company('005930').corpName)"
+# → 삼성전자
+
+# 5. AI 기업분석 실행 (dartlab[ai] 설치 시)
+uv run dartlab ai
+# → http://localhost:8400
 ```
 
 ## 빠른 시작
@@ -243,13 +263,7 @@ c.rawReport      # 정기보고서 원본 parquet (가공 전)
 
 ## AI 기업분석 (dartlab ai)
 
-DartLab의 구조화 데이터 위에서 LLM과 대화하며 기업을 분석할 수 있다.
-
-```bash
-pip install dartlab[ui]
-dartlab ai
-# → http://localhost:8400
-```
+DartLab의 구조화 데이터 위에서 LLM과 대화하며 기업을 분석할 수 있다 — `uv run dartlab ai`로 웹 UI가 `http://localhost:8400`에 열린다.
 
 재무제표, 주석, 배당, 임원, 지배구조 등 DartLab이 추출한 모든 데이터를 컨텍스트로 제공하고, 자연어 질문에 대한 분석 답변을 스트리밍한다.
 

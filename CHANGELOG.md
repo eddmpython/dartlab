@@ -5,6 +5,38 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-03-09
+
+### Changed
+
+**`dartlab[ui]` → `dartlab[ai]` 리네이밍**
+- AI 기업분석 optional dependency를 `[ai]`로 변경 (`dartlab ai` CLI 명령과 일치)
+- `dartlab[ui]`는 하위호환 alias로 유지 (내부적으로 `[ai]` 참조)
+- `dartlab ui` CLI 실행 시 `dartlab ai`로 변경 안내
+
+**uv 통일**
+- 전체 문서(README, README_KR, docs, landing)에서 pip 참조 제거, uv 설치 방법으로 통일
+- 모든 provider ImportError 메시지를 `uv add dartlab[...]` 형태로 변경
+
+### Added
+
+**insightEngine — 종합 인사이트 분석 엔진**
+- 7영역(실적, 수익성, 재무건전성, 현금흐름, 성장성, 지배구조, 밸류에이션) 등급 분석
+- 이상치 탐지 (z-score 기반) + 요약 텍스트 자동 생성
+- Company 클래스에 `insights` property 통합
+
+**AI 웹 인터페이스 UX 개선**
+- 로딩 단계 표시 (생각 중 → 데이터 로딩 → 분석 → 응답 생성)
+- 응답 완료 후 경과시간 배지 표시
+- 대화 삭제 확인 팝업
+- context 모달 헤더 2행 구조로 개선 (탭 버튼 세로 텍스트 버그 수정)
+
+**Ollama 최적화**
+- 서버 시작 시 모델 preload (cold start 제거)
+- 모델 추천 가이드 API (`/api/models/ollama` 응답에 recommendations 포함)
+- 질문 유형 기반 컨텍스트 필터링 (건전성/수익성/성장성/배당/현금 별 관련 계정만 전송)
+- Guided Generation JSON 스키마 (Ollama 구조화 출력용)
+
 ## [0.2.4] - 2026-03-09
 
 ### Added
@@ -21,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Company 클래스에 `report` property 통합
 - agent tools_registry에 report 관련 도구 함수 추가
 - `dartlab.dataDir` property 추가 (데이터 디렉토리 설정)
+
+[0.2.5]: https://github.com/eddmpython/dartlab/compare/v0.2.4...v0.2.5
+[0.2.4]: https://github.com/eddmpython/dartlab/compare/v0.2.0...v0.2.4
 
 ## [0.2.0] - 2026-03-08
 

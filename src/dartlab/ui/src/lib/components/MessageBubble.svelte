@@ -1,11 +1,26 @@
 <script>
 	import { cn } from "$lib/utils.js";
 	import { Badge } from "$lib/components/ui/badge/index.js";
-	import { Database, X, FileText, Code, Wrench, Loader2, Check, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-svelte";
+	import { Database, X, FileText, Code, Wrench, Loader2, Check, TrendingUp, TrendingDown, Minus, AlertTriangle, Clock } from "lucide-svelte";
 
 	let { message } = $props();
 	let openModal = $state(null);
 	let contextTab = $state("rendered");
+
+	let loadingPhase = $derived.by(() => {
+		if (!message.loading) return "";
+		if (message.text) return "응답 생성 중...";
+		if (message.contexts?.length > 0) return "분석 중...";
+		if (message.snapshot) return "데이터 확인 중...";
+		if (message.meta) return "기업 데이터 로딩 중...";
+		return "생각 중...";
+	});
+
+	let latestContextLabel = $derived.by(() => {
+		if (!message.loading || !message.contexts?.length) return "";
+		const last = message.contexts[message.contexts.length - 1];
+		return last?.label || last?.module || "";
+	});
 
 	function renderMarkdown(text) {
 		if (!text) return "";
@@ -99,10 +114,10 @@
 						{/each}
 					</div>
 				</div>
-			{:else if message.loading && !message.text && !message.contexts}
+			{:else if message.loading && !message.text}
 				<div class="flex items-center gap-1.5 mb-3 text-[12px] text-dl-text-dim">
 					<Loader2 size={13} class="animate-spin" />
-					<span>데이터 로딩 중...</span>
+					<span>{loadingPhase}</span>
 				</div>
 			{/if}
 
@@ -126,15 +141,23 @@
 			{/if}
 
 			{#if message.loading && !message.text}
-				<div class="flex items-center gap-1.5 h-6">
-					<span class="typing-dot"></span>
-					<span class="typing-dot delay-1"></span>
-					<span class="typing-dot delay-2"></span>
+				<div class="flex items-center gap-2 h-6 text-[12px] text-dl-text-dim">
+					<Loader2 size={14} class="animate-spin flex-shrink-0" />
+					<span>{loadingPhase}</span>
+					{#if latestContextLabel}
+						<span class="text-dl-text-muted">— {latestContextLabel}</span>
+					{/if}
 				</div>
 			{:else}
 				<div class={cn("prose-dartlab text-[15px] leading-[1.75]", message.error && "text-dl-primary")}>
 					{@html renderMarkdown(message.text)}
 				</div>
+				{#if message.duration && !message.loading}
+					<div class="flex items-center gap-1 mt-2 text-[10px] text-dl-text-dim">
+						<Clock size={10} />
+						<span>{message.duration}초</span>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -148,49 +171,58 @@
 		onclick={(e) => { if (e.target === e.currentTarget) openModal = null; }}
 		onkeydown={(e) => { if (e.key === "Escape") openModal = null; }}
 	>
-		<div class="w-full max-w-3xl max-h-[80vh] bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-			<div class="flex items-center justify-between px-5 pt-4 pb-2 flex-shrink-0">
-				<div class="flex items-center gap-3">
-					<div class="flex items-center gap-1.5 text-[13px] font-medium text-dl-text">
-						<Database size={14} />
-						{ctx.label || ctx.module}
+		<div class="w-full max-w-3xl max-h-[80vh] mx-4 bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+			<div class="flex-shrink-0 border-b border-dl-border/50">
+				<div class="flex items-center justify-between px-5 pt-4 pb-3">
+					<div class="flex items-center gap-1.5 text-[14px] font-medium text-dl-text">
+						<Database size={15} class="flex-shrink-0" />
+						<span>{ctx.label || ctx.module}</span>
 					</div>
-					<div class="flex items-center gap-0.5 bg-dl-bg-darker rounded-lg p-0.5">
+					<div class="flex items-center gap-2">
+						<div class="flex items-center gap-0.5 bg-dl-bg-darker rounded-lg p-0.5">
+							<button
+								class={cn(
+									"flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors",
+									contextTab === "rendered"
+										? "bg-dl-bg-card text-dl-text shadow-sm"
+										: "text-dl-text-dim hover:text-dl-text-muted"
+								)}
+								onclick={() => contextTab = "rendered"}
+							>
+								<FileText size={11} />
+								렌더링
+							</button>
+							<button
+								class={cn(
+									"flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors",
+									contextTab === "raw"
+										? "bg-dl-bg-card text-dl-text shadow-sm"
+										: "text-dl-text-dim hover:text-dl-text-muted"
+								)}
+								onclick={() => contextTab = "raw"}
+							>
+								<Code size={11} />
+								원문
+							</button>
+						</div>
 						<button
-							class={cn(
-								"flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors",
-								contextTab === "rendered"
-									? "bg-dl-bg-card text-dl-text shadow-sm"
-									: "text-dl-text-dim hover:text-dl-text-muted"
-							)}
-							onclick={() => contextTab = "rendered"}
+							class="p-1 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
+							onclick={() => openModal = null}
 						>
-							<FileText size={11} />
-							렌더링
-						</button>
-						<button
-							class={cn(
-								"flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors",
-								contextTab === "raw"
-									? "bg-dl-bg-card text-dl-text shadow-sm"
-									: "text-dl-text-dim hover:text-dl-text-muted"
-							)}
-							onclick={() => contextTab = "raw"}
-						>
-							<Code size={11} />
-							원문
+							<X size={18} />
 						</button>
 					</div>
-
-					{#if message.contexts.length > 1}
-						<div class="flex items-center gap-1 ml-2">
+				</div>
+				{#if message.contexts.length > 1}
+					<div class="px-5 pb-2.5 overflow-x-auto scrollbar-hide">
+						<div class="flex items-center gap-1.5">
 							{#each message.contexts as _, idx}
 								<button
 									class={cn(
-										"px-1.5 py-0.5 rounded text-[9px] transition-colors",
+										"px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition-colors flex-shrink-0",
 										idx === openModal
-											? "bg-dl-primary/20 text-dl-primary-light"
-											: "bg-dl-bg-darker text-dl-text-dim hover:text-dl-text-muted"
+											? "bg-dl-primary/20 text-dl-primary-light font-medium"
+											: "bg-dl-bg-darker text-dl-text-dim hover:text-dl-text-muted hover:bg-dl-bg-darker/80"
 									)}
 									onclick={() => { openModal = idx; }}
 								>
@@ -198,14 +230,8 @@
 								</button>
 							{/each}
 						</div>
-					{/if}
-				</div>
-				<button
-					class="p-1 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
-					onclick={() => openModal = null}
-				>
-					<X size={18} />
-				</button>
+					</div>
+				{/if}
 			</div>
 
 			<div class="flex-1 overflow-y-auto px-5 pb-5 min-h-0">
@@ -221,13 +247,3 @@
 	</div>
 {/if}
 
-<style>
-	.typing-dot {
-		width: 8px; height: 8px; border-radius: 50%;
-		background: var(--color-dl-text-dim);
-		display: inline-block;
-		animation: typing 1.2s infinite;
-	}
-	.typing-dot.delay-1 { animation-delay: 0.2s; }
-	.typing-dot.delay-2 { animation-delay: 0.4s; }
-</style>

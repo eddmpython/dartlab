@@ -6,6 +6,7 @@ const modules = import.meta.glob(
 		'@docs/user-guide/*.md',
 		'@docs/api/*.md',
 		'@docs/tutorials/*.md',
+		'@docs/changelog.md',
 		'!@docs/**/STATUS.md',
 		'!@docs/index.md'
 	],

@@ -27,8 +27,7 @@ class OpenAICompatProvider(BaseProvider):
 			except ImportError:
 				raise ImportError(
 					"openai 패키지가 필요합니다.\n"
-					"  pip install dartlab[llm]\n"
-					"  또는: pip install openai"
+					"  uv add dartlab[llm]"
 				)
 			kwargs = {}
 			if self.config.api_key:

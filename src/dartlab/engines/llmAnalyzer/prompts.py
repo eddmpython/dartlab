@@ -958,3 +958,109 @@ def extract_response_meta(response_text: str) -> dict[str, Any]:
 	meta["has_conclusion"] = any(kw in response_text for kw in conclusion_keywords)
 
 	return meta
+
+
+# ══════════════════════════════════════
+# Guided Generation — JSON 구조 강제 (Ollama)
+# ══════════════════════════════════════
+
+GUIDED_SCHEMA: dict[str, Any] = {
+	"type": "object",
+	"properties": {
+		"summary": {
+			"type": "string",
+			"description": "핵심 요약 1~2문장",
+		},
+		"metrics": {
+			"type": "array",
+			"description": "분석 지표 3~8개",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {"type": "string", "description": "지표명"},
+					"value": {"type": "string", "description": "값 (예: 45.2%)"},
+					"year": {"type": "string", "description": "연도"},
+					"trend": {"type": "string", "description": "한 단어: 개선/악화/유지/급등/급락"},
+					"assessment": {"type": "string", "description": "한 단어: 양호/주의/위험/우수"},
+				},
+				"required": ["name", "value", "year", "trend", "assessment"],
+			},
+		},
+		"positives": {
+			"type": "array",
+			"description": "긍정 신호 1~3개",
+			"items": {"type": "string"},
+		},
+		"risks": {
+			"type": "array",
+			"description": "리스크 0~3개",
+			"items": {
+				"type": "object",
+				"properties": {
+					"description": {"type": "string"},
+					"severity": {"type": "string", "description": "낮음/보통/높음"},
+				},
+				"required": ["description", "severity"],
+			},
+		},
+		"grade": {
+			"type": "string",
+			"description": "종합 등급 (A+/A/B+/B/B-/C/D/F 또는 양호/보통/주의/위험)",
+		},
+		"conclusion": {
+			"type": "string",
+			"description": "결론 2~3문장, 근거 요약 포함",
+		},
+	},
+	"required": ["summary", "metrics", "positives", "risks", "grade", "conclusion"],
+}
+
+
+def guided_json_to_markdown(data: dict[str, Any]) -> str:
+	"""Guided Generation JSON 응답을 마크다운으로 변환."""
+	parts: list[str] = []
+
+	grade = data.get("grade", "")
+	summary = data.get("summary", "")
+	if summary:
+		parts.append(f"**{summary}**")
+		parts.append("")
+
+	metrics = data.get("metrics", [])
+	if metrics:
+		parts.append("## 핵심 지표")
+		parts.append("| 지표 | 값 | 연도 | 추세 | 판단 |")
+		parts.append("|------|-----|------|------|------|")
+		for m in metrics:
+			name = m.get("name", "-")
+			value = m.get("value", "-")
+			year = m.get("year", "-")
+			trend = m.get("trend", "-")
+			assessment = m.get("assessment", "-")
+			parts.append(f"| {name} | **{value}** | {year} | {trend} | {assessment} |")
+		parts.append("")
+
+	positives = data.get("positives", [])
+	if positives:
+		parts.append("## 긍정 신호")
+		for p in positives:
+			parts.append(f"- {p}")
+		parts.append("")
+
+	risks = data.get("risks", [])
+	if risks:
+		parts.append("## 리스크")
+		for r in risks:
+			desc = r.get("description", "-") if isinstance(r, dict) else str(r)
+			severity = r.get("severity", "") if isinstance(r, dict) else ""
+			severity_badge = f" [{severity}]" if severity else ""
+			parts.append(f"- ⚠️ {desc}{severity_badge}")
+		parts.append("")
+
+	conclusion = data.get("conclusion", "")
+	if conclusion:
+		grade_badge = f" **[{grade}]**" if grade else ""
+		parts.append(f"## 결론{grade_badge}")
+		parts.append(conclusion)
+
+	return "\n".join(parts)

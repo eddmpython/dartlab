@@ -5,8 +5,8 @@
 	let copiedIdx = $state(-1);
 
 	const commands = [
-		{ label: 'uv (recommended)', cmd: 'uv add dartlab', highlight: true },
-		{ label: 'pip', cmd: 'pip install dartlab', highlight: false }
+		{ label: 'uv', cmd: 'uv add dartlab', highlight: true },
+		{ label: 'AI 기업분석', cmd: 'uv add dartlab[ai] && uv run dartlab ai', highlight: false }
 	];
 
 	async function copy(idx: number) {

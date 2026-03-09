@@ -35,7 +35,7 @@ class ClaudeProvider(BaseProvider):
 			except ImportError:
 				raise ImportError(
 					"openai 패키지가 필요합니다 (프록시 모드).\n"
-					"  pip install dartlab[llm]"
+					"  uv add dartlab[llm]"
 				)
 			self._client = OpenAI(
 				api_key=self.config.api_key or "proxy",
@@ -49,8 +49,7 @@ class ClaudeProvider(BaseProvider):
 			except ImportError:
 				raise ImportError(
 					"anthropic 패키지가 필요합니다.\n"
-					"  pip install dartlab[llm-anthropic]\n"
-					"  또는: pip install anthropic\n\n"
+					"  uv add dartlab[llm-anthropic]\n\n"
 					"프록시를 사용하려면 base_url을 설정하세요:\n"
 					"  dartlab.llm.configure(provider='claude', base_url='http://...')"
 				)

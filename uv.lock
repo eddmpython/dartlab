@@ -181,6 +181,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+ai = [
+    { name = "fastapi" },
+    { name = "sse-starlette" },
+    { name = "uvicorn", extra = ["standard"] },
+]
 all = [
     { name = "anthropic" },
     { name = "fastapi" },
@@ -217,8 +222,9 @@ requires-dist = [
     { name = "alive-progress", specifier = ">=3.3.0" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.30.0" },
     { name = "anthropic", marker = "extra == 'llm-anthropic'", specifier = ">=0.30.0" },
+    { name = "dartlab", extras = ["ai"], marker = "extra == 'ui'" },
+    { name = "fastapi", marker = "extra == 'ai'", specifier = ">=0.135.1" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.135.1" },
-    { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.135.1" },
     { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'llm'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'llm-anthropic'", specifier = ">=1.0.0" },
@@ -227,12 +233,12 @@ requires-dist = [
     { name = "polars", specifier = ">=1.0.0" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "rich", specifier = ">=14.3.3" },
+    { name = "sse-starlette", marker = "extra == 'ai'", specifier = ">=2.0.0" },
     { name = "sse-starlette", marker = "extra == 'all'", specifier = ">=2.0.0" },
-    { name = "sse-starlette", marker = "extra == 'ui'", specifier = ">=2.0.0" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'ai'", specifier = ">=0.30.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30.0" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'ui'", specifier = ">=0.30.0" },
 ]
-provides-extras = ["llm", "llm-anthropic", "charts", "ui", "all"]
+provides-extras = ["llm", "llm-anthropic", "charts", "ai", "ui", "all"]
 
 [package.metadata.requires-dev]
 dev = [

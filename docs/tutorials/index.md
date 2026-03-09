@@ -20,7 +20,7 @@ DartLab의 핵심 기능을 단계별로 익힌다. 각 튜토리얼은 Google C
 Colab에서 실행하면 별도 설치가 필요 없다. 로컬에서 실행하려면 먼저 설치한다.
 
 ```bash
-pip install dartlab
+uv add dartlab
 ```
 
 데이터는 종목코드를 입력하면 GitHub Releases에서 자동 다운로드된다.

@@ -1,8 +1,8 @@
 """DartLab Web Server — FastAPI + SSE 스트리밍.
 
-dartlab ui 명령으로 실행:
-    dartlab ui              # http://localhost:8400
-    dartlab ui --port 9000  # 커스텀 포트
+dartlab ai 명령으로 실행:
+    dartlab ai              # http://localhost:8400
+    dartlab ai --port 9000  # 커스텀 포트
 """
 
 from __future__ import annotations
@@ -26,6 +26,25 @@ from dartlab import Company
 
 
 app = FastAPI(title="DartLab", version=dartlab.__version__ if hasattr(dartlab, "__version__") else "0.2.0")
+
+
+@app.on_event("startup")
+async def _preload_ollama():
+	"""서버 시작 시 Ollama 모델을 메모리에 미리 로딩 (cold start 제거)."""
+	try:
+		from dartlab.engines.llmAnalyzer.providers import create_provider
+		from dartlab.engines.llmAnalyzer.types import LLMConfig
+
+		config = LLMConfig(provider="ollama")
+		provider = create_provider(config)
+		if hasattr(provider, "preload") and provider.check_available():
+			import asyncio
+			ok = await asyncio.to_thread(provider.preload)
+			if ok:
+				print(f"  Ollama 모델 preload 완료: {provider.resolved_model}")
+	except Exception:
+		pass
+
 
 app.add_middleware(
 	CORSMiddleware,
@@ -181,14 +200,18 @@ def api_models(provider: str):
 	if provider in CLI_MODELS:
 		return {"models": CLI_MODELS[provider]}
 
-	# Ollama: 로컬 설치된 모델 조회
+	# Ollama: 로컬 설치된 모델 조회 + 추천 정보
 	if provider == "ollama":
 		try:
 			config = LLMConfig(provider="ollama")
 			prov = create_provider(config)
-			return {"models": prov.get_installed_models()}
+			installed = prov.get_installed_models()
+			return {
+				"models": installed,
+				"recommendations": _OLLAMA_MODEL_GUIDE,
+			}
 		except Exception:
-			return {"models": []}
+			return {"models": [], "recommendations": _OLLAMA_MODEL_GUIDE}
 
 	# OpenAI: SDK의 models.list() 사용
 	if provider == "openai":
@@ -370,6 +393,15 @@ def api_company_modules(code: str):
 	except Exception as e:
 		raise HTTPException(status_code=404, detail=str(e))
 
+
+_OLLAMA_MODEL_GUIDE: list[dict[str, str]] = [
+	{"name": "qwen3", "size": "8B", "vram": "~6GB", "quality": "높음", "speed": "보통", "note": "한국어 재무분석에 가장 추천"},
+	{"name": "gemma2", "size": "9B", "vram": "~7GB", "quality": "높음", "speed": "보통", "note": "다국어 성능 우수"},
+	{"name": "llama3.2", "size": "3B", "vram": "~3GB", "quality": "보통", "speed": "빠름", "note": "저사양 PC 추천"},
+	{"name": "mistral", "size": "7B", "vram": "~5GB", "quality": "보통", "speed": "빠름", "note": "영문 질문에 강함"},
+	{"name": "phi4", "size": "14B", "vram": "~10GB", "quality": "매우높음", "speed": "느림", "note": "GPU 12GB+ 추천"},
+	{"name": "qwen3:14b", "size": "14B", "vram": "~10GB", "quality": "매우높음", "speed": "느림", "note": "최고 품질, 고사양 PC"},
+]
 
 _COMPANY_SUFFIXES = ("차", "전자", "그룹", "건설", "화학", "제약", "바이오", "증권", "보험", "은행", "금융", "지주", "산업", "통신", "에너지")
 
@@ -849,12 +881,45 @@ async def _stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str 
 
 		llm = create_provider(config_)
 
-		# tool calling 지원 여부 확인
-		use_tools = c is not None and hasattr(llm, "complete_with_tools")
+		use_guided = (
+			use_compact
+			and c is not None
+			and hasattr(llm, "complete_json")
+		)
+		use_tools = c is not None and not use_guided and hasattr(llm, "complete_with_tools")
 
 		full_response_parts: list[str] = []
+		done_payload: dict[str, Any] = {}
 
-		if use_tools:
+		if use_guided:
+			from dartlab.engines.llmAnalyzer.prompts import GUIDED_SCHEMA, guided_json_to_markdown
+
+			resp = await asyncio.to_thread(llm.complete_json, messages, GUIDED_SCHEMA)
+			raw_json = resp.answer
+			try:
+				parsed = json.loads(raw_json)
+				md_text = guided_json_to_markdown(parsed)
+				done_payload["guidedRaw"] = parsed
+				if parsed.get("grade"):
+					done_payload["responseMeta"] = {
+						"grade": parsed["grade"],
+						"has_conclusion": bool(parsed.get("conclusion")),
+						"signals": {
+							"positive": [p[:20] for p in parsed.get("positives", [])[:3]],
+							"negative": [r.get("description", "")[:20] for r in parsed.get("risks", [])[:3] if isinstance(r, dict)],
+						},
+						"tables_count": 1,
+					}
+			except (json.JSONDecodeError, ValueError):
+				md_text = raw_json
+
+			full_response_parts.append(md_text)
+			yield {
+				"event": "chunk",
+				"data": json.dumps({"text": md_text}, ensure_ascii=False),
+			}
+
+		elif use_tools:
 			from dartlab.engines.llmAnalyzer.agent import agent_loop, AGENT_SYSTEM_ADDITION
 
 			messages[0]["content"] += AGENT_SYSTEM_ADDITION
@@ -917,7 +982,6 @@ async def _stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str 
 					"data": json.dumps({"text": chunk}, ensure_ascii=False),
 				}
 
-		done_payload: dict[str, Any] = {}
 		if c and full_response_parts:
 			from dartlab.engines.llmAnalyzer.prompts import extract_response_meta
 			full_text = "".join(full_response_parts)
@@ -976,7 +1040,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8400):
 		sock.close()
 	except OSError:
 		print(f"\n  오류: 포트 {port}이 이미 사용 중입니다.", file=sys.stderr)
-		print(f"  다른 포트를 사용하세요: dartlab ui --port {port + 1}\n", file=sys.stderr)
+		print(f"  다른 포트를 사용하세요: dartlab ai --port {port + 1}\n", file=sys.stderr)
 		return
 
 	uvicorn.run(app, host=host, port=port, log_level="info")

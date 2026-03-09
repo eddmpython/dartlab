@@ -34,12 +34,32 @@ All data is accessed through simple properties on a `Company` object, following 
 
 ## Installation
 
-```bash
-pip install dartlab
-```
+> **[uv](https://docs.astral.sh/uv/)** is required — a fast Python package manager written in Rust. It handles Python version management and virtual environments automatically.
 
 ```bash
-uv add dartlab
+# 1. Install uv (skip if already installed)
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Create a project
+uv init my-analysis && cd my-analysis
+
+# 3. Install DartLab — pick the extras you need
+uv add dartlab              # Core (financial statement parsing)
+uv add dartlab[ai]          # + AI analysis web interface (dartlab ai)
+uv add dartlab[llm]         # + OpenAI/Ollama LLM (CLI analysis)
+uv add dartlab[charts]      # + Plotly charts
+uv add dartlab[all]         # Everything
+
+# 4. Verify
+uv run python -c "from dartlab import Company; print(Company('005930').corpName)"
+# → 삼성전자
+
+# 5. Launch AI analysis (requires dartlab[ai])
+uv run dartlab ai
+# → http://localhost:8400
 ```
 
 ## Quick Start
@@ -245,15 +265,9 @@ c.rawReport      # Original periodic report parquet (unprocessed)
 
 ## AI Analysis (dartlab ai)
 
-Chat with an LLM over DartLab's structured data to analyze companies interactively.
+Chat with an LLM over DartLab's structured data to analyze companies interactively — `uv run dartlab ai` opens the web UI at `http://localhost:8400`.
 
-```bash
-pip install dartlab[ui]
-dartlab ai
-# → http://localhost:8400
-```
-
-Provides all extracted data — financial statements, notes, dividends, executives, governance — as context for natural-language Q&A with streaming responses.
+All extracted data (financial statements, notes, dividends, executives, governance) is provided as context for natural-language Q&A with streaming responses.
 
 > **Currently supported LLM: Ollama (local)**
 >

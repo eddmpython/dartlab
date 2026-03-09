@@ -763,6 +763,33 @@ class Company:
         """
         return self._getFinanceBuild("cum", "CFS")
 
+    # ── 인사이트 분석 ──
+
+    @property
+    def insights(self):
+        """종합 인사이트 분석 (7영역 등급 + 이상치 + 요약).
+
+        Returns:
+            AnalysisResult 또는 finance 데이터 없으면 None.
+
+        Example::
+
+            c = Company("005930")
+            c.insights.grades()       # {'performance': 'A', ...}
+            c.insights.summary        # "삼성전자는 실적, 재무건전성 등..."
+            c.insights.anomalies      # [Anomaly(...), ...]
+            c.insights.profile        # "premium"
+        """
+        if not self._hasFinance:
+            return None
+        cacheKey = "_insights"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.insightEngine import analyze
+        result = analyze(self.stockCode, company=self)
+        self._cache[cacheKey] = result
+        return result
+
     # ── 전체 추출 ──
 
     def all(self) -> dict[str, Any]:

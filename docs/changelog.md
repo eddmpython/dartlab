@@ -9,6 +9,34 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-03-09
+
+### Changed
+
+**`dartlab[ui]` → `dartlab[ai]` 리네이밍**
+- AI 기업분석 optional dependency를 `[ai]`로 변경 (`dartlab ai` CLI 명령과 일치)
+- `dartlab[ui]`는 하위호환 alias로 유지
+- `dartlab ui` CLI 실행 시 `dartlab ai`로 변경 안내
+
+**uv 통일**
+- 전체 문서에서 pip 참조 제거, uv 설치 방법으로 통일
+
+### Added
+
+**insightEngine — 종합 인사이트 분석 엔진**
+- 7영역(실적, 수익성, 재무건전성, 현금흐름, 성장성, 지배구조, 밸류에이션) 등급 분석
+- 이상치 탐지 + 요약 텍스트 자동 생성
+- Company 클래스에 `insights` property 통합
+
+**AI 웹 인터페이스 UX 개선**
+- 로딩 단계 표시, 응답 경과시간 배지, 대화 삭제 확인 팝업
+- context 모달 헤더 레이아웃 수정
+
+**Ollama 최적화**
+- 서버 시작 시 모델 preload (cold start 제거)
+- 모델 추천 가이드 API
+- 질문 유형 기반 컨텍스트 필터링
+
 ## [0.2.4] - 2026-03-09
 
 ### Added

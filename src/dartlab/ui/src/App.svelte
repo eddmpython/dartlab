@@ -47,6 +47,9 @@
 	let pullPercent = $state(0);
 	let pullHandle = $state(null);
 
+	// Delete confirmation
+	let deleteConfirmId = $state(null);
+
 	// Toast
 	let toastMessage = $state("");
 	let toastType = $state("error");
@@ -280,7 +283,14 @@
 		if (currentStream) { currentStream.abort(); currentStream = null; }
 	}
 
-	function handleDeleteConversation(id) { store.deleteConversation(id); }
+	function handleDeleteConversation(id) { deleteConfirmId = id; }
+
+	function confirmDelete() {
+		if (deleteConfirmId) {
+			store.deleteConversation(deleteConfirmId);
+			deleteConfirmId = null;
+		}
+	}
 
 	async function sendMessage() {
 		const question = inputText.trim();
@@ -299,7 +309,7 @@
 		isLoading = true;
 
 		store.addMessage("assistant", "");
-		store.updateLastMessage({ loading: true });
+		store.updateLastMessage({ loading: true, startedAt: Date.now() });
 		scrollTrigger++;
 
 		// 멀티턴: 이전 대화 기록을 서버에 전달 (현재 추가한 user 메시지 제외)
@@ -361,7 +371,12 @@
 					scrollTrigger++;
 				},
 				onDone() {
-					store.updateLastMessage({ loading: false });
+					const conv = store.active;
+					const last = conv?.messages[conv.messages.length - 1];
+					const duration = last?.startedAt
+						? ((Date.now() - last.startedAt) / 1000).toFixed(1)
+						: null;
+					store.updateLastMessage({ loading: false, duration });
 					isLoading = false;
 					currentStream = null;
 					scrollTrigger++;
@@ -397,7 +412,9 @@
 			e.preventDefault();
 			toggleSidebar();
 		}
-		if (e.key === 'Escape' && showSettings) {
+		if (e.key === 'Escape' && deleteConfirmId) {
+			deleteConfirmId = null;
+		} else if (e.key === 'Escape' && showSettings) {
 			showSettings = false;
 		}
 	}
@@ -886,6 +903,35 @@
 					onclick={() => showSettings = false}
 				>
 					닫기
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete confirmation -->
+{#if deleteConfirmId}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn"
+		onclick={(e) => { if (e.target === e.currentTarget) deleteConfirmId = null; }}
+		onkeydown={() => {}}
+	>
+		<div class="w-full max-w-xs bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl p-5">
+			<div class="text-[14px] font-medium text-dl-text mb-1.5">대화 삭제</div>
+			<div class="text-[12px] text-dl-text-muted mb-4">이 대화를 삭제하시겠습니까? 삭제된 대화는 복구할 수 없습니다.</div>
+			<div class="flex items-center justify-end gap-2">
+				<button
+					class="px-3.5 py-1.5 rounded-lg text-[12px] text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
+					onclick={() => deleteConfirmId = null}
+				>
+					취소
+				</button>
+				<button
+					class="px-3.5 py-1.5 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors"
+					onclick={confirmDelete}
+				>
+					삭제
 				</button>
 			</div>
 		</div>

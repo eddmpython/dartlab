@@ -196,14 +196,46 @@ _FE_DISPLAY_ACCOUNTS = {
 }
 
 
+_QUESTION_ACCOUNT_FILTER: dict[str, dict[str, set[str]]] = {
+	"건전성": {
+		"BS": {"total_assets", "total_liabilities", "total_equity", "current_assets", "current_liabilities", "cash_and_equivalents", "short_term_borrowings", "long_term_borrowings"},
+		"IS": {"operating_income", "finance_cost", "net_income"},
+		"CF": {"operating_cashflow", "investing_cashflow"},
+	},
+	"수익성": {
+		"IS": {"revenue", "cost_of_sales", "gross_profit", "selling_and_administrative_expenses", "operating_income", "net_income"},
+		"BS": {"total_equity", "total_assets"},
+	},
+	"성장성": {
+		"IS": {"revenue", "operating_income", "net_income"},
+		"CF": {"operating_cashflow"},
+	},
+	"배당": {
+		"IS": {"net_income"},
+		"BS": {"total_equity"},
+	},
+	"현금": {
+		"CF": {"operating_cashflow", "investing_cashflow", "financing_cashflow", "cash_and_cash_equivalents_end"},
+		"BS": {"cash_and_equivalents"},
+	},
+}
+
+
 def _build_finance_engine_section(
 	series: dict,
 	years: list[str],
 	sj_div: str,
 	n_years: int,
+	account_filter: set[str] | None = None,
 ) -> str | None:
-	"""financeEngine annual series → compact 마크다운 테이블."""
+	"""financeEngine annual series → compact 마크다운 테이블.
+
+	Args:
+		account_filter: 이 set에 속한 snake_id만 표시. None이면 전체.
+	"""
 	accounts = _FE_DISPLAY_ACCOUNTS.get(sj_div, [])
+	if account_filter:
+		accounts = [(sid, label) for sid, label in accounts if sid in account_filter]
 	if not accounts:
 		return None
 
@@ -362,6 +394,14 @@ def build_context_by_module(
 	except Exception:
 		pass
 
+	acct_filters: dict[str, set[str]] = {}
+	if compact:
+		from dartlab.engines.llmAnalyzer.prompts import _classify_question_multi
+		q_types = _classify_question_multi(question, max_types=2)
+		for qt in q_types:
+			for sj, ids in _QUESTION_ACCOUNT_FILTER.get(qt, {}).items():
+				acct_filters.setdefault(sj, set()).update(ids)
+
 	fe_loaded = False
 	annual = getattr(company, "annual", None)
 	if annual is not None:
@@ -372,7 +412,8 @@ def build_context_by_module(
 			header_parts.append(f"\n**데이터 기준: {yr_min}~{yr_max}년** (가장 최근: {yr_max}년, 금액: 억/조원)\n")
 
 			for sj in ("IS", "BS", "CF"):
-				section = _build_finance_engine_section(series, years, sj, n_years)
+				af = acct_filters.get(sj) if acct_filters else None
+				section = _build_finance_engine_section(series, years, sj, n_years, af)
 				if section:
 					modules_dict[sj] = section
 					included.append(sj)

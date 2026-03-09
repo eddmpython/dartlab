@@ -60,6 +60,24 @@ class OllamaProvider(BaseProvider):
 		except Exception:
 			return []
 
+	def preload(self) -> bool:
+		"""모델을 메모리에 미리 로딩 (keep_alive=-1).
+
+		서버 시작 시 호출하면 첫 질문의 cold start 지연을 제거한다.
+		Ollama native API 사용 (OpenAI 호환 API는 keep_alive 미지원).
+		"""
+		import requests
+
+		try:
+			resp = requests.post(
+				f"{OLLAMA_DEFAULT_URL}/api/generate",
+				json={"model": self.resolved_model, "prompt": "", "keep_alive": -1, "stream": False},
+				timeout=60,
+			)
+			return resp.status_code == 200
+		except (requests.ConnectionError, requests.Timeout):
+			return False
+
 	def _ensure_available(self):
 		if not self.check_available():
 			from dartlab.engines.llmAnalyzer.ollama_setup import get_install_guide
@@ -77,8 +95,7 @@ class OllamaProvider(BaseProvider):
 			except ImportError:
 				raise ImportError(
 					"openai 패키지가 필요합니다.\n"
-					"  pip install dartlab[llm]\n"
-					"  또는: pip install openai"
+					"  uv add dartlab[llm]"
 				)
 			self._client = OpenAI(base_url=self._base_url, api_key="ollama")
 		return self._client
@@ -107,6 +124,37 @@ class OllamaProvider(BaseProvider):
 		for chunk in stream:
 			if chunk.choices and chunk.choices[0].delta.content:
 				yield chunk.choices[0].delta.content
+
+	def complete_json(
+		self,
+		messages: list[dict[str, str]],
+		schema: dict | None = None,
+	) -> LLMResponse:
+		"""JSON 구조 강제 completion (Guided Generation).
+
+		Args:
+			schema: JSON Schema dict. None이면 단순 json_object 모드.
+		"""
+		client = self._get_client()
+		if schema:
+			response_format = {
+				"type": "json_schema",
+				"json_schema": {"name": "analysis", "schema": schema},
+			}
+		else:
+			response_format = {"type": "json_object"}
+
+		response = client.chat.completions.create(
+			model=self.resolved_model,
+			messages=messages,
+			temperature=self.config.temperature,
+			response_format=response_format,
+		)
+		return LLMResponse(
+			answer=response.choices[0].message.content or "",
+			provider="ollama",
+			model=self.resolved_model,
+		)
 
 	def complete_with_tools(
 		self,

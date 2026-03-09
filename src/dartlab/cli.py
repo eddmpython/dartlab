@@ -81,6 +81,8 @@ def main():
 	elif args.command == "setup":
 		_cmd_setup(args)
 	elif args.command in ("ai", "ui"):
+		if args.command == "ui":
+			print("  ℹ  dartlab ui → dartlab ai 로 변경되었습니다. dartlab ai를 사용하세요.\n")
 		_cmd_ui(args)
 
 

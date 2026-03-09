@@ -166,8 +166,8 @@ class ClaudeCodeProvider(BaseProvider):
 			raise ImportError(
 				"Claude Code CLI가 현재 환경에서 작동하지 않습니다 (VSCode 중첩 세션).\n"
 				"SDK fallback을 위해 anthropic 패키지가 필요합니다:\n"
-				"  pip install anthropic\n\n"
-				"또는 별도 터미널에서 dartlab ui를 실행하세요."
+				"  uv add anthropic\n\n"
+				"또는 별도 터미널에서 dartlab ai를 실행하세요."
 			)
 
 		api_key = self._get_sdk_api_key()
@@ -176,7 +176,7 @@ class ClaudeCodeProvider(BaseProvider):
 				"Claude Code CLI가 현재 환경에서 작동하지 않습니다 (VSCode 중첩 세션).\n\n"
 				"해결 방법:\n"
 				"1. Settings에서 'Anthropic Claude' provider로 전환 후 API 키 입력\n"
-				"2. 또는 별도 터미널(PowerShell/CMD)에서 dartlab ui 실행"
+				"2. 또는 별도 터미널(PowerShell/CMD)에서 dartlab ai 실행"
 			)
 
 		self._sdk_client = Anthropic(api_key=api_key)

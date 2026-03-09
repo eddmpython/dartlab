@@ -106,15 +106,16 @@ uv run python -c "from dartlab import Company; c = Company('005930'); print(c.co
 
 ---
 
-## 이미 Python이 있는 경우
+## AI 기업분석 (dartlab ai)
 
-Python과 pip가 이미 설치되어 있다면 바로 설치할 수 있다.
+LLM과 대화하며 기업을 분석하는 웹 인터페이스를 사용하려면 AI 의존성을 함께 설치한다.
 
 ```bash
-pip install dartlab
+uv add dartlab[ai]
+uv run dartlab ai
 ```
 
-다만 uv를 사용하는 것을 권장한다. 속도와 환경 관리 모두 우월하다.
+브라우저에서 `http://localhost:8400` 이 열린다. Ollama가 필요하다 — [ollama.com](https://ollama.com/download)에서 설치 후 `ollama pull gemma3`으로 모델을 받으면 된다.
 
 ---
 

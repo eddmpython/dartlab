@@ -43,8 +43,7 @@ def _ensure_plotly():
 	except ImportError:
 		raise ImportError(
 			"plotly 패키지가 필요합니다.\n"
-			"  pip install dartlab[charts]\n"
-			"  또는: pip install plotly"
+			"  uv add dartlab[charts]"
 		) from None
 
 
