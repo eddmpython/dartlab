@@ -788,6 +788,34 @@ class KRCompany:
         self._cache[cacheKey] = result
         return result
 
+    @property
+    def ratioSeries(self):
+        """재무비율 연도별 시계열 (IS/BS/CF와 동일한 dict 구조).
+
+        Returns:
+            ({"RATIO": {snakeId: [v1, v2, ...]}}, years) 또는 None.
+
+        Example::
+
+            c = Company("005930")
+            series, years = c.ratioSeries
+            series["RATIO"]["roe"]  # [8.69, 13.20, 16.55, ...]
+        """
+        if not self._hasFinance:
+            return None
+        cacheKey = "_ratioSeries_CFS"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        annualResult = self.annual
+        if annualResult is None:
+            return None
+        annualSeries, years = annualResult
+        from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+        rs = calcRatioSeries(annualSeries, years)
+        result = toSeriesDict(rs)
+        self._cache[cacheKey] = result
+        return result
+
     # ── 섹터 분류 ──
 
     @property
@@ -1198,7 +1226,7 @@ def _isUSTicker(s: str) -> bool:
     return bool(re.match(r"^[A-Za-z]{1,5}$", s))
 
 
-def Company(codeOrName: str) -> KRCompany:
+def Company(codeOrName: str) -> "KRCompany":
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성.
 
     판별 규칙:

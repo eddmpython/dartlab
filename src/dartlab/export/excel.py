@@ -40,7 +40,7 @@ _ACCOUNT_FONT = Font(bold=True, size=10)
 _NEGATIVE_FMT = '#,##0;[Red]-#,##0'
 _NUMBER_FMT = '#,##0'
 
-_SJ_LABELS = {"IS": "손익계산서", "BS": "재무상태표", "CF": "현금흐름표"}
+_SJ_LABELS = {"IS": "손익계산서", "BS": "재무상태표", "CF": "현금흐름표", "RATIO": "재무비율"}
 
 _ACCOUNT_LABELS_OVERRIDE: dict[str, str] = {
 	"owners_of_parent_equity": "자본총계(지배)",
@@ -50,6 +50,53 @@ _ACCOUNT_LABELS_OVERRIDE: dict[str, str] = {
 	"capex": "유형자산취득",
 	"rnd_expenses": "연구개발비",
 	"amortization": "무형자산상각비",
+}
+
+_RATIO_LABELS: dict[str, str] = {
+	"roe": "ROE (%)",
+	"roa": "ROA (%)",
+	"operatingMargin": "영업이익률 (%)",
+	"netMargin": "순이익률 (%)",
+	"grossMargin": "매출총이익률 (%)",
+	"ebitdaMargin": "EBITDA마진 (%)",
+	"costOfSalesRatio": "매출원가율 (%)",
+	"sgaRatio": "판관비율 (%)",
+	"debtRatio": "부채비율 (%)",
+	"currentRatio": "유동비율 (%)",
+	"quickRatio": "당좌비율 (%)",
+	"equityRatio": "자기자본비율 (%)",
+	"interestCoverage": "이자보상배율 (x)",
+	"netDebtRatio": "순차입금비율 (%)",
+	"noncurrentRatio": "비유동비율 (%)",
+	"revenueGrowth": "매출성장률 (%)",
+	"operatingProfitGrowth": "영업이익성장률 (%)",
+	"netProfitGrowth": "순이익성장률 (%)",
+	"assetGrowth": "자산성장률 (%)",
+	"equityGrowthRate": "자본성장률 (%)",
+	"totalAssetTurnover": "총자산회전율 (x)",
+	"inventoryTurnover": "재고자산회전율 (x)",
+	"receivablesTurnover": "매출채권회전율 (x)",
+	"payablesTurnover": "매입채무회전율 (x)",
+	"fcf": "FCF",
+	"operatingCfMargin": "영업CF마진 (%)",
+	"operatingCfToNetIncome": "영업CF/순이익 (%)",
+	"capexRatio": "CAPEX비율 (%)",
+	"dividendPayoutRatio": "배당성향 (%)",
+	"revenue": "매출",
+	"operatingProfit": "영업이익",
+	"netProfit": "순이익",
+	"totalAssets": "총자산",
+	"totalEquity": "자본총계",
+	"operatingCashflow": "영업CF",
+}
+
+_CATEGORY_LABELS: dict[str, str] = {
+	"profitability": "수익성",
+	"stability": "안정성",
+	"growth": "성장성",
+	"efficiency": "효율성",
+	"cashflow": "현금흐름",
+	"absolute": "절대지표",
 }
 
 
@@ -144,45 +191,54 @@ def _writeFinanceSheet(
 
 
 def _writeRatiosSheet(wb: Workbook, c: Company, *, label: str = "") -> None:
-	from dartlab.engines.common.finance.ratios import calcRatios
+	from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict, RATIO_CATEGORIES
 
-	ts = c._cache.get("_finance_q_CFS")
-	if ts is None:
+	annualResult = c.annual
+	if annualResult is None:
 		return
-	series, _ = ts
-	ratios = calcRatios(series)
+	annualSeries, years = annualResult
+	rs = calcRatioSeries(annualSeries, years)
+	ratioSeriesDict, _ = toSeriesDict(rs)
+	ratioData = ratioSeriesDict.get("RATIO", {})
+	if not ratioData:
+		return
 
 	ws = wb.create_sheet(title=(label or "재무비율")[:31])
-	_writeHeaders(ws, ["지표", "값", "단위"])
+	_writeHeaders(ws, ["지표"] + years)
 
-	rows = [
-		("영업이익률", ratios.operatingMargin, "%"),
-		("순이익률", ratios.netMargin, "%"),
-		("ROE", ratios.roe, "%"),
-		("ROA", ratios.roa, "%"),
-		("부채비율", ratios.debtRatio, "%"),
-		("유동비율", ratios.currentRatio, "%"),
-		("자기자본비율", ratios.equityRatio, "%"),
-		("순부채비율", ratios.netDebtRatio, "%"),
-		("매출 3Y CAGR", ratios.revenueGrowth3Y, "%"),
-		("FCF (TTM)", ratios.fcf, "원"),
-		("매출 (TTM)", ratios.revenueTTM, "원"),
-		("영업이익 (TTM)", ratios.operatingIncomeTTM, "원"),
-		("순이익 (TTM)", ratios.netIncomeTTM, "원"),
-	]
+	_CATEGORY_FILL = PatternFill(start_color="D6E4F0", end_color="D6E4F0", fill_type="solid")
+	_CATEGORY_FONT = Font(bold=True, size=11, color="1F3864")
 
-	for rowIdx, (rowLabel, val, unit) in enumerate(rows, 2):
-		ws.cell(row=rowIdx, column=1, value=rowLabel).font = _ACCOUNT_FONT
-		if val is not None:
-			if unit == "%":
-				ws.cell(row=rowIdx, column=2, value=round(val, 2))
-				ws.cell(row=rowIdx, column=2).number_format = '0.00'
-			else:
-				ws.cell(row=rowIdx, column=2, value=round(val))
-				ws.cell(row=rowIdx, column=2).number_format = _NUMBER_FMT
-		ws.cell(row=rowIdx, column=3, value=unit)
+	_ABS_FIELDS = {"fcf", "revenue", "operatingProfit", "netProfit",
+		"totalAssets", "totalEquity", "operatingCashflow"}
+
+	row = 2
+	for catKey, fields in RATIO_CATEGORIES:
+		catFields = [f for f in fields if f in ratioData]
+		if not catFields:
+			continue
+
+		catLabel = _CATEGORY_LABELS.get(catKey, catKey)
+		cell = ws.cell(row=row, column=1, value=catLabel)
+		cell.font = _CATEGORY_FONT
+		cell.fill = _CATEGORY_FILL
+		for colIdx in range(2, len(years) + 2):
+			ws.cell(row=row, column=colIdx).fill = _CATEGORY_FILL
+		row += 1
+
+		for fieldName in catFields:
+			vals = ratioData[fieldName]
+			displayLabel = _RATIO_LABELS.get(fieldName, fieldName)
+			ws.cell(row=row, column=1, value=displayLabel).font = _ACCOUNT_FONT
+			isAbs = fieldName in _ABS_FIELDS
+			for colIdx, val in enumerate(vals, 2):
+				if val is not None:
+					cell = ws.cell(row=row, column=colIdx, value=round(val) if isAbs else round(val, 2))
+					cell.number_format = _NEGATIVE_FMT if isAbs else '0.00'
+			row += 1
 
 	_autoWidth(ws)
+	ws.freeze_panes = "B2"
 
 
 def _writeDataFrameSheet(

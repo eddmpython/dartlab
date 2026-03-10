@@ -13,6 +13,8 @@ from dartlab.engines.common.finance.extract import (
 from dartlab.engines.common.finance.ratios import (
     calcRatios,
     calcRatioSeries,
+    toSeriesDict,
+    RATIO_CATEGORIES,
     RatioResult,
     RatioSeriesResult,
 )
@@ -24,6 +26,8 @@ __all__ = [
     "getRevenueGrowth3Y",
     "calcRatios",
     "calcRatioSeries",
+    "toSeriesDict",
+    "RATIO_CATEGORIES",
     "RatioResult",
     "RatioSeriesResult",
 ]

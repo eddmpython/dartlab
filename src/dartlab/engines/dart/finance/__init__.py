@@ -12,7 +12,7 @@ from dartlab.engines.dart.finance.pivot import (
     buildSceAnnual,
 )
 from dartlab.engines.dart.finance.extract import getTTM, getLatest, getAnnualValues, getRevenueGrowth3Y
-from dartlab.engines.dart.finance.ratios import calcRatios
+from dartlab.engines.dart.finance.ratios import calcRatios, calcRatioSeries, toSeriesDict
 from dartlab.engines.dart.finance.mapper import AccountMapper
 
 __all__ = [
@@ -26,5 +26,7 @@ __all__ = [
     "getAnnualValues",
     "getRevenueGrowth3Y",
     "calcRatios",
+    "calcRatioSeries",
+    "toSeriesDict",
     "AccountMapper",
 ]

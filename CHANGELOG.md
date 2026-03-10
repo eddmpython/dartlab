@@ -5,6 +5,38 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-03-10
+
+### Added
+
+**재무비율 시계열 피벗 (engines/common/finance)**
+- `toSeriesDict()` — 연도별 재무비율 시계열을 IS/BS/CF와 동일한 dict 구조로 변환
+- `RATIO_CATEGORIES` — 6카테고리(수익성, 안정성, 성장성, 효율성, 현금흐름, 절대값) 그룹핑 상수
+- `calcRatioSeries`, `toSeriesDict` re-export 추가 (dart/finance, common/finance)
+
+**Company.ratioSeries property**
+- `c.ratioSeries` — 연도별 재무비율 시계열 (`{"RATIO": {snakeId: [v1, v2, ...]}}`, years) 반환
+- IS/BS/CF/SCE와 동일한 패턴으로 재무비율 접근 가능
+
+**Excel 재무비율 시트 개선**
+- 단일시점 세로나열 → 연도별 피벗 테이블로 전면 재작성
+- 카테고리별 섹션 헤더 (수익성, 안정성, 성장성, 효율성, 현금흐름, 절대값) + 색상 구분
+- 35개 비율 한글 라벨 매핑 (`_RATIO_LABELS`)
+- freeze panes (좌측 지표명 고정)
+
+**SCE(자본변동표) spec.py 반영**
+- `dart/finance/spec.py` statements 목록에 SCE 추가
+- normalization 설명에 SCE 매트릭스 피벗 방식 명시
+
+### Fixed
+
+**서버 Company.search 버그 수정**
+- `Company`는 팩토리 함수이므로 `.search()` staticmethod가 존재하지 않던 문제
+- `server/resolve.py`, `server/__init__.py`에서 `Company.search()` → `KRCompany.search()`로 변경
+- `Company()` 팩토리 함수 반환 타입 힌트를 forward reference(`"KRCompany"`)로 수정
+
+[0.3.1]: https://github.com/eddmpython/dartlab/compare/v0.3.0...v0.3.1
+
 ## [0.3.0] - 2026-03-09
 
 ### Changed

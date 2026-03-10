@@ -98,21 +98,28 @@ def test_exportToExcel_no_data_raises(mockCompany):
 
 
 def test_ratios_sheet(mockCompany):
-	from dartlab.engines.common.finance.ratios import RatioResult
+	annualSeries = {
+		"IS": {"sales": [100, 200, 300], "operating_profit": [10, 20, 30], "net_profit": [5, 10, 15]},
+		"BS": {"total_assets": [1000, 2000, 3000], "owners_of_parent_equity": [500, 600, 700], "total_liabilities": [500, 1400, 2300]},
+		"CF": {"operating_cashflow": [50, 60, 70]},
+	}
+	years = ["2022", "2023", "2024"]
+	mockCompany.annual = (annualSeries, years)
 
-	ratios = RatioResult(roe=8.5, roa=3.2, operatingMargin=12.0, debtRatio=30.0)
+	with patch(PATCH_TARGET, return_value=(annualSeries, years)):
+		with tempfile.TemporaryDirectory() as tmpDir:
+			outPath = Path(tmpDir) / "test.xlsx"
+			result = exportToExcel(mockCompany, outputPath=outPath, modules=["ratios"])
 
-	with patch(PATCH_TARGET, return_value=({"IS": {}, "BS": {}, "CF": {}}, ["2024"])):
-		with patch("dartlab.engines.common.finance.ratios.calcRatios", return_value=ratios):
-			with tempfile.TemporaryDirectory() as tmpDir:
-				outPath = Path(tmpDir) / "test.xlsx"
-				result = exportToExcel(mockCompany, outputPath=outPath, modules=["ratios"])
-
-				from openpyxl import load_workbook
-				wb = load_workbook(result)
-				assert "재무비율" in wb.sheetnames
-				ws = wb["재무비율"]
-				assert ws.cell(2, 1).value == "영업이익률"
+			from openpyxl import load_workbook
+			wb = load_workbook(result)
+			assert "재무비율" in wb.sheetnames
+			ws = wb["재무비율"]
+			assert ws.cell(2, 1).value == "수익성"
+			assert ws.cell(2, 2).value is None
+			assert ws.cell(3, 1).value is not None
+			headers = [ws.cell(1, c).value for c in range(2, 5)]
+			assert headers == ["2022", "2023", "2024"]
 
 
 def test_dataframe_property_as_sheet(mockCompany):

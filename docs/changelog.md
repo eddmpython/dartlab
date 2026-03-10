@@ -9,6 +9,29 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-03-10
+
+### Added
+
+**재무비율 시계열 피벗 (engines/common/finance)**
+- `toSeriesDict()` — 연도별 재무비율 시계열을 IS/BS/CF와 동일한 dict 구조로 변환
+- `RATIO_CATEGORIES` — 6카테고리(수익성, 안정성, 성장성, 효율성, 현금흐름, 절대값) 그룹핑 상수
+
+**Company.ratioSeries property**
+- `c.ratioSeries` — 연도별 재무비율 시계열 접근 (`{"RATIO": {snakeId: [v1, v2, ...]}}`, years)
+
+**Excel 재무비율 시트 개선**
+- 단일시점 세로나열 → 연도별 피벗 테이블 + 카테고리 섹션 헤더 + 색상 구분
+
+**SCE(자본변동표) spec.py 반영**
+- AI Tier 2에서 자본변동표 데이터 존재를 인지할 수 있도록 spec 추가
+
+### Fixed
+
+**서버 Company.search 버그 수정**
+- `Company.search()` → `KRCompany.search()`로 변경 (팩토리 함수에 staticmethod 부재 문제)
+- `Company()` 반환 타입 힌트 수정
+
 ## [0.3.0] - 2026-03-09
 
 ### Changed

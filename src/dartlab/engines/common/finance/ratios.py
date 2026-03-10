@@ -508,3 +508,48 @@ def calcRatioSeries(
 			rs.dividendPayoutRatio.append(None)
 
 	return rs
+
+
+RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
+	("profitability", [
+		"roe", "roa", "operatingMargin", "netMargin",
+		"grossMargin", "ebitdaMargin", "costOfSalesRatio", "sgaRatio",
+	]),
+	("stability", [
+		"debtRatio", "currentRatio", "quickRatio", "equityRatio",
+		"interestCoverage", "netDebtRatio", "noncurrentRatio",
+	]),
+	("growth", [
+		"revenueGrowth", "operatingProfitGrowth", "netProfitGrowth",
+		"assetGrowth", "equityGrowthRate",
+	]),
+	("efficiency", [
+		"totalAssetTurnover", "inventoryTurnover",
+		"receivablesTurnover", "payablesTurnover",
+	]),
+	("cashflow", [
+		"fcf", "operatingCfMargin", "operatingCfToNetIncome",
+		"capexRatio", "dividendPayoutRatio",
+	]),
+	("absolute", [
+		"revenue", "operatingProfit", "netProfit",
+		"totalAssets", "totalEquity", "operatingCashflow",
+	]),
+]
+
+
+def toSeriesDict(
+	rs: RatioSeriesResult,
+) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+	"""RatioSeriesResult → IS/BS/CF와 동일한 시계열 dict 변환.
+
+	Returns:
+		({"RATIO": {snakeId: [v1, v2, ...], ...}}, years)
+	"""
+	ratioDict: dict[str, list[Optional[float]]] = {}
+	for _, fields in RATIO_CATEGORIES:
+		for fieldName in fields:
+			vals = getattr(rs, fieldName, [])
+			if any(v is not None for v in vals):
+				ratioDict[fieldName] = vals
+	return {"RATIO": ratioDict}, rs.years

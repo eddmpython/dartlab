@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 import dartlab
-from dartlab import Company
+from dartlab import Company, KRCompany
 
 from .models import AskRequest, ConfigureRequest
 from .resolve import (
@@ -455,7 +455,7 @@ async def api_ollama_pull(req: dict):
 def api_search(q: str = Query(..., min_length=1)):
 	"""종목 검색."""
 	try:
-		df = Company.search(q)
+		df = KRCompany.search(q)
 		rows = df.to_dicts() if len(df) > 0 else []
 		mapped = []
 		for r in rows[:20]:

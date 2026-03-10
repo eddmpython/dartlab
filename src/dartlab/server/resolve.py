@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab import Company
+from dartlab import Company, KRCompany
 
 from .models import AskRequest, HistoryMessage
 
@@ -91,7 +91,7 @@ def _collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
 	if len(query) < 2:
 		return []
 	try:
-		df = Company.search(query)
+		df = KRCompany.search(query)
 		if len(df) == 0:
 			return []
 	except (ValueError, OSError):
@@ -133,7 +133,7 @@ def _search_suggestions(question: str) -> list[dict[str, str]]:
 				queries.append(word[:-len(suffix)])
 		for q in queries:
 			try:
-				df = Company.search(q)
+				df = KRCompany.search(q)
 				for row in df.head(3).to_dicts():
 					code = row.get("종목코드", row.get("stockCode", ""))
 					name = row.get("회사명", row.get("corpName", ""))

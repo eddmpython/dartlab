@@ -14,7 +14,7 @@ def buildSpec() -> dict:
         "name": "dart.finance",
         "description": "DART XBRL 재무제표 정규화 — 분기별 standalone 시계열",
         "summary": {
-            "statements": ["IS", "BS", "CF"],
+            "statements": ["IS", "BS", "CF", "SCE"],
             "period": "2019~2024 (분기별)",
             "mappedAccounts": 34171,
             "ratioCount": len(ratioFields),
@@ -24,6 +24,7 @@ def buildSpec() -> dict:
                 "IS": "누적→standalone 변환 (thstrm_add_amount)",
                 "CF": "이전 분기 차분으로 standalone 변환",
                 "BS": "시점 잔액 그대로",
+                "SCE": "변동사유×자본항목 매트릭스 피벗 (sceMapper 2-tier 매핑)",
             },
             "mappingPipeline": [
                 "prefix 제거",
