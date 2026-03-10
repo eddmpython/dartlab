@@ -52,18 +52,18 @@ def contingentLiability(stockCode: str) -> ContingentLiabilityResult | None:
                 parsed = parseGuaranteeDetail(block)
                 if parsed:
                     yearGuarantee = parsed
-                    yearGuarantee["year"] = year
+                    yearGuarantee["year"] = int(year)
 
             elif kind == "guaranteeSummary" and yearGuarantee is None:
                 parsed = parseGuaranteeSummary(block)
                 if parsed:
                     yearGuarantee = parsed
-                    yearGuarantee["year"] = year
+                    yearGuarantee["year"] = int(year)
 
             elif kind == "lawsuit":
                 parsed = parseLawsuit(block)
                 if parsed:
-                    parsed["year"] = year
+                    parsed["year"] = int(year)
                     yearLawsuits.append(parsed)
 
         if yearGuarantee:

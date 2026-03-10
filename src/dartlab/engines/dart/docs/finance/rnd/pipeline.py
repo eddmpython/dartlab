@@ -45,7 +45,7 @@ def rnd(stockCode: str) -> RndResult | None:
             parsed = parseRndTable(block)
             if parsed and parsed["rndExpense"]:
                 # 첫 번째 기간(당기) 값만 사용
-                row: dict = {"year": year}
+                row: dict = {"year": int(year)}
                 row["rndExpense"] = parsed["rndExpense"][0]
                 if parsed["revenueRatio"]:
                     row["revenueRatio"] = parsed["revenueRatio"][0]

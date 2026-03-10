@@ -52,7 +52,7 @@ def executive(stockCode: str) -> ExecutiveResult | None:
                 executives = parseExecutiveBlock(block)
                 if executives:
                     stats = aggregateExecutives(executives)
-                    stats["year"] = year
+                    stats["year"] = int(year)
                     execRows.append(stats)
                 break
 
@@ -61,7 +61,7 @@ def executive(stockCode: str) -> ExecutiveResult | None:
             if classifyBlock(block) == "unregisteredPay":
                 pay = parseUnregisteredPayBlock(block)
                 if pay:
-                    pay["year"] = year
+                    pay["year"] = int(year)
                     payRows.append(pay)
                 break
 
@@ -111,7 +111,7 @@ def _findExecutiveSection(df: pl.DataFrame, year: str) -> str | None:
 
 def _dedup(rows: list[dict]) -> list[dict]:
     """연도별 중복 제거 (최신 우선)."""
-    seen: set[str] = set()
+    seen: set[int] = set()
     result = []
     for r in rows:
         if r["year"] not in seen:
@@ -122,9 +122,9 @@ def _dedup(rows: list[dict]) -> list[dict]:
 
 def _buildExecutiveDf(rows: list[dict]) -> pl.DataFrame:
     data = []
-    for r in sorted(rows, key=lambda x: str(x["year"])):
+    for r in sorted(rows, key=lambda x: x["year"]):
         data.append({
-            "year": int(r["year"]),
+            "year": r["year"],
             "totalRegistered": r["totalRegistered"],
             "insideDirectors": r["insideDirectors"],
             "outsideDirectors": r["outsideDirectors"],
@@ -139,9 +139,9 @@ def _buildExecutiveDf(rows: list[dict]) -> pl.DataFrame:
 
 def _buildUnregPayDf(rows: list[dict]) -> pl.DataFrame:
     data = []
-    for r in sorted(rows, key=lambda x: str(x["year"])):
+    for r in sorted(rows, key=lambda x: x["year"]):
         data.append({
-            "year": int(r["year"]),
+            "year": r["year"],
             "headcount": r["headcount"],
             "totalSalary": r["totalSalary"],
             "avgSalary": r["avgSalary"],

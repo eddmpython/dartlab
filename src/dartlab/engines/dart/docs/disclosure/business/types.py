@@ -32,9 +32,14 @@ class BusinessChange:
 
 @dataclass
 class BusinessResult:
-    """사업의 내용 분석 결과."""
+    """사업의 내용 분석 결과.
+
+    sections: 최신 연도의 섹션 목록 (하위 호환).
+    yearSections: 연도별 전체 섹션 dict (LLM 다년도 비교용).
+    """
 
     corpName: str | None
     year: int
     sections: list[BusinessSection] = field(default_factory=list)
     changes: list[BusinessChange] = field(default_factory=list)
+    yearSections: dict[int, list[BusinessSection]] = field(default_factory=dict)

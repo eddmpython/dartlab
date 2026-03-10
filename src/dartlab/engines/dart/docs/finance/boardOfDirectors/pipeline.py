@@ -67,7 +67,7 @@ def boardOfDirectors(stockCode: str) -> BoardResult | None:
         if directorCount is None:
             directorCount = parseDirectorCountFromText(content)
 
-        row = {"year": year}
+        row = {"year": int(year)}
 
         if directorCount:
             row["totalDirectors"] = directorCount.get("totalDirectors")
@@ -84,7 +84,7 @@ def boardOfDirectors(stockCode: str) -> BoardResult | None:
 
         for comm in committees:
             committeeRows.append({
-                "year": year,
+                "year": int(year),
                 "committeeName": comm["name"],
                 "composition": comm["composition"],
                 "members": comm["members"],

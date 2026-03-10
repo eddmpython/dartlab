@@ -12,7 +12,9 @@ from dartlab.engines.dart.docs.finance.riskDerivative.parser import (
 from dartlab.engines.dart.docs.finance.riskDerivative.types import RiskDerivativeResult
 
 
-def _buildDerivativeDf(rows: list[dict]) -> pl.DataFrame | None:
+def _buildDerivativeDf(
+    rows: list[dict], headers: list[str] | None = None,
+) -> pl.DataFrame | None:
     """파생상품 행 목록을 DataFrame으로 변환."""
     if not rows:
         return None
@@ -20,13 +22,17 @@ def _buildDerivativeDf(rows: list[dict]) -> pl.DataFrame | None:
     maxVals = max(len(r["values"]) for r in rows)
     data: dict[str, list] = {"label": [r["label"] for r in rows]}
     for i in range(maxVals):
-        data[f"v{i+1}"] = [
+        colName = headers[i] if headers and i < len(headers) else f"v{i+1}"
+        if colName in data:
+            colName = f"{colName}_{i+1}"
+        data[colName] = [
             r["values"][i] if i < len(r["values"]) else None for r in rows
         ]
 
     schema = {"label": pl.Utf8}
-    for i in range(maxVals):
-        schema[f"v{i+1}"] = pl.Int64
+    for col in data:
+        if col != "label":
+            schema[col] = pl.Int64
 
     return pl.DataFrame(data, schema=schema)
 
@@ -57,7 +63,7 @@ def riskDerivative(stockCode: str) -> RiskDerivativeResult | None:
 
                 unit = detectUnit(content)
                 fxSensitivity = parseFxSensitivity(content)
-                derivatives = parseDerivativeContracts(content)
+                derivatives, derivHeaders = parseDerivativeContracts(content)
 
                 if not fxSensitivity and not derivatives:
                     if (
@@ -110,7 +116,7 @@ def riskDerivative(stockCode: str) -> RiskDerivativeResult | None:
                     fxSensitivity=fxSensitivity,
                     derivatives=derivatives,
                     fxDf=fxDf,
-                    derivativeDf=_buildDerivativeDf(derivatives),
+                    derivativeDf=_buildDerivativeDf(derivatives, derivHeaders),
                 )
 
     return None

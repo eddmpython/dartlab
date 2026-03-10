@@ -18,6 +18,9 @@ from dartlab.engines.dart.docs.disclosure.business.types import (
 def business(stockCode: str) -> BusinessResult | None:
     """사업보고서에서 사업의 내용 섹션 추출 + 연도별 변경 탐지.
 
+    모든 연도의 섹션 텍스트를 수집하여 yearSections에 저장.
+    LLM이 연도별 텍스트 변화를 비교 분석할 수 있도록 한다.
+
     Args:
         stockCode: 종목코드 (6자리)
 
@@ -29,7 +32,7 @@ def business(stockCode: str) -> BusinessResult | None:
 
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
-    latestSections: dict[str, dict] | None = None
+    allSections: dict[int, list[BusinessSection]] = {}
     latestYear: int | None = None
 
     for year in years:
@@ -45,23 +48,22 @@ def business(stockCode: str) -> BusinessResult | None:
         if not sections:
             sections = extractFromUnified(report)
 
-        if sections and latestSections is None:
-            latestSections = sections
-            latestYear = reportYear
-            break
+        if sections and reportYear not in allSections:
+            sectionList = [
+                BusinessSection(
+                    key=key,
+                    title=info["title"],
+                    chars=info["chars"],
+                    text=info["text"],
+                )
+                for key, info in sections.items()
+            ]
+            allSections[reportYear] = sectionList
+            if latestYear is None:
+                latestYear = reportYear
 
-    if not latestSections or latestYear is None:
+    if not allSections or latestYear is None:
         return None
-
-    sectionList = [
-        BusinessSection(
-            key=key,
-            title=info["title"],
-            chars=info["chars"],
-            text=info["text"],
-        )
-        for key, info in latestSections.items()
-    ]
 
     allYears = sorted(df["year"].unique().to_list())
     rawChanges = computeChanges(df, allYears)
@@ -79,6 +81,7 @@ def business(stockCode: str) -> BusinessResult | None:
     return BusinessResult(
         corpName=corpName,
         year=latestYear,
-        sections=sectionList,
+        sections=allSections[latestYear],
         changes=changeList,
+        yearSections=allSections,
     )

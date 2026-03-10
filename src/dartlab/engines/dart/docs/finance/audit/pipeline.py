@@ -144,7 +144,7 @@ def _pickCurrentFee(fees: list[dict], baseYear: str) -> dict | None:
 def _buildOpinionDf(rows: list[dict]) -> pl.DataFrame:
     """감사의견 시계열 DataFrame."""
     data = []
-    for r in sorted(rows, key=lambda x: str(x["year"])):
+    for r in sorted(rows, key=lambda x: int(x["year"])):
         data.append({
             "year": int(r["year"]),
             "auditor": r["auditor"],
@@ -157,7 +157,7 @@ def _buildOpinionDf(rows: list[dict]) -> pl.DataFrame:
 def _buildFeeDf(rows: list[dict]) -> pl.DataFrame:
     """감사보수 시계열 DataFrame."""
     data = []
-    for r in sorted(rows, key=lambda x: str(x["year"])):
+    for r in sorted(rows, key=lambda x: int(x["year"])):
         data.append({
             "year": int(r["year"]),
             "auditor": r["auditor"],

@@ -48,7 +48,7 @@ def capitalChange(stockCode: str) -> CapitalChangeResult | None:
                 parsed = parseCapitalChangeTable(block)
                 if parsed:
                     # 자본금 변동은 멀티기간 — 최신(첫 번째) 기간만 사용
-                    row = {"year": year}
+                    row = {"year": int(year)}
                     for stype, prefix in [("common", "common"), ("preferred", "preferred")]:
                         data = parsed.get(stype, {})
                         if "발행주식총수" in data and data["발행주식총수"]:
@@ -70,7 +70,7 @@ def capitalChange(stockCode: str) -> CapitalChangeResult | None:
                 if "발행할" in blockText or "Ⅰ" in blockText:
                     parsed = parseShareTotalTable(block)
                     if parsed:
-                        row = {"year": year, "referenceDate": parsed.get("referenceDate")}
+                        row = {"year": int(year), "referenceDate": parsed.get("referenceDate")}
                         for key, prefix in [
                             ("authorizedShares", "authorized"),
                             ("issuedShares", "issued"),
@@ -90,7 +90,7 @@ def capitalChange(stockCode: str) -> CapitalChangeResult | None:
                     parsed = parseTreasuryStockTable(block)
                     if parsed:
                         treasuryRows.append({
-                            "year": year,
+                            "year": int(year),
                             "totalBegin": parsed["totalBegin"],
                             "totalEnd": parsed["totalEnd"],
                         })

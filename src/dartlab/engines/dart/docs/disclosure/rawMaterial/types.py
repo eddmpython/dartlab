@@ -45,11 +45,26 @@ class CapexItem:
 
 
 @dataclass
-class RawMaterialResult:
-    """원재료 및 생산설비 분석 결과."""
+class YearSnapshot:
+    """단일 연도의 원재료/설비/투자 스냅샷."""
 
-    corpName: str | None
-    year: int | None = None
     materials: list[RawMaterial] = field(default_factory=list)
     equipment: Equipment | None = None
     capexItems: list[CapexItem] = field(default_factory=list)
+
+
+@dataclass
+class RawMaterialResult:
+    """원재료 및 생산설비 분석 결과.
+
+    materials/equipment/capexItems: 최신 연도 (하위 호환).
+    yearSnapshots: 연도별 전체 dict (LLM 다년도 비교용).
+    """
+
+    corpName: str | None
+    year: int | None = None
+    nYears: int = 1
+    materials: list[RawMaterial] = field(default_factory=list)
+    equipment: Equipment | None = None
+    capexItems: list[CapexItem] = field(default_factory=list)
+    yearSnapshots: dict[int, YearSnapshot] = field(default_factory=dict)

@@ -61,8 +61,34 @@ def _isHeaderRow(cells: list[str]) -> bool:
     return sum(1 for c in cells if c.strip() in keywords or "기" in c or "년" in c) >= 2
 
 
-def parseSalesTable(content: str) -> list[dict]:
-    """매출실적 테이블 파싱."""
+def _extractValueHeaders(headerCols: list[str]) -> list[str]:
+    """헤더 행에서 숫자 값에 대응하는 컬럼명만 추출.
+
+    라벨 역할의 키워드(구분, 부문 등)를 제외하고 기(期)/년 등
+    시간축 헤더를 반환한다.
+    """
+    labelKeywords = {
+        "구분", "부문", "매출유형", "품목", "품 목", "주요제품", "사업구분",
+        "제품", "상품", "용역",
+    }
+    valueHeaders = []
+    for c in headerCols:
+        s = c.strip()
+        if not s or s in labelKeywords:
+            continue
+        if re.match(r"^\d+\.?\d*%$", s):
+            continue
+        valueHeaders.append(s)
+    return valueHeaders
+
+
+def parseSalesTable(content: str) -> tuple[list[dict], list[str]]:
+    """매출실적 테이블 파싱.
+
+    Returns:
+        (rows, valueHeaders) 튜플.
+        valueHeaders는 값 컬럼의 헤더명 목록 (예: ["제47기", "제46기"]).
+    """
     lines = content.split("\n")
     results: list[dict] = []
 
@@ -124,15 +150,21 @@ def parseSalesTable(content: str) -> list[dict]:
         label = " > ".join(label_parts)
         results.append({"label": label, "values": values})
 
-    return results
+    valueHeaders = _extractValueHeaders(headerCols) if headerCols else []
+    return results, valueHeaders
 
 
-def parseOrderBacklog(content: str) -> list[dict]:
-    """수주상황 테이블 파싱."""
+def parseOrderBacklog(content: str) -> tuple[list[dict], list[str]]:
+    """수주상황 테이블 파싱.
+
+    Returns:
+        (rows, valueHeaders) 튜플.
+    """
     lines = content.split("\n")
     results: list[dict] = []
 
     inSection = False
+    headerCols: list[str] = []
     headerFound = False
 
     for line in lines:
@@ -151,6 +183,7 @@ def parseOrderBacklog(content: str) -> list[dict]:
             continue
 
         if any("수주" in c and ("총액" in c or "잔고" in c) for c in cells):
+            headerCols = cells
             headerFound = True
             continue
 
@@ -179,4 +212,5 @@ def parseOrderBacklog(content: str) -> list[dict]:
 
         results.append({"label": " > ".join(label_parts), "values": values})
 
-    return results
+    valueHeaders = _extractValueHeaders(headerCols) if headerCols else []
+    return results, valueHeaders

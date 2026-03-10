@@ -86,7 +86,7 @@ class Notes:
             else:
                 result = self._company._call_module(module)
             df = extractor(result) if result else None
-        except Exception:
+        except (FileNotFoundError, ValueError, KeyError, AttributeError, TypeError):
             df = None
 
         self._cache[name] = df

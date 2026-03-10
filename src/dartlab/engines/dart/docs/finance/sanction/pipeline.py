@@ -38,7 +38,7 @@ def sanction(stockCode: str) -> SanctionResult | None:
         for block in blocks:
             entries = parseSanctionTable(block)
             for entry in entries:
-                entry["year"] = year
+                entry["year"] = int(year)
                 allRows.append(entry)
 
     if not allRows:

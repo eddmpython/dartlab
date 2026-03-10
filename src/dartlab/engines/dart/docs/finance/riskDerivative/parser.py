@@ -107,12 +107,29 @@ def parseFxSensitivity(content: str) -> list[dict]:
     return results
 
 
-def parseDerivativeContracts(content: str) -> list[dict]:
-    """파생상품 계약 현황 파싱."""
+def _extractValueHeaders(headerCols: list[str]) -> list[str]:
+    """헤더 행에서 라벨 키워드를 제외한 값 컬럼 헤더 추출."""
+    labelKeywords = {"종류", "구분", "거래상대방", "거래대상", "파생상품"}
+    valueHeaders = []
+    for c in headerCols:
+        s = c.strip()
+        if not s or s in labelKeywords:
+            continue
+        valueHeaders.append(s)
+    return valueHeaders
+
+
+def parseDerivativeContracts(content: str) -> tuple[list[dict], list[str]]:
+    """파생상품 계약 현황 파싱.
+
+    Returns:
+        (rows, valueHeaders) 튜플.
+    """
     lines = content.split("\n")
     results: list[dict] = []
 
     inSection = False
+    headerCols: list[str] = []
     headerFound = False
 
     for line in lines:
@@ -138,6 +155,7 @@ def parseDerivativeContracts(content: str) -> list[dict]:
         if any("종류" in c or "구분" in c for c in cells) and any(
             "금액" in c or "손익" in c for c in cells
         ):
+            headerCols = cells
             headerFound = True
             continue
 
@@ -161,4 +179,5 @@ def parseDerivativeContracts(content: str) -> list[dict]:
             "values": values,
         })
 
-    return results
+    valueHeaders = _extractValueHeaders(headerCols) if headerCols else []
+    return results, valueHeaders

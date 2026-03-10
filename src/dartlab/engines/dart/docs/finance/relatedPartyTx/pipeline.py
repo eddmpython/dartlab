@@ -50,7 +50,7 @@ def relatedPartyTx(stockCode: str) -> RelatedPartyTxResult | None:
             if kind == "guarantee" and not yearHasGuarantee:
                 entries = parseGuaranteeBlock(block)
                 for e in entries:
-                    e["year"] = year
+                    e["year"] = int(year)
                     guaranteeRows.append(e)
                 if entries:
                     yearHasGuarantee = True
@@ -58,7 +58,7 @@ def relatedPartyTx(stockCode: str) -> RelatedPartyTxResult | None:
             elif kind == "revenueTx" and not yearHasRevenue:
                 entries = parseRevenueTxBlock(block)
                 for e in entries:
-                    e["year"] = year
+                    e["year"] = int(year)
                     revenueTxRows.append(e)
                 if entries:
                     yearHasRevenue = True

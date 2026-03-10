@@ -42,7 +42,7 @@ def internalControl(stockCode: str) -> InternalControlResult | None:
                 period = entry.get("period", "")
                 if period not in seenPeriods:
                     seenPeriods.add(period)
-                    entry["year"] = year
+                    entry["year"] = int(year)
                     allRows.append(entry)
 
     if not allRows:
@@ -69,7 +69,7 @@ def _findSection(report: pl.DataFrame) -> str | None:
 
 
 def _buildControlDf(rows: list[dict]) -> pl.DataFrame:
-    data = sorted(rows, key=lambda x: x.get("year", 0))
+    data = sorted(rows, key=lambda x: x["year"])
     schema = {
         "year": pl.Int64,
         "period": pl.Utf8,
