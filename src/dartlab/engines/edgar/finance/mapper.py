@@ -41,7 +41,6 @@ EDGAR_TO_DART_ALIASES: dict[str, str] = {
     "income_tax_expense": "income_taxes",
     "basic_eps": "basic_earnings_per_share",
     "diluted_eps": "diluted_earnings_per_share",
-    "dividends_paid": "dividends",
     "ppe": "tangible_assets",
     "trade_receivables": "trade_and_other_receivables",
     "short_term_borrowings": "shortterm_borrowings",
@@ -50,9 +49,14 @@ EDGAR_TO_DART_ALIASES: dict[str, str] = {
     "non_current_assets": "noncurrent_assets",
     "non_current_liabilities": "noncurrent_liabilities",
     "finance_cost": "finance_costs",
+    "interest_expense": "finance_costs",
+    "interest_income": "finance_income",
     "financing_cashflow": "cash_flows_from_financing_activities",
     "other_equity_components": "other_equity",
     "issued_capital": "paidin_capital",
+    "selling_general_admin": "selling_and_administrative_expenses",
+    "capex": "purchase_of_property_plant_and_equipment",
+    "accounts_payable": "trade_and_other_payables",
 }
 
 STMT_OVERRIDES: dict[tuple[str, str], str] = {

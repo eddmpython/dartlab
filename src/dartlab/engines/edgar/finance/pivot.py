@@ -181,7 +181,10 @@ def buildAnnual(
                     annual[yIdx] = vals[lastIdx] if lastIdx < len(vals) else None
                 else:
                     qVals = [vals[qi] for qi in qIndices if qi < len(vals) and vals[qi] is not None]
-                    annual[yIdx] = sum(qVals) if qVals else None
+                    if len(qIndices) < 4:
+                        annual[yIdx] = None
+                    else:
+                        annual[yIdx] = sum(qVals) if qVals else None
 
             result[sjDiv][snakeId] = annual
 

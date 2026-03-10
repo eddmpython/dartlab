@@ -188,32 +188,37 @@ def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
 def calcRatios(
 	series: dict[str, dict[str, list[Optional[float]]]],
 	marketCap: Optional[float] = None,
+	annual: bool = False,
 ) -> RatioResult:
 	"""시계열에서 재무비율 계산 (최신 단일 시점).
 
 	Args:
-		series: buildTimeseries() 결과.
+		series: buildTimeseries() 또는 buildAnnual() 결과.
 		marketCap: 시가총액 (원 단위). None이면 밸류에이션 멀티플 건너뜀.
+		annual: True면 IS/CF에 getLatest 사용 (연간 시계열).
+			False면 getTTM 사용 (분기 시계열, 기본값).
 
 	Returns:
 		RatioResult.
 	"""
 	r = RatioResult()
 
-	r.revenueTTM = getTTM(series, "IS", "sales")
-	r.operatingIncomeTTM = getTTM(series, "IS", "operating_profit")
-	r.netIncomeTTM = getTTM(series, "IS", "net_profit")
-	r.operatingCashflowTTM = getTTM(series, "CF", "operating_cashflow")
-	r.investingCashflowTTM = getTTM(series, "CF", "investing_cashflow")
+	_flow = getLatest if annual else getTTM
 
-	r.grossProfit = getTTM(series, "IS", "gross_profit")
-	r.costOfSales = getTTM(series, "IS", "cost_of_sales")
-	r.sga = getTTM(series, "IS", "selling_and_administrative_expenses")
-	r.financeIncome = getTTM(series, "IS", "finance_income")
-	r.financeCosts = getTTM(series, "IS", "finance_costs")
+	r.revenueTTM = _flow(series, "IS", "sales")
+	r.operatingIncomeTTM = _flow(series, "IS", "operating_profit")
+	r.netIncomeTTM = _flow(series, "IS", "net_profit")
+	r.operatingCashflowTTM = _flow(series, "CF", "operating_cashflow")
+	r.investingCashflowTTM = _flow(series, "CF", "investing_cashflow")
 
-	r.capex = getTTM(series, "CF", "purchase_of_property_plant_and_equipment")
-	r.dividendsPaid = getTTM(series, "CF", "dividends_paid")
+	r.grossProfit = _flow(series, "IS", "gross_profit")
+	r.costOfSales = _flow(series, "IS", "cost_of_sales")
+	r.sga = _flow(series, "IS", "selling_and_administrative_expenses")
+	r.financeIncome = _flow(series, "IS", "finance_income")
+	r.financeCosts = _flow(series, "IS", "finance_costs")
+
+	r.capex = _flow(series, "CF", "purchase_of_property_plant_and_equipment")
+	r.dividendsPaid = _flow(series, "CF", "dividends_paid")
 
 	r.totalAssets = getLatest(series, "BS", "total_assets")
 	r.totalEquity = getLatest(series, "BS", "owners_of_parent_equity")

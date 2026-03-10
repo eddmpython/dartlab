@@ -95,7 +95,7 @@ class USCompany:
                 self._cache["_ratios"] = None
             else:
                 aSeries, _ = annual
-                self._cache["_ratios"] = calcRatios(aSeries)
+                self._cache["_ratios"] = calcRatios(aSeries, annual=True)
         return self._cache["_ratios"]
 
     @property

@@ -197,7 +197,7 @@ class TestCalcRatiosCompat:
         result = buildAnnual(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, years = result
 
-        ratios = calcRatios(series)
+        ratios = calcRatios(series, annual=True)
         assert ratios.operatingMargin is not None
         assert ratios.netMargin is not None
         assert ratios.revenueGrowth3Y is not None
