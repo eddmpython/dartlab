@@ -2,7 +2,9 @@
 
 from dartlab.engines.common.finance.ratios import (
     RatioResult,
+    RatioSeriesResult,
     calcRatios,
+    calcRatioSeries,
 )
 
-__all__ = ["RatioResult", "calcRatios"]
+__all__ = ["RatioResult", "RatioSeriesResult", "calcRatios", "calcRatioSeries"]

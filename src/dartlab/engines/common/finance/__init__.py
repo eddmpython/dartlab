@@ -10,7 +10,12 @@ from dartlab.engines.common.finance.extract import (
     getAnnualValues,
     getRevenueGrowth3Y,
 )
-from dartlab.engines.common.finance.ratios import calcRatios, RatioResult
+from dartlab.engines.common.finance.ratios import (
+    calcRatios,
+    calcRatioSeries,
+    RatioResult,
+    RatioSeriesResult,
+)
 
 __all__ = [
     "getTTM",
@@ -18,5 +23,7 @@ __all__ = [
     "getAnnualValues",
     "getRevenueGrowth3Y",
     "calcRatios",
+    "calcRatioSeries",
     "RatioResult",
+    "RatioSeriesResult",
 ]

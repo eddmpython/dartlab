@@ -1,10 +1,18 @@
 """재무비율 계산.
 
 시계열 dict에서 핵심 비율을 계산한다.
-시가총액이 없으면 PER/PBR/PSR/EV_EBITDA는 None.
 
-연간 시계열(period="y")에서는 4분기 값이 이미 해당 연도의 누적 합계이므로,
-IS/CF도 getLatest로 최신 연간값을 가져온다 (= TTM).
+두 가지 모드:
+1. calcRatios(series) → RatioResult (최신 단일 시점, 하위호환)
+2. calcRatioSeries(annualSeries, years) → RatioSeriesResult (연도별 시계열)
+
+비율 분류 (6개 카테고리, 30+ 비율):
+- 수익성: ROE, ROA, 영업이익률, 순이익률, 매출총이익률, EBITDA마진, 매출원가율, 판관비율
+- 안정성: 부채비율, 유동비율, 당좌비율, 자기자본비율, 이자보상배율, 순차입금비율, 비유동비율
+- 성장성: 매출성장률, 영업이익성장률, 순이익성장률, 자산성장률, 자본성장률
+- 효율성: 총자산회전율, 재고자산회전율, 매출채권회전율, 매입채무회전율
+- 현금흐름: FCF, 영업CF마진, 영업CF/순이익, CAPEX비율, 배당성향
+- 주당지표: EPS, BPS (시가총액 필요: PER, PBR, PSR, EV/EBITDA)
 """
 
 from __future__ import annotations
@@ -17,7 +25,7 @@ from dartlab.engines.common.finance.extract import getLatest, getTTM, getRevenue
 
 @dataclass
 class RatioResult:
-	"""비율 계산 결과."""
+	"""비율 계산 결과 (최신 단일 시점)."""
 
 	revenueTTM: Optional[float] = None
 	operatingIncomeTTM: Optional[float] = None
@@ -35,18 +43,57 @@ class RatioResult:
 	longTermBorrowings: Optional[float] = None
 	bonds: Optional[float] = None
 
+	grossProfit: Optional[float] = None
+	costOfSales: Optional[float] = None
+	sga: Optional[float] = None
+	inventories: Optional[float] = None
+	receivables: Optional[float] = None
+	payables: Optional[float] = None
+	tangibleAssets: Optional[float] = None
+	intangibleAssets: Optional[float] = None
+	retainedEarnings: Optional[float] = None
+	financeIncome: Optional[float] = None
+	financeCosts: Optional[float] = None
+	capex: Optional[float] = None
+	dividendsPaid: Optional[float] = None
+	noncurrentAssets: Optional[float] = None
+	noncurrentLiabilities: Optional[float] = None
+
 	roe: Optional[float] = None
 	roa: Optional[float] = None
 	operatingMargin: Optional[float] = None
 	netMargin: Optional[float] = None
+	grossMargin: Optional[float] = None
+	ebitdaMargin: Optional[float] = None
+	costOfSalesRatio: Optional[float] = None
+	sgaRatio: Optional[float] = None
+
 	debtRatio: Optional[float] = None
 	currentRatio: Optional[float] = None
-	fcf: Optional[float] = None
-	revenueGrowth3Y: Optional[float] = None
-
+	quickRatio: Optional[float] = None
+	equityRatio: Optional[float] = None
+	interestCoverage: Optional[float] = None
 	netDebt: Optional[float] = None
 	netDebtRatio: Optional[float] = None
-	equityRatio: Optional[float] = None
+	noncurrentRatio: Optional[float] = None
+
+	revenueGrowth: Optional[float] = None
+	operatingProfitGrowth: Optional[float] = None
+	netProfitGrowth: Optional[float] = None
+	assetGrowth: Optional[float] = None
+	equityGrowthRate: Optional[float] = None
+	revenueGrowth3Y: Optional[float] = None
+
+	totalAssetTurnover: Optional[float] = None
+	inventoryTurnover: Optional[float] = None
+	receivablesTurnover: Optional[float] = None
+	payablesTurnover: Optional[float] = None
+
+	fcf: Optional[float] = None
+	operatingCfMargin: Optional[float] = None
+	operatingCfToNetIncome: Optional[float] = None
+	capexRatio: Optional[float] = None
+	dividendPayoutRatio: Optional[float] = None
 
 	per: Optional[float] = None
 	pbr: Optional[float] = None
@@ -57,11 +104,92 @@ class RatioResult:
 	warnings: list[str] = field(default_factory=list)
 
 
+@dataclass
+class RatioSeriesResult:
+	"""연도별 비율 시계열."""
+
+	years: list[str] = field(default_factory=list)
+
+	roe: list[Optional[float]] = field(default_factory=list)
+	roa: list[Optional[float]] = field(default_factory=list)
+	operatingMargin: list[Optional[float]] = field(default_factory=list)
+	netMargin: list[Optional[float]] = field(default_factory=list)
+	grossMargin: list[Optional[float]] = field(default_factory=list)
+	ebitdaMargin: list[Optional[float]] = field(default_factory=list)
+	costOfSalesRatio: list[Optional[float]] = field(default_factory=list)
+	sgaRatio: list[Optional[float]] = field(default_factory=list)
+
+	debtRatio: list[Optional[float]] = field(default_factory=list)
+	currentRatio: list[Optional[float]] = field(default_factory=list)
+	quickRatio: list[Optional[float]] = field(default_factory=list)
+	equityRatio: list[Optional[float]] = field(default_factory=list)
+	interestCoverage: list[Optional[float]] = field(default_factory=list)
+	netDebtRatio: list[Optional[float]] = field(default_factory=list)
+	noncurrentRatio: list[Optional[float]] = field(default_factory=list)
+
+	revenueGrowth: list[Optional[float]] = field(default_factory=list)
+	operatingProfitGrowth: list[Optional[float]] = field(default_factory=list)
+	netProfitGrowth: list[Optional[float]] = field(default_factory=list)
+	assetGrowth: list[Optional[float]] = field(default_factory=list)
+	equityGrowthRate: list[Optional[float]] = field(default_factory=list)
+
+	totalAssetTurnover: list[Optional[float]] = field(default_factory=list)
+	inventoryTurnover: list[Optional[float]] = field(default_factory=list)
+	receivablesTurnover: list[Optional[float]] = field(default_factory=list)
+	payablesTurnover: list[Optional[float]] = field(default_factory=list)
+
+	fcf: list[Optional[float]] = field(default_factory=list)
+	operatingCfMargin: list[Optional[float]] = field(default_factory=list)
+	operatingCfToNetIncome: list[Optional[float]] = field(default_factory=list)
+	capexRatio: list[Optional[float]] = field(default_factory=list)
+	dividendPayoutRatio: list[Optional[float]] = field(default_factory=list)
+
+	revenue: list[Optional[float]] = field(default_factory=list)
+	operatingProfit: list[Optional[float]] = field(default_factory=list)
+	netProfit: list[Optional[float]] = field(default_factory=list)
+	totalAssets: list[Optional[float]] = field(default_factory=list)
+	totalEquity: list[Optional[float]] = field(default_factory=list)
+	operatingCashflow: list[Optional[float]] = field(default_factory=list)
+
+
+def _safeDiv(a: Optional[float], b: Optional[float]) -> Optional[float]:
+	if a is None or b is None or b == 0:
+		return None
+	return a / b
+
+
+def _safePct(a: Optional[float], b: Optional[float]) -> Optional[float]:
+	r = _safeDiv(a, b)
+	if r is None:
+		return None
+	return round(r * 100, 2)
+
+
+def _safeRound(v: Optional[float], n: int = 2) -> Optional[float]:
+	if v is None:
+		return None
+	return round(v, n)
+
+
+def _yoy(vals: list[Optional[float]], i: int) -> Optional[float]:
+	if i < 1:
+		return None
+	cur = vals[i]
+	prev = vals[i - 1]
+	if cur is None or prev is None or prev == 0:
+		return None
+	return round(((cur - prev) / abs(prev)) * 100, 2)
+
+
+def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
+	return series.get(sjDiv, {}).get(snakeId, [])
+
+
 def calcRatios(
 	series: dict[str, dict[str, list[Optional[float]]]],
 	marketCap: Optional[float] = None,
 ) -> RatioResult:
-	"""시계열에서 재무비율 계산.
+	"""시계열에서 재무비율 계산 (최신 단일 시점).
 
 	Args:
 		series: buildTimeseries() 결과.
@@ -78,6 +206,15 @@ def calcRatios(
 	r.operatingCashflowTTM = getTTM(series, "CF", "operating_cashflow")
 	r.investingCashflowTTM = getTTM(series, "CF", "investing_cashflow")
 
+	r.grossProfit = getTTM(series, "IS", "gross_profit")
+	r.costOfSales = getTTM(series, "IS", "cost_of_sales")
+	r.sga = getTTM(series, "IS", "selling_and_administrative_expenses")
+	r.financeIncome = getTTM(series, "IS", "finance_income")
+	r.financeCosts = getTTM(series, "IS", "finance_costs")
+
+	r.capex = getTTM(series, "CF", "purchase_of_property_plant_and_equipment")
+	r.dividendsPaid = getTTM(series, "CF", "dividends_paid")
+
 	r.totalAssets = getLatest(series, "BS", "total_assets")
 	r.totalEquity = getLatest(series, "BS", "owners_of_parent_equity")
 	r.totalLiabilities = getLatest(series, "BS", "total_liabilities")
@@ -87,9 +224,18 @@ def calcRatios(
 	r.shortTermBorrowings = getLatest(series, "BS", "shortterm_borrowings") or 0
 	r.longTermBorrowings = getLatest(series, "BS", "longterm_borrowings") or 0
 	r.bonds = getLatest(series, "BS", "debentures") or 0
+	r.inventories = getLatest(series, "BS", "inventories")
+	r.receivables = getLatest(series, "BS", "trade_and_other_receivables")
+	r.payables = getLatest(series, "BS", "trade_and_other_payables")
+	r.tangibleAssets = getLatest(series, "BS", "tangible_assets")
+	r.intangibleAssets = getLatest(series, "BS", "intangible_assets")
+	r.retainedEarnings = getLatest(series, "BS", "retained_earnings")
+	r.noncurrentAssets = getLatest(series, "BS", "noncurrent_assets")
+	r.noncurrentLiabilities = getLatest(series, "BS", "noncurrent_liabilities")
 
 	_calcProfitability(r)
 	_calcStability(r)
+	_calcEfficiency(r)
 	_calcCashflow(r, series)
 
 	if marketCap and marketCap > 0:
@@ -100,64 +246,84 @@ def calcRatios(
 
 
 def _calcProfitability(r: RatioResult) -> None:
-	"""수익성 비율."""
-	if r.netIncomeTTM is not None:
-		if r.totalEquity and r.totalEquity > 0:
-			raw = (r.netIncomeTTM / r.totalEquity) * 100
-			if -500 <= raw <= 500:
-				r.roe = round(raw, 2)
-			else:
-				r.warnings.append(f"ROE {raw:.0f}% 범위 초과")
+	"""수익성 비율 (8개)."""
+	r.roe = _safePct(r.netIncomeTTM, r.totalEquity)
+	if r.roe is not None and not (-500 <= r.roe <= 500):
+		r.warnings.append(f"ROE {r.roe:.0f}% 범위 초과")
+		r.roe = None
 
-		if r.totalAssets and r.totalAssets > 0:
-			raw = (r.netIncomeTTM / r.totalAssets) * 100
-			if -200 <= raw <= 200:
-				r.roa = round(raw, 2)
-			else:
-				r.warnings.append(f"ROA {raw:.0f}% 범위 초과")
+	r.roa = _safePct(r.netIncomeTTM, r.totalAssets)
+	if r.roa is not None and not (-200 <= r.roa <= 200):
+		r.warnings.append(f"ROA {r.roa:.0f}% 범위 초과")
+		r.roa = None
 
-	if r.revenueTTM and r.revenueTTM > 0:
-		if r.operatingIncomeTTM is not None:
-			raw = (r.operatingIncomeTTM / r.revenueTTM) * 100
-			if -500 <= raw <= 500:
-				r.operatingMargin = round(raw, 2)
+	r.operatingMargin = _safePct(r.operatingIncomeTTM, r.revenueTTM)
+	r.netMargin = _safePct(r.netIncomeTTM, r.revenueTTM)
+	r.grossMargin = _safePct(r.grossProfit, r.revenueTTM)
+	r.costOfSalesRatio = _safePct(r.costOfSales, r.revenueTTM)
+	r.sgaRatio = _safePct(r.sga, r.revenueTTM)
 
-		if r.netIncomeTTM is not None:
-			raw = (r.netIncomeTTM / r.revenueTTM) * 100
-			if -500 <= raw <= 500:
-				r.netMargin = round(raw, 2)
+	if r.operatingIncomeTTM is not None and r.revenueTTM and r.revenueTTM > 0:
+		depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+		ebitda = r.operatingIncomeTTM + depreciation
+		r.ebitdaMargin = _safeRound((ebitda / r.revenueTTM) * 100, 2)
 
 
 def _calcStability(r: RatioResult) -> None:
-	"""안정성 비율."""
-	if r.totalLiabilities is not None and r.totalEquity and r.totalEquity > 0:
-		raw = (r.totalLiabilities / r.totalEquity) * 100
-		if raw <= 5000:
-			r.debtRatio = round(raw, 2)
+	"""안정성 비율 (7개)."""
+	r.debtRatio = _safePct(r.totalLiabilities, r.totalEquity)
+	if r.debtRatio is not None and r.debtRatio > 5000:
+		r.debtRatio = None
 
-	if r.currentAssets is not None and r.currentLiabilities and r.currentLiabilities > 0:
-		raw = (r.currentAssets / r.currentLiabilities) * 100
-		if raw <= 10000:
-			r.currentRatio = round(raw, 2)
+	r.currentRatio = _safePct(r.currentAssets, r.currentLiabilities)
+	if r.currentRatio is not None and r.currentRatio > 10000:
+		r.currentRatio = None
+
+	if r.currentAssets is not None and r.inventories is not None and r.currentLiabilities and r.currentLiabilities > 0:
+		quickAssets = r.currentAssets - r.inventories
+		r.quickRatio = _safeRound((quickAssets / r.currentLiabilities) * 100, 2)
+
+	r.equityRatio = _safePct(r.totalEquity, r.totalAssets)
+
+	if r.operatingIncomeTTM is not None and r.financeCosts and r.financeCosts > 0:
+		r.interestCoverage = _safeRound(r.operatingIncomeTTM / r.financeCosts, 2)
 
 	totalBorrowings = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
 	r.netDebt = totalBorrowings - (r.cash or 0)
 
-	if r.totalEquity and r.totalEquity > 0:
-		r.netDebtRatio = round((r.netDebt / r.totalEquity) * 100, 2)
+	r.netDebtRatio = _safePct(r.netDebt, r.totalEquity)
 
-	if r.totalAssets and r.totalAssets > 0 and r.totalEquity is not None:
-		r.equityRatio = round((r.totalEquity / r.totalAssets) * 100, 2)
+	if r.noncurrentAssets is not None and r.totalEquity and r.totalEquity > 0:
+		r.noncurrentRatio = _safeRound((r.noncurrentAssets / r.totalEquity) * 100, 2)
+
+
+def _calcEfficiency(r: RatioResult) -> None:
+	"""효율성 비율 (4개)."""
+	r.totalAssetTurnover = _safeRound(_safeDiv(r.revenueTTM, r.totalAssets), 2)
+	r.inventoryTurnover = _safeRound(_safeDiv(r.revenueTTM, r.inventories), 2)
+	r.receivablesTurnover = _safeRound(_safeDiv(r.revenueTTM, r.receivables), 2)
+
+	if r.costOfSales is not None:
+		r.payablesTurnover = _safeRound(_safeDiv(r.costOfSales, r.payables), 2)
 
 
 def _calcCashflow(
 	r: RatioResult,
 	series: dict[str, dict[str, list[Optional[float]]]],
 ) -> None:
-	"""FCF + 매출 성장률."""
-	if r.operatingCashflowTTM is not None and r.investingCashflowTTM is not None:
-		capex = abs(r.investingCashflowTTM) if r.investingCashflowTTM < 0 else 0
-		r.fcf = r.operatingCashflowTTM - capex
+	"""현금흐름 비율 (5개)."""
+	capexAmt = abs(r.capex) if r.capex and r.capex > 0 else 0
+	if r.operatingCashflowTTM is not None:
+		r.fcf = r.operatingCashflowTTM - capexAmt
+
+	r.operatingCfMargin = _safePct(r.operatingCashflowTTM, r.revenueTTM)
+	r.operatingCfToNetIncome = _safePct(r.operatingCashflowTTM, r.netIncomeTTM)
+
+	if r.capex and r.revenueTTM and r.revenueTTM > 0:
+		r.capexRatio = _safeRound((abs(r.capex) / r.revenueTTM) * 100, 2)
+
+	if r.dividendsPaid and r.netIncomeTTM and r.netIncomeTTM > 0:
+		r.dividendPayoutRatio = _safeRound((abs(r.dividendsPaid) / r.netIncomeTTM) * 100, 2)
 
 	r.revenueGrowth3Y = getRevenueGrowth3Y(series)
 
@@ -180,6 +346,160 @@ def _calcValuation(r: RatioResult) -> None:
 	ev = mc + netDebt
 
 	if r.operatingIncomeTTM and r.operatingIncomeTTM > 0:
-		ebitda = r.operatingIncomeTTM * 1.15
+		depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+		ebitda = r.operatingIncomeTTM + depreciation
 		if ebitda > 0:
 			r.evEbitda = round(ev / ebitda, 2)
+
+
+def calcRatioSeries(
+	annualSeries: dict[str, dict[str, list[Optional[float]]]],
+	years: list[str],
+) -> RatioSeriesResult:
+	"""연도별 재무비율 시계열 계산.
+
+	Args:
+		annualSeries: buildAnnual() 결과의 series.
+		years: buildAnnual() 결과의 years.
+
+	Returns:
+		RatioSeriesResult — 모든 비율이 연도별 리스트.
+	"""
+	n = len(years)
+	rs = RatioSeriesResult(years=list(years))
+
+	revenue = _get(annualSeries, "IS", "sales")
+	costOfSales = _get(annualSeries, "IS", "cost_of_sales")
+	grossProfit = _get(annualSeries, "IS", "gross_profit")
+	opProfit = _get(annualSeries, "IS", "operating_profit")
+	netProfit = _get(annualSeries, "IS", "net_profit")
+	sga = _get(annualSeries, "IS", "selling_and_administrative_expenses")
+	finCosts = _get(annualSeries, "IS", "finance_costs")
+
+	totalAssets = _get(annualSeries, "BS", "total_assets")
+	totalEquity = _get(annualSeries, "BS", "owners_of_parent_equity")
+	totalLiab = _get(annualSeries, "BS", "total_liabilities")
+	curAssets = _get(annualSeries, "BS", "current_assets")
+	curLiab = _get(annualSeries, "BS", "current_liabilities")
+	cash = _get(annualSeries, "BS", "cash_and_cash_equivalents")
+	inventories = _get(annualSeries, "BS", "inventories")
+	receivables = _get(annualSeries, "BS", "trade_and_other_receivables")
+	payables = _get(annualSeries, "BS", "trade_and_other_payables")
+	tangible = _get(annualSeries, "BS", "tangible_assets")
+	intangible = _get(annualSeries, "BS", "intangible_assets")
+	stBorrow = _get(annualSeries, "BS", "shortterm_borrowings")
+	ltBorrow = _get(annualSeries, "BS", "longterm_borrowings")
+	bonds = _get(annualSeries, "BS", "debentures")
+	ncAssets = _get(annualSeries, "BS", "noncurrent_assets")
+
+	opCf = _get(annualSeries, "CF", "operating_cashflow")
+	capex = _get(annualSeries, "CF", "purchase_of_property_plant_and_equipment")
+	divPaid = _get(annualSeries, "CF", "dividends_paid")
+
+	def _v(lst: list, i: int) -> Optional[float]:
+		if i < len(lst):
+			return lst[i]
+		return None
+
+	for i in range(n):
+		rev_i = _v(revenue, i)
+		cos_i = _v(costOfSales, i)
+		gp_i = _v(grossProfit, i)
+		op_i = _v(opProfit, i)
+		np_i = _v(netProfit, i)
+		sga_i = _v(sga, i)
+		fc_i = _v(finCosts, i)
+
+		ta_i = _v(totalAssets, i)
+		te_i = _v(totalEquity, i)
+		tl_i = _v(totalLiab, i)
+		ca_i = _v(curAssets, i)
+		cl_i = _v(curLiab, i)
+		cash_i = _v(cash, i)
+		inv_i = _v(inventories, i)
+		rec_i = _v(receivables, i)
+		pay_i = _v(payables, i)
+		tan_i = _v(tangible, i)
+		int_i = _v(intangible, i)
+		stb_i = _v(stBorrow, i) or 0
+		ltb_i = _v(ltBorrow, i) or 0
+		bnd_i = _v(bonds, i) or 0
+		nca_i = _v(ncAssets, i)
+
+		opcf_i = _v(opCf, i)
+		cap_i = _v(capex, i)
+		div_i = _v(divPaid, i)
+
+		rs.revenue.append(rev_i)
+		rs.operatingProfit.append(op_i)
+		rs.netProfit.append(np_i)
+		rs.totalAssets.append(ta_i)
+		rs.totalEquity.append(te_i)
+		rs.operatingCashflow.append(opcf_i)
+
+		rs.roe.append(_safePct(np_i, te_i))
+		rs.roa.append(_safePct(np_i, ta_i))
+		rs.operatingMargin.append(_safePct(op_i, rev_i))
+		rs.netMargin.append(_safePct(np_i, rev_i))
+		rs.grossMargin.append(_safePct(gp_i, rev_i))
+		rs.costOfSalesRatio.append(_safePct(cos_i, rev_i))
+		rs.sgaRatio.append(_safePct(sga_i, rev_i))
+
+		dep = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
+		ebitda = (op_i + dep) if op_i is not None else None
+		rs.ebitdaMargin.append(_safePct(ebitda, rev_i))
+
+		rs.debtRatio.append(_safePct(tl_i, te_i))
+		rs.currentRatio.append(_safePct(ca_i, cl_i))
+
+		if ca_i is not None and inv_i is not None and cl_i and cl_i > 0:
+			rs.quickRatio.append(_safeRound(((ca_i - inv_i) / cl_i) * 100, 2))
+		else:
+			rs.quickRatio.append(None)
+
+		rs.equityRatio.append(_safePct(te_i, ta_i))
+
+		if op_i is not None and fc_i and fc_i > 0:
+			rs.interestCoverage.append(_safeRound(op_i / fc_i, 2))
+		else:
+			rs.interestCoverage.append(None)
+
+		nd = stb_i + ltb_i + bnd_i - (cash_i or 0)
+		rs.netDebtRatio.append(_safePct(nd, te_i))
+
+		if nca_i is not None and te_i and te_i > 0:
+			rs.noncurrentRatio.append(_safeRound((nca_i / te_i) * 100, 2))
+		else:
+			rs.noncurrentRatio.append(None)
+
+		rs.revenueGrowth.append(_yoy(revenue, i) if len(revenue) > i else None)
+		rs.operatingProfitGrowth.append(_yoy(opProfit, i) if len(opProfit) > i else None)
+		rs.netProfitGrowth.append(_yoy(netProfit, i) if len(netProfit) > i else None)
+		rs.assetGrowth.append(_yoy(totalAssets, i) if len(totalAssets) > i else None)
+		rs.equityGrowthRate.append(_yoy(totalEquity, i) if len(totalEquity) > i else None)
+
+		rs.totalAssetTurnover.append(_safeRound(_safeDiv(rev_i, ta_i), 2))
+		rs.inventoryTurnover.append(_safeRound(_safeDiv(rev_i, inv_i), 2))
+		rs.receivablesTurnover.append(_safeRound(_safeDiv(rev_i, rec_i), 2))
+		rs.payablesTurnover.append(_safeRound(_safeDiv(cos_i, pay_i), 2))
+
+		capAmt = abs(cap_i) if cap_i and cap_i > 0 else 0
+		if opcf_i is not None:
+			rs.fcf.append(opcf_i - capAmt)
+		else:
+			rs.fcf.append(None)
+
+		rs.operatingCfMargin.append(_safePct(opcf_i, rev_i))
+		rs.operatingCfToNetIncome.append(_safePct(opcf_i, np_i))
+
+		if cap_i and rev_i and rev_i > 0:
+			rs.capexRatio.append(_safeRound((abs(cap_i) / rev_i) * 100, 2))
+		else:
+			rs.capexRatio.append(None)
+
+		if div_i and np_i and np_i > 0:
+			rs.dividendPayoutRatio.append(_safeRound((abs(div_i) / np_i) * 100, 2))
+		else:
+			rs.dividendPayoutRatio.append(None)
+
+	return rs
