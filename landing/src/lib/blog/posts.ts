@@ -8,6 +8,14 @@ export interface PostMeta {
 
 export const posts: PostMeta[] = [
 	{
+		slug: 'python-financial-analysis',
+		title: '파이썬으로 재무제표 분석하기',
+		date: '2026-03-10',
+		description:
+			'파이썬으로 상장기업 재무제표를 분석하는 방법을 처음부터 끝까지 정리한다. 데이터 수집, 계정 표준화, 분기별 시계열, 재무비율, 기업 간 비교까지 — 엑셀로는 며칠 걸릴 작업을 코드 몇 줄로 끝내는 방법.',
+		thumbnail: '/avatar-code.png'
+	},
+	{
 		slug: 'reading-business-reports',
 		title: '사업보고서 텍스트, 이렇게 읽는다',
 		date: '2026-03-09',

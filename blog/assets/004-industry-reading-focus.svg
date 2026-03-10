@@ -7,85 +7,85 @@
   </defs>
   <rect width="800" height="360" rx="16" fill="url(#bg4b)"/>
 
-  <text x="400" y="36" text-anchor="middle" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="16" font-weight="700">업종별 핵심 읽기 포인트</text>
+  <text x="400" y="36" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="16" font-weight="700">업종별 핵심 읽기 포인트</text>
 
   <!-- Row 1 -->
   <!-- Manufacturing -->
   <rect x="30" y="58" width="235" height="130" rx="10" fill="#1e293b" stroke="#ea4647" stroke-width="1.5"/>
   <rect x="30" y="58" width="235" height="30" rx="10" fill="#ea4647" opacity="0.15"/>
-  <text x="147" y="78" text-anchor="middle" fill="#ea4647" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">제조업</text>
-  <text x="44" y="104" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">원재료 가격 추이</text>
-  <text x="235" y="104" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
-  <text x="44" y="124" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">가동률</text>
-  <text x="235" y="124" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
-  <text x="44" y="144" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">재고자산 평가손실</text>
-  <text x="235" y="144" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 14번</text>
-  <text x="44" y="164" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">설비 투자 (CAPEX)</text>
-  <text x="235" y="164" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 16번</text>
+  <text x="147" y="78" text-anchor="middle" fill="#ea4647" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">제조업</text>
+  <text x="44" y="104" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">원재료 가격 추이</text>
+  <text x="235" y="104" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
+  <text x="44" y="124" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">가동률</text>
+  <text x="235" y="124" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
+  <text x="44" y="144" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">재고자산 평가손실</text>
+  <text x="235" y="144" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 14번</text>
+  <text x="44" y="164" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">설비 투자 (CAPEX)</text>
+  <text x="235" y="164" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 16번</text>
 
   <!-- Construction -->
   <rect x="283" y="58" width="235" height="130" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
   <rect x="283" y="58" width="235" height="30" rx="10" fill="#f59e0b" opacity="0.15"/>
-  <text x="400" y="78" text-anchor="middle" fill="#f59e0b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">건설 · 조선</text>
-  <text x="297" y="104" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">수주 잔고</text>
-  <text x="488" y="104" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 매출·수주</text>
-  <text x="297" y="124" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">공사진행률</text>
-  <text x="488" y="124" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 32번</text>
-  <text x="297" y="144" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">공사손실충당부채</text>
-  <text x="488" y="144" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 26번</text>
-  <text x="297" y="164" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">채무보증</text>
-  <text x="488" y="164" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">XI. 우발부채</text>
+  <text x="400" y="78" text-anchor="middle" fill="#f59e0b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">건설 · 조선</text>
+  <text x="297" y="104" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">수주 잔고</text>
+  <text x="488" y="104" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 매출·수주</text>
+  <text x="297" y="124" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">공사진행률</text>
+  <text x="488" y="124" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 32번</text>
+  <text x="297" y="144" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">공사손실충당부채</text>
+  <text x="488" y="144" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 26번</text>
+  <text x="297" y="164" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">채무보증</text>
+  <text x="488" y="164" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">XI. 우발부채</text>
 
   <!-- Finance -->
   <rect x="536" y="58" width="235" height="130" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
   <rect x="536" y="58" width="235" height="30" rx="10" fill="#3b82f6" opacity="0.15"/>
-  <text x="653" y="78" text-anchor="middle" fill="#3b82f6" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">금융업</text>
-  <text x="550" y="104" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">대손충당금</text>
-  <text x="741" y="104" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 8번</text>
-  <text x="550" y="124" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">건전성 비율 (BIS)</text>
-  <text x="741" y="124" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">III. 재무사항</text>
-  <text x="550" y="144" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">위험관리 (VaR)</text>
-  <text x="741" y="144" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 4번</text>
-  <text x="550" y="164" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">연체율 추이</text>
-  <text x="741" y="164" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
+  <text x="653" y="78" text-anchor="middle" fill="#3b82f6" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">금융업</text>
+  <text x="550" y="104" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">대손충당금</text>
+  <text x="741" y="104" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 8번</text>
+  <text x="550" y="124" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">건전성 비율 (BIS)</text>
+  <text x="741" y="124" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">III. 재무사항</text>
+  <text x="550" y="144" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">위험관리 (VaR)</text>
+  <text x="741" y="144" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 4번</text>
+  <text x="550" y="164" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">연체율 추이</text>
+  <text x="741" y="164" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
 
   <!-- Row 2 -->
   <!-- IT/Platform -->
   <rect x="30" y="206" width="235" height="130" rx="10" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
   <rect x="30" y="206" width="235" height="30" rx="10" fill="#8b5cf6" opacity="0.15"/>
-  <text x="147" y="226" text-anchor="middle" fill="#8b5cf6" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">IT · 플랫폼</text>
-  <text x="44" y="252" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">수익인식 정책</text>
-  <text x="235" y="252" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 2·32번</text>
-  <text x="44" y="272" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">영업부문별 실적</text>
-  <text x="235" y="272" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 39번</text>
-  <text x="44" y="292" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">R&D 투자액</text>
-  <text x="235" y="292" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 연구개발</text>
-  <text x="44" y="312" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">주식보상비용</text>
-  <text x="235" y="312" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 36번</text>
+  <text x="147" y="226" text-anchor="middle" fill="#8b5cf6" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">IT · 플랫폼</text>
+  <text x="44" y="252" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">수익인식 정책</text>
+  <text x="235" y="252" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 2·32번</text>
+  <text x="44" y="272" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">영업부문별 실적</text>
+  <text x="235" y="272" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 39번</text>
+  <text x="44" y="292" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">R&D 투자액</text>
+  <text x="235" y="292" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 연구개발</text>
+  <text x="44" y="312" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">주식보상비용</text>
+  <text x="235" y="312" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 36번</text>
 
   <!-- Bio/Pharma -->
   <rect x="283" y="206" width="235" height="130" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
   <rect x="283" y="206" width="235" height="30" rx="10" fill="#10b981" opacity="0.15"/>
-  <text x="400" y="226" text-anchor="middle" fill="#10b981" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">바이오 · 제약</text>
-  <text x="297" y="252" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">임상 파이프라인</text>
-  <text x="488" y="252" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
-  <text x="297" y="272" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">개발비 자본화</text>
-  <text x="488" y="272" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 17번</text>
-  <text x="297" y="292" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">기술이전 계약</text>
-  <text x="488" y="292" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 주요 계약</text>
-  <text x="297" y="312" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">계속기업 불확실성</text>
-  <text x="488" y="312" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">V. 감사의견</text>
+  <text x="400" y="226" text-anchor="middle" fill="#10b981" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">바이오 · 제약</text>
+  <text x="297" y="252" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">임상 파이프라인</text>
+  <text x="488" y="252" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
+  <text x="297" y="272" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">개발비 자본화</text>
+  <text x="488" y="272" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 17번</text>
+  <text x="297" y="292" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">기술이전 계약</text>
+  <text x="488" y="292" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 주요 계약</text>
+  <text x="297" y="312" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">계속기업 불확실성</text>
+  <text x="488" y="312" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">V. 감사의견</text>
 
   <!-- Retail/Consumer -->
   <rect x="536" y="206" width="235" height="130" rx="10" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
   <rect x="536" y="206" width="235" height="30" rx="10" fill="#ec4899" opacity="0.15"/>
-  <text x="653" y="226" text-anchor="middle" fill="#ec4899" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">유통 · 소비재</text>
-  <text x="550" y="252" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">매출 구성 (제품별)</text>
-  <text x="741" y="252" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 주요 제품</text>
-  <text x="550" y="272" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">점포 수 · 평당 매출</text>
-  <text x="741" y="272" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
-  <text x="550" y="292" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">리스부채 (임차)</text>
-  <text x="741" y="292" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 19번</text>
-  <text x="550" y="312" fill="#f1f5f9" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">재고자산 회전율</text>
-  <text x="741" y="312" text-anchor="end" fill="#64748b" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 14번</text>
+  <text x="653" y="226" text-anchor="middle" fill="#ec4899" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="700">유통 · 소비재</text>
+  <text x="550" y="252" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">매출 구성 (제품별)</text>
+  <text x="741" y="252" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 주요 제품</text>
+  <text x="550" y="272" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">점포 수 · 평당 매출</text>
+  <text x="741" y="272" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">II. 사업의 내용</text>
+  <text x="550" y="292" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">리스부채 (임차)</text>
+  <text x="741" y="292" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 19번</text>
+  <text x="550" y="312" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">재고자산 회전율</text>
+  <text x="741" y="312" text-anchor="end" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">주석 14번</text>
 </svg>

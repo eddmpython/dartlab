@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" fill="none">
+  <defs>
+    <linearGradient id="bg5a" x1="0" y1="0" x2="800" y2="300">
+      <stop offset="0%" stop-color="#0a0e17"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="800" height="300" rx="16" fill="url(#bg5a)"/>
+
+  <text x="400" y="32" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="15" font-weight="700">파이썬 재무 분석 파이프라인</text>
+
+  <!-- Step 1: Raw Data -->
+  <rect x="20" y="56" width="130" height="100" rx="10" fill="#1e293b" stroke="#ea4647" stroke-width="2"/>
+  <text x="85" y="80" text-anchor="middle" fill="#ea4647" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">DART 원본</text>
+  <text x="85" y="100" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">XBRL 재무제표</text>
+  <text x="85" y="116" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">계정ID 비표준</text>
+  <text x="85" y="132" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">누적 구조</text>
+  <text x="85" y="148" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="9">2,700+ 기업</text>
+
+  <path d="M155 106 L175 106" stroke="#475569" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 2: Standardize -->
+  <rect x="180" y="56" width="130" height="100" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+  <text x="245" y="80" text-anchor="middle" fill="#f59e0b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">계정 표준화</text>
+  <text x="245" y="100" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">7단계 매핑</text>
+  <text x="245" y="116" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">34,000+ 동의어</text>
+  <text x="245" y="132" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">98.7% 커버리지</text>
+  <text x="245" y="148" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="9">revenue, total_assets, ...</text>
+
+  <path d="M315 106 L335 106" stroke="#475569" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 3: Timeseries -->
+  <rect x="340" y="56" width="130" height="100" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <text x="405" y="80" text-anchor="middle" fill="#3b82f6" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">분기 시계열</text>
+  <text x="405" y="100" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">누적 → 독립 변환</text>
+  <text x="405" y="116" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">IS/CF 역산</text>
+  <text x="405" y="132" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">BS 시점 잔액</text>
+  <text x="405" y="148" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="9">36+ 분기</text>
+
+  <path d="M475 106 L495 106" stroke="#475569" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 4: Ratios -->
+  <rect x="500" y="56" width="130" height="100" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+  <text x="565" y="80" text-anchor="middle" fill="#10b981" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">재무비율</text>
+  <text x="565" y="100" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">TTM 자동 계산</text>
+  <text x="565" y="116" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">ROE, 영업이익률</text>
+  <text x="565" y="132" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">부채비율, FCF</text>
+  <text x="565" y="148" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="9">4축 분석</text>
+
+  <path d="M635 106 L655 106" stroke="#475569" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 5: Insight -->
+  <rect x="660" y="56" width="120" height="100" rx="10" fill="#1e293b" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="720" y="80" text-anchor="middle" fill="#8b5cf6" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">인사이트</text>
+  <text x="720" y="100" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">7영역 등급</text>
+  <text x="720" y="116" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">이상치 탐지</text>
+  <text x="720" y="132" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">섹터 비교</text>
+  <text x="720" y="148" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="9">A~F 등급</text>
+
+  <!-- Bottom comparison -->
+  <rect x="20" y="180" width="370" height="100" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="205" y="204" text-anchor="middle" fill="#ea4647" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="12" font-weight="700">엑셀로 하면</text>
+  <text x="205" y="226" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">종목 1개 분석 = 반나절</text>
+  <text x="205" y="246" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">종목 10개 비교 = 이틀</text>
+  <text x="205" y="266" text-anchor="middle" fill="#64748b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">종목 2,700개 = 불가능</text>
+
+  <rect x="410" y="180" width="370" height="100" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+  <text x="595" y="204" text-anchor="middle" fill="#10b981" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="12" font-weight="700">파이썬으로 하면</text>
+  <text x="595" y="226" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">종목 1개 분석 = 1초</text>
+  <text x="595" y="246" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11">종목 10개 비교 = 3초</text>
+  <text x="595" y="266" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="600">종목 2,700개 = 수 분</text>
+</svg>

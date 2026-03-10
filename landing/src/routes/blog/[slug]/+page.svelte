@@ -358,7 +358,7 @@
 	.blog-article :global(h1) {
 		font-size: 2rem;
 		font-weight: 800;
-		margin-bottom: 0.5rem;
+		margin-bottom: 2rem;
 		background: linear-gradient(135deg, #f1f5f9, #94a3b8);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
