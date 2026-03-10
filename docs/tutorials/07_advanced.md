@@ -1,10 +1,10 @@
 ---
-title: "4. Advanced Analysis"
+title: "7. Advanced Analysis"
 ---
 
-# 4. Advanced Analysis — 고급 분석
+# 7. Advanced Analysis — 고급 분석
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_advanced.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/07_advanced.ipynb)
 
 K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석, 거버넌스 분석 등 심화 모듈을 다룬다.
 
@@ -314,6 +314,6 @@ d["notes"]["inventory"], d["notes"]["borrowings"]
 
 ## 다음 단계
 
-- [5. 기업 간 비교](./cross-company) — 계정 표준화, 시계열 비교, 섹터·인사이트·순위
+- [8. 기업 간 비교](./cross-company) — 섹터 분류, 인사이트 등급, 시장 순위
 - [API Overview](../api/overview) — property 전체 목록과 파라미터 상세
 - [계정 표준화와 시계열](../api/timeseries) — 7단계 매핑, snakeId, 정규화 방식

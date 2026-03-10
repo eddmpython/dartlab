@@ -32,10 +32,13 @@ export const navigation: NavItem[] = [
 		href: '/docs/tutorials',
 		items: [
 			{ title: '1. Quickstart', href: '/docs/tutorials/quickstart' },
-			{ title: '2. Financial Deep Dive', href: '/docs/tutorials/financial' },
-			{ title: '3. Disclosure Text', href: '/docs/tutorials/disclosure' },
-			{ title: '4. Advanced Analysis', href: '/docs/tutorials/advanced' },
-			{ title: '5. 기업 간 비교', href: '/docs/tutorials/cross-company' }
+			{ title: '2. 재무제표 조회', href: '/docs/tutorials/financial-statements' },
+			{ title: '3. 시계열 분석', href: '/docs/tutorials/timeseries' },
+			{ title: '4. 재무비율', href: '/docs/tutorials/ratios' },
+			{ title: '5. 보고서 데이터', href: '/docs/tutorials/report-data' },
+			{ title: '6. 공시 텍스트', href: '/docs/tutorials/disclosure' },
+			{ title: '7. 고급 분석', href: '/docs/tutorials/advanced' },
+			{ title: '8. 기업 간 비교', href: '/docs/tutorials/cross-company' }
 		]
 	},
 	{

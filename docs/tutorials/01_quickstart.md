@@ -195,5 +195,6 @@ d = c.all()              # progress bar 없이 실행
 
 ## 다음 단계
 
-- [2. Financial Deep Dive](./financial) — 배당, 직원, 최대주주, 부문별 매출
+- [2. 재무제표 조회](./financial-statements) — BS, IS, CF 상세 조회와 데이터 구조
+- [3. 시계열 분석](./timeseries) — 계정 표준화, 분기별 독립 시계열, TTM
 - [API Overview](../api/overview) — property 전체 목록

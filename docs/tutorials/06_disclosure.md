@@ -1,10 +1,10 @@
 ---
-title: "3. Disclosure Text"
+title: "6. Disclosure Text"
 ---
 
-# 3. Disclosure Text — 공시 텍스트 분석
+# 6. Disclosure Text — 공시 텍스트 분석
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/03_disclosure.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb)
 
 숫자 뒤에 숨겨진 텍스트를 읽는다. 이 튜토리얼에서 다루는 내용은 다음과 같다.
 
@@ -204,5 +204,5 @@ c.companyHistory
 
 ## 다음 단계
 
-- [4. Advanced Analysis](./advanced) — K-IFRS 주석, 유형자산 변동, 관계기업
-- [API Overview](../api/overview) — property 전체 목록
+- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산 변동, 관계기업
+- [8. 기업 간 비교](./cross-company) — 섹터, 인사이트, 순위

@@ -1,12 +1,12 @@
 ---
-title: "2. Financial Deep Dive"
+title: "5. Report Data"
 ---
 
-# 2. Financial Deep Dive — 재무 심화 분석
+# 5. Report Data — 정기보고서 데이터
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/05_report_data.ipynb)
 
-정기보고서에 포함된 재무 데이터를 깊이 있게 분석한다. 모든 데이터는 property 한 줄로 접근한다.
+정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다. 모든 데이터는 property 한 줄로 접근한다.
 
 - 배당 시계열 (DPS, 배당수익률, 배당성향)
 - 직원 현황 (인원, 평균연봉, 근속연수)
@@ -50,6 +50,16 @@ if div is not None:
     print(f"배당성향: {last['payoutRatio']}%")
 ```
 
+| 컬럼 | 의미 |
+|------|------|
+| `netIncome` | 당기순이익 |
+| `eps` | 주당순이익 |
+| `totalDividend` | 배당금 총액 |
+| `payoutRatio` | 배당성향 (배당금/순이익) |
+| `dividendYield` | 배당수익률 (DPS/주가) |
+| `dps` | 보통주 1주당 배당금 |
+| `dpsPreferred` | 우선주 1주당 배당금 |
+
 ---
 
 ## 직원 현황
@@ -60,6 +70,8 @@ c.employee
 ```
 
 총 직원수, 평균 근속연수, 연간 급여 총액, 1인당 평균 연봉의 시계열이다.
+
+직원수의 급격한 변화는 사업 확장/축소 또는 구조조정의 신호일 수 있다. 평균연봉 대비 업계 수준을 비교하면 인재 유치 경쟁력을 가늠할 수 있다.
 
 ---
 
@@ -83,6 +95,8 @@ result.totalRatio    # 특수관계인 합계 지분율
 for h in result.holders:
     print(f"{h.name} ({h.relation}): {h.ratioEnd}%")
 ```
+
+최대주주 지분율이 너무 낮으면 경영권 리스크가 있고, 특수관계인 합계 지분율이 높으면 경영 안정성은 좋지만 소액주주 권익 침해 가능성을 살펴야 한다.
 
 ---
 
@@ -121,6 +135,8 @@ print(f"자기주식: {result.treasuryShares:,.0f}")
 print(f"자사주 비율: {result.treasuryRatio:.2%}")
 ```
 
+자기주식 비율이 높으면 실질 유통주식이 적어 주가에 영향을 줄 수 있다. 자사주 매입/소각 추이도 확인해볼 만하다.
+
 ---
 
 ## 부문별 매출
@@ -143,6 +159,8 @@ for year, tables in result.tables.items():
         print(f"[{year}] {t.tableType}: {t.columns}")
 ```
 
+매출이 특정 부문에 집중되어 있으면 해당 부문의 경기에 민감하다. 부문 다각화 추이를 보면 사업 전략을 읽을 수 있다.
+
 ---
 
 ## 비용의 성격별 분류
@@ -162,6 +180,8 @@ print(result.timeSeries)  # 비용 시계열
 print(result.ratios)      # 구성비
 print(result.crossCheck)  # 교차 검증 결과
 ```
+
+원재료비 비중이 높으면 원자재 가격에 민감하고, 인건비 비중이 높으면 인력 집약적 사업이다.
 
 ---
 
@@ -199,6 +219,8 @@ print(result.payByTypeDf)   # 유형별 보수
 print(result.topPayDf)      # 5억 초과 개인별 보수
 ```
 
+임원 보수가 실적 대비 과도하면 지배구조 리스크 신호다. 5억 초과 공시 대상 임원의 보수 구조(급여 vs 상여 vs 주식보상)도 확인해볼 만하다.
+
 ---
 
 ## 감사의견
@@ -215,6 +237,15 @@ result = c.get("audit")
 print(result.opinionDf)   # 감사의견 시계열
 print(result.feeDf)        # 감사보수 시계열
 ```
+
+| 감사의견 | 의미 |
+|----------|------|
+| 적정 | 정상 — 재무제표를 신뢰할 수 있다 |
+| 한정 | 일부 항목에 문제 — 해당 항목을 주의깊게 봐야 한다 |
+| 부적정 | 재무제표 전체를 신뢰할 수 없다 |
+| 의견거절 | 감사를 수행할 수 없었다 — 가장 심각한 경고 |
+
+감사의견이 "적정"이 아니면 다른 분석 결과를 모두 재검토해야 한다.
 
 ---
 
@@ -283,5 +314,5 @@ print(pl.DataFrame(rows))
 
 ## 다음 단계
 
-- [3. Disclosure Text](./disclosure) — 사업의 내용, MD&A, 회사의 개요
-- [4. Advanced Analysis](./advanced) — K-IFRS 주석, 유형자산, 교차 분석
+- [6. 공시 텍스트](./disclosure) — 사업의 내용, MD&A, 회사의 개요
+- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산, 교차 분석
