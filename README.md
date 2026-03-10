@@ -477,6 +477,16 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [ ] Quantitative + qualitative cross-validation
 - [ ] Visualization
 
+## Contributing
+
+Issues and pull requests are welcome. Before submitting:
+
+- Follow the project conventions: **camelCase** naming, **Polars** (not pandas), **uv** for package management
+- Test new features in `experiments/` first — verify the approach before modifying `src/`
+- For data mapping improvements (e.g., `accountMappings.json`), include experiment results showing the before/after impact
+
+Questions or ideas? Open an [issue](https://github.com/eddmpython/dartlab/issues). Both Korean and English are fine.
+
 ## Sponsor
 
 <a href="https://buymeacoffee.com/eddmpython">
