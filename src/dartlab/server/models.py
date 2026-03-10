@@ -5,9 +5,16 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
+class HistoryMeta(BaseModel):
+	company: str | None = None
+	stockCode: str | None = None
+	modules: list[str] | None = None
+
+
 class HistoryMessage(BaseModel):
 	role: str
 	text: str
+	meta: HistoryMeta | None = None
 
 
 class AskRequest(BaseModel):

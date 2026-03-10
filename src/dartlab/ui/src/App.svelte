@@ -1,3 +1,18 @@
+<!--
+	[최우선 UX 원칙] 데이터 투명성 — 절대 제거 금지
+
+	SSE 스트리밍 콜백(onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult)은
+	LLM이 보는 모든 데이터를 사용자에게 투명하게 전달하는 핵심 경로다.
+	이 콜백들을 제거하거나 무시하면 안 된다.
+
+	각 SSE 이벤트는 message 객체에 저장되어 MessageBubble에서 뱃지/카드/모달로 표시된다:
+	  onMeta        → message.meta (company, stockCode, includedModules, dataYearRange)
+	  onSnapshot    → message.snapshot (핵심 수치 카드)
+	  onContext     → message.contexts[] (모듈별 데이터 뱃지)
+	  onSystemPrompt → message.systemPrompt, message.userContent
+	  onToolCall    → message.toolEvents[] (도구 호출 뱃지)
+	  onToolResult  → message.toolEvents[] (도구 결과)
+-->
 <script>
 	import "./app.css";
 	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, oauthAuthorize, oauthStatus, oauthLogout } from "$lib/api.js";
@@ -51,6 +66,20 @@
 	// OAuth login
 	let oauthLoggingIn = $state(false);
 	let chatgptDetail = $state({});
+
+	// Mobile
+	let isMobile = $state(false);
+
+	function checkMobile() {
+		isMobile = window.innerWidth <= 768;
+		if (isMobile) sidebarOpen = false;
+	}
+
+	$effect(() => {
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	});
 
 	// Delete confirmation
 	let deleteConfirmId = $state(null);
@@ -356,6 +385,16 @@
 		}
 	}
 
+	function getLastStockCode() {
+		const conv = store.active;
+		if (!conv) return null;
+		for (let i = conv.messages.length - 1; i >= 0; i--) {
+			const m = conv.messages[i];
+			if (m.role === "assistant" && m.meta?.stockCode) return m.meta.stockCode;
+		}
+		return null;
+	}
+
 	async function sendMessage() {
 		const question = inputText.trim();
 		if (!question || isLoading) return;
@@ -367,6 +406,7 @@
 		}
 
 		if (!store.activeId) store.createConversation();
+		const streamConvId = store.activeId;
 
 		store.addMessage("user", question);
 		inputText = "";
@@ -376,36 +416,55 @@
 		store.updateLastMessage({ loading: true, startedAt: Date.now() });
 		scrollTrigger++;
 
-		// 멀티턴: 이전 대화 기록을 서버에 전달 (현재 추가한 user 메시지 제외)
 		const conv = store.active;
 		const history = [];
+		let lastAnalyzedCode = null;
 		if (conv) {
-			// 마지막 2개는 방금 추가한 user + assistant placeholder → 제외
 			const msgs = conv.messages.slice(0, -2);
 			for (const m of msgs) {
 				if ((m.role === "user" || m.role === "assistant") && m.text && m.text.trim() && !m.error && !m.loading) {
-					history.push({ role: m.role, text: m.text });
+					const entry = { role: m.role, text: m.text };
+					if (m.role === "assistant" && m.meta?.stockCode) {
+						entry.meta = {
+							company: m.meta.company || m.company,
+							stockCode: m.meta.stockCode,
+							modules: m.meta.includedModules || null,
+						};
+						lastAnalyzedCode = m.meta.stockCode;
+					}
+					history.push(entry);
 				}
 			}
 		}
 
+		const companyHint = lastAnalyzedCode || getLastStockCode();
+
+		function isStale() { return store.activeId !== streamConvId; }
+
 		const stream = askStream(
-			null, question, { provider: activeProvider, model: activeModel },
+			companyHint, question, { provider: activeProvider, model: activeModel },
 			{
 				onMeta(meta) {
-					const updates = { meta };
+					if (isStale()) return;
+					const conv = store.active;
+					const last = conv?.messages[conv.messages.length - 1];
+					const merged = { ...(last?.meta || {}), ...meta };
+					const updates = { meta: merged };
 					if (meta.company) {
 						updates.company = meta.company;
 						if (store.activeId && store.active?.title === "새 대화") {
 							store.updateTitle(store.activeId, meta.company);
 						}
 					}
+					if (meta.stockCode) updates.stockCode = meta.stockCode;
 					store.updateLastMessage(updates);
 				},
 				onSnapshot(snapshot) {
+					if (isStale()) return;
 					store.updateLastMessage({ snapshot });
 				},
 				onContext(ctx) {
+					if (isStale()) return;
 					const conv = store.active;
 					if (!conv) return;
 					const last = conv.messages[conv.messages.length - 1];
@@ -415,12 +474,14 @@
 					});
 				},
 				onSystemPrompt(data) {
+					if (isStale()) return;
 					store.updateLastMessage({
 						systemPrompt: data.text,
 						userContent: data.userContent || null,
 					});
 				},
 				onToolCall(ev) {
+					if (isStale()) return;
 					const conv = store.active;
 					if (!conv) return;
 					const last = conv.messages[conv.messages.length - 1];
@@ -430,6 +491,7 @@
 					});
 				},
 				onToolResult(ev) {
+					if (isStale()) return;
 					const conv = store.active;
 					if (!conv) return;
 					const last = conv.messages[conv.messages.length - 1];
@@ -439,6 +501,7 @@
 					});
 				},
 				onChunk(text) {
+					if (isStale()) return;
 					const conv = store.active;
 					if (!conv) return;
 					const last = conv.messages[conv.messages.length - 1];
@@ -446,19 +509,32 @@
 					scrollTrigger++;
 				},
 				onDone() {
+					if (isStale()) return;
 					const conv = store.active;
 					const last = conv?.messages[conv.messages.length - 1];
 					const duration = last?.startedAt
 						? ((Date.now() - last.startedAt) / 1000).toFixed(1)
 						: null;
 					store.updateLastMessage({ loading: false, duration });
+					store.flush();
 					isLoading = false;
 					currentStream = null;
 					scrollTrigger++;
 				},
-				onError(err) {
+				onError(err, action, detail) {
+					if (isStale()) return;
 					store.updateLastMessage({ text: `오류: ${err}`, loading: false, error: true });
-					showToast(err);
+					store.flush();
+					if (action === "relogin" || action === "login") {
+						showToast(`${err} — 설정에서 재로그인하세요`);
+						openSettings();
+					} else if (action === "check_headers" || action === "check_endpoint" || action === "check_client_id") {
+						showToast(`${err} — ChatGPT API 변경 감지. 업데이트를 확인하세요`);
+					} else if (action === "rate_limit") {
+						showToast("요청이 너무 많습니다. 잠시 후 다시 시도해주세요");
+					} else {
+						showToast(err);
+					}
 					isLoading = false;
 					currentStream = null;
 				},
@@ -474,7 +550,46 @@
 			currentStream = null;
 			isLoading = false;
 			store.updateLastMessage({ loading: false });
+			store.flush();
 		}
+	}
+
+	function handleRegenerate() {
+		const conv = store.active;
+		if (!conv || conv.messages.length < 2) return;
+		let lastUserMsg = "";
+		for (let i = conv.messages.length - 1; i >= 0; i--) {
+			if (conv.messages[i].role === "user") {
+				lastUserMsg = conv.messages[i].text;
+				break;
+			}
+		}
+		if (!lastUserMsg) return;
+		store.removeLastMessage();
+		store.removeLastMessage();
+		inputText = lastUserMsg;
+		requestAnimationFrame(() => { sendMessage(); });
+	}
+
+	function handleExport() {
+		const conv = store.active;
+		if (!conv) return;
+		let md = `# ${conv.title}\n\n`;
+		for (const msg of conv.messages) {
+			if (msg.role === "user") {
+				md += `## You\n\n${msg.text}\n\n`;
+			} else if (msg.role === "assistant" && msg.text) {
+				md += `## DartLab\n\n${msg.text}\n\n`;
+			}
+		}
+		const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `${conv.title || "dartlab-chat"}.md`;
+		a.click();
+		URL.revokeObjectURL(url);
+		showToast("대화가 마크다운으로 내보내졌습니다", "success");
 	}
 
 	// Keyboard shortcuts
@@ -515,22 +630,28 @@
 
 <div class="flex h-screen bg-dl-bg-dark overflow-hidden">
 	<!-- Sidebar -->
-	<Sidebar
-		conversations={store.conversations}
-		activeId={store.activeId}
-		open={sidebarOpen}
-		version={appVersion}
-		onNewChat={handleNewChat}
-		onSelect={handleSelectConversation}
-		onDelete={handleDeleteConversation}
-	/>
+	{#if isMobile && sidebarOpen}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="sidebar-overlay" onclick={() => { sidebarOpen = false; }} onkeydown={() => {}}></div>
+	{/if}
+	<div class={isMobile ? (sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
+		<Sidebar
+			conversations={store.conversations}
+			activeId={store.activeId}
+			open={isMobile ? true : sidebarOpen}
+			version={appVersion}
+			onNewChat={() => { handleNewChat(); if (isMobile) sidebarOpen = false; }}
+			onSelect={(id) => { handleSelectConversation(id); if (isMobile) sidebarOpen = false; }}
+			onDelete={handleDeleteConversation}
+		/>
+	</div>
 
 	<!-- Main -->
-	<div class="relative flex flex-col flex-1 min-w-0 min-h-0">
+	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
 		<!-- Header bar (floating, transparent) -->
 		<div class="absolute top-0 left-0 right-0 z-10 pointer-events-none">
 			<div class="flex items-center justify-between px-3 h-11 pointer-events-auto"
-				style="background: linear-gradient(to bottom, var(--color-dl-bg-dark) 60%, transparent);"
+				style="background: linear-gradient(to bottom, rgba(5,8,17,0.92) 40%, transparent);"
 			>
 				<!-- Left: sidebar toggle -->
 				<button
@@ -629,6 +750,8 @@
 				bind:inputText
 				onSend={sendMessage}
 				onStop={stopStream}
+				onRegenerate={handleRegenerate}
+				onExport={handleExport}
 			/>
 		{:else}
 			<EmptyState

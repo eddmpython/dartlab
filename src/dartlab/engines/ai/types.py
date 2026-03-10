@@ -21,6 +21,13 @@ class LLMConfig:
 	max_tokens: int = 4096
 	system_prompt: str | None = None
 
+	def __post_init__(self):
+		import os
+		if self.base_url is None:
+			env_url = os.environ.get("DARTLAB_LLM_BASE_URL")
+			if env_url:
+				self.base_url = env_url
+
 	def merge(self, overrides: dict[str, Any]) -> LLMConfig:
 		"""per-call override 적용한 새 Config 반환."""
 		vals = dataclasses.asdict(self)

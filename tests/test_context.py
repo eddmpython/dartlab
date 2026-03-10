@@ -7,7 +7,8 @@ from dartlab.engines.ai.context import (
 	_resolve_tables,
 	df_to_markdown,
 )
-from dartlab.engines.ai.metadata import MODULE_META, ColumnMeta, ModuleMeta
+from dartlab.core.registry import ColumnMeta, DataEntry
+from dartlab.engines.ai.metadata import MODULE_META, ModuleMeta
 
 
 # ══════════════════════════════════════
@@ -40,15 +41,16 @@ class TestDfToMarkdown:
 
 	def test_with_meta(self):
 		df = pl.DataFrame({"year": [2023], "auditor": ["삼일"]})
-		meta = ModuleMeta(
-			label="감사의견",
-			description="감사의견 시계열",
+		entry = DataEntry(
+			name="test", label="감사의견", category="report",
+			dataType="dataframe", description="감사의견 시계열",
 			unit="",
 			columns=(
 				ColumnMeta("year", "사업연도"),
 				ColumnMeta("auditor", "감사인명"),
 			),
 		)
+		meta = ModuleMeta(entry)
 		result = df_to_markdown(df, meta=meta)
 		assert "사업연도" in result
 		assert "감사인명" in result

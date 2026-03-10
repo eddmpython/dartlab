@@ -2,15 +2,23 @@
 
 질문을 분류하고, 결정론적으로 분석 도구를 실행하여
 pre-computed 결과를 LLM context에 추가한다.
+
+Tier 1 아키텍처:
+  - 기존: docs/finance 기반 ratio_table, anomaly 등
+  - 추가: L2 엔진(sector, insight, rank) 결과를 분석 패키지로 주입
+  - 모든 provider에서 동작 (tool calling 불필요)
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import polars as pl
 
 from dartlab.engines.ai.prompts import _classify_question
+
+_log = logging.getLogger(__name__)
 
 
 def classify_question(question: str) -> str:
@@ -40,6 +48,10 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
 				sections.append(result)
 		except Exception:
 			continue
+
+	l2 = _run_l2_engines(company, q_type)
+	if l2:
+		sections.append(l2)
 
 	if not sections:
 		return ""
@@ -224,3 +236,179 @@ _PIPELINE_MAP: dict[str, list] = {
 	"투자": [_run_growth_analysis],
 	"종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis],
 }
+
+
+# ══════════════════════════════════════
+# L2 엔진 통합 — Tier 1 분석 패키지
+# ══════════════════════════════════════
+
+_Q_TYPES_NEED_INSIGHT = frozenset({
+	"건전성", "수익성", "성장성", "리스크", "종합",
+})
+
+_Q_TYPES_NEED_RANK = frozenset({
+	"종합", "성장성",
+})
+
+
+def _run_l2_engines(company: Any, q_type: str) -> str | None:
+	"""L2 엔진(sector, insight, rank) 결과를 분석 패키지로 조립."""
+	stockCode = getattr(company, "stockCode", None)
+	if not stockCode:
+		return None
+
+	parts: list[str] = []
+
+	sector_md = _run_sector(company)
+	if sector_md:
+		parts.append(sector_md)
+
+	if q_type in _Q_TYPES_NEED_INSIGHT:
+		insight_md = _run_insight(stockCode, company)
+		if insight_md:
+			parts.append(insight_md)
+
+	if q_type in _Q_TYPES_NEED_RANK:
+		rank_md = _run_rank(stockCode)
+		if rank_md:
+			parts.append(rank_md)
+
+	if not parts:
+		return None
+	return "\n\n".join(parts)
+
+
+def _run_sector(company: Any) -> str | None:
+	"""sector 엔진: 업종 분류 + 섹터 파라미터."""
+	try:
+		from dartlab.engines.sector import classify, getParams
+
+		corpName = getattr(company, "corpName", "")
+		overview = getattr(company, "companyOverview", None)
+		kindIndustry = None
+		mainProducts = None
+		if isinstance(overview, dict):
+			kindIndustry = overview.get("indutyName")
+		detail = getattr(company, "companyOverviewDetail", None)
+		if isinstance(detail, dict):
+			mainProducts = detail.get("mainBusiness")
+
+		info = classify(corpName, kindIndustry=kindIndustry, mainProducts=mainProducts)
+		if info.source == "unknown":
+			return None
+
+		params = getParams(info)
+
+		lines = [
+			"### 섹터 분류 (자동)",
+			f"- **대분류**: {info.sector.value}",
+			f"- **중분류**: {info.industryGroup.value}",
+			f"- **분류근거**: {info.source} (신뢰도 {info.confidence:.0%})",
+		]
+		if params:
+			lines.append(f"- **섹터 기준 PER**: {params.perMultiple}배")
+			lines.append(f"- **섹터 기준 PBR**: {params.pbrMultiple}배")
+			lines.append(f"- **적정 할인율**: {params.discountRate}%")
+		return "\n".join(lines)
+	except (ImportError, AttributeError):
+		_log.debug("sector engine not available")
+		return None
+	except Exception as e:
+		_log.debug("sector engine error: %s", e)
+		return None
+
+
+def _run_insight(stockCode: str, company: Any) -> str | None:
+	"""insight 엔진: 7영역 등급 + 이상치 + 프로파일."""
+	try:
+		from dartlab.engines.insight import analyze
+
+		result = analyze(stockCode, company=company)
+		if result is None:
+			return None
+
+		grades = result.grades()
+		lines = [
+			"### 인사이트 등급 (자동분석)",
+			f"- **프로파일**: {result.profile}",
+			"",
+			"| 영역 | 등급 | 요약 |",
+			"| --- | --- | --- |",
+		]
+		areaMap = {
+			"performance": ("실적", result.performance),
+			"profitability": ("수익성", result.profitability),
+			"health": ("건전성", result.health),
+			"cashflow": ("현금흐름", result.cashflow),
+			"governance": ("지배구조", result.governance),
+			"risk": ("리스크", result.risk),
+			"opportunity": ("기회", result.opportunity),
+		}
+		for key, (label, ir) in areaMap.items():
+			grade = grades.get(key, "N")
+			summary = ir.summary if ir else "-"
+			lines.append(f"| {label} | **{grade}** | {summary} |")
+
+		if result.anomalies:
+			lines.append("")
+			lines.append("### 이상치 탐지")
+			for a in result.anomalies[:5]:
+				severity = {"danger": "⚠️", "warning": "🔸", "info": "ℹ️"}.get(a.severity, "•")
+				lines.append(f"- {severity} [{a.category}] {a.text}")
+
+		if result.summary:
+			lines.append("")
+			lines.append(f"**종합**: {result.summary}")
+
+		return "\n".join(lines)
+	except (ImportError, AttributeError):
+		_log.debug("insight engine not available")
+		return None
+	except Exception as e:
+		_log.debug("insight engine error: %s", e)
+		return None
+
+
+def _run_rank(stockCode: str) -> str | None:
+	"""rank 엔진: 시장 내 규모 순위."""
+	try:
+		from dartlab.engines.rank import getRank
+
+		rank = getRank(stockCode)
+		if rank is None:
+			return None
+
+		lines = ["### 시장 순위 (캐시)"]
+
+		def _fmtRank(r, total, label):
+			if r is None:
+				return None
+			pct = r / total * 100 if total > 0 else 0
+			return f"- **{label}**: {r:,}위 / {total:,}개 (상위 {pct:.1f}%)"
+
+		row = _fmtRank(rank.revenueRank, rank.revenueTotal, "매출 순위(전체)")
+		if row:
+			lines.append(row)
+		row = _fmtRank(rank.assetRank, rank.assetTotal, "자산 순위(전체)")
+		if row:
+			lines.append(row)
+		row = _fmtRank(rank.growthRank, rank.growthTotal, "성장률 순위(전체)")
+		if row:
+			lines.append(row)
+
+		if rank.revenueRankInSector is not None:
+			lines.append(f"- **섹터({rank.sector}) 매출 순위**: {rank.revenueRankInSector}위 / {rank.revenueSectorTotal}개")
+
+		if rank.sizeClass:
+			sizeLabels = {"large": "대형", "mid": "중형", "small": "소형"}
+			lines.append(f"- **규모 분류**: {sizeLabels.get(rank.sizeClass, rank.sizeClass)}")
+
+		if len(lines) <= 1:
+			return None
+		return "\n".join(lines)
+	except (ImportError, AttributeError):
+		_log.debug("rank engine not available")
+		return None
+	except Exception as e:
+		_log.debug("rank engine error: %s", e)
+		return None

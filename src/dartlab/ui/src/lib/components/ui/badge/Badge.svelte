@@ -8,6 +8,7 @@
 		accent: "bg-dl-accent/10 text-dl-accent-light border-dl-accent/20",
 		success: "bg-dl-success/10 text-dl-success border-dl-success/20",
 		muted: "bg-dl-bg-card-hover text-dl-text-muted border-dl-border",
+		dim: "bg-dl-bg-card/60 text-dl-text-dim border-dl-border/50",
 	};
 </script>
 

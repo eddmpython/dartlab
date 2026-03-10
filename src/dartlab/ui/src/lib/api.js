@@ -94,6 +94,78 @@ export async function oauthLogout() {
 	return res.json();
 }
 
+/** Excel 내보내기 가능한 모듈 목록 */
+export async function fetchExportModules(stockCode) {
+	const res = await fetch(`${BASE}/api/export/modules/${encodeURIComponent(stockCode)}`);
+	if (!res.ok) throw new Error("모듈 목록 조회 실패");
+	return res.json();
+}
+
+/** 데이터 소스 트리 (registry 기반 전체 소스) */
+export async function fetchExportSources(stockCode) {
+	const res = await fetch(`${BASE}/api/export/sources/${encodeURIComponent(stockCode)}`);
+	if (!res.ok) throw new Error("소스 목록 조회 실패");
+	return res.json();
+}
+
+/** 템플릿 목록 (프리셋 + 커스텀) */
+export async function fetchTemplates() {
+	const res = await fetch(`${BASE}/api/export/templates`);
+	if (!res.ok) throw new Error("템플릿 조회 실패");
+	return res.json();
+}
+
+/** 템플릿 저장 */
+export async function saveTemplate(template) {
+	const res = await fetch(`${BASE}/api/export/templates`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(template),
+	});
+	if (!res.ok) throw new Error("템플릿 저장 실패");
+	return res.json();
+}
+
+/** 템플릿 삭제 */
+export async function deleteTemplate(templateId) {
+	const res = await fetch(`${BASE}/api/export/templates/${encodeURIComponent(templateId)}`, {
+		method: "DELETE",
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "템플릿 삭제 실패");
+	}
+	return res.json();
+}
+
+/** Excel 파일 다운로드 */
+export async function downloadExcel(stockCode, modules = null, templateId = null) {
+	let url = `${BASE}/api/export/excel/${encodeURIComponent(stockCode)}`;
+	const params = new URLSearchParams();
+	if (templateId) {
+		params.set("template_id", templateId);
+	} else if (modules && modules.length > 0) {
+		params.set("modules", modules.join(","));
+	}
+	const qs = params.toString();
+	if (qs) url += `?${qs}`;
+	const res = await fetch(url);
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "Excel 다운로드 실패");
+	}
+	const blob = await res.blob();
+	const disposition = res.headers.get("content-disposition") || "";
+	const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^;"'\n]+)/i);
+	const filename = match ? decodeURIComponent(match[1]) : `${stockCode}.xlsx`;
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(blob);
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(a.href);
+	return filename;
+}
+
 /** 종목 검색 */
 export async function searchCompany(query) {
 	const res = await fetch(`${BASE}/api/search?q=${encodeURIComponent(query)}`);
@@ -185,7 +257,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
 							else if (currentEvent === "chunk") onChunk?.(parsed.text);
-							else if (currentEvent === "error") onError?.(parsed.error);
+							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
 							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(); } }
 						} catch {
 							// skip malformed JSON

@@ -25,14 +25,39 @@ function loadFromStorage() {
 	}
 }
 
+const EPHEMERAL_KEYS = ["systemPrompt", "userContent", "contexts", "snapshot", "toolEvents", "startedAt", "loading"];
+
+function stripEphemeral(convs) {
+	return convs.map(c => ({
+		...c,
+		messages: c.messages.map(m => {
+			if (m.role !== "assistant") return m;
+			const cleaned = {};
+			for (const [k, v] of Object.entries(m)) {
+				if (!EPHEMERAL_KEYS.includes(k)) cleaned[k] = v;
+			}
+			return cleaned;
+		}),
+	}));
+}
+
 function saveToStorage(data) {
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+		const slim = {
+			conversations: stripEphemeral(data.conversations),
+			activeId: data.activeId,
+		};
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
 	} catch {
-		// storage full — remove oldest
 		if (data.conversations.length > 5) {
 			data.conversations = data.conversations.slice(0, data.conversations.length - 5);
-			try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+			try {
+				const slim = {
+					conversations: stripEphemeral(data.conversations),
+					activeId: data.activeId,
+				};
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+			} catch {}
 		}
 	}
 }
@@ -48,7 +73,18 @@ export function createConversationsStore() {
 		activeId = null;
 	}
 
+	let persistTimer = null;
 	function persist() {
+		if (persistTimer) clearTimeout(persistTimer);
+		persistTimer = setTimeout(() => {
+			saveToStorage({ conversations, activeId });
+			persistTimer = null;
+		}, 300);
+	}
+
+	function persistNow() {
+		if (persistTimer) clearTimeout(persistTimer);
+		persistTimer = null;
 		saveToStorage({ conversations, activeId });
 	}
 
@@ -72,14 +108,14 @@ export function createConversationsStore() {
 		}
 
 		activeId = conv.id;
-		persist();
+		persistNow();
 		return conv.id;
 	}
 
 	function setActive(id) {
 		if (conversations.find(c => c.id === id)) {
 			activeId = id;
-			persist();
+			persistNow();
 		}
 	}
 
@@ -93,13 +129,12 @@ export function createConversationsStore() {
 		conv.messages = [...conv.messages, msg];
 		conv.updatedAt = Date.now();
 
-		// 첫 유저 메시지로 제목 자동 생성
 		if (conv.title === "새 대화" && role === "user") {
 			conv.title = text.length > 30 ? text.slice(0, 30) + "..." : text;
 		}
 
 		conversations = [...conversations];
-		persist();
+		persistNow();
 	}
 
 	function updateLastMessage(updates) {
@@ -118,7 +153,16 @@ export function createConversationsStore() {
 		if (activeId === id) {
 			activeId = conversations.length > 0 ? conversations[0].id : null;
 		}
-		persist();
+		persistNow();
+	}
+
+	function removeLastMessage() {
+		const conv = getActive();
+		if (!conv || conv.messages.length === 0) return;
+		conv.messages = conv.messages.slice(0, -1);
+		conv.updatedAt = Date.now();
+		conversations = [...conversations];
+		persistNow();
 	}
 
 	function updateTitle(id, title) {
@@ -126,14 +170,14 @@ export function createConversationsStore() {
 		if (conv) {
 			conv.title = title;
 			conversations = [...conversations];
-			persist();
+			persistNow();
 		}
 	}
 
 	function clearAll() {
 		conversations = [];
 		activeId = null;
-		persist();
+		persistNow();
 	}
 
 	return {
@@ -144,8 +188,10 @@ export function createConversationsStore() {
 		setActive,
 		addMessage,
 		updateLastMessage,
+		removeLastMessage,
 		deleteConversation,
 		updateTitle,
 		clearAll,
+		flush: persistNow,
 	};
 }

@@ -1,4 +1,21 @@
-"""SSE 스트리밍 generator — 분석/대화 응답 생성."""
+"""SSE 스트리밍 generator — 분석/대화 응답 생성.
+
+[최우선 UX 원칙] 데이터 투명성 — 절대 제거 금지
+
+이벤트 흐름의 모든 단계는 UI에서 뱃지/카드/모달로 투명하게 노출된다.
+LLM이 보는 데이터, 시스템이 제공하는 컨텍스트는 반드시 SSE 이벤트로 전송하여
+사용자가 실시간으로 확인할 수 있어야 한다.
+
+이벤트 흐름:
+  meta          → 회사, 종목코드, 포함 모듈, 연도 범위
+  snapshot      → 핵심 수치 (주가, 시총, PER 등)
+  context       → 모듈별 데이터 (IS, BS, CF, ratios, dividend 등)
+  system_prompt → 시스템 프롬프트 + LLM에 전달되는 전체 user content
+  tool_call     → 에이전트 도구 호출
+  tool_result   → 도구 실행 결과
+  chunk         → LLM 응답 텍스트 (실시간 스트리밍)
+  done          → 완료 (responseMeta 포함)
+"""
 
 from __future__ import annotations
 
@@ -11,6 +28,7 @@ from dartlab import Company
 from .models import AskRequest
 from .resolve import has_analysis_intent
 from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot
+from .cache import company_cache
 
 
 async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str | None = None):
@@ -57,7 +75,12 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 		history_msgs = build_history_messages(req.history)
 
 		if c and not has_analysis_intent(req.question):
-			snapshot = await asyncio.to_thread(build_snapshot, c)
+			cached = company_cache.get(c.stockCode)
+			if cached:
+				snapshot = cached[1]
+			else:
+				snapshot = await asyncio.to_thread(build_snapshot, c)
+				company_cache.put(c.stockCode, c, snapshot)
 			if snapshot:
 				yield {
 					"event": "snapshot",
@@ -104,7 +127,12 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 			from dartlab.engines.ai.prompts import build_system_prompt, _classify_question_multi
 			from dartlab.engines.ai.metadata import MODULE_META
 
-			snapshot = await asyncio.to_thread(build_snapshot, c)
+			cached = company_cache.get(c.stockCode)
+			if cached:
+				snapshot = cached[1]
+			else:
+				snapshot = await asyncio.to_thread(build_snapshot, c)
+				company_cache.put(c.stockCode, c, snapshot)
 			if snapshot:
 				yield {
 					"event": "snapshot",
@@ -229,13 +257,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 				md_text = raw_json
 
 			full_response_parts.append(md_text)
-			yield {
-				"event": "chunk",
-				"data": json.dumps({"text": md_text}, ensure_ascii=False),
-			}
+			paragraphs = md_text.split("\n\n")
+			for i, para in enumerate(paragraphs):
+				chunk_text = para if i == len(paragraphs) - 1 else para + "\n\n"
+				yield {
+					"event": "chunk",
+					"data": json.dumps({"text": chunk_text}, ensure_ascii=False),
+				}
+				if i < len(paragraphs) - 1:
+					await asyncio.sleep(0.02)
 
 		elif use_tools:
-			from dartlab.engines.ai.agent import agent_loop, AGENT_SYSTEM_ADDITION
+			from dartlab.engines.ai.agent import agent_loop_stream, AGENT_SYSTEM_ADDITION
 
 			messages[0]["content"] += AGENT_SYSTEM_ADDITION
 
@@ -254,32 +287,40 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 					{"event": "tool_result", "name": name, "result": result[:2000]},
 				)
 
-			async def _run_agent():
-				ans = await asyncio.to_thread(
-					agent_loop,
+			def _run_agent_stream():
+				for chunk in agent_loop_stream(
 					llm, messages, c,
 					max_turns=5,
 					on_tool_call=_on_tool_call,
 					on_tool_result=_on_tool_result,
+				):
+					loop.call_soon_threadsafe(
+						queue.put_nowait,
+						{"event": "chunk", "text": chunk},
+					)
+				loop.call_soon_threadsafe(
+					queue.put_nowait,
+					{"event": "_done"},
 				)
-				await queue.put({"event": "_done", "answer": ans})
 
-			task = asyncio.create_task(_run_agent())
+			task = asyncio.ensure_future(asyncio.to_thread(_run_agent_stream))
 
 			while True:
 				ev = await queue.get()
 				if ev["event"] == "_done":
-					if ev.get("answer"):
-						full_response_parts.append(ev["answer"])
-						yield {
-							"event": "chunk",
-							"data": json.dumps({"text": ev["answer"]}, ensure_ascii=False),
-						}
 					break
-				yield {
-					"event": ev["event"],
-					"data": json.dumps(ev, ensure_ascii=False),
-				}
+				if ev["event"] == "chunk":
+					text = ev["text"]
+					full_response_parts.append(text)
+					yield {
+						"event": "chunk",
+						"data": json.dumps({"text": text}, ensure_ascii=False),
+					}
+				else:
+					yield {
+						"event": ev["event"],
+						"data": json.dumps(ev, ensure_ascii=False),
+					}
 
 			await task
 		else:
@@ -305,9 +346,25 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 				done_payload["responseMeta"] = response_meta
 
 	except Exception as e:
+		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
+		from dartlab.engines.ai.oauthToken import TokenRefreshError
+
+		error_payload: dict[str, Any] = {"error": str(e)}
+
+		if isinstance(e, ChatGPTOAuthError):
+			error_payload["action"] = e.action
+			error_payload["error"] = e.message
+			if e.detail:
+				error_payload["detail"] = e.detail
+		elif isinstance(e, TokenRefreshError):
+			error_payload["action"] = "relogin"
+			error_payload["error"] = e.detail or str(e)
+		elif isinstance(e, PermissionError):
+			error_payload["action"] = "login"
+
 		yield {
 			"event": "error",
-			"data": json.dumps({"error": str(e)}, ensure_ascii=False),
+			"data": json.dumps(error_payload, ensure_ascii=False),
 		}
 
 	yield {"event": "done", "data": json.dumps(done_payload, ensure_ascii=False)}

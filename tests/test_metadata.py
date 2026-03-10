@@ -1,7 +1,5 @@
 """metadata 모듈 테스트 — 데이터 구조 검증."""
 
-import dataclasses
-
 import pytest
 
 from dartlab.engines.ai.metadata import (
@@ -16,7 +14,7 @@ class TestModuleMeta:
 	def test_core_modules_exist(self):
 		"""핵심 모듈이 MODULE_META에 존재해야 한다."""
 		core = ["BS", "IS", "CF", "audit", "dividend", "majorHolder", "employee",
-				"executive", "segment", "fsSummary"]
+				"executive", "segments", "fsSummary"]
 		for name in core:
 			assert name in MODULE_META, f"{name} missing from MODULE_META"
 
@@ -43,11 +41,11 @@ class TestModuleMeta:
 					f"{name}.relatedModules에 '{related}'가 있지만 MODULE_META에 없음"
 				)
 
-	def test_frozen(self):
-		"""dataclass frozen=True 확인."""
+	def test_no_arbitrary_attrs(self):
+		"""__slots__로 임의 속성 추가 차단 확인."""
 		meta = get_meta("BS")
-		with pytest.raises(dataclasses.FrozenInstanceError):
-			meta.label = "변경 시도"
+		with pytest.raises(AttributeError):
+			meta.nonexistent_attr = "추가 시도"
 
 	def test_column_meta_types(self):
 		"""columns가 ColumnMeta 인스턴스의 tuple이어야 한다."""

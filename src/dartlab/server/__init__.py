@@ -22,9 +22,15 @@ import dartlab
 from dartlab import Company
 
 from .models import AskRequest, ConfigureRequest
-from .resolve import try_resolve_company, try_resolve_from_history, build_not_found_msg
+from .resolve import (
+	try_resolve_company, try_resolve_from_history,
+	build_not_found_msg, build_ambiguous_msg,
+	needs_match_verification, verify_match_with_llm,
+	_collect_candidates, ResolveResult,
+)
 from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot, OLLAMA_MODEL_GUIDE
 from .streaming import stream_ask
+from .cache import company_cache
 
 
 app = FastAPI(title="DartLab", version=dartlab.__version__ if hasattr(dartlab, "__version__") else "0.2.0")
@@ -112,12 +118,15 @@ def api_status():
 
 	chatgpt_detail = {}
 	try:
-		from dartlab.engines.ai.oauthToken import is_authenticated, load_token
+		from dartlab.engines.ai.oauthToken import is_authenticated, load_token, TokenRefreshError
 		chatgpt_detail["authenticated"] = is_authenticated()
 		token_data = load_token()
 		if token_data:
 			chatgpt_detail["expiresAt"] = token_data.get("expires_at")
-	except Exception:
+	except TokenRefreshError as e:
+		chatgpt_detail["authenticated"] = False
+		chatgpt_detail["error"] = e.reason
+	except (OSError, ValueError):
 		chatgpt_detail["authenticated"] = False
 
 	version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
@@ -483,6 +492,131 @@ def api_company_modules(code: str):
 		raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.get("/api/export/modules/{code}")
+async def api_export_modules(code: str):
+	"""Excel 내보내기 가능한 모듈 목록."""
+	try:
+		c = await asyncio.to_thread(Company, code)
+	except (ValueError, OSError) as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+	from dartlab.export.excel import listAvailableModules
+	modules = await asyncio.to_thread(listAvailableModules, c)
+	return {
+		"stockCode": c.stockCode,
+		"corpName": c.corpName,
+		"modules": modules,
+	}
+
+
+@app.get("/api/export/sources/{code}")
+async def api_export_sources(code: str):
+	"""데이터 소스 디스커버리 — registry 기반 전체 소스 트리."""
+	try:
+		c = await asyncio.to_thread(Company, code)
+	except (ValueError, OSError) as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+	from dartlab.export.sources import discoverSources
+	tree = await asyncio.to_thread(discoverSources, c)
+	return tree.toDict()
+
+
+@app.get("/api/export/templates")
+def api_export_templates():
+	"""저장된 템플릿 목록 (프리셋 포함)."""
+	from dartlab.export.store import TemplateStore
+	store = TemplateStore()
+	templates = store.list()
+	return {
+		"templates": [t.toDict() for t in templates],
+	}
+
+
+@app.get("/api/export/templates/{template_id}")
+def api_export_template_get(template_id: str):
+	"""단일 템플릿 조회."""
+	from dartlab.export.store import TemplateStore
+	store = TemplateStore()
+	t = store.get(template_id)
+	if t is None:
+		raise HTTPException(status_code=404, detail=f"템플릿 '{template_id}'을 찾을 수 없습니다")
+	return t.toDict()
+
+
+@app.post("/api/export/templates")
+def api_export_template_save(req: dict):
+	"""템플릿 저장 (신규 or 업데이트)."""
+	from dartlab.export.store import TemplateStore
+	from dartlab.export.template import ExcelTemplate
+	store = TemplateStore()
+	t = ExcelTemplate.fromDict(req)
+	tid = store.save(t)
+	return {"ok": True, "templateId": tid}
+
+
+@app.delete("/api/export/templates/{template_id}")
+def api_export_template_delete(template_id: str):
+	"""템플릿 삭제."""
+	from dartlab.export.store import TemplateStore
+	store = TemplateStore()
+	deleted = store.delete(template_id)
+	if not deleted:
+		raise HTTPException(status_code=400, detail="프리셋 템플릿은 삭제할 수 없습니다")
+	return {"ok": True}
+
+
+@app.get("/api/export/excel/{code}")
+async def api_export_excel(
+	code: str,
+	modules: str | None = Query(None, description="쉼표 구분 모듈: IS,BS,CF,ratios,dividend,employee"),
+	template_id: str | None = Query(None, description="템플릿 ID (preset_full, preset_summary 등)"),
+):
+	"""Excel 파일 내보내기 — .xlsx 다운로드."""
+	import tempfile
+	try:
+		c = await asyncio.to_thread(Company, code)
+	except (ValueError, OSError) as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+	tmpDir = Path(tempfile.gettempdir())
+	safeName = c.corpName.replace("/", "_").replace("\\", "_")
+
+	if template_id:
+		from dartlab.export.store import TemplateStore
+		from dartlab.export.excel import exportWithTemplate
+		store = TemplateStore()
+		tmpl = store.get(template_id)
+		if tmpl is None:
+			raise HTTPException(status_code=404, detail=f"템플릿 '{template_id}'을 찾을 수 없습니다")
+		templateSafe = tmpl.name.replace("/", "_").replace("\\", "_")
+		outPath = tmpDir / f"{c.stockCode}_{safeName}_{templateSafe}.xlsx"
+		try:
+			await asyncio.to_thread(exportWithTemplate, c, tmpl, outPath)
+		except ValueError as e:
+			raise HTTPException(status_code=400, detail=str(e))
+		return FileResponse(
+			path=str(outPath),
+			filename=f"{c.stockCode}_{safeName}_{templateSafe}.xlsx",
+			media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		)
+
+	modList = [m.strip() for m in modules.split(",")] if modules else None
+	outPath = tmpDir / f"{c.stockCode}_{safeName}.xlsx"
+
+	try:
+		from dartlab.export.excel import exportToExcel
+		await asyncio.to_thread(exportToExcel, c, outputPath=outPath, modules=modList)
+	except ValueError as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+	return FileResponse(
+		path=str(outPath),
+		filename=f"{c.stockCode}_{safeName}.xlsx",
+		media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	)
+
+
 @app.get("/api/data/stats")
 def api_data_stats():
 	"""로컬 데이터 현황 — 문서/재무 파일 수, dartlab 버전."""
@@ -501,6 +635,20 @@ def api_data_stats():
 		except Exception:
 			stats[category] = {"count": 0, "path": ""}
 	return stats
+
+
+@app.get("/api/spec")
+def api_spec(engine: str | None = None, section: str | None = None):
+	"""시스템 스펙 조회 — LLM/MCP/외부 클라이언트용."""
+	from dartlab.engines.ai.spec import buildSpec, getEngineSpec
+
+	if engine:
+		result = getEngineSpec(engine, section)
+		if result is None:
+			raise HTTPException(status_code=404, detail=f"엔진 '{engine}'을 찾을 수 없습니다")
+		return result
+	depth = "detail" if section == "detail" else "summary"
+	return buildSpec(depth=depth)
 
 
 @app.post("/api/ask")
@@ -524,17 +672,46 @@ async def api_ask(req: AskRequest):
 
 	resolved = try_resolve_company(req)
 	c: Company | None = resolved.company
-	if not c and not resolved.not_found and req.history:
+
+	if c and needs_match_verification(req.question, c.corpName):
+		corrected = await asyncio.to_thread(
+			verify_match_with_llm, req.question, c.corpName, c.stockCode,
+		)
+		if corrected:
+			try:
+				c = Company(corrected)
+			except (ValueError, OSError):
+				candidates = _collect_candidates(corrected, strict=False)
+				if candidates:
+					resolved = ResolveResult(ambiguous=True, suggestions=candidates)
+					c = None
+
+	if c:
+		cached = company_cache.get(c.stockCode)
+		if cached:
+			c = cached[0]
+
+	if not c and not resolved.not_found and not resolved.ambiguous and req.history:
 		c = try_resolve_from_history(req.history)
+		if c:
+			cached = company_cache.get(c.stockCode)
+			if cached:
+				c = cached[0]
+
+	disambig_msg: str | None = None
+	if resolved.not_found:
+		disambig_msg = build_not_found_msg(resolved.suggestions)
+	elif resolved.ambiguous:
+		disambig_msg = build_ambiguous_msg(resolved.suggestions)
 
 	if req.stream:
 		return EventSourceResponse(
-			stream_ask(c, req, not_found_msg=build_not_found_msg(resolved.suggestions) if resolved.not_found else None),
+			stream_ask(c, req, not_found_msg=disambig_msg),
 			media_type="text/event-stream",
 		)
 
-	if resolved.not_found:
-		return {"answer": build_not_found_msg(resolved.suggestions)}
+	if disambig_msg:
+		return {"answer": disambig_msg}
 
 	if c is None:
 		return await _plain_chat(req)
@@ -577,7 +754,13 @@ async def _plain_chat(req: AskRequest):
 	try:
 		answer = await asyncio.to_thread(llm.complete, messages)
 		return {"answer": answer}
+	except PermissionError:
+		raise HTTPException(status_code=401, detail="ChatGPT OAuth 토큰이 없습니다. 로그인이 필요합니다.")
 	except Exception as e:
+		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
+		from dartlab.engines.ai.oauthToken import TokenRefreshError
+		if isinstance(e, (ChatGPTOAuthError, TokenRefreshError)):
+			raise HTTPException(status_code=401, detail=str(e))
 		raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -610,20 +793,92 @@ def serve_spa(path: str = ""):
 	return HTMLResponse("<h2>index.html not found</h2>", status_code=404)
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8400):
-	"""서버 실행."""
+def _is_dartlab_alive(port: int) -> bool:
+	"""DartLab 서버가 살아있는지 health check."""
+	import urllib.request
+
+	try:
+		resp = urllib.request.urlopen(f"http://127.0.0.1:{port}/api/status", timeout=2)
+		return resp.status == 200
+	except (OSError, urllib.error.URLError):
+		return False
+
+
+def _kill_port(port: int) -> bool:
+	"""포트를 점유 중인 좀비 프로세스를 종료한다. 성공 시 True."""
+	import platform
+	import subprocess
+	import time
+
+	system = platform.system()
+	pids: set[int] = set()
+
+	if system == "Windows":
+		result = subprocess.run(
+			["netstat", "-ano", "-p", "TCP"],
+			capture_output=True, text=True,
+		)
+		for line in result.stdout.splitlines():
+			parts = line.split()
+			if len(parts) >= 5 and f":{port}" in parts[1] and parts[3] == "LISTENING":
+				pid = int(parts[4])
+				if pid > 0:
+					pids.add(pid)
+	else:
+		result = subprocess.run(
+			["lsof", "-ti", f":{port}"],
+			capture_output=True, text=True,
+		)
+		for line in result.stdout.strip().splitlines():
+			if line.strip().isdigit():
+				pids.add(int(line.strip()))
+
+	if not pids:
+		return False
+
+	import os
+	my_pid = os.getpid()
+	for pid in pids:
+		if pid == my_pid:
+			continue
+		if system == "Windows":
+			subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+		else:
+			import signal
+			os.kill(pid, signal.SIGTERM)
+
+	time.sleep(0.5)
+	return True
+
+
+def ensure_port(port: int) -> str:
+	"""포트 확보. "ok" | "already_running" | "failed" 반환."""
 	import socket
 	import sys
-
-	import uvicorn
 
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	try:
 		sock.bind(("127.0.0.1", port))
 		sock.close()
+		return "ok"
 	except OSError:
-		print(f"\n  오류: 포트 {port}이 이미 사용 중입니다.", file=sys.stderr)
-		print(f"  다른 포트를 사용하세요: dartlab ai --port {port + 1}\n", file=sys.stderr)
-		return
+		pass
 
+	if _is_dartlab_alive(port):
+		print(f"\n  이미 실행 중입니다: http://localhost:{port}\n")
+		return "already_running"
+
+	print(f"\n  포트 {port} 사용 중 (좀비) — 기존 프로세스 종료 중...")
+	if _kill_port(port):
+		print(f"  종료 완료. 재시작합니다.\n")
+		return "ok"
+
+	print(f"\n  오류: 포트 {port}을 해제할 수 없습니다.", file=sys.stderr)
+	print(f"  다른 포트를 사용하세요: dartlab ai --port {port + 1}\n", file=sys.stderr)
+	return "failed"
+
+
+def run_server(host: str = "0.0.0.0", port: int = 8400):
+	"""서버 실행 (blocking)."""
+	import uvicorn
 	uvicorn.run("dartlab.server:app", host=host, port=port, log_level="info")

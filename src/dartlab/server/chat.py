@@ -86,9 +86,26 @@ def build_history_messages(history: list[HistoryMessage] | None) -> list[dict[st
 	for h in trimmed:
 		role = h.role if h.role in ("user", "assistant") else "user"
 		text = h.text.strip()
-		if text:
-			msgs.append({"role": role, "content": text})
+		if not text:
+			continue
+		if role == "assistant" and h.meta and h.meta.stockCode:
+			mod_str = ", ".join(h.meta.modules) if h.meta.modules else "N/A"
+			text = (
+				f"[이전 분석: {h.meta.company or '?'} ({h.meta.stockCode}), "
+				f"사용 모듈: {mod_str}]\n{text}"
+			)
+		msgs.append({"role": role, "content": text})
 	return msgs
+
+
+def extract_last_stock_code(history: list[HistoryMessage] | None) -> str | None:
+	"""히스토리에서 가장 최근 분석된 종목코드를 추출."""
+	if not history:
+		return None
+	for h in reversed(history):
+		if h.meta and h.meta.stockCode:
+			return h.meta.stockCode
+	return None
 
 
 def build_snapshot(company: Company) -> dict | None:

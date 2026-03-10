@@ -111,22 +111,13 @@ def register_defaults(company: Any) -> None:
 			return "\n".join(f"- {item}" for item in data[:20])
 		return str(data)[:2000]
 
+	from dartlab.core.registry import buildModuleDescription
 	register_tool(
 		"get_data",
 		get_data,
 		"기업의 재무/공시 데이터를 조회합니다. "
 		"주요 module_name: "
-		"BS(재무상태표), IS(손익계산서), CF(현금흐름표), fsSummary(재무요약), "
-		"dividend(배당), audit(감사의견), majorHolder(최대주주), "
-		"executive(임원), employee(직원), rnd(R&D), segment(사업부문), "
-		"productService(주요제품), salesOrder(매출수주), "
-		"bond(채무증권), shareCapital(주식현황), capitalChange(자본변동), "
-		"contingentLiability(우발부채), sanction(제재현황), "
-		"subsidiary(자회사투자), affiliateGroup(계열사), "
-		"boardOfDirectors(이사회), executivePay(임원보수), "
-		"tangibleAsset(유형자산), costByNature(비용성격별분류), "
-		"riskDerivative(위험관리), internalControl(내부통제), "
-		"business(사업의내용), mdna(MD&A), companyOverviewDetail(회사개요). "
+		f"{buildModuleDescription()}. "
 		"모듈명을 모르면 먼저 `list_modules`를 호출하세요.",
 		{
 			"type": "object",
@@ -401,5 +392,306 @@ def register_defaults(company: Any) -> None:
 		"get_company_info",
 		get_company_info,
 		"기업의 기본 정보(기업명, 종목코드, 대표자, 업종 등)를 조회합니다.",
+		{"type": "object", "properties": {}},
+	)
+
+	# 8. get_system_spec: DartLab 시스템 스펙 조회
+	def get_system_spec() -> str:
+		from dartlab.engines.ai.spec import buildSpec
+		spec = buildSpec(depth="summary")
+		lines = [f"# {spec['system']['name']} v{spec['system']['version']}"]
+		lines.append(f"{spec['system']['description']} ({spec['system']['coverage']})")
+		lines.append("")
+		lines.append("## 엔진 목록")
+		for name, info in spec.get("engines", {}).items():
+			lines.append(f"### {name}")
+			lines.append(f"- {info.get('description', '')}")
+			summary = info.get("summary", {})
+			for k, v in summary.items():
+				lines.append(f"- {k}: {v}")
+		return "\n".join(lines)
+
+	register_tool(
+		"get_system_spec",
+		get_system_spec,
+		"DartLab 시스템의 전체 스펙(엔진 목록, 데이터 종류, 기능)을 조회합니다. "
+		"사용자가 '어떤 데이터가 있어?', '무슨 분석이 가능해?' 같은 메타 질문을 할 때 사용하세요.",
+		{"type": "object", "properties": {}},
+	)
+
+	# 9. get_engine_spec: 특정 엔진 상세 스펙 조회
+	def get_engine_spec(engine: str) -> str:
+		from dartlab.engines.ai.spec import getEngineSpec
+		spec = getEngineSpec(engine)
+		if spec is None:
+			from dartlab.engines.ai.spec import buildSpec
+			all_spec = buildSpec(depth="summary")
+			available = ", ".join(all_spec.get("engines", {}).keys())
+			return f"'{engine}' 엔진을 찾을 수 없습니다. 사용 가능한 엔진: {available}"
+		return json.dumps(spec, ensure_ascii=False, indent=2, default=str)
+
+	register_tool(
+		"get_engine_spec",
+		get_engine_spec,
+		"특정 엔진의 상세 스펙을 조회합니다. "
+		"엔진명 예시: insight(인사이트), sector(섹터분류), rank(규모순위), "
+		"dart.finance(재무제표), dart.report(정기보고서). "
+		"각 엔진이 제공하는 구체적 지표·영역·분류 기준을 확인할 수 있습니다.",
+		{
+			"type": "object",
+			"properties": {
+				"engine": {
+					"type": "string",
+					"description": "엔진명 (예: insight, sector, rank, dart.finance, dart.report)",
+				},
+			},
+			"required": ["engine"],
+		},
+	)
+
+	# 10. get_insight: 기업 인사이트 분석 실행
+	def get_insight() -> str:
+		stockCode = getattr(company, "stockCode", None)
+		if not stockCode:
+			return "종목코드가 없어 인사이트 분석을 실행할 수 없습니다."
+		try:
+			from dartlab.engines.insight import analyze
+			result = analyze(stockCode, company=company)
+			if result is None:
+				return "재무 데이터 부족으로 인사이트 분석을 수행할 수 없습니다."
+			grades = result.grades()
+			lines = [f"프로파일: {result.profile}", ""]
+			lines.append("| 영역 | 등급 | 요약 |")
+			lines.append("| --- | --- | --- |")
+			areaMap = {
+				"performance": "실적",
+				"profitability": "수익성",
+				"health": "건전성",
+				"cashflow": "현금흐름",
+				"governance": "지배구조",
+				"risk": "리스크",
+				"opportunity": "기회",
+			}
+			for key, label in areaMap.items():
+				ir = getattr(result, key, None)
+				grade = grades.get(key, "N")
+				summary = ir.summary if ir else "-"
+				lines.append(f"| {label} | {grade} | {summary} |")
+			if result.anomalies:
+				lines.append("")
+				for a in result.anomalies[:5]:
+					lines.append(f"- [{a.severity}] {a.text}")
+			if result.summary:
+				lines.append(f"\n{result.summary}")
+			return "\n".join(lines)
+		except ImportError:
+			return "insight 엔진을 불러올 수 없습니다."
+
+	register_tool(
+		"get_insight",
+		get_insight,
+		"기업의 7영역 인사이트 분석을 실행합니다. "
+		"실적, 수익성, 재무건전성, 현금흐름, 지배구조, 리스크, 기회를 A~F 등급으로 평가. "
+		"이상치 탐지와 프로파일(premium/growth/stable/caution/distress) 분류를 포함합니다.",
+		{"type": "object", "properties": {}},
+	)
+
+	# 11. get_sector_info: 기업 섹터 분류 조회
+	def get_sector_info() -> str:
+		try:
+			from dartlab.engines.sector import classify, getParams
+			corpName = getattr(company, "corpName", "")
+			overview = getattr(company, "companyOverview", None)
+			kindIndustry = None
+			if isinstance(overview, dict):
+				kindIndustry = overview.get("indutyName")
+			detail = getattr(company, "companyOverviewDetail", None)
+			mainProducts = None
+			if isinstance(detail, dict):
+				mainProducts = detail.get("mainBusiness")
+			info = classify(corpName, kindIndustry=kindIndustry, mainProducts=mainProducts)
+			params = getParams(info)
+			lines = [
+				f"대분류: {info.sector.value}",
+				f"중분류: {info.industryGroup.value}",
+				f"분류근거: {info.source} (신뢰도 {info.confidence:.0%})",
+			]
+			if params:
+				lines.append(f"섹터 기준 PER: {params.perMultiple}배")
+				lines.append(f"섹터 기준 PBR: {params.pbrMultiple}배")
+				lines.append(f"할인율: {params.discountRate}%")
+				lines.append(f"성장률: {params.growthRate}%")
+			return "\n".join(lines)
+		except ImportError:
+			return "sector 엔진을 불러올 수 없습니다."
+
+	register_tool(
+		"get_sector_info",
+		get_sector_info,
+		"기업의 WICS 섹터 분류와 섹터 파라미터(PER, PBR, 할인율)를 조회합니다.",
+		{"type": "object", "properties": {}},
+	)
+
+	# 12. get_rank: 기업 시장 순위 조회
+	def get_rank_info() -> str:
+		stockCode = getattr(company, "stockCode", None)
+		if not stockCode:
+			return "종목코드가 없습니다."
+		try:
+			from dartlab.engines.rank import getRank
+			rank = getRank(stockCode)
+			if rank is None:
+				return "순위 데이터가 없습니다. (rank snapshot 미생성)"
+			lines = []
+			if rank.revenueRank is not None:
+				lines.append(f"매출 순위(전체): {rank.revenueRank}/{rank.revenueTotal}")
+			if rank.assetRank is not None:
+				lines.append(f"자산 순위(전체): {rank.assetRank}/{rank.assetTotal}")
+			if rank.growthRank is not None:
+				lines.append(f"성장률 순위(전체): {rank.growthRank}/{rank.growthTotal}")
+			if rank.revenueRankInSector is not None:
+				lines.append(f"매출 순위({rank.sector}): {rank.revenueRankInSector}/{rank.revenueSectorTotal}")
+			if rank.sizeClass:
+				lines.append(f"규모 분류: {rank.sizeClass}")
+			return "\n".join(lines) if lines else "순위 데이터가 비어있습니다."
+		except ImportError:
+			return "rank 엔진을 불러올 수 없습니다."
+
+	register_tool(
+		"get_rank",
+		get_rank_info,
+		"기업의 전체 시장 및 섹터 내 규모 순위(매출, 자산, 성장률)를 조회합니다.",
+		{"type": "object", "properties": {}},
+	)
+
+	# 13. export_to_excel: Excel 파일 내보내기
+	def export_to_excel(modules: str = "") -> str:
+		from dartlab.export.excel import exportToExcel, listAvailableModules
+		import tempfile
+
+		modList = [m.strip() for m in modules.split(",") if m.strip()] or None
+		safeName = company.corpName.replace("/", "_").replace("\\", "_")
+		outPath = Path(tempfile.gettempdir()) / f"{company.stockCode}_{safeName}.xlsx"
+
+		exportToExcel(company, outputPath=outPath, modules=modList)
+		available = listAvailableModules(company)
+		modDesc = ", ".join(m["label"] for m in available) if not modList else ", ".join(modList)
+		return f"Excel 파일 생성 완료: {outPath}\n포함 시트: {modDesc}"
+
+	from pathlib import Path
+
+	register_tool(
+		"export_to_excel",
+		export_to_excel,
+		"기업 데이터를 Excel(.xlsx) 파일로 내보냅니다. "
+		"modules: 쉼표 구분 시트 선택 (IS,BS,CF,ratios,dividend,audit,employee,executive 등 Company의 모든 property). "
+		"비워두면 데이터가 있는 모든 모듈 자동 포함.",
+		{
+			"type": "object",
+			"properties": {
+				"modules": {
+					"type": "string",
+					"description": "포함할 시트 (쉼표 구분, 예: 'IS,BS,ratios,dividend'). 비워두면 전체.",
+					"default": "",
+				},
+			},
+		},
+	)
+
+	# 14. create_template: 엑셀 템플릿 생성
+	def create_template(name: str, sheets_json: str) -> str:
+		"""JSON 시트 정의로 Excel 내보내기 템플릿을 생성합니다."""
+		from dartlab.export.template import ExcelTemplate, SheetSpec
+		from dartlab.export.store import TemplateStore
+		try:
+			sheets_data = json.loads(sheets_json)
+		except json.JSONDecodeError:
+			return "sheets_json 파싱 오류. JSON 배열 형태로 입력하세요. 예: [{\"source\":\"IS\",\"label\":\"손익\"}]"
+		sheets = [SheetSpec(**s) for s in sheets_data]
+		tmpl = ExcelTemplate(name=name, sheets=sheets)
+		store = TemplateStore()
+		tid = store.save(tmpl)
+		sheetNames = ", ".join(s.label for s in sheets)
+		return f"템플릿 '{name}' 생성 완료 (ID: {tid})\n시트: {sheetNames}"
+
+	register_tool(
+		"create_template",
+		create_template,
+		"Excel 내보내기 템플릿을 생성합니다. "
+		"시트 구성을 JSON으로 정의하면 저장되어 다음에도 재사용 가능합니다. "
+		"프리셋: preset_full(전체), preset_summary(요약), preset_governance(지배구조).",
+		{
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "템플릿 이름 (예: '내 분석 양식')",
+				},
+				"sheets_json": {
+					"type": "string",
+					"description": "시트 목록 JSON. 예: [{\"source\":\"IS\",\"label\":\"손익계산서\"},{\"source\":\"BS\"},{\"source\":\"dividend\"}]",
+				},
+			},
+			"required": ["name", "sheets_json"],
+		},
+	)
+
+	# 15. export_with_template: 템플릿 기반 엑셀 내보내기
+	def export_with_template(template_id: str) -> str:
+		"""저장된 템플릿으로 Excel 파일을 생성합니다."""
+		from dartlab.export.store import TemplateStore
+		from dartlab.export.excel import exportWithTemplate
+		import tempfile
+
+		store = TemplateStore()
+		tmpl = store.get(template_id)
+		if tmpl is None:
+			available = store.list()
+			avail_str = ", ".join(f"{t.templateId}({t.name})" for t in available)
+			return f"템플릿 '{template_id}'을 찾을 수 없습니다. 사용 가능: {avail_str}"
+
+		safeName = company.corpName.replace("/", "_").replace("\\", "_")
+		templateSafe = tmpl.name.replace("/", "_").replace("\\", "_")
+		outPath = Path(tempfile.gettempdir()) / f"{company.stockCode}_{safeName}_{templateSafe}.xlsx"
+
+		exportWithTemplate(company, tmpl, outPath)
+		return f"Excel 파일 생성 완료: {outPath}\n템플릿: {tmpl.name} ({len(tmpl.sheets)}개 시트)"
+
+	register_tool(
+		"export_with_template",
+		export_with_template,
+		"저장된 템플릿으로 Excel 파일을 생성합니다. "
+		"템플릿 ID 예시: preset_full(전체), preset_summary(요약), preset_governance(지배구조). "
+		"사용자가 만든 커스텀 템플릿도 ID로 사용 가능합니다.",
+		{
+			"type": "object",
+			"properties": {
+				"template_id": {
+					"type": "string",
+					"description": "사용할 템플릿 ID (예: preset_full, preset_summary, t_1234567890)",
+				},
+			},
+			"required": ["template_id"],
+		},
+	)
+
+	# 16. list_templates: 저장된 템플릿 목록
+	def list_templates() -> str:
+		"""저장된 Excel 내보내기 템플릿 목록을 조회합니다."""
+		from dartlab.export.store import TemplateStore
+		store = TemplateStore()
+		templates = store.list()
+		if not templates:
+			return "저장된 템플릿이 없습니다."
+		lines = ["| ID | 이름 | 시트 수 | 설명 |", "| --- | --- | --- | --- |"]
+		for t in templates:
+			lines.append(f"| `{t.templateId}` | {t.name} | {len(t.sheets)} | {t.description or '-'} |")
+		return "\n".join(lines)
+
+	register_tool(
+		"list_templates",
+		list_templates,
+		"저장된 Excel 내보내기 템플릿 목록을 조회합니다. "
+		"프리셋과 사용자 커스텀 템플릿을 모두 포함합니다.",
 		{"type": "object", "properties": {}},
 	)

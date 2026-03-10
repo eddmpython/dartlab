@@ -30,6 +30,14 @@ html, body, #app {
 	line-height: 1.6;
 }
 
+.glow-bg {
+	background:
+		radial-gradient(ellipse at 50% 0%, rgba(234,70,71,0.04) 0%, transparent 55%),
+		radial-gradient(ellipse at 30% 40%, rgba(234,70,71,0.02) 0%, transparent 50%),
+		radial-gradient(ellipse at 75% 60%, rgba(251,146,60,0.015) 0%, transparent 50%),
+		var(--color-dl-bg-dark);
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-dl-border); border-radius: 3px; }
@@ -60,7 +68,7 @@ html, body, #app {
 	transition: border-color 0.2s;
 	width: 100%;
 }
-.input-box:focus-within { border-color: var(--color-dl-text-dim); }
+.input-box:focus-within { border-color: rgba(234, 70, 71, 0.3); }
 .input-box.large {
 	padding: 16px 20px;
 	box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3);
@@ -134,12 +142,15 @@ html, body, #app {
 }
 .prose-dartlab pre code { background: none; padding: 0; color: var(--color-dl-text-muted); }
 .prose-dartlab table {
-	border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.875em;
+	border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.85em;
+	border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 8px;
+	overflow: hidden;
 }
 .prose-dartlab th {
 	text-align: left; padding: 0.6rem 0.8rem;
-	border-bottom: 2px solid rgba(148, 163, 184, 0.15);
-	color: var(--color-dl-text); font-weight: 600; font-size: 0.8rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+	background: rgba(148, 163, 184, 0.04);
+	color: var(--color-dl-text-muted); font-weight: 500; font-size: 0.8rem;
 	white-space: nowrap; letter-spacing: 0.02em;
 }
 .prose-dartlab td {
@@ -152,7 +163,8 @@ html, body, #app {
 	font-family: var(--font-mono); font-size: 0.85em;
 }
 .prose-dartlab thead { position: sticky; top: 0; }
-.prose-dartlab tbody tr:hover td { background: rgba(148, 163, 184, 0.03); }
+.prose-dartlab tbody tr:hover td { background: rgba(148, 163, 184, 0.04); }
+.prose-dartlab tbody tr:last-child td { border-bottom: none; }
 .prose-dartlab strong { font-weight: 600; color: var(--color-dl-text); }
 .prose-dartlab blockquote {
 	border-left: 3px solid var(--color-dl-primary); padding: 0.4em 1em;
@@ -161,3 +173,71 @@ html, body, #app {
 }
 .prose-dartlab a { color: var(--color-dl-primary); text-decoration: none; }
 .prose-dartlab a:hover { text-decoration: underline; }
+
+/* ── Code block copy button ── */
+.code-block-wrap {
+	position: relative;
+	margin: 0.8em 0;
+}
+.code-block-wrap pre { margin: 0; }
+.code-copy-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	border: 1px solid rgba(148, 163, 184, 0.12);
+	background: rgba(15, 18, 25, 0.8);
+	color: var(--color-dl-text-dim);
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+.code-block-wrap:hover .code-copy-btn { opacity: 1; }
+.code-copy-btn:hover { color: var(--color-dl-text); background: rgba(30, 36, 51, 0.9); }
+
+/* ── Number highlight ── */
+.num-highlight {
+	color: var(--color-dl-accent-light);
+	font-variant-numeric: tabular-nums;
+	font-weight: 500;
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+	0% { background-position: -400px 0; }
+	100% { background-position: 400px 0; }
+}
+.skeleton-line {
+	height: 12px;
+	border-radius: 6px;
+	background: linear-gradient(90deg, rgba(148,163,184,0.06) 25%, rgba(148,163,184,0.12) 50%, rgba(148,163,184,0.06) 75%);
+	background-size: 800px 100%;
+	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+	.sidebar-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 40;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(2px);
+	}
+	.sidebar-mobile {
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		z-index: 50;
+		width: 280px;
+		max-width: 85vw;
+	}
+	.prose-dartlab table { font-size: 0.78em; }
+	.prose-dartlab th, .prose-dartlab td { padding: 0.4rem 0.5rem; }
+}

@@ -15,12 +15,19 @@ _SKIP_CI = pytest.mark.skipif(
 	reason="CI 환경에서 CLI provider 테스트 불가",
 )
 
+_CLEAN_CLAUDE_ENV = {
+	k: v for k, v in os.environ.items()
+	if not k.startswith("CLAUDE") and not k.startswith("VSCODE")
+	and k not in ("ELECTRON_RUN_AS_NODE", "ELECTRON_NO_ASAR")
+}
+
 
 # ══════════════════════════════════════
 # ClaudeCodeProvider
 # ══════════════════════════════════════
 
 @_SKIP_CI
+@patch.dict(os.environ, _CLEAN_CLAUDE_ENV, clear=True)
 class TestClaudeCodeProvider:
 	def _make_provider(self, model=None):
 		from dartlab.engines.ai.providers.claude_code import ClaudeCodeProvider

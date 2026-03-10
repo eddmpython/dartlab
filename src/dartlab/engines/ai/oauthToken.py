@@ -80,36 +80,87 @@ def exchange_code(code: str, verifier: str) -> dict[str, Any]:
     return data
 
 
+class TokenRefreshError(Exception):
+    """refresh_token 갱신 실패 — 사유를 분류하여 전달."""
+
+    def __init__(self, reason: str, detail: str = ""):
+        self.reason = reason
+        self.detail = detail
+        super().__init__(f"토큰 갱신 실패 ({reason}): {detail}")
+
+
 def refresh_access_token() -> dict[str, Any] | None:
-    """저장된 refresh_token으로 access_token 갱신."""
+    """저장된 refresh_token으로 access_token 갱신.
+
+    Raises:
+        TokenRefreshError: 갱신 실패 시 사유 분류
+            - "no_token": 저장된 토큰 없음
+            - "expired": refresh_token 만료
+            - "reused": refresh_token 이미 사용됨 (rotation)
+            - "revoked": refresh_token 취소됨
+            - "network": 네트워크 오류
+            - "unknown": 분류 불가
+    """
     token_data = load_token()
     if not token_data or not token_data.get("refresh_token"):
-        return None
+        raise TokenRefreshError("no_token", "저장된 토큰이 없습니다. 재로그인이 필요합니다.")
 
     import requests
 
-    resp = requests.post(
-        CHATGPT_TOKEN_URL,
-        data={
-            "grant_type": "refresh_token",
-            "client_id": CHATGPT_CLIENT_ID,
-            "refresh_token": token_data["refresh_token"],
-        },
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        return None
+    try:
+        resp = requests.post(
+            CHATGPT_TOKEN_URL,
+            data={
+                "grant_type": "refresh_token",
+                "client_id": CHATGPT_CLIENT_ID,
+                "refresh_token": token_data["refresh_token"],
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=15,
+        )
+    except requests.ConnectionError:
+        raise TokenRefreshError("network", "OpenAI 인증 서버에 연결할 수 없습니다.")
+    except requests.Timeout:
+        raise TokenRefreshError("network", "OpenAI 인증 서버 응답 시간 초과.")
 
-    data = resp.json()
-    if "refresh_token" not in data:
-        data["refresh_token"] = token_data["refresh_token"]
-    _save_token(data)
-    return data
+    if resp.status_code == 200:
+        data = resp.json()
+        if "refresh_token" not in data:
+            data["refresh_token"] = token_data["refresh_token"]
+        _save_token(data)
+        return data
+
+    error_body = {}
+    try:
+        error_body = resp.json()
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    error_code = error_body.get("error", "")
+    error_desc = error_body.get("error_description", resp.text[:200])
+
+    if "expired" in error_code or "expired" in error_desc.lower():
+        raise TokenRefreshError("expired", "refresh_token이 만료되었습니다. 재로그인이 필요합니다.")
+    if "reuse" in error_code or "already" in error_desc.lower():
+        raise TokenRefreshError("reused", "refresh_token이 이미 사용되었습니다. 재로그인이 필요합니다.")
+    if "revoke" in error_code or "invalid_grant" in error_code:
+        raise TokenRefreshError("revoked", "refresh_token이 취소되었습니다. 재로그인이 필요합니다.")
+    if "invalid_client" in error_code:
+        raise TokenRefreshError(
+            "client_changed",
+            "OAuth Client ID가 변경된 것 같습니다. "
+            "openai/codex 레포에서 최신 Client ID를 확인하세요.",
+        )
+
+    raise TokenRefreshError("unknown", f"HTTP {resp.status_code}: {error_desc}")
 
 
 def get_valid_token() -> str | None:
-    """유효한 access_token을 반환. 만료 임박 시 자동 갱신."""
+    """유효한 access_token을 반환. 만료 임박 시 자동 갱신.
+
+    Raises:
+        TokenRefreshError: 갱신 실패 시 (사유 분류 포함)
+    """
     token_data = load_token()
     if not token_data:
         return None
