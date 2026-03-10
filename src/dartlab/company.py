@@ -738,6 +738,56 @@ class KRCompany:
         """
         return self._getFinanceBuild("cum", "CFS")
 
+    @property
+    def sceMatrix(self):
+        """자본변동표 연도별 매트릭스 (연결 기준).
+
+        Returns:
+            (matrix, years) 또는 None.
+            matrix[year][cause][detail] = 금액
+            years = ["2016", ..., "2024"]
+
+        Example::
+
+            c = Company("005930")
+            matrix, years = c.sceMatrix
+            matrix["2024"]["net_income"]["retained_earnings"]
+        """
+        if not self._hasFinance:
+            return None
+        cacheKey = "_sceMatrix_CFS"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.dart.finance.pivot import buildSceMatrix
+        result = buildSceMatrix(self.stockCode)
+        self._cache[cacheKey] = result
+        return result
+
+    @property
+    def sce(self):
+        """자본변동표 연도별 시계열 (연결 기준).
+
+        Returns:
+            (series, years) 또는 None.
+            series["SCE"]["cause__detail"] = [v2016, ..., v2024]
+            years = ["2016", ..., "2024"]
+
+        Example::
+
+            c = Company("005930")
+            series, years = c.sce
+            series["SCE"]["net_income__retained_earnings"]
+        """
+        if not self._hasFinance:
+            return None
+        cacheKey = "_sceAnnual_CFS"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.dart.finance.pivot import buildSceAnnual
+        result = buildSceAnnual(self.stockCode)
+        self._cache[cacheKey] = result
+        return result
+
     # ── 섹터 분류 ──
 
     @property

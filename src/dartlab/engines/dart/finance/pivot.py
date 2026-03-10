@@ -5,6 +5,7 @@
 2. IS/CIS/CF 누적 → standalone 변환
 3. BS 그대로 (시점 잔액)
 4. 분기별 period 컬럼 생성
+5. SCE 연도별 매트릭스/시계열 피벗
 
 결과 구조::
 
@@ -15,6 +16,11 @@
     }
 
 periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
+
+SCE 결과 구조::
+
+    matrix[year][cause][detail] = 금액
+    series["SCE"]["cause__detail"] = [v2016, v2017, ..., v2024]
 
 snakeId는 standardAccounts.json 기준 그대로 사용.
 """
@@ -399,3 +405,154 @@ def _aggregateCumulative(
 			result[sjDiv][snakeId] = cum
 
 	return result, list(qPeriods)
+
+
+def buildSceMatrix(
+	stockCode: str,
+	fsDivPref: str = "CFS",
+) -> Optional[tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]]]:
+	"""SCE 원본 → 연도별 자본변동 매트릭스.
+
+	각 연도에서 가장 높은 분기(maxQ)만 사용.
+
+	Args:
+		stockCode: 종목코드 (예: "005930")
+		fsDivPref: "CFS" (연결) 또는 "OFS" (별도).
+
+	Returns:
+		(matrix, years) 또는 None.
+		matrix[year][cause_snakeId][detail_snakeId] = 금액
+		years = ["2016", "2017", ..., "2024"]
+	"""
+	from dartlab.core.dataLoader import loadData
+	from dartlab.engines.dart.finance.sceMapper import normalizeCause, normalizeDetail
+
+	df = loadData(stockCode, category="finance")
+	if df is None or df.is_empty():
+		return None
+
+	return _buildSceMatrixFromDf(df, fsDivPref)
+
+
+def _buildSceMatrixFromDf(
+	df: pl.DataFrame,
+	fsDivPref: str = "CFS",
+) -> Optional[tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]]]:
+	"""DataFrame에서 직접 SCE 매트릭스 피벗 (내부용)."""
+	from dartlab.engines.dart.finance.sceMapper import normalizeCause, normalizeDetail
+
+	if "sj_div" not in df.columns:
+		return None
+
+	sce = df.filter(pl.col("sj_div") == "SCE")
+	if sce.is_empty():
+		return None
+
+	sce = _applyCfsPriority(sce, fsDivPref)
+
+	if "thstrm_amount" in sce.columns:
+		sce = sce.with_columns(
+			pl.when(
+				pl.col("thstrm_amount").is_not_null()
+				& (pl.col("thstrm_amount").str.strip_chars() != "")
+				& (pl.col("thstrm_amount").str.strip_chars() != "-")
+			)
+			.then(pl.col("thstrm_amount").str.strip_chars().str.replace_all(",", "").cast(pl.Float64, strict=False))
+			.otherwise(pl.lit(None).cast(pl.Float64))
+			.alias("thstrm_amount")
+		)
+
+	yearMaxQ: dict[str, int] = {}
+	for row in sce.iter_rows(named=True):
+		year = row.get("bsns_year", "")
+		reprtNm = row.get("reprt_nm", "")
+		qNum = QUARTER_ORDER.get(reprtNm, 0)
+		if qNum > 0:
+			yearMaxQ[year] = max(yearMaxQ.get(year, 0), qNum)
+
+	yearSet: set[str] = set()
+	matrix: dict[str, dict[str, dict[str, Optional[float]]]] = {}
+
+	for row in sce.iter_rows(named=True):
+		year = row.get("bsns_year", "")
+		reprtNm = row.get("reprt_nm", "")
+		qNum = QUARTER_ORDER.get(reprtNm, 0)
+		if qNum == 0:
+			continue
+
+		maxQ = yearMaxQ.get(year, 4)
+		if qNum != maxQ:
+			continue
+
+		nm = row.get("account_nm", "") or ""
+		detail = row.get("account_detail", "") or ""
+		amount = row.get("thstrm_amount")
+
+		cause = normalizeCause(nm)
+		component = normalizeDetail(detail)
+
+		if cause.startswith("unmapped:") or component.startswith("unmapped:"):
+			continue
+
+		yearSet.add(year)
+		if year not in matrix:
+			matrix[year] = {}
+		if cause not in matrix[year]:
+			matrix[year][cause] = {}
+
+		if amount is not None:
+			matrix[year][cause][component] = amount
+
+	years = sorted(yearSet)
+	if not years:
+		return None
+	return matrix, years
+
+
+def buildSceAnnual(
+	stockCode: str,
+	fsDivPref: str = "CFS",
+) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
+	"""SCE → 연도별 시계열 (BS/IS/CF와 유사한 출력 형태).
+
+	Args:
+		stockCode: 종목코드 (예: "005930")
+		fsDivPref: "CFS" (연결) 또는 "OFS" (별도).
+
+	Returns:
+		(series, years) 또는 None.
+		series["SCE"]["cause__detail"] = [v2016, v2017, ..., v2024]
+		years = ["2016", "2017", ..., "2024"]
+	"""
+	result = buildSceMatrix(stockCode, fsDivPref)
+	if result is None:
+		return None
+
+	return _sceMatrixToSeries(result)
+
+
+def _sceMatrixToSeries(
+	matrixResult: tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]],
+) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+	"""매트릭스 → 연도별 시계열 변환 (내부용)."""
+	matrix, years = matrixResult
+	nYears = len(years)
+	yearIdx = {y: i for i, y in enumerate(years)}
+
+	allKeys: set[tuple[str, str]] = set()
+	for year in matrix:
+		for cause in matrix[year]:
+			for detail in matrix[year][cause]:
+				allKeys.add((cause, detail))
+
+	series: dict[str, list[Optional[float]]] = {}
+	for cause, detail in sorted(allKeys):
+		key = f"{cause}__{detail}"
+		vals: list[Optional[float]] = [None] * nYears
+		for year in matrix:
+			idx = yearIdx[year]
+			val = matrix[year].get(cause, {}).get(detail)
+			vals[idx] = val
+		series[key] = vals
+
+	return {"SCE": series}, years
