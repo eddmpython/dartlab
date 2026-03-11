@@ -135,9 +135,14 @@
 		return val.toLocaleString("ko-KR");
 	}
 
+	function isYearValue(val) {
+		return Number.isInteger(val) && val >= 1900 && val <= 2100;
+	}
+
 	function formatCellValue(val, unit) {
 		if (val === null || val === undefined) return "-";
 		if (typeof val === "number") {
+			if (isYearValue(val)) return String(val);
 			if (unit === "원" || unit === "백만원") {
 				if (unit === "백만원") val = val * 1_000_000;
 				return formatWon(val);
@@ -196,7 +201,7 @@
 			{/if}
 		</div>
 		<div class="flex items-center gap-2">
-			{#if selectedCompany}
+			{#if selectedCompany && !activeModule}
 				<button
 					class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dl-success/15 text-dl-success text-[11px] font-medium hover:bg-dl-success/25 transition-colors disabled:opacity-40"
 					onclick={handleDownloadExcel}
@@ -207,7 +212,7 @@
 					{:else}
 						<Download size={12} />
 					{/if}
-					Excel
+					전체 Excel
 				</button>
 			{/if}
 			<button
