@@ -21,10 +21,10 @@ export const navigation: NavItem[] = [
 			{ title: 'finance.summary', href: '/docs/api/finance-summary' },
 			{ title: 'finance.statements', href: '/docs/api/finance-statements' },
 			{ title: 'All Modules', href: '/docs/api/finance-others' },
-			{ title: '계정 표준화와 시계열', href: '/docs/api/timeseries' },
-			{ title: '섹터 분류', href: '/docs/api/sector' },
-			{ title: '인사이트 등급', href: '/docs/api/insight' },
-			{ title: '시장 순위', href: '/docs/api/rank' }
+			{ title: 'Timeseries', href: '/docs/api/timeseries' },
+			{ title: 'Sector', href: '/docs/api/sector' },
+			{ title: 'Insight', href: '/docs/api/insight' },
+			{ title: 'Rank', href: '/docs/api/rank' }
 		]
 	},
 	{
@@ -32,13 +32,13 @@ export const navigation: NavItem[] = [
 		href: '/docs/tutorials',
 		items: [
 			{ title: '1. Quickstart', href: '/docs/tutorials/quickstart' },
-			{ title: '2. 재무제표 조회', href: '/docs/tutorials/financial-statements' },
-			{ title: '3. 시계열 분석', href: '/docs/tutorials/timeseries' },
-			{ title: '4. 재무비율', href: '/docs/tutorials/ratios' },
-			{ title: '5. 보고서 데이터', href: '/docs/tutorials/report-data' },
-			{ title: '6. 공시 텍스트', href: '/docs/tutorials/disclosure' },
-			{ title: '7. 고급 분석', href: '/docs/tutorials/advanced' },
-			{ title: '8. 기업 간 비교', href: '/docs/tutorials/cross-company' }
+			{ title: '2. Financial Statements', href: '/docs/tutorials/financial-statements' },
+			{ title: '3. Timeseries', href: '/docs/tutorials/timeseries' },
+			{ title: '4. Ratios', href: '/docs/tutorials/ratios' },
+			{ title: '5. Report Data', href: '/docs/tutorials/report-data' },
+			{ title: '6. Disclosure Text', href: '/docs/tutorials/disclosure' },
+			{ title: '7. Advanced', href: '/docs/tutorials/advanced' },
+			{ title: '8. Cross-Company', href: '/docs/tutorials/cross-company' }
 		]
 	},
 	{

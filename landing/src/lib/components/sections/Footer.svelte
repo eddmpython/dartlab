@@ -9,7 +9,7 @@
 			{ label: 'API Reference', href: `${base}/docs/api/overview` }
 		],
 		'Blog': [
-			{ label: 'DART의 모든 것', href: `${base}/blog/everything-about-dart` }
+			{ label: 'Everything About DART', href: `${base}/blog/everything-about-dart` }
 		],
 		'Project': [
 			{ label: 'GitHub', href: brand.repo },

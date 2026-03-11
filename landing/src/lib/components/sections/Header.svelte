@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { Button } from '$lib/components/ui/button';
-	import { Github, BookOpen, Download } from 'lucide-svelte';
+	import { Github, BookOpen, Download, Newspaper } from 'lucide-svelte';
 
 	let scrolled = $state(false);
 
@@ -53,12 +53,17 @@
 				title="GitHub">
 				<Github class="w-4.5 h-4.5" />
 			</a>
+			<a href="{base}/blog/"
+				class="w-9 h-9 rounded-lg flex items-center justify-center text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-all no-underline"
+				title="Blog">
+				<Newspaper class="w-4.5 h-4.5" />
+			</a>
 			<a href="{base}/docs/"
 				class="w-9 h-9 rounded-lg flex items-center justify-center text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-all no-underline"
 				title="Documentation">
 				<BookOpen class="w-4.5 h-4.5" />
 			</a>
-			<Button size="sm" href="#install">
+			<Button size="sm" href="#install" class="hidden md:inline-flex">
 				<Download class="w-3.5 h-3.5" />
 				Install
 			</Button>
