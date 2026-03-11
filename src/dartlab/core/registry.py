@@ -128,16 +128,17 @@ _ENTRIES: list[DataEntry] = [
 	),
 
 	# ═══════════════════════════════════════════════════════
-	# report — 공시 파싱 모듈 (docs engine, 재무제표)
+	# report — 재무제표 (finance XBRL 우선, docs fallback)
 	# ═══════════════════════════════════════════════════════
 	DataEntry(
 		name="BS", label="재무상태표", category="report",
 		dataType="dataframe",
-		description="K-IFRS 연결 재무상태표. 계정명 × 연도별 기말 잔액.",
+		description="K-IFRS 연결 재무상태표. finance XBRL 정규화(snakeId) 기반, 회사간 비교 가능. finance 없으면 docs fallback.",
 		modulePath="dartlab.engines.dart.docs.finance.statements",
 		funcName="statements", extractor=None,
-		requires="docs",
-		columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목"),),
+		requires="finance",
+		unit="원",
+		columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목 (snakeId → 한글명)"),),
 		analysisHints=(
 			"부채비율(부채총계/자본총계) 추이",
 			"유동비율(유동자산/유동부채) 확인",
@@ -150,11 +151,12 @@ _ENTRIES: list[DataEntry] = [
 	DataEntry(
 		name="IS", label="손익계산서", category="report",
 		dataType="dataframe",
-		description="K-IFRS 연결 손익계산서. 계정명 × 연도별 누적 금액.",
+		description="K-IFRS 연결 손익계산서. finance XBRL 정규화 기반. 매출액, 영업이익, 순이익 등 전체 계정 포함.",
 		modulePath="dartlab.engines.dart.docs.finance.statements",
 		funcName="statements", extractor=None,
-		requires="docs",
-		columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목"),),
+		requires="finance",
+		unit="원",
+		columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목 (snakeId → 한글명)"),),
 		analysisHints=(
 			"매출 성장률(YoY) 계산",
 			"영업이익률(영업이익/매출액) 추이",
@@ -167,11 +169,12 @@ _ENTRIES: list[DataEntry] = [
 	DataEntry(
 		name="CF", label="현금흐름표", category="report",
 		dataType="dataframe",
-		description="K-IFRS 연결 현금흐름표. 계정명 × 연도별 현금흐름.",
+		description="K-IFRS 연결 현금흐름표. finance XBRL 정규화 기반. 영업/투자/재무활동 현금흐름.",
 		modulePath="dartlab.engines.dart.docs.finance.statements",
 		funcName="statements", extractor=None,
-		requires="docs",
-		columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목"),),
+		requires="finance",
+		unit="원",
+		columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목 (snakeId → 한글명)"),),
 		analysisHints=(
 			"영업활동CF가 양수인지 확인 (음수 = 위험)",
 			"FCF = 영업활동CF - 자본적지출",

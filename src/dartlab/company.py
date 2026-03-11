@@ -77,6 +77,48 @@ def _import_and_call(modulePath: str, funcName: str, stockCode: str, **kwargs) -
     return func(stockCode, **kwargs)
 
 
+def _financeToDataFrame(
+    series: dict[str, dict[str, list]], years: list[str], sjDiv: str,
+) -> pl.DataFrame | None:
+    """finance 연도별 시계열 → 한글 계정명 × 연도 컬럼 DataFrame.
+
+    Args:
+        series: {"BS": {"snakeId": [v1, v2, ...]}, ...}
+        years: ["2016", "2017", ...]
+        sjDiv: "BS", "IS", "CF"
+
+    Returns:
+        계정명 | 2016 | 2017 | ... 형태의 DataFrame.
+    """
+    stmtData = series.get(sjDiv)
+    if not stmtData:
+        return None
+
+    from dartlab.engines.dart.finance.mapper import AccountMapper
+    mapper = AccountMapper.get()
+    labels = mapper.labelMap()
+    order = mapper.sortOrder(sjDiv)
+    levels = mapper.levelMap(sjDiv)
+
+    rows = []
+    for snakeId, values in stmtData.items():
+        label = labels.get(snakeId, snakeId)
+        level = levels.get(snakeId, 2)
+        sortKey = order.get(snakeId, 9999)
+        row = {"계정명": label, "_snakeId": snakeId, "_level": level, "_sort": sortKey}
+        for i, y in enumerate(years):
+            row[y] = values[i] if i < len(values) else None
+        rows.append(row)
+
+    if not rows:
+        return None
+
+    rows.sort(key=lambda r: r["_sort"])
+    df = pl.DataFrame(rows)
+    df = df.drop(["_snakeId", "_level", "_sort"])
+    return df
+
+
 def _ensureData(stockCode: str, category: str) -> bool:
     """로컬에 parquet이 있으면 True, 없으면 다운로드 시도 후 결과 반환."""
     from dartlab.core.dataConfig import DATA_RELEASES
@@ -94,7 +136,20 @@ def _ensureData(stockCode: str, category: str) -> bool:
 
 
 class _ReportAccessor:
-    """KRCompany.report 네임스페이스 — reportEngine pivot 결과 접근."""
+    """KRCompany.report 네임스페이스 — 22개 apiType 접근.
+
+    pivot 함수가 있는 5개(dividend, employee, majorHolder, executive, audit)는
+    전용 Result 반환. 나머지 17개는 extractAnnual로 DataFrame 반환.
+
+    Example::
+
+        c.report.dividend         # DividendResult (pivot)
+        c.report.treasuryStock    # DataFrame (extractAnnual)
+        c.report.extract("dividend")  # DataFrame (정제 원본)
+        c.report.apiTypes         # 사용 가능한 apiType 목록
+    """
+
+    _PIVOT_NAMES = frozenset({"dividend", "employee", "majorHolder", "executive", "audit"})
 
     def __init__(self, company: KRCompany):
         self._company = company
@@ -169,26 +224,57 @@ class _ReportAccessor:
         """감사의견 시계열 (AuditResult)."""
         return self._pivot("audit")
 
+    def __getattr__(self, name: str) -> Any:
+        """미등록 apiType은 extractAnnual 자동 호출."""
+        if name.startswith("_"):
+            raise AttributeError(name)
+        from dartlab.engines.dart.report.types import API_TYPES
+        if name in API_TYPES and name not in self._PIVOT_NAMES:
+            return self.extractAnnual(name)
+        raise AttributeError(f"ReportAccessor에 '{name}' 항목이 없습니다. apiTypes: {API_TYPES}")
+
+    @property
+    def apiTypes(self) -> list[str]:
+        """사용 가능한 apiType 목록."""
+        from dartlab.engines.dart.report.types import API_TYPES
+        return list(API_TYPES)
+
+    @property
+    def labels(self) -> dict[str, str]:
+        """apiType → 한글명 매핑."""
+        from dartlab.engines.dart.report.types import API_TYPE_LABELS
+        return dict(API_TYPE_LABELS)
+
     def __repr__(self):
         from dartlab.engines.dart.report.types import API_TYPES
-        return f"ReportAccessor({len(API_TYPES)} apiTypes)"
+        return f"ReportAccessor({len(API_TYPES)} apiTypes, {len(self._PIVOT_NAMES)} pivots)"
 
 
 class KRCompany:
     """DART 기반 한국 상장기업 분석.
 
-    property로 바로 DataFrame에 접근할 수 있다. 접근 시 lazy 로딩 + 캐싱.
+    3개 데이터 소스를 강점 기반으로 선별하여 제공:
+
+    - **finance** (XBRL 정규화): BS/IS/CF, timeseries, annual, ratios, sce
+    - **report** (DART API 정형): dividend, employee, majorHolder, executive, audit + 17개 apiType
+    - **docs** (HTML 파싱): 서술형(business, mdna), K-IFRS 주석(notes), 거버넌스, 리스크 등
+
+    소스 우선순위:
+    - c.BS/IS/CF → finance XBRL (snakeId 정규화, 회사간 비교 가능) → docs fallback
+    - c.dividend/employee/majorHolder/executive/audit → report API → docs fallback
+    - c.notes.*, c.business, c.mdna, c.segments 등 → docs 고유
 
     Example::
 
         c = Company("005930")           # 삼성전자
-        c.BS                             # 재무상태표 DataFrame
-        c.notes.inventory                # 주석 · 재고자산
+        c.BS                             # 재무상태표 (finance XBRL)
+        c.IS                             # 손익계산서 (매출액, 영업이익 포함)
+        c.annual                         # 연도별 시계열 dict
+        c.ratios                         # 재무비율 (ROE, ROA 등)
+        c.dividend                       # 배당 (report API)
+        c.report.treasuryStock           # 자기주식 (report 22개 apiType)
+        c.notes.inventory                # 주석 · 재고자산 (docs)
         c.notes["재고자산"]               # 동일
-        d = c.all()                      # 전체 dict
-
-        import dartlab
-        dartlab.verbose = False          # 출력 끄기
     """
 
     def __init__(self, codeOrName: str):
@@ -384,40 +470,76 @@ class KRCompany:
         return df
 
     # ── 재무제표 (property) ──
+    # finance(XBRL) 우선 → docs fallback
+
+    def _financeStmt(self, sjDiv: str) -> pl.DataFrame | None:
+        """finance 연도별 시계열에서 sjDiv DataFrame 생성 (캐싱)."""
+        cacheKey = f"_financeStmt_{sjDiv}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        annualResult = self.annual
+        if annualResult is None:
+            return None
+        series, years = annualResult
+        df = _financeToDataFrame(series, years, sjDiv)
+        self._cache[cacheKey] = df
+        return df
 
     @property
     def BS(self) -> pl.DataFrame | None:
-        """재무상태표 DataFrame."""
+        """재무상태표 DataFrame (finance XBRL 우선, docs fallback)."""
+        df = self._financeStmt("BS") if self._hasFinance else None
+        if df is not None:
+            return df
         r = self._call_module("statements")
         return r.BS if r else None
 
     @property
     def IS(self) -> pl.DataFrame | None:
-        """손익계산서 DataFrame."""
+        """손익계산서 DataFrame (finance XBRL 우선, docs fallback)."""
+        df = self._financeStmt("IS") if self._hasFinance else None
+        if df is not None:
+            return df
         r = self._call_module("statements")
         return r.IS if r else None
 
     @property
     def CF(self) -> pl.DataFrame | None:
-        """현금흐름표 DataFrame."""
+        """현금흐름표 DataFrame (finance XBRL 우선, docs fallback)."""
+        df = self._financeStmt("CF") if self._hasFinance else None
+        if df is not None:
+            return df
         r = self._call_module("statements")
         return r.CF if r else None
 
     # ── 정기보고서 (property) ──
+    # report(DART API) 우선 → docs fallback
 
     @property
     def dividend(self) -> pl.DataFrame | None:
-        """배당 시계열 DataFrame."""
+        """배당 시계열 DataFrame (report API 우선, docs fallback)."""
+        if self._hasReport and self.report is not None:
+            r = self.report.dividend
+            if r is not None:
+                return r.df
         return self._get_primary("dividend")
 
     @property
     def majorHolder(self) -> pl.DataFrame | None:
-        """최대주주 시계열 DataFrame."""
+        """최대주주 시계열 DataFrame (report API 우선, docs fallback)."""
+        if self._hasReport and self.report is not None:
+            r = self.report.majorHolder
+            if r is not None:
+                return r.df
         return self._get_primary("majorHolder")
 
     @property
     def employee(self) -> pl.DataFrame | None:
-        """직원 현황 시계열 DataFrame."""
+        """직원 현황 시계열 DataFrame (report API 우선, docs fallback)."""
+        if self._hasReport and self.report is not None:
+            r = self.report.employee
+            if r is not None:
+                return r.df
         return self._get_primary("employee")
 
     @property
@@ -437,7 +559,11 @@ class KRCompany:
 
     @property
     def executive(self) -> pl.DataFrame | None:
-        """등기임원 집계 시계열 DataFrame."""
+        """등기임원 집계 시계열 DataFrame (report API 우선, docs fallback)."""
+        if self._hasReport and self.report is not None:
+            r = self.report.executive
+            if r is not None:
+                return r.df
         return self._get_primary("executive")
 
     @property
@@ -447,7 +573,11 @@ class KRCompany:
 
     @property
     def audit(self) -> pl.DataFrame | None:
-        """감사의견 시계열 DataFrame."""
+        """감사의견 시계열 DataFrame (report API 우선, docs fallback)."""
+        if self._hasReport and self.report is not None:
+            r = self.report.audit
+            if r is not None:
+                return r.df
         return self._get_primary("audit")
 
     @property
@@ -550,12 +680,22 @@ class KRCompany:
         """회사 개요 상세 (설립일, 상장일, 대표이사 등)."""
         return self._get_primary("companyOverviewDetail")
 
-    # ── 부문정보 (property) ──
+    # ── 부문정보 / K-IFRS 주석 (property) ──
 
     @property
     def segments(self) -> pl.DataFrame | None:
         """부문별 매출 시계열 DataFrame."""
         return self._get_primary("segments")
+
+    @property
+    def tangibleAsset(self) -> pl.DataFrame | None:
+        """유형자산 변동표 DataFrame."""
+        return self._get_primary("tangibleAsset")
+
+    @property
+    def costByNature(self) -> pl.DataFrame | None:
+        """비용 성격별 분류 시계열 DataFrame."""
+        return self._get_primary("costByNature")
 
     # ── 공시 서술 (property) ──
 
