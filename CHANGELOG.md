@@ -5,6 +5,61 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-11
+
+### Changed
+
+**Company 데이터 소스 계층 개선 (Breaking Change)**
+- `c.BS`, `c.IS`, `c.CF` — docs HTML 파싱 → **finance XBRL 정규화** 기반으로 변경
+  - snakeId 통일로 회사간 비교 가능, 단위: 원 (기존 docs는 백만원)
+  - finance 데이터 없으면 docs fallback 유지
+- `c.IS` — docs가 반환하던 CIS(포괄손익계산서)에서 **finance IS(손익계산서)**로 변경
+  - 매출액, 영업이익 등 핵심 계정이 누락되던 문제 해결
+- `c.dividend`, `c.employee`, `c.majorHolder`, `c.executive`, `c.audit` — docs → **report API** 우선으로 변경
+  - DART API 정형 데이터 사용 (HTML 파싱보다 정확), report 없으면 docs fallback
+
+**registry BS/IS/CF 메타데이터 업데이트**
+- `requires`: "docs" → "finance"
+- `unit`: "원" 추가
+- `description`: finance XBRL 정규화 기반 명시
+
+### Added
+
+**report 엔진 5개→22개 apiType 확장**
+- `_ReportAccessor`에 `__getattr__` 추가 — 17개 비피벗 apiType 자동 접근
+  - `c.report.treasuryStock`, `c.report.capitalChange`, `c.report.minorityHolder` 등
+- `c.report.apiTypes` — 사용 가능한 22개 apiType 목록
+- `c.report.labels` — apiType → 한글명 매핑
+
+**Company property 추가**
+- `c.tangibleAsset` — 유형자산 변동표 DataFrame (docs)
+- `c.costByNature` — 비용 성격별 분류 시계열 DataFrame (docs)
+
+**엔진별 SPEC.md 문서**
+- `engines/dart/finance/SPEC.md` — 매핑 파이프라인, 5개 피벗 함수, snakeId 테이블, AccountMapper 상세
+- `engines/dart/report/SPEC.md` — 22개 apiType 컬럼 명세, 4단계 추출 파이프라인, 6개 Result 타입
+- `engines/dart/docs/SPEC.md` — 40개 모듈(finance 36 + disclosure 4) 전체 함수 시그니처, Result 패턴
+
+**Company 소스 역할 배정 문서**
+- `engines/dart/ROLE_ASSIGNMENT.md` — property별 데이터 소스 우선순위, 구현 계획
+
+**테스트 추가**
+- `test_bsIdentity.py` — BS 항등식 검증 (자산=부채+자본)
+- `test_mappingBenchmark.py` — 매핑률 벤치마크 (97%+ 기준)
+- `test_regressionFinance.py` — finance 출력 회귀 테스트
+- `test_server.py` — 서버 smoke test
+
+**CI/인프라**
+- pytest-cov 설정 추가 (coverage run/report)
+- API 안정성 Tier 문서 (`docs/stability.md`)
+
+**블로그**
+- 007: EDGAR 통합 플레이북
+- 008: 사업의 내용으로 기업 판단하기
+- 블로그별 SVG 다이어그램 추가
+
+[0.4.0]: https://github.com/eddmpython/dartlab/compare/v0.3.2...v0.4.0
+
 ## [0.3.2] - 2026-03-11
 
 ### Added

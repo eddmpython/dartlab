@@ -9,6 +9,45 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-11
+
+### Changed
+
+**Company 데이터 소스 계층 개선 (Breaking Change)**
+- `c.BS`, `c.IS`, `c.CF` — docs HTML 파싱 → **finance XBRL 정규화** 기반으로 변경
+  - snakeId 통일로 회사간 비교 가능, 단위: 원 (기존 docs는 백만원)
+  - finance 데이터 없으면 docs fallback 유지
+- `c.IS` — docs CIS(포괄손익계산서) → **finance IS(손익계산서)**로 변경
+  - 매출액, 영업이익 등 핵심 계정 누락 문제 해결
+- `c.dividend`, `c.employee`, `c.majorHolder`, `c.executive`, `c.audit` — report API 우선으로 변경
+
+### Added
+
+**report 엔진 5개→22개 apiType 확장**
+- `c.report.treasuryStock`, `c.report.capitalChange` 등 17개 비피벗 apiType 자동 접근
+- `c.report.apiTypes`, `c.report.labels` 속성 추가
+
+**Company property 추가**
+- `c.tangibleAsset` — 유형자산 변동표
+- `c.costByNature` — 비용 성격별 분류 시계열
+
+**엔진별 SPEC.md 문서** — finance, report, docs 각 엔진 상세 API 스펙
+
+**테스트 추가** — BS 항등식, 매핑 벤치마크, 재무 회귀, 서버 smoke test
+
+**블로그** — 007 EDGAR 통합 플레이북, 008 사업의 내용으로 기업 판단하기
+
+## [0.3.2] - 2026-03-11
+
+### Added
+
+**Data Explorer 전면 리디자인**
+- 모달 → 전체화면 레이아웃, 한글/영문 토글, 계정 계층 인덴트
+- 재무 시계열 테이블: 첫 열 고정, 원 단위 자동 포맷, 음수 빨간색
+
+**6개 LLM Provider 지원**
+- ChatGPT (OAuth), Ollama, OpenAI API, Anthropic API, Codex CLI, Claude Code CLI
+
 ## [0.3.1] - 2026-03-10
 
 ### Added
