@@ -286,17 +286,23 @@ c.rawReport      # Original periodic report parquet (unprocessed)
 
 Chat with an LLM over DartLab's structured data to analyze companies interactively — `uv run dartlab ai` opens the web UI at `http://localhost:8400`.
 
-All extracted data (financial statements, notes, dividends, executives, governance) is provided as context for natural-language Q&A with streaming responses.
+All extracted data (financial statements, notes, dividends, executives, governance) is provided as context for natural-language Q&A with streaming responses. Data Explorer lets you browse raw data directly in the browser.
 
-> **Currently supported LLM: Ollama (local)**
->
-> The current version supports **Ollama** for local LLM inference. No API key needed, and your data stays on your machine.
->
-> - Install [Ollama](https://ollama.com/download), then `ollama pull gemma3` to download a model
-> - Select and download models in the UI settings
-> - GPU (NVIDIA/AMD) is auto-detected for acceleration
->
-> **Coming soon**: Cloud LLM providers (OpenAI, Anthropic, etc.)
+### Supported LLM Providers
+
+| Provider | Auth | Description |
+|----------|------|-------------|
+| **ChatGPT** | OAuth (browser login) | ChatGPT Plus/Pro subscription — no API key needed |
+| **Ollama** | None (local) | Free, offline, private — GPU auto-detected |
+| **OpenAI API** | API key | GPT-4o, o3, o4-mini and more |
+| **Anthropic API** | API key | Claude Opus, Sonnet, Haiku |
+| **Codex CLI** | CLI auth | ChatGPT subscription via Codex CLI |
+| **Claude Code** | CLI auth | Claude subscription via Claude Code CLI |
+
+```bash
+uv run dartlab ai              # http://localhost:8400
+uv run dartlab ai --port 9000  # custom port
+```
 
 ---
 
@@ -473,10 +479,47 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [x] Anomaly detection (Z-score + domain rules across 30+ financial metrics)
 - [x] Market-wide size ranking (revenue, assets, growth — total + within-sector)
 - [x] AI analysis web interface (dartlab ai) — Ollama local LLM
-- [ ] Cloud LLM providers (OpenAI, Anthropic, etc.)
+- [x] Cloud LLM providers (OpenAI, Anthropic, ChatGPT OAuth, Codex CLI, Claude Code)
+- [x] Data Explorer — full-screen data browser with Korean/English label toggle
+- [x] Excel export with templates
+- [ ] EDGAR (US SEC) financial data integration
 - [ ] Text analysis module integration (from separate project)
 - [ ] Quantitative + qualitative cross-validation
 - [ ] Visualization
+
+## Architecture
+
+```
+src/dartlab/
+├── company.py              # Company class — property → DataFrame (yfinance pattern)
+├── core/                   # Data loading, report selection, table parsing
+│   ├── dataLoader.py       # GitHub Releases ↔ local cache
+│   ├── dataConfig.py       # Release tags, shard mapping
+│   └── registry.py         # DataEntry — single source of truth for all modules
+│
+├── engines/
+│   ├── dart/               # L1: DART data source
+│   │   ├── docs/           # Filing document parsing
+│   │   │   ├── finance/    # 36 quantitative modules (BS, IS, CF, dividend, ...)
+│   │   │   ├── disclosure/ # 4 narrative modules (business, MD&A, overview, ...)
+│   │   │   └── notes.py    # K-IFRS notes wrapper (12 items)
+│   │   ├── finance/        # XBRL normalization — 34K synonyms → unified snakeId
+│   │   └── report/         # Periodic report API (dividend, employee, audit, ...)
+│   │
+│   ├── sector/             # L2: WICS 11-sector classification
+│   ├── insight/            # L2: 7-area grading (A~F) + anomaly detection
+│   ├── rank/               # L2: Market-wide size ranking
+│   │
+│   └── ai/                 # L3: LLM-powered analysis
+│       ├── providers/      # ChatGPT, Ollama, OpenAI, Anthropic, Codex, Claude Code
+│       ├── context.py      # Engine data → LLM context assembly
+│       └── prompts.py      # System prompts (KR/EN)
+│
+├── server/                 # FastAPI backend for web UI
+└── ui/                     # Svelte 5 SPA (Data Explorer, chat)
+```
+
+**Layer principles**: L1 defines the data (labels, ordering, units). L2 and L3 consume L1 without modification. Changes to data quality always start at L1.
 
 ## Contributing
 

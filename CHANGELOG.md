@@ -5,6 +5,37 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-03-11
+
+### Added
+
+**Data Explorer 전면 리디자인**
+- 모달 → 전체화면 레이아웃으로 변경 (fixed inset-0)
+- 한글/영문 계정명 토글 — L1 labelMap()의 5,790개 한글 라벨 활용
+- 계정 계층 구조 인덴트 (대/중/소 분류, levelMap() 기반)
+- 재무 시계열 테이블: 첫 번째 열 고정(sticky), 가로 스크롤
+- 원 단위 자동 포맷 (조/억/만), 음수 빨간색 표시
+- 회사 아바타 (첫 글자) + 단위 배지 표시
+
+**서버 재무 메타데이터 API**
+- `_build_finance_meta()` — finance 시계열 모듈의 한글 라벨, 정렬 순서, 레벨 정보를 preview API에 포함
+- preview 응답에 `unit` 필드 추가 (DataEntry.unit 기반)
+
+**6개 LLM Provider 지원**
+- ChatGPT (OAuth), Ollama (로컬), OpenAI API, Anthropic API, Codex CLI, Claude Code CLI
+
+**README Architecture 섹션**
+- 3계층 엔진 아키텍처(L1/L2/L3) 시각화
+- 기여자를 위한 프로젝트 구조 설명
+
+### Changed
+
+**README 전면 보강**
+- AI Analysis 섹션: Ollama 전용 → 6개 provider 테이블로 확장
+- Roadmap: Cloud LLM, Data Explorer, Excel export 완료 표시, EDGAR 추가
+
+[0.3.2]: https://github.com/eddmpython/dartlab/compare/v0.3.1...v0.3.2
+
 ## [0.3.1] - 2026-03-10
 
 ### Added
