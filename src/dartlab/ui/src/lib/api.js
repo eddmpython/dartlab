@@ -166,6 +166,27 @@ export async function downloadExcel(stockCode, modules = null, templateId = null
 	return filename;
 }
 
+/** 경량 데이터 소스 목록 (빠름 — registry 메타만 확인) */
+export async function fetchDataSources(stockCode) {
+	const res = await fetch(`${BASE}/api/data/sources/${encodeURIComponent(stockCode)}`);
+	if (!res.ok) throw new Error("소스 목록 조회 실패");
+	return res.json();
+}
+
+/** 데이터 미리보기 */
+export async function fetchDataPreview(stockCode, module, maxRows = 50) {
+	const params = new URLSearchParams();
+	if (maxRows !== 50) params.set("max_rows", String(maxRows));
+	const qs = params.toString();
+	const url = `${BASE}/api/data/preview/${encodeURIComponent(stockCode)}/${encodeURIComponent(module)}${qs ? "?" + qs : ""}`;
+	const res = await fetch(url);
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "미리보기 실패");
+	}
+	return res.json();
+}
+
 /** 종목 검색 */
 export async function searchCompany(query) {
 	const res = await fetch(`${BASE}/api/search?q=${encodeURIComponent(query)}`);

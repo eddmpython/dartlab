@@ -639,7 +639,7 @@ class KRCompany:
         Returns:
             (series, periods) 또는 None.
             series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
-            periods = ["2016_Q1", ...] (q/cum) 또는 ["2016", ...] (y)
+            periods = ["2016-Q1", ...] (q/cum) 또는 ["2016", ...] (y)
 
         Example::
 
@@ -699,7 +699,7 @@ class KRCompany:
         Returns:
             (series, periods) 또는 None.
             series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
-            periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
+            periods = ["2016-Q1", "2016-Q2", ..., "2024-Q4"]
 
         Example::
 
@@ -1220,13 +1220,18 @@ class KRCompany:
         """시장 코드."""
         return "KR"
 
+    @property
+    def currency(self) -> str:
+        """통화 코드."""
+        return "KRW"
+
 
 def _isUSTicker(s: str) -> bool:
     """미국 ticker 형식 판별 (영문 대문자 1~5자리)."""
     return bool(re.match(r"^[A-Za-z]{1,5}$", s))
 
 
-def Company(codeOrName: str) -> "KRCompany":
+def Company(codeOrName: str) -> "KRCompany | USCompany":
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성.
 
     판별 규칙:

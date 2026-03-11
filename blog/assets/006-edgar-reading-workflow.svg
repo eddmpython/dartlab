@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="t d">
+  <title id="t">EDGAR Reading Workflow</title>
+  <desc id="d">Four-step EDGAR reading workflow from baseline to positioning context.</desc>
+  <rect width="1200" height="620" fill="#101827"/>
+  <text x="60" y="72" fill="#e8f0ff" font-family="Arial, sans-serif" font-size="40" font-weight="700">EDGAR 4-Step Workflow</text>
+  <text x="60" y="106" fill="#9dafcb" font-family="Arial, sans-serif" font-size="20">A practical order for reading without losing context</text>
+
+  <rect x="60" y="160" width="250" height="330" rx="18" fill="#20344d" stroke="#6ba5de"/>
+  <text x="90" y="205" fill="#dff0ff" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 1</text>
+  <text x="90" y="240" fill="#dff0ff" font-family="Arial, sans-serif" font-size="24">10-K / 20-F</text>
+  <text x="90" y="285" fill="#b9d5f2" font-family="Arial, sans-serif" font-size="18">Set annual baseline</text>
+  <text x="90" y="315" fill="#b9d5f2" font-family="Arial, sans-serif" font-size="18">Business + risk + policy</text>
+
+  <rect x="340" y="160" width="250" height="330" rx="18" fill="#2b3b26" stroke="#8cc982"/>
+  <text x="370" y="205" fill="#e6fae0" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 2</text>
+  <text x="370" y="240" fill="#e6fae0" font-family="Arial, sans-serif" font-size="24">10-Q</text>
+  <text x="370" y="285" fill="#c4e5bd" font-family="Arial, sans-serif" font-size="18">Track quarterly drift</text>
+  <text x="370" y="315" fill="#c4e5bd" font-family="Arial, sans-serif" font-size="18">Cash + working capital</text>
+
+  <rect x="620" y="160" width="250" height="330" rx="18" fill="#4b2f2a" stroke="#dd9992"/>
+  <text x="650" y="205" fill="#ffe9e6" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 3</text>
+  <text x="650" y="240" fill="#ffe9e6" font-family="Arial, sans-serif" font-size="24">8-K / 6-K</text>
+  <text x="650" y="285" fill="#f2c0bb" font-family="Arial, sans-serif" font-size="18">Link events to numbers</text>
+  <text x="650" y="315" fill="#f2c0bb" font-family="Arial, sans-serif" font-size="18">Check timing gaps</text>
+
+  <rect x="900" y="160" width="250" height="330" rx="18" fill="#2f273f" stroke="#a996d8"/>
+  <text x="930" y="205" fill="#efe8ff" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 4</text>
+  <text x="930" y="240" fill="#efe8ff" font-family="Arial, sans-serif" font-size="24">13F</text>
+  <text x="930" y="285" fill="#d2c3ef" font-family="Arial, sans-serif" font-size="18">Use as context signal</text>
+  <text x="930" y="315" fill="#d2c3ef" font-family="Arial, sans-serif" font-size="18">Not real-time trading</text>
+
+  <path d="M310 320 L340 320" stroke="#8ab6e7" stroke-width="4"/>
+  <path d="M590 320 L620 320" stroke="#a4d89d" stroke-width="4"/>
+  <path d="M870 320 L900 320" stroke="#e7b0a9" stroke-width="4"/>
+
+  <rect x="60" y="530" width="1090" height="56" rx="12" fill="#1b2230"/>
+  <text x="86" y="567" fill="#c8d4ea" font-family="Arial, sans-serif" font-size="24" font-weight="700">Read order beats volume:</text>
+  <text x="380" y="567" fill="#c8d4ea" font-family="Arial, sans-serif" font-size="24">Baseline → Update → Event link → Position context</text>
+</svg>

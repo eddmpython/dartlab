@@ -2,6 +2,7 @@
 
 import json
 import socket
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import URLError
@@ -22,6 +23,7 @@ def _getDataRoot() -> Path:
     return Path(config.dataDir)
 
 _DOWNLOAD_TIMEOUT = 30
+_MAX_RETRIES = 3
 
 PERIOD_KINDS = {
     "y": ["annual"],
@@ -34,15 +36,31 @@ def _dataDir(category: str = "docs") -> Path:
     return _getDataRoot() / DATA_RELEASES[category]["dir"]
 
 
+def _downloadWithRetry(url: str, dest: Path) -> None:
+    """URL → dest 다운로드. 최대 3회 재시도 (2초, 4초 대기)."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    lastErr = None
+    for attempt in range(_MAX_RETRIES):
+        old_timeout = socket.getdefaulttimeout()
+        try:
+            socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
+            urlretrieve(url, dest)
+            return
+        except (URLError, socket.timeout, OSError) as e:
+            lastErr = e
+            if dest.exists():
+                dest.unlink()
+            if attempt < _MAX_RETRIES - 1:
+                wait = 2 ** (attempt + 1)
+                time.sleep(wait)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
+    raise lastErr
+
+
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
     url = f"{releaseBaseUrl(category, stockCode=stockCode)}/{stockCode}.parquet"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    old_timeout = socket.getdefaulttimeout()
-    try:
-        socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
-        urlretrieve(url, dest)
-    finally:
-        socket.setdefaulttimeout(old_timeout)
+    _downloadWithRetry(url, dest)
 
 
 def loadData(stockCode: str, category: str = "docs") -> pl.DataFrame:
@@ -59,8 +77,11 @@ def loadData(stockCode: str, category: str = "docs") -> pl.DataFrame:
             if path.exists():
                 path.unlink()
             raise RuntimeError(
-                f"데이터 다운로드 실패 ({stockCode}): {e}. "
-                f"네트워크를 확인하거나 `dartlab download`로 미리 받아두세요."
+                f"데이터 다운로드 실패 ({stockCode}): {e}\n"
+                f"  해결 방법:\n"
+                f"  1. 네트워크 연결 확인\n"
+                f"  2. `dartlab download {stockCode}` 명령으로 수동 다운로드\n"
+                f"  3. GitHub Releases 페이지에서 직접 다운로드 후 {dataDir}/ 에 배치"
             ) from e
     return pl.read_parquet(str(path))
 
@@ -130,22 +151,23 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
     action = "다운로드 (신규+업데이트)" if forceUpdate else "신규 다운로드"
     print(f"[dartlab] {action}: {len(toDownload)}종목 (스킵: {skipped})")
 
+    failed = 0
     with alive_bar(len(toDownload), title="다운로드") as bar:
         for asset in toDownload:
             dest = dataDir / asset["name"]
-            old_timeout = socket.getdefaulttimeout()
             try:
-                socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
-                urlretrieve(asset["browser_download_url"], dest)
+                _downloadWithRetry(asset["browser_download_url"], dest)
             except (URLError, socket.timeout, OSError) as e:
-                print(f"\n[dartlab] {asset['name']} 다운로드 실패: {e}")
+                print(f"\n[dartlab] {asset['name']} 다운로드 실패 (3회 재시도 후): {e}")
                 if dest.exists():
                     dest.unlink()
-            finally:
-                socket.setdefaulttimeout(old_timeout)
+                failed += 1
             bar()
 
-    print(f"[dartlab] 완료 → {dataDir}")
+    if failed:
+        print(f"[dartlab] 완료 → {dataDir} (실패: {failed}건)")
+    else:
+        print(f"[dartlab] 완료 → {dataDir}")
 
 
 def download(stockCode: str) -> None:
@@ -164,7 +186,7 @@ def download(stockCode: str) -> None:
         except (URLError, socket.timeout, OSError) as e:
             if dest.exists():
                 dest.unlink()
-            print(f"[dartlab] {stockCode} ({label}) 다운로드 실패: {e}")
+            print(f"[dartlab] {stockCode} ({label}) 다운로드 실패 (3회 재시도 후): {e}")
 
 
 DART_VIEWER = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="

@@ -10,6 +10,47 @@ from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchNam
 from dartlab.engines import ai as llm
 
 
+def search(keyword: str):
+    """종목 검색 (KR + US 통합).
+
+    Example::
+
+        import dartlab
+        dartlab.search("삼성전자")
+        dartlab.search("AAPL")
+    """
+    if any("\uac00" <= ch <= "\ud7a3" for ch in keyword):
+        return KRCompany.search(keyword)
+    if keyword.isascii() and keyword.isalpha():
+        try:
+            from dartlab.usCompany import USCompany as _US
+            return _US.search(keyword)
+        except (ImportError, AttributeError, NotImplementedError):
+            pass
+    return KRCompany.search(keyword)
+
+
+def listing(market: str | None = None):
+    """전체 상장법인 목록.
+
+    Args:
+        market: "KR" 또는 "US". None이면 KR 기본.
+
+    Example::
+
+        import dartlab
+        dartlab.listing()          # KR 전체
+        dartlab.listing("US")      # US 전체 (향후)
+    """
+    if market and market.upper() == "US":
+        try:
+            from dartlab.usCompany import USCompany as _US
+            return _US.listing()
+        except (ImportError, AttributeError, NotImplementedError):
+            raise NotImplementedError("US listing은 아직 지원되지 않습니다")
+    return KRCompany.listing()
+
+
 class _Module(sys.modules[__name__].__class__):
     """dartlab.verbose / dartlab.dataDir 프록시."""
 
@@ -38,6 +79,8 @@ __all__ = [
     "Compare",
     "KRCompany",
     "USCompany",
+    "search",
+    "listing",
     "verbose",
     "dataDir",
     "getKindList",

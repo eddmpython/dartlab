@@ -24,6 +24,8 @@ from typing import Optional
 
 import polars as pl
 
+from dartlab.engines.common.finance.ordering import sortSeries
+from dartlab.engines.common.finance.period import extractYear, formatPeriod, parsePeriod
 from dartlab.engines.edgar.finance.mapper import EdgarMapper
 
 
@@ -131,6 +133,7 @@ def buildTimeseries(
 
     _computeEquity(result, periods)
     _computeDerived(result, periods)
+    sortSeries(result)
 
     return result, periods
 
@@ -160,7 +163,7 @@ def buildAnnual(
 
     yearSet: dict[str, list[int]] = {}
     for i, p in enumerate(qPeriods):
-        year = p.split("-")[0]
+        year = extractYear(p)
         yearSet.setdefault(year, []).append(i)
 
     years = sorted(yearSet.keys())
@@ -223,10 +226,13 @@ def _guessStmt(tag: str) -> str:
 
 
 def _selectStandalone(df: pl.DataFrame, stmtType: str) -> pl.DataFrame:
-    tagDf = df.filter(
-        pl.col("frame").is_null() &
-        pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"])
-    )
+    if stmtType == "BS":
+        tagDf = df.filter(pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"]))
+    else:
+        tagDf = df.filter(
+            pl.col("frame").is_null() &
+            pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"])
+        )
 
     if tagDf.height == 0:
         return pl.DataFrame()
@@ -244,6 +250,13 @@ def _selectStandalone(df: pl.DataFrame, stmtType: str) -> pl.DataFrame:
 
 
 def _selectBS(tagDf: pl.DataFrame) -> pl.DataFrame:
+    """BS 시점잔액 선택.
+
+    각 (tag, period)에서 가장 최근 end date의 값을 선택한다.
+    SEC filing에서 Q1~Q3은 당기 시점잔액(frame 있음)과
+    비교재무제표(frame 없음, 전년도 FY end)가 공존하는데,
+    최대 end date가 당기 시점잔액이다.
+    """
     if tagDf.height == 0:
         return pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
 
@@ -251,36 +264,12 @@ def _selectBS(tagDf: pl.DataFrame) -> pl.DataFrame:
     if hasEnd.height == 0:
         return _selectByLatestPeriod(tagDf)
 
-    majorityEnd = (
+    return (
         hasEnd
-        .group_by(["period", "end"])
-        .agg(pl.col("tag").n_unique().alias("nTags"))
-        .sort(["period", "nTags"], descending=[False, True])
-        .group_by("period")
-        .agg(pl.col("end").first().alias("bestEnd"))
-    )
-
-    matched = hasEnd.join(majorityEnd, on="period").filter(
-        pl.col("end") == pl.col("bestEnd")
-    )
-    matchedResult = (
-        matched
-        .sort("filed", descending=True)
+        .sort(["end", "filed"], descending=[True, True])
         .group_by(["tag", "period"])
         .agg(pl.col("val").first().alias("val"))
     )
-
-    unmatched = hasEnd.join(matchedResult, on=["tag", "period"], how="anti")
-    if unmatched.height > 0:
-        fallback = (
-            unmatched
-            .sort(["end", "filed"], descending=[True, True])
-            .group_by(["tag", "period"])
-            .agg(pl.col("val").first().alias("val"))
-        )
-        return pl.concat([matchedResult, fallback])
-
-    return matchedResult
 
 
 def _selectByLatestPeriod(df: pl.DataFrame) -> pl.DataFrame:
@@ -377,7 +366,7 @@ def _deaccumulateCF(
     for row in fyQ1Result.iter_rows(named=True):
         period = row["period"]
         if period.endswith("-Q1"):
-            q1Map[(row["tag"], period.split("-")[0])] = row["val"]
+            q1Map[(row["tag"], extractYear(period))] = row["val"]
 
     ytdMap: dict[tuple[str, str, str], float] = {}
     for row in q2q3Ytd.iter_rows(named=True):
@@ -388,11 +377,11 @@ def _deaccumulateCF(
         if fp == "Q2":
             q1Val = q1Map.get((tag, fy))
             if q1Val is not None and ytdVal is not None:
-                rows.append({"tag": tag, "period": f"{fy}-Q2", "val": ytdVal - q1Val})
+                rows.append({"tag": tag, "period": formatPeriod(fy, 2), "val": ytdVal - q1Val})
         elif fp == "Q3":
             q2YtdVal = ytdMap.get((tag, fy, "Q2"))
             if q2YtdVal is not None and ytdVal is not None:
-                rows.append({"tag": tag, "period": f"{fy}-Q3", "val": ytdVal - q2YtdVal})
+                rows.append({"tag": tag, "period": formatPeriod(fy, 3), "val": ytdVal - q2YtdVal})
 
     if not rows:
         return pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
@@ -417,7 +406,8 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
     rows = []
     for mpRow in missingPeriods.iter_rows(named=True):
         tag, period = mpRow["tag"], mpRow["period"]
-        fy, fp = period.split("-")
+        fy = extractYear(period)
+        fp = period.split("-")[1]
 
         candidates = ytdRows.filter(
             (pl.col("tag") == tag) &
@@ -483,25 +473,25 @@ def _pivotTimeseries(selected: pl.DataFrame) -> pl.DataFrame:
 
 
 def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
-    if stmtType == "BS":
-        return pivoted
-
     periodCols = [c for c in pivoted.columns if c != "tag"]
-    years = sorted({c.split("-")[0] for c in periodCols if "-" in c})
+    years = sorted({extractYear(c) for c in periodCols if "-" in c})
 
     newCols = {}
     for year in years:
         fyCol = f"{year}-FY"
-        q1Col = f"{year}-Q1"
-        q2Col = f"{year}-Q2"
-        q3Col = f"{year}-Q3"
-        q4Col = f"{year}-Q4"
+        q4Col = formatPeriod(year, 4)
 
-        if all(c in pivoted.columns for c in [fyCol, q1Col, q2Col, q3Col]):
-            q4Vals = (
-                pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
-            )
-            newCols[q4Col] = q4Vals
+        if stmtType == "BS":
+            if fyCol in pivoted.columns and q4Col not in pivoted.columns:
+                newCols[q4Col] = pivoted[fyCol]
+        else:
+            q1Col = formatPeriod(year, 1)
+            q2Col = formatPeriod(year, 2)
+            q3Col = formatPeriod(year, 3)
+            if all(c in pivoted.columns for c in [fyCol, q1Col, q2Col, q3Col]):
+                newCols[q4Col] = (
+                    pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
+                )
 
     if not newCols:
         return pivoted
@@ -525,12 +515,11 @@ def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
 
 def _sortPeriods(periods: set[str]) -> list[str]:
     def sortKey(p: str) -> tuple:
-        parts = p.split("-")
-        if len(parts) == 2:
-            fy = int(parts[0])
-            fpOrder = {"Q1": 1, "Q2": 2, "Q3": 3, "Q4": 4}
-            return (fy, fpOrder.get(parts[1], 9))
-        return (9999, 9)
+        try:
+            year, q = parsePeriod(p)
+            return (int(year), q)
+        except (ValueError, IndexError):
+            return (9999, 9)
 
     return sorted(periods, key=sortKey)
 

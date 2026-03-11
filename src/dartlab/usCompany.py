@@ -7,9 +7,11 @@ Company와 동일한 핵심 인터페이스를 제공하되, EDGAR 데이터를 
     from dartlab import USCompany
 
     c = USCompany("AAPL")
+    c.corpName             # "Apple Inc."
     c.timeseries           # (series, periods) 분기별
     c.annual               # (series, years) 연도별
     c.ratios               # RatioResult
+    c.ratioSeries          # ({"RATIO": {...}}, years) 연도별 비율 시계열
     c.insights             # AnalysisResult (7영역 등급)
 """
 
@@ -28,20 +30,20 @@ class USCompany:
     Example::
 
         c = USCompany("AAPL")
-        c.timeseries           # (series, periods) 분기별
+        c.corpName             # "Apple Inc."
         c.ratios               # RatioResult
-        c.insights             # AnalysisResult
+        c.ratioSeries          # 연도별 비율 시계열
     """
 
     def __init__(self, ticker: str):
         self.ticker = ticker.upper()
         self._cache: dict[str, Any] = {}
 
-        cik = self._resolveCik(self.ticker)
-        if cik is None:
+        tickerRow = self._resolveTickerRow(self.ticker)
+        if tickerRow is None:
             raise ValueError(f"'{ticker}'에 해당하는 CIK를 찾을 수 없음")
-        self.cik = cik
-        self.corpName = self.ticker
+        self.cik = tickerRow["cik"]
+        self.corpName = tickerRow.get("title") or self.ticker
 
         from dartlab.engines.edgar.finance.pivot import buildTimeseries
         ts = buildTimeseries(self.cik)
@@ -49,8 +51,8 @@ class USCompany:
             raise ValueError(f"'{self.ticker}' (CIK: {self.cik}) EDGAR 재무 데이터 없음")
         self._cache["_ts"] = ts
 
-    def _resolveCik(self, ticker: str) -> str | None:
-        """ticker → CIK 변환."""
+    def _resolveTickerRow(self, ticker: str) -> dict | None:
+        """ticker → {cik, ticker, title} dict."""
         tickerPath = self._getTickerPath()
         if tickerPath is None or not tickerPath.exists():
             return None
@@ -62,7 +64,9 @@ class USCompany:
             row = df.filter(pl.col("ticker") == ticker.upper())
         if row.is_empty():
             return None
-        return str(row["cik"][0]).zfill(10)
+        r = row.row(0, named=True)
+        r["cik"] = str(r["cik"]).zfill(10)
+        return r
 
     def _getTickerPath(self) -> Path | None:
         """tickers.parquet 경로. data/edgar/ 루트에 위치."""
@@ -70,7 +74,7 @@ class USCompany:
         return Path(config.dataDir) / "edgar" / "tickers.parquet"
 
     def __repr__(self):
-        return f"USCompany('{self.ticker}', cik='{self.cik}')"
+        return f"USCompany('{self.ticker}', {self.corpName})"
 
     @property
     def timeseries(self):
@@ -99,6 +103,26 @@ class USCompany:
         return self._cache["_ratios"]
 
     @property
+    def ratioSeries(self):
+        """재무비율 연도별 시계열 (IS/BS/CF와 동일한 dict 구조).
+
+        Returns:
+            ({"RATIO": {snakeId: [v1, v2, ...]}}, years) 또는 None.
+        """
+        cacheKey = "_ratioSeries"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        annual = self.annual
+        if annual is None:
+            return None
+        aSeries, years = annual
+        from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+        rs = calcRatioSeries(aSeries, years)
+        result = toSeriesDict(rs)
+        self._cache[cacheKey] = result
+        return result
+
+    @property
     def insights(self):
         """종합 인사이트 (AnalysisResult)."""
         if "_insights" not in self._cache:
@@ -120,3 +144,8 @@ class USCompany:
     def market(self) -> str:
         """시장 코드."""
         return "US"
+
+    @property
+    def currency(self) -> str:
+        """통화 코드."""
+        return "USD"

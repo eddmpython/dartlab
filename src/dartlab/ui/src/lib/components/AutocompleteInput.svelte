@@ -92,7 +92,7 @@
 	}
 </script>
 
-<div class="relative">
+<div class="relative w-full">
 	<div class={cn("input-box", large && "large")}>
 		<textarea
 			bind:this={textareaEl}

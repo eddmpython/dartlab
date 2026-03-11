@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 import dartlab
-from dartlab import Company, KRCompany
+from dartlab import Company
 
 from .models import AskRequest, ConfigureRequest
 from .resolve import (
@@ -455,7 +455,7 @@ async def api_ollama_pull(req: dict):
 def api_search(q: str = Query(..., min_length=1)):
 	"""종목 검색."""
 	try:
-		df = KRCompany.search(q)
+		df = dartlab.search(q)
 		rows = df.to_dicts() if len(df) > 0 else []
 		mapped = []
 		for r in rows[:20]:
@@ -490,6 +490,67 @@ def api_company_modules(code: str):
 		return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
 	except Exception as e:
 		raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/data/sources/{code}")
+async def api_data_sources(code: str):
+	"""경량 데이터 소스 목록 — registry 메타 + 파일 존재 여부만 확인 (빠름).
+
+	discoverSources와 달리 getattr로 실제 데이터를 로드하지 않는다.
+	Company 생성 + _hasFinance/_hasDocs/_hasReport 3개 플래그만 확인.
+	"""
+	try:
+		c = await asyncio.to_thread(Company, code)
+	except (ValueError, OSError) as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+	from dartlab.core.registry import getEntries
+
+	hasFlags = {
+		"finance": c._hasFinance,
+		"docs": c._hasDocs,
+		"report": c._hasReport,
+	}
+
+	categoryOrder = ["finance", "report", "disclosure", "notes", "analysis", "raw"]
+	categories: dict[str, list[dict]] = {}
+	totalAvailable = 0
+
+	for entry in getEntries():
+		req = entry.requires or ""
+		if req:
+			available = hasFlags.get(req, False)
+		else:
+			available = True
+
+		item = {
+			"name": entry.name,
+			"label": entry.label,
+			"dataType": entry.dataType,
+			"description": entry.description,
+			"available": available,
+		}
+		categories.setdefault(entry.category, []).append(item)
+		if available:
+			totalAvailable += 1
+
+	ordered: dict[str, list[dict]] = {}
+	for cat in categoryOrder:
+		if cat in categories:
+			ordered[cat] = categories[cat]
+	for cat in categories:
+		if cat not in ordered:
+			ordered[cat] = categories[cat]
+
+	totalSources = sum(len(v) for v in ordered.values())
+
+	return {
+		"stockCode": c.stockCode,
+		"corpName": c.corpName,
+		"totalSources": totalSources,
+		"availableSources": totalAvailable,
+		"categories": ordered,
+	}
 
 
 @app.get("/api/export/modules/{code}")
@@ -615,6 +676,140 @@ async def api_export_excel(
 		filename=f"{c.stockCode}_{safeName}.xlsx",
 		media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	)
+
+
+def _resolve_module_data(c: Company, entry) -> Any:
+	"""registry entry에서 실제 데이터를 추출한다.
+
+	finance 시계열(annual.IS, timeseries.CF 등)은 series dict → DataFrame 변환.
+	extractor가 있는 모듈은 raw 데이터에 extractor를 적용.
+	callable(메서드)은 호출하여 결과를 반환.
+	dataclass/Enum은 dict/str로 변환.
+	"""
+	import dataclasses
+	import enum
+	import polars as pl
+
+	name = entry.name
+
+	if name.startswith("annual.") or name.startswith("timeseries."):
+		prefix, stmt = name.split(".", 1)
+		prop = "annual" if prefix == "annual" else "timeseries"
+		result = getattr(c, prop, None)
+		if result is None:
+			return None
+		series, periods = result
+		stmt_data = series.get(stmt)
+		if not stmt_data or not periods:
+			return None
+		rows = []
+		for account, values in stmt_data.items():
+			row = {"계정명": account}
+			for i, p in enumerate(periods):
+				row[str(p)] = values[i] if i < len(values) else None
+			rows.append(row)
+		if not rows:
+			return None
+		return pl.DataFrame(rows)
+
+	attrName = entry.funcName or entry.name
+	if name in ("IS", "BS", "CF"):
+		attrName = name
+
+	data = getattr(c, attrName, None)
+	if data is None:
+		return None
+
+	if callable(data) and not isinstance(data, (pl.DataFrame, dict, str)):
+		data = data()
+
+	if entry.extractor:
+		try:
+			data = entry.extractor(data)
+		except (AttributeError, TypeError):
+			pass
+
+	if dataclasses.is_dataclass(data) and not isinstance(data, type):
+		data = {k: v for k, v in dataclasses.asdict(data).items() if v is not None}
+
+	if isinstance(data, dict):
+		cleaned = {}
+		for k, v in data.items():
+			if isinstance(v, enum.Enum):
+				cleaned[k] = v.value
+			elif isinstance(v, (list, tuple)):
+				cleaned[k] = [item.value if isinstance(item, enum.Enum) else item for item in v]
+			else:
+				cleaned[k] = v
+		data = cleaned
+
+	return data
+
+
+@app.get("/api/data/preview/{code}/{module}")
+async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=1, le=500)):
+	"""데이터 미리보기 — 모듈 데이터를 JSON으로 반환 (테이블/텍스트)."""
+	try:
+		c = await asyncio.to_thread(Company, code)
+	except (ValueError, OSError) as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+	from dartlab.core.registry import getEntry
+	entry = getEntry(module)
+	if entry is None:
+		raise HTTPException(status_code=404, detail=f"모듈 '{module}'을 찾을 수 없습니다")
+
+	import polars as pl
+
+	try:
+		data = await asyncio.to_thread(_resolve_module_data, c, entry)
+	except (AttributeError, ValueError, OSError, KeyError, TypeError) as e:
+		raise HTTPException(status_code=404, detail=f"데이터를 가져올 수 없습니다: {e}")
+
+	if data is None:
+		raise HTTPException(status_code=404, detail="데이터가 없습니다")
+
+	if isinstance(data, pl.DataFrame):
+		preview = data.head(max_rows)
+		rows = preview.to_dicts()
+		for row in rows:
+			for k, v in row.items():
+				if v is not None and not isinstance(v, (str, int, float, bool)):
+					row[k] = str(v)
+		return {
+			"type": "table",
+			"module": module,
+			"label": entry.label,
+			"columns": preview.columns,
+			"rows": rows,
+			"totalRows": data.height,
+			"truncated": data.height > max_rows,
+		}
+
+	if isinstance(data, dict):
+		return {
+			"type": "dict",
+			"module": module,
+			"label": entry.label,
+			"data": {k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v for k, v in data.items()},
+		}
+
+	if isinstance(data, str):
+		truncated = len(data) > 5000
+		return {
+			"type": "text",
+			"module": module,
+			"label": entry.label,
+			"text": data[:5000] if truncated else data,
+			"truncated": truncated,
+		}
+
+	return {
+		"type": "unknown",
+		"module": module,
+		"label": entry.label,
+		"data": str(data)[:2000],
+	}
 
 
 @app.get("/api/data/stats")

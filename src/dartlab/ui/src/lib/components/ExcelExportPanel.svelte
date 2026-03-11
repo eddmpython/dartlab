@@ -1,12 +1,68 @@
 <script>
 	import { cn } from "$lib/utils.js";
-	import { fetchExportModules, fetchTemplates, downloadExcel, saveTemplate, deleteTemplate } from "$lib/api.js";
+	import { fetchExportModules, fetchTemplates, downloadExcel, saveTemplate, deleteTemplate, searchCompany } from "$lib/api.js";
 	import {
 		FileSpreadsheet, Download, Loader2, X, CheckSquare, Square,
-		ChevronDown, ChevronUp, Trash2, Save, LayoutTemplate
+		ChevronDown, ChevronUp, Trash2, Save, LayoutTemplate, Search
 	} from "lucide-svelte";
 
-	let { stockCode = null, corpName = "", onClose } = $props();
+	let { stockCode: initialStockCode = null, corpName: initialCorpName = "", onClose } = $props();
+
+	let activeStockCode = $state(null);
+	let activeCorpName = $state("");
+
+	let searchQuery = $state("");
+	let searchResults = $state([]);
+	let searchLoading = $state(false);
+	let searchSelectedIdx = $state(-1);
+	let showSearchResults = $state(false);
+	let searchDebounce = null;
+
+	$effect(() => {
+		if (initialStockCode) {
+			activeStockCode = initialStockCode;
+			activeCorpName = initialCorpName;
+		}
+	});
+
+	function handleSearchInput() {
+		const q = searchQuery.trim();
+		if (searchDebounce) clearTimeout(searchDebounce);
+		if (q.length < 2) { showSearchResults = false; return; }
+		searchDebounce = setTimeout(async () => {
+			searchLoading = true;
+			try {
+				const data = await searchCompany(q);
+				if (data.results?.length > 0) {
+					searchResults = data.results.slice(0, 8);
+					showSearchResults = true;
+					searchSelectedIdx = -1;
+				} else {
+					showSearchResults = false;
+				}
+			} catch {
+				showSearchResults = false;
+			}
+			searchLoading = false;
+		}, 250);
+	}
+
+	function handleSearchKeydown(e) {
+		if (showSearchResults && searchResults.length > 0) {
+			if (e.key === "ArrowDown") { e.preventDefault(); searchSelectedIdx = (searchSelectedIdx + 1) % searchResults.length; return; }
+			if (e.key === "ArrowUp") { e.preventDefault(); searchSelectedIdx = searchSelectedIdx <= 0 ? searchResults.length - 1 : searchSelectedIdx - 1; return; }
+			if (e.key === "Enter" && searchSelectedIdx >= 0) { e.preventDefault(); selectSearchResult(searchResults[searchSelectedIdx]); return; }
+			if (e.key === "Escape") { showSearchResults = false; return; }
+		}
+	}
+
+	function selectSearchResult(item) {
+		activeStockCode = item.stockCode;
+		activeCorpName = item.corpName;
+		searchQuery = "";
+		showSearchResults = false;
+		searchResults = [];
+	}
 
 	/** @type {"template" | "custom"} */
 	let mode = $state("template");
@@ -28,7 +84,7 @@
 	let allSelected = $derived(selected.size === modules.length && modules.length > 0);
 
 	$effect(() => {
-		if (stockCode) {
+		if (activeStockCode) {
 			loadModules();
 			loadTemplates();
 		}
@@ -38,7 +94,7 @@
 		loading = true;
 		error = "";
 		try {
-			const data = await fetchExportModules(stockCode);
+			const data = await fetchExportModules(activeStockCode);
 			modules = data.modules || [];
 			selected = new Set(modules.map(m => m.name));
 		} catch (e) {
@@ -91,11 +147,11 @@
 		error = "";
 		try {
 			if (mode === "template" && selectedTemplate) {
-				await downloadExcel(stockCode, null, selectedTemplate.templateId);
+				await downloadExcel(activeStockCode, null, selectedTemplate.templateId);
 			} else {
 				if (selected.size === 0) { downloading = false; return; }
 				const mods = allSelected ? null : [...selected];
-				await downloadExcel(stockCode, mods);
+				await downloadExcel(activeStockCode, mods);
 			}
 		} catch (e) {
 			error = e.message;
@@ -114,7 +170,7 @@
 			await saveTemplate({
 				name: newTemplateName.trim(),
 				sheets,
-				description: `${corpName} 기준 커스텀 양식`,
+				description: `${activeCorpName} 기준 커스텀 양식`,
 			});
 			newTemplateName = "";
 			showNewTemplate = false;
@@ -136,9 +192,11 @@
 	}
 
 	let canDownload = $derived(
-		mode === "template"
-			? selectedTemplate !== null
-			: selected.size > 0
+		activeStockCode && (
+			mode === "template"
+				? selectedTemplate !== null
+				: selected.size > 0
+		)
 	);
 </script>
 
@@ -148,8 +206,14 @@
 		<div class="flex items-center gap-2">
 			<FileSpreadsheet size={16} class="text-dl-success" />
 			<span class="text-[13px] font-medium text-dl-text">Excel 내보내기</span>
-			{#if corpName}
-				<span class="text-[11px] text-dl-text-dim">— {corpName}</span>
+			{#if activeCorpName}
+				<span class="text-[11px] text-dl-text-dim">— {activeCorpName}</span>
+				<button
+					class="text-[10px] text-dl-text-dim hover:text-dl-text-muted transition-colors"
+					onclick={() => { activeStockCode = null; activeCorpName = ""; modules = []; selected = new Set(); }}
+				>
+					변경
+				</button>
 			{/if}
 		</div>
 		<div class="flex items-center gap-1.5">
@@ -211,7 +275,52 @@
 
 	<!-- Content -->
 	<div class="px-4 py-3">
-		{#if loading}
+		{#if !activeStockCode}
+			<!-- 종목 검색 -->
+			<div class="relative">
+				<div class="flex items-center gap-2 mb-2">
+					<Search size={14} class="text-dl-text-dim flex-shrink-0" />
+					<span class="text-[12px] text-dl-text-muted">종목을 검색하세요</span>
+				</div>
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="종목명 또는 종목코드 (예: 삼성전자, 005930)"
+					class="w-full bg-dl-bg-darker border border-dl-border rounded-lg px-3 py-2.5 text-[12px] text-dl-text placeholder:text-dl-text-dim outline-none focus:border-dl-success/50 transition-colors"
+					oninput={handleSearchInput}
+					onkeydown={handleSearchKeydown}
+					onblur={() => { setTimeout(() => { showSearchResults = false; }, 200); }}
+				/>
+				{#if searchLoading}
+					<div class="absolute right-3 top-[calc(50%+10px)] -translate-y-1/2">
+						<Loader2 size={14} class="animate-spin text-dl-text-dim" />
+					</div>
+				{/if}
+				{#if showSearchResults && searchResults.length > 0}
+					<div class="absolute left-0 right-0 top-full mt-1 z-10 bg-dl-bg-card border border-dl-border rounded-xl shadow-2xl shadow-black/40 overflow-hidden animate-fadeIn max-h-[240px] overflow-y-auto">
+						{#each searchResults as item, i}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								class={cn(
+									"flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors",
+									i === searchSelectedIdx ? "bg-dl-success/10 text-dl-text" : "text-dl-text-muted hover:bg-white/[0.03]"
+								)}
+								onmousedown={() => selectSearchResult(item)}
+								onmouseenter={() => { searchSelectedIdx = i; }}
+							>
+								<div class="flex-1 min-w-0">
+									<div class="text-[12px] font-medium truncate">{item.corpName}</div>
+									<div class="text-[10px] text-dl-text-dim">{item.stockCode} · {item.market || ""}</div>
+								</div>
+								{#if item.sector}
+									<span class="text-[10px] text-dl-text-dim flex-shrink-0">{item.sector}</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{:else if loading}
 			<div class="flex items-center gap-2 py-4 justify-center text-[12px] text-dl-text-dim">
 				<Loader2 size={14} class="animate-spin" />
 				데이터 로드 중...

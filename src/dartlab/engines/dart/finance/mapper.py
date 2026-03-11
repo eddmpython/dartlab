@@ -19,6 +19,9 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from dartlab.engines.common.finance.ordering import levelMap as _commonLevelMap
+from dartlab.engines.common.finance.ordering import sortOrder as _commonSortOrder
+
 _DATA_DIR = Path(__file__).parent / "mapperData"
 
 _PREFIX_RE = re.compile(r"^(?:ifrs-full_|ifrs_|dart_|ifrs-smes_)")
@@ -206,7 +209,6 @@ class AccountMapper:
 	_instance: Optional[AccountMapper] = None
 	_mappings: Optional[dict[str, str]] = None
 	_stdAccounts: Optional[dict[str, dict]] = None
-	_sortOrderData: Optional[dict[str, dict]] = None
 
 	@classmethod
 	def get(cls) -> AccountMapper:
@@ -221,10 +223,6 @@ class AccountMapper:
 				data = json.load(f)
 			AccountMapper._mappings = data["mappings"]
 			AccountMapper._stdAccounts = data.get("standardAccounts", {})
-
-			sortPath = _DATA_DIR / "sortOrder.json"
-			with open(sortPath, encoding="utf-8") as f:
-				AccountMapper._sortOrderData = json.load(f)
 
 	def map(self, accountId: str, accountNm: str) -> Optional[str]:
 		"""account_id + account_nm → snakeId.
@@ -286,43 +284,9 @@ class AccountMapper:
 		return result
 
 	def sortOrder(self, sjDiv: str) -> dict[str, int]:
-		"""sj_div별 snakeId → 표시 순서 (K-IFRS 기준).
-
-		sortOrder.json(learnedSortOrder 기반)의 sortOrder 값으로 정렬.
-		CIS는 IS 정렬을 공유.
-
-		Args:
-			sjDiv: "BS", "IS", "CIS", "CF"
-
-		Returns:
-			{snakeId: 순서번호} dict. 순서번호가 작을수록 위에 표시.
-		"""
-		if not self._sortOrderData:
-			return {}
-
-		stmtKey = "IS" if sjDiv in ("IS", "CIS") else sjDiv
-		stmtData = self._sortOrderData.get(stmtKey, {})
-		if not stmtData:
-			return {}
-
-		sortedItems = sorted(
-			stmtData.items(),
-			key=lambda kv: kv[1].get("sortOrder", 9999),
-		)
-		return {sid: i for i, (sid, _) in enumerate(sortedItems)}
+		"""sj_div별 snakeId → 표시 순서 (common/finance/ordering 위임)."""
+		return _commonSortOrder(sjDiv)
 
 	def levelMap(self, sjDiv: str) -> dict[str, int]:
-		"""sj_div별 snakeId → 들여쓰기 레벨 (1=대분류, 2=중분류, 3=세분류).
-
-		Args:
-			sjDiv: "BS", "IS", "CIS", "CF"
-
-		Returns:
-			{snakeId: level} dict.
-		"""
-		if not self._sortOrderData:
-			return {}
-
-		stmtKey = "IS" if sjDiv in ("IS", "CIS") else sjDiv
-		stmtData = self._sortOrderData.get(stmtKey, {})
-		return {sid: meta.get("level", 1) for sid, meta in stmtData.items()}
+		"""sj_div별 snakeId → 들여쓰기 레벨 (common/finance/ordering 위임)."""
+		return _commonLevelMap(sjDiv)

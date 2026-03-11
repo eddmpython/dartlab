@@ -90,12 +90,49 @@ us.cik                       # "0000320193"
 
 ```python
 c = Compare(Company("005930"), Company("AAPL"))
-c.ratios       # DataFrame — 기업별 재무비율
-c.insights     # DataFrame — 기업별 등급
-c.revenue      # DataFrame — 연도별 매출
-c.netIncome    # DataFrame — 연도별 순이익
-c.totalAssets  # DataFrame — 연도별 총자산
 ```
+
+### 재무비율 비교
+
+| Property | 설명 |
+|----------|------|
+| `ratios` | 전체 비율 (30+ 비율) |
+| `profitability` | 수익성 (ROE, ROA, 마진 등) |
+| `stability` | 안정성 (부채비율, 유동비율 등) |
+| `growth` | 성장성 (매출/이익 YoY, CAGR) |
+| `efficiency` | 효율성 (회전율) |
+| `cashflowRatios` | 현금흐름 (FCF, CF마진 등) |
+| `valuation` | 밸류에이션 (PER, PBR 등) |
+| `scale` | 규모 절대값 (매출, 자산, 시총) |
+
+### 인사이트 비교
+
+| Property | 설명 |
+|----------|------|
+| `insights` | 7영역 등급 비교 |
+| `insightDetails` | 등급 + 요약 상세 비교 |
+
+### 연도별 시계열 비교
+
+| Property | 설명 |
+|----------|------|
+| `revenue` | 매출 |
+| `operatingProfit` | 영업이익 |
+| `netIncome` | 순이익 |
+| `totalAssets` | 총자산 |
+| `equity` | 자본(지배기업) |
+| `operatingCashflow` | 영업활동CF |
+
+### 비율 추이 비교
+
+| Property | 설명 |
+|----------|------|
+| `roeHistory` | ROE 연도별 추이 |
+| `debtRatioHistory` | 부채비율 추이 |
+| `marginHistory` | 영업이익률 추이 |
+| `netMarginHistory` | 순이익률 추이 |
+| `currentRatioHistory` | 유동비율 추이 |
+| `ratioHistory("snakeId")` | 임의 비율 추이 |
 
 ---
 
@@ -207,7 +244,7 @@ c.totalAssets  # DataFrame — 연도별 총자산
 
 ### RatioResult
 
-비율 계산 결과.
+비율 계산 결과 (최신 단일 시점).
 
 | 필드 | 타입 | 기본값 |
 |------|------|--------|
@@ -225,17 +262,52 @@ c.totalAssets  # DataFrame — 연도별 총자산
 | `shortTermBorrowings` | `Optional` | None |
 | `longTermBorrowings` | `Optional` | None |
 | `bonds` | `Optional` | None |
+| `grossProfit` | `Optional` | None |
+| `costOfSales` | `Optional` | None |
+| `sga` | `Optional` | None |
+| `inventories` | `Optional` | None |
+| `receivables` | `Optional` | None |
+| `payables` | `Optional` | None |
+| `tangibleAssets` | `Optional` | None |
+| `intangibleAssets` | `Optional` | None |
+| `retainedEarnings` | `Optional` | None |
+| `financeIncome` | `Optional` | None |
+| `financeCosts` | `Optional` | None |
+| `capex` | `Optional` | None |
+| `dividendsPaid` | `Optional` | None |
+| `noncurrentAssets` | `Optional` | None |
+| `noncurrentLiabilities` | `Optional` | None |
 | `roe` | `Optional` | None |
 | `roa` | `Optional` | None |
 | `operatingMargin` | `Optional` | None |
 | `netMargin` | `Optional` | None |
+| `grossMargin` | `Optional` | None |
+| `ebitdaMargin` | `Optional` | None |
+| `costOfSalesRatio` | `Optional` | None |
+| `sgaRatio` | `Optional` | None |
 | `debtRatio` | `Optional` | None |
 | `currentRatio` | `Optional` | None |
-| `fcf` | `Optional` | None |
-| `revenueGrowth3Y` | `Optional` | None |
+| `quickRatio` | `Optional` | None |
+| `equityRatio` | `Optional` | None |
+| `interestCoverage` | `Optional` | None |
 | `netDebt` | `Optional` | None |
 | `netDebtRatio` | `Optional` | None |
-| `equityRatio` | `Optional` | None |
+| `noncurrentRatio` | `Optional` | None |
+| `revenueGrowth` | `Optional` | None |
+| `operatingProfitGrowth` | `Optional` | None |
+| `netProfitGrowth` | `Optional` | None |
+| `assetGrowth` | `Optional` | None |
+| `equityGrowthRate` | `Optional` | None |
+| `revenueGrowth3Y` | `Optional` | None |
+| `totalAssetTurnover` | `Optional` | None |
+| `inventoryTurnover` | `Optional` | None |
+| `receivablesTurnover` | `Optional` | None |
+| `payablesTurnover` | `Optional` | None |
+| `fcf` | `Optional` | None |
+| `operatingCfMargin` | `Optional` | None |
+| `operatingCfToNetIncome` | `Optional` | None |
+| `capexRatio` | `Optional` | None |
+| `dividendPayoutRatio` | `Optional` | None |
 | `per` | `Optional` | None |
 | `pbr` | `Optional` | None |
 | `psr` | `Optional` | None |

@@ -15,7 +15,7 @@
         "CF":  {"operating_cashflow": [...], ...},
     }
 
-periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
+periods = ["2016-Q1", "2016-Q2", ..., "2024-Q4"]
 
 SCE 결과 구조::
 
@@ -31,6 +31,8 @@ from typing import Optional
 
 import polars as pl
 
+from dartlab.engines.common.finance.ordering import sortSeries
+from dartlab.engines.common.finance.period import extractYear, formatPeriod
 from dartlab.engines.dart.finance.mapper import AccountMapper
 
 QUARTER_ORDER = {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}
@@ -74,7 +76,7 @@ def buildTimeseries(
 	Returns:
 		(series, periods) 또는 None.
 		series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
-		periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
+		periods = ["2016-Q1", "2016-Q2", ..., "2024-Q4"]
 	"""
 	result = _loadAndNormalize(stockCode, fsDivPref)
 	if result is None:
@@ -128,7 +130,7 @@ def buildCumulative(
 	Returns:
 		(series, periods) 또는 None.
 		series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
-		periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
+		periods = ["2016-Q1", "2016-Q2", ..., "2024-Q4"]
 	"""
 	qResult = buildTimeseries(stockCode, fsDivPref)
 	if qResult is None:
@@ -269,7 +271,7 @@ def _buildPeriods(df: pl.DataFrame) -> list[str]:
 		qNum = QUARTER_ORDER.get(q, 0)
 		if qNum == 0:
 			continue
-		result.append((y, qNum, f"{y}_Q{qNum}"))
+		result.append((y, qNum, formatPeriod(y, qNum)))
 
 	result.sort(key=lambda x: (x[0], x[1]))
 	return [r[2] for r in result]
@@ -306,7 +308,7 @@ def _pivotToSeries(
 		year = row.get("bsns_year", "")
 		reprtNm = row.get("reprt_nm", "")
 		qNum = QUARTER_ORDER.get(reprtNm, 0)
-		pKey = f"{year}_Q{qNum}"
+		pKey = formatPeriod(year, qNum)
 
 		idx = periodIdx.get(pKey)
 		if idx is None:
@@ -319,25 +321,8 @@ def _pivotToSeries(
 		if target[snakeId][idx] is None:
 			target[snakeId][idx] = amount
 
-	_sortByStandard(result, mapper)
+	sortSeries(result)
 	return result
-
-
-def _sortByStandard(
-	series: dict[str, dict[str, list[Optional[float]]]],
-	mapper: AccountMapper,
-) -> None:
-	"""K-IFRS 기준 sortOrder로 sj_div별 dict를 재정렬 (in-place)."""
-	for sjDiv in list(series.keys()):
-		order = mapper.sortOrder(sjDiv)
-		if not order:
-			continue
-		maxOrd = len(order)
-		sortedItems = sorted(
-			series[sjDiv].items(),
-			key=lambda kv: order.get(kv[0], maxOrd),
-		)
-		series[sjDiv] = dict(sortedItems)
 
 
 def _aggregateAnnual(
@@ -347,7 +332,7 @@ def _aggregateAnnual(
 	"""분기별 standalone → 연도별 집계."""
 	yearSet: dict[str, list[int]] = {}
 	for i, p in enumerate(qPeriods):
-		year = p.split("_")[0]
+		year = extractYear(p)
 		yearSet.setdefault(year, []).append(i)
 
 	years = sorted(yearSet.keys())
@@ -382,7 +367,7 @@ def _aggregateCumulative(
 	"""분기별 standalone → 분기별 누적."""
 	yearStarts: dict[str, int] = {}
 	for i, p in enumerate(qPeriods):
-		year = p.split("_")[0]
+		year = extractYear(p)
 		if year not in yearStarts:
 			yearStarts[year] = i
 
@@ -397,7 +382,7 @@ def _aggregateCumulative(
 				cum = list(vals)
 			else:
 				for i, p in enumerate(qPeriods):
-					year = p.split("_")[0]
+					year = extractYear(p)
 					startIdx = yearStarts[year]
 					qVals = [vals[j] for j in range(startIdx, i + 1) if j < len(vals) and vals[j] is not None]
 					cum[i] = sum(qVals) if qVals else None

@@ -1055,6 +1055,122 @@
     "current_inventories": {
       "sortOrder": 1090,
       "level": 2
+    },
+    "accumulated_deficit": {
+      "sortOrder": 3200,
+      "level": 2
+    },
+    "availableforsale_financial_assets": {
+      "sortOrder": 1058,
+      "level": 2
+    },
+    "employee_benefit_assets": {
+      "sortOrder": 1900,
+      "level": 2
+    },
+    "investments_in_associates_and_joint_ventures": {
+      "sortOrder": 1800,
+      "level": 2
+    },
+    "investments_in_subsidiaries_associates_and_joint_ventures": {
+      "sortOrder": 1810,
+      "level": 2
+    },
+    "lease_liabilities": {
+      "sortOrder": 2200,
+      "level": 2
+    },
+    "noncurrent_borrowings": {
+      "sortOrder": 2520,
+      "level": 2
+    },
+    "other_components_of_equity": {
+      "sortOrder": 3300,
+      "level": 2
+    },
+    "other_noncurrent_financial_liabilities": {
+      "sortOrder": 2600,
+      "level": 2
+    },
+    "other_noncurrent_receivables": {
+      "sortOrder": 1850,
+      "level": 2
+    },
+    "prepaid_income_taxes": {
+      "sortOrder": 1180,
+      "level": 2
+    },
+    "short_term_borrowings": {
+      "sortOrder": 2150,
+      "level": 2
+    },
+    "short_term_investments": {
+      "sortOrder": 1027,
+      "level": 2
+    },
+    "long_term_investments": {
+      "sortOrder": 1830,
+      "level": 2
+    },
+    "operating_lease_rou_asset": {
+      "sortOrder": 1860,
+      "level": 2
+    },
+    "operating_lease_liability_current": {
+      "sortOrder": 2210,
+      "level": 2
+    },
+    "operating_lease_liability_noncurrent": {
+      "sortOrder": 2570,
+      "level": 2
+    },
+    "finance_lease_liability_noncurrent": {
+      "sortOrder": 2575,
+      "level": 2
+    },
+    "capital_lease_current": {
+      "sortOrder": 2215,
+      "level": 2
+    },
+    "deferred_revenue_current": {
+      "sortOrder": 2250,
+      "level": 2
+    },
+    "deferred_revenue_noncurrent": {
+      "sortOrder": 2580,
+      "level": 2
+    },
+    "commercial_paper_liability": {
+      "sortOrder": 2160,
+      "level": 2
+    },
+    "accrued_income_taxes_current": {
+      "sortOrder": 2260,
+      "level": 2
+    },
+    "contract_liability": {
+      "sortOrder": 2255,
+      "level": 2
+    },
+    "additional_paid_in_capital": {
+      "sortOrder": 3120,
+      "level": 2
+    },
+    "restricted_cash_current": {
+      "sortOrder": 1015,
+      "level": 2
+    },
+    "redeemable_noncontrolling_interest": {
+      "sortOrder": 2990,
+      "level": 1
+    },
+    "other_receivables_current": {
+      "sortOrder": 1170,
+      "level": 2
+    },
+    "equity_method_investments": {
+      "sortOrder": 1820,
+      "level": 2
     }
   },
   "IS": {
@@ -1673,6 +1789,42 @@
     "availableforsale_financial_assets_valuation": {
       "sortOrder": 2640,
       "level": 2
+    },
+    "selling_and_administrative_expenses": {
+      "sortOrder": 1050,
+      "level": 1
+    },
+    "income_tax_expense": {
+      "sortOrder": 2010,
+      "level": 1
+    },
+    "income_tax_benefit": {
+      "sortOrder": 2015,
+      "level": 1
+    },
+    "other_operating_income": {
+      "sortOrder": 4010,
+      "level": 2
+    },
+    "net_income": {
+      "sortOrder": 2050,
+      "level": 1
+    },
+    "loss_before_tax": {
+      "sortOrder": 1350,
+      "level": 1
+    },
+    "stock_compensation_expense": {
+      "sortOrder": 4510,
+      "level": 2
+    },
+    "depreciation_amortization": {
+      "sortOrder": 4500,
+      "level": 2
+    },
+    "total_other_comprehensive_income": {
+      "sortOrder": 9050,
+      "level": 1
     }
   },
   "CF": {
@@ -3226,6 +3378,70 @@
     },
     "change_in_noncontrolling_interests": {
       "sortOrder": 3500,
+      "level": 2
+    },
+    "net_income_cf": {
+      "sortOrder": 1050,
+      "level": 2
+    },
+    "depreciation_cf": {
+      "sortOrder": 1100,
+      "level": 2
+    },
+    "stock_compensation": {
+      "sortOrder": 1110,
+      "level": 2
+    },
+    "deferred_taxes": {
+      "sortOrder": 1120,
+      "level": 2
+    },
+    "accounts_receivable_change": {
+      "sortOrder": 1200,
+      "level": 2
+    },
+    "accounts_payable_change": {
+      "sortOrder": 1210,
+      "level": 2
+    },
+    "inventory_change": {
+      "sortOrder": 1220,
+      "level": 2
+    },
+    "debt_issuance": {
+      "sortOrder": 3100,
+      "level": 2
+    },
+    "debt_repayment": {
+      "sortOrder": 3110,
+      "level": 2
+    },
+    "stock_repurchase": {
+      "sortOrder": 3200,
+      "level": 2
+    },
+    "stock_issuance": {
+      "sortOrder": 3210,
+      "level": 2
+    },
+    "investment_purchases": {
+      "sortOrder": 2100,
+      "level": 2
+    },
+    "investment_sales": {
+      "sortOrder": 2110,
+      "level": 2
+    },
+    "investment_maturities": {
+      "sortOrder": 2120,
+      "level": 2
+    },
+    "net_change_in_cash": {
+      "sortOrder": 4500,
+      "level": 1
+    },
+    "ending_cash": {
+      "sortOrder": 7010,
       "level": 2
     }
   }

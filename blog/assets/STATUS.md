@@ -34,3 +34,8 @@
 ### 004 — 사업보고서 텍스트, 이렇게 읽는다
 - `004-reading-strategy.svg` — 읽기 전략 (우선순위별 4단계 + 페이지 분포)
 - `004-industry-reading-focus.svg` — 업종별 핵심 읽기 포인트 6개 업종
+
+### 006 — EDGAR의 모든 것
+- `006-edgar-structure-map.svg` — EDGAR form 지도 (정기/수시/포지션 분류)
+- `006-dart-vs-edgar-deep.svg` — DART vs EDGAR 심층 비교 매트릭스
+- `006-edgar-reading-workflow.svg` — EDGAR 4단계 읽기 워크플로

@@ -21,6 +21,7 @@
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
+	import DataExplorer from "$lib/components/DataExplorer.svelte";
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText,
 		Download, X, Loader2, Settings, Check, ExternalLink,
@@ -66,6 +67,9 @@
 	// OAuth login
 	let oauthLoggingIn = $state(false);
 	let chatgptDetail = $state({});
+
+	// DataExplorer modal
+	let showDataExplorer = $state(false);
 
 	// Mobile
 	let isMobile = $state(false);
@@ -604,6 +608,8 @@
 		}
 		if (e.key === 'Escape' && deleteConfirmId) {
 			deleteConfirmId = null;
+		} else if (e.key === 'Escape' && showDataExplorer) {
+			showDataExplorer = false;
 		} else if (e.key === 'Escape' && showSettings) {
 			showSettings = false;
 		}
@@ -752,11 +758,13 @@
 				onStop={stopStream}
 				onRegenerate={handleRegenerate}
 				onExport={handleExport}
+				onOpenExplorer={() => showDataExplorer = true}
 			/>
 		{:else}
 			<EmptyState
 				bind:inputText
 				onSend={sendMessage}
+				onOpenExplorer={() => showDataExplorer = true}
 			/>
 		{/if}
 	</div>
@@ -1202,6 +1210,11 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+<!-- DataExplorer Modal -->
+{#if showDataExplorer}
+	<DataExplorer onClose={() => showDataExplorer = false} />
 {/if}
 
 <!-- Delete confirmation -->

@@ -90,6 +90,9 @@ ignore = ["E402", "E501", "E741", "F841"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+markers = [
+    "requires_data: 로컬 parquet 데이터 필요 (CI에서 skip)",
+]
 
 [dependency-groups]
 dev = [

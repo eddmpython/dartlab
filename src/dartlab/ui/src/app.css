@@ -72,6 +72,7 @@ html, body, #app {
 .input-box.large {
 	padding: 16px 20px;
 	box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3);
+	max-width: 100%;
 }
 
 .input-textarea {
