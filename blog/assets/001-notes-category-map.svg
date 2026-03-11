@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg001n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg001n)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">K-IFRS Notes Category Map</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">40+ note items grouped by analytical purpose</text>
+
+  <rect x="40" y="76" width="232" height="92" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="56" y="98" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#f87171">General & Policy</text>
+  <text x="56" y="118" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#1 #2 #3</text>
+  <text x="56" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Accounting policy, key assumptions</text>
+
+  <rect x="284" y="76" width="232" height="92" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="300" y="98" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#fdba74">Financial Instruments</text>
+  <text x="300" y="118" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#4 #5 #6 #7</text>
+  <text x="300" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Risk sensitivity, fair value tiers</text>
+
+  <rect x="528" y="76" width="232" height="92" rx="8" fill="rgba(251,191,36,0.05)" stroke="rgba(251,191,36,0.2)"/>
+  <text x="544" y="98" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#fde68a">Assets Detail</text>
+  <text x="544" y="118" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#8 ~ #20</text>
+  <text x="544" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Receivables, inventory, PPE, lease</text>
+
+  <rect x="40" y="182" width="232" height="92" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="56" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">Liabilities & Contingency</text>
+  <text x="56" y="224" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#21 ~ #27</text>
+  <text x="56" y="244" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Borrowings, provisions, lawsuits</text>
+
+  <rect x="284" y="182" width="232" height="92" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="300" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#86efac">Equity & Earnings</text>
+  <text x="300" y="224" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#28 ~ #41</text>
+  <text x="300" y="244" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Capital, EPS, dividend, tax</text>
+
+  <rect x="528" y="182" width="232" height="92" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="544" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#7dd3fc">Business Context</text>
+  <text x="544" y="224" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#39 #42 #43</text>
+  <text x="544" y="244" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Segments, related party, post events</text>
+
+  <rect x="40" y="300" width="720" height="88" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="324" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#cbd5e1">How to use this map</text>
+  <text x="56" y="346" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">1) Start with liabilities/contingency for downside risk</text>
+  <text x="56" y="364" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">2) Check assets detail for quality of earnings</text>
+  <text x="56" y="382" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">3) Validate with segment/related-party context</text>
+</svg>

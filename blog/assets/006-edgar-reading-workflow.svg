@@ -1,39 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
   <title id="t">EDGAR Reading Workflow</title>
   <desc id="d">Four-step EDGAR reading workflow from baseline to positioning context.</desc>
-  <rect width="1200" height="620" fill="#101827"/>
-  <text x="60" y="72" fill="#e8f0ff" font-family="Arial, sans-serif" font-size="40" font-weight="700">EDGAR 4-Step Workflow</text>
-  <text x="60" y="106" fill="#9dafcb" font-family="Arial, sans-serif" font-size="20">A practical order for reading without losing context</text>
+  <defs><linearGradient id="bg6c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg6c)"/><rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">EDGAR 4-Step Workflow</text>
 
-  <rect x="60" y="160" width="250" height="330" rx="18" fill="#20344d" stroke="#6ba5de"/>
-  <text x="90" y="205" fill="#dff0ff" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 1</text>
-  <text x="90" y="240" fill="#dff0ff" font-family="Arial, sans-serif" font-size="24">10-K / 20-F</text>
-  <text x="90" y="285" fill="#b9d5f2" font-family="Arial, sans-serif" font-size="18">Set annual baseline</text>
-  <text x="90" y="315" fill="#b9d5f2" font-family="Arial, sans-serif" font-size="18">Business + risk + policy</text>
+  <rect x="40" y="78" width="170" height="220" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="56" y="102" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600">Step 1</text>
+  <text x="56" y="122" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="10">10-K / 20-F</text>
+  <text x="56" y="146" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="10">Set annual baseline</text>
 
-  <rect x="340" y="160" width="250" height="330" rx="18" fill="#2b3b26" stroke="#8cc982"/>
-  <text x="370" y="205" fill="#e6fae0" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 2</text>
-  <text x="370" y="240" fill="#e6fae0" font-family="Arial, sans-serif" font-size="24">10-Q</text>
-  <text x="370" y="285" fill="#c4e5bd" font-family="Arial, sans-serif" font-size="18">Track quarterly drift</text>
-  <text x="370" y="315" fill="#c4e5bd" font-family="Arial, sans-serif" font-size="18">Cash + working capital</text>
+  <rect x="220" y="78" width="170" height="220" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="236" y="102" fill="#86efac" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600">Step 2</text>
+  <text x="236" y="122" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="10">10-Q</text>
+  <text x="236" y="146" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="10">Track quarterly drift</text>
 
-  <rect x="620" y="160" width="250" height="330" rx="18" fill="#4b2f2a" stroke="#dd9992"/>
-  <text x="650" y="205" fill="#ffe9e6" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 3</text>
-  <text x="650" y="240" fill="#ffe9e6" font-family="Arial, sans-serif" font-size="24">8-K / 6-K</text>
-  <text x="650" y="285" fill="#f2c0bb" font-family="Arial, sans-serif" font-size="18">Link events to numbers</text>
-  <text x="650" y="315" fill="#f2c0bb" font-family="Arial, sans-serif" font-size="18">Check timing gaps</text>
+  <rect x="400" y="78" width="170" height="220" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="416" y="102" fill="#fdba74" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600">Step 3</text>
+  <text x="416" y="122" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="10">8-K / 6-K</text>
+  <text x="416" y="146" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="10">Link events to numbers</text>
 
-  <rect x="900" y="160" width="250" height="330" rx="18" fill="#2f273f" stroke="#a996d8"/>
-  <text x="930" y="205" fill="#efe8ff" font-family="Arial, sans-serif" font-size="26" font-weight="700">Step 4</text>
-  <text x="930" y="240" fill="#efe8ff" font-family="Arial, sans-serif" font-size="24">13F</text>
-  <text x="930" y="285" fill="#d2c3ef" font-family="Arial, sans-serif" font-size="18">Use as context signal</text>
-  <text x="930" y="315" fill="#d2c3ef" font-family="Arial, sans-serif" font-size="18">Not real-time trading</text>
+  <rect x="580" y="78" width="180" height="220" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="596" y="102" fill="#c4b5fd" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600">Step 4</text>
+  <text x="596" y="122" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="10">13F</text>
+  <text x="596" y="146" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="10">Use as context signal</text>
 
-  <path d="M310 320 L340 320" stroke="#8ab6e7" stroke-width="4"/>
-  <path d="M590 320 L620 320" stroke="#a4d89d" stroke-width="4"/>
-  <path d="M870 320 L900 320" stroke="#e7b0a9" stroke-width="4"/>
+  <path d="M210 182 L220 182 M390 182 L400 182 M570 182 L580 182" stroke="#334155" stroke-width="2"/>
 
-  <rect x="60" y="530" width="1090" height="56" rx="12" fill="#1b2230"/>
-  <text x="86" y="567" fill="#c8d4ea" font-family="Arial, sans-serif" font-size="24" font-weight="700">Read order beats volume:</text>
-  <text x="380" y="567" fill="#c8d4ea" font-family="Arial, sans-serif" font-size="24">Baseline → Update → Event link → Position context</text>
+  <rect x="40" y="322" width="720" height="64" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="348" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">Read order beats volume:</text>
+  <text x="56" y="368" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Baseline -> Update -> Event link -> Position context</text>
 </svg>

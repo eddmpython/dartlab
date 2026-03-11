@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg8g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg8g)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Cross-Validation Loop</text>
+  <circle cx="190" cy="210" r="70" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="190" y="206" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#7dd3fc">II. Business</text>
+  <text x="190" y="224" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Claim</text>
+
+  <circle cx="400" cy="210" r="70" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="400" y="206" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#86efac">Statements</text>
+  <text x="400" y="224" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Numbers</text>
+
+  <circle cx="610" cy="210" r="70" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="610" y="206" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fdba74">Notes/Audit</text>
+  <text x="610" y="224" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Confidence</text>
+
+  <path d="M260 210 L330 210 M470 210 L540 210" stroke="#334155" stroke-width="2"/>
+  <path d="M610 280 C520 360 280 360 190 280" stroke="#334155" stroke-width="2" fill="none"/>
+</svg>

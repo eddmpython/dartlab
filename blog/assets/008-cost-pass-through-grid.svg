@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg8f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg8f)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Cost Pass-Through Grid</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Input inflation vs pricing power matrix</text>
+
+  <rect x="80" y="90" width="640" height="280" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <line x1="400" y1="90" x2="400" y2="370" stroke="#334155"/>
+  <line x1="80" y1="230" x2="720" y2="230" stroke="#334155"/>
+
+  <text x="210" y="140" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#86efac">Low input pressure</text>
+  <text x="590" y="140" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fdba74">High input pressure</text>
+  <text x="210" y="320" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#7dd3fc">High pricing power</text>
+  <text x="590" y="320" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#f87171">Low pricing power</text>
+
+  <text x="210" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Best quality zone</text>
+  <text x="590" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Monitor margin lag</text>
+  <text x="210" y="350" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Defensive but watch volume</text>
+  <text x="590" y="350" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Highest risk zone</text>
+</svg>

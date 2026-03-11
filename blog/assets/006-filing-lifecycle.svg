@@ -1,39 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="t d">
-  <title id="t">Filing Lifecycle</title>
-  <desc id="d">Lifecycle from event filing to financial reflection in periodic reports.</desc>
-  <rect width="1200" height="640" fill="#101a2a"/>
-  <text x="60" y="72" fill="#ecf3ff" font-family="Arial, sans-serif" font-size="40" font-weight="700">From Event to Financial Impact</text>
-  <text x="60" y="106" fill="#9db1cf" font-family="Arial, sans-serif" font-size="20">Link 8-K/6-K events to 10-Q and 10-K effects</text>
-
-  <rect x="70" y="190" width="230" height="220" rx="18" fill="#3a2626" stroke="#d49595"/>
-  <text x="95" y="240" fill="#ffe8e8" font-family="Arial, sans-serif" font-size="28" font-weight="700">Event</text>
-  <text x="95" y="280" fill="#f2bdbd" font-family="Arial, sans-serif" font-size="22">8-K / 6-K</text>
-  <text x="95" y="330" fill="#e8b0b0" font-family="Arial, sans-serif" font-size="18">Contract, management,</text>
-  <text x="95" y="356" fill="#e8b0b0" font-family="Arial, sans-serif" font-size="18">funding, legal events</text>
-
-  <rect x="350" y="190" width="230" height="220" rx="18" fill="#2a3926" stroke="#94ca87"/>
-  <text x="375" y="240" fill="#ebffe5" font-family="Arial, sans-serif" font-size="28" font-weight="700">Update</text>
-  <text x="375" y="280" fill="#c8e9bf" font-family="Arial, sans-serif" font-size="22">10-Q</text>
-  <text x="375" y="330" fill="#b8ddb0" font-family="Arial, sans-serif" font-size="18">Quarterly P/L, CF,</text>
-  <text x="375" y="356" fill="#b8ddb0" font-family="Arial, sans-serif" font-size="18">working capital impact</text>
-
-  <rect x="630" y="190" width="230" height="220" rx="18" fill="#24364b" stroke="#76a8da"/>
-  <text x="655" y="240" fill="#e3f1ff" font-family="Arial, sans-serif" font-size="28" font-weight="700">Consolidation</text>
-  <text x="655" y="280" fill="#bdd8f5" font-family="Arial, sans-serif" font-size="22">10-K / 20-F</text>
-  <text x="655" y="330" fill="#aac9ea" font-family="Arial, sans-serif" font-size="18">Policy updates, notes,</text>
-  <text x="655" y="356" fill="#aac9ea" font-family="Arial, sans-serif" font-size="18">risk language changes</text>
-
-  <rect x="910" y="190" width="230" height="220" rx="18" fill="#2f273e" stroke="#a28cd3"/>
-  <text x="935" y="240" fill="#f0e8ff" font-family="Arial, sans-serif" font-size="28" font-weight="700">Context</text>
-  <text x="935" y="280" fill="#d5c6ee" font-family="Arial, sans-serif" font-size="22">13F</text>
-  <text x="935" y="330" fill="#c7b6e3" font-family="Arial, sans-serif" font-size="18">Position direction</text>
-  <text x="935" y="356" fill="#c7b6e3" font-family="Arial, sans-serif" font-size="18">(delayed signal)</text>
-
-  <path d="M300 300 L350 300" stroke="#d7a0a0" stroke-width="4"/>
-  <path d="M580 300 L630 300" stroke="#a8d89f" stroke-width="4"/>
-  <path d="M860 300 L910 300" stroke="#9bc4ea" stroke-width="4"/>
-
-  <rect x="70" y="470" width="1070" height="100" rx="12" fill="#1a2436"/>
-  <text x="96" y="528" fill="#c9d8ef" font-family="Arial, sans-serif" font-size="24" font-weight="700">Insight rule:</text>
-  <text x="260" y="528" fill="#c9d8ef" font-family="Arial, sans-serif" font-size="24">Never interpret a number before tracing its event origin.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs><linearGradient id="bg6e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg6e)"/><rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Filing Lifecycle</text>
+  <rect x="40" y="90" width="170" height="120" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/><text x="56" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">Event</text><text x="56" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">8-K / 6-K</text>
+  <rect x="230" y="90" width="170" height="120" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/><text x="246" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">Update</text><text x="246" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">10-Q</text>
+  <rect x="420" y="90" width="170" height="120" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/><text x="436" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#f87171">Consolidation</text><text x="436" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">10-K / 20-F</text>
+  <rect x="610" y="90" width="150" height="120" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/><text x="626" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">Context</text><text x="626" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">13F</text>
+  <path d="M210 150 L230 150 M400 150 L420 150 M590 150 L610 150" stroke="#334155" stroke-width="2"/>
+  <rect x="40" y="240" width="720" height="96" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="264" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#cbd5e1">Rule</text>
+  <text x="56" y="286" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Trace events first, then verify numeric reflection in the next periodic filing.</text>
 </svg>

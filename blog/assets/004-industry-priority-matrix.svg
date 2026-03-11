@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg004n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg004n)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Industry Priority Matrix</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">What to read first by sector before deep dive</text>
+
+  <rect x="40" y="78" width="720" height="300" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+
+  <text x="68" y="104" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">Sector</text>
+  <text x="210" y="104" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">Priority 1</text>
+  <text x="420" y="104" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">Priority 2</text>
+  <text x="600" y="104" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">Why</text>
+
+  <text x="68" y="138" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">Manufacturing</text>
+  <text x="210" y="138" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Raw material trend</text>
+  <text x="420" y="138" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Inventory note</text>
+  <text x="600" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Margin sensitivity</text>
+
+  <text x="68" y="172" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">Construction/Ship</text>
+  <text x="210" y="172" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Order backlog</text>
+  <text x="420" y="172" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Provision note</text>
+  <text x="600" y="172" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Future revenue proxy</text>
+
+  <text x="68" y="206" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">Financials</text>
+  <text x="210" y="206" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Credit quality</text>
+  <text x="420" y="206" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Risk management</text>
+  <text x="600" y="206" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Balance-sheet business</text>
+
+  <text x="68" y="240" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">IT / Platform</text>
+  <text x="210" y="240" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Revenue policy</text>
+  <text x="420" y="240" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Segment margin</text>
+  <text x="600" y="240" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Model durability</text>
+
+  <text x="68" y="274" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">Biotech/Pharma</text>
+  <text x="210" y="274" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Pipeline status</text>
+  <text x="420" y="274" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Intangible note</text>
+  <text x="600" y="274" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Future-value dominant</text>
+
+  <text x="68" y="308" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">Retail/Consumer</text>
+  <text x="210" y="308" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">Same-store trend</text>
+  <text x="420" y="308" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fdba74">Cost by nature</text>
+  <text x="600" y="308" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Operating leverage</text>
+
+  <text x="40" y="402" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Rule: Start with sector-critical tables, then read narrative for causal validation.</text>
+</svg>

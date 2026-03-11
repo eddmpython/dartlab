@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs><linearGradient id="bg7i" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg7i)"/><rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Search Intent Map</text>
+  <rect x="40" y="90" width="340" height="250" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="56" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#7dd3fc">Common queries</text>
+  <text x="56" y="136" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">10-K vs 10-Q</text>
+  <text x="56" y="154" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Meaning of 8-K</text>
+  <text x="56" y="172" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">20-F vs 6-K</text>
+  <text x="56" y="190" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">How to use 13F</text>
+  <rect x="420" y="90" width="340" height="250" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="436" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">Answer structure</text>
+  <text x="436" y="136" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Definition -> use case -> limitation</text>
+  <text x="436" y="154" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Timeline mapping across forms</text>
+  <text x="436" y="172" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Common misread prevention</text>
+  <path d="M380 160 L420 160" stroke="#334155" stroke-width="2"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs><linearGradient id="bg7a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg7a)"/><rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Integrated Form Tracking</text>
+  <rect x="40" y="90" width="170" height="110" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/><text x="56" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#f87171">Baseline</text><text x="56" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">10-K / 20-F</text>
+  <rect x="220" y="90" width="170" height="110" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/><text x="236" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">Update</text><text x="236" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">10-Q</text>
+  <rect x="400" y="90" width="170" height="110" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/><text x="416" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">Event</text><text x="416" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">8-K / 6-K</text>
+  <rect x="580" y="90" width="180" height="110" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/><text x="596" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">Context</text><text x="596" y="134" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">13F</text>
+  <path d="M210 146 L220 146 M390 146 L400 146 M570 146 L580 146" stroke="#334155" stroke-width="2"/>
+</svg>

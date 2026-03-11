@@ -190,6 +190,8 @@ EDGAR는 하루아침에 만들어진 시스템이 아니다.
 
 ![EDGAR Deadline Matrix](/blog/assets/006-edgar-deadline-matrix.svg)
 
+![Filing Calendar Rhythm](/blog/assets/006-filing-calendar-rhythm.svg)
+
 | form | 일반적 제출 기준 | 실무에서 의미 |
 |------|-------------------|----------------|
 | 10-K | filer 구분에 따라 60/75/90일 | 연간 기준선의 확정 시점 |

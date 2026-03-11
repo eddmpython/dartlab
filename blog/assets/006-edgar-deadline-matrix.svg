@@ -1,39 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="t d">
-  <title id="t">EDGAR Deadline Matrix</title>
-  <desc id="d">Submission timing matrix for major EDGAR forms.</desc>
-  <rect width="1200" height="760" fill="#0f1626"/>
-  <text x="60" y="72" fill="#ebf2ff" font-family="Arial, sans-serif" font-size="40" font-weight="700">EDGAR Deadline Matrix</text>
-  <text x="60" y="106" fill="#9fb2ce" font-family="Arial, sans-serif" font-size="20">Interpret timing as an analysis signal, not just compliance data</text>
-
-  <rect x="60" y="150" width="1080" height="70" rx="10" fill="#1e2a40"/>
-  <text x="100" y="194" fill="#dbe7fb" font-family="Arial, sans-serif" font-size="24" font-weight="700">Form</text>
-  <text x="380" y="194" fill="#dbe7fb" font-family="Arial, sans-serif" font-size="24" font-weight="700">Typical timing</text>
-  <text x="760" y="194" fill="#dbe7fb" font-family="Arial, sans-serif" font-size="24" font-weight="700">Interpretation</text>
-
-  <rect x="60" y="235" width="1080" height="72" rx="10" fill="#16243a"/>
-  <text x="100" y="279" fill="#d8e8ff" font-family="Arial, sans-serif" font-size="24">10-K</text>
-  <text x="380" y="279" fill="#c0d6f1" font-family="Arial, sans-serif" font-size="22">60 / 75 / 90 days</text>
-  <text x="760" y="279" fill="#c0d6f1" font-family="Arial, sans-serif" font-size="20">Annual baseline confidence window</text>
-
-  <rect x="60" y="318" width="1080" height="72" rx="10" fill="#1a2a24"/>
-  <text x="100" y="362" fill="#ddf5df" font-family="Arial, sans-serif" font-size="24">10-Q</text>
-  <text x="380" y="362" fill="#c4e2c7" font-family="Arial, sans-serif" font-size="22">40 / 45 days</text>
-  <text x="760" y="362" fill="#c4e2c7" font-family="Arial, sans-serif" font-size="20">Quarterly drift speed</text>
-
-  <rect x="60" y="401" width="1080" height="72" rx="10" fill="#322123"/>
-  <text x="100" y="445" fill="#ffe6e6" font-family="Arial, sans-serif" font-size="24">8-K</text>
-  <text x="380" y="445" fill="#efc3c3" font-family="Arial, sans-serif" font-size="22">Usually 4 business days</text>
-  <text x="760" y="445" fill="#efc3c3" font-family="Arial, sans-serif" font-size="20">Event sensitivity in disclosure</text>
-
-  <rect x="60" y="484" width="1080" height="72" rx="10" fill="#2a2436"/>
-  <text x="100" y="528" fill="#f1e7ff" font-family="Arial, sans-serif" font-size="24">20-F / 6-K</text>
-  <text x="380" y="528" fill="#d6c7ec" font-family="Arial, sans-serif" font-size="22">Annual + furnished updates</text>
-  <text x="760" y="528" fill="#d6c7ec" font-family="Arial, sans-serif" font-size="20">Cross-market timing bridge</text>
-
-  <rect x="60" y="567" width="1080" height="72" rx="10" fill="#2f2a1d"/>
-  <text x="100" y="611" fill="#fff3da" font-family="Arial, sans-serif" font-size="24">13F</text>
-  <text x="380" y="611" fill="#ead7a8" font-family="Arial, sans-serif" font-size="22">45 days after quarter-end</text>
-  <text x="760" y="611" fill="#ead7a8" font-family="Arial, sans-serif" font-size="20">Delayed positioning context</text>
-
-  <text x="60" y="700" fill="#95a8c7" font-family="Arial, sans-serif" font-size="18">Note: Exact dates shift by filer class, fiscal year-end, and holiday rules.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs><linearGradient id="bg6d" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg6d)"/><rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">EDGAR Deadline Matrix</text>
+  <text x="68" y="86" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">FORM</text><text x="250" y="86" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">TIMING</text><text x="520" y="86" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">ANALYTIC SIGNAL</text>
+  <rect x="40" y="98" width="720" height="52" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">10-K / 10-Q</text><text x="250" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">60/75/90, 40/45 day windows</text><text x="520" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Baseline freshness and drift speed</text>
+  <rect x="40" y="160" width="720" height="52" rx="6" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="56" y="190" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fdba74">8-K</text><text x="250" y="190" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Usually 4 business days</text><text x="520" y="190" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Event disclosure sensitivity</text>
+  <rect x="40" y="222" width="720" height="52" rx="6" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="56" y="252" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#c4b5fd">20-F / 6-K</text><text x="250" y="252" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Annual + furnished updates</text><text x="520" y="252" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Cross-market information bridge</text>
+  <rect x="40" y="284" width="720" height="52" rx="6" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="56" y="314" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#86efac">13F</text><text x="250" y="314" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">45 days after quarter end</text><text x="520" y="314" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Delayed positioning context</text>
 </svg>

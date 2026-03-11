@@ -1,37 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="t d">
-  <title id="t">DART vs EDGAR Deep Comparison</title>
-  <desc id="d">Comparison matrix between DART and EDGAR across structure, data access, and analysis flow.</desc>
-  <rect width="1200" height="760" fill="#0f1724"/>
-  <text x="60" y="74" fill="#ecf2ff" font-family="Arial, sans-serif" font-size="42" font-weight="700">DART vs EDGAR</text>
-  <text x="60" y="108" fill="#9fb0ca" font-family="Arial, sans-serif" font-size="20">Deep comparison for practical analysis workflow</text>
-
-  <rect x="60" y="150" width="1080" height="70" rx="12" fill="#1f293d"/>
-  <text x="100" y="195" fill="#d7e3f7" font-family="Arial, sans-serif" font-size="26" font-weight="700">Dimension</text>
-  <text x="470" y="195" fill="#d7e3f7" font-family="Arial, sans-serif" font-size="26" font-weight="700">DART</text>
-  <text x="840" y="195" fill="#d7e3f7" font-family="Arial, sans-serif" font-size="26" font-weight="700">EDGAR</text>
-
-  <rect x="60" y="240" width="1080" height="110" rx="12" fill="#142033" stroke="#40648f"/>
-  <text x="100" y="282" fill="#c7d9f5" font-family="Arial, sans-serif" font-size="24" font-weight="700">Document system</text>
-  <text x="470" y="282" fill="#d8ecff" font-family="Arial, sans-serif" font-size="22">Report-section first</text>
-  <text x="470" y="318" fill="#9ebee1" font-family="Arial, sans-serif" font-size="18">Business report structure focus</text>
-  <text x="840" y="282" fill="#d8ecff" font-family="Arial, sans-serif" font-size="22">Form-role first</text>
-  <text x="840" y="318" fill="#9ebee1" font-family="Arial, sans-serif" font-size="18">10-K, 10-Q, 8-K, 20-F, 6-K flow</text>
-
-  <rect x="60" y="370" width="1080" height="110" rx="12" fill="#1d2b1f" stroke="#4a8a55"/>
-  <text x="100" y="412" fill="#d0f0d2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Data access style</text>
-  <text x="470" y="412" fill="#e2ffe4" font-family="Arial, sans-serif" font-size="22">Parsing-heavy workflow</text>
-  <text x="470" y="448" fill="#b6ddb9" font-family="Arial, sans-serif" font-size="18">Section extraction and normalization</text>
-  <text x="840" y="412" fill="#e2ffe4" font-family="Arial, sans-serif" font-size="22">Pipeline-heavy workflow</text>
-  <text x="840" y="448" fill="#b6ddb9" font-family="Arial, sans-serif" font-size="18">Submissions + facts + form linking</text>
-
-  <rect x="60" y="500" width="1080" height="110" rx="12" fill="#3a2626" stroke="#9c6666"/>
-  <text x="100" y="542" fill="#f4d4d4" font-family="Arial, sans-serif" font-size="24" font-weight="700">Timing interpretation</text>
-  <text x="470" y="542" fill="#ffe7e7" font-family="Arial, sans-serif" font-size="22">Section update and correction signals</text>
-  <text x="470" y="578" fill="#e4b4b4" font-family="Arial, sans-serif" font-size="18">Correction filings, naming changes</text>
-  <text x="840" y="542" fill="#ffe7e7" font-family="Arial, sans-serif" font-size="22">Form sequence and event timing</text>
-  <text x="840" y="578" fill="#e4b4b4" font-family="Arial, sans-serif" font-size="18">8-K/6-K to 10-Q/10-K traceability</text>
-
-  <rect x="60" y="640" width="1080" height="80" rx="12" fill="#1a1f2a"/>
-  <text x="88" y="690" fill="#c9d4e8" font-family="Arial, sans-serif" font-size="24" font-weight="700">Practical takeaway:</text>
-  <text x="380" y="690" fill="#c9d4e8" font-family="Arial, sans-serif" font-size="24">In EDGAR, identify form purpose first, then read numbers.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg6b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg6b)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">DART vs EDGAR (Deep)</text>
+  <text x="68" y="90" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">DIMENSION</text><text x="280" y="90" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">DART</text><text x="540" y="90" font-family="JetBrains Mono,monospace" font-size="10" fill="#64748b">EDGAR</text>
+  <rect x="40" y="102" width="720" height="72" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="60" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">Document logic</text><text x="280" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Section-first reading</text><text x="540" y="128" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Form-role-first reading</text>
+  <rect x="40" y="184" width="720" height="72" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="60" y="210" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#86efac">Data workflow</text><text x="280" y="210" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Parsing-heavy</text><text x="540" y="210" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Pipeline + form-linking</text>
+  <rect x="40" y="266" width="720" height="72" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="60" y="292" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fdba74">Time interpretation</text><text x="280" y="292" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Correction & structure shifts</text><text x="540" y="292" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Event-to-filing sequence</text>
+  <text x="40" y="386" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Takeaway: In EDGAR, identify form purpose before interpreting numbers.</text>
 </svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg006n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg006n)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">EDGAR Filing Calendar Rhythm</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Interpret filings as a timeline sequence, not isolated documents</text>
+
+  <rect x="52" y="86" width="696" height="56" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="68" y="110" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">Q1</text>
+  <text x="68" y="128" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">10-Q + event-linked 8-K/6-K</text>
+
+  <rect x="52" y="152" width="696" height="56" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="68" y="176" font-family="JetBrains Mono, monospace" font-size="10" fill="#86efac">Q2</text>
+  <text x="68" y="194" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#dcfce7">10-Q drift confirmation + new 8-K/6-K</text>
+
+  <rect x="52" y="218" width="696" height="56" rx="8" fill="rgba(251,191,36,0.05)" stroke="rgba(251,191,36,0.2)"/>
+  <text x="68" y="242" font-family="JetBrains Mono, monospace" font-size="10" fill="#fde68a">Q3</text>
+  <text x="68" y="260" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fef3c7">10-Q pre-year-end risk signal window</text>
+
+  <rect x="52" y="284" width="696" height="72" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="68" y="308" font-family="JetBrains Mono, monospace" font-size="10" fill="#f87171">Q4 / Year-end</text>
+  <text x="68" y="326" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fecaca">10-K (or 20-F) baseline reset + policy/footnote updates</text>
+  <text x="68" y="344" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fecaca">Next cycle starts from this new baseline</text>
+
+  <rect x="52" y="366" width="696" height="34" rx="6" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="68" y="388" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#c4b5fd">13F overlays on this timeline as delayed positioning context</text>
+</svg>

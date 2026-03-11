@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg002n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" rx="12" fill="url(#bg002n)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">OpenDART Rate Limit Impact</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">What daily caps mean for full-market collection</text>
+
+  <rect x="48" y="82" width="704" height="98" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="68" y="106" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#cbd5e1">Scenario</text>
+  <text x="68" y="126" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">2,500 companies × 20 quarters = 50,000 calls</text>
+  <text x="68" y="146" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">Daily cap 10,000 → minimum 5 days (ideal), more with retries/errors</text>
+
+  <text x="60" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">DAY 1</text>
+  <rect x="60" y="232" width="130" height="22" rx="4" fill="rgba(234,70,71,0.10)" stroke="rgba(234,70,71,0.35)"/>
+  <text x="125" y="247" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#f87171">10,000</text>
+
+  <text x="210" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">DAY 2</text>
+  <rect x="210" y="232" width="130" height="22" rx="4" fill="rgba(234,70,71,0.10)" stroke="rgba(234,70,71,0.35)"/>
+  <text x="275" y="247" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#f87171">20,000</text>
+
+  <text x="360" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">DAY 3</text>
+  <rect x="360" y="232" width="130" height="22" rx="4" fill="rgba(251,146,60,0.10)" stroke="rgba(251,146,60,0.35)"/>
+  <text x="425" y="247" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fdba74">30,000</text>
+
+  <text x="510" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">DAY 4</text>
+  <rect x="510" y="232" width="130" height="22" rx="4" fill="rgba(251,191,36,0.10)" stroke="rgba(251,191,36,0.35)"/>
+  <text x="575" y="247" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fde68a">40,000</text>
+
+  <text x="660" y="222" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">DAY 5</text>
+  <rect x="660" y="232" width="92" height="22" rx="4" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.35)"/>
+  <text x="706" y="247" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#86efac">50,000</text>
+
+  <rect x="48" y="288" width="704" height="92" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="68" y="312" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#c4b5fd">Operational takeaway</text>
+  <text x="68" y="332" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#a78bfa">- Retry logic and checkpointing are mandatory, not optional</text>
+  <text x="68" y="350" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#a78bfa">- Batch design should assume multi-day ingestion windows</text>
+  <text x="68" y="368" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#a78bfa">- For market-wide jobs, scheduling strategy matters as much as parsing</text>
+</svg>

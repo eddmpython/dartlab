@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg8e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg8e)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Customer Concentration Risk</text>
+  <rect x="40" y="90" width="720" height="70" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="56" y="116" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#f87171">High concentration path</text>
+  <text x="56" y="136" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Top-1/Top-3 customer share rises -> price negotiation weakens -> margin volatility jumps</text>
+  <rect x="40" y="176" width="720" height="70" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="56" y="202" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">Diversification path</text>
+  <text x="56" y="222" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">New customer onboarding -> contract mix balances -> revenue durability improves</text>
+  <rect x="40" y="262" width="720" height="110" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="286" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">Quick checks</text>
+  <text x="56" y="306" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Is top customer share rising for 2+ years?</text>
+  <text x="56" y="324" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Are long-term contracts increasing?</text>
+  <text x="56" y="342" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Does margin stability match concentration trend?</text>
+</svg>

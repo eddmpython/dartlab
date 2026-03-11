@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg8b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg8b)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Same Growth, Different Quality</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Revenue +20% can imply opposite decisions</text>
+
+  <rect x="40" y="86" width="232" height="250" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="56" y="110" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#86efac">Case A: Structural</text>
+  <text x="56" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Market expansion</text>
+  <text x="56" y="150" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Pricing power intact</text>
+  <text x="56" y="168" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Customer base widening</text>
+  <text x="56" y="198" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Interpretation: repeatable growth</text>
+
+  <rect x="284" y="86" width="232" height="250" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="300" y="110" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#fdba74">Case B: Concentrated</text>
+  <text x="300" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Top clients dominate</text>
+  <text x="300" y="150" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Contract visibility weak</text>
+  <text x="300" y="168" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Negotiation power weak</text>
+  <text x="300" y="198" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Interpretation: fragile growth</text>
+
+  <rect x="528" y="86" width="232" height="250" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="544" y="110" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f87171">Case C: Accounting Timing</text>
+  <text x="544" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Expense recognition delayed</text>
+  <text x="544" y="150" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Provision burden pending</text>
+  <text x="544" y="168" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">- Quality of earnings weak</text>
+  <text x="544" y="198" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Interpretation: risky headline growth</text>
+</svg>

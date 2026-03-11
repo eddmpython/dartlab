@@ -1,35 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="t d">
-  <title id="t">Korean Investor EDGAR Checklist</title>
-  <desc id="d">Practical checklist for Korean investors reading EDGAR filings.</desc>
-  <rect width="1200" height="700" fill="#0f1728"/>
-  <text x="60" y="72" fill="#edf3ff" font-family="Arial, sans-serif" font-size="40" font-weight="700">EDGAR Checklist</text>
-  <text x="60" y="106" fill="#9db1ce" font-family="Arial, sans-serif" font-size="20">For Korean investors moving from DART-style reading to form-based reading</text>
-
-  <rect x="60" y="150" width="520" height="230" rx="16" fill="#1f2f49" stroke="#6ea6db"/>
-  <text x="90" y="196" fill="#e2f0ff" font-family="Arial, sans-serif" font-size="28" font-weight="700">Document Structure</text>
-  <text x="90" y="236" fill="#c2d9f5" font-family="Arial, sans-serif" font-size="20">[ ] Baseline: latest 10-K or 20-F</text>
-  <text x="90" y="268" fill="#c2d9f5" font-family="Arial, sans-serif" font-size="20">[ ] Compare latest 2-3 10-Qs</text>
-  <text x="90" y="300" fill="#c2d9f5" font-family="Arial, sans-serif" font-size="20">[ ] Link key 8-K/6-K events</text>
-  <text x="90" y="332" fill="#c2d9f5" font-family="Arial, sans-serif" font-size="20">[ ] Keep form role notes by date</text>
-
-  <rect x="620" y="150" width="520" height="230" rx="16" fill="#2a3a25" stroke="#8bc783"/>
-  <text x="650" y="196" fill="#e8fbe3" font-family="Arial, sans-serif" font-size="28" font-weight="700">Timing</text>
-  <text x="650" y="236" fill="#c8e8c1" font-family="Arial, sans-serif" font-size="20">[ ] Is filing timing normal vs peers?</text>
-  <text x="650" y="268" fill="#c8e8c1" font-family="Arial, sans-serif" font-size="20">[ ] Any unusual delay patterns?</text>
-  <text x="650" y="300" fill="#c8e8c1" font-family="Arial, sans-serif" font-size="20">[ ] Event date vs filing date gap checked?</text>
-  <text x="650" y="332" fill="#c8e8c1" font-family="Arial, sans-serif" font-size="20">[ ] Reflected in next periodic filing?</text>
-
-  <rect x="60" y="410" width="520" height="230" rx="16" fill="#3b2626" stroke="#d29a9a"/>
-  <text x="90" y="456" fill="#ffe9e9" font-family="Arial, sans-serif" font-size="28" font-weight="700">Cross-Validation</text>
-  <text x="90" y="496" fill="#efc1c1" font-family="Arial, sans-serif" font-size="20">[ ] MD&amp;A matches numeric changes?</text>
-  <text x="90" y="528" fill="#efc1c1" font-family="Arial, sans-serif" font-size="20">[ ] Footnote policy updates identified?</text>
-  <text x="90" y="560" fill="#efc1c1" font-family="Arial, sans-serif" font-size="20">[ ] New risk language added?</text>
-  <text x="90" y="592" fill="#efc1c1" font-family="Arial, sans-serif" font-size="20">[ ] Narrative and cash flow aligned?</text>
-
-  <rect x="620" y="410" width="520" height="230" rx="16" fill="#2e273c" stroke="#a691d3"/>
-  <text x="650" y="456" fill="#f0e9ff" font-family="Arial, sans-serif" font-size="28" font-weight="700">Position Context</text>
-  <text x="650" y="496" fill="#d5c7ed" font-family="Arial, sans-serif" font-size="20">[ ] 13F read as delayed context</text>
-  <text x="650" y="528" fill="#d5c7ed" font-family="Arial, sans-serif" font-size="20">[ ] 4-8 quarter trend tracked</text>
-  <text x="650" y="560" fill="#d5c7ed" font-family="Arial, sans-serif" font-size="20">[ ] Avoid copy-trading interpretation</text>
-  <text x="650" y="592" fill="#d5c7ed" font-family="Arial, sans-serif" font-size="20">[ ] Use with fundamentals only</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg6f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg6f)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Korean Investor Checklist (EDGAR)</text>
+  <rect x="40" y="78" width="350" height="140" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="56" y="102" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#f87171">Document Structure</text>
+  <text x="56" y="124" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Baseline: latest 10-K or 20-F</text>
+  <text x="56" y="142" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Compare latest 2-3 10-Qs</text>
+  <text x="56" y="160" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Link key 8-K/6-K events</text>
+  <rect x="410" y="78" width="350" height="140" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="426" y="102" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">Timing</text>
+  <text x="426" y="124" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Peer-relative delay check</text>
+  <text x="426" y="142" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Event date vs filing date gap</text>
+  <rect x="40" y="232" width="350" height="140" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="56" y="256" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">Cross Validation</text>
+  <text x="56" y="278" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] MD&A narrative vs numbers</text>
+  <text x="56" y="296" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] New risk language in footnotes</text>
+  <rect x="410" y="232" width="350" height="140" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="426" y="256" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">Position Context</text>
+  <text x="426" y="278" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] 13F as direction, not timing</text>
+  <text x="426" y="296" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Check 4-8 quarter continuity</text>
 </svg>

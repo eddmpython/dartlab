@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg8h" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg8h)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Common Mistakes Heatmap</text>
+
+  <rect x="40" y="90" width="720" height="54" rx="6" fill="rgba(234,70,71,0.10)" stroke="rgba(234,70,71,0.25)"/>
+  <text x="56" y="122" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fecaca">High impact: treating II section as PR and skipping it</text>
+
+  <rect x="40" y="152" width="720" height="54" rx="6" fill="rgba(251,146,60,0.08)" stroke="rgba(251,146,60,0.22)"/>
+  <text x="56" y="184" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fed7aa">High impact: assuming growth quality from headline revenue only</text>
+
+  <rect x="40" y="214" width="720" height="54" rx="6" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.22)"/>
+  <text x="56" y="246" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#fef3c7">Medium impact: reading customer concentration as strength only</text>
+
+  <rect x="40" y="276" width="720" height="54" rx="6" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.22)"/>
+  <text x="56" y="308" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#cffafe">Medium impact: not validating narrative with notes/audit language</text>
+
+  <rect x="40" y="338" width="720" height="54" rx="6" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.22)"/>
+  <text x="56" y="370" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#dcfce7">Lower impact: over-reading single wording without trend comparison</text>
+</svg>

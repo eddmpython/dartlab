@@ -67,6 +67,8 @@ thstrm_amount: 162,663,620,000,000
 
 재무 분석에서 가장 어려운 단계는 "분석"이 아니라 **"같은 것을 같다고 인식하는 것"**이다.
 
+![Account Mapping Pipeline](/blog/assets/005-account-mapping-pipeline.svg)
+
 ![계정 표준화](/blog/assets/005-account-mapping.svg)
 
 매출 하나만 해도 이렇다.

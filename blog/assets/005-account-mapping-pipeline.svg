@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" fill="none">
+  <defs>
+    <linearGradient id="bg005n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="440" rx="12" fill="url(#bg005n)"/>
+  <rect x="0.5" y="0.5" width="799" height="439" rx="12" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Account Mapping Pipeline (7 Steps)</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">From noisy XBRL labels to unified snakeId</text>
+
+  <rect x="40" y="78" width="720" height="42" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="104" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">1</text>
+  <text x="86" y="104" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cbd5e1">Prefix cleanup: ifrs-full_, dart_, ifrs_, ifrs-smes_</text>
+
+  <rect x="40" y="128" width="720" height="42" rx="6" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="56" y="154" font-family="JetBrains Mono, monospace" font-size="11" fill="#f87171">2</text>
+  <text x="86" y="154" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fecaca">ID_SYNONYMS mapping</text>
+
+  <rect x="40" y="178" width="720" height="42" rx="6" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="56" y="204" font-family="JetBrains Mono, monospace" font-size="11" fill="#fdba74">3</text>
+  <text x="86" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fed7aa">ACCOUNT_NAME_SYNONYMS mapping</text>
+
+  <rect x="40" y="228" width="720" height="42" rx="6" fill="rgba(251,191,36,0.05)" stroke="rgba(251,191,36,0.2)"/>
+  <text x="56" y="254" font-family="JetBrains Mono, monospace" font-size="11" fill="#fde68a">4</text>
+  <text x="86" y="254" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fef3c7">CORE_MAP override for high-priority accounts</text>
+
+  <rect x="40" y="278" width="720" height="42" rx="6" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="56" y="304" font-family="JetBrains Mono, monospace" font-size="11" fill="#c4b5fd">5</text>
+  <text x="86" y="304" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#ddd6fe">accountMappings.json lookup (learned synonyms)</text>
+
+  <rect x="40" y="328" width="720" height="42" rx="6" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="56" y="354" font-family="JetBrains Mono, monospace" font-size="11" fill="#86efac">6</text>
+  <text x="86" y="354" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#dcfce7">Fallback normalization (whitespace/parentheses cleanup)</text>
+
+  <rect x="40" y="378" width="720" height="42" rx="6" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="56" y="404" font-family="JetBrains Mono, monospace" font-size="11" fill="#7dd3fc">7</text>
+  <text x="86" y="404" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cffafe">Unmapped -> None (safe failure for downstream logic)</text>
+</svg>
