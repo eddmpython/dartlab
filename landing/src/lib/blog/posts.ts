@@ -8,6 +8,14 @@ export interface PostMeta {
 
 export const posts: PostMeta[] = [
 	{
+		slug: 'everything-about-edgar',
+		title: 'EDGAR의 모든 것',
+		date: '2026-03-11',
+		description:
+			'SEC EDGAR는 미국 자본시장의 핵심 인프라다. 10-K, 10-Q, 8-K, 20-F, 6-K, 13F가 각각 무엇을 담고 왜 중요한지, 제출 시한은 어떻게 다르고 데이터는 어떻게 공개되는지, 그리고 한국 투자자가 DART와 무엇을 다르게 읽어야 하는지 깊이 있게 정리한다.',
+		thumbnail: '/avatar-chart.png'
+	},
+	{
 		slug: 'python-financial-analysis',
 		title: '파이썬으로 재무제표 분석하기',
 		date: '2026-03-10',
