@@ -46,7 +46,7 @@ jobs:
         run: pip install ruff
 
       - name: Lint check
-        run: ruff check src/dartlab/
+        run: ruff check src/dartlab/ tests/
 
   smoke:
     runs-on: ubuntu-latest
@@ -68,10 +68,11 @@ jobs:
           python -c "
           import dartlab
           from dartlab import Company, KRCompany, USCompany, Compare
-          from dartlab.core.registry import REGISTRY
+          from dartlab.core.registry import getEntries
           from dartlab.engines.common.finance.ratios import calcRatios
           from dartlab.engines.insight.grading import AREAS
-          from dartlab.engines.dart.finance.mapper import mapAccount
-          print(f'dartlab imported OK, {len(REGISTRY)} registry entries')
+          from dartlab.engines.dart.finance.mapper import AccountMapper
+          entries = getEntries()
+          print(f'dartlab imported OK, {len(entries)} registry entries')
           print(f'{len(AREAS)} insight areas')
           "
