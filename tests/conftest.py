@@ -17,6 +17,8 @@ from dartlab.core.dataLoader import _dataDir
 
 SAMSUNG = "005930"
 HYUNDAI = "005380"
+SHINHAN = "055550"
+KAKAO = "035720"
 
 
 def _has_data(code: str, category: str = "docs") -> bool:
@@ -35,6 +37,12 @@ requires_finance = pytest.mark.skipif(
 requires_report = pytest.mark.skipif(
     not _has_data(SAMSUNG, "report"), reason="삼성전자 report 데이터 없음"
 )
+requires_shinhan = pytest.mark.skipif(
+    not _has_data(SHINHAN, "finance"), reason="신한지주 finance 데이터 없음"
+)
+requires_kakao = pytest.mark.skipif(
+    not _has_data(KAKAO, "finance"), reason="카카오 finance 데이터 없음"
+)
 
 
 _DATA_SKIP_REASONS = frozenset({
@@ -42,8 +50,13 @@ _DATA_SKIP_REASONS = frozenset({
     "현대자동차 docs 데이터 없음",
     "삼성전자 finance 데이터 없음",
     "삼성전자 report 데이터 없음",
+    "신한지주 finance 데이터 없음",
+    "카카오 finance 데이터 없음",
     "EDGAR parquet 데이터 없음",
     "EDGAR tickers.parquet 없음",
+    "삼성전자 데이터 없음",
+    "벤치마크 종목 finance 데이터 없음",
+    "BS 항등식 검증 종목 finance 데이터 없음",
 })
 
 
