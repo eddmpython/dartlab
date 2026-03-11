@@ -725,6 +725,11 @@ class KRCompany:
             print(f"  ▶ {self.corpName} · 원재료설비")
         return self._call_module("rawMaterial")
 
+    @property
+    def sections(self) -> pl.DataFrame | None:
+        """사업보고서 전체 섹션 텍스트 — topic(행) × period(열) DataFrame."""
+        return self._get_primary("sections")
+
     # ── holderOverview (별도 함수) ──
 
     @property

@@ -688,6 +688,23 @@ _ENTRIES: list[DataEntry] = [
 		analysisHints=("원재료 조달 집중도", "시설투자 규모 추이"),
 		relatedModules=("costByNature", "tangibleAsset"),
 	),
+	DataEntry(
+		name="sections", label="사업보고서섹션", category="disclosure",
+		dataType="dataframe",
+		description="사업보고서 전체 섹션 텍스트를 topic(행) × period(열) DataFrame으로 구조화. "
+		"leaf title 기준 수평 비교 가능. 연간+분기+반기 전 기간 포함.",
+		modulePath="dartlab.engines.dart.docs.sections",
+		funcName="sections", extractor=None,
+		requires="docs",
+		columns=(
+			ColumnMeta("topic", "섹션 주제명 (leaf title)"),
+		),
+		analysisHints=(
+			"사업 리스크, 소송, 제재, 후발사건 등 서술형 정보 탐색",
+			"연도별 텍스트 변화 비교 (같은 topic의 기간별 텍스트 대조)",
+			"경영진 전망, 이사회 활동, 위험관리 정책 등 정성 분석",
+		),
+	),
 
 	# ═══════════════════════════════════════════════════════
 	# notes — K-IFRS 주석
