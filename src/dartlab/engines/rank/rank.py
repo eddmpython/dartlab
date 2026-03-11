@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -73,9 +73,9 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
         stockCode → RankInfo 매핑 dict.
     """
     from dartlab.core.kindList import getKindList
-    from dartlab.engines.sector import classify
-    from dartlab.engines.dart.finance.pivot import buildAnnual
     from dartlab.engines.common.finance.ratios import calcRatios
+    from dartlab.engines.dart.finance.pivot import buildAnnual
+    from dartlab.engines.sector import classify
 
     kindDf = getKindList()
     codes = kindDf["종목코드"].to_list()

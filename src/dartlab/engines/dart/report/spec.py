@@ -5,7 +5,7 @@ from __future__ import annotations
 
 def buildSpec() -> dict:
     """dart/report 엔진 스펙 반환."""
-    from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS
+    from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES
 
     return {
         "name": "dart.report",

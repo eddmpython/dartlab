@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from dartlab.engines.common.finance.extract import getLatest, getAnnualValues
+from dartlab.engines.common.finance.extract import getAnnualValues, getLatest
 from dartlab.engines.common.finance.ratios import RatioResult
 from dartlab.engines.insight.benchmark import getBenchmark, sectorAdjustment
 from dartlab.engines.insight.detector import detectIncompleteYear
@@ -230,7 +230,7 @@ def analyzeProfitability(
             details.append(f"높은 레버리지로 ROE 달성 (ROE/ROA={leverage:.1f}x)")
             risks.append(Flag("warning", "finance", f"ROE/ROA {leverage:.1f}x — 부채 활용 높음"))
         elif leverage < 1.5 and roe > 15:
-            details.append(f"낮은 레버리지로 고ROE — 진성 수익성")
+            details.append("낮은 레버리지로 고ROE — 진성 수익성")
             opps.append(Flag("strong", "finance", f"레버리지 {leverage:.1f}x로 ROE {roe:.1f}%"))
 
     bm = getBenchmark(sector)

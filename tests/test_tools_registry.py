@@ -1,7 +1,6 @@
 """tools_registry 모듈 테스트 — LLM 불필요."""
 
 import polars as pl
-import pytest
 
 from dartlab.engines.ai.tools_registry import (
 	clear_registry,
@@ -10,7 +9,6 @@ from dartlab.engines.ai.tools_registry import (
 	register_defaults,
 	register_tool,
 )
-
 
 # ══════════════════════════════════════
 # Mock Company

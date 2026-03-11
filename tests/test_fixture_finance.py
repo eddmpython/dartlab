@@ -100,8 +100,8 @@ class TestPivotWithFixture:
         assert "IS" in aSeries
 
     def test_ratiosFromFixture(self, financeDf):
-        from dartlab.engines.dart.finance.pivot import buildAnnual
         from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.engines.dart.finance.pivot import buildAnnual
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildAnnual("005930")

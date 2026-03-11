@@ -14,24 +14,27 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 import dartlab
 from dartlab import Company
 
+from .cache import company_cache
+from .chat import OLLAMA_MODEL_GUIDE, build_dynamic_chat_prompt, build_history_messages
 from .models import AskRequest, ConfigureRequest
 from .resolve import (
-	try_resolve_company, try_resolve_from_history,
-	build_not_found_msg, build_ambiguous_msg,
-	needs_match_verification, verify_match_with_llm,
-	_collect_candidates, ResolveResult,
+	ResolveResult,
+	_collect_candidates,
+	build_ambiguous_msg,
+	build_not_found_msg,
+	needs_match_verification,
+	try_resolve_company,
+	try_resolve_from_history,
+	verify_match_with_llm,
 )
-from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot, OLLAMA_MODEL_GUIDE
 from .streaming import stream_ask
-from .cache import company_cache
-
 
 app = FastAPI(title="DartLab", version=dartlab.__version__ if hasattr(dartlab, "__version__") else "0.2.0")
 
@@ -118,7 +121,7 @@ def api_status():
 
 	chatgpt_detail = {}
 	try:
-		from dartlab.engines.ai.oauthToken import is_authenticated, load_token, TokenRefreshError
+		from dartlab.engines.ai.oauthToken import TokenRefreshError, is_authenticated, load_token
 		chatgpt_detail["authenticated"] = is_authenticated()
 		token_data = load_token()
 		if token_data:
@@ -235,6 +238,7 @@ def api_models(provider: str):
 def _get_api_key(provider: str) -> str | None:
 	"""글로벌 config 또는 환경변수에서 API 키를 가져온다."""
 	import os
+
 	from dartlab.engines.ai import get_config
 	config = get_config()
 	if config.api_key and config.provider == provider:
@@ -309,7 +313,7 @@ def _fetch_anthropic_models() -> list[str]:
 @app.get("/api/oauth/authorize")
 def api_oauth_authorize():
 	"""ChatGPT OAuth 인증 시작 — 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
-	from dartlab.engines.ai.oauthToken import build_auth_url, OAUTH_REDIRECT_PORT
+	from dartlab.engines.ai.oauthToken import OAUTH_REDIRECT_PORT, build_auth_url
 
 	auth_url, verifier, state = build_auth_url()
 
@@ -347,8 +351,8 @@ _oauth_state: dict = {}
 def _start_oauth_callback_server(port: int):
 	"""OAuth 콜백을 받을 임시 HTTP 서버를 백그라운드 스레드로 시작."""
 	import threading
-	from http.server import HTTPServer, BaseHTTPRequestHandler
-	from urllib.parse import urlparse, parse_qs
+	from http.server import BaseHTTPRequestHandler, HTTPServer
+	from urllib.parse import parse_qs, urlparse
 
 	class CallbackHandler(BaseHTTPRequestHandler):
 		def do_GET(self):
@@ -644,8 +648,8 @@ async def api_export_excel(
 	safeName = c.corpName.replace("/", "_").replace("\\", "_")
 
 	if template_id:
-		from dartlab.export.store import TemplateStore
 		from dartlab.export.excel import exportWithTemplate
+		from dartlab.export.store import TemplateStore
 		store = TemplateStore()
 		tmpl = store.get(template_id)
 		if tmpl is None:
@@ -688,6 +692,7 @@ def _resolve_module_data(c: Company, entry) -> Any:
 	"""
 	import dataclasses
 	import enum
+
 	import polars as pl
 
 	name = entry.name
@@ -746,9 +751,33 @@ def _resolve_module_data(c: Company, entry) -> Any:
 	return data
 
 
+def _build_finance_meta(moduleName: str) -> dict[str, Any]:
+	"""finance 시계열 모듈의 메타데이터 — 한글 라벨, 정렬, 레벨 정보."""
+	if not moduleName.startswith("annual.") and not moduleName.startswith("timeseries."):
+		return {}
+
+	_, stmt = moduleName.split(".", 1)
+	from dartlab.engines.dart.finance.mapper import AccountMapper
+	mapper = AccountMapper.get()
+	labels = mapper.labelMap()
+	order = mapper.sortOrder(stmt)
+	levels = mapper.levelMap(stmt)
+
+	return {
+		"labels": labels,
+		"sortOrder": order,
+		"levels": levels,
+		"unit": "원",
+		"stmtType": stmt,
+	}
+
+
 @app.get("/api/data/preview/{code}/{module}")
 async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=1, le=500)):
-	"""데이터 미리보기 — 모듈 데이터를 JSON으로 반환 (테이블/텍스트)."""
+	"""데이터 미리보기 — 모듈 데이터를 JSON으로 반환 (테이블/텍스트).
+
+	finance 시계열의 경우 meta에 labels/sortOrder/levels 포함.
+	"""
 	try:
 		c = await asyncio.to_thread(Company, code)
 	except (ValueError, OSError) as e:
@@ -776,21 +805,27 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
 			for k, v in row.items():
 				if v is not None and not isinstance(v, (str, int, float, bool)):
 					row[k] = str(v)
-		return {
+		result: dict[str, Any] = {
 			"type": "table",
 			"module": module,
 			"label": entry.label,
+			"unit": entry.unit,
 			"columns": preview.columns,
 			"rows": rows,
 			"totalRows": data.height,
 			"truncated": data.height > max_rows,
 		}
+		financeMeta = _build_finance_meta(module)
+		if financeMeta:
+			result["meta"] = financeMeta
+		return result
 
 	if isinstance(data, dict):
 		return {
 			"type": "dict",
 			"module": module,
 			"label": entry.label,
+			"unit": entry.unit,
 			"data": {k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v for k, v in data.items()},
 		}
 
@@ -952,8 +987,8 @@ async def _plain_chat(req: AskRequest):
 	except PermissionError:
 		raise HTTPException(status_code=401, detail="ChatGPT OAuth 토큰이 없습니다. 로그인이 필요합니다.")
 	except Exception as e:
-		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
 		from dartlab.engines.ai.oauthToken import TokenRefreshError
+		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
 		if isinstance(e, (ChatGPTOAuthError, TokenRefreshError)):
 			raise HTTPException(status_code=401, detail=str(e))
 		raise HTTPException(status_code=500, detail=str(e))
@@ -1065,7 +1100,7 @@ def ensure_port(port: int) -> str:
 
 	print(f"\n  포트 {port} 사용 중 (좀비) — 기존 프로세스 종료 중...")
 	if _kill_port(port):
-		print(f"  종료 완료. 재시작합니다.\n")
+		print("  종료 완료. 재시작합니다.\n")
 		return "ok"
 
 	print(f"\n  오류: 포트 {port}을 해제할 수 없습니다.", file=sys.stderr)

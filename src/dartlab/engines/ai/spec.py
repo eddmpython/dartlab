@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 _ENGINE_SPECS = [
     "dartlab.engines.dart.finance.spec",
     "dartlab.engines.dart.report.spec",

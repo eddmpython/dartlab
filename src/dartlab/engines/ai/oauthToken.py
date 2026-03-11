@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
-
 CHATGPT_AUTH_URL = "https://auth.openai.com/oauth/authorize"
 CHATGPT_TOKEN_URL = "https://auth.openai.com/oauth/token"
 CHATGPT_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"

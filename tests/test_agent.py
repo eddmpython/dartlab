@@ -1,12 +1,10 @@
 """agent 모듈 테스트 — mock provider로 LLM 불필요."""
 
-import pytest
+
+import polars as pl
 
 from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop
 from dartlab.engines.ai.types import ToolCall, ToolResponse
-from dartlab.engines.ai.tools_registry import clear_registry, get_tool_schemas
-import polars as pl
-
 
 # ══════════════════════════════════════
 # Mocks

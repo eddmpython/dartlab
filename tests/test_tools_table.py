@@ -1,7 +1,6 @@
 """tools.table 모듈 테스트 — 데이터 의존 없음."""
 
 import polars as pl
-import pytest
 
 from dartlab.tools.table import (
 	format_korean,
@@ -11,7 +10,6 @@ from dartlab.tools.table import (
 	summary_stats,
 	yoy_change,
 )
-
 
 # ══════════════════════════════════════
 # YoY 변동

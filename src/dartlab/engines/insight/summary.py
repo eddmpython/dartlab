@@ -6,7 +6,6 @@ from typing import Optional
 
 from dartlab.engines.insight.types import Anomaly, InsightResult
 
-
 GRADE_SCORE = {"A": 4, "B": 3, "C": 2, "D": 1, "F": 0, "N": None}
 
 

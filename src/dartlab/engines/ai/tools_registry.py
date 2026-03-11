@@ -247,7 +247,7 @@ def register_defaults(company: Any) -> None:
 
 	# 4. compute_growth: 성장률 매트릭스
 	def compute_growth(module_name: str) -> str:
-		from dartlab.tools.table import pivot_accounts, growth_matrix
+		from dartlab.tools.table import growth_matrix, pivot_accounts
 
 		data = getattr(company, module_name, None)
 		if not isinstance(data, pl.DataFrame):
@@ -566,8 +566,9 @@ def register_defaults(company: Any) -> None:
 
 	# 13. export_to_excel: Excel 파일 내보내기
 	def export_to_excel(modules: str = "") -> str:
-		from dartlab.export.excel import exportToExcel, listAvailableModules
 		import tempfile
+
+		from dartlab.export.excel import exportToExcel, listAvailableModules
 
 		modList = [m.strip() for m in modules.split(",") if m.strip()] or None
 		safeName = company.corpName.replace("/", "_").replace("\\", "_")
@@ -601,8 +602,8 @@ def register_defaults(company: Any) -> None:
 	# 14. create_template: 엑셀 템플릿 생성
 	def create_template(name: str, sheets_json: str) -> str:
 		"""JSON 시트 정의로 Excel 내보내기 템플릿을 생성합니다."""
-		from dartlab.export.template import ExcelTemplate, SheetSpec
 		from dartlab.export.store import TemplateStore
+		from dartlab.export.template import ExcelTemplate, SheetSpec
 		try:
 			sheets_data = json.loads(sheets_json)
 		except json.JSONDecodeError:
@@ -639,9 +640,10 @@ def register_defaults(company: Any) -> None:
 	# 15. export_with_template: 템플릿 기반 엑셀 내보내기
 	def export_with_template(template_id: str) -> str:
 		"""저장된 템플릿으로 Excel 파일을 생성합니다."""
-		from dartlab.export.store import TemplateStore
-		from dartlab.export.excel import exportWithTemplate
 		import tempfile
+
+		from dartlab.export.excel import exportWithTemplate
+		from dartlab.export.store import TemplateStore
 
 		store = TemplateStore()
 		tmpl = store.get(template_id)

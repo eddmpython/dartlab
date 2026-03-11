@@ -89,8 +89,8 @@ def _df_to_simple_md(df: pl.DataFrame, max_rows: int = 10) -> str:
 
 def _run_health_analysis(company: Any, tables: list[str]) -> str | None:
 	"""재무건전성: ratio_table + anomaly detection."""
-	from dartlab.tools.table import ratio_table
 	from dartlab.engines.ai.aiParser import detect_anomalies
+	from dartlab.tools.table import ratio_table
 
 	bs = getattr(company, "BS", None)
 	is_ = getattr(company, "IS", None)
@@ -120,7 +120,7 @@ def _run_health_analysis(company: Any, tables: list[str]) -> str | None:
 
 def _run_profitability_analysis(company: Any, tables: list[str]) -> str | None:
 	"""수익성: IS 피벗 + YoY + 요약통계."""
-	from dartlab.tools.table import pivot_accounts, yoy_change, summary_stats
+	from dartlab.tools.table import pivot_accounts, summary_stats, yoy_change
 
 	is_ = getattr(company, "IS", None)
 	if not isinstance(is_, pl.DataFrame):
@@ -152,7 +152,7 @@ def _run_profitability_analysis(company: Any, tables: list[str]) -> str | None:
 
 def _run_growth_analysis(company: Any, tables: list[str]) -> str | None:
 	"""성장성: growth_matrix."""
-	from dartlab.tools.table import pivot_accounts, growth_matrix
+	from dartlab.tools.table import growth_matrix, pivot_accounts
 
 	is_ = getattr(company, "IS", None)
 	if not isinstance(is_, pl.DataFrame):
@@ -176,7 +176,7 @@ def _run_growth_analysis(company: Any, tables: list[str]) -> str | None:
 
 def _run_dividend_analysis(company: Any, tables: list[str]) -> str | None:
 	"""배당: dividend 데이터 YoY + 요약통계."""
-	from dartlab.tools.table import yoy_change, summary_stats
+	from dartlab.tools.table import summary_stats, yoy_change
 
 	div = getattr(company, "dividend", None)
 	if not isinstance(div, pl.DataFrame) or div.height == 0:

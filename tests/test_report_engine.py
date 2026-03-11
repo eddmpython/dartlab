@@ -147,7 +147,7 @@ class TestPivotAudit:
 @requires_report
 class TestTypes:
     def test_api_types(self):
-        from dartlab.engines.dart.report import API_TYPES, API_TYPE_LABELS
+        from dartlab.engines.dart.report import API_TYPE_LABELS, API_TYPES
         assert len(API_TYPES) == 22
         for t in API_TYPES:
             assert t in API_TYPE_LABELS

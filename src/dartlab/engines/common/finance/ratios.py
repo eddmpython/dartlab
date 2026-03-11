@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.engines.common.finance.extract import getLatest, getTTM, getRevenueGrowth3Y
+from dartlab.engines.common.finance.extract import getLatest, getRevenueGrowth3Y, getTTM
 
 
 @dataclass

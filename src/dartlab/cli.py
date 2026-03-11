@@ -123,9 +123,9 @@ def _cmd_status(args):
 			if info.get("models"):
 				print(f"  models:    {', '.join(info['models'])}")
 			if not info["installed"]:
-				print(f"  setup:     dartlab setup ollama")
+				print("  setup:     dartlab setup ollama")
 			elif not info["running"]:
-				print(f"  setup:     ollama serve")
+				print("  setup:     ollama serve")
 
 		elif prov == "claude-code" and "claude-code" in s:
 			info = s["claude-code"]
@@ -134,7 +134,7 @@ def _cmd_status(args):
 			if info.get("version"):
 				print(f"  version:   {info['version']}")
 			if not info["installed"] or not info["authenticated"]:
-				print(f"  setup:     dartlab setup claude-code")
+				print("  setup:     dartlab setup claude-code")
 
 		elif prov == "codex" and "codex" in s:
 			info = s["codex"]
@@ -142,7 +142,7 @@ def _cmd_status(args):
 			if info.get("version"):
 				print(f"  version:   {info['version']}")
 			if not info["installed"]:
-				print(f"  setup:     dartlab setup codex")
+				print("  setup:     dartlab setup codex")
 
 		elif prov in ("openai", "claude", "custom") and not avail:
 			print(f"  setup:     dartlab ask ... -p {prov} --api-key YOUR_KEY")
@@ -152,7 +152,8 @@ def _cmd_status(args):
 
 def _cmd_setup(args):
 	from dartlab.engines.ai.cli_setup import (
-		detect_claude_code, detect_codex,
+		detect_claude_code,
+		detect_codex,
 	)
 
 	if args.provider is None:
@@ -345,9 +346,9 @@ def _cmd_ui(args):
 				shell=True,
 			)
 
-		print(f"\n  DartLab AI (개발 모드)")
+		print("\n  DartLab AI (개발 모드)")
 		print(f"  API:     {url}")
-		print(f"  Svelte:  http://localhost:5400")
+		print("  Svelte:  http://localhost:5400")
 		print()
 
 		vite_thread = threading.Thread(target=run_vite, daemon=True)
@@ -357,17 +358,18 @@ def _cmd_ui(args):
 		if not ui_dir.exists():
 			print("\n  UI가 빌드되지 않았습니다.")
 			print("  개발 모드로 실행하세요:\n")
-			print(f"    dartlab ai --dev\n")
+			print("    dartlab ai --dev\n")
 			print("  또는 빌드 후 실행:")
-			print(f"    cd src/dartlab/ui && npm install && npm run build")
-			print(f"    dartlab ai\n")
+			print("    cd src/dartlab/ui && npm install && npm run build")
+			print("    dartlab ai\n")
 			return
 
-		print(f"\n  DartLab AI")
+		print("\n  DartLab AI")
 		print(f"  {url}")
 		print()
 
 	import os
+
 	from dartlab.server import ensure_port, run_server
 
 	should_open = not getattr(args, "no_browser", False) and not os.environ.get("DARTLAB_NO_BROWSER")

@@ -2,38 +2,29 @@
 
 import pytest
 
-from dartlab.engines.insight.types import (
-    Flag,
-    InsightResult,
-    Anomaly,
-    AnalysisResult,
+from dartlab.engines.common.finance.ratios import RatioResult
+from dartlab.engines.insight.anomaly import (
+    _yoyChange,
+    detectBalanceSheetShift,
+    detectCashBurn,
+    detectEarningsQuality,
+    runAnomalyDetection,
+)
+from dartlab.engines.insight.benchmark import (
+    BENCHMARKS,
+    DEFAULT_BENCHMARK,
+    getBenchmark,
+    sectorAdjustment,
 )
 from dartlab.engines.insight.detector import (
     detectIncompleteYear,
-    detectFinancialSector,
 )
-from dartlab.engines.insight.benchmark import (
-    getBenchmark,
-    sectorAdjustment,
-    BENCHMARKS,
-    DEFAULT_BENCHMARK,
-)
-from dartlab.engines.rank.rank import RankInfo
 from dartlab.engines.insight.grading import (
-    _scoreToGrade,
     _getGrowthYoY,
+    _scoreToGrade,
+    analyzeOpportunitySummary,
     analyzeProfitability,
     analyzeRiskSummary,
-    analyzeOpportunitySummary,
-)
-from dartlab.engines.common.finance.ratios import RatioResult
-from dartlab.engines.sector.types import Sector
-from dartlab.engines.insight.anomaly import (
-    _yoyChange,
-    detectEarningsQuality,
-    detectBalanceSheetShift,
-    detectCashBurn,
-    runAnomalyDetection,
 )
 from dartlab.engines.insight.summary import (
     _eunNeun,
@@ -41,6 +32,14 @@ from dartlab.engines.insight.summary import (
     classifyProfile,
     generateSummary,
 )
+from dartlab.engines.insight.types import (
+    AnalysisResult,
+    Anomaly,
+    Flag,
+    InsightResult,
+)
+from dartlab.engines.rank.rank import RankInfo
+from dartlab.engines.sector.types import Sector
 
 
 class TestTypes:

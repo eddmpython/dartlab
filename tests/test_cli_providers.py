@@ -2,11 +2,10 @@
 
 import json
 import os
-import shutil
 import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import patch, MagicMock
 
 from dartlab.engines.ai.types import LLMConfig
 

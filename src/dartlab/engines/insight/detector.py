@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
-from dartlab.engines.common.finance.extract import getLatest, getAnnualValues
+from dartlab.engines.common.finance.extract import getAnnualValues, getLatest
 from dartlab.engines.common.finance.ratios import RatioResult
 
 

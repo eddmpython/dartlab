@@ -14,8 +14,6 @@ account_detail → 자본항목(component) snakeId
 from __future__ import annotations
 
 import re
-from typing import Optional
-
 
 CAUSE_SYNONYMS: dict[str, str] = {
     "기초자본": "beginning_equity",
@@ -332,7 +330,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "해외사업장외화환산차이": "fx_translation",
     "해외사업장 외화환산차이": "fx_translation",
     "해외사업장환산외환차이(세후)": "fx_translation",
-    "해외사업장 환산차이": "fx_translation",
 
     "관계기업 및 공동기업 주식 취득 및 처분": "associate_oci",
     "관계기업의 기타포괄손익에 대한 지분": "associate_oci",
@@ -362,7 +359,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "전환사채의 보통주 전환": "convertible_bond",
     "전환사채발행": "convertible_bond",
     "전환사채전환": "convertible_bond",
-    "전환사채 전환": "convertible_bond",
 
     "소유주와의 거래 합계": "equity_change_total",
     "소유주와의거래합계": "equity_change_total",
@@ -385,7 +381,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
 
     "비지배지분의 취득": "intragroup_tx",
     "비지배지분 취득": "intragroup_tx",
-    "비지배지분의 변동": "nci_change",
     "종속기업지분변동": "intragroup_tx",
     "종속기업 지분의 변동": "intragroup_tx",
 
@@ -407,11 +402,9 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "현금흐름위험회피 파생상품평가손익": "cashflow_hedge",
 
     "유형자산재평가이익": "revaluation_surplus",
-    "유형자산 재평가이익": "revaluation_surplus",
     "재평가잉여금 변동": "revaluation_surplus",
 
     "전환사채 상환": "convertible_bond",
-    "전환사채의 상환": "convertible_bond",
     "전환사채의전환": "convertible_bond",
     "전환사채 전환(행사)": "convertible_bond",
     "전환상환우선주의 전환": "convertible_bond",
@@ -427,13 +420,11 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "해외산업환산손익": "fx_translation",
     "해외사업환산손실": "fx_translation",
     "해외사업환산": "fx_translation",
-    "해외사업환산이익(손실)": "fx_translation",
 
     "자본 총계": "ending_equity",
     "자본총계 잔액": "ending_equity",
 
     "주식매수선택권의 부여": "stock_compensation",
-    "주식매수선택권 부여": "stock_compensation",
     "주식기준보상 인식": "stock_compensation",
 
     "총포괄손익합계": "total_comprehensive",
@@ -497,7 +488,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "합병으로 인한 증가(감소)": "merger",
 
     "지분법 이익잉여금 변동": "associate_oci",
-    "지분법이익잉여금 변동": "associate_oci",
     "지분법 이익잉여금변동": "associate_oci",
 
     "자산재평가손익": "revaluation_surplus",
@@ -546,7 +536,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
 
     "신종자본증권배당": "hybrid_interest",
     "신종자본증권상환": "hybrid_issued",
-    "신종자본증권 상환": "hybrid_issued",
 
     "(부의)지분법자본변동": "associate_oci",
     "관계기업자본변동": "associate_oci",
@@ -724,7 +713,6 @@ DETAIL_MAP: dict[str, str] = {
     "주식매수선택권": "other_equity",
     "자본에 직접 반영된 소유주와의 거래": "other_equity",
     "기타포괄손익": "accumulated_oci",
-    "기타포괄손익누계": "accumulated_oci",
     "기타포괄손익항목": "accumulated_oci",
     "기타의포괄손익누계액": "accumulated_oci",
     "지배주주지분": "owners_equity",

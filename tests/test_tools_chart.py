@@ -1,13 +1,11 @@
 """tools.chart 모듈 테스트 — plotly 필요."""
 
+import importlib.util
+
 import polars as pl
 import pytest
 
-try:
-	import plotly
-	HAS_PLOTLY = True
-except ImportError:
-	HAS_PLOTLY = False
+HAS_PLOTLY = importlib.util.find_spec("plotly") is not None
 
 requires_plotly = pytest.mark.skipif(not HAS_PLOTLY, reason="plotly not installed")
 

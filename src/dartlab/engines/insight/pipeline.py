@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dartlab.engines.common.finance.ratios import calcRatios
 from dartlab.engines.insight.anomaly import runAnomalyDetection
 from dartlab.engines.insight.detector import detectFinancialSector
-from dartlab.engines.sector.types import Sector
 from dartlab.engines.insight.grading import (
     analyzeCashflow,
     analyzeGovernance,
@@ -19,6 +18,7 @@ from dartlab.engines.insight.grading import (
 )
 from dartlab.engines.insight.summary import classifyProfile, generateSummary
 from dartlab.engines.insight.types import AnalysisResult
+from dartlab.engines.sector.types import Sector
 
 if TYPE_CHECKING:
     from dartlab.company import KRCompany as Company
@@ -47,7 +47,7 @@ def analyze(
         AnalysisResult 또는 데이터 부족 시 None.
     """
     if qSeriesPair is None or aSeriesPair is None:
-        from dartlab.engines.dart.finance.pivot import buildTimeseries, buildAnnual
+        from dartlab.engines.dart.finance.pivot import buildAnnual, buildTimeseries
         if qSeriesPair is None:
             qResult = buildTimeseries(stockCode)
             if qResult is None:

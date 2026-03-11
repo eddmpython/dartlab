@@ -1,7 +1,6 @@
 """aiParser 모듈 테스트 — LLM 불필요한 통계 기능만."""
 
 import polars as pl
-import pytest
 
 from dartlab.engines.ai.aiParser import (
 	Anomaly,
@@ -10,7 +9,6 @@ from dartlab.engines.ai.aiParser import (
 	detect_anomalies,
 	interpret_accounts,
 )
-
 
 # ══════════════════════════════════════
 # 통계 사전 스크리닝

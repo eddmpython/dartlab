@@ -30,7 +30,7 @@ from openpyxl.utils import get_column_letter
 
 if TYPE_CHECKING:
 	from dartlab.company import KRCompany as Company
-	from dartlab.export.template import ExcelTemplate, SheetSpec
+	from dartlab.export.template import ExcelTemplate
 
 
 _HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
@@ -191,7 +191,7 @@ def _writeFinanceSheet(
 
 
 def _writeRatiosSheet(wb: Workbook, c: Company, *, label: str = "") -> None:
-	from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict, RATIO_CATEGORIES
+	from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES, calcRatioSeries, toSeriesDict
 
 	annualResult = c.annual
 	if annualResult is None:

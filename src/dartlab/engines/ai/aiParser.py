@@ -32,8 +32,7 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.engines.ai.metadata import MODULE_META, get_meta
-
+from dartlab.engines.ai.metadata import get_meta
 
 # ══════════════════════════════════════
 # 내부 LLM 호출

@@ -1,19 +1,17 @@
 """pipeline 모듈 테스트 — LLM 불필요."""
 
 import polars as pl
-import pytest
 
 from dartlab.engines.ai.pipeline import (
-	classify_question,
-	run_pipeline,
 	_df_to_simple_md,
+	_run_dividend_analysis,
+	_run_growth_analysis,
 	_run_health_analysis,
 	_run_profitability_analysis,
-	_run_growth_analysis,
-	_run_dividend_analysis,
 	_run_risk_analysis,
+	classify_question,
+	run_pipeline,
 )
-
 
 # ══════════════════════════════════════
 # Mock Company

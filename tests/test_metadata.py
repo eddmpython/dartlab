@@ -5,7 +5,6 @@ import pytest
 from dartlab.engines.ai.metadata import (
 	MODULE_META,
 	ColumnMeta,
-	ModuleMeta,
 	get_meta,
 )
 

@@ -25,18 +25,18 @@ from typing import Any
 
 from dartlab import Company
 
+from .cache import company_cache
+from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot
 from .models import AskRequest
 from .resolve import has_analysis_intent
-from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot
-from .cache import company_cache
 
 
 async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str | None = None):
 	"""SSE 스트리밍 generator.
 
 	이벤트 흐름:
-	  meta → snapshot → context (모듈별, 여러 번) → chunk... → done
-	  tool_call/tool_result 이벤트는 agent_loop 사용 시 추가
+		meta → snapshot → context (모듈별, 여러 번) → chunk... → done
+		tool_call/tool_result 이벤트는 agent_loop 사용 시 추가
 	"""
 	from dartlab.engines.ai import get_config
 	from dartlab.engines.ai.providers import create_provider
@@ -121,11 +121,12 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
 		elif c:
 			from dartlab.engines.ai.context import (
+				_get_sector,
 				build_context_by_module,
-				detect_year_range, _get_sector,
+				detect_year_range,
 			)
-			from dartlab.engines.ai.prompts import build_system_prompt, _classify_question_multi
 			from dartlab.engines.ai.metadata import MODULE_META
+			from dartlab.engines.ai.prompts import _classify_question_multi, build_system_prompt
 
 			cached = company_cache.get(c.stockCode)
 			if cached:
@@ -268,7 +269,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 					await asyncio.sleep(0.02)
 
 		elif use_tools:
-			from dartlab.engines.ai.agent import agent_loop_stream, AGENT_SYSTEM_ADDITION
+			from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop_stream
 
 			messages[0]["content"] += AGENT_SYSTEM_ADDITION
 
@@ -346,8 +347,8 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 				done_payload["responseMeta"] = response_meta
 
 	except Exception as e:
-		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
 		from dartlab.engines.ai.oauthToken import TokenRefreshError
+		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
 
 		error_payload: dict[str, Any] = {"error": str(e)}
 

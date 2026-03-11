@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 AREAS = {
     "performance": {
         "label": "실적",

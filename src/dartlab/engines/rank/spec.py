@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 METRICS = {
     "revenue": {
         "label": "매출",

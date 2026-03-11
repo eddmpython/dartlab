@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import polars as pl
 
 from dartlab.engines.dart.report.types import (
-    META_DROP_COLS,
+    API_TYPE_LABELS,
     KEEP_META_COLS,
+    META_DROP_COLS,
+    PREFERRED_QUARTER,
     QUARTER_MAP,
     STR_OVERRIDE_COLS,
-    PREFERRED_QUARTER,
     ReportResult,
-    API_TYPE_LABELS,
 )
 
 

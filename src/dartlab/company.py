@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from dartlab.usCompany import USCompany
 
 import polars as pl
 
@@ -35,13 +38,12 @@ from dartlab.core.kindList import (
     nameToCode,
     searchName,
 )
-from dartlab.engines.dart.docs.notes import Notes
-
 
 # ── 모듈 레지스트리 (core/registry.py에서 자동 생성) ──
 # (모듈 import 경로, 함수명, 한글 라벨, primary DataFrame 추출)
 # fsSummary/statements는 내부 디스패치 전용 (BS/IS/CF property가 statements를 호출)
 from dartlab.core.registry import getModuleEntries as _getModuleEntries
+from dartlab.engines.dart.docs.notes import Notes
 
 _MODULE_REGISTRY: list[tuple[str, str, str, Any]] = [
     ("dartlab.engines.dart.docs.finance.summary", "fsSummary", "요약재무정보", None),
@@ -77,8 +79,8 @@ def _import_and_call(modulePath: str, funcName: str, stockCode: str, **kwargs) -
 
 def _ensureData(stockCode: str, category: str) -> bool:
     """로컬에 parquet이 있으면 True, 없으면 다운로드 시도 후 결과 반환."""
-    from dartlab.core.dataLoader import _dataDir, _download
     from dartlab.core.dataConfig import DATA_RELEASES
+    from dartlab.core.dataLoader import _dataDir, _download
     dest = _dataDir(category) / f"{stockCode}.parquet"
     if dest.exists():
         return True
@@ -102,11 +104,11 @@ class _ReportAccessor:
         if name in self._cache:
             return self._cache[name]
         from dartlab.engines.dart.report import (
+            pivotAudit,
             pivotDividend,
             pivotEmployee,
-            pivotMajorHolder,
             pivotExecutive,
-            pivotAudit,
+            pivotMajorHolder,
         )
         funcs = {
             "dividend": pivotDividend,
@@ -621,7 +623,7 @@ class KRCompany:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        from dartlab.engines.dart.finance.pivot import buildTimeseries, buildAnnual, buildCumulative
+        from dartlab.engines.dart.finance.pivot import buildAnnual, buildCumulative, buildTimeseries
 
         builders = {"q": buildTimeseries, "y": buildAnnual, "cum": buildCumulative}
         builder = builders.get(period, buildTimeseries)
@@ -1087,10 +1089,12 @@ class KRCompany:
         """
         from dartlab.engines.ai import get_config
         from dartlab.engines.ai.context import (
-            build_context, build_compact_context, _get_sector,
+            _get_sector,
+            build_compact_context,
+            build_context,
         )
         from dartlab.engines.ai.pipeline import run_pipeline
-        from dartlab.engines.ai.prompts import build_system_prompt, _classify_question
+        from dartlab.engines.ai.prompts import _classify_question, build_system_prompt
         from dartlab.engines.ai.providers import create_provider
 
         config_ = get_config()

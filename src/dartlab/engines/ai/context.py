@@ -13,7 +13,6 @@ import polars as pl
 
 from dartlab.engines.ai.metadata import MODULE_META, ModuleMeta
 
-
 # ══════════════════════════════════════
 # reportEngine 기반 컨텍스트 (2차 데이터 소스)
 # ══════════════════════════════════════
@@ -1153,7 +1152,7 @@ def build_context(
 	if year_range:
 		sections.append(f"\n**데이터 기준: {year_range['min_year']}~{year_range['max_year']}년** (가장 최근: {year_range['max_year']}년)")
 		if not compact:
-			sections.append(f"이후 데이터는 포함되어 있지 않습니다.\n")
+			sections.append("이후 데이터는 포함되어 있지 않습니다.\n")
 
 	if compact:
 		sections.append("\n금액: 억/조원 표시 (원본 백만원)\n")

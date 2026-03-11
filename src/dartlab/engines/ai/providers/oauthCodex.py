@@ -19,10 +19,10 @@ from typing import Generator
 
 import requests
 
-from dartlab.engines.ai.providers.base import BaseProvider
-from dartlab.engines.ai.types import LLMResponse
 from dartlab.engines.ai import oauthToken
 from dartlab.engines.ai.oauthToken import TokenRefreshError
+from dartlab.engines.ai.providers.base import BaseProvider
+from dartlab.engines.ai.types import LLMResponse
 
 log = logging.getLogger(__name__)
 

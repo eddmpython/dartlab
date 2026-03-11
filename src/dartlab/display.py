@@ -112,7 +112,7 @@ def printGuide(corpName: str, stockCode: str, properties: list, noteKeys: list, 
     console = Console()
 
     t = Text()
-    t.append(f"\n dartlab", style=f"bold {_PR}")
+    t.append("\n dartlab", style=f"bold {_PR}")
     t.append(" · ", style=_TD)
     t.append(corpName, style=f"bold {_AC}")
     t.append(f" ({stockCode})", style=_TM)

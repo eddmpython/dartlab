@@ -21,7 +21,6 @@ _IS_WINDOWS = platform.system() == "Windows"
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMResponse
 
-
 # CLI 별칭 → Anthropic SDK 모델ID 매핑
 _ALIAS_TO_MODEL = {
 	"opus": "claude-opus-4-6-20250616",
@@ -188,8 +187,10 @@ class ClaudeCodeProvider(BaseProvider):
 			return False
 		try:
 			result = subprocess.run(
-				["claude", "-p", "ping", "--output-format", "json",
-				 "--model", self.resolved_model, "--max-turns", "1"],
+				[
+					"claude", "-p", "ping", "--output-format", "json",
+					"--model", self.resolved_model, "--max-turns", "1",
+				],
 				stdin=subprocess.DEVNULL,
 				capture_output=True,
 				timeout=_CLI_PROBE_TIMEOUT,

@@ -8,11 +8,11 @@ import polars as pl
 
 from dartlab.engines.dart.report.extract import extractAnnual, extractClean
 from dartlab.engines.dart.report.types import (
+    AuditResult,
     DividendResult,
     EmployeeResult,
-    MajorHolderResult,
     ExecutiveResult,
-    AuditResult,
+    MajorHolderResult,
 )
 
 

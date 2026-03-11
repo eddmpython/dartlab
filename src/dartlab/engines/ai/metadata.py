@@ -8,7 +8,9 @@
 
 from __future__ import annotations
 
-from dartlab.core.registry import ColumnMeta, DataEntry, getEntries, getEntry
+from dartlab.core.registry import ColumnMeta, DataEntry, getEntries
+
+__all__ = ["ColumnMeta", "ModuleMeta", "MODULE_META", "get_meta"]
 
 
 class ModuleMeta:

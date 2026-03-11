@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 import polars as pl
 
 from dartlab.core.dataLoader import extractCorpName, loadData

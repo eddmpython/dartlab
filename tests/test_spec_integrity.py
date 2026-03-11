@@ -1,6 +1,5 @@
 """Spec 무결성 테스트 — 코드와 spec의 불일치를 CI에서 검증."""
 
-import pytest
 
 
 def test_all_engines_have_spec():
@@ -79,8 +78,9 @@ def test_report_spec_matches_api_types():
 def test_finance_spec_ratios_match_dataclass():
     """finance spec의 ratios가 RatioResult 필드와 일치하는지."""
     import dataclasses
-    from dartlab.engines.dart.finance.spec import buildSpec
+
     from dartlab.engines.common.finance.ratios import RatioResult
+    from dartlab.engines.dart.finance.spec import buildSpec
 
     spec = buildSpec()
     expected = [f.name for f in dataclasses.fields(RatioResult) if f.name != "warnings"]

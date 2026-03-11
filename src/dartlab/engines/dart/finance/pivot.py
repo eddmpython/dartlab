@@ -410,7 +410,6 @@ def buildSceMatrix(
 		years = ["2016", "2017", ..., "2024"]
 	"""
 	from dartlab.core.dataLoader import loadData
-	from dartlab.engines.dart.finance.sceMapper import normalizeCause, normalizeDetail
 
 	df = loadData(stockCode, category="finance")
 	if df is None or df.is_empty():

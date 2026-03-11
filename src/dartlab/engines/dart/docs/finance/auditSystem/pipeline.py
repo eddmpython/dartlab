@@ -5,8 +5,8 @@ import polars as pl
 from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.finance.auditSystem.parser import (
-    parseAuditCommittee,
     parseAuditActivity,
+    parseAuditCommittee,
 )
 from dartlab.engines.dart.docs.finance.auditSystem.types import AuditSystemResult
 

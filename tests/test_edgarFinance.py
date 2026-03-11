@@ -191,8 +191,8 @@ class TestBuildAnnual:
 @_skipNoData
 class TestCalcRatiosCompat:
     def test_ratiosWithEdgarData(self):
-        from dartlab.engines.edgar.finance.pivot import buildAnnual
         from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.engines.edgar.finance.pivot import buildAnnual
 
         result = buildAnnual(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, years = result
