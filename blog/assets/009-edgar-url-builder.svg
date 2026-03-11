@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg9b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg9b)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">EDGAR URL Builder</text>
+
+  <rect x="40" y="90" width="720" height="68" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="56" y="116" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">Input</text>
+  <text x="56" y="138" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">CIK=0000320193, accession=0000320193-24-000123, doc=aapl-20241228x10q.htm</text>
+
+  <rect x="40" y="174" width="720" height="68" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="56" y="200" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Transform</text>
+  <text x="56" y="222" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">cik_int=320193, accession_no_dash=000032019324000123</text>
+
+  <rect x="40" y="258" width="720" height="92" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="56" y="284" font-family="JetBrains Mono,monospace" font-size="10" fill="#7dd3fc">Output URL</text>
+  <text x="56" y="306" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cffafe">https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20241228x10q.htm</text>
+</svg>

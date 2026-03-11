@@ -76,3 +76,8 @@
 - `008-cost-pass-through-grid.svg` — 원가 전가 가능성 매트릭스
 - `008-cross-validation-loop.svg` — II-재무제표-주석/감사 교차검증 루프
 - `008-common-mistakes-heatmap.svg` — 자주 하는 실수 영향도 히트맵
+
+### 009 — EDGAR 개별공시 원문 접근 가이드
+- `009-edgar-access-path.svg` — submissions→URL조립→원문 접근 경로
+- `009-edgar-url-builder.svg` — accession/CIK 기반 원문 URL 조립 규칙
+- `009-edgar-api-stability-guide.svg` — EDGAR 수집 안정성 체크리스트

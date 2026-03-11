@@ -32,6 +32,8 @@ classifiers = [
 ]
 dependencies = [
     "alive-progress>=3.3.0",
+    "beautifulsoup4>=4.14.3",
+    "lxml>=6.0.2",
     "openpyxl>=3.1.5",
     "polars>=1.0.0",
     "requests>=2.32.5",

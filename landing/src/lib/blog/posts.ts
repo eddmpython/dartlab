@@ -12,15 +12,18 @@ const modules = import.meta.glob('@blog/*.md', { eager: true }) as Record<
 >;
 
 function buildPosts(): PostMeta[] {
-	const result: PostMeta[] = [];
+	const result: Array<PostMeta & { order: number }> = [];
 	for (const [path, mod] of Object.entries(modules)) {
 		const m = mod.metadata;
 		if (!m?.title || !m?.date) continue;
+		const match = path.match(/\/blog\/(\d+)-/);
+		const order = match ? Number.parseInt(match[1], 10) : 0;
 		const slug = path
 			.replace(/^.*?\/blog\//, '')
 			.replace(/^\d+-/, '')
 			.replace(/\.md$/, '');
 		result.push({
+			order,
 			slug,
 			title: m.title,
 			date: m.date,
@@ -28,7 +31,15 @@ function buildPosts(): PostMeta[] {
 			thumbnail: m.thumbnail ?? '/avatar-chart.png'
 		});
 	}
-	return result.sort((a, b) => b.date.localeCompare(a.date));
+	return result
+		.sort((a, b) => {
+			const byDate = b.date.localeCompare(a.date);
+			if (byDate !== 0) return byDate;
+			const byOrder = b.order - a.order;
+			if (byOrder !== 0) return byOrder;
+			return a.slug.localeCompare(b.slug);
+		})
+		.map(({ order: _order, ...post }) => post);
 }
 
 export const posts: PostMeta[] = buildPosts();

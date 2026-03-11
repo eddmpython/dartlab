@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs><linearGradient id="bg9a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg9a)"/><rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">EDGAR Access Path</text>
+
+  <rect x="40" y="90" width="220" height="180" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="56" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#7dd3fc">1) submissions JSON</text>
+  <text x="56" y="136" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">CIK -> form/accession/primaryDocument</text>
+
+  <rect x="290" y="90" width="220" height="180" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="306" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#86efac">2) URL build</text>
+  <text x="306" y="136" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">accession '-' removed + primaryDocument</text>
+
+  <rect x="540" y="90" width="220" height="180" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="556" y="114" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">3) Archives file</text>
+  <text x="556" y="136" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">.htm / .txt original filing content</text>
+
+  <path d="M260 180 L290 180 M510 180 L540 180" stroke="#334155" stroke-width="2"/>
+</svg>
