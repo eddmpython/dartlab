@@ -260,3 +260,20 @@ src/dartlab/company.py ← 수정: all() 정렬 순서를 chapter 기반으로
 - parquet 원본 데이터 270종목
 - sections 파이프라인 (완성됨)
 - registry 구조 (수정 예정)
+
+---
+
+## 7. 실행 결과 (2026-03-11)
+
+### 001_titleFrequency.py 완료
+
+- 실행 파일: `experiments/056_sectionMap/001_titleFrequency.py`
+- 스캔 파일 수: 270
+- 총 `section_title` 행 수: 160,853
+- 고유 `section_title` 수: 494
+- Top10 소분류 커버리지: 23.20% (37,321 / 160,853)
+
+핵심 관찰:
+- 대분류 파싱 결과 `UNKNOWN` 비중이 큼(116,604행). 이는 로마숫자 장 제목이 아닌 하위목차(`1.`, `2.`...) 행이 다수 포함되기 때문.
+- 소분류 상위 빈도는 재무/임원/주주/연혁 계열 항목에 집중.
+- 다음 단계(002_autoNormalize)는 UNKNOWN 군집 정규화(접두사 제거/특수문자 통일/유사도 그룹핑)에 집중 필요.
