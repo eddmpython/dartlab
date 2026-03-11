@@ -94,9 +94,26 @@ markers = [
     "requires_data: 로컬 parquet 데이터 필요 (CI에서 skip)",
 ]
 
+[tool.coverage.run]
+source = ["dartlab"]
+omit = [
+    "src/dartlab/ui/*",
+    "src/dartlab/engines/ai/providers/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__",
+    "raise NotImplementedError",
+]
+
 [dependency-groups]
 dev = [
     "dartlab[all]",
     "pillow>=12.1.1",
     "pytest>=9.0.2",
+    "pytest-cov>=6.0.0",
 ]

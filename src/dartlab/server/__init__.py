@@ -707,6 +707,10 @@ def _resolve_module_data(c: Company, entry) -> Any:
 		stmt_data = series.get(stmt)
 		if not stmt_data or not periods:
 			return None
+
+		from dartlab.engines.dart.finance.mapper import AccountMapper
+		order = AccountMapper.get().sortOrder(stmt)
+
 		rows = []
 		for account, values in stmt_data.items():
 			row = {"계정명": account}
@@ -715,6 +719,8 @@ def _resolve_module_data(c: Company, entry) -> Any:
 			rows.append(row)
 		if not rows:
 			return None
+		if order:
+			rows.sort(key=lambda r: order.get(r["계정명"], 9999))
 		return pl.DataFrame(rows)
 
 	attrName = entry.funcName or entry.name
@@ -799,6 +805,8 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
 		raise HTTPException(status_code=404, detail="데이터가 없습니다")
 
 	if isinstance(data, pl.DataFrame):
+		if "year" in data.columns:
+			data = data.sort("year")
 		preview = data.head(max_rows)
 		rows = preview.to_dicts()
 		for row in rows:
@@ -821,12 +829,24 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
 		return result
 
 	if isinstance(data, dict):
+		flat: dict[str, Any] = {}
+		for k, v in data.items():
+			if isinstance(v, pl.DataFrame):
+				continue
+			if isinstance(v, list) and v and isinstance(v[0], dict):
+				flat[k] = json.dumps(v, ensure_ascii=False, default=str)
+			elif isinstance(v, dict):
+				flat[k] = json.dumps(v, ensure_ascii=False, default=str)
+			elif isinstance(v, (str, int, float, bool, type(None))):
+				flat[k] = v
+			else:
+				flat[k] = str(v)
 		return {
 			"type": "dict",
 			"module": module,
 			"label": entry.label,
 			"unit": entry.unit,
-			"data": {k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v for k, v in data.items()},
+			"data": flat,
 		}
 
 	if isinstance(data, str):

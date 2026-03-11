@@ -1,6 +1,12 @@
 """DART 공시 데이터 활용 라이브러리."""
 
 import sys
+from importlib.metadata import version as _pkg_version
+
+try:
+    __version__ = _pkg_version("dartlab")
+except Exception:
+    __version__ = "0.0.0"
 
 from dartlab import config, core, engines
 from dartlab.company import Company, KRCompany
