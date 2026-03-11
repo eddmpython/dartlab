@@ -39,3 +39,6 @@
 - `006-edgar-structure-map.svg` — EDGAR form 지도 (정기/수시/포지션 분류)
 - `006-dart-vs-edgar-deep.svg` — DART vs EDGAR 심층 비교 매트릭스
 - `006-edgar-reading-workflow.svg` — EDGAR 4단계 읽기 워크플로
+- `006-edgar-deadline-matrix.svg` — 주요 form 제출기한 매트릭스 + 해석 포인트
+- `006-filing-lifecycle.svg` — 이벤트 공시에서 정기보고 반영까지 라이프사이클
+- `006-korean-investor-checklist.svg` — 한국 투자자용 EDGAR 실전 체크리스트
