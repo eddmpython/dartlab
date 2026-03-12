@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Revenue to Cash Bridge</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Receivables sit between booked sales and collected cash.</text>
+  <rect x="64" y="156" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="108" y="202" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Revenue</text>
+  <rect x="325" y="156" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="345" y="202" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Receivables</text>
+  <rect x="586" y="156" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="640" y="202" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Cash</text>
+  <path d="M214 196H325" stroke="#ea4647" stroke-width="3"/>
+  <path d="M475 196H586" stroke="#22c55e" stroke-width="3"/>
+  <text x="312" y="286" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">quality falls when the bridge gets longer and weaker</text>
+</svg>

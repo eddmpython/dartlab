@@ -1,15 +1,13 @@
 import type { EntryGenerator } from './$types';
 
-const modules = import.meta.glob('@blog/*.md', { eager: true }) as Record<
+const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<
 	string,
 	{ default: ConstructorOfATypedSvelteComponent; metadata?: Record<string, string> }
 >;
 
 function normalizePath(rawPath: string): string {
-	return rawPath
-		.replace(/^.*?\/blog\//, '')
-		.replace(/^\d+-/, '')
-		.replace(/\.md$/, '');
+	const match = rawPath.match(/\/blog\/[^/]+\/\d+-([^/]+)\/index\.md$/);
+	return match?.[1] ?? '';
 }
 
 const slugMap = new Map<
@@ -19,6 +17,7 @@ const slugMap = new Map<
 
 for (const [path, mod] of Object.entries(modules)) {
 	const slug = normalizePath(path);
+	if (!slug) continue;
 	slugMap.set(slug, { component: mod.default, metadata: mod.metadata });
 }
 

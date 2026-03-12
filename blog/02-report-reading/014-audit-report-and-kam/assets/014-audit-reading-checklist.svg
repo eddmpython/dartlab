@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Audit Reading Checklist</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Read opinion, KAM, uncertainty, then cross-check with notes.</text>
+  <rect x="72" y="126" width="656" height="230" rx="18" fill="#101826" stroke="#2b3648"/>
+  <text x="102" y="170" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">1. opinion type</text>
+  <text x="102" y="206" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">2. KAM titles and repeats</text>
+  <text x="102" y="242" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">3. going concern or emphasis</text>
+  <text x="102" y="278" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">4. estimate sensitivity</text>
+  <text x="102" y="314" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">5. notes and cash flow cross-check</text>
+</svg>

@@ -43,15 +43,17 @@ if (existsSync(blogHtml) && !existsSync(blogIndex)) {
 }
 
 // llms.txt + llms-full.txt — auto-generate from docs/ and blog/ markdown
-function collectMdFiles(dir, prefix = '') {
+function collectMdFiles(dir, prefix = '', options = {}) {
 	const results = [];
 	if (!existsSync(dir)) return results;
+	const { includeIndex = false } = options;
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
-		if (entry.name === 'STATUS.md' || entry.name === 'index.md') continue;
+		if (entry.name === 'STATUS.md') continue;
+		if (entry.name === 'index.md' && !includeIndex) continue;
 		if (entry.name === '_deprecated' || entry.name === '_backup' || entry.name === '_reference') continue;
 		const full = resolve(dir, entry.name);
 		if (entry.isDirectory()) {
-			results.push(...collectMdFiles(full, `${prefix}${entry.name}/`));
+			results.push(...collectMdFiles(full, `${prefix}${entry.name}/`, options));
 		} else if (entry.name.endsWith('.md')) {
 			results.push({ path: full, rel: `${prefix}${entry.name}` });
 		}
@@ -78,7 +80,7 @@ const docsRoot = resolve(projectRoot, 'docs');
 const blogRoot = resolve(projectRoot, 'blog');
 
 const docFiles = collectMdFiles(docsRoot);
-const blogFiles = collectMdFiles(blogRoot);
+const blogFiles = collectMdFiles(blogRoot, '', { includeIndex: true });
 
 const sections = [
 	{
@@ -97,9 +99,8 @@ const sections = [
 		files: blogFiles,
 		urlPrefix: `${siteUrl}/blog/`,
 		pathToUrl: (rel) => {
-			return rel
-				.replace(/\.md$/, '')
-				.replace(/^\d+-/, '');
+			const match = rel.match(/^[^/]+\/\d+-([^/]+)\/index\.md$/);
+			return match?.[1] ?? rel.replace(/\.md$/, '');
 		}
 	}
 ];
@@ -154,7 +155,8 @@ const docUrls = docFiles.map(f => {
 const blogPosts = blogFiles.map(f => {
 	const content = readFileSync(f.path, 'utf-8');
 	const fm = extractFrontmatter(content);
-	const slug = f.rel.replace(/\.md$/, '').replace(/^\d+-/, '');
+	const slugMatch = f.rel.match(/^[^/]+\/\d+-([^/]+)\/index\.md$/);
+	const slug = slugMatch?.[1] ?? f.rel.replace(/\.md$/, '');
 	return {
 		loc: `${siteUrl}/blog/${slug}`,
 		priority: '0.8',

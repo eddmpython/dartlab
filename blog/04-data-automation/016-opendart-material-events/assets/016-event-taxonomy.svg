@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Material Event Taxonomy</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Use event buckets first. Read raw filings second.</text>
+  <rect x="66" y="132" width="148" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="102" y="178" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Equity</text>
+  <rect x="234" y="132" width="148" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="272" y="178" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Debt</text>
+  <rect x="402" y="132" width="148" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="430" y="178" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Assets</text>
+  <rect x="570" y="132" width="148" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="598" y="178" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Contracts</text>
+  <rect x="150" y="256" width="180" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="190" y="302" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Litigation</text>
+  <rect x="470" y="256" width="180" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="500" y="302" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Governance</text>
+</svg>

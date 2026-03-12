@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Earnings Quality Checklist</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Receivable analysis works only when sales, cash, aging, and allowance are read together.</text>
+  <rect x="72" y="128" width="656" height="226" rx="18" fill="#101826" stroke="#2b3648"/>
+  <text x="102" y="170" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">1. sales vs receivable growth</text>
+  <text x="102" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">2. aging bucket deterioration</text>
+  <text x="102" y="240" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">3. CFO vs net income</text>
+  <text x="102" y="275" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">4. allowance ratio trend</text>
+  <text x="102" y="310" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">5. customer concentration</text>
+</svg>

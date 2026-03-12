@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Estimate Sensitivity</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">KAM gets louder when estimates move profit or asset value too much.</text>
+  <rect x="80" y="130" width="150" height="60" rx="12" fill="#172033"/><text x="110" y="166" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">Revenue</text>
+  <rect x="250" y="130" width="150" height="60" rx="12" fill="#3b1d22"/><text x="293" y="166" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">Impairment</text>
+  <rect x="420" y="130" width="150" height="60" rx="12" fill="#3b1d22"/><text x="448" y="166" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">Provisions</text>
+  <rect x="590" y="130" width="130" height="60" rx="12" fill="#172033"/><text x="615" y="166" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="13">Inventory</text>
+  <text x="86" y="260" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Lower sensitivity</text>
+  <text x="560" y="260" fill="#fca5a5" font-family="Inter,system-ui,sans-serif" font-size="12">Higher sensitivity</text>
+  <line x1="100" y1="236" x2="700" y2="236" stroke="#334155" stroke-width="4"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Monitoring Dashboard</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">A useful watchlist sorts events by signal, company, and follow-up status.</text>
+  <rect x="60" y="130" width="200" height="100" rx="16" fill="#111827" stroke="#334155"/><text x="90" y="168" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Watchlist companies</text><text x="90" y="196" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="11">corp_code, sector, trigger set</text>
+  <rect x="300" y="130" width="200" height="100" rx="16" fill="#111827" stroke="#334155"/><text x="332" y="168" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Event queue</text><text x="332" y="196" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="11">severity, date, raw link</text>
+  <rect x="540" y="130" width="200" height="100" rx="16" fill="#111827" stroke="#334155"/><text x="565" y="168" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">Follow-up status</text><text x="565" y="196" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="11">checked in next quarter?</text>
+  <rect x="180" y="274" width="440" height="72" rx="16" fill="#101826" stroke="#2b3648"/><text x="222" y="316" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="13">Goal: fewer alerts, better triage, cleaner link to future filings</text>
+</svg>

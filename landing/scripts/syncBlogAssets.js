@@ -1,21 +1,46 @@
-import { existsSync, mkdirSync, readdirSync, copyFileSync, statSync, rmSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { basename, dirname, resolve } from 'path';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = resolve(__dirname, '..', '..', 'blog', 'assets');
+const blogRoot = resolve(__dirname, '..', '..', 'blog');
+
+function collectAssets(dir, result = []) {
+	for (const entry of readdirSync(dir)) {
+		const fullPath = resolve(dir, entry);
+		const stat = statSync(fullPath);
+		if (stat.isDirectory()) {
+			if (entry === 'assets') {
+				for (const asset of readdirSync(fullPath)) {
+					const assetPath = resolve(fullPath, asset);
+					if (!statSync(assetPath).isFile()) continue;
+					if (asset.endsWith('.md')) continue;
+					result.push(assetPath);
+				}
+				continue;
+			}
+			collectAssets(fullPath, result);
+		}
+	}
+	return result;
+}
 
 function syncDir(dest) {
 	mkdirSync(dest, { recursive: true });
 
 	const existing = existsSync(dest) ? new Set(readdirSync(dest)) : new Set();
-	const source = readdirSync(src);
+	const source = collectAssets(blogRoot);
+	const seen = new Map();
 	let copied = 0;
 
-	for (const file of source) {
-		const srcFile = resolve(src, file);
-		if (!statSync(srcFile).isFile()) continue;
-		if (file.endsWith('.md')) continue;
+	for (const srcFile of source) {
+		const file = basename(srcFile);
+		const duplicate = seen.get(file);
+		if (duplicate) {
+			throw new Error(`Duplicate blog asset filename detected: ${file}\n- ${duplicate}\n- ${srcFile}`);
+		}
+		seen.set(file, srcFile);
+
 		const destFile = resolve(dest, file);
 		const srcMtime = statSync(srcFile).mtimeMs;
 		const needsCopy = !existsSync(destFile) || statSync(destFile).mtimeMs < srcMtime;
@@ -37,8 +62,8 @@ function cleanDir(dest) {
 	rmSync(dest, { recursive: true, force: true });
 }
 
-if (!existsSync(src)) {
-	console.log('  -> blog/assets/ not found, skipping');
+if (!existsSync(blogRoot)) {
+	console.log('  -> blog/ not found, skipping');
 	process.exit(0);
 }
 

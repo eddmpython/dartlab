@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
-	import { getPost, findPrevNext } from '$lib/blog/posts';
+	import { findPrevNext, findSeriesPrevNext, getPost } from '$lib/blog/posts';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { onMount, tick } from 'svelte';
 
@@ -119,6 +119,7 @@
 	const meta = $derived(data.metadata ?? {});
 	const postInfo = $derived(getPost(data.slug));
 	const prevNext = $derived(findPrevNext(data.slug));
+	const seriesPrevNext = $derived(findSeriesPrevNext(data.slug));
 
 	const pageTitle = $derived(`${meta?.title ?? 'Blog'} — DartLab`);
 	const pageDesc = $derived(meta?.description ?? `DartLab Blog — ${meta?.title ?? ''}`);
@@ -231,6 +232,19 @@
 						height="96"
 					/>
 				{/if}
+				{#if postInfo}
+					<div class="post-meta-row">
+						<span class="post-badge">{postInfo.categoryLabel}</span>
+						{#if postInfo.seriesLabel}
+							<span class="post-series">
+								{postInfo.seriesLabel}
+								{#if postInfo.seriesOrder}
+									<span class="post-series-order">#{postInfo.seriesOrder}</span>
+								{/if}
+							</span>
+						{/if}
+					</div>
+				{/if}
 				{#if postInfo?.date}
 					<div class="post-date">
 						<Calendar size={13} />
@@ -248,6 +262,26 @@
 					<Component />
 				{/if}
 			</article>
+
+			{#if seriesPrevNext.prev || seriesPrevNext.next}
+				<section class="series-nav">
+					<div class="series-nav-heading">같은 시리즈에서 이어 읽기</div>
+					<div class="series-nav-grid">
+						{#if seriesPrevNext.prev}
+							<a href="{base}/blog/{seriesPrevNext.prev.slug}" class="series-card">
+								<span class="series-card-label">이전 시리즈 글</span>
+								<span class="series-card-title">{seriesPrevNext.prev.title}</span>
+							</a>
+						{/if}
+						{#if seriesPrevNext.next}
+							<a href="{base}/blog/{seriesPrevNext.next.slug}" class="series-card">
+								<span class="series-card-label">다음 시리즈 글</span>
+								<span class="series-card-title">{seriesPrevNext.next.title}</span>
+							</a>
+						{/if}
+					</div>
+				</section>
+			{/if}
 
 			{#if prevNext.prev || prevNext.next}
 				<nav class="post-nav">
@@ -344,6 +378,43 @@
 		border-radius: 50%;
 		border: 2px solid rgba(234, 70, 71, 0.2);
 		margin-bottom: 1rem;
+	}
+
+	.post-meta-row {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.post-badge,
+	.post-series {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.35rem 0.7rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.post-badge {
+		background: rgba(234, 70, 71, 0.12);
+		border: 1px solid rgba(234, 70, 71, 0.24);
+		color: #fda4a4;
+	}
+
+	.post-series {
+		background: rgba(148, 163, 184, 0.08);
+		border: 1px solid rgba(148, 163, 184, 0.14);
+		color: #cbd5e1;
+	}
+
+	.post-series-order {
+		color: #94a3b8;
 	}
 
 	.post-date {
@@ -628,6 +699,55 @@
 	.blog-toc-item.active { color: #ea4647; border-left-color: #ea4647; }
 	.blog-toc-item.h3 { padding-left: 1.1rem; font-size: 0.72rem; }
 
+	.series-nav {
+		margin-top: 3rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(30, 36, 51, 0.8);
+	}
+
+	.series-nav-heading {
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #64748b;
+		margin-bottom: 0.85rem;
+	}
+
+	.series-nav-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 0.9rem;
+	}
+
+	.series-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 1rem;
+		border-radius: 12px;
+		border: 1px solid rgba(30, 36, 51, 0.7);
+		background: rgba(15, 18, 25, 0.75);
+		text-decoration: none;
+		transition: border-color 0.15s, transform 0.15s;
+	}
+
+	.series-card:hover {
+		border-color: rgba(234, 70, 71, 0.28);
+		transform: translateY(-1px);
+	}
+
+	.series-card-label {
+		font-size: 0.72rem;
+		color: #64748b;
+	}
+
+	.series-card-title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: #e2e8f0;
+	}
+
 	/* Prev/Next navigation */
 	.post-nav {
 		display: grid;
@@ -701,6 +821,7 @@
 	@media (max-width: 1100px) {
 		.blog-post-layout { padding: 0 1rem; }
 		.blog-post-col { padding: 0; }
+		.series-nav-grid { grid-template-columns: 1fr; }
 		.post-nav { grid-template-columns: 1fr; }
 	}
 

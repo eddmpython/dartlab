@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Failure Map</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Most monitoring systems fail from weak triage, not weak data.</text>
+  <rect x="70" y="128" width="160" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="94" y="174" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">API only</text>
+  <rect x="250" y="128" width="160" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="274" y="174" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">No ranking</text>
+  <rect x="430" y="128" width="160" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="447" y="174" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">No raw filing</text>
+  <rect x="610" y="128" width="120" height="86" rx="16" fill="#111827" stroke="#334155"/><text x="620" y="174" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">No follow-up</text>
+  <text x="86" y="296" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="13">Good pipeline = detect -> rank -> read -> confirm.</text>
+</svg>

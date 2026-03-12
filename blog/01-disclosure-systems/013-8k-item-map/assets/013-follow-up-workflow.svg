@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Follow-up Workflow</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Read 8-K, assign signal, then map the next documents.</text>
+  <rect x="60" y="156" width="130" height="70" rx="16" fill="#111827" stroke="#334155"/><text x="87" y="197" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">Open 8-K</text>
+  <rect x="230" y="156" width="130" height="70" rx="16" fill="#111827" stroke="#334155"/><text x="246" y="197" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">Check item</text>
+  <rect x="400" y="156" width="130" height="70" rx="16" fill="#111827" stroke="#334155"/><text x="415" y="197" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">Read exhibit</text>
+  <rect x="570" y="156" width="150" height="70" rx="16" fill="#111827" stroke="#334155"/><text x="590" y="197" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">Track next 10-Q</text>
+  <path d="M190 191H230" stroke="#ea4647" stroke-width="3"/>
+  <path d="M360 191H400" stroke="#ea4647" stroke-width="3"/>
+  <path d="M530 191H570" stroke="#ea4647" stroke-width="3"/>
+  <text x="60" y="292" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Signal becomes actionable only when it changes the next filing review list.</text>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Good vs Bad Growth</text>
+  <rect x="72" y="126" width="280" height="240" rx="18" fill="#101826" stroke="#2b3648"/>
+  <text x="100" y="164" fill="#86efac" font-family="Inter,system-ui,sans-serif" font-size="16" font-weight="700">Healthier pattern</text>
+  <text x="100" y="202" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">sales and receivables grow together</text>
+  <text x="100" y="230" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">CFO remains supportive</text>
+  <text x="100" y="258" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">allowance reflects risk</text>
+  <rect x="448" y="126" width="280" height="240" rx="18" fill="#101826" stroke="#2b3648"/>
+  <text x="476" y="164" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="16" font-weight="700">Riskier pattern</text>
+  <text x="476" y="202" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">receivables outrun sales</text>
+  <text x="476" y="230" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">cash flow lags</text>
+  <text x="476" y="258" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="12">allowance stays too low</text>
+</svg>

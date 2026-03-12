@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Audit Opinion Branch</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Opinion type is the start. KAM depth is where the signal lives.</text>
+  <rect x="310" y="100" width="180" height="72" rx="16" fill="#111827" stroke="#334155"/><text x="350" y="143" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700">Audit report</text>
+  <rect x="90" y="236" width="160" height="84" rx="16" fill="#111827" stroke="#334155"/><text x="118" y="276" fill="#86efac" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Unmodified</text>
+  <rect x="320" y="236" width="160" height="84" rx="16" fill="#111827" stroke="#334155"/><text x="362" y="276" fill="#fbbf24" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Emphasis</text>
+  <rect x="550" y="236" width="160" height="84" rx="16" fill="#111827" stroke="#334155"/><text x="588" y="276" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700">Modified</text>
+  <path d="M400 172V216" stroke="#ea4647" stroke-width="3"/>
+  <path d="M400 216L170 236" stroke="#ea4647" stroke-width="3"/>
+  <path d="M400 216L400 236" stroke="#ea4647" stroke-width="3"/>
+  <path d="M400 216L630 236" stroke="#ea4647" stroke-width="3"/>
+</svg>

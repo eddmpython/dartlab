@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Severity Ladder</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Rank events before spending time on raw filing analysis.</text>
+  <rect x="170" y="292" width="460" height="38" rx="12" fill="#172033"/><text x="378" y="316" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">routine board matters</text>
+  <rect x="200" y="248" width="400" height="38" rx="12" fill="#22304a"/><text x="380" y="272" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">lawsuits and collateral</text>
+  <rect x="240" y="204" width="320" height="38" rx="12" fill="#3b2b23"/><text x="370" y="228" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">asset deals</text>
+  <rect x="280" y="160" width="240" height="38" rx="12" fill="#4a1f27"/><text x="368" y="184" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">equity or CB</text>
+  <rect x="320" y="116" width="160" height="38" rx="12" fill="#5a1722"/><text x="364" y="140" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="12">survival risk</text>
+</svg>

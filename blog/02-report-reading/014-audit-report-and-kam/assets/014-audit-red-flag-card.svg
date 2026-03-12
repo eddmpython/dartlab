@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Audit Red Flags</text>
+  <rect x="60" y="122" width="680" height="236" rx="18" fill="#101826" stroke="#2b3648"/>
+  <text x="88" y="164" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700">Repeat KAM</text>
+  <text x="88" y="194" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">same issue appears again while cash flow weakens</text>
+  <text x="88" y="236" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700">Going concern language</text>
+  <text x="88" y="266" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">liquidity stress matters more than headline earnings</text>
+  <text x="88" y="308" fill="#f87171" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700">Narrative mismatch</text>
+  <text x="88" y="338" fill="#cbd5e1" font-family="Inter,system-ui,sans-serif" font-size="12">management optimism but auditor keeps stressing estimates</text>
+</svg>

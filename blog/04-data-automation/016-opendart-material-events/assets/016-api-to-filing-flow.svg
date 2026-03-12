@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">API to Filing Flow</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">API detects. Raw filing explains. Financials confirm.</text>
+  <rect x="56" y="164" width="140" height="72" rx="16" fill="#111827" stroke="#334155"/><text x="84" y="206" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">corp_code</text>
+  <rect x="236" y="164" width="140" height="72" rx="16" fill="#111827" stroke="#334155"/><text x="266" y="206" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">event API</text>
+  <rect x="416" y="164" width="140" height="72" rx="16" fill="#111827" stroke="#334155"/><text x="443" y="206" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">raw filing</text>
+  <rect x="596" y="164" width="140" height="72" rx="16" fill="#111827" stroke="#334155"/><text x="620" y="206" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="13">10-Q / 10-K</text>
+  <path d="M196 200H236" stroke="#ea4647" stroke-width="3"/><path d="M376 200H416" stroke="#ea4647" stroke-width="3"/><path d="M556 200H596" stroke="#ea4647" stroke-width="3"/>
+</svg>

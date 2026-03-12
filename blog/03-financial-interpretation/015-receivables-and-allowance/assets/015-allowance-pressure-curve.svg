@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Allowance Pressure</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">When aging worsens but allowance stays flat, earnings quality falls.</text>
+  <line x1="100" y1="320" x2="700" y2="320" stroke="#334155" stroke-width="3"/>
+  <line x1="100" y1="320" x2="100" y2="130" stroke="#334155" stroke-width="3"/>
+  <path d="M120 280C200 270 250 250 320 228C390 206 460 180 520 170C580 160 640 156 680 154" stroke="#f87171" stroke-width="4" fill="none"/>
+  <path d="M120 300C200 298 260 294 330 292C400 290 470 288 540 286C610 284 650 282 680 280" stroke="#60a5fa" stroke-width="4" fill="none"/>
+  <text x="560" y="160" fill="#fca5a5" font-family="Inter,system-ui,sans-serif" font-size="12">risk rises</text>
+  <text x="560" y="274" fill="#93c5fd" font-family="Inter,system-ui,sans-serif" font-size="12">allowance flat</text>
+</svg>

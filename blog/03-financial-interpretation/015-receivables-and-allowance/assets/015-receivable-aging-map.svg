@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Aging Map</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Longer aging buckets deserve more suspicion and more allowance.</text>
+  <rect x="80" y="160" width="120" height="90" rx="16" fill="#172033"/><text x="120" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="14">0-30</text>
+  <rect x="220" y="150" width="120" height="100" rx="16" fill="#22304a"/><text x="260" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="14">31-60</text>
+  <rect x="360" y="138" width="120" height="112" rx="16" fill="#3b2b23"/><text x="398" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="14">61-90</text>
+  <rect x="500" y="122" width="120" height="128" rx="16" fill="#4a1f27"/><text x="530" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="14">91-180</text>
+  <rect x="640" y="104" width="90" height="146" rx="16" fill="#5a1722"/><text x="655" y="205" fill="#e2e8f0" font-family="Inter,system-ui,sans-serif" font-size="14">180+</text>
+</svg>
