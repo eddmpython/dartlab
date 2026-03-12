@@ -439,31 +439,85 @@
 	}
 
 	.blog-article :global(table) {
+		display: block;
 		width: 100%;
-		border-collapse: collapse;
-		margin: 1.5rem 0;
-		font-size: 0.875rem;
+		overflow-x: auto;
+		border-collapse: separate;
+		border-spacing: 0;
+		margin: 1.75rem 0;
+		font-size: 0.9rem;
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+			rgba(15, 18, 25, 0.92);
+		border: 1px solid rgba(30, 36, 51, 0.95);
+		border-radius: 18px;
+		box-shadow:
+			0 18px 40px rgba(3, 5, 9, 0.28),
+			inset 0 1px 0 rgba(255, 255, 255, 0.03);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.blog-article :global(thead) {
+		background: linear-gradient(180deg, rgba(234, 70, 71, 0.12), rgba(234, 70, 71, 0.04));
 	}
 
 	.blog-article :global(th) {
 		text-align: left;
-		padding: 0.75rem 1rem;
-		border-bottom: 2px solid rgba(30, 36, 51, 0.8);
+		padding: 0.95rem 1rem;
+		border-bottom: 1px solid rgba(234, 70, 71, 0.18);
 		color: #f1f5f9;
-		font-weight: 600;
+		font-weight: 700;
 		font-size: 0.8rem;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.07em;
+		white-space: nowrap;
 	}
 
 	.blog-article :global(td) {
-		padding: 0.6rem 1rem;
-		border-bottom: 1px solid rgba(30, 36, 51, 0.5);
-		color: #94a3b8;
+		padding: 0.85rem 1rem;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.72);
+		color: #cbd5e1;
+		background: rgba(255, 255, 255, 0.01);
+		vertical-align: top;
+	}
+
+	.blog-article :global(tbody tr:last-child td) {
+		border-bottom: none;
+	}
+
+	.blog-article :global(th:first-child) {
+		border-top-left-radius: 18px;
+	}
+
+	.blog-article :global(th:last-child) {
+		border-top-right-radius: 18px;
+	}
+
+	.blog-article :global(tbody tr:last-child td:first-child) {
+		border-bottom-left-radius: 18px;
+	}
+
+	.blog-article :global(tbody tr:last-child td:last-child) {
+		border-bottom-right-radius: 18px;
 	}
 
 	.blog-article :global(tr:hover td) {
-		background: rgba(148, 163, 184, 0.03);
+		background: rgba(148, 163, 184, 0.05);
+	}
+
+	.blog-article :global(td strong), .blog-article :global(th strong) {
+		color: #f8fafc;
+	}
+
+	.blog-article :global(caption) {
+		caption-side: top;
+		text-align: left;
+		padding: 0 0.25rem 0.75rem;
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #64748b;
 	}
 
 	.blog-article :global(blockquote) {
