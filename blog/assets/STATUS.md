@@ -11,8 +11,8 @@
 
 ## 빌드 연동
 
-`landing/scripts/syncBlogAssets.js`가 `prebuild` 시점에 이 폴더를 `landing/static/blog/assets/`로 동기화한다.
-마크다운에서는 `/blog/assets/파일명.svg`로 참조하면 `svelte.config.js`의 `rehypeBaseUrl` 플러그인이 base path를 자동 주입한다.
+`landing/scripts/syncBlogAssets.js`가 `prebuild` 시점에 임시로 `landing/static/blog/assets/`를 만들고, `postbuild` 시점에 최종 `landing/build/blog/assets/`로 동기화한 뒤 임시 복사본을 삭제한다.
+마크다운에서는 `./assets/파일명.svg`로 참조한다. 포스트 URL 기준 상대경로로 해석되므로 GitHub Pages base path 유무와 무관하게 `/blog/assets/...`를 안정적으로 가리킨다.
 
 ## 파일 목록
 

@@ -13,7 +13,7 @@ thumbnail: /avatar-study.png
 
 진짜 중요한 건 각 form의 정의가 아니라, **서로를 어떻게 연결해 읽느냐**다.
 
-![Integrated Form Tracking](/blog/assets/007-edgar-form-tracking.svg)
+![Integrated Form Tracking](./assets/007-edgar-form-tracking.svg)
 
 이 글은 세 가지를 한 번에 묶는다.
 
@@ -33,7 +33,7 @@ thumbnail: /avatar-study.png
 
 결국 문서를 "많이" 읽고도 결론은 얕아진다. 그래서 필요 한 건 문서 요약이 아니라 **연결 규칙**이다.
 
-![Why Integrated Reading](/blog/assets/007-why-integrated.svg)
+![Why Integrated Reading](./assets/007-why-integrated.svg)
 
 ---
 
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 여기서 만든 기준선이 없으면, 분기 변화(10-Q)가 의미를 잃는다.
 
-![10-K Reading Order](/blog/assets/007-10k-reading-order.svg)
+![10-K Reading Order](./assets/007-10k-reading-order.svg)
 
 ### 2) 10-Q: 기준선 대비 이탈 탐지 문서
 
@@ -77,7 +77,7 @@ thumbnail: /avatar-study.png
 
 핵심 규칙: **숫자 해석 전에 이벤트를 먼저 찾는다.**
 
-![Event to Metric Map](/blog/assets/007-event-to-metric-map.svg)
+![Event to Metric Map](./assets/007-event-to-metric-map.svg)
 
 ---
 
@@ -89,7 +89,7 @@ thumbnail: /avatar-study.png
 
 맞다. 구조는 다르다. 그런데 기능은 같다.
 
-![FPI Bridge Framework](/blog/assets/007-fpi-bridge.svg)
+![FPI Bridge Framework](./assets/007-fpi-bridge.svg)
 
 ### 20-F를 읽는 법
 
@@ -114,7 +114,7 @@ thumbnail: /avatar-study.png
 
 즉 6-K는 타이밍 문서이면서 동시에 번역 문서다. 이벤트 자체보다 **시장 간 정보 전달 속도**를 본다.
 
-![6-K Timing Bridge](/blog/assets/007-6k-timing-bridge.svg)
+![6-K Timing Bridge](./assets/007-6k-timing-bridge.svg)
 
 ---
 
@@ -122,7 +122,7 @@ thumbnail: /avatar-study.png
 
 13F는 유용하다. 하지만 목적을 잘못 잡으면 가장 위험한 문서가 된다.
 
-![13F Signal Framework](/blog/assets/007-13f-signal-framework.svg)
+![13F Signal Framework](./assets/007-13f-signal-framework.svg)
 
 ### 13F로 할 수 있는 것
 
@@ -158,7 +158,7 @@ thumbnail: /avatar-study.png
 | 반영 확인 | 이벤트와 재무를 분리 | 다음 10-Q/10-K에서 수치 반영 체크 |
 | 보조 신호 | 13F 추종 매매 | 4~8분기 추세만 활용 |
 
-![Integrated Decision Tree](/blog/assets/007-integrated-decision-tree.svg)
+![Integrated Decision Tree](./assets/007-integrated-decision-tree.svg)
 
 ---
 
@@ -184,7 +184,7 @@ thumbnail: /avatar-study.png
 
 ## FAQ (검색 유입형)
 
-![Search Intent Map](/blog/assets/007-search-intent-map.svg)
+![Search Intent Map](./assets/007-search-intent-map.svg)
 
 ### Q1. 10-K와 20-F는 같은 건가?
 

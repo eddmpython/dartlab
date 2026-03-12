@@ -13,7 +13,7 @@ thumbnail: /avatar-chart.png
 
 이 글은 EDGAR를 처음 접하는 사람부터 이미 쓰고 있는 사람까지, 전체 구조를 한 번에 잡을 수 있도록 정리한 가이드다.
 
-![EDGAR Structure Map](/blog/assets/006-edgar-structure-map.svg)
+![EDGAR Structure Map](./assets/006-edgar-structure-map.svg)
 
 ---
 
@@ -188,9 +188,9 @@ EDGAR는 하루아침에 만들어진 시스템이 아니다.
 
 제출기한은 단순 규정 암기용 정보가 아니다. 실제 분석에서는 "정보의 신선도"와 "리스크 탐지 속도"를 결정한다.
 
-![EDGAR Deadline Matrix](/blog/assets/006-edgar-deadline-matrix.svg)
+![EDGAR Deadline Matrix](./assets/006-edgar-deadline-matrix.svg)
 
-![Filing Calendar Rhythm](/blog/assets/006-filing-calendar-rhythm.svg)
+![Filing Calendar Rhythm](./assets/006-filing-calendar-rhythm.svg)
 
 | form | 일반적 제출 기준 | 실무에서 의미 |
 |------|-------------------|----------------|
@@ -217,7 +217,7 @@ EDGAR는 하루아침에 만들어진 시스템이 아니다.
 
 EDGAR와 DART는 "둘 다 전자공시"라는 공통점만 보면 비슷해 보이지만, 분석자의 작업 방식에는 큰 차이가 난다.
 
-![DART vs EDGAR Deep Comparison](/blog/assets/006-dart-vs-edgar-deep.svg)
+![DART vs EDGAR Deep Comparison](./assets/006-dart-vs-edgar-deep.svg)
 
 ### 1) 문서 체계의 차이
 
@@ -284,7 +284,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 많은 분석이 실패하는 이유는 "숫자"와 "이벤트"를 따로 보기 때문이다.
 
-![Filing Lifecycle](/blog/assets/006-filing-lifecycle.svg)
+![Filing Lifecycle](./assets/006-filing-lifecycle.svg)
 
 권장 방식은 아래와 같다.
 
@@ -321,7 +321,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 아래 프레임으로 읽으면 문서가 많아도 길을 잃지 않는다.
 
-![EDGAR Reading Workflow](/blog/assets/006-edgar-reading-workflow.svg)
+![EDGAR Reading Workflow](./assets/006-edgar-reading-workflow.svg)
 
 ### 1단계: 기준선 설정 (10-K/20-F)
 
@@ -378,7 +378,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 미국 기업 하나를 볼 때 아래 항목에 답할 수 있으면, 기본적인 EDGAR 리딩 품질은 확보된다.
 
-![Korean Investor Checklist](/blog/assets/006-korean-investor-checklist.svg)
+![Korean Investor Checklist](./assets/006-korean-investor-checklist.svg)
 
 ### 문서 구조
 

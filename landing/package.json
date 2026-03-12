@@ -5,9 +5,9 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"prebuild": "node scripts/syncBrand.js && node scripts/syncBlogAssets.js",
+		"prebuild": "node scripts/syncBrand.js && node scripts/syncBlogAssets.js prepare",
 		"build": "vite build",
-		"postbuild": "node scripts/postbuild.js",
+		"postbuild": "node scripts/syncBlogAssets.js finalize && node scripts/postbuild.js",
 		"sync-brand": "node scripts/syncBrand.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",

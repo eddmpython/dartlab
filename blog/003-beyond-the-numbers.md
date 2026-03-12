@@ -13,7 +13,7 @@ thumbnail: /avatar-celebrate.png
 
 문제는 **숫자가 말해주는 건 "무엇이 일어났는가"뿐**이라는 것이다. "왜 일어났는가", "이 숫자를 신뢰할 수 있는가", "앞으로도 이어질 것인가"는 숫자 안에 없다.
 
-![Numbers Only vs Full Picture](/blog/assets/003-beyond-numbers-hero.svg)
+![Numbers Only vs Full Picture](./assets/003-beyond-numbers-hero.svg)
 
 ---
 
@@ -38,7 +38,7 @@ thumbnail: /avatar-celebrate.png
 
 ## 같은 숫자, 다른 이야기
 
-![Same Numbers, Different Stories](/blog/assets/003-same-numbers-different-stories.svg)
+![Same Numbers, Different Stories](./assets/003-same-numbers-different-stories.svg)
 
 구체적인 상황으로 보자.
 
@@ -170,7 +170,7 @@ thumbnail: /avatar-celebrate.png
 
 주석은 재무제표 각 계정의 상세 내역이다. 재무상태표에 "재고자산 1조 원"이라는 한 줄이 있다면, 주석에는 그 1조 원이 원재료/재공품/제품/상품/미착품 중 어떤 구성인지, 평가손실은 얼마인지가 나온다.
 
-![Footnote Risk Signals](/blog/assets/003-footnote-risk-signals.svg)
+![Footnote Risk Signals](./assets/003-footnote-risk-signals.svg)
 
 주석은 분량이 방대해서 많은 사람이 넘기지만, **재무제표의 진짜 디테일은 주석에 있다.**
 
@@ -262,7 +262,7 @@ c.business     # 사업의 내용 — 시장 환경, 경쟁, 원재료
 
 ## 정리
 
-![Depth of Analysis](/blog/assets/003-analysis-depth-pyramid.svg)
+![Depth of Analysis](./assets/003-analysis-depth-pyramid.svg)
 
 재무제표는 시작이다. 끝이 아니다.
 

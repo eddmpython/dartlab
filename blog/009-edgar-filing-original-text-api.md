@@ -17,7 +17,7 @@ EDGAR를 쓸 때 가장 흔한 오해가 있다.
 
 핵심은 "엔드포인트 하나"가 아니라 "접근 경로를 조립하는 방식"이다.
 
-![EDGAR Access Path](/blog/assets/009-edgar-access-path.svg)
+![EDGAR Access Path](./assets/009-edgar-access-path.svg)
 
 ---
 
@@ -84,7 +84,7 @@ https://www.sec.gov/Archives/edgar/data/{CIK_NO_LEADING_ZERO}/{ACCESSION_NO_DASH
 https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20241228x10q.htm
 ```
 
-![URL Builder](/blog/assets/009-edgar-url-builder.svg)
+![URL Builder](./assets/009-edgar-url-builder.svg)
 
 ---
 
@@ -186,7 +186,7 @@ form별로 수집 목적을 나눠야 파이프라인이 안정적이다.
 
 ## rate limit/운영 안정성 체크리스트
 
-![API Stability Guide](/blog/assets/009-edgar-api-stability-guide.svg)
+![API Stability Guide](./assets/009-edgar-api-stability-guide.svg)
 
 - [ ] 요청 간 간격(throttling) 적용
 - [ ] 재시도(backoff) 정책 적용
