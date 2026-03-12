@@ -34,7 +34,10 @@
 		<aside class="dl-blog-sidebar">
 			<div class="dl-blog-sidebar-inner">
 				<div class="dl-blog-sidebar-brand">
-					<span class="dl-blog-sidebar-kicker">DartLab Blog</span>
+					<div class="dl-blog-sidebar-brand-row">
+						<img src="{base}/avatar.png" alt="DartLab" width="36" height="36" class="dl-blog-sidebar-avatar" />
+						<span class="dl-blog-sidebar-kicker">DartLab Blog</span>
+					</div>
 					<strong class="dl-blog-sidebar-title">Read Beyond the Numbers</strong>
 					<p class="dl-blog-sidebar-desc">공시를 숫자가 아니라 구조와 맥락으로 읽는 아카이브.</p>
 				</div>
@@ -172,6 +175,22 @@
 		padding: 0 0.15rem 0.2rem;
 	}
 
+	.dl-blog-sidebar-brand-row {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.dl-blog-sidebar-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.22);
+		box-shadow: 0 6px 18px rgba(3, 5, 9, 0.24);
+		flex-shrink: 0;
+	}
+
 	.dl-blog-sidebar-kicker {
 		display: block;
 		font-size: 0.72rem;
@@ -179,7 +198,7 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: #ea4647;
-		margin-bottom: 0.35rem;
+		margin-bottom: 0;
 	}
 
 	.dl-blog-sidebar-title {

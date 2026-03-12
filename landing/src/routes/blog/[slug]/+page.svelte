@@ -356,7 +356,10 @@
 		<aside class="blog-toc" class:toc-hidden={!tocVisible}>
 			{#if tocItems.length > 0}
 				<div class="blog-toc-inner">
-					<span class="blog-toc-heading">On this page</span>
+					<div class="blog-toc-header">
+						<img src="{base}/avatar.png" alt="DartLab" width="24" height="24" class="blog-toc-avatar" />
+						<span class="blog-toc-heading">On this page</span>
+					</div>
 					<nav class="blog-toc-list">
 						{#each tocItems as item}
 							<button
@@ -720,6 +723,21 @@
 		border-left: 1px solid rgba(30, 36, 51, 0.8);
 	}
 
+	.blog-toc-header {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		margin-bottom: 0.6rem;
+	}
+
+	.blog-toc-avatar {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.2);
+		flex-shrink: 0;
+	}
+
 	.blog-toc-heading {
 		display: block;
 		font-size: 0.7rem;
@@ -727,7 +745,7 @@
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: #64748b;
-		margin-bottom: 0.6rem;
+		margin-bottom: 0;
 	}
 
 	.blog-toc-list {
