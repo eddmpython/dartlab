@@ -101,7 +101,7 @@
 								읽기 <ArrowRight size={14} />
 							</span>
 						</div>
-						<img src="{base}{post.cardPreview}" alt={post.title} class="category-post-thumb" width="172" height="172" loading="lazy" />
+						<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="category-post-thumb" width="172" height="172" loading="lazy" />
 					</div>
 				</a>
 			{/each}

@@ -132,6 +132,7 @@ export interface PostMeta {
 	description: string;
 	thumbnail: string;
 	cardPreview: string;
+	previewAsset?: string;
 	readingMinutes: number;
 	category: CategoryId;
 	categoryLabel: string;
@@ -146,6 +147,7 @@ type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
 const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const svgAssetPaths = Object.keys(import.meta.glob('@blog/**/assets/*.svg'));
 
 function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
 	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
@@ -175,6 +177,7 @@ function buildPosts(): PostMeta[] {
 		const readingMinutes = estimateReadingMinutes(rawMarkdown);
 		const thumbnail = metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png';
 		const cardPreview = metadata.cardPreview ? String(metadata.cardPreview) : thumbnail;
+		const previewAsset = findPreviewAsset(path);
 
 		result.push({
 			slug: parsed.slug,
@@ -183,6 +186,7 @@ function buildPosts(): PostMeta[] {
 			description: metadata.description ? String(metadata.description) : '',
 			thumbnail,
 			cardPreview,
+			previewAsset,
 			readingMinutes,
 			category: category.id,
 			categoryLabel: category.label,
@@ -215,6 +219,14 @@ function estimateReadingMinutes(rawMarkdown: string): number {
 		.trim();
 	const tokenCount = plainText ? plainText.split(' ').length : 0;
 	return Math.max(3, Math.ceil(tokenCount / 220));
+}
+
+function findPreviewAsset(path: string): string | undefined {
+	const prefix = path.replace(/index\.md$/, 'assets/');
+	const match = svgAssetPaths.find((assetPath) => assetPath.startsWith(prefix));
+	if (!match) return undefined;
+	const filename = match.split('/').pop();
+	return filename ? `/blog/assets/${filename}` : undefined;
 }
 
 export const posts: PostMeta[] = buildPosts();

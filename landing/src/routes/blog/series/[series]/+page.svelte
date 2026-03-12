@@ -81,7 +81,7 @@
 									<p class="series-step-desc">{post.description}</p>
 								</div>
 							</div>
-							<img src="{base}{post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
+							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>

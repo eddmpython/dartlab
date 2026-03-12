@@ -124,7 +124,7 @@
 							<h3 class="latest-title">{post.title}</h3>
 							<p class="latest-desc">{post.description}</p>
 						</div>
-						<img src="{base}{post.cardPreview}" alt={post.title} class="latest-thumb" width="172" height="172" loading="lazy" />
+						<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="latest-thumb" width="172" height="172" loading="lazy" />
 					</div>
 				</a>
 			{/each}
