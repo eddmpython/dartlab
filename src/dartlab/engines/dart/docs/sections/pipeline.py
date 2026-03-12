@@ -25,7 +25,7 @@ import re
 
 import polars as pl
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.sections.chunker import chunkRows
 from dartlab.engines.dart.docs.sections.types import (
