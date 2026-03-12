@@ -5,6 +5,14 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-03-12
+
+### Fixed
+
+**서버 테스트 런타임 의존성 보강**
+- `dartlab[ai]` 에 `httpx` 추가
+- `starlette.testclient` 가 `httpx` 미설치로 실패하던 문제 해결
+
 ## [0.4.1] - 2026-03-12
 
 ### Fixed
@@ -78,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 008: 사업의 내용으로 기업 판단하기
 - 블로그별 SVG 다이어그램 추가
 
+[0.4.2]: https://github.com/eddmpython/dartlab/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/eddmpython/dartlab/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/eddmpython/dartlab/compare/v0.3.2...v0.4.0
 
