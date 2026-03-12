@@ -1848,3 +1848,218 @@ retrieval/context 메타 추가:
 - broad raw는 거의 사라졌고, 남은 것은 특수 거래문구, 표 내부 세부항목, 회사 특화 문장형 제목이 중심이다.
 - `retrievalBlocks/contextSlices`는 이제 text뿐 아니라 table block도 semantic topic을 붙이며 쪼갠다.
 - 다음 완성 단계는 exact mapping을 더 늘리는 것보다, 남은 문장형/표세부를 semantic/detail projector로 흡수하는 쪽이 핵심이다.
+
+### 2026-03-12 `sections()` 무손실 전환
+
+핵심 변경:
+- `pipeline.sections()`를 `chunkRows()` 기반 text-only 병합에서 raw section markdown 병합으로 전환
+- 이제 `topic x period` wide cell은 `section_content` 원문 markdown를 그대로 보존한다
+- chapter II projection은 유지하되, projection 대상 text도 원문 markdown 그대로 복제한다
+- `chunker`는 여전히 retrieval/semantic 분해용으로 남아 있지만, `sections()` 생성 시 table markdown를 버리지 않는다
+
+추가 구현:
+- `runtime.semanticTopicForBlock()` 추가
+  - heading label뿐 아니라 markdown table 첫 컬럼 label로 semantic topic 추론
+- `views.splitMarkdownTable()` 추가
+  - table slice를 header-preserving chunk로 분해
+- `retrievalBlocks()`는 `semanticTopicForBlock()` 사용
+- `contextSlices()`는 table block이면 `splitMarkdownTable()`로 분할
+
+검증:
+- 새 회귀 테스트 추가:
+  - `tests/test_sections_pipeline.py`
+  - `sections()`가 markdown table을 실제로 보존하는지 확인
+- 전체 검증:
+  - `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `19 passed`
+- 삼성전자 `005930` 확인:
+  - `sections` shape: `(96, 107)`
+  - `salesOrder` cell 안에 markdown table 구분자 `|` 보존 확인
+  - retrieval semantic summary는 유지:
+    - `auditSystem 816`
+    - `audit 702`
+    - `majorHolder 592`
+    - `majorContractsAndRnd 192`
+
+해석:
+- 이제 `sections()` 자체도 더 이상 “비교용 text-only 손실 view”가 아니다.
+- wide view, retrieval blocks, context slices가 모두 같은 raw markdown를 공유하는 방향으로 정렬되었다.
+- 남은 과제는 broad mapping이 아니라, raw 문장형/표 세부행을 semantic/detail projector로 더 내려서 information-preserving horizontalization을 완성하는 것이다.
+
+### 2026-03-12 wide canonicalization 복구
+
+추가 exact mapping:
+- `financialNotes`
+  - `회계정보에관한사항`
+  - `유가증권명세서`
+  - `주요채권명세서`
+  - `사채명세서`
+  - `장기차입금명세서`
+  - `단기차입금명세서`
+  - `주요채무명세서`
+  - `예금등명세서`
+- `disclosureChanges`
+  - `주요경영사항신고내용의진행상황등`
+  - `주요경영사항신고내용및그진행상황`
+- `affiliateGroup`
+  - `관계회사등의현황`
+- `companyHistory`
+  - `합병전,후의재무제표`
+- `companyOverview`
+  - `국내및해외주요사업장현황(상세)`
+
+추가 suppression:
+- `runtime.projectionSuppressedTopics()`
+  - chapter II split source인 `주요제품및원재료등`도 최종 wide view에서 숨김
+
+검증:
+- `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `19 passed`
+- 대표 종목군 raw 잔여 재점검:
+  - 삼성전자 `005930`: `96 -> 82`
+  - SK하이닉스 `000660`: `91 -> 81`
+  - NAVER `035420`: raw 없음
+  - 현대차 `005380`: raw 없음
+  - LG화학 `051910`: raw 없음
+
+현재 상단 raw 성격:
+- 삼성전자 / SK하이닉스에 남는 것은
+  - `재고자산명세서`
+  - `감가상각비등명세서`
+  - `제조원가명세서`
+  - `법인세등명세서`
+  - `감사인의보수등에관한사항`
+  같은 appendix/detail 명세서 위주
+
+해석:
+- broad section raw는 사실상 정리되었다.
+- 현재 남은 것은 반복되는 appendix/detail 명세서와 일부 역사적 특수 항목이며, core horizontalization 품질은 production 수준에 근접했다.
+- 마지막 단계는 이 detail appendix를 별도 appendix layer로 정식 분리할지, `financialNotes/audit` 아래 detail semantic row로 더 내릴지 결정하고 마무리하는 것이다.
+
+### 2026-03-12 package-ready detail/source trace 마감
+
+추가 구현:
+- `runtime.py`
+  - `detailTopicForTopic()` 추가
+  - appendix/detail 명세서를 detail semantic key로 분리
+    - `noteInventoryDetail`
+    - `noteDepreciationDetail`
+    - `noteManufacturingCostDetail`
+    - `noteTaxDetail`
+    - `noteSecuritiesDetail`
+    - `noteReceivablesDetail`
+    - `noteDebtDetail`
+    - `noteCashDetail`
+    - `auditFeeDetail`
+- `views.py`
+  - `retrievalBlocks()`에 `sourceTopic`, `cellKey`, `detailTopic` 컬럼 추가
+  - `contextSlices()`에도 동일 메타 추가
+- `README.md`
+  - `Company.sections`, `Company.retrievalBlocks`, `Company.contextSlices` 사용 예시 추가
+- `pyproject.toml`
+  - classifier `Development Status :: 4 - Beta`로 상향
+
+검증:
+- `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `19 passed`
+- `python -m build --no-isolation`
+  - 결과: `dartlab-0.4.3.tar.gz`, `dartlab-0.4.3-py3-none-any.whl`
+- `retrievalBlocks/contextSlices` 실제 스키마 확인:
+  - `topic`
+  - `sourceTopic`
+  - `cellKey`
+  - `semanticTopic`
+  - `detailTopic`
+
+해석:
+- 이제 package runtime은
+  - `sections()` = canonical wide markdown view
+  - `retrievalBlocks()` = 원문 block + source trace
+  - `contextSlices()` = LLM slice + source trace
+  구조로 닫혔다.
+- per-stock 결과를 저장하지 않아도, packaged rules와 runtime DataFrame만으로 재현 가능한 상태가 되었다.
+
+### 2026-03-12 package closing pass
+
+추가 구현:
+- `sections()` core wide view에서 appendix/detail row를 기본 숨김 처리
+- `개별재무제표에관한사항`, `연결재무제표에관한사항` 도 detail semantic layer로 분리
+- `장래계획에관한사항의추진실적`, `개별재무제표에대한감사인(공인회계사)의감사의견등`, `중간감사`, `컴퓨터2000년문제의해결과관련된사항` 등 반복 raw 잔여를 흡수
+- README / pyproject / changelog 를 package-facing 기준으로 정리
+
+결과:
+- core wide view는 canonical comparison 축만 남기고, appendix/detail 은 `retrievalBlocks/contextSlices` 의 `detailTopic` 메타로 회수 가능
+- broad raw residual은 appendix/detail 및 특수 역사 항목 수준으로 축소
+- package 메타는 `Production/Stable` 기준으로 상향
+
+### 2026-03-12 retrieval quality closing pass
+
+추가 구현:
+- `views.py`
+  - `isPlaceholderBlock()` 추가
+  - `retrievalBlocks()`에 `isPlaceholder` 메타 추가
+  - `contextSlices()`는 boilerplate 및 non-semantic placeholder를 기본 제외
+  - `blockPriority`는 `detailTopic > semanticTopic > text > heading > table` 순으로 재정렬
+- `runtime.py`
+  - `detailTopicForBlock()` 추가
+  - `financialNotes`, `audit` 내부 block/table row label에서 detail semantic topic을 직접 추론
+
+검증:
+- `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `21 passed`
+- 대표 종목군 `005930`, `000660`, `035420`, `005380`, `051910`
+  - `sections()` raw residual count: 모두 `0`
+- contextSlices 실측:
+  - 삼성전자 `semantic_ratio 0.0575`, `placeholder_ratio 0.000049`
+  - SK하이닉스 `semantic_ratio 0.0694`, `placeholder_ratio 0.0`
+
+해석:
+- core wide view는 유지한 채 AI 입력 품질이 올라갔다.
+- 현재 기본 retrieval 경로는 placeholder 노이즈를 거의 제거하고 detail/note block을 우선 회수한다.
+
+### 2026-03-12 docs 283개 기준 detail taxonomy 보강
+
+배경:
+- `eddmpython`에서 추가 반영된 docs 13개 신규 종목을 `data/dart/docs`로 동기화한 뒤 수평화 재점검
+- 신규 problem stock:
+  - `006800`
+  - `010140`
+  - `012450`
+  - `086520`
+  - `086790`
+  - `247540`
+
+추가 구현:
+- `mapper.py`
+  - 패턴형 제목 매핑 추가
+  - 금융업 상세 업무 제목, 지적재산권 보유현황(company suffix), 연구개발실적(company suffix), 수주/계약 상세 제목을 broad canonical로 흡수
+- `runtime.py`
+  - `detailTopicForBlock()`에 금융업/지적재산권/수주/계약 detail taxonomy 추가
+  - 예:
+    - `bankDepositProductDetail`
+    - `bankLoanProductDetail`
+    - `trustBusinessDetail`
+    - `financialProductOverviewDetail`
+    - `bankServiceDetail`
+    - `brokerageBusinessDetail`
+    - `derivativeProductDetail`
+    - `ipPortfolioDetail`
+    - `orderBacklogDetail`
+    - `majorContractDetail`
+    - `rndPortfolioDetail`
+
+검증:
+- `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `21 passed`
+- 신규 problem stock residual:
+  - `006800`: `0`
+  - `010140`: `0`
+  - `012450`: `0`
+  - `086520`: `0`
+  - `086790`: `0`
+  - `247540`: `0`
+
+해석:
+- docs 283개 기준으로 신규 추가 종목군까지 core `sections()` raw residual이 사실상 정리되었다.
+- 남은 정보는 broad raw가 아니라 detail taxonomy에서 회수되는 구조로 닫혔다.
+- 현재 package 수준 기준에서 `sections()`는 core canonical 비교축, `retrievalBlocks/contextSlices`는 detail/semantic evidence layer 역할이 명확히 분리되었다.
