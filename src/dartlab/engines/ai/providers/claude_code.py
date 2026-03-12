@@ -305,9 +305,7 @@ class ClaudeCodeProvider(BaseProvider):
 				shell=_IS_WINDOWS,
 			)
 		except subprocess.TimeoutExpired:
-			# CLI hang → SDK fallback 전환
-			self._use_sdk = True
-			return self._sdk_complete(messages)
+			raise TimeoutError("Claude Code CLI 호출이 시간 초과되었습니다.")
 
 		if result.returncode != 0:
 			raw_err = result.stderr or b""

@@ -10,7 +10,6 @@ import pytest
 from starlette.testclient import TestClient
 
 from dartlab.server import app
-
 from tests.conftest import SAMSUNG, _has_data
 
 _has_samsung_docs = _has_data(SAMSUNG, "docs")
@@ -460,7 +459,7 @@ class TestChatUtils:
 
     def test_build_history_with_meta(self):
         from dartlab.server.chat import build_history_messages
-        from dartlab.server.models import HistoryMeta, HistoryMessage
+        from dartlab.server.models import HistoryMessage, HistoryMeta
         msgs = build_history_messages([
             HistoryMessage(
                 role="assistant", text="분석 결과",
@@ -473,7 +472,7 @@ class TestChatUtils:
 
     def test_extract_last_stock_code(self):
         from dartlab.server.chat import extract_last_stock_code
-        from dartlab.server.models import HistoryMeta, HistoryMessage
+        from dartlab.server.models import HistoryMessage, HistoryMeta
         assert extract_last_stock_code(None) is None
         assert extract_last_stock_code([]) is None
         code = extract_last_stock_code([
