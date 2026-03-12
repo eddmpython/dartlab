@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg11a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg11a)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Construction In Progress Flow</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Cash spending becomes CIP, then operating assets, then depreciation and profit pressure</text>
+
+  <rect x="42" y="102" width="148" height="96" rx="10" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="116" y="128" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#7dd3fc">Cash Outflow</text>
+  <text x="116" y="149" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Capex spending</text>
+  <text x="116" y="165" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">starts here</text>
+
+  <rect x="226" y="102" width="160" height="96" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="306" y="128" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">CIP</text>
+  <text x="306" y="149" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Unfinished factory,</text>
+  <text x="306" y="165" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">equipment, line</text>
+
+  <rect x="422" y="102" width="160" height="96" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="502" y="128" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#86efac">Tangible Assets</text>
+  <text x="502" y="149" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Buildings, machinery,</text>
+  <text x="502" y="165" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">operating facilities</text>
+
+  <rect x="618" y="102" width="140" height="96" rx="10" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="688" y="128" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#fdba74">P&amp;L Impact</text>
+  <text x="688" y="149" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Depreciation,</text>
+  <text x="688" y="165" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">margin test</text>
+
+  <path d="M190 150H226" stroke="#334155" stroke-width="2"/>
+  <path d="M386 150H422" stroke="#334155" stroke-width="2"/>
+  <path d="M582 150H618" stroke="#334155" stroke-width="2"/>
+  <path d="M216 150l-8-6v12l8-6Z" fill="#334155"/>
+  <path d="M412 150l-8-6v12l8-6Z" fill="#334155"/>
+  <path d="M608 150l-8-6v12l8-6Z" fill="#334155"/>
+
+  <rect x="64" y="252" width="300" height="104" rx="10" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="84" y="278" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f1f5f9">Healthy Flow</text>
+  <text x="84" y="300" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Cash outflow grows, CIP rises, tangible assets increase,</text>
+  <text x="84" y="316" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">and revenue absorbs later depreciation.</text>
+  <text x="84" y="338" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Read as:</text>
+  <text x="142" y="338" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">timed expansion with real execution</text>
+
+  <rect x="434" y="252" width="302" height="104" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="454" y="278" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">Risk Flow</text>
+  <text x="454" y="300" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Narrative is strong, but CIP stalls, assets do not convert,</text>
+  <text x="454" y="316" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">or depreciation arrives before revenue ramps.</text>
+  <text x="454" y="338" font-family="JetBrains Mono,monospace" font-size="10" fill="#fdba74">Read as:</text>
+  <text x="508" y="338" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">delay, weak demand, or overbuild risk</text>
+</svg>

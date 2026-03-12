@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2026-03-11
 
+### Added
+
+**docs/sections 학습형 수평화 runtime**
+- `Company.sections`가 learned section rules 기반으로 coarse report를 fine topic 축에 즉시 backfill
+- `projectionRules.chapterII.json` 패키지 포함
+- `sectionProfileTable.parquet` 패키지 포함 + runtime artifact loader 추가
+
 ### Changed
 
 **Company 데이터 소스 계층 개선 (Breaking Change)**
@@ -20,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `c.IS` — docs CIS(포괄손익계산서) → **finance IS(손익계산서)**로 변경
   - 매출액, 영업이익 등 핵심 계정 누락 문제 해결
 - `c.dividend`, `c.employee`, `c.majorHolder`, `c.executive`, `c.audit` — report API 우선으로 변경
+- `sections` pipeline — 단순 leaf title 병합에서 learned-rule 기반 horizontalization으로 변경
+  - 번호/기호 prefix 제거 강화
+  - legacy section title exact mapping 흡수
+  - chapter II coarse topic을 canonical fine topic으로 projection
 
 ### Added
 

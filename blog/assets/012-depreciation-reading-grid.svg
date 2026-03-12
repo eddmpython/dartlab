@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg12b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg12b)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Depreciation Reading Grid</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Depreciation is readable only when five different sections line up</text>
+
+  <rect x="52" y="92" width="220" height="92" rx="10" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="72" y="118" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#7dd3fc">Income Statement</text>
+  <text x="72" y="141" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">How much depreciation hits</text>
+  <text x="72" y="157" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">the current period</text>
+
+  <rect x="290" y="92" width="220" height="92" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="310" y="118" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#86efac">Cash Flow</text>
+  <text x="310" y="141" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Why cash can still look fine</text>
+  <text x="310" y="157" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">when accounting profit softens</text>
+
+  <rect x="528" y="92" width="220" height="92" rx="10" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="548" y="118" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#fdba74">Tangible Asset Note</text>
+  <text x="548" y="141" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Which assets created</text>
+  <text x="548" y="157" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">today's depreciation load</text>
+
+  <rect x="170" y="224" width="220" height="92" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="190" y="250" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">CIP Note</text>
+  <text x="190" y="273" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">How much future depreciation</text>
+  <text x="190" y="289" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">is still waiting behind</text>
+
+  <rect x="410" y="224" width="220" height="92" rx="10" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
+  <text x="430" y="250" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#c4b5fd">Business Section</text>
+  <text x="430" y="273" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ddd6fe">Whether management explains</text>
+  <text x="430" y="289" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">how the asset earns back</text>
+
+  <path d="M272 138H290" stroke="#334155" stroke-width="2"/>
+  <path d="M510 138H528" stroke="#334155" stroke-width="2"/>
+  <path d="M400 184V224" stroke="#334155" stroke-width="2"/>
+</svg>

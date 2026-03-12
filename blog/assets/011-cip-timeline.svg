@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg11d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg11d)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">CIP Timeline</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">From announcement to completion, timing determines whether capex helps or hurts</text>
+
+  <path d="M92 214H710" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="120" cy="214" r="10" fill="#38bdf8"/>
+  <circle cx="248" cy="214" r="10" fill="#7dd3fc"/>
+  <circle cx="376" cy="214" r="10" fill="#ea4647"/>
+  <circle cx="504" cy="214" r="10" fill="#86efac"/>
+  <circle cx="632" cy="214" r="10" fill="#fdba74"/>
+
+  <text x="120" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#7dd3fc">Plan</text>
+  <text x="120" y="250" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">announce project</text>
+
+  <text x="248" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#7dd3fc">Spend</text>
+  <text x="248" y="250" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">cash goes out</text>
+
+  <text x="376" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#f87171">CIP Build-up</text>
+  <text x="376" y="250" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">unfinished asset accumulates</text>
+
+  <text x="504" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#86efac">Completion</text>
+  <text x="504" y="250" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">convert to tangible assets</text>
+
+  <text x="632" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fdba74">P&amp;L Test</text>
+  <text x="632" y="250" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">depreciation vs revenue</text>
+
+  <rect x="104" y="296" width="592" height="64" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="124" y="320" font-family="JetBrains Mono,monospace" font-size="10" fill="#fbbf24">Watch for delays:</text>
+  <text x="220" y="320" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">if CIP stays high for too long, completion timing and demand assumptions may be weakening</text>
+  <text x="124" y="342" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Watch for pressure:</text>
+  <text x="226" y="342" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">after completion, margins must absorb depreciation and ramp-up inefficiency</text>
+</svg>

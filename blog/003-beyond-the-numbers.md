@@ -13,7 +13,7 @@ thumbnail: /avatar-celebrate.png
 
 문제는 **숫자가 말해주는 건 "무엇이 일어났는가"뿐**이라는 것이다. "왜 일어났는가", "이 숫자를 신뢰할 수 있는가", "앞으로도 이어질 것인가"는 숫자 안에 없다.
 
-![Numbers Only vs Full Picture](./assets/003-beyond-numbers-hero.svg)
+![재무 숫자만 볼 때와 전체 공시 맥락까지 볼 때의 차이](./assets/003-beyond-numbers-hero.svg)
 
 ---
 

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg11b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg11b)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">CIP Reading Grid</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">CIP becomes useful only when read across four different sections</text>
+
+  <rect x="56" y="96" width="320" height="108" rx="10" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="76" y="122" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#7dd3fc">Business Section</text>
+  <text x="76" y="145" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Why invest? Which line? What schedule? What demand?</text>
+  <text x="76" y="172" font-family="JetBrains Mono,monospace" font-size="10" fill="#7dd3fc">Role:</text>
+  <text x="112" y="172" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">management narrative</text>
+
+  <rect x="424" y="96" width="320" height="108" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="444" y="122" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#86efac">Cash Flow Statement</text>
+  <text x="444" y="145" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Did cash actually go out? Is debt helping fund the project?</text>
+  <text x="444" y="172" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Role:</text>
+  <text x="480" y="172" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">execution evidence</text>
+
+  <rect x="56" y="234" width="320" height="108" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="76" y="260" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">CIP Note</text>
+  <text x="76" y="283" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Is the project moving, stalling, or sitting too long?</text>
+  <text x="76" y="310" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">Role:</text>
+  <text x="112" y="310" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">progress checkpoint</text>
+
+  <rect x="424" y="234" width="320" height="108" rx="10" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="444" y="260" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#fdba74">Tangible Asset Note</text>
+  <text x="444" y="283" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Did CIP turn into machinery/buildings, and what cost follows?</text>
+  <text x="444" y="310" font-family="JetBrains Mono,monospace" font-size="10" fill="#fdba74">Role:</text>
+  <text x="482" y="310" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">post-completion impact</text>
+
+  <path d="M376 150H424" stroke="#334155" stroke-width="2"/>
+  <path d="M216 204V234" stroke="#334155" stroke-width="2"/>
+  <path d="M584 204V234" stroke="#334155" stroke-width="2"/>
+  <path d="M376 288H424" stroke="#334155" stroke-width="2"/>
+</svg>
