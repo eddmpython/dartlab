@@ -5,6 +5,14 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-03-12
+
+### Fixed
+
+**EDGAR sections 패키지 아티팩트 포함**
+- `canonicalRows.parquet`, `formTopicDrafts.json`, `mappingCoverage.latest.json` 를 패키지 리소스로 포함
+- EDGAR sections artifact loader가 실험 폴더가 아닌 설치 패키지에서도 정상 동작하도록 수정
+
 ## [0.4.2] - 2026-03-12
 
 ### Fixed
@@ -86,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 008: 사업의 내용으로 기업 판단하기
 - 블로그별 SVG 다이어그램 추가
 
+[0.4.3]: https://github.com/eddmpython/dartlab/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/eddmpython/dartlab/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/eddmpython/dartlab/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/eddmpython/dartlab/compare/v0.3.2...v0.4.0

@@ -84,6 +84,8 @@ def check_staged() -> int:
     for file_path in staged_files():
         if file_path == "scripts/check_no_ai_markers.py":
             continue
+        if Path(file_path).suffix.lower() == ".parquet":
+            continue
         try:
             content = run_git(["show", f":{file_path}"])
         except RuntimeError:
@@ -135,6 +137,8 @@ def check_files_in_range(base: str | None, head: str) -> int:
     failures: list[str] = []
     for file_path in changed_files_in_range(base, head):
         if file_path == "scripts/check_no_ai_markers.py":
+            continue
+        if Path(file_path).suffix.lower() == ".parquet":
             continue
         if not Path(file_path).exists():
             continue

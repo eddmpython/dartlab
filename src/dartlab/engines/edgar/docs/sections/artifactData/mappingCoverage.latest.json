@@ -1,0 +1,44 @@
+{
+  "docs_files": 122,
+  "candidate_summary": [
+    {
+      "form_type": "10-K",
+      "candidates": 20,
+      "mapped_candidates": 20,
+      "coverage": 1.0
+    },
+    {
+      "form_type": "10-Q",
+      "candidates": 9,
+      "mapped_candidates": 9,
+      "coverage": 1.0
+    },
+    {
+      "form_type": "20-F",
+      "candidates": 27,
+      "mapped_candidates": 27,
+      "coverage": 1.0
+    }
+  ],
+  "raw_summary": [
+    {
+      "form_type": "10-K",
+      "raw_titles": 43,
+      "mapped_titles": 43,
+      "coverage": 1.0
+    },
+    {
+      "form_type": "10-Q",
+      "raw_titles": 12,
+      "mapped_titles": 12,
+      "coverage": 1.0
+    },
+    {
+      "form_type": "20-F",
+      "raw_titles": 32,
+      "mapped_titles": 32,
+      "coverage": 1.0
+    }
+  ],
+  "unmapped_top": []
+}

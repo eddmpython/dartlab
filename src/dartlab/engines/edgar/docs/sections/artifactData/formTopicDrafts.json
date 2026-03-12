@@ -1,0 +1,362 @@
+{
+  "20-F": [
+    {
+      "section_title": "Item 17. Financial Statements",
+      "filings": 33,
+      "tickers": 5,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 15. Controls and Procedures",
+      "filings": 30,
+      "tickers": 5,
+      "filing_coverage": 0.9090909090909091
+    },
+    {
+      "section_title": "Item 16A. Audit Committee Financial Expert",
+      "filings": 30,
+      "tickers": 5,
+      "filing_coverage": 0.9090909090909091
+    },
+    {
+      "section_title": "Item 16E. Purchases of Equity Securities",
+      "filings": 30,
+      "tickers": 5,
+      "filing_coverage": 0.9090909090909091
+    },
+    {
+      "section_title": "Item 19. Exhibits",
+      "filings": 30,
+      "tickers": 5,
+      "filing_coverage": 0.9090909090909091
+    },
+    {
+      "section_title": "Item 1. Identity of Directors & Senior Management",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 10. Additional Information",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 11. Quantitative and Qualitative Disclosures",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 13. Defaults & Arrears",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 18. Financial Statements",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 2. Offer Statistics and Expected Timetable",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 4. Information on the Company",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 5. Operating and Financial Review",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 7. Major Shareholders",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 8. Financial Information",
+      "filings": 29,
+      "tickers": 5,
+      "filing_coverage": 0.8787878787878788
+    },
+    {
+      "section_title": "Item 12. Description of Securities",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 14. Material Modifications",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16B. Code of Ethics",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16C. Principal Accountant Fees",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16D. Exemptions from Listing Standards",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16F. Change in Registrant's Certifying Accountant",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16G. Corporate Governance",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 3. Key Information",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 4A. Unresolved Staff Comments",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 6. Directors & Senior Management",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 9. The Offer and Listing",
+      "filings": 28,
+      "tickers": 5,
+      "filing_coverage": 0.8484848484848485
+    },
+    {
+      "section_title": "Item 16H. Mine Safety Disclosure",
+      "filings": 24,
+      "tickers": 5,
+      "filing_coverage": 0.7272727272727273
+    }
+  ],
+  "10-Q": [
+    {
+      "section_title": "Part I - Item 1. Financial Statements",
+      "filings": 103,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+      "filings": 103,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Part II - Item 1. Legal Proceedings",
+      "filings": 103,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Part II - Item 1A. Risk Factors",
+      "filings": 103,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Part II - Item 6. Exhibits",
+      "filings": 103,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Part I - Item 3. Quantitative and Qualitative Disclosures About Market Risk",
+      "filings": 102,
+      "tickers": 2,
+      "filing_coverage": 0.9902912621359223
+    },
+    {
+      "section_title": "Part I - Item 4. Controls and Procedures",
+      "filings": 101,
+      "tickers": 2,
+      "filing_coverage": 0.9805825242718447
+    },
+    {
+      "section_title": "Part II - Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
+      "filings": 101,
+      "tickers": 2,
+      "filing_coverage": 0.9805825242718447
+    },
+    {
+      "section_title": "Part II - Item 3. Defaults Upon Senior Securities",
+      "filings": 100,
+      "tickers": 2,
+      "filing_coverage": 0.970873786407767
+    },
+    {
+      "section_title": "Part II - Item 5. Other Information",
+      "filings": 100,
+      "tickers": 2,
+      "filing_coverage": 0.970873786407767
+    },
+    {
+      "section_title": "Part II - Item 4. Mine Safety Disclosures",
+      "filings": 89,
+      "tickers": 2,
+      "filing_coverage": 0.8640776699029126
+    }
+  ],
+  "10-K": [
+    {
+      "section_title": "Item 1. Business",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 10. Directors & Corporate Governance",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 11. Executive Compensation",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 12. Security Ownership",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 13. Related Transactions",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 14. Principal Accountant Fees",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 15. Exhibits & Schedules",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 1A. Risk Factors",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 1B. Unresolved Staff Comments",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 2. Properties",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 3. Legal Proceedings",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 5. Market for Common Equity",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 6. Reserved",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 7. MD&A",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 7A. Market Risk Disclosures",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 8. Financial Statements",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 9. Changes in Accountants",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 9A. Controls and Procedures",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 9B. Other Information",
+      "filings": 35,
+      "tickers": 2,
+      "filing_coverage": 1.0
+    },
+    {
+      "section_title": "Item 4. Mine Safety Disclosures",
+      "filings": 33,
+      "tickers": 2,
+      "filing_coverage": 0.9428571428571428
+    },
+    {
+      "section_title": "Item 16. Form 10-K Summary",
+      "filings": 18,
+      "tickers": 2,
+      "filing_coverage": 0.5142857142857142
+    }
+  ]
+}
