@@ -27,13 +27,22 @@ ZERO_SHA = "0" * 40
 
 
 def run_git(args: list[str], check: bool = True) -> str:
-    proc = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+    proc = subprocess.run(
+        ["git", *args],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
     if check and proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
-    return proc.stdout
+    return proc.stdout or ""
 
 
 def find_matches(text: str) -> list[str]:
+    if not text:
+        return []
     matches: list[str] = []
     seen: set[str] = set()
     for pattern in COMPILED_PATTERNS:
@@ -61,7 +70,7 @@ def check_text(label: str, text: str) -> int:
 
 
 def check_commit_message(path: str) -> int:
-    content = Path(path).read_text(encoding="utf-8")
+    content = Path(path).read_text(encoding="utf-8", errors="replace")
     return check_text("커밋 메시지에 AI 흔적이 포함되어 있습니다.", content)
 
 
@@ -130,8 +139,8 @@ def check_files_in_range(base: str | None, head: str) -> int:
         if not Path(file_path).exists():
             continue
         try:
-            content = Path(file_path).read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+            content = Path(file_path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
             continue
         matches = find_matches(content)
         if matches:
