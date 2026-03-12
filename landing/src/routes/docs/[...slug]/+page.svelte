@@ -212,8 +212,10 @@
 
 	.doc-layout {
 		display: grid;
-		grid-template-columns: 1fr 200px;
+		grid-template-columns: minmax(0, var(--content-max-width)) var(--toc-width);
 		gap: 2rem;
+		justify-content: center;
+		align-items: start;
 	}
 
 	.doc-content-col {
@@ -227,11 +229,13 @@
 		max-height: calc(100vh - 90px);
 		overflow-y: auto;
 		scrollbar-width: thin;
-		scrollbar-color: rgba(168, 162, 158, 0.15) transparent;
+		scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
 	}
 
 	.doc-toc-inner {
 		padding-top: 0.5rem;
+		border-left: 1px solid rgba(30, 36, 51, 0.8);
+		padding-left: 1rem;
 	}
 
 	.doc-toc-heading {
@@ -240,7 +244,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		color: #57534e;
+		color: #64748b;
 		margin-bottom: 0.6rem;
 	}
 
@@ -255,7 +259,7 @@
 		text-align: left;
 		padding: 0.2rem 0 0.2rem 0.6rem;
 		font-size: 0.75rem;
-		color: #78716c;
+		color: #64748b;
 		background: none;
 		border: none;
 		border-left: 2px solid transparent;
@@ -268,7 +272,7 @@
 	}
 
 	.doc-toc-item:hover {
-		color: #d6d3d1;
+		color: #cbd5e1;
 	}
 
 	.doc-toc-item.active {

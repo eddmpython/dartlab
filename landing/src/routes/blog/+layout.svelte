@@ -76,6 +76,12 @@
 
 	.dl-blog {
 		min-height: 100vh;
+		--shell-max-width: 1400px;
+		--sidebar-width: 220px;
+		--content-max-width: 860px;
+		--toc-width: 200px;
+		--page-gutter: 1.5rem;
+		--rail-gap: 2rem;
 	}
 
 	.dl-blog-header {
@@ -88,7 +94,7 @@
 	}
 
 	.dl-blog-header-inner {
-		max-width: 1400px;
+		max-width: var(--shell-max-width);
 		margin: 0 auto;
 		display: flex;
 		align-items: center;
@@ -141,12 +147,12 @@
 	.dl-blog-icon-link:hover { color: #f1f5f9; }
 
 	.dl-blog-body {
-		max-width: 1400px;
+		max-width: var(--shell-max-width);
 		margin: 0 auto;
 		display: grid;
-		grid-template-columns: 220px minmax(0, 1fr);
-		gap: 2rem;
-		padding: 2.25rem 1.5rem 6rem;
+		grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+		gap: var(--rail-gap);
+		padding: 2.25rem var(--page-gutter) 6rem;
 	}
 
 	.dl-blog-sidebar {

@@ -392,15 +392,21 @@
 
 	.blog-post-layout {
 		position: relative;
-		max-width: 1280px;
+		max-width: calc(var(--content-max-width) + var(--toc-width) + 2rem);
 		margin: 0 auto;
-		padding: 0 1.5rem;
+		padding: 0;
+		display: grid;
+		grid-template-columns: minmax(0, var(--content-max-width)) var(--toc-width);
+		gap: 2rem;
+		justify-content: center;
+		align-items: start;
 	}
 
 	.blog-post-col {
-		max-width: 1060px;
-		margin: 0 auto;
-		padding: 0 2rem;
+		min-width: 0;
+		max-width: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	/* Post header */
@@ -658,6 +664,11 @@
 	}
 
 	.blog-article :global(img) { max-width: 100%; border-radius: 8px; display: block; margin: 1.5rem auto; }
+	.blog-article :global(svg),
+	.blog-article :global(canvas),
+	.blog-article :global(iframe) {
+		max-width: 100%;
+	}
 
 	/* Copy button */
 	:global(.copy-btn) {
@@ -685,12 +696,11 @@
 		opacity: 1;
 	}
 
-	/* ToC — positioned outside the 1060px content column */
 	.blog-toc {
-		position: fixed;
+		position: sticky;
 		top: 72px;
-		left: calc(50% + 530px + 2rem);
-		width: 200px;
+		width: var(--toc-width);
+		height: fit-content;
 		max-height: calc(100vh - 90px);
 		overflow-y: auto;
 		scrollbar-width: thin;
@@ -704,7 +714,11 @@
 		transition: opacity 0.2s;
 	}
 
-	.blog-toc-inner { padding-top: 0.5rem; }
+	.blog-toc-inner {
+		padding-top: 0.5rem;
+		padding-left: 1rem;
+		border-left: 1px solid rgba(30, 36, 51, 0.8);
+	}
 
 	.blog-toc-heading {
 		display: block;
@@ -974,19 +988,24 @@
 	}
 	.back-link:hover { color: #ea4647; }
 
-	@media (max-width: 1400px) {
+	@media (max-width: 1200px) {
 		.blog-toc { display: none; }
+		.blog-post-layout {
+			max-width: min(var(--content-max-width), 100%);
+			grid-template-columns: 1fr;
+		}
 	}
 
 	@media (max-width: 1100px) {
-		.blog-post-layout { padding: 0 1rem; }
-		.blog-post-col { padding: 0; }
 		.brand-loop-links { grid-template-columns: 1fr; }
 		.series-nav-grid { grid-template-columns: 1fr; }
 		.post-nav { grid-template-columns: 1fr; }
 	}
 
 	@media (max-width: 480px) {
-		.blog-post-layout { padding: 0 0.75rem; }
+		.post-header {
+			margin-bottom: 1.5rem;
+			padding-bottom: 1.25rem;
+		}
 	}
 </style>
