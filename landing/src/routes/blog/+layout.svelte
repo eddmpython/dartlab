@@ -165,10 +165,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-		padding: 1rem;
-		border: 1px solid rgba(30, 36, 51, 0.8);
-		border-radius: 18px;
-		background: rgba(15, 18, 25, 0.78);
+		padding: 0.35rem 0;
+	}
+
+	.dl-blog-sidebar-brand {
+		padding: 0 0.15rem 0.2rem;
 	}
 
 	.dl-blog-sidebar-kicker {
@@ -270,7 +271,7 @@
 			flex-direction: row;
 			align-items: center;
 			overflow-x: auto;
-			padding: 0.9rem;
+			padding: 0.25rem 0;
 		}
 
 		.dl-blog-sidebar-brand {

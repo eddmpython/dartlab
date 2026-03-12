@@ -293,14 +293,15 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-		padding: 1rem;
-		border: 1px solid rgba(30, 36, 51, 0.8);
-		border-radius: 18px;
-		background: rgba(15, 18, 25, 0.78);
+		padding: 0.35rem 0;
 		max-height: calc(100vh - 100px);
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+	}
+
+	.dl-docs-sidebar-brand {
+		padding: 0 0.15rem 0.2rem;
 	}
 
 	.dl-docs-sidebar-kicker {
