@@ -7,9 +7,11 @@
 from unittest.mock import MagicMock
 
 import pytest
-from starlette.testclient import TestClient
 
-from dartlab.server import app
+starlette = pytest.importorskip("starlette", reason="starlette not installed (optional [ai] dependency)")
+from starlette.testclient import TestClient  # noqa: E402
+
+from dartlab.server import app  # noqa: E402
 from tests.conftest import SAMSUNG, _has_data
 
 _has_samsung_docs = _has_data(SAMSUNG, "docs")

@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
 from importlib.resources import as_file, files
 from pathlib import Path
-from collections.abc import Iterator
 
 import polars as pl
-
 
 _PROFILE_PACKAGE = "dartlab.engines.dart.docs.sections.profileData"
 
