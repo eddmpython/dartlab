@@ -236,7 +236,7 @@
 
 	.category-post-shell {
 		display: grid;
-		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
 		gap: 1rem;
 		align-items: start;
 	}
@@ -255,12 +255,15 @@
 			rgba(9, 12, 18, 0.96);
 		padding: 0.35rem;
 		overflow: hidden;
+		height: 100%;
+		min-height: 100%;
 	}
 
 	.category-post-preview-image {
 		display: block;
 		width: 100%;
-		height: 132px;
+		height: 100%;
+		min-height: 176px;
 		object-fit: cover;
 		object-position: center;
 		border-radius: 9px;
