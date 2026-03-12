@@ -68,22 +68,26 @@
 			<div class="series-roadmap-list">
 				{#each posts as post, index}
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
-						{#if post.previewAsset}
-							<div class="series-step-preview">
-								<img src="{base}{post.previewAsset}" alt="" class="series-step-preview-image" loading="lazy" />
+						<div class="series-step-shell">
+							{#if post.previewAsset}
+								<div class="series-step-preview">
+									<img src="{base}{post.previewAsset}" alt="" class="series-step-preview-image" loading="lazy" />
+								</div>
+							{/if}
+							<div class="series-step-main">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" />
+								<div class="series-step-body">
+									<div class="series-step-meta">
+										<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
+										<span class="series-step-category">{post.categoryLabel}</span>
+										<span class="series-step-date"><Calendar size={12} /> {formatDate(post.date)} <span class="series-step-dot">·</span> 예상 {post.readingMinutes}분</span>
+									</div>
+									<h2 class="series-step-title">{post.title}</h2>
+									<p class="series-step-desc">{post.description}</p>
+								</div>
 							</div>
-						{/if}
-						<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" />
-						<div class="series-step-body">
-							<div class="series-step-meta">
-								<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
-								<span class="series-step-category">{post.categoryLabel}</span>
-								<span class="series-step-date"><Calendar size={12} /> {formatDate(post.date)} <span class="series-step-dot">·</span> 예상 {post.readingMinutes}분</span>
-							</div>
-							<h2 class="series-step-title">{post.title}</h2>
-							<p class="series-step-desc">{post.description}</p>
+							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
-						<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 					</a>
 				{/each}
 			</div>
@@ -175,10 +179,6 @@
 	}
 
 	.series-step-card {
-		display: grid;
-		grid-template-columns: minmax(220px, 260px) auto 1fr auto;
-		gap: 1rem;
-		align-items: start;
 		padding: 1.35rem 1.4rem;
 		border-radius: 16px;
 		border: 1px solid rgba(30, 36, 51, 0.9);
@@ -190,23 +190,38 @@
 		border-color: rgba(234, 70, 71, 0.28);
 	}
 
+	.series-step-shell {
+		display: grid;
+		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+		gap: 1rem;
+		align-items: start;
+	}
+
 	.series-step-preview {
-		border-radius: 14px;
+		border-radius: 12px;
 		border: 1px solid rgba(30, 36, 51, 0.85);
 		background:
 			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
 			rgba(9, 12, 18, 0.96);
-		padding: 0.45rem;
+		padding: 0.35rem;
 		overflow: hidden;
 	}
 
 	.series-step-preview-image {
 		display: block;
 		width: 100%;
-		height: 140px;
+		height: 132px;
 		object-fit: cover;
-		object-position: top center;
-		border-radius: 10px;
+		object-position: center;
+		border-radius: 9px;
+	}
+
+	.series-step-main {
+		min-width: 0;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		gap: 1rem;
+		align-items: start;
 	}
 
 	.series-step-avatar {
@@ -326,7 +341,8 @@
 	}
 
 	@media (max-width: 820px) {
-		.series-step-card {
+		.series-step-shell,
+		.series-step-main {
 			grid-template-columns: 1fr;
 		}
 

@@ -79,30 +79,34 @@
 		<section class="category-posts">
 			{#each posts as post}
 				<a href="{base}/blog/{post.slug}" class="category-post-card">
-					{#if post.previewAsset}
-						<div class="category-post-preview">
-							<img src="{base}{post.previewAsset}" alt="" class="category-post-preview-image" loading="lazy" />
-						</div>
-					{/if}
-					<div class="category-post-top">
-						<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" />
-						<div class="category-post-meta">
-							{#if post.seriesLabel}
-								<span class="category-post-series">{post.seriesLabel}</span>
-							{/if}
-							<div class="category-post-date">
-								<Calendar size={12} />
-								{formatDate(post.date)}
-								<span class="category-post-dot">·</span>
-								예상 {post.readingMinutes}분
+					<div class="category-post-shell">
+						{#if post.previewAsset}
+							<div class="category-post-preview">
+								<img src="{base}{post.previewAsset}" alt="" class="category-post-preview-image" loading="lazy" />
 							</div>
+						{/if}
+						<div class="category-post-body">
+							<div class="category-post-top">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" />
+								<div class="category-post-meta">
+									{#if post.seriesLabel}
+										<span class="category-post-series">{post.seriesLabel}</span>
+									{/if}
+									<div class="category-post-date">
+										<Calendar size={12} />
+										{formatDate(post.date)}
+										<span class="category-post-dot">·</span>
+										예상 {post.readingMinutes}분
+									</div>
+								</div>
+							</div>
+							<h2 class="category-post-title">{post.title}</h2>
+							<p class="category-post-desc">{post.description}</p>
+							<span class="category-post-cta">
+								읽기 <ArrowRight size={14} />
+							</span>
 						</div>
 					</div>
-					<h2 class="category-post-title">{post.title}</h2>
-					<p class="category-post-desc">{post.description}</p>
-					<span class="category-post-cta">
-						읽기 <ArrowRight size={14} />
-					</span>
 				</a>
 			{/each}
 		</section>
@@ -217,9 +221,6 @@
 	}
 
 	.category-post-card {
-		display: flex;
-		flex-direction: column;
-		gap: 0.7rem;
 		padding: 1.4rem 1.5rem;
 		border-radius: 16px;
 		border: 1px solid rgba(30, 36, 51, 0.9);
@@ -233,6 +234,13 @@
 		transform: translateY(-1px);
 	}
 
+	.category-post-shell {
+		display: grid;
+		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+		gap: 1rem;
+		align-items: start;
+	}
+
 	.category-post-top {
 		display: flex;
 		align-items: center;
@@ -240,23 +248,29 @@
 	}
 
 	.category-post-preview {
-		margin: -0.2rem -0.15rem 0.15rem;
-		border-radius: 14px;
+		border-radius: 12px;
 		border: 1px solid rgba(30, 36, 51, 0.85);
 		background:
 			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
 			rgba(9, 12, 18, 0.96);
-		padding: 0.45rem;
+		padding: 0.35rem;
 		overflow: hidden;
 	}
 
 	.category-post-preview-image {
 		display: block;
 		width: 100%;
-		height: 150px;
+		height: 132px;
 		object-fit: cover;
-		object-position: top center;
-		border-radius: 10px;
+		object-position: center;
+		border-radius: 9px;
+	}
+
+	.category-post-body {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.7rem;
 	}
 
 	.category-post-meta {
@@ -307,6 +321,12 @@
 		color: #ea4647;
 		font-size: 0.82rem;
 		font-weight: 700;
+	}
+
+	@media (max-width: 900px) {
+		.category-post-shell {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.category-footer-brand {

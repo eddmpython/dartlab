@@ -102,30 +102,34 @@
 		<div class="latest-list">
 			{#each latestPosts as post}
 				<a href="{base}/blog/{post.slug}" class="latest-card">
-					{#if post.previewAsset}
-						<div class="latest-preview">
-							<img src="{base}{post.previewAsset}" alt="" class="latest-preview-image" loading="lazy" />
-						</div>
-					{/if}
-					<div class="latest-card-top">
-						<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="56" height="56" />
-						<div class="latest-card-copy">
-							<div class="latest-meta">
-								<span class="latest-badge">{post.categoryLabel}</span>
-								{#if post.seriesLabel}
-									<span class="latest-series">{post.seriesLabel}</span>
-								{/if}
+					<div class="latest-card-shell">
+						{#if post.previewAsset}
+							<div class="latest-preview">
+								<img src="{base}{post.previewAsset}" alt="" class="latest-preview-image" loading="lazy" />
 							</div>
-							<div class="latest-date">
-								<Calendar size={12} />
-								{formatDate(post.date)}
-								<span class="latest-dot">·</span>
-								예상 {post.readingMinutes}분
+						{/if}
+						<div class="latest-card-body">
+							<div class="latest-card-top">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="56" height="56" />
+								<div class="latest-card-copy">
+									<div class="latest-meta">
+										<span class="latest-badge">{post.categoryLabel}</span>
+										{#if post.seriesLabel}
+											<span class="latest-series">{post.seriesLabel}</span>
+										{/if}
+									</div>
+									<div class="latest-date">
+										<Calendar size={12} />
+										{formatDate(post.date)}
+										<span class="latest-dot">·</span>
+										예상 {post.readingMinutes}분
+									</div>
+								</div>
 							</div>
+							<h3 class="latest-title">{post.title}</h3>
+							<p class="latest-desc">{post.description}</p>
 						</div>
 					</div>
-					<h3 class="latest-title">{post.title}</h3>
-					<p class="latest-desc">{post.description}</p>
 				</a>
 			{/each}
 		</div>
@@ -363,9 +367,6 @@
 	}
 
 	.latest-card {
-		display: flex;
-		flex-direction: column;
-		gap: 0.7rem;
 		padding: 1.3rem 1.4rem;
 		border-radius: 14px;
 		border: 1px solid rgba(30, 36, 51, 0.9);
@@ -379,6 +380,13 @@
 		transform: translateY(-1px);
 	}
 
+	.latest-card-shell {
+		display: grid;
+		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+		gap: 1rem;
+		align-items: start;
+	}
+
 	.latest-card-top {
 		display: flex;
 		align-items: center;
@@ -386,23 +394,29 @@
 	}
 
 	.latest-preview {
-		margin: -0.15rem -0.25rem 0.2rem;
-		border-radius: 14px;
+		border-radius: 12px;
 		border: 1px solid rgba(30, 36, 51, 0.85);
 		background:
 			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
 			rgba(9, 12, 18, 0.96);
-		padding: 0.5rem;
+		padding: 0.35rem;
 		overflow: hidden;
 	}
 
 	.latest-preview-image {
 		display: block;
 		width: 100%;
-		height: 160px;
+		height: 132px;
 		object-fit: cover;
-		object-position: top center;
-		border-radius: 10px;
+		object-position: center;
+		border-radius: 9px;
+	}
+
+	.latest-card-body {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.7rem;
 	}
 
 	.latest-avatar {
@@ -526,8 +540,8 @@
 			align-items: flex-start;
 		}
 
-		.latest-card-top {
-			align-items: flex-start;
+		.latest-card-shell {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
