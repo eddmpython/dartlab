@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg10c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg10c)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Capex Type Matrix</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">Capex size matters less than purpose, timing, and payoff visibility</text>
+
+  <path d="M120 350V100" stroke="#334155" stroke-width="2"/>
+  <path d="M120 350H700" stroke="#334155" stroke-width="2"/>
+  <text x="92" y="110" transform="rotate(-90 92 110)" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Strategic risk</text>
+  <text x="650" y="382" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">Payoff visibility</text>
+
+  <rect x="168" y="264" width="150" height="70" rx="10" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="243" y="290" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#7dd3fc">Maintenance</text>
+  <text x="243" y="309" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Defensive spend</text>
+
+  <rect x="338" y="214" width="150" height="70" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="413" y="240" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#86efac">Efficiency</text>
+  <text x="413" y="259" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Margin support</text>
+
+  <rect x="510" y="156" width="150" height="70" rx="10" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="585" y="182" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#fdba74">Expansion</text>
+  <text x="585" y="201" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Growth response</text>
+
+  <rect x="536" y="78" width="150" height="70" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="611" y="104" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">New Business</text>
+  <text x="611" y="123" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Option-like bet</text>
+
+  <rect x="120" y="84" width="352" height="74" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="140" y="110" font-family="JetBrains Mono,monospace" font-size="10" fill="#7dd3fc">Question 1</text>
+  <text x="140" y="129" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Does this capex preserve the existing business, improve margins,</text>
+  <text x="140" y="145" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">expand proven demand, or fund an unproven option?</text>
+
+  <rect x="120" y="172" width="352" height="74" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="140" y="198" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Question 2</text>
+  <text x="140" y="217" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Can you identify schedule, demand evidence, and margin path</text>
+  <text x="140" y="233" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">from the annual report and notes?</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg10d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg10d)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Expansion Risk Checklist</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">A good expansion is demand-backed, visible, and economically absorbable</text>
+
+  <rect x="44" y="86" width="332" height="284" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="210" y="114" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#86efac">Good Expansion</text>
+  <text x="68" y="154" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="154" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Utilization was already high</text>
+  <text x="68" y="186" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="186" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Demand evidence exists: contracts, orders, customer growth</text>
+  <text x="68" y="218" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="218" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Construction-in-progress and cash outflow both move</text>
+  <text x="68" y="250" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="250" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Management gives dates, lines, and utilization targets</text>
+  <text x="68" y="282" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="282" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Margin story survives depreciation and ramp-up cost</text>
+  <text x="68" y="314" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">[+]</text>
+  <text x="102" y="314" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Expansion strengthens the core business</text>
+
+  <rect x="424" y="86" width="332" height="284" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="590" y="114" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#f87171">Risky Expansion</text>
+  <text x="448" y="154" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="154" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Utilization was still low before spending</text>
+  <text x="448" y="186" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="186" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Narrative is vague: “future growth”, “market opportunity”</text>
+  <text x="448" y="218" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="218" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Capex plan is large but asset build-up is weak</text>
+  <text x="448" y="250" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="250" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Debt rises faster than operating cash generation</text>
+  <text x="448" y="282" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="282" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Ramp-up cost and depreciation are ignored in guidance</text>
+  <text x="448" y="314" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">[-]</text>
+  <text x="482" y="314" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Expansion is far from the existing competitive edge</text>
+</svg>

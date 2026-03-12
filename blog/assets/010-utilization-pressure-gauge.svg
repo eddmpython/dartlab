@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg10b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg10b)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Utilization Pressure Gauge</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">High utilization is useful only when the company can explain its next move</text>
+
+  <rect x="60" y="118" width="150" height="88" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="135" y="145" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#86efac">60% below</text>
+  <text x="135" y="168" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Slack capacity</text>
+  <text x="135" y="184" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Watch demand weakness</text>
+
+  <rect x="224" y="118" width="150" height="88" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="299" y="145" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#7dd3fc">70% to 80%</text>
+  <text x="299" y="168" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cffafe">Balanced zone</text>
+  <text x="299" y="184" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Room for growth remains</text>
+
+  <rect x="388" y="118" width="150" height="88" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="463" y="145" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#fdba74">85% to 90%</text>
+  <text x="463" y="168" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffedd5">Pre-bottleneck</text>
+  <text x="463" y="184" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Check capex timing</text>
+
+  <rect x="552" y="118" width="188" height="88" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="646" y="145" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#f87171">90% above</text>
+  <text x="646" y="168" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Tight system pressure</text>
+  <text x="646" y="184" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Margin and quality risk rise</text>
+
+  <path d="M90 262H708" stroke="#1e2433" stroke-width="18" stroke-linecap="round"/>
+  <path d="M90 262H250" stroke="#22c55e" stroke-width="18" stroke-linecap="round"/>
+  <path d="M250 262H410" stroke="#38bdf8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M410 262H570" stroke="#fb923c" stroke-width="18" stroke-linecap="round"/>
+  <path d="M570 262H708" stroke="#ea4647" stroke-width="18" stroke-linecap="round"/>
+
+  <circle cx="610" cy="262" r="16" fill="#f8fafc" stroke="#ea4647" stroke-width="4"/>
+  <text x="610" y="302" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">Example: 93%</text>
+
+  <rect x="88" y="320" width="624" height="52" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="108" y="343" font-family="JetBrains Mono,monospace" font-size="10" fill="#fbbf24">Read with:</text>
+  <text x="182" y="343" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">outsourcing, maintenance delay, line-specific mix, capex schedule, construction-in-progress</text>
+  <text x="108" y="362" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Avoid:</text>
+  <text x="158" y="362" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">treating a high utilization number as a standalone bullish signal</text>
+</svg>

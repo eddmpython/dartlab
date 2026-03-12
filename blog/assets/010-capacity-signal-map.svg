@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" fill="none">
+  <defs>
+    <linearGradient id="bg10a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="430" rx="12" fill="url(#bg10a)"/>
+  <rect x="0.5" y="0.5" width="799" height="429" rx="12" stroke="#1e2433"/>
+  <text x="400" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">Capacity Signal Map</text>
+  <text x="400" y="52" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b">How capacity pressure turns into growth, capex, and margin risk</text>
+
+  <rect x="38" y="96" width="146" height="92" rx="10" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
+  <text x="111" y="122" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#7dd3fc">Demand</text>
+  <text x="111" y="143" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Orders increase</text>
+  <text x="111" y="159" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">or customers expand</text>
+
+  <rect x="224" y="96" width="164" height="92" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="306" y="122" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">Capacity</text>
+  <text x="306" y="143" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Can the system</text>
+  <text x="306" y="159" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">absorb more volume?</text>
+
+  <rect x="428" y="96" width="164" height="92" rx="10" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
+  <text x="510" y="122" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#fdba74">Utilization</text>
+  <text x="510" y="143" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Pressure rises</text>
+  <text x="510" y="159" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">before revenue peaks</text>
+
+  <rect x="614" y="96" width="148" height="92" rx="10" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
+  <text x="688" y="122" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#86efac">Capex</text>
+  <text x="688" y="143" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#dcfce7">Expand, automate,</text>
+  <text x="688" y="159" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">or maintain</text>
+
+  <path d="M184 142H224" stroke="#334155" stroke-width="2"/>
+  <path d="M388 142H428" stroke="#334155" stroke-width="2"/>
+  <path d="M592 142H614" stroke="#334155" stroke-width="2"/>
+  <path d="M214 142l-8-6v12l8-6Z" fill="#334155"/>
+  <path d="M418 142l-8-6v12l8-6Z" fill="#334155"/>
+  <path d="M604 142l-8-6v12l8-6Z" fill="#334155"/>
+
+  <rect x="56" y="244" width="330" height="118" rx="10" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="76" y="272" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f1f5f9">Healthy Loop</text>
+  <text x="76" y="296" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Demand rises -> utilization tightens -> targeted capex follows</text>
+  <text x="76" y="314" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">Capacity expands in time -> revenue grows without margin shock</text>
+  <text x="76" y="338" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">Signal:</text>
+  <text x="132" y="338" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">high utilization + specific schedule + visible asset build-up</text>
+
+  <rect x="414" y="244" width="330" height="118" rx="10" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
+  <text x="434" y="272" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#f87171">Risk Loop</text>
+  <text x="434" y="296" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">Demand rises -> utilization saturates -> capex is late or vague</text>
+  <text x="434" y="314" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#fecaca">External outsourcing, quality cost, and margin pressure appear first</text>
+  <text x="434" y="338" font-family="JetBrains Mono,monospace" font-size="10" fill="#fdba74">Signal:</text>
+  <text x="486" y="338" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">95% utilization + abstract explanation + weak cash evidence</text>
+</svg>
