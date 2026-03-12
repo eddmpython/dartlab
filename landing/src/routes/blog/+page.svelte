@@ -104,22 +104,27 @@
 				<a href="{base}/blog/{post.slug}" class="latest-card">
 					<div class="latest-card-shell">
 						<div class="latest-card-body">
-							<div class="latest-meta">
-								<span class="latest-badge">{post.categoryLabel}</span>
-								{#if post.seriesLabel}
-									<span class="latest-series">{post.seriesLabel}</span>
-								{/if}
-							</div>
-							<div class="latest-date">
-								<Calendar size={12} />
-								{formatDate(post.date)}
-								<span class="latest-dot">·</span>
-								예상 {post.readingMinutes}분
+							<div class="latest-card-top">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="52" height="52" loading="lazy" />
+								<div class="latest-card-copy">
+									<div class="latest-meta">
+										<span class="latest-badge">{post.categoryLabel}</span>
+										{#if post.seriesLabel}
+											<span class="latest-series">{post.seriesLabel}</span>
+										{/if}
+									</div>
+									<div class="latest-date">
+										<Calendar size={12} />
+										{formatDate(post.date)}
+										<span class="latest-dot">·</span>
+										예상 {post.readingMinutes}분
+									</div>
+								</div>
 							</div>
 							<h3 class="latest-title">{post.title}</h3>
 							<p class="latest-desc">{post.description}</p>
 						</div>
-						<img src="{base}{post.thumbnail}" alt={post.title} class="latest-thumb" width="196" height="128" loading="lazy" />
+						<img src="{base}{post.previewAsset ?? post.thumbnail}" alt={post.title} class="latest-thumb" width="196" height="128" loading="lazy" />
 					</div>
 				</a>
 			{/each}
@@ -384,6 +389,28 @@
 		flex-direction: column;
 		gap: 0.55rem;
 		justify-content: center;
+	}
+
+	.latest-card-top {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
+	.latest-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
+	}
+
+	.latest-card-copy {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
 	}
 
 	.latest-date {

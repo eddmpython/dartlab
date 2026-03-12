@@ -81,15 +81,18 @@
 				<a href="{base}/blog/{post.slug}" class="category-post-card">
 					<div class="category-post-shell">
 						<div class="category-post-body">
-							<div class="category-post-meta">
-								{#if post.seriesLabel}
-									<span class="category-post-series">{post.seriesLabel}</span>
-								{/if}
-								<div class="category-post-date">
-									<Calendar size={12} />
-									{formatDate(post.date)}
-									<span class="category-post-dot">·</span>
-									예상 {post.readingMinutes}분
+							<div class="category-post-top">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
+								<div class="category-post-meta">
+									{#if post.seriesLabel}
+										<span class="category-post-series">{post.seriesLabel}</span>
+									{/if}
+									<div class="category-post-date">
+										<Calendar size={12} />
+										{formatDate(post.date)}
+										<span class="category-post-dot">·</span>
+										예상 {post.readingMinutes}분
+									</div>
 								</div>
 							</div>
 							<h2 class="category-post-title">{post.title}</h2>
@@ -98,7 +101,7 @@
 								읽기 <ArrowRight size={14} />
 							</span>
 						</div>
-						<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-thumb" width="196" height="128" loading="lazy" />
+						<img src="{base}{post.previewAsset ?? post.thumbnail}" alt={post.title} class="category-post-thumb" width="196" height="128" loading="lazy" />
 					</div>
 				</a>
 			{/each}
@@ -242,11 +245,26 @@
 		justify-content: center;
 	}
 
+	.category-post-top {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
 	.category-post-meta {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 0.45rem;
+	}
+
+	.category-post-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
 	}
 
 	.category-post-date {

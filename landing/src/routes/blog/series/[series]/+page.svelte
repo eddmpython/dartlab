@@ -70,6 +70,7 @@
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
 						<div class="series-step-shell">
 							<div class="series-step-main">
+								<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" loading="lazy" />
 								<div class="series-step-body">
 									<div class="series-step-meta">
 										<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
@@ -80,7 +81,7 @@
 									<p class="series-step-desc">{post.description}</p>
 								</div>
 							</div>
-							<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-thumb" width="196" height="128" loading="lazy" />
+							<img src="{base}{post.previewAsset ?? post.thumbnail}" alt={post.title} class="series-step-thumb" width="196" height="128" loading="lazy" />
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>
@@ -194,7 +195,19 @@
 
 	.series-step-main {
 		min-width: 0;
-		display: block;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 0.85rem;
+		align-items: center;
+	}
+
+	.series-step-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
 	}
 
 	.series-step-index {
@@ -316,6 +329,10 @@
 	@media (max-width: 820px) {
 		.series-step-shell {
 			grid-template-columns: 1fr;
+		}
+
+		.series-step-main {
+			grid-template-columns: auto minmax(0, 1fr);
 		}
 
 		.series-step-thumb {
