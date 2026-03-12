@@ -102,15 +102,20 @@
 		<div class="latest-list">
 			{#each latestPosts as post}
 				<a href="{base}/blog/{post.slug}" class="latest-card">
-					<div class="latest-meta">
-						<span class="latest-badge">{post.categoryLabel}</span>
-						{#if post.seriesLabel}
-							<span class="latest-series">{post.seriesLabel}</span>
-						{/if}
-					</div>
-					<div class="latest-date">
-						<Calendar size={12} />
-						{formatDate(post.date)}
+					<div class="latest-card-top">
+						<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="56" height="56" />
+						<div class="latest-card-copy">
+							<div class="latest-meta">
+								<span class="latest-badge">{post.categoryLabel}</span>
+								{#if post.seriesLabel}
+									<span class="latest-series">{post.seriesLabel}</span>
+								{/if}
+							</div>
+							<div class="latest-date">
+								<Calendar size={12} />
+								{formatDate(post.date)}
+							</div>
+						</div>
 					</div>
 					<h3 class="latest-title">{post.title}</h3>
 					<p class="latest-desc">{post.description}</p>
@@ -367,6 +372,28 @@
 		transform: translateY(-1px);
 	}
 
+	.latest-card-top {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+	}
+
+	.latest-avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
+	}
+
+	.latest-card-copy {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
 	.latest-date {
 		display: flex;
 		align-items: center;
@@ -464,6 +491,10 @@
 
 		.section-head {
 			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.latest-card-top {
 			align-items: flex-start;
 		}
 	}

@@ -79,13 +79,16 @@
 		<section class="category-posts">
 			{#each posts as post}
 				<a href="{base}/blog/{post.slug}" class="category-post-card">
-					<div class="category-post-meta">
-						{#if post.seriesLabel}
-							<span class="category-post-series">{post.seriesLabel}</span>
-						{/if}
-						<div class="category-post-date">
-							<Calendar size={12} />
-							{formatDate(post.date)}
+					<div class="category-post-top">
+						<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" />
+						<div class="category-post-meta">
+							{#if post.seriesLabel}
+								<span class="category-post-series">{post.seriesLabel}</span>
+							{/if}
+							<div class="category-post-date">
+								<Calendar size={12} />
+								{formatDate(post.date)}
+							</div>
 						</div>
 					</div>
 					<h2 class="category-post-title">{post.title}</h2>
@@ -223,11 +226,26 @@
 		transform: translateY(-1px);
 	}
 
+	.category-post-top {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
 	.category-post-meta {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.6rem;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.45rem;
+	}
+
+	.category-post-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
 	}
 
 	.category-post-date {

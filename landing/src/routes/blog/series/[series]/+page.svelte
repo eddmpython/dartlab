@@ -68,9 +68,10 @@
 			<div class="series-roadmap-list">
 				{#each posts as post, index}
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
-						<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
+						<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" />
 						<div class="series-step-body">
 							<div class="series-step-meta">
+								<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
 								<span class="series-step-category">{post.categoryLabel}</span>
 								<span class="series-step-date"><Calendar size={12} /> {formatDate(post.date)}</span>
 							</div>
@@ -184,6 +185,15 @@
 		border-color: rgba(234, 70, 71, 0.28);
 	}
 
+	.series-step-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(234, 70, 71, 0.18);
+		background: rgba(15, 18, 25, 0.92);
+		flex-shrink: 0;
+	}
+
 	.series-step-index {
 		display: inline-flex;
 		align-items: center;
@@ -201,6 +211,7 @@
 	.series-step-meta {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: 0.6rem;
 		margin-bottom: 0.5rem;
 	}
@@ -288,6 +299,10 @@
 	@media (max-width: 820px) {
 		.series-step-card {
 			grid-template-columns: 1fr;
+		}
+
+		.series-step-avatar {
+			margin-bottom: 0.2rem;
 		}
 	}
 </style>
