@@ -103,32 +103,23 @@
 			{#each latestPosts as post}
 				<a href="{base}/blog/{post.slug}" class="latest-card">
 					<div class="latest-card-shell">
-						{#if post.previewAsset}
-							<div class="latest-preview">
-								<img src="{base}{post.previewAsset}" alt="" class="latest-preview-image" loading="lazy" />
-							</div>
-						{/if}
 						<div class="latest-card-body">
-							<div class="latest-card-top">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="56" height="56" />
-								<div class="latest-card-copy">
-									<div class="latest-meta">
-										<span class="latest-badge">{post.categoryLabel}</span>
-										{#if post.seriesLabel}
-											<span class="latest-series">{post.seriesLabel}</span>
-										{/if}
-									</div>
-									<div class="latest-date">
-										<Calendar size={12} />
-										{formatDate(post.date)}
-										<span class="latest-dot">·</span>
-										예상 {post.readingMinutes}분
-									</div>
-								</div>
+							<div class="latest-meta">
+								<span class="latest-badge">{post.categoryLabel}</span>
+								{#if post.seriesLabel}
+									<span class="latest-series">{post.seriesLabel}</span>
+								{/if}
+							</div>
+							<div class="latest-date">
+								<Calendar size={12} />
+								{formatDate(post.date)}
+								<span class="latest-dot">·</span>
+								예상 {post.readingMinutes}분
 							</div>
 							<h3 class="latest-title">{post.title}</h3>
 							<p class="latest-desc">{post.description}</p>
 						</div>
+						<img src="{base}{post.thumbnail}" alt={post.title} class="latest-thumb" width="196" height="128" loading="lazy" />
 					</div>
 				</a>
 			{/each}
@@ -382,60 +373,17 @@
 
 	.latest-card-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+		grid-template-columns: minmax(0, 1fr) 196px;
 		gap: 1rem;
-		align-items: start;
-	}
-
-	.latest-card-top {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
-	}
-
-	.latest-preview {
-		border-radius: 12px;
-		border: 1px solid rgba(30, 36, 51, 0.85);
-		background:
-			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-			rgba(9, 12, 18, 0.96);
-		padding: 0.35rem;
-		overflow: hidden;
-		height: 100%;
-		min-height: 100%;
-	}
-
-	.latest-preview-image {
-		display: block;
-		width: 100%;
-		height: 100%;
-		min-height: 172px;
-		object-fit: cover;
-		object-position: center;
-		border-radius: 9px;
+		align-items: stretch;
 	}
 
 	.latest-card-body {
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.7rem;
-	}
-
-	.latest-avatar {
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		border: 1px solid rgba(234, 70, 71, 0.18);
-		background: rgba(15, 18, 25, 0.92);
-		flex-shrink: 0;
-	}
-
-	.latest-card-copy {
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.55rem;
+		justify-content: center;
 	}
 
 	.latest-date {
@@ -449,6 +397,16 @@
 
 	.latest-dot {
 		color: rgba(100, 116, 139, 0.72);
+	}
+
+	.latest-thumb {
+		display: block;
+		width: 196px;
+		height: 128px;
+		object-fit: cover;
+		object-position: center;
+		border-radius: 8px;
+		align-self: center;
 	}
 
 	.latest-title {
@@ -545,6 +503,12 @@
 
 		.latest-card-shell {
 			grid-template-columns: 1fr;
+		}
+
+		.latest-thumb {
+			width: 100%;
+			max-width: 260px;
+			justify-self: end;
 		}
 	}
 </style>

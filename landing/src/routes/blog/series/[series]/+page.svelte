@@ -69,13 +69,7 @@
 				{#each posts as post, index}
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
 						<div class="series-step-shell">
-							{#if post.previewAsset}
-								<div class="series-step-preview">
-									<img src="{base}{post.previewAsset}" alt="" class="series-step-preview-image" loading="lazy" />
-								</div>
-							{/if}
 							<div class="series-step-main">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" />
 								<div class="series-step-body">
 									<div class="series-step-meta">
 										<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
@@ -86,6 +80,7 @@
 									<p class="series-step-desc">{post.description}</p>
 								</div>
 							</div>
+							<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-thumb" width="196" height="128" loading="lazy" />
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>
@@ -192,48 +187,14 @@
 
 	.series-step-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+		grid-template-columns: minmax(0, 1fr) 196px auto;
 		gap: 1rem;
-		align-items: start;
-	}
-
-	.series-step-preview {
-		border-radius: 12px;
-		border: 1px solid rgba(30, 36, 51, 0.85);
-		background:
-			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-			rgba(9, 12, 18, 0.96);
-		padding: 0.35rem;
-		overflow: hidden;
-		height: 100%;
-		min-height: 100%;
-	}
-
-	.series-step-preview-image {
-		display: block;
-		width: 100%;
-		height: 100%;
-		min-height: 176px;
-		object-fit: cover;
-		object-position: center;
-		border-radius: 9px;
+		align-items: center;
 	}
 
 	.series-step-main {
 		min-width: 0;
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr) auto;
-		gap: 1rem;
-		align-items: start;
-	}
-
-	.series-step-avatar {
-		width: 52px;
-		height: 52px;
-		border-radius: 50%;
-		border: 1px solid rgba(234, 70, 71, 0.18);
-		background: rgba(15, 18, 25, 0.92);
-		flex-shrink: 0;
+		display: block;
 	}
 
 	.series-step-index {
@@ -283,6 +244,15 @@
 
 	.series-step-dot {
 		color: rgba(100, 116, 139, 0.72);
+	}
+
+	.series-step-thumb {
+		display: block;
+		width: 196px;
+		height: 128px;
+		object-fit: cover;
+		object-position: center;
+		border-radius: 8px;
 	}
 
 	.series-step-title {
@@ -344,13 +314,14 @@
 	}
 
 	@media (max-width: 820px) {
-		.series-step-shell,
-		.series-step-main {
+		.series-step-shell {
 			grid-template-columns: 1fr;
 		}
 
-		.series-step-avatar {
-			margin-bottom: 0.2rem;
+		.series-step-thumb {
+			width: 100%;
+			max-width: 260px;
+			justify-self: end;
 		}
 	}
 </style>

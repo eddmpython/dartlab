@@ -80,24 +80,16 @@
 			{#each posts as post}
 				<a href="{base}/blog/{post.slug}" class="category-post-card">
 					<div class="category-post-shell">
-						{#if post.previewAsset}
-							<div class="category-post-preview">
-								<img src="{base}{post.previewAsset}" alt="" class="category-post-preview-image" loading="lazy" />
-							</div>
-						{/if}
 						<div class="category-post-body">
-							<div class="category-post-top">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" />
-								<div class="category-post-meta">
-									{#if post.seriesLabel}
-										<span class="category-post-series">{post.seriesLabel}</span>
-									{/if}
-									<div class="category-post-date">
-										<Calendar size={12} />
-										{formatDate(post.date)}
-										<span class="category-post-dot">·</span>
-										예상 {post.readingMinutes}분
-									</div>
+							<div class="category-post-meta">
+								{#if post.seriesLabel}
+									<span class="category-post-series">{post.seriesLabel}</span>
+								{/if}
+								<div class="category-post-date">
+									<Calendar size={12} />
+									{formatDate(post.date)}
+									<span class="category-post-dot">·</span>
+									예상 {post.readingMinutes}분
 								</div>
 							</div>
 							<h2 class="category-post-title">{post.title}</h2>
@@ -106,6 +98,7 @@
 								읽기 <ArrowRight size={14} />
 							</span>
 						</div>
+						<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-thumb" width="196" height="128" loading="lazy" />
 					</div>
 				</a>
 			{/each}
@@ -236,44 +229,17 @@
 
 	.category-post-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+		grid-template-columns: minmax(0, 1fr) 196px;
 		gap: 1rem;
-		align-items: start;
-	}
-
-	.category-post-top {
-		display: flex;
-		align-items: center;
-		gap: 0.85rem;
-	}
-
-	.category-post-preview {
-		border-radius: 12px;
-		border: 1px solid rgba(30, 36, 51, 0.85);
-		background:
-			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-			rgba(9, 12, 18, 0.96);
-		padding: 0.35rem;
-		overflow: hidden;
-		height: 100%;
-		min-height: 100%;
-	}
-
-	.category-post-preview-image {
-		display: block;
-		width: 100%;
-		height: 100%;
-		min-height: 176px;
-		object-fit: cover;
-		object-position: center;
-		border-radius: 9px;
+		align-items: stretch;
 	}
 
 	.category-post-body {
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.7rem;
+		gap: 0.45rem;
+		justify-content: center;
 	}
 
 	.category-post-meta {
@@ -281,15 +247,6 @@
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 0.45rem;
-	}
-
-	.category-post-avatar {
-		width: 52px;
-		height: 52px;
-		border-radius: 50%;
-		border: 1px solid rgba(234, 70, 71, 0.18);
-		background: rgba(15, 18, 25, 0.92);
-		flex-shrink: 0;
 	}
 
 	.category-post-date {
@@ -303,6 +260,16 @@
 
 	.category-post-dot {
 		color: rgba(100, 116, 139, 0.72);
+	}
+
+	.category-post-thumb {
+		display: block;
+		width: 196px;
+		height: 128px;
+		object-fit: cover;
+		object-position: center;
+		border-radius: 8px;
+		align-self: center;
 	}
 
 	.category-post-title {
@@ -329,6 +296,12 @@
 	@media (max-width: 900px) {
 		.category-post-shell {
 			grid-template-columns: 1fr;
+		}
+
+		.category-post-thumb {
+			width: 100%;
+			max-width: 260px;
+			justify-self: end;
 		}
 	}
 
