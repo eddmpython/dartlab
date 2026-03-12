@@ -1,0 +1,14 @@
+{
+  "매출에관한사항": [
+    "salesOrder"
+  ],
+  "연구개발활동": [
+    "majorContractsAndRnd"
+  ],
+  "경영상의주요계약등": [
+    "majorContractsAndRnd"
+  ],
+  "파생상품등에관한사항": [
+    "riskDerivative"
+  ]
+}

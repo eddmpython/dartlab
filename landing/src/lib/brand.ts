@@ -22,6 +22,7 @@ export const brand = {
 			label: '정기보고서 데이터',
 			shards: ['data-report-1', 'data-report-2', 'data-report-3', 'data-report-4'],
 		},
+		edgarDocs: { tag: 'data-edgar-docs', dir: 'edgar/docs', label: 'SEC EDGAR 공시 문서 데이터' },
 		edgar: { dir: 'edgar/finance', label: 'SEC EDGAR 재무 데이터' },
 	},
 

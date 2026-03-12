@@ -6,5 +6,22 @@ from dartlab.engines.dart.docs.sections.types import (
     SectionResult,
     YearSections,
 )
+from dartlab.engines.dart.docs.sections.views import (
+    buildMarkdownBlocks,
+    buildMarkdownWide,
+    contextSlices,
+    retrievalBlocks,
+    sortPeriods,
+)
 
-__all__ = ["sections", "SectionChunk", "SectionResult", "YearSections"]
+__all__ = [
+    "sections",
+    "retrievalBlocks",
+    "contextSlices",
+    "buildMarkdownBlocks",
+    "buildMarkdownWide",
+    "sortPeriods",
+    "SectionChunk",
+    "SectionResult",
+    "YearSections",
+]

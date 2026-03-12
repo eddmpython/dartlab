@@ -730,6 +730,32 @@ class KRCompany:
         """사업보고서 전체 섹션 텍스트 — topic(행) × period(열) DataFrame."""
         return self._get_primary("sections")
 
+    @property
+    def retrievalBlocks(self) -> pl.DataFrame | None:
+        """원문 markdown 보존 retrieval block DataFrame."""
+        if not self._hasDocs:
+            return None
+        cacheKey = "retrievalBlocks"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.dart.docs.sections import retrievalBlocks
+        result = retrievalBlocks(self.stockCode)
+        self._cache[cacheKey] = result
+        return result
+
+    @property
+    def contextSlices(self) -> pl.DataFrame | None:
+        """LLM 투입용 context slice DataFrame."""
+        if not self._hasDocs:
+            return None
+        cacheKey = "contextSlices"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.dart.docs.sections import contextSlices
+        result = contextSlices(self.stockCode)
+        self._cache[cacheKey] = result
+        return result
+
     # ── holderOverview (별도 함수) ──
 
     @property

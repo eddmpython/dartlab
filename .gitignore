@@ -8,9 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+.venv-wsl
 
 
 CLAUDE.md
+AGENT.md
 .agent/
 
 # Data (available via gh release)
@@ -22,6 +24,9 @@ _reference/
 # Backup (파일 삭제 대신 이동)
 _backup/
 
+# Local agent/tooling state
+.claude/
+
 # Node modules (all locations)
 node_modules/
 
@@ -32,3 +37,8 @@ landing/static/blog/assets/
 
 # MkDocs build
 site/
+
+# Local experiment artifacts
+experiments/**/output/
+experiments/055_edgarDocs/*.parquet
+experiments/055_edgarDocs/batch/

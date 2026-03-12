@@ -28,10 +28,19 @@ import polars as pl
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.sections.chunker import chunkRows
+from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.engines.dart.docs.sections.runtime import (
+    applyProjections,
+    baseChunkPath,
+    chapterFromMajorNum,
+    chapterTeacherTopics,
+    projectionSuppressedTopics,
+)
 from dartlab.engines.dart.docs.sections.types import (
     SectionChunk,
     YearSections,
 )
+from dartlab.engines.dart.docs.sections.views import sortPeriods
 
 _REPORT_KINDS = [
     ("annual", ""),
@@ -41,9 +50,6 @@ _REPORT_KINDS = [
 ]
 
 _RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
-_RE_LEAF_PREFIX = re.compile(r"^\d+\.\s*|^[가-힣]\.\s*")
-
-
 def _getContentCol(df: pl.DataFrame) -> str:
     if "section_content" in df.columns:
         return "section_content"
@@ -51,16 +57,18 @@ def _getContentCol(df: pl.DataFrame) -> str:
 
 
 def _leafTitle(path: str) -> str:
-    """path에서 안정적인 leaf title 추출 (숫자/한글 접두사 제거)."""
-    base = _RE_SPLIT_SUFFIX.sub("", path)
+    base = baseChunkPath(path)
     parts = base.split(" > ")
     leaf = parts[-1]
-    leaf = _RE_LEAF_PREFIX.sub("", leaf)
-    return leaf.strip()
+    return stripSectionPrefix(leaf)
 
 
 def _buildYearSections(
-    df: pl.DataFrame, year: str, reportKind: str, periodKey: str, contentCol: str,
+    df: pl.DataFrame,
+    year: str,
+    reportKind: str,
+    periodKey: str,
+    contentCol: str,
 ) -> YearSections | None:
     report = selectReport(df, year, reportKind=reportKind)
     if report is None:
@@ -69,10 +77,7 @@ def _buildYearSections(
     if contentCol not in report.columns:
         return None
 
-    nonEmpty = report.filter(
-        pl.col(contentCol).is_not_null()
-        & (pl.col(contentCol).str.len_chars() > 0)
-    )
+    nonEmpty = report.filter(pl.col(contentCol).is_not_null() & (pl.col(contentCol).str.len_chars() > 0))
     if len(nonEmpty) == 0:
         return None
 
@@ -92,31 +97,42 @@ def _buildYearSections(
     )
 
 
-def _chunksToLeafMap(
-    chunks: list[SectionChunk],
-) -> tuple[dict[str, str], list[tuple[str, int, int]]]:
-    """청크 리스트 → (leafMap, orderList) 변환.
-
-    Returns:
-        leafMap: {leafTitle: mergedText}
-        orderList: [(leafTitle, majorNum, 첫등장순서)] — 사업보고서 원본 순서 보존
-    """
-    merged: dict[str, list[str]] = {}
-    order: dict[str, tuple[int, int]] = {}
+def _chunkRowsToTopicRows(chunks: list[SectionChunk]) -> list[dict[str, object]]:
+    merged: dict[tuple[str, str], list[str]] = {}
+    order: dict[tuple[str, str], tuple[int, int]] = {}
+    source: dict[tuple[str, str], str] = {}
     idx = 0
     for c in chunks:
         if c.kind in ("skipped", "table_only"):
             continue
-        base = _RE_SPLIT_SUFFIX.sub("", c.path)
-        lt = _leafTitle(base)
-        if lt not in merged:
-            merged[lt] = []
-            order[lt] = (c.majorNum, idx)
+        chapter = chapterFromMajorNum(c.majorNum)
+        if chapter is None:
+            continue
+        base = baseChunkPath(c.path)
+        rawTitle = _leafTitle(base)
+        topic = mapSectionTitle(rawTitle)
+        key = (chapter, topic)
+        if key not in merged:
+            merged[key] = []
+            order[key] = (c.majorNum, idx)
+            source[key] = rawTitle
             idx += 1
-        merged[lt].append(c.textContent)
-    leafMap = {lt: "\n".join(texts) for lt, texts in merged.items()}
-    orderList = [(lt, maj, seq) for lt, (maj, seq) in order.items()]
-    return leafMap, orderList
+        merged[key].append(c.textContent)
+
+    rows: list[dict[str, object]] = []
+    for (chapter, topic), texts in merged.items():
+        majorNum, seq = order[(chapter, topic)]
+        rows.append(
+            {
+                "chapter": chapter,
+                "topic": topic,
+                "text": "\n".join(texts),
+                "majorNum": majorNum,
+                "orderSeq": seq,
+                "sourceTopic": source[(chapter, topic)],
+            }
+        )
+    return rows
 
 
 def sections(stockCode: str) -> pl.DataFrame | None:
@@ -136,7 +152,10 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     topicMap: dict[str, dict[str, str]] = {}
     topicOrder: dict[str, tuple[int, int]] = {}
+    periodRows: dict[str, list[dict[str, object]]] = {}
     validPeriods: list[str] = []
+    latestAnnualRows: list[dict[str, object]] | None = None
+    suppressed = projectionSuppressedTopics()
 
     for year in years:
         for reportKind, suffix in _REPORT_KINDS:
@@ -146,14 +165,31 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                 continue
 
             validPeriods.append(periodKey)
-            leafMap, orderList = _chunksToLeafMap(ys.chunks)
-            for leaf, text in leafMap.items():
-                if leaf not in topicMap:
-                    topicMap[leaf] = {}
-                topicMap[leaf][periodKey] = text
-            for lt, majorNum, seq in orderList:
-                if lt not in topicOrder:
-                    topicOrder[lt] = (majorNum, seq)
+            rows = _chunkRowsToTopicRows(ys.chunks)
+            periodRows[periodKey] = rows
+            if reportKind == "annual" and latestAnnualRows is None:
+                latestAnnualRows = rows
+
+    teacherTopics = chapterTeacherTopics(latestAnnualRows or [])
+    validPeriods = sortPeriods(validPeriods)
+
+    for periodKey in validPeriods:
+        rows = applyProjections(periodRows.get(periodKey, []), teacherTopics)
+        for row in rows:
+            chapter = row["chapter"]
+            topic = row["topic"]
+            text = row["text"]
+            if not isinstance(chapter, str) or not isinstance(topic, str) or not isinstance(text, str):
+                continue
+            if topic in suppressed.get(chapter, set()):
+                continue
+            if topic not in topicMap:
+                topicMap[topic] = {}
+            topicMap[topic][periodKey] = text
+            if topic not in topicOrder:
+                majorNum = int(row.get("majorNum", 99))
+                seq = int(row.get("orderSeq", 999999))
+                topicOrder[topic] = (majorNum, seq)
 
     if not validPeriods or not topicMap:
         return None

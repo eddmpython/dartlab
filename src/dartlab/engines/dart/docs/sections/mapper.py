@@ -8,6 +8,7 @@ from pathlib import Path
 _INDUSTRY_PREFIX_RE = re.compile(r"^\([^)]*업\)")
 _MULTISPACE_RE = re.compile(r"\s+")
 _LEAF_PREFIX_RE = re.compile(r"^\s*(?:(?:\d+|[가-힣])[.)]\s*|\(\d+\)\s*|[①-⑳]\s*)+")
+_TRAILING_PUNCT_RE = re.compile(r"[-–—:：;,]+$")
 
 
 def _mappingPath() -> Path:
@@ -23,7 +24,9 @@ def normalizeSectionTitle(title: str) -> str:
     text = _INDUSTRY_PREFIX_RE.sub("", text)
     text = stripSectionPrefix(text)
     text = text.replace("ㆍ", ",")
+    text = text.replace("·", ",")
     text = _MULTISPACE_RE.sub("", text)
+    text = _TRAILING_PUNCT_RE.sub("", text)
     return text.strip()
 
 

@@ -8,6 +8,7 @@ from dartlab.engines.dart.docs.sections.artifacts import loadProjectionRules
 
 _RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
 _RE_MAJOR_HEADING = re.compile(r"^([가-힣])\.\s*(.+)$")
+_RE_TABLE_SEP = re.compile(r"^\|(?:\s*:?-{3,}:?\s*\|)+$")
 _CHAPTER_BY_MAJOR = {
     1: "I",
     2: "II",
@@ -24,6 +25,23 @@ _CHAPTER_BY_MAJOR = {
 }
 _CHAPTER_II_SPLIT_SOURCE = "주요제품및원재료등"
 _CHAPTER_II_SPLIT_FALLBACK_TARGETS = ("productService", "rawMaterial")
+_ATOMIC_SEMANTIC_TOPICS = {
+    "segmentSemiconductor",
+    "segmentIct",
+    "segmentDigitalMedia",
+    "segmentHomeAppliance",
+    "segmentDisplay",
+    "segmentHarman",
+    "segmentOther",
+    "marketRisk",
+    "creditRisk",
+    "liquidityRisk",
+    "capitalRisk",
+    "fxRisk",
+    "interestRateRisk",
+    "fairValueRisk",
+    "derivativeExposure",
+}
 
 
 def chapterFromMajorNum(majorNum: int) -> str | None:
@@ -78,6 +96,96 @@ def extractSemanticUnits(topic: str, text: str) -> list[tuple[str, str]]:
     if topic in {"segmentOverview", "segmentFinancialSummary", "riskDerivative"}:
         return splitByMajorHeading(text)
     return []
+
+
+def semanticTopicForLabel(topic: str, label: str) -> str | None:
+    if topic in _ATOMIC_SEMANTIC_TOPICS:
+        return topic
+    joined = f"{topic}\n{label}"
+    if topic in {"segmentOverview", "segmentFinancialSummary"}:
+        if any(keyword in joined for keyword in ("반도체", "DS")):
+            return "segmentSemiconductor"
+        if any(keyword in joined for keyword in ("정보통신", "DX", "MX", "네트워크")):
+            return "segmentIct"
+        if any(keyword in joined for keyword in ("디지털미디어", "VD", "영상디스플레이")):
+            return "segmentDigitalMedia"
+        if any(keyword in joined for keyword in ("생활가전", "DA")):
+            return "segmentHomeAppliance"
+        if "디스플레이" in joined:
+            return "segmentDisplay"
+        if any(keyword in joined for keyword in ("하만", "Harman")):
+            return "segmentHarman"
+        if "기타" in joined:
+            return "segmentOther"
+        return None
+
+    if topic == "riskDerivative":
+        if "시장위험" in joined:
+            return "marketRisk"
+        if "신용위험" in joined:
+            return "creditRisk"
+        if "유동성위험" in joined:
+            return "liquidityRisk"
+        if "자본위험" in joined:
+            return "capitalRisk"
+        if any(keyword in joined for keyword in ("환위험", "환율")):
+            return "fxRisk"
+        if any(keyword in joined for keyword in ("금리위험", "이자율")):
+            return "interestRateRisk"
+        if "공정가치" in joined:
+            return "fairValueRisk"
+        if "파생상품" in joined:
+            return "derivativeExposure"
+        return None
+
+    return None
+
+
+def _tableLeadCells(tableText: str) -> list[str]:
+    labels: list[str] = []
+    for raw in tableText.splitlines():
+        line = raw.strip()
+        if not line.startswith("|") or _RE_TABLE_SEP.match(line):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if not cells:
+            continue
+        first = cells[0]
+        if not first or first in {"구분", "항목", "내용", "비고"}:
+            continue
+        labels.append(first)
+    return labels
+
+
+def semanticTopicForBlock(topic: str, label: str, blockType: str, blockText: str) -> str | None:
+    direct = semanticTopicForLabel(topic, label)
+    if direct:
+        return direct
+
+    if blockType == "table":
+        for cellLabel in _tableLeadCells(blockText):
+            mapped = semanticTopicForLabel(topic, cellLabel)
+            if mapped:
+                return mapped
+
+    joined = f"{label}\n{blockText}"
+    if topic == "audit" and any(keyword in joined for keyword in ("감사의견", "감사인", "검토절차")):
+        return "audit"
+    if topic == "auditSystem" and any(
+        keyword in joined for keyword in ("감사위원회", "내부감사", "내부회계", "준법지원인")
+    ):
+        return "auditSystem"
+    if topic == "majorHolder" and any(keyword in joined for keyword in ("최대주주", "주식소유", "5%이상")):
+        return "majorHolder"
+    if topic == "environmentRegulation" and any(
+        keyword in joined for keyword in ("환경", "배출권", "규제", "녹색경영")
+    ):
+        return "environmentRegulation"
+    if topic == "majorContractsAndRnd" and any(
+        keyword in joined for keyword in ("연구개발", "R&D", "주요계약")
+    ):
+        return "majorContractsAndRnd"
+    return None
 
 
 def _routeChapterIISegment(sourceTopic: str, label: str, body: str) -> str | None:

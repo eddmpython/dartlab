@@ -38,6 +38,11 @@ DATA_RELEASES: dict[str, dict] = {
             for i, r in enumerate(_SHARD_RANGES)
         ],
     },
+    "edgarDocs": {
+        "tag": "data-edgar-docs",
+        "dir": "edgar/docs",
+        "label": "SEC EDGAR 공시 문서 데이터",
+    },
     "edgar": {
         "dir": "edgar/finance",
         "label": "SEC EDGAR 재무 데이터",

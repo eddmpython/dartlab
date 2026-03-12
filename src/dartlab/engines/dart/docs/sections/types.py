@@ -8,8 +8,9 @@ from dataclasses import dataclass, field
 
 import polars as pl
 
+from dartlab.engines.dart.docs.sections.mapper import stripSectionPrefix
+
 _RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
-_RE_LEAF_PREFIX = re.compile(r"^\d+\.\s*|^[가-힣]\.\s*")
 
 
 def _basePath(path: str) -> str:
@@ -19,8 +20,7 @@ def _basePath(path: str) -> str:
 def _leafTitle(path: str) -> str:
     parts = path.split(" > ")
     leaf = parts[-1]
-    leaf = _RE_LEAF_PREFIX.sub("", leaf)
-    return leaf.strip()
+    return stripSectionPrefix(leaf)
 
 
 @dataclass
