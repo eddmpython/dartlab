@@ -102,6 +102,11 @@
 		<div class="latest-list">
 			{#each latestPosts as post}
 				<a href="{base}/blog/{post.slug}" class="latest-card">
+					{#if post.previewAsset}
+						<div class="latest-preview">
+							<img src="{base}{post.previewAsset}" alt="" class="latest-preview-image" loading="lazy" />
+						</div>
+					{/if}
 					<div class="latest-card-top">
 						<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="56" height="56" />
 						<div class="latest-card-copy">
@@ -114,6 +119,8 @@
 							<div class="latest-date">
 								<Calendar size={12} />
 								{formatDate(post.date)}
+								<span class="latest-dot">·</span>
+								예상 {post.readingMinutes}분
 							</div>
 						</div>
 					</div>
@@ -378,6 +385,26 @@
 		gap: 0.9rem;
 	}
 
+	.latest-preview {
+		margin: -0.15rem -0.25rem 0.2rem;
+		border-radius: 14px;
+		border: 1px solid rgba(30, 36, 51, 0.85);
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+			rgba(9, 12, 18, 0.96);
+		padding: 0.5rem;
+		overflow: hidden;
+	}
+
+	.latest-preview-image {
+		display: block;
+		width: 100%;
+		height: 160px;
+		object-fit: cover;
+		object-position: top center;
+		border-radius: 10px;
+	}
+
 	.latest-avatar {
 		width: 56px;
 		height: 56px;
@@ -397,9 +424,14 @@
 	.latest-date {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.3rem;
 		font-size: 0.75rem;
 		color: #64748b;
+	}
+
+	.latest-dot {
+		color: rgba(100, 116, 139, 0.72);
 	}
 
 	.latest-title {

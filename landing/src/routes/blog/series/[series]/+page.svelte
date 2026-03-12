@@ -68,12 +68,17 @@
 			<div class="series-roadmap-list">
 				{#each posts as post, index}
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
+						{#if post.previewAsset}
+							<div class="series-step-preview">
+								<img src="{base}{post.previewAsset}" alt="" class="series-step-preview-image" loading="lazy" />
+							</div>
+						{/if}
 						<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" />
 						<div class="series-step-body">
 							<div class="series-step-meta">
 								<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
 								<span class="series-step-category">{post.categoryLabel}</span>
-								<span class="series-step-date"><Calendar size={12} /> {formatDate(post.date)}</span>
+								<span class="series-step-date"><Calendar size={12} /> {formatDate(post.date)} <span class="series-step-dot">·</span> 예상 {post.readingMinutes}분</span>
 							</div>
 							<h2 class="series-step-title">{post.title}</h2>
 							<p class="series-step-desc">{post.description}</p>
@@ -171,7 +176,7 @@
 
 	.series-step-card {
 		display: grid;
-		grid-template-columns: auto 1fr auto;
+		grid-template-columns: minmax(220px, 260px) auto 1fr auto;
 		gap: 1rem;
 		align-items: start;
 		padding: 1.35rem 1.4rem;
@@ -183,6 +188,25 @@
 
 	.series-step-card:hover {
 		border-color: rgba(234, 70, 71, 0.28);
+	}
+
+	.series-step-preview {
+		border-radius: 14px;
+		border: 1px solid rgba(30, 36, 51, 0.85);
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+			rgba(9, 12, 18, 0.96);
+		padding: 0.45rem;
+		overflow: hidden;
+	}
+
+	.series-step-preview-image {
+		display: block;
+		width: 100%;
+		height: 140px;
+		object-fit: cover;
+		object-position: top center;
+		border-radius: 10px;
 	}
 
 	.series-step-avatar {
@@ -233,9 +257,14 @@
 	.series-step-date {
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.3rem;
 		font-size: 0.75rem;
 		color: #64748b;
+	}
+
+	.series-step-dot {
+		color: rgba(100, 116, 139, 0.72);
 	}
 
 	.series-step-title {

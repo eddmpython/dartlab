@@ -79,6 +79,11 @@
 		<section class="category-posts">
 			{#each posts as post}
 				<a href="{base}/blog/{post.slug}" class="category-post-card">
+					{#if post.previewAsset}
+						<div class="category-post-preview">
+							<img src="{base}{post.previewAsset}" alt="" class="category-post-preview-image" loading="lazy" />
+						</div>
+					{/if}
 					<div class="category-post-top">
 						<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" />
 						<div class="category-post-meta">
@@ -88,6 +93,8 @@
 							<div class="category-post-date">
 								<Calendar size={12} />
 								{formatDate(post.date)}
+								<span class="category-post-dot">·</span>
+								예상 {post.readingMinutes}분
 							</div>
 						</div>
 					</div>
@@ -232,6 +239,26 @@
 		gap: 0.85rem;
 	}
 
+	.category-post-preview {
+		margin: -0.2rem -0.15rem 0.15rem;
+		border-radius: 14px;
+		border: 1px solid rgba(30, 36, 51, 0.85);
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+			rgba(9, 12, 18, 0.96);
+		padding: 0.45rem;
+		overflow: hidden;
+	}
+
+	.category-post-preview-image {
+		display: block;
+		width: 100%;
+		height: 150px;
+		object-fit: cover;
+		object-position: top center;
+		border-radius: 10px;
+	}
+
 	.category-post-meta {
 		display: flex;
 		flex-direction: column;
@@ -251,9 +278,14 @@
 	.category-post-date {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.3rem;
 		font-size: 0.75rem;
 		color: #64748b;
+	}
+
+	.category-post-dot {
+		color: rgba(100, 116, 139, 0.72);
 	}
 
 	.category-post-title {

@@ -131,6 +131,8 @@ export interface PostMeta {
 	date: string;
 	description: string;
 	thumbnail: string;
+	previewAsset?: string;
+	readingMinutes: number;
 	category: CategoryId;
 	categoryLabel: string;
 	categoryFolder: string;
@@ -143,6 +145,8 @@ export interface PostMeta {
 type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
+const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const svgAssetPaths = Object.keys(import.meta.glob('@blog/**/assets/*.svg'));
 
 function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
 	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
@@ -168,6 +172,9 @@ function buildPosts(): PostMeta[] {
 		const series = metadata.series ? (String(metadata.series).trim() as SeriesId) : undefined;
 		const rawSeriesOrder = metadata.seriesOrder === undefined ? undefined : String(metadata.seriesOrder).trim();
 		const seriesOrder = rawSeriesOrder ? Number.parseInt(rawSeriesOrder, 10) : undefined;
+		const rawMarkdown = rawModules[path] ?? '';
+		const readingMinutes = estimateReadingMinutes(rawMarkdown);
+		const previewAsset = findPreviewAsset(path);
 
 		result.push({
 			slug: parsed.slug,
@@ -175,6 +182,8 @@ function buildPosts(): PostMeta[] {
 			date: String(metadata.date),
 			description: metadata.description ? String(metadata.description) : '',
 			thumbnail: metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png',
+			previewAsset,
+			readingMinutes,
 			category: category.id,
 			categoryLabel: category.label,
 			categoryFolder: category.folder,
@@ -192,6 +201,28 @@ function buildPosts(): PostMeta[] {
 		if (byOrder !== 0) return byOrder;
 		return a.slug.localeCompare(b.slug);
 	});
+}
+
+function estimateReadingMinutes(rawMarkdown: string): number {
+	if (!rawMarkdown) return 3;
+	const withoutFrontmatter = rawMarkdown.replace(/^---[\s\S]*?---\s*/, '');
+	const withoutCode = withoutFrontmatter.replace(/```[\s\S]*?```/g, ' ');
+	const withoutImages = withoutCode.replace(/!\[[^\]]*\]\([^)]+\)/g, ' ');
+	const plainText = withoutImages
+		.replace(/\[[^\]]+\]\([^)]+\)/g, '$1')
+		.replace(/[#>*`|_-]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	const tokenCount = plainText ? plainText.split(' ').length : 0;
+	return Math.max(3, Math.ceil(tokenCount / 220));
+}
+
+function findPreviewAsset(path: string): string | undefined {
+	const prefix = path.replace(/index\.md$/, 'assets/');
+	const match = svgAssetPaths.find((assetPath) => assetPath.startsWith(prefix));
+	if (!match) return undefined;
+	const filename = match.split('/').pop();
+	return filename ? `/blog/assets/${filename}` : undefined;
 }
 
 export const posts: PostMeta[] = buildPosts();
