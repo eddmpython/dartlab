@@ -168,10 +168,32 @@ const blogPosts = blogFiles.map(f => {
 	};
 });
 
+const blogCategories = [...new Set(blogFiles
+	.map(f => {
+		const content = readFileSync(f.path, 'utf-8');
+		const fm = extractFrontmatter(content);
+		return fm.category || null;
+	})
+	.filter(Boolean))];
+
+const blogSeries = [...new Set(blogFiles
+	.map(f => {
+		const content = readFileSync(f.path, 'utf-8');
+		const fm = extractFrontmatter(content);
+		return fm.series || null;
+	})
+	.filter(Boolean))];
+
 let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 sitemap += `  <url>\n    <loc>${siteUrl}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
 sitemap += `  <url>\n    <loc>${siteUrl}/docs/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
 sitemap += `  <url>\n    <loc>${siteUrl}/blog/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+for (const category of blogCategories) {
+	sitemap += `  <url>\n    <loc>${siteUrl}/blog/category/${category}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.75</priority>\n  </url>\n`;
+}
+for (const series of blogSeries) {
+	sitemap += `  <url>\n    <loc>${siteUrl}/blog/series/${series}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.72</priority>\n  </url>\n`;
+}
 for (const u of docUrls) {
 	sitemap += `  <url>\n    <loc>${u.loc}</loc>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>\n`;
 }

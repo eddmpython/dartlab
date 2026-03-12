@@ -1,44 +1,129 @@
 export const categoryDefinitions = [
 	{
 		id: 'disclosure-systems',
+		slug: 'disclosure-systems',
 		folder: '01-disclosure-systems',
 		label: '공시 시스템',
-		description: 'DART와 EDGAR의 구조, form 체계, 원문 접근 방식을 다룹니다.'
+		description: 'DART와 EDGAR의 구조, form 체계, 원문 접근 방식을 다룹니다.',
+		seoTitle: '공시 시스템 | DART와 EDGAR를 구조적으로 읽는 법',
+		seoDescription:
+			'DartLab 공시 시스템 카테고리. DART, EDGAR, 8-K, 20-F, 원문 공시와 form 구조를 실전적으로 읽는 글을 모았습니다.',
+		brandMessage:
+			'DartLab은 공시를 검색 결과가 아니라 시스템 구조로 읽습니다. DART와 EDGAR의 form, 제출 흐름, 원문 접근 방식을 실전적으로 정리합니다.'
 	},
 	{
 		id: 'report-reading',
+		slug: 'report-reading',
 		folder: '02-report-reading',
 		label: '사업보고서 읽기',
-		description: '사업보고서와 핵심 서술 섹션을 실제 판단으로 연결하는 글입니다.'
+		description: '사업보고서와 핵심 서술 섹션을 실제 판단으로 연결하는 글입니다.',
+		seoTitle: '사업보고서 읽기 | 텍스트와 리스크를 읽는 법',
+		seoDescription:
+			'DartLab 사업보고서 읽기 카테고리. 사업의 내용, 감사보고서, KAM, MD&A, 우발부채 같은 서술형 공시를 투자 판단으로 연결하는 글을 모았습니다.',
+		brandMessage:
+			'DartLab은 사업보고서를 숫자의 부록이 아니라 판단의 중심으로 봅니다. 텍스트, 리스크, 감사 문구를 실제 투자 해석으로 연결합니다.'
 	},
 	{
 		id: 'financial-interpretation',
+		slug: 'financial-interpretation',
 		folder: '03-financial-interpretation',
 		label: '재무 해석',
-		description: '설비투자, 비용 구조, 주석 해석을 투자 판단 관점에서 풉니다.'
+		description: '설비투자, 비용 구조, 주석 해석을 투자 판단 관점에서 풉니다.',
+		seoTitle: '재무 해석 | 주석, 현금흐름, 이익의 질 읽는 법',
+		seoDescription:
+			'DartLab 재무 해석 카테고리. 생산능력, 건설중인자산, 감가상각, 매출채권, 대손충당금처럼 숫자 뒤 구조를 읽는 심화 글을 모았습니다.',
+		brandMessage:
+			'DartLab은 재무제표 숫자만 보지 않습니다. 주석, 현금흐름, 운전자본, 고정비 구조를 함께 읽어 이익의 질을 해석합니다.'
 	},
 	{
 		id: 'data-automation',
+		slug: 'data-automation',
 		folder: '04-data-automation',
 		label: '데이터 자동화',
-		description: '공시 데이터를 수집하고 분석 파이프라인으로 연결하는 방법입니다.'
+		description: '공시 데이터를 수집하고 분석 파이프라인으로 연결하는 방법입니다.',
+		seoTitle: '데이터 자동화 | OpenDART와 EDGAR 파이프라인',
+		seoDescription:
+			'DartLab 데이터 자동화 카테고리. OpenDART, EDGAR, XBRL, corp_code, 원문 공시를 실제 수집 파이프라인으로 연결하는 글을 모았습니다.',
+		brandMessage:
+			'DartLab은 공시를 손으로만 읽지 않습니다. OpenDART와 EDGAR 데이터를 파이프라인으로 묶어 반복 가능한 분석 구조를 만듭니다.'
 	}
 ] as const;
 
 export type CategoryId = (typeof categoryDefinitions)[number]['id'];
+export type CategoryDefinition = (typeof categoryDefinitions)[number];
 
 export const seriesDefinitions = {
-	'dart-foundations': 'DART 기초 시리즈',
-	'edgar-reading': 'EDGAR 읽기 시리즈',
-	'report-reading-foundations': '사업보고서 읽기 시리즈',
-	'fixed-cost-and-capex': '설비투자 해석 시리즈',
-	'financial-context': '재무 맥락 읽기',
-	'data-automation': '데이터 자동화 시리즈',
-	'working-capital-and-earnings-quality': '운전자본·이익의 질 시리즈',
-	'audit-and-governance-reading': '감사·거버넌스 읽기 시리즈'
+	'dart-foundations': {
+		id: 'dart-foundations',
+		label: 'DART 기초 시리즈',
+		description: 'DART와 OpenDART를 처음부터 구조적으로 익히는 시리즈입니다.',
+		seoTitle: 'DART 기초 시리즈 | 전자공시 시스템을 처음부터 읽는 법',
+		seoDescription: 'DartLab DART 기초 시리즈. DART 구조, OpenDART 활용, 한국 전자공시 시스템 읽는 법을 단계적으로 정리합니다.',
+		brandMessage: 'DartLab은 DART를 단순 조회 사이트가 아니라 구조화된 전자공시 시스템으로 다룹니다.'
+	},
+	'edgar-reading': {
+		id: 'edgar-reading',
+		label: 'EDGAR 읽기 시리즈',
+		description: 'EDGAR form 구조, filing 원문, 이벤트 공시를 실전적으로 읽는 시리즈입니다.',
+		seoTitle: 'EDGAR 읽기 시리즈 | 10-K, 8-K, filing 원문 읽는 법',
+		seoDescription: 'DartLab EDGAR 읽기 시리즈. 10-K, 8-K, filing 원문, SEC form 구조를 실제 분석 흐름으로 연결합니다.',
+		brandMessage: 'DartLab은 EDGAR를 서류 묶음이 아니라 form 구조와 후속 확인 흐름으로 읽습니다.'
+	},
+	'report-reading-foundations': {
+		id: 'report-reading-foundations',
+		label: '사업보고서 읽기 시리즈',
+		description: '사업보고서의 핵심 섹션을 순서대로 해석하는 기초 시리즈입니다.',
+		seoTitle: '사업보고서 읽기 시리즈 | 사업의 내용과 공시 텍스트 읽는 법',
+		seoDescription: 'DartLab 사업보고서 읽기 시리즈. 사업의 내용, 핵심 서술 섹션, 구조적 변화 신호를 투자 판단으로 연결합니다.',
+		brandMessage: 'DartLab은 사업보고서를 숫자의 주석이 아니라 투자 판단의 본문으로 봅니다.'
+	},
+	'fixed-cost-and-capex': {
+		id: 'fixed-cost-and-capex',
+		label: '설비투자 해석 시리즈',
+		description: '생산능력, 건설중인자산, 감가상각을 한 흐름으로 읽는 심화 시리즈입니다.',
+		seoTitle: '설비투자 해석 시리즈 | 생산능력, CAPEX, 감가상각 읽는 법',
+		seoDescription: 'DartLab 설비투자 해석 시리즈. 생산능력, 가동률, 건설중인자산, 감가상각을 연결해 고정비 구조를 읽는 글을 모았습니다.',
+		brandMessage: 'DartLab은 설비투자를 발표 문구가 아니라 고정비 구조와 마진 변화로 해석합니다.'
+	},
+	'financial-context': {
+		id: 'financial-context',
+		label: '재무 맥락 읽기',
+		description: '재무 숫자를 공시 맥락과 같이 읽기 위한 입문형 시리즈입니다.',
+		seoTitle: '재무 맥락 읽기 | 숫자 뒤 구조를 함께 보는 법',
+		seoDescription: 'DartLab 재무 맥락 읽기. 숫자만 보지 않고 사업보고서와 공시 문맥을 함께 읽는 기초 글을 모았습니다.',
+		brandMessage: 'DartLab은 숫자만 맞는 분석보다 맥락까지 맞는 분석을 지향합니다.'
+	},
+	'data-automation': {
+		id: 'data-automation',
+		label: '데이터 자동화 시리즈',
+		description: 'OpenDART, corp_code, 공시 원문을 수집 파이프라인으로 연결하는 시리즈입니다.',
+		seoTitle: '데이터 자동화 시리즈 | OpenDART와 공시 파이프라인 설계',
+		seoDescription: 'DartLab 데이터 자동화 시리즈. OpenDART, corp_code, 주요사항보고서, 원문 데이터를 실제 파이프라인으로 연결합니다.',
+		brandMessage: 'DartLab은 공시를 읽는 것에서 끝내지 않고 재사용 가능한 데이터 파이프라인으로 바꿉니다.'
+	},
+	'working-capital-and-earnings-quality': {
+		id: 'working-capital-and-earnings-quality',
+		label: '운전자본·이익의 질 시리즈',
+		description: '매출채권, 재고, 현금흐름을 통해 이익의 질을 읽는 시리즈입니다.',
+		seoTitle: '운전자본·이익의 질 시리즈 | 매출채권과 현금흐름 읽는 법',
+		seoDescription: 'DartLab 운전자본·이익의 질 시리즈. 매출채권, 대손충당금, 재고, 영업현금흐름을 통해 숫자 뒤 질을 해석합니다.',
+		brandMessage: 'DartLab은 이익의 크기보다 이익의 질과 현금 회수 구조를 더 중요하게 봅니다.'
+	},
+	'audit-and-governance-reading': {
+		id: 'audit-and-governance-reading',
+		label: '감사·거버넌스 읽기 시리즈',
+		description: '감사보고서, KAM, 내부통제, 지배구조 문구를 읽는 시리즈입니다.',
+		seoTitle: '감사·거버넌스 읽기 시리즈 | 감사보고서와 KAM 해석',
+		seoDescription: 'DartLab 감사·거버넌스 읽기 시리즈. 감사보고서, KAM, 회계추정, 내부통제, 지배구조 문구를 해석하는 글을 모았습니다.',
+		brandMessage: 'DartLab은 감사의견 한 줄보다 그 뒤의 판단 구조와 경고 신호를 읽습니다.'
+	}
 } as const;
 
+export type SeriesId = keyof typeof seriesDefinitions;
+export type SeriesDefinition = (typeof seriesDefinitions)[SeriesId];
+
 const categoryById = new Map(categoryDefinitions.map((category) => [category.id, category]));
+const categoryBySlug = new Map(categoryDefinitions.map((category) => [category.slug, category]));
 
 export interface PostMeta {
 	slug: string;
@@ -50,12 +135,12 @@ export interface PostMeta {
 	categoryLabel: string;
 	categoryFolder: string;
 	order: number;
-	series?: string;
+	series?: SeriesId;
 	seriesLabel?: string;
 	seriesOrder?: number;
 }
 
-type BlogModule = { metadata?: Record<string, string> };
+type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
 
@@ -80,22 +165,22 @@ function buildPosts(): PostMeta[] {
 		const category = categoryId ? categoryById.get(categoryId) : undefined;
 		if (!category || category.folder !== parsed.categoryFolder) continue;
 
-		const series = metadata.series ? String(metadata.series).trim() : undefined;
+		const series = metadata.series ? (String(metadata.series).trim() as SeriesId) : undefined;
 		const rawSeriesOrder = metadata.seriesOrder === undefined ? undefined : String(metadata.seriesOrder).trim();
 		const seriesOrder = rawSeriesOrder ? Number.parseInt(rawSeriesOrder, 10) : undefined;
 
 		result.push({
 			slug: parsed.slug,
-			title: metadata.title,
-			date: metadata.date,
-			description: metadata.description ?? '',
-			thumbnail: metadata.thumbnail ?? '/avatar-chart.png',
+			title: String(metadata.title),
+			date: String(metadata.date),
+			description: metadata.description ? String(metadata.description) : '',
+			thumbnail: metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png',
 			category: category.id,
 			categoryLabel: category.label,
 			categoryFolder: category.folder,
 			order: parsed.order,
 			series,
-			seriesLabel: series ? seriesDefinitions[series as keyof typeof seriesDefinitions] ?? series : undefined,
+			seriesLabel: series ? seriesDefinitions[series]?.label ?? series : undefined,
 			seriesOrder: Number.isNaN(seriesOrder) ? undefined : seriesOrder
 		});
 	}
@@ -115,13 +200,83 @@ export function getPost(slug: string): PostMeta | undefined {
 	return posts.find((post) => post.slug === slug);
 }
 
-export function getCategoryGroups(): Array<(typeof categoryDefinitions)[number] & { posts: PostMeta[] }> {
+export function getCategory(categoryIdOrSlug: string): CategoryDefinition | undefined {
+	return categoryById.get(categoryIdOrSlug as CategoryId) ?? categoryBySlug.get(categoryIdOrSlug);
+}
+
+export function getCategoryPath(categoryIdOrSlug: string): string | undefined {
+	const category = getCategory(categoryIdOrSlug);
+	return category ? `/blog/category/${category.slug}` : undefined;
+}
+
+export function getPostsByCategory(categoryIdOrSlug: string): PostMeta[] {
+	const category = getCategory(categoryIdOrSlug);
+	if (!category) return [];
+	return posts.filter((post) => post.category === category.id);
+}
+
+export function getCategoryGroups(): Array<CategoryDefinition & { posts: PostMeta[]; postCount: number; seriesLabels: string[] }> {
 	return categoryDefinitions
-		.map((category) => ({
-			...category,
-			posts: posts.filter((post) => post.category === category.id)
-		}))
+		.map((category) => {
+			const categoryPosts = posts.filter((post) => post.category === category.id);
+			const seriesLabels = [...new Set(categoryPosts.map((post) => post.seriesLabel).filter(Boolean))] as string[];
+			return {
+				...category,
+				posts: categoryPosts,
+				postCount: categoryPosts.length,
+				seriesLabels
+			};
+		})
 		.filter((category) => category.posts.length > 0);
+}
+
+export function getLatestPosts(limit = 6): PostMeta[] {
+	return posts.slice(0, limit);
+}
+
+export function getRelatedPostsByCategory(slug: string, limit = 3): PostMeta[] {
+	const current = getPost(slug);
+	if (!current) return [];
+	return posts.filter((post) => post.category === current.category && post.slug !== slug).slice(0, limit);
+}
+
+export function getSeriesPosts(seriesId: string): PostMeta[] {
+	return posts
+		.filter((post) => post.series === seriesId)
+		.sort((a, b) => {
+			const bySeriesOrder = (a.seriesOrder ?? Number.MAX_SAFE_INTEGER) - (b.seriesOrder ?? Number.MAX_SAFE_INTEGER);
+			if (bySeriesOrder !== 0) return bySeriesOrder;
+			return a.order - b.order;
+		});
+}
+
+export function getSeries(seriesId: string): SeriesDefinition | undefined {
+	return seriesDefinitions[seriesId as SeriesId];
+}
+
+export function getSeriesPath(seriesId: string): string | undefined {
+	const series = getSeries(seriesId);
+	return series ? `/blog/series/${series.id}` : undefined;
+}
+
+export function getSeriesGroups(): Array<SeriesDefinition & { posts: PostMeta[]; postCount: number }> {
+	return Object.values(seriesDefinitions)
+		.map((series) => {
+			const seriesPosts = getSeriesPosts(series.id);
+			return {
+				...series,
+				posts: seriesPosts,
+				postCount: seriesPosts.length
+			};
+		})
+		.filter((series) => series.postCount > 0)
+		.sort((a, b) => b.postCount - a.postCount || a.label.localeCompare(b.label));
+}
+
+export function getSeriesGroupsByCategory(categoryIdOrSlug: string): Array<SeriesDefinition & { posts: PostMeta[]; postCount: number }> {
+	const category = getCategory(categoryIdOrSlug);
+	if (!category) return [];
+	return getSeriesGroups().filter((series) => series.posts.some((post) => post.category === category.id));
 }
 
 export function findPrevNext(slug: string): { prev?: PostMeta; next?: PostMeta } {
@@ -137,14 +292,7 @@ export function findSeriesPrevNext(slug: string): { prev?: PostMeta; next?: Post
 	const current = getPost(slug);
 	if (!current?.series) return {};
 
-	const seriesPosts = posts
-		.filter((post) => post.series === current.series)
-		.sort((a, b) => {
-			const bySeriesOrder = (a.seriesOrder ?? Number.MAX_SAFE_INTEGER) - (b.seriesOrder ?? Number.MAX_SAFE_INTEGER);
-			if (bySeriesOrder !== 0) return bySeriesOrder;
-			return a.order - b.order;
-		});
-
+	const seriesPosts = getSeriesPosts(current.series);
 	const idx = seriesPosts.findIndex((post) => post.slug === slug);
 	if (idx === -1) return {};
 	return {

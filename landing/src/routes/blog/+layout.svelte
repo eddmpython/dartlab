@@ -1,9 +1,14 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { Github } from 'lucide-svelte';
 	import Footer from '$lib/components/sections/Footer.svelte';
+	import { categoryDefinitions, getCategoryPath } from '$lib/blog/posts';
 
 	let { children } = $props();
+
+	let currentPath = $derived(page.url.pathname.replace(base, ''));
+	let currentCategory = $derived(page.data.currentCategory);
 </script>
 
 <div class="dl-blog">
@@ -25,9 +30,39 @@
 		</div>
 	</header>
 
-	<main class="dl-blog-main">
-		{@render children()}
-	</main>
+	<div class="dl-blog-body">
+		<aside class="dl-blog-sidebar">
+			<div class="dl-blog-sidebar-inner">
+				<div class="dl-blog-sidebar-brand">
+					<span class="dl-blog-sidebar-kicker">DartLab Blog</span>
+					<strong class="dl-blog-sidebar-title">Read Beyond the Numbers</strong>
+					<p class="dl-blog-sidebar-desc">공시를 숫자가 아니라 구조와 맥락으로 읽는 아카이브.</p>
+				</div>
+				<div class="dl-blog-sidebar-product">
+					<a href="{base}/docs/getting-started/quickstart" class="dl-blog-product-link primary">Quickstart</a>
+					<a href="{base}/docs/api/overview" class="dl-blog-product-link">API Overview</a>
+				</div>
+				<nav class="dl-blog-category-nav">
+					<a href="{base}/blog/" class="dl-blog-category-link" class:active={currentPath === '/blog' || currentPath === '/blog/'}>
+						전체 허브
+					</a>
+					{#each categoryDefinitions as category}
+						<a
+							href="{base}{getCategoryPath(category.id)}"
+							class="dl-blog-category-link"
+							class:active={currentCategory === category.id || currentPath === getCategoryPath(category.id) || currentPath.startsWith(`${getCategoryPath(category.id)}/`)}
+						>
+							<span>{category.label}</span>
+						</a>
+					{/each}
+				</nav>
+			</div>
+		</aside>
+
+		<main class="dl-blog-main">
+			{@render children()}
+		</main>
+	</div>
 
 	<Footer />
 </div>
@@ -53,7 +88,7 @@
 	}
 
 	.dl-blog-header-inner {
-		max-width: 1100px;
+		max-width: 1400px;
 		margin: 0 auto;
 		display: flex;
 		align-items: center;
@@ -93,13 +128,8 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 	}
-	.dl-blog-link:hover { color: #f1f5f9; }
 
-	.dl-blog-header-right {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
+	.dl-blog-link:hover { color: #f1f5f9; }
 
 	.dl-blog-icon-link {
 		color: #64748b;
@@ -107,17 +137,157 @@
 		padding: 0.25rem;
 		transition: color 0.15s;
 	}
+
 	.dl-blog-icon-link:hover { color: #f1f5f9; }
 
-	.dl-blog-main {
-		max-width: 1100px;
+	.dl-blog-body {
+		max-width: 1400px;
 		margin: 0 auto;
-		padding: 2.5rem 1.5rem 6rem;
+		display: grid;
+		grid-template-columns: 220px minmax(0, 1fr);
+		gap: 2rem;
+		padding: 2.25rem 1.5rem 6rem;
+	}
+
+	.dl-blog-sidebar {
+		display: block;
+	}
+
+	.dl-blog-sidebar-inner {
+		position: sticky;
+		top: 84px;
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		padding: 1rem;
+		border: 1px solid rgba(30, 36, 51, 0.8);
+		border-radius: 18px;
+		background: rgba(15, 18, 25, 0.78);
+	}
+
+	.dl-blog-sidebar-kicker {
+		display: block;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #ea4647;
+		margin-bottom: 0.35rem;
+	}
+
+	.dl-blog-sidebar-title {
+		display: block;
+		font-size: 1rem;
+		color: #f8fafc;
+		margin-bottom: 0.45rem;
+	}
+
+	.dl-blog-sidebar-desc {
+		font-size: 0.84rem;
+		line-height: 1.65;
+		color: #94a3b8;
+		margin: 0;
+	}
+
+	.dl-blog-category-nav {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.dl-blog-sidebar-product {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	.dl-blog-product-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.68rem 0.9rem;
+		border-radius: 12px;
+		border: 1px solid rgba(148, 163, 184, 0.16);
+		background: rgba(148, 163, 184, 0.06);
+		color: #e2e8f0;
+		text-decoration: none;
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+
+	.dl-blog-product-link.primary {
+		background: rgba(234, 70, 71, 0.14);
+		border-color: rgba(234, 70, 71, 0.28);
+		color: #fda4a4;
+	}
+
+	.dl-blog-category-link {
+		display: flex;
+		align-items: center;
+		padding: 0.72rem 0.8rem;
+		border-radius: 12px;
+		border: 1px solid transparent;
+		background: rgba(148, 163, 184, 0.03);
+		color: #cbd5e1;
+		text-decoration: none;
+		font-size: 0.88rem;
+		font-weight: 600;
+		transition: border-color 0.15s, color 0.15s, background 0.15s;
+	}
+
+	.dl-blog-category-link:hover {
+		border-color: rgba(234, 70, 71, 0.24);
+		color: #f8fafc;
+		background: rgba(234, 70, 71, 0.05);
+	}
+
+	.dl-blog-category-link.active {
+		border-color: rgba(234, 70, 71, 0.28);
+		color: #f8fafc;
+		background: rgba(234, 70, 71, 0.08);
+		box-shadow: inset 3px 0 0 #ea4647;
+	}
+
+	.dl-blog-main {
+		min-width: 0;
+	}
+
+	@media (max-width: 960px) {
+		.dl-blog-body {
+			grid-template-columns: 1fr;
+			gap: 1rem;
+			padding: 1.5rem 0.75rem 4rem;
+		}
+
+		.dl-blog-sidebar-inner {
+			position: static;
+			flex-direction: row;
+			align-items: center;
+			overflow-x: auto;
+			padding: 0.9rem;
+		}
+
+		.dl-blog-sidebar-brand {
+			min-width: 220px;
+		}
+
+		.dl-blog-sidebar-product {
+			flex-direction: row;
+		}
+
+		.dl-blog-category-nav {
+			flex-direction: row;
+			flex-wrap: nowrap;
+		}
+
+		.dl-blog-category-link {
+			white-space: nowrap;
+		}
 	}
 
 	@media (max-width: 480px) {
 		.dl-blog-logo-text { display: none; }
 		.dl-blog-divider { display: none; }
-		.dl-blog-main { padding: 1.5rem 0.75rem 4rem; }
+		.dl-blog-sidebar-brand { min-width: 180px; }
 	}
 </style>

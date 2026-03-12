@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
-	import { findPrevNext, findSeriesPrevNext, getPost } from '$lib/blog/posts';
+	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { onMount, tick } from 'svelte';
 
@@ -120,8 +120,9 @@
 	const postInfo = $derived(getPost(data.slug));
 	const prevNext = $derived(findPrevNext(data.slug));
 	const seriesPrevNext = $derived(findSeriesPrevNext(data.slug));
+	const relatedCategoryPosts = $derived(getRelatedPostsByCategory(data.slug, 3));
 
-	const pageTitle = $derived(`${meta?.title ?? 'Blog'} — DartLab`);
+	const pageTitle = $derived(`${meta?.title ?? 'Blog'} — DartLab 전자공시 분석`);
 	const pageDesc = $derived(meta?.description ?? `DartLab Blog — ${meta?.title ?? ''}`);
 	const pageUrl = $derived(`${brand.url}blog/${data.slug}`);
 	const pageImage = $derived(postInfo?.thumbnail ? `${brand.url}${postInfo.thumbnail.replace(/^\//, '')}` : `${brand.url}og-image.png`);
@@ -133,6 +134,9 @@
 		url: pageUrl,
 		image: pageImage,
 		datePublished: postInfo?.date ?? '',
+		articleSection: postInfo?.categoryLabel ?? '',
+		keywords: [postInfo?.categoryLabel, postInfo?.seriesLabel, '전자공시', 'DartLab'].filter(Boolean).join(', '),
+		isPartOf: postInfo ? `${brand.url}blog/category/${postInfo.category}` : `${brand.url}blog/`,
 		author: { '@type': 'Person', name: 'eddmpython', url: 'https://github.com/eddmpython' },
 		publisher: { '@type': 'Organization', name: 'DartLab', url: brand.url },
 		inLanguage: 'ko'
@@ -234,14 +238,14 @@
 				{/if}
 				{#if postInfo}
 					<div class="post-meta-row">
-						<span class="post-badge">{postInfo.categoryLabel}</span>
+						<a href="{base}{getCategoryPath(postInfo.category)}" class="post-badge">{postInfo.categoryLabel}</a>
 						{#if postInfo.seriesLabel}
-							<span class="post-series">
+							<a href="{base}{getSeriesPath(postInfo.series)}" class="post-series">
 								{postInfo.seriesLabel}
 								{#if postInfo.seriesOrder}
 									<span class="post-series-order">#{postInfo.seriesOrder}</span>
 								{/if}
-							</span>
+							</a>
 						{/if}
 					</div>
 				{/if}
@@ -282,6 +286,44 @@
 					</div>
 				</section>
 			{/if}
+
+			{#if relatedCategoryPosts.length > 0}
+				<section class="brand-loop">
+					<div class="brand-loop-copy">
+						<div class="brand-loop-kicker">DartLab</div>
+						<h2 class="brand-loop-title">같은 카테고리에서 더 읽기</h2>
+						<p class="brand-loop-desc">
+							DartLab은 {postInfo?.categoryLabel} 카테고리 안에서 글이 서로 이어지도록 설계합니다.
+							다음 글로 넘어가며 구조와 맥락을 같이 쌓는 방식입니다.
+						</p>
+					</div>
+					<div class="brand-loop-links">
+						{#each relatedCategoryPosts as post}
+							<a href="{base}/blog/{post.slug}" class="brand-loop-card">
+								<span class="brand-loop-card-series">{post.seriesLabel ?? post.categoryLabel}</span>
+								<span class="brand-loop-card-title">{post.title}</span>
+							</a>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			<section class="product-bridge">
+				<div class="product-bridge-copy">
+					<div class="product-bridge-kicker">DartLab Product</div>
+					<h2 class="product-bridge-title">이 글의 판단을 실제 데이터 흐름으로 옮기기</h2>
+					<p class="product-bridge-desc">
+						DartLab은 전자공시를 읽는 법을 코드와 데이터로 연결하기 위해 만든 제품입니다.
+						사업보고서 텍스트, 재무 시계열, 정기보고서 데이터를 한 흐름에서 다루도록 설계했습니다.
+					</p>
+				</div>
+				<div class="product-bridge-links">
+					<a href="{base}/docs/getting-started/quickstart" class="product-bridge-link primary">Quickstart</a>
+					<a href="{base}/docs/getting-started/installation" class="product-bridge-link">설치 가이드</a>
+					<a href="{base}/docs/api/overview" class="product-bridge-link">API Overview</a>
+					<a href="{base}/docs/tutorials/06_disclosure" class="product-bridge-link">공시 텍스트 튜토리얼</a>
+				</div>
+			</section>
 
 			{#if prevNext.prev || prevNext.next}
 				<nav class="post-nav">
@@ -405,12 +447,14 @@
 		background: rgba(234, 70, 71, 0.12);
 		border: 1px solid rgba(234, 70, 71, 0.24);
 		color: #fda4a4;
+		text-decoration: none;
 	}
 
 	.post-series {
 		background: rgba(148, 163, 184, 0.08);
 		border: 1px solid rgba(148, 163, 184, 0.14);
 		color: #cbd5e1;
+		text-decoration: none;
 	}
 
 	.post-series-order {
@@ -699,6 +743,65 @@
 	.blog-toc-item.active { color: #ea4647; border-left-color: #ea4647; }
 	.blog-toc-item.h3 { padding-left: 1.1rem; font-size: 0.72rem; }
 
+	.brand-loop {
+		margin-top: 3rem;
+		padding-top: 1.6rem;
+		border-top: 1px solid rgba(30, 36, 51, 0.8);
+	}
+
+	.brand-loop-kicker {
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: #ea4647;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		margin-bottom: 0.4rem;
+	}
+
+	.brand-loop-title {
+		font-size: 1.2rem;
+		font-weight: 800;
+		color: #f8fafc;
+		margin-bottom: 0.5rem;
+	}
+
+	.brand-loop-desc {
+		color: #94a3b8;
+		line-height: 1.75;
+		margin-bottom: 1rem;
+	}
+
+	.brand-loop-links {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 0.85rem;
+	}
+
+	.brand-loop-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 0.95rem 1rem;
+		border-radius: 12px;
+		border: 1px solid rgba(30, 36, 51, 0.7);
+		background: rgba(15, 18, 25, 0.75);
+		text-decoration: none;
+	}
+
+	.brand-loop-card-series {
+		font-size: 0.7rem;
+		color: #64748b;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: 700;
+	}
+
+	.brand-loop-card-title {
+		font-size: 0.94rem;
+		font-weight: 700;
+		color: #e2e8f0;
+	}
+
 	.series-nav {
 		margin-top: 3rem;
 		padding-top: 1.5rem;
@@ -746,6 +849,63 @@
 		font-size: 0.95rem;
 		font-weight: 700;
 		color: #e2e8f0;
+	}
+
+	.product-bridge {
+		margin-top: 3rem;
+		padding: 1.5rem;
+		border-radius: 18px;
+		border: 1px solid rgba(234, 70, 71, 0.16);
+		background:
+			linear-gradient(135deg, rgba(234, 70, 71, 0.08), rgba(251, 146, 60, 0.04)),
+			rgba(15, 18, 25, 0.94);
+	}
+
+	.product-bridge-kicker {
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: #ea4647;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		margin-bottom: 0.4rem;
+	}
+
+	.product-bridge-title {
+		font-size: 1.2rem;
+		font-weight: 800;
+		color: #f8fafc;
+		margin-bottom: 0.5rem;
+	}
+
+	.product-bridge-desc {
+		color: #cbd5e1;
+		line-height: 1.75;
+	}
+
+	.product-bridge-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.7rem;
+		margin-top: 1rem;
+	}
+
+	.product-bridge-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.72rem 1rem;
+		border-radius: 999px;
+		border: 1px solid rgba(148, 163, 184, 0.16);
+		background: rgba(148, 163, 184, 0.06);
+		color: #e2e8f0;
+		text-decoration: none;
+		font-weight: 700;
+	}
+
+	.product-bridge-link.primary {
+		background: rgba(234, 70, 71, 0.14);
+		border-color: rgba(234, 70, 71, 0.28);
+		color: #fda4a4;
 	}
 
 	/* Prev/Next navigation */
@@ -821,6 +981,7 @@
 	@media (max-width: 1100px) {
 		.blog-post-layout { padding: 0 1rem; }
 		.blog-post-col { padding: 0; }
+		.brand-loop-links { grid-template-columns: 1fr; }
 		.series-nav-grid { grid-template-columns: 1fr; }
 		.post-nav { grid-template-columns: 1fr; }
 	}

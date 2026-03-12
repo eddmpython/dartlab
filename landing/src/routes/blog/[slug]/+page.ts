@@ -37,6 +37,7 @@ export function load({ params }: { params: { slug: string } }) {
 	return {
 		component: entry.component,
 		metadata: entry.metadata ?? {},
-		slug: params.slug
+		slug: params.slug,
+		currentCategory: entry.metadata?.category ?? null
 	};
 }
