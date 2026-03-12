@@ -440,10 +440,9 @@
 
 	.blog-article :global(table) {
 		display: table;
-		width: max-content;
-		min-width: min(100%, 720px);
+		width: 100%;
 		max-width: 100%;
-		overflow-x: auto;
+		table-layout: fixed;
 		border-collapse: separate;
 		border-spacing: 0;
 		margin: 1.75rem 0;
