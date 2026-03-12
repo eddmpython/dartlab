@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Five Things First</text>
+  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Overview, business model, risk, numbers, trust.</text>
+  <circle cx="160" cy="220" r="52" fill="#111827" stroke="#334155"/><text x="129" y="225" fill="#f8fafc" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Overview</text>
+  <circle cx="300" cy="150" r="52" fill="#111827" stroke="#334155"/><text x="272" y="155" fill="#f8fafc" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Business</text>
+  <circle cx="300" cy="290" r="52" fill="#111827" stroke="#334155"/><text x="283" y="295" fill="#f8fafc" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Risk</text>
+  <circle cx="470" cy="150" r="52" fill="#111827" stroke="#334155"/><text x="446" y="155" fill="#f8fafc" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Numbers</text>
+  <circle cx="640" cy="220" r="52" fill="#111827" stroke="#334155"/><text x="619" y="225" fill="#f8fafc" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Trust</text>
+  <path d="M212 204L248 186" stroke="#ea4647" stroke-width="3"/>
+  <path d="M212 236L248 254" stroke="#ea4647" stroke-width="3"/>
+  <path d="M352 150H418" stroke="#ea4647" stroke-width="3"/>
+  <path d="M522 168L588 204" stroke="#ea4647" stroke-width="3"/>
+</svg>

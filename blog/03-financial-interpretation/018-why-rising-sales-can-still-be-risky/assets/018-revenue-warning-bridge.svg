@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Revenue Warning Bridge</text>
+  <text x="48" y="86" fill="#94a3b8" font-size="12" font-family="Inter,system-ui,sans-serif">Sales can look strong while quality weakens underneath.</text>
+  <rect x="84" y="166" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="128" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Sales</text>
+  <rect x="324" y="126" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="346" y="170" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Receivables</text>
+  <rect x="324" y="246" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="367" y="290" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Inventory</text>
+  <rect x="564" y="166" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="610" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Cash</text>
+  <path d="M234 206H324" stroke="#ea4647" stroke-width="3"/><path d="M474 166H564" stroke="#ea4647" stroke-width="3"/><path d="M474 286H564" stroke="#fbbf24" stroke-width="3"/>
+</svg>

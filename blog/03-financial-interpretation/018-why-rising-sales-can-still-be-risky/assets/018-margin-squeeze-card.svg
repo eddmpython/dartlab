@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Margin Squeeze</text>
+  <rect x="82" y="126" width="270" height="180" rx="16" fill="#111827" stroke="#334155"/><text x="132" y="162" fill="#86efac" font-size="16" font-family="Inter,system-ui,sans-serif" font-weight="700">Healthy growth</text>
+  <text x="118" y="206" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Sales up</text><text x="118" y="236" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Margin stable</text><text x="118" y="266" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Cash follows</text>
+  <rect x="448" y="126" width="270" height="180" rx="16" fill="#111827" stroke="#334155"/><text x="501" y="162" fill="#f87171" font-size="16" font-family="Inter,system-ui,sans-serif" font-weight="700">Risky growth</text>
+  <text x="484" y="206" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Sales up</text><text x="484" y="236" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Margin down</text><text x="484" y="266" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Cash weak</text>
+</svg>

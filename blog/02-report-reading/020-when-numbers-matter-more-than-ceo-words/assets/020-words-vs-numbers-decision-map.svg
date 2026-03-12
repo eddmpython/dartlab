@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Words vs Numbers</text>
+  <rect x="120" y="148" width="220" height="130" rx="16" fill="#111827" stroke="#334155"/><text x="197" y="186" fill="#fbbf24" font-size="16" font-weight="700" font-family="Inter,system-ui,sans-serif">Words</text>
+  <rect x="460" y="148" width="220" height="130" rx="16" fill="#111827" stroke="#334155"/><text x="530" y="186" fill="#86efac" font-size="16" font-weight="700" font-family="Inter,system-ui,sans-serif">Numbers</text>
+  <path d="M340 214H460" stroke="#ea4647" stroke-width="3"/>
+</svg>

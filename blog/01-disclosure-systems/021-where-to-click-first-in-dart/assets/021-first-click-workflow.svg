@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">First Click Workflow</text>
+  <rect x="70" y="164" width="120" height="70" rx="14" fill="#111827" stroke="#334155"/><text x="98" y="206" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Search</text>
+  <rect x="230" y="164" width="120" height="70" rx="14" fill="#111827" stroke="#334155"/><text x="258" y="206" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Report</text>
+  <rect x="390" y="164" width="120" height="70" rx="14" fill="#111827" stroke="#334155"/><text x="420" y="206" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Event</text>
+  <rect x="550" y="164" width="120" height="70" rx="14" fill="#111827" stroke="#334155"/><text x="578" y="206" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Audit</text>
+  <path d="M190 199H230M350 199H390M510 199H550" stroke="#ea4647" stroke-width="3"/>
+</svg>

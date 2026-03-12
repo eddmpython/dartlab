@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Warning Checklist</text>
+  <rect x="76" y="120" width="648" height="224" rx="18" fill="#111827" stroke="#334155"/>
+  <text x="108" y="165" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">1. Are receivables rising faster than sales?</text>
+  <text x="108" y="205" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">2. Is inventory building with sales?</text>
+  <text x="108" y="245" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">3. Is margin slipping?</text>
+  <text x="108" y="285" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">4. Is operating cash flow weaker than earnings?</text>
+</svg>

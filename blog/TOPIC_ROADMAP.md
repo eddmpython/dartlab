@@ -29,6 +29,18 @@
 
 ## 우선순위 큐
 
+## 다음 생산 배치
+
+- `017 20-F와 10-K는 무엇이 다른가`
+- `018 Risk Factors와 MD&A를 같이 읽는 법`
+- `019 재고자산과 평가손실 읽는 법`
+- `020 XBRL 재무제표 원문과 주석 다운로드 파이프라인`
+
+준비 문서:
+
+- `blog/_reference/WRITING_QUEUE.md`
+- `blog/_reference/017-020-source-checklist.md`
+
 ### 1순위: 바로 써야 하는 주제
 
 #### 1. 8-K item map 읽는 법

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">10-Minute Checklist</text>
+  <rect x="72" y="118" width="656" height="220" rx="18" fill="#111827" stroke="#334155"/>
+  <text x="104" y="162" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">1. Can you describe the business in one sentence?</text>
+  <text x="104" y="202" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">2. Do products, customers, and risks connect clearly?</text>
+  <text x="104" y="242" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">3. Do notes support the headline numbers?</text>
+  <text x="104" y="282" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">4. Do audit and governance sections raise trust issues?</text>
+</svg>

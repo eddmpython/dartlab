@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Optimism vs Reality</text>
+  <rect x="92" y="164" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="142" y="208" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">CEO words</text>
+  <rect x="312" y="164" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="355" y="208" fill="#f87171" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Conflict</text>
+  <rect x="532" y="164" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="580" y="208" fill="#86efac" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Data</text>
+  <path d="M272 205H312M492 205H532" stroke="#ea4647" stroke-width="3"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Beginner Mistakes</text>
+  <rect x="56" y="120" width="160" height="108" rx="16" fill="#111827" stroke="#334155"/><text x="96" y="154" fill="#f87171" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Only numbers</text>
+  <rect x="232" y="120" width="160" height="108" rx="16" fill="#111827" stroke="#334155"/><text x="264" y="154" fill="#f87171" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Skip risk</text>
+  <rect x="408" y="120" width="160" height="108" rx="16" fill="#111827" stroke="#334155"/><text x="437" y="154" fill="#f87171" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Ignore notes</text>
+  <rect x="584" y="120" width="160" height="108" rx="16" fill="#111827" stroke="#334155"/><text x="620" y="154" fill="#f87171" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Skip audit</text>
+  <text x="180" y="320" fill="#94a3b8" font-size="13" font-family="Inter,system-ui,sans-serif">Most mistakes come from reading the report as a pile of pages, not a structure.</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Pressure Map</text>
+  <circle cx="240" cy="214" r="86" fill="#111827" stroke="#334155"/><text x="184" y="220" fill="#f8fafc" font-size="16" font-family="Inter,system-ui,sans-serif" font-weight="700">Receivables</text>
+  <circle cx="420" cy="214" r="86" fill="#111827" stroke="#334155"/><text x="377" y="220" fill="#f8fafc" font-size="16" font-family="Inter,system-ui,sans-serif" font-weight="700">Inventory</text>
+  <circle cx="600" cy="214" r="86" fill="#111827" stroke="#334155"/><text x="572" y="220" fill="#f8fafc" font-size="16" font-family="Inter,system-ui,sans-serif" font-weight="700">Margin</text>
+  <path d="M326 214H334M506 214H514" stroke="#ea4647" stroke-width="3"/>
+</svg>

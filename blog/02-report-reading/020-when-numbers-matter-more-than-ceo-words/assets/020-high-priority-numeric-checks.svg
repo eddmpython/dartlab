@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Priority Numeric Checks</text>
+  <rect x="76" y="112" width="300" height="220" rx="16" fill="#111827" stroke="#334155"/><text x="146" y="150" fill="#f8fafc" font-size="16" font-weight="700" font-family="Inter,system-ui,sans-serif">Check first</text>
+  <text x="114" y="194" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Cash flow</text><text x="114" y="224" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Receivables</text><text x="114" y="254" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Inventory</text><text x="114" y="284" fill="#cbd5e1" font-size="13" font-family="Inter,system-ui,sans-serif">Margin</text>
+</svg>

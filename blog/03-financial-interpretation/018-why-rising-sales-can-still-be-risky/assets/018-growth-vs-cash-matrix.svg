@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#050811"/>
+  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
+  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Growth vs Cash</text>
+  <rect x="170" y="120" width="420" height="220" rx="18" fill="#111827" stroke="#334155"/>
+  <path d="M380 120V340M170 230H590" stroke="#334155"/>
+  <text x="262" y="154" fill="#86efac" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Strong sales, strong cash</text>
+  <text x="413" y="154" fill="#f87171" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Strong sales, weak cash</text>
+  <text x="264" y="304" fill="#94a3b8" font-size="13" font-family="Inter,system-ui,sans-serif">Weak sales, stable cash</text>
+  <text x="416" y="304" fill="#94a3b8" font-size="13" font-family="Inter,system-ui,sans-serif">Weak sales, weak cash</text>
+</svg>
