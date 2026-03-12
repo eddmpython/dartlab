@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.4.5"
+version = "0.4.6"
 description = "DART 공시 문서를 완벽하게 분석하는 Python 라이브러리 — 숫자와 텍스트 모두"
 readme = "README.md"
 license = {file = "LICENSE"}
