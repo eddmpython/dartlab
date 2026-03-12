@@ -101,7 +101,7 @@
 								읽기 <ArrowRight size={14} />
 							</span>
 						</div>
-						<img src="{base}{post.previewAsset ?? post.thumbnail}" alt={post.title} class="category-post-thumb" width="196" height="128" loading="lazy" />
+						<img src="{base}{post.cardPreview}" alt={post.title} class="category-post-thumb" width="172" height="172" loading="lazy" />
 					</div>
 				</a>
 			{/each}
@@ -232,7 +232,7 @@
 
 	.category-post-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 196px;
+		grid-template-columns: minmax(0, 1fr) 172px;
 		gap: 1rem;
 		align-items: stretch;
 	}
@@ -282,12 +282,12 @@
 
 	.category-post-thumb {
 		display: block;
-		width: 196px;
-		height: 128px;
+		width: 172px;
+		height: 172px;
 		object-fit: cover;
 		object-position: center;
-		border-radius: 8px;
-		align-self: center;
+		border-radius: 10px;
+		align-self: stretch;
 	}
 
 	.category-post-title {
@@ -318,7 +318,9 @@
 
 		.category-post-thumb {
 			width: 100%;
-			max-width: 260px;
+			max-width: 220px;
+			height: auto;
+			aspect-ratio: 1 / 1;
 			justify-self: end;
 		}
 	}

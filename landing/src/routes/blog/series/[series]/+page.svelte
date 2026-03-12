@@ -81,7 +81,7 @@
 									<p class="series-step-desc">{post.description}</p>
 								</div>
 							</div>
-							<img src="{base}{post.previewAsset ?? post.thumbnail}" alt={post.title} class="series-step-thumb" width="196" height="128" loading="lazy" />
+							<img src="{base}{post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>
@@ -188,7 +188,7 @@
 
 	.series-step-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 196px auto;
+		grid-template-columns: minmax(0, 1fr) 172px auto;
 		gap: 1rem;
 		align-items: center;
 	}
@@ -261,11 +261,11 @@
 
 	.series-step-thumb {
 		display: block;
-		width: 196px;
-		height: 128px;
+		width: 172px;
+		height: 172px;
 		object-fit: cover;
 		object-position: center;
-		border-radius: 8px;
+		border-radius: 10px;
 	}
 
 	.series-step-title {
@@ -337,7 +337,9 @@
 
 		.series-step-thumb {
 			width: 100%;
-			max-width: 260px;
+			max-width: 220px;
+			height: auto;
+			aspect-ratio: 1 / 1;
 			justify-self: end;
 		}
 	}

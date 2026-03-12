@@ -131,7 +131,7 @@ export interface PostMeta {
 	date: string;
 	description: string;
 	thumbnail: string;
-	previewAsset?: string;
+	cardPreview: string;
 	readingMinutes: number;
 	category: CategoryId;
 	categoryLabel: string;
@@ -146,7 +146,6 @@ type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
 const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const svgAssetPaths = Object.keys(import.meta.glob('@blog/**/assets/*.svg'));
 
 function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
 	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
@@ -174,15 +173,16 @@ function buildPosts(): PostMeta[] {
 		const seriesOrder = rawSeriesOrder ? Number.parseInt(rawSeriesOrder, 10) : undefined;
 		const rawMarkdown = rawModules[path] ?? '';
 		const readingMinutes = estimateReadingMinutes(rawMarkdown);
-		const previewAsset = findPreviewAsset(path);
+		const thumbnail = metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png';
+		const cardPreview = metadata.cardPreview ? String(metadata.cardPreview) : thumbnail;
 
 		result.push({
 			slug: parsed.slug,
 			title: String(metadata.title),
 			date: String(metadata.date),
 			description: metadata.description ? String(metadata.description) : '',
-			thumbnail: metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png',
-			previewAsset,
+			thumbnail,
+			cardPreview,
 			readingMinutes,
 			category: category.id,
 			categoryLabel: category.label,
@@ -215,14 +215,6 @@ function estimateReadingMinutes(rawMarkdown: string): number {
 		.trim();
 	const tokenCount = plainText ? plainText.split(' ').length : 0;
 	return Math.max(3, Math.ceil(tokenCount / 220));
-}
-
-function findPreviewAsset(path: string): string | undefined {
-	const prefix = path.replace(/index\.md$/, 'assets/');
-	const match = svgAssetPaths.find((assetPath) => assetPath.startsWith(prefix));
-	if (!match) return undefined;
-	const filename = match.split('/').pop();
-	return filename ? `/blog/assets/${filename}` : undefined;
 }
 
 export const posts: PostMeta[] = buildPosts();

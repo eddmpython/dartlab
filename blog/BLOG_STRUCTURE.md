@@ -45,7 +45,12 @@ category: disclosure-systems | report-reading | financial-interpretation | data-
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
+cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 ```
+
+- `thumbnail`: 카드 좌측 메타 영역에 쓰는 아바타형 대표 이미지
+- `cardPreview`: 우측 정사각형 썸네일 슬롯에 쓰는 카드 전용 프리뷰 이미지
+- `cardPreview`가 없으면 `thumbnail`을 fallback으로 사용한다
 
 ## 시리즈 정의
 
