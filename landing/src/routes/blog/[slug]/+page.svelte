@@ -439,8 +439,10 @@
 	}
 
 	.blog-article :global(table) {
-		display: block;
-		width: 100%;
+		display: table;
+		width: max-content;
+		min-width: min(100%, 720px);
+		max-width: 100%;
 		overflow-x: auto;
 		border-collapse: separate;
 		border-spacing: 0;
@@ -455,6 +457,11 @@
 			0 18px 40px rgba(3, 5, 9, 0.28),
 			inset 0 1px 0 rgba(255, 255, 255, 0.03);
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.blog-article :global(table tbody),
+	.blog-article :global(table thead) {
+		width: auto;
 	}
 
 	.blog-article :global(thead) {
