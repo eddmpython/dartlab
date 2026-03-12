@@ -10,7 +10,11 @@ import polars as pl
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
-from dartlab.engines.dart.docs.sections.runtime import semanticTopicForBlock
+from dartlab.engines.dart.docs.sections.runtime import (
+    detailTopicForBlock,
+    detailTopicForTopic,
+    semanticTopicForBlock,
+)
 
 REPORT_KINDS = [
     ("annual", ""),
@@ -58,9 +62,33 @@ def isBoilerplateTopic(topic: str) -> bool:
     }
 
 
-def blockPriority(blockType: str, semanticTopic: str | None, isBoilerplate: bool) -> int:
+def isPlaceholderBlock(blockText: str) -> bool:
+    text = blockText.strip()
+    if not text:
+        return False
+    phrases = (
+        "분기보고서에 기재하지 않습니다",
+        "반기보고서에 기재하지 않습니다",
+        "반기ㆍ사업보고서에 기재 예정",
+        "반기·사업보고서에 기재 예정",
+        "기업공시서식 작성기준에 따라 분기보고서에 기재하지 않습니다",
+    )
+    return any(phrase in text for phrase in phrases)
+
+
+def blockPriority(
+    blockType: str,
+    semanticTopic: str | None,
+    detailTopic: str | None,
+    isBoilerplate: bool,
+    isPlaceholder: bool,
+) -> int:
     if isBoilerplate:
         return 0
+    if isPlaceholder:
+        return 0
+    if detailTopic:
+        return 5
     if semanticTopic:
         return 4
     if blockType == "text":
@@ -261,7 +289,10 @@ def retrievalBlocks(stockCode: str) -> pl.DataFrame:
                     blockLabel = str(block["blockLabel"])
                     blockType = str(block["blockType"])
                     semanticTopic = semanticTopicForBlock(topic, blockLabel, blockType, blockText)
+                    detailTopic = detailTopicForBlock(topic, rawTitle, blockLabel, blockType, blockText)
                     boilerplate = isBoilerplateTopic(topic)
+                    placeholder = isPlaceholderBlock(blockText)
+                    cellKey = f"{stockCode}:{period}:{topic}"
                     rows.append(
                         {
                             "stockCode": stockCode,
@@ -270,6 +301,8 @@ def retrievalBlocks(stockCode: str) -> pl.DataFrame:
                             "sectionOrder": int(record["section_order"]),
                             "rawTitle": rawTitle,
                             "topic": topic,
+                            "sourceTopic": rawTitle,
+                            "cellKey": cellKey,
                             "blockIdx": int(block["blockIdx"]),
                             "blockType": blockType,
                             "blockLabel": blockLabel,
@@ -277,12 +310,20 @@ def retrievalBlocks(stockCode: str) -> pl.DataFrame:
                             "chars": len(blockText),
                             "tableLines": int(block["tableLines"]),
                             "semanticTopic": semanticTopic,
+                            "detailTopic": detailTopic,
                             "isBoilerplate": boilerplate,
-                            "blockPriority": blockPriority(blockType, semanticTopic, boilerplate),
+                            "isPlaceholder": placeholder,
+                            "blockPriority": blockPriority(
+                                blockType,
+                                semanticTopic,
+                                detailTopic,
+                                boilerplate,
+                                placeholder,
+                            ),
                         }
                     )
 
-    return pl.DataFrame(
+    df = pl.DataFrame(
         rows,
         schema={
             "stockCode": pl.Utf8,
@@ -291,6 +332,8 @@ def retrievalBlocks(stockCode: str) -> pl.DataFrame:
             "sectionOrder": pl.Int64,
             "rawTitle": pl.Utf8,
             "topic": pl.Utf8,
+            "sourceTopic": pl.Utf8,
+            "cellKey": pl.Utf8,
             "blockIdx": pl.Int64,
             "blockType": pl.Utf8,
             "blockLabel": pl.Utf8,
@@ -298,10 +341,16 @@ def retrievalBlocks(stockCode: str) -> pl.DataFrame:
             "chars": pl.Int64,
             "tableLines": pl.Int64,
             "semanticTopic": pl.Utf8,
+            "detailTopic": pl.Utf8,
             "isBoilerplate": pl.Boolean,
+            "isPlaceholder": pl.Boolean,
             "blockPriority": pl.Int64,
         },
         strict=False,
+    )
+    return df.sort(
+        ["periodOrder", "blockPriority", "sectionOrder", "blockIdx"],
+        descending=[True, True, False, False],
     )
 
 
@@ -360,6 +409,9 @@ def contextSlices(stockCode: str, *, maxChars: int = 1800) -> pl.DataFrame:
     blocks = retrievalBlocks(stockCode)
     rows: list[dict[str, object]] = []
     for record in blocks.to_dicts():
+        isSemantic = record.get("semanticTopic") is not None or record.get("detailTopic") is not None
+        if record.get("isBoilerplate") or (record.get("isPlaceholder") and not isSemantic):
+            continue
         blockText = str(record["blockText"] or "")
         if record["blockType"] == "table":
             parts = splitMarkdownTable(blockText, maxChars)
@@ -372,26 +424,33 @@ def contextSlices(stockCode: str, *, maxChars: int = 1800) -> pl.DataFrame:
                     "period": record["period"],
                     "periodOrder": record["periodOrder"],
                     "topic": record["topic"],
+                    "sourceTopic": record.get("sourceTopic"),
+                    "cellKey": record.get("cellKey"),
                     "semanticTopic": record.get("semanticTopic"),
+                    "detailTopic": record.get("detailTopic"),
                     "blockType": record["blockType"],
                     "blockLabel": record["blockLabel"],
                     "sliceIdx": idx,
                     "sliceText": part,
                     "chars": len(part),
-                    "isSemantic": record.get("semanticTopic") is not None,
+                    "isSemantic": isSemantic,
                     "isTable": record["blockType"] == "table",
                     "isBoilerplate": record.get("isBoilerplate"),
+                    "isPlaceholder": record.get("isPlaceholder"),
                     "blockPriority": record.get("blockPriority"),
                 }
             )
-    return pl.DataFrame(
+    df = pl.DataFrame(
         rows,
         schema={
             "stockCode": pl.Utf8,
             "period": pl.Utf8,
             "periodOrder": pl.Int64,
             "topic": pl.Utf8,
+            "sourceTopic": pl.Utf8,
+            "cellKey": pl.Utf8,
             "semanticTopic": pl.Utf8,
+            "detailTopic": pl.Utf8,
             "blockType": pl.Utf8,
             "blockLabel": pl.Utf8,
             "sliceIdx": pl.Int64,
@@ -400,9 +459,14 @@ def contextSlices(stockCode: str, *, maxChars: int = 1800) -> pl.DataFrame:
             "isSemantic": pl.Boolean,
             "isTable": pl.Boolean,
             "isBoilerplate": pl.Boolean,
+            "isPlaceholder": pl.Boolean,
             "blockPriority": pl.Int64,
         },
         strict=False,
+    )
+    return df.sort(
+        ["periodOrder", "blockPriority", "topic", "sliceIdx"],
+        descending=[True, True, False, False],
     )
 
 

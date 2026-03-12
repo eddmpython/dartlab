@@ -47,15 +47,20 @@
 </script>
 
 <aside class={cn(
-	"flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden",
+	"surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden",
 	open ? "w-[260px]" : "w-[52px]"
 )}>
 	{#if open}
 		<div class="flex flex-col h-full min-w-[260px]">
 			<!-- Brand -->
-			<div class="flex items-center gap-2.5 px-4 pt-4 pb-2">
-				<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
-				<span class="text-[15px] font-bold text-dl-text tracking-tight">DartLab</span>
+			<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
+				<div class="flex items-center gap-2.5">
+					<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
+					<div>
+						<div class="text-[15px] font-bold text-dl-text tracking-tight">DartLab</div>
+						<div class="text-[10px] uppercase tracking-[0.16em] text-dl-text-dim">Analysis Workspace</div>
+					</div>
+				</div>
 			</div>
 
 			<!-- New Chat -->
@@ -69,7 +74,7 @@
 			<!-- Search -->
 			{#if conversations.length > 3}
 				<div class="px-3 pb-2">
-					<div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-dl-bg-card border border-dl-border">
+					<div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-dl-bg-card/80 border border-dl-border/60">
 						<Search size={12} class="text-dl-text-dim flex-shrink-0" />
 						<input
 							type="text"
@@ -82,31 +87,33 @@
 			{/if}
 
 			<!-- Conversation List -->
-			<div class="flex-1 overflow-y-auto px-2 space-y-4">
+			<div class="flex-1 overflow-y-auto px-2 py-1 space-y-4">
 				{#each groups as group}
 					<div>
 						<div class="px-2 py-1.5 text-[11px] font-medium text-dl-text-dim uppercase tracking-wider">
 							{group.label}
 						</div>
 						{#each group.items as conv}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
 								class={cn(
-									"w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-[13px] transition-colors group cursor-pointer",
+									"w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left text-[13px] transition-all duration-200 group",
 									conv.id === activeId
-										? "bg-dl-bg-card text-dl-text border-l-2 border-dl-primary"
-										: "text-dl-text-muted hover:bg-dl-bg-card/50 hover:text-dl-text border-l-2 border-transparent"
+										? "bg-dl-surface-card text-dl-text border border-dl-primary/30 shadow-sm shadow-black/15"
+										: "text-dl-text-muted border border-transparent hover:bg-dl-bg-card/50 hover:text-dl-text hover:border-dl-border/60"
 								)}
-								onclick={() => onSelect?.(conv.id)}
-								onkeydown={(e) => { if (e.key === 'Enter') onSelect?.(conv.id); }}
-								role="button"
-								tabindex="0"
 							>
-								<MessageSquare size={14} class="flex-shrink-0 opacity-50" />
-								<span class="flex-1 truncate">{conv.title}</span>
+								<button
+									class="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-0.5 text-left"
+									onclick={() => onSelect?.(conv.id)}
+									aria-current={conv.id === activeId ? "true" : undefined}
+								>
+									<MessageSquare size={14} class="flex-shrink-0 opacity-50" />
+									<span class="flex-1 truncate">{conv.title}</span>
+								</button>
 								<button
 									class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-dl-bg-card-hover text-dl-text-dim hover:text-dl-primary transition-all"
 									onclick={(e) => { e.stopPropagation(); onDelete?.(conv.id); }}
+									aria-label={`${conv.title} 삭제`}
 								>
 									<Trash2 size={12} />
 								</button>
@@ -117,8 +124,9 @@
 			</div>
 
 			{#if version}
-				<div class="flex-shrink-0 px-4 py-2.5 border-t border-dl-border/50 text-[10px] text-dl-text-dim">
-					DartLab v{version}
+				<div class="flex-shrink-0 px-4 py-3 border-t border-dl-border/40">
+					<div class="text-[10px] uppercase tracking-[0.16em] text-dl-text-dim">Version</div>
+					<div class="mt-1 text-[10px] text-dl-text-muted">DartLab v{version}</div>
 				</div>
 			{/if}
 		</div>

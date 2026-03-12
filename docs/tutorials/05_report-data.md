@@ -1,4 +1,4 @@
----
+﻿---
 title: "5. Report Data"
 ---
 
@@ -24,9 +24,9 @@ title: "5. Report Data"
 ## 준비
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 ```
 
 ---
@@ -296,7 +296,7 @@ codes = ["005930", "000660", "035420"]
 rows = []
 
 for code in codes:
-    c = Company(code)
+    c = dartlab.Company(code)
     div = c.dividend
     if div is not None:
         last = div.row(-1, named=True)
@@ -316,3 +316,5 @@ print(pl.DataFrame(rows))
 
 - [6. 공시 텍스트](./disclosure) — 사업의 내용, MD&A, 회사의 개요
 - [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산, 교차 분석
+
+

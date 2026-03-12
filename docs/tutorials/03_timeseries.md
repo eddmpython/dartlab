@@ -1,4 +1,4 @@
----
+﻿---
 title: "3. Timeseries"
 ---
 
@@ -22,7 +22,7 @@ title: "3. Timeseries"
 ## 준비
 
 ```python
-from dartlab import Company
+import dartlab
 ```
 
 ---
@@ -65,7 +65,7 @@ DartLab은 이 문제를 **7단계 매핑 파이프라인**으로 해결한다.
 `Company.timeseries` property로 분기별 시계열을 받는다.
 
 ```python
-c = Company("005930")
+c = dartlab.Company("005930")
 series, periods = c.timeseries
 ```
 
@@ -269,9 +269,9 @@ for i, year in enumerate(years[-5:], len(years)-5):
 
 ```python
 companies = [
-    Company("005930"),   # 삼성전자
-    Company("000660"),   # SK하이닉스
-    Company("035420"),   # NAVER
+    dartlab.Company("005930"),   # 삼성전자
+    dartlab.Company("000660"),   # SK하이닉스
+    dartlab.Company("035420"),   # NAVER
 ]
 
 for comp in companies:
@@ -290,8 +290,8 @@ for comp in companies:
 ### 매출 시계열 나란히 보기
 
 ```python
-samsung = Company("005930")
-sk = Company("000660")
+samsung = dartlab.Company("005930")
+sk = dartlab.Company("000660")
 
 s1, p1 = samsung.timeseries
 s2, p2 = sk.timeseries
@@ -334,3 +334,4 @@ rev = series["IS"]["revenue"]
 
 - [4. 재무비율](./ratios) — 시계열에서 자동 계산되는 재무비율
 - [5. 보고서 데이터](./report-data) — 배당, 직원, 주주, 감사 등 정기보고서 데이터
+

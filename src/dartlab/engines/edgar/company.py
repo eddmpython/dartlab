@@ -1,12 +1,12 @@
-"""SEC EDGAR 기반 미국 기업 분석 클래스.
+"""EDGAR 엔진 내부 Company 본체.
 
 Company와 동일한 핵심 인터페이스를 제공하되, EDGAR 데이터를 사용한다.
 
 사용법::
 
-    from dartlab import USCompany
+    from dartlab import Company
 
-    c = USCompany("AAPL")
+    c = Company("AAPL")
     c.corpName             # "Apple Inc."
     c.timeseries           # (series, periods) 분기별
     c.annual               # (series, years) 연도별
@@ -21,15 +21,15 @@ import logging
 from pathlib import Path
 from typing import Any
 
-_log = logging.getLogger("dartlab.usCompany")
+_log = logging.getLogger("dartlab.engines.edgar.company")
 
 
-class USCompany:
+class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
 
     Example::
 
-        c = USCompany("AAPL")
+        c = Company("AAPL")
         c.corpName             # "Apple Inc."
         c.ratios               # RatioResult
         c.ratioSeries          # 연도별 비율 시계열
@@ -74,7 +74,7 @@ class USCompany:
         return Path(config.dataDir) / "edgar" / "tickers.parquet"
 
     def __repr__(self):
-        return f"USCompany('{self.ticker}', {self.corpName})"
+        return f"Company('{self.ticker}', {self.corpName})"
 
     @property
     def timeseries(self):

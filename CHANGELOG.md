@@ -5,6 +5,60 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-03-13
+
+### Changed
+
+**Company public surface 정리**
+- 공개 진입 예제를 `import dartlab; c = dartlab.Company("005930")` 로 통일
+- `Company.index`, `Company.show(topic)`, `Company.trace(topic)` 를 현재 메인 흐름으로 문서/예제/CLI에 반영
+- `Company.profile` 은 향후 terminal/notebook 문서형 보고서 뷰 로드맵으로만 명시
+
+**문서 / notebook / marimo 동기화**
+- README, GitHub Pages 문서, startMarimo, 연계 notebook 예제를 현재 API 기준으로 정리
+- docs 없는 회사에서 `현재 사업보고서 부재` 안내가 나온다는 점을 예제와 설명에 추가
+- compare 개선 예정, EDGAR Company UX 정렬 예정 메시지를 문서에 명시
+
+**CLI / server / UI surface 정리**
+- `dartlab profile` 기본 출력을 `company.index` 로 변경
+- `dartlab profile --show TOPIC`, `--trace TOPIC` 지원 추가
+- AI UI용 `/api/company/{code}/index`, `/show/{topic}`, `/trace/{topic}` endpoint와 client helper 추가
+
+### Fixed
+
+**생성 문서와 버전 메타데이터 갱신**
+- `scripts/generateSpec.py` 를 현재 Company surface 기준으로 갱신
+- `API_SPEC.md`, `llms.txt`, skill reference 생성물 재생성
+- 패키지/landing 버전을 `0.4.5` 로 갱신
+
+## [0.4.4] - 2026-03-12
+
+### Changed
+
+**docs/sections production 마감**
+- `Company.sections` 가 raw markdown를 보존한 canonical wide view로 동작하면서 appendix/detail row는 기본 core view에서 숨김
+- `Company.retrievalBlocks`, `Company.contextSlices` 가 `sourceTopic`, `cellKey`, `semanticTopic`, `detailTopic` 을 함께 반환해 원문 block을 역추적 가능하게 정리
+- appendix/detail 명세서(`재고자산명세서`, `감가상각비등명세서`, `제조원가명세서`, `법인세등명세서`, 감사 보수 등)를 detail semantic layer로 분리
+- broad raw residual 일부를 exact mapping으로 흡수해 package 기본 수평화 품질을 마감
+- 금융업/지적재산권/수주/계약 상세표를 detail taxonomy로 흡수해 추가 docs 종목군에서도 core raw residual이 사라지도록 보강
+
+**Company 레이어 정상화**
+- `engines.dart.company`, `engines.edgar.company` 에 시장별 Company 본체를 배치하고 루트 `dartlab.company` 는 facade만 담당하도록 재구성
+- `engines.dart.compare`, `engines.edgar.compare` 도 루트 compare 의존 없이 독립 import 가능하도록 정리
+- `engines` 하위에서 루트 `dartlab.company`, `dartlab.compare`, `dartlab.usCompany` 를 직접 import 하지 않도록 레이어 방향을 바로잡음
+
+### Fixed
+
+**패키지 메타데이터와 문서 정리**
+- README에 `sections/retrievalBlocks/contextSlices` 사용 흐름과 런타임 무저장 원칙을 명시
+- `pyproject.toml` classifier 를 `Production/Stable` 로 상향
+
+**CLI 상용화 준비**
+- 단일 `cli.py` 를 `dartlab/cli/` 패키지로 분리하고 명령/서비스/파서 계층을 고정
+- `dartlab` 엔트리포인트를 `dartlab.cli.main:main` 으로 전환
+- CLI 종료 코드, 공통 예외 처리, deprecated alias 정책, `--version` 지원을 표준화
+- subprocess 기반 CLI E2E smoke test와 packaging contract test를 추가
+
 ## [0.4.3] - 2026-03-12
 
 ### Fixed
@@ -94,6 +148,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 008: 사업의 내용으로 기업 판단하기
 - 블로그별 SVG 다이어그램 추가
 
+[0.4.4]: https://github.com/eddmpython/dartlab/compare/v0.4.3...v0.4.4
+[0.4.5]: https://github.com/eddmpython/dartlab/compare/v0.4.4...v0.4.5
 [0.4.3]: https://github.com/eddmpython/dartlab/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/eddmpython/dartlab/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/eddmpython/dartlab/compare/v0.4.0...v0.4.1
@@ -157,8 +213,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **서버 Company.search 버그 수정**
 - `Company`는 팩토리 함수이므로 `.search()` staticmethod가 존재하지 않던 문제
-- `server/resolve.py`, `server/__init__.py`에서 `Company.search()` → `KRCompany.search()`로 변경
-- `Company()` 팩토리 함수 반환 타입 힌트를 forward reference(`"KRCompany"`)로 수정
+- `server/resolve.py`, `server/__init__.py`에서 DART engine company search 경로로 수정
+- `Company()` 팩토리 함수 반환 타입 힌트를 facade 구조 기준으로 정리
 
 [0.3.1]: https://github.com/eddmpython/dartlab/compare/v0.3.0...v0.3.1
 

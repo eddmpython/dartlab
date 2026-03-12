@@ -1,4 +1,4 @@
----
+﻿---
 title: 계정 표준화와 시계열
 ---
 
@@ -208,10 +208,10 @@ r = calcRatios(series, marketCap=400_000_000_000_000)  # 시가총액 제공 시
 두 기업의 매출 시계열을 비교하는 예시:
 
 ```python
-from dartlab import Company
+import dartlab
 
-samsung = Company("005930")
-sk = Company("000660")
+samsung = dartlab.Company("005930")
+sk = dartlab.Company("000660")
 
 s1, p1 = samsung.timeseries
 s2, p2 = sk.timeseries
@@ -232,3 +232,4 @@ sk_rev = s2["IS"]["revenue"]
 - `interest_income`, `insurance_revenue` 같은 금융업 고유 계정이 존재한다
 
 insight 엔진은 금융업을 자동 감지하여 별도 기준으로 분석한다.
+

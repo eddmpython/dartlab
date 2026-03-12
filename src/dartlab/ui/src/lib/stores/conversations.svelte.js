@@ -65,13 +65,10 @@ function saveToStorage(data) {
 /** 대화 목록 + 활성 대화 관리 */
 export function createConversationsStore() {
 	const stored = loadFromStorage();
-	let conversations = $state(stored.conversations);
-	let activeId = $state(stored.activeId);
-
-	// activeId가 유효하지 않으면 초기화
-	if (activeId && !conversations.find(c => c.id === activeId)) {
-		activeId = null;
-	}
+	const initialConversations = stored.conversations || [];
+	const initialActiveId = initialConversations.find(c => c.id === stored.activeId) ? stored.activeId : null;
+	let conversations = $state(initialConversations);
+	let activeId = $state(initialActiveId);
 
 	let persistTimer = null;
 	function persist() {

@@ -1,4 +1,4 @@
----
+﻿---
 title: "6. Disclosure Text"
 ---
 
@@ -20,9 +20,9 @@ title: "6. Disclosure Text"
 ## 준비
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 ```
 
 ---
@@ -206,3 +206,4 @@ c.companyHistory
 
 - [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산 변동, 관계기업
 - [8. 기업 간 비교](./cross-company) — 섹터, 인사이트, 순위
+

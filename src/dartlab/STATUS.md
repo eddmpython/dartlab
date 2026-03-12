@@ -55,14 +55,14 @@ dartlab/
 
 ## API 요약
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
+c.index                 # 회사 구조 인덱스
+c.show("BS")            # topic payload
+c.trace("dividend")     # source trace
 c.BS                    # 재무상태표 DataFrame
 c.dividend              # 배당 시계열 DataFrame
-c.notes.inventory       # 주석 · 재고자산
-c.notes["재고자산"]      # 한글 키로도 접근
-d = c.all()             # 전체 dict (progress bar)
 
 import dartlab
 dartlab.verbose = False  # 진행 표시 끄기

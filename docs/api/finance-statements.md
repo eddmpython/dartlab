@@ -1,4 +1,4 @@
----
+﻿---
 title: finance.statements
 ---
 
@@ -11,7 +11,7 @@ title: finance.statements
 ### property 접근 (간편)
 
 ```python
-c = Company("005930")
+c = dartlab.Company("005930")
 
 c.BS   # 재무상태표
 c.IS   # 손익계산서
@@ -81,9 +81,9 @@ result = c.get("statements", period="h")   # 반기별
 ### 재무상태표 — 주요 항목
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 
 print(c.BS)
 # account         | 2015       | 2016       | ... | 2024
@@ -125,3 +125,4 @@ print(f"BS 항목 수: {result.BS.height if result.BS is not None else 0}")
 print(f"IS 항목 수: {result.IS.height if result.IS is not None else 0}")
 print(f"CF 항목 수: {result.CF.height if result.CF is not None else 0}")
 ```
+

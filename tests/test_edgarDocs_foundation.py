@@ -1,5 +1,6 @@
 """EDGAR docs 저장·로더 기반 테스트."""
 
+import json
 from pathlib import Path
 
 import polars as pl
@@ -210,6 +211,106 @@ def test_loadData_edgarDocs_sinceYear_override(monkeypatch, tmp_path):
     assert called["sinceYear"] == 2015
 
 
+def test_getLocalEdgarDocsState_reads_latest_from_parquet(tmp_path):
+    from dartlab.core.dataLoader import _getLocalEdgarDocsState
+
+    df = pl.read_parquet(FIXTURE_EDGAR_DOCS)
+    path = tmp_path / "AAPL.parquet"
+    df.write_parquet(path)
+
+    state = _getLocalEdgarDocsState(path)
+
+    assert state is not None
+    assert state["latest_filing_date"] == "2026-01-30"
+    assert state["latest_accession_no"] == "0000320193-26-000006"
+
+
+def test_loadData_edgarDocs_local_only_uses_local_file(monkeypatch, tmp_path):
+    from dartlab import config
+    from dartlab.core.dataLoader import loadData
+
+    dataRoot = tmp_path / "data"
+    docsDir = dataRoot / "edgar" / "docs"
+    docsDir.mkdir(parents=True)
+    fixture = pl.read_parquet(FIXTURE_EDGAR_DOCS)
+    path = docsDir / "AAPL.parquet"
+    fixture.write_parquet(path)
+
+    monkeypatch.setattr(config, "dataDir", str(dataRoot))
+
+    df = loadData("AAPL", category="edgarDocs", refresh="local_only")
+    assert df.height == fixture.height
+
+
+def test_loadData_edgarDocs_force_check_skips_rebuild_when_fresh(monkeypatch, tmp_path):
+    from dartlab import config
+    from dartlab.core.dataLoader import loadData
+
+    dataRoot = tmp_path / "data"
+    docsDir = dataRoot / "edgar" / "docs"
+    docsDir.mkdir(parents=True)
+    fixture = pl.read_parquet(FIXTURE_EDGAR_DOCS)
+    path = docsDir / "AAPL.parquet"
+    fixture.write_parquet(path)
+
+    monkeypatch.setattr(config, "dataDir", str(dataRoot))
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._getLatestRegularEdgarFiling",
+        lambda stockCode, sinceYear=2009: {
+            "ticker": "AAPL",
+            "cik": "0000320193",
+            "filing_date": "2024-11-01",
+            "accession_no": fixture["accession_no"][0],
+            "form_type": "10-K",
+        },
+    )
+
+    rebuilt = {"called": False}
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._incrementalUpdateEdgarDocs",
+        lambda *args, **kwargs: rebuilt.__setitem__("called", True),
+    )
+
+    loadData("AAPL", category="edgarDocs", refresh="force_check")
+    assert rebuilt["called"] is False
+
+
+def test_loadData_edgarDocs_force_check_runs_incremental_when_stale(monkeypatch, tmp_path):
+    from dartlab import config
+    from dartlab.core.dataLoader import loadData
+
+    dataRoot = tmp_path / "data"
+    docsDir = dataRoot / "edgar" / "docs"
+    docsDir.mkdir(parents=True)
+    fixture = pl.read_parquet(FIXTURE_EDGAR_DOCS)
+    path = docsDir / "AAPL.parquet"
+    fixture.write_parquet(path)
+
+    monkeypatch.setattr(config, "dataDir", str(dataRoot))
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._getLatestRegularEdgarFiling",
+        lambda stockCode, sinceYear=2009: {
+            "ticker": "AAPL",
+            "cik": "0000320193",
+            "filing_date": "2026-05-01",
+            "accession_no": "new-accession",
+            "form_type": "10-Q",
+        },
+    )
+
+    called = {}
+    def fakeIncremental(stockCode: str, pathArg: Path, *, sinceYear: int, latestRemote: dict) -> None:
+        called["stockCode"] = stockCode
+        called["path"] = pathArg
+        called["latest"] = latestRemote
+
+    monkeypatch.setattr("dartlab.core.dataLoader._incrementalUpdateEdgarDocs", fakeIncremental)
+
+    loadData("AAPL", category="edgarDocs", refresh="force_check")
+    assert called["stockCode"] == "AAPL"
+    assert called["latest"]["accession_no"] == "new-accession"
+
+
 def test_selectEdgarReport_annual_and_quarter():
     from dartlab.core.dataLoader import _normalizeLoadedFrame
     from dartlab.core.reportSelector import selectEdgarReport
@@ -283,13 +384,11 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
         "cik": ["0000320193", "0000789019", "0000123456"],
         "title": ["Apple Inc.", "Microsoft Corp.", "OTC Example"],
         "exchange": ["Nasdaq", "NYSE", "OTC"],
-        "is_exchange_listed": [True, True, False],
-        "is_otc": [False, False, True],
     })
 
     fetched: list[tuple[str, int]] = []
 
-    def fakeLoadEdgarListedUniverse(*, forceUpdate: bool = False) -> pl.DataFrame:
+    def fakeBuildEdgarCollectibleUniverse(*, limit: int = 2000, sinceYear: int = 2009, forceRefresh: bool = False) -> pl.DataFrame:
         return universe
 
     def fakeFetchEdgarDocs(ticker: str, outPath: Path, *, sinceYear: int = 2009, maxFilings=None) -> Path:
@@ -298,13 +397,268 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
         pl.DataFrame({"ticker": [ticker]}).write_parquet(outPath)
         return outPath
 
-    monkeypatch.setattr("dartlab.core.dataLoader.loadEdgarListedUniverse", fakeLoadEdgarListedUniverse)
+    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.buildEdgarCollectibleUniverse", fakeBuildEdgarCollectibleUniverse)
     monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
 
     result = downloadListedEdgarDocs(limit=10, sinceYear=2009, batchSize=0, cooldownSeconds=0)
 
-    assert fetched == [("AAPL", 2009), ("MSFT", 2009)]
-    assert result.filter(pl.col("status") == "downloaded").height == 2
+    assert fetched == [("AAPL", 2009), ("MSFT", 2009), ("OTCX", 2009)]
+    assert result.filter(pl.col("status") == "downloaded").height == 3
+
+
+def test_findFilings_includes_40f_and_excludes_6k():
+    from dartlab.engines.edgar.docs.fetch import _findFilings
+
+    submissions = {
+        "cik": "0001308648",
+        "filings": {
+            "recent": {
+                "form": ["6-K", "40-F", "20-F", "10-Q"],
+                "filingDate": ["2025-01-10", "2024-03-01", "2023-03-01", "2024-05-10"],
+                "reportDate": ["", "2023-12-31", "2022-12-31", "2024-03-31"],
+                "accessionNumber": ["a", "b", "c", "d"],
+                "primaryDocument": ["a.htm", "b.htm", "c.htm", "d.htm"],
+            },
+            "files": [],
+        },
+    }
+
+    filings = _findFilings(submissions, 2009)
+
+    assert [row["formType"] for row in filings] == ["20-F", "40-F", "10-Q"]
+
+
+def test_periodKey_treats_40f_as_annual():
+    from dartlab.engines.edgar.docs.fetch import _periodKey
+
+    assert _periodKey("40-F", "2024-12-31", "2025") == "2024"
+    assert _periodKey("40-F", None, "2024") == "2024"
+
+
+def test_summarizeEdgarDocsFrame_flags_unexpected_full_document():
+    from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
+
+    df = pl.DataFrame({
+        "accession_no": ["a1", "a1", "a2"],
+        "form_type": ["10-K", "10-K", "40-F"],
+        "section_title": ["Full Document", "Item 1. Business", "Full Document"],
+        "section_content": ["alpha", "| x | y |", "gamma"],
+    })
+
+    summary = summarizeEdgarDocsFrame(df)
+
+    assert summary["rows_saved"] == 3
+    assert summary["filings_saved"] == 2
+    assert summary["forms_found"] == ["10-K", "40-F"]
+    assert summary["table_rows"] == 1
+    assert "unexpected_full_document:10-K" in summary["quality_flags"]
+
+
+def test_summarizeEdgarDocsFrame_allows_40f_full_document_fallback():
+    from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
+
+    df = pl.DataFrame({
+        "accession_no": ["a1"],
+        "form_type": ["40-F"],
+        "section_title": ["Full Document"],
+        "section_content": ["plain text"],
+    })
+
+    summary = summarizeEdgarDocsFrame(df)
+
+    assert summary["quality_flags"] == []
+    assert summary["full_document_rows"] == 1
+
+
+def test_dedupeIssuerUniverse_prefers_base_ticker():
+    from dartlab.engines.edgar.docs.fetch import _dedupeIssuerUniverse
+
+    df = pl.DataFrame({
+        "ticker": ["AGM-PD", "AGM", "AGM-PE", "BRK-B", "BRK-A"],
+        "cik": ["0001001", "0001001", "0001001", "0001002", "0001002"],
+        "title": ["Farm Credit", "Farm Credit", "Farm Credit", "Berkshire", "Berkshire"],
+        "exchange": ["NYSE", "NYSE", "NYSE", "NYSE", "NYSE"],
+    })
+
+    result = _dedupeIssuerUniverse(df)
+
+    assert result["ticker"].to_list() == ["AGM", "BRK-A"]
+
+
+def test_interleaveIssuerUniverse_spreads_tickers_across_buckets():
+    from dartlab.engines.edgar.docs.fetch import _interleaveIssuerUniverse
+
+    df = pl.DataFrame({
+        "ticker": ["AAPL", "AAON", "AMZN", "BRK-A", "BMY", "C", "CRM"],
+        "cik": ["1", "2", "3", "4", "5", "6", "7"],
+        "title": ["a", "b", "c", "d", "e", "f", "g"],
+        "exchange": ["Nasdaq"] * 7,
+    })
+
+    result = _interleaveIssuerUniverse(df)
+
+    assert result["ticker"].to_list() == ["AAON", "BMY", "C", "AAPL", "BRK-A", "CRM", "AMZN"]
+
+
+def test_prepareEdgarCollectibleUniverse_writes_incremental_cache_and_progress(monkeypatch, tmp_path):
+    from dartlab import config
+    from dartlab.engines.edgar.docs.fetch import prepareEdgarCollectibleUniverse
+
+    monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
+
+    listed = pl.DataFrame({
+        "ticker": ["AAPL", "BMY", "CRM"],
+        "cik": ["0001", "0002", "0003"],
+        "title": ["Apple", "Bristol", "Salesforce"],
+        "exchange": ["Nasdaq", "NYSE", "NYSE"],
+        "is_exchange_listed": [True, True, True],
+    })
+
+    def fakeLoadListedUniverse():
+        return listed
+
+    def fakeGetSubmissions(cik: str):
+        formMap = {
+            "0001": ["10-K", "10-Q"],
+            "0002": [],
+            "0003": ["20-F"],
+        }
+        forms = formMap[cik]
+        return {
+            "cik": cik,
+            "filings": {
+                "recent": {
+                    "form": forms,
+                    "filingDate": ["2025-01-01"] * len(forms),
+                    "reportDate": ["2024-12-31"] * len(forms),
+                    "accessionNumber": [f"{cik}-{idx}" for idx in range(len(forms))],
+                    "primaryDocument": [f"{idx}.htm" for idx in range(len(forms))],
+                },
+                "files": [],
+            },
+        }
+
+    monkeypatch.setattr("dartlab.core.dataLoader.loadEdgarListedUniverse", fakeLoadListedUniverse)
+    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch._getSubmissions", fakeGetSubmissions)
+
+    progressPath = tmp_path / "universe.progress.jsonl"
+    result = prepareEdgarCollectibleUniverse(limit=2, sinceYear=2009, progressPath=progressPath, flushEvery=1)
+
+    assert result["ticker"].to_list() == ["AAPL", "CRM"]
+    assert result["candidate_order"].to_list() == [1, 2]
+    assert result["supported_regular_forms"].to_list() == ["10-K,10-Q", "20-F"]
+
+    cachePath = tmp_path / "data" / "edgar" / "docsCollectibleUniverse.parquet"
+    assert cachePath.exists()
+    assert progressPath.exists()
+    progressLines = progressPath.read_text(encoding="utf-8").strip().splitlines()
+    assert len(progressLines) == 3
+    assert '"status": "supported"' in progressLines[0]
+    assert any('"status": "unsupported_regular_forms"' in line for line in progressLines)
+
+
+def test_download_batch_classifies_failure_kinds():
+    import importlib.util
+    import requests
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    spec = importlib.util.spec_from_file_location("exp057_download", scriptPath)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module._classifyFailure("A filing 없음", ValueError("A filing 없음")) == "no_supported_regular_filing"
+    assert module._classifyFailure("section 추출 실패", ValueError("section 추출 실패")) == "parse_error"
+    assert module._classifyFailure("TLS CA certificate bundle", OSError("TLS CA certificate bundle")) == "legacy_env_error"
+    assert module._classifyFailure("timed out", TimeoutError("timed out")) == "fetch_timeout"
+    assert module._classifyFailure("network", requests.RequestException("network")) == "fetch_error"
+    assert module._classifyFailure("disk", OSError("disk")) == "storage_error"
+
+
+def test_download_batch_lock_blocks_duplicate_run(tmp_path):
+    import importlib.util
+    import pytest
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    spec = importlib.util.spec_from_file_location("exp057_download_lock", scriptPath)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    lockPath = tmp_path / "download.lock"
+    module._acquireLock(lockPath)
+    try:
+        with pytest.raises(RuntimeError, match="already running"):
+            module._acquireLock(lockPath)
+    finally:
+        module._releaseLock(lockPath)
+
+
+def test_download_batch_load_completed_requires_existing_parquet(tmp_path):
+    import importlib.util
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    spec = importlib.util.spec_from_file_location("exp057_download_completed", scriptPath)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    docsDir = tmp_path / "docs"
+    docsDir.mkdir()
+    progressPath = tmp_path / "download.progress.jsonl"
+    progressPath.write_text(
+        "\n".join([
+            json.dumps({"ticker": "AAPL", "status": "downloaded", "path": str(docsDir / "AAPL.parquet")}),
+            json.dumps({"ticker": "MSFT", "status": "downloaded", "path": str(docsDir / "MSFT.parquet")}),
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    (docsDir / "MSFT.parquet").write_bytes(b"PAR1")
+
+    completed = module._loadCompleted(progressPath, docsDir)
+
+    assert completed == {"MSFT"}
+
+
+def test_download_batch_prepare_state_archives_stale_progress(tmp_path):
+    import importlib.util
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    spec = importlib.util.spec_from_file_location("exp057_download_state", scriptPath)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    docsDir = tmp_path / "docs"
+    docsDir.mkdir()
+    progressPath = tmp_path / "download.progress.jsonl"
+    heartbeatPath = tmp_path / "download.heartbeat.json"
+    monitorPath = tmp_path / "download.monitor.json"
+    progressPath.write_text("old\n", encoding="utf-8")
+    heartbeatPath.write_text("{}", encoding="utf-8")
+    monitorPath.write_text("{}", encoding="utf-8")
+
+    runId = module._prepareBatchState(
+        docsDir=docsDir,
+        progressPath=progressPath,
+        heartbeatPath=heartbeatPath,
+        monitorPath=monitorPath,
+    )
+
+    assert not progressPath.exists()
+    assert not heartbeatPath.exists()
+    assert not monitorPath.exists()
+    assert len(list(tmp_path.glob(f"download.progress.stale-{runId}.jsonl"))) == 1
+    assert len(list(tmp_path.glob(f"download.heartbeat.stale-{runId}.json"))) == 1
+    assert len(list(tmp_path.glob(f"download.monitor.stale-{runId}.json"))) == 1
 
 
 def test_edgar_sections_pipeline_builds_topic_period_view(tmp_path, monkeypatch):
@@ -454,6 +808,291 @@ Exhibits body
     assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
     assert "Part II - Item 1. Legal Proceedings" in titles
     assert "Part II - Item 1A. Risk Factors" in titles
+
+
+def test_splitItems_splits_quarterly_items_with_en_dash_titles():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+PART I. FINANCIAL INFORMATION
+Item 1 – Financial Statements
+Quarterly statements body
+Item 2 – Management's Discussion and Analysis of Financial Condition and Results of Operations
+MD&A body
+Item 3 – Quantitative and Qualitative Disclosures About Market Risk
+Risk body
+Item 4 – Controls and Procedures
+Controls body
+PART II. OTHER INFORMATION
+Item 1 – Legal Proceedings
+Legal body
+Item 1A – Risk Factors
+Risk factors body
+Item 6 – Exhibits
+Exhibits body
+""".strip()
+
+    items = _splitItems(text, "10-Q")
+
+    titles = [item["title"] for item in items]
+    assert "Part I - Item 1. Financial Statements" in titles
+    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert "Part II - Item 1A. Risk Factors" in titles
+
+
+def test_splitItems_splits_quarterly_items_with_split_part_and_title_lines():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+PART
+I – FINANCIAL INFORMATION
+Item 1 – Financial
+Statements
+Quarterly statements body
+Item 2 – Management’s
+Discussion and Analysis of Financial Condition and Results of Operations
+MD&A body
+Item 3 – Quantitative and
+Qualitative Disclosures About Market Risk
+Risk body
+Item 4 – Controls and
+Procedures
+Controls body
+PART II
+Item 1 – Legal
+Proceedings
+Legal body
+Item 1A – Risk
+Factors
+Risk factors body
+Item 6 –
+Exhibits
+Exhibits body
+""".strip()
+
+    items = _splitItems(text, "10-Q")
+
+    titles = [item["title"] for item in items]
+    assert "Part I - Item 1. Financial Statements" in titles
+    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert "Part II - Item 1A. Risk Factors" in titles
+
+
+def test_splitItems_prefers_quarterly_body_items_over_toc_items():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+TABLE OF CONTENTS
+| PART I. FINANCIAL INFORMATION |  |  | Page |  |  |
+| Item 1: | Financial Statements |  |  |  |  |
+| Item 2: | Management's Discussion and Analysis of Financial Condition and Results of Operations |  |  |  |  |
+| Item 3: | Quantitative and Qualitative Disclosures About Market Risk |  |  | 40 |  |
+| Item 4: | Controls and Procedures |  |  | 41 |  |
+| PART II. OTHER INFORMATION |  |  |  |  |  |
+| Item 1A: | Risk Factors |  |  | 42 |  |
+| Item 6: | Exhibits |  |  | 42 |  |
+| PART I. | FINANCIAL INFORMATION |
+| Item 1. | Financial Statements |
+Financial statements body
+| Item 2. | Management's Discussion and Analysis of Financial Condition and Results of Operations |
+MD&A body
+| Item 3. | Quantitative and Qualitative Disclosures About Market Risk |
+Market risk body
+| Item 4. | Controls and Procedures |
+Controls body
+| PART II. | OTHER INFORMATION |
+| Item 1A. | Risk Factors |
+Risk factors body
+| Item 6. | Exhibits |
+Exhibits body
+""".strip()
+
+    items = _splitItems(text, "10-Q")
+
+    titles = [item["title"] for item in items]
+    assert titles == [
+        "Part I - Item 1. Financial Statements",
+        "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+        "Part I - Item 3. Quantitative and Qualitative Disclosures About Market Risk",
+        "Part I - Item 4. Controls and Procedures",
+        "Part II - Item 1A. Risk Factors",
+        "Part II - Item 6. Exhibits",
+    ]
+    assert "Market risk body" in items[2]["content"]
+    assert "Risk factors body" in items[4]["content"]
+
+
+def test_splitItems_splits_quarterly_items_with_item_number_on_next_line():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+PART I. FINANCIAL INFORMATION
+| Item 1. | Financial Statements |
+Financial statements body
+Item
+2. Management's Discussion and Analysis of Financial Condition and Results of Operations
+MD&A body
+Item
+3. Quantitative and Qualitative Disclosures About Market Risk
+Risk body
+Item
+4. Controls and Procedures
+Controls body
+PART II. OTHER INFORMATION
+Item
+1A. Risk Factors
+Risk factors body
+Item
+6. Exhibits
+Exhibits body
+""".strip()
+
+    items = _splitItems(text, "10-Q")
+
+    titles = [item["title"] for item in items]
+    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert "Part I - Item 3. Quantitative and Qualitative Disclosures About Market Risk" in titles
+    assert "Part II - Item 1A. Risk Factors" in titles
+
+
+def test_splitItems_splits_10k_from_table_rows():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+| PART I |  |  |  |
+| Item 1 |  | Business |  |
+Business body
+More business body
+| Item 1A |  | Risk Factors |  |
+Risk body
+| Item 7 |  | Management's Discussion and Analysis of Financial Condition and Results of Operations |  |
+MD&A body
+| Item 8 |  | Financial Statements and Supplementary Data |  |
+Financial body
+""".strip()
+
+    items = _splitItems(text, "10-K")
+
+    titles = [item["title"] for item in items]
+    assert "Item 1. Business" in titles
+    assert "Item 1A. Risk Factors" in titles
+    assert "Item 7. MD&A" in titles
+    assert "Item 8. Financial Statements" in titles
+
+
+def test_splitItems_prefers_10k_body_table_items_over_toc_rows():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+Table of Contents
+| Item 1. |  | Business |  | 6 |
+| Item 1A. |  | Risk Factors |  | 26 |
+| Item 7. |  | Management's Discussion and Analysis of Financial Condition and Results of Operations |  | 57 |
+| Item 8. |  | Financial Statements and Supplementary Data |  | 65 |
+Part I
+| Item 1. |  | Business |  |  |
+Business body
+| Item 1A. |  | Risk Factors |  |  |
+Risk factors body
+Part II
+| Item 7. |  | Management's Discussion and Analysis of Financial Condition and Results of Operations |  |  |
+MD&A body
+| Item 8. |  | Financial Statements and Supplementary Data |  |  |
+Financial body
+""".strip()
+
+    items = _splitItems(text, "10-K")
+
+    assert "Business body" in items[0]["content"]
+    assert "Risk factors body" in items[1]["content"]
+    assert "MD&A body" in items[2]["content"]
+    assert "Financial body" in items[3]["content"]
+
+
+def test_splitItems_prefers_10k_body_items_over_toc_item_lines():
+    from dartlab.engines.edgar.docs.fetch import _splitItems
+
+    text = """
+Table of Contents
+Item 1. Business
+Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations
+Item 8. Financial Statements and Supplementary Data
+Part I
+Item 1. Business
+Business body
+Part II
+Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations
+MD&A body
+Item 8. Financial Statements and Supplementary Data
+Financial body
+""".strip()
+
+    items = _splitItems(text, "10-K")
+
+    titles = [item["title"] for item in items]
+    assert titles == [
+        "Item 1. Business",
+        "Item 7. MD&A",
+        "Item 8. Financial Statements",
+    ]
+    assert "Business body" in items[0]["content"]
+    assert "MD&A body" in items[1]["content"]
+    assert "Financial body" in items[2]["content"]
+
+
+def test_submissionTextUrl_uses_accession_txt_name():
+    from dartlab.engines.edgar.docs.fetch import _filingIndexJsonUrl, _submissionTextUrl
+
+    filing = {
+        "accessionNumber": "0001907982-24-000049",
+        "filingUrl": "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/qbts-20231231.htm",
+    }
+
+    assert _submissionTextUrl(filing) == (
+        "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/"
+        "0001907982-24-000049.txt"
+    )
+    assert _filingIndexJsonUrl(filing) == (
+        "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/index.json"
+    )
+
+
+def test_classify40FDocumentName_identifies_supporting_documents():
+    from dartlab.engines.edgar.docs.fetch import _classify40FDocumentName
+
+    assert _classify40FDocumentName("a997-annualinformationfo.htm") == "Annual Information Form"
+    assert _classify40FDocumentName("mda20250331q42025.htm") == "MD&A"
+    assert _classify40FDocumentName("acb-20250331_d2.htm") == "Financial Statements"
+    assert _classify40FDocumentName("exhibit311-ye2023.htm") is None
+
+
+def test_split40FPrimaryText_splits_uppercase_headings():
+    from dartlab.engines.edgar.docs.fetch import _split40FPrimaryText
+
+    text = """
+FORM 40-F
+ANNUAL INFORMATION FORM
+Annual info body
+AUDITED ANNUAL FINANCIAL STATEMENTS
+Financial statements body
+MANAGEMENT'S DISCUSSION AND ANALYSIS
+MD&A body
+CASH REQUIREMENTS
+Cash requirement body
+EXHIBIT INDEX
+Exhibit body
+""".strip()
+
+    items = _split40FPrimaryText(text)
+
+    assert [item["title"] for item in items] == [
+        "Annual Information Form",
+        "Audited Annual Financial Statements",
+        "Management'S Discussion And Analysis",
+        "Cash Requirements",
+        "Exhibit Index",
+    ]
+    assert "MD&A body" in items[2]["content"]
 
 
 def test_parseEdgarPeriodKey_and_extractEdgarReportYear():

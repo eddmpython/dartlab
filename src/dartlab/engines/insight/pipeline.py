@@ -21,7 +21,7 @@ from dartlab.engines.insight.types import AnalysisResult
 from dartlab.engines.sector.types import Sector
 
 if TYPE_CHECKING:
-    from dartlab.company import KRCompany as Company
+    from dartlab.engines.dart.company import Company
 
 SeriesPair = tuple[dict, list[str]]
 
@@ -65,8 +65,8 @@ def analyze(
 
     if company is None and corpName is None:
         try:
-            import dartlab
-            company = dartlab.Company(stockCode)
+            from dartlab.engines.dart.company import Company
+            company = Company(stockCode)
         except ValueError:
             pass
 

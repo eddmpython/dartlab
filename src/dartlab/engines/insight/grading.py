@@ -15,7 +15,7 @@ from dartlab.engines.insight.types import Flag, InsightResult
 from dartlab.engines.sector.types import Sector
 
 if TYPE_CHECKING:
-    from dartlab.company import KRCompany as Company
+    from dartlab.engines.dart.company import Company
 
 
 def _scoreToGrade(score: int, maxScore: int) -> str:

@@ -1,4 +1,4 @@
----
+﻿---
 title: "1. Quickstart"
 ---
 
@@ -22,9 +22,9 @@ title: "1. Quickstart"
 모든 분석의 시작점이다. 종목코드 또는 회사명으로 생성한다.
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 c.corpName   # "삼성전자"
 c.stockCode  # "005930"
 ```
@@ -32,7 +32,7 @@ c.stockCode  # "005930"
 회사명으로도 가능하다.
 
 ```python
-c = Company("카카오")
+c = dartlab.Company("카카오")
 c.stockCode    # "035720"
 ```
 
@@ -132,7 +132,7 @@ print(quarterly.BS)   # 분기별 재무상태표
 해당 종목의 공시 목록과 DART 뷰어 링크를 조회한다.
 
 ```python
-c.docs()
+c.filings()
 # year | reportType | rceptDate | rceptNo | dartUrl
 ```
 
@@ -169,14 +169,14 @@ c.guide()
 
 ```python
 # 로컬에 있는 전체 종목 인덱스
-Company.status()
+dartlab.Company.status()
 # stockCode | corpName | rows | yearFrom | yearTo | nDocs
 
 # 종목 검색
-Company.search("반도체")
+dartlab.Company.search("반도체")
 
 # 전체 상장기업 목록
-Company.listing()
+dartlab.Company.listing()
 ```
 
 ---
@@ -187,7 +187,7 @@ Company.listing()
 import dartlab
 
 dartlab.verbose = False
-c = Company("005930")   # 조용히 생성
+c = dartlab.Company("005930")   # 조용히 생성
 d = c.all()              # progress bar 없이 실행
 ```
 
@@ -198,3 +198,4 @@ d = c.all()              # progress bar 없이 실행
 - [2. 재무제표 조회](./financial-statements) — BS, IS, CF 상세 조회와 데이터 구조
 - [3. 시계열 분석](./timeseries) — 계정 표준화, 분기별 독립 시계열, TTM
 - [API Overview](../api/overview) — property 전체 목록
+

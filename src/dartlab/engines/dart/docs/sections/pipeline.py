@@ -21,24 +21,18 @@ period key 형식:
 
 from __future__ import annotations
 
-import re
-
 import polars as pl
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.dart.docs.sections.chunker import chunkRows
+from dartlab.engines.dart.docs.sections.chunker import parseMajorNum
 from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 from dartlab.engines.dart.docs.sections.runtime import (
     applyProjections,
-    baseChunkPath,
     chapterFromMajorNum,
     chapterTeacherTopics,
+    detailTopicForTopic,
     projectionSuppressedTopics,
-)
-from dartlab.engines.dart.docs.sections.types import (
-    SectionChunk,
-    YearSections,
 )
 from dartlab.engines.dart.docs.sections.views import sortPeriods
 
@@ -49,75 +43,44 @@ _REPORT_KINDS = [
     ("Q3", "Q3"),
 ]
 
-_RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
 def _getContentCol(df: pl.DataFrame) -> str:
     if "section_content" in df.columns:
         return "section_content"
     return "content"
 
 
-def _leafTitle(path: str) -> str:
-    base = baseChunkPath(path)
-    parts = base.split(" > ")
-    leaf = parts[-1]
-    return stripSectionPrefix(leaf)
-
-
-def _buildYearSections(
-    df: pl.DataFrame,
-    year: str,
-    reportKind: str,
-    periodKey: str,
-    contentCol: str,
-) -> YearSections | None:
-    report = selectReport(df, year, reportKind=reportKind)
-    if report is None:
-        return None
-
-    if contentCol not in report.columns:
-        return None
-
-    nonEmpty = report.filter(pl.col(contentCol).is_not_null() & (pl.col(contentCol).str.len_chars() > 0))
-    if len(nonEmpty) == 0:
-        return None
-
-    rows = report.sort("section_order").to_dicts()
-    chunks = chunkRows(rows, contentCol)
-    if not chunks:
-        return None
-
-    totalOriginal = sum(c.totalChars for c in chunks)
-    totalText = sum(c.textChars for c in chunks if c.kind != "skipped")
-
-    return YearSections(
-        year=periodKey,
-        chunks=chunks,
-        totalOriginalChars=totalOriginal,
-        totalTextChars=totalText,
-    )
-
-
-def _chunkRowsToTopicRows(chunks: list[SectionChunk]) -> list[dict[str, object]]:
+def _reportRowsToTopicRows(rows: list[dict[str, object]], contentCol: str) -> list[dict[str, object]]:
     merged: dict[tuple[str, str], list[str]] = {}
     order: dict[tuple[str, str], tuple[int, int]] = {}
     source: dict[tuple[str, str], str] = {}
+    currentMajorNum: int | None = None
     idx = 0
-    for c in chunks:
-        if c.kind in ("skipped", "table_only"):
+
+    for record in rows:
+        title = str(record.get("section_title") or "").strip()
+        content = str(record.get(contentCol) or "")
+        if not title or not content.strip():
             continue
-        chapter = chapterFromMajorNum(c.majorNum)
+
+        majorNum = parseMajorNum(title)
+        if majorNum is not None:
+            currentMajorNum = majorNum
+        if currentMajorNum is None:
+            continue
+
+        chapter = chapterFromMajorNum(currentMajorNum)
         if chapter is None:
             continue
-        base = baseChunkPath(c.path)
-        rawTitle = _leafTitle(base)
+
+        rawTitle = stripSectionPrefix(title)
         topic = mapSectionTitle(rawTitle)
         key = (chapter, topic)
         if key not in merged:
             merged[key] = []
-            order[key] = (c.majorNum, idx)
+            order[key] = (currentMajorNum, idx)
             source[key] = rawTitle
             idx += 1
-        merged[key].append(c.textContent)
+        merged[key].append(content.strip())
 
     rows: list[dict[str, object]] = []
     for (chapter, topic), texts in merged.items():
@@ -160,12 +123,18 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     for year in years:
         for reportKind, suffix in _REPORT_KINDS:
             periodKey = f"{year}{suffix}"
-            ys = _buildYearSections(df, year, reportKind, periodKey, contentCol)
-            if ys is None:
+            report = selectReport(df, year, reportKind=reportKind)
+            if report is None or contentCol not in report.columns:
                 continue
-
+            subset = (
+                report.select(["section_order", "section_title", contentCol])
+                .filter(pl.col(contentCol).is_not_null() & (pl.col(contentCol).str.len_chars() > 0))
+                .sort("section_order")
+            )
+            if subset.height == 0:
+                continue
             validPeriods.append(periodKey)
-            rows = _chunkRowsToTopicRows(ys.chunks)
+            rows = _reportRowsToTopicRows(subset.to_dicts(), contentCol)
             periodRows[periodKey] = rows
             if reportKind == "annual" and latestAnnualRows is None:
                 latestAnnualRows = rows
@@ -182,6 +151,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             if not isinstance(chapter, str) or not isinstance(topic, str) or not isinstance(text, str):
                 continue
             if topic in suppressed.get(chapter, set()):
+                continue
+            if detailTopicForTopic(topic) is not None:
                 continue
             if topic not in topicMap:
                 topicMap[topic] = {}

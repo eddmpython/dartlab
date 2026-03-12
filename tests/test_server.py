@@ -255,11 +255,37 @@ class TestCompanyAPI:
         data = resp.json()
         assert data["stockCode"] == SAMSUNG
         assert "삼성전자" in data["corpName"]
+        assert "surface" in data
+        assert data["profile"]["status"] == "roadmap"
 
     def test_company_not_found(self, client):
         """GET /api/company/{code} — 없는 종목 → 404."""
         resp = client.get("/api/company/999999")
         assert resp.status_code == 404
+
+    @requires_samsung_any
+    def test_company_index(self, client):
+        resp = client.get(f"/api/company/{SAMSUNG}/index")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["payload"]["type"] == "table"
+        assert "chapter" in data["payload"]["columns"]
+
+    @requires_samsung_any
+    def test_company_show(self, client):
+        resp = client.get(f"/api/company/{SAMSUNG}/show/BS")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["payload"]["type"] == "table"
+        assert "rows" in data["payload"]
+
+    @requires_samsung_any
+    def test_company_trace(self, client):
+        resp = client.get(f"/api/company/{SAMSUNG}/trace/dividend")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["payload"]["type"] == "dict"
+        assert data["payload"]["data"]["primarySource"] == "report"
 
 
 class TestDataSources:

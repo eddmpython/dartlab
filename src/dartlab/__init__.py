@@ -9,11 +9,12 @@ except Exception:
     __version__ = "0.0.0"
 
 from dartlab import config, core, engines
-from dartlab.company import Company, KRCompany
+from dartlab.company import Company
 from dartlab.compare import Compare
 from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
+from dartlab.engines.dart.company import Company as _DartCompany
 from dartlab.engines import ai as llm
-from dartlab.usCompany import USCompany
+from dartlab.engines.edgar.company import Company as _EdgarCompany
 
 
 def search(keyword: str):
@@ -26,14 +27,14 @@ def search(keyword: str):
         dartlab.search("AAPL")
     """
     if any("\uac00" <= ch <= "\ud7a3" for ch in keyword):
-        return KRCompany.search(keyword)
+        return _DartCompany.search(keyword)
     if keyword.isascii() and keyword.isalpha():
         try:
-            from dartlab.usCompany import USCompany as _US
+            from dartlab.engines.edgar.company import Company as _US
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
             pass
-    return KRCompany.search(keyword)
+    return _DartCompany.search(keyword)
 
 
 def listing(market: str | None = None):
@@ -50,11 +51,11 @@ def listing(market: str | None = None):
     """
     if market and market.upper() == "US":
         try:
-            from dartlab.usCompany import USCompany as _US
+            from dartlab.engines.edgar.company import Company as _US
             return _US.listing()
         except (ImportError, AttributeError, NotImplementedError):
             raise NotImplementedError("US listing은 아직 지원되지 않습니다")
-    return KRCompany.listing()
+    return _DartCompany.listing()
 
 
 class _Module(sys.modules[__name__].__class__):
@@ -83,8 +84,6 @@ sys.modules[__name__].__class__ = _Module
 __all__ = [
     "Company",
     "Compare",
-    "KRCompany",
-    "USCompany",
     "config",
     "core",
     "engines",

@@ -190,7 +190,7 @@ def printGuide(corpName: str, stockCode: str, properties: list, noteKeys: list, 
     t.append("  요약재무정보 + 브릿지 매칭  ", style=_TM)
     console.print(t)
     t = Text("   ")
-    t.append("c.docs()", style=_PR)
+    t.append("c.filings()", style=_PR)
     t.append("       공시 문서 목록  ", style=_TM)
     console.print(t)
 

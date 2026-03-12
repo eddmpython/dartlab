@@ -12,7 +12,7 @@ OpenDART 정기보고서 API 데이터 → **apiType별 추출/정제/피벗**.
 - **원본**: `data/dart/report/{stockCode}.parquet`
 - **GitHub Release**: `data-report-{1..4}` (4개 shard)
 - **기간**: 2015년~ (분기별 데이터)
-- **수집**: eddmpython이 OpenDART API 28개를 호출하여 parquet으로 통합 저장
+- **수집 정의**: eddmpython이 OpenDART API 28개 체계를 기준으로 parquet을 생성
 - **갱신 주기**: 분기 보고서 제출 후
 
 ## 원본 parquet 구조
@@ -24,12 +24,12 @@ OpenDART 정기보고서 API 데이터 → **apiType별 추출/정제/피벗**.
 | `stockCode` | 종목코드 |
 | `year` | 사업연도 |
 | `quarter` | 분기명 (1분기/2분기/3분기/4분기) |
-| `apiType` | API 종류 (22개) |
+| `apiType` | API 종류 (28개 체계, 현재 parquet 기준 일부는 미존재 가능) |
 | `stlm_dt` | 결산일 |
 
 나머지 컬럼은 apiType별로 다르며, null이 아닌 것만 유효.
 
-## 전체 apiType 목록 (22개)
+## 전체 apiType 목록 (28개)
 
 ### 주주/지배구조 (6개)
 
@@ -83,7 +83,7 @@ OpenDART 정기보고서 API 데이터 → **apiType별 추출/정제/피벗**.
 | `corporateBond` | 회사채미상환잔액 | Q2 | tm, knd, issue_de, expire_de, balace |
 | `shortTermBond` | 단기사채미상환잔액 | Q2 | tm, nm, issue_de, expire_de, balace |
 
-### eddmpython에 있지만 미수집 (6개)
+### 정의는 있으나 현재 parquet에서 비어 있을 수 있는 항목 (6개)
 
 아래 apiType은 eddmpython에 정의되어 있으나 현재 parquet에 포함되지 않음:
 

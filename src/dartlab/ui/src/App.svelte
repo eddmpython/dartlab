@@ -18,6 +18,7 @@
 	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, oauthAuthorize, oauthStatus, oauthLogout } from "$lib/api.js";
 	import { cn } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
+	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
@@ -25,7 +26,7 @@
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText,
 		Download, X, Loader2, Settings, Check, ExternalLink,
-		Key, AlertCircle, CheckCircle2, Terminal, LogIn, LogOut
+		Key, AlertCircle, CheckCircle2, Terminal, LogIn, LogOut, Database
 	} from "lucide-svelte";
 
 	// ── State ──
@@ -67,22 +68,44 @@
 	// OAuth login
 	let oauthLoggingIn = $state(false);
 	let chatgptDetail = $state({});
+	let settingsDialog = $state(null);
+	let deleteDialog = $state(null);
+	let mobileWorkspaceSheet = $state(null);
 
-	// DataExplorer modal
-	let showDataExplorer = $state(false);
+	const workspace = createWorkspaceStore();
 
 	// Mobile
 	let isMobile = $state(false);
 
 	function checkMobile() {
 		isMobile = window.innerWidth <= 768;
-		if (isMobile) sidebarOpen = false;
+		if (isMobile) {
+			sidebarOpen = false;
+			workspace.close();
+		} else if (!workspace.userPinnedCompany) {
+			workspace.open("overview");
+		}
 	}
 
 	$effect(() => {
 		checkMobile();
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
+	});
+
+	$effect(() => {
+		if (!showSettings || !settingsDialog) return;
+		requestAnimationFrame(() => settingsDialog?.focus());
+	});
+
+	$effect(() => {
+		if (!deleteConfirmId || !deleteDialog) return;
+		requestAnimationFrame(() => deleteDialog?.focus());
+	});
+
+	$effect(() => {
+		if (!isMobile || !workspace.isOpen || !mobileWorkspaceSheet) return;
+		requestAnimationFrame(() => mobileWorkspaceSheet?.focus());
 	});
 
 	// Delete confirmation
@@ -351,6 +374,26 @@
 	// ── UI Actions ──
 	function toggleSidebar() { sidebarOpen = !sidebarOpen; }
 
+	function openWorkspace(tab = "explore") {
+		workspace.open(tab);
+	}
+
+	function closeWorkspace() {
+		workspace.close();
+	}
+
+	function handleAskAboutModule(company, module) {
+		if (!company || !module) return;
+		const companyLabel = company.corpName || company.company || company.stockCode;
+		inputText = `${companyLabel}의 ${module.label} 데이터를 바탕으로 핵심 포인트를 요약해줘`;
+		workspace.selectCompany(company, { pin: true });
+		openWorkspace("evidence");
+	}
+
+	function handleOpenEvidence(section, index = null) {
+		workspace.openEvidence(section, index);
+	}
+
 	function openSettings() {
 		apiKeyInput = "";
 		apiKeyResult = null;
@@ -366,8 +409,23 @@
 		if (expandedProvider) loadModelsFor(expandedProvider);
 	}
 
+	function syncSelectedCompanyFromConversation(conv) {
+		if (!conv) return;
+		for (let i = conv.messages.length - 1; i >= 0; i--) {
+			const msg = conv.messages[i];
+			if (msg.role === "assistant" && (msg.meta?.stockCode || msg.meta?.company || msg.company)) {
+				workspace.syncCompanyFromMessage(
+					{ company: msg.meta?.company || msg.company, stockCode: msg.meta?.stockCode },
+					workspace.selectedCompany
+				);
+				return;
+			}
+		}
+	}
+
 	function handleNewChat() {
 		store.createConversation();
+		workspace.clearEvidenceSelection();
 		inputText = "";
 		isLoading = false;
 		if (currentStream) { currentStream.abort(); currentStream = null; }
@@ -375,6 +433,8 @@
 
 	function handleSelectConversation(id) {
 		store.setActive(id);
+		workspace.clearEvidenceSelection();
+		syncSelectedCompanyFromConversation(store.active);
 		inputText = "";
 		isLoading = false;
 		if (currentStream) { currentStream.abort(); currentStream = null; }
@@ -441,7 +501,7 @@
 			}
 		}
 
-		const companyHint = lastAnalyzedCode || getLastStockCode();
+		const companyHint = workspace.selectedCompany?.stockCode || lastAnalyzedCode || getLastStockCode();
 
 		function isStale() { return store.activeId !== streamConvId; }
 
@@ -461,6 +521,9 @@
 						}
 					}
 					if (meta.stockCode) updates.stockCode = meta.stockCode;
+					if (meta.company || meta.stockCode) {
+						workspace.syncCompanyFromMessage(meta, workspace.selectedCompany);
+					}
 					store.updateLastMessage(updates);
 				},
 				onSnapshot(snapshot) {
@@ -606,18 +669,24 @@
 			e.preventDefault();
 			toggleSidebar();
 		}
-		if (e.key === 'Escape' && deleteConfirmId) {
-			deleteConfirmId = null;
-		} else if (e.key === 'Escape' && showDataExplorer) {
-			showDataExplorer = false;
-		} else if (e.key === 'Escape' && showSettings) {
+		if (e.key === 'Escape' && showSettings) {
 			showSettings = false;
+		} else if (e.key === 'Escape' && deleteConfirmId) {
+			deleteConfirmId = null;
+		} else if (e.key === 'Escape' && workspace.isOpen) {
+			workspace.close();
 		}
 	}
 
 	let activeMessages = $derived(store.active?.messages || []);
 	let hasConversation = $derived(store.active && store.active.messages.length > 0);
 	let noProviderAvailable = $derived(!statusLoading && (!activeProvider || !providers[activeProvider]?.available));
+	let evidenceMessage = $derived.by(() => {
+		for (let i = activeMessages.length - 1; i >= 0; i--) {
+			if (activeMessages[i].role === "assistant") return activeMessages[i];
+		}
+		return null;
+	});
 
 	const OLLAMA_MODELS = [
 		{ name: "gemma3",       size: "3B",  gb: "2.3",  desc: "Google, 빠르고 가벼움",         tag: "추천" },
@@ -637,8 +706,7 @@
 <div class="flex h-screen bg-dl-bg-dark overflow-hidden">
 	<!-- Sidebar -->
 	{#if isMobile && sidebarOpen}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="sidebar-overlay" onclick={() => { sidebarOpen = false; }} onkeydown={() => {}}></div>
+		<button class="sidebar-overlay" onclick={() => { sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
 	{/if}
 	<div class={isMobile ? (sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
 		<Sidebar
@@ -663,6 +731,7 @@
 				<button
 					class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
 					onclick={toggleSidebar}
+					aria-label={sidebarOpen ? "사이드바 접기" : "사이드바 열기"}
 				>
 					{#if sidebarOpen}
 						<PanelLeftClose size={18} />
@@ -673,6 +742,19 @@
 
 				<!-- Right: links + settings -->
 				<div class="flex items-center gap-1">
+					<button
+						class={cn(
+							"flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] transition-colors",
+							workspace.isOpen
+								? "bg-dl-primary/10 text-dl-primary-light"
+								: "text-dl-text-dim hover:bg-white/5 hover:text-dl-text-muted"
+						)}
+						onclick={() => workspace.isOpen ? closeWorkspace() : openWorkspace("explore")}
+						aria-pressed={workspace.isOpen}
+					>
+						<Database size={12} />
+						<span>{workspace.isOpen ? "패널 닫기" : "탐색 열기"}</span>
+					</button>
 					<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
 						class="p-1.5 rounded-lg text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
 						<Coffee size={15} />
@@ -699,6 +781,7 @@
 									: "text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5"
 						)}
 						onclick={() => openSettings()}
+						aria-label="AI Provider 설정 열기"
 					>
 						{#if statusLoading}
 							<Loader2 size={12} class="animate-spin" />
@@ -748,25 +831,50 @@
 		</div>
 
 		<!-- Content (full height, scrolls under header) -->
-		{#if hasConversation}
-			<ChatArea
-				messages={activeMessages}
-				{isLoading}
-				{scrollTrigger}
-				bind:inputText
-				onSend={sendMessage}
-				onStop={stopStream}
-				onRegenerate={handleRegenerate}
-				onExport={handleExport}
-				onOpenExplorer={() => showDataExplorer = true}
-			/>
-		{:else}
-			<EmptyState
-				bind:inputText
-				onSend={sendMessage}
-				onOpenExplorer={() => showDataExplorer = true}
-			/>
-		{/if}
+		<div class="flex flex-1 min-h-0">
+			<div class="min-w-0 flex-1">
+				{#if hasConversation}
+					<ChatArea
+						messages={activeMessages}
+						{isLoading}
+						{scrollTrigger}
+						bind:inputText
+						selectedCompany={workspace.selectedCompany}
+						onSend={sendMessage}
+						onStop={stopStream}
+						onRegenerate={handleRegenerate}
+						onExport={handleExport}
+						onOpenExplorer={openWorkspace}
+						onOpenEvidence={handleOpenEvidence}
+					/>
+				{:else}
+					<EmptyState
+						bind:inputText
+						selectedCompany={workspace.selectedCompany}
+						onSend={sendMessage}
+						onOpenExplorer={openWorkspace}
+					/>
+				{/if}
+			</div>
+
+			{#if !isMobile && workspace.isOpen}
+				<div class="surface-panel w-[400px] flex-shrink-0 border-l border-dl-border/60 bg-dl-bg-card/35 pt-11">
+					<DataExplorer
+						selectedCompany={workspace.selectedCompany}
+						recentCompanies={workspace.recentCompanies}
+						activeTab={workspace.activeTab}
+						evidenceMessage={evidenceMessage}
+						activeEvidenceSection={workspace.activeEvidenceSection}
+						selectedEvidenceIndex={workspace.selectedEvidenceIndex}
+						onSelectCompany={(company) => workspace.selectCompany(company, { pin: true })}
+						onChangeTab={(tab) => workspace.setTab(tab)}
+						onAskAboutModule={handleAskAboutModule}
+						onNotify={showToast}
+						onClose={closeWorkspace}
+					/>
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -774,22 +882,34 @@
 <!-- Settings Modal                         -->
 <!-- ═══════════════════════════════════════ -->
 {#if showSettings}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
 		onclick={(e) => { if (e.target === e.currentTarget) showSettings = false; }}
-		onkeydown={() => {}}
+		role="presentation"
 	>
-		<div class="w-full max-w-xl bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl overflow-hidden">
+		<div
+			bind:this={settingsDialog}
+			class="surface-overlay w-full max-w-xl bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl overflow-hidden"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="settings-dialog-title"
+			tabindex="-1"
+		>
 			<!-- Modal Header -->
-			<div class="flex items-center justify-between px-6 pt-5 pb-3">
-				<div class="text-[14px] font-semibold text-dl-text">AI Provider 설정</div>
+			<div class="border-b border-dl-border/40 px-6 pt-5 pb-3">
+				<div class="flex items-center justify-between">
+					<div>
+						<div id="settings-dialog-title" class="text-[14px] font-semibold text-dl-text">AI Provider 설정</div>
+						<div class="mt-1 text-[11px] text-dl-text-dim">사용할 모델과 인증 상태를 한 곳에서 관리합니다.</div>
+					</div>
 				<button
 					class="p-1 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
 					onclick={() => showSettings = false}
+					aria-label="설정 닫기"
 				>
 					<X size={18} />
 				</button>
+				</div>
 			</div>
 
 			<div class="px-6 pb-5 max-h-[70vh] overflow-y-auto">
@@ -1212,21 +1332,69 @@
 	</div>
 {/if}
 
-<!-- DataExplorer Modal -->
-{#if showDataExplorer}
-	<DataExplorer onClose={() => showDataExplorer = false} />
+<!-- Mobile Workspace Panel -->
+{#if isMobile && workspace.isOpen}
+	<div
+		class="fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
+		onclick={(e) => { if (e.target === e.currentTarget) closeWorkspace(); }}
+		role="presentation"
+	>
+		<div
+			bind:this={mobileWorkspaceSheet}
+			class="mobile-workspace-sheet absolute inset-x-0 bottom-0 top-[12vh] rounded-t-[24px] border border-dl-border bg-dl-bg-card shadow-2xl"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="mobile-workspace-title"
+			tabindex="-1"
+		>
+			<div class="flex items-center justify-between px-4 pt-2 pb-1">
+				<div class="flex-1 flex justify-center">
+					<div class="h-1.5 w-14 rounded-full bg-dl-border/80"></div>
+				</div>
+				<button
+					class="rounded-lg p-1.5 text-dl-text-dim transition-colors hover:bg-white/5 hover:text-dl-text"
+					onclick={closeWorkspace}
+					aria-label="워크스페이스 닫기"
+				>
+					<X size={16} />
+				</button>
+			</div>
+			<div id="mobile-workspace-title" class="px-4 pb-2 text-[11px] uppercase tracking-[0.16em] text-dl-text-dim">
+				Workspace
+			</div>
+			<DataExplorer
+				selectedCompany={workspace.selectedCompany}
+				recentCompanies={workspace.recentCompanies}
+				activeTab={workspace.activeTab}
+				evidenceMessage={evidenceMessage}
+				activeEvidenceSection={workspace.activeEvidenceSection}
+				selectedEvidenceIndex={workspace.selectedEvidenceIndex}
+				onSelectCompany={(company) => workspace.selectCompany(company, { pin: true })}
+				onChangeTab={(tab) => workspace.setTab(tab)}
+				onAskAboutModule={handleAskAboutModule}
+				onNotify={showToast}
+				onClose={closeWorkspace}
+			/>
+		</div>
+	</div>
 {/if}
 
 <!-- Delete confirmation -->
 {#if deleteConfirmId}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn"
 		onclick={(e) => { if (e.target === e.currentTarget) deleteConfirmId = null; }}
-		onkeydown={() => {}}
+		role="presentation"
 	>
-		<div class="w-full max-w-xs bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl p-5">
-			<div class="text-[14px] font-medium text-dl-text mb-1.5">대화 삭제</div>
+		<div
+			bind:this={deleteDialog}
+			class="w-full max-w-xs bg-dl-bg-card border border-dl-border rounded-2xl shadow-2xl p-5"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="delete-dialog-title"
+			tabindex="-1"
+		>
+			<div id="delete-dialog-title" class="text-[14px] font-medium text-dl-text mb-1.5">대화 삭제</div>
 			<div class="text-[12px] text-dl-text-muted mb-4">이 대화를 삭제하시겠습니까? 삭제된 대화는 복구할 수 없습니다.</div>
 			<div class="flex items-center justify-end gap-2">
 				<button
@@ -1248,14 +1416,21 @@
 
 <!-- Toast -->
 {#if toastVisible}
-	<div class="fixed bottom-6 right-6 z-[300] animate-fadeIn">
+	<div class="fixed bottom-6 right-6 z-[300] animate-fadeIn" aria-live="polite" aria-atomic="true">
 		<div class={cn(
-			"px-4 py-3 rounded-xl border text-[13px] shadow-2xl max-w-sm",
+			"surface-overlay flex items-start gap-3 px-4 py-3 rounded-2xl border text-[13px] shadow-2xl max-w-sm",
 			toastType === "error" ? "bg-dl-primary/10 border-dl-primary/30 text-dl-primary-light" :
 			toastType === "success" ? "bg-dl-success/10 border-dl-success/30 text-dl-success" :
 			"bg-dl-bg-card border-dl-border text-dl-text"
 		)}>
-			{toastMessage}
+			<div class="min-w-0 flex-1">{toastMessage}</div>
+			<button
+				class="rounded-lg p-1 text-current/80 transition-colors hover:bg-white/5 hover:text-current"
+				onclick={() => { toastVisible = false; }}
+				aria-label="알림 닫기"
+			>
+				<X size={14} />
+			</button>
 		</div>
 	</div>
 {/if}

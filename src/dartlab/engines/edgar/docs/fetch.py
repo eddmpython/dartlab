@@ -6,10 +6,13 @@
 
 from __future__ import annotations
 
+import json
 import re
+import signal
 import time
 import warnings
 from pathlib import Path
+from typing import Callable
 
 import polars as pl
 import requests
@@ -23,8 +26,33 @@ BASE_URL = "https://www.sec.gov"
 DATA_URL = "https://data.sec.gov"
 SINCE_YEAR = 2009
 REQUEST_INTERVAL = 0.2
+FILING_TIMEOUT_SECONDS = 45
 BATCH_SIZE = 25
 BATCH_COOLDOWN_SECONDS = 8.0
+SUPPORTED_REGULAR_FORMS = ("10-K", "10-Q", "20-F", "40-F")
+SUPPORTED_ANNUAL_FORMS = ("10-K", "20-F", "40-F")
+FALLBACK_FULL_DOCUMENT_FORMS = ("40-F",)
+QUALITY_GATED_FORMS = ("10-K", "10-Q", "20-F")
+FORTY_F_HEADINGS = {
+    "NOTE TO UNITED STATES READERS - DIFFERENCES",
+    "ANNUAL INFORMATION FORM",
+    "AUDITED ANNUAL FINANCIAL STATEMENTS",
+    "MANAGEMENT'S DISCUSSION AND ANALYSIS",
+    "DISCLOSURE CONTROLS AND PROCEDURES",
+    "AUDIT COMMITTEE",
+    "CODE OF ETHICS",
+    "PRINCIPAL ACCOUNTANT FEES AND SERVICES",
+    "AUDIT COMMITTEE PRE-APPROVAL POLICIES AND PROCEDURES",
+    "OFF-BALANCE SHEET ARRANGEMENTS",
+    "CASH REQUIREMENTS",
+    "MINE SAFETY DISCLOSURE",
+    "DISCLOSURE REGARDING FOREIGN JURISDICTIONS THAT PREVENT INSPECTIONS",
+    "RECOVERY OF ERRONEOUSLY AWARDED COMPENSATION",
+    "NEW YORK STOCK EXCHANGE DISCLOSURE",
+    "UNDERTAKINGS",
+    "CONSENT TO SERVICE OF PROCESS",
+    "EXHIBIT INDEX",
+}
 
 ITEM_NAMES_10K = {
     "1": "Business",
@@ -108,8 +136,17 @@ ITEM_PATTERN = re.compile(
     r"([^\n]{3,80})",
     re.MULTILINE,
 )
-PART_PATTERN = re.compile(r"^\s*PART\s+(I|II)\b", re.IGNORECASE | re.MULTILINE)
-ITEM_LINE_PATTERN = re.compile(r"^\s*Item\s+(\d+[A-K]?)\.\s*(.*)$", re.IGNORECASE)
+PART_PATTERN = re.compile(r"^\s*PART\s+(II|I)\b", re.IGNORECASE | re.MULTILINE)
+ITEM_LINE_PATTERN = re.compile(r"^\s*Item\s+(\d+[A-K]?)\s*[\.\:\-\u2013\u2014]?\s*(.*)$", re.IGNORECASE)
+ITEM_NUMBER_TITLE_PATTERN = re.compile(r"^\s*(\d+[A-K]?)\s*[\.\:\-\u2013\u2014]\s*(.*)$", re.IGNORECASE)
+ITEM_TABLE_LINE_PATTERN = re.compile(
+    r"^\|\s*Item\s+(\d+[A-K]?)\s*[\.\:\-\u2013\u2014]?\s*\|\s*(.*?)\s*\|",
+    re.IGNORECASE,
+)
+PART_TABLE_LINE_PATTERN = re.compile(
+    r"^\|\s*PART\s+(II|I)\.?\s*(.*?)\|",
+    re.IGNORECASE,
+)
 
 
 def fetchEdgarDocs(
@@ -118,7 +155,10 @@ def fetchEdgarDocs(
     *,
     sinceYear: int = SINCE_YEAR,
     maxFilings: int | None = None,
+    filingTimeout: int = FILING_TIMEOUT_SECONDS,
     showProgress: bool = True,
+    sourceMode: str = "sec_api",
+    strictQuality: bool = False,
 ) -> Path:
     ticker = ticker.upper()
     meta = _resolveTickerMeta(ticker)
@@ -135,19 +175,105 @@ def fetchEdgarDocs(
     print(f"[dartlab] {ticker} EDGAR docs 원문 수집 시작 ({len(filings)} filings, since {sinceYear})")
 
     rows: list[dict] = []
+    skippedFilings: list[str] = []
     if showProgress:
         with alive_bar(len(filings), title="EDGAR 원문 수집") as bar:
-            _collectFilingRows(rows, filings, meta, ticker, bar)
+            _collectFilingRows(rows, filings, meta, ticker, bar, filingTimeout, skippedFilings)
     else:
-        _collectFilingRows(rows, filings, meta, ticker, None)
+        _collectFilingRows(rows, filings, meta, ticker, None, filingTimeout, skippedFilings)
 
     if not rows:
         raise ValueError(f"{ticker} EDGAR docs에서 section 추출 실패")
 
     outPath.parent.mkdir(parents=True, exist_ok=True)
-    pl.DataFrame(rows).write_parquet(outPath)
+    df = pl.DataFrame(rows)
+    summary = summarizeEdgarDocsFrame(df)
+    if strictQuality:
+        _assertEdgarDocsQuality(summary)
+    df.write_parquet(outPath)
+    if skippedFilings:
+        print(f"[dartlab] {ticker} filing {len(skippedFilings)}건 skip")
     print(f"[dartlab] 저장 완료: {outPath}")
     return outPath
+
+
+def summarizeEdgarDocsFrame(df: pl.DataFrame) -> dict[str, object]:
+    if df.is_empty():
+        return {
+            "rows_saved": 0,
+            "filings_saved": 0,
+            "forms_found": [],
+            "full_document_rows": 0,
+            "table_rows": 0,
+            "quality_flags": ["empty_parquet"],
+            "form_metrics": [],
+        }
+
+    sectionTitle = pl.col("section_title").cast(pl.Utf8)
+    sectionContent = pl.col("section_content").cast(pl.Utf8)
+    formType = pl.col("form_type").cast(pl.Utf8)
+
+    formMetricsDf = (
+        df.group_by("form_type")
+        .agg(
+            pl.len().alias("rows_saved"),
+            pl.col("accession_no").n_unique().alias("filings_saved"),
+            sectionTitle.eq("Full Document").sum().alias("full_document_rows"),
+            sectionContent.str.contains(r"\|").sum().alias("table_rows"),
+            sectionTitle.n_unique().alias("unique_titles"),
+        )
+        .sort("form_type")
+    )
+
+    qualityFlags: list[str] = []
+    formMetrics: list[dict[str, object]] = []
+    for row in formMetricsDf.to_dicts():
+        filingsSaved = int(row["filings_saved"])
+        fullDocumentRows = int(row["full_document_rows"])
+        fullDocumentRatio = fullDocumentRows / filingsSaved if filingsSaved else 0.0
+        tableRows = int(row["table_rows"])
+        rowsSaved = int(row["rows_saved"])
+        tableRatio = tableRows / rowsSaved if rowsSaved else 0.0
+        metric = {
+            "form_type": row["form_type"],
+            "rows_saved": rowsSaved,
+            "filings_saved": filingsSaved,
+            "full_document_rows": fullDocumentRows,
+            "full_document_ratio": round(fullDocumentRatio, 6),
+            "table_rows": tableRows,
+            "table_ratio": round(tableRatio, 6),
+            "unique_titles": int(row["unique_titles"]),
+        }
+        formMetrics.append(metric)
+        if row["form_type"] not in FALLBACK_FULL_DOCUMENT_FORMS and fullDocumentRows > 0:
+            qualityFlags.append(f"unexpected_full_document:{row['form_type']}")
+
+    return {
+        "rows_saved": df.height,
+        "filings_saved": df["accession_no"].n_unique() if "accession_no" in df.columns else 0,
+        "forms_found": sorted(df["form_type"].drop_nulls().unique().to_list()) if "form_type" in df.columns else [],
+        "full_document_rows": int(df.filter(sectionTitle == "Full Document").height),
+        "table_rows": int(df.select(sectionContent.str.contains(r"\|").sum().alias("table_rows")).item()),
+        "quality_flags": qualityFlags,
+        "form_metrics": formMetrics,
+    }
+
+
+def summarizeEdgarDocsParquet(path: Path) -> dict[str, object]:
+    summary = summarizeEdgarDocsFrame(pl.read_parquet(path))
+    summary["path"] = str(path)
+    summary["ticker"] = path.stem
+    return summary
+
+
+def _assertEdgarDocsQuality(summary: dict[str, object]) -> None:
+    qualityFlags = [str(flag) for flag in summary.get("quality_flags", [])]
+    blocking = [
+        flag for flag in qualityFlags
+        if any(flag == f"unexpected_full_document:{formType}" for formType in QUALITY_GATED_FORMS)
+    ]
+    if blocking:
+        raise ValueError(f"EDGAR docs 품질 게이트 실패: {', '.join(blocking)}")
 
 
 def _collectFilingRows(
@@ -156,11 +282,23 @@ def _collectFilingRows(
     meta: dict[str, str],
     ticker: str,
     bar,
+    filingTimeout: int,
+    skippedFilings: list[str],
 ) -> None:
     for filing in filings:
-        html = _downloadHtml(filing["filingUrl"])
-        text = _htmlToText(html)
-        items = _splitItems(text, filing["formType"])
+        try:
+            with _FilingTimeout(filingTimeout):
+                html = _downloadFilingSource(filing)
+                text = _htmlToText(html)
+                if filing["formType"] == "40-F":
+                    items = _split40FSections(filing, text)
+                else:
+                    items = _splitItems(text, filing["formType"])
+        except (requests.RequestException, TimeoutError, ValueError):
+            skippedFilings.append(str(filing["accessionNumber"]))
+            if bar is not None:
+                bar()
+            continue
 
         reportType = _reportType(filing["formType"], filing.get("periodEnd"))
         periodKey = _periodKey(filing["formType"], filing.get("periodEnd"), filing["year"])
@@ -185,6 +323,31 @@ def _collectFilingRows(
             bar()
 
 
+class _FilingTimeout:
+    def __init__(self, seconds: int):
+        self.seconds = max(int(seconds), 0)
+        self._previousHandler = None
+
+    def __enter__(self):
+        if self.seconds <= 0:
+            return self
+        self._previousHandler = signal.getsignal(signal.SIGALRM)
+        signal.signal(signal.SIGALRM, self._handle)
+        signal.alarm(self.seconds)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self.seconds > 0:
+            signal.alarm(0)
+            if self._previousHandler is not None:
+                signal.signal(signal.SIGALRM, self._previousHandler)
+        return False
+
+    @staticmethod
+    def _handle(signum, frame):
+        raise TimeoutError("filing fetch timed out")
+
+
 def downloadListedEdgarDocs(
     *,
     limit: int = 2000,
@@ -194,19 +357,11 @@ def downloadListedEdgarDocs(
     skipExisting: bool = True,
 ) -> pl.DataFrame:
     from dartlab import config
-    from dartlab.core.dataLoader import loadEdgarListedUniverse
 
     docsDir = Path(config.dataDir) / "edgar" / "docs"
     docsDir.mkdir(parents=True, exist_ok=True)
 
-    universe = (
-        loadEdgarListedUniverse()
-        .filter(pl.col("is_exchange_listed"))
-        .select(["ticker", "cik", "title", "exchange"])
-        .sort("ticker")
-    )
-    if limit > 0:
-        universe = universe.head(limit)
+    universe = buildEdgarCollectibleUniverse(limit=limit, sinceYear=sinceYear)
 
     tickers = universe["ticker"].to_list()
     total = len(tickers)
@@ -234,6 +389,180 @@ def downloadListedEdgarDocs(
                 time.sleep(cooldownSeconds)
 
     return pl.DataFrame(results)
+
+
+def buildEdgarCollectibleUniverse(
+    *,
+    limit: int = 2000,
+    sinceYear: int = SINCE_YEAR,
+    forceRefresh: bool = False,
+) -> pl.DataFrame:
+    return prepareEdgarCollectibleUniverse(
+        limit=limit,
+        sinceYear=sinceYear,
+        forceRefresh=forceRefresh,
+    )
+
+
+def prepareEdgarCollectibleUniverse(
+    *,
+    limit: int = 2000,
+    sinceYear: int = SINCE_YEAR,
+    forceRefresh: bool = False,
+    progressPath: Path | None = None,
+    flushEvery: int = 25,
+    heartbeat: Callable[..., None] | None = None,
+) -> pl.DataFrame:
+    from dartlab import config
+    from dartlab.core.dataLoader import loadEdgarListedUniverse
+
+    cachePath = Path(config.dataDir) / "edgar" / "docsCollectibleUniverse.parquet"
+    cacheDf = _loadCollectibleUniverseCache(cachePath, forceRefresh=forceRefresh)
+
+    listed = (
+        loadEdgarListedUniverse()
+        .filter(pl.col("is_exchange_listed"))
+        .select(["ticker", "cik", "title", "exchange"])
+        .sort(["ticker", "cik"])
+    )
+    issuerUniverse = _dedupeIssuerUniverse(listed)
+
+    if not cacheDf.is_empty():
+        issuerUniverse = issuerUniverse.join(
+            cacheDf.select(["cik", "has_supported_regular_filing", "supported_regular_forms", "last_checked"]),
+            on="cik",
+            how="left",
+        )
+    else:
+        issuerUniverse = issuerUniverse.with_columns(
+            pl.lit(None, dtype=pl.Boolean).alias("has_supported_regular_filing"),
+            pl.lit(None, dtype=pl.Utf8).alias("supported_regular_forms"),
+            pl.lit(None, dtype=pl.Utf8).alias("last_checked"),
+        )
+
+    evaluationUniverse = _interleaveIssuerUniverse(issuerUniverse)
+    rows = evaluationUniverse.to_dicts()
+    evaluatedBatch: list[dict[str, object]] = []
+    selected: list[dict[str, object]] = []
+    for idx, row in enumerate(rows, start=1):
+        if heartbeat is not None:
+            heartbeat(
+                stage="prepare_universe",
+                currentTicker=str(row["ticker"]),
+                currentCik=str(row["cik"]),
+                candidatesReady=len(selected),
+                universeChecked=idx - 1,
+            )
+
+        if row.get("has_supported_regular_filing") is None or forceRefresh:
+            try:
+                submissions = _getSubmissions(str(row["cik"]))
+                supportedForms = _supportedRegularForms(submissions, sinceYear)
+                row["supported_regular_forms"] = ",".join(supportedForms)
+                row["has_supported_regular_filing"] = bool(supportedForms)
+                row["last_checked"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                universeStatus = "supported" if supportedForms else "unsupported_regular_forms"
+            except requests.RequestException as exc:
+                row["supported_regular_forms"] = None
+                row["has_supported_regular_filing"] = None
+                row["last_checked"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                universeStatus = "submissions_fetch_error"
+                if progressPath is not None:
+                    _appendJsonl(progressPath, {
+                        "ticker": row["ticker"],
+                        "cik": row["cik"],
+                        "exchange": row["exchange"],
+                        "status": universeStatus,
+                        "reason": str(exc),
+                        "last_checked": row["last_checked"],
+                    })
+                continue
+
+            if progressPath is not None:
+                _appendJsonl(progressPath, {
+                    "ticker": row["ticker"],
+                    "cik": row["cik"],
+                    "exchange": row["exchange"],
+                    "status": universeStatus,
+                    "supported_regular_forms": row["supported_regular_forms"],
+                    "last_checked": row["last_checked"],
+                })
+
+        evaluatedBatch.append(row)
+        if row.get("has_supported_regular_filing"):
+            selected.append(row)
+        if flushEvery > 0 and len(evaluatedBatch) >= flushEvery:
+            cacheDf = _mergeCollectibleUniverseCache(cachePath, cacheDf, evaluatedBatch)
+            evaluatedBatch = []
+        if limit > 0 and len(selected) >= limit:
+            break
+
+    if evaluatedBatch:
+        cacheDf = _mergeCollectibleUniverseCache(cachePath, cacheDf, evaluatedBatch)
+
+    result = pl.DataFrame(selected)
+    if limit > 0 and result.height > limit:
+        result = result.head(limit)
+    if result.is_empty():
+        return pl.DataFrame(
+            schema={
+                "candidate_order": pl.Int64,
+                "ticker": pl.Utf8,
+                "cik": pl.Utf8,
+                "title": pl.Utf8,
+                "exchange": pl.Utf8,
+                "supported_regular_forms": pl.Utf8,
+                "last_checked": pl.Utf8,
+            }
+        )
+    result = result.with_row_index("candidate_order", offset=1)
+    return result.select([
+        "candidate_order",
+        "ticker",
+        "cik",
+        "title",
+        "exchange",
+        "supported_regular_forms",
+        "last_checked",
+    ])
+
+
+def _emptyCollectibleUniverseCache() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "ticker": pl.Utf8,
+            "cik": pl.Utf8,
+            "title": pl.Utf8,
+            "exchange": pl.Utf8,
+            "supported_regular_forms": pl.Utf8,
+            "has_supported_regular_filing": pl.Boolean,
+            "last_checked": pl.Utf8,
+        }
+    )
+
+
+def _loadCollectibleUniverseCache(cachePath: Path, *, forceRefresh: bool) -> pl.DataFrame:
+    if cachePath.exists() and not forceRefresh:
+        return pl.read_parquet(cachePath)
+    return _emptyCollectibleUniverseCache()
+
+
+def _mergeCollectibleUniverseCache(cachePath: Path, cacheDf: pl.DataFrame, rows: list[dict[str, object]]) -> pl.DataFrame:
+    freshDf = pl.DataFrame(rows)
+    if cacheDf.is_empty():
+        merged = freshDf
+    else:
+        remaining = cacheDf.filter(~pl.col("cik").is_in(freshDf["cik"].to_list()))
+        merged = pl.concat([remaining, freshDf], how="vertical_relaxed")
+    cachePath.parent.mkdir(parents=True, exist_ok=True)
+    merged.write_parquet(cachePath)
+    return merged
+
+
+def _appendJsonl(path: Path, record: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def _resolveTickerMeta(ticker: str) -> dict[str, str]:
@@ -312,7 +641,7 @@ def _findFilings(submissions: dict, sinceYear: int) -> list[dict]:
     rows: list[dict] = []
 
     for i, formType in enumerate(merged["form"]):
-        if formType not in ("10-K", "10-Q", "20-F"):
+        if formType not in SUPPORTED_REGULAR_FORMS:
             continue
         filingDate = merged["filingDate"][i]
         year = int(filingDate[:4])
@@ -341,6 +670,124 @@ def _downloadHtml(url: str) -> str:
     resp = requests.get(url, headers=HEADERS, timeout=60)
     resp.raise_for_status()
     return resp.text
+
+
+def _submissionTextUrl(filing: dict) -> str:
+    filingUrl = str(filing["filingUrl"])
+    baseDir = filingUrl.rsplit("/", 1)[0]
+    accession = str(filing["accessionNumber"])
+    return f"{baseDir}/{accession}.txt"
+
+
+def _filingDirectoryUrl(filing: dict) -> str:
+    return str(filing["filingUrl"]).rsplit("/", 1)[0]
+
+
+def _filingIndexJsonUrl(filing: dict) -> str:
+    return f"{_filingDirectoryUrl(filing)}/index.json"
+
+
+def _listFilingHtmlDocuments(filing: dict) -> list[str]:
+    time.sleep(REQUEST_INTERVAL)
+    resp = requests.get(_filingIndexJsonUrl(filing), headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    items = resp.json().get("directory", {}).get("item", [])
+    names: list[str] = []
+    for item in items:
+        name = str(item.get("name") or "")
+        lower = name.lower()
+        if not lower.endswith((".htm", ".html")):
+            continue
+        if lower.endswith("-index.html") or lower.endswith("-index-headers.html"):
+            continue
+        if re.fullmatch(r"r\d+\.htm", lower):
+            continue
+        names.append(name)
+    return names
+
+
+def _classify40FDocumentName(name: str) -> str | None:
+    lower = name.lower()
+    if "annualinformation" in lower or "annual-information" in lower or "annualinformationfo" in lower:
+        return "Annual Information Form"
+    if lower.startswith("mda") or "managementdiscussion" in lower or "management-discussion" in lower:
+        return "MD&A"
+    if "financialstatement" in lower or "financial-statements" in lower or lower.endswith("_d2.htm"):
+        return "Financial Statements"
+    return None
+
+
+def _isLowQualityText(text: str) -> bool:
+    sample = text[:8000].strip()
+    if len(sample) < 200:
+        return True
+    letters = sum(ch.isalpha() for ch in sample)
+    spaces = sample.count(" ")
+    if letters > 0 and spaces / max(len(sample), 1) < 0.02:
+        return True
+    return False
+
+
+def _downloadFilingSource(filing: dict) -> str:
+    html = _downloadHtml(str(filing["filingUrl"]))
+    if html.strip():
+        return html
+    return _downloadHtml(_submissionTextUrl(filing))
+
+
+def _split40FSections(filing: dict, primaryText: str) -> list[dict]:
+    sections: list[dict] = []
+    seenTitles: set[str] = set()
+
+    try:
+        for name in _listFilingHtmlDocuments(filing):
+            title = _classify40FDocumentName(name)
+            if title is None or title in seenTitles:
+                continue
+            url = f"{_filingDirectoryUrl(filing)}/{name}"
+            text = _htmlToText(_downloadHtml(url))
+            if _isLowQualityText(text):
+                continue
+            sections.append({"title": title, "content": text})
+            seenTitles.add(title)
+    except requests.RequestException:
+        pass
+
+    if sections:
+        return sections
+    headingSections = _split40FPrimaryText(primaryText)
+    if headingSections:
+        return headingSections
+    return [{"title": "Full Document", "content": primaryText}]
+
+
+def _split40FPrimaryText(text: str) -> list[dict]:
+    starts: list[dict[str, int | str]] = []
+    offset = 0
+    seen: set[str] = set()
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        upper = stripped.upper()
+        if upper in FORTY_F_HEADINGS and upper not in seen:
+            starts.append({"title": stripped, "start": offset})
+            seen.add(upper)
+        offset += len(line)
+
+    if len(starts) < 2:
+        return []
+
+    sections: list[dict] = []
+    for idx, startInfo in enumerate(starts):
+        start = int(startInfo["start"])
+        end = int(starts[idx + 1]["start"]) if idx + 1 < len(starts) else len(text)
+        content = text[start:end].strip()
+        if not content:
+            continue
+        sections.append({
+            "title": str(startInfo["title"]).title(),
+            "content": content,
+        })
+    return sections
 
 
 def _tableToMarkdown(table) -> str:
@@ -417,27 +864,75 @@ def _htmlToText(html: str) -> str:
 
 
 def _splitItems(text: str, formType: str) -> list[dict]:
+    if formType == "40-F":
+        return [{"title": "Full Document", "content": text}]
     if formType == "10-Q":
         return _splitQuarterlyItems(text)
 
     itemNames = ITEM_NAMES_20F if formType == "20-F" else ITEM_NAMES_10K
     matches = list(ITEM_PATTERN.finditer(text))
     if not matches:
+        tableItems = _splitTableStructuredItems(text, itemNames)
+        if tableItems:
+            return tableItems
         return [{"title": "Full Document", "content": text}]
 
-    seen = set()
-    items = []
-    for i, match in enumerate(matches):
+    startsByItem: dict[str, dict[str, int | str]] = {}
+    for match in matches:
         itemNum = match.group(1).upper()
-        if itemNum in seen:
-            continue
-        seen.add(itemNum)
-        start = match.start()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         canonTitle = itemNames.get(itemNum, match.group(2).strip().rstrip("."))
-        items.append({
+        startsByItem[itemNum] = {
+            "item_num": itemNum,
+            "start": match.start(),
             "title": f"Item {itemNum}. {canonTitle}",
-            "content": text[start:end].strip(),
+        }
+
+    starts = sorted(startsByItem.values(), key=lambda row: int(row["start"]))
+    items: list[dict] = []
+    for idx, startInfo in enumerate(starts):
+        start = int(startInfo["start"])
+        end = int(starts[idx + 1]["start"]) if idx + 1 < len(starts) else len(text)
+        content = text[start:end].strip()
+        if not content:
+            continue
+        items.append({
+            "title": str(startInfo["title"]),
+            "content": content,
+        })
+    return items
+
+
+def _splitTableStructuredItems(text: str, itemNames: dict[str, str]) -> list[dict]:
+    startsByItem: dict[str, dict[str, int | str]] = {}
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        match = ITEM_TABLE_LINE_PATTERN.match(stripped)
+        if match:
+            itemNum = match.group(1).upper()
+            title = itemNames.get(itemNum) or re.sub(r"\s+", " ", match.group(2).strip(" |"))
+            if title:
+                startsByItem[itemNum] = {
+                    "item_num": itemNum,
+                    "start": offset,
+                    "title": f"Item {itemNum}. {title}",
+                }
+        offset += len(line)
+
+    starts = sorted(startsByItem.values(), key=lambda row: int(row["start"]))
+    if len(starts) < 2:
+        return []
+
+    items: list[dict] = []
+    for idx, startInfo in enumerate(starts):
+        start = int(startInfo["start"])
+        end = int(starts[idx + 1]["start"]) if idx + 1 < len(starts) else len(text)
+        content = text[start:end].strip()
+        if not content:
+            continue
+        items.append({
+            "title": str(startInfo["title"]),
+            "content": content,
         })
     return items
 
@@ -447,23 +942,34 @@ def _splitQuarterlyItems(text: str) -> list[dict]:
     if not body:
         return [{"title": "Full Document", "content": text}]
 
-    starts: list[dict[str, int | str]] = []
+    bodyLines = body.splitlines()
+    startsByKey: dict[tuple[str, str], dict[str, int | str]] = {}
     currentPart: str | None = None
     offset = 0
-    seen: set[tuple[str, str]] = set()
 
-    for line in body.splitlines(keepends=True):
-        stripped = line.strip()
+    for idx, rawLine in enumerate(bodyLines):
+        line = rawLine + "\n"
+        stripped = rawLine.strip()
         if not stripped:
             offset += len(line)
             continue
-        if "|" in stripped:
-            offset += len(line)
-            continue
-
         partMatch = PART_PATTERN.match(stripped)
         if partMatch:
             currentPart = partMatch.group(1).upper()
+            offset += len(line)
+            continue
+
+        if stripped.upper() == "PART" and idx + 1 < len(bodyLines):
+            nextLine = bodyLines[idx + 1].strip()
+            nextMatch = re.match(r"^(I|II)\b", nextLine, re.IGNORECASE)
+            if nextMatch:
+                currentPart = nextMatch.group(1).upper()
+                offset += len(line)
+                continue
+
+        partTableMatch = PART_TABLE_LINE_PATTERN.match(stripped)
+        if partTableMatch:
+            currentPart = partTableMatch.group(1).upper()
             offset += len(line)
             continue
 
@@ -472,16 +978,54 @@ def _splitQuarterlyItems(text: str) -> list[dict]:
             itemNum = itemMatch.group(1).upper()
             key = (currentPart, itemNum)
             canonicalTitle = ITEM_NAMES_10Q.get(f"{currentPart}:{itemNum}")
-            if canonicalTitle and key not in seen:
-                starts.append({
+            if idx + 1 < len(bodyLines):
+                nextTitle = bodyLines[idx + 1].strip()
+                if nextTitle and not PART_PATTERN.match(nextTitle) and not ITEM_LINE_PATTERN.match(nextTitle):
+                    if not itemMatch.group(2).strip():
+                        canonicalTitle = canonicalTitle or nextTitle
+            if canonicalTitle:
+                startsByKey[key] = {
                     "part": currentPart,
                     "item_num": itemNum,
                     "start": offset,
                     "title": f"Part {currentPart} - Item {itemNum}. {canonicalTitle}",
-                })
-                seen.add(key)
+                }
+            offset += len(line)
+            continue
+
+        if stripped.upper() == "ITEM" and idx + 1 < len(bodyLines) and currentPart is not None:
+            nextLine = bodyLines[idx + 1].strip()
+            nextItemMatch = ITEM_NUMBER_TITLE_PATTERN.match(nextLine)
+            if nextItemMatch:
+                itemNum = nextItemMatch.group(1).upper()
+                key = (currentPart, itemNum)
+                canonicalTitle = ITEM_NAMES_10Q.get(f"{currentPart}:{itemNum}") or nextItemMatch.group(2).strip()
+                if canonicalTitle:
+                    startsByKey[key] = {
+                        "part": currentPart,
+                        "item_num": itemNum,
+                        "start": offset,
+                        "title": f"Part {currentPart} - Item {itemNum}. {canonicalTitle}",
+                    }
+                offset += len(line)
+                continue
+
+        itemTableMatch = ITEM_TABLE_LINE_PATTERN.match(stripped)
+        if itemTableMatch and currentPart is not None:
+            itemNum = itemTableMatch.group(1).upper()
+            key = (currentPart, itemNum)
+            titleText = itemTableMatch.group(2).strip()
+            canonicalTitle = ITEM_NAMES_10Q.get(f"{currentPart}:{itemNum}") or titleText
+            if canonicalTitle:
+                startsByKey[key] = {
+                    "part": currentPart,
+                    "item_num": itemNum,
+                    "start": offset,
+                    "title": f"Part {currentPart} - Item {itemNum}. {canonicalTitle}",
+                }
         offset += len(line)
 
+    starts = sorted(startsByKey.values(), key=lambda row: int(row["start"]))
     if len(starts) < 2:
         return [{"title": "Full Document", "content": body}]
 
@@ -504,12 +1048,22 @@ def _splitQuarterlyItems(text: str) -> list[dict]:
 
 def _quarterlyBodyText(text: str) -> str:
     lines = text.splitlines()
+    partStarts: list[int] = []
     for idx, line in enumerate(lines):
         stripped = line.strip()
-        if "|" in stripped:
-            continue
         if re.match(r"^PART\s+I\b", stripped, re.IGNORECASE):
-            return "\n".join(lines[idx:]).strip()
+            partStarts.append(idx)
+            continue
+        if stripped.upper() == "PART" and idx + 1 < len(lines):
+            if re.match(r"^I\b", lines[idx + 1].strip(), re.IGNORECASE):
+                partStarts.append(idx)
+                continue
+        if PART_TABLE_LINE_PATTERN.match(stripped):
+            partStarts.append(idx)
+    if len(partStarts) >= 2:
+        return "\n".join(lines[partStarts[1]:]).strip()
+    if partStarts:
+        return "\n".join(lines[partStarts[0]:]).strip()
     return text
 
 
@@ -546,7 +1100,7 @@ def _periodKey(formType: str, periodEnd: str | None, year: str) -> str | None:
         match = re.match(r"(\d{4})-(\d{2})", periodEnd)
         if match:
             pYear, month = match.groups()
-            if formType in ("10-K", "20-F"):
+            if formType in SUPPORTED_ANNUAL_FORMS:
                 return pYear
             if formType == "10-Q":
                 if month == "03":
@@ -555,6 +1109,68 @@ def _periodKey(formType: str, periodEnd: str | None, year: str) -> str | None:
                     return f"{pYear}Q2"
                 if month == "09":
                     return f"{pYear}Q3"
-    if formType in ("10-K", "20-F"):
+    if formType in SUPPORTED_ANNUAL_FORMS:
         return str(year)
     return None
+
+
+def _tickerSortKey(ticker: str) -> tuple[int, int, str]:
+    hasSuffix = 1 if "-" in ticker else 0
+    return hasSuffix, len(ticker), ticker
+
+
+def _dedupeIssuerUniverse(df: pl.DataFrame) -> pl.DataFrame:
+    rows: list[dict[str, object]] = []
+    for cik, group in df.group_by("cik", maintain_order=True):
+        records = group.sort("ticker").to_dicts()
+        records.sort(key=lambda row: _tickerSortKey(str(row["ticker"])))
+        rows.append(records[0])
+    return pl.DataFrame(rows).sort("ticker")
+
+
+def _tickerBucketKey(ticker: str) -> str:
+    ticker = ticker.upper()
+    if not ticker:
+        return "#"
+    first = ticker[0]
+    if first.isalnum():
+        return first
+    return "#"
+
+
+def _interleaveIssuerUniverse(df: pl.DataFrame) -> pl.DataFrame:
+    if df.is_empty():
+        return df
+
+    buckets: dict[str, list[dict[str, object]]] = {}
+    for row in df.sort("ticker").to_dicts():
+        buckets.setdefault(_tickerBucketKey(str(row["ticker"])), []).append(row)
+
+    ordered: list[dict[str, object]] = []
+    bucketKeys = sorted(buckets)
+    while True:
+        progressed = False
+        for key in bucketKeys:
+            bucket = buckets[key]
+            if not bucket:
+                continue
+            ordered.append(bucket.pop(0))
+            progressed = True
+        if not progressed:
+            break
+
+    return pl.DataFrame(ordered)
+
+
+def _supportedRegularForms(submissions: dict, sinceYear: int) -> list[str]:
+    merged = _mergeFilingArrays(submissions, sinceYear)
+    forms: list[str] = []
+    for i, formType in enumerate(merged["form"]):
+        if formType not in SUPPORTED_REGULAR_FORMS:
+            continue
+        filingDate = merged["filingDate"][i]
+        if int(filingDate[:4]) < sinceYear:
+            continue
+        if formType not in forms:
+            forms.append(formType)
+    return forms

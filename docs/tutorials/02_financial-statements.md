@@ -1,4 +1,4 @@
----
+﻿---
 title: "2. Financial Statements"
 ---
 
@@ -20,9 +20,9 @@ title: "2. Financial Statements"
 ## 준비
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 ```
 
 ---
@@ -247,3 +247,4 @@ else:
 
 - [3. 시계열 분석](./timeseries) — 계정 표준화, 분기별 독립 시계열, TTM
 - [4. 재무비율](./ratios) — ROE, 부채비율, FCF 등 자동 계산
+

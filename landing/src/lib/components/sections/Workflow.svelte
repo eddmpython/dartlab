@@ -13,17 +13,17 @@
 		{
 			icon: Code2,
 			step: '02',
-			title: 'Enter Stock Code',
-			desc: 'Pass a 6-digit code. Missing data is auto-downloaded from GitHub Releases.',
-			code: 'c = Company("005930")',
+			title: 'Create Company',
+			desc: 'Start from the public entrypoint. Missing data is auto-downloaded from GitHub Releases.',
+			code: 'c = dartlab.Company("005930")',
 			color: 'text-dl-accent bg-dl-accent/10 border-dl-accent/20'
 		},
 		{
 			icon: LineChart,
 			step: '03',
-			title: 'Get Results',
-			desc: 'Time-series DataFrames, match rates, and breakpoint tracking. 18 modules ready to use.',
-			code: 'c.analyze().FS  # DataFrame',
+			title: 'Inspect Structure',
+			desc: 'Check the index first, then open a topic and trace its source.',
+			code: 'c.index  # then c.show("BS")',
 			color: 'text-dl-success bg-dl-success/10 border-dl-success/20'
 		}
 	];

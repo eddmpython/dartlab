@@ -11,12 +11,12 @@ pip install dartlab
 ## 빠른 시작
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")  # 삼성전자
-c.BS                   # 재무상태표
-c.ratios               # 재무비율 (ROE, PER 등)
-c.insights             # 7영역 인사이트 등급 (A~F)
+c = dartlab.Company("005930")
+c.index                # 회사 구조 인덱스
+c.show("BS")           # topic payload 보기
+c.trace("dividend")    # source 추적
 ```
 
 ## 주요 기능
@@ -32,9 +32,9 @@ c.insights             # 7영역 인사이트 등급 (A~F)
 
 ### 공시 파싱 모듈
 
-- **BS** (재무상태표): K-IFRS 연결 재무상태표. 계정명 × 연도별 기말 잔액.
-- **IS** (손익계산서): K-IFRS 연결 손익계산서. 계정명 × 연도별 누적 금액.
-- **CF** (현금흐름표): K-IFRS 연결 현금흐름표. 계정명 × 연도별 현금흐름.
+- **BS** (재무상태표): K-IFRS 연결 재무상태표. finance XBRL 정규화(snakeId) 기반, 회사간 비교 가능. finance 없으면 docs fallback.
+- **IS** (손익계산서): K-IFRS 연결 손익계산서. finance XBRL 정규화 기반. 매출액, 영업이익, 순이익 등 전체 계정 포함.
+- **CF** (현금흐름표): K-IFRS 연결 현금흐름표. finance XBRL 정규화 기반. 영업/투자/재무활동 현금흐름.
 - **fsSummary** (요약재무정보): DART 공시 요약재무정보. 다년간 주요 재무지표 비교.
 - **segments** (부문정보): 사업부문별 매출·이익 데이터. 부문간 수익성 비교 가능.
 - **tangibleAsset** (유형자산): 유형자산 변동표. 취득/처분/감가상각 내역.
@@ -76,6 +76,7 @@ c.insights             # 7영역 인사이트 등급 (A~F)
 - **companyOverview** (회사개요정량): 공시 기반 회사 정량 개요 데이터.
 - **mdna** (MD&A): 이사의 경영진단 및 분석의견. 경영진 시각의 실적 평가와 전망.
 - **rawMaterial** (원재료설비): 원재료 매입, 유형자산 현황, 시설투자 데이터.
+- **sections** (사업보고서섹션): 사업보고서 전체 섹션 텍스트를 topic(행) × period(열) DataFrame으로 구조화. leaf title 기준 수평 비교 가능. 연간+분기+반기 전 기간 포함.
 
 ### K-IFRS 주석
 

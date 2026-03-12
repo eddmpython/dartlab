@@ -1,4 +1,4 @@
----
+﻿---
 title: "7. Advanced Analysis"
 ---
 
@@ -22,9 +22,9 @@ K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석,
 ## 준비
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 ```
 
 ---
@@ -242,7 +242,7 @@ codes = ["005930", "000660", "035420"]
 rows = []
 
 for code in codes:
-    c = Company(code)
+    c = dartlab.Company(code)
     bs = c.BS
     if bs is not None:
         # 마지막 연도 자산총계 확인
@@ -263,7 +263,7 @@ print(pl.DataFrame(rows))
 ```python
 dividends = []
 for code in codes:
-    c = Company(code)
+    c = dartlab.Company(code)
     div = c.dividend
     if div is not None:
         last = div.row(-1, named=True)
@@ -317,3 +317,5 @@ d["notes"]["inventory"], d["notes"]["borrowings"]
 - [8. 기업 간 비교](./cross-company) — 섹터 분류, 인사이트 등급, 시장 순위
 - [API Overview](../api/overview) — property 전체 목록과 파라미터 상세
 - [계정 표준화와 시계열](../api/timeseries) — 7단계 매핑, snakeId, 정규화 방식
+
+

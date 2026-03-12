@@ -1,4 +1,4 @@
----
+﻿---
 title: 설치
 ---
 
@@ -97,7 +97,7 @@ uv add dartlab
 ## 4단계: 설치 확인
 
 ```bash
-uv run python -c "from dartlab import Company; c = Company('005930'); print(c.corpName)"
+uv run python -c "import dartlab; c = dartlab.Company('005930'); print(c.corpName)"
 ```
 
 `삼성전자`가 출력되면 설치 완료다.
@@ -134,14 +134,14 @@ uv run dartlab ai
 
 DartLab은 DART 공시 원문을 파싱한 Parquet 파일을 사용한다. [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs)에 260개 이상의 상장 기업 데이터가 있다.
 
-데이터를 직접 다운로드할 필요는 없다. `Company("005930")` 처럼 호출하면 로컬에 파일이 없을 때 **자동으로 다운로드**한다.
+데이터를 직접 다운로드할 필요는 없다. `dartlab.Company("005930")` 처럼 호출하면 로컬에 파일이 없을 때 **자동으로 다운로드**한다.
 
 ### 자동 다운로드 동작
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")   # 로컬에 없으면 자동 다운로드
+c = dartlab.Company("005930")   # 로컬에 없으면 자동 다운로드
 ```
 
 1. 로컬 `data/docsData/` 디렉토리에서 파일 확인
@@ -179,8 +179,8 @@ Colab 셀에서:
 ```python
 !pip install dartlab
 
-from dartlab import Company
-c = Company("005930")
+import dartlab
+c = dartlab.Company("005930")
 c.BS
 ```
 
@@ -210,3 +210,5 @@ GitHub Releases에서 다운로드하므로 네트워크 상태에 따라 시간
 
 - [빠른 시작](./quickstart) — 전체 기능 둘러보기
 - [API Overview](../api/overview) — property 전체 목록
+
+

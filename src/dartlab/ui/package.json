@@ -6,14 +6,18 @@
 	"scripts": {
 		"dev": "vite dev --port 5400",
 		"build": "vite build",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:e2e": "node ./tests/e2e/run-smoke.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@tailwindcss/vite": "^4.2.1",
 		"svelte": "^5.0.0",
 		"tailwindcss": "^4.2.1",
-		"vite": "^6.0.0"
+		"vite": "^6.0.0",
+		"vitest": "^3.2.4"
 	},
 	"dependencies": {
 		"bits-ui": "^2.16.3",

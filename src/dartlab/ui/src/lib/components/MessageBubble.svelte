@@ -22,10 +22,10 @@
 	import {
 		Database, X, FileText, Code, Wrench, Loader2,
 		AlertTriangle, Clock, Brain,
-		RefreshCw
+		RefreshCw, Eye, CheckCircle2, Activity
 	} from "lucide-svelte";
 
-	let { message, onRegenerate } = $props();
+	let { message, onRegenerate, onOpenEvidence } = $props();
 	let openModal = $state(null);
 	let modalType = $state("context");
 	let contextTab = $state("raw");
@@ -51,7 +51,11 @@
 	let companyName = $derived(message.company || message.meta?.company || null);
 
 	let hasTransparencyData = $derived(
-		message.systemPrompt || message.contexts?.length > 0 || message.meta?.includedModules
+		message.systemPrompt ||
+		message.userContent ||
+		message.contexts?.length > 0 ||
+		message.meta?.includedModules ||
+		message.toolEvents?.length > 0
 	);
 
 	let dataYearRange = $derived.by(() => {
@@ -188,6 +192,58 @@
 	}
 
 	let contentEl = $state();
+	const TABLE_LINE_RE = /^\s*\|.+\|\s*$/;
+
+	function splitStreamingContent(text, loading) {
+		if (!text) return { committed: "", draft: "", draftType: "none" };
+		if (!loading) return { committed: text, draft: "", draftType: "none" };
+
+		const lines = text.split("\n");
+		let safeIndex = lines.length;
+
+		if (!text.endsWith("\n")) safeIndex = Math.min(safeIndex, lines.length - 1);
+
+		let codeFenceCount = 0;
+		let lastFenceLine = -1;
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].trim().startsWith("```")) {
+				codeFenceCount += 1;
+				lastFenceLine = i;
+			}
+		}
+		if (codeFenceCount % 2 === 1 && lastFenceLine >= 0) {
+			safeIndex = Math.min(safeIndex, lastFenceLine);
+		}
+
+		let trailingTableStart = -1;
+		for (let i = lines.length - 1; i >= 0; i--) {
+			const line = lines[i];
+			if (!line.trim()) break;
+			if (TABLE_LINE_RE.test(line)) trailingTableStart = i;
+			else {
+				trailingTableStart = -1;
+				break;
+			}
+		}
+		if (trailingTableStart >= 0) {
+			safeIndex = Math.min(safeIndex, trailingTableStart);
+		}
+
+		if (safeIndex <= 0) {
+			return {
+				committed: "",
+				draft: text,
+				draftType: trailingTableStart === 0 ? "table" : codeFenceCount % 2 === 1 ? "code" : "text",
+			};
+		}
+
+		const committed = lines.slice(0, safeIndex).join("\n");
+		const draft = lines.slice(safeIndex).join("\n");
+		let draftType = "text";
+		if (draft && trailingTableStart >= safeIndex) draftType = "table";
+		else if (draft && codeFenceCount % 2 === 1) draftType = "code";
+		return { committed, draft, draftType };
+	}
 
 	const ICON_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
 	const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-dl-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -204,25 +260,84 @@
 	}
 
 	function openContextModal(idx) {
+		if (onOpenEvidence) {
+			onOpenEvidence("contexts", idx);
+			return;
+		}
 		openModal = idx;
 		modalType = "context";
 		contextTab = "rendered";
 	}
 
 	function openSystemPromptModal() {
+		if (onOpenEvidence) {
+			onOpenEvidence("system");
+			return;
+		}
 		openModal = 0;
 		modalType = "system";
 		contextTab = "raw";
 	}
 
 	function openSnapshotModal() {
+		if (onOpenEvidence) {
+			onOpenEvidence("snapshot");
+			return;
+		}
 		openModal = 0;
 		modalType = "snapshot";
+	}
+
+	function openToolEventModal(idx) {
+		if (onOpenEvidence) {
+			const event = message.toolEvents?.[idx];
+			onOpenEvidence(event?.type === "result" ? "tool-results" : "tool-calls", idx);
+			return;
+		}
+		openModal = idx;
+		modalType = "tool";
+		contextTab = "raw";
+	}
+
+	function openUserContentModal() {
+		if (onOpenEvidence) {
+			onOpenEvidence("input");
+			return;
+		}
+		openModal = 0;
+		modalType = "userContent";
+		contextTab = "raw";
 	}
 
 	function closeModal() {
 		openModal = null;
 	}
+
+	function summarizeToolEvent(ev) {
+		if (!ev) return "";
+		if (ev.type === "call") {
+			return ev.arguments?.module || ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || "";
+		}
+		if (typeof ev.result === "string") return ev.result.slice(0, 120);
+		if (ev.result && typeof ev.result === "object") {
+			return ev.result.module || ev.result.status || ev.result.name || "";
+		}
+		return "";
+	}
+
+	let toolCallEvents = $derived((message.toolEvents || []).filter((event) => event.type === "call"));
+	let toolResultEvents = $derived((message.toolEvents || []).filter((event) => event.type === "result"));
+	let streamingContent = $derived.by(() => splitStreamingContent(message.text || "", message.loading));
+	let activityBadges = $derived.by(() => {
+		const badges = [];
+		if (message.meta?.includedModules?.length > 0) badges.push({ label: `모듈 ${message.meta.includedModules.length}개`, icon: Database });
+		if (message.contexts?.length > 0) badges.push({ label: `컨텍스트 ${message.contexts.length}건`, icon: Eye });
+		if (toolCallEvents.length > 0) badges.push({ label: `툴 호출 ${toolCallEvents.length}건`, icon: Wrench });
+		if (toolResultEvents.length > 0) badges.push({ label: `툴 결과 ${toolResultEvents.length}건`, icon: CheckCircle2 });
+		if (message.systemPrompt) badges.push({ label: "시스템 프롬프트", icon: Brain });
+		if (message.userContent) badges.push({ label: "LLM 입력", icon: FileText });
+		return badges;
+	});
 
 	let loadingSteps = $derived.by(() => {
 		if (!message.loading) return [];
@@ -254,11 +369,19 @@
 {:else}
 	<div class="flex items-start gap-3 animate-fadeIn">
 		<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5" />
-		<div class="flex-1 pt-0.5 min-w-0">
+		<div class="message-shell flex-1 pt-0.5 min-w-0">
 
 			<!-- ── 상단 메타 뱃지 (데이터 투명성: LLM이 보는 데이터를 뱃지로 표시) ── -->
-			{#if companyName || dataYearRange || message.contexts?.length > 0 || message.meta?.includedModules}
-				<div class="flex flex-wrap items-center gap-1.5 mb-2">
+			{#if companyName || dataYearRange || message.contexts?.length > 0 || message.meta?.includedModules || activityBadges.length > 0}
+				<div class="message-section-slot message-transparency-slot mb-3 rounded-2xl border border-dl-border/40 bg-dl-bg-card/20 p-3">
+					<div class="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-dl-text-dim">
+						<Activity size={11} />
+						투명성
+					</div>
+					<div class="mb-2 text-[11px] leading-relaxed text-dl-text-dim">
+						이 응답을 만들 때 실제로 참조한 회사, 기간, 컨텍스트, 툴 활동을 바로 열어볼 수 있습니다.
+					</div>
+					<div class="flex flex-wrap items-center gap-1.5">
 					{#if companyName}
 						<Badge variant="muted">{companyName}</Badge>
 					{/if}
@@ -281,13 +404,29 @@
 							모듈 {message.meta.includedModules.length}개
 						</span>
 					{/if}
+					{#each activityBadges as badge}
+						<button
+							class="inline-flex items-center gap-1 rounded-full border border-dl-border/50 bg-dl-bg-card/35 px-2 py-0.5 text-[10px] text-dl-text-dim transition-colors hover:border-dl-primary/30 hover:text-dl-text"
+							onclick={() => {
+								if (badge.label.startsWith("컨텍스트")) openContextModal(0);
+								else if (badge.label.startsWith("툴 호출")) onOpenEvidence ? onOpenEvidence("tool-calls", 0) : openToolEventModal(0);
+								else if (badge.label.startsWith("툴 결과")) onOpenEvidence ? onOpenEvidence("tool-results", 0) : openToolEventModal((message.toolEvents || []).findIndex((event) => event.type === "result"));
+								else if (badge.label === "시스템 프롬프트") openSystemPromptModal();
+								else if (badge.label === "LLM 입력") openUserContentModal();
+							}}
+						>
+							<badge.icon size={10} class="flex-shrink-0" />
+							{badge.label}
+						</button>
+					{/each}
+					</div>
 				</div>
 			{/if}
 
 			<!-- ── Snapshot 카드 (클릭하면 원본 JSON) ── -->
 			{#if message.snapshot?.items?.length > 0}
 				<button
-					class="mb-3 rounded-xl border border-dl-border/60 bg-dl-bg-card/40 overflow-hidden animate-fadeIn shadow-sm shadow-black/10 w-full text-left cursor-pointer hover:border-dl-primary/30 transition-colors"
+					class="message-section-slot mb-3 rounded-xl border border-dl-border/60 bg-dl-bg-card/40 overflow-hidden animate-fadeIn shadow-sm shadow-black/10 w-full text-left cursor-pointer hover:border-dl-primary/30 transition-colors"
 					onclick={openSnapshotModal}
 				>
 					<div class="grid gap-px" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));">
@@ -316,17 +455,33 @@
 
 			<!-- ── Tool Events (데이터 투명성: LLM이 조회한 데이터를 실시간 표시) ── -->
 			{#if message.toolEvents?.length > 0}
-				<div class="mb-3">
-					<div class="flex flex-wrap items-center gap-1.5">
-						{#each message.toolEvents as ev}
-							{#if ev.type === "call"}
-								{@const detail = ev.arguments?.module || ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || ""}
-								<span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-dl-accent/30 bg-dl-accent/[0.06] text-[11px] text-dl-accent">
+				<div class="message-section-slot mb-3">
+					<div class="rounded-2xl border border-dl-border/40 bg-dl-bg-card/20 p-3">
+						<div class="mb-2 text-[10px] uppercase tracking-[0.18em] text-dl-text-dim">보고 있는 것 / 하고 있는 것</div>
+						<div class="mb-2 text-[11px] leading-relaxed text-dl-text-dim">
+							응답 중에 실제로 호출한 도구와 반환된 결과 흐름입니다. 배지를 누르면 상세 근거로 이동합니다.
+						</div>
+						<div class="flex flex-wrap items-center gap-1.5">
+						{#each message.toolEvents as ev, idx}
+							{@const detail = summarizeToolEvent(ev)}
+							<button
+								class={cn(
+									"flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all",
+									ev.type === "call"
+										? "border-dl-accent/30 bg-dl-accent/[0.06] text-dl-accent hover:border-dl-accent/50"
+										: "border-dl-success/30 bg-dl-success/[0.06] text-dl-success hover:border-dl-success/50"
+								)}
+								onclick={() => openToolEventModal(idx)}
+							>
+								{#if ev.type === "call"}
 									<Wrench size={11} />
-									{ev.name}{detail ? `: ${detail}` : ""}
-								</span>
-							{/if}
+								{:else}
+									<CheckCircle2 size={11} />
+								{/if}
+								{ev.type === "call" ? ev.name : `${ev.name} 결과`}{detail ? `: ${detail}` : ""}
+							</button>
 						{/each}
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -357,7 +512,7 @@
 				</div>
 			{:else}
 				{#if message.loading}
-					<div class="flex items-center gap-2 mb-2 text-[11px] text-dl-text-dim">
+					<div class="message-section-slot flex items-center gap-2 mb-2 text-[11px] text-dl-text-dim">
 						<Loader2 size={12} class="animate-spin flex-shrink-0" />
 						<span>{loadingPhase}</span>
 					</div>
@@ -365,11 +520,27 @@
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
-					class={cn("prose-dartlab text-[15px] leading-[1.75]", message.error && "text-dl-primary")}
+					class={cn("prose-dartlab message-body text-[15px] leading-[1.75]", message.error && "text-dl-primary")}
 					bind:this={contentEl}
 					onclick={handleContentClick}
 				>
-					{@html renderMarkdown(message.text)}
+					{#if streamingContent.committed}
+						<div class="message-committed">
+							{@html renderMarkdown(streamingContent.committed)}
+						</div>
+					{/if}
+					{#if streamingContent.draft}
+						<div class={cn(
+							"message-live-tail",
+							streamingContent.draftType === "table" && "message-draft-table",
+							streamingContent.draftType === "code" && "message-draft-code"
+						)}>
+							<div class="message-live-label">
+								{streamingContent.draftType === "table" ? "표 구성 중" : streamingContent.draftType === "code" ? "코드 블록 생성 중" : "응답 작성 중"}
+							</div>
+							<pre>{streamingContent.draft}</pre>
+						</div>
+					{/if}
 				</div>
 
 				<!-- ── 하단 메타 (응답 완료 후) ── -->
@@ -416,7 +587,7 @@
 						{#if message.userContent}
 							<button
 								class="flex items-center gap-1 px-2 py-0.5 rounded-full border border-dl-border/40 text-[10px] text-dl-text-dim hover:text-dl-accent hover:border-dl-accent/30 transition-all"
-								onclick={() => { openModal = 0; modalType = "userContent"; contextTab = "raw"; }}
+								onclick={openUserContentModal}
 							>
 								<FileText size={10} />
 								LLM 입력 ({message.userContent.length.toLocaleString()}자 · ~{formatTokens(estimateTokens(message.userContent))}tok)
@@ -435,9 +606,11 @@
 	{@const isUserContent = modalType === "userContent"}
 	{@const isContext = modalType === "context"}
 	{@const isSnapshot = modalType === "snapshot"}
+	{@const isTool = modalType === "tool"}
 	{@const ctx = isContext ? message.contexts?.[openModal] : null}
-	{@const modalTitle = isSnapshot ? "핵심 수치 (원본 데이터)" : isSystemPrompt ? "시스템 프롬프트" : isUserContent ? "LLM에 전달된 입력" : (ctx?.label || ctx?.module || "")}
-	{@const modalText = isSnapshot ? JSON.stringify(message.snapshot, null, 2) : isSystemPrompt ? message.systemPrompt : isUserContent ? message.userContent : ctx?.text}
+	{@const toolEvent = isTool ? message.toolEvents?.[openModal] : null}
+	{@const modalTitle = isSnapshot ? "핵심 수치 (원본 데이터)" : isSystemPrompt ? "시스템 프롬프트" : isUserContent ? "LLM에 전달된 입력" : isTool ? (toolEvent?.type === "call" ? `${toolEvent?.name} 호출` : `${toolEvent?.name} 결과`) : (ctx?.label || ctx?.module || "")}
+	{@const modalText = isSnapshot ? JSON.stringify(message.snapshot, null, 2) : isSystemPrompt ? message.systemPrompt : isUserContent ? message.userContent : isTool ? JSON.stringify(toolEvent, null, 2) : ctx?.text}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
@@ -520,7 +693,7 @@
 					</div>
 				{/if}
 
-				{#if !isContext && !isSnapshot}
+				{#if !isContext && !isSnapshot && !isTool}
 					<div class="px-5 pb-2.5">
 						<div class="flex items-center gap-1.5">
 							{#if message.systemPrompt}
@@ -558,6 +731,19 @@
 				{#if isContext && contextTab === "rendered"}
 					<div class="prose-dartlab text-[13px] leading-[1.7] pt-3">
 						{@html renderMarkdown(ctx?.text)}
+					</div>
+				{:else if isTool}
+					<div class="mt-3 space-y-3">
+						<div class="rounded-xl border border-dl-border/40 bg-dl-bg-darker p-3">
+							<div class="mb-1 text-[10px] uppercase tracking-wide text-dl-text-dim">요약</div>
+							<div class="text-[11px] text-dl-text-muted">
+								{toolEvent?.type === "call" ? "LLM이 도구를 호출한 이벤트입니다." : "도구 실행 결과가 반환된 이벤트입니다."}
+								{#if summarizeToolEvent(toolEvent)}
+									<span class="text-dl-text"> {summarizeToolEvent(toolEvent)}</span>
+								{/if}
+							</div>
+						</div>
+						<pre class="text-[11px] text-dl-text-muted font-mono bg-dl-bg-darker rounded-xl p-4 overflow-x-auto whitespace-pre-wrap break-words">{modalText}</pre>
 					</div>
 				{:else}
 					<pre class="text-[11px] text-dl-text-muted font-mono bg-dl-bg-darker rounded-xl p-4 mt-3 overflow-x-auto whitespace-pre-wrap break-words">{modalText}</pre>

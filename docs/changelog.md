@@ -1,4 +1,4 @@
----
+﻿---
 title: Changelog
 ---
 
@@ -8,6 +8,42 @@ All notable changes to DartLab will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.4.5] - 2026-03-13
+
+### Changed
+
+**Company public surface 정리**
+- 공개 진입 예제를 `import dartlab; c = dartlab.Company("005930")` 로 통일
+- `Company.index`, `Company.show(topic)`, `Company.trace(topic)` 를 현재 메인 흐름으로 문서/예제/CLI에 반영
+- `Company.profile` 은 향후 terminal/notebook 문서형 보고서 뷰 로드맵으로만 명시
+
+**문서 / notebook / marimo 동기화**
+- README, GitHub Pages 문서, startMarimo, 연계 notebook 예제를 현재 API 기준으로 정리
+- docs 없는 회사에서 `현재 사업보고서 부재` 안내가 나온다는 점을 예제와 설명에 추가
+- compare 개선 예정, EDGAR Company UX 정렬 예정 메시지를 문서에 명시
+
+**CLI / server / UI surface 정리**
+- `dartlab profile` 기본 출력을 `company.index` 로 변경
+- `dartlab profile --show TOPIC`, `--trace TOPIC` 지원 추가
+- AI UI용 `/api/company/{code}/index`, `/show/{topic}`, `/trace/{topic}` endpoint와 client helper 추가
+
+## [0.4.4] - 2026-03-12
+
+### Changed
+
+**docs/sections production 마감**
+- `Company.sections` 가 raw markdown를 보존한 canonical wide view로 동작하면서 appendix/detail row는 기본 core view에서 숨김
+- `Company.retrievalBlocks`, `Company.contextSlices` 가 `sourceTopic`, `cellKey`, `semanticTopic`, `detailTopic` 을 함께 반환해 원문 block을 역추적 가능하게 정리
+- appendix/detail 명세서를 detail semantic layer로 분리해 core 비교축과 분리
+- broad raw residual 일부를 exact mapping으로 흡수해 package 기본 수평화 품질을 마감
+- 금융업/지적재산권/수주/계약 상세표를 detail taxonomy로 흡수해 추가 docs 종목군에서도 core raw residual이 사라지도록 보강
+
+### Fixed
+
+**패키지 메타데이터와 문서 정리**
+- README에 `sections/retrievalBlocks/contextSlices` 사용 흐름과 런타임 무저장 원칙을 명시
+- `pyproject.toml` classifier 를 `Production/Stable` 로 상향
 
 ## [0.4.3] - 2026-03-12
 
@@ -104,8 +140,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 **서버 Company.search 버그 수정**
-- `Company.search()` → `KRCompany.search()`로 변경 (팩토리 함수에 staticmethod 부재 문제)
-- `Company()` 반환 타입 힌트 수정
+- `dartlab.Company.search()` → DART engine company search 경로로 변경 (팩토리 함수에 staticmethod 부재 문제)
+- `dartlab.Company()` 반환 타입 힌트 수정
 
 ## [0.3.0] - 2026-03-09
 
@@ -305,3 +341,5 @@ DartLab 최초 공개 릴리즈.
 - Polars 기반 DataFrame 처리
 - GitHub Actions CI + PyPI trusted publishing
 - 260+ 상장사 Parquet 데이터 (GitHub Releases)
+
+

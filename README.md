@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <br>
 
@@ -29,7 +29,9 @@
 
 ## What is DartLab?
 
-DartLab is a Python library for parsing and analyzing [DART (Data Analysis, Retrieval and Transfer System)](https://dart.fss.or.kr/) — Korea's official electronic disclosure system. It extracts **both financial numbers and narrative text** from corporate filings.
+DartLab is a Python package for parsing and analyzing [DART (Data Analysis, Retrieval and Transfer System)](https://dart.fss.or.kr/) — Korea's official electronic disclosure system. Its stable core is built around DART company analysis, with a unified `dartlab.Company(...)` facade, CLI, and AI web interface on top.
+
+Today, the package message is simple: **DART core is the stable default, while EDGAR and mixed-market paths are still expansion tracks**. DartLab extracts **both financial numbers and narrative text** from corporate filings and exposes them through comparable tables, company facades, and CLI workflows.
 
 ### Account Standardization
 
@@ -73,7 +75,7 @@ uv add dartlab[charts]      # + Plotly charts
 uv add dartlab[all]         # Everything
 
 # 4. Verify
-uv run python -c "from dartlab import Company; print(Company('005930').corpName)"
+uv run python -c "import dartlab; c = dartlab.Company('005930'); print(c.corpName)"
 # → 삼성전자
 
 # 5. Launch AI analysis (requires dartlab[ai])
@@ -84,11 +86,14 @@ uv run dartlab ai
 ## Quick Start
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")       # by stock code
-c = Company("삼성전자")      # by company name (Korean)
-c.corpName                   # "삼성전자"
+c = dartlab.Company("005930")       # by stock code
+c = dartlab.Company("삼성전자")      # by company name (Korean)
+c.corpName                  # "삼성전자"
+
+# EDGAR path exists through the same facade, but DART remains the stable default
+c = dartlab.Company("AAPL")
 ```
 
 Creating a `Company` object prints a usage guide. For the full guide, call `c.guide()`.
@@ -104,16 +109,54 @@ downloadAll("report")                      # 2,700+ companies — periodic repor
 downloadAll("finance", forceUpdate=True)   # re-download if remote is newer
 ```
 
+## CLI
+
+The `dartlab` command is a public interface, not just a helper for the web UI.
+
+```bash
+uv run dartlab status
+uv run dartlab setup codex
+uv run dartlab ask 005930 "Summarize debt risk"
+uv run dartlab excel 005930
+uv run dartlab ai
+```
+
+`dartlab ai` launches the web interface. `ask`, `status`, `setup`, and `excel` are supported CLI commands with stable entrypoint behavior.
+
 ---
 
 ## Features
+
+### Company Index First
+
+The current public flow is simple:
+
+- `index` shows the company structure first
+- `show(topic)` opens the actual payload
+- `trace(topic)` explains whether `docs`, `finance`, or `report` won
+
+```python
+import dartlab
+
+c = dartlab.Company("005930")
+c.index              # structure index dataframe
+c.show("BS")         # show one topic
+c.trace("dividend")  # source trace
+c.docs.sections      # pure docs source spine
+c.finance.BS         # authoritative financial statement
+c.report.dividend    # authoritative report series
+```
+
+`profile` is intentionally held back for a future report-style view. The plan is a terminal/notebook-friendly company report that emphasizes change points instead of repeating unchanged text.
 
 ### Financial Statements
 
 ```python
 c.BS    # Balance Sheet (DataFrame)
 c.IS    # Income Statement (DataFrame)
+c.CIS   # Comprehensive Income Statement (DataFrame)
 c.CF    # Cash Flow Statement (DataFrame)
+c.SCE   # Statement of Changes in Equity
 ```
 
 ### Cross-Company Comparable Time Series
@@ -197,6 +240,28 @@ result.timeSeries    # Ownership ratio time series
 ```python
 c.employee    # year, totalEmployees, avgSalary, avgTenure, ...
 ```
+
+### Disclosure Horizontalization
+
+```python
+c.sections          # merged topic x period company table
+c.index             # same structure index dataframe
+c.docs.sections     # pure docs horizontalization source
+c.retrievalBlocks   # long DataFrame of source markdown blocks
+c.contextSlices     # LLM-ready slices with semantic/detail metadata
+```
+
+`sections` is the company spine. Columns are time series. The row structure
+comes from disclosure sections, then `finance` fills `BS / IS / CIS / CF / SCE`
+and `report` fills better structured periodic disclosure rows.
+
+`retrievalBlocks()` and `contextSlices()` keep raw markdown and table evidence
+so the text layer stays lossless while runtime still returns DataFrames
+directly.
+
+DartLab does not store per-stock result tables as package data. Learned rules
+ship with the package, and runtime returns DataFrames directly from the current
+stock's disclosure parquet.
 
 ### Audit Opinion
 
@@ -288,6 +353,8 @@ Chat with an LLM over DartLab's structured data to analyze companies interactive
 
 All extracted data (financial statements, notes, dividends, executives, governance) is provided as context for natural-language Q&A with streaming responses. Data Explorer lets you browse raw data directly in the browser.
 
+The web UI is one public surface. The same runtime also exposes CLI entrypoints such as `dartlab ask`, `dartlab status`, `dartlab setup`, and `dartlab excel`.
+
 ### Supported LLM Providers
 
 | Provider | Auth | Description |
@@ -342,16 +409,16 @@ result.feeDf       # Audit fees
 ## Company Search
 
 ```python
-from dartlab import Company
+import dartlab
 
-Company.search("삼성")
+dartlab.Company.search("삼성")
 # ┌──────────────┬──────────┬────────────────┐
 # │ 회사명       ┆ 종목코드 ┆ 업종           │
 # └──────────────┴──────────┴────────────────┘
 
-Company.listing()   # Full KRX listed companies
-Company.status()    # Local data index
-c.docs()            # Filing list + DART viewer links
+dartlab.Company.listing()   # Full KRX listed companies
+dartlab.Company.status()    # Local data index
+c.filings()         # Filing list + DART viewer links
 ```
 
 ---
@@ -410,7 +477,7 @@ When match rate drops below 85%, a breakpoint is detected and the segment is spl
 
 All data originates from **[OpenDART](https://opendart.fss.or.kr/)** and **[DART](https://dart.fss.or.kr/)**, Korea's official electronic disclosure system. The developer has **not modified a single number** — only metadata columns (stock code, year, report type, etc.) have been added for structural organization.
 
-If you want to verify, you can cross-check any value against the original filings using the package's built-in DART viewer links (`c.docs()`).
+If you want to verify, you can cross-check any value against the original filings using the package's built-in DART viewer links (`c.filings()`).
 
 Each Parquet file contains all filings for a single company:
 
@@ -482,6 +549,9 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [x] Cloud LLM providers (OpenAI, Anthropic, ChatGPT OAuth, Codex CLI, Claude Code)
 - [x] Data Explorer — full-screen data browser with Korean/English label toggle
 - [x] Excel export with templates
+- [ ] Company `profile` report view (terminal/notebook document view focused on change points)
+- [ ] Compare UX overhaul around the same `index/show/trace` philosophy
+- [ ] EDGAR Company UX alignment with the DART `Company` surface
 - [ ] EDGAR (US SEC) financial data integration
 - [ ] Text analysis module integration (from separate project)
 - [ ] Quantitative + qualitative cross-validation
@@ -539,3 +609,4 @@ Questions or ideas? Open an [issue](https://github.com/eddmpython/dartlab/issues
 ## License
 
 MIT License
+

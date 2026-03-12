@@ -1,5 +1,6 @@
 """데이터 로딩 및 공통 유틸."""
 
+import inspect
 import json
 import re
 import socket
@@ -26,6 +27,7 @@ def _getDataRoot() -> Path:
 _DOWNLOAD_TIMEOUT = 30
 _MAX_RETRIES = 3
 _EDGAR_UNIVERSE_TTL_HOURS = 24
+_EDGAR_DOCS_FRESHNESS_TTL_HOURS = 24
 _SEC_HEADERS = {"User-Agent": "DartLab eddmpython@gmail.com"}
 _LISTED_EXCHANGES = {"Nasdaq", "NYSE", "CBOE"}
 
@@ -69,43 +71,97 @@ def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
     _downloadWithRetry(url, dest)
 
 
-def loadData(stockCode: str, category: str = "docs", *, sinceYear: int | None = None) -> pl.DataFrame:
+def loadData(
+    stockCode: str,
+    category: str = "docs",
+    *,
+    sinceYear: int | None = None,
+    asOf: str | None = None,
+    refresh: str = "auto",
+) -> pl.DataFrame:
     """종목코드 → DataFrame. 로컬에 없으면 릴리즈에서 자동 다운로드."""
     dataDir = _dataDir(category)
     path = dataDir / f"{stockCode}.parquet"
     effectiveSinceYear = sinceYear
     if category == "edgarDocs" and effectiveSinceYear is None:
         effectiveSinceYear = 2009
-    if not path.exists():
+    if category == "edgarDocs":
+        _ensureEdgarDocs(
+            stockCode,
+            path,
+            sinceYear=effectiveSinceYear or 2009,
+            asOf=asOf,
+            refresh=refresh,
+        )
+    elif not path.exists():
         label = DATA_RELEASES[category]["label"]
         print(f"[dartlab] {stockCode}.parquet ({label}) 로컬에 없음 → GitHub Release에서 다운로드...")
         try:
             _download(stockCode, path, category)
             print(f"[dartlab] 저장 완료: {path}")
         except (URLError, socket.timeout, OSError) as e:
-            if category == "edgarDocs":
-                if path.exists():
-                    path.unlink()
-                print("[dartlab] GitHub Release에 없거나 다운로드 실패 → SEC EDGAR API 직접 수집으로 전환")
-                from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
-
-                fetchEdgarDocs(stockCode, path, sinceYear=effectiveSinceYear or 2009)
-            else:
-                if path.exists():
-                    path.unlink()
-                raise RuntimeError(
-                    f"데이터 다운로드 실패 ({stockCode}): {e}\n"
-                    f"  해결 방법:\n"
-                    f"  1. 네트워크 연결 확인\n"
-                    f"  2. `dartlab download {stockCode}` 명령으로 수동 다운로드\n"
-                    f"  3. GitHub Releases 페이지에서 직접 다운로드 후 {dataDir}/ 에 배치"
-                ) from e
+            if path.exists():
+                path.unlink()
+            raise RuntimeError(
+                f"데이터 다운로드 실패 ({stockCode}): {e}\n"
+                f"  해결 방법:\n"
+                f"  1. 네트워크 연결 확인\n"
+                f"  2. `dartlab download {stockCode}` 명령으로 수동 다운로드\n"
+                f"  3. GitHub Releases 페이지에서 직접 다운로드 후 {dataDir}/ 에 배치"
+            ) from e
         except ValueError:
             if path.exists():
                 path.unlink()
             raise
     df = pl.read_parquet(str(path))
     return _normalizeLoadedFrame(df, category)
+
+
+def _ensureEdgarDocs(
+    stockCode: str,
+    path: Path,
+    *,
+    sinceYear: int,
+    asOf: str | None,
+    refresh: str,
+) -> None:
+    from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
+
+    if refresh not in {"auto", "force_check", "force_rebuild", "local_only"}:
+        raise ValueError(f"지원하지 않는 refresh 정책: {refresh}")
+
+    if refresh == "local_only":
+        if not path.exists():
+            raise FileNotFoundError(f"로컬 EDGAR docs 없음: {path}")
+        return
+
+    if refresh == "force_rebuild":
+        _rebuildEdgarDocs(stockCode, path, sinceYear=sinceYear, sourceMode="sec_api_rebuild")
+        return
+
+    if not path.exists():
+        label = DATA_RELEASES["edgarDocs"]["label"]
+        print(f"[dartlab] {stockCode}.parquet ({label}) 로컬에 없음 → GitHub Release에서 다운로드...")
+        try:
+            _download(stockCode, path, "edgarDocs")
+            print(f"[dartlab] 저장 완료: {path}")
+        except (URLError, socket.timeout, OSError):
+            if path.exists():
+                path.unlink()
+            print("[dartlab] GitHub Release에 없거나 다운로드 실패 → SEC EDGAR API 직접 수집으로 전환")
+            _rebuildEdgarDocs(stockCode, path, sinceYear=sinceYear, sourceMode="sec_api")
+        return
+
+    if refresh == "auto" and not _isEdgarDocsCheckExpired(path):
+        return
+
+    latestRemote = _getLatestRegularEdgarFiling(stockCode, sinceYear=sinceYear)
+    if latestRemote is None:
+        return
+    localState = _getLocalEdgarDocsState(path)
+    if localState is not None and _isEdgarDocsFresh(localState, latestRemote, asOf=asOf):
+        return
+    _incrementalUpdateEdgarDocs(stockCode, path, sinceYear=sinceYear, latestRemote=latestRemote)
 
 
 def _fetchAssets(tag: str) -> list[dict]:
@@ -344,6 +400,133 @@ def _fetchJson(url: str) -> dict:
         socket.setdefaulttimeout(old_timeout)
 
 
+def _isEdgarDocsCheckExpired(path: Path) -> bool:
+    if not path.exists():
+        return True
+    ageSeconds = time.time() - path.stat().st_mtime
+    return ageSeconds > _EDGAR_DOCS_FRESHNESS_TTL_HOURS * 3600
+
+
+def _getLatestRegularEdgarFiling(stockCode: str, *, sinceYear: int) -> dict[str, str] | None:
+    from dartlab.engines.edgar.docs.fetch import _findFilings, _getSubmissions, _resolveTickerMeta
+
+    meta = _resolveTickerMeta(stockCode.upper())
+    submissions = _getSubmissions(meta["cik"])
+    filings = _findFilings(submissions, sinceYear)
+    if not filings:
+        return None
+    latest = filings[-1]
+    return {
+        "ticker": stockCode.upper(),
+        "cik": meta["cik"],
+        "filing_date": latest["filingDate"],
+        "accession_no": latest["accessionNumber"],
+        "form_type": latest["formType"],
+    }
+
+
+def _getLocalEdgarDocsState(path: Path) -> dict[str, str] | None:
+    if not path.exists():
+        return None
+    df = pl.read_parquet(path, columns=["filing_date", "accession_no"])
+    if df.is_empty():
+        return None
+    latestDate = df["filing_date"].drop_nulls().max()
+    latestAccession = ""
+    if latestDate is not None:
+        latestRows = df.filter(pl.col("filing_date") == latestDate)
+        if latestRows.height and "accession_no" in latestRows.columns:
+            latestAccession = str(latestRows["accession_no"][0] or "")
+    return {
+        "latest_filing_date": str(latestDate or ""),
+        "latest_accession_no": latestAccession,
+    }
+
+
+def _isEdgarDocsFresh(localState: dict[str, str], latestRemote: dict[str, str], *, asOf: str | None) -> bool:
+    latestAccession = str(localState.get("latest_accession_no") or "")
+    latestDate = str(localState.get("latest_filing_date") or "")
+    if asOf is not None and latestDate:
+        return latestDate >= asOf
+    if latestDate and latestDate > latestRemote["filing_date"]:
+        return True
+    if latestDate and latestDate == latestRemote["filing_date"]:
+        return latestAccession == latestRemote["accession_no"] or bool(latestAccession)
+    if latestAccession:
+        return latestAccession == latestRemote["accession_no"]
+    return latestDate == latestRemote["filing_date"]
+
+
+def _callFetchEdgarDocs(
+    fetchFn,
+    stockCode: str,
+    path: Path,
+    *,
+    sinceYear: int,
+    sourceMode: str,
+) -> None:
+    kwargs = {"sinceYear": sinceYear}
+    try:
+        signature = inspect.signature(fetchFn)
+    except (TypeError, ValueError):
+        signature = None
+
+    if signature is None or "sourceMode" in signature.parameters:
+        kwargs["sourceMode"] = sourceMode
+    if signature is None or "strictQuality" in signature.parameters:
+        kwargs["strictQuality"] = False
+
+    fetchFn(stockCode, path, **kwargs)
+
+
+def _rebuildEdgarDocs(stockCode: str, path: Path, *, sinceYear: int, sourceMode: str) -> None:
+    from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
+
+    try:
+        _callFetchEdgarDocs(
+            fetchEdgarDocs,
+            stockCode,
+            path,
+            sinceYear=sinceYear,
+            sourceMode=sourceMode,
+        )
+    except Exception:
+        if path.exists():
+            path.unlink()
+        raise
+
+
+def _incrementalUpdateEdgarDocs(
+    stockCode: str,
+    path: Path,
+    *,
+    sinceYear: int,
+    latestRemote: dict[str, str],
+) -> None:
+    from dartlab.engines.edgar.docs.fetch import (
+        _collectFilingRows,
+        _findFilings,
+        _getSubmissions,
+        _resolveTickerMeta,
+    )
+
+    currentDf = pl.read_parquet(path)
+    existingAccessions = set(currentDf["accession_no"].drop_nulls().to_list()) if "accession_no" in currentDf.columns else set()
+    meta = _resolveTickerMeta(stockCode.upper())
+    filings = _findFilings(_getSubmissions(meta["cik"]), sinceYear)
+    newFilings = [filing for filing in filings if filing["accessionNumber"] not in existingAccessions]
+    if not newFilings:
+        return
+
+    rows: list[dict] = []
+    _collectFilingRows(rows, newFilings, meta, stockCode.upper(), None)
+    if not rows:
+        return
+    newDf = pl.DataFrame(rows)
+    merged = pl.concat([currentDf, newDf], how="vertical_relaxed")
+    merged.write_parquet(path)
+
+
 def _normalizeLoadedFrame(df: pl.DataFrame, category: str) -> pl.DataFrame:
     if category == "docs":
         return _normalizeDartDocs(df)
@@ -411,7 +594,7 @@ def _edgarReportTypeFromRow(row: dict) -> str | None:
     if not formType:
         return None
     if not periodEnd:
-        if formType in ("10-K", "20-F") and year:
+        if formType in ("10-K", "20-F", "40-F") and year:
             return f"{formType} ({year}.12)"
         return str(formType)
 
@@ -441,7 +624,7 @@ def _applyEdgarPeriodKeys(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _inferEdgarPeriodKeyMap(filings: list[dict]) -> dict[str, str | None]:
-    annualForms = {"10-K", "20-F"}
+    annualForms = {"10-K", "20-F", "40-F"}
     enriched = []
     for filing in filings:
         accession = str(filing.get("accession_no") or "")

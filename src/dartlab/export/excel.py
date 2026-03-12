@@ -29,7 +29,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 if TYPE_CHECKING:
-	from dartlab.company import KRCompany as Company
+	from dartlab.engines.dart.company import Company
 	from dartlab.export.template import ExcelTemplate
 
 
@@ -287,9 +287,9 @@ def _writeDataFrameSheet(
 
 
 def _getAvailableModules(c: Company) -> list[tuple[str, str]]:
-	from dartlab.company import _ALL_PROPERTIES
+	from dartlab.engines.dart.company import listExportModules
 	available = []
-	for name, label in _ALL_PROPERTIES:
+	for name, label in listExportModules():
 		available.append((name, label))
 	available.append(("ratios", "재무비율"))
 	return available

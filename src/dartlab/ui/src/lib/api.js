@@ -194,10 +194,32 @@ export async function searchCompany(query) {
 	return res.json();
 }
 
-/** 기업 정보 */
+/** 기업 기본 정보 + surface 안내 */
 export async function fetchCompany(code) {
 	const res = await fetch(`${BASE}/api/company/${code}`);
 	if (!res.ok) throw new Error("기업 정보 조회 실패");
+	return res.json();
+}
+
+/** company index */
+export async function fetchCompanyIndex(code) {
+	const res = await fetch(`${BASE}/api/company/${code}/index`);
+	if (!res.ok) throw new Error("company index 조회 실패");
+	return res.json();
+}
+
+/** company topic payload */
+export async function fetchCompanyShow(code, topic, raw = false) {
+	const params = raw ? "?raw=true" : "";
+	const res = await fetch(`${BASE}/api/company/${code}/show/${encodeURIComponent(topic)}${params}`);
+	if (!res.ok) throw new Error("company topic 조회 실패");
+	return res.json();
+}
+
+/** company topic provenance */
+export async function fetchCompanyTrace(code, topic) {
+	const res = await fetch(`${BASE}/api/company/${code}/trace/${encodeURIComponent(topic)}`);
+	if (!res.ok) throw new Error("company trace 조회 실패");
 	return res.json();
 }
 

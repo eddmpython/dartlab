@@ -5,12 +5,15 @@
 DART 사업보고서 HTML → **섹션별 파싱** → 구조화된 DataFrame/Result 반환.
 재무제표, 배당, 직원, 임원, 감사, 부문정보, K-IFRS 주석 등 공시 문서의 모든 정보를 추출.
 
+시장 진입점은 `dartlab.engines.dart.Company`와 `dartlab.engines.dart.Compare`다.
+루트 `dartlab.Company` / `dartlab.Compare`는 이 DART 진입점을 통합 facade로 감싼다.
+
 **핵심 가치**: 1999년부터의 장기 히스토리 + 서술형 정보 + 구조화 불가능한 데이터.
 
 ## 데이터 소스
 
 - **원본**: `data/dart/docs/{stockCode}.parquet`
-- **GitHub Release**: `data-docs` (단일 태그, 272개 종목)
+- **GitHub Release**: `data-docs` (단일 태그, 현재 283개 종목 기준 운영)
 - **기간**: 1999년~ (전자공시 시작 이후)
 - **단위**: 대부분 백만원 (KRW)
 - **parquet 스키마**: year, rcept_date, rcept_no, report_type, section_title, section_content 등 10개 컬럼
@@ -99,6 +102,21 @@ DART 사업보고서 HTML → **섹션별 파싱** → 구조화된 DataFrame/Re
 | `companyOverview` | `companyOverview(stockCode)` | `OverviewResult` | (스칼라) | 회사 정량 개요 (설립, 주소, 신용등급) |
 | `mdna` | `mdna(stockCode)` | `MdnaResult` | `overview: str`, `sections` | MD&A (경영진단/분석의견) |
 | `rawMaterial` | `rawMaterial(stockCode)` | `RawMaterialResult` | `materials`, `equipment`, `capexItems` | 원재료 + 설비 + 시설투자 |
+
+### sections runtime — 무손실 수평화 계층
+
+`Company.sections`, `Company.retrievalBlocks`, `Company.contextSlices`는 docs parquet 위에서 동작하는 공통 text runtime이다.
+
+| API | 반환 | 역할 |
+|-----|------|------|
+| `sections(stockCode)` | `topic x period DataFrame` | core canonical 비교축. markdown/table 무손실 보존 |
+| `retrievalBlocks(stockCode)` | long `DataFrame` | 원문 block 단위 증거층. `sourceTopic`, `semanticTopic`, `detailTopic`, `cellKey` 포함 |
+| `contextSlices(stockCode)` | long `DataFrame` | LLM 입력용 slice. placeholder/boilerplate 기본 제외, semantic/detail 우선 |
+
+운영 원칙:
+- per-stock 결과를 패키지 data로 저장하지 않는다.
+- learned rules와 compact artifact만 패키지에 포함한다.
+- appendix/detail은 core wide view에서 숨기고 `detailTopic`으로 retrieval layer에서 회수한다.
 
 ### notes.py — K-IFRS 주석 통합 접근
 

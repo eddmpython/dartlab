@@ -42,6 +42,34 @@ _ATOMIC_SEMANTIC_TOPICS = {
     "fairValueRisk",
     "derivativeExposure",
 }
+_DETAIL_TOPIC_MAP = {
+    "재고자산명세서": "noteInventoryDetail",
+    "감가상각비등명세서": "noteDepreciationDetail",
+    "제조원가명세서": "noteManufacturingCostDetail",
+    "법인세등명세서": "noteTaxDetail",
+    "법인세비용명세서": "noteTaxDetail",
+    "개별재무제표에관한사항": "noteSeparateFinancialStatementsDetail",
+    "연결재무제표에관한사항": "noteConsolidatedFinancialStatementsDetail",
+    "유가증권명세서": "noteSecuritiesDetail",
+    "주요채권명세서": "noteReceivablesDetail",
+    "사채명세서": "noteDebtDetail",
+    "장기차입금명세서": "noteDebtDetail",
+    "단기차입금명세서": "noteDebtDetail",
+    "주요채무명세서": "noteDebtDetail",
+    "예금등명세서": "noteCashDetail",
+    "감사인의보수등에관한사항": "auditFeeDetail",
+}
+_DETAIL_TOPIC_KEYWORDS = {
+    "noteInventoryDetail": ("재고자산", "inventory"),
+    "noteDepreciationDetail": ("감가상각", "depreciation"),
+    "noteManufacturingCostDetail": ("제조원가", "manufacturing"),
+    "noteTaxDetail": ("법인세", "세무", "tax"),
+    "noteSecuritiesDetail": ("유가증권", "securities"),
+    "noteReceivablesDetail": ("채권", "매출채권", "receivables"),
+    "noteDebtDetail": ("차입금", "사채", "채무", "debt", "borrowings"),
+    "noteCashDetail": ("예금", "현금", "cash"),
+    "auditFeeDetail": ("감사보수", "보수", "비감사용역"),
+}
 
 
 def chapterFromMajorNum(majorNum: int) -> str | None:
@@ -65,7 +93,9 @@ def chapterTeacherTopics(rows: list[dict[str, object]]) -> dict[str, set[str]]:
 
 def projectionSuppressedTopics() -> dict[str, set[str]]:
     rules = loadProjectionRules("chapterII")
-    return {"II": set(rules.keys())}
+    suppressed = set(rules.keys())
+    suppressed.add(_CHAPTER_II_SPLIT_SOURCE)
+    return {"II": suppressed}
 
 
 def splitByMajorHeading(text: str) -> list[tuple[str, str]]:
@@ -185,6 +215,89 @@ def semanticTopicForBlock(topic: str, label: str, blockType: str, blockText: str
         keyword in joined for keyword in ("연구개발", "R&D", "주요계약")
     ):
         return "majorContractsAndRnd"
+    return None
+
+
+def detailTopicForTopic(topic: str) -> str | None:
+    return _DETAIL_TOPIC_MAP.get(topic)
+
+
+def detailTopicForBlock(
+    topic: str,
+    sourceTopic: str,
+    label: str,
+    blockType: str,
+    blockText: str,
+) -> str | None:
+    direct = detailTopicForTopic(topic)
+    if direct:
+        return direct
+
+    candidates = [sourceTopic, label, blockText]
+    if blockType == "table":
+        candidates.extend(_tableLeadCells(blockText))
+    haystack = "\n".join(part for part in candidates if part)
+
+    if topic == "productService":
+        if "신탁업무(상세)" in haystack:
+            return "trustBusinessDetail"
+        if any(keyword in haystack for keyword in ("예금업무(상세)", "예금상품(상세)")):
+            return "bankDepositProductDetail"
+        if any(keyword in haystack for keyword in ("대출업무(상세)", "대출상품(상세)")):
+            return "bankLoanProductDetail"
+        if "신용카드상품(상세)" in haystack:
+            return "cardProductDetail"
+        if "상품및서비스개요(상세)" in haystack:
+            return "financialProductOverviewDetail"
+        if any(keyword in haystack for keyword in ("외환/수출입서비스(상세)", "e-금융서비스(상세)", "방카슈랑스(상세)")):
+            return "bankServiceDetail"
+        if any(
+            keyword in haystack
+            for keyword in ("증권거래현황(상세)", "금융투자상품의위탁매매및수수료현황(상세)")
+        ):
+            return "brokerageBusinessDetail"
+        if any(keyword in haystack for keyword in ("투자운용인력현황(상세)", "투자일임업무-투자운용인력현황(상세)")):
+            return "assetManagementStaffDetail"
+
+    if topic == "riskDerivative" and any(
+        keyword in haystack for keyword in ("장내파생상품거래현황(상세)", "신용파생상품상세명세(상세)")
+    ):
+        return "derivativeProductDetail"
+
+    if topic == "financialNotes" and any(
+        keyword in haystack for keyword in ("신탁업무-재무제표(상세)", "신탁업무재무제표(상세)")
+    ):
+        return "trustFinancialStatementDetail"
+
+    if topic == "intellectualProperty" and any(
+        keyword in haystack for keyword in ("지적재산권보유현황", "주요지적재산권현황")
+    ):
+        return "ipPortfolioDetail"
+
+    if topic == "majorContractsAndRnd" and "연구개발실적(" in haystack:
+        return "rndPortfolioDetail"
+
+    if topic == "salesOrder" and any(keyword in haystack for keyword in ("수주상황(상세)", "수주현황(상세)")):
+        return "orderBacklogDetail"
+
+    if topic == "majorContractsAndRnd" and any(
+        keyword in haystack for keyword in ("경영상의주요계약(상세)", "경영상의주요계약[상세]")
+    ):
+        return "majorContractDetail"
+
+    if topic == "affiliateGroupDetail" and "기업집단에소속된회사(상세)" in haystack:
+        return "affiliateCompanyDetail"
+
+    if topic not in {"financialNotes", "audit"}:
+        return None
+
+    for detailTopic, keywords in _DETAIL_TOPIC_KEYWORDS.items():
+        if any(keyword in haystack for keyword in keywords):
+            if topic == "audit" and detailTopic != "auditFeeDetail":
+                continue
+            if topic == "financialNotes" and detailTopic == "auditFeeDetail":
+                continue
+            return detailTopic
     return None
 
 

@@ -1,4 +1,4 @@
----
+﻿---
 title: Bridge Matching
 ---
 
@@ -73,9 +73,9 @@ DART 공시의 요약재무정보는 매년 계정명이 미세하게 바뀐다.
 property로 접근하면 Bridge Matching이 자동 적용된 결과를 받는다.
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 
 # property — Bridge Matching 적용된 DataFrame
 c.BS   # 재무상태표
@@ -201,3 +201,4 @@ result = c.fsSummary(period="h")  # 반기별
 | `rate` | `float` | 구간 평균 매칭률 |
 
 > 상세한 API 정보는 [finance.summary](../api/finance-summary)를 참고한다.
+

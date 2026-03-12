@@ -39,6 +39,37 @@ from .streaming import stream_ask
 app = FastAPI(title="DartLab", version=dartlab.__version__ if hasattr(dartlab, "__version__") else "0.2.0")
 
 
+def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
+	"""Company index/show/trace payload를 UI 친화 JSON으로 직렬화."""
+	import polars as pl
+
+	if payload is None:
+		return {"type": "none", "data": None}
+
+	if isinstance(payload, pl.DataFrame):
+		preview = payload.head(max_rows)
+		rows = preview.to_dicts()
+		for row in rows:
+			for key, value in row.items():
+				if value is not None and not isinstance(value, (str, int, float, bool)):
+					row[key] = str(value)
+		return {
+			"type": "table",
+			"columns": preview.columns,
+			"rows": rows,
+			"totalRows": payload.height,
+			"truncated": payload.height > max_rows,
+		}
+
+	if isinstance(payload, dict):
+		return {"type": "dict", "data": payload}
+
+	if isinstance(payload, str):
+		return {"type": "text", "data": payload}
+
+	return {"type": "unknown", "data": str(payload)}
+
+
 @app.on_event("startup")
 async def _preload_ollama():
 	"""서버 시작 후 Ollama 모델을 백그라운드에서 미리 로딩 (cold start 제거)."""
@@ -476,10 +507,67 @@ def api_search(q: str = Query(..., min_length=1)):
 
 @app.get("/api/company/{code}")
 def api_company(code: str):
-	"""기업 기본 정보."""
+	"""기업 기본 정보 + 현재 공개 surface 안내."""
 	try:
 		c = Company(code)
-		return {"stockCode": c.stockCode, "corpName": c.corpName}
+		return {
+			"stockCode": c.stockCode,
+			"corpName": c.corpName,
+			"surface": {
+				"index": f"/api/company/{c.stockCode}/index",
+				"show": f"/api/company/{c.stockCode}/show/{{topic}}",
+				"trace": f"/api/company/{c.stockCode}/trace/{{topic}}",
+			},
+			"profile": {
+				"status": "roadmap",
+				"description": "변화 지점을 문서처럼 읽는 company report view가 추후 추가될 예정입니다.",
+			},
+		}
+	except Exception as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/index")
+def api_company_index(code: str):
+	"""Company index DataFrame."""
+	try:
+		c = Company(code)
+		return {
+			"stockCode": c.stockCode,
+			"corpName": c.corpName,
+			"payload": _serialize_payload(c.index),
+		}
+	except Exception as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/show/{topic}")
+def api_company_show(code: str, topic: str, raw: bool = Query(False)):
+	"""Company topic payload."""
+	try:
+		c = Company(code)
+		return {
+			"stockCode": c.stockCode,
+			"corpName": c.corpName,
+			"topic": topic,
+			"raw": raw,
+			"payload": _serialize_payload(c.show(topic, raw=raw)),
+		}
+	except Exception as e:
+		raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/trace/{topic}")
+def api_company_trace(code: str, topic: str):
+	"""Company topic source trace."""
+	try:
+		c = Company(code)
+		return {
+			"stockCode": c.stockCode,
+			"corpName": c.corpName,
+			"topic": topic,
+			"payload": _serialize_payload(c.trace(topic)),
+		}
 	except Exception as e:
 		raise HTTPException(status_code=404, detail=str(e))
 

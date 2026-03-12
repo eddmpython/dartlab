@@ -117,18 +117,21 @@ def _dataclassesSection() -> str:
 
 
 def _companySection() -> str:
-    """Company 팩토리 + KRCompany/USCompany/Compare 사용법."""
+    """Company facade + 엔진 Company/Compare 사용법."""
     return textwrap.dedent("""\
-    ## Company (팩토리)
+    ## Company (통합 facade)
 
-    입력을 자동 판별하여 KRCompany 또는 USCompany를 생성한다.
+    입력을 자동 판별하여 DART 또는 EDGAR 시장 전용 Company를 생성한다.
+    현재 DART Company의 공개 진입점은 **index → show(topic) → trace(topic)** 이다.
+    `profile`은 향후 terminal/notebook 문서형 보고서 뷰로 확장될 예정이다.
 
     ```python
-    from dartlab import Company, Compare
+    import dartlab
+    from dartlab import Compare
 
-    kr = Company("005930")       # → KRCompany (DART 종목코드)
-    kr = Company("삼성전자")      # → KRCompany (회사명)
-    us = Company("AAPL")         # → USCompany (SEC ticker)
+    kr = dartlab.Company("005930")
+    kr = dartlab.Company("삼성전자")
+    us = dartlab.Company("AAPL")
 
     kr.market                    # "KR"
     us.market                    # "US"
@@ -138,20 +141,32 @@ def _companySection() -> str:
 
     | 입력 | 결과 | 예시 |
     |------|------|------|
-    | 6자리 숫자 | KRCompany | `Company("005930")` |
-    | 한글 포함 | KRCompany | `Company("삼성전자")` |
-    | 영문 1~5자리 | USCompany | `Company("AAPL")` |
+    | 6자리 숫자 | DART Company | `Company("005930")` |
+    | 한글 포함 | DART Company | `Company("삼성전자")` |
+    | 영문 1~5자리 | EDGAR Company | `Company("AAPL")` |
 
-    ## KRCompany (DART 한국 기업)
+    ## DART Company
+
+    ### 현재 공개 진입점
+
+    | surface | 설명 |
+    |---------|------|
+    | `index` | 회사 데이터 구조 인덱스 DataFrame |
+    | `show(topic)` | topic의 실제 데이터 payload 조회 |
+    | `trace(topic, period)` | docs / finance / report source provenance 조회 |
+    | `docs` | pure docs source namespace |
+    | `finance` | authoritative finance source namespace |
+    | `report` | authoritative structured disclosure source namespace |
+    | `profile` | 향후 보고서형 렌더용 예약 뷰 |
 
     ### 정적 메서드
 
     | 메서드 | 반환 | 설명 |
     |--------|------|------|
-    | `KRCompany.listing()` | DataFrame | KRX 전체 상장법인 목록 |
-    | `KRCompany.search(keyword)` | DataFrame | 회사명 부분 검색 |
-    | `KRCompany.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
-    | `KRCompany.resolve(codeOrName)` | str \\| None | 종목코드/회사명 → 종목코드 |
+    | `dartlab.engines.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
+    | `dartlab.engines.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
+    | `dartlab.engines.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
+    | `dartlab.engines.dart.Company.resolve(codeOrName)` | str \\| None | 종목코드/회사명 → 종목코드 |
 
     ### 핵심 property
 
@@ -159,10 +174,18 @@ def _companySection() -> str:
     |----------|------|------|
     | `BS` | DataFrame | 재무상태표 |
     | `IS` | DataFrame | 손익계산서 |
+    | `CIS` | DataFrame | 포괄손익계산서 |
     | `CF` | DataFrame | 현금흐름표 |
+    | `SCE` | tuple \\| DataFrame | 자본변동표 |
+    | `sections` | DataFrame | merged topic x period company table |
     | `timeseries` | (series, periods) | 분기별 standalone 시계열 |
     | `annual` | (series, years) | 연도별 시계열 |
     | `ratios` | RatioResult | 재무비율 |
+    | `index` | DataFrame | 회사 구조 인덱스 |
+    | `docs` | Accessor | pure docs source |
+    | `finance` | Accessor | authoritative finance source |
+    | `report` | Accessor | authoritative report source |
+    | `profile` | _BoardView | 향후 보고서형 뷰 예약 |
     | `sector` | SectorInfo | 섹터 분류 |
     | `insights` | AnalysisResult | 7영역 인사이트 등급 |
     | `rank` | RankInfo | 시장 순위 |
@@ -175,17 +198,25 @@ def _companySection() -> str:
     |--------|------|------|
     | `get(name)` | Result | 모듈 전체 Result 객체 |
     | `all()` | dict | 전체 데이터 dict |
+    | `show(topic, period=None, raw=False)` | Any | topic payload 조회 |
+    | `trace(topic, period=None)` | dict \\| None | 선택 source provenance 조회 |
     | `fsSummary(period)` | AnalysisResult | 요약재무정보 |
     | `getTimeseries(period, fsDivPref)` | (series, periods) | 커스텀 시계열 |
     | `getRatios(fsDivPref)` | RatioResult | 커스텀 비율 |
 
+    `index`는 회사 전체 구조를 먼저 보여주고, `show(topic)`가 실제 데이터를 연다.
+    `trace(topic)`는 같은 topic에서 docs / finance / report 중 어떤 source가 채택됐는지 설명한다.
+    docs가 없는 회사는 `docsStatus` 안내 row와 `현재 사업보고서 부재` notice가 표시된다.
+
     report/disclosure property는 registry에서 자동 디스패치된다 (`_MODULE_REGISTRY`).
     등록된 모든 property는 아래 "데이터 레지스트리" 섹션 참조.
 
-    ## USCompany (EDGAR 미국 기업)
+    ## EDGAR Company
 
     ```python
-    us = Company("AAPL")
+    import dartlab
+
+    us = dartlab.Company("AAPL")
     us.ticker                    # "AAPL"
     us.cik                       # "0000320193"
     ```
@@ -203,8 +234,14 @@ def _companySection() -> str:
     ## Compare (복수 기업 비교)
 
     ```python
-    c = Compare(Company("005930"), Company("AAPL"))
+    import dartlab
+    from dartlab import Compare
+
+    c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
     ```
+
+    루트 `Compare`는 KR/US 혼합을 포함한 통합 facade다. 시장별 명시 compare는
+    `dartlab.engines.dart.Compare`, `dartlab.engines.edgar.Compare`로 접근한다.
 
     ### 재무비율 비교
 
@@ -284,12 +321,12 @@ def generateLlmsTxt() -> str:
         "## 빠른 시작",
         "",
         "```python",
-        "from dartlab import Company",
+        "import dartlab",
         "",
-        'c = Company("005930")  # 삼성전자',
-        "c.BS                   # 재무상태표",
-        "c.ratios               # 재무비율 (ROE, PER 등)",
-        "c.insights             # 7영역 인사이트 등급 (A~F)",
+        'c = dartlab.Company("005930")',
+        "c.index                # 회사 구조 인덱스",
+        'c.show("BS")           # topic payload 보기',
+        'c.trace("dividend")    # source 추적',
         "```",
         "",
         "## 주요 기능",

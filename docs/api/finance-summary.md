@@ -1,4 +1,4 @@
----
+﻿---
 title: finance.summary
 ---
 
@@ -11,7 +11,7 @@ title: finance.summary
 ### property 접근 (간편)
 
 ```python
-c = Company("005930")
+c = dartlab.Company("005930")
 
 c.BS   # 재무상태표 DataFrame
 c.IS   # 손익계산서 DataFrame
@@ -154,9 +154,9 @@ DART 공시의 요약재무정보는 매년 계정명이 미세하게 바뀔 수
 ### 기본 사용
 
 ```python
-from dartlab import Company
+import dartlab
 
-c = Company("005930")
+c = dartlab.Company("005930")
 
 # property로 바로 DataFrame
 print(c.BS)   # 재무상태표
@@ -217,3 +217,4 @@ print(result.IS)   # 분기별 손익계산서
 result = c.fsSummary()
 print(result.FS)   # 재무상태표 + 손익계산서 한 DataFrame
 ```
+
