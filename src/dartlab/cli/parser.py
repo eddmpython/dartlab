@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from importlib.metadata import version as pkg_version
 
-from dartlab.cli.context import CommandSpec, DEPRECATED_ALIASES, EXIT_USAGE
+from dartlab.cli.context import DEPRECATED_ALIASES, CommandSpec
 from dartlab.cli.services.runtime import load_command_module
 
 COMMAND_SPECS = (

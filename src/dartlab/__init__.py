@@ -3,18 +3,21 @@
 import sys
 from importlib.metadata import version as _pkg_version
 
+from dartlab import config, core, engines
+from dartlab.company import Company
+from dartlab.compare import Compare
+from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
+from dartlab.engines import ai as llm
+from dartlab.engines.dart.company import Company as _DartCompany
+from dartlab.engines.edgar.company import Company as _EdgarCompany
+
 try:
     __version__ = _pkg_version("dartlab")
 except Exception:
     __version__ = "0.0.0"
 
-from dartlab import config, core, engines
-from dartlab.company import Company
-from dartlab.compare import Compare
-from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
-from dartlab.engines.dart.company import Company as _DartCompany
-from dartlab.engines import ai as llm
-from dartlab.engines.edgar.company import Company as _EdgarCompany
+KRCompany = _DartCompany
+USCompany = _EdgarCompany
 
 
 def search(keyword: str):
@@ -84,6 +87,8 @@ sys.modules[__name__].__class__ = _Module
 __all__ = [
     "Company",
     "Compare",
+    "KRCompany",
+    "USCompany",
     "config",
     "core",
     "engines",

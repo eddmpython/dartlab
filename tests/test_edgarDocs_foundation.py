@@ -559,8 +559,9 @@ def test_prepareEdgarCollectibleUniverse_writes_incremental_cache_and_progress(m
 
 def test_download_batch_classifies_failure_kinds():
     import importlib.util
-    import requests
     from pathlib import Path
+
+    import requests
 
     root = Path(__file__).resolve().parents[1]
     scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
@@ -579,8 +580,9 @@ def test_download_batch_classifies_failure_kinds():
 
 def test_download_batch_lock_blocks_duplicate_run(tmp_path):
     import importlib.util
-    import pytest
     from pathlib import Path
+
+    import pytest
 
     root = Path(__file__).resolve().parents[1]
     scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"

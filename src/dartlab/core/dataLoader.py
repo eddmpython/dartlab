@@ -125,8 +125,6 @@ def _ensureEdgarDocs(
     asOf: str | None,
     refresh: str,
 ) -> None:
-    from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
-
     if refresh not in {"auto", "force_check", "force_rebuild", "local_only"}:
         raise ValueError(f"지원하지 않는 refresh 정책: {refresh}")
 

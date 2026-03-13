@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from dartlab import Compare, Company
-from dartlab.engines.dart import Compare as EngineDartCompare
+from dartlab import Company, Compare
 from dartlab.engines.dart import Company as EngineDartCompany
-from dartlab.engines.edgar import Compare as EngineEdgarCompare
+from dartlab.engines.dart import Compare as EngineDartCompare
 from dartlab.engines.edgar import Company as EngineEdgarCompany
+from dartlab.engines.edgar import Compare as EngineEdgarCompare
 
 
 def _read(relpath: str) -> str:

@@ -15,6 +15,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.company import Company
+
 _log = logging.getLogger("dartlab.compare")
 
 

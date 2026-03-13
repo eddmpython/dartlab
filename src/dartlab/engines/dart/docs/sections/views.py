@@ -12,7 +12,6 @@ from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 from dartlab.engines.dart.docs.sections.runtime import (
     detailTopicForBlock,
-    detailTopicForTopic,
     semanticTopicForBlock,
 )
 

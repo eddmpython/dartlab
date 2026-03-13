@@ -17,7 +17,7 @@ import logging
 import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 
@@ -384,9 +384,9 @@ def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str,
     포괄손익계산서(CIS)를 별도 canonical row로 보여주기 위해 raw normalized
     finance parquet를 다시 집계한다.
     """
-    from dartlab.engines.dart.finance.pivot import _loadAndNormalize
     from dartlab.engines.common.finance.period import extractYear, formatPeriod
     from dartlab.engines.dart.finance.mapper import AccountMapper
+    from dartlab.engines.dart.finance.pivot import _loadAndNormalize
 
     result = _loadAndNormalize(stockCode, fsDivPref)
     if result is None:
@@ -545,7 +545,7 @@ class _ReportAccessor:
 
     def status(self, apiType: str | None = None) -> pl.DataFrame | dict[str, bool]:
         """apiType availability 확인."""
-        from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS, PREFERRED_QUARTER
+        from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES, PREFERRED_QUARTER
         if apiType is not None:
             return {apiType: self.extract(apiType) is not None}
 

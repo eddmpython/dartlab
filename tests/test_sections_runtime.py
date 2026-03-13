@@ -15,13 +15,13 @@ from dartlab.engines.dart.docs.sections.runtime import (
 )
 from dartlab.engines.dart.docs.sections.views import (
     blockPriority,
-    isPlaceholderBlock,
     isBoilerplateTopic,
+    isPlaceholderBlock,
     periodOrderValue,
     periodSortKey,
-    splitMarkdownTable,
     sortPeriods,
     splitContextText,
+    splitMarkdownTable,
 )
 
 

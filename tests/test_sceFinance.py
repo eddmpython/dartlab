@@ -45,6 +45,7 @@ class TestSceMapper:
 
     def test_unmapped_rows_are_preserved_in_matrix(self):
         import polars as pl
+
         from dartlab.engines.dart.finance.pivot import _buildSceMatrixFromDf
 
         df = pl.DataFrame(
