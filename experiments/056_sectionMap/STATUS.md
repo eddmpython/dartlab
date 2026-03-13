@@ -18,6 +18,23 @@ sections도 완전히 같은 패턴을 밟는다:
 숫자(finance) + 텍스트(sections) + 실시간(report) — 세 축이 모두 같은 시간 축 위에 정렬되어,
 한 회사의 모든 정보를 하나의 수평 비교 가능한 덩어리로 제공한다.
 
+추가 원칙:
+- docs 내부 개별 파서는 최종 목적이 아니라 과도기 결과물이다.
+- 최종 source of truth는 `sections`와 그 하위 `retrievalBlocks/contextSlices`다.
+- table-bearing topic은 `sections -> subtopic extractor`로 다시 뽑아 `Company.show()`와 docs 메서드가 그 결과를 쓰게 한다.
+- 기존 docs 파서는 archive/legacy fallback으로만 남기는 방향이 맞다.
+- 현재 `Company.show()` 1차 sections 전환 완료:
+  - `salesOrder`
+  - `riskDerivative`
+  - `segments`
+  - `rawMaterial`
+  - `costByNature`
+- `tangibleAsset`는 sections/detailTopic만으로는 아직 legacy `movementDf` 품질을 안정적으로 대체하지 못해 archive/fallback 유지가 맞다.
+- 전회사 추가 coverage 실험:
+  - `052_validateAdditionalShowCoverage.py`
+  - `costByNature` / `tangibleAsset`는 legacy-heavy 경로라 전수 sweep이 느리다.
+  - 현재 60개 종목 checkpoint 기준 `failure 0`, 단 `015760.costByNature`는 timeout 1건으로 별도 기록되며 재검증 대상이다.
+
 이건 단순히 "섹션 이름 통일"이 아니다.
 사업보고서라는 정해진 프레임 위에서, 모든 회사의 모든 기간을 겹칠 수 있게 만드는 것이다.
 사용자는 세로로 읽으면 그 연도의 전체 보고서를, 가로로 읽으면 같은 정보의 시간 변화를 본다.

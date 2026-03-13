@@ -504,6 +504,7 @@ def _incrementalUpdateEdgarDocs(
     latestRemote: dict[str, str],
 ) -> None:
     from dartlab.engines.edgar.docs.fetch import (
+        FILING_TIMEOUT_SECONDS,
         _collectFilingRows,
         _findFilings,
         _getSubmissions,
@@ -519,7 +520,8 @@ def _incrementalUpdateEdgarDocs(
         return
 
     rows: list[dict] = []
-    _collectFilingRows(rows, newFilings, meta, stockCode.upper(), None)
+    skipped: list[str] = []
+    _collectFilingRows(rows, newFilings, meta, stockCode.upper(), None, FILING_TIMEOUT_SECONDS, skipped)
     if not rows:
         return
     newDf = pl.DataFrame(rows)

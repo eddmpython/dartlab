@@ -323,13 +323,16 @@ def _collectFilingRows(
             bar()
 
 
+_HAS_SIGALRM = hasattr(signal, "SIGALRM")
+
+
 class _FilingTimeout:
     def __init__(self, seconds: int):
         self.seconds = max(int(seconds), 0)
         self._previousHandler = None
 
     def __enter__(self):
-        if self.seconds <= 0:
+        if self.seconds <= 0 or not _HAS_SIGALRM:
             return self
         self._previousHandler = signal.getsignal(signal.SIGALRM)
         signal.signal(signal.SIGALRM, self._handle)
@@ -337,7 +340,7 @@ class _FilingTimeout:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        if self.seconds > 0:
+        if self.seconds > 0 and _HAS_SIGALRM:
             signal.alarm(0)
             if self._previousHandler is not None:
                 signal.signal(signal.SIGALRM, self._previousHandler)

@@ -563,7 +563,7 @@ def test_download_batch_classifies_failure_kinds():
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
     spec = importlib.util.spec_from_file_location("exp057_download", scriptPath)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -583,7 +583,7 @@ def test_download_batch_lock_blocks_duplicate_run(tmp_path):
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
     spec = importlib.util.spec_from_file_location("exp057_download_lock", scriptPath)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -603,7 +603,7 @@ def test_download_batch_load_completed_requires_existing_parquet(tmp_path):
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
     spec = importlib.util.spec_from_file_location("exp057_download_completed", scriptPath)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -631,7 +631,7 @@ def test_download_batch_prepare_state_archives_stale_progress(tmp_path):
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    scriptPath = root / "experiments" / "057_edgarSectionMap" / "002_downloadFirst2000.py"
+    scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
     spec = importlib.util.spec_from_file_location("exp057_download_state", scriptPath)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -1160,3 +1160,29 @@ def test_fetchJson_uses_sec_user_agent(monkeypatch):
     payload = _fetchJson("https://example.com/test.json")
 
     assert payload == {"ok": True}
+
+
+def test_priorityTickerCollection_load_completed_requires_existing_parquet(tmp_path):
+    import importlib
+
+    module = importlib.import_module("experiments.057_edgarSectionMap_fail.018_priorityTickerCollection")
+
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    progress_path = tmp_path / "priority.progress.jsonl"
+    progress_path.write_text(
+        "\n".join(
+            [
+                json.dumps({"ticker": "AAPL", "status": "downloaded"}),
+                json.dumps({"ticker": "MSFT", "status": "failed"}),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    completed = module._load_completed(progress_path, docs_dir)
+    assert completed == set()
+
+    (docs_dir / "AAPL.parquet").write_text("stub", encoding="utf-8")
+    completed = module._load_completed(progress_path, docs_dir)
+    assert completed == {"AAPL"}
