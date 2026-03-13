@@ -197,13 +197,14 @@ result.breakpoints # 변경점 목록
 
 ### 주석 (K-IFRS)
 
-주석 데이터를 영문 속성 또는 한글 키로 바로 접근할 수 있다.
+주석 데이터는 deep access용이다. 회사 관점 기본 경로는 먼저 `c.show(...)`를 쓰고, 필요할 때만 notes로 내려간다.
 
 ```python
 c.notes.inventory          # 재고자산 DataFrame
 c.notes["재고자산"]         # 한글 키도 가능
 c.notes.receivables        # 매출채권
-c.notes.tangibleAsset      # 유형자산
+c.show("tangibleAsset")    # 회사 관점 기본 payload
+c.notes.tangibleAsset      # deep access legacy note parser
 c.notes.intangibleAsset    # 무형자산
 c.notes.investmentProperty # 투자부동산
 c.notes.affiliates         # 관계기업
@@ -212,7 +213,8 @@ c.notes.provisions         # 충당부채
 c.notes.eps                # 주당이익
 c.notes.lease              # 리스
 c.notes.segments           # 부문정보
-c.notes.costByNature       # 비용의성격별분류
+c.show("costByNature")     # 회사 관점 기본 payload
+c.notes.costByNature       # deep access legacy note parser
 ```
 
 ### 배당

@@ -195,11 +195,14 @@ result.breakpoints # List of detected breakpoints
 
 ### K-IFRS Notes (12 items)
 
+Use these as deep-access note parsers. For the company workflow, prefer `c.show(...)` on the board first.
+
 ```python
 c.notes.inventory          # Inventories
 c.notes["재고자산"]         # Korean key also works
 c.notes.receivables        # Trade receivables
-c.notes.tangibleAsset      # Property, plant & equipment
+c.show("tangibleAsset")    # preferred company payload
+c.notes.tangibleAsset      # deep-access legacy note parser
 c.notes.intangibleAsset    # Intangible assets
 c.notes.investmentProperty # Investment property
 c.notes.affiliates         # Associates
@@ -208,7 +211,8 @@ c.notes.provisions         # Provisions
 c.notes.eps                # Earnings per share
 c.notes.lease              # Leases
 c.notes.segments           # Operating segments
-c.notes.costByNature       # Expenses by nature
+c.show("costByNature")     # preferred company payload
+c.notes.costByNature       # deep-access legacy note parser
 ```
 
 ### Dividends

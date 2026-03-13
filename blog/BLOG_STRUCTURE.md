@@ -62,6 +62,7 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 - `data-automation`
 - `working-capital-and-earnings-quality`
 - `audit-and-governance-reading`
+- `ownership-and-governance-reading`
 
 새 시리즈를 만들 때는 먼저 이 문서에 추가한다.
 

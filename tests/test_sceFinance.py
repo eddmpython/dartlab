@@ -43,6 +43,34 @@ class TestSceMapper:
         from dartlab.engines.dart.finance.sceMapper import normalizeDetail
         assert normalizeDetail("기타포괄손익누계액 관련항목 [member]") == "accumulated_oci"
 
+    def test_unmapped_rows_are_preserved_in_matrix(self):
+        import polars as pl
+        from dartlab.engines.dart.finance.pivot import _buildSceMatrixFromDf
+
+        df = pl.DataFrame(
+            {
+                "bsns_year": ["2025", "2025"],
+                "reprt_nm": ["4분기", "4분기"],
+                "sj_div": ["SCE", "SCE"],
+                "fs_div": ["CFS", "CFS"],
+                "account_id": ["unknown_1", "known_1"],
+                "account_nm": ["완전히알수없는변동", "기말자본"],
+                "account_detail": ["완전히알수없는상세", "연결재무제표 [member]"],
+                "thstrm_amount": ["10", "100"],
+            }
+        )
+
+        result = _buildSceMatrixFromDf(df)
+        assert result is not None
+        matrix, years = result
+        assert years == ["2025"]
+        year_data = matrix["2025"]
+        assert "ending_equity" in year_data
+        preserved_cause = [k for k in year_data if k.startswith("other_")]
+        assert preserved_cause
+        preserved_detail = list(year_data[preserved_cause[0]].keys())
+        assert any(k.startswith("detail_") for k in preserved_detail)
+
 
 @requires_finance
 class TestScePivot:

@@ -13,15 +13,22 @@ def _isUSTicker(s: str) -> bool:
     return bool(re.match(r"^[A-Za-z]{1,5}$", s))
 
 
+def _isDartCode(s: str) -> bool:
+    """DART 종목코드 형식 판별 (숫자/영문 포함 6자리)."""
+    return bool(re.match(r"^[0-9A-Za-z]{6}$", s))
+
+
 def Company(codeOrName: str):
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성."""
-    if re.match(r"^\d{6}$", codeOrName):
-        return _DartCompany(codeOrName)
+    normalized = codeOrName.strip()
 
-    if any("\uac00" <= ch <= "\ud7a3" for ch in codeOrName):
-        return _DartCompany(codeOrName)
+    if _isDartCode(normalized):
+        return _DartCompany(normalized.upper())
 
-    if _isUSTicker(codeOrName):
-        return _EdgarCompany(codeOrName)
+    if any("\uac00" <= ch <= "\ud7a3" for ch in normalized):
+        return _DartCompany(normalized)
 
-    return _DartCompany(codeOrName)
+    if _isUSTicker(normalized):
+        return _EdgarCompany(normalized)
+
+    return _DartCompany(normalized)

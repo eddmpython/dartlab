@@ -38,6 +38,21 @@ from dartlab.engines.dart.finance.mapper import AccountMapper
 QUARTER_ORDER = {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}
 
 
+def _preserveUnmapped(label: str, prefix: str) -> str:
+	safe = (
+		label.strip().lower()
+		.replace(" ", "_")
+		.replace("/", "_")
+		.replace("-", "_")
+		.replace("(", "")
+		.replace(")", "")
+		.replace(",", "_")
+	)
+	safe = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in safe)
+	safe = "_".join(part for part in safe.split("_") if part)
+	return f"{prefix}_{safe or 'unknown'}"
+
+
 def _loadAndNormalize(
 	stockCode: str,
 	fsDivPref: str = "CFS",
@@ -475,8 +490,10 @@ def _buildSceMatrixFromDf(
 		cause = normalizeCause(nm)
 		component = normalizeDetail(detail)
 
-		if cause.startswith("unmapped:") or component.startswith("unmapped:"):
-			continue
+		if cause.startswith("unmapped:"):
+			cause = _preserveUnmapped(cause.split(":", 1)[1], "other")
+		if component.startswith("unmapped:"):
+			component = _preserveUnmapped(component.split(":", 1)[1], "detail")
 
 		yearSet.add(year)
 		if year not in matrix:

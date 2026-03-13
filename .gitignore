@@ -14,7 +14,7 @@ wheels/
 CLAUDE.md
 AGENT.md
 .agent/
-
+.claude/
 # Data (available via gh release)
 data/
 
@@ -23,9 +23,6 @@ _reference/
 
 # Backup (파일 삭제 대신 이동)
 _backup/
-
-# Local agent/tooling state
-.claude/
 
 # Node modules (all locations)
 node_modules/

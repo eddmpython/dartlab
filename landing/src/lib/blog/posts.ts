@@ -116,6 +116,14 @@ export const seriesDefinitions = {
 		seoTitle: '감사·거버넌스 읽기 시리즈 | 감사보고서와 KAM 해석',
 		seoDescription: 'DartLab 감사·거버넌스 읽기 시리즈. 감사보고서, KAM, 회계추정, 내부통제, 지배구조 문구를 해석하는 글을 모았습니다.',
 		brandMessage: 'DartLab은 감사의견 한 줄보다 그 뒤의 판단 구조와 경고 신호를 읽습니다.'
+	},
+	'ownership-and-governance-reading': {
+		id: 'ownership-and-governance-reading',
+		label: '대주주·지배구조 읽기 시리즈',
+		description: '대주주, 특수관계인, 보수, 주주환원, 주총 안건을 초보자 기준으로 읽는 시리즈입니다.',
+		seoTitle: '대주주·지배구조 읽기 시리즈 | 오너십과 주주환원 읽는 법',
+		seoDescription: 'DartLab 대주주·지배구조 읽기 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고를 쉽게 읽는 법을 정리합니다.',
+		brandMessage: 'DartLab은 숫자만이 아니라 소유, 통제, 보수 구조까지 읽어 회사의 진짜 방향을 해석합니다.'
 	}
 } as const;
 
