@@ -248,7 +248,7 @@ c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
 |------|-------|----------|-------------|
 | `notes.receivables` | 매출채권 | `dataframe` | K-IFRS 매출채권 주석. 채권 잔액 및 대손충당금 내역. |
 | `notes.inventory` | 재고자산 | `dataframe` | K-IFRS 재고자산 주석. 원재료/재공품/제품 내역별 금액. |
-| `notes.tangibleAsset` | 유형자산(주석) | `dataframe` | deep access note parser. 회사 기본 경로는 `show("tangibleAsset")`. |
+| `notes.tangibleAsset` | 유형자산(주석) | `dataframe` | K-IFRS 유형자산 변동 주석. 토지, 건물, 기계 등 항목별 변동. |
 | `notes.intangibleAsset` | 무형자산 | `dataframe` | K-IFRS 무형자산 주석. 영업권, 개발비 등 항목별 변동. |
 | `notes.investmentProperty` | 투자부동산 | `dataframe` | K-IFRS 투자부동산 주석. 공정가치 및 변동 내역. |
 | `notes.affiliates` | 관계기업(주석) | `dataframe` | K-IFRS 관계기업 투자 주석. 지분법 적용 내역. |
@@ -257,7 +257,7 @@ c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
 | `notes.eps` | 주당이익 | `dataframe` | K-IFRS 주당이익 주석. 기본/희석 EPS 계산 내역. |
 | `notes.lease` | 리스 | `dataframe` | K-IFRS 리스 주석. 사용권자산, 리스부채 내역. |
 | `notes.segments` | 부문정보(주석) | `dataframe` | K-IFRS 부문정보 주석. 사업부문별 상세 데이터. |
-| `notes.costByNature` | 비용의성격별분류(주석) | `dataframe` | deep access note parser. 회사 기본 경로는 `show("costByNature")`. |
+| `notes.costByNature` | 비용의성격별분류(주석) | `dataframe` | K-IFRS 비용의 성격별 분류 주석. |
 
 ### 원본 데이터 (raw)
 
@@ -293,6 +293,7 @@ c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
 | `investingCashflowTTM` | `Optional` | None |
 | `totalAssets` | `Optional` | None |
 | `totalEquity` | `Optional` | None |
+| `ownersEquity` | `Optional` | None |
 | `totalLiabilities` | `Optional` | None |
 | `currentAssets` | `Optional` | None |
 | `currentLiabilities` | `Optional` | None |
@@ -313,6 +314,7 @@ c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
 | `financeCosts` | `Optional` | None |
 | `capex` | `Optional` | None |
 | `dividendsPaid` | `Optional` | None |
+| `depreciationExpense` | `Optional` | None |
 | `noncurrentAssets` | `Optional` | None |
 | `noncurrentLiabilities` | `Optional` | None |
 | `roe` | `Optional` | None |
@@ -351,6 +353,7 @@ c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
 | `psr` | `Optional` | None |
 | `evEbitda` | `Optional` | None |
 | `marketCap` | `Optional` | None |
+| `ebitdaEstimated` | `bool` | True |
 | `warnings` | `list` | [] |
 
 ### InsightResult

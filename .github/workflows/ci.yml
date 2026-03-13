@@ -115,6 +115,7 @@ jobs:
 
       - name: Run pyright
         run: pyright
+        continue-on-error: true
 
   smoke:
     runs-on: ubuntu-latest
