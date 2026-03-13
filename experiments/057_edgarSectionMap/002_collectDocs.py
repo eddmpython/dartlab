@@ -43,7 +43,7 @@ import polars as pl
 from dartlab import config
 
 SINCE_YEAR = 2009
-TICKER_TIMEOUT_SECONDS = 300
+TICKER_TIMEOUT_SECONDS = 600
 COOLDOWN_SECONDS = 1.0
 
 PRIORITY_TICKERS = [

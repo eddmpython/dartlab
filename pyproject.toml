@@ -121,11 +121,26 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
+fail_under = 40
 exclude_lines = [
     "pragma: no cover",
     "if __name__",
     "raise NotImplementedError",
 ]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["src/dartlab"]
+exclude = [
+    "src/dartlab/engines/ai/providers/**",
+    "src/dartlab/ui/**",
+    "experiments/**",
+]
+reportMissingTypeStubs = false
+reportUnknownParameterType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
 
 [dependency-groups]
 dev = [
@@ -133,6 +148,8 @@ dev = [
     "dartlab[all]",
     "hatchling>=1.29.0",
     "pillow>=12.1.1",
+    "pre-commit>=4.0.0",
+    "pyright>=1.1.0",
     "pytest>=9.0.2",
     "pytest-cov>=6.0.0",
 ]

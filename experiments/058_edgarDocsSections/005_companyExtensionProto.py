@@ -1,47 +1,49 @@
-"""EDGAR 엔진 내부 Company 본체.
+"""
+실험 ID: 058-005
+실험명: EDGAR Company 확장 프로토타입 — docs/finance/profile namespace
 
-DART Company와 동일한 4-namespace 구조를 제공한다.
+목적:
+- DART Company의 4-namespace 구조를 EDGAR에 적용하는 프로토타입을 검증한다.
+- docs(sections/filings/show) + finance(BS/IS/CF/ratios) + profile(merged) + 루트 property
 
-- docs: sections 수평화 (topic × period), filings, show
-- finance: BS/IS/CF/timeseries/annual/ratios
-- profile: docs spine + finance merge (향후 확장)
+가설:
+1. 기존 EDGAR Company + sections pipeline + finance pivot으로 DART와 동일한 구조가 가능하다.
+2. profile.sections는 docs.sections 기반에 finance authoritative 정보를 보강할 수 있다.
 
-사용법::
+방법:
+1. 프로토타입 클래스로 전체 namespace 구현
+2. AAPL/MSFT/TSLA에서 동작 검증
+3. DART Company와 인터페이스 대조
 
-    from dartlab import Company
+결과 (실험 후 작성):
 
-    c = Company("AAPL")
-    c.corpName             # "Apple Inc."
-    c.docs.sections        # topic × period DataFrame
-    c.finance.BS           # 연도별 재무상태표
-    c.BS                   # finance.BS 바로가기
-    c.sections             # docs.sections 바로가기
-    c.show("10-K::item1Business")  # topic content 조회
+결론:
+
+실험일: 2026-03-13
 """
 
 from __future__ import annotations
 
-import logging
-from pathlib import Path
 from typing import Any
 
 import polars as pl
 
-_log = logging.getLogger("dartlab.engines.edgar.company")
+from dartlab import config
+from dartlab.core.dataLoader import loadData
+from dartlab.engines.edgar.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.edgar.finance.pivot import buildTimeseries, buildAnnual
 
 
 class _DocsAccessor:
-    """EDGAR docs namespace. sections 수평화가 유일한 기초 경로."""
 
-    def __init__(self, company: Company):
+    def __init__(self, company: _CompanyProto):
         self._company = company
 
     @property
     def sections(self) -> pl.DataFrame | None:
         key = "_docs_sections"
         if key not in self._company._cache:
-            from dartlab.engines.edgar.docs.sections.pipeline import sections
-            self._company._cache[key] = sections(self._company.ticker)
+            self._company._cache[key] = buildSections(self._company.ticker)
         return self._company._cache[key]
 
     def filings(self) -> pl.DataFrame | None:
@@ -49,7 +51,6 @@ class _DocsAccessor:
         if key in self._company._cache:
             return self._company._cache[key]
 
-        from dartlab.core.dataLoader import loadData
         df = loadData(self._company.ticker, category="edgarDocs")
         if df is None or df.is_empty():
             self._company._cache[key] = None
@@ -88,9 +89,8 @@ class _DocsAccessor:
 
 
 class _FinanceAccessor:
-    """EDGAR finance namespace. XBRL 정규화 재무 데이터."""
 
-    def __init__(self, company: Company):
+    def __init__(self, company: _CompanyProto):
         self._company = company
 
     @property
@@ -100,24 +100,16 @@ class _FinanceAccessor:
     @property
     def annual(self):
         if "_annual" not in self._company._cache:
-            from dartlab.engines.edgar.finance.pivot import buildAnnual
             self._company._cache["_annual"] = buildAnnual(self._company.cik)
         return self._company._cache["_annual"]
 
     def _stmtDf(self, stmtKey: str) -> pl.DataFrame | None:
-        cacheKey = f"_finance_{stmtKey}"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-
         annual = self.annual
         if annual is None:
-            self._company._cache[cacheKey] = None
             return None
-
         series, years = annual
         stmtData = series.get(stmtKey)
         if not stmtData:
-            self._company._cache[cacheKey] = None
             return None
 
         rows = []
@@ -126,10 +118,7 @@ class _FinanceAccessor:
             for i, year in enumerate(years):
                 row[str(year)] = values[i] if i < len(values) else None
             rows.append(row)
-
-        result = pl.DataFrame(rows) if rows else None
-        self._company._cache[cacheKey] = result
-        return result
+        return pl.DataFrame(rows) if rows else None
 
     @property
     def BS(self) -> pl.DataFrame | None:
@@ -157,77 +146,41 @@ class _FinanceAccessor:
 
     @property
     def ratioSeries(self):
-        cacheKey = "_ratioSeries"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-        annual = self.annual
-        if annual is None:
-            return None
-        aSeries, years = annual
-        from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
-        rs = calcRatioSeries(aSeries, years)
-        result = toSeriesDict(rs)
-        self._company._cache[cacheKey] = result
-        return result
+        if "_ratioSeries" not in self._company._cache:
+            annual = self.annual
+            if annual is None:
+                self._company._cache["_ratioSeries"] = None
+            else:
+                aSeries, years = annual
+                from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+                rs = calcRatioSeries(aSeries, years)
+                self._company._cache["_ratioSeries"] = toSeriesDict(rs)
+        return self._company._cache["_ratioSeries"]
 
 
-class Company:
-    """SEC EDGAR 기반 미국 기업 진입점.
-
-    4-namespace 구조::
-
-        c = Company("AAPL")
-        c.docs.sections        # topic × period 수평화
-        c.docs.filings()       # 문서 목록
-        c.docs.show(topic)     # topic content 조회
-        c.finance.BS           # 연도별 재무상태표
-        c.finance.IS           # 연도별 손익계산서
-        c.finance.CF           # 연도별 현금흐름표
-        c.finance.ratios       # 재무비율
-        c.BS                   # finance.BS 바로가기
-        c.sections             # docs.sections 바로가기
-        c.show(topic)          # 통합 조회
-    """
+class _CompanyProto:
 
     def __init__(self, ticker: str):
+        from pathlib import Path
+
         self.ticker = ticker.upper()
         self._cache: dict[str, Any] = {}
 
-        tickerRow = self._resolveTickerRow(self.ticker)
-        if tickerRow is None:
-            raise ValueError(f"'{ticker}'에 해당하는 CIK를 찾을 수 없음")
-        self.cik = tickerRow["cik"]
-        self.corpName = tickerRow.get("title") or self.ticker
+        tickerPath = Path(config.dataDir) / "edgar" / "tickers.parquet"
+        df = pl.read_parquet(tickerPath)
+        row = df.filter(pl.col("ticker") == self.ticker)
+        if row.is_empty():
+            raise ValueError(f"ticker not found: {ticker}")
+        r = row.row(0, named=True)
+        self.cik = str(r["cik"]).zfill(10)
+        self.corpName = r.get("title") or self.ticker
 
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
         ts = buildTimeseries(self.cik)
         if ts is not None:
             self._cache["_ts"] = ts
 
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
-
-    def _resolveTickerRow(self, ticker: str) -> dict | None:
-        tickerPath = self._getTickerPath()
-        if tickerPath is None or not tickerPath.exists():
-            return None
-
-        df = pl.read_parquet(tickerPath)
-        row = df.filter(pl.col("ticker") == ticker)
-        if row.is_empty():
-            row = df.filter(pl.col("ticker") == ticker.upper())
-        if row.is_empty():
-            return None
-        r = row.row(0, named=True)
-        r["cik"] = str(r["cik"]).zfill(10)
-        return r
-
-    def _getTickerPath(self) -> Path | None:
-        from dartlab import config
-        return Path(config.dataDir) / "edgar" / "tickers.parquet"
-
-    def __repr__(self):
-        return f"Company('{self.ticker}', {self.corpName})"
 
     @property
     def market(self) -> str:
@@ -236,14 +189,6 @@ class Company:
     @property
     def currency(self) -> str:
         return "USD"
-
-    @property
-    def timeseries(self):
-        return self._cache.get("_ts")
-
-    @property
-    def annual(self):
-        return self.finance.annual
 
     @property
     def BS(self) -> pl.DataFrame | None:
@@ -266,15 +211,11 @@ class Company:
         return self.finance.ratios
 
     @property
-    def ratioSeries(self):
-        return self.finance.ratioSeries
-
-    @property
     def insights(self):
         if "_insights" not in self._cache:
             from dartlab.engines.insight.pipeline import analyze
-            ts = self.timeseries
-            annual = self.annual
+            ts = self.finance.timeseries
+            annual = self.finance.annual
             if ts is None or annual is None:
                 self._cache["_insights"] = None
             else:
@@ -290,3 +231,60 @@ class Company:
         if topic in ("BS", "IS", "CF"):
             return getattr(self.finance, topic)
         return self.docs.show(topic, period)
+
+    def __repr__(self):
+        return f"Company('{self.ticker}', {self.corpName})"
+
+
+def main() -> None:
+    print("=== 058-005 EDGAR Company 확장 프로토타입 ===\n")
+
+    for ticker in ["AAPL", "MSFT", "TSLA"]:
+        print(f"--- {ticker} ---")
+        c = _CompanyProto(ticker)
+        print(f"  repr: {c}")
+        print(f"  market: {c.market}, currency: {c.currency}")
+
+        bs = c.BS
+        if bs is not None:
+            print(f"  BS: {bs.height} accounts × {len(bs.columns) - 1} years")
+        else:
+            print(f"  BS: None")
+
+        isdf = c.IS
+        if isdf is not None:
+            print(f"  IS: {isdf.height} accounts × {len(isdf.columns) - 1} years")
+
+        cf = c.CF
+        if cf is not None:
+            print(f"  CF: {cf.height} accounts × {len(cf.columns) - 1} years")
+
+        sec = c.sections
+        if sec is not None:
+            print(f"  sections: {sec.height} topics × {len(sec.columns) - 1} periods")
+
+        filings = c.docs.filings()
+        if filings is not None:
+            print(f"  filings: {filings.height}")
+
+        ratios = c.ratios
+        if ratios is not None:
+            print(f"  ratios: {type(ratios).__name__}")
+
+        insights = c.insights
+        if insights is not None:
+            print(f"  insights: {type(insights).__name__}")
+
+        text = c.show("10-K::item1Business")
+        if text:
+            print(f"  show('10-K::item1Business'): {len(text)} chars")
+
+        text2 = c.show("BS")
+        if text2 is not None:
+            print(f"  show('BS'): {text2.height} rows DataFrame")
+
+        print()
+
+
+if __name__ == "__main__":
+    main()

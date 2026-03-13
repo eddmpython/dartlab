@@ -602,6 +602,17 @@ Issues and pull requests are welcome. Before submitting:
 - Test new features in `experiments/` first — verify the approach before modifying `src/`
 - For data mapping improvements (e.g., `accountMappings.json`), include experiment results showing the before/after impact
 
+### Development Setup
+
+```bash
+git clone https://github.com/eddmpython/dartlab.git
+cd dartlab
+uv sync --group dev
+pre-commit install
+pre-commit install --hook-type commit-msg
+uv run pytest tests/ -v -m "not requires_data"
+```
+
 Questions or ideas? Open an [issue](https://github.com/eddmpython/dartlab/issues). Both Korean and English are fine.
 
 ## Sponsor

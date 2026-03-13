@@ -6,6 +6,122 @@ import pytest
 from tests.conftest import SAMSUNG, requires_samsung
 
 
+def _topicBlocksFrame(topic: str, rows: list[dict[str, object]]) -> pl.DataFrame:
+    records: list[dict[str, object]] = []
+    for idx, row in enumerate(rows):
+        records.append(
+            {
+                "stockCode": "TEST",
+                "period": row["period"],
+                "periodOrder": row["periodOrder"],
+                "sectionOrder": row.get("sectionOrder", 1),
+                "rawTitle": row.get("rawTitle", topic),
+                "topic": topic,
+                "sourceTopic": row.get("sourceTopic", topic),
+                "cellKey": f"TEST:{row['period']}:{topic}",
+                "blockIdx": idx,
+                "blockType": row.get("blockType", "text"),
+                "blockLabel": row.get("blockLabel", "(root)"),
+                "blockText": row.get("blockText", ""),
+                "chars": len(str(row.get("blockText", ""))),
+                "tableLines": row.get("tableLines", 0),
+                "semanticTopic": row.get("semanticTopic"),
+                "detailTopic": row.get("detailTopic"),
+                "isBoilerplate": False,
+                "isPlaceholder": row.get("isPlaceholder", False),
+                "blockPriority": row.get("blockPriority", 3),
+            }
+        )
+    return pl.DataFrame(records, strict=False)
+
+
+class TestProfileChangeLedgerHelpers:
+    def test_change_point_collapses_repeated_periods(self):
+        from dartlab.engines.dart.company import _buildTopicChangeLedger
+
+        blocks = _topicBlocksFrame(
+            "companyOverview",
+            [
+                {"period": "2024Q1", "periodOrder": 20241, "blockText": "회사는 반도체를 생산한다."},
+                {"period": "2024Q2", "periodOrder": 20242, "blockText": "회사는 반도체를 생산한다."},
+                {"period": "2024Q3", "periodOrder": 20243, "blockText": "회사는 반도체와 모바일 기기를 생산한다."},
+            ],
+        )
+
+        ledger = _buildTopicChangeLedger(blocks)
+
+        assert ledger.height == 2
+        assert set(ledger["period"].to_list()) == {"2024Q1", "2024Q3"}
+
+    def test_restated_text_is_separated_from_edited_text(self):
+        from dartlab.engines.dart.company import _buildTopicChangeLedger
+
+        blocks = _topicBlocksFrame(
+            "companyOverview",
+            [
+                {"period": "2024Q1", "periodOrder": 20241, "blockText": "회사는 반도체를 생산한다."},
+                {"period": "2024Q2", "periodOrder": 20242, "blockText": "회사는 반도체를 생산한다"},
+            ],
+        )
+
+        ledger = _buildTopicChangeLedger(blocks)
+
+        assert ledger.height == 2
+        latest = ledger.filter(pl.col("period") == "2024Q2")
+        assert latest.item(0, "changeType") == "restated"
+
+    def test_table_structure_change_is_not_treated_as_value_edit(self):
+        from dartlab.engines.dart.company import _buildTopicChangeLedger
+
+        blocks = _topicBlocksFrame(
+            "salesOrder",
+            [
+                {
+                    "period": "2024Q1",
+                    "periodOrder": 20241,
+                    "blockType": "table",
+                    "blockLabel": "(root)",
+                    "blockText": "| 항목 | 값 |\n| --- | --- |\n| A | 1 |\n| B | 2 |",
+                    "tableLines": 4,
+                },
+                {
+                    "period": "2024Q2",
+                    "periodOrder": 20242,
+                    "blockType": "table",
+                    "blockLabel": "(root)",
+                    "blockText": "| 항목 | 값 |\n| --- | --- |\n| A | 1 |\n| B | 2 |\n| C | 3 |",
+                    "tableLines": 5,
+                },
+            ],
+        )
+
+        ledger = _buildTopicChangeLedger(blocks)
+
+        latest = ledger.filter(pl.col("period") == "2024Q2")
+        assert latest.item(0, "changeType") == "added"
+
+    def test_placeholder_is_tracked_with_own_change_type(self):
+        from dartlab.engines.dart.company import _buildTopicChangeLedger
+
+        blocks = _topicBlocksFrame(
+            "companyOverview",
+            [
+                {"period": "2024Q1", "periodOrder": 20241, "blockText": "회사는 반도체를 생산한다."},
+                {
+                    "period": "2024Q2",
+                    "periodOrder": 20242,
+                    "blockText": "기업공시서식 작성기준에 따라 분기보고서에 기재하지 않습니다.",
+                    "isPlaceholder": True,
+                },
+            ],
+        )
+
+        ledger = _buildTopicChangeLedger(blocks)
+
+        latest = ledger.filter(pl.col("period") == "2024Q2")
+        assert latest.item(0, "changeType") == "placeholder"
+
+
 @requires_samsung
 class TestCompany:
     def test_init_by_code(self):
@@ -157,6 +273,29 @@ class TestCompany:
         assert len(firstProfileChapter) > 0
         assert isinstance(next(iter(firstProfileChapter.values())), pl.DataFrame)
 
+    def test_profile_ledger_and_evidence_are_available(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        ledger = c.profile.ledger
+        assert isinstance(ledger, pl.DataFrame)
+        assert set(
+            [
+                "chapter",
+                "topic",
+                "label",
+                "period",
+                "changeType",
+                "summary",
+                "evidenceRef",
+            ]
+        ).issubset(set(ledger.columns))
+        risk_rows = ledger.filter(pl.col("topic") == "riskDerivative")
+        if risk_rows.height > 0:
+            evidence = c.profile.evidence("riskDerivative", risk_rows.item(0, "period"))
+            assert isinstance(evidence, pl.DataFrame)
+            assert set(["changeType", "evidenceRef", "blockType"]).issubset(set(evidence.columns))
+
     def test_open_and_topics_surface_company_payloads(self):
         from dartlab import Company
 
@@ -240,6 +379,8 @@ class TestCompany:
         assert isinstance(c.index, pl.DataFrame)
         assert c.index.height > 0
         assert isinstance(c.show("companyOverview"), pl.DataFrame)
+        assert "changeType" in c.show("companyOverview").columns
+        assert "evidenceRef" in c.show("companyOverview").columns
         traced = c.trace("dividend")
         assert traced is not None
         assert traced["primarySource"] == "report"
