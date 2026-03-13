@@ -35,6 +35,7 @@ class RatioResult:
 
 	totalAssets: Optional[float] = None
 	totalEquity: Optional[float] = None
+	ownersEquity: Optional[float] = None
 	totalLiabilities: Optional[float] = None
 	currentAssets: Optional[float] = None
 	currentLiabilities: Optional[float] = None
@@ -56,6 +57,7 @@ class RatioResult:
 	financeCosts: Optional[float] = None
 	capex: Optional[float] = None
 	dividendsPaid: Optional[float] = None
+	depreciationExpense: Optional[float] = None
 	noncurrentAssets: Optional[float] = None
 	noncurrentLiabilities: Optional[float] = None
 
@@ -100,6 +102,7 @@ class RatioResult:
 	psr: Optional[float] = None
 	evEbitda: Optional[float] = None
 	marketCap: Optional[float] = None
+	ebitdaEstimated: bool = True
 
 	warnings: list[str] = field(default_factory=list)
 
@@ -178,17 +181,152 @@ def _yoy(vals: list[Optional[float]], i: int) -> Optional[float]:
 	prev = vals[i - 1]
 	if cur is None or prev is None or prev == 0:
 		return None
-	return round(((cur - prev) / abs(prev)) * 100, 2)
+	if prev > 0 and cur >= 0:
+		return round(((cur - prev) / prev) * 100, 2)
+	if prev < 0 and cur < 0:
+		return round(((cur - prev) / abs(prev)) * 100, 2)
+	return None
 
 
 def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
 	return series.get(sjDiv, {}).get(snakeId, [])
 
 
+def _detectArchetype(series: dict[str, dict[str, list[Optional[float]]]]) -> str:
+	isKeys = set(series.get("IS", {}))
+	bsKeys = set(series.get("BS", {}))
+
+	if {
+		"insurance_revenue",
+		"assumed_reinsurance_premiums",
+		"benefit_payments",
+	}.intersection(isKeys):
+		return "insurance"
+
+	if "interest_income" in isKeys and {
+		"loans",
+		"cash_and_deposits",
+		"debt_securities_at_amortized_cost",
+	}.intersection(bsKeys):
+		return "bank"
+
+	if "commission_income" in isKeys and {
+		"financial_assets_at_fv_through_profit",
+		"financial_assets_at_fv_through_oci",
+		"financial_assets_at_amortized_cost",
+	}.intersection(bsKeys):
+		return "securities"
+
+	if any(token in isKeys for token in ("interest_income", "insurance_revenue", "commission_income")):
+		return "financial"
+
+	return "general"
+
+
+def _setNone(result: RatioResult, *fieldNames: str) -> None:
+	for fieldName in fieldNames:
+		setattr(result, fieldName, None)
+
+
+def _setSeriesNone(result: RatioSeriesResult, *fieldNames: str) -> None:
+	empty = [None] * len(result.years)
+	for fieldName in fieldNames:
+		setattr(result, fieldName, list(empty))
+
+
+def _applyArchetypePolicyResult(result: RatioResult, archetype: str) -> None:
+	if archetype == "general":
+		return
+
+	_setNone(
+		result,
+		"debtRatio",
+		"currentRatio",
+		"quickRatio",
+		"interestCoverage",
+		"netDebt",
+		"netDebtRatio",
+		"noncurrentRatio",
+		"inventoryTurnover",
+		"receivablesTurnover",
+		"payablesTurnover",
+		"operatingCfMargin",
+		"operatingCfToNetIncome",
+		"capexRatio",
+		"fcf",
+	)
+
+	if archetype in {"bank", "financial"}:
+		_setNone(
+			result,
+			"operatingMargin",
+			"netMargin",
+			"grossMargin",
+			"ebitdaMargin",
+			"costOfSalesRatio",
+			"sgaRatio",
+		)
+
+
+def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> None:
+	if archetype == "general":
+		return
+
+	_setSeriesNone(
+		result,
+		"debtRatio",
+		"currentRatio",
+		"quickRatio",
+		"interestCoverage",
+		"netDebtRatio",
+		"noncurrentRatio",
+		"inventoryTurnover",
+		"receivablesTurnover",
+		"payablesTurnover",
+		"operatingCfMargin",
+		"operatingCfToNetIncome",
+		"capexRatio",
+		"fcf",
+	)
+
+	if archetype in {"bank", "financial"}:
+		_setSeriesNone(
+			result,
+			"operatingMargin",
+			"netMargin",
+			"grossMargin",
+			"ebitdaMargin",
+			"costOfSalesRatio",
+			"sgaRatio",
+		)
+
+
+def _pick_first(series: dict[str, dict[str, list[Optional[float]]]], sjDiv: str, snakeIds: list[str], annual: bool = False) -> Optional[float]:
+	getter = getLatest if annual else getTTM
+	for snakeId in snakeIds:
+		val = getter(series, sjDiv, snakeId)
+		if val is not None:
+			return val
+	return None
+
+
+def _pick_series(
+	series: dict[str, dict[str, list[Optional[float]]]],
+	sjDiv: str,
+	snakeIds: list[str],
+) -> list[Optional[float]]:
+	for snakeId in snakeIds:
+		values = _get(series, sjDiv, snakeId)
+		if any(v is not None for v in values):
+			return values
+	return []
+
+
 def calcRatios(
 	series: dict[str, dict[str, list[Optional[float]]]],
 	marketCap: Optional[float] = None,
 	annual: bool = False,
+	archetypeOverride: str | None = None,
 ) -> RatioResult:
 	"""시계열에서 재무비율 계산 (최신 단일 시점).
 
@@ -202,12 +340,13 @@ def calcRatios(
 		RatioResult.
 	"""
 	r = RatioResult()
+	archetype = archetypeOverride or _detectArchetype(series)
 
 	_flow = getLatest if annual else getTTM
 
-	r.revenueTTM = _flow(series, "IS", "sales")
-	r.operatingIncomeTTM = _flow(series, "IS", "operating_profit")
-	r.netIncomeTTM = _flow(series, "IS", "net_profit")
+	r.revenueTTM = _pick_first(series, "IS", ["sales", "revenue"], annual=annual)
+	r.operatingIncomeTTM = _pick_first(series, "IS", ["operating_profit", "operating_income"], annual=annual)
+	r.netIncomeTTM = _pick_first(series, "IS", ["net_profit", "net_income"], annual=annual)
 	r.operatingCashflowTTM = _flow(series, "CF", "operating_cashflow")
 	r.investingCashflowTTM = _flow(series, "CF", "investing_cashflow")
 
@@ -215,13 +354,20 @@ def calcRatios(
 	r.costOfSales = _flow(series, "IS", "cost_of_sales")
 	r.sga = _flow(series, "IS", "selling_and_administrative_expenses")
 	r.financeIncome = _flow(series, "IS", "finance_income")
-	r.financeCosts = _flow(series, "IS", "finance_costs")
+	r.financeCosts = _pick_first(series, "IS", ["finance_costs", "interest_expense"], annual=annual)
 
 	r.capex = _flow(series, "CF", "purchase_of_property_plant_and_equipment")
 	r.dividendsPaid = _flow(series, "CF", "dividends_paid")
+	r.depreciationExpense = _pick_first(
+		series,
+		"CF",
+		["depreciation_and_amortization", "depreciation_cf", "depreciation"],
+		annual=annual,
+	)
 
 	r.totalAssets = getLatest(series, "BS", "total_assets")
-	r.totalEquity = getLatest(series, "BS", "owners_of_parent_equity")
+	r.totalEquity = getLatest(series, "BS", "total_stockholders_equity") or getLatest(series, "BS", "owners_of_parent_equity")
+	r.ownersEquity = getLatest(series, "BS", "owners_of_parent_equity") or r.totalEquity
 	r.totalLiabilities = getLatest(series, "BS", "total_liabilities")
 	r.currentAssets = getLatest(series, "BS", "current_assets")
 	r.currentLiabilities = getLatest(series, "BS", "current_liabilities")
@@ -247,12 +393,13 @@ def calcRatios(
 		r.marketCap = marketCap
 		_calcValuation(r)
 
+	_applyArchetypePolicyResult(r, archetype)
 	return r
 
 
 def _calcProfitability(r: RatioResult) -> None:
 	"""수익성 비율 (8개)."""
-	r.roe = _safePct(r.netIncomeTTM, r.totalEquity)
+	r.roe = _safePct(r.netIncomeTTM, r.ownersEquity)
 	if r.roe is not None and not (-500 <= r.roe <= 500):
 		r.warnings.append(f"ROE {r.roe:.0f}% 범위 초과")
 		r.roe = None
@@ -269,7 +416,12 @@ def _calcProfitability(r: RatioResult) -> None:
 	r.sgaRatio = _safePct(r.sga, r.revenueTTM)
 
 	if r.operatingIncomeTTM is not None and r.revenueTTM and r.revenueTTM > 0:
-		depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+		depreciation = r.depreciationExpense
+		if depreciation is None:
+			depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+			r.ebitdaEstimated = True
+		else:
+			r.ebitdaEstimated = False
 		ebitda = r.operatingIncomeTTM + depreciation
 		r.ebitdaMargin = _safeRound((ebitda / r.revenueTTM) * 100, 2)
 
@@ -351,7 +503,9 @@ def _calcValuation(r: RatioResult) -> None:
 	ev = mc + netDebt
 
 	if r.operatingIncomeTTM and r.operatingIncomeTTM > 0:
-		depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+		depreciation = r.depreciationExpense
+		if depreciation is None:
+			depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
 		ebitda = r.operatingIncomeTTM + depreciation
 		if ebitda > 0:
 			r.evEbitda = round(ev / ebitda, 2)
@@ -360,6 +514,7 @@ def _calcValuation(r: RatioResult) -> None:
 def calcRatioSeries(
 	annualSeries: dict[str, dict[str, list[Optional[float]]]],
 	years: list[str],
+	archetypeOverride: str | None = None,
 ) -> RatioSeriesResult:
 	"""연도별 재무비율 시계열 계산.
 
@@ -372,17 +527,23 @@ def calcRatioSeries(
 	"""
 	n = len(years)
 	rs = RatioSeriesResult(years=list(years))
+	archetype = archetypeOverride or _detectArchetype(annualSeries)
 
-	revenue = _get(annualSeries, "IS", "sales")
+	revenue = _pick_series(annualSeries, "IS", ["sales", "revenue"])
 	costOfSales = _get(annualSeries, "IS", "cost_of_sales")
 	grossProfit = _get(annualSeries, "IS", "gross_profit")
-	opProfit = _get(annualSeries, "IS", "operating_profit")
-	netProfit = _get(annualSeries, "IS", "net_profit")
+	opProfit = _pick_series(annualSeries, "IS", ["operating_profit", "operating_income"])
+	netProfit = _pick_series(annualSeries, "IS", ["net_profit", "net_income"])
 	sga = _get(annualSeries, "IS", "selling_and_administrative_expenses")
-	finCosts = _get(annualSeries, "IS", "finance_costs")
+	finCosts = _pick_series(annualSeries, "IS", ["finance_costs", "interest_expense"])
 
 	totalAssets = _get(annualSeries, "BS", "total_assets")
-	totalEquity = _get(annualSeries, "BS", "owners_of_parent_equity")
+	totalEquity = _get(annualSeries, "BS", "total_stockholders_equity")
+	if not any(v is not None for v in totalEquity):
+		totalEquity = _get(annualSeries, "BS", "owners_of_parent_equity")
+	ownersEquity = _get(annualSeries, "BS", "owners_of_parent_equity")
+	if not any(v is not None for v in ownersEquity):
+		ownersEquity = totalEquity
 	totalLiab = _get(annualSeries, "BS", "total_liabilities")
 	curAssets = _get(annualSeries, "BS", "current_assets")
 	curLiab = _get(annualSeries, "BS", "current_liabilities")
@@ -400,6 +561,11 @@ def calcRatioSeries(
 	opCf = _get(annualSeries, "CF", "operating_cashflow")
 	capex = _get(annualSeries, "CF", "purchase_of_property_plant_and_equipment")
 	divPaid = _get(annualSeries, "CF", "dividends_paid")
+	depreciation = _get(annualSeries, "CF", "depreciation_and_amortization")
+	if not any(v is not None for v in depreciation):
+		depreciation = _get(annualSeries, "CF", "depreciation_cf")
+	if not any(v is not None for v in depreciation):
+		depreciation = _get(annualSeries, "CF", "depreciation")
 
 	def _v(lst: list, i: int) -> Optional[float]:
 		if i < len(lst):
@@ -417,6 +583,7 @@ def calcRatioSeries(
 
 		ta_i = _v(totalAssets, i)
 		te_i = _v(totalEquity, i)
+		oe_i = _v(ownersEquity, i)
 		tl_i = _v(totalLiab, i)
 		ca_i = _v(curAssets, i)
 		cl_i = _v(curLiab, i)
@@ -442,7 +609,7 @@ def calcRatioSeries(
 		rs.totalEquity.append(te_i)
 		rs.operatingCashflow.append(opcf_i)
 
-		rs.roe.append(_safePct(np_i, te_i))
+		rs.roe.append(_safePct(np_i, oe_i))
 		rs.roa.append(_safePct(np_i, ta_i))
 		rs.operatingMargin.append(_safePct(op_i, rev_i))
 		rs.netMargin.append(_safePct(np_i, rev_i))
@@ -450,7 +617,9 @@ def calcRatioSeries(
 		rs.costOfSalesRatio.append(_safePct(cos_i, rev_i))
 		rs.sgaRatio.append(_safePct(sga_i, rev_i))
 
-		dep = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
+		dep = _v(depreciation, i)
+		if dep is None:
+			dep = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
 		ebitda = (op_i + dep) if op_i is not None else None
 		rs.ebitdaMargin.append(_safePct(ebitda, rev_i))
 
@@ -507,6 +676,7 @@ def calcRatioSeries(
 		else:
 			rs.dividendPayoutRatio.append(None)
 
+	_applyArchetypePolicySeries(rs, archetype)
 	return rs
 
 

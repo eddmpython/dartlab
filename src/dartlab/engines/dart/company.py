@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import OrderedDict
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
@@ -25,6 +26,7 @@ pl.Config.set_tbl_width_chars(200)
 
 from dartlab.core.dataLoader import (
     DART_VIEWER,
+    _dataDir,
     buildIndex,
     extractCorpName,
     loadData,
@@ -39,6 +41,7 @@ from dartlab.core.kindList import (
 # ── 모듈 레지스트리 (core/registry.py에서 자동 생성) ──
 # (모듈 import 경로, 함수명, 한글 라벨, primary DataFrame 추출)
 # fsSummary/statements는 내부 디스패치 전용 (BS/IS/CF property가 statements를 호출)
+from dartlab.core.registry import getEntry as _getEntry
 from dartlab.core.registry import getModuleEntries as _getModuleEntries
 from dartlab.engines.dart.docs.notes import Notes
 
@@ -84,6 +87,14 @@ _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CH
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
     "audit": "auditOpinion",
+}
+_DOCS_TOPIC_HINTS: dict[str, tuple[str, ...]] = {
+    "costByNature": ("비용의 성격별 분류", "비용의성격별분류", "제조원가", "감가상각비"),
+    "tangibleAsset": ("유형자산", "감가상각비"),
+}
+_DOCS_TITLE_HINTS: dict[str, tuple[str, ...]] = {
+    "costByNature": ("비용의 성격별 분류", "비용의성격별분류", "제조원가명세서"),
+    "tangibleAsset": ("유형자산",),
 }
 
 
@@ -164,6 +175,176 @@ def _financeToDataFrame(
     df = pl.DataFrame(rows)
     df = df.drop(["_snakeId", "_level", "_sort"])
     return df
+
+
+_RATIO_CATEGORY_LABELS: dict[str, str] = {
+    "profitability": "수익성",
+    "stability": "안정성",
+    "growth": "성장성",
+    "efficiency": "효율성",
+    "cashflow": "현금흐름",
+    "absolute": "절대규모",
+}
+
+_RATIO_FIELD_LABELS: dict[str, str] = {
+    "roe": "ROE (%)",
+    "roa": "ROA (%)",
+    "operatingMargin": "영업이익률 (%)",
+    "netMargin": "순이익률 (%)",
+    "grossMargin": "매출총이익률 (%)",
+    "ebitdaMargin": "EBITDA마진 (%)",
+    "costOfSalesRatio": "매출원가율 (%)",
+    "sgaRatio": "판관비율 (%)",
+    "debtRatio": "부채비율 (%)",
+    "currentRatio": "유동비율 (%)",
+    "quickRatio": "당좌비율 (%)",
+    "equityRatio": "자기자본비율 (%)",
+    "interestCoverage": "이자보상배율 (x)",
+    "netDebtRatio": "순차입금비율 (%)",
+    "noncurrentRatio": "비유동비율 (%)",
+    "revenueGrowth": "매출 YoY (%)",
+    "operatingProfitGrowth": "영업이익 YoY (%)",
+    "netProfitGrowth": "순이익 YoY (%)",
+    "assetGrowth": "자산 YoY (%)",
+    "equityGrowthRate": "자본 YoY (%)",
+    "totalAssetTurnover": "총자산회전율 (x)",
+    "inventoryTurnover": "재고자산회전율 (x)",
+    "receivablesTurnover": "매출채권회전율 (x)",
+    "payablesTurnover": "매입채무회전율 (x)",
+    "fcf": "FCF",
+    "operatingCfMargin": "영업CF마진 (%)",
+    "operatingCfToNetIncome": "영업CF/순이익 (%)",
+    "capexRatio": "CAPEX비율 (%)",
+    "dividendPayoutRatio": "배당성향 (%)",
+    "revenue": "매출",
+    "operatingProfit": "영업이익",
+    "netProfit": "순이익",
+    "totalAssets": "총자산",
+    "totalEquity": "자본(지배)",
+    "operatingCashflow": "영업현금흐름",
+}
+
+
+_RATIO_TEMPLATE_FIELDS: dict[str, tuple[str, ...]] = {
+    "bank": (
+        "roe", "roa", "equityRatio",
+        "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "dividendPayoutRatio",
+        "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+    ),
+    "insurance": (
+        "roe", "roa", "equityRatio",
+        "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "dividendPayoutRatio",
+        "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+    ),
+    "diversified_financials": (
+        "roe", "roa", "operatingMargin", "netMargin", "ebitdaMargin",
+        "equityRatio",
+        "revenueGrowth", "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "totalAssetTurnover",
+        "dividendPayoutRatio",
+        "revenue", "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+    ),
+}
+
+
+def _ratioTemplateKeyForIndustryGroup(industryGroup: Any) -> str | None:
+    if industryGroup is None:
+        return None
+
+    try:
+        from dartlab.engines.sector.types import IndustryGroup
+    except ImportError:
+        return None
+
+    mapping = {
+        IndustryGroup.BANK: "bank",
+        IndustryGroup.INSURANCE: "insurance",
+        IndustryGroup.DIVERSIFIED_FINANCIALS: "diversified_financials",
+    }
+    return mapping.get(industryGroup)
+
+
+def _ratioArchetypeOverrideForIndustryGroup(industryGroup: Any) -> str | None:
+    if industryGroup is None:
+        return None
+
+    try:
+        from dartlab.engines.sector.types import IndustryGroup
+    except ImportError:
+        return None
+
+    mapping = {
+        IndustryGroup.BANK: "bank",
+        IndustryGroup.INSURANCE: "insurance",
+        IndustryGroup.DIVERSIFIED_FINANCIALS: "securities",
+    }
+    return mapping.get(industryGroup)
+
+
+def _ratioResultHasHeadlineSignal(result: Any) -> bool:
+    if result is None:
+        return False
+
+    headlineFields = (
+        "roe",
+        "roa",
+        "operatingMargin",
+        "netMargin",
+        "debtRatio",
+        "currentRatio",
+        "equityRatio",
+        "revenueTTM",
+        "netIncomeTTM",
+    )
+    return any(getattr(result, fieldName, None) is not None for fieldName in headlineFields)
+
+
+def _shouldFallbackToAnnualRatios(result: Any, archetypeOverride: str | None) -> bool:
+    if result is None:
+        return True
+
+    if archetypeOverride in {"bank", "insurance", "securities"}:
+        profitabilityFields = ("roe", "roa", "operatingMargin", "netMargin")
+        return not any(getattr(result, fieldName, None) is not None for fieldName in profitabilityFields)
+
+    return not _ratioResultHasHeadlineSignal(result)
+
+
+def _ratioSeriesToDataFrame(
+    series: dict[str, dict[str, list[Any | None]]], years: list[str], fieldNames: tuple[str, ...] | None = None,
+) -> pl.DataFrame | None:
+    """재무비율 연도별 시계열 → 분류/항목 × 연도 컬럼 DataFrame."""
+    ratioData = series.get("RATIO")
+    if not ratioData:
+        return None
+
+    from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+
+    fieldFilter = set(fieldNames) if fieldNames is not None else None
+    rows: list[dict[str, Any]] = []
+    for category, fields in RATIO_CATEGORIES:
+        for fieldName in fields:
+            if fieldFilter is not None and fieldName not in fieldFilter:
+                continue
+            values = ratioData.get(fieldName)
+            if not values or not any(v is not None for v in values):
+                continue
+            row = {
+                "분류": _RATIO_CATEGORY_LABELS.get(category, category),
+                "항목": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
+                "_field": fieldName,
+            }
+            for idx, year in enumerate(years):
+                row[str(year)] = values[idx] if idx < len(values) else None
+            rows.append(row)
+
+    if not rows:
+        return None
+
+    df = pl.DataFrame(rows)
+    return df.drop("_field")
 
 
 def _sceToDataFrame(
@@ -319,7 +500,10 @@ class _ReportAccessor:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.report import extractClean
-        result = extractClean(self._company.stockCode, apiType)
+        try:
+            result = extractClean(self._company.stockCode, apiType)
+        except Exception:  # noqa: BLE001
+            result = None
         self._cache[cacheKey] = result
         return result
 
@@ -329,13 +513,39 @@ class _ReportAccessor:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.report import extractAnnual as _extractAnnual
-        result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
+        try:
+            result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
+        except Exception:  # noqa: BLE001
+            result = None
+        self._cache[cacheKey] = result
+        return result
+
+    def result(self, apiType: str, quarterNum: int | None = None) -> Any | None:
+        """apiType별 통일된 Result 반환.
+
+        pivot 전용 5개는 기존 Result 객체를 그대로 돌려주고,
+        나머지는 ReportResult를 반환한다.
+        """
+        cacheKey = f"_result_{apiType}_{quarterNum}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        if apiType in self._PIVOT_NAMES:
+            result = getattr(self, apiType)
+            self._cache[cacheKey] = result
+            return result
+
+        from dartlab.engines.dart.report import extractResult
+        try:
+            result = extractResult(self._company.stockCode, apiType, quarterNum)
+        except Exception:  # noqa: BLE001
+            result = None
         self._cache[cacheKey] = result
         return result
 
     def status(self, apiType: str | None = None) -> pl.DataFrame | dict[str, bool]:
         """apiType availability 확인."""
-        from dartlab.engines.dart.report.types import API_TYPES
+        from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS, PREFERRED_QUARTER
         if apiType is not None:
             return {apiType: self.extract(apiType) is not None}
 
@@ -343,6 +553,9 @@ class _ReportAccessor:
         for name in API_TYPES:
             rows.append({
                 "apiType": name,
+                "label": API_TYPE_LABELS.get(name, name),
+                "preferredQuarter": PREFERRED_QUARTER.get(name),
+                "isPivot": name in self._PIVOT_NAMES,
                 "available": self.extract(name) is not None,
             })
         return pl.DataFrame(rows)
@@ -443,7 +656,10 @@ class _DocsAccessor:
 
     @property
     def rawMaterial(self):
-        return self._company._rawMaterial()
+        return self._company._sectionsSubtopicWide("rawMaterial") or self._company._rawMaterialLegacy()
+
+    def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
+        return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
 
 
 class _FinanceAccessor:
@@ -516,6 +732,7 @@ class _ProfileAccessor:
         "CIS",
         "CF",
         "SCE",
+        "ratios",
         "dividend",
         "employee",
         "majorHolder",
@@ -950,7 +1167,7 @@ class _BoardView(OrderedDict):
                 rows.append({
                     "chapter": chapter,
                     "topic": topic,
-                    "label": topic,
+                    "label": self._company._topicLabel(topic),
                     "kind": self._kindForPayload(payload),
                     "source": traced["primarySource"] if traced is not None else None,
                     "periods": self._periodsForPayload(payload),
@@ -1030,38 +1247,46 @@ class _BoardView(OrderedDict):
 class Company:
     """DART 기반 한국 상장기업 분석.
 
+    기본 사용 모델은 index / show / trace다.
+
+    - ``index``: sections 뼈대 위에 finance/report가 채워진 수평화 보드
+    - ``show(topic)``: 특정 topic의 실제 payload(DataFrame)
+    - ``trace(topic, period)``: 선택 source와 provenance
+
     3개 데이터 소스를 강점 기반으로 선별하여 제공:
 
-    - **finance** (XBRL 정규화): BS/IS/CF, timeseries, annual, ratios, sce
-    - **report** (DART API 정형): dividend, employee, majorHolder, executive, audit + 17개 apiType
+    - **finance** (XBRL 정규화): BS/IS/CIS/CF/SCE, timeseries, annual, ratios
+    - **report** (DART API 정형): 28개 apiType 체계, 현재 가용 항목 중심 structured disclosure
     - **docs** (HTML 파싱): 서술형(business, mdna), K-IFRS 주석(notes), 거버넌스, 리스크 등
 
     소스 우선순위:
-    - docs 수평화가 구조의 spine
+    - docs sections 수평화가 구조의 spine
     - finance가 숫자 재무 authoritative source
     - report가 정형 공시 authoritative source
-    - Company.profile이 세 source를 최종 merge
+    - Company는 이 세 source를 merged board로 제공한다
 
     Example::
 
         c = Company("005930")           # 삼성전자
-        c.BS                             # 재무상태표 (finance XBRL)
-        c.IS                             # 손익계산서 (매출액, 영업이익 포함)
-        c.annual                         # 연도별 시계열 dict
-        c.ratios                         # 재무비율 (ROE, ROA 등)
-        c.dividend                       # 배당 (report API)
-        c.report.treasuryStock           # 자기주식 (report 22개 apiType)
-        c.notes.inventory                # 주석 · 재고자산 (docs)
-        c.notes["재고자산"]               # 동일
+        c.index                          # 전체 수평화 보드
+        c.show("BS")                     # 재무상태표
+        c.show("salesOrder")             # sections 기반 subtopic DataFrame
+        c.show("costByNature")           # sections/detailTopic 우선 + legacy fallback
+        c.trace("dividend")              # source provenance
+        c.finance.CIS                    # 포괄손익계산서
+        c.finance.SCE                    # 자본변동표
+        c.report.treasuryStock           # 정형 공시
+        c.docs.sections                  # pure docs source view
     """
 
     def __init__(self, codeOrName: str):
-        if re.match(r"^\d{6}$", codeOrName):
-            self.stockCode = codeOrName
+        normalized = codeOrName.strip()
+        if re.match(r"^[0-9A-Za-z]{6}$", normalized):
+            self.stockCode = normalized.upper()
         else:
-            code = nameToCode(codeOrName)
+            code = nameToCode(normalized)
             if code is None:
-                raise ValueError(f"'{codeOrName}'에 해당하는 종목을 찾을 수 없음")
+                raise ValueError(f"'{normalized}'에 해당하는 종목을 찾을 수 없음")
             self.stockCode = code
         self._cache: dict[str, Any] = {}
 
@@ -1089,7 +1314,7 @@ class Company:
         self._notesAccessor = Notes(self) if self._hasDocs else None
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
-        self.report = _ReportAccessor(self) if self._hasReport else _ReportAccessor(self)
+        self.report = _ReportAccessor(self)
         self._profileAccessor = _ProfileAccessor(self)
 
     def __repr__(self):
@@ -1179,9 +1404,10 @@ class Company:
     @staticmethod
     def resolve(codeOrName: str) -> str | None:
         """종목코드 또는 회사명 → 종목코드 변환."""
-        if re.match(r"^\d{6}$", codeOrName):
-            return codeOrName
-        return nameToCode(codeOrName)
+        normalized = codeOrName.strip()
+        if re.match(r"^[0-9A-Za-z]{6}$", normalized):
+            return normalized.upper()
+        return nameToCode(normalized)
 
     @staticmethod
     def codeName(stockCode: str) -> str | None:
@@ -1288,6 +1514,91 @@ class Company:
             print(f"  ▶ {self.corpName} · 원재료설비")
         return self._call_module("rawMaterial")
 
+    def _rawMaterialLegacy(self) -> Any:
+        try:
+            return self._rawMaterial()
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _topicSubtables(self, topic: str):
+        cacheKey = f"_topicSubtables:{topic}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        blocks = self._retrievalBlocks()
+        if blocks is None or blocks.is_empty():
+            self._cache[cacheKey] = None
+            return None
+        from dartlab.engines.dart.docs.sections import topicSubtables
+        result = topicSubtables(blocks, topic)
+        self._cache[cacheKey] = result
+        return result
+
+    def _sectionsSubtopicWide(self, topic: str) -> pl.DataFrame | None:
+        result = self._topicSubtables(topic)
+        return None if result is None else result.wide
+
+    def _sectionsSubtopicLong(self, topic: str) -> pl.DataFrame | None:
+        result = self._topicSubtables(topic)
+        return None if result is None else result.long
+
+    def _safePrimary(self, name: str) -> pl.DataFrame | None:
+        try:
+            payload = self._get_primary(name)
+        except Exception:  # noqa: BLE001
+            return None
+        return payload if isinstance(payload, pl.DataFrame) else None
+
+    def _hasDocsTopicHint(self, topic: str) -> bool:
+        cacheKey = f"_hasDocsTopicHint:{topic}"
+        if cacheKey in self._cache:
+            return bool(self._cache[cacheKey])
+        keywords = _DOCS_TOPIC_HINTS.get(topic)
+        if not self._hasDocs or not keywords:
+            self._cache[cacheKey] = False
+            return False
+        raw = self.rawDocs
+        if raw is None or raw.is_empty():
+            self._cache[cacheKey] = False
+            return False
+        matched = False
+        for keyword in keywords:
+            subset = raw.filter(
+                pl.col("section_title").str.contains(keyword, literal=True, strict=False)
+                | pl.col("section_content").str.contains(keyword, literal=True, strict=False)
+            )
+            if not subset.is_empty():
+                matched = True
+                break
+        self._cache[cacheKey] = matched
+        return matched
+
+    def _hasSectionTitleHint(self, topic: str) -> bool:
+        cacheKey = f"_hasSectionTitleHint:{topic}"
+        if cacheKey in self._cache:
+            return bool(self._cache[cacheKey])
+        keywords = _DOCS_TITLE_HINTS.get(topic)
+        if not self._hasDocs or not keywords:
+            self._cache[cacheKey] = False
+            return False
+        path = Path(_dataDir("docs")) / f"{self.stockCode}.parquet"
+        if not path.exists():
+            self._cache[cacheKey] = False
+            return False
+        matched = False
+        for keyword in keywords:
+            subset = (
+                pl.scan_parquet(path)
+                .select("section_title")
+                .filter(pl.col("section_title").str.contains(keyword, literal=True, strict=False))
+                .limit(1)
+                .collect()
+            )
+            if subset.height > 0:
+                matched = True
+                break
+        self._cache[cacheKey] = matched
+        return matched
+
     def _sceMatrix(self):
         if not self._hasFinance:
             return None
@@ -1344,7 +1655,8 @@ class Company:
             return None
         annualSeries, years = annualResult
         from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
-        rs = calcRatioSeries(annualSeries, years)
+        archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
+        rs = calcRatioSeries(annualSeries, years, archetypeOverride=archetypeOverride)
         result = toSeriesDict(rs)
         self._cache[cacheKey] = result
         return result
@@ -1525,12 +1837,12 @@ class Company:
     @property
     def salesOrder(self) -> pl.DataFrame | None:
         """매출/수주 DataFrame."""
-        return self._get_primary("salesOrder")
+        return self._sectionsSubtopicWide("salesOrder") or self._safePrimary("salesOrder")
 
     @property
     def riskDerivative(self) -> pl.DataFrame | None:
         """위험관리/파생거래 DataFrame."""
-        return self._get_primary("riskDerivative")
+        return self._sectionsSubtopicWide("riskDerivative") or self._safePrimary("riskDerivative")
 
     @property
     def articlesOfIncorporation(self) -> pl.DataFrame | None:
@@ -1572,17 +1884,30 @@ class Company:
     @property
     def segments(self) -> pl.DataFrame | None:
         """부문별 매출 시계열 DataFrame."""
-        return self._get_primary("segments")
+        return self._sectionsSubtopicWide("segments") or self._safePrimary("segments")
 
     @property
     def tangibleAsset(self) -> pl.DataFrame | None:
         """유형자산 변동표 DataFrame."""
+        if not self._hasDocsTopicHint("tangibleAsset"):
+            return None
         return self._get_primary("tangibleAsset")
 
     @property
     def costByNature(self) -> pl.DataFrame | None:
-        """비용 성격별 분류 시계열 DataFrame."""
-        return self._get_primary("costByNature")
+        """비용 성격별 분류 시계열 DataFrame.
+
+        sections/detailTopic 기반 table extractor를 우선 사용하고,
+        기존 parser 결과는 archive/fallback으로만 사용한다.
+        """
+        if not self._hasSectionTitleHint("costByNature"):
+            return None
+        sections_df = self._sectionsSubtopicWide("costByNature")
+        if sections_df is not None:
+            return sections_df
+        if not self._hasDocsTopicHint("costByNature"):
+            return None
+        return self._safePrimary("costByNature")
 
     # ── 공시 서술 (property) ──
 
@@ -1606,11 +1931,8 @@ class Company:
 
     @property
     def rawMaterial(self) -> Any:
-        """원재료/설비/시설투자 데이터."""
-        from dartlab import config
-        if config.verbose:
-            print(f"  ▶ {self.corpName} · 원재료설비")
-        return self._call_module("rawMaterial")
+        """원재료/설비/시설투자 수평화 DataFrame."""
+        return self._sectionsSubtopicWide("rawMaterial") or self._rawMaterialLegacy()
 
     @property
     def sections(self) -> pl.DataFrame | None:
@@ -1637,6 +1959,7 @@ class Company:
             "CIS": "III",
             "CF": "III",
             "SCE": "III",
+            "ratios": "III",
             "audit": "V",
             "auditContract": "V",
             "nonAuditContract": "V",
@@ -1705,8 +2028,25 @@ class Company:
                 ordered.append(topic)
                 seen.add(topic)
 
+        if self._hasFinance and self._ratioSeries() is not None and "ratios" not in seen:
+            ordered.append("ratios")
+            seen.add("ratios")
+
         self._cache[cacheKey] = ordered
         return ordered
+
+    def _topicLabel(self, topic: str) -> str:
+        if topic == "CIS":
+            return "포괄손익계산서"
+        if topic == "SCE":
+            return "자본변동표"
+        entry = _getEntry(topic)
+        if entry is not None:
+            return entry.label
+        for name, label in _ALL_PROPERTIES:
+            if name == topic:
+                return label
+        return topic
 
     def _textTopicFrame(self, topic: str) -> pl.DataFrame | None:
         docsSections = self.docs.sections
@@ -1802,6 +2142,38 @@ class Company:
         if topic in {"BS", "IS", "CIS", "CF", "SCE"}:
             return self._applyPeriodFilter(getattr(self, topic), period)
 
+        if topic == "ratios":
+            ratioSeries = self._ratioSeries()
+            if ratioSeries is None:
+                return None
+            series, years = ratioSeries
+            templateKey = _ratioTemplateKeyForIndustryGroup(getattr(self.sector, "industryGroup", None))
+            fieldNames = _RATIO_TEMPLATE_FIELDS.get(templateKey)
+            ratioFrame = _ratioSeriesToDataFrame(series, years, fieldNames=fieldNames)
+            return self._applyPeriodFilter(ratioFrame, period)
+
+        if topic in {"salesOrder", "riskDerivative", "segments", "rawMaterial", "costByNature"}:
+            if topic == "costByNature" and not self._hasSectionTitleHint("costByNature"):
+                return None
+            if raw:
+                subtopicFrame = self._sectionsSubtopicLong(topic)
+                if subtopicFrame is not None:
+                    return self._applyPeriodFilter(subtopicFrame, period)
+            else:
+                subtopicFrame = self._sectionsSubtopicWide(topic)
+                if subtopicFrame is not None:
+                    return self._applyPeriodFilter(subtopicFrame, period)
+            fallback_payload = {
+                "salesOrder": self._safePrimary("salesOrder"),
+                "riskDerivative": self._safePrimary("riskDerivative"),
+                "segments": self._safePrimary("segments"),
+                "rawMaterial": self._rawMaterialLegacy(),
+                "costByNature": self._safePrimary("costByNature") if self._hasDocsTopicHint("costByNature") else None,
+            }[topic]
+            if fallback_payload is not None:
+                return self._applyPeriodFilter(fallback_payload, period)
+            return None
+
         reportFrame = self._reportFrame(topic)
         if reportFrame is not None:
             return self._applyPeriodFilter(reportFrame, period)
@@ -1835,6 +2207,41 @@ class Company:
                 "selectedPayloadRef": None,
                 "availableSources": [],
                 "whySelected": "docs unavailable",
+            }
+        if topic == "ratios":
+            ratioSeries = self._ratioSeries()
+            templateKey = _ratioTemplateKeyForIndustryGroup(getattr(self.sector, "industryGroup", None))
+            rowCount = None
+            yearCount = None
+            coverage = "missing"
+            if ratioSeries is not None:
+                series, years = ratioSeries
+                fieldNames = _RATIO_TEMPLATE_FIELDS.get(templateKey)
+                ratioFrame = _ratioSeriesToDataFrame(series, years, fieldNames=fieldNames)
+                rowCount = None if ratioFrame is None else ratioFrame.height
+                yearCount = len(years)
+                if ratioFrame is not None and rowCount >= 30 and yearCount >= 5:
+                    coverage = "full"
+                elif ratioFrame is not None and rowCount > 0:
+                    coverage = "partial"
+            return {
+                "topic": topic,
+                "period": period,
+                "primarySource": "finance",
+                "fallbackSources": [],
+                "selectedPayloadRef": "finance:RATIO",
+                "availableSources": [] if ratioSeries is None else [{
+                    "source": "finance",
+                    "rows": 1,
+                    "payloadRef": "finance:RATIO",
+                    "summary": "annual ratio series" if templateKey is None else f"annual ratio series ({templateKey} template)",
+                    "priority": 300,
+                }],
+                "whySelected": "finance authoritative priority" if templateKey is None else f"finance authoritative priority with {templateKey} industry template",
+                "template": templateKey or "general",
+                "rowCount": rowCount,
+                "yearCount": yearCount,
+                "coverage": coverage,
             }
         return self._profileAccessor.trace(topic, period=period)
 
@@ -1990,11 +2397,21 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.common.finance.ratios import calcRatios
+        archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
         ts = self._getFinanceBuild("q", fsDivPref)
-        if ts is None:
-            return None
-        series, _ = ts
-        result = calcRatios(series)
+        result = None
+        if ts is not None:
+            series, _ = ts
+            result = calcRatios(series, archetypeOverride=archetypeOverride)
+
+        if _shouldFallbackToAnnualRatios(result, archetypeOverride):
+            annual = self._getFinanceBuild("y", fsDivPref)
+            if annual is not None:
+                annualSeries, _ = annual
+                annualResult = calcRatios(annualSeries, annual=True, archetypeOverride=archetypeOverride)
+                if _ratioResultHasHeadlineSignal(annualResult):
+                    result = annualResult
+
         self._cache[cacheKey] = result
         return result
 

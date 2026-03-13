@@ -114,6 +114,15 @@ def build_snapshot(company: Company) -> dict | None:
 	if ratios is None:
 		return None
 
+	isFinancial = False
+	sectorInfo = getattr(company, "sector", None)
+	if sectorInfo is not None:
+		try:
+			from dartlab.engines.sector.types import Sector
+			isFinancial = sectorInfo.sector == Sector.FINANCIALS
+		except (ImportError, AttributeError):
+			isFinancial = False
+
 	def _fmt(val, suffix=""):
 		if val is None:
 			return None
@@ -151,6 +160,8 @@ def build_snapshot(company: Company) -> dict | None:
 		return "danger"
 
 	items = []
+	roeGood, roeCaution = (8, 5) if isFinancial else (10, 5)
+	roaGood, roaCaution = (0.5, 0.2) if isFinancial else (5, 2)
 
 	if ratios.revenueTTM is not None:
 		items.append({"label": "매출(TTM)", "value": _fmt(ratios.revenueTTM), "status": None})
@@ -161,9 +172,9 @@ def build_snapshot(company: Company) -> dict | None:
 	if ratios.operatingMargin is not None:
 		items.append({"label": "영업이익률", "value": _pct(ratios.operatingMargin), "status": _judge_pct(ratios.operatingMargin, 10, 5)})
 	if ratios.roe is not None:
-		items.append({"label": "ROE", "value": _pct(ratios.roe), "status": _judge_pct(ratios.roe, 10, 5)})
+		items.append({"label": "ROE", "value": _pct(ratios.roe), "status": _judge_pct(ratios.roe, roeGood, roeCaution)})
 	if ratios.roa is not None:
-		items.append({"label": "ROA", "value": _pct(ratios.roa), "status": _judge_pct(ratios.roa, 5, 2)})
+		items.append({"label": "ROA", "value": _pct(ratios.roa), "status": _judge_pct(ratios.roa, roaGood, roaCaution)})
 	if ratios.debtRatio is not None:
 		items.append({"label": "부채비율", "value": _pct(ratios.debtRatio), "status": _judge_pct_inv(ratios.debtRatio, 100, 200)})
 	if ratios.currentRatio is not None:

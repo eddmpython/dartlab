@@ -26,6 +26,25 @@ if TYPE_CHECKING:
 SeriesPair = tuple[dict, list[str]]
 
 
+def _ratio_archetype_override(company: Company | None) -> str | None:
+    if company is None:
+        return None
+
+    try:
+        from dartlab.engines.sector.types import IndustryGroup
+    except ImportError:
+        return None
+
+    sectorInfo = getattr(company, "sector", None)
+    industryGroup = getattr(sectorInfo, "industryGroup", None)
+    mapping = {
+        IndustryGroup.BANK: "bank",
+        IndustryGroup.INSURANCE: "insurance",
+        IndustryGroup.DIVERSIFIED_FINANCIALS: "securities",
+    }
+    return mapping.get(industryGroup)
+
+
 def analyze(
     stockCode: str,
     company: Company | None = None,
@@ -61,7 +80,7 @@ def analyze(
 
     qSeries, qPeriods = qSeriesPair
     aSeries, aYears = aSeriesPair
-    ratios = calcRatios(aSeries)
+    ratios = calcRatios(aSeries, archetypeOverride=_ratio_archetype_override(company))
 
     if company is None and corpName is None:
         try:

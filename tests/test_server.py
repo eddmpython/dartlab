@@ -519,6 +519,34 @@ class TestChatUtils:
         assert isinstance(prompt, str)
         assert len(prompt) > 100
 
+    def test_build_snapshot_relaxes_financial_thresholds(self):
+        from dartlab.server.chat import build_snapshot
+        from dartlab.engines.sector.types import IndustryGroup, Sector, SectorInfo
+
+        class DummyRatios:
+            revenueTTM = None
+            operatingIncomeTTM = None
+            netIncomeTTM = None
+            operatingMargin = None
+            roe = 8.3
+            roa = 0.6
+            debtRatio = None
+            currentRatio = None
+            fcf = None
+            revenueGrowth3Y = None
+            warnings = []
+
+        class DummyCompany:
+            ratios = DummyRatios()
+            sector = SectorInfo(Sector.FINANCIALS, IndustryGroup.BANK, 1.0, "test")
+            annual = None
+
+        snapshot = build_snapshot(DummyCompany())
+        assert snapshot is not None
+        items = {item["label"]: item for item in snapshot["items"]}
+        assert items["ROE"]["status"] == "good"
+        assert items["ROA"]["status"] == "good"
+
 
 class TestCompanyCache:
     def test_put_and_get(self):

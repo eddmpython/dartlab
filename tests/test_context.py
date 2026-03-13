@@ -4,11 +4,13 @@ import polars as pl
 
 from dartlab.core.registry import ColumnMeta, DataEntry
 from dartlab.engines.ai.context import (
+	_build_ratios_section,
 	_compute_derived_metrics,
 	_resolve_tables,
 	df_to_markdown,
 )
 from dartlab.engines.ai.metadata import ModuleMeta
+from dartlab.engines.sector.types import IndustryGroup, Sector, SectorInfo
 
 # ══════════════════════════════════════
 # df_to_markdown
@@ -144,6 +146,35 @@ class TestComputeDerivedMetrics:
 		})
 		result = _compute_derived_metrics("IS", df)
 		assert result is None
+
+
+class TestBuildRatiosSection:
+	def test_financial_thresholds_are_relaxed(self):
+		class DummyRatios:
+			roe = 8.3
+			roa = 0.6
+			operatingMargin = None
+			netMargin = None
+			debtRatio = None
+			currentRatio = None
+			equityRatio = 8.1
+			netDebt = None
+			netDebtRatio = None
+			fcf = None
+			revenueGrowth3Y = None
+			revenueTTM = None
+			operatingIncomeTTM = None
+			netIncomeTTM = None
+			warnings = []
+
+		class DummyCompany:
+			ratios = DummyRatios()
+			sector = SectorInfo(Sector.FINANCIALS, IndustryGroup.BANK, 1.0, "test")
+
+		result = _build_ratios_section(DummyCompany())
+		assert result is not None
+		assert "| ROE | 8.3% | 양호 |" in result
+		assert "| ROA | 0.6% | 양호 |" in result
 
 
 # ══════════════════════════════════════

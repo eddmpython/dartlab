@@ -35,8 +35,20 @@ class TestCompany:
         with pytest.raises(ValueError):
             Company("존재하지않는회사명zzz")
 
+    def test_alphanumeric_dart_codes_are_routed_and_resolved(self):
+        from dartlab import Company
+        from dartlab.engines.dart.company import Company as DartCompany
+
+        c = Company("0009K0")
+        assert isinstance(c, DartCompany)
+        assert c.stockCode == "0009K0"
+        assert DartCompany.resolve("0009K0") == "0009K0"
+        payload = c.show("rawMaterial")
+        assert payload is None or isinstance(payload, pl.DataFrame)
+
     def test_source_namespaces(self):
         from dartlab import Company
+        from dartlab.engines.dart.report.types import PREFERRED_QUARTER
 
         c = Company(SAMSUNG)
         assert c.docs is not None
@@ -46,6 +58,10 @@ class TestCompany:
         assert c.profile is not None
         assert isinstance(c.index, pl.DataFrame)
         assert len(c.report.apiTypes) == 28
+        status = c.report.status()
+        assert isinstance(status, pl.DataFrame)
+        assert set(["apiType", "label", "preferredQuarter", "isPivot", "available"]).issubset(status.columns)
+        assert status.filter(pl.col("apiType") == "dividend").item(0, "preferredQuarter") == PREFERRED_QUARTER["dividend"]
 
     def test_profile_sections_matches_company_sections(self):
         from dartlab import Company
@@ -123,6 +139,12 @@ class TestCompany:
         assert c.profile.trace("dividend")["primarySource"] == "report"
         assert c.profile.trace("BS")["primarySource"] == "finance"
         assert c.profile.trace("CIS")["primarySource"] == "finance"
+        ratioTrace = c.trace("ratios")
+        assert ratioTrace["primarySource"] == "finance"
+        assert ratioTrace["template"] == "general"
+        assert ratioTrace["coverage"] in {"full", "partial"}
+        assert ratioTrace["rowCount"] is not None
+        assert ratioTrace["yearCount"] is not None
 
     def test_board_and_profile_are_ordered_topic_views(self):
         from dartlab import Company
@@ -140,10 +162,76 @@ class TestCompany:
 
         c = Company(SAMSUNG)
         assert "BS" in c.topics
+        assert "ratios" in c.topics
         assert isinstance(c.show("BS"), pl.DataFrame)
         assert isinstance(c.show("BS", raw=True), pl.DataFrame)
+        assert isinstance(c.show("ratios"), pl.DataFrame)
         assert isinstance(c.show("dividend"), pl.DataFrame)
         assert isinstance(c.show("riskDerivative", raw=False), pl.DataFrame)
+
+    def test_sections_based_table_topics_are_exposed_as_dataframes(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        sales = c.show("salesOrder")
+        risk = c.show("riskDerivative")
+        segments = c.show("segments")
+        raw_material = c.show("rawMaterial")
+        cost_by_nature = c.show("costByNature")
+        assert isinstance(sales, pl.DataFrame)
+        assert isinstance(risk, pl.DataFrame)
+        assert isinstance(segments, pl.DataFrame)
+        assert isinstance(raw_material, pl.DataFrame)
+        assert isinstance(cost_by_nature, pl.DataFrame)
+        assert "subtopic" in sales.columns
+        assert "subtopic" in risk.columns
+        assert "subtopic" in segments.columns
+        assert "subtopic" in raw_material.columns
+        assert "subtopic" in cost_by_nature.columns or "account" in cost_by_nature.columns
+
+    def test_sections_based_table_topics_support_raw_long_view_and_docs_subtables(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        sales_raw = c.show("salesOrder", raw=True)
+        sales_docs = c.docs.subtables("salesOrder")
+        risk_raw = c.docs.subtables("riskDerivative", raw=True)
+        cost_docs = c.docs.subtables("costByNature")
+
+        assert isinstance(sales_raw, pl.DataFrame)
+        assert isinstance(sales_docs, pl.DataFrame)
+        assert isinstance(risk_raw, pl.DataFrame)
+        assert cost_docs is None or isinstance(cost_docs, pl.DataFrame)
+        assert "subtopic" in sales_raw.columns
+        assert "tableText" in sales_raw.columns
+        assert "subtopic" in sales_docs.columns
+        assert "subtopic" in risk_raw.columns
+
+    def test_report_result_surface_is_unified(self):
+        from dartlab import Company
+        from dartlab.engines.dart.report.types import ReportResult
+
+        c = Company(SAMSUNG)
+        dividend = c.report.result("dividend")
+        treasury = c.report.result("treasuryStock")
+
+        assert dividend is not None
+        assert hasattr(dividend, "df")
+        assert isinstance(dividend.df, pl.DataFrame)
+
+        assert treasury is None or isinstance(treasury, ReportResult)
+        if treasury is not None:
+            assert isinstance(treasury.df, pl.DataFrame)
+
+    def test_index_includes_finance_ratio_series(self):
+        import dartlab
+
+        c = dartlab.Company(SAMSUNG)
+        ratios = c.index.filter(pl.col("topic") == "ratios")
+        assert ratios.height == 1
+        assert ratios.item(0, "chapter") == "III. 재무에 관한 사항"
+        assert ratios.item(0, "source") == "finance"
+        assert ratios.item(0, "label") == "재무비율"
 
     def test_public_index_show_trace_surface(self):
         import dartlab

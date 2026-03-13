@@ -279,6 +279,15 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
 	if ratios is None:
 		return None
 
+	isFinancial = False
+	sectorInfo = getattr(company, "sector", None)
+	if sectorInfo is not None:
+		try:
+			from dartlab.engines.sector.types import Sector
+			isFinancial = sectorInfo.sector == Sector.FINANCIALS
+		except (ImportError, AttributeError):
+			isFinancial = False
+
 	lines = ["## 핵심 재무비율 (자동계산)"]
 	lines.append("| 지표 | 값 | 판단 |")
 	lines.append("| --- | --- | --- |")
@@ -301,10 +310,13 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
 			return "주의"
 		return "위험"
 
+	roeGood, roeCaution = (8, 5) if isFinancial else (10, 5)
+	roaGood, roaCaution = (0.5, 0.2) if isFinancial else (5, 2)
+
 	if ratios.roe is not None:
-		lines.append(f"| ROE | {ratios.roe:.1f}% | {_judge(ratios.roe, 10, 5)} |")
+		lines.append(f"| ROE | {ratios.roe:.1f}% | {_judge(ratios.roe, roeGood, roeCaution)} |")
 	if ratios.roa is not None:
-		lines.append(f"| ROA | {ratios.roa:.1f}% | {_judge(ratios.roa, 5, 2)} |")
+		lines.append(f"| ROA | {ratios.roa:.1f}% | {_judge(ratios.roa, roaGood, roaCaution)} |")
 	if ratios.operatingMargin is not None:
 		lines.append(f"| 영업이익률 | {ratios.operatingMargin:.1f}% | - |")
 	if not compact and ratios.netMargin is not None:
