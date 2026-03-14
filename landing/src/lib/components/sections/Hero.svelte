@@ -22,6 +22,7 @@
 				alt="DartLab mascot"
 				width="180"
 				height="180"
+				fetchpriority="high"
 				class="drop-shadow-[0_0_32px_rgba(234,70,71,0.35)] hover:drop-shadow-[0_0_48px_rgba(234,70,71,0.55)] transition-all duration-300 hover:scale-105 animate-float"
 			/>
 		</div>

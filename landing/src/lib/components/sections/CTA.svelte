@@ -18,6 +18,8 @@
 						alt="DartLab mascot"
 						width="120"
 						height="120"
+						loading="lazy"
+						decoding="async"
 						class="drop-shadow-[0_0_24px_rgba(234,70,71,0.35)] animate-float"
 					/>
 				</div>

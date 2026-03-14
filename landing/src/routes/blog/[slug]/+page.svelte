@@ -242,6 +242,8 @@
 						class="post-avatar"
 						width="96"
 						height="96"
+						loading="lazy"
+						decoding="async"
 					/>
 				{/if}
 				{#if postInfo}
