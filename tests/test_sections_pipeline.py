@@ -45,7 +45,8 @@ def test_sections_pipeline_preserves_markdown_tables_and_period_order(monkeypatc
     result = pipeline.sections("TEST")
 
     assert result is not None
-    assert result.columns[1:] == ["2024", "2024Q1"]
+    periodCols = [c for c in result.columns if c not in ("topic", "chapter")]
+    assert periodCols == ["2024Q1", "2024"]
     sales = result.filter(pl.col("topic") == "salesOrder").row(0, named=True)
     assert "| 구분 | 금액 |" in sales["2024"]
     assert "| 국내 | 25 |" in sales["2024Q1"]

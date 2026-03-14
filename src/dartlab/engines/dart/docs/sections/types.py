@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import re
 from dataclasses import dataclass, field
 
 import polars as pl
 
+from dartlab.engines.dart.docs.sections._common import basePath
 from dartlab.engines.dart.docs.sections.mapper import stripSectionPrefix
-
-_RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
-
-
-def _basePath(path: str) -> str:
-    return _RE_SPLIT_SUFFIX.sub("", path)
 
 
 def _leafTitle(path: str) -> str:
@@ -75,7 +69,7 @@ class YearSections:
         """텍스트 청크를 줄 단위 DataFrame으로 변환."""
         rows: list[dict] = []
         for c in self.textChunks():
-            bp = _basePath(c.path)
+            bp = basePath(c.path)
             for i, line in enumerate(c.textContent.split("\n")):
                 line = line.strip()
                 if not line:
@@ -91,7 +85,7 @@ class YearSections:
         """leaf title → 병합된 텍스트 dict."""
         merged: dict[str, list[str]] = {}
         for c in self.textChunks():
-            bp = _basePath(c.path)
+            bp = basePath(c.path)
             lt = _leafTitle(bp)
             if lt not in merged:
                 merged[lt] = []

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
+from functools import lru_cache
 from importlib.resources import as_file, files
 from pathlib import Path
 
@@ -21,6 +22,7 @@ def packagedArtifactPath(name: str) -> Iterator[Path]:
         yield path
 
 
+@lru_cache(maxsize=4)
 def loadProjectionRules(chapter: str) -> dict[str, list[str]]:
     filename = f"projectionRules.{chapter}.json"
     try:

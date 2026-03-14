@@ -12,6 +12,7 @@
         "BS":  {"total_assets": [v1, v2, ...], ...},
         "IS":  {"sales": [...], ...},
         "CF":  {"operating_cashflow": [...], ...},
+        "CI":  {"comprehensive_income": [...], ...},
     }
 
 periods = ["2020-Q1", "2020-Q2", ..., "2024-Q4"]
@@ -47,7 +48,7 @@ def buildTimeseries(
 
     Returns:
         (series, periods) 또는 None.
-        series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
+        series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}, "CI": {...}}
         periods = ["2020-Q1", "2020-Q2", ..., "2024-Q4"]
     """
     if edgarDir is None:
@@ -69,7 +70,7 @@ def buildTimeseries(
             tagToStmts[tag] = {_guessStmt(tag)}
 
     stmtDfs: dict[str, pl.DataFrame] = {}
-    for stmt in ["IS", "BS", "CF"]:
+    for stmt in ["IS", "BS", "CF", "CI"]:
         stmtTagList = [t for t, stmts in tagToStmts.items() if stmt in stmts]
         if not stmtTagList:
             continue
@@ -77,8 +78,8 @@ def buildTimeseries(
         if stmtDf.height > 0:
             stmtDfs[stmt] = stmtDf
 
-    series: dict[str, dict[str, dict[str, float]]] = {"BS": {}, "IS": {}, "CF": {}}
-    sidSource: dict[str, dict[str, dict[str, str]]] = {"BS": {}, "IS": {}, "CF": {}}
+    series: dict[str, dict[str, dict[str, float]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
+    sidSource: dict[str, dict[str, dict[str, str]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
     allPeriods: set[str] = set()
 
     for stmt, stmtDf in stmtDfs.items():
@@ -121,7 +122,7 @@ def buildTimeseries(
     nPeriods = len(periods)
     periodIdx = {p: i for i, p in enumerate(periods)}
 
-    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}}
+    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
     for stmt in series:
         for sid, pMap in series[stmt].items():
             vals: list[Optional[float]] = [None] * nPeriods
@@ -170,7 +171,7 @@ def buildAnnual(
     nYears = len(years)
     yearIdx = {y: i for i, y in enumerate(years)}
 
-    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}}
+    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
 
     for sjDiv in qSeries:
         for snakeId, vals in qSeries[sjDiv].items():

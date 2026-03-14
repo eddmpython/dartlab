@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 
+from dartlab.engines.dart.docs.sections._common import RE_SPLIT_SUFFIX
 from dartlab.engines.dart.docs.sections.artifacts import loadProjectionRules
-
-_RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
 _RE_MAJOR_HEADING = re.compile(r"^([가-힣])\.\s*(.+)$")
 _RE_TABLE_SEP = re.compile(r"^\|(?:\s*:?-{3,}:?\s*\|)+$")
 _CHAPTER_BY_MAJOR = {
@@ -77,7 +76,7 @@ def chapterFromMajorNum(majorNum: int) -> str | None:
 
 
 def baseChunkPath(path: str) -> str:
-    return _RE_SPLIT_SUFFIX.sub("", path)
+    return RE_SPLIT_SUFFIX.sub("", path)
 
 
 def chapterTeacherTopics(rows: list[dict[str, object]]) -> dict[str, set[str]]:

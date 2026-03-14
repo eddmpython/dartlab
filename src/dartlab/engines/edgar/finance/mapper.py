@@ -137,7 +137,7 @@ class EdgarMapper:
     @classmethod
     def classifyTagsByStmt(cls) -> dict[str, set[str]]:
         cls._ensureLoaded()
-        stmtTags: dict[str, set[str]] = {"IS": set(), "BS": set(), "CF": set()}
+        stmtTags: dict[str, set[str]] = {"IS": set(), "BS": set(), "CF": set(), "CI": set()}
         for acct in cls._accounts:
             stmt = acct["stmt"]
             if stmt in stmtTags:

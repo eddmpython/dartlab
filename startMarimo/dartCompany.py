@@ -1,4 +1,4 @@
-﻿import marimo
+import marimo
 
 __generated_with = "0.20.4"
 app = marimo.App(width="medium")
@@ -27,15 +27,21 @@ def _(c):
 
 @app.cell
 def _(c):
-    # topic을 기준으로 상세한데이터 확인
+    # topic으로 상세한데이터 확인
     c.show("companyOverview")
     return
 
 
 @app.cell
 def _(c):
+    c.show("companyHistory")
+    return
+
+
+@app.cell
+def _(c):
     # report 데이터 조회
-    c.show('audit')
+    c.show('nonAuditContract')
     return
 
 
@@ -60,5 +66,3 @@ def _():
 
 if __name__ == "__main__":
     app.run()
-
-

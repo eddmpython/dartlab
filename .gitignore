@@ -12,7 +12,7 @@ wheels/
 
 
 CLAUDE.md
-AGENT.md
+AGENTS.md
 .agent/
 .claude/
 # Data (available via gh release)

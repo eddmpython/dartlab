@@ -373,7 +373,7 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
     if topicBlocks is None or topicBlocks.is_empty():
         return pl.DataFrame(schema=schema)
 
-    from dartlab.engines.dart.docs.sections.views import sortPeriods
+    from dartlab.engines.dart.docs.sections import sortPeriods
 
     canonicalBlocks = [_canonicalBlockRecord(record) for record in topicBlocks.to_dicts()]
     periods = sortPeriods(sorted({block["period"] for block in canonicalBlocks}), descending=False)
@@ -452,7 +452,7 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
     result = pl.DataFrame(rows, schema=schema, strict=False)
     if result.is_empty():
         return result
-    from dartlab.engines.dart.docs.sections.views import sortPeriods
+    from dartlab.engines.dart.docs.sections import sortPeriods
     ordered = sortPeriods(result.get_column("period").to_list())
     orderMap = {period: idx for idx, period in enumerate(ordered)}
     return (
@@ -482,7 +482,7 @@ def _buildTopicEvidence(topicBlocks: pl.DataFrame | None, period: str) -> pl.Dat
     if topicBlocks is None or topicBlocks.is_empty():
         return pl.DataFrame(schema=schema)
 
-    from dartlab.engines.dart.docs.sections.views import sortPeriods
+    from dartlab.engines.dart.docs.sections import sortPeriods
 
     canonicalBlocks = [_canonicalBlockRecord(record) for record in topicBlocks.to_dicts()]
     periods = sortPeriods(sorted({block["period"] for block in canonicalBlocks}), descending=False)
@@ -784,6 +784,8 @@ def _sceToDataFrame(
     series: dict[str, dict[str, list]], years: list[str],
 ) -> pl.DataFrame | None:
     """SCE 연도별 시계열 → 항목 × 연도 컬럼 DataFrame."""
+    from dartlab.engines.dart.finance.sceMapper import CAUSE_LABELS, DETAIL_LABELS
+
     stmtData = series.get("SCE")
     if not stmtData:
         return None
@@ -791,7 +793,15 @@ def _sceToDataFrame(
     rows = []
     for item, values in stmtData.items():
         cause, _, detail = item.partition("__")
-        label = f"{cause} / {detail}" if detail else cause
+        causeKr = CAUSE_LABELS.get(cause)
+        if causeKr is None:
+            # other_파생금융상품평가손익 → 기타(파생금융상품평가손익)
+            baseCause, _, suffix = cause.partition("_")
+            baseKr = CAUSE_LABELS.get(baseCause, baseCause)
+            suffixKr = suffix.replace("_", " ") if suffix else ""
+            causeKr = f"{baseKr}({suffixKr})" if suffixKr else baseKr
+        detailKr = DETAIL_LABELS.get(detail, detail) if detail else ""
+        label = f"{causeKr} / {detailKr}" if detailKr else causeKr
         row = {
             "계정명": label,
             "_cause": cause,
@@ -1240,7 +1250,7 @@ class _ProfileAccessor:
 
         periodCols: list[str] = []
         if docsSections is not None:
-            periodCols.extend([c for c in docsSections.columns if c != "topic"])
+            periodCols.extend([c for c in docsSections.columns if _isPeriodColumn(c)])
         if facts is not None and not facts.is_empty():
             factPeriods = facts["period"].drop_nulls().unique().to_list()
             periodCols.extend(str(p) for p in factPeriods if p is not None)
@@ -1248,7 +1258,7 @@ class _ProfileAccessor:
         if not periodCols:
             return docsSections
 
-        from dartlab.engines.dart.docs.sections.views import sortPeriods
+        from dartlab.engines.dart.docs.sections import sortPeriods
         periodCols = sortPeriods(sorted(set(periodCols)))
 
         rowMap: dict[str, dict[str, Any]] = {}
@@ -1499,7 +1509,7 @@ class _ProfileAccessor:
         if docsSections is not None and topic in docsSections["topic"].to_list():
             row = docsSections.filter(pl.col("topic") == topic)
             if not row.is_empty():
-                periodCols = [c for c in docsSections.columns if c != "topic"]
+                periodCols = [c for c in docsSections.columns if _isPeriodColumn(c)]
                 if period is not None and period in periodCols:
                     value = row.item(0, period)
                     if value is not None:
@@ -2483,6 +2493,10 @@ class Company:
             "privateOfferingUsage": "X",
             "corporateBond": "X",
             "shortTermBond": "X",
+            "auditOpinion": "V",
+            "outsideDirector": "VI",
+            "executivePayByType": "VIII",
+            "executivePayTotal": "VIII",
         }
 
         table = self._profileTable()
@@ -2554,14 +2568,30 @@ class Company:
         if docsSections is not None and "topic" in docsSections.columns:
             topicFrame = docsSections.filter(pl.col("topic") == topic)
             if not topicFrame.is_empty():
-                return topicFrame
+                return self._unpivotTopicRow(topicFrame)
 
         profileSections = self._profileAccessor.sections
         if profileSections is not None and "topic" in profileSections.columns:
             topicFrame = profileSections.filter(pl.col("topic") == topic)
             if not topicFrame.is_empty():
-                return topicFrame
+                return self._unpivotTopicRow(topicFrame)
         return None
+
+    @staticmethod
+    def _unpivotTopicRow(topicFrame: pl.DataFrame) -> pl.DataFrame:
+        """topic × period 수평 행을 period(행) 세로로 전환."""
+        metaCols = {"chapter", "topic"}
+        periodCols = [c for c in topicFrame.columns if c not in metaCols]
+        chapter = topicFrame["chapter"][0] if "chapter" in topicFrame.columns else None
+        topic = topicFrame["topic"][0] if "topic" in topicFrame.columns else None
+        rows: list[dict[str, str | None]] = []
+        for col in periodCols:
+            val = topicFrame[col][0]
+            if val is not None:
+                rows.append({"chapter": chapter, "topic": topic, "period": col, "content": val})
+        if not rows:
+            return pl.DataFrame({"chapter": [], "topic": [], "period": [], "content": []})
+        return pl.DataFrame(rows)
 
     def _topicBlocks(self, topic: str) -> pl.DataFrame | None:
         blocks = self._retrievalBlocks()
@@ -2590,34 +2620,35 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    def _compressTopicFrame(self, df: pl.DataFrame | None) -> pl.DataFrame | None:
-        if df is None or df.is_empty():
-            return df
-        if "topic" not in df.columns or df.height != 1:
-            return df
-        topic = str(df.item(0, "topic"))
-        ledger = self._topicChangeLedger(topic)
-        if ledger is not None and not ledger.is_empty():
-            return ledger
-        return df
-
     def _reportFrame(self, topic: str) -> pl.DataFrame | None:
         if self.report is None:
             return None
         apiType = _REPORT_TOPIC_TO_API_TYPE.get(topic, topic)
         if apiType not in self.report.apiTypes:
             return None
-        return self.report.extractAnnual(apiType)
+        # pivot 5개는 toWide()로 사용자 친화적 테이블 반환
+        pivotName = apiType if apiType in _ReportAccessor._PIVOT_NAMES else topic
+        if pivotName in _ReportAccessor._PIVOT_NAMES:
+            result = getattr(self.report, pivotName, None)
+            if result is not None and hasattr(result, "toWide"):
+                wide = result.toWide()
+                if wide is not None:
+                    return wide
+        df = self.report.extractAnnual(apiType)
+        if df is None or df.is_empty():
+            return df
+        _META_COLS = {"stlm_dt", "apiType", "stockCode", "year", "quarter", "quarterNum"}
+        dropCols = [c for c in df.columns if c in _META_COLS]
+        if dropCols:
+            df = df.drop(dropCols)
+        return df
 
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
             return payload
 
         if period in payload.columns:
-            keepCols = []
-            for col in ("topic", "계정명"):
-                if col in payload.columns:
-                    keepCols.append(col)
+            keepCols = [c for c in payload.columns if not _isPeriodColumn(c)]
             keepCols.append(period)
             return payload.select(keepCols)
 
@@ -2677,8 +2708,7 @@ class Company:
 
         textFrame = self._textTopicFrame(topic)
         if textFrame is not None:
-            payload = textFrame if raw else self._compressTopicFrame(textFrame)
-            return self._applyPeriodFilter(payload, period)
+            return self._applyPeriodFilter(textFrame, period)
 
         if not self._hasDocs:
             return _noticeFrame(topic, "현재 사업보고서 부재")
@@ -2737,6 +2767,102 @@ class Company:
             }
         return self._profileAccessor.trace(topic, period=period)
 
+    def diff(
+        self,
+        topic: str | None = None,
+        fromPeriod: str | None = None,
+        toPeriod: str | None = None,
+    ) -> pl.DataFrame | None:
+        """기간간 텍스트 변경 비교.
+
+        사용법::
+
+            c.diff()                          # 전체 topic 변경 요약
+            c.diff("businessOverview")        # 특정 topic 변경 이력
+            c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
+        """
+        from dartlab.engines.dart.docs.sections.diff import sectionsDiff, topicDiff
+
+        docsSections = self.docs.sections
+        if docsSections is None:
+            return None
+
+        # 줄 단위 상세 diff (인터리빙 순서로 맥락 유지)
+        if topic is not None and fromPeriod is not None and toPeriod is not None:
+            result = topicDiff(docsSections, topic, fromPeriod, toPeriod)
+            if result is None:
+                return None
+            import difflib
+            filtered = docsSections.filter(pl.col("topic") == topic)
+            if filtered.height == 0:
+                return None
+            fromText = str(filtered.item(0, fromPeriod) or "")
+            toText = str(filtered.item(0, toPeriod) or "")
+            fromLines = fromText.splitlines()
+            toLines = toText.splitlines()
+            rows: list[dict[str, str | int]] = []
+            lineNo = 0
+            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+                None, fromLines, toLines,
+            ).get_opcodes():
+                if tag == "equal":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": " ", "text": line})
+                elif tag == "insert":
+                    for line in toLines[j1:j2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "+", "text": line})
+                elif tag == "delete":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "-", "text": line})
+                elif tag == "replace":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "-", "text": line})
+                    for line in toLines[j1:j2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "+", "text": line})
+            return pl.DataFrame(rows) if rows else None
+
+        diffResult = sectionsDiff(docsSections)
+
+        # 특정 topic 변경 이력
+        if topic is not None:
+            topicEntries = [e for e in diffResult.entries if e.topic == topic]
+            if not topicEntries:
+                return pl.DataFrame({
+                    "fromPeriod": [], "toPeriod": [],
+                    "status": [], "fromLen": [], "toLen": [],
+                    "delta": [], "deltaRate": [],
+                })
+            return pl.DataFrame([
+                {
+                    "fromPeriod": e.fromPeriod,
+                    "toPeriod": e.toPeriod,
+                    "status": e.status,
+                    "fromLen": e.fromLen,
+                    "toLen": e.toLen,
+                    "delta": e.toLen - e.fromLen,
+                    "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
+                }
+                for e in topicEntries
+            ])
+
+        # 전체 요약
+        return pl.DataFrame([
+            {
+                "chapter": s.chapter,
+                "topic": s.topic,
+                "periods": s.totalPeriods,
+                "changed": s.changedCount,
+                "stable": s.stableCount,
+                "changeRate": round(s.changeRate, 3),
+            }
+            for s in diffResult.summaries
+        ])
+
     @property
     def topics(self) -> list[str]:
         return list(self._boardTopics())
@@ -2781,8 +2907,139 @@ class Company:
 
     @property
     def index(self) -> pl.DataFrame:
-        """현재 공개 Company 구조 인덱스 DataFrame."""
-        return self.profile.index
+        """현재 공개 Company 구조 인덱스 DataFrame.
+
+        sections 메타데이터 + finance/report 존재 확인만으로 구성.
+        개별 파서를 호출하지 않아 빠르다 (lazy).
+        """
+        cacheKey = "_lazyIndex"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        rows: list[dict[str, Any]] = []
+
+        if not self._hasDocs:
+            rows.append({
+                "chapter": "안내",
+                "topic": "docsStatus",
+                "label": "사업보고서",
+                "kind": "notice",
+                "source": "docs",
+                "periods": "-",
+                "shape": "missing",
+                "preview": "현재 사업보고서 부재",
+                "_sortKey": (0, 0),
+            })
+
+        _STMT_ORDER = {"BS": 0, "IS": 1, "CIS": 2, "CF": 3, "SCE": 4}
+        for stmt in ("BS", "IS", "CIS", "CF", "SCE"):
+            df = getattr(self, stmt, None)
+            if df is None:
+                continue
+            periodCols = [c for c in df.columns if _isPeriodColumn(c)]
+            periods = f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
+            rows.append({
+                "chapter": _CHAPTER_TITLES.get("III", "III"),
+                "topic": stmt,
+                "label": self._topicLabel(stmt),
+                "kind": "finance",
+                "source": "finance",
+                "periods": periods,
+                "shape": _shapeString(df),
+                "preview": f"{df.height} accounts",
+                "_sortKey": (3, _STMT_ORDER[stmt]),
+            })
+
+        rsPair = self._ratioSeries() if self._hasFinance else None
+        if rsPair is not None:
+            series, years = rsPair
+            ratioData = series.get("RATIO", {})
+            from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+            metricCount = sum(
+                1 for _, fields in RATIO_CATEGORIES
+                for f in fields
+                if ratioData.get(f) and any(v is not None for v in ratioData[f])
+            )
+            periods = f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-")
+            rows.append({
+                "chapter": _CHAPTER_TITLES.get("III", "III"),
+                "topic": "ratios",
+                "label": "재무비율",
+                "kind": "finance",
+                "source": "finance",
+                "periods": periods,
+                "shape": f"{metricCount}x{len(years) + 2}",
+                "preview": f"{metricCount} metrics",
+                "_sortKey": (3, 5),
+            })
+
+        sec = self.docs.sections
+        if sec is not None and "topic" in sec.columns:
+            periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
+            periodRange = f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
+            hasChapterCol = "chapter" in sec.columns
+            for rowIdx, row in enumerate(sec.iter_rows(named=True)):
+                topic = row["topic"]
+                if not isinstance(topic, str) or not topic:
+                    continue
+                nonNull = sum(1 for c in periodCols if row.get(c) is not None)
+                preview = "-"
+                for col in periodCols:
+                    val = row.get(col)
+                    if val is not None:
+                        text = _normalizeTextCell(val)[:80]
+                        preview = f"{col}: {text}"
+                        break
+                chapter = row.get("chapter") if hasChapterCol else self._chapterForTopic(topic)
+                if not isinstance(chapter, str) or not chapter:
+                    chapter = self._chapterForTopic(topic)
+                chapterNum = _CHAPTER_ORDER.get(chapter, 12)
+                rows.append({
+                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                    "topic": topic,
+                    "label": self._topicLabel(topic),
+                    "kind": "docs",
+                    "source": "docs",
+                    "periods": periodRange,
+                    "shape": f"{nonNull}기간",
+                    "preview": preview,
+                    "_sortKey": (chapterNum, 100 + rowIdx),
+                })
+
+        if self._hasReport:
+            from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS
+            existingTopics = {r["topic"] for r in rows}
+            for rIdx, apiType in enumerate(API_TYPES):
+                if apiType in existingTopics:
+                    continue
+                df = self.report.extract(apiType)
+                if df is None or df.is_empty():
+                    continue
+                chapter = self._chapterForTopic(apiType)
+                chapterNum = _CHAPTER_ORDER.get(chapter, 12)
+                rows.append({
+                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                    "topic": apiType,
+                    "label": API_TYPE_LABELS.get(apiType, apiType),
+                    "kind": "report",
+                    "source": "report",
+                    "periods": "-",
+                    "shape": _shapeString(df),
+                    "preview": API_TYPE_LABELS.get(apiType, apiType),
+                    "_sortKey": (chapterNum, 200 + rIdx),
+                })
+
+        rows.sort(key=lambda r: r.get("_sortKey", (99, 999)))
+        for r in rows:
+            r.pop("_sortKey", None)
+
+        df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
+            "chapter": pl.Utf8, "topic": pl.Utf8, "label": pl.Utf8,
+            "kind": pl.Utf8, "source": pl.Utf8,
+            "periods": pl.Utf8, "shape": pl.Utf8, "preview": pl.Utf8,
+        })
+        self._cache[cacheKey] = df
+        return df
 
     @property
     def board(self) -> pl.DataFrame:

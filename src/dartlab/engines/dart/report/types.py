@@ -103,6 +103,23 @@ STR_OVERRIDE_COLS: dict[str, set[str]] = {
     "dividend": {"se", "stock_knd"},
 }
 
+def _seriesToWide(
+    years: list[int],
+    metrics: list[tuple[str, list]],
+) -> pl.DataFrame | None:
+    """시계열 metric 리스트를 metric(행)×year(열) 와이드 DataFrame으로 변환."""
+    yearCols = [str(y) for y in years]
+    rows: list[dict[str, object]] = []
+    for label, series in metrics:
+        if not any(v is not None for v in series):
+            continue
+        row: dict[str, object] = {"metric": label}
+        for y, v in zip(yearCols, series):
+            row[y] = v
+        rows.append(row)
+    return pl.DataFrame(rows) if rows else None
+
+
 META_DROP_COLS = frozenset({
     "rcept_no", "corp_cls", "corp_code", "corp_name",
     "corpCode", "fsDiv", "collectStatus", "apiName",
@@ -180,6 +197,14 @@ class DividendResult:
     def nYears(self) -> int:
         return len(self.years)
 
+    def toWide(self) -> pl.DataFrame | None:
+        return _seriesToWide(self.years, [
+            ("주당현금배당금", self.dps),
+            ("현금배당수익률(%)", self.dividendYield),
+            ("주식배당", self.stockDividend),
+            ("주식배당수익률(%)", self.stockDividendYield),
+        ])
+
 
 @dataclass
 class EmployeeResult:
@@ -195,6 +220,13 @@ class EmployeeResult:
     def nYears(self) -> int:
         return len(self.years)
 
+    def toWide(self) -> pl.DataFrame | None:
+        return _seriesToWide(self.years, [
+            ("총직원수", self.totalEmployee),
+            ("월평균급여(천원)", self.avgMonthlySalary),
+            ("연간총급여(백만원)", self.totalAnnualSalary),
+        ])
+
 
 @dataclass
 class MajorHolderResult:
@@ -209,6 +241,11 @@ class MajorHolderResult:
     def nYears(self) -> int:
         return len(self.years)
 
+    def toWide(self) -> pl.DataFrame | None:
+        return _seriesToWide(self.years, [
+            ("최대주주총지분율(%)", self.totalShareRatio),
+        ])
+
 
 @dataclass
 class ExecutiveResult:
@@ -218,6 +255,14 @@ class ExecutiveResult:
     totalCount: int = 0
     registeredCount: int = 0
     outsideCount: int = 0
+
+    def toWide(self) -> pl.DataFrame | None:
+        rows = [
+            {"metric": "총임원수", "latest": self.totalCount},
+            {"metric": "사내이사", "latest": self.registeredCount},
+            {"metric": "사외이사", "latest": self.outsideCount},
+        ]
+        return pl.DataFrame(rows)
 
 
 @dataclass
@@ -232,3 +277,9 @@ class AuditResult:
     @property
     def nYears(self) -> int:
         return len(self.years)
+
+    def toWide(self) -> pl.DataFrame | None:
+        return _seriesToWide(self.years, [
+            ("감사의견", self.opinions),
+            ("감사법인", self.auditors),
+        ])

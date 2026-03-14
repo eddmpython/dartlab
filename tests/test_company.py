@@ -378,9 +378,10 @@ class TestCompany:
         c = dartlab.Company(SAMSUNG)
         assert isinstance(c.index, pl.DataFrame)
         assert c.index.height > 0
-        assert isinstance(c.show("companyOverview"), pl.DataFrame)
-        assert "changeType" in c.show("companyOverview").columns
-        assert "evidenceRef" in c.show("companyOverview").columns
+        overview = c.show("companyOverview")
+        assert isinstance(overview, pl.DataFrame)
+        assert "period" in overview.columns
+        assert "content" in overview.columns
         traced = c.trace("dividend")
         assert traced is not None
         assert traced["primarySource"] == "report"

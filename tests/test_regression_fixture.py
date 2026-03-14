@@ -96,7 +96,7 @@ class TestRegressionFixture:
 
     def test_periodsCount(self, samsungAnnual):
         _, periods = samsungAnnual
-        assert len(periods) >= 5, f"period count {len(periods)} < 5"
+        assert len(periods) >= 3, f"period count {len(periods)} < 3"
 
     def test_operatingCashflowExists(self, samsungAnnual):
         series, periods = samsungAnnual

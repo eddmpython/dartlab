@@ -885,3 +885,65 @@ def normalizeDetail(detail: str | None) -> str:
         return "other_equity"
 
     return f"unmapped:{last}"
+
+
+# ── 한글 표시 라벨 ──────────────────────────────────────────────
+
+CAUSE_LABELS: dict[str, str] = {
+    "beginning_equity": "기초자본",
+    "adjusted_beginning": "수정후기초",
+    "ending_equity": "기말자본",
+    "net_income": "당기순이익",
+    "dividends": "배당",
+    "stock_dividends": "주식배당",
+    "treasury_acquired": "자기주식취득",
+    "treasury_disposed": "자기주식처분",
+    "treasury_retired": "자기주식소각",
+    "treasury_change": "자기주식변동",
+    "capital_increase": "유상증자",
+    "capital_decrease": "감자",
+    "fx_translation": "해외사업환산",
+    "fvoci_valuation": "FVOCI평가",
+    "cashflow_hedge": "현금흐름위험회피",
+    "remeasurement_db": "확정급여재측정",
+    "associate_oci": "지분법자본변동",
+    "intragroup_tx": "연결범위내거래",
+    "consolidation_change": "연결범위변동",
+    "accounting_change": "회계정책변경",
+    "error_correction": "전기오류수정",
+    "stock_compensation": "주식보상",
+    "stock_options": "주식선택권",
+    "convertible_bond": "전환사채",
+    "hybrid_issued": "신종자본증권발행",
+    "hybrid_interest": "신종자본증권이자",
+    "total_comprehensive": "총포괄손익",
+    "reclassification": "재분류",
+    "nci_change": "비지배지분변동",
+    "equity_change_total": "자본변동합계",
+    "other_oci": "기타포괄손익",
+    "revaluation_surplus": "재평가잉여금",
+    "other": "기타",
+    "held_for_sale_reclass": "매각예정재분류",
+    "retained_earnings_appropriation": "이익잉여금처분",
+    "deficit_offset": "결손금보전",
+    "debt_equity_swap": "출자전환",
+    "merger": "합병",
+    "spinoff": "분할",
+}
+
+DETAIL_LABELS: dict[str, str] = {
+    "share_capital": "자본금",
+    "share_premium": "주식발행초과금",
+    "capital_surplus": "자본잉여금",
+    "retained_earnings": "이익잉여금",
+    "other_equity": "기타자본",
+    "accumulated_oci": "기타포괄손익누계액",
+    "treasury_stock": "자기주식",
+    "noncontrolling_interest": "비지배지분",
+    "owners_equity": "지배주주지분",
+    "total": "합계",
+    "total_separate": "합계(별도)",
+    "hybrid_capital": "신종자본증권",
+    "held_for_sale": "매각예정",
+    "revaluation_surplus": "재평가잉여금",
+}

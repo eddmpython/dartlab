@@ -13,13 +13,15 @@ from dartlab.engines.dart.docs.sections.runtime import (
     semanticTopicForBlock,
     semanticTopicForLabel,
 )
+from dartlab.engines.dart.docs.sections._common import (
+    periodOrderValue,
+    periodSortKey,
+    sortPeriods,
+)
 from dartlab.engines.dart.docs.sections.views import (
     blockPriority,
     isBoilerplateTopic,
     isPlaceholderBlock,
-    periodOrderValue,
-    periodSortKey,
-    sortPeriods,
     splitContextText,
     splitMarkdownTable,
 )
@@ -116,9 +118,9 @@ def test_semantic_topic_for_block_uses_table_row_labels():
     assert detailTopicForTopic("salesOrder") is None
 
 
-def test_period_sorting_orders_time_series_descending():
+def test_period_sorting_orders_time_series_ascending():
     periods = ["2024Q1", "2025", "2024", "2025Q3", "2025Q1", "2025Q2"]
-    assert sortPeriods(periods) == ["2025", "2025Q3", "2025Q2", "2025Q1", "2024", "2024Q1"]
+    assert sortPeriods(periods) == ["2024Q1", "2024", "2025Q1", "2025Q2", "2025Q3", "2025"]
     assert periodSortKey("2024") > periodSortKey("2024Q3")
     assert periodOrderValue("2025Q3") == 20253
 

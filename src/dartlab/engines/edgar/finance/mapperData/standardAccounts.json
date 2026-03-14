@@ -3,7 +3,7 @@
     "source": "US-GAAP Taxonomy + Custom Design",
     "description": "EDGAR 표준계정 코드 - US-GAAP 기반 (핵심 재무제표 본문 항목)",
     "version": "3.0.0",
-    "totalAccounts": 179,
+    "totalAccounts": 188,
     "boundary": "재무제표 본문(BS/IS/CF) + 자본변동표(EQ) + 포괄손익(CI) + 주석공시(NT) 전체 항목",
     "statementMapping": {
       "BS": "Balance Sheet",
@@ -2152,7 +2152,8 @@
       "line": 100,
       "parent": null,
       "commonTags": [
-        "OtherComprehensiveIncomeLossNetOfTaxPeriodIncreaseDecrease"
+        "OtherComprehensiveIncomeLossNetOfTaxPeriodIncreaseDecrease",
+        "OtherComprehensiveIncomeLossNetOfTax"
       ]
     },
     {
@@ -2522,6 +2523,117 @@
         "StockIssuedDuringPeriodSharesEmployeeBenefitPlan",
         "MinorityInterestOwnershipPercentageByParent",
         "IncreaseDecreaseInCustomerDeposits"
+      ]
+    },
+    {
+      "code": "CI002",
+      "stmt": "CI",
+      "snakeId": "comprehensive_income",
+      "korName": "포괄손익",
+      "engName": "Comprehensive Income Net of Tax",
+      "level": 1,
+      "line": 90,
+      "parent": null,
+      "commonTags": [
+        "ComprehensiveIncomeNetOfTax",
+        "ComprehensiveIncomeNetOfTaxIncludingPortionAttributableToNoncontrollingInterest",
+        "ComprehensiveIncomeNetOfTaxAttributableToNoncontrollingInterest"
+      ]
+    },
+    {
+      "code": "CI003",
+      "stmt": "CI",
+      "snakeId": "other_comprehensive_income_parent",
+      "korName": "지배기업 기타포괄손익",
+      "engName": "OCI Attributable to Parent",
+      "level": 1,
+      "line": 95,
+      "parent": null,
+      "commonTags": [
+        "OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent"
+      ]
+    },
+    {
+      "code": "CI013",
+      "stmt": "CI",
+      "snakeId": "oci_foreign_currency",
+      "korName": "외화환산손익",
+      "engName": "OCI Foreign Currency Translation",
+      "level": 2,
+      "line": 140,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossForeignCurrencyTransactionAndTranslationAdjustmentNetOfTax",
+        "OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentNetOfTaxPeriodIncreaseDecrease"
+      ]
+    },
+    {
+      "code": "CI014",
+      "stmt": "CI",
+      "snakeId": "oci_afs_securities",
+      "korName": "매도가능증권 평가손익",
+      "engName": "OCI Available-for-Sale Securities",
+      "level": 2,
+      "line": 150,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossAvailableForSaleSecuritiesAdjustmentNetOfTax",
+        "OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodNetOfTax"
+      ]
+    },
+    {
+      "code": "CI015",
+      "stmt": "CI",
+      "snakeId": "oci_derivatives",
+      "korName": "파생상품 평가손익",
+      "engName": "OCI Derivatives Qualifying as Hedges",
+      "level": 2,
+      "line": 160,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossDerivativesQualifyingAsHedgesNetOfTax",
+        "OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodNetOfTax",
+        "OtherComprehensiveIncomeLossCashFlowHedgeGainLossAfterReclassificationAndTax"
+      ]
+    },
+    {
+      "code": "CI016",
+      "stmt": "CI",
+      "snakeId": "oci_reclassification_afs",
+      "korName": "매도가능증권 재분류조정",
+      "engName": "OCI Reclassification for Sale of Securities",
+      "level": 2,
+      "line": 170,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossReclassificationAdjustmentFromAOCIForSaleOfSecuritiesNetOfTax"
+      ]
+    },
+    {
+      "code": "CI017",
+      "stmt": "CI",
+      "snakeId": "oci_reclassification_derivatives",
+      "korName": "파생상품 재분류조정",
+      "engName": "OCI Reclassification on Derivatives",
+      "level": 2,
+      "line": 180,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossReclassificationAdjustmentFromAOCIOnDerivativesNetOfTax",
+        "OtherComprehensiveIncomeLossCashFlowHedgeGainLossReclassificationAfterTax"
+      ]
+    },
+    {
+      "code": "CI018",
+      "stmt": "CI",
+      "snakeId": "oci_tax",
+      "korName": "기타포괄손익 세효과",
+      "engName": "OCI Tax",
+      "level": 2,
+      "line": 190,
+      "parent": "total_other_comprehensive_income",
+      "commonTags": [
+        "OtherComprehensiveIncomeLossTax"
       ]
     }
   ]

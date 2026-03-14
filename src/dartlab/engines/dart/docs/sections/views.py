@@ -7,44 +7,19 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
+from dartlab.engines.dart.docs.sections._common import (
+    periodOrderValue,
+    sortPeriods,
+)
 from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.engines.dart.docs.sections.pipeline import iterPeriodSubsets
 from dartlab.engines.dart.docs.sections.runtime import (
     detailTopicForBlock,
     semanticTopicForBlock,
 )
 
-REPORT_KINDS = [
-    ("annual", ""),
-    ("Q1", "Q1"),
-    ("semi", "Q2"),
-    ("Q3", "Q3"),
-]
 RE_MAJOR = re.compile(r"^([가-힣])\.\s*(.+)$")
 RE_MINOR = re.compile(r"^\((\d+)\)\s*(.+)$")
-
-
-def periodSortKey(period: str) -> tuple[int, int]:
-    value = str(period)
-    if "Q" in value:
-        return int(value[:4]), int(value[-1])
-    return int(value), 4
-
-
-def sortPeriods(periods: list[str], *, descending: bool = True) -> list[str]:
-    return sorted(periods, key=periodSortKey, reverse=descending)
-
-
-def periodOrderValue(period: str) -> int:
-    year, slot = periodSortKey(period)
-    return year * 10 + slot
-
-
-def contentCol(df: pl.DataFrame) -> str:
-    if "section_content" in df.columns:
-        return "section_content"
-    return "content"
 
 
 def normalizeTitle(title: str) -> str:
@@ -116,46 +91,29 @@ def classifyContent(content: str) -> tuple[int, int, int]:
 
 
 def buildMarkdownBlocks(stockCode: str) -> pl.DataFrame:
-    df = loadData(stockCode)
-    ccol = contentCol(df)
-    years = sorted({str(year) for year in df.get_column("year").to_list()}, reverse=True)
     rows: list[dict[str, object]] = []
 
-    for year in years:
-        for reportKind, suffix in REPORT_KINDS:
-            period = f"{year}{suffix}"
-            report = selectReport(df, year, reportKind=reportKind)
-            if report is None or ccol not in report.columns:
+    for period, _reportKind, ccol, subset in iterPeriodSubsets(stockCode):
+        for record in subset.to_dicts():
+            rawTitle = normalizeTitle(str(record["section_title"] or ""))
+            if not rawTitle:
                 continue
-
-            subset = (
-                report.select(["section_order", "section_title", ccol])
-                .filter(pl.col(ccol).is_not_null() & (pl.col(ccol).str.len_chars() > 0))
-                .sort("section_order")
+            content = str(record[ccol] or "")
+            textLines, tableLines, headingLines = classifyContent(content)
+            rows.append(
+                {
+                    "stockCode": stockCode,
+                    "period": period,
+                    "periodOrder": periodOrderValue(period),
+                    "sectionOrder": int(record["section_order"]),
+                    "rawTitle": rawTitle,
+                    "topic": mapSectionTitle(rawTitle),
+                    "rawMarkdown": content,
+                    "textLines": textLines,
+                    "tableLines": tableLines,
+                    "headingLines": headingLines,
+                }
             )
-            if subset.height == 0:
-                continue
-
-            for record in subset.to_dicts():
-                rawTitle = normalizeTitle(str(record["section_title"] or ""))
-                if not rawTitle:
-                    continue
-                content = str(record[ccol] or "")
-                textLines, tableLines, headingLines = classifyContent(content)
-                rows.append(
-                    {
-                        "stockCode": stockCode,
-                        "period": period,
-                        "periodOrder": periodOrderValue(period),
-                        "sectionOrder": int(record["section_order"]),
-                        "rawTitle": rawTitle,
-                        "topic": mapSectionTitle(rawTitle),
-                        "rawMarkdown": content,
-                        "textLines": textLines,
-                        "tableLines": tableLines,
-                        "headingLines": headingLines,
-                    }
-                )
 
     return pl.DataFrame(rows)
 
@@ -174,7 +132,7 @@ def buildMarkdownWide(blocks: pl.DataFrame) -> pl.DataFrame:
         .sort(["firstOrder", "topic", "period"])
     )
 
-    periods = [period for period in sortPeriods(merged.get_column("period").unique().to_list())]
+    periods = sortPeriods(merged.get_column("period").unique().to_list())
     wide = merged.select(["topic", "period", "rawMarkdown"]).pivot(
         on="period", index="topic", values="rawMarkdown"
     )
@@ -259,68 +217,53 @@ def splitMarkdownBlocks(content: str) -> list[dict[str, object]]:
 
 
 def retrievalBlocks(stockCode: str) -> pl.DataFrame:
-    df = loadData(stockCode)
-    ccol = contentCol(df)
-    years = sorted({str(year) for year in df.get_column("year").to_list()}, reverse=True)
     rows: list[dict[str, object]] = []
 
-    for year in years:
-        for reportKind, suffix in REPORT_KINDS:
-            period = f"{year}{suffix}"
-            report = selectReport(df, year, reportKind=reportKind)
-            if report is None or ccol not in report.columns:
+    for period, _reportKind, ccol, subset in iterPeriodSubsets(stockCode):
+        for record in subset.to_dicts():
+            rawTitle = normalizeTitle(str(record["section_title"] or ""))
+            if not rawTitle:
                 continue
-            subset = (
-                report.select(["section_order", "section_title", ccol])
-                .filter(pl.col(ccol).is_not_null() & (pl.col(ccol).str.len_chars() > 0))
-                .sort("section_order")
-            )
-            if subset.height == 0:
-                continue
-            for record in subset.to_dicts():
-                rawTitle = normalizeTitle(str(record["section_title"] or ""))
-                if not rawTitle:
-                    continue
-                topic = mapSectionTitle(rawTitle)
-                content = str(record[ccol] or "")
-                for block in splitMarkdownBlocks(content):
-                    blockText = str(block["blockText"])
-                    blockLabel = str(block["blockLabel"])
-                    blockType = str(block["blockType"])
-                    semanticTopic = semanticTopicForBlock(topic, blockLabel, blockType, blockText)
-                    detailTopic = detailTopicForBlock(topic, rawTitle, blockLabel, blockType, blockText)
-                    boilerplate = isBoilerplateTopic(topic)
-                    placeholder = isPlaceholderBlock(blockText)
-                    cellKey = f"{stockCode}:{period}:{topic}"
-                    rows.append(
-                        {
-                            "stockCode": stockCode,
-                            "period": period,
-                            "periodOrder": periodOrderValue(period),
-                            "sectionOrder": int(record["section_order"]),
-                            "rawTitle": rawTitle,
-                            "topic": topic,
-                            "sourceTopic": rawTitle,
-                            "cellKey": cellKey,
-                            "blockIdx": int(block["blockIdx"]),
-                            "blockType": blockType,
-                            "blockLabel": blockLabel,
-                            "blockText": blockText,
-                            "chars": len(blockText),
-                            "tableLines": int(block["tableLines"]),
-                            "semanticTopic": semanticTopic,
-                            "detailTopic": detailTopic,
-                            "isBoilerplate": boilerplate,
-                            "isPlaceholder": placeholder,
-                            "blockPriority": blockPriority(
-                                blockType,
-                                semanticTopic,
-                                detailTopic,
-                                boilerplate,
-                                placeholder,
-                            ),
-                        }
-                    )
+            topic = mapSectionTitle(rawTitle)
+            content = str(record[ccol] or "")
+            for block in splitMarkdownBlocks(content):
+                blockText = str(block["blockText"])
+                blockLabel = str(block["blockLabel"])
+                blockType = str(block["blockType"])
+                semanticTopic = semanticTopicForBlock(topic, blockLabel, blockType, blockText)
+                detailTopic = detailTopicForBlock(topic, rawTitle, blockLabel, blockType, blockText)
+                boilerplate = isBoilerplateTopic(topic)
+                placeholder = isPlaceholderBlock(blockText)
+                cellKey = f"{stockCode}:{period}:{topic}"
+                rows.append(
+                    {
+                        "stockCode": stockCode,
+                        "period": period,
+                        "periodOrder": periodOrderValue(period),
+                        "sectionOrder": int(record["section_order"]),
+                        "rawTitle": rawTitle,
+                        "topic": topic,
+                        "sourceTopic": rawTitle,
+                        "cellKey": cellKey,
+                        "blockIdx": int(block["blockIdx"]),
+                        "blockType": blockType,
+                        "blockLabel": blockLabel,
+                        "blockText": blockText,
+                        "chars": len(blockText),
+                        "tableLines": int(block["tableLines"]),
+                        "semanticTopic": semanticTopic,
+                        "detailTopic": detailTopic,
+                        "isBoilerplate": boilerplate,
+                        "isPlaceholder": placeholder,
+                        "blockPriority": blockPriority(
+                            blockType,
+                            semanticTopic,
+                            detailTopic,
+                            boilerplate,
+                            placeholder,
+                        ),
+                    }
+                )
 
     df = pl.DataFrame(
         rows,

@@ -19,43 +19,33 @@
 - 대주주 / 특수관계인 / 임원 보수 / 주주환원 / 주총 / 지배구조
 - 생산능력 / 건설중인자산 / 감가상각
 - 매출채권 / 대손충당금
-- 파이썬 재무제표 분석 / OpenDART 주요사항보고서
+- 파이썬 재무제표 분석 / OpenDART 주요사항보고서 / XBRL·주석 다운로드
 
 반면 아래 축은 아직 비어 있거나 약하다.
 
-- 20-F, 13F 같은 개별 form 실전 해석
+- 13F 같은 개별 form 실전 해석
 - 우발부채, 소송 공시
 - 재고, 영업현금흐름, 손상차손 같은 후속 이익의 질
 - Risk Factors / MD&A 교차 읽기
-- XBRL / 원문 다운로드 파이프라인 실전 활용
+- corp_code부터 filing 원문까지 이어지는 DART 수집 설계
 
 ## 우선순위 큐
 
 ## 다음 생산 배치
 
-- `028 20-F와 10-K는 무엇이 다른가`
 - `029 Risk Factors와 MD&A를 같이 읽는 법`
 - `030 재고자산과 평가손실 읽는 법`
-- `031 XBRL 재무제표 원문과 주석 다운로드 파이프라인`
+- `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`
 
 준비 문서:
 
 - `blog/_reference/WRITING_QUEUE.md`
+- `blog/_reference/028-031-writing-pack.md`
 - `blog/_reference/017-020-source-checklist.md`
 
 ### 1순위: 바로 써야 하는 주제
 
-#### 1. 20-F와 10-K는 무엇이 다른가
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `edgar-reading`
-- 검색 의도:
-  - `20-f 10-k 차이`
-  - `fpi sec 공시`
-- 핵심:
-  - FPI, 6-K, 업데이트 리듬, IFRS/US GAAP 차이
-
-#### 2. Risk Factors와 MD&A를 같이 읽는 법
+#### 1. Risk Factors와 MD&A를 같이 읽는 법
 
 - 카테고리: `02-report-reading`
 - 시리즈: `report-reading-foundations`
@@ -65,7 +55,7 @@
 - 핵심:
   - 리스크 항목과 경영진 설명을 분리하지 않고 같이 읽는다.
 
-#### 3. 재고자산과 평가손실 읽는 법
+#### 2. 재고자산과 평가손실 읽는 법
 
 - 카테고리: `03-financial-interpretation`
 - 시리즈: `working-capital-and-earnings-quality`
@@ -75,19 +65,19 @@
 - 핵심:
   - 수요 둔화, 원가 압력, 재고 축적, 평가손실 가능성
 
-#### 4. XBRL 재무제표 원문과 주석 다운로드 파이프라인
+#### 3. corp_code부터 filing 원문까지 DART 수집 파이프라인 설계
 
 - 카테고리: `04-data-automation`
 - 시리즈: `data-automation`
 - 검색 의도:
-  - `opendart xbrl`
-  - `주석 일괄다운로드`
+  - `dart corp_code`
+  - `opendart pipeline`
 - 핵심:
-  - JSON API, 원문, XBRL, 주석 다운로드를 한 파이프라인으로 연결한다.
+  - corp_code, 검색, 원문 파일, 접수번호 추적의 연결 구조
 
 ### 2순위: 블로그 깊이를 더 올리는 주제
 
-#### 5. EDGAR Next 이후 무엇이 달라졌나
+#### 4. EDGAR Next 이후 무엇이 달라졌나
 
 - 카테고리: `01-disclosure-systems`
 - 시리즈: `edgar-reading`
@@ -97,7 +87,7 @@
 - 핵심:
   - filer access, 계정 관리, 제출 프로세스 변화
 
-#### 6. 우발부채와 소송 공시 읽는 법
+#### 5. 우발부채와 소송 공시 읽는 법
 
 - 카테고리: `02-report-reading`
 - 시리즈: `audit-and-governance-reading`
@@ -107,7 +97,7 @@
 - 핵심:
   - 충당부채 전 단계 신호, 문구 강도, 손익 반영 시차
 
-#### 7. 영업현금흐름이 순이익을 부정할 때
+#### 6. 영업현금흐름이 순이익을 부정할 때
 
 - 카테고리: `03-financial-interpretation`
 - 시리즈: `working-capital-and-earnings-quality`
@@ -117,15 +107,15 @@
 - 핵심:
   - 운전자본, 일회성, 회수 지연, 선수금/매입채무 의존
 
-#### 8. corp_code부터 filing 원문까지 DART 수집 파이프라인 설계
+#### 7. EDGAR 원문 + JSON + XBRL을 같이 쓰는 수집 설계
 
 - 카테고리: `04-data-automation`
 - 시리즈: `data-automation`
 - 검색 의도:
-  - `dart corp_code`
-  - `opendart pipeline`
+  - `edgar json xbrl`
+  - `edgar filing pipeline`
 - 핵심:
-  - corp_code, 검색, 원문 파일, XBRL, 주석 다운로드의 연결 구조
+  - submissions JSON, filing 원문, XBRL 원문을 같이 쓰는 구조
 
 ## 카테고리별 운영 방향
 
@@ -133,9 +123,8 @@
 
 다음 순서로 간다.
 
-1. `20-F와 10-K는 무엇이 다른가`
-2. `EDGAR Next 이후 무엇이 달라졌나`
-3. `Form 13F를 어떻게 읽어야 하나`
+1. `EDGAR Next 이후 무엇이 달라졌나`
+2. `Form 13F를 어떻게 읽어야 하나`
 
 운영 원칙:
 
@@ -172,9 +161,8 @@
 
 다음 순서로 간다.
 
-1. `XBRL 재무제표 원문과 주석 다운로드 파이프라인`
-2. `corp_code부터 원문까지 DART 수집 구조`
-3. `EDGAR 원문 + JSON + XBRL을 같이 쓰는 수집 설계`
+1. `corp_code부터 원문까지 DART 수집 구조`
+2. `EDGAR 원문 + JSON + XBRL을 같이 쓰는 수집 설계`
 
 운영 원칙:
 
@@ -190,17 +178,16 @@
 - `report-reading-foundations` (5개)
 - `fixed-cost-and-capex` (3개)
 - `financial-context` (2개)
-- `data-automation` (2개)
+- `data-automation` (3개)
 - `working-capital-and-earnings-quality` (1개)
 - `audit-and-governance-reading` (1개)
 - `ownership-and-governance-reading` (6개)
 
 ## 다음 실제 작성 순서
 
-1. `028 20-F와 10-K는 무엇이 다른가`
-2. `029 Risk Factors와 MD&A를 같이 읽는 법`
-3. `030 재고자산과 평가손실 읽는 법`
-4. `031 XBRL 재무제표 원문과 주석 다운로드 파이프라인`
+1. `029 Risk Factors와 MD&A를 같이 읽는 법`
+2. `030 재고자산과 평가손실 읽는 법`
+3. `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`
 
 이 순서는 다음 기준으로 정했다.
 
@@ -255,7 +242,7 @@ DART / OpenDART:
 
 ## 제작 상태
 
-- 완료 (27개):
+- 완료 (28개):
   - `001` ~ `021`: 초기 배치 + 1차 확장
   - `022-major-shareholder-and-related-parties`
   - `023-executive-pay-disclosure`
@@ -263,8 +250,8 @@ DART / OpenDART:
   - `025-governance-red-flags`
   - `026-how-to-read-agm-notice`
   - `027-good-vs-risky-ownership`
+  - `028-opendart-xbrl-notes-pipeline`
 - 다음 후보:
-  - `028 20-F와 10-K는 무엇이 다른가`
   - `029 Risk Factors와 MD&A를 같이 읽는 법`
   - `030 재고자산과 평가손실 읽는 법`
-  - `031 XBRL 재무제표 원문과 주석 다운로드 파이프라인`
+  - `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`

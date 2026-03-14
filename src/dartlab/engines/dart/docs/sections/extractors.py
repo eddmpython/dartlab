@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.views import sortPeriods
+from dartlab.engines.dart.docs.sections._common import sortPeriods
 
 
 @dataclass(frozen=True)

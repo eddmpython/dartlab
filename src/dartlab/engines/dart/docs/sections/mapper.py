@@ -9,6 +9,7 @@ _INDUSTRY_PREFIX_RE = re.compile(r"^\([^)]*업\)")
 _MULTISPACE_RE = re.compile(r"\s+")
 _LEAF_PREFIX_RE = re.compile(r"^\s*(?:(?:\d+|[가-힣])[.)]\s*|\(\d+\)\s*|[①-⑳]\s*)+")
 _TRAILING_PUNCT_RE = re.compile(r"[-–—:：;,]+$")
+_ROMAN_PREFIX_RE = re.compile(r"^(?:X{0,3}(?:IX|IV|V?I{0,3}))[.\s]+")
 _PATTERN_MAPPINGS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^지적재산권보유현황\(.+\)$"), "intellectualProperty"),
     (re.compile(r"^연구개발실적\(.+\)$"), "majorContractsAndRnd"),
@@ -36,6 +37,7 @@ def normalizeSectionTitle(title: str) -> str:
     text = stripSectionPrefix(title)
     text = _INDUSTRY_PREFIX_RE.sub("", text)
     text = stripSectionPrefix(text)
+    text = _ROMAN_PREFIX_RE.sub("", text)
     text = text.replace("ㆍ", ",")
     text = text.replace("·", ",")
     text = _MULTISPACE_RE.sub("", text)

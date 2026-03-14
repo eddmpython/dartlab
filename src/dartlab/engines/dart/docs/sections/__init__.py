@@ -10,12 +10,12 @@ from dartlab.engines.dart.docs.sections.types import (
     SectionResult,
     YearSections,
 )
+from dartlab.engines.dart.docs.sections._common import sortPeriods
 from dartlab.engines.dart.docs.sections.views import (
     buildMarkdownBlocks,
     buildMarkdownWide,
     contextSlices,
     retrievalBlocks,
-    sortPeriods,
 )
 
 __all__ = [

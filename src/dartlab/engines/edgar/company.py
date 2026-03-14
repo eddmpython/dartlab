@@ -1,10 +1,10 @@
 """EDGAR 엔진 내부 Company 본체.
 
-DART Company와 동일한 4-namespace 구조를 제공한다.
+DART Company와 동일한 구조를 제공한다.
 
 - docs: sections 수평화 (topic × period), filings, show
-- finance: BS/IS/CF/timeseries/annual/ratios
-- profile: docs spine + finance merge (향후 확장)
+- finance: BS/IS/CF/CIS/timeseries/annual/ratios
+- 공개 인터페이스: index / show / trace
 
 사용법::
 
@@ -12,22 +12,105 @@ DART Company와 동일한 4-namespace 구조를 제공한다.
 
     c = Company("AAPL")
     c.corpName             # "Apple Inc."
-    c.docs.sections        # topic × period DataFrame
-    c.finance.BS           # 연도별 재무상태표
-    c.BS                   # finance.BS 바로가기
-    c.sections             # docs.sections 바로가기
-    c.show("10-K::item1Business")  # topic content 조회
+    c.index                # 수평화 보드 DataFrame
+    c.show("BS")           # 재무상태표 DataFrame
+    c.show("10-K::item1Business")  # topic content (str)
+    c.trace("BS")          # source provenance
+    c.docs.sections        # pure docs source
+    c.finance.BS           # finance.BS 바로가기
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 import polars as pl
 
 _log = logging.getLogger("dartlab.engines.edgar.company")
+
+_PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
+
+_FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
+
+_RATIO_FIELD_LABELS: dict[str, str] = {
+    "roe": "ROE (%)",
+    "roa": "ROA (%)",
+    "operatingMargin": "Operating Margin (%)",
+    "netMargin": "Net Margin (%)",
+    "grossMargin": "Gross Margin (%)",
+    "ebitdaMargin": "EBITDA Margin (%)",
+    "costOfSalesRatio": "COGS Ratio (%)",
+    "sgaRatio": "SG&A Ratio (%)",
+    "debtRatio": "Debt Ratio (%)",
+    "currentRatio": "Current Ratio (%)",
+    "quickRatio": "Quick Ratio (%)",
+    "equityRatio": "Equity Ratio (%)",
+    "interestCoverage": "Interest Coverage (x)",
+    "netDebtRatio": "Net Debt Ratio (%)",
+    "noncurrentRatio": "Non-current Ratio (%)",
+    "revenueGrowth": "Revenue YoY (%)",
+    "operatingProfitGrowth": "Operating Profit YoY (%)",
+    "netProfitGrowth": "Net Profit YoY (%)",
+    "assetGrowth": "Asset YoY (%)",
+    "equityGrowthRate": "Equity YoY (%)",
+    "totalAssetTurnover": "Asset Turnover (x)",
+    "inventoryTurnover": "Inventory Turnover (x)",
+    "receivablesTurnover": "Receivables Turnover (x)",
+    "payablesTurnover": "Payables Turnover (x)",
+    "fcf": "FCF",
+    "operatingCfMargin": "Operating CF Margin (%)",
+    "operatingCfToNetIncome": "Operating CF / Net Income (%)",
+    "capexRatio": "Capex Ratio (%)",
+    "dividendPayoutRatio": "Dividend Payout Ratio (%)",
+    "revenue": "Revenue",
+    "operatingProfit": "Operating Profit",
+    "netProfit": "Net Profit",
+    "totalAssets": "Total Assets",
+    "totalEquity": "Total Equity",
+    "operatingCashflow": "Operating Cashflow",
+}
+
+_RATIO_CATEGORY_LABELS: dict[str, str] = {
+    "profitability": "Profitability",
+    "stability": "Stability",
+    "growth": "Growth",
+    "efficiency": "Efficiency",
+    "cashflow": "Cashflow",
+    "absolute": "Absolute",
+}
+
+
+def _ratioSeriesToDataFrame(
+    series: dict[str, dict[str, list[Any | None]]], years: list[str],
+) -> pl.DataFrame | None:
+    ratioData = series.get("RATIO")
+    if not ratioData:
+        return None
+
+    from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+
+    rows: list[dict[str, Any]] = []
+    for category, fields in RATIO_CATEGORIES:
+        for fieldName in fields:
+            values = ratioData.get(fieldName)
+            if not values or not any(v is not None for v in values):
+                continue
+            row: dict[str, Any] = {
+                "category": _RATIO_CATEGORY_LABELS.get(category, category),
+                "metric": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
+                "_field": fieldName,
+            }
+            for idx, year in enumerate(years):
+                row[str(year)] = values[idx] if idx < len(values) else None
+            rows.append(row)
+
+    if not rows:
+        return None
+    df = pl.DataFrame(rows)
+    return df.drop("_field")
 
 
 class _DocsAccessor:
@@ -144,6 +227,10 @@ class _FinanceAccessor:
         return self._stmtDf("CF")
 
     @property
+    def CIS(self) -> pl.DataFrame | None:
+        return self._stmtDf("CI")
+
+    @property
     def ratios(self):
         if "_ratios" not in self._company._cache:
             from dartlab.engines.common.finance.ratios import calcRatios
@@ -183,6 +270,7 @@ class Company:
         c.finance.BS           # 연도별 재무상태표
         c.finance.IS           # 연도별 손익계산서
         c.finance.CF           # 연도별 현금흐름표
+        c.finance.CIS          # 연도별 포괄손익계산서
         c.finance.ratios       # 재무비율
         c.BS                   # finance.BS 바로가기
         c.sections             # docs.sections 바로가기
@@ -258,6 +346,10 @@ class Company:
         return self.finance.CF
 
     @property
+    def CIS(self) -> pl.DataFrame | None:
+        return self.finance.CIS
+
+    @property
     def sections(self) -> pl.DataFrame | None:
         return self.docs.sections
 
@@ -286,7 +378,204 @@ class Company:
                 )
         return self._cache["_insights"]
 
-    def show(self, topic: str, period: str | None = None) -> Any:
-        if topic in ("BS", "IS", "CF"):
-            return getattr(self.finance, topic)
-        return self.docs.show(topic, period)
+    def filings(self) -> pl.DataFrame | None:
+        return self.docs.filings()
+
+    @property
+    def topics(self) -> list[str]:
+        cacheKey = "_topics"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        ordered: list[str] = []
+        seen: set[str] = set()
+
+        for stmt in ("BS", "IS", "CF", "CIS"):
+            if getattr(self.finance, stmt) is not None:
+                ordered.append(stmt)
+                seen.add(stmt)
+
+        if self.finance.ratioSeries is not None and "ratios" not in seen:
+            ordered.append("ratios")
+            seen.add("ratios")
+
+        sec = self.docs.sections
+        if sec is not None:
+            for topic in sec["topic"].to_list():
+                if isinstance(topic, str) and topic not in seen:
+                    ordered.append(topic)
+                    seen.add(topic)
+
+        self._cache[cacheKey] = ordered
+        return ordered
+
+    def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> Any:
+        if topic in _FINANCE_TOPICS:
+            df = getattr(self.finance, topic)
+            return self._applyPeriodFilter(df, period)
+
+        if topic == "ratios":
+            rs = self.finance.ratioSeries
+            if rs is None:
+                return None
+            series, years = rs
+            df = _ratioSeriesToDataFrame(series, years)
+            return self._applyPeriodFilter(df, period)
+
+        content = self.docs.show(topic, period)
+        if content is not None:
+            return content
+
+        return None
+
+    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        if topic in _FINANCE_TOPICS:
+            df = getattr(self.finance, topic)
+            if df is None:
+                return None
+            return {
+                "topic": topic,
+                "period": period,
+                "primarySource": "finance",
+                "fallbackSources": [],
+                "selectedPayloadRef": f"finance:{topic}",
+                "availableSources": [{"source": "finance", "rows": df.height, "priority": 300}],
+                "whySelected": "finance authoritative",
+            }
+
+        if topic == "ratios":
+            rs = self.finance.ratioSeries
+            if rs is None:
+                return None
+            series, years = rs
+            df = _ratioSeriesToDataFrame(series, years)
+            rowCount = df.height if df is not None else None
+            yearCount = len(years)
+            if df is not None and rowCount >= 20 and yearCount >= 5:
+                coverage = "full"
+            elif df is not None and rowCount > 0:
+                coverage = "partial"
+            else:
+                coverage = "missing"
+            return {
+                "topic": topic,
+                "period": period,
+                "primarySource": "finance",
+                "fallbackSources": [],
+                "selectedPayloadRef": "finance:RATIO",
+                "availableSources": [{"source": "finance", "rows": 1, "priority": 300}],
+                "whySelected": "finance authoritative",
+                "rowCount": rowCount,
+                "yearCount": yearCount,
+                "coverage": coverage,
+            }
+
+        sec = self.docs.sections
+        if sec is not None and topic in sec["topic"].to_list():
+            return {
+                "topic": topic,
+                "period": period,
+                "primarySource": "docs",
+                "fallbackSources": [],
+                "selectedPayloadRef": f"docs:{topic}",
+                "availableSources": [{"source": "docs", "rows": 1, "priority": 100}],
+                "whySelected": "docs authoritative",
+            }
+
+        return None
+
+    @property
+    def index(self) -> pl.DataFrame:
+        cacheKey = "_index"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        rows: list[dict[str, Any]] = []
+        for topic in self.topics:
+            traced = self.trace(topic)
+            source = traced["primarySource"] if traced else None
+
+            if topic in _FINANCE_TOPICS:
+                df = getattr(self.finance, topic)
+                rows.append({
+                    "topic": topic,
+                    "kind": "finance",
+                    "source": source,
+                    "periods": self._periodsStr(df),
+                    "shape": self._shapeStr(df),
+                    "preview": self._previewFinance(df),
+                })
+            elif topic == "ratios":
+                rs = self.finance.ratioSeries
+                if rs is not None:
+                    _, years = rs
+                    df = _ratioSeriesToDataFrame(*rs)
+                    rows.append({
+                        "topic": topic,
+                        "kind": "finance",
+                        "source": source,
+                        "periods": f"{years[-1]}..{years[0]}" if len(years) > 1 else (years[0] if years else "-"),
+                        "shape": self._shapeStr(df),
+                        "preview": f"{df.height} metrics" if df is not None else "-",
+                    })
+            else:
+                sec = self.docs.sections
+                if sec is not None:
+                    topicRow = sec.filter(pl.col("topic") == topic)
+                    periodCols = [c for c in sec.columns if c != "topic"]
+                    if not topicRow.is_empty():
+                        nonNull = sum(1 for c in periodCols if topicRow[c][0] is not None)
+                        rows.append({
+                            "topic": topic,
+                            "kind": "docs",
+                            "source": source,
+                            "periods": f"{periodCols[-1]}..{periodCols[0]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-"),
+                            "shape": f"1x{nonNull}",
+                            "preview": self._previewDocsCell(topicRow, periodCols),
+                        })
+
+        df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
+            "topic": pl.Utf8, "kind": pl.Utf8, "source": pl.Utf8,
+            "periods": pl.Utf8, "shape": pl.Utf8, "preview": pl.Utf8,
+        })
+        self._cache[cacheKey] = df
+        return df
+
+    def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
+        if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
+            return payload
+        if period in payload.columns:
+            keepCols = [c for c in ("account", "category", "metric", "topic") if c in payload.columns]
+            keepCols.append(period)
+            return payload.select(keepCols)
+        return payload
+
+    @staticmethod
+    def _shapeStr(df: pl.DataFrame | None) -> str:
+        if df is None:
+            return "-"
+        return f"{df.height}x{df.width}"
+
+    @staticmethod
+    def _periodsStr(df: pl.DataFrame | None) -> str:
+        if df is None:
+            return "-"
+        periodCols = [c for c in df.columns if _PERIOD_COLUMN_RE.fullmatch(c)]
+        if not periodCols:
+            return "-"
+        return f"{periodCols[-1]}..{periodCols[0]}" if len(periodCols) > 1 else periodCols[0]
+
+    @staticmethod
+    def _previewFinance(df: pl.DataFrame | None) -> str:
+        if df is None or df.is_empty():
+            return "-"
+        return f"{df.height} accounts"
+
+    @staticmethod
+    def _previewDocsCell(topicRow: pl.DataFrame, periodCols: list[str]) -> str:
+        for col in periodCols:
+            val = topicRow[col][0]
+            if val is not None:
+                text = str(val).strip().replace("\n", " ")
+                return f"{col}: {text[:100]}" if len(text) > 100 else f"{col}: {text[:80]}"
+        return "-"

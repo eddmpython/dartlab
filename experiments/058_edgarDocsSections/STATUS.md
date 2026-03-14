@@ -34,6 +34,8 @@ c.profile.sections    # merged view (향후)
 | `002_docsNamespaceProto.py` | ✅ | EdgarDocsProto: sections/filings/show 동작 검증 |
 | `003_topicAlignment.py` | ✅ | 10-K/10-Q topic 정렬 + 의미적 대응 쌍 분석 |
 | `004_crossFormContent.py` | ✅ | 대응 쌍 content 길이 비교 |
+| `005_companyExtensionProto.py` | ✅ | Company 4-namespace 프로토타입 검증 |
+| `006_fullValidation.py` | ✅ | 패키지 반영 후 전종목 검증 (335개) |
 
 ## 실행 결과
 
@@ -70,3 +72,41 @@ content 길이 비교 (10-K vs 10-Q 대응 쌍):
 - **Controls**: 10-Q = 10-K × 0.19~0.68 — 분기는 간략
 - **Legal Proceedings**: 대체로 유사 길이
 - MSFT 이상치: item8FinancialStatements가 10-K에서 2,430 chars뿐 — 별도 exhibit 참조 구조
+
+### 005 완료 (2026-03-13)
+
+- _DocsAccessor + _FinanceAccessor + Company 루트 property 프로토타입
+- AAPL/MSFT/TSLA 전부 동작: docs.sections, finance.BS/IS/CF, show(), ratios, insights
+- 프로토타입 → 패키지 반영 완료
+
+### 006 완료 (2026-03-14, 335개)
+
+- **패키지 코드 전종목 검증: 335개 중 333개 성공, 에러 0**
+- CIK 미해석 2개만 (ticker→CIK 매핑 누락, EDGAR Company 자체 문제 아님)
+- 테스트: 669 passed, 2 failed (기존 DART 테스트, 이번 변경과 무관)
+
+## 최종 결과
+
+**EDGAR Company 4-namespace 구조 완성:**
+
+```python
+c = Company("AAPL")
+
+c.docs.sections              # 35 topics × 66 periods (2009~2026Q1)
+c.docs.filings()             # 69 filings
+c.docs.show("10-K::item1Business")  # 15,998 chars
+
+c.finance.BS                 # 57 accounts × 18 years
+c.finance.IS                 # 42 accounts × 18 years
+c.finance.CF                 # 47 accounts × 18 years
+c.finance.ratios             # RatioResult
+c.finance.ratioSeries        # 연도별 비율 시계열
+
+c.BS                         # finance.BS 바로가기
+c.sections                   # docs.sections 바로가기
+c.show("BS")                 # DataFrame
+c.show("10-K::item1Business")  # str
+
+c.ratios                     # 재무비율
+c.insights                   # 7영역 등급
+```

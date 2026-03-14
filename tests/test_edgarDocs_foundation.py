@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 FIXTURE_EDGAR_DOCS = FIXTURE_DIR / "AAPL.edgarDocs.parquet"
@@ -1188,3 +1189,127 @@ def test_priorityTickerCollection_load_completed_requires_existing_parquet(tmp_p
     (docs_dir / "AAPL.parquet").write_text("stub", encoding="utf-8")
     completed = module._load_completed(progress_path, docs_dir)
     assert completed == {"AAPL"}
+
+
+_HAS_EDGAR_TICKERS = (Path(__file__).resolve().parents[1] / "data" / "edgar" / "tickers.parquet").exists()
+_skipNoEdgarTickers = pytest.mark.skipif(
+    not _HAS_EDGAR_TICKERS,
+    reason="EDGAR tickers.parquet 없음",
+)
+
+
+@_skipNoEdgarTickers
+class TestEdgarCompanyInterface:
+    def test_index_returns_dataframe_with_required_columns(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        idx = c.index
+        assert isinstance(idx, pl.DataFrame)
+        assert idx.height > 0
+        assert set(["topic", "kind", "source", "periods", "shape", "preview"]).issubset(set(idx.columns))
+
+    def test_index_includes_finance_and_docs(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        idx = c.index
+        topics = idx["topic"].to_list()
+        assert "BS" in topics
+        assert "IS" in topics
+        assert "CF" in topics
+        assert "ratios" in topics
+        docTopics = [t for t in topics if "::" in t]
+        assert len(docTopics) > 0
+
+    def test_show_finance_returns_dataframe(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        for stmt in ("BS", "IS", "CF"):
+            df = c.show(stmt)
+            assert isinstance(df, pl.DataFrame)
+            assert df.height > 0
+
+    def test_show_ratios_returns_dataframe(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        df = c.show("ratios")
+        assert isinstance(df, pl.DataFrame)
+        assert "category" in df.columns
+        assert "metric" in df.columns
+
+    def test_show_docs_topic_returns_string(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        biz = c.show("10-K::item1Business")
+        assert isinstance(biz, str)
+        assert len(biz) > 0
+
+    def test_show_nonexistent_topic_returns_none(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        assert c.show("completelyFakeTopic") is None
+
+    def test_trace_finance_topic(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        traced = c.trace("BS")
+        assert traced is not None
+        assert traced["primarySource"] == "finance"
+        assert traced["topic"] == "BS"
+
+    def test_trace_ratios_topic(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        traced = c.trace("ratios")
+        assert traced is not None
+        assert traced["primarySource"] == "finance"
+        assert "rowCount" in traced
+        assert "yearCount" in traced
+        assert "coverage" in traced
+        assert traced["coverage"] in ("full", "partial", "missing")
+
+    def test_trace_docs_topic(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        traced = c.trace("10-K::item1Business")
+        assert traced is not None
+        assert traced["primarySource"] == "docs"
+
+    def test_trace_nonexistent_returns_none(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        assert c.trace("completelyFakeTopic") is None
+
+    def test_topics_list_is_ordered(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        topics = c.topics
+        assert isinstance(topics, list)
+        assert topics[:5] == ["BS", "IS", "CF", "CIS", "ratios"]
+
+    def test_show_with_period_filter(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        df = c.show("BS", period="2024")
+        assert isinstance(df, pl.DataFrame)
+        assert "2024" in df.columns
+        nonMeta = [col for col in df.columns if col != "account"]
+        assert len(nonMeta) == 1
+
+    def test_filings_returns_dataframe(self):
+        from dartlab.engines.edgar.company import Company
+
+        c = Company("AAPL")
+        f = c.filings()
+        assert f is None or isinstance(f, pl.DataFrame)
