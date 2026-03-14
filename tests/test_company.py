@@ -380,8 +380,8 @@ class TestCompany:
         assert c.index.height > 0
         overview = c.show("companyOverview")
         assert isinstance(overview, pl.DataFrame)
-        assert "period" in overview.columns
-        assert "content" in overview.columns
+        # table-heavy topic은 subtopic wide 수평화로 반환
+        assert "subtopic" in overview.columns or "period" in overview.columns
         traced = c.trace("dividend")
         assert traced is not None
         assert traced["primarySource"] == "report"

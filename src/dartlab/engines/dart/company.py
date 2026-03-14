@@ -99,6 +99,34 @@ _DOCS_TITLE_HINTS: dict[str, tuple[str, ...]] = {
     "tangibleAsset": ("유형자산",),
 }
 
+_TOPIC_LABELS: dict[str, str] = {
+    "businessOverview": "사업의 개요",
+    "businessStatus": "사업현황",
+    "consolidatedNotes": "연결재무제표 주석",
+    "consolidatedStatements": "연결재무제표",
+    "financialNotes": "재무제표 주석",
+    "financialStatements": "재무제표",
+    "financialSoundnessOtherReference": "재무건전성 기타참고",
+    "governanceOverview": "지배구조 개요",
+    "majorContractsAndRnd": "주요계약 및 R&D",
+    "mdna": "경영진단 및 분석의견",
+    "segmentFinancialSummary": "부문별 재무요약",
+    "investmentInOtherDetail": "타법인출자 상세",
+    "stockAdministration": "주식사무",
+    "stockPriceTrend": "주가 추이",
+    "appendixSchedule": "상세표",
+    "investorProtection": "투자자보호",
+    "disclosureChanges": "공시내용 변경",
+    "subsequentEvents": "후발사건",
+    "expertConfirmation": "전문가확인",
+    "subsidiaryDetail": "종속회사 상세",
+    "affiliateGroupDetail": "계열회사 상세",
+    "rndDetail": "연구개발 상세",
+    "otherReference": "기타참고사항",
+    "otherReferences": "기타참고사항",
+    "operatingFacilities": "생산설비",
+}
+
 
 def listExportModules() -> list[tuple[str, str]]:
     """Excel/export용 DART 공개 모듈 목록."""
@@ -2052,6 +2080,31 @@ class Company:
         result = self._topicSubtables(topic)
         return None if result is None else result.long
 
+    # subtopic 자동 수평화를 건너뛰는 topic (이미 다른 경로에서 처리되거나 subtopic 과다)
+    _AUTO_SUBTOPIC_SKIP: frozenset[str] = frozenset({
+        # 이미 명시적 subtopic 경로
+        "salesOrder", "riskDerivative", "segments", "rawMaterial", "costByNature",
+        # 재무제표 — finance 엔진이 authoritative
+        "BS", "IS", "CIS", "CF", "SCE", "ratios",
+        # fsSummary — subtopic 800+ (과다)
+        "fsSummary",
+        # 주석 — 너무 방대하여 subtopic 세분화 비효율
+        "consolidatedNotes", "financialNotes",
+    })
+
+    _AUTO_SUBTOPIC_MAX = 100  # subtopic이 이 수를 넘으면 text fallback
+
+    def _autoSubtopicWide(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
+        """table-heavy docs topic을 자동으로 subtopic wide 수평화."""
+        if topic in self._AUTO_SUBTOPIC_SKIP:
+            return None
+        result = self._topicSubtables(topic)
+        if result is None:
+            return None
+        if result.wide.height > self._AUTO_SUBTOPIC_MAX:
+            return None
+        return result.long if raw else result.wide
+
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
         try:
             payload = self._get_primary(name)
@@ -2555,6 +2608,8 @@ class Company:
             return "포괄손익계산서"
         if topic == "SCE":
             return "자본변동표"
+        if topic in _TOPIC_LABELS:
+            return _TOPIC_LABELS[topic]
         entry = _getEntry(topic)
         if entry is not None:
             return entry.label
@@ -2705,6 +2760,11 @@ class Company:
             from dartlab.engines.dart.docs.notes import _REGISTRY as _NOTES_REGISTRY
             if topic in _NOTES_REGISTRY:
                 return self._applyPeriodFilter(self.notes._get(topic), period)
+
+        # table-heavy docs topic → subtopic wide 수평화 자동 시도
+        tableWide = self._autoSubtopicWide(topic, raw=raw)
+        if tableWide is not None:
+            return self._applyPeriodFilter(tableWide, period)
 
         textFrame = self._textTopicFrame(topic)
         if textFrame is not None:
