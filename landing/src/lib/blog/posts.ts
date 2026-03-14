@@ -155,6 +155,27 @@ type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
 const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const svgAssets = import.meta.glob('@blog/**/assets/*.svg', { eager: false }) as Record<string, () => Promise<unknown>>;
+
+/** Build a map: post directory path → sorted list of SVG filenames */
+function buildAssetIndex(): Map<string, string[]> {
+	const index = new Map<string, string[]>();
+	for (const assetPath of Object.keys(svgAssets)) {
+		// assetPath: /blog/01-disclosure-systems/001-everything-about-dart/assets/001-disclosure-flow.svg
+		const match = assetPath.match(/^(\/blog\/[^/]+\/[^/]+)\/assets\/([^/]+\.svg)$/);
+		if (!match) continue;
+		const postDir = match[1]; // /blog/01-disclosure-systems/001-everything-about-dart
+		const fileName = match[2];
+		const list = index.get(postDir) ?? [];
+		list.push(fileName);
+		index.set(postDir, list);
+	}
+	// Sort each list so first SVG is deterministic
+	for (const list of index.values()) list.sort();
+	return index;
+}
+
+const assetIndex = buildAssetIndex();
 
 function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
 	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
@@ -228,8 +249,13 @@ function estimateReadingMinutes(rawMarkdown: string): number {
 	return Math.max(3, Math.ceil(tokenCount / 220));
 }
 
-function findPreviewAsset(_path: string): string | undefined {
-	return undefined;
+function findPreviewAsset(postPath: string): string | undefined {
+	// postPath: /blog/01-disclosure-systems/001-everything-about-dart/index.md
+	const postDir = postPath.replace(/\/index\.md$/, '');
+	const svgs = assetIndex.get(postDir);
+	if (!svgs || svgs.length === 0) return undefined;
+	// First SVG alphabetically → /blog/assets/{filename} (synced by syncBlogAssets)
+	return `/blog/assets/${svgs[0]}`;
 }
 
 export const posts: PostMeta[] = buildPosts();
