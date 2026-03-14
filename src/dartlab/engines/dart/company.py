@@ -3023,7 +3023,25 @@ class Company:
 
     def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         result = self._showCore(topic, period=period, raw=raw)
-        return self._trimOldPeriods(result)
+        result = self._trimOldPeriods(result)
+        if topic == "CF" and isinstance(result, pl.DataFrame) and "계정명" in result.columns:
+            result = self._cleanCfDataFrame(result)
+        return result
+
+    @staticmethod
+    def _cleanCfDataFrame(df: pl.DataFrame) -> pl.DataFrame:
+        """CF DataFrame 후처리: 잘못된 당기순이익·영문 계정명·all-null 행 제거."""
+        periodCols = [c for c in df.columns if _isPeriodColumn(c)]
+        if not periodCols:
+            return df
+        # 1) 당기순이익 행 제거 (CF에서 standalone 차분이 잘못됨, IS에서 봐야 함)
+        df = df.filter(~pl.col("계정명").is_in(["당기순이익", "법인세비용차감전순이익"]))
+        # 2) 영문 underscore 계정명 제거
+        df = df.filter(~pl.col("계정명").str.contains(r"^[a-z_]+$"))
+        # 3) all-null 행 제거 (모든 기간이 null인 행)
+        notAllNull = pl.any_horizontal([pl.col(c).is_not_null() for c in periodCols])
+        df = df.filter(notAllNull)
+        return df
 
     def _showCore(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         if topic == "docsStatus":
