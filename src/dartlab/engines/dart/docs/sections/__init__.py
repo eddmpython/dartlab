@@ -1,7 +1,9 @@
 """사업보고서 섹션 구조화 모듈."""
 
 from dartlab.engines.dart.docs.sections.extractors import (
+    ParsedSubtopicTable,
     TopicSubtables,
+    parseSubtopicTable,
     topicSubtables,
 )
 from dartlab.engines.dart.docs.sections.pipeline import sections
@@ -26,6 +28,8 @@ __all__ = [
     "buildMarkdownWide",
     "topicSubtables",
     "TopicSubtables",
+    "parseSubtopicTable",
+    "ParsedSubtopicTable",
     "sortPeriods",
     "SectionChunk",
     "SectionResult",

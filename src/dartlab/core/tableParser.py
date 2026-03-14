@@ -68,6 +68,12 @@ def detectUnit(content: str) -> float:
     return DEFAULT_UNIT_SCALE
 
 
+def detectUnitLabel(content: str) -> str | None:
+    """content에서 단위 원문 문자열 반환. 감지 실패 시 None."""
+    m = re.search(r"단위\s*[：:]\s*(백만원|천원|원)", content)
+    return m.group(1) if m else None
+
+
 def extractRawTables(content: str) -> list[dict]:
     """마크다운 테이블 파싱 (빈 셀 유지). 멀티레벨 헤더 처리에 필수."""
     tables = []

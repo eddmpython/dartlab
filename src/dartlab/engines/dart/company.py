@@ -2923,6 +2923,47 @@ class Company:
             for s in diffResult.summaries
         ])
 
+    def table(
+        self,
+        topic: str,
+        subtopic: str | None = None,
+        *,
+        numeric: bool = False,
+        period: str | None = None,
+    ) -> Any:
+        """subtopic wide 셀의 markdown table을 구조화 DataFrame으로 파싱.
+
+        Args:
+            topic: docs topic 이름
+            subtopic: 파싱할 subtopic 이름 (None이면 첫 번째 subtopic)
+            numeric: True이면 금액 문자열을 float로 변환
+            period: 기간 필터 (예: "2024")
+
+        Returns:
+            ParsedSubtopicTable 또는 파싱 불가 시 None
+
+        Example::
+
+            c.table("employee")                    # 첫 번째 subtopic
+            c.table("employee", "직원현황")         # 특정 subtopic
+            c.table("employee", numeric=True)       # 숫자 변환
+        """
+        result = self._topicSubtables(topic)
+        if result is None:
+            return None
+        from dartlab.engines.dart.docs.sections import parseSubtopicTable
+        parsed = parseSubtopicTable(result, subtopic, numeric=numeric)
+        if parsed is None:
+            return None
+        if period is not None and parsed.df is not None:
+            periodCols = [c for c in parsed.df.columns if c != "항목"]
+            matchedCols = [c for c in periodCols if period in c]
+            if matchedCols:
+                from dataclasses import replace
+                filteredDf = parsed.df.select(["항목", *matchedCols])
+                return replace(parsed, df=filteredDf)
+        return parsed
+
     @property
     def topics(self) -> list[str]:
         return list(self._boardTopics())

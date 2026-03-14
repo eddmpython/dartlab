@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 
 import polars as pl
 
@@ -157,3 +158,229 @@ def topicSubtables(blocks: pl.DataFrame | None, topic: str) -> TopicSubtables | 
     )
 
     return TopicSubtables(topic=topic, long=long_df, wide=wide_df, summary=summary_df)
+
+
+# ---------------------------------------------------------------------------
+# ParsedSubtopicTable — subtopic wide 셀의 markdown table → 구조화 DataFrame
+# ---------------------------------------------------------------------------
+
+_RE_NORMALIZE_KO = re.compile(r"(?<=[\uAC00-\uD7A3])\s+(?=[\uAC00-\uD7A3])")
+_RE_CURRENT_PERIOD = re.compile(r"(당기|당기말|당반기|당분기|현재|전체)")
+_RE_PREV_PERIOD = re.compile(r"(전기|전반기|전분기)")
+
+
+@dataclass(frozen=True)
+class ParsedSubtopicTable:
+    """subtopic wide 셀의 markdown table을 파싱한 결과."""
+
+    subtopic: str
+    df: pl.DataFrame
+    unit: str | None = None
+    pattern: str | None = None
+    parsedPeriods: list[str] = field(default_factory=list)
+    failedPeriods: list[str] = field(default_factory=list)
+
+
+def _normalizeName(name: str) -> str:
+    """항목명 정규화. 한글 사이 공백 제거."""
+    return _RE_NORMALIZE_KO.sub("", name.strip())
+
+
+def _pickValue(values: list[str]) -> str:
+    """값 리스트에서 대표값 선택. 마지막 유효 숫자를 사용."""
+    for v in reversed(values):
+        if v and v.strip() and v.strip() not in ("-", ""):
+            return v
+    return values[0] if values else ""
+
+
+def _isCurrentPeriod(period: str) -> bool:
+    """당기 계열 period인지 판정. 전기/전기말은 제외."""
+    if _RE_PREV_PERIOD.search(period):
+        return False
+    return bool(_RE_CURRENT_PERIOD.search(period))
+
+
+def _parseOneCellTable(
+    cellText: str,
+    *,
+    numeric: bool = False,
+) -> tuple[list[dict[str, str | float | None]], str | None, str | None]:
+    """단일 셀의 markdown table text → items 리스트.
+
+    Returns:
+        (items, unitLabel, pattern)
+        items: [{"name": str, "value": str|float|None}, ...]
+    """
+    from dartlab.core.tableParser import (
+        detectUnitLabel,
+        extractRawTables,
+        parseAmount,
+        parseNotesTable,
+    )
+
+    if not cellText or not cellText.strip():
+        return [], None, None
+
+    unitLabel = detectUnitLabel(cellText)
+
+    # parseNotesTable은 extractRawTables 내부 사용
+    parsed = parseNotesTable(cellText)
+    if parsed:
+        # 당기 블록 선택
+        currentBlock = None
+        for p in parsed:
+            if _isCurrentPeriod(p["period"]):
+                currentBlock = p
+                break
+        if currentBlock is None:
+            currentBlock = parsed[0]
+
+        items: list[dict[str, str | float | None]] = []
+        for item in currentBlock["items"]:
+            name = _normalizeName(item["name"])
+            if not name:
+                continue
+            rawVal = _pickValue(item["values"])
+            if numeric:
+                items.append({"name": name, "value": parseAmount(rawVal)})
+            else:
+                items.append({"name": name, "value": rawVal})
+        return items, unitLabel, currentBlock["pattern"]
+
+    # parseNotesTable 실패 시 extractRawTables fallback
+    tables = extractRawTables(cellText)
+    if not tables:
+        return [], unitLabel, None
+
+    items = []
+    for row in tables[0]["rows"]:
+        name = _normalizeName(row[0]) if row else ""
+        if not name:
+            continue
+        values = row[1:] if len(row) > 1 else []
+        rawVal = _pickValue(values) if values else ""
+        if numeric:
+            items.append({"name": name, "value": parseAmount(rawVal)})
+        else:
+            items.append({"name": name, "value": rawVal})
+    return items, unitLabel, "raw"
+
+
+def _mergeAcrossPeriods(
+    periodItems: dict[str, list[dict[str, str | float | None]]],
+    *,
+    numeric: bool = False,
+) -> pl.DataFrame | None:
+    """기간별 items를 합산하여 항목 × 기간 DataFrame 구축."""
+    if not periodItems:
+        return None
+
+    allNames: list[str] = []
+    nameSet: set[str] = set()
+    for items in periodItems.values():
+        for item in items:
+            name = str(item["name"])
+            if name not in nameSet:
+                allNames.append(name)
+                nameSet.add(name)
+
+    if not allNames:
+        return None
+
+    periods = sortPeriods(list(periodItems.keys()))
+
+    rows: list[dict[str, object]] = []
+    for name in allNames:
+        row: dict[str, object] = {"항목": name}
+        for period in periods:
+            items = periodItems.get(period, [])
+            value = None
+            for item in items:
+                if item["name"] == name:
+                    value = item["value"]
+                    break
+            row[period] = value
+        rows.append(row)
+
+    schema: dict[str, type] = {"항목": pl.Utf8}
+    valType = pl.Float64 if numeric else pl.Utf8
+    for period in periods:
+        schema[period] = valType
+
+    return pl.DataFrame(rows, schema=schema, strict=False)
+
+
+def parseSubtopicTable(
+    subtables: TopicSubtables,
+    subtopic: str | None = None,
+    *,
+    numeric: bool = False,
+) -> ParsedSubtopicTable | None:
+    """subtopic wide의 특정 subtopic 행에서 markdown table을 파싱.
+
+    Args:
+        subtables: topicSubtables()가 반환한 TopicSubtables
+        subtopic: 파싱할 subtopic 이름 (None이면 첫 번째 subtopic)
+        numeric: True이면 parseAmount()로 숫자 변환
+
+    Returns:
+        ParsedSubtopicTable 또는 파싱 실패 시 None
+    """
+    wide = subtables.wide
+    if wide.is_empty():
+        return None
+
+    metaCols = {"topic", "sourceTopic", "subtopic", "subtopicOrder"}
+    periodCols = [c for c in wide.columns if c not in metaCols]
+
+    if not periodCols:
+        return None
+
+    # subtopic 선택
+    if subtopic is None:
+        targetRow = wide.row(0, named=True)
+        subtopic = str(targetRow.get("subtopic", ""))
+    else:
+        matched = wide.filter(pl.col("subtopic") == subtopic)
+        if matched.is_empty():
+            return None
+        targetRow = matched.row(0, named=True)
+
+    # 각 기간별 파싱
+    periodItems: dict[str, list[dict[str, str | float | None]]] = {}
+    parsedPeriods: list[str] = []
+    failedPeriods: list[str] = []
+    firstUnit: str | None = None
+    firstPattern: str | None = None
+
+    for col in periodCols:
+        cellText = targetRow.get(col)
+        if cellText is None or (isinstance(cellText, str) and not cellText.strip()):
+            continue
+
+        items, unitLabel, pattern = _parseOneCellTable(
+            str(cellText), numeric=numeric,
+        )
+        if items:
+            periodItems[col] = items
+            parsedPeriods.append(col)
+            if firstUnit is None and unitLabel:
+                firstUnit = unitLabel
+            if firstPattern is None and pattern:
+                firstPattern = pattern
+        else:
+            failedPeriods.append(col)
+
+    df = _mergeAcrossPeriods(periodItems, numeric=numeric)
+    if df is None:
+        return None
+
+    return ParsedSubtopicTable(
+        subtopic=subtopic,
+        df=df,
+        unit=firstUnit,
+        pattern=firstPattern,
+        parsedPeriods=parsedPeriods,
+        failedPeriods=failedPeriods,
+    )
