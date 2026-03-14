@@ -197,7 +197,7 @@
 		display: inline-flex;
 		align-items: center;
 		padding: 0.3rem 0.6rem;
-		border-radius: 999px;
+		border-radius: 6px;
 		background: rgba(148, 163, 184, 0.08);
 		border: 1px solid rgba(148, 163, 184, 0.14);
 		color: #cbd5e1;
@@ -224,7 +224,7 @@
 
 	.category-post-card {
 		padding: 1.4rem 1.5rem;
-		border-radius: 16px;
+		border-radius: 12px;
 		border: 1px solid rgba(30, 36, 51, 0.9);
 		background: rgba(15, 18, 25, 0.9);
 		text-decoration: none;
@@ -232,8 +232,7 @@
 	}
 
 	.category-post-card:hover {
-		border-color: rgba(234, 70, 71, 0.28);
-		transform: translateY(-1px);
+		border-color: rgba(234, 70, 71, 0.25);
 	}
 
 	.category-post-shell {

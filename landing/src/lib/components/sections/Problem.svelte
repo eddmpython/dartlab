@@ -10,10 +10,10 @@
 			<p class="text-dl-text-muted text-lg">Most tools only extract a few numbers. What about the rest?</p>
 		</div>
 
-		<div class="grid md:grid-cols-2 gap-6">
+		<div class="grid md:grid-cols-2 gap-5">
 			<Card hover={false}>
-				<div class="text-xs font-mono text-dl-text-dim mb-4 uppercase tracking-wider">Existing Tools</div>
-				<div class="space-y-3 font-mono text-sm">
+				<div class="text-[11px] font-mono text-dl-text-dim mb-4 uppercase tracking-wider">Existing Tools</div>
+				<div class="space-y-2.5 font-mono text-sm">
 					<div class="flex items-center gap-3 text-dl-text-muted">
 						<span class="text-dl-success">✓</span> Revenue
 					</div>
@@ -42,15 +42,15 @@
 				</div>
 			</Card>
 
-			<Card hover={false} class="border-dl-primary/30 ring-1 ring-dl-primary/10 bg-gradient-to-br from-dl-bg-card to-dl-bg-card">
+			<Card hover={false} class="border-dl-primary/20 bg-dl-bg-card">
 				<div class="flex items-center gap-2 mb-4">
 					<picture>
 						<source srcset="{base}/avatar-analyze.webp" type="image/webp" />
-						<img src="{base}/avatar-analyze.png" alt="" width="24" height="24" loading="lazy" decoding="async" class="rounded-full" />
+						<img src="{base}/avatar-analyze.png" alt="" width="20" height="20" loading="lazy" decoding="async" class="rounded-full" />
 					</picture>
-					<span class="text-xs font-mono text-dl-primary uppercase tracking-wider">DartLab</span>
+					<span class="text-[11px] font-mono text-dl-primary uppercase tracking-wider">DartLab</span>
 				</div>
-				<div class="space-y-3 font-mono text-sm">
+				<div class="space-y-2.5 font-mono text-sm">
 					<div class="flex items-center gap-3 text-dl-text">
 						<span class="text-dl-success">✓</span> Revenue
 					</div>

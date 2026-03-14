@@ -23,7 +23,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 			{#each cases as c}
 				<Card class="text-left">
-					<div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 {c.color}">
+					<div class="w-10 h-10 rounded-md flex items-center justify-center mb-4 {c.color}">
 						<c.icon class="w-6 h-6" />
 					</div>
 					<h4 class="text-base font-semibold text-dl-text mb-2">{c.title}</h4>

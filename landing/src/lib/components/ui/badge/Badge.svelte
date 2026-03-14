@@ -21,7 +21,7 @@
 </script>
 
 <span class={cn(
-	'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border',
+	'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border',
 	variants[variant],
 	className
 )}>

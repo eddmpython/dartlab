@@ -6,7 +6,7 @@
 <section class="py-24 px-6">
 	<div class="mx-auto max-w-2xl text-center">
 		<div
-			class="p-8 md:p-12 rounded-2xl bg-gradient-to-b from-dl-bg-card to-dl-bg-darker border border-dl-border relative overflow-hidden"
+			class="p-8 md:p-12 rounded-lg bg-dl-bg-card border border-dl-border relative overflow-hidden"
 		>
 			<div
 				class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(234,70,71,0.05)_0%,_transparent_70%)]"

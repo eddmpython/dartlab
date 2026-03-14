@@ -8,11 +8,7 @@
 
 <section class="relative pt-32 pb-20 px-6 overflow-hidden">
 	<div
-		class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(234,70,71,0.08)_0%,_transparent_60%)]"
-	></div>
-	<div
-		class="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] pointer-events-none"
-		style="background: radial-gradient(ellipse at 30% 50%, rgba(234,70,71,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(251,146,60,0.03) 0%, transparent 50%);"
+		class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(234,70,71,0.06)_0%,_transparent_60%)]"
 	></div>
 
 	<div class="relative mx-auto max-w-4xl text-center">
@@ -25,7 +21,7 @@
 					width="180"
 					height="180"
 					fetchpriority="high"
-					class="drop-shadow-[0_0_32px_rgba(234,70,71,0.35)] hover:drop-shadow-[0_0_48px_rgba(234,70,71,0.55)] transition-all duration-300 hover:scale-105 animate-float"
+					class="drop-shadow-[0_0_32px_rgba(234,70,71,0.25)] animate-float"
 				/>
 			</picture>
 		</div>
@@ -48,7 +44,7 @@
 			<span class="text-dl-text font-medium">Numbers are the result, text is the cause.</span> DartLab reads both.
 		</p>
 
-		<div class="flex flex-wrap items-center justify-center gap-4 mb-16">
+		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">
 			<Button href={brand.desktop}>
 				<Download class="w-4 h-4" />
 				Windows Download
@@ -58,7 +54,7 @@
 			<Button variant="secondary" href="{base}/docs/getting-started/quickstart">Quick Start</Button>
 		</div>
 
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
 			{#each [
 				{ value: '40', unit: '', label: 'Parsing Modules' },
 				{ value: '2,700', unit: '+', label: 'Listed Companies' },
@@ -66,7 +62,7 @@
 				{ value: 'MIT', unit: '', label: 'License' }
 			] as stat}
 				<div
-					class="px-4 py-4 rounded-xl bg-dl-bg-card/50 border border-dl-border/50 hover:border-dl-primary/30 transition-all"
+					class="px-4 py-3 rounded-lg bg-dl-bg-card/50 border border-dl-border/50 hover:border-dl-primary/20 transition-colors"
 				>
 					<div
 						class="text-2xl font-extrabold bg-gradient-to-r from-dl-primary to-dl-accent bg-clip-text text-transparent"

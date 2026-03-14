@@ -9,7 +9,7 @@
 	let { title, children }: Props = $props();
 </script>
 
-<div class="max-w-2xl mx-auto rounded-xl overflow-hidden bg-dl-bg-darker border border-dl-border shadow-2xl shadow-black/30 text-left">
+<div class="max-w-2xl mx-auto rounded-lg overflow-hidden bg-dl-bg-card border border-dl-border shadow-lg shadow-black/20 text-left">
 	<div class="flex items-center gap-1.5 px-4 py-3 bg-white/[0.03] border-b border-dl-border">
 		<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
 		<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>

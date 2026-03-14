@@ -45,9 +45,9 @@
 						<div class="hidden md:block absolute top-[46px] -right-1.5 w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[6px] border-l-dl-border z-10"></div>
 					{/if}
 
-					<div class="rounded-xl border border-dl-border bg-dl-bg-card p-6 hover:border-dl-primary/30 transition-all h-full">
+					<div class="rounded-lg border border-dl-border bg-dl-bg-card p-6 hover:border-dl-primary/30 transition-colors h-full">
 						<div class="flex items-center gap-3 mb-4">
-							<div class="w-11 h-11 rounded-xl border flex items-center justify-center {s.color}">
+							<div class="w-10 h-10 rounded-md border flex items-center justify-center {s.color}">
 								<s.icon class="w-5 h-5" />
 							</div>
 							<span class="text-xs font-mono text-dl-text-dim">{s.step}</span>

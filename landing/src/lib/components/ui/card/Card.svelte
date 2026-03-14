@@ -12,8 +12,8 @@
 </script>
 
 <div class={cn(
-	'rounded-xl bg-dl-bg-card border border-dl-border p-6 transition-all duration-300',
-	hover && 'hover:border-dl-primary/50 hover:-translate-y-1 hover:shadow-lg hover:shadow-dl-primary/5',
+	'rounded-lg bg-dl-bg-card border border-dl-border p-6 transition-colors duration-200',
+	hover && 'hover:border-dl-primary/30',
 	className
 )}>
 	{@render children()}

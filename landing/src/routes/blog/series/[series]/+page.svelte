@@ -182,7 +182,7 @@
 
 	.series-step-card {
 		padding: 1.35rem 1.4rem;
-		border-radius: 16px;
+		border-radius: 12px;
 		border: 1px solid rgba(30, 36, 51, 0.9);
 		background: rgba(15, 18, 25, 0.9);
 		text-decoration: none;
@@ -222,7 +222,7 @@
 		justify-content: center;
 		width: 2.2rem;
 		height: 2.2rem;
-		border-radius: 999px;
+		border-radius: 6px;
 		background: rgba(234, 70, 71, 0.12);
 		border: 1px solid rgba(234, 70, 71, 0.22);
 		color: #fda4a4;
@@ -242,7 +242,7 @@
 		display: inline-flex;
 		align-items: center;
 		padding: 0.28rem 0.55rem;
-		border-radius: 999px;
+		border-radius: 6px;
 		background: rgba(148, 163, 184, 0.08);
 		border: 1px solid rgba(148, 163, 184, 0.14);
 		color: #cbd5e1;
@@ -299,7 +299,7 @@
 	.series-product-cta {
 		margin-top: 2.4rem;
 		padding: 1.6rem;
-		border-radius: 18px;
+		border-radius: 12px;
 		border: 1px solid rgba(234, 70, 71, 0.16);
 		background:
 			linear-gradient(135deg, rgba(234, 70, 71, 0.08), rgba(251, 146, 60, 0.04)),
@@ -318,7 +318,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0.72rem 1rem;
-		border-radius: 999px;
+		border-radius: 6px;
 		border: 1px solid rgba(148, 163, 184, 0.16);
 		background: rgba(148, 163, 184, 0.06);
 		color: #e2e8f0;

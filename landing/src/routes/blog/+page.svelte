@@ -51,18 +51,10 @@
 
 <div class="blog-hub">
 	<section class="blog-hub-hero">
-		<div class="blog-hub-kicker">DartLab Blog</div>
 		<h1 class="blog-hub-title">공시를 숫자가 아니라 구조와 맥락으로 읽는 아카이브</h1>
 		<p class="blog-hub-desc">
 			DART와 EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화를 카테고리 단위로 정리합니다.
-			검색으로 유입돼도 다음 읽을 글이 이어지고, 시리즈로 들어와도 구조를 잃지 않게 설계합니다.
 		</p>
-		<div class="blog-hub-actions">
-			<a href="{base}/docs/getting-started/quickstart" class="blog-action primary">Quickstart</a>
-			<a href="{base}/docs/getting-started/installation" class="blog-action">설치 가이드</a>
-			<a href="{base}/docs/api/overview" class="blog-action">API Overview</a>
-			<a href="{brand.repo}" target="_blank" rel="noopener" class="blog-action">GitHub</a>
-		</div>
 	</section>
 
 	<section class="category-grid">
@@ -73,7 +65,7 @@
 						<div class="category-card-kicker">{category.folder}</div>
 						<h2 class="category-card-title">{category.label}</h2>
 					</div>
-					<span class="category-count">{category.postCount} posts</span>
+					<span class="category-count">{category.postCount}</span>
 				</div>
 				<p class="category-card-desc">{category.description}</p>
 				{#if category.seriesLabels.length > 0}
@@ -93,10 +85,8 @@
 	<section class="latest-posts">
 		<div class="section-head">
 			<div>
-				<div class="section-kicker">Latest</div>
 				<h2 class="section-title">최신 글</h2>
 			</div>
-			<p class="section-desc">최근 발행 글에서 현재 블로그의 주제 흐름을 바로 볼 수 있습니다.</p>
 		</div>
 
 		<div class="latest-list">
@@ -105,10 +95,6 @@
 					<div class="latest-card-shell">
 						<div class="latest-card-body">
 							<div class="latest-card-top">
-								<picture>
-									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
-									<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="52" height="52" loading="lazy" />
-								</picture>
 								<div class="latest-card-copy">
 									<div class="latest-meta">
 										<span class="latest-badge">{post.categoryLabel}</span>
@@ -120,7 +106,7 @@
 										<Calendar size={12} />
 										{formatDate(post.date)}
 										<span class="latest-dot">·</span>
-										예상 {post.readingMinutes}분
+										{post.readingMinutes}분
 									</div>
 								</div>
 							</div>
@@ -129,7 +115,7 @@
 						</div>
 						<picture>
 							<source srcset="{base}{(post.previewAsset ?? post.cardPreview).replace('.png', '.webp')}" type="image/webp" />
-							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="latest-thumb" width="172" height="172" loading="lazy" />
+							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="latest-thumb" width="160" height="160" loading="lazy" />
 						</picture>
 					</div>
 				</a>
@@ -140,10 +126,8 @@
 	<section class="featured-series">
 		<div class="section-head">
 			<div>
-				<div class="section-kicker">Series</div>
-				<h2 class="section-title">시리즈별로 이어 읽기</h2>
+				<h2 class="section-title">시리즈</h2>
 			</div>
-			<p class="section-desc">깊게 읽을수록 가치가 커지는 주제는 시리즈 허브로 묶었습니다.</p>
 		</div>
 
 		<div class="series-grid">
@@ -151,7 +135,7 @@
 				<a href="{base}{getSeriesPath(series.id)}" class="series-card">
 					<div class="series-card-head">
 						<h3 class="series-card-title">{series.label}</h3>
-						<span class="series-count">{series.postCount} posts</span>
+						<span class="series-count">{series.postCount}</span>
 					</div>
 					<p class="series-card-desc">{series.description}</p>
 					<span class="series-card-cta">
@@ -159,23 +143,6 @@
 					</span>
 				</a>
 			{/each}
-		</div>
-	</section>
-
-	<section class="product-cta">
-		<div class="product-cta-copy">
-			<div class="section-kicker">Product</div>
-			<h2 class="section-title">DartLab으로 전자공시를 실제 데이터로 연결하기</h2>
-			<p class="section-desc">
-				블로그는 읽는 법을 설명하고, DartLab은 그 판단을 코드와 데이터로 옮깁니다.
-				재무 시계열, 사업보고서 텍스트, 정기보고서 데이터까지 하나의 흐름으로 다룰 수 있습니다.
-			</p>
-		</div>
-		<div class="product-cta-links">
-			<a href="{base}/docs/getting-started/quickstart" class="product-link primary">5분 Quickstart</a>
-			<a href="{base}/docs/api/overview" class="product-link">API Overview</a>
-			<a href="{base}/docs/tutorials/06_disclosure" class="product-link">공시 텍스트 튜토리얼</a>
-			<a href="{base}/docs/tutorials/03_timeseries" class="product-link">시계열 튜토리얼</a>
 		</div>
 	</section>
 </div>
@@ -186,90 +153,61 @@
 	}
 
 	.blog-hub-hero {
-		padding: 1rem 0 2.2rem;
-		border-bottom: 1px solid rgba(30, 36, 51, 0.85);
-		margin-bottom: 2.5rem;
-	}
-
-	.blog-hub-kicker,
-	.section-kicker,
-	.category-card-kicker {
-		font-size: 0.72rem;
-		font-weight: 700;
-		color: #ea4647;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		margin-bottom: 0.45rem;
+		padding: 0.5rem 0 2rem;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.6);
+		margin-bottom: 2rem;
 	}
 
 	.blog-hub-title {
-		font-size: 2.5rem;
-		font-weight: 800;
-		line-height: 1.16;
-		color: #f8fafc;
-		margin-bottom: 0.9rem;
+		font-size: 2rem;
+		font-weight: 700;
+		line-height: 1.2;
+		color: #f1f5f9;
+		margin-bottom: 0.6rem;
 	}
 
-	.blog-hub-desc,
-	.section-desc {
-		max-width: 760px;
-		font-size: 1rem;
-		line-height: 1.8;
+	.blog-hub-desc {
+		max-width: 600px;
+		font-size: 0.9375rem;
+		line-height: 1.7;
 		color: #94a3b8;
 	}
 
-	.blog-hub-actions,
-	.product-cta-links {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.7rem;
-		margin-top: 1rem;
+	.category-card-kicker {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		color: #64748b;
+		letter-spacing: 0.03em;
+		font-family: 'JetBrains Mono', monospace;
+		margin-bottom: 0.25rem;
 	}
 
-	.blog-action,
-	.product-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.72rem 1rem;
-		border-radius: 999px;
-		border: 1px solid rgba(148, 163, 184, 0.16);
-		background: rgba(148, 163, 184, 0.06);
-		color: #e2e8f0;
-		text-decoration: none;
+	.section-title {
+		font-size: 1.25rem;
 		font-weight: 700;
-	}
-
-	.blog-action.primary,
-	.product-link.primary {
-		background: rgba(234, 70, 71, 0.14);
-		border-color: rgba(234, 70, 71, 0.28);
-		color: #fda4a4;
+		color: #f1f5f9;
 	}
 
 	.category-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.2rem;
-		margin-bottom: 3rem;
+		gap: 1rem;
+		margin-bottom: 2.5rem;
 	}
 
 	.category-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.95rem;
-		padding: 1.5rem;
-		border-radius: 18px;
-		border: 1px solid rgba(30, 36, 51, 0.95);
-		background:
-			linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-			rgba(15, 18, 25, 0.94);
+		gap: 0.75rem;
+		padding: 1.25rem;
+		border-radius: 12px;
+		border: 1px solid rgba(30, 36, 51, 0.8);
+		background: rgba(10, 13, 20, 0.8);
 		text-decoration: none;
-		transition: transform 0.15s, border-color 0.15s;
+		transition: border-color 0.15s;
 	}
 
 	.category-card:hover {
-		transform: translateY(-2px);
 		border-color: rgba(234, 70, 71, 0.3);
 	}
 
@@ -280,27 +218,26 @@
 		gap: 1rem;
 	}
 
-	.category-card-title,
-	.section-title {
-		font-size: 1.4rem;
-		font-weight: 800;
-		color: #f8fafc;
+	.category-card-title {
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: #f1f5f9;
 	}
 
 	.category-count {
 		font-size: 0.75rem;
-		font-weight: 700;
-		padding: 0.35rem 0.6rem;
-		border-radius: 999px;
+		font-weight: 600;
+		padding: 0.2rem 0.5rem;
+		border-radius: 6px;
 		background: rgba(148, 163, 184, 0.08);
-		border: 1px solid rgba(148, 163, 184, 0.14);
-		color: #cbd5e1;
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		color: #94a3b8;
+		font-family: 'JetBrains Mono', monospace;
 	}
 
-	.category-card-desc,
-	.latest-desc {
-		font-size: 0.92rem;
-		line-height: 1.75;
+	.category-card-desc {
+		font-size: 0.875rem;
+		line-height: 1.65;
 		color: #94a3b8;
 	}
 
@@ -308,7 +245,7 @@
 	.latest-meta {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.45rem;
+		gap: 0.35rem;
 	}
 
 	.category-series,
@@ -316,25 +253,24 @@
 	.latest-series {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.28rem 0.55rem;
-		border-radius: 999px;
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
+		padding: 0.2rem 0.45rem;
+		border-radius: 6px;
+		font-size: 0.65rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
 	}
 
 	.category-series,
 	.latest-series {
 		background: rgba(148, 163, 184, 0.08);
-		border: 1px solid rgba(148, 163, 184, 0.14);
-		color: #cbd5e1;
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		color: #94a3b8;
 	}
 
 	.latest-badge {
-		background: rgba(234, 70, 71, 0.12);
-		border: 1px solid rgba(234, 70, 71, 0.24);
-		color: #fda4a4;
+		background: rgba(234, 70, 71, 0.1);
+		border: 1px solid rgba(234, 70, 71, 0.2);
+		color: #f87171;
 	}
 
 	.category-card-cta {
@@ -342,81 +278,67 @@
 		align-items: center;
 		gap: 0.35rem;
 		color: #ea4647;
-		font-size: 0.82rem;
-		font-weight: 700;
+		font-size: 0.8rem;
+		font-weight: 600;
 	}
 
-	.latest-posts {
+	.latest-posts,
+	.featured-series {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		margin-bottom: 3rem;
+		gap: 0.75rem;
+		margin-bottom: 2.5rem;
 	}
 
 	.section-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 1.25rem;
-		padding-bottom: 0.85rem;
-		border-bottom: 1px solid rgba(30, 36, 51, 0.8);
+		padding-bottom: 0.6rem;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.6);
 	}
 
 	.latest-list {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.5rem;
 	}
 
 	.latest-card {
-		padding: 1.3rem 1.4rem;
-		border-radius: 14px;
-		border: 1px solid rgba(30, 36, 51, 0.9);
-		background: rgba(15, 18, 25, 0.88);
+		padding: 1rem 1.25rem;
+		border-radius: 12px;
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		background: rgba(10, 13, 20, 0.6);
 		text-decoration: none;
-		transition: border-color 0.15s, transform 0.15s;
+		transition: border-color 0.15s;
 	}
 
 	.latest-card:hover {
-		border-color: rgba(234, 70, 71, 0.28);
-		transform: translateY(-1px);
+		border-color: rgba(234, 70, 71, 0.25);
 	}
 
 	.latest-card-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 172px;
+		grid-template-columns: minmax(0, 1fr) 160px;
 		gap: 1rem;
-		align-items: stretch;
+		align-items: center;
 	}
 
 	.latest-card-body {
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.55rem;
-		justify-content: center;
+		gap: 0.4rem;
 	}
 
 	.latest-card-top {
 		display: flex;
 		align-items: center;
-		gap: 0.85rem;
-	}
-
-	.latest-avatar {
-		width: 52px;
-		height: 52px;
-		border-radius: 50%;
-		border: 1px solid rgba(234, 70, 71, 0.18);
-		background: rgba(15, 18, 25, 0.92);
-		flex-shrink: 0;
+		gap: 0.75rem;
 	}
 
 	.latest-card-copy {
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.45rem;
+		gap: 0.35rem;
 	}
 
 	.latest-date {
@@ -424,57 +346,55 @@
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 0.3rem;
-		font-size: 0.75rem;
+		font-size: 0.72rem;
 		color: #64748b;
 	}
 
 	.latest-dot {
-		color: rgba(100, 116, 139, 0.72);
+		color: rgba(100, 116, 139, 0.5);
 	}
 
 	.latest-thumb {
 		display: block;
-		width: 172px;
-		height: 172px;
+		width: 160px;
+		height: 160px;
 		object-fit: cover;
 		object-position: center;
-		border-radius: 10px;
-		align-self: stretch;
+		border-radius: 8px;
 	}
 
 	.latest-title {
-		font-size: 1.16rem;
+		font-size: 1.05rem;
 		font-weight: 700;
-		color: #f8fafc;
+		color: #f1f5f9;
 	}
 
-	.featured-series {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		margin-bottom: 3rem;
+	.latest-desc {
+		font-size: 0.85rem;
+		line-height: 1.6;
+		color: #94a3b8;
 	}
 
 	.series-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1rem;
+		gap: 0.75rem;
 	}
 
 	.series-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.8rem;
-		padding: 1.35rem 1.4rem;
-		border-radius: 16px;
-		border: 1px solid rgba(30, 36, 51, 0.9);
-		background: rgba(15, 18, 25, 0.9);
+		gap: 0.6rem;
+		padding: 1.1rem 1.25rem;
+		border-radius: 12px;
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		background: rgba(10, 13, 20, 0.6);
 		text-decoration: none;
+		transition: border-color 0.15s;
 	}
 
 	.series-card:hover {
-		border-color: rgba(234, 70, 71, 0.28);
-		transform: translateY(-1px);
+		border-color: rgba(234, 70, 71, 0.25);
 	}
 
 	.series-card-head {
@@ -485,20 +405,21 @@
 	}
 
 	.series-card-title {
-		font-size: 1.05rem;
+		font-size: 0.95rem;
 		font-weight: 700;
-		color: #f8fafc;
+		color: #f1f5f9;
 	}
 
 	.series-count {
 		font-size: 0.72rem;
-		font-weight: 700;
-		color: #cbd5e1;
+		font-weight: 600;
+		color: #94a3b8;
+		font-family: 'JetBrains Mono', monospace;
 	}
 
 	.series-card-desc {
-		font-size: 0.9rem;
-		line-height: 1.7;
+		font-size: 0.85rem;
+		line-height: 1.65;
 		color: #94a3b8;
 	}
 
@@ -507,31 +428,14 @@
 		align-items: center;
 		gap: 0.35rem;
 		color: #ea4647;
-		font-size: 0.82rem;
-		font-weight: 700;
-	}
-
-	.product-cta {
-		padding: 1.6rem;
-		border-radius: 18px;
-		border: 1px solid rgba(234, 70, 71, 0.16);
-		background:
-			linear-gradient(135deg, rgba(234, 70, 71, 0.08), rgba(251, 146, 60, 0.04)),
-			rgba(15, 18, 25, 0.94);
+		font-size: 0.8rem;
+		font-weight: 600;
 	}
 
 	@media (max-width: 900px) {
-		.category-grid {
-			grid-template-columns: 1fr;
-		}
-
+		.category-grid,
 		.series-grid {
 			grid-template-columns: 1fr;
-		}
-
-		.section-head {
-			flex-direction: column;
-			align-items: flex-start;
 		}
 
 		.latest-card-shell {
@@ -540,10 +444,13 @@
 
 		.latest-thumb {
 			width: 100%;
-			max-width: 220px;
+			max-width: 200px;
 			height: auto;
 			aspect-ratio: 1 / 1;
-			justify-self: end;
+		}
+
+		.blog-hub-title {
+			font-size: 1.6rem;
 		}
 	}
 </style>

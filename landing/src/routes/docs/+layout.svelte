@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { navigation, type NavItem } from '$lib/docs/navigation';
-	import { Github, Menu, X, ChevronRight, ChevronDown } from 'lucide-svelte';
+	import { Github, Menu, X, ChevronRight, ChevronDown, Search } from 'lucide-svelte';
 	import Footer from '$lib/components/sections/Footer.svelte';
 
 	let { children } = $props();
@@ -50,6 +50,10 @@
 		}
 		expandedSections = next;
 	}
+
+	function openSearch() {
+		window.dispatchEvent(new CustomEvent('open-command-palette'));
+	}
 </script>
 
 <div class="dl-docs">
@@ -59,7 +63,7 @@
 				<a href="{base}/" class="dl-docs-logo">
 					<picture>
 						<source srcset="{base}/avatar.webp" type="image/webp" />
-						<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-docs-logo-img" />
+						<img src="{base}/avatar.png" alt="DartLab" width="24" height="24" class="dl-docs-logo-img" />
 					</picture>
 					<span class="dl-docs-logo-text">DartLab</span>
 				</a>
@@ -68,11 +72,16 @@
 			</div>
 
 			<div class="dl-docs-header-right">
+				<button class="dl-docs-search-btn" onclick={openSearch}>
+					<Search size={14} />
+					<span>Search...</span>
+					<kbd>⌘K</kbd>
+				</button>
 				<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener" class="dl-docs-icon-link">
-					<Github size={18} />
+					<Github size={16} />
 				</a>
 				<button class="dl-docs-mobile-btn" onclick={() => mobileNavOpen = !mobileNavOpen}>
-					{#if mobileNavOpen}<X size={20} />{:else}<Menu size={20} />{/if}
+					{#if mobileNavOpen}<X size={18} />{:else}<Menu size={18} />{/if}
 				</button>
 			</div>
 		</div>
@@ -112,21 +121,11 @@
 		{#if !isIndex}
 			<aside class="dl-docs-sidebar">
 				<div class="dl-docs-sidebar-inner">
-					<div class="dl-docs-sidebar-brand">
-						<span class="dl-docs-sidebar-kicker">DartLab Docs</span>
-						<strong class="dl-docs-sidebar-title">Build From the Filing Graph</strong>
-						<p class="dl-docs-sidebar-desc">설치부터 API 흐름까지, 공시 데이터를 코드로 연결하는 문서.</p>
-					</div>
-					<div class="dl-docs-sidebar-product">
-						<a href="{base}/docs/getting-started/quickstart" class="dl-docs-product-link primary">Quickstart</a>
-						<a href="{base}/blog/" class="dl-docs-product-link">Blog Hub</a>
-					</div>
 					<nav class="dl-docs-sidebar-nav">
 						{#each sidebarSections as section}
 							<div class="dl-sidebar-section">
 								<button
 									class="dl-sidebar-section-btn"
-									class:active={currentSection === section}
 									onclick={() => toggleSection(section.href)}
 								>
 									<span>{section.title}</span>
@@ -181,13 +180,13 @@
 	:global(body) {
 		margin: 0;
 		background: #050811;
-		color: #fafaf9;
+		color: #f1f5f9;
 	}
 
 	.dl-docs {
 		min-height: 100vh;
 		--shell-max-width: 1400px;
-		--sidebar-width: 220px;
+		--sidebar-width: 240px;
 		--content-max-width: 860px;
 		--toc-width: 200px;
 		--page-gutter: 1.5rem;
@@ -199,7 +198,7 @@
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		background: rgba(3, 5, 9, 0.85);
+		background: rgba(3, 5, 9, 0.92);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(30, 36, 51, 0.6);
 	}
@@ -210,8 +209,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 1.5rem;
-		height: 56px;
+		padding: 0 1rem;
+		height: 48px;
 	}
 
 	.dl-docs-header-left {
@@ -225,32 +224,60 @@
 		align-items: center;
 		gap: 0.35rem;
 		text-decoration: none;
-		color: #fafaf9;
-		font-weight: 700;
-		font-size: 1.05rem;
+		color: #f1f5f9;
+		font-weight: 600;
+		font-size: 0.875rem;
 	}
 
 	.dl-docs-logo-img { border-radius: 50%; }
 
 	.dl-docs-divider {
 		color: #1e2433;
-		font-size: 1.2rem;
+		font-size: 1rem;
 		font-weight: 300;
-		margin: 0 0.15rem;
 	}
 
 	.dl-docs-link {
 		color: #94a3b8;
 		text-decoration: none;
-		font-size: 0.9rem;
+		font-size: 0.8125rem;
 		font-weight: 500;
 	}
-	.dl-docs-link:hover { color: #fafaf9; }
+	.dl-docs-link:hover { color: #f1f5f9; }
 
 	.dl-docs-header-right {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.dl-docs-search-btn {
+		display: none;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.25rem 0.625rem;
+		border-radius: 6px;
+		border: 1px solid rgba(30, 36, 51, 0.8);
+		background: rgba(15, 18, 25, 0.5);
+		color: #64748b;
+		font-size: 0.75rem;
+		cursor: pointer;
+		height: 28px;
+		transition: border-color 0.15s, color 0.15s;
+	}
+	.dl-docs-search-btn:hover {
+		border-color: rgba(30, 36, 51, 1);
+		color: #94a3b8;
+	}
+	.dl-docs-search-btn kbd {
+		padding: 0.1rem 0.3rem;
+		border-radius: 4px;
+		background: rgba(5, 8, 17, 0.8);
+		border: 1px solid rgba(30, 36, 51, 0.8);
+		font-size: 0.625rem;
+		font-family: inherit;
+		line-height: 1;
+		color: #64748b;
 	}
 
 	.dl-docs-icon-link {
@@ -259,7 +286,7 @@
 		padding: 0.25rem;
 		transition: color 0.15s;
 	}
-	.dl-docs-icon-link:hover { color: #fafaf9; }
+	.dl-docs-icon-link:hover { color: #f1f5f9; }
 
 	.dl-docs-mobile-btn {
 		display: none;
@@ -277,8 +304,8 @@
 		display: grid;
 		grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 		gap: var(--rail-gap);
-		min-height: calc(100vh - 56px);
-		padding: 2.25rem var(--page-gutter) 6rem;
+		min-height: calc(100vh - 48px);
+		padding: 1.5rem var(--page-gutter) 6rem;
 	}
 
 	.dl-docs-body.is-index {
@@ -292,73 +319,19 @@
 
 	.dl-docs-sidebar-inner {
 		position: sticky;
-		top: 84px;
+		top: 72px;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
-		padding: 0.35rem 0;
-		max-height: calc(100vh - 100px);
+		gap: 0.5rem;
+		padding: 0.25rem 0;
+		max-height: calc(100vh - 80px);
 		overflow-y: auto;
 		scrollbar-width: thin;
-		scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
-	}
-
-	.dl-docs-sidebar-brand {
-		padding: 0 0.15rem 0.2rem;
-	}
-
-	.dl-docs-sidebar-kicker {
-		display: block;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: #ea4647;
-		margin-bottom: 0.35rem;
-	}
-
-	.dl-docs-sidebar-title {
-		display: block;
-		font-size: 1rem;
-		color: #f8fafc;
-		margin-bottom: 0.45rem;
-	}
-
-	.dl-docs-sidebar-desc {
-		font-size: 0.84rem;
-		line-height: 1.65;
-		color: #94a3b8;
-		margin: 0;
-	}
-
-	.dl-docs-sidebar-product {
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
-	}
-
-	.dl-docs-product-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.68rem 0.9rem;
-		border-radius: 12px;
-		border: 1px solid rgba(148, 163, 184, 0.16);
-		background: rgba(148, 163, 184, 0.06);
-		color: #e2e8f0;
-		text-decoration: none;
-		font-size: 0.82rem;
-		font-weight: 700;
-	}
-
-	.dl-docs-product-link.primary {
-		background: rgba(234, 70, 71, 0.14);
-		border-color: rgba(234, 70, 71, 0.28);
-		color: #fda4a4;
+		scrollbar-color: rgba(148, 163, 184, 0.1) transparent;
 	}
 
 	.dl-sidebar-section {
-		margin-bottom: 0.45rem;
+		margin-bottom: 0.25rem;
 	}
 
 	.dl-sidebar-section-btn {
@@ -366,66 +339,59 @@
 		align-items: center;
 		justify-content: space-between;
 		width: 100%;
-		padding: 0.72rem 0.8rem;
-		border: 1px solid transparent;
-		background: rgba(148, 163, 184, 0.03);
-		color: #cbd5e1;
-		font-size: 0.88rem;
+		padding: 0.375rem 0.5rem;
+		border: none;
+		background: none;
+		color: #94a3b8;
+		font-size: 0.6875rem;
 		font-weight: 600;
 		cursor: pointer;
-		border-radius: 12px;
-		transition: all 0.15s;
+		border-radius: 6px;
+		transition: color 0.15s;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 	.dl-sidebar-section-btn:hover {
-		border-color: rgba(234, 70, 71, 0.24);
-		color: #f8fafc;
-		background: rgba(234, 70, 71, 0.05);
-	}
-	.dl-sidebar-section-btn.active {
-		border-color: rgba(234, 70, 71, 0.28);
-		color: #f8fafc;
-		background: rgba(234, 70, 71, 0.08);
-		box-shadow: inset 3px 0 0 #ea4647;
+		color: #f1f5f9;
 	}
 
 	.dl-sidebar-items {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
-		padding: 0.45rem 0 0.1rem 0.55rem;
+		gap: 1px;
+		padding: 0.25rem 0 0.25rem 0;
 	}
 
 	.dl-sidebar-item {
 		display: flex;
 		align-items: center;
-		padding: 0.68rem 0.8rem;
-		font-size: 0.84rem;
-		color: #cbd5e1;
+		padding: 0.375rem 0.625rem;
+		font-size: 0.8125rem;
+		color: #94a3b8;
 		text-decoration: none;
-		border-radius: 12px;
-		transition: all 0.12s;
-		border: 1px solid transparent;
-		background: rgba(148, 163, 184, 0.03);
+		border-radius: 6px;
+		transition: color 0.12s, background 0.12s;
+		border-left: 2px solid transparent;
+		margin-left: 0.25rem;
 	}
 	.dl-sidebar-item:hover {
-		border-color: rgba(234, 70, 71, 0.24);
-		color: #f8fafc;
-		background: rgba(234, 70, 71, 0.05);
+		color: #f1f5f9;
+		background: rgba(17, 24, 39, 0.6);
 	}
 	.dl-sidebar-item.active {
-		border-color: rgba(234, 70, 71, 0.28);
-		color: #f8fafc;
-		background: rgba(234, 70, 71, 0.08);
-		box-shadow: inset 3px 0 0 #ea4647;
+		color: #f1f5f9;
+		font-weight: 600;
+		border-left-color: #ea4647;
+		background: rgba(234, 70, 71, 0.05);
 	}
 
 	.dl-sidebar-standalone {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid rgba(30, 36, 51, 0.8);
+		margin-top: 0.5rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid rgba(30, 36, 51, 0.6);
 		display: flex;
 		flex-direction: column;
-		gap: 0.45rem;
+		gap: 1px;
 	}
 
 	/* Main content */
@@ -436,11 +402,9 @@
 	/* Content typography */
 	.dl-docs-content :global(h1) {
 		font-size: 2rem;
-		font-weight: 800;
+		font-weight: 700;
 		margin-bottom: 0.5rem;
-		background: linear-gradient(135deg, #f1f5f9, #94a3b8);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
+		color: #f1f5f9;
 	}
 
 	.dl-docs-content :global(h2) {
@@ -449,8 +413,8 @@
 		margin-top: 3.5rem;
 		margin-bottom: 1rem;
 		padding-bottom: 0.5rem;
-		border-bottom: 1px solid rgba(168, 162, 158, 0.1);
-		color: #fafaf9;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.6);
+		color: #f1f5f9;
 	}
 
 	.dl-docs-content :global(h3) {
@@ -458,7 +422,7 @@
 		font-weight: 600;
 		margin-top: 2.5rem;
 		margin-bottom: 0.75rem;
-		color: #e7e5e4;
+		color: #e2e8f0;
 	}
 
 	.dl-docs-content :global(h4) {
@@ -466,7 +430,7 @@
 		font-weight: 600;
 		margin-top: 1.5rem;
 		margin-bottom: 0.5rem;
-		color: #d6d3d1;
+		color: #cbd5e1;
 	}
 
 	.dl-docs-content :global(p) {
@@ -481,17 +445,18 @@
 	.dl-docs-content :global(strong) { color: #e2e8f0; }
 
 	.dl-docs-content :global(code:not(pre code)) {
-		background: rgba(148, 163, 184, 0.1);
+		background: rgba(15, 18, 25, 0.8);
 		padding: 0.15rem 0.4rem;
 		border-radius: 4px;
 		font-size: 0.875em;
 		font-family: 'JetBrains Mono', monospace;
 		color: #e2e8f0;
+		border: 1px solid rgba(30, 36, 51, 0.5);
 	}
 
 	.dl-docs-content :global(pre) {
-		background: #0d1117 !important;
-		border: 1px solid rgba(30, 36, 51, 0.8);
+		background: #0f1219 !important;
+		border: 1px solid rgba(30, 36, 51, 0.6);
 		border-radius: 8px;
 		padding: 1rem;
 		overflow-x: auto;
@@ -502,6 +467,7 @@
 	.dl-docs-content :global(pre code) {
 		background: none !important;
 		padding: 0;
+		border: none;
 		font-family: 'JetBrains Mono', monospace;
 	}
 
@@ -525,30 +491,28 @@
 
 	.dl-docs-content :global(th) {
 		text-align: left;
-		padding: 0.75rem 1rem;
-		border-bottom: 2px solid rgba(30, 36, 51, 0.8);
-		color: #fafaf9;
+		padding: 0.625rem 1rem;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.8);
+		color: #f1f5f9;
 		font-weight: 600;
 		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
 	}
 
 	.dl-docs-content :global(td) {
-		padding: 0.6rem 1rem;
-		border-bottom: 1px solid rgba(168, 162, 158, 0.08);
+		padding: 0.5rem 1rem;
+		border-bottom: 1px solid rgba(30, 36, 51, 0.4);
 		color: #94a3b8;
 	}
 
 	.dl-docs-content :global(tr:hover td) {
-		background: rgba(148, 163, 184, 0.03);
+		background: rgba(17, 24, 39, 0.3);
 	}
 
 	.dl-docs-content :global(blockquote) {
-		border-left: 3px solid #ea4647;
+		border-left: 2px solid #ea4647;
 		padding: 0.5rem 1rem;
 		margin: 1rem 0;
-		background: rgba(234, 70, 71, 0.05);
+		background: rgba(234, 70, 71, 0.04);
 		border-radius: 0 6px 6px 0;
 	}
 
@@ -556,7 +520,7 @@
 
 	.dl-docs-content :global(hr) {
 		border: none;
-		border-top: 1px solid rgba(30, 36, 51, 0.8);
+		border-top: 1px solid rgba(30, 36, 51, 0.6);
 		margin: 3rem 0;
 	}
 
@@ -567,7 +531,7 @@
 		display: none;
 		flex-direction: column;
 		padding: 0.5rem 1rem 1rem;
-		border-top: 1px solid rgba(30, 36, 51, 0.8);
+		border-top: 1px solid rgba(30, 36, 51, 0.6);
 		max-height: 60vh;
 		overflow-y: auto;
 	}
@@ -578,7 +542,7 @@
 
 	.dl-docs-mobile-section-title {
 		display: block;
-		font-size: 0.7rem;
+		font-size: 0.6875rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -589,13 +553,17 @@
 	.dl-docs-mobile-link {
 		display: block;
 		padding: 0.5rem 0.5rem 0.5rem 1rem;
-		font-size: 0.85rem;
+		font-size: 0.8125rem;
 		color: #94a3b8;
 		text-decoration: none;
-		border-bottom: 1px solid rgba(30, 36, 51, 0.8);
+		border-bottom: 1px solid rgba(30, 36, 51, 0.4);
 	}
-	.dl-docs-mobile-link:hover { color: #fafaf9; }
+	.dl-docs-mobile-link:hover { color: #f1f5f9; }
 	.dl-docs-mobile-link.active { color: #ea4647; }
+
+	@media (min-width: 768px) {
+		.dl-docs-search-btn { display: flex; }
+	}
 
 	@media (max-width: 1024px) {
 		.dl-docs-body {

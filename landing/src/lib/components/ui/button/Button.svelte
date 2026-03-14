@@ -3,7 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
-	type Variant = 'default' | 'secondary' | 'ghost' | 'outline' | 'coffee';
+	type Variant = 'default' | 'secondary' | 'ghost' | 'outline' | 'coffee' | 'link';
 	type Size = 'default' | 'sm' | 'lg' | 'icon';
 
 	interface BaseProps {
@@ -20,25 +20,26 @@
 	let { variant = 'default', size = 'default', class: className, children, ...restProps }: Props = $props();
 
 	const variants: Record<Variant, string> = {
-		default: 'bg-gradient-to-r from-dl-primary to-dl-primary-dark text-dl-bg-dark shadow-lg shadow-dl-primary/30 hover:shadow-dl-primary/40 hover:-translate-y-0.5',
-		secondary: 'bg-dl-bg-card border border-dl-border text-dl-text-muted hover:text-dl-text hover:bg-dl-bg-card-hover hover:-translate-y-0.5',
+		default: 'bg-dl-primary text-white shadow-sm hover:bg-dl-primary/90',
+		secondary: 'bg-dl-bg-card border border-dl-border text-dl-text-muted hover:text-dl-text hover:bg-dl-bg-card-hover',
 		ghost: 'text-dl-text-muted hover:text-dl-text hover:bg-white/5',
-		outline: 'border border-dl-border text-dl-text-muted hover:text-dl-text hover:border-dl-primary',
-		coffee: 'bg-[#ffdd00] text-dl-bg-dark font-semibold shadow-lg shadow-[#ffdd00]/30 hover:shadow-[#ffdd00]/40 hover:-translate-y-0.5'
+		outline: 'border border-dl-border text-dl-text-muted hover:text-dl-text hover:border-dl-primary/50',
+		coffee: 'bg-[#ffdd00] text-dl-bg-dark font-semibold shadow-sm hover:bg-[#ffdd00]/90',
+		link: 'text-dl-primary underline-offset-4 hover:underline p-0 h-auto'
 	};
 
 	const sizes: Record<Size, string> = {
-		default: 'px-6 py-2.5 text-sm',
-		sm: 'px-4 py-2 text-xs',
-		lg: 'px-8 py-3 text-base',
-		icon: 'w-10 h-10'
+		default: 'px-5 py-2 text-sm h-9',
+		sm: 'px-3.5 py-1.5 text-xs h-8',
+		lg: 'px-6 py-2.5 text-sm h-10',
+		icon: 'w-9 h-9'
 	};
 
 	function getClasses() {
 		return cn(
-			'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer no-underline',
+			'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 cursor-pointer no-underline whitespace-nowrap',
 			variants[variant],
-			sizes[size],
+			variant !== 'link' && sizes[size],
 			className
 		);
 	}

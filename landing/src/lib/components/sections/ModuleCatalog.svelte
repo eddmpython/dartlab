@@ -70,7 +70,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each statementsModules as m}
-						<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-all">
+						<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-colors">
 							<div class="shrink-0 mt-0.5">
 								<span class="w-1.5 h-1.5 rounded-full bg-dl-primary block"></span>
 							</div>
@@ -91,7 +91,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each financeModules as m}
-						<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-all">
+						<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-colors">
 							<div class="shrink-0 mt-0.5">
 								<span class="w-1.5 h-1.5 rounded-full bg-dl-primary block"></span>
 							</div>
@@ -112,7 +112,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each reportModules as m}
-						<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-all">
+						<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-colors">
 							<div class="shrink-0 mt-0.5">
 								<span class="w-1.5 h-1.5 rounded-full bg-dl-primary block"></span>
 							</div>
@@ -133,7 +133,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each governanceModules as m}
-						<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-all">
+						<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-colors">
 							<div class="shrink-0 mt-0.5">
 								<span class="w-1.5 h-1.5 rounded-full bg-dl-accent block"></span>
 							</div>
@@ -154,7 +154,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each otherModules as m}
-						<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-all">
+						<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-colors">
 							<div class="shrink-0 mt-0.5">
 								<span class="w-1.5 h-1.5 rounded-full bg-dl-accent block"></span>
 							</div>
@@ -176,7 +176,7 @@
 					</div>
 					<div class="grid grid-cols-1 gap-3">
 						{#each notesModules as m}
-							<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-all">
+							<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-primary/30 hover:bg-dl-bg-card transition-colors">
 								<div class="shrink-0 mt-0.5">
 									<span class="w-1.5 h-1.5 rounded-full bg-dl-primary block"></span>
 								</div>
@@ -197,7 +197,7 @@
 					</div>
 					<div class="grid grid-cols-1 gap-3">
 						{#each disclosureModules as m}
-							<div class="group flex items-start gap-3 px-4 py-3 rounded-lg border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-all">
+							<div class="group flex items-start gap-3 px-4 py-3 rounded-md border border-dl-border bg-dl-bg-card/50 hover:border-dl-accent/30 hover:bg-dl-bg-card transition-colors">
 								<div class="shrink-0 mt-0.5">
 									<span class="w-1.5 h-1.5 rounded-full bg-dl-accent block"></span>
 								</div>

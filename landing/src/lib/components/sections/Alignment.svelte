@@ -25,7 +25,7 @@
 					] as bar}
 						<div class="grid grid-cols-[5rem_1fr] items-center gap-3">
 							<span class="text-dl-text-muted text-xs text-right font-mono">{bar.label}</span>
-							<div class="h-8 rounded-lg bg-dl-bg-darker overflow-hidden">
+							<div class="h-8 rounded-md bg-dl-bg-darker overflow-hidden">
 								<div
 									class="h-full {bar.width} bg-gradient-to-r {bar.color} rounded-lg flex items-center justify-center"
 								>

@@ -14,7 +14,7 @@
 
 		<div class="grid md:grid-cols-3 gap-6">
 			<Card class="hover:border-dl-primary/40 hover:shadow-dl-primary/5">
-				<div class="w-11 h-11 rounded-xl bg-dl-primary/10 flex items-center justify-center mb-4">
+				<div class="w-10 h-10 rounded-md bg-dl-primary/10 flex items-center justify-center mb-4">
 					<BarChart3 class="w-5 h-5 text-dl-primary" />
 				</div>
 				<div class="text-xs font-mono text-dl-primary mb-2">Layer 1</div>
@@ -42,7 +42,7 @@
 			</Card>
 
 			<Card class="hover:border-dl-accent/40 hover:shadow-dl-accent/5">
-				<div class="w-11 h-11 rounded-xl bg-dl-accent/10 flex items-center justify-center mb-4">
+				<div class="w-10 h-10 rounded-md bg-dl-accent/10 flex items-center justify-center mb-4">
 					<FileText class="w-5 h-5 text-dl-accent" />
 				</div>
 				<div class="text-xs font-mono text-dl-accent mb-2">Layer 2</div>
@@ -70,7 +70,7 @@
 			</Card>
 
 			<Card class="hover:border-dl-primary/40 hover:shadow-dl-primary/5">
-				<div class="w-11 h-11 rounded-xl bg-gradient-to-br from-dl-primary/10 to-dl-accent/10 flex items-center justify-center mb-4">
+				<div class="w-10 h-10 rounded-md bg-gradient-to-br from-dl-primary/10 to-dl-accent/10 flex items-center justify-center mb-4">
 					<Link2 class="w-5 h-5 text-dl-primary" />
 				</div>
 				<div class="text-xs font-mono bg-gradient-to-r from-dl-primary to-dl-accent bg-clip-text text-transparent mb-2">Layer 3</div>

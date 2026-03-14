@@ -27,8 +27,8 @@
 		<div class="space-y-4">
 			{#each commands as item, i}
 				<div
-					class="rounded-xl overflow-hidden border bg-dl-bg-card transition-all hover:-translate-y-0.5 {item.highlight
-						? 'border-dl-primary/30 ring-1 ring-dl-primary/10 shadow-lg shadow-dl-primary/5'
+					class="rounded-lg overflow-hidden border bg-dl-bg-card transition-colors {item.highlight
+						? 'border-dl-primary/30'
 						: 'border-dl-border'}"
 				>
 					<div
