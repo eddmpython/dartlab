@@ -28,7 +28,7 @@ def _(c):
 @app.cell
 def _(c):
     # topic으로 상세한데이터 확인
-    c.show("companyOverview")
+    c.show("productService")
     return
 
 

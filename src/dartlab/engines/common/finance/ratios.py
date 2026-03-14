@@ -174,11 +174,11 @@ def _safeRound(v: Optional[float], n: int = 2) -> Optional[float]:
 	return round(v, n)
 
 
-def _yoy(vals: list[Optional[float]], i: int) -> Optional[float]:
-	if i < 1:
+def _yoy(vals: list[Optional[float]], i: int, lag: int = 1) -> Optional[float]:
+	if i < lag:
 		return None
 	cur = vals[i]
-	prev = vals[i - 1]
+	prev = vals[i - lag]
 	if cur is None or prev is None or prev == 0:
 		return None
 	if prev > 0 and cur >= 0:
@@ -515,15 +515,17 @@ def calcRatioSeries(
 	annualSeries: dict[str, dict[str, list[Optional[float]]]],
 	years: list[str],
 	archetypeOverride: str | None = None,
+	yoyLag: int = 1,
 ) -> RatioSeriesResult:
-	"""연도별 재무비율 시계열 계산.
+	"""재무비율 시계열 계산 (연간 또는 분기).
 
 	Args:
-		annualSeries: buildAnnual() 결과의 series.
-		years: buildAnnual() 결과의 years.
+		annualSeries: buildAnnual() 또는 timeseries 결과의 series.
+		years: 기간 리스트 (연간 또는 분기).
+		yoyLag: 성장률 비교 기간 간격 (연간=1, 분기=4).
 
 	Returns:
-		RatioSeriesResult — 모든 비율이 연도별 리스트.
+		RatioSeriesResult — 모든 비율이 기간별 리스트.
 	"""
 	n = len(years)
 	rs = RatioSeriesResult(years=list(years))
@@ -646,11 +648,11 @@ def calcRatioSeries(
 		else:
 			rs.noncurrentRatio.append(None)
 
-		rs.revenueGrowth.append(_yoy(revenue, i) if len(revenue) > i else None)
-		rs.operatingProfitGrowth.append(_yoy(opProfit, i) if len(opProfit) > i else None)
-		rs.netProfitGrowth.append(_yoy(netProfit, i) if len(netProfit) > i else None)
-		rs.assetGrowth.append(_yoy(totalAssets, i) if len(totalAssets) > i else None)
-		rs.equityGrowthRate.append(_yoy(totalEquity, i) if len(totalEquity) > i else None)
+		rs.revenueGrowth.append(_yoy(revenue, i, yoyLag) if len(revenue) > i else None)
+		rs.operatingProfitGrowth.append(_yoy(opProfit, i, yoyLag) if len(opProfit) > i else None)
+		rs.netProfitGrowth.append(_yoy(netProfit, i, yoyLag) if len(netProfit) > i else None)
+		rs.assetGrowth.append(_yoy(totalAssets, i, yoyLag) if len(totalAssets) > i else None)
+		rs.equityGrowthRate.append(_yoy(totalEquity, i, yoyLag) if len(totalEquity) > i else None)
 
 		rs.totalAssetTurnover.append(_safeRound(_safeDiv(rev_i, ta_i), 2))
 		rs.inventoryTurnover.append(_safeRound(_safeDiv(rev_i, inv_i), 2))

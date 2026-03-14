@@ -13,7 +13,7 @@ def sortPeriods(periods: list[str]) -> list[str]:
             return int(period), 4
         return int(period[:4]), int(period[-1])
 
-    return sorted(periods, key=key, reverse=True)
+    return sorted(periods, key=key)
 
 
 def sortTopics(topics: list[str], topicOrder: dict[str, int]) -> list[str]:

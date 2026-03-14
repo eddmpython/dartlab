@@ -90,6 +90,88 @@ _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
     "audit": "auditOpinion",
 }
+# OpenDART 개발가이드 공식 한글 컬럼 매핑 (https://opendart.fss.or.kr/guide/)
+_REPORT_COL_KR: dict[str, str] = {
+    # 증자(감자) 현황 — apiId=2019004
+    "isu_dcrs_de": "주식발행(감소)일자", "isu_dcrs_stle": "발행(감소)형태",
+    "isu_dcrs_stock_knd": "발행(감소)주식종류", "isu_dcrs_qy": "발행(감소)수량",
+    "isu_dcrs_mstvdv_fval_amount": "주당액면가액", "isu_dcrs_mstvdv_amount": "주당가액",
+    # 자기주식 취득/처분 — apiId=2019006
+    "stock_knd": "주식종류", "acqs_mth1": "취득방법(대)",
+    "acqs_mth2": "취득방법(중)", "acqs_mth3": "취득방법(소)",
+    "bsis_qy": "기초수량", "change_qy_acqs": "변동수량(취득)",
+    "change_qy_dsps": "변동수량(처분)", "change_qy_incnr": "변동수량(소각)",
+    "trmend_qy": "기말수량",
+    # 주식총수 현황 — apiId=2020002
+    "se": "구분", "isu_stock_totqy": "발행할주식총수",
+    "now_to_isu_stock_totqy": "현재까지발행주식총수",
+    "now_to_dcrs_stock_totqy": "현재까지감소주식총수",
+    "redc": "감자", "profit_incnr": "이익소각", "rdmstk_repy": "상환주식상환",
+    "etc": "기타", "istc_totqy": "발행주식총수",
+    "tesstk_co": "자기주식수", "distb_stock_co": "유통주식수",
+    # 타법인 출자 현황 — apiId=2019015
+    "inv_prm": "법인명", "frst_acqs_de": "최초취득일자", "invstmnt_purps": "출자목적",
+    "frst_acqs_amount": "최초취득금액", "bsis_blce_qy": "기초잔액(수량)",
+    "bsis_blce_qota_rt": "기초잔액(지분율)", "bsis_blce_acntbk_amount": "기초잔액(장부가액)",
+    "incrs_dcrs_acqs_dsps_qy": "증감(취득처분)(수량)",
+    "incrs_dcrs_acqs_dsps_amount": "증감(취득처분)(금액)",
+    "incrs_dcrs_evl_lstmn": "증감(평가손액)",
+    "trmend_blce_qy": "기말잔액(수량)", "trmend_blce_qota_rt": "기말잔액(지분율)",
+    "trmend_blce_acntbk_amount": "기말잔액(장부가액)",
+    "recent_bsns_year_fnnr_sttus_tot_assets": "최근사업연도재무현황(총자산)",
+    "recent_bsns_year_fnnr_sttus_thstrm_ntpf": "최근사업연도재무현황(당기순이익)",
+    # 최대주주 변동현황 — apiId=2019008
+    "change_on": "변동일", "mxmm_shrholdr_nm": "최대주주명",
+    "posesn_stock_co": "소유주식수", "qota_rt": "지분율", "change_cause": "변동원인",
+    # 소액주주 현황 — apiId=2019009
+    "shrholdr_co": "주주수", "shrholdr_tot_co": "전체주주수", "shrholdr_rate": "주주비율",
+    "hold_stock_co": "보유주식수", "stock_tot_co": "총발행주식수", "hold_stock_rate": "보유주식비율",
+    # 사외이사 현황 — apiId=2020012
+    "drctr_co": "이사의수", "otcmp_drctr_co": "사외이사수",
+    "apnt": "사외이사변동(선임)", "rlsofc": "사외이사변동(해임)",
+    "mdstrm_resig": "사외이사변동(중도퇴임)",
+    # 공모자금 사용내역 — apiId=2020016
+    "se_nm": "구분", "tm": "회차", "pay_de": "납입일", "pay_amount": "납입금액",
+    "on_dclrt_cptal_use_plan": "신고서상자금사용계획",
+    "real_cptal_use_sttus": "실제자금사용현황",
+    "rs_cptal_use_plan_useprps": "증권신고서자금사용계획(용도)",
+    "rs_cptal_use_plan_prcure_amount": "증권신고서자금사용계획(조달금액)",
+    "real_cptal_use_dtls_cn": "실제자금사용내역(내용)",
+    "real_cptal_use_dtls_amount": "실제자금사용내역(금액)",
+    "dffrnc_occrrnc_resn": "차이발생사유",
+    # 사모자금 사용내역 — apiId=2020017
+    "cptal_use_plan": "자금사용계획",
+    "mtrpt_cptal_use_plan_useprps": "주요사항보고서자금사용계획(용도)",
+    "mtrpt_cptal_use_plan_prcure_amount": "주요사항보고서자금사용계획(조달금액)",
+    # 회사채 미상환 잔액 — apiId=2020006
+    "sm": "합계", "remndr_exprtn1": "잔여만기(대분류)", "remndr_exprtn2": "잔여만기(소분류)",
+    "yy1_below": "1년이하", "yy1_excess_yy2_below": "1년초과2년이하",
+    "yy2_excess_yy3_below": "2년초과3년이하", "yy3_excess_yy4_below": "3년초과4년이하",
+    "yy4_excess_yy5_below": "4년초과5년이하", "yy5_excess_yy10_below": "5년초과10년이하",
+    "yy10_excess": "10년초과",
+    # 단기사채 미상환 잔액 — apiId=2020005
+    "de10_below": "10일이하", "de10_excess_de30_below": "10일초과30일이하",
+    "de30_excess_de90_below": "30일초과90일이하", "de90_excess_de180_below": "90일초과180일이하",
+    "de180_excess_yy1_below": "180일초과1년이하", "isu_lmt": "발행한도", "remndr_lmt": "잔여한도",
+    # 감사용역 체결현황 — apiId=2020010
+    "bsns_year": "사업연도", "adtor": "감사인", "cn": "내용", "mendng": "보수",
+    "tot_reqre_time": "총소요시간", "adt_cntrct_dtls_mendng": "감사계약내역(보수)",
+    "adt_cntrct_dtls_time": "감사계약내역(시간)",
+    "real_exc_dtls_mendng": "실제수행내역(보수)", "real_exc_dtls_time": "실제수행내역(시간)",
+    # 비감사 용역 계약현황 — apiId=2020011
+    "cntrct_cncls_de": "계약체결일", "servc_cn": "용역내용",
+    "servc_exc_pd": "용역수행기간", "servc_mendng": "용역보수",
+    # 이사·감사 보수현황 — apiId=2019013
+    "nmpr": "인원수", "mendng_totamt": "보수총액",
+    "jan_avrg_mendng_am": "1인평균보수액",
+    # 개인별 보수현황 — apiId=2019012, 2019014
+    "nm": "이름", "ofcps": "직위",
+    "mendng_totamt_ct_incls_mendng": "보수총액비포함보수",
+    # 미등기임원 보수현황 — apiId=2020013
+    "fyer_salary_totamt": "연간급여총액", "jan_salary_am": "1인평균급여액",
+    # 공통
+    "rm": "비고",
+}
 _DOCS_TOPIC_HINTS: dict[str, tuple[str, ...]] = {
     "costByNature": ("비용의 성격별 분류", "비용의성격별분류", "제조원가", "감가상각비"),
     "tangibleAsset": ("유형자산", "감가상각비"),
@@ -903,6 +985,45 @@ def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str,
         annualSeries[snakeId] = annualVals
 
     return {"CIS": annualSeries}, years
+
+
+def _financeCisQuarterly(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str, dict[str, list]], list[str]] | None:
+    """finance 원본에서 CIS 분기별 시계열 생성 (연간 합산 없이)."""
+    from dartlab.engines.common.finance.period import formatPeriod
+    from dartlab.engines.dart.finance.mapper import AccountMapper
+    from dartlab.engines.dart.finance.pivot import _loadAndNormalize
+
+    result = _loadAndNormalize(stockCode, fsDivPref)
+    if result is None:
+        return None
+
+    df, periods = result
+    df = df.filter(pl.col("sj_div") == "CIS")
+    if df.is_empty():
+        return None
+
+    periodIdx = {p: i for i, p in enumerate(periods)}
+    mapper = AccountMapper.get()
+    qSeries: dict[str, list[Any | None]] = {}
+
+    for row in df.iter_rows(named=True):
+        accountId = row.get("account_id", "") or ""
+        accountNm = row.get("account_nm", "") or ""
+        snakeId = mapper.map(accountId, accountNm)
+        if snakeId is None:
+            continue
+
+        pKey = formatPeriod(row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0))
+        idx = periodIdx.get(pKey)
+        if idx is None:
+            continue
+
+        if snakeId not in qSeries:
+            qSeries[snakeId] = [None] * len(periods)
+        if qSeries[snakeId][idx] is None:
+            qSeries[snakeId][idx] = row.get("_normalized_amount")
+
+    return {"CIS": qSeries}, periods
 
 
 def _ensureData(stockCode: str, category: str) -> bool:
@@ -2215,29 +2336,43 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
+    def _financeCisQuarterly(self):
+        """CIS 분기별 시계열 (연간 합산 없이)."""
+        if not self._hasFinance:
+            return None
+        cacheKey = "_financeCISQuarterly_CFS"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        result = _financeCisQuarterly(self.stockCode, "CFS")
+        self._cache[cacheKey] = result
+        return result
+
     def _ratioSeries(self):
         if not self._hasFinance:
             return None
-        cacheKey = "_ratioSeries_CFS"
+        cacheKey = "_ratioSeries_Q_CFS"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        annualResult = self.finance.annual
-        if annualResult is None:
+        qResult = self.finance.timeseries
+        if qResult is None:
             return None
-        annualSeries, years = annualResult
+        qSeries, periods = qResult
+        # 2016-Q1 → 2016Q1 포맷 통일
+        normalizedPeriods = [p.replace("-", "") for p in periods]
         from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
         archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
-        rs = calcRatioSeries(annualSeries, years, archetypeOverride=archetypeOverride)
+        rs = calcRatioSeries(qSeries, normalizedPeriods, archetypeOverride=archetypeOverride, yoyLag=4)
         result = toSeriesDict(rs)
         self._cache[cacheKey] = result
         return result
 
     def _financeOrDocsStatement(self, sjDiv: str) -> pl.DataFrame | None:
         if sjDiv == "CIS":
-            cisAnnual = self._financeCisAnnual() if self._hasFinance else None
-            if cisAnnual is not None:
-                series, years = cisAnnual
-                df = _financeToDataFrame(series, years, "CIS")
+            cisQ = self._financeCisQuarterly() if self._hasFinance else None
+            if cisQ is not None:
+                series, periods = cisQ
+                normalizedPeriods = [p.replace("-", "") for p in periods]
+                df = _financeToDataFrame(series, normalizedPeriods, "CIS")
                 if df is not None:
                     return df
         df = self._financeStmt(sjDiv) if self._hasFinance else None
@@ -2250,15 +2385,17 @@ class Company:
     # finance(XBRL) 우선 → docs fallback
 
     def _financeStmt(self, sjDiv: str) -> pl.DataFrame | None:
-        """finance 연도별 시계열에서 sjDiv DataFrame 생성 (캐싱)."""
+        """finance 분기별 시계열에서 sjDiv DataFrame 생성 (캐싱)."""
         cacheKey = f"_financeStmt_{sjDiv}"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        annualResult = self.annual
-        if annualResult is None:
+        qResult = self.timeseries
+        if qResult is None:
             return None
-        series, years = annualResult
-        df = _financeToDataFrame(series, years, sjDiv)
+        series, periods = qResult
+        # 2016-Q1 → 2016Q1 포맷 통일
+        normalizedPeriods = [p.replace("-", "") for p in periods]
+        df = _financeToDataFrame(series, normalizedPeriods, sjDiv)
         self._cache[cacheKey] = df
         return df
 
@@ -2654,6 +2791,108 @@ class Company:
                 return topicFrame
         return None
 
+    def _cleanSectionText(self, textFrame: pl.DataFrame | None, period: str | None) -> pl.DataFrame | None:
+        """text 행에서 메타 컬럼 제거 + all-null 기간 제거."""
+        if textFrame is None or textFrame.is_empty():
+            return None
+        metaCols = {"chapter", "topic", "blockType"}
+        periodCols = [c for c in textFrame.columns if c not in metaCols]
+        if not periodCols:
+            return None
+        df = textFrame.select(periodCols)
+        # all-null 기간 제거
+        keepCols = [c for c in df.columns if df[c].null_count() < df.height]
+        if not keepCols:
+            return None
+        df = df.select(keepCols)
+        return self._applyPeriodFilter(df, period) if not df.is_empty() else None
+
+    def _cleanSectionTable(self, topic: str, period: str | None) -> pl.DataFrame | None:
+        """table 행을 구조화 DataFrame으로 변환 (finance IS/BS처럼)."""
+        if topic in self._AUTO_SUBTOPIC_SKIP:
+            return None
+        result = self._topicSubtables(topic)
+        if result is None:
+            return None
+        from dartlab.engines.dart.docs.sections import parseSubtopicTable
+        parsed = parseSubtopicTable(result, numeric=False)
+        if parsed is not None and parsed.df is not None:
+            df = parsed.df
+            if period is not None:
+                periodCols = [c for c in df.columns if c != "항목"]
+                matchedCols = [c for c in periodCols if period in c]
+                if matchedCols:
+                    df = df.select(["항목", *matchedCols])
+            return df
+        # 파싱 실패 시 subtopic wide 반환 (메타 컬럼 정리)
+        wide = result.wide
+        metaCols = {"topic", "sourceTopic", "subtopicOrder", "semanticTopic", "detailTopic"}
+        keepCols = [c for c in wide.columns if c not in metaCols]
+        if keepCols:
+            wide = wide.select(keepCols)
+        return self._applyPeriodFilter(wide, period) if not wide.is_empty() else None
+
+    @staticmethod
+    def _cleanSubtopicWide(df: pl.DataFrame) -> pl.DataFrame:
+        """subtopic wide에서 메타 컬럼 제거 + subtopic→항목 통일."""
+        _DROP_META = {"topic", "sourceTopic", "subtopicOrder", "semanticTopic", "detailTopic"}
+        dropCols = [c for c in df.columns if c in _DROP_META]
+        if dropCols:
+            df = df.drop(dropCols)
+        if "subtopic" in df.columns:
+            df = df.rename({"subtopic": "항목"})
+        return df
+
+    @staticmethod
+    def _ensurePeriodAscending(df: pl.DataFrame) -> pl.DataFrame:
+        """기간 컬럼을 오름차순으로 정렬."""
+        nonPeriodCols = [c for c in df.columns if not _isPeriodColumn(c)]
+        periodCols = [c for c in df.columns if _isPeriodColumn(c)]
+        if len(periodCols) < 2:
+            return df
+        sortedPeriods = sorted(periodCols)
+        if periodCols == sortedPeriods:
+            return df
+        return df.select([*nonPeriodCols, *sortedPeriods])
+
+    @staticmethod
+    def _dropOldPeriodColumns(df: pl.DataFrame, minYear: int) -> pl.DataFrame:
+        """기간 컬럼 중 minYear 미만 연도를 제거."""
+        keepCols = []
+        for c in df.columns:
+            if _isPeriodColumn(c) and int(c[:4]) < minYear:
+                continue
+            keepCols.append(c)
+        if len(keepCols) == len(df.columns):
+            return df
+        return df.select(keepCols)
+
+    def _trimOldPeriods(self, result: Any) -> Any:
+        """show() 반환값에서 _MIN_YEAR 이전 기간 제거."""
+        if result is None:
+            return None
+        minYear = self._MIN_YEAR
+        if isinstance(result, ShowResult):
+            text = self._dropOldPeriodColumns(result.text, minYear) if result.text is not None else None
+            table = self._dropOldPeriodColumns(result.table, minYear) if result.table is not None else None
+            # 기간 컬럼이 모두 제거된 경우
+            if text is not None:
+                hasPeriod = any(_isPeriodColumn(c) for c in text.columns)
+                if not hasPeriod:
+                    text = None
+            if table is not None:
+                hasPeriod = any(_isPeriodColumn(c) for c in table.columns)
+                if not hasPeriod:
+                    table = None
+            if text is None and table is None:
+                return None
+            return ShowResult(text=text, table=table)
+        if isinstance(result, pl.DataFrame):
+            trimmed = self._dropOldPeriodColumns(result, minYear)
+            # period 컬럼이 없는 DF (리스트형 report)는 그대로 반환
+            return trimmed
+        return result
+
     @staticmethod
     def _unpivotTopicRows(topicFrame: pl.DataFrame) -> pl.DataFrame:
         """topic × period 수평 행을 세로로 전환. blockType 유지."""
@@ -2703,7 +2942,7 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    def _reportFrame(self, topic: str) -> pl.DataFrame | None:
+    def _reportFrame(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         if self.report is None:
             return None
         apiType = _REPORT_TOPIC_TO_API_TYPE.get(topic, topic)
@@ -2716,6 +2955,8 @@ class Company:
             if result is not None and hasattr(result, "toWide"):
                 wide = result.toWide()
                 if wide is not None:
+                    if not raw and "metric" in wide.columns:
+                        wide = wide.rename({"metric": "항목"})
                     return wide
         df = self.report.extractAnnual(apiType)
         if df is None or df.is_empty():
@@ -2724,6 +2965,16 @@ class Company:
         dropCols = [c for c in df.columns if c in _META_COLS]
         if dropCols:
             df = df.drop(dropCols)
+        if raw:
+            return df
+        # 영문 컬럼 → 한글 매핑 (OpenDART 공식)
+        renameMap = {c: _REPORT_COL_KR[c] for c in df.columns if c in _REPORT_COL_KR}
+        if renameMap:
+            # 중복 한글명 방지: 이미 존재하는 컬럼명은 건너뜀
+            existing = set(df.columns)
+            renameMap = {k: v for k, v in renameMap.items() if v not in existing or k == v}
+            if renameMap:
+                df = df.rename(renameMap)
         return df
 
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
@@ -2741,7 +2992,13 @@ class Company:
             return payload.filter(pl.col("year").cast(pl.Utf8) == period)
         return payload
 
+    _MIN_YEAR = 2016
+
     def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
+        result = self._showCore(topic, period=period, raw=raw)
+        return self._trimOldPeriods(result)
+
+    def _showCore(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         if topic == "docsStatus":
             return _noticeFrame(topic, "현재 사업보고서 부재")
 
@@ -2768,6 +3025,7 @@ class Company:
             else:
                 subtopicFrame = self._sectionsSubtopicWide(topic)
                 if subtopicFrame is not None:
+                    subtopicFrame = self._cleanSubtopicWide(subtopicFrame)
                     return self._applyPeriodFilter(subtopicFrame, period)
             fallback_payload = {
                 "salesOrder": self._safePrimary("salesOrder"),
@@ -2777,10 +3035,16 @@ class Company:
                 "costByNature": self._safePrimary("costByNature") if self._hasDocsTopicHint("costByNature") else None,
             }[topic]
             if fallback_payload is not None:
-                return self._applyPeriodFilter(fallback_payload, period)
+                payload = self._ensurePeriodAscending(fallback_payload)
+                # account/subtopic 등 → 항목 통일
+                if "account" in payload.columns:
+                    payload = payload.rename({"account": "항목"})
+                elif "subtopic" in payload.columns:
+                    payload = payload.rename({"subtopic": "항목"})
+                return self._applyPeriodFilter(payload, period)
             return None
 
-        reportFrame = self._reportFrame(topic)
+        reportFrame = self._reportFrame(topic, raw=raw)
         if reportFrame is not None:
             return self._applyPeriodFilter(reportFrame, period)
 
@@ -2792,8 +3056,12 @@ class Company:
         # sections에서 text/table 분리하여 ShowResult 반환
         showResult = self._sectionShowResult(topic)
         if showResult is not None:
-            text = self._applyPeriodFilter(showResult.text, period) if showResult.text is not None else None
-            table = self._applyPeriodFilter(showResult.table, period) if showResult.table is not None else None
+            # text: 메타 컬럼 제거 + all-null 기간 제거
+            text = self._cleanSectionText(showResult.text, period)
+            # table: 구조화 DataFrame (finance IS/BS처럼)
+            table = self._cleanSectionTable(topic, period)
+            if text is None and table is None:
+                return None
             return ShowResult(text=text, table=table)
 
         if not self._hasDocs:

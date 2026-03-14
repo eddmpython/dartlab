@@ -14,9 +14,9 @@ DART Company와 동일한 구조를 제공한다.
     c.corpName             # "Apple Inc."
     c.index                # 수평화 보드 DataFrame
     c.show("BS")           # 재무상태표 DataFrame
-    c.show("10-K::item1Business")  # topic content (str)
+    c.show("10-K::item1Business")  # ShowResult(text, table)
     c.trace("BS")          # source provenance
-    c.docs.sections        # pure docs source
+    c.docs.sections        # pure docs source (blockType 분리)
     c.finance.BS           # finance.BS 바로가기
 """
 
@@ -25,7 +25,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple, Optional
 
 import polars as pl
 
@@ -83,6 +83,13 @@ _RATIO_CATEGORY_LABELS: dict[str, str] = {
 }
 
 
+class ShowResult(NamedTuple):
+    """show() 반환 — text와 table을 분리."""
+
+    text: pl.DataFrame | None
+    table: pl.DataFrame | None
+
+
 def _ratioSeriesToDataFrame(
     series: dict[str, dict[str, list[Any | None]]], years: list[str],
 ) -> pl.DataFrame | None:
@@ -111,6 +118,10 @@ def _ratioSeriesToDataFrame(
         return None
     df = pl.DataFrame(rows)
     return df.drop("_field")
+
+
+def _isPeriodColumn(col: str) -> bool:
+    return bool(_PERIOD_COLUMN_RE.fullmatch(col))
 
 
 class _DocsAccessor:
@@ -143,16 +154,44 @@ class _DocsAccessor:
         result = (
             df.select(available)
             .unique(subset=["accession_no"])
-            .sort("period_key", descending=True)
+            .sort("period_key", descending=False)
         )
         self._company._cache[key] = result
         return result
 
-    def show(self, topic: str, period: str | None = None) -> str | None:
+    def show(self, topic: str, period: str | None = None) -> ShowResult | str | None:
+        """topic의 text/table을 ShowResult로 반환.
+
+        blockType이 있으면 ShowResult(text, table) 분리.
+        blockType이 없으면 하위 호환을 위해 str 반환.
+        """
         sec = self.sections
         if sec is None:
             return None
 
+        hasBlockType = "blockType" in sec.columns
+
+        if hasBlockType:
+            topicRows = sec.filter(pl.col("topic") == topic)
+            if topicRows.is_empty():
+                return None
+            periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
+
+            if period is not None:
+                if period not in topicRows.columns:
+                    return None
+                keepCols = ["topic", "blockType", period]
+                topicRows = topicRows.select([c for c in keepCols if c in topicRows.columns])
+
+            textRows = topicRows.filter(pl.col("blockType") == "text")
+            tableRows = topicRows.filter(pl.col("blockType") == "table")
+            text = textRows if not textRows.is_empty() else None
+            table = tableRows if not tableRows.is_empty() else None
+            if text is None and table is None:
+                return None
+            return ShowResult(text=text, table=table)
+
+        # blockType 없는 레거시 경로
         topicRow = sec.filter(pl.col("topic") == topic)
         if topicRow.is_empty():
             return None
@@ -162,7 +201,7 @@ class _DocsAccessor:
                 return None
             return topicRow[period][0]
 
-        periods = [c for c in topicRow.columns if c != "topic"]
+        periods = [c for c in topicRow.columns if _isPeriodColumn(c)]
         for p in periods:
             val = topicRow[p][0]
             if val is not None:
@@ -258,23 +297,106 @@ class _FinanceAccessor:
         return result
 
 
+class _ProfileAccessor:
+    """EDGAR profile namespace — docs spine + finance/report merge layer.
+
+    DART Company.profile과 동일한 사상:
+    - docs.sections가 구조적 뼈대
+    - finance가 숫자 authoritative → docs 요약재무 대체
+    - 서술형/정성 정보는 docs authoritative
+    """
+
+    def __init__(self, company: Company):
+        self._company = company
+
+    @property
+    def sections(self) -> pl.DataFrame | None:
+        """merged sections — finance topic을 docs sections에 합류."""
+        cacheKey = "_profile_sections"
+        if cacheKey in self._company._cache:
+            return self._company._cache[cacheKey]
+
+        docsSec = self._company.docs.sections
+        financeRows = self._buildFinanceRows()
+
+        if docsSec is None and not financeRows:
+            self._company._cache[cacheKey] = None
+            return None
+
+        if docsSec is not None and financeRows:
+            periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
+            finDf = pl.DataFrame(financeRows, schema={
+                "topic": pl.Utf8,
+                "blockType": pl.Utf8,
+                **{p: pl.Utf8 for p in periodCols},
+            })
+            result = pl.concat([finDf, docsSec], how="diagonal_relaxed")
+        elif docsSec is not None:
+            result = docsSec
+        else:
+            result = pl.DataFrame(financeRows) if financeRows else None
+
+        self._company._cache[cacheKey] = result
+        return result
+
+    def _buildFinanceRows(self) -> list[dict[str, str | None]]:
+        """finance BS/IS/CF를 sections 호환 행으로 변환."""
+        rows: list[dict[str, str | None]] = []
+        docsSec = self._company.docs.sections
+        periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)] if docsSec is not None else []
+
+        for stmtName in ("BS", "IS", "CF", "CIS"):
+            df = getattr(self._company.finance, stmtName)
+            if df is None:
+                continue
+            # finance DataFrame을 텍스트 테이블로 변환
+            tableStr = self._dfToMarkdownTable(df)
+            if not tableStr:
+                continue
+            row: dict[str, str | None] = {
+                "topic": stmtName,
+                "blockType": "table",
+            }
+            for p in periodCols:
+                row[p] = None
+            # 최신 기간에 전체 finance 테이블 배치
+            if periodCols:
+                row[periodCols[-1]] = tableStr
+            rows.append(row)
+        return rows
+
+    @staticmethod
+    def _dfToMarkdownTable(df: pl.DataFrame) -> str:
+        """DataFrame을 markdown 테이블 문자열로 변환."""
+        if df is None or df.is_empty():
+            return ""
+        headers = df.columns
+        lines = ["| " + " | ".join(headers) + " |"]
+        lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+        for row in df.iter_rows():
+            cells = [str(v) if v is not None else "" for v in row]
+            lines.append("| " + " | ".join(cells) + " |")
+        return "\n".join(lines)
+
+
 class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
 
     4-namespace 구조::
 
         c = Company("AAPL")
-        c.docs.sections        # topic × period 수평화
+        c.docs.sections        # topic × period 수평화 (blockType 분리)
         c.docs.filings()       # 문서 목록
-        c.docs.show(topic)     # topic content 조회
+        c.docs.show(topic)     # ShowResult(text, table)
         c.finance.BS           # 연도별 재무상태표
         c.finance.IS           # 연도별 손익계산서
         c.finance.CF           # 연도별 현금흐름표
         c.finance.CIS          # 연도별 포괄손익계산서
         c.finance.ratios       # 재무비율
+        c.profile.sections     # merged sections (finance + docs)
         c.BS                   # finance.BS 바로가기
         c.sections             # docs.sections 바로가기
-        c.show(topic)          # 통합 조회
+        c.show(topic)          # 통합 조회 → ShowResult
     """
 
     def __init__(self, ticker: str):
@@ -294,6 +416,7 @@ class Company:
 
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
+        self.profile = _ProfileAccessor(self)
 
     def _resolveTickerRow(self, ticker: str) -> dict | None:
         tickerPath = self._getTickerPath()
@@ -401,7 +524,8 @@ class Company:
 
         sec = self.docs.sections
         if sec is not None:
-            for topic in sec["topic"].to_list():
+            topicCol = sec["topic"].to_list()
+            for topic in topicCol:
                 if isinstance(topic, str) and topic not in seen:
                     ordered.append(topic)
                     seen.add(topic)
@@ -410,6 +534,12 @@ class Company:
         return ordered
 
     def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> Any:
+        """통합 조회.
+
+        - finance topic → DataFrame
+        - ratios → DataFrame
+        - docs topic → ShowResult(text, table)
+        """
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
             return self._applyPeriodFilter(df, period)
@@ -422,9 +552,9 @@ class Company:
             df = _ratioSeriesToDataFrame(series, years)
             return self._applyPeriodFilter(df, period)
 
-        content = self.docs.show(topic, period)
-        if content is not None:
-            return content
+        result = self.docs.show(topic, period)
+        if result is not None:
+            return result
 
         return None
 
@@ -514,24 +644,37 @@ class Company:
                         "topic": topic,
                         "kind": "finance",
                         "source": source,
-                        "periods": f"{years[-1]}..{years[0]}" if len(years) > 1 else (years[0] if years else "-"),
+                        "periods": f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-"),
                         "shape": self._shapeStr(df),
                         "preview": f"{df.height} metrics" if df is not None else "-",
                     })
             else:
                 sec = self.docs.sections
                 if sec is not None:
-                    topicRow = sec.filter(pl.col("topic") == topic)
-                    periodCols = [c for c in sec.columns if c != "topic"]
-                    if not topicRow.is_empty():
-                        nonNull = sum(1 for c in periodCols if topicRow[c][0] is not None)
+                    topicRows = sec.filter(pl.col("topic") == topic)
+                    periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
+                    if not topicRows.is_empty():
+                        # blockType 분리 시 text/table 행 수 표시
+                        hasBlockType = "blockType" in sec.columns
+                        if hasBlockType:
+                            textCount = topicRows.filter(pl.col("blockType") == "text").height
+                            tableCount = topicRows.filter(pl.col("blockType") == "table").height
+                            blockInfo = f"text:{textCount} table:{tableCount}"
+                        else:
+                            blockInfo = "1 row"
+                        nonNull = 0
+                        for r in topicRows.iter_rows(named=True):
+                            for c in periodCols:
+                                if r.get(c) is not None:
+                                    nonNull += 1
+                                    break
                         rows.append({
                             "topic": topic,
                             "kind": "docs",
                             "source": source,
-                            "periods": f"{periodCols[-1]}..{periodCols[0]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-"),
-                            "shape": f"1x{nonNull}",
-                            "preview": self._previewDocsCell(topicRow, periodCols),
+                            "periods": f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-"),
+                            "shape": blockInfo,
+                            "preview": self._previewDocsCell(topicRows, periodCols),
                         })
 
         df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
@@ -545,7 +688,7 @@ class Company:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
             return payload
         if period in payload.columns:
-            keepCols = [c for c in ("account", "category", "metric", "topic") if c in payload.columns]
+            keepCols = [c for c in ("account", "category", "metric", "topic", "blockType") if c in payload.columns]
             keepCols.append(period)
             return payload.select(keepCols)
         return payload
@@ -563,7 +706,7 @@ class Company:
         periodCols = [c for c in df.columns if _PERIOD_COLUMN_RE.fullmatch(c)]
         if not periodCols:
             return "-"
-        return f"{periodCols[-1]}..{periodCols[0]}" if len(periodCols) > 1 else periodCols[0]
+        return f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else periodCols[0]
 
     @staticmethod
     def _previewFinance(df: pl.DataFrame | None) -> str:
@@ -572,10 +715,11 @@ class Company:
         return f"{df.height} accounts"
 
     @staticmethod
-    def _previewDocsCell(topicRow: pl.DataFrame, periodCols: list[str]) -> str:
-        for col in periodCols:
-            val = topicRow[col][0]
-            if val is not None:
-                text = str(val).strip().replace("\n", " ")
-                return f"{col}: {text[:100]}" if len(text) > 100 else f"{col}: {text[:80]}"
+    def _previewDocsCell(topicRows: pl.DataFrame, periodCols: list[str]) -> str:
+        for row in topicRows.iter_rows(named=True):
+            for col in periodCols:
+                val = row.get(col)
+                if val is not None:
+                    text = str(val).strip().replace("\n", " ")
+                    return f"{col}: {text[:100]}" if len(text) > 100 else f"{col}: {text[:80]}"
         return "-"

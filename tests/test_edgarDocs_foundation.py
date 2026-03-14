@@ -680,10 +680,12 @@ def test_edgar_sections_pipeline_builds_topic_period_view(tmp_path, monkeypatch)
 
     assert df is not None
     assert "topic" in df.columns
+    assert "blockType" in df.columns
     assert "2024" in df.columns
     assert "2024Q1" in df.columns
     assert "10-K::item1Business" in df["topic"].to_list()
-    assert df.columns[1:] == sortPeriods(df.columns[1:])
+    periodCols = [c for c in df.columns if c not in ("topic", "blockType")]
+    assert periodCols == sortPeriods(periodCols)
 
 
 def test_edgar_sections_pipeline_supports_form_native_structured_topics(tmp_path, monkeypatch):
@@ -734,7 +736,7 @@ def test_edgar_sections_artifacts_and_views():
         topicNamespace,
     )
 
-    assert sortPeriods(["2024", "2024Q1", "2023", "2024Q3"]) == ["2024", "2024Q3", "2024Q1", "2023"]
+    assert sortPeriods(["2024", "2024Q1", "2023", "2024Q3"]) == ["2023", "2024Q1", "2024Q3", "2024"]
     assert topicNamespace("10-K", "item1Business") == "10-K::item1Business"
     assert fallbackTopic("10-Q") == "10-Q::fullDocument"
     assert loadCanonicalRows() is not None
@@ -1240,13 +1242,13 @@ class TestEdgarCompanyInterface:
         assert "category" in df.columns
         assert "metric" in df.columns
 
-    def test_show_docs_topic_returns_string(self):
-        from dartlab.engines.edgar.company import Company
+    def test_show_docs_topic_returns_show_result(self):
+        from dartlab.engines.edgar.company import Company, ShowResult
 
         c = Company("AAPL")
         biz = c.show("10-K::item1Business")
-        assert isinstance(biz, str)
-        assert len(biz) > 0
+        assert isinstance(biz, ShowResult)
+        assert biz.text is not None or biz.table is not None
 
     def test_show_nonexistent_topic_returns_none(self):
         from dartlab.engines.edgar.company import Company

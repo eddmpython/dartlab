@@ -83,18 +83,18 @@ Layer 4 위에 차트/그래프를 포함한 대시보드를 별도 기능으로
 
 ## EDGAR Company 구조
 
-- `c.index` : finance + docs 통합 수평화 보드
-- `c.show(topic)` : finance/ratios/docs 자동 라우팅
+- `c.index` : finance + docs 통합 수평화 보드 (blockType 표시)
+- `c.show(topic)` : finance → DataFrame, docs → ShowResult(text, table)
 - `c.trace(topic)` : source provenance
 - `c.topics` : 전체 topic 목록
 - `c.docs`
-  - `sections`, `filings`, `show`
+  - `sections` (blockType 분리), `filings`, `show` → ShowResult
 - `c.finance`
-  - `BS`, `IS`, `CF`, `ratios`, `ratioSeries`, `timeseries`
+  - `BS`, `IS`, `CF`, `CIS`, `ratios`, `ratioSeries`, `timeseries`
 - `c.report`
   - 향후 (SEC API 정형 데이터)
 - `c.profile`
-  - 향후 (docs + finance merge)
+  - `sections` — docs spine + finance merge layer (구현 완료)
 
 레거시 파서 없음. sections 수평화가 유일한 기초 경로.
 
