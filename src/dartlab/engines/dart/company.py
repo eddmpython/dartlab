@@ -3024,23 +3024,29 @@ class Company:
     def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         result = self._showCore(topic, period=period, raw=raw)
         result = self._trimOldPeriods(result)
-        if topic == "CF" and isinstance(result, pl.DataFrame) and "계정명" in result.columns:
-            result = self._cleanCfDataFrame(result)
+        if topic in {"IS", "BS", "CIS", "CF", "SCE"} and isinstance(result, pl.DataFrame) and "계정명" in result.columns:
+            result = self._cleanFinanceDataFrame(result, topic)
         return result
 
     @staticmethod
-    def _cleanCfDataFrame(df: pl.DataFrame) -> pl.DataFrame:
-        """CF DataFrame 후처리: 잘못된 당기순이익·영문 계정명·all-null 행 제거."""
+    def _cleanFinanceDataFrame(df: pl.DataFrame, sjDiv: str) -> pl.DataFrame:
+        """재무제표 DataFrame 후처리: all-null 행 제거, CF 고유 정리."""
         periodCols = [c for c in df.columns if _isPeriodColumn(c)]
         if not periodCols:
             return df
-        # 1) 당기순이익 행 제거 (CF에서 standalone 차분이 잘못됨, IS에서 봐야 함)
-        df = df.filter(~pl.col("계정명").is_in(["당기순이익", "법인세비용차감전순이익"]))
-        # 2) 영문 underscore 계정명 제거
-        df = df.filter(~pl.col("계정명").str.contains(r"^[a-z_]+$"))
-        # 3) all-null 행 제거 (모든 기간이 null인 행)
+        # CF 고유: 당기순이익 제거 (standalone 차분 오류), 영문 계정명 제거
+        if sjDiv == "CF":
+            df = df.filter(~pl.col("계정명").is_in(["당기순이익", "법인세비용차감전순이익"]))
+            df = df.filter(~pl.col("계정명").str.contains(r"^[a-z_]+$"))
+        # 공통: all-null 행 제거 (모든 기간이 null인 행)
         notAllNull = pl.any_horizontal([pl.col(c).is_not_null() for c in periodCols])
         df = df.filter(notAllNull)
+        # 공통: 같은 계정명 중복행 병합 (coalesce — 먼저 나온 행 우선)
+        if df["계정명"].n_unique() < df.height:
+            merged = df.group_by("계정명", maintain_order=True).agg(
+                [pl.col(c).drop_nulls().first().alias(c) for c in periodCols]
+            )
+            df = merged
         return df
 
     def _showCore(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
