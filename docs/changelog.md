@@ -9,6 +9,41 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-03-14
+
+### Added
+
+**Profile Pipeline 구축 (Phase 1~4)**
+- `c.diff()` 3-mode API: 전체 요약 / topic 이력(delta, deltaRate) / 줄 단위 인터리빙 diff
+- `sections/diff.py` 모듈: hash 기반 기간간 텍스트 변화 감지
+- `common/finance/inflection.py` 모듈: 재무 시계열 변곡점 탐지
+- report `toWide()`: 5개 pivot Result에 metric × year wide DataFrame 반환
+- `sections/_common.py`: `sortPeriods()` 기간 정렬 유틸리티
+
+### Changed
+
+**데이터 품질 전수조사 및 안정화**
+- `show()` 3-layer 디스패치: finance stmt → report toWide → docs 세로 unpivot
+- `_applyPeriodFilter()` 수정: period 필터 시 `분류`/`항목`/`metric` 등 label 컬럼 보존
+- `_reportFrame()` 메타 컬럼 6개(`stlm_dt`, `apiType`, `stockCode`, `year`, `quarter`, `quarterNum`) 자동 제거
+- `index` lazy 구축: 30초 → 1.77초, I~XII장 문서 순서 정렬
+- sections pipeline 장 제목 중복 제거 (71 → 54 topic)
+- 기간 정렬 오름차순 통일 (과거 → 최신)
+- `sectionMappings.json` 30건 추가 (커버리지 94.6% → 98.9%)
+- SCE 계정명 한글화 (CAUSE_LABELS / DETAIL_LABELS)
+- 6종목 485 show() 전수검증 에러 0, BS 항등식 6종목 OK
+
+**EDGAR 엔진 확장**
+- EDGAR CIS/SCE 실험 (059), standardAccounts 확장
+- EDGAR Company lazy profile 최적화 (060)
+
+### Fixed
+
+- `_applyPeriodFilter` period 필터 시 non-period label 컬럼 누락 버그
+- `index` period range 표시 역순(`2025..1999Q2`) → 오름차순(`1999Q2..2025`)
+- `test_regression_fixture` threshold 조정 (fixture parquet 3년 데이터 대응)
+- `test_sections_pipeline`, `test_sections_runtime` 오름차순 정렬 반영
+
 ## [0.4.6] - 2026-03-13
 
 ### Fixed
