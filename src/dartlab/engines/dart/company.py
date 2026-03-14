@@ -19,7 +19,7 @@ import logging
 import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import polars as pl
 
@@ -1783,6 +1783,13 @@ class _BoardView(OrderedDict):
         return f"<pre>{self}</pre>"
 
 
+class ShowResult(NamedTuple):
+    """show() 반환 — text와 table을 분리."""
+
+    text: pl.DataFrame | None
+    table: pl.DataFrame | None
+
+
 class Company:
     """DART 기반 한국 상장기업 분석.
 
@@ -2618,34 +2625,55 @@ class Company:
                 return label
         return topic
 
-    def _textTopicFrame(self, topic: str) -> pl.DataFrame | None:
+    def _sectionShowResult(self, topic: str) -> ShowResult | None:
+        """sections에서 topic의 text/table 수평 행을 분리하여 ShowResult 반환."""
+        topicFrame = self._sectionTopicRaw(topic)
+        if topicFrame is None:
+            return None
+        hasBlockType = "blockType" in topicFrame.columns
+        textFrame = topicFrame.filter(pl.col("blockType") == "text") if hasBlockType else topicFrame
+        tableFrame = topicFrame.filter(pl.col("blockType") == "table") if hasBlockType else pl.DataFrame()
+        text = textFrame if not textFrame.is_empty() else None
+        table = tableFrame if not tableFrame.is_empty() else None
+        if text is None and table is None:
+            return None
+        return ShowResult(text=text, table=table)
+
+    def _sectionTopicRaw(self, topic: str) -> pl.DataFrame | None:
+        """sections에서 topic의 원본 수평 행(text+table) 반환."""
         docsSections = self.docs.sections
         if docsSections is not None and "topic" in docsSections.columns:
             topicFrame = docsSections.filter(pl.col("topic") == topic)
             if not topicFrame.is_empty():
-                return self._unpivotTopicRow(topicFrame)
+                return topicFrame
 
         profileSections = self._profileAccessor.sections
         if profileSections is not None and "topic" in profileSections.columns:
             topicFrame = profileSections.filter(pl.col("topic") == topic)
             if not topicFrame.is_empty():
-                return self._unpivotTopicRow(topicFrame)
+                return topicFrame
         return None
 
     @staticmethod
-    def _unpivotTopicRow(topicFrame: pl.DataFrame) -> pl.DataFrame:
-        """topic × period 수평 행을 period(행) 세로로 전환."""
-        metaCols = {"chapter", "topic"}
+    def _unpivotTopicRows(topicFrame: pl.DataFrame) -> pl.DataFrame:
+        """topic × period 수평 행을 세로로 전환. blockType 유지."""
+        metaCols = {"chapter", "topic", "blockType"}
         periodCols = [c for c in topicFrame.columns if c not in metaCols]
-        chapter = topicFrame["chapter"][0] if "chapter" in topicFrame.columns else None
-        topic = topicFrame["topic"][0] if "topic" in topicFrame.columns else None
+        hasBlockType = "blockType" in topicFrame.columns
         rows: list[dict[str, str | None]] = []
-        for col in periodCols:
-            val = topicFrame[col][0]
-            if val is not None:
-                rows.append({"chapter": chapter, "topic": topic, "period": col, "content": val})
+        for i in range(topicFrame.height):
+            ch = topicFrame["chapter"][i] if "chapter" in topicFrame.columns else None
+            tp = topicFrame["topic"][i] if "topic" in topicFrame.columns else None
+            bt = topicFrame["blockType"][i] if hasBlockType else None
+            for col in periodCols:
+                val = topicFrame[col][i]
+                if val is not None and str(val).strip():
+                    rows.append({
+                        "chapter": ch, "topic": tp, "blockType": bt,
+                        "period": col, "content": str(val),
+                    })
         if not rows:
-            return pl.DataFrame({"chapter": [], "topic": [], "period": [], "content": []})
+            return pl.DataFrame({"chapter": [], "topic": [], "blockType": [], "period": [], "content": []})
         return pl.DataFrame(rows)
 
     def _topicBlocks(self, topic: str) -> pl.DataFrame | None:
@@ -2761,14 +2789,12 @@ class Company:
             if topic in _NOTES_REGISTRY:
                 return self._applyPeriodFilter(self.notes._get(topic), period)
 
-        # table-heavy docs topic → subtopic wide 수평화 자동 시도
-        tableWide = self._autoSubtopicWide(topic, raw=raw)
-        if tableWide is not None:
-            return self._applyPeriodFilter(tableWide, period)
-
-        textFrame = self._textTopicFrame(topic)
-        if textFrame is not None:
-            return self._applyPeriodFilter(textFrame, period)
+        # sections에서 text/table 분리하여 ShowResult 반환
+        showResult = self._sectionShowResult(topic)
+        if showResult is not None:
+            text = self._applyPeriodFilter(showResult.text, period) if showResult.text is not None else None
+            table = self._applyPeriodFilter(showResult.table, period) if showResult.table is not None else None
+            return ShowResult(text=text, table=table)
 
         if not self._hasDocs:
             return _noticeFrame(topic, "현재 사업보고서 부재")
