@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { onMount, tick } from 'svelte';
 
@@ -126,21 +127,28 @@
 	const pageDesc = $derived(meta?.description ?? `DartLab Blog — ${meta?.title ?? ''}`);
 	const pageUrl = $derived(`${brand.url}blog/${data.slug}`);
 	const pageImage = $derived(postInfo?.thumbnail ? `${brand.url}${postInfo.thumbnail.replace(/^\//, '')}` : `${brand.url}og-image.png`);
-	const jsonLd = $derived(JSON.stringify({
-		'@context': 'https://schema.org',
-		'@type': 'BlogPosting',
-		headline: meta?.title ?? '',
-		description: pageDesc,
-		url: pageUrl,
-		image: pageImage,
-		datePublished: postInfo?.date ?? '',
-		articleSection: postInfo?.categoryLabel ?? '',
-		keywords: [postInfo?.categoryLabel, postInfo?.seriesLabel, '전자공시', 'DartLab'].filter(Boolean).join(', '),
-		isPartOf: postInfo ? `${brand.url}blog/category/${postInfo.category}` : `${brand.url}blog/`,
-		author: { '@type': 'Person', name: 'eddmpython', url: 'https://github.com/eddmpython' },
-		publisher: { '@type': 'Organization', name: 'DartLab', url: brand.url },
-		inLanguage: 'ko'
-	}));
+	const faqItems = $derived(parseFaqFromMarkdown(data.rawMarkdown ?? ''));
+	const jsonLd = $derived(
+		JSON.stringify([
+			buildArticleJsonLd({
+				type: 'BlogPosting',
+				title: meta?.title ?? '',
+				description: pageDesc,
+				url: pageUrl,
+				image: pageImage,
+				datePublished: postInfo?.date ?? '',
+				section: postInfo?.categoryLabel ?? '',
+				keywords: [postInfo?.categoryLabel, postInfo?.seriesLabel, '전자공시', 'DartLab'].filter(Boolean),
+				isPartOf: postInfo ? `${brand.url}blog/category/${postInfo.category}` : `${brand.url}blog/`
+			}),
+			buildBreadcrumbJsonLd([
+				{ name: 'DartLab', url: brand.url },
+				{ name: 'Blog', url: buildAbsoluteUrl('blog/') },
+				{ name: meta?.title ?? 'Blog', url: pageUrl }
+			]),
+			...(faqItems.length > 0 ? [buildFaqJsonLd(faqItems)] : [])
+		])
+	);
 
 	let giscusEl: HTMLElement | undefined = $state();
 
@@ -259,6 +267,12 @@
 						})}
 					</div>
 				{/if}
+				{#if meta?.description}
+					<div class="post-summary" aria-label="포스트 핵심 요약">
+						<span class="post-summary-kicker">Quick Summary</span>
+						<p>{meta.description}</p>
+					</div>
+				{/if}
 			</header>
 
 			<article class="blog-article" bind:this={articleEl}>
@@ -321,7 +335,7 @@
 					<a href="{base}/docs/getting-started/quickstart" class="product-bridge-link primary">Quickstart</a>
 					<a href="{base}/docs/getting-started/installation" class="product-bridge-link">설치 가이드</a>
 					<a href="{base}/docs/api/overview" class="product-bridge-link">API Overview</a>
-					<a href="{base}/docs/tutorials/06_disclosure" class="product-bridge-link">공시 텍스트 튜토리얼</a>
+					<a href="{base}/docs/tutorials/disclosure" class="product-bridge-link">공시 텍스트 튜토리얼</a>
 				</div>
 			</section>
 
@@ -418,6 +432,33 @@
 		margin-bottom: 2rem;
 		padding-bottom: 1.5rem;
 		border-bottom: 1px solid rgba(30, 36, 51, 0.8);
+	}
+
+	.post-summary {
+		width: min(100%, 720px);
+		margin-top: 1rem;
+		padding: 1rem 1.1rem;
+		border-radius: 14px;
+		border: 1px solid rgba(234, 70, 71, 0.22);
+		background: linear-gradient(135deg, rgba(234, 70, 71, 0.12), rgba(15, 18, 25, 0.96));
+		box-shadow: 0 18px 40px rgba(3, 5, 9, 0.24);
+	}
+
+	.post-summary-kicker {
+		display: inline-block;
+		margin-bottom: 0.45rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #fdba74;
+	}
+
+	.post-summary p {
+		margin: 0;
+		font-size: 0.98rem;
+		line-height: 1.7;
+		color: #e2e8f0;
 	}
 
 	.post-avatar {

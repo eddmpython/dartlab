@@ -8,6 +8,7 @@ const projectRoot = resolve(__dirname, '..', '..');
 const basePath = process.env.BASE_PATH || '';
 const siteUrl = 'https://eddmpython.github.io/dartlab';
 const target = `${basePath}/docs/getting-started/installation`;
+const extraPages = [];
 
 const docsDir = resolve(buildDir, 'docs');
 
@@ -76,15 +77,29 @@ function stripFrontmatter(content) {
 	return content.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '').trim();
 }
 
+function writeMarkdownMirror(relPath, title, url, description, content) {
+	const outPath = resolve(buildDir, 'markdown', relPath);
+	const body = stripFrontmatter(content);
+	const parts = [`# ${title}`, `Source: ${url}`];
+	if (description) parts.push(`Summary: ${description}`);
+	parts.push(body);
+	mkdirSync(dirname(outPath), { recursive: true });
+	writeFileSync(outPath, parts.join('\n\n').trim() + '\n', 'utf-8');
+	return `${siteUrl}/markdown/${relPath.replace(/\\/g, '/')}`;
+}
+
 const docsRoot = resolve(projectRoot, 'docs');
 const blogRoot = resolve(projectRoot, 'blog');
 
 const docFiles = collectMdFiles(docsRoot);
-const blogFiles = collectMdFiles(blogRoot, '', { includeIndex: true });
+const blogFiles = collectMdFiles(blogRoot, '', { includeIndex: true }).filter((file) =>
+	/^[^/]+\/\d+-[^/]+\/index\.md$/.test(file.rel)
+);
 
 const sections = [
 	{
 		heading: 'Docs',
+		description: '설치, quickstart, API reference, 튜토리얼. DartLab을 실제 코드와 데이터 흐름으로 사용하는 문서.',
 		files: docFiles,
 		urlPrefix: `${siteUrl}/docs/`,
 		pathToUrl: (rel) => {
@@ -96,6 +111,7 @@ const sections = [
 	},
 	{
 		heading: 'Blog',
+		description: 'DART, EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화에 관한 장문 가이드.',
 		files: blogFiles,
 		urlPrefix: `${siteUrl}/blog/`,
 		pathToUrl: (rel) => {
@@ -111,6 +127,7 @@ let llmsTxt = `# DartLab
 
 DartLab은 한국 금융감독원 DART 전자공시 데이터를 수집·분석하는 Python 라이브러리다.
 정량 데이터(재무제표, 밸류에이션)와 정성 데이터(감사의견, 지배구조), 공시 문서 텍스트를 모두 다룬다.
+AI 크롤러와 답변 엔진을 위해 각 페이지의 markdown mirror도 함께 제공한다.
 
 `;
 
@@ -119,11 +136,20 @@ let fullParts = [];
 for (const section of sections) {
 	if (section.files.length === 0) continue;
 	llmsTxt += `## ${section.heading}\n`;
+	llmsTxt += `${section.description}\n\n`;
 	for (const file of section.files) {
 		const content = readFileSync(file.path, 'utf-8');
+		const fm = extractFrontmatter(content);
 		const title = extractTitle(content) || file.rel;
 		const url = section.urlPrefix + section.pathToUrl(file.rel);
-		llmsTxt += `- [${title}](${url})\n`;
+		const description = fm.description || '';
+		const mirrorRelPath =
+			section.heading === 'Docs'
+				? `docs/${section.pathToUrl(file.rel)}.md`
+				: `blog/${section.pathToUrl(file.rel)}.md`;
+		const mirrorUrl = writeMarkdownMirror(mirrorRelPath, title, url, description, content);
+		const detail = description ? ` — ${description}` : '';
+		llmsTxt += `- [${title}](${url})${detail} | Markdown: ${mirrorUrl}\n`;
 		fullParts.push(`# ${title}\n\nSource: ${url}\n\n${stripFrontmatter(content)}`);
 	}
 	llmsTxt += '\n';
@@ -188,6 +214,9 @@ let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www
 sitemap += `  <url>\n    <loc>${siteUrl}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
 sitemap += `  <url>\n    <loc>${siteUrl}/docs/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
 sitemap += `  <url>\n    <loc>${siteUrl}/blog/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+for (const extraPage of extraPages) {
+	sitemap += `  <url>\n    <loc>${extraPage.loc}</loc>\n    <changefreq>${extraPage.changefreq}</changefreq>\n    <priority>${extraPage.priority}</priority>\n  </url>\n`;
+}
 for (const category of blogCategories) {
 	sitemap += `  <url>\n    <loc>${siteUrl}/blog/category/${category}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.75</priority>\n  </url>\n`;
 }

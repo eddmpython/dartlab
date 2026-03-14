@@ -1,7 +1,17 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
+	import { brand } from '$lib/brand';
 	import { findPrevNext } from '$lib/docs/navigation';
+	import {
+		buildAbsoluteUrl,
+		buildArticleJsonLd,
+		buildBreadcrumbJsonLd,
+		buildFaqJsonLd,
+		buildOrganizationJsonLd,
+		buildPersonJsonLd,
+		parseFaqFromMarkdown
+	} from '$lib/seo';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { onMount, tick } from 'svelte';
 
@@ -94,6 +104,35 @@
 	const Component = $derived(data.component);
 	const meta = $derived(data.metadata ?? {});
 	const prevNext = $derived(findPrevNext(page.url.pathname));
+	const pageTitle = $derived(`${meta?.title ?? 'Docs'} — DartLab 전자공시 문서`);
+	const pageDesc = $derived(meta?.description ?? `DartLab ${meta?.title ?? ''} 문서. DART 전자공시 데이터와 사용 예제를 설명합니다.`);
+	const pageUrl = $derived(buildAbsoluteUrl(`docs/${data.slug}`));
+	const pageImage = buildAbsoluteUrl('og-image.png');
+	const docType = $derived(data.slug === 'about' ? 'AboutPage' : 'TechArticle');
+	const docKeywords = $derived(
+		['전자공시', 'DART', 'OpenDART', meta?.title ?? '', data.slug?.startsWith('api/') ? 'API reference' : 'tutorial'].filter(Boolean)
+	);
+	const faqItems = $derived(parseFaqFromMarkdown(data.rawMarkdown ?? ''));
+	const docJsonLd = $derived(
+		JSON.stringify([
+			buildArticleJsonLd({
+				type: docType,
+				title: meta?.title ?? 'Docs',
+				description: pageDesc,
+				url: pageUrl,
+				image: pageImage,
+				section: data.slug?.split('/')[0] ?? 'docs',
+				keywords: docKeywords
+			}),
+			buildBreadcrumbJsonLd([
+				{ name: 'DartLab', url: brand.url },
+				{ name: 'Docs', url: buildAbsoluteUrl('docs/') },
+				{ name: meta?.title ?? 'Docs', url: pageUrl }
+			]),
+			...(faqItems.length > 0 ? [buildFaqJsonLd(faqItems)] : []),
+			...(data.slug === 'about' ? [buildOrganizationJsonLd(), buildPersonJsonLd()] : [])
+		])
+	);
 
 	$effect(() => {
 		if (!mounted) return;
@@ -124,12 +163,21 @@
 </script>
 
 <svelte:head>
-	<title>{meta?.title ?? 'Docs'} — DartLab 전자공시 분석</title>
-	{#if meta?.description}
-		<meta name="description" content={meta.description} />
-	{:else}
-		<meta name="description" content="DartLab {meta?.title ?? ''} — DART 전자공시 문서 분석 Python 라이브러리 문서." />
-	{/if}
+	<title>{pageTitle}</title>
+	<meta name="description" content={pageDesc} />
+	<link rel="canonical" href={pageUrl} />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="og:description" content={pageDesc} />
+	<meta property="og:url" content={pageUrl} />
+	<meta property="og:site_name" content="DartLab" />
+	<meta property="og:image" content={pageImage} />
+	<meta property="og:locale" content="ko_KR" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={pageTitle} />
+	<meta name="twitter:description" content={pageDesc} />
+	<meta name="twitter:image" content={pageImage} />
+	{@html `<script type="application/ld+json">${docJsonLd}</script>`}
 </svelte:head>
 
 {#if data.status === 404}
@@ -141,6 +189,13 @@
 {:else}
 	<div class="doc-layout">
 		<div class="doc-content-col">
+			{#if meta?.description}
+				<section class="doc-summary" aria-label="문서 핵심 요약">
+					<span class="doc-summary-kicker">Quick Summary</span>
+					<p>{meta.description}</p>
+				</section>
+			{/if}
+
 			<article class="doc-article" bind:this={articleEl}>
 				{#if Component}
 					<Component />
@@ -220,6 +275,32 @@
 
 	.doc-content-col {
 		min-width: 0;
+	}
+
+	.doc-summary {
+		margin: 0 0 1.5rem;
+		padding: 1rem 1.1rem;
+		border-radius: 14px;
+		border: 1px solid rgba(234, 70, 71, 0.22);
+		background: linear-gradient(135deg, rgba(234, 70, 71, 0.12), rgba(15, 18, 25, 0.96));
+		box-shadow: 0 18px 40px rgba(3, 5, 9, 0.26);
+	}
+
+	.doc-summary-kicker {
+		display: inline-block;
+		margin-bottom: 0.45rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #fdba74;
+	}
+
+	.doc-summary p {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.7;
+		color: #e2e8f0;
 	}
 
 	.doc-toc {

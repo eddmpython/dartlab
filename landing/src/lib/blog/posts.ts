@@ -155,7 +155,6 @@ type BlogModule = { metadata?: Record<string, string | number> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
 const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const svgAssetPaths = Object.keys(import.meta.glob('@blog/**/assets/*.svg'));
 
 function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
 	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
@@ -229,12 +228,8 @@ function estimateReadingMinutes(rawMarkdown: string): number {
 	return Math.max(3, Math.ceil(tokenCount / 220));
 }
 
-function findPreviewAsset(path: string): string | undefined {
-	const prefix = path.replace(/index\.md$/, 'assets/');
-	const match = svgAssetPaths.find((assetPath) => assetPath.startsWith(prefix));
-	if (!match) return undefined;
-	const filename = match.split('/').pop();
-	return filename ? `/blog/assets/${filename}` : undefined;
+function findPreviewAsset(_path: string): string | undefined {
+	return undefined;
 }
 
 export const posts: PostMeta[] = buildPosts();

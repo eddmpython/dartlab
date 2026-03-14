@@ -6,7 +6,8 @@
 	const footerLinks = {
 		'Docs': [
 			{ label: 'Getting Started', href: `${base}/docs/` },
-			{ label: 'API Reference', href: `${base}/docs/api/overview` }
+			{ label: 'API Reference', href: `${base}/docs/api/overview` },
+			{ label: 'Changelog', href: `${base}/docs/changelog` }
 		],
 		'Blog': [
 			{ label: 'Everything About DART', href: `${base}/blog/everything-about-dart` }

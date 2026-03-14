@@ -33,7 +33,7 @@
 				class="px-3 py-2 text-sm text-dl-text-muted hover:text-dl-text transition-colors no-underline rounded-lg hover:bg-white/5">
 				API
 			</a>
-			<a href="{base}/docs/user-guide/bridge-matching"
+			<a href="{base}/docs/tutorials/quickstart"
 				class="px-3 py-2 text-sm text-dl-text-muted hover:text-dl-text transition-colors no-underline rounded-lg hover:bg-white/5">
 				Guide
 			</a>

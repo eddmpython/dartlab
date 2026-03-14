@@ -42,12 +42,16 @@ export const navigation: NavItem[] = [
 		]
 	},
 	{
+		title: 'About',
+		href: '/docs/about'
+	},
+	{
 		title: 'Changelog',
 		href: '/docs/changelog'
 	}
 ];
 
-function flattenNav(items: NavItem[]): NavItem[] {
+export function flattenNav(items: NavItem[]): NavItem[] {
 	const result: NavItem[] = [];
 	for (const item of items) {
 		if (item.items && item.items.length > 0) {
