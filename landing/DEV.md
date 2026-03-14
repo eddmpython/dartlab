@@ -49,10 +49,12 @@
 - `alt` 반드시 명시 (접근성)
 - `decoding="async"` 비핵심 이미지에 추가
 
-### WebP 변환 (향후)
-- avatar PNG 12개 (총 ~2.1MB) → WebP 변환 시 ~60% 절감 예상
-- og-image.png (468KB) → WebP 변환 고려
-- 변환 시 `<picture>` + `<source type="image/webp">` + PNG fallback 패턴 사용
+### WebP 변환 (완료)
+- avatar PNG 12개 → WebP 변환 완료 (2.1MB → 318KB, **85% 절감**)
+- 모든 avatar img 태그 → `<picture>` + `<source type="image/webp">` + PNG fallback
+- 동적 썸네일도 `.replace('.png', '.webp')` 패턴으로 WebP 우선 제공
+- og-image.png, icon-*.png, favicon.png은 PNG 유지 (meta 태그/파비콘 호환성)
+- 새 아바타 추가 시 PNG + WebP 둘 다 생성 필수
 
 ## 폰트 규칙
 

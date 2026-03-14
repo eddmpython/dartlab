@@ -105,7 +105,10 @@
 					<div class="latest-card-shell">
 						<div class="latest-card-body">
 							<div class="latest-card-top">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="52" height="52" loading="lazy" />
+								<picture>
+									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
+									<img src="{base}{post.thumbnail}" alt={post.title} class="latest-avatar" width="52" height="52" loading="lazy" />
+								</picture>
 								<div class="latest-card-copy">
 									<div class="latest-meta">
 										<span class="latest-badge">{post.categoryLabel}</span>
@@ -124,7 +127,10 @@
 							<h3 class="latest-title">{post.title}</h3>
 							<p class="latest-desc">{post.description}</p>
 						</div>
-						<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="latest-thumb" width="172" height="172" loading="lazy" />
+						<picture>
+							<source srcset="{base}{(post.previewAsset ?? post.cardPreview).replace('.png', '.webp')}" type="image/webp" />
+							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="latest-thumb" width="172" height="172" loading="lazy" />
+						</picture>
 					</div>
 				</a>
 			{/each}

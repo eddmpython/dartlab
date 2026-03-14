@@ -16,7 +16,10 @@
 		<div class="dl-blog-header-inner">
 			<div class="dl-blog-header-left">
 				<a href="{base}/" class="dl-blog-logo">
-					<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-blog-logo-img" />
+					<picture>
+						<source srcset="{base}/avatar.webp" type="image/webp" />
+						<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-blog-logo-img" />
+					</picture>
 					<span class="dl-blog-logo-text">DartLab</span>
 				</a>
 				<span class="dl-blog-divider">/</span>
@@ -35,7 +38,10 @@
 			<div class="dl-blog-sidebar-inner">
 				<div class="dl-blog-sidebar-brand">
 					<div class="dl-blog-sidebar-brand-row">
-						<img src="{base}/avatar.png" alt="DartLab" width="36" height="36" class="dl-blog-sidebar-avatar" />
+						<picture>
+							<source srcset="{base}/avatar.webp" type="image/webp" />
+							<img src="{base}/avatar.png" alt="DartLab" width="36" height="36" class="dl-blog-sidebar-avatar" />
+						</picture>
 						<span class="dl-blog-sidebar-kicker">DartLab Blog</span>
 					</div>
 					<strong class="dl-blog-sidebar-title">Read Beyond the Numbers</strong>

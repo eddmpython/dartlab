@@ -70,7 +70,10 @@
 					<a href="{base}/blog/{post.slug}" class="series-step-card">
 						<div class="series-step-shell">
 							<div class="series-step-main">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" loading="lazy" />
+								<picture>
+									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
+									<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" loading="lazy" />
+								</picture>
 								<div class="series-step-body">
 									<div class="series-step-meta">
 										<div class="series-step-index">#{post.seriesOrder ?? index + 1}</div>
@@ -81,7 +84,10 @@
 									<p class="series-step-desc">{post.description}</p>
 								</div>
 							</div>
-							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
+							<picture>
+								<source srcset="{base}{(post.previewAsset ?? post.cardPreview).replace('.png', '.webp')}" type="image/webp" />
+								<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
+							</picture>
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>

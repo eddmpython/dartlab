@@ -57,7 +57,10 @@
 		<div class="dl-docs-header-inner">
 			<div class="dl-docs-header-left">
 				<a href="{base}/" class="dl-docs-logo">
-					<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-docs-logo-img" />
+					<picture>
+						<source srcset="{base}/avatar.webp" type="image/webp" />
+						<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" class="dl-docs-logo-img" />
+					</picture>
 					<span class="dl-docs-logo-text">DartLab</span>
 				</a>
 				<span class="dl-docs-divider">/</span>

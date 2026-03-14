@@ -44,7 +44,10 @@
 
 			<Card hover={false} class="border-dl-primary/30 ring-1 ring-dl-primary/10 bg-gradient-to-br from-dl-bg-card to-dl-bg-card">
 				<div class="flex items-center gap-2 mb-4">
-					<img src="{base}/avatar-analyze.png" alt="" width="24" height="24" loading="lazy" decoding="async" class="rounded-full" />
+					<picture>
+						<source srcset="{base}/avatar-analyze.webp" type="image/webp" />
+						<img src="{base}/avatar-analyze.png" alt="" width="24" height="24" loading="lazy" decoding="async" class="rounded-full" />
+					</picture>
 					<span class="text-xs font-mono text-dl-primary uppercase tracking-wider">DartLab</span>
 				</div>
 				<div class="space-y-3 font-mono text-sm">

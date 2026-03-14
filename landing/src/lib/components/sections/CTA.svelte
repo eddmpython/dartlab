@@ -13,15 +13,18 @@
 			></div>
 			<div class="relative">
 				<div class="mb-6 flex justify-center">
-					<img
-						src="{base}/avatar-discover.png"
-						alt="DartLab mascot"
-						width="120"
-						height="120"
-						loading="lazy"
-						decoding="async"
-						class="drop-shadow-[0_0_24px_rgba(234,70,71,0.35)] animate-float"
-					/>
+					<picture>
+						<source srcset="{base}/avatar-discover.webp" type="image/webp" />
+						<img
+							src="{base}/avatar-discover.png"
+							alt="DartLab mascot"
+							width="120"
+							height="120"
+							loading="lazy"
+							decoding="async"
+							class="drop-shadow-[0_0_24px_rgba(234,70,71,0.35)] animate-float"
+						/>
+					</picture>
 				</div>
 				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-4">Start Analyzing DART Disclosures</h2>
 				<p class="text-dl-text-muted mb-8">Read the story beyond the numbers.</p>

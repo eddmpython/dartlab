@@ -17,14 +17,17 @@
 
 	<div class="relative mx-auto max-w-4xl text-center">
 		<div class="mb-6 flex justify-center">
-			<img
-				src="{base}/avatar.png"
-				alt="DartLab mascot"
-				width="180"
-				height="180"
-				fetchpriority="high"
-				class="drop-shadow-[0_0_32px_rgba(234,70,71,0.35)] hover:drop-shadow-[0_0_48px_rgba(234,70,71,0.55)] transition-all duration-300 hover:scale-105 animate-float"
-			/>
+			<picture>
+				<source srcset="{base}/avatar.webp" type="image/webp" />
+				<img
+					src="{base}/avatar.png"
+					alt="DartLab mascot"
+					width="180"
+					height="180"
+					fetchpriority="high"
+					class="drop-shadow-[0_0_32px_rgba(234,70,71,0.35)] hover:drop-shadow-[0_0_48px_rgba(234,70,71,0.55)] transition-all duration-300 hover:scale-105 animate-float"
+				/>
+			</picture>
 		</div>
 
 		<Badge variant="success" class="mb-8">

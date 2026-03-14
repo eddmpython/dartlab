@@ -82,7 +82,10 @@
 					<div class="category-post-shell">
 						<div class="category-post-body">
 							<div class="category-post-top">
-								<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
+								<picture>
+									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
+									<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
+								</picture>
 								<div class="category-post-meta">
 									{#if post.seriesLabel}
 										<span class="category-post-series">{post.seriesLabel}</span>
@@ -101,7 +104,10 @@
 								읽기 <ArrowRight size={14} />
 							</span>
 						</div>
-						<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="category-post-thumb" width="172" height="172" loading="lazy" />
+						<picture>
+							<source srcset="{base}{(post.previewAsset ?? post.cardPreview).replace('.png', '.webp')}" type="image/webp" />
+							<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="category-post-thumb" width="172" height="172" loading="lazy" />
+						</picture>
 					</div>
 				</a>
 			{/each}

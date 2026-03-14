@@ -16,7 +16,10 @@
 <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 {scrolled ? 'bg-dl-bg-darker/90 backdrop-blur-xl border-b border-dl-border/50 shadow-lg shadow-black/20' : 'bg-transparent'}">
 	<nav class="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
 		<a href="{base}/" class="flex items-center gap-1.5 no-underline group">
-			<img src="{base}/avatar.png" alt="DartLab" width="32" height="32" class="rounded-full transition-transform group-hover:scale-110" />
+			<picture>
+				<source srcset="{base}/avatar.webp" type="image/webp" />
+				<img src="{base}/avatar.png" alt="DartLab" width="32" height="32" class="rounded-full transition-transform group-hover:scale-110" />
+			</picture>
 			<span class="text-lg font-bold text-dl-text tracking-tight">DartLab</span>
 		</a>
 

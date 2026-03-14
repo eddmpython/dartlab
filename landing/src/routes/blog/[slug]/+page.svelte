@@ -236,15 +236,18 @@
 		<div class="blog-post-col">
 			<header class="post-header">
 				{#if postInfo?.thumbnail}
-					<img
-						src="{base}{postInfo.thumbnail}"
-						alt={meta?.title ?? ''}
-						class="post-avatar"
-						width="96"
-						height="96"
-						loading="lazy"
-						decoding="async"
-					/>
+					<picture>
+						<source srcset="{base}{postInfo.thumbnail.replace('.png', '.webp')}" type="image/webp" />
+						<img
+							src="{base}{postInfo.thumbnail}"
+							alt={meta?.title ?? ''}
+							class="post-avatar"
+							width="96"
+							height="96"
+							loading="lazy"
+							decoding="async"
+						/>
+					</picture>
 				{/if}
 				{#if postInfo}
 					<div class="post-meta-row">
