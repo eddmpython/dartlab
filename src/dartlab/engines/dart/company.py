@@ -207,6 +207,24 @@ _TOPIC_LABELS: dict[str, str] = {
     "otherReference": "기타참고사항",
     "otherReferences": "기타참고사항",
     "operatingFacilities": "생산설비",
+    # subtopic에 등장하는 내부 topic명 한글화
+    "marketRisk": "시장위험",
+    "liquidityRisk": "유동성위험",
+    "capitalRisk": "자본위험",
+    "creditRisk": "신용위험",
+    "derivativeExposure": "파생상품 노출",
+    "fxRisk": "환율위험",
+    "fairValueRisk": "공정가치위험",
+    "interestRateRisk": "이자율위험",
+    "priceRisk": "가격위험",
+    "segmentIct": "ICT 부문",
+    "segmentOther": "기타 부문",
+    "segmentDigitalMedia": "디지털미디어 부문",
+    "salesOrder": "매출 및 수주",
+    "rawMaterial": "원재료 및 설비",
+    "riskDerivative": "위험관리 및 파생상품",
+    "costByNature": "비용의 성격별 분류",
+    "segments": "부문정보",
 }
 
 
@@ -2834,13 +2852,18 @@ class Company:
 
     @staticmethod
     def _cleanSubtopicWide(df: pl.DataFrame) -> pl.DataFrame:
-        """subtopic wide에서 메타 컬럼 제거 + subtopic→항목 통일."""
+        """subtopic wide에서 메타 컬럼 제거 + subtopic→항목 통일 + 내부 topic명 한글화."""
         _DROP_META = {"topic", "sourceTopic", "subtopicOrder", "semanticTopic", "detailTopic"}
         dropCols = [c for c in df.columns if c in _DROP_META]
         if dropCols:
             df = df.drop(dropCols)
         if "subtopic" in df.columns:
             df = df.rename({"subtopic": "항목"})
+        # 내부 topic명을 한글로 치환
+        if "항목" in df.columns:
+            df = df.with_columns(
+                pl.col("항목").replace(_TOPIC_LABELS).alias("항목")
+            )
         return df
 
     @staticmethod
@@ -2889,7 +2912,11 @@ class Company:
             return ShowResult(text=text, table=table)
         if isinstance(result, pl.DataFrame):
             trimmed = self._dropOldPeriodColumns(result, minYear)
-            # period 컬럼이 없는 DF (리스트형 report)는 그대로 반환
+            # 기간 컬럼이 있었는데 모두 제거된 경우 → None
+            hadPeriod = any(_isPeriodColumn(c) for c in result.columns)
+            hasPeriod = any(_isPeriodColumn(c) for c in trimmed.columns)
+            if hadPeriod and not hasPeriod:
+                return None
             return trimmed
         return result
 
