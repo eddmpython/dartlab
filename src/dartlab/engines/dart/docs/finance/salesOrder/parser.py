@@ -54,9 +54,23 @@ def detectUnit(content: str) -> str:
 def _isHeaderRow(cells: list[str]) -> bool:
     """헤더 행 판별."""
     keywords = {
-        "구분", "부문", "매출유형", "품목", "품 목", "주요제품", "사업구분",
-        "매출액", "비중", "금액", "내수", "수출", "합계", "합 계",
-        "제품", "상품", "용역",
+        "구분",
+        "부문",
+        "매출유형",
+        "품목",
+        "품 목",
+        "주요제품",
+        "사업구분",
+        "매출액",
+        "비중",
+        "금액",
+        "내수",
+        "수출",
+        "합계",
+        "합 계",
+        "제품",
+        "상품",
+        "용역",
     }
     return sum(1 for c in cells if c.strip() in keywords or "기" in c or "년" in c) >= 2
 
@@ -68,8 +82,16 @@ def _extractValueHeaders(headerCols: list[str]) -> list[str]:
     시간축 헤더를 반환한다.
     """
     labelKeywords = {
-        "구분", "부문", "매출유형", "품목", "품 목", "주요제품", "사업구분",
-        "제품", "상품", "용역",
+        "구분",
+        "부문",
+        "매출유형",
+        "품목",
+        "품 목",
+        "주요제품",
+        "사업구분",
+        "제품",
+        "상품",
+        "용역",
     }
     valueHeaders = []
     for c in headerCols:

@@ -95,10 +95,12 @@ def _findExecutiveSection(df: pl.DataFrame, year: str) -> str | None:
         title = row.get("section_title", "") or ""
         if any(re.search(p, title) for p in EXECUTIVE_SECTION_PATTERNS):
             isSub = not title.startswith(("V", "VI", "VII", "VIII", "IX"))
-            candidates.append({
-                "content": row.get("section_content", "") or "",
-                "isSub": isSub,
-            })
+            candidates.append(
+                {
+                    "content": row.get("section_content", "") or "",
+                    "isSub": isSub,
+                }
+            )
 
     if not candidates:
         return None
@@ -123,29 +125,33 @@ def _dedup(rows: list[dict]) -> list[dict]:
 def _buildExecutiveDf(rows: list[dict]) -> pl.DataFrame:
     data = []
     for r in sorted(rows, key=lambda x: x["year"]):
-        data.append({
-            "year": r["year"],
-            "totalRegistered": r["totalRegistered"],
-            "insideDirectors": r["insideDirectors"],
-            "outsideDirectors": r["outsideDirectors"],
-            "otherNonexec": r["otherNonexec"],
-            "fullTimeCount": r["fullTimeCount"],
-            "partTimeCount": r["partTimeCount"],
-            "maleCount": r["maleCount"],
-            "femaleCount": r["femaleCount"],
-        })
+        data.append(
+            {
+                "year": r["year"],
+                "totalRegistered": r["totalRegistered"],
+                "insideDirectors": r["insideDirectors"],
+                "outsideDirectors": r["outsideDirectors"],
+                "otherNonexec": r["otherNonexec"],
+                "fullTimeCount": r["fullTimeCount"],
+                "partTimeCount": r["partTimeCount"],
+                "maleCount": r["maleCount"],
+                "femaleCount": r["femaleCount"],
+            }
+        )
     return pl.DataFrame(data)
 
 
 def _buildUnregPayDf(rows: list[dict]) -> pl.DataFrame:
     data = []
     for r in sorted(rows, key=lambda x: x["year"]):
-        data.append({
-            "year": r["year"],
-            "headcount": r["headcount"],
-            "totalSalary": r["totalSalary"],
-            "avgSalary": r["avgSalary"],
-        })
+        data.append(
+            {
+                "year": r["year"],
+                "headcount": r["headcount"],
+                "totalSalary": r["totalSalary"],
+                "avgSalary": r["avgSalary"],
+            }
+        )
     schema = {
         "year": pl.Int64,
         "headcount": pl.Int64,

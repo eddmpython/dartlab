@@ -67,6 +67,7 @@ def analyze(
     """
     if qSeriesPair is None or aSeriesPair is None:
         from dartlab.engines.dart.finance.pivot import buildAnnual, buildTimeseries
+
         if qSeriesPair is None:
             qResult = buildTimeseries(stockCode)
             if qResult is None:
@@ -85,6 +86,7 @@ def analyze(
     if company is None and corpName is None:
         try:
             from dartlab.engines.dart.company import Company
+
             company = Company(stockCode)
         except ValueError:
             pass

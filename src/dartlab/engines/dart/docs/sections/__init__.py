@@ -1,5 +1,6 @@
 """사업보고서 섹션 구조화 모듈."""
 
+from dartlab.engines.dart.docs.sections._common import sortPeriods
 from dartlab.engines.dart.docs.sections.extractors import (
     ParsedSubtopicTable,
     TopicSubtables,
@@ -12,7 +13,6 @@ from dartlab.engines.dart.docs.sections.types import (
     SectionResult,
     YearSections,
 )
-from dartlab.engines.dart.docs.sections._common import sortPeriods
 from dartlab.engines.dart.docs.sections.views import (
     buildMarkdownBlocks,
     buildMarkdownWide,

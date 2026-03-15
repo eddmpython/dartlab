@@ -12,9 +12,18 @@ from dartlab.engines.dart.docs.finance.segment.types import SegmentTable
 # ── 메타 컬럼 패턴 (부문명이 아닌 컬럼) ──────────────────────
 
 _META_PATTERNS = [
-    r"^구\s*분$", r"^계\b", r"^합계\b", r"^소계\b",
-    r"조정후금액", r"조정후\s*금액", r"내부거래", r"^기타$",
-    r"총계", r"용역\s*합계", r"조정사항", r"지역\s*합계",
+    r"^구\s*분$",
+    r"^계\b",
+    r"^합계\b",
+    r"^소계\b",
+    r"조정후금액",
+    r"조정후\s*금액",
+    r"내부거래",
+    r"^기타$",
+    r"총계",
+    r"용역\s*합계",
+    r"조정사항",
+    r"지역\s*합계",
 ]
 
 
@@ -133,10 +142,7 @@ def parseSegmentTables(text: str) -> list[SegmentTable]:
     def flush():
         nonlocal currentColumns, currentRows, rowOrder, pendingHeaders, hasData
         if currentColumns and currentRows:
-            keepIdx = [
-                i for i, c in enumerate(currentColumns)
-                if c and not _isMetaColumn(c)
-            ]
+            keepIdx = [i for i, c in enumerate(currentColumns) if c and not _isMetaColumn(c)]
             cleanCols = [currentColumns[i] for i in keepIdx]
 
             cleanCols = [re.sub(r"\(\*\d*\)", "", c).strip() for c in cleanCols]
@@ -157,14 +163,16 @@ def parseSegmentTables(text: str) -> list[SegmentTable]:
                     aligned = False
 
             tableType = classifyTable(cleanCols)
-            results.append(SegmentTable(
-                period=currentPeriod,
-                tableType=tableType,
-                columns=cleanCols,
-                rows=cleanRows,
-                order=list(rowOrder),
-                aligned=aligned,
-            ))
+            results.append(
+                SegmentTable(
+                    period=currentPeriod,
+                    tableType=tableType,
+                    columns=cleanCols,
+                    rows=cleanRows,
+                    order=list(rowOrder),
+                    aligned=aligned,
+                )
+            )
         currentColumns = []
         currentRows = {}
         rowOrder = []

@@ -32,340 +32,362 @@ from .resolve import has_analysis_intent
 
 
 async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str | None = None):
-	"""SSE 스트리밍 generator.
+    """SSE 스트리밍 generator.
 
-	이벤트 흐름:
-		meta → snapshot → context (모듈별, 여러 번) → chunk... → done
-		tool_call/tool_result 이벤트는 agent_loop 사용 시 추가
-	"""
-	from dartlab.engines.ai import get_config
-	from dartlab.engines.ai.providers import create_provider
+    이벤트 흐름:
+            meta → snapshot → context (모듈별, 여러 번) → chunk... → done
+            tool_call/tool_result 이벤트는 agent_loop 사용 시 추가
+    """
+    from dartlab.engines.ai import get_config
+    from dartlab.engines.ai.providers import create_provider
 
-	if not_found_msg:
-		yield {
-			"event": "meta",
-			"data": json.dumps({"company": None, "stockCode": None}, ensure_ascii=False),
-		}
-		yield {
-			"event": "chunk",
-			"data": json.dumps({"text": not_found_msg}, ensure_ascii=False),
-		}
-		yield {"event": "done", "data": "{}"}
-		return
+    if not_found_msg:
+        yield {
+            "event": "meta",
+            "data": json.dumps({"company": None, "stockCode": None}, ensure_ascii=False),
+        }
+        yield {
+            "event": "chunk",
+            "data": json.dumps({"text": not_found_msg}, ensure_ascii=False),
+        }
+        yield {"event": "done", "data": "{}"}
+        return
 
-	yield {
-		"event": "meta",
-		"data": json.dumps({
-			"company": c.corpName if c else None,
-			"stockCode": c.stockCode if c else None,
-		}, ensure_ascii=False),
-	}
+    yield {
+        "event": "meta",
+        "data": json.dumps(
+            {
+                "company": c.corpName if c else None,
+                "stockCode": c.stockCode if c else None,
+            },
+            ensure_ascii=False,
+        ),
+    }
 
-	try:
-		config_ = get_config()
-		overrides: dict[str, Any] = {}
-		if req.provider:
-			overrides["provider"] = req.provider
-		if req.model:
-			overrides["model"] = req.model
-		if overrides:
-			config_ = config_.merge(overrides)
+    try:
+        config_ = get_config()
+        overrides: dict[str, Any] = {}
+        if req.provider:
+            overrides["provider"] = req.provider
+        if req.model:
+            overrides["model"] = req.model
+        if overrides:
+            config_ = config_.merge(overrides)
 
-		use_compact = config_.provider in ("ollama", "codex", "claude-code")
-		history_msgs = build_history_messages(req.history)
+        use_compact = config_.provider in ("ollama", "codex", "claude-code")
+        history_msgs = build_history_messages(req.history)
 
-		if c and not has_analysis_intent(req.question):
-			cached = company_cache.get(c.stockCode)
-			if cached:
-				snapshot = cached[1]
-			else:
-				snapshot = await asyncio.to_thread(build_snapshot, c)
-				company_cache.put(c.stockCode, c, snapshot)
-			if snapshot:
-				yield {
-					"event": "snapshot",
-					"data": json.dumps(snapshot, ensure_ascii=False),
-				}
+        if c and not has_analysis_intent(req.question):
+            cached = company_cache.get(c.stockCode)
+            if cached:
+                snapshot = cached[1]
+            else:
+                snapshot = await asyncio.to_thread(build_snapshot, c)
+                company_cache.put(c.stockCode, c, snapshot)
+            if snapshot:
+                yield {
+                    "event": "snapshot",
+                    "data": json.dumps(snapshot, ensure_ascii=False),
+                }
 
-			light_prompt = (
-				build_dynamic_chat_prompt()
-				+ f"\n\n## 현재 대화 종목\n"
-				f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
-				f"아직 구체적 분석 요청은 아닙니다. 가볍게 대화하되, "
-				f"분석이 필요하면 어떤 분석을 원하는지 물어보세요.\n"
-				f"예: '어떤 분석을 원하시나요? 재무 건전성, 수익성, 배당, 종합 분석 등을 해드릴 수 있습니다.'"
-			)
-			messages = [{"role": "system", "content": light_prompt}]
-			messages.extend(history_msgs)
-			messages.append({"role": "user", "content": req.question})
+            light_prompt = (
+                build_dynamic_chat_prompt() + f"\n\n## 현재 대화 종목\n"
+                f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
+                f"아직 구체적 분석 요청은 아닙니다. 가볍게 대화하되, "
+                f"분석이 필요하면 어떤 분석을 원하는지 물어보세요.\n"
+                f"예: '어떤 분석을 원하시나요? 재무 건전성, 수익성, 배당, 종합 분석 등을 해드릴 수 있습니다.'"
+            )
+            messages = [{"role": "system", "content": light_prompt}]
+            messages.extend(history_msgs)
+            messages.append({"role": "user", "content": req.question})
 
-			yield {
-				"event": "system_prompt",
-				"data": json.dumps({"text": light_prompt}, ensure_ascii=False),
-			}
+            yield {
+                "event": "system_prompt",
+                "data": json.dumps({"text": light_prompt}, ensure_ascii=False),
+            }
 
-			llm = create_provider(config_)
-			def _gen_light():
-				yield from llm.stream(messages)
-			gen = _gen_light()
-			while True:
-				chunk = await asyncio.to_thread(next, gen, None)
-				if chunk is None:
-					break
-				yield {
-					"event": "chunk",
-					"data": json.dumps({"text": chunk}, ensure_ascii=False),
-				}
-			yield {"event": "done", "data": "{}"}
-			return
+            llm = create_provider(config_)
 
-		elif c:
-			from dartlab.engines.ai.context import (
-				_get_sector,
-				build_context_by_module,
-				detect_year_range,
-			)
-			from dartlab.engines.ai.metadata import MODULE_META
-			from dartlab.engines.ai.prompts import _classify_question_multi, build_system_prompt
+            def _gen_light():
+                yield from llm.stream(messages)
 
-			cached = company_cache.get(c.stockCode)
-			if cached:
-				snapshot = cached[1]
-			else:
-				snapshot = await asyncio.to_thread(build_snapshot, c)
-				company_cache.put(c.stockCode, c, snapshot)
-			if snapshot:
-				yield {
-					"event": "snapshot",
-					"data": json.dumps(snapshot, ensure_ascii=False),
-				}
+            gen = _gen_light()
+            while True:
+                chunk = await asyncio.to_thread(next, gen, None)
+                if chunk is None:
+                    break
+                yield {
+                    "event": "chunk",
+                    "data": json.dumps({"text": chunk}, ensure_ascii=False),
+                }
+            yield {"event": "done", "data": "{}"}
+            return
 
-			modules_dict, included_tables, header_text = await asyncio.to_thread(
-				build_context_by_module, c, req.question,
-				req.include, req.exclude, use_compact,
-			)
+        elif c:
+            from dartlab.engines.ai.context import (
+                _get_sector,
+                build_context_by_module,
+                detect_year_range,
+            )
+            from dartlab.engines.ai.metadata import MODULE_META
+            from dartlab.engines.ai.prompts import _classify_question_multi, build_system_prompt
 
-			if "_full" in modules_dict:
-				context_text = modules_dict["_full"]
-				yield {
-					"event": "context",
-					"data": json.dumps({
-						"module": "_full",
-						"label": "전체 데이터",
-						"text": context_text,
-					}, ensure_ascii=False),
-				}
-			else:
-				for mod_name in included_tables:
-					mod_text = modules_dict.get(mod_name, "")
-					if not mod_text:
-						continue
-					meta_info = MODULE_META.get(mod_name)
-					label = meta_info.label if meta_info else mod_name
-					yield {
-						"event": "context",
-						"data": json.dumps({
-							"module": mod_name,
-							"label": label,
-							"text": mod_text,
-						}, ensure_ascii=False),
-					}
-				parts = [header_text] if header_text else []
-				for name in included_tables:
-					if name in modules_dict:
-						parts.append(modules_dict[name])
-				context_text = "\n".join(parts)
+            cached = company_cache.get(c.stockCode)
+            if cached:
+                snapshot = cached[1]
+            else:
+                snapshot = await asyncio.to_thread(build_snapshot, c)
+                company_cache.put(c.stockCode, c, snapshot)
+            if snapshot:
+                yield {
+                    "event": "snapshot",
+                    "data": json.dumps(snapshot, ensure_ascii=False),
+                }
 
-			if not use_compact:
-				from dartlab.engines.ai.pipeline import run_pipeline
-				pipeline_result = await asyncio.to_thread(
-					run_pipeline, c, req.question, included_tables,
-				)
-				if pipeline_result:
-					context_text = context_text + pipeline_result
+            modules_dict, included_tables, header_text = await asyncio.to_thread(
+                build_context_by_module,
+                c,
+                req.question,
+                req.include,
+                req.exclude,
+                use_compact,
+            )
 
-			meta_payload: dict[str, Any] = {"includedModules": included_tables}
-			if not use_compact:
-				year_range = await asyncio.to_thread(detect_year_range, c, included_tables)
-				if year_range:
-					meta_payload["dataYearRange"] = year_range
-			yield {
-				"event": "meta",
-				"data": json.dumps(meta_payload, ensure_ascii=False),
-			}
+            if "_full" in modules_dict:
+                context_text = modules_dict["_full"]
+                yield {
+                    "event": "context",
+                    "data": json.dumps(
+                        {
+                            "module": "_full",
+                            "label": "전체 데이터",
+                            "text": context_text,
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
+            else:
+                for mod_name in included_tables:
+                    mod_text = modules_dict.get(mod_name, "")
+                    if not mod_text:
+                        continue
+                    meta_info = MODULE_META.get(mod_name)
+                    label = meta_info.label if meta_info else mod_name
+                    yield {
+                        "event": "context",
+                        "data": json.dumps(
+                            {
+                                "module": mod_name,
+                                "label": label,
+                                "text": mod_text,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    }
+                parts = [header_text] if header_text else []
+                for name in included_tables:
+                    if name in modules_dict:
+                        parts.append(modules_dict[name])
+                context_text = "\n".join(parts)
 
-			sector = _get_sector(c)
-			question_types = _classify_question_multi(req.question)
-			system = build_system_prompt(
-				config_.system_prompt,
-				included_modules=included_tables,
-				sector=sector,
-				question_types=question_types,
-				compact=use_compact,
-			)
-			messages = [{"role": "system", "content": system}]
-			messages.extend(history_msgs)
-			user_content = f"{context_text}\n\n---\n\n질문: {req.question}"
-			messages.append({"role": "user", "content": user_content})
+            if not use_compact:
+                from dartlab.engines.ai.pipeline import run_pipeline
 
-			yield {
-				"event": "system_prompt",
-				"data": json.dumps({"text": system, "userContent": user_content}, ensure_ascii=False),
-			}
-		else:
-			chat_prompt = build_dynamic_chat_prompt()
-			messages = [{"role": "system", "content": chat_prompt}]
-			messages.extend(history_msgs)
-			messages.append({"role": "user", "content": req.question})
+                pipeline_result = await asyncio.to_thread(
+                    run_pipeline,
+                    c,
+                    req.question,
+                    included_tables,
+                )
+                if pipeline_result:
+                    context_text = context_text + pipeline_result
 
-			yield {
-				"event": "system_prompt",
-				"data": json.dumps({"text": chat_prompt}, ensure_ascii=False),
-			}
+            meta_payload: dict[str, Any] = {"includedModules": included_tables}
+            if not use_compact:
+                year_range = await asyncio.to_thread(detect_year_range, c, included_tables)
+                if year_range:
+                    meta_payload["dataYearRange"] = year_range
+            yield {
+                "event": "meta",
+                "data": json.dumps(meta_payload, ensure_ascii=False),
+            }
 
-		llm = create_provider(config_)
+            sector = _get_sector(c)
+            question_types = _classify_question_multi(req.question)
+            system = build_system_prompt(
+                config_.system_prompt,
+                included_modules=included_tables,
+                sector=sector,
+                question_types=question_types,
+                compact=use_compact,
+            )
+            messages = [{"role": "system", "content": system}]
+            messages.extend(history_msgs)
+            user_content = f"{context_text}\n\n---\n\n질문: {req.question}"
+            messages.append({"role": "user", "content": user_content})
 
-		use_guided = (
-			use_compact
-			and c is not None
-			and hasattr(llm, "complete_json")
-		)
-		use_tools = c is not None and not use_guided and hasattr(llm, "complete_with_tools")
+            yield {
+                "event": "system_prompt",
+                "data": json.dumps({"text": system, "userContent": user_content}, ensure_ascii=False),
+            }
+        else:
+            chat_prompt = build_dynamic_chat_prompt()
+            messages = [{"role": "system", "content": chat_prompt}]
+            messages.extend(history_msgs)
+            messages.append({"role": "user", "content": req.question})
 
-		full_response_parts: list[str] = []
-		done_payload: dict[str, Any] = {}
+            yield {
+                "event": "system_prompt",
+                "data": json.dumps({"text": chat_prompt}, ensure_ascii=False),
+            }
 
-		if use_guided:
-			from dartlab.engines.ai.prompts import GUIDED_SCHEMA, guided_json_to_markdown
+        llm = create_provider(config_)
 
-			resp = await asyncio.to_thread(llm.complete_json, messages, GUIDED_SCHEMA)
-			raw_json = resp.answer
-			try:
-				parsed = json.loads(raw_json)
-				md_text = guided_json_to_markdown(parsed)
-				done_payload["guidedRaw"] = parsed
-				if parsed.get("grade"):
-					done_payload["responseMeta"] = {
-						"grade": parsed["grade"],
-						"has_conclusion": bool(parsed.get("conclusion")),
-						"signals": {
-							"positive": [p[:20] for p in parsed.get("positives", [])[:3]],
-							"negative": [r.get("description", "")[:20] for r in parsed.get("risks", [])[:3] if isinstance(r, dict)],
-						},
-						"tables_count": 1,
-					}
-			except (json.JSONDecodeError, ValueError):
-				md_text = raw_json
+        use_guided = use_compact and c is not None and hasattr(llm, "complete_json")
+        use_tools = c is not None and not use_guided and hasattr(llm, "complete_with_tools")
 
-			full_response_parts.append(md_text)
-			paragraphs = md_text.split("\n\n")
-			for i, para in enumerate(paragraphs):
-				chunk_text = para if i == len(paragraphs) - 1 else para + "\n\n"
-				yield {
-					"event": "chunk",
-					"data": json.dumps({"text": chunk_text}, ensure_ascii=False),
-				}
-				if i < len(paragraphs) - 1:
-					await asyncio.sleep(0.02)
+        full_response_parts: list[str] = []
+        done_payload: dict[str, Any] = {}
 
-		elif use_tools:
-			from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop_stream
+        if use_guided:
+            from dartlab.engines.ai.prompts import GUIDED_SCHEMA, guided_json_to_markdown
 
-			messages[0]["content"] += AGENT_SYSTEM_ADDITION
+            resp = await asyncio.to_thread(llm.complete_json, messages, GUIDED_SCHEMA)
+            raw_json = resp.answer
+            try:
+                parsed = json.loads(raw_json)
+                md_text = guided_json_to_markdown(parsed)
+                done_payload["guidedRaw"] = parsed
+                if parsed.get("grade"):
+                    done_payload["responseMeta"] = {
+                        "grade": parsed["grade"],
+                        "has_conclusion": bool(parsed.get("conclusion")),
+                        "signals": {
+                            "positive": [p[:20] for p in parsed.get("positives", [])[:3]],
+                            "negative": [
+                                r.get("description", "")[:20]
+                                for r in parsed.get("risks", [])[:3]
+                                if isinstance(r, dict)
+                            ],
+                        },
+                        "tables_count": 1,
+                    }
+            except (json.JSONDecodeError, ValueError):
+                md_text = raw_json
 
-			queue: asyncio.Queue = asyncio.Queue()
-			loop = asyncio.get_event_loop()
+            full_response_parts.append(md_text)
+            paragraphs = md_text.split("\n\n")
+            for i, para in enumerate(paragraphs):
+                chunk_text = para if i == len(paragraphs) - 1 else para + "\n\n"
+                yield {
+                    "event": "chunk",
+                    "data": json.dumps({"text": chunk_text}, ensure_ascii=False),
+                }
+                if i < len(paragraphs) - 1:
+                    await asyncio.sleep(0.02)
 
-			def _on_tool_call(name: str, args: dict):
-				loop.call_soon_threadsafe(
-					queue.put_nowait,
-					{"event": "tool_call", "name": name, "arguments": args},
-				)
+        elif use_tools:
+            from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop_stream
 
-			def _on_tool_result(name: str, result: str):
-				loop.call_soon_threadsafe(
-					queue.put_nowait,
-					{"event": "tool_result", "name": name, "result": result[:2000]},
-				)
+            messages[0]["content"] += AGENT_SYSTEM_ADDITION
 
-			def _run_agent_stream():
-				for chunk in agent_loop_stream(
-					llm, messages, c,
-					max_turns=5,
-					on_tool_call=_on_tool_call,
-					on_tool_result=_on_tool_result,
-				):
-					loop.call_soon_threadsafe(
-						queue.put_nowait,
-						{"event": "chunk", "text": chunk},
-					)
-				loop.call_soon_threadsafe(
-					queue.put_nowait,
-					{"event": "_done"},
-				)
+            queue: asyncio.Queue = asyncio.Queue()
+            loop = asyncio.get_event_loop()
 
-			task = asyncio.ensure_future(asyncio.to_thread(_run_agent_stream))
+            def _on_tool_call(name: str, args: dict):
+                loop.call_soon_threadsafe(
+                    queue.put_nowait,
+                    {"event": "tool_call", "name": name, "arguments": args},
+                )
 
-			while True:
-				ev = await queue.get()
-				if ev["event"] == "_done":
-					break
-				if ev["event"] == "chunk":
-					text = ev["text"]
-					full_response_parts.append(text)
-					yield {
-						"event": "chunk",
-						"data": json.dumps({"text": text}, ensure_ascii=False),
-					}
-				else:
-					yield {
-						"event": ev["event"],
-						"data": json.dumps(ev, ensure_ascii=False),
-					}
+            def _on_tool_result(name: str, result: str):
+                loop.call_soon_threadsafe(
+                    queue.put_nowait,
+                    {"event": "tool_result", "name": name, "result": result[:2000]},
+                )
 
-			await task
-		else:
-			def _gen():
-				yield from llm.stream(messages)
+            def _run_agent_stream():
+                for chunk in agent_loop_stream(
+                    llm,
+                    messages,
+                    c,
+                    max_turns=5,
+                    on_tool_call=_on_tool_call,
+                    on_tool_result=_on_tool_result,
+                ):
+                    loop.call_soon_threadsafe(
+                        queue.put_nowait,
+                        {"event": "chunk", "text": chunk},
+                    )
+                loop.call_soon_threadsafe(
+                    queue.put_nowait,
+                    {"event": "_done"},
+                )
 
-			gen = _gen()
-			while True:
-				chunk = await asyncio.to_thread(next, gen, None)
-				if chunk is None:
-					break
-				full_response_parts.append(chunk)
-				yield {
-					"event": "chunk",
-					"data": json.dumps({"text": chunk}, ensure_ascii=False),
-				}
+            task = asyncio.ensure_future(asyncio.to_thread(_run_agent_stream))
 
-		if c and full_response_parts:
-			from dartlab.engines.ai.prompts import extract_response_meta
-			full_text = "".join(full_response_parts)
-			response_meta = extract_response_meta(full_text)
-			if response_meta.get("grade") or response_meta.get("has_conclusion"):
-				done_payload["responseMeta"] = response_meta
+            while True:
+                ev = await queue.get()
+                if ev["event"] == "_done":
+                    break
+                if ev["event"] == "chunk":
+                    text = ev["text"]
+                    full_response_parts.append(text)
+                    yield {
+                        "event": "chunk",
+                        "data": json.dumps({"text": text}, ensure_ascii=False),
+                    }
+                else:
+                    yield {
+                        "event": ev["event"],
+                        "data": json.dumps(ev, ensure_ascii=False),
+                    }
 
-	except Exception as e:
-		from dartlab.engines.ai.oauthToken import TokenRefreshError
-		from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
+            await task
+        else:
 
-		error_payload: dict[str, Any] = {"error": str(e)}
+            def _gen():
+                yield from llm.stream(messages)
 
-		if isinstance(e, ChatGPTOAuthError):
-			error_payload["action"] = e.action
-			error_payload["error"] = e.message
-			if e.detail:
-				error_payload["detail"] = e.detail
-		elif isinstance(e, TokenRefreshError):
-			error_payload["action"] = "relogin"
-			error_payload["error"] = e.detail or str(e)
-		elif isinstance(e, PermissionError):
-			error_payload["action"] = "login"
+            gen = _gen()
+            while True:
+                chunk = await asyncio.to_thread(next, gen, None)
+                if chunk is None:
+                    break
+                full_response_parts.append(chunk)
+                yield {
+                    "event": "chunk",
+                    "data": json.dumps({"text": chunk}, ensure_ascii=False),
+                }
 
-		yield {
-			"event": "error",
-			"data": json.dumps(error_payload, ensure_ascii=False),
-		}
+        if c and full_response_parts:
+            from dartlab.engines.ai.prompts import extract_response_meta
 
-	yield {"event": "done", "data": json.dumps(done_payload, ensure_ascii=False)}
+            full_text = "".join(full_response_parts)
+            response_meta = extract_response_meta(full_text)
+            if response_meta.get("grade") or response_meta.get("has_conclusion"):
+                done_payload["responseMeta"] = response_meta
+
+    except Exception as e:
+        from dartlab.engines.ai.oauthToken import TokenRefreshError
+        from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
+
+        error_payload: dict[str, Any] = {"error": str(e)}
+
+        if isinstance(e, ChatGPTOAuthError):
+            error_payload["action"] = e.action
+            error_payload["error"] = e.message
+            if e.detail:
+                error_payload["detail"] = e.detail
+        elif isinstance(e, TokenRefreshError):
+            error_payload["action"] = "relogin"
+            error_payload["error"] = e.detail or str(e)
+        elif isinstance(e, PermissionError):
+            error_payload["action"] = "login"
+
+        yield {
+            "event": "error",
+            "data": json.dumps(error_payload, ensure_ascii=False),
+        }
+
+    yield {"event": "done", "data": json.dumps(done_payload, ensure_ascii=False)}

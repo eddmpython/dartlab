@@ -13,7 +13,8 @@ from dartlab.engines.dart.docs.finance.riskDerivative.types import RiskDerivativ
 
 
 def _buildDerivativeDf(
-    rows: list[dict], headers: list[str] | None = None,
+    rows: list[dict],
+    headers: list[str] | None = None,
 ) -> pl.DataFrame | None:
     """파생상품 행 목록을 DataFrame으로 변환."""
     if not rows:
@@ -22,12 +23,10 @@ def _buildDerivativeDf(
     maxVals = max(len(r["values"]) for r in rows)
     data: dict[str, list] = {"label": [r["label"] for r in rows]}
     for i in range(maxVals):
-        colName = headers[i] if headers and i < len(headers) else f"v{i+1}"
+        colName = headers[i] if headers and i < len(headers) else f"v{i + 1}"
         if colName in data:
-            colName = f"{colName}_{i+1}"
-        data[colName] = [
-            r["values"][i] if i < len(r["values"]) else None for r in rows
-        ]
+            colName = f"{colName}_{i + 1}"
+        data[colName] = [r["values"][i] if i < len(r["values"]) else None for r in rows]
 
     schema = {"label": pl.Utf8}
     for col in data:
@@ -54,9 +53,7 @@ def riskDerivative(stockCode: str) -> RiskDerivativeResult | None:
 
         for row in report.iter_rows(named=True):
             title = row.get("section_title", "") or ""
-            if ("위험관리" in title and "파생" in title) or (
-                "파생" in title and "거래" in title
-            ):
+            if ("위험관리" in title and "파생" in title) or ("파생" in title and "거래" in title):
                 content = row.get("section_content", "") or ""
                 if len(content) < 50:
                     continue
@@ -66,21 +63,14 @@ def riskDerivative(stockCode: str) -> RiskDerivativeResult | None:
                 derivatives, derivHeaders = parseDerivativeContracts(content)
 
                 if not fxSensitivity and not derivatives:
-                    if (
-                        "없습니다" in content[:500]
-                        or "해당사항" in content[:500]
-                        or len(content) < 300
-                    ):
+                    if "없습니다" in content[:500] or "해당사항" in content[:500] or len(content) < 300:
                         return RiskDerivativeResult(
                             corpName=corpName,
                             nYears=1,
                             unit=unit,
                             noData=True,
                         )
-                    hasRisk = any(
-                        k in content
-                        for k in ("환율", "이자율", "시장위험", "신용위험")
-                    )
+                    hasRisk = any(k in content for k in ("환율", "이자율", "시장위험", "신용위험"))
                     if hasRisk:
                         return RiskDerivativeResult(
                             corpName=corpName,
@@ -95,12 +85,8 @@ def riskDerivative(stockCode: str) -> RiskDerivativeResult | None:
                     fxDf = pl.DataFrame(
                         {
                             "currency": [f["currency"] for f in fxSensitivity],
-                            "upImpact": [
-                                f.get("upImpact") for f in fxSensitivity
-                            ],
-                            "downImpact": [
-                                f.get("downImpact") for f in fxSensitivity
-                            ],
+                            "upImpact": [f.get("upImpact") for f in fxSensitivity],
+                            "downImpact": [f.get("downImpact") for f in fxSensitivity],
                         },
                         schema={
                             "currency": pl.Utf8,

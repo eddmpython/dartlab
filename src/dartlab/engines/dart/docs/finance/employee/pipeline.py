@@ -30,8 +30,7 @@ def employee(stockCode: str) -> EmployeeResult | None:
             continue
 
         empRows = report.filter(
-            pl.col("section_title").str.contains("직원")
-            | pl.col("section_title").str.contains("임원")
+            pl.col("section_title").str.contains("직원") | pl.col("section_title").str.contains("임원")
         )
         if empRows.height == 0:
             continue
@@ -76,5 +75,3 @@ def employee(stockCode: str) -> EmployeeResult | None:
         nYears=ts.height,
         timeSeries=ts,
     )
-
-

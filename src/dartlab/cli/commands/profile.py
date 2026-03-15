@@ -26,12 +26,12 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--show",
         metavar="TOPIC",
-        help='topic payload 출력 예: --show BS, --show dividend, --show companyOverview',
+        help="topic payload 출력 예: --show BS, --show dividend, --show companyOverview",
     )
     parser.add_argument(
         "--trace",
         metavar="TOPIC",
-        help='topic source trace 출력 예: --trace dividend',
+        help="topic source trace 출력 예: --trace dividend",
     )
     parser.set_defaults(handler=run)
 

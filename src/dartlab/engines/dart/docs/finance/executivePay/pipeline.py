@@ -113,13 +113,15 @@ def _findPaySection(df: pl.DataFrame, year: str) -> str | None:
 def _buildPayByTypeDf(rows: list[dict]) -> pl.DataFrame:
     data = []
     for r in sorted(rows, key=lambda x: (x["year"], x["category"])):
-        data.append({
-            "year": int(r["year"]),
-            "category": r["category"],
-            "headcount": r["headcount"],
-            "totalPay": r["totalPay"],
-            "avgPay": r["avgPay"],
-        })
+        data.append(
+            {
+                "year": int(r["year"]),
+                "category": r["category"],
+                "headcount": r["headcount"],
+                "totalPay": r["totalPay"],
+                "avgPay": r["avgPay"],
+            }
+        )
     schema = {
         "year": pl.Int64,
         "category": pl.Utf8,
@@ -133,12 +135,14 @@ def _buildPayByTypeDf(rows: list[dict]) -> pl.DataFrame:
 def _buildTopPayDf(rows: list[dict]) -> pl.DataFrame:
     data = []
     for r in sorted(rows, key=lambda x: (x["year"], -(x["totalPay"] or 0))):
-        data.append({
-            "year": int(r["year"]),
-            "name": r["name"],
-            "position": r["position"],
-            "totalPay": r["totalPay"],
-        })
+        data.append(
+            {
+                "year": int(r["year"]),
+                "name": r["name"],
+                "position": r["position"],
+                "totalPay": r["totalPay"],
+            }
+        )
     schema = {
         "year": pl.Int64,
         "name": pl.Utf8,

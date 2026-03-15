@@ -18,13 +18,16 @@ from dartlab.engines.dart.docs.disclosure.rawMaterial.types import (
 )
 
 
-def _parseYear(report: pl.DataFrame) -> tuple[
-    list[dict] | None, dict | None, list[dict] | None,
+def _parseYear(
+    report: pl.DataFrame,
+) -> tuple[
+    list[dict] | None,
+    dict | None,
+    list[dict] | None,
 ]:
     """단일 연도 report에서 원재료/설비/CAPEX 파싱."""
     sections = report.filter(
-        pl.col("section_title").str.contains("원재료")
-        | pl.col("section_title").str.contains("생산설비")
+        pl.col("section_title").str.contains("원재료") | pl.col("section_title").str.contains("생산설비")
     )
     if sections.height == 0:
         return None, None, None
@@ -59,18 +62,11 @@ def _buildMaterials(rawResult: list[dict] | None) -> list[RawMaterial]:
 def _buildEquipment(eqResult: dict | None) -> Equipment | None:
     if not eqResult:
         return None
-    return Equipment(**{
-        k: eqResult.get(k)
-        for k in Equipment.__dataclass_fields__
-        if k in eqResult
-    })
+    return Equipment(**{k: eqResult.get(k) for k in Equipment.__dataclass_fields__ if k in eqResult})
 
 
 def _buildCapex(capResult: list[dict] | None) -> list[CapexItem]:
-    return [
-        CapexItem(segment=r["segment"], amount=r["amount"])
-        for r in (capResult or [])
-    ]
+    return [CapexItem(segment=r["segment"], amount=r["amount"]) for r in (capResult or [])]
 
 
 def rawMaterial(stockCode: str) -> RawMaterialResult | None:

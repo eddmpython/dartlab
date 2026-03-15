@@ -131,8 +131,11 @@ class OAuthCodexProvider(BaseProvider):
 
         try:
             resp = requests.post(
-                url, headers=headers, json=body,
-                stream=stream, timeout=300,
+                url,
+                headers=headers,
+                json=body,
+                stream=stream,
+                timeout=300,
             )
         except requests.ConnectionError:
             raise ChatGPTOAuthError(
@@ -156,8 +159,11 @@ class OAuthCodexProvider(BaseProvider):
             if refreshed:
                 headers = self._build_headers(refreshed["access_token"])
                 resp = requests.post(
-                    url, headers=headers, json=body,
-                    stream=stream, timeout=300,
+                    url,
+                    headers=headers,
+                    json=body,
+                    stream=stream,
+                    timeout=300,
                 )
 
         if resp.status_code != 200:
@@ -188,17 +194,21 @@ class OAuthCodexProvider(BaseProvider):
             if m["role"] == "system":
                 system_parts.append(m["content"])
             elif m["role"] == "assistant":
-                input_items.append({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": [{"type": "output_text", "text": m["content"]}],
-                })
+                input_items.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": m["content"]}],
+                    }
+                )
             else:
-                input_items.append({
-                    "type": "message",
-                    "role": "user",
-                    "content": [{"type": "input_text", "text": m["content"]}],
-                })
+                input_items.append(
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": m["content"]}],
+                    }
+                )
 
         body: dict = {
             "model": self.resolved_model,

@@ -15,16 +15,16 @@ def test_build_parser_registers_all_commands():
     parser = build_parser()
 
     choices = parser._subparsers._group_actions[0].choices
-    assert set(["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "ui"]).issubset(choices.keys())
+    assert set(["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "ui"]).issubset(
+        choices.keys()
+    )
     assert choices["ui"].help == "==SUPPRESS=="
 
 
 def test_parse_ask_options():
     parser = build_parser()
 
-    args = parser.parse_args(
-        ["ask", "005930", "분석", "--provider", "codex", "--include", "BS", "IS", "--stream"]
-    )
+    args = parser.parse_args(["ask", "005930", "분석", "--provider", "codex", "--include", "BS", "IS", "--stream"])
 
     assert args.command == "ask"
     assert args.company == "005930"

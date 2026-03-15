@@ -39,9 +39,7 @@ def fundraising(stockCode: str) -> FundraisingResult | None:
                         or "해당없음" in content[:500]
                         or len(content) < 300
                     )
-                    hasHeader = "발행" in content and (
-                        "일자" in content or "형태" in content
-                    )
+                    hasHeader = "발행" in content and ("일자" in content or "형태" in content)
                     if noDataSignals or hasHeader:
                         return FundraisingResult(
                             corpName=corpName,

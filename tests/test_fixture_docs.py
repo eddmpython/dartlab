@@ -25,8 +25,7 @@ class TestDocsStructure:
         assert "section_content" in docsDf.columns
 
     def test_hasRequiredColumns(self, docsDf):
-        required = ["corp_code", "corp_name", "year", "rcept_no",
-                     "report_type", "section_title", "section_content"]
+        required = ["corp_code", "corp_name", "year", "rcept_no", "report_type", "section_title", "section_content"]
         for col in required:
             assert col in docsDf.columns, f"missing column: {col}"
 

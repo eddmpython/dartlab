@@ -80,8 +80,13 @@ _SCALE_FIELDS: list[tuple[str, str]] = [
 ]
 
 _INSIGHT_AREAS = [
-    "performance", "profitability", "health",
-    "cashflow", "governance", "risk", "opportunity",
+    "performance",
+    "profitability",
+    "health",
+    "cashflow",
+    "governance",
+    "risk",
+    "opportunity",
 ]
 
 
@@ -453,10 +458,13 @@ class Compare:
         if not self._isAllKR:
             _log.debug("dividendCompare: KR 전용 — US 기업 포함 시 None")
             return None
-        return self._reportTimeseries("dividend", [
-            ("dps", "DPS (원)"),
-            ("dividendYield", "배당수익률 (%)"),
-        ])
+        return self._reportTimeseries(
+            "dividend",
+            [
+                ("dps", "DPS (원)"),
+                ("dividendYield", "배당수익률 (%)"),
+            ],
+        )
 
     @property
     def employeeCompare(self) -> pl.DataFrame | None:
@@ -468,10 +476,13 @@ class Compare:
         if not self._isAllKR:
             _log.debug("employeeCompare: KR 전용 — US 기업 포함 시 None")
             return None
-        return self._reportTimeseries("employee", [
-            ("totalEmployee", "총 직원수"),
-            ("avgMonthlySalary", "평균 월급 (만원)"),
-        ])
+        return self._reportTimeseries(
+            "employee",
+            [
+                ("totalEmployee", "총 직원수"),
+                ("avgMonthlySalary", "평균 월급 (만원)"),
+            ],
+        )
 
     @property
     def majorHolderCompare(self) -> pl.DataFrame | None:
@@ -483,9 +494,12 @@ class Compare:
         if not self._isAllKR:
             _log.debug("majorHolderCompare: KR 전용 — US 기업 포함 시 None")
             return None
-        return self._reportTimeseries("majorHolder", [
-            ("totalShareRatio", "최대주주 지분율 (%)"),
-        ])
+        return self._reportTimeseries(
+            "majorHolder",
+            [
+                ("totalShareRatio", "최대주주 지분율 (%)"),
+            ],
+        )
 
     @property
     def auditCompare(self) -> pl.DataFrame | None:
@@ -532,6 +546,7 @@ class Compare:
         df = pl.DataFrame(rows) if rows else pl.DataFrame()
         self._cache[cacheKey] = df
         return df
+
     def _reportTimeseries(
         self,
         reportName: str,

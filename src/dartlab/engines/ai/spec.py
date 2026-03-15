@@ -20,6 +20,7 @@ _ENGINE_SPECS = [
 def _loadEngineSpec(modulePath: str) -> dict | None:
     """엔진 spec 모듈을 동적 임포트하여 buildSpec() 호출."""
     import importlib
+
     try:
         mod = importlib.import_module(modulePath)
         return mod.buildSpec()

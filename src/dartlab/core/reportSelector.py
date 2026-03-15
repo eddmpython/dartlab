@@ -15,16 +15,11 @@ def selectReport(df: pl.DataFrame, year: str, reportKind: str = "annual") -> pl.
     if kindFilter is None:
         return None
 
-    reports = df.filter(
-        (pl.col("year") == year)
-        & (pl.col("report_type").str.contains(kindFilter))
-    )
+    reports = df.filter((pl.col("year") == year) & (pl.col("report_type").str.contains(kindFilter)))
     if reports.height == 0:
         return None
 
-    orig = reports.filter(
-        ~pl.col("report_type").str.contains("기재정정|첨부")
-    )
+    orig = reports.filter(~pl.col("report_type").str.contains("기재정정|첨부"))
     if orig.height > 0:
         return orig
 

@@ -147,8 +147,7 @@ def refresh_access_token() -> dict[str, Any] | None:
     if "invalid_client" in error_code:
         raise TokenRefreshError(
             "client_changed",
-            "OAuth Client ID가 변경된 것 같습니다. "
-            "openai/codex 레포에서 최신 Client ID를 확인하세요.",
+            "OAuth Client ID가 변경된 것 같습니다. openai/codex 레포에서 최신 Client ID를 확인하세요.",
         )
 
     raise TokenRefreshError("unknown", f"HTTP {resp.status_code}: {error_desc}")

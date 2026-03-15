@@ -143,12 +143,14 @@ def _buildOpinionDf(rows: list[dict]) -> pl.DataFrame:
     """감사의견 시계열 DataFrame."""
     data = []
     for r in sorted(rows, key=lambda x: int(x["year"])):
-        data.append({
-            "year": int(r["year"]),
-            "auditor": r["auditor"],
-            "opinion": normalizeOpinion(r["opinion"]),
-            "keyAuditMatters": r.get("keyAuditMatters", ""),
-        })
+        data.append(
+            {
+                "year": int(r["year"]),
+                "auditor": r["auditor"],
+                "opinion": normalizeOpinion(r["opinion"]),
+                "keyAuditMatters": r.get("keyAuditMatters", ""),
+            }
+        )
     return pl.DataFrame(data)
 
 
@@ -156,14 +158,16 @@ def _buildFeeDf(rows: list[dict]) -> pl.DataFrame:
     """감사보수 시계열 DataFrame."""
     data = []
     for r in sorted(rows, key=lambda x: int(x["year"])):
-        data.append({
-            "year": int(r["year"]),
-            "auditor": r["auditor"],
-            "contractFee": r["contractFee"],
-            "contractHours": r["contractHours"],
-            "actualFee": r["actualFee"],
-            "actualHours": r["actualHours"],
-        })
+        data.append(
+            {
+                "year": int(r["year"]),
+                "auditor": r["auditor"],
+                "contractFee": r["contractFee"],
+                "contractHours": r["contractHours"],
+                "actualFee": r["actualFee"],
+                "actualHours": r["actualHours"],
+            }
+        )
     schema = {
         "year": pl.Int64,
         "auditor": pl.Utf8,

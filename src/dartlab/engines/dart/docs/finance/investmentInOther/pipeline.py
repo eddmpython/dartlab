@@ -14,12 +14,10 @@ def _buildInvestmentDf(rows: list[dict], headers: list[str] | None = None) -> pl
     maxVals = max(len(r["values"]) for r in rows)
     data: dict[str, list] = {"name": [r["name"] for r in rows]}
     for i in range(maxVals):
-        colName = headers[i] if headers and i < len(headers) else f"v{i+1}"
+        colName = headers[i] if headers and i < len(headers) else f"v{i + 1}"
         if colName in data:
-            colName = f"{colName}_{i+1}"
-        data[colName] = [
-            r["values"][i] if i < len(r["values"]) else None for r in rows
-        ]
+            colName = f"{colName}_{i + 1}"
+        data[colName] = [r["values"][i] if i < len(r["values"]) else None for r in rows]
     return pl.DataFrame(data)
 
 

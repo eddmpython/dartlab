@@ -29,6 +29,7 @@ def test_edgarDocs_has_minimum_common_schema(tmp_path, monkeypatch):
     fixture.write_parquet(docsDir / "AAPL.parquet")
 
     from dartlab import config
+
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
 
     df = loadData("AAPL", category="edgarDocs")
@@ -77,6 +78,7 @@ def test_edgarDocs_common_view_values(tmp_path, monkeypatch):
     fixture.write_parquet(docsDir / "AAPL.parquet")
 
     from dartlab import config
+
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
 
     df = loadData("AAPL", category="edgarDocs")
@@ -300,6 +302,7 @@ def test_loadData_edgarDocs_force_check_runs_incremental_when_stale(monkeypatch,
     )
 
     called = {}
+
     def fakeIncremental(stockCode: str, pathArg: Path, *, sinceYear: int, latestRemote: dict) -> None:
         called["stockCode"] = stockCode
         called["path"] = pathArg
@@ -380,16 +383,20 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
 
-    universe = pl.DataFrame({
-        "ticker": ["AAPL", "MSFT", "OTCX"],
-        "cik": ["0000320193", "0000789019", "0000123456"],
-        "title": ["Apple Inc.", "Microsoft Corp.", "OTC Example"],
-        "exchange": ["Nasdaq", "NYSE", "OTC"],
-    })
+    universe = pl.DataFrame(
+        {
+            "ticker": ["AAPL", "MSFT", "OTCX"],
+            "cik": ["0000320193", "0000789019", "0000123456"],
+            "title": ["Apple Inc.", "Microsoft Corp.", "OTC Example"],
+            "exchange": ["Nasdaq", "NYSE", "OTC"],
+        }
+    )
 
     fetched: list[tuple[str, int]] = []
 
-    def fakeBuildEdgarCollectibleUniverse(*, limit: int = 2000, sinceYear: int = 2009, forceRefresh: bool = False) -> pl.DataFrame:
+    def fakeBuildEdgarCollectibleUniverse(
+        *, limit: int = 2000, sinceYear: int = 2009, forceRefresh: bool = False
+    ) -> pl.DataFrame:
         return universe
 
     def fakeFetchEdgarDocs(ticker: str, outPath: Path, *, sinceYear: int = 2009, maxFilings=None) -> Path:
@@ -398,7 +405,9 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
         pl.DataFrame({"ticker": [ticker]}).write_parquet(outPath)
         return outPath
 
-    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.buildEdgarCollectibleUniverse", fakeBuildEdgarCollectibleUniverse)
+    monkeypatch.setattr(
+        "dartlab.engines.edgar.docs.fetch.buildEdgarCollectibleUniverse", fakeBuildEdgarCollectibleUniverse
+    )
     monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
 
     result = downloadListedEdgarDocs(limit=10, sinceYear=2009, batchSize=0, cooldownSeconds=0)
@@ -439,12 +448,14 @@ def test_periodKey_treats_40f_as_annual():
 def test_summarizeEdgarDocsFrame_flags_unexpected_full_document():
     from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
 
-    df = pl.DataFrame({
-        "accession_no": ["a1", "a1", "a2"],
-        "form_type": ["10-K", "10-K", "40-F"],
-        "section_title": ["Full Document", "Item 1. Business", "Full Document"],
-        "section_content": ["alpha", "| x | y |", "gamma"],
-    })
+    df = pl.DataFrame(
+        {
+            "accession_no": ["a1", "a1", "a2"],
+            "form_type": ["10-K", "10-K", "40-F"],
+            "section_title": ["Full Document", "Item 1. Business", "Full Document"],
+            "section_content": ["alpha", "| x | y |", "gamma"],
+        }
+    )
 
     summary = summarizeEdgarDocsFrame(df)
 
@@ -458,12 +469,14 @@ def test_summarizeEdgarDocsFrame_flags_unexpected_full_document():
 def test_summarizeEdgarDocsFrame_allows_40f_full_document_fallback():
     from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
 
-    df = pl.DataFrame({
-        "accession_no": ["a1"],
-        "form_type": ["40-F"],
-        "section_title": ["Full Document"],
-        "section_content": ["plain text"],
-    })
+    df = pl.DataFrame(
+        {
+            "accession_no": ["a1"],
+            "form_type": ["40-F"],
+            "section_title": ["Full Document"],
+            "section_content": ["plain text"],
+        }
+    )
 
     summary = summarizeEdgarDocsFrame(df)
 
@@ -474,12 +487,14 @@ def test_summarizeEdgarDocsFrame_allows_40f_full_document_fallback():
 def test_dedupeIssuerUniverse_prefers_base_ticker():
     from dartlab.engines.edgar.docs.fetch import _dedupeIssuerUniverse
 
-    df = pl.DataFrame({
-        "ticker": ["AGM-PD", "AGM", "AGM-PE", "BRK-B", "BRK-A"],
-        "cik": ["0001001", "0001001", "0001001", "0001002", "0001002"],
-        "title": ["Farm Credit", "Farm Credit", "Farm Credit", "Berkshire", "Berkshire"],
-        "exchange": ["NYSE", "NYSE", "NYSE", "NYSE", "NYSE"],
-    })
+    df = pl.DataFrame(
+        {
+            "ticker": ["AGM-PD", "AGM", "AGM-PE", "BRK-B", "BRK-A"],
+            "cik": ["0001001", "0001001", "0001001", "0001002", "0001002"],
+            "title": ["Farm Credit", "Farm Credit", "Farm Credit", "Berkshire", "Berkshire"],
+            "exchange": ["NYSE", "NYSE", "NYSE", "NYSE", "NYSE"],
+        }
+    )
 
     result = _dedupeIssuerUniverse(df)
 
@@ -489,12 +504,14 @@ def test_dedupeIssuerUniverse_prefers_base_ticker():
 def test_interleaveIssuerUniverse_spreads_tickers_across_buckets():
     from dartlab.engines.edgar.docs.fetch import _interleaveIssuerUniverse
 
-    df = pl.DataFrame({
-        "ticker": ["AAPL", "AAON", "AMZN", "BRK-A", "BMY", "C", "CRM"],
-        "cik": ["1", "2", "3", "4", "5", "6", "7"],
-        "title": ["a", "b", "c", "d", "e", "f", "g"],
-        "exchange": ["Nasdaq"] * 7,
-    })
+    df = pl.DataFrame(
+        {
+            "ticker": ["AAPL", "AAON", "AMZN", "BRK-A", "BMY", "C", "CRM"],
+            "cik": ["1", "2", "3", "4", "5", "6", "7"],
+            "title": ["a", "b", "c", "d", "e", "f", "g"],
+            "exchange": ["Nasdaq"] * 7,
+        }
+    )
 
     result = _interleaveIssuerUniverse(df)
 
@@ -507,13 +524,15 @@ def test_prepareEdgarCollectibleUniverse_writes_incremental_cache_and_progress(m
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
 
-    listed = pl.DataFrame({
-        "ticker": ["AAPL", "BMY", "CRM"],
-        "cik": ["0001", "0002", "0003"],
-        "title": ["Apple", "Bristol", "Salesforce"],
-        "exchange": ["Nasdaq", "NYSE", "NYSE"],
-        "is_exchange_listed": [True, True, True],
-    })
+    listed = pl.DataFrame(
+        {
+            "ticker": ["AAPL", "BMY", "CRM"],
+            "cik": ["0001", "0002", "0003"],
+            "title": ["Apple", "Bristol", "Salesforce"],
+            "exchange": ["Nasdaq", "NYSE", "NYSE"],
+            "is_exchange_listed": [True, True, True],
+        }
+    )
 
     def fakeLoadListedUniverse():
         return listed
@@ -573,7 +592,9 @@ def test_download_batch_classifies_failure_kinds():
 
     assert module._classifyFailure("A filing 없음", ValueError("A filing 없음")) == "no_supported_regular_filing"
     assert module._classifyFailure("section 추출 실패", ValueError("section 추출 실패")) == "parse_error"
-    assert module._classifyFailure("TLS CA certificate bundle", OSError("TLS CA certificate bundle")) == "legacy_env_error"
+    assert (
+        module._classifyFailure("TLS CA certificate bundle", OSError("TLS CA certificate bundle")) == "legacy_env_error"
+    )
     assert module._classifyFailure("timed out", TimeoutError("timed out")) == "fetch_timeout"
     assert module._classifyFailure("network", requests.RequestException("network")) == "fetch_error"
     assert module._classifyFailure("disk", OSError("disk")) == "storage_error"
@@ -616,10 +637,13 @@ def test_download_batch_load_completed_requires_existing_parquet(tmp_path):
     docsDir.mkdir()
     progressPath = tmp_path / "download.progress.jsonl"
     progressPath.write_text(
-        "\n".join([
-            json.dumps({"ticker": "AAPL", "status": "downloaded", "path": str(docsDir / "AAPL.parquet")}),
-            json.dumps({"ticker": "MSFT", "status": "downloaded", "path": str(docsDir / "MSFT.parquet")}),
-        ]) + "\n",
+        "\n".join(
+            [
+                json.dumps({"ticker": "AAPL", "status": "downloaded", "path": str(docsDir / "AAPL.parquet")}),
+                json.dumps({"ticker": "MSFT", "status": "downloaded", "path": str(docsDir / "MSFT.parquet")}),
+            ]
+        )
+        + "\n",
         encoding="utf-8",
     )
     (docsDir / "MSFT.parquet").write_bytes(b"PAR1")
@@ -692,29 +716,32 @@ def test_edgar_sections_pipeline_supports_form_native_structured_topics(tmp_path
     import importlib
 
     from dartlab.engines.edgar.docs.sections import sections
+
     pipelineModule = importlib.import_module("dartlab.engines.edgar.docs.sections.pipeline")
 
-    df = pl.DataFrame({
-        "cik": ["0001", "0001", "0001", "0001"],
-        "company_name": ["Test Corp."] * 4,
-        "ticker": ["TEST"] * 4,
-        "year": ["2024", "2024", "2024", "2024"],
-        "filing_date": ["2024-11-01", "2024-05-01", "2024-05-01", "2024-05-01"],
-        "period_end": ["2024-09-28", "2024-03-30", "2024-03-30", "2024-03-30"],
-        "accession_no": ["annual-1", "q1-1", "q1-1", "q1-1"],
-        "form_type": ["10-K", "10-Q", "10-Q", "10-Q"],
-        "report_type": ["10-K (2024.09)", "10-Q (2024.03)", "10-Q (2024.03)", "10-Q (2024.03)"],
-        "period_key": ["2024", "2024Q1", "2024Q1", "2024Q1"],
-        "section_order": [0, 0, 1, 2],
-        "section_title": [
-            "Item 1. Business",
-            "Part I - Item 1. Financial Statements",
-            "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
-            "Part II - Item 1A. Risk Factors",
-        ],
-        "filing_url": ["u1", "u2", "u2", "u2"],
-        "section_content": ["Annual business", "Quarter statements", "Quarter mdna", "Quarter risks"],
-    })
+    df = pl.DataFrame(
+        {
+            "cik": ["0001", "0001", "0001", "0001"],
+            "company_name": ["Test Corp."] * 4,
+            "ticker": ["TEST"] * 4,
+            "year": ["2024", "2024", "2024", "2024"],
+            "filing_date": ["2024-11-01", "2024-05-01", "2024-05-01", "2024-05-01"],
+            "period_end": ["2024-09-28", "2024-03-30", "2024-03-30", "2024-03-30"],
+            "accession_no": ["annual-1", "q1-1", "q1-1", "q1-1"],
+            "form_type": ["10-K", "10-Q", "10-Q", "10-Q"],
+            "report_type": ["10-K (2024.09)", "10-Q (2024.03)", "10-Q (2024.03)", "10-Q (2024.03)"],
+            "period_key": ["2024", "2024Q1", "2024Q1", "2024Q1"],
+            "section_order": [0, 0, 1, 2],
+            "section_title": [
+                "Item 1. Business",
+                "Part I - Item 1. Financial Statements",
+                "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+                "Part II - Item 1A. Risk Factors",
+            ],
+            "filing_url": ["u1", "u2", "u2", "u2"],
+            "section_content": ["Annual business", "Quarter statements", "Quarter mdna", "Quarter risks"],
+        }
+    )
     monkeypatch.setattr(pipelineModule, "loadData", lambda stockCode, category="edgarDocs", sinceYear=None: df)
 
     result = sections("TEST")
@@ -776,7 +803,10 @@ Exhibits body
 
     assert len(items) >= 7
     assert items[0]["title"] == "Part I - Item 1. Financial Statements"
-    assert items[1]["title"] == "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+    assert (
+        items[1]["title"]
+        == "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+    )
     assert any(item["title"] == "Part II - Item 1A. Risk Factors" for item in items)
 
 
@@ -810,7 +840,10 @@ Exhibits body
 
     titles = [item["title"] for item in items]
     assert "Part I - Item 1. Financial Statements" in titles
-    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert (
+        "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+        in titles
+    )
     assert "Part II - Item 1. Legal Proceedings" in titles
     assert "Part II - Item 1A. Risk Factors" in titles
 
@@ -841,7 +874,10 @@ Exhibits body
 
     titles = [item["title"] for item in items]
     assert "Part I - Item 1. Financial Statements" in titles
-    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert (
+        "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+        in titles
+    )
     assert "Part II - Item 1A. Risk Factors" in titles
 
 
@@ -879,7 +915,10 @@ Exhibits body
 
     titles = [item["title"] for item in items]
     assert "Part I - Item 1. Financial Statements" in titles
-    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert (
+        "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+        in titles
+    )
     assert "Part II - Item 1A. Risk Factors" in titles
 
 
@@ -955,7 +994,10 @@ Exhibits body
     items = _splitItems(text, "10-Q")
 
     titles = [item["title"] for item in items]
-    assert "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations" in titles
+    assert (
+        "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations"
+        in titles
+    )
     assert "Part I - Item 3. Quantitative and Qualitative Disclosures About Market Risk" in titles
     assert "Part II - Item 1A. Risk Factors" in titles
 
@@ -1054,8 +1096,7 @@ def test_submissionTextUrl_uses_accession_txt_name():
     }
 
     assert _submissionTextUrl(filing) == (
-        "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/"
-        "0001907982-24-000049.txt"
+        "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/0001907982-24-000049.txt"
     )
     assert _filingIndexJsonUrl(filing) == (
         "https://www.sec.gov/Archives/edgar/data/0001907982/000190798224000049/index.json"

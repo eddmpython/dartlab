@@ -70,9 +70,7 @@ def _hasSection(text: str, field: str) -> bool:
 # ── 개별 필드 파서 ──
 
 
-def _parseFounded(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseFounded(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "founded"):
         missing.append("founded")
         return
@@ -85,24 +83,18 @@ def _parseFounded(
     if m:
         dm = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일", m.group(1))
         if dm:
-            result["founded"] = (
-                f"{dm.group(1)}-{int(dm.group(2)):02d}-{int(dm.group(3)):02d}"
-            )
+            result["founded"] = f"{dm.group(1)}-{int(dm.group(2)):02d}-{int(dm.group(3)):02d}"
             return
 
     m = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일[에\s]*설립", text)
     if m:
-        result["founded"] = (
-            f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
-        )
+        result["founded"] = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
         return
 
     failed.append("founded")
 
 
-def _parseAddress(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseAddress(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "address"):
         missing.append("address")
         return
@@ -127,9 +119,7 @@ def _parseAddress(
     failed.append("address")
 
 
-def _parseHomepage(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseHomepage(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "homepage"):
         missing.append("homepage")
         return
@@ -154,9 +144,7 @@ def _parseHomepage(
     failed.append("homepage")
 
 
-def _parseSubsidiaryCount(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseSubsidiaryCount(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "subsidiaryCount"):
         missing.append("subsidiaryCount")
         return
@@ -170,9 +158,7 @@ def _parseSubsidiaryCount(
         return
 
     # 합계 행이 전부 - 인 경우 (종속기업 0개)
-    allDashMatch = re.search(
-        r"\|\s*합계\s*\|\s*-\s*\|\s*-\s*\|\s*-\s*\|\s*-\s*\|", text
-    )
+    allDashMatch = re.search(r"\|\s*합계\s*\|\s*-\s*\|\s*-\s*\|\s*-\s*\|\s*-\s*\|", text)
     if allDashMatch:
         result["subsidiaryCount"] = 0
         return
@@ -189,9 +175,7 @@ def _parseSubsidiaryCount(
     failed.append("subsidiaryCount")
 
 
-def _parseSME(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseSME(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "isSME"):
         missing.append("isSME")
         return
@@ -200,17 +184,13 @@ def _parseSME(
     if not m:
         m = re.search(r"중소기업에\s*(해당되지\s*않|해당)", text)
     if m:
-        result["isSME"] = (
-            "해당되지" not in m.group(1) and "미해당" not in m.group(1)
-        )
+        result["isSME"] = "해당되지" not in m.group(1) and "미해당" not in m.group(1)
         return
 
     failed.append("isSME")
 
 
-def _parseVenture(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseVenture(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "isVenture"):
         missing.append("isVenture")
         return
@@ -236,9 +216,7 @@ _AGENCY_RE = (
 _AGENCY_FULL_RE = _AGENCY_RE + r"|Fitch|한기평|한신평|NICE신평"
 
 
-def _parseCreditRatings(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseCreditRatings(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "creditRatings"):
         missing.append("creditRatings")
         return
@@ -248,7 +226,10 @@ def _parseCreditRatings(
     # 다음 섹션 경계 컷오프
     sectionCutoff = None
     for boundary in [
-        "주권상장", "회사의 연혁", "주주에 관한", "자본금 변동",
+        "주권상장",
+        "회사의 연혁",
+        "주주에 관한",
+        "자본금 변동",
     ]:
         pos = creditSection.find(boundary)
         if pos != -1 and (sectionCutoff is None or pos < sectionCutoff):
@@ -265,9 +246,16 @@ def _parseCreditRatings(
     # 등급 설명표 컷오프
     descCutoff = None
     for keyword in [
-        "등급별 내용", "정 의", "등 급 | 정 의", "투자적격등급",
-        "투기등급", "등급의 정의", "등 급 정 의", "신용등급체계",
-        "국내 신용등급 체계", "신용등급 체계",
+        "등급별 내용",
+        "정 의",
+        "등 급 | 정 의",
+        "투자적격등급",
+        "투기등급",
+        "등급의 정의",
+        "등 급 정 의",
+        "신용등급체계",
+        "국내 신용등급 체계",
+        "신용등급 체계",
     ]:
         pos = creditSection.find(keyword)
         if pos != -1 and (descCutoff is None or pos < descCutoff):
@@ -276,12 +264,8 @@ def _parseCreditRatings(
         creditSection = creditSection[:descCutoff]
 
     # 등급 범위 표기 제거
-    creditSection = re.sub(
-        r"\([A-Za-z0-9+\-]+\s*~\s*[A-Za-z0-9+\-]+\)", "", creditSection
-    )
-    creditSection = re.sub(
-        r"[A-Za-z0-9+]+\s+~\s+[A-Za-z0-9+]+", "", creditSection
-    )
+    creditSection = re.sub(r"\([A-Za-z0-9+\-]+\s*~\s*[A-Za-z0-9+\-]+\)", "", creditSection)
+    creditSection = re.sub(r"[A-Za-z0-9+]+\s+~\s+[A-Za-z0-9+]+", "", creditSection)
 
     # 등급 뒤 (Stable), (안정적), /부정적 등 제거
     creditSection = re.sub(
@@ -351,9 +335,7 @@ def _parseCreditRatings(
     # 2) 표에서 최신 행 (날짜가 첫 열)
     if not ratings:
         seen: set[tuple[str, str]] = set()
-        cleanSection = re.sub(
-            r"\([A-Za-z0-9+\-]+~[A-Za-z0-9+\-]+\)", "", creditSection
-        )
+        cleanSection = re.sub(r"\([A-Za-z0-9+\-]+~[A-Za-z0-9+\-]+\)", "", creditSection)
         dateRows = list(
             re.finditer(
                 r"\|\s*(\d{4}\.\d{2}(?:\.\d{2})?)\s*\|([^\n]+)",
@@ -361,40 +343,26 @@ def _parseCreditRatings(
             )
         )
         if dateRows:
-            uniqueDates = list(
-                dict.fromkeys(dr.group(1) for dr in reversed(dateRows))
-            )
+            uniqueDates = list(dict.fromkeys(dr.group(1) for dr in reversed(dateRows)))
             latestYM = uniqueDates[0][:7]
             recentDates = {d for d in uniqueDates if d[:7] == latestYM}
-            recentRows = [
-                dr for dr in dateRows if dr.group(1) in recentDates
-            ]
+            recentRows = [dr for dr in dateRows if dr.group(1) in recentDates]
             for dr in recentRows:
                 rowText = dr.group(2)
-                agencies = [
-                    am.group(1)
-                    for am in re.finditer(rf"({_AGENCY_FULL_RE})", rowText)
-                ]
-                grades = [
-                    gm.group(1)
-                    for gm in re.finditer(rf"({_GRADE_RE})", rowText)
-                ]
+                agencies = [am.group(1) for am in re.finditer(rf"({_AGENCY_FULL_RE})", rowText)]
+                grades = [gm.group(1) for gm in re.finditer(rf"({_GRADE_RE})", rowText)]
                 if len(grades) == 1 and agencies:
                     for agency in agencies:
                         key = (agency, grades[0])
                         if key not in seen:
                             seen.add(key)
-                            ratings.append(
-                                CreditRating(agency=agency, grade=grades[0])
-                            )
+                            ratings.append(CreditRating(agency=agency, grade=grades[0]))
                 elif len(agencies) == 1 and grades:
                     for grade in grades:
                         key = (agencies[0], grade)
                         if key not in seen:
                             seen.add(key)
-                            ratings.append(
-                                CreditRating(agency=agencies[0], grade=grade)
-                            )
+                            ratings.append(CreditRating(agency=agencies[0], grade=grade))
 
     if ratings:
         result["creditRatings"] = ratings
@@ -402,9 +370,7 @@ def _parseCreditRatings(
         failed.append("creditRatings")
 
 
-def _parseListedDate(
-    text: str, result: dict, missing: list[str], failed: list[str]
-) -> None:
+def _parseListedDate(text: str, result: dict, missing: list[str], failed: list[str]) -> None:
     if not _hasSection(text, "listedDate"):
         missing.append("listedDate")
         return
@@ -416,9 +382,7 @@ def _parseListedDate(
     for pat in patterns:
         m = re.search(pat, text)
         if m:
-            result["listedDate"] = (
-                f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
-            )
+            result["listedDate"] = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
             return
 
     failed.append("listedDate")

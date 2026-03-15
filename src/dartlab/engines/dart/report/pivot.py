@@ -51,20 +51,18 @@ def pivotEmployee(stockCode: str) -> EmployeeResult | None:
     if df is None:
         return None
 
-    totals = df.filter(
-        (pl.col("sexdstn").is_null())
-        | (pl.col("sexdstn") == "계")
-        | (pl.col("sexdstn") == "합계")
-    )
+    totals = df.filter((pl.col("sexdstn").is_null()) | (pl.col("sexdstn") == "계") | (pl.col("sexdstn") == "합계"))
 
     if totals.is_empty():
         totals = (
             df.group_by(["year", "quarterNum"])
-            .agg([
-                pl.col("sm").sum().alias("sm"),
-                pl.col("fyer_salary_totamt").sum().alias("fyer_salary_totamt"),
-                pl.col("jan_salary_am").mean().alias("jan_salary_am"),
-            ])
+            .agg(
+                [
+                    pl.col("sm").sum().alias("sm"),
+                    pl.col("fyer_salary_totamt").sum().alias("fyer_salary_totamt"),
+                    pl.col("jan_salary_am").mean().alias("jan_salary_am"),
+                ]
+            )
             .sort("year")
         )
 
@@ -129,18 +127,18 @@ def pivotMajorHolder(stockCode: str) -> MajorHolderResult | None:
     latestHolders: list[dict] = []
     if latestYear is not None:
         individuals = common.filter(
-            (pl.col("year") == latestYear)
-            & (pl.col("nm") != "계")
-            & pl.col("nm").is_not_null()
+            (pl.col("year") == latestYear) & (pl.col("nm") != "계") & pl.col("nm").is_not_null()
         ).sort("trmend_posesn_stock_qota_rt", descending=True)
 
         for row in individuals.head(10).iter_rows(named=True):
-            latestHolders.append({
-                "name": row["nm"],
-                "relate": row.get("relate"),
-                "ratio": row.get("trmend_posesn_stock_qota_rt"),
-                "shares": row.get("trmend_posesn_stock_co"),
-            })
+            latestHolders.append(
+                {
+                    "name": row["nm"],
+                    "relate": row.get("relate"),
+                    "ratio": row.get("trmend_posesn_stock_qota_rt"),
+                    "shares": row.get("trmend_posesn_stock_co"),
+                }
+            )
 
     return MajorHolderResult(
         years=years,
@@ -158,9 +156,7 @@ def pivotExecutive(stockCode: str) -> ExecutiveResult | None:
 
     latestYear = df["year"].max()
     latestQ = df.filter(pl.col("year") == latestYear)["quarterNum"].max()
-    latest = df.filter(
-        (pl.col("year") == latestYear) & (pl.col("quarterNum") == latestQ)
-    )
+    latest = df.filter((pl.col("year") == latestYear) & (pl.col("quarterNum") == latestQ))
 
     if latest.is_empty():
         return None

@@ -57,9 +57,7 @@ def parseMeetingAgenda(content: str) -> list[dict]:
             headerFound = True
             continue
 
-        if any("구분" in c or "구 분" in c for c in cells) and any(
-            "안건" in c or "내용" in c for c in cells
-        ):
+        if any("구분" in c or "구 분" in c for c in cells) and any("안건" in c or "내용" in c for c in cells):
             headerFound = True
             continue
 

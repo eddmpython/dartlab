@@ -25,7 +25,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "자본총계": "ending_equity",
     "기말 자본": "ending_equity",
     "기말잔액": "ending_equity",
-
     "당기순이익": "net_income",
     "당기순이익(손실)": "net_income",
     "당기순손실": "net_income",
@@ -34,7 +33,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "분기순이익": "net_income",
     "분기순이익(손실)": "net_income",
     "분기순손실": "net_income",
-
     "배당": "dividends",
     "배당금 지급": "dividends",
     "배당금지급": "dividends",
@@ -42,7 +40,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "현금배당": "dividends",
     "연차배당": "dividends",
     "소유주에 대한 배분으로 인식된 배당금": "dividends",
-
     "자기주식의 취득": "treasury_acquired",
     "자기주식 취득": "treasury_acquired",
     "자기주식의취득": "treasury_acquired",
@@ -52,11 +49,9 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "자기주식의 처분": "treasury_disposed",
     "자기주식 처분": "treasury_disposed",
     "자기주식 거래로 인한 증감": "treasury_change",
-
     "해외사업장환산외환차이": "fx_translation",
     "해외사업장 환산 외환차이": "fx_translation",
     "해외사업환산손익": "fx_translation",
-
     "기타포괄손익-공정가치금융자산평가손익": "fvoci_valuation",
     "기타포괄손익-공정가치 측정 금융자산 평가손익": "fvoci_valuation",
     "기타포괄손익-공정가치측정 금융자산 평가손익": "fvoci_valuation",
@@ -68,11 +63,9 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "공정가치측정금융자산 평가손익": "fvoci_valuation",
     "매도가능금융자산평가": "fvoci_valuation",
     "매도가능금융자산평가손익": "fvoci_valuation",
-
     "현금흐름위험회피파생상품평가손익": "cashflow_hedge",
     "현금흐름위험회피 파생상품 평가손익": "cashflow_hedge",
     "파생상품평가": "cashflow_hedge",
-
     "순확정급여부채(자산) 재측정요소": "remeasurement_db",
     "순확정급여부채 재측정요소": "remeasurement_db",
     "순확정급여자산 재측정요소": "remeasurement_db",
@@ -83,12 +76,10 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "확정급여제도의 재측정손익": "remeasurement_db",
     "순확정급여부채의 재측정요소": "remeasurement_db",
     "보험수리적손익": "remeasurement_db",
-
     "관계기업 및 공동기업의 기타포괄손익에 대한 지분": "associate_oci",
     "관계기업 및 공동기업 기타포괄손익에 대한 지분": "associate_oci",
     "지분법 기타포괄손익": "associate_oci",
     "지분법자본변동": "associate_oci",
-
     "연결실체내 자본거래 등": "intragroup_tx",
     "연결실체내 자본거래": "intragroup_tx",
     "지배력을 상실하지 않는 종속기업에 대한 소유지분의 변동에 따른 증가(감소)/비지배지분의 변동": "intragroup_tx",
@@ -96,12 +87,10 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "연결범위의 변동": "consolidation_change",
     "연결대상범위의 변동": "consolidation_change",
     "사업결합": "consolidation_change",
-
     "회계정책변경누적효과": "accounting_change",
     "회계정책변경의 누적효과": "accounting_change",
     "회계정책 변경효과": "accounting_change",
     "회계정책변경에 따른 증가(감소)": "accounting_change",
-
     "주식기준보상": "stock_compensation",
     "주식기준보상거래": "stock_compensation",
     "주식보상비용": "stock_compensation",
@@ -113,7 +102,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "주식매수선택권 행사": "stock_options",
     "주식매입선택권": "stock_options",
     "주식매입선택권의 행사": "stock_options",
-
     "기타": "other",
     "기타변동": "other",
     "기타거래": "other",
@@ -132,10 +120,8 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "총 포괄손익": "total_comprehensive",
     "포괄이익": "total_comprehensive",
     "포괄손익": "total_comprehensive",
-
     "매각예정분류": "held_for_sale_reclass",
     "매각예정 분류": "held_for_sale_reclass",
-
     "유상증자": "capital_increase",
     "무상증자": "capital_increase",
     "지분의 발행": "capital_increase",
@@ -166,7 +152,6 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "영구채 이자": "hybrid_interest",
     "신종자본증권이자": "hybrid_interest",
     "신종자본증권 배당": "hybrid_interest",
-
     "기타포괄손익-공정가치 측정 금융자산 평가손익 적립금": "fvoci_valuation",
     "기타포괄손익-공정가치측정금융자산평가손익": "fvoci_valuation",
     "매도가능증권평가손익": "fvoci_valuation",
@@ -176,18 +161,15 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "파생상품평가손익": "cashflow_hedge",
     "현금흐름위험회피손익": "cashflow_hedge",
     "위험회피파생상품평가손익": "cashflow_hedge",
-
     "배당금": "dividends",
     "주식배당": "stock_dividends",
     "중간배당": "dividends",
     "중간배당금": "dividends",
-
     "자기주식": "treasury_change",
     "자기주식처분": "treasury_disposed",
     "자기주식의처분": "treasury_disposed",
     "자기주식 거래에 따른 증가(감소)": "treasury_change",
     "자기주식거래": "treasury_change",
-
     "기초": "beginning_equity",
     "기초잔액": "beginning_equity",
     "기초 자본": "beginning_equity",
@@ -195,215 +177,168 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "수정 후 기초자본": "adjusted_beginning",
     "기말": "ending_equity",
     "기말 잔액": "ending_equity",
-
     "환율변동": "fx_translation",
     "해외사업장환산손익": "fx_translation",
     "해외사업환산외환차이": "fx_translation",
     "해외사업장 환산손익": "fx_translation",
     "해외사업장의 환산손익": "fx_translation",
-
     "지분법이익잉여금변동": "associate_oci",
     "지분법 자본변동": "associate_oci",
     "지분법이익잉여금 변동": "associate_oci",
     "지분법자본변동액": "associate_oci",
     "관계기업 기타포괄손익에 대한 지분": "associate_oci",
     "지분법 적용 투자지분의 변동": "associate_oci",
-
     "확정급여제도 재측정요소": "remeasurement_db",
     "확정급여제도의 재측정": "remeasurement_db",
     "확정급여측정": "remeasurement_db",
     "순확정급여부채(자산)의 재측정요소": "remeasurement_db",
     "퇴직급여제도의 재측정요소": "remeasurement_db",
-
     "재평가잉여금": "revaluation_surplus",
     "토지재평가잉여금": "revaluation_surplus",
     "유형자산재평가잉여금": "revaluation_surplus",
     "유형자산 재평가이익": "revaluation_surplus",
-
     "연결범위 변동": "consolidation_change",
     "연결실체의변동": "consolidation_change",
     "연결범위변동": "consolidation_change",
     "종속기업 취득": "consolidation_change",
     "종속기업 처분": "consolidation_change",
     "사업결합으로 인한 증가(감소)": "consolidation_change",
-
     "회계정책변경": "accounting_change",
     "회계정책 변경": "accounting_change",
     "전기오류수정": "error_correction",
     "전기오류수정손익": "error_correction",
     "오류수정": "error_correction",
-
     "비지배지분의 변동": "nci_change",
     "비지배지분변동": "nci_change",
     "비지배지분의 변동에 따른 증가(감소)": "nci_change",
-
     "연결실체내자본거래": "intragroup_tx",
     "연결실체 내 자본거래": "intragroup_tx",
     "종속기업 지분변동": "intragroup_tx",
     "지배력을 상실하지 않는 종속기업에 대한 소유지분의 변동": "intragroup_tx",
-
     "주식선택권 행사": "stock_options",
     "주식선택권행사": "stock_options",
     "주식선택권의 부여": "stock_compensation",
     "주식매수선택권 부여": "stock_compensation",
     "주식선택권 부여": "stock_compensation",
-
     "신주인수권 행사": "capital_increase",
     "신주인수권대가": "convertible_bond",
     "신주인수권 대가": "convertible_bond",
-
     "지분법이익잉여금": "associate_oci",
-
     "순확정급여부채의재측정요소": "remeasurement_db",
     "확정급여채무의 재측정요소": "remeasurement_db",
     "확정급여채무의재측정요소": "remeasurement_db",
-
     "총포괄손익 합계": "total_comprehensive",
     "총포괄손익 소계": "total_comprehensive",
     "총포괄이익 합계": "total_comprehensive",
     "총 포괄이익": "total_comprehensive",
-
     "출자전환": "debt_equity_swap",
-
     "기타포괄손익-공정가치측정금융자산 평가손익": "fvoci_valuation",
     "매도가능금융자산평가이익": "fvoci_valuation",
     "매도가능금융자산 평가이익": "fvoci_valuation",
     "매도가능금융자산의 평가이익": "fvoci_valuation",
     "매도가능금융자산평가이익(손실)": "fvoci_valuation",
     "매도가능금융자산의 공정가치변동": "fvoci_valuation",
-
     "전환사채 발행": "convertible_bond",
     "복합금융상품 발행": "convertible_bond",
     "복합금융상품발행": "convertible_bond",
-
     "오류수정에 따른 증가(감소)": "error_correction",
     "전기오류수정에 따른 증가(감소)": "error_correction",
-
     "소유주와의 거래 총액": "equity_change_total",
     "소유주와의거래총액": "equity_change_total",
     "소유주와의 거래에 의한 증가(감소)": "equity_change_total",
-
     "해외사업환산이익(손실)": "fx_translation",
     "해외사업환산이익": "fx_translation",
     "해외사업환산차이": "fx_translation",
     "해외사업장 환산차이": "fx_translation",
-
     "결손보전": "deficit_offset",
     "결손금 보전": "deficit_offset",
-
     "자기주식처분이익": "treasury_disposed",
     "자기주식처분손실": "treasury_disposed",
     "자기주식 처분이익": "treasury_disposed",
-
     "분기말자본": "ending_equity",
     "분기말 자본": "ending_equity",
     "반기말자본": "ending_equity",
     "반기말 자본": "ending_equity",
-
     "기타변동에 따른 증가(감소), 자본": "other",
     "기타사유에 따른 증가(감소)": "other",
-
     "종속기업의 취득": "consolidation_change",
     "종속기업의 처분": "consolidation_change",
     "종속기업 유상증자": "capital_increase",
-
     "이익잉여금 처분으로 인한 증감": "retained_earnings_appropriation",
     "이익잉여금처분": "retained_earnings_appropriation",
     "이익잉여금의 처분": "retained_earnings_appropriation",
-
     "재분류조정": "reclassification",
     "재분류 조정": "reclassification",
-
     "수정 후 재작성된 금액": "adjusted_beginning",
     "수정후 재작성 금액": "adjusted_beginning",
     "수정재작성": "adjusted_beginning",
     "수정후 금액": "adjusted_beginning",
     "수정 후 금액": "adjusted_beginning",
-
     "지배력을 상실하지 않는 종속기업에 대한 소유지분의 변동에 따른 증가(감소), 자본": "intragroup_tx",
     "지배력을 상실하지 않는 종속기업에 대한 소유지분의 변동에 따른 증가(감소)": "intragroup_tx",
     "비지배지분과의 거래": "intragroup_tx",
     "비지배지분과의거래": "intragroup_tx",
-
     "해외사업장환산차이": "fx_translation",
     "해외사업장환산외환차이(세후기타포괄손익)": "fx_translation",
     "해외사업장외화환산차이": "fx_translation",
     "해외사업장 외화환산차이": "fx_translation",
     "해외사업장환산외환차이(세후)": "fx_translation",
-
     "관계기업 및 공동기업 주식 취득 및 처분": "associate_oci",
     "관계기업의 기타포괄손익에 대한 지분": "associate_oci",
     "부의지분법자본변동": "associate_oci",
     "지분법평가": "associate_oci",
     "지분법 평가": "associate_oci",
-
     "당기순손익": "net_income",
     "연결당기순이익": "net_income",
     "연결당기순이익(손실)": "net_income",
-
     "기타포괄손익-공정가치금융자산 평가손익": "fvoci_valuation",
     "기타포괄손익-공정가치 금융자산 평가손익": "fvoci_valuation",
     "기타포괄손익-공정가치 지분상품 평가손익": "fvoci_valuation",
     "매도가능증권평가이익": "fvoci_valuation",
     "매도가능증권평가손실": "fvoci_valuation",
     "매도가능증권 평가이익": "fvoci_valuation",
-
     "현금흐름위험회피": "cashflow_hedge",
     "현금흐름 위험회피": "cashflow_hedge",
-
     "회계정책변경의 효과": "accounting_change",
     "회계정책의 변경효과": "accounting_change",
     "회계정책변경효과": "accounting_change",
     "회계정책의 변경": "accounting_change",
-
     "전환사채의 보통주 전환": "convertible_bond",
     "전환사채발행": "convertible_bond",
     "전환사채전환": "convertible_bond",
-
     "소유주와의 거래 합계": "equity_change_total",
     "소유주와의거래합계": "equity_change_total",
     "소유주와의 거래에 따른 총 증가(감소)": "equity_change_total",
-
     "주식매수선택권행사": "stock_options",
     "주식기준보상거래의 인식": "stock_compensation",
     "주식선택권의 소멸": "stock_compensation",
     "주식선택권 소멸": "stock_compensation",
-
     "순확정급여제도의 재측정요소": "remeasurement_db",
-
     "소계": "equity_change_total",
-
     "합병으로 인한 자본변동": "merger",
     "합병으로 인한 증가": "merger",
     "합병": "merger",
     "합병차익": "merger",
     "합병차손": "merger",
-
     "비지배지분의 취득": "intragroup_tx",
     "비지배지분 취득": "intragroup_tx",
     "종속기업지분변동": "intragroup_tx",
     "종속기업 지분의 변동": "intragroup_tx",
-
     "기타포괄손익-공정가치측정 금융자산평가손익": "fvoci_valuation",
     "기타포괄손익공정가치측정금융자산평가손익": "fvoci_valuation",
     "기타포괄손익-공정가치 측정 금융자산 처분손익": "fvoci_valuation",
     "기타포괄손익-공정가치측정 금융자산 처분손익": "fvoci_valuation",
-
     "교환권대가": "convertible_bond",
     "교환권 대가": "convertible_bond",
-
     "소유주와의 거래 소계": "equity_change_total",
     "소유주와의 거래": "equity_change_total",
     "자본에 직접 반영된 소유주와의 거래 등 소계": "equity_change_total",
     "자본에 직접 반영된 소유주와의 거래": "equity_change_total",
     "자본에 직접 인식된 주주와의 거래": "equity_change_total",
     "자본에 직접 인식된 소유주와의 거래": "equity_change_total",
-
     "현금흐름위험회피 파생상품평가손익": "cashflow_hedge",
-
     "유형자산재평가이익": "revaluation_surplus",
     "재평가잉여금 변동": "revaluation_surplus",
-
     "전환사채 상환": "convertible_bond",
     "전환사채의전환": "convertible_bond",
     "전환사채 전환(행사)": "convertible_bond",
@@ -412,156 +347,110 @@ CAUSE_SYNONYMS: dict[str, str] = {
     "전환권 대가": "convertible_bond",
     "복합금융상품 상환": "convertible_bond",
     "복합금융상품의 상환": "convertible_bond",
-
     "연차배당금": "dividends",
     "종속기업의 배당": "dividends",
     "종속기업 배당": "dividends",
-
     "해외산업환산손익": "fx_translation",
     "해외사업환산손실": "fx_translation",
     "해외사업환산": "fx_translation",
-
     "자본 총계": "ending_equity",
     "자본총계 잔액": "ending_equity",
-
     "주식매수선택권의 부여": "stock_compensation",
     "주식기준보상 인식": "stock_compensation",
-
     "총포괄손익합계": "total_comprehensive",
-
     "적립금의 적립": "retained_earnings_appropriation",
     "적립금 적립": "retained_earnings_appropriation",
-
     "주식발행초과금": "capital_increase",
     "주식발행": "capital_increase",
-
     "결손금보전": "deficit_offset",
-
     "관계기업 기타포괄손익에 대한 지분해당액": "associate_oci",
     "관계기업및공동기업의기타포괄손익에대한지분": "associate_oci",
-
     "순확정급여의 재측정요소": "remeasurement_db",
     "순확정급여채무의 재측정요소": "remeasurement_db",
     "확정급여제도의 재측정 요소": "remeasurement_db",
     "재측정요소": "remeasurement_db",
-
     "기타포괄손익 소계": "other_oci",
     "기타포괄손익소계": "other_oci",
     "세후기타포괄이익": "other_oci",
-
     "주식발행비용": "capital_increase",
-
     "보고금액": "adjusted_beginning",
     "보고 금액": "adjusted_beginning",
-
     "전환우선주의 전환": "convertible_bond",
     "전환우선주의 보통주 전환": "convertible_bond",
     "전환사채의 행사": "convertible_bond",
     "신주인수권부사채의 발행": "convertible_bond",
     "신주인수권부사채 발행": "convertible_bond",
-
     "매도가능금융자산평가손실": "fvoci_valuation",
     "기타포괄손익-공정가치 측정 금융자산": "fvoci_valuation",
     "기타포괄손익-공정가치측정지분증권평가손익": "fvoci_valuation",
-
     "기타자본조정": "other",
     "기타 자본조정": "other",
-
     "자본에 직접 반영된 소유주와의 거래 소계": "equity_change_total",
-
     "신종자본증권발행": "hybrid_issued",
     "신종자본증권 상환": "hybrid_issued",
-
     "기타자본잉여금": "other",
-
     "총포괄이익(손실)": "total_comprehensive",
     "총포괄이익 소계": "total_comprehensive",
-
     "신주청약": "capital_increase",
     "신주청약증거금": "capital_increase",
-
     "종속기업의 자기주식 취득": "treasury_acquired",
     "종속기업 자기주식 취득": "treasury_acquired",
-
     "사업결합으로 인한 변동": "consolidation_change",
     "합병으로 인한 변동": "merger",
     "합병으로 인한 증가(감소)": "merger",
-
     "지분법 이익잉여금 변동": "associate_oci",
     "지분법 이익잉여금변동": "associate_oci",
-
     "자산재평가손익": "revaluation_surplus",
     "유형자산재평가손익": "revaluation_surplus",
-
     "종속기업에 대한 소유지분의 변동": "intragroup_tx",
     "종속기업에대한 소유지분의 변동": "intragroup_tx",
-
     "외환차이": "fx_translation",
     "외환환산차이": "fx_translation",
-
     "주식기준보상거래에 따른 증가(감소)": "stock_compensation",
     "주식기준보상에 따른 증가(감소)": "stock_compensation",
     "주식보상비용의 인식": "stock_compensation",
     "주식보상비용 인식": "stock_compensation",
-
     "순확정급여부채재측정요소": "remeasurement_db",
     "보험수리적이익(손실)": "remeasurement_db",
     "보험수리적 이익(손실)": "remeasurement_db",
     "보험수리적이익": "remeasurement_db",
     "보험수리적손실": "remeasurement_db",
-
     "총포괄손익 계": "total_comprehensive",
     "총기타포괄손익": "other_oci",
     "총 기타포괄손익": "other_oci",
-
     "분기말": "ending_equity",
-
     "해외사업환산손익의 변동": "fx_translation",
     "해외사업 환산손익": "fx_translation",
-
     "자본에 직접 반영된 소유주와의 거래 등": "equity_change_total",
     "소유주와의 거래총액": "equity_change_total",
-
     "주식선택권의행사": "stock_options",
     "주식매입선택권 행사": "stock_options",
     "주식매입선택권의행사": "stock_options",
     "주식매수선택권의행사": "stock_options",
-
     "교환사채의 발행": "convertible_bond",
     "교환사채의 교환": "convertible_bond",
     "교환사채 발행": "convertible_bond",
     "전환사채의발행": "convertible_bond",
     "전환사채": "convertible_bond",
     "전환사채의 전환권행사": "convertible_bond",
-
     "신종자본증권배당": "hybrid_interest",
     "신종자본증권상환": "hybrid_issued",
-
     "(부의)지분법자본변동": "associate_oci",
     "관계기업자본변동": "associate_oci",
     "관계기업 자본변동": "associate_oci",
-
     "종속기업유상증자": "capital_increase",
-
     "이익잉여금 전입": "retained_earnings_appropriation",
     "자본잉여금의 이익잉여금 전입": "retained_earnings_appropriation",
-
     "주식발행비": "capital_increase",
-
     "자기주식소각": "treasury_retired",
     "자기주식의소각": "treasury_retired",
-
     "수정후 재작성된 금액": "adjusted_beginning",
-
     "기타포괄손익-공정가치측정금융자산처분손익": "fvoci_valuation",
-
     "토지재평가이익": "revaluation_surplus",
     "토지재평가손익": "revaluation_surplus",
     "토지 재평가이익": "revaluation_surplus",
-
     "단주취득 및 처분": "treasury_change",
     "단주 취득 및 처분": "treasury_change",
-
     "신주인수권의행사": "capital_increase",
 }
 
@@ -669,9 +558,7 @@ CAUSE_FALLBACK_PATTERNS: list[tuple[str, str]] = [
 ]
 
 
-_CAUSE_NOSPACE: dict[str, str] = {
-    k.replace(" ", ""): v for k, v in CAUSE_SYNONYMS.items()
-}
+_CAUSE_NOSPACE: dict[str, str] = {k.replace(" ", ""): v for k, v in CAUSE_SYNONYMS.items()}
 
 
 DETAIL_MAP: dict[str, str] = {

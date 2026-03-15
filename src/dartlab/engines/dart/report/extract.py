@@ -51,9 +51,7 @@ def extractRaw(
     sub = sub.drop(dropCols)
 
     sub = sub.with_columns(pl.col("year").cast(pl.Int32))
-    sub = sub.with_columns(
-        pl.col("quarter").replace(QUARTER_MAP).cast(pl.Int32).alias("quarterNum")
-    )
+    sub = sub.with_columns(pl.col("quarter").replace(QUARTER_MAP).cast(pl.Int32).alias("quarterNum"))
 
     if "stlm_dt" in sub.columns:
         sub = sub.filter(pl.col("stlm_dt").is_not_null())
@@ -148,12 +146,16 @@ def _castNumeric(
             continue
 
         stripped = df[c].str.strip_chars().str.replace_all(",", "")
-        cleanedSeries = stripped.to_frame("_v").select(
-            pl.when((pl.col("_v") == "-") | (pl.col("_v") == ""))
-            .then(pl.lit(None))
-            .otherwise(pl.col("_v"))
-            .alias("_v")
-        ).to_series()
+        cleanedSeries = (
+            stripped.to_frame("_v")
+            .select(
+                pl.when((pl.col("_v") == "-") | (pl.col("_v") == ""))
+                .then(pl.lit(None))
+                .otherwise(pl.col("_v"))
+                .alias("_v")
+            )
+            .to_series()
+        )
 
         numSeries = cleanedSeries.cast(pl.Float64, strict=False)
         nonNullOriginal = cleanedSeries.drop_nulls().len()

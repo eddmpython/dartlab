@@ -17,16 +17,32 @@ import re
 from dartlab.engines.dart.docs.sections.types import SectionChunk
 
 ROMAN_MAP = {
-    "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,
-    "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
-    "XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15,
+    "I": 1,
+    "II": 2,
+    "III": 3,
+    "IV": 4,
+    "V": 5,
+    "VI": 6,
+    "VII": 7,
+    "VIII": 8,
+    "IX": 9,
+    "X": 10,
+    "XI": 11,
+    "XII": 12,
+    "XIII": 13,
+    "XIV": 14,
+    "XV": 15,
 }
 
 SKIP_MAJORS = {3}
 
 FINANCE_ENGINE_COVERED = {
-    "요약재무정보", "연결재무제표", "연결재무제표 주석",
-    "재무제표", "재무제표 주석", "배당에 관한 사항",
+    "요약재무정보",
+    "연결재무제표",
+    "연결재무제표 주석",
+    "재무제표",
+    "재무제표 주석",
+    "배당에 관한 사항",
 }
 
 _RE_KOREAN_HEADING = re.compile(r"^([가-힣])\.\s+(.+)")
@@ -108,9 +124,7 @@ def separateTableAndText(content: str) -> tuple[str, list[str], int]:
     return "\n".join(textLines), tableHeaders, tableRowCount
 
 
-_RE_SUBHEADING = re.compile(
-    r"^(?:●|▶|◆|■|□|○|\(\d+\)|\d+\)\s|\[\S+[^\]]*\]$|<주요|<자회사)"
-)
+_RE_SUBHEADING = re.compile(r"^(?:●|▶|◆|■|□|○|\(\d+\)|\d+\)\s|\[\S+[^\]]*\]$|<주요|<자회사)")
 
 
 def _splitLargeText(text: str, maxChars: int = MAX_CHUNK_CHARS) -> list[str]:
@@ -149,7 +163,9 @@ def _splitLargeText(text: str, maxChars: int = MAX_CHUNK_CHARS) -> list[str]:
 
 
 def _mergeSegments(
-    segments: list[str], maxChars: int, sep: str,
+    segments: list[str],
+    maxChars: int,
+    sep: str,
 ) -> list[str]:
     """세그먼트들을 maxChars 이내로 병합."""
     result: list[str] = []
@@ -188,19 +204,21 @@ def _splitLargeChunk(chunk: SectionChunk) -> list[SectionChunk]:
 
     chunks: list[SectionChunk] = []
     for i, part in enumerate(parts, 1):
-        chunks.append(SectionChunk(
-            majorNum=chunk.majorNum,
-            majorTitle=chunk.majorTitle,
-            subTitle=chunk.subTitle,
-            path=f"{chunk.path} [{i}/{len(parts)}]",
-            textContent=part,
-            tableCount=0,
-            tableRowCount=0,
-            tableSummary=chunk.tableSummary if i == 1 else "",
-            totalChars=len(part),
-            textChars=len(part),
-            kind="split",
-        ))
+        chunks.append(
+            SectionChunk(
+                majorNum=chunk.majorNum,
+                majorTitle=chunk.majorTitle,
+                subTitle=chunk.subTitle,
+                path=f"{chunk.path} [{i}/{len(parts)}]",
+                textContent=part,
+                tableCount=0,
+                tableRowCount=0,
+                tableSummary=chunk.tableSummary if i == 1 else "",
+                totalChars=len(part),
+                textChars=len(part),
+                kind="split",
+            )
+        )
     return chunks
 
 
@@ -230,26 +248,40 @@ def chunkSection(
             tableSummary += f" (컬럼: {tableHeaders[0][:60]})"
 
     if tableRatio > 0.9 and textChars < 500:
-        return [SectionChunk(
-            majorNum=majorNum, majorTitle=majorTitle, subTitle=subTitle,
-            path=path,
-            textContent=textOnly.strip() if textOnly.strip() else "(테이블 전용 섹션)",
-            tableCount=len(tableHeaders), tableRowCount=tableRowCount,
-            tableSummary=tableSummary, totalChars=totalChars,
-            textChars=textChars, kind="table_only",
-        )]
+        return [
+            SectionChunk(
+                majorNum=majorNum,
+                majorTitle=majorTitle,
+                subTitle=subTitle,
+                path=path,
+                textContent=textOnly.strip() if textOnly.strip() else "(테이블 전용 섹션)",
+                tableCount=len(tableHeaders),
+                tableRowCount=tableRowCount,
+                tableSummary=tableSummary,
+                totalChars=totalChars,
+                textChars=textChars,
+                kind="table_only",
+            )
+        ]
 
     segments = splitByHeadings(textOnly)
 
     if len(segments) <= 1 or all(not h for h, _ in segments):
-        return [SectionChunk(
-            majorNum=majorNum, majorTitle=majorTitle, subTitle=subTitle,
-            path=path, textContent=textOnly.strip(),
-            tableCount=len(tableHeaders), tableRowCount=tableRowCount,
-            tableSummary=tableSummary, totalChars=totalChars,
-            textChars=textChars,
-            kind="text" if tableRatio < 0.5 else "mixed",
-        )]
+        return [
+            SectionChunk(
+                majorNum=majorNum,
+                majorTitle=majorTitle,
+                subTitle=subTitle,
+                path=path,
+                textContent=textOnly.strip(),
+                tableCount=len(tableHeaders),
+                tableRowCount=tableRowCount,
+                tableSummary=tableSummary,
+                totalChars=totalChars,
+                textChars=textChars,
+                kind="text" if tableRatio < 0.5 else "mixed",
+            )
+        ]
 
     chunks: list[SectionChunk] = []
     for heading, body in segments:
@@ -259,13 +291,21 @@ def chunkSection(
         if segTableH:
             segTableSum = f"테이블 {len(segTableH)}개, {segTableR}행"
 
-        chunks.append(SectionChunk(
-            majorNum=majorNum, majorTitle=majorTitle, subTitle=subTitle,
-            path=segPath, textContent=segText.strip(),
-            tableCount=len(segTableH), tableRowCount=segTableR,
-            tableSummary=segTableSum, totalChars=len(body),
-            textChars=len(segText), kind="sub_chunk",
-        ))
+        chunks.append(
+            SectionChunk(
+                majorNum=majorNum,
+                majorTitle=majorTitle,
+                subTitle=subTitle,
+                path=segPath,
+                textContent=segText.strip(),
+                tableCount=len(segTableH),
+                tableRowCount=segTableR,
+                tableSummary=segTableSum,
+                totalChars=len(body),
+                textChars=len(segText),
+                kind="sub_chunk",
+            )
+        )
 
     return chunks
 
@@ -296,10 +336,12 @@ def chunkRows(rows: list[dict], contentCol: str) -> list[SectionChunk]:
                     "subs": [],
                 }
         elif sNum is not None and currentMajorNum is not None:
-            majorSections[currentMajorNum]["subs"].append({
-                "title": title,
-                "content": content,
-            })
+            majorSections[currentMajorNum]["subs"].append(
+                {
+                    "title": title,
+                    "content": content,
+                }
+            )
 
     allChunks: list[SectionChunk] = []
 
@@ -308,14 +350,21 @@ def chunkRows(rows: list[dict], contentCol: str) -> list[SectionChunk]:
         majorTitle = section["title"]
 
         if mNum in SKIP_MAJORS:
-            allChunks.append(SectionChunk(
-                majorNum=mNum, majorTitle=majorTitle, subTitle="",
-                path=majorTitle,
-                textContent="(finance 엔진이 정량 처리)",
-                tableCount=0, tableRowCount=0, tableSummary="",
-                totalChars=len(section["content"]),
-                textChars=0, kind="skipped",
-            ))
+            allChunks.append(
+                SectionChunk(
+                    majorNum=mNum,
+                    majorTitle=majorTitle,
+                    subTitle="",
+                    path=majorTitle,
+                    textContent="(finance 엔진이 정량 처리)",
+                    tableCount=0,
+                    tableRowCount=0,
+                    tableSummary="",
+                    totalChars=len(section["content"]),
+                    textChars=0,
+                    kind="skipped",
+                )
+            )
             continue
 
         if section["subs"]:
@@ -325,23 +374,26 @@ def chunkRows(rows: list[dict], contentCol: str) -> list[SectionChunk]:
 
                 subClean = re.sub(r"^\d+\.\s*", "", subTitle).strip()
                 if subClean in FINANCE_ENGINE_COVERED:
-                    allChunks.append(SectionChunk(
-                        majorNum=mNum, majorTitle=majorTitle, subTitle=subTitle,
-                        path=f"{majorTitle} > {subTitle}",
-                        textContent="(finance/report 엔진이 정량 처리)",
-                        tableCount=0, tableRowCount=0, tableSummary="",
-                        totalChars=len(subContent),
-                        textChars=0, kind="skipped",
-                    ))
+                    allChunks.append(
+                        SectionChunk(
+                            majorNum=mNum,
+                            majorTitle=majorTitle,
+                            subTitle=subTitle,
+                            path=f"{majorTitle} > {subTitle}",
+                            textContent="(finance/report 엔진이 정량 처리)",
+                            tableCount=0,
+                            tableRowCount=0,
+                            tableSummary="",
+                            totalChars=len(subContent),
+                            textChars=0,
+                            kind="skipped",
+                        )
+                    )
                     continue
 
-                allChunks.extend(
-                    chunkSection(subContent, mNum, majorTitle, subTitle)
-                )
+                allChunks.extend(chunkSection(subContent, mNum, majorTitle, subTitle))
         else:
-            allChunks.extend(
-                chunkSection(section["content"], mNum, majorTitle, "")
-            )
+            allChunks.extend(chunkSection(section["content"], mNum, majorTitle, ""))
 
     finalChunks: list[SectionChunk] = []
     for chunk in allChunks:

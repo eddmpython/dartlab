@@ -1,5 +1,10 @@
 import polars as pl
 
+from dartlab.engines.dart.docs.sections._common import (
+    periodOrderValue,
+    periodSortKey,
+    sortPeriods,
+)
 from dartlab.engines.dart.docs.sections.artifacts import (
     loadProjectionRules,
     loadSectionProfileTable,
@@ -12,11 +17,6 @@ from dartlab.engines.dart.docs.sections.runtime import (
     extractSemanticUnits,
     semanticTopicForBlock,
     semanticTopicForLabel,
-)
-from dartlab.engines.dart.docs.sections._common import (
-    periodOrderValue,
-    periodSortKey,
-    sortPeriods,
 )
 from dartlab.engines.dart.docs.sections.views import (
     blockPriority,
@@ -105,16 +105,48 @@ def test_semantic_topic_for_block_uses_table_row_labels():
     assert detailTopicForTopic("재고자산명세서") == "noteInventoryDetail"
     assert detailTopicForTopic("법인세비용명세서") == "noteTaxDetail"
     assert detailTopicForTopic("개별재무제표에관한사항") == "noteSeparateFinancialStatementsDetail"
-    assert detailTopicForBlock("financialNotes", "법인세등명세서", "법인세", "text", "법인세 비용 설명") == "noteTaxDetail"
-    assert detailTopicForBlock("audit", "감사인의보수등에관한사항", "감사보수", "table", "| 항목 | 값 |\n| --- | --- |\n| 감사보수 | 1 |") == "auditFeeDetail"
-    assert detailTopicForBlock("productService", "(하나은행)예금업무(상세)", "(root)", "text", "예금 상품 설명") == "bankDepositProductDetail"
-    assert detailTopicForBlock("productService", "(하나은행)신탁업무(상세)", "(root)", "text", "신탁 상품 설명") == "trustBusinessDetail"
-    assert detailTopicForBlock("productService", "(하나저축은행)상품및서비스개요(상세)", "(root)", "text", "상품 설명") == "financialProductOverviewDetail"
-    assert detailTopicForBlock("riskDerivative", "(하나증권)신용파생상품상세명세(상세)", "(root)", "text", "파생 상품 설명") == "derivativeProductDetail"
-    assert detailTopicForBlock("intellectualProperty", "지적재산권보유현황(에코프로머티리얼즈)", "(root)", "text", "특허 보유 현황") == "ipPortfolioDetail"
+    assert (
+        detailTopicForBlock("financialNotes", "법인세등명세서", "법인세", "text", "법인세 비용 설명") == "noteTaxDetail"
+    )
+    assert (
+        detailTopicForBlock(
+            "audit", "감사인의보수등에관한사항", "감사보수", "table", "| 항목 | 값 |\n| --- | --- |\n| 감사보수 | 1 |"
+        )
+        == "auditFeeDetail"
+    )
+    assert (
+        detailTopicForBlock("productService", "(하나은행)예금업무(상세)", "(root)", "text", "예금 상품 설명")
+        == "bankDepositProductDetail"
+    )
+    assert (
+        detailTopicForBlock("productService", "(하나은행)신탁업무(상세)", "(root)", "text", "신탁 상품 설명")
+        == "trustBusinessDetail"
+    )
+    assert (
+        detailTopicForBlock("productService", "(하나저축은행)상품및서비스개요(상세)", "(root)", "text", "상품 설명")
+        == "financialProductOverviewDetail"
+    )
+    assert (
+        detailTopicForBlock(
+            "riskDerivative", "(하나증권)신용파생상품상세명세(상세)", "(root)", "text", "파생 상품 설명"
+        )
+        == "derivativeProductDetail"
+    )
+    assert (
+        detailTopicForBlock(
+            "intellectualProperty", "지적재산권보유현황(에코프로머티리얼즈)", "(root)", "text", "특허 보유 현황"
+        )
+        == "ipPortfolioDetail"
+    )
     assert detailTopicForBlock("salesOrder", "수주상황(상세)", "(root)", "text", "수주 잔고") == "orderBacklogDetail"
-    assert detailTopicForBlock("majorContractsAndRnd", "연구개발실적(에코프로머티리얼즈)", "(root)", "text", "개발 내역") == "rndPortfolioDetail"
-    assert detailTopicForBlock("majorContractsAndRnd", "경영상의주요계약(상세)", "(root)", "text", "계약 내역") == "majorContractDetail"
+    assert (
+        detailTopicForBlock("majorContractsAndRnd", "연구개발실적(에코프로머티리얼즈)", "(root)", "text", "개발 내역")
+        == "rndPortfolioDetail"
+    )
+    assert (
+        detailTopicForBlock("majorContractsAndRnd", "경영상의주요계약(상세)", "(root)", "text", "계약 내역")
+        == "majorContractDetail"
+    )
     assert detailTopicForTopic("salesOrder") is None
 
 

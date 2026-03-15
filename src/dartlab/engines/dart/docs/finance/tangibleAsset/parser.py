@@ -80,13 +80,30 @@ LABEL_MAP = {
 }
 
 MOVEMENT_MARKERS = [
-    "기초", "기말", "취득", "감가상각", "처분", "손상",
-    "사업결합", "대체", "환율", "외화", "매각예정", "폐기",
-    "순장부", "장부금액", "장부가액",
+    "기초",
+    "기말",
+    "취득",
+    "감가상각",
+    "처분",
+    "손상",
+    "사업결합",
+    "대체",
+    "환율",
+    "외화",
+    "매각예정",
+    "폐기",
+    "순장부",
+    "장부금액",
+    "장부가액",
 ]
 
 DESCRIPTION_MARKERS = [
-    "기술", "설명", "사건", "상황", "참조", "주석",
+    "기술",
+    "설명",
+    "사건",
+    "상황",
+    "참조",
+    "주석",
 ]
 
 _END_ALIASES = ("장부금액", "장부금액 합계", "순장부금액", "총장부금액", "기말금액")
@@ -103,10 +120,27 @@ def splitCells(line: str) -> list[str]:
 
 def isAssetCategory(text: str) -> bool:
     keywords = [
-        "토지", "건물", "구축물", "기계장치", "차량", "공구",
-        "비품", "건설중", "사용권", "합계", "합 계", "엔진",
-        "항공기", "미착", "사무용", "생산시설", "업무용",
-        "기타유형", "기타의유형", "기타 유형", "임차점포",
+        "토지",
+        "건물",
+        "구축물",
+        "기계장치",
+        "차량",
+        "공구",
+        "비품",
+        "건설중",
+        "사용권",
+        "합계",
+        "합 계",
+        "엔진",
+        "항공기",
+        "미착",
+        "사무용",
+        "생산시설",
+        "업무용",
+        "기타유형",
+        "기타의유형",
+        "기타 유형",
+        "임차점포",
     ]
     return any(kw in text for kw in keywords)
 
@@ -297,12 +331,14 @@ def parseMovementBlock(block: str, period: str):
                 if headerCategories and headerCategories[0] == "구분":
                     headerCategories = headerCategories[1:]
             elif foundStart and any(r["label"] == "기말" for r in dataRows):
-                allResults.append({
-                    "period": period,
-                    "unit": unit,
-                    "categories": headerCategories,
-                    "rows": dataRows,
-                })
+                allResults.append(
+                    {
+                        "period": period,
+                        "unit": unit,
+                        "categories": headerCategories,
+                        "rows": dataRows,
+                    }
+                )
                 headerCategories = [c.strip() for c in cells if c.strip()]
                 if headerCategories and headerCategories[0] == "구분":
                     headerCategories = headerCategories[1:]
@@ -334,12 +370,14 @@ def parseMovementBlock(block: str, period: str):
             if dataRows and foundStart:
                 hasStartPrev = any(r["label"] == "기초" for r in dataRows)
                 if hasStartPrev:
-                    allResults.append({
-                        "period": period,
-                        "unit": unit,
-                        "categories": headerCategories,
-                        "rows": dataRows,
-                    })
+                    allResults.append(
+                        {
+                            "period": period,
+                            "unit": unit,
+                            "categories": headerCategories,
+                            "rows": dataRows,
+                        }
+                    )
                 dataRows = []
             foundStart = True
 
@@ -349,7 +387,7 @@ def parseMovementBlock(block: str, period: str):
         if not isMovementRow(normLabel):
             continue
 
-        valueCells = cells[labelColIdx + 1:]
+        valueCells = cells[labelColIdx + 1 :]
 
         values = {}
         valIdx = 0
@@ -368,12 +406,14 @@ def parseMovementBlock(block: str, period: str):
     if dataRows and headerCategories:
         hasStart = any(r["label"] == "기초" for r in dataRows)
         if hasStart:
-            allResults.append({
-                "period": period,
-                "unit": unit,
-                "categories": headerCategories,
-                "rows": dataRows,
-            })
+            allResults.append(
+                {
+                    "period": period,
+                    "unit": unit,
+                    "categories": headerCategories,
+                    "rows": dataRows,
+                }
+            )
 
     return allResults if allResults else None
 
@@ -507,8 +547,7 @@ def _blockScore(parsed):
     hasStart = "기초" in labels
     hasEnd = "기말" in labels
     movementCount = sum(
-        1 for lb in labels
-        if lb in ("취득", "처분", "감가상각", "대체", "손상", "사업결합", "환율", "매각예정", "기타")
+        1 for lb in labels if lb in ("취득", "처분", "감가상각", "대체", "손상", "사업결합", "환율", "매각예정", "기타")
     )
     catCount = len(parsed["categories"])
 

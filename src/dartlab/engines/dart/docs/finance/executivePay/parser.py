@@ -6,6 +6,7 @@ import re
 # 유틸리티
 # ──────────────────────────────────────────────
 
+
 def _cellsFromLine(line: str) -> list[str]:
     return [c.strip() for c in line.split("|")[1:-1]]
 
@@ -27,6 +28,7 @@ def _parseFloat(text: str) -> float | None:
 # ──────────────────────────────────────────────
 # 테이블 블록 추출 + 분류
 # ──────────────────────────────────────────────
+
 
 def extractTableBlocks(content: str) -> list[list[str]]:
     """content에서 연속된 파이프라인 블록 추출."""
@@ -71,6 +73,7 @@ def classifyBlock(block: list[str]) -> str:
 # ──────────────────────────────────────────────
 # 유형별 보수 파서
 # ──────────────────────────────────────────────
+
 
 def parsePayByTypeBlock(block: list[str]) -> list[dict]:
     """유형별 보수 테이블 파싱.
@@ -144,12 +147,14 @@ def parsePayByTypeBlock(block: list[str]) -> list[dict]:
         if headcount is None and totalPay is None:
             continue
 
-        result.append({
-            "category": _normalizeCategory(category),
-            "headcount": int(headcount) if headcount is not None else None,
-            "totalPay": totalPay,
-            "avgPay": avgPay,
-        })
+        result.append(
+            {
+                "category": _normalizeCategory(category),
+                "headcount": int(headcount) if headcount is not None else None,
+                "totalPay": totalPay,
+                "avgPay": avgPay,
+            }
+        )
 
     return result
 
@@ -175,6 +180,7 @@ def _normalizeCategory(raw: str) -> str:
 # ──────────────────────────────────────────────
 # 5억 초과 개인별 파서
 # ──────────────────────────────────────────────
+
 
 def parsePayIndividualBlock(block: list[str]) -> list[dict]:
     """5억 초과 개인별 보수 테이블 파싱.
@@ -237,10 +243,12 @@ def parsePayIndividualBlock(block: list[str]) -> list[dict]:
         if totalPay is None:
             continue
 
-        result.append({
-            "name": name,
-            "position": position,
-            "totalPay": totalPay,
-        })
+        result.append(
+            {
+                "name": name,
+                "position": position,
+                "totalPay": totalPay,
+            }
+        )
 
     return result

@@ -120,10 +120,14 @@ class TestGrading:
 
     def test_risk_summary_danger(self):
         insights = {
-            "performance": InsightResult("F", "", risks=[
-                Flag("danger", "finance", "매출 급감"),
-                Flag("danger", "finance", "영업이익 급감"),
-            ]),
+            "performance": InsightResult(
+                "F",
+                "",
+                risks=[
+                    Flag("danger", "finance", "매출 급감"),
+                    Flag("danger", "finance", "영업이익 급감"),
+                ],
+            ),
         }
         result = analyzeRiskSummary(insights)
         assert result.grade == "F"
@@ -137,13 +141,17 @@ class TestGrading:
 
     def test_opportunity_strong(self):
         insights = {
-            "performance": InsightResult("A", "", opportunities=[
-                Flag("strong", "growth", "매출 성장"),
-                Flag("strong", "growth", "이익 성장"),
-                Flag("strong", "finance", "ROE"),
-                Flag("positive", "finance", "부채"),
-                Flag("positive", "finance", "유동비"),
-            ]),
+            "performance": InsightResult(
+                "A",
+                "",
+                opportunities=[
+                    Flag("strong", "growth", "매출 성장"),
+                    Flag("strong", "growth", "이익 성장"),
+                    Flag("strong", "finance", "ROE"),
+                    Flag("positive", "finance", "부채"),
+                    Flag("positive", "finance", "유동비"),
+                ],
+            ),
         }
         result = analyzeOpportunitySummary(insights)
         assert result.grade == "A"
@@ -193,10 +201,16 @@ class TestBenchmark:
 class TestRank:
     def test_rank_info_repr(self):
         ri = RankInfo(
-            stockCode="005930", corpName="삼성전자", sector="IT", industryGroup="반도체와반도체장비",
-            revenue=11e12, totalAssets=5e12,
-            revenueRank=2, revenueTotal=2192,
-            revenueRankInSector=2, revenueSectorTotal=467,
+            stockCode="005930",
+            corpName="삼성전자",
+            sector="IT",
+            industryGroup="반도체와반도체장비",
+            revenue=11e12,
+            totalAssets=5e12,
+            revenueRank=2,
+            revenueTotal=2192,
+            revenueRankInSector=2,
+            revenueSectorTotal=467,
             sizeClass="large",
         )
         r = repr(ri)
@@ -212,13 +226,23 @@ class TestRank:
 
     def test_rank_info_size_class(self):
         ri = RankInfo(
-            stockCode="000001", corpName="대형사", sector="IT", industryGroup="반도체와반도체장비",
-            revenueRank=10, revenueTotal=2000, sizeClass="large",
+            stockCode="000001",
+            corpName="대형사",
+            sector="IT",
+            industryGroup="반도체와반도체장비",
+            revenueRank=10,
+            revenueTotal=2000,
+            sizeClass="large",
         )
         assert ri.sizeClass == "large"
         ri2 = RankInfo(
-            stockCode="000002", corpName="소형사", sector="IT", industryGroup="반도체와반도체장비",
-            revenueRank=1500, revenueTotal=2000, sizeClass="small",
+            stockCode="000002",
+            corpName="소형사",
+            sector="IT",
+            industryGroup="반도체와반도체장비",
+            revenueRank=1500,
+            revenueTotal=2000,
+            sizeClass="small",
         )
         assert ri2.sizeClass == "small"
 
@@ -230,24 +254,41 @@ class TestAnomaly:
         assert _yoyChange([None]) is None
 
     def test_earnings_quality_skip_financial(self):
-        series = {"IS": {"operating_profit": [100, 200], "net_profit": [50, 100]}, "CF": {"operating_cashflow": [80, 40]}}
+        series = {
+            "IS": {"operating_profit": [100, 200], "net_profit": [50, 100]},
+            "CF": {"operating_cashflow": [80, 40]},
+        }
         result = detectEarningsQuality(series, isFinancial=True)
         assert result == []
 
     def test_earnings_quality_detect(self):
-        series = {"IS": {"operating_profit": [100, 200], "net_profit": [50, 100]}, "CF": {"operating_cashflow": [80, 40]}}
+        series = {
+            "IS": {"operating_profit": [100, 200], "net_profit": [50, 100]},
+            "CF": {"operating_cashflow": [80, 40]},
+        }
         result = detectEarningsQuality(series, isFinancial=False)
         assert len(result) >= 1
         assert result[0].severity == "danger"
 
     def test_balance_sheet_capital_erosion(self):
-        series = {"BS": {"owners_of_parent_equity": [100, -50], "total_liabilities": [200, 300], "shortterm_borrowings": [0, 0], "longterm_borrowings": [0, 0], "debentures": [0, 0]}}
+        series = {
+            "BS": {
+                "owners_of_parent_equity": [100, -50],
+                "total_liabilities": [200, 300],
+                "shortterm_borrowings": [0, 0],
+                "longterm_borrowings": [0, 0],
+                "debentures": [0, 0],
+            }
+        }
         result = detectBalanceSheetShift(series)
         found = [a for a in result if "자본잠식" in a.text]
         assert len(found) == 1
 
     def test_cash_burn_skip_financial(self):
-        series = {"BS": {"cash_and_cash_equivalents": [100, 100]}, "CF": {"operating_cashflow": [-50], "cash_flows_from_financing_activities": [80]}}
+        series = {
+            "BS": {"cash_and_cash_equivalents": [100, 100]},
+            "CF": {"operating_cashflow": [-50], "cash_flows_from_financing_activities": [80]},
+        }
         result = detectCashBurn(series, isFinancial=True)
         cashBurnItems = [a for a in result if "차입으로" in a.text]
         assert len(cashBurnItems) == 0
@@ -270,15 +311,39 @@ class TestSummary:
         assert _iGa("현금흐름") == "현금흐름이"
 
     def test_classify_profile_premium(self):
-        grades = {"performance": "A", "profitability": "A", "health": "A", "cashflow": "B", "governance": "B", "risk": "A", "opportunity": "A"}
+        grades = {
+            "performance": "A",
+            "profitability": "A",
+            "health": "A",
+            "cashflow": "B",
+            "governance": "B",
+            "risk": "A",
+            "opportunity": "A",
+        }
         assert classifyProfile(grades) == "premium"
 
     def test_classify_profile_caution(self):
-        grades = {"performance": "F", "profitability": "F", "health": "F", "cashflow": "B", "governance": "A", "risk": "D", "opportunity": "D"}
+        grades = {
+            "performance": "F",
+            "profitability": "F",
+            "health": "F",
+            "cashflow": "B",
+            "governance": "A",
+            "risk": "D",
+            "opportunity": "D",
+        }
         assert classifyProfile(grades) == "caution"
 
     def test_classify_profile_mixed(self):
-        grades = {"performance": "C", "profitability": "C", "health": "C", "cashflow": "C", "governance": "C", "risk": "C", "opportunity": "C"}
+        grades = {
+            "performance": "C",
+            "profitability": "C",
+            "health": "C",
+            "cashflow": "C",
+            "governance": "C",
+            "risk": "C",
+            "opportunity": "C",
+        }
         assert classifyProfile(grades) == "mixed"
 
     def test_generate_summary_premium(self):

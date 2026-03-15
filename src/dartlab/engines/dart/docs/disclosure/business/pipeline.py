@@ -1,6 +1,5 @@
 """사업의 내용 데이터 추출 파이프라인."""
 
-
 from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import extractReportYear, selectReport
 from dartlab.engines.dart.docs.disclosure.business.parser import (

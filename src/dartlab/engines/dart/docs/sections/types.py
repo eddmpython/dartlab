@@ -60,10 +60,7 @@ class YearSections:
 
     def search(self, keyword: str) -> list[SectionChunk]:
         kw = keyword.lower()
-        return [
-            c for c in self.chunks
-            if kw in c.path.lower() or kw in c.textContent.lower()
-        ]
+        return [c for c in self.chunks if kw in c.path.lower() or kw in c.textContent.lower()]
 
     def toLinesDf(self) -> pl.DataFrame:
         """텍스트 청크를 줄 단위 DataFrame으로 변환."""
@@ -75,10 +72,15 @@ class YearSections:
                 if not line:
                     continue
                 h = hashlib.md5(line.encode()).hexdigest()[:12]
-                rows.append({
-                    "path": bp, "lineNum": i,
-                    "hash": h, "text": line, "chars": len(line),
-                })
+                rows.append(
+                    {
+                        "path": bp,
+                        "lineNum": i,
+                        "hash": h,
+                        "text": line,
+                        "chars": len(line),
+                    }
+                )
         return pl.DataFrame(rows)
 
     def toLeafMap(self) -> dict[str, str]:
@@ -107,7 +109,8 @@ class SectionResult:
     periods: list[str]
     yearSections: dict[str, YearSections] = field(default_factory=dict)
     _topicMap: dict[str, dict[str, str]] = field(
-        default_factory=dict, repr=False,
+        default_factory=dict,
+        repr=False,
     )
 
     def __post_init__(self) -> None:
@@ -150,10 +153,7 @@ class SectionResult:
     def search(self, keyword: str) -> dict[str, dict[str, str]]:
         """키워드로 topic 검색."""
         kw = keyword.lower()
-        return {
-            t: series for t, series in self._topicMap.items()
-            if kw in t.lower()
-        }
+        return {t: series for t, series in self._topicMap.items() if kw in t.lower()}
 
     def overview(self) -> pl.DataFrame:
         """전체 topic × period 크기 매트릭스."""
@@ -166,17 +166,26 @@ class SectionResult:
         return pl.DataFrame(records).sort("count", descending=True)
 
     def compare(
-        self, periodA: str, periodB: str, path: str | None = None,
+        self,
+        periodA: str,
+        periodB: str,
+        path: str | None = None,
     ) -> pl.DataFrame:
         """두 기간의 텍스트 변경사항을 줄 단위로 비교."""
         ysA = self.yearSections.get(periodA)
         ysB = self.yearSections.get(periodB)
         if ysA is None or ysB is None:
-            return pl.DataFrame(schema={
-                "path": pl.Utf8, "linesA": pl.UInt32, "linesB": pl.UInt32,
-                "kept": pl.UInt32, "added": pl.UInt32, "removed": pl.UInt32,
-                "changeRate": pl.Float64,
-            })
+            return pl.DataFrame(
+                schema={
+                    "path": pl.Utf8,
+                    "linesA": pl.UInt32,
+                    "linesB": pl.UInt32,
+                    "kept": pl.UInt32,
+                    "added": pl.UInt32,
+                    "removed": pl.UInt32,
+                    "changeRate": pl.Float64,
+                }
+            )
 
         dfA = ysA.toLinesDf()
         dfB = ysB.toLinesDf()
@@ -186,9 +195,7 @@ class SectionResult:
             dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw))
             dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw))
 
-        allPaths = sorted(
-            set(dfA["path"].to_list()) | set(dfB["path"].to_list())
-        )
+        allPaths = sorted(set(dfA["path"].to_list()) | set(dfB["path"].to_list()))
 
         records: list[dict] = []
         for p in allPaths:
@@ -199,16 +206,25 @@ class SectionResult:
             removed = pA.join(pB, on="hash", how="anti").height
             total = pA.height + pB.height
             rate = (added + removed) / total if total > 0 else 0.0
-            records.append({
-                "path": p, "linesA": pA.height, "linesB": pB.height,
-                "kept": kept, "added": added, "removed": removed,
-                "changeRate": round(rate, 3),
-            })
+            records.append(
+                {
+                    "path": p,
+                    "linesA": pA.height,
+                    "linesB": pB.height,
+                    "kept": kept,
+                    "added": added,
+                    "removed": removed,
+                    "changeRate": round(rate, 3),
+                }
+            )
 
         return pl.DataFrame(records).sort("changeRate", descending=True)
 
     def diff(
-        self, periodA: str, periodB: str, path: str,
+        self,
+        periodA: str,
+        periodB: str,
+        path: str,
     ) -> pl.DataFrame:
         """특정 섹션의 줄 단위 diff 반환."""
         ysA = self.yearSections.get(periodA)
@@ -223,17 +239,8 @@ class SectionResult:
         dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw))
         dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw))
 
-        kept = (
-            dfA.join(dfB, on="hash", how="inner", suffix="_r")
-            .select(pl.lit("kept").alias("status"), pl.col("text"))
-        )
-        added = (
-            dfB.join(dfA, on="hash", how="anti")
-            .select(pl.lit("added").alias("status"), pl.col("text"))
-        )
-        removed = (
-            dfA.join(dfB, on="hash", how="anti")
-            .select(pl.lit("removed").alias("status"), pl.col("text"))
-        )
+        kept = dfA.join(dfB, on="hash", how="inner", suffix="_r").select(pl.lit("kept").alias("status"), pl.col("text"))
+        added = dfB.join(dfA, on="hash", how="anti").select(pl.lit("added").alias("status"), pl.col("text"))
+        removed = dfA.join(dfB, on="hash", how="anti").select(pl.lit("removed").alias("status"), pl.col("text"))
 
         return pl.concat([removed, added, kept])

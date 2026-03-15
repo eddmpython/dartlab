@@ -108,10 +108,12 @@ def parseGuaranteeBlock(block: list[str]) -> list[dict]:
                 amounts.append(val)
 
         if amounts:
-            results.append({
-                "entity": entity,
-                "amount": max(amounts),
-            })
+            results.append(
+                {
+                    "entity": entity,
+                    "amount": max(amounts),
+                }
+            )
 
     return results
 
@@ -141,10 +143,12 @@ def parseRevenueTxBlock(block: list[str]) -> list[dict]:
                 amounts.append(val)
 
         if amounts:
-            results.append({
-                "entity": entity,
-                "sales": amounts[0] if len(amounts) >= 1 else None,
-                "purchases": amounts[1] if len(amounts) >= 2 else None,
-            })
+            results.append(
+                {
+                    "entity": entity,
+                    "sales": amounts[0] if len(amounts) >= 1 else None,
+                    "purchases": amounts[1] if len(amounts) >= 2 else None,
+                }
+            )
 
     return results

@@ -11,150 +11,154 @@ from typing import Any, Callable, Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.tools_registry import (
-	execute_tool,
-	get_tool_schemas,
-	register_defaults,
+    execute_tool,
+    get_tool_schemas,
+    register_defaults,
 )
 
 
 def agent_loop(
-	provider: BaseProvider,
-	messages: list[dict],
-	company: Any,
-	*,
-	max_turns: int = 5,
-	on_tool_call: Callable[[str, dict], None] | None = None,
-	on_tool_result: Callable[[str, str], None] | None = None,
+    provider: BaseProvider,
+    messages: list[dict],
+    company: Any,
+    *,
+    max_turns: int = 5,
+    on_tool_call: Callable[[str, dict], None] | None = None,
+    on_tool_result: Callable[[str, str], None] | None = None,
 ) -> str:
-	"""에이전트 루프: LLM ↔ 도구 반복 실행.
+    """에이전트 루프: LLM ↔ 도구 반복 실행.
 
-	1. LLM에 tools 스키마와 함께 호출
-	2. tool_calls가 있으면 실행 후 결과를 messages에 추가
-	3. tool_calls가 없으면 최종 답변 반환
-	4. max_turns까지 반복
+    1. LLM에 tools 스키마와 함께 호출
+    2. tool_calls가 있으면 실행 후 결과를 messages에 추가
+    3. tool_calls가 없으면 최종 답변 반환
+    4. max_turns까지 반복
 
-	Args:
-		provider: LLM provider 인스턴스
-		messages: 초기 메시지 (system + user)
-		company: Company 인스턴스 (도구 바인딩용)
-		max_turns: 최대 반복 횟수
-		on_tool_call: 도구 호출 시 콜백 (UI용)
-		on_tool_result: 도구 결과 시 콜백 (UI용)
+    Args:
+            provider: LLM provider 인스턴스
+            messages: 초기 메시지 (system + user)
+            company: Company 인스턴스 (도구 바인딩용)
+            max_turns: 최대 반복 횟수
+            on_tool_call: 도구 호출 시 콜백 (UI용)
+            on_tool_result: 도구 결과 시 콜백 (UI용)
 
-	Returns:
-		LLM의 최종 답변 텍스트
-	"""
-	register_defaults(company)
-	tools = get_tool_schemas()
+    Returns:
+            LLM의 최종 답변 텍스트
+    """
+    register_defaults(company)
+    tools = get_tool_schemas()
 
-	last_answer = ""
+    last_answer = ""
 
-	for _turn in range(max_turns):
-		response = provider.complete_with_tools(messages, tools)
-		last_answer = response.answer
+    for _turn in range(max_turns):
+        response = provider.complete_with_tools(messages, tools)
+        last_answer = response.answer
 
-		if not response.tool_calls:
-			return response.answer
+        if not response.tool_calls:
+            return response.answer
 
-		# assistant 메시지 추가 (tool_calls 포함)
-		assistant_msg: dict[str, Any] = {"role": "assistant"}
-		if response.answer:
-			assistant_msg["content"] = response.answer
-		else:
-			assistant_msg["content"] = None
+        # assistant 메시지 추가 (tool_calls 포함)
+        assistant_msg: dict[str, Any] = {"role": "assistant"}
+        if response.answer:
+            assistant_msg["content"] = response.answer
+        else:
+            assistant_msg["content"] = None
 
-		assistant_msg["tool_calls"] = [
-			{
-				"id": tc.id,
-				"type": "function",
-				"function": {
-					"name": tc.name,
-					"arguments": json.dumps(tc.arguments, ensure_ascii=False),
-				},
-			}
-			for tc in response.tool_calls
-		]
-		messages.append(assistant_msg)
+        assistant_msg["tool_calls"] = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.name,
+                    "arguments": json.dumps(tc.arguments, ensure_ascii=False),
+                },
+            }
+            for tc in response.tool_calls
+        ]
+        messages.append(assistant_msg)
 
-		# 도구 실행 + 결과 추가
-		for tc in response.tool_calls:
-			if on_tool_call:
-				on_tool_call(tc.name, tc.arguments)
+        # 도구 실행 + 결과 추가
+        for tc in response.tool_calls:
+            if on_tool_call:
+                on_tool_call(tc.name, tc.arguments)
 
-			result = execute_tool(tc.name, tc.arguments)
+            result = execute_tool(tc.name, tc.arguments)
 
-			if on_tool_result:
-				on_tool_result(tc.name, result)
+            if on_tool_result:
+                on_tool_result(tc.name, result)
 
-			messages.append({
-				"role": "tool",
-				"tool_call_id": tc.id,
-				"content": result,
-			})
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": result,
+                }
+            )
 
-	return last_answer
+    return last_answer
 
 
 def agent_loop_stream(
-	provider: BaseProvider,
-	messages: list[dict],
-	company: Any,
-	*,
-	max_turns: int = 5,
-	on_tool_call: Callable[[str, dict], None] | None = None,
-	on_tool_result: Callable[[str, str], None] | None = None,
+    provider: BaseProvider,
+    messages: list[dict],
+    company: Any,
+    *,
+    max_turns: int = 5,
+    on_tool_call: Callable[[str, dict], None] | None = None,
+    on_tool_result: Callable[[str, str], None] | None = None,
 ) -> Generator[str, None, None]:
-	"""스트리밍 에이전트 루프: tool 실행 후 최종 답변을 청크로 yield.
+    """스트리밍 에이전트 루프: tool 실행 후 최종 답변을 청크로 yield.
 
-	tool_call/tool_result 단계는 콜백으로 알리고,
-	최종 답변은 llm.stream()으로 실시간 청크 전달.
-	"""
-	register_defaults(company)
-	tools = get_tool_schemas()
+    tool_call/tool_result 단계는 콜백으로 알리고,
+    최종 답변은 llm.stream()으로 실시간 청크 전달.
+    """
+    register_defaults(company)
+    tools = get_tool_schemas()
 
-	for _turn in range(max_turns):
-		response = provider.complete_with_tools(messages, tools)
+    for _turn in range(max_turns):
+        response = provider.complete_with_tools(messages, tools)
 
-		if not response.tool_calls:
-			if _turn == 0:
-				yield from provider.stream(messages)
-				return
-			messages.append({"role": "assistant", "content": response.answer or ""})
-			final_messages = [m for m in messages if m.get("role") != "tool" or True]
-			yield from provider.stream(final_messages)
-			return
+        if not response.tool_calls:
+            if _turn == 0:
+                yield from provider.stream(messages)
+                return
+            messages.append({"role": "assistant", "content": response.answer or ""})
+            final_messages = [m for m in messages if m.get("role") != "tool" or True]
+            yield from provider.stream(final_messages)
+            return
 
-		assistant_msg: dict[str, Any] = {"role": "assistant"}
-		assistant_msg["content"] = response.answer if response.answer else None
-		assistant_msg["tool_calls"] = [
-			{
-				"id": tc.id,
-				"type": "function",
-				"function": {
-					"name": tc.name,
-					"arguments": json.dumps(tc.arguments, ensure_ascii=False),
-				},
-			}
-			for tc in response.tool_calls
-		]
-		messages.append(assistant_msg)
+        assistant_msg: dict[str, Any] = {"role": "assistant"}
+        assistant_msg["content"] = response.answer if response.answer else None
+        assistant_msg["tool_calls"] = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.name,
+                    "arguments": json.dumps(tc.arguments, ensure_ascii=False),
+                },
+            }
+            for tc in response.tool_calls
+        ]
+        messages.append(assistant_msg)
 
-		for tc in response.tool_calls:
-			if on_tool_call:
-				on_tool_call(tc.name, tc.arguments)
+        for tc in response.tool_calls:
+            if on_tool_call:
+                on_tool_call(tc.name, tc.arguments)
 
-			result = execute_tool(tc.name, tc.arguments)
+            result = execute_tool(tc.name, tc.arguments)
 
-			if on_tool_result:
-				on_tool_result(tc.name, result)
+            if on_tool_result:
+                on_tool_result(tc.name, result)
 
-			messages.append({
-				"role": "tool",
-				"tool_call_id": tc.id,
-				"content": result,
-			})
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": result,
+                }
+            )
 
-	yield from provider.stream(messages)
+    yield from provider.stream(messages)
 
 
 AGENT_SYSTEM_ADDITION = """

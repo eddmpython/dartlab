@@ -12,8 +12,8 @@ import os
 import time
 from typing import Any
 
-import requests
 import polars as pl
+import requests
 
 BASE_URL = "https://opendart.fss.or.kr/api"
 

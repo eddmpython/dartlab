@@ -76,7 +76,7 @@ def parseInvestments(content: str) -> tuple[list[dict], list[str]]:
                 if "법인명" in c or "회사명" in c or "종목명" in c:
                     nameIdx = i
                     break
-            numericHeaders = [c.strip().replace(" ", "") for c in cells[nameIdx + 1:] if c.strip()]
+            numericHeaders = [c.strip().replace(" ", "") for c in cells[nameIdx + 1 :] if c.strip()]
             continue
 
         if not headerFound:

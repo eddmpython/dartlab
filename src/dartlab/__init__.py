@@ -9,8 +9,8 @@ from dartlab.compare import Compare
 from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
 from dartlab.engines.dart.company import Company as _DartCompany
-from dartlab.engines.edgar.company import Company as _EdgarCompany
 from dartlab.engines.dart.openapi.dart import Dart
+from dartlab.engines.edgar.company import Company as _EdgarCompany
 
 try:
     __version__ = _pkg_version("dartlab")
@@ -35,6 +35,7 @@ def search(keyword: str):
     if keyword.isascii() and keyword.isalpha():
         try:
             from dartlab.engines.edgar.company import Company as _US
+
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
             pass
@@ -56,6 +57,7 @@ def listing(market: str | None = None):
     if market and market.upper() == "US":
         try:
             from dartlab.engines.edgar.company import Company as _US
+
             return _US.listing()
         except (ImportError, AttributeError, NotImplementedError):
             raise NotImplementedError("US listing은 아직 지원되지 않습니다")

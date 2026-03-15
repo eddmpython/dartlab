@@ -22,6 +22,7 @@ def financeDf():
 class TestMapperWithFixture:
     def _mapper(self):
         from dartlab.engines.dart.finance.mapper import AccountMapper
+
         return AccountMapper.get()
 
     def test_mapRevenueId(self):
@@ -199,50 +200,72 @@ class TestRatioQuality:
         from dartlab.engines.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
 
         assert _ratioResultHasHeadlineSignal(None) is False
-        assert _ratioResultHasHeadlineSignal(SimpleNamespace(
-            roe=None,
-            roa=None,
-            operatingMargin=None,
-            netMargin=None,
-            debtRatio=None,
-            currentRatio=None,
-            equityRatio=None,
-            revenueTTM=None,
-            netIncomeTTM=None,
-        )) is False
-        assert _ratioResultHasHeadlineSignal(SimpleNamespace(
-            roe=None,
-            roa=0.6,
-            operatingMargin=None,
-            netMargin=None,
-            debtRatio=None,
-            currentRatio=None,
-            equityRatio=None,
-            revenueTTM=None,
-            netIncomeTTM=None,
-        )) is True
-        assert _shouldFallbackToAnnualRatios(SimpleNamespace(
-            roe=None,
-            roa=None,
-            operatingMargin=None,
-            netMargin=None,
-            debtRatio=None,
-            currentRatio=None,
-            equityRatio=8.0,
-            revenueTTM=None,
-            netIncomeTTM=None,
-        ), "insurance") is True
-        assert _shouldFallbackToAnnualRatios(SimpleNamespace(
-            roe=None,
-            roa=None,
-            operatingMargin=None,
-            netMargin=None,
-            debtRatio=None,
-            currentRatio=None,
-            equityRatio=8.0,
-            revenueTTM=None,
-            netIncomeTTM=None,
-        ), None) is False
+        assert (
+            _ratioResultHasHeadlineSignal(
+                SimpleNamespace(
+                    roe=None,
+                    roa=None,
+                    operatingMargin=None,
+                    netMargin=None,
+                    debtRatio=None,
+                    currentRatio=None,
+                    equityRatio=None,
+                    revenueTTM=None,
+                    netIncomeTTM=None,
+                )
+            )
+            is False
+        )
+        assert (
+            _ratioResultHasHeadlineSignal(
+                SimpleNamespace(
+                    roe=None,
+                    roa=0.6,
+                    operatingMargin=None,
+                    netMargin=None,
+                    debtRatio=None,
+                    currentRatio=None,
+                    equityRatio=None,
+                    revenueTTM=None,
+                    netIncomeTTM=None,
+                )
+            )
+            is True
+        )
+        assert (
+            _shouldFallbackToAnnualRatios(
+                SimpleNamespace(
+                    roe=None,
+                    roa=None,
+                    operatingMargin=None,
+                    netMargin=None,
+                    debtRatio=None,
+                    currentRatio=None,
+                    equityRatio=8.0,
+                    revenueTTM=None,
+                    netIncomeTTM=None,
+                ),
+                "insurance",
+            )
+            is True
+        )
+        assert (
+            _shouldFallbackToAnnualRatios(
+                SimpleNamespace(
+                    roe=None,
+                    roa=None,
+                    operatingMargin=None,
+                    netMargin=None,
+                    debtRatio=None,
+                    currentRatio=None,
+                    equityRatio=8.0,
+                    revenueTTM=None,
+                    netIncomeTTM=None,
+                ),
+                None,
+            )
+            is False
+        )
 
     def test_ratio_template_fields_by_financial_industry(self):
         from dartlab.engines.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup

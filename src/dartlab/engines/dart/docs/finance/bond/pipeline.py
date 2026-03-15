@@ -29,9 +29,7 @@ def bond(stockCode: str) -> BondResult | None:
         if report is None:
             continue
 
-        bondRows = report.filter(
-            pl.col("section_title").str.contains("증권의 발행")
-        )
+        bondRows = report.filter(pl.col("section_title").str.contains("증권의 발행"))
         if bondRows.height == 0:
             continue
 
@@ -89,5 +87,3 @@ def bond(stockCode: str) -> BondResult | None:
         issuances=issuances,
         timeSeries=ts,
     )
-
-

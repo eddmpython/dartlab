@@ -29,13 +29,9 @@ def subsidiary(stockCode: str) -> SubsidiaryResult | None:
         if report is None:
             continue
 
-        subRows = report.filter(
-            pl.col("section_title").str.contains("타법인")
-        )
+        subRows = report.filter(pl.col("section_title").str.contains("타법인"))
         if subRows.height == 0:
-            subRows = report.filter(
-                pl.col("section_title").str.contains("출자")
-            )
+            subRows = report.filter(pl.col("section_title").str.contains("출자"))
         if subRows.height == 0:
             continue
 
@@ -103,5 +99,3 @@ def subsidiary(stockCode: str) -> SubsidiaryResult | None:
         investments=investments,
         timeSeries=ts,
     )
-
-

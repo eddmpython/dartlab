@@ -84,15 +84,9 @@ def _fetchKind() -> pl.DataFrame:
     if "종목코드" not in df.columns:
         return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8})
 
-    df = df.with_columns(
-        pl.col("종목코드").cast(pl.Utf8).str.zfill(6)
-    )
-    df = df.filter(
-        pl.col("종목코드").str.contains(r"^[0-9A-Z]{6}$")
-    )
-    df = df.filter(
-        ~pl.col("회사명").str.contains(r"스팩|리츠")
-    )
+    df = df.with_columns(pl.col("종목코드").cast(pl.Utf8).str.zfill(6))
+    df = df.filter(pl.col("종목코드").str.contains(r"^[0-9A-Z]{6}$"))
+    df = df.filter(~pl.col("회사명").str.contains(r"스팩|리츠"))
     df = df.unique(subset=["종목코드"]).sort("종목코드")
     return df
 

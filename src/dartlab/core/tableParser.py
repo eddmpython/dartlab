@@ -46,9 +46,7 @@ def parseAmount(text: str) -> float | None:
     cleaned = text.strip().replace(",", "").replace(" ", "")
     if re.match(r"^\(주\d*\)$", cleaned):
         return None
-    isNeg = "△" in cleaned or "▲" in cleaned or (
-        cleaned.startswith("(") and cleaned.endswith(")")
-    )
+    isNeg = "△" in cleaned or "▲" in cleaned or (cleaned.startswith("(") and cleaned.endswith(")"))
     cleaned = re.sub(r"[△▲\(\)]", "", cleaned)
     cleaned = re.sub(r"[^\d.]", "", cleaned)
     if not cleaned or cleaned.count(".") > 1:
@@ -147,7 +145,7 @@ def _detectPatternA(tables: list[dict]) -> list[dict] | None:
         if spanRowIdx + 1 >= len(allRows):
             continue
         subHeaderRow = allRows[spanRowIdx + 1]
-        dataRows = allRows[spanRowIdx + 2:]
+        dataRows = allRows[spanRowIdx + 2 :]
 
         periods = []
         currentPeriod = None
@@ -169,7 +167,7 @@ def _detectPatternA(tables: list[dict]) -> list[dict] | None:
 
         results = []
         for period in periods:
-            subHeaders = subHeaderRow[period["startCol"]:period["endCol"] + 1]
+            subHeaders = subHeaderRow[period["startCol"] : period["endCol"] + 1]
             subHeaders = [h for h in subHeaders if h]
 
             items = []
@@ -179,16 +177,18 @@ def _detectPatternA(tables: list[dict]) -> list[dict] | None:
                 name = row[0].strip() if row[0] else ""
                 if not name:
                     continue
-                values = row[period["startCol"]:period["endCol"] + 1]
+                values = row[period["startCol"] : period["endCol"] + 1]
                 items.append({"name": name, "values": values})
 
             if items:
-                results.append({
-                    "pattern": "A",
-                    "period": period["name"],
-                    "headers": subHeaders,
-                    "items": items,
-                })
+                results.append(
+                    {
+                        "pattern": "A",
+                        "period": period["name"],
+                        "headers": subHeaders,
+                        "items": items,
+                    }
+                )
 
         if results:
             return results
@@ -222,12 +222,14 @@ def _detectPatternB(tables: list[dict]) -> list[dict] | None:
                             items.append({"name": name, "values": values})
 
                         if items:
-                            periodTables.append({
-                                "pattern": "B",
-                                "period": periodName,
-                                "headers": filteredHeaders,
-                                "items": items,
-                            })
+                            periodTables.append(
+                                {
+                                    "pattern": "B",
+                                    "period": periodName,
+                                    "headers": filteredHeaders,
+                                    "items": items,
+                                }
+                            )
                     i += 2
                     continue
         i += 1
@@ -276,12 +278,14 @@ def _detectPatternC(tables: list[dict]) -> list[dict] | None:
             items.append({"name": name, "values": values})
 
         if items:
-            return [{
-                "pattern": "C",
-                "period": "전체",
-                "headers": cleanHeaders,
-                "items": items,
-            }]
+            return [
+                {
+                    "pattern": "C",
+                    "period": "전체",
+                    "headers": cleanHeaders,
+                    "items": items,
+                }
+            ]
     return None
 
 
@@ -337,12 +341,14 @@ def _detectPatternD(tables: list[dict]) -> list[dict] | None:
             items.append({"name": name, "values": values})
 
         if items and hasAnyNumber:
-            return [{
-                "pattern": "D",
-                "period": "현재",
-                "headers": cleanHeaders,
-                "items": items,
-            }]
+            return [
+                {
+                    "pattern": "D",
+                    "period": "현재",
+                    "headers": cleanHeaders,
+                    "items": items,
+                }
+            ]
 
     return None
 
@@ -422,7 +428,7 @@ def extractAccounts(content: str) -> tuple[dict[str, list[float | None]], list[s
                 candText = " ".join(candidate)
                 if "기" in candText or "년" in candText:
                     headers = candidate
-                    table["rows"] = table["rows"][ri + 1:]
+                    table["rows"] = table["rows"][ri + 1 :]
                     break
             else:
                 continue

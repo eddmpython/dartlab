@@ -67,9 +67,7 @@ def extractFromSubSections(report: pl.DataFrame) -> dict[str, dict]:
 
 def extractFromUnified(report: pl.DataFrame) -> dict[str, dict]:
     """통합 텍스트에서 번호 패턴으로 분리."""
-    mainSection = report.filter(
-        pl.col("section_title").str.contains("사업의 내용")
-    )
+    mainSection = report.filter(pl.col("section_title").str.contains("사업의 내용"))
     if mainSection.height == 0:
         return {}
 
@@ -119,24 +117,19 @@ def splitByNumber(text: str) -> list[tuple[str, str, str]]:
 def getBusinessText(report: pl.DataFrame) -> str | None:
     """보고서에서 사업 개요 텍스트 추출 (변경 탐지용)."""
     overview = report.filter(
-        pl.col("section_title").str.starts_with("1.")
-        & pl.col("section_title").str.contains("사업의 개요")
+        pl.col("section_title").str.starts_with("1.") & pl.col("section_title").str.contains("사업의 개요")
     )
     if overview.height > 0:
         return overview.row(0, named=True)["section_content"]
 
-    main = report.filter(
-        pl.col("section_title").str.contains("사업의 내용")
-    )
+    main = report.filter(pl.col("section_title").str.contains("사업의 내용"))
     if main.height > 0:
         return main.row(0, named=True)["section_content"]
 
     return None
 
 
-def computeChanges(
-    df: pl.DataFrame, years: list[str]
-) -> list[dict]:
+def computeChanges(df: pl.DataFrame, years: list[str]) -> list[dict]:
     """연도별 사업 내용 변경률 계산."""
     changes = []
     prevText = None
@@ -151,15 +144,12 @@ def computeChanges(
             continue
 
         overview = annual.filter(
-            pl.col("section_title").str.starts_with("1.")
-            & pl.col("section_title").str.contains("사업의 개요")
+            pl.col("section_title").str.starts_with("1.") & pl.col("section_title").str.contains("사업의 개요")
         )
         if overview.height > 0:
             text = overview.row(0, named=True)["section_content"]
         else:
-            main = annual.filter(
-                pl.col("section_title").str.contains("사업의 내용")
-            )
+            main = annual.filter(pl.col("section_title").str.contains("사업의 내용"))
             if main.height > 0:
                 text = main.row(0, named=True)["section_content"]
             else:
@@ -169,20 +159,19 @@ def computeChanges(
             ratio = difflib.SequenceMatcher(None, prevText, text).ratio()
             changedPct = round((1 - ratio) * 100, 1)
 
-            diffLines = list(difflib.unified_diff(
-                prevText.splitlines(), text.splitlines(),
-                lineterm="", n=0
-            ))
+            diffLines = list(difflib.unified_diff(prevText.splitlines(), text.splitlines(), lineterm="", n=0))
             added = sum(1 for l in diffLines if l.startswith("+") and not l.startswith("+++"))
             removed = sum(1 for l in diffLines if l.startswith("-") and not l.startswith("---"))
 
-            changes.append({
-                "year": int(year),
-                "changedPct": changedPct,
-                "added": added,
-                "removed": removed,
-                "totalChars": len(text),
-            })
+            changes.append(
+                {
+                    "year": int(year),
+                    "changedPct": changedPct,
+                    "added": added,
+                    "removed": removed,
+                    "totalChars": len(text),
+                }
+            )
 
         prevText = text
 

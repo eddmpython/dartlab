@@ -65,6 +65,7 @@ def isSeparatorRow(line: str) -> bool:
 # 1. 자본금 변동사항
 # ──────────────────────────────────────────────
 
+
 def parseCapitalChangeTable(block: list[str]) -> dict | None:
     """자본금 변동사항 테이블 파싱.
 
@@ -143,7 +144,7 @@ def parseCapitalChangeTable(block: list[str]) -> dict | None:
             elif c in ("-", "−", "–"):
                 numericCells.append(c)
 
-        values = [parseAmount(c) for c in numericCells[:len(periods)]]
+        values = [parseAmount(c) for c in numericCells[: len(periods)]]
 
         if "발행주식" in label:
             label = "발행주식총수"
@@ -165,6 +166,7 @@ def parseCapitalChangeTable(block: list[str]) -> dict | None:
 # ──────────────────────────────────────────────
 # 2. 주식의 총수
 # ──────────────────────────────────────────────
+
 
 def parseShareTotalTable(block: list[str]) -> dict | None:
     """주식의 총수 등 테이블 파싱.
@@ -254,6 +256,7 @@ def parseShareTotalTable(block: list[str]) -> dict | None:
 # ──────────────────────────────────────────────
 # 3. 자기주식 변동
 # ──────────────────────────────────────────────
+
 
 def parseTreasuryStockTable(block: list[str]) -> dict | None:
     """자기주식 변동 테이블 파싱.
@@ -349,15 +352,17 @@ def parseTreasuryStockTable(block: list[str]) -> dict | None:
         cancelled = parseAmount(cells[cancelledIdx]) if cancelledIdx and cancelledIdx < len(cells) else None
         end = parseAmount(cells[endIdx]) if endIdx < len(cells) else None
 
-        rows.append({
-            "method": currentMethod,
-            "stockType": stockType,
-            "beginQty": begin,
-            "acquired": acquired,
-            "disposed": disposed,
-            "cancelled": cancelled,
-            "endQty": end,
-        })
+        rows.append(
+            {
+                "method": currentMethod,
+                "stockType": stockType,
+                "beginQty": begin,
+                "acquired": acquired,
+                "disposed": disposed,
+                "cancelled": cancelled,
+                "endQty": end,
+            }
+        )
 
         if begin:
             totalBegin += begin

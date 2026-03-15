@@ -10,7 +10,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 # ── 매핑 테이블 ────────────────────────────────────────────
 
 _REPRT_NM: dict[str, str] = {
@@ -198,6 +197,7 @@ _COMPANY_KR: dict[str, str] = {
 
 # ── enrich 함수 ────────────────────────────────────────────
 
+
 def enrichFinance(
     df: pl.DataFrame,
     stockCode: str,
@@ -225,9 +225,9 @@ def enrichFinance(
             enriched = enriched.with_columns(pl.lit("CFS").alias("fs_div"))
     if "fs_nm" not in df.columns and "fs_div" in enriched.columns:
         enriched = enriched.with_columns(
-            pl.col("fs_div").replace_strict(
-                {"CFS": "연결재무제표", "OFS": "재무제표"}, default="재무제표"
-            ).alias("fs_nm")
+            pl.col("fs_div")
+            .replace_strict({"CFS": "연결재무제표", "OFS": "재무제표"}, default="재무제표")
+            .alias("fs_nm")
         )
     if "collect_status" not in df.columns:
         enriched = enriched.with_columns(pl.lit("collected").alias("collect_status"))
@@ -263,9 +263,7 @@ def enrichReport(
         if "bsns_year" in df.columns:
             enriched = enriched.with_columns(pl.col("bsns_year").alias("year"))
         elif "stlm_dt" in df.columns:
-            enriched = enriched.with_columns(
-                pl.col("stlm_dt").str.slice(0, 4).alias("year")
-            )
+            enriched = enriched.with_columns(pl.col("stlm_dt").str.slice(0, 4).alias("year"))
     if "quarter" not in df.columns:
         if "reprt_code" in df.columns:
             enriched = enriched.with_columns(
@@ -273,10 +271,13 @@ def enrichReport(
             )
         elif "stlm_dt" in df.columns:
             enriched = enriched.with_columns(
-                pl.col("stlm_dt").str.slice(5, 2).replace_strict(
+                pl.col("stlm_dt")
+                .str.slice(5, 2)
+                .replace_strict(
                     {"03": "1분기", "06": "2분기", "09": "3분기", "12": "4분기"},
                     default="기타",
-                ).alias("quarter")
+                )
+                .alias("quarter")
             )
     if "collectStatus" not in df.columns:
         enriched = enriched.with_columns(pl.lit(1, dtype=pl.Int64).alias("collectStatus"))
@@ -285,6 +286,7 @@ def enrichReport(
 
 
 # ── 컬럼 한글화 ────────────────────────────────────────────
+
 
 def korColumns(
     df: pl.DataFrame,
@@ -331,6 +333,7 @@ def korColumns(
 
 
 # ── 저장 ───────────────────────────────────────────────────
+
 
 def save(
     df: pl.DataFrame,

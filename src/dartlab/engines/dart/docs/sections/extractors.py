@@ -61,17 +61,13 @@ def topicSubtables(blocks: pl.DataFrame | None, topic: str) -> TopicSubtables | 
 
     resolved = _resolvedTopic(topic)
     selector = _TOPIC_SELECTORS.get(topic)
-    subset = (
-        blocks
-        .filter(
-            pl.col("topic") == resolved,
-            pl.col("blockType") == "table",
-            pl.col("blockText").is_not_null(),
-        )
-        .sort(
-            ["periodOrder", "sectionOrder", "blockIdx"],
-            descending=[True, False, False],
-        )
+    subset = blocks.filter(
+        pl.col("topic") == resolved,
+        pl.col("blockType") == "table",
+        pl.col("blockText").is_not_null(),
+    ).sort(
+        ["periodOrder", "sectionOrder", "blockIdx"],
+        descending=[True, False, False],
     )
     if selector is not None and selector.detailTopics:
         subset = subset.filter(pl.col("detailTopic").is_in(selector.detailTopics))
@@ -127,27 +123,32 @@ def topicSubtables(blocks: pl.DataFrame | None, topic: str) -> TopicSubtables | 
 
     periods = sortPeriods(long_df.get_column("period").unique().to_list())
     merged = (
-        long_df
-        .group_by(["topic", "sourceTopic", "subtopic", "subtopicOrder", "period"])
+        long_df.group_by(["topic", "sourceTopic", "subtopic", "subtopicOrder", "period"])
         .agg(
             pl.col("tableText").implode().list.join("\n\n").alias("tableText"),
         )
         .sort(["subtopicOrder", "period"], descending=[False, True])
     )
     wide_df = (
-        merged
-        .pivot(
+        merged.pivot(
             on="period",
             index=["topic", "sourceTopic", "subtopic", "subtopicOrder"],
             values="tableText",
         )
-        .select(["topic", "sourceTopic", "subtopic", "subtopicOrder", *[p for p in periods if p in merged["period"].unique().to_list()]])
+        .select(
+            [
+                "topic",
+                "sourceTopic",
+                "subtopic",
+                "subtopicOrder",
+                *[p for p in periods if p in merged["period"].unique().to_list()],
+            ]
+        )
         .sort("subtopicOrder")
     )
 
     summary_df = (
-        long_df
-        .group_by(["topic", "sourceTopic", "subtopic", "subtopicOrder"])
+        long_df.group_by(["topic", "sourceTopic", "subtopic", "subtopicOrder"])
         .agg(
             pl.len().alias("periodCount"),
             pl.col("chars").mean().round(0).alias("avgChars"),
@@ -360,7 +361,8 @@ def parseSubtopicTable(
             continue
 
         items, unitLabel, pattern = _parseOneCellTable(
-            str(cellText), numeric=numeric,
+            str(cellText),
+            numeric=numeric,
         )
         if items:
             periodItems[col] = items

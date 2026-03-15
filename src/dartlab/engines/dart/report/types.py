@@ -82,14 +82,22 @@ STR_OVERRIDE_COLS: dict[str, set[str]] = {
     "treasuryStock": {"stock_knd", "acqs_mth1", "acqs_mth2", "acqs_mth3", "rm"},
     "outsideDirector": {"apnt", "rlsofc", "mdstrm_resig"},
     "privateOfferingUsage": {
-        "se_nm", "pay_de", "real_cptal_use_sttus",
-        "real_cptal_use_dtls_cn", "dffrnc_occrrnc_resn",
-        "cptal_use_plan", "mtrpt_cptal_use_plan_useprps",
+        "se_nm",
+        "pay_de",
+        "real_cptal_use_sttus",
+        "real_cptal_use_dtls_cn",
+        "dffrnc_occrrnc_resn",
+        "cptal_use_plan",
+        "mtrpt_cptal_use_plan_useprps",
     },
     "publicOfferingUsage": {
-        "se_nm", "pay_de", "on_dclrt_cptal_use_plan",
-        "real_cptal_use_sttus", "rs_cptal_use_plan_useprps",
-        "real_cptal_use_dtls_cn", "dffrnc_occrrnc_resn",
+        "se_nm",
+        "pay_de",
+        "on_dclrt_cptal_use_plan",
+        "real_cptal_use_sttus",
+        "rs_cptal_use_plan_useprps",
+        "real_cptal_use_dtls_cn",
+        "dffrnc_occrrnc_resn",
     },
     "debtSecurities": {"se", "mtd"},
     "commercialPaper": {"mtd"},
@@ -102,6 +110,7 @@ STR_OVERRIDE_COLS: dict[str, set[str]] = {
     "executive": {"mxmm_shrholdr_relate"},
     "dividend": {"se", "stock_knd"},
 }
+
 
 def _seriesToWide(
     years: list[int],
@@ -120,14 +129,28 @@ def _seriesToWide(
     return pl.DataFrame(rows) if rows else None
 
 
-META_DROP_COLS = frozenset({
-    "rcept_no", "corp_cls", "corp_code", "corp_name",
-    "corpCode", "fsDiv", "collectStatus", "apiName",
-})
+META_DROP_COLS = frozenset(
+    {
+        "rcept_no",
+        "corp_cls",
+        "corp_code",
+        "corp_name",
+        "corpCode",
+        "fsDiv",
+        "collectStatus",
+        "apiName",
+    }
+)
 
-KEEP_META_COLS = frozenset({
-    "stockCode", "year", "quarter", "apiType", "stlm_dt",
-})
+KEEP_META_COLS = frozenset(
+    {
+        "stockCode",
+        "year",
+        "quarter",
+        "apiType",
+        "stlm_dt",
+    }
+)
 
 QUARTER_MAP: dict[str, int] = {
     "1분기": 1,
@@ -198,12 +221,15 @@ class DividendResult:
         return len(self.years)
 
     def toWide(self) -> pl.DataFrame | None:
-        return _seriesToWide(self.years, [
-            ("주당현금배당금", self.dps),
-            ("현금배당수익률(%)", self.dividendYield),
-            ("주식배당", self.stockDividend),
-            ("주식배당수익률(%)", self.stockDividendYield),
-        ])
+        return _seriesToWide(
+            self.years,
+            [
+                ("주당현금배당금", self.dps),
+                ("현금배당수익률(%)", self.dividendYield),
+                ("주식배당", self.stockDividend),
+                ("주식배당수익률(%)", self.stockDividendYield),
+            ],
+        )
 
 
 @dataclass
@@ -221,11 +247,14 @@ class EmployeeResult:
         return len(self.years)
 
     def toWide(self) -> pl.DataFrame | None:
-        return _seriesToWide(self.years, [
-            ("총직원수", self.totalEmployee),
-            ("월평균급여(천원)", self.avgMonthlySalary),
-            ("연간총급여(백만원)", self.totalAnnualSalary),
-        ])
+        return _seriesToWide(
+            self.years,
+            [
+                ("총직원수", self.totalEmployee),
+                ("월평균급여(천원)", self.avgMonthlySalary),
+                ("연간총급여(백만원)", self.totalAnnualSalary),
+            ],
+        )
 
 
 @dataclass
@@ -242,9 +271,12 @@ class MajorHolderResult:
         return len(self.years)
 
     def toWide(self) -> pl.DataFrame | None:
-        return _seriesToWide(self.years, [
-            ("최대주주총지분율(%)", self.totalShareRatio),
-        ])
+        return _seriesToWide(
+            self.years,
+            [
+                ("최대주주총지분율(%)", self.totalShareRatio),
+            ],
+        )
 
 
 @dataclass
@@ -279,7 +311,10 @@ class AuditResult:
         return len(self.years)
 
     def toWide(self) -> pl.DataFrame | None:
-        return _seriesToWide(self.years, [
-            ("감사의견", self.opinions),
-            ("감사법인", self.auditors),
-        ])
+        return _seriesToWide(
+            self.years,
+            [
+                ("감사의견", self.opinions),
+                ("감사법인", self.auditors),
+            ],
+        )

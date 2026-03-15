@@ -38,8 +38,7 @@ def parseDividendTable(content: str) -> dict:
         if not inMainTable and "구" in cellText and "분" in cellText and "당기" in cellText:
             inMainTable = True
         if inMainTable or any(
-            kw in cellText
-            for kw in ["주당액면가액", "당기순이익", "현금배당금", "배당성향", "배당수익률"]
+            kw in cellText for kw in ["주당액면가액", "당기순이익", "현금배당금", "배당성향", "배당수익률"]
         ):
             inMainTable = True
             tableRows.append(cells)
@@ -68,18 +67,10 @@ def parseDividendTable(content: str) -> dict:
         if len(row) >= 4:
             second = row[1].strip()
             if second in ("보통주", "우선주", "종류주", "1우선주(주1)", "1우선주"):
-                stockType = (
-                    "우선주"
-                    if "우선" in second
-                    else ("종류주" if "종류" in second else "보통주")
-                )
+                stockType = "우선주" if "우선" in second else ("종류주" if "종류" in second else "보통주")
                 values = row[2:]
             elif label in ("보통주", "우선주", "종류주", "1우선주(주1)", "1우선주"):
-                stockType = (
-                    "우선주"
-                    if "우선" in label
-                    else ("종류주" if "종류" in label else "보통주")
-                )
+                stockType = "우선주" if "우선" in label else ("종류주" if "종류" in label else "보통주")
                 label = prevLabel
                 values = row[1:]
 
@@ -89,10 +80,7 @@ def parseDividendTable(content: str) -> dict:
 
         if "당기순이익" in label and "연결" in label:
             result["netIncome"] = amounts
-        elif "당기순이익" in label and (
-            not result["netIncome"]
-            or all(a is None for a in result["netIncome"])
-        ):
+        elif "당기순이익" in label and (not result["netIncome"] or all(a is None for a in result["netIncome"])):
             result["netIncome"] = amounts
         elif "주당순이익" in label:
             result["eps"] = amounts

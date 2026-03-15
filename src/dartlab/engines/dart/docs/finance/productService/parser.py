@@ -108,16 +108,22 @@ def parseProductService(content: str) -> list[dict]:
 
         if not headerFound:
             hasProduct = any(
-                k in c for c in cells
+                k in c
+                for c in cells
                 for k in (
-                    "제품", "서비스", "품목", "품 목", "구분", "부문", "부 문",
-                    "사업부문", "상품명", "사업영역",
+                    "제품",
+                    "서비스",
+                    "품목",
+                    "품 목",
+                    "구분",
+                    "부문",
+                    "부 문",
+                    "사업부문",
+                    "상품명",
+                    "사업영역",
                 )
             )
-            hasMoney = any(
-                k in c for c in cells
-                for k in ("매출", "금액", "비중", "비율")
-            )
+            hasMoney = any(k in c for c in cells for k in ("매출", "금액", "비중", "비율"))
             if hasProduct and hasMoney:
                 headerFound = True
                 continue

@@ -71,16 +71,15 @@ def notesDetail(
 
             periods = []
             for block in parsed:
-                items = [
-                    NotesItem(name=it["name"], values=it["values"])
-                    for it in block["items"]
-                ]
-                periods.append(NotesPeriod(
-                    pattern=block["pattern"],
-                    period=block["period"],
-                    headers=block["headers"],
-                    items=items,
-                ))
+                items = [NotesItem(name=it["name"], values=it["values"]) for it in block["items"]]
+                periods.append(
+                    NotesPeriod(
+                        pattern=block["pattern"],
+                        period=block["period"],
+                        headers=block["headers"],
+                        items=items,
+                    )
+                )
 
             if periods:
                 allTables[year] = periods

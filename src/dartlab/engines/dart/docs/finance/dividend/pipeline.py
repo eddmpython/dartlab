@@ -85,5 +85,3 @@ def dividend(stockCode: str) -> DividendResult | None:
         nYears=ts.height,
         timeSeries=ts,
     )
-
-

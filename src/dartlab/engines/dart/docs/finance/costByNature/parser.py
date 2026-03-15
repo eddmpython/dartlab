@@ -38,10 +38,18 @@ NORMALIZE_MAP = [
 ]
 
 TOTAL_PATTERNS = [
-    "합계", "소계", "성격별비용", "총영업비용",
-    "매출원가및", "매출원가와", "매출원가,",
-    "영업비용합계", "계속영업", "중단영업",
-    "합계에대한", "비용의합계",
+    "합계",
+    "소계",
+    "성격별비용",
+    "총영업비용",
+    "매출원가및",
+    "매출원가와",
+    "매출원가,",
+    "영업비용합계",
+    "계속영업",
+    "중단영업",
+    "합계에대한",
+    "비용의합계",
 ]
 
 _SKIP_KEYWORDS = {"구분", "구 분", "계정과목", "공시금액", "단위"}
@@ -142,16 +150,16 @@ def findCostByNatureSection(contents: list[str]) -> str | None:
                 continue
             m = re.match(r"^(\d{1,2})\.\s+(.+)", s)
             if m and "비용" in m.group(2) and "성격" in m.group(2):
-                return "\n".join(lines[i:_findNextSection(lines, i + 1, r"^(\d{1,2})\.\s+")])
+                return "\n".join(lines[i : _findNextSection(lines, i + 1, r"^(\d{1,2})\.\s+")])
             m2 = re.match(r"^\((\d{1,2})\)\s+(.+)", s)
             if m2 and "비용" in m2.group(2) and "성격" in m2.group(2):
-                return "\n".join(lines[i:_findNextSection(lines, i + 1, r"^\(\d{1,2}\)\s+")])
+                return "\n".join(lines[i : _findNextSection(lines, i + 1, r"^\(\d{1,2}\)\s+")])
 
     for content in contents:
         lines = content.split("\n")
         for i, line in enumerate(lines):
             if "비용의 성격" in line or ("성격별" in line and "비용" in line):
-                return "\n".join(lines[max(0, i - 1):_findTableEnd(lines, i + 1)])
+                return "\n".join(lines[max(0, i - 1) : _findTableEnd(lines, i + 1)])
 
     return None
 

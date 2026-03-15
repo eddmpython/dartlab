@@ -10,14 +10,17 @@ _PIPE_RE = re.compile(r"\|")
 _DASH_CHARS_RE = re.compile(r"[\x96\x97\u2013\u2014]")
 _ITEM_RE = re.compile(r"^Item\s+(\d+[A-Z]?)\.\s*(.*)$", re.IGNORECASE)
 _PART_ITEM_RE = re.compile(
-    r"^Part\s+(I{1,2})\s*-\s*Item\s+(\d+[A-Z]?)\.\s*(.*)$", re.IGNORECASE,
+    r"^Part\s+(I{1,2})\s*-\s*Item\s+(\d+[A-Z]?)\.\s*(.*)$",
+    re.IGNORECASE,
 )
 # Part I - {label} (Item 없이 label만)
 _PART_NOLABEL_RE = re.compile(
-    r"^Part\s+(I{1,2})\s*-\s*(.+)$", re.IGNORECASE,
+    r"^Part\s+(I{1,2})\s*-\s*(.+)$",
+    re.IGNORECASE,
 )
 _REG_S_K_RE = re.compile(
-    r"^Item\s+(?:405|103)\.\s+of\s+(?:SEC\s+)?Regulation\s+S-K.*$", re.IGNORECASE,
+    r"^Item\s+(?:405|103)\.\s+of\s+(?:SEC\s+)?Regulation\s+S-K.*$",
+    re.IGNORECASE,
 )
 _ITEM_601_RE = re.compile(r"^Item 601\. of Regulation S-K.*$", re.IGNORECASE)
 _ITEM_406_RE = re.compile(r"^Item 406\. of Regulation S-K.*$", re.IGNORECASE)
@@ -29,23 +32,28 @@ _REG_3DIGIT_RE = re.compile(
 )
 # "IT EM 1A" / "I tem 1A" 오타 보정 (정상 "Item"은 제외)
 _BROKEN_ITEM_RE = re.compile(
-    r"^(?:IT\s+EM|I\s+tem)\s+(\d+[A-Z]?)\.\s*(.*)$", re.IGNORECASE,
+    r"^(?:IT\s+EM|I\s+tem)\s+(\d+[A-Z]?)\.\s*(.*)$",
+    re.IGNORECASE,
 )
 # "Item 4B. Item 4B" / "Item 12D. ITEM 12D" 중복 label 제거
 _DUPE_LABEL_RE = re.compile(
-    r"^(Item\s+\d+[A-Z]?)\.\s*(?:ITEM\s+\d+[A-Z]?\s*\.?\s*)?(.*)$", re.IGNORECASE,
+    r"^(Item\s+\d+[A-Z]?)\.\s*(?:ITEM\s+\d+[A-Z]?\s*\.?\s*)?(.*)$",
+    re.IGNORECASE,
 )
 # "of Regulation S-K ..." — Item prefix 없이 시작하는 Reg S-K 본문
 _LOOSE_REG_RE = re.compile(
-    r"^of\s+(?:SEC\s+)?Regulation\s+(?:S-K|AB)", re.IGNORECASE,
+    r"^of\s+(?:SEC\s+)?Regulation\s+(?:S-K|AB)",
+    re.IGNORECASE,
 )
 # "and the registrant, at the time of filing..."
 _LOOSE_405_RE = re.compile(
-    r"^and\s+the\s+registrant", re.IGNORECASE,
+    r"^and\s+the\s+registrant",
+    re.IGNORECASE,
 )
 # "under Regulation S-K..."
 _UNDER_REG_RE = re.compile(
-    r"^under\s+Regulation\s+(?:S-K|AB)", re.IGNORECASE,
+    r"^under\s+Regulation\s+(?:S-K|AB)",
+    re.IGNORECASE,
 )
 # "of SK-1300..."
 _OF_SK_RE = re.compile(r"^of\s+SK-\d+", re.IGNORECASE)
@@ -80,11 +88,23 @@ _PART_LABEL_CANON: dict[tuple[str, str], str] = {
     ("I", "CONDENSED CONSOLIDATED FINANCIAL STATEMENTS. 3"): "Part I - Item 1. Financial Statements",
     ("I", "CONDENSED CONSOLIDATED FINANCIAL STATEMENTS"): "Part I - Item 1. Financial Statements",
     # MD&A
-    ("I", "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS"): "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
-    ("I", "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERAT"): "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+    (
+        "I",
+        "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    ): "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+    (
+        "I",
+        "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERAT",
+    ): "Part I - Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations",
     # Unregistered Sales
-    ("I", "UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS."): "Part II - Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
-    ("I", "UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS"): "Part II - Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
+    (
+        "I",
+        "UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS.",
+    ): "Part II - Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
+    (
+        "I",
+        "UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS",
+    ): "Part II - Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
     # Page (table of contents)
     ("I", "PAGE"): "Part I - Item 1. Financial Statements",
     # Other
@@ -100,7 +120,10 @@ def _normalizePartItem(text: str) -> str:
         itemLabel = _MULTISPACE_RE.sub(" ", partMatch.group(3).strip())
         itemLabel = _cleanPipes(itemLabel)
         itemLabelInner = re.sub(
-            r"^Item\s+\d+[A-Z]?\.\s*", "", itemLabel, flags=re.IGNORECASE,
+            r"^Item\s+\d+[A-Z]?\.\s*",
+            "",
+            itemLabel,
+            flags=re.IGNORECASE,
         ).strip()
         if itemLabelInner:
             itemLabel = itemLabelInner
@@ -170,7 +193,10 @@ def normalizeSectionTitle(title: str) -> str:
 
     # "Part I - Item 1A. IT EM 1A. RISK FACTORS" → 내부 오타 보정
     innerBroken = re.sub(
-        r"(?:IT\s+EM|I\s+tem)\s+\d+[A-Z]?\.\s*", "", text, flags=re.IGNORECASE,
+        r"(?:IT\s+EM|I\s+tem)\s+\d+[A-Z]?\.\s*",
+        "",
+        text,
+        flags=re.IGNORECASE,
     )
     if innerBroken != text:
         text = _MULTISPACE_RE.sub(" ", innerBroken).strip()
@@ -197,7 +223,9 @@ def normalizeSectionTitle(title: str) -> str:
 
     # "Item 405. and the registrant..." 형태
     item405Loose = re.match(
-        r"^Item\s+405\.\s+and\s+the\s+registrant", text, re.IGNORECASE,
+        r"^Item\s+405\.\s+and\s+the\s+registrant",
+        text,
+        re.IGNORECASE,
     )
     if item405Loose:
         return "Item 405. of Regulation S-K"

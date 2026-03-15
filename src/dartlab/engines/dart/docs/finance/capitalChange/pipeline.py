@@ -89,11 +89,13 @@ def capitalChange(stockCode: str) -> CapitalChangeResult | None:
                 if "기초수량" in blockText and "기말수량" in blockText:
                     parsed = parseTreasuryStockTable(block)
                     if parsed:
-                        treasuryRows.append({
-                            "year": int(year),
-                            "totalBegin": parsed["totalBegin"],
-                            "totalEnd": parsed["totalEnd"],
-                        })
+                        treasuryRows.append(
+                            {
+                                "year": int(year),
+                                "totalBegin": parsed["totalBegin"],
+                                "totalEnd": parsed["totalEnd"],
+                            }
+                        )
                         break
 
     if not capitalRows and not shareTotalRows:

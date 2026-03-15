@@ -7,10 +7,10 @@ corpCode.xml (ZIP)을 한 번 다운받아 로컬 캐시하고 즉시 조회.
 from __future__ import annotations
 
 import io
-import zipfile
-from pathlib import Path
-from datetime import datetime
 import xml.etree.ElementTree as ET
+import zipfile
+from datetime import datetime
+from pathlib import Path
 
 import polars as pl
 
@@ -132,8 +132,7 @@ def findCorpCode(
         if listed.height > 1:
             names = listed["corp_name"].head(5).to_list()
             raise ValueError(
-                f"'{query}' 검색 결과가 {listed.height}개입니다. "
-                f"더 정확한 이름 또는 종목코드를 사용하세요: {names}"
+                f"'{query}' 검색 결과가 {listed.height}개입니다. 더 정확한 이름 또는 종목코드를 사용하세요: {names}"
             )
         return match["corp_code"][0]
 

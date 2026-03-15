@@ -50,10 +50,7 @@ from dartlab.engines.dart.docs.notes import Notes
 _MODULE_REGISTRY: list[tuple[str, str, str, Any]] = [
     ("dartlab.engines.dart.docs.finance.summary", "fsSummary", "요약재무정보", None),
     ("dartlab.engines.dart.docs.finance.statements", "statements", "재무제표", None),
-] + [
-    (e.modulePath, e.funcName, e.label, e.extractor)
-    for e in _getModuleEntries()
-]
+] + [(e.modulePath, e.funcName, e.label, e.extractor) for e in _getModuleEntries()]
 
 # 모듈명 → 레지스트리 인덱스
 _MODULE_INDEX: dict[str, int] = {entry[1]: i for i, entry in enumerate(_MODULE_REGISTRY)}
@@ -70,20 +67,22 @@ for entry in _MODULE_REGISTRY:
         continue
     _ALL_PROPERTIES.append((name, entry[2]))
 
-_CHAPTER_TITLES: OrderedDict[str, str] = OrderedDict([
-    ("I", "I. 회사의 개요"),
-    ("II", "II. 사업의 내용"),
-    ("III", "III. 재무에 관한 사항"),
-    ("IV", "IV. 이사의 경영진단 및 분석의견"),
-    ("V", "V. 감사인의 감사의견등"),
-    ("VI", "VI. 이사회등회사의기관및계열회사에관한사항"),
-    ("VII", "VII. 주주에 관한 사항"),
-    ("VIII", "VIII. 임원 및 직원 등에 관한 사항"),
-    ("IX", "IX. 이해관계자와의 거래내용"),
-    ("X", "X. 그 밖에 투자자 보호를 위하여 필요한 사항"),
-    ("XI", "XI. 재무제표등"),
-    ("XII", "XII. 상세표 및 부속명세서"),
-])
+_CHAPTER_TITLES: OrderedDict[str, str] = OrderedDict(
+    [
+        ("I", "I. 회사의 개요"),
+        ("II", "II. 사업의 내용"),
+        ("III", "III. 재무에 관한 사항"),
+        ("IV", "IV. 이사의 경영진단 및 분석의견"),
+        ("V", "V. 감사인의 감사의견등"),
+        ("VI", "VI. 이사회등회사의기관및계열회사에관한사항"),
+        ("VII", "VII. 주주에 관한 사항"),
+        ("VIII", "VIII. 임원 및 직원 등에 관한 사항"),
+        ("IX", "IX. 이해관계자와의 거래내용"),
+        ("X", "X. 그 밖에 투자자 보호를 위하여 필요한 사항"),
+        ("XI", "XI. 재무제표등"),
+        ("XII", "XII. 상세표 및 부속명세서"),
+    ]
+)
 
 _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CHAPTER_TITLES, start=1)}
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
@@ -93,45 +92,74 @@ _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
 # OpenDART 개발가이드 공식 한글 컬럼 매핑 (https://opendart.fss.or.kr/guide/)
 _REPORT_COL_KR: dict[str, str] = {
     # 증자(감자) 현황 — apiId=2019004
-    "isu_dcrs_de": "주식발행(감소)일자", "isu_dcrs_stle": "발행(감소)형태",
-    "isu_dcrs_stock_knd": "발행(감소)주식종류", "isu_dcrs_qy": "발행(감소)수량",
-    "isu_dcrs_mstvdv_fval_amount": "주당액면가액", "isu_dcrs_mstvdv_amount": "주당가액",
+    "isu_dcrs_de": "주식발행(감소)일자",
+    "isu_dcrs_stle": "발행(감소)형태",
+    "isu_dcrs_stock_knd": "발행(감소)주식종류",
+    "isu_dcrs_qy": "발행(감소)수량",
+    "isu_dcrs_mstvdv_fval_amount": "주당액면가액",
+    "isu_dcrs_mstvdv_amount": "주당가액",
     # 자기주식 취득/처분 — apiId=2019006
-    "stock_knd": "주식종류", "acqs_mth1": "취득방법(대)",
-    "acqs_mth2": "취득방법(중)", "acqs_mth3": "취득방법(소)",
-    "bsis_qy": "기초수량", "change_qy_acqs": "변동수량(취득)",
-    "change_qy_dsps": "변동수량(처분)", "change_qy_incnr": "변동수량(소각)",
+    "stock_knd": "주식종류",
+    "acqs_mth1": "취득방법(대)",
+    "acqs_mth2": "취득방법(중)",
+    "acqs_mth3": "취득방법(소)",
+    "bsis_qy": "기초수량",
+    "change_qy_acqs": "변동수량(취득)",
+    "change_qy_dsps": "변동수량(처분)",
+    "change_qy_incnr": "변동수량(소각)",
     "trmend_qy": "기말수량",
     # 주식총수 현황 — apiId=2020002
-    "se": "구분", "isu_stock_totqy": "발행할주식총수",
+    "se": "구분",
+    "isu_stock_totqy": "발행할주식총수",
     "now_to_isu_stock_totqy": "현재까지발행주식총수",
     "now_to_dcrs_stock_totqy": "현재까지감소주식총수",
-    "redc": "감자", "profit_incnr": "이익소각", "rdmstk_repy": "상환주식상환",
-    "etc": "기타", "istc_totqy": "발행주식총수",
-    "tesstk_co": "자기주식수", "distb_stock_co": "유통주식수",
+    "redc": "감자",
+    "profit_incnr": "이익소각",
+    "rdmstk_repy": "상환주식상환",
+    "etc": "기타",
+    "istc_totqy": "발행주식총수",
+    "tesstk_co": "자기주식수",
+    "distb_stock_co": "유통주식수",
     # 타법인 출자 현황 — apiId=2019015
-    "inv_prm": "법인명", "frst_acqs_de": "최초취득일자", "invstmnt_purps": "출자목적",
-    "frst_acqs_amount": "최초취득금액", "bsis_blce_qy": "기초잔액(수량)",
-    "bsis_blce_qota_rt": "기초잔액(지분율)", "bsis_blce_acntbk_amount": "기초잔액(장부가액)",
+    "inv_prm": "법인명",
+    "frst_acqs_de": "최초취득일자",
+    "invstmnt_purps": "출자목적",
+    "frst_acqs_amount": "최초취득금액",
+    "bsis_blce_qy": "기초잔액(수량)",
+    "bsis_blce_qota_rt": "기초잔액(지분율)",
+    "bsis_blce_acntbk_amount": "기초잔액(장부가액)",
     "incrs_dcrs_acqs_dsps_qy": "증감(취득처분)(수량)",
     "incrs_dcrs_acqs_dsps_amount": "증감(취득처분)(금액)",
     "incrs_dcrs_evl_lstmn": "증감(평가손액)",
-    "trmend_blce_qy": "기말잔액(수량)", "trmend_blce_qota_rt": "기말잔액(지분율)",
+    "trmend_blce_qy": "기말잔액(수량)",
+    "trmend_blce_qota_rt": "기말잔액(지분율)",
     "trmend_blce_acntbk_amount": "기말잔액(장부가액)",
     "recent_bsns_year_fnnr_sttus_tot_assets": "최근사업연도재무현황(총자산)",
     "recent_bsns_year_fnnr_sttus_thstrm_ntpf": "최근사업연도재무현황(당기순이익)",
     # 최대주주 변동현황 — apiId=2019008
-    "change_on": "변동일", "mxmm_shrholdr_nm": "최대주주명",
-    "posesn_stock_co": "소유주식수", "qota_rt": "지분율", "change_cause": "변동원인",
+    "change_on": "변동일",
+    "mxmm_shrholdr_nm": "최대주주명",
+    "posesn_stock_co": "소유주식수",
+    "qota_rt": "지분율",
+    "change_cause": "변동원인",
     # 소액주주 현황 — apiId=2019009
-    "shrholdr_co": "주주수", "shrholdr_tot_co": "전체주주수", "shrholdr_rate": "주주비율",
-    "hold_stock_co": "보유주식수", "stock_tot_co": "총발행주식수", "hold_stock_rate": "보유주식비율",
+    "shrholdr_co": "주주수",
+    "shrholdr_tot_co": "전체주주수",
+    "shrholdr_rate": "주주비율",
+    "hold_stock_co": "보유주식수",
+    "stock_tot_co": "총발행주식수",
+    "hold_stock_rate": "보유주식비율",
     # 사외이사 현황 — apiId=2020012
-    "drctr_co": "이사의수", "otcmp_drctr_co": "사외이사수",
-    "apnt": "사외이사변동(선임)", "rlsofc": "사외이사변동(해임)",
+    "drctr_co": "이사의수",
+    "otcmp_drctr_co": "사외이사수",
+    "apnt": "사외이사변동(선임)",
+    "rlsofc": "사외이사변동(해임)",
     "mdstrm_resig": "사외이사변동(중도퇴임)",
     # 공모자금 사용내역 — apiId=2020016
-    "se_nm": "구분", "tm": "회차", "pay_de": "납입일", "pay_amount": "납입금액",
+    "se_nm": "구분",
+    "tm": "회차",
+    "pay_de": "납입일",
+    "pay_amount": "납입금액",
     "on_dclrt_cptal_use_plan": "신고서상자금사용계획",
     "real_cptal_use_sttus": "실제자금사용현황",
     "rs_cptal_use_plan_useprps": "증권신고서자금사용계획(용도)",
@@ -144,31 +172,50 @@ _REPORT_COL_KR: dict[str, str] = {
     "mtrpt_cptal_use_plan_useprps": "주요사항보고서자금사용계획(용도)",
     "mtrpt_cptal_use_plan_prcure_amount": "주요사항보고서자금사용계획(조달금액)",
     # 회사채 미상환 잔액 — apiId=2020006
-    "sm": "합계", "remndr_exprtn1": "잔여만기(대분류)", "remndr_exprtn2": "잔여만기(소분류)",
-    "yy1_below": "1년이하", "yy1_excess_yy2_below": "1년초과2년이하",
-    "yy2_excess_yy3_below": "2년초과3년이하", "yy3_excess_yy4_below": "3년초과4년이하",
-    "yy4_excess_yy5_below": "4년초과5년이하", "yy5_excess_yy10_below": "5년초과10년이하",
+    "sm": "합계",
+    "remndr_exprtn1": "잔여만기(대분류)",
+    "remndr_exprtn2": "잔여만기(소분류)",
+    "yy1_below": "1년이하",
+    "yy1_excess_yy2_below": "1년초과2년이하",
+    "yy2_excess_yy3_below": "2년초과3년이하",
+    "yy3_excess_yy4_below": "3년초과4년이하",
+    "yy4_excess_yy5_below": "4년초과5년이하",
+    "yy5_excess_yy10_below": "5년초과10년이하",
     "yy10_excess": "10년초과",
     # 단기사채 미상환 잔액 — apiId=2020005
-    "de10_below": "10일이하", "de10_excess_de30_below": "10일초과30일이하",
-    "de30_excess_de90_below": "30일초과90일이하", "de90_excess_de180_below": "90일초과180일이하",
-    "de180_excess_yy1_below": "180일초과1년이하", "isu_lmt": "발행한도", "remndr_lmt": "잔여한도",
+    "de10_below": "10일이하",
+    "de10_excess_de30_below": "10일초과30일이하",
+    "de30_excess_de90_below": "30일초과90일이하",
+    "de90_excess_de180_below": "90일초과180일이하",
+    "de180_excess_yy1_below": "180일초과1년이하",
+    "isu_lmt": "발행한도",
+    "remndr_lmt": "잔여한도",
     # 감사용역 체결현황 — apiId=2020010
-    "bsns_year": "사업연도", "adtor": "감사인", "cn": "내용", "mendng": "보수",
-    "tot_reqre_time": "총소요시간", "adt_cntrct_dtls_mendng": "감사계약내역(보수)",
+    "bsns_year": "사업연도",
+    "adtor": "감사인",
+    "cn": "내용",
+    "mendng": "보수",
+    "tot_reqre_time": "총소요시간",
+    "adt_cntrct_dtls_mendng": "감사계약내역(보수)",
     "adt_cntrct_dtls_time": "감사계약내역(시간)",
-    "real_exc_dtls_mendng": "실제수행내역(보수)", "real_exc_dtls_time": "실제수행내역(시간)",
+    "real_exc_dtls_mendng": "실제수행내역(보수)",
+    "real_exc_dtls_time": "실제수행내역(시간)",
     # 비감사 용역 계약현황 — apiId=2020011
-    "cntrct_cncls_de": "계약체결일", "servc_cn": "용역내용",
-    "servc_exc_pd": "용역수행기간", "servc_mendng": "용역보수",
+    "cntrct_cncls_de": "계약체결일",
+    "servc_cn": "용역내용",
+    "servc_exc_pd": "용역수행기간",
+    "servc_mendng": "용역보수",
     # 이사·감사 보수현황 — apiId=2019013
-    "nmpr": "인원수", "mendng_totamt": "보수총액",
+    "nmpr": "인원수",
+    "mendng_totamt": "보수총액",
     "jan_avrg_mendng_am": "1인평균보수액",
     # 개인별 보수현황 — apiId=2019012, 2019014
-    "nm": "이름", "ofcps": "직위",
+    "nm": "이름",
+    "ofcps": "직위",
     "mendng_totamt_ct_incls_mendng": "보수총액비포함보수",
     # 미등기임원 보수현황 — apiId=2020013
-    "fyer_salary_totamt": "연간급여총액", "jan_salary_am": "1인평균급여액",
+    "fyer_salary_totamt": "연간급여총액",
+    "jan_salary_am": "1인평균급여액",
     # 공통
     "rm": "비고",
 }
@@ -283,20 +330,22 @@ def _canonicalBlockRecord(record: dict[str, Any]) -> dict[str, Any]:
     if blockType == "table":
         tableRows, tableCols, tableHeader, tableLabels = _tableMetrics(normalizedText)
     tableShape = (
-        f"rows={tableRows}|cols={tableCols}|header={tableHeader}|labels={tableLabels}"
-        if blockType == "table"
-        else None
+        f"rows={tableRows}|cols={tableCols}|header={tableHeader}|labels={tableLabels}" if blockType == "table" else None
     )
-    anchorKey = "|".join([
-        blockType,
-        detailTopic,
-        semanticTopic,
-        blockLabel,
-    ])
-    structureKey = "|".join([
-        anchorKey,
-        tableShape or "",
-    ])
+    anchorKey = "|".join(
+        [
+            blockType,
+            detailTopic,
+            semanticTopic,
+            blockLabel,
+        ]
+    )
+    structureKey = "|".join(
+        [
+            anchorKey,
+            tableShape or "",
+        ]
+    )
     textHash = _stableFingerprint(normalizedText)
     blockKey = _stableFingerprint(structureKey, normalizedText)
     evidenceRef = f"{record.get('cellKey')}#{int(record.get('blockIdx', 0))}"
@@ -434,9 +483,7 @@ def _matchTopicBlocks(
 
 
 def _summarizeTopicChange(matches: list[dict[str, Any]], counts: dict[str, int]) -> tuple[str, str]:
-    nonPlaceholder = sum(
-        counts[key] for key in ("added", "removed", "edited", "moved", "restated")
-    )
+    nonPlaceholder = sum(counts[key] for key in ("added", "removed", "edited", "moved", "restated"))
     if nonPlaceholder == 0 and counts["placeholder"] > 0:
         changeType = "placeholder"
     elif counts["moved"] > 0 and counts["added"] == counts["removed"] == counts["edited"] == counts["restated"] == 0:
@@ -447,7 +494,12 @@ def _summarizeTopicChange(matches: list[dict[str, Any]], counts: dict[str, int])
         changeType = "added"
     elif counts["removed"] > 0 and counts["added"] == counts["edited"] == counts["moved"] == counts["restated"] == 0:
         changeType = "removed"
-    elif counts["edited"] > 0 or counts["restated"] > 0 or counts["moved"] > 0 or (counts["added"] > 0 and counts["removed"] > 0):
+    elif (
+        counts["edited"] > 0
+        or counts["restated"] > 0
+        or counts["moved"] > 0
+        or (counts["added"] > 0 and counts["removed"] > 0)
+    ):
         changeType = "edited"
     else:
         changeType = "unchanged"
@@ -457,7 +509,9 @@ def _summarizeTopicChange(matches: list[dict[str, Any]], counts: dict[str, int])
         block = match.get("current") or match.get("previous")
         if block is None:
             continue
-        label = block.get("detailTopic") or block.get("semanticTopic") or block.get("blockLabel") or block.get("blockType")
+        label = (
+            block.get("detailTopic") or block.get("semanticTopic") or block.get("blockLabel") or block.get("blockType")
+        )
         if label and label not in labels:
             labels.append(str(label))
         if len(labels) >= 3:
@@ -529,22 +583,24 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
             summary = "초기 기준점"
             evidenceRef = f"{currentState[0]['cellKey']}#period" if currentState else f"{period}"
             text = "\n\n".join(block["blockText"] for block in currentState if block["blockText"]).strip()
-            rows.append({
-                "topic": currentState[0]["topic"] if currentState else None,
-                "period": period,
-                "previousPeriod": None,
-                "changeType": changeType,
-                "change": changeType,
-                "summary": summary,
-                "evidenceRef": evidenceRef,
-                "text": text,
-                "addedBlocks": len(currentState),
-                "removedBlocks": 0,
-                "editedBlocks": 0,
-                "movedBlocks": 0,
-                "restatedBlocks": 0,
-                "placeholderBlocks": sum(1 for block in currentState if block["isPlaceholder"]),
-            })
+            rows.append(
+                {
+                    "topic": currentState[0]["topic"] if currentState else None,
+                    "period": period,
+                    "previousPeriod": None,
+                    "changeType": changeType,
+                    "change": changeType,
+                    "summary": summary,
+                    "evidenceRef": evidenceRef,
+                    "text": text,
+                    "addedBlocks": len(currentState),
+                    "removedBlocks": 0,
+                    "editedBlocks": 0,
+                    "movedBlocks": 0,
+                    "restatedBlocks": 0,
+                    "placeholderBlocks": sum(1 for block in currentState if block["isPlaceholder"]),
+                }
+            )
         else:
             matches, counts = _matchTopicBlocks(previousState, currentState)
             if counts["kept"] == len(currentState) and counts["removed"] == 0 and counts["placeholder"] == 0:
@@ -554,24 +610,28 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
                 continue
 
             changeType, summary = _summarizeTopicChange(matches, counts)
-            evidenceRef = f"{currentState[0]['cellKey']}#period" if currentState else f"{previousState[0]['cellKey']}#removed"
+            evidenceRef = (
+                f"{currentState[0]['cellKey']}#period" if currentState else f"{previousState[0]['cellKey']}#removed"
+            )
             text = "\n\n".join(block["blockText"] for block in currentState if block["blockText"]).strip()
-            rows.append({
-                "topic": currentState[0]["topic"] if currentState else previousState[0]["topic"],
-                "period": period,
-                "previousPeriod": previousPeriod,
-                "changeType": changeType,
-                "change": changeType,
-                "summary": summary,
-                "evidenceRef": evidenceRef,
-                "text": text,
-                "addedBlocks": counts["added"],
-                "removedBlocks": counts["removed"],
-                "editedBlocks": counts["edited"],
-                "movedBlocks": counts["moved"],
-                "restatedBlocks": counts["restated"],
-                "placeholderBlocks": counts["placeholder"],
-            })
+            rows.append(
+                {
+                    "topic": currentState[0]["topic"] if currentState else previousState[0]["topic"],
+                    "period": period,
+                    "previousPeriod": previousPeriod,
+                    "changeType": changeType,
+                    "change": changeType,
+                    "summary": summary,
+                    "evidenceRef": evidenceRef,
+                    "text": text,
+                    "addedBlocks": counts["added"],
+                    "removedBlocks": counts["removed"],
+                    "editedBlocks": counts["edited"],
+                    "movedBlocks": counts["moved"],
+                    "restatedBlocks": counts["restated"],
+                    "placeholderBlocks": counts["placeholder"],
+                }
+            )
 
         previousFingerprint = currentFingerprint
         previousState = currentState
@@ -581,14 +641,10 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
     if result.is_empty():
         return result
     from dartlab.engines.dart.docs.sections import sortPeriods
+
     ordered = sortPeriods(result.get_column("period").to_list())
     orderMap = {period: idx for idx, period in enumerate(ordered)}
-    return (
-        result
-        .with_columns(pl.col("period").replace(orderMap).alias("_order"))
-        .sort("_order")
-        .drop("_order")
-    )
+    return result.with_columns(pl.col("period").replace(orderMap).alias("_order")).sort("_order").drop("_order")
 
 
 def _buildTopicEvidence(topicBlocks: pl.DataFrame | None, period: str) -> pl.DataFrame:
@@ -638,39 +694,43 @@ def _buildTopicEvidence(topicBlocks: pl.DataFrame | None, period: str) -> pl.Dat
         block = current or previous
         if block is None:
             continue
-        rows.append({
-            "topic": block["topic"],
-            "period": period,
-            "previousPeriod": previousPeriod,
-            "changeType": match["changeType"],
-            "evidenceRef": (current or previous)["evidenceRef"],
-            "blockType": block["blockType"],
-            "blockLabel": block["blockLabel"],
-            "semanticTopic": block.get("semanticTopic"),
-            "detailTopic": block.get("detailTopic"),
-            "currentText": None if current is None else current["blockText"],
-            "previousText": None if previous is None else previous["blockText"],
-            "tableShape": None if current is None else current.get("tableShape"),
-            "previousTableShape": None if previous is None else previous.get("tableShape"),
-        })
+        rows.append(
+            {
+                "topic": block["topic"],
+                "period": period,
+                "previousPeriod": previousPeriod,
+                "changeType": match["changeType"],
+                "evidenceRef": (current or previous)["evidenceRef"],
+                "blockType": block["blockType"],
+                "blockLabel": block["blockLabel"],
+                "semanticTopic": block.get("semanticTopic"),
+                "detailTopic": block.get("detailTopic"),
+                "currentText": None if current is None else current["blockText"],
+                "previousText": None if previous is None else previous["blockText"],
+                "tableShape": None if current is None else current.get("tableShape"),
+                "previousTableShape": None if previous is None else previous.get("tableShape"),
+            }
+        )
 
     if not rows and currentState:
         for current in currentState:
-            rows.append({
-                "topic": current["topic"],
-                "period": period,
-                "previousPeriod": previousPeriod,
-                "changeType": "initial",
-                "evidenceRef": current["evidenceRef"],
-                "blockType": current["blockType"],
-                "blockLabel": current["blockLabel"],
-                "semanticTopic": current.get("semanticTopic"),
-                "detailTopic": current.get("detailTopic"),
-                "currentText": current["blockText"],
-                "previousText": None,
-                "tableShape": current.get("tableShape"),
-                "previousTableShape": None,
-            })
+            rows.append(
+                {
+                    "topic": current["topic"],
+                    "period": period,
+                    "previousPeriod": previousPeriod,
+                    "changeType": "initial",
+                    "evidenceRef": current["evidenceRef"],
+                    "blockType": current["blockType"],
+                    "blockLabel": current["blockLabel"],
+                    "semanticTopic": current.get("semanticTopic"),
+                    "detailTopic": current.get("detailTopic"),
+                    "currentText": current["blockText"],
+                    "previousText": None,
+                    "tableShape": current.get("tableShape"),
+                    "previousTableShape": None,
+                }
+            )
 
     return pl.DataFrame(rows, schema=schema, strict=False)
 
@@ -682,22 +742,27 @@ def _shapeString(df: pl.DataFrame | None) -> str:
 
 
 def _noticeFrame(topic: str, message: str) -> pl.DataFrame:
-    return pl.DataFrame({
-        "topic": [topic],
-        "message": [message],
-    })
+    return pl.DataFrame(
+        {
+            "topic": [topic],
+            "message": [message],
+        }
+    )
 
 
 def _import_and_call(modulePath: str, funcName: str, stockCode: str, **kwargs) -> Any:
     """모듈을 lazy import하고 함수 호출."""
     import importlib
+
     mod = importlib.import_module(modulePath)
     func = getattr(mod, funcName)
     return func(stockCode, **kwargs)
 
 
 def _financeToDataFrame(
-    series: dict[str, dict[str, list]], years: list[str], sjDiv: str,
+    series: dict[str, dict[str, list]],
+    years: list[str],
+    sjDiv: str,
 ) -> pl.DataFrame | None:
     """finance 연도별 시계열 → 한글 계정명 × 연도 컬럼 DataFrame.
 
@@ -714,6 +779,7 @@ def _financeToDataFrame(
         return None
 
     from dartlab.engines.dart.finance.mapper import AccountMapper
+
     mapper = AccountMapper.get()
     labels = mapper.labelMap()
     order = mapper.sortOrder(sjDiv)
@@ -788,24 +854,55 @@ _RATIO_FIELD_LABELS: dict[str, str] = {
 
 _RATIO_TEMPLATE_FIELDS: dict[str, tuple[str, ...]] = {
     "bank": (
-        "roe", "roa", "equityRatio",
-        "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "roe",
+        "roa",
+        "equityRatio",
+        "operatingProfitGrowth",
+        "netProfitGrowth",
+        "assetGrowth",
+        "equityGrowthRate",
         "dividendPayoutRatio",
-        "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+        "operatingProfit",
+        "netProfit",
+        "totalAssets",
+        "totalEquity",
+        "operatingCashflow",
     ),
     "insurance": (
-        "roe", "roa", "equityRatio",
-        "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "roe",
+        "roa",
+        "equityRatio",
+        "operatingProfitGrowth",
+        "netProfitGrowth",
+        "assetGrowth",
+        "equityGrowthRate",
         "dividendPayoutRatio",
-        "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+        "operatingProfit",
+        "netProfit",
+        "totalAssets",
+        "totalEquity",
+        "operatingCashflow",
     ),
     "diversified_financials": (
-        "roe", "roa", "operatingMargin", "netMargin", "ebitdaMargin",
+        "roe",
+        "roa",
+        "operatingMargin",
+        "netMargin",
+        "ebitdaMargin",
         "equityRatio",
-        "revenueGrowth", "operatingProfitGrowth", "netProfitGrowth", "assetGrowth", "equityGrowthRate",
+        "revenueGrowth",
+        "operatingProfitGrowth",
+        "netProfitGrowth",
+        "assetGrowth",
+        "equityGrowthRate",
         "totalAssetTurnover",
         "dividendPayoutRatio",
-        "revenue", "operatingProfit", "netProfit", "totalAssets", "totalEquity", "operatingCashflow",
+        "revenue",
+        "operatingProfit",
+        "netProfit",
+        "totalAssets",
+        "totalEquity",
+        "operatingCashflow",
     ),
 }
 
@@ -874,7 +971,9 @@ def _shouldFallbackToAnnualRatios(result: Any, archetypeOverride: str | None) ->
 
 
 def _ratioSeriesToDataFrame(
-    series: dict[str, dict[str, list[Any | None]]], years: list[str], fieldNames: tuple[str, ...] | None = None,
+    series: dict[str, dict[str, list[Any | None]]],
+    years: list[str],
+    fieldNames: tuple[str, ...] | None = None,
 ) -> pl.DataFrame | None:
     """재무비율 연도별 시계열 → 분류/항목 × 연도 컬럼 DataFrame."""
     ratioData = series.get("RATIO")
@@ -909,7 +1008,8 @@ def _ratioSeriesToDataFrame(
 
 
 def _sceToDataFrame(
-    series: dict[str, dict[str, list]], years: list[str],
+    series: dict[str, dict[str, list]],
+    years: list[str],
 ) -> pl.DataFrame | None:
     """SCE 연도별 시계열 → 항목 × 연도 컬럼 DataFrame."""
     from dartlab.engines.dart.finance.sceMapper import CAUSE_LABELS, DETAIL_LABELS
@@ -979,7 +1079,9 @@ def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str,
         if snakeId is None:
             continue
 
-        pKey = formatPeriod(row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0))
+        pKey = formatPeriod(
+            row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0)
+        )
         idx = periodIdx.get(pKey)
         if idx is None:
             continue
@@ -1031,7 +1133,9 @@ def _financeCisQuarterly(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[s
         if snakeId is None:
             continue
 
-        pKey = formatPeriod(row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0))
+        pKey = formatPeriod(
+            row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0)
+        )
         idx = periodIdx.get(pKey)
         if idx is None:
             continue
@@ -1048,6 +1152,7 @@ def _ensureData(stockCode: str, category: str) -> bool:
     """로컬에 parquet이 있으면 True, 없으면 다운로드 시도 후 결과 반환."""
     from dartlab.core.dataConfig import DATA_RELEASES
     from dartlab.core.dataLoader import _dataDir, _download
+
     dest = _dataDir(category) / f"{stockCode}.parquet"
     if dest.exists():
         return True
@@ -1090,6 +1195,7 @@ class _ReportAccessor:
             pivotExecutive,
             pivotMajorHolder,
         )
+
         funcs = {
             "dividend": pivotDividend,
             "employee": pivotEmployee,
@@ -1110,6 +1216,7 @@ class _ReportAccessor:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.report import extractClean
+
         try:
             result = extractClean(self._company.stockCode, apiType)
         except Exception:  # noqa: BLE001
@@ -1123,6 +1230,7 @@ class _ReportAccessor:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.report import extractAnnual as _extractAnnual
+
         try:
             result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
         except Exception:  # noqa: BLE001
@@ -1146,6 +1254,7 @@ class _ReportAccessor:
             return result
 
         from dartlab.engines.dart.report import extractResult
+
         try:
             result = extractResult(self._company.stockCode, apiType, quarterNum)
         except Exception:  # noqa: BLE001
@@ -1156,18 +1265,21 @@ class _ReportAccessor:
     def status(self, apiType: str | None = None) -> pl.DataFrame | dict[str, bool]:
         """apiType availability 확인."""
         from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES, PREFERRED_QUARTER
+
         if apiType is not None:
             return {apiType: self.extract(apiType) is not None}
 
         rows = []
         for name in API_TYPES:
-            rows.append({
-                "apiType": name,
-                "label": API_TYPE_LABELS.get(name, name),
-                "preferredQuarter": PREFERRED_QUARTER.get(name),
-                "isPivot": name in self._PIVOT_NAMES,
-                "available": self.extract(name) is not None,
-            })
+            rows.append(
+                {
+                    "apiType": name,
+                    "label": API_TYPE_LABELS.get(name, name),
+                    "preferredQuarter": PREFERRED_QUARTER.get(name),
+                    "isPivot": name in self._PIVOT_NAMES,
+                    "available": self.extract(name) is not None,
+                }
+            )
         return pl.DataFrame(rows)
 
     @property
@@ -1200,6 +1312,7 @@ class _ReportAccessor:
         if name.startswith("_"):
             raise AttributeError(name)
         from dartlab.engines.dart.report.types import API_TYPES
+
         if name in API_TYPES and name not in self._PIVOT_NAMES:
             return self.extractAnnual(name)
         raise AttributeError(f"ReportAccessor에 '{name}' 항목이 없습니다. apiTypes: {API_TYPES}")
@@ -1208,22 +1321,26 @@ class _ReportAccessor:
     def apiTypes(self) -> list[str]:
         """사용 가능한 apiType 목록."""
         from dartlab.engines.dart.report.types import API_TYPES
+
         return list(API_TYPES)
 
     @property
     def labels(self) -> dict[str, str]:
         """apiType → 한글명 매핑."""
         from dartlab.engines.dart.report.types import API_TYPE_LABELS
+
         return dict(API_TYPE_LABELS)
 
     @property
     def availableApiTypes(self) -> list[str]:
         """현재 parquet에 실제 존재하는 apiType 목록."""
         from dartlab.engines.dart.report.types import API_TYPES
+
         return [name for name in API_TYPES if self.extract(name) is not None]
 
     def __repr__(self):
         from dartlab.engines.dart.report.types import API_TYPES
+
         return f"ReportAccessor({len(API_TYPES)} apiTypes, {len(self._PIVOT_NAMES)} pivots)"
 
 
@@ -1426,6 +1543,7 @@ class _ProfileAccessor:
             return docsSections
 
         from dartlab.engines.dart.docs.sections import sortPeriods
+
         periodCols = sortPeriods(sorted(set(periodCols)))
 
         rowMap: dict[str, dict[str, Any]] = {}
@@ -1442,13 +1560,14 @@ class _ProfileAccessor:
 
         if facts is not None and not facts.is_empty():
             primaryFacts = (
-                facts
-                .sort(["priority", "source"], descending=[True, False])
+                facts.sort(["priority", "source"], descending=[True, False])
                 .group_by(["topic", "period"])
-                .agg([
-                    pl.col("source").first().alias("primarySource"),
-                    pl.col("summary").first().alias("summary"),
-                ])
+                .agg(
+                    [
+                        pl.col("source").first().alias("primarySource"),
+                        pl.col("summary").first().alias("summary"),
+                    ]
+                )
             )
 
             for row in primaryFacts.iter_rows(named=True):
@@ -1507,17 +1626,19 @@ class _ProfileAccessor:
                         value = values[idx] if idx < len(values) else None
                         if value is None:
                             continue
-                        rows.append({
-                            "topic": sj,
-                            "period": str(year),
-                            "source": "finance",
-                            "valueType": "number",
-                            "valueKey": item,
-                            "value": value,
-                            "payloadRef": f"finance:{sj}:{item}",
-                            "priority": 300,
-                            "summary": f"{item}={value}",
-                        })
+                        rows.append(
+                            {
+                                "topic": sj,
+                                "period": str(year),
+                                "source": "finance",
+                                "valueType": "number",
+                                "valueKey": item,
+                                "value": value,
+                                "payloadRef": f"finance:{sj}:{item}",
+                                "priority": 300,
+                                "summary": f"{item}={value}",
+                            }
+                        )
                 if rows:
                     frames.append(pl.DataFrame(rows))
 
@@ -1530,17 +1651,19 @@ class _ProfileAccessor:
                     value = values[idx] if idx < len(values) else None
                     if value is None:
                         continue
-                    rows.append({
-                        "topic": "CIS",
-                        "period": str(year),
-                        "source": "finance",
-                        "valueType": "number",
-                        "valueKey": item,
-                        "value": value,
-                        "payloadRef": f"finance:CIS:{item}",
-                        "priority": 300,
-                        "summary": f"{item}={value}",
-                    })
+                    rows.append(
+                        {
+                            "topic": "CIS",
+                            "period": str(year),
+                            "source": "finance",
+                            "valueType": "number",
+                            "valueKey": item,
+                            "value": value,
+                            "payloadRef": f"finance:CIS:{item}",
+                            "priority": 300,
+                            "summary": f"{item}={value}",
+                        }
+                    )
             if rows:
                 frames.append(pl.DataFrame(rows))
 
@@ -1553,17 +1676,19 @@ class _ProfileAccessor:
                     value = values[idx] if idx < len(values) else None
                     if value is None:
                         continue
-                    rows.append({
-                        "topic": "SCE",
-                        "period": str(year),
-                        "source": "finance",
-                        "valueType": "number",
-                        "valueKey": item,
-                        "value": value,
-                        "payloadRef": f"finance:SCE:{item}",
-                        "priority": 300,
-                        "summary": f"{item}={value}",
-                    })
+                    rows.append(
+                        {
+                            "topic": "SCE",
+                            "period": str(year),
+                            "source": "finance",
+                            "valueType": "number",
+                            "valueKey": item,
+                            "value": value,
+                            "payloadRef": f"finance:SCE:{item}",
+                            "priority": 300,
+                            "summary": f"{item}={value}",
+                        }
+                    )
                 if rows:
                     frames.append(pl.DataFrame(rows))
 
@@ -1583,20 +1708,22 @@ class _ProfileAccessor:
                         if value is None:
                             continue
                         summaryParts.append(f"{key}={value}")
-                        rows.append({
-                            "topic": self._canonicalReportTopic(apiType),
-                            "period": str(year),
-                            "source": "report",
-                            "valueType": "field",
-                            "valueKey": key,
-                            "value": str(value),
-                            "payloadRef": f"report:{apiType}:{quarter}",
-                            "priority": 200,
-                            "summary": None,
-                        })
+                        rows.append(
+                            {
+                                "topic": self._canonicalReportTopic(apiType),
+                                "period": str(year),
+                                "source": "report",
+                                "valueType": "field",
+                                "valueKey": key,
+                                "value": str(value),
+                                "payloadRef": f"report:{apiType}:{quarter}",
+                                "priority": 200,
+                                "summary": None,
+                            }
+                        )
                     if rows and summaryParts:
                         summary = "; ".join(summaryParts[:6])
-                        for item in rows[-len(summaryParts):]:
+                        for item in rows[-len(summaryParts) :]:
                             item["summary"] = summary
                 if rows:
                     frames.append(pl.DataFrame(rows))
@@ -1612,17 +1739,19 @@ class _ProfileAccessor:
                 topic = row.get("detailTopic") or row.get("semanticTopic") or row.get("topic")
                 if topic is None:
                     continue
-                docsRows.append({
-                    "topic": str(topic),
-                    "period": str(period),
-                    "source": "docs",
-                    "valueType": row.get("blockType") or "text",
-                    "valueKey": row.get("blockLabel") or row.get("rawTitle") or str(topic),
-                    "value": str(blockText),
-                    "payloadRef": row.get("cellKey") or f"docs:{topic}:{period}",
-                    "priority": 100,
-                    "summary": str(blockText)[:400],
-                })
+                docsRows.append(
+                    {
+                        "topic": str(topic),
+                        "period": str(period),
+                        "source": "docs",
+                        "valueType": row.get("blockType") or "text",
+                        "valueKey": row.get("blockLabel") or row.get("rawTitle") or str(topic),
+                        "value": str(blockText),
+                        "payloadRef": row.get("cellKey") or f"docs:{topic}:{period}",
+                        "priority": 100,
+                        "summary": str(blockText)[:400],
+                    }
+                )
             if docsRows:
                 frames.append(pl.DataFrame(docsRows))
 
@@ -1665,12 +1794,14 @@ class _ProfileAccessor:
             if period is not None:
                 traced = traced.filter(pl.col("period") == period)
             if not traced.is_empty():
-                grouped = traced.group_by("source").agg([
-                    pl.len().alias("rows"),
-                    pl.col("payloadRef").first().alias("payloadRef"),
-                    pl.col("summary").first().alias("summary"),
-                    pl.col("priority").max().alias("priority"),
-                ])
+                grouped = traced.group_by("source").agg(
+                    [
+                        pl.len().alias("rows"),
+                        pl.col("payloadRef").first().alias("payloadRef"),
+                        pl.col("summary").first().alias("summary"),
+                        pl.col("priority").max().alias("priority"),
+                    ]
+                )
                 sources.extend(grouped.iter_rows(named=True))
 
         if docsSections is not None and topic in docsSections["topic"].to_list():
@@ -1680,13 +1811,15 @@ class _ProfileAccessor:
                 if period is not None and period in periodCols:
                     value = row.item(0, period)
                     if value is not None:
-                        sources.append({
-                            "source": "docs",
-                            "rows": 1,
-                            "payloadRef": f"docs-sections:{topic}:{period}",
-                            "summary": str(value)[:400],
-                            "priority": 100,
-                        })
+                        sources.append(
+                            {
+                                "source": "docs",
+                                "rows": 1,
+                                "payloadRef": f"docs-sections:{topic}:{period}",
+                                "summary": str(value)[:400],
+                                "priority": 100,
+                            }
+                        )
 
         if not sources:
             return None
@@ -1769,43 +1902,49 @@ class _BoardView(OrderedDict):
                     ledger.with_columns(
                         pl.lit(chapter).alias("chapter"),
                         pl.lit(self._company._topicLabel(topic)).alias("label"),
-                    ).select([
-                        "chapter",
-                        "topic",
-                        "label",
-                        "period",
-                        "previousPeriod",
-                        "changeType",
-                        "summary",
-                        "evidenceRef",
-                        "text",
-                        "addedBlocks",
-                        "removedBlocks",
-                        "editedBlocks",
-                        "movedBlocks",
-                        "restatedBlocks",
-                        "placeholderBlocks",
-                    ])
+                    ).select(
+                        [
+                            "chapter",
+                            "topic",
+                            "label",
+                            "period",
+                            "previousPeriod",
+                            "changeType",
+                            "summary",
+                            "evidenceRef",
+                            "text",
+                            "addedBlocks",
+                            "removedBlocks",
+                            "editedBlocks",
+                            "movedBlocks",
+                            "restatedBlocks",
+                            "placeholderBlocks",
+                        ]
+                    )
                 )
 
-        result = pl.concat(rows, how="vertical_relaxed") if rows else pl.DataFrame(
-            schema={
-                "chapter": pl.Utf8,
-                "topic": pl.Utf8,
-                "label": pl.Utf8,
-                "period": pl.Utf8,
-                "previousPeriod": pl.Utf8,
-                "changeType": pl.Utf8,
-                "summary": pl.Utf8,
-                "evidenceRef": pl.Utf8,
-                "text": pl.Utf8,
-                "addedBlocks": pl.Int64,
-                "removedBlocks": pl.Int64,
-                "editedBlocks": pl.Int64,
-                "movedBlocks": pl.Int64,
-                "restatedBlocks": pl.Int64,
-                "placeholderBlocks": pl.Int64,
-            }
+        result = (
+            pl.concat(rows, how="vertical_relaxed")
+            if rows
+            else pl.DataFrame(
+                schema={
+                    "chapter": pl.Utf8,
+                    "topic": pl.Utf8,
+                    "label": pl.Utf8,
+                    "period": pl.Utf8,
+                    "previousPeriod": pl.Utf8,
+                    "changeType": pl.Utf8,
+                    "summary": pl.Utf8,
+                    "evidenceRef": pl.Utf8,
+                    "text": pl.Utf8,
+                    "addedBlocks": pl.Int64,
+                    "removedBlocks": pl.Int64,
+                    "editedBlocks": pl.Int64,
+                    "movedBlocks": pl.Int64,
+                    "restatedBlocks": pl.Int64,
+                    "placeholderBlocks": pl.Int64,
+                }
+            )
         )
         self._company._cache[cacheKey] = result
         return result
@@ -1821,40 +1960,50 @@ class _BoardView(OrderedDict):
 
         rows: list[dict[str, Any]] = []
         if not self._company._hasDocs:
-            rows.append({
-                "chapter": "안내",
-                "topic": "docsStatus",
-                "label": "사업보고서",
-                "kind": "notice",
-                "source": "docs",
-                "periods": "-",
-                "shape": "missing",
-                "preview": "현재 사업보고서 부재",
-            })
+            rows.append(
+                {
+                    "chapter": "안내",
+                    "topic": "docsStatus",
+                    "label": "사업보고서",
+                    "kind": "notice",
+                    "source": "docs",
+                    "periods": "-",
+                    "shape": "missing",
+                    "preview": "현재 사업보고서 부재",
+                }
+            )
         for chapter, topics in self.items():
             for topic, payload in topics.items():
                 traced = self._company.trace(topic)
-                rows.append({
-                    "chapter": chapter,
-                    "topic": topic,
-                    "label": self._company._topicLabel(topic),
-                    "kind": self._kindForPayload(payload),
-                    "source": traced["primarySource"] if traced is not None else None,
-                    "periods": self._periodsForPayload(payload),
-                    "shape": _shapeString(payload) if isinstance(payload, pl.DataFrame) else type(payload).__name__,
-                    "preview": self._previewForPayload(payload),
-                })
+                rows.append(
+                    {
+                        "chapter": chapter,
+                        "topic": topic,
+                        "label": self._company._topicLabel(topic),
+                        "kind": self._kindForPayload(payload),
+                        "source": traced["primarySource"] if traced is not None else None,
+                        "periods": self._periodsForPayload(payload),
+                        "shape": _shapeString(payload) if isinstance(payload, pl.DataFrame) else type(payload).__name__,
+                        "preview": self._previewForPayload(payload),
+                    }
+                )
 
-        df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
-            "chapter": pl.Utf8,
-            "topic": pl.Utf8,
-            "label": pl.Utf8,
-            "kind": pl.Utf8,
-            "source": pl.Utf8,
-            "periods": pl.Utf8,
-            "shape": pl.Utf8,
-            "preview": pl.Utf8,
-        })
+        df = (
+            pl.DataFrame(rows)
+            if rows
+            else pl.DataFrame(
+                schema={
+                    "chapter": pl.Utf8,
+                    "topic": pl.Utf8,
+                    "label": pl.Utf8,
+                    "kind": pl.Utf8,
+                    "source": pl.Utf8,
+                    "periods": pl.Utf8,
+                    "shape": pl.Utf8,
+                    "preview": pl.Utf8,
+                }
+            )
+        )
         self._company._cache[cacheKey] = df
         return df
 
@@ -1987,6 +2136,7 @@ class Company:
 
         if self._hasFinance:
             from dartlab.engines.dart.finance.pivot import buildTimeseries
+
             ts = buildTimeseries(self.stockCode)
             if ts is not None:
                 self._cache["_finance_q_CFS"] = ts
@@ -2004,9 +2154,11 @@ class Company:
 
     def __repr__(self):
         from dartlab import config
+
         if config.verbose:
             from dartlab.display import printRepr
             from dartlab.engines.dart.docs.notes import _REGISTRY as notesRegistry
+
             nProps = len([p for p in _ALL_PROPERTIES if p[0] not in ("BS", "IS", "CF")])
             nNotes = len(notesRegistry) if self._hasDocs else 0
             printRepr(self.corpName, self.stockCode, nProps, nNotes)
@@ -2017,6 +2169,7 @@ class Company:
         """전체 사용 가이드 출력."""
         from dartlab.display import printGuide
         from dartlab.engines.dart.docs.notes import _REGISTRY as notesRegistry
+
         props = [p[0] for p in _ALL_PROPERTIES if p[0] not in ("BS", "IS", "CF")]
         if self._hasDocs:
             noteKeys = list(notesRegistry.keys())
@@ -2049,8 +2202,10 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         result = _import_and_call(
-            "dartlab.engines.dart.docs.finance.notesDetail", "notesDetail",
-            self.stockCode, keyword=keyword,
+            "dartlab.engines.dart.docs.finance.notesDetail",
+            "notesDetail",
+            self.stockCode,
+            keyword=keyword,
         )
         self._cache[cacheKey] = result
         return result
@@ -2058,6 +2213,7 @@ class Company:
     def _get_primary(self, name: str, **kwargs) -> Any:
         """모듈 호출 후 primary DataFrame 추출."""
         from dartlab import config
+
         cacheKey = f"{name}:{kwargs}" if kwargs else name
         idx = _MODULE_INDEX[name]
         entry = _MODULE_REGISTRY[idx]
@@ -2107,7 +2263,15 @@ class Company:
     def _filings(self) -> pl.DataFrame:
         """이 종목의 공시 문서 목록 + DART 뷰어 링크."""
         if not self._hasDocs:
-            return pl.DataFrame(schema={"year": pl.Utf8, "rceptDate": pl.Utf8, "rceptNo": pl.Utf8, "reportType": pl.Utf8, "dartUrl": pl.Utf8})
+            return pl.DataFrame(
+                schema={
+                    "year": pl.Utf8,
+                    "rceptDate": pl.Utf8,
+                    "rceptNo": pl.Utf8,
+                    "reportType": pl.Utf8,
+                    "dartUrl": pl.Utf8,
+                }
+            )
         df = loadData(self.stockCode)
         docs = (
             df.select("year", "rcept_date", "rcept_no", "report_type")
@@ -2115,11 +2279,13 @@ class Company:
             .with_columns(
                 pl.lit(DART_VIEWER).add(pl.col("rcept_no")).alias("dartUrl"),
             )
-            .rename({
-                "report_type": "reportType",
-                "rcept_date": "rceptDate",
-                "rcept_no": "rceptNo",
-            })
+            .rename(
+                {
+                    "report_type": "reportType",
+                    "rcept_date": "rceptDate",
+                    "rcept_no": "rceptNo",
+                }
+            )
             .sort("year", "rceptDate", descending=[True, True])
         )
         return docs
@@ -2178,6 +2344,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.docs.sections import retrievalBlocks
+
         result = retrievalBlocks(self.stockCode)
         self._cache[cacheKey] = result
         return result
@@ -2189,12 +2356,14 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.docs.sections import contextSlices
+
         result = contextSlices(self.stockCode)
         self._cache[cacheKey] = result
         return result
 
     def _rawMaterial(self) -> Any:
         from dartlab import config
+
         if config.verbose:
             print(f"  ▶ {self.corpName} · 원재료설비")
         return self._call_module("rawMaterial")
@@ -2214,6 +2383,7 @@ class Company:
             self._cache[cacheKey] = None
             return None
         from dartlab.engines.dart.docs.sections import topicSubtables
+
         result = topicSubtables(blocks, topic)
         self._cache[cacheKey] = result
         return result
@@ -2227,16 +2397,28 @@ class Company:
         return None if result is None else result.long
 
     # subtopic 자동 수평화를 건너뛰는 topic (이미 다른 경로에서 처리되거나 subtopic 과다)
-    _AUTO_SUBTOPIC_SKIP: frozenset[str] = frozenset({
-        # 이미 명시적 subtopic 경로
-        "salesOrder", "riskDerivative", "segments", "rawMaterial", "costByNature",
-        # 재무제표 — finance 엔진이 authoritative
-        "BS", "IS", "CIS", "CF", "SCE", "ratios",
-        # fsSummary — subtopic 800+ (과다)
-        "fsSummary",
-        # 주석 — 너무 방대하여 subtopic 세분화 비효율
-        "consolidatedNotes", "financialNotes",
-    })
+    _AUTO_SUBTOPIC_SKIP: frozenset[str] = frozenset(
+        {
+            # 이미 명시적 subtopic 경로
+            "salesOrder",
+            "riskDerivative",
+            "segments",
+            "rawMaterial",
+            "costByNature",
+            # 재무제표 — finance 엔진이 authoritative
+            "BS",
+            "IS",
+            "CIS",
+            "CF",
+            "SCE",
+            "ratios",
+            # fsSummary — subtopic 800+ (과다)
+            "fsSummary",
+            # 주석 — 너무 방대하여 subtopic 세분화 비효율
+            "consolidatedNotes",
+            "financialNotes",
+        }
+    )
 
     _AUTO_SUBTOPIC_MAX = 100  # subtopic이 이 수를 넘으면 text fallback
 
@@ -2316,6 +2498,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.finance.pivot import buildSceMatrix
+
         result = buildSceMatrix(self.stockCode)
         self._cache[cacheKey] = result
         return result
@@ -2327,6 +2510,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.finance.pivot import buildSceAnnual
+
         result = buildSceAnnual(self.stockCode)
         self._cache[cacheKey] = result
         return result
@@ -2378,6 +2562,7 @@ class Company:
         # 2016-Q1 → 2016Q1 포맷 통일
         normalizedPeriods = [p.replace("-", "") for p in periods]
         from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+
         archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
         rs = calcRatioSeries(qSeries, normalizedPeriods, archetypeOverride=archetypeOverride, yoyLag=4)
         result = toSeriesDict(rs)
@@ -2646,6 +2831,7 @@ class Company:
     def overview(self) -> Any:
         """회사 개요 정량 데이터."""
         from dartlab import config
+
         if config.verbose:
             print(f"  ▶ {self.corpName} · 회사개요정량")
         return self._call_module("companyOverview")
@@ -2670,6 +2856,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.dart.docs.sections.artifacts import loadSectionProfileTable
+
         table = loadSectionProfileTable()
         self._cache[cacheKey] = table
         return table
@@ -2718,8 +2905,7 @@ class Company:
         if table is not None and not table.is_empty():
             canonicalCol = "canonicalTopic" if "canonicalTopic" in table.columns else "topic"
             grouped = (
-                table
-                .filter(pl.col(canonicalCol).is_not_null(), pl.col("chapter").is_not_null())
+                table.filter(pl.col(canonicalCol).is_not_null(), pl.col("chapter").is_not_null())
                 .group_by([canonicalCol, "chapter"])
                 .agg(pl.len().alias("count"))
                 .sort(["count", canonicalCol], descending=[True, False])
@@ -2738,6 +2924,7 @@ class Company:
             return self._chapterMap()[topic]
         if self.notes is not None:
             from dartlab.engines.dart.docs.notes import _REGISTRY as _NOTES_REGISTRY
+
             if topic in _NOTES_REGISTRY:
                 return "XI"
         return "XII"
@@ -2833,6 +3020,7 @@ class Company:
         if result is None:
             return None
         from dartlab.engines.dart.docs.sections import parseSubtopicTable
+
         parsed = parseSubtopicTable(result, numeric=False)
         if parsed is not None and parsed.df is not None:
             df = parsed.df
@@ -2857,9 +3045,7 @@ class Company:
             df = df.rename({"subtopic": "항목"})
         # 내부 topic명을 한글로 치환
         if "항목" in df.columns:
-            df = df.with_columns(
-                pl.col("항목").replace(_TOPIC_LABELS).alias("항목")
-            )
+            df = df.with_columns(pl.col("항목").replace(_TOPIC_LABELS).alias("항목"))
         return df
 
     @staticmethod
@@ -2930,10 +3116,15 @@ class Company:
             for col in periodCols:
                 val = topicFrame[col][i]
                 if val is not None and str(val).strip():
-                    rows.append({
-                        "chapter": ch, "topic": tp, "blockType": bt,
-                        "period": col, "content": str(val),
-                    })
+                    rows.append(
+                        {
+                            "chapter": ch,
+                            "topic": tp,
+                            "blockType": bt,
+                            "period": col,
+                            "content": str(val),
+                        }
+                    )
         if not rows:
             return pl.DataFrame({"chapter": [], "topic": [], "blockType": [], "period": [], "content": []})
         return pl.DataFrame(rows)
@@ -2973,8 +3164,12 @@ class Company:
             if apiType not in self.report.apiTypes:
                 return None
             return self._reportFrameInner(apiType, topic, raw=raw)
-        except (pl.exceptions.ColumnNotFoundError, pl.exceptions.InvalidOperationError,
-                pl.exceptions.SchemaError, RuntimeError):
+        except (
+            pl.exceptions.ColumnNotFoundError,
+            pl.exceptions.InvalidOperationError,
+            pl.exceptions.SchemaError,
+            RuntimeError,
+        ):
             return None
 
     def _reportFrameInner(self, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
@@ -3027,7 +3222,11 @@ class Company:
     def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         result = self._showCore(topic, period=period, raw=raw)
         result = self._trimOldPeriods(result)
-        if topic in {"IS", "BS", "CIS", "CF", "SCE"} and isinstance(result, pl.DataFrame) and "계정명" in result.columns:
+        if (
+            topic in {"IS", "BS", "CIS", "CF", "SCE"}
+            and isinstance(result, pl.DataFrame)
+            and "계정명" in result.columns
+        ):
             result = self._cleanFinanceDataFrame(result, topic)
         return result
 
@@ -3104,6 +3303,7 @@ class Company:
 
         if self.notes is not None:
             from dartlab.engines.dart.docs.notes import _REGISTRY as _NOTES_REGISTRY
+
             if topic in _NOTES_REGISTRY:
                 return self._applyPeriodFilter(self.notes._get(topic), period)
 
@@ -3160,14 +3360,22 @@ class Company:
                 "primarySource": "finance",
                 "fallbackSources": [],
                 "selectedPayloadRef": "finance:RATIO",
-                "availableSources": [] if ratioSeries is None else [{
-                    "source": "finance",
-                    "rows": 1,
-                    "payloadRef": "finance:RATIO",
-                    "summary": "annual ratio series" if templateKey is None else f"annual ratio series ({templateKey} template)",
-                    "priority": 300,
-                }],
-                "whySelected": "finance authoritative priority" if templateKey is None else f"finance authoritative priority with {templateKey} industry template",
+                "availableSources": []
+                if ratioSeries is None
+                else [
+                    {
+                        "source": "finance",
+                        "rows": 1,
+                        "payloadRef": "finance:RATIO",
+                        "summary": "annual ratio series"
+                        if templateKey is None
+                        else f"annual ratio series ({templateKey} template)",
+                        "priority": 300,
+                    }
+                ],
+                "whySelected": "finance authoritative priority"
+                if templateKey is None
+                else f"finance authoritative priority with {templateKey} industry template",
                 "template": templateKey or "general",
                 "rowCount": rowCount,
                 "yearCount": yearCount,
@@ -3201,6 +3409,7 @@ class Company:
             if result is None:
                 return None
             import difflib
+
             filtered = docsSections.filter(pl.col("topic") == topic)
             if filtered.height == 0:
                 return None
@@ -3211,7 +3420,9 @@ class Company:
             rows: list[dict[str, str | int]] = []
             lineNo = 0
             for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-                None, fromLines, toLines,
+                None,
+                fromLines,
+                toLines,
             ).get_opcodes():
                 if tag == "equal":
                     for line in fromLines[i1:i2]:
@@ -3240,36 +3451,46 @@ class Company:
         if topic is not None:
             topicEntries = [e for e in diffResult.entries if e.topic == topic]
             if not topicEntries:
-                return pl.DataFrame({
-                    "fromPeriod": [], "toPeriod": [],
-                    "status": [], "fromLen": [], "toLen": [],
-                    "delta": [], "deltaRate": [],
-                })
-            return pl.DataFrame([
-                {
-                    "fromPeriod": e.fromPeriod,
-                    "toPeriod": e.toPeriod,
-                    "status": e.status,
-                    "fromLen": e.fromLen,
-                    "toLen": e.toLen,
-                    "delta": e.toLen - e.fromLen,
-                    "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
-                }
-                for e in topicEntries
-            ])
+                return pl.DataFrame(
+                    {
+                        "fromPeriod": [],
+                        "toPeriod": [],
+                        "status": [],
+                        "fromLen": [],
+                        "toLen": [],
+                        "delta": [],
+                        "deltaRate": [],
+                    }
+                )
+            return pl.DataFrame(
+                [
+                    {
+                        "fromPeriod": e.fromPeriod,
+                        "toPeriod": e.toPeriod,
+                        "status": e.status,
+                        "fromLen": e.fromLen,
+                        "toLen": e.toLen,
+                        "delta": e.toLen - e.fromLen,
+                        "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
+                    }
+                    for e in topicEntries
+                ]
+            )
 
         # 전체 요약
-        return pl.DataFrame([
-            {
-                "chapter": s.chapter,
-                "topic": s.topic,
-                "periods": s.totalPeriods,
-                "changed": s.changedCount,
-                "stable": s.stableCount,
-                "changeRate": round(s.changeRate, 3),
-            }
-            for s in diffResult.summaries
-        ])
+        return pl.DataFrame(
+            [
+                {
+                    "chapter": s.chapter,
+                    "topic": s.topic,
+                    "periods": s.totalPeriods,
+                    "changed": s.changedCount,
+                    "stable": s.stableCount,
+                    "changeRate": round(s.changeRate, 3),
+                }
+                for s in diffResult.summaries
+            ]
+        )
 
     def table(
         self,
@@ -3300,6 +3521,7 @@ class Company:
         if result is None:
             return None
         from dartlab.engines.dart.docs.sections import parseSubtopicTable
+
         parsed = parseSubtopicTable(result, subtopic, numeric=numeric)
         if parsed is None:
             return None
@@ -3308,6 +3530,7 @@ class Company:
             matchedCols = [c for c in periodCols if period in c]
             if matchedCols:
                 from dataclasses import replace
+
                 filteredDf = parsed.df.select(["항목", *matchedCols])
                 return replace(parsed, df=filteredDf)
         return parsed
@@ -3324,13 +3547,15 @@ class Company:
             ("finance", self.rawFinance),
             ("report", self.rawReport),
         ):
-            rows.append({
-                "source": source,
-                "available": raw is not None,
-                "rows": raw.height if raw is not None else None,
-                "cols": raw.width if raw is not None else None,
-                "shape": _shapeString(raw),
-            })
+            rows.append(
+                {
+                    "source": source,
+                    "available": raw is not None,
+                    "rows": raw.height if raw is not None else None,
+                    "cols": raw.width if raw is not None else None,
+                    "shape": _shapeString(raw),
+                }
+            )
         return pl.DataFrame(rows)
 
     def _buildProfile(self, *, raw: bool) -> _BoardView:
@@ -3368,17 +3593,19 @@ class Company:
         rows: list[dict[str, Any]] = []
 
         if not self._hasDocs:
-            rows.append({
-                "chapter": "안내",
-                "topic": "docsStatus",
-                "label": "사업보고서",
-                "kind": "notice",
-                "source": "docs",
-                "periods": "-",
-                "shape": "missing",
-                "preview": "현재 사업보고서 부재",
-                "_sortKey": (0, 0),
-            })
+            rows.append(
+                {
+                    "chapter": "안내",
+                    "topic": "docsStatus",
+                    "label": "사업보고서",
+                    "kind": "notice",
+                    "source": "docs",
+                    "periods": "-",
+                    "shape": "missing",
+                    "preview": "현재 사업보고서 부재",
+                    "_sortKey": (0, 0),
+                }
+            )
 
         _STMT_ORDER = {"BS": 0, "IS": 1, "CIS": 2, "CF": 3, "SCE": 4}
         for stmt in ("BS", "IS", "CIS", "CF", "SCE"):
@@ -3386,46 +3613,56 @@ class Company:
             if df is None:
                 continue
             periodCols = [c for c in df.columns if _isPeriodColumn(c)]
-            periods = f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
-            rows.append({
-                "chapter": _CHAPTER_TITLES.get("III", "III"),
-                "topic": stmt,
-                "label": self._topicLabel(stmt),
-                "kind": "finance",
-                "source": "finance",
-                "periods": periods,
-                "shape": _shapeString(df),
-                "preview": f"{df.height} accounts",
-                "_sortKey": (3, _STMT_ORDER[stmt]),
-            })
+            periods = (
+                f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
+            )
+            rows.append(
+                {
+                    "chapter": _CHAPTER_TITLES.get("III", "III"),
+                    "topic": stmt,
+                    "label": self._topicLabel(stmt),
+                    "kind": "finance",
+                    "source": "finance",
+                    "periods": periods,
+                    "shape": _shapeString(df),
+                    "preview": f"{df.height} accounts",
+                    "_sortKey": (3, _STMT_ORDER[stmt]),
+                }
+            )
 
         rsPair = self._ratioSeries() if self._hasFinance else None
         if rsPair is not None:
             series, years = rsPair
             ratioData = series.get("RATIO", {})
             from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+
             metricCount = sum(
-                1 for _, fields in RATIO_CATEGORIES
+                1
+                for _, fields in RATIO_CATEGORIES
                 for f in fields
                 if ratioData.get(f) and any(v is not None for v in ratioData[f])
             )
             periods = f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-")
-            rows.append({
-                "chapter": _CHAPTER_TITLES.get("III", "III"),
-                "topic": "ratios",
-                "label": "재무비율",
-                "kind": "finance",
-                "source": "finance",
-                "periods": periods,
-                "shape": f"{metricCount}x{len(years) + 2}",
-                "preview": f"{metricCount} metrics",
-                "_sortKey": (3, 5),
-            })
+            rows.append(
+                {
+                    "chapter": _CHAPTER_TITLES.get("III", "III"),
+                    "topic": "ratios",
+                    "label": "재무비율",
+                    "kind": "finance",
+                    "source": "finance",
+                    "periods": periods,
+                    "shape": f"{metricCount}x{len(years) + 2}",
+                    "preview": f"{metricCount} metrics",
+                    "_sortKey": (3, 5),
+                }
+            )
 
         sec = self.docs.sections
         if sec is not None and "topic" in sec.columns:
             periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
-            periodRange = f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
+            periodRange = (
+                f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
+            )
             hasChapterCol = "chapter" in sec.columns
             for rowIdx, row in enumerate(sec.iter_rows(named=True)):
                 topic = row["topic"]
@@ -3443,20 +3680,23 @@ class Company:
                 if not isinstance(chapter, str) or not chapter:
                     chapter = self._chapterForTopic(topic)
                 chapterNum = _CHAPTER_ORDER.get(chapter, 12)
-                rows.append({
-                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
-                    "topic": topic,
-                    "label": self._topicLabel(topic),
-                    "kind": "docs",
-                    "source": "docs",
-                    "periods": periodRange,
-                    "shape": f"{nonNull}기간",
-                    "preview": preview,
-                    "_sortKey": (chapterNum, 100 + rowIdx),
-                })
+                rows.append(
+                    {
+                        "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                        "topic": topic,
+                        "label": self._topicLabel(topic),
+                        "kind": "docs",
+                        "source": "docs",
+                        "periods": periodRange,
+                        "shape": f"{nonNull}기간",
+                        "preview": preview,
+                        "_sortKey": (chapterNum, 100 + rowIdx),
+                    }
+                )
 
         if self._hasReport:
-            from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS
+            from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES
+
             existingTopics = {r["topic"] for r in rows}
             for rIdx, apiType in enumerate(API_TYPES):
                 if apiType in existingTopics:
@@ -3466,27 +3706,40 @@ class Company:
                     continue
                 chapter = self._chapterForTopic(apiType)
                 chapterNum = _CHAPTER_ORDER.get(chapter, 12)
-                rows.append({
-                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
-                    "topic": apiType,
-                    "label": API_TYPE_LABELS.get(apiType, apiType),
-                    "kind": "report",
-                    "source": "report",
-                    "periods": "-",
-                    "shape": _shapeString(df),
-                    "preview": API_TYPE_LABELS.get(apiType, apiType),
-                    "_sortKey": (chapterNum, 200 + rIdx),
-                })
+                rows.append(
+                    {
+                        "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                        "topic": apiType,
+                        "label": API_TYPE_LABELS.get(apiType, apiType),
+                        "kind": "report",
+                        "source": "report",
+                        "periods": "-",
+                        "shape": _shapeString(df),
+                        "preview": API_TYPE_LABELS.get(apiType, apiType),
+                        "_sortKey": (chapterNum, 200 + rIdx),
+                    }
+                )
 
         rows.sort(key=lambda r: r.get("_sortKey", (99, 999)))
         for r in rows:
             r.pop("_sortKey", None)
 
-        df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
-            "chapter": pl.Utf8, "topic": pl.Utf8, "label": pl.Utf8,
-            "kind": pl.Utf8, "source": pl.Utf8,
-            "periods": pl.Utf8, "shape": pl.Utf8, "preview": pl.Utf8,
-        })
+        df = (
+            pl.DataFrame(rows)
+            if rows
+            else pl.DataFrame(
+                schema={
+                    "chapter": pl.Utf8,
+                    "topic": pl.Utf8,
+                    "label": pl.Utf8,
+                    "kind": pl.Utf8,
+                    "source": pl.Utf8,
+                    "periods": pl.Utf8,
+                    "shape": pl.Utf8,
+                    "preview": pl.Utf8,
+                }
+            )
+        )
         self._cache[cacheKey] = df
         return df
 
@@ -3521,10 +3774,13 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab import config
+
         if config.verbose:
             print(f"  ▶ {self.corpName} · 주주현황")
         result = _import_and_call(
-            "dartlab.engines.dart.docs.finance.majorHolder", "holderOverview", self.stockCode,
+            "dartlab.engines.dart.docs.finance.majorHolder",
+            "holderOverview",
+            self.stockCode,
         )
         self._cache[cacheKey] = result
         return result
@@ -3595,6 +3851,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.common.finance.ratios import calcRatios
+
         archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
         ts = self._getFinanceBuild("q", fsDivPref)
         result = None
@@ -3746,6 +4003,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.sector import classify
+
         kindDf = getKindList()
         row = kindDf.filter(pl.col("종목코드") == self.stockCode)
         kindIndustry = row["업종"][0] if row.height > 0 and "업종" in kindDf.columns else None
@@ -3771,6 +4029,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.sector import getParams
+
         result = getParams(self.sector)
         self._cache[cacheKey] = result
         return result
@@ -3801,6 +4060,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.rank.rank import getRank
+
         result = getRank(self.stockCode)
         self._cache[cacheKey] = result
         return result
@@ -3828,6 +4088,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         from dartlab.engines.insight import analyze
+
         result = analyze(self.stockCode, company=self)
         self._cache[cacheKey] = result
         return result
@@ -3851,6 +4112,7 @@ class Company:
 
         if config.verbose:
             from alive_progress import alive_bar
+
             with alive_bar(total, title=f"▶ {self.corpName}") as bar:
                 _log = logging.getLogger("dartlab.engines.dart.company")
                 for name, label in _ALL_PROPERTIES:
@@ -3938,6 +4200,7 @@ class Company:
             c.toExcel(modules=["IS", "BS"])      # 시트 선택
         """
         from dartlab.export.excel import exportToExcel
+
         return exportToExcel(self, outputPath=outputPath, modules=modules)
 
     # ── get() — 모듈 전체 결과 객체 접근 ──
@@ -4006,11 +4269,7 @@ class Company:
         from dartlab.engines.ai.providers import create_provider
 
         config_ = get_config()
-        overrides = {
-            k: v
-            for k, v in {"provider": provider, "model": model, **kwargs}.items()
-            if v is not None
-        }
+        overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}
         if overrides:
             config_ = config_.merge(overrides)
 
@@ -4018,11 +4277,17 @@ class Company:
 
         if use_compact:
             context_text, included_tables = build_compact_context(
-                self, question, include=include, exclude=exclude,
+                self,
+                question,
+                include=include,
+                exclude=exclude,
             )
         else:
             context_text, included_tables = build_context(
-                self, question, include=include, exclude=exclude,
+                self,
+                question,
+                include=include,
+                exclude=exclude,
             )
 
         if not use_compact:
@@ -4058,6 +4323,7 @@ class Company:
         response.context_tables = included_tables
 
         from dartlab import config
+
         if config.verbose:
             print(f"  [LLM] {response.provider}/{response.model}")
             if response.usage:
@@ -4105,11 +4371,7 @@ class Company:
         from dartlab.engines.ai.providers import create_provider
 
         config_ = get_config()
-        overrides = {
-            k: v
-            for k, v in {"provider": provider, "model": model, **kwargs}.items()
-            if v is not None
-        }
+        overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}
         if overrides:
             config_ = config_.merge(overrides)
 
@@ -4121,7 +4383,9 @@ class Company:
 
         llm = create_provider(config_)
         return agent_loop(
-            llm, messages, self,
+            llm,
+            messages,
+            self,
             max_turns=max_turns,
             on_tool_call=on_tool_call,
             on_tool_result=on_tool_result,
@@ -4136,5 +4400,3 @@ class Company:
     def currency(self) -> str:
         """통화 코드."""
         return "KRW"
-
-

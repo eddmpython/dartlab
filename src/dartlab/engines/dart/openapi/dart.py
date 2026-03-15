@@ -23,35 +23,35 @@ from __future__ import annotations
 
 import io
 import zipfile
-from datetime import datetime, date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
 
 import polars as pl
 
-from dartlab.engines.dart.openapi.client import DartClient
-from dartlab.engines.dart.openapi.corpCode import (
-    loadCorpCodes,
-    findCorpCode,
-    searchCompanies,
-)
-from dartlab.engines.dart.openapi.disclosure import (
-    listFilings,
-    companyInfo,
-    _resolveCorpCode,
-    FILING_TYPES,
-    CORP_CLASS,
-)
-from dartlab.engines.dart.openapi.dateUtil import parseDate, defaultStart, defaultEnd
 from dartlab import config as _dartlabConfig
 from dartlab.core.dataConfig import DATA_RELEASES
+from dartlab.engines.dart.openapi.client import DartClient
+from dartlab.engines.dart.openapi.corpCode import (
+    findCorpCode,
+    loadCorpCodes,
+    searchCompanies,
+)
+from dartlab.engines.dart.openapi.dateUtil import defaultEnd, defaultStart, parseDate
+from dartlab.engines.dart.openapi.disclosure import (
+    CORP_CLASS,
+    FILING_TYPES,
+    _resolveCorpCode,
+    companyInfo,
+    listFilings,
+)
 from dartlab.engines.dart.openapi.saver import (
     enrichFinance,
     enrichReport,
-    korColumns,
+)
+from dartlab.engines.dart.openapi.saver import (
     save as _saveFile,
 )
-
 
 # ── 내부 상수 ──────────────────────────────────────────────
 
@@ -136,14 +136,35 @@ _REPORT_ENDPOINTS: dict[str, str] = {
 # 정기보고서 전체 28개 카테고리 (saveReport 기본값)
 _PERIODIC_REPORT_CATEGORIES: list[str] = [
     # eddmpython 기본 22개
-    "배당", "직원", "임원", "최대주주", "최대주주변동", "소액주주",
-    "자기주식", "증자감자", "이사회임원전체보수", "이사회임원개인보수",
-    "개인별보수", "타법인출자", "주식총수", "회계감사인", "감사용역체결",
-    "감사비감사계약", "사외이사변동", "미등기임원보수", "회사채미상환",
-    "단기사채미상환", "공모자금용도", "공모자금사용",
+    "배당",
+    "직원",
+    "임원",
+    "최대주주",
+    "최대주주변동",
+    "소액주주",
+    "자기주식",
+    "증자감자",
+    "이사회임원전체보수",
+    "이사회임원개인보수",
+    "개인별보수",
+    "타법인출자",
+    "주식총수",
+    "회계감사인",
+    "감사용역체결",
+    "감사비감사계약",
+    "사외이사변동",
+    "미등기임원보수",
+    "회사채미상환",
+    "단기사채미상환",
+    "공모자금용도",
+    "공모자금사용",
     # 추가 정기보고서 6개
-    "대주주지분변동", "기업어음미상환", "신종자본증권미상환",
-    "채무증권발행실적", "이사감사보수총회인정", "이사감사보수지급형태",
+    "대주주지분변동",
+    "기업어음미상환",
+    "신종자본증권미상환",
+    "채무증권발행실적",
+    "이사감사보수총회인정",
+    "이사감사보수지급형태",
 ]
 
 
@@ -159,6 +180,7 @@ def _dataPath(category: str, stockCode: str) -> Path:
 
 
 # ── 내부 유틸 ──────────────────────────────────────────────
+
 
 def _buildPeriods(
     start: int,
@@ -407,8 +429,13 @@ class Dart:
 
         corpName = self._resolveCorpName(corp)
         return _fetchSeries(
-            self._client, endpoint, corpCodeStr, corpName,
-            periods, "재무제표", extraParams,
+            self._client,
+            endpoint,
+            corpCodeStr,
+            corpName,
+            periods,
+            "재무제표",
+            extraParams,
         )
 
     def finstateMulti(
@@ -511,9 +538,7 @@ class Dart:
         endpoint = _REPORT_ENDPOINTS.get(reportType)
         if endpoint is None:
             available = ", ".join(sorted(_REPORT_ENDPOINTS.keys()))
-            raise ValueError(
-                f"'{reportType}'은 알 수 없는 보고서 유형입니다.\n사용 가능: {available}"
-            )
+            raise ValueError(f"'{reportType}'은 알 수 없는 보고서 유형입니다.\n사용 가능: {available}")
 
         quarterly, quarter = _resolveQ(q, hasRange=end is not None)
         periods = _buildPeriods(startYear, end, quarterly, quarter)
@@ -531,8 +556,12 @@ class Dart:
 
         corpName = self._resolveCorpName(corp)
         return _fetchSeries(
-            self._client, endpoint, corpCodeStr, corpName,
-            periods, reportType,
+            self._client,
+            endpoint,
+            corpCodeStr,
+            corpName,
+            periods,
+            reportType,
         )
 
     # ── 지분공시 ───────────────────────────────────────────
@@ -545,9 +574,7 @@ class Dart:
         >>> d.majorShareholders("삼성전자")
         """
         corpCodeStr = _resolveCorpCode(self._client, corp)
-        return self._client.getDf(
-            "majorstock.json", {"corp_code": corpCodeStr}
-        )
+        return self._client.getDf("majorstock.json", {"corp_code": corpCodeStr})
 
     def executiveShares(self, corp: str) -> pl.DataFrame:
         """임원·주요주주 소유보고.
@@ -557,9 +584,7 @@ class Dart:
         >>> d.executiveShares("삼성전자")
         """
         corpCodeStr = _resolveCorpCode(self._client, corp)
-        return self._client.getDf(
-            "elestock.json", {"corp_code": corpCodeStr}
-        )
+        return self._client.getDf("elestock.json", {"corp_code": corpCodeStr})
 
     # ── 공시 서류 ──────────────────────────────────────────
 
@@ -694,11 +719,11 @@ def _resolveQ(q: int | None, hasRange: bool) -> tuple[bool, str]:
     """
     if q is None:
         if hasRange:
-            return True, "annual"   # 범위 → 전분기
-        return False, "annual"      # 단건 → 연간 1건
+            return True, "annual"  # 범위 → 전분기
+        return False, "annual"  # 단건 → 연간 1건
 
     if q == 0:
-        return True, "annual"       # 명시적 전분기
+        return True, "annual"  # 명시적 전분기
 
     qMap = {1: "Q1", 2: "Q2", 3: "Q3", 4: "annual"}
     quarter = qMap.get(q)
@@ -770,8 +795,11 @@ class DartCompany:
         if q is None and start is not None:
             effectiveQ = 0
         return self._dart.report(
-            self._corp, category, start,
-            end=end, q=effectiveQ,
+            self._corp,
+            category,
+            start,
+            end=end,
+            q=effectiveQ,
         )
 
     def finance(
@@ -815,8 +843,12 @@ class DartCompany:
         if q is None and start is not None:
             effectiveQ = 0
         return self._dart.finstate(
-            self._corp, start, end=end, q=effectiveQ,
-            consolidated=consolidated, full=full,
+            self._corp,
+            start,
+            end=end,
+            q=effectiveQ,
+            consolidated=consolidated,
+            full=full,
         )
 
     def filings(
@@ -838,7 +870,11 @@ class DartCompany:
         >>> s.filings(final=True)        # 최종보고서만
         """
         return self._dart.filings(
-            self._corp, start, end, type=type, final=final,
+            self._corp,
+            start,
+            end,
+            type=type,
+            final=final,
         )
 
     def info(self) -> dict[str, str]:
@@ -934,9 +970,7 @@ class DartCompany:
             code = match["stock_code"][0].strip()
             if code:
                 return code
-        match = df.filter(
-            pl.col("corp_name").str.contains(self._corp, literal=True)
-        )
+        match = df.filter(pl.col("corp_name").str.contains(self._corp, literal=True))
         if match.height > 0:
             code = match["stock_code"][0].strip()
             if code:

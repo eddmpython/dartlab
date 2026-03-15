@@ -6,6 +6,7 @@ import re
 # 유틸리티
 # ──────────────────────────────────────────────
 
+
 def _cellsFromLine(line: str) -> list[str]:
     return [c.strip() for c in line.split("|")[1:-1]]
 
@@ -27,6 +28,7 @@ def _parseInt(text: str) -> int | None:
 # ──────────────────────────────────────────────
 # 테이블 블록 추출 + 분류
 # ──────────────────────────────────────────────
+
 
 def extractTableBlocks(content: str) -> list[list[str]]:
     """content에서 연속된 파이프라인 블록 추출."""
@@ -80,6 +82,7 @@ def classifyBlock(block: list[str]) -> str:
 # 이사 수 파서
 # ──────────────────────────────────────────────
 
+
 def parseDirectorCount(block: list[str]) -> dict | None:
     """이사 수 / 사외이사 수 파싱.
 
@@ -122,7 +125,7 @@ def parseDirectorCount(block: list[str]) -> dict | None:
         return None
 
     dataRow = None
-    for row in rows[headerIdx + 1:]:
+    for row in rows[headerIdx + 1 :]:
         text = " ".join(row)
         if re.search(r"선임|해임|중도퇴임|단위", text) and not any(_parseInt(c) is not None for c in row):
             continue
@@ -171,6 +174,7 @@ def parseDirectorCountFromText(content: str) -> dict | None:
 # 이사회 개최/참석률 파서
 # ──────────────────────────────────────────────
 
+
 def parseBoardMeeting(block: list[str]) -> dict | None:
     """이사회 개최 횟수 + 출석률 파싱.
 
@@ -197,7 +201,7 @@ def parseBoardMeeting(block: list[str]) -> dict | None:
         return None
 
     attendanceRates = {}
-    for row in rows[:headerIdx + 2]:
+    for row in rows[: headerIdx + 2]:
         for cell in row:
             matches = re.findall(r"(\S+?)\s*\(출석률\s*:?\s*([\d.]+)\s*%\)", cell)
             for name, rate in matches:
@@ -208,7 +212,7 @@ def parseBoardMeeting(block: list[str]) -> dict | None:
 
     datePattern = re.compile(r"(?:\d{4}|'\d{2})[.\-/]\d{1,2}[.\-/]\d{1,2}")
     meetingDates = set()
-    for row in rows[headerIdx + 1:]:
+    for row in rows[headerIdx + 1 :]:
         for cell in row:
             for d in datePattern.findall(cell):
                 meetingDates.add(d)
@@ -216,7 +220,7 @@ def parseBoardMeeting(block: list[str]) -> dict | None:
     maxSession = 0
     sessionPattern = re.compile(r"^(\d+)$")
     sessionInText = re.compile(r"\((\d+)차\)")
-    for row in rows[headerIdx + 1:]:
+    for row in rows[headerIdx + 1 :]:
         if row:
             m = sessionPattern.match(row[0].strip())
             if m:
@@ -239,6 +243,7 @@ def parseBoardMeeting(block: list[str]) -> dict | None:
 # ──────────────────────────────────────────────
 # 위원회 구성 파서
 # ──────────────────────────────────────────────
+
 
 def parseCommittee(block: list[str]) -> list[dict]:
     """위원회 구성 파싱.
@@ -285,7 +290,7 @@ def parseCommittee(block: list[str]) -> list[dict]:
         colName = 0
 
     result = []
-    for row in rows[headerIdx + 1:]:
+    for row in rows[headerIdx + 1 :]:
         while len(row) < nCols:
             row.append("")
 
@@ -296,10 +301,12 @@ def parseCommittee(block: list[str]) -> list[dict]:
         comp = row[colComp].strip() if colComp is not None else ""
         members = row[colMembers].strip() if colMembers is not None else ""
 
-        result.append({
-            "name": name,
-            "composition": comp,
-            "members": members,
-        })
+        result.append(
+            {
+                "name": name,
+                "composition": comp,
+                "members": members,
+            }
+        )
 
     return result

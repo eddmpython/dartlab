@@ -29,9 +29,7 @@ def mdna(stockCode: str) -> MdnaResult | None:
         if report is None:
             continue
 
-        mdnaRows = report.filter(
-            pl.col("section_title").str.contains("경영진단")
-        )
+        mdnaRows = report.filter(pl.col("section_title").str.contains("경영진단"))
         if mdnaRows.height == 0:
             continue
 

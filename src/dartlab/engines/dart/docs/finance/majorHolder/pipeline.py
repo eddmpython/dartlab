@@ -154,10 +154,7 @@ def holderOverview(stockCode: str) -> HolderOverview | None:
     if fiveResult is None and minResult is None and votResult is None:
         return None
 
-    big = [
-        BigHolder(name=h["name"], shares=h.get("shares"), ratio=h.get("ratio"))
-        for h in (fiveResult or [])
-    ]
+    big = [BigHolder(name=h["name"], shares=h.get("shares"), ratio=h.get("ratio")) for h in (fiveResult or [])]
 
     min_ = None
     if minResult:
@@ -165,9 +162,7 @@ def holderOverview(stockCode: str) -> HolderOverview | None:
 
     vot = None
     if votResult:
-        vot = VotingRights(**{
-            k: votResult.get(k) for k in VotingRights.__dataclass_fields__
-        })
+        vot = VotingRights(**{k: votResult.get(k) for k in VotingRights.__dataclass_fields__})
 
     return HolderOverview(
         corpName=corpName,
@@ -176,5 +171,3 @@ def holderOverview(stockCode: str) -> HolderOverview | None:
         minority=min_,
         voting=vot,
     )
-
-

@@ -3,8 +3,16 @@
 import re
 
 KOREAN_NUMS = {
-    "가": 1, "나": 2, "다": 3, "라": 4, "마": 5,
-    "바": 6, "사": 7, "아": 8, "자": 9, "차": 10,
+    "가": 1,
+    "나": 2,
+    "다": 3,
+    "라": 4,
+    "마": 5,
+    "바": 6,
+    "사": 7,
+    "아": 8,
+    "자": 9,
+    "차": 10,
 }
 
 SECTION_ALIASES = {
@@ -89,10 +97,7 @@ def extractOverview(sections: dict[str, str]) -> str | None:
     """섹션 딕셔너리에서 개요 텍스트 추출."""
     for key, content in sections.items():
         if classifySection(key) == "overview":
-            textLines = [
-                l for l in content.split("\n")
-                if l.strip() and not l.strip().startswith("|")
-            ]
+            textLines = [l for l in content.split("\n") if l.strip() and not l.strip().startswith("|")]
             result = "\n".join(textLines).strip()
             return result or None
     return None

@@ -113,7 +113,11 @@ def parseRndTable(block: list[str]) -> dict | None:
         rowText = " ".join(cells[:3])
 
         # 연구개발비용 계
-        if ("연구개발비용" in rowText and "계" in rowText) or ("합 계" in rowText and "연구" in blockText) or ("연구개발비 합계" in rowText):
+        if (
+            ("연구개발비용" in rowText and "계" in rowText)
+            or ("합 계" in rowText and "연구" in blockText)
+            or ("연구개발비 합계" in rowText)
+        ):
             for cell in cells:
                 if re.match(r"^[\d,]+$", cell.strip()):
                     rndExpense.append(parseAmount(cell))
@@ -130,6 +134,6 @@ def parseRndTable(block: list[str]) -> dict | None:
 
     return {
         "periods": periods,
-        "rndExpense": rndExpense[:len(periods)],
-        "revenueRatio": revenueRatio[:len(periods)] if revenueRatio else [],
+        "rndExpense": rndExpense[: len(periods)],
+        "revenueRatio": revenueRatio[: len(periods)] if revenueRatio else [],
     }

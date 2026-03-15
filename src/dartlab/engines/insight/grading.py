@@ -240,7 +240,9 @@ def analyzeProfitability(
     if adj != 0:
         score += adj
         direction = "상향" if adj > 0 else "하향"
-        details.append(f"[섹터 보정 {direction}: {sector.value} 대비 OM{'↑' if omAdj > 0 else '↓' if omAdj < 0 else '→'} ROE{'↑' if roeAdj > 0 else '↓' if roeAdj < 0 else '→'}]")
+        details.append(
+            f"[섹터 보정 {direction}: {sector.value} 대비 OM{'↑' if omAdj > 0 else '↓' if omAdj < 0 else '→'} ROE{'↑' if roeAdj > 0 else '↓' if roeAdj < 0 else '→'}]"
+        )
 
     grade = _scoreToGrade(score, 5)
     summary = "수익성 " + ("우수" if score >= 4 else "양호" if score >= 2 else "보통" if score >= 0 else "개선 필요")
@@ -258,7 +260,9 @@ def _analyzeProfitabilityFinancial(
     score = 0
     netIncome = getLatest(aSeries, "IS", "net_profit")
     totalAssets = getLatest(aSeries, "BS", "total_assets")
-    totalEquity = getLatest(aSeries, "BS", "owners_of_parent_equity") or getLatest(aSeries, "BS", "total_stockholders_equity")
+    totalEquity = getLatest(aSeries, "BS", "owners_of_parent_equity") or getLatest(
+        aSeries, "BS", "total_stockholders_equity"
+    )
     opIncome = getLatest(aSeries, "IS", "operating_profit")
     opExpense = getLatest(aSeries, "IS", "operating_expense")
 
@@ -306,7 +310,9 @@ def _analyzeProfitabilityFinancial(
             risks.append(Flag("warning", "finance", f"CIR {cir:.1f}%"))
 
     grade = _scoreToGrade(score, 5)
-    summary = "금융업 수익성 " + ("우수" if score >= 4 else "양호" if score >= 2 else "보통" if score >= 0 else "개선 필요")
+    summary = "금융업 수익성 " + (
+        "우수" if score >= 4 else "양호" if score >= 2 else "보통" if score >= 0 else "개선 필요"
+    )
     return InsightResult(grade, summary, details, risks, opps)
 
 
@@ -548,10 +554,15 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
 
     grade = _scoreToGrade(score, maxScore)
     summary = "지배구조 " + (
-        "우수" if grade == "A" else
-        "안정" if grade == "B" else
-        "보통" if grade == "C" else
-        "주의" if grade == "D" else "위험"
+        "우수"
+        if grade == "A"
+        else "안정"
+        if grade == "B"
+        else "보통"
+        if grade == "C"
+        else "주의"
+        if grade == "D"
+        else "위험"
     )
     return InsightResult(grade, summary, details, risks, opps)
 

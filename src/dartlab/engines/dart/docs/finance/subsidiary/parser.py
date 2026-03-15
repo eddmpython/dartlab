@@ -1,6 +1,5 @@
 """타법인출자 현황 테이블 파서."""
 
-
 from dartlab.core.tableParser import parseAmount
 
 

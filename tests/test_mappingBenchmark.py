@@ -37,9 +37,13 @@ CORE_ACCOUNTS = {
 }
 
 FINANCIAL_SECTOR_EXEMPT_IS = {"sales", "cost_of_sales", "gross_profit"}
-FINANCIAL_SECTOR_EXEMPT_BS = {"current_assets", "noncurrent_assets",
-                              "current_liabilities", "noncurrent_liabilities",
-                              "inventories"}
+FINANCIAL_SECTOR_EXEMPT_BS = {
+    "current_assets",
+    "noncurrent_assets",
+    "current_liabilities",
+    "noncurrent_liabilities",
+    "inventories",
+}
 
 BENCHMARK_STOCKS = [
     ("005930", "삼성전자", "IT"),
@@ -57,13 +61,13 @@ BENCHMARK_STOCKS = [
 
 def _available_stocks():
     """finance 데이터가 있는 종목만 필터."""
-    return [(code, name, sector) for code, name, sector in BENCHMARK_STOCKS
-            if _has_data(code, "finance")]
+    return [(code, name, sector) for code, name, sector in BENCHMARK_STOCKS if _has_data(code, "finance")]
 
 
 def _build_annual(code: str):
     """종목의 annual 데이터 빌드."""
     from dartlab import Company
+
     c = Company(code)
     annual = getattr(c, "annual", None)
     if annual is None:
@@ -130,17 +134,13 @@ class TestMappingCoverage:
                 if hit:
                     mapped += 1
         coverage = mapped / total * 100 if total > 0 else 0
-        assert coverage >= 80, (
-            f"전체 매핑 커버리지 {coverage:.1f}% < 80% "
-            f"({mapped}/{total})"
-        )
+        assert coverage >= 80, f"전체 매핑 커버리지 {coverage:.1f}% < 80% ({mapped}/{total})"
 
     def test_per_stock_coverage(self, benchmark_results):
         """각 종목별 매핑 커버리지 ≥ 60% (금융업 면제 반영)."""
         for code, info in benchmark_results.items():
             hits = info["hits"]
-            applicable = {k: v for k, v in hits.items()
-                          if not _is_exempt(info["sector"], k[0], k[1])}
+            applicable = {k: v for k, v in hits.items() if not _is_exempt(info["sector"], k[0], k[1])}
             total = len(applicable)
             mapped = sum(1 for h in applicable.values() if h)
             coverage = mapped / total * 100 if total > 0 else 0
@@ -154,16 +154,12 @@ class TestMappingCoverage:
         for code, info in benchmark_results.items():
             if info["sector"] == "금융":
                 continue
-            assert info["hits"].get(("IS", "sales")), (
-                f"{info['name']}({code}): sales 미매핑"
-            )
+            assert info["hits"].get(("IS", "sales")), f"{info['name']}({code}): sales 미매핑"
 
     def test_total_assets_always_mapped(self, benchmark_results):
         """total_assets는 모든 종목에서 매핑되어야 함."""
         for code, info in benchmark_results.items():
-            assert info["hits"].get(("BS", "total_assets")), (
-                f"{info['name']}({code}): total_assets 미매핑"
-            )
+            assert info["hits"].get(("BS", "total_assets")), f"{info['name']}({code}): total_assets 미매핑"
 
     def test_total_equity_always_mapped(self, benchmark_results):
         """total_stockholders_equity는 모든 종목에서 매핑되어야 함."""
@@ -175,50 +171,34 @@ class TestMappingCoverage:
     def test_total_liabilities_always_mapped(self, benchmark_results):
         """total_liabilities는 모든 종목에서 매핑되어야 함."""
         for code, info in benchmark_results.items():
-            assert info["hits"].get(("BS", "total_liabilities")), (
-                f"{info['name']}({code}): total_liabilities 미매핑"
-            )
+            assert info["hits"].get(("BS", "total_liabilities")), f"{info['name']}({code}): total_liabilities 미매핑"
 
     def test_operating_cashflow_always_mapped(self, benchmark_results):
         """영업활동현금흐름은 모든 종목에서 매핑되어야 함."""
         for code, info in benchmark_results.items():
-            assert info["hits"].get(("CF", "operating_cashflow")), (
-                f"{info['name']}({code}): operating_cashflow 미매핑"
-            )
+            assert info["hits"].get(("CF", "operating_cashflow")), f"{info['name']}({code}): operating_cashflow 미매핑"
 
     def test_has_multiple_periods(self, benchmark_results):
         """각 종목의 시계열이 2개 이상 기간을 포함."""
         for code, info in benchmark_results.items():
-            assert len(info["periods"]) >= 2, (
-                f"{info['name']}({code}): 기간 {len(info['periods'])}개 (최소 2 필요)"
-            )
+            assert len(info["periods"]) >= 2, f"{info['name']}({code}): 기간 {len(info['periods'])}개 (최소 2 필요)"
 
 
 @requires_benchmark
 class TestMappingConsistency:
     def test_is_operating_profit_consistent(self, benchmark_results):
         """operating_profit이 전 종목에서 매핑."""
-        mapped = sum(
-            1 for info in benchmark_results.values()
-            if info["hits"].get(("IS", "operating_profit"))
-        )
+        mapped = sum(1 for info in benchmark_results.values() if info["hits"].get(("IS", "operating_profit")))
         total = len(benchmark_results)
-        assert mapped >= total * 0.9, (
-            f"IS.operating_profit: {mapped}/{total} 종목에서만 매핑"
-        )
+        assert mapped >= total * 0.9, f"IS.operating_profit: {mapped}/{total} 종목에서만 매핑"
 
     def test_bs_universal_accounts(self, benchmark_results):
         """BS 보편 계정(자산/부채/자본)이 전 종목에서 매핑."""
         universal = ["total_assets", "total_liabilities", "total_stockholders_equity"]
         for acc in universal:
-            mapped = sum(
-                1 for info in benchmark_results.values()
-                if info["hits"].get(("BS", acc))
-            )
+            mapped = sum(1 for info in benchmark_results.values() if info["hits"].get(("BS", acc)))
             total = len(benchmark_results)
-            assert mapped == total, (
-                f"BS.{acc}: {mapped}/{total} 종목에서만 매핑 (100% 필요)"
-            )
+            assert mapped == total, f"BS.{acc}: {mapped}/{total} 종목에서만 매핑 (100% 필요)"
 
     def test_cf_accounts_consistent(self, benchmark_results):
         """CF 핵심 계정이 전 종목 70%+ 에서 매핑.
@@ -227,14 +207,9 @@ class TestMappingConsistency:
         매핑되므로 70% 기준 적용.
         """
         for acc in CORE_ACCOUNTS["CF"]:
-            mapped = sum(
-                1 for info in benchmark_results.values()
-                if info["hits"].get(("CF", acc))
-            )
+            mapped = sum(1 for info in benchmark_results.values() if info["hits"].get(("CF", acc)))
             total = len(benchmark_results)
-            assert mapped >= total * 0.7, (
-                f"CF.{acc}: {mapped}/{total} 종목에서만 매핑 (70% 필요)"
-            )
+            assert mapped >= total * 0.7, f"CF.{acc}: {mapped}/{total} 종목에서만 매핑 (70% 필요)"
 
 
 @requires_benchmark
@@ -266,9 +241,7 @@ class TestFinancialValues:
                 continue
             for a, e in zip(assets, equity):
                 if a is not None and e is not None:
-                    assert e <= a * 1.01, (
-                        f"{info['name']}({code}): equity({e:,.0f}) > assets({a:,.0f})"
-                    )
+                    assert e <= a * 1.01, f"{info['name']}({code}): equity({e:,.0f}) > assets({a:,.0f})"
 
     def test_operating_cashflow_exists(self, benchmark_results):
         """영업현금흐름이 값을 가지는지."""
@@ -279,6 +252,4 @@ class TestFinancialValues:
             series, _ = annual
             vals = series.get("CF", {}).get("operating_cashflow", [])
             nonNull = [v for v in vals if v is not None]
-            assert len(nonNull) > 0, (
-                f"{info['name']}({code}): operating_cashflow 값 없음"
-            )
+            assert len(nonNull) > 0, f"{info['name']}({code}): operating_cashflow 값 없음"

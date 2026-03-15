@@ -22,10 +22,7 @@ def findAuditSections(df: pl.DataFrame, year: str) -> list[str]:
         & (~pl.col("report_type").str.contains("기재정정|첨부"))
     )
     if report.height == 0:
-        report = df.filter(
-            (pl.col("year") == year)
-            & (pl.col("report_type").str.contains("사업보고서"))
-        )
+        report = df.filter((pl.col("year") == year) & (pl.col("report_type").str.contains("사업보고서")))
         if report.height > 0:
             latest = report.sort("rcept_date", descending=True)
             latestType = latest["report_type"][0]
@@ -133,9 +130,7 @@ def _parseSubBlock(rows: list[list[str]]) -> dict | None:
             continue
 
         if subheader is None and header:
-            isSubheader = all(
-                c.strip() in ("보수", "시간", "") for c in row
-            )
+            isSubheader = all(c.strip() in ("보수", "시간", "") for c in row)
             if isSubheader and "보수" in " ".join(row):
                 subheader = row
                 continue
@@ -234,15 +229,17 @@ def parseOpinionBlock(block: dict) -> list[dict]:
 
         period = currentPeriod if currentPeriod else firstCell
 
-        results.append({
-            "fiscalPeriod": period,
-            "reportType": reportType,
-            "auditor": auditor,
-            "opinion": opinion,
-            "goingConcern": goingConcern,
-            "emphasis": emphasis,
-            "keyAuditMatters": keyMatters,
-        })
+        results.append(
+            {
+                "fiscalPeriod": period,
+                "reportType": reportType,
+                "auditor": auditor,
+                "opinion": opinion,
+                "goingConcern": goingConcern,
+                "emphasis": emphasis,
+                "keyAuditMatters": keyMatters,
+            }
+        )
 
     return results
 
@@ -271,15 +268,17 @@ def parseFeeBlock(block: dict) -> list[dict]:
         actualFee = _parseNum(row[5])
         actualHours = _parseNum(row[6])
 
-        results.append({
-            "fiscalPeriod": currentPeriod if currentPeriod else firstCell,
-            "auditor": auditor,
-            "content": content,
-            "contractFee": contractFee,
-            "contractHours": contractHours,
-            "actualFee": actualFee,
-            "actualHours": actualHours,
-        })
+        results.append(
+            {
+                "fiscalPeriod": currentPeriod if currentPeriod else firstCell,
+                "auditor": auditor,
+                "content": content,
+                "contractFee": contractFee,
+                "contractHours": contractHours,
+                "actualFee": actualFee,
+                "actualHours": actualHours,
+            }
+        )
 
     return results
 

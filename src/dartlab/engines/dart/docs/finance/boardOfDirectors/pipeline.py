@@ -83,12 +83,14 @@ def boardOfDirectors(stockCode: str) -> BoardResult | None:
             rows.append(row)
 
         for comm in committees:
-            committeeRows.append({
-                "year": int(year),
-                "committeeName": comm["name"],
-                "composition": comm["composition"],
-                "members": comm["members"],
-            })
+            committeeRows.append(
+                {
+                    "year": int(year),
+                    "committeeName": comm["name"],
+                    "composition": comm["composition"],
+                    "members": comm["members"],
+                }
+            )
 
     if not rows and not committeeRows:
         return None

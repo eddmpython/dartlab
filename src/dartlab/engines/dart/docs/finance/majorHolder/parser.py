@@ -91,9 +91,7 @@ def parseMajorHolderTable(content: str) -> dict:
         }
         result["holders"].append(holder)
 
-        isMajor = "본인" in relation or (
-            "최대주주" in relation and "특수" not in relation
-        )
+        isMajor = "본인" in relation or ("최대주주" in relation and "특수" not in relation)
         isCommon = "보통주" in stockType or "의결권" in stockType
         if isMajor and isCommon and result["majorHolder"] is None:
             result["majorHolder"] = name

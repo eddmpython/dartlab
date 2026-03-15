@@ -9,8 +9,16 @@ import pytest
 from tests.conftest import _has_data
 
 BENCHMARK_STOCKS = [
-    "005930", "005380", "055550", "035720", "000660",
-    "006400", "207940", "003550", "017670", "034730",
+    "005930",
+    "005380",
+    "055550",
+    "035720",
+    "000660",
+    "006400",
+    "207940",
+    "003550",
+    "017670",
+    "034730",
 ]
 
 
@@ -60,11 +68,7 @@ class TestBSIdentity:
                 pct = diff / abs(a) * 100
 
                 if pct > 1.0:
-                    violations.append(
-                        f"{code} {period}: "
-                        f"assets={a:,.0f}, liab+eq={l + e:,.0f}, "
-                        f"diff={pct:.2f}%"
-                    )
+                    violations.append(f"{code} {period}: assets={a:,.0f}, liab+eq={l + e:,.0f}, diff={pct:.2f}%")
 
         if violations:
             msg = f"BS 항등식 위반 {len(violations)}건:\n"
@@ -107,9 +111,7 @@ class TestBSIdentity:
 
         assert total > 0, "BS 항등식 검증할 데이터 없음"
         rate = passed / total * 100
-        assert rate >= 95, (
-            f"BS 항등식 통과율 {rate:.1f}% < 95% ({passed}/{total})"
-        )
+        assert rate >= 95, f"BS 항등식 통과율 {rate:.1f}% < 95% ({passed}/{total})"
 
     def test_assets_equals_liabilities_and_equity(self):
         """total_liabilities_and_equity가 있으면 total_assets와 정확히 일치해야 함."""
@@ -131,7 +133,4 @@ class TestBSIdentity:
             for a, le in zip(assets, lae):
                 if a is not None and le is not None and a != 0:
                     diff_pct = abs(a - le) / abs(a) * 100
-                    assert diff_pct < 0.01, (
-                        f"{code}: total_assets({a:,.0f}) != "
-                        f"total_liabilities_and_equity({le:,.0f})"
-                    )
+                    assert diff_pct < 0.01, f"{code}: total_assets({a:,.0f}) != total_liabilities_and_equity({le:,.0f})"

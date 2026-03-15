@@ -32,15 +32,12 @@ def extractContent(
     """
     if scope != "separate":
         cons = report.filter(
-            pl.col("section_title").str.contains("연결재무제표")
-            & ~pl.col("section_title").str.contains("주석")
+            pl.col("section_title").str.contains("연결재무제표") & ~pl.col("section_title").str.contains("주석")
         )
         if cons.height > 0:
             content = cons["section_content"][0]
             # "연결대상이 없어 연결재무제표를 작성하지 않습니다" 처리
-            hasNoSub = "연결대상" in content and (
-                "없어" in content or "없으므로" in content
-            )
+            hasNoSub = "연결대상" in content and ("없어" in content or "없으므로" in content)
             if not hasNoSub:
                 if scope == "consolidated":
                     return content, "consolidated"

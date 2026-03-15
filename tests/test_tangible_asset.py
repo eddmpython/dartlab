@@ -9,6 +9,7 @@ from tests.conftest import SAMSUNG, requires_samsung
 class TestTangibleAsset:
     def test_basic(self):
         from dartlab.engines.dart.docs.finance.tangibleAsset import tangibleAsset
+
         r = tangibleAsset(SAMSUNG)
         assert r is not None
         assert r.corpName == "삼성전자"
@@ -16,12 +17,14 @@ class TestTangibleAsset:
 
     def test_reliability(self):
         from dartlab.engines.dart.docs.finance.tangibleAsset import tangibleAsset
+
         r = tangibleAsset(SAMSUNG)
         assert r is not None
         assert r.reliability in ("high", "low")
 
     def test_movements(self):
         from dartlab.engines.dart.docs.finance.tangibleAsset import tangibleAsset
+
         r = tangibleAsset(SAMSUNG)
         assert r is not None
         assert r.movements is not None
@@ -34,6 +37,7 @@ class TestTangibleAsset:
 
     def test_movement_df(self):
         from dartlab.engines.dart.docs.finance.tangibleAsset import tangibleAsset
+
         r = tangibleAsset(SAMSUNG)
         assert r is not None
         if r.movementDf is not None:

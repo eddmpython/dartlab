@@ -126,12 +126,14 @@ class TestProfileChangeLedgerHelpers:
 class TestCompany:
     def test_init_by_code(self):
         from dartlab import Company
+
         c = Company(SAMSUNG)
         assert c.stockCode == SAMSUNG
         assert c.corpName == "삼성전자"
 
     def test_repr(self):
         import dartlab
+
         dartlab.verbose = False
         c = dartlab.Company(SAMSUNG)
         assert "005930" in repr(c)
@@ -140,6 +142,7 @@ class TestCompany:
 
     def test_filings(self):
         from dartlab import Company
+
         c = Company(SAMSUNG)
         filings = c.filings()
         assert isinstance(filings, pl.DataFrame)
@@ -148,6 +151,7 @@ class TestCompany:
 
     def test_invalid_name_raises(self):
         from dartlab import Company
+
         with pytest.raises(ValueError):
             Company("존재하지않는회사명zzz")
 
@@ -177,7 +181,9 @@ class TestCompany:
         status = c.report.status()
         assert isinstance(status, pl.DataFrame)
         assert set(["apiType", "label", "preferredQuarter", "isPivot", "available"]).issubset(status.columns)
-        assert status.filter(pl.col("apiType") == "dividend").item(0, "preferredQuarter") == PREFERRED_QUARTER["dividend"]
+        assert (
+            status.filter(pl.col("apiType") == "dividend").item(0, "preferredQuarter") == PREFERRED_QUARTER["dividend"]
+        )
 
     def test_profile_sections_matches_company_sections(self):
         from dartlab import Company

@@ -112,7 +112,9 @@ def generateSummary(
 
     if profile == "premium":
         if strengths:
-            parts.append(f"{nameEunNeun} {', '.join(strengths)} 등 전반적으로 우수한 재무 상태를 보이는 우량 기업입니다.")
+            parts.append(
+                f"{nameEunNeun} {', '.join(strengths)} 등 전반적으로 우수한 재무 상태를 보이는 우량 기업입니다."
+            )
         else:
             parts.append(f"{nameEunNeun} 전반적으로 우수한 재무 상태를 보이는 우량 기업입니다.")
 

@@ -32,6 +32,7 @@ from dartlab.engines.edgar.finance.mapper import EdgarMapper
 
 def _getEdgarDir() -> Path:
     from dartlab.core.dataLoader import _dataDir
+
     return _dataDir("edgar")
 
 
@@ -206,18 +207,38 @@ def _loadFacts(edgarDir: Path, cik: str) -> Optional[pl.DataFrame]:
 def _guessStmt(tag: str) -> str:
     tagLower = tag.lower()
     cfKeywords = [
-        "cashflow", "cash_flow", "netcash", "payment", "proceeds",
-        "repayment", "issuance", "capex", "dividend",
-        "depreciation", "amortization", "stockcompensation",
+        "cashflow",
+        "cash_flow",
+        "netcash",
+        "payment",
+        "proceeds",
+        "repayment",
+        "issuance",
+        "capex",
+        "dividend",
+        "depreciation",
+        "amortization",
+        "stockcompensation",
     ]
     for kw in cfKeywords:
         if kw in tagLower:
             return "CF"
 
     bsKeywords = [
-        "asset", "liabilit", "equity", "receivable", "payable",
-        "inventory", "cash", "debt", "borrowing", "goodwill",
-        "intangible", "property", "plant", "deferred",
+        "asset",
+        "liabilit",
+        "equity",
+        "receivable",
+        "payable",
+        "inventory",
+        "cash",
+        "debt",
+        "borrowing",
+        "goodwill",
+        "intangible",
+        "property",
+        "plant",
+        "deferred",
     ]
     for kw in bsKeywords:
         if kw in tagLower:
@@ -230,17 +251,12 @@ def _selectStandalone(df: pl.DataFrame, stmtType: str) -> pl.DataFrame:
     if stmtType == "BS":
         tagDf = df.filter(pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"]))
     else:
-        tagDf = df.filter(
-            pl.col("frame").is_null() &
-            pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"])
-        )
+        tagDf = df.filter(pl.col("frame").is_null() & pl.col("fp").is_in(["Q1", "Q2", "Q3", "FY"]))
 
     if tagDf.height == 0:
         return pl.DataFrame()
 
-    tagDf = tagDf.with_columns(
-        (pl.col("fy").cast(pl.Utf8) + "-" + pl.col("fp")).alias("period")
-    )
+    tagDf = tagDf.with_columns((pl.col("fy").cast(pl.Utf8) + "-" + pl.col("fp")).alias("period"))
 
     if stmtType == "BS":
         return _selectBS(tagDf)
@@ -266,8 +282,7 @@ def _selectBS(tagDf: pl.DataFrame) -> pl.DataFrame:
         return _selectByLatestPeriod(tagDf)
 
     return (
-        hasEnd
-        .sort(["end", "filed"], descending=[True, True])
+        hasEnd.sort(["end", "filed"], descending=[True, True])
         .group_by(["tag", "period"])
         .agg(pl.col("val").first().alias("val"))
     )
@@ -280,25 +295,17 @@ def _selectByLatestPeriod(df: pl.DataFrame) -> pl.DataFrame:
     hasEnd = df.filter(pl.col("end").is_not_null())
     if hasEnd.height > 0:
         return (
-            hasEnd
-            .sort(["end", "filed"], descending=[True, True])
+            hasEnd.sort(["end", "filed"], descending=[True, True])
             .group_by(["tag", "period"])
             .agg(pl.col("val").first().alias("val"))
         )
 
-    return (
-        df
-        .sort("filed", descending=True)
-        .group_by(["tag", "period"])
-        .agg(pl.col("val").first().alias("val"))
-    )
+    return df.sort("filed", descending=True).group_by(["tag", "period"]).agg(pl.col("val").first().alias("val"))
 
 
 def _computeDurationDays(tagDf: pl.DataFrame) -> pl.DataFrame:
     return tagDf.with_columns(
-        pl.when(
-            pl.col("start").is_not_null() & pl.col("end").is_not_null()
-        )
+        pl.when(pl.col("start").is_not_null() & pl.col("end").is_not_null())
         .then((pl.col("end") - pl.col("start")).dt.total_days())
         .otherwise(pl.lit(None))
         .alias("duration_days")
@@ -315,16 +322,12 @@ def _selectFlowDirect(tagDf: pl.DataFrame) -> pl.DataFrame:
     q1Result = _selectByLatestPeriod(q1Rows)
 
     q2q3Standalone = tagDf.filter(
-        pl.col("fp").is_in(["Q2", "Q3"]) &
-        pl.col("duration_days").is_not_null() &
-        (pl.col("duration_days") <= 100)
+        pl.col("fp").is_in(["Q2", "Q3"]) & pl.col("duration_days").is_not_null() & (pl.col("duration_days") <= 100)
     )
     q2q3Result = _selectByLatestPeriod(q2q3Standalone)
 
     parts = [df for df in [fyResult, q1Result, q2q3Result] if df.height > 0]
-    result = pl.concat(parts) if parts else pl.DataFrame(
-        schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64}
-    )
+    result = pl.concat(parts) if parts else pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
 
     missingPeriods = _findMissingQuarters(tagDf, result)
     if missingPeriods.height > 0:
@@ -342,14 +345,11 @@ def _selectFlowYTD(tagDf: pl.DataFrame) -> pl.DataFrame:
     fyQ1Result = _selectByLatestPeriod(fyQ1)
 
     q2q3Ytd = tagDf.filter(
-        pl.col("fp").is_in(["Q2", "Q3"]) &
-        pl.col("duration_days").is_not_null() &
-        (pl.col("duration_days") > 100)
+        pl.col("fp").is_in(["Q2", "Q3"]) & pl.col("duration_days").is_not_null() & (pl.col("duration_days") > 100)
     )
 
     q2q3Result = (
-        q2q3Ytd
-        .sort(["end", "filed"], descending=[True, True])
+        q2q3Ytd.sort(["end", "filed"], descending=[True, True])
         .group_by(["tag", "fy", "fp"])
         .agg(pl.col("val").first().alias("ytd_val"))
     )
@@ -399,10 +399,7 @@ def _findMissingQuarters(tagDf: pl.DataFrame, result: pl.DataFrame) -> pl.DataFr
 def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.DataFrame:
     tagDf = _computeDurationDays(tagDf) if "duration_days" not in tagDf.columns else tagDf
 
-    ytdRows = tagDf.filter(
-        pl.col("duration_days").is_not_null() &
-        (pl.col("duration_days") > 100)
-    )
+    ytdRows = tagDf.filter(pl.col("duration_days").is_not_null() & (pl.col("duration_days") > 100))
 
     rows = []
     for mpRow in missingPeriods.iter_rows(named=True):
@@ -410,11 +407,9 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
         fy = extractYear(period)
         fp = period.split("-")[1]
 
-        candidates = ytdRows.filter(
-            (pl.col("tag") == tag) &
-            (pl.col("fy") == int(fy)) &
-            (pl.col("fp") == fp)
-        ).sort(["end", "filed"], descending=[True, True])
+        candidates = ytdRows.filter((pl.col("tag") == tag) & (pl.col("fy") == int(fy)) & (pl.col("fp") == fp)).sort(
+            ["end", "filed"], descending=[True, True]
+        )
 
         if candidates.height == 0:
             continue
@@ -422,11 +417,9 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
         ytdVal = candidates.row(0, named=True)["val"]
 
         if fp == "Q2":
-            q1Rows = tagDf.filter(
-                (pl.col("tag") == tag) &
-                (pl.col("fy") == int(fy)) &
-                (pl.col("fp") == "Q1")
-            ).sort("filed", descending=True)
+            q1Rows = tagDf.filter((pl.col("tag") == tag) & (pl.col("fy") == int(fy)) & (pl.col("fp") == "Q1")).sort(
+                "filed", descending=True
+            )
             if q1Rows.height > 0:
                 q1Val = q1Rows.row(0, named=True)["val"]
                 if q1Val is not None and ytdVal is not None:
@@ -434,9 +427,7 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
 
         elif fp == "Q3":
             q2YtdRows = ytdRows.filter(
-                (pl.col("tag") == tag) &
-                (pl.col("fy") == int(fy)) &
-                (pl.col("fp") == "Q2")
+                (pl.col("tag") == tag) & (pl.col("fy") == int(fy)) & (pl.col("fp") == "Q2")
             ).sort(["end", "filed"], descending=[True, True])
             if q2YtdRows.height > 0:
                 q2YtdVal = q2YtdRows.row(0, named=True)["val"]
@@ -490,9 +481,7 @@ def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
             q2Col = formatPeriod(year, 2)
             q3Col = formatPeriod(year, 3)
             if all(c in pivoted.columns for c in [fyCol, q1Col, q2Col, q3Col]):
-                newCols[q4Col] = (
-                    pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
-                )
+                newCols[q4Col] = pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
 
     if not newCols:
         return pivoted

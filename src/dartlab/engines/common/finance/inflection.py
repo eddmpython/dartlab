@@ -92,15 +92,17 @@ def detectInflections(
                 continue
 
             if prev != 0 and curr != 0 and (prev > 0) != (curr > 0):
-                results.append(Inflection(
-                    account=account,
-                    year=currYear,
-                    prevYear=prevYear,
-                    prev=prev,
-                    curr=curr,
-                    changeRate=0.0,
-                    severity="major",
-                ))
+                results.append(
+                    Inflection(
+                        account=account,
+                        year=currYear,
+                        prevYear=prevYear,
+                        prev=prev,
+                        curr=curr,
+                        changeRate=0.0,
+                        severity="major",
+                    )
+                )
                 continue
 
             if abs(prev) < minAbsValue:
@@ -115,15 +117,17 @@ def detectInflections(
             else:
                 continue
 
-            results.append(Inflection(
-                account=account,
-                year=currYear,
-                prevYear=prevYear,
-                prev=prev,
-                curr=curr,
-                changeRate=changeRate,
-                severity=severity,
-            ))
+            results.append(
+                Inflection(
+                    account=account,
+                    year=currYear,
+                    prevYear=prevYear,
+                    prev=prev,
+                    curr=curr,
+                    changeRate=changeRate,
+                    severity=severity,
+                )
+            )
 
     severityOrder = {"major": 0, "minor": 1}
     results.sort(key=lambda x: (severityOrder.get(x.severity, 9), -abs(x.changeRate)))

@@ -23,25 +23,29 @@ def detectBreakpoints(
     segmentStats: list[Segment] = []
     for seg in segments:
         if not seg["pairs"]:
-            segmentStats.append(Segment(
-                startYear=seg["years"][0],
-                endYear=seg["years"][-1],
-                nYears=len(seg["years"]),
-                matched=0,
-                total=0,
-                rate=None,
-            ))
+            segmentStats.append(
+                Segment(
+                    startYear=seg["years"][0],
+                    endYear=seg["years"][-1],
+                    nYears=len(seg["years"]),
+                    matched=0,
+                    total=0,
+                    rate=None,
+                )
+            )
             continue
         segMatched = sum(p.matched for p in seg["pairs"])
         segTotal = sum(p.total for p in seg["pairs"])
         segRate = segMatched / segTotal if segTotal > 0 else 0.0
-        segmentStats.append(Segment(
-            startYear=seg["years"][0],
-            endYear=seg["years"][-1],
-            nYears=len(seg["years"]),
-            matched=segMatched,
-            total=segTotal,
-            rate=segRate,
-        ))
+        segmentStats.append(
+            Segment(
+                startYear=seg["years"][0],
+                endYear=seg["years"][-1],
+                nYears=len(seg["years"]),
+                matched=segMatched,
+                total=segTotal,
+                rate=segRate,
+            )
+        )
 
     return segmentStats, breakpoints

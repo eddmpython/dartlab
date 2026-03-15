@@ -27,18 +27,14 @@ def companyOverview(stockCode: str) -> OverviewResult | None:
         if report is None:
             continue
 
-        overviewRow = report.filter(
-            pl.col("section_title") == "1. 회사의 개요"
-        )
+        overviewRow = report.filter(pl.col("section_title") == "1. 회사의 개요")
         if overviewRow.height == 0:
             overviewRow = report.filter(
-                pl.col("section_title").str.contains("회사의 개요")
-                & pl.col("section_title").str.starts_with("1.")
+                pl.col("section_title").str.contains("회사의 개요") & pl.col("section_title").str.starts_with("1.")
             )
         if overviewRow.height == 0:
             overviewRow = report.filter(
-                pl.col("section_title").str.contains("회사의 개요")
-                & ~pl.col("section_title").str.starts_with("I.")
+                pl.col("section_title").str.contains("회사의 개요") & ~pl.col("section_title").str.starts_with("I.")
             )
         if overviewRow.height == 0:
             continue

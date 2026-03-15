@@ -8,9 +8,7 @@ import pytest
 
 from tests.conftest import SAMSUNG, _has_data
 
-requires_samsung_finance = pytest.mark.skipif(
-    not _has_data(SAMSUNG, "finance"), reason="삼성전자 finance 데이터 없음"
-)
+requires_samsung_finance = pytest.mark.skipif(not _has_data(SAMSUNG, "finance"), reason="삼성전자 finance 데이터 없음")
 
 GOLDEN_YEAR = "2023"
 
@@ -44,6 +42,7 @@ class TestRegressionSamsung:
     @pytest.fixture(scope="class")
     def samsung_annual(self):
         from dartlab import Company
+
         c = Company(SAMSUNG)
         annual = getattr(c, "annual", None)
         if annual is None:
@@ -63,9 +62,7 @@ class TestRegressionSamsung:
             assert actual is not None, f"BS.{snakeId} {GOLDEN_YEAR} 값 없음"
             diff_pct = abs(actual - expected) / abs(expected) * 100
             assert diff_pct <= TOLERANCE_PCT, (
-                f"BS.{snakeId} {GOLDEN_YEAR}: "
-                f"expected={expected:,.0f}, actual={actual:,.0f}, "
-                f"diff={diff_pct:.2f}%"
+                f"BS.{snakeId} {GOLDEN_YEAR}: expected={expected:,.0f}, actual={actual:,.0f}, diff={diff_pct:.2f}%"
             )
 
     def test_is_golden_values(self, samsung_annual):
@@ -76,9 +73,7 @@ class TestRegressionSamsung:
             assert actual is not None, f"IS.{snakeId} {GOLDEN_YEAR} 값 없음"
             diff_pct = abs(actual - expected) / abs(expected) * 100
             assert diff_pct <= TOLERANCE_PCT, (
-                f"IS.{snakeId} {GOLDEN_YEAR}: "
-                f"expected={expected:,.0f}, actual={actual:,.0f}, "
-                f"diff={diff_pct:.2f}%"
+                f"IS.{snakeId} {GOLDEN_YEAR}: expected={expected:,.0f}, actual={actual:,.0f}, diff={diff_pct:.2f}%"
             )
 
     def test_bs_identity_golden(self, samsung_annual):
@@ -89,9 +84,7 @@ class TestRegressionSamsung:
         e = _get_annual_value(series, periods, "BS", "total_stockholders_equity", GOLDEN_YEAR)
         assert a is not None and l is not None and e is not None
         diff_pct = abs(a - (l + e)) / abs(a) * 100
-        assert diff_pct <= 0.5, (
-            f"BS 항등식 실패: assets={a:,.0f}, liab+eq={l + e:,.0f}, diff={diff_pct:.2f}%"
-        )
+        assert diff_pct <= 0.5, f"BS 항등식 실패: assets={a:,.0f}, liab+eq={l + e:,.0f}, diff={diff_pct:.2f}%"
 
     def test_periods_count(self, samsung_annual):
         """삼성전자 시계열이 5년 이상."""

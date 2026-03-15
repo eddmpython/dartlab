@@ -66,9 +66,7 @@ class TestRegressionFixture:
             assert actual is not None, f"BS.{snakeId} {GOLDEN_YEAR} is None"
             diffPct = abs(actual - expected) / abs(expected) * 100
             assert diffPct <= TOLERANCE_PCT, (
-                f"BS.{snakeId} {GOLDEN_YEAR}: "
-                f"expected={expected:,.0f}, actual={actual:,.0f}, "
-                f"diff={diffPct:.2f}%"
+                f"BS.{snakeId} {GOLDEN_YEAR}: expected={expected:,.0f}, actual={actual:,.0f}, diff={diffPct:.2f}%"
             )
 
     def test_isGoldenValues(self, samsungAnnual):
@@ -78,9 +76,7 @@ class TestRegressionFixture:
             assert actual is not None, f"IS.{snakeId} {GOLDEN_YEAR} is None"
             diffPct = abs(actual - expected) / abs(expected) * 100
             assert diffPct <= TOLERANCE_PCT, (
-                f"IS.{snakeId} {GOLDEN_YEAR}: "
-                f"expected={expected:,.0f}, actual={actual:,.0f}, "
-                f"diff={diffPct:.2f}%"
+                f"IS.{snakeId} {GOLDEN_YEAR}: expected={expected:,.0f}, actual={actual:,.0f}, diff={diffPct:.2f}%"
             )
 
     def test_bsIdentity(self, samsungAnnual):
@@ -90,9 +86,7 @@ class TestRegressionFixture:
         eq = _getAnnualValue(series, periods, "BS", "total_stockholders_equity", GOLDEN_YEAR)
         assert a is not None and liab is not None and eq is not None
         diffPct = abs(a - (liab + eq)) / abs(a) * 100
-        assert diffPct <= 0.5, (
-            f"BS identity failed: assets={a:,.0f}, liab+eq={liab + eq:,.0f}, diff={diffPct:.2f}%"
-        )
+        assert diffPct <= 0.5, f"BS identity failed: assets={a:,.0f}, liab+eq={liab + eq:,.0f}, diff={diffPct:.2f}%"
 
     def test_periodsCount(self, samsungAnnual):
         _, periods = samsungAnnual

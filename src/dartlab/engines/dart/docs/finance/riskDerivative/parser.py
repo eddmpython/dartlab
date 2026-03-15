@@ -152,9 +152,7 @@ def parseDerivativeContracts(content: str) -> tuple[list[dict], list[str]]:
         if any("단위" in c or "기준일" in c for c in cells):
             continue
 
-        if any("종류" in c or "구분" in c for c in cells) and any(
-            "금액" in c or "손익" in c for c in cells
-        ):
+        if any("종류" in c or "구분" in c for c in cells) and any("금액" in c or "손익" in c for c in cells):
             headerCols = cells
             headerFound = True
             continue
@@ -174,10 +172,12 @@ def parseDerivativeContracts(content: str) -> tuple[list[dict], list[str]]:
         if not label_parts:
             continue
 
-        results.append({
-            "label": " > ".join(label_parts),
-            "values": values,
-        })
+        results.append(
+            {
+                "label": " > ".join(label_parts),
+                "values": values,
+            }
+        )
 
     valueHeaders = _extractValueHeaders(headerCols) if headerCols else []
     return results, valueHeaders

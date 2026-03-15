@@ -40,22 +40,62 @@ def _parseAmount(text: str) -> float | None:
 
 
 _META_NAMES = {
-    "구 분", "구분", "회사명", "기업명", "종 목", "기 업 명",
-    "지분율(%)", "지분율", "소유지분율",
-    "관계기업", "공동기업", "관계기업 및 공동기업",
-    "소 계", "소계", "합 계", "합계", "계",
-    "단위", "비 고", "비고",
-    "기초", "기 초", "기말", "기 말", "취득", "취 득", "처분", "처 분",
-    "배당", "배 당", "배당금", "손상", "손상차손",
-    "기타", "기타변동", "기타증감액",
-    "장부금액", "취득원가",
+    "구 분",
+    "구분",
+    "회사명",
+    "기업명",
+    "종 목",
+    "기 업 명",
+    "지분율(%)",
+    "지분율",
+    "소유지분율",
+    "관계기업",
+    "공동기업",
+    "관계기업 및 공동기업",
+    "소 계",
+    "소계",
+    "합 계",
+    "합계",
+    "계",
+    "단위",
+    "비 고",
+    "비고",
+    "기초",
+    "기 초",
+    "기말",
+    "기 말",
+    "취득",
+    "취 득",
+    "처분",
+    "처 분",
+    "배당",
+    "배 당",
+    "배당금",
+    "손상",
+    "손상차손",
+    "기타",
+    "기타변동",
+    "기타증감액",
+    "장부금액",
+    "취득원가",
 }
 
 
 _MOVEMENT_ITEM_KEYWORDS = [
-    "기초", "기말", "취득", "처분", "배당", "손상", "기타",
-    "지분법", "이익 중", "자본변동", "연결범위",
-    "환율변동", "대체", "원금회수",
+    "기초",
+    "기말",
+    "취득",
+    "처분",
+    "배당",
+    "손상",
+    "기타",
+    "지분법",
+    "이익 중",
+    "자본변동",
+    "연결범위",
+    "환율변동",
+    "대체",
+    "원금회수",
 ]
 
 
@@ -69,10 +109,7 @@ def _isNameCell(text: str) -> bool:
         return False
     if any(sClean.startswith(kw) or sClean == kw for kw in _MOVEMENT_ITEM_KEYWORDS):
         return False
-    if len(sClean) >= 20 and any(
-        kw in sClean
-        for kw in ["에 대한", "설명", "기술", "내역에 대한", "여부", "판단"]
-    ):
+    if len(sClean) >= 20 and any(kw in sClean for kw in ["에 대한", "설명", "기술", "내역에 대한", "여부", "판단"]):
         return False
     if _parseAmount(s) is not None and s != "0":
         cleaned = re.sub(r"[,.\-%()△\s]", "", s)
@@ -86,17 +123,24 @@ def _isNameCell(text: str) -> bool:
 
 
 _PROFILE_NAME_KEYWORDS = [
-    "회사명", "회 사 명", "기업명", "기 업 명", "종 목", "구 분",
+    "회사명",
+    "회 사 명",
+    "기업명",
+    "기 업 명",
+    "종 목",
+    "구 분",
 ]
 _PROFILE_SUBHEADER_KEYWORDS = [
-    "지분율", "소유지분율", "연결회사지분율",
-    "장부금액", "취득원가", "순자산",
+    "지분율",
+    "소유지분율",
+    "연결회사지분율",
+    "장부금액",
+    "취득원가",
+    "순자산",
 ]
 
 
-def _findHeaderColumns(
-    headers: list[str], subHeaders: list[str] | None = None
-) -> dict:
+def _findHeaderColumns(headers: list[str], subHeaders: list[str] | None = None) -> dict:
     """헤더(1~2행)에서 이름/지분율/장부금액/소재지 열 인덱스."""
     mapping: dict[str, int | None] = {
         "nameIdx": 0,
@@ -117,10 +161,15 @@ def _findHeaderColumns(
             mapping["acquisitionIdx"] = j
         elif any(kw in hc for kw in ["소재지", "소재국가", "주사업장", "사업 소재지"]):
             mapping["locationIdx"] = j
-        elif any(kw in hc for kw in [
-            "주요 영업활동", "주요영업활동", "관계의 성격",
-            "영업과 주요 활동",
-        ]):
+        elif any(
+            kw in hc
+            for kw in [
+                "주요 영업활동",
+                "주요영업활동",
+                "관계의 성격",
+                "영업과 주요 활동",
+            ]
+        ):
             mapping["activityIdx"] = j
 
     if subHeaders:
@@ -181,20 +230,18 @@ def extractProfiles(rows: list[list[str]]) -> list[AffiliateProfile]:
         # 3) 이름키워드 없지만 세부키워드 2개+ 3셀이상 (LG에너지 순자산|지분율|장부금액)
         firstEmpty = len(cells) >= 3 and not cells[0].strip()
         detailCount = sum(
-            1 for kw in _PROFILE_SUBHEADER_KEYWORDS
+            1
+            for kw in _PROFILE_SUBHEADER_KEYWORDS
             + ["소재지", "소재국가", "관계의 성격", "주요영업활동", "주요 영업활동"]
             if kw in cellStr
         )
         # 반복 패턴 체크: 고유 비어있지 않은 셀이 절반 이하면 횡전개 서브헤더
         uniqueNonEmpty = set(c.strip() for c in cells if c.strip())
         isRepeating = len(uniqueNonEmpty) * 2 < len([c for c in cells if c.strip()])
-        if (
-            not isRepeating
-            and (
-                (hasName and hasDetail)
-                or (firstEmpty and detailCount >= 2 and len(cells) <= 12)
-                or (not hasName and detailCount >= 2 and 3 <= len(cells) <= 12)
-            )
+        if not isRepeating and (
+            (hasName and hasDetail)
+            or (firstEmpty and detailCount >= 2 and len(cells) <= 12)
+            or (not hasName and detailCount >= 2 and 3 <= len(cells) <= 12)
         ):
             headers = cells
             headerIdx = i
@@ -265,9 +312,7 @@ def extractProfiles(rows: list[list[str]]) -> list[AffiliateProfile]:
 
         # offset: 헤더의 비어있지 않은 첫 셀 위치 vs 데이터의 두 번째 셀 위치
         # 헤더에 이름열이 명시적이면 직접 매핑, 아니면 fallback 사용
-        headerHasName = any(
-            kw in headers[0].strip() for kw in _PROFILE_NAME_KEYWORDS
-        ) if headers[0].strip() else False
+        headerHasName = any(kw in headers[0].strip() for kw in _PROFILE_NAME_KEYWORDS) if headers[0].strip() else False
 
         name = _cleanName(firstCell)
         profile = AffiliateProfile(name=name, category=category)
@@ -333,10 +378,22 @@ def extractProfiles(rows: list[list[str]]) -> list[AffiliateProfile]:
             for c in cells[1:]:
                 cs = c.strip()
                 if cs and not _parseAmount(cs) and len(cs) <= 10:
-                    if any(kw in cs for kw in [
-                        "한국", "대한민국", "미국", "중국", "일본", "독일",
-                        "프랑스", "싱가포르", "영국", "인도", "베트남",
-                    ]):
+                    if any(
+                        kw in cs
+                        for kw in [
+                            "한국",
+                            "대한민국",
+                            "미국",
+                            "중국",
+                            "일본",
+                            "독일",
+                            "프랑스",
+                            "싱가포르",
+                            "영국",
+                            "인도",
+                            "베트남",
+                        ]
+                    ):
                         profile.location = cs
                         break
 
@@ -358,24 +415,40 @@ def extractProfiles(rows: list[list[str]]) -> list[AffiliateProfile]:
 
 
 MOVEMENT_COL_MAP = {
-    "기초": "opening", "기 초": "opening", "기초금액": "opening",
-    "기말": "closing", "기 말": "closing", "기말금액": "closing",
-    "취득": "acquisition", "취 득": "acquisition",
+    "기초": "opening",
+    "기 초": "opening",
+    "기초금액": "opening",
+    "기말": "closing",
+    "기 말": "closing",
+    "기말금액": "closing",
+    "취득": "acquisition",
+    "취 득": "acquisition",
     "취득(처분)": "acquisition",
     "취득/처분": "acquisition",
     "취득/처분/출자금의환급": "acquisition",
     "취득/대체": "acquisition",
-    "처분": "disposal", "처 분": "disposal",
-    "지분법손익": "equityIncome", "지분법이익(손실)": "equityIncome",
-    "지분법이익": "equityIncome", "지분법손실": "equityIncome",
+    "처분": "disposal",
+    "처 분": "disposal",
+    "지분법손익": "equityIncome",
+    "지분법이익(손실)": "equityIncome",
+    "지분법이익": "equityIncome",
+    "지분법손실": "equityIncome",
     "이익중지분해당액": "equityIncome",
-    "지분법자본변동": "equityCapChange", "지분법 자본변동": "equityCapChange",
+    "지분법자본변동": "equityCapChange",
+    "지분법 자본변동": "equityCapChange",
     "(부의)지분법자본변동": "equityCapChange",
-    "배당": "dividend", "배 당": "dividend", "배당금": "dividend",
-    "배당및배분": "dividend", "배당 및 배분": "dividend",
-    "손상": "impairment", "손상차손": "impairment",
-    "기타": "other", "기타증감액": "other", "기타변동": "other",
-    "연결범위변동": "other", "대 체": "other",
+    "배당": "dividend",
+    "배 당": "dividend",
+    "배당금": "dividend",
+    "배당및배분": "dividend",
+    "배당 및 배분": "dividend",
+    "손상": "impairment",
+    "손상차손": "impairment",
+    "기타": "other",
+    "기타증감액": "other",
+    "기타변동": "other",
+    "연결범위변동": "other",
+    "대 체": "other",
     "원금회수": "other",
 }
 
@@ -534,8 +607,7 @@ def extractMovements(rows: list[list[str]]) -> list[AffiliateMovement]:
             if headers:
                 firstH = _normalizeColName(headers[0])
                 headerHasName = not any(
-                    re.sub(r"[\s·ㆍ\u3000]", "", kw) in firstH
-                    or firstH in re.sub(r"[\s·ㆍ\u3000]", "", kw)
+                    re.sub(r"[\s·ㆍ\u3000]", "", kw) in firstH or firstH in re.sub(r"[\s·ㆍ\u3000]", "", kw)
                     for kw in MOVEMENT_COL_MAP
                 )
                 if headerHasName:
@@ -599,11 +671,13 @@ def extractSimpleMovement(rows: list[list[str]]) -> list[dict]:
         prevAmt = _parseAmount(c2)
 
         if curAmt is not None or prevAmt is not None:
-            results.append({
-                "항목": c0,
-                "당기": curAmt,
-                "전기": prevAmt,
-            })
+            results.append(
+                {
+                    "항목": c0,
+                    "당기": curAmt,
+                    "전기": prevAmt,
+                }
+            )
 
     return results
 
@@ -634,8 +708,10 @@ _TRANSPOSED_PROFILE_MAP = {
 }
 
 _TRANSPOSED_MOVEMENT_MAP = {
-    "기초": "opening", "기초금액": "opening",
-    "기말": "closing", "기말금액": "closing",
+    "기초": "opening",
+    "기초금액": "opening",
+    "기말": "closing",
+    "기말금액": "closing",
     "취득": "acquisition",
     "취득/처분": "acquisition",
     "취득/처분/출자금의 환급": "acquisition",
@@ -647,10 +723,15 @@ _TRANSPOSED_MOVEMENT_MAP = {
     "이익중지분해당액": "equityIncome",
     "지분법 자본변동": "equityCapChange",
     "지분법자본변동": "equityCapChange",
-    "배당": "dividend", "배당금수령": "dividend",
-    "배당금": "dividend", "배당 및 배분": "dividend",
-    "손상": "impairment", "손상차손": "impairment",
-    "기타": "other", "기타증감액": "other", "기타변동": "other",
+    "배당": "dividend",
+    "배당금수령": "dividend",
+    "배당금": "dividend",
+    "배당 및 배분": "dividend",
+    "손상": "impairment",
+    "손상차손": "impairment",
+    "기타": "other",
+    "기타증감액": "other",
+    "기타변동": "other",
     "원금회수": "other",
     # 현대차 2024 횡전개
     "지분법적용 투자지분, 기초": "opening",
@@ -663,15 +744,40 @@ _TRANSPOSED_MOVEMENT_MAP = {
 }
 
 _TRANSPOSED_NON_NAME_KEYWORDS = [
-    "장부금액", "취득원가", "순자산", "순자산지분금액", "순자산(부채)", "내부거래",
-    "보유주식수", "유동자산", "비유동자산", "자산", "부채", "자본",
-    "매출액", "당기순이익", "당기순손실", "당기손익",
-    "지분법적용", "지분법 적용", "투자지분",
-    "주요 사업 소재지", "주요사업소재지", "주된 사업장",
-    "주요 영업활동", "주요영업활동", "결산월",
-    "지분율", "소유지분율",
-    "관계의 성격", "기업의 영업", "의결권", "영향력",
-    "종속기업 명칭", "담보", "보증",
+    "장부금액",
+    "취득원가",
+    "순자산",
+    "순자산지분금액",
+    "순자산(부채)",
+    "내부거래",
+    "보유주식수",
+    "유동자산",
+    "비유동자산",
+    "자산",
+    "부채",
+    "자본",
+    "매출액",
+    "당기순이익",
+    "당기순손실",
+    "당기손익",
+    "지분법적용",
+    "지분법 적용",
+    "투자지분",
+    "주요 사업 소재지",
+    "주요사업소재지",
+    "주된 사업장",
+    "주요 영업활동",
+    "주요영업활동",
+    "결산월",
+    "지분율",
+    "소유지분율",
+    "관계의 성격",
+    "기업의 영업",
+    "의결권",
+    "영향력",
+    "종속기업 명칭",
+    "담보",
+    "보증",
 ]
 
 
@@ -711,8 +817,11 @@ def _findTransposedBlocks(rows: list[list[str]]) -> list[dict]:
         if len(cells) >= 8:
             first = cells[0].strip()
             isFirstEmpty = not first or first in (
-                "전체 관계기업 투자금액", "전체 관계기업 및 공동기업",
-                "관계기업", "공동기업", "전체 공동기업",
+                "전체 관계기업 투자금액",
+                "전체 관계기업 및 공동기업",
+                "관계기업",
+                "공동기업",
+                "전체 공동기업",
             )
             if isFirstEmpty:
                 nameCount = sum(1 for c in cells[1:] if _isTransposedNameCell(c))
@@ -734,9 +843,7 @@ def _findTransposedBlocks(rows: list[list[str]]) -> list[dict]:
                         if len(jcells) < 3:
                             break
                         jfirst = jcells[0].strip()
-                        jnameCount = sum(
-                            1 for c in jcells[1:] if _isTransposedNameCell(c)
-                        )
+                        jnameCount = sum(1 for c in jcells[1:] if _isTransposedNameCell(c))
                         if not jfirst and jnameCount >= 3:
                             break
                         if len(jcells) <= 2 and jcells[0].strip() in ("당기", "전기"):
@@ -747,10 +854,7 @@ def _findTransposedBlocks(rows: list[list[str]]) -> list[dict]:
                             j += 1
                             continue
 
-                        vals = [
-                            jcells[k].strip() if k < len(jcells) else ""
-                            for k in range(1, len(jcells))
-                        ]
+                        vals = [jcells[k].strip() if k < len(jcells) else "" for k in range(1, len(jcells))]
                         items[itemName] = vals
                         j += 1
 
@@ -784,13 +888,15 @@ def _findTransposedBlocks(rows: list[list[str]]) -> list[dict]:
                         blockType = None
 
                     if items and blockType:
-                        blocks.append({
-                            "period": currentPeriod or "당기",
-                            "names": names,
-                            "items": items,
-                            "blockType": blockType,
-                            "startRow": i,
-                        })
+                        blocks.append(
+                            {
+                                "period": currentPeriod or "당기",
+                                "names": names,
+                                "items": items,
+                                "blockType": blockType,
+                                "startRow": i,
+                            }
+                        )
 
                     i = j
                     continue

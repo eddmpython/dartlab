@@ -22,7 +22,9 @@ from dartlab.core.dataConfig import (
 
 def _getDataRoot() -> Path:
     from dartlab import config
+
     return Path(config.dataDir)
+
 
 _DOWNLOAD_TIMEOUT = 30
 _MAX_RETRIES = 3
@@ -311,14 +313,16 @@ def buildIndex(category: str = "docs") -> pl.DataFrame:
             years = sorted(df["year"].unique().to_list())
             docIdCol = _docIdColumn(df)
             nDocs = df[docIdCol].n_unique() if docIdCol else 0
-            records.append({
-                "stockCode": code,
-                "corpName": name,
-                "rows": df.height,
-                "yearFrom": years[0] if years else None,
-                "yearTo": years[-1] if years else None,
-                "nDocs": nDocs,
-            })
+            records.append(
+                {
+                    "stockCode": code,
+                    "corpName": name,
+                    "rows": df.height,
+                    "yearFrom": years[0] if years else None,
+                    "yearTo": years[-1] if years else None,
+                    "nDocs": nDocs,
+                }
+            )
             bar()
 
     return pl.DataFrame(records)
@@ -342,14 +346,16 @@ def updateEdgarListedUniverse(*, force: bool = False) -> Path:
         exchangeStr = str(exchange or "").strip()
         if not tickerStr:
             continue
-        records.append({
-            "cik": str(cik).zfill(10),
-            "ticker": tickerStr,
-            "title": str(name or "").strip(),
-            "exchange": exchangeStr,
-            "is_exchange_listed": exchangeStr in _LISTED_EXCHANGES,
-            "is_otc": exchangeStr == "OTC",
-        })
+        records.append(
+            {
+                "cik": str(cik).zfill(10),
+                "ticker": tickerStr,
+                "title": str(name or "").strip(),
+                "exchange": exchangeStr,
+                "is_exchange_listed": exchangeStr in _LISTED_EXCHANGES,
+                "is_otc": exchangeStr == "OTC",
+            }
+        )
 
     path.parent.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(records).write_parquet(path)
@@ -510,7 +516,9 @@ def _incrementalUpdateEdgarDocs(
     )
 
     currentDf = pl.read_parquet(path)
-    existingAccessions = set(currentDf["accession_no"].drop_nulls().to_list()) if "accession_no" in currentDf.columns else set()
+    existingAccessions = (
+        set(currentDf["accession_no"].drop_nulls().to_list()) if "accession_no" in currentDf.columns else set()
+    )
     meta = _resolveTickerMeta(stockCode.upper())
     filings = _findFilings(_getSubmissions(meta["cik"]), sinceYear)
     newFilings = [filing for filing in filings if filing["accessionNumber"] not in existingAccessions]
@@ -551,11 +559,7 @@ def _normalizeDartDocs(df: pl.DataFrame) -> pl.DataFrame:
     if "period_key" not in df.columns and "report_type" in df.columns:
         from dartlab.core.reportSelector import parsePeriodKey
 
-        exprs.append(
-            pl.col("report_type")
-            .map_elements(parsePeriodKey, return_dtype=pl.Utf8)
-            .alias("period_key")
-        )
+        exprs.append(pl.col("report_type").map_elements(parsePeriodKey, return_dtype=pl.Utf8).alias("period_key"))
 
     if exprs:
         return df.with_columns(exprs)
@@ -633,22 +637,21 @@ def _inferEdgarPeriodKeyMap(filings: list[dict]) -> dict[str, str | None]:
         periodEnd = filing.get("period_end")
         periodEndStr = str(periodEnd) if periodEnd else ""
         sortKey = periodEndStr or filingDate
-        enriched.append({
-            "accession_no": accession,
-            "form_type": formType,
-            "filing_date": filingDate,
-            "period_end": periodEndStr,
-            "year": str(filing.get("year") or ""),
-            "sort_key": sortKey,
-        })
+        enriched.append(
+            {
+                "accession_no": accession,
+                "form_type": formType,
+                "filing_date": filingDate,
+                "period_end": periodEndStr,
+                "year": str(filing.get("year") or ""),
+                "sort_key": sortKey,
+            }
+        )
 
     enriched.sort(key=lambda row: (row["sort_key"], row["filing_date"], row["accession_no"]))
     periodMap: dict[str, str | None] = {}
 
-    annualIdx = [
-        i for i, row in enumerate(enriched)
-        if row["form_type"] in annualForms and row["period_end"]
-    ]
+    annualIdx = [i for i, row in enumerate(enriched) if row["form_type"] in annualForms and row["period_end"]]
 
     for idx in annualIdx:
         annual = enriched[idx]
@@ -658,20 +661,14 @@ def _inferEdgarPeriodKeyMap(filings: list[dict]) -> dict[str, str | None]:
         prevAnnual = annualIdx[pos - 1]
         curAnnual = annualIdx[pos]
         fy = enriched[curAnnual]["period_end"][:4]
-        qRows = [
-            row for row in enriched[prevAnnual + 1:curAnnual]
-            if row["form_type"] == "10-Q"
-        ]
+        qRows = [row for row in enriched[prevAnnual + 1 : curAnnual] if row["form_type"] == "10-Q"]
         for qNum, row in enumerate(qRows[:3], start=1):
             periodMap[row["accession_no"]] = f"{fy}Q{qNum}"
 
     if annualIdx:
         lastAnnual = annualIdx[-1]
         lastFy = int(enriched[lastAnnual]["period_end"][:4])
-        qRows = [
-            row for row in enriched[lastAnnual + 1:]
-            if row["form_type"] == "10-Q"
-        ]
+        qRows = [row for row in enriched[lastAnnual + 1 :] if row["form_type"] == "10-Q"]
         for qNum, row in enumerate(qRows[:3], start=1):
             periodMap[row["accession_no"]] = f"{lastFy + 1}Q{qNum}"
 

@@ -67,10 +67,7 @@ def iterPeriodSubsets(
                 continue
             subset = (
                 report.select(["section_order", "section_title", ccol])
-                .filter(
-                    pl.col(ccol).is_not_null()
-                    & (pl.col(ccol).str.len_chars() > 0)
-                )
+                .filter(pl.col(ccol).is_not_null() & (pl.col(ccol).str.len_chars() > 0))
                 .sort("section_order")
             )
             if subset.height == 0:
@@ -91,7 +88,8 @@ def _splitTextTable(content: str) -> tuple[str, str]:
 
 
 def _reportRowsToTopicRows(
-    records: list[dict[str, object]], contentCol: str,
+    records: list[dict[str, object]],
+    contentCol: str,
 ) -> list[dict[str, object]]:
     # key: (chapter, topic, blockType) — blockType은 "text" 또는 "table"
     merged: dict[tuple[str, str, str], list[str]] = {}
@@ -221,7 +219,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     for periodKey in validPeriods:
         projected = applyProjections(
-            periodRows.get(periodKey, []), teacherTopics,
+            periodRows.get(periodKey, []),
+            teacherTopics,
         )
         for row in projected:
             chapter = row["chapter"]

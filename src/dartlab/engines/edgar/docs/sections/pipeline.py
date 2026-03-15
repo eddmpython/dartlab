@@ -21,7 +21,7 @@ import polars as pl
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectEdgarReport
 from dartlab.engines.edgar.docs.sections.mapper import mapSectionTitle
-from dartlab.engines.edgar.docs.sections.views import sortPeriods, sortTopics
+from dartlab.engines.edgar.docs.sections.views import sortPeriods
 
 
 def _splitTextTable(content: str) -> tuple[str, str]:

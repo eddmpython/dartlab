@@ -23,20 +23,22 @@ if TYPE_CHECKING:
 
 # 주석별 디스패치 정보: 영문명 → (호출 모듈, 한글 키워드, extractor)
 # "notesDetail"이면 _call_notesDetail(한글키워드) 호출, 아니면 _call_module(모듈명) 호출.
-_NOTES_DISPATCH: OrderedDict[str, tuple[str, str, Any]] = OrderedDict([
-    ("receivables",        ("notesDetail",    "매출채권",         lambda r: r.tableDf)),
-    ("inventory",          ("notesDetail",    "재고자산",         lambda r: r.tableDf)),
-    ("tangibleAsset",      ("tangibleAsset",  "유형자산",         lambda r: r.movementDf)),
-    ("intangibleAsset",    ("notesDetail",    "무형자산",         lambda r: r.tableDf)),
-    ("investmentProperty", ("notesDetail",    "투자부동산",       lambda r: r.tableDf)),
-    ("affiliates",         ("affiliates",     "관계기업",         lambda r: r.movementDf)),
-    ("borrowings",         ("notesDetail",    "차입금",           lambda r: r.tableDf)),
-    ("provisions",         ("notesDetail",    "충당부채",         lambda r: r.tableDf)),
-    ("eps",                ("notesDetail",    "주당이익",         lambda r: r.tableDf)),
-    ("lease",              ("notesDetail",    "리스",             lambda r: r.tableDf)),
-    ("segments",           ("segments",       "부문정보",         lambda r: r.revenue)),
-    ("costByNature",       ("costByNature",   "비용의성격별분류", lambda r: r.timeSeries)),
-])
+_NOTES_DISPATCH: OrderedDict[str, tuple[str, str, Any]] = OrderedDict(
+    [
+        ("receivables", ("notesDetail", "매출채권", lambda r: r.tableDf)),
+        ("inventory", ("notesDetail", "재고자산", lambda r: r.tableDf)),
+        ("tangibleAsset", ("tangibleAsset", "유형자산", lambda r: r.movementDf)),
+        ("intangibleAsset", ("notesDetail", "무형자산", lambda r: r.tableDf)),
+        ("investmentProperty", ("notesDetail", "투자부동산", lambda r: r.tableDf)),
+        ("affiliates", ("affiliates", "관계기업", lambda r: r.movementDf)),
+        ("borrowings", ("notesDetail", "차입금", lambda r: r.tableDf)),
+        ("provisions", ("notesDetail", "충당부채", lambda r: r.tableDf)),
+        ("eps", ("notesDetail", "주당이익", lambda r: r.tableDf)),
+        ("lease", ("notesDetail", "리스", lambda r: r.tableDf)),
+        ("segments", ("segments", "부문정보", lambda r: r.revenue)),
+        ("costByNature", ("costByNature", "비용의성격별분류", lambda r: r.timeSeries)),
+    ]
+)
 
 # core/registry.py와 동기화된 외부 인터페이스 (하위 호환)
 _REGISTRY = _NOTES_DISPATCH
@@ -77,6 +79,7 @@ class Notes:
         module, krName, extractor = spec
 
         from dartlab import config
+
         if config.verbose:
             print(f"  ▶ {self._company.corpName} · {krName}")
 

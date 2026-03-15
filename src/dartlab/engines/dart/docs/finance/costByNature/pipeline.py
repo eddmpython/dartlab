@@ -43,58 +43,58 @@ def costByNature(stockCode: str, period: str = "y") -> CostByNatureResult | None
     allAccounts: list[str] = []
 
     for year in years:
-      for reportKind in reportKinds:
-        report = selectReport(df, year, reportKind=reportKind)
-        if report is None:
-            continue
-
-        notes = extractNotesContent(report)
-        if not notes:
-            continue
-
-        section = findCostByNatureSection(notes)
-        if section is None:
-            continue
-
-        result = parseCostByNature(section)
-        if result is None:
-            continue
-
-        periodKey = _extractPeriodKey(report["report_type"][0], reportKind)
-        if periodKey is None:
-            continue
-
-        if periodKey in yearData:
-            continue
-
-        danggi: dict[str, float | None] = {}
-        jeongi: dict[str, float | None] = {}
-        order: list[str] = []
-
-        for rawName in result["order"]:
-            if isTotalRow(rawName):
-                continue
-            stdName = normalizeAccountName(rawName)
-
-            if stdName in danggi:
+        for reportKind in reportKinds:
+            report = selectReport(df, year, reportKind=reportKind)
+            if report is None:
                 continue
 
-            dVal = result["당기"].get(rawName)
-            jVal = result["전기"].get(rawName)
+            notes = extractNotesContent(report)
+            if not notes:
+                continue
 
-            danggi[stdName] = dVal
-            jeongi[stdName] = jVal
+            section = findCostByNatureSection(notes)
+            if section is None:
+                continue
 
-            if stdName not in order:
-                order.append(stdName)
+            result = parseCostByNature(section)
+            if result is None:
+                continue
 
-        if danggi:
-            yearData[periodKey] = danggi
-            for n in order:
-                if n not in allAccounts:
-                    allAccounts.append(n)
-        if jeongi:
-            prevData[periodKey] = jeongi
+            periodKey = _extractPeriodKey(report["report_type"][0], reportKind)
+            if periodKey is None:
+                continue
+
+            if periodKey in yearData:
+                continue
+
+            danggi: dict[str, float | None] = {}
+            jeongi: dict[str, float | None] = {}
+            order: list[str] = []
+
+            for rawName in result["order"]:
+                if isTotalRow(rawName):
+                    continue
+                stdName = normalizeAccountName(rawName)
+
+                if stdName in danggi:
+                    continue
+
+                dVal = result["당기"].get(rawName)
+                jVal = result["전기"].get(rawName)
+
+                danggi[stdName] = dVal
+                jeongi[stdName] = jVal
+
+                if stdName not in order:
+                    order.append(stdName)
+
+            if danggi:
+                yearData[periodKey] = danggi
+                for n in order:
+                    if n not in allAccounts:
+                        allAccounts.append(n)
+            if jeongi:
+                prevData[periodKey] = jeongi
 
     if not yearData:
         return None

@@ -8,8 +8,7 @@ import polars as pl
 def extractNotesContent(report: pl.DataFrame) -> list[str]:
     """보고서에서 연결재무제표 주석 섹션 내용 추출."""
     section = report.filter(
-        pl.col("section_title").str.contains("연결재무제표")
-        & pl.col("section_title").str.contains("주석")
+        pl.col("section_title").str.contains("연결재무제표") & pl.col("section_title").str.contains("주석")
     )
     if section.height == 0:
         return []

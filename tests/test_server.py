@@ -18,9 +18,7 @@ _has_samsung_docs = _has_data(SAMSUNG, "docs")
 _has_samsung_finance = _has_data(SAMSUNG, "finance")
 _has_any_samsung = _has_samsung_docs or _has_samsung_finance
 
-requires_samsung_any = pytest.mark.skipif(
-    not _has_any_samsung, reason="삼성전자 데이터 없음"
-)
+requires_samsung_any = pytest.mark.skipif(not _has_any_samsung, reason="삼성전자 데이터 없음")
 
 
 @pytest.fixture(scope="module")
@@ -431,6 +429,7 @@ class TestAsk:
 class TestResolveUtils:
     def test_is_meta_question(self):
         from dartlab.server.resolve import is_meta_question
+
         assert is_meta_question("버전 알려줘")
         assert is_meta_question("도움말")
         assert is_meta_question("뭘 할 수 있어?")
@@ -438,32 +437,39 @@ class TestResolveUtils:
 
     def test_has_analysis_intent(self):
         from dartlab.server.resolve import has_analysis_intent
+
         assert has_analysis_intent("삼성전자 매출 분석해줘")
         assert has_analysis_intent("ROE 알려줘")
         assert not has_analysis_intent("삼성전자 분석하고 싶은데")
 
     def test_build_not_found_msg_empty(self):
         from dartlab.server.resolve import build_not_found_msg
+
         msg = build_not_found_msg([])
         assert "찾을 수 없습니다" in msg
 
     def test_build_not_found_msg_with_suggestions(self):
         from dartlab.server.resolve import build_not_found_msg
+
         msg = build_not_found_msg([{"corpName": "삼성전자", "stockCode": "005930"}])
         assert "삼성전자" in msg
         assert "005930" in msg
 
     def test_build_ambiguous_msg(self):
         from dartlab.server.resolve import build_ambiguous_msg
-        msg = build_ambiguous_msg([
-            {"corpName": "현대자동차", "stockCode": "005380"},
-            {"corpName": "현대차증권", "stockCode": "001500"},
-        ])
+
+        msg = build_ambiguous_msg(
+            [
+                {"corpName": "현대자동차", "stockCode": "005380"},
+                {"corpName": "현대차증권", "stockCode": "001500"},
+            ]
+        )
         assert "현대자동차" in msg
         assert "현대차증권" in msg
 
     def test_needs_match_verification(self):
         from dartlab.server.resolve import needs_match_verification
+
         assert not needs_match_verification("삼성전자 분석해줘", "삼성전자")
         assert needs_match_verification("현대차 분석해줘", "현대차증권")
         assert not needs_match_verification("삼전 분석해줘", "삼성전자")
@@ -472,15 +478,19 @@ class TestResolveUtils:
 class TestChatUtils:
     def test_build_history_empty(self):
         from dartlab.server.chat import build_history_messages
+
         assert build_history_messages(None) == []
 
     def test_build_history_messages(self):
         from dartlab.server.chat import build_history_messages
         from dartlab.server.models import HistoryMessage
-        msgs = build_history_messages([
-            HistoryMessage(role="user", text="삼성전자 분석해줘"),
-            HistoryMessage(role="assistant", text="분석 결과입니다."),
-        ])
+
+        msgs = build_history_messages(
+            [
+                HistoryMessage(role="user", text="삼성전자 분석해줘"),
+                HistoryMessage(role="assistant", text="분석 결과입니다."),
+            ]
+        )
         assert len(msgs) == 2
         assert msgs[0]["role"] == "user"
         assert msgs[1]["role"] == "assistant"
@@ -488,12 +498,16 @@ class TestChatUtils:
     def test_build_history_with_meta(self):
         from dartlab.server.chat import build_history_messages
         from dartlab.server.models import HistoryMessage, HistoryMeta
-        msgs = build_history_messages([
-            HistoryMessage(
-                role="assistant", text="분석 결과",
-                meta=HistoryMeta(company="삼성전자", stockCode="005930", modules=["IS", "BS"]),
-            ),
-        ])
+
+        msgs = build_history_messages(
+            [
+                HistoryMessage(
+                    role="assistant",
+                    text="분석 결과",
+                    meta=HistoryMeta(company="삼성전자", stockCode="005930", modules=["IS", "BS"]),
+                ),
+            ]
+        )
         assert len(msgs) == 1
         assert "삼성전자" in msgs[0]["content"]
         assert "005930" in msgs[0]["content"]
@@ -501,19 +515,24 @@ class TestChatUtils:
     def test_extract_last_stock_code(self):
         from dartlab.server.chat import extract_last_stock_code
         from dartlab.server.models import HistoryMessage, HistoryMeta
+
         assert extract_last_stock_code(None) is None
         assert extract_last_stock_code([]) is None
-        code = extract_last_stock_code([
-            HistoryMessage(role="user", text="질문"),
-            HistoryMessage(
-                role="assistant", text="답변",
-                meta=HistoryMeta(stockCode="005930"),
-            ),
-        ])
+        code = extract_last_stock_code(
+            [
+                HistoryMessage(role="user", text="질문"),
+                HistoryMessage(
+                    role="assistant",
+                    text="답변",
+                    meta=HistoryMeta(stockCode="005930"),
+                ),
+            ]
+        )
         assert code == "005930"
 
     def test_build_dynamic_chat_prompt(self):
         from dartlab.server.chat import build_dynamic_chat_prompt
+
         prompt = build_dynamic_chat_prompt()
         assert "DartLab" in prompt
         assert isinstance(prompt, str)
@@ -551,6 +570,7 @@ class TestChatUtils:
 class TestCompanyCache:
     def test_put_and_get(self):
         from dartlab.server.cache import CompanyCache
+
         cache = CompanyCache()
         mock = MagicMock()
         mock.stockCode = "005930"
@@ -563,6 +583,7 @@ class TestCompanyCache:
 
     def test_clear(self):
         from dartlab.server.cache import CompanyCache
+
         cache = CompanyCache()
         mock = MagicMock()
         cache.put("005930", mock, None)
@@ -572,6 +593,7 @@ class TestCompanyCache:
 
     def test_lru_eviction(self):
         from dartlab.server.cache import CompanyCache
+
         cache = CompanyCache()
         for i in range(25):
             code = f"{i:06d}"
@@ -584,6 +606,7 @@ class TestCompanyCache:
 
     def test_update_snapshot(self):
         from dartlab.server.cache import CompanyCache
+
         cache = CompanyCache()
         mock = MagicMock()
         cache.put("005930", mock, {"old": True})

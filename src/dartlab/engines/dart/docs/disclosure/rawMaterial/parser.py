@@ -34,8 +34,10 @@ def _findHeaderIndices(headerCells: list[str]) -> dict:
         elif clean in ("구분",):
             gubunIdx = i
         elif (
-            "품목" in clean or "원재료명" in clean
-            or "원부재료" in clean or "원,부재료" in clean
+            "품목" in clean
+            or "원재료명" in clean
+            or "원부재료" in clean
+            or "원,부재료" in clean
             or "원ㆍ부재료" in clean
         ):
             idx["item"] = i
@@ -51,11 +53,7 @@ def _findHeaderIndices(headerCells: list[str]) -> dict:
             idx["ratio"] = i
         elif "비고" in clean or "매입처" in clean or "구매처" in clean:
             idx["supplier"] = i
-        elif (
-            re.match(r"^제\d+", clean)
-            or re.match(r"^20\d{2}", clean)
-            or re.match(r"^제\s*\d+", c.strip())
-        ):
+        elif re.match(r"^제\d+", clean) or re.match(r"^20\d{2}", clean) or re.match(r"^제\s*\d+", c.strip()):
             if "amount" not in idx:
                 idx["amount"] = i
 
@@ -104,60 +102,57 @@ def parseRawMaterials(content: str) -> list[dict] | None:
 
         joined = " ".join(cells)
 
-        if "단위" in joined and (
-            "억원" in joined or "백만원" in joined
-            or "천원" in joined or "원)" in joined
-        ):
+        if "단위" in joined and ("억원" in joined or "백만원" in joined or "천원" in joined or "원)" in joined):
             continue
 
         # 헤더 감지
         joinedNoSpace = joined.replace(" ", "")
         hasAmtKw = (
-            "매입액" in joinedNoSpace or "투입액" in joinedNoSpace
-            or "매입금액" in joinedNoSpace or "원재료금액" in joinedNoSpace
+            "매입액" in joinedNoSpace
+            or "투입액" in joinedNoSpace
+            or "매입금액" in joinedNoSpace
+            or "원재료금액" in joinedNoSpace
         )
         hasItemKw = (
-            "품목" in joinedNoSpace or "원재료" in joinedNoSpace
-            or "원부재료" in joinedNoSpace or "원,부재료" in joinedNoSpace
+            "품목" in joinedNoSpace
+            or "원재료" in joinedNoSpace
+            or "원부재료" in joinedNoSpace
+            or "원,부재료" in joinedNoSpace
             or "원ㆍ부재료" in joinedNoSpace
-            or "부문" in joinedNoSpace or "제품명" in joinedNoSpace
+            or "부문" in joinedNoSpace
+            or "제품명" in joinedNoSpace
         )
         hasTypeKw = "매입유형" in joinedNoSpace
         hasRatioKw = "비율" in joinedNoSpace or "비중" in joinedNoSpace
-        hasYearCol = bool(re.search(
-            r"제\s*\d+\s*(?:\([^)]*\)\s*)?기|20\d{2}\s*년", joined
-        ))
-        hasStructKw = (
-            "구분" in joinedNoSpace and (
-                "용도" in joinedNoSpace or hasAmtKw or hasRatioKw
-            )
-        )
+        hasYearCol = bool(re.search(r"제\s*\d+\s*(?:\([^)]*\)\s*)?기|20\d{2}\s*년", joined))
+        hasStructKw = "구분" in joinedNoSpace and ("용도" in joinedNoSpace or hasAmtKw or hasRatioKw)
 
         # 분할 헤더 2행째 감지: 매입액|비율만 반복되는 행
-        isSplitRow2 = (
-            hasAmtKw
-            and all(
-                c.replace(" ", "") in (
-                    "", "매입액", "비율", "비율(%)", "비중", "비중(%)",
-                )
-                or re.match(r"^제\s*\d+", c.strip())
-                or re.match(r"^20\d{2}", c.strip())
-                for c in cells
+        isSplitRow2 = hasAmtKw and all(
+            c.replace(" ", "")
+            in (
+                "",
+                "매입액",
+                "비율",
+                "비율(%)",
+                "비중",
+                "비중(%)",
             )
+            or re.match(r"^제\s*\d+", c.strip())
+            or re.match(r"^20\d{2}", c.strip())
+            for c in cells
         )
 
-        isHeader = (
-            not isSplitRow2
-            and (
-                (hasAmtKw and (hasItemKw or hasRatioKw or hasStructKw))
-                or (hasTypeKw and hasItemKw)
-                or (hasAmtKw and hasYearCol)
-                or (
-                    hasYearCol and hasItemKw
-                    and "구분" in joinedNoSpace
-                    and "생산" not in joinedNoSpace
-                    and "수량" not in joinedNoSpace
-                )
+        isHeader = not isSplitRow2 and (
+            (hasAmtKw and (hasItemKw or hasRatioKw or hasStructKw))
+            or (hasTypeKw and hasItemKw)
+            or (hasAmtKw and hasYearCol)
+            or (
+                hasYearCol
+                and hasItemKw
+                and "구분" in joinedNoSpace
+                and "생산" not in joinedNoSpace
+                and "수량" not in joinedNoSpace
             )
         )
 
@@ -211,9 +206,7 @@ def parseRawMaterials(content: str) -> list[dict] | None:
             # 제외: 매입액(비율) 합쳐진 헤더, 연도 컬럼 헤더, 다음 셀이 빈칸
             if "ratio" not in headerIdx:
                 amtCell = cells[headerIdx["amount"]] if headerIdx["amount"] < len(cells) else ""
-                amtIsYearCol = bool(re.match(
-                    r"^제\s*\d+|^20\d{2}", amtCell.replace(" ", "")
-                ))
+                amtIsYearCol = bool(re.match(r"^제\s*\d+|^20\d{2}", amtCell.replace(" ", "")))
                 nextIdx = headerIdx["amount"] + 1
                 nextCell = cells[nextIdx].strip() if nextIdx < len(cells) else ""
                 if (
@@ -247,9 +240,11 @@ def parseRawMaterials(content: str) -> list[dict] | None:
 
         # 서브 헤더 스킵: 대부분 셀이 연도 패턴이면 (분할 헤더 2행째)
         yearCellCount = sum(
-            1 for c in nonEmpty
+            1
+            for c in nonEmpty
             if re.match(r"^(제\s*\d+|20\d{2})", c.replace(" ", ""))
-            or "매입액" == c.replace(" ", "") or "비율" == c.replace(" ", "")
+            or "매입액" == c.replace(" ", "")
+            or "비율" == c.replace(" ", "")
         )
         if yearCellCount >= len(nonEmpty) * 0.5 and len(nonEmpty) >= 2:
             continue
@@ -307,9 +302,7 @@ def parseRawMaterials(content: str) -> list[dict] | None:
             # shifted이지만 행 전체에 숫자가 없으면 실제로는
             # 금액이 없는 정상 행 (segment만 존재)
             if shifted:
-                hasAnyNum = any(
-                    parseAmount(c) is not None for c in cells
-                )
+                hasAnyNum = any(parseAmount(c) is not None for c in cells)
                 if not hasAnyNum:
                     # 금액 없는 행 — segment만 갱신
                     if segIdx is not None and segIdx < len(cells) and cells[segIdx]:
@@ -344,11 +337,7 @@ def parseRawMaterials(content: str) -> list[dict] | None:
                         ratio = parseAmount(m2.group(2))
                     else:
                         amt = parseAmount(amtText)
-                if (
-                    si(ratioIdx) is not None
-                    and si(ratioIdx) < len(cells)
-                    and ratio is None
-                ):
+                if si(ratioIdx) is not None and si(ratioIdx) < len(cells) and ratio is None:
                     ratio = parseAmount(cells[si(ratioIdx)])
                 if si(suppIdx) is not None and si(suppIdx) < len(cells):
                     supplier = cells[si(suppIdx)]
@@ -371,11 +360,7 @@ def parseRawMaterials(content: str) -> list[dict] | None:
                         ratio = parseAmount(m.group(2))
                     else:
                         amt = parseAmount(amtText)
-                if (
-                    ratioIdx is not None
-                    and ratioIdx < len(cells)
-                    and ratio is None
-                ):
+                if ratioIdx is not None and ratioIdx < len(cells) and ratio is None:
                     ratio = parseAmount(cells[ratioIdx])
                 if suppIdx is not None and suppIdx < len(cells):
                     supplier = cells[suppIdx]
@@ -395,14 +380,16 @@ def parseRawMaterials(content: str) -> list[dict] | None:
             continue
 
         if item and (amt is not None or ratio is not None):
-            results.append({
-                "segment": segment,
-                "item": item,
-                "usage": usage,
-                "amount": amt,
-                "ratio": ratio,
-                "supplier": supplier,
-            })
+            results.append(
+                {
+                    "segment": segment,
+                    "item": item,
+                    "usage": usage,
+                    "amount": amt,
+                    "ratio": ratio,
+                    "supplier": supplier,
+                }
+            )
 
     return results if results else None
 
@@ -463,12 +450,7 @@ def parseEquipment(content: str) -> dict | None:
 
         if not s.startswith("|"):
             if inTable and result:
-                if (
-                    s
-                    and not s.startswith("※")
-                    and not s.startswith("(")
-                    and not s.startswith("[")
-                ):
+                if s and not s.startswith("※") and not s.startswith("(") and not s.startswith("["):
                     if "시설투자" in s or "투자" in s:
                         continue
                     break
@@ -482,9 +464,7 @@ def parseEquipment(content: str) -> dict | None:
             continue
         joined = " ".join(cells)
 
-        if "단위" in joined and (
-            "억원" in joined or "백만원" in joined or "천원" in joined
-        ):
+        if "단위" in joined and ("억원" in joined or "백만원" in joined or "천원" in joined):
             continue
 
         # 헤더 감지
@@ -540,12 +520,7 @@ def parseEquipment(content: str) -> dict | None:
                 break
 
         # 감가상각비
-        if (
-            "감가상각" in label
-            and "누계" not in label
-            and "포함" not in label
-            and "원가" not in label
-        ):
+        if "감가상각" in label and "누계" not in label and "포함" not in label and "원가" not in label:
             for ci in range(len(colNames)):
                 if colNames[ci] == "total" and ci < len(cells):
                     val = parseAmount(cells[ci])
@@ -597,9 +572,7 @@ def parseCapex(content: str) -> list[dict] | None:
 
         if "단위" in joined:
             continue
-        if ("구 분" in joined or "구분" in joined) and (
-            "투자" in joined or "내 용" in joined
-        ):
+        if ("구 분" in joined or "구분" in joined) and ("투자" in joined or "내 용" in joined):
             inTable = True
             continue
         if not inTable:

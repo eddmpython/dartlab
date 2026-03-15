@@ -49,20 +49,14 @@ def tangibleAsset(stockCode: str) -> TangibleAssetResult | None:
         yearReliability = "high"
 
         for parsed in results:
-            hasTotal = any(
-                "합계" in c or "합 계" in c for c in parsed["categories"]
-            )
+            hasTotal = any("합계" in c or "합 계" in c for c in parsed["categories"])
             catCount = len(parsed["categories"])
 
             if not hasTotal:
                 yearReliability = "low"
-                yearWarnings.append(
-                    "합계 컬럼 없음 — 개별 열 합산값은 취득원가일 수 있음"
-                )
+                yearWarnings.append("합계 컬럼 없음 — 개별 열 합산값은 취득원가일 수 있음")
             if catCount < 4:
-                yearWarnings.append(
-                    f"카테고리 {catCount}개 — 축약된 테이블일 수 있음"
-                )
+                yearWarnings.append(f"카테고리 {catCount}개 — 축약된 테이블일 수 있음")
 
             movements.append(
                 TangibleMovement(

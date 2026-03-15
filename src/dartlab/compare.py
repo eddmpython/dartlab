@@ -69,8 +69,16 @@ class _MixedCompare:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         fields = [
-            "revenueTTM", "operatingIncomeTTM", "netIncomeTTM", "totalAssets",
-            "totalEquity", "totalLiabilities", "cash", "marketCap", "fcf", "netDebt",
+            "revenueTTM",
+            "operatingIncomeTTM",
+            "netIncomeTTM",
+            "totalAssets",
+            "totalEquity",
+            "totalLiabilities",
+            "cash",
+            "marketCap",
+            "fcf",
+            "netDebt",
         ]
         rows = []
         for c in self.companies:
@@ -115,8 +123,10 @@ def Compare(*args: Any):
 
     if markets == {"KR"}:
         from dartlab.engines.dart.compare import Compare as _DartCompare
+
         return _DartCompare(*companies)
     if markets == {"US"}:
         from dartlab.engines.edgar.compare import Compare as _EdgarCompare
+
         return _EdgarCompare(*companies)
     return _MixedCompare(*companies)

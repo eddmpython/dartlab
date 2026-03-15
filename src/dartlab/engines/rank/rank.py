@@ -53,6 +53,7 @@ class RankInfo:
 
 def _cacheDir() -> Path:
     from dartlab import config
+
     return Path(config.dataDir) / "_cache"
 
 
@@ -62,6 +63,7 @@ def _cachePath() -> Path:
 
 def _financeExists(stockCode: str) -> bool:
     from dartlab import config
+
     dataDir = Path(config.dataDir) / DATA_RELEASES["finance"]["dir"]
     return (dataDir / f"{stockCode}.parquet").exists()
 
@@ -114,15 +116,18 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
 
     revSorted = sorted(
         [r for r in records if r["revenue"] is not None],
-        key=lambda x: x["revenue"], reverse=True,
+        key=lambda x: x["revenue"],
+        reverse=True,
     )
     assetSorted = sorted(
         [r for r in records if r["totalAssets"] is not None and r["totalAssets"] > 0],
-        key=lambda x: x["totalAssets"], reverse=True,
+        key=lambda x: x["totalAssets"],
+        reverse=True,
     )
     growthSorted = sorted(
         [r for r in records if r["revenueGrowth3Y"] is not None],
-        key=lambda x: x["revenueGrowth3Y"], reverse=True,
+        key=lambda x: x["revenueGrowth3Y"],
+        reverse=True,
     )
 
     nRev = len(revSorted)
@@ -134,6 +139,7 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
     growthRank = {r["stockCode"]: i + 1 for i, r in enumerate(growthSorted)}
 
     from collections import defaultdict
+
     sectorRevLists: dict[str, list[str]] = defaultdict(list)
     sectorAssetLists: dict[str, list[str]] = defaultdict(list)
     sectorGrowthLists: dict[str, list[str]] = defaultdict(list)

@@ -6,6 +6,7 @@ import re
 # 유틸리티
 # ──────────────────────────────────────────────
 
+
 def _cellsFromLine(line: str) -> list[str]:
     """파이프 라인에서 셀 추출."""
     return [c.strip() for c in line.split("|")[1:-1]]
@@ -35,6 +36,7 @@ def _parseFloat(text: str) -> float | None:
 # ──────────────────────────────────────────────
 # 테이블 블록 추출 + 분류
 # ──────────────────────────────────────────────
+
 
 def extractTableBlocks(content: str) -> list[list[str]]:
     """content에서 연속된 파이프라인 블록 추출."""
@@ -79,6 +81,7 @@ def classifyBlock(block: list[str]) -> str:
 # ──────────────────────────────────────────────
 # 등기임원 테이블 파서
 # ──────────────────────────────────────────────
+
 
 def parseExecutiveBlock(block: list[str]) -> list[dict]:
     """등기임원 테이블에서 임원 리스트 추출.
@@ -184,6 +187,7 @@ def aggregateExecutives(executives: list[dict]) -> dict:
 # ──────────────────────────────────────────────
 # 미등기임원 보수 테이블 파서
 # ──────────────────────────────────────────────
+
 
 def parseUnregisteredPayBlock(block: list[str]) -> dict | None:
     """미등기임원 보수 테이블 파싱.

@@ -269,7 +269,8 @@ def summarizeEdgarDocsParquet(path: Path) -> dict[str, object]:
 def _assertEdgarDocsQuality(summary: dict[str, object]) -> None:
     qualityFlags = [str(flag) for flag in summary.get("quality_flags", [])]
     blocking = [
-        flag for flag in qualityFlags
+        flag
+        for flag in qualityFlags
         if any(flag == f"unexpected_full_document:{formType}" for formType in QUALITY_GATED_FORMS)
     ]
     if blocking:
@@ -303,22 +304,24 @@ def _collectFilingRows(
         reportType = _reportType(filing["formType"], filing.get("periodEnd"))
         periodKey = _periodKey(filing["formType"], filing.get("periodEnd"), filing["year"])
         for order, item in enumerate(items):
-            rows.append({
-                "cik": meta["cik"],
-                "company_name": meta["title"],
-                "ticker": ticker,
-                "year": filing["year"],
-                "filing_date": filing["filingDate"],
-                "period_end": filing.get("periodEnd"),
-                "accession_no": filing["accessionNumber"],
-                "form_type": filing["formType"],
-                "report_type": reportType,
-                "period_key": periodKey,
-                "section_order": order,
-                "section_title": item["title"],
-                "filing_url": filing["filingUrl"],
-                "section_content": item["content"],
-            })
+            rows.append(
+                {
+                    "cik": meta["cik"],
+                    "company_name": meta["title"],
+                    "ticker": ticker,
+                    "year": filing["year"],
+                    "filing_date": filing["filingDate"],
+                    "period_end": filing.get("periodEnd"),
+                    "accession_no": filing["accessionNumber"],
+                    "form_type": filing["formType"],
+                    "report_type": reportType,
+                    "period_key": periodKey,
+                    "section_order": order,
+                    "section_title": item["title"],
+                    "filing_url": filing["filingUrl"],
+                    "section_content": item["content"],
+                }
+            )
         if bar is not None:
             bar()
 
@@ -471,25 +474,31 @@ def prepareEdgarCollectibleUniverse(
                 row["last_checked"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 universeStatus = "submissions_fetch_error"
                 if progressPath is not None:
-                    _appendJsonl(progressPath, {
+                    _appendJsonl(
+                        progressPath,
+                        {
+                            "ticker": row["ticker"],
+                            "cik": row["cik"],
+                            "exchange": row["exchange"],
+                            "status": universeStatus,
+                            "reason": str(exc),
+                            "last_checked": row["last_checked"],
+                        },
+                    )
+                continue
+
+            if progressPath is not None:
+                _appendJsonl(
+                    progressPath,
+                    {
                         "ticker": row["ticker"],
                         "cik": row["cik"],
                         "exchange": row["exchange"],
                         "status": universeStatus,
-                        "reason": str(exc),
+                        "supported_regular_forms": row["supported_regular_forms"],
                         "last_checked": row["last_checked"],
-                    })
-                continue
-
-            if progressPath is not None:
-                _appendJsonl(progressPath, {
-                    "ticker": row["ticker"],
-                    "cik": row["cik"],
-                    "exchange": row["exchange"],
-                    "status": universeStatus,
-                    "supported_regular_forms": row["supported_regular_forms"],
-                    "last_checked": row["last_checked"],
-                })
+                    },
+                )
 
         evaluatedBatch.append(row)
         if row.get("has_supported_regular_filing"):
@@ -519,15 +528,17 @@ def prepareEdgarCollectibleUniverse(
             }
         )
     result = result.with_row_index("candidate_order", offset=1)
-    return result.select([
-        "candidate_order",
-        "ticker",
-        "cik",
-        "title",
-        "exchange",
-        "supported_regular_forms",
-        "last_checked",
-    ])
+    return result.select(
+        [
+            "candidate_order",
+            "ticker",
+            "cik",
+            "title",
+            "exchange",
+            "supported_regular_forms",
+            "last_checked",
+        ]
+    )
 
 
 def _emptyCollectibleUniverseCache() -> pl.DataFrame:
@@ -550,7 +561,9 @@ def _loadCollectibleUniverseCache(cachePath: Path, *, forceRefresh: bool) -> pl.
     return _emptyCollectibleUniverseCache()
 
 
-def _mergeCollectibleUniverseCache(cachePath: Path, cacheDf: pl.DataFrame, rows: list[dict[str, object]]) -> pl.DataFrame:
+def _mergeCollectibleUniverseCache(
+    cachePath: Path, cacheDf: pl.DataFrame, rows: list[dict[str, object]]
+) -> pl.DataFrame:
     freshDf = pl.DataFrame(rows)
     if cacheDf.is_empty():
         merged = freshDf
@@ -653,16 +666,18 @@ def _findFilings(submissions: dict, sinceYear: int) -> list[dict]:
 
         accession = merged["accessionNumber"][i]
         primaryDoc = merged["primaryDocument"][i]
-        rows.append({
-            "formType": formType,
-            "filingDate": filingDate,
-            "year": str(year),
-            "periodEnd": reportDates[i] or None,
-            "accessionNumber": accession,
-            "filingUrl": (
-                f"{BASE_URL}/Archives/edgar/data/{submissions['cik']}/{accession.replace('-', '')}/{primaryDoc}"
-            ),
-        })
+        rows.append(
+            {
+                "formType": formType,
+                "filingDate": filingDate,
+                "year": str(year),
+                "periodEnd": reportDates[i] or None,
+                "accessionNumber": accession,
+                "filingUrl": (
+                    f"{BASE_URL}/Archives/edgar/data/{submissions['cik']}/{accession.replace('-', '')}/{primaryDoc}"
+                ),
+            }
+        )
 
     rows.sort(key=lambda row: (row["filingDate"], row["formType"]))
     return rows
@@ -786,10 +801,12 @@ def _split40FPrimaryText(text: str) -> list[dict]:
         content = text[start:end].strip()
         if not content:
             continue
-        sections.append({
-            "title": str(startInfo["title"]).title(),
-            "content": content,
-        })
+        sections.append(
+            {
+                "title": str(startInfo["title"]).title(),
+                "content": content,
+            }
+        )
     return sections
 
 
@@ -898,10 +915,12 @@ def _splitItems(text: str, formType: str) -> list[dict]:
         content = text[start:end].strip()
         if not content:
             continue
-        items.append({
-            "title": str(startInfo["title"]),
-            "content": content,
-        })
+        items.append(
+            {
+                "title": str(startInfo["title"]),
+                "content": content,
+            }
+        )
     return items
 
 
@@ -933,10 +952,12 @@ def _splitTableStructuredItems(text: str, itemNames: dict[str, str]) -> list[dic
         content = text[start:end].strip()
         if not content:
             continue
-        items.append({
-            "title": str(startInfo["title"]),
-            "content": content,
-        })
+        items.append(
+            {
+                "title": str(startInfo["title"]),
+                "content": content,
+            }
+        )
     return items
 
 
@@ -1039,10 +1060,12 @@ def _splitQuarterlyItems(text: str) -> list[dict]:
         content = _cleanQuarterlySectionText(body[start:end].strip())
         if not content:
             continue
-        items.append({
-            "title": str(startInfo["title"]),
-            "content": content,
-        })
+        items.append(
+            {
+                "title": str(startInfo["title"]),
+                "content": content,
+            }
+        )
 
     if len(items) < 2:
         return [{"title": "Full Document", "content": body}]
@@ -1064,9 +1087,9 @@ def _quarterlyBodyText(text: str) -> str:
         if PART_TABLE_LINE_PATTERN.match(stripped):
             partStarts.append(idx)
     if len(partStarts) >= 2:
-        return "\n".join(lines[partStarts[1]:]).strip()
+        return "\n".join(lines[partStarts[1] :]).strip()
     if partStarts:
-        return "\n".join(lines[partStarts[0]:]).strip()
+        return "\n".join(lines[partStarts[0] :]).strip()
     return text
 
 

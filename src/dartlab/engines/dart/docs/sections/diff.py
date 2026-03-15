@@ -77,7 +77,9 @@ class DiffResult:
 
     def topChanged(self, n: int = 10) -> list[DiffSummary]:
         return sorted(
-            self.summaries, key=lambda s: s.changeRate, reverse=True,
+            self.summaries,
+            key=lambda s: s.changeRate,
+            reverse=True,
         )[:n]
 
     def stable(self) -> list[DiffSummary]:
@@ -122,26 +124,30 @@ def sectionsDiff(sections: pl.DataFrame) -> DiffResult:
             if prevHash is not None and prevPeriod is not None:
                 if curHash != prevHash:
                     changedCount += 1
-                    entries.append(DiffEntry(
-                        topic=topic,
-                        chapter=chapter,
-                        fromPeriod=prevPeriod,
-                        toPeriod=period,
-                        status="CHANGED",
-                        fromLen=len(str(row.get(prevPeriod, ""))),
-                        toLen=len(str(text)),
-                    ))
+                    entries.append(
+                        DiffEntry(
+                            topic=topic,
+                            chapter=chapter,
+                            fromPeriod=prevPeriod,
+                            toPeriod=period,
+                            status="CHANGED",
+                            fromLen=len(str(row.get(prevPeriod, ""))),
+                            toLen=len(str(text)),
+                        )
+                    )
 
             prevHash = curHash
             prevPeriod = period
 
-        summaries.append(DiffSummary(
-            topic=topic,
-            chapter=chapter,
-            totalPeriods=totalPeriods,
-            changedCount=changedCount,
-            stableCount=max(0, totalPeriods - 1 - changedCount),
-        ))
+        summaries.append(
+            DiffSummary(
+                topic=topic,
+                chapter=chapter,
+                totalPeriods=totalPeriods,
+                changedCount=changedCount,
+                stableCount=max(0, totalPeriods - 1 - changedCount),
+            )
+        )
 
     return DiffResult(entries=entries, summaries=summaries)
 
@@ -202,8 +208,11 @@ def topicDiff(
     kept: list[str] = []
 
     import difflib
+
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-        None, fromLines, toLines,
+        None,
+        fromLines,
+        toLines,
     ).get_opcodes():
         if tag == "equal":
             kept.extend(fromLines[i1:i2])

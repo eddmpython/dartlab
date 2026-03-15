@@ -96,8 +96,7 @@ def test_map_section_title_returns_new_legacy_canonical_topics():
     assert mapSectionTitle("관련법령또는정부의규제등") == "environmentRegulation"
     assert mapSectionTitle("배출권거래제관리업체지정") == "environmentRegulation"
     assert (
-        mapSectionTitle("또한당사는환경안전관련법규준수를위해내부관리기준을강화하고임직원")
-        == "environmentRegulation"
+        mapSectionTitle("또한당사는환경안전관련법규준수를위해내부관리기준을강화하고임직원") == "environmentRegulation"
     )
     assert mapSectionTitle("중소기업해당여부") == "smeStatus"
     assert mapSectionTitle("경영권경쟁") == "controlCompetition"
@@ -117,10 +116,7 @@ def test_map_section_title_returns_new_legacy_canonical_topics():
     assert mapSectionTitle("파생상품및풋백옵션등거래현황") == "riskDerivative"
     assert mapSectionTitle("중요한소송사건등") == "materialLitigation"
     assert mapSectionTitle("견질또는담보용어음,수표현황") == "pledgedNotesAndChecks"
-    assert (
-        mapSectionTitle("독점규제및공정거래에관한법률상특수관계인을상대로")
-        == "relatedPartyCompetitionLaw"
-    )
+    assert mapSectionTitle("독점규제및공정거래에관한법률상특수관계인을상대로") == "relatedPartyCompetitionLaw"
     assert mapSectionTitle("다양한종류의주식") == "shareClassDiversity"
     assert mapSectionTitle("연결대상종속기업개황") == "subsidiaryDetail"
     assert mapSectionTitle("연결대상종속회사개황") == "subsidiaryDetail"
@@ -221,10 +217,7 @@ def test_map_section_title_returns_new_legacy_canonical_topics():
     assert mapSectionTitle("임원배상책임보험가입현황") == "executiveLiabilityInsurance"
     assert mapSectionTitle("최대주주의개요") == "majorHolder"
     assert mapSectionTitle("최대주주의최대주주의개요") == "majorHolder"
-    assert (
-        mapSectionTitle("회사의최대주주(그의증권거래법상특수관계인을포함한다)")
-        == "majorHolder"
-    )
+    assert mapSectionTitle("회사의최대주주(그의증권거래법상특수관계인을포함한다)") == "majorHolder"
     assert mapSectionTitle("최대주주의변동을초래할수있는특정거래") == "majorHolder"
     assert mapSectionTitle("최대주주의변동") == "majorHolder"
     assert mapSectionTitle("최대주주변동내역") == "majorHolder"

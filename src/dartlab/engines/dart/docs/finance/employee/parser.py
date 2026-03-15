@@ -28,8 +28,7 @@ def parseTenure(text: str) -> float | None:
     return None
 
 
-def _tryExtract(cells: list[str], empIdx: int, tenureIdx: int,
-                salaryIdx: int, avgIdx: int) -> dict | None:
+def _tryExtract(cells: list[str], empIdx: int, tenureIdx: int, salaryIdx: int, avgIdx: int) -> dict | None:
     """지정 인덱스로 합계 행에서 직원 데이터 추출."""
     if empIdx >= len(cells):
         return None
@@ -105,7 +104,8 @@ def parseEmployeeTable(content: str) -> dict:
         if len(cells) >= 3:
             maxIdx = len(cells)
             r = _tryExtract(
-                cells, 2,
+                cells,
+                2,
                 7 if maxIdx > 7 else maxIdx,
                 8 if maxIdx > 8 else maxIdx,
                 9 if maxIdx > 9 else maxIdx,

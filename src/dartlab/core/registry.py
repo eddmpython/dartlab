@@ -20,817 +20,986 @@ from typing import Any
 
 @dataclass(frozen=True)
 class ColumnMeta:
-	"""DataFrame 컬럼 메타데이터 (LLM 컨텍스트용)."""
+    """DataFrame 컬럼 메타데이터 (LLM 컨텍스트용)."""
 
-	name: str
-	description: str
-	unit: str = ""
+    name: str
+    description: str
+    unit: str = ""
 
 
 @dataclass(frozen=True)
 class DataEntry:
-	"""데이터 소스 메타데이터 — registry의 최소 단위.
+    """데이터 소스 메타데이터 — registry의 최소 단위.
 
-	category별 역할:
-	- finance: 시계열 재무제표 (annual.IS, timeseries.BS 등)
-	- report: 공시 파싱 모듈 (dividend, employee 등)
-	- notes: K-IFRS 주석 (notes.receivables 등)
-	- disclosure: 서술형 공시 (business, mdna 등)
-	- raw: 원본 parquet (rawDocs, rawFinance, rawReport)
-	- analysis: L2 분석 엔진 (ratios, insight, sector, rank)
-	"""
+    category별 역할:
+    - finance: 시계열 재무제표 (annual.IS, timeseries.BS 등)
+    - report: 공시 파싱 모듈 (dividend, employee 등)
+    - notes: K-IFRS 주석 (notes.receivables 등)
+    - disclosure: 서술형 공시 (business, mdna 등)
+    - raw: 원본 parquet (rawDocs, rawFinance, rawReport)
+    - analysis: L2 분석 엔진 (ratios, insight, sector, rank)
+    """
 
-	name: str
-	label: str
-	category: str
-	dataType: str
-	description: str
+    name: str
+    label: str
+    category: str
+    dataType: str
+    description: str
 
-	modulePath: str | None = None
-	funcName: str | None = None
-	extractor: Any = None
+    modulePath: str | None = None
+    funcName: str | None = None
+    extractor: Any = None
 
-	requires: str | None = None
-	unit: str = "백만원"
-	columns: tuple[ColumnMeta, ...] = ()
-	analysisHints: tuple[str, ...] = ()
-	relatedModules: tuple[str, ...] = ()
-	maxRows: int = 30
+    requires: str | None = None
+    unit: str = "백만원"
+    columns: tuple[ColumnMeta, ...] = ()
+    analysisHints: tuple[str, ...] = ()
+    relatedModules: tuple[str, ...] = ()
+    maxRows: int = 30
 
 
 _ENTRIES: list[DataEntry] = [
-	# ═══════════════════════════════════════════════════════
-	# finance — 시계열 재무제표
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="annual.IS", label="손익계산서(연도별)", category="finance",
-		dataType="timeseries",
-		description="연도별 손익계산서 시계열. 매출액, 영업이익, 순이익 등 전체 계정.",
-		requires="finance",
-		columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목"),),
-		analysisHints=(
-			"매출 성장률(YoY) 계산",
-			"영업이익률(영업이익/매출액) 추이",
-			"순이익률(당기순이익/매출액) 추이",
-			"매출원가율 변동 확인",
-		),
-		relatedModules=("annual.BS", "annual.CF"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="annual.BS", label="재무상태표(연도별)", category="finance",
-		dataType="timeseries",
-		description="연도별 재무상태표 시계열. 자산, 부채, 자본 전체 계정.",
-		requires="finance",
-		columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목"),),
-		analysisHints=(
-			"부채비율(부채총계/자본총계) 추이",
-			"유동비율(유동자산/유동부채) 확인",
-			"자산 구성 변화 (유형 vs 무형 비중)",
-		),
-		relatedModules=("annual.IS", "annual.CF"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="annual.CF", label="현금흐름표(연도별)", category="finance",
-		dataType="timeseries",
-		description="연도별 현금흐름표 시계열. 영업/투자/재무활동 현금흐름.",
-		requires="finance",
-		columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목"),),
-		analysisHints=(
-			"영업활동CF가 양수인지 확인 (음수 = 위험)",
-			"FCF = 영업활동CF - 자본적지출",
-			"재무활동CF로 차입/상환 패턴 파악",
-		),
-		relatedModules=("annual.IS", "annual.BS"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="timeseries.IS", label="손익계산서(분기별)", category="finance",
-		dataType="timeseries",
-		description="분기별 손익계산서 standalone 시계열.",
-		requires="finance",
-		relatedModules=("timeseries.BS", "timeseries.CF"),
-	),
-	DataEntry(
-		name="timeseries.BS", label="재무상태표(분기별)", category="finance",
-		dataType="timeseries",
-		description="분기별 재무상태표 시점잔액 시계열.",
-		requires="finance",
-		relatedModules=("timeseries.IS", "timeseries.CF"),
-	),
-	DataEntry(
-		name="timeseries.CF", label="현금흐름표(분기별)", category="finance",
-		dataType="timeseries",
-		description="분기별 현금흐름표 standalone 시계열.",
-		requires="finance",
-		relatedModules=("timeseries.IS", "timeseries.BS"),
-	),
-
-	# ═══════════════════════════════════════════════════════
-	# report — 재무제표 (finance XBRL 우선, docs fallback)
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="BS", label="재무상태표", category="report",
-		dataType="dataframe",
-		description="K-IFRS 연결 재무상태표. finance XBRL 정규화(snakeId) 기반, 회사간 비교 가능. finance 없으면 docs fallback.",
-		modulePath="dartlab.engines.dart.docs.finance.statements",
-		funcName="statements", extractor=None,
-		requires="finance",
-		unit="원",
-		columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목 (snakeId → 한글명)"),),
-		analysisHints=(
-			"부채비율(부채총계/자본총계) 추이",
-			"유동비율(유동자산/유동부채) 확인",
-			"자산 구성 변화 (유형 vs 무형 비중)",
-			"IFRS 16 리스부채 영향 고려",
-		),
-		relatedModules=("IS", "CF", "fsSummary"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="IS", label="손익계산서", category="report",
-		dataType="dataframe",
-		description="K-IFRS 연결 손익계산서. finance XBRL 정규화 기반. 매출액, 영업이익, 순이익 등 전체 계정 포함.",
-		modulePath="dartlab.engines.dart.docs.finance.statements",
-		funcName="statements", extractor=None,
-		requires="finance",
-		unit="원",
-		columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목 (snakeId → 한글명)"),),
-		analysisHints=(
-			"매출 성장률(YoY) 계산",
-			"영업이익률(영업이익/매출액) 추이",
-			"순이익률(당기순이익/매출액) 추이",
-			"매출원가율 변동 확인",
-		),
-		relatedModules=("BS", "CF", "fsSummary", "segments"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="CF", label="현금흐름표", category="report",
-		dataType="dataframe",
-		description="K-IFRS 연결 현금흐름표. finance XBRL 정규화 기반. 영업/투자/재무활동 현금흐름.",
-		modulePath="dartlab.engines.dart.docs.finance.statements",
-		funcName="statements", extractor=None,
-		requires="finance",
-		unit="원",
-		columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목 (snakeId → 한글명)"),),
-		analysisHints=(
-			"영업활동CF가 양수인지 확인 (음수 = 위험)",
-			"FCF = 영업활동CF - 자본적지출",
-			"재무활동CF로 차입/상환 패턴 파악",
-			"영업CF > 순이익이면 이익의 질 양호",
-		),
-		relatedModules=("BS", "IS"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="fsSummary", label="요약재무정보", category="report",
-		dataType="dataframe",
-		description="DART 공시 요약재무정보. 다년간 주요 재무지표 비교.",
-		modulePath="dartlab.engines.dart.docs.finance.summary",
-		funcName="fsSummary", extractor=None,
-		requires="docs",
-		analysisHints=("전체 재무 추세의 출발점으로 활용",),
-		relatedModules=("BS", "IS", "CF"),
-		maxRows=50,
-	),
-	DataEntry(
-		name="segments", label="부문정보", category="report",
-		dataType="dataframe",
-		description="사업부문별 매출·이익 데이터. 부문간 수익성 비교 가능.",
-		modulePath="dartlab.engines.dart.docs.finance.segment",
-		funcName="segments", extractor=lambda r: r.revenue,
-		requires="docs",
-		analysisHints=(
-			"부문별 매출 비중과 성장률",
-			"부문별 수익성 차이와 성장 기여도",
-		),
-		relatedModules=("IS", "productService"),
-	),
-	DataEntry(
-		name="tangibleAsset", label="유형자산", category="report",
-		dataType="dataframe",
-		description="유형자산 변동표. 취득/처분/감가상각 내역.",
-		modulePath="dartlab.engines.dart.docs.finance.tangibleAsset",
-		funcName="tangibleAsset", extractor=lambda r: r.movementDf,
-		requires="docs",
-		analysisHints=(
-			"CAPEX 수준과 감가상각 비교",
-			"자산 처분 규모 확인",
-		),
-		relatedModules=("CF", "BS"),
-	),
-	DataEntry(
-		name="costByNature", label="비용성격별분류", category="report",
-		dataType="dataframe",
-		description="비용을 성격별로 분류한 시계열. 원재료비, 인건비, 감가상각비 등.",
-		modulePath="dartlab.engines.dart.docs.finance.costByNature",
-		funcName="costByNature", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		analysisHints=(
-			"비용 구조 변화 추적 (인건비 비중 등)",
-			"원재료비 변동이 매출원가율에 미치는 영향",
-		),
-		relatedModules=("IS", "rawMaterial"),
-	),
-
-	# ── 정기보고서 — 재무 관련 ──
-	DataEntry(
-		name="dividend", label="배당", category="report",
-		dataType="dataframe",
-		description="배당 시계열. 연도별 DPS, 배당총액, 배당성향, 배당수익률.",
-		modulePath="dartlab.engines.dart.docs.finance.dividend",
-		funcName="dividend", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		unit="원 (DPS), 백만원 (총액), % (배당성향·수익률)",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("netIncome", "당기순이익", "백만원"),
-			ColumnMeta("eps", "주당순이익", "원"),
-			ColumnMeta("totalDividend", "현금배당금총액", "백만원"),
-			ColumnMeta("payoutRatio", "현금배당성향", "%"),
-			ColumnMeta("dividendYield", "현금배당수익률", "%"),
-			ColumnMeta("dps", "보통주 주당현금배당금", "원"),
-		),
-		analysisHints=(
-			"DPS 증감 추이 확인",
-			"배당성향(DPS/EPS) 안정성 — 100% 초과 시 과배당 우려",
-			"배당수익률 변화",
-		),
-		relatedModules=("IS", "shareCapital"),
-	),
-	DataEntry(
-		name="majorHolder", label="최대주주", category="report",
-		dataType="dataframe",
-		description="최대주주 지분율 시계열. 지분 변동은 경영권 안정성의 핵심 지표.",
-		modulePath="dartlab.engines.dart.docs.finance.majorHolder",
-		funcName="majorHolder", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		unit="% (지분율), 주 (주식수)",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("majorHolder", "최대주주명"),
-			ColumnMeta("majorRatio", "최대주주 지분율", "%"),
-			ColumnMeta("totalRatio", "특수관계인 포함 총 지분율", "%"),
-			ColumnMeta("holderCount", "주요주주 수", "명"),
-		),
-		analysisHints=(
-			"최대주주 지분율 변동 확인",
-			"특수관계인 포함 총 지분율 30% 이상이면 경영권 안정",
-		),
-		relatedModules=("holderOverview", "executive"),
-	),
-	DataEntry(
-		name="employee", label="직원현황", category="report",
-		dataType="dataframe",
-		description="직원 수, 평균 근속연수, 평균 연봉 시계열.",
-		modulePath="dartlab.engines.dart.docs.finance.employee",
-		funcName="employee", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		unit="명 (인원), 년 (근속), 백만원 (연봉)",
-		analysisHints=(
-			"직원 수 증감과 매출 성장의 관계",
-			"평균 연봉 수준 및 변화",
-		),
-		relatedModules=("IS", "executivePay"),
-	),
-	DataEntry(
-		name="subsidiary", label="자회사투자", category="report",
-		dataType="dataframe",
-		description="종속회사 투자 시계열. 지분율, 장부가액 변동.",
-		modulePath="dartlab.engines.dart.docs.finance.subsidiary",
-		funcName="subsidiary", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		unit="백만원 (금액), % (지분율)",
-		analysisHints=(
-			"자회사 손익이 연결 실적에 미치는 영향",
-			"주요 자회사 지분율 변동",
-		),
-		relatedModules=("investmentInOther", "affiliateGroup"),
-	),
-	DataEntry(
-		name="bond", label="채무증권", category="report",
-		dataType="dataframe",
-		description="사채, CP 등 채무증권 발행·상환 시계열.",
-		modulePath="dartlab.engines.dart.docs.finance.bond",
-		funcName="bond", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		analysisHints=(
-			"만기 도래 시점의 차환 리스크",
-			"이자율 수준과 신용등급 연계",
-		),
-		relatedModules=("BS", "CF", "contingentLiability"),
-	),
-	DataEntry(
-		name="shareCapital", label="주식현황", category="report",
-		dataType="dataframe",
-		description="발행주식수, 자기주식, 유통주식수 시계열.",
-		modulePath="dartlab.engines.dart.docs.finance.shareCapital",
-		funcName="shareCapital", extractor=lambda r: r.timeSeries,
-		requires="docs",
-		unit="주",
-		analysisHints=(
-			"자기주식 비율과 소각 여부",
-			"유통주식수 변동이 주가에 미치는 영향",
-		),
-		relatedModules=("capitalChange", "fundraising", "dividend"),
-	),
-	DataEntry(
-		name="executive", label="임원현황", category="report",
-		dataType="dataframe",
-		description="등기임원 구성 시계열. 사내이사/사외이사/비상무이사 구분.",
-		modulePath="dartlab.engines.dart.docs.finance.executive",
-		funcName="executive", extractor=lambda r: r.executiveDf,
-		requires="docs",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("totalRegistered", "등기임원 총원", "명"),
-			ColumnMeta("insideDirectors", "사내이사", "명"),
-			ColumnMeta("outsideDirectors", "사외이사", "명"),
-			ColumnMeta("otherNonexec", "기타비상무이사", "명"),
-			ColumnMeta("maleCount", "남성 임원", "명"),
-			ColumnMeta("femaleCount", "여성 임원", "명"),
-		),
-		analysisHints=("사외이사 비율 1/3 이상은 법적 요건",),
-		relatedModules=("boardOfDirectors", "executivePay"),
-	),
-	DataEntry(
-		name="executivePay", label="임원보수", category="report",
-		dataType="dataframe",
-		description="임원 유형별 보수 시계열. 등기이사/사외이사/감사 구분.",
-		modulePath="dartlab.engines.dart.docs.finance.executivePay",
-		funcName="executivePay", extractor=lambda r: r.payByTypeDf,
-		requires="docs",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("category", "임원 유형"),
-			ColumnMeta("headcount", "인원수", "명"),
-			ColumnMeta("totalPay", "보수총액", "백만원"),
-			ColumnMeta("avgPay", "1인당 평균보수", "백만원"),
-		),
-		analysisHints=("평균 보수 대비 실적 적정성 판단",),
-		relatedModules=("executive", "employee"),
-	),
-	DataEntry(
-		name="audit", label="감사의견", category="report",
-		dataType="dataframe",
-		description="외부감사인의 감사의견과 감사보수 시계열. 적정 외 의견은 중대 위험 신호.",
-		modulePath="dartlab.engines.dart.docs.finance.audit",
-		funcName="audit", extractor=lambda r: r.opinionDf,
-		requires="docs",
-		unit="백만원 (보수)",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("auditor", "감사인 (회계법인)"),
-			ColumnMeta("opinion", "감사의견 (적정/한정/부적정/의견거절)"),
-			ColumnMeta("keyAuditMatters", "핵심감사사항"),
-		),
-		analysisHints=(
-			"적정 외 의견은 중대 리스크 신호",
-			"감사인 교체 빈번 여부 확인",
-			"핵심감사사항의 반복 패턴",
-		),
-		relatedModules=("auditSystem", "internalControl"),
-	),
-	DataEntry(
-		name="boardOfDirectors", label="이사회", category="report",
-		dataType="dataframe",
-		description="이사회 구성 및 활동 시계열. 개최횟수, 출석률 포함.",
-		modulePath="dartlab.engines.dart.docs.finance.boardOfDirectors",
-		funcName="boardOfDirectors", extractor=lambda r: r.boardDf,
-		requires="docs",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("totalDirectors", "이사 총원", "명"),
-			ColumnMeta("outsideDirectors", "사외이사", "명"),
-			ColumnMeta("meetingCount", "이사회 개최횟수", "회"),
-			ColumnMeta("avgAttendanceRate", "평균 출석률", "%"),
-		),
-		analysisHints=("이사회 활동성(개최횟수)과 출석률 확인",),
-		relatedModules=("executive", "auditSystem"),
-	),
-	DataEntry(
-		name="capitalChange", label="자본변동", category="report",
-		dataType="dataframe",
-		description="자본금 변동 시계열. 보통주/우선주 주식수·액면 변동.",
-		modulePath="dartlab.engines.dart.docs.finance.capitalChange",
-		funcName="capitalChange", extractor=lambda r: r.capitalDf,
-		requires="docs",
-		unit="주 (주식수), 원 (액면)",
-		analysisHints=("증자/감자 이벤트와 지분 희석 효과",),
-		relatedModules=("shareCapital", "fundraising"),
-	),
-	DataEntry(
-		name="contingentLiability", label="우발부채", category="report",
-		dataType="dataframe",
-		description="채무보증, 소송 현황. 잠재적 재무 리스크 지표.",
-		modulePath="dartlab.engines.dart.docs.finance.contingentLiability",
-		funcName="contingentLiability", extractor=lambda r: r.guaranteeDf,
-		requires="docs",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("totalGuaranteeAmount", "채무보증 총액", "백만원"),
-			ColumnMeta("lineCount", "보증 건수", "건"),
-		),
-		analysisHints=(
-			"채무보증 총액 대비 자기자본 비율",
-			"소송 규모와 진행 상태",
-		),
-		relatedModules=("BS", "sanction"),
-	),
-	DataEntry(
-		name="internalControl", label="내부통제", category="report",
-		dataType="dataframe",
-		description="내부회계관리제도 감사의견 시계열.",
-		modulePath="dartlab.engines.dart.docs.finance.internalControl",
-		funcName="internalControl", extractor=lambda r: r.controlDf,
-		requires="docs",
-		analysisHints=("내부통제 취약점은 재무제표 신뢰성 리스크",),
-		relatedModules=("audit", "auditSystem"),
-	),
-	DataEntry(
-		name="relatedPartyTx", label="관계자거래", category="report",
-		dataType="dataframe",
-		description="대주주 등과의 매출·매입 거래 시계열. 이전가격 리스크 확인.",
-		modulePath="dartlab.engines.dart.docs.finance.relatedPartyTx",
-		funcName="relatedPartyTx", extractor=lambda r: r.revenueTxDf,
-		requires="docs",
-		analysisHints=("관계자 거래 비중이 매출의 10%+ 이면 주의",),
-		relatedModules=("affiliateGroup", "majorHolder"),
-	),
-	DataEntry(
-		name="rnd", label="R&D", category="report",
-		dataType="dataframe",
-		description="연구개발비용 시계열. 기술 투자 강도 판단.",
-		modulePath="dartlab.engines.dart.docs.finance.rnd",
-		funcName="rnd", extractor=lambda r: r.rndDf,
-		requires="docs",
-		columns=(
-			ColumnMeta("year", "사업연도"),
-			ColumnMeta("rndExpense", "연구개발비", "백만원"),
-			ColumnMeta("revenueRatio", "매출 대비 R&D 비율", "%"),
-		),
-		analysisHints=(
-			"매출 대비 R&D 비율의 업종 적정성",
-			"R&D 투자 추세와 매출 성장의 관계",
-		),
-		relatedModules=("IS", "productService"),
-	),
-	DataEntry(
-		name="sanction", label="제재현황", category="report",
-		dataType="dataframe",
-		description="행정제재, 과징금, 영업정지 등 규제 조치 이력.",
-		modulePath="dartlab.engines.dart.docs.finance.sanction",
-		funcName="sanction", extractor=lambda r: r.sanctionDf,
-		requires="docs",
-		analysisHints=("제재 이력은 규제 리스크 신호", "반복 제재 패턴 확인"),
-		relatedModules=("contingentLiability",),
-	),
-	DataEntry(
-		name="affiliateGroup", label="계열사", category="report",
-		dataType="dataframe",
-		description="기업집단 소속 계열회사 현황. 상장/비상장 구분.",
-		modulePath="dartlab.engines.dart.docs.finance.affiliateGroup",
-		funcName="affiliateGroup", extractor=lambda r: r.affiliateDf,
-		requires="docs",
-		analysisHints=("그룹 규모와 계열사 변동 추적",),
-		relatedModules=("relatedPartyTx", "subsidiary"),
-		maxRows=15,
-	),
-	DataEntry(
-		name="fundraising", label="증자감자", category="report",
-		dataType="dataframe",
-		description="유상증자, 무상증자, 감자 이력.",
-		modulePath="dartlab.engines.dart.docs.finance.fundraising",
-		funcName="fundraising", extractor=lambda r: r.issuanceDf,
-		requires="docs",
-		analysisHints=("증자 빈도와 목적 (시설/운영/차환)", "감자 이유 확인"),
-		relatedModules=("capitalChange", "shareCapital"),
-	),
-	DataEntry(
-		name="productService", label="주요제품", category="report",
-		dataType="dataframe",
-		description="주요 제품/서비스별 매출액과 비중.",
-		modulePath="dartlab.engines.dart.docs.finance.productService",
-		funcName="productService", extractor=lambda r: r.productDf,
-		requires="docs",
-		analysisHints=("매출 집중도(단일 제품 의존도) 확인",),
-		relatedModules=("segments", "salesOrder"),
-	),
-	DataEntry(
-		name="salesOrder", label="매출수주", category="report",
-		dataType="dataframe",
-		description="매출실적 및 수주 현황.",
-		modulePath="dartlab.engines.dart.docs.finance.salesOrder",
-		funcName="salesOrder", extractor=lambda r: r.salesDf,
-		requires="docs",
-		analysisHints=("수주잔고 추이로 미래 매출 가시성 확인",),
-		relatedModules=("IS", "productService"),
-	),
-	DataEntry(
-		name="riskDerivative", label="위험관리", category="report",
-		dataType="dataframe",
-		description="환율·이자율·상품가격 리스크 관리. 파생상품 보유 현황.",
-		modulePath="dartlab.engines.dart.docs.finance.riskDerivative",
-		funcName="riskDerivative", extractor=lambda r: r.fxDf,
-		requires="docs",
-		analysisHints=(
-			"환위험 노출 규모와 헤지 비율",
-			"파생상품 평가손익 추이",
-		),
-		relatedModules=("IS", "BS"),
-	),
-	DataEntry(
-		name="articlesOfIncorporation", label="정관", category="report",
-		dataType="dataframe",
-		description="정관 변경 이력. 사업목적 추가·변경으로 신사업 진출 파악.",
-		modulePath="dartlab.engines.dart.docs.finance.articlesOfIncorporation",
-		funcName="articlesOfIncorporation", extractor=lambda r: r.changesDf,
-		requires="docs",
-		analysisHints=("사업목적 추가/변경 사항 확인",),
-	),
-	DataEntry(
-		name="otherFinance", label="기타재무", category="report",
-		dataType="dataframe",
-		description="대손충당금, 재고자산 관련 기타 재무 데이터.",
-		modulePath="dartlab.engines.dart.docs.finance.otherFinance",
-		funcName="otherFinance", extractor=lambda r: r.badDebtDf,
-		requires="docs",
-		analysisHints=("대손충당금 적립률 추이", "재고자산 회전율 변동"),
-		relatedModules=("BS", "IS"),
-	),
-	DataEntry(
-		name="companyHistory", label="연혁", category="report",
-		dataType="dataframe",
-		description="회사 주요 연혁 이벤트 목록.",
-		modulePath="dartlab.engines.dart.docs.finance.companyHistory",
-		funcName="companyHistory", extractor=lambda r: r.eventsDf,
-		requires="docs",
-		analysisHints=("최근 M&A, 사업 전환, 상장 등 주요 이벤트",),
-		maxRows=20,
-	),
-	DataEntry(
-		name="shareholderMeeting", label="주주총회", category="report",
-		dataType="dataframe",
-		description="주주총회 안건 및 의결 결과.",
-		modulePath="dartlab.engines.dart.docs.finance.shareholderMeeting",
-		funcName="shareholderMeeting", extractor=lambda r: r.agendaDf,
-		requires="docs",
-		analysisHints=("안건 부결 여부, 특수 안건 확인",),
-		relatedModules=("majorHolder",),
-	),
-	DataEntry(
-		name="auditSystem", label="감사제도", category="report",
-		dataType="dataframe",
-		description="감사위원회 구성 및 활동 현황.",
-		modulePath="dartlab.engines.dart.docs.finance.auditSystem",
-		funcName="auditSystem", extractor=lambda r: r.committeeDf,
-		requires="docs",
-		analysisHints=("감사위원회 전원 사외이사 여부 확인",),
-		relatedModules=("audit", "boardOfDirectors"),
-	),
-	DataEntry(
-		name="affiliate", label="관계기업투자", category="report",
-		dataType="dataframe",
-		description="관계기업/공동기업 투자 변동 시계열. 지분법손익, 기초/기말 장부가 포함.",
-		modulePath="dartlab.engines.dart.docs.finance.affiliate",
-		funcName="affiliate", extractor=lambda r: r.movementDf,
-		requires="docs",
-		analysisHints=(
-			"관계기업 지분법손익이 연결 실적에 미치는 영향",
-			"투자 포트폴리오 변동(취득/처분) 추적",
-		),
-		relatedModules=("subsidiary", "investmentInOther", "affiliateGroup"),
-	),
-	DataEntry(
-		name="investmentInOther", label="타법인출자", category="report",
-		dataType="dataframe",
-		description="타법인 출자 현황. 투자목적, 지분율, 장부가 등.",
-		modulePath="dartlab.engines.dart.docs.finance.investmentInOther",
-		funcName="investmentInOther", extractor=lambda r: r.investmentDf,
-		requires="docs",
-		analysisHints=("비핵심 투자 비중과 수익성",),
-		relatedModules=("subsidiary", "affiliateGroup"),
-		maxRows=20,
-	),
-	DataEntry(
-		name="companyOverviewDetail", label="회사개요", category="report",
-		dataType="dict",
-		description="설립일, 상장일, 대표이사, 주소, 주요사업 등 기본 정보.",
-		modulePath="dartlab.engines.dart.docs.finance.companyOverviewDetail",
-		funcName="companyOverviewDetail",
-		extractor=lambda r: {
-			"foundedDate": r.foundedDate, "listedDate": r.listedDate,
-			"address": r.address, "ceo": r.ceo,
-			"mainBusiness": r.mainBusiness, "website": r.website,
-		},
-		requires="docs",
-	),
-
-	DataEntry(
-		name="holderOverview", label="주주현황", category="report",
-		dataType="custom",
-		description="5% 이상 주주, 소액주주 현황, 의결권 현황. majorHolder보다 상세한 주주 구성.",
-		modulePath="dartlab.engines.dart.docs.finance.majorHolder",
-		funcName="holderOverview", extractor=None,
-		requires="docs",
-		analysisHints=(
-			"5% 이상 대량보유 주주 변동 추적",
-			"소액주주 비율과 유통주식 비율",
-		),
-		relatedModules=("majorHolder", "shareCapital"),
-	),
-
-	# ═══════════════════════════════════════════════════════
-	# disclosure — 서술형 공시
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="business", label="사업의내용", category="disclosure",
-		dataType="text",
-		description="사업보고서 '사업의 내용' 서술. 사업 구조와 현황 파악.",
-		modulePath="dartlab.engines.dart.docs.disclosure.business",
-		funcName="business", extractor=lambda r: r.sections,
-		requires="docs",
-		analysisHints=(
-			"핵심 사업모델과 경쟁력 파악",
-			"산업 리스크 요인 확인",
-		),
-		maxRows=5,
-	),
-	DataEntry(
-		name="companyOverview", label="회사개요정량", category="disclosure",
-		dataType="dict",
-		description="공시 기반 회사 정량 개요 데이터.",
-		modulePath="dartlab.engines.dart.docs.disclosure.companyOverview",
-		funcName="companyOverview", extractor=None,
-		requires="docs",
-	),
-	DataEntry(
-		name="mdna", label="MD&A", category="disclosure",
-		dataType="text",
-		description="이사의 경영진단 및 분석의견. 경영진 시각의 실적 평가와 전망.",
-		modulePath="dartlab.engines.dart.docs.disclosure.mdna",
-		funcName="mdna", extractor=lambda r: r.overview,
-		requires="docs",
-		analysisHints=(
-			"경영진의 실적 자기평가와 전망",
-			"언급된 리스크 요인",
-		),
-	),
-	DataEntry(
-		name="rawMaterial", label="원재료설비", category="disclosure",
-		dataType="dict",
-		description="원재료 매입, 유형자산 현황, 시설투자 데이터.",
-		modulePath="dartlab.engines.dart.docs.disclosure.rawMaterial",
-		funcName="rawMaterial", extractor=None,
-		requires="docs",
-		analysisHints=("원재료 조달 집중도", "시설투자 규모 추이"),
-		relatedModules=("costByNature", "tangibleAsset"),
-	),
-	DataEntry(
-		name="sections", label="사업보고서섹션", category="disclosure",
-		dataType="dataframe",
-		description="사업보고서 전체 섹션 텍스트를 topic(행) × period(열) DataFrame으로 구조화. "
-		"leaf title 기준 수평 비교 가능. 연간+분기+반기 전 기간 포함.",
-		modulePath="dartlab.engines.dart.docs.sections",
-		funcName="sections", extractor=None,
-		requires="docs",
-		columns=(
-			ColumnMeta("topic", "섹션 주제명 (leaf title)"),
-		),
-		analysisHints=(
-			"사업 리스크, 소송, 제재, 후발사건 등 서술형 정보 탐색",
-			"연도별 텍스트 변화 비교 (같은 topic의 기간별 텍스트 대조)",
-			"경영진 전망, 이사회 활동, 위험관리 정책 등 정성 분석",
-		),
-	),
-
-	# ═══════════════════════════════════════════════════════
-	# notes — K-IFRS 주석
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="notes.receivables", label="매출채권", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 매출채권 주석. 채권 잔액 및 대손충당금 내역.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.inventory", label="재고자산", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 재고자산 주석. 원재료/재공품/제품 내역별 금액.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.tangibleAsset", label="유형자산(주석)", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 유형자산 변동 주석. 토지, 건물, 기계 등 항목별 변동.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.intangibleAsset", label="무형자산", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 무형자산 주석. 영업권, 개발비 등 항목별 변동.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.investmentProperty", label="투자부동산", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 투자부동산 주석. 공정가치 및 변동 내역.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.affiliates", label="관계기업(주석)", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 관계기업 투자 주석. 지분법 적용 내역.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.borrowings", label="차입금", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 차입금 주석. 단기/장기 차입 잔액 및 이자율.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.provisions", label="충당부채", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 충당부채 주석. 판매보증, 소송, 복구 등.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.eps", label="주당이익", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 주당이익 주석. 기본/희석 EPS 계산 내역.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.lease", label="리스", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 리스 주석. 사용권자산, 리스부채 내역.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.segments", label="부문정보(주석)", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 부문정보 주석. 사업부문별 상세 데이터.",
-		requires="docs",
-	),
-	DataEntry(
-		name="notes.costByNature", label="비용의성격별분류(주석)", category="notes",
-		dataType="dataframe",
-		description="K-IFRS 비용의 성격별 분류 주석.",
-		requires="docs",
-	),
-
-	# ═══════════════════════════════════════════════════════
-	# raw — 원본 parquet
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="rawDocs", label="공시 원본", category="raw",
-		dataType="dataframe",
-		description="공시 문서 원본 parquet. 가공 전 전체 테이블과 텍스트.",
-		requires="docs",
-	),
-	DataEntry(
-		name="rawFinance", label="XBRL 원본", category="raw",
-		dataType="dataframe",
-		description="XBRL 재무제표 원본 parquet. 매핑/정규화 전 원본 데이터.",
-		requires="finance",
-	),
-	DataEntry(
-		name="rawReport", label="보고서 원본", category="raw",
-		dataType="dataframe",
-		description="정기보고서 API 원본 parquet. 파싱 전 원본 데이터.",
-		requires="report",
-	),
-
-	# ═══════════════════════════════════════════════════════
-	# analysis — L2 분석 엔진
-	# ═══════════════════════════════════════════════════════
-	DataEntry(
-		name="ratios", label="재무비율", category="analysis",
-		dataType="ratios",
-		description="financeEngine이 자동계산한 수익성·안정성·밸류에이션 비율.",
-		requires="finance",
-		unit="%",
-	),
-	DataEntry(
-		name="insight", label="인사이트", category="analysis",
-		dataType="custom",
-		description="7영역 A~F 등급 분석 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회).",
-		requires="finance",
-	),
-	DataEntry(
-		name="sector", label="섹터분류", category="analysis",
-		dataType="custom",
-		description="WICS 11대 섹터 분류. 대분류/중분류 + 섹터별 파라미터.",
-	),
-	DataEntry(
-		name="rank", label="시장순위", category="analysis",
-		dataType="custom",
-		description="전체 시장 및 섹터 내 매출/자산/성장률 순위.",
-		requires="finance",
-	),
+    # ═══════════════════════════════════════════════════════
+    # finance — 시계열 재무제표
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="annual.IS",
+        label="손익계산서(연도별)",
+        category="finance",
+        dataType="timeseries",
+        description="연도별 손익계산서 시계열. 매출액, 영업이익, 순이익 등 전체 계정.",
+        requires="finance",
+        columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목"),),
+        analysisHints=(
+            "매출 성장률(YoY) 계산",
+            "영업이익률(영업이익/매출액) 추이",
+            "순이익률(당기순이익/매출액) 추이",
+            "매출원가율 변동 확인",
+        ),
+        relatedModules=("annual.BS", "annual.CF"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="annual.BS",
+        label="재무상태표(연도별)",
+        category="finance",
+        dataType="timeseries",
+        description="연도별 재무상태표 시계열. 자산, 부채, 자본 전체 계정.",
+        requires="finance",
+        columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목"),),
+        analysisHints=(
+            "부채비율(부채총계/자본총계) 추이",
+            "유동비율(유동자산/유동부채) 확인",
+            "자산 구성 변화 (유형 vs 무형 비중)",
+        ),
+        relatedModules=("annual.IS", "annual.CF"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="annual.CF",
+        label="현금흐름표(연도별)",
+        category="finance",
+        dataType="timeseries",
+        description="연도별 현금흐름표 시계열. 영업/투자/재무활동 현금흐름.",
+        requires="finance",
+        columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목"),),
+        analysisHints=(
+            "영업활동CF가 양수인지 확인 (음수 = 위험)",
+            "FCF = 영업활동CF - 자본적지출",
+            "재무활동CF로 차입/상환 패턴 파악",
+        ),
+        relatedModules=("annual.IS", "annual.BS"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="timeseries.IS",
+        label="손익계산서(분기별)",
+        category="finance",
+        dataType="timeseries",
+        description="분기별 손익계산서 standalone 시계열.",
+        requires="finance",
+        relatedModules=("timeseries.BS", "timeseries.CF"),
+    ),
+    DataEntry(
+        name="timeseries.BS",
+        label="재무상태표(분기별)",
+        category="finance",
+        dataType="timeseries",
+        description="분기별 재무상태표 시점잔액 시계열.",
+        requires="finance",
+        relatedModules=("timeseries.IS", "timeseries.CF"),
+    ),
+    DataEntry(
+        name="timeseries.CF",
+        label="현금흐름표(분기별)",
+        category="finance",
+        dataType="timeseries",
+        description="분기별 현금흐름표 standalone 시계열.",
+        requires="finance",
+        relatedModules=("timeseries.IS", "timeseries.BS"),
+    ),
+    # ═══════════════════════════════════════════════════════
+    # report — 재무제표 (finance XBRL 우선, docs fallback)
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="BS",
+        label="재무상태표",
+        category="report",
+        dataType="dataframe",
+        description="K-IFRS 연결 재무상태표. finance XBRL 정규화(snakeId) 기반, 회사간 비교 가능. finance 없으면 docs fallback.",
+        modulePath="dartlab.engines.dart.docs.finance.statements",
+        funcName="statements",
+        extractor=None,
+        requires="finance",
+        unit="원",
+        columns=(ColumnMeta("계정명", "K-IFRS 재무상태표 계정과목 (snakeId → 한글명)"),),
+        analysisHints=(
+            "부채비율(부채총계/자본총계) 추이",
+            "유동비율(유동자산/유동부채) 확인",
+            "자산 구성 변화 (유형 vs 무형 비중)",
+            "IFRS 16 리스부채 영향 고려",
+        ),
+        relatedModules=("IS", "CF", "fsSummary"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="IS",
+        label="손익계산서",
+        category="report",
+        dataType="dataframe",
+        description="K-IFRS 연결 손익계산서. finance XBRL 정규화 기반. 매출액, 영업이익, 순이익 등 전체 계정 포함.",
+        modulePath="dartlab.engines.dart.docs.finance.statements",
+        funcName="statements",
+        extractor=None,
+        requires="finance",
+        unit="원",
+        columns=(ColumnMeta("계정명", "K-IFRS 손익계산서 계정과목 (snakeId → 한글명)"),),
+        analysisHints=(
+            "매출 성장률(YoY) 계산",
+            "영업이익률(영업이익/매출액) 추이",
+            "순이익률(당기순이익/매출액) 추이",
+            "매출원가율 변동 확인",
+        ),
+        relatedModules=("BS", "CF", "fsSummary", "segments"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="CF",
+        label="현금흐름표",
+        category="report",
+        dataType="dataframe",
+        description="K-IFRS 연결 현금흐름표. finance XBRL 정규화 기반. 영업/투자/재무활동 현금흐름.",
+        modulePath="dartlab.engines.dart.docs.finance.statements",
+        funcName="statements",
+        extractor=None,
+        requires="finance",
+        unit="원",
+        columns=(ColumnMeta("계정명", "K-IFRS 현금흐름표 계정과목 (snakeId → 한글명)"),),
+        analysisHints=(
+            "영업활동CF가 양수인지 확인 (음수 = 위험)",
+            "FCF = 영업활동CF - 자본적지출",
+            "재무활동CF로 차입/상환 패턴 파악",
+            "영업CF > 순이익이면 이익의 질 양호",
+        ),
+        relatedModules=("BS", "IS"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="fsSummary",
+        label="요약재무정보",
+        category="report",
+        dataType="dataframe",
+        description="DART 공시 요약재무정보. 다년간 주요 재무지표 비교.",
+        modulePath="dartlab.engines.dart.docs.finance.summary",
+        funcName="fsSummary",
+        extractor=None,
+        requires="docs",
+        analysisHints=("전체 재무 추세의 출발점으로 활용",),
+        relatedModules=("BS", "IS", "CF"),
+        maxRows=50,
+    ),
+    DataEntry(
+        name="segments",
+        label="부문정보",
+        category="report",
+        dataType="dataframe",
+        description="사업부문별 매출·이익 데이터. 부문간 수익성 비교 가능.",
+        modulePath="dartlab.engines.dart.docs.finance.segment",
+        funcName="segments",
+        extractor=lambda r: r.revenue,
+        requires="docs",
+        analysisHints=(
+            "부문별 매출 비중과 성장률",
+            "부문별 수익성 차이와 성장 기여도",
+        ),
+        relatedModules=("IS", "productService"),
+    ),
+    DataEntry(
+        name="tangibleAsset",
+        label="유형자산",
+        category="report",
+        dataType="dataframe",
+        description="유형자산 변동표. 취득/처분/감가상각 내역.",
+        modulePath="dartlab.engines.dart.docs.finance.tangibleAsset",
+        funcName="tangibleAsset",
+        extractor=lambda r: r.movementDf,
+        requires="docs",
+        analysisHints=(
+            "CAPEX 수준과 감가상각 비교",
+            "자산 처분 규모 확인",
+        ),
+        relatedModules=("CF", "BS"),
+    ),
+    DataEntry(
+        name="costByNature",
+        label="비용성격별분류",
+        category="report",
+        dataType="dataframe",
+        description="비용을 성격별로 분류한 시계열. 원재료비, 인건비, 감가상각비 등.",
+        modulePath="dartlab.engines.dart.docs.finance.costByNature",
+        funcName="costByNature",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        analysisHints=(
+            "비용 구조 변화 추적 (인건비 비중 등)",
+            "원재료비 변동이 매출원가율에 미치는 영향",
+        ),
+        relatedModules=("IS", "rawMaterial"),
+    ),
+    # ── 정기보고서 — 재무 관련 ──
+    DataEntry(
+        name="dividend",
+        label="배당",
+        category="report",
+        dataType="dataframe",
+        description="배당 시계열. 연도별 DPS, 배당총액, 배당성향, 배당수익률.",
+        modulePath="dartlab.engines.dart.docs.finance.dividend",
+        funcName="dividend",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        unit="원 (DPS), 백만원 (총액), % (배당성향·수익률)",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("netIncome", "당기순이익", "백만원"),
+            ColumnMeta("eps", "주당순이익", "원"),
+            ColumnMeta("totalDividend", "현금배당금총액", "백만원"),
+            ColumnMeta("payoutRatio", "현금배당성향", "%"),
+            ColumnMeta("dividendYield", "현금배당수익률", "%"),
+            ColumnMeta("dps", "보통주 주당현금배당금", "원"),
+        ),
+        analysisHints=(
+            "DPS 증감 추이 확인",
+            "배당성향(DPS/EPS) 안정성 — 100% 초과 시 과배당 우려",
+            "배당수익률 변화",
+        ),
+        relatedModules=("IS", "shareCapital"),
+    ),
+    DataEntry(
+        name="majorHolder",
+        label="최대주주",
+        category="report",
+        dataType="dataframe",
+        description="최대주주 지분율 시계열. 지분 변동은 경영권 안정성의 핵심 지표.",
+        modulePath="dartlab.engines.dart.docs.finance.majorHolder",
+        funcName="majorHolder",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        unit="% (지분율), 주 (주식수)",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("majorHolder", "최대주주명"),
+            ColumnMeta("majorRatio", "최대주주 지분율", "%"),
+            ColumnMeta("totalRatio", "특수관계인 포함 총 지분율", "%"),
+            ColumnMeta("holderCount", "주요주주 수", "명"),
+        ),
+        analysisHints=(
+            "최대주주 지분율 변동 확인",
+            "특수관계인 포함 총 지분율 30% 이상이면 경영권 안정",
+        ),
+        relatedModules=("holderOverview", "executive"),
+    ),
+    DataEntry(
+        name="employee",
+        label="직원현황",
+        category="report",
+        dataType="dataframe",
+        description="직원 수, 평균 근속연수, 평균 연봉 시계열.",
+        modulePath="dartlab.engines.dart.docs.finance.employee",
+        funcName="employee",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        unit="명 (인원), 년 (근속), 백만원 (연봉)",
+        analysisHints=(
+            "직원 수 증감과 매출 성장의 관계",
+            "평균 연봉 수준 및 변화",
+        ),
+        relatedModules=("IS", "executivePay"),
+    ),
+    DataEntry(
+        name="subsidiary",
+        label="자회사투자",
+        category="report",
+        dataType="dataframe",
+        description="종속회사 투자 시계열. 지분율, 장부가액 변동.",
+        modulePath="dartlab.engines.dart.docs.finance.subsidiary",
+        funcName="subsidiary",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        unit="백만원 (금액), % (지분율)",
+        analysisHints=(
+            "자회사 손익이 연결 실적에 미치는 영향",
+            "주요 자회사 지분율 변동",
+        ),
+        relatedModules=("investmentInOther", "affiliateGroup"),
+    ),
+    DataEntry(
+        name="bond",
+        label="채무증권",
+        category="report",
+        dataType="dataframe",
+        description="사채, CP 등 채무증권 발행·상환 시계열.",
+        modulePath="dartlab.engines.dart.docs.finance.bond",
+        funcName="bond",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        analysisHints=(
+            "만기 도래 시점의 차환 리스크",
+            "이자율 수준과 신용등급 연계",
+        ),
+        relatedModules=("BS", "CF", "contingentLiability"),
+    ),
+    DataEntry(
+        name="shareCapital",
+        label="주식현황",
+        category="report",
+        dataType="dataframe",
+        description="발행주식수, 자기주식, 유통주식수 시계열.",
+        modulePath="dartlab.engines.dart.docs.finance.shareCapital",
+        funcName="shareCapital",
+        extractor=lambda r: r.timeSeries,
+        requires="docs",
+        unit="주",
+        analysisHints=(
+            "자기주식 비율과 소각 여부",
+            "유통주식수 변동이 주가에 미치는 영향",
+        ),
+        relatedModules=("capitalChange", "fundraising", "dividend"),
+    ),
+    DataEntry(
+        name="executive",
+        label="임원현황",
+        category="report",
+        dataType="dataframe",
+        description="등기임원 구성 시계열. 사내이사/사외이사/비상무이사 구분.",
+        modulePath="dartlab.engines.dart.docs.finance.executive",
+        funcName="executive",
+        extractor=lambda r: r.executiveDf,
+        requires="docs",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("totalRegistered", "등기임원 총원", "명"),
+            ColumnMeta("insideDirectors", "사내이사", "명"),
+            ColumnMeta("outsideDirectors", "사외이사", "명"),
+            ColumnMeta("otherNonexec", "기타비상무이사", "명"),
+            ColumnMeta("maleCount", "남성 임원", "명"),
+            ColumnMeta("femaleCount", "여성 임원", "명"),
+        ),
+        analysisHints=("사외이사 비율 1/3 이상은 법적 요건",),
+        relatedModules=("boardOfDirectors", "executivePay"),
+    ),
+    DataEntry(
+        name="executivePay",
+        label="임원보수",
+        category="report",
+        dataType="dataframe",
+        description="임원 유형별 보수 시계열. 등기이사/사외이사/감사 구분.",
+        modulePath="dartlab.engines.dart.docs.finance.executivePay",
+        funcName="executivePay",
+        extractor=lambda r: r.payByTypeDf,
+        requires="docs",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("category", "임원 유형"),
+            ColumnMeta("headcount", "인원수", "명"),
+            ColumnMeta("totalPay", "보수총액", "백만원"),
+            ColumnMeta("avgPay", "1인당 평균보수", "백만원"),
+        ),
+        analysisHints=("평균 보수 대비 실적 적정성 판단",),
+        relatedModules=("executive", "employee"),
+    ),
+    DataEntry(
+        name="audit",
+        label="감사의견",
+        category="report",
+        dataType="dataframe",
+        description="외부감사인의 감사의견과 감사보수 시계열. 적정 외 의견은 중대 위험 신호.",
+        modulePath="dartlab.engines.dart.docs.finance.audit",
+        funcName="audit",
+        extractor=lambda r: r.opinionDf,
+        requires="docs",
+        unit="백만원 (보수)",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("auditor", "감사인 (회계법인)"),
+            ColumnMeta("opinion", "감사의견 (적정/한정/부적정/의견거절)"),
+            ColumnMeta("keyAuditMatters", "핵심감사사항"),
+        ),
+        analysisHints=(
+            "적정 외 의견은 중대 리스크 신호",
+            "감사인 교체 빈번 여부 확인",
+            "핵심감사사항의 반복 패턴",
+        ),
+        relatedModules=("auditSystem", "internalControl"),
+    ),
+    DataEntry(
+        name="boardOfDirectors",
+        label="이사회",
+        category="report",
+        dataType="dataframe",
+        description="이사회 구성 및 활동 시계열. 개최횟수, 출석률 포함.",
+        modulePath="dartlab.engines.dart.docs.finance.boardOfDirectors",
+        funcName="boardOfDirectors",
+        extractor=lambda r: r.boardDf,
+        requires="docs",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("totalDirectors", "이사 총원", "명"),
+            ColumnMeta("outsideDirectors", "사외이사", "명"),
+            ColumnMeta("meetingCount", "이사회 개최횟수", "회"),
+            ColumnMeta("avgAttendanceRate", "평균 출석률", "%"),
+        ),
+        analysisHints=("이사회 활동성(개최횟수)과 출석률 확인",),
+        relatedModules=("executive", "auditSystem"),
+    ),
+    DataEntry(
+        name="capitalChange",
+        label="자본변동",
+        category="report",
+        dataType="dataframe",
+        description="자본금 변동 시계열. 보통주/우선주 주식수·액면 변동.",
+        modulePath="dartlab.engines.dart.docs.finance.capitalChange",
+        funcName="capitalChange",
+        extractor=lambda r: r.capitalDf,
+        requires="docs",
+        unit="주 (주식수), 원 (액면)",
+        analysisHints=("증자/감자 이벤트와 지분 희석 효과",),
+        relatedModules=("shareCapital", "fundraising"),
+    ),
+    DataEntry(
+        name="contingentLiability",
+        label="우발부채",
+        category="report",
+        dataType="dataframe",
+        description="채무보증, 소송 현황. 잠재적 재무 리스크 지표.",
+        modulePath="dartlab.engines.dart.docs.finance.contingentLiability",
+        funcName="contingentLiability",
+        extractor=lambda r: r.guaranteeDf,
+        requires="docs",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("totalGuaranteeAmount", "채무보증 총액", "백만원"),
+            ColumnMeta("lineCount", "보증 건수", "건"),
+        ),
+        analysisHints=(
+            "채무보증 총액 대비 자기자본 비율",
+            "소송 규모와 진행 상태",
+        ),
+        relatedModules=("BS", "sanction"),
+    ),
+    DataEntry(
+        name="internalControl",
+        label="내부통제",
+        category="report",
+        dataType="dataframe",
+        description="내부회계관리제도 감사의견 시계열.",
+        modulePath="dartlab.engines.dart.docs.finance.internalControl",
+        funcName="internalControl",
+        extractor=lambda r: r.controlDf,
+        requires="docs",
+        analysisHints=("내부통제 취약점은 재무제표 신뢰성 리스크",),
+        relatedModules=("audit", "auditSystem"),
+    ),
+    DataEntry(
+        name="relatedPartyTx",
+        label="관계자거래",
+        category="report",
+        dataType="dataframe",
+        description="대주주 등과의 매출·매입 거래 시계열. 이전가격 리스크 확인.",
+        modulePath="dartlab.engines.dart.docs.finance.relatedPartyTx",
+        funcName="relatedPartyTx",
+        extractor=lambda r: r.revenueTxDf,
+        requires="docs",
+        analysisHints=("관계자 거래 비중이 매출의 10%+ 이면 주의",),
+        relatedModules=("affiliateGroup", "majorHolder"),
+    ),
+    DataEntry(
+        name="rnd",
+        label="R&D",
+        category="report",
+        dataType="dataframe",
+        description="연구개발비용 시계열. 기술 투자 강도 판단.",
+        modulePath="dartlab.engines.dart.docs.finance.rnd",
+        funcName="rnd",
+        extractor=lambda r: r.rndDf,
+        requires="docs",
+        columns=(
+            ColumnMeta("year", "사업연도"),
+            ColumnMeta("rndExpense", "연구개발비", "백만원"),
+            ColumnMeta("revenueRatio", "매출 대비 R&D 비율", "%"),
+        ),
+        analysisHints=(
+            "매출 대비 R&D 비율의 업종 적정성",
+            "R&D 투자 추세와 매출 성장의 관계",
+        ),
+        relatedModules=("IS", "productService"),
+    ),
+    DataEntry(
+        name="sanction",
+        label="제재현황",
+        category="report",
+        dataType="dataframe",
+        description="행정제재, 과징금, 영업정지 등 규제 조치 이력.",
+        modulePath="dartlab.engines.dart.docs.finance.sanction",
+        funcName="sanction",
+        extractor=lambda r: r.sanctionDf,
+        requires="docs",
+        analysisHints=("제재 이력은 규제 리스크 신호", "반복 제재 패턴 확인"),
+        relatedModules=("contingentLiability",),
+    ),
+    DataEntry(
+        name="affiliateGroup",
+        label="계열사",
+        category="report",
+        dataType="dataframe",
+        description="기업집단 소속 계열회사 현황. 상장/비상장 구분.",
+        modulePath="dartlab.engines.dart.docs.finance.affiliateGroup",
+        funcName="affiliateGroup",
+        extractor=lambda r: r.affiliateDf,
+        requires="docs",
+        analysisHints=("그룹 규모와 계열사 변동 추적",),
+        relatedModules=("relatedPartyTx", "subsidiary"),
+        maxRows=15,
+    ),
+    DataEntry(
+        name="fundraising",
+        label="증자감자",
+        category="report",
+        dataType="dataframe",
+        description="유상증자, 무상증자, 감자 이력.",
+        modulePath="dartlab.engines.dart.docs.finance.fundraising",
+        funcName="fundraising",
+        extractor=lambda r: r.issuanceDf,
+        requires="docs",
+        analysisHints=("증자 빈도와 목적 (시설/운영/차환)", "감자 이유 확인"),
+        relatedModules=("capitalChange", "shareCapital"),
+    ),
+    DataEntry(
+        name="productService",
+        label="주요제품",
+        category="report",
+        dataType="dataframe",
+        description="주요 제품/서비스별 매출액과 비중.",
+        modulePath="dartlab.engines.dart.docs.finance.productService",
+        funcName="productService",
+        extractor=lambda r: r.productDf,
+        requires="docs",
+        analysisHints=("매출 집중도(단일 제품 의존도) 확인",),
+        relatedModules=("segments", "salesOrder"),
+    ),
+    DataEntry(
+        name="salesOrder",
+        label="매출수주",
+        category="report",
+        dataType="dataframe",
+        description="매출실적 및 수주 현황.",
+        modulePath="dartlab.engines.dart.docs.finance.salesOrder",
+        funcName="salesOrder",
+        extractor=lambda r: r.salesDf,
+        requires="docs",
+        analysisHints=("수주잔고 추이로 미래 매출 가시성 확인",),
+        relatedModules=("IS", "productService"),
+    ),
+    DataEntry(
+        name="riskDerivative",
+        label="위험관리",
+        category="report",
+        dataType="dataframe",
+        description="환율·이자율·상품가격 리스크 관리. 파생상품 보유 현황.",
+        modulePath="dartlab.engines.dart.docs.finance.riskDerivative",
+        funcName="riskDerivative",
+        extractor=lambda r: r.fxDf,
+        requires="docs",
+        analysisHints=(
+            "환위험 노출 규모와 헤지 비율",
+            "파생상품 평가손익 추이",
+        ),
+        relatedModules=("IS", "BS"),
+    ),
+    DataEntry(
+        name="articlesOfIncorporation",
+        label="정관",
+        category="report",
+        dataType="dataframe",
+        description="정관 변경 이력. 사업목적 추가·변경으로 신사업 진출 파악.",
+        modulePath="dartlab.engines.dart.docs.finance.articlesOfIncorporation",
+        funcName="articlesOfIncorporation",
+        extractor=lambda r: r.changesDf,
+        requires="docs",
+        analysisHints=("사업목적 추가/변경 사항 확인",),
+    ),
+    DataEntry(
+        name="otherFinance",
+        label="기타재무",
+        category="report",
+        dataType="dataframe",
+        description="대손충당금, 재고자산 관련 기타 재무 데이터.",
+        modulePath="dartlab.engines.dart.docs.finance.otherFinance",
+        funcName="otherFinance",
+        extractor=lambda r: r.badDebtDf,
+        requires="docs",
+        analysisHints=("대손충당금 적립률 추이", "재고자산 회전율 변동"),
+        relatedModules=("BS", "IS"),
+    ),
+    DataEntry(
+        name="companyHistory",
+        label="연혁",
+        category="report",
+        dataType="dataframe",
+        description="회사 주요 연혁 이벤트 목록.",
+        modulePath="dartlab.engines.dart.docs.finance.companyHistory",
+        funcName="companyHistory",
+        extractor=lambda r: r.eventsDf,
+        requires="docs",
+        analysisHints=("최근 M&A, 사업 전환, 상장 등 주요 이벤트",),
+        maxRows=20,
+    ),
+    DataEntry(
+        name="shareholderMeeting",
+        label="주주총회",
+        category="report",
+        dataType="dataframe",
+        description="주주총회 안건 및 의결 결과.",
+        modulePath="dartlab.engines.dart.docs.finance.shareholderMeeting",
+        funcName="shareholderMeeting",
+        extractor=lambda r: r.agendaDf,
+        requires="docs",
+        analysisHints=("안건 부결 여부, 특수 안건 확인",),
+        relatedModules=("majorHolder",),
+    ),
+    DataEntry(
+        name="auditSystem",
+        label="감사제도",
+        category="report",
+        dataType="dataframe",
+        description="감사위원회 구성 및 활동 현황.",
+        modulePath="dartlab.engines.dart.docs.finance.auditSystem",
+        funcName="auditSystem",
+        extractor=lambda r: r.committeeDf,
+        requires="docs",
+        analysisHints=("감사위원회 전원 사외이사 여부 확인",),
+        relatedModules=("audit", "boardOfDirectors"),
+    ),
+    DataEntry(
+        name="affiliate",
+        label="관계기업투자",
+        category="report",
+        dataType="dataframe",
+        description="관계기업/공동기업 투자 변동 시계열. 지분법손익, 기초/기말 장부가 포함.",
+        modulePath="dartlab.engines.dart.docs.finance.affiliate",
+        funcName="affiliate",
+        extractor=lambda r: r.movementDf,
+        requires="docs",
+        analysisHints=(
+            "관계기업 지분법손익이 연결 실적에 미치는 영향",
+            "투자 포트폴리오 변동(취득/처분) 추적",
+        ),
+        relatedModules=("subsidiary", "investmentInOther", "affiliateGroup"),
+    ),
+    DataEntry(
+        name="investmentInOther",
+        label="타법인출자",
+        category="report",
+        dataType="dataframe",
+        description="타법인 출자 현황. 투자목적, 지분율, 장부가 등.",
+        modulePath="dartlab.engines.dart.docs.finance.investmentInOther",
+        funcName="investmentInOther",
+        extractor=lambda r: r.investmentDf,
+        requires="docs",
+        analysisHints=("비핵심 투자 비중과 수익성",),
+        relatedModules=("subsidiary", "affiliateGroup"),
+        maxRows=20,
+    ),
+    DataEntry(
+        name="companyOverviewDetail",
+        label="회사개요",
+        category="report",
+        dataType="dict",
+        description="설립일, 상장일, 대표이사, 주소, 주요사업 등 기본 정보.",
+        modulePath="dartlab.engines.dart.docs.finance.companyOverviewDetail",
+        funcName="companyOverviewDetail",
+        extractor=lambda r: {
+            "foundedDate": r.foundedDate,
+            "listedDate": r.listedDate,
+            "address": r.address,
+            "ceo": r.ceo,
+            "mainBusiness": r.mainBusiness,
+            "website": r.website,
+        },
+        requires="docs",
+    ),
+    DataEntry(
+        name="holderOverview",
+        label="주주현황",
+        category="report",
+        dataType="custom",
+        description="5% 이상 주주, 소액주주 현황, 의결권 현황. majorHolder보다 상세한 주주 구성.",
+        modulePath="dartlab.engines.dart.docs.finance.majorHolder",
+        funcName="holderOverview",
+        extractor=None,
+        requires="docs",
+        analysisHints=(
+            "5% 이상 대량보유 주주 변동 추적",
+            "소액주주 비율과 유통주식 비율",
+        ),
+        relatedModules=("majorHolder", "shareCapital"),
+    ),
+    # ═══════════════════════════════════════════════════════
+    # disclosure — 서술형 공시
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="business",
+        label="사업의내용",
+        category="disclosure",
+        dataType="text",
+        description="사업보고서 '사업의 내용' 서술. 사업 구조와 현황 파악.",
+        modulePath="dartlab.engines.dart.docs.disclosure.business",
+        funcName="business",
+        extractor=lambda r: r.sections,
+        requires="docs",
+        analysisHints=(
+            "핵심 사업모델과 경쟁력 파악",
+            "산업 리스크 요인 확인",
+        ),
+        maxRows=5,
+    ),
+    DataEntry(
+        name="companyOverview",
+        label="회사개요정량",
+        category="disclosure",
+        dataType="dict",
+        description="공시 기반 회사 정량 개요 데이터.",
+        modulePath="dartlab.engines.dart.docs.disclosure.companyOverview",
+        funcName="companyOverview",
+        extractor=None,
+        requires="docs",
+    ),
+    DataEntry(
+        name="mdna",
+        label="MD&A",
+        category="disclosure",
+        dataType="text",
+        description="이사의 경영진단 및 분석의견. 경영진 시각의 실적 평가와 전망.",
+        modulePath="dartlab.engines.dart.docs.disclosure.mdna",
+        funcName="mdna",
+        extractor=lambda r: r.overview,
+        requires="docs",
+        analysisHints=(
+            "경영진의 실적 자기평가와 전망",
+            "언급된 리스크 요인",
+        ),
+    ),
+    DataEntry(
+        name="rawMaterial",
+        label="원재료설비",
+        category="disclosure",
+        dataType="dict",
+        description="원재료 매입, 유형자산 현황, 시설투자 데이터.",
+        modulePath="dartlab.engines.dart.docs.disclosure.rawMaterial",
+        funcName="rawMaterial",
+        extractor=None,
+        requires="docs",
+        analysisHints=("원재료 조달 집중도", "시설투자 규모 추이"),
+        relatedModules=("costByNature", "tangibleAsset"),
+    ),
+    DataEntry(
+        name="sections",
+        label="사업보고서섹션",
+        category="disclosure",
+        dataType="dataframe",
+        description="사업보고서 전체 섹션 텍스트를 topic(행) × period(열) DataFrame으로 구조화. "
+        "leaf title 기준 수평 비교 가능. 연간+분기+반기 전 기간 포함.",
+        modulePath="dartlab.engines.dart.docs.sections",
+        funcName="sections",
+        extractor=None,
+        requires="docs",
+        columns=(ColumnMeta("topic", "섹션 주제명 (leaf title)"),),
+        analysisHints=(
+            "사업 리스크, 소송, 제재, 후발사건 등 서술형 정보 탐색",
+            "연도별 텍스트 변화 비교 (같은 topic의 기간별 텍스트 대조)",
+            "경영진 전망, 이사회 활동, 위험관리 정책 등 정성 분석",
+        ),
+    ),
+    # ═══════════════════════════════════════════════════════
+    # notes — K-IFRS 주석
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="notes.receivables",
+        label="매출채권",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 매출채권 주석. 채권 잔액 및 대손충당금 내역.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.inventory",
+        label="재고자산",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 재고자산 주석. 원재료/재공품/제품 내역별 금액.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.tangibleAsset",
+        label="유형자산(주석)",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 유형자산 변동 주석. 토지, 건물, 기계 등 항목별 변동.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.intangibleAsset",
+        label="무형자산",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 무형자산 주석. 영업권, 개발비 등 항목별 변동.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.investmentProperty",
+        label="투자부동산",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 투자부동산 주석. 공정가치 및 변동 내역.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.affiliates",
+        label="관계기업(주석)",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 관계기업 투자 주석. 지분법 적용 내역.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.borrowings",
+        label="차입금",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 차입금 주석. 단기/장기 차입 잔액 및 이자율.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.provisions",
+        label="충당부채",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 충당부채 주석. 판매보증, 소송, 복구 등.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.eps",
+        label="주당이익",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 주당이익 주석. 기본/희석 EPS 계산 내역.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.lease",
+        label="리스",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 리스 주석. 사용권자산, 리스부채 내역.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.segments",
+        label="부문정보(주석)",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 부문정보 주석. 사업부문별 상세 데이터.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="notes.costByNature",
+        label="비용의성격별분류(주석)",
+        category="notes",
+        dataType="dataframe",
+        description="K-IFRS 비용의 성격별 분류 주석.",
+        requires="docs",
+    ),
+    # ═══════════════════════════════════════════════════════
+    # raw — 원본 parquet
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="rawDocs",
+        label="공시 원본",
+        category="raw",
+        dataType="dataframe",
+        description="공시 문서 원본 parquet. 가공 전 전체 테이블과 텍스트.",
+        requires="docs",
+    ),
+    DataEntry(
+        name="rawFinance",
+        label="XBRL 원본",
+        category="raw",
+        dataType="dataframe",
+        description="XBRL 재무제표 원본 parquet. 매핑/정규화 전 원본 데이터.",
+        requires="finance",
+    ),
+    DataEntry(
+        name="rawReport",
+        label="보고서 원본",
+        category="raw",
+        dataType="dataframe",
+        description="정기보고서 API 원본 parquet. 파싱 전 원본 데이터.",
+        requires="report",
+    ),
+    # ═══════════════════════════════════════════════════════
+    # analysis — L2 분석 엔진
+    # ═══════════════════════════════════════════════════════
+    DataEntry(
+        name="ratios",
+        label="재무비율",
+        category="analysis",
+        dataType="ratios",
+        description="financeEngine이 자동계산한 수익성·안정성·밸류에이션 비율.",
+        requires="finance",
+        unit="%",
+    ),
+    DataEntry(
+        name="insight",
+        label="인사이트",
+        category="analysis",
+        dataType="custom",
+        description="7영역 A~F 등급 분석 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회).",
+        requires="finance",
+    ),
+    DataEntry(
+        name="sector",
+        label="섹터분류",
+        category="analysis",
+        dataType="custom",
+        description="WICS 11대 섹터 분류. 대분류/중분류 + 섹터별 파라미터.",
+    ),
+    DataEntry(
+        name="rank",
+        label="시장순위",
+        category="analysis",
+        dataType="custom",
+        description="전체 시장 및 섹터 내 매출/자산/성장률 순위.",
+        requires="finance",
+    ),
 ]
 
 
@@ -839,52 +1008,52 @@ _ENTRIES: list[DataEntry] = [
 _INDEX: dict[str, DataEntry] = {e.name: e for e in _ENTRIES}
 _BY_CATEGORY: dict[str, list[DataEntry]] = {}
 for _e in _ENTRIES:
-	_BY_CATEGORY.setdefault(_e.category, []).append(_e)
+    _BY_CATEGORY.setdefault(_e.category, []).append(_e)
 
 
 # ── public API ──
 
+
 def getEntries(*, category: str | None = None) -> list[DataEntry]:
-	"""전체 또는 카테고리별 엔트리 반환."""
-	if category is None:
-		return list(_ENTRIES)
-	return list(_BY_CATEGORY.get(category, []))
+    """전체 또는 카테고리별 엔트리 반환."""
+    if category is None:
+        return list(_ENTRIES)
+    return list(_BY_CATEGORY.get(category, []))
 
 
 def getEntry(name: str) -> DataEntry | None:
-	"""이름으로 단일 엔트리 조회."""
-	return _INDEX.get(name)
+    """이름으로 단일 엔트리 조회."""
+    return _INDEX.get(name)
 
 
 def getCategories() -> list[str]:
-	"""등록된 카테고리 목록."""
-	return list(_BY_CATEGORY.keys())
+    """등록된 카테고리 목록."""
+    return list(_BY_CATEGORY.keys())
 
 
 def getModuleEntries() -> list[DataEntry]:
-	"""Company property 디스패치에 사용할 엔트리만 (modulePath가 있는 report + disclosure).
+    """Company property 디스패치에 사용할 엔트리만 (modulePath가 있는 report + disclosure).
 
-	BS/IS/CF/fsSummary는 제외 — company.py에서 statements 내부 디스패치로 별도 처리.
-	"""
-	_SKIP = frozenset({"BS", "IS", "CF", "fsSummary", "holderOverview"})
-	return [
-		e for e in _ENTRIES
-		if e.modulePath is not None
-		and e.category in ("report", "disclosure")
-		and e.name not in _SKIP
-	]
+    BS/IS/CF/fsSummary는 제외 — company.py에서 statements 내부 디스패치로 별도 처리.
+    """
+    _SKIP = frozenset({"BS", "IS", "CF", "fsSummary", "holderOverview"})
+    return [
+        e
+        for e in _ENTRIES
+        if e.modulePath is not None and e.category in ("report", "disclosure") and e.name not in _SKIP
+    ]
 
 
 def getNotesEntries() -> list[DataEntry]:
-	"""Notes 접근용 엔트리만."""
-	return [e for e in _ENTRIES if e.category == "notes"]
+    """Notes 접근용 엔트리만."""
+    return [e for e in _ENTRIES if e.category == "notes"]
 
 
 def buildModuleDescription() -> str:
-	"""LLM tool description용 모듈 목록 문자열 자동 생성."""
-	parts = []
-	for e in _ENTRIES:
-		if e.category in ("finance", "raw"):
-			continue
-		parts.append(f"{e.name}({e.label})")
-	return ", ".join(parts)
+    """LLM tool description용 모듈 목록 문자열 자동 생성."""
+    parts = []
+    for e in _ENTRIES:
+        if e.category in ("finance", "raw"):
+            continue
+        parts.append(f"{e.name}({e.label})")
+    return ", ".join(parts)

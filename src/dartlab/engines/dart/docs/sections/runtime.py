@@ -6,6 +6,7 @@ import re
 
 from dartlab.engines.dart.docs.sections._common import RE_SPLIT_SUFFIX
 from dartlab.engines.dart.docs.sections.artifacts import loadProjectionRules
+
 _RE_MAJOR_HEADING = re.compile(r"^([가-힣])\.\s*(.+)$")
 _RE_TABLE_SEP = re.compile(r"^\|(?:\s*:?-{3,}:?\s*\|)+$")
 _CHAPTER_BY_MAJOR = {
@@ -210,9 +211,7 @@ def semanticTopicForBlock(topic: str, label: str, blockType: str, blockText: str
         keyword in joined for keyword in ("환경", "배출권", "규제", "녹색경영")
     ):
         return "environmentRegulation"
-    if topic == "majorContractsAndRnd" and any(
-        keyword in joined for keyword in ("연구개발", "R&D", "주요계약")
-    ):
+    if topic == "majorContractsAndRnd" and any(keyword in joined for keyword in ("연구개발", "R&D", "주요계약")):
         return "majorContractsAndRnd"
     return None
 
@@ -248,12 +247,11 @@ def detailTopicForBlock(
             return "cardProductDetail"
         if "상품및서비스개요(상세)" in haystack:
             return "financialProductOverviewDetail"
-        if any(keyword in haystack for keyword in ("외환/수출입서비스(상세)", "e-금융서비스(상세)", "방카슈랑스(상세)")):
-            return "bankServiceDetail"
         if any(
-            keyword in haystack
-            for keyword in ("증권거래현황(상세)", "금융투자상품의위탁매매및수수료현황(상세)")
+            keyword in haystack for keyword in ("외환/수출입서비스(상세)", "e-금융서비스(상세)", "방카슈랑스(상세)")
         ):
+            return "bankServiceDetail"
+        if any(keyword in haystack for keyword in ("증권거래현황(상세)", "금융투자상품의위탁매매및수수료현황(상세)")):
             return "brokerageBusinessDetail"
         if any(keyword in haystack for keyword in ("투자운용인력현황(상세)", "투자일임업무-투자운용인력현황(상세)")):
             return "assetManagementStaffDetail"

@@ -6,30 +6,30 @@ from pydantic import BaseModel
 
 
 class HistoryMeta(BaseModel):
-	company: str | None = None
-	stockCode: str | None = None
-	modules: list[str] | None = None
+    company: str | None = None
+    stockCode: str | None = None
+    modules: list[str] | None = None
 
 
 class HistoryMessage(BaseModel):
-	role: str
-	text: str
-	meta: HistoryMeta | None = None
+    role: str
+    text: str
+    meta: HistoryMeta | None = None
 
 
 class AskRequest(BaseModel):
-	company: str | None = None
-	question: str
-	provider: str | None = None
-	model: str | None = None
-	include: list[str] | None = None
-	exclude: list[str] | None = None
-	stream: bool = False
-	history: list[HistoryMessage] | None = None
+    company: str | None = None
+    question: str
+    provider: str | None = None
+    model: str | None = None
+    include: list[str] | None = None
+    exclude: list[str] | None = None
+    stream: bool = False
+    history: list[HistoryMessage] | None = None
 
 
 class ConfigureRequest(BaseModel):
-	provider: str = "codex"
-	model: str | None = None
-	api_key: str | None = None
-	base_url: str | None = None
+    provider: str = "codex"
+    model: str | None = None
+    api_key: str | None = None
+    base_url: str | None = None

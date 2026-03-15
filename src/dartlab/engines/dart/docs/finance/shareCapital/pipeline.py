@@ -29,9 +29,7 @@ def shareCapital(stockCode: str) -> ShareCapitalResult | None:
         if report is None:
             continue
 
-        shareRows = report.filter(
-            pl.col("section_title").str.contains("주식의 총수")
-        )
+        shareRows = report.filter(pl.col("section_title").str.contains("주식의 총수"))
         if shareRows.height == 0:
             continue
 
@@ -81,5 +79,3 @@ def shareCapital(stockCode: str) -> ShareCapitalResult | None:
         treasuryRatio=latest.get("treasuryRatio"),
         timeSeries=ts,
     )
-
-

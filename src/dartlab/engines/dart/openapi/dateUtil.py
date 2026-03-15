@@ -12,8 +12,8 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, date
 from calendar import monthrange
+from datetime import date, datetime
 
 
 def _validateDate(year: int, month: int, day: int) -> None:
@@ -77,8 +77,7 @@ def parseDate(value: str | datetime | date | None, asEnd: bool = False) -> str |
         return f"{year:04d}{month:02d}{day:02d}"
 
     raise ValueError(
-        f"날짜 형식을 인식할 수 없습니다: '{value}'. "
-        "지원: '2024', '2024-01', '2024-01-15', '20240115', datetime"
+        f"날짜 형식을 인식할 수 없습니다: '{value}'. 지원: '2024', '2024-01', '2024-01-15', '20240115', datetime"
     )
 
 

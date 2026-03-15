@@ -93,8 +93,7 @@ class SectorInfo:
 
     def __repr__(self):
         return (
-            f"SectorInfo({self.sector.value}/{self.industryGroup.value}, "
-            f"conf={self.confidence:.2f}, src={self.source})"
+            f"SectorInfo({self.sector.value}/{self.industryGroup.value}, conf={self.confidence:.2f}, src={self.source})"
         )
 
 

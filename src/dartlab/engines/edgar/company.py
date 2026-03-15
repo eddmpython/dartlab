@@ -25,7 +25,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import polars as pl
 
@@ -96,38 +96,57 @@ _FORM_ORDER = {"10-K": 0, "10-Q": 1, "20-F": 2, "40-F": 3}
 
 # 10-K item 정렬 순서 (SEC 양식 순)
 _10K_ORDER: dict[str, int] = {
-    "item1Business": 1, "item1ARiskFactors": 2, "item1BUnresolvedStaffComments": 3,
-    "item1CCybersecurity": 4, "item1DExecutiveOfficers": 5,
-    "item103EnvironmentalDisclosure": 6, "item405RegulationSKDisclosure": 7,
+    "item1Business": 1,
+    "item1ARiskFactors": 2,
+    "item1BUnresolvedStaffComments": 3,
+    "item1CCybersecurity": 4,
+    "item1DExecutiveOfficers": 5,
+    "item103EnvironmentalDisclosure": 6,
+    "item405RegulationSKDisclosure": 7,
     "item406RegulationSKCodeOfEthics": 8,
-    "item2Properties": 10, "item3LegalProceedings": 11,
-    "item4MineSafetyDisclosures": 12, "item4AExecutiveOfficersOfTheRegistrant": 13,
-    "item5MarketForCommonEquity": 20, "item6Reserved": 21,
-    "item7Mdna": 22, "item7AMarketRiskDisclosures": 23,
-    "item8FinancialStatements": 24, "item8ASupplementalFinancialInformation": 25,
-    "item9ChangesInAccountants": 30, "item9AControlsAndProcedures": 31,
-    "item9BOtherInformation": 32, "item9CForeignJurisdictionDisclosures": 33,
-    "item10DirectorsAndCorporateGovernance": 40, "item11ExecutiveCompensation": 41,
-    "item12SecurityOwnership": 42, "item13RelatedTransactions": 43,
+    "item2Properties": 10,
+    "item3LegalProceedings": 11,
+    "item4MineSafetyDisclosures": 12,
+    "item4AExecutiveOfficersOfTheRegistrant": 13,
+    "item5MarketForCommonEquity": 20,
+    "item6Reserved": 21,
+    "item7Mdna": 22,
+    "item7AMarketRiskDisclosures": 23,
+    "item8FinancialStatements": 24,
+    "item8ASupplementalFinancialInformation": 25,
+    "item9ChangesInAccountants": 30,
+    "item9AControlsAndProcedures": 31,
+    "item9BOtherInformation": 32,
+    "item9CForeignJurisdictionDisclosures": 33,
+    "item10DirectorsAndCorporateGovernance": 40,
+    "item11ExecutiveCompensation": 41,
+    "item12SecurityOwnership": 42,
+    "item13RelatedTransactions": 43,
     "item14PrincipalAccountantFees": 44,
-    "item15ExhibitsAndSchedules": 50, "item16Form10KSummary": 51,
+    "item15ExhibitsAndSchedules": 50,
+    "item16Form10KSummary": 51,
 }
 
 # 10-Q item 정렬 순서
 _10Q_ORDER: dict[str, int] = {
-    "partIItem1FinancialStatements": 1, "partIItem2Mdna": 2,
-    "partIItem3MarketRisk": 3, "partIItem4ControlsAndProcedures": 4,
-    "partIIItem1LegalProceedings": 10, "partIIItem1ARiskFactors": 11,
+    "partIItem1FinancialStatements": 1,
+    "partIItem2Mdna": 2,
+    "partIItem3MarketRisk": 3,
+    "partIItem4ControlsAndProcedures": 4,
+    "partIIItem1LegalProceedings": 10,
+    "partIIItem1ARiskFactors": 11,
     "partIIItem2UnregisteredSalesAndUseOfProceeds": 12,
     "partIIItem2CIssuerPurchaseOfEquitySecurities": 13,
     "partIIItem3DefaultsUponSeniorSecurities": 14,
-    "partIIItem4MineSafetyDisclosures": 15, "partIIItem5OtherInformation": 16,
+    "partIIItem4MineSafetyDisclosures": 15,
+    "partIIItem5OtherInformation": 16,
     "partIIItem6Exhibits": 17,
 }
 
 
 def _sortDocTopics(topics: list[str]) -> list[str]:
     """docs topics를 form별 → item 순으로 정렬."""
+
     def sortKey(topic: str) -> tuple[int, int, str]:
         if "::" not in topic:
             return (99, 0, topic)
@@ -200,6 +219,7 @@ def _itemIdToLabel(itemId: str) -> str:
     label = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", label)
     return label
 
+
 _RATIO_FIELD_LABELS: dict[str, str] = {
     "roe": "ROE (%)",
     "roa": "ROA (%)",
@@ -256,7 +276,8 @@ class ShowResult(NamedTuple):
 
 
 def _ratioSeriesToDataFrame(
-    series: dict[str, dict[str, list[Any | None]]], years: list[str],
+    series: dict[str, dict[str, list[Any | None]]],
+    years: list[str],
 ) -> pl.DataFrame | None:
     ratioData = series.get("RATIO")
     if not ratioData:
@@ -300,6 +321,7 @@ class _DocsAccessor:
         key = "_docs_sections"
         if key not in self._company._cache:
             from dartlab.engines.edgar.docs.sections.pipeline import sections
+
             self._company._cache[key] = sections(self._company.ticker)
         return self._company._cache[key]
 
@@ -309,6 +331,7 @@ class _DocsAccessor:
             return self._company._cache[key]
 
         from dartlab.core.dataLoader import loadData
+
         df = loadData(self._company.ticker, category="edgarDocs")
         if df is None or df.is_empty():
             self._company._cache[key] = None
@@ -317,9 +340,7 @@ class _DocsAccessor:
         cols = ["period_key", "form_type", "accession_no", "filed_date"]
         available = [c for c in cols if c in df.columns]
         result = (
-            df.select(available)
-            .unique(subset=["accession_no"])
-            .sort("period_key", descending=False, nulls_last=True)
+            df.select(available).unique(subset=["accession_no"]).sort("period_key", descending=False, nulls_last=True)
         )
         self._company._cache[key] = result
         return result
@@ -388,6 +409,7 @@ class _FinanceAccessor:
     def annual(self):
         if "_annual" not in self._company._cache:
             from dartlab.engines.edgar.finance.pivot import buildAnnual
+
             self._company._cache["_annual"] = buildAnnual(self._company.cik)
         return self._company._cache["_annual"]
 
@@ -438,6 +460,7 @@ class _FinanceAccessor:
     def ratios(self):
         if "_ratios" not in self._company._cache:
             from dartlab.engines.common.finance.ratios import calcRatios
+
             annual = self.annual
             if annual is None:
                 self._company._cache["_ratios"] = None
@@ -456,6 +479,7 @@ class _FinanceAccessor:
             return None
         aSeries, years = annual
         from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+
         rs = calcRatioSeries(aSeries, years)
         result = toSeriesDict(rs)
         self._company._cache[cacheKey] = result
@@ -490,11 +514,14 @@ class _ProfileAccessor:
 
         if docsSec is not None and financeRows:
             periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
-            finDf = pl.DataFrame(financeRows, schema={
-                "topic": pl.Utf8,
-                "blockType": pl.Utf8,
-                **{p: pl.Utf8 for p in periodCols},
-            })
+            finDf = pl.DataFrame(
+                financeRows,
+                schema={
+                    "topic": pl.Utf8,
+                    "blockType": pl.Utf8,
+                    **{p: pl.Utf8 for p in periodCols},
+                },
+            )
             result = pl.concat([finDf, docsSec], how="diagonal_relaxed")
         elif docsSec is not None:
             result = docsSec
@@ -580,6 +607,7 @@ class Company:
         self.corpName = tickerRow.get("title") or self.ticker
 
         from dartlab.engines.edgar.finance.pivot import buildTimeseries
+
         ts = buildTimeseries(self.cik)
         if ts is not None:
             self._cache["_ts"] = ts
@@ -605,6 +633,7 @@ class Company:
 
     def _getTickerPath(self) -> Path | None:
         from dartlab import config
+
         return Path(config.dataDir) / "edgar" / "tickers.parquet"
 
     def __repr__(self):
@@ -658,6 +687,7 @@ class Company:
     def insights(self):
         if "_insights" not in self._cache:
             from dartlab.engines.insight.pipeline import analyze
+
             ts = self.timeseries
             annual = self.annual
             if ts is None or annual is None:
@@ -824,31 +854,35 @@ class Company:
 
             if topic in _FINANCE_TOPICS:
                 df = getattr(self.finance, topic)
-                rows.append({
-                    "chapter": chapter,
-                    "topic": topic,
-                    "label": label,
-                    "kind": "finance",
-                    "source": source,
-                    "periods": self._periodsStr(df),
-                    "shape": self._shapeStr(df),
-                    "preview": self._previewFinance(df),
-                })
-            elif topic == "ratios":
-                rs = self.finance.ratioSeries
-                if rs is not None:
-                    _, years = rs
-                    df = _ratioSeriesToDataFrame(*rs)
-                    rows.append({
+                rows.append(
+                    {
                         "chapter": chapter,
                         "topic": topic,
                         "label": label,
                         "kind": "finance",
                         "source": source,
-                        "periods": f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-"),
+                        "periods": self._periodsStr(df),
                         "shape": self._shapeStr(df),
-                        "preview": f"{df.height} metrics" if df is not None else "-",
-                    })
+                        "preview": self._previewFinance(df),
+                    }
+                )
+            elif topic == "ratios":
+                rs = self.finance.ratioSeries
+                if rs is not None:
+                    _, years = rs
+                    df = _ratioSeriesToDataFrame(*rs)
+                    rows.append(
+                        {
+                            "chapter": chapter,
+                            "topic": topic,
+                            "label": label,
+                            "kind": "finance",
+                            "source": source,
+                            "periods": f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-"),
+                            "shape": self._shapeStr(df),
+                            "preview": f"{df.height} metrics" if df is not None else "-",
+                        }
+                    )
             else:
                 sec = self.docs.sections
                 if sec is not None:
@@ -861,22 +895,37 @@ class Company:
                             for c in periodCols:
                                 if r.get(c) is not None:
                                     nonNullPeriods.add(c)
-                        rows.append({
-                            "chapter": chapter,
-                            "topic": topic,
-                            "label": label,
-                            "kind": "docs",
-                            "source": source,
-                            "periods": f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-"),
-                            "shape": f"{len(nonNullPeriods)}기간",
-                            "preview": self._previewDocsCell(topicRows, periodCols),
-                        })
+                        rows.append(
+                            {
+                                "chapter": chapter,
+                                "topic": topic,
+                                "label": label,
+                                "kind": "docs",
+                                "source": source,
+                                "periods": f"{periodCols[0]}..{periodCols[-1]}"
+                                if len(periodCols) > 1
+                                else (periodCols[0] if periodCols else "-"),
+                                "shape": f"{len(nonNullPeriods)}기간",
+                                "preview": self._previewDocsCell(topicRows, periodCols),
+                            }
+                        )
 
-        df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
-            "chapter": pl.Utf8, "topic": pl.Utf8, "label": pl.Utf8,
-            "kind": pl.Utf8, "source": pl.Utf8,
-            "periods": pl.Utf8, "shape": pl.Utf8, "preview": pl.Utf8,
-        })
+        df = (
+            pl.DataFrame(rows)
+            if rows
+            else pl.DataFrame(
+                schema={
+                    "chapter": pl.Utf8,
+                    "topic": pl.Utf8,
+                    "label": pl.Utf8,
+                    "kind": pl.Utf8,
+                    "source": pl.Utf8,
+                    "periods": pl.Utf8,
+                    "shape": pl.Utf8,
+                    "preview": pl.Utf8,
+                }
+            )
+        )
         self._cache[cacheKey] = df
         return df
 
