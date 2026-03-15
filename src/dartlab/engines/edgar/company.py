@@ -35,6 +35,171 @@ _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
 
+# topic → chapter / label 매핑 (DART index와 구조 통일)
+_FINANCE_LABELS: dict[str, tuple[str, str]] = {
+    "BS": ("Financial Statements", "Balance Sheet"),
+    "IS": ("Financial Statements", "Income Statement"),
+    "CF": ("Financial Statements", "Cash Flow"),
+    "CIS": ("Financial Statements", "Comprehensive Income"),
+    "ratios": ("Financial Statements", "Financial Ratios"),
+}
+
+# 10-K Item → (chapter, label)
+_10K_ITEM_LABELS: dict[str, tuple[str, str]] = {
+    "item1Business": ("Part I", "Business"),
+    "item1ARiskFactors": ("Part I", "Risk Factors"),
+    "item1BUnresolvedStaffComments": ("Part I", "Unresolved Staff Comments"),
+    "item1CCybersecurity": ("Part I", "Cybersecurity"),
+    "item1DExecutiveOfficers": ("Part I", "Executive Officers"),
+    "item2Properties": ("Part I", "Properties"),
+    "item3LegalProceedings": ("Part I", "Legal Proceedings"),
+    "item4MineSafetyDisclosures": ("Part I", "Mine Safety Disclosures"),
+    "item4AExecutiveOfficersOfTheRegistrant": ("Part I", "Executive Officers"),
+    "item5MarketForCommonEquity": ("Part II", "Market for Common Equity"),
+    "item6Reserved": ("Part II", "Reserved"),
+    "item7Mdna": ("Part II", "MD&A"),
+    "item7AMarketRiskDisclosures": ("Part II", "Market Risk Disclosures"),
+    "item8FinancialStatements": ("Part II", "Financial Statements"),
+    "item9ChangesInAccountants": ("Part III", "Changes in Accountants"),
+    "item9AControlsAndProcedures": ("Part III", "Controls and Procedures"),
+    "item9BOtherInformation": ("Part III", "Other Information"),
+    "item9CForeignJurisdictionDisclosures": ("Part III", "Foreign Jurisdiction Disclosures"),
+    "item10DirectorsAndCorporateGovernance": ("Part III", "Directors & Corporate Governance"),
+    "item11ExecutiveCompensation": ("Part III", "Executive Compensation"),
+    "item12SecurityOwnership": ("Part III", "Security Ownership"),
+    "item13RelatedTransactions": ("Part III", "Related Transactions"),
+    "item14PrincipalAccountantFees": ("Part III", "Principal Accountant Fees"),
+    "item15ExhibitsAndSchedules": ("Part IV", "Exhibits & Schedules"),
+    "item16Form10KSummary": ("Part IV", "Form 10-K Summary"),
+    "item103EnvironmentalDisclosure": ("Regulation S-K", "Environmental Disclosure"),
+    "item405RegulationSKDisclosure": ("Regulation S-K", "Regulation S-K Disclosure"),
+    "item406RegulationSKCodeOfEthics": ("Regulation S-K", "Code of Ethics"),
+}
+
+# 10-Q Part/Item → (chapter, label)
+_10Q_ITEM_LABELS: dict[str, tuple[str, str]] = {
+    "partIItem1FinancialStatements": ("Part I", "Financial Statements"),
+    "partIItem2Mdna": ("Part I", "MD&A"),
+    "partIItem3MarketRisk": ("Part I", "Market Risk Disclosures"),
+    "partIItem4ControlsAndProcedures": ("Part I", "Controls and Procedures"),
+    "partIIItem1LegalProceedings": ("Part II", "Legal Proceedings"),
+    "partIIItem1ARiskFactors": ("Part II", "Risk Factors"),
+    "partIIItem2UnregisteredSalesAndUseOfProceeds": ("Part II", "Unregistered Sales"),
+    "partIIItem3DefaultsUponSeniorSecurities": ("Part II", "Defaults Upon Senior Securities"),
+    "partIIItem4MineSafetyDisclosures": ("Part II", "Mine Safety Disclosures"),
+    "partIIItem5OtherInformation": ("Part II", "Other Information"),
+    "partIIItem6Exhibits": ("Part II", "Exhibits"),
+}
+
+
+_FORM_ORDER = {"10-K": 0, "10-Q": 1, "20-F": 2, "40-F": 3}
+
+# 10-K item 정렬 순서 (SEC 양식 순)
+_10K_ORDER: dict[str, int] = {
+    "item1Business": 1, "item1ARiskFactors": 2, "item1BUnresolvedStaffComments": 3,
+    "item1CCybersecurity": 4, "item1DExecutiveOfficers": 5,
+    "item103EnvironmentalDisclosure": 6, "item405RegulationSKDisclosure": 7,
+    "item406RegulationSKCodeOfEthics": 8,
+    "item2Properties": 10, "item3LegalProceedings": 11,
+    "item4MineSafetyDisclosures": 12, "item4AExecutiveOfficersOfTheRegistrant": 13,
+    "item5MarketForCommonEquity": 20, "item6Reserved": 21,
+    "item7Mdna": 22, "item7AMarketRiskDisclosures": 23,
+    "item8FinancialStatements": 24, "item8ASupplementalFinancialInformation": 25,
+    "item9ChangesInAccountants": 30, "item9AControlsAndProcedures": 31,
+    "item9BOtherInformation": 32, "item9CForeignJurisdictionDisclosures": 33,
+    "item10DirectorsAndCorporateGovernance": 40, "item11ExecutiveCompensation": 41,
+    "item12SecurityOwnership": 42, "item13RelatedTransactions": 43,
+    "item14PrincipalAccountantFees": 44,
+    "item15ExhibitsAndSchedules": 50, "item16Form10KSummary": 51,
+}
+
+# 10-Q item 정렬 순서
+_10Q_ORDER: dict[str, int] = {
+    "partIItem1FinancialStatements": 1, "partIItem2Mdna": 2,
+    "partIItem3MarketRisk": 3, "partIItem4ControlsAndProcedures": 4,
+    "partIIItem1LegalProceedings": 10, "partIIItem1ARiskFactors": 11,
+    "partIIItem2UnregisteredSalesAndUseOfProceeds": 12,
+    "partIIItem2CIssuerPurchaseOfEquitySecurities": 13,
+    "partIIItem3DefaultsUponSeniorSecurities": 14,
+    "partIIItem4MineSafetyDisclosures": 15, "partIIItem5OtherInformation": 16,
+    "partIIItem6Exhibits": 17,
+}
+
+
+def _sortDocTopics(topics: list[str]) -> list[str]:
+    """docs topics를 form별 → item 순으로 정렬."""
+    def sortKey(topic: str) -> tuple[int, int, str]:
+        if "::" not in topic:
+            return (99, 0, topic)
+        formType, itemId = topic.split("::", 1)
+        formOrder = _FORM_ORDER.get(formType, 9)
+        if formType == "10-K":
+            itemOrder = _10K_ORDER.get(itemId, 99)
+        elif formType == "10-Q":
+            itemOrder = _10Q_ORDER.get(itemId, 99)
+        else:
+            # 20-F, 40-F 등 — itemId에서 숫자 추출하여 정렬
+            itemOrder = _extractItemNumber(itemId)
+        return (formOrder, itemOrder, itemId)
+
+    return sorted(topics, key=sortKey)
+
+
+def _extractItemNumber(itemId: str) -> int:
+    """itemId에서 item 번호를 추출. "item5AOperatingResults" → 5."""
+    m = re.match(r"item(\d+)", itemId)
+    if m:
+        num = int(m.group(1))
+        # sub-item은 부모 뒤에 (item5A → 5*100+1, item16K → 16*100+11)
+        subMatch = re.match(r"item\d+([A-Z])", itemId)
+        if subMatch:
+            return num * 100 + (ord(subMatch.group(1)) - ord("A") + 1)
+        return num * 100
+    return 9999
+
+
+def _topicChapterLabel(topic: str) -> tuple[str, str]:
+    """topic에서 chapter와 label을 추출."""
+    if topic in _FINANCE_LABELS:
+        return _FINANCE_LABELS[topic]
+
+    # "10-K::item1Business" → formType="10-K", itemId="item1Business"
+    if "::" in topic:
+        formType, itemId = topic.split("::", 1)
+        if formType == "10-K" and itemId in _10K_ITEM_LABELS:
+            return _10K_ITEM_LABELS[itemId]
+        if formType == "10-Q" and itemId in _10Q_ITEM_LABELS:
+            return _10Q_ITEM_LABELS[itemId]
+        # 20-F, 기타 → sectionMappings.json에서 label 역추출
+        label = _itemIdToLabel(itemId)
+        return (formType, label)
+
+    return ("", topic)
+
+
+def _itemIdToLabel(itemId: str) -> str:
+    """camelCase itemId → 읽기 쉬운 label. "item5AOperatingResults" → "Operating Results"."""
+    # prefix 제거: "item5A" + 대문자시작 or "item1" + 대문자시작
+    # sub-item letter: 숫자 뒤 대문자 1개 + 바로 뒤가 대문자 (item5AO → A는 sub-item)
+    # 단어 시작: 숫자 뒤 대문자 + 소문자 (item1Id → I는 단어 시작)
+    m = re.match(r"^(?:partI{1,2})?[Ii]tem(\d+)([A-Z]?)(.*)$", itemId)
+    if not m:
+        return itemId
+    subLetter = m.group(2)
+    rest = m.group(3)
+    if subLetter and rest and rest[0].isupper():
+        # item5A + OperatingResults → sub-item, rest = OperatingResults
+        pass
+    elif subLetter:
+        # item1I + dentity → I는 단어 시작, 붙여야 함
+        rest = subLetter + rest
+    if not rest:
+        return itemId
+    # camelCase → spaces
+    label = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", rest)
+    label = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", label)
+    return label
+
 _RATIO_FIELD_LABELS: dict[str, str] = {
     "roe": "ROE (%)",
     "roa": "ROA (%)",
@@ -154,7 +319,7 @@ class _DocsAccessor:
         result = (
             df.select(available)
             .unique(subset=["accession_no"])
-            .sort("period_key", descending=False)
+            .sort("period_key", descending=False, nulls_last=True)
         )
         self._company._cache[key] = result
         return result
@@ -340,18 +505,19 @@ class _ProfileAccessor:
         return result
 
     def _buildFinanceRows(self) -> list[dict[str, str | None]]:
-        """finance BS/IS/CF를 sections 호환 행으로 변환."""
+        """finance BS/IS/CF를 sections 호환 행으로 변환.
+
+        각 연도 기간에 해당 연도의 단일 컬럼 제표를 배치한다.
+        """
         rows: list[dict[str, str | None]] = []
         docsSec = self._company.docs.sections
         periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)] if docsSec is not None else []
+        # 연간 기간만 추출 (Q 없는 것)
+        annualPeriods = [p for p in periodCols if "Q" not in p]
 
         for stmtName in ("BS", "IS", "CF", "CIS"):
             df = getattr(self._company.finance, stmtName)
             if df is None:
-                continue
-            # finance DataFrame을 텍스트 테이블로 변환
-            tableStr = self._dfToMarkdownTable(df)
-            if not tableStr:
                 continue
             row: dict[str, str | None] = {
                 "topic": stmtName,
@@ -359,9 +525,13 @@ class _ProfileAccessor:
             }
             for p in periodCols:
                 row[p] = None
-            # 최신 기간에 전체 finance 테이블 배치
-            if periodCols:
-                row[periodCols[-1]] = tableStr
+            # 각 연도 기간에 해당 연도 데이터가 있으면 배치
+            for p in annualPeriods:
+                if p in df.columns:
+                    col = df.select(["account", p])
+                    nonNull = col.filter(pl.col(p).is_not_null())
+                    if not nonNull.is_empty():
+                        row[p] = self._dfToMarkdownTable(nonNull)
             rows.append(row)
         return rows
 
@@ -513,6 +683,7 @@ class Company:
         ordered: list[str] = []
         seen: set[str] = set()
 
+        # 1. finance 제표 먼저
         for stmt in ("BS", "IS", "CF", "CIS"):
             if getattr(self.finance, stmt) is not None:
                 ordered.append(stmt)
@@ -522,9 +693,11 @@ class Company:
             ordered.append("ratios")
             seen.add("ratios")
 
+        # 2. docs topics — form별 정렬 (10-K → 10-Q → 20-F → 기타)
         sec = self.docs.sections
         if sec is not None:
-            topicCol = sec["topic"].to_list()
+            topicCol = sec["topic"].unique().to_list()
+            topicCol = _sortDocTopics(topicCol)
             for topic in topicCol:
                 if isinstance(topic, str) and topic not in seen:
                     ordered.append(topic)
@@ -563,9 +736,12 @@ class Company:
             df = getattr(self.finance, topic)
             if df is None:
                 return None
+            chapter, label = _topicChapterLabel(topic)
             return {
                 "topic": topic,
                 "period": period,
+                "chapter": chapter,
+                "label": label,
                 "primarySource": "finance",
                 "fallbackSources": [],
                 "selectedPayloadRef": f"finance:{topic}",
@@ -587,9 +763,12 @@ class Company:
                 coverage = "partial"
             else:
                 coverage = "missing"
+            chapter, label = _topicChapterLabel(topic)
             return {
                 "topic": topic,
                 "period": period,
+                "chapter": chapter,
+                "label": label,
                 "primarySource": "finance",
                 "fallbackSources": [],
                 "selectedPayloadRef": "finance:RATIO",
@@ -602,14 +781,31 @@ class Company:
 
         sec = self.docs.sections
         if sec is not None and topic in sec["topic"].to_list():
+            topicRows = sec.filter(pl.col("topic") == topic)
+            periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
+            nonNullPeriods = set()
+            hasText = hasTable = False
+            if "blockType" in sec.columns:
+                hasText = topicRows.filter(pl.col("blockType") == "text").height > 0
+                hasTable = topicRows.filter(pl.col("blockType") == "table").height > 0
+            for r in topicRows.iter_rows(named=True):
+                for c in periodCols:
+                    if r.get(c) is not None:
+                        nonNullPeriods.add(c)
+            chapter, label = _topicChapterLabel(topic)
             return {
                 "topic": topic,
                 "period": period,
+                "chapter": chapter,
+                "label": label,
                 "primarySource": "docs",
                 "fallbackSources": [],
                 "selectedPayloadRef": f"docs:{topic}",
-                "availableSources": [{"source": "docs", "rows": 1, "priority": 100}],
+                "availableSources": [{"source": "docs", "rows": topicRows.height, "priority": 100}],
                 "whySelected": "docs authoritative",
+                "periodCount": len(nonNullPeriods),
+                "hasText": hasText,
+                "hasTable": hasTable,
             }
 
         return None
@@ -624,11 +820,14 @@ class Company:
         for topic in self.topics:
             traced = self.trace(topic)
             source = traced["primarySource"] if traced else None
+            chapter, label = _topicChapterLabel(topic)
 
             if topic in _FINANCE_TOPICS:
                 df = getattr(self.finance, topic)
                 rows.append({
+                    "chapter": chapter,
                     "topic": topic,
+                    "label": label,
                     "kind": "finance",
                     "source": source,
                     "periods": self._periodsStr(df),
@@ -641,7 +840,9 @@ class Company:
                     _, years = rs
                     df = _ratioSeriesToDataFrame(*rs)
                     rows.append({
+                        "chapter": chapter,
                         "topic": topic,
+                        "label": label,
                         "kind": "finance",
                         "source": source,
                         "periods": f"{years[0]}..{years[-1]}" if len(years) > 1 else (years[0] if years else "-"),
@@ -654,31 +855,26 @@ class Company:
                     topicRows = sec.filter(pl.col("topic") == topic)
                     periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
                     if not topicRows.is_empty():
-                        # blockType 분리 시 text/table 행 수 표시
-                        hasBlockType = "blockType" in sec.columns
-                        if hasBlockType:
-                            textCount = topicRows.filter(pl.col("blockType") == "text").height
-                            tableCount = topicRows.filter(pl.col("blockType") == "table").height
-                            blockInfo = f"text:{textCount} table:{tableCount}"
-                        else:
-                            blockInfo = "1 row"
-                        nonNull = 0
+                        # 비어있지 않은 기간 수
+                        nonNullPeriods = set()
                         for r in topicRows.iter_rows(named=True):
                             for c in periodCols:
                                 if r.get(c) is not None:
-                                    nonNull += 1
-                                    break
+                                    nonNullPeriods.add(c)
                         rows.append({
+                            "chapter": chapter,
                             "topic": topic,
+                            "label": label,
                             "kind": "docs",
                             "source": source,
                             "periods": f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-"),
-                            "shape": blockInfo,
+                            "shape": f"{len(nonNullPeriods)}기간",
                             "preview": self._previewDocsCell(topicRows, periodCols),
                         })
 
         df = pl.DataFrame(rows) if rows else pl.DataFrame(schema={
-            "topic": pl.Utf8, "kind": pl.Utf8, "source": pl.Utf8,
+            "chapter": pl.Utf8, "topic": pl.Utf8, "label": pl.Utf8,
+            "kind": pl.Utf8, "source": pl.Utf8,
             "periods": pl.Utf8, "shape": pl.Utf8, "preview": pl.Utf8,
         })
         self._cache[cacheKey] = df
