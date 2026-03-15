@@ -2975,6 +2975,13 @@ class Company:
         apiType = _REPORT_TOPIC_TO_API_TYPE.get(topic, topic)
         if apiType not in self.report.apiTypes:
             return None
+        try:
+            return self._reportFrameInner(apiType, topic, raw=raw)
+        except (pl.exceptions.ColumnNotFoundError, pl.exceptions.InvalidOperationError,
+                pl.exceptions.SchemaError):
+            return None
+
+    def _reportFrameInner(self, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         # pivot 5개는 toWide()로 사용자 친화적 테이블 반환
         pivotName = apiType if apiType in _ReportAccessor._PIVOT_NAMES else topic
         if pivotName in _ReportAccessor._PIVOT_NAMES:

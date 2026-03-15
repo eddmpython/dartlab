@@ -55,7 +55,8 @@ def extractRaw(
         pl.col("quarter").replace(QUARTER_MAP).cast(pl.Int32).alias("quarterNum")
     )
 
-    sub = sub.filter(pl.col("stlm_dt").is_not_null())
+    if "stlm_dt" in sub.columns:
+        sub = sub.filter(pl.col("stlm_dt").is_not_null())
     sub = sub.sort(["year", "quarterNum"])
 
     return sub
