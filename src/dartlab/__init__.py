@@ -10,6 +10,7 @@ from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchNam
 from dartlab.engines import ai as llm
 from dartlab.engines.dart.company import Company as _DartCompany
 from dartlab.engines.edgar.company import Company as _EdgarCompany
+from dartlab.engines.dart.openapi.dart import Dart
 
 try:
     __version__ = _pkg_version("dartlab")
@@ -87,6 +88,7 @@ sys.modules[__name__].__class__ = _Module
 __all__ = [
     "Company",
     "Compare",
+    "Dart",
     "KRCompany",
     "USCompany",
     "config",
