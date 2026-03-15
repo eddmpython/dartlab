@@ -2842,12 +2842,8 @@ class Company:
                 if matchedCols:
                     df = df.select(["항목", *matchedCols])
             return df
-        # 파싱 실패 시 subtopic wide 반환 (메타 컬럼 정리)
-        wide = result.wide
-        metaCols = {"topic", "sourceTopic", "subtopicOrder", "semanticTopic", "detailTopic"}
-        keepCols = [c for c in wide.columns if c not in metaCols]
-        if keepCols:
-            wide = wide.select(keepCols)
+        # 파싱 실패 시 subtopic wide 반환 (메타 컬럼 정리 + 항목 통일)
+        wide = self._cleanSubtopicWide(result.wide)
         return self._applyPeriodFilter(wide, period) if not wide.is_empty() else None
 
     @staticmethod
