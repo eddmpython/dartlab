@@ -54,6 +54,9 @@ class MockCompany:
             "indutyName": "IT서비스",
         }
 
+    def show(self, topic: str, **kwargs):
+        return getattr(self, topic, None)
+
 
 # ══════════════════════════════════════
 # register_tool / execute_tool

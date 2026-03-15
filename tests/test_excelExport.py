@@ -12,9 +12,19 @@ from dartlab.export.excel import exportToExcel, listAvailableModules
 PATCH_TARGET = "dartlab.engines.dart.finance.pivot.buildAnnual"
 
 
+class _ShowableMock(MagicMock):
+    """show() 지원 MagicMock."""
+
+    _show_data: dict
+
+    def show(self, topic, **kwargs):
+        return self._show_data.get(topic)
+
+
 @pytest.fixture
 def mockCompany():
-    c = MagicMock()
+    c = _ShowableMock()
+    c._show_data = {}
     c.stockCode = "005930"
     c.corpName = "삼성전자"
     c._hasFinance = True
@@ -133,6 +143,7 @@ def test_ratios_sheet(mockCompany):
 def test_dataframe_property_as_sheet(mockCompany):
     df = pl.DataFrame({"year": [2022, 2023], "total": [100, 200]})
     mockCompany.dividend = df
+    mockCompany._show_data["dividend"] = df
     mockCompany._hasFinance = False
 
     with tempfile.TemporaryDirectory() as tmpDir:

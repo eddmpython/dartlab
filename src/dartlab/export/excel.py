@@ -301,8 +301,8 @@ def _resolveData(c: Company, moduleName: str) -> pl.DataFrame | None:
     if moduleName == "ratios":
         return None
     try:
-        data = getattr(c, moduleName, None)
-    except Exception:
+        data = c.show(moduleName)
+    except (KeyError, ValueError, TypeError):
         return None
     if isinstance(data, pl.DataFrame) and data.height > 0:
         return data

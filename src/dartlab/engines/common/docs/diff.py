@@ -1,11 +1,11 @@
 """sections DataFrame 위 기간간 텍스트 diff.
 
 sections 수평화 DataFrame(topic × period)에서 인접 기간 텍스트 변화를 감지한다.
-060-003 실험으로 검증된 hash 기반 비교 + difflib 줄 단위 세부 diff.
+DART/EDGAR 공통으로 사용. 060-003 실험으로 검증된 hash 기반 비교 + difflib 줄 단위 세부 diff.
 
 사용법::
 
-    from dartlab.engines.dart.docs.sections.diff import sectionsDiff, topicDiff
+    from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
 
     df = sectionsDiff(sections)
     detail = topicDiff(sections, "사업의 개요", "2025", "2024")

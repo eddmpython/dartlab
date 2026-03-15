@@ -89,7 +89,7 @@ def register_defaults(company: Any) -> None:
 
     # 1. get_data: 파서 모듈 데이터 조회
     def get_data(module_name: str) -> str:
-        data = getattr(company, module_name, None)
+        data = getattr(company, module_name, None) if hasattr(company, module_name) else company.show(module_name)
         if data is None:
             # 유사한 모듈명 제안
             from dartlab.engines.ai.metadata import MODULE_META
@@ -380,9 +380,9 @@ def register_defaults(company: Any) -> None:
     def get_company_info() -> str:
         info_parts = [
             f"기업명: {company.corpName}",
-            f"종목코드: {company.stockCode}",
+            f"종목코드: {getattr(company, 'stockCode', getattr(company, 'ticker', ''))}",
         ]
-        overview = getattr(company, "companyOverview", None)
+        overview = company.show("companyOverview") if hasattr(company, "show") else None
         if isinstance(overview, dict):
             for key in ("ceo", "mainBusiness", "indutyName", "foundedDate"):
                 if overview.get(key):
@@ -507,11 +507,11 @@ def register_defaults(company: Any) -> None:
             from dartlab.engines.sector import classify, getParams
 
             corpName = getattr(company, "corpName", "")
-            overview = getattr(company, "companyOverview", None)
+            overview = company.show("companyOverview") if hasattr(company, "show") else None
             kindIndustry = None
             if isinstance(overview, dict):
                 kindIndustry = overview.get("indutyName")
-            detail = getattr(company, "companyOverviewDetail", None)
+            detail = company.show("companyOverviewDetail") if hasattr(company, "show") else None
             mainProducts = None
             if isinstance(detail, dict):
                 mainProducts = detail.get("mainBusiness")

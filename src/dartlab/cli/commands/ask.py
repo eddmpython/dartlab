@@ -45,7 +45,10 @@ def run(args) -> int:
     print(f"  provider: {provider}")
     print()
 
-    answer = company.ask(
+    from dartlab.engines.ai.standalone import ask as _ask
+
+    answer = _ask(
+        company,
         args.question,
         include=args.include,
         exclude=args.exclude,
