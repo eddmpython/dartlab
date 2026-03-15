@@ -38,7 +38,8 @@ export const navigation: NavItem[] = [
 			{ title: '5. Report Data', href: '/docs/tutorials/report-data' },
 			{ title: '6. Disclosure Text', href: '/docs/tutorials/disclosure' },
 			{ title: '7. Advanced', href: '/docs/tutorials/advanced' },
-			{ title: '8. Cross-Company', href: '/docs/tutorials/cross-company' }
+			{ title: '8. Cross-Company', href: '/docs/tutorials/cross-company' },
+			{ title: '9. US Stocks (EDGAR)', href: '/docs/tutorials/edgar' }
 		]
 	},
 	{

@@ -37,6 +37,14 @@ c.stockCode
 c = dartlab.Company("카카오")
 ```
 
+미국 종목도 같은 facade로 생성한다. 티커 형식에 따라 DART/EDGAR가 자동 결정된다.
+
+```python
+c = dartlab.Company("AAPL")   # US stock — auto-detected
+c.corpName  # "Apple Inc."
+c.ticker    # "AAPL"
+```
+
 ## 먼저 index를 본다
 
 ```python
@@ -61,8 +69,14 @@ c.show("companyOverview")
 ```
 
 - 재무제표와 정형 공시는 DataFrame으로 바로 본다.
-- 텍스트 topic은 읽기 쉬운 형태로 정리된 payload를 본다.
+- 텍스트 topic은 `ShowResult(text, table)` 로 반환된다 — 텍스트와 테이블이 분리되어 있다.
 - 원본에 가까운 형태가 필요하면 `raw=True`를 사용한다.
+
+```python
+result = c.show("companyOverview")
+result.text    # 서술문 DataFrame
+result.table   # 테이블 DataFrame
+```
 
 ```python
 c.show("companyOverview", raw=True)
@@ -112,9 +126,19 @@ c.SCE
 원천 데이터 계층으로 직접 내려가고 싶다면 namespace를 쓴다.
 
 ```python
-c.docs.sections
-c.finance.BS
-c.report.dividend
+# DART Company (KR)
+c.docs.sections      # 사업보고서 수평화
+c.finance.BS         # XBRL 재무제표
+c.report.dividend    # 정기보고서 정형 공시
+```
+
+EDGAR Company도 같은 namespace 구조를 따른다.
+
+```python
+# EDGAR Company (US)
+us = dartlab.Company("AAPL")
+us.docs.sections     # 10-K/10-Q sections
+us.finance.BS        # SEC XBRL financials
 ```
 
 ## CLI

@@ -12,14 +12,19 @@ DartLab의 현재 공개 Company 흐름은 `index -> show(topic) -> trace(topic)
 ```python
 import dartlab
 
+# DART (한국)
 c = dartlab.Company("005930")
 c = dartlab.Company("삼성전자")
+c.corpName     # "삼성전자"
+c.stockCode    # "005930"
 
-c.corpName
-c.stockCode
+# EDGAR (미국)
+us = dartlab.Company("AAPL")
+us.corpName    # "Apple Inc."
+us.ticker      # "AAPL"
 ```
 
-데이터가 로컬에 없으면 GitHub Releases에서 자동 다운로드한다.
+티커 형식에 따라 DART/EDGAR 엔진이 자동으로 선택된다. 데이터가 로컬에 없으면 GitHub Releases에서 자동 다운로드한다.
 
 ## 현재 공개 surface
 
@@ -76,8 +81,14 @@ c.show("companyOverview")
 ```
 
 - 재무/정형 공시 topic은 DataFrame이 바로 반환된다.
-- 텍스트 topic은 읽기 쉬운 형태로 정리된 DataFrame이 반환된다.
+- 텍스트 topic은 `ShowResult(text, table)` 로 반환된다 — 텍스트와 테이블이 분리되어 있다.
 - `raw=True`를 주면 원본 wide view에 더 가까운 payload를 볼 수 있다.
+
+```python
+result = c.show("companyOverview")
+result.text    # 서술문 DataFrame
+result.table   # 테이블 DataFrame
+```
 
 ```python
 c.show("companyOverview", raw=True)
@@ -104,14 +115,43 @@ c.trace("companyOverview")
 공개 메인 플로우는 `index/show/trace`지만, 필요하면 source namespace로 직접 내려갈 수 있다.
 
 ```python
-c.docs.sections
-c.finance.BS
-c.report.dividend
+# DART Company
+c.docs.sections        # 사업보고서 수평화
+c.finance.BS           # XBRL 재무제표
+c.report.dividend      # 정기보고서 정형 공시
 ```
 
 - `docs`: 공시 텍스트 원천
 - `finance`: authoritative 재무제표/시계열
-- `report`: authoritative 정형 공시
+- `report`: authoritative 정형 공시 (DART only)
+
+## EDGAR Company (US Stocks)
+
+EDGAR Company도 같은 `index → show → trace` 흐름을 따른다. DART Company와 동일한 인터페이스를 제공하므로 사용법이 같다.
+
+```python
+us = dartlab.Company("AAPL")
+us.index                     # 같은 8컬럼 구조
+us.show("BS")                # SEC XBRL 재무제표
+us.show("riskFactors")       # 10-K 서술형 섹션
+us.trace("BS")               # source provenance
+```
+
+EDGAR Company의 source namespace:
+
+```python
+us.docs.sections       # 10-K/10-Q 수평화
+us.finance.BS          # SEC XBRL 재무상태표
+us.finance.IS          # SEC XBRL 손익계산서
+us.finance.CF          # SEC XBRL 현금흐름표
+us.finance.ratios      # 재무비율
+```
+
+DART Company와의 차이:
+
+- `report` namespace 없음 (SEC에는 DART 정기보고서 API에 대응하는 구조가 없음)
+- docs topic 이름은 SEC 양식 기반 (예: `riskFactors`, `mdna`, `financialStatements`)
+- 현재 Beta 단계 (Tier 2)
 
 ## 정적 메서드
 
@@ -143,6 +183,6 @@ uv run dartlab profile 005930 --trace dividend
 
 - `profile`: 변화 지점 중심의 company report view로 확장 예정
 - `Compare`: 같은 철학으로 UX 개선 예정
-- `EDGAR Company`: DART Company와 같은 수준의 Company-style surface로 정렬 예정
+- ~~`EDGAR Company`~~: DART Company와 같은 수준으로 정렬 완료 (Beta)
 
 

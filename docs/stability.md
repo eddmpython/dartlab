@@ -34,11 +34,15 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 
 | API | 설명 |
 |-----|------|
+| `dartlab.Company("AAPL")` | EDGAR Company facade (미국 주식) |
+| `engines.edgar.docs` | EDGAR 10-K/10-Q sections |
+| `engines.edgar.finance` | SEC XBRL 재무제표 |
 | `Company.insights` | 인사이트 등급 (7영역) |
 | `Company.rank` | 시장 규모 순위 |
 | `Company.docs.retrievalBlocks` | 원문 block retrieval |
 | `Company.docs.contextSlices` | LLM/context slice view |
 | `Company.ask()` | LLM 기반 분석 |
+| `Compare` | 복수 종목 비교 facade |
 | `dartlab` subcommands/options | `ask`, `status`, `setup`, `ai`, `excel`, `profile` 명령 UX |
 | Server API `/api/*` | 웹 서버 엔드포인트 |
 | `engines.ai.*` | AI/LLM 엔진 |
@@ -49,10 +53,7 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 
 | API | 설명 |
 |-----|------|
-| `dartlab.Company("AAPL")` / `dartlab.engines.edgar.Company` | 미국 주식 (EDGAR) |
-| `Compare` | 복수 종목 비교 facade (개선 예정) |
 | mixed-market `Compare` | KR/US 혼합 비교 |
-| `engines.edgar.*` | EDGAR 데이터 엔진 |
 | `export.*` | Excel 내보내기 |
 | `engines.ai.tools.*` | LLM tool calling |
 

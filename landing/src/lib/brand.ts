@@ -3,7 +3,7 @@ export const brand = {
 	tagline: 'Read Beyond the Numbers',
 	description: 'A Python library for comprehensive DART disclosure analysis',
 	descriptionKo: 'DART 전자공시 데이터를 구조화하는 오픈소스 Python 라이브러리',
-	version: '0.4.7',
+	version: '0.5.0',
 	url: 'https://eddmpython.github.io/dartlab/',
 	repo: 'https://github.com/eddmpython/dartlab',
 	pypi: 'https://pypi.org/project/dartlab/',

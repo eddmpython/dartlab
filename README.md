@@ -29,9 +29,9 @@
 
 ## What is DartLab?
 
-DartLab is a Python package for parsing and analyzing [DART (Data Analysis, Retrieval and Transfer System)](https://dart.fss.or.kr/) — Korea's official electronic disclosure system. Its stable core is built around DART company analysis, with a unified `dartlab.Company(...)` facade, CLI, and AI web interface on top.
+DartLab is a Python package for parsing and analyzing corporate filings. Its stable core covers [DART](https://dart.fss.or.kr/) (Korea) with growing support for [SEC EDGAR](https://www.sec.gov/edgar) (US) — both accessed through the same `dartlab.Company(...)` facade.
 
-Today, the package message is simple: **DART core is the stable default, while EDGAR and mixed-market paths are still expansion tracks**. DartLab extracts **both financial numbers and narrative text** from corporate filings and exposes them through comparable tables, company facades, and CLI workflows.
+The package extracts **both financial numbers and narrative text** from filings and exposes them through comparable tables, company facades, CLI workflows, and an AI web interface. The same `index → show → trace` workflow works for Korean and US stocks alike.
 
 ### Account Standardization
 
@@ -88,12 +88,14 @@ uv run dartlab ai
 ```python
 import dartlab
 
+# Korean stocks (DART)
 c = dartlab.Company("005930")       # by stock code
 c = dartlab.Company("삼성전자")      # by company name (Korean)
 c.corpName                  # "삼성전자"
 
-# EDGAR path exists through the same facade, but DART remains the stable default
+# US stocks (EDGAR) — same facade, same workflow
 c = dartlab.Company("AAPL")
+c.corpName                  # "Apple Inc."
 ```
 
 Creating a `Company` object prints a usage guide. For the full guide, call `c.guide()`.
@@ -127,7 +129,25 @@ uv run dartlab ai
 
 ## Features
 
-### Company Index First
+### Company — The Unified Entry Point
+
+One facade covers both markets. The ticker format determines the data source automatically:
+
+```python
+import dartlab
+
+# Korean stock → DART engine
+kr = dartlab.Company("005930")
+kr.corpName    # "삼성전자"
+
+# US stock → EDGAR engine
+us = dartlab.Company("AAPL")
+us.corpName    # "Apple Inc."
+```
+
+Both return the same `Company` interface with the same `index → show → trace` workflow.
+
+### index / show / trace
 
 The current public flow is simple:
 
@@ -136,8 +156,6 @@ The current public flow is simple:
 - `trace(topic)` explains whether `docs`, `finance`, or `report` won
 
 ```python
-import dartlab
-
 c = dartlab.Company("005930")
 c.index              # structure index dataframe
 c.show("BS")         # show one topic
@@ -145,9 +163,21 @@ c.trace("dividend")  # source trace
 c.docs.sections      # pure docs source spine
 c.finance.BS         # authoritative financial statement
 c.report.dividend    # authoritative report series
+
+# Same flow for EDGAR
+us = dartlab.Company("AAPL")
+us.index             # same 8-column structure
+us.show("BS")        # SEC XBRL financials
+us.show("riskFactors")  # 10-K narrative sections
 ```
 
-`profile` is intentionally held back for a future report-style view. The plan is a terminal/notebook-friendly company report that emphasizes change points instead of repeating unchanged text.
+`show()` returns a `ShowResult(text, table)` for disclosure topics — text and table blocks are separated:
+
+```python
+result = c.show("companyOverview")
+result.text    # narrative text DataFrame
+result.table   # table DataFrame
+```
 
 ### Financial Statements
 
@@ -156,7 +186,7 @@ c.BS    # Balance Sheet (DataFrame)
 c.IS    # Income Statement (DataFrame)
 c.CIS   # Comprehensive Income Statement (DataFrame)
 c.CF    # Cash Flow Statement (DataFrame)
-c.SCE   # Statement of Changes in Equity
+c.SCE   # Statement of Changes in Equity  (DART only)
 ```
 
 ### Cross-Company Comparable Time Series
@@ -555,8 +585,8 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [x] Excel export with templates
 - [ ] Company `profile` report view (terminal/notebook document view focused on change points)
 - [ ] Compare UX overhaul around the same `index/show/trace` philosophy
-- [ ] EDGAR Company UX alignment with the DART `Company` surface
-- [ ] EDGAR (US SEC) financial data integration
+- [x] EDGAR Company UX alignment with the DART `Company` surface
+- [x] EDGAR (US SEC) financial data integration
 - [ ] Text analysis module integration (from separate project)
 - [ ] Quantitative + qualitative cross-validation
 - [ ] Visualization
@@ -565,14 +595,14 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 
 ```
 src/dartlab/
-├── company.py              # Company class — property → DataFrame (yfinance pattern)
+├── company.py              # Company facade — auto-routes DART / EDGAR
 ├── core/                   # Data loading, report selection, table parsing
 │   ├── dataLoader.py       # GitHub Releases ↔ local cache
 │   ├── dataConfig.py       # Release tags, shard mapping
 │   └── registry.py         # DataEntry — single source of truth for all modules
 │
 ├── engines/
-│   ├── dart/               # L1: DART data source
+│   ├── dart/               # L1: DART data source (Korea)
 │   │   ├── docs/           # Filing document parsing
 │   │   │   ├── finance/    # 36 quantitative modules (BS, IS, CF, dividend, ...)
 │   │   │   ├── disclosure/ # 4 narrative modules (business, MD&A, overview, ...)
@@ -580,6 +610,11 @@ src/dartlab/
 │   │   ├── finance/        # XBRL normalization — 34K synonyms → unified snakeId
 │   │   └── report/         # Periodic report API (dividend, employee, audit, ...)
 │   │
+│   ├── edgar/              # L1: EDGAR data source (US)
+│   │   ├── docs/           # 10-K/10-Q section parsing + horizontal alignment
+│   │   └── finance/        # SEC XBRL normalization → unified snakeId
+│   │
+│   ├── common/             # Shared utilities (extract, ratios)
 │   ├── sector/             # L2: WICS 11-sector classification
 │   ├── insight/            # L2: 7-area grading (A~F) + anomaly detection
 │   ├── rank/               # L2: Market-wide size ranking
