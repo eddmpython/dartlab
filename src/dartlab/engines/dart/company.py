@@ -2969,12 +2969,12 @@ class Company:
         if self.report is None:
             return None
         apiType = _REPORT_TOPIC_TO_API_TYPE.get(topic, topic)
-        if apiType not in self.report.apiTypes:
-            return None
         try:
+            if apiType not in self.report.apiTypes:
+                return None
             return self._reportFrameInner(apiType, topic, raw=raw)
         except (pl.exceptions.ColumnNotFoundError, pl.exceptions.InvalidOperationError,
-                pl.exceptions.SchemaError):
+                pl.exceptions.SchemaError, RuntimeError):
             return None
 
     def _reportFrameInner(self, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
