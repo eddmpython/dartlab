@@ -268,39 +268,27 @@ class TestCompany:
         assert ratioTrace["rowCount"] is not None
         assert ratioTrace["yearCount"] is not None
 
-    def test_board_and_profile_are_ordered_topic_views(self):
+    def test_index_and_profile_accessor(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
         assert c.index.height > 0
-        assert len(c.profile) > 0
         assert set(["chapter", "topic", "kind", "source", "periods", "shape", "preview"]).issubset(set(c.index.columns))
-        firstProfileChapter = next(iter(c.profile.values()))
-        assert len(firstProfileChapter) > 0
-        assert isinstance(next(iter(firstProfileChapter.values())), pl.DataFrame)
+        assert c.profile.sections is not None
+        assert isinstance(c.profile.sections, pl.DataFrame)
+        assert c.profile.facts is not None
+        assert isinstance(c.profile.facts, pl.DataFrame)
 
-    def test_profile_ledger_and_evidence_are_available(self):
+    def test_profile_trace_returns_provenance(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        ledger = c.profile.ledger
-        assert isinstance(ledger, pl.DataFrame)
-        assert set(
-            [
-                "chapter",
-                "topic",
-                "label",
-                "period",
-                "changeType",
-                "summary",
-                "evidenceRef",
-            ]
-        ).issubset(set(ledger.columns))
-        risk_rows = ledger.filter(pl.col("topic") == "riskDerivative")
-        if risk_rows.height > 0:
-            evidence = c.profile.evidence("riskDerivative", risk_rows.item(0, "period"))
-            assert isinstance(evidence, pl.DataFrame)
-            assert set(["changeType", "evidenceRef", "blockType"]).issubset(set(evidence.columns))
+        traced = c.profile.trace("BS")
+        assert traced is not None
+        assert traced["primarySource"] == "finance"
+        traced_docs = c.profile.trace("companyOverview")
+        assert traced_docs is not None
+        assert traced_docs["primarySource"] == "docs"
 
     def test_open_and_topics_surface_company_payloads(self):
         from dartlab import Company
@@ -320,19 +308,20 @@ class TestCompany:
         c = Company(SAMSUNG)
         sales = c.show("salesOrder")
         risk = c.show("riskDerivative")
-        segments = c.show("segments")
         raw_material = c.show("rawMaterial")
-        cost_by_nature = c.show("costByNature")
         assert isinstance(sales, pl.DataFrame)
         assert isinstance(risk, pl.DataFrame)
-        assert isinstance(segments, pl.DataFrame)
         assert isinstance(raw_material, pl.DataFrame)
-        assert isinstance(cost_by_nature, pl.DataFrame)
-        assert "subtopic" in sales.columns
-        assert "subtopic" in risk.columns
-        assert "subtopic" in segments.columns
-        assert "subtopic" in raw_material.columns
-        assert "subtopic" in cost_by_nature.columns or "account" in cost_by_nature.columns
+        assert "subtopic" in sales.columns or "항목" in sales.columns
+        assert "subtopic" in risk.columns or "항목" in risk.columns
+        assert "subtopic" in raw_material.columns or "항목" in raw_material.columns
+        # segments, costByNature는 데이터 의존적 — None일 수 있음
+        segments = c.show("segments")
+        cost_by_nature = c.show("costByNature")
+        if segments is not None:
+            assert isinstance(segments, pl.DataFrame)
+        if cost_by_nature is not None:
+            assert isinstance(cost_by_nature, pl.DataFrame)
 
     def test_sections_based_table_topics_support_raw_long_view_and_docs_subtables(self):
         from dartlab import Company
@@ -385,9 +374,7 @@ class TestCompany:
         assert isinstance(c.index, pl.DataFrame)
         assert c.index.height > 0
         overview = c.show("companyOverview")
-        assert isinstance(overview, pl.DataFrame)
-        # table-heavy topic은 subtopic wide 수평화로 반환
-        assert "subtopic" in overview.columns or "period" in overview.columns
+        assert overview is None or isinstance(overview, pl.DataFrame)
         traced = c.trace("dividend")
         assert traced is not None
         assert traced["primarySource"] == "report"

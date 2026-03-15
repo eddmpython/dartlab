@@ -25,7 +25,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any
 
 import polars as pl
 
@@ -268,11 +268,7 @@ _RATIO_CATEGORY_LABELS: dict[str, str] = {
 }
 
 
-class ShowResult(NamedTuple):
-    """show() 반환 — text와 table을 분리."""
-
-    text: pl.DataFrame | None
-    table: pl.DataFrame | None
+from dartlab.engines.common.types import ShowResult
 
 
 def _ratioSeriesToDataFrame(
@@ -562,6 +558,30 @@ class _ProfileAccessor:
             rows.append(row)
         return rows
 
+    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        """topic의 source provenance 반환."""
+        if topic in {"BS", "IS", "CIS", "CF"}:
+            df = getattr(self._company.finance, topic, None)
+            if df is not None:
+                return {
+                    "topic": topic,
+                    "period": period,
+                    "primarySource": "finance",
+                    "fallbackSources": ["docs"],
+                    "whySelected": "finance authoritative priority",
+                }
+
+        docsSec = self._company.docs.sections
+        if docsSec is not None and topic in docsSec["topic"].to_list():
+            return {
+                "topic": topic,
+                "period": period,
+                "primarySource": "docs",
+                "fallbackSources": [],
+                "whySelected": "docs authoritative priority",
+            }
+        return None
+
     @staticmethod
     def _dfToMarkdownTable(df: pl.DataFrame) -> str:
         """DataFrame을 markdown 테이블 문자열로 변환."""
@@ -593,7 +613,7 @@ class Company:
         c.profile.sections     # merged sections (finance + docs)
         c.BS                   # finance.BS 바로가기
         c.sections             # docs.sections 바로가기
-        c.show(topic)          # 통합 조회 → ShowResult
+        c.show(topic)          # 통합 조회 → DataFrame | None
     """
 
     def __init__(self, ticker: str):
@@ -736,12 +756,12 @@ class Company:
         self._cache[cacheKey] = ordered
         return ordered
 
-    def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> Any:
-        """통합 조회.
+    def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> pl.DataFrame | None:
+        """통합 조회 — 항상 DataFrame | None 반환.
 
         - finance topic → DataFrame
         - ratios → DataFrame
-        - docs topic → ShowResult(text, table)
+        - docs topic → DataFrame (ShowResult는 table 우선, text fallback)
         """
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
@@ -756,9 +776,10 @@ class Company:
             return self._applyPeriodFilter(df, period)
 
         result = self.docs.show(topic, period)
-        if result is not None:
+        if isinstance(result, ShowResult):
+            return result.table if result.table is not None else result.text
+        if isinstance(result, pl.DataFrame):
             return result
-
         return None
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
@@ -968,3 +989,112 @@ class Company:
                     text = str(val).strip().replace("\n", " ")
                     return f"{col}: {text[:100]}" if len(text) > 100 else f"{col}: {text[:80]}"
         return "-"
+
+    def diff(
+        self,
+        topic: str | None = None,
+        fromPeriod: str | None = None,
+        toPeriod: str | None = None,
+    ) -> pl.DataFrame | None:
+        """기간간 텍스트 변경 비교.
+
+        사용법::
+
+            c.diff()                          # 전체 topic 변경 요약
+            c.diff("10-K::item1ARiskFactors") # 특정 topic 변경 이력
+            c.diff("10-K::item7Mdna", "2023", "2024")  # 줄 단위 diff
+        """
+        from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
+
+        docsSections = self.docs.sections
+        if docsSections is None:
+            return None
+
+        # 줄 단위 상세 diff
+        if topic is not None and fromPeriod is not None and toPeriod is not None:
+            result = topicDiff(docsSections, topic, fromPeriod, toPeriod)
+            if result is None:
+                return None
+            import difflib
+
+            filtered = docsSections.filter(pl.col("topic") == topic)
+            if filtered.height == 0:
+                return None
+            fromText = str(filtered.item(0, fromPeriod) or "")
+            toText = str(filtered.item(0, toPeriod) or "")
+            fromLines = fromText.splitlines()
+            toLines = toText.splitlines()
+            rows: list[dict[str, str | int]] = []
+            lineNo = 0
+            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+                None,
+                fromLines,
+                toLines,
+            ).get_opcodes():
+                if tag == "equal":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": " ", "text": line})
+                elif tag == "insert":
+                    for line in toLines[j1:j2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "+", "text": line})
+                elif tag == "delete":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "-", "text": line})
+                elif tag == "replace":
+                    for line in fromLines[i1:i2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "-", "text": line})
+                    for line in toLines[j1:j2]:
+                        lineNo += 1
+                        rows.append({"line": lineNo, "status": "+", "text": line})
+            return pl.DataFrame(rows) if rows else None
+
+        diffResult = sectionsDiff(docsSections)
+
+        # 특정 topic 변경 이력
+        if topic is not None:
+            topicEntries = [e for e in diffResult.entries if e.topic == topic]
+            if not topicEntries:
+                return pl.DataFrame(
+                    {
+                        "fromPeriod": [],
+                        "toPeriod": [],
+                        "status": [],
+                        "fromLen": [],
+                        "toLen": [],
+                        "delta": [],
+                        "deltaRate": [],
+                    }
+                )
+            return pl.DataFrame(
+                [
+                    {
+                        "fromPeriod": e.fromPeriod,
+                        "toPeriod": e.toPeriod,
+                        "status": e.status,
+                        "fromLen": e.fromLen,
+                        "toLen": e.toLen,
+                        "delta": e.toLen - e.fromLen,
+                        "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
+                    }
+                    for e in topicEntries
+                ]
+            )
+
+        # 전체 요약
+        return pl.DataFrame(
+            [
+                {
+                    "chapter": s.chapter,
+                    "topic": s.topic,
+                    "periods": s.totalPeriods,
+                    "changed": s.changedCount,
+                    "stable": s.stableCount,
+                    "changeRate": round(s.changeRate, 3),
+                }
+                for s in diffResult.summaries
+            ]
+        )

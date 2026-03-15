@@ -19,7 +19,7 @@ import logging
 import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any
 
 import polars as pl
 
@@ -741,15 +741,6 @@ def _shapeString(df: pl.DataFrame | None) -> str:
     return f"{df.height}x{df.width}"
 
 
-def _noticeFrame(topic: str, message: str) -> pl.DataFrame:
-    return pl.DataFrame(
-        {
-            "topic": [topic],
-            "message": [message],
-        }
-    )
-
-
 def _import_and_call(modulePath: str, funcName: str, stockCode: str, **kwargs) -> Any:
     """모듈을 lazy import하고 함수 호출."""
     import importlib
@@ -1219,7 +1210,7 @@ class _ReportAccessor:
 
         try:
             result = extractClean(self._company.stockCode, apiType)
-        except Exception:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
         return result
@@ -1233,7 +1224,7 @@ class _ReportAccessor:
 
         try:
             result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
-        except Exception:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
         return result
@@ -1257,7 +1248,7 @@ class _ReportAccessor:
 
         try:
             result = extractResult(self._company.stockCode, apiType, quarterNum)
-        except Exception:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
         return result
@@ -1383,7 +1374,7 @@ class _DocsAccessor:
 
     @property
     def rawMaterial(self):
-        return self._company._sectionsSubtopicWide("rawMaterial") or self._company._rawMaterialLegacy()
+        return self._company._sectionsSubtopicWide("rawMaterial") or self._company._safePrimary("rawMaterial")
 
     def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
@@ -1849,233 +1840,8 @@ class _ProfileAccessor:
         return "docs"
 
 
-class _BoardView(OrderedDict):
-    """사용자용 회사 프로파일 뷰."""
+from dartlab.engines.common.types import ShowResult
 
-    def __init__(self, company: "Company", payload: OrderedDict[str, OrderedDict[str, pl.DataFrame]], *, raw: bool):
-        super().__init__(payload)
-        self._company = company
-        self._raw = raw
-
-    @property
-    def sections(self) -> pl.DataFrame | None:
-        return self._company._profileAccessor.sections
-
-    @property
-    def facts(self) -> pl.DataFrame | None:
-        return self._company._profileAccessor.facts
-
-    @property
-    def topics(self) -> list[str]:
-        return self._company.topics
-
-    @property
-    def availableTopics(self) -> list[str]:
-        return self._company.topics
-
-    def get(self, topic: str, default: Any = None) -> Any:
-        payload = self._company.show(topic, raw=self._raw)
-        if payload is None:
-            return default
-        return payload
-
-    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
-        return self._company.trace(topic, period=period)
-
-    def show(self, topic: str, *, period: str | None = None, raw: bool | None = None) -> Any:
-        effectiveRaw = self._raw if raw is None else raw
-        return self._company.show(topic, period=period, raw=effectiveRaw)
-
-    @property
-    def ledger(self) -> pl.DataFrame:
-        cacheKey = "_profileLedgerRaw" if self._raw else "_profileLedger"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-
-        rows: list[pl.DataFrame] = []
-        for chapter, topics in self.items():
-            for topic in topics:
-                ledger = self._company._topicChangeLedger(topic)
-                if ledger is None or ledger.is_empty():
-                    continue
-                rows.append(
-                    ledger.with_columns(
-                        pl.lit(chapter).alias("chapter"),
-                        pl.lit(self._company._topicLabel(topic)).alias("label"),
-                    ).select(
-                        [
-                            "chapter",
-                            "topic",
-                            "label",
-                            "period",
-                            "previousPeriod",
-                            "changeType",
-                            "summary",
-                            "evidenceRef",
-                            "text",
-                            "addedBlocks",
-                            "removedBlocks",
-                            "editedBlocks",
-                            "movedBlocks",
-                            "restatedBlocks",
-                            "placeholderBlocks",
-                        ]
-                    )
-                )
-
-        result = (
-            pl.concat(rows, how="vertical_relaxed")
-            if rows
-            else pl.DataFrame(
-                schema={
-                    "chapter": pl.Utf8,
-                    "topic": pl.Utf8,
-                    "label": pl.Utf8,
-                    "period": pl.Utf8,
-                    "previousPeriod": pl.Utf8,
-                    "changeType": pl.Utf8,
-                    "summary": pl.Utf8,
-                    "evidenceRef": pl.Utf8,
-                    "text": pl.Utf8,
-                    "addedBlocks": pl.Int64,
-                    "removedBlocks": pl.Int64,
-                    "editedBlocks": pl.Int64,
-                    "movedBlocks": pl.Int64,
-                    "restatedBlocks": pl.Int64,
-                    "placeholderBlocks": pl.Int64,
-                }
-            )
-        )
-        self._company._cache[cacheKey] = result
-        return result
-
-    def evidence(self, topic: str, period: str) -> pl.DataFrame:
-        return self._company._topicEvidence(topic, period)
-
-    @property
-    def index(self) -> pl.DataFrame:
-        cacheKey = "_profileIndexRaw" if self._raw else "_profileIndex"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-
-        rows: list[dict[str, Any]] = []
-        if not self._company._hasDocs:
-            rows.append(
-                {
-                    "chapter": "안내",
-                    "topic": "docsStatus",
-                    "label": "사업보고서",
-                    "kind": "notice",
-                    "source": "docs",
-                    "periods": "-",
-                    "shape": "missing",
-                    "preview": "현재 사업보고서 부재",
-                }
-            )
-        for chapter, topics in self.items():
-            for topic, payload in topics.items():
-                traced = self._company.trace(topic)
-                rows.append(
-                    {
-                        "chapter": chapter,
-                        "topic": topic,
-                        "label": self._company._topicLabel(topic),
-                        "kind": self._kindForPayload(payload),
-                        "source": traced["primarySource"] if traced is not None else None,
-                        "periods": self._periodsForPayload(payload),
-                        "shape": _shapeString(payload) if isinstance(payload, pl.DataFrame) else type(payload).__name__,
-                        "preview": self._previewForPayload(payload),
-                    }
-                )
-
-        df = (
-            pl.DataFrame(rows)
-            if rows
-            else pl.DataFrame(
-                schema={
-                    "chapter": pl.Utf8,
-                    "topic": pl.Utf8,
-                    "label": pl.Utf8,
-                    "kind": pl.Utf8,
-                    "source": pl.Utf8,
-                    "periods": pl.Utf8,
-                    "shape": pl.Utf8,
-                    "preview": pl.Utf8,
-                }
-            )
-        )
-        self._company._cache[cacheKey] = df
-        return df
-
-    def _kindForPayload(self, payload: Any) -> str:
-        if not isinstance(payload, pl.DataFrame):
-            return type(payload).__name__
-        cols = set(payload.columns)
-        if {"topic", "period", "changeType", "summary", "evidenceRef"}.issubset(cols):
-            return "ledger"
-        if {"topic", "period", "change", "text"}.issubset(cols):
-            return "text"
-        if "period" in cols:
-            return "timeseries"
-        if any(_isPeriodColumn(col) for col in payload.columns if col != "topic"):
-            return "wide"
-        return "dataframe"
-
-    def _periodsForPayload(self, payload: Any) -> str:
-        if not isinstance(payload, pl.DataFrame) or payload.is_empty():
-            return "-"
-        if "period" in payload.columns:
-            periods = [str(v) for v in payload["period"].drop_nulls().to_list()]
-            if not periods:
-                return "-"
-            return f"{periods[-1]}..{periods[0]}" if len(periods) > 1 else periods[0]
-        periodCols = [col for col in payload.columns if _isPeriodColumn(col)]
-        if not periodCols:
-            return "-"
-        return f"{periodCols[-1]}..{periodCols[0]}" if len(periodCols) > 1 else periodCols[0]
-
-    def _previewForPayload(self, payload: Any) -> str:
-        if not isinstance(payload, pl.DataFrame) or payload.is_empty():
-            return "-"
-        cols = set(payload.columns)
-        if {"topic", "period", "changeType", "summary", "evidenceRef"}.issubset(cols):
-            summary = payload.item(0, "summary")
-            return _normalizeTextCell(summary)[:120]
-        if {"topic", "period", "change", "text"}.issubset(cols):
-            text = payload.item(0, "text")
-            return _normalizeTextCell(text)[:120]
-        periodCols = [col for col in payload.columns if _isPeriodColumn(col)]
-        if periodCols:
-            for period in periodCols:
-                value = payload.item(0, period)
-                text = _normalizeTextCell(value)
-                if text:
-                    return f"{period}: {text[:100]}"
-        return ", ".join(payload.columns[:4])
-
-    def __repr__(self) -> str:
-        chapterCount = len(self)
-        topicCount = sum(len(topics) for topics in self.values())
-        kind = "profile" if not self._raw else "profile(raw)"
-        ledger = self.ledger
-        if ledger.is_empty():
-            return f"{kind}({chapterCount} chapters, {topicCount} topics)\n{self.index}"
-        return f"{kind}({chapterCount} chapters, {topicCount} topics)\n{ledger}"
-
-    __str__ = __repr__
-
-    def _repr_html_(self) -> str:
-        ledger = self.ledger
-        if hasattr(ledger, "_repr_html_"):
-            return ledger._repr_html_()
-        return f"<pre>{self}</pre>"
-
-
-class ShowResult(NamedTuple):
-    """show() 반환 — text와 table을 분리."""
-
-    text: pl.DataFrame | None
-    table: pl.DataFrame | None
 
 
 class Company:
@@ -2125,7 +1891,7 @@ class Company:
         self._cache: dict[str, Any] = {}
 
         self._hasDocs = _ensureData(self.stockCode, "docs")
-        self._hasFinance = _ensureData(self.stockCode, "finance")
+        self._hasFinanceParquet = _ensureData(self.stockCode, "finance")
         self._hasReport = _ensureData(self.stockCode, "report")
 
         if self._hasDocs:
@@ -2134,16 +1900,10 @@ class Company:
         else:
             self.corpName = codeToName(self.stockCode)
 
-        if self._hasFinance:
-            from dartlab.engines.dart.finance.pivot import buildTimeseries
+        # finance는 lazy — 첫 접근 시 _ensureFinanceLoaded()에서 검증
+        self._financeChecked = False
 
-            ts = buildTimeseries(self.stockCode)
-            if ts is not None:
-                self._cache["_finance_q_CFS"] = ts
-            else:
-                self._hasFinance = False
-
-        if not self._hasDocs and not self._hasFinance and not self._hasReport:
+        if not self._hasDocs and not self._hasFinanceParquet and not self._hasReport:
             raise ValueError(f"'{self.stockCode}' 데이터 없음 (docs/finance/report 모두 없음)")
 
         self._notesAccessor = Notes(self) if self._hasDocs else None
@@ -2153,31 +1913,13 @@ class Company:
         self._profileAccessor = _ProfileAccessor(self)
 
     def __repr__(self):
-        from dartlab import config
-
-        if config.verbose:
-            from dartlab.display import printRepr
-            from dartlab.engines.dart.docs.notes import _REGISTRY as notesRegistry
-
-            nProps = len([p for p in _ALL_PROPERTIES if p[0] not in ("BS", "IS", "CF")])
-            nNotes = len(notesRegistry) if self._hasDocs else 0
-            printRepr(self.corpName, self.stockCode, nProps, nNotes)
-            return ""
         return f"Company({self.stockCode}, {self.corpName})"
 
-    def guide(self):
-        """전체 사용 가이드 출력."""
-        from dartlab.display import printGuide
-        from dartlab.engines.dart.docs.notes import _REGISTRY as notesRegistry
-
-        props = [p[0] for p in _ALL_PROPERTIES if p[0] not in ("BS", "IS", "CF")]
-        if self._hasDocs:
-            noteKeys = list(notesRegistry.keys())
-            noteKeysKr = [v[1] for v in notesRegistry.values()]
-        else:
-            noteKeys = []
-            noteKeysKr = []
-        printGuide(self.corpName, self.stockCode, props, noteKeys, noteKeysKr)
+    @property
+    def _hasFinance(self) -> bool:
+        """finance 사용 가능 여부 — lazy check 포함."""
+        self._ensureFinanceLoaded()
+        return self._hasFinanceParquet
 
     # ── 내부 호출 ──
 
@@ -2311,7 +2053,7 @@ class Company:
     @property
     def rawFinance(self) -> pl.DataFrame | None:
         """재무제표 원본 parquet 전체 (가공 전)."""
-        if not self._hasFinance:
+        if not self._hasFinanceParquet:
             return None
         cacheKey = "_rawFinance"
         if cacheKey in self._cache:
@@ -2360,19 +2102,6 @@ class Company:
         result = contextSlices(self.stockCode)
         self._cache[cacheKey] = result
         return result
-
-    def _rawMaterial(self) -> Any:
-        from dartlab import config
-
-        if config.verbose:
-            print(f"  ▶ {self.corpName} · 원재료설비")
-        return self._call_module("rawMaterial")
-
-    def _rawMaterialLegacy(self) -> Any:
-        try:
-            return self._rawMaterial()
-        except Exception:  # noqa: BLE001
-            return None
 
     def _topicSubtables(self, topic: str):
         cacheKey = f"_topicSubtables:{topic}"
@@ -2436,7 +2165,7 @@ class Company:
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
         try:
             payload = self._get_primary(name)
-        except Exception:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError, ImportError, FileNotFoundError, AttributeError):
             return None
         return payload if isinstance(payload, pl.DataFrame) else None
 
@@ -2621,230 +2350,6 @@ class Company:
     def CF(self) -> pl.DataFrame | None:
         """현금흐름표 DataFrame (finance XBRL 우선, docs fallback)."""
         return self.finance.CF
-
-    # ── 정기보고서 (property) ──
-    # report(DART API) 우선 → docs fallback
-
-    @property
-    def dividend(self) -> pl.DataFrame | None:
-        """배당 시계열 DataFrame (report API 우선, docs fallback)."""
-        if self._hasReport and self.report is not None:
-            r = self.report.dividend
-            if r is not None:
-                return r.df
-        return self._get_primary("dividend")
-
-    @property
-    def majorHolder(self) -> pl.DataFrame | None:
-        """최대주주 시계열 DataFrame (report API 우선, docs fallback)."""
-        if self._hasReport and self.report is not None:
-            r = self.report.majorHolder
-            if r is not None:
-                return r.df
-        return self._get_primary("majorHolder")
-
-    @property
-    def employee(self) -> pl.DataFrame | None:
-        """직원 현황 시계열 DataFrame (report API 우선, docs fallback)."""
-        if self._hasReport and self.report is not None:
-            r = self.report.employee
-            if r is not None:
-                return r.df
-        return self._get_primary("employee")
-
-    @property
-    def subsidiary(self) -> pl.DataFrame | None:
-        """자회사 투자 시계열 DataFrame."""
-        return self._get_primary("subsidiary")
-
-    @property
-    def bond(self) -> pl.DataFrame | None:
-        """채무증권 발행 시계열 DataFrame."""
-        return self._get_primary("bond")
-
-    @property
-    def shareCapital(self) -> pl.DataFrame | None:
-        """주식 현황 시계열 DataFrame."""
-        return self._get_primary("shareCapital")
-
-    @property
-    def executive(self) -> pl.DataFrame | None:
-        """등기임원 집계 시계열 DataFrame (report API 우선, docs fallback)."""
-        if self._hasReport and self.report is not None:
-            r = self.report.executive
-            if r is not None:
-                return r.df
-        return self._get_primary("executive")
-
-    @property
-    def executivePay(self) -> pl.DataFrame | None:
-        """임원 보수 시계열 DataFrame."""
-        return self._get_primary("executivePay")
-
-    @property
-    def audit(self) -> pl.DataFrame | None:
-        """감사의견 시계열 DataFrame (report API 우선, docs fallback)."""
-        if self._hasReport and self.report is not None:
-            r = self.report.audit
-            if r is not None:
-                return r.df
-        return self._get_primary("audit")
-
-    @property
-    def boardOfDirectors(self) -> pl.DataFrame | None:
-        """이사회 시계열 DataFrame."""
-        return self._get_primary("boardOfDirectors")
-
-    @property
-    def capitalChange(self) -> pl.DataFrame | None:
-        """자본금 변동 시계열 DataFrame."""
-        return self._get_primary("capitalChange")
-
-    @property
-    def contingentLiability(self) -> pl.DataFrame | None:
-        """우발부채 시계열 DataFrame."""
-        return self._get_primary("contingentLiability")
-
-    @property
-    def internalControl(self) -> pl.DataFrame | None:
-        """내부통제 시계열 DataFrame."""
-        return self._get_primary("internalControl")
-
-    @property
-    def relatedPartyTx(self) -> pl.DataFrame | None:
-        """관계자거래 시계열 DataFrame."""
-        return self._get_primary("relatedPartyTx")
-
-    @property
-    def rnd(self) -> pl.DataFrame | None:
-        """R&D 비용 시계열 DataFrame."""
-        return self._get_primary("rnd")
-
-    @property
-    def sanction(self) -> pl.DataFrame | None:
-        """제재 현황 DataFrame."""
-        return self._get_primary("sanction")
-
-    @property
-    def affiliateGroup(self) -> pl.DataFrame | None:
-        """계열사 목록 DataFrame."""
-        return self._get_primary("affiliateGroup")
-
-    @property
-    def affiliate(self) -> pl.DataFrame | None:
-        """관계기업 투자 변동 시계열 DataFrame."""
-        return self._get_primary("affiliate")
-
-    @property
-    def fundraising(self) -> pl.DataFrame | None:
-        """증자/감자 이력 DataFrame."""
-        return self._get_primary("fundraising")
-
-    @property
-    def productService(self) -> pl.DataFrame | None:
-        """주요 제품/서비스 DataFrame."""
-        return self._get_primary("productService")
-
-    @property
-    def salesOrder(self) -> pl.DataFrame | None:
-        """매출/수주 DataFrame."""
-        return self._sectionsSubtopicWide("salesOrder") or self._safePrimary("salesOrder")
-
-    @property
-    def riskDerivative(self) -> pl.DataFrame | None:
-        """위험관리/파생거래 DataFrame."""
-        return self._sectionsSubtopicWide("riskDerivative") or self._safePrimary("riskDerivative")
-
-    @property
-    def articlesOfIncorporation(self) -> pl.DataFrame | None:
-        """정관 변경이력 DataFrame."""
-        return self._get_primary("articlesOfIncorporation")
-
-    @property
-    def otherFinance(self) -> pl.DataFrame | None:
-        """기타 재무 DataFrame."""
-        return self._get_primary("otherFinance")
-
-    @property
-    def companyHistory(self) -> pl.DataFrame | None:
-        """회사 연혁 DataFrame."""
-        return self._get_primary("companyHistory")
-
-    @property
-    def shareholderMeeting(self) -> pl.DataFrame | None:
-        """주주총회 안건 DataFrame."""
-        return self._get_primary("shareholderMeeting")
-
-    @property
-    def auditSystem(self) -> pl.DataFrame | None:
-        """감사제도 DataFrame."""
-        return self._get_primary("auditSystem")
-
-    @property
-    def investmentInOther(self) -> pl.DataFrame | None:
-        """타법인출자 현황 DataFrame."""
-        return self._get_primary("investmentInOther")
-
-    @property
-    def companyOverviewDetail(self) -> dict | None:
-        """회사 개요 상세 (설립일, 상장일, 대표이사 등)."""
-        return self._get_primary("companyOverviewDetail")
-
-    # ── 부문정보 / K-IFRS 주석 (property) ──
-
-    @property
-    def segments(self) -> pl.DataFrame | None:
-        """부문별 매출 시계열 DataFrame."""
-        return self._sectionsSubtopicWide("segments") or self._safePrimary("segments")
-
-    @property
-    def tangibleAsset(self) -> pl.DataFrame | None:
-        """유형자산 변동표 DataFrame."""
-        if not self._hasDocsTopicHint("tangibleAsset"):
-            return None
-        return self._get_primary("tangibleAsset")
-
-    @property
-    def costByNature(self) -> pl.DataFrame | None:
-        """비용 성격별 분류 시계열 DataFrame.
-
-        sections/detailTopic 기반 table extractor를 우선 사용하고,
-        기존 parser 결과는 archive/fallback으로만 사용한다.
-        """
-        if not self._hasSectionTitleHint("costByNature"):
-            return None
-        sections_df = self._sectionsSubtopicWide("costByNature")
-        if sections_df is not None:
-            return sections_df
-        if not self._hasDocsTopicHint("costByNature"):
-            return None
-        return self._safePrimary("costByNature")
-
-    # ── 공시 서술 (property) ──
-
-    @property
-    def business(self) -> list | None:
-        """사업의 내용 섹션 목록."""
-        return self._get_primary("business")
-
-    @property
-    def overview(self) -> Any:
-        """회사 개요 정량 데이터."""
-        from dartlab import config
-
-        if config.verbose:
-            print(f"  ▶ {self.corpName} · 회사개요정량")
-        return self._call_module("companyOverview")
-
-    @property
-    def mdna(self) -> str | None:
-        """MD&A 개요 텍스트."""
-        return self._get_primary("mdna")
-
-    @property
-    def rawMaterial(self) -> Any:
-        """원재료/설비/시설투자 수평화 DataFrame."""
-        return self._sectionsSubtopicWide("rawMaterial") or self._rawMaterialLegacy()
 
     @property
     def sections(self) -> pl.DataFrame | None:
@@ -3219,16 +2724,20 @@ class Company:
 
     _MIN_YEAR = 2016
 
-    def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
+    def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
         result = self._showCore(topic, period=period, raw=raw)
         result = self._trimOldPeriods(result)
+        if isinstance(result, ShowResult):
+            return result.table if result.table is not None else result.text
         if (
             topic in {"IS", "BS", "CIS", "CF", "SCE"}
             and isinstance(result, pl.DataFrame)
             and "계정명" in result.columns
         ):
             result = self._cleanFinanceDataFrame(result, topic)
-        return result
+        if isinstance(result, pl.DataFrame):
+            return result
+        return None
 
     @staticmethod
     def _cleanFinanceDataFrame(df: pl.DataFrame, sjDiv: str) -> pl.DataFrame:
@@ -3253,7 +2762,7 @@ class Company:
 
     def _showCore(self, topic: str, *, period: str | None = None, raw: bool = False) -> Any:
         if topic == "docsStatus":
-            return _noticeFrame(topic, "현재 사업보고서 부재")
+            return None
 
         if topic in {"BS", "IS", "CIS", "CF", "SCE"}:
             return self._applyPeriodFilter(getattr(self, topic), period)
@@ -3284,7 +2793,7 @@ class Company:
                 "salesOrder": self._safePrimary("salesOrder"),
                 "riskDerivative": self._safePrimary("riskDerivative"),
                 "segments": self._safePrimary("segments"),
-                "rawMaterial": self._rawMaterialLegacy(),
+                "rawMaterial": self._safePrimary("rawMaterial"),
                 "costByNature": self._safePrimary("costByNature") if self._hasDocsTopicHint("costByNature") else None,
             }[topic]
             if fallback_payload is not None:
@@ -3319,7 +2828,7 @@ class Company:
             return ShowResult(text=text, table=table)
 
         if not self._hasDocs:
-            return _noticeFrame(topic, "현재 사업보고서 부재")
+            return None
 
         try:
             payload = getattr(self, topic)
@@ -3397,7 +2906,7 @@ class Company:
             c.diff("businessOverview")        # 특정 topic 변경 이력
             c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
         """
-        from dartlab.engines.dart.docs.sections.diff import sectionsDiff, topicDiff
+        from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
 
         docsSections = self.docs.sections
         if docsSections is None:
@@ -3557,27 +3066,6 @@ class Company:
                 }
             )
         return pl.DataFrame(rows)
-
-    def _buildProfile(self, *, raw: bool) -> _BoardView:
-        cacheKey = "_profileRawView" if raw else "_profileView"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        payload: OrderedDict[str, OrderedDict[str, Any]] = OrderedDict(
-            (title, OrderedDict()) for title in _CHAPTER_TITLES.values()
-        )
-        for topic in self._boardTopics():
-            topicPayload = self.show(topic, raw=raw)
-            if topicPayload is None:
-                continue
-            chapter = self._chapterForTopic(topic)
-            chapterTitle = _CHAPTER_TITLES.get(chapter, _CHAPTER_TITLES["XII"])
-            payload[chapterTitle][topic] = topicPayload
-
-        payload = OrderedDict((chapter, topics) for chapter, topics in payload.items() if topics)
-        profile = _BoardView(self, payload, raw=raw)
-        self._cache[cacheKey] = profile
-        return profile
 
     @property
     def index(self) -> pl.DataFrame:
@@ -3744,14 +3232,9 @@ class Company:
         return df
 
     @property
-    def board(self) -> pl.DataFrame:
-        """Deprecated alias for index."""
-        return self.index
-
-    @property
-    def profile(self) -> _BoardView:
-        """향후 보고서형 렌더로 확장될 예약 Company 뷰."""
-        return self._buildProfile(raw=False)
+    def profile(self) -> _ProfileAccessor:
+        """docs spine + finance/report merge layer."""
+        return self._profileAccessor
 
     @property
     def retrievalBlocks(self) -> pl.DataFrame | None:
@@ -3763,28 +3246,6 @@ class Company:
         """LLM 투입용 context slice DataFrame."""
         return self.docs.contextSlices
 
-    # ── holderOverview (별도 함수) ──
-
-    @property
-    def holderOverview(self) -> Any:
-        """5% 이상 주주, 소액주주, 의결권 현황."""
-        if not self._hasDocs:
-            return None
-        cacheKey = "holderOverview"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        from dartlab import config
-
-        if config.verbose:
-            print(f"  ▶ {self.corpName} · 주주현황")
-        result = _import_and_call(
-            "dartlab.engines.dart.docs.finance.majorHolder",
-            "holderOverview",
-            self.stockCode,
-        )
-        self._cache[cacheKey] = result
-        return result
-
     # ── fsSummary (별도 — 파라미터 있음) ──
 
     def fsSummary(self, ifrsOnly: bool = True, period: str = "y"):
@@ -3792,6 +3253,21 @@ class Company:
         return self._call_module("fsSummary", ifrsOnly=ifrsOnly, period=period)
 
     # ── financeEngine (숫자 재무 데이터) ──
+
+    def _ensureFinanceLoaded(self) -> None:
+        """lazy finance: 첫 접근 시 buildTimeseries 실행."""
+        if self._financeChecked:
+            return
+        self._financeChecked = True
+        if not self._hasFinanceParquet:
+            return
+        from dartlab.engines.dart.finance.pivot import buildTimeseries
+
+        ts = buildTimeseries(self.stockCode)
+        if ts is not None:
+            self._cache["_finance_q_CFS"] = ts
+        else:
+            self._hasFinanceParquet = False
 
     def _getFinanceBuild(self, period: str = "q", fsDivPref: str = "CFS"):
         """finance parquet 시계열 빌드 (캐싱).
@@ -4092,304 +3568,6 @@ class Company:
         result = analyze(self.stockCode, company=self)
         self._cache[cacheKey] = result
         return result
-
-    # ── 전체 추출 ──
-
-    def all(self) -> dict[str, Any]:
-        """전체 데이터를 dict로 반환.
-
-        Returns:
-            {"BS": DataFrame, "IS": DataFrame, "dividend": DataFrame, ...}
-            notes 항목은 "notes" 키 아래 dict로 포함.
-            finance 항목은 "timeseries", "ratios" 키로 포함.
-        """
-        from dartlab import config
-        from dartlab.engines.dart.docs.notes import _REGISTRY as notes_registry
-
-        nNotes = len(notes_registry) if self._hasDocs else 0
-        total = len(_ALL_PROPERTIES) + nNotes + 3
-        result: dict[str, Any] = {}
-
-        if config.verbose:
-            from alive_progress import alive_bar
-
-            with alive_bar(total, title=f"▶ {self.corpName}") as bar:
-                _log = logging.getLogger("dartlab.engines.dart.company")
-                for name, label in _ALL_PROPERTIES:
-                    bar.text = label
-                    try:
-                        config.verbose = False
-                        result[name] = getattr(self, name)
-                        config.verbose = True
-                    except (KeyError, ValueError, TypeError, FileNotFoundError, OSError) as e:
-                        _log.debug("all(): %s failed — %s", name, e)
-                        result[name] = None
-                        config.verbose = True
-                    bar()
-
-                if self._hasDocs and self.notes is not None:
-                    for noteName in notes_registry:
-                        krName = notes_registry[noteName][1]
-                        bar.text = krName
-                        try:
-                            config.verbose = False
-                            result.setdefault("notes", {})[noteName] = self.notes._get(noteName)
-                            config.verbose = True
-                        except (KeyError, ValueError, TypeError, FileNotFoundError, OSError) as e:
-                            _log.debug("all(): notes.%s failed — %s", noteName, e)
-                            result.setdefault("notes", {})[noteName] = None
-                            config.verbose = True
-                        bar()
-
-                bar.text = "시계열"
-                result["timeseries"] = self.timeseries
-                bar()
-                bar.text = "연도별"
-                result["annual"] = self.annual
-                bar()
-                bar.text = "재무비율"
-                result["ratios"] = self.ratios
-                bar()
-        else:
-            _log = logging.getLogger("dartlab.engines.dart.company")
-            for name, label in _ALL_PROPERTIES:
-                try:
-                    result[name] = getattr(self, name)
-                except (KeyError, ValueError, TypeError, FileNotFoundError, OSError) as e:
-                    _log.debug("all(): %s failed — %s", name, e)
-                    result[name] = None
-
-            if self._hasDocs and self.notes is not None:
-                notes_result = {}
-                for noteName in notes_registry:
-                    try:
-                        notes_result[noteName] = self.notes._get(noteName)
-                    except (KeyError, ValueError, TypeError, FileNotFoundError, OSError) as e:
-                        _log.debug("all(): notes.%s failed — %s", noteName, e)
-                        notes_result[noteName] = None
-                result["notes"] = notes_result
-
-            result["timeseries"] = self.timeseries
-            result["annual"] = self.annual
-            result["ratios"] = self.ratios
-
-        return result
-
-    # ── Excel 내보내기 ──
-
-    def toExcel(
-        self,
-        outputPath: str | None = None,
-        modules: list[str] | None = None,
-    ) -> str:
-        """Excel 파일로 내보내기.
-
-        Args:
-            outputPath: 저장 경로. None이면 '{종목코드}_{회사명}.xlsx'.
-            modules: 포함할 시트. None이면 전체.
-                가능한 값: "IS", "BS", "CF", "ratios", "dividend", "employee"
-
-        Returns:
-            저장된 파일 경로.
-
-        Example::
-
-            c = Company("005930")
-            c.toExcel()                          # 005930_삼성전자.xlsx
-            c.toExcel("output.xlsx")             # 지정 경로
-            c.toExcel(modules=["IS", "BS"])      # 시트 선택
-        """
-        from dartlab.export.excel import exportToExcel
-
-        return exportToExcel(self, outputPath=outputPath, modules=modules)
-
-    # ── get() — 모듈 전체 결과 객체 접근 ──
-
-    def get(self, name: str, **kwargs) -> Any:
-        """모듈의 전체 결과 객체를 반환 (복수 DataFrame 접근용).
-
-        Args:
-            name: 모듈명 (dividend, audit, statements 등).
-
-        Returns:
-            해당 모듈의 Result 객체 전체.
-
-        Example::
-
-            r = c.get("audit")     # AuditResult
-            r.opinionDf            # 감사의견
-            r.feeDf                # 감사보수
-        """
-        if name == "holderOverview":
-            return self.holderOverview
-        return self._call_module(name, **kwargs)
-
-    # ── LLM 분석 ──
-
-    def ask(
-        self,
-        question: str,
-        *,
-        include: list[str] | None = None,
-        exclude: list[str] | None = None,
-        provider: str | None = None,
-        model: str | None = None,
-        stream: bool = False,
-        **kwargs,
-    ) -> str:
-        """LLM에게 이 기업에 대해 질문.
-
-        Args:
-            question: 질문 텍스트 (한국어 또는 영어)
-            include: 명시적으로 포함할 데이터 ["BS", "dividend", ...]
-            exclude: 제외할 데이터
-            provider: per-call provider override
-            model: per-call model override
-            stream: True면 터미널에 스트리밍 출력 후 전체 텍스트 반환
-            **kwargs: LLMConfig override (temperature, max_tokens, ...)
-
-        Returns:
-            LLM 응답 텍스트
-
-        Example::
-
-            c = Company("005930")
-            c.ask("재무 건전성을 분석해줘")
-            c.ask("배당 추세", include=["dividend", "IS"])
-            c.ask("부채 리스크", provider="ollama", model="llama3.1")
-        """
-        from dartlab.engines.ai import get_config
-        from dartlab.engines.ai.context import (
-            _get_sector,
-            build_compact_context,
-            build_context,
-        )
-        from dartlab.engines.ai.pipeline import run_pipeline
-        from dartlab.engines.ai.prompts import _classify_question, build_system_prompt
-        from dartlab.engines.ai.providers import create_provider
-
-        config_ = get_config()
-        overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}
-        if overrides:
-            config_ = config_.merge(overrides)
-
-        use_compact = config_.provider in ("ollama", "codex", "claude-code")
-
-        if use_compact:
-            context_text, included_tables = build_compact_context(
-                self,
-                question,
-                include=include,
-                exclude=exclude,
-            )
-        else:
-            context_text, included_tables = build_context(
-                self,
-                question,
-                include=include,
-                exclude=exclude,
-            )
-
-        if not use_compact:
-            pipeline_result = run_pipeline(self, question, included_tables)
-            if pipeline_result:
-                context_text = context_text + pipeline_result
-
-        sector = _get_sector(self)
-        question_type = _classify_question(question)
-        system = build_system_prompt(
-            config_.system_prompt,
-            included_modules=included_tables,
-            sector=sector,
-            question_type=question_type,
-            compact=use_compact,
-        )
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": f"{context_text}\n\n---\n\n질문: {question}"},
-        ]
-
-        llm = create_provider(config_)
-
-        if stream:
-            chunks = []
-            for chunk in llm.stream(messages):
-                print(chunk, end="", flush=True)
-                chunks.append(chunk)
-            print()
-            return "".join(chunks)
-
-        response = llm.complete(messages)
-        response.context_tables = included_tables
-
-        from dartlab import config
-
-        if config.verbose:
-            print(f"  [LLM] {response.provider}/{response.model}")
-            if response.usage:
-                print(f"  [LLM] tokens: {response.usage.get('total_tokens', '?')}")
-
-        return response.answer
-
-    def chat(
-        self,
-        question: str,
-        *,
-        provider: str | None = None,
-        model: str | None = None,
-        max_turns: int = 5,
-        on_tool_call=None,
-        on_tool_result=None,
-        **kwargs,
-    ) -> str:
-        """에이전트 모드: LLM이 필요한 도구를 직접 선택하여 분석.
-
-        ask()와 달리 모든 데이터를 미리 로딩하지 않고,
-        LLM이 tool calling으로 필요한 데이터를 요청한다.
-
-        Args:
-            question: 질문 텍스트
-            provider: per-call provider override
-            model: per-call model override
-            max_turns: 최대 도구 호출 반복 횟수
-            on_tool_call: 도구 호출 시 콜백 (UI용)
-            on_tool_result: 도구 결과 시 콜백 (UI용)
-            **kwargs: LLMConfig override
-
-        Returns:
-            LLM 최종 응답 텍스트
-
-        Example::
-
-            c = Company("005930")
-            c.chat("재무 건전성을 분석하고 이상 징후를 찾아줘")
-            c.chat("배당 추세", provider="ollama", model="llama3.1")
-        """
-        from dartlab.engines.ai import get_config
-        from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop
-        from dartlab.engines.ai.prompts import build_system_prompt
-        from dartlab.engines.ai.providers import create_provider
-
-        config_ = get_config()
-        overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}
-        if overrides:
-            config_ = config_.merge(overrides)
-
-        system = build_system_prompt(config_.system_prompt) + AGENT_SYSTEM_ADDITION
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": f"기업: {self.corpName} ({self.stockCode})\n\n{question}"},
-        ]
-
-        llm = create_provider(config_)
-        return agent_loop(
-            llm,
-            messages,
-            self,
-            max_turns=max_turns,
-            on_tool_call=on_tool_call,
-            on_tool_result=on_tool_result,
-        )
 
     @property
     def market(self) -> str:

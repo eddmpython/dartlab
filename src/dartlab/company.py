@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from dartlab.engines.common.protocols import CompanyProtocol
 from dartlab.engines.dart.company import Company as _DartCompany
 from dartlab.engines.edgar.company import Company as _EdgarCompany
 
@@ -18,7 +19,7 @@ def _isDartCode(s: str) -> bool:
     return bool(re.match(r"^[0-9A-Za-z]{6}$", s))
 
 
-def Company(codeOrName: str):
+def Company(codeOrName: str) -> CompanyProtocol:
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성."""
     normalized = codeOrName.strip()
 

@@ -61,15 +61,6 @@ def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
             "truncated": payload.height > max_rows,
         }
 
-    # ShowResult(text, table) — DART/EDGAR Company.show() 공통 반환
-    if hasattr(payload, "_fields") and set(getattr(payload, "_fields", ())) == {"text", "table"}:
-        parts: dict[str, Any] = {}
-        if payload.text is not None and isinstance(payload.text, pl.DataFrame):
-            parts["text"] = _serialize_payload(payload.text, max_rows=max_rows)
-        if payload.table is not None and isinstance(payload.table, pl.DataFrame):
-            parts["table"] = _serialize_payload(payload.table, max_rows=max_rows)
-        return {"type": "showResult", **parts}
-
     if isinstance(payload, dict):
         return {"type": "dict", "data": payload}
 

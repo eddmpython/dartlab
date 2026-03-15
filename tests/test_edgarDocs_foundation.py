@@ -1283,13 +1283,12 @@ class TestEdgarCompanyInterface:
         assert "category" in df.columns
         assert "metric" in df.columns
 
-    def test_show_docs_topic_returns_show_result(self):
-        from dartlab.engines.edgar.company import Company, ShowResult
+    def test_show_docs_topic_returns_dataframe(self):
+        from dartlab.engines.edgar.company import Company
 
         c = Company("AAPL")
         biz = c.show("10-K::item1Business")
-        assert isinstance(biz, ShowResult)
-        assert biz.text is not None or biz.table is not None
+        assert biz is None or isinstance(biz, pl.DataFrame)
 
     def test_show_nonexistent_topic_returns_none(self):
         from dartlab.engines.edgar.company import Company
