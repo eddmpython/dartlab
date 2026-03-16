@@ -42,8 +42,17 @@ Company 레벨에서 profile.sections를 만들 때 finance/report 것으로 대
 
 이 레이어를 index / show / trace로 접근한다:
 - `index` : 전체 수평화 보드
-- `show(topic, period?, raw?)` : 실제 payload
+- `show(topic, period?)` : 실제 payload
 - `trace(topic, period?)` : source provenance
+
+**show(topic) 로직:**
+1. finance topic(BS/IS/CF/CIS/SCE) → finance DataFrame
+2. report topic → report DataFrame
+3. sections topic → **단일 DataFrame**. 모든 기간 그대로. 기간 자르지 않음.
+   - text 행: blockType="text", 항목=null, 기간 컬럼에 서술문 그대로
+   - table 행: blockType="table", 항목=파싱된 행 라벨, 기간 컬럼에 셀 값
+   - markdown을 파싱해서 행×열로 풀어서 text 행과 합친다
+   - 반환형은 항상 DataFrame | None. ShowResult 사용하지 않음.
 
 ### Layer 3. profile (시계열 문서화)
 
@@ -113,6 +122,16 @@ Layer 4 위에 차트/그래프를 포함한 대시보드를 별도 기능으로
   - `sections` — docs spine + finance merge layer (구현 완료)
 
 레거시 파서 없음. sections 수평화가 유일한 기초 경로.
+
+## 매퍼 체계 (3개)
+
+같은 패턴: 학습 → 매퍼 JSON → 수평화/표준화.
+
+1. **accountMappings.json** — 계정명 → snakeId (finance)
+2. **sectionMappings.json** — section_title → topic (sections)
+3. **tableMappings.json** — 테이블 헤더 → 타입 + 항목 표준화 (미구현)
+
+3번이 완성되면 show()에서 table을 finance처럼 항목 × period DataFrame으로 반환 가능.
 
 상세 문서:
 - `src/dartlab/engines/dart/DEV.md`

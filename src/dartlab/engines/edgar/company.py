@@ -757,11 +757,11 @@ class Company:
         return ordered
 
     def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> pl.DataFrame | None:
-        """통합 조회 — 항상 DataFrame | None 반환.
+        """통합 조회 — 항상 DataFrame | None.
 
         - finance topic → DataFrame
         - ratios → DataFrame
-        - docs topic → DataFrame (ShowResult는 table 우선, text fallback)
+        - docs topic → text + 파싱된 table 병합 DataFrame
         """
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
@@ -777,10 +777,87 @@ class Company:
 
         result = self.docs.show(topic, period)
         if isinstance(result, ShowResult):
-            return result.table if result.table is not None else result.text
+            return self._buildShowDataFrame(result, period)
         if isinstance(result, pl.DataFrame):
             return result
         return None
+
+    @staticmethod
+    def _parseMdTable(md: str) -> list[tuple[str, str]]:
+        """markdown table → (항목, 값) 리스트."""
+        if not md:
+            return []
+        rows: list[tuple[str, str]] = []
+        headers = None
+        for line in md.strip().split("\n"):
+            line = line.strip()
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(set(c.strip()) <= {"-", ":"} for c in cells):
+                continue
+            if headers is None:
+                headers = cells
+                continue
+            label = cells[0] if cells else ""
+            value = " | ".join(cells[1:]) if len(cells) > 1 else ""
+            rows.append((label, value))
+        return rows
+
+    def _buildShowDataFrame(
+        self, showResult: ShowResult, period: str | None,
+    ) -> pl.DataFrame | None:
+        """ShowResult → text + 파싱된 table 병합 DataFrame."""
+        periodCols: list[str] = []
+        for src in (showResult.text, showResult.table):
+            if src is not None:
+                periodCols = [c for c in src.columns if _isPeriodColumn(c)]
+                break
+        if period is not None:
+            periodCols = [c for c in periodCols if c == period]
+        if not periodCols:
+            return None
+
+        outRows: list[dict[str, str | None]] = []
+
+        # text
+        if showResult.text is not None and not showResult.text.is_empty():
+            for row in showResult.text.iter_rows(named=True):
+                outRow: dict[str, str | None] = {"blockType": "text", "항목": None}
+                for p in periodCols:
+                    outRow[p] = row.get(p)
+                outRows.append(outRow)
+
+        # table — markdown 파싱
+        if showResult.table is not None and not showResult.table.is_empty():
+            allLabels: list[str] = []
+            seenLabels: set[str] = set()
+            periodParsed: dict[str, dict[str, str]] = {}
+
+            for p in periodCols:
+                if p not in showResult.table.columns:
+                    continue
+                md = showResult.table[p][0]
+                if md is None:
+                    continue
+                parsed = self._parseMdTable(str(md))
+                labelMap: dict[str, str] = {}
+                for label, value in parsed:
+                    if label and label not in seenLabels:
+                        allLabels.append(label)
+                        seenLabels.add(label)
+                    labelMap[label] = value
+                periodParsed[p] = labelMap
+
+            for label in allLabels:
+                outRow = {"blockType": "table", "항목": label}
+                for p in periodCols:
+                    outRow[p] = periodParsed.get(p, {}).get(label)
+                outRows.append(outRow)
+
+        if not outRows:
+            return None
+        return pl.DataFrame(outRows)
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic in _FINANCE_TOPICS:

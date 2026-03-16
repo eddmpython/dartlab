@@ -2717,9 +2717,6 @@ class Company:
 
     def show(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
         result = self._showCore(topic, period=period, raw=raw)
-        result = self._trimOldPeriods(result)
-        if isinstance(result, ShowResult):
-            return result.table if result.table is not None else result.text
         if (
             topic in {"IS", "BS", "CIS", "CF", "SCE"}
             and isinstance(result, pl.DataFrame)
@@ -2807,25 +2804,53 @@ class Company:
             if topic in _NOTES_REGISTRY:
                 return self._applyPeriodFilter(self.notes._get(topic), period)
 
-        # sections에서 text/table 분리하여 ShowResult 반환
-        showResult = self._sectionShowResult(topic)
-        if showResult is not None:
-            # text: 메타 컬럼 제거 + all-null 기간 제거
-            text = self._cleanSectionText(showResult.text, period)
-            # table: 구조화 DataFrame (finance IS/BS처럼)
-            table = self._cleanSectionTable(topic, period)
-            if text is None and table is None:
-                return None
-            return ShowResult(text=text, table=table)
+        # sections에서 text + 파싱된 table 병합 DataFrame 반환
+        topicFrame = self._sectionTopicRaw(topic)
+        if topicFrame is not None:
+            return self._buildShowDataFrame(topicFrame, period)
 
-        if not self._hasDocs:
+        return None
+
+    def _buildShowDataFrame(
+        self, topicFrame: pl.DataFrame, period: str | None,
+    ) -> pl.DataFrame | None:
+        """sections topicFrame → text + 파싱된 table 병합 DataFrame."""
+        hasBlockType = "blockType" in topicFrame.columns
+        periodCols = [c for c in topicFrame.columns if _isPeriodColumn(c)]
+        if period is not None:
+            periodCols = [c for c in periodCols if c == period]
+        if not periodCols:
             return None
 
-        try:
-            payload = getattr(self, topic)
-        except AttributeError:
+        frames: list[pl.DataFrame] = []
+
+        # text 행
+        if hasBlockType:
+            textRows = topicFrame.filter(pl.col("blockType") == "text")
+        else:
+            textRows = topicFrame
+
+        if not textRows.is_empty():
+            textDf = textRows.select(periodCols).with_columns([
+                pl.lit("text").alias("blockType"),
+                pl.lit(None).cast(pl.Utf8).alias("tableType"),
+                pl.lit(None).cast(pl.Utf8).alias("항목"),
+            ]).select(["blockType", "tableType", "항목", *periodCols])
+            frames.append(textDf)
+
+        # table 행 — tableParser로 파싱
+        if hasBlockType:
+            tableRows = topicFrame.filter(pl.col("blockType") == "table")
+            if not tableRows.is_empty():
+                from dartlab.engines.dart.docs.sections.tableParser import buildTableDataFrame
+                tableDf = buildTableDataFrame(tableRows, periodCols)
+                if tableDf is not None and not tableDf.is_empty():
+                    frames.append(tableDf)
+
+        if not frames:
             return None
-        return self._applyPeriodFilter(payload, period)
+
+        return pl.concat(frames, how="diagonal_relaxed")
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic == "docsStatus" and not self._hasDocs:
