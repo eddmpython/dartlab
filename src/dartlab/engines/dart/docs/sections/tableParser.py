@@ -1,85 +1,36 @@
 """테이블 파서 — sections의 markdown 테이블을 구조화된 DataFrame으로 변환.
 
-sections의 blockType="table" 셀에서:
-1. 서브테이블 분리 (구분선 기준)
-2. 헤더 기반 타입 분류 (tableMappings.json)
-3. 같은 타입의 서브테이블끼리 기간별 수평화 (항목 × period)
+구조 타입별 병합 전략:
+- multi_year: 당기/전기/전전기 → 기수→연도 변환 → 체인 브릿지 수평화
+- key_value: 2컬럼 키-값 → 기간별 단순 수평화
+- matrix: 3컬럼+ → 첫 컬럼=항목, 나머지=값, 기간별 수평화
 """
 
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
+from collections import defaultdict
 
 import polars as pl
 
-_MAPPER_PATH = Path(__file__).parent / "mapperData" / "tableMappings.json"
-_mappings: dict | None = None
 
-
-def _loadMappings() -> dict:
-    global _mappings
-    if _mappings is None:
-        with open(_MAPPER_PATH, encoding="utf-8") as f:
-            _mappings = json.load(f)
-    return _mappings
-
-
-def _normalizeHeader(header: str) -> str:
-    h = re.sub(r"\d{4}(Q\d)?", "", header)
-    h = re.sub(r"제\s*\d+\s*기", "", h)
-    h = re.sub(r"\(\s*단위\s*:\s*[^)]+\)", "", h)
-    h = re.sub(r"\(\s*기준일\s*:?[^)]*\)", "", h)
-    h = re.sub(r"\d+\.\d+\.\d+", "", h)
-    h = re.sub(r"\s+", " ", h).strip()
-    return h
-
-
-def _isJunk(header: str) -> bool:
-    h = header.strip()
-    if not h:
-        return True
-    if set(h) <= {"|", " "}:
-        return True
-    m = _loadMappings()
-    for prefix in m.get("junk_prefixes", []):
-        if h.startswith(prefix):
-            return True
-    for phrase in m.get("junk_contains", []):
-        if phrase in h:
-            return True
-    minLen = m.get("junk_min_length", 5)
-    if len(h) < minLen:
-        return True
-    return False
-
-
-def classifyHeader(header: str) -> str | None:
-    """정규화 헤더 → 테이블 타입명."""
-    m = _loadMappings()
-    h = header.lower().replace(" ", "")
-    for rule in m.get("rules", []):
-        keywords = rule["keywords"]
-        if all(kw.replace(" ", "").lower() in h for kw in keywords):
-            return rule["type"]
-    return None
+# ── 서브테이블 분리 ──
 
 
 def splitSubtables(md: str) -> list[list[str]]:
-    """markdown 셀에서 구분선 기준으로 서브테이블 분리."""
+    """구분선 기준 서브테이블 분리."""
     tables: list[list[str]] = []
     current: list[str] = []
 
     for line in md.strip().split("\n"):
-        stripped = line.strip()
-        if not stripped.startswith("|"):
+        s = line.strip()
+        if not s.startswith("|"):
             if current:
                 tables.append(current)
                 current = []
             continue
 
-        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        cells = [c.strip() for c in s.strip("|").split("|")]
         isSep = all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip())
 
         if isSep and current:
@@ -87,101 +38,206 @@ def splitSubtables(md: str) -> list[list[str]]:
                 prev = current[:-1]
                 if prev:
                     tables.append(prev)
-                current = [current[-1], stripped]
+                current = [current[-1], s]
             else:
-                current.append(stripped)
+                current.append(s)
         else:
-            current.append(stripped)
+            current.append(s)
 
     if current:
         tables.append(current)
-
     return tables
 
 
-def subtableHeader(lines: list[str]) -> str:
-    """서브테이블의 헤더(첫 비구분선 줄)."""
-    for line in lines:
-        cells = [c.strip() for c in line.strip("|").split("|")]
-        isSep = all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip())
-        if not isSep:
-            return " | ".join(c.strip() for c in cells if c.strip())
-    return ""
+# ── 유틸 ──
 
 
-def parseSubtableRows(lines: list[str]) -> list[tuple[str, str]]:
-    """서브테이블 → (항목, 값) 리스트. 헤더/구분선 이후 데이터만."""
-    rows: list[tuple[str, str]] = []
-    headerDone = False
+def _headerCells(lines: list[str]) -> list[str]:
     for line in lines:
         cells = [c.strip() for c in line.strip("|").split("|")]
-        isSep = all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip())
-        if isSep:
-            headerDone = True
+        if not all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+            return [c for c in cells if c.strip()]
+    return []
+
+
+def _dataRows(lines: list[str]) -> list[list[str]]:
+    rows = []
+    sepDone = False
+    for line in lines:
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+            sepDone = True
             continue
-        if not headerDone:
-            continue
-        label = cells[0].strip() if cells else ""
-        value = " | ".join(cells[1:]).strip() if len(cells) > 1 else ""
-        if label:
-            rows.append((label, value))
+        if sepDone:
+            rows.append(cells)
     return rows
 
 
-def parseTableCell(md: str) -> list[dict]:
-    """하나의 markdown 셀 → 타입별 서브테이블 리스트.
+def _normalizeHeader(headerCells: list[str]) -> str:
+    h = " | ".join(headerCells)
+    h = re.sub(r"\d{4}(Q\d)?", "", h)
+    h = re.sub(r"제\s*\d+\s*기", "", h)
+    h = re.sub(r"\(\s*단위\s*:\s*[^)]+\)", "", h)
+    h = re.sub(r"\s+", " ", h).strip()
+    return h
 
-    Returns:
-        [{"type": "productDivision", "header": "...", "rows": [(항목,값),...]}]
-    """
-    results: list[dict] = []
-    for sub in splitSubtables(md):
-        header = subtableHeader(sub)
-        normH = _normalizeHeader(header)
-        if _isJunk(normH):
+
+def _normalizeItemName(name: str) -> str:
+    n = re.sub(r"\s+", "", name)
+    n = n.replace("（", "(").replace("）", ")")
+    n = n.replace("ㆍ", "·")
+    return n
+
+
+def _isJunk(headerCells: list[str]) -> bool:
+    if not headerCells:
+        return True
+    h = " ".join(headerCells).strip()
+    if not h or set(h) <= {"|", " "}:
+        return True
+    if h.startswith("※") or h.startswith("☞") or h.startswith("[△"):
+        return True
+    if "본문 위치로 이동" in h:
+        return True
+    if len(h) < 5:
+        return True
+    return False
+
+
+def _extractUnit(lines: list[str]) -> str | None:
+    full = "\n".join(lines)
+    m = re.search(r"\(\s*단위\s*:\s*([^)]+)\)", full)
+    return m.group(1).strip() if m else None
+
+
+# ── 구조 분류 ──
+
+_MULTI_YEAR_KW = {"당기", "전기", "전전기", "당반기", "전반기"}
+_STOCK_TYPES = {"보통주", "우선주", "기타주식"}
+
+
+def _classifyStructure(headerCells: list[str]) -> str:
+    joined = " ".join(headerCells)
+    if any(kw in joined for kw in _MULTI_YEAR_KW):
+        return "multi_year"
+    if len(headerCells) == 2:
+        return "key_value"
+    if len(headerCells) >= 3:
+        return "matrix"
+    return "skip"
+
+
+# ── multi_year 파싱 ──
+
+
+def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, str, str]], str | None]:
+    """multi_year → [(항목, 연도, 값), ...] + 단위."""
+    sepIdx = -1
+    for i, line in enumerate(sub):
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+            sepIdx = i
+            break
+
+    if sepIdx < 0 or sepIdx + 1 >= len(sub):
+        return [], None
+
+    # 기수 행
+    kisuCells = [c.strip() for c in sub[sepIdx + 1].strip("|").split("|")]
+    kisuNums = []
+    for cell in kisuCells:
+        m = re.search(r"제\s*(\d+)\s*기", cell)
+        if m:
+            kisuNums.append(int(m.group(1)))
+
+    if not kisuNums:
+        return [], None
+
+    maxKisu = max(kisuNums)
+    sortedKisu = sorted(kisuNums, reverse=True)
+    kisuToYear = {kn: str(periodYear - maxKisu + kn) for kn in kisuNums}
+
+    unit = _extractUnit(sub)
+    triples: list[tuple[str, str, str]] = []
+    prevItem = ""
+
+    for line in sub[sepIdx + 2:]:
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
             continue
-        tableType = classifyHeader(normH)
-        if tableType is None:
-            tableType = "_unclassified"
-        dataRows = parseSubtableRows(sub)
-        if dataRows:
-            results.append({
-                "type": tableType,
-                "header": header,
-                "rows": dataRows,
-            })
-    return results
+        if not cells or not cells[0].strip():
+            continue
+
+        first = cells[0].strip()
+        if first.startswith("※"):
+            continue
+
+        # 보통주/우선주 연속행
+        if first in _STOCK_TYPES and prevItem:
+            itemName = _normalizeItemName(f"{prevItem}-{first}")
+            valCells = cells[1:]
+        elif len(cells) > 1 and cells[1].strip() in _STOCK_TYPES:
+            stockType = cells[1].strip()
+            itemName = _normalizeItemName(f"{first}-{stockType}")
+            valCells = cells[2:]
+            prevItem = first
+        else:
+            itemName = _normalizeItemName(first)
+            valCells = cells[1:]
+            prevItem = first
+
+        for i, kn in enumerate(sortedKisu):
+            if i < len(valCells):
+                val = valCells[i].strip()
+                if val and val != "-" and val not in _STOCK_TYPES:
+                    triples.append((itemName, kisuToYear[kn], val))
+
+    return triples, unit
+
+
+# ── key_value / matrix 파싱 ──
+
+
+def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, str]], str | None]:
+    """key_value/matrix → [(항목, 값), ...] + 단위."""
+    rows = _dataRows(sub)
+    unit = _extractUnit(sub)
+    result: list[tuple[str, str]] = []
+
+    for row in rows:
+        if not row or not row[0].strip():
+            continue
+        first = row[0].strip()
+        if first.startswith("※"):
+            continue
+        item = _normalizeItemName(first)
+        value = " | ".join(row[1:]).strip() if len(row) > 1 else ""
+        if item:
+            result.append((item, value))
+
+    return result, unit
+
+
+# ── 통합 빌더 ──
 
 
 def buildTableDataFrame(
     topicFrame: pl.DataFrame,
     periodCols: list[str],
 ) -> pl.DataFrame | None:
-    """sections의 table 행 → 수평화된 DataFrame (항목 × period).
+    """sections의 table 행 → 수평화된 DataFrame.
 
-    같은 타입의 서브테이블끼리 항목을 기간별로 나란히 놓는다.
-
-    Parameters
-    ----------
-    topicFrame : pl.DataFrame
-        sections에서 특정 topic의 blockType="table" 행.
-    periodCols : list[str]
-        기간 컬럼 목록.
-
-    Returns
-    -------
-    pl.DataFrame | None
-        blockType | tableType | 항목 | period1 | period2 | ...
+    구조 타입별로 다른 병합 전략 적용.
     """
     if topicFrame.is_empty():
         return None
 
-    # 기간별 서브테이블 파싱
-    # tableType → {period → {항목 → 값}}
-    typeData: dict[str, dict[str, dict[str, str]]] = {}
-    # tableType → 항목 순서 유지
-    typeItemOrder: dict[str, list[str]] = {}
-    typeItemSeen: dict[str, set[str]] = {}
+    # 정규화 헤더별 데이터 수집
+    # key: normHeader → {period → [(항목,값)]}  (key_value/matrix)
+    # key: normHeader → [(항목,연도,값)]  (multi_year — 연도가 이미 해석됨)
+    kvData: dict[str, dict[str, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))
+    myData: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    units: dict[str, str] = {}
 
     for p in periodCols:
         if p not in topicFrame.columns:
@@ -190,40 +246,110 @@ def buildTableDataFrame(
         if md is None:
             continue
 
-        parsed = parseTableCell(str(md))
-        for entry in parsed:
-            tt = entry["type"]
-            if tt not in typeData:
-                typeData[tt] = {}
-                typeItemOrder[tt] = []
-                typeItemSeen[tt] = set()
-            if p not in typeData[tt]:
-                typeData[tt][p] = {}
+        pYear = int(re.match(r"\d{4}", p).group()) if re.match(r"\d{4}", p) else None
 
-            for label, value in entry["rows"]:
-                typeData[tt][p][label] = value
-                if label not in typeItemSeen[tt]:
-                    typeItemOrder[tt].append(label)
-                    typeItemSeen[tt].add(label)
+        for sub in splitSubtables(str(md)):
+            hc = _headerCells(sub)
+            if _isJunk(hc):
+                continue
 
-    if not typeData:
+            normH = _normalizeHeader(hc)
+            structType = _classifyStructure(hc)
+
+            if structType == "multi_year" and pYear and "Q" not in p:
+                triples, unit = _parseMultiYear(sub, pYear)
+                myData[normH].extend(triples)
+                if unit:
+                    units[normH] = unit
+
+            elif structType in ("key_value", "matrix"):
+                pairs, unit = _parseKeyValueOrMatrix(sub)
+                kvData[normH][p].extend(pairs)
+                if unit:
+                    units[normH] = unit
+
+    if not kvData and not myData:
         return None
 
-    # DataFrame 생성
     outRows: list[dict[str, str | None]] = []
-    for tt in typeData:
-        items = typeItemOrder[tt]
-        for item in items:
+
+    # multi_year → 항목 × 연도
+    for normH, triples in myData.items():
+        allItems: list[str] = []
+        seenItems: set[str] = set()
+        yearItemVal: dict[str, dict[str, str]] = defaultdict(dict)
+
+        for item, year, val in triples:
+            if item not in seenItems:
+                allItems.append(item)
+                seenItems.add(item)
+            yearItemVal[item][year] = val
+
+        allYears = sorted(set(y for iv in yearItemVal.values() for y in iv.keys()))
+        unit = units.get(normH, "")
+
+        for item in allItems:
             row: dict[str, str | None] = {
                 "blockType": "table",
-                "tableType": tt,
+                "tableType": "multi_year",
+                "단위": unit,
+                "항목": item,
+            }
+            for y in allYears:
+                row[y] = yearItemVal[item].get(y)
+            outRows.append(row)
+
+    # key_value / matrix → 항목 × period
+    for normH, periodData in kvData.items():
+        allItems: list[str] = []
+        seenItems: set[str] = set()
+        periodItemVal: dict[str, dict[str, str]] = defaultdict(dict)
+
+        for p, pairs in periodData.items():
+            for item, val in pairs:
+                if item not in seenItems:
+                    allItems.append(item)
+                    seenItems.add(item)
+                periodItemVal[item][p] = val
+
+        unit = units.get(normH, "")
+
+        for item in allItems:
+            row: dict[str, str | None] = {
+                "blockType": "table",
+                "tableType": "key_value",
+                "단위": unit,
                 "항목": item,
             }
             for p in periodCols:
-                row[p] = typeData[tt].get(p, {}).get(item)
+                row[p] = periodItemVal[item].get(p)
             outRows.append(row)
 
     if not outRows:
         return None
 
-    return pl.DataFrame(outRows)
+    # 각 normHeader 그룹별로 DataFrame 생성 후 concat
+    # (다른 서브테이블은 다른 컬럼 세트를 가질 수 있으므로)
+    groups: dict[str, list[dict]] = defaultdict(list)
+    for row in outRows:
+        # tableType + 항목 세트로 그룹핑
+        key = row.get("tableType", "unknown")
+        groups[key].append(row)
+
+    frames: list[pl.DataFrame] = []
+    for key, rows in groups.items():
+        try:
+            frames.append(pl.DataFrame(rows))
+        except Exception:
+            # 같은 tableType 내에서도 스키마 다를 수 있음 → 개별 처리
+            for row in rows:
+                try:
+                    frames.append(pl.DataFrame([row]))
+                except Exception:
+                    pass
+
+    if not frames:
+        return None
+    if len(frames) == 1:
+        return frames[0]
+    return pl.concat(frames, how="diagonal_relaxed")
