@@ -198,11 +198,19 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
 # ── key_value / matrix 파싱 ──
 
 
-def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, str]], str | None]:
-    """key_value/matrix → [(항목, 값), ...] + 단위."""
+def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, list[str]]], list[str], str | None]:
+    """key_value/matrix → [(항목, [값1, 값2, ...]), ...] + 헤더컬럼명 + 단위.
+
+    Returns:
+        (rows, headerNames, unit)
+        rows: [(normalizedItem, [val1, val2, ...]), ...]
+        headerNames: 헤더 컬럼명 (첫 컬럼 제외)
+    """
+    headerCells = _headerCells(sub)
+    headerNames = [_normalizeItemName(h) for h in headerCells[1:]] if len(headerCells) > 1 else []
     rows = _dataRows(sub)
     unit = _extractUnit(sub)
-    result: list[tuple[str, str]] = []
+    result: list[tuple[str, list[str]]] = []
 
     for row in rows:
         if not row or not row[0].strip():
@@ -211,11 +219,11 @@ def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, str]], str |
         if first.startswith("※"):
             continue
         item = _normalizeItemName(first)
-        value = " | ".join(row[1:]).strip() if len(row) > 1 else ""
+        values = [c.strip() for c in row[1:]]
         if item:
-            result.append((item, value))
+            result.append((item, values))
 
-    return result, unit
+    return result, headerNames, unit
 
 
 # ── 통합 빌더 ──
@@ -263,10 +271,23 @@ def buildTableDataFrame(
                     units[normH] = unit
 
             elif structType in ("key_value", "matrix"):
-                pairs, unit = _parseKeyValueOrMatrix(sub)
-                kvData[normH][p].extend(pairs)
+                rows, headerNames, unit = _parseKeyValueOrMatrix(sub)
                 if unit:
                     units[normH] = unit
+
+                if len(headerNames) <= 1:
+                    # key_value: 단순 (항목, 단일값)
+                    for item, vals in rows:
+                        val = vals[0] if vals else ""
+                        kvData[normH][p].append((item, val))
+                else:
+                    # matrix: 다중 컬럼 → 항목_컬럼명으로 풀어서 저장
+                    for item, vals in rows:
+                        for i, hName in enumerate(headerNames):
+                            val = vals[i] if i < len(vals) else ""
+                            if val and val != "-":
+                                compositeItem = f"{item}_{hName}" if hName else item
+                                kvData[normH][p].append((compositeItem, val))
 
     if not kvData and not myData:
         return None

@@ -2859,10 +2859,8 @@ class Company:
             tablePart = result.filter(pl.col("blockType") == "table")
 
             if not tablePart.is_empty():
-                # 최근 절반 기간에 값이 하나라도 있는 행만 유지
-                # (과거에만 존재하던 항목 제거)
-                halfIdx = max(1, len(dataCols) // 2)
-                recentCols = dataCols[halfIdx:]
+                # 최근 5기간(약 1.5년)에 값이 하나라도 있는 행만 유지
+                recentCols = dataCols[-5:] if len(dataCols) > 5 else dataCols
                 hasRecent = pl.any_horizontal([pl.col(c).is_not_null() for c in recentCols])
                 tablePart = tablePart.filter(hasRecent)
 
