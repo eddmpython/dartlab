@@ -775,89 +775,62 @@ class Company:
             df = _ratioSeriesToDataFrame(series, years)
             return self._applyPeriodFilter(df, period)
 
-        result = self.docs.show(topic, period)
-        if isinstance(result, ShowResult):
-            return self._buildShowDataFrame(result, period)
-        if isinstance(result, pl.DataFrame):
-            return result
-        return None
+        # docs topic → sections에서 직접 가져옴
+        sec = self.docs.sections
+        if sec is None:
+            return None
 
-    @staticmethod
-    def _parseMdTable(md: str) -> list[tuple[str, str]]:
-        """markdown table → (항목, 값) 리스트."""
-        if not md:
-            return []
-        rows: list[tuple[str, str]] = []
-        headers = None
-        for line in md.strip().split("\n"):
-            line = line.strip()
-            if not line.startswith("|"):
-                continue
-            cells = [c.strip() for c in line.strip("|").split("|")]
-            if all(set(c.strip()) <= {"-", ":"} for c in cells):
-                continue
-            if headers is None:
-                headers = cells
-                continue
-            label = cells[0] if cells else ""
-            value = " | ".join(cells[1:]) if len(cells) > 1 else ""
-            rows.append((label, value))
-        return rows
+        topicRows = sec.filter(pl.col("topic") == topic)
+        if topicRows.is_empty():
+            return None
 
-    def _buildShowDataFrame(
-        self, showResult: ShowResult, period: str | None,
-    ) -> pl.DataFrame | None:
-        """ShowResult → text + 파싱된 table 병합 DataFrame."""
-        periodCols: list[str] = []
-        for src in (showResult.text, showResult.table):
-            if src is not None:
-                periodCols = [c for c in src.columns if _isPeriodColumn(c)]
-                break
+        hasBlockType = "blockType" in topicRows.columns
+        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
         if period is not None:
             periodCols = [c for c in periodCols if c == period]
         if not periodCols:
             return None
 
-        outRows: list[dict[str, str | None]] = []
+        frames: list[pl.DataFrame] = []
 
         # text
-        if showResult.text is not None and not showResult.text.is_empty():
-            for row in showResult.text.iter_rows(named=True):
-                outRow: dict[str, str | None] = {"blockType": "text", "항목": None}
-                for p in periodCols:
-                    outRow[p] = row.get(p)
-                outRows.append(outRow)
+        if hasBlockType:
+            textRows = topicRows.filter(pl.col("blockType") == "text")
+        else:
+            textRows = topicRows
+        if not textRows.is_empty():
+            textDf = textRows.select(periodCols).with_columns([
+                pl.lit("text").alias("blockType"),
+                pl.lit(None).cast(pl.Utf8).alias("tableType"),
+                pl.lit(None).cast(pl.Utf8).alias("항목"),
+            ]).select(["blockType", "tableType", "항목", *periodCols])
+            frames.append(textDf)
 
-        # table — markdown 파싱
-        if showResult.table is not None and not showResult.table.is_empty():
-            allLabels: list[str] = []
-            seenLabels: set[str] = set()
-            periodParsed: dict[str, dict[str, str]] = {}
+        # table — tableParser
+        if hasBlockType:
+            tableRows = topicRows.filter(pl.col("blockType") == "table")
+            if not tableRows.is_empty():
+                from dartlab.engines.dart.docs.sections.tableParser import buildTableDataFrame
+                tableDf = buildTableDataFrame(tableRows, periodCols)
+                if tableDf is not None and not tableDf.is_empty():
+                    # 최근 5기간 필터
+                    dataCols = [c for c in tableDf.columns if _isPeriodColumn(c)]
+                    if len(dataCols) > 5:
+                        recentCols = dataCols[-5:]
+                        hasRecent = pl.any_horizontal([pl.col(c).is_not_null() for c in recentCols])
+                        tableDf = tableDf.filter(hasRecent)
+                    frames.append(tableDf)
 
-            for p in periodCols:
-                if p not in showResult.table.columns:
-                    continue
-                md = showResult.table[p][0]
-                if md is None:
-                    continue
-                parsed = self._parseMdTable(str(md))
-                labelMap: dict[str, str] = {}
-                for label, value in parsed:
-                    if label and label not in seenLabels:
-                        allLabels.append(label)
-                        seenLabels.add(label)
-                    labelMap[label] = value
-                periodParsed[p] = labelMap
-
-            for label in allLabels:
-                outRow = {"blockType": "table", "항목": label}
-                for p in periodCols:
-                    outRow[p] = periodParsed.get(p, {}).get(label)
-                outRows.append(outRow)
-
-        if not outRows:
+        if not frames:
             return None
-        return pl.DataFrame(outRows)
+        result = pl.concat(frames, how="diagonal_relaxed")
+
+        # trailing 파이프 정리
+        for col in periodCols:
+            if col in result.columns and result[col].dtype == pl.Utf8:
+                result = result.with_columns(pl.col(col).str.strip_chars_end(" |").alias(col))
+
+        return result
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic in _FINANCE_TOPICS:
