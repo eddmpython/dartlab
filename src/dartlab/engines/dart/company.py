@@ -1376,6 +1376,47 @@ class _DocsAccessor:
     def rawMaterial(self):
         return self._company._sectionsSubtopicWide("rawMaterial") or self._company._safePrimary("rawMaterial")
 
+    def show(self, topic: str, period: str | None = None) -> "ShowResult | None":
+        """topic의 text/table을 ShowResult로 반환.
+
+        EDGAR docs.show()와 동일한 인터페이스.
+        blockType이 있으면 ShowResult(text, table) 분리.
+        """
+        sec = self.sections
+        if sec is None:
+            return None
+
+        topicRows = sec.filter(pl.col("topic") == topic)
+        if topicRows.is_empty():
+            return None
+
+        hasBlockType = "blockType" in topicRows.columns
+
+        if hasBlockType:
+            if period is not None:
+                if period not in topicRows.columns:
+                    return None
+                keepCols = [c for c in ["topic", "blockType", period] if c in topicRows.columns]
+                topicRows = topicRows.select(keepCols)
+
+            textRows = topicRows.filter(pl.col("blockType") == "text")
+            tableRows = topicRows.filter(pl.col("blockType") == "table")
+            text = textRows if not textRows.is_empty() else None
+            table = tableRows if not tableRows.is_empty() else None
+            if text is None and table is None:
+                return None
+            return ShowResult(text=text, table=table)
+
+        # blockType 없는 레거시 경로
+        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+        if period is not None:
+            if period not in topicRows.columns:
+                return None
+            text = topicRows.select(["topic", period])
+        else:
+            text = topicRows
+        return ShowResult(text=text, table=None)
+
     def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
 
@@ -1518,17 +1559,13 @@ class _ProfileAccessor:
             return self._company._cache[cacheKey]
 
         docsSections = self._company.docs.sections
-        facts = self.facts
 
-        if docsSections is None and facts is None:
+        if docsSections is None:
             return None
 
         periodCols: list[str] = []
         if docsSections is not None:
             periodCols.extend([c for c in docsSections.columns if _isPeriodColumn(c)])
-        if facts is not None and not facts.is_empty():
-            factPeriods = facts["period"].drop_nulls().unique().to_list()
-            periodCols.extend(str(p) for p in factPeriods if p is not None)
 
         if not periodCols:
             return docsSections
@@ -1537,64 +1574,10 @@ class _ProfileAccessor:
 
         periodCols = sortPeriods(sorted(set(periodCols)))
 
-        rowMap: dict[str, dict[str, Any]] = {}
-        docsTopicOrder: list[str] = []
-        if docsSections is not None:
-            for row in docsSections.iter_rows(named=True):
-                topic = row["topic"]
-                if not self._isProfileTopic(topic):
-                    continue
-                docsTopicOrder.append(topic)
-                rowMap[topic] = {"topic": topic}
-                for period in periodCols:
-                    rowMap[topic][period] = row.get(period)
-
-        if facts is not None and not facts.is_empty():
-            primaryFacts = (
-                facts.sort(["priority", "source"], descending=[True, False])
-                .group_by(["topic", "period"])
-                .agg(
-                    [
-                        pl.col("source").first().alias("primarySource"),
-                        pl.col("summary").first().alias("summary"),
-                    ]
-                )
-            )
-
-            for row in primaryFacts.iter_rows(named=True):
-                topic = row["topic"]
-                if not self._isProfileTopic(topic):
-                    continue
-                period = row["period"]
-                summary = row["summary"]
-                source = row["primarySource"]
-                if topic not in rowMap:
-                    rowMap[topic] = {"topic": topic}
-                    for col in periodCols:
-                        rowMap[topic][col] = None
-                if rowMap[topic].get(period) is None and summary:
-                    rowMap[topic][period] = summary
-
-        orderedTopics: list[str] = []
-        seen: set[str] = set()
-
-        for topic in docsTopicOrder:
-            if topic in rowMap and topic not in seen:
-                orderedTopics.append(topic)
-                seen.add(topic)
-
-        remaining = [t for t in rowMap if t not in seen]
-        prefOrder = {topic: idx for idx, topic in enumerate(self._PREFERRED_TOPIC_ORDER)}
-        remaining.sort(key=lambda t: (prefOrder.get(t, 9999), t))
-        orderedTopics.extend(remaining)
-
-        records = [rowMap[t] for t in orderedTopics]
-        result = pl.from_dicts(records, infer_schema_length=len(records)).select(["topic", *periodCols])
-        castCols = [pl.col("topic").cast(pl.Utf8)]
-        castCols.extend(pl.col(col).cast(pl.Utf8, strict=False) for col in periodCols)
-        result = result.with_columns(castCols)
-        self._company._cache[cacheKey] = result
-        return result
+        # docs.sections 기반 — facts merge 없이 직접 사용
+        # finance/report는 show()/trace()에서 source 대체로 처리
+        self._company._cache[cacheKey] = docsSections
+        return docsSections
 
     @property
     def facts(self) -> pl.DataFrame | None:
@@ -2521,6 +2504,14 @@ class Company:
         """table 행을 구조화 DataFrame으로 변환 (finance IS/BS처럼)."""
         if topic in self._AUTO_SUBTOPIC_SKIP:
             return None
+        # sections에 table 블록이 없으면 retrievalBlocks 접근 불필요
+        sec = self.docs.sections
+        if sec is not None and "blockType" in sec.columns:
+            tableRows = sec.filter(
+                (pl.col("topic") == topic) & (pl.col("blockType") == "table")
+            )
+            if tableRows.is_empty():
+                return None
         result = self._topicSubtables(topic)
         if result is None:
             return None

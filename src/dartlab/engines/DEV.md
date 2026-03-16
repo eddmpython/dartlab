@@ -59,9 +59,25 @@ Company 레벨에서 profile.sections를 만들 때 finance/report 것으로 대
 
 ### Layer 4. 뷰어 (렌더링)
 
-Layer 3의 구조화된 데이터를 실제 눈에 보이게 렌더링한다.
-- 프론트엔드(Svelte): 웹 브라우저에서 예쁘게 표시
-- 터미널(Rich 등): CLI에서 구조화된 출력
+Svelte UI에서 sections를 직접 렌더링한다. 파이썬 모듈이 아니라 프론트엔드다.
+
+**테이블** (blockType=table):
+- sections 그대로 렌더링. 기간별 수평 테이블.
+
+**텍스트** (blockType=text):
+- 원문 전체를 보여주지 않는다. 3가지 뷰:
+  1. **변화 지점** — 어느 기간에 무엇이 바뀌었는지 (sectionsDiff → entries)
+  2. **변화 과정** — 기간별 추가/삭제 흐름 (topicDiff → added/removed/kept)
+  3. **최종 상태** — 현재 텍스트에서 변경된 부분 표시
+
+데이터 레이어: `common/docs/diff.py` (완성)
+- `sectionsDiff(sections)` → 전체 변화 감지 (hash 기반)
+- `topicDiff(sections, topic, from, to)` → 줄 단위 diff (difflib)
+
+렌더링 레이어: Svelte UI (서버 제공)
+- 변경 하이라이트, 기간 간 비교, 접기/펼치기
+- 서버(FastAPI) UI에서 제공
+- AI 분석에도 diff 컨텍스트를 기반으로 설명/요약
 
 ### 최종형: 대시보드
 

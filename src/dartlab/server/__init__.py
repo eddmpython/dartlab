@@ -661,6 +661,57 @@ def api_company_trace(code: str, topic: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.get("/api/company/{code}/diff")
+def api_company_diff(code: str):
+    """Company sections 전체 diff 요약."""
+    try:
+        c = Company(code)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "payload": _serialize_payload(c.diff()),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/diff/{topic}")
+def api_company_diff_topic(
+    code: str,
+    topic: str,
+    fromPeriod: str = Query(..., alias="from"),
+    toPeriod: str = Query(..., alias="to"),
+):
+    """Company 특정 topic의 두 기간 줄 단위 diff."""
+    try:
+        c = Company(code)
+        result = c.diff(topic, fromPeriod, toPeriod)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "topic": topic,
+            "fromPeriod": fromPeriod,
+            "toPeriod": toPeriod,
+            "payload": _serialize_payload(result),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/sections")
+def api_company_sections(code: str):
+    """Company sections 원본 (topic × period)."""
+    try:
+        c = Company(code)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "payload": _serialize_payload(c.sections),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @app.get("/api/company/{code}/modules")
 def api_company_modules(code: str):
     """기업의 사용 가능한 데이터 모듈 목록."""

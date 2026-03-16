@@ -223,6 +223,28 @@ export async function fetchCompanyTrace(code, topic) {
 	return res.json();
 }
 
+/** company sections 원본 */
+export async function fetchCompanySections(code) {
+	const res = await fetch(`${BASE}/api/company/${code}/sections`);
+	if (!res.ok) throw new Error("sections 조회 실패");
+	return res.json();
+}
+
+/** company diff 요약 */
+export async function fetchCompanyDiff(code) {
+	const res = await fetch(`${BASE}/api/company/${code}/diff`);
+	if (!res.ok) throw new Error("diff 조회 실패");
+	return res.json();
+}
+
+/** company topic diff (줄 단위) */
+export async function fetchCompanyTopicDiff(code, topic, fromPeriod, toPeriod) {
+	const params = new URLSearchParams({ from: fromPeriod, to: toPeriod });
+	const res = await fetch(`${BASE}/api/company/${code}/diff/${encodeURIComponent(topic)}?${params}`);
+	if (!res.ok) throw new Error("topic diff 조회 실패");
+	return res.json();
+}
+
 /** LLM 질문 (동기) */
 export async function ask(company, question, options = {}) {
 	const body = { company, question, stream: false, ...options };

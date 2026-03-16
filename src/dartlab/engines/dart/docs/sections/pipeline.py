@@ -46,6 +46,8 @@ from dartlab.engines.dart.docs.sections.runtime import (
 
 def iterPeriodSubsets(
     stockCode: str,
+    *,
+    sinceYear: int = 2016,
 ) -> Iterator[tuple[str, str, str, pl.DataFrame]]:
     """기간별 유효 섹션 subset을 순회한다.
 
@@ -54,12 +56,17 @@ def iterPeriodSubsets(
         subset은 section_order 기준 정렬된 DataFrame.
 
     loadData를 1회만 호출하고, pipeline/views 양쪽이 공유한다.
+    sinceYear 이전 기간은 건너뛴다 (finance 없는 기간 제외).
     """
     df = loadData(stockCode)
     ccol = detectContentCol(df)
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
     for year in years:
+        if isinstance(year, str) and year.isdigit() and int(year) < sinceYear:
+            continue
+        if isinstance(year, (int, float)) and int(year) < sinceYear:
+            continue
         for reportKind, suffix in REPORT_KINDS:
             periodKey = f"{year}{suffix}"
             report = selectReport(df, year, reportKind=reportKind)
