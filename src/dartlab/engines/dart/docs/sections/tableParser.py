@@ -201,10 +201,7 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
 def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, list[str]]], list[str], str | None]:
     """key_value/matrix → [(항목, [값1, 값2, ...]), ...] + 헤더컬럼명 + 단위.
 
-    Returns:
-        (rows, headerNames, unit)
-        rows: [(normalizedItem, [val1, val2, ...]), ...]
-        headerNames: 헤더 컬럼명 (첫 컬럼 제외)
+    다중행 헤더, 그룹 헤더, 주석 행 처리 포함.
     """
     headerCells = _headerCells(sub)
     headerNames = [_normalizeItemName(h) for h in headerCells[1:]] if len(headerCells) > 1 else []
@@ -212,14 +209,39 @@ def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, list[str]]],
     unit = _extractUnit(sub)
     result: list[tuple[str, list[str]]] = []
 
-    for row in rows:
+    if not rows:
+        return result, headerNames, unit
+
+    # 다중행 헤더 감지: 첫 데이터행이 순수 텍스트(숫자 없음)이고 컬럼 수가 헤더와 비슷하면 서브헤더
+    firstRow = rows[0]
+    isSubHeader = (
+        len(firstRow) >= len(headerCells)
+        and all(not any(ch.isdigit() for ch in cell) or not cell.strip() for cell in firstRow)
+        and len(rows) > 1
+    )
+    dataStart = 1 if isSubHeader else 0
+
+    prevGroupItem = ""
+    for row in rows[dataStart:]:
         if not row or not row[0].strip():
             continue
         first = row[0].strip()
-        if first.startswith("※"):
+        if first.startswith("※") or first.startswith("☞"):
             continue
+
         item = _normalizeItemName(first)
         values = [c.strip() for c in row[1:]]
+
+        # 그룹 헤더 감지: 값이 전부 비어있거나 1개만 있고 다음 행들이 세부 항목
+        allEmpty = all(not v or v == "-" for v in values)
+        if allEmpty and len(values) >= 2:
+            prevGroupItem = item
+            continue
+
+        # 그룹 헤더 하위 항목이면 접두사 추가
+        if prevGroupItem and not allEmpty:
+            item = f"{prevGroupItem}_{item}"
+
         if item:
             result.append((item, values))
 
@@ -259,6 +281,11 @@ def buildTableDataFrame(
         for sub in splitSubtables(str(md)):
             hc = _headerCells(sub)
             if _isJunk(hc):
+                continue
+
+            # 0행 서브테이블 스킵 (단위, 주석, 기준일 등)
+            dr = _dataRows(sub)
+            if not dr:
                 continue
 
             normH = _normalizeHeader(hc)
