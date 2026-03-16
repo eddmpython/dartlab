@@ -288,10 +288,13 @@ def buildTableDataFrame(
         allYears = sorted(set(y for iv in yearItemVal.values() for y in iv.keys()))
         unit = units.get(normH, "")
 
+        subtableName = normH[:50] if normH else ""
+
         for item in allItems:
             row: dict[str, str | None] = {
                 "blockType": "table",
                 "tableType": "multi_year",
+                "subtable": subtableName,
                 "단위": unit,
                 "항목": item,
             }
@@ -314,10 +317,14 @@ def buildTableDataFrame(
 
         unit = units.get(normH, "")
 
+        # normHeader에서 사람 읽기용 subtable명 생성
+        subtableName = normH[:50] if normH else ""
+
         for item in allItems:
             row: dict[str, str | None] = {
                 "blockType": "table",
                 "tableType": "key_value",
+                "subtable": subtableName,
                 "단위": unit,
                 "항목": item,
             }

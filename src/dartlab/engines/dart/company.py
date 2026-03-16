@@ -2850,7 +2850,33 @@ class Company:
         if not frames:
             return None
 
-        return pl.concat(frames, how="diagonal_relaxed")
+        result = pl.concat(frames, how="diagonal_relaxed")
+
+        # table 행 정리
+        dataCols = [c for c in result.columns if _isPeriodColumn(c)]
+        if dataCols and "blockType" in result.columns:
+            textPart = result.filter(pl.col("blockType") == "text")
+            tablePart = result.filter(pl.col("blockType") == "table")
+
+            if not tablePart.is_empty():
+                # 최근 절반 기간에 값이 하나라도 있는 행만 유지
+                # (과거에만 존재하던 항목 제거)
+                halfIdx = max(1, len(dataCols) // 2)
+                recentCols = dataCols[halfIdx:]
+                hasRecent = pl.any_horizontal([pl.col(c).is_not_null() for c in recentCols])
+                tablePart = tablePart.filter(hasRecent)
+
+            parts = [p for p in [textPart, tablePart] if not p.is_empty()]
+            result = pl.concat(parts, how="diagonal_relaxed") if parts else result
+
+        # 값의 trailing 파이프 정리
+        for col in dataCols:
+            if col in result.columns and result[col].dtype == pl.Utf8:
+                result = result.with_columns(
+                    pl.col(col).str.strip_chars_end(" |").alias(col)
+                )
+
+        return result
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic == "docsStatus" and not self._hasDocs:
