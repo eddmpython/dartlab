@@ -52,6 +52,8 @@ c.index  # chapter, topic, label, kind, source, periods, shape, preview
 
 - 레거시 파서 없음 — sections가 처음부터 유일한 경로
 - report namespace 아직 없음 (SEC API 정형 데이터는 향후)
+- `openapi/`는 SEC public API wrapper + saver 역할만 담당
+- raw 응답은 source-native dict/DataFrame 유지, parquet 저장만 dartlab 규약에 맞춘다
 
 ## 현재 구조
 

@@ -582,105 +582,45 @@ def _appendJsonl(path: Path, record: dict[str, object]) -> None:
 
 
 def _resolveTickerMeta(ticker: str) -> dict[str, str]:
-    from dartlab import config
-    from dartlab.core.dataLoader import loadEdgarListedUniverse
+    from dartlab.engines.edgar.openapi.identity import resolveIssuer
 
-    tickerPath = Path(config.dataDir) / "edgar" / "tickers.parquet"
-    try:
-        listedDf = loadEdgarListedUniverse()
-        listedRow = listedDf.filter(pl.col("ticker") == ticker)
-        if not listedRow.is_empty():
-            record = listedRow.row(0, named=True)
-            return {
-                "ticker": ticker,
-                "cik": str(record["cik"]).zfill(10),
-                "title": record.get("title") or ticker,
-            }
-    except OSError:
-        pass
-
-    if tickerPath.exists():
-        df = pl.read_parquet(tickerPath)
-        row = df.filter(pl.col("ticker") == ticker)
-        if row.is_empty():
-            row = df.filter(pl.col("ticker") == ticker.upper())
-        if not row.is_empty():
-            record = row.row(0, named=True)
-            return {
-                "ticker": ticker,
-                "cik": str(record["cik"]).zfill(10),
-                "title": record.get("title") or ticker,
-            }
-
-    time.sleep(REQUEST_INTERVAL)
-    resp = requests.get("https://www.sec.gov/files/company_tickers.json", headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    payload = resp.json()
-    for record in payload.values():
-        if str(record.get("ticker", "")).upper() == ticker:
-            return {
-                "ticker": ticker,
-                "cik": str(record["cik_str"]).zfill(10),
-                "title": record.get("title") or ticker,
-            }
-    raise ValueError(f"{ticker}에 해당하는 CIK를 찾을 수 없음")
+    info = resolveIssuer(str(ticker).upper())
+    return {
+        "ticker": info["ticker"],
+        "cik": info["cik"],
+        "title": info["title"],
+    }
 
 
 def _getSubmissions(cik: str) -> dict:
-    time.sleep(REQUEST_INTERVAL)
-    resp = requests.get(f"{DATA_URL}/submissions/CIK{cik}.json", headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    return resp.json()
+    from dartlab.engines.edgar.openapi.submissions import getSubmissionsJson
+
+    return getSubmissionsJson(cik)
 
 
 def _mergeFilingArrays(submissions: dict, sinceYear: int) -> dict:
-    recent = submissions["filings"]["recent"]
-    merged = {k: list(v) for k, v in recent.items()}
+    from dartlab.engines.edgar.openapi.submissions import mergeSubmissionFilings
 
-    for fileInfo in submissions["filings"].get("files", []):
-        filingTo = fileInfo.get("filingTo", "")
-        if filingTo and int(filingTo[:4]) < sinceYear:
-            continue
-        time.sleep(REQUEST_INTERVAL)
-        resp = requests.get(f"{DATA_URL}/submissions/{fileInfo['name']}", headers=HEADERS, timeout=30)
-        resp.raise_for_status()
-        extra = resp.json()
-        for key in merged:
-            if key in extra:
-                merged[key].extend(extra[key])
-    return merged
+    return mergeSubmissionFilings(submissions, sinceYear=sinceYear)
 
 
 def _findFilings(submissions: dict, sinceYear: int) -> list[dict]:
-    merged = _mergeFilingArrays(submissions, sinceYear)
-    reportDates = merged.get("reportDate", [""] * len(merged["form"]))
-    rows: list[dict] = []
+    from dartlab.engines.edgar.openapi.submissions import findRegularFilings
 
-    for i, formType in enumerate(merged["form"]):
-        if formType not in SUPPORTED_REGULAR_FORMS:
-            continue
-        filingDate = merged["filingDate"][i]
-        year = int(filingDate[:4])
-        if year < sinceYear:
-            continue
-
-        accession = merged["accessionNumber"][i]
-        primaryDoc = merged["primaryDocument"][i]
-        rows.append(
+    rows = findRegularFilings(submissions, sinceYear=sinceYear)
+    converted: list[dict] = []
+    for row in rows:
+        converted.append(
             {
-                "formType": formType,
-                "filingDate": filingDate,
-                "year": str(year),
-                "periodEnd": reportDates[i] or None,
-                "accessionNumber": accession,
-                "filingUrl": (
-                    f"{BASE_URL}/Archives/edgar/data/{submissions['cik']}/{accession.replace('-', '')}/{primaryDoc}"
-                ),
+                "formType": row["form"],
+                "filingDate": row["filing_date"],
+                "year": row["year"],
+                "periodEnd": row["report_date"],
+                "accessionNumber": row["accession_no"],
+                "filingUrl": row["filing_url"],
             }
         )
-
-    rows.sort(key=lambda row: (row["filingDate"], row["formType"]))
-    return rows
+    return converted
 
 
 def _downloadHtml(url: str) -> str:

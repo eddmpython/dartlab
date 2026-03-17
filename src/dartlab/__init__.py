@@ -9,8 +9,9 @@ from dartlab.compare import Compare
 from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
 from dartlab.engines.dart.company import Company as _DartCompany
-from dartlab.engines.dart.openapi.dart import Dart
+from dartlab.engines.dart.openapi.dart import Dart, OpenDart
 from dartlab.engines.edgar.company import Company as _EdgarCompany
+from dartlab.engines.edgar.openapi.edgar import OpenEdgar
 
 try:
     __version__ = _pkg_version("dartlab")
@@ -91,6 +92,8 @@ __all__ = [
     "Company",
     "Compare",
     "Dart",
+    "OpenDart",
+    "OpenEdgar",
     "KRCompany",
     "USCompany",
     "config",

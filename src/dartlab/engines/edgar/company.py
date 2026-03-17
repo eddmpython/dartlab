@@ -638,18 +638,35 @@ class Company:
 
     def _resolveTickerRow(self, ticker: str) -> dict | None:
         tickerPath = self._getTickerPath()
-        if tickerPath is None or not tickerPath.exists():
-            return None
+        tickerUpper = ticker.upper()
+        if tickerPath is not None and tickerPath.exists():
+            df = pl.read_parquet(tickerPath)
+            row = df.filter(pl.col("ticker") == ticker)
+            if row.is_empty():
+                row = df.filter(pl.col("ticker") == tickerUpper)
+            if not row.is_empty():
+                r = row.row(0, named=True)
+                r["cik"] = str(r["cik"]).zfill(10)
+                return r
 
-        df = pl.read_parquet(tickerPath)
-        row = df.filter(pl.col("ticker") == ticker)
-        if row.is_empty():
-            row = df.filter(pl.col("ticker") == ticker.upper())
-        if row.is_empty():
+        try:
+            from dartlab.core.dataLoader import loadEdgarListedUniverse
+
+            listed = loadEdgarListedUniverse()
+            row = listed.filter(pl.col("ticker") == tickerUpper)
+            if not row.is_empty():
+                r = row.row(0, named=True)
+                r["cik"] = str(r["cik"]).zfill(10)
+                return r
+        except (FileNotFoundError, OSError, RuntimeError):
+            pass
+
+        try:
+            from dartlab.engines.edgar.openapi.identity import resolveIssuer
+
+            return resolveIssuer(tickerUpper)
+        except ValueError:
             return None
-        r = row.row(0, named=True)
-        r["cik"] = str(r["cik"]).zfill(10)
-        return r
 
     def _getTickerPath(self) -> Path | None:
         from dartlab import config

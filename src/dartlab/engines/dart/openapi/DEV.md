@@ -5,11 +5,14 @@ opendartreader 대체. 극강 편의성 설계.
 ## 사용법
 
 ```python
-from dartlab.engines.dart.openapi import Dart
+from dartlab import OpenDart
 
-d = Dart()                           # 환경변수 DART_API_KEY 자동
-d = Dart("your_key")                 # 단일 키
-d = Dart(["key1", "key2", "key3"])   # 멀티 키 로테이션
+d = OpenDart()                           # canonical 이름
+d = OpenDart("your_key")                 # 단일 키
+d = OpenDart(["key1", "key2", "key3"])   # 멀티 키 로테이션
+
+# 호환 alias
+from dartlab import Dart
 
 # 공시 검색 — 날짜 유연 ("2024", "2024-01", "2024-1-5", "20240105", datetime)
 d.filings("삼성전자")                    # 최근 1년 자동
@@ -43,7 +46,7 @@ d.corpCodes()                # 전체 11만+ DataFrame
 
 ```
 openapi/
-├── __init__.py      # Dart 클래스 export
+├── __init__.py      # OpenDart / Dart export
 ├── dart.py          # Dart facade (사용자 진입점)
 ├── client.py        # DartClient (멀티 키, rate limit, 자동 재시도)
 ├── corpCode.py      # corp_code 관리 (캐시 ~/.dartlab/corpCode.parquet)
@@ -54,7 +57,7 @@ openapi/
 
 ## 설계 원칙
 
-1. **Dart 클래스 하나로 모든 것** — client, corpCode 내부 숨김
+1. **OpenDart 클래스 하나로 모든 것** — client, corpCode 내부 숨김
 2. **멀티 키 로테이션** — rate limit 초과 시 자동으로 다음 키 전환 + 재시도
 3. **유연한 날짜** — "2024", "2024-01", "2024-1-5", "20240105", datetime 전부 OK
 4. **스마트 기본값** — 날짜 안 주면 최근 1년, 연도 안 주면 전년
@@ -63,8 +66,8 @@ openapi/
 
 ## API 키 탐색 순서
 
-1. `Dart(["key1", "key2"])` — 직접 리스트
-2. `Dart("key")` — 직접 단일
+1. `OpenDart(["key1", "key2"])` — 직접 리스트
+2. `OpenDart("key")` — 직접 단일
 3. 환경변수 `DART_API_KEYS` (쉼표 구분)
 4. 환경변수 `DART_API_KEY` (단일)
 
@@ -79,4 +82,4 @@ openapi/
 
 `engines/{market}/openapi/` 패턴으로 EDGAR 등에도 동일 적용:
 - `engines/edgar/openapi/` — SEC EDGAR API
-- 각 마켓별 facade 클래스 제공
+- 각 마켓별 facade 클래스 제공 (`OpenDart`, `OpenEdgar`)

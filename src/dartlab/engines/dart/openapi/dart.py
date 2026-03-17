@@ -1103,3 +1103,7 @@ class DartCompany:
     def __repr__(self) -> str:
         methods = "report | finance | filings | info | shares | saveFinance | saveReport | saveFilings | xbrl"
         return f"DartCompany('{self._corp}') — {methods}"
+
+
+OpenDart = Dart
+OpenDartCompany = DartCompany
