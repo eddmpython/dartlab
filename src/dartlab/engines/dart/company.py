@@ -2707,12 +2707,10 @@ class Company:
         )
 
         _SUFFIX_RE = re.compile(r"(사업)?부문$")
-        # 기수+상대기(당기/전기 등): 제76기(당기) → 당기
-        _KISU_RE = re.compile(r"제\d+기\s*(?:\d*분기)?\s*\(?(당기|전기|전전기|당반기|전반기)\)?")
-        # 기수만 있는 패턴: 제9기1분기, 제61기반기, 제2기3분기(2025년반기) 등 → 제거 대상
-        _KISU_ONLY_RE = re.compile(
-            r"^제\d+기\s*(?:\d*분기|반기|말)?\s*"
-            r"(?:\(\d{4}년[^)]*\))?\s*$"
+        # 기수+상대기(당기/전기 등): 제76기(당기) → 당기, 제2기1분기(당분기) → 당분기
+        _KISU_RE = re.compile(
+            r"제\d+기\s*(?:\d*분기|반기|말)?\s*"
+            r"\(?(당기|전기|전전기|당반기|전반기|당분기|전분기)\)?"
         )
 
         def _normalizeItem(name: str) -> str:
@@ -2721,9 +2719,6 @@ class Company:
             m = _KISU_RE.search(name)
             if m:
                 return m.group(1)
-            # 기수만 있는 항목 → 빈 문자열 (이후 junk 필터에서 제거)
-            if _KISU_ONLY_RE.match(name):
-                return ""
             return name
 
         def _collectMultiYear(sub: list[str], pYear: int, p: str) -> None:

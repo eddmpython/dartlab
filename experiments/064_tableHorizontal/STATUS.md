@@ -326,3 +326,101 @@ bo=1 [table] 주당현금배당금(원)-보통주: 22=1,444      23=1,444      2
 ### 테스트 통과
 - `tests/test_company.py`: 27 passed
 - `tests/test_sections_pipeline.py`: 4 passed
+
+## 012~020 심층 품질 개선 (2026-03-17)
+
+### 012: 283종목 전수 None 비율 측정 (원본 tableParser 경로)
+
+_stripUnitHeader 패치 미반영 상태(tableParser 직접 사용)로 측정:
+- 전체: 128,089 blocks, success=68,007 (53.1%)
+- 주요 실패 원인: single_col_header_unit 13,815건 (가장 큰 개선 기회)
+
+### 015: _stripUnitHeader 패치 반영 후 재측정
+
+company.py 로직(패치 포함) 재현하여 정확한 None 비율 측정:
+- 전체: success=70,118 (54.7%) — 008 대비 +144건
+- 실패 원인 분포: overlap_filtered 36,760건(63%), no_items 11,297건(19%), list_type 6,628건(11%), all_junk 3,286건(6%)
+
+### 016: no_items/all_junk 원본 분석
+
+| 패턴 | 내용 | 수정 가능 여부 |
+|------|------|---------------|
+| audit all_junk | 항목이 날짜/순번(`1`, `2018.04.13`) — matrix 첫 컬럼 | 정상 스킵 (이력형) |
+| companyOverview all_junk | 순번 항목 (`1`, `2`) — 종속기업 순번 | 정상 스킵 |
+| dividend all_junk | 항목이 `-` — 무배당 기업 | 정상 스킵 |
+| businessOverview no_items | 조직도/정관 텍스트가 table 오분류 | 정상 스킵 |
+| executivePay no_items | 복잡한 다중행 구조 | 후속 개선 대상 |
+
+### 017: 단위행 변형 패턴 수집
+
+총 49,796개 1-col skip 헤더:
+- 기존 정규식 매칭: 34,423건 (69%)
+- **강화 정규식 추가 매칭: 234건** (`(원화단위:...)`/`(외화단위:...)` 변형)
+- 미매칭 15,139건 중 대부분은 `재무상태표`(276건), `포괄손익계산서` 등 skip이 정상인 제목
+
+### 018: overlap_filtered 상세 분석
+
+핵심 발견 — overlap < 0.3 경계 근처의 케이스:
+- **dividend**: `제9기1분기`, `제17기1분기` 등 기수가 항목명에 포함 → 기간마다 달라져 겹침률 하락
+- **audit**: `제2기1분기(당분기)` 등 기수+`당분기`가 항목명 → 기존 `_KISU_RE`가 `당분기` 미인식
+- **boardOfDirectors**: 인명+출석률, 날짜 등 기간마다 달라지는 게 정상 (이력형 맞음)
+- **businessOverview/mdna**: R&D 과제명, 위원회명 등 실제 이력형 (정상 스킵)
+
+### 적용한 수정 (`company.py _horizontalizeTableBlock`)
+
+1. **`_UNIT_ONLY_RE` 강화**
+   - 기존: `^\(?\s*단위\s*[:/]?\s*[^)]*\)?\s*$`
+   - 강화: `(원화단위:...)`/`(외화단위:...)`/`(금액단위:...)` 포함
+   - `<당분기> (단위: 원)`, `[단위 : 백만원]`, `（단위: 천원)` 등 변형 처리
+   - 효과: riskDerivative +0.4%p, rawMaterial +0.1%p
+
+2. **`_KISU_RE` 강화**
+   - 기존: `당기|전기|전전기|당반기|전반기`
+   - 추가: `당분기|전분기` (분기보고서 항목명에 빈번)
+   - 효과: audit +0.7%p, internalControl +0.9%p
+
+3. **`_KISU_ONLY_RE` 시도 후 철회**
+   - `제9기1분기` 같은 기수 전용 항목을 제거 시도
+   - audit -1.9%p, dividend -0.7%p 악화 → 유효 항목 감소로 overlap 판정 변화
+   - 결론: 기수 전용 항목 제거는 부작용이 큼, 철회
+
+### 283종목 전수 검증 (최종)
+
+| 지표 | 008 개선 후 | 012~020 개선 후 | 변화 |
+|------|------------|----------------|------|
+| 전체 성공률 | 54.6% (69,974) | 54.7% (70,080) | +0.1%p (+106) |
+| audit | 70.0% | 70.6% | +0.7%p |
+| internalControl | 93.1% | 93.9% | +0.9%p |
+| riskDerivative | 89.6% | 87.3% | -2.3%p* |
+
+*riskDerivative: 015(86.8%) → 020(87.3%)으로 실제로는 +0.5%p 개선. 008 기준값(89.6%)은 다른 실험 경로와 차이.
+
+### 핵심 topic 현재 성공률
+
+| topic | 성공률 | 블록 수 |
+|-------|--------|---------|
+| internalControl | 93.9% | 1,056 |
+| rawMaterial | 93.8% | 1,753 |
+| majorHolder | 87.9% | 2,584 |
+| riskDerivative | 87.3% | 2,246 |
+| salesOrder | 85.5% | 1,074 |
+| relatedPartyTx | 85.4% | 1,030 |
+| shareholderMeeting | 82.7% | 1,342 |
+| dividend | 81.5% | 1,425 |
+| auditSystem | 81.5% | 2,047 |
+| majorContractsAndRnd | 80.8% | 1,661 |
+| employee | 75.3% | 2,226 |
+| companyOverview | 74.8% | 2,721 |
+| audit | 70.6% | 1,731 |
+| boardOfDirectors | 68.4% | 3,173 |
+
+### 남은 None 원인 (개선 불가/후속 과제)
+
+1. **overlap_filtered (63%)**: K-IFRS 주석, R&D 과제명, 인명 등 기간마다 다른 게 정상인 테이블. 수평화 부적합 → 정상 스킵.
+2. **no_items (19%)**: 복잡한 다중행 헤더, 조직도 텍스트, 빈 테이블. 후속 개선 대상이나 효과 대비 복잡도 높음.
+3. **list_type (11%)**: 종속기업 1000+, 임원 1500+ 등. 정상 스킵.
+4. **all_junk (6%)**: 날짜/순번이 항목명인 이력형 테이블. 정상 스킵.
+
+### 테스트 통과
+- `tests/test_company.py`: 27 passed
+- `tests/test_sections_pipeline.py`: 4 passed
