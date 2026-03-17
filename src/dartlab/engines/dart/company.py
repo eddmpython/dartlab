@@ -2617,7 +2617,16 @@ class Company:
         반환: 실제헤더 행부터의 서브테이블 (기존 파서가 그대로 동작).
         해당하지 않으면 None.
         """
-        _UNIT_ONLY_RE = re.compile(r"^\(?\s*단위\s*[:/]?\s*[^)]*\)?\s*$")
+        # 단위행 변형: (단위:천원), (원화단위:백만원, 외화단위:천USD),
+        # [단위 : 백만원], <당분기> (단위: 원), （단위: 천원) 등
+        _UNIT_ONLY_RE = re.compile(
+            r"^[\(\[\（<〈]?\s*"
+            r"(?:<[^>]+>\s*)?"  # <당분기> 같은 앞쪽 태그
+            r"[\(\[\（]?\s*"
+            r"(?:단위|원화\s*단위|외화\s*단위|금액\s*단위)"
+            r".*$",
+            re.IGNORECASE,
+        )
         _DATE_ONLY_RE = re.compile(r"^\(?\s*기준일\s*:")
 
         # 첫 번째 비-separator 행 찾기
@@ -2698,13 +2707,23 @@ class Company:
         )
 
         _SUFFIX_RE = re.compile(r"(사업)?부문$")
+        # 기수+상대기(당기/전기 등): 제76기(당기) → 당기
         _KISU_RE = re.compile(r"제\d+기\s*(?:\d*분기)?\s*\(?(당기|전기|전전기|당반기|전반기)\)?")
+        # 기수만 있는 패턴: 제9기1분기, 제61기반기, 제2기3분기(2025년반기) 등 → 제거 대상
+        _KISU_ONLY_RE = re.compile(
+            r"^제\d+기\s*(?:\d*분기|반기|말)?\s*"
+            r"(?:\(\d{4}년[^)]*\))?\s*$"
+        )
 
         def _normalizeItem(name: str) -> str:
             name = _SUFFIX_RE.sub("", name).strip()
+            # 기수+상대기 → 상대기명으로 치환
             m = _KISU_RE.search(name)
             if m:
                 return m.group(1)
+            # 기수만 있는 항목 → 빈 문자열 (이후 junk 필터에서 제거)
+            if _KISU_ONLY_RE.match(name):
+                return ""
             return name
 
         def _collectMultiYear(sub: list[str], pYear: int, p: str) -> None:
@@ -2770,7 +2789,12 @@ class Company:
                     beforeLen = len(allItems)
                     _collectMultiYear(sub, pYear, p)
                     # multi_year 파싱 실패 → kv/matrix fallback
-                    if len(allItems) == beforeLen and len(hc) >= 2:
+                    # 단, 헤더 셀이 순수 기수 키워드이면 fallback 금지
+                    # (Q 기간에서 기수 파싱 실패, 구조 자체는 multi_year)
+                    # "당기말/전기말" 등 복합어는 fallback 허용
+                    _PURE_KISU = {"당기", "전기", "전전기", "당반기", "전반기"}
+                    headerHasPureKisu = any(c.strip() in _PURE_KISU for c in hc)
+                    if len(allItems) == beforeLen and len(hc) >= 2 and not headerHasPureKisu:
                         _collectKvMatrix(sub, p)
 
                 elif structType in ("key_value", "matrix"):

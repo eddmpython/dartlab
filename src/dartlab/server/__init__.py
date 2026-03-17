@@ -1282,6 +1282,7 @@ async def _plain_chat(req: AskRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 # ── Static Files (Svelte build) ──
 
 _UI_DIR = Path(__file__).parent.parent / "ui" / "build"

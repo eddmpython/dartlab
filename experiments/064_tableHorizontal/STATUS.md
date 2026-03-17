@@ -250,3 +250,79 @@ bo=1 [table] 주당현금배당금(원)-보통주: 22=1,444      23=1,444      2
 - 핵심 데이터 수평화: **흡수 가능**
 - text-table 교차 순서, 잔여 key_value 분산은 show() 레벨에서 후속 개선
 - 성능 최적화는 프로덕션 흡수 후
+
+## 008 품질 전수 점검 + 개선 (2026-03-17)
+
+### 283종목 전수 점검 (개선 전)
+- 128,089 table 블록, 에러 종목 0
+- 수평화 성공: 68,007 (53.1%), None: 60,082 (46.9%)
+- 핵심 topic: dividend 65%, audit 69%, salesOrder 83%, riskDerivative 59%
+
+### None 원인 분류
+
+| 원인 | 건수 | 설명 |
+|------|------|------|
+| no_items | 31,965 | 파싱 자체 실패 (서브테이블 구조 인식 불가) |
+| history_skip | 23,941 | 이력형 감지 (겹침률 < 0.3, 항목 > 5) — 정상 스킵 |
+| list_skip | 4,176 | 목록형 감지 (항목 > 50) — 정상 스킵 |
+
+### no_items 세부 원인 (핵심 topic)
+
+| 원인 | 설명 | 대표 topic |
+|------|------|-----------|
+| no_data_rows (71%) | separator 뒤 데이터 없음/단위행이 헤더 | dividend, executivePay |
+| single_col_header (49%) | `(단위:천원)` 이 헤더로 인식되어 skip | riskDerivative, salesOrder |
+| multi_year_quarter (23%) | Q 기간에서 multi_year 스킵 | dividend |
+| kv_matrix_ok_but_filtered (59%) | 파싱 됐지만 필터에서 걸림 | audit |
+
+### 근본 원인: 단위행 헤더 문제
+```
+| (단위:천원) |  |  |        ← _headerCells가 여기를 헤더로 인식
+| --- | --- | --- |          ← separator
+| 구 분 | 당기말 | 전기말 | ← 실제 헤더 (데이터 행 취급)
+| 현금성자산 | 72,040,993 |  ← 실제 데이터
+```
+`_headerCells`가 첫 번째 비-separator 행을 헤더로 반환 → `(단위:천원)` 1컬럼 → `skip` 분류.
+실제 헤더는 separator 이후 첫 행에 있음.
+
+### 수정 내용 (`company.py _horizontalizeTableBlock`)
+
+1. **`_stripUnitHeader` 정적 메서드 추가**
+   - 서브테이블의 첫 비-separator 행이 단위/기준일 패턴이면 → separator 이후의 행을 새 서브테이블로 반환
+   - separator가 없으면 인조 separator 삽입 (기존 파서 호환)
+   - 기존 `tableParser.py` 수정 없이 `company.py` 레벨에서만 처리
+
+2. **multi_year 파싱 실패 → kv/matrix fallback**
+   - `_parseMultiYear`가 0 triples 반환 시 `_parseKeyValueOrMatrix`로 재시도
+   - 단, 헤더 셀이 순수 기수 키워드(`당기`, `전기` 등)이면 fallback 금지
+   - `당기말/전기말` 등 복합어는 fallback 허용
+
+### 283종목 전수 검증 (개선 후)
+- 128,089 table 블록, 에러 종목 0
+- 수평화 성공: **69,974 (54.6%)**, None: 58,115 (45.4%)
+- 전체 +1,967건 개선 (+1.5pp)
+
+### 핵심 topic별 성공률 비교
+
+| topic | 개선 전 | 개선 후 | 변화 |
+|-------|---------|---------|------|
+| dividend | 928 (65%) | 986 (69%) | +58 (+4pp) |
+| audit | 1,196 (69%) | 1,213 (70%) | +17 (+1pp) |
+| salesOrder | 891 (83%) | 917 (85%) | +26 (+2pp) |
+| companyOverview | 2,038 (75%) | 2,035 (75%) | -3 (무시) |
+| employee | 1,639 (74%) | 1,680 (75%) | +41 (+1pp) |
+| majorHolder | 2,265 (88%) | 2,270 (88%) | +5 |
+| shareCapital | 899 (96%) | 899 (96%) | 0 |
+| executivePay | 1,669 (54%) | 1,736 (57%) | +67 (+3pp) |
+| rawMaterial | 1,517 (87%) | 1,642 (94%) | +125 (+7pp) |
+| riskDerivative | 1,336 (59%) | 2,013 (90%) | **+677 (+31pp)** |
+
+### 남은 None (정상 스킵)
+- **이력형(history_skip)**: 겹침률 < 0.3인 K-IFRS 주석, 연혁, 이사회 등. 수평화 부적합. 정상.
+- **목록형(list_skip)**: 종속기업 1000+개, 임원 1500+ 등. 수평화 부적합. 정상.
+- **no_data_rows**: executivePay의 99%는 `(단위 : )` + 복잡한 다중행 구조. 후속 개선 대상.
+- **multi_year_quarter**: Q 기간 multi_year 파싱 미지원 (기수 패턴 부재). 후속 개선 대상.
+
+### 테스트 통과
+- `tests/test_company.py`: 27 passed
+- `tests/test_sections_pipeline.py`: 4 passed
