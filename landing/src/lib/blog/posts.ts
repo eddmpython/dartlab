@@ -124,14 +124,23 @@ export const seriesDefinitions = {
 		seoTitle: '대주주·지배구조 읽기 시리즈 | 오너십과 주주환원 읽는 법',
 		seoDescription: 'DartLab 대주주·지배구조 읽기 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고를 쉽게 읽는 법을 정리합니다.',
 		brandMessage: 'DartLab은 숫자만이 아니라 소유, 통제, 보수 구조까지 읽어 회사의 진짜 방향을 해석합니다.'
+	},
+	'corporate-actions-and-financing': {
+		id: 'corporate-actions-and-financing',
+		label: '기업 이벤트·자금조달 읽기 시리즈',
+		description: '유상증자, 전환사채, 자기주식, 합병·분할 같은 기업 이벤트 공시를 읽는 시리즈입니다.',
+		seoTitle: '기업 이벤트·자금조달 읽기 시리즈 | 유상증자, CB, 자기주식 공시 읽는 법',
+		seoDescription:
+			'DartLab 기업 이벤트·자금조달 읽기 시리즈. 유상증자, 전환사채, BW, 자기주식, 합병·분할 같은 이벤트 공시를 실제 판단 흐름으로 정리합니다.',
+		brandMessage: 'DartLab은 기업 이벤트 공시를 단발 뉴스가 아니라 희석, 자금조달, 지배력 변화의 신호로 읽습니다.'
 	}
 } as const;
 
 export type SeriesId = keyof typeof seriesDefinitions;
 export type SeriesDefinition = (typeof seriesDefinitions)[SeriesId];
 
-const categoryById = new Map(categoryDefinitions.map((category) => [category.id, category]));
-const categoryBySlug = new Map(categoryDefinitions.map((category) => [category.slug, category]));
+const categoryById = new Map<string, CategoryDefinition>(categoryDefinitions.map((category) => [category.id, category]));
+const categoryBySlug = new Map<string, CategoryDefinition>(categoryDefinitions.map((category) => [category.slug, category]));
 
 export interface PostMeta {
 	slug: string;

@@ -24,6 +24,7 @@
 반면 아래 축은 아직 비어 있거나 약하다.
 
 - 13F 같은 개별 form 실전 해석
+- 유상증자, CB/BW, 자기주식, 합병/분할 같은 기업 이벤트 공시 실전 해석
 - 우발부채, 소송 공시
 - 재고, 영업현금흐름, 손상차손 같은 후속 이익의 질
 - Risk Factors / MD&A 교차 읽기
@@ -42,6 +43,27 @@
 - `blog/_reference/WRITING_QUEUE.md`
 - `blog/_reference/028-031-writing-pack.md`
 - `blog/_reference/017-020-source-checklist.md`
+
+## 새 시리즈 확정
+
+### 기업 이벤트·자금조달 읽기 시리즈
+
+- 시리즈 id: `corporate-actions-and-financing`
+- 포지션:
+  - DART 강점을 가장 잘 살릴 수 있는 다음 확장축
+  - 단순 제도 설명이 아니라 `희석`, `자금조달`, `지배력 이동`, `후속 공시 추적`을 같이 읽는 실전형 시리즈
+- 이유:
+  - 기존 시리즈와 겹치지 않으면서 검색 의도가 분명하다
+  - `주요사항보고서`, `지분공시`, `자기주식`, `합병/분할`을 하나의 해석 흐름으로 묶기 좋다
+  - 대주주·지배구조 시리즈와도 자연스럽게 내부 링크를 만들 수 있다
+
+예상 첫 묶음:
+
+- `032 유상증자 공시 읽는 법`
+- `033 전환사채와 BW 공시 읽는 법`
+- `034 자기주식 취득·처분·소각 공시 읽는 법`
+- `035 합병·분할 공시 읽는 법`
+- `036 최대주주 변경과 경영권 이동 신호 읽는 법`
 
 ### 1순위: 바로 써야 하는 주제
 
@@ -117,6 +139,58 @@
 - 핵심:
   - submissions JSON, filing 원문, XBRL 원문을 같이 쓰는 구조
 
+### 다음 시리즈 배치: 기업 이벤트·자금조달 읽기 시리즈
+
+#### 8. 유상증자 공시 읽는 법
+
+- 카테고리: `01-disclosure-systems`
+- 시리즈: `corporate-actions-and-financing`
+- 검색 의도:
+  - `유상증자 공시 읽는 법`
+  - `유상증자 투자 위험`
+- 핵심:
+  - 자금 사용 목적, 할인율, 기존 주주 희석, 후속 일정 확인
+
+#### 9. 전환사채와 BW 공시 읽는 법
+
+- 카테고리: `01-disclosure-systems`
+- 시리즈: `corporate-actions-and-financing`
+- 검색 의도:
+  - `전환사채 공시 읽는 법`
+  - `bw 공시 해석`
+- 핵심:
+  - 전환가액 조정, 리픽싱, 잠재 희석, 조달 조건의 질
+
+#### 10. 자기주식 취득·처분·소각 공시 읽는 법
+
+- 카테고리: `01-disclosure-systems`
+- 시리즈: `corporate-actions-and-financing`
+- 검색 의도:
+  - `자기주식 취득 소각 차이`
+  - `자사주 공시 읽는 법`
+- 핵심:
+  - 취득과 소각의 차이, 처분 가능성, 주주환원 신호의 진정성
+
+#### 11. 합병·분할 공시 읽는 법
+
+- 카테고리: `01-disclosure-systems`
+- 시리즈: `corporate-actions-and-financing`
+- 검색 의도:
+  - `합병 공시 읽는 법`
+  - `회사 분할 공시 해석`
+- 핵심:
+  - 거래 목적, 교환비율, 사업 재편 논리, 소수주주 관점 체크포인트
+
+#### 12. 최대주주 변경과 경영권 이동 신호 읽는 법
+
+- 카테고리: `02-report-reading`
+- 시리즈: `corporate-actions-and-financing`
+- 검색 의도:
+  - `최대주주 변경 공시 읽는 법`
+  - `경영권 변경 신호`
+- 핵심:
+  - 거래 상대방, 자금 출처, 담보·콜옵션 구조, 후속 공시 추적
+
 ## 카테고리별 운영 방향
 
 ### 01-disclosure-systems
@@ -171,7 +245,7 @@
 
 ## 시리즈 현황
 
-현재 시리즈 (9개, 모두 posts.ts에 정의 완료):
+현재 시리즈 (10개, posts.ts 정의 완료):
 
 - `dart-foundations` (3개)
 - `edgar-reading` (4개)
@@ -182,6 +256,7 @@
 - `working-capital-and-earnings-quality` (1개)
 - `audit-and-governance-reading` (1개)
 - `ownership-and-governance-reading` (6개)
+- `corporate-actions-and-financing` (0개, 신규 기획 확정)
 
 ## 다음 실제 작성 순서
 
