@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 <br>
 
@@ -6,7 +6,7 @@
 
 <h3>DartLab</h3>
 
-<p><b>Beyond the numbers</b> — Extract both financials and text from DART filings</p>
+<p><b>One company map from disclosure sections</b></p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>
@@ -27,60 +27,53 @@
 
 </div>
 
-## What is DartLab?
+## What DartLab Is
 
-DartLab is a Python package for parsing and analyzing corporate filings. Its stable core covers [DART](https://dart.fss.or.kr/) (Korea) with growing support for [SEC EDGAR](https://www.sec.gov/edgar) (US) — both accessed through the same `dartlab.Company(...)` facade.
+DartLab turns corporate filings into a single company map.
 
-The package extracts **both financial numbers and narrative text** from filings and exposes them through a company facade, CLI workflows, and an AI web interface. The current public flow is `sections → show → trace`.
+The center of that map is `sections`: a horizontalized board built from disclosure sections across periods. Instead of treating a filing as a pile of unrelated parsers, DartLab aligns the document structure first, then lets stronger sources fill in what they own:
 
-### Account Standardization
+- `docs` for section structure, narrative text, detail blocks, and evidence
+- `finance` for authoritative numeric statements
+- `report` for authoritative structured disclosure APIs
+- `profile` for the merged company layer built on top of the same spine
 
-Every listed company in Korea reports financials through XBRL, but each company uses **different account IDs and names** for the same economic concept. "Revenue" alone appears as dozens of variations across 2,700+ companies.
+The public workflow is now simple:
 
-DartLab maintains its own **unified account schema** — built through a 7-stage mapping pipeline covering 34,000+ learned synonyms. The result: **98.7% of all financial statement rows** (15.8 million rows tested) across 2,700+ companies are successfully mapped to standardized accounts. This means you can directly compare Samsung Electronics' revenue with any other listed company using the same `revenue` key.
+```python
+import dartlab
 
+c = dartlab.Company("005930")
+
+c.sections
+c.show("companyOverview")
+c.trace("BS")
 ```
-Raw XBRL (company-specific)          DartLab (standardized)
-─────────────────────────────        ──────────────────────
-ifrs-full_Revenue                 →  revenue
-dart_OperatingIncomeLoss          →  operating_income
-dart_ConstructionRevenue          →  revenue
-ifrs_ProfitLoss                   →  net_income
-매출액, 수익(매출액), 영업수익     →  revenue
-```
 
-### 40 Parsing Modules
+## Why It Changed
 
-One stock code is all you need. 40 modules extract structured DataFrames from disclosure filings — financial statements, notes, dividends, executives, governance, risk, and narrative text. All accessed through simple properties on a `Company` object, following the yfinance-style API.
+Older disclosure tooling often grew into a property zoo: many parsers, many entrypoints, and weak structural consistency.
 
-## Installation
+DartLab is moving away from that. The current design goal is:
 
-> **[uv](https://docs.astral.sh/uv/)** is required — a fast Python package manager written in Rust. It handles Python version management and virtual environments automatically.
+- one `Company`
+- one canonical `sections` map
+- one source-aware `show` / `trace` workflow
+- one shared structure that Python, docs, and the upcoming AI GUI can all consume
+
+This is where most of the recent quality and performance work went.
+
+## Install
 
 ```bash
-# 1. Install uv (skip if already installed)
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-# macOS / Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+uv add dartlab
+```
 
-# 2. Create a project
-uv init my-analysis && cd my-analysis
+AI interface:
 
-# 3. Install DartLab — pick the extras you need
-uv add dartlab              # Core (financial statement parsing)
-uv add dartlab[ai]          # + AI analysis web interface (dartlab ai)
-uv add dartlab[llm]         # + OpenAI/Ollama LLM (CLI analysis)
-uv add dartlab[charts]      # + Plotly charts
-uv add dartlab[all]         # Everything
-
-# 4. Verify
-uv run python -c "import dartlab; c = dartlab.Company('005930'); print(c.corpName)"
-# → 삼성전자
-
-# 5. Launch AI analysis (requires dartlab[ai])
+```bash
+uv add "dartlab[ai]"
 uv run dartlab ai
-# → http://localhost:8400
 ```
 
 ## Quick Start
@@ -88,547 +81,99 @@ uv run dartlab ai
 ```python
 import dartlab
 
-# Korean stocks (DART)
-c = dartlab.Company("005930")       # by stock code
-c = dartlab.Company("삼성전자")      # by company name (Korean)
-c.corpName                  # "삼성전자"
-
-# US stocks (EDGAR) — same facade, same workflow
-c = dartlab.Company("AAPL")
-c.corpName                  # "Apple Inc."
-```
-
-Data is auto-downloaded from GitHub Releases when not found locally.
-
-```python
-from dartlab.core.dataLoader import downloadAll
-
-downloadAll("docs")                        # 260+ companies — disclosure documents
-downloadAll("finance")                     # 2,700+ companies — financial numbers
-downloadAll("report")                      # 2,700+ companies — periodic reports
-downloadAll("finance", forceUpdate=True)   # re-download if remote is newer
-```
-
-## CLI
-
-The `dartlab` command is a public interface, not just a helper for the web UI.
-
-```bash
-uv run dartlab status
-uv run dartlab setup codex
-uv run dartlab ask 005930 "Summarize debt risk"
-uv run dartlab excel 005930
-uv run dartlab ai
-```
-
-`dartlab ai` launches the web interface. `ask`, `status`, `setup`, and `excel` are supported CLI commands with stable entrypoint behavior.
-
----
-
-## Features
-
-### Company — The Unified Entry Point
-
-One facade covers both markets. The ticker format determines the data source automatically:
-
-```python
-import dartlab
-
-# Korean stock → DART engine
-kr = dartlab.Company("005930")
-kr.corpName    # "삼성전자"
-
-# US stock → EDGAR engine
-us = dartlab.Company("AAPL")
-us.corpName    # "Apple Inc."
-```
-
-Both return the same `Company` interface with the same `sections → show → trace` workflow.
-
-### sections / show / trace
-
-The current public flow is simple:
-
-- `sections` is the company spine
-- `show(topic)` opens one topic payload
-- `trace(topic)` explains whether `docs`, `finance`, or `report` won
-
-```python
+# KR: DART
 c = dartlab.Company("005930")
-c.sections           # company topic x period table
-c.topics             # available topics
-c.show("BS")         # show one topic
-c.trace("dividend")  # source trace
-c.docs.sections      # pure docs source spine
-c.finance.BS         # authoritative financial statement
-c.report.dividend    # authoritative report series
 
-# Same flow for EDGAR
+c.sections                  # canonical company map
+c.show("BS")                # one topic payload
+c.show("companyOverview")   # sections-based disclosure payload
+c.trace("BS")               # chosen source + provenance
+
+# US: EDGAR
 us = dartlab.Company("AAPL")
-us.sections          # same company spine interface
-us.topics            # available topics
-us.show("BS")        # SEC XBRL financials
-us.show("10-K::item1Business")  # 10-K narrative section
+us.sections
+us.show("10-K::item1Business")
 ```
 
-### Financial Statements
+The key distinction is:
+
+- `c.sections`: the public company board
+- `c.docs.sections`: the pure docs source view
+- `c.trace(...)`: why a topic came from `docs`, `finance`, or `report`
+
+## OpenAPI
+
+Use the source-native wrappers when you want raw public APIs directly.
 
 ```python
-c.BS    # Balance Sheet (DataFrame)
-c.IS    # Income Statement (DataFrame)
-c.CIS   # Comprehensive Income Statement (DataFrame)
-c.CF    # Cash Flow Statement (DataFrame)
-c.SCE   # Statement of Changes in Equity  (DART only)
+from dartlab import OpenDart, OpenEdgar
+
+d = OpenDart()
+e = OpenEdgar()
+
+e.company("AAPL")
+e.filings("AAPL", forms=["10-K"])
+e.companyFactsJson("AAPL")
 ```
 
-### Cross-Company Comparable Time Series
+These wrappers keep the original source surface as intact as possible, while saved parquet stays compatible with DartLab's `Company` engine.
 
-Every company's XBRL data is mapped through the unified account schema (98.7% coverage), then converted to **standalone quarterly time series**. Cumulative figures from semi-annual and annual reports are reverse-engineered into individual quarters.
+## Core Ideas
+
+### 1. Sections First
+
+`sections` is the backbone. A company is no longer documented as a loose set of outputs; it is described as one horizontalized map of disclosure units across periods.
+
+### 2. Source-Aware Company
+
+`Company` is not a raw source wrapper. It is a merged company object that knows when `finance` or `report` should override docs.
+
+### 3. AI-Ready Structure
+
+The same `sections -> show -> trace` contract is what the upcoming AI GUI will consume. The goal is not a different AI-only schema, but the same company map exposed through a different interface.
+
+### 4. Raw Access Still Exists
+
+You can still go deeper when needed:
 
 ```python
-series, periods = c.timeseries
-# periods = ["2016_Q1", "2016_Q2", ..., "2024_Q4"]
-# series["IS"]["revenue"]            # quarterly revenue
-# series["BS"]["total_assets"]       # quarterly total assets
-# series["CF"]["operating_cashflow"] # quarterly operating cash flow
-
-r = c.ratios
-r.roe               # 8.29 (%)
-r.operatingMargin   # 9.51 (%)
-r.debtRatio         # 27.4 (%)
-r.fcf               # Free Cash Flow (KRW)
+c.docs.sections
+c.docs.retrievalBlocks
+c.docs.contextSlices
+c.finance.BS
+c.report.audit
 ```
 
-2,700+ listed companies share the same snakeId schema. Compare any two companies directly — no manual mapping required.
-
-### Summary Financials with Bridge Matching
-
-Extracts summary financial time series, automatically tracking accounts even when names change due to K-IFRS revisions.
-
-```python
-result = c.fsSummary()
-
-result.FS          # Full financial time series (Polars DataFrame)
-result.BS          # Balance Sheet
-result.IS          # Income Statement
-result.allRate     # Overall match rate (e.g. 0.97)
-result.breakpoints # List of detected breakpoints
-```
-
-### K-IFRS Notes (12 items)
-
-Use these as deep-access note parsers. For the company workflow, prefer `c.show(...)` on the board first.
-
-```python
-c.notes.inventory          # Inventories
-c.notes["재고자산"]         # Korean key also works
-c.notes.receivables        # Trade receivables
-c.show("tangibleAsset")    # preferred company payload
-c.notes.tangibleAsset      # deep-access legacy note parser
-c.notes.intangibleAsset    # Intangible assets
-c.notes.investmentProperty # Investment property
-c.notes.affiliates         # Associates
-c.notes.borrowings         # Borrowings
-c.notes.provisions         # Provisions
-c.notes.eps                # Earnings per share
-c.notes.lease              # Leases
-c.notes.segments           # Operating segments
-c.show("costByNature")     # preferred company payload
-c.notes.costByNature       # deep-access legacy note parser
-```
-
-### Dividends
-
-```python
-c.dividend
-# ┌──────┬───────────┬───────┬──────────────┬─────────────┬──────────────┬──────┐
-# │ year ┆ netIncome ┆ eps   ┆ totalDividend┆ payoutRatio ┆ dividendYield┆ dps  │
-# └──────┴───────────┴───────┴──────────────┴─────────────┴──────────────┴──────┘
-```
-
-### Major Shareholders
-
-```python
-c.majorHolder    # Largest shareholder + related parties ownership (time series)
-```
-
-For the full Result object: `c.get("majorHolder")`
-
-```python
-result = c.get("majorHolder")
-result.majorHolder   # "이재용"
-result.majorRatio    # 20.76
-result.timeSeries    # Ownership ratio time series
-```
-
-### Employees
-
-```python
-c.employee    # year, totalEmployees, avgSalary, avgTenure, ...
-```
-
-### Disclosure Horizontalization
-
-```python
-c.sections          # company topic x period table
-c.docs.sections     # pure docs horizontalization source
-c.retrievalBlocks   # long DataFrame of source markdown blocks
-c.contextSlices     # LLM-ready slices with semantic/detail metadata
-```
-
-`sections` is the company spine. Columns are time series. The row structure
-comes from disclosure sections, then `finance` fills `BS / IS / CIS / CF / SCE`
-and `report` fills better structured periodic disclosure rows.
-
-`retrievalBlocks()` and `contextSlices()` keep raw markdown and table evidence
-so the text layer stays lossless while runtime still returns DataFrames
-directly.
-
-DartLab does not store per-stock result tables as package data. Learned rules
-ship with the package, and runtime returns topic payloads directly from the
-current stock's disclosure parquet.
-
-### Audit Opinion
-
-```python
-c.audit    # year, auditor, opinion, keyAuditMatters
-```
-
-### Executives
-
-```python
-c.executive      # year, totalRegistered, insideDirectors, outsideDirectors, ...
-c.executivePay   # year, category, headcount, totalPay, avgPay
-```
-
-### Shares / Capital
-
-```python
-c.shareCapital     # Issued, treasury, outstanding shares
-c.capitalChange    # Capital changes
-c.fundraising      # Capital increases/decreases
-```
-
-### Subsidiaries / Associates
-
-```python
-c.subsidiary           # Investments in other corporations
-c.affiliateGroup       # Affiliate group companies
-c.investmentInOther    # Investee, ownership ratio, book value
-```
-
-### Board / Governance
-
-```python
-c.boardOfDirectors     # Board composition, attendance
-c.shareholderMeeting   # Shareholder meeting agendas, resolutions
-c.auditSystem          # Audit committee, audit activities
-c.internalControl      # Internal control assessment
-```
-
-### Risk / Legal
-
-```python
-c.contingentLiability  # Contingent liabilities, lawsuits
-c.relatedPartyTx       # Related party transactions
-c.sanction             # Sanctions, penalties
-c.riskDerivative       # FX sensitivity, derivatives
-```
-
-### Other Financials
-
-```python
-c.bond                 # Debt securities
-c.rnd                  # R&D expenses
-c.otherFinance         # Allowance for bad debt, etc.
-c.productService       # Major products/services
-c.salesOrder           # Sales performance, order backlog
-c.articlesOfIncorporation  # Articles of incorporation amendments
-```
-
-### Company Info
-
-```python
-c.companyHistory         # Corporate history
-c.companyOverviewDetail  # Incorporation date, listing date, CEO, address
-```
-
-### Disclosure Narratives
-
-```python
-c.business       # Business overview (sections + change detection)
-c.overview       # Company overview (incorporation, address, credit rating)
-c.mdna           # Management Discussion & Analysis
-c.rawMaterial    # Raw materials, tangible assets, capex
-```
-
-### Raw Data Access
-
-```python
-c.rawDocs        # Original docs parquet (unprocessed)
-c.rawFinance     # Original finance parquet (unprocessed)
-c.rawReport      # Original periodic report parquet (unprocessed)
-```
-
----
-
-## AI Analysis (dartlab ai)
-
-Chat with an LLM over DartLab's structured data to analyze companies interactively — `uv run dartlab ai` opens the web UI at `http://localhost:8400`.
-
-All extracted data (financial statements, notes, dividends, executives, governance) is provided as context for natural-language Q&A with streaming responses. Data Explorer lets you browse raw data directly in the browser.
-
-The web UI is one public surface. The same runtime also exposes CLI entrypoints such as `dartlab ask`, `dartlab status`, `dartlab setup`, and `dartlab excel`.
-
-### Supported LLM Providers
-
-| Provider | Auth | Description |
-|----------|------|-------------|
-| **ChatGPT** | OAuth (browser login) | ChatGPT Plus/Pro subscription — no API key needed |
-| **Ollama** | None (local) | Free, offline, private — GPU auto-detected |
-| **OpenAI API** | API key | GPT-4o, o3, o4-mini and more |
-| **Anthropic API** | API key | Claude Opus, Sonnet, Haiku |
-| **Codex CLI** | CLI auth | ChatGPT subscription via Codex CLI |
-| **Claude Code** | CLI auth | Claude subscription via Claude Code CLI |
-
-```bash
-uv run dartlab ai              # http://localhost:8400
-uv run dartlab ai --port 9000  # custom port
-```
-
----
-
-## Result Object
-
-Properties return the primary DataFrame. For the full Result object, use `c.get()`.
-
-```python
-# property — returns DataFrame directly
-c.audit          # opinionDf (audit opinion DataFrame)
-
-# get() — returns full Result object
-result = c.get("audit")
-result.opinionDf   # Audit opinion
-result.feeDf       # Audit fees
-```
-
----
-
-## Company Search
-
-```python
-import dartlab
-
-dartlab.Company.search("삼성")
-# ┌──────────────┬──────────┬────────────────┐
-# │ 회사명       ┆ 종목코드 ┆ 업종           │
-# └──────────────┴──────────┴────────────────┘
-
-dartlab.Company.listing()   # Full KRX listed companies
-dartlab.Company.status()    # Local data index
-c.filings()         # Filing list + DART viewer links
-```
-
----
-
-## Core Technology
-
-### Horizontal Alignment of Filings
-
-DART filings cover different periods depending on report type:
-
-```
-                           Q1         Q2         Q3         Q4
-                          ┌──────┐
- Q1 Report                │  Q1  │
-                          └──────┘
-                          ┌──────────────┐
- Semi-Annual              │   Q1 + Q2    │
-                          └──────────────┘
-                          ┌─────────────────────┐
- Q3 Report                │    Q1 + Q2 + Q3     │
-                          └─────────────────────┘
-                          ┌──────────────────────────────┐
- Annual Report            │       Q1 + Q2 + Q3 + Q4      │
-                          └──────────────────────────────┘
-```
-
-Q1 reports contain only Q1, semi-annual reports contain cumulative Q1+Q2, and annual reports contain the full year. DartLab reverse-engineers standalone quarterly figures from these cumulative structures, and tracks accounts even when names change between filings.
-
-### Bridge Matching
-
-K-IFRS revisions and internal restructuring frequently cause **account name changes within the same company**. Bridge Matching combines amount matching and name similarity across adjacent years to automatically link identical accounts.
-
-```
-             2022              2023              2024
-             ──────            ──────            ──────
- 매출액 ────────────── 매출액 ────────────── 수익(매출액)
-                              ↑ name change              ↑ name change
- 영업이익 ──────────── 영업이익 ──────────── 영업이익
- 당기순이익 ────────── 당기순이익 ────────── 당기순이익(손실)
-```
-
-Four-stage matching process:
-
-1. **Exact match** — identical amounts
-2. **Restatement match** — within 0.5 tolerance
-3. **Name change match** — amount error < 5% AND name similarity > 60%
-4. **Special item match** — decimal-unit items like EPS
-
-When match rate drops below 85%, a breakpoint is detected and the segment is split.
-
----
+## Stability
+
+- DART core `Company` flow is the stable center
+- EDGAR is improving quickly, but still a lower stability tier
+- Public messaging now favors `sections -> show -> trace`
+See [docs/stability.md](docs/stability.md).
+
+## Documentation
+
+- Docs: https://eddmpython.github.io/dartlab/
+- Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
+- API overview: https://eddmpython.github.io/dartlab/docs/api/overview
+- Blog: https://eddmpython.github.io/dartlab/blog/
 
 ## Data
 
-### Sources and Integrity
+DartLab uses centralized release config for downloadable datasets and keeps source-specific storage formats compatible with the runtime loaders.
 
-All data originates from **[OpenDART](https://opendart.fss.or.kr/)** and **[DART](https://dart.fss.or.kr/)**, Korea's official electronic disclosure system. The developer has **not modified a single number** — only metadata columns (stock code, year, report type, etc.) have been added for structural organization.
+Current public releases include:
 
-If you want to verify, you can cross-check any value against the original filings using the package's built-in DART viewer links (`c.filings()`).
-
-Each Parquet file contains all filings for a single company:
-
-- **Metadata**: stock code, company name, report type, filing date, business year
-- **Quantitative**: summary financials, financial statement body, notes
-- **Narrative**: business description, audit opinion, risk management, executive/shareholder status
-
-### Data Releases
-
-| Category | Release Tags | Description | Count |
-|----------|-------------|-------------|-------|
-| Disclosure | [`data-docs`](https://github.com/eddmpython/dartlab/releases/tag/data-docs) | Parsed annual report sections | 260+ |
-| Finance | [`data-finance-1`](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) [`2`](https://github.com/eddmpython/dartlab/releases/tag/data-finance-2) [`3`](https://github.com/eddmpython/dartlab/releases/tag/data-finance-3) [`4`](https://github.com/eddmpython/dartlab/releases/tag/data-finance-4) | XBRL financial statement numbers | 2,700+ |
-| Report | [`data-report-1`](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) [`2`](https://github.com/eddmpython/dartlab/releases/tag/data-report-2) [`3`](https://github.com/eddmpython/dartlab/releases/tag/data-report-3) [`4`](https://github.com/eddmpython/dartlab/releases/tag/data-report-4) | Periodic report data | 2,700+ |
-
-Finance and Report data are split into 4 tags by stock code range (GitHub's 1000-asset-per-release limit). `loadData()` and `downloadAll()` handle this automatically.
-
-### Bring Your Own Data
-
-If you structure your own Parquet files to match DartLab's schema, all existing features work out of the box. Place files as `data/{category}/{stockCode}.parquet` and every property, extraction module, and analysis tool will function normally.
-
-### Disclaimer
-
-This project is licensed under MIT. While the data faithfully mirrors OpenDART public disclosures, **no guarantee of commercial reliability is provided**. Always verify against official sources for investment or compliance decisions.
-
-> **Update frequency**
->
-> Data is collected directly without paid proxies, so updates may be slow. Adding new companies or reflecting the latest filings may take time.
-
----
-
-## Why DartLab?
-
-DART filings contain far more than financial numbers — business descriptions, risk factors, audit opinions, litigation status, and governance changes are all embedded in the text. Most tools only extract the numbers. The rest is discarded.
-
-DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a single time axis, and automatically tracks accounts even when K-IFRS revisions or restructuring changes their names.
-
-> **Current scope**
->
-> Bridge Matching tracks account name changes **within a single company** across years. The finance engine enables **cross-company comparison** by mapping XBRL accounts to standardized snakeIds. 2,700+ listed companies are normalized to the same structure.
->
-> The insight engine grades each company across 7 areas (performance, profitability, financial health, cash flow, governance, risk), detects anomalies, and the rank engine computes market-wide size rankings.
->
-> Text analysis capabilities are being developed in a **separate project** and will be integrated into DartLab.
->
-> The ultimate goal is a tool that can analyze the **entire market** at once, not just one company.
-
-## Roadmap
-
-- [x] Summary financial time series (Bridge Matching)
-- [x] Consolidated BS, IS, CF
-- [x] Segment revenue, associates, dividends, employees, shareholders, subsidiaries
-- [x] Debt securities, expenses by nature, raw materials/capex
-- [x] Audit opinion, executive status, executive compensation
-- [x] PPE movement, note details (23 keywords)
-- [x] Board of directors, capital changes, contingent liabilities, related party tx, sanctions, R&D, internal control
-- [x] Affiliate groups, capital raises, sales/orders, products, risk management/derivatives
-- [x] MD&A, business description, company overview
-- [x] Company property API + Notes integration
-- [x] Rich terminal output (avatar + usage guide)
-- [x] Account standardization engine — 2,700+ companies cross-comparable
-- [x] Quarterly time series + financial ratios (c.timeseries, c.ratios)
-- [x] Periodic report data engine (dividend, employees, major holders, audit, executives)
-- [x] Sector classification (WICS 11 sectors — KSIC + keyword + override)
-- [x] Insight grading engine (7 areas: performance, profitability, health, cashflow, governance, risk + overall)
-- [x] Anomaly detection (Z-score + domain rules across 30+ financial metrics)
-- [x] Market-wide size ranking (revenue, assets, growth — total + within-sector)
-- [x] AI analysis web interface (dartlab ai) — Ollama local LLM
-- [x] Cloud LLM providers (OpenAI, Anthropic, ChatGPT OAuth, Codex CLI, Claude Code)
-- [x] Data Explorer — full-screen data browser with Korean/English label toggle
-- [x] Excel export with templates
-- [ ] Company `profile` report view (terminal/notebook document view focused on change points)
-- [x] EDGAR Company UX alignment with the DART `Company` surface
-- [x] EDGAR (US SEC) financial data integration
-- [ ] Text analysis module integration (from separate project)
-- [ ] Quantitative + qualitative cross-validation
-- [ ] Visualization
-
-## Architecture
-
-```
-src/dartlab/
-├── company.py              # Company facade — auto-routes DART / EDGAR
-├── core/                   # Data loading, report selection, table parsing
-│   ├── dataLoader.py       # GitHub Releases ↔ local cache
-│   ├── dataConfig.py       # Release tags, shard mapping
-│   └── registry.py         # DataEntry — single source of truth for all modules
-│
-├── engines/
-│   ├── dart/               # L1: DART data source (Korea)
-│   │   ├── docs/           # Filing document parsing
-│   │   │   ├── finance/    # 36 quantitative modules (BS, IS, CF, dividend, ...)
-│   │   │   ├── disclosure/ # 4 narrative modules (business, MD&A, overview, ...)
-│   │   │   └── notes.py    # K-IFRS notes wrapper (12 items)
-│   │   ├── finance/        # XBRL normalization — 34K synonyms → unified snakeId
-│   │   └── report/         # Periodic report API (dividend, employee, audit, ...)
-│   │
-│   ├── edgar/              # L1: EDGAR data source (US)
-│   │   ├── docs/           # 10-K/10-Q section parsing + horizontal alignment
-│   │   └── finance/        # SEC XBRL normalization → unified snakeId
-│   │
-│   ├── common/             # Shared utilities (extract, ratios)
-│   ├── sector/             # L2: WICS 11-sector classification
-│   ├── insight/            # L2: 7-area grading (A~F) + anomaly detection
-│   ├── rank/               # L2: Market-wide size ranking
-│   │
-│   └── ai/                 # L3: LLM-powered analysis
-│       ├── providers/      # ChatGPT, Ollama, OpenAI, Anthropic, Codex, Claude Code
-│       ├── context.py      # Engine data → LLM context assembly
-│       └── prompts.py      # System prompts (KR/EN)
-│
-├── server/                 # FastAPI backend for web UI
-└── ui/                     # Svelte 5 SPA (Data Explorer, chat)
-```
-
-**Layer principles**: L1 defines the data (labels, ordering, units). L2 and L3 consume L1 without modification. Changes to data quality always start at L1.
+- DART docs
+- DART finance
+- DART report
+- EDGAR docs
+- EDGAR finance
 
 ## Contributing
 
-Issues and pull requests are welcome. Before submitting:
-
-- Test new features in `experiments/` first — verify the approach before modifying `src/`
-- For data mapping improvements (e.g., `accountMappings.json`), include experiment results showing the before/after impact
-
-### Development Setup
-
-```bash
-git clone https://github.com/eddmpython/dartlab.git
-cd dartlab
-uv sync --group dev
-pre-commit install
-pre-commit install --hook-type commit-msg
-uv run pytest tests/ -v -m "not requires_data"
-```
-
-Questions or ideas? Open an [issue](https://github.com/eddmpython/dartlab/issues). Both Korean and English are fine.
-
-## Sponsor
-
-<a href="https://buymeacoffee.com/eddmpython">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="180"/>
-</a>
+The project prefers experiments before engine changes. If you want to propose a parser or mapping change, validate it first and then bring the result back into the engine.
 
 ## License
 
-MIT License
+MIT

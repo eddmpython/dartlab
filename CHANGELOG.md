@@ -5,15 +5,27 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+**공개 문서와 랜딩 메시지 재정렬**
+- README / README_KR를 `sections` 중심 회사 맵 서사로 재작성
+- docs 메인 흐름을 `Company -> sections -> show -> trace` 기준으로 통일
+- `index`, `ShowResult`, `40개 모듈`, `Compare` 중심 공개 문구를 메인 문서와 랜딩에서 제거
+- 랜딩 카피를 parser 카탈로그 중심에서 sections-first company map 중심으로 재구성
+- 튜토리얼 `quickstart`, `edgar`를 현행 공개 contract에 맞게 재정리
+- docs 상태 문서를 현행 공개 문서 구조 기준으로 갱신
+
 ## [0.5.0] - 2026-03-15
 
 ### Added
 
 **EDGAR Company DART급 완성**
-- EDGAR Company가 DART Company와 동일한 `index / show / trace` 8컬럼 구조 달성
+- EDGAR Company가 DART Company와 동일한 `sections / show / trace` 메인 흐름에 합류
 - EDGAR sections 매퍼 100% (182개 매핑, 442,025행), 974종목 에러 0 전수조사 통과
 - EDGAR profile namespace 구현 — docs + finance merged view
-- EDGAR sections blockType 분리 (text/table), ShowResult(text, table) 반환
+- EDGAR sections blockType 분리 (text/table)
 - 10-K/10-Q 의미적 대응 6쌍 매핑 (riskFactors, mdna, financialStatements, controls, legalProceedings, exhibits)
 
 **OpenDART API 직접 클라이언트**
@@ -21,15 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **sections / show() 품질 강화**
 - `sections` blockType 분리: text/table 별도 행, blockOrder로 원본 순서 보존
-- `show()` → `ShowResult(text, table)` NamedTuple 반환 — 텍스트/테이블 분리 접근
 - `c.table()` — subtopic wide 셀의 markdown table 구조화 파싱
 - table-heavy docs topic 자동 subtopic wide 수평화 + topic 한글화
 
 **문서 대규모 개선**
-- README/README_KR: Features를 index/show/trace 중심으로 재구성, EDGAR 통합 강조
+- README/README_KR: 공개 흐름을 `sections/show/trace` 기준으로 재구성, EDGAR 통합 강조
 - docs/tutorials/edgar: EDGAR 통합 가이드 신규 추가 (7개 섹션 + DART 비교표)
 - docs/stability: EDGAR → Tier 2 (Beta) 승격
-- docs/quickstart, api/overview: EDGAR 예시 + ShowResult 설명 추가
+- docs/quickstart, api/overview: EDGAR 예시 추가
 - notebooks/tutorials/09_edgar.ipynb: EDGAR Colab 노트북 신규
 - navigation.ts: EDGAR 튜토리얼 항목 추가
 

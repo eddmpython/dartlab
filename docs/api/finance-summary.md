@@ -4,11 +4,11 @@ title: finance.summary
 
 # finance.summary
 
-요약재무정보를 시계열로 추출한다. **Bridge Matching**으로 계정명 변경을 자동 추적해서 시계열 연속성을 보장한다.
+요약재무정보를 시계열로 추출한다. `Company`의 기본 공개 흐름은 `sections -> show -> trace`지만, 재무 시계열을 더 깊게 보고 싶을 때는 `finance.summary` 계층으로 내려간다. **Bridge Matching**으로 계정명 변경을 자동 추적해서 시계열 연속성을 보장한다.
 
 ## 사용법
 
-### property 접근 (간편)
+### Company shortcut
 
 ```python
 c = dartlab.Company("005930")
@@ -17,7 +17,7 @@ c.BS   # 재무상태표 DataFrame
 c.IS   # 손익계산서 DataFrame
 ```
 
-> 대부분의 경우 이것으로 충분하다. 아래는 Bridge Matching 분석 결과를 확인하거나 분기별 데이터가 필요할 때 사용한다.
+> 공개 기본 흐름은 `c.show("BS")`지만, Bridge Matching 분석 결과나 분기/반기 단위 요약재무가 필요하면 여기로 내려온다.
 
 ### fsSummary() 메서드 (상세)
 
@@ -158,7 +158,7 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-# property로 바로 DataFrame
+# Company shortcut
 print(c.BS)   # 재무상태표
 print(c.IS)   # 손익계산서
 ```

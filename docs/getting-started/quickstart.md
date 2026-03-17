@@ -1,4 +1,4 @@
-﻿---
+---
 title: 빠른 시작
 ---
 
@@ -6,12 +6,12 @@ title: 빠른 시작
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)
 
-DartLab의 현재 시작 흐름은 간단하다.
+DartLab의 현재 시작 흐름은 `sections -> show -> trace`다.
 
-1. `dartlab.Company("005930")` 로 회사를 만든다.
-2. `c.index` 로 어떤 데이터가 있는지 본다.
-3. `c.show("topic")` 으로 실제 내용을 연다.
-4. `c.trace("topic")` 으로 source를 확인한다.
+1. `Company`를 만든다
+2. `sections`로 회사 맵을 본다
+3. `show("topic")`으로 topic을 연다
+4. `trace("topic")`으로 source를 확인한다
 
 ## 설치
 
@@ -19,150 +19,103 @@ DartLab의 현재 시작 흐름은 간단하다.
 uv add dartlab
 ```
 
-> Python이 없어도 괜찮다. uv가 자동으로 설치하고 가상환경까지 만든다.
+AI 인터페이스까지 쓰려면:
+
+```bash
+uv add "dartlab[ai]"
+uv run dartlab ai
+```
 
 ## Company 생성
 
 ```python
 import dartlab
 
+# 한국: DART
 c = dartlab.Company("005930")
-c.corpName
-c.stockCode
+c = dartlab.Company("삼성전자")
+
+# 미국: EDGAR
+us = dartlab.Company("AAPL")
 ```
 
-회사명으로도 만들 수 있다.
+## 먼저 `sections`를 본다
 
 ```python
-c = dartlab.Company("카카오")
+c.sections
+us.sections
 ```
 
-미국 종목도 같은 facade로 생성한다. 티커 형식에 따라 DART/EDGAR가 자동 결정된다.
+`sections`는 회사의 canonical board다. 컬럼은 기간이고, row는 회사 문서에서 정렬된 topic 구조다.
 
-```python
-c = dartlab.Company("AAPL")   # US stock — auto-detected
-c.corpName  # "Apple Inc."
-c.ticker    # "AAPL"
-```
+중요한 구분:
 
-## 먼저 index를 본다
-
-```python
-c.index
-```
-
-`index`는 회사 전체 구조를 먼저 보여주는 DataFrame이다.
-
-- 어떤 topic이 있는지
-- 어떤 source를 쓰는지
-- 시계열 범위가 어느 정도인지
-- payload가 어떤 형태인지
-
-를 한눈에 본다.
+- `c.sections`: 공개 company board
+- `c.docs.sections`: pure docs source
 
 ## topic을 연다
 
 ```python
 c.show("BS")
-c.show("audit")
 c.show("companyOverview")
+c.show("audit")
+
+us.show("BS")
+us.show("10-K::item1Business")
 ```
 
-- 재무제표와 정형 공시는 DataFrame으로 바로 본다.
-- 텍스트 topic은 `ShowResult(text, table)` 로 반환된다 — 텍스트와 테이블이 분리되어 있다.
-- 원본에 가까운 형태가 필요하면 `raw=True`를 사용한다.
-
-```python
-result = c.show("companyOverview")
-result.text    # 서술문 DataFrame
-result.table   # 테이블 DataFrame
-```
-
-```python
-c.show("companyOverview", raw=True)
-```
+`show(topic)`은 topic 하나를 실제 payload로 연다. 숫자 topic이면 `finance`가, 정형 공시 topic이면 `report`가, 서술/섹션 topic이면 `docs`가 기본 source가 된다.
 
 ## source를 추적한다
 
 ```python
 c.trace("BS")
-c.trace("dividend")
 c.trace("companyOverview")
+c.trace("audit")
 ```
 
-이 단계에서:
+`trace(topic)`은 그 topic이 왜 그 source에서 왔는지 설명한다.
 
-- `BS`는 대체로 `finance`
-- `dividend`는 대체로 `report`
-- `companyOverview`는 대체로 `docs`
+확인하고 싶은 것은 보통 다음 세 가지다.
 
-가 선택된다는 것을 확인할 수 있다.
-
-## docs가 없는 회사
-
-사업보고서 docs가 아직 없는 회사도 있을 수 있다.
-
-```python
-c.index
-c.show("docsStatus")
-```
-
-이 경우 `index`에는 `docsStatus` row가 추가되고, `show("docsStatus")` 는 `현재 사업보고서 부재` 안내를 반환한다.
-
-## 재무제표 shortcut
-
-기존 shortcut property도 그대로 쓸 수 있다.
-
-```python
-c.BS
-c.IS
-c.CIS
-c.CF
-c.SCE
-```
+- 어떤 source가 선택됐는가
+- 어떤 period가 실제로 채워졌는가
+- raw docs / finance / report 중 무엇이 증거인가
 
 ## source namespace
 
-원천 데이터 계층으로 직접 내려가고 싶다면 namespace를 쓴다.
+필요하면 source를 직접 내려가서 볼 수 있다.
 
 ```python
-# DART Company (KR)
-c.docs.sections      # 사업보고서 수평화
-c.finance.BS         # XBRL 재무제표
-c.report.dividend    # 정기보고서 정형 공시
+# DART
+c.docs.sections
+c.docs.retrievalBlocks
+c.docs.contextSlices
+c.finance.BS
+c.report.audit
+
+# EDGAR
+us.docs.sections
+us.finance.BS
 ```
 
-EDGAR Company도 같은 namespace 구조를 따른다.
+하지만 기본 경로는 여전히 `sections -> show -> trace`다.
+
+## OpenAPI
+
+공개 API를 직접 다루고 싶다면 source-native wrapper를 쓴다.
 
 ```python
-# EDGAR Company (US)
-us = dartlab.Company("AAPL")
-us.docs.sections     # 10-K/10-Q sections
-us.finance.BS        # SEC XBRL financials
+from dartlab import OpenDart, OpenEdgar
+
+d = OpenDart()
+e = OpenEdgar()
+
+e.filings("AAPL", forms=["10-K"])
+e.companyFactsJson("AAPL")
 ```
-
-## CLI
-
-CLI도 같은 흐름이다.
-
-```bash
-uv run dartlab profile 005930
-uv run dartlab profile 005930 --show BS
-uv run dartlab profile 005930 --trace dividend
-```
-
-## 앞으로의 profile
-
-`profile`은 지금 공개 메인 기능이 아니다. 앞으로는 다음 목표로 확장된다.
-
-- terminal/notebook에서 문서처럼 읽는 company report
-- 변하지 않는 텍스트 반복보다 변화 지점을 먼저 보여주는 뷰
-- `index/show/trace` 위에 올라가는 상위 렌더 레이어
 
 ## 다음 단계
 
-- [설치](./installation)
-- [API Overview](../api/overview)
-- [튜토리얼](../tutorials/index.md)
-
-
+- [API 개요](../api/overview)
+- [안정성 안내](../stability)

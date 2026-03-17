@@ -6,7 +6,7 @@ title: "5. Report Data"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/05_report_data.ipynb)
 
-정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다. 모든 데이터는 property 한 줄로 접근한다.
+정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다. 공개 기본 흐름은 `c.show(...)`지만, 여기서는 `report` 계층으로 직접 내려가 세부 payload를 확인한다.
 
 - 배당 시계열 (DPS, 배당수익률, 배당성향)
 - 직원 현황 (인원, 평균연봉, 근속연수)
@@ -287,7 +287,7 @@ for inv in result.investments[:5]:
 
 ## 여러 종목 비교
 
-property 접근으로 간결하게 비교 분석할 수 있다.
+같은 report payload를 여러 회사에서 반복 호출해 비교할 수 있다.
 
 ```python
 import polars as pl

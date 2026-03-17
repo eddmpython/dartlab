@@ -1,64 +1,61 @@
-﻿---
+---
 title: DartLab
 ---
 
 # DartLab
 
-DART 전자공시 문서에서 재무제표, 주석, 정기보고서, 텍스트를 파싱하고 시계열로 정렬하는 Python 라이브러리.
+DartLab은 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
 
-종목코드 하나면 된다. 40개 분석 모듈이 공시 원문에서 구조화된 데이터를 추출한다. yfinance처럼 property 한 줄로 DataFrame을 바로 받는다.
-
-한국 상장사 2,700+개는 같은 경제적 개념에 대해 회사마다 다른 XBRL 계정ID와 계정명을 사용한다. DartLab은 7단계 매핑 파이프라인과 34,000+개의 학습된 동의어를 통해 자체 통합 계정 체계를 구축했다. 전체 1,585만 행 중 **98.7%**가 표준 계정으로 매핑되어, 어떤 두 기업이든 동일한 키로 직접 비교할 수 있다.
+지금 DartLab의 중심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 먼저 기간축으로 수평화하고, 그 위에 `finance`와 `report` 같은 더 강한 source를 얹는다.
 
 ```python
 import dartlab
 
 c = dartlab.Company("005930")
 
-c.index             # company structure index
-c.show("BS")        # topic payload
-c.trace("dividend") # source trace
-c.BS                # 재무상태표 DataFrame
-c.CIS               # 포괄손익계산서 DataFrame
-c.SCE               # 자본변동표
-c.dividend          # 배당 시계열 DataFrame
+c.sections
+c.show("companyOverview")
+c.trace("BS")
 ```
 
-## 무엇을 할 수 있나
+## 지금 공개 서사
 
-| 분류 | property | 설명 |
-|------|----------|------|
-| Company 탐색 | `c.index`, `c.show("...")`, `c.trace("...")` | 회사 구조를 먼저 보고, 필요한 topic을 열고, source를 추적 |
-| 재무제표 | `c.BS`, `c.IS`, `c.CIS`, `c.CF`, `c.SCE` | 재무상태표, 손익계산서, 포괄손익계산서, 현금흐름표, 자본변동표 |
-| K-IFRS 주석 | `c.notes.inventory`, `c.notes.borrowings` 등 12개 | 재고자산, 차입금, 리스, 충당부채 등 |
-| 정기보고서 | `c.dividend`, `c.employee`, `c.majorHolder` 등 26개 | 배당, 직원, 최대주주, 감사, 임원 등 |
-| 공시 텍스트 | `c.docs.sections`, `c.retrievalBlocks`, `c.contextSlices` | 수평화 source, 원문 markdown block, LLM slice |
+- `Company` 하나로 시작한다
+- `sections`가 회사의 canonical board다
+- `show(topic)`으로 필요한 topic을 연다
+- `trace(topic)`으로 선택된 source와 provenance를 확인한다
 
-전체 모듈 40개. 데이터가 로컬에 없으면 GitHub Releases에서 자동 다운로드한다.
+즉 예전처럼 parser 목록을 먼저 외우는 흐름이 아니다. 회사 전체를 하나의 맵으로 보고, 필요한 topic으로 내려가는 흐름이다.
 
-## 핵심 기능
+## 왜 `sections`가 중요한가
 
-- **property 접근**: `c.dividend`로 바로 DataFrame. 2단계 접근 불필요
-- **index/show/trace**: 회사 구조 확인 → topic 열기 → source 검증
-- **Notes 통합**: `c.notes.inventory`로 K-IFRS 주석 12개 항목 통합 접근
-- **일괄 조회**: `c.all()`로 전체 데이터를 한 번에 dict로
-- **Bridge Matching**: 계정명 변경을 자동 추적해서 시계열 연속성 보장
-- **계정 표준화**: 2,700+ 상장사 XBRL 계정을 통합 체계로 매핑 (98.7%, 1,585만 행)
-- **기업 간 비교**: 동일 snakeId로 정규화된 분기별 시계열
-- **인사이트 등급**: 7영역(실적·수익성·건전성·현금흐름·지배구조·리스크) A~F 등급
-- **시장 순위**: 매출·자산·성장률 기준 전체 + 섹터 내 순위
-- **lazy + cache**: 처음 접근할 때만 파싱하고 이후 캐싱
-- **profile roadmap**: 향후 terminal/notebook 문서형 회사 보고서 뷰 예정
+공시는 원래 세로 문서다. 회사의 개요, 사업의 내용, 재무에 관한 사항, 리스크, 지배구조가 시간에 따라 이어진다.
 
-## 다음 단계
+DartLab은 이 세로 문서를 그대로 소비하지 않고 다음처럼 바꾼다.
 
-- [설치](getting-started/installation.md)
-- [빠른 시작](getting-started/quickstart.md)
-- [API Reference](api/overview.md)
-- [계정 표준화와 시계열](api/timeseries.md)
-- [섹터 분류](api/sector.md)
-- [인사이트 등급](api/insight.md)
-- [시장 순위](api/rank.md)
-- [튜토리얼](tutorials/index.md)
+1. 섹션 경계를 먼저 잡는다
+2. 같은 구조 단위를 연도/분기별로 옆으로 맞춘다
+3. 그 위에서 `finance`, `report`, `docs`를 source-aware하게 소비한다
 
+이 구조 덕분에:
 
+- 회사 전체 구조를 한 번에 볼 수 있고
+- 같은 topic을 여러 기간에 걸쳐 비교할 수 있고
+- AI GUI도 같은 맵을 그대로 소비할 수 있다
+
+## Company 구조
+
+- `c.sections`: 공개 company board
+- `c.docs.sections`: pure docs horizontalization source
+- `c.finance`: authoritative numeric layer
+- `c.report`: authoritative structured disclosure layer
+- `c.profile`: docs spine 위에 merge된 최종 company layer
+
+현재 공개 사용 흐름은 `sections -> show -> trace`다.
+
+## 바로 시작
+
+- [빠른 시작](getting-started/quickstart)
+- [API 개요](api/overview)
+- [안정성 안내](stability)
+- [변경 이력](changelog)

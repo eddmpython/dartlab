@@ -1,8 +1,8 @@
 export const brand = {
 	name: 'DartLab',
-	tagline: 'Read Beyond the Numbers',
-	description: 'A Python library for comprehensive DART disclosure analysis',
-	descriptionKo: 'DART 전자공시 데이터를 구조화하는 오픈소스 Python 라이브러리',
+	tagline: 'One company map from disclosure sections',
+	description: 'A sections-first Python library for company mapping from DART disclosures',
+	descriptionKo: '공시 섹션을 하나의 회사 맵으로 수평화하는 오픈소스 Python 라이브러리',
 	version: '0.5.0',
 	url: 'https://eddmpython.github.io/dartlab/',
 	repo: 'https://github.com/eddmpython/dartlab',

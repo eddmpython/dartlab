@@ -26,8 +26,8 @@
 						/>
 					</picture>
 				</div>
-				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-4">Start Analyzing DART Disclosures</h2>
-				<p class="text-dl-text-muted mb-8">Read the story beyond the numbers.</p>
+				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-4">Start from the Company Map</h2>
+				<p class="text-dl-text-muted mb-8">Use the same `sections -> show -> trace` structure in Python today and in the upcoming AI GUI next.</p>
 
 				<div class="flex flex-wrap items-center justify-center gap-4">
 					<Button href="#install">Install</Button>

@@ -21,9 +21,9 @@
 		{
 			icon: LineChart,
 			step: '03',
-			title: 'Inspect Structure',
-			desc: 'Check the index first, then open a topic and trace its source.',
-			code: 'c.index  # then c.show("BS")',
+			title: 'Read the Map',
+			desc: 'Start from sections, then open a topic and trace the source that won.',
+			code: 'c.sections  # then c.show("BS")',
 			color: 'text-dl-success bg-dl-success/10 border-dl-success/20'
 		}
 	];
@@ -33,8 +33,8 @@
 	<div class="max-w-5xl mx-auto">
 		<div class="text-center mb-16">
 			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">How it works</span>
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">Analysis in 3 Steps</h2>
-			<p class="text-dl-text-muted text-lg">No complex setup — just one stock code to start</p>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">From Stock Code to Company Map</h2>
+			<p class="text-dl-text-muted text-lg">No parser inventory first. Start from the company board.</p>
 		</div>
 
 		<div class="grid md:grid-cols-3 gap-6">

@@ -28,20 +28,20 @@
 
 		<Badge variant="success" class="mb-8">
 			<span class="w-1.5 h-1.5 rounded-full bg-dl-success animate-pulse"></span>
-			v{brand.version} — 40 Analysis Modules
+			v{brand.version} — Sections-First Company Map
 		</Badge>
 
 		<h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-			<span class="text-dl-text">Read Beyond</span><br />
+			<span class="text-dl-text">One Company Map</span><br />
 			<span
 				class="bg-gradient-to-r from-dl-primary via-dl-primary-light to-dl-primary bg-clip-text text-transparent"
-				>the Numbers</span
+				>from Disclosure Sections</span
 			>
 		</h1>
 
 		<p class="text-lg md:text-xl text-dl-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-			A Python library for comprehensive DART disclosure analysis.<br />
-			<span class="text-dl-text font-medium">Numbers are the result, text is the cause.</span> DartLab reads both.
+			DartLab strips away parser sprawl and turns filings into one horizontal company map.<br />
+			<span class="text-dl-text font-medium">sections -> show -> trace</span> is the public contract that Python and the upcoming AI GUI share.
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">
@@ -56,10 +56,10 @@
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
 			{#each [
-				{ value: '40', unit: '', label: 'Parsing Modules' },
-				{ value: '2,700', unit: '+', label: 'Listed Companies' },
-				{ value: '98.7', unit: '%', label: 'Account Match Rate' },
-				{ value: 'MIT', unit: '', label: 'License' }
+				{ value: 'sections', unit: '', label: 'canonical spine' },
+				{ value: 'show', unit: '', label: 'open one topic' },
+				{ value: 'trace', unit: '', label: 'source provenance' },
+				{ value: 'AI GUI', unit: '', label: 'same map, new interface' }
 			] as stat}
 				<div
 					class="px-4 py-3 rounded-lg bg-dl-bg-card/50 border border-dl-border/50 hover:border-dl-primary/20 transition-colors"

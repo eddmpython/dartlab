@@ -6,7 +6,7 @@ title: "7. Advanced Analysis"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/07_advanced.ipynb)
 
-K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석, 거버넌스 분석 등 심화 모듈을 다룬다.
+K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석, 거버넌스 분석 등 심화 source namespace를 다룬다. 공개 기본 흐름은 `sections -> show -> trace`지만, 이 문서는 그 아래의 deep access를 설명한다.
 
 - Notes 통합 접근 (12개 항목)
 - 미등록 키워드 직접 조회 (23개)
@@ -15,7 +15,7 @@ K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석,
 - 이사회와 감사제도
 - 거버넌스·리스크 분석
 - 여러 종목 비교 분석
-- Result 객체와 전체 일괄 조회
+- Result 객체와 deep access 패턴
 
 ---
 
@@ -58,12 +58,12 @@ c.notes["차입금"]           # c.notes.borrowings와 동일
 c.notes["유형자산"]         # c.notes.tangibleAsset과 동일
 ```
 
-### 전체 조회
+### 전체 키 확인
 
 ```python
 c.notes.keys()       # ['receivables', 'inventory', 'tangibleAsset', ...]
 c.notes.keys_kr()    # ['매출채권', '재고자산', '유형자산', ...]
-c.notes.all()        # 모든 항목을 dict로 반환
+c.notes.keys()       # 사용 가능한 notes 키
 ```
 
 ---
@@ -231,7 +231,7 @@ print(result.lawsuitDf)      # 소송 현황
 
 ## 여러 종목 비교
 
-property 접근으로 간결하게 비교 분석할 수 있다.
+같은 deep access payload를 여러 회사에서 반복 호출해 비교할 수 있다.
 
 ### 재무 비교
 
@@ -295,27 +295,10 @@ result.feeDf       # 감사보수
 
 ---
 
-## 전체 일괄 조회
-
-```python
-d = c.all()
-
-# 재무제표
-d["BS"], d["IS"], d["CF"]
-
-# 정기보고서
-d["dividend"], d["employee"], d["majorHolder"]
-
-# K-IFRS 주석
-d["notes"]["inventory"], d["notes"]["borrowings"]
-```
-
----
-
 ## 다음 단계
 
 - [8. 기업 간 비교](./cross-company) — 섹터 분류, 인사이트 등급, 시장 순위
-- [API Overview](../api/overview) — property 전체 목록과 파라미터 상세
+- [API Overview](../api/overview) — 공개 surface와 source namespace
 - [계정 표준화와 시계열](../api/timeseries) — 7단계 매핑, snakeId, 정규화 방식
 
 

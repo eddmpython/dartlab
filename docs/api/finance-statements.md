@@ -4,11 +4,11 @@ title: finance.statements
 
 # finance.statements
 
-연결재무제표를 재무상태표(BS), 손익계산서(IS), 현금흐름표(CF)로 분리해서 시계열로 추출한다. 요약재무정보보다 **상세한 항목**(50~200개)을 원문 그대로 제공한다.
+연결재무제표를 재무상태표(BS), 손익계산서(IS), 현금흐름표(CF)로 분리해서 시계열로 추출한다. `Company`의 기본 공개 흐름은 `sections -> show -> trace`지만, 상세 재무 계정을 직접 다루려면 `finance.statements` 계층으로 내려간다. 요약재무정보보다 **상세한 항목**(50~200개)을 원문 그대로 제공한다.
 
 ## 사용법
 
-### property 접근 (간편)
+### Company shortcut
 
 ```python
 c = dartlab.Company("005930")
@@ -18,7 +18,7 @@ c.IS   # 손익계산서
 c.CF   # 현금흐름표
 ```
 
-### get()으로 전체 접근
+### `get()`으로 전체 접근
 
 ```python
 result = c.get("statements")
@@ -72,7 +72,7 @@ result = c.get("statements", period="h")   # 반기별
 | **시계열 연속성** | 우수 (자동 추적) | 원문 의존 |
 | **용도** | 장기 트렌드 분석 | 상세 항목 확인 |
 
-> **일반 규칙**: 시계열 분석이 목적이면 `c.BS`, `c.IS` (statements 기반 property) 또는 `c.fsSummary()` (Bridge Matching 적용). 상세 항목 분해가 목적이면 `c.get("statements")`.
+> **일반 규칙**: 공개 board에서는 `c.show("BS")`로 시작한다. 더 상세한 계정 분해가 목적이면 `c.BS`, `c.CF`, `c.get("statements")`, `c.fsSummary()` 같은 finance 계층으로 내려간다.
 
 ---
 

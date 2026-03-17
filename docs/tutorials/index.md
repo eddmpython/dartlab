@@ -4,13 +4,13 @@ title: Tutorials
 
 # Tutorials
 
-DartLab의 핵심 기능을 단계별로 익힌다. 각 튜토리얼은 Google Colab에서 설치 없이 바로 실행할 수 있다.
+DartLab의 핵심 기능을 단계별로 익힌다. 현재 튜토리얼의 중심 흐름은 `Company -> sections -> show -> trace`다. 각 튜토리얼은 Google Colab에서 설치 없이 바로 실행할 수 있다.
 
 ## Interactive Notebooks
 
 | # | 튜토리얼 | 내용 | |
 |---|-----------|------|-|
-| 01 | Quickstart | Company 생성, property 접근, 재무제표, 전체 조회 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/01_quickstart.ipynb) |
+| 01 | Quickstart | Company 생성, sections, show, trace | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/01_quickstart.ipynb) |
 | 02 | Financial Statements | 재무상태표, 손익계산서, 현금흐름표 상세 조회 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) |
 | 03 | Timeseries | 계정 표준화, 분기별 독립 시계열, TTM | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/03_timeseries.ipynb) |
 | 04 | Ratios | 재무비율 — ROE, 부채비율, FCF, 기업 비교 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) |

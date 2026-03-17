@@ -16,7 +16,7 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 | API | 설명 |
 |-----|------|
 | `dartlab.Company(code)` | 종목 객체 생성 facade |
-| `Company.index` | 회사 구조 인덱스 |
+| `Company.sections` | 공개 company board |
 | `Company.show()` | topic payload 조회 |
 | `Company.trace()` | source provenance 조회 |
 | `Company.docs` | docs source namespace |
@@ -24,7 +24,6 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 | `Company.report` | 정형 공시 namespace (28개 API 체계) |
 | `dartlab.search()` | 종목 검색 |
 | `dartlab.listing()` | 전체 상장법인 목록 |
-| `Company.sections` | merged sections view |
 | `Company.IS/BS/CF` | authoritative statement shortcut |
 | `dartlab` CLI entrypoint | 설치 후 실행되는 공개 명령 진입점 |
 
@@ -42,7 +41,6 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 | `Company.docs.retrievalBlocks` | 원문 block retrieval |
 | `Company.docs.contextSlices` | LLM/context slice view |
 | `Company.ask()` | LLM 기반 분석 |
-| `Compare` | 복수 종목 비교 facade |
 | `dartlab` subcommands/options | `ask`, `status`, `setup`, `ai`, `excel`, `profile` 명령 UX |
 | Server API `/api/*` | 웹 서버 엔드포인트 |
 | `engines.ai.*` | AI/LLM 엔진 |
@@ -53,7 +51,6 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 
 | API | 설명 |
 |-----|------|
-| mixed-market `Compare` | KR/US 혼합 비교 |
 | `export.*` | Excel 내보내기 |
 | `engines.ai.tools.*` | LLM tool calling |
 
@@ -93,7 +90,7 @@ DART core stable 판단 기준:
 
 - **semver 준수**: major=파괴적, minor=기능추가, patch=버그수정
 - DART core stable 범위는 minor 내에서 호환성을 우선한다
-- EDGAR, mixed compare, 일부 AI 기능은 Tier 정책에 따라 더 빠르게 바뀔 수 있다
+- EDGAR과 일부 AI 기능은 Tier 정책에 따라 더 빠르게 바뀔 수 있다
 - `Company.profile` 보고서형 뷰는 아직 로드맵 단계이며, 향후 terminal/notebook 문서형 렌더로 추가될 예정이다
 
 ## CLI 호환성 규칙
@@ -102,5 +99,4 @@ DART core stable 판단 기준:
 - 공개 서브커맨드와 주요 옵션 변경은 최소 1개 minor 버전 전에 deprecated 경고를 둔다.
 - 종료 코드는 계약으로 본다: `0` 성공, `1` 런타임 오류, `2` 사용법 오류, `130` 사용자 인터럽트.
 - deprecated alias는 help에서 숨길 수 있지만, 제거 전까지 실행 가능해야 한다.
-
 

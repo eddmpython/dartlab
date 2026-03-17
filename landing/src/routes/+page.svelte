@@ -23,7 +23,7 @@
 
 <svelte:head>
 	<title>DartLab — {brand.description}</title>
-	<meta name="description" content="DartLab은 한국 DART 전자공시 데이터를 재무제표, 사업보고서, 감사의견, 주석까지 구조화하는 오픈소스 Python 라이브러리다." />
+	<meta name="description" content="DartLab은 공시 섹션을 수평화해 하나의 company map으로 만드는 오픈소스 Python 라이브러리다. sections, show, trace, AI-ready workflow를 제공한다." />
 	<meta name="keywords" content="전자공시, DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/" />
 
@@ -39,7 +39,7 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="DartLab — {brand.description}" />
-	<meta name="twitter:description" content="DART 전자공시 분석 Python 라이브러리. 재무제표, 사업보고서, 감사의견을 시계열 DataFrame으로. 2,700+ 상장기업." />
+	<meta name="twitter:description" content="공시 섹션을 하나의 회사 맵으로 수평화하는 DART 전자공시 분석 Python 라이브러리. sections, show, trace, AI-ready." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 
 	{@html `<script type="application/ld+json">${homepageJsonLd}</script>`}
