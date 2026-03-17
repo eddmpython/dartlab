@@ -131,7 +131,11 @@ def _classifyStructure(headerCells: list[str]) -> str:
 
 
 def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, str, str]], str | None]:
-    """multi_year → [(항목, 연도, 값), ...] + 단위."""
+    """multi_year → [(항목, 연도, 값), ...] + 단위.
+
+    기수 행(제XX기)이 있으면 기수→연도 변환.
+    기수 행이 없으면 헤더의 당기/전기 키워드로 직접 연도 매핑.
+    """
     sepIdx = -1
     for i, line in enumerate(sub):
         cells = [c.strip() for c in line.strip("|").split("|")]
@@ -142,7 +146,7 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
     if sepIdx < 0 or sepIdx + 1 >= len(sub):
         return [], None
 
-    # 기수 행
+    # 기수 행 탐색
     kisuCells = [c.strip() for c in sub[sepIdx + 1].strip("|").split("|")]
     kisuNums = []
     for cell in kisuCells:
@@ -150,47 +154,91 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
         if m:
             kisuNums.append(int(m.group(1)))
 
-    if not kisuNums:
-        return [], None
-
-    maxKisu = max(kisuNums)
-    sortedKisu = sorted(kisuNums, reverse=True)
-    kisuToYear = {kn: str(periodYear - maxKisu + kn) for kn in kisuNums}
-
     unit = _extractUnit(sub)
     triples: list[tuple[str, str, str]] = []
-    prevItem = ""
 
-    for line in sub[sepIdx + 2:]:
-        cells = [c.strip() for c in line.strip("|").split("|")]
-        if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
-            continue
-        if not cells or not cells[0].strip():
-            continue
+    if kisuNums:
+        # ── 기수 행 기반 파싱 (기존 로직) ──
+        maxKisu = max(kisuNums)
+        sortedKisu = sorted(kisuNums, reverse=True)
+        kisuToYear = {kn: str(periodYear - maxKisu + kn) for kn in kisuNums}
 
-        first = cells[0].strip()
-        if first.startswith("※"):
-            continue
+        prevItem = ""
+        for line in sub[sepIdx + 2:]:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+                continue
+            if not cells or not cells[0].strip():
+                continue
 
-        # 보통주/우선주 연속행
-        if first in _STOCK_TYPES and prevItem:
-            itemName = _normalizeItemName(f"{prevItem}-{first}")
-            valCells = cells[1:]
-        elif len(cells) > 1 and cells[1].strip() in _STOCK_TYPES:
-            stockType = cells[1].strip()
-            itemName = _normalizeItemName(f"{first}-{stockType}")
-            valCells = cells[2:]
-            prevItem = first
-        else:
-            itemName = _normalizeItemName(first)
-            valCells = cells[1:]
-            prevItem = first
+            first = cells[0].strip()
+            if first.startswith("※"):
+                continue
 
-        for i, kn in enumerate(sortedKisu):
-            if i < len(valCells):
-                val = valCells[i].strip()
-                if val and val != "-" and val not in _STOCK_TYPES:
-                    triples.append((itemName, kisuToYear[kn], val))
+            # 보통주/우선주 연속행
+            if first in _STOCK_TYPES and prevItem:
+                itemName = _normalizeItemName(f"{prevItem}-{first}")
+                valCells = cells[1:]
+            elif len(cells) > 1 and cells[1].strip() in _STOCK_TYPES:
+                stockType = cells[1].strip()
+                itemName = _normalizeItemName(f"{first}-{stockType}")
+                valCells = cells[2:]
+                prevItem = first
+            else:
+                itemName = _normalizeItemName(first)
+                valCells = cells[1:]
+                prevItem = first
+
+            for i, kn in enumerate(sortedKisu):
+                if i < len(valCells):
+                    val = valCells[i].strip()
+                    if val and val != "-" and val not in _STOCK_TYPES:
+                        triples.append((itemName, kisuToYear[kn], val))
+    else:
+        # ── 기수 행 없음 → 헤더 키워드로 직접 연도 매핑 ──
+        headerCells = _headerCells(sub)
+        colYears: list[tuple[int, str]] = []  # (컬럼 인덱스, 연도)
+        for ci, hc in enumerate(headerCells):
+            h = hc.strip()
+            if re.search(r"당기|당분기|당반기", h):
+                colYears.append((ci, str(periodYear)))
+            elif re.search(r"전전기|전전분기|전전반기", h):
+                colYears.append((ci, str(periodYear - 2)))
+            elif re.search(r"전기|전분기|전반기", h):
+                colYears.append((ci, str(periodYear - 1)))
+
+        if not colYears:
+            return [], unit
+
+        dataStart = sepIdx + 1  # 기수 행이 없으므로 separator 바로 다음이 데이터
+        prevItem = ""
+        for line in sub[dataStart:]:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+                continue
+            if not cells or not cells[0].strip():
+                continue
+
+            first = cells[0].strip()
+            if first.startswith("※") or first.startswith("☞"):
+                continue
+
+            # 보통주/우선주 연속행
+            if first in _STOCK_TYPES and prevItem:
+                itemName = _normalizeItemName(f"{prevItem}-{first}")
+            elif len(cells) > 1 and cells[1].strip() in _STOCK_TYPES:
+                stockType = cells[1].strip()
+                itemName = _normalizeItemName(f"{first}-{stockType}")
+                prevItem = first
+            else:
+                itemName = _normalizeItemName(first)
+                prevItem = first
+
+            for ci, year in colYears:
+                if ci < len(cells):
+                    val = cells[ci].strip()
+                    if val and val != "-" and val not in _STOCK_TYPES:
+                        triples.append((itemName, year, val))
 
     return triples, unit
 

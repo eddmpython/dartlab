@@ -2784,12 +2784,7 @@ class Company:
                     beforeLen = len(allItems)
                     _collectMultiYear(sub, pYear, p)
                     # multi_year 파싱 실패 → kv/matrix fallback
-                    # 단, 헤더 셀이 순수 기수 키워드이면 fallback 금지
-                    # (Q 기간에서 기수 파싱 실패, 구조 자체는 multi_year)
-                    # "당기말/전기말" 등 복합어는 fallback 허용
-                    _PURE_KISU = {"당기", "전기", "전전기", "당반기", "전반기"}
-                    headerHasPureKisu = any(c.strip() in _PURE_KISU for c in hc)
-                    if len(allItems) == beforeLen and len(hc) >= 2 and not headerHasPureKisu:
+                    if len(allItems) == beforeLen and len(hc) >= 2:
                         _collectKvMatrix(sub, p)
 
                 elif structType in ("key_value", "matrix"):
