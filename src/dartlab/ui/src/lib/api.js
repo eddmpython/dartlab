@@ -208,10 +208,13 @@ export async function fetchCompanyIndex(code) {
 	return res.json();
 }
 
-/** company topic payload */
-export async function fetchCompanyShow(code, topic, raw = false) {
-	const params = raw ? "?raw=true" : "";
-	const res = await fetch(`${BASE}/api/company/${code}/show/${encodeURIComponent(topic)}${params}`);
+/** company topic payload — block=null이면 블록 목차, block=N이면 실제 데이터 */
+export async function fetchCompanyShow(code, topic, block = null, raw = false) {
+	const params = new URLSearchParams();
+	if (block !== null) params.set("block", block);
+	if (raw) params.set("raw", "true");
+	const qs = params.toString() ? `?${params}` : "";
+	const res = await fetch(`${BASE}/api/company/${code}/show/${encodeURIComponent(topic)}${qs}`);
 	if (!res.ok) throw new Error("company topic 조회 실패");
 	return res.json();
 }

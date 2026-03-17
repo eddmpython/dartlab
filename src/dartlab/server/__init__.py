@@ -630,17 +630,38 @@ def api_company_index(code: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@app.get("/api/company/{code}/show/{topic}")
-def api_company_show(code: str, topic: str, raw: bool = Query(False)):
-    """Company topic payload."""
+@app.get("/api/company/{code}/sections")
+def api_company_sections(code: str):
+    """Company sections — 전체 지도."""
     try:
         c = Company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
+            "payload": _serialize_payload(c.sections),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/show/{topic}")
+def api_company_show(code: str, topic: str, block: int | None = Query(None), raw: bool = Query(False)):
+    """Company topic payload.
+
+    block=None → 블록 목차, block=N → 실제 데이터.
+    """
+    try:
+        c = Company(code)
+        if block is not None:
+            result = c.show(topic, block, period=None, raw=raw)
+        else:
+            result = c.show(topic)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
             "topic": topic,
-            "raw": raw,
-            "payload": _serialize_payload(c.show(topic, raw=raw)),
+            "block": block,
+            "payload": _serialize_payload(result),
         }
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -1,22 +1,31 @@
 <script>
-	import { fetchCompanyIndex, fetchCompanyDiff, fetchCompanyTopicDiff, fetchCompanyShow } from "$lib/api.js";
-	import { ChevronRight, ChevronDown, FileText, Table2, GitCompare, Loader2 } from "lucide-svelte";
+	import { fetchCompanySections, fetchCompanyShow, fetchCompanyDiff, fetchCompanyTopicDiff } from "$lib/api.js";
+	import { ChevronRight, ChevronDown, FileText, Table2, GitCompare, Loader2, Database, ClipboardList } from "lucide-svelte";
 
 	let { stockCode = null, corpName = "" } = $props();
 
-	let index = $state(null);
+	let sections = $state(null);
 	let diffSummary = $state(null);
 	let loading = $state(false);
-	let selectedTopic = $state(null);
-	let topicData = $state(null);
-	let topicDiff = $state(null);
-	let topicLoading = $state(false);
-	let viewMode = $state("latest"); // "latest" | "changes" | "diff"
+
+	// 좌측 목차
 	let expandedChapters = $state(new Set());
 
-	// diff에서 기간 선택
+	// 우측 콘텐츠
+	let selectedTopic = $state(null);
+	let blockIndex = $state(null);
+	let blockData = $state(null);
+	let selectedBlock = $state(null);
+	let contentLoading = $state(false);
+
+	// diff
 	let diffFrom = $state("");
 	let diffTo = $state("");
+	let topicDiff = $state(null);
+	let viewMode = $state("content"); // "content" | "diff"
+
+	// 기간 목록 (sections에서 추출)
+	let periods = $state([]);
 
 	$effect(() => {
 		if (stockCode) loadData();
@@ -25,12 +34,19 @@
 	async function loadData() {
 		loading = true;
 		try {
-			const [idxRes, diffRes] = await Promise.all([
-				fetchCompanyIndex(stockCode),
+			const [secRes, diffRes] = await Promise.all([
+				fetchCompanySections(stockCode),
 				fetchCompanyDiff(stockCode),
 			]);
-			index = idxRes.payload;
+			sections = secRes.payload;
 			diffSummary = diffRes.payload;
+
+			// 기간 목록 추출
+			if (sections?.columns) {
+				periods = sections.columns.filter(c =>
+					/^\d{4}(Q[1-4])?$/.test(c)
+				);
+			}
 		} catch (e) {
 			console.error("viewer load error:", e);
 		}
@@ -39,29 +55,45 @@
 
 	async function selectTopic(topic) {
 		selectedTopic = topic;
-		topicData = null;
+		blockIndex = null;
+		blockData = null;
+		selectedBlock = null;
 		topicDiff = null;
-		topicLoading = true;
+		viewMode = "content";
+		contentLoading = true;
 		try {
 			const res = await fetchCompanyShow(stockCode, topic);
-			topicData = res.payload;
+			blockIndex = res.payload;
 		} catch (e) {
-			console.error("topic load error:", e);
+			console.error("block index error:", e);
 		}
-		topicLoading = false;
+		contentLoading = false;
+	}
+
+	async function selectBlock(block) {
+		selectedBlock = block;
+		blockData = null;
+		contentLoading = true;
+		try {
+			const res = await fetchCompanyShow(stockCode, selectedTopic, block);
+			blockData = res.payload;
+		} catch (e) {
+			console.error("block data error:", e);
+		}
+		contentLoading = false;
 	}
 
 	async function loadTopicDiff() {
 		if (!diffFrom || !diffTo || !selectedTopic) return;
 		topicDiff = null;
-		topicLoading = true;
+		contentLoading = true;
 		try {
 			const res = await fetchCompanyTopicDiff(stockCode, selectedTopic, diffFrom, diffTo);
 			topicDiff = res.payload;
 		} catch (e) {
 			console.error("diff load error:", e);
 		}
-		topicLoading = false;
+		contentLoading = false;
 	}
 
 	function toggleChapter(ch) {
@@ -71,44 +103,71 @@
 		expandedChapters = next;
 	}
 
+	// sections를 chapter → topic 트리로 변환
+	function buildTocTree(rows) {
+		if (!rows) return [];
+		const chapters = [];
+		let current = null;
+		const seenTopics = new Set();
+
+		for (const row of rows) {
+			const ch = row.chapter || "";
+			if (!current || current.chapter !== ch) {
+				current = { chapter: ch, topics: [] };
+				chapters.push(current);
+			}
+			const topic = row.topic;
+			if (!seenTopics.has(topic)) {
+				seenTopics.add(topic);
+				const source = row.source || "docs";
+				current.topics.push({ topic, source });
+			}
+		}
+		return chapters;
+	}
+
 	function getChangeInfo(topic) {
 		if (!diffSummary?.rows) return null;
 		return diffSummary.rows.find(r => r.topic === topic);
 	}
 
-	// index를 chapter별로 그룹
-	function groupByChapter(rows) {
-		const groups = [];
-		let current = null;
-		for (const row of rows) {
-			const ch = row.chapter || "";
-			if (!current || current.chapter !== ch) {
-				current = { chapter: ch, topics: [] };
-				groups.push(current);
-			}
-			current.topics.push(row);
-		}
-		return groups;
+	function sourceIcon(source) {
+		if (source === "finance") return "📊";
+		if (source === "report") return "📋";
+		return "";
+	}
+
+	function blockTypeLabel(type) {
+		if (type === "text") return "텍스트";
+		if (type === "table") return "테이블";
+		return type;
 	}
 </script>
 
 <div class="viewer">
+	<!-- 헤더 -->
 	<div class="viewer-header">
-		<h2>{corpName || stockCode}</h2>
-		<div class="view-modes">
-			<button class:active={viewMode === "latest"} onclick={() => viewMode = "latest"}>최종</button>
-			<button class:active={viewMode === "changes"} onclick={() => viewMode = "changes"}>변화 지점</button>
-			<button class:active={viewMode === "diff"} onclick={() => viewMode = "diff"}>변화 과정</button>
+		<div class="header-left">
+			<h2>{corpName || stockCode}</h2>
+			{#if periods.length}
+				<span class="period-badge">{periods[0]} ~ {periods[periods.length - 1]}</span>
+			{/if}
 		</div>
+		{#if selectedTopic}
+			<div class="view-modes">
+				<button class:active={viewMode === "content"} onclick={() => viewMode = "content"}>본문</button>
+				<button class:active={viewMode === "diff"} onclick={() => viewMode = "diff"}>변화 비교</button>
+			</div>
+		{/if}
 	</div>
 
 	{#if loading}
-		<div class="loading"><Loader2 class="spin" size={20} /> 로딩 중...</div>
-	{:else if index?.rows}
+		<div class="loading"><Loader2 class="spin" size={20} /> 공시 데이터 로딩 중...</div>
+	{:else if sections?.rows}
 		<div class="viewer-body">
-			<!-- 좌: 목차 -->
+			<!-- 좌: 목차 (DART 스타일) -->
 			<nav class="toc">
-				{#each groupByChapter(index.rows) as group}
+				{#each buildTocTree(sections.rows) as group}
 					<div class="toc-chapter">
 						<button class="toc-chapter-btn" onclick={() => toggleChapter(group.chapter)}>
 							{#if expandedChapters.has(group.chapter)}
@@ -119,14 +178,15 @@
 							<span>{group.chapter || "기타"}</span>
 						</button>
 						{#if expandedChapters.has(group.chapter)}
-							{#each group.topics as row}
-								{@const change = getChangeInfo(row.topic)}
+							{#each group.topics as item}
+								{@const change = getChangeInfo(item.topic)}
 								<button
 									class="toc-topic"
-									class:active={selectedTopic === row.topic}
-									onclick={() => selectTopic(row.topic)}
+									class:active={selectedTopic === item.topic}
+									onclick={() => selectTopic(item.topic)}
 								>
-									<span class="toc-label">{row.label || row.topic}</span>
+									<span class="toc-icon">{sourceIcon(item.source)}</span>
+									<span class="toc-label">{item.topic}</span>
 									{#if change?.changed && change.changed > 0}
 										<span class="change-badge">{change.changed}</span>
 									{/if}
@@ -140,73 +200,113 @@
 			<!-- 우: 콘텐츠 -->
 			<main class="content">
 				{#if !selectedTopic}
-					<div class="empty">좌측에서 topic을 선택하세요</div>
-				{:else if topicLoading}
+					<div class="empty">
+						<FileText size={32} strokeWidth={1} />
+						<p>좌측에서 섹션을 선택하세요</p>
+					</div>
+
+				{:else if contentLoading}
 					<div class="loading"><Loader2 class="spin" size={20} /></div>
-				{:else if viewMode === "latest"}
-					<!-- 최종 상태 -->
-					{#if topicData?.type === "table"}
-						<table class="data-table">
-							<thead>
-								<tr>
-									{#each topicData.columns as col}
-										<th>{col}</th>
-									{/each}
-								</tr>
-							</thead>
-							<tbody>
-								{#each topicData.rows as row}
-									<tr>
-										{#each topicData.columns as col}
-											<td>{row[col] ?? ""}</td>
-										{/each}
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					{:else if topicData?.type === "text"}
-						<div class="text-content">{topicData.data}</div>
-					{:else}
-						<div class="empty">데이터 없음</div>
+
+				{:else if viewMode === "content"}
+					<!-- 블록 목차 + 콘텐츠 -->
+					<div class="topic-header">
+						<h3>{selectedTopic}</h3>
+					</div>
+
+					{#if blockIndex?.rows}
+						<div class="block-list">
+							{#each blockIndex.rows as row}
+								<button
+									class="block-item"
+									class:active={selectedBlock === row.block}
+									onclick={() => selectBlock(row.block)}
+								>
+									<span class="block-num">{row.block}</span>
+									<span class="block-type" class:text={row.type === "text"} class:table={row.type === "table"}>
+										{blockTypeLabel(row.type)}
+									</span>
+									<span class="block-source">{sourceIcon(row.source)}</span>
+									<span class="block-preview">{row.preview || ""}</span>
+								</button>
+							{/each}
+						</div>
 					{/if}
 
-				{:else if viewMode === "changes"}
-					<!-- 변화 지점 -->
-					{@const change = getChangeInfo(selectedTopic)}
-					{#if change}
-						<div class="change-summary">
-							<p>전체 기간: {change.totalPeriods}개 | 변경: {change.changed}회 | 안정: {change.stable}회</p>
-							<p>변경률: {((change.changeRate || 0) * 100).toFixed(1)}%</p>
+					{#if blockData}
+						<div class="block-content">
+							{#if blockData.type === "table" && blockData.rows}
+								<div class="table-wrapper">
+									<table class="data-table">
+										<thead>
+											<tr>
+												{#each blockData.columns as col}
+													<th>{col}</th>
+												{/each}
+											</tr>
+										</thead>
+										<tbody>
+											{#each blockData.rows as row}
+												<tr>
+													{#each blockData.columns as col}
+														<td>{row[col] ?? ""}</td>
+													{/each}
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{:else if blockData.type === "text" && blockData.data}
+								<div class="text-content">{blockData.data}</div>
+							{:else if blockData.rows}
+								<!-- DataFrame 형태 -->
+								<div class="table-wrapper">
+									<table class="data-table">
+										<thead>
+											<tr>
+												{#each blockData.columns as col}
+													<th>{col}</th>
+												{/each}
+											</tr>
+										</thead>
+										<tbody>
+											{#each blockData.rows as row}
+												<tr>
+													{#each blockData.columns as col}
+														<td>{row[col] ?? ""}</td>
+													{/each}
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{:else}
+								<div class="empty">데이터 없음</div>
+							{/if}
 						</div>
-						<!-- 변경 지점 목록 -->
-						{#if diffSummary?.rows}
-							{@const entries = diffSummary.rows.filter(r => r.topic === selectedTopic)}
-							{#each entries as entry}
-								{#if entry.fromPeriod && entry.toPeriod}
-									<div class="change-entry">
-										<span class="period">{entry.fromPeriod} → {entry.toPeriod}</span>
-										<span class="status">{entry.status}</span>
-										<button class="diff-btn" onclick={() => { diffFrom = entry.fromPeriod; diffTo = entry.toPeriod; viewMode = "diff"; loadTopicDiff(); }}>
-											<GitCompare size={14} /> 비교
-										</button>
-									</div>
-								{/if}
-							{/each}
-						{/if}
-					{:else}
-						<div class="empty">변화 정보 없음</div>
 					{/if}
 
 				{:else if viewMode === "diff"}
-					<!-- 변화 과정 (줄 단위 diff) -->
+					<!-- 변화 비교 -->
+					<div class="topic-header">
+						<h3>{selectedTopic} — 변화 비교</h3>
+					</div>
+
 					<div class="diff-controls">
-						<label>
-							이전: <input bind:value={diffFrom} placeholder="2023" />
-						</label>
-						<label>
-							이후: <input bind:value={diffTo} placeholder="2024" />
-						</label>
-						<button onclick={loadTopicDiff}>비교</button>
+						<select bind:value={diffFrom}>
+							<option value="">이전 기간</option>
+							{#each periods as p}
+								<option value={p}>{p}</option>
+							{/each}
+						</select>
+						<span class="diff-arrow">→</span>
+						<select bind:value={diffTo}>
+							<option value="">이후 기간</option>
+							{#each periods as p}
+								<option value={p}>{p}</option>
+							{/each}
+						</select>
+						<button class="diff-run-btn" onclick={loadTopicDiff}>비교</button>
 					</div>
 
 					{#if topicDiff?.type === "table" && topicDiff.rows}
@@ -230,47 +330,357 @@
 </div>
 
 <style>
-	.viewer { display: flex; flex-direction: column; height: 100%; font-family: system-ui, sans-serif; }
-	.viewer-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
-	.viewer-header h2 { margin: 0; font-size: 16px; }
-	.view-modes { display: flex; gap: 4px; }
-	.view-modes button { padding: 4px 12px; border: 1px solid #d1d5db; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
-	.view-modes button.active { background: #1f2937; color: white; border-color: #1f2937; }
+	.viewer {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
+		background: #fafbfc;
+	}
 
-	.viewer-body { display: flex; flex: 1; overflow: hidden; }
+	/* 헤더 */
+	.viewer-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 14px 20px;
+		background: white;
+		border-bottom: 2px solid #1a365d;
+	}
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.viewer-header h2 {
+		margin: 0;
+		font-size: 17px;
+		font-weight: 700;
+		color: #1a365d;
+	}
+	.period-badge {
+		font-size: 11px;
+		color: #64748b;
+		background: #f1f5f9;
+		padding: 2px 8px;
+		border-radius: 4px;
+	}
+	.view-modes {
+		display: flex;
+		gap: 2px;
+		background: #f1f5f9;
+		border-radius: 6px;
+		padding: 2px;
+	}
+	.view-modes button {
+		padding: 5px 14px;
+		border: none;
+		border-radius: 4px;
+		background: transparent;
+		cursor: pointer;
+		font-size: 13px;
+		color: #64748b;
+		font-weight: 500;
+	}
+	.view-modes button.active {
+		background: white;
+		color: #1a365d;
+		box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+	}
 
-	.toc { width: 260px; overflow-y: auto; border-right: 1px solid #e5e7eb; padding: 8px 0; flex-shrink: 0; }
-	.toc-chapter-btn { display: flex; align-items: center; gap: 4px; width: 100%; padding: 6px 12px; border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; }
-	.toc-topic { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 4px 12px 4px 28px; border: none; background: none; cursor: pointer; font-size: 12px; color: #6b7280; text-align: left; }
-	.toc-topic:hover { background: #f3f4f6; }
-	.toc-topic.active { background: #eff6ff; color: #1d4ed8; font-weight: 500; }
-	.change-badge { background: #fbbf24; color: #78350f; font-size: 10px; padding: 1px 5px; border-radius: 8px; font-weight: 600; }
+	/* 본문 */
+	.viewer-body {
+		display: flex;
+		flex: 1;
+		overflow: hidden;
+	}
 
-	.content { flex: 1; overflow-y: auto; padding: 16px; }
-	.empty { color: #9ca3af; text-align: center; padding: 40px; }
-	.loading { display: flex; align-items: center; gap: 8px; justify-content: center; padding: 40px; color: #6b7280; }
+	/* 좌: 목차 */
+	.toc {
+		width: 280px;
+		overflow-y: auto;
+		background: white;
+		border-right: 1px solid #e2e8f0;
+		flex-shrink: 0;
+	}
+	.toc-chapter-btn {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		padding: 10px 14px;
+		border: none;
+		border-bottom: 1px solid #f1f5f9;
+		background: #f8fafc;
+		cursor: pointer;
+		font-size: 13px;
+		font-weight: 700;
+		color: #1e293b;
+		text-align: left;
+	}
+	.toc-chapter-btn:hover {
+		background: #f1f5f9;
+	}
+	.toc-topic {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		padding: 7px 14px 7px 32px;
+		border: none;
+		border-bottom: 1px solid #f8fafc;
+		background: none;
+		cursor: pointer;
+		font-size: 12px;
+		color: #475569;
+		text-align: left;
+	}
+	.toc-topic:hover {
+		background: #f1f5f9;
+	}
+	.toc-topic.active {
+		background: #eff6ff;
+		color: #1d4ed8;
+		font-weight: 600;
+		border-left: 3px solid #1d4ed8;
+		padding-left: 29px;
+	}
+	.toc-icon {
+		font-size: 11px;
+		width: 16px;
+		flex-shrink: 0;
+	}
+	.toc-label {
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.change-badge {
+		background: #fbbf24;
+		color: #78350f;
+		font-size: 10px;
+		padding: 1px 5px;
+		border-radius: 8px;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
 
-	.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-	.data-table th { background: #f9fafb; padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600; position: sticky; top: 0; }
-	.data-table td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; white-space: pre-wrap; }
-	.text-content { white-space: pre-wrap; font-size: 14px; line-height: 1.7; }
+	/* 우: 콘텐츠 */
+	.content {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0;
+	}
+	.topic-header {
+		padding: 16px 20px 12px;
+		border-bottom: 1px solid #e2e8f0;
+		background: white;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+	}
+	.topic-header h3 {
+		margin: 0;
+		font-size: 15px;
+		font-weight: 600;
+		color: #1e293b;
+	}
 
-	.change-summary { background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
-	.change-entry { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
-	.change-entry .period { font-weight: 500; }
-	.change-entry .status { color: #dc2626; font-size: 11px; }
-	.diff-btn { display: flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: white; cursor: pointer; font-size: 12px; }
+	/* 블록 목록 */
+	.block-list {
+		padding: 8px 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.block-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 12px;
+		border: 1px solid #e2e8f0;
+		border-radius: 6px;
+		background: white;
+		cursor: pointer;
+		font-size: 12px;
+		text-align: left;
+	}
+	.block-item:hover {
+		border-color: #93c5fd;
+		background: #f0f9ff;
+	}
+	.block-item.active {
+		border-color: #1d4ed8;
+		background: #eff6ff;
+	}
+	.block-num {
+		width: 22px;
+		height: 22px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f1f5f9;
+		border-radius: 4px;
+		font-weight: 600;
+		color: #64748b;
+		font-size: 11px;
+		flex-shrink: 0;
+	}
+	.block-type {
+		font-size: 11px;
+		padding: 1px 6px;
+		border-radius: 3px;
+		font-weight: 500;
+		flex-shrink: 0;
+	}
+	.block-type.text {
+		background: #ecfdf5;
+		color: #065f46;
+	}
+	.block-type.table {
+		background: #eff6ff;
+		color: #1e40af;
+	}
+	.block-source {
+		font-size: 11px;
+		flex-shrink: 0;
+	}
+	.block-preview {
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: #94a3b8;
+		font-size: 11px;
+	}
 
-	.diff-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
-	.diff-controls input { width: 80px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; }
-	.diff-controls button { padding: 4px 12px; border: 1px solid #1d4ed8; border-radius: 4px; background: #1d4ed8; color: white; cursor: pointer; font-size: 13px; }
+	/* 블록 콘텐츠 */
+	.block-content {
+		padding: 16px 20px;
+	}
 
-	.diff-view { font-family: monospace; font-size: 13px; line-height: 1.6; }
-	.diff-line { display: flex; padding: 1px 8px; }
-	.diff-line.added { background: #dcfce7; }
-	.diff-line.removed { background: #fee2e2; text-decoration: line-through; }
-	.diff-marker { width: 16px; flex-shrink: 0; color: #9ca3af; }
-	.diff-text { white-space: pre-wrap; }
+	.empty {
+		color: #94a3b8;
+		text-align: center;
+		padding: 60px 20px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 12px;
+	}
+	.loading {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		justify-content: center;
+		padding: 40px;
+		color: #64748b;
+	}
+
+	/* 테이블 */
+	.table-wrapper {
+		overflow-x: auto;
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+	}
+	.data-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13px;
+	}
+	.data-table th {
+		background: #f8fafc;
+		padding: 10px 12px;
+		text-align: left;
+		border-bottom: 2px solid #e2e8f0;
+		font-weight: 600;
+		color: #1e293b;
+		position: sticky;
+		top: 0;
+		white-space: nowrap;
+	}
+	.data-table td {
+		padding: 8px 12px;
+		border-bottom: 1px solid #f1f5f9;
+		white-space: pre-wrap;
+		color: #334155;
+	}
+	.data-table tr:hover td {
+		background: #f8fafc;
+	}
+
+	/* 텍스트 */
+	.text-content {
+		white-space: pre-wrap;
+		font-size: 14px;
+		line-height: 1.8;
+		color: #1e293b;
+		padding: 4px 0;
+	}
+
+	/* diff */
+	.diff-controls {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		padding: 12px 20px;
+		background: #f8fafc;
+		border-bottom: 1px solid #e2e8f0;
+	}
+	.diff-controls select {
+		padding: 6px 10px;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		font-size: 13px;
+		background: white;
+	}
+	.diff-arrow {
+		color: #94a3b8;
+		font-weight: 600;
+	}
+	.diff-run-btn {
+		padding: 6px 16px;
+		border: none;
+		border-radius: 6px;
+		background: #1d4ed8;
+		color: white;
+		cursor: pointer;
+		font-size: 13px;
+		font-weight: 500;
+	}
+	.diff-run-btn:hover {
+		background: #1e40af;
+	}
+
+	.diff-view {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 13px;
+		line-height: 1.7;
+		padding: 12px 20px;
+	}
+	.diff-line {
+		display: flex;
+		padding: 2px 8px;
+		border-radius: 3px;
+	}
+	.diff-line.added {
+		background: #dcfce7;
+	}
+	.diff-line.removed {
+		background: #fee2e2;
+		text-decoration: line-through;
+		opacity: 0.7;
+	}
+	.diff-marker {
+		width: 18px;
+		flex-shrink: 0;
+		color: #94a3b8;
+		font-weight: 600;
+	}
+	.diff-text {
+		white-space: pre-wrap;
+	}
 
 	:global(.spin) { animation: spin 1s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }
