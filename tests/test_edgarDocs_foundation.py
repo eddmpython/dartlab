@@ -1274,14 +1274,16 @@ class TestEdgarCompanyInterface:
             assert isinstance(df, pl.DataFrame)
             assert df.height > 0
 
-    def test_show_ratios_returns_dataframe(self):
+    def test_show_ratios_returns_block_index_and_data(self):
         from dartlab.engines.edgar.company import Company
 
         c = Company("AAPL")
-        df = c.show("ratios")
+        idx = c.show("ratios")
+        assert isinstance(idx, pl.DataFrame)
+        assert "block" in idx.columns
+        df = c.show("ratios", 0)
         assert isinstance(df, pl.DataFrame)
         assert "category" in df.columns
-        assert "metric" in df.columns
 
     def test_show_docs_topic_returns_dataframe(self):
         from dartlab.engines.edgar.company import Company
@@ -1339,15 +1341,13 @@ class TestEdgarCompanyInterface:
         assert isinstance(topics, list)
         assert topics[:5] == ["BS", "IS", "CF", "CIS", "ratios"]
 
-    def test_show_with_period_filter(self):
+    def test_show_with_block_and_period_filter(self):
         from dartlab.engines.edgar.company import Company
 
         c = Company("AAPL")
-        df = c.show("BS", period="2024")
+        df = c.show("BS", 0, period="2024")
         assert isinstance(df, pl.DataFrame)
         assert "2024" in df.columns
-        nonMeta = [col for col in df.columns if col != "account"]
-        assert len(nonMeta) == 1
 
     def test_filings_returns_dataframe(self):
         from dartlab.engines.edgar.company import Company

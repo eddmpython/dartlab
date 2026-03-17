@@ -706,27 +706,17 @@ class Company:
         period: str | None = None,
         **_kw: Any,
     ) -> pl.DataFrame | None:
-        """통합 조회 — 항상 DataFrame | None.
+        """topic의 데이터를 반환.
+
+        block=None → 블록 목차 DataFrame (block, type, source, preview)
+        block=N → 해당 blockOrder의 실제 데이터 DataFrame
 
         Args:
-            topic: topic 이름 (BS, IS, item1Business 등)
-            block: blockOrder 인덱스. None이면 전체.
+            topic: topic 이름 (BS, IS, 10-K::item1Business 등)
+            block: blockOrder 인덱스. None이면 블록 목차.
             period: 특정 기간 필터
         """
-        if topic in _FINANCE_TOPICS:
-            df = getattr(self.finance, topic)
-            return self._applyPeriodFilter(df, period)
-
-        if topic == "ratios":
-            rs = self.finance.ratioSeries
-            if rs is None:
-                return None
-            series, years = rs
-            df = _ratioSeriesToDataFrame(series, years)
-            return self._applyPeriodFilter(df, period)
-
-        # docs topic — sections에서 blockOrder별 text/table 반환
-        sec = self.docs.sections
+        sec = self.sections
         if sec is None:
             return None
 
@@ -734,22 +724,73 @@ class Company:
         if topicRows.is_empty():
             return None
 
-        if block is not None and "blockOrder" in topicRows.columns and "blockType" in topicRows.columns:
-            boRows = topicRows.filter(pl.col("blockOrder") == block)
-            if boRows.is_empty():
-                return None
-            bt = boRows["blockType"][0]
-            periodCols = [c for c in boRows.columns if _isPeriodColumn(c)]
+        if block is None:
+            return self._buildBlockIndex(topicRows)
+
+        # 특정 block의 실제 데이터
+        source = "docs"
+        if "source" in topicRows.columns:
+            srcRows = topicRows.filter(pl.col("blockOrder") == block) if "blockOrder" in topicRows.columns else topicRows
+            if not srcRows.is_empty():
+                source = srcRows["source"][0]
+
+        if source == "finance":
+            if topic == "ratios":
+                rs = self.finance.ratioSeries
+                if rs is None:
+                    return None
+                series, years = rs
+                return self._applyPeriodFilter(_ratioSeriesToDataFrame(series, years), period)
+            df = getattr(self.finance, topic, None)
+            return self._applyPeriodFilter(df, period) if df is not None else None
+
+        # docs — topic 전체 반환 (EDGAR는 topic당 text 1행 + table 1행)
+        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+        if "blockType" in topicRows.columns:
+            bt = topicRows.filter(pl.col("blockOrder") == block)["blockType"][0] if "blockOrder" in topicRows.columns else "text"
             if bt == "text":
-                nonNullCols = [c for c in periodCols if boRows[c].null_count() < boRows.height]
+                nonNullCols = [c for c in periodCols if topicRows[c].null_count() < topicRows.height]
                 if not nonNullCols:
                     return None
-                return self._applyPeriodFilter(boRows.select(nonNullCols), period)
-            # table block은 원본 그대로 (EDGAR table 수평화는 추후)
-            return self._applyPeriodFilter(boRows, period)
-
-        # block=None → 전체 topic
+                result = topicRows.filter(pl.col("blockType") == "text").select(nonNullCols)
+                return self._applyPeriodFilter(result, period)
         return self._applyPeriodFilter(topicRows, period)
+
+    def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
+        """topic의 블록 목차 DataFrame."""
+        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+        rows = []
+        seen: set[int] = set()
+
+        hasBlockOrder = "blockOrder" in topicRows.columns
+
+        for row in topicRows.iter_rows(named=True):
+            bt = row.get("blockType", "text")
+            source = row.get("source", "docs")
+
+            if hasBlockOrder:
+                bo = row.get("blockOrder", 0)
+                if bo is None:
+                    bo = len(seen)
+            else:
+                bo = len(seen)
+
+            if bo in seen:
+                continue
+            seen.add(bo)
+
+            preview = ""
+            if source in ("finance", "report"):
+                preview = f"({source})"
+            else:
+                for p in reversed(periodCols):
+                    val = row.get(p)
+                    if val:
+                        preview = str(val)[:50]
+                        break
+            rows.append({"block": bo, "type": bt, "source": source, "preview": preview})
+
+        return pl.DataFrame(rows)
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic in _FINANCE_TOPICS:
