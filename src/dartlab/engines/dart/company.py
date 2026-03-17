@@ -2641,9 +2641,17 @@ class Company:
         )
 
         _SUFFIX_RE = re.compile(r"(사업)?부문$")
+        _KISU_RE = re.compile(r"제\d+기\s*(?:\d*분기)?\s*\(?(당기|전기|전전기|당반기|전반기)\)?")
+        _KISU_ONLY_RE = re.compile(r"^제\d+기\s*(?:\d*분기)?(?:말)?$")
 
         def _normalizeItem(name: str) -> str:
-            return _SUFFIX_RE.sub("", name).strip()
+            name = _SUFFIX_RE.sub("", name).strip()
+            # 기수 정규화: 제76기(당기) → 당기
+            m = _KISU_RE.search(name)
+            if m:
+                return m.group(1)
+            # 제76기만 있는 경우 그대로 유지
+            return name
 
         allItems: list[str] = []
         seenItems: set[str] = set()
@@ -2725,8 +2733,12 @@ class Company:
                         totalPairs += 1
             avgOverlap = totalOverlap / totalPairs if totalPairs else 0
             if avgOverlap < 0.3 and len(allItems) > 5:
-                # 이력형 → 수평화 스킵 (원본 마크다운 유지)
+                # 이력형 → 수평화 스킵
                 return None
+
+        # 목록형 감지: 항목 수가 과다하면 수평화 부적합
+        if len(allItems) > 50:
+            return None
 
         # DataFrame 구성
         usedPeriods = [p for p in periodCols if any(p in periodItemVal.get(item, {}) for item in allItems)]
