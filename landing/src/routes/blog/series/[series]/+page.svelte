@@ -82,6 +82,7 @@
 									</div>
 									<h2 class="series-step-title">{post.title}</h2>
 									<p class="series-step-desc">{post.description}</p>
+									<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 								</div>
 							</div>
 							<picture>
@@ -90,7 +91,6 @@
 								{/if}
 								<img src="{base}{post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" decoding="async" />
 							</picture>
-							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>
 					</a>
 				{/each}
@@ -196,7 +196,7 @@
 
 	.series-step-shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 172px auto;
+		grid-template-columns: minmax(0, 1fr) 172px;
 		gap: 1rem;
 		align-items: center;
 	}
@@ -348,7 +348,6 @@
 			max-width: 220px;
 			height: auto;
 			aspect-ratio: 1 / 1;
-			justify-self: end;
 		}
 	}
 </style>
