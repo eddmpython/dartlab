@@ -262,59 +262,52 @@ def buildTableDataFrame(
     if topicFrame.is_empty():
         return None
 
-    # 정규화 헤더별 데이터 수집
-    # key: normHeader → {period → [(항목,값)]}  (key_value/matrix)
-    # key: normHeader → [(항목,연도,값)]  (multi_year — 연도가 이미 해석됨)
-    kvData: dict[str, dict[str, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))
-    myData: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
-    units: dict[str, str] = {}
+    # key: (blockOrder, normHeader) → {period → [(항목,값)]} / [(항목,연도,값)]
+    kvData: dict[tuple[int, str], dict[str, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))
+    myData: dict[tuple[int, str], list[tuple[str, str, str]]] = defaultdict(list)
+    units: dict[tuple[int, str], str] = {}
 
-    for p in periodCols:
-        if p not in topicFrame.columns:
-            continue
-        md = topicFrame[p][0]
-        if md is None:
-            continue
-
-        pYear = int(re.match(r"\d{4}", p).group()) if re.match(r"\d{4}", p) else None
-
-        for sub in splitSubtables(str(md)):
-            hc = _headerCells(sub)
-            if _isJunk(hc):
+    for record in topicFrame.iter_rows(named=True):
+        blockOrder = int(record.get("blockOrder") or 0)
+        for p in periodCols:
+            if p not in topicFrame.columns:
+                continue
+            md = record.get(p)
+            if md is None:
                 continue
 
-            # 0행 서브테이블 스킵 (단위, 주석, 기준일 등)
-            dr = _dataRows(sub)
-            if not dr:
-                continue
+            pYear = int(re.match(r"\d{4}", p).group()) if re.match(r"\d{4}", p) else None
 
-            normH = _normalizeHeader(hc)
-            structType = _classifyStructure(hc)
+            for sub in splitSubtables(str(md)):
+                hc = _headerCells(sub)
+                if _isJunk(hc):
+                    continue
 
-            if structType == "multi_year" and pYear and "Q" not in p:
-                triples, unit = _parseMultiYear(sub, pYear)
-                myData[normH].extend(triples)
-                if unit:
-                    units[normH] = unit
+                # 0행 서브테이블 스킵 (단위, 주석, 기준일 등)
+                dr = _dataRows(sub)
+                if not dr:
+                    continue
 
-            elif structType in ("key_value", "matrix"):
-                rows, headerNames, unit = _parseKeyValueOrMatrix(sub)
-                if unit:
-                    units[normH] = unit
+                normH = _normalizeHeader(hc)
+                groupKey = (blockOrder, normH)
+                structType = _classifyStructure(hc)
 
-                if len(headerNames) <= 1:
-                    # key_value: 단순 (항목, 단일값)
+                if structType == "multi_year" and pYear and "Q" not in p:
+                    triples, unit = _parseMultiYear(sub, pYear)
+                    myData[groupKey].extend(triples)
+                    if unit:
+                        units[groupKey] = unit
+
+                elif structType in ("key_value", "matrix"):
+                    rows, headerNames, unit = _parseKeyValueOrMatrix(sub)
+                    if unit:
+                        units[groupKey] = unit
+
+                    # key_value/matrix: 첫 컬럼=항목, 나머지=값 (파이프로 합침)
                     for item, vals in rows:
-                        val = vals[0] if vals else ""
-                        kvData[normH][p].append((item, val))
-                else:
-                    # matrix: 다중 컬럼 → 항목_컬럼명으로 풀어서 저장
-                    for item, vals in rows:
-                        for i, hName in enumerate(headerNames):
-                            val = vals[i] if i < len(vals) else ""
-                            if val and val != "-":
-                                compositeItem = f"{item}_{hName}" if hName else item
-                                kvData[normH][p].append((compositeItem, val))
+                        val = " | ".join(v for v in vals if v).strip()
+                        if val:
+                            kvData[groupKey][p].append((item, val))
 
     if not kvData and not myData:
         return None
@@ -322,7 +315,7 @@ def buildTableDataFrame(
     outRows: list[dict[str, str | None]] = []
 
     # multi_year → 항목 × 연도
-    for normH, triples in myData.items():
+    for (blockOrder, normH), triples in myData.items():
         allItems: list[str] = []
         seenItems: set[str] = set()
         yearItemVal: dict[str, dict[str, str]] = defaultdict(dict)
@@ -334,24 +327,26 @@ def buildTableDataFrame(
             yearItemVal[item][year] = val
 
         allYears = sorted(set(y for iv in yearItemVal.values() for y in iv.keys()))
-        unit = units.get(normH, "")
+        unit = units.get((blockOrder, normH), "")
 
         subtableName = normH[:50] if normH else ""
 
         for item in allItems:
             row: dict[str, str | None] = {
                 "blockType": "table",
+                "blockOrder": blockOrder,
                 "tableType": "multi_year",
                 "subtable": subtableName,
                 "단위": unit,
                 "항목": item,
+                "_rowOrder": len(outRows),
             }
             for y in allYears:
                 row[y] = yearItemVal[item].get(y)
             outRows.append(row)
 
     # key_value / matrix → 항목 × period
-    for normH, periodData in kvData.items():
+    for (blockOrder, normH), periodData in kvData.items():
         allItems: list[str] = []
         seenItems: set[str] = set()
         periodItemVal: dict[str, dict[str, str]] = defaultdict(dict)
@@ -363,7 +358,7 @@ def buildTableDataFrame(
                     seenItems.add(item)
                 periodItemVal[item][p] = val
 
-        unit = units.get(normH, "")
+        unit = units.get((blockOrder, normH), "")
 
         # normHeader에서 사람 읽기용 subtable명 생성
         subtableName = normH[:50] if normH else ""
@@ -371,10 +366,12 @@ def buildTableDataFrame(
         for item in allItems:
             row: dict[str, str | None] = {
                 "blockType": "table",
+                "blockOrder": blockOrder,
                 "tableType": "key_value",
                 "subtable": subtableName,
                 "단위": unit,
                 "항목": item,
+                "_rowOrder": len(outRows),
             }
             for p in periodCols:
                 row[p] = periodItemVal[item].get(p)

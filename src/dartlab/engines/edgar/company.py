@@ -14,7 +14,7 @@ DART Company와 동일한 구조를 제공한다.
     c.corpName             # "Apple Inc."
     c.index                # 수평화 보드 DataFrame
     c.show("BS")           # 재무상태표 DataFrame
-    c.show("10-K::item1Business")  # ShowResult(text, table)
+    c.show("item1Business")        # docs topic DataFrame
     c.trace("BS")          # source provenance
     c.docs.sections        # pure docs source (blockType 분리)
     c.finance.BS           # finance.BS 바로가기
@@ -268,7 +268,6 @@ _RATIO_CATEGORY_LABELS: dict[str, str] = {
 }
 
 
-from dartlab.engines.common.types import ShowResult
 
 
 def _ratioSeriesToDataFrame(
@@ -340,56 +339,6 @@ class _DocsAccessor:
         )
         self._company._cache[key] = result
         return result
-
-    def show(self, topic: str, period: str | None = None) -> ShowResult | str | None:
-        """topic의 text/table을 ShowResult로 반환.
-
-        blockType이 있으면 ShowResult(text, table) 분리.
-        blockType이 없으면 하위 호환을 위해 str 반환.
-        """
-        sec = self.sections
-        if sec is None:
-            return None
-
-        hasBlockType = "blockType" in sec.columns
-
-        if hasBlockType:
-            topicRows = sec.filter(pl.col("topic") == topic)
-            if topicRows.is_empty():
-                return None
-            periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
-
-            if period is not None:
-                if period not in topicRows.columns:
-                    return None
-                keepCols = ["topic", "blockType", period]
-                topicRows = topicRows.select([c for c in keepCols if c in topicRows.columns])
-
-            textRows = topicRows.filter(pl.col("blockType") == "text")
-            tableRows = topicRows.filter(pl.col("blockType") == "table")
-            text = textRows if not textRows.is_empty() else None
-            table = tableRows if not tableRows.is_empty() else None
-            if text is None and table is None:
-                return None
-            return ShowResult(text=text, table=table)
-
-        # blockType 없는 레거시 경로
-        topicRow = sec.filter(pl.col("topic") == topic)
-        if topicRow.is_empty():
-            return None
-
-        if period is not None:
-            if period not in topicRow.columns:
-                return None
-            return topicRow[period][0]
-
-        periods = [c for c in topicRow.columns if _isPeriodColumn(c)]
-        for p in periods:
-            val = topicRow[p][0]
-            if val is not None:
-                return val
-        return None
-
 
 class _FinanceAccessor:
     """EDGAR finance namespace. XBRL 정규화 재무 데이터."""
@@ -494,70 +443,6 @@ class _ProfileAccessor:
     def __init__(self, company: Company):
         self._company = company
 
-    @property
-    def sections(self) -> pl.DataFrame | None:
-        """merged sections — finance topic을 docs sections에 합류."""
-        cacheKey = "_profile_sections"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-
-        docsSec = self._company.docs.sections
-        financeRows = self._buildFinanceRows()
-
-        if docsSec is None and not financeRows:
-            self._company._cache[cacheKey] = None
-            return None
-
-        if docsSec is not None and financeRows:
-            periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
-            finDf = pl.DataFrame(
-                financeRows,
-                schema={
-                    "topic": pl.Utf8,
-                    "blockType": pl.Utf8,
-                    **{p: pl.Utf8 for p in periodCols},
-                },
-            )
-            result = pl.concat([finDf, docsSec], how="diagonal_relaxed")
-        elif docsSec is not None:
-            result = docsSec
-        else:
-            result = pl.DataFrame(financeRows) if financeRows else None
-
-        self._company._cache[cacheKey] = result
-        return result
-
-    def _buildFinanceRows(self) -> list[dict[str, str | None]]:
-        """finance BS/IS/CF를 sections 호환 행으로 변환.
-
-        각 연도 기간에 해당 연도의 단일 컬럼 제표를 배치한다.
-        """
-        rows: list[dict[str, str | None]] = []
-        docsSec = self._company.docs.sections
-        periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)] if docsSec is not None else []
-        # 연간 기간만 추출 (Q 없는 것)
-        annualPeriods = [p for p in periodCols if "Q" not in p]
-
-        for stmtName in ("BS", "IS", "CF", "CIS"):
-            df = getattr(self._company.finance, stmtName)
-            if df is None:
-                continue
-            row: dict[str, str | None] = {
-                "topic": stmtName,
-                "blockType": "table",
-            }
-            for p in periodCols:
-                row[p] = None
-            # 각 연도 기간에 해당 연도 데이터가 있으면 배치
-            for p in annualPeriods:
-                if p in df.columns:
-                    col = df.select(["account", p])
-                    nonNull = col.filter(pl.col(p).is_not_null())
-                    if not nonNull.is_empty():
-                        row[p] = self._dfToMarkdownTable(nonNull)
-            rows.append(row)
-        return rows
-
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         """topic의 source provenance 반환."""
         if topic in {"BS", "IS", "CIS", "CF"}:
@@ -582,20 +467,6 @@ class _ProfileAccessor:
             }
         return None
 
-    @staticmethod
-    def _dfToMarkdownTable(df: pl.DataFrame) -> str:
-        """DataFrame을 markdown 테이블 문자열로 변환."""
-        if df is None or df.is_empty():
-            return ""
-        headers = df.columns
-        lines = ["| " + " | ".join(headers) + " |"]
-        lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
-        for row in df.iter_rows():
-            cells = [str(v) if v is not None else "" for v in row]
-            lines.append("| " + " | ".join(cells) + " |")
-        return "\n".join(lines)
-
-
 class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
 
@@ -604,13 +475,13 @@ class Company:
         c = Company("AAPL")
         c.docs.sections        # topic × period 수평화 (blockType 분리)
         c.docs.filings()       # 문서 목록
-        c.docs.show(topic)     # ShowResult(text, table)
+        c.show(topic, block)   # blockOrder별 text/table
         c.finance.BS           # 연도별 재무상태표
         c.finance.IS           # 연도별 손익계산서
         c.finance.CF           # 연도별 현금흐름표
         c.finance.CIS          # 연도별 포괄손익계산서
         c.finance.ratios       # 재무비율
-        c.profile.sections     # merged sections (finance + docs)
+        c.profile.trace(topic) # source provenance
         c.BS                   # finance.BS 바로가기
         c.sections             # docs.sections 바로가기
         c.show(topic)          # 통합 조회 → DataFrame | None
@@ -710,7 +581,61 @@ class Company:
 
     @property
     def sections(self) -> pl.DataFrame | None:
-        return self.docs.sections
+        """sections — docs + finance 통합 지도."""
+        cacheKey = "_sections"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        docsSec = self.docs.sections
+        if docsSec is None:
+            self._cache[cacheKey] = None
+            return None
+
+        periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
+
+        # source 컬럼 추가
+        if "source" not in docsSec.columns:
+            docsSec = docsSec.with_columns(pl.lit("docs").alias("source"))
+
+        # finance topics 추가
+        extraRows: list[dict[str, Any]] = []
+        for ft in ("BS", "IS", "CF", "CIS"):
+            df = getattr(self.finance, ft, None)
+            if df is not None:
+                extraRows.append({
+                    "chapter": "Financial Statements",
+                    "topic": ft,
+                    "blockType": "table",
+                    "blockOrder": 0,
+                    "source": "finance",
+                    **{p: None for p in periodCols},
+                })
+        if self.finance.ratioSeries is not None:
+            extraRows.append({
+                "chapter": "Financial Statements",
+                "topic": "ratios",
+                "blockType": "table",
+                "blockOrder": 0,
+                "source": "finance",
+                **{p: None for p in periodCols},
+            })
+
+        if not extraRows:
+            self._cache[cacheKey] = docsSec
+            return docsSec
+
+        extraDf = pl.DataFrame(extraRows, schema={
+            "chapter": pl.Utf8,
+            "topic": pl.Utf8,
+            "blockType": pl.Utf8,
+            "blockOrder": pl.Int64,
+            "source": pl.Utf8,
+            **{p: pl.Utf8 for p in periodCols},
+        })
+
+        merged = pl.concat([docsSec, extraDf], how="diagonal_relaxed")
+        self._cache[cacheKey] = merged
+        return merged
 
     @property
     def ratios(self):
@@ -773,12 +698,20 @@ class Company:
         self._cache[cacheKey] = ordered
         return ordered
 
-    def show(self, topic: str, *, period: str | None = None, **_kw: Any) -> pl.DataFrame | None:
+    def show(
+        self,
+        topic: str,
+        block: int | None = None,
+        *,
+        period: str | None = None,
+        **_kw: Any,
+    ) -> pl.DataFrame | None:
         """통합 조회 — 항상 DataFrame | None.
 
-        - finance topic → DataFrame
-        - ratios → DataFrame
-        - docs topic → text + 파싱된 table 병합 DataFrame
+        Args:
+            topic: topic 이름 (BS, IS, item1Business 등)
+            block: blockOrder 인덱스. None이면 전체.
+            period: 특정 기간 필터
         """
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
@@ -792,7 +725,7 @@ class Company:
             df = _ratioSeriesToDataFrame(series, years)
             return self._applyPeriodFilter(df, period)
 
-        # docs topic → sections에서 직접 가져옴
+        # docs topic — sections에서 blockOrder별 text/table 반환
         sec = self.docs.sections
         if sec is None:
             return None
@@ -801,53 +734,22 @@ class Company:
         if topicRows.is_empty():
             return None
 
-        hasBlockType = "blockType" in topicRows.columns
-        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
-        if period is not None:
-            periodCols = [c for c in periodCols if c == period]
-        if not periodCols:
-            return None
+        if block is not None and "blockOrder" in topicRows.columns and "blockType" in topicRows.columns:
+            boRows = topicRows.filter(pl.col("blockOrder") == block)
+            if boRows.is_empty():
+                return None
+            bt = boRows["blockType"][0]
+            periodCols = [c for c in boRows.columns if _isPeriodColumn(c)]
+            if bt == "text":
+                nonNullCols = [c for c in periodCols if boRows[c].null_count() < boRows.height]
+                if not nonNullCols:
+                    return None
+                return self._applyPeriodFilter(boRows.select(nonNullCols), period)
+            # table block은 원본 그대로 (EDGAR table 수평화는 추후)
+            return self._applyPeriodFilter(boRows, period)
 
-        frames: list[pl.DataFrame] = []
-
-        # text
-        if hasBlockType:
-            textRows = topicRows.filter(pl.col("blockType") == "text")
-        else:
-            textRows = topicRows
-        if not textRows.is_empty():
-            textDf = textRows.select(periodCols).with_columns([
-                pl.lit("text").alias("blockType"),
-                pl.lit(None).cast(pl.Utf8).alias("tableType"),
-                pl.lit(None).cast(pl.Utf8).alias("항목"),
-            ]).select(["blockType", "tableType", "항목", *periodCols])
-            frames.append(textDf)
-
-        # table — tableParser
-        if hasBlockType:
-            tableRows = topicRows.filter(pl.col("blockType") == "table")
-            if not tableRows.is_empty():
-                from dartlab.engines.dart.docs.sections.tableParser import buildTableDataFrame
-                tableDf = buildTableDataFrame(tableRows, periodCols)
-                if tableDf is not None and not tableDf.is_empty():
-                    # 최근 5기간 필터
-                    dataCols = [c for c in tableDf.columns if _isPeriodColumn(c)]
-                    if len(dataCols) > 5:
-                        recentCols = dataCols[-5:]
-                        hasRecent = pl.any_horizontal([pl.col(c).is_not_null() for c in recentCols])
-                        tableDf = tableDf.filter(hasRecent)
-                    frames.append(tableDf)
-
-        if not frames:
-            return None
-        result = pl.concat(frames, how="diagonal_relaxed")
-
-        # trailing 파이프 정리
-        for col in periodCols:
-            if col in result.columns and result[col].dtype == pl.Utf8:
-                result = result.with_columns(pl.col(col).str.strip_chars_end(" |").alias(col))
-
-        return result
+        # block=None → 전체 topic
+        return self._applyPeriodFilter(topicRows, period)
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic in _FINANCE_TOPICS:

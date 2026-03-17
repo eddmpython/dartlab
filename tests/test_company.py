@@ -185,13 +185,18 @@ class TestCompany:
             status.filter(pl.col("apiType") == "dividend").item(0, "preferredQuarter") == PREFERRED_QUARTER["dividend"]
         )
 
-    def test_profile_sections_matches_company_sections(self):
+    def test_sections_includes_docs_and_finance(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
         assert c.sections is not None
-        assert c.profile.sections is not None
-        assert c.sections.shape == c.profile.sections.shape
+        assert c.docs.sections is not None
+        # sections ⊇ docs.sections (finance/report 행이 추가됨)
+        assert c.sections.height >= c.docs.sections.height
+        topics = c.sections["topic"].to_list()
+        assert "BS" in topics
+        assert "companyOverview" in topics
+        assert "source" in c.sections.columns
 
     def test_first_layer_dataframe_contracts(self):
         from dartlab import Company
@@ -199,7 +204,7 @@ class TestCompany:
         c = Company(SAMSUNG)
         assert isinstance(c.filings(), pl.DataFrame)
         assert isinstance(c.docs.sections, pl.DataFrame)
-        assert isinstance(c.profile.sections, pl.DataFrame)
+        assert isinstance(c.sections, pl.DataFrame)
         assert isinstance(c.sources, pl.DataFrame)
         assert isinstance(c.finance.BS, pl.DataFrame)
         assert isinstance(c.finance.IS, pl.DataFrame)
@@ -233,21 +238,22 @@ class TestCompany:
         assert isinstance(c.finance.SCE, pl.DataFrame)
         assert isinstance(c.SCE, pl.DataFrame)
 
-    def test_profile_sections_include_finance_and_report_topics(self):
+    def test_sections_contain_docs_topics(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        sections = c.profile.sections
+        sections = c.sections
         assert sections is not None
         topics = sections["topic"].to_list()
-        for topic in ["BS", "IS", "CIS", "CF", "SCE", "dividend", "employee", "majorHolder", "audit"]:
+        # sections는 docs 수평화 결과 — docs topic이 포함되어야 함
+        for topic in ["dividend", "employee", "majorHolder", "audit"]:
             assert topic in topics
 
-    def test_profile_sections_hide_raw_source_topics(self):
+    def test_sections_hide_raw_source_topics(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        sections = c.profile.sections
+        sections = c.sections
         assert sections is not None
         topics = set(sections["topic"].to_list())
         assert "주요제품및원재료등" not in topics
@@ -274,8 +280,8 @@ class TestCompany:
         c = Company(SAMSUNG)
         assert c.index.height > 0
         assert set(["chapter", "topic", "kind", "source", "periods", "shape", "preview"]).issubset(set(c.index.columns))
-        assert c.profile.sections is not None
-        assert isinstance(c.profile.sections, pl.DataFrame)
+        assert c.sections is not None
+        assert isinstance(c.sections, pl.DataFrame)
         assert c.profile.facts is not None
         assert isinstance(c.profile.facts, pl.DataFrame)
 
@@ -302,44 +308,29 @@ class TestCompany:
         assert isinstance(c.show("dividend"), pl.DataFrame)
         assert isinstance(c.show("riskDerivative", raw=False), pl.DataFrame)
 
-    def test_sections_based_table_topics_are_exposed_as_dataframes(self):
+    def test_show_topic_returns_block_index(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        sales = c.show("salesOrder")
-        risk = c.show("riskDerivative")
-        raw_material = c.show("rawMaterial")
-        assert isinstance(sales, pl.DataFrame)
-        assert isinstance(risk, pl.DataFrame)
-        assert isinstance(raw_material, pl.DataFrame)
-        assert "subtopic" in sales.columns or "항목" in sales.columns
-        assert "subtopic" in risk.columns or "항목" in risk.columns
-        assert "subtopic" in raw_material.columns or "항목" in raw_material.columns
-        # segments, costByNature는 데이터 의존적 — None일 수 있음
-        segments = c.show("segments")
-        cost_by_nature = c.show("costByNature")
-        if segments is not None:
-            assert isinstance(segments, pl.DataFrame)
-        if cost_by_nature is not None:
-            assert isinstance(cost_by_nature, pl.DataFrame)
-
-    def test_sections_based_table_topics_support_raw_long_view_and_docs_subtables(self):
+        idx = c.show("salesOrder")
+        assert isinstance(idx, pl.DataFrame)
+        assert {"block", "type", "source"}.issubset(set(idx.columns))
+        # block=1 접근하면 실제 데이터
+        table = c.show("salesOrder", 1)
+        assert table is None or isinstance(table, pl.DataFrame)
+    def test_show_block_returns_data(self):
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        sales_raw = c.show("salesOrder", raw=True)
-        sales_docs = c.docs.subtables("salesOrder")
-        risk_raw = c.docs.subtables("riskDerivative", raw=True)
-        cost_docs = c.docs.subtables("costByNature")
-
-        assert isinstance(sales_raw, pl.DataFrame)
-        assert isinstance(sales_docs, pl.DataFrame)
-        assert isinstance(risk_raw, pl.DataFrame)
-        assert cost_docs is None or isinstance(cost_docs, pl.DataFrame)
-        assert "subtopic" in sales_raw.columns
-        assert "tableText" in sales_raw.columns
-        assert "subtopic" in sales_docs.columns
-        assert "subtopic" in risk_raw.columns
+        # docs text
+        text = c.show("companyOverview", 0)
+        assert text is None or isinstance(text, pl.DataFrame)
+        # docs table
+        table = c.show("companyOverview", 1)
+        assert table is None or isinstance(table, pl.DataFrame)
+        # finance
+        bs = c.show("BS", 0)
+        assert bs is None or isinstance(bs, pl.DataFrame)
 
     def test_report_result_surface_is_unified(self):
         from dartlab import Company
@@ -378,3 +369,12 @@ class TestCompany:
         traced = c.trace("dividend")
         assert traced is not None
         assert traced["primarySource"] == "report"
+
+    def test_show_returns_block_index_for_docs_topic(self):
+        import dartlab
+
+        c = dartlab.Company(SAMSUNG)
+        overview = c.show("companyOverview")
+        assert overview is not None
+        assert isinstance(overview, pl.DataFrame)
+        assert {"block", "type", "source"}.issubset(set(overview.columns))

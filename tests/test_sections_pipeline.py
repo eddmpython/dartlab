@@ -45,11 +45,57 @@ def test_sections_pipeline_preserves_markdown_tables_and_period_order(monkeypatc
     result = pipeline.sections("TEST")
 
     assert result is not None
+    assert "blockOrder" in result.columns
     periodCols = [c for c in result.columns if c not in ("topic", "chapter", "blockType", "blockOrder")]
     assert periodCols == ["2024Q1", "2024"]
     sales = result.filter(pl.col("topic") == "salesOrder").row(0, named=True)
     assert "| 구분 | 금액 |" in sales["2024"]
     assert "| 국내 | 25 |" in sales["2024Q1"]
+
+
+def test_sections_pipeline_preserves_multiple_blocks_within_same_topic(monkeypatch):
+    pipeline = importlib.import_module("dartlab.engines.dart.docs.sections.pipeline")
+
+    df = pl.DataFrame(
+        {
+            "year": ["2024", "2024", "2025", "2025"],
+            "report_kind": ["annual", "annual", "annual", "annual"],
+            "section_order": [0, 1, 0, 1],
+            "section_title": [
+                "II. 사업의 내용",
+                "1. 회사의 개요",
+                "II. 사업의 내용",
+                "1. 회사의 개요",
+            ],
+            "section_content": [
+                "사업 개요",
+                "첫 문단\n| 구분 | 값 |\n| --- | --- |\n| A | 1 |\n둘째 문단",
+                "사업 개요",
+                "첫 문단 수정\n| 구분 | 값 |\n| --- | --- |\n| A | 2 |\n둘째 문단 수정",
+            ],
+        }
+    )
+
+    def fakeLoadData(stockCode: str):
+        return df
+
+    def fakeSelectReport(frame: pl.DataFrame, year: str, reportKind: str):
+        subset = frame.filter((pl.col("year") == year) & (pl.col("report_kind") == reportKind))
+        return subset if subset.height > 0 else None
+
+    monkeypatch.setattr(pipeline, "loadData", fakeLoadData)
+    monkeypatch.setattr(pipeline, "selectReport", fakeSelectReport)
+
+    result = pipeline.sections("TEST")
+
+    assert result is not None
+    overview = result.filter(pl.col("topic") == "companyOverview").sort("blockOrder")
+    assert overview.height == 3
+    assert overview["blockType"].to_list() == ["text", "table", "text"]
+    assert overview["blockOrder"].to_list() == [0, 1, 2]
+    assert "첫 문단" in overview.item(0, "2024")
+    assert "| A | 2 |" in overview.item(1, "2025")
+    assert "둘째 문단 수정" in overview.item(2, "2025")
 
 
 def test_sections_pipeline_hides_detail_topics_from_core_view(monkeypatch):

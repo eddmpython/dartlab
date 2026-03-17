@@ -10,14 +10,14 @@ period key 형식:
 - "2024Q3" → 3분기보고서
 
 반환 형식:
-    (topic, blockType)(행) × period(열) DataFrame
-    ┌──────────────┬───────────┬────────┬──────────┬────────┐
-    │ topic        │ blockType │ 2025   │ 2025Q3   │ 2024   │
-    ├──────────────┼───────────┼────────┼──────────┼────────┤
-    │ 사업의 개요  │ text      │ 텍스트 │ 텍스트   │ 텍스트 │
-    │ 사업의 개요  │ table     │ 테이블 │ null     │ 테이블 │
-    │ 영업실적     │ text      │ 텍스트 │ null     │ 텍스트 │
-    └──────────────┴───────────┴────────┴──────────┴────────┘
+    (topic, blockType, blockOrder)(행) × period(열) DataFrame
+    ┌──────────────┬───────────┬────────────┬────────┬──────────┬────────┐
+    │ topic        │ blockType │ blockOrder │ 2025   │ 2025Q3   │ 2024   │
+    ├──────────────┼───────────┼────────────┼────────┼──────────┼────────┤
+    │ 사업의 개요  │ text      │ 0          │ 텍스트 │ 텍스트   │ 텍스트 │
+    │ 사업의 개요  │ table     │ 1          │ 테이블 │ null     │ 테이블 │
+    │ 사업의 개요  │ text      │ 2          │ 텍스트 │ null     │ 텍스트 │
+    └──────────────┴───────────┴────────────┴────────┴──────────┴────────┘
 """
 
 from __future__ import annotations
@@ -82,26 +82,51 @@ def iterPeriodSubsets(
             yield periodKey, reportKind, ccol, subset
 
 
-def _splitTextTable(content: str) -> tuple[str, str]:
-    """content를 텍스트 부분과 테이블 부분으로 분리."""
-    text_lines: list[str] = []
-    table_lines: list[str] = []
-    for line in content.split("\n"):
-        if line.strip().startswith("|"):
-            table_lines.append(line)
-        else:
-            text_lines.append(line)
-    return "\n".join(text_lines).strip(), "\n".join(table_lines).strip()
+def _splitContentBlocks(content: str) -> list[tuple[str, str]]:
+    """content를 원문 순서대로 text/table block으로 분해."""
+    rows: list[tuple[str, str]] = []
+    textBuffer: list[str] = []
+    tableBuffer: list[str] = []
+
+    def _flushText() -> None:
+        nonlocal textBuffer
+        text = "\n".join(textBuffer).strip()
+        if text:
+            rows.append(("text", text))
+        textBuffer = []
+
+    def _flushTable() -> None:
+        nonlocal tableBuffer
+        text = "\n".join(tableBuffer).strip()
+        if text:
+            rows.append(("table", text))
+        tableBuffer = []
+
+    for raw in content.splitlines():
+        stripped = raw.strip()
+        if not stripped:
+            _flushTable()
+            if textBuffer:
+                textBuffer.append("")
+            continue
+        if stripped.startswith("|"):
+            _flushText()
+            tableBuffer.append(stripped)
+            continue
+        _flushTable()
+        textBuffer.append(stripped)
+
+    _flushText()
+    _flushTable()
+    return rows
 
 
 def _reportRowsToTopicRows(
     records: list[dict[str, object]],
     contentCol: str,
 ) -> list[dict[str, object]]:
-    # key: (chapter, topic, blockType) — blockType은 "text" 또는 "table"
-    merged: dict[tuple[str, str, str], list[str]] = {}
-    order: dict[tuple[str, str, str], tuple[int, int]] = {}
-    source: dict[tuple[str, str, str], str] = {}
+    emitted: list[dict[str, object]] = []
+    topicBlockCounts: dict[tuple[str, str], int] = {}
     currentMajorNum: int | None = None
     idx = 0
     # 장 제목 행은 보류했다가, 소항목이 없는 단독 장이면 등록한다.
@@ -110,23 +135,24 @@ def _reportRowsToTopicRows(
 
     def _registerContent(ch: str, tp: str, rawT: str, content: str, majorNum: int) -> None:
         nonlocal idx
-        textPart, tablePart = _splitTextTable(content)
-        if textPart:
-            key = (ch, tp, "text")
-            if key not in merged:
-                merged[key] = []
-                order[key] = (majorNum, idx)
-                source[key] = rawT
-                idx += 1
-            merged[key].append(textPart)
-        if tablePart:
-            key = (ch, tp, "table")
-            if key not in merged:
-                merged[key] = []
-                order[key] = (majorNum, idx)
-                source[key] = rawT
-                idx += 1
-            merged[key].append(tablePart)
+        topicKey = (ch, tp)
+        nextBlockOrder = topicBlockCounts.get(topicKey, 0)
+        for blockType, blockText in _splitContentBlocks(content):
+            emitted.append(
+                {
+                    "chapter": ch,
+                    "topic": tp,
+                    "blockType": blockType,
+                    "blockOrder": nextBlockOrder,
+                    "text": blockText,
+                    "majorNum": majorNum,
+                    "orderSeq": idx,
+                    "sourceTopic": rawT,
+                }
+            )
+            nextBlockOrder += 1
+            idx += 1
+        topicBlockCounts[topicKey] = nextBlockOrder
 
     def _flushPending() -> None:
         nonlocal pendingChapter, hasSubItems
@@ -175,25 +201,11 @@ def _reportRowsToTopicRows(
     # 마지막 장 처리
     _flushPending()
 
-    result: list[dict[str, object]] = []
-    for (chapter, topic, blockType), texts in merged.items():
-        majorNum, seq = order[(chapter, topic, blockType)]
-        result.append(
-            {
-                "chapter": chapter,
-                "topic": topic,
-                "blockType": blockType,
-                "text": "\n".join(texts),
-                "majorNum": majorNum,
-                "orderSeq": seq,
-                "sourceTopic": source[(chapter, topic, blockType)],
-            }
-        )
-    return result
+    return emitted
 
 
 def sections(stockCode: str) -> pl.DataFrame | None:
-    """전 기간 보고서 섹션 — (topic, blockType) × period DataFrame.
+    """전 기간 보고서 섹션 — (topic, blockType, blockOrder) × period DataFrame.
 
     텍스트와 테이블을 분리하여 같은 topic이라도 text 행과 table 행으로 나뉜다.
 
@@ -201,12 +213,12 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         stockCode: 종목코드
 
     Returns:
-        (topic, blockType)(행) × period(열) DataFrame. 값은 텍스트(str).
+        (topic, blockType, blockOrder)(행) × period(열) DataFrame. 값은 텍스트(str).
         데이터 없으면 None.
     """
-    # key: (topic, blockType) — blockType은 "text" 또는 "table"
-    topicMap: dict[tuple[str, str], dict[str, str]] = {}
-    topicOrder: dict[tuple[str, str], tuple[int, int]] = {}
+    # key: (topic, blockType, blockOrder)
+    topicMap: dict[tuple[str, str, int], dict[str, str]] = {}
+    topicOrder: dict[tuple[str, str, int], tuple[int, int]] = {}
     periodRows: dict[str, list[dict[str, object]]] = {}
     validPeriods: list[str] = []
     latestAnnualRows: list[dict[str, object]] | None = None
@@ -234,39 +246,60 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             topic = row["topic"]
             text = row["text"]
             blockType = row.get("blockType", "text")
+            blockOrder = row.get("blockOrder", 0)
             if not isinstance(chapter, str) or not isinstance(topic, str) or not isinstance(text, str):
                 continue
             if not isinstance(blockType, str):
                 blockType = "text"
+            if not isinstance(blockOrder, int):
+                blockOrder = int(blockOrder)
             if topic not in topicChapter:
                 topicChapter[topic] = chapter
             if topic in suppressed.get(chapter, set()):
                 continue
             if detailTopicForTopic(topic) is not None:
                 continue
-            key = (topic, blockType)
+            key = (topic, blockType, blockOrder)
             if key not in topicMap:
                 topicMap[key] = {}
             topicMap[key][periodKey] = text
             if key not in topicOrder:
                 majorNum = int(row.get("majorNum", 99))
                 seq = int(row.get("orderSeq", 999999))
-                # text를 table 앞에 배치 (blockType 순서: text=0, table=1)
-                blockSort = 0 if blockType == "text" else 1
-                topicOrder[key] = (majorNum, seq, blockSort)
+                topicOrder[key] = (majorNum, seq)
 
     if not validPeriods or not topicMap:
         return None
 
-    sortedKeys = sorted(topicOrder.keys(), key=lambda k: topicOrder[k])
+    # topic 그룹핑: 같은 topic의 블록이 반드시 연속하도록 정렬
+    # (majorNum, topic_first_seq) → topic 순서, 그 안에서 blockOrder
+    topicFirstSeq: dict[str, tuple[int, int]] = {}
+    for key, (majorNum, seq) in topicOrder.items():
+        topic = key[0]
+        if topic not in topicFirstSeq or (majorNum, seq) < topicFirstSeq[topic]:
+            topicFirstSeq[topic] = (majorNum, seq)
+
+    # topic 내 안정 순서를 위해 topic별 고유 인덱스 부여
+    topicIndex: dict[str, int] = {}
+    for topic_seq in sorted(topicFirstSeq.items(), key=lambda x: x[1]):
+        topicIndex[topic_seq[0]] = len(topicIndex)
+
+    def _sortKey(k: tuple[str, str, int]) -> tuple[int, int, int, int]:
+        topic, _blockType, blockOrder = k
+        majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
+        tIdx = topicIndex.get(topic, 999999)
+        return (majorNum, firstSeq, tIdx, blockOrder)
+
+    sortedKeys = sorted(topicOrder.keys(), key=_sortKey)
 
     dfRows: list[dict[str, str | None]] = []
     for key in sortedKeys:
-        topic, blockType = key
+        topic, blockType, blockOrder = key
         row: dict[str, str | None] = {
             "chapter": topicChapter.get(topic),
             "topic": topic,
             "blockType": blockType,
+            "blockOrder": blockOrder,
         }
         for period in validPeriods:
             row[period] = topicMap[key].get(period)
@@ -274,14 +307,18 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     remaining = set(topicMap.keys()) - set(topicOrder.keys())
     for key in sorted(remaining):
-        topic, blockType = key
+        topic, blockType, blockOrder = key
         row: dict[str, str | None] = {
             "chapter": topicChapter.get(topic),
             "topic": topic,
             "blockType": blockType,
+            "blockOrder": blockOrder,
         }
         for period in validPeriods:
             row[period] = topicMap[key].get(period)
         dfRows.append(row)
 
-    return pl.DataFrame(dfRows)
+    schema = {"chapter": pl.Utf8, "topic": pl.Utf8, "blockType": pl.Utf8, "blockOrder": pl.Int64}
+    for p in validPeriods:
+        schema[p] = pl.Utf8
+    return pl.DataFrame(dfRows, schema=schema)
