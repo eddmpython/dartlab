@@ -555,6 +555,32 @@ class Company:
     def currency(self) -> str:
         return "USD"
 
+    def view(self, *, port: int = 8400) -> None:
+        """브라우저에서 공시 뷰어를 엽니다."""
+        import socket
+        import threading
+        import time
+        import webbrowser
+
+        def _is_port_in_use(p: int) -> bool:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(("127.0.0.1", p)) == 0
+
+        if not _is_port_in_use(port):
+            def _run():
+                import uvicorn
+                uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
+
+            t = threading.Thread(target=_run, daemon=True)
+            t.start()
+            for _ in range(30):
+                if _is_port_in_use(port):
+                    break
+                time.sleep(0.1)
+
+        url = f"http://127.0.0.1:{port}/?company={self.ticker}"
+        webbrowser.open(url)
+
     @property
     def timeseries(self):
         return self._cache.get("_ts")

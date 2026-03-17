@@ -2646,7 +2646,26 @@ class Company:
         if sepIdx < 0 or sepIdx + 1 >= len(sub):
             return None
 
-        return sub[sepIdx + 1:]
+        remainder = sub[sepIdx + 1:]
+        if not remainder:
+            return None
+
+        # 나머지에 separator가 있으면 그대로 반환 (정상적인 2-separator 구조)
+        hasSep = any(
+            all(set(c.strip()) <= {"-", ":"} for c in line.strip("|").split("|") if c.strip())
+            for line in remainder
+        )
+        if hasSep:
+            return remainder
+
+        # separator가 없으면 실제 헤더 + 인조 separator + 데이터 행으로 구성
+        if len(remainder) >= 2:
+            headerLine = remainder[0]
+            colCount = len(headerLine.strip("|").split("|"))
+            sepLine = "| " + " | ".join(["---"] * colCount) + " |"
+            return [headerLine, sepLine] + remainder[1:]
+
+        return None
 
     def _horizontalizeTableBlock(
         self,
@@ -2744,10 +2763,15 @@ class Company:
                         fixedDr = _dataRows(fixed)
                         if fixedHc and not _isJunk(fixedHc) and fixedDr:
                             structType = _classifyStructure(fixedHc)
+                            hc = fixedHc
                             sub = fixed  # 이후 파서에 strip된 서브테이블 전달
 
                 if structType == "multi_year":
+                    beforeLen = len(allItems)
                     _collectMultiYear(sub, pYear, p)
+                    # multi_year 파싱 실패 → kv/matrix fallback
+                    if len(allItems) == beforeLen and len(hc) >= 2:
+                        _collectKvMatrix(sub, p)
 
                 elif structType in ("key_value", "matrix"):
                     _collectKvMatrix(sub, p)
@@ -3902,3 +3926,39 @@ class Company:
     def currency(self) -> str:
         """통화 코드."""
         return "KRW"
+
+    def view(self, *, port: int = 8400) -> None:
+        """브라우저에서 공시 뷰어를 엽니다.
+
+        로컬 서버를 자동으로 띄우고 브라우저를 열어서
+        이 회사의 전체 공시를 DART 스타일로 탐색할 수 있습니다.
+
+        Example::
+
+            c = Company("005930")
+            c.view()
+        """
+        import socket
+        import threading
+        import time
+        import webbrowser
+
+        def _is_port_in_use(p: int) -> bool:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(("127.0.0.1", p)) == 0
+
+        if not _is_port_in_use(port):
+            def _run():
+                import uvicorn
+                uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
+
+            t = threading.Thread(target=_run, daemon=True)
+            t.start()
+            # 서버 준비 대기
+            for _ in range(30):
+                if _is_port_in_use(port):
+                    break
+                time.sleep(0.1)
+
+        url = f"http://127.0.0.1:{port}/?company={self.stockCode}"
+        webbrowser.open(url)
