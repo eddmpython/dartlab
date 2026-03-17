@@ -705,3 +705,143 @@ def register_defaults(company: Any) -> None:
         "저장된 Excel 내보내기 템플릿 목록을 조회합니다. 프리셋과 사용자 커스텀 템플릿을 모두 포함합니다.",
         {"type": "object", "properties": {}},
     )
+
+    # ── 17. sections: 전체 공시 지도 조회 ──
+    def get_sections() -> str:
+        sec = company.sections
+        if sec is None:
+            return "sections 데이터가 없습니다."
+        topics = []
+        seen = set()
+        for row in sec.to_dicts():
+            t = row.get("topic", "")
+            if t not in seen:
+                seen.add(t)
+                src = row.get("source", "docs")
+                ch = row.get("chapter", "")
+                topics.append(f"| {ch} | `{t}` | {src} |")
+        lines = ["| 장 | topic | source |", "| --- | --- | --- |"] + topics
+        return "\n".join(lines)
+
+    register_tool(
+        "get_sections",
+        get_sections,
+        "기업의 전체 공시 지도(sections)를 조회합니다. "
+        "어떤 topic이 어떤 장(chapter)에 있는지, source(docs/finance/report)가 무엇인지 확인. "
+        "show(topic, block)으로 접근하기 전에 먼저 이 도구로 전체 구조를 파악하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    # ── 18. show_block: sections 블록 데이터 조회 ──
+    def show_block(topic: str, block: int | None = None) -> str:
+        if block is None:
+            result = company.show(topic)
+        else:
+            result = company.show(topic, block)
+        if result is None:
+            return f"'{topic}' block={block} 데이터가 없습니다."
+        if isinstance(result, pl.DataFrame):
+            return _df_to_md(result, max_rows=30)
+        return str(result)[:3000]
+
+    register_tool(
+        "show_block",
+        show_block,
+        "sections의 특정 topic/block 데이터를 조회합니다. "
+        "block=null이면 블록 목차(block, type, source, preview)를 반환. "
+        "block=N이면 해당 블록의 실제 데이터(text 또는 수평화 table)를 반환. "
+        "get_sections로 topic 목록을 확인한 뒤 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "topic명 (예: companyOverview, dividend, BS)",
+                },
+                "block": {
+                    "type": "integer",
+                    "description": "blockOrder (null이면 블록 목차, 숫자면 해당 블록 데이터)",
+                },
+            },
+            "required": ["topic"],
+        },
+    )
+
+    # ── 19. search_company: 종목 검색 ──
+    def search_company(keyword: str) -> str:
+        from dartlab.core.kindList import searchName
+
+        results = searchName(keyword)
+        if results is None or (isinstance(results, pl.DataFrame) and results.is_empty()):
+            return f"'{keyword}' 검색 결과가 없습니다."
+        if isinstance(results, pl.DataFrame):
+            return _df_to_md(results, max_rows=20)
+        return str(results)[:2000]
+
+    register_tool(
+        "search_company",
+        search_company,
+        "종목명/종목코드로 기업을 검색합니다. 종목코드를 모를 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "검색 키워드 (예: '삼성', '현대차', '반도체')",
+                },
+            },
+            "required": ["keyword"],
+        },
+    )
+
+    # ── 20. download_data: 데이터 다운로드 ──
+    def download_data(stock_code: str = "", category: str = "docs") -> str:
+        from dartlab.core.dataLoader import download, downloadAll
+
+        if stock_code:
+            download(stock_code)
+            return f"{stock_code} 데이터 다운로드 완료."
+        downloadAll(category)
+        return f"{category} 전체 데이터 다운로드 완료."
+
+    register_tool(
+        "download_data",
+        download_data,
+        "데이터를 다운로드합니다. "
+        "stock_code를 지정하면 해당 종목만, 비워두면 카테고리 전체를 다운로드합니다. "
+        "category: docs(공시문서), finance(재무), report(정기보고서).",
+        {
+            "type": "object",
+            "properties": {
+                "stock_code": {
+                    "type": "string",
+                    "description": "종목코드 (비워두면 전체)",
+                    "default": "",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "카테고리 (docs, finance, report)",
+                    "default": "docs",
+                },
+            },
+        },
+    )
+
+    # ── 21. data_status: 데이터 현황 조회 ──
+    def data_status() -> str:
+        from dartlab.core.dataLoader import _dataDir, DATA_RELEASES
+
+        lines = ["| 카테고리 | 라벨 | 파일 수 |", "| --- | --- | --- |"]
+        for cat, conf in DATA_RELEASES.items():
+            dataDir = _dataDir(cat)
+            count = len(list(dataDir.glob("*.parquet"))) if dataDir.exists() else 0
+            lines.append(f"| {cat} | {conf['label']} | {count} |")
+        return "\n".join(lines)
+
+    register_tool(
+        "data_status",
+        data_status,
+        "로컬에 저장된 데이터 현황(카테고리별 파일 수)을 조회합니다. "
+        "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
