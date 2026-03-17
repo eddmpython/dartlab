@@ -3,8 +3,9 @@
 	import { searchCompany, fetchDataSources, fetchDataPreview, downloadExcel, fetchCompany } from "$lib/api.js";
 	import {
 		X, Search, Database, ChevronRight, ChevronDown, Table2, FileText, Loader2,
-		Download, Languages, Sparkles, Wrench, Brain, Link2, RotateCcw, Eye, CheckCircle2
+		Download, Languages, Sparkles, Wrench, Brain, Link2, RotateCcw, Eye, CheckCircle2, ScrollText
 	} from "lucide-svelte";
+	import SectionsViewer from "./SectionsViewer.svelte";
 
 	let {
 		selectedCompany = null,
@@ -686,7 +687,16 @@
 			</div>
 		{/if}
 
-		<div class="mt-3 grid grid-cols-3 gap-1.5 rounded-xl bg-dl-bg-darker p-1">
+		<div class="mt-3 grid grid-cols-4 gap-1.5 rounded-xl bg-dl-bg-darker p-1">
+			<button
+				class={cn(
+					"rounded-lg px-2 py-1.5 text-[11px] transition-colors",
+					activeTab === "sections" ? "bg-dl-bg-card text-dl-text" : "text-dl-text-dim hover:text-dl-text-muted"
+				)}
+				onclick={() => setTab("sections")}
+			>
+				공시
+			</button>
 			<button
 				class={cn(
 					"rounded-lg px-2 py-1.5 text-[11px] transition-colors",
@@ -720,7 +730,7 @@
 			<div class="mt-3 grid grid-cols-3 gap-2">
 				<div class="rounded-xl border border-dl-border/40 bg-dl-bg-card/45 px-3 py-2">
 					<div class="text-[9px] uppercase tracking-[0.16em] text-dl-text-dim">View</div>
-					<div class="mt-1 text-[12px] font-medium text-dl-text">{activeTab === "overview" ? "Overview" : activeTab === "explore" ? "Explore" : "Evidence"}</div>
+					<div class="mt-1 text-[12px] font-medium text-dl-text">{activeTab === "sections" ? "공시" : activeTab === "overview" ? "Overview" : activeTab === "explore" ? "Explore" : "Evidence"}</div>
 				</div>
 				<div class="rounded-xl border border-dl-border/40 bg-dl-bg-card/45 px-3 py-2">
 					<div class="text-[9px] uppercase tracking-[0.16em] text-dl-text-dim">Modules</div>
@@ -755,7 +765,22 @@
 				{actionStatus.text}
 			</div>
 		{/if}
-		{#if activeTab === "overview"}
+		{#if activeTab === "sections"}
+			{#if selectedCompany}
+				<SectionsViewer
+					stockCode={selectedCompany.stockCode}
+					corpName={selectedCompany.corpName}
+				/>
+			{:else}
+				<div class="rounded-2xl border border-dl-border/60 bg-dl-bg-darker/70 p-4 text-center">
+					<ScrollText size={28} class="mx-auto mb-3 text-dl-text-dim/50" />
+					<div class="text-[13px] font-medium text-dl-text">공시 뷰어</div>
+					<div class="mt-1 text-[11px] leading-relaxed text-dl-text-dim">
+						회사를 선택하면 전자공시 전체를 탐색할 수 있습니다.
+					</div>
+				</div>
+			{/if}
+		{:else if activeTab === "overview"}
 			{#if !selectedCompany}
 				<div class="rounded-2xl border border-dl-border/60 bg-dl-bg-darker/70 p-4 text-center">
 					<Database size={28} class="mx-auto mb-3 text-dl-text-dim/50" />

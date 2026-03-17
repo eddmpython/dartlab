@@ -1,5 +1,5 @@
 const STORAGE_KEY = "dartlab-workspace";
-const VALID_TABS = new Set(["overview", "explore", "evidence"]);
+const VALID_TABS = new Set(["sections", "overview", "explore", "evidence"]);
 const MAX_RECENT_COMPANIES = 6;
 
 function normalizeTab(tab) {
