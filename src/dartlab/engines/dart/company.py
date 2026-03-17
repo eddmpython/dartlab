@@ -2609,6 +2609,45 @@ class Company:
         # block=None → 전체 topic (text 원문 + table 수평화, blockOrder 순서)
         return self._applyPeriodFilter(topicFrame, period)
 
+    @staticmethod
+    def _stripUnitHeader(sub: list[str]) -> list[str] | None:
+        """단위행/기준일행이 헤더인 서브테이블 → 단위행 제거 + 나머지 반환.
+
+        패턴: | (단위:천원) | | | → sep → 실제헤더 → 데이터
+        반환: 실제헤더 행부터의 서브테이블 (기존 파서가 그대로 동작).
+        해당하지 않으면 None.
+        """
+        _UNIT_ONLY_RE = re.compile(r"^\(?\s*단위\s*[:/]?\s*[^)]*\)?\s*$")
+        _DATE_ONLY_RE = re.compile(r"^\(?\s*기준일\s*:")
+
+        # 첫 번째 비-separator 행 찾기
+        firstRow = None
+        for line in sub:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+                continue
+            firstRow = [c for c in cells if c.strip()]
+            break
+
+        if firstRow is None or len(firstRow) != 1:
+            return None
+        h = firstRow[0].strip()
+        if not (_UNIT_ONLY_RE.match(h) or _DATE_ONLY_RE.match(h)):
+            return None
+
+        # 첫 separator 이후의 행들을 새 서브테이블로 반환
+        sepIdx = -1
+        for i, line in enumerate(sub):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
+                sepIdx = i
+                break
+
+        if sepIdx < 0 or sepIdx + 1 >= len(sub):
+            return None
+
+        return sub[sepIdx + 1:]
+
     def _horizontalizeTableBlock(
         self,
         topicFrame: pl.DataFrame,
@@ -2632,7 +2671,6 @@ class Company:
         if boRow.is_empty():
             return None
 
-        # 실험 064의 개선된 파서를 직접 사용
         from dartlab.engines.dart.docs.sections.tableParser import (
             _parseMultiYear,
             _parseKeyValueOrMatrix,
@@ -2642,16 +2680,38 @@ class Company:
 
         _SUFFIX_RE = re.compile(r"(사업)?부문$")
         _KISU_RE = re.compile(r"제\d+기\s*(?:\d*분기)?\s*\(?(당기|전기|전전기|당반기|전반기)\)?")
-        _KISU_ONLY_RE = re.compile(r"^제\d+기\s*(?:\d*분기)?(?:말)?$")
 
         def _normalizeItem(name: str) -> str:
             name = _SUFFIX_RE.sub("", name).strip()
-            # 기수 정규화: 제76기(당기) → 당기
             m = _KISU_RE.search(name)
             if m:
                 return m.group(1)
-            # 제76기만 있는 경우 그대로 유지
             return name
+
+        def _collectMultiYear(sub: list[str], pYear: int, p: str) -> None:
+            triples, _ = _parseMultiYear(sub, pYear)
+            for rawItem, year, val in triples:
+                item = _normalizeItem(rawItem)
+                if year == str(pYear):
+                    if item not in seenItems:
+                        allItems.append(item)
+                        seenItems.add(item)
+                    if item not in periodItemVal:
+                        periodItemVal[item] = {}
+                    periodItemVal[item][p] = val
+
+        def _collectKvMatrix(sub: list[str], p: str) -> None:
+            rows, _, _ = _parseKeyValueOrMatrix(sub)
+            for rawItem, vals in rows:
+                item = _normalizeItem(rawItem)
+                val = " | ".join(v for v in vals if v).strip()
+                if val:
+                    if item not in seenItems:
+                        allItems.append(item)
+                        seenItems.add(item)
+                    if item not in periodItemVal:
+                        periodItemVal[item] = {}
+                    periodItemVal[item][p] = val
 
         allItems: list[str] = []
         seenItems: set[str] = set()
@@ -2676,30 +2736,21 @@ class Company:
 
                 structType = _classifyStructure(hc)
 
-                if structType == "multi_year" and "Q" not in p:
-                    triples, _ = _parseMultiYear(sub, pYear)
-                    for rawItem, year, val in triples:
-                        item = _normalizeItem(rawItem)
-                        if year == str(pYear):
-                            if item not in seenItems:
-                                allItems.append(item)
-                                seenItems.add(item)
-                            if item not in periodItemVal:
-                                periodItemVal[item] = {}
-                            periodItemVal[item][p] = val
+                # 단위/기준일 헤더 → 실제 헤더로 재분류
+                if structType == "skip":
+                    fixed = self._stripUnitHeader(sub)
+                    if fixed is not None:
+                        fixedHc = _headerCells(fixed)
+                        fixedDr = _dataRows(fixed)
+                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
+                            structType = _classifyStructure(fixedHc)
+                            sub = fixed  # 이후 파서에 strip된 서브테이블 전달
+
+                if structType == "multi_year":
+                    _collectMultiYear(sub, pYear, p)
 
                 elif structType in ("key_value", "matrix"):
-                    rows, _, _ = _parseKeyValueOrMatrix(sub)
-                    for rawItem, vals in rows:
-                        item = _normalizeItem(rawItem)
-                        val = " | ".join(v for v in vals if v).strip()
-                        if val:
-                            if item not in seenItems:
-                                allItems.append(item)
-                                seenItems.add(item)
-                            if item not in periodItemVal:
-                                periodItemVal[item] = {}
-                            periodItemVal[item][p] = val
+                    _collectKvMatrix(sub, p)
 
         if not allItems:
             return None
