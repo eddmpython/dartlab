@@ -50,7 +50,8 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 
 - `thumbnail`: 카드 좌측 메타 영역에 쓰는 아바타형 대표 이미지
 - `cardPreview`: 우측 정사각형 썸네일 슬롯에 쓰는 카드 전용 프리뷰 이미지
-- `cardPreview`가 없으면 `thumbnail`을 fallback으로 사용한다
+- `cardPreview`를 생략하면 본문에서 첫 번째로 등장하는 SVG를 우측 썸네일로 자동 사용한다
+- 본문 SVG가 없을 때만 `thumbnail`을 fallback으로 사용한다
 
 ## 시리즈 정의
 

@@ -85,8 +85,10 @@
 								</div>
 							</div>
 							<picture>
-								<source srcset="{base}{(post.previewAsset ?? post.cardPreview).replace('.png', '.webp')}" type="image/webp" />
-								<img src="{base}{post.previewAsset ?? post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" />
+								{#if post.cardPreviewWebp}
+									<source srcset="{base}{post.cardPreviewWebp}" type="image/webp" />
+								{/if}
+								<img src="{base}{post.cardPreview}" alt={post.title} class="series-step-thumb" width="172" height="172" loading="lazy" decoding="async" />
 							</picture>
 							<span class="series-step-cta">읽기 <ArrowRight size={14} /></span>
 						</div>

@@ -140,6 +140,7 @@ export interface PostMeta {
 	description: string;
 	thumbnail: string;
 	cardPreview: string;
+	cardPreviewWebp?: string;
 	previewAsset?: string;
 	readingMinutes: number;
 	category: CategoryId;
@@ -203,9 +204,10 @@ function buildPosts(): PostMeta[] {
 		const seriesOrder = rawSeriesOrder ? Number.parseInt(rawSeriesOrder, 10) : undefined;
 		const rawMarkdown = rawModules[path] ?? '';
 		const readingMinutes = estimateReadingMinutes(rawMarkdown);
+		const previewAsset = findPreviewAsset(path, rawMarkdown);
 		const thumbnail = metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png';
-		const cardPreview = metadata.cardPreview ? String(metadata.cardPreview) : thumbnail;
-		const previewAsset = findPreviewAsset(path);
+		const cardPreview = metadata.cardPreview ? String(metadata.cardPreview) : previewAsset ?? thumbnail;
+		const cardPreviewWebp = toWebpAsset(cardPreview);
 
 		result.push({
 			slug: parsed.slug,
@@ -214,6 +216,7 @@ function buildPosts(): PostMeta[] {
 			description: metadata.description ? String(metadata.description) : '',
 			thumbnail,
 			cardPreview,
+			cardPreviewWebp,
 			previewAsset,
 			readingMinutes,
 			category: category.id,
@@ -249,12 +252,22 @@ function estimateReadingMinutes(rawMarkdown: string): number {
 	return Math.max(3, Math.ceil(tokenCount / 220));
 }
 
-function findPreviewAsset(postPath: string): string | undefined {
+function toWebpAsset(path: string): string | undefined {
+	if (path.endsWith('.png')) return path.replace(/\.png$/i, '.webp');
+	if (path.endsWith('.jpg')) return path.replace(/\.jpg$/i, '.webp');
+	if (path.endsWith('.jpeg')) return path.replace(/\.jpeg$/i, '.webp');
+	return undefined;
+}
+
+function findPreviewAsset(postPath: string, rawMarkdown: string): string | undefined {
+	const firstSvgInBody = rawMarkdown.match(/!\[[^\]]*\]\(\.\/assets\/([^)]+\.svg)\)/i);
+	if (firstSvgInBody) return `/blog/assets/${firstSvgInBody[1]}`;
+
 	// postPath: /blog/01-disclosure-systems/001-everything-about-dart/index.md
 	const postDir = postPath.replace(/\/index\.md$/, '');
 	const svgs = assetIndex.get(postDir);
 	if (!svgs || svgs.length === 0) return undefined;
-	// First SVG alphabetically → /blog/assets/{filename} (synced by syncBlogAssets)
+	// Fallback for posts with svg assets but no explicit markdown hit.
 	return `/blog/assets/${svgs[0]}`;
 }
 

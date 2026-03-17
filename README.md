@@ -31,7 +31,7 @@
 
 DartLab is a Python package for parsing and analyzing corporate filings. Its stable core covers [DART](https://dart.fss.or.kr/) (Korea) with growing support for [SEC EDGAR](https://www.sec.gov/edgar) (US) — both accessed through the same `dartlab.Company(...)` facade.
 
-The package extracts **both financial numbers and narrative text** from filings and exposes them through comparable tables, company facades, CLI workflows, and an AI web interface. The same `index → show → trace` workflow works for Korean and US stocks alike.
+The package extracts **both financial numbers and narrative text** from filings and exposes them through a company facade, CLI workflows, and an AI web interface. The current public flow is `sections → show → trace`.
 
 ### Account Standardization
 
@@ -98,8 +98,6 @@ c = dartlab.Company("AAPL")
 c.corpName                  # "Apple Inc."
 ```
 
-Creating a `Company` object prints a usage guide. For the full guide, call `c.guide()`.
-
 Data is auto-downloaded from GitHub Releases when not found locally.
 
 ```python
@@ -145,19 +143,20 @@ us = dartlab.Company("AAPL")
 us.corpName    # "Apple Inc."
 ```
 
-Both return the same `Company` interface with the same `index → show → trace` workflow.
+Both return the same `Company` interface with the same `sections → show → trace` workflow.
 
-### index / show / trace
+### sections / show / trace
 
 The current public flow is simple:
 
-- `index` shows the company structure first
-- `show(topic)` opens the actual payload
+- `sections` is the company spine
+- `show(topic)` opens one topic payload
 - `trace(topic)` explains whether `docs`, `finance`, or `report` won
 
 ```python
 c = dartlab.Company("005930")
-c.index              # structure index dataframe
+c.sections           # company topic x period table
+c.topics             # available topics
 c.show("BS")         # show one topic
 c.trace("dividend")  # source trace
 c.docs.sections      # pure docs source spine
@@ -166,17 +165,10 @@ c.report.dividend    # authoritative report series
 
 # Same flow for EDGAR
 us = dartlab.Company("AAPL")
-us.index             # same 8-column structure
+us.sections          # same company spine interface
+us.topics            # available topics
 us.show("BS")        # SEC XBRL financials
-us.show("riskFactors")  # 10-K narrative sections
-```
-
-`show()` returns a `ShowResult(text, table)` for disclosure topics — text and table blocks are separated:
-
-```python
-result = c.show("companyOverview")
-result.text    # narrative text DataFrame
-result.table   # table DataFrame
+us.show("10-K::item1Business")  # 10-K narrative section
 ```
 
 ### Financial Statements
@@ -278,8 +270,7 @@ c.employee    # year, totalEmployees, avgSalary, avgTenure, ...
 ### Disclosure Horizontalization
 
 ```python
-c.sections          # merged topic x period company table
-c.index             # same structure index dataframe
+c.sections          # company topic x period table
 c.docs.sections     # pure docs horizontalization source
 c.retrievalBlocks   # long DataFrame of source markdown blocks
 c.contextSlices     # LLM-ready slices with semantic/detail metadata
@@ -294,8 +285,8 @@ so the text layer stays lossless while runtime still returns DataFrames
 directly.
 
 DartLab does not store per-stock result tables as package data. Learned rules
-ship with the package, and runtime returns DataFrames directly from the current
-stock's disclosure parquet.
+ship with the package, and runtime returns topic payloads directly from the
+current stock's disclosure parquet.
 
 ### Audit Opinion
 
@@ -403,23 +394,6 @@ The web UI is one public surface. The same runtime also exposes CLI entrypoints 
 ```bash
 uv run dartlab ai              # http://localhost:8400
 uv run dartlab ai --port 9000  # custom port
-```
-
----
-
-## Bulk Extraction
-
-```python
-d = c.all()    # All module data as dict (with progress bar)
-# {"BS": df, "IS": df, "CF": df, "dividend": df, "notes": {...},
-#  "timeseries": (series, periods), "ratios": RatioResult, ...}
-```
-
-```python
-import dartlab
-dartlab.verbose = False    # Suppress progress output
-
-d = c.all()    # Silent extraction
 ```
 
 ---
@@ -570,7 +544,7 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [x] Board of directors, capital changes, contingent liabilities, related party tx, sanctions, R&D, internal control
 - [x] Affiliate groups, capital raises, sales/orders, products, risk management/derivatives
 - [x] MD&A, business description, company overview
-- [x] Company property API + Notes integration + all()
+- [x] Company property API + Notes integration
 - [x] Rich terminal output (avatar + usage guide)
 - [x] Account standardization engine — 2,700+ companies cross-comparable
 - [x] Quarterly time series + financial ratios (c.timeseries, c.ratios)
@@ -584,7 +558,6 @@ DartLab extracts both. It aligns quarterly, semi-annual, and annual reports on a
 - [x] Data Explorer — full-screen data browser with Korean/English label toggle
 - [x] Excel export with templates
 - [ ] Company `profile` report view (terminal/notebook document view focused on change points)
-- [ ] Compare UX overhaul around the same `index/show/trace` philosophy
 - [x] EDGAR Company UX alignment with the DART `Company` surface
 - [x] EDGAR (US SEC) financial data integration
 - [ ] Text analysis module integration (from separate project)
@@ -659,4 +632,3 @@ Questions or ideas? Open an [issue](https://github.com/eddmpython/dartlab/issues
 ## License
 
 MIT License
-
