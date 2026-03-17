@@ -744,16 +744,37 @@ class Company:
             df = getattr(self.finance, topic, None)
             return self._applyPeriodFilter(df, period) if df is not None else None
 
-        # docs — topic 전체 반환 (EDGAR는 topic당 text 1행 + table 1행)
+        # docs — blockType에 따라 text/table 반환
         periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
         if "blockType" in topicRows.columns:
-            bt = topicRows.filter(pl.col("blockOrder") == block)["blockType"][0] if "blockOrder" in topicRows.columns else "text"
+            # blockOrder로 필터 (None이면 blockType으로 대체)
+            bt = "text"
+            if "blockOrder" in topicRows.columns:
+                boFiltered = topicRows.filter(pl.col("blockOrder") == block)
+                if not boFiltered.is_empty():
+                    bt = boFiltered["blockType"][0]
+                else:
+                    # blockOrder가 None인 경우 — 인덱스로 접근
+                    btList = topicRows["blockType"].to_list()
+                    bt = btList[block] if block < len(btList) else "text"
+
             if bt == "text":
-                nonNullCols = [c for c in periodCols if topicRows[c].null_count() < topicRows.height]
+                textRows = topicRows.filter(pl.col("blockType") == "text")
+                if textRows.is_empty():
+                    return None
+                nonNullCols = [c for c in periodCols if textRows[c].null_count() < textRows.height]
                 if not nonNullCols:
                     return None
-                result = topicRows.filter(pl.col("blockType") == "text").select(nonNullCols)
-                return self._applyPeriodFilter(result, period)
+                return self._applyPeriodFilter(textRows.select(nonNullCols), period)
+            else:
+                tableRows = topicRows.filter(pl.col("blockType") == "table")
+                if tableRows.is_empty():
+                    return None
+                nonNullCols = [c for c in periodCols if tableRows[c].null_count() < tableRows.height]
+                if not nonNullCols:
+                    return None
+                return self._applyPeriodFilter(tableRows.select(nonNullCols), period)
+
         return self._applyPeriodFilter(topicRows, period)
 
     def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
