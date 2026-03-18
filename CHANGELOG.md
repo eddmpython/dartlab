@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **공개 문서와 랜딩 메시지 재정렬**
 - README / README_KR를 `sections` 중심 회사 맵 서사로 재작성
 - docs 메인 흐름을 `Company -> sections -> show -> trace` 기준으로 통일
-- `index`, `ShowResult`, `40개 모듈`, `Compare` 중심 공개 문구를 메인 문서와 랜딩에서 제거
+- `index`, `ShowResult`, `40개 모듈`, legacy 비교 surface 중심 공개 문구를 메인 문서와 랜딩에서 제거
 - 랜딩 카피를 parser 카탈로그 중심에서 sections-first company map 중심으로 재구성
 - 튜토리얼 `quickstart`, `edgar`를 현행 공개 contract에 맞게 재정리
 - docs 상태 문서를 현행 공개 문서 구조 기준으로 갱신

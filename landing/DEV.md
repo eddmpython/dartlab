@@ -24,7 +24,7 @@
 
 ### robots.txt
 - 모든 봇 `Allow: /`
-- AI 봇 6종 명시적 허용: GPTBot, ChatGPT-User, ClaudeBot, Google-Extended, PerplexityBot, Applebot-Extended
+- AI 봇 7종 명시적 허용: GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Google-Extended, PerplexityBot, Applebot-Extended
 - 수정 시 `landing/static/robots.txt` 직접 편집
 
 ### Sitemap

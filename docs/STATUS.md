@@ -37,7 +37,7 @@ docs/
 
 ## 정리 원칙
 
-- `Compare`는 메인 공개 서사에서 빼둔다
+- legacy 비교 surface는 메인 공개 서사에서 뺀다
 - `index`는 공개 기본 경로에서 제거한다
 - `ShowResult` 같은 과거 반환형 설명은 공개 문서에서 제거한다
 - `40 modules` 같은 옛 메시지는 홈/빠른시작/랜딩에서 쓰지 않는다
@@ -53,7 +53,7 @@ docs/
 - [x] README / README_KR sections 중심 재작성
 - [x] docs/index, quickstart, api/overview 재정렬
 - [x] tutorials/01_quickstart, tutorials/09_edgar 현행화
-- [x] stability 문서에서 `index`, `Compare` 공개 노출 정리
+- [x] stability 문서에서 `index`, legacy 비교 surface 공개 노출 정리
 - [x] 랜딩 hero / architecture / workflow / CTA 메시지 재작성
 - [ ] finance 상세 문서(`api/finance-*`)의 sections-first 서사 추가 정리
 - [ ] 나머지 튜토리얼 구간의 오래된 property 중심 문구 추가 정리
