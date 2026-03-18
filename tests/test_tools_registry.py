@@ -155,6 +155,18 @@ class TestRegisterDefaults:
         assert "data_status" in names
         assert "get_data" not in names
 
+    def test_register_defaults_hides_coding_tools_on_nonlocal_host(self, monkeypatch):
+        monkeypatch.setenv("DARTLAB_HOST", "0.0.0.0")
+        monkeypatch.delenv("DARTLAB_ENABLE_CODING_RUNTIME", raising=False)
+        register_defaults(None)
+        names = [s["function"]["name"] for s in get_tool_schemas()]
+        assert "get_coding_runtime_status" in names
+        assert "run_coding_task" not in names
+        assert "run_codex_task" not in names
+        result = execute_tool("get_runtime_capabilities", {})
+        assert "비활성화" in result
+        assert "안전 정책" in result
+
     def test_runtime_capabilities_mentions_edgar_and_coding_scope(self):
         register_defaults(None)
         result = execute_tool("get_runtime_capabilities", {})

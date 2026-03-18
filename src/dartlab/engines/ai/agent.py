@@ -13,6 +13,7 @@ from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.tool_runtime import ToolRuntime
 from dartlab.engines.ai.tools_registry import (
     build_tool_runtime,
+    get_coding_runtime_policy,
 )
 
 
@@ -162,63 +163,104 @@ def agent_loop_stream(
     yield from provider.stream(messages)
 
 
-AGENT_SYSTEM_ADDITION = """
+def build_agent_system_addition(runtime: ToolRuntime | None = None) -> str:
+    """현재 runtime에 맞는 도구 안내 프롬프트를 생성한다."""
+    tool_names = {
+        schema.get("function", {}).get("name", "")
+        for schema in (runtime.get_tool_schemas() if runtime is not None else [])
+    }
+    coding_runtime_enabled, coding_runtime_reason = get_coding_runtime_policy()
+    has_runtime_coding_tools = (
+        {"run_coding_task", "run_codex_task"}.issubset(tool_names) if tool_names else coding_runtime_enabled
+    )
 
-## 도구 사용 안내
+    lines = [
+        "",
+        "## 도구 사용 안내",
+        "",
+        "당신은 DartLab 분석 도구를 사용할 수 있습니다.",
+        "필요한 데이터를 도구를 통해 조회하고, 분석 결과를 종합하여 답변하세요.",
+        "",
+        "### 데이터 조회 도구:",
+        "- `list_modules`: 사용 가능한 데이터 모듈 목록 조회 → **데이터를 모를 때 먼저 호출**",
+        "- `search_data`: 키워드로 전체 모듈 검색 → 특정 계정과목이나 지표를 찾을 때",
+        "- `get_data`: 특정 모듈의 데이터 조회 (BS, IS, CF, dividend 등)",
+        "- `get_report_data`: 정기보고서 API 데이터 조회 (배당, 직원, 임원 등)",
+        "- `get_company_info`: 기업 기본 정보",
+        "",
+        "### 분석 도구:",
+        "- `compute_ratios`: 재무비율 자동 계산 (부채비율, ROE 등)",
+        "- `detect_anomalies`: 이상치 탐지 (급격한 변동, 부호 반전)",
+        "- `compute_growth`: 성장률 매트릭스 (1Y/2Y/3Y/5Y CAGR)",
+        "- `yoy_analysis`: 전년 대비 변동 분석",
+        "- `get_summary`: 요약 통계 (평균, 추세, CAGR)",
+        "",
+        "### L2 분석 엔진 도구:",
+        "- `get_insight`: 기업 7영역 인사이트 등급(A~F) + 이상치 + 프로파일 분류",
+        "- `get_sector_info`: WICS 섹터 분류 + 섹터 파라미터(PER, PBR, 할인율)",
+        "- `get_rank`: 전체 시장 및 섹터 내 규모 순위",
+        "",
+        "### 메타 도구 (시스템 정보):",
+        '- `get_system_spec`: DartLab 전체 스펙 (엔진, 데이터, 기능 목록) → **"어떤 데이터가 있어?" 질문에 사용**',
+        "- `get_engine_spec`: 특정 엔진의 상세 스펙 (insight, sector, rank, dart.finance, dart.report)",
+        "- `get_runtime_capabilities`: UI 대화에서 실제 가능한 기능 범위 → **EDGAR 추가 수집, OpenAPI, GPT/Codex 코딩 가능 범위 질문에 우선 사용**",
+        "- `get_tool_catalog`: 현재 등록된 도구 목록/파라미터 조회 → **새 도구가 추가됐는지 확인할 때 사용**",
+        "- `get_coding_runtime_status`: 현재 coding runtime의 backend 목록/상태 조회",
+        "",
+        "### 전역 도구 (회사 없어도 사용 가능):",
+        "- `search_company`: 종목명/종목코드 검색",
+        "- `download_data`: docs/finance/report/edgarDocs 다운로드",
+        "- `data_status`: 로컬 데이터 보유 현황 확인",
+        "- `get_openapi_capabilities`: OpenDart/OpenEdgar surface 요약",
+        "- `call_dart_openapi`: DART 공개 API 직접 호출",
+        "- `call_edgar_openapi`: EDGAR 공개 API 직접 호출",
+        "- `openapi_save`: OpenAPI saver로 parquet 생성",
+    ]
 
-당신은 DartLab 분석 도구를 사용할 수 있습니다.
-필요한 데이터를 도구를 통해 조회하고, 분석 결과를 종합하여 답변하세요.
+    if has_runtime_coding_tools:
+        lines.extend(
+            [
+                "- `run_coding_task`: 표준 coding runtime으로 실제 코드 작업 위임 → **명시적 코드 수정/리팩터링 요청에서 우선 사용**",
+                "- `run_codex_task`: Codex compatibility alias",
+            ]
+        )
+    else:
+        lines.append(f"- 현재 세션에서는 coding runtime 도구가 등록되지 않았습니다. ({coding_runtime_reason})")
 
-### 데이터 조회 도구:
-- `list_modules`: 사용 가능한 데이터 모듈 목록 조회 → **데이터를 모를 때 먼저 호출**
-- `search_data`: 키워드로 전체 모듈 검색 → 특정 계정과목이나 지표를 찾을 때
-- `get_data`: 특정 모듈의 데이터 조회 (BS, IS, CF, dividend 등)
-- `get_report_data`: 정기보고서 API 데이터 조회 (배당, 직원, 임원 등)
-- `get_company_info`: 기업 기본 정보
+    lines.extend(
+        [
+            "",
+            "### 분석 절차:",
+            "1. 질문을 이해하고 이것이 `기능 탐색`인지 `회사 분석`인지 먼저 구분",
+            "2. 기능 탐색 질문이면 `get_runtime_capabilities`, `get_system_spec`, `get_openapi_capabilities`, `get_tool_catalog`, `get_coding_runtime_status` 중 적절한 것을 먼저 호출",
+            "3. 회사 분석인데 어떤 데이터가 있는지 모르면 `list_modules`를 먼저 호출",
+            "4. OpenAPI 원문/추가 수집 질문이면 `call_dart_openapi`, `call_edgar_openapi`, `openapi_save`를 사용",
+            "5. 구체적 모듈 데이터를 `get_data` 또는 `show_block`으로 조회",
+        ]
+    )
 
-### 분석 도구:
-- `compute_ratios`: 재무비율 자동 계산 (부채비율, ROE 등)
-- `detect_anomalies`: 이상치 탐지 (급격한 변동, 부호 반전)
-- `compute_growth`: 성장률 매트릭스 (1Y/2Y/3Y/5Y CAGR)
-- `yoy_analysis`: 전년 대비 변동 분석
-- `get_summary`: 요약 통계 (평균, 추세, CAGR)
+    if has_runtime_coding_tools:
+        lines.append(
+            "6. 명시적 코드 수정/리팩터링 요청이면 `run_coding_task` 사용을 우선 검토하고, Codex 고정 지시일 때만 `run_codex_task`를 사용"
+        )
+    else:
+        lines.append(
+            "6. 코드 작업 요청이라도 현재 세션에서 coding runtime이 닫혀 있으면 실제 수정 대신 수정안과 활성화 조건만 안내"
+        )
 
-### L2 분석 엔진 도구:
-- `get_insight`: 기업 7영역 인사이트 등급(A~F) + 이상치 + 프로파일 분류
-- `get_sector_info`: WICS 섹터 분류 + 섹터 파라미터(PER, PBR, 할인율)
-- `get_rank`: 전체 시장 및 섹터 내 규모 순위
+    lines.extend(
+        [
+            "7. 필요 시 `get_insight`, `get_sector_info`, `get_rank` 등으로 심층 분석",
+            "8. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
+            "9. 모든 수치에 출처(테이블명, 연도)를 반드시 인용",
+            "",
+            "### 답변 방식:",
+            '- 사용자가 "뭘 할 수 있어?", "EDGAR에서 더 받을 수 있어?", "OpenAPI로 뭐가 돼?", "GPT 연결하면 코딩도 돼?"처럼 범위를 물으면',
+            "  가능한 것 / 바로 할 수 있는 것 / 아직 안 되는 것을 먼저 짧게 정리한 뒤 다음 액션을 제안하세요.",
+            "- 도구와 기능 목록은 고정 문구를 외우지 말고 현재 등록된 tool registry 결과를 우선 신뢰하세요.",
+        ]
+    )
+    return "\n".join(lines)
 
-### 메타 도구 (시스템 정보):
-- `get_system_spec`: DartLab 전체 스펙 (엔진, 데이터, 기능 목록) → **"어떤 데이터가 있어?" 질문에 사용**
-- `get_engine_spec`: 특정 엔진의 상세 스펙 (insight, sector, rank, dart.finance, dart.report)
-- `get_runtime_capabilities`: UI 대화에서 실제 가능한 기능 범위 → **EDGAR 추가 수집, OpenAPI, GPT/Codex 코딩 가능 범위 질문에 우선 사용**
-- `get_tool_catalog`: 현재 등록된 도구 목록/파라미터 조회 → **새 도구가 추가됐는지 확인할 때 사용**
-- `get_coding_runtime_status`: 현재 coding runtime의 backend 목록/상태 조회
 
-### 전역 도구 (회사 없어도 사용 가능):
-- `search_company`: 종목명/종목코드 검색
-- `download_data`: docs/finance/report/edgarDocs 다운로드
-- `data_status`: 로컬 데이터 보유 현황 확인
-- `get_openapi_capabilities`: OpenDart/OpenEdgar surface 요약
-- `call_dart_openapi`: DART 공개 API 직접 호출
-- `call_edgar_openapi`: EDGAR 공개 API 직접 호출
-- `openapi_save`: OpenAPI saver로 parquet 생성
-- `run_coding_task`: 표준 coding runtime으로 실제 코드 작업 위임 → **명시적 코드 수정/리팩터링 요청에서 우선 사용**
-- `run_codex_task`: Codex compatibility alias
-
-### 분석 절차:
-1. 질문을 이해하고 이것이 `기능 탐색`인지 `회사 분석`인지 먼저 구분
-2. 기능 탐색 질문이면 `get_runtime_capabilities`, `get_system_spec`, `get_openapi_capabilities`, `get_tool_catalog`, `get_coding_runtime_status` 중 적절한 것을 먼저 호출
-3. 회사 분석인데 어떤 데이터가 있는지 모르면 `list_modules`를 먼저 호출
-4. OpenAPI 원문/추가 수집 질문이면 `call_dart_openapi`, `call_edgar_openapi`, `openapi_save`를 사용
-5. 구체적 모듈 데이터를 `get_data` 또는 `show_block`으로 조회
-6. 명시적 코드 수정/리팩터링 요청이면 `run_coding_task` 사용을 우선 검토하고, Codex 고정 지시일 때만 `run_codex_task`를 사용
-7. 필요 시 `get_insight`, `get_sector_info`, `get_rank` 등으로 심층 분석
-8. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)
-9. 모든 수치에 출처(테이블명, 연도)를 반드시 인용
-
-### 답변 방식:
-- 사용자가 "뭘 할 수 있어?", "EDGAR에서 더 받을 수 있어?", "OpenAPI로 뭐가 돼?", "GPT 연결하면 코딩도 돼?"처럼 범위를 물으면
-  가능한 것 / 바로 할 수 있는 것 / 아직 안 되는 것을 먼저 짧게 정리한 뒤 다음 액션을 제안하세요.
-- 도구와 기능 목록은 고정 문구를 외우지 말고 현재 등록된 tool registry 결과를 우선 신뢰하세요.
-"""
+AGENT_SYSTEM_ADDITION = build_agent_system_addition()

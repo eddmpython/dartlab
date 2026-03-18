@@ -149,9 +149,10 @@ def chat(
         LLM 최종 응답 텍스트.
     """
     from dartlab.engines.ai import get_config
-    from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop
+    from dartlab.engines.ai.agent import agent_loop, build_agent_system_addition
     from dartlab.engines.ai.prompts import build_system_prompt
     from dartlab.engines.ai.providers import create_provider
+    from dartlab.engines.ai.tools_registry import build_tool_runtime
 
     config_ = get_config()
     overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}
@@ -161,7 +162,8 @@ def chat(
     corp_name = getattr(company, "corpName", "Unknown")
     stock_id = getattr(company, "stockCode", getattr(company, "ticker", ""))
 
-    system = build_system_prompt(config_.system_prompt) + AGENT_SYSTEM_ADDITION
+    runtime = build_tool_runtime(company, name="standalone-agent")
+    system = build_system_prompt(config_.system_prompt) + build_agent_system_addition(runtime)
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": f"기업: {corp_name} ({stock_id})\n\n{question}"},
@@ -173,6 +175,7 @@ def chat(
         messages,
         company,
         max_turns=max_turns,
+        runtime=runtime,
         on_tool_call=on_tool_call,
         on_tool_result=on_tool_result,
     )

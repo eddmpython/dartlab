@@ -2,7 +2,7 @@
 
 import polars as pl
 
-from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop
+from dartlab.engines.ai.agent import agent_loop, build_agent_system_addition
 from dartlab.engines.ai.tools_registry import build_tool_runtime
 from dartlab.engines.ai.types import ToolCall, ToolResponse
 
@@ -272,17 +272,28 @@ class TestAgentLoop:
 
 class TestAgentSystemAddition:
     def test_contains_tool_descriptions(self):
-        assert "get_data" in AGENT_SYSTEM_ADDITION
-        assert "compute_ratios" in AGENT_SYSTEM_ADDITION
-        assert "detect_anomalies" in AGENT_SYSTEM_ADDITION
-        assert "get_runtime_capabilities" in AGENT_SYSTEM_ADDITION
-        assert "get_tool_catalog" in AGENT_SYSTEM_ADDITION
-        assert "get_coding_runtime_status" in AGENT_SYSTEM_ADDITION
-        assert "call_dart_openapi" in AGENT_SYSTEM_ADDITION
-        assert "call_edgar_openapi" in AGENT_SYSTEM_ADDITION
-        assert "run_coding_task" in AGENT_SYSTEM_ADDITION
-        assert "run_codex_task" in AGENT_SYSTEM_ADDITION
+        prompt = build_agent_system_addition(build_tool_runtime(MockCompany(), name="agent-system-test"))
+        assert "get_data" in prompt
+        assert "compute_ratios" in prompt
+        assert "detect_anomalies" in prompt
+        assert "get_runtime_capabilities" in prompt
+        assert "get_tool_catalog" in prompt
+        assert "get_coding_runtime_status" in prompt
+        assert "call_dart_openapi" in prompt
+        assert "call_edgar_openapi" in prompt
+        assert "run_coding_task" in prompt
+        assert "run_codex_task" in prompt
+        assert "AGENT_SYSTEM_ADDITION" not in prompt
 
     def test_contains_procedure(self):
-        assert "분석 절차" in AGENT_SYSTEM_ADDITION
-        assert "run_coding_task" in AGENT_SYSTEM_ADDITION
+        prompt = build_agent_system_addition(build_tool_runtime(MockCompany(), name="agent-system-test"))
+        assert "분석 절차" in prompt
+        assert "run_coding_task" in prompt
+
+    def test_hides_coding_tools_when_runtime_disabled(self, monkeypatch):
+        monkeypatch.setenv("DARTLAB_HOST", "0.0.0.0")
+        monkeypatch.delenv("DARTLAB_ENABLE_CODING_RUNTIME", raising=False)
+        prompt = build_agent_system_addition(build_tool_runtime(MockCompany(), name="agent-system-disabled"))
+        assert "coding runtime 도구가 등록되지 않았습니다" in prompt
+        assert "run_coding_task" not in prompt
+        assert "run_codex_task" not in prompt
