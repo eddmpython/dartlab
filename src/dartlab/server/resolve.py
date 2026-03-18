@@ -7,6 +7,8 @@ from dartlab import Company
 
 from .models import AskRequest, HistoryMessage
 
+_RESOLVE_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
+
 _COMPANY_SUFFIXES = (
     "차",
     "전자",
@@ -250,7 +252,7 @@ def _search_suggestions(question: str) -> list[dict[str, str]]:
                         suggestions.append({"corpName": name, "stockCode": code})
                         if len(suggestions) >= 5:
                             return suggestions
-            except Exception:
+            except _RESOLVE_ERRORS:
                 continue
     return suggestions
 
@@ -484,7 +486,7 @@ def try_resolve_from_history(history: list[HistoryMessage]) -> Company | None:
         if msg.meta and msg.meta.stockCode:
             try:
                 return Company(msg.meta.stockCode)
-            except Exception:
+            except _RESOLVE_ERRORS:
                 continue
     import re
 
@@ -495,6 +497,6 @@ def try_resolve_from_history(history: list[HistoryMessage]) -> Company | None:
         if code_match:
             try:
                 return Company(code_match.group(1))
-            except Exception:
+            except _RESOLVE_ERRORS:
                 continue
     return None

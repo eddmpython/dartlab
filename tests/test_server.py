@@ -579,6 +579,26 @@ class TestResolveUtils:
         assert result.company is not None
         assert result.company.stockCode == "005930"
 
+    def test_try_resolve_from_history_skips_invalid_company(self, monkeypatch):
+        from dartlab.server.models import HistoryMessage, HistoryMeta
+        from dartlab.server.resolve import try_resolve_from_history
+
+        class DummyCompany:
+            def __init__(self, identifier):
+                if identifier == "111111":
+                    raise ValueError("invalid")
+                self.stockCode = identifier
+
+        monkeypatch.setattr("dartlab.server.resolve.Company", DummyCompany)
+        company = try_resolve_from_history(
+            [
+                HistoryMessage(role="assistant", text="이전 답변", meta=HistoryMeta(stockCode="111111")),
+                HistoryMessage(role="assistant", text="최근 답변", meta=HistoryMeta(stockCode="005930")),
+            ]
+        )
+        assert company is not None
+        assert company.stockCode == "005930"
+
 
 class TestChatUtils:
     def test_build_history_empty(self):
