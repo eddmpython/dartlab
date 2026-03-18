@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<defs>
+<linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#1F1A32"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient>
+</defs>
+<rect x="0" y="0" width="1200" height="720" rx="0" fill="url(#g)" stroke="none" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="648" rx="36" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="116" rx="36" fill="#1F1A32" stroke="none" stroke-width="1"/>
+<text x="72" y="96" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">038. ????? ?? ?? ?? ?? vs ??? ??</text>
+<text x="72" y="132" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#E5E7EB">DartLab ?? ??? SVG</text>
+<rect x="72" y="204" width="498" height="408" rx="28" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+<rect x="630" y="204" width="498" height="408" rx="28" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+<text x="96" y="252" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="28" font-weight="700" fill="#065F46">????? ??? ??</text>
+<text x="654" y="252" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="28" font-weight="700" fill="#991B1B">? ???? ?? ??</text>
+<text x="102" y="320" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#065F46">? ?? ?? ??</text>
+<text x="102" y="394" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#065F46">? ?? ?? ???</text>
+<text x="102" y="468" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#065F46">? ?? ??</text>
+<text x="660" y="320" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#991B1B">? ??? ?</text>
+<text x="660" y="394" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#991B1B">? ?? ?? ??</text>
+<text x="660" y="468" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="600" fill="#991B1B">? ?? ???</text>
+<text x="72" y="666" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="20" font-weight="500" fill="#4B5563">??: ????? ?? ??? ? ? ???? ??? ?? ??? ?? ?? ??.</text>
+</svg>

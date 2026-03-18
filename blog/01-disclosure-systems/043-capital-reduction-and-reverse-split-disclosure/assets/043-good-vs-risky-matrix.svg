@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title>??? ???? ?? good vs risky</title>
+  <desc>??? ???? ?? good vs risky ?? ??</desc>
+  <rect width="1200" height="720" fill="#FCFBF8"/>
+  <rect x="32" y="28" width="1136" height="664" rx="28" fill="#FFFFFF" stroke="#E9E3D8"/>
+  <rect x="52" y="48" width="1096" height="92" rx="20" fill="#F8DDD7"/>
+  <text x="84" y="92" font-size="36" font-weight="700" fill="#2E1A15">??? ???? ?? good vs risky</text>
+  <text x="84" y="126" font-size="18" fill="#2E1A15">DartLab Blog Visual Guide</text>
+  <text x="96" y="198" font-size="24" font-weight="700" fill="#2E1A15">????? ??? ??? ? ???? ?? ??</text>
+  <rect x="96" y="234" width="480" height="388" rx="20" fill="#F4FBF4" stroke="#BCD6BC"/>
+  <rect x="624" y="234" width="480" height="388" rx="20" fill="#FFF2EF" stroke="#E2B4AA"/>
+  <text x="126" y="280" font-size="26" font-weight="700" fill="#1E4A27">????? ??? ??</text>
+  <text x="654" y="280" font-size="26" font-weight="700" fill="#7B1F12">? ???? ?? ??</text>
+  <text x="132" y="330" font-size="22" font-weight="500" fill="#2E1A15">? ?? ?? ??</text>
+  <text x="132" y="408" font-size="22" font-weight="500" fill="#2E1A15">? ????? ?? ??</text>
+  <text x="132" y="486" font-size="22" font-weight="500" fill="#2E1A15">? ?? ?? ?? ??</text>
+  <text x="660" y="330" font-size="22" font-weight="500" fill="#2E1A15">? ?? ?? ??</text>
+  <text x="660" y="408" font-size="22" font-weight="500" fill="#2E1A15">? ?? ??? ??</text>
+  <text x="660" y="486" font-size="22" font-weight="500" fill="#2E1A15">? ?? ?? ??</text>
+</svg>

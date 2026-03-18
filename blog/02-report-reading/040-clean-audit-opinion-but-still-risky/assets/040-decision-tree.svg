@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<defs>
+<linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#111827"/><stop offset="100%" stop-color="#DC2626"/></linearGradient>
+</defs>
+<rect x="0" y="0" width="1200" height="720" rx="0" fill="url(#g)" stroke="none" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="648" rx="36" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="116" rx="36" fill="#111827" stroke="none" stroke-width="1"/>
+<text x="72" y="96" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">040. ?? ?? ?? ?? ?? ?? ??</text>
+<text x="72" y="132" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#E5E7EB">DartLab ?? ??? SVG</text>
+<rect x="415" y="188" width="370" height="110" rx="28" fill="#FDEAEA" stroke="#DC2626" stroke-width="2"/>
+<text x="445" y="248" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="28" font-weight="700" fill="#111827">?? ?? ??</text>
+<text x="445" y="284" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="500" fill="#334155">?? ????</text>
+<rect x="92" y="416" width="276" height="158" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+<text x="116" y="472" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#111827">?? ??</text>
+<rect x="430" y="416" width="276" height="158" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+<text x="454" y="472" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#111827">??? ??</text>
+<rect x="768" y="416" width="276" height="158" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+<text x="792" y="472" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#111827">?? ??</text>
+<path d="M600 298 L600 356 M600 356 L230 356 L230 416 M600 356 L568 356 L568 416 M600 356 L906 356 L906 416" stroke="#64748B" stroke-width="4" fill="none"/>
+<text x="116" y="524" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#475569">KAM ???</text>
+<text x="454" y="524" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#475569">?? ?? ??</text>
+<text x="792" y="524" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#475569">CFO ??</text>
+<text x="792" y="556" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#475569">???? ??</text>
+<text x="72" y="666" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="20" font-weight="500" fill="#4B5563">??: ?? ?? ?? ?? ??? ? ? ???? ??? ?? ??? ?? ?? ??.</text>
+</svg>

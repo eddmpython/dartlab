@@ -72,9 +72,9 @@ export const seriesDefinitions = {
 	'report-reading-foundations': {
 		id: 'report-reading-foundations',
 		label: '사업보고서 실전 읽기',
-		description: '사업보고서의 핵심 섹션을 실제 판단 순서에 맞춰 읽게 만드는 기본 시리즈입니다.',
+		description: '사업보고서의 핵심 섹션과 신규사업 문구를 실제 판단 순서에 맞춰 읽게 만드는 기본 시리즈입니다.',
 		seoTitle: '사업보고서 실전 읽기 | 사업의 내용과 공시 텍스트 읽는 법',
-		seoDescription: 'DartLab 사업보고서 실전 읽기 시리즈. 사업의 내용, 리스크, MD&A, 텍스트 변화 신호를 실제 판단 흐름으로 연결합니다.',
+		seoDescription: 'DartLab 사업보고서 실전 읽기 시리즈. 사업의 내용, 리스크, MD&A, 신규사업 계획, 텍스트 변화 신호를 실제 판단 흐름으로 연결합니다.',
 		brandMessage: 'DartLab은 사업보고서를 숫자의 주변부가 아니라, 투자 판단의 방향을 먼저 바꾸는 본문으로 봅니다.'
 	},
 	'fixed-cost-and-capex': {
@@ -88,10 +88,10 @@ export const seriesDefinitions = {
 	'financial-context': {
 		id: 'financial-context',
 		label: '숫자 뒤 맥락 읽기',
-		description: '재무제표 숫자만으로 놓치는 사업 맥락과 해석의 함정을 잡아주는 입문형 시리즈입니다.',
+		description: '재무제표 숫자만으로 놓치는 사업 맥락과 해석의 함정을 개발비·무형자산까지 포함해 잡아주는 입문형 시리즈입니다.',
 		seoTitle: '숫자 뒤 맥락 읽기 | 재무제표 숫자만 보면 안 되는 이유',
-		seoDescription: 'DartLab 숫자 뒤 맥락 읽기 시리즈. 숫자만 보지 않고 사업보고서와 공시 문맥을 함께 읽는 기초 글을 모았습니다.',
-		brandMessage: 'DartLab은 숫자가 맞는지보다, 그 숫자가 왜 그렇게 나왔는지까지 설명되는 분석을 더 중요하게 봅니다.'
+		seoDescription: 'DartLab 숫자 뒤 맥락 읽기 시리즈. 숫자만 보지 않고 사업보고서, 신규사업, 개발비·무형자산 같은 공시 문맥을 함께 읽는 기초 글을 모았습니다.',
+		brandMessage: 'DartLab은 숫자가 맞는지보다, 그 숫자가 왜 그렇게 나왔는지와 어떤 기대가 자산으로 남아 있는지까지 설명되는 분석을 더 중요하게 봅니다.'
 	},
 	'data-automation': {
 		id: 'data-automation',
@@ -104,35 +104,35 @@ export const seriesDefinitions = {
 	'working-capital-and-earnings-quality': {
 		id: 'working-capital-and-earnings-quality',
 		label: '재고·채권·이익의 질',
-		description: '매출채권, 재고, 현금흐름을 함께 봐서 성장의 질과 회수 구조를 읽는 시리즈입니다.',
+		description: '매출채권, 재고, 영업현금흐름, 선수금·계약부채를 함께 봐서 성장의 질과 회수 구조를 읽는 시리즈입니다.',
 		seoTitle: '재고·채권·이익의 질 | 운전자본과 현금흐름 읽는 법',
-		seoDescription: 'DartLab 재고·채권·이익의 질 시리즈. 매출채권, 대손충당금, 재고, 영업현금흐름을 통해 숫자 뒤 질을 해석합니다.',
+		seoDescription: 'DartLab 재고·채권·이익의 질 시리즈. 매출채권, 대손충당금, 재고, 영업현금흐름, 선수금·계약부채를 통해 숫자 뒤 질을 해석합니다.',
 		brandMessage: 'DartLab은 이익의 크기보다, 그 이익이 실제로 회수되는지와 얼마나 오래 버틸 수 있는지를 더 중요하게 봅니다.'
 	},
 	'audit-and-governance-reading': {
 		id: 'audit-and-governance-reading',
 		label: '감사와 경고 신호',
-		description: '감사보고서, KAM, 우발부채, 소송, 회계추정처럼 회사의 신뢰도를 바꾸는 경고 문구를 읽는 시리즈입니다.',
+		description: '감사보고서, KAM, 우발부채, 지급보증·담보·약정, 내부회계·감사위원회, 적정 의견 아래 위험 신호를 읽는 시리즈입니다.',
 		seoTitle: '감사와 경고 신호 | 감사보고서, KAM, 우발부채 읽는 법',
-		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 우발부채, 소송, 회계추정처럼 신뢰도 판단에 중요한 문구를 해석하는 글을 모았습니다.',
-		brandMessage: 'DartLab은 감사의견 한 줄보다, 우발부채와 소송까지 포함해 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
+		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 우발부채, 소송, 지급보증, 담보, 약정, 내부회계, 감사위원회처럼 신뢰도 판단에 중요한 문구를 해석하는 글을 모았습니다.',
+		brandMessage: 'DartLab은 감사의견 한 줄보다, 우발부채와 보증·담보 구조, 내부회계와 감독기구까지 포함해 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
 	},
 	'ownership-and-governance-reading': {
 		id: 'ownership-and-governance-reading',
 		label: '대주주·보수·주주환원',
-		description: '대주주, 특수관계인, 임원 보수, 주주환원, 주총 안건을 실제 판단 기준으로 읽는 시리즈입니다.',
+		description: '대주주, 특수관계인, 임원 보수, 주주환원, 주총 안건, 최대주주 주식담보를 실제 판단 기준으로 읽는 시리즈입니다.',
 		seoTitle: '대주주·보수·주주환원 | 오너십과 지배구조 읽는 법',
-		seoDescription: 'DartLab 대주주·보수·주주환원 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고를 실제 판단 흐름으로 정리합니다.',
-		brandMessage: 'DartLab은 숫자만이 아니라, 누가 회사 방향을 정하고 누가 혜택을 가져가는지까지 함께 읽습니다.'
+		seoDescription: 'DartLab 대주주·보수·주주환원 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고, 최대주주 주식담보를 실제 판단 흐름으로 정리합니다.',
+		brandMessage: 'DartLab은 숫자만이 아니라, 누가 회사 방향을 정하고 누가 혜택을 가져가며 누가 지분 압박을 받고 있는지까지 함께 읽습니다.'
 	},
 	'corporate-actions-and-financing': {
 		id: 'corporate-actions-and-financing',
 		label: '이벤트·자금조달 공시',
-		description: '유상증자, 전환사채, 자기주식, 합병·분할 같은 기업 이벤트 공시를 실제 판단 흐름으로 읽는 시리즈입니다.',
+		description: '유상증자, 전환사채, 자기주식, 제3자배정, 최대주주 변경, 합병·분할, 감자·주식병합 같은 기업 이벤트 공시를 실제 판단 흐름으로 읽는 시리즈입니다.',
 		seoTitle: '이벤트·자금조달 공시 | 유상증자, CB, 자기주식 읽는 법',
 		seoDescription:
-			'DartLab 이벤트·자금조달 공시 시리즈. 유상증자, 전환사채, BW, 자기주식, 합병·분할 같은 이벤트 공시를 실제 판단 흐름으로 정리합니다.',
-		brandMessage: 'DartLab은 기업 이벤트 공시를 단발 뉴스가 아니라, 희석과 자금조달, 지배력 변화의 신호로 읽습니다.'
+			'DartLab 이벤트·자금조달 공시 시리즈. 유상증자, 전환사채, BW, 자기주식, 제3자배정, 최대주주 변경, 합병·분할, 감자·주식병합 같은 이벤트 공시를 실제 판단 흐름으로 정리합니다.',
+		brandMessage: 'DartLab은 기업 이벤트 공시를 단발 뉴스가 아니라, 희석과 자금조달, 지배력 변화, 주가 착시의 신호로 읽습니다.'
 	}
 } as const;
 

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<defs>
+<linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#172554"/><stop offset="100%" stop-color="#2563EB"/></linearGradient>
+</defs>
+<rect x="0" y="0" width="1200" height="720" rx="0" fill="url(#g)" stroke="none" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="648" rx="36" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+<rect x="36" y="36" width="1128" height="116" rx="36" fill="#172554" stroke="none" stroke-width="1"/>
+<text x="72" y="96" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">042. ???? ?? ?? ?? ???</text>
+<text x="72" y="132" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#E5E7EB">DartLab ?? ??? SVG</text>
+<rect x="72" y="206" width="1056" height="118" rx="28" fill="#E5EEFF" stroke="#2563EB" stroke-width="2"/>
+<rect x="72" y="352" width="1056" height="118" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+<rect x="72" y="498" width="1056" height="118" rx="28" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+<text x="96" y="252" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#172554">?? ???</text>
+<text x="96" y="394" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#172554">?? ???</text>
+<text x="96" y="540" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#172554">?? ???</text>
+<text x="310" y="286" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#334155">CAPEX???</text>
+<text x="640" y="286" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#334155">???</text>
+<text x="310" y="428" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#334155">?????</text>
+<text x="640" y="428" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#334155">????</text>
+<text x="310" y="540" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#7C2D12">CAPEX ??</text>
+<text x="640" y="540" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#7C2D12">?? ??</text>
+<text x="310" y="574" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#7C2D12">?? ??</text>
+<text x="640" y="574" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="600" fill="#7C2D12">?? ??? ??</text>
+<text x="72" y="666" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="20" font-weight="500" fill="#4B5563">??: ???? ?? ??? ? ? ???? ??? ?? ??? ?? ?? ??.</text>
+</svg>
