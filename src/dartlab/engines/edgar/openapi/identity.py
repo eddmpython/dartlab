@@ -115,4 +115,3 @@ def searchIssuers(
         pl.col("ticker").str.contains(upper, literal=True)
         | pl.col("title").str.to_uppercase().str.contains(upper, literal=True)
     ).sort(["ticker", "cik"])
-

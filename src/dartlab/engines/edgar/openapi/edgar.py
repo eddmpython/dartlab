@@ -152,4 +152,3 @@ class OpenEdgarCompany:
 
     def __repr__(self) -> str:
         return f"OpenEdgarCompany('{self.ticker}')"
-

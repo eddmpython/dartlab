@@ -15,4 +15,3 @@ aapl.saveFinance()
 from dartlab.engines.edgar.openapi.edgar import OpenEdgar, OpenEdgarCompany
 
 __all__ = ["OpenEdgar", "OpenEdgarCompany"]
-

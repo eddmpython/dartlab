@@ -13,9 +13,8 @@ from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.dataLoader import loadEdgarListedUniverse
 from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
 from dartlab.engines.edgar.openapi.client import EdgarClient
-from dartlab.engines.edgar.openapi.facts import EDGAR_COMPANYFACTS_SCHEMA
+from dartlab.engines.edgar.openapi.facts import EDGAR_COMPANYFACTS_SCHEMA, companyFactsToRows, getCompanyFactsJson
 from dartlab.engines.edgar.openapi.identity import loadTickers
-from dartlab.engines.edgar.openapi.facts import companyFactsToRows, getCompanyFactsJson
 
 EDGAR_DOCS_SCHEMA = {
     "cik": pl.Utf8,
@@ -56,16 +55,12 @@ def _validateSchema(df: pl.DataFrame, schema: dict[str, pl.DataType], *, label: 
     expectedCols = list(schema.keys())
     actualCols = list(df.columns)
     if actualCols != expectedCols:
-        raise ValueError(
-            f"{label} schema mismatch: columns {actualCols} != {expectedCols}; overwrite prevented"
-        )
+        raise ValueError(f"{label} schema mismatch: columns {actualCols} != {expectedCols}; overwrite prevented")
 
     for col, dtype in schema.items():
         actual = df.schema.get(col)
         if actual != dtype:
-            raise ValueError(
-                f"{label} schema mismatch: column {col} dtype {actual} != {dtype}; overwrite prevented"
-            )
+            raise ValueError(f"{label} schema mismatch: column {col} dtype {actual} != {dtype}; overwrite prevented")
 
 
 def _ensureIdentityCaches(client: EdgarClient | None = None) -> None:
@@ -124,7 +119,9 @@ def _validateSavedFinanceParquet(path: Path, cik: str) -> None:
 
     ts = buildTimeseries(cik, edgarDir=path.parent)
     if ts is None:
-        raise ValueError("edgarFinance consumer smoke check failed: buildTimeseries() returned None; overwrite prevented")
+        raise ValueError(
+            "edgarFinance consumer smoke check failed: buildTimeseries() returned None; overwrite prevented"
+        )
 
 
 def verifyOpenEdgarSaveCompatibility(ticker: str) -> dict[str, object]:

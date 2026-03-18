@@ -78,13 +78,12 @@ class EdgarClient:
                 status = exc.response.status_code if exc.response is not None else None
                 if status not in (429, 500, 502, 503, 504) or attempt == self.maxRetries - 1:
                     raise EdgarApiError(f"SEC API 요청 실패 ({status}): {url}") from exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
             except requests.RequestException as exc:
                 lastErr = exc
                 if attempt == self.maxRetries - 1:
                     raise EdgarApiError(f"SEC API 네트워크 오류: {url}") from exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
         if lastErr is not None:
             raise EdgarApiError(f"SEC API 요청 실패: {url}") from lastErr
         raise EdgarApiError(f"SEC API 요청 실패: {url}")
-

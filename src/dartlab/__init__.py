@@ -1,7 +1,8 @@
 """DART 공시 데이터 활용 라이브러리."""
 
 import sys
-from importlib.metadata import PackageNotFoundError, version as _pkg_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 from dartlab import config, core, engines
 from dartlab.company import Company

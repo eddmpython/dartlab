@@ -268,8 +268,6 @@ _RATIO_CATEGORY_LABELS: dict[str, str] = {
 }
 
 
-
-
 def _ratioSeriesToDataFrame(
     series: dict[str, dict[str, list[Any | None]]],
     years: list[str],
@@ -339,6 +337,7 @@ class _DocsAccessor:
         )
         self._company._cache[key] = result
         return result
+
 
 class _FinanceAccessor:
     """EDGAR finance namespace. XBRL 정규화 재무 데이터."""
@@ -467,6 +466,7 @@ class _ProfileAccessor:
             }
         return None
 
+
 class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
 
@@ -567,8 +567,10 @@ class Company:
                 return s.connect_ex(("127.0.0.1", p)) == 0
 
         if not _is_port_in_use(port):
+
             def _run():
                 import uvicorn
+
                 uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
 
             t = threading.Thread(target=_run, daemon=True)
@@ -628,36 +630,43 @@ class Company:
         for ft in ("BS", "IS", "CF", "CIS"):
             df = getattr(self.finance, ft, None)
             if df is not None:
-                extraRows.append({
+                extraRows.append(
+                    {
+                        "chapter": "Financial Statements",
+                        "topic": ft,
+                        "blockType": "table",
+                        "blockOrder": 0,
+                        "source": "finance",
+                        **{p: None for p in periodCols},
+                    }
+                )
+        if self.finance.ratioSeries is not None:
+            extraRows.append(
+                {
                     "chapter": "Financial Statements",
-                    "topic": ft,
+                    "topic": "ratios",
                     "blockType": "table",
                     "blockOrder": 0,
                     "source": "finance",
                     **{p: None for p in periodCols},
-                })
-        if self.finance.ratioSeries is not None:
-            extraRows.append({
-                "chapter": "Financial Statements",
-                "topic": "ratios",
-                "blockType": "table",
-                "blockOrder": 0,
-                "source": "finance",
-                **{p: None for p in periodCols},
-            })
+                }
+            )
 
         if not extraRows:
             self._cache[cacheKey] = docsSec
             return docsSec
 
-        extraDf = pl.DataFrame(extraRows, schema={
-            "chapter": pl.Utf8,
-            "topic": pl.Utf8,
-            "blockType": pl.Utf8,
-            "blockOrder": pl.Int64,
-            "source": pl.Utf8,
-            **{p: pl.Utf8 for p in periodCols},
-        })
+        extraDf = pl.DataFrame(
+            extraRows,
+            schema={
+                "chapter": pl.Utf8,
+                "topic": pl.Utf8,
+                "blockType": pl.Utf8,
+                "blockOrder": pl.Int64,
+                "source": pl.Utf8,
+                **{p: pl.Utf8 for p in periodCols},
+            },
+        )
 
         merged = pl.concat([docsSec, extraDf], how="diagonal_relaxed")
         self._cache[cacheKey] = merged
@@ -756,7 +765,9 @@ class Company:
         # 특정 block의 실제 데이터
         source = "docs"
         if "source" in topicRows.columns:
-            srcRows = topicRows.filter(pl.col("blockOrder") == block) if "blockOrder" in topicRows.columns else topicRows
+            srcRows = (
+                topicRows.filter(pl.col("blockOrder") == block) if "blockOrder" in topicRows.columns else topicRows
+            )
             if not srcRows.is_empty():
                 source = srcRows["source"][0]
 

@@ -318,6 +318,7 @@ class TestCompany:
         # block=1 접근하면 실제 데이터
         table = c.show("salesOrder", 1)
         assert table is None or isinstance(table, pl.DataFrame)
+
     def test_show_block_returns_data(self):
         from dartlab import Company
 

@@ -104,8 +104,10 @@ def test_dart_finance_isinstance_protocol():
 
 
 @pytest.mark.skipif(
-    not __import__("dartlab.core.dataLoader", fromlist=["_dataDir"]).
-    _dataDir("edgar").joinpath("AAPL.parquet").exists(),
+    not __import__("dartlab.core.dataLoader", fromlist=["_dataDir"])
+    ._dataDir("edgar")
+    .joinpath("AAPL.parquet")
+    .exists(),
     reason="EDGAR parquet 데이터 없음",
 )
 def test_edgar_company_isinstance_protocol():

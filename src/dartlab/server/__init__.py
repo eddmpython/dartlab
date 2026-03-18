@@ -687,8 +687,8 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
 async def api_parse_raw_table(code: str, topic: str, block_idx: int):
     """raw_markdown 블록을 AI로 구조화된 DataFrame으로 변환."""
     try:
-        from dartlab.engines.dart.docs.viewer import viewerBlocks, serializeViewerBlock
         from dartlab.engines.dart.docs.tableAI import parseRawMarkdownBlock
+        from dartlab.engines.dart.docs.viewer import viewerBlocks
 
         c = _get_company(code)
         blocks = viewerBlocks(c, topic)
@@ -1335,7 +1335,6 @@ async def _plain_chat(req: AskRequest):
         if isinstance(e, (ChatGPTOAuthError, TokenRefreshError)):
             raise HTTPException(status_code=401, detail=str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 # ── Static Files (Svelte build) ──

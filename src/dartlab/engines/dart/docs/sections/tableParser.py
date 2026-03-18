@@ -13,7 +13,6 @@ from collections import defaultdict
 
 import polars as pl
 
-
 # ── 서브테이블 분리 ──
 
 
@@ -161,7 +160,7 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
     triples: list[tuple[str, str, str]] = []
     prevItem = ""
 
-    for line in sub[sepIdx + 2:]:
+    for line in sub[sepIdx + 2 :]:
         cells = [c.strip() for c in line.strip("|").split("|")]
         if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
             continue

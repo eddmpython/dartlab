@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import difflib
 import hashlib
-import logging
 import re
 from collections import OrderedDict
 from pathlib import Path
@@ -2295,15 +2294,25 @@ class Company:
         if self._hasFinance:
             for ft in ("BS", "IS", "CIS", "CF", "SCE"):
                 if getattr(self.finance, ft, None) is not None:
-                    topicExtras.setdefault(ft, []).append({
-                        "chapter": "III", "topic": ft, "blockType": "table",
-                        "source": "finance", **{p: None for p in periodCols},
-                    })
+                    topicExtras.setdefault(ft, []).append(
+                        {
+                            "chapter": "III",
+                            "topic": ft,
+                            "blockType": "table",
+                            "source": "finance",
+                            **{p: None for p in periodCols},
+                        }
+                    )
             if self._ratioSeries() is not None:
-                topicExtras.setdefault("ratios", []).append({
-                    "chapter": "III", "topic": "ratios", "blockType": "table",
-                    "source": "finance", **{p: None for p in periodCols},
-                })
+                topicExtras.setdefault("ratios", []).append(
+                    {
+                        "chapter": "III",
+                        "topic": "ratios",
+                        "blockType": "table",
+                        "source": "finance",
+                        **{p: None for p in periodCols},
+                    }
+                )
 
         if self.rawReport is not None:
             try:
@@ -2315,10 +2324,15 @@ class Company:
                                 topic = k
                                 break
                     chapter = chapterMap.get(topic, "X")
-                    topicExtras.setdefault(topic, []).append({
-                        "chapter": chapter, "topic": topic, "blockType": "table",
-                        "source": "report", **{p: None for p in periodCols},
-                    })
+                    topicExtras.setdefault(topic, []).append(
+                        {
+                            "chapter": chapter,
+                            "topic": topic,
+                            "blockType": "table",
+                            "source": "report",
+                            **{p: None for p in periodCols},
+                        }
+                    )
             except (ValueError, KeyError, AttributeError):
                 pass
 
@@ -2336,8 +2350,11 @@ class Company:
                 seenTopics.add(t)
 
         schema = {
-            "chapter": pl.Utf8, "topic": pl.Utf8, "blockType": pl.Utf8,
-            "blockOrder": pl.Int64, "source": pl.Utf8,
+            "chapter": pl.Utf8,
+            "topic": pl.Utf8,
+            "blockType": pl.Utf8,
+            "blockOrder": pl.Int64,
+            "source": pl.Utf8,
             **{p: pl.Utf8 for p in periodCols},
         }
 
@@ -2536,12 +2553,14 @@ class Company:
                     if val:
                         preview = str(val)[:50]
                         break
-            rows.append({
-                "block": bo,
-                "type": bt,
-                "source": source,
-                "preview": preview,
-            })
+            rows.append(
+                {
+                    "block": bo,
+                    "type": bt,
+                    "source": source,
+                    "preview": preview,
+                }
+            )
         return pl.DataFrame(rows)
 
     def _showFinanceTopic(self, topic: str, *, period: str | None = None) -> pl.DataFrame | None:
@@ -2661,14 +2680,13 @@ class Company:
         if sepIdx < 0 or sepIdx + 1 >= len(sub):
             return None
 
-        remainder = sub[sepIdx + 1:]
+        remainder = sub[sepIdx + 1 :]
         if not remainder:
             return None
 
         # 나머지에 separator가 있으면 그대로 반환 (정상적인 2-separator 구조)
         hasSep = any(
-            all(set(c.strip()) <= {"-", ":"} for c in line.strip("|").split("|") if c.strip())
-            for line in remainder
+            all(set(c.strip()) <= {"-", ":"} for c in line.strip("|").split("|") if c.strip()) for line in remainder
         )
         if hasSep:
             return remainder
@@ -2691,25 +2709,20 @@ class Company:
     ) -> pl.DataFrame | None:
         """table 블록을 기간 간 수평화 — 항목×기간 매트릭스."""
         from dartlab.engines.dart.docs.sections.tableParser import (
-            splitSubtables,
+            _classifyStructure,
+            _dataRows,
             _headerCells,
             _isJunk,
-            _dataRows,
-            _classifyStructure,
-            _extractUnit,
+            splitSubtables,
         )
 
-        boRow = topicFrame.filter(
-            (pl.col("blockOrder") == blockOrder) & (pl.col("blockType") == "table")
-        )
+        boRow = topicFrame.filter((pl.col("blockOrder") == blockOrder) & (pl.col("blockType") == "table"))
         if boRow.is_empty():
             return None
 
         from dartlab.engines.dart.docs.sections.tableParser import (
-            _parseMultiYear,
             _parseKeyValueOrMatrix,
-            _normalizeItemName,
-            _STOCK_TYPES,
+            _parseMultiYear,
         )
 
         _SUFFIX_RE = re.compile(r"(사업)?부문$")
@@ -2773,9 +2786,7 @@ class Company:
 
         from dartlab.engines.dart.docs.sections.tableParser import _normalizeHeader
 
-        _PERIOD_KW_RE = re.compile(
-            r"\d*분기|반기|당기|전기|전전기|당반기|전반기|당분기|전분기|당기말|전기말"
-        )
+        _PERIOD_KW_RE = re.compile(r"\d*분기|반기|당기|전기|전전기|당반기|전반기|당분기|전분기|당기말|전기말")
 
         def _groupHeader(hc: list[str]) -> str:
             """그룹핑용 헤더 시그니처 — 기간 키워드까지 제거."""
@@ -2919,10 +2930,7 @@ class Company:
         # (기간별 서브테이블 구조가 다른 경우, 예: 이사 변동 + 사업조직 변경 혼재)
         if len(usedPeriods) >= 3 and len(allItems) > 15:
             totalCells = len(allItems) * len(usedPeriods)
-            filledCells = sum(
-                1 for item in allItems for p in usedPeriods
-                if periodItemVal.get(item, {}).get(p)
-            )
+            filledCells = sum(1 for item in allItems for p in usedPeriods if periodItemVal.get(item, {}).get(p))
             fillRate = filledCells / totalCells if totalCells > 0 else 0
             if fillRate < 0.5:
                 return None
@@ -3041,7 +3049,9 @@ class Company:
                         }
                     )
         if not rows:
-            return pl.DataFrame({"chapter": [], "topic": [], "blockType": [], "blockOrder": [], "period": [], "content": []})
+            return pl.DataFrame(
+                {"chapter": [], "topic": [], "blockType": [], "blockOrder": [], "period": [], "content": []}
+            )
         return pl.DataFrame(rows)
 
     def _topicBlocks(self, topic: str) -> pl.DataFrame | None:
@@ -3185,7 +3195,8 @@ class Company:
             # docs — text 또는 table 수평화
             result = self._showSectionBlock(
                 sec.filter(pl.col("topic") == topic),
-                block=block, period=period,
+                block=block,
+                period=period,
             )
 
         if (
@@ -3219,7 +3230,12 @@ class Company:
         return df
 
     def _showCore(
-        self, topic: str, *, block: int | None = None, period: str | None = None, raw: bool = False,
+        self,
+        topic: str,
+        *,
+        block: int | None = None,
+        period: str | None = None,
+        raw: bool = False,
     ) -> Any:
         if topic == "docsStatus":
             return None
@@ -3616,9 +3632,7 @@ class Company:
                 if topicFrame.is_empty():
                     continue
                 nonNull = sum(
-                    1
-                    for c in periodCols
-                    if c in topicFrame.columns and topicFrame.get_column(c).drop_nulls().len() > 0
+                    1 for c in periodCols if c in topicFrame.columns and topicFrame.get_column(c).drop_nulls().len() > 0
                 )
                 preview = "-"
                 for row in topicFrame.iter_rows(named=True):
@@ -4059,8 +4073,10 @@ class Company:
                 return s.connect_ex(("127.0.0.1", p)) == 0
 
         if not _is_port_in_use(port):
+
             def _run():
                 import uvicorn
+
                 uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
 
             t = threading.Thread(target=_run, daemon=True)

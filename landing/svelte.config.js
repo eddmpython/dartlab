@@ -11,6 +11,9 @@ function rehypeBaseUrl() {
 			if (node.tagName === 'img' && node.properties?.src?.startsWith('/')) {
 				node.properties.src = basePath + node.properties.src;
 			}
+			if (node.tagName === 'a' && node.properties?.href?.startsWith('/')) {
+				node.properties.href = basePath + node.properties.href;
+			}
 		});
 	};
 }

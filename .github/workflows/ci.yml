@@ -136,7 +136,7 @@ jobs:
         run: |
           python -c "
           import dartlab
-          from dartlab import Company, KRCompany, USCompany, Compare
+          from dartlab import Company
           from dartlab.core.registry import getEntries
           from dartlab.engines.common.finance.ratios import calcRatios
           from dartlab.engines.insight.grading import analyzePerformance

@@ -14,11 +14,9 @@ AI를 활용하여 항목×기간 매트릭스로 변환한다.
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 from typing import Any
-
 
 _CACHE_DIR = Path.home() / ".dartlab" / "cache" / "table_parse"
 

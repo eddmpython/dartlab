@@ -12,7 +12,6 @@
 """
 
 import statistics
-import sys
 import time
 
 SAMSUNG = "005930"

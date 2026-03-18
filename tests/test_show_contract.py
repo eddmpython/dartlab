@@ -6,7 +6,6 @@
 import time
 
 import polars as pl
-import pytest
 
 from tests.conftest import SAMSUNG, requires_samsung
 

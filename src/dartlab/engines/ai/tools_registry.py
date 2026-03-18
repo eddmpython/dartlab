@@ -829,7 +829,7 @@ def register_defaults(company: Any) -> None:
 
     # ── 21. data_status: 데이터 현황 조회 ──
     def data_status() -> str:
-        from dartlab.core.dataLoader import _dataDir, DATA_RELEASES
+        from dartlab.core.dataLoader import DATA_RELEASES, _dataDir
 
         lines = ["| 카테고리 | 라벨 | 파일 수 |", "| --- | --- | --- |"]
         for cat, conf in DATA_RELEASES.items():

@@ -139,7 +139,9 @@ def test_openedgar_company_proxy(monkeypatch):
     monkeypatch.setattr("dartlab.engines.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.engines.edgar.openapi.client.EdgarClient.getJson",
-        lambda self, url: _submissions_payload() if "submissions/CIK0000320193.json" in url else _companyfacts_payload(),
+        lambda self, url: _submissions_payload()
+        if "submissions/CIK0000320193.json" in url
+        else _companyfacts_payload(),
     )
 
     company = OpenEdgar()("AAPL")
@@ -155,7 +157,9 @@ def test_saveDocs_writes_sections_compatible_parquet(monkeypatch, tmp_path):
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
     monkeypatch.setattr("dartlab.engines.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
-    monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df())
+    monkeypatch.setattr(
+        "dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
+    )
     monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadTickers", lambda *args, **kwargs: _ticker_df())
 
     def fakeFetchEdgarDocs(ticker: str, outPath: Path, *, sinceYear: int = 2009, **kwargs) -> Path:
@@ -173,7 +177,9 @@ def test_saveDocs_writes_sections_compatible_parquet(monkeypatch, tmp_path):
                 "period_key": ["2024"],
                 "section_order": [0],
                 "section_title": ["Item 1. Business"],
-                "filing_url": ["https://www.sec.gov/Archives/edgar/data/0000320193/000032019324000111/aapl-20240928.htm"],
+                "filing_url": [
+                    "https://www.sec.gov/Archives/edgar/data/0000320193/000032019324000111/aapl-20240928.htm"
+                ],
                 "section_content": ["Apple business overview"],
             }
         )
@@ -198,7 +204,9 @@ def test_saveFinance_writes_companyfacts_parquet_compatible_with_pivot(monkeypat
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
     monkeypatch.setattr("dartlab.engines.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
-    monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df())
+    monkeypatch.setattr(
+        "dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
+    )
     monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadTickers", lambda *args, **kwargs: _ticker_df())
 
     def fakeGetJson(self, url: str):
@@ -278,7 +286,9 @@ def test_saveDocs_schema_mismatch_preserves_existing_file(monkeypatch, tmp_path)
 
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
     monkeypatch.setattr("dartlab.engines.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
-    monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df())
+    monkeypatch.setattr(
+        "dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
+    )
     monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadTickers", lambda *args, **kwargs: _ticker_df())
 
     def badFetch(ticker: str, outPath: Path, *, sinceYear: int = 2009, **kwargs) -> Path:
@@ -342,7 +352,9 @@ def test_saveFinance_smoke_failure_preserves_existing_file(monkeypatch, tmp_path
 
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
     monkeypatch.setattr("dartlab.engines.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
-    monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df())
+    monkeypatch.setattr(
+        "dartlab.engines.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
+    )
     monkeypatch.setattr("dartlab.engines.edgar.openapi.saver.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.engines.edgar.openapi.client.EdgarClient.getJson",

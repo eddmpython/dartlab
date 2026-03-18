@@ -180,4 +180,3 @@ def filingsFrame(
             "year",
         ]
     )
-

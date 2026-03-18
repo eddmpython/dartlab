@@ -47,6 +47,7 @@ DiffChunkKind = Literal["same", "added", "removed"]
 @dataclass
 class BlockMeta:
     """블록 표시 메타데이터."""
+
     unit: str | None = None
     scale: str | None = None
     scaleDivisor: float = 1.0
@@ -58,6 +59,7 @@ class BlockMeta:
 @dataclass
 class InlineDiff:
     """한 기간 쌍의 문장 수준 diff."""
+
     fromPeriod: str
     toPeriod: str
     additions: list[str] = field(default_factory=list)
@@ -67,10 +69,11 @@ class InlineDiff:
 @dataclass
 class AnnotatedLine:
     """최신 텍스트의 한 줄 + blame + 변경 빈도."""
+
     text: str
-    since: str              # 이 문장이 처음 등장한 기간
-    frequency: int = 0      # 이 문장이 존재하는 기간 수
-    totalPeriods: int = 0   # 전체 기간 수
+    since: str  # 이 문장이 처음 등장한 기간
+    frequency: int = 0  # 이 문장이 존재하는 기간 수
+    totalPeriods: int = 0  # 전체 기간 수
     isHeading: bool = False
 
     @property
@@ -89,13 +92,15 @@ class AnnotatedLine:
 @dataclass
 class ChangeDigestItem:
     """변경 요약 카드의 개별 항목."""
-    kind: str   # "numeric", "added", "removed", "wording"
-    text: str   # 표시 텍스트
+
+    kind: str  # "numeric", "added", "removed", "wording"
+    text: str  # 표시 텍스트
 
 
 @dataclass
 class ChangeDigest:
     """최신 변경의 요약 카드."""
+
     fromPeriod: str
     toPeriod: str
     items: list[ChangeDigestItem] = field(default_factory=list)
@@ -105,6 +110,7 @@ class ChangeDigest:
 @dataclass
 class ChangeSummary:
     """text 블록의 기간간 변경 요약 + inline diff + annotated blame."""
+
     totalPeriods: int = 0
     changedPairs: int = 0
     latestChange: str | None = None
@@ -117,6 +123,7 @@ class ChangeSummary:
 @dataclass
 class ViewerBlock:
     """프론트엔드가 소비하는 블록 단위."""
+
     block: int
     kind: BlockKind
     source: str
@@ -130,6 +137,7 @@ class ViewerBlock:
 @dataclass
 class PeriodRef:
     """절대 기간 라벨의 canonical 표현."""
+
     label: str
     year: int
     quarter: int | None = None
@@ -140,6 +148,7 @@ class PeriodRef:
 @dataclass
 class ViewerDiffChunk:
     """선택 period 원문 위치에 맞춘 diff chunk."""
+
     kind: DiffChunkKind
     paragraphs: list[str] = field(default_factory=list)
 
@@ -147,6 +156,7 @@ class ViewerDiffChunk:
 @dataclass
 class ViewerTextHeading:
     """body section을 위한 구조 anchor heading."""
+
     block: int
     text: str
     period: PeriodRef
@@ -155,6 +165,7 @@ class ViewerTextHeading:
 @dataclass
 class ViewerTextView:
     """특정 period snapshot과 직전 comparable period diff."""
+
     period: PeriodRef
     prevPeriod: PeriodRef | None = None
     body: str = ""
@@ -166,6 +177,7 @@ class ViewerTextView:
 @dataclass
 class ViewerTextTimelineEntry:
     """section 상단 timeline item."""
+
     period: PeriodRef
     prevPeriod: PeriodRef | None = None
     status: TextViewStatus = "stable"
@@ -174,6 +186,7 @@ class ViewerTextTimelineEntry:
 @dataclass
 class ViewerTextSection:
     """텍스트 전용 보고서의 본문 섹션."""
+
     id: str
     order: int
     bodyBlock: int
@@ -192,6 +205,7 @@ class ViewerTextSection:
 @dataclass
 class ViewerTextDocument:
     """텍스트 블록만으로 재구성한 읽기용 문서."""
+
     topic: str
     mode: str = "timeline_text"
     periods: list[PeriodRef] = field(default_factory=list)
@@ -206,6 +220,7 @@ class ViewerTextDocument:
 
 
 # ── 메인 진입점 ──
+
 
 def viewerBlocks(company: Company, topic: str) -> list[ViewerBlock]:
     """topic의 모든 블록을 ViewerBlock 리스트로 반환."""
@@ -267,11 +282,7 @@ def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocum
         return None
 
     textPeriods = sorted(
-        {
-            period
-            for block in textBlocks
-            for period in _textPeriodMap(block).keys()
-        },
+        {period for block in textBlocks for period in _textPeriodMap(block).keys()},
         key=_periodSortKey,
     )
     if not textPeriods:
@@ -328,6 +339,7 @@ def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocum
 
 # ── Finance 블록 ──
 
+
 def _buildFinanceBlock(company: Company, topic: str) -> ViewerBlock | None:
     """finance topic을 sections 우회하여 직접 로드."""
     df = company._showFinanceTopic(topic)
@@ -363,6 +375,7 @@ def _buildFinanceBlock(company: Company, topic: str) -> ViewerBlock | None:
 
 # ── Report 블록 ──
 
+
 def _buildReportBlock(company: Company, topic: str, bo: int) -> ViewerBlock | None:
     """report source 블록."""
     df = company._showReportTopic(topic)
@@ -391,6 +404,7 @@ def _buildReportBlock(company: Company, topic: str, bo: int) -> ViewerBlock | No
 
 # ── Text 블록 ──
 
+
 def _classifyTextType(text: str) -> str:
     """text 블록을 heading(소제목) vs body(서술형)로 분류."""
     if not text or not text.strip():
@@ -404,9 +418,7 @@ def _classifyTextType(text: str) -> str:
     return "body"
 
 
-def _buildTextBlock(
-    boRows: pl.DataFrame, bo: int, periodCols: list[str]
-) -> ViewerBlock | None:
+def _buildTextBlock(boRows: pl.DataFrame, bo: int, periodCols: list[str]) -> ViewerBlock | None:
     """text 블록. heading이면 changeSummary 없이, body면 전체 변경 분석."""
     keepCols = [c for c in periodCols if c in boRows.columns]
     nonNullCols = [c for c in keepCols if boRows[c].null_count() < boRows.height]
@@ -746,9 +758,7 @@ def _isStructuralHeadingLine(line: str) -> bool:
         return False
     if len(line) > 88:
         return False
-    return bool(
-        re.match(r"^\[.+\]$|^【.+】$|^[IVX]+\.\s|^\d+\.\s|^[가-힣]\.\s|^\(\d+\)\s|^\([가-힣]\)\s", line)
-    )
+    return bool(re.match(r"^\[.+\]$|^【.+】$|^[IVX]+\.\s|^\d+\.\s|^[가-힣]\.\s|^\(\d+\)\s|^\([가-힣]\)\s", line))
 
 
 def _splitSentences(text: str) -> list[str]:
@@ -804,7 +814,10 @@ def _wordLevelDiff(old: str, new: str) -> tuple[str, str]:
 
 
 def _computeInlineDiff(
-    fromText: str, toText: str, fromPeriod: str, toPeriod: str,
+    fromText: str,
+    toText: str,
+    fromPeriod: str,
+    toPeriod: str,
 ) -> InlineDiff | None:
     """두 텍스트의 문장 수준 inline diff."""
     fromSents = _splitSentences(fromText)
@@ -852,9 +865,7 @@ def _computeInlineDiff(
     )
 
 
-def _buildChangeSummary(
-    boRows: pl.DataFrame, periodCols: list[str]
-) -> ChangeSummary | None:
+def _buildChangeSummary(boRows: pl.DataFrame, periodCols: list[str]) -> ChangeSummary | None:
     """인접 기간 간 text 변경 감지 + inline diff."""
     if boRows.is_empty():
         return None
@@ -881,11 +892,13 @@ def _buildChangeSummary(
             fromText = str(row.get(fromPeriod, ""))
             toText = str(row.get(toPeriod, ""))
             delta = len(toText) - len(fromText)
-            changes.append({
-                "from": fromPeriod,
-                "to": toPeriod,
-                "delta": f"{'+' if delta >= 0 else ''}{delta}자",
-            })
+            changes.append(
+                {
+                    "from": fromPeriod,
+                    "to": toPeriod,
+                    "delta": f"{'+' if delta >= 0 else ''}{delta}자",
+                }
+            )
             # 최근 N개만 inline diff
             if len(diffs) < _MAX_DIFF_PAIRS:
                 d = _computeInlineDiff(fromText, toText, fromPeriod, toPeriod)
@@ -917,9 +930,7 @@ def _buildChangeSummary(
 _NUM_RE = re.compile(r"([\d,]+(?:\.\d+)?)\s*(조|억|만|개|%|명|원|년|기|건|사)?")
 
 
-def _buildDigestDirect(
-    row: dict[str, Any], periodCols: list[str]
-) -> ChangeDigest | None:
+def _buildDigestDirect(row: dict[str, Any], periodCols: list[str]) -> ChangeDigest | None:
     """같은 보고서 유형의 이전 기간과 직접 비교하여 digest 생성.
 
     예: 최신이 2025(연간)이면 2024(연간)과 비교.
@@ -1058,14 +1069,10 @@ def _extractNumericChanges(old: str, new: str) -> list[str]:
 
 # ── Annotated Blame ──
 
-_HEADING_RE = re.compile(
-    r"^\[.+\]$|^【.+】$|^[가-힣]\.\s|^\d+\.\s|^\(\d+\)\s|^\([가-힣]\)\s"
-)
+_HEADING_RE = re.compile(r"^\[.+\]$|^【.+】$|^[가-힣]\.\s|^\d+\.\s|^\(\d+\)\s|^\([가-힣]\)\s")
 
 
-def _buildAnnotatedBlame(
-    row: dict[str, Any], periodCols: list[str]
-) -> list[AnnotatedLine]:
+def _buildAnnotatedBlame(row: dict[str, Any], periodCols: list[str]) -> list[AnnotatedLine]:
     """최신 텍스트의 각 줄: since(최초 등장) + frequency(존재 기간 수).
 
     - since: 가장 오래된 기간에서 이 줄이 존재하는 시점
@@ -1102,18 +1109,21 @@ def _buildAnnotatedBlame(
                 if firstSeen == latestPeriod:
                     firstSeen = period
 
-        result.append(AnnotatedLine(
-            text=line,
-            since=firstSeen,
-            frequency=freq,
-            totalPeriods=totalPeriods,
-            isHeading=bool(_HEADING_RE.match(line)),
-        ))
+        result.append(
+            AnnotatedLine(
+                text=line,
+                since=firstSeen,
+                frequency=freq,
+                totalPeriods=totalPeriods,
+                isHeading=bool(_HEADING_RE.match(line)),
+            )
+        )
 
     return result
 
 
 # ── Table 블록 ──
+
 
 def _buildTableBlock(
     company: Company,
@@ -1183,9 +1193,7 @@ def _buildTableBlock(
     )
 
 
-def _buildRawMarkdownBlock(
-    result: pl.DataFrame, bo: int, resPeriods: list[str], firstCol: str
-) -> ViewerBlock:
+def _buildRawMarkdownBlock(result: pl.DataFrame, bo: int, resPeriods: list[str], firstCol: str) -> ViewerBlock:
     """수평화 결과가 마크다운 문자열인 경우 raw_markdown으로 분류."""
     rawMd: dict[str, str] = {}
     for p in resPeriods:
@@ -1210,6 +1218,7 @@ def _buildRawMarkdownBlock(
 
 # ── Structured 테이블 정리 ──
 
+
 def _periodSortKey(p: str) -> tuple[int, int]:
     """기간 컬럼 정렬키: 2021Q1→(2021,1), 2021→(2021,5), 2021Q4→(2021,4)."""
     m = re.fullmatch(r"(\d{4})(Q([1-4]))?", p)
@@ -1220,9 +1229,7 @@ def _periodSortKey(p: str) -> tuple[int, int]:
     return (year, q)
 
 
-def _cleanStructuredTable(
-    df: pl.DataFrame, periodCols: list[str], firstCol: str
-) -> pl.DataFrame:
+def _cleanStructuredTable(df: pl.DataFrame, periodCols: list[str], firstCol: str) -> pl.DataFrame:
     """structured 테이블 정리: 기간 정렬 + 전체 null 컬럼 제거."""
     # 1. 전체 null인 기간 컬럼 제거
     keepPeriods = []
@@ -1243,6 +1250,7 @@ def _cleanStructuredTable(
 
 
 # ── 유틸리티 ──
+
 
 def _isRawMarkdown(text: str) -> bool:
     """셀 값이 마크다운 테이블 원본인지 판별."""
@@ -1285,16 +1293,14 @@ def _detectScale(df: pl.DataFrame, periodCols: list[str]) -> tuple[str | None, f
 
 # ── 직렬화 ──
 
+
 def _serializeChangeDigest(digest: ChangeDigest | None) -> dict[str, Any] | None:
     if digest is None:
         return None
     return {
         "from": digest.fromPeriod,
         "to": digest.toPeriod,
-        "items": [
-            {"kind": item.kind, "text": item.text}
-            for item in digest.items
-        ],
+        "items": [{"kind": item.kind, "text": item.text} for item in digest.items],
         "wordingCount": digest.wordingCount,
     }
 
@@ -1375,10 +1381,7 @@ def serializeViewerTextDocument(document: ViewerTextDocument | None) -> dict[str
                     }
                     for entry in section.timeline
                 ],
-                "views": {
-                    label: _serializeViewerTextView(view)
-                    for label, view in section.views.items()
-                },
+                "views": {label: _serializeViewerTextView(view) for label, view in section.views.items()},
             }
             for section in document.sections
         ],
