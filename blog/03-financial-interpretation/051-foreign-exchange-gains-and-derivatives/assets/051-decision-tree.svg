@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>????? ?? ??</title>
+  <desc>??? ??? ??? ??? ??</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
+  <rect x="40" y="36" width="1200" height="648" fill="#ffffff" rx="28" stroke="#cbd5e1"/>
+  <text x="80" y="100" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">????? ?? ??</text>
+  <text x="80" y="142" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">??? ??? ??? ??? ??</text>
+  <rect x="470" y="165" width="340" height="92" rx="22" fill="#fff7ed" stroke="#ea580c"/><text x="640" y="220" text-anchor="middle" font-size="30" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#9a3412">? ?? ??</text><text x="640" y="258" text-anchor="middle" font-size="20" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#7c2d12">?? ??? ??? ????</text><line x1="640" y1="257" x2="270" y2="340" stroke="#94a3b8" stroke-width="5"/><rect x="110" y="340" width="320" height="160" rx="24" fill="#dbeafe" stroke="#2563eb"/><text x="270" y="418" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#1d4ed8">?? ??</text><line x1="640" y1="257" x2="610" y2="340" stroke="#94a3b8" stroke-width="5"/><rect x="450" y="340" width="320" height="160" rx="24" fill="#fef3c7" stroke="#d97706"/><text x="610" y="418" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#b45309">?? ??</text><line x1="640" y1="257" x2="950" y2="340" stroke="#94a3b8" stroke-width="5"/><rect x="790" y="340" width="320" height="160" rx="24" fill="#fee2e2" stroke="#dc2626"/><text x="950" y="418" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#b91c1c">?? ??</text>
+</svg>

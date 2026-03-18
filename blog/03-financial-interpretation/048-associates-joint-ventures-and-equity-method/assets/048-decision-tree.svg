@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title>????? ????? ?? ??</title>
+  <desc>????? ????? ?? ?? ?? ??</desc>
+  <rect width="1200" height="720" fill="#FCFBF8"/>
+  <rect x="32" y="28" width="1136" height="664" rx="28" fill="#FFFFFF" stroke="#E9E3D8"/>
+  <rect x="52" y="48" width="1096" height="92" rx="20" fill="#E7E1FB"/>
+  <text x="84" y="92" font-size="36" font-weight="700" fill="#2C2053">????? ????? ?? ??</text>
+  <text x="84" y="126" font-size="18" fill="#2C2053">DartLab Blog Visual Guide</text>
+  <text x="96" y="200" font-size="24" font-weight="700" fill="#2C2053">?? ?? ? ??? ??? ?? ??</text>
+  <rect x="468" y="236" width="260" height="96" rx="20" fill="#E7E1FB" stroke="#5C4AA8"/>
+  <text x="500" y="294" font-size="28" font-weight="700" fill="#2C2053">?? ?? ??</text>
+  <text x="430" y="360" font-size="20" font-weight="500" fill="#2C2053">??? ??? ??? ??? ?????</text>
+  <text x="482" y="392" font-size="20" font-weight="500" fill="#2C2053">? ??? ?? ?? ??</text>
+  <line x1="598" y1="332" x2="236" y2="430" stroke="#5C4AA8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="126" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#5C4AA8"/>
+  <text x="150" y="476" font-size="24" font-weight="700" fill="#2C2053">?? ??</text>
+  <text x="150" y="516" font-size="18" font-weight="500" fill="#2C2053">?? ??? ???</text>
+  <text x="150" y="546" font-size="18" font-weight="500" fill="#2C2053">?? ??? ? ???</text>
+  <line x1="598" y1="332" x2="576" y2="430" stroke="#5C4AA8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="466" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#5C4AA8"/>
+  <text x="490" y="476" font-size="24" font-weight="700" fill="#2C2053">?? ??</text>
+  <text x="490" y="516" font-size="18" font-weight="500" fill="#2C2053">?? ??? ???</text>
+  <text x="490" y="546" font-size="18" font-weight="500" fill="#2C2053">?? ??? ? ???</text>
+  <line x1="598" y1="332" x2="916" y2="430" stroke="#5C4AA8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="806" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#5C4AA8"/>
+  <text x="830" y="476" font-size="24" font-weight="700" fill="#2C2053">?? ??</text>
+  <text x="830" y="516" font-size="18" font-weight="500" fill="#2C2053">?? ??? ???</text>
+  <text x="830" y="546" font-size="18" font-weight="500" fill="#2C2053">?? ??? ? ???</text>
+</svg>

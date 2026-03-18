@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>????? ?? ??</title>
+  <desc>?? ????? ?? ? ??</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
+  <rect x="40" y="36" width="1200" height="648" fill="#ffffff" rx="28" stroke="#cbd5e1"/>
+  <text x="80" y="100" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">????? ?? ??</text>
+  <text x="80" y="142" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ? ??</text>
+  <rect x="80" y="180" width="1120" height="400" rx="24" fill="#f8fafc" stroke="#334155"/><line x1="120" y1="263" x2="1160" y2="263" stroke="#cbd5e1" stroke-width="2"/><text x="150" y="245" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#0f172a">?? ??</text><text x="580" y="245" font-size="21" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ??? ??? ?? ??</text><line x1="120" y1="325" x2="1160" y2="325" stroke="#cbd5e1" stroke-width="2"/><text x="150" y="307" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#0f172a">?? ????</text><text x="580" y="307" font-size="21" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ??? ??? ?? ??</text><line x1="120" y1="387" x2="1160" y2="387" stroke="#cbd5e1" stroke-width="2"/><text x="150" y="369" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#0f172a">?? ?? ??</text><text x="580" y="369" font-size="21" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ??? ??? ?? ??</text><line x1="120" y1="449" x2="1160" y2="449" stroke="#cbd5e1" stroke-width="2"/><text x="150" y="431" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#0f172a">??????</text><text x="580" y="431" font-size="21" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ??? ??? ?? ??</text><line x1="120" y1="511" x2="1160" y2="511" stroke="#cbd5e1" stroke-width="2"/><text x="150" y="493" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#0f172a">?? ??</text><text x="580" y="493" font-size="21" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ????? ?? ??? ??? ?? ??</text>
+</svg>

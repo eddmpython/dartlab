@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>????? ?? ??</title>
+  <desc>?? ?? ?? ?? ??</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
+  <rect x="40" y="36" width="1200" height="648" fill="#ffffff" rx="28" stroke="#cbd5e1"/>
+  <text x="80" y="100" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">????? ?? ??</text>
+  <text x="80" y="142" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ?? ?? ?? ??</text>
+  <rect x="80" y="250" width="160" height="110" rx="18" fill="#eff6ff" stroke="#2563eb"/><text x="160" y="300" text-anchor="middle" font-size="22" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#1e3a8a">?? ?? ??</text><line x1="240" y1="305" x2="320" y2="305" stroke="#94a3b8" stroke-width="6"/><polygon points="304,293 320,305 304,317" fill="#94a3b8"/><rect x="320" y="250" width="160" height="110" rx="18" fill="#eff6ff" stroke="#2563eb"/><text x="400" y="300" text-anchor="middle" font-size="22" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#1e3a8a">?? ?? ??</text><line x1="480" y1="305" x2="560" y2="305" stroke="#94a3b8" stroke-width="6"/><polygon points="544,293 560,305 544,317" fill="#94a3b8"/><rect x="560" y="250" width="160" height="110" rx="18" fill="#eff6ff" stroke="#2563eb"/><text x="640" y="300" text-anchor="middle" font-size="22" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#1e3a8a">?? ?? ??</text><line x1="720" y1="305" x2="800" y2="305" stroke="#94a3b8" stroke-width="6"/><polygon points="784,293 800,305 784,317" fill="#94a3b8"/><rect x="800" y="250" width="160" height="110" rx="18" fill="#eff6ff" stroke="#2563eb"/><text x="880" y="300" text-anchor="middle" font-size="22" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#1e3a8a">?? ?? ??</text><line x1="960" y1="305" x2="1040" y2="305" stroke="#94a3b8" stroke-width="6"/><polygon points="1024,293 1040,305 1024,317" fill="#94a3b8"/><rect x="1040" y="250" width="160" height="110" rx="18" fill="#eff6ff" stroke="#2563eb"/><text x="1120" y="300" text-anchor="middle" font-size="22" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="600" fill="#1e3a8a">??? ??</text>
+</svg>

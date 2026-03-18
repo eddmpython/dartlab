@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>???? ???? ??</title>
+  <desc>?? ??? ? ???? ?? ?? ??</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
+  <rect x="40" y="36" width="1200" height="648" fill="#ffffff" rx="28" stroke="#cbd5e1"/>
+  <text x="80" y="100" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">???? ???? ??</text>
+  <text x="80" y="142" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">?? ??? ? ???? ?? ?? ??</text>
+  <rect x="90" y="190" width="470" height="360" rx="24" fill="#ecfdf5" stroke="#16a34a"/><rect x="720" y="190" width="470" height="360" rx="24" fill="#fef2f2" stroke="#dc2626"/><text x="325" y="245" text-anchor="middle" font-size="30" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#166534">????? ??</text><text x="955" y="245" text-anchor="middle" font-size="30" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#991b1b">? ???? ?</text><text x="140" y="320" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#14532d">? ??? ?? ???</text><text x="140" y="402" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#14532d">? ?? ?? ??</text><text x="140" y="484" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#14532d">? ?? ?? ??</text><text x="770" y="320" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#7f1d1d">? ??? ??? ??</text><text x="770" y="402" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#7f1d1d">? ?? ?? ??</text><text x="770" y="484" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#7f1d1d">? ???? ?? ??</text>
+</svg>

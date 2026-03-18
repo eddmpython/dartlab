@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title>?????? ?? ?? ?? ??</title>
+  <desc>?????? ?? ?? ?? ?? ?? ??</desc>
+  <rect width="1200" height="720" fill="#FCFBF8"/>
+  <rect x="32" y="28" width="1136" height="664" rx="28" fill="#FFFFFF" stroke="#E9E3D8"/>
+  <rect x="52" y="48" width="1096" height="92" rx="20" fill="#F6E7D3"/>
+  <text x="84" y="92" font-size="36" font-weight="700" fill="#4A2B08">?????? ?? ?? ?? ??</text>
+  <text x="84" y="126" font-size="18" fill="#4A2B08">DartLab Blog Visual Guide</text>
+  <rect x="72" y="176" width="1056" height="474" rx="20" fill="#FFFDF8" stroke="#DDD6C8"/>
+  <text x="96" y="214" font-size="24" font-weight="700" fill="#4A2B08">??? ?? ??? ?? ??</text>
+  <rect x="96" y="260" width="228" height="176" rx="20" fill="#F6E7D3" stroke="#8A5313"/>
+  <text x="114" y="304" font-size="24" font-weight="700" fill="#4A2B08">1. ???? ????</text>
+  <text x="114" y="344" font-size="18" font-weight="500" fill="#4A2B08">??? ????</text>
+  <text x="114" y="380" font-size="18" font-weight="500" fill="#4A2B08">?? ???? ??? ??</text>
+  <line x1="324" y1="348" x2="356" y2="348" stroke="#8A5313" stroke-width="6" stroke-linecap="round"/>
+  <polygon points="356,348 340,338 340,358" fill="#8A5313"/>
+  <rect x="360" y="260" width="228" height="176" rx="20" fill="#F6E7D3" stroke="#8A5313"/>
+  <text x="378" y="304" font-size="24" font-weight="700" fill="#4A2B08">2. ??? ?? ??</text>
+  <text x="378" y="344" font-size="18" font-weight="500" fill="#4A2B08">??? ???</text>
+  <text x="378" y="380" font-size="18" font-weight="500" fill="#4A2B08">?? ???? ??? ??</text>
+  <line x1="588" y1="348" x2="620" y2="348" stroke="#8A5313" stroke-width="6" stroke-linecap="round"/>
+  <polygon points="620,348 604,338 604,358" fill="#8A5313"/>
+  <rect x="624" y="260" width="228" height="176" rx="20" fill="#F6E7D3" stroke="#8A5313"/>
+  <text x="642" y="304" font-size="24" font-weight="700" fill="#4A2B08">3. ?? ??</text>
+  <text x="642" y="344" font-size="18" font-weight="500" fill="#4A2B08">??? ????</text>
+  <text x="642" y="380" font-size="18" font-weight="500" fill="#4A2B08">?? ???? ??? ??</text>
+  <line x1="852" y1="348" x2="884" y2="348" stroke="#8A5313" stroke-width="6" stroke-linecap="round"/>
+  <polygon points="884,348 868,338 868,358" fill="#8A5313"/>
+  <rect x="888" y="260" width="228" height="176" rx="20" fill="#F6E7D3" stroke="#8A5313"/>
+  <text x="906" y="304" font-size="24" font-weight="700" fill="#4A2B08">4. ??? ??</text>
+  <text x="906" y="344" font-size="18" font-weight="500" fill="#4A2B08">?? ??? ???</text>
+  <text x="906" y="380" font-size="18" font-weight="500" fill="#4A2B08">?? ???? ??? ??</text>
+</svg>

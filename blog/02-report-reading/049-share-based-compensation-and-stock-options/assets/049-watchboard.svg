@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title>??????? ???? follow-up watchboard</title>
+  <desc>??????? ???? follow-up watchboard ?? ??</desc>
+  <rect width="1200" height="720" fill="#FCFBF8"/>
+  <rect x="32" y="28" width="1136" height="664" rx="28" fill="#FFFFFF" stroke="#E9E3D8"/>
+  <rect x="52" y="48" width="1096" height="92" rx="20" fill="#F6DFEA"/>
+  <text x="84" y="92" font-size="36" font-weight="700" fill="#4B1833">??????? ???? follow-up watchboard</text>
+  <text x="84" y="126" font-size="18" fill="#4B1833">DartLab Blog Visual Guide</text>
+  <text x="96" y="198" font-size="24" font-weight="700" fill="#4B1833">????? ?? ????? ? ??? ??</text>
+  <rect x="96" y="242" width="488" height="140" rx="20" fill="#F6DFEA" stroke="#8D3B66"/>
+  <text x="124" y="292" font-size="24" font-weight="700" fill="#4B1833">?? ?? ??</text>
+  <text x="124" y="330" font-size="18" font-weight="500" fill="#4B1833">?? ???? ?? ???? ?? ??</text>
+  <text x="124" y="358" font-size="18" font-weight="500" fill="#4B1833">? ?? ???? ?? ??? ????</text>
+  <rect x="616" y="242" width="488" height="140" rx="20" fill="#FFFDF8" stroke="#8D3B66"/>
+  <text x="644" y="292" font-size="24" font-weight="700" fill="#4B1833">?? ??</text>
+  <text x="644" y="330" font-size="18" font-weight="500" fill="#4B1833">?? ???? ?? ???? ?? ??</text>
+  <text x="644" y="358" font-size="18" font-weight="500" fill="#4B1833">? ?? ???? ?? ??? ????</text>
+  <rect x="96" y="416" width="488" height="140" rx="20" fill="#F6DFEA" stroke="#8D3B66"/>
+  <text x="124" y="466" font-size="24" font-weight="700" fill="#4B1833">???? ??</text>
+  <text x="124" y="504" font-size="18" font-weight="500" fill="#4B1833">?? ???? ?? ???? ?? ??</text>
+  <text x="124" y="532" font-size="18" font-weight="500" fill="#4B1833">? ?? ???? ?? ??? ????</text>
+  <rect x="616" y="416" width="488" height="140" rx="20" fill="#FFFDF8" stroke="#8D3B66"/>
+  <text x="644" y="466" font-size="24" font-weight="700" fill="#4B1833">???? ??</text>
+  <text x="644" y="504" font-size="18" font-weight="500" fill="#4B1833">?? ???? ?? ???? ?? ??</text>
+  <text x="644" y="532" font-size="18" font-weight="500" fill="#4B1833">? ?? ???? ?? ??? ????</text>
+</svg>
