@@ -245,6 +245,8 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             baseRow["textPath"] = None
             baseRow["textPathKey"] = None
             baseRow["textParentPathKey"] = None
+            baseRow["textSemanticPathKey"] = None
+            baseRow["textSemanticParentPathKey"] = None
             baseRow["segmentOrder"] = 0
             baseRow["segmentKeyBase"] = f"table|sb:{sourceBlockOrder}"
             baseRow["segmentOccurrence"] = 1
@@ -267,21 +269,30 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             if finalHeadings:
                 pathLabels = [str(item["label"]) for item in finalHeadings]
                 pathKeys = [str(item["key"]) for item in finalHeadings if str(item["key"])]
+                semanticPathKeys = [str(item["semanticKey"]) for item in finalHeadings if str(item["semanticKey"])]
                 textLevel = int(finalHeadings[-1]["level"])
                 textPath = " > ".join(pathLabels) if pathLabels else None
                 textPathKey = " > ".join(pathKeys) if pathKeys else None
                 textParentPathKey = " > ".join(pathKeys[:-1]) if len(pathKeys) > 1 else None
-                segmentKeyBase = f"body|p:{textPathKey}" if textPathKey else f"body|lv:{textLevel}|a:empty"
+                textSemanticPathKey = " > ".join(semanticPathKeys) if semanticPathKeys else None
+                textSemanticParentPathKey = " > ".join(semanticPathKeys[:-1]) if len(semanticPathKeys) > 1 else None
+                segmentKeyBase = (
+                    f"body|p:{textSemanticPathKey}" if textSemanticPathKey else f"body|lv:{textLevel}|a:empty"
+                )
             else:
                 textLevel = 0
                 textPath = None
                 textPathKey = None
                 textParentPathKey = None
+                textSemanticPathKey = None
+                textSemanticParentPathKey = None
                 segmentKeyBase = "body|lv:0|a:empty"
             baseRow["textLevel"] = textLevel
             baseRow["textPath"] = textPath
             baseRow["textPathKey"] = textPathKey
             baseRow["textParentPathKey"] = textParentPathKey
+            baseRow["textSemanticPathKey"] = textSemanticPathKey
+            baseRow["textSemanticParentPathKey"] = textSemanticParentPathKey
             baseRow["segmentOrder"] = 0
             baseRow["segmentKeyBase"] = segmentKeyBase
             baseRow["segmentOccurrence"] = 1
@@ -298,6 +309,8 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             nodeRow["textPath"] = node["textPath"]
             nodeRow["textPathKey"] = node["textPathKey"]
             nodeRow["textParentPathKey"] = node["textParentPathKey"]
+            nodeRow["textSemanticPathKey"] = node.get("textSemanticPathKey")
+            nodeRow["textSemanticParentPathKey"] = node.get("textSemanticParentPathKey")
             nodeRow["segmentOrder"] = node["segmentOrder"]
             nodeRow["segmentKeyBase"] = node["segmentKeyBase"]
             nodeRow["segmentOccurrence"] = 1
@@ -368,6 +381,151 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
     }
 
 
+def projectCadenceRows(
+    df: pl.DataFrame,
+    *,
+    cadenceScope: str,
+    includeMixed: bool = True,
+) -> pl.DataFrame:
+    """sections DataFrame를 cadence 기준으로 투영한다."""
+    if df.is_empty() or "cadenceScope" not in df.columns:
+        return df
+
+    scope = str(cadenceScope).strip().lower()
+    if scope == "all":
+        return df
+    if scope not in {"annual", "quarterly", "mixed"}:
+        raise ValueError(f"unsupported cadenceScope: {cadenceScope}")
+
+    allowed = {scope}
+    if includeMixed and scope in {"annual", "quarterly"}:
+        allowed.add("mixed")
+
+    return df.filter(pl.col("cadenceScope").is_in(sorted(allowed)))
+
+
+def _emptySemanticRegistryFrame() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "topic": pl.Utf8,
+            "textNodeType": pl.Utf8,
+            "textLevel": pl.Int64,
+            "cadenceScope": pl.Utf8,
+            "textSemanticPathKey": pl.Utf8,
+            "textSemanticParentPathKey": pl.Utf8,
+            "rowCount": pl.Int64,
+            "rawPathCount": pl.Int64,
+            "rawPaths": pl.List(pl.Utf8),
+            "rawParentPaths": pl.List(pl.Utf8),
+            "semanticPathCount": pl.Int64,
+            "semanticPaths": pl.List(pl.Utf8),
+            "sourceBlockOrders": pl.List(pl.Int64),
+            "segmentKeys": pl.List(pl.Utf8),
+            "latestAnnualPeriod": pl.Utf8,
+            "latestQuarterlyPeriod": pl.Utf8,
+            "hasCollision": pl.Boolean,
+        }
+    )
+
+
+def semanticRegistry(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+) -> pl.DataFrame:
+    """textSemanticPathKey 기준 semantic registry를 만든다."""
+    if df is None or df.is_empty():
+        return _emptySemanticRegistryFrame()
+
+    required = {"topic", "textSemanticPathKey", "textPathKey", "segmentKey"}
+    if not required.issubset(set(df.columns)):
+        return _emptySemanticRegistryFrame()
+
+    scoped = df
+    if cadenceScope != "all":
+        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if topic is not None:
+        scoped = scoped.filter(pl.col("topic") == topic)
+    if scoped.is_empty():
+        return _emptySemanticRegistryFrame()
+
+    textScoped = scoped
+    if "blockType" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("blockType") == "text")
+    if "textStructural" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("textStructural") != False)  # noqa: E712
+    textScoped = textScoped.filter(pl.col("textSemanticPathKey").is_not_null() & pl.col("textPathKey").is_not_null())
+    if textScoped.is_empty():
+        return _emptySemanticRegistryFrame()
+
+    rawPathExpr = (
+        pl.col("textPathVariants").list.explode().drop_nulls().unique().sort()
+        if "textPathVariants" in textScoped.columns
+        else pl.col("textPathKey").drop_nulls().unique().sort()
+    )
+    rawParentExpr = (
+        pl.col("textParentPathVariants").list.explode().drop_nulls().unique().sort()
+        if "textParentPathVariants" in textScoped.columns
+        else pl.col("textParentPathKey").drop_nulls().unique().sort()
+    )
+    semanticPathExpr = (
+        pl.col("textSemanticPathVariants").list.explode().drop_nulls().unique().sort()
+        if "textSemanticPathVariants" in textScoped.columns
+        else pl.col("textSemanticPathKey").drop_nulls().unique().sort()
+    )
+
+    registry = (
+        textScoped.group_by(
+            [
+                "topic",
+                "textNodeType",
+                "textLevel",
+                "cadenceScope",
+                "textSemanticPathKey",
+                "textSemanticParentPathKey",
+            ],
+            maintain_order=True,
+        )
+        .agg(
+            [
+                pl.len().alias("rowCount"),
+                rawPathExpr.alias("rawPaths"),
+                rawParentExpr.alias("rawParentPaths"),
+                semanticPathExpr.alias("semanticPaths"),
+                pl.col("sourceBlockOrder").drop_nulls().unique().sort().alias("sourceBlockOrders"),
+                pl.col("segmentKey").drop_nulls().unique().sort().alias("segmentKeys"),
+                pl.col("latestAnnualPeriod").drop_nulls().max().alias("latestAnnualPeriod"),
+                pl.col("latestQuarterlyPeriod").drop_nulls().max().alias("latestQuarterlyPeriod"),
+            ]
+        )
+        .with_columns(
+            [
+                pl.col("rawPaths").list.len().alias("rawPathCount"),
+                pl.col("semanticPaths").list.len().alias("semanticPathCount"),
+            ]
+        )
+        .with_columns((pl.col("rawPathCount") > 1).alias("hasCollision"))
+        .sort(["topic", "textSemanticPathKey", "textNodeType", "textLevel", "cadenceScope"])
+    )
+    return registry
+
+
+def semanticCollisions(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+) -> pl.DataFrame:
+    """semantic registry에서 raw path 충돌 그룹만 반환한다."""
+    registry = semanticRegistry(df, topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if registry.is_empty():
+        return registry
+    return registry.filter(pl.col("hasCollision"))
+
+
 def sections(stockCode: str) -> pl.DataFrame | None:
     """전 기간 보고서 섹션 — (topic, blockType, blockOrder) × period DataFrame.
 
@@ -383,6 +541,10 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     topicMap: dict[tuple[str, str], dict[str, str]] = {}
     rowMeta: dict[tuple[str, str], dict[str, object]] = {}
     rowOrder: dict[tuple[str, str], dict[str, int]] = {}
+    pathVariantsByKey: dict[tuple[str, str], set[str]] = {}
+    parentPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
+    semanticPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
+    semanticParentPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
     periodRows: dict[str, list[dict[str, object]]] = {}
     validPeriods: list[str] = []
     latestAnnualRows: list[dict[str, object]] | None = None
@@ -437,6 +599,14 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             if key not in topicMap:
                 topicMap[key] = {}
             topicMap[key][periodKey] = text
+            if isinstance(row.get("textPathKey"), str) and row.get("textPathKey"):
+                pathVariantsByKey.setdefault(key, set()).add(str(row["textPathKey"]))
+            if isinstance(row.get("textParentPathKey"), str) and row.get("textParentPathKey"):
+                parentPathVariantsByKey.setdefault(key, set()).add(str(row["textParentPathKey"]))
+            if isinstance(row.get("textSemanticPathKey"), str) and row.get("textSemanticPathKey"):
+                semanticPathVariantsByKey.setdefault(key, set()).add(str(row["textSemanticPathKey"]))
+            if isinstance(row.get("textSemanticParentPathKey"), str) and row.get("textSemanticParentPathKey"):
+                semanticParentPathVariantsByKey.setdefault(key, set()).add(str(row["textSemanticParentPathKey"]))
             majorNum = int(row.get("majorNum", 99))
             sortOrder = int(row.get("sortOrder", 999999))
             if topic not in topicFirstSeq or (majorNum, sortOrder) < topicFirstSeq[topic]:
@@ -476,6 +646,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                     "textPath": row.get("textPath"),
                     "textPathKey": row.get("textPathKey"),
                     "textParentPathKey": row.get("textParentPathKey"),
+                    "textSemanticPathKey": row.get("textSemanticPathKey"),
+                    "textSemanticParentPathKey": row.get("textSemanticParentPathKey"),
                     "segmentKey": segmentKey,
                     "segmentOrder": int(row.get("segmentOrder") or 0),
                     "segmentOccurrence": int(row.get("segmentOccurrence") or 1),
@@ -485,6 +657,11 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     if not validPeriods or not topicMap:
         return None
+
+    cadenceMetaByKey = {key: _rowCadenceMeta(periodMap) for key, periodMap in topicMap.items()}
+    topicKeysByTopic: dict[str, list[tuple[str, str]]] = {}
+    for key in topicMap.keys():
+        topicKeysByTopic.setdefault(key[0], []).append(key)
 
     topicIndex: dict[str, int] = {}
     for topic_seq in sorted(topicFirstSeq.items(), key=lambda x: x[1]):
@@ -498,7 +675,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
         tIdx = topicIndex.get(topic, 999999)
         info = rowOrder.get(k, {})
-        cadenceMeta = _rowCadenceMeta(topicMap.get(k, {}))
+        cadenceMeta = cadenceMetaByKey.get(k, {})
         return (
             majorNum,
             firstSeq,
@@ -515,12 +692,15 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     dfRows: list[dict[str, str | None]] = []
     for topic in sortedTopics:
-        topicKeys = [key for key in topicMap.keys() if key[0] == topic]
-        topicKeys = sorted(topicKeys, key=_topicRowSortKey)
+        topicKeys = sorted(topicKeysByTopic.get(topic, []), key=_topicRowSortKey)
         for blockOrder, key in enumerate(topicKeys):
             meta = rowMeta.get(key, {})
             orderInfo = rowOrder.get(key, {})
-            cadenceMeta = _rowCadenceMeta(topicMap.get(key, {}))
+            cadenceMeta = cadenceMetaByKey.get(key, {})
+            pathVariants = sorted(pathVariantsByKey.get(key, set()))
+            parentPathVariants = sorted(parentPathVariantsByKey.get(key, set()))
+            semanticPathVariants = sorted(semanticPathVariantsByKey.get(key, set()))
+            semanticParentPathVariants = sorted(semanticParentPathVariantsByKey.get(key, set()))
             row: dict[str, str | int | None] = {
                 "chapter": topicChapter.get(topic),
                 "topic": topic,
@@ -537,6 +717,19 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                 "textParentPathKey": (
                     str(meta["textParentPathKey"]) if isinstance(meta.get("textParentPathKey"), str) else None
                 ),
+                "textPathVariantCount": len(pathVariants),
+                "textPathVariants": pathVariants or None,
+                "textParentPathVariants": parentPathVariants or None,
+                "textSemanticPathKey": (
+                    str(meta["textSemanticPathKey"]) if isinstance(meta.get("textSemanticPathKey"), str) else None
+                ),
+                "textSemanticParentPathKey": (
+                    str(meta["textSemanticParentPathKey"])
+                    if isinstance(meta.get("textSemanticParentPathKey"), str)
+                    else None
+                ),
+                "textSemanticPathVariants": semanticPathVariants or None,
+                "textSemanticParentPathVariants": semanticParentPathVariants or None,
                 "segmentKey": str(meta.get("segmentKey") or ""),
                 "segmentOrder": int(meta.get("segmentOrder") or 0),
                 "segmentOccurrence": int(orderInfo.get("segmentOccurrence") or meta.get("segmentOccurrence") or 1),
@@ -572,6 +765,13 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         "textPath": pl.Utf8,
         "textPathKey": pl.Utf8,
         "textParentPathKey": pl.Utf8,
+        "textPathVariantCount": pl.Int64,
+        "textPathVariants": pl.List(pl.Utf8),
+        "textParentPathVariants": pl.List(pl.Utf8),
+        "textSemanticPathKey": pl.Utf8,
+        "textSemanticParentPathKey": pl.Utf8,
+        "textSemanticPathVariants": pl.List(pl.Utf8),
+        "textSemanticParentPathVariants": pl.List(pl.Utf8),
         "segmentKey": pl.Utf8,
         "segmentOrder": pl.Int64,
         "segmentOccurrence": pl.Int64,

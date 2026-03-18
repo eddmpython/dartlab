@@ -21,6 +21,37 @@ _RE_SHORT_PAREN = re.compile(r"^\(([^)]+)\)$")
 _RE_HEADING_NOISE = re.compile(r"^(?:단위|주\d|참고|출처|비고)\b")
 _RE_NONWORD = re.compile(r"[^0-9A-Za-z가-힣]+")
 _RE_TEMPORAL_MARKER = re.compile(r"^(?:\d{4}년(?:\s*\d{1,2}월)?|\d{4}[./]\d{1,2})$")
+_RE_SUFFIX_EGWANHAN = re.compile(r"에관한사항$")
+
+_TOPIC_SEGMENT_ALIASES: dict[str, dict[str, str]] = {
+    "companyOverview": {
+        "연결대상종속기업개황": "연결대상종속사현황",
+        "연결대상종속회사개황": "연결대상종속사현황",
+        "연결대상종속회사현황요약": "연결대상종속사현황",
+        "연결대상종속기업개황요약": "연결대상종속사현황",
+        "연결대상회사의변동내용": "연결대상변동내용",
+        "당기중종속기업변동내용": "연결대상변동내용",
+        "당기연결대상회사의변동내용": "연결대상변동내용",
+        "본사의주소전화번호홈페이지주소": "본사의주소전화번호홈페이지",
+    },
+    "businessOverview": {
+        "생산및설비에관한사항": "생산및설비",
+        "매출에관한사항": "매출",
+        "주요원재료에관한사항": "주요원재료",
+        "영업의개황등": "영업현황",
+        "국내외시장여건등": "시장여건",
+        "산업의특성등": "산업의특성",
+        "사업부문별현황": "사업부문현황",
+    },
+    "mdna": {
+        "재무상태및영업실적연결기준": "재무상태및영업실적",
+        "조직개편": "조직변경",
+        "조직의변경": "조직변경",
+        "자산손상인식": "자산손상",
+        "유동성및자금조달과지출": "유동성및자금조달",
+        "환율변동영향": "환율변동",
+    },
+}
 
 
 def _clean_line(line: str) -> str:
@@ -58,6 +89,27 @@ def _canonical_heading_key(
         if mapped == topic:
             return f"@topic:{topic}"
     return labelKey
+
+
+def _semantic_segment_key(labelKey: str, *, topic: str | None) -> str:
+    if not labelKey or labelKey.startswith("@"):
+        return labelKey
+
+    key = labelKey
+
+    aliasMap = _TOPIC_SEGMENT_ALIASES.get(str(topic or ""), {})
+    if key in aliasMap:
+        key = aliasMap[key]
+
+    key = _RE_SUFFIX_EGWANHAN.sub("", key)
+    key = key.replace("종속기업", "종속사").replace("종속회사", "종속사")
+
+    if isinstance(topic, str) and topic == "businessOverview":
+        key = key.replace("영업의개황", "영업현황")
+    if isinstance(topic, str) and topic == "mdna":
+        key = key.replace("환율변동영향", "환율변동")
+
+    return key
 
 
 def _is_temporal_marker(text: str) -> bool:
@@ -141,14 +193,17 @@ def parseTextStructureWithState(
 
         pathLabels = [str(item["label"]) for item in stack]
         pathKeys = [str(item["key"]) for item in stack if str(item["key"])]
+        semanticPathKeys = [str(item["semanticKey"]) for item in stack if str(item["semanticKey"])]
         pathText = " > ".join(pathLabels) if pathLabels else None
         pathKey = " > ".join(pathKeys) if pathKeys else None
         parentPathKey = " > ".join(pathKeys[:-1]) if len(pathKeys) > 1 else None
+        semanticPathKey = " > ".join(semanticPathKeys) if semanticPathKeys else None
+        semanticParentPathKey = " > ".join(semanticPathKeys[:-1]) if len(semanticPathKeys) > 1 else None
         level = int(stack[-1]["level"]) if stack else 0
         anchor = _body_anchor(body)
         # Text row identity should follow outline path first.
         # Raw coarse block order is preserved separately as sourceBlockOrder.
-        stableKeyBase = f"body|p:{pathKey}" if pathKey else f"body|lv:{level}|a:{anchor}"
+        stableKeyBase = f"body|p:{semanticPathKey}" if semanticPathKey else f"body|lv:{level}|a:{anchor}"
         nodes.append(
             {
                 "textNodeType": "body",
@@ -157,6 +212,8 @@ def parseTextStructureWithState(
                 "textPath": pathText,
                 "textPathKey": pathKey,
                 "textParentPathKey": parentPathKey,
+                "textSemanticPathKey": semanticPathKey,
+                "textSemanticParentPathKey": semanticParentPathKey,
                 "segmentOrder": segmentOrder,
                 "segmentKeyBase": stableKeyBase,
                 "text": body,
@@ -182,6 +239,7 @@ def parseTextStructureWithState(
         labelText = _normalize_heading_text(label)
         labelKey = _heading_key(label)
         stackKey = _canonical_heading_key(labelText, labelKey, level=level, topic=topic)
+        semanticStackKey = _semantic_segment_key(stackKey, topic=topic)
         redundantTopicAlias = (
             structural
             and bool(stack)
@@ -194,19 +252,25 @@ def parseTextStructureWithState(
         if structural and not redundantTopicAlias:
             while stack and int(stack[-1]["level"]) >= level:
                 stack.pop()
-            stack.append({"level": level, "label": labelText, "key": stackKey})
+            stack.append({"level": level, "label": labelText, "key": stackKey, "semanticKey": semanticStackKey})
             pathLabels = [str(item["label"]) for item in stack]
             pathKeys = [str(item["key"]) for item in stack if str(item["key"])]
+            semanticPathKeys = [str(item["semanticKey"]) for item in stack if str(item["semanticKey"])]
             pathText = " > ".join(pathLabels) if pathLabels else None
             pathKey = " > ".join(pathKeys) if pathKeys else None
             parentPathKey = " > ".join(pathKeys[:-1]) if len(pathKeys) > 1 else None
-            segmentKeyBase = f"heading|lv:{level}|p:{pathKey or stackKey}"
+            semanticPathKey = " > ".join(semanticPathKeys) if semanticPathKeys else None
+            semanticParentPathKey = " > ".join(semanticPathKeys[:-1]) if len(semanticPathKeys) > 1 else None
+            segmentKeyBase = f"heading|lv:{level}|p:{semanticPathKey or semanticStackKey}"
         else:
             currentPathKeys = [str(item["key"]) for item in stack if str(item["key"])]
+            currentSemanticPathKeys = [str(item["semanticKey"]) for item in stack if str(item["semanticKey"])]
             pathText = labelText
             keyPrefix = "@alias" if redundantTopicAlias else "@marker"
             pathKey = f"{keyPrefix}:{labelKey}"
             parentPathKey = " > ".join(currentPathKeys) if currentPathKeys else None
+            semanticPathKey = pathKey
+            semanticParentPathKey = " > ".join(currentSemanticPathKeys) if currentSemanticPathKeys else None
             segmentKind = "alias" if redundantTopicAlias else "marker"
             segmentKeyBase = f"heading|{segmentKind}|lv:{level}|p:{pathKey}"
         nodes.append(
@@ -217,6 +281,8 @@ def parseTextStructureWithState(
                 "textPath": pathText,
                 "textPathKey": pathKey,
                 "textParentPathKey": parentPathKey,
+                "textSemanticPathKey": semanticPathKey,
+                "textSemanticParentPathKey": semanticParentPathKey,
                 "segmentOrder": segmentOrder,
                 "segmentKeyBase": segmentKeyBase,
                 "text": stripped,

@@ -7,7 +7,12 @@ from dartlab.engines.dart.docs.sections.extractors import (
     parseSubtopicTable,
     topicSubtables,
 )
-from dartlab.engines.dart.docs.sections.pipeline import sections
+from dartlab.engines.dart.docs.sections.pipeline import (
+    projectCadenceRows,
+    sections,
+    semanticCollisions,
+    semanticRegistry,
+)
 from dartlab.engines.dart.docs.sections.types import (
     SectionChunk,
     SectionResult,
@@ -22,6 +27,9 @@ from dartlab.engines.dart.docs.sections.views import (
 
 __all__ = [
     "sections",
+    "projectCadenceRows",
+    "semanticRegistry",
+    "semanticCollisions",
     "retrievalBlocks",
     "contextSlices",
     "buildMarkdownBlocks",

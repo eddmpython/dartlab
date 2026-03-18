@@ -1351,6 +1351,37 @@ class _DocsAccessor:
     def sections(self) -> pl.DataFrame | None:
         return self._company._get_primary("sections")
 
+    def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        return self._company._docsSectionsCadence(cadenceScope, includeMixed=includeMixed)
+
+    def sectionsSemanticRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsSemanticRegistry(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            collisionsOnly=False,
+        )
+
+    def sectionsSemanticCollisions(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsSemanticRegistry(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            collisionsOnly=True,
+        )
+
     @property
     def retrievalBlocks(self) -> pl.DataFrame | None:
         return self._company._retrievalBlocks()
@@ -1991,6 +2022,65 @@ class Company:
     def notes(self):
         """K-IFRS notes accessor (compat)."""
         return self._notesAccessor
+
+    def _docsSectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        cacheKey = f"_docsSectionsCadence:{normalizedScope}:{int(includeMixed)}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+        from dartlab.engines.dart.docs.sections import projectCadenceRows
+
+        result = projectCadenceRows(sectionsFrame, cadenceScope=normalizedScope, includeMixed=includeMixed)
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsSemanticRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        collisionsOnly: bool = False,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        topicKey = topic or "*"
+        cacheKey = (
+            f"_docsSectionsSemanticRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}"
+        )
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import semanticCollisions, semanticRegistry
+
+        if collisionsOnly:
+            result = semanticCollisions(
+                sectionsFrame,
+                topic=topic,
+                cadenceScope=normalizedScope,
+                includeMixed=includeMixed,
+            )
+        else:
+            result = semanticRegistry(
+                sectionsFrame,
+                topic=topic,
+                cadenceScope=normalizedScope,
+                includeMixed=includeMixed,
+            )
+        self._cache[cacheKey] = result
+        return result
 
     def _retrievalBlocks(self) -> pl.DataFrame | None:
         if not self._hasDocs:

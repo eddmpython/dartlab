@@ -212,6 +212,21 @@ class TestCompany:
         assert isinstance(c.finance.CF, pl.DataFrame)
         assert isinstance(c.finance.SCE, pl.DataFrame)
 
+    def test_docs_sections_projection_and_semantic_registry_accessors(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        annual = c.docs.sectionsCadence("annual")
+        registry = c.docs.sectionsSemanticRegistry(topic="mdna")
+        collisions = c.docs.sectionsSemanticCollisions(topic="mdna")
+
+        assert isinstance(annual, pl.DataFrame)
+        assert isinstance(registry, pl.DataFrame)
+        assert isinstance(collisions, pl.DataFrame)
+        assert annual.height <= c.docs.sections.height
+        assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(registry.columns))
+        assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(collisions.columns))
+
     def test_profile_facts_include_docs_source(self):
         from dartlab import Company
 

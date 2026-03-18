@@ -29,12 +29,22 @@
   - `textStructural`: 구조 heading/body 여부 (`false`면 marker/alias row)
   - `textLevel`: heading/body level
   - `textPath`, `textPathKey`, `textParentPathKey`
+  - `textPathVariantCount`, `textPathVariants`, `textParentPathVariants`
+  - `textSemanticPathKey`, `textSemanticParentPathKey`
+  - `textSemanticPathVariants`, `textSemanticParentPathVariants`
   - `segmentKey`, `segmentOrder`, `segmentOccurrence`, `sourceBlockOrder`
   - `cadenceKey`, `cadenceScope`, `annualPeriodCount`, `quarterlyPeriodCount`
   - `latestAnnualPeriod`, `latestQuarterlyPeriod`
 - top-level heading이 현재 topic과 같은 의미로 매핑되면 `textPathKey`는 label 문자열이 아니라 `@topic:{topic}` canonical root를 쓴다.
 - `[2021년 12월]` 같은 시점 마커와 중복 root alias는 raw row로는 남기되 `textStructural=false`로 내려서 outline stack을 오염시키지 않는다.
+- `textSemanticPathKey`는 raw 구조선을 덮어쓰지 않는 parallel semantic spine이다.
+  - `textPathKey`는 원문 구조를 그대로 보존한다.
+  - `textSemanticPathKey`는 안전한 alias만 흡수한다.
+  - 현재는 `...에 관한 사항`, `종속기업/종속회사`, `조직개편/조직의 변경` 같은 보수적 케이스만 정규화한다.
 - `cadenceScope`는 `annual` / `quarterly` / `mixed` / `none`이며, 소비층이 연간 구조와 분기 구조를 섞지 않게 하는 기준 메타다.
+- `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`는 `sections` 내부에서 cadence-aware row projection을 제공하는 공식 helper다.
+- `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`는 `textSemanticPathKey` 기준으로 row가 흡수한 raw wording drift를 진단하는 공식 helper다.
+- `c.docs.sectionsCadence()`, `c.docs.sectionsSemanticRegistry()`, `c.docs.sectionsSemanticCollisions()`는 위 helper의 Company-level cached access path다.
 - viewer는 위 구조를 소비해 렌더링만 담당한다. viewer 안에서 문서 구조를 다시 해석하는 로직은 임시 보정으로 보고 점진적으로 제거한다.
 
 ### 현재 정확한 기준 위치 (2026-03-18)
@@ -45,11 +55,29 @@
 - 핵심 변경 요약:
   - text row spine은 `sourceBlockOrder`가 아니라 `textPathKey + occurrence` 기준이다.
   - top-level root alias는 `@topic:{topic}` canonical root로 정규화한다.
+  - semantic alias spine은 `textSemanticPathKey` / `textSemanticParentPathKey`로 병렬 보존한다.
+  - row가 흡수한 raw wording drift는 `textPathVariants` / `textPathVariantCount`에 보존한다.
   - 시점 marker와 중복 root alias는 `textStructural=false` row로 보존하고 outline stack에서는 제외한다.
   - row별 period 분포는 `cadenceKey`, `cadenceScope`, `latestAnnualPeriod`, `latestQuarterlyPeriod`로 기록한다.
 - 실제 구현 기준 파일:
   - `src/dartlab/engines/dart/docs/sections/textStructure.py`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py`
+
+### 다종목 검증 기준과 다음 단계 (2026-03-18)
+
+- 검증 샘플:
+  - `005930`, `000660`, `035720`, `035420`, `373220`, `068270`
+  - topic: `companyOverview`, `businessOverview`, `mdna`
+- 현재 semantic alias는 보수적으로만 적용한다.
+  - 실제 row merge가 확인된 축은 `companyOverview`, `mdna` 쪽이 먼저다.
+  - `businessOverview`는 `영업의 개황 등 -> 영업현황`, `매출에 관한 사항 -> 매출` 같은 safe rename은 많지만, 대다수 회사에서 row 수 자체는 거의 줄지 않는다.
+  - 즉 `businessOverview`의 병목은 alias 사전 부족보다 `부문/구조 이동`을 흡수하는 semantic matcher 부족이다.
+- 다음 단계 우선순위:
+  1. `topic + cadenceScope` 기준 `semantic registry` 도입
+  2. parent-guard가 있는 alias만 추가 (`companyOverview` slot alias, `mdna` root alias 우선)
+  3. 법인명/시점 marker/부문명은 alias가 아니라 별도 guard 또는 이벤트 레이어로 분리
+  4. `businessOverview`는 alias dict 확장보다 `same/moved/split/merge` 판정이 가능한 구조 matcher를 먼저 올린다
+  5. 성능은 `sections` materialized projection/cache를 추가해 first-build를 더 줄인다
 
 ## viewer.py — 공시뷰어 presentation layer
 
