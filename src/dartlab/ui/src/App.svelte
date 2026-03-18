@@ -15,7 +15,7 @@
 -->
 <script>
 	import "./app.css";
-	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, oauthAuthorize, oauthStatus, oauthLogout, searchCompany as searchCompanyApi } from "$lib/api.js";
+	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, codexLogout, searchCompany as searchCompanyApi } from "$lib/api.js";
 	import { cn } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
@@ -27,7 +27,7 @@
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Download, X, Loader2, Settings, Check, ExternalLink,
-		Key, AlertCircle, CheckCircle2, Terminal, LogIn, LogOut, Database
+		Key, AlertCircle, CheckCircle2, Terminal, LogOut, Database
 	} from "lucide-svelte";
 
 	// ── State ──
@@ -66,9 +66,6 @@
 	let pullPercent = $state(0);
 	let pullHandle = $state(null);
 
-	// OAuth login
-	let oauthLoggingIn = $state(false);
-	let chatgptDetail = $state({});
 	let settingsDialog = $state(null);
 	let deleteDialog = $state(null);
 
@@ -139,6 +136,10 @@
 
 	let codexDetail = $state({});
 
+	function normalizeProvider(name) {
+		return name === "chatgpt" ? "codex" : name;
+	}
+
 	async function loadStatus() {
 		statusLoading = true;
 		try {
@@ -146,10 +147,9 @@
 			providers = data.providers || {};
 			ollamaDetail = data.ollama || {};
 			codexDetail = data.codex || {};
-			chatgptDetail = data.chatgpt || {};
 			if (data.version) appVersion = data.version;
 
-			const savedProvider = localStorage.getItem("dartlab-provider");
+			const savedProvider = normalizeProvider(localStorage.getItem("dartlab-provider"));
 			const savedModel = localStorage.getItem("dartlab-model");
 
 			if (savedProvider && providers[savedProvider]?.available) {
@@ -184,7 +184,7 @@
 				return;
 			}
 
-			for (const name of ["chatgpt", "codex", "ollama"]) {
+			for (const name of ["codex", "ollama", "openai"]) {
 				if (providers[name]?.available) {
 					activeProvider = name;
 					expandedProvider = name;
@@ -202,6 +202,7 @@
 	}
 
 	async function loadModelsFor(provider) {
+		provider = normalizeProvider(provider);
 		modelsLoading = { ...modelsLoading, [provider]: true };
 		try {
 			const data = await fetchModels(provider);
@@ -213,6 +214,7 @@
 	}
 
 	async function selectProvider(name) {
+		name = normalizeProvider(name);
 		activeProvider = name;
 		activeModel = null;
 		expandedProvider = name;
@@ -237,10 +239,11 @@
 	async function selectModel(model) {
 		activeModel = model;
 		localStorage.setItem("dartlab-model", model);
-		try { await configure(activeProvider, model); } catch {}
+		try { await configure(normalizeProvider(activeProvider), model); } catch {}
 	}
 
 	function toggleExpandProvider(name) {
+		name = normalizeProvider(name);
 		if (expandedProvider === name) {
 			expandedProvider = null;
 		} else {
@@ -256,7 +259,7 @@
 		apiKeyVerifying = true;
 		apiKeyResult = null;
 		try {
-			const result = await configure(activeProvider, activeModel, key);
+			const result = await configure(normalizeProvider(activeProvider), activeModel, key);
 			if (result.available) {
 				apiKeyResult = "success";
 				providers[activeProvider] = { ...providers[activeProvider], available: true, model: result.model };
@@ -273,56 +276,13 @@
 		apiKeyVerifying = false;
 	}
 
-	async function startOAuthLogin() {
-		if (oauthLoggingIn) return;
-		oauthLoggingIn = true;
+	async function handleCodexLogout() {
 		try {
-			const { authUrl } = await oauthAuthorize();
-			window.open(authUrl, "dartlab-oauth", "width=600,height=700");
-
-			const pollInterval = setInterval(async () => {
-				try {
-					const result = await oauthStatus();
-					if (result.done) {
-						clearInterval(pollInterval);
-						oauthLoggingIn = false;
-						if (result.error) {
-							showToast(`인증 실패: ${result.error}`);
-						} else {
-							showToast("ChatGPT 인증 성공", "success");
-							await loadStatus();
-							if (providers["chatgpt"]?.available) {
-								await selectProvider("chatgpt");
-							}
-						}
-					}
-				} catch {
-					clearInterval(pollInterval);
-					oauthLoggingIn = false;
-				}
-			}, 2000);
-
-			setTimeout(() => {
-				clearInterval(pollInterval);
-				if (oauthLoggingIn) {
-					oauthLoggingIn = false;
-					showToast("인증 시간이 초과되었습니다. 다시 시도해주세요.");
-				}
-			}, 120000);
-		} catch (err) {
-			oauthLoggingIn = false;
-			showToast(`OAuth 시작 실패: ${err.message}`);
-		}
-	}
-
-	async function handleOAuthLogout() {
-		try {
-			await oauthLogout();
-			chatgptDetail = { authenticated: false };
-			if (activeProvider === "chatgpt") {
-				providers = { ...providers, chatgpt: { ...providers.chatgpt, available: false } };
+			await codexLogout();
+			if (activeProvider === "codex") {
+				providers = { ...providers, codex: { ...providers.codex, available: false } };
 			}
-			showToast("ChatGPT 로그아웃 완료", "success");
+			showToast("Codex 계정 로그아웃 완료", "success");
 			await loadStatus();
 		} catch {
 			showToast("로그아웃 실패");
@@ -602,13 +562,12 @@
 					if (isStale()) return;
 					store.updateLastMessage({ text: `오류: ${err}`, loading: false, error: true });
 					store.flush();
-					if (action === "relogin" || action === "login") {
-						showToast(`${err} — 설정에서 재로그인하세요`);
+					if (action === "login") {
+						showToast(`${err} — 설정에서 Codex 로그인을 확인하세요`);
 						openSettings();
-					} else if (action === "check_headers" || action === "check_endpoint" || action === "check_client_id") {
-						showToast(`${err} — ChatGPT API 변경 감지. 업데이트를 확인하세요`);
-					} else if (action === "rate_limit") {
-						showToast("요청이 너무 많습니다. 잠시 후 다시 시도해주세요");
+					} else if (action === "install") {
+						showToast(`${err} — 설정에서 Codex 설치 안내를 확인하세요`);
+						openSettings();
 					} else {
 						showToast(err);
 					}
@@ -942,6 +901,9 @@
 									{:else if needsKey}
 										<Key size={14} class="text-amber-400" />
 										<span class="text-[10px] text-amber-400">인증 필요</span>
+									{:else if needsCli && name === "codex" && codexDetail.installed}
+										<AlertCircle size={14} class="text-amber-400" />
+										<span class="text-[10px] text-amber-400">인증 필요</span>
 									{:else if needsCli && !info.available}
 										<Terminal size={14} class="text-dl-text-dim" />
 										<span class="text-[10px] text-dl-text-dim">미설치</span>
@@ -1048,7 +1010,7 @@
 									<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
 										{#if name === "codex"}
 											<div class="text-[12px] text-dl-text mb-2.5">
-												{codexDetail.installed ? "Codex CLI가 설치되었지만 인증이 필요합니다" : "Codex CLI 설치가 필요합니다"}
+												{codexDetail.installed ? "Codex CLI가 설치되었지만 로그인이 필요합니다" : "Codex CLI 설치가 필요합니다"}
 											</div>
 											<div class="space-y-2">
 												{#if !codexDetail.installed}
@@ -1067,55 +1029,34 @@
 													<div class="flex-1">
 														<div class="text-[10px] text-dl-text-dim mb-1">브라우저 인증 (ChatGPT 계정)</div>
 														<div class="p-2 rounded-lg bg-dl-bg-darker border border-dl-border text-[11px] text-dl-text-muted font-mono">
-															codex
+															codex login
 														</div>
 													</div>
 												</div>
 											</div>
+											{#if codexDetail.loginStatus}
+												<div class="text-[10px] text-dl-text-dim mt-2">{codexDetail.loginStatus}</div>
+											{/if}
 											<div class="flex items-center gap-1.5 mt-2.5 px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
 												<AlertCircle size={12} class="text-amber-400 flex-shrink-0" />
 												<span class="text-[10px] text-amber-400/80">ChatGPT Plus 또는 Pro 구독이 필요합니다</span>
 											</div>
 										{/if}
-										<div class="text-[10px] text-dl-text-dim mt-2">설치 완료 후 새로고침하세요</div>
+										<div class="text-[10px] text-dl-text-dim mt-2">{codexDetail.installed ? "로그인 완료 후 새로고침하세요" : "설치 완료 후 새로고침하세요"}</div>
 									</div>
 								{/if}
 
-								<!-- OAuth 로그인 (chatgpt provider) -->
-								{#if info.auth === "oauth" && !info.available}
-									<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
-										<div class="text-[12px] text-dl-text mb-2.5">ChatGPT 계정으로 로그인하여 사용하세요</div>
-										<button
-											class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
-											onclick={startOAuthLogin}
-											disabled={oauthLoggingIn}
-										>
-											{#if oauthLoggingIn}
-												<Loader2 size={14} class="animate-spin" />
-												브라우저에서 로그인 중...
-											{:else}
-												<LogIn size={14} />
-												OpenAI 계정으로 로그인
-											{/if}
-										</button>
-										<div class="flex items-center gap-1.5 mt-2.5 px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
-											<AlertCircle size={12} class="text-amber-400 flex-shrink-0" />
-											<span class="text-[10px] text-amber-400/80">ChatGPT Plus 또는 Pro 구독이 필요합니다</span>
-										</div>
-									</div>
-								{/if}
-
-								<!-- OAuth 인증됨 + 로그아웃 (chatgpt provider) -->
-								{#if info.auth === "oauth" && info.available}
+								<!-- Codex 계정 인증됨 + 로그아웃 -->
+								{#if name === "codex" && info.available}
 									<div class="px-4 pb-2 border-t border-dl-border/50 pt-2.5">
 										<div class="flex items-center justify-between">
 											<div class="flex items-center gap-2">
 												<CheckCircle2 size={13} class="text-dl-success" />
-												<span class="text-[11px] text-dl-success">ChatGPT 인증됨</span>
+												<span class="text-[11px] text-dl-success">ChatGPT 계정 인증됨</span>
 											</div>
 											<button
 												class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] text-dl-text-dim hover:text-dl-primary-light hover:bg-white/5 transition-colors"
-												onclick={handleOAuthLogout}
+												onclick={handleCodexLogout}
 											>
 												<LogOut size={11} />
 												로그아웃
@@ -1125,7 +1066,7 @@
 								{/if}
 
 								<!-- ═══ Inline Model Selection ═══ -->
-								{#if info.available || needsKey || needsCli || info.auth === "oauth"}
+								{#if info.available || needsKey || needsCli}
 									<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
 										<div class="flex items-center justify-between mb-2.5">
 											<span class="text-[11px] font-medium text-dl-text-muted">모델 선택</span>

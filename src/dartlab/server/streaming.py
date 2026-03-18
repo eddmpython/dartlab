@@ -369,19 +369,9 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 done_payload["responseMeta"] = response_meta
 
     except Exception as e:
-        from dartlab.engines.ai.oauthToken import TokenRefreshError
-        from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
-
         error_payload: dict[str, Any] = {"error": str(e)}
-
-        if isinstance(e, ChatGPTOAuthError):
-            error_payload["action"] = e.action
-            error_payload["error"] = e.message
-            if e.detail:
-                error_payload["detail"] = e.detail
-        elif isinstance(e, TokenRefreshError):
-            error_payload["action"] = "relogin"
-            error_payload["error"] = e.detail or str(e)
+        if isinstance(e, FileNotFoundError):
+            error_payload["action"] = "install"
         elif isinstance(e, PermissionError):
             error_payload["action"] = "login"
 

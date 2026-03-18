@@ -40,6 +40,7 @@ class TestStatus:
         assert "version" in data
         assert isinstance(data["providers"], dict)
         assert "claude-code" not in data["providers"]
+        assert "chatgpt" not in data["providers"]
         for prov_info in data["providers"].values():
             assert "available" in prov_info
 
@@ -57,6 +58,7 @@ class TestStatus:
         data = resp.json()
         assert "codex" in data
         assert "installed" in data["codex"]
+        assert "authenticated" in data["codex"]
 
     def test_status_version_not_unknown(self, client):
         """GET /api/status — 버전이 'unknown'이 아님."""
@@ -244,6 +246,15 @@ class TestOAuth:
     def test_oauth_logout(self, client):
         """POST /api/oauth/logout — 토큰 제거."""
         resp = client.post("/api/oauth/logout")
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+
+class TestCodexAuth:
+    def test_codex_logout(self, client, monkeypatch):
+        """POST /api/codex/logout — Codex CLI 인증 제거."""
+        monkeypatch.setattr("dartlab.engines.ai.codex_cli.logout_codex_cli", lambda: None)
+        resp = client.post("/api/codex/logout")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 

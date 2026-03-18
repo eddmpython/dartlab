@@ -38,16 +38,11 @@ from .streaming import stream_ask
 
 app = FastAPI(title="DartLab", version=dartlab.__version__)
 
-UI_PROVIDERS = ("chatgpt", "codex", "ollama", "openai")
+UI_PROVIDERS = ("codex", "ollama", "openai")
 UI_PROVIDER_META: dict[str, dict[str, str]] = {
-    "chatgpt": {
-        "label": "ChatGPT (구독)",
-        "desc": "ChatGPT Plus/Pro 구독, 브라우저 로그인으로 사용",
-        "auth": "oauth",
-    },
     "codex": {
-        "label": "GPT (Codex CLI)",
-        "desc": "ChatGPT Plus/Pro 구독, Codex CLI 필요. 코드 작업은 workspace-write로 위임 가능",
+        "label": "GPT (ChatGPT 계정)",
+        "desc": "ChatGPT Plus/Pro 구독, Codex CLI 로그인 필요. 코드 작업은 workspace-write로 위임 가능",
         "auth": "cli",
     },
     "ollama": {"label": "Ollama (로컬)", "desc": "무료, 오프라인, 프라이빗", "auth": "none"},
@@ -59,23 +54,14 @@ UI_PROVIDER_META: dict[str, dict[str, str]] = {
     },
 }
 
-STATIC_MODELS: dict[str, list[str]] = {
-    "chatgpt": [
-        "gpt-5.4",
-        "gpt-5.3",
-        "gpt-5.3-codex",
-        "gpt-5.2",
-        "gpt-5.2-codex",
-        "gpt-5.1",
-        "gpt-5.1-codex",
-        "gpt-5.1-codex-mini",
-        "o3",
-        "o4-mini",
-        "gpt-4.1",
-        "gpt-4.1-mini",
-        "gpt-4.1-nano",
-    ],
-}
+STATIC_MODELS: dict[str, list[str]] = {}
+
+
+def _normalize_provider_name(provider: str | None) -> str | None:
+    """Normalize deprecated provider aliases to the current public surface."""
+    if provider == "chatgpt":
+        return "codex"
+    return provider
 
 
 def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
@@ -173,7 +159,7 @@ def api_status():
         ollama_detail["installed"] = False
         ollama_detail["running"] = False
 
-    codex_detail = {"installed": False, "version": None}
+    codex_detail = {"installed": False, "authenticated": False, "authMode": None, "loginStatus": None, "version": None}
     try:
         from dartlab.engines.ai.cli_setup import detect_codex
 
@@ -181,19 +167,14 @@ def api_status():
     except Exception:
         pass
 
-    chatgpt_detail = {}
-    try:
-        from dartlab.engines.ai.oauthToken import TokenRefreshError, is_authenticated, load_token
-
-        chatgpt_detail["authenticated"] = is_authenticated()
-        token_data = load_token()
-        if token_data:
-            chatgpt_detail["expiresAt"] = token_data.get("expires_at")
-    except TokenRefreshError as e:
-        chatgpt_detail["authenticated"] = False
-        chatgpt_detail["error"] = e.reason
-    except (OSError, ValueError):
-        chatgpt_detail["authenticated"] = False
+    chatgpt_detail = {
+        "deprecated": True,
+        "mappedTo": "codex",
+        "available": results.get("codex", {}).get("available", False),
+        "authenticated": codex_detail.get("authenticated", False),
+        "authMode": codex_detail.get("authMode"),
+        "loginStatus": codex_detail.get("loginStatus"),
+    }
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
     return {
@@ -213,16 +194,18 @@ def api_configure(req: ConfigureRequest):
     from dartlab.engines.ai.types import LLMConfig
 
     current = get_config()
-    kwargs: dict[str, Any] = {"provider": req.provider}
+    effective_provider = _normalize_provider_name(req.provider) or req.provider
+    current_provider = _normalize_provider_name(current.provider) or current.provider
+    kwargs: dict[str, Any] = {"provider": effective_provider}
     if req.model:
         kwargs["model"] = req.model
     if req.api_key:
         kwargs["api_key"] = req.api_key
-    elif current.api_key and current.provider == req.provider:
+    elif current.api_key and current_provider == effective_provider:
         kwargs["api_key"] = current.api_key
     if req.base_url:
         kwargs["base_url"] = req.base_url
-    elif current.base_url and current.provider == req.provider:
+    elif current.base_url and current_provider == effective_provider:
         kwargs["base_url"] = current.base_url
     configure(**kwargs)
 
@@ -236,7 +219,7 @@ def api_configure(req: ConfigureRequest):
     except Exception:
         pass
 
-    return {"ok": True, "provider": req.provider, "available": available, "model": model}
+    return {"ok": True, "provider": effective_provider, "available": available, "model": model}
 
 
 @app.get("/api/models/{provider}")
@@ -244,6 +227,8 @@ def api_models(provider: str):
     """Provider별 사용 가능한 모델 목록 — SDK/API 자동 조회, 실패시 fallback."""
     from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.types import LLMConfig
+
+    provider = _normalize_provider_name(provider) or provider
 
     if provider == "codex":
         from dartlab.engines.ai.codex_cli import get_codex_model_catalog
@@ -411,6 +396,20 @@ def _fetch_anthropic_models() -> list[str]:
         return models
     except Exception:
         return []
+
+
+@app.post("/api/codex/logout")
+def api_codex_logout():
+    """Codex CLI에 저장된 계정 인증을 제거한다."""
+    from dartlab.engines.ai.codex_cli import logout_codex_cli
+
+    try:
+        logout_codex_cli()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return {"ok": True}
 
 
 @app.get("/api/oauth/authorize")
@@ -1216,8 +1215,9 @@ async def api_ask(req: AskRequest):
         from dartlab.engines.ai import configure, get_config
 
         current = get_config()
+        current_provider = _normalize_provider_name(current.provider) or current.provider
         overrides: dict[str, Any] = {
-            "provider": req.provider or current.provider,
+            "provider": _normalize_provider_name(req.provider) or current_provider,
         }
         if req.model:
             overrides["model"] = req.model
@@ -1300,7 +1300,7 @@ async def _plain_chat(req: AskRequest):
     config_ = get_config()
     overrides: dict[str, Any] = {}
     if req.provider:
-        overrides["provider"] = req.provider
+        overrides["provider"] = _normalize_provider_name(req.provider) or req.provider
     if req.model:
         overrides["model"] = req.model
     if overrides:
@@ -1315,13 +1315,10 @@ async def _plain_chat(req: AskRequest):
         answer = await asyncio.to_thread(llm.complete, messages)
         return {"answer": answer}
     except PermissionError:
-        raise HTTPException(status_code=401, detail="ChatGPT OAuth 토큰이 없습니다. 로그인이 필요합니다.")
+        raise HTTPException(status_code=401, detail="Codex CLI 로그인이 필요합니다. `codex login`을 실행하세요.")
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
-        from dartlab.engines.ai.oauthToken import TokenRefreshError
-        from dartlab.engines.ai.providers.oauthCodex import ChatGPTOAuthError
-
-        if isinstance(e, (ChatGPTOAuthError, TokenRefreshError)):
-            raise HTTPException(status_code=401, detail=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

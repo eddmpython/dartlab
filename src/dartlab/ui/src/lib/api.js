@@ -73,24 +73,10 @@ export function pullOllamaModel(modelName, { onProgress, onDone, onError }) {
 	return { abort: () => controller.abort() };
 }
 
-/** ChatGPT OAuth 인증 시작 */
-export async function oauthAuthorize() {
-	const res = await fetch(`${BASE}/api/oauth/authorize`);
-	if (!res.ok) throw new Error("OAuth 인증 시작 실패");
-	return res.json();
-}
-
-/** OAuth 인증 완료 여부 폴링 */
-export async function oauthStatus() {
-	const res = await fetch(`${BASE}/api/oauth/status`);
-	if (!res.ok) return { done: false };
-	return res.json();
-}
-
-/** OAuth 로그아웃 */
-export async function oauthLogout() {
-	const res = await fetch(`${BASE}/api/oauth/logout`, { method: "POST" });
-	if (!res.ok) throw new Error("로그아웃 실패");
+/** Codex CLI 로그아웃 */
+export async function codexLogout() {
+	const res = await fetch(`${BASE}/api/codex/logout`, { method: "POST" });
+	if (!res.ok) throw new Error("Codex 로그아웃 실패");
 	return res.json();
 }
 
