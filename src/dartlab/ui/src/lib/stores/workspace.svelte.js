@@ -25,6 +25,9 @@ export function createWorkspaceStore() {
 	let panelOpen = $state(false);
 	let panelMode = $state(null); // "viewer" | "data"
 	let panelData = $state(null); // data to display in panel
+	let activeTab = $state("explore");
+	let activeEvidenceSection = $state(null);
+	let selectedEvidenceIndex = $state(null);
 
 	// Viewer에서 현재 보고 있는 topic (AI 컨텍스트용)
 	let viewerTopic = $state(null);     // "companyOverview", "BS" 등
@@ -66,6 +69,7 @@ export function createWorkspaceStore() {
 		panelMode = "data";
 		panelData = data;
 		panelOpen = true;
+		setTab("explore");
 	}
 
 	function closePanel() {
@@ -99,6 +103,26 @@ export function createWorkspaceStore() {
 		viewerTopicLabel = label || topic;
 	}
 
+	function openEvidence(section, index = null) {
+		panelMode = "data";
+		panelOpen = true;
+		activeTab = "evidence";
+		activeEvidenceSection = section;
+		selectedEvidenceIndex = Number.isInteger(index) ? index : null;
+	}
+
+	function clearEvidenceSelection() {
+		activeEvidenceSection = null;
+		selectedEvidenceIndex = null;
+	}
+
+	function setTab(tab) {
+		activeTab = tab || "explore";
+		if (activeTab !== "evidence") {
+			clearEvidenceSelection();
+		}
+	}
+
 	// Context for AI — what the user is currently viewing
 	function getViewContext() {
 		if (!panelOpen) return null;
@@ -120,15 +144,21 @@ export function createWorkspaceStore() {
 		get panelOpen() { return panelOpen; },
 		get panelMode() { return panelMode; },
 		get panelData() { return panelData; },
+		get activeTab() { return activeTab; },
+		get activeEvidenceSection() { return activeEvidenceSection; },
+		get selectedEvidenceIndex() { return selectedEvidenceIndex; },
 		get selectedCompany() { return selectedCompany; },
 		get recentCompanies() { return recentCompanies; },
 		get viewerTopic() { return viewerTopic; },
 		get viewerTopicLabel() { return viewerTopicLabel; },
 		openViewer,
 		openData,
+		openEvidence,
 		closePanel,
 		selectCompany,
 		setViewerTopic,
+		clearEvidenceSelection,
+		setTab,
 		syncCompanyFromMessage,
 		getViewContext,
 	};

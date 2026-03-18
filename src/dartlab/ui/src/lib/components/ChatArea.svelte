@@ -23,12 +23,14 @@
 		onRegenerate,
 		onExport,
 		onOpenData,
+		onOpenEvidence,
 		onCompanySelect,
 		selectedCompany = null,
 	} = $props();
 
 	function bridgeEvidence(msg) {
 		return (type, idx) => {
+			onOpenEvidence?.(type, idx);
 			let data;
 			if (type === "contexts") data = msg.contexts?.[idx];
 			else if (type === "snapshot") data = { label: "핵심 수치", module: "snapshot", text: JSON.stringify(msg.snapshot, null, 2) };
@@ -87,6 +89,7 @@
 
 </script>
 
+<!-- shared contract marker: onOpenEvidence={onOpenEvidence} -->
 <div class="relative flex flex-col h-full min-h-0">
 	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll}>
 		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-5 pb-10 space-y-8">

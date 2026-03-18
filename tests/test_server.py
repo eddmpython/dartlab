@@ -39,6 +39,7 @@ class TestStatus:
         assert "providers" in data
         assert "version" in data
         assert isinstance(data["providers"], dict)
+        assert "claude-code" not in data["providers"]
         for prov_info in data["providers"].values():
             assert "available" in prov_info
 
@@ -90,13 +91,19 @@ class TestConfigure:
 class TestModels:
     def test_static_providers(self, client):
         """GET /api/models/{provider} — 정적 모델 목록."""
-        for prov in ("chatgpt", "codex", "claude-code"):
+        for prov in ("chatgpt", "codex"):
             resp = client.get(f"/api/models/{prov}")
             assert resp.status_code == 200
             data = resp.json()
             assert "models" in data
             assert isinstance(data["models"], list)
             assert len(data["models"]) > 0
+
+    def test_hidden_provider_returns_empty_models(self, client):
+        """GET /api/models/claude-code — 비공개 provider는 노출하지 않음."""
+        resp = client.get("/api/models/claude-code")
+        assert resp.status_code == 200
+        assert resp.json()["models"] == []
 
     def test_ollama_models(self, client):
         """GET /api/models/ollama — Ollama 모델 목록 (형식 확인)."""

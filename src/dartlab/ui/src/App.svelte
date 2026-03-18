@@ -138,7 +138,6 @@
 	$effect(() => { loadStatus(); });
 
 	let codexDetail = $state({});
-	let claudeCodeDetail = $state({});
 
 	async function loadStatus() {
 		statusLoading = true;
@@ -147,7 +146,6 @@
 			providers = data.providers || {};
 			ollamaDetail = data.ollama || {};
 			codexDetail = data.codex || {};
-			claudeCodeDetail = data.claudeCode || {};
 			chatgptDetail = data.chatgpt || {};
 			if (data.version) appVersion = data.version;
 
@@ -386,6 +384,10 @@
 		workspace.openData(data);
 	}
 
+	function handleOpenEvidence(section, index = null) {
+		workspace.openEvidence(section, index);
+	}
+
 	function handleCompanySelect(company) {
 		workspace.openViewer(company);
 	}
@@ -453,8 +455,8 @@
 		return null;
 	}
 
-	async function sendMessage() {
-		const question = inputText.trim();
+	async function sendMessage(prefilledQuestion = null) {
+		const question = (prefilledQuestion ?? inputText).trim();
 		if (!question || isLoading) return;
 
 		if (!activeProvider || !providers[activeProvider]?.available) {
@@ -819,6 +821,7 @@
 						onRegenerate={handleRegenerate}
 						onExport={handleExport}
 						onOpenData={handleOpenData}
+						onOpenEvidence={handleOpenEvidence}
 						onCompanySelect={handleCompanySelect}
 					/>
 				{:else}
@@ -1072,36 +1075,6 @@
 											<div class="flex items-center gap-1.5 mt-2.5 px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
 												<AlertCircle size={12} class="text-amber-400 flex-shrink-0" />
 												<span class="text-[10px] text-amber-400/80">ChatGPT Plus 또는 Pro 구독이 필요합니다</span>
-											</div>
-										{:else if name === "claude-code"}
-											<div class="text-[12px] text-dl-text mb-2.5">
-												{claudeCodeDetail.installed && !claudeCodeDetail.authenticated ? "Claude Code가 설치되었지만 인증이 필요합니다" : "Claude Code CLI 설치가 필요합니다"}
-											</div>
-											<div class="space-y-2">
-												{#if !claudeCodeDetail.installed}
-													<div class="flex items-start gap-2.5">
-														<span class="text-[10px] text-dl-text-dim mt-0.5 flex-shrink-0">1.</span>
-														<div class="flex-1">
-															<div class="text-[10px] text-dl-text-dim mb-1">Node.js 설치 후 실행</div>
-															<div class="p-2 rounded-lg bg-dl-bg-darker border border-dl-border text-[11px] text-dl-text-muted font-mono">
-																npm install -g @anthropic-ai/claude-code
-															</div>
-														</div>
-													</div>
-												{/if}
-												<div class="flex items-start gap-2.5">
-													<span class="text-[10px] text-dl-text-dim mt-0.5 flex-shrink-0">{claudeCodeDetail.installed ? "1." : "2."}</span>
-													<div class="flex-1">
-														<div class="text-[10px] text-dl-text-dim mb-1">인증</div>
-														<div class="p-2 rounded-lg bg-dl-bg-darker border border-dl-border text-[11px] text-dl-text-muted font-mono">
-															claude auth login
-														</div>
-													</div>
-												</div>
-											</div>
-											<div class="flex items-center gap-1.5 mt-2.5 px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
-												<AlertCircle size={12} class="text-amber-400 flex-shrink-0" />
-												<span class="text-[10px] text-amber-400/80">Claude Pro 또는 Max 구독이 필요합니다</span>
 											</div>
 										{/if}
 										<div class="text-[10px] text-dl-text-dim mt-2">설치 완료 후 새로고침하세요</div>

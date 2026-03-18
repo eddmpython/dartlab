@@ -244,7 +244,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         llm = create_provider(config_)
 
         use_guided = use_compact and c is not None and hasattr(llm, "complete_json")
-        use_tools = c is not None and not use_guided and hasattr(llm, "complete_with_tools")
+        use_tools = not use_guided and hasattr(llm, "complete_with_tools")
 
         full_response_parts: list[str] = []
         done_payload: dict[str, Any] = {}

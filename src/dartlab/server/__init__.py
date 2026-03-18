@@ -38,6 +38,45 @@ from .streaming import stream_ask
 
 app = FastAPI(title="DartLab", version=dartlab.__version__)
 
+UI_PROVIDERS = ("chatgpt", "codex", "ollama", "openai")
+UI_PROVIDER_META: dict[str, dict[str, str]] = {
+    "chatgpt": {
+        "label": "ChatGPT (구독)",
+        "desc": "ChatGPT Plus/Pro 구독, 브라우저 로그인으로 사용",
+        "auth": "oauth",
+    },
+    "codex": {
+        "label": "GPT (Codex CLI)",
+        "desc": "ChatGPT Plus/Pro 구독, Codex CLI 필요. 코드 작업은 workspace-write로 위임 가능",
+        "auth": "cli",
+    },
+    "ollama": {"label": "Ollama (로컬)", "desc": "무료, 오프라인, 프라이빗", "auth": "none"},
+    "openai": {
+        "label": "OpenAI API",
+        "desc": "GPT-5.4, o4 등 전체 모델",
+        "auth": "api_key",
+        "envKey": "OPENAI_API_KEY",
+    },
+}
+
+STATIC_MODELS: dict[str, list[str]] = {
+    "chatgpt": [
+        "gpt-5.4",
+        "gpt-5.3",
+        "gpt-5.3-codex",
+        "gpt-5.2",
+        "gpt-5.2-codex",
+        "gpt-5.1",
+        "gpt-5.1-codex",
+        "gpt-5.1-codex-mini",
+        "o3",
+        "o4-mini",
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4.1-nano",
+    ],
+}
+
 
 def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
     """Company index/show/trace payload를 UI 친화 JSON으로 직렬화."""
@@ -106,34 +145,10 @@ def api_status():
     from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.types import LLMConfig
 
-    providers_list = ["chatgpt", "codex", "ollama", "openai"]
     results = {}
 
-    meta = {
-        "chatgpt": {
-            "label": "ChatGPT (구독)",
-            "desc": "ChatGPT Plus/Pro 구독, 브라우저 로그인으로 사용",
-            "auth": "oauth",
-        },
-        "codex": {"label": "GPT (Codex CLI)", "desc": "ChatGPT Plus/Pro 구독, Codex CLI 필요", "auth": "cli"},
-        "ollama": {"label": "Ollama (로컬)", "desc": "무료, 오프라인, 프라이빗", "auth": "none"},
-        "openai": {
-            "label": "OpenAI API",
-            "desc": "GPT-5.4, o4 등 전체 모델",
-            "auth": "api_key",
-            "envKey": "OPENAI_API_KEY",
-        },
-        "claude": {
-            "label": "Claude API",
-            "desc": "Opus, Sonnet 등 전체 모델",
-            "auth": "api_key",
-            "envKey": "ANTHROPIC_API_KEY",
-        },
-        "claude-code": {"label": "Claude Code CLI", "desc": "Claude Pro/Max 구독, API 키 불필요", "auth": "cli"},
-    }
-
-    for prov in providers_list:
-        info = {"available": False, "model": None, **(meta.get(prov, {}))}
+    for prov in UI_PROVIDERS:
+        info = {"available": False, "model": None, **UI_PROVIDER_META.get(prov, {})}
         try:
             config = LLMConfig(provider=prov)
             provider = create_provider(config)
@@ -158,15 +173,13 @@ def api_status():
         ollama_detail["installed"] = False
         ollama_detail["running"] = False
 
-    codex_detail = {}
+    codex_detail = {"installed": False, "version": None}
     try:
         from dartlab.engines.ai.cli_setup import detect_codex
 
-        codex_info = detect_codex()
-        codex_detail["installed"] = codex_info.get("installed", False)
-        codex_detail["version"] = codex_info.get("version")
+        codex_detail = detect_codex()
     except Exception:
-        codex_detail["installed"] = False
+        pass
 
     chatgpt_detail = {}
     try:
@@ -232,36 +245,11 @@ def api_models(provider: str):
     from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.types import LLMConfig
 
-    STATIC_MODELS = {
-        "claude-code": [
-            "sonnet",
-            "opus",
-            "haiku",
-            "claude-sonnet-4-6",
-            "claude-opus-4-6",
-            "claude-sonnet-4-5",
-            "claude-opus-4-5",
-            "claude-haiku-4-5-20251001",
-        ],
-        "codex": [
-            "gpt-4.1",
-        ],
-        "chatgpt": [
-            "gpt-5.4",
-            "gpt-5.3",
-            "gpt-5.3-codex",
-            "gpt-5.2",
-            "gpt-5.2-codex",
-            "gpt-5.1",
-            "gpt-5.1-codex",
-            "gpt-5.1-codex-mini",
-            "o3",
-            "o4-mini",
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "gpt-4.1-nano",
-        ],
-    }
+    if provider == "codex":
+        from dartlab.engines.ai.codex_cli import get_codex_model_catalog
+
+        return {"models": get_codex_model_catalog()}
+
     if provider in STATIC_MODELS:
         return {"models": STATIC_MODELS[provider]}
 
