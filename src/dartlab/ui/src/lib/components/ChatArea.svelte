@@ -1,5 +1,5 @@
 <script>
-	import { Download, Database, Search } from "lucide-svelte";
+	import { Download } from "lucide-svelte";
 	import MessageBubble from "./MessageBubble.svelte";
 	import AutocompleteInput from "./AutocompleteInput.svelte";
 
@@ -22,10 +22,25 @@
 		onStop,
 		onRegenerate,
 		onExport,
-		onOpenExplorer,
-		onOpenEvidence,
+		onOpenData,
+		onCompanySelect,
 		selectedCompany = null,
 	} = $props();
+
+	function bridgeEvidence(msg) {
+		return (type, idx) => {
+			let data;
+			if (type === "contexts") data = msg.contexts?.[idx];
+			else if (type === "snapshot") data = { label: "핵심 수치", module: "snapshot", text: JSON.stringify(msg.snapshot, null, 2) };
+			else if (type === "system") data = { label: "시스템 프롬프트", module: "system", text: msg.systemPrompt };
+			else if (type === "input") data = { label: "LLM 입력", module: "input", text: msg.userContent };
+			else if (type === "tool-calls" || type === "tool-results") {
+				const ev = msg.toolEvents?.[idx];
+				data = { label: `${ev?.name || "도구"} ${ev?.type === "call" ? "호출" : "결과"}`, module: "tool", text: JSON.stringify(ev, null, 2) };
+			}
+			if (data) onOpenData?.(data);
+		};
+	}
 
 	let chatContainer;
 	let streamAnchor;
@@ -74,44 +89,12 @@
 
 <div class="relative flex flex-col h-full min-h-0">
 	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll}>
-		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-14 pb-10 space-y-8">
-			{#if selectedCompany}
-				<div class="surface-panel flex flex-wrap items-center gap-2 rounded-2xl border border-dl-primary/20 bg-dl-primary/[0.05] px-4 py-3">
-					<div class="flex items-center gap-2 text-[12px] text-dl-text">
-						<Database size={13} class="text-dl-primary-light" />
-						<span class="font-medium">{selectedCompany.corpName || selectedCompany.company || "선택된 회사"}</span>
-						<span class="text-dl-text-dim">{selectedCompany.stockCode}</span>
-					</div>
-					<div class="flex flex-wrap gap-1.5 ml-auto">
-						<button
-							class="rounded-full border border-dl-border/50 px-2.5 py-1 text-[10px] text-dl-text-dim transition-colors hover:border-dl-primary/30 hover:text-dl-text"
-							onclick={() => onOpenExplorer?.("overview")}
-						>
-							<Database size={10} class="inline mr-1" />
-							Overview
-						</button>
-						<button
-							class="rounded-full border border-dl-border/50 px-2.5 py-1 text-[10px] text-dl-text-dim transition-colors hover:border-dl-primary/30 hover:text-dl-text"
-							onclick={() => onOpenExplorer?.("explore")}
-						>
-							<Search size={10} class="inline mr-1" />
-							Explore
-						</button>
-						<button
-							class="rounded-full border border-dl-border/50 px-2.5 py-1 text-[10px] text-dl-text-dim transition-colors hover:border-dl-primary/30 hover:text-dl-text"
-							onclick={() => onOpenExplorer?.("evidence")}
-						>
-							<Database size={10} class="inline mr-1" />
-							Evidence
-						</button>
-					</div>
-				</div>
-			{/if}
-				{#each messages as msg, idx}
+		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-5 pb-10 space-y-8">
+					{#each messages as msg, idx}
 					<MessageBubble
 						message={msg}
 						onRegenerate={isLastAssistant(idx) ? onRegenerate : undefined}
-						onOpenEvidence={onOpenEvidence}
+						onOpenEvidence={onOpenData ? bridgeEvidence(msg) : undefined}
 					/>
 				{/each}
 				<div bind:this={streamAnchor} class="h-px w-full"></div>
@@ -133,20 +116,6 @@
 		<div class="max-w-[720px] mx-auto">
 			{#if !isLoading}
 				<div class="flex justify-end gap-2 mb-1.5">
-					<button
-						class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-dl-text-dim hover:text-dl-text-muted transition-colors"
-						onclick={() => onOpenExplorer?.("explore")}
-					>
-						<Search size={10} />
-						탐색
-					</button>
-					<button
-						class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-dl-text-dim hover:text-dl-text-muted transition-colors"
-						onclick={() => onOpenExplorer?.("evidence")}
-					>
-						<Database size={10} />
-						근거
-					</button>
 					{#if messages.length > 1 && onExport}
 						<button
 							class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-dl-text-dim hover:text-dl-text-muted transition-colors"
@@ -164,6 +133,7 @@
 				placeholder="메시지를 입력하세요..."
 				onSend={onSend}
 				onStop={onStop}
+				{onCompanySelect}
 			/>
 		</div>
 	</div>

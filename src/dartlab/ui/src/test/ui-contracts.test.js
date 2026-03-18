@@ -70,4 +70,14 @@ describe("UI contracts", () => {
 		expect(source).toContain("streamAnchor.scrollIntoView");
 		expect(source).toContain("최신 응답으로 이동");
 	});
+
+	it("renders disclosure text as a block-first report instead of raw text block listing", () => {
+		const source = read("src/lib/components/SectionsViewer.svelte");
+
+		expect(source).toContain("textDocument");
+		expect(source).toContain("커버리지");
+		expect(source).toContain("과거 유지");
+		expect(source).toContain("selectTextTimelinePeriod");
+		expect(source).toContain("비교 없음");
+	});
 });

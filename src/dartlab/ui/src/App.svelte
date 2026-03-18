@@ -15,16 +15,17 @@
 -->
 <script>
 	import "./app.css";
-	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, oauthAuthorize, oauthStatus, oauthLogout } from "$lib/api.js";
+	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, oauthAuthorize, oauthStatus, oauthLogout, searchCompany as searchCompanyApi } from "$lib/api.js";
 	import { cn } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
-	import DataExplorer from "$lib/components/DataExplorer.svelte";
+	import RightPanel from "$lib/components/RightPanel.svelte";
+	import AutocompleteInput from "$lib/components/AutocompleteInput.svelte";
 	import {
-		Menu, PanelLeftClose, Coffee, Github, FileText,
+		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Download, X, Loader2, Settings, Check, ExternalLink,
 		Key, AlertCircle, CheckCircle2, Terminal, LogIn, LogOut, Database
 	} from "lucide-svelte";
@@ -38,7 +39,7 @@
 	let activeProvider = $state(null);
 	let activeModel = $state(null);
 	let availableModels = $state([]);
-	let sidebarOpen = $state(true);
+	let sidebarOpen = $state(false);
 	let scrollTrigger = $state(0);
 
 	// Initial loading
@@ -70,9 +71,22 @@
 	let chatgptDetail = $state({});
 	let settingsDialog = $state(null);
 	let deleteDialog = $state(null);
-	let mobileWorkspaceSheet = $state(null);
 
 	const workspace = createWorkspaceStore();
+
+	// Right panel width depends on content + fullscreen mode
+	let viewerFullscreen = $state(false);
+	let panelWidth = $derived(
+		viewerFullscreen ? "100%" :
+		workspace.panelMode === "viewer" ? "65%" : "50%"
+	);
+
+	// Search modal
+	let showSearchModal = $state(false);
+	let searchModalText = $state("");
+	let searchModalResults = $state([]);
+	let searchModalIdx = $state(-1);
+	let searchModalDebounce = null;
 
 	// Mobile
 	let isMobile = $state(false);
@@ -81,9 +95,7 @@
 		isMobile = window.innerWidth <= 768;
 		if (isMobile) {
 			sidebarOpen = false;
-			workspace.close();
-		} else if (!workspace.userPinnedCompany) {
-			workspace.open("overview");
+			workspace.closePanel();
 		}
 	}
 
@@ -103,10 +115,6 @@
 		requestAnimationFrame(() => deleteDialog?.focus());
 	});
 
-	$effect(() => {
-		if (!isMobile || !workspace.isOpen || !mobileWorkspaceSheet) return;
-		requestAnimationFrame(() => mobileWorkspaceSheet?.focus());
-	});
 
 	// Delete confirmation
 	let deleteConfirmId = $state(null);
@@ -374,24 +382,12 @@
 	// ── UI Actions ──
 	function toggleSidebar() { sidebarOpen = !sidebarOpen; }
 
-	function openWorkspace(tab = "explore") {
-		workspace.open(tab);
+	function handleOpenData(data) {
+		workspace.openData(data);
 	}
 
-	function closeWorkspace() {
-		workspace.close();
-	}
-
-	function handleAskAboutModule(company, module) {
-		if (!company || !module) return;
-		const companyLabel = company.corpName || company.company || company.stockCode;
-		inputText = `${companyLabel}의 ${module.label} 데이터를 바탕으로 핵심 포인트를 요약해줘`;
-		workspace.selectCompany(company, { pin: true });
-		openWorkspace("evidence");
-	}
-
-	function handleOpenEvidence(section, index = null) {
-		workspace.openEvidence(section, index);
+	function handleCompanySelect(company) {
+		workspace.openViewer(company);
 	}
 
 	function openSettings() {
@@ -425,7 +421,6 @@
 
 	function handleNewChat() {
 		store.createConversation();
-		workspace.clearEvidenceSelection();
 		inputText = "";
 		isLoading = false;
 		if (currentStream) { currentStream.abort(); currentStream = null; }
@@ -433,7 +428,6 @@
 
 	function handleSelectConversation(id) {
 		store.setActive(id);
-		workspace.clearEvidenceSelection();
 		syncSelectedCompanyFromConversation(store.active);
 		inputText = "";
 		isLoading = false;
@@ -503,10 +497,24 @@
 
 		const companyHint = workspace.selectedCompany?.stockCode || lastAnalyzedCode || getLastStockCode();
 
+		// 맥락 인식: 사용자가 보고 있는 것을 AI에게 전달
+		const viewContext = workspace.getViewContext();
+		let enhancedQuestion = question;
+		if (viewContext?.type === "viewer" && viewContext.company) {
+			let ctx = `\n[사용자가 현재 ${viewContext.company.corpName}(${viewContext.company.stockCode}) 공시를 보고 있습니다`;
+			if (viewContext.topic) {
+				ctx += ` — 현재 섹션: ${viewContext.topicLabel || viewContext.topic}(${viewContext.topic})`;
+			}
+			ctx += `]`;
+			enhancedQuestion += ctx;
+		} else if (viewContext?.type === "data" && viewContext.data?.label) {
+			enhancedQuestion += `\n[사용자가 현재 "${viewContext.data.label}" 데이터를 보고 있습니다]`;
+		}
+
 		function isStale() { return store.activeId !== streamConvId; }
 
 		const stream = askStream(
-			companyHint, question, { provider: activeProvider, model: activeModel },
+			companyHint, enhancedQuestion, { provider: activeProvider, model: activeModel },
 			{
 				onMeta(meta) {
 					if (isStale()) return;
@@ -659,34 +667,42 @@
 		showToast("대화가 마크다운으로 내보내졌습니다", "success");
 	}
 
+	function openSearchModal() {
+		showSearchModal = true;
+		searchModalText = "";
+		searchModalResults = [];
+		searchModalIdx = -1;
+	}
+
 	// Keyboard shortcuts
 	function handleGlobalKeydown(e) {
 		if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
 			e.preventDefault();
 			handleNewChat();
 		}
+		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			e.preventDefault();
+			openSearchModal();
+		}
 		if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'S') {
 			e.preventDefault();
 			toggleSidebar();
 		}
-		if (e.key === 'Escape' && showSettings) {
+		if (e.key === 'Escape' && showSearchModal) {
+			showSearchModal = false;
+		} else if (e.key === 'Escape' && showSettings) {
 			showSettings = false;
 		} else if (e.key === 'Escape' && deleteConfirmId) {
 			deleteConfirmId = null;
-		} else if (e.key === 'Escape' && workspace.isOpen) {
-			workspace.close();
+		} else if (e.key === 'Escape' && workspace.panelOpen) {
+			workspace.closePanel();
 		}
 	}
 
 	let activeMessages = $derived(store.active?.messages || []);
 	let hasConversation = $derived(store.active && store.active.messages.length > 0);
 	let noProviderAvailable = $derived(!statusLoading && (!activeProvider || !providers[activeProvider]?.available));
-	let evidenceMessage = $derived.by(() => {
-		for (let i = activeMessages.length - 1; i >= 0; i--) {
-			if (activeMessages[i].role === "assistant") return activeMessages[i];
-		}
-		return null;
-	});
+
 
 	const OLLAMA_MODELS = [
 		{ name: "gemma3",       size: "3B",  gb: "2.3",  desc: "Google, 빠르고 가벼움",         tag: "추천" },
@@ -717,122 +733,80 @@
 			onNewChat={() => { handleNewChat(); if (isMobile) sidebarOpen = false; }}
 			onSelect={(id) => { handleSelectConversation(id); if (isMobile) sidebarOpen = false; }}
 			onDelete={handleDeleteConversation}
+			onOpenSearch={openSearchModal}
 		/>
 	</div>
 
 	<!-- Main -->
 	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
-		<!-- Header bar (floating, transparent) -->
-		<div class="absolute top-0 left-0 right-0 z-10 pointer-events-none">
-			<div class="flex items-center justify-between px-3 h-11 pointer-events-auto"
-				style="background: linear-gradient(to bottom, rgba(5,8,17,0.92) 40%, transparent);"
+		<!-- Top-left: sidebar toggle -->
+		<div class="absolute top-2 left-3 z-20 pointer-events-auto">
+			<button
+				class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
+				onclick={toggleSidebar}
 			>
-				<!-- Left: sidebar toggle -->
-				<button
-					class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
-					onclick={toggleSidebar}
-					aria-label={sidebarOpen ? "사이드바 접기" : "사이드바 열기"}
-				>
-					{#if sidebarOpen}
-						<PanelLeftClose size={18} />
-					{:else}
-						<Menu size={18} />
-					{/if}
-				</button>
-
-				<!-- Right: links + settings -->
-				<div class="flex items-center gap-1">
-					<button
-						class={cn(
-							"flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] transition-colors",
-							workspace.isOpen
-								? "bg-dl-primary/10 text-dl-primary-light"
-								: "text-dl-text-dim hover:bg-white/5 hover:text-dl-text-muted"
-						)}
-						onclick={() => workspace.isOpen ? closeWorkspace() : openWorkspace("explore")}
-						aria-pressed={workspace.isOpen}
-					>
-						<Database size={12} />
-						<span>{workspace.isOpen ? "패널 닫기" : "탐색 열기"}</span>
-					</button>
-					<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
-						class="p-1.5 rounded-lg text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
-						<Coffee size={15} />
-					</a>
-					<a href="https://eddmpython.github.io/dartlab/" target="_blank" rel="noopener noreferrer"
-						class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="Documentation">
-						<FileText size={15} />
-					</a>
-					<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener noreferrer"
-						class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="GitHub">
-						<Github size={15} />
-					</a>
-
-					<div class="w-px h-4 bg-dl-border mx-1"></div>
-
-					<!-- Provider/Model button → opens settings modal -->
-					<button
-						class={cn(
-							"flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] transition-colors",
-							statusLoading
-								? "text-dl-text-dim"
-								: noProviderAvailable
-									? "text-dl-primary-light bg-dl-primary/10 hover:bg-dl-primary/15"
-									: "text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5"
-						)}
-						onclick={() => openSettings()}
-						aria-label="AI Provider 설정 열기"
-					>
-						{#if statusLoading}
-							<Loader2 size={12} class="animate-spin" />
-							<span>확인 중...</span>
-						{:else if noProviderAvailable}
-							<AlertCircle size={12} />
-							<span>설정 필요</span>
-						{:else}
-							<span class="w-1.5 h-1.5 rounded-full bg-dl-success"></span>
-							<span>{activeProvider}</span>
-							{#if activeModel}
-								<span class="text-dl-text-dim">/</span>
-								<span class="max-w-[80px] truncate">{activeModel}</span>
-							{/if}
-							{#if isPulling}
-								<Loader2 size={10} class="animate-spin text-dl-primary-light" />
-							{/if}
-						{/if}
-						<Settings size={12} />
-					</button>
-				</div>
-			</div>
-
-			<!-- Loading / No provider warning banner -->
-			{#if statusLoading && !showSettings}
-				<div class="mx-3 mb-2 px-4 py-3 rounded-xl border border-dl-border bg-dl-bg-card/80 backdrop-blur-sm flex items-center gap-3 pointer-events-auto">
-					<Loader2 size={16} class="text-dl-text-dim animate-spin flex-shrink-0" />
-					<div class="flex-1">
-						<div class="text-[13px] text-dl-text-muted">AI Provider 확인 중...</div>
-					</div>
-				</div>
-			{:else if noProviderAvailable && !showSettings}
-				<div class="mx-3 mb-2 px-4 py-3 rounded-xl border border-dl-primary/30 bg-dl-primary/5 backdrop-blur-sm flex items-center gap-3 pointer-events-auto">
-					<AlertCircle size={16} class="text-dl-primary-light flex-shrink-0" />
-					<div class="flex-1">
-						<div class="text-[13px] text-dl-text">AI Provider가 설정되지 않았습니다</div>
-						<div class="text-[11px] text-dl-text-muted mt-0.5">대화를 시작하려면 Provider를 설정해주세요</div>
-					</div>
-					<button
-						class="px-3 py-1.5 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors flex-shrink-0"
-						onclick={() => openSettings()}
-					>
-						설정하기
-					</button>
-				</div>
-			{/if}
+				{#if sidebarOpen}
+					<PanelLeftClose size={18} />
+				{:else}
+					<Menu size={18} />
+				{/if}
+			</button>
 		</div>
 
-		<!-- Content (full height, scrolls under header) -->
+		<!-- Top-right fixed controls (GPT style) -->
+		<div class="absolute top-2 right-3 z-20 flex items-center gap-1 pointer-events-auto">
+			<button
+				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors"
+				onclick={openSearchModal}
+				title="종목 검색 (Ctrl+K)"
+			>
+				<Search size={14} />
+			</button>
+			<a href="https://eddmpython.github.io/dartlab/" target="_blank" rel="noopener noreferrer"
+				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="Documentation">
+				<FileText size={14} />
+			</a>
+			<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener noreferrer"
+				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="GitHub">
+				<Github size={14} />
+			</a>
+			<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
+				class="p-1.5 rounded-lg text-[#ffdd00]/60 hover:text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
+				<Coffee size={14} />
+			</a>
+			<button
+				class={cn(
+					"flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] transition-colors",
+					statusLoading
+						? "text-dl-text-dim"
+						: noProviderAvailable
+							? "text-dl-primary-light bg-dl-primary/10 hover:bg-dl-primary/15"
+							: "text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5"
+				)}
+				onclick={() => openSettings()}
+			>
+				{#if statusLoading}
+					<Loader2 size={12} class="animate-spin" />
+					<span>확인 중...</span>
+				{:else if noProviderAvailable}
+					<AlertCircle size={12} />
+					<span>설정 필요</span>
+				{:else}
+					<span class="w-1.5 h-1.5 rounded-full bg-dl-success"></span>
+					<span>{activeProvider}</span>
+					{#if activeModel}
+						<span class="text-dl-text-dim">/</span>
+						<span class="max-w-[80px] truncate">{activeModel}</span>
+					{/if}
+				{/if}
+				<Settings size={12} />
+			</button>
+		</div>
+
+		<!-- Content -->
 		<div class="flex flex-1 min-h-0">
-			<div class="min-w-0 flex-1">
+			<!-- Chat area (always present) -->
+			<div class="min-w-0 flex-1 flex flex-col">
 				{#if hasConversation}
 					<ChatArea
 						messages={activeMessages}
@@ -844,33 +818,32 @@
 						onStop={stopStream}
 						onRegenerate={handleRegenerate}
 						onExport={handleExport}
-						onOpenExplorer={openWorkspace}
-						onOpenEvidence={handleOpenEvidence}
+						onOpenData={handleOpenData}
+						onCompanySelect={handleCompanySelect}
 					/>
 				{:else}
 					<EmptyState
 						bind:inputText
-						selectedCompany={workspace.selectedCompany}
 						onSend={sendMessage}
-						onOpenExplorer={openWorkspace}
+						onCompanySelect={handleCompanySelect}
 					/>
 				{/if}
 			</div>
 
-			{#if !isMobile && workspace.isOpen}
-				<div class="surface-panel w-[400px] flex-shrink-0 border-l border-dl-border/60 bg-dl-bg-card/35 pt-11">
-					<DataExplorer
-						selectedCompany={workspace.selectedCompany}
-						recentCompanies={workspace.recentCompanies}
-						activeTab={workspace.activeTab}
-						evidenceMessage={evidenceMessage}
-						activeEvidenceSection={workspace.activeEvidenceSection}
-						selectedEvidenceIndex={workspace.selectedEvidenceIndex}
-						onSelectCompany={(company) => workspace.selectCompany(company, { pin: true })}
-						onChangeTab={(tab) => workspace.setTab(tab)}
-						onAskAboutModule={handleAskAboutModule}
-						onNotify={showToast}
-						onClose={closeWorkspace}
+			<!-- Right panel (contextual) -->
+			{#if !isMobile && workspace.panelOpen}
+				<div
+					class="flex-shrink-0 border-l border-dl-border/30 transition-all duration-300"
+					style="width: {panelWidth}; min-width: 360px; {viewerFullscreen ? '' : 'max-width: 75vw;'}"
+				>
+					<RightPanel
+						mode={workspace.panelMode}
+						company={workspace.selectedCompany}
+						data={workspace.panelData}
+						onClose={() => { viewerFullscreen = false; workspace.closePanel(); }}
+						onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
+						onFullscreen={() => { viewerFullscreen = !viewerFullscreen; }}
+						isFullscreen={viewerFullscreen}
 					/>
 				</div>
 			{/if}
@@ -1332,52 +1305,6 @@
 	</div>
 {/if}
 
-<!-- Mobile Workspace Panel -->
-{#if isMobile && workspace.isOpen}
-	<div
-		class="fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
-		onclick={(e) => { if (e.target === e.currentTarget) closeWorkspace(); }}
-		role="presentation"
-	>
-		<div
-			bind:this={mobileWorkspaceSheet}
-			class="mobile-workspace-sheet absolute inset-x-0 bottom-0 top-[12vh] rounded-t-[24px] border border-dl-border bg-dl-bg-card shadow-2xl"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="mobile-workspace-title"
-			tabindex="-1"
-		>
-			<div class="flex items-center justify-between px-4 pt-2 pb-1">
-				<div class="flex-1 flex justify-center">
-					<div class="h-1.5 w-14 rounded-full bg-dl-border/80"></div>
-				</div>
-				<button
-					class="rounded-lg p-1.5 text-dl-text-dim transition-colors hover:bg-white/5 hover:text-dl-text"
-					onclick={closeWorkspace}
-					aria-label="워크스페이스 닫기"
-				>
-					<X size={16} />
-				</button>
-			</div>
-			<div id="mobile-workspace-title" class="px-4 pb-2 text-[11px] uppercase tracking-[0.16em] text-dl-text-dim">
-				Workspace
-			</div>
-			<DataExplorer
-				selectedCompany={workspace.selectedCompany}
-				recentCompanies={workspace.recentCompanies}
-				activeTab={workspace.activeTab}
-				evidenceMessage={evidenceMessage}
-				activeEvidenceSection={workspace.activeEvidenceSection}
-				selectedEvidenceIndex={workspace.selectedEvidenceIndex}
-				onSelectCompany={(company) => workspace.selectCompany(company, { pin: true })}
-				onChangeTab={(tab) => workspace.setTab(tab)}
-				onAskAboutModule={handleAskAboutModule}
-				onNotify={showToast}
-				onClose={closeWorkspace}
-			/>
-		</div>
-	</div>
-{/if}
 
 <!-- Delete confirmation -->
 {#if deleteConfirmId}
@@ -1409,6 +1336,132 @@
 				>
 					삭제
 				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Search Modal — Spotlight/Cmd+K 스타일 -->
+{#if showSearchModal}
+	{@const recentList = workspace.recentCompanies || []}
+	<div
+		class="fixed inset-0 z-[200] flex items-start justify-center pt-[12vh] bg-black/70 backdrop-blur-md animate-fadeIn"
+		onclick={(e) => { if (e.target === e.currentTarget) showSearchModal = false; }}
+		role="presentation"
+	>
+		<div class="w-full max-w-2xl mx-4 bg-dl-bg-card border border-dl-border/60 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+			<!-- 검색 입력 -->
+			<div class="flex items-center gap-3 px-5 py-4 border-b border-dl-border/40">
+				<Search size={18} class="text-dl-text-dim flex-shrink-0" />
+				<input
+					type="text"
+					bind:value={searchModalText}
+					placeholder="종목명 또는 종목코드 검색..."
+					class="flex-1 bg-transparent border-none outline-none text-[16px] text-dl-text placeholder:text-dl-text-dim"
+					oninput={() => {
+						if (searchModalDebounce) clearTimeout(searchModalDebounce);
+						if (searchModalText.trim().length >= 1) {
+							searchModalDebounce = setTimeout(async () => {
+								try {
+									const data = await searchCompanyApi(searchModalText.trim());
+									searchModalResults = data.results?.slice(0, 8) || [];
+								} catch { searchModalResults = []; }
+							}, 250);
+						} else {
+							searchModalResults = [];
+						}
+					}}
+					onkeydown={(e) => {
+						const items = searchModalResults.length > 0 ? searchModalResults : recentList;
+						if (e.key === "ArrowDown") { e.preventDefault(); searchModalIdx = Math.min(searchModalIdx + 1, items.length - 1); }
+						else if (e.key === "ArrowUp") { e.preventDefault(); searchModalIdx = Math.max(searchModalIdx - 1, -1); }
+						else if (e.key === "Enter" && searchModalIdx >= 0 && items[searchModalIdx]) {
+							e.preventDefault();
+							const c = items[searchModalIdx];
+							showSearchModal = false; searchModalText = ""; searchModalResults = []; searchModalIdx = -1;
+							handleCompanySelect(c);
+						}
+						else if (e.key === "Escape") { showSearchModal = false; }
+					}}
+					autofocus
+				/>
+				<kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-dl-text-dim border border-dl-border/60 bg-dl-bg-darker">ESC</kbd>
+			</div>
+
+			<!-- 결과 목록 -->
+			<div class="max-h-[50vh] overflow-y-auto">
+				{#if searchModalResults.length > 0}
+					<div class="px-3 pt-2 pb-1">
+						<div class="text-[10px] uppercase tracking-wider text-dl-text-dim px-2 mb-1">검색 결과</div>
+					</div>
+					{#each searchModalResults as item, i}
+						<button
+							class={cn(
+								"flex items-center gap-3 w-full px-5 py-3 text-left transition-colors",
+								i === searchModalIdx ? "bg-dl-primary/10" : "hover:bg-white/[0.03]"
+							)}
+							onclick={() => {
+								showSearchModal = false; searchModalText = ""; searchModalResults = []; searchModalIdx = -1;
+								handleCompanySelect(item);
+							}}
+							onmouseenter={() => { searchModalIdx = i; }}
+						>
+							<div class="w-8 h-8 rounded-lg bg-dl-bg-darker border border-dl-border/40 flex items-center justify-center text-[11px] font-semibold text-dl-text-muted flex-shrink-0">
+								{(item.corpName || "?").charAt(0)}
+							</div>
+							<div class="flex-1 min-w-0">
+								<div class="text-[14px] font-medium text-dl-text truncate">{item.corpName}</div>
+								<div class="text-[11px] text-dl-text-dim">{item.stockCode} · {item.market || ""}{item.sector ? ` · ${item.sector}` : ""}</div>
+							</div>
+							<div class="flex items-center gap-2 flex-shrink-0">
+								<span class="text-[10px] text-dl-text-dim">공시 보기</span>
+								<FileText size={14} class="text-dl-text-dim" />
+							</div>
+						</button>
+					{/each}
+				{:else if searchModalText.trim().length === 0 && recentList.length > 0}
+					<div class="px-3 pt-2 pb-1">
+						<div class="text-[10px] uppercase tracking-wider text-dl-text-dim px-2 mb-1">최근 조회</div>
+					</div>
+					{#each recentList as item, i}
+						<button
+							class={cn(
+								"flex items-center gap-3 w-full px-5 py-3 text-left transition-colors",
+								i === searchModalIdx ? "bg-dl-primary/10" : "hover:bg-white/[0.03]"
+							)}
+							onclick={() => {
+								showSearchModal = false; searchModalText = ""; searchModalIdx = -1;
+								handleCompanySelect(item);
+							}}
+							onmouseenter={() => { searchModalIdx = i; }}
+						>
+							<div class="w-8 h-8 rounded-lg bg-dl-bg-darker border border-dl-border/40 flex items-center justify-center text-[11px] font-semibold text-dl-text-muted flex-shrink-0">
+								{(item.corpName || "?").charAt(0)}
+							</div>
+							<div class="flex-1 min-w-0">
+								<div class="text-[14px] font-medium text-dl-text truncate">{item.corpName}</div>
+								<div class="text-[11px] text-dl-text-dim">{item.stockCode} · {item.market || ""}</div>
+							</div>
+						</button>
+					{/each}
+				{:else if searchModalText.trim().length > 0}
+					<div class="flex items-center justify-center py-8 text-[13px] text-dl-text-dim">
+						검색 결과가 없습니다
+					</div>
+				{:else}
+					<div class="flex flex-col items-center justify-center py-10 text-dl-text-dim">
+						<Search size={24} class="mb-2 opacity-40" />
+						<div class="text-[13px]">종목명 또는 종목코드를 입력하세요</div>
+						<div class="text-[11px] mt-1 opacity-60">검색 후 공시를 볼 수 있습니다</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- 하단 힌트 -->
+			<div class="flex items-center gap-4 px-5 py-2.5 border-t border-dl-border/30 text-[10px] text-dl-text-dim">
+				<span class="flex items-center gap-1"><kbd class="px-1 py-px rounded border border-dl-border/40 bg-dl-bg-darker font-mono">↑↓</kbd> 이동</span>
+				<span class="flex items-center gap-1"><kbd class="px-1 py-px rounded border border-dl-border/40 bg-dl-bg-darker font-mono">Enter</kbd> 선택</span>
+				<span class="flex items-center gap-1"><kbd class="px-1 py-px rounded border border-dl-border/40 bg-dl-bg-darker font-mono">ESC</kbd> 닫기</span>
 			</div>
 		</div>
 	</div>

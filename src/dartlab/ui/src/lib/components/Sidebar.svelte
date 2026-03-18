@@ -1,7 +1,7 @@
 <script>
 	import { cn } from "$lib/utils.js";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { Plus, MessageSquare, Trash2, Search } from "lucide-svelte";
+	import { Plus, MessageSquare, Trash2, Search, FileText } from "lucide-svelte";
 
 	let {
 		conversations = [],
@@ -11,6 +11,7 @@
 		onNewChat,
 		onSelect,
 		onDelete,
+		onOpenSearch,
 	} = $props();
 
 	let searchQuery = $state("");
@@ -124,9 +125,8 @@
 			</div>
 
 			{#if version}
-				<div class="flex-shrink-0 px-4 py-3 border-t border-dl-border/40">
-					<div class="text-[10px] uppercase tracking-[0.16em] text-dl-text-dim">Version</div>
-					<div class="mt-1 text-[10px] text-dl-text-muted">DartLab v{version}</div>
+				<div class="flex-shrink-0 px-4 py-2.5 border-t border-dl-border/40">
+					<span class="text-[10px] text-dl-text-dim font-mono">v{version}</span>
 				</div>
 			{/if}
 		</div>

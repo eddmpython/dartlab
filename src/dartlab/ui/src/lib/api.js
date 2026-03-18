@@ -219,6 +219,13 @@ export async function fetchCompanyShow(code, topic, block = null, raw = false) {
 	return res.json();
 }
 
+/** company topic 전체 블록 일괄 조회 — N+1 호출 제거 */
+export async function fetchCompanyShowAll(code, topic) {
+	const res = await fetch(`${BASE}/api/company/${code}/show/${encodeURIComponent(topic)}/all`);
+	if (!res.ok) throw new Error("company topic 일괄 조회 실패");
+	return res.json();
+}
+
 /** company topic provenance */
 export async function fetchCompanyTrace(code, topic) {
 	const res = await fetch(`${BASE}/api/company/${code}/trace/${encodeURIComponent(topic)}`);

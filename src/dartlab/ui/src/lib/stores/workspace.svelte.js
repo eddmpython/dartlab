@@ -1,160 +1,85 @@
 const STORAGE_KEY = "dartlab-workspace";
-const VALID_TABS = new Set(["sections", "overview", "explore", "evidence"]);
-const MAX_RECENT_COMPANIES = 6;
-
-function normalizeTab(tab) {
-	return VALID_TABS.has(tab) ? tab : "overview";
-}
+const MAX_RECENT = 6;
 
 function canUseBrowser() {
 	return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
 
-function readUrlState() {
-	if (!canUseBrowser()) return {};
-	const params = new URLSearchParams(window.location.search);
-	const stockCode = params.get("company") || null;
-	const tab = params.get("tab");
-	const panel = params.get("panel");
-	return {
-		stockCode,
-		tab: tab ? normalizeTab(tab) : null,
-		isOpen: panel === "open" ? true : panel === "closed" ? false : null,
-	};
-}
-
-function loadStoredState() {
+function loadState() {
 	if (!canUseBrowser()) return {};
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return {};
-		const parsed = JSON.parse(raw);
-		return {
-			isOpen: typeof parsed.isOpen === "boolean" ? parsed.isOpen : true,
-			activeTab: normalizeTab(parsed.activeTab),
-			selectedCompany: parsed.selectedCompany || null,
-			userPinnedCompany: !!parsed.userPinnedCompany,
-			recentCompanies: Array.isArray(parsed.recentCompanies) ? parsed.recentCompanies : [],
-			activeEvidenceSection: parsed.activeEvidenceSection || null,
-			selectedEvidenceIndex: Number.isInteger(parsed.selectedEvidenceIndex) ? parsed.selectedEvidenceIndex : null,
-		};
-	} catch {
-		return {};
-	}
+		return raw ? JSON.parse(raw) : {};
+	} catch { return {}; }
 }
 
-function persistState(state) {
+function saveState(s) {
 	if (!canUseBrowser()) return;
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function syncUrl(state) {
-	if (!canUseBrowser()) return;
-	const url = new URL(window.location.href);
-	if (state.selectedCompany?.stockCode) {
-		url.searchParams.set("company", state.selectedCompany.stockCode);
-	} else {
-		url.searchParams.delete("company");
-	}
-	url.searchParams.set("tab", normalizeTab(state.activeTab));
-	url.searchParams.set("panel", state.isOpen ? "open" : "closed");
-	window.history.replaceState({}, "", url);
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
 export function createWorkspaceStore() {
-	const stored = loadStoredState();
-	const urlState = readUrlState();
-	const initialSelectedCompany = urlState.stockCode
-		? { ...(stored.selectedCompany || {}), stockCode: urlState.stockCode }
-		: (stored.selectedCompany || null);
+	const stored = loadState();
 
-	let isOpen = $state(urlState.isOpen ?? stored.isOpen ?? true);
-	let activeTab = $state(urlState.tab ?? stored.activeTab ?? "overview");
-	let selectedCompany = $state(initialSelectedCompany);
-	let userPinnedCompany = $state(stored.userPinnedCompany ?? !!initialSelectedCompany);
+	// Panel state
+	let panelOpen = $state(false);
+	let panelMode = $state(null); // "viewer" | "data"
+	let panelData = $state(null); // data to display in panel
+
+	// Viewer에서 현재 보고 있는 topic (AI 컨텍스트용)
+	let viewerTopic = $state(null);     // "companyOverview", "BS" 등
+	let viewerTopicLabel = $state(null); // "회사 개요", "재무상태표" 등
+
+	// Company state (persisted)
+	let selectedCompany = $state(stored.selectedCompany || null);
 	let recentCompanies = $state(stored.recentCompanies || []);
-	let activeEvidenceSection = $state(stored.activeEvidenceSection ?? null);
-	let selectedEvidenceIndex = $state(stored.selectedEvidenceIndex ?? null);
 
-	function updateRecentCompanies(company) {
+	function persist() {
+		saveState({ selectedCompany, recentCompanies });
+	}
+
+	function updateRecent(company) {
 		if (!company?.stockCode) return;
-		const normalized = {
+		const norm = {
 			stockCode: company.stockCode,
 			corpName: company.corpName || company.company || company.stockCode,
 			company: company.company || company.corpName || company.stockCode,
 			market: company.market || "",
-			sector: company.sector || "",
 		};
-		const deduped = recentCompanies.filter((item) => item.stockCode !== normalized.stockCode);
-		recentCompanies = [normalized, ...deduped].slice(0, MAX_RECENT_COMPANIES);
+		recentCompanies = [norm, ...recentCompanies.filter(c => c.stockCode !== norm.stockCode)].slice(0, MAX_RECENT);
 	}
 
-	function sync() {
-		const snapshot = {
-			isOpen,
-			activeTab,
-			selectedCompany,
-			userPinnedCompany,
-			recentCompanies,
-			activeEvidenceSection,
-			selectedEvidenceIndex,
-		};
-		persistState(snapshot);
-		syncUrl(snapshot);
-	}
-
-	function open(tab = "explore") {
-		activeTab = normalizeTab(tab);
-		isOpen = true;
-		if (activeTab !== "evidence") {
-			activeEvidenceSection = null;
-			selectedEvidenceIndex = null;
+	// Open disclosure viewer for a company
+	function openViewer(company) {
+		if (company) {
+			selectedCompany = company;
+			updateRecent(company);
 		}
-		sync();
+		panelMode = "viewer";
+		panelData = null;
+		panelOpen = true;
+		persist();
 	}
 
-	function close() {
-		isOpen = false;
-		sync();
+	// Open data panel (badge click, AI data, etc.)
+	function openData(data) {
+		panelMode = "data";
+		panelData = data;
+		panelOpen = true;
 	}
 
-	function setTab(tab) {
-		activeTab = normalizeTab(tab);
-		if (activeTab !== "evidence") {
-			activeEvidenceSection = null;
-			selectedEvidenceIndex = null;
-		}
-		sync();
+	function closePanel() {
+		panelOpen = false;
 	}
 
-	function openEvidence(section, index = null) {
-		activeTab = "evidence";
-		isOpen = true;
-		activeEvidenceSection = section || null;
-		selectedEvidenceIndex = Number.isInteger(index) ? index : null;
-		sync();
-	}
-
-	function clearEvidenceSelection() {
-		activeEvidenceSection = null;
-		selectedEvidenceIndex = null;
-		sync();
-	}
-
-	function selectCompany(company, { pin = true, openTab = null } = {}) {
+	function selectCompany(company) {
 		selectedCompany = company;
-		userPinnedCompany = company ? pin : false;
-		activeEvidenceSection = null;
-		selectedEvidenceIndex = null;
-		if (company) updateRecentCompanies(company);
-		if (openTab) {
-			activeTab = normalizeTab(openTab);
-			isOpen = true;
-		}
-		sync();
+		if (company) updateRecent(company);
+		persist();
 	}
 
-	function syncCompanyFromMessage(meta = {}, fallback = null) {
+	// Called from SSE onMeta when AI detects a company
+	function syncCompanyFromMessage(meta, fallback) {
 		if (!meta?.company && !meta?.stockCode) return;
 		selectedCompany = {
 			...(selectedCompany || {}),
@@ -163,36 +88,48 @@ export function createWorkspaceStore() {
 			company: meta.company || selectedCompany?.company || fallback?.company || fallback?.corpName,
 			stockCode: meta.stockCode || selectedCompany?.stockCode || fallback?.stockCode,
 			market: selectedCompany?.market || fallback?.market || "",
-			sector: selectedCompany?.sector || fallback?.sector || "",
 		};
-		userPinnedCompany = true;
-		updateRecentCompanies(selectedCompany);
-		sync();
+		updateRecent(selectedCompany);
+		persist();
 	}
 
-	function resetCompany() {
-		selectedCompany = null;
-		userPinnedCompany = false;
-		activeEvidenceSection = null;
-		selectedEvidenceIndex = null;
-		sync();
+	// Viewer에서 topic 변경 시 호출
+	function setViewerTopic(topic, label) {
+		viewerTopic = topic;
+		viewerTopicLabel = label || topic;
+	}
+
+	// Context for AI — what the user is currently viewing
+	function getViewContext() {
+		if (!panelOpen) return null;
+		if (panelMode === "viewer" && selectedCompany) {
+			return {
+				type: "viewer",
+				company: selectedCompany,
+				topic: viewerTopic,
+				topicLabel: viewerTopicLabel,
+			};
+		}
+		if (panelMode === "data" && panelData) {
+			return { type: "data", data: panelData };
+		}
+		return null;
 	}
 
 	return {
-		get isOpen() { return isOpen; },
-		get activeTab() { return activeTab; },
+		get panelOpen() { return panelOpen; },
+		get panelMode() { return panelMode; },
+		get panelData() { return panelData; },
 		get selectedCompany() { return selectedCompany; },
-		get userPinnedCompany() { return userPinnedCompany; },
 		get recentCompanies() { return recentCompanies; },
-		get activeEvidenceSection() { return activeEvidenceSection; },
-		get selectedEvidenceIndex() { return selectedEvidenceIndex; },
-		open,
-		close,
-		setTab,
-		openEvidence,
-		clearEvidenceSelection,
+		get viewerTopic() { return viewerTopic; },
+		get viewerTopicLabel() { return viewerTopicLabel; },
+		openViewer,
+		openData,
+		closePanel,
 		selectCompany,
+		setViewerTopic,
 		syncCompanyFromMessage,
-		resetCompany,
+		getViewContext,
 	};
 }

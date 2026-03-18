@@ -266,8 +266,6 @@ button, a, input, textarea {
 }
 .prose-dartlab pre code { background: none; padding: 0; color: var(--color-dl-text-muted); }
 .prose-dartlab table {
-	display: block;
-	overflow-x: auto;
 	border-collapse: separate; width: 100%; margin: 1em 0; font-size: 0.85em;
 	border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 12px;
 	overflow: hidden;

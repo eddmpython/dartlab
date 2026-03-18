@@ -10,6 +10,7 @@
 		placeholder = "메시지를 입력하세요...",
 		onSend,
 		onStop,
+		onCompanySelect,
 	} = $props();
 
 	let suggestions = $state([]);
@@ -84,6 +85,7 @@
 		inputText = `${item.corpName} `;
 		showSuggestions = false;
 		selectedIdx = -1;
+		onCompanySelect?.(item);
 		if (textareaEl) textareaEl.focus();
 	}
 
