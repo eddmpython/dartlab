@@ -161,6 +161,23 @@ class TestDetectAnomalies:
         result = detect_anomalies(df, use_llm=False, threshold_pct=50.0)
         assert result == []
 
+    def test_llm_failure_falls_back_to_statistical_result(self, monkeypatch):
+        df = pl.DataFrame(
+            {
+                "year": [2020, 2021, 2022, 2023],
+                "assets": [1000, 1100, 1200, 2500],
+            }
+        )
+
+        def raise_runtime_error(*args, **kwargs):
+            raise RuntimeError("llm unavailable")
+
+        monkeypatch.setattr("dartlab.engines.ai.aiParser._llm_call", raise_runtime_error)
+
+        anomalies = detect_anomalies(df, use_llm=True, threshold_pct=50.0)
+
+        assert len(anomalies) >= 1
+
 
 # ══════════════════════════════════════
 # interpret_accounts (LLM 없이 테스트 가능한 부분)

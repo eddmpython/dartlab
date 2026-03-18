@@ -13,6 +13,8 @@ import polars as pl
 
 from dartlab.engines.ai.metadata import MODULE_META, ModuleMeta
 
+_CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
+
 # ══════════════════════════════════════
 # reportEngine 기반 컨텍스트 (2차 데이터 소스)
 # ══════════════════════════════════════
@@ -438,7 +440,7 @@ def build_context_by_module(
                 info_parts.append(f"주요사업: {detail['mainBusiness']}")
             if info_parts:
                 header_parts.append("> " + " | ".join(info_parts))
-    except Exception:
+    except _CONTEXT_ERRORS:
         pass
 
     acct_filters: dict[str, set[str]] = {}
@@ -508,7 +510,7 @@ def build_context_by_module(
                             data = result
                         else:
                             data = result
-                    except Exception:
+                    except _CONTEXT_ERRORS:
                         continue
 
                 meta = MODULE_META.get(name)
@@ -544,7 +546,7 @@ def build_context_by_module(
                 modules_dict[name] = "\n".join(section_parts)
                 included.append(name)
 
-            except Exception:
+            except _CONTEXT_ERRORS:
                 continue
 
     if not fe_loaded:
@@ -687,7 +689,7 @@ def detect_year_range(company: Any, tables: list[str]) -> dict | None:
                 else:
                     year_cols = [c for c in data.columns if c.isdigit() and len(c) == 4]
                     all_years.update(int(c) for c in year_cols)
-        except Exception:
+        except _CONTEXT_ERRORS:
             continue
     if not all_years:
         return None
@@ -727,7 +729,7 @@ def scan_available_modules(company: Any) -> list[dict[str, str]]:
             else:
                 info = {"name": name, "label": meta.label, "type": "text"}
             available.append(info)
-        except Exception:
+        except _CONTEXT_ERRORS:
             continue
     return available
 
@@ -869,7 +871,7 @@ def _get_sector(company: Any) -> str | None:
             sector = detail.get("sector") or detail.get("indutyName")
             if sector:
                 return sector
-    except Exception:
+    except _CONTEXT_ERRORS:
         pass
 
     return None
@@ -1057,7 +1059,7 @@ def _compute_derived_metrics(name: str, df: pl.DataFrame, company: Any = None) -
                     if total_asset and total_asset != 0:
                         roa = ni / total_asset * 100
                         lines.append(f"- {latest} ROA: {roa:.1f}%")
-            except Exception:
+            except _CONTEXT_ERRORS:
                 pass
 
     elif name == "BS":
@@ -1225,7 +1227,7 @@ def build_context(
                 info_parts.append(f"설립: {detail['foundedDate']}")
             if info_parts:
                 sections.append("> " + " | ".join(info_parts))
-    except Exception:
+    except _CONTEXT_ERRORS:
         pass
 
     year_range = detect_year_range(company, tables_to_include)
@@ -1258,7 +1260,7 @@ def build_context(
                         data = result
                     else:
                         data = result
-                except Exception:
+                except _CONTEXT_ERRORS:
                     continue
 
             meta = MODULE_META.get(name)
@@ -1312,7 +1314,7 @@ def build_context(
             sections.append("\n".join(section_parts))
             included.append(name)
 
-        except Exception:
+        except _CONTEXT_ERRORS:
             continue
 
     report_sections = _build_report_sections(company)

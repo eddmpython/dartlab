@@ -2,6 +2,7 @@
 
 import polars as pl
 
+import dartlab.engines.ai.pipeline as pipeline_module
 from dartlab.engines.ai.pipeline import (
     _df_to_simple_md,
     _run_dividend_analysis,
@@ -224,3 +225,21 @@ class TestRunPipeline:
         result = run_pipeline(company, "재무 건전성 분석", ["BS", "IS"])
         # BS가 DataFrame이 아니어서 health는 실패하지만 에러가 나지 않음
         assert isinstance(result, str)
+
+    def test_runner_value_error_does_not_block_next_runner(self, monkeypatch):
+        def broken_runner(company, included_tables):
+            raise ValueError("broken runner")
+
+        def healthy_runner(company, included_tables):
+            return "### 정상 러너"
+
+        monkeypatch.setitem(
+            pipeline_module._PIPELINE_MAP,
+            "건전성",
+            [broken_runner, healthy_runner],
+        )
+        monkeypatch.setattr(pipeline_module, "_run_l2_engines", lambda company, q_type: None)
+
+        result = run_pipeline(MockCompany(), "재무 건전성 분석", [])
+
+        assert "정상 러너" in result

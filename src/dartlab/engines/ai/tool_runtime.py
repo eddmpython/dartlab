@@ -5,6 +5,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
+_TOOL_RUNTIME_ERRORS = (
+    AttributeError,
+    FileNotFoundError,
+    ImportError,
+    KeyError,
+    OSError,
+    PermissionError,
+    RuntimeError,
+    TimeoutError,
+    TypeError,
+    ValueError,
+)
+
 
 @dataclass(frozen=True)
 class RegisteredTool:
@@ -52,7 +65,7 @@ class ToolRuntime:
             return f"오류: '{name}' 도구를 찾을 수 없습니다."
         try:
             return tool.function(**arguments)
-        except Exception as e:
+        except _TOOL_RUNTIME_ERRORS as e:
             return f"도구 실행 오류 ({name}): {e}"
 
     def clear(self) -> None:

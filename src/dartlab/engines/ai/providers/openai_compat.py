@@ -8,6 +8,8 @@ from typing import Generator
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolResponse
 
+_OPENAI_COMPAT_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError)
+
 
 class OpenAICompatProvider(BaseProvider):
     """OpenAI SDK 기반 provider.
@@ -42,7 +44,7 @@ class OpenAICompatProvider(BaseProvider):
         try:
             self._get_client()
             return True
-        except Exception:
+        except _OPENAI_COMPAT_ERRORS:
             return False
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:

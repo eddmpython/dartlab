@@ -25,12 +25,9 @@ class OllamaProvider(BaseProvider):
     @property
     def default_model(self) -> str:
         # 설치된 모델 중 첫 번째 사용, 없으면 llama3.1 fallback
-        try:
-            models = self.get_installed_models()
-            if models:
-                return models[0]
-        except Exception:
-            pass
+        models = self.get_installed_models()
+        if models:
+            return models[0]
         return "llama3.1"
 
     def check_available(self) -> bool:
@@ -57,7 +54,7 @@ class OllamaProvider(BaseProvider):
                     name = name[:-7]
                 names.append(name)
             return names
-        except Exception:
+        except (requests.RequestException, AttributeError, KeyError, OSError, TypeError, ValueError):
             return []
 
     def preload(self) -> bool:

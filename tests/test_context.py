@@ -8,6 +8,7 @@ from dartlab.engines.ai.context import (
     _compute_derived_metrics,
     _resolve_tables,
     df_to_markdown,
+    scan_available_modules,
 )
 from dartlab.engines.ai.metadata import ModuleMeta
 from dartlab.engines.sector.types import IndustryGroup, Sector, SectorInfo
@@ -234,3 +235,19 @@ class TestResolveModules:
         result = _resolve_tables("배당과 감사의견을 분석해줘", None, None)
         assert "dividend" in result
         assert "audit" in result
+
+
+class TestScanAvailableModules:
+    def test_skips_broken_attribute_and_keeps_valid_module(self):
+        class DummyCompany:
+            BS = pl.DataFrame({"계정명": ["자산총계"], "2023": [100]})
+
+            @property
+            def IS(self):
+                raise ValueError("broken module")
+
+        result = scan_available_modules(DummyCompany())
+        names = {item["name"] for item in result}
+
+        assert "BS" in names
+        assert "IS" not in names

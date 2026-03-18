@@ -34,6 +34,8 @@ import polars as pl
 
 from dartlab.engines.ai.metadata import get_meta
 
+_AI_PARSER_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError)
+
 # ══════════════════════════════════════
 # 내부 LLM 호출
 # ══════════════════════════════════════
@@ -366,7 +368,7 @@ def detect_anomalies(
                 if i < len(desc_lines):
                     a.description = desc_lines[i]
 
-        except Exception:
+        except _AI_PARSER_ERRORS:
             # LLM 실패 시 통계 결과만 반환
             pass
 

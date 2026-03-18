@@ -30,6 +30,7 @@ _ALIAS_TO_MODEL = {
 
 # CLI가 hang되는지 빠르게 판별하는 타임아웃 (초)
 _CLI_PROBE_TIMEOUT = 8
+_CLAUDE_CODE_SDK_ERRORS = (json.JSONDecodeError, OSError, subprocess.TimeoutExpired, TypeError, ValueError)
 
 
 class ClaudeCodeProvider(BaseProvider):
@@ -154,7 +155,7 @@ class ClaudeCodeProvider(BaseProvider):
                 if key:
                     self._api_key_from_cli = key
                     return key
-        except Exception:
+        except _CLAUDE_CODE_SDK_ERRORS:
             pass
 
         return None

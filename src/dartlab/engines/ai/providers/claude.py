@@ -7,6 +7,8 @@ from typing import Generator
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolResponse
 
+_CLAUDE_PROVIDER_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError)
+
 
 class ClaudeProvider(BaseProvider):
     """Anthropic SDK 기반 provider.
@@ -62,7 +64,7 @@ class ClaudeProvider(BaseProvider):
         try:
             self._get_client()
             return True
-        except Exception:
+        except _CLAUDE_PROVIDER_ERRORS:
             return False
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:

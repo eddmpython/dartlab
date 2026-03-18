@@ -19,6 +19,7 @@ import polars as pl
 from dartlab.engines.ai.prompts import _classify_question
 
 _log = logging.getLogger(__name__)
+_PIPELINE_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
 
 
 def classify_question(question: str) -> str:
@@ -46,7 +47,7 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
             result = runner(company, included_tables)
             if result:
                 sections.append(result)
-        except Exception:
+        except _PIPELINE_ERRORS:
             continue
 
     l2 = _run_l2_engines(company, q_type)
@@ -316,7 +317,7 @@ def _run_sector(company: Any) -> str | None:
     except (ImportError, AttributeError):
         _log.debug("sector engine not available")
         return None
-    except Exception as e:
+    except _PIPELINE_ERRORS as e:
         _log.debug("sector engine error: %s", e)
         return None
 
@@ -367,7 +368,7 @@ def _run_insight(stockCode: str, company: Any) -> str | None:
     except (ImportError, AttributeError):
         _log.debug("insight engine not available")
         return None
-    except Exception as e:
+    except _PIPELINE_ERRORS as e:
         _log.debug("insight engine error: %s", e)
         return None
 
@@ -414,6 +415,6 @@ def _run_rank(stockCode: str) -> str | None:
     except (ImportError, AttributeError):
         _log.debug("rank engine not available")
         return None
-    except Exception as e:
+    except _PIPELINE_ERRORS as e:
         _log.debug("rank engine error: %s", e)
         return None
