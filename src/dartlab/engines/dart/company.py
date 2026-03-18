@@ -1334,27 +1334,28 @@ class _ReportAccessor:
         return f"ReportAccessor({len(API_TYPES)} apiTypes, {len(self._PIVOT_NAMES)} pivots)"
 
 
-class _DocsAccessor:
-    """docs source namespace."""
+class _SectionsSource:
+    """sections source-of-truth accessor.
+
+    raw DataFrame를 감싸되, 같은 경로에서 cadence/semantic 파생표를 바로 꺼낼 수 있게 한다.
+    일반 DataFrame 연산은 내부 raw DataFrame으로 위임한다.
+    """
 
     def __init__(self, company: "Company"):
         self._company = company
 
     @property
     def raw(self) -> pl.DataFrame | None:
-        return self._company.rawDocs
-
-    def filings(self) -> pl.DataFrame:
-        return self._company._filings()
-
-    @property
-    def sections(self) -> pl.DataFrame | None:
         return self._company._get_primary("sections")
 
-    def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+    @property
+    def frame(self) -> pl.DataFrame | None:
+        return self.raw
+
+    def cadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
         return self._company._docsSectionsCadence(cadenceScope, includeMixed=includeMixed)
 
-    def sectionsSemanticRegistry(
+    def semanticRegistry(
         self,
         *,
         topic: str | None = None,
@@ -1368,7 +1369,7 @@ class _DocsAccessor:
             collisionsOnly=False,
         )
 
-    def sectionsSemanticCollisions(
+    def semanticCollisions(
         self,
         *,
         topic: str | None = None,
@@ -1380,6 +1381,82 @@ class _DocsAccessor:
             cadenceScope=cadenceScope,
             includeMixed=includeMixed,
             collisionsOnly=True,
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        frame = self.raw
+        if frame is None:
+            raise AttributeError(name)
+        return getattr(frame, name)
+
+    def __getitem__(self, key: Any) -> Any:
+        frame = self.raw
+        if frame is None:
+            raise KeyError(key)
+        return frame[key]
+
+    def __len__(self) -> int:
+        frame = self.raw
+        return 0 if frame is None else len(frame)
+
+    def __repr__(self) -> str:
+        frame = self.raw
+        if frame is None:
+            return "SectionsSource(missing)"
+        return (
+            f"SectionsSource(shape={frame.shape}, "
+            "methods=[raw, cadence(), semanticRegistry(), semanticCollisions()])"
+        )
+
+
+class _DocsAccessor:
+    """docs source namespace."""
+
+    def __init__(self, company: "Company"):
+        self._company = company
+        self._sectionsAccessor = _SectionsSource(company)
+
+    @property
+    def raw(self) -> pl.DataFrame | None:
+        return self._company.rawDocs
+
+    def filings(self) -> pl.DataFrame:
+        return self._company._filings()
+
+    @property
+    def sections(self) -> "_SectionsSource | None":
+        return self._sectionsAccessor if self._sectionsAccessor.raw is not None else None
+
+    def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        sections = self.sections
+        return None if sections is None else sections.cadence(cadenceScope, includeMixed=includeMixed)
+
+    def sectionsSemanticRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.semanticRegistry(topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+        )
+
+    def sectionsSemanticCollisions(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.semanticCollisions(topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
         )
 
     @property

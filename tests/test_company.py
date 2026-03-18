@@ -203,7 +203,8 @@ class TestCompany:
 
         c = Company(SAMSUNG)
         assert isinstance(c.filings(), pl.DataFrame)
-        assert isinstance(c.docs.sections, pl.DataFrame)
+        assert c.docs.sections is not None
+        assert isinstance(c.docs.sections.raw, pl.DataFrame)
         assert isinstance(c.sections, pl.DataFrame)
         assert isinstance(c.sources, pl.DataFrame)
         assert isinstance(c.finance.BS, pl.DataFrame)
@@ -219,13 +220,22 @@ class TestCompany:
         annual = c.docs.sectionsCadence("annual")
         registry = c.docs.sectionsSemanticRegistry(topic="mdna")
         collisions = c.docs.sectionsSemanticCollisions(topic="mdna")
+        accessorAnnual = c.docs.sections.cadence("annual")
+        accessorRegistry = c.docs.sections.semanticRegistry(topic="mdna")
+        accessorCollisions = c.docs.sections.semanticCollisions(topic="mdna")
 
         assert isinstance(annual, pl.DataFrame)
         assert isinstance(registry, pl.DataFrame)
         assert isinstance(collisions, pl.DataFrame)
+        assert isinstance(accessorAnnual, pl.DataFrame)
+        assert isinstance(accessorRegistry, pl.DataFrame)
+        assert isinstance(accessorCollisions, pl.DataFrame)
         assert annual.height <= c.docs.sections.height
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(registry.columns))
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(collisions.columns))
+        assert annual.equals(accessorAnnual)
+        assert registry.equals(accessorRegistry)
+        assert collisions.equals(accessorCollisions)
 
     def test_profile_facts_include_docs_source(self):
         from dartlab import Company
