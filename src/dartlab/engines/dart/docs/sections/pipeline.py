@@ -96,45 +96,54 @@ def iterPeriodSubsets(
 
 def _splitContentBlocks(content: str) -> list[tuple[str, str]]:
     """content를 원문 순서대로 text/table block으로 분해."""
+    strippedContent = content.strip()
+    if not strippedContent:
+        return []
+    if "|" not in strippedContent:
+        return [("text", strippedContent)]
+
     rows: list[tuple[str, str]] = []
-    textBuffer: list[str] = []
-    tableBuffer: list[str] = []
+    rowsAppend = rows.append
+    buffer: list[str] = []
+    currentKind: str | None = None
 
-    def _flushText() -> None:
-        nonlocal textBuffer
-        text = "\n".join(textBuffer).strip()
+    def _flush(kind: str | None) -> None:
+        nonlocal buffer
+        if kind is None or not buffer:
+            buffer = []
+            return
+        text = "\n".join(buffer).strip()
         if text:
-            rows.append(("text", text))
-        textBuffer = []
-
-    def _flushTable() -> None:
-        nonlocal tableBuffer
-        text = "\n".join(tableBuffer).strip()
-        if text:
-            rows.append(("table", text))
-        tableBuffer = []
+            rowsAppend((kind, text))
+        buffer = []
 
     for raw in content.splitlines():
         stripped = raw.strip()
         if not stripped:
-            _flushTable()
-            if textBuffer:
-                textBuffer.append("")
+            if currentKind == "table":
+                _flush(currentKind)
+                currentKind = None
+            elif currentKind == "text" and buffer:
+                buffer.append("")
             continue
-        if stripped.startswith("|"):
-            _flushText()
-            tableBuffer.append(stripped)
-            continue
-        _flushTable()
-        textBuffer.append(stripped)
 
-    _flushText()
-    _flushTable()
+        nextKind = "table" if stripped.startswith("|") else "text"
+        if currentKind is None:
+            currentKind = nextKind
+            buffer.append(stripped)
+            continue
+
+        if nextKind != currentKind:
+            _flush(currentKind)
+            currentKind = nextKind
+        buffer.append(stripped)
+
+    _flush(currentKind)
     return rows
 
 
 def _reportRowsToTopicRows(
-    records: list[dict[str, object]],
+    subset: pl.DataFrame,
     contentCol: str,
 ) -> list[dict[str, object]]:
     emitted: list[dict[str, object]] = []
@@ -143,7 +152,12 @@ def _reportRowsToTopicRows(
     idx = 0
     # 장 제목 행은 보류했다가, 소항목이 없는 단독 장이면 등록한다.
     pendingChapter: dict[str, object] | None = None
-    hasSubItems = False
+    if subset.is_empty():
+        return emitted
+
+    cols = subset.columns
+    titleIdx = cols.index("section_title")
+    contentIdx = cols.index(contentCol)
 
     def _registerContent(ch: str, tp: str, rawT: str, content: str, majorNum: int) -> None:
         nonlocal idx
@@ -167,27 +181,34 @@ def _reportRowsToTopicRows(
             idx += 1
         topicBlockCounts[topicKey] = nextBlockOrder
 
-    def _flushPending() -> None:
-        nonlocal pendingChapter, hasSubItems
-        if pendingChapter is not None and not hasSubItems:
-            # 소항목 없는 단독 장 — 장 제목 content를 topic으로 등록
-            pTitle = str(pendingChapter.get("section_title") or "").strip()
-            pContent = str(pendingChapter.get(contentCol) or "").strip()
-            pMajor = parseMajorNum(pTitle)
-            if pMajor is not None and pContent:
-                ch = chapterFromMajorNum(pMajor)
-                if ch is not None:
-                    rawT = stripSectionPrefix(pTitle)
-                    tp = mapSectionTitle(rawT)
-                    _registerContent(ch, tp, rawT, pContent, pMajor)
+    def _registerPendingChapter() -> None:
+        nonlocal pendingChapter
+        if pendingChapter is None:
+            return
+        pTitle = str(pendingChapter.get("section_title") or "").strip()
+        pContent = str(pendingChapter.get(contentCol) or "").strip()
+        pMajor = parseMajorNum(pTitle)
+        if pMajor is not None and pContent:
+            ch = chapterFromMajorNum(pMajor)
+            if ch is not None:
+                rawT = stripSectionPrefix(pTitle)
+                tp = mapSectionTitle(rawT)
+                _registerContent(ch, tp, rawT, pContent, pMajor)
         pendingChapter = None
-        hasSubItems = False
 
-    for record in records:
-        title = str(record.get("section_title") or "").strip()
-        content = str(record.get(contentCol) or "")
+    def _flushPending() -> None:
+        _registerPendingChapter()
+
+    for values in subset.iter_rows():
+        title = str(values[titleIdx] or "").strip()
+        content = str(values[contentIdx] or "")
         if not title or not content.strip():
             continue
+
+        record = {
+            "section_title": title,
+            contentCol: content,
+        }
 
         majorNum = parseMajorNum(title)
         if majorNum is not None:
@@ -195,13 +216,14 @@ def _reportRowsToTopicRows(
             _flushPending()
             currentMajorNum = majorNum
             pendingChapter = record
-            hasSubItems = False
             continue
         if currentMajorNum is None:
             continue
 
-        # 소항목 도달 — 장 제목 content는 중복이므로 버림
-        hasSubItems = True
+        # 장 제목 행의 content도 raw source-of-truth로 보존한다.
+        # 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite되고,
+        # 장 제목에만 있던 segment는 그대로 남는다.
+        _registerPendingChapter()
 
         chapter = chapterFromMajorNum(currentMajorNum)
         if chapter is None:
@@ -221,14 +243,17 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
     expanded: list[dict[str, object]] = []
     headingStateByTopic: dict[str, list[dict[str, object]]] = {}
 
-    orderedRows = sorted(
-        rows,
-        key=lambda r: (
-            int(r.get("majorNum") or 99),
-            int(r.get("orderSeq") or 999999),
-            int(r.get("sourceBlockOrder") or r.get("blockOrder") or 0),
-        ),
-    )
+    if any(row.get("projectionKind") is not None for row in rows):
+        orderedRows = sorted(
+            rows,
+            key=lambda r: (
+                int(r.get("majorNum") or 99),
+                int(r.get("orderSeq") or 999999),
+                int(r.get("sourceBlockOrder") or r.get("blockOrder") or 0),
+            ),
+        )
+    else:
+        orderedRows = rows
 
     for row in orderedRows:
         blockType = str(row.get("blockType") or "text")
@@ -552,7 +577,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     for periodKey, reportKind, ccol, subset in iterPeriodSubsets(stockCode):
         validPeriods.append(periodKey)
-        topicRows = _reportRowsToTopicRows(subset.to_dicts(), ccol)
+        topicRows = _reportRowsToTopicRows(subset, ccol)
         periodRows[periodKey] = topicRows
         if reportKind == "annual" and latestAnnualRows is None:
             latestAnnualRows = topicRows
@@ -688,71 +713,6 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             str(k[1]),
         )
 
-    sortedTopics = [topic for topic, _ in sorted(topicFirstSeq.items(), key=lambda x: x[1])]
-
-    dfRows: list[dict[str, str | None]] = []
-    for topic in sortedTopics:
-        topicKeys = sorted(topicKeysByTopic.get(topic, []), key=_topicRowSortKey)
-        for blockOrder, key in enumerate(topicKeys):
-            meta = rowMeta.get(key, {})
-            orderInfo = rowOrder.get(key, {})
-            cadenceMeta = cadenceMetaByKey.get(key, {})
-            pathVariants = sorted(pathVariantsByKey.get(key, set()))
-            parentPathVariants = sorted(parentPathVariantsByKey.get(key, set()))
-            semanticPathVariants = sorted(semanticPathVariantsByKey.get(key, set()))
-            semanticParentPathVariants = sorted(semanticParentPathVariantsByKey.get(key, set()))
-            row: dict[str, str | int | None] = {
-                "chapter": topicChapter.get(topic),
-                "topic": topic,
-                "blockType": str(meta.get("blockType") or "text"),
-                "blockOrder": blockOrder,
-                "sourceBlockOrder": int(orderInfo.get("sourceBlockOrder") or meta.get("sourceBlockOrder") or 0),
-                "textNodeType": str(meta["textNodeType"]) if isinstance(meta.get("textNodeType"), str) else None,
-                "textStructural": bool(meta["textStructural"])
-                if isinstance(meta.get("textStructural"), bool)
-                else None,
-                "textLevel": int(meta["textLevel"]) if isinstance(meta.get("textLevel"), int) else None,
-                "textPath": str(meta["textPath"]) if isinstance(meta.get("textPath"), str) else None,
-                "textPathKey": str(meta["textPathKey"]) if isinstance(meta.get("textPathKey"), str) else None,
-                "textParentPathKey": (
-                    str(meta["textParentPathKey"]) if isinstance(meta.get("textParentPathKey"), str) else None
-                ),
-                "textPathVariantCount": len(pathVariants),
-                "textPathVariants": pathVariants or None,
-                "textParentPathVariants": parentPathVariants or None,
-                "textSemanticPathKey": (
-                    str(meta["textSemanticPathKey"]) if isinstance(meta.get("textSemanticPathKey"), str) else None
-                ),
-                "textSemanticParentPathKey": (
-                    str(meta["textSemanticParentPathKey"])
-                    if isinstance(meta.get("textSemanticParentPathKey"), str)
-                    else None
-                ),
-                "textSemanticPathVariants": semanticPathVariants or None,
-                "textSemanticParentPathVariants": semanticParentPathVariants or None,
-                "segmentKey": str(meta.get("segmentKey") or ""),
-                "segmentOrder": int(meta.get("segmentOrder") or 0),
-                "segmentOccurrence": int(orderInfo.get("segmentOccurrence") or meta.get("segmentOccurrence") or 1),
-                "cadenceKey": str(cadenceMeta.get("cadenceKey") or "none"),
-                "cadenceScope": str(cadenceMeta.get("cadenceScope") or "none"),
-                "annualPeriodCount": int(cadenceMeta.get("annualPeriodCount") or 0),
-                "quarterlyPeriodCount": int(cadenceMeta.get("quarterlyPeriodCount") or 0),
-                "latestAnnualPeriod": (
-                    str(cadenceMeta["latestAnnualPeriod"])
-                    if isinstance(cadenceMeta.get("latestAnnualPeriod"), str)
-                    else None
-                ),
-                "latestQuarterlyPeriod": (
-                    str(cadenceMeta["latestQuarterlyPeriod"])
-                    if isinstance(cadenceMeta.get("latestQuarterlyPeriod"), str)
-                    else None
-                ),
-                "sourceTopic": str(meta["sourceTopic"]) if isinstance(meta.get("sourceTopic"), str) else None,
-            }
-            for period in validPeriods:
-                row[period] = topicMap[key].get(period)
-            dfRows.append(row)
-
     schema = {
         "chapter": pl.Utf8,
         "topic": pl.Utf8,
@@ -785,4 +745,79 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     }
     for p in validPeriods:
         schema[p] = pl.Utf8
-    return pl.DataFrame(dfRows, schema=schema)
+
+    dataColumns: dict[str, list[object]] = {col: [] for col in schema}
+    sortedTopics = [topic for topic, _ in sorted(topicFirstSeq.items(), key=lambda x: x[1])]
+
+    for topic in sortedTopics:
+        topicKeys = sorted(topicKeysByTopic.get(topic, []), key=_topicRowSortKey)
+        for blockOrder, key in enumerate(topicKeys):
+            meta = rowMeta.get(key, {})
+            orderInfo = rowOrder.get(key, {})
+            cadenceMeta = cadenceMetaByKey.get(key, {})
+            pathVariants = sorted(pathVariantsByKey.get(key, set()))
+            parentPathVariants = sorted(parentPathVariantsByKey.get(key, set()))
+            semanticPathVariants = sorted(semanticPathVariantsByKey.get(key, set()))
+            semanticParentPathVariants = sorted(semanticParentPathVariantsByKey.get(key, set()))
+
+            dataColumns["chapter"].append(topicChapter.get(topic))
+            dataColumns["topic"].append(topic)
+            dataColumns["blockType"].append(str(meta.get("blockType") or "text"))
+            dataColumns["blockOrder"].append(blockOrder)
+            dataColumns["sourceBlockOrder"].append(
+                int(orderInfo.get("sourceBlockOrder") or meta.get("sourceBlockOrder") or 0)
+            )
+            dataColumns["textNodeType"].append(
+                str(meta["textNodeType"]) if isinstance(meta.get("textNodeType"), str) else None
+            )
+            dataColumns["textStructural"].append(
+                bool(meta["textStructural"]) if isinstance(meta.get("textStructural"), bool) else None
+            )
+            dataColumns["textLevel"].append(int(meta["textLevel"]) if isinstance(meta.get("textLevel"), int) else None)
+            dataColumns["textPath"].append(str(meta["textPath"]) if isinstance(meta.get("textPath"), str) else None)
+            dataColumns["textPathKey"].append(
+                str(meta["textPathKey"]) if isinstance(meta.get("textPathKey"), str) else None
+            )
+            dataColumns["textParentPathKey"].append(
+                str(meta["textParentPathKey"]) if isinstance(meta.get("textParentPathKey"), str) else None
+            )
+            dataColumns["textPathVariantCount"].append(len(pathVariants))
+            dataColumns["textPathVariants"].append(pathVariants or None)
+            dataColumns["textParentPathVariants"].append(parentPathVariants or None)
+            dataColumns["textSemanticPathKey"].append(
+                str(meta["textSemanticPathKey"]) if isinstance(meta.get("textSemanticPathKey"), str) else None
+            )
+            dataColumns["textSemanticParentPathKey"].append(
+                str(meta["textSemanticParentPathKey"])
+                if isinstance(meta.get("textSemanticParentPathKey"), str)
+                else None
+            )
+            dataColumns["textSemanticPathVariants"].append(semanticPathVariants or None)
+            dataColumns["textSemanticParentPathVariants"].append(semanticParentPathVariants or None)
+            dataColumns["segmentKey"].append(str(meta.get("segmentKey") or ""))
+            dataColumns["segmentOrder"].append(int(meta.get("segmentOrder") or 0))
+            dataColumns["segmentOccurrence"].append(
+                int(orderInfo.get("segmentOccurrence") or meta.get("segmentOccurrence") or 1)
+            )
+            dataColumns["cadenceKey"].append(str(cadenceMeta.get("cadenceKey") or "none"))
+            dataColumns["cadenceScope"].append(str(cadenceMeta.get("cadenceScope") or "none"))
+            dataColumns["annualPeriodCount"].append(int(cadenceMeta.get("annualPeriodCount") or 0))
+            dataColumns["quarterlyPeriodCount"].append(int(cadenceMeta.get("quarterlyPeriodCount") or 0))
+            dataColumns["latestAnnualPeriod"].append(
+                str(cadenceMeta["latestAnnualPeriod"])
+                if isinstance(cadenceMeta.get("latestAnnualPeriod"), str)
+                else None
+            )
+            dataColumns["latestQuarterlyPeriod"].append(
+                str(cadenceMeta["latestQuarterlyPeriod"])
+                if isinstance(cadenceMeta.get("latestQuarterlyPeriod"), str)
+                else None
+            )
+            dataColumns["sourceTopic"].append(
+                str(meta["sourceTopic"]) if isinstance(meta.get("sourceTopic"), str) else None
+            )
+            periodMap = topicMap.get(key, {})
+            for period in validPeriods:
+                dataColumns[period].append(periodMap.get(period))
+
+    return pl.DataFrame(dataColumns, schema=schema)

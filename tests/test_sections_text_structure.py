@@ -3,7 +3,7 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab import Company
-from dartlab.engines.dart.docs.sections import pipeline, textStructure
+from dartlab.engines.dart.docs.sections import displayPeriod, pipeline, rawPeriod, reorderPeriodColumns, textStructure
 from dartlab.engines.dart.docs.sections.textStructure import parseTextStructure, parseTextStructureWithState
 
 SAMSUNG = "005930"
@@ -142,6 +142,54 @@ def test_parse_text_structure_normalizes_safe_business_overview_aliases(monkeypa
     assert secondBody["textSemanticPathKey"] == "@topic:businessOverview > 생산및설비"
 
 
+def test_parse_text_structure_normalizes_safe_audit_system_aliases(monkeypatch):
+    def fake_map_section_title(title: str) -> str:
+        normalized = title.replace(" ", "")
+        if normalized in {"감사및감사위원회", "감사위원회", "감사위원회에관한사항"}:
+            return "auditSystem"
+        return normalized
+
+    monkeypatch.setattr(textStructure, "mapSectionTitle", fake_map_section_title)
+
+    first = parseTextStructure(
+        "1. 감사 및 감사위원회\n가. 감사위원회\n(1) 감사위원 현황\n감사위원 현황입니다.",
+        sourceBlockOrder=0,
+        topic="auditSystem",
+    )
+    second = parseTextStructure(
+        "1. 감사 및 감사위원회\n가. 감사위원회에 관한 사항\n(1) 감사위원 현황\n감사위원 현황입니다.",
+        sourceBlockOrder=0,
+        topic="auditSystem",
+    )
+
+    firstBody = next(row for row in first if row["textNodeType"] == "body")
+    secondBody = next(row for row in second if row["textNodeType"] == "body")
+
+    assert second[1]["text"] == "가. 감사위원회에 관한 사항"
+    assert firstBody["textPathKey"] != secondBody["textPathKey"]
+    assert firstBody["textSemanticPathKey"] == "@topic:auditSystem > 감사위원회 > 감사위원현황"
+    assert secondBody["textSemanticPathKey"] == "@topic:auditSystem > 감사위원회 > 감사위원현황"
+
+
+def test_period_helpers_support_q4_display_and_recent_first_ordering():
+    df = pl.DataFrame(
+        {
+            "topic": ["companyOverview"],
+            "2024Q1": ["q1"],
+            "2025": ["annual"],
+            "2024": ["prevAnnual"],
+            "2025Q3": ["q3"],
+        }
+    )
+
+    ordered = reorderPeriodColumns(df, descending=True, annualAsQ4=True)
+    periodCols = [col for col in ordered.columns if col.startswith("20")]
+
+    assert rawPeriod("2025Q4") == "2025"
+    assert displayPeriod("2025", annualAsQ4=True) == "2025Q4"
+    assert periodCols == ["2025Q4", "2025Q3", "2024Q4", "2024Q1"]
+
+
 def test_sections_horizontalize_numbering_changes_into_same_row(monkeypatch):
     def fake_map_section_title(_title: str) -> str:
         return "companyOverview"
@@ -231,6 +279,62 @@ def test_sections_horizontalize_numbering_changes_into_same_row(monkeypatch):
     assert "삼성전자주식회사" in legal_body.item(0, "2024")
     assert "삼성전자주식회사" in legal_body.item(0, "2025")
     assert legal_body.item(0, "segmentOccurrence") == 1
+
+
+def test_sections_preserve_pending_chapter_content_when_subitems_exist(monkeypatch):
+    def fake_map_section_title(title: str) -> str:
+        normalized = title.replace(" ", "")
+        if normalized.endswith("사업의내용") or normalized.endswith("사업의개요"):
+            return "businessOverview"
+        return normalized
+
+    def fake_iter_period_subsets(_stockCode: str, *, sinceYear: int = 2016):
+        assert sinceYear == 2016
+        schema = {
+            "section_order": pl.Int64,
+            "section_title": pl.Utf8,
+            "section_content": pl.Utf8,
+        }
+        yield (
+            "2025",
+            "annual",
+            "section_content",
+            pl.DataFrame(
+                [
+                    {
+                        "section_order": 1,
+                        "section_title": "II. 사업의 내용",
+                        "section_content": (
+                            "1. 사업의 개요\n"
+                            "가. 총괄\n"
+                            "총괄 설명입니다.\n"
+                            "나. 추가 설명\n"
+                            "장 제목에만 남아 있는 설명입니다."
+                        ),
+                    },
+                    {
+                        "section_order": 2,
+                        "section_title": "1. 사업의 개요",
+                        "section_content": ("가. 총괄\n총괄 설명입니다."),
+                    },
+                ],
+                schema=schema,
+            ),
+        )
+
+    monkeypatch.setattr(pipeline, "mapSectionTitle", fake_map_section_title)
+    monkeypatch.setattr(pipeline, "iterPeriodSubsets", fake_iter_period_subsets)
+
+    df = pipeline.sections("TEST")
+
+    assert df is not None
+    bodyRows = df.filter((pl.col("topic") == "businessOverview") & (pl.col("textNodeType") == "body"))
+
+    payloads = [value for value in bodyRows.get_column("2025").to_list() if isinstance(value, str)]
+
+    assert bodyRows.height >= 2
+    assert len(payloads) >= 2
+    assert any("장 제목에만 남아 있는 설명" in value for value in payloads)
 
 
 def test_sections_horizontalize_same_path_when_source_block_order_shifts(monkeypatch):

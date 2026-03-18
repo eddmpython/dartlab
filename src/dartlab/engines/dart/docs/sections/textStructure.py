@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from functools import lru_cache
 from typing import Any, Literal
 
 from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
@@ -27,11 +28,18 @@ _TOPIC_SEGMENT_ALIASES: dict[str, dict[str, str]] = {
     "companyOverview": {
         "연결대상종속기업개황": "연결대상종속사현황",
         "연결대상종속회사개황": "연결대상종속사현황",
+        "연결대상종속기업현황": "연결대상종속사현황",
+        "연결대상종속회사현황": "연결대상종속사현황",
         "연결대상종속회사현황요약": "연결대상종속사현황",
+        "연결대상종속회사개황요약": "연결대상종속사현황",
         "연결대상종속기업개황요약": "연결대상종속사현황",
+        "연결대상종속기업현황요약": "연결대상종속사현황",
         "연결대상회사의변동내용": "연결대상변동내용",
+        "연결대상회사의변동현황": "연결대상변동내용",
         "당기중종속기업변동내용": "연결대상변동내용",
         "당기연결대상회사의변동내용": "연결대상변동내용",
+        "본사의주소전화번호및홈페이지": "본사의주소전화번호홈페이지",
+        "본사의주소전화번호및홈페이지주소": "본사의주소전화번호홈페이지",
         "본사의주소전화번호홈페이지주소": "본사의주소전화번호홈페이지",
     },
     "businessOverview": {
@@ -47,9 +55,16 @@ _TOPIC_SEGMENT_ALIASES: dict[str, dict[str, str]] = {
         "재무상태및영업실적연결기준": "재무상태및영업실적",
         "조직개편": "조직변경",
         "조직의변경": "조직변경",
+        "조직변경등": "조직변경",
         "자산손상인식": "자산손상",
         "유동성및자금조달과지출": "유동성및자금조달",
         "환율변동영향": "환율변동",
+    },
+    "auditSystem": {
+        "감사위원회에관한사항": "감사위원회",
+        "감사위원회의위원의독립성": "감사위원회위원의독립성",
+        "감사위원회의주요활동내역": "감사위원회주요활동내역",
+        "준법지원인등지원조직현황": "준법지원인지원조직현황",
     },
 }
 
@@ -58,6 +73,7 @@ def _clean_line(line: str) -> str:
     return line.replace("\u00a0", " ").replace("\t", " ").rstrip()
 
 
+@lru_cache(maxsize=32768)
 def _normalize_heading_text(text: str) -> str:
     cleaned = stripSectionPrefix(text.strip())
     cleaned = cleaned.strip("[]【】")
@@ -70,6 +86,7 @@ def _normalize_heading_text(text: str) -> str:
     return cleaned.strip()
 
 
+@lru_cache(maxsize=32768)
 def _heading_key(text: str) -> str:
     normalized = _normalize_heading_text(text)
     normalized = normalized.replace("·", "").replace("ㆍ", "")
@@ -91,6 +108,7 @@ def _canonical_heading_key(
     return labelKey
 
 
+@lru_cache(maxsize=65536)
 def _semantic_segment_key(labelKey: str, *, topic: str | None) -> str:
     if not labelKey or labelKey.startswith("@"):
         return labelKey
@@ -112,19 +130,22 @@ def _semantic_segment_key(labelKey: str, *, topic: str | None) -> str:
     return key
 
 
+@lru_cache(maxsize=32768)
 def _is_temporal_marker(text: str) -> bool:
     normalized = _normalize_heading_text(text)
     return bool(_RE_TEMPORAL_MARKER.fullmatch(normalized))
 
 
+@lru_cache(maxsize=32768)
 def _body_anchor(text: str) -> str:
-    normalized = _MULTISPACE_RE.sub(" ", text.strip())
+    normalized = " ".join(text.split())
     if not normalized:
         return "empty"
     anchor = normalized[:96]
-    return hashlib.md5(anchor.encode("utf-8")).hexdigest()[:12]
+    return hashlib.blake2b(anchor.encode("utf-8"), digest_size=8).hexdigest()[:12]
 
 
+@lru_cache(maxsize=32768)
 def _detect_heading(line: str) -> tuple[int, str, bool] | None:
     stripped = line.strip()
     if not stripped or stripped.startswith("|"):

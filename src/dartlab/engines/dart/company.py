@@ -647,6 +647,9 @@ def _buildTopicChangeLedger(topicBlocks: pl.DataFrame | None) -> pl.DataFrame:
 
 
 def _buildTopicEvidence(topicBlocks: pl.DataFrame | None, period: str) -> pl.DataFrame:
+    from dartlab.engines.dart.docs.sections import rawPeriod
+
+    period = rawPeriod(period)
     schema = {
         "topic": pl.Utf8,
         "period": pl.Utf8,
@@ -1352,6 +1355,30 @@ class _SectionsSource:
     def frame(self) -> pl.DataFrame | None:
         return self.raw
 
+    def periods(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> list[str]:
+        frame = self.raw
+        if frame is None:
+            return []
+        from dartlab.engines.dart.docs.sections import periodColumns
+
+        return periodColumns(frame.columns, descending=recentFirst, annualAsQ4=annualAsQ4)
+
+    def ordered(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> pl.DataFrame | None:
+        return self._company._docsSectionsOrdered(recentFirst=recentFirst, annualAsQ4=annualAsQ4)
+
+    def coverage(
+        self,
+        *,
+        topic: str | None = None,
+        recentFirst: bool = True,
+        annualAsQ4: bool = True,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsCoverage(
+            topic=topic,
+            recentFirst=recentFirst,
+            annualAsQ4=annualAsQ4,
+        )
+
     def cadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
         return self._company._docsSectionsCadence(cadenceScope, includeMixed=includeMixed)
 
@@ -1404,7 +1431,10 @@ class _SectionsSource:
         if frame is None:
             return "SectionsSource(missing)"
         return (
-            f"SectionsSource(shape={frame.shape}, methods=[raw, cadence(), semanticRegistry(), semanticCollisions()])"
+            "SectionsSource("
+            "shape="
+            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions()]"
+            ")"
         )
 
 
@@ -1425,6 +1455,22 @@ class _DocsAccessor:
     @property
     def sections(self) -> "_SectionsSource | None":
         return self._sectionsAccessor if self._sectionsAccessor.raw is not None else None
+
+    def sectionsOrdered(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> pl.DataFrame | None:
+        sections = self.sections
+        return None if sections is None else sections.ordered(recentFirst=recentFirst, annualAsQ4=annualAsQ4)
+
+    def sectionsCoverage(
+        self,
+        *,
+        topic: str | None = None,
+        recentFirst: bool = True,
+        annualAsQ4: bool = True,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None if sections is None else sections.coverage(topic=topic, recentFirst=recentFirst, annualAsQ4=annualAsQ4)
+        )
 
     def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
         sections = self.sections
@@ -1796,6 +1842,9 @@ class _ProfileAccessor:
         return sections.filter(pl.col("topic") == topic)
 
     def trace(self, topic: str, period: str | None = None) -> pl.DataFrame | dict[str, Any] | None:
+        from dartlab.engines.dart.docs.sections import rawPeriod
+
+        requestedPeriod = rawPeriod(period) if isinstance(period, str) else period
         facts = self.facts
         docsSections = self._company.docs.sections
 
@@ -1803,8 +1852,8 @@ class _ProfileAccessor:
 
         if facts is not None:
             traced = facts.filter(pl.col("topic") == topic)
-            if period is not None:
-                traced = traced.filter(pl.col("period") == period)
+            if requestedPeriod is not None:
+                traced = traced.filter(pl.col("period") == requestedPeriod)
             if not traced.is_empty():
                 grouped = traced.group_by("source").agg(
                     [
@@ -1820,14 +1869,14 @@ class _ProfileAccessor:
             row = docsSections.filter(pl.col("topic") == topic)
             if not row.is_empty():
                 periodCols = [c for c in docsSections.columns if _isPeriodColumn(c)]
-                if period is not None and period in periodCols:
-                    value = row.item(0, period)
+                if requestedPeriod is not None and requestedPeriod in periodCols:
+                    value = row.item(0, requestedPeriod)
                     if value is not None:
                         sources.append(
                             {
                                 "source": "docs",
                                 "rows": 1,
-                                "payloadRef": f"docs-sections:{topic}:{period}",
+                                "payloadRef": f"docs-sections:{topic}:{requestedPeriod}",
                                 "summary": str(value)[:400],
                                 "priority": 100,
                             }
@@ -1840,7 +1889,7 @@ class _ProfileAccessor:
         primary = sources[0]
         return {
             "topic": topic,
-            "period": period,
+            "period": requestedPeriod,
             "primarySource": primary.get("source"),
             "fallbackSources": [r.get("source") for r in sources[1:]],
             "selectedPayloadRef": primary.get("payloadRef"),
@@ -2113,6 +2162,93 @@ class Company:
         from dartlab.engines.dart.docs.sections import projectCadenceRows
 
         result = projectCadenceRows(sectionsFrame, cadenceScope=normalizedScope, includeMixed=includeMixed)
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsOrdered(
+        self,
+        *,
+        recentFirst: bool = True,
+        annualAsQ4: bool = True,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        cacheKey = f"_docsSectionsOrdered:{int(recentFirst)}:{int(annualAsQ4)}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import reorderPeriodColumns
+
+        result = reorderPeriodColumns(sectionsFrame.raw, descending=recentFirst, annualAsQ4=annualAsQ4)
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsCoverage(
+        self,
+        *,
+        topic: str | None = None,
+        recentFirst: bool = True,
+        annualAsQ4: bool = True,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        topicKey = topic or "*"
+        cacheKey = f"_docsSectionsCoverage:{topicKey}:{int(recentFirst)}:{int(annualAsQ4)}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import displayPeriod, sortPeriods
+
+        rawFrame = sectionsFrame.raw
+        scoped = rawFrame if topic is None else rawFrame.filter(pl.col("topic") == topic)
+        if scoped.is_empty():
+            result = pl.DataFrame(
+                schema={
+                    "topic": pl.Utf8,
+                    "period": pl.Utf8,
+                    "rawPeriod": pl.Utf8,
+                    "rowCount": pl.Int64,
+                    "nonNullRows": pl.Int64,
+                    "nullRows": pl.Int64,
+                    "coverageRatio": pl.Float64,
+                }
+            )
+            self._cache[cacheKey] = result
+            return result
+
+        periodCols = sortPeriods([c for c in scoped.columns if _isPeriodColumn(c)], descending=recentFirst)
+        topics = scoped.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
+        records: list[dict[str, Any]] = []
+        for topicName in topics:
+            topicRows = scoped.filter(pl.col("topic") == topicName)
+            rowCount = topicRows.height
+            if rowCount == 0:
+                continue
+            for periodCol in periodCols:
+                nonNullRows = topicRows.get_column(periodCol).drop_nulls().len()
+                records.append(
+                    {
+                        "topic": str(topicName),
+                        "period": displayPeriod(periodCol, annualAsQ4=annualAsQ4),
+                        "rawPeriod": periodCol,
+                        "rowCount": rowCount,
+                        "nonNullRows": nonNullRows,
+                        "nullRows": rowCount - nonNullRows,
+                        "coverageRatio": (float(nonNullRows) / float(rowCount)) if rowCount else 0.0,
+                    }
+                )
+
+        result = pl.DataFrame(records, strict=False) if records else pl.DataFrame()
         self._cache[cacheKey] = result
         return result
 
@@ -3231,11 +3367,14 @@ class Company:
         return result
 
     def _topicEvidence(self, topic: str, period: str) -> pl.DataFrame:
-        cacheKey = f"_topicEvidence:{topic}:{period}"
+        from dartlab.engines.dart.docs.sections import rawPeriod
+
+        normalizedPeriod = rawPeriod(period)
+        cacheKey = f"_topicEvidence:{topic}:{normalizedPeriod}"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         blocks = self._topicBlocks(topic)
-        result = _buildTopicEvidence(blocks, period)
+        result = _buildTopicEvidence(blocks, normalizedPeriod)
         self._cache[cacheKey] = result
         return result
 
@@ -3288,16 +3427,23 @@ class Company:
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
             return payload
+        from dartlab.engines.dart.docs.sections import rawPeriod
 
-        if period in payload.columns:
+        requestedPeriod = str(period)
+        normalizedPeriod = rawPeriod(period)
+
+        if normalizedPeriod in payload.columns:
             keepCols = [c for c in payload.columns if not _isPeriodColumn(c)]
-            keepCols.append(period)
-            return payload.select(keepCols)
+            keepCols.append(normalizedPeriod)
+            result = payload.select(keepCols)
+            if requestedPeriod != normalizedPeriod and normalizedPeriod in result.columns:
+                result = result.rename({normalizedPeriod: requestedPeriod})
+            return result
 
         if "period" in payload.columns:
-            return payload.filter(pl.col("period") == period)
+            return payload.filter(pl.col("period") == normalizedPeriod)
         if "year" in payload.columns:
-            return payload.filter(pl.col("year").cast(pl.Utf8) == period)
+            return payload.filter(pl.col("year").cast(pl.Utf8) == normalizedPeriod)
         return payload
 
     _MIN_YEAR = 2016
@@ -3774,10 +3920,10 @@ class Company:
 
         sec = self.docs.sections
         if sec is not None and "topic" in sec.columns:
-            periodCols = [c for c in sec.columns if _isPeriodColumn(c)]
-            periodRange = (
-                f"{periodCols[0]}..{periodCols[-1]}" if len(periodCols) > 1 else (periodCols[0] if periodCols else "-")
-            )
+            from dartlab.engines.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+
+            periodCols = sortPeriods([c for c in sec.columns if _isPeriodColumn(c)], descending=True)
+            periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
             topicOrder: list[str] = []
             seenTopics: set[str] = set()
             for row in sec.iter_rows(named=True):
@@ -3798,7 +3944,7 @@ class Company:
                         val = row.get(col)
                         if val is not None:
                             text = _normalizeTextCell(val)[:80]
-                            preview = f"{col}: {text}"
+                            preview = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
                             break
                     if preview != "-":
                         break

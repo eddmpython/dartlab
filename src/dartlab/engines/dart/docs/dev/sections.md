@@ -76,6 +76,10 @@
   - row가 흡수한 과거 raw wording drift는 `textPathVariants`에 남긴다.
   - semantic alias는 `textSemanticPathKey`에서만 흡수한다.
   - 보수적으로 검증된 alias만 허용한다.
+- 장 제목 content는 source-of-truth로 보존한다.
+  - 소항목이 있어도 pending chapter text를 먼저 등록한다.
+  - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.
+  - 장 제목에만 남아 있던 segment는 sparse row가 아니라 실제 최신 row로 살아남는다.
 - `[2021년 12월]` 같은 시점 마커와 중복 topic alias heading은 row로는 보존하되 `textStructural=false`로 내려 구조 stack에는 넣지 않는다.
 - row별 period 분포는 `cadenceScope`로 요약한다.
   - `annual`: 연간에만 존재
@@ -84,7 +88,11 @@
   - `cadenceKey`: `annual,q1,q2,q3` 같은 finer set
 - `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`로 `sections` 내부에서 annual/quarterly/mixed row projection을 바로 만들 수 있다.
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`로 semantic spine 기준 raw wording drift와 collision을 바로 진단할 수 있다.
-- `c.docs.sectionsCadence()`, `c.docs.sectionsSemanticRegistry()`, `c.docs.sectionsSemanticCollisions()`가 Company-level cached access path다.
+- `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
+  - `c.docs.sections.filter(...)`처럼 DataFrame 연산을 그대로 쓸 수 있다.
+  - 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`를 쓴다.
+  - `periods()/ordered()/coverage()`는 최신우선 + 연간 `Q4` alias projection이다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()`는 호환용 wrapper다.
 - `show()`, `diff()`, viewer, AI가 같은 text structure를 공유해야 한다.
 
 ## 2026-03-18 현재 기준
@@ -101,6 +109,9 @@
   - `cadenceScope=quarterly`: 분기 전용 row
   - `cadenceScope=mixed`: 연간/분기 공용 row
   - `latestAnnualPeriod`, `latestQuarterlyPeriod`: 각 cadence에서 마지막 실존 period
+- 현재 공식 period projection helper:
+  - `src/dartlab/engines/dart/docs/sections/_common.py:displayPeriod`
+  - `src/dartlab/engines/dart/docs/sections/_common.py:reorderPeriodColumns`
 - 현재 공식 cadence projection helper:
   - `src/dartlab/engines/dart/docs/sections/pipeline.py:projectCadenceRows`
 - 현재 공식 semantic registry helper:
@@ -120,10 +131,13 @@
   - `companyOverview`, `mdna`는 safe alias가 실제 row merge로 이어지는 케이스가 확인된다.
   - `businessOverview`는 `...에 관한 사항 -> 핵심 slot 이름` 같은 semantic rename은 많지만, 대다수 회사에서는 row count가 거의 줄지 않는다.
   - 해석: `businessOverview`의 병목은 wording drift보다 `부문 이동/구조 이동`이다.
+  - 다만 최신 연간 sparse의 큰 원인 하나는 raw source 자체가 아니라 chapter content drop이었다.
+  - 장 제목 content 보존 후 `005930` 최신 annual `businessOverview` coverage는 `177/436 (40.6%)`까지 회복됐다.
 - 현재 안전 alias의 예:
   - `연결대상 종속기업/종속회사 개황 -> 연결대상 종속사 현황`
   - `조직개편 / 조직의 변경 -> 조직변경`
   - `유동성 및 자금조달과 지출 -> 유동성 및 자금조달`
+  - `감사위원회에 관한 사항 -> 감사위원회`
   - `...에 관한 사항 -> slot name` 계열의 좁은 정규화
 - 현재 금지 merge의 예:
   - `DX부문`, `CE부문`, `DS부문` 같은 부문명은 automatic merge 금지

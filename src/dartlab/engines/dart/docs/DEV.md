@@ -40,11 +40,19 @@
 - `textSemanticPathKey`는 raw 구조선을 덮어쓰지 않는 parallel semantic spine이다.
   - `textPathKey`는 원문 구조를 그대로 보존한다.
   - `textSemanticPathKey`는 안전한 alias만 흡수한다.
-  - 현재는 `...에 관한 사항`, `종속기업/종속회사`, `조직개편/조직의 변경` 같은 보수적 케이스만 정규화한다.
+  - 현재는 `...에 관한 사항`, `종속기업/종속회사`, `조직개편/조직의 변경`, `감사위원회에 관한 사항` 같은 보수적 케이스만 정규화한다.
 - `cadenceScope`는 `annual` / `quarterly` / `mixed` / `none`이며, 소비층이 연간 구조와 분기 구조를 섞지 않게 하는 기준 메타다.
 - `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`는 `sections` 내부에서 cadence-aware row projection을 제공하는 공식 helper다.
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`는 `textSemanticPathKey` 기준으로 row가 흡수한 raw wording drift를 진단하는 공식 helper다.
-- `c.docs.sectionsCadence()`, `c.docs.sectionsSemanticRegistry()`, `c.docs.sectionsSemanticCollisions()`는 위 helper의 Company-level cached access path다.
+- `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
+  - DataFrame 메서드는 그대로 위임된다.
+  - 같은 경로에서 `.raw`, `.periods()`, `.ordered()`, `.coverage()`, `.cadence(...)`, `.semanticRegistry(...)`, `.semanticCollisions(...)`를 호출한다.
+  - `periods()/ordered()/coverage()`는 사용자-facing projection이며 최신우선 + 연간 `Q4` alias를 지원한다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()`는 호환용 thin wrapper다.
+- 장 제목 content는 source-of-truth로 보존한다.
+  - 소항목이 있어도 장 제목 text block을 먼저 등록한다.
+  - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.
+  - 장 제목에만 남아 있는 segment는 그대로 유지된다.
 - viewer는 위 구조를 소비해 렌더링만 담당한다. viewer 안에서 문서 구조를 다시 해석하는 로직은 임시 보정으로 보고 점진적으로 제거한다.
 
 ### 현재 정확한 기준 위치 (2026-03-18)
@@ -59,9 +67,12 @@
   - row가 흡수한 raw wording drift는 `textPathVariants` / `textPathVariantCount`에 보존한다.
   - 시점 marker와 중복 root alias는 `textStructural=false` row로 보존하고 outline stack에서는 제외한다.
   - row별 period 분포는 `cadenceKey`, `cadenceScope`, `latestAnnualPeriod`, `latestQuarterlyPeriod`로 기록한다.
+  - accessor는 `periods()/ordered()/coverage()`로 최신우선 `Q4` alias projection을 바로 제공한다.
+  - `show(period="2025Q4")`는 raw annual column `2025`를 alias로 받아들이고, 반환 컬럼도 `2025Q4`로 맞춘다.
 - 실제 구현 기준 파일:
   - `src/dartlab/engines/dart/docs/sections/textStructure.py`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py`
+  - `src/dartlab/engines/dart/company.py`
 
 ### 다종목 검증 기준과 다음 단계 (2026-03-18)
 
@@ -70,8 +81,9 @@
   - topic: `companyOverview`, `businessOverview`, `mdna`
 - 현재 semantic alias는 보수적으로만 적용한다.
   - 실제 row merge가 확인된 축은 `companyOverview`, `mdna` 쪽이 먼저다.
-  - `businessOverview`는 `영업의 개황 등 -> 영업현황`, `매출에 관한 사항 -> 매출` 같은 safe rename은 많지만, 대다수 회사에서 row 수 자체는 거의 줄지 않는다.
-  - 즉 `businessOverview`의 병목은 alias 사전 부족보다 `부문/구조 이동`을 흡수하는 semantic matcher 부족이다.
+  - `businessOverview`는 `영업의 개황 등 -> 영업현황`, `매출에 관한 사항 -> 매출` 같은 safe rename은 많지만, 병목은 여전히 `부문/구조 이동`을 흡수하는 matcher 쪽이다.
+  - 다만 최신 연간 sparse의 큰 원인 하나는 raw source 손실이 아니라 `_reportRowsToTopicRows()`의 chapter content drop이었고, 지금은 장 제목 content를 보존하도록 수정했다.
+  - 삼성전자 `businessOverview` 최신 annual coverage는 `2/318`에서 `177/436`으로 올라왔다.
 - 다음 단계 우선순위:
   1. `topic + cadenceScope` 기준 `semantic registry` 도입
   2. parent-guard가 있는 alias만 추가 (`companyOverview` slot alias, `mdna` root alias 우선)

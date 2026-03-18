@@ -217,25 +217,56 @@ class TestCompany:
         from dartlab import Company
 
         c = Company(SAMSUNG)
+        ordered = c.docs.sectionsOrdered()
+        coverage = c.docs.sectionsCoverage(topic="businessOverview")
         annual = c.docs.sectionsCadence("annual")
         registry = c.docs.sectionsSemanticRegistry(topic="mdna")
         collisions = c.docs.sectionsSemanticCollisions(topic="mdna")
+        accessorPeriods = c.docs.sections.periods()
+        accessorOrdered = c.docs.sections.ordered()
+        accessorCoverage = c.docs.sections.coverage(topic="businessOverview")
         accessorAnnual = c.docs.sections.cadence("annual")
         accessorRegistry = c.docs.sections.semanticRegistry(topic="mdna")
         accessorCollisions = c.docs.sections.semanticCollisions(topic="mdna")
 
+        assert isinstance(ordered, pl.DataFrame)
+        assert isinstance(coverage, pl.DataFrame)
         assert isinstance(annual, pl.DataFrame)
         assert isinstance(registry, pl.DataFrame)
         assert isinstance(collisions, pl.DataFrame)
+        assert isinstance(accessorPeriods, list)
+        assert isinstance(accessorOrdered, pl.DataFrame)
+        assert isinstance(accessorCoverage, pl.DataFrame)
         assert isinstance(accessorAnnual, pl.DataFrame)
         assert isinstance(accessorRegistry, pl.DataFrame)
         assert isinstance(accessorCollisions, pl.DataFrame)
         assert annual.height <= c.docs.sections.height
+        orderedPeriodCols = [c for c in ordered.columns if c.startswith("20")]
+        assert orderedPeriodCols == accessorPeriods
+        assert orderedPeriodCols[0].endswith("Q4")
+        assert {"topic", "period", "rawPeriod", "rowCount", "nonNullRows", "coverageRatio"}.issubset(
+            set(coverage.columns)
+        )
+        assert ordered.equals(accessorOrdered)
+        assert coverage.equals(accessorCoverage)
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(registry.columns))
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(collisions.columns))
         assert annual.equals(accessorAnnual)
         assert registry.equals(accessorRegistry)
         assert collisions.equals(accessorCollisions)
+
+    def test_show_accepts_q4_alias_for_annual_sections_period(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        annual = c.show("companyOverview", 0, period="2025")
+        annualQ4 = c.show("companyOverview", 0, period="2025Q4")
+
+        assert isinstance(annual, pl.DataFrame)
+        assert isinstance(annualQ4, pl.DataFrame)
+        assert "2025" in annual.columns
+        assert "2025Q4" in annualQ4.columns
+        assert annual.item(0, "2025") == annualQ4.item(0, "2025Q4")
 
     def test_profile_facts_include_docs_source(self):
         from dartlab import Company
