@@ -19,9 +19,11 @@ from dartlab.engines.dart.docs.sections.pipeline import (
     sections,
     semanticCollisions,
     semanticRegistry,
+    structureChanges,
     structureCollisions,
     structureEvents,
     structureRegistry,
+    structureSummary,
 )
 from dartlab.engines.dart.docs.sections.types import (
     SectionChunk,
@@ -41,6 +43,8 @@ __all__ = [
     "structureRegistry",
     "structureCollisions",
     "structureEvents",
+    "structureSummary",
+    "structureChanges",
     "semanticRegistry",
     "semanticCollisions",
     "retrievalBlocks",

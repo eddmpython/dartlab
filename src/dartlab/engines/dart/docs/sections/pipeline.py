@@ -608,6 +608,62 @@ def _emptyStructureEventsFrame() -> pl.DataFrame:
     )
 
 
+def _emptyStructureSummaryFrame() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "topic": pl.Utf8,
+            "textNodeType": pl.Utf8,
+            "textLevel": pl.Int64,
+            "cadenceScope": pl.Utf8,
+            "textComparablePathKey": pl.Utf8,
+            "textComparableParentPathKey": pl.Utf8,
+            "structurePattern": pl.Utf8,
+            "hasCollision": pl.Boolean,
+            "activePeriodCount": pl.Int64,
+            "activePeriods": pl.List(pl.Utf8),
+            "latestPeriod": pl.Utf8,
+            "latestPeriodLane": pl.Utf8,
+            "latestPathCount": pl.Int64,
+            "multiPathPeriods": pl.List(pl.Utf8),
+            "eventCount": pl.Int64,
+            "latestEventType": pl.Utf8,
+            "latestEventFromPeriod": pl.Utf8,
+            "latestEventToPeriod": pl.Utf8,
+            "latestEventLane": pl.Utf8,
+        }
+    )
+
+
+def _emptyStructureChangesFrame() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "topic": pl.Utf8,
+            "textNodeType": pl.Utf8,
+            "textLevel": pl.Int64,
+            "cadenceScope": pl.Utf8,
+            "textComparablePathKey": pl.Utf8,
+            "textComparableParentPathKey": pl.Utf8,
+            "structurePattern": pl.Utf8,
+            "hasCollision": pl.Boolean,
+            "activePeriodCount": pl.Int64,
+            "activePeriods": pl.List(pl.Utf8),
+            "latestPeriod": pl.Utf8,
+            "latestPeriodLane": pl.Utf8,
+            "latestPathCount": pl.Int64,
+            "multiPathPeriods": pl.List(pl.Utf8),
+            "eventCount": pl.Int64,
+            "latestEventType": pl.Utf8,
+            "latestEventFromPeriod": pl.Utf8,
+            "latestEventToPeriod": pl.Utf8,
+            "latestEventLane": pl.Utf8,
+            "anchorPeriod": pl.Utf8,
+            "anchorPeriodLane": pl.Utf8,
+            "isLatest": pl.Boolean,
+            "isStale": pl.Boolean,
+        }
+    )
+
+
 def _structureGroupColumns() -> list[str]:
     return [
         "topic",
@@ -617,6 +673,17 @@ def _structureGroupColumns() -> list[str]:
         "textComparablePathKey",
         "textComparableParentPathKey",
     ]
+
+
+def _normalizeStructureGroupDtypes(frame: pl.DataFrame) -> pl.DataFrame:
+    casts: list[pl.Expr] = []
+    stringCols = ["topic", "textNodeType", "cadenceScope", "textComparablePathKey", "textComparableParentPathKey"]
+    for colName in stringCols:
+        if colName in frame.columns:
+            casts.append(pl.col(colName).cast(pl.Utf8).alias(colName))
+    if "textLevel" in frame.columns:
+        casts.append(pl.col("textLevel").cast(pl.Int64).alias("textLevel"))
+    return frame.with_columns(casts) if casts else frame
 
 
 def _periodLane(period: str | None) -> str | None:
@@ -629,6 +696,29 @@ def _periodLane(period: str | None) -> str | None:
     if period.endswith("Q3"):
         return "q3"
     return "annual"
+
+
+def _allowedStructurePeriodLanes(cadenceScope: str | None) -> set[str] | None:
+    scope = str(cadenceScope).strip().lower() if isinstance(cadenceScope, str) else "all"
+    if scope == "annual":
+        return {"annual"}
+    if scope == "quarterly":
+        return {"q1", "q2", "q3"}
+    return None
+
+
+def _structurePatternRank(pattern: str | None) -> int:
+    order = {
+        "parallel": 7,
+        "split_merge": 6,
+        "split": 5,
+        "merge": 4,
+        "reassigned": 3,
+        "moved": 2,
+        "variant": 1,
+        "same": 0,
+    }
+    return order.get(str(pattern), 0)
 
 
 def _pathCollection(paths: object) -> list[str]:
@@ -761,9 +851,12 @@ def _structurePattern(payload: object) -> str:
     return "variant"
 
 
-def _structurePeriodActivity(textScoped: pl.DataFrame) -> pl.DataFrame | None:
+def _structurePeriodActivity(textScoped: pl.DataFrame, *, cadenceScope: str = "all") -> pl.DataFrame | None:
     groupCols = _structureGroupColumns()
     periodCols = sortPeriods([str(col) for col in textScoped.columns if re.fullmatch(r"^\d{4}(Q[1-4])?$", str(col))])
+    allowedLanes = _allowedStructurePeriodLanes(cadenceScope)
+    if allowedLanes is not None:
+        periodCols = [period for period in periodCols if _periodLane(period) in allowedLanes]
     if not periodCols:
         return None
 
@@ -908,7 +1001,7 @@ def structureRegistry(
         return _emptyStructureRegistryFrame()
 
     groupCols = _structureGroupColumns()
-    periodActivity = _structurePeriodActivity(textScoped)
+    periodActivity = _structurePeriodActivity(textScoped, cadenceScope=cadenceScope)
     periodActivitySummary: pl.DataFrame | None = None
     if periodActivity is not None:
         periodActivitySummary = periodActivity.group_by(groupCols, maintain_order=True).agg(
@@ -972,7 +1065,7 @@ def structureRegistry(
         .with_columns((pl.col("rawSemanticPathCount") > 1).alias("hasCollision"))
         .sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "cadenceScope"])
     )
-    return registry
+    return _normalizeStructureGroupDtypes(registry)
 
 
 def structureCollisions(
@@ -1033,7 +1126,7 @@ def structureEvents(
     if textScoped.is_empty():
         return _emptyStructureEventsFrame()
 
-    periodActivity = _structurePeriodActivity(textScoped)
+    periodActivity = _structurePeriodActivity(textScoped, cadenceScope=cadenceScope)
     if periodActivity is None:
         return _emptyStructureEventsFrame()
 
@@ -1100,6 +1193,152 @@ def structureEvents(
         return _emptyStructureEventsFrame()
     return pl.DataFrame(rows, schema=_emptyStructureEventsFrame().schema).sort(
         ["topic", "textComparablePathKey", "fromPeriod", "toPeriod", "textNodeType", "textLevel"]
+    )
+
+
+def structureSummary(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+    nodeType: str | None = None,
+) -> pl.DataFrame:
+    registry = structureRegistry(
+        df,
+        topic=topic,
+        cadenceScope=cadenceScope,
+        includeMixed=includeMixed,
+        nodeType=nodeType,
+    )
+    if registry.is_empty():
+        return _emptyStructureSummaryFrame()
+
+    groupCols = _structureGroupColumns()
+    summary = registry.select(
+        groupCols
+        + [
+            "structurePattern",
+            "hasCollision",
+            "activePeriodCount",
+            "activePeriods",
+            "latestPathCount",
+            "multiPathPeriods",
+        ]
+    ).with_columns(
+        [
+            pl.col("activePeriods").list.last().alias("latestPeriod"),
+            pl.col("activePeriods")
+            .list.last()
+            .map_elements(_periodLane, return_dtype=pl.Utf8)
+            .alias("latestPeriodLane"),
+        ]
+    )
+    summary = _normalizeStructureGroupDtypes(summary)
+
+    events = structureEvents(
+        df,
+        topic=topic,
+        cadenceScope=cadenceScope,
+        includeMixed=includeMixed,
+        changedOnly=True,
+        nodeType=nodeType,
+    )
+    if not events.is_empty():
+        eventSummary = (
+            events.with_columns(
+                pl.col("toPeriod").map_elements(periodOrderValue, return_dtype=pl.Int64).alias("toOrder")
+            )
+            .sort(groupCols + ["toOrder"])
+            .group_by(groupCols, maintain_order=True)
+            .agg(
+                [
+                    pl.len().alias("eventCount"),
+                    pl.col("eventType").last().alias("latestEventType"),
+                    pl.col("fromPeriod").last().alias("latestEventFromPeriod"),
+                    pl.col("toPeriod").last().alias("latestEventToPeriod"),
+                    pl.col("periodLane").last().alias("latestEventLane"),
+                ]
+            )
+        )
+        eventSummary = _normalizeStructureGroupDtypes(eventSummary)
+        summary = summary.join(eventSummary, on=groupCols, how="left", nulls_equal=True)
+    else:
+        summary = summary.with_columns(
+            [
+                pl.lit(0).cast(pl.Int64).alias("eventCount"),
+                pl.lit(None, dtype=pl.Utf8).alias("latestEventType"),
+                pl.lit(None, dtype=pl.Utf8).alias("latestEventFromPeriod"),
+                pl.lit(None, dtype=pl.Utf8).alias("latestEventToPeriod"),
+                pl.lit(None, dtype=pl.Utf8).alias("latestEventLane"),
+            ]
+        )
+
+    if "eventCount" in summary.columns:
+        summary = summary.with_columns(pl.col("eventCount").fill_null(0))
+
+    for colName in ["latestEventType", "latestEventFromPeriod", "latestEventToPeriod", "latestEventLane"]:
+        if colName not in summary.columns:
+            summary = summary.with_columns(pl.lit(None, dtype=pl.Utf8).alias(colName))
+
+    return summary.sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "cadenceScope"])
+
+
+def structureChanges(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+    nodeType: str | None = None,
+    latestOnly: bool = True,
+    changedOnly: bool = True,
+) -> pl.DataFrame:
+    summary = structureSummary(
+        df,
+        topic=topic,
+        cadenceScope=cadenceScope,
+        includeMixed=includeMixed,
+        nodeType=nodeType,
+    )
+    if summary.is_empty():
+        return _emptyStructureChangesFrame()
+
+    allowedAnchorLanes = _allowedStructurePeriodLanes(cadenceScope)
+    latestPeriods = [
+        period
+        for period in summary["latestPeriod"].to_list()
+        if isinstance(period, str)
+        and period
+        and (allowedAnchorLanes is None or _periodLane(period) in allowedAnchorLanes)
+    ]
+    anchorPeriod = max(latestPeriods, key=periodOrderValue) if latestPeriods else None
+    anchorLane = _periodLane(anchorPeriod)
+
+    changes = summary.with_columns(
+        [
+            pl.lit(anchorPeriod, dtype=pl.Utf8).alias("anchorPeriod"),
+            pl.lit(anchorLane, dtype=pl.Utf8).alias("anchorPeriodLane"),
+            (pl.col("latestPeriod") == anchorPeriod).alias("isLatest"),
+            (pl.col("latestPeriod") != anchorPeriod).alias("isStale"),
+            pl.col("structurePattern").map_elements(_structurePatternRank, return_dtype=pl.Int64).alias("_patternRank"),
+        ]
+    )
+
+    if changedOnly:
+        changes = changes.filter(pl.col("eventCount") > 0)
+    if latestOnly:
+        changes = changes.filter(pl.col("isLatest"))
+    if changes.is_empty():
+        return _emptyStructureChangesFrame()
+
+    return (
+        changes.sort(
+            ["isLatest", "eventCount", "_patternRank", "latestPathCount", "textComparablePathKey"],
+            descending=[True, True, True, True, False],
+        )
+        .drop("_patternRank")
+        .select(_emptyStructureChangesFrame().columns)
     )
 
 

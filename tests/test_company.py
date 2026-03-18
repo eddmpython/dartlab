@@ -225,8 +225,12 @@ class TestCompany:
         structureRegistry = c.docs.sectionsStructureRegistry(topic="businessOverview")
         structureCollisions = c.docs.sectionsStructureCollisions(topic="businessOverview")
         structureEvents = c.docs.sectionsStructureEvents(topic="businessOverview")
+        structureSummary = c.docs.sectionsStructureSummary(topic="businessOverview")
+        structureChanges = c.docs.sectionsStructureChanges(topic="businessOverview", nodeType="body")
         bodyStructureRegistry = c.docs.sectionsStructureRegistry(topic="businessOverview", nodeType="body")
         bodyStructureEvents = c.docs.sectionsStructureEvents(topic="businessOverview", nodeType="body")
+        bodyStructureSummary = c.docs.sectionsStructureSummary(topic="businessOverview", nodeType="body")
+        bodyStructureChanges = c.docs.sectionsStructureChanges(topic="businessOverview", nodeType="body")
         accessorPeriods = c.docs.sections.periods()
         accessorOrdered = c.docs.sections.ordered()
         accessorCoverage = c.docs.sections.coverage(topic="businessOverview")
@@ -236,8 +240,12 @@ class TestCompany:
         accessorStructureRegistry = c.docs.sections.structureRegistry(topic="businessOverview")
         accessorStructureCollisions = c.docs.sections.structureCollisions(topic="businessOverview")
         accessorStructureEvents = c.docs.sections.structureEvents(topic="businessOverview")
+        accessorStructureSummary = c.docs.sections.structureSummary(topic="businessOverview")
+        accessorStructureChanges = c.docs.sections.structureChanges(topic="businessOverview", nodeType="body")
         accessorBodyStructureRegistry = c.docs.sections.structureRegistry(topic="businessOverview", nodeType="body")
         accessorBodyStructureEvents = c.docs.sections.structureEvents(topic="businessOverview", nodeType="body")
+        accessorBodyStructureSummary = c.docs.sections.structureSummary(topic="businessOverview", nodeType="body")
+        accessorBodyStructureChanges = c.docs.sections.structureChanges(topic="businessOverview", nodeType="body")
 
         assert isinstance(ordered, pl.DataFrame)
         assert isinstance(coverage, pl.DataFrame)
@@ -247,8 +255,12 @@ class TestCompany:
         assert isinstance(structureRegistry, pl.DataFrame)
         assert isinstance(structureCollisions, pl.DataFrame)
         assert isinstance(structureEvents, pl.DataFrame)
+        assert isinstance(structureSummary, pl.DataFrame)
+        assert isinstance(structureChanges, pl.DataFrame)
         assert isinstance(bodyStructureRegistry, pl.DataFrame)
         assert isinstance(bodyStructureEvents, pl.DataFrame)
+        assert isinstance(bodyStructureSummary, pl.DataFrame)
+        assert isinstance(bodyStructureChanges, pl.DataFrame)
         assert isinstance(accessorPeriods, list)
         assert isinstance(accessorOrdered, pl.DataFrame)
         assert isinstance(accessorCoverage, pl.DataFrame)
@@ -258,8 +270,12 @@ class TestCompany:
         assert isinstance(accessorStructureRegistry, pl.DataFrame)
         assert isinstance(accessorStructureCollisions, pl.DataFrame)
         assert isinstance(accessorStructureEvents, pl.DataFrame)
+        assert isinstance(accessorStructureSummary, pl.DataFrame)
+        assert isinstance(accessorStructureChanges, pl.DataFrame)
         assert isinstance(accessorBodyStructureRegistry, pl.DataFrame)
         assert isinstance(accessorBodyStructureEvents, pl.DataFrame)
+        assert isinstance(accessorBodyStructureSummary, pl.DataFrame)
+        assert isinstance(accessorBodyStructureChanges, pl.DataFrame)
         assert annual.height <= c.docs.sections.height
         orderedPeriodCols = [c for c in ordered.columns if c.startswith("20")]
         assert orderedPeriodCols == accessorPeriods
@@ -292,18 +308,42 @@ class TestCompany:
             "removedPaths",
             "eventType",
         }.issubset(set(structureEvents.columns))
+        assert {
+            "textComparablePathKey",
+            "structurePattern",
+            "latestPeriod",
+            "latestPeriodLane",
+            "latestPathCount",
+            "eventCount",
+            "latestEventType",
+        }.issubset(set(structureSummary.columns))
+        assert {
+            "textComparablePathKey",
+            "anchorPeriod",
+            "isLatest",
+            "isStale",
+            "latestEventType",
+        }.issubset(set(structureChanges.columns))
         assert annual.equals(accessorAnnual)
         assert registry.equals(accessorRegistry)
         assert collisions.equals(accessorCollisions)
         assert structureRegistry.equals(accessorStructureRegistry)
         assert structureCollisions.equals(accessorStructureCollisions)
         assert structureEvents.equals(accessorStructureEvents)
+        assert structureSummary.equals(accessorStructureSummary)
+        assert structureChanges.equals(accessorStructureChanges)
         assert bodyStructureRegistry.equals(accessorBodyStructureRegistry)
         assert bodyStructureEvents.equals(accessorBodyStructureEvents)
+        assert bodyStructureSummary.equals(accessorBodyStructureSummary)
+        assert bodyStructureChanges.equals(accessorBodyStructureChanges)
         assert bodyStructureRegistry.height <= structureRegistry.height
         assert bodyStructureEvents.height <= structureEvents.height
+        assert bodyStructureSummary.height <= structureSummary.height
+        assert bodyStructureChanges.height <= bodyStructureSummary.height
         assert set(bodyStructureRegistry["textNodeType"].unique().to_list()) == {"body"}
         assert set(bodyStructureEvents["textNodeType"].unique().to_list()) == {"body"}
+        assert set(bodyStructureSummary["textNodeType"].unique().to_list()) == {"body"}
+        assert set(bodyStructureChanges["textNodeType"].unique().to_list()) == {"body"}
 
     def test_show_accepts_q4_alias_for_annual_sections_period(self):
         from dartlab import Company

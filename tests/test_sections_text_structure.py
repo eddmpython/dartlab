@@ -964,6 +964,228 @@ def test_structure_events_do_not_compare_cross_cadence_transitions():
     assert events.height == 0
 
 
+def test_structure_helpers_respect_requested_cadence_lane_on_mixed_rows():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview", "businessOverview"],
+            "blockType": ["text", "text"],
+            "textStructural": [True, True],
+            "textNodeType": ["body", "body"],
+            "textLevel": [1, 1],
+            "cadenceScope": ["mixed", "mixed"],
+            "textComparablePathKey": ["매출", "매출"],
+            "textComparableParentPathKey": [None, None],
+            "textSemanticPathKey": ["매출", "매출및수주상황"],
+            "textSemanticParentPathKey": [None, None],
+            "segmentKey": ["lane1", "lane2"],
+            "sourceBlockOrder": [0, 1],
+            "latestAnnualPeriod": ["2023", "2024"],
+            "latestQuarterlyPeriod": ["2023Q1", "2024Q1"],
+            "2023Q1": ["a", None],
+            "2024Q1": [None, "a"],
+            "2023": ["a", None],
+            "2024": [None, "a"],
+        }
+    )
+
+    quarterlySummary = pipeline.structureSummary(
+        df, topic="businessOverview", cadenceScope="quarterly", nodeType="body"
+    )
+    assert quarterlySummary.height == 1
+    quarterlyRow = quarterlySummary.row(0, named=True)
+    assert quarterlyRow["latestPeriod"] == "2024Q1"
+    assert quarterlyRow["latestPeriodLane"] == "q1"
+    assert quarterlyRow["eventCount"] == 1
+    assert quarterlyRow["latestEventType"] == "variant"
+    assert quarterlyRow["latestEventLane"] == "q1"
+
+    quarterlyEvents = pipeline.structureEvents(df, topic="businessOverview", cadenceScope="quarterly", nodeType="body")
+    assert quarterlyEvents.height == 1
+    assert quarterlyEvents.item(0, "periodLane") == "q1"
+    assert quarterlyEvents.item(0, "fromPeriod") == "2023Q1"
+    assert quarterlyEvents.item(0, "toPeriod") == "2024Q1"
+
+    annualSummary = pipeline.structureSummary(df, topic="businessOverview", cadenceScope="annual", nodeType="body")
+    assert annualSummary.height == 1
+    annualRow = annualSummary.row(0, named=True)
+    assert annualRow["latestPeriod"] == "2024"
+    assert annualRow["latestPeriodLane"] == "annual"
+    assert annualRow["latestEventLane"] == "annual"
+
+
+def test_structure_summary_combines_registry_and_latest_event():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview"] * 8,
+            "blockType": ["text"] * 8,
+            "textStructural": [True] * 8,
+            "textNodeType": ["body"] * 8,
+            "textLevel": [1] * 8,
+            "cadenceScope": ["annual"] * 8,
+            "textComparablePathKey": [
+                "매출",
+                "매출",
+                "매출 > 판매경로및판매방법",
+                "매출 > 판매경로및판매방법",
+                "생산및설비 > 생산능력생산실적가동률",
+                "생산및설비 > 생산능력생산실적가동률",
+                "시장위험과위험관리",
+                "시장위험과위험관리",
+            ],
+            "textComparableParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "textSemanticPathKey": [
+                "매출",
+                "매출및수주상황",
+                "매출 > 판매경로",
+                "매출 > 판매전략",
+                "생산및설비 > 생산실적",
+                "생산및설비 > 가동률",
+                "시장위험과위험관리",
+                "위험관리및파생거래",
+            ],
+            "textSemanticParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "segmentKey": [f"sum{i}" for i in range(8)],
+            "sourceBlockOrder": list(range(8)),
+            "latestAnnualPeriod": ["2025"] * 8,
+            "latestQuarterlyPeriod": [None] * 8,
+            "2024": ["a", None, "a", None, "a", "b", "a", "b"],
+            "2025": [None, "a", "a", "b", "a", None, "a", "b"],
+        }
+    )
+
+    summary = pipeline.structureSummary(df, topic="businessOverview", nodeType="body")
+    assert summary.height == 4
+
+    variant = summary.filter(pl.col("textComparablePathKey") == "매출").row(0, named=True)
+    assert variant["structurePattern"] == "variant"
+    assert variant["latestPeriod"] == "2025"
+    assert variant["latestPeriodLane"] == "annual"
+    assert variant["latestPathCount"] == 1
+    assert variant["eventCount"] == 1
+    assert variant["latestEventType"] == "variant"
+    assert variant["latestEventToPeriod"] == "2025"
+
+    split = summary.filter(pl.col("textComparablePathKey") == "매출 > 판매경로및판매방법").row(0, named=True)
+    assert split["structurePattern"] == "split"
+    assert split["eventCount"] == 1
+    assert split["latestEventType"] == "split"
+
+    merge = summary.filter(pl.col("textComparablePathKey") == "생산및설비 > 생산능력생산실적가동률").row(0, named=True)
+    assert merge["structurePattern"] == "merge"
+    assert merge["latestEventType"] == "merge"
+
+    parallel = summary.filter(pl.col("textComparablePathKey") == "시장위험과위험관리").row(0, named=True)
+    assert parallel["structurePattern"] == "parallel"
+    assert parallel["latestEventType"] is None
+    assert parallel["eventCount"] == 0
+
+
+def test_structure_changes_focuses_latest_changed_rows():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview"] * 10,
+            "blockType": ["text"] * 10,
+            "textStructural": [True] * 10,
+            "textNodeType": ["body"] * 10,
+            "textLevel": [1] * 10,
+            "cadenceScope": ["annual"] * 10,
+            "textComparablePathKey": [
+                "매출",
+                "매출",
+                "매출 > 판매경로및판매방법",
+                "매출 > 판매경로및판매방법",
+                "생산및설비 > 생산능력생산실적가동률",
+                "생산및설비 > 생산능력생산실적가동률",
+                "시장위험과위험관리",
+                "시장위험과위험관리",
+                "안정항목",
+                "안정항목",
+            ],
+            "textComparableParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+                None,
+                None,
+            ],
+            "textSemanticPathKey": [
+                "매출",
+                "매출및수주상황",
+                "매출 > 판매경로",
+                "매출 > 판매전략",
+                "생산및설비 > 생산실적",
+                "생산및설비 > 가동률",
+                "시장위험과위험관리",
+                "위험관리및파생거래",
+                "안정항목",
+                "안정항목",
+            ],
+            "textSemanticParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+                None,
+                None,
+            ],
+            "segmentKey": [f"chg{i}" for i in range(10)],
+            "sourceBlockOrder": list(range(10)),
+            "latestAnnualPeriod": ["2025"] * 10,
+            "latestQuarterlyPeriod": [None] * 10,
+            "2024": ["a", None, "a", None, "a", "b", "a", "b", "x", "x"],
+            "2025": [None, "a", "a", "b", "a", None, "a", "b", "x", "x"],
+        }
+    )
+
+    changes = pipeline.structureChanges(df, topic="businessOverview", nodeType="body")
+    assert changes.height == 3
+    assert changes["textComparablePathKey"].to_list() == [
+        "매출 > 판매경로및판매방법",
+        "생산및설비 > 생산능력생산실적가동률",
+        "매출",
+    ]
+    assert changes["isLatest"].to_list() == [True, True, True]
+    assert changes["anchorPeriod"].to_list() == ["2025", "2025", "2025"]
+    assert changes["latestEventType"].to_list() == ["split", "merge", "variant"]
+
+    allLatest = pipeline.structureChanges(df, topic="businessOverview", nodeType="body", changedOnly=False)
+    assert allLatest.height == 5
+    assert allLatest["textComparablePathKey"].to_list() == [
+        "매출 > 판매경로및판매방법",
+        "생산및설비 > 생산능력생산실적가동률",
+        "매출",
+        "시장위험과위험관리",
+        "안정항목",
+    ]
+
+
 def test_sections_adds_cadence_scope_metadata(monkeypatch):
     def fake_map_section_title(_title: str) -> str:
         return "businessOverview"

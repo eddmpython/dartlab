@@ -46,9 +46,14 @@
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`는 `textSemanticPathKey` 기준으로 row가 흡수한 raw wording drift를 진단하는 공식 helper다.
 - `structureRegistry(df, ...)` / `structureCollisions(df, ...)`는 `textComparablePathKey` 기준으로 moved/split/merge/parallel 같은 구조 이벤트를 진단하는 공식 helper다.
 - `structureEvents(df, ...)`는 comparable slot의 period 전이(`fromPeriod -> toPeriod`)를 직접 event row로 내리는 공식 helper다.
+- `structureSummary(df, ...)`는 latest 구조 상태를 한 줄로 요약하는 공식 helper다.
+- `structureChanges(df, ...)`는 latest 구조 변화만 압축해서 보여주는 공식 helper다.
   - `nodeType='body'`를 주면 heading anchor를 제외하고 본문 이벤트만 본다.
   - `periodLane` 기준으로 같은 report-kind 안에서만 비교한다. (`annual`, `q1`, `q2`, `q3`)
   - 즉 `Q3 -> annual -> Q1` 같은 교차 주기 전이는 event로 만들지 않는다.
+  - `cadenceScope='annual'/'quarterly'`로 조회하면 `mixed` row를 포함하더라도 해당 lane period만 activity에 반영한다.
+    - `quarterly` 조회에 annual lane이 섞이면 안 된다.
+    - `annual` 조회에 q1/q2/q3 lane이 섞이면 안 된다.
   - 핵심 진단 메타:
     - `activePeriods`
     - `activePathCounts`
@@ -70,11 +75,26 @@
     - `split`
     - `merge`
     - `parallel_change`
+  - `structureSummary()` 핵심 컬럼:
+    - `latestPeriod`
+    - `latestPeriodLane`
+    - `latestPathCount`
+    - `eventCount`
+    - `latestEventType`
+    - `latestEventFromPeriod`
+    - `latestEventToPeriod`
+  - `structureChanges()` 추가 컬럼:
+    - `anchorPeriod`
+    - `anchorPeriodLane`
+    - `isLatest`
+    - `isStale`
+  - 기본 `changedOnly=True`는 `eventCount > 0`인 최근 구조 이벤트 row만 남긴다.
+    - persistent hotspot을 같이 보려면 `changedOnly=False`를 쓰거나 `structureSummary()` / `structureCollisions()`를 본다.
 - `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
   - DataFrame 메서드는 그대로 위임된다.
-  - 같은 경로에서 `.raw`, `.periods()`, `.ordered()`, `.coverage()`, `.cadence(...)`, `.semanticRegistry(...)`, `.semanticCollisions(...)`, `.structureRegistry(...)`, `.structureCollisions(...)`, `.structureEvents(...)`를 호출한다.
+  - 같은 경로에서 `.raw`, `.periods()`, `.ordered()`, `.coverage()`, `.cadence(...)`, `.semanticRegistry(...)`, `.semanticCollisions(...)`, `.structureRegistry(...)`, `.structureCollisions(...)`, `.structureEvents(...)`, `.structureSummary(...)`, `.structureChanges(...)`를 호출한다.
   - `periods()/ordered()/coverage()`는 사용자-facing projection이며 최신우선 + 연간 `Q4` alias를 지원한다.
-  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()`는 호환용 thin wrapper다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()` / `c.docs.sectionsStructureSummary()` / `c.docs.sectionsStructureChanges()`는 호환용 thin wrapper다.
 - 장 제목 content는 source-of-truth로 보존한다.
   - 소항목이 있어도 장 제목 text block을 먼저 등록한다.
   - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.

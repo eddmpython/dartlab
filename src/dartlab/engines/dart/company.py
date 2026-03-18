@@ -1459,6 +1459,40 @@ class _SectionsSource:
             nodeType=nodeType,
         )
 
+    def structureSummary(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsStructureSummary(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            nodeType=nodeType,
+        )
+
+    def structureChanges(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+        latestOnly: bool = True,
+        changedOnly: bool = True,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsStructureChanges(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            nodeType=nodeType,
+            latestOnly=latestOnly,
+            changedOnly=changedOnly,
+        )
+
     def __getattr__(self, name: str) -> Any:
         frame = self.raw
         if frame is None:
@@ -1482,7 +1516,7 @@ class _SectionsSource:
         return (
             "SectionsSource("
             "shape="
-            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents()]"
+            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents(), structureSummary(), structureChanges()]"
             ")"
         )
 
@@ -1612,6 +1646,50 @@ class _DocsAccessor:
                 includeMixed=includeMixed,
                 changedOnly=changedOnly,
                 nodeType=nodeType,
+            )
+        )
+
+    def sectionsStructureSummary(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.structureSummary(
+                topic=topic,
+                cadenceScope=cadenceScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+            )
+        )
+
+    def sectionsStructureChanges(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+        latestOnly: bool = True,
+        changedOnly: bool = True,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.structureChanges(
+                topic=topic,
+                cadenceScope=cadenceScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+                latestOnly=latestOnly,
+                changedOnly=changedOnly,
             )
         )
 
@@ -2481,6 +2559,83 @@ class Company:
             includeMixed=includeMixed,
             changedOnly=changedOnly,
             nodeType=nodeType,
+        )
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsStructureSummary(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
+        topicKey = topic or "*"
+        cacheKey = (
+            f"_docsSectionsStructureSummary:{topicKey}:{normalizedScope}:{int(includeMixed)}:{normalizedNodeType}"
+        )
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import structureSummary
+
+        result = structureSummary(
+            sectionsFrame,
+            topic=topic,
+            cadenceScope=normalizedScope,
+            includeMixed=includeMixed,
+            nodeType=nodeType,
+        )
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsStructureChanges(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+        latestOnly: bool = True,
+        changedOnly: bool = True,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
+        topicKey = topic or "*"
+        cacheKey = (
+            f"_docsSectionsStructureChanges:{topicKey}:{normalizedScope}:{int(includeMixed)}:{normalizedNodeType}:"
+            f"{int(latestOnly)}:{int(changedOnly)}"
+        )
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import structureChanges
+
+        result = structureChanges(
+            sectionsFrame,
+            topic=topic,
+            cadenceScope=normalizedScope,
+            includeMixed=includeMixed,
+            nodeType=nodeType,
+            latestOnly=latestOnly,
+            changedOnly=changedOnly,
         )
         self._cache[cacheKey] = result
         return result
