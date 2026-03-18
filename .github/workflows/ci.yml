@@ -50,7 +50,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.11.4
 
       - name: Lint check
         run: ruff check src/dartlab/ tests/
@@ -66,7 +66,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.11.4
 
       - name: Format check
         run: ruff format --check src/dartlab/ tests/
