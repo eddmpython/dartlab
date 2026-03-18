@@ -1404,8 +1404,7 @@ class _SectionsSource:
         if frame is None:
             return "SectionsSource(missing)"
         return (
-            f"SectionsSource(shape={frame.shape}, "
-            "methods=[raw, cadence(), semanticRegistry(), semanticCollisions()])"
+            f"SectionsSource(shape={frame.shape}, methods=[raw, cadence(), semanticRegistry(), semanticCollisions()])"
         )
 
 
