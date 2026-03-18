@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 import polars as pl
 
+from dartlab.engines.ai.coding_runtime import get_default_coding_runtime
 from dartlab.engines.ai.tool_runtime import (
     ToolRuntime,
     create_tool_runtime,
@@ -152,6 +153,9 @@ def _build_runtime_capabilities_markdown(company: Any | None = None) -> str:
     registry_counts = {category: len(getEntries(category=category)) for category in getCategories()}
     tool_names = [schema.get("function", {}).get("name", "") for schema in get_tool_schemas()]
     codex_info = inspect_codex_cli()
+    coding_runtime = get_default_coding_runtime()
+    coding_backends = coding_runtime.inspect_backends()
+    coding_backend_labels = ", ".join(f"`{item['name']}`" for item in coding_backends) or "(없음)"
     codex_commands = ", ".join(f"`{name}`" for name in codex_info.get("commands", [])[:8]) or "(미확인)"
     sandbox_modes = ", ".join(f"`{mode}`" for mode in codex_info.get("sandboxModes", [])) or "(미확인)"
 
@@ -180,7 +184,7 @@ def _build_runtime_capabilities_markdown(company: Any | None = None) -> str:
         "- OpenDart/OpenEdgar 공개 API를 대화 도구로 직접 호출",
         "- Excel 내보내기, 템플릿 생성/조회/재사용",
         "- 로컬 데이터 현황 확인, 데이터 다운로드 트리거",
-        "- Codex CLI 브리지로 실제 코드 작업, 수정, 리뷰 요청 전달",
+        "- coding runtime을 통해 실제 코드 작업, 수정, 리뷰 요청 전달",
         "",
         "## EDGAR에서 더 받을 수 있는 데이터",
         '- `Company("AAPL")` 경로로 저장된 EDGAR docs/finance를 바로 읽을 수 있음',
@@ -197,11 +201,13 @@ def _build_runtime_capabilities_markdown(company: Any | None = None) -> str:
         "## GPT / Codex 연결 범위",
         "- OpenAI, ChatGPT, Codex CLI, Ollama 등을 채팅 백엔드로 연결 가능",
         "- 현재 UI에서는 코드 설명, 코드 초안, 리팩터링 제안 같은 텍스트 기반 코딩 보조는 가능",
+        f"- 등록된 coding backend: {coding_backend_labels}",
         f"- Codex CLI 상태: {'설치됨' if codex_info.get('installed') else '미설치'}"
         + (f" / {codex_info['version']}" if codex_info.get("version") else ""),
         f"- Codex CLI 명령 자동 인식: {codex_commands}",
         f"- Codex sandbox 자동 인식: {sandbox_modes}",
         "- `codex` provider는 코드/파일 수정 의도가 보이면 `workspace-write`를 우선 사용하고, 일반 질의는 `read-only`를 유지",
+        "- `run_coding_task` 도구가 coding runtime의 표준 진입점이며, 현재 기본 backend는 `codex`",
         "- `run_codex_task` 도구를 통해 다른 provider에서도 Codex CLI에 코드 작업을 위임할 수 있음",
         "- `claude-code` provider는 OAuth 지원 전까지 공개 surface에서 제공하지 않음",
         "- Codex CLI help/config가 바뀌면 상태/설명 경로가 다시 검사되어 자동 반영됨",
@@ -248,6 +254,25 @@ def build_tool_runtime(company: Any | None = None, *, name: str = "session") -> 
     runtime = create_tool_runtime(name=name)
     register_defaults(company, runtime=runtime)
     return runtime
+
+
+def _build_coding_runtime_markdown() -> str:
+    """Summarize currently registered coding backends."""
+    runtime = get_default_coding_runtime()
+    lines = [f"# Coding Runtime ({runtime.name})"]
+    for backend in runtime.inspect_backends():
+        lines.append(f"## `{backend['name']}`")
+        lines.append(f"- label: {backend.get('label', backend['name'])}")
+        lines.append(f"- available: {backend.get('available')}")
+        if backend.get("version"):
+            lines.append(f"- version: {backend['version']}")
+        if backend.get("configuredModel"):
+            lines.append(f"- configuredModel: {backend['configuredModel']}")
+        sandbox_modes = backend.get("sandboxModes") or []
+        if sandbox_modes:
+            lines.append(f"- sandboxModes: {', '.join(f'`{mode}`' for mode in sandbox_modes)}")
+        lines.append(f"- description: {backend.get('description', '')}")
+    return "\n".join(lines)
 
 
 def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None = None) -> ToolRuntime:
@@ -332,38 +357,99 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         },
     )
 
+    def get_coding_runtime_status() -> str:
+        return _build_coding_runtime_markdown()
+
+    register_tool(
+        "get_coding_runtime_status",
+        get_coding_runtime_status,
+        "현재 등록된 coding backend와 가용 상태를 조회합니다. 아직 provider와 분리된 코드 작업 런타임의 상태를 확인할 때 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    def run_coding_task(
+        prompt: str,
+        backend: str = "codex",
+        sandbox: str = "workspace-write",
+        model: str = "",
+        timeout_seconds: int = 300,
+    ) -> str:
+        runtime = get_default_coding_runtime()
+        try:
+            result = runtime.run_task(
+                prompt,
+                backend=backend or None,
+                sandbox=sandbox,
+                model=model or None,
+                timeout_seconds=timeout_seconds,
+            )
+        except KeyError as e:
+            return str(e)
+        except (FileNotFoundError, PermissionError, RuntimeError) as e:
+            return str(e)
+
+        lines = [
+            "## Coding 작업 결과",
+            f"- backend: {result.backend}",
+            f"- sandbox: {result.sandbox}",
+            f"- model: {result.model}",
+        ]
+        if result.usage:
+            lines.append(f"- tokens: {result.usage.get('total_tokens', '?')}")
+        lines.extend(["", result.answer])
+        return "\n".join(lines)
+
+    register_tool(
+        "run_coding_task",
+        run_coding_task,
+        "표준 coding runtime을 통해 워크스페이스 코드 작업을 실행합니다. "
+        "backend를 바꾸면 미래에 Codex 외 다른 coding backend도 같은 인터페이스로 호출할 수 있습니다.",
+        {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "coding backend에 전달할 코드 작업 지시문",
+                },
+                "backend": {
+                    "type": "string",
+                    "description": "사용할 coding backend 이름. 현재 기본값은 codex",
+                    "default": "codex",
+                },
+                "sandbox": {
+                    "type": "string",
+                    "description": "read-only, workspace-write, danger-full-access 중 하나",
+                    "default": "workspace-write",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "backend에 전달할 모델명. 비우면 backend 기본값 사용",
+                    "default": "",
+                },
+                "timeout_seconds": {
+                    "type": "integer",
+                    "description": "최대 대기 시간(초)",
+                    "default": 300,
+                },
+            },
+            "required": ["prompt"],
+        },
+    )
+
     def run_codex_task(
         prompt: str,
         sandbox: str = "workspace-write",
         model: str = "",
         timeout_seconds: int = 300,
     ) -> str:
-        from dartlab.engines.ai.codex_cli import inspect_codex_cli, run_codex_exec
-
-        info = inspect_codex_cli()
-        if not info.get("installed"):
-            return "Codex CLI가 설치되어 있지 않습니다. 먼저 `codex --version`이 동작해야 합니다."
-
-        sandbox_modes = set(info.get("sandboxModes") or [])
-        selected_sandbox = sandbox
-        if sandbox_modes and sandbox not in sandbox_modes:
-            selected_sandbox = "workspace-write" if "workspace-write" in sandbox_modes else "read-only"
-
-        answer, usage = run_codex_exec(
+        result = run_coding_task(
             prompt,
-            model=model or None,
-            sandbox=selected_sandbox,
-            timeout=timeout_seconds,
+            backend="codex",
+            sandbox=sandbox,
+            model=model,
+            timeout_seconds=timeout_seconds,
         )
-        lines = [
-            "## Codex 작업 결과",
-            f"- sandbox: {selected_sandbox}",
-            f"- model: {model or info.get('configuredModel') or 'CLI default'}",
-        ]
-        if usage:
-            lines.append(f"- tokens: {usage.get('total_tokens', '?')}")
-        lines.extend(["", answer])
-        return "\n".join(lines)
+        return result.replace("## Coding 작업 결과", "## Codex 작업 결과", 1)
 
     register_tool(
         "run_codex_task",

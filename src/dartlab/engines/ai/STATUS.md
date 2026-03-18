@@ -24,7 +24,9 @@
 
 - 도구 등록/실행은 `tool_runtime.py`의 `ToolRuntime`으로 분리되기 시작했다.
 - `tools_registry.py`는 현재 호환 래퍼 역할을 하며, 세션별/에이전트별 isolated runtime 생성이 가능하다.
-- 다음 단계는 coding backend(Codex 등)를 provider가 아니라 runtime 뒤에 붙이는 것이다.
+- coding executor는 `coding_runtime.py`로 분리되기 시작했고, backend registry를 통해 관리한다.
+- 표준 코드 작업 진입점은 `run_coding_task`이며 `run_codex_task`는 Codex compatibility alias로 유지한다.
+- 다음 단계는 Codex 외 backend를 이 runtime 뒤에 추가하되, 공개 provider surface와는 분리하는 것이다.
 
 ## ChatGPT OAuth Provider — 핵심 리스크
 

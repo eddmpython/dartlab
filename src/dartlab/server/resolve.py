@@ -332,6 +332,21 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
             suggestions = _search_suggestions(req.company)
             return ResolveResult(not_found=True, suggestions=suggestions)
 
+    if req.viewContext and req.viewContext.company:
+        view_company = req.viewContext.company
+        identifiers = [
+            view_company.stockCode,
+            view_company.corpName,
+            view_company.company,
+        ]
+        for identifier in identifiers:
+            if not identifier:
+                continue
+            try:
+                return ResolveResult(company=Company(identifier))
+            except (ValueError, OSError):
+                continue
+
     import re
 
     q = req.question

@@ -140,6 +140,37 @@
 		return name === "chatgpt" ? "codex" : name;
 	}
 
+	function apiKeyStorageKey(provider) {
+		return `dartlab-api-key:${normalizeProvider(provider)}`;
+	}
+
+	function getSessionApiKey(provider) {
+		if (typeof sessionStorage === "undefined" || !provider) return "";
+		return sessionStorage.getItem(apiKeyStorageKey(provider)) || "";
+	}
+
+	function setSessionApiKey(provider, key) {
+		if (typeof sessionStorage === "undefined" || !provider) return;
+		if (key) sessionStorage.setItem(apiKeyStorageKey(provider), key);
+		else sessionStorage.removeItem(apiKeyStorageKey(provider));
+	}
+
+	async function validateProvider(provider, model = null, apiKey = null) {
+		const result = await configure(provider, model, apiKey);
+		if (result?.provider) {
+			const name = normalizeProvider(result.provider);
+			providers = {
+				...providers,
+				[name]: {
+					...(providers[name] || {}),
+					available: !!result.available,
+					model: result.model || providers[name]?.model || model || null,
+				},
+			};
+		}
+		return result;
+	}
+
 	async function loadStatus() {
 		statusLoading = true;
 		try {
@@ -151,11 +182,12 @@
 
 			const savedProvider = normalizeProvider(localStorage.getItem("dartlab-provider"));
 			const savedModel = localStorage.getItem("dartlab-model");
+			const savedKey = getSessionApiKey(savedProvider);
 
 			if (savedProvider && providers[savedProvider]?.available) {
 				activeProvider = savedProvider;
 				expandedProvider = savedProvider;
-				await configure(savedProvider, savedModel);
+				apiKeyInput = savedKey;
 				await loadModelsFor(savedProvider);
 				const models = providerModels[savedProvider] || [];
 				if (savedModel && models.includes(savedModel)) {
@@ -172,6 +204,12 @@
 			if (savedProvider && providers[savedProvider]) {
 				activeProvider = savedProvider;
 				expandedProvider = savedProvider;
+				apiKeyInput = savedKey;
+				if (savedKey) {
+					try {
+						await validateProvider(savedProvider, savedModel, savedKey);
+					} catch {}
+				}
 				await loadModelsFor(savedProvider);
 				const models = providerModels[savedProvider] || [];
 				availableModels = models;
@@ -188,7 +226,7 @@
 				if (providers[name]?.available) {
 					activeProvider = name;
 					expandedProvider = name;
-					await configure(name);
+					apiKeyInput = getSessionApiKey(name);
 					await loadModelsFor(name);
 					const models = providerModels[name] || [];
 					availableModels = models;
@@ -220,11 +258,8 @@
 		expandedProvider = name;
 		localStorage.setItem("dartlab-provider", name);
 		localStorage.removeItem("dartlab-model");
-		apiKeyInput = "";
+		apiKeyInput = getSessionApiKey(name);
 		apiKeyResult = null;
-		try {
-			await configure(name);
-		} catch {}
 		// 항상 모델 목록 로드 (API 키 없어도 fallback 제공)
 		await loadModelsFor(name);
 		const models = providerModels[name] || [];
@@ -232,14 +267,19 @@
 		if (models.length > 0) {
 			activeModel = providers[name]?.model || models[0];
 			localStorage.setItem("dartlab-model", activeModel);
-			try { await configure(name, activeModel); } catch {}
+			if (apiKeyInput) {
+				try { await validateProvider(name, activeModel, apiKeyInput); } catch {}
+			}
 		}
 	}
 
 	async function selectModel(model) {
 		activeModel = model;
 		localStorage.setItem("dartlab-model", model);
-		try { await configure(normalizeProvider(activeProvider), model); } catch {}
+		const key = getSessionApiKey(activeProvider);
+		if (key) {
+			try { await validateProvider(normalizeProvider(activeProvider), model, key); } catch {}
+		}
 	}
 
 	function toggleExpandProvider(name) {
@@ -259,18 +299,20 @@
 		apiKeyVerifying = true;
 		apiKeyResult = null;
 		try {
-			const result = await configure(normalizeProvider(activeProvider), activeModel, key);
+			const result = await validateProvider(normalizeProvider(activeProvider), activeModel, key);
 			if (result.available) {
+				setSessionApiKey(activeProvider, key);
 				apiKeyResult = "success";
-				providers[activeProvider] = { ...providers[activeProvider], available: true, model: result.model };
 				if (!activeModel && result.model) activeModel = result.model;
 				await loadModelsFor(activeProvider);
 				availableModels = providerModels[activeProvider] || [];
 				showToast("API 키 인증 성공", "success");
 			} else {
+				setSessionApiKey(activeProvider, "");
 				apiKeyResult = "error";
 			}
 		} catch {
+			setSessionApiKey(activeProvider, "");
 			apiKeyResult = "error";
 		}
 		apiKeyVerifying = false;
@@ -449,6 +491,12 @@
 							company: m.meta.company || m.company,
 							stockCode: m.meta.stockCode,
 							modules: m.meta.includedModules || null,
+							market: m.meta.market || null,
+							topic: m.meta.topic || null,
+							topicLabel: m.meta.topicLabel || null,
+							dialogueMode: m.meta.dialogueMode || null,
+							questionTypes: m.meta.questionTypes || null,
+							userGoal: m.meta.userGoal || null,
 						};
 						lastAnalyzedCode = m.meta.stockCode;
 					}
@@ -459,24 +507,16 @@
 
 		const companyHint = workspace.selectedCompany?.stockCode || lastAnalyzedCode || getLastStockCode();
 
-		// 맥락 인식: 사용자가 보고 있는 것을 AI에게 전달
 		const viewContext = workspace.getViewContext();
-		let enhancedQuestion = question;
-		if (viewContext?.type === "viewer" && viewContext.company) {
-			let ctx = `\n[사용자가 현재 ${viewContext.company.corpName}(${viewContext.company.stockCode}) 공시를 보고 있습니다`;
-			if (viewContext.topic) {
-				ctx += ` — 현재 섹션: ${viewContext.topicLabel || viewContext.topic}(${viewContext.topic})`;
-			}
-			ctx += `]`;
-			enhancedQuestion += ctx;
-		} else if (viewContext?.type === "data" && viewContext.data?.label) {
-			enhancedQuestion += `\n[사용자가 현재 "${viewContext.data.label}" 데이터를 보고 있습니다]`;
-		}
 
 		function isStale() { return store.activeId !== streamConvId; }
 
+		const requestOptions = { provider: activeProvider, model: activeModel, viewContext };
+		const sessionKey = getSessionApiKey(activeProvider);
+		if (sessionKey) requestOptions.api_key = sessionKey;
+
 		const stream = askStream(
-			companyHint, enhancedQuestion, { provider: activeProvider, model: activeModel },
+			companyHint, question, requestOptions,
 			{
 				onMeta(meta) {
 					if (isStale()) return;

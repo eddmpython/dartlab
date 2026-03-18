@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
+import polars as pl
+
 import dartlab
 from dartlab import Company
 
+from .dialogue import ConversationState, build_dialogue_policy
 from .models import HistoryMessage
 
 _MAX_HISTORY_TURNS = 10
+_MAX_HISTORY_CHARS = 12000
+_MAX_HISTORY_MESSAGE_CHARS = 1800
 
 OLLAMA_MODEL_GUIDE: list[dict[str, str]] = [
     {
@@ -35,7 +40,7 @@ OLLAMA_MODEL_GUIDE: list[dict[str, str]] = [
 ]
 
 
-def build_dynamic_chat_prompt() -> str:
+def build_dynamic_chat_prompt(state: ConversationState | None = None) -> str:
     """실시간 데이터 현황을 포함한 채팅 시스템 프롬프트 생성."""
     from dartlab.core.dataLoader import _dataDir
 
@@ -55,7 +60,7 @@ def build_dynamic_chat_prompt() -> str:
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
 
-    return (
+    prompt = (
         "당신은 DartLab의 금융 분석 AI 어시스턴트입니다. "
         "한국 DART 전자공시와 미국 SEC EDGAR 데이터를 함께 다루며, "
         "사용자가 지금 무엇을 할 수 있는지 먼저 설명하고 다음 행동까지 제안합니다.\n\n"
@@ -94,6 +99,9 @@ def build_dynamic_chat_prompt() -> str:
         "- 숫자만 나열하지 말고 해석에 집중하세요.\n"
         "- 특정 종목을 분석하려면 종목명이나 종목코드를 알려달라고 안내하세요."
     )
+    if state is not None:
+        prompt += "\n\n" + build_dialogue_policy(state)
+    return prompt
 
 
 def build_history_messages(history: list[HistoryMessage] | None) -> list[dict[str, str]]:
@@ -101,17 +109,112 @@ def build_history_messages(history: list[HistoryMessage] | None) -> list[dict[st
     if not history:
         return []
     trimmed = history[-(_MAX_HISTORY_TURNS * 2) :]
-    msgs = []
+    prepared: list[dict[str, str]] = []
     for h in trimmed:
         role = h.role if h.role in ("user", "assistant") else "user"
         text = h.text.strip()
         if not text:
             continue
-        if role == "assistant" and h.meta and h.meta.stockCode:
-            mod_str = ", ".join(h.meta.modules) if h.meta.modules else "N/A"
-            text = f"[이전 분석: {h.meta.company or '?'} ({h.meta.stockCode}), 사용 모듈: {mod_str}]\n{text}"
-        msgs.append({"role": role, "content": text})
-    return msgs
+        if role == "assistant" and h.meta:
+            summary_parts = []
+            if h.meta.company or h.meta.stockCode:
+                company_text = h.meta.company or "?"
+                if h.meta.stockCode:
+                    company_text += f" ({h.meta.stockCode})"
+                summary_parts.append(company_text)
+            if h.meta.market:
+                summary_parts.append(f"시장: {h.meta.market}")
+            if h.meta.topicLabel or h.meta.topic:
+                summary_parts.append(f"주제: {h.meta.topicLabel or h.meta.topic}")
+            if h.meta.dialogueMode:
+                summary_parts.append(f"모드: {h.meta.dialogueMode}")
+            if h.meta.userGoal:
+                summary_parts.append(f"목표: {h.meta.userGoal}")
+            if h.meta.modules:
+                summary_parts.append(f"모듈: {', '.join(h.meta.modules)}")
+            if summary_parts:
+                text = f"[이전 대화 상태: {' | '.join(summary_parts)}]\n{text}"
+        prepared.append({"role": role, "content": _compress_history_text(text)})
+
+    total = 0
+    selected: list[dict[str, str]] = []
+    for item in reversed(prepared):
+        content_len = len(item["content"])
+        if selected and total + content_len > _MAX_HISTORY_CHARS:
+            break
+        selected.append(item)
+        total += content_len
+    return list(reversed(selected))
+
+
+def _compress_history_text(text: str) -> str:
+    """길어진 과거 대화를 앞뒤 핵심만 남기도록 압축."""
+    if len(text) <= _MAX_HISTORY_MESSAGE_CHARS:
+        return text
+    head = int(_MAX_HISTORY_MESSAGE_CHARS * 0.65)
+    tail = _MAX_HISTORY_MESSAGE_CHARS - head
+    return text[:head].rstrip() + "\n...\n" + text[-tail:].lstrip()
+
+
+def _stringify_focus_value(value: Any, *, max_rows: int = 12, max_chars: int = 2400) -> str:
+    from dartlab.engines.ai.context import df_to_markdown
+
+    if value is None:
+        return "(데이터 없음)"
+    if isinstance(value, pl.DataFrame):
+        return df_to_markdown(value, max_rows=max_rows, compact=True)
+    text = str(value)
+    return text if len(text) <= max_chars else text[:max_chars] + "\n... (truncated)"
+
+
+def build_focus_context(company: Company | Any, state: ConversationState) -> str | None:
+    """현재 viewer/topic 맥락을 LLM 입력용 근거 블록으로 승격."""
+    if not state.topic or not hasattr(company, "show"):
+        return None
+
+    lines = ["## 현재 사용자가 보고 있는 섹션"]
+    lines.append(f"- topic: `{state.topic}`")
+    if state.topic_label:
+        lines.append(f"- label: {state.topic_label}")
+    if state.company and state.stock_code:
+        lines.append(f"- company: {state.company} ({state.stock_code})")
+
+    try:
+        overview = company.show(state.topic)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        overview = None
+
+    if isinstance(overview, pl.DataFrame) and overview.height > 0:
+        lines.append("")
+        lines.append("### 블록 목차")
+        lines.append(_stringify_focus_value(overview, max_rows=6))
+
+        block_col = (
+            "block" if "block" in overview.columns else "blockOrder" if "blockOrder" in overview.columns else None
+        )
+        if block_col:
+            first_block = overview.row(0, named=True).get(block_col)
+            if isinstance(first_block, int):
+                try:
+                    block_value = company.show(state.topic, first_block)
+                except (AttributeError, KeyError, TypeError, ValueError):
+                    block_value = None
+                if block_value is not None:
+                    lines.append("")
+                    lines.append(f"### 현재 섹션 대표 block={first_block}")
+                    lines.append(_stringify_focus_value(block_value))
+
+    if hasattr(company, "trace"):
+        try:
+            trace = company.trace(state.topic)
+        except (AttributeError, KeyError, TypeError, ValueError):
+            trace = None
+        if trace:
+            lines.append("")
+            lines.append("### source trace")
+            lines.append(_stringify_focus_value(trace, max_chars=1600))
+
+    return "\n".join(lines)
 
 
 def extract_last_stock_code(history: list[HistoryMessage] | None) -> str | None:

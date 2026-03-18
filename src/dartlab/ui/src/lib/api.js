@@ -11,7 +11,7 @@ export async function fetchStatus() {
 	return res.json();
 }
 
-/** LLM provider 설정 (api_key, base_url 지원) */
+/** LLM provider 검증 (서버 전역 상태는 변경하지 않음) */
 export async function configure(provider, model = null, apiKey = null) {
 	const body = { provider };
 	if (model) body.model = model;

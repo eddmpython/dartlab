@@ -6,6 +6,7 @@
 
 from unittest.mock import MagicMock
 
+import polars as pl
 import pytest
 
 starlette = pytest.importorskip("starlette", reason="starlette not installed (optional [ai] dependency)")
@@ -88,6 +89,29 @@ class TestConfigure:
         )
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
+
+    def test_configure_does_not_mutate_global_config(self, client, monkeypatch):
+        from dartlab.engines.ai import configure as configure_global, get_config
+
+        class DummyProvider:
+            def __init__(self, config):
+                self.resolved_model = config.model or "dummy-model"
+
+            def check_available(self):
+                return True
+
+        monkeypatch.setattr("dartlab.engines.ai.providers.create_provider", lambda config: DummyProvider(config))
+        configure_global(provider="ollama", model="qwen3")
+        before = get_config()
+
+        resp = client.post(
+            "/api/configure",
+            json={"provider": "openai", "model": "gpt-5.4", "api_key": "sk-test"},
+        )
+        assert resp.status_code == 200
+        after = get_config()
+        assert after.provider == before.provider
+        assert after.model == before.model
 
 
 class TestModels:
@@ -440,6 +464,35 @@ class TestAsk:
         if resp.status_code == 200:
             assert "answer" in resp.json()
 
+    def test_ask_passes_request_api_key(self, client, monkeypatch):
+        captured = {}
+
+        class DummyCompany:
+            corpName = "삼성전자"
+            stockCode = "005930"
+
+            def ask(self, question, **kwargs):
+                captured["question"] = question
+                captured["kwargs"] = kwargs
+                return "ok"
+
+        monkeypatch.setattr("dartlab.server.resolve.Company", lambda identifier: DummyCompany())
+        resp = client.post(
+            "/api/ask",
+            json={
+                "company": "삼성전자",
+                "question": "매출 알려줘",
+                "stream": False,
+                "provider": "openai",
+                "model": "gpt-5.4",
+                "api_key": "sk-test",
+            },
+        )
+        assert resp.status_code == 200
+        assert captured["kwargs"]["provider"] == "openai"
+        assert captured["kwargs"]["model"] == "gpt-5.4"
+        assert captured["kwargs"]["api_key"] == "sk-test"
+
 
 # ── 유틸리티/로직 단위 테스트 ──
 
@@ -492,6 +545,30 @@ class TestResolveUtils:
         assert needs_match_verification("현대차 분석해줘", "현대차증권")
         assert not needs_match_verification("삼전 분석해줘", "삼성전자")
 
+    def test_try_resolve_company_uses_view_context(self, monkeypatch):
+        from dartlab.server.models import AskRequest
+        from dartlab.server.resolve import try_resolve_company
+
+        class DummyCompany:
+            def __init__(self, identifier):
+                self.stockCode = "005930" if identifier == "005930" else identifier
+                self.corpName = "삼성전자"
+
+        monkeypatch.setattr("dartlab.server.resolve.Company", DummyCompany)
+        result = try_resolve_company(
+            AskRequest(
+                question="이 부분 왜 이래?",
+                viewContext={
+                    "type": "viewer",
+                    "company": {"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
+                    "topic": "dividend",
+                    "topicLabel": "배당",
+                },
+            )
+        )
+        assert result.company is not None
+        assert result.company.stockCode == "005930"
+
 
 class TestChatUtils:
     def test_build_history_empty(self):
@@ -522,13 +599,24 @@ class TestChatUtils:
                 HistoryMessage(
                     role="assistant",
                     text="분석 결과",
-                    meta=HistoryMeta(company="삼성전자", stockCode="005930", modules=["IS", "BS"]),
+                    meta=HistoryMeta(
+                        company="삼성전자",
+                        stockCode="005930",
+                        modules=["IS", "BS"],
+                        market="dart",
+                        topic="dividend",
+                        topicLabel="배당",
+                        dialogueMode="company_analysis",
+                        userGoal="현재 회사의 구체적 분석",
+                    ),
                 ),
             ]
         )
         assert len(msgs) == 1
         assert "삼성전자" in msgs[0]["content"]
         assert "005930" in msgs[0]["content"]
+        assert "배당" in msgs[0]["content"]
+        assert "company_analysis" in msgs[0]["content"]
 
     def test_extract_last_stock_code(self):
         from dartlab.server.chat import extract_last_stock_code
@@ -550,11 +638,76 @@ class TestChatUtils:
 
     def test_build_dynamic_chat_prompt(self):
         from dartlab.server.chat import build_dynamic_chat_prompt
+        from dartlab.server.dialogue import build_conversation_state
+        from dartlab.server.models import ViewContext
 
         prompt = build_dynamic_chat_prompt()
         assert "DartLab" in prompt
         assert isinstance(prompt, str)
         assert len(prompt) > 100
+
+        state = build_conversation_state(
+            "이 부분 왜 이래?",
+            view_context=ViewContext(
+                type="viewer",
+                company={"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
+                topic="dividend",
+                topicLabel="배당",
+            ),
+        )
+        prompt_with_state = build_dynamic_chat_prompt(state)
+        assert "현재 대화 상태" in prompt_with_state
+        assert "배당" in prompt_with_state
+
+    def test_build_history_messages_compresses_long_text(self):
+        from dartlab.server.chat import build_history_messages
+        from dartlab.server.models import HistoryMessage
+
+        long_text = "가" * 4000
+        msgs = build_history_messages([HistoryMessage(role="assistant", text=long_text)])
+        assert len(msgs) == 1
+        assert len(msgs[0]["content"]) < 2500
+        assert "..." in msgs[0]["content"]
+
+    def test_build_focus_context(self):
+        from dartlab.server.chat import build_focus_context
+        from dartlab.server.dialogue import build_conversation_state
+        from dartlab.server.models import ViewContext
+
+        class DummyCompany:
+            corpName = "삼성전자"
+            stockCode = "005930"
+
+            def show(self, topic, block=None):
+                if block is None:
+                    return pl.DataFrame(
+                        {
+                            "block": [0, 1],
+                            "type": ["text", "table"],
+                            "source": ["docs", "report"],
+                            "preview": ["개요", "배당표"],
+                        }
+                    )
+                return pl.DataFrame({"year": [2024, 2023], "dps": [1500, 1444]})
+
+            def trace(self, topic):
+                return {"primarySource": "report", "topic": topic}
+
+        state = build_conversation_state(
+            "왜 줄었지?",
+            company=DummyCompany(),
+            view_context=ViewContext(
+                type="viewer",
+                company={"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
+                topic="dividend",
+                topicLabel="배당",
+            ),
+        )
+        text = build_focus_context(DummyCompany(), state)
+        assert text is not None
+        assert "현재 사용자가 보고 있는 섹션" in text
+        assert "dividend" in text
+        assert "primarySource" in text
 
     def test_build_snapshot_relaxes_financial_thresholds(self):
         from dartlab.engines.sector.types import IndustryGroup, Sector, SectorInfo

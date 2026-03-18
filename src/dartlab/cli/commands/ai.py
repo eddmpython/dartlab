@@ -23,7 +23,7 @@ def configure_parser(subparsers) -> None:
 
 def _add_shared_arguments(parser) -> None:
     parser.add_argument("--port", type=int, default=8400, help="포트 번호 (기본: 8400)")
-    parser.add_argument("--host", default="0.0.0.0", help="호스트 (기본: 0.0.0.0)")
+    parser.add_argument("--host", default="127.0.0.1", help="호스트 (기본: 127.0.0.1)")
     parser.add_argument("--dev", action="store_true", help="개발 모드 (Svelte dev 서버 동시 실행)")
     parser.add_argument("--no-browser", action="store_true", help="브라우저 자동 열기 비활성화")
 

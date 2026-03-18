@@ -26,7 +26,8 @@ from typing import Any
 from dartlab import Company
 
 from .cache import company_cache
-from .chat import build_dynamic_chat_prompt, build_history_messages, build_snapshot
+from .chat import build_dynamic_chat_prompt, build_focus_context, build_history_messages, build_snapshot
+from .dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta
 from .models import AskRequest
 from .resolve import has_analysis_intent
 
@@ -41,10 +42,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
     from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
 
+    state = build_conversation_state(
+        req.question,
+        history=req.history,
+        company=c,
+        view_context=req.viewContext,
+    )
+    focus_context = await asyncio.to_thread(build_focus_context, c, state) if c is not None else None
+
     if not_found_msg:
         yield {
             "event": "meta",
-            "data": json.dumps({"company": None, "stockCode": None}, ensure_ascii=False),
+            "data": json.dumps(conversation_state_to_meta(state), ensure_ascii=False),
         }
         yield {
             "event": "chunk",
@@ -55,13 +64,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
     yield {
         "event": "meta",
-        "data": json.dumps(
-            {
-                "company": c.corpName if c else None,
-                "stockCode": c.stockCode if c else None,
-            },
-            ensure_ascii=False,
-        ),
+        "data": json.dumps(conversation_state_to_meta(state), ensure_ascii=False),
     }
 
     try:
@@ -71,13 +74,17 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             overrides["provider"] = req.provider
         if req.model:
             overrides["model"] = req.model
+        if req.api_key:
+            overrides["api_key"] = req.api_key
+        if req.base_url:
+            overrides["base_url"] = req.base_url
         if overrides:
             config_ = config_.merge(overrides)
 
         use_compact = config_.provider in ("ollama", "codex", "claude-code")
         history_msgs = build_history_messages(req.history)
 
-        if c and not has_analysis_intent(req.question):
+        if c and not has_analysis_intent(state.question):
             cached = company_cache.get(c.stockCode)
             if cached:
                 snapshot = cached[1]
@@ -89,9 +96,21 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     "event": "snapshot",
                     "data": json.dumps(snapshot, ensure_ascii=False),
                 }
+            if focus_context:
+                yield {
+                    "event": "context",
+                    "data": json.dumps(
+                        {
+                            "module": "_focus_topic",
+                            "label": f"현재 섹션: {state.topic_label or state.topic}",
+                            "text": focus_context,
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
 
             light_prompt = (
-                build_dynamic_chat_prompt() + f"\n\n## 현재 대화 종목\n"
+                build_dynamic_chat_prompt(state) + f"\n\n## 현재 대화 종목\n"
                 f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
                 f"아직 구체적 분석 요청은 아닙니다. 가볍게 대화하되, "
                 f"분석이 필요하면 어떤 분석을 원하는지 물어보세요.\n"
@@ -99,7 +118,10 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             )
             messages = [{"role": "system", "content": light_prompt}]
             messages.extend(history_msgs)
-            messages.append({"role": "user", "content": req.question})
+            user_text = state.question
+            if focus_context:
+                user_text = f"{focus_context}\n\n---\n\n질문: {state.question}"
+            messages.append({"role": "user", "content": user_text})
 
             yield {
                 "event": "system_prompt",
@@ -147,7 +169,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             modules_dict, included_tables, header_text = await asyncio.to_thread(
                 build_context_by_module,
                 c,
-                req.question,
+                state.question,
                 req.include,
                 req.exclude,
                 use_compact,
@@ -155,6 +177,19 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             if "_full" in modules_dict:
                 context_text = modules_dict["_full"]
+                if focus_context:
+                    context_text = focus_context + "\n\n" + context_text
+                    yield {
+                        "event": "context",
+                        "data": json.dumps(
+                            {
+                                "module": "_focus_topic",
+                                "label": f"현재 섹션: {state.topic_label or state.topic}",
+                                "text": focus_context,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    }
                 yield {
                     "event": "context",
                     "data": json.dumps(
@@ -185,10 +220,24 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                         ),
                     }
                 parts = [header_text] if header_text else []
+                if focus_context:
+                    parts.append(focus_context)
                 for name in included_tables:
                     if name in modules_dict:
                         parts.append(modules_dict[name])
                 context_text = "\n".join(parts)
+                if focus_context:
+                    yield {
+                        "event": "context",
+                        "data": json.dumps(
+                            {
+                                "module": "_focus_topic",
+                                "label": f"현재 섹션: {state.topic_label or state.topic}",
+                                "text": focus_context,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    }
 
             if not use_compact:
                 from dartlab.engines.ai.pipeline import run_pipeline
@@ -202,7 +251,10 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 if pipeline_result:
                     context_text = context_text + pipeline_result
 
-            meta_payload: dict[str, Any] = {"includedModules": included_tables}
+            meta_payload: dict[str, Any] = {
+                **conversation_state_to_meta(state),
+                "includedModules": included_tables,
+            }
             if not use_compact:
                 year_range = await asyncio.to_thread(detect_year_range, c, included_tables)
                 if year_range:
@@ -213,17 +265,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             }
 
             sector = _get_sector(c)
-            question_types = _classify_question_multi(req.question)
+            question_types = _classify_question_multi(state.question)
             system = build_system_prompt(
                 config_.system_prompt,
                 included_modules=included_tables,
                 sector=sector,
-                question_types=question_types,
+                question_types=state.question_types or question_types,
                 compact=use_compact,
             )
+            system = system + "\n\n" + build_dialogue_policy(state)
             messages = [{"role": "system", "content": system}]
             messages.extend(history_msgs)
-            user_content = f"{context_text}\n\n---\n\n질문: {req.question}"
+            user_content = f"{context_text}\n\n---\n\n질문: {state.question}"
             messages.append({"role": "user", "content": user_content})
 
             yield {
@@ -231,10 +284,10 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 "data": json.dumps({"text": system, "userContent": user_content}, ensure_ascii=False),
             }
         else:
-            chat_prompt = build_dynamic_chat_prompt()
+            chat_prompt = build_dynamic_chat_prompt(state)
             messages = [{"role": "system", "content": chat_prompt}]
             messages.extend(history_msgs)
-            messages.append({"role": "user", "content": req.question})
+            messages.append({"role": "user", "content": state.question})
 
             yield {
                 "event": "system_prompt",
@@ -291,18 +344,32 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             messages[0]["content"] += AGENT_SYSTEM_ADDITION
 
-            queue: asyncio.Queue = asyncio.Queue()
+            queue: asyncio.Queue = asyncio.Queue(maxsize=256)
             loop = asyncio.get_event_loop()
+
+            def _enqueue_event(payload: dict[str, Any]) -> None:
+                try:
+                    if queue.full():
+                        if payload.get("event") in {"chunk", "_done"}:
+                            try:
+                                queue.get_nowait()
+                            except asyncio.QueueEmpty:
+                                pass
+                        else:
+                            return
+                    queue.put_nowait(payload)
+                except asyncio.QueueFull:
+                    pass
 
             def _on_tool_call(name: str, args: dict):
                 loop.call_soon_threadsafe(
-                    queue.put_nowait,
+                    _enqueue_event,
                     {"event": "tool_call", "name": name, "arguments": args},
                 )
 
             def _on_tool_result(name: str, result: str):
                 loop.call_soon_threadsafe(
-                    queue.put_nowait,
+                    _enqueue_event,
                     {"event": "tool_result", "name": name, "result": result[:2000]},
                 )
 
@@ -316,11 +383,11 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     on_tool_result=_on_tool_result,
                 ):
                     loop.call_soon_threadsafe(
-                        queue.put_nowait,
+                        _enqueue_event,
                         {"event": "chunk", "text": chunk},
                     )
                 loop.call_soon_threadsafe(
-                    queue.put_nowait,
+                    _enqueue_event,
                     {"event": "_done"},
                 )
 

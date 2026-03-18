@@ -50,6 +50,17 @@
 	});
 
 	let companyName = $derived(message.company || message.meta?.company || null);
+	const DIALOGUE_MODE_LABELS = {
+		capability: "기능 탐색",
+		coding: "코딩 작업",
+		company_explore: "회사 탐색",
+		company_analysis: "회사 분석",
+		follow_up: "후속 질문",
+		general_chat: "일반 대화",
+	};
+	let dialogueModeLabel = $derived(
+		message.meta?.dialogueMode ? DIALOGUE_MODE_LABELS[message.meta.dialogueMode] || message.meta.dialogueMode : null
+	);
 
 	let hasTransparencyData = $derived(
 		message.systemPrompt ||
@@ -286,6 +297,15 @@
 					<div class="flex flex-wrap items-center gap-1.5">
 					{#if companyName}
 						<Badge variant="muted">{companyName}</Badge>
+					{/if}
+					{#if message.meta?.market}
+						<Badge variant="muted">{message.meta.market.toUpperCase()}</Badge>
+					{/if}
+					{#if dialogueModeLabel}
+						<Badge variant="accent">{dialogueModeLabel}</Badge>
+					{/if}
+					{#if message.meta?.topicLabel}
+						<Badge variant="muted">{message.meta.topicLabel}</Badge>
 					{/if}
 					{#if dataYearRange}
 						<Badge variant="accent">{dataYearRange}</Badge>

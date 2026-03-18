@@ -110,6 +110,8 @@ class TestRegisterTool:
         names = [schema["function"]["name"] for schema in runtime.get_tool_schemas()]
         assert runtime.name == "isolated-test"
         assert "get_system_spec" in names
+        assert "get_coding_runtime_status" in names
+        assert "run_coding_task" in names
         assert "run_codex_task" in names
 
     def test_error_handling(self):
@@ -141,10 +143,12 @@ class TestRegisterDefaults:
         assert "get_engine_spec" in names
         assert "get_runtime_capabilities" in names
         assert "get_tool_catalog" in names
+        assert "get_coding_runtime_status" in names
         assert "get_openapi_capabilities" in names
         assert "call_dart_openapi" in names
         assert "call_edgar_openapi" in names
         assert "openapi_save" in names
+        assert "run_coding_task" in names
         assert "run_codex_task" in names
         assert "search_company" in names
         assert "download_data" in names
@@ -158,14 +162,74 @@ class TestRegisterDefaults:
         assert "EDGAR" in result
         assert "Codex" in result or "codex" in result
         assert "workspace-write" in result
+        assert "run_coding_task" in result
         assert "run_codex_task" in result
 
     def test_get_tool_catalog_includes_runtime_tools(self):
         register_defaults(None)
         result = execute_tool("get_tool_catalog", {"include_parameters": True})
         assert "get_runtime_capabilities" in result
+        assert "get_coding_runtime_status" in result
+        assert "run_coding_task" in result
         assert "run_codex_task" in result
         assert "timeout_seconds" in result
+
+    def test_get_coding_runtime_status(self, monkeypatch):
+        import dartlab.engines.ai.codex_cli as codex_cli
+
+        monkeypatch.setattr(
+            codex_cli,
+            "inspect_codex_cli",
+            lambda: {
+                "installed": True,
+                "authenticated": True,
+                "version": "0.99.0",
+                "configuredModel": "gpt-5.4",
+                "sandboxModes": ["read-only", "workspace-write"],
+            },
+        )
+        register_defaults(None)
+        result = execute_tool("get_coding_runtime_status", {})
+        assert "Coding Runtime" in result
+        assert "`codex`" in result
+        assert "0.99.0" in result
+        assert "workspace-write" in result
+
+    def test_run_coding_task(self, monkeypatch):
+        import dartlab.engines.ai.codex_cli as codex_cli
+
+        monkeypatch.setattr(
+            codex_cli,
+            "inspect_codex_cli",
+            lambda: {
+                "installed": True,
+                "authenticated": True,
+                "configuredModel": "gpt-5.4",
+                "sandboxModes": ["read-only", "workspace-write"],
+            },
+        )
+        monkeypatch.setattr(
+            codex_cli,
+            "run_codex_exec",
+            lambda prompt, model=None, sandbox="read-only", timeout=300: (
+                f"done: {prompt}",
+                {"total_tokens": 123},
+            ),
+        )
+        register_defaults(None)
+        result = execute_tool(
+            "run_coding_task",
+            {
+                "prompt": "foo.py를 수정해줘",
+                "backend": "codex",
+                "sandbox": "workspace-write",
+                "timeout_seconds": 120,
+            },
+        )
+        assert "Coding 작업 결과" in result
+        assert "backend: codex" in result
+        assert "workspace-write" in result
+        assert "done: foo.py를 수정해줘" in result
 
     def test_run_codex_task(self, monkeypatch):
         import dartlab.engines.ai.codex_cli as codex_cli
@@ -173,7 +237,12 @@ class TestRegisterDefaults:
         monkeypatch.setattr(
             codex_cli,
             "inspect_codex_cli",
-            lambda: {"installed": True, "configuredModel": "gpt-5.4", "sandboxModes": ["read-only", "workspace-write"]},
+            lambda: {
+                "installed": True,
+                "authenticated": True,
+                "configuredModel": "gpt-5.4",
+                "sandboxModes": ["read-only", "workspace-write"],
+            },
         )
         monkeypatch.setattr(
             codex_cli,

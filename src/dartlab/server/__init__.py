@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from dartlab import Company
 
 from .cache import company_cache
 from .chat import OLLAMA_MODEL_GUIDE, build_dynamic_chat_prompt, build_history_messages
+from .dialogue import build_conversation_state
 from .models import AskRequest, ConfigureRequest
 from .resolve import (
     ResolveResult,
@@ -55,6 +57,25 @@ UI_PROVIDER_META: dict[str, dict[str, str]] = {
 }
 
 STATIC_MODELS: dict[str, list[str]] = {}
+
+
+def _default_host() -> str:
+    return os.environ.get("DARTLAB_HOST", "127.0.0.1")
+
+
+def _cors_origins() -> list[str]:
+    raw = os.environ.get("DARTLAB_CORS_ORIGINS")
+    if raw:
+        raw = raw.strip()
+        if raw == "*":
+            return ["*"]
+        return [item.strip() for item in raw.split(",") if item.strip()]
+    return [
+        "http://127.0.0.1:8400",
+        "http://localhost:8400",
+        "http://127.0.0.1:5400",
+        "http://localhost:5400",
+    ]
 
 
 def _normalize_provider_name(provider: str | None) -> str | None:
@@ -119,7 +140,7 @@ async def _preload_ollama():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -188,26 +209,22 @@ def api_status():
 
 @app.post("/api/configure")
 def api_configure(req: ConfigureRequest):
-    """LLM provider 설정. API 키 검증 포함."""
-    from dartlab.engines.ai import configure, get_config
+    """LLM provider 검증. 전역 상태는 변경하지 않는다."""
+    from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.types import LLMConfig
 
     current = get_config()
     effective_provider = _normalize_provider_name(req.provider) or req.provider
-    current_provider = _normalize_provider_name(current.provider) or current.provider
-    kwargs: dict[str, Any] = {"provider": effective_provider}
-    if req.model:
-        kwargs["model"] = req.model
-    if req.api_key:
-        kwargs["api_key"] = req.api_key
-    elif current.api_key and current_provider == effective_provider:
-        kwargs["api_key"] = current.api_key
-    if req.base_url:
-        kwargs["base_url"] = req.base_url
-    elif current.base_url and current_provider == effective_provider:
-        kwargs["base_url"] = current.base_url
-    configure(**kwargs)
+    kwargs: dict[str, Any] = {
+        "provider": effective_provider,
+        "model": req.model or current.model,
+        "api_key": req.api_key,
+        "base_url": req.base_url or current.base_url,
+        "temperature": current.temperature,
+        "max_tokens": current.max_tokens,
+        "system_prompt": current.system_prompt,
+    }
 
     available = False
     model = None
@@ -1211,26 +1228,12 @@ async def api_ask(req: AskRequest):
     """LLM 질문 — 종목이 있으면 데이터 기반 분석, 없으면 순수 대화."""
     dartlab.verbose = False
 
-    if req.provider or req.model:
-        from dartlab.engines.ai import configure, get_config
-
-        current = get_config()
-        current_provider = _normalize_provider_name(current.provider) or current.provider
-        overrides: dict[str, Any] = {
-            "provider": _normalize_provider_name(req.provider) or current_provider,
-        }
-        if req.model:
-            overrides["model"] = req.model
-        if current.api_key:
-            overrides["api_key"] = current.api_key
-        if current.base_url:
-            overrides["base_url"] = current.base_url
-        configure(**overrides)
-
     resolved = try_resolve_company(req)
     c: Company | None = resolved.company
 
-    if c and needs_match_verification(req.question, c.corpName):
+    resolved_from_explicit_context = bool(req.company) or bool(req.viewContext and req.viewContext.company)
+
+    if c and not resolved_from_explicit_context and needs_match_verification(req.question, c.corpName):
         corrected = await asyncio.to_thread(
             verify_match_with_llm,
             req.question,
@@ -1282,6 +1285,10 @@ async def api_ask(req: AskRequest):
             req.question,
             include=req.include,
             exclude=req.exclude,
+            provider=_normalize_provider_name(req.provider) or req.provider,
+            model=req.model,
+            api_key=req.api_key,
+            base_url=req.base_url,
         )
         return {
             "company": c.corpName,
@@ -1303,12 +1310,21 @@ async def _plain_chat(req: AskRequest):
         overrides["provider"] = _normalize_provider_name(req.provider) or req.provider
     if req.model:
         overrides["model"] = req.model
+    if req.api_key:
+        overrides["api_key"] = req.api_key
+    if req.base_url:
+        overrides["base_url"] = req.base_url
     if overrides:
         config_ = config_.merge(overrides)
 
-    messages = [{"role": "system", "content": build_dynamic_chat_prompt()}]
+    state = build_conversation_state(
+        req.question,
+        history=req.history,
+        view_context=req.viewContext,
+    )
+    messages = [{"role": "system", "content": build_dynamic_chat_prompt(state)}]
     messages.extend(build_history_messages(req.history))
-    messages.append({"role": "user", "content": req.question})
+    messages.append({"role": "user", "content": state.question})
 
     llm = create_provider(config_)
     try:
@@ -1442,8 +1458,8 @@ def ensure_port(port: int) -> str:
     return "failed"
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8400):
+def run_server(host: str | None = None, port: int = 8400):
     """서버 실행 (blocking)."""
     import uvicorn
 
-    uvicorn.run("dartlab.server:app", host=host, port=port, log_level="info")
+    uvicorn.run("dartlab.server:app", host=host or _default_host(), port=port, log_level="info")
