@@ -13,7 +13,7 @@
   <text x="426" y="142" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] Event date vs filing date gap</text>
   <rect x="40" y="232" width="350" height="140" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
   <text x="56" y="256" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">Cross Validation</text>
-  <text x="56" y="278" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] MD&A narrative vs numbers</text>
+  <text x="56" y="278" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] MD&amp;A narrative vs numbers</text>
   <text x="56" y="296" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">[ ] New risk language in footnotes</text>
   <rect x="410" y="232" width="350" height="140" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
   <text x="426" y="256" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">Position Context</text>

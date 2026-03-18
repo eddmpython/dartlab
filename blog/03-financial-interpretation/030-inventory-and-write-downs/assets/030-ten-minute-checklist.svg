@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">재고자산 점검 체크리스트</title>
+  <desc id="desc">재고자산과 평가손실을 빠르게 점검하는 여섯 가지 질문을 정리한 체크리스트</desc>
+  <rect width="1200" height="720" fill="#fff8e8"/>
+  <rect x="170" y="80" width="860" height="560" rx="30" fill="#fffef8" stroke="#d1ad4d" stroke-width="4"/>
+  <text x="600" y="145" font-size="36" font-family="Arial, sans-serif" text-anchor="middle" fill="#8c6a1f" font-weight="700">10분 체크리스트</text>
+  <text x="240" y="230" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">1. 재고 증가율이 매출보다 빠른가</text>
+  <text x="240" y="295" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">2. 원재료, 재공품, 제품 중 어디가 늘었나</text>
+  <text x="240" y="360" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">3. 재고회전율이 여러 분기 둔화되는가</text>
+  <text x="240" y="425" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">4. 매출총이익률이 같이 약해지는가</text>
+  <text x="240" y="490" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">5. 평가손실이 늦게 크게 반영되는가</text>
+  <text x="240" y="555" font-size="24" font-family="Arial, sans-serif" fill="#5f502c">6. 채권과 영업현금흐름도 함께 나빠지는가</text>
+  <circle cx="205" cy="220" r="16" fill="#d1ad4d"/>
+  <circle cx="205" cy="285" r="16" fill="#d1ad4d"/>
+  <circle cx="205" cy="350" r="16" fill="#d1ad4d"/>
+  <circle cx="205" cy="415" r="16" fill="#d1ad4d"/>
+  <circle cx="205" cy="480" r="16" fill="#d1ad4d"/>
+  <circle cx="205" cy="545" r="16" fill="#d1ad4d"/>
+</svg>

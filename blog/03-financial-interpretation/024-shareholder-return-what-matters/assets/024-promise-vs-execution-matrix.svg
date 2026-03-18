@@ -1,1 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Promise vs Execution</text><rect x="170" y="118" width="420" height="220" rx="18" fill="#111827" stroke="#334155"/><path d="M380 118V338M170 228H590" stroke="#334155"/><text x="248" y="152" fill="#86efac" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Strong promise, strong execution</text><text x="430" y="152" fill="#f87171" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Promise only</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">약속과 실행 매트릭스</title>
+  <desc id="desc">주주환원 문구와 실제 실행 숫자를 2x2 매트릭스로 비교한 그림</desc>
+  <defs>
+    <linearGradient id="bg024b" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#09111f"/>
+      <stop offset="100%" stop-color="#101826"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="760" rx="28" fill="url(#bg024b)"/>
+  <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주주환원은 2x2로 보면 과장이 줄어든다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">가로축은 실행 숫자, 세로축은 발표 강도다. 좋은 문장보다 좋은 실행이 오른쪽에 있다.</text>
+
+  <text x="108" y="214" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">발표 강함</text>
+  <text x="1038" y="214" text-anchor="end" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">발표 약함</text>
+  <text x="60" y="392" transform="rotate(-90 60 392)" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">실행 약함</text>
+  <text x="60" y="656" transform="rotate(-90 60 656)" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">실행 강함</text>
+
+  <rect x="104" y="236" width="470" height="214" rx="24" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
+  <text x="138" y="280" fill="#fdba74" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">말은 크지만 숫자는 약함</text>
+  <text x="138" y="318" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="18">주주가치 제고 문구는 많지만</text>
+  <text x="138" y="344" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="18">배당, 매입, 소각 숫자가 작다</text>
+  <text x="138" y="380" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 발표가 이벤트성인가</text>
+  <text x="138" y="406" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 다음 해에도 반복되는가</text>
+
+  <rect x="622" y="236" width="474" height="214" rx="24" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
+  <text x="656" y="280" fill="#c4b5fd" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">조용하지만 숫자는 보임</text>
+  <text x="656" y="318" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="18">발표는 크지 않아도</text>
+  <text x="656" y="344" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="18">배당과 소각이 꾸준히 이어질 수 있다</text>
+  <text x="656" y="380" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 숫자가 누적되는가</text>
+  <text x="656" y="406" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 시장이 덜 주목했을 뿐인가</text>
+
+  <rect x="104" y="486" width="470" height="214" rx="24" fill="#2a1b1b" stroke="#ef4444" stroke-width="2"/>
+  <text x="138" y="530" fill="#fca5a5" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">가장 경계할 구간</text>
+  <text x="138" y="568" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="18">말도 약하고 숫자도 약하다</text>
+  <text x="138" y="594" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="18">주주환원은 우선순위가 아닐 수 있다</text>
+  <text x="138" y="630" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 현금 여력이 없는가</text>
+  <text x="138" y="656" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 투자 부담이 너무 큰가</text>
+
+  <rect x="622" y="486" width="474" height="214" rx="24" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="656" y="530" fill="#86efac" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">가장 신뢰할 수 있는 구간</text>
+  <text x="656" y="568" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">말보다 숫자가 먼저 보이고</text>
+  <text x="656" y="594" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">배당, 매입, 소각이 반복된다</text>
+  <text x="656" y="630" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 현금흐름과도 모순이 없는가</text>
+  <text x="656" y="656" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: CAPEX 부담까지 버틸 수 있는가</text>
+</svg>

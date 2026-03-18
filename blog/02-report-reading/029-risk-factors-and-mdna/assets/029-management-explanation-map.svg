@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">경영진 설명 해부도</title>
+  <desc id="desc">좋은 MD&amp;A 설명이 무엇을 포함해야 하는지 정리한 구조도</desc>
+  <rect width="1200" height="720" fill="#eef7f3"/>
+  <rect x="380" y="90" width="440" height="120" rx="28" fill="#d7f0e3" stroke="#3f8b67" stroke-width="4"/>
+  <text x="600" y="145" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#276247" font-weight="700">좋은 MD&amp;A 설명</text>
+  <text x="600" y="185" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#376856">같은 이슈를 숫자와 함께 설명한다</text>
+  <rect x="120" y="290" width="220" height="140" rx="24" fill="#ffffff" stroke="#6aac8b" stroke-width="3"/>
+  <rect x="380" y="290" width="220" height="140" rx="24" fill="#ffffff" stroke="#6aac8b" stroke-width="3"/>
+  <rect x="640" y="290" width="220" height="140" rx="24" fill="#ffffff" stroke="#6aac8b" stroke-width="3"/>
+  <rect x="900" y="290" width="220" height="140" rx="24" fill="#ffffff" stroke="#6aac8b" stroke-width="3"/>
+  <text x="230" y="350" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d6148" font-weight="700">어디가 흔들렸나</text>
+  <text x="230" y="388" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#4c6c5c">사업, 지역, 제품, 고객</text>
+  <text x="490" y="350" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d6148" font-weight="700">무슨 숫자가 변했나</text>
+  <text x="490" y="388" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#4c6c5c">매출, 마진, 재고, CFO</text>
+  <text x="750" y="350" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d6148" font-weight="700">왜 그랬나</text>
+  <text x="750" y="388" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#4c6c5c">일시적 vs 구조적</text>
+  <text x="1010" y="350" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d6148" font-weight="700">다음에 뭘 볼까</text>
+  <text x="1010" y="388" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#4c6c5c">다음 분기 재확인 포인트</text>
+  <path d="M600 210 V260" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M230 260 H1010" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M230 260 V290" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M490 260 V290" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M750 260 V290" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M1010 260 V290" stroke="#4b8a6a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <text x="600" y="590" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#355d49" font-weight="700">문구가 아니라 설명 구조를 본다</text>
+  <text x="600" y="630" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a6658">좋은 MD&amp;A는 어디, 무엇, 왜, 다음 확인 포인트를 모두 남긴다</text>
+</svg>

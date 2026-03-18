@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">재고회전율과 마진 매트릭스</title>
+  <desc id="desc">재고회전율과 매출총이익률 조합으로 재고 압력을 판단하는 2x2 매트릭스</desc>
+  <rect width="1200" height="720" fill="#eef3fb"/>
+  <text x="600" y="90" font-size="36" font-family="Arial, sans-serif" text-anchor="middle" fill="#36547f" font-weight="700">회전율과 마진을 같이 봐야 한다</text>
+  <text x="600" y="140" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a638a">재고가 쌓이는 속도와 가격 방어 능력을 동시에 읽는다</text>
+  <rect x="210" y="210" width="390" height="190" fill="#ddf1df" stroke="#5f9c6b" stroke-width="3"/>
+  <rect x="600" y="210" width="390" height="190" fill="#fff2c9" stroke="#c3a74a" stroke-width="3"/>
+  <rect x="210" y="400" width="390" height="190" fill="#ffe0cc" stroke="#d0844a" stroke-width="3"/>
+  <rect x="600" y="400" width="390" height="190" fill="#ffd6d6" stroke="#c95e5e" stroke-width="3"/>
+  <text x="405" y="190" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#36547f" font-weight="700">마진 유지</text>
+  <text x="795" y="190" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#36547f" font-weight="700">마진 하락</text>
+  <text x="145" y="320" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#36547f" font-weight="700" transform="rotate(-90 145 320)">회전율 안정</text>
+  <text x="145" y="510" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#36547f" font-weight="700" transform="rotate(-90 145 510)">회전율 둔화</text>
+  <text x="405" y="300" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#366046" font-weight="700">건강한 상태</text>
+  <text x="405" y="340" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#476655">수요와 가격 방어가 유지된다</text>
+  <text x="795" y="300" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#8a6f21" font-weight="700">가격 압력</text>
+  <text x="795" y="340" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#7b6c42">원가 전가 실패 가능성</text>
+  <text x="405" y="490" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#a56633" font-weight="700">수요 점검 필요</text>
+  <text x="405" y="530" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#8d6b52">재고가 느리게 돈다</text>
+  <text x="795" y="490" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#a03f3f" font-weight="700">경고 구간</text>
+  <text x="795" y="530" font-size="20" font-family="Arial, sans-serif" text-anchor="middle" fill="#865656">할인 판매와 평가손실 가능성</text>
+</svg>

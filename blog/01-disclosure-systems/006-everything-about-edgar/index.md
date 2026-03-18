@@ -462,7 +462,7 @@ EDGAR를 잘 쓴다는 건 검색창에 티커를 넣는 기술이 아니라, **
 DartLab은 한국 DART 분석 도구로 시작했지만, 지금은 미국 EDGAR 재무제표도 같은 방식으로 분석할 수 있다.
 
 ```python
-from dartlab import Company, Compare
+from dartlab import Company
 
 apple = Company("AAPL")
 apple.BS       # 재무상태표 (분기별 시계열)
@@ -483,9 +483,11 @@ DART 분석과 코드가 완전히 같다. `Company("005930")`이든 `Company("A
 ### 한미 비교 분석
 
 ```python
-vs = Compare("005930", "AAPL")
-vs.ratios   # 삼성전자 vs Apple 재무비율 비교
-vs.BS       # 재무상태표 나란히 비교
+samsung = Company("005930")
+apple = Company("AAPL")
+
+samsung.show("ratios")
+apple.show("ratios")
 ```
 
 같은 기준으로 정규화된 데이터이기 때문에, 통화와 회계 체계가 달라도 구조적 비교가 가능하다.

@@ -6,11 +6,11 @@
 
   <rect x="40" y="88" width="170" height="240" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
   <text x="56" y="112" font-family="JetBrains Mono,monospace" font-size="10" fill="#7dd3fc">0-2 min</text>
-  <text x="56" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Market & competition scan</text>
+  <text x="56" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Market &amp; competition scan</text>
 
   <rect x="220" y="88" width="170" height="240" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
   <text x="236" y="112" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">2-5 min</text>
-  <text x="236" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Customer & cost pressure</text>
+  <text x="236" y="132" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Customer &amp; cost pressure</text>
 
   <rect x="400" y="88" width="170" height="240" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
   <text x="416" y="112" font-family="JetBrains Mono,monospace" font-size="10" fill="#fdba74">5-8 min</text>

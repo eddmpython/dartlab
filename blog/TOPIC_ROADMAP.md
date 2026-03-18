@@ -1,332 +1,199 @@
 # Topic Roadmap
 
-이 문서는 블로그의 다음 글 후보를 `카테고리별 우선순위`, `검색 의도`, `시리즈 연결`, `공식 출처` 기준으로 정리한 운영 문서다.
+이 문서는 블로그를 `글 수 확장`보다 `사람에게 바로 도움이 되는 검색 허브`로 키우기 위한 운영 문서다.
 
-원칙:
+현재 기준은 워크트리 기준 30개 포스트다.
 
-- 기존 글과 겹치지 않아야 한다.
-- 검색 의도가 분명해야 한다.
-- 시리즈로 이어질 수 있어야 한다.
-- 공식 자료로 뒷받침되는 주제를 우선한다.
-- 각 글은 완성형 본문 + SVG 기본 5개 기준으로 준비한다.
+## 지금 상태 요약
 
-## 현재 블로그 공백
-
-현재 블로그는 다음 축은 강하다.
+강한 축:
 
 - DART / EDGAR 전체 구조
-- 사업보고서 읽기 (사업의 내용, 감사보고서, KAM, CEO 말 vs 숫자)
-- 대주주 / 특수관계인 / 임원 보수 / 주주환원 / 주총 / 지배구조
+- 사업보고서 읽기 기본 흐름
+- 대주주 / 특수관계인 / 임원 보수 / 주주환원 / 주총
 - 생산능력 / 건설중인자산 / 감가상각
-- 매출채권 / 대손충당금
-- 파이썬 재무제표 분석 / OpenDART 주요사항보고서 / XBRL·주석 다운로드
+- 매출채권 / 재고 / 이익의 질
+- OpenDART / XBRL / 원문 다운로드 파이프라인
 
-반면 아래 축은 아직 비어 있거나 약하다.
+약한 축:
 
-- 13F 같은 개별 form 실전 해석
-- 유상증자, CB/BW, 자기주식, 합병/분할 같은 기업 이벤트 공시 실전 해석
-- 우발부채, 소송 공시
-- 재고, 영업현금흐름, 손상차손 같은 후속 이익의 질
-- Risk Factors / MD&A 교차 읽기
-- corp_code부터 filing 원문까지 이어지는 DART 수집 설계
+- 초보자 입문 허브 글의 두께
+- 시리즈별 `다음 글로 이동시키는` 연결성
+- 본문 안 문맥형 내부 링크
+- 글마다 비슷하게 반복되는 템플릿
+- SVG의 정보 밀도와 다양성
+- 기업 이벤트·자금조달 공시 시리즈 부재
 
-## 우선순위 큐
+## 전수 점검 결과
 
-## 다음 생산 배치
+`scripts/auditBlog.py` 기준으로 지금 가장 중요한 수치는 아래다.
 
-- `029 Risk Factors와 MD&A를 같이 읽는 법`
-- `030 재고자산과 평가손실 읽는 법`
-- `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`
+- 포스트 수: `30`
+- 1,200단어 미만 포스트: `21`
+- SVG 4개 미만 포스트: `3`
+- FAQ 없는 포스트: `7`
+- 체크리스트성 헤딩이 없는 포스트: `30`
+  - 현재는 `10분 체크리스트`, `10분 실전 체크리스트`처럼 흩어져 있어 일관성이 약하다
+- XML 파서 기준 깨진 SVG: `8`
+- 가장 많이 반복된 H2:
+  - `정리`
+  - `FAQ`
+  - `참고한 공식 자료`
+  - `자주 틀리는 해석 4가지`
 
-준비 문서:
+이 수치가 말하는 핵심은 단순하다.
 
-- `blog/_reference/WRITING_QUEUE.md`
-- `blog/_reference/028-031-writing-pack.md`
-- `blog/_reference/017-020-source-checklist.md`
+- 글이 너무 적은 것이 아니다.
+- `기초 허브 글`, `시리즈 구조`, `SVG 체계`가 아직 균일하지 않다.
 
-## 새 시리즈 확정
+## 운영 방향 전환
 
-### 기업 이벤트·자금조달 읽기 시리즈
+이제부터는 `새 글 1개`보다 `기존 허브 글 1개 강화`를 더 높은 우선순위로 둔다.
 
-- 시리즈 id: `corporate-actions-and-financing`
-- 포지션:
-  - DART 강점을 가장 잘 살릴 수 있는 다음 확장축
-  - 단순 제도 설명이 아니라 `희석`, `자금조달`, `지배력 이동`, `후속 공시 추적`을 같이 읽는 실전형 시리즈
+### 우선순위 1
+
+- 검색형 입문 글 강화
+- 시리즈 첫 글 강화
+- SVG 깨짐과 낮은 정보 밀도 해결
+
+### 우선순위 2
+
+- 비어 있는 시리즈를 실전 검색 의도로 채우기
+- 문맥형 내부 링크를 늘려 카테고리 허브를 강하게 만들기
+
+### 우선순위 3
+
+- 새 주제를 확장하되, 기존 글과 겹치지 않는 질문만 추가
+
+## 사람 도움 중심 개편 원칙
+
+- 너무 깊게 들어가기보다 `지금 무엇을 봐야 하나`를 먼저 답한다.
+- 입문 글은 정의보다 `첫 행동`을 먼저 준다.
+- 판단 글은 공식 설명보다 `좋은 경우 vs 위험한 경우`를 먼저 보여준다.
+- 파이프라인 글은 기능 나열보다 `무엇을 어떤 순서로 붙여야 하는지`를 먼저 준다.
+- 같은 시리즈라도 구조를 똑같이 복제하지 않는다.
+
+## AI 검색 노출 원칙
+
+공식 가이드 기준으로 중요한 것은 새 AI 전용 문법이 아니라 `사람 기준의 유용한 본문`이다.
+
+- 첫 문단에서 질문에 직접 답한다.
+- 본문 안에 정의, 판단 기준, 다음 행동이 같이 있어야 한다.
+- robots, sitemap, JSON-LD는 계속 유지하되, 그것만으로 해결된다고 보지 않는다.
+- OAI-SearchBot, Google-Extended, ClaudeBot, PerplexityBot 허용 상태를 유지한다.
+- 본문 링크가 시리즈 구조를 실제로 설명해야 한다.
+
+## 시리즈 재정렬
+
+시리즈 id는 유지하되, 사용자에게 보이는 포지션은 아래처럼 정리한다.
+
+| 시리즈 id | 사용자용 포지션 | 현재 상태 |
+| --- | --- | --- |
+| `dart-foundations` | DART 첫걸음 | 좋음, 입문 허브 강화 필요 |
+| `edgar-reading` | EDGAR 실전 입문 | 좋음, raw filing 글 보강 필요 |
+| `report-reading-foundations` | 사업보고서 실전 읽기 | 핵심 시리즈, 첫 글 강화 필요 |
+| `audit-and-governance-reading` | 감사와 경고 신호 | 너무 얇음, 우발부채/소송 글 필요 |
+| `ownership-and-governance-reading` | 대주주·보수·주주환원 | 양은 충분, 개별 글 차별화 약함 |
+| `fixed-cost-and-capex` | 설비투자와 고정비 | 좋은 축, SVG 보강 필요 |
+| `financial-context` | 숫자 뒤 맥락 읽기 | 얇음, 후속 입문 글 필요 |
+| `working-capital-and-earnings-quality` | 재고·채권·이익의 질 | 성장 가능성 큼, 현금흐름 글 필요 |
+| `data-automation` | 공시 데이터 파이프라인 | 좋음, 031이 꼭 필요 |
+| `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 비어 있음, 바로 채워야 함 |
+
+## 리라이트 우선순위
+
+### A. 가장 먼저 손볼 글
+
+1. `004-reading-business-reports` `완료`
+2. `021-where-to-click-first-in-dart` `완료`
+3. `009-edgar-filing-original-text-api` `완료`
+
+이 세 글은 2026-03-18 기준 1차 리라이트를 끝냈다. 다음 배치는 오너십 클러스터와 남은 저SVG 글로 넘어간다.
+
+### B. 시리즈 묶음 리라이트
+
+1. `022-major-shareholder-and-related-parties` `완료`
+2. `023-executive-pay-disclosure` `완료`
+3. `024-shareholder-return-what-matters` `완료`
+4. `026-how-to-read-agm-notice` `완료`
+
+이 묶음은 2026-03-18 기준 1차 리라이트를 마쳤다. 다음 남은 오너십 클러스터 우선순위는 `025`, `027`이다.
+
+### C. SVG 우선 보강 대상
+
+1. 텍스트 노드 3개 이하 자산 3개 교체
+2. 첫 SVG가 질문을 설명하지 못하는 입문 글 재검토
+3. `025`, `027` 리라이트와 SVG 보강 동시 진행
+
+## 다음 신규 글 우선순위
+
+### 1. 031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계
+
 - 이유:
-  - 기존 시리즈와 겹치지 않으면서 검색 의도가 분명하다
-  - `주요사항보고서`, `지분공시`, `자기주식`, `합병/분할`을 하나의 해석 흐름으로 묶기 좋다
-  - 대주주·지배구조 시리즈와도 자연스럽게 내부 링크를 만들 수 있다
+  - `002`, `016`, `028`을 묶는 상위 허브 글이다.
+  - 검색 의도와 제품 연결이 모두 강하다.
 
-예상 첫 묶음:
+### 2. 032 유상증자 공시 읽는 법
 
-- `032 유상증자 공시 읽는 법`
-- `033 전환사채와 BW 공시 읽는 법`
-- `034 자기주식 취득·처분·소각 공시 읽는 법`
-- `035 합병·분할 공시 읽는 법`
-- `036 최대주주 변경과 경영권 이동 신호 읽는 법`
+- 이유:
+  - 비어 있는 `corporate-actions-and-financing` 시리즈를 가장 빨리 살릴 수 있다.
+  - 실제 검색 수요가 강하다.
 
-### 1순위: 바로 써야 하는 주제
+### 3. 033 전환사채와 BW 공시 읽는 법
 
-#### 1. Risk Factors와 MD&A를 같이 읽는 법
+- 이유:
+  - 유상증자와 함께 읽히는 대표 검색형 주제다.
+  - 희석과 조달 조건을 읽는 실제 도움 글이 된다.
 
-- 카테고리: `02-report-reading`
-- 시리즈: `report-reading-foundations`
-- 검색 의도:
-  - `md&a 읽는 법`
-  - `risk factors 해석`
-- 핵심:
-  - 리스크 항목과 경영진 설명을 분리하지 않고 같이 읽는다.
+### 4. 우발부채와 소송 공시 읽는 법
 
-#### 2. 재고자산과 평가손실 읽는 법
+- 이유:
+  - 감사/경고 신호 시리즈를 살리는 핵심 글이다.
+  - 지금 블로그에서 공백이 큰데 실전 도움도 매우 크다.
 
-- 카테고리: `03-financial-interpretation`
-- 시리즈: `working-capital-and-earnings-quality`
-- 검색 의도:
-  - `재고자산 증가`
-  - `재고평가손실`
-- 핵심:
-  - 수요 둔화, 원가 압력, 재고 축적, 평가손실 가능성
+### 5. 영업현금흐름이 순이익을 부정할 때
 
-#### 3. corp_code부터 filing 원문까지 DART 수집 파이프라인 설계
-
-- 카테고리: `04-data-automation`
-- 시리즈: `data-automation`
-- 검색 의도:
-  - `dart corp_code`
-  - `opendart pipeline`
-- 핵심:
-  - corp_code, 검색, 원문 파일, 접수번호 추적의 연결 구조
-
-### 2순위: 블로그 깊이를 더 올리는 주제
-
-#### 4. EDGAR Next 이후 무엇이 달라졌나
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `edgar-reading`
-- 검색 의도:
-  - `edgar next`
-  - `edgar filing changes`
-- 핵심:
-  - filer access, 계정 관리, 제출 프로세스 변화
-
-#### 5. 우발부채와 소송 공시 읽는 법
-
-- 카테고리: `02-report-reading`
-- 시리즈: `audit-and-governance-reading`
-- 검색 의도:
-  - `우발부채 해석`
-  - `소송 공시 읽는 법`
-- 핵심:
-  - 충당부채 전 단계 신호, 문구 강도, 손익 반영 시차
-
-#### 6. 영업현금흐름이 순이익을 부정할 때
-
-- 카테고리: `03-financial-interpretation`
-- 시리즈: `working-capital-and-earnings-quality`
-- 검색 의도:
-  - `영업현금흐름 순이익 차이`
-  - `cash flow earnings quality`
-- 핵심:
-  - 운전자본, 일회성, 회수 지연, 선수금/매입채무 의존
-
-#### 7. EDGAR 원문 + JSON + XBRL을 같이 쓰는 수집 설계
-
-- 카테고리: `04-data-automation`
-- 시리즈: `data-automation`
-- 검색 의도:
-  - `edgar json xbrl`
-  - `edgar filing pipeline`
-- 핵심:
-  - submissions JSON, filing 원문, XBRL 원문을 같이 쓰는 구조
-
-### 다음 시리즈 배치: 기업 이벤트·자금조달 읽기 시리즈
-
-#### 8. 유상증자 공시 읽는 법
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `corporate-actions-and-financing`
-- 검색 의도:
-  - `유상증자 공시 읽는 법`
-  - `유상증자 투자 위험`
-- 핵심:
-  - 자금 사용 목적, 할인율, 기존 주주 희석, 후속 일정 확인
-
-#### 9. 전환사채와 BW 공시 읽는 법
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `corporate-actions-and-financing`
-- 검색 의도:
-  - `전환사채 공시 읽는 법`
-  - `bw 공시 해석`
-- 핵심:
-  - 전환가액 조정, 리픽싱, 잠재 희석, 조달 조건의 질
-
-#### 10. 자기주식 취득·처분·소각 공시 읽는 법
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `corporate-actions-and-financing`
-- 검색 의도:
-  - `자기주식 취득 소각 차이`
-  - `자사주 공시 읽는 법`
-- 핵심:
-  - 취득과 소각의 차이, 처분 가능성, 주주환원 신호의 진정성
-
-#### 11. 합병·분할 공시 읽는 법
-
-- 카테고리: `01-disclosure-systems`
-- 시리즈: `corporate-actions-and-financing`
-- 검색 의도:
-  - `합병 공시 읽는 법`
-  - `회사 분할 공시 해석`
-- 핵심:
-  - 거래 목적, 교환비율, 사업 재편 논리, 소수주주 관점 체크포인트
-
-#### 12. 최대주주 변경과 경영권 이동 신호 읽는 법
-
-- 카테고리: `02-report-reading`
-- 시리즈: `corporate-actions-and-financing`
-- 검색 의도:
-  - `최대주주 변경 공시 읽는 법`
-  - `경영권 변경 신호`
-- 핵심:
-  - 거래 상대방, 자금 출처, 담보·콜옵션 구조, 후속 공시 추적
+- 이유:
+  - `재고·채권·이익의 질` 시리즈를 제대로 묶어준다.
 
 ## 카테고리별 운영 방향
 
 ### 01-disclosure-systems
 
-다음 순서로 간다.
-
-1. `EDGAR Next 이후 무엇이 달라졌나`
-2. `Form 13F를 어떻게 읽어야 하나`
-
-운영 원칙:
-
-- 제도 설명에서 끝내지 않는다.
-- 항상 `실전 읽기 순서`와 `후속 form 연결`까지 다룬다.
+- 입문 허브는 `DART 첫걸음`
+- 실전 확장은 `EDGAR raw filing`, `기업 이벤트·자금조달`
+- 제도 설명보다 클릭 순서와 후속 확인 흐름을 우선한다
 
 ### 02-report-reading
 
-다음 순서로 간다.
-
-1. `Risk Factors와 MD&A를 같이 읽는 법`
-2. `우발부채와 소송 공시 읽는 법`
-
-운영 원칙:
-
-- 텍스트 해석 글은 비교표와 체크리스트를 반드시 넣는다.
-- 숫자보다 먼저 문구와 리스크 강도를 읽는 흐름을 유지한다.
+- 첫 글은 `전체 읽기 순서`
+- 다음 글은 `섹션별 실전 판단`
+- 감사, 우발부채, 리스크, MD&A는 서로 교차 링크한다
 
 ### 03-financial-interpretation
 
-다음 순서로 간다.
-
-1. `재고자산과 평가손실 읽는 법`
-2. `영업현금흐름이 순이익을 부정할 때`
-3. `손상차손 읽는 법`
-4. `운전자본이 이익의 질을 바꾸는 방식`
-
-운영 원칙:
-
-- `설비투자 해석 시리즈` 다음 묶음은 `운전자본·이익의 질 시리즈`로 연결한다.
-- 손익계산서만 보지 말고 주석, 현금흐름표, 회전 지표를 같이 읽는다.
+- `설비투자와 고정비`와 `재고·채권·이익의 질` 두 축으로 단순화한다
+- 숫자 자체보다 숫자 조합과 해석 실수를 강조한다
 
 ### 04-data-automation
 
-다음 순서로 간다.
-
-1. `corp_code부터 원문까지 DART 수집 구조`
-2. `EDGAR 원문 + JSON + XBRL을 같이 쓰는 수집 설계`
-
-운영 원칙:
-
-- 단순 endpoint 소개가 아니라 `무엇이 되고 무엇이 안 되는지`를 분명히 쓴다.
-- 예제는 실무 파이프라인 단위로 구성한다.
-
-## 시리즈 현황
-
-현재 시리즈 (10개, posts.ts 정의 완료):
-
-- `dart-foundations` (3개)
-- `edgar-reading` (4개)
-- `report-reading-foundations` (5개)
-- `fixed-cost-and-capex` (3개)
-- `financial-context` (2개)
-- `data-automation` (3개)
-- `working-capital-and-earnings-quality` (1개)
-- `audit-and-governance-reading` (1개)
-- `ownership-and-governance-reading` (6개)
-- `corporate-actions-and-financing` (0개, 신규 기획 확정)
-
-## 다음 실제 작성 순서
-
-1. `029 Risk Factors와 MD&A를 같이 읽는 법`
-2. `030 재고자산과 평가손실 읽는 법`
-3. `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`
-
-이 순서는 다음 기준으로 정했다.
-
-- 검색 의도가 선명한가
-- 기존 글과 자연스럽게 연결되는가
-- 깊게 써도 내용 중복이 적은가
-- 공식 자료로 근거를 붙일 수 있는가
-
-## 작성 준비 체크리스트
-
-새 글을 실제로 쓰기 전에 아래를 정리한다.
-
-1. 카테고리와 시리즈를 확정한다.
-2. 전역 포스트 번호를 예약한다.
-3. 검색형 제목 1개와 설명 1개를 확정한다.
-4. 공식 출처 3개 이상을 먼저 확보한다.
-5. SVG 5개 기본 구성을 먼저 설계한다.
-6. FAQ 4~5문항을 먼저 잡는다.
-7. 체크리스트 섹션을 마지막 전 섹션으로 고정한다.
-
-## 공식 출처 메모
-
-EDGAR / SEC:
-
-- SEC Forms Index  
-  https://www.sec.gov/submit-filings/forms-index
-- SEC How to Read a 10-K  
-  https://www.sec.gov/answers/reada10k.htm
-- SEC Form 13F FAQ  
-  https://www.sec.gov/divisions/investment/13ffaq.htm
-- SEC EDGAR Next  
-  https://www.sec.gov/submit-filings/improving-edgar/edgar-next-improving-filer-access-account-management
-- SEC EDGAR News & Announcements  
-  https://www.sec.gov/submit-filings/edgar-news-announcements
-
-DART / OpenDART:
-
-- DART 보고서정보  
-  https://dart.fss.or.kr/introduction/content2.do
-- OpenDART 개발가이드  
-  https://opendart.fss.or.kr/guide/main.do
-- OpenDART 공시정보 활용마당  
-  https://opendart.fss.or.kr/disclosureinfo/biz/main.do
-- OpenDART 주요사항보고서 주요정보 가이드  
-  https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005
-
-## 메모
-
-- SEC 쪽은 `개별 form 실전 해석`이 가장 좋은 확장축이다.
-- DART 쪽은 `감사보고서`, `주요사항보고서`, `원문/XBRL 활용`이 아직 비어 있다.
-- 재무 해석 쪽은 다음 시리즈를 `운전자본·이익의 질`로 잡는 것이 가장 자연스럽다.
+- endpoint 소개보다 `수집기 설계`를 쓴다
+- corp_code, rcept_no, raw filing, XBRL, notes를 레이어로 나눠 설명한다
 
 ## 제작 상태
 
-- 완료 (28개):
-  - `001` ~ `021`: 초기 배치 + 1차 확장
-  - `022-major-shareholder-and-related-parties`
-  - `023-executive-pay-disclosure`
-  - `024-shareholder-return-what-matters`
-  - `025-governance-red-flags`
-  - `026-how-to-read-agm-notice`
-  - `027-good-vs-risky-ownership`
-  - `028-opendart-xbrl-notes-pipeline`
-- 다음 후보:
-  - `029 Risk Factors와 MD&A를 같이 읽는 법`
-  - `030 재고자산과 평가손실 읽는 법`
-  - `031 corp_code부터 filing 원문까지 DART 수집 파이프라인 설계`
+- 작성 완료: `001` ~ `030`
+- 다음 신규 우선 글: `031`
+- 다음 리라이트 우선 글: `025`, `027`, `020`, `017`, `014`
+
+## 운영 메모
+
+- 블로그의 다음 성장축은 `더 깊은 전문성`보다 `더 명확한 첫 답변`이다.
+- 현재는 글 수가 아니라 `입문 허브와 SVG 체계`가 병목이다.
+- 기존 글을 강화하지 않은 채 새 글만 늘리면 시리즈는 넓어지지만 브랜드는 약해진다.
+
+## 최근 리라이트 메모
+
+- `004`, `021`, `009`, `022`, `023`, `024`, `026`은 2026-03-18 기준 허브 수준으로 재작성했다.
+- `011`은 신규 SVG를 추가해 저SVG 대상에서 제외했다.
+- 현재 남은 핵심 SVG 저밀도 자산은 `020`, `025`, `027`이다.

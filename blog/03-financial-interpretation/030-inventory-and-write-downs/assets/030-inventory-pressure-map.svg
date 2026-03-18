@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">재고 압력 구조도</title>
+  <desc id="desc">재고 증가가 좋은 경우와 위험한 경우로 갈라지는 흐름을 보여주는 구조도</desc>
+  <rect width="1200" height="720" fill="#f8f3ea"/>
+  <rect x="420" y="70" width="360" height="110" rx="26" fill="#f7dfb7" stroke="#c78d39" stroke-width="4"/>
+  <text x="600" y="118" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#7c5319" font-weight="700">재고 증가</text>
+  <text x="600" y="155" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#8a6534">좋은 준비일 수도, 위험 신호일 수도 있다</text>
+  <rect x="100" y="270" width="430" height="320" rx="28" fill="#edf8ef" stroke="#4d8f63" stroke-width="4"/>
+  <rect x="670" y="270" width="430" height="320" rx="28" fill="#fff0ef" stroke="#c6645e" stroke-width="4"/>
+  <text x="315" y="335" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#2f6a45" font-weight="700">건강한 증가</text>
+  <text x="885" y="335" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#9a3f3a" font-weight="700">위험한 누적</text>
+  <text x="150" y="400" font-size="24" font-family="Arial, sans-serif" fill="#35644a">• 계절성 수요 준비</text>
+  <text x="150" y="445" font-size="24" font-family="Arial, sans-serif" fill="#35644a">• 신규 제품 출시 전</text>
+  <text x="150" y="490" font-size="24" font-family="Arial, sans-serif" fill="#35644a">• 회전율 방어</text>
+  <text x="150" y="535" font-size="24" font-family="Arial, sans-serif" fill="#35644a">• 마진 유지</text>
+  <text x="720" y="400" font-size="24" font-family="Arial, sans-serif" fill="#8f4641">• 매출보다 더 빠른 증가</text>
+  <text x="720" y="445" font-size="24" font-family="Arial, sans-serif" fill="#8f4641">• 회전율 둔화</text>
+  <text x="720" y="490" font-size="24" font-family="Arial, sans-serif" fill="#8f4641">• 할인 판매와 마진 하락</text>
+  <text x="720" y="535" font-size="24" font-family="Arial, sans-serif" fill="#8f4641">• 평가손실 가능성</text>
+  <path d="M600 180 V235" stroke="#b37a2e" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M600 235 L315 270" stroke="#4d8f63" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M600 235 L885 270" stroke="#c6645e" stroke-width="8" fill="none" stroke-linecap="round"/>
+</svg>

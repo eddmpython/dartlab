@@ -55,84 +55,84 @@ export type CategoryDefinition = (typeof categoryDefinitions)[number];
 export const seriesDefinitions = {
 	'dart-foundations': {
 		id: 'dart-foundations',
-		label: 'DART 기초 시리즈',
-		description: 'DART와 OpenDART를 처음부터 구조적으로 익히는 시리즈입니다.',
-		seoTitle: 'DART 기초 시리즈 | 전자공시 시스템을 처음부터 읽는 법',
-		seoDescription: 'DartLab DART 기초 시리즈. DART 구조, OpenDART 활용, 한국 전자공시 시스템 읽는 법을 단계적으로 정리합니다.',
-		brandMessage: 'DartLab은 DART를 단순 조회 사이트가 아니라 구조화된 전자공시 시스템으로 다룹니다.'
+		label: 'DART 첫걸음',
+		description: 'DART에서 무엇부터 눌러야 하는지, OpenDART는 어디까지 되는지 입문자 기준으로 정리하는 시리즈입니다.',
+		seoTitle: 'DART 첫걸음 | 전자공시를 처음부터 읽는 법',
+		seoDescription: 'DartLab DART 첫걸음 시리즈. DART 구조, 첫 클릭 순서, OpenDART 역할을 입문자 기준으로 쉽게 정리합니다.',
+		brandMessage: 'DartLab은 DART를 메뉴 많은 사이트가 아니라, 초보자도 길을 잃지 않게 만드는 전자공시 지도처럼 다룹니다.'
 	},
 	'edgar-reading': {
 		id: 'edgar-reading',
-		label: 'EDGAR 읽기 시리즈',
-		description: 'EDGAR form 구조, filing 원문, 이벤트 공시를 실전적으로 읽는 시리즈입니다.',
-		seoTitle: 'EDGAR 읽기 시리즈 | 10-K, 8-K, filing 원문 읽는 법',
-		seoDescription: 'DartLab EDGAR 읽기 시리즈. 10-K, 8-K, filing 원문, SEC form 구조를 실제 분석 흐름으로 연결합니다.',
-		brandMessage: 'DartLab은 EDGAR를 서류 묶음이 아니라 form 구조와 후속 확인 흐름으로 읽습니다.'
+		label: 'EDGAR 실전 입문',
+		description: '10-K, 10-Q, 8-K, filing 원문을 한국 투자자 기준으로 빠르게 파악하게 만드는 시리즈입니다.',
+		seoTitle: 'EDGAR 실전 입문 | 10-K, 8-K, filing 원문 읽는 법',
+		seoDescription: 'DartLab EDGAR 실전 입문 시리즈. 10-K, 8-K, filing 원문, SEC form 구조를 실제 읽기 순서로 연결합니다.',
+		brandMessage: 'DartLab은 EDGAR를 낯선 미국 서류 묶음이 아니라, 무엇을 언제 어떻게 확인해야 하는지 알려주는 읽기 흐름으로 정리합니다.'
 	},
 	'report-reading-foundations': {
 		id: 'report-reading-foundations',
-		label: '사업보고서 읽기 시리즈',
-		description: '사업보고서의 핵심 섹션을 순서대로 해석하는 기초 시리즈입니다.',
-		seoTitle: '사업보고서 읽기 시리즈 | 사업의 내용과 공시 텍스트 읽는 법',
-		seoDescription: 'DartLab 사업보고서 읽기 시리즈. 사업의 내용, 핵심 서술 섹션, 구조적 변화 신호를 투자 판단으로 연결합니다.',
-		brandMessage: 'DartLab은 사업보고서를 숫자의 주석이 아니라 투자 판단의 본문으로 봅니다.'
+		label: '사업보고서 실전 읽기',
+		description: '사업보고서의 핵심 섹션을 실제 판단 순서에 맞춰 읽게 만드는 기본 시리즈입니다.',
+		seoTitle: '사업보고서 실전 읽기 | 사업의 내용과 공시 텍스트 읽는 법',
+		seoDescription: 'DartLab 사업보고서 실전 읽기 시리즈. 사업의 내용, 리스크, MD&A, 텍스트 변화 신호를 실제 판단 흐름으로 연결합니다.',
+		brandMessage: 'DartLab은 사업보고서를 숫자의 주변부가 아니라, 투자 판단의 방향을 먼저 바꾸는 본문으로 봅니다.'
 	},
 	'fixed-cost-and-capex': {
 		id: 'fixed-cost-and-capex',
-		label: '설비투자 해석 시리즈',
-		description: '생산능력, 건설중인자산, 감가상각을 한 흐름으로 읽는 심화 시리즈입니다.',
-		seoTitle: '설비투자 해석 시리즈 | 생산능력, CAPEX, 감가상각 읽는 법',
-		seoDescription: 'DartLab 설비투자 해석 시리즈. 생산능력, 가동률, 건설중인자산, 감가상각을 연결해 고정비 구조를 읽는 글을 모았습니다.',
-		brandMessage: 'DartLab은 설비투자를 발표 문구가 아니라 고정비 구조와 마진 변화로 해석합니다.'
+		label: '설비투자와 고정비',
+		description: '생산능력, 건설중인자산, 감가상각을 한 흐름으로 읽어 CAPEX 이후를 판단하게 만드는 시리즈입니다.',
+		seoTitle: '설비투자와 고정비 | 생산능력, CAPEX, 감가상각 읽는 법',
+		seoDescription: 'DartLab 설비투자와 고정비 시리즈. 생산능력, 가동률, 건설중인자산, 감가상각을 연결해 투자 이후 비용 구조를 읽는 글을 모았습니다.',
+		brandMessage: 'DartLab은 설비투자를 좋은 뉴스로만 읽지 않고, 그 뒤에 따라오는 고정비와 마진 부담까지 같이 봅니다.'
 	},
 	'financial-context': {
 		id: 'financial-context',
-		label: '재무 맥락 읽기',
-		description: '재무 숫자를 공시 맥락과 같이 읽기 위한 입문형 시리즈입니다.',
-		seoTitle: '재무 맥락 읽기 | 숫자 뒤 구조를 함께 보는 법',
-		seoDescription: 'DartLab 재무 맥락 읽기. 숫자만 보지 않고 사업보고서와 공시 문맥을 함께 읽는 기초 글을 모았습니다.',
-		brandMessage: 'DartLab은 숫자만 맞는 분석보다 맥락까지 맞는 분석을 지향합니다.'
+		label: '숫자 뒤 맥락 읽기',
+		description: '재무제표 숫자만으로 놓치는 사업 맥락과 해석의 함정을 잡아주는 입문형 시리즈입니다.',
+		seoTitle: '숫자 뒤 맥락 읽기 | 재무제표 숫자만 보면 안 되는 이유',
+		seoDescription: 'DartLab 숫자 뒤 맥락 읽기 시리즈. 숫자만 보지 않고 사업보고서와 공시 문맥을 함께 읽는 기초 글을 모았습니다.',
+		brandMessage: 'DartLab은 숫자가 맞는지보다, 그 숫자가 왜 그렇게 나왔는지까지 설명되는 분석을 더 중요하게 봅니다.'
 	},
 	'data-automation': {
 		id: 'data-automation',
-		label: '데이터 자동화 시리즈',
-		description: 'OpenDART, corp_code, 공시 원문을 수집 파이프라인으로 연결하는 시리즈입니다.',
-		seoTitle: '데이터 자동화 시리즈 | OpenDART와 공시 파이프라인 설계',
-		seoDescription: 'DartLab 데이터 자동화 시리즈. OpenDART, corp_code, 주요사항보고서, 원문 데이터를 실제 파이프라인으로 연결합니다.',
-		brandMessage: 'DartLab은 공시를 읽는 것에서 끝내지 않고 재사용 가능한 데이터 파이프라인으로 바꿉니다.'
+		label: '공시 데이터 파이프라인',
+		description: 'OpenDART, corp_code, 공시 원문, XBRL을 실제 수집기 구조로 연결하는 시리즈입니다.',
+		seoTitle: '공시 데이터 파이프라인 | OpenDART와 공시 수집 설계',
+		seoDescription: 'DartLab 공시 데이터 파이프라인 시리즈. OpenDART, corp_code, 주요사항보고서, XBRL, 원문 데이터를 실제 수집 구조로 연결합니다.',
+		brandMessage: 'DartLab은 공시를 읽는 법을 넘어서, 반복 가능한 수집기와 분석 파이프라인으로 연결하는 방법까지 다룹니다.'
 	},
 	'working-capital-and-earnings-quality': {
 		id: 'working-capital-and-earnings-quality',
-		label: '운전자본·이익의 질 시리즈',
-		description: '매출채권, 재고, 현금흐름을 통해 이익의 질을 읽는 시리즈입니다.',
-		seoTitle: '운전자본·이익의 질 시리즈 | 매출채권과 현금흐름 읽는 법',
-		seoDescription: 'DartLab 운전자본·이익의 질 시리즈. 매출채권, 대손충당금, 재고, 영업현금흐름을 통해 숫자 뒤 질을 해석합니다.',
-		brandMessage: 'DartLab은 이익의 크기보다 이익의 질과 현금 회수 구조를 더 중요하게 봅니다.'
+		label: '재고·채권·이익의 질',
+		description: '매출채권, 재고, 현금흐름을 함께 봐서 성장의 질과 회수 구조를 읽는 시리즈입니다.',
+		seoTitle: '재고·채권·이익의 질 | 운전자본과 현금흐름 읽는 법',
+		seoDescription: 'DartLab 재고·채권·이익의 질 시리즈. 매출채권, 대손충당금, 재고, 영업현금흐름을 통해 숫자 뒤 질을 해석합니다.',
+		brandMessage: 'DartLab은 이익의 크기보다, 그 이익이 실제로 회수되는지와 얼마나 오래 버틸 수 있는지를 더 중요하게 봅니다.'
 	},
 	'audit-and-governance-reading': {
 		id: 'audit-and-governance-reading',
-		label: '감사·거버넌스 읽기 시리즈',
-		description: '감사보고서, KAM, 내부통제, 지배구조 문구를 읽는 시리즈입니다.',
-		seoTitle: '감사·거버넌스 읽기 시리즈 | 감사보고서와 KAM 해석',
-		seoDescription: 'DartLab 감사·거버넌스 읽기 시리즈. 감사보고서, KAM, 회계추정, 내부통제, 지배구조 문구를 해석하는 글을 모았습니다.',
-		brandMessage: 'DartLab은 감사의견 한 줄보다 그 뒤의 판단 구조와 경고 신호를 읽습니다.'
+		label: '감사와 경고 신호',
+		description: '감사보고서, KAM, 회계추정처럼 회사의 신뢰도를 바꾸는 경고 문구를 읽는 시리즈입니다.',
+		seoTitle: '감사와 경고 신호 | 감사보고서와 KAM 읽는 법',
+		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 회계추정, 내부통제처럼 신뢰도 판단에 중요한 문구를 해석하는 글을 모았습니다.',
+		brandMessage: 'DartLab은 감사의견 한 줄보다, 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
 	},
 	'ownership-and-governance-reading': {
 		id: 'ownership-and-governance-reading',
-		label: '대주주·지배구조 읽기 시리즈',
-		description: '대주주, 특수관계인, 보수, 주주환원, 주총 안건을 초보자 기준으로 읽는 시리즈입니다.',
-		seoTitle: '대주주·지배구조 읽기 시리즈 | 오너십과 주주환원 읽는 법',
-		seoDescription: 'DartLab 대주주·지배구조 읽기 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고를 쉽게 읽는 법을 정리합니다.',
-		brandMessage: 'DartLab은 숫자만이 아니라 소유, 통제, 보수 구조까지 읽어 회사의 진짜 방향을 해석합니다.'
+		label: '대주주·보수·주주환원',
+		description: '대주주, 특수관계인, 임원 보수, 주주환원, 주총 안건을 실제 판단 기준으로 읽는 시리즈입니다.',
+		seoTitle: '대주주·보수·주주환원 | 오너십과 지배구조 읽는 법',
+		seoDescription: 'DartLab 대주주·보수·주주환원 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고를 실제 판단 흐름으로 정리합니다.',
+		brandMessage: 'DartLab은 숫자만이 아니라, 누가 회사 방향을 정하고 누가 혜택을 가져가는지까지 함께 읽습니다.'
 	},
 	'corporate-actions-and-financing': {
 		id: 'corporate-actions-and-financing',
-		label: '기업 이벤트·자금조달 읽기 시리즈',
-		description: '유상증자, 전환사채, 자기주식, 합병·분할 같은 기업 이벤트 공시를 읽는 시리즈입니다.',
-		seoTitle: '기업 이벤트·자금조달 읽기 시리즈 | 유상증자, CB, 자기주식 공시 읽는 법',
+		label: '이벤트·자금조달 공시',
+		description: '유상증자, 전환사채, 자기주식, 합병·분할 같은 기업 이벤트 공시를 실제 판단 흐름으로 읽는 시리즈입니다.',
+		seoTitle: '이벤트·자금조달 공시 | 유상증자, CB, 자기주식 읽는 법',
 		seoDescription:
-			'DartLab 기업 이벤트·자금조달 읽기 시리즈. 유상증자, 전환사채, BW, 자기주식, 합병·분할 같은 이벤트 공시를 실제 판단 흐름으로 정리합니다.',
-		brandMessage: 'DartLab은 기업 이벤트 공시를 단발 뉴스가 아니라 희석, 자금조달, 지배력 변화의 신호로 읽습니다.'
+			'DartLab 이벤트·자금조달 공시 시리즈. 유상증자, 전환사채, BW, 자기주식, 합병·분할 같은 이벤트 공시를 실제 판단 흐름으로 정리합니다.',
+		brandMessage: 'DartLab은 기업 이벤트 공시를 단발 뉴스가 아니라, 희석과 자금조달, 지배력 변화의 신호로 읽습니다.'
 	}
 } as const;
 

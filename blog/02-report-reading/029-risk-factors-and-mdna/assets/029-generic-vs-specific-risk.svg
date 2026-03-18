@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">일반론 리스크와 구체적 리스크 비교</title>
+  <desc id="desc">누구에게나 적용되는 일반적 리스크와 회사 고유의 구체적 리스크를 비교한 카드</desc>
+  <rect width="1200" height="720" fill="#f4f1fb"/>
+  <rect x="90" y="120" width="450" height="470" rx="30" fill="#fff7ef" stroke="#c98c42" stroke-width="4"/>
+  <rect x="660" y="120" width="450" height="470" rx="30" fill="#eef6ff" stroke="#4d7ac7" stroke-width="4"/>
+  <text x="315" y="190" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#92581a" font-weight="700">반복 문구</text>
+  <text x="885" y="190" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d5d9c" font-weight="700">진짜 신호</text>
+  <text x="150" y="255" font-size="24" font-family="Arial, sans-serif" fill="#6b4b25">• 거시환경 불확실성</text>
+  <text x="150" y="305" font-size="24" font-family="Arial, sans-serif" fill="#6b4b25">• 경쟁 심화 가능성</text>
+  <text x="150" y="355" font-size="24" font-family="Arial, sans-serif" fill="#6b4b25">• 규제 변경 가능성</text>
+  <text x="150" y="405" font-size="24" font-family="Arial, sans-serif" fill="#6b4b25">• 누구에게나 적용 가능</text>
+  <text x="150" y="455" font-size="24" font-family="Arial, sans-serif" fill="#6b4b25">• MD&amp;A에서 다시 안 나옴</text>
+  <text x="720" y="255" font-size="24" font-family="Arial, sans-serif" fill="#365f92">• 특정 고객 의존 심화</text>
+  <text x="720" y="305" font-size="24" font-family="Arial, sans-serif" fill="#365f92">• 원재료 가격 급등 노출</text>
+  <text x="720" y="355" font-size="24" font-family="Arial, sans-serif" fill="#365f92">• 새로 추가되거나 구체화됨</text>
+  <text x="720" y="405" font-size="24" font-family="Arial, sans-serif" fill="#365f92">• MD&amp;A 숫자 설명과 연결됨</text>
+  <text x="720" y="455" font-size="24" font-family="Arial, sans-serif" fill="#365f92">• 다음 보고서 추적 필요</text>
+  <circle cx="315" cy="530" r="42" fill="#f3d4a4"/>
+  <text x="315" y="540" font-size="30" font-family="Arial, sans-serif" text-anchor="middle" fill="#73491d" font-weight="700">낮음</text>
+  <circle cx="885" cy="530" r="42" fill="#b8d4ff"/>
+  <text x="885" y="540" font-size="30" font-family="Arial, sans-serif" text-anchor="middle" fill="#2d5d9c" font-weight="700">높음</text>
+  <text x="600" y="650" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#444" font-weight="700">중요한 것은 문구의 길이가 아니라 구체성과 숫자 연결성이다</text>
+</svg>

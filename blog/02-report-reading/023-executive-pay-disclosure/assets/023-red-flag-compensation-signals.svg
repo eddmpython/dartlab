@@ -1,1 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Red Flags</text><rect x="88" y="120" width="624" height="222" rx="18" fill="#111827" stroke="#334155"/><text x="120" y="166" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">- rising pay with weak results</text><text x="120" y="206" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">- vague incentive targets</text><text x="120" y="246" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif">- weak link to shareholder return</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">임원 보수 경계 신호</title>
+  <desc id="desc">임원 보수 공시에서 초보자가 특히 경계할 다섯 가지 신호를 정리한 보드</desc>
+  <defs>
+    <linearGradient id="bg023b" x1="0" y1="0" x2="1200" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a111f"/>
+      <stop offset="100%" stop-color="#101826"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" rx="28" fill="url(#bg023b)"/>
+  <rect x="20" y="20" width="1160" height="680" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">보수 공시에서 특히 경계할 다섯 가지</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">총액보다 설명의 질과 실적 연결성이 약한 패턴을 먼저 본다.</text>
+
+  <rect x="72" y="176" width="318" height="136" rx="20" fill="#2a1b1b" stroke="#ef4444" stroke-width="2"/>
+  <text x="98" y="220" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">SIGNAL 1</text>
+  <text x="98" y="256" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">실적 부진에도 보수 구조 고정</text>
+  <text x="98" y="290" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="17">조정 메커니즘이 약하면 설명보다 관성이 강할 수 있다.</text>
+
+  <rect x="414" y="176" width="318" height="136" rx="20" fill="#2a2117" stroke="#f59e0b" stroke-width="2"/>
+  <text x="440" y="220" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">SIGNAL 2</text>
+  <text x="440" y="256" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">성과급 기준이 추상적</text>
+  <text x="440" y="290" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="17">무엇을 잘해야 받는지 안 보이면 해석도 흐려진다.</text>
+
+  <rect x="756" y="176" width="372" height="136" rx="20" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
+  <text x="782" y="220" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">SIGNAL 3</text>
+  <text x="782" y="256" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">주식보상 설명은 있는데 조건이 약함</text>
+  <text x="782" y="290" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="17">장기 정렬처럼 보이지만 실제로는 단기 보상일 수 있다.</text>
+
+  <rect x="72" y="344" width="514" height="148" rx="20" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
+  <text x="98" y="388" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">SIGNAL 4</text>
+  <text x="98" y="424" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">주주환원은 약한데 보수와 한도만 빠르게 확대</text>
+  <text x="98" y="458" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="17">주주와 경영진 우선순위가 엇갈리는지 다시 보게 만드는 신호다.</text>
+
+  <rect x="614" y="344" width="514" height="148" rx="20" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="640" y="388" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">SIGNAL 5</text>
+  <text x="640" y="424" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">한도 변화 이유가 구체적이면 오히려 안심 재료</text>
+  <text x="640" y="458" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="17">모든 변화가 나쁜 것은 아니다. 설명의 질이 방향을 바꾼다.</text>
+
+  <rect x="72" y="534" width="1056" height="118" rx="22" fill="#101926" stroke="#334155" stroke-width="2"/>
+  <text x="104" y="578" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">실전 팁</text>
+  <text x="184" y="578" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">보수 공시는 단독 판정표가 아니다. 최대주주 구조, 주총 안건, 주주환원 숫자 위에 올려서 읽을 때 의미가 선명해진다.</text>
+</svg>

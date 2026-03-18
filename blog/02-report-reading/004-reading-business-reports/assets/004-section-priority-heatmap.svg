@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">사업보고서 섹션 우선순위 히트맵</title>
+  <desc id="desc">숫자 신뢰성, 리스크, 성장, 지배구조 등 읽는 목적에 따라 사업보고서에서 어떤 섹션을 먼저 봐야 하는지 정리한 히트맵</desc>
+  <defs>
+    <linearGradient id="bg004b" x1="0" y1="0" x2="1200" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08111f"/>
+      <stop offset="100%" stop-color="#0f1724"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="820" rx="28" fill="url(#bg004b)"/>
+  <rect x="20" y="20" width="1160" height="780" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">무엇이 궁금한가에 따라 먼저 열 섹션이 달라진다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">사업보고서는 순서대로 읽는 문서가 아니라, 질문에 따라 다른 곳부터 여는 문서다.</text>
+
+  <text x="72" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">읽는 목적</text>
+  <text x="356" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">감사의견</text>
+  <text x="506" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">투자자 보호</text>
+  <text x="676" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">사업의 내용</text>
+  <text x="846" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MD&amp;A</text>
+  <text x="998" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">주주·특관</text>
+
+  <rect x="70" y="236" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
+  <text x="96" y="286" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숫자 신뢰성 확인</text>
+  <rect x="330" y="252" width="130" height="52" rx="14" fill="#ea4647"/>
+  <text x="395" y="286" text-anchor="middle" fill="#fff" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
+  <rect x="484" y="252" width="130" height="52" rx="14" fill="#334155"/>
+  <text x="549" y="286" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
+  <rect x="654" y="252" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="824" y="252" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="976" y="252" width="130" height="52" rx="14" fill="#1e293b"/>
+
+  <rect x="70" y="338" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
+  <text x="96" y="388" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숨은 리스크 확인</text>
+  <rect x="330" y="354" width="130" height="52" rx="14" fill="#334155"/>
+  <text x="395" y="388" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
+  <rect x="484" y="354" width="130" height="52" rx="14" fill="#f97316"/>
+  <text x="549" y="388" text-anchor="middle" fill="#fff" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
+  <rect x="654" y="354" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="824" y="354" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="976" y="354" width="130" height="52" rx="14" fill="#1e293b"/>
+
+  <rect x="70" y="440" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
+  <text x="96" y="490" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">사업 구조와 성장 검증</text>
+  <rect x="330" y="456" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="484" y="456" width="130" height="52" rx="14" fill="#334155"/>
+  <text x="549" y="490" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
+  <rect x="654" y="456" width="130" height="52" rx="14" fill="#38bdf8"/>
+  <text x="719" y="490" text-anchor="middle" fill="#082f49" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
+  <rect x="824" y="456" width="130" height="52" rx="14" fill="#22c55e"/>
+  <text x="889" y="490" text-anchor="middle" fill="#052e16" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">함께</text>
+  <rect x="976" y="456" width="130" height="52" rx="14" fill="#1e293b"/>
+
+  <rect x="70" y="542" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
+  <text x="96" y="592" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">경영진 설명 검증</text>
+  <rect x="330" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="484" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="654" y="558" width="130" height="52" rx="14" fill="#334155"/>
+  <text x="719" y="592" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
+  <rect x="824" y="558" width="130" height="52" rx="14" fill="#22c55e"/>
+  <text x="889" y="592" text-anchor="middle" fill="#052e16" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
+  <rect x="976" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
+
+  <rect x="70" y="644" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
+  <text x="96" y="694" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">이해상충과 지배구조 확인</text>
+  <rect x="330" y="660" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="484" y="660" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="654" y="660" width="130" height="52" rx="14" fill="#1e293b"/>
+  <rect x="824" y="660" width="130" height="52" rx="14" fill="#334155"/>
+  <text x="889" y="694" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
+  <rect x="976" y="660" width="130" height="52" rx="14" fill="#a78bfa"/>
+  <text x="1041" y="694" text-anchor="middle" fill="#2e1065" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
+
+  <rect x="70" y="748" width="1040" height="28" rx="14" fill="#101826"/>
+  <circle cx="196" cy="762" r="10" fill="#ea4647"/>
+  <text x="216" y="768" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">최우선으로 먼저 연다</text>
+  <circle cx="474" cy="762" r="10" fill="#334155"/>
+  <text x="494" y="768" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">바로 이어서 본다</text>
+  <circle cx="720" cy="762" r="10" fill="#1e293b"/>
+  <text x="740" y="768" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">필요할 때 뒤에서 보강한다</text>
+</svg>

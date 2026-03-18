@@ -12,7 +12,7 @@
   <text x="400" y="52" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">40+ note items grouped by analytical purpose</text>
 
   <rect x="40" y="76" width="232" height="92" rx="8" fill="rgba(234,70,71,0.05)" stroke="rgba(234,70,71,0.2)"/>
-  <text x="56" y="98" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#f87171">General & Policy</text>
+  <text x="56" y="98" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#f87171">General &amp; Policy</text>
   <text x="56" y="118" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#1 #2 #3</text>
   <text x="56" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Accounting policy, key assumptions</text>
 
@@ -27,12 +27,12 @@
   <text x="544" y="138" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Receivables, inventory, PPE, lease</text>
 
   <rect x="40" y="182" width="232" height="92" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
-  <text x="56" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">Liabilities & Contingency</text>
+  <text x="56" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">Liabilities &amp; Contingency</text>
   <text x="56" y="224" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#21 ~ #27</text>
   <text x="56" y="244" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Borrowings, provisions, lawsuits</text>
 
   <rect x="284" y="182" width="232" height="92" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
-  <text x="300" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#86efac">Equity & Earnings</text>
+  <text x="300" y="204" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#86efac">Equity &amp; Earnings</text>
   <text x="300" y="224" font-family="JetBrains Mono, monospace" font-size="10" fill="#94a3b8">#28 ~ #41</text>
   <text x="300" y="244" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Capital, EPS, dividend, tax</text>
 

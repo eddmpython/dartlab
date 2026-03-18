@@ -27,7 +27,7 @@
   <text x="270" y="84" text-anchor="middle" fill="#f59e0b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="12" font-weight="700">2순위</text>
   <text x="270" y="106" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="600">사업의 내용</text>
   <text x="270" y="124" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">시장·원재료·가동률</text>
-  <text x="270" y="148" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="600">MD&A</text>
+  <text x="270" y="148" text-anchor="middle" fill="#f1f5f9" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="13" font-weight="600">MD&amp;A</text>
   <text x="270" y="166" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">경영진 설명</text>
 
   <!-- Arrow -->
@@ -63,7 +63,7 @@
   <text x="252" y="243" text-anchor="middle" fill="#fff" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10" font-weight="600">주석 80p</text>
 
   <rect x="384" y="224" width="200" height="28" rx="4" fill="#f59e0b" opacity="0.5"/>
-  <text x="484" y="243" text-anchor="middle" fill="#fff" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10" font-weight="600">사업 내용 · MD&A 70p</text>
+  <text x="484" y="243" text-anchor="middle" fill="#fff" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10" font-weight="600">사업 내용 · MD&amp;A 70p</text>
 
   <rect x="586" y="224" width="184" height="28" rx="4" fill="#64748b" opacity="0.5"/>
   <text x="678" y="243" text-anchor="middle" fill="#fff" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10" font-weight="600">지배구조 · 기타 70p</text>
@@ -75,5 +75,5 @@
   <!-- Time estimate -->
   <rect x="540" y="270" width="230" height="50" rx="8" fill="#1e293b" stroke="#475569"/>
   <text x="655" y="291" text-anchor="middle" fill="#f59e0b" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="11" font-weight="700">핵심만 읽으면 ~45분</text>
-  <text x="655" y="309" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">감사 3분 + 소송 5분 + 사업 15분 + MD&A 10분 + 지배 8분</text>
+  <text x="655" y="309" text-anchor="middle" fill="#94a3b8" font-family="'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-size="10">감사 3분 + 소송 5분 + 사업 15분 + MD&amp;A 10분 + 지배 8분</text>
 </svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">이슈 추적 사다리</title>
+  <desc id="desc">리스크 문구가 다음 숫자와 다음 보고서 추적으로 이어지는 단계를 보여주는 사다리</desc>
+  <rect width="1200" height="720" fill="#f7f7fb"/>
+  <path d="M250 580 L250 170" stroke="#6b7290" stroke-width="12" stroke-linecap="round"/>
+  <path d="M950 580 L950 170" stroke="#6b7290" stroke-width="12" stroke-linecap="round"/>
+  <path d="M250 520 H950" stroke="#6b7290" stroke-width="10" stroke-linecap="round"/>
+  <path d="M250 430 H950" stroke="#6b7290" stroke-width="10" stroke-linecap="round"/>
+  <path d="M250 340 H950" stroke="#6b7290" stroke-width="10" stroke-linecap="round"/>
+  <path d="M250 250 H950" stroke="#6b7290" stroke-width="10" stroke-linecap="round"/>
+  <text x="600" y="125" font-size="36" font-family="Arial, sans-serif" text-anchor="middle" fill="#40485d" font-weight="700">리스크는 한 번 읽고 끝내지 않는다</text>
+  <text x="600" y="235" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a5267">1. Risk Factors에서 이슈 포착</text>
+  <text x="600" y="325" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a5267">2. MD&amp;A에서 실제 영향 설명 확인</text>
+  <text x="600" y="415" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a5267">3. 숫자에서 실현 정도 확인</text>
+  <text x="600" y="505" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#4a5267">4. 다음 분기와 다음 연차에서 반복 여부 추적</text>
+  <text x="600" y="620" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#2f3546" font-weight="700">같은 이슈가 문구, 설명, 숫자, 다음 보고서로 이동하는지 본다</text>
+</svg>

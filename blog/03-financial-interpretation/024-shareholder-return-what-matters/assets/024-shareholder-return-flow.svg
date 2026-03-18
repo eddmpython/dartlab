@@ -1,1 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Shareholder Return Flow</text><rect x="74" y="168" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="116" y="212" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Cash flow</text><rect x="324" y="168" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="348" y="212" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Policy</text><rect x="574" y="168" width="150" height="80" rx="16" fill="#111827" stroke="#334155"/><text x="607" y="212" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Shareholder</text><path d="M224 208H324M474 208H574" stroke="#ea4647" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">주주환원 실행 흐름</title>
+  <desc id="desc">이익과 현금흐름이 배당, 자사주 매입, 소각으로 이어지는 과정을 보여주는 흐름도</desc>
+  <defs>
+    <linearGradient id="bg024a" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08121d"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arrow024a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M0 0L12 6L0 12Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" rx="28" fill="url(#bg024a)"/>
+  <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">좋은 문장보다 좋은 실행 흐름이 먼저다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">주주환원은 이익과 현금, 자사주 처리 방식이 이어질 때 비로소 실제 정책이 된다.</text>
+
+  <rect x="72" y="184" width="244" height="190" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
+  <text x="98" y="228" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">START</text>
+  <text x="98" y="268" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">이익과 현금</text>
+  <text x="98" y="304" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">순이익만이 아니라</text>
+  <text x="98" y="330" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">영업현금흐름과 잉여현금</text>
+  <text x="98" y="356" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">차입 부담까지 같이 본다</text>
+
+  <rect x="478" y="184" width="244" height="190" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="504" y="228" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MIDDLE</text>
+  <text x="504" y="268" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">실행 선택</text>
+  <text x="504" y="304" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">배당 확대</text>
+  <text x="504" y="330" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">자사주 매입</text>
+  <text x="504" y="356" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">자사주 소각</text>
+
+  <rect x="884" y="184" width="244" height="190" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
+  <text x="910" y="228" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">END</text>
+  <text x="910" y="268" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">주주 체감</text>
+  <text x="910" y="304" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">현금 배당이 늘었는가</text>
+  <text x="910" y="330" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">주식 수가 실제로 줄었는가</text>
+  <text x="910" y="356" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">반복 가능한 정책인가</text>
+
+  <path d="M318 278H466" stroke="#475569" stroke-width="4" marker-end="url(#arrow024a)"/>
+  <path d="M724 278H872" stroke="#475569" stroke-width="4" marker-end="url(#arrow024a)"/>
+
+  <rect x="72" y="434" width="1056" height="242" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
+  <text x="104" y="480" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">중간에서 자주 생기는 착시</text>
+
+  <rect x="104" y="514" width="300" height="120" rx="18" fill="#2b1d1b" stroke="#f97316"/>
+  <text x="128" y="552" fill="#fdba74" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">자사주 매입만 발표</text>
+  <text x="128" y="582" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="17">실제 매입 규모와 소각 여부를 보지 않으면</text>
+  <text x="128" y="606" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="17">주주 체감 효과를 과대평가하기 쉽다</text>
+
+  <rect x="450" y="514" width="300" height="120" rx="18" fill="#241b2a" stroke="#a78bfa"/>
+  <text x="474" y="552" fill="#c4b5fd" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">배당 확대 기사</text>
+  <text x="474" y="582" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="17">DPS와 배당총액이 몇 년 동안 유지되는지</text>
+  <text x="474" y="606" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="17">현금흐름 위에서 꼭 확인해야 한다</text>
+
+  <rect x="796" y="514" width="300" height="120" rx="18" fill="#16231f" stroke="#22c55e"/>
+  <text x="820" y="552" fill="#86efac" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">좋은 정책의 모습</text>
+  <text x="820" y="582" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="17">현금흐름과 모순되지 않고</text>
+  <text x="820" y="606" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="17">배당, 매입, 소각이 반복적으로 이어진다</text>
+</svg>

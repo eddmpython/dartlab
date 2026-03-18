@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="340" viewBox="0 0 800 340" fill="none">
+  <rect width="800" height="340" rx="28" fill="#111827"/>
+  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">Note Extraction Flow</text>
+  <g>
+    <rect x="54" y="126" width="140" height="72" rx="18" fill="#1e3a8a"/>
+    <text x="124" y="168" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="14">baseline filing</text>
+    <rect x="234" y="126" width="140" height="72" rx="18" fill="#0f766e"/>
+    <text x="304" y="168" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="14">rcept_no keep</text>
+    <rect x="414" y="126" width="140" height="72" rx="18" fill="#ea580c"/>
+    <text x="484" y="168" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="14">notes download</text>
+    <rect x="594" y="126" width="152" height="72" rx="18" fill="#7c3aed"/>
+    <text x="670" y="168" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="14">parser / storage</text>
+  </g>
+  <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+    <path d="M194 162H234"/>
+    <path d="M374 162H414"/>
+    <path d="M554 162H594"/>
+  </g>
+</svg>

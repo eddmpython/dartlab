@@ -1,1 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-family="Inter,system-ui,sans-serif" font-weight="700">AGM Reading Flow</text><rect x="74" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="103" y="212" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif" font-weight="700">Agenda</text><rect x="330" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="351" y="212" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif" font-weight="700">Meaning</text><rect x="586" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="618" y="212" fill="#f8fafc" font-size="14" font-family="Inter,system-ui,sans-serif" font-weight="700">Action</text><path d="M214 206H330M470 206H586" stroke="#ea4647" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">주주총회소집공고 읽기 흐름</title>
+  <desc id="desc">주주총회소집공고를 읽을 때 안건 우선순위와 배경 문서를 어떻게 연결할지 보여주는 흐름도</desc>
+  <defs>
+    <linearGradient id="bg026a" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08111d"/>
+      <stop offset="100%" stop-color="#101827"/>
+    </linearGradient>
+    <marker id="arrow026a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M0 0L12 6L0 12Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" rx="28" fill="url(#bg026a)"/>
+  <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주총공고는 안건을 배경 문서와 연결할 때 읽힌다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">일정 확인으로 끝내지 말고, 어떤 안건이 왜 지금 올라왔는지 순서대로 묻는다.</text>
+
+  <rect x="72" y="184" width="184" height="168" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
+  <text x="96" y="224" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 1</text>
+  <text x="96" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">안건 목록</text>
+  <text x="96" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">이사 선임</text>
+  <text x="96" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보수한도</text>
+  <text x="96" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">정관변경</text>
+
+  <rect x="294" y="184" width="184" height="168" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="318" y="224" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 2</text>
+  <text x="318" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">우선순위</text>
+  <text x="318" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">사람</text>
+  <text x="318" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보상</text>
+  <text x="318" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">규칙 변화</text>
+
+  <rect x="516" y="184" width="184" height="168" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
+  <text x="540" y="224" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 3</text>
+  <text x="540" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">배경 문서</text>
+  <text x="540" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">사업보고서</text>
+  <text x="540" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보수 공시</text>
+  <text x="540" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">오너십 표</text>
+
+  <rect x="738" y="184" width="184" height="168" rx="22" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
+  <text x="762" y="224" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 4</text>
+  <text x="762" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">질문 만들기</text>
+  <text x="762" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">왜 지금인가</text>
+  <text x="762" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">누구에게 유리한가</text>
+  <text x="762" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">무엇이 바뀌나</text>
+
+  <rect x="960" y="184" width="168" height="168" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
+  <text x="984" y="224" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 5</text>
+  <text x="984" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">판단</text>
+  <text x="984" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">통과되면</text>
+  <text x="984" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">무슨 방향이 되나</text>
+
+  <path d="M258 268H282" stroke="#475569" stroke-width="4" marker-end="url(#arrow026a)"/>
+  <path d="M480 268H504" stroke="#475569" stroke-width="4" marker-end="url(#arrow026a)"/>
+  <path d="M702 268H726" stroke="#475569" stroke-width="4" marker-end="url(#arrow026a)"/>
+  <path d="M924 268H948" stroke="#475569" stroke-width="4" marker-end="url(#arrow026a)"/>
+
+  <rect x="72" y="434" width="1056" height="238" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
+  <text x="104" y="478" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">초보자에게 특히 유용한 연결</text>
+
+  <rect x="104" y="514" width="304" height="112" rx="18" fill="#132131" stroke="#38bdf8"/>
+  <text x="128" y="552" fill="#7dd3fc" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">이사 선임</text>
+  <text x="128" y="582" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">최대주주 구조와 붙여서 보면</text>
+  <text x="128" y="606" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">지배력이 이사회로 이어지는지 보인다</text>
+
+  <rect x="448" y="514" width="304" height="112" rx="18" fill="#16231f" stroke="#22c55e"/>
+  <text x="472" y="552" fill="#86efac" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">보수한도</text>
+  <text x="472" y="582" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">현재 보수 공시와 나란히 보면</text>
+  <text x="472" y="606" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">앞으로 허용하려는 방향이 보인다</text>
+
+  <rect x="792" y="514" width="304" height="112" rx="18" fill="#231d16" stroke="#f59e0b"/>
+  <text x="816" y="552" fill="#fcd34d" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">정관변경과 배당</text>
+  <text x="816" y="582" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">주주환원과 자본정책 문서까지 붙이면</text>
+  <text x="816" y="606" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">짧은 안건 문장이 훨씬 선명해진다</text>
+</svg>

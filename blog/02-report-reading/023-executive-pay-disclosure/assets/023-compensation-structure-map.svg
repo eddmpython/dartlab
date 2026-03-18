@@ -1,1 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Compensation Structure</text><rect x="80" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="124" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Salary</text><rect x="270" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="318" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Bonus</text><rect x="460" y="166" width="140" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="491" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Stock</text><rect x="650" y="166" width="70" height="80" rx="14" fill="#111827" stroke="#334155"/><text x="663" y="210" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Other</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">임원 보수 구조 지도</title>
+  <desc id="desc">급여, 상여, 주식보상, 기타 보상을 어떻게 읽을지 단계별로 보여주는 지도</desc>
+  <defs>
+    <linearGradient id="bg023a" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08131b"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arrow023a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M0 0L12 6L0 12Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" rx="28" fill="url(#bg023a)"/>
+  <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">임원 보수는 총액보다 구조를 묻는 표다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">같은 총액이어도 무엇을 잘해야 보상받는지에 따라 회사가 주는 신호는 완전히 달라진다.</text>
+
+  <rect x="72" y="178" width="240" height="220" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
+  <text x="98" y="222" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">1. 급여</text>
+  <text x="98" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">고정 보상</text>
+  <text x="98" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">기본급이 크면</text>
+  <text x="98" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">실적과 분리될 수 있다</text>
+  <text x="98" y="362" fill="#bae6fd" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 너무 굳어 있지 않나</text>
+
+  <rect x="346" y="178" width="240" height="220" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="372" y="222" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">2. 상여</text>
+  <text x="372" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">단기 성과급</text>
+  <text x="372" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">무엇을 성과로 보나</text>
+  <text x="372" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">설명과 숫자가 맞나</text>
+  <text x="372" y="362" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 기준이 구체적인가</text>
+
+  <rect x="620" y="178" width="240" height="220" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
+  <text x="646" y="222" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">3. 주식보상</text>
+  <text x="646" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">장기 정렬</text>
+  <text x="646" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">베스팅 기간과 조건</text>
+  <text x="646" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">희석 가능성 확인</text>
+  <text x="646" y="362" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 주주와 같은 방향인가</text>
+
+  <rect x="894" y="178" width="234" height="220" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
+  <text x="920" y="222" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">4. 기타 보상</text>
+  <text x="920" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">퇴직과 일회성</text>
+  <text x="920" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">올해 숫자를 왜곡할 수 있다</text>
+  <text x="920" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">반복 가능한 보상인지 본다</text>
+  <text x="920" y="362" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 올해만 큰 숫자인가</text>
+
+  <path d="M312 288H336" stroke="#475569" stroke-width="4" marker-end="url(#arrow023a)"/>
+  <path d="M586 288H610" stroke="#475569" stroke-width="4" marker-end="url(#arrow023a)"/>
+  <path d="M860 288H884" stroke="#475569" stroke-width="4" marker-end="url(#arrow023a)"/>
+
+  <rect x="72" y="458" width="1056" height="206" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
+  <text x="104" y="502" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">마지막으로 붙여볼 질문</text>
+  <text x="104" y="540" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">실적이 나빠질 때 보수 구조도 같이 조정되는가</text>
+  <text x="104" y="572" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">주주환원과 보수 설명이 같은 방향을 가리키는가</text>
+  <text x="104" y="604" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">보수한도 안건이 현재 보수 구조와 자연스럽게 이어지는가</text>
+  <rect x="104" y="620" width="312" height="20" rx="10" fill="#38bdf8"/>
+  <rect x="434" y="620" width="302" height="20" rx="10" fill="#22c55e"/>
+  <rect x="754" y="620" width="290" height="20" rx="10" fill="#f59e0b"/>
+  <text x="1068" y="636" text-anchor="end" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">구조 이해 -> 연결 검증 -> 방향 판단</text>
+</svg>

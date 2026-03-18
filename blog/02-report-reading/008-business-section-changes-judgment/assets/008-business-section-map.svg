@@ -9,7 +9,7 @@
   <text x="56" y="130" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Is demand expanding or saturating?</text>
 
   <rect x="284" y="86" width="232" height="110" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.2)"/>
-  <text x="300" y="110" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#fdba74">Competition & Pricing</text>
+  <text x="300" y="110" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#fdba74">Competition &amp; Pricing</text>
   <text x="300" y="130" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Do they keep pricing power?</text>
 
   <rect x="528" y="86" width="232" height="110" rx="8" fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.2)"/>
@@ -17,7 +17,7 @@
   <text x="544" y="130" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Concentration vs diversification</text>
 
   <rect x="40" y="214" width="350" height="110" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)"/>
-  <text x="56" y="238" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#7dd3fc">Cost & Supply Chain</text>
+  <text x="56" y="238" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#7dd3fc">Cost &amp; Supply Chain</text>
   <text x="56" y="258" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Can margin survive input shocks?</text>
 
   <rect x="410" y="214" width="350" height="110" rx="8" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.2)"/>
