@@ -1,1 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none"><rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/><text x="48" y="62" fill="#f8fafc" font-size="24" font-family="Inter,system-ui,sans-serif" font-weight="700">Owner Dependence</text><rect x="170" y="118" width="420" height="220" rx="18" fill="#111827" stroke="#334155"/><path d="M380 118V338M170 228H590" stroke="#334155"/><text x="232" y="152" fill="#86efac" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Strong owner, strong system</text><text x="418" y="304" fill="#f87171" font-size="13" font-family="Inter,system-ui,sans-serif" font-weight="700">Strong owner, weak system</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">오너 의존 매트릭스</title>
+  <desc id="desc">강한 오너십이 장점으로 읽히는 경우와 위험으로 읽히는 경우를 비교하는 매트릭스</desc>
+  <defs>
+    <linearGradient id="bg025a" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08111d"/>
+      <stop offset="100%" stop-color="#101826"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="760" rx="28" fill="url(#bg025a)"/>
+  <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
+
+  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">강한 오너십은 장점일 수도 있고 경고일 수도 있다</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">같은 강한 지배력도 설명 가능성과 견제 구조가 있느냐에 따라 완전히 다르게 읽힌다.</text>
+
+  <text x="238" y="206" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">설명 약함</text>
+  <text x="892" y="206" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">설명 충분</text>
+  <text x="60" y="376" transform="rotate(-90 60 376)" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">견제 약함</text>
+  <text x="60" y="642" transform="rotate(-90 60 642)" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">견제 있음</text>
+
+  <rect x="104" y="228" width="436" height="214" rx="24" fill="#2a1b1b" stroke="#ef4444" stroke-width="2"/>
+  <text x="138" y="272" fill="#fca5a5" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">가장 위험한 조합</text>
+  <text x="138" y="310" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="18">오너는 강한데 설명은 약하고</text>
+  <text x="138" y="336" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="18">이사회와 주총 견제도 약해 보인다</text>
+  <text x="138" y="372" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">내부거래, 보수, 자본정책이 같이 불편하면 경고 강도 상승</text>
+
+  <rect x="590" y="228" width="506" height="214" rx="24" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
+  <text x="624" y="272" fill="#fcd34d" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">설명은 있지만 견제는 약함</text>
+  <text x="624" y="310" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="18">장기 전략을 말하고 구조 설명도 되지만</text>
+  <text x="624" y="336" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="18">반대 의견이 반영될 통로가 약하면 불편함이 남는다</text>
+  <text x="624" y="372" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">주총 안건과 이사회 구성을 함께 봐야 하는 구간</text>
+
+  <rect x="104" y="486" width="436" height="214" rx="24" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
+  <text x="138" y="530" fill="#c4b5fd" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">견제는 있는데 설명 부족</text>
+  <text x="138" y="568" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="18">겉으로는 균형 구조처럼 보여도</text>
+  <text x="138" y="594" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="18">왜 이렇게 설계됐는지 설명이 약하면 신뢰가 덜 쌓인다</text>
+  <text x="138" y="630" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">복잡한 관계회사 구조에서 자주 보이는 구간</text>
+
+  <rect x="590" y="486" width="506" height="214" rx="24" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
+  <text x="624" y="530" fill="#86efac" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">가장 건강한 조합</text>
+  <text x="624" y="568" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">오너십은 강할 수 있어도 구조가 단순하고 설명 가능하며</text>
+  <text x="624" y="594" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">보수, 환원, 이사회 견제까지 같은 방향으로 읽힌다</text>
+  <text x="624" y="630" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="18">좋은 오너십으로 읽힐 가능성이 가장 높은 구간</text>
+</svg>
