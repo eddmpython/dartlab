@@ -1758,7 +1758,6 @@ class _ProfileAccessor:
 from dartlab.engines.common.types import ShowResult
 
 
-
 class Company:
     """DART 기반 한국 상장기업 분석.
 
@@ -2603,7 +2602,14 @@ class Company:
                     return None
                 return self._applyPeriodFilter(boRows.select(nonNullCols), period)
             elif bt == "table":
-                return self._horizontalizeTableBlock(topicFrame, block, periodCols, period)
+                result = self._horizontalizeTableBlock(topicFrame, block, periodCols, period)
+                if result is not None:
+                    return result
+                # 수평화 실패(이력형/목록형 등) → 원본 텍스트 fallback
+                keepCols = [c for c in periodCols if c in boRows.columns]
+                nonNullCols = [c for c in keepCols if boRows[c].null_count() < boRows.height]
+                if nonNullCols:
+                    return self._applyPeriodFilter(boRows.select(nonNullCols), period)
             return None
 
         # block=None → 전체 topic (text 원문 + table 수평화, blockOrder 순서)
@@ -2713,8 +2719,11 @@ class Company:
             r"\(?(당기|전기|전전기|당반기|전반기|당분기|전분기)\)?"
         )
 
+        _NOTE_REF_RE = re.compile(r"\(\*\d*(?:,\d+)*\)")  # (*), (*1), (*1,2) 등
+
         def _normalizeItem(name: str) -> str:
             name = _SUFFIX_RE.sub("", name).strip()
+            name = _NOTE_REF_RE.sub("", name).strip()  # 주석번호 제거
             # 기수+상대기 → 상대기명으로 치환
             m = _KISU_RE.search(name)
             if m:
@@ -2734,23 +2743,90 @@ class Company:
                     periodItemVal[item][p] = val
 
         def _collectKvMatrix(sub: list[str], p: str) -> None:
-            rows, _, _ = _parseKeyValueOrMatrix(sub)
+            rows, headerNames, _ = _parseKeyValueOrMatrix(sub)
             for rawItem, vals in rows:
                 item = _normalizeItem(rawItem)
-                val = " | ".join(v for v in vals if v).strip()
-                if val:
-                    if item not in seenItems:
-                        allItems.append(item)
-                        seenItems.add(item)
-                    if item not in periodItemVal:
-                        periodItemVal[item] = {}
-                    periodItemVal[item][p] = val
+                nonEmptyVals = [v for v in vals if v.strip()]
+                if len(headerNames) >= 2 and len(nonEmptyVals) >= 2 and len(nonEmptyVals) <= len(headerNames):
+                    # matrix: 헤더별 개별 항목으로 분리 (vals와 headerNames 수가 맞을 때만)
+                    for hi, hname in enumerate(headerNames):
+                        v = vals[hi].strip() if hi < len(vals) else ""
+                        if not v or v == "-":
+                            continue
+                        compoundItem = f"{item}_{hname}"
+                        if compoundItem not in seenItems:
+                            allItems.append(compoundItem)
+                            seenItems.add(compoundItem)
+                        if compoundItem not in periodItemVal:
+                            periodItemVal[compoundItem] = {}
+                        periodItemVal[compoundItem][p] = v
+                else:
+                    # key_value 또는 vals > headerNames: 전체 값 합침
+                    val = " | ".join(v for v in vals if v.strip()).strip()
+                    if val:
+                        if item not in seenItems:
+                            allItems.append(item)
+                            seenItems.add(item)
+                        if item not in periodItemVal:
+                            periodItemVal[item] = {}
+                        periodItemVal[item][p] = val
 
+        from dartlab.engines.dart.docs.sections.tableParser import _normalizeHeader
+
+        _PERIOD_KW_RE = re.compile(
+            r"\d*분기|반기|당기|전기|전전기|당반기|전반기|당분기|전분기|당기말|전기말"
+        )
+
+        def _groupHeader(hc: list[str]) -> str:
+            """그룹핑용 헤더 시그니처 — 기간 키워드까지 제거."""
+            h = _normalizeHeader(hc)
+            h = _PERIOD_KW_RE.sub("", h)
+            h = re.sub(r"\| *\|", "|", h)  # 빈 파이프 정리
+            h = re.sub(r"\s+", " ", h).strip()
+            return h
+
+        # ── 1단계: 기간별 서브테이블의 헤더 시그니처 수집 ──
+        _headerGroups: dict[str, list[str]] = {}  # normHeader → [periods]
+        for p in periodCols:
+            md = boRow[p][0] if p in boRow.columns else None
+            if md is None:
+                continue
+            for sub in splitSubtables(str(md)):
+                hc = _headerCells(sub)
+                if _isJunk(hc):
+                    continue
+                dr = _dataRows(sub)
+                if not dr:
+                    continue
+                structType = _classifyStructure(hc)
+                if structType == "skip":
+                    fixed = self._stripUnitHeader(sub)
+                    if fixed is not None:
+                        fixedHc = _headerCells(fixed)
+                        fixedDr = _dataRows(fixed)
+                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
+                            hc = fixedHc
+                gh = _groupHeader(hc)
+                if gh not in _headerGroups:
+                    _headerGroups[gh] = []
+                if p not in _headerGroups[gh]:
+                    _headerGroups[gh].append(p)
+
+        # 가장 많은 기간을 커버하는 헤더 그룹 선택
+        if _headerGroups:
+            bestHeader = max(_headerGroups, key=lambda k: len(_headerGroups[k]))
+            bestPeriods = set(_headerGroups[bestHeader])
+        else:
+            bestPeriods = set(periodCols)
+
+        # ── 2단계: 선택된 그룹의 기간에서만 수평화 ──
         allItems: list[str] = []
         seenItems: set[str] = set()
         periodItemVal: dict[str, dict[str, str]] = {}
 
         for p in periodCols:
+            if p not in bestPeriods:
+                continue
             md = boRow[p][0] if p in boRow.columns else None
             if md is None:
                 continue
@@ -2779,6 +2855,11 @@ class Company:
                             structType = _classifyStructure(fixedHc)
                             hc = fixedHc
                             sub = fixed  # 이후 파서에 strip된 서브테이블 전달
+
+                # 선택된 헤더 그룹의 서브테이블만 수집
+                gh = _groupHeader(hc)
+                if gh != bestHeader:
+                    continue
 
                 if structType == "multi_year":
                     beforeLen = len(allItems)
@@ -2833,6 +2914,18 @@ class Company:
         usedPeriods = [p for p in periodCols if any(p in periodItemVal.get(item, {}) for item in allItems)]
         if not usedPeriods:
             return None
+
+        # sparse 감지: 항목이 많고 대부분이 소수 기간에서만 값 → 수평화 부적합
+        # (기간별 서브테이블 구조가 다른 경우, 예: 이사 변동 + 사업조직 변경 혼재)
+        if len(usedPeriods) >= 3 and len(allItems) > 15:
+            totalCells = len(allItems) * len(usedPeriods)
+            filledCells = sum(
+                1 for item in allItems for p in usedPeriods
+                if periodItemVal.get(item, {}).get(p)
+            )
+            fillRate = filledCells / totalCells if totalCells > 0 else 0
+            if fillRate < 0.5:
+                return None
 
         schema = {"항목": pl.Utf8}
         for p in usedPeriods:
@@ -3070,7 +3163,11 @@ class Company:
 
         if block is None:
             # 블록 목차 반환
-            return self._buildBlockIndex(topicRows)
+            blockIndex = self._buildBlockIndex(topicRows)
+            if blockIndex.height == 1:
+                # 블록이 1개면 바로 데이터 반환
+                return self.show(topic, blockIndex["block"][0], period=period, raw=raw)
+            return blockIndex
 
         # 특정 block의 실제 데이터
         boRows = topicRows.filter(pl.col("blockOrder") == block)

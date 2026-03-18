@@ -5,8 +5,8 @@
 SEC EDGAR 원문 공시를 섹션 단위 parquet로 저장하고, `sections()`까지 포함한 form-native text 비교 계층을 제공한다.
 현재 package 계약은 `10-K`, `10-Q`, `20-F`, `40-F`를 `section_title`, `section_content`, `period_key` 중심으로 읽고, `form_type::topicId` 기준 horizontal view를 만드는 것이다.
 
-시장 진입점은 `dartlab.engines.edgar.Company`와 `dartlab.engines.edgar.Compare`다.
-루트 `dartlab.Company` / `dartlab.Compare`는 이 EDGAR 진입점을 통합 facade로 감싼다.
+시장 진입점은 `dartlab.engines.edgar.Company`다.
+루트 `dartlab.Company`가 이 EDGAR 진입점을 통합 facade로 감싼다.
 
 핵심 근거 실험은 `experiments/055_edgarDocs/`와 `experiments/057_edgarSectionMap/`이다.
 

@@ -6,7 +6,6 @@
 
 - 루트 facade
   - `dartlab.Company`
-  - `dartlab.Compare`
 - 엔진 본체
   - `dartlab.engines.dart.*`
   - `dartlab.engines.edgar.*`
@@ -15,7 +14,7 @@
 - 루트 facade -> 엔진 본체
 - 엔진 본체 -> 루트 facade 금지
 
-## Company 핵심 사상 (2026-03-17 확정)
+## Company 핵심 사상 (2026-03-18 확정)
 
 ### sections = 전체 지도
 
@@ -115,6 +114,13 @@ c.finance.BS/IS/CF  # finance 바로가기
 ```
 
 DART/EDGAR 동일 인터페이스. CompanyProtocol로 보장.
+
+## Compare 제거 원칙 (2026-03-18 확정)
+
+- 공개 진입점은 `Company` 하나로 수렴한다.
+- 루트 `dartlab.Compare`와 엔진별 `Compare`는 사용처가 없으면 유지하지 않는다.
+- 기업 간 비교가 다시 필요해지면 기존 `Compare` 추상화를 복원하지 않고 `Company` 기반 API 위에서 새로 설계한다.
+- 뷰어의 table 정렬/표시 문제를 `Compare` 개념으로 설명하지 않는다.
 
 상세 문서:
 - `src/dartlab/engines/dart/DEV.md`

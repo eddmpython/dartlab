@@ -36,7 +36,7 @@ from .resolve import (
 )
 from .streaming import stream_ask
 
-app = FastAPI(title="DartLab", version=dartlab.__version__ if hasattr(dartlab, "__version__") else "0.2.0")
+app = FastAPI(title="DartLab", version=dartlab.__version__)
 
 
 def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
@@ -594,11 +594,21 @@ def api_search(q: str = Query(..., min_length=1)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+def _get_company(code: str) -> Company:
+    """캐시 우선 Company 조회 — 뷰어 엔드포인트 공용."""
+    cached = company_cache.get(code)
+    if cached:
+        return cached[0]
+    c = Company(code)
+    company_cache.put(code, c, None)
+    return c
+
+
 @app.get("/api/company/{code}")
 def api_company(code: str):
     """기업 기본 정보 + 현재 공개 surface 안내."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -620,7 +630,7 @@ def api_company(code: str):
 def api_company_index(code: str):
     """Company index DataFrame."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -634,14 +644,73 @@ def api_company_index(code: str):
 def api_company_sections(code: str):
     """Company sections — 전체 지도."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
-            "payload": _serialize_payload(c.sections),
+            "payload": _serialize_payload(c.sections, max_rows=5000),
         }
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/show/{topic}/all")
+def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
+    """topic의 모든 블록 데이터를 viewer 레이어 경유로 반환.
+
+    각 블록에 kind(finance/text/structured/raw_markdown/report),
+    meta(unit/scale/periods), changeSummary(text 변천사),
+    textDocument(텍스트 전용 timeline 문서)를 포함한다.
+    """
+    try:
+        from dartlab.engines.dart.docs.viewer import (
+            serializeViewerBlock,
+            serializeViewerTextDocument,
+            viewerBlocks,
+            viewerTextDocument,
+        )
+
+        c = _get_company(code)
+        blocks = viewerBlocks(c, topic)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "topic": topic,
+            "blocks": [serializeViewerBlock(b) for b in blocks],
+            "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/company/{code}/show/{topic}/{block_idx}/parse")
+async def api_parse_raw_table(code: str, topic: str, block_idx: int):
+    """raw_markdown 블록을 AI로 구조화된 DataFrame으로 변환."""
+    try:
+        from dartlab.engines.dart.docs.viewer import viewerBlocks, serializeViewerBlock
+        from dartlab.engines.dart.docs.tableAI import parseRawMarkdownBlock
+
+        c = _get_company(code)
+        blocks = viewerBlocks(c, topic)
+        target = None
+        for b in blocks:
+            if b.block == block_idx and b.kind == "raw_markdown":
+                target = b
+                break
+        if target is None:
+            raise HTTPException(status_code=404, detail="raw_markdown 블록이 아님")
+
+        result = await parseRawMarkdownBlock(target.rawMarkdown, topic, block_idx)
+        return {
+            "stockCode": c.stockCode,
+            "topic": topic,
+            "block": block_idx,
+            "parsed": result,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/company/{code}/show/{topic}")
@@ -651,7 +720,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
     block=None → 블록 목차, block=N → 실제 데이터.
     """
     try:
-        c = Company(code)
+        c = _get_company(code)
         if block is not None:
             result = c.show(topic, block, period=None, raw=raw)
         else:
@@ -671,7 +740,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
 def api_company_trace(code: str, topic: str):
     """Company topic source trace."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -686,7 +755,7 @@ def api_company_trace(code: str, topic: str):
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -705,7 +774,7 @@ def api_company_diff_topic(
 ):
     """Company 특정 topic의 두 기간 줄 단위 diff."""
     try:
-        c = Company(code)
+        c = _get_company(code)
         result = c.diff(topic, fromPeriod, toPeriod)
         return {
             "stockCode": c.stockCode,
@@ -719,27 +788,13 @@ def api_company_diff_topic(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@app.get("/api/company/{code}/sections")
-def api_company_sections(code: str):
-    """Company sections 원본 (topic × period)."""
-    try:
-        c = Company(code)
-        return {
-            "stockCode": c.stockCode,
-            "corpName": c.corpName,
-            "payload": _serialize_payload(c.sections),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
 @app.get("/api/company/{code}/modules")
 def api_company_modules(code: str):
     """기업의 사용 가능한 데이터 모듈 목록."""
     try:
         from dartlab.engines.ai.context import scan_available_modules
 
-        c = Company(code)
+        c = _get_company(code)
         modules = scan_available_modules(c)
         return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
     except Exception as e:
@@ -1306,7 +1361,11 @@ def serve_spa(path: str = ""):
 
     index = _UI_DIR / "index.html"
     if index.exists():
-        return FileResponse(index, media_type="text/html")
+        return FileResponse(
+            index,
+            media_type="text/html",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     return HTMLResponse("<h2>index.html not found</h2>", status_code=404)
 
@@ -1380,17 +1439,16 @@ def ensure_port(port: int) -> str:
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(("127.0.0.1", port))
+        sock.bind(("0.0.0.0", port))
         sock.close()
         return "ok"
     except OSError:
         pass
 
     if _is_dartlab_alive(port):
-        print(f"\n  이미 실행 중입니다: http://localhost:{port}\n")
-        return "already_running"
-
-    print(f"\n  포트 {port} 사용 중 (좀비) — 기존 프로세스 종료 중...")
+        print(f"\n  기존 서버 종료 중 (포트 {port})...")
+    else:
+        print(f"\n  포트 {port} 사용 중 (좀비) — 기존 프로세스 종료 중...")
     if _kill_port(port):
         print("  종료 완료. 재시작합니다.\n")
         return "ok"

@@ -13,7 +13,6 @@
 
 ```python
 import dartlab
-from dartlab import Compare
 
 kr = dartlab.Company("005930")
 kr = dartlab.Company("삼성전자")
@@ -116,60 +115,6 @@ us.cik                       # "0000320193"
 | `ratios` | RatioResult | 재무비율 |
 | `insights` | AnalysisResult | 7영역 인사이트 등급 |
 | `market` | str | `"US"` |
-
-## Compare (복수 기업 비교)
-
-```python
-import dartlab
-from dartlab import Compare
-
-c = Compare(dartlab.Company("005930"), dartlab.Company("AAPL"))
-```
-
-루트 `Compare`는 KR/US 혼합을 포함한 통합 facade다. 시장별 명시 compare는
-`dartlab.engines.dart.Compare`, `dartlab.engines.edgar.Compare`로 접근한다.
-
-### 재무비율 비교
-
-| Property | 설명 |
-|----------|------|
-| `ratios` | 전체 비율 (30+ 비율) |
-| `profitability` | 수익성 (ROE, ROA, 마진 등) |
-| `stability` | 안정성 (부채비율, 유동비율 등) |
-| `growth` | 성장성 (매출/이익 YoY, CAGR) |
-| `efficiency` | 효율성 (회전율) |
-| `cashflowRatios` | 현금흐름 (FCF, CF마진 등) |
-| `valuation` | 밸류에이션 (PER, PBR 등) |
-| `scale` | 규모 절대값 (매출, 자산, 시총) |
-
-### 인사이트 비교
-
-| Property | 설명 |
-|----------|------|
-| `insights` | 7영역 등급 비교 |
-| `insightDetails` | 등급 + 요약 상세 비교 |
-
-### 연도별 시계열 비교
-
-| Property | 설명 |
-|----------|------|
-| `revenue` | 매출 |
-| `operatingProfit` | 영업이익 |
-| `netIncome` | 순이익 |
-| `totalAssets` | 총자산 |
-| `equity` | 자본(지배기업) |
-| `operatingCashflow` | 영업활동CF |
-
-### 비율 추이 비교
-
-| Property | 설명 |
-|----------|------|
-| `roeHistory` | ROE 연도별 추이 |
-| `debtRatioHistory` | 부채비율 추이 |
-| `marginHistory` | 영업이익률 추이 |
-| `netMarginHistory` | 순이익률 추이 |
-| `currentRatioHistory` | 유동비율 추이 |
-| `ratioHistory("snakeId")` | 임의 비율 추이 |
 
 ---
 
