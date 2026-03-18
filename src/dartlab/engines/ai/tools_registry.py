@@ -64,9 +64,775 @@ def _df_to_md(df: pl.DataFrame, max_rows: int = 15) -> str:
     return df_to_markdown(df, max_rows=max_rows)
 
 
-def register_defaults(company: Any) -> None:
-    """Company 인스턴스에 바인딩된 기본 분석 도구 등록."""
+def _json_to_text(value: Any, max_chars: int = 4000) -> str:
+    """dict/list/json 직렬화."""
+    text = json.dumps(value, ensure_ascii=False, indent=2, default=str)
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n... (truncated)"
+
+
+def _format_tool_value(value: Any, *, max_rows: int = 30, max_chars: int = 4000) -> str:
+    """도구 반환값을 문자열로 표준화."""
+    if isinstance(value, pl.DataFrame):
+        return _df_to_md(value, max_rows=max_rows)
+    if isinstance(value, (dict, list, tuple)):
+        return _json_to_text(value, max_chars=max_chars)
+    return str(value)
+
+
+def _maybe_int(value: Any) -> int | None:
+    """빈 값이면 None, 아니면 int 변환."""
+    if value in (None, "", False):
+        return None
+    return int(value)
+
+
+def _csv_list(value: str | None) -> list[str] | None:
+    """쉼표 구분 문자열 → 리스트."""
+    if not value:
+        return None
+    items = [item.strip() for item in value.split(",") if item.strip()]
+    return items or None
+
+
+def _build_system_spec_markdown() -> str:
+    """시스템 요약 스펙을 사람이 읽기 쉬운 마크다운으로 반환."""
+    from dartlab.engines.ai.spec import buildSpec
+
+    spec = buildSpec(depth="summary")
+    lines = [f"# {spec['system']['name']} v{spec['system']['version']}"]
+    lines.append(f"{spec['system']['description']} ({spec['system']['coverage']})")
+    lines.append("")
+    lines.append("## 엔진 목록")
+    for name, info in spec.get("engines", {}).items():
+        lines.append(f"### {name}")
+        lines.append(f"- {info.get('description', '')}")
+        summary = info.get("summary", {})
+        for key, value in summary.items():
+            lines.append(f"- {key}: {value}")
+    return "\n".join(lines)
+
+
+def _count_local_parquets(category: str) -> int:
+    """카테고리별 로컬 parquet 파일 수."""
+    from dartlab.core.dataLoader import _dataDir
+
+    try:
+        data_dir = _dataDir(category)
+    except (FileNotFoundError, KeyError, OSError, PermissionError, ValueError):
+        return 0
+    if not data_dir.exists():
+        return 0
+    return len(list(data_dir.glob("*.parquet")))
+
+
+def _build_tool_catalog_markdown(include_parameters: bool = False) -> str:
+    """현재 등록된 tool schema를 마크다운으로 노출."""
+    schemas = get_tool_schemas()
+    lines = [f"# 등록된 대화 도구 ({len(schemas)}개)"]
+    for schema in schemas:
+        fn = schema.get("function", {})
+        name = fn.get("name", "")
+        desc = fn.get("description", "")
+        lines.append(f"## `{name}`")
+        lines.append(f"- {desc}")
+        if include_parameters:
+            params = fn.get("parameters", {}).get("properties", {})
+            required = set(fn.get("parameters", {}).get("required", []))
+            for key, info in params.items():
+                info_type = info.get("type", "any")
+                requirement = "required" if key in required else "optional"
+                description = info.get("description", "")
+                lines.append(f"- `{key}` ({info_type}, {requirement}): {description}")
+    return "\n".join(lines)
+
+
+def _build_runtime_capabilities_markdown(company: Any | None = None) -> str:
+    """UI 대화에서 설명해야 하는 실제 기능 범위를 registry/tool 기준으로 요약."""
+    from dartlab.core.registry import getCategories, getEntries
+    from dartlab.engines.ai.codex_cli import inspect_codex_cli
+
+    local_counts = {
+        "docs": _count_local_parquets("docs"),
+        "finance": _count_local_parquets("finance"),
+        "edgarDocs": _count_local_parquets("edgarDocs"),
+        "edgar": _count_local_parquets("edgar"),
+    }
+    registry_counts = {category: len(getEntries(category=category)) for category in getCategories()}
+    tool_names = [schema.get("function", {}).get("name", "") for schema in get_tool_schemas()]
+    codex_info = inspect_codex_cli()
+    codex_commands = ", ".join(f"`{name}`" for name in codex_info.get("commands", [])[:8]) or "(미확인)"
+    sandbox_modes = ", ".join(f"`{mode}`" for mode in codex_info.get("sandboxModes", [])) or "(미확인)"
+
+    lines = [
+        "# DartLab 런타임 기능 범위",
+        "",
+        "## 자동 인식된 대화 도구",
+        f"- 현재 등록된 도구: {len(tool_names)}개",
+        f"- 도구 목록: {', '.join(f'`{name}`' for name in tool_names)}",
+        "- 새 도구가 등록되면 이 목록과 에이전트 사용 surface에 자동 반영됨",
+        "",
+        "## 시장 / 진입점",
+        '- `Company("005930")`, `Company("삼성전자")` → 한국 DART Company',
+        '- `Company("AAPL")` → 미국 SEC EDGAR Company',
+        "- `OpenDart()` → DART 공개 API 원문/편의 래퍼",
+        "- `OpenEdgar()` → SEC 공개 API 원문/편의 래퍼",
+        "",
+        "## Registry 기반 데이터 surface",
+        f"- registry 카테고리: {', '.join(f'`{name}`({registry_counts[name]}개)' for name in sorted(registry_counts))}",
+        "- `core/registry.py`에 엔트리를 추가하면 모듈 설명/검색/조회 surface가 함께 확장됨",
+        "",
+        "## UI 대화에서 가능한 것",
+        "- 종목 검색, 회사 선택, sections/show/trace/diff 기반 공시 탐색",
+        "- 재무표 조회, 재무비율, YoY, CAGR, 이상치, 요약 통계 계산",
+        "- insight/sector/rank 분석 엔진 호출",
+        "- OpenDart/OpenEdgar 공개 API를 대화 도구로 직접 호출",
+        "- Excel 내보내기, 템플릿 생성/조회/재사용",
+        "- 로컬 데이터 현황 확인, 데이터 다운로드 트리거",
+        "- Codex CLI 브리지로 실제 코드 작업, 수정, 리뷰 요청 전달",
+        "",
+        "## EDGAR에서 더 받을 수 있는 데이터",
+        '- `Company("AAPL")` 경로로 저장된 EDGAR docs/finance를 바로 읽을 수 있음',
+        '- `OpenEdgar().search("Apple")` → issuer 검색',
+        '- `OpenEdgar()("AAPL").filings()` → submissions 기반 filing 목록',
+        '- `OpenEdgar()("AAPL").companyFactsJson()` / `companyConceptJson()` / `frameJson(...)` → SEC raw 데이터',
+        '- `OpenEdgar()("AAPL").saveDocs(sinceYear=2009)` → EDGAR docs parquet 추가 수집',
+        '- `OpenEdgar()("AAPL").saveFinance()` → companyfacts parquet 저장',
+        "",
+        "## OpenAPI 범위",
+        "- DART: 기업 검색, 공시 목록, 정기보고서/재무 API, 저장용 saver",
+        "- EDGAR: issuer resolve/search, submissions, filings DataFrame, companyfacts/companyconcept/frames, docs/finance saver",
+        "",
+        "## GPT / Codex 연결 범위",
+        "- OpenAI, ChatGPT, Codex CLI, Ollama 등을 채팅 백엔드로 연결 가능",
+        "- 현재 UI에서는 코드 설명, 코드 초안, 리팩터링 제안 같은 텍스트 기반 코딩 보조는 가능",
+        f"- Codex CLI 상태: {'설치됨' if codex_info.get('installed') else '미설치'}"
+        + (f" / {codex_info['version']}" if codex_info.get("version") else ""),
+        f"- Codex CLI 명령 자동 인식: {codex_commands}",
+        f"- Codex sandbox 자동 인식: {sandbox_modes}",
+        "- `codex` provider는 코드/파일 수정 의도가 보이면 `workspace-write`를 우선 사용하고, 일반 질의는 `read-only`를 유지",
+        "- `run_codex_task` 도구를 통해 다른 provider에서도 Codex CLI에 코드 작업을 위임할 수 있음",
+        "- `claude-code` provider는 OAuth 지원 전까지 공개 surface에서 제공하지 않음",
+        "- Codex CLI help/config가 바뀌면 상태/설명 경로가 다시 검사되어 자동 반영됨",
+        "",
+        "## 로컬 데이터 현황",
+        f"- DART docs: {local_counts['docs']}개",
+        f"- DART finance: {local_counts['finance']}개",
+        f"- EDGAR docs: {local_counts['edgarDocs']}개",
+        f"- EDGAR finance: {local_counts['edgar']}개",
+    ]
+
+    if company is not None:
+        from dartlab.engines.ai.context import scan_available_modules
+
+        modules = scan_available_modules(company)
+        lines.extend(
+            [
+                "",
+                "## 현재 선택 기업에서 바로 쓸 수 있는 데이터",
+                f"- 회사: {getattr(company, 'corpName', '-')}",
+                f"- 즉시 조회 가능한 모듈: {len(modules)}개",
+            ]
+        )
+        if modules:
+            module_preview = ", ".join(f"`{module['name']}`" for module in modules[:15])
+            lines.append(f"- 상위 모듈: {module_preview}")
+
+    lines.extend(
+        [
+            "",
+            "## 추천 다음 질문",
+            "- `AAPL에서 지금 바로 볼 수 있는 데이터 알려줘`",
+            "- `EDGAR docs를 더 받으려면 어떤 경로를 써야 해?`",
+            "- `OpenDart와 OpenEdgar로 할 수 있는 일을 비교해줘`",
+            "- `현재 등록된 도구 목록과 파라미터를 보여줘`",
+            "- `현재 워크스페이스에서 이 버그를 고치도록 Codex에 맡겨줘`",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def register_defaults(company: Any | None = None) -> None:
+    """전역 기능 + Company 바인딩 분석 도구 등록."""
     clear_registry()
+
+    def get_system_spec() -> str:
+        return _build_system_spec_markdown()
+
+    register_tool(
+        "get_system_spec",
+        get_system_spec,
+        "DartLab 시스템의 전체 스펙(엔진 목록, 데이터 종류, 기능)을 조회합니다. "
+        "사용자가 '어떤 데이터가 있어?', '무슨 분석이 가능해?' 같은 메타 질문을 할 때 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    def get_engine_spec(engine: str) -> str:
+        from dartlab.engines.ai.spec import buildSpec, getEngineSpec
+
+        spec = getEngineSpec(engine)
+        if spec is None:
+            all_spec = buildSpec(depth="summary")
+            available = ", ".join(all_spec.get("engines", {}).keys())
+            return f"'{engine}' 엔진을 찾을 수 없습니다. 사용 가능한 엔진: {available}"
+        return json.dumps(spec, ensure_ascii=False, indent=2, default=str)
+
+    register_tool(
+        "get_engine_spec",
+        get_engine_spec,
+        "특정 엔진의 상세 스펙을 조회합니다. "
+        "엔진명 예시: insight(인사이트), sector(섹터분류), rank(규모순위), "
+        "dart.finance(재무제표), dart.report(정기보고서). "
+        "각 엔진이 제공하는 구체적 지표·영역·분류 기준을 확인할 수 있습니다.",
+        {
+            "type": "object",
+            "properties": {
+                "engine": {
+                    "type": "string",
+                    "description": "엔진명 (예: insight, sector, rank, dart.finance, dart.report)",
+                },
+            },
+            "required": ["engine"],
+        },
+    )
+
+    def get_runtime_capabilities() -> str:
+        return _build_runtime_capabilities_markdown(company)
+
+    register_tool(
+        "get_runtime_capabilities",
+        get_runtime_capabilities,
+        "DartLab UI 대화에서 실제로 가능한 기능 범위를 요약합니다. "
+        "EDGAR에서 더 받을 수 있는 데이터, OpenAPI 범위, GPT/Codex 연결 시 가능한 코딩 범위를 물을 때 우선 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    def get_tool_catalog(include_parameters: bool = False) -> str:
+        return _build_tool_catalog_markdown(include_parameters=include_parameters)
+
+    register_tool(
+        "get_tool_catalog",
+        get_tool_catalog,
+        "현재 대화에서 등록된 도구 목록을 조회합니다. 새로 추가된 도구도 현재 registry 기준으로 자동 반영됩니다.",
+        {
+            "type": "object",
+            "properties": {
+                "include_parameters": {
+                    "type": "boolean",
+                    "description": "true면 각 도구의 파라미터까지 함께 출력",
+                    "default": False,
+                }
+            },
+        },
+    )
+
+    def run_codex_task(
+        prompt: str,
+        sandbox: str = "workspace-write",
+        model: str = "",
+        timeout_seconds: int = 300,
+    ) -> str:
+        from dartlab.engines.ai.codex_cli import inspect_codex_cli, run_codex_exec
+
+        info = inspect_codex_cli()
+        if not info.get("installed"):
+            return "Codex CLI가 설치되어 있지 않습니다. 먼저 `codex --version`이 동작해야 합니다."
+
+        sandbox_modes = set(info.get("sandboxModes") or [])
+        selected_sandbox = sandbox
+        if sandbox_modes and sandbox not in sandbox_modes:
+            selected_sandbox = "workspace-write" if "workspace-write" in sandbox_modes else "read-only"
+
+        answer, usage = run_codex_exec(
+            prompt,
+            model=model or None,
+            sandbox=selected_sandbox,
+            timeout=timeout_seconds,
+        )
+        lines = [
+            "## Codex 작업 결과",
+            f"- sandbox: {selected_sandbox}",
+            f"- model: {model or info.get('configuredModel') or 'CLI default'}",
+        ]
+        if usage:
+            lines.append(f"- tokens: {usage.get('total_tokens', '?')}")
+        lines.extend(["", answer])
+        return "\n".join(lines)
+
+    register_tool(
+        "run_codex_task",
+        run_codex_task,
+        "Codex CLI에 현재 워크스페이스 코드 작업을 위임합니다. "
+        "명시적인 코드 수정, 리팩터링, 테스트 보강, 리뷰 요청에서만 사용하세요. "
+        "workspace-write sandbox를 사용하면 실제 파일이 수정될 수 있습니다.",
+        {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Codex에 전달할 코드 작업 지시문",
+                },
+                "sandbox": {
+                    "type": "string",
+                    "description": "read-only, workspace-write, danger-full-access 중 하나",
+                    "default": "workspace-write",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Codex CLI에 전달할 모델명. 비우면 CLI 기본값 사용",
+                    "default": "",
+                },
+                "timeout_seconds": {
+                    "type": "integer",
+                    "description": "최대 대기 시간(초)",
+                    "default": 300,
+                },
+            },
+            "required": ["prompt"],
+        },
+    )
+
+    def search_company(keyword: str) -> str:
+        from dartlab.core.kindList import searchName
+
+        results = searchName(keyword)
+        if results is None or (isinstance(results, pl.DataFrame) and results.is_empty()):
+            return f"'{keyword}' 검색 결과가 없습니다."
+        if isinstance(results, pl.DataFrame):
+            return _df_to_md(results, max_rows=20)
+        return str(results)[:2000]
+
+    register_tool(
+        "search_company",
+        search_company,
+        "종목명/종목코드로 기업을 검색합니다. 종목코드를 모를 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "검색 키워드 (예: '삼성', '현대차', '반도체')",
+                },
+            },
+            "required": ["keyword"],
+        },
+    )
+
+    def download_data(stock_code: str = "", category: str = "docs") -> str:
+        from dartlab.core.dataLoader import downloadAll, loadData
+
+        if category == "edgarDocs" and not stock_code:
+            return (
+                "EDGAR docs는 ticker를 지정한 개별 수집 경로를 사용하세요. 예: stock_code='AAPL', category='edgarDocs'"
+            )
+        if stock_code:
+            loadData(stock_code, category=category)
+            return f"{stock_code} {category} 데이터 다운로드 완료."
+        downloadAll(category)
+        return f"{category} 전체 데이터 다운로드 완료."
+
+    register_tool(
+        "download_data",
+        download_data,
+        "데이터를 다운로드합니다. "
+        "stock_code를 지정하면 해당 종목만, 비워두면 카테고리 전체를 다운로드합니다. "
+        "category: docs(공시문서), finance(재무), report(정기보고서), edgarDocs(미국 공시문서, ticker 필요).",
+        {
+            "type": "object",
+            "properties": {
+                "stock_code": {
+                    "type": "string",
+                    "description": "종목코드 또는 ticker (비워두면 전체)",
+                    "default": "",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "카테고리 (docs, finance, report, edgarDocs)",
+                    "default": "docs",
+                },
+            },
+        },
+    )
+
+    def data_status() -> str:
+        from dartlab.core.dataLoader import DATA_RELEASES, _dataDir
+
+        lines = ["| 카테고리 | 라벨 | 파일 수 |", "| --- | --- | --- |"]
+        for cat, conf in DATA_RELEASES.items():
+            data_dir = _dataDir(cat)
+            count = len(list(data_dir.glob("*.parquet"))) if data_dir.exists() else 0
+            lines.append(f"| {cat} | {conf['label']} | {count} |")
+        return "\n".join(lines)
+
+    register_tool(
+        "data_status",
+        data_status,
+        "로컬에 저장된 데이터 현황(카테고리별 파일 수)을 조회합니다. "
+        "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    def get_openapi_capabilities(market: str = "all") -> str:
+        from dartlab import OpenDart
+
+        sections: list[str] = []
+        target = (market or "all").lower()
+
+        if target in {"all", "dart", "kr"}:
+            sections.extend(
+                [
+                    "## DART OpenAPI",
+                    "- facade: `OpenDart()`",
+                    "- action: `search`, `company`, `corp_code`, `corp_codes`",
+                    "- action: `filings`, `finstate`, `report`",
+                    "- action: `major_shareholders`, `executive_shares`",
+                    "- action: `report_types`, `filing_types`, `markets`, `xbrl_taxonomy`",
+                    "- save: `finance`, `report`, `filings`, `xbrl`",
+                    f"- report type count: {len(OpenDart.reportTypes())}",
+                ]
+            )
+
+        if target in {"all", "edgar", "us"}:
+            sections.extend(
+                [
+                    "## EDGAR OpenAPI",
+                    "- facade: `OpenEdgar()`",
+                    "- action: `search`, `company`, `submissions`, `filings`",
+                    "- action: `company_facts`, `company_concept`, `frame`",
+                    "- save: `docs`, `finance`",
+                ]
+            )
+
+        if not sections:
+            return "market은 `all`, `dart`, `edgar` 중 하나여야 합니다."
+
+        sections.extend(
+            [
+                "",
+                "## 예시",
+                "- `call_dart_openapi(action='report_types')`",
+                "- `call_dart_openapi(action='report', corp='삼성전자', report_type='배당', start='2023')`",
+                "- `call_edgar_openapi(action='filings', identifier='AAPL', forms='10-K,10-Q')`",
+                "- `openapi_save(market='edgar', identifier='AAPL', dataset='docs', since_year=2018)`",
+            ]
+        )
+        return "\n".join(["# OpenAPI 기능 범위", *sections])
+
+    register_tool(
+        "get_openapi_capabilities",
+        get_openapi_capabilities,
+        "DART/EDGAR OpenAPI surface를 요약합니다. "
+        "사용자가 OpenDart, OpenEdgar, 공개 API로 뭘 할 수 있는지 물을 때 먼저 호출하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "market": {
+                    "type": "string",
+                    "description": "all, dart, edgar 중 하나",
+                    "default": "all",
+                }
+            },
+        },
+    )
+
+    def call_dart_openapi(
+        action: str,
+        corp: str = "",
+        query: str = "",
+        start: str = "",
+        end: str = "",
+        quarter: int | None = None,
+        report_type: str = "",
+        listed: bool = False,
+        disclosure_type: str = "",
+        final: bool = False,
+        market_code: str = "",
+        consolidated: bool = True,
+        full: bool = False,
+        taxonomy_category: str = "",
+    ) -> str:
+        from dartlab import OpenDart
+
+        dart = OpenDart()
+        action_key = (action or "").strip().lower()
+        start_arg = start or None
+        end_arg = _maybe_int(end)
+
+        if action_key == "search":
+            if not query:
+                return "query가 필요합니다."
+            return _format_tool_value(dart.search(query, listed=listed))
+
+        if action_key == "company":
+            if not corp:
+                return "corp가 필요합니다."
+            return _format_tool_value(dart.company(corp))
+
+        if action_key == "corp_code":
+            target = corp or query
+            if not target:
+                return "corp 또는 query가 필요합니다."
+            return _format_tool_value({"corpCode": dart.corpCode(target)})
+
+        if action_key == "corp_codes":
+            return _format_tool_value(dart.corpCodes())
+
+        if action_key == "filings":
+            corp_arg = corp or None
+            result = dart.filings(
+                corp_arg,
+                start_arg,
+                end or None,
+                type=disclosure_type or None,
+                final=final,
+                market=market_code or None,
+            )
+            return _format_tool_value(result)
+
+        if action_key == "finstate":
+            if not corp:
+                return "corp가 필요합니다."
+            result = dart.finstate(
+                corp,
+                start_arg,
+                end=end_arg,
+                q=quarter,
+                consolidated=consolidated,
+                full=full,
+            )
+            return _format_tool_value(result)
+
+        if action_key == "report":
+            if not corp or not report_type:
+                return "corp와 report_type이 필요합니다."
+            result = dart.report(
+                corp,
+                report_type,
+                start_arg,
+                end=end_arg,
+                q=quarter,
+            )
+            return _format_tool_value(result)
+
+        if action_key == "major_shareholders":
+            if not corp:
+                return "corp가 필요합니다."
+            return _format_tool_value(dart.majorShareholders(corp))
+
+        if action_key == "executive_shares":
+            if not corp:
+                return "corp가 필요합니다."
+            return _format_tool_value(dart.executiveShares(corp))
+
+        if action_key == "report_types":
+            return _format_tool_value(OpenDart.reportTypes())
+
+        if action_key == "filing_types":
+            return _format_tool_value(OpenDart.filingTypes())
+
+        if action_key == "markets":
+            return _format_tool_value(OpenDart.markets())
+
+        if action_key == "xbrl_taxonomy":
+            if not taxonomy_category:
+                return "taxonomy_category가 필요합니다. 예: BS1, IS1, CF1"
+            return _format_tool_value(dart.xbrlTaxonomy(taxonomy_category))
+
+        return (
+            "지원하지 않는 action입니다. "
+            "search, company, corp_code, corp_codes, filings, finstate, report, "
+            "major_shareholders, executive_shares, report_types, filing_types, markets, xbrl_taxonomy"
+        )
+
+    register_tool(
+        "call_dart_openapi",
+        call_dart_openapi,
+        "DART OpenAPI를 직접 호출합니다. "
+        "action 예시: search, company, corp_code, corp_codes, filings, finstate, report, "
+        "major_shareholders, executive_shares, report_types, filing_types, markets, xbrl_taxonomy.",
+        {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "호출할 DART action"},
+                "corp": {"type": "string", "description": "회사명/종목코드/corp_code"},
+                "query": {"type": "string", "description": "search용 검색어"},
+                "start": {"type": "string", "description": "시작일 또는 연도"},
+                "end": {"type": "string", "description": "종료일 또는 종료 연도"},
+                "quarter": {"type": "integer", "description": "분기. 0~4 또는 null"},
+                "report_type": {"type": "string", "description": "예: 배당, 직원, 임원"},
+                "listed": {"type": "boolean", "description": "상장사만 검색", "default": False},
+                "disclosure_type": {"type": "string", "description": "공시유형 예: A"},
+                "final": {"type": "boolean", "description": "최종보고서만", "default": False},
+                "market_code": {"type": "string", "description": "법인구분 Y/K/N/E"},
+                "consolidated": {"type": "boolean", "description": "연결 기준", "default": True},
+                "full": {"type": "boolean", "description": "전체 계정", "default": False},
+                "taxonomy_category": {"type": "string", "description": "xbrl taxonomy 카테고리"},
+            },
+            "required": ["action"],
+        },
+    )
+
+    def call_edgar_openapi(
+        action: str,
+        identifier: str = "",
+        query: str = "",
+        forms: str = "",
+        since: str = "",
+        until: str = "",
+        taxonomy: str = "",
+        tag: str = "",
+        unit: str = "",
+        period: str = "",
+    ) -> str:
+        from dartlab import OpenEdgar
+
+        edgar = OpenEdgar()
+        action_key = (action or "").strip().lower()
+
+        if action_key == "search":
+            if not query:
+                return "query가 필요합니다."
+            return _format_tool_value(edgar.search(query))
+
+        if action_key == "company":
+            if not identifier:
+                return "identifier가 필요합니다."
+            return _format_tool_value(edgar.company(identifier))
+
+        if action_key == "submissions":
+            if not identifier:
+                return "identifier가 필요합니다."
+            return _format_tool_value(edgar.submissionsJson(identifier))
+
+        if action_key == "filings":
+            if not identifier:
+                return "identifier가 필요합니다."
+            return _format_tool_value(
+                edgar.filings(
+                    identifier,
+                    forms=_csv_list(forms),
+                    since=since or None,
+                    until=until or None,
+                )
+            )
+
+        if action_key == "company_facts":
+            if not identifier:
+                return "identifier가 필요합니다."
+            return _format_tool_value(edgar.companyFactsJson(identifier))
+
+        if action_key == "company_concept":
+            if not identifier or not taxonomy or not tag:
+                return "identifier, taxonomy, tag가 필요합니다."
+            return _format_tool_value(edgar.companyConceptJson(identifier, taxonomy, tag))
+
+        if action_key == "frame":
+            if not taxonomy or not tag or not unit or not period:
+                return "taxonomy, tag, unit, period가 필요합니다."
+            return _format_tool_value(edgar.frameJson(taxonomy, tag, unit, period))
+
+        return (
+            "지원하지 않는 action입니다. search, company, submissions, filings, company_facts, company_concept, frame"
+        )
+
+    register_tool(
+        "call_edgar_openapi",
+        call_edgar_openapi,
+        "EDGAR OpenAPI를 직접 호출합니다. "
+        "action 예시: search, company, submissions, filings, company_facts, company_concept, frame.",
+        {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "호출할 EDGAR action"},
+                "identifier": {"type": "string", "description": "ticker 또는 CIK"},
+                "query": {"type": "string", "description": "search용 검색어"},
+                "forms": {"type": "string", "description": "쉼표 구분 form 목록 예: 10-K,10-Q"},
+                "since": {"type": "string", "description": "시작일"},
+                "until": {"type": "string", "description": "종료일"},
+                "taxonomy": {"type": "string", "description": "taxonomy 예: us-gaap"},
+                "tag": {"type": "string", "description": "tag 예: RevenueFromContractWithCustomerExcludingAssessedTax"},
+                "unit": {"type": "string", "description": "frame unit 예: USD"},
+                "period": {"type": "string", "description": "frame period 예: CY2024Q4I"},
+            },
+            "required": ["action"],
+        },
+    )
+
+    def openapi_save(
+        market: str,
+        identifier: str,
+        dataset: str,
+        start: str = "",
+        end: str = "",
+        quarter: int | None = None,
+        since_year: int = 2009,
+        full: bool = True,
+        categories: str = "",
+    ) -> str:
+        from dartlab import OpenDart, OpenEdgar
+
+        market_key = (market or "").strip().lower()
+        dataset_key = (dataset or "").strip().lower()
+        end_arg = _maybe_int(end)
+
+        if market_key in {"dart", "kr"}:
+            if not identifier:
+                return "identifier가 필요합니다."
+            company_api = OpenDart()(identifier)
+            if dataset_key == "finance":
+                return _format_tool_value(company_api.saveFinance(start or None, end=end_arg, q=quarter, full=full))
+            if dataset_key == "report":
+                return _format_tool_value(
+                    company_api.saveReport(
+                        start or None,
+                        end=end_arg,
+                        q=quarter,
+                        categories=_csv_list(categories),
+                    )
+                )
+            if dataset_key == "filings":
+                return _format_tool_value(company_api.saveFilings(start or None, end or None))
+            if dataset_key == "xbrl":
+                return _format_tool_value(company_api.xbrl(start or None, q=quarter))
+            return "DART dataset은 finance, report, filings, xbrl 중 하나여야 합니다."
+
+        if market_key in {"edgar", "us"}:
+            if not identifier:
+                return "identifier가 필요합니다."
+            company_api = OpenEdgar()(identifier)
+            if dataset_key == "docs":
+                return _format_tool_value(company_api.saveDocs(sinceYear=since_year))
+            if dataset_key == "finance":
+                return _format_tool_value(company_api.saveFinance())
+            return "EDGAR dataset은 docs, finance 중 하나여야 합니다."
+
+        return "market은 dart 또는 edgar여야 합니다."
+
+    register_tool(
+        "openapi_save",
+        openapi_save,
+        "DART/EDGAR OpenAPI saver를 실행해 로컬 parquet를 생성합니다. "
+        "DART dataset: finance, report, filings, xbrl. EDGAR dataset: docs, finance.",
+        {
+            "type": "object",
+            "properties": {
+                "market": {"type": "string", "description": "dart 또는 edgar"},
+                "identifier": {"type": "string", "description": "회사명/종목코드/ticker/CIK"},
+                "dataset": {"type": "string", "description": "저장할 데이터 종류"},
+                "start": {"type": "string", "description": "DART 시작 연도/일자"},
+                "end": {"type": "string", "description": "DART 종료 연도/일자"},
+                "quarter": {"type": "integer", "description": "DART 분기"},
+                "since_year": {"type": "integer", "description": "EDGAR docs 시작 연도", "default": 2009},
+                "full": {"type": "boolean", "description": "DART finance 전체 계정", "default": True},
+                "categories": {"type": "string", "description": "DART report 카테고리 목록"},
+            },
+            "required": ["market", "identifier", "dataset"],
+        },
+    )
+
+    if company is None:
+        return
 
     # 0. list_modules: 사용 가능한 모듈 목록 조회
     def list_modules() -> str:
@@ -398,20 +1164,7 @@ def register_defaults(company: Any) -> None:
 
     # 8. get_system_spec: DartLab 시스템 스펙 조회
     def get_system_spec() -> str:
-        from dartlab.engines.ai.spec import buildSpec
-
-        spec = buildSpec(depth="summary")
-        lines = [f"# {spec['system']['name']} v{spec['system']['version']}"]
-        lines.append(f"{spec['system']['description']} ({spec['system']['coverage']})")
-        lines.append("")
-        lines.append("## 엔진 목록")
-        for name, info in spec.get("engines", {}).items():
-            lines.append(f"### {name}")
-            lines.append(f"- {info.get('description', '')}")
-            summary = info.get("summary", {})
-            for k, v in summary.items():
-                lines.append(f"- {k}: {v}")
-        return "\n".join(lines)
+        return _build_system_spec_markdown()
 
     register_tool(
         "get_system_spec",
@@ -796,11 +1549,15 @@ def register_defaults(company: Any) -> None:
 
     # ── 20. download_data: 데이터 다운로드 ──
     def download_data(stock_code: str = "", category: str = "docs") -> str:
-        from dartlab.core.dataLoader import download, downloadAll
+        from dartlab.core.dataLoader import downloadAll, loadData
 
+        if category == "edgarDocs" and not stock_code:
+            return (
+                "EDGAR docs는 ticker를 지정한 개별 수집 경로를 사용하세요. 예: stock_code='AAPL', category='edgarDocs'"
+            )
         if stock_code:
-            download(stock_code)
-            return f"{stock_code} 데이터 다운로드 완료."
+            loadData(stock_code, category=category)
+            return f"{stock_code} {category} 데이터 다운로드 완료."
         downloadAll(category)
         return f"{category} 전체 데이터 다운로드 완료."
 
@@ -809,18 +1566,18 @@ def register_defaults(company: Any) -> None:
         download_data,
         "데이터를 다운로드합니다. "
         "stock_code를 지정하면 해당 종목만, 비워두면 카테고리 전체를 다운로드합니다. "
-        "category: docs(공시문서), finance(재무), report(정기보고서).",
+        "category: docs(공시문서), finance(재무), report(정기보고서), edgarDocs(미국 공시문서, ticker 필요).",
         {
             "type": "object",
             "properties": {
                 "stock_code": {
                     "type": "string",
-                    "description": "종목코드 (비워두면 전체)",
+                    "description": "종목코드 또는 ticker (비워두면 전체)",
                     "default": "",
                 },
                 "category": {
                     "type": "string",
-                    "description": "카테고리 (docs, finance, report)",
+                    "description": "카테고리 (docs, finance, report, edgarDocs)",
                     "default": "docs",
                 },
             },

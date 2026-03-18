@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-PROVIDERS = ["codex", "claude-code", "ollama", "openai", "claude", "custom"]
-CLI_PROVIDERS = ["codex", "claude-code", "ollama"]
+PROVIDERS = ["codex", "ollama", "openai", "claude", "custom"]
+CLI_PROVIDERS = ["codex", "ollama"]
 
 EXIT_OK = 0
 EXIT_USAGE = 2

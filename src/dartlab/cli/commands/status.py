@@ -38,15 +38,6 @@ def run(args) -> int:
             elif not info["running"]:
                 print("  setup:     ollama serve")
 
-        elif provider_name == "claude-code" and "claude-code" in status:
-            info = status["claude-code"]
-            print(f"  installed: {info['installed']}")
-            print(f"  authenticated: {info['authenticated']}")
-            if info.get("version"):
-                print(f"  version:   {info['version']}")
-            if not info["installed"] or not info["authenticated"]:
-                print("  setup:     dartlab setup claude-code")
-
         elif provider_name == "codex" and "codex" in status:
             info = status["codex"]
             print(f"  installed: {info['installed']}")

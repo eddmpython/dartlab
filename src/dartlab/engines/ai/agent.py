@@ -190,12 +190,32 @@ AGENT_SYSTEM_ADDITION = """
 ### 메타 도구 (시스템 정보):
 - `get_system_spec`: DartLab 전체 스펙 (엔진, 데이터, 기능 목록) → **"어떤 데이터가 있어?" 질문에 사용**
 - `get_engine_spec`: 특정 엔진의 상세 스펙 (insight, sector, rank, dart.finance, dart.report)
+- `get_runtime_capabilities`: UI 대화에서 실제 가능한 기능 범위 → **EDGAR 추가 수집, OpenAPI, GPT/Codex 코딩 가능 범위 질문에 우선 사용**
+- `get_tool_catalog`: 현재 등록된 도구 목록/파라미터 조회 → **새 도구가 추가됐는지 확인할 때 사용**
+
+### 전역 도구 (회사 없어도 사용 가능):
+- `search_company`: 종목명/종목코드 검색
+- `download_data`: docs/finance/report/edgarDocs 다운로드
+- `data_status`: 로컬 데이터 보유 현황 확인
+- `get_openapi_capabilities`: OpenDart/OpenEdgar surface 요약
+- `call_dart_openapi`: DART 공개 API 직접 호출
+- `call_edgar_openapi`: EDGAR 공개 API 직접 호출
+- `openapi_save`: OpenAPI saver로 parquet 생성
+- `run_codex_task`: Codex CLI에 실제 코드 작업 위임 → **명시적 코드 수정/리팩터링 요청에서 사용**
 
 ### 분석 절차:
-1. 질문을 이해하고 필요한 데이터를 파악
-2. 어떤 데이터가 있는지 모르면 `list_modules` 또는 `get_system_spec`을 먼저 호출
-3. 구체적 모듈 데이터를 `get_data`로 조회
-4. 필요 시 `get_insight`, `get_sector_info`, `get_rank` 등으로 심층 분석
-5. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)
-6. 모든 수치에 출처(테이블명, 연도)를 반드시 인용
+1. 질문을 이해하고 이것이 `기능 탐색`인지 `회사 분석`인지 먼저 구분
+2. 기능 탐색 질문이면 `get_runtime_capabilities`, `get_system_spec`, `get_openapi_capabilities`, `get_tool_catalog` 중 적절한 것을 먼저 호출
+3. 회사 분석인데 어떤 데이터가 있는지 모르면 `list_modules`를 먼저 호출
+4. OpenAPI 원문/추가 수집 질문이면 `call_dart_openapi`, `call_edgar_openapi`, `openapi_save`를 사용
+5. 구체적 모듈 데이터를 `get_data` 또는 `show_block`으로 조회
+6. 명시적 코드 수정/리팩터링 요청이면 `run_codex_task` 사용을 우선 검토
+7. 필요 시 `get_insight`, `get_sector_info`, `get_rank` 등으로 심층 분석
+8. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)
+9. 모든 수치에 출처(테이블명, 연도)를 반드시 인용
+
+### 답변 방식:
+- 사용자가 "뭘 할 수 있어?", "EDGAR에서 더 받을 수 있어?", "OpenAPI로 뭐가 돼?", "GPT 연결하면 코딩도 돼?"처럼 범위를 물으면
+  가능한 것 / 바로 할 수 있는 것 / 아직 안 되는 것을 먼저 짧게 정리한 뒤 다음 액션을 제안하세요.
+- 도구와 기능 목록은 고정 문구를 외우지 말고 현재 등록된 tool registry 결과를 우선 신뢰하세요.
 """

@@ -14,21 +14,18 @@ def configure_parser(subparsers) -> None:
 
 def run(args) -> int:
     try:
-        from dartlab.engines.ai.cli_setup import detect_claude_code, detect_codex
+        from dartlab.engines.ai.cli_setup import detect_codex
     except Exception as exc:
         raise CLIError(f"setup 정보를 불러오지 못했습니다: {exc}") from exc
 
     if args.provider is None:
         print("\n사용 가능한 provider:\n")
         print("  dartlab setup codex        ChatGPT Plus/Pro 구독 (API 키 불필요)")
-        print("  dartlab setup claude-code  Claude Pro/Max 구독 (API 키 불필요)")
         print("  dartlab setup ollama       로컬 LLM (무료)\n")
         return 0
 
     if args.provider == "codex":
         _setup_codex(detect_codex())
-    elif args.provider == "claude-code":
-        _setup_claude_code(detect_claude_code())
     elif args.provider == "ollama":
         _setup_ollama()
     return 0
@@ -56,32 +53,6 @@ def _setup_codex(info: dict) -> None:
 
     print("  4. 사용")
     print('     dartlab ask 005930 "재무 건전성 분석" -p codex')
-    print()
-
-
-def _setup_claude_code(info: dict) -> None:
-    print("\n[ Claude Code CLI 설정 — Claude Pro/Max 구독 ]\n")
-
-    if info["installed"]:
-        print(f"  1. 설치  ✓  ({info.get('version', 'installed')})")
-    else:
-        print("  1. 설치")
-        print("     npm install -g @anthropic-ai/claude-code\n")
-        print("     Node.js가 필요합니다: https://nodejs.org/\n")
-
-    if info.get("authenticated"):
-        print("  2. 인증  ✓")
-    else:
-        print("  2. 인증")
-        print("     claude auth login\n")
-        print("     브라우저가 열리면 Claude 계정으로 로그인하세요.\n")
-
-    print("  3. 확인")
-    print("     dartlab status -p claude-code\n")
-
-    print("  4. 사용")
-    print('     dartlab ask 005930 "재무 건전성 분석" -p claude-code')
-    print('     dartlab ask 삼성전자 "배당 분석" -p claude-code -m opus')
     print()
 
 

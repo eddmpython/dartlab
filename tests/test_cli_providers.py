@@ -205,8 +205,10 @@ class TestCodexProvider:
         return CodexProvider(config)
 
     def test_default_model(self):
+        from dartlab.engines.ai.codex_cli import get_codex_configured_model
+
         provider = self._make_provider()
-        assert provider.default_model == "gpt-4.1"
+        assert provider.default_model == (get_codex_configured_model() or "gpt-4.1")
 
     def test_resolved_model_override(self):
         provider = self._make_provider(model="gpt-4o")
@@ -220,7 +222,7 @@ class TestCodexProvider:
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
     def test_check_available_installed(self, _, mock_run):
-        mock_run.return_value = MagicMock(returncode=0)
+        mock_run.return_value = MagicMock(returncode=0, stdout="codex-cli 0.115.0", stderr="")
         provider = self._make_provider()
         assert provider.check_available() is True
 
@@ -286,6 +288,63 @@ class TestCodexProvider:
 
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
+    def test_complete_passes_model_flag(self, _, mock_run):
+        jsonl_output = json.dumps(
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "text": "ok"},
+            }
+        )
+        mock_run.return_value = MagicMock(returncode=0, stdout=jsonl_output, stderr="")
+        provider = self._make_provider(model="gpt-5.4")
+        provider.complete([{"role": "user", "content": "분석"}])
+        cmd = mock_run.call_args[0][0]
+        assert "--model" in cmd
+        idx = cmd.index("--model")
+        assert cmd[idx + 1] == "gpt-5.4"
+
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"sandboxModes": ["read-only", "workspace-write"]},
+    )
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/codex")
+    def test_complete_uses_workspace_write_for_code_tasks(self, _, mock_run, __):
+        jsonl_output = json.dumps(
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "text": "ok"},
+            }
+        )
+        mock_run.return_value = MagicMock(returncode=0, stdout=jsonl_output, stderr="")
+        provider = self._make_provider()
+        provider.complete([{"role": "user", "content": "src/app.py 버그를 수정해줘"}])
+        cmd = mock_run.call_args_list[-1][0][0]
+        idx = cmd.index("--sandbox")
+        assert cmd[idx + 1] == "workspace-write"
+
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"sandboxModes": ["read-only", "workspace-write"]},
+    )
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/codex")
+    def test_complete_uses_read_only_for_analysis_tasks(self, _, mock_run, __):
+        jsonl_output = json.dumps(
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "text": "ok"},
+            }
+        )
+        mock_run.return_value = MagicMock(returncode=0, stdout=jsonl_output, stderr="")
+        provider = self._make_provider()
+        provider.complete([{"role": "user", "content": "삼성전자 재무를 설명해줘"}])
+        cmd = mock_run.call_args_list[-1][0][0]
+        idx = cmd.index("--sandbox")
+        assert cmd[idx + 1] == "read-only"
+
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/codex")
     def test_complete_cli_error(self, _, mock_run):
         mock_run.return_value = MagicMock(
             returncode=1,
@@ -345,6 +404,8 @@ class TestCliDetection:
         result = detect_codex()
         assert "installed" in result
         assert "version" in result
+        assert "configuredModel" in result
+        assert "supportsWorkspaceWrite" in result
 
     def test_claude_code_install_guide(self):
         from dartlab.engines.ai.cli_setup import get_claude_code_install_guide

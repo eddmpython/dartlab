@@ -243,6 +243,11 @@ class TestAgentSystemAddition:
         assert "get_data" in AGENT_SYSTEM_ADDITION
         assert "compute_ratios" in AGENT_SYSTEM_ADDITION
         assert "detect_anomalies" in AGENT_SYSTEM_ADDITION
+        assert "get_runtime_capabilities" in AGENT_SYSTEM_ADDITION
+        assert "get_tool_catalog" in AGENT_SYSTEM_ADDITION
+        assert "call_dart_openapi" in AGENT_SYSTEM_ADDITION
+        assert "call_edgar_openapi" in AGENT_SYSTEM_ADDITION
+        assert "run_codex_task" in AGENT_SYSTEM_ADDITION
 
     def test_contains_procedure(self):
         assert "분석 절차" in AGENT_SYSTEM_ADDITION

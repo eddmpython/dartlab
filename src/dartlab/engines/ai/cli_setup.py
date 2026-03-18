@@ -60,30 +60,9 @@ def detect_codex() -> dict:
     Returns:
             {"installed": bool, "version": str | None}
     """
-    result: dict = {
-        "installed": False,
-        "version": None,
-    }
+    from dartlab.engines.ai.codex_cli import inspect_codex_cli
 
-    if not shutil.which("codex"):
-        return result
-
-    result["installed"] = True
-
-    try:
-        proc = subprocess.run(
-            ["codex", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            shell=_IS_WINDOWS,
-        )
-        if proc.returncode == 0:
-            result["version"] = proc.stdout.strip()
-    except (subprocess.TimeoutExpired, OSError):
-        pass
-
-    return result
+    return inspect_codex_cli()
 
 
 def get_claude_code_install_guide() -> str:

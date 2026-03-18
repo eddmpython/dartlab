@@ -8,7 +8,7 @@ from dartlab.engines.ai.types import LLMConfig
 
 def detect_provider() -> str:
     """Return the first available local-first provider."""
-    for provider_name in ["codex", "claude-code", "ollama"]:
+    for provider_name in ["codex", "ollama"]:
         config = LLMConfig(provider=provider_name)
         try:
             provider = create_provider(config)

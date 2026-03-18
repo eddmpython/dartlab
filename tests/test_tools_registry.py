@@ -1,5 +1,7 @@
 """tools_registry 모듈 테스트 — LLM 불필요."""
 
+from pathlib import Path
+
 import polars as pl
 
 from dartlab.engines.ai.tools_registry import (
@@ -122,6 +124,139 @@ class TestRegisterTool:
 class TestRegisterDefaults:
     def setup_method(self):
         clear_registry()
+
+    def test_registers_global_tools_without_company(self):
+        register_defaults(None)
+        schemas = get_tool_schemas()
+        names = [s["function"]["name"] for s in schemas]
+        assert "get_system_spec" in names
+        assert "get_engine_spec" in names
+        assert "get_runtime_capabilities" in names
+        assert "get_tool_catalog" in names
+        assert "get_openapi_capabilities" in names
+        assert "call_dart_openapi" in names
+        assert "call_edgar_openapi" in names
+        assert "openapi_save" in names
+        assert "run_codex_task" in names
+        assert "search_company" in names
+        assert "download_data" in names
+        assert "data_status" in names
+        assert "get_data" not in names
+
+    def test_runtime_capabilities_mentions_edgar_and_coding_scope(self):
+        register_defaults(None)
+        result = execute_tool("get_runtime_capabilities", {})
+        assert "OpenEdgar" in result
+        assert "EDGAR" in result
+        assert "Codex" in result or "codex" in result
+        assert "workspace-write" in result
+        assert "run_codex_task" in result
+
+    def test_get_tool_catalog_includes_runtime_tools(self):
+        register_defaults(None)
+        result = execute_tool("get_tool_catalog", {"include_parameters": True})
+        assert "get_runtime_capabilities" in result
+        assert "run_codex_task" in result
+        assert "timeout_seconds" in result
+
+    def test_run_codex_task(self, monkeypatch):
+        import dartlab.engines.ai.codex_cli as codex_cli
+
+        monkeypatch.setattr(
+            codex_cli,
+            "inspect_codex_cli",
+            lambda: {"installed": True, "configuredModel": "gpt-5.4", "sandboxModes": ["read-only", "workspace-write"]},
+        )
+        monkeypatch.setattr(
+            codex_cli,
+            "run_codex_exec",
+            lambda prompt, model=None, sandbox="read-only", timeout=300: (f"done: {prompt}", {"total_tokens": 123}),
+        )
+        register_defaults(None)
+        result = execute_tool(
+            "run_codex_task",
+            {"prompt": "foo.py를 수정해줘", "sandbox": "workspace-write", "timeout_seconds": 120},
+        )
+        assert "Codex 작업 결과" in result
+        assert "workspace-write" in result
+        assert "done: foo.py를 수정해줘" in result
+
+    def test_call_dart_openapi_search(self, monkeypatch):
+        import dartlab
+
+        class FakeOpenDart:
+            @staticmethod
+            def reportTypes():
+                return ["배당", "직원"]
+
+            @staticmethod
+            def filingTypes():
+                return {"A": "정기공시"}
+
+            @staticmethod
+            def markets():
+                return {"Y": "유가증권"}
+
+            def search(self, query, listed=False):
+                assert query == "삼성"
+                assert listed is True
+                return pl.DataFrame({"corp_name": ["삼성전자"], "stock_code": ["005930"]})
+
+        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
+        register_defaults(None)
+        result = execute_tool("call_dart_openapi", {"action": "search", "query": "삼성", "listed": True})
+        assert "005930" in result
+
+    def test_call_edgar_openapi_company(self, monkeypatch):
+        import dartlab
+
+        class FakeOpenEdgar:
+            def company(self, identifier):
+                assert identifier == "AAPL"
+                return {"ticker": "AAPL", "cik": "0000320193", "title": "Apple Inc."}
+
+        monkeypatch.setattr(dartlab, "OpenEdgar", FakeOpenEdgar)
+        register_defaults(None)
+        result = execute_tool("call_edgar_openapi", {"action": "company", "identifier": "AAPL"})
+        assert "Apple Inc." in result
+        assert "0000320193" in result
+
+    def test_openapi_save_edgar_docs(self, monkeypatch):
+        import dartlab
+
+        class FakeOpenEdgarCompany:
+            def saveDocs(self, sinceYear=2009):
+                assert sinceYear == 2018
+                return Path("C:/temp/AAPL.parquet")
+
+        class FakeOpenEdgar:
+            def __call__(self, identifier):
+                assert identifier == "AAPL"
+                return FakeOpenEdgarCompany()
+
+        monkeypatch.setattr(dartlab, "OpenEdgar", FakeOpenEdgar)
+        register_defaults(None)
+        result = execute_tool(
+            "openapi_save",
+            {"market": "edgar", "identifier": "AAPL", "dataset": "docs", "since_year": 2018},
+        )
+        assert "AAPL.parquet" in result
+
+    def test_download_data_specific_category_uses_loaddata(self, monkeypatch):
+        import dartlab.core.dataLoader as data_loader
+
+        called = {}
+
+        def fake_load_data(stock_code, category="docs", **kwargs):
+            called["stock_code"] = stock_code
+            called["category"] = category
+            return pl.DataFrame()
+
+        monkeypatch.setattr(data_loader, "loadData", fake_load_data)
+        register_defaults(None)
+        result = execute_tool("download_data", {"stock_code": "AAPL", "category": "edgarDocs"})
+        assert called == {"stock_code": "AAPL", "category": "edgarDocs"}
+        assert "AAPL edgarDocs 데이터 다운로드 완료." in result
 
     def test_registers_tools(self):
         company = MockCompany()
