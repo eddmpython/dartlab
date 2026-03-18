@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Identifier Map</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">what each key should own</text>
+
+  <rect x="40" y="110" width="160" height="118" rx="18" fill="#1d4ed8"/>
+  <text x="120" y="144" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">ticker</text>
+  <text x="120" y="170" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">user input</text>
+  <text x="120" y="192" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">screen label</text>
+  <text x="120" y="214" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">market familiar key</text>
+
+  <rect x="230" y="110" width="160" height="118" rx="18" fill="#0f766e"/>
+  <text x="310" y="144" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">corp_code</text>
+  <text x="310" y="170" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">OpenDART company key</text>
+  <text x="310" y="192" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">scheduler anchor</text>
+  <text x="310" y="214" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">master record</text>
+
+  <rect x="420" y="110" width="160" height="118" rx="18" fill="#ea580c"/>
+  <text x="500" y="144" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">corp_name</text>
+  <text x="500" y="170" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">human readable label</text>
+  <text x="500" y="192" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">logs and review</text>
+  <text x="500" y="214" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">search debugging</text>
+
+  <rect x="610" y="110" width="150" height="118" rx="18" fill="#7c3aed"/>
+  <text x="685" y="144" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">rcept_no</text>
+  <text x="685" y="170" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">filing key</text>
+  <text x="685" y="192" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">raw and XBRL link</text>
+  <text x="685" y="214" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">amendment chain</text>
+
+  <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+    <path d="M200 168H230"/>
+    <path d="M390 168H420"/>
+    <path d="M580 168H610"/>
+  </g>
+
+  <rect x="58" y="276" width="684" height="112" rx="22" fill="#111827" stroke="#334155"/>
+  <text x="82" y="308" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Key separation</text>
+  <text x="82" y="334" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">Use ticker for entry, corp_code for company logic, and rcept_no for document logic.</text>
+  <text x="82" y="356" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">Do not collapse company keys and filing keys into one table column.</text>
+</svg>

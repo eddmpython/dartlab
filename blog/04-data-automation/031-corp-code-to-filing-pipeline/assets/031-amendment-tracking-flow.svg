@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Amendment Tracking Flow</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">latest effective view plus version chain</text>
+
+  <rect x="62" y="132" width="180" height="108" rx="20" fill="#1d4ed8"/>
+  <text x="152" y="164" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">initial filing</text>
+  <text x="152" y="188" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">rcept_no A</text>
+  <text x="152" y="210" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">status = original</text>
+
+  <rect x="310" y="132" width="180" height="108" rx="20" fill="#ea580c"/>
+  <text x="400" y="164" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">amendment</text>
+  <text x="400" y="188" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">rcept_no B</text>
+  <text x="400" y="210" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">linked to A</text>
+
+  <rect x="558" y="132" width="180" height="108" rx="20" fill="#0f766e"/>
+  <text x="648" y="164" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">operational view</text>
+  <text x="648" y="188" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">latest effective filing</text>
+  <text x="648" y="210" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">selected for analytics</text>
+
+  <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+    <path d="M242 186H310"/>
+    <path d="M490 186H558"/>
+  </g>
+
+  <rect x="72" y="288" width="656" height="94" rx="20" fill="#111827" stroke="#334155"/>
+  <text x="96" y="320" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Keep both views</text>
+  <text x="96" y="346" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">Operational view: one latest effective document for dashboards and analytics.</text>
+  <text x="96" y="368" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">History view: original and amended filings remain linked for audit, debugging, and change review.</text>
+</svg>

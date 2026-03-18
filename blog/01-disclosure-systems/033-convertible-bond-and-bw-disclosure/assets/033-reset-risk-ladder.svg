@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Reset Risk Ladder</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">who gains flexibility when the stock gets weaker</text>
+
+  <rect x="108" y="296" width="180" height="60" rx="16" fill="#0f766e"/>
+  <text x="198" y="332" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">simple terms</text>
+
+  <rect x="310" y="232" width="180" height="60" rx="16" fill="#2563eb"/>
+  <text x="400" y="268" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">limited reset</text>
+
+  <rect x="512" y="168" width="180" height="60" rx="16" fill="#ea580c"/>
+  <text x="602" y="204" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">strong refixing</text>
+
+  <rect x="512" y="104" width="180" height="60" rx="16" fill="#b91c1c"/>
+  <text x="602" y="140" text-anchor="middle" fill="#fee2e2" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">refixing plus put pressure</text>
+
+  <g stroke="#94a3b8" stroke-width="4" stroke-linecap="round">
+    <path d="M288 326H310"/>
+    <path d="M490 262H512"/>
+    <path d="M602 168V164"/>
+  </g>
+
+  <text x="104" y="388" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">Risk rises when dilution terms can get better for the investor while repayment pressure stays with the issuer.</text>
+</svg>

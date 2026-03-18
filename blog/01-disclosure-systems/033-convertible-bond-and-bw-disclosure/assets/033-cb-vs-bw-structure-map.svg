@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">CB vs BW</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">same funding family, different option mechanics</text>
+
+  <rect x="74" y="106" width="266" height="252" rx="24" fill="#111827" stroke="#1d4ed8"/>
+  <text x="104" y="142" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">CB</text>
+  <text x="104" y="172" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">bond can convert into shares</text>
+  <text x="104" y="198" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">watch conversion price and conversion window</text>
+  <text x="104" y="224" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">share dilution arrives through conversion</text>
+  <text x="104" y="250" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">refixing can make future dilution cheaper</text>
+
+  <rect x="460" y="106" width="266" height="252" rx="24" fill="#111827" stroke="#7c3aed"/>
+  <text x="490" y="142" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">BW</text>
+  <text x="490" y="172" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">bond plus warrant rights</text>
+  <text x="490" y="198" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">watch strike price and exercise period</text>
+  <text x="490" y="224" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">bond and warrant effects should be separated</text>
+  <text x="490" y="250" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">exercise conditions can be the real center of risk</text>
+
+  <path d="M380 226H420" stroke="#94a3b8" stroke-width="3" stroke-dasharray="8 8"/>
+  <text x="400" y="206" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="12">both can hide future dilution</text>
+</svg>

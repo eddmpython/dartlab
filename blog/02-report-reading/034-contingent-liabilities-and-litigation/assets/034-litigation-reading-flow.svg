@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">우발부채와 소송 공시 읽기 흐름</title>
+  <desc id="desc">주석, 투자자 보호, 감사보고서, 후속 추적을 순서대로 읽는 흐름을 보여준다.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fbff"/>
+      <stop offset="100%" stop-color="#eef4ff"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#355c9a"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <text x="70" y="84" font-size="36" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">우발부채와 소송은 한 문서가 아니라 흐름으로 읽는다</text>
+  <text x="70" y="122" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#355c9a">주석에서 회계 처리부터 가르고, 본문과 감사보고서, 다음 보고서까지 붙여서 본다</text>
+
+  <rect x="70" y="180" width="240" height="210" rx="24" fill="#ffffff" stroke="#bfd2f0" stroke-width="2"/>
+  <text x="100" y="225" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">1. 주석</text>
+  <text x="100" y="265" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">충당부채인지</text>
+  <text x="100" y="292" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">우발부채인지 먼저 가른다</text>
+  <text x="100" y="331" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">금액, 사용, 환입,</text>
+  <text x="100" y="355" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">최대 노출액을 확인</text>
+
+  <rect x="340" y="180" width="240" height="210" rx="24" fill="#ffffff" stroke="#bfd2f0" stroke-width="2"/>
+  <text x="370" y="225" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">2. 본문</text>
+  <text x="370" y="265" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">투자자 보호, 소송 현황,</text>
+  <text x="370" y="292" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">사건 배경을 붙인다</text>
+  <text x="370" y="331" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">당사자, 단계, 설명의</text>
+  <text x="370" y="355" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">구체성을 본다</text>
+
+  <rect x="610" y="180" width="240" height="210" rx="24" fill="#ffffff" stroke="#bfd2f0" stroke-width="2"/>
+  <text x="640" y="225" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">3. 감사</text>
+  <text x="640" y="265" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">KAM이나 민감 추정으로</text>
+  <text x="640" y="292" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">더 무겁게 보이는지 확인</text>
+  <text x="640" y="331" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">회계 문구와 회사 설명이</text>
+  <text x="640" y="355" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">어긋나는지 본다</text>
+
+  <rect x="880" y="180" width="250" height="210" rx="24" fill="#ffffff" stroke="#bfd2f0" stroke-width="2"/>
+  <text x="910" y="225" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">4. 후속 추적</text>
+  <text x="910" y="265" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">다음 분기, 정정공시,</text>
+  <text x="910" y="292" font-size="18" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">실제 현금 유출을 본다</text>
+  <text x="910" y="331" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">충당부채 사용, 환입,</text>
+  <text x="910" y="355" font-size="16" font-family="'Segoe UI', Arial, sans-serif" fill="#56718f">합의·판결 결과를 확인</text>
+
+  <line x1="310" y1="285" x2="340" y2="285" stroke="#355c9a" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="580" y1="285" x2="610" y2="285" stroke="#355c9a" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="850" y1="285" x2="880" y2="285" stroke="#355c9a" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <rect x="70" y="455" width="1060" height="175" rx="28" fill="#16355f"/>
+  <text x="105" y="503" font-size="28" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#ffffff">핵심 판단</text>
+  <text x="105" y="543" font-size="22" font-family="'Segoe UI', Arial, sans-serif" fill="#e6f0ff">대차대조표에 큰 숫자가 없어도 안심하지 않는다</text>
+  <text x="105" y="577" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#c9dbff">중요한 것은 이미 비용으로 잡았는지, 아직 주석에만 남았는지, 다음 보고서에서 현실화되는지다</text>
+  <text x="105" y="608" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#c9dbff">우발부채와 소송은 한 줄이 아니라 여러 층의 설명을 붙여서 읽을 때 실제 부담이 보인다</text>
+</svg>

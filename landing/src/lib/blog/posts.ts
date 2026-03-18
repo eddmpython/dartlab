@@ -112,10 +112,10 @@ export const seriesDefinitions = {
 	'audit-and-governance-reading': {
 		id: 'audit-and-governance-reading',
 		label: '감사와 경고 신호',
-		description: '감사보고서, KAM, 회계추정처럼 회사의 신뢰도를 바꾸는 경고 문구를 읽는 시리즈입니다.',
-		seoTitle: '감사와 경고 신호 | 감사보고서와 KAM 읽는 법',
-		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 회계추정, 내부통제처럼 신뢰도 판단에 중요한 문구를 해석하는 글을 모았습니다.',
-		brandMessage: 'DartLab은 감사의견 한 줄보다, 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
+		description: '감사보고서, KAM, 우발부채, 소송, 회계추정처럼 회사의 신뢰도를 바꾸는 경고 문구를 읽는 시리즈입니다.',
+		seoTitle: '감사와 경고 신호 | 감사보고서, KAM, 우발부채 읽는 법',
+		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 우발부채, 소송, 회계추정처럼 신뢰도 판단에 중요한 문구를 해석하는 글을 모았습니다.',
+		brandMessage: 'DartLab은 감사의견 한 줄보다, 우발부채와 소송까지 포함해 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
 	},
 	'ownership-and-governance-reading': {
 		id: 'ownership-and-governance-reading',

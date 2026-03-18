@@ -123,7 +123,7 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 | `dart-foundations` | DART 첫걸음 | 초보자가 DART에서 길을 잃지 않게 만든다 |
 | `edgar-reading` | EDGAR 실전 입문 | 한국 투자자도 EDGAR form 구조를 빠르게 익히게 만든다 |
 | `report-reading-foundations` | 사업보고서 실전 읽기 | 사업보고서 텍스트를 실제 판단 순서로 읽게 만든다 |
-| `audit-and-governance-reading` | 감사와 경고 신호 | 감사보고서와 KAM에서 리스크를 읽게 만든다 |
+| `audit-and-governance-reading` | 감사와 경고 신호 | 감사보고서, KAM, 우발부채, 소송에서 리스크를 읽게 만든다 |
 | `ownership-and-governance-reading` | 대주주·보수·주주환원 | 소유와 통제, 보상 구조를 같이 읽게 만든다 |
 | `fixed-cost-and-capex` | 설비투자와 고정비 | CAPEX 이후 비용 구조까지 읽게 만든다 |
 | `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석을 잡아준다 |

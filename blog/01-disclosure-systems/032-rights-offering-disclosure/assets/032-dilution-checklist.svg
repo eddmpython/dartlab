@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Dilution Checklist</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">four questions before you react</text>
+
+  <rect x="56" y="108" width="160" height="118" rx="20" fill="#1d4ed8"/>
+  <text x="136" y="142" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">why raise</text>
+  <text x="136" y="170" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">operations</text>
+  <text x="136" y="192" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">facility</text>
+  <text x="136" y="214" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">debt payment</text>
+
+  <rect x="238" y="108" width="160" height="118" rx="20" fill="#0f766e"/>
+  <text x="318" y="142" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">how much</text>
+  <text x="318" y="170" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">offering size</text>
+  <text x="318" y="192" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">discount</text>
+  <text x="318" y="214" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">expected dilution</text>
+
+  <rect x="420" y="108" width="160" height="118" rx="20" fill="#ea580c"/>
+  <text x="500" y="142" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">who joins</text>
+  <text x="500" y="170" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">existing holders</text>
+  <text x="500" y="192" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">major holder</text>
+  <text x="500" y="214" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">outside investor</text>
+
+  <rect x="602" y="108" width="142" height="118" rx="20" fill="#7c3aed"/>
+  <text x="673" y="142" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700">does it hold</text>
+  <text x="673" y="170" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">amendments</text>
+  <text x="673" y="192" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">final price</text>
+  <text x="673" y="214" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="13">actual result</text>
+
+  <rect x="70" y="278" width="660" height="96" rx="20" fill="#111827" stroke="#334155"/>
+  <text x="96" y="310" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Quick reading rule</text>
+  <text x="96" y="336" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">A rights offering becomes risky when weak cash flow, urgent funding, heavy dilution, and repeated amendments appear together.</text>
+</svg>

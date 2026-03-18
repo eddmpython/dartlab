@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420" fill="none">
+  <rect width="800" height="420" rx="28" fill="#0f172a"/>
+  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Rights Offering Reading Order</text>
+  <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">plan, detail, condition, outcome</text>
+
+  <rect x="36" y="126" width="156" height="92" rx="18" fill="#1d4ed8"/>
+  <text x="114" y="158" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">유상증자결정</text>
+  <text x="114" y="182" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">why now</text>
+  <text x="114" y="200" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">planned size and method</text>
+
+  <rect x="220" y="126" width="156" height="92" rx="18" fill="#0f766e"/>
+  <text x="298" y="158" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">증권신고서</text>
+  <text x="298" y="182" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="12">use of proceeds</text>
+  <text x="298" y="200" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="12">risk wording</text>
+
+  <rect x="404" y="126" width="156" height="92" rx="18" fill="#ea580c"/>
+  <text x="482" y="158" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">조건 확정</text>
+  <text x="482" y="182" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="12">price and discount</text>
+  <text x="482" y="200" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="12">calendar change</text>
+
+  <rect x="588" y="126" width="176" height="92" rx="18" fill="#7c3aed"/>
+  <text x="676" y="158" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">발행실적보고서</text>
+  <text x="676" y="182" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="12">subscription reality</text>
+  <text x="676" y="200" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="12">did the plan close well</text>
+
+  <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+    <path d="M192 172H220"/>
+    <path d="M376 172H404"/>
+    <path d="M560 172H588"/>
+  </g>
+
+  <rect x="54" y="272" width="692" height="100" rx="22" fill="#111827" stroke="#334155"/>
+  <text x="80" y="304" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Core rule</text>
+  <text x="80" y="330" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">Do not judge from the title. Read the offering as a sequence of planning, disclosure, condition changes, and final execution.</text>
+  <text x="80" y="352" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">The later documents often matter more than the first headline.</text>
+</svg>

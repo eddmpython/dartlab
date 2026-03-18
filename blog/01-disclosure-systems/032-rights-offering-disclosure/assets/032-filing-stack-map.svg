@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Offering Filing Stack</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">what each document adds</text>
+
+  <rect x="56" y="104" width="160" height="220" rx="22" fill="#111827" stroke="#334155"/>
+  <text x="136" y="138" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">decision filing</text>
+  <text x="136" y="168" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">purpose</text>
+  <text x="136" y="190" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">method</text>
+  <text x="136" y="212" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">planned scale</text>
+  <text x="136" y="234" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">calendar</text>
+
+  <rect x="236" y="104" width="160" height="220" rx="22" fill="#1d4ed8"/>
+  <text x="316" y="138" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">registration</text>
+  <text x="316" y="168" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">use of proceeds</text>
+  <text x="316" y="190" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">risk factors</text>
+  <text x="316" y="212" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">distribution structure</text>
+  <text x="316" y="234" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">fine print</text>
+
+  <rect x="416" y="104" width="160" height="220" rx="22" fill="#ea580c"/>
+  <text x="496" y="138" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">condition update</text>
+  <text x="496" y="168" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">final issue price</text>
+  <text x="496" y="190" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">discount change</text>
+  <text x="496" y="212" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">date change</text>
+  <text x="496" y="234" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="13">revision signal</text>
+
+  <rect x="596" y="104" width="148" height="220" rx="22" fill="#0f766e"/>
+  <text x="670" y="138" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">actual outcome</text>
+  <text x="670" y="168" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">subscription</text>
+  <text x="670" y="190" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">payment</text>
+  <text x="670" y="212" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">execution gap</text>
+  <text x="670" y="234" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">final reading</text>
+</svg>

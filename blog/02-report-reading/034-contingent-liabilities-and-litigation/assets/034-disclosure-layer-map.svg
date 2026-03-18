@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">우발부채와 소송 공시 레이어 맵</title>
+  <desc id="desc">주석, 투자자 보호, 감사보고서, 경영진 설명, 후속 공시의 역할 차이를 설명하는 레이어 도식이다.</desc>
+  <rect width="1200" height="820" fill="#f9fbff"/>
+  <text x="70" y="82" font-size="34" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">같은 소송도 층마다 말하는 정보가 다르다</text>
+  <text x="70" y="118" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#516b8d">그래서 검색 한 번으로 끝내지 않고, 층별로 어떤 질문을 던질지 정해 두는 편이 빠르다</text>
+
+  <rect x="80" y="170" width="1040" height="108" rx="26" fill="#ffffff" stroke="#c9d9ef" stroke-width="2"/>
+  <text x="118" y="214" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">주석</text>
+  <text x="260" y="214" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">충당부채인지 우발부채인지, 금액과 회계 처리 변화가 있는지 본다</text>
+  <text x="260" y="246" font-size="17" font-family="'Segoe UI', Arial, sans-serif" fill="#5b7594">핵심 질문: 이미 비용을 잡았는가 / 추정이 어려운가 / 최대 노출액은 어느 정도인가</text>
+
+  <rect x="80" y="300" width="1040" height="108" rx="26" fill="#ffffff" stroke="#c9d9ef" stroke-width="2"/>
+  <text x="118" y="344" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">투자자 보호</text>
+  <text x="260" y="344" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">소송 배경, 당사자, 사건 단계, 회사 입장을 더 구체적으로 붙인다</text>
+  <text x="260" y="376" font-size="17" font-family="'Segoe UI', Arial, sans-serif" fill="#5b7594">핵심 질문: 무슨 분쟁인가 / 언제 시작됐는가 / 올해 설명이 더 구체해졌는가</text>
+
+  <rect x="80" y="430" width="1040" height="108" rx="26" fill="#ffffff" stroke="#c9d9ef" stroke-width="2"/>
+  <text x="118" y="474" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">감사보고서</text>
+  <text x="260" y="474" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">KAM 또는 민감 추정으로 등장하면 회계 판단과 불확실성이 더 크다는 뜻일 수 있다</text>
+  <text x="260" y="506" font-size="17" font-family="'Segoe UI', Arial, sans-serif" fill="#5b7594">핵심 질문: 감사인이 이 항목을 얼마나 무겁게 보는가 / 회사 설명과 강도가 일치하는가</text>
+
+  <rect x="80" y="560" width="1040" height="108" rx="26" fill="#ffffff" stroke="#c9d9ef" stroke-width="2"/>
+  <text x="118" y="604" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">경영진 설명</text>
+  <text x="260" y="604" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#2f4562">리스크 문구와 MD&amp;A가 사건을 어떻게 해석하는지, 낙관이 과하지 않은지 본다</text>
+  <text x="260" y="636" font-size="17" font-family="'Segoe UI', Arial, sans-serif" fill="#5b7594">핵심 질문: 경영진 설명이 숫자와 맞는가 / 같은 이슈를 너무 가볍게 덮지 않는가</text>
+
+  <rect x="80" y="690" width="1040" height="92" rx="26" fill="#16355f"/>
+  <text x="118" y="736" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#ffffff">후속 공시와 다음 보고서</text>
+  <text x="360" y="736" font-size="20" font-family="'Segoe UI', Arial, sans-serif" fill="#d9e7ff">충당부채 사용, 환입, 합의·판결, 실제 현금 유출이 드러나는 마지막 레이어</text>
+</svg>

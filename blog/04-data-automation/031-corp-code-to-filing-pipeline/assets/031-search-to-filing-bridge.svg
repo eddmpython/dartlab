@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
+  <rect width="800" height="430" rx="28" fill="#0f172a"/>
+  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Search to Filing Bridge</text>
+  <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">how the baseline report is chosen</text>
+
+  <rect x="42" y="104" width="190" height="196" rx="22" fill="#111827" stroke="#334155"/>
+  <text x="68" y="136" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Search filters</text>
+  <text x="68" y="164" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">company = corp_code</text>
+  <text x="68" y="186" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">date range = watch or batch window</text>
+  <text x="68" y="208" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">report type = annual, quarter, event</text>
+  <text x="68" y="230" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">latest effective view = yes</text>
+  <text x="68" y="252" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">store list rows, not just top result</text>
+
+  <rect x="305" y="104" width="190" height="196" rx="22" fill="#1d4ed8"/>
+  <text x="400" y="136" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Baseline rules</text>
+  <text x="400" y="164" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">annual question -> business report</text>
+  <text x="400" y="186" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">quarter update -> quarter or half report</text>
+  <text x="400" y="208" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">event watch -> material filing</text>
+  <text x="400" y="230" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">revision found -> keep amendment chain</text>
+  <text x="400" y="252" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="13">save rcept_no with every choice</text>
+
+  <rect x="568" y="104" width="190" height="196" rx="22" fill="#0f766e"/>
+  <text x="663" y="136" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Outputs</text>
+  <text x="663" y="164" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">baseline filing ledger</text>
+  <text x="663" y="186" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">rcept_no key</text>
+  <text x="663" y="208" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">download targets</text>
+  <text x="663" y="230" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">reason for chosen document</text>
+  <text x="663" y="252" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="13">amendment follow-up plan</text>
+
+  <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+    <path d="M232 202H305"/>
+    <path d="M495 202H568"/>
+  </g>
+
+  <text x="400" y="360" text-anchor="middle" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">The search layer is not a temporary request. It becomes the filing ledger.</text>
+</svg>
