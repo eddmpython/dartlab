@@ -91,7 +91,8 @@ class TestConfigure:
         assert resp.json()["ok"] is True
 
     def test_configure_does_not_mutate_global_config(self, client, monkeypatch):
-        from dartlab.engines.ai import configure as configure_global, get_config
+        from dartlab.engines.ai import configure as configure_global
+        from dartlab.engines.ai import get_config
 
         class DummyProvider:
             def __init__(self, config):
