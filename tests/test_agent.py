@@ -3,6 +3,7 @@
 import polars as pl
 
 from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop
+from dartlab.engines.ai.tools_registry import build_tool_runtime
 from dartlab.engines.ai.types import ToolCall, ToolResponse
 
 # ══════════════════════════════════════
@@ -231,6 +232,37 @@ class TestAgentLoop:
         # 에러 없이 실행되어야 함
         result = agent_loop(provider, messages, company)
         assert isinstance(result, str)
+
+    def test_runtime_injection(self):
+        """커스텀 ToolRuntime을 주입해도 정상 동작."""
+        provider = MockProvider(
+            [
+                ToolResponse(
+                    answer="",
+                    provider="mock",
+                    model="mock-1",
+                    tool_calls=[
+                        ToolCall(id="call_1", name="get_company_info", arguments={}),
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                ToolResponse(
+                    answer="완료",
+                    provider="mock",
+                    model="mock-1",
+                    tool_calls=[],
+                    finish_reason="stop",
+                ),
+            ]
+        )
+        company = MockCompany()
+        runtime = build_tool_runtime(company, name="agent-test")
+        messages = [
+            {"role": "system", "content": "test"},
+            {"role": "user", "content": "정보"},
+        ]
+        result = agent_loop(provider, messages, company, runtime=runtime)
+        assert result == "완료"
 
 
 # ══════════════════════════════════════

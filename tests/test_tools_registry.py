@@ -5,6 +5,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.engines.ai.tools_registry import (
+    build_tool_runtime,
     clear_registry,
     execute_tool,
     get_tool_schemas,
@@ -103,6 +104,13 @@ class TestRegisterTool:
         assert len(get_tool_schemas()) == 1
         clear_registry()
         assert len(get_tool_schemas()) == 0
+
+    def test_build_tool_runtime_is_isolated(self):
+        runtime = build_tool_runtime(None, name="isolated-test")
+        names = [schema["function"]["name"] for schema in runtime.get_tool_schemas()]
+        assert runtime.name == "isolated-test"
+        assert "get_system_spec" in names
+        assert "run_codex_task" in names
 
     def test_error_handling(self):
         """실행 중 에러가 발생하면 에러 메시지 반환."""

@@ -7,15 +7,9 @@ ChatGPT Plus/Pro 구독 사용자가 API 키 없이 LLM을 사용할 수 있다.
 from __future__ import annotations
 
 import shutil
-import subprocess
 from typing import Generator
 
-from dartlab.engines.ai.codex_cli import (
-    get_codex_configured_model,
-    infer_codex_sandbox,
-    inspect_codex_cli,
-    run_codex_exec,
-)
+from dartlab.engines.ai import codex_cli
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMResponse
 
@@ -25,33 +19,29 @@ class CodexProvider(BaseProvider):
 
     @property
     def default_model(self) -> str:
-        return get_codex_configured_model() or "gpt-4.1"
+        return codex_cli.get_codex_configured_model() or "gpt-4.1"
 
     def check_available(self) -> bool:
-        info = inspect_codex_cli()
-        return bool(info.get("installed"))
+        info = codex_cli.inspect_codex_cli()
+        return bool(info.get("installed") and info.get("authenticated"))
 
     def _ensure_available(self) -> None:
         if not shutil.which("codex"):
             from dartlab.engines.ai.cli_setup import get_codex_install_guide
 
             raise FileNotFoundError(f"Codex CLI를 찾을 수 없습니다.\n\n{get_codex_install_guide()}")
-        try:
-            result = subprocess.run(
-                ["codex", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                shell=False,
+
+        info = codex_cli.inspect_codex_cli()
+        if not info.get("installed"):
+            from dartlab.engines.ai.cli_setup import get_codex_install_guide
+
+            raise FileNotFoundError(f"Codex CLI를 찾을 수 없습니다.\n\n{get_codex_install_guide()}")
+        if not info.get("authenticated"):
+            raise PermissionError(
+                "Codex CLI가 설치되어 있지만 로그인이 필요합니다.\n\n"
+                "  codex login\n\n"
+                "ChatGPT 계정으로 로그인한 뒤 다시 시도하세요."
             )
-            if result.returncode != 0:
-                raise PermissionError(
-                    "Codex CLI가 설치되어 있지만 로그인이 필요합니다.\n\n"
-                    "  codex\n\n"
-                    "처음 실행하면 브라우저에서 ChatGPT 계정으로 로그인됩니다."
-                )
-        except (subprocess.TimeoutExpired, OSError):
-            pass
 
     def _build_prompt(self, messages: list[dict[str, str]]) -> str:
         """messages를 단일 프롬프트로 합성."""
@@ -64,13 +54,13 @@ class CodexProvider(BaseProvider):
         return "\n\n".join(parts)
 
     def _select_sandbox(self, messages: list[dict[str, str]]) -> str:
-        return infer_codex_sandbox(messages)
+        return codex_cli.infer_codex_sandbox(messages)
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
         self._ensure_available()
         prompt = self._build_prompt(messages)
         sandbox = self._select_sandbox(messages)
-        answer, usage = run_codex_exec(
+        answer, usage = codex_cli.run_codex_exec(
             prompt,
             model=self.resolved_model,
             sandbox=sandbox,
@@ -88,7 +78,7 @@ class CodexProvider(BaseProvider):
         self._ensure_available()
         prompt = self._build_prompt(messages)
         sandbox = self._select_sandbox(messages)
-        full_text, _usage = run_codex_exec(
+        full_text, _usage = codex_cli.run_codex_exec(
             prompt,
             model=self.resolved_model,
             sandbox=sandbox,

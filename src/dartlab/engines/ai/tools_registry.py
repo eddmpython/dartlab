@@ -11,7 +11,12 @@ from typing import Any, Callable
 
 import polars as pl
 
-_TOOL_REGISTRY: dict[str, dict[str, Any]] = {}
+from dartlab.engines.ai.tool_runtime import (
+    ToolRuntime,
+    create_tool_runtime,
+    get_default_tool_runtime,
+    set_default_tool_runtime,
+)
 
 
 def register_tool(
@@ -21,37 +26,22 @@ def register_tool(
     parameters: dict,
 ) -> None:
     """도구 등록."""
-    _TOOL_REGISTRY[name] = {
-        "function": func,
-        "schema": {
-            "type": "function",
-            "function": {
-                "name": name,
-                "description": description,
-                "parameters": parameters,
-            },
-        },
-    }
+    get_default_tool_runtime().register_tool(name, func, description, parameters)
 
 
 def get_tool_schemas() -> list[dict]:
     """등록된 도구의 OpenAI function calling 스키마 목록."""
-    return [t["schema"] for t in _TOOL_REGISTRY.values()]
+    return get_default_tool_runtime().get_tool_schemas()
 
 
 def execute_tool(name: str, arguments: dict) -> str:
     """도구 실행. 결과는 문자열(마크다운)로 반환."""
-    if name not in _TOOL_REGISTRY:
-        return f"오류: '{name}' 도구를 찾을 수 없습니다."
-    try:
-        return _TOOL_REGISTRY[name]["function"](**arguments)
-    except Exception as e:
-        return f"도구 실행 오류 ({name}): {e}"
+    return get_default_tool_runtime().execute_tool(name, arguments)
 
 
 def clear_registry() -> None:
     """등록된 모든 도구 제거 (테스트용)."""
-    _TOOL_REGISTRY.clear()
+    get_default_tool_runtime().clear()
 
 
 def _df_to_md(df: pl.DataFrame, max_rows: int = 15) -> str:
@@ -253,8 +243,23 @@ def _build_runtime_capabilities_markdown(company: Any | None = None) -> str:
     return "\n".join(lines)
 
 
-def register_defaults(company: Any | None = None) -> None:
+def build_tool_runtime(company: Any | None = None, *, name: str = "session") -> ToolRuntime:
+    """Build an isolated tool runtime populated with current default tools."""
+    runtime = create_tool_runtime(name=name)
+    register_defaults(company, runtime=runtime)
+    return runtime
+
+
+def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None = None) -> ToolRuntime:
     """전역 기능 + Company 바인딩 분석 도구 등록."""
+    if runtime is not None:
+        previous_runtime = get_default_tool_runtime()
+        set_default_tool_runtime(runtime)
+        try:
+            return register_defaults(company)
+        finally:
+            set_default_tool_runtime(previous_runtime)
+
     clear_registry()
 
     def get_system_spec() -> str:
@@ -832,7 +837,7 @@ def register_defaults(company: Any | None = None) -> None:
     )
 
     if company is None:
-        return
+        return get_default_tool_runtime()
 
     # 0. list_modules: 사용 가능한 모듈 목록 조회
     def list_modules() -> str:
@@ -1602,3 +1607,5 @@ def register_defaults(company: Any | None = None) -> None:
         "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
         {"type": "object", "properties": {}},
     )
+
+    return get_default_tool_runtime()

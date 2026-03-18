@@ -10,10 +10,9 @@ import json
 from typing import Any, Callable, Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
+from dartlab.engines.ai.tool_runtime import ToolRuntime
 from dartlab.engines.ai.tools_registry import (
-    execute_tool,
-    get_tool_schemas,
-    register_defaults,
+    build_tool_runtime,
 )
 
 
@@ -23,6 +22,7 @@ def agent_loop(
     company: Any,
     *,
     max_turns: int = 5,
+    runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
 ) -> str:
@@ -44,8 +44,8 @@ def agent_loop(
     Returns:
             LLM의 최종 답변 텍스트
     """
-    register_defaults(company)
-    tools = get_tool_schemas()
+    tool_runtime = runtime or build_tool_runtime(company, name="agent-loop")
+    tools = tool_runtime.get_tool_schemas()
 
     last_answer = ""
 
@@ -81,7 +81,7 @@ def agent_loop(
             if on_tool_call:
                 on_tool_call(tc.name, tc.arguments)
 
-            result = execute_tool(tc.name, tc.arguments)
+            result = tool_runtime.execute_tool(tc.name, tc.arguments)
 
             if on_tool_result:
                 on_tool_result(tc.name, result)
@@ -103,6 +103,7 @@ def agent_loop_stream(
     company: Any,
     *,
     max_turns: int = 5,
+    runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
 ) -> Generator[str, None, None]:
@@ -111,8 +112,8 @@ def agent_loop_stream(
     tool_call/tool_result 단계는 콜백으로 알리고,
     최종 답변은 llm.stream()으로 실시간 청크 전달.
     """
-    register_defaults(company)
-    tools = get_tool_schemas()
+    tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
+    tools = tool_runtime.get_tool_schemas()
 
     for _turn in range(max_turns):
         response = provider.complete_with_tools(messages, tools)
@@ -145,7 +146,7 @@ def agent_loop_stream(
             if on_tool_call:
                 on_tool_call(tc.name, tc.arguments)
 
-            result = execute_tool(tc.name, tc.arguments)
+            result = tool_runtime.execute_tool(tc.name, tc.arguments)
 
             if on_tool_result:
                 on_tool_result(tc.name, result)

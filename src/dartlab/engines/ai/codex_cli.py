@@ -12,6 +12,21 @@ from pathlib import Path
 from typing import Any
 
 _CODEX_CONFIG_PATH = Path.home() / ".codex" / "config.toml"
+_DEFAULT_CODEX_MODELS = [
+    "gpt-5.4",
+    "gpt-5.3",
+    "gpt-5.3-codex",
+    "gpt-5.2",
+    "gpt-5.2-codex",
+    "gpt-5.1",
+    "gpt-5.1-codex",
+    "gpt-5.1-codex-mini",
+    "o3",
+    "o4-mini",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+]
 _CODING_KEYWORDS = (
     "코드",
     "코딩",
@@ -106,12 +121,7 @@ def get_codex_model_catalog() -> list[str]:
     if configured:
         models.append(configured)
 
-    try:
-        from dartlab.engines.ai.providers.oauthCodex import AVAILABLE_MODELS
-
-        models.extend(AVAILABLE_MODELS)
-    except ImportError:
-        pass
+    models.extend(_DEFAULT_CODEX_MODELS)
 
     if not models:
         models.append("gpt-4.1")
@@ -157,15 +167,38 @@ def _extract_sandbox_modes(help_text: str) -> list[str]:
     return [value.strip() for value in values.split(",") if value.strip()]
 
 
+def _parse_login_status(stdout: str, stderr: str, returncode: int) -> tuple[bool, str | None, str | None]:
+    """Parse `codex login status` output into authentication metadata."""
+    text = (stdout or stderr or "").strip()
+    lowered = text.lower()
+
+    if returncode != 0:
+        return False, None, text or None
+
+    authenticated = "logged in" in lowered or "authenticated" in lowered
+    auth_mode = None
+    if "chatgpt" in lowered:
+        auth_mode = "chatgpt"
+    elif "api key" in lowered or "api-key" in lowered:
+        auth_mode = "api_key"
+
+    return authenticated, auth_mode, text or None
+
+
 def inspect_codex_cli() -> dict[str, Any]:
     """Inspect installed Codex CLI features from live help output."""
     result: dict[str, Any] = {
         "installed": False,
         "version": None,
         "configuredModel": get_codex_configured_model(),
+        "authenticated": False,
+        "authMode": None,
+        "loginStatus": None,
         "commands": [],
         "execCommands": [],
         "sandboxModes": [],
+        "supportsLogin": False,
+        "supportsLogout": False,
         "supportsJson": False,
         "supportsWorkspaceWrite": False,
         "supportsDangerFullAccess": False,
@@ -190,9 +223,18 @@ def inspect_codex_cli() -> dict[str, Any]:
         help_text = root_help[1]
         commands = _extract_commands(help_text)
         result["commands"] = commands
+        result["supportsLogin"] = "login" in commands
+        result["supportsLogout"] = "logout" in commands
         result["supportsMcp"] = "mcp" in commands
         result["supportsReview"] = "review" in commands
         result["supportsApply"] = "apply" in commands
+
+    login_status = _run_codex_meta_command("login", "status")
+    if login_status is not None:
+        authenticated, auth_mode, status_text = _parse_login_status(*login_status[1:], login_status[0])
+        result["authenticated"] = authenticated
+        result["authMode"] = auth_mode
+        result["loginStatus"] = status_text
 
     exec_help = _run_codex_meta_command("exec", "--help")
     if exec_help is not None and exec_help[0] == 0:
@@ -205,6 +247,21 @@ def inspect_codex_cli() -> dict[str, Any]:
         result["supportsJson"] = "--json" in help_text
 
     return result
+
+
+def logout_codex_cli(timeout: int = 15) -> None:
+    """Remove stored Codex CLI authentication."""
+    info = inspect_codex_cli()
+    if not info.get("installed"):
+        raise FileNotFoundError("Codex CLI가 설치되어 있지 않습니다.")
+
+    result = _run_codex_meta_command("logout", timeout=timeout)
+    if result is None:
+        raise RuntimeError("Codex CLI 로그아웃 명령을 실행할 수 없습니다.")
+
+    returncode, _stdout, stderr = result
+    if returncode != 0:
+        raise RuntimeError(stderr or "Codex CLI 로그아웃에 실패했습니다.")
 
 
 def infer_codex_sandbox(messages: list[dict[str, str]], override: str | None = None) -> str:

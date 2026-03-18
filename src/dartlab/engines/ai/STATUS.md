@@ -8,11 +8,23 @@
 | `claude` | claude.py | API Key / 프록시 | claude-sonnet-4-6 | **안정** — 공식 SDK |
 | `ollama` | ollama.py | 없음 (localhost) | llama3.1 | **안정** — 로컬 |
 | `custom` | openai_compat.py | API Key | gpt-4o | **안정** — OpenAI 호환 |
-| `chatgpt` | oauthCodex.py | **OAuth PKCE** | gpt-5.4 | **취약** — 비공식 API |
-| `codex` | codex.py | CLI 세션 | CLI config 또는 gpt-4.1 | **취약** — CLI 의존 |
+| `chatgpt` | providers/__init__.py alias | `codex`로 정규화 | codex mirror | **호환용 alias** — 공개 surface 비노출 |
+| `codex` | codex.py | CLI 세션 | CLI config 또는 gpt-4.1 | **공식 경로 우선** — Codex CLI 의존 |
 | `claude-code` | claude_code.py | CLI 세션 | sonnet | **보류중** — OAuth 지원 전 비공개 |
 
 ---
+
+## 현재 공개 경로
+
+- UI/서버/기본 provider surface에서 ChatGPT 구독 계정 경로는 `codex`가 단일 공식 진입점이다.
+- `chatgpt` 이름은 기존 설정/호환성 때문에 내부 alias로만 남아 있으며 실제 구현은 `codex`로 정규화된다.
+- 아래 ChatGPT OAuth 내용은 legacy/참고용이다. 공개 기능으로는 더 이상 우선 사용하지 않는다.
+
+## Tool Runtime 기반
+
+- 도구 등록/실행은 `tool_runtime.py`의 `ToolRuntime`으로 분리되기 시작했다.
+- `tools_registry.py`는 현재 호환 래퍼 역할을 하며, 세션별/에이전트별 isolated runtime 생성이 가능하다.
+- 다음 단계는 coding backend(Codex 등)를 provider가 아니라 runtime 뒤에 붙이는 것이다.
 
 ## ChatGPT OAuth Provider — 핵심 리스크
 

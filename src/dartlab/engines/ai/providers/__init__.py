@@ -16,7 +16,7 @@ _PROVIDER_MAP: dict[str, str] = {
     "custom": "dartlab.engines.ai.providers.openai_compat.OpenAICompatProvider",
     "claude-code": "dartlab.engines.ai.providers.claude_code.ClaudeCodeProvider",
     "codex": "dartlab.engines.ai.providers.codex.CodexProvider",
-    "chatgpt": "dartlab.engines.ai.providers.oauthCodex.OAuthCodexProvider",
+    "chatgpt": "dartlab.engines.ai.providers.codex.CodexProvider",
 }
 
 

@@ -214,21 +214,37 @@ class TestCodexProvider:
         provider = self._make_provider(model="gpt-4o")
         assert provider.resolved_model == "gpt-4o"
 
-    @patch("shutil.which", return_value=None)
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": False, "authenticated": False},
+    )
     def test_check_available_not_installed(self, _):
         provider = self._make_provider()
         assert provider.check_available() is False
 
-    @patch("subprocess.run")
-    @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_check_available_installed(self, _, mock_run):
-        mock_run.return_value = MagicMock(returncode=0, stdout="codex-cli 0.115.0", stderr="")
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True},
+    )
+    def test_check_available_installed(self, _):
         provider = self._make_provider()
         assert provider.check_available() is True
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": False},
+    )
+    def test_check_available_not_authenticated(self, _):
+        provider = self._make_provider()
+        assert provider.check_available() is False
+
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_success(self, _, mock_run):
+    def test_complete_success(self, _, mock_run, __):
         jsonl_output = "\n".join(
             [
                 json.dumps({"type": "thread.started", "thread_id": "abc"}),
@@ -258,9 +274,13 @@ class TestCodexProvider:
         assert result.provider == "codex"
         assert result.usage["total_tokens"] == 150
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_with_system(self, _, mock_run):
+    def test_complete_with_system(self, _, mock_run, __):
         """시스템 메시지가 프롬프트에 포함되는지 확인."""
         jsonl_output = json.dumps(
             {
@@ -286,9 +306,13 @@ class TestCodexProvider:
         assert "[System Instructions]" in prompt
         assert "재무 분석가" in prompt
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_passes_model_flag(self, _, mock_run):
+    def test_complete_passes_model_flag(self, _, mock_run, __):
         jsonl_output = json.dumps(
             {
                 "type": "item.completed",
@@ -305,7 +329,7 @@ class TestCodexProvider:
 
     @patch(
         "dartlab.engines.ai.codex_cli.inspect_codex_cli",
-        return_value={"sandboxModes": ["read-only", "workspace-write"]},
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
@@ -325,7 +349,7 @@ class TestCodexProvider:
 
     @patch(
         "dartlab.engines.ai.codex_cli.inspect_codex_cli",
-        return_value={"sandboxModes": ["read-only", "workspace-write"]},
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
@@ -343,9 +367,13 @@ class TestCodexProvider:
         idx = cmd.index("--sandbox")
         assert cmd[idx + 1] == "read-only"
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_cli_error(self, _, mock_run):
+    def test_complete_cli_error(self, _, mock_run, __):
         mock_run.return_value = MagicMock(
             returncode=1,
             stdout="",
@@ -355,9 +383,13 @@ class TestCodexProvider:
         with pytest.raises(RuntimeError, match="Codex CLI 오류"):
             provider.complete([{"role": "user", "content": "test"}])
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_no_answer(self, _, mock_run):
+    def test_complete_no_answer(self, _, mock_run, __):
         """응답에 agent_message가 없으면 에러."""
         jsonl_output = json.dumps({"type": "turn.completed"})
         mock_run.return_value = MagicMock(
@@ -375,9 +407,13 @@ class TestCodexProvider:
         with pytest.raises(FileNotFoundError, match="Codex CLI"):
             provider.complete([{"role": "user", "content": "test"}])
 
+    @patch(
+        "dartlab.engines.ai.codex_cli.inspect_codex_cli",
+        return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
+    )
     @patch("subprocess.run")
     @patch("shutil.which", return_value="/usr/bin/codex")
-    def test_complete_timeout(self, _, mock_run):
+    def test_complete_timeout(self, _, mock_run, __):
         mock_run.side_effect = subprocess.TimeoutExpired(cmd="codex", timeout=300)
         provider = self._make_provider()
         with pytest.raises(TimeoutError):
@@ -405,6 +441,7 @@ class TestCliDetection:
         assert "installed" in result
         assert "version" in result
         assert "configuredModel" in result
+        assert "authenticated" in result
         assert "supportsWorkspaceWrite" in result
 
     def test_claude_code_install_guide(self):
@@ -451,6 +488,13 @@ class TestProviderRegistry:
         from dartlab.engines.ai.providers import create_provider
 
         config = LLMConfig(provider="codex")
+        provider = create_provider(config)
+        assert provider.__class__.__name__ == "CodexProvider"
+
+    def test_create_chatgpt_alias_provider(self):
+        from dartlab.engines.ai.providers import create_provider
+
+        config = LLMConfig(provider="chatgpt")
         provider = create_provider(config)
         assert provider.__class__.__name__ == "CodexProvider"
 
