@@ -1,12 +1,13 @@
-"""Company/Compare 레이어 구조 테스트."""
+"""Company 레이어 구조 테스트."""
 
 from pathlib import Path
 
-from dartlab import Company, Compare
-from dartlab.engines.dart import Company as EngineDartCompany
-from dartlab.engines.dart import Compare as EngineDartCompare
-from dartlab.engines.edgar import Company as EngineEdgarCompany
-from dartlab.engines.edgar import Compare as EngineEdgarCompare
+import dartlab
+import dartlab.engines.dart as dart_engine
+import dartlab.engines.edgar as edgar_engine
+from dartlab import Company
+from dartlab.engines.dart import Company as DartEngineCompany
+from dartlab.engines.edgar import Company as EdgarEngineCompany
 
 
 def _read(relpath: str) -> str:
@@ -16,14 +17,16 @@ def _read(relpath: str) -> str:
 
 def test_root_facade_exports_exist():
     assert callable(Company)
-    assert callable(Compare)
+    assert not hasattr(dartlab, "Compare")
+    assert not hasattr(dartlab, "KRCompany")
+    assert not hasattr(dartlab, "USCompany")
 
 
 def test_engine_exports_exist():
-    assert callable(EngineDartCompany)
-    assert callable(EngineEdgarCompany)
-    assert callable(EngineDartCompare)
-    assert callable(EngineEdgarCompare)
+    assert callable(DartEngineCompany)
+    assert callable(EdgarEngineCompany)
+    assert not hasattr(dart_engine, "Compare")
+    assert not hasattr(edgar_engine, "Compare")
 
 
 def test_report_api_surface_is_28():
@@ -35,9 +38,7 @@ def test_report_api_surface_is_28():
 def test_engine_modules_do_not_import_root_company_or_compare():
     targets = [
         "src/dartlab/engines/dart/company.py",
-        "src/dartlab/engines/dart/compare.py",
         "src/dartlab/engines/edgar/company.py",
-        "src/dartlab/engines/edgar/compare.py",
     ]
     banned = [
         "from dartlab.company import",
@@ -52,6 +53,17 @@ def test_engine_modules_do_not_import_root_company_or_compare():
         text = _read(target)
         for pattern in banned:
             assert pattern not in text, f"{target} contains banned import: {pattern}"
+
+
+def test_compare_modules_are_removed():
+    root = Path(__file__).resolve().parents[1]
+    targets = [
+        "src/dartlab/compare.py",
+        "src/dartlab/engines/dart/compare.py",
+        "src/dartlab/engines/edgar/compare.py",
+    ]
+    for target in targets:
+        assert not (root / target).exists(), f"{target} should be removed"
 
 
 def test_public_docs_do_not_reference_legacy_company_names():

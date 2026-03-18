@@ -1,25 +1,20 @@
 """DART 공시 데이터 활용 라이브러리."""
 
 import sys
-from importlib.metadata import version as _pkg_version
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
 from dartlab import config, core, engines
 from dartlab.company import Company
-from dartlab.compare import Compare
 from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
-from dartlab.engines.dart.company import Company as _DartCompany
+from dartlab.engines.dart.company import Company as _DartEngineCompany
 from dartlab.engines.dart.openapi.dart import Dart, OpenDart
-from dartlab.engines.edgar.company import Company as _EdgarCompany
 from dartlab.engines.edgar.openapi.edgar import OpenEdgar
 
 try:
     __version__ = _pkg_version("dartlab")
-except Exception:
+except PackageNotFoundError:
     __version__ = "0.0.0"
-
-KRCompany = _DartCompany
-USCompany = _EdgarCompany
 
 
 def search(keyword: str):
@@ -32,7 +27,7 @@ def search(keyword: str):
         dartlab.search("AAPL")
     """
     if any("\uac00" <= ch <= "\ud7a3" for ch in keyword):
-        return _DartCompany.search(keyword)
+        return _DartEngineCompany.search(keyword)
     if keyword.isascii() and keyword.isalpha():
         try:
             from dartlab.engines.edgar.company import Company as _US
@@ -40,7 +35,7 @@ def search(keyword: str):
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
             pass
-    return _DartCompany.search(keyword)
+    return _DartEngineCompany.search(keyword)
 
 
 def listing(market: str | None = None):
@@ -62,7 +57,7 @@ def listing(market: str | None = None):
             return _US.listing()
         except (ImportError, AttributeError, NotImplementedError):
             raise NotImplementedError("US listing은 아직 지원되지 않습니다")
-    return _DartCompany.listing()
+    return _DartEngineCompany.listing()
 
 
 class _Module(sys.modules[__name__].__class__):
@@ -90,12 +85,9 @@ sys.modules[__name__].__class__ = _Module
 
 __all__ = [
     "Company",
-    "Compare",
     "Dart",
     "OpenDart",
     "OpenEdgar",
-    "KRCompany",
-    "USCompany",
     "config",
     "core",
     "engines",

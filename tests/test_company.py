@@ -157,12 +157,12 @@ class TestCompany:
 
     def test_alphanumeric_dart_codes_are_routed_and_resolved(self):
         from dartlab import Company
-        from dartlab.engines.dart.company import Company as DartCompany
+        from dartlab.engines.dart.company import Company as DartEngineCompany
 
         c = Company("0009K0")
-        assert isinstance(c, DartCompany)
+        assert isinstance(c, DartEngineCompany)
         assert c.stockCode == "0009K0"
-        assert DartCompany.resolve("0009K0") == "0009K0"
+        assert DartEngineCompany.resolve("0009K0") == "0009K0"
         payload = c.show("rawMaterial")
         assert payload is None or isinstance(payload, pl.DataFrame)
 

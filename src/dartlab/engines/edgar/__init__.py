@@ -2,11 +2,9 @@
 
 from dartlab.engines.edgar import docs, finance
 from dartlab.engines.edgar.company import Company
-from dartlab.engines.edgar.compare import Compare
 
 __all__ = [
     "finance",
     "docs",
     "Company",
-    "Compare",
 ]

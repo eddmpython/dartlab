@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 
 from dartlab.engines.common.protocols import CompanyProtocol
-from dartlab.engines.dart.company import Company as _DartCompany
-from dartlab.engines.edgar.company import Company as _EdgarCompany
+from dartlab.engines.dart.company import Company as _DartEngineCompany
+from dartlab.engines.edgar.company import Company as _EdgarEngineCompany
 
 
 def _isUSTicker(s: str) -> bool:
@@ -24,12 +24,12 @@ def Company(codeOrName: str) -> CompanyProtocol:
     normalized = codeOrName.strip()
 
     if _isDartCode(normalized):
-        return _DartCompany(normalized.upper())
+        return _DartEngineCompany(normalized.upper())
 
     if any("\uac00" <= ch <= "\ud7a3" for ch in normalized):
-        return _DartCompany(normalized)
+        return _DartEngineCompany(normalized)
 
     if _isUSTicker(normalized):
-        return _EdgarCompany(normalized)
+        return _EdgarEngineCompany(normalized)
 
-    return _DartCompany(normalized)
+    return _DartEngineCompany(normalized)
