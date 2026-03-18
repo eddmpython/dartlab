@@ -44,11 +44,37 @@
 - `cadenceScope`는 `annual` / `quarterly` / `mixed` / `none`이며, 소비층이 연간 구조와 분기 구조를 섞지 않게 하는 기준 메타다.
 - `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`는 `sections` 내부에서 cadence-aware row projection을 제공하는 공식 helper다.
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`는 `textSemanticPathKey` 기준으로 row가 흡수한 raw wording drift를 진단하는 공식 helper다.
+- `structureRegistry(df, ...)` / `structureCollisions(df, ...)`는 `textComparablePathKey` 기준으로 moved/split/merge/parallel 같은 구조 이벤트를 진단하는 공식 helper다.
+- `structureEvents(df, ...)`는 comparable slot의 period 전이(`fromPeriod -> toPeriod`)를 직접 event row로 내리는 공식 helper다.
+  - `nodeType='body'`를 주면 heading anchor를 제외하고 본문 이벤트만 본다.
+  - `periodLane` 기준으로 같은 report-kind 안에서만 비교한다. (`annual`, `q1`, `q2`, `q3`)
+  - 즉 `Q3 -> annual -> Q1` 같은 교차 주기 전이는 event로 만들지 않는다.
+  - 핵심 진단 메타:
+    - `activePeriods`
+    - `activePathCounts`
+    - `multiPathPeriods`
+    - `structurePattern`
+  - `structurePattern` 값:
+    - `same`: raw semantic path 충돌 없음
+    - `variant`: period마다 하나의 path만 살아 있고 wording/root만 바뀜
+    - `moved`: leaf는 같고 parent path만 이동
+    - `reassigned`: business unit slot처럼 같은 comparable slot에 다른 leaf가 시계열로 교대
+    - `split`: 초기 1개 path가 최근 여러 path로 분화
+    - `merge`: 초기 여러 path가 최근 1개 path로 수렴
+    - `split_merge`: 중간에만 다중 path가 나타나는 혼합형
+    - `parallel`: 여러 path가 동시 병존하는 구조
+  - `structureEvents()`의 `eventType` 값:
+    - `variant`
+    - `moved`
+    - `reassigned`
+    - `split`
+    - `merge`
+    - `parallel_change`
 - `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
   - DataFrame 메서드는 그대로 위임된다.
-  - 같은 경로에서 `.raw`, `.periods()`, `.ordered()`, `.coverage()`, `.cadence(...)`, `.semanticRegistry(...)`, `.semanticCollisions(...)`를 호출한다.
+  - 같은 경로에서 `.raw`, `.periods()`, `.ordered()`, `.coverage()`, `.cadence(...)`, `.semanticRegistry(...)`, `.semanticCollisions(...)`, `.structureRegistry(...)`, `.structureCollisions(...)`, `.structureEvents(...)`를 호출한다.
   - `periods()/ordered()/coverage()`는 사용자-facing projection이며 최신우선 + 연간 `Q4` alias를 지원한다.
-  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()`는 호환용 thin wrapper다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()`는 호환용 thin wrapper다.
 - 장 제목 content는 source-of-truth로 보존한다.
   - 소항목이 있어도 장 제목 text block을 먼저 등록한다.
   - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.
@@ -69,6 +95,9 @@
   - row별 period 분포는 `cadenceKey`, `cadenceScope`, `latestAnnualPeriod`, `latestQuarterlyPeriod`로 기록한다.
   - accessor는 `periods()/ordered()/coverage()`로 최신우선 `Q4` alias projection을 바로 제공한다.
   - `show(period="2025Q4")`는 raw annual column `2025`를 alias로 받아들이고, 반환 컬럼도 `2025Q4`로 맞춘다.
+  - comparable slot spine은 `textComparablePathKey` / `textComparableParentPathKey`로 따로 보존한다.
+  - `structureRegistry()`는 comparable spine 기준 `activePathCounts`와 `structurePattern`을 계산해 구조 이동과 병합/분화를 진단한다.
+  - `structureEvents()`는 comparable spine 기준으로 `fromPeriod -> toPeriod` 구조 전이 row를 만든다.
 - 실제 구현 기준 파일:
   - `src/dartlab/engines/dart/docs/sections/textStructure.py`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py`

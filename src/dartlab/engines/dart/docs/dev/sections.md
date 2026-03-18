@@ -76,6 +76,9 @@
   - row가 흡수한 과거 raw wording drift는 `textPathVariants`에 남긴다.
   - semantic alias는 `textSemanticPathKey`에서만 흡수한다.
   - 보수적으로 검증된 alias만 허용한다.
+- `textComparablePathKey` / `textComparableParentPathKey`는 semantic spine과 별개로 `구조 슬롯`만 비교하기 위한 comparable spine이다.
+  - businessOverview의 부문명, 판매경로 세부 slot처럼 raw semantic leaf가 바뀌어도 같은 비교 슬롯으로 볼 수 있는 경우에만 쓴다.
+  - 이 spine 위에서 `structureRegistry()` / `structureCollisions()`가 moved/split/merge/parallel 진단표를 만든다.
 - 장 제목 content는 source-of-truth로 보존한다.
   - 소항목이 있어도 pending chapter text를 먼저 등록한다.
   - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.
@@ -88,11 +91,44 @@
   - `cadenceKey`: `annual,q1,q2,q3` 같은 finer set
 - `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`로 `sections` 내부에서 annual/quarterly/mixed row projection을 바로 만들 수 있다.
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`로 semantic spine 기준 raw wording drift와 collision을 바로 진단할 수 있다.
+- `structureRegistry(df, ...)` / `structureCollisions(df, ...)`로 comparable spine 기준 구조 이벤트를 바로 진단할 수 있다.
+- `nodeType='body'`를 주면 heading anchor를 제외하고 본문 충돌만 본다.
+  - 핵심 메타:
+    - `activePeriods`
+    - `activePathCounts`
+    - `multiPathPeriods`
+    - `structurePattern`
+  - `structurePattern` 값:
+    - `same`
+    - `variant`
+    - `moved`
+    - `reassigned`
+    - `split`
+    - `merge`
+    - `split_merge`
+    - `parallel`
+- `structureEvents(df, ...)`는 comparable spine 기준 period 전이 event row를 만든다.
+  - `nodeType='body'`를 주면 heading transition을 제외하고 본문 전이만 본다.
+  - `periodLane` 기준으로 같은 report-kind끼리만 비교한다.
+  - `annual`, `q1`, `q2`, `q3` lane 내부 전이만 event row로 만든다.
+  - 교차 주기(`Q3 -> annual`, `annual -> Q1`)는 구조 event로 간주하지 않는다.
+  - 주요 컬럼:
+    - `fromPeriod`, `toPeriod`
+    - `fromPaths`, `toPaths`
+    - `addedPaths`, `removedPaths`
+    - `eventType`
+  - `eventType` 값:
+    - `variant`
+    - `moved`
+    - `reassigned`
+    - `split`
+    - `merge`
+    - `parallel_change`
 - `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
   - `c.docs.sections.filter(...)`처럼 DataFrame 연산을 그대로 쓸 수 있다.
-  - 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`를 쓴다.
+  - 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`, `c.docs.sections.structureRegistry(...)`, `c.docs.sections.structureCollisions(...)`, `c.docs.sections.structureEvents(...)`를 쓴다.
   - `periods()/ordered()/coverage()`는 최신우선 + 연간 `Q4` alias projection이다.
-  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()`는 호환용 wrapper다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()`는 호환용 wrapper다.
 - `show()`, `diff()`, viewer, AI가 같은 text structure를 공유해야 한다.
 
 ## 2026-03-18 현재 기준
@@ -117,6 +153,11 @@
 - 현재 공식 semantic registry helper:
   - `src/dartlab/engines/dart/docs/sections/pipeline.py:semanticRegistry`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py:semanticCollisions`
+- 현재 공식 structure registry helper:
+  - `src/dartlab/engines/dart/docs/sections/pipeline.py:structureRegistry`
+  - `src/dartlab/engines/dart/docs/sections/pipeline.py:structureCollisions`
+- 현재 공식 structure event helper:
+  - `src/dartlab/engines/dart/docs/sections/pipeline.py:structureEvents`
 - 구현 파일:
   - `src/dartlab/engines/dart/docs/sections/textStructure.py`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py`
@@ -131,6 +172,7 @@
   - `companyOverview`, `mdna`는 safe alias가 실제 row merge로 이어지는 케이스가 확인된다.
   - `businessOverview`는 `...에 관한 사항 -> 핵심 slot 이름` 같은 semantic rename은 많지만, 대다수 회사에서는 row count가 거의 줄지 않는다.
   - 해석: `businessOverview`의 병목은 wording drift보다 `부문 이동/구조 이동`이다.
+  - 그래서 현재는 semantic alias 위에 comparable slot spine과 `structurePattern` 진단을 같이 쓴다.
   - 다만 최신 연간 sparse의 큰 원인 하나는 raw source 자체가 아니라 chapter content drop이었다.
   - 장 제목 content 보존 후 `005930` 최신 annual `businessOverview` coverage는 `177/436 (40.6%)`까지 회복됐다.
 - 현재 안전 alias의 예:

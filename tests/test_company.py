@@ -222,24 +222,44 @@ class TestCompany:
         annual = c.docs.sectionsCadence("annual")
         registry = c.docs.sectionsSemanticRegistry(topic="mdna")
         collisions = c.docs.sectionsSemanticCollisions(topic="mdna")
+        structureRegistry = c.docs.sectionsStructureRegistry(topic="businessOverview")
+        structureCollisions = c.docs.sectionsStructureCollisions(topic="businessOverview")
+        structureEvents = c.docs.sectionsStructureEvents(topic="businessOverview")
+        bodyStructureRegistry = c.docs.sectionsStructureRegistry(topic="businessOverview", nodeType="body")
+        bodyStructureEvents = c.docs.sectionsStructureEvents(topic="businessOverview", nodeType="body")
         accessorPeriods = c.docs.sections.periods()
         accessorOrdered = c.docs.sections.ordered()
         accessorCoverage = c.docs.sections.coverage(topic="businessOverview")
         accessorAnnual = c.docs.sections.cadence("annual")
         accessorRegistry = c.docs.sections.semanticRegistry(topic="mdna")
         accessorCollisions = c.docs.sections.semanticCollisions(topic="mdna")
+        accessorStructureRegistry = c.docs.sections.structureRegistry(topic="businessOverview")
+        accessorStructureCollisions = c.docs.sections.structureCollisions(topic="businessOverview")
+        accessorStructureEvents = c.docs.sections.structureEvents(topic="businessOverview")
+        accessorBodyStructureRegistry = c.docs.sections.structureRegistry(topic="businessOverview", nodeType="body")
+        accessorBodyStructureEvents = c.docs.sections.structureEvents(topic="businessOverview", nodeType="body")
 
         assert isinstance(ordered, pl.DataFrame)
         assert isinstance(coverage, pl.DataFrame)
         assert isinstance(annual, pl.DataFrame)
         assert isinstance(registry, pl.DataFrame)
         assert isinstance(collisions, pl.DataFrame)
+        assert isinstance(structureRegistry, pl.DataFrame)
+        assert isinstance(structureCollisions, pl.DataFrame)
+        assert isinstance(structureEvents, pl.DataFrame)
+        assert isinstance(bodyStructureRegistry, pl.DataFrame)
+        assert isinstance(bodyStructureEvents, pl.DataFrame)
         assert isinstance(accessorPeriods, list)
         assert isinstance(accessorOrdered, pl.DataFrame)
         assert isinstance(accessorCoverage, pl.DataFrame)
         assert isinstance(accessorAnnual, pl.DataFrame)
         assert isinstance(accessorRegistry, pl.DataFrame)
         assert isinstance(accessorCollisions, pl.DataFrame)
+        assert isinstance(accessorStructureRegistry, pl.DataFrame)
+        assert isinstance(accessorStructureCollisions, pl.DataFrame)
+        assert isinstance(accessorStructureEvents, pl.DataFrame)
+        assert isinstance(accessorBodyStructureRegistry, pl.DataFrame)
+        assert isinstance(accessorBodyStructureEvents, pl.DataFrame)
         assert annual.height <= c.docs.sections.height
         orderedPeriodCols = [c for c in ordered.columns if c.startswith("20")]
         assert orderedPeriodCols == accessorPeriods
@@ -251,9 +271,39 @@ class TestCompany:
         assert coverage.equals(accessorCoverage)
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(registry.columns))
         assert {"textSemanticPathKey", "rawPathCount", "rawPaths", "hasCollision"}.issubset(set(collisions.columns))
+        assert {
+            "textComparablePathKey",
+            "rawSemanticPathCount",
+            "rawSemanticPaths",
+            "activePeriodCount",
+            "activePathCounts",
+            "multiPathPeriods",
+            "structurePattern",
+            "hasCollision",
+        }.issubset(set(structureRegistry.columns))
+        assert {
+            "textComparablePathKey",
+            "periodLane",
+            "fromPeriod",
+            "toPeriod",
+            "fromPathCount",
+            "toPathCount",
+            "addedPaths",
+            "removedPaths",
+            "eventType",
+        }.issubset(set(structureEvents.columns))
         assert annual.equals(accessorAnnual)
         assert registry.equals(accessorRegistry)
         assert collisions.equals(accessorCollisions)
+        assert structureRegistry.equals(accessorStructureRegistry)
+        assert structureCollisions.equals(accessorStructureCollisions)
+        assert structureEvents.equals(accessorStructureEvents)
+        assert bodyStructureRegistry.equals(accessorBodyStructureRegistry)
+        assert bodyStructureEvents.equals(accessorBodyStructureEvents)
+        assert bodyStructureRegistry.height <= structureRegistry.height
+        assert bodyStructureEvents.height <= structureEvents.height
+        assert set(bodyStructureRegistry["textNodeType"].unique().to_list()) == {"body"}
+        assert set(bodyStructureEvents["textNodeType"].unique().to_list()) == {"body"}
 
     def test_show_accepts_q4_alias_for_annual_sections_period(self):
         from dartlab import Company

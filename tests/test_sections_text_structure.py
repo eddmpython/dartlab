@@ -673,8 +673,295 @@ def test_sections_do_not_merge_distinct_business_unit_segments(monkeypatch):
     first = unitBodies.row(0, named=True)
     second = unitBodies.row(1, named=True)
     assert first["textSemanticPathKey"] != second["textSemanticPathKey"]
+    assert first["textComparablePathKey"] == second["textComparablePathKey"]
     assert first["2024"] is None or first["2025"] is None
     assert second["2024"] is None or second["2025"] is None
+
+    collisions = pipeline.structureCollisions(df, topic="businessOverview")
+    assert collisions.height >= 1
+    target = collisions.filter(pl.col("textComparablePathKey") == first["textComparablePathKey"])
+    assert target.height >= 1
+    targetRow = target.row(0, named=True)
+    assert "reassigned" in set(target["structurePattern"].to_list())
+    assert targetRow["activePeriodCount"] == 2
+    assert targetRow["activePathCounts"] == [1, 1]
+    assert targetRow["multiPathPeriods"] == []
+
+
+def test_structure_registry_distinguishes_variant_split_merge_and_parallel():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview"] * 8,
+            "blockType": ["text"] * 8,
+            "textStructural": [True] * 8,
+            "textNodeType": ["body"] * 8,
+            "textLevel": [1] * 8,
+            "cadenceScope": ["annual"] * 8,
+            "textComparablePathKey": [
+                "매출",
+                "매출",
+                "매출 > 판매경로및판매방법",
+                "매출 > 판매경로및판매방법",
+                "생산및설비 > 생산능력생산실적가동률",
+                "생산및설비 > 생산능력생산실적가동률",
+                "시장위험과위험관리",
+                "시장위험과위험관리",
+            ],
+            "textComparableParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "textSemanticPathKey": [
+                "매출",
+                "매출및수주상황",
+                "매출 > 판매경로",
+                "매출 > 판매전략",
+                "생산및설비 > 생산실적",
+                "생산및설비 > 가동률",
+                "시장위험과위험관리",
+                "위험관리및파생거래",
+            ],
+            "textSemanticParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "segmentKey": [f"s{i}" for i in range(8)],
+            "sourceBlockOrder": list(range(8)),
+            "latestAnnualPeriod": ["2025"] * 8,
+            "latestQuarterlyPeriod": [None] * 8,
+            "2024": ["a", None, "a", None, "a", "b", "a", "b"],
+            "2025": [None, "a", "a", "b", "a", None, "a", "b"],
+        }
+    )
+
+    registry = pipeline.structureRegistry(df, topic="businessOverview")
+
+    variant = registry.filter(pl.col("textComparablePathKey") == "매출")
+    assert variant.height == 1
+    variantRow = variant.row(0, named=True)
+    assert variantRow["structurePattern"] == "variant"
+    assert variantRow["activePathCounts"] == [1, 1]
+
+    split = registry.filter(pl.col("textComparablePathKey") == "매출 > 판매경로및판매방법")
+    assert split.height == 1
+    splitRow = split.row(0, named=True)
+    assert splitRow["structurePattern"] == "split"
+    assert splitRow["activePathCounts"] == [1, 2]
+    assert splitRow["multiPathPeriods"] == ["2025"]
+
+    merge = registry.filter(pl.col("textComparablePathKey") == "생산및설비 > 생산능력생산실적가동률")
+    assert merge.height == 1
+    mergeRow = merge.row(0, named=True)
+    assert mergeRow["structurePattern"] == "merge"
+    assert mergeRow["activePathCounts"] == [2, 1]
+    assert mergeRow["multiPathPeriods"] == ["2024"]
+
+    parallel = registry.filter(pl.col("textComparablePathKey") == "시장위험과위험관리")
+    assert parallel.height == 1
+    parallelRow = parallel.row(0, named=True)
+    assert parallelRow["structurePattern"] == "parallel"
+    assert parallelRow["activePathCounts"] == [2, 2]
+    assert parallelRow["multiPathPeriods"] == ["2024", "2025"]
+
+    bodyOnly = pipeline.structureRegistry(df, topic="businessOverview", nodeType="body")
+    assert bodyOnly.height == registry.height
+    assert set(bodyOnly["textNodeType"].unique().to_list()) == {"body"}
+
+
+def test_structure_events_capture_transition_types():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview"] * 8,
+            "blockType": ["text"] * 8,
+            "textStructural": [True] * 8,
+            "textNodeType": ["body"] * 8,
+            "textLevel": [1] * 8,
+            "cadenceScope": ["annual"] * 8,
+            "textComparablePathKey": [
+                "매출",
+                "매출",
+                "매출 > 판매경로및판매방법",
+                "매출 > 판매경로및판매방법",
+                "생산및설비 > 생산능력생산실적가동률",
+                "생산및설비 > 생산능력생산실적가동률",
+                "시장위험과위험관리",
+                "시장위험과위험관리",
+            ],
+            "textComparableParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "textSemanticPathKey": [
+                "매출",
+                "매출및수주상황",
+                "매출 > 판매경로",
+                "매출 > 판매전략",
+                "생산및설비 > 생산실적",
+                "생산및설비 > 가동률",
+                "시장위험과위험관리",
+                "위험관리및파생거래",
+            ],
+            "textSemanticParentPathKey": [
+                None,
+                None,
+                "매출",
+                "매출",
+                "생산및설비",
+                "생산및설비",
+                None,
+                None,
+            ],
+            "segmentKey": [f"e{i}" for i in range(8)],
+            "sourceBlockOrder": list(range(8)),
+            "latestAnnualPeriod": ["2025"] * 8,
+            "latestQuarterlyPeriod": [None] * 8,
+            "2024": ["a", None, "a", None, "a", "b", "a", "b"],
+            "2025": [None, "a", "a", "b", "a", None, "a", "b"],
+        }
+    )
+
+    events = pipeline.structureEvents(df, topic="businessOverview")
+    assert events.height == 3
+
+    variant = events.filter(pl.col("textComparablePathKey") == "매출").row(0, named=True)
+    assert variant["periodLane"] == "annual"
+    assert variant["eventType"] == "variant"
+    assert variant["fromPathCount"] == 1
+    assert variant["toPathCount"] == 1
+    assert variant["addedPaths"] == ["매출및수주상황"]
+    assert variant["removedPaths"] == ["매출"]
+
+    split = events.filter(pl.col("textComparablePathKey") == "매출 > 판매경로및판매방법").row(0, named=True)
+    assert split["periodLane"] == "annual"
+    assert split["eventType"] == "split"
+    assert split["fromPathCount"] == 1
+    assert split["toPathCount"] == 2
+    assert split["addedPaths"] == ["매출 > 판매전략"]
+
+    merge = events.filter(pl.col("textComparablePathKey") == "생산및설비 > 생산능력생산실적가동률").row(0, named=True)
+    assert merge["periodLane"] == "annual"
+    assert merge["eventType"] == "merge"
+    assert merge["fromPathCount"] == 2
+    assert merge["toPathCount"] == 1
+    assert merge["removedPaths"] == ["생산및설비 > 가동률"]
+
+    bodyOnly = pipeline.structureEvents(df, topic="businessOverview", nodeType="body")
+    assert bodyOnly.height == events.height
+    assert set(bodyOnly["textNodeType"].unique().to_list()) == {"body"}
+
+
+def test_structure_events_capture_reassigned_transition(monkeypatch):
+    def fake_map_section_title(_title: str) -> str:
+        return "businessOverview"
+
+    def fake_iter_period_subsets(_stockCode: str, *, sinceYear: int = 2016):
+        assert sinceYear == 2016
+        schema = {
+            "section_order": pl.Int64,
+            "section_title": pl.Utf8,
+            "section_content": pl.Utf8,
+        }
+        yield (
+            "2024",
+            "annual",
+            "section_content",
+            pl.DataFrame(
+                [
+                    {"section_order": 1, "section_title": "II. 사업의 개요", "section_content": "장 소개"},
+                    {
+                        "section_order": 2,
+                        "section_title": "1. 사업의 개요",
+                        "section_content": ("1. 사업의 개요\n가. 사업부문별 현황\n(1) DX부문\nDX 설명입니다."),
+                    },
+                ],
+                schema=schema,
+            ),
+        )
+        yield (
+            "2025",
+            "annual",
+            "section_content",
+            pl.DataFrame(
+                [
+                    {"section_order": 1, "section_title": "II. 사업의 개요", "section_content": "장 소개"},
+                    {
+                        "section_order": 2,
+                        "section_title": "1. 사업의 개요",
+                        "section_content": ("1. 사업의 개요\n가. 사업부문별 현황\n(1) CE부문\nCE 설명입니다."),
+                    },
+                ],
+                schema=schema,
+            ),
+        )
+
+    monkeypatch.setattr(pipeline, "mapSectionTitle", fake_map_section_title)
+    monkeypatch.setattr(textStructure, "mapSectionTitle", fake_map_section_title)
+    monkeypatch.setattr(pipeline, "iterPeriodSubsets", fake_iter_period_subsets)
+
+    df = pipeline.sections("TEST")
+    assert df is not None
+
+    events = pipeline.structureEvents(df, topic="businessOverview")
+    target = events.filter(
+        (pl.col("textComparablePathKey") == "@topic:businessOverview > 사업부문현황")
+        & (pl.col("textNodeType") == "body")
+    )
+    assert target.height == 1
+    row = target.row(0, named=True)
+    assert row["periodLane"] == "annual"
+    assert row["eventType"] == "reassigned"
+    assert row["fromPeriod"] == "2024"
+    assert row["toPeriod"] == "2025"
+    assert row["addedPaths"] == ["@topic:businessOverview > 사업부문현황 > CE부문"]
+    assert row["removedPaths"] == ["@topic:businessOverview > 사업부문현황 > DX부문"]
+
+    bodyOnly = pipeline.structureEvents(df, topic="businessOverview", nodeType="body")
+    assert bodyOnly.height == 1
+    assert bodyOnly.item(0, "eventType") == "reassigned"
+
+
+def test_structure_events_do_not_compare_cross_cadence_transitions():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview", "businessOverview"],
+            "blockType": ["text", "text"],
+            "textStructural": [True, True],
+            "textNodeType": ["body", "body"],
+            "textLevel": [1, 1],
+            "cadenceScope": ["mixed", "mixed"],
+            "textComparablePathKey": ["매출", "매출"],
+            "textComparableParentPathKey": [None, None],
+            "textSemanticPathKey": ["매출", "매출및수주상황"],
+            "textSemanticParentPathKey": [None, None],
+            "segmentKey": ["cross1", "cross2"],
+            "sourceBlockOrder": [0, 1],
+            "latestAnnualPeriod": ["2024", "2024"],
+            "latestQuarterlyPeriod": ["2024Q1", "2024Q1"],
+            "2024Q1": ["a", None],
+            "2024": [None, "a"],
+        }
+    )
+
+    events = pipeline.structureEvents(df, topic="businessOverview")
+    assert events.height == 0
 
 
 def test_sections_adds_cadence_scope_metadata(monkeypatch):
@@ -804,6 +1091,8 @@ def test_company_sections_preserve_structured_text_columns():
         "textParentPathVariants",
         "textSemanticPathKey",
         "textSemanticParentPathKey",
+        "textComparablePathKey",
+        "textComparableParentPathKey",
         "textSemanticPathVariants",
         "textSemanticParentPathVariants",
         "segmentKey",

@@ -19,6 +19,9 @@ from dartlab.engines.dart.docs.sections.pipeline import (
     sections,
     semanticCollisions,
     semanticRegistry,
+    structureCollisions,
+    structureEvents,
+    structureRegistry,
 )
 from dartlab.engines.dart.docs.sections.types import (
     SectionChunk,
@@ -35,6 +38,9 @@ from dartlab.engines.dart.docs.sections.views import (
 __all__ = [
     "sections",
     "projectCadenceRows",
+    "structureRegistry",
+    "structureCollisions",
+    "structureEvents",
     "semanticRegistry",
     "semanticCollisions",
     "retrievalBlocks",

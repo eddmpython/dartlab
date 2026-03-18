@@ -54,8 +54,16 @@ row는 흡수된 raw wording drift를 `textPathVariants` / `textPathVariantCount
 row별 period 분포는 `cadenceScope` / `cadenceKey` / `latestAnnualPeriod` / `latestQuarterlyPeriod` 메타로 보존한다.
 c.docs.sections는 raw DataFrame을 감싼 source accessor다.
 - DataFrame 속성/메서드는 그대로 위임된다. (`c.docs.sections.filter(...)`)
-- 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`를 바로 쓴다.
-- 기존 `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()`는 호환용 얇은 래퍼다.
+- 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`, `c.docs.sections.structureRegistry(...)`, `c.docs.sections.structureCollisions(...)`, `c.docs.sections.structureEvents(...)`를 바로 쓴다.
+- 기존 `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()`는 호환용 얇은 래퍼다.
+- comparable slot spine(`textComparablePathKey`) 기준 구조 이벤트도 `sections` 안에서 계산한다.
+  - `variant`: wording/root만 바뀐 충돌
+  - `moved`: parent path만 이동
+  - `reassigned`: business unit slot처럼 leaf가 교대
+  - `split` / `merge` / `split_merge` / `parallel`: period별 active path 수 변화
+  - `structureEvents()`는 위 구조 변화를 `fromPeriod -> toPeriod` 전이 row로 직접 내린다.
+  - `nodeType='body'`를 주면 heading anchor를 제외한 본문 기준 진단만 본다.
+  - `periodLane` 기준 동일 report-kind 내부 전이만 비교한다.
 셀에는 해당 기간의 원문 payload를 둔다.
 어떤 기간에만 존재하는 unit은 해당 기간만 값이 있고 나머지는 `null`이다.
 이것이 Company의 구조적 뼈대다.

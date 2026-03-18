@@ -22,6 +22,7 @@ period key 형식:
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 import polars as pl
@@ -31,6 +32,7 @@ from dartlab.core.reportSelector import selectReport
 from dartlab.engines.dart.docs.sections._common import (
     REPORT_KINDS,
     detectContentCol,
+    periodOrderValue,
     sortPeriods,
 )
 from dartlab.engines.dart.docs.sections.chunker import parseMajorNum
@@ -43,6 +45,103 @@ from dartlab.engines.dart.docs.sections.runtime import (
     projectionSuppressedTopics,
 )
 from dartlab.engines.dart.docs.sections.textStructure import parseTextStructureWithState
+
+_RE_BUSINESS_UNIT_SEGMENT = re.compile(r".+(?:부문|총괄)$")
+_RE_BUSINESS_UNIT_SHORT = re.compile(r"^[A-Z][A-Z0-9&/-]{1,7}$")
+
+_BUSINESS_OVERVIEW_COMPARABLE_ROOTS: dict[str, str] = {
+    "주요제품서비스등": "주요제품및서비스",
+    "매출및수주상황": "매출",
+    "주요계약및연구개발활동": "연구개발활동",
+    "주요원재료": "원재료및생산설비",
+    "주요사업장현황": "생산및설비",
+    "위험관리및파생거래": "시장위험과위험관리",
+}
+
+_STRUCTURE_SLOT_ALIASES: dict[str, dict[str, str]] = {
+    "businessOverview": {
+        "판매경로": "판매경로및판매방법",
+        "판매방법및조건": "판매경로및판매방법",
+        "판매전략": "판매경로및판매방법",
+        "판매조직": "판매경로및판매방법",
+        "판매경로및판매방법등": "판매경로및판매방법",
+        "생산능력": "생산능력생산실적가동률",
+        "생산실적": "생산능력생산실적가동률",
+        "가동률": "생산능력생산실적가동률",
+        "생산능력및산출근거": "생산능력생산실적가동률",
+        "생산능력생산실적가동률": "생산능력생산실적가동률",
+        "생산능력산출근거및생산실적": "생산능력생산실적가동률",
+        "사업부문별요약재무현황": "사업부문별요약재무현황",
+        "산업의특성": "산업의특성",
+        "시장여건": "시장여건",
+        "영업현황": "영업현황",
+    },
+    "auditSystem": {
+        "감사위원회교육실시계획및현황": "감사위원회교육",
+        "감사위원회의교육실시계획": "감사위원회교육",
+        "감사위원회교육실시현황": "감사위원회교육",
+    },
+}
+
+_BUSINESS_UNIT_SEGMENT_LITERALS = {"Harman", "SDC"}
+
+
+def _splitPathSegments(path: str | None) -> list[str]:
+    if not isinstance(path, str) or not path:
+        return []
+    return [segment.strip() for segment in path.split(" > ") if segment.strip()]
+
+
+def _joinPathSegments(segments: list[str]) -> str | None:
+    cleaned = [segment for segment in segments if isinstance(segment, str) and segment]
+    if not cleaned:
+        return None
+    return " > ".join(cleaned)
+
+
+def _isBusinessUnitSegment(segment: str) -> bool:
+    return (
+        segment in _BUSINESS_UNIT_SEGMENT_LITERALS
+        or bool(_RE_BUSINESS_UNIT_SEGMENT.fullmatch(segment))
+        or bool(_RE_BUSINESS_UNIT_SHORT.fullmatch(segment))
+    )
+
+
+def _normalizeComparableSegment(topic: str, segment: str) -> str:
+    if topic == "businessOverview":
+        segment = _BUSINESS_OVERVIEW_COMPARABLE_ROOTS.get(segment, segment)
+    return _STRUCTURE_SLOT_ALIASES.get(topic, {}).get(segment, segment)
+
+
+def _comparablePathInfo(topic: str, semanticPathKey: str | None) -> tuple[str | None, str | None]:
+    segments = _splitPathSegments(semanticPathKey)
+    if not segments:
+        return None, None
+
+    normalized: list[str] = []
+    unitAnchorInserted = False
+
+    for segment in segments:
+        if segment.startswith("@topic:"):
+            normalized.append(segment)
+            continue
+
+        if topic == "businessOverview" and _isBusinessUnitSegment(segment):
+            if not unitAnchorInserted:
+                anchor = "사업부문현황"
+                if not normalized or normalized[-1] != anchor:
+                    normalized.append(anchor)
+                unitAnchorInserted = True
+            continue
+
+        normalizedSegment = _normalizeComparableSegment(topic, segment)
+        if normalized and normalized[-1] == normalizedSegment:
+            continue
+        normalized.append(normalizedSegment)
+
+    pathKey = _joinPathSegments(normalized)
+    parentPathKey = _joinPathSegments(normalized[:-1])
+    return pathKey, parentPathKey
 
 
 def _periodSortKey(period: str) -> tuple[int, int]:
@@ -453,6 +552,239 @@ def _emptySemanticRegistryFrame() -> pl.DataFrame:
     )
 
 
+def _emptyStructureRegistryFrame() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "topic": pl.Utf8,
+            "textNodeType": pl.Utf8,
+            "textLevel": pl.Int64,
+            "cadenceScope": pl.Utf8,
+            "textComparablePathKey": pl.Utf8,
+            "textComparableParentPathKey": pl.Utf8,
+            "rowCount": pl.Int64,
+            "rawSemanticPathCount": pl.Int64,
+            "rawSemanticPaths": pl.List(pl.Utf8),
+            "rawSemanticParentPaths": pl.List(pl.Utf8),
+            "rawSemanticLeafCount": pl.Int64,
+            "rawSemanticLeafs": pl.List(pl.Utf8),
+            "sourceBlockOrders": pl.List(pl.Int64),
+            "segmentKeys": pl.List(pl.Utf8),
+            "latestAnnualPeriod": pl.Utf8,
+            "latestQuarterlyPeriod": pl.Utf8,
+            "activePeriodCount": pl.Int64,
+            "activePeriods": pl.List(pl.Utf8),
+            "activePathCounts": pl.List(pl.Int64),
+            "minActivePathCount": pl.Int64,
+            "maxActivePathCount": pl.Int64,
+            "earliestPathCount": pl.Int64,
+            "latestPathCount": pl.Int64,
+            "multiPathPeriods": pl.List(pl.Utf8),
+            "structurePattern": pl.Utf8,
+            "hasCollision": pl.Boolean,
+        }
+    )
+
+
+def _emptyStructureEventsFrame() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "topic": pl.Utf8,
+            "textNodeType": pl.Utf8,
+            "textLevel": pl.Int64,
+            "cadenceScope": pl.Utf8,
+            "textComparablePathKey": pl.Utf8,
+            "textComparableParentPathKey": pl.Utf8,
+            "periodLane": pl.Utf8,
+            "fromPeriod": pl.Utf8,
+            "toPeriod": pl.Utf8,
+            "fromPathCount": pl.Int64,
+            "toPathCount": pl.Int64,
+            "fromPaths": pl.List(pl.Utf8),
+            "toPaths": pl.List(pl.Utf8),
+            "addedPaths": pl.List(pl.Utf8),
+            "removedPaths": pl.List(pl.Utf8),
+            "eventType": pl.Utf8,
+        }
+    )
+
+
+def _structureGroupColumns() -> list[str]:
+    return [
+        "topic",
+        "textNodeType",
+        "textLevel",
+        "cadenceScope",
+        "textComparablePathKey",
+        "textComparableParentPathKey",
+    ]
+
+
+def _periodLane(period: str | None) -> str | None:
+    if not isinstance(period, str) or not period:
+        return None
+    if period.endswith("Q1"):
+        return "q1"
+    if period.endswith("Q2"):
+        return "q2"
+    if period.endswith("Q3"):
+        return "q3"
+    return "annual"
+
+
+def _pathCollection(paths: object) -> list[str]:
+    if isinstance(paths, pl.Series):
+        values = paths.to_list()
+    elif isinstance(paths, list):
+        values = paths
+    else:
+        return []
+    return [str(path) for path in values if isinstance(path, str) and path]
+
+
+def _intCollection(values: object) -> list[int]:
+    if isinstance(values, pl.Series):
+        rawValues = values.to_list()
+    elif isinstance(values, list):
+        rawValues = values
+    else:
+        return []
+
+    result: list[int] = []
+    for value in rawValues:
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            result.append(value)
+            continue
+        if isinstance(value, float) and value.is_integer():
+            result.append(int(value))
+    return result
+
+
+def _path_leafs(paths: object) -> list[str]:
+    values = _pathCollection(paths)
+    leafs = sorted({segments[-1] for path in values if (segments := _splitPathSegments(path))})
+    return leafs
+
+
+def _isBusinessUnitComparablePath(path: str | None) -> bool:
+    return isinstance(path, str) and any(segment == "사업부문현황" for segment in _splitPathSegments(path))
+
+
+def _periodsWithMultiplePaths(payload: object) -> list[str]:
+    if not isinstance(payload, dict):
+        return []
+    periods = payload.get("activePeriods")
+    counts = payload.get("activePathCounts")
+    if not isinstance(periods, list) or not isinstance(counts, list):
+        return []
+
+    result: list[str] = []
+    for period, count in zip(periods, counts, strict=False):
+        if isinstance(period, str) and isinstance(count, (int, float)) and int(count) > 1:
+            result.append(period)
+    return result
+
+
+def _changedPaths(fromPaths: list[str], toPaths: list[str]) -> tuple[list[str], list[str]]:
+    added = [path for path in toPaths if path not in fromPaths]
+    removed = [path for path in fromPaths if path not in toPaths]
+    return added, removed
+
+
+def _structureTransitionType(comparablePathKey: str | None, fromPaths: list[str], toPaths: list[str]) -> str:
+    if fromPaths == toPaths:
+        return "stable"
+
+    fromCount = len(fromPaths)
+    toCount = len(toPaths)
+    fromLeafs = _path_leafs(fromPaths)
+    toLeafs = _path_leafs(toPaths)
+    fromParents = {_joinPathSegments(_splitPathSegments(path)[:-1]) for path in fromPaths if _splitPathSegments(path)}
+    toParents = {_joinPathSegments(_splitPathSegments(path)[:-1]) for path in toPaths if _splitPathSegments(path)}
+    fromParents.discard(None)
+    toParents.discard(None)
+
+    if fromCount == 1 and toCount == 1:
+        if set(fromLeafs) == set(toLeafs) and fromParents != toParents:
+            return "moved"
+        if _isBusinessUnitComparablePath(comparablePathKey) and set(fromLeafs) != set(toLeafs):
+            return "reassigned"
+        return "variant"
+    if fromCount == 1 and toCount > 1:
+        return "split"
+    if fromCount > 1 and toCount == 1:
+        return "merge"
+    return "parallel_change"
+
+
+def _structurePattern(payload: object) -> str:
+    if isinstance(payload, dict):
+        values = _pathCollection(payload.get("rawSemanticPaths"))
+        comparablePathKey = payload.get("textComparablePathKey")
+        activeCounts = _intCollection(payload.get("activePathCounts"))
+    else:
+        values = _pathCollection(payload)
+        comparablePathKey = None
+        activeCounts = []
+
+    if len(values) <= 1:
+        return "same"
+
+    parents = {_joinPathSegments(_splitPathSegments(path)[:-1]) for path in values if _splitPathSegments(path)}
+    parents.discard(None)
+    leafs = _path_leafs(values)
+
+    if activeCounts and max(activeCounts) <= 1:
+        if len(leafs) == 1 and len(parents) > 1:
+            return "moved"
+        if _isBusinessUnitComparablePath(str(comparablePathKey)) and len(leafs) > 1:
+            return "reassigned"
+        return "variant"
+
+    if len(leafs) == 1 and len(parents) > 1:
+        return "moved"
+
+    if activeCounts:
+        earliestCount = activeCounts[0]
+        latestCount = activeCounts[-1]
+        minCount = min(activeCounts)
+        maxCount = max(activeCounts)
+        if earliestCount <= 1 and latestCount > 1:
+            return "split"
+        if earliestCount > 1 and latestCount <= 1:
+            return "merge"
+        if minCount <= 1 and maxCount > 1:
+            return "split_merge"
+        return "parallel"
+
+    return "variant"
+
+
+def _structurePeriodActivity(textScoped: pl.DataFrame) -> pl.DataFrame | None:
+    groupCols = _structureGroupColumns()
+    periodCols = sortPeriods([str(col) for col in textScoped.columns if re.fullmatch(r"^\d{4}(Q[1-4])?$", str(col))])
+    if not periodCols:
+        return None
+
+    periodActivity = (
+        textScoped.select(groupCols + ["textSemanticPathKey"] + periodCols)
+        .unpivot(
+            index=groupCols + ["textSemanticPathKey"],
+            on=periodCols,
+            variable_name="period",
+            value_name="payload",
+        )
+        .filter(pl.col("payload").is_not_null() & (pl.col("payload").cast(pl.Utf8).str.len_chars() > 0))
+        .with_columns(pl.col("period").map_elements(periodOrderValue, return_dtype=pl.Int64).alias("periodOrder"))
+        .group_by(groupCols + ["period", "periodOrder"], maintain_order=True)
+        .agg(pl.col("textSemanticPathKey").drop_nulls().unique().sort().alias("activeRawSemanticPaths"))
+        .with_columns(pl.col("activeRawSemanticPaths").list.len().alias("activePathCount"))
+        .sort(groupCols + ["periodOrder"])
+    )
+    return None if periodActivity.is_empty() else periodActivity
+
+
 def semanticRegistry(
     df: pl.DataFrame | None,
     *,
@@ -535,6 +867,240 @@ def semanticRegistry(
         .sort(["topic", "textSemanticPathKey", "textNodeType", "textLevel", "cadenceScope"])
     )
     return registry
+
+
+def structureRegistry(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+    nodeType: str | None = None,
+) -> pl.DataFrame:
+    """Comparable slot spine 기준 structure registry를 만든다."""
+    if df is None or df.is_empty():
+        return _emptyStructureRegistryFrame()
+
+    required = {"topic", "textComparablePathKey", "textSemanticPathKey", "segmentKey"}
+    if not required.issubset(set(df.columns)):
+        return _emptyStructureRegistryFrame()
+
+    scoped = df
+    if cadenceScope != "all":
+        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if topic is not None:
+        scoped = scoped.filter(pl.col("topic") == topic)
+    if scoped.is_empty():
+        return _emptyStructureRegistryFrame()
+
+    textScoped = scoped
+    if "blockType" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("blockType") == "text")
+    if "textStructural" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("textStructural") != False)  # noqa: E712
+    normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else None
+    if normalizedNodeType is not None and "textNodeType" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("textNodeType") == normalizedNodeType)
+    textScoped = textScoped.filter(
+        pl.col("textComparablePathKey").is_not_null() & pl.col("textSemanticPathKey").is_not_null()
+    )
+    if textScoped.is_empty():
+        return _emptyStructureRegistryFrame()
+
+    groupCols = _structureGroupColumns()
+    periodActivity = _structurePeriodActivity(textScoped)
+    periodActivitySummary: pl.DataFrame | None = None
+    if periodActivity is not None:
+        periodActivitySummary = periodActivity.group_by(groupCols, maintain_order=True).agg(
+            [
+                pl.len().alias("activePeriodCount"),
+                pl.col("period").alias("activePeriods"),
+                pl.col("activePathCount").alias("activePathCounts"),
+                pl.col("activePathCount").min().alias("minActivePathCount"),
+                pl.col("activePathCount").max().alias("maxActivePathCount"),
+                pl.col("activePathCount").first().alias("earliestPathCount"),
+                pl.col("activePathCount").last().alias("latestPathCount"),
+            ]
+        )
+
+    registry = textScoped.group_by(groupCols, maintain_order=True).agg(
+        [
+            pl.len().alias("rowCount"),
+            pl.col("textSemanticPathKey").drop_nulls().unique().sort().alias("rawSemanticPaths"),
+            pl.col("textSemanticParentPathKey").drop_nulls().unique().sort().alias("rawSemanticParentPaths"),
+            pl.col("sourceBlockOrder").drop_nulls().unique().sort().alias("sourceBlockOrders"),
+            pl.col("segmentKey").drop_nulls().unique().sort().alias("segmentKeys"),
+            pl.col("latestAnnualPeriod").drop_nulls().max().alias("latestAnnualPeriod"),
+            pl.col("latestQuarterlyPeriod").drop_nulls().max().alias("latestQuarterlyPeriod"),
+        ]
+    )
+    if periodActivitySummary is not None:
+        registry = registry.join(periodActivitySummary, on=groupCols, how="left", nulls_equal=True)
+    else:
+        registry = registry.with_columns(
+            [
+                pl.lit(0).cast(pl.Int64).alias("activePeriodCount"),
+                pl.lit([], dtype=pl.List(pl.Utf8)).alias("activePeriods"),
+                pl.lit([], dtype=pl.List(pl.Int64)).alias("activePathCounts"),
+                pl.lit(0).cast(pl.Int64).alias("minActivePathCount"),
+                pl.lit(0).cast(pl.Int64).alias("maxActivePathCount"),
+                pl.lit(0).cast(pl.Int64).alias("earliestPathCount"),
+                pl.lit(0).cast(pl.Int64).alias("latestPathCount"),
+            ]
+        )
+
+    registry = (
+        registry.with_columns(
+            [
+                pl.col("rawSemanticPaths").list.len().alias("rawSemanticPathCount"),
+                pl.col("rawSemanticPaths")
+                .map_elements(_path_leafs, return_dtype=pl.List(pl.Utf8))
+                .alias("rawSemanticLeafs"),
+            ]
+        )
+        .with_columns(
+            [
+                pl.col("rawSemanticLeafs").list.len().alias("rawSemanticLeafCount"),
+                pl.struct(["activePeriods", "activePathCounts"])
+                .map_elements(_periodsWithMultiplePaths, return_dtype=pl.List(pl.Utf8))
+                .alias("multiPathPeriods"),
+                pl.struct(["rawSemanticPaths", "textComparablePathKey", "activePathCounts"])
+                .map_elements(_structurePattern, return_dtype=pl.Utf8)
+                .alias("structurePattern"),
+            ]
+        )
+        .with_columns((pl.col("rawSemanticPathCount") > 1).alias("hasCollision"))
+        .sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "cadenceScope"])
+    )
+    return registry
+
+
+def structureCollisions(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+    nodeType: str | None = None,
+) -> pl.DataFrame:
+    registry = structureRegistry(
+        df,
+        topic=topic,
+        cadenceScope=cadenceScope,
+        includeMixed=includeMixed,
+        nodeType=nodeType,
+    )
+    if registry.is_empty():
+        return registry
+    return registry.filter(pl.col("hasCollision"))
+
+
+def structureEvents(
+    df: pl.DataFrame | None,
+    *,
+    topic: str | None = None,
+    cadenceScope: str = "all",
+    includeMixed: bool = True,
+    changedOnly: bool = True,
+    nodeType: str | None = None,
+) -> pl.DataFrame:
+    if df is None or df.is_empty():
+        return _emptyStructureEventsFrame()
+
+    required = {"topic", "textComparablePathKey", "textSemanticPathKey", "segmentKey"}
+    if not required.issubset(set(df.columns)):
+        return _emptyStructureEventsFrame()
+
+    scoped = df
+    if cadenceScope != "all":
+        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if topic is not None:
+        scoped = scoped.filter(pl.col("topic") == topic)
+    if scoped.is_empty():
+        return _emptyStructureEventsFrame()
+
+    textScoped = scoped
+    if "blockType" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("blockType") == "text")
+    if "textStructural" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("textStructural") != False)  # noqa: E712
+    normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else None
+    if normalizedNodeType is not None and "textNodeType" in textScoped.columns:
+        textScoped = textScoped.filter(pl.col("textNodeType") == normalizedNodeType)
+    textScoped = textScoped.filter(
+        pl.col("textComparablePathKey").is_not_null() & pl.col("textSemanticPathKey").is_not_null()
+    )
+    if textScoped.is_empty():
+        return _emptyStructureEventsFrame()
+
+    periodActivity = _structurePeriodActivity(textScoped)
+    if periodActivity is None:
+        return _emptyStructureEventsFrame()
+
+    groupCols = _structureGroupColumns()
+    rows: list[dict[str, object]] = []
+    groupFrame = periodActivity.group_by(groupCols, maintain_order=True).agg(
+        [
+            pl.col("period").alias("periods"),
+            pl.col("activeRawSemanticPaths").alias("pathsByPeriod"),
+            pl.col("activePathCount").alias("pathCounts"),
+        ]
+    )
+    for entry in groupFrame.iter_rows(named=True):
+        periods = entry.get("periods")
+        pathsByPeriod = entry.get("pathsByPeriod")
+        pathCounts = entry.get("pathCounts")
+        if not isinstance(periods, list) or not isinstance(pathsByPeriod, list) or not isinstance(pathCounts, list):
+            continue
+        lanes: dict[str, list[int]] = {}
+        for idx, period in enumerate(periods):
+            lane = _periodLane(period)
+            if lane is None:
+                continue
+            lanes.setdefault(lane, []).append(idx)
+
+        for lane, indices in lanes.items():
+            if len(indices) < 2:
+                continue
+            for pos in range(1, len(indices)):
+                fromIdx = indices[pos - 1]
+                toIdx = indices[pos]
+                fromPeriod = periods[fromIdx]
+                toPeriod = periods[toIdx]
+                fromPaths = _pathCollection(pathsByPeriod[fromIdx])
+                toPaths = _pathCollection(pathsByPeriod[toIdx])
+                if not isinstance(fromPeriod, str) or not isinstance(toPeriod, str) or not fromPaths or not toPaths:
+                    continue
+                eventType = _structureTransitionType(entry.get("textComparablePathKey"), fromPaths, toPaths)
+                if changedOnly and eventType == "stable":
+                    continue
+                addedPaths, removedPaths = _changedPaths(fromPaths, toPaths)
+                rows.append(
+                    {
+                        "topic": entry.get("topic"),
+                        "textNodeType": entry.get("textNodeType"),
+                        "textLevel": entry.get("textLevel"),
+                        "cadenceScope": entry.get("cadenceScope"),
+                        "textComparablePathKey": entry.get("textComparablePathKey"),
+                        "textComparableParentPathKey": entry.get("textComparableParentPathKey"),
+                        "periodLane": lane,
+                        "fromPeriod": fromPeriod,
+                        "toPeriod": toPeriod,
+                        "fromPathCount": int(pathCounts[fromIdx]),
+                        "toPathCount": int(pathCounts[toIdx]),
+                        "fromPaths": fromPaths,
+                        "toPaths": toPaths,
+                        "addedPaths": addedPaths,
+                        "removedPaths": removedPaths,
+                        "eventType": eventType,
+                    }
+                )
+
+    if not rows:
+        return _emptyStructureEventsFrame()
+    return pl.DataFrame(rows, schema=_emptyStructureEventsFrame().schema).sort(
+        ["topic", "textComparablePathKey", "fromPeriod", "toPeriod", "textNodeType", "textLevel"]
+    )
 
 
 def semanticCollisions(
@@ -632,6 +1198,10 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                 semanticPathVariantsByKey.setdefault(key, set()).add(str(row["textSemanticPathKey"]))
             if isinstance(row.get("textSemanticParentPathKey"), str) and row.get("textSemanticParentPathKey"):
                 semanticParentPathVariantsByKey.setdefault(key, set()).add(str(row["textSemanticParentPathKey"]))
+            comparablePathKey, comparableParentPathKey = _comparablePathInfo(
+                topic,
+                str(row.get("textSemanticPathKey") or row.get("textPathKey") or "") or None,
+            )
             majorNum = int(row.get("majorNum", 99))
             sortOrder = int(row.get("sortOrder", 999999))
             if topic not in topicFirstSeq or (majorNum, sortOrder) < topicFirstSeq[topic]:
@@ -673,6 +1243,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                     "textParentPathKey": row.get("textParentPathKey"),
                     "textSemanticPathKey": row.get("textSemanticPathKey"),
                     "textSemanticParentPathKey": row.get("textSemanticParentPathKey"),
+                    "textComparablePathKey": comparablePathKey,
+                    "textComparableParentPathKey": comparableParentPathKey,
                     "segmentKey": segmentKey,
                     "segmentOrder": int(row.get("segmentOrder") or 0),
                     "segmentOccurrence": int(row.get("segmentOccurrence") or 1),
@@ -730,6 +1302,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         "textParentPathVariants": pl.List(pl.Utf8),
         "textSemanticPathKey": pl.Utf8,
         "textSemanticParentPathKey": pl.Utf8,
+        "textComparablePathKey": pl.Utf8,
+        "textComparableParentPathKey": pl.Utf8,
         "textSemanticPathVariants": pl.List(pl.Utf8),
         "textSemanticParentPathVariants": pl.List(pl.Utf8),
         "segmentKey": pl.Utf8,
@@ -790,6 +1364,14 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             dataColumns["textSemanticParentPathKey"].append(
                 str(meta["textSemanticParentPathKey"])
                 if isinstance(meta.get("textSemanticParentPathKey"), str)
+                else None
+            )
+            dataColumns["textComparablePathKey"].append(
+                str(meta["textComparablePathKey"]) if isinstance(meta.get("textComparablePathKey"), str) else None
+            )
+            dataColumns["textComparableParentPathKey"].append(
+                str(meta["textComparableParentPathKey"])
+                if isinstance(meta.get("textComparableParentPathKey"), str)
                 else None
             )
             dataColumns["textSemanticPathVariants"].append(semanticPathVariants or None)

@@ -1410,6 +1410,55 @@ class _SectionsSource:
             collisionsOnly=True,
         )
 
+    def structureRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsStructureRegistry(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            collisionsOnly=False,
+            nodeType=nodeType,
+        )
+
+    def structureCollisions(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsStructureRegistry(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            collisionsOnly=True,
+            nodeType=nodeType,
+        )
+
+    def structureEvents(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        changedOnly: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        return self._company._docsSectionsStructureEvents(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            changedOnly=changedOnly,
+            nodeType=nodeType,
+        )
+
     def __getattr__(self, name: str) -> Any:
         frame = self.raw
         if frame is None:
@@ -1433,7 +1482,7 @@ class _SectionsSource:
         return (
             "SectionsSource("
             "shape="
-            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions()]"
+            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents()]"
             ")"
         )
 
@@ -1502,6 +1551,68 @@ class _DocsAccessor:
             None
             if sections is None
             else sections.semanticCollisions(topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+        )
+
+    def sectionsStructureRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.structureRegistry(
+                topic=topic,
+                cadenceScope=cadenceScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+            )
+        )
+
+    def sectionsStructureCollisions(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.structureCollisions(
+                topic=topic,
+                cadenceScope=cadenceScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+            )
+        )
+
+    def sectionsStructureEvents(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        changedOnly: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        sections = self.sections
+        return (
+            None
+            if sections is None
+            else sections.structureEvents(
+                topic=topic,
+                cadenceScope=cadenceScope,
+                includeMixed=includeMixed,
+                changedOnly=changedOnly,
+                nodeType=nodeType,
+            )
         )
 
     @property
@@ -2291,6 +2402,86 @@ class Company:
                 cadenceScope=normalizedScope,
                 includeMixed=includeMixed,
             )
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsStructureRegistry(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        collisionsOnly: bool = False,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
+        topicKey = topic or "*"
+        cacheKey = f"_docsSectionsStructureRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}:{normalizedNodeType}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import structureCollisions, structureRegistry
+
+        if collisionsOnly:
+            result = structureCollisions(
+                sectionsFrame,
+                topic=topic,
+                cadenceScope=normalizedScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+            )
+        else:
+            result = structureRegistry(
+                sectionsFrame,
+                topic=topic,
+                cadenceScope=normalizedScope,
+                includeMixed=includeMixed,
+                nodeType=nodeType,
+            )
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionsStructureEvents(
+        self,
+        *,
+        topic: str | None = None,
+        cadenceScope: str = "all",
+        includeMixed: bool = True,
+        changedOnly: bool = True,
+        nodeType: str | None = None,
+    ) -> pl.DataFrame | None:
+        if not self._hasDocs:
+            return None
+        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
+        topicKey = topic or "*"
+        cacheKey = f"_docsSectionsStructureEvents:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(changedOnly)}:{normalizedNodeType}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sectionsFrame = self.docs.sections
+        if sectionsFrame is None:
+            self._cache[cacheKey] = None
+            return None
+
+        from dartlab.engines.dart.docs.sections import structureEvents
+
+        result = structureEvents(
+            sectionsFrame,
+            topic=topic,
+            cadenceScope=normalizedScope,
+            includeMixed=includeMixed,
+            changedOnly=changedOnly,
+            nodeType=nodeType,
+        )
         self._cache[cacheKey] = result
         return result
 
