@@ -340,9 +340,11 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     await asyncio.sleep(0.02)
 
         elif use_tools:
-            from dartlab.engines.ai.agent import AGENT_SYSTEM_ADDITION, agent_loop_stream
+            from dartlab.engines.ai.agent import agent_loop_stream, build_agent_system_addition
+            from dartlab.engines.ai.tools_registry import build_tool_runtime
 
-            messages[0]["content"] += AGENT_SYSTEM_ADDITION
+            tool_runtime = build_tool_runtime(c, name="stream-agent")
+            messages[0]["content"] += build_agent_system_addition(tool_runtime)
 
             queue: asyncio.Queue = asyncio.Queue(maxsize=256)
             loop = asyncio.get_event_loop()
@@ -379,6 +381,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     messages,
                     c,
                     max_turns=5,
+                    runtime=tool_runtime,
                     on_tool_call=_on_tool_call,
                     on_tool_result=_on_tool_result,
                 ):
@@ -435,7 +438,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             if response_meta.get("grade") or response_meta.get("has_conclusion"):
                 done_payload["responseMeta"] = response_meta
 
-    except Exception as e:
+    except (
+        AttributeError,
+        FileNotFoundError,
+        ImportError,
+        KeyError,
+        OSError,
+        PermissionError,
+        RuntimeError,
+        TimeoutError,
+        TypeError,
+        ValueError,
+    ) as e:
         error_payload: dict[str, Any] = {"error": str(e)}
         if isinstance(e, FileNotFoundError):
             error_payload["action"] = "install"

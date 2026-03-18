@@ -12,11 +12,11 @@ export async function fetchStatus() {
 }
 
 /** LLM provider 검증 (서버 전역 상태는 변경하지 않음) */
-export async function configure(provider, model = null, apiKey = null) {
+export async function validateProvider(provider, model = null, apiKey = null) {
 	const body = { provider };
 	if (model) body.model = model;
 	if (apiKey) body.api_key = apiKey;
-	const res = await fetch(`${BASE}/api/configure`, {
+	const res = await fetch(`${BASE}/api/provider/validate`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
@@ -24,6 +24,8 @@ export async function configure(provider, model = null, apiKey = null) {
 	if (!res.ok) throw new Error("설정 실패");
 	return res.json();
 }
+
+export const configure = validateProvider;
 
 /** Provider별 모델 목록 조회 */
 export async function fetchModels(provider) {

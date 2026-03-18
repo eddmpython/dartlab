@@ -15,7 +15,7 @@
 -->
 <script>
 	import "./app.css";
-	import { fetchStatus, configure, askStream, fetchModels, pullOllamaModel, codexLogout, searchCompany as searchCompanyApi } from "$lib/api.js";
+	import { fetchStatus, validateProvider as validateProviderApi, askStream, fetchModels, pullOllamaModel, codexLogout, searchCompany as searchCompanyApi } from "$lib/api.js";
 	import { cn } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
@@ -84,6 +84,7 @@
 	let searchModalResults = $state([]);
 	let searchModalIdx = $state(-1);
 	let searchModalDebounce = null;
+	let searchModalInput = $state(null);
 
 	// Mobile
 	let isMobile = $state(false);
@@ -110,6 +111,11 @@
 	$effect(() => {
 		if (!deleteConfirmId || !deleteDialog) return;
 		requestAnimationFrame(() => deleteDialog?.focus());
+	});
+
+	$effect(() => {
+		if (!showSearchModal || !searchModalInput) return;
+		requestAnimationFrame(() => searchModalInput?.focus());
 	});
 
 
@@ -156,7 +162,7 @@
 	}
 
 	async function validateProvider(provider, model = null, apiKey = null) {
-		const result = await configure(provider, model, apiKey);
+		const result = await validateProviderApi(provider, model, apiKey);
 		if (result?.provider) {
 			const name = normalizeProvider(result.provider);
 			providers = {
@@ -1308,6 +1314,7 @@
 			<div class="flex items-center gap-3 px-5 py-4 border-b border-dl-border/40">
 				<Search size={18} class="text-dl-text-dim flex-shrink-0" />
 				<input
+					bind:this={searchModalInput}
 					type="text"
 					bind:value={searchModalText}
 					placeholder="종목명 또는 종목코드 검색..."
@@ -1337,7 +1344,6 @@
 						}
 						else if (e.key === "Escape") { showSearchModal = false; }
 					}}
-					autofocus
 				/>
 				<kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-dl-text-dim border border-dl-border/60 bg-dl-bg-darker">ESC</kbd>
 			</div>

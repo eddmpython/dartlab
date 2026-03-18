@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +40,7 @@ from .resolve import (
 )
 from .streaming import stream_ask
 
-app = FastAPI(title="DartLab", version=dartlab.__version__)
+logger = logging.getLogger(__name__)
 
 UI_PROVIDERS = ("codex", "ollama", "openai")
 UI_PROVIDER_META: dict[str, dict[str, str]] = {
@@ -57,6 +59,60 @@ UI_PROVIDER_META: dict[str, dict[str, str]] = {
 }
 
 STATIC_MODELS: dict[str, list[str]] = {}
+_HANDLED_API_ERRORS = (
+    AttributeError,
+    FileNotFoundError,
+    ImportError,
+    KeyError,
+    OSError,
+    PermissionError,
+    RuntimeError,
+    TimeoutError,
+    TypeError,
+    ValueError,
+)
+
+
+async def _preload_ollama_once() -> None:
+    """서버 시작 직후 Ollama 모델을 미리 깨워 cold start를 줄인다."""
+
+    await asyncio.sleep(2)
+
+    try:
+        from dartlab.engines.ai.providers import create_provider
+        from dartlab.engines.ai.types import LLMConfig
+
+        config = LLMConfig(provider="ollama")
+        provider = create_provider(config)
+    except (ImportError, OSError, RuntimeError, ValueError) as exc:
+        logger.debug("Ollama preload 준비 실패", exc_info=exc)
+        return
+
+    if not hasattr(provider, "preload"):
+        return
+
+    try:
+        if provider.check_available():
+            ok = await asyncio.to_thread(provider.preload)
+            if ok:
+                logger.info("Ollama 모델 preload 완료: %s", provider.resolved_model)
+    except (ConnectionError, OSError, RuntimeError, TimeoutError, ValueError) as exc:
+        logger.debug("Ollama preload 실행 실패", exc_info=exc)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    preload_task = asyncio.create_task(_preload_ollama_once())
+    try:
+        yield
+    finally:
+        if not preload_task.done():
+            preload_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await preload_task
+
+
+app = FastAPI(title="DartLab", version=dartlab.__version__, lifespan=lifespan)
 
 
 def _default_host() -> str:
@@ -116,28 +172,6 @@ def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
     return {"type": "unknown", "data": str(payload)}
 
 
-@app.on_event("startup")
-async def _preload_ollama():
-    """서버 시작 후 Ollama 모델을 백그라운드에서 미리 로딩 (cold start 제거)."""
-
-    async def _do_preload():
-        await asyncio.sleep(2)
-        try:
-            from dartlab.engines.ai.providers import create_provider
-            from dartlab.engines.ai.types import LLMConfig
-
-            config = LLMConfig(provider="ollama")
-            provider = create_provider(config)
-            if hasattr(provider, "preload") and provider.check_available():
-                ok = await asyncio.to_thread(provider.preload)
-                if ok:
-                    print(f"  Ollama 모델 preload 완료: {provider.resolved_model}")
-        except Exception:
-            pass
-
-    asyncio.create_task(_do_preload())
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
@@ -162,8 +196,9 @@ def api_status():
             available = provider.check_available()
             info["available"] = available
             info["model"] = provider.resolved_model
-        except Exception:
-            pass
+        except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
+            info["available"] = False
+            info["model"] = None
         results[prov] = info
 
     ollama_detail = {}
@@ -176,7 +211,7 @@ def api_status():
         ollama_detail["gpu"] = ollama_info.get("gpu", None)
         if not ollama_info.get("installed"):
             ollama_detail["installGuide"] = get_install_guide()
-    except Exception:
+    except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
         ollama_detail["installed"] = False
         ollama_detail["running"] = False
 
@@ -185,8 +220,14 @@ def api_status():
         from dartlab.engines.ai.cli_setup import detect_codex
 
         codex_detail = detect_codex()
-    except Exception:
-        pass
+    except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
+        codex_detail = {
+            "installed": False,
+            "authenticated": False,
+            "authMode": None,
+            "loginStatus": None,
+            "version": None,
+        }
 
     chatgpt_detail = {
         "deprecated": True,
@@ -207,9 +248,8 @@ def api_status():
     }
 
 
-@app.post("/api/configure")
-def api_configure(req: ConfigureRequest):
-    """LLM provider 검증. 전역 상태는 변경하지 않는다."""
+def _validate_provider_connection(req: ConfigureRequest) -> dict[str, Any]:
+    """LLM provider 연결 가능 여부만 검증한다."""
     from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.types import LLMConfig
@@ -233,10 +273,23 @@ def api_configure(req: ConfigureRequest):
         provider = create_provider(config)
         available = provider.check_available()
         model = provider.resolved_model
-    except Exception:
-        pass
+    except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
+        available = False
+        model = None
 
     return {"ok": True, "provider": effective_provider, "available": available, "model": model}
+
+
+@app.post("/api/provider/validate")
+def api_validate_provider(req: ConfigureRequest):
+    """LLM provider 검증. 전역 상태는 변경하지 않는다."""
+    return _validate_provider_connection(req)
+
+
+@app.post("/api/configure")
+def api_configure(req: ConfigureRequest):
+    """구버전 alias. 현재는 provider 검증만 수행한다."""
+    return _validate_provider_connection(req)
 
 
 @app.get("/api/models/{provider}")
@@ -261,7 +314,7 @@ def api_models(provider: str):
             prov = create_provider(config)
             installed = prov.get_installed_models()
             return {"models": installed, "recommendations": OLLAMA_MODEL_GUIDE}
-        except Exception:
+        except _HANDLED_API_ERRORS:
             return {"models": [], "recommendations": OLLAMA_MODEL_GUIDE}
 
     if provider == "openai":
@@ -371,7 +424,7 @@ def _fetch_openai_models() -> list[str]:
 
         models.sort(key=sort_key)
         return models
-    except Exception:
+    except (ImportError, OSError, RuntimeError, ValueError):
         return []
 
 
@@ -382,7 +435,10 @@ def _fetch_anthropic_models() -> list[str]:
         return []
     try:
         import requests
+    except ImportError:
+        return []
 
+    try:
         resp = requests.get(
             "https://api.anthropic.com/v1/models",
             headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
@@ -411,7 +467,7 @@ def _fetch_anthropic_models() -> list[str]:
 
         models.sort(key=sort_key)
         return models
-    except Exception:
+    except (OSError, ValueError, requests.RequestException):
         return []
 
 
@@ -511,7 +567,7 @@ def _start_oauth_callback_server(port: int):
                 exchange_code(code, _oauth_state["verifier"])
                 _oauth_state["done"] = True
                 self._respond_html("인증 성공", "DartLab 인증이 완료되었습니다. 이 창을 닫아주세요.")
-            except Exception as e:
+            except _HANDLED_API_ERRORS as e:
                 _oauth_state["error"] = str(e)
                 _oauth_state["done"] = True
                 self._respond_html("인증 실패", f"토큰 교환 실패: {e}")
@@ -571,7 +627,7 @@ async def api_ollama_pull(req: dict):
                         "data": line.decode("utf-8"),
                     }
             yield {"event": "done", "data": "{}"}
-        except Exception as e:
+        except _HANDLED_API_ERRORS as e:
             yield {"event": "error", "data": json.dumps({"error": str(e)})}
 
     return EventSourceResponse(_stream_pull(), media_type="text/event-stream")
@@ -594,7 +650,7 @@ def api_search(q: str = Query(..., min_length=1)):
                 }
             )
         return {"results": mapped}
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -626,7 +682,7 @@ def api_company(code: str):
                 "description": "변화 지점을 문서처럼 읽는 company report view가 추후 추가될 예정입니다.",
             },
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -640,7 +696,7 @@ def api_company_index(code: str):
             "corpName": c.corpName,
             "payload": _serialize_payload(c.index),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -654,7 +710,7 @@ def api_company_sections(code: str):
             "corpName": c.corpName,
             "payload": _serialize_payload(c.sections, max_rows=5000),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -683,7 +739,7 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
             "blocks": [serializeViewerBlock(b) for b in blocks],
             "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -713,7 +769,7 @@ async def api_parse_raw_table(code: str, topic: str, block_idx: int):
         }
     except HTTPException:
         raise
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -736,7 +792,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
             "block": block,
             "payload": _serialize_payload(result),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -751,7 +807,7 @@ def api_company_trace(code: str, topic: str):
             "topic": topic,
             "payload": _serialize_payload(c.trace(topic)),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -765,7 +821,7 @@ def api_company_diff(code: str):
             "corpName": c.corpName,
             "payload": _serialize_payload(c.diff()),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -788,7 +844,7 @@ def api_company_diff_topic(
             "toPeriod": toPeriod,
             "payload": _serialize_payload(result),
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -801,7 +857,7 @@ def api_company_modules(code: str):
         c = _get_company(code)
         modules = scan_available_modules(c)
         return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -1204,7 +1260,7 @@ def api_data_stats():
                 stats[category] = {"count": len(files), "path": str(d)}
             else:
                 stats[category] = {"count": 0, "path": str(d)}
-        except Exception:
+        except _HANDLED_API_ERRORS:
             stats[category] = {"count": 0, "path": ""}
     return stats
 
@@ -1295,7 +1351,7 @@ async def api_ask(req: AskRequest):
             "stockCode": c.stockCode,
             "answer": answer,
         }
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1334,7 +1390,7 @@ async def _plain_chat(req: AskRequest):
         raise HTTPException(status_code=401, detail="Codex CLI 로그인이 필요합니다. `codex login`을 실행하세요.")
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-    except Exception as e:
+    except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1462,4 +1518,6 @@ def run_server(host: str | None = None, port: int = 8400):
     """서버 실행 (blocking)."""
     import uvicorn
 
-    uvicorn.run("dartlab.server:app", host=host or _default_host(), port=port, log_level="info")
+    resolved_host = host or _default_host()
+    os.environ["DARTLAB_HOST"] = resolved_host
+    uvicorn.run("dartlab.server:app", host=resolved_host, port=port, log_level="info")

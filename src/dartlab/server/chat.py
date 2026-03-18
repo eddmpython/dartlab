@@ -43,6 +43,7 @@ OLLAMA_MODEL_GUIDE: list[dict[str, str]] = [
 def build_dynamic_chat_prompt(state: ConversationState | None = None) -> str:
     """실시간 데이터 현황을 포함한 채팅 시스템 프롬프트 생성."""
     from dartlab.core.dataLoader import _dataDir
+    from dartlab.engines.ai.tools_registry import get_coding_runtime_policy
 
     def _count(category: str) -> int:
         try:
@@ -57,6 +58,12 @@ def build_dynamic_chat_prompt(state: ConversationState | None = None) -> str:
     finance_count = _count("finance")
     edgar_docs_count = _count("edgarDocs")
     edgar_finance_count = _count("edgar")
+    coding_runtime_enabled, coding_runtime_reason = get_coding_runtime_policy()
+    coding_surface = (
+        "- 로컬 안전 정책이 허용되면 coding runtime으로 실제 코드 작업을 위임 가능"
+        if coding_runtime_enabled
+        else f"- 현재 세션에서는 텍스트 기반 코드 보조만 가능하고 실제 코드 작업 runtime은 비활성화됨 ({coding_runtime_reason})"
+    )
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
 
@@ -89,7 +96,8 @@ def build_dynamic_chat_prompt(state: ConversationState | None = None) -> str:
         "- OpenDart/OpenEdgar 공개 API 직접 호출 + saver 실행\n"
         "- 재무비율: ROE, ROA, 부채비율, 유동비율, FCF, 이자보상배율 자동계산\n"
         "- 업종별 벤치마크 비교, insight/rank/sector 분석\n"
-        "- Excel 내보내기, 템플릿 생성/재사용\n\n"
+        "- Excel 내보내기, 템플릿 생성/재사용\n"
+        f"{coding_surface}\n\n"
         "## 답변 규칙\n"
         "- 기능 범위나 가능 여부를 묻는 질문이면 가능한 것, 바로 할 수 있는 것, 아직 안 되는 것을 먼저 짧게 정리하세요.\n"
         "- 수치가 2개 이상 등장하면 반드시 마크다운 테이블(|표)로 정리하세요.\n"

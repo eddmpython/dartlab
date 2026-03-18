@@ -69,10 +69,10 @@ class TestStatus:
 
 
 class TestConfigure:
-    def test_configure_ollama(self, client):
-        """POST /api/configure — provider 설정 변경."""
+    def test_validate_provider_ollama(self, client):
+        """POST /api/provider/validate — provider 검증."""
         resp = client.post(
-            "/api/configure",
+            "/api/provider/validate",
             json={"provider": "ollama"},
         )
         assert resp.status_code == 200
@@ -81,16 +81,16 @@ class TestConfigure:
         assert data["provider"] == "ollama"
         assert "available" in data
 
-    def test_configure_with_model(self, client):
-        """POST /api/configure — model 지정."""
+    def test_validate_provider_with_model(self, client):
+        """POST /api/provider/validate — model 지정."""
         resp = client.post(
-            "/api/configure",
+            "/api/provider/validate",
             json={"provider": "ollama", "model": "qwen3"},
         )
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
-    def test_configure_does_not_mutate_global_config(self, client, monkeypatch):
+    def test_validate_provider_does_not_mutate_global_config(self, client, monkeypatch):
         from dartlab.engines.ai import configure as configure_global
         from dartlab.engines.ai import get_config
 
@@ -106,13 +106,22 @@ class TestConfigure:
         before = get_config()
 
         resp = client.post(
-            "/api/configure",
+            "/api/provider/validate",
             json={"provider": "openai", "model": "gpt-5.4", "api_key": "sk-test"},
         )
         assert resp.status_code == 200
         after = get_config()
         assert after.provider == before.provider
         assert after.model == before.model
+
+    def test_configure_alias_still_works(self, client):
+        """POST /api/configure — 구버전 alias 유지."""
+        resp = client.post(
+            "/api/configure",
+            json={"provider": "ollama"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
 
 
 class TestModels:
@@ -470,7 +479,7 @@ class TestAsk:
 
         class DummyCompany:
             corpName = "삼성전자"
-            stockCode = "005930"
+            stockCode = "999998"
 
             def ask(self, question, **kwargs):
                 captured["question"] = question
@@ -659,6 +668,7 @@ class TestChatUtils:
         prompt_with_state = build_dynamic_chat_prompt(state)
         assert "현재 대화 상태" in prompt_with_state
         assert "배당" in prompt_with_state
+        assert "응답 템플릿" in prompt_with_state
 
     def test_build_history_messages_compresses_long_text(self):
         from dartlab.server.chat import build_history_messages

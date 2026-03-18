@@ -230,6 +230,9 @@ def conversation_state_to_meta(state: ConversationState) -> dict[str, Any]:
 
 
 def build_dialogue_policy(state: ConversationState) -> str:
+    from dartlab.engines.ai.tools_registry import get_coding_runtime_policy
+
+    coding_runtime_enabled, coding_runtime_reason = get_coding_runtime_policy()
     lines = [
         "## 현재 대화 상태",
         f"- 대화 모드: {_DIALOGUE_MODE_LABELS.get(state.dialogue_mode, state.dialogue_mode)}",
@@ -257,12 +260,40 @@ def build_dialogue_policy(state: ConversationState) -> str:
                 "- 실제로 등록된 도구와 런타임 상태만 말하고 추측하지 마세요.",
             ]
         )
+        lines.extend(
+            [
+                "",
+                "## 응답 템플릿",
+                "1. 가능한 것: 현재 세션에서 바로 가능한 기능 2~4개",
+                "2. 바로 할 수 있는 것: 지금 즉시 실행 가능한 조회/분석/저장 작업",
+                "3. 아직 안 되는 것: 미지원 또는 현재 세션에서 닫힌 기능",
+                "4. 다음 액션: 사용자가 바로 복사해서 물을 수 있는 질문 2~4개",
+            ]
+        )
     elif state.dialogue_mode == "coding":
         lines.extend(
             [
                 "- 먼저 작업 범위와 제약을 짧게 요약하세요.",
-                "- 실행 가능한 코드 작업이면 `run_coding_task` 사용을 우선 검토하세요.",
                 "- 수정 결과를 말할 때 변경점, 검증, 남은 리스크를 분리해서 설명하세요.",
+            ]
+        )
+        if coding_runtime_enabled:
+            lines.append(
+                "- 이 세션에서는 coding runtime이 열려 있으므로 실행 가능한 코드 작업이면 `run_coding_task` 사용을 우선 검토하세요."
+            )
+        else:
+            lines.append(
+                f"- 이 세션에서는 coding runtime이 비활성화되어 있으니 실제 코드 수정은 약속하지 말고, 텍스트 기반 수정안과 활성화 조건만 안내하세요. ({coding_runtime_reason})"
+            )
+        lines.extend(
+            [
+                "",
+                "## 응답 템플릿",
+                "1. 작업 범위: 무엇을 고치거나 만들지 한두 문장으로 요약",
+                "2. 실행 상태: 실제 코드 작업 가능 여부 또는 막힌 이유",
+                "3. 변경점: 파일/동작 기준 핵심 변경 또는 제안안",
+                "4. 검증: 테스트/빌드/확인 방법",
+                "5. 남은 리스크: 아직 확인되지 않은 점 1~2개",
             ]
         )
     elif state.dialogue_mode == "company_analysis":
@@ -273,6 +304,16 @@ def build_dialogue_policy(state: ConversationState) -> str:
                 "- 사용자가 이미 보고 있는 topic이 있으면 그 topic을 우선 활용하세요.",
             ]
         )
+        lines.extend(
+            [
+                "",
+                "## 응답 템플릿",
+                "1. 한줄 결론: 가장 중요한 판단 1~2문장",
+                "2. 근거 표: 핵심 수치 2개 이상이면 반드시 표로 정리",
+                "3. 해석: 숫자가 의미하는 변화와 원인",
+                "4. 다음 drill-down: 더 파볼 주제 1~2개",
+            ]
+        )
     elif state.dialogue_mode in {"company_explore", "follow_up"}:
         lines.extend(
             [
@@ -281,11 +322,29 @@ def build_dialogue_policy(state: ConversationState) -> str:
                 "- 짧은 답 후 구체적 drill-down 옵션을 제안하세요.",
             ]
         )
+        lines.extend(
+            [
+                "",
+                "## 응답 템플릿",
+                "1. 직접 답: 사용자의 현재 질문에 바로 답변",
+                "2. 지금 볼 수 있는 데이터/경로: topic, show, trace, OpenAPI 중 적절한 경로",
+                "3. 다음 선택지: 이어서 물을 만한 drill-down 질문 2~3개",
+            ]
+        )
     else:
         lines.extend(
             [
                 "- 짧고 직접적으로 답하고, 필요한 경우에만 다음 행동을 제안하세요.",
                 "- 회사 맥락이 없으면 특정 종목명/코드가 있으면 더 정확히 도와줄 수 있다고 안내하세요.",
+            ]
+        )
+        lines.extend(
+            [
+                "",
+                "## 응답 템플릿",
+                "1. 직접 답변",
+                "2. 필요하면 짧은 보충 설명",
+                "3. 필요한 경우에만 다음 행동 1~2개",
             ]
         )
     return "\n".join(lines)

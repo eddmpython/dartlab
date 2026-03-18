@@ -75,3 +75,30 @@ def test_conversation_state_meta_and_policy():
     assert payload["market"] == "edgar"
     assert "대화 모드" in policy
     assert "현재 회사" in policy
+    assert "응답 템플릿" in policy
+    assert "가능한 것:" in policy
+
+
+def test_coding_policy_reflects_runtime_guard(monkeypatch):
+    monkeypatch.setenv("DARTLAB_HOST", "0.0.0.0")
+    monkeypatch.delenv("DARTLAB_ENABLE_CODING_RUNTIME", raising=False)
+    state = build_conversation_state("이 버그 고치고 테스트 추가해줘")
+    policy = build_dialogue_policy(state)
+    assert "비활성화" in policy
+    assert "텍스트 기반 수정안" in policy
+
+
+def test_company_analysis_policy_includes_result_template():
+    state = build_conversation_state(
+        "삼성전자 수익성 분석해줘",
+        view_context=ViewContext(
+            type="viewer",
+            company={"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
+            topic="IS",
+            topicLabel="손익계산서",
+        ),
+    )
+    policy = build_dialogue_policy(state)
+    assert state.dialogue_mode == "company_analysis"
+    assert "한줄 결론" in policy
+    assert "근거 표" in policy
