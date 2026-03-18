@@ -6,7 +6,8 @@
 핵심 원칙:
 - `sections`가 docs source of truth다.
 - markdown/table 경계는 버리지 않는다.
-- 같은 topic 내부에서도 block을 합치지 않고 `blockOrder`로 원문 순서를 유지한다.
+- 같은 topic 내부에서도 block을 합치지 않고 raw 큰 블록 순서는 `sourceBlockOrder`로 유지한다.
+- 수평화 후 fine row의 안정 순서는 `blockOrder`로 관리한다.
 - 셀 값은 요약/파생 결과가 아니라 해당 기간 원문 payload를 그대로 유지한다.
 - table-heavy topic은 `sections`에서 다시 추출한다.
 - 기존 docs 개별 parser는 archive/legacy fallback로 남긴다.
@@ -28,6 +29,8 @@
 - 사업보고서의 기본 section 구조를 수평화한다.
 - 수평화 단위는 `topic × blockType × blockOrder × period`다.
 - 여기서 행은 큰 topic 자체가 아니라, topic을 정확히 절개한 내부 section/block unit이다.
+- text row는 body block을 다시 `heading/body` 단위로 분해한 fine row를 포함한다.
+- 원래 큰 block 경계는 `sourceBlockOrder`에 남긴다.
 - 어떤 기간에만 존재하는 block/unit은 그 기간만 값이 있고 다른 기간은 `null`로 유지한다.
 - `Company.index`와 `Company.show()`의 뼈대를 제공한다.
 - table-heavy topic은 raw markdown/table을 유지한 채 다시 추출 가능한 상태로 둔다.
@@ -54,12 +57,41 @@
 - derived text structure:
   - `topic × blockOrder × segmentOrder × period`
 - segment payload:
-  - `headingPath`, `level`, `body`, `paragraphs`
+  - `textNodeType`, `textStructural`, `textLevel`, `textPath`, `textPathKey`, `textParentPathKey`
+  - `segmentKey`, `segmentOrder`, `segmentOccurrence`, `sourceBlockOrder`
+  - `cadenceKey`, `cadenceScope`, `annualPeriodCount`, `quarterlyPeriodCount`
+  - `latestAnnualPeriod`, `latestQuarterlyPeriod`
 
 원칙:
 - raw `sections` 셀 값은 계속 원문 payload를 유지한다.
 - 소제목 분리와 문단 분리는 raw를 덮어쓰지 않고 파생 계층으로 추가한다.
+- body row 수평화는 번호(`가.`, `1.`, `(1)`)가 바뀌어도 유지되도록 번호 제거 path를 우선 사용한다.
+- text row identity는 raw block 위치가 아니라 `textPathKey + occurrence`를 우선 사용하고, 원래 큰 블록 위치는 `sourceBlockOrder`로만 보존한다.
+- top-level heading이 현재 topic과 같은 의미면 `textPathKey`는 `@topic:{topic}` canonical root를 사용한다.
+- `[2021년 12월]` 같은 시점 마커와 중복 topic alias heading은 row로는 보존하되 `textStructural=false`로 내려 구조 stack에는 넣지 않는다.
+- row별 period 분포는 `cadenceScope`로 요약한다.
+  - `annual`: 연간에만 존재
+  - `quarterly`: Q1/Q2/Q3에만 존재
+  - `mixed`: 연간과 분기에 모두 존재
+  - `cadenceKey`: `annual,q1,q2,q3` 같은 finer set
 - `show()`, `diff()`, viewer, AI가 같은 text structure를 공유해야 한다.
+
+## 2026-03-18 현재 기준
+
+- 이번 개선의 정확한 기준은 이 문서와 `src/dartlab/engines/dart/docs/DEV.md`다.
+- 현재 `sections` 텍스트 row 정렬의 핵심은 아래 네 가지다.
+  - `textPathKey + occurrence`가 논리 row identity다.
+  - `sourceBlockOrder`는 원래 큰 블록 경계 보존용이다.
+  - `@topic:{topic}` root는 같은 topic을 가리키는 top-level heading alias를 하나의 구조선으로 묶는다.
+  - `textStructural=false` row는 marker/alias 보존용이며 outline tree를 구성하지 않는다.
+- 현재 row 메타 해석:
+  - `cadenceScope=annual`: 연간 row
+  - `cadenceScope=quarterly`: 분기 전용 row
+  - `cadenceScope=mixed`: 연간/분기 공용 row
+  - `latestAnnualPeriod`, `latestQuarterlyPeriod`: 각 cadence에서 마지막 실존 period
+- 구현 파일:
+  - `src/dartlab/engines/dart/docs/sections/textStructure.py`
+  - `src/dartlab/engines/dart/docs/sections/pipeline.py`
 
 ## production 정책
 

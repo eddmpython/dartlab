@@ -430,7 +430,11 @@ def _buildTextBlock(boRows: pl.DataFrame, bo: int, periodCols: list[str]) -> Vie
     # 최신 기간 텍스트로 heading/body 분류
     row = boRows.row(0, named=True)
     latestText = str(row.get(nonNullCols[-1], ""))
-    textType = _classifyTextType(latestText)
+    textType = str(row.get("textNodeType") or "")
+    if textType not in {"heading", "body"}:
+        textType = _classifyTextType(latestText)
+    if row.get("textStructural") is False and textType == "heading":
+        textType = "body"
 
     # heading이면 changeSummary 생성 안 함
     summary = _buildChangeSummary(boRows, nonNullCols) if textType == "body" else None

@@ -35,7 +35,7 @@ def _(c):
 @app.cell
 def _(c):
     # topic으로 topic의 blockOrder를 통해 표형식 데이터는 다시 수평구조로 concat 
-    c.show("companyOverview",1)
+    c.show("companyOverview",4)
     return
 
 

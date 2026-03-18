@@ -2287,31 +2287,36 @@ class Company:
         if "source" not in docsSec.columns:
             docsSec = docsSec.with_columns(pl.lit("docs").alias("source"))
 
+        docsSchema = dict(docsSec.schema)
+        if "source" not in docsSchema:
+            docsSchema["source"] = pl.Utf8
+        metaCols = [c for c in docsSec.columns if c not in periodCols]
+
         # finance/report에서 추가할 행 수집
         # key: topic → (chapter, source, maxBlockOrder)
         topicExtras: dict[str, list[dict[str, Any]]] = {}
 
+        def _baseExtraRow(*, chapter: str, topic: str, source: str) -> dict[str, Any]:
+            row = {col: None for col in metaCols}
+            row.update(
+                {
+                    "chapter": chapter,
+                    "topic": topic,
+                    "blockType": "table",
+                    "source": source,
+                }
+            )
+            for p in periodCols:
+                row[p] = None
+            return row
+
         if self._hasFinance:
             for ft in ("BS", "IS", "CIS", "CF", "SCE"):
                 if getattr(self.finance, ft, None) is not None:
-                    topicExtras.setdefault(ft, []).append(
-                        {
-                            "chapter": "III",
-                            "topic": ft,
-                            "blockType": "table",
-                            "source": "finance",
-                            **{p: None for p in periodCols},
-                        }
-                    )
+                    topicExtras.setdefault(ft, []).append(_baseExtraRow(chapter="III", topic=ft, source="finance"))
             if self._ratioSeries() is not None:
                 topicExtras.setdefault("ratios", []).append(
-                    {
-                        "chapter": "III",
-                        "topic": "ratios",
-                        "blockType": "table",
-                        "source": "finance",
-                        **{p: None for p in periodCols},
-                    }
+                    _baseExtraRow(chapter="III", topic="ratios", source="finance")
                 )
 
         if self.rawReport is not None:
@@ -2325,13 +2330,7 @@ class Company:
                                 break
                     chapter = chapterMap.get(topic, "X")
                     topicExtras.setdefault(topic, []).append(
-                        {
-                            "chapter": chapter,
-                            "topic": topic,
-                            "blockType": "table",
-                            "source": "report",
-                            **{p: None for p in periodCols},
-                        }
+                        _baseExtraRow(chapter=chapter, topic=topic, source="report")
                     )
             except (ValueError, KeyError, AttributeError):
                 pass
@@ -2349,14 +2348,7 @@ class Company:
                 docsTopics.append(t)
                 seenTopics.add(t)
 
-        schema = {
-            "chapter": pl.Utf8,
-            "topic": pl.Utf8,
-            "blockType": pl.Utf8,
-            "blockOrder": pl.Int64,
-            "source": pl.Utf8,
-            **{p: pl.Utf8 for p in periodCols},
-        }
+        schema = docsSchema
 
         result_frames: list[pl.DataFrame] = []
         insertedExtras: set[str] = set()

@@ -42,6 +42,18 @@ from dartlab.engines.dart.docs.sections.runtime import (
     detailTopicForTopic,
     projectionSuppressedTopics,
 )
+from dartlab.engines.dart.docs.sections.textStructure import parseTextStructureWithState
+
+
+def _periodSortKey(period: str) -> tuple[int, int]:
+    year = int(period[:4])
+    if period.endswith("Q1"):
+        return (year, 1)
+    if period.endswith("Q2"):
+        return (year, 2)
+    if period.endswith("Q3"):
+        return (year, 3)
+    return (year, 4)
 
 
 def iterPeriodSubsets(
@@ -144,6 +156,7 @@ def _reportRowsToTopicRows(
                     "topic": tp,
                     "blockType": blockType,
                     "blockOrder": nextBlockOrder,
+                    "sourceBlockOrder": nextBlockOrder,
                     "text": blockText,
                     "majorNum": majorNum,
                     "orderSeq": idx,
@@ -204,6 +217,157 @@ def _reportRowsToTopicRows(
     return emitted
 
 
+def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    expanded: list[dict[str, object]] = []
+    headingStateByTopic: dict[str, list[dict[str, object]]] = {}
+
+    orderedRows = sorted(
+        rows,
+        key=lambda r: (
+            int(r.get("majorNum") or 99),
+            int(r.get("orderSeq") or 999999),
+            int(r.get("sourceBlockOrder") or r.get("blockOrder") or 0),
+        ),
+    )
+
+    for row in orderedRows:
+        blockType = str(row.get("blockType") or "text")
+        topic = str(row.get("topic") or "")
+        sourceBlockOrder = int(row.get("sourceBlockOrder") or row.get("blockOrder") or 0)
+        orderSeq = int(row.get("orderSeq") or 0)
+        baseRow = dict(row)
+        baseRow["sourceBlockOrder"] = sourceBlockOrder
+
+        if blockType != "text":
+            baseRow["textNodeType"] = None
+            baseRow["textStructural"] = None
+            baseRow["textLevel"] = None
+            baseRow["textPath"] = None
+            baseRow["textPathKey"] = None
+            baseRow["textParentPathKey"] = None
+            baseRow["segmentOrder"] = 0
+            baseRow["segmentKeyBase"] = f"table|sb:{sourceBlockOrder}"
+            baseRow["segmentOccurrence"] = 1
+            baseRow["sortOrder"] = orderSeq * 1000
+            expanded.append(baseRow)
+            continue
+
+        text = str(row.get("text") or "").strip()
+        initialHeadings = headingStateByTopic.get(topic, [])
+        nodes, finalHeadings = parseTextStructureWithState(
+            text,
+            sourceBlockOrder=sourceBlockOrder,
+            topic=topic,
+            initialHeadings=initialHeadings,
+        )
+        headingStateByTopic[topic] = finalHeadings
+        if not nodes:
+            baseRow["textNodeType"] = "body"
+            baseRow["textStructural"] = True
+            if finalHeadings:
+                pathLabels = [str(item["label"]) for item in finalHeadings]
+                pathKeys = [str(item["key"]) for item in finalHeadings if str(item["key"])]
+                textLevel = int(finalHeadings[-1]["level"])
+                textPath = " > ".join(pathLabels) if pathLabels else None
+                textPathKey = " > ".join(pathKeys) if pathKeys else None
+                textParentPathKey = " > ".join(pathKeys[:-1]) if len(pathKeys) > 1 else None
+                segmentKeyBase = f"body|p:{textPathKey}" if textPathKey else f"body|lv:{textLevel}|a:empty"
+            else:
+                textLevel = 0
+                textPath = None
+                textPathKey = None
+                textParentPathKey = None
+                segmentKeyBase = "body|lv:0|a:empty"
+            baseRow["textLevel"] = textLevel
+            baseRow["textPath"] = textPath
+            baseRow["textPathKey"] = textPathKey
+            baseRow["textParentPathKey"] = textParentPathKey
+            baseRow["segmentOrder"] = 0
+            baseRow["segmentKeyBase"] = segmentKeyBase
+            baseRow["segmentOccurrence"] = 1
+            baseRow["sortOrder"] = orderSeq * 1000
+            expanded.append(baseRow)
+            continue
+
+        for node in nodes:
+            nodeRow = dict(baseRow)
+            nodeRow["text"] = str(node["text"])
+            nodeRow["textNodeType"] = node["textNodeType"]
+            nodeRow["textStructural"] = bool(node.get("textStructural", True))
+            nodeRow["textLevel"] = node["textLevel"]
+            nodeRow["textPath"] = node["textPath"]
+            nodeRow["textPathKey"] = node["textPathKey"]
+            nodeRow["textParentPathKey"] = node["textParentPathKey"]
+            nodeRow["segmentOrder"] = node["segmentOrder"]
+            nodeRow["segmentKeyBase"] = node["segmentKeyBase"]
+            nodeRow["segmentOccurrence"] = 1
+            nodeRow["sortOrder"] = (orderSeq * 1000) + int(node["segmentOrder"])
+            expanded.append(nodeRow)
+
+    occurrenceCount: dict[tuple[str, str], int] = {}
+    for row in sorted(expanded, key=lambda r: (str(r.get("topic") or ""), int(r.get("sortOrder") or 0))):
+        topic = str(row.get("topic") or "")
+        baseKey = str(row.get("segmentKeyBase") or "")
+        occKey = (topic, baseKey)
+        occurrenceCount[occKey] = occurrenceCount.get(occKey, 0) + 1
+        occ = occurrenceCount[occKey]
+        row["segmentOccurrence"] = occ
+        row["segmentKey"] = f"{baseKey}|occ:{occ}"
+
+    return expanded
+
+
+def _periodCadence(period: str) -> str:
+    if period.endswith("Q1"):
+        return "q1"
+    if period.endswith("Q2"):
+        return "q2"
+    if period.endswith("Q3"):
+        return "q3"
+    return "annual"
+
+
+def _cadenceSortKey(cadence: str) -> int:
+    return {"annual": 0, "q1": 1, "q2": 2, "q3": 3}.get(cadence, 9)
+
+
+def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
+    presentPeriods = [period for period, value in periodMap.items() if isinstance(value, str) and value.strip()]
+    if not presentPeriods:
+        return {
+            "cadenceKey": "none",
+            "cadenceScope": "none",
+            "annualPeriodCount": 0,
+            "quarterlyPeriodCount": 0,
+            "latestAnnualPeriod": None,
+            "latestQuarterlyPeriod": None,
+        }
+
+    cadenceKeys = sorted({_periodCadence(period) for period in presentPeriods}, key=_cadenceSortKey)
+    annualPeriods = [period for period in presentPeriods if _periodCadence(period) == "annual"]
+    quarterlyPeriods = [period for period in presentPeriods if _periodCadence(period) != "annual"]
+    hasAnnual = bool(annualPeriods)
+    hasQuarterly = bool(quarterlyPeriods)
+    if hasAnnual and hasQuarterly:
+        cadenceScope = "mixed"
+    elif hasAnnual:
+        cadenceScope = "annual"
+    else:
+        cadenceScope = "quarterly"
+
+    latestAnnual = max(annualPeriods, key=_periodSortKey) if annualPeriods else None
+    latestQuarterly = max(quarterlyPeriods, key=_periodSortKey) if quarterlyPeriods else None
+
+    return {
+        "cadenceKey": ",".join(cadenceKeys),
+        "cadenceScope": cadenceScope,
+        "annualPeriodCount": len(annualPeriods),
+        "quarterlyPeriodCount": len(quarterlyPeriods),
+        "latestAnnualPeriod": latestAnnual,
+        "latestQuarterlyPeriod": latestQuarterly,
+    }
+
+
 def sections(stockCode: str) -> pl.DataFrame | None:
     """전 기간 보고서 섹션 — (topic, blockType, blockOrder) × period DataFrame.
 
@@ -216,9 +380,9 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         (topic, blockType, blockOrder)(행) × period(열) DataFrame. 값은 텍스트(str).
         데이터 없으면 None.
     """
-    # key: (topic, blockType, blockOrder)
-    topicMap: dict[tuple[str, str, int], dict[str, str]] = {}
-    topicOrder: dict[tuple[str, str, int], tuple[int, int]] = {}
+    topicMap: dict[tuple[str, str], dict[str, str]] = {}
+    rowMeta: dict[tuple[str, str], dict[str, object]] = {}
+    rowOrder: dict[tuple[str, str], dict[str, int]] = {}
     periodRows: dict[str, list[dict[str, object]]] = {}
     validPeriods: list[str] = []
     latestAnnualRows: list[dict[str, object]] | None = None
@@ -233,92 +397,192 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     teacherTopics = chapterTeacherTopics(latestAnnualRows or [])
     validPeriods = sortPeriods(validPeriods)
+    latestPeriod = validPeriods[-1]
+
+    def _representativePeriodRank(period: str | None) -> int:
+        if not isinstance(period, str):
+            return -1
+        year = int(period[:4])
+        quarter = {"Q1": 1, "Q2": 2, "Q3": 3}.get(period[4:], 4)
+        return (year * 10) + quarter
 
     topicChapter: dict[str, str] = {}
+    topicFirstSeq: dict[str, tuple[int, int]] = {}
 
     for periodKey in validPeriods:
         projected = applyProjections(
             periodRows.get(periodKey, []),
             teacherTopics,
         )
-        for row in projected:
+        for row in _expandStructuredRows(projected):
             chapter = row["chapter"]
             topic = row["topic"]
             text = row["text"]
             blockType = row.get("blockType", "text")
-            blockOrder = row.get("blockOrder", 0)
+            segmentKey = row.get("segmentKey")
             if not isinstance(chapter, str) or not isinstance(topic, str) or not isinstance(text, str):
                 continue
             if not isinstance(blockType, str):
                 blockType = "text"
-            if not isinstance(blockOrder, int):
-                blockOrder = int(blockOrder)
+            if not isinstance(segmentKey, str) or not segmentKey:
+                continue
             if topic not in topicChapter:
                 topicChapter[topic] = chapter
             if topic in suppressed.get(chapter, set()):
                 continue
             if detailTopicForTopic(topic) is not None:
                 continue
-            key = (topic, blockType, blockOrder)
+
+            key = (topic, segmentKey)
             if key not in topicMap:
                 topicMap[key] = {}
             topicMap[key][periodKey] = text
-            if key not in topicOrder:
-                majorNum = int(row.get("majorNum", 99))
-                seq = int(row.get("orderSeq", 999999))
-                topicOrder[key] = (majorNum, seq)
+            majorNum = int(row.get("majorNum", 99))
+            sortOrder = int(row.get("sortOrder", 999999))
+            if topic not in topicFirstSeq or (majorNum, sortOrder) < topicFirstSeq[topic]:
+                topicFirstSeq[topic] = (majorNum, sortOrder)
+
+            orderInfo = rowOrder.setdefault(
+                key,
+                {
+                    "latestRank": 999999999,
+                    "latestMissing": 1,
+                    "firstRank": 999999999,
+                    "sourceBlockOrder": int(row.get("sourceBlockOrder") or 0),
+                    "segmentOrder": int(row.get("segmentOrder") or 0),
+                    "segmentOccurrence": int(row.get("segmentOccurrence") or 1),
+                },
+            )
+            orderInfo["firstRank"] = min(orderInfo["firstRank"], sortOrder)
+            orderInfo["sourceBlockOrder"] = min(orderInfo["sourceBlockOrder"], int(row.get("sourceBlockOrder") or 0))
+            orderInfo["segmentOrder"] = min(orderInfo["segmentOrder"], int(row.get("segmentOrder") or 0))
+            orderInfo["segmentOccurrence"] = min(orderInfo["segmentOccurrence"], int(row.get("segmentOccurrence") or 1))
+            if periodKey == latestPeriod:
+                orderInfo["latestMissing"] = 0
+                orderInfo["latestRank"] = min(orderInfo["latestRank"], sortOrder)
+
+            prevMeta = rowMeta.get(key)
+            prevRank = _representativePeriodRank(prevMeta.get("_repPeriod")) if isinstance(prevMeta, dict) else -1
+            currRank = _representativePeriodRank(periodKey)
+            if prevMeta is None or currRank >= prevRank:
+                rowMeta[key] = {
+                    "chapter": chapter,
+                    "topic": topic,
+                    "blockType": blockType,
+                    "sourceBlockOrder": int(row.get("sourceBlockOrder") or 0),
+                    "textNodeType": row.get("textNodeType"),
+                    "textStructural": row.get("textStructural"),
+                    "textLevel": int(row["textLevel"]) if isinstance(row.get("textLevel"), int) else None,
+                    "textPath": row.get("textPath"),
+                    "textPathKey": row.get("textPathKey"),
+                    "textParentPathKey": row.get("textParentPathKey"),
+                    "segmentKey": segmentKey,
+                    "segmentOrder": int(row.get("segmentOrder") or 0),
+                    "segmentOccurrence": int(row.get("segmentOccurrence") or 1),
+                    "sourceTopic": row.get("sourceTopic"),
+                    "_repPeriod": periodKey,
+                }
 
     if not validPeriods or not topicMap:
         return None
 
-    # topic 그룹핑: 같은 topic의 블록이 반드시 연속하도록 정렬
-    # (majorNum, topic_first_seq) → topic 순서, 그 안에서 blockOrder
-    topicFirstSeq: dict[str, tuple[int, int]] = {}
-    for key, (majorNum, seq) in topicOrder.items():
-        topic = key[0]
-        if topic not in topicFirstSeq or (majorNum, seq) < topicFirstSeq[topic]:
-            topicFirstSeq[topic] = (majorNum, seq)
-
-    # topic 내 안정 순서를 위해 topic별 고유 인덱스 부여
     topicIndex: dict[str, int] = {}
     for topic_seq in sorted(topicFirstSeq.items(), key=lambda x: x[1]):
         topicIndex[topic_seq[0]] = len(topicIndex)
 
-    def _sortKey(k: tuple[str, str, int]) -> tuple[int, int, int, int]:
-        topic, _blockType, blockOrder = k
+    def _cadenceScopePriority(scope: str | None) -> int:
+        return {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}.get(str(scope or "none"), 9)
+
+    def _topicRowSortKey(k: tuple[str, str]) -> tuple[int, int, int, int, int, int, int, int, str]:
+        topic, _segmentKey = k
         majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
         tIdx = topicIndex.get(topic, 999999)
-        return (majorNum, firstSeq, tIdx, blockOrder)
+        info = rowOrder.get(k, {})
+        cadenceMeta = _rowCadenceMeta(topicMap.get(k, {}))
+        return (
+            majorNum,
+            firstSeq,
+            tIdx,
+            _cadenceScopePriority(str(cadenceMeta.get("cadenceScope") or "none")),
+            int(info.get("latestMissing", 1)),
+            int(info.get("latestRank", 999999999)),
+            int(info.get("firstRank", 999999999)),
+            int(info.get("segmentOccurrence", 1)),
+            str(k[1]),
+        )
 
-    sortedKeys = sorted(topicOrder.keys(), key=_sortKey)
+    sortedTopics = [topic for topic, _ in sorted(topicFirstSeq.items(), key=lambda x: x[1])]
 
     dfRows: list[dict[str, str | None]] = []
-    for key in sortedKeys:
-        topic, blockType, blockOrder = key
-        row: dict[str, str | None] = {
-            "chapter": topicChapter.get(topic),
-            "topic": topic,
-            "blockType": blockType,
-            "blockOrder": blockOrder,
-        }
-        for period in validPeriods:
-            row[period] = topicMap[key].get(period)
-        dfRows.append(row)
+    for topic in sortedTopics:
+        topicKeys = [key for key in topicMap.keys() if key[0] == topic]
+        topicKeys = sorted(topicKeys, key=_topicRowSortKey)
+        for blockOrder, key in enumerate(topicKeys):
+            meta = rowMeta.get(key, {})
+            orderInfo = rowOrder.get(key, {})
+            cadenceMeta = _rowCadenceMeta(topicMap.get(key, {}))
+            row: dict[str, str | int | None] = {
+                "chapter": topicChapter.get(topic),
+                "topic": topic,
+                "blockType": str(meta.get("blockType") or "text"),
+                "blockOrder": blockOrder,
+                "sourceBlockOrder": int(orderInfo.get("sourceBlockOrder") or meta.get("sourceBlockOrder") or 0),
+                "textNodeType": str(meta["textNodeType"]) if isinstance(meta.get("textNodeType"), str) else None,
+                "textStructural": bool(meta["textStructural"])
+                if isinstance(meta.get("textStructural"), bool)
+                else None,
+                "textLevel": int(meta["textLevel"]) if isinstance(meta.get("textLevel"), int) else None,
+                "textPath": str(meta["textPath"]) if isinstance(meta.get("textPath"), str) else None,
+                "textPathKey": str(meta["textPathKey"]) if isinstance(meta.get("textPathKey"), str) else None,
+                "textParentPathKey": (
+                    str(meta["textParentPathKey"]) if isinstance(meta.get("textParentPathKey"), str) else None
+                ),
+                "segmentKey": str(meta.get("segmentKey") or ""),
+                "segmentOrder": int(meta.get("segmentOrder") or 0),
+                "segmentOccurrence": int(orderInfo.get("segmentOccurrence") or meta.get("segmentOccurrence") or 1),
+                "cadenceKey": str(cadenceMeta.get("cadenceKey") or "none"),
+                "cadenceScope": str(cadenceMeta.get("cadenceScope") or "none"),
+                "annualPeriodCount": int(cadenceMeta.get("annualPeriodCount") or 0),
+                "quarterlyPeriodCount": int(cadenceMeta.get("quarterlyPeriodCount") or 0),
+                "latestAnnualPeriod": (
+                    str(cadenceMeta["latestAnnualPeriod"])
+                    if isinstance(cadenceMeta.get("latestAnnualPeriod"), str)
+                    else None
+                ),
+                "latestQuarterlyPeriod": (
+                    str(cadenceMeta["latestQuarterlyPeriod"])
+                    if isinstance(cadenceMeta.get("latestQuarterlyPeriod"), str)
+                    else None
+                ),
+                "sourceTopic": str(meta["sourceTopic"]) if isinstance(meta.get("sourceTopic"), str) else None,
+            }
+            for period in validPeriods:
+                row[period] = topicMap[key].get(period)
+            dfRows.append(row)
 
-    remaining = set(topicMap.keys()) - set(topicOrder.keys())
-    for key in sorted(remaining):
-        topic, blockType, blockOrder = key
-        row: dict[str, str | None] = {
-            "chapter": topicChapter.get(topic),
-            "topic": topic,
-            "blockType": blockType,
-            "blockOrder": blockOrder,
-        }
-        for period in validPeriods:
-            row[period] = topicMap[key].get(period)
-        dfRows.append(row)
-
-    schema = {"chapter": pl.Utf8, "topic": pl.Utf8, "blockType": pl.Utf8, "blockOrder": pl.Int64}
+    schema = {
+        "chapter": pl.Utf8,
+        "topic": pl.Utf8,
+        "blockType": pl.Utf8,
+        "blockOrder": pl.Int64,
+        "sourceBlockOrder": pl.Int64,
+        "textNodeType": pl.Utf8,
+        "textStructural": pl.Boolean,
+        "textLevel": pl.Int64,
+        "textPath": pl.Utf8,
+        "textPathKey": pl.Utf8,
+        "textParentPathKey": pl.Utf8,
+        "segmentKey": pl.Utf8,
+        "segmentOrder": pl.Int64,
+        "segmentOccurrence": pl.Int64,
+        "cadenceKey": pl.Utf8,
+        "cadenceScope": pl.Utf8,
+        "annualPeriodCount": pl.Int64,
+        "quarterlyPeriodCount": pl.Int64,
+        "latestAnnualPeriod": pl.Utf8,
+        "latestQuarterlyPeriod": pl.Utf8,
+        "sourceTopic": pl.Utf8,
+    }
     for p in validPeriods:
         schema[p] = pl.Utf8
     return pl.DataFrame(dfRows, schema=schema)
