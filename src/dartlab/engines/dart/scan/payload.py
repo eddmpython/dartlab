@@ -40,7 +40,9 @@ def governance_to_insight(row: dict) -> dict | None:
     if outside is not None:
         details.append(f"사외이사 비율 {outside:.1f}%")
         if outside >= 40:
-            opportunities.append({"level": "positive", "category": "governance", "text": f"사외이사 비율 우수 ({outside:.1f}%)"})
+            opportunities.append(
+                {"level": "positive", "category": "governance", "text": f"사외이사 비율 우수 ({outside:.1f}%)"}
+            )
         elif outside == 0:
             risks.append({"level": "danger", "category": "governance", "text": "사외이사 없음"})
 
@@ -85,7 +87,9 @@ def workforce_to_insight(row: dict) -> dict | None:
     if rev_per is not None:
         details.append(f"직원당 매출 {rev_per:.1f}억")
         if rev_per >= 5:
-            opportunities.append({"level": "positive", "category": "workforce", "text": f"직원당 매출 우수 ({rev_per:.1f}억)"})
+            opportunities.append(
+                {"level": "positive", "category": "workforce", "text": f"직원당 매출 우수 ({rev_per:.1f}억)"}
+            )
         elif rev_per < 1:
             risks.append({"level": "warning", "category": "workforce", "text": f"직원당 매출 저조 ({rev_per:.1f}억)"})
 
@@ -144,7 +148,9 @@ def capital_to_insight(row: dict) -> dict | None:
         if yld is not None:
             details.append(f"배당수익률 {yld:.1f}%")
             if yld >= 3:
-                opportunities.append({"level": "positive", "category": "capital", "text": f"배당수익률 우수 ({yld:.1f}%)"})
+                opportunities.append(
+                    {"level": "positive", "category": "capital", "text": f"배당수익률 우수 ({yld:.1f}%)"}
+                )
 
     treasury = row.get("자사주보유")
     if treasury:
@@ -265,8 +271,13 @@ def build_unified_payload(company) -> dict[str, dict | None]:
         insights = company.insights
         if insights and hasattr(insights, "grades"):
             for area_name in (
-                "performance", "profitability", "health", "cashflow",
-                "governance", "risk", "opportunity",
+                "performance",
+                "profitability",
+                "health",
+                "cashflow",
+                "governance",
+                "risk",
+                "opportunity",
             ):
                 area = getattr(insights, area_name, None)
                 if area:
@@ -275,7 +286,9 @@ def build_unified_payload(company) -> dict[str, dict | None]:
                         "summary": area.summary,
                         "details": area.details,
                         "risks": [{"level": r.level, "category": r.category, "text": r.text} for r in area.risks],
-                        "opportunities": [{"level": o.level, "category": o.category, "text": o.text} for o in area.opportunities],
+                        "opportunities": [
+                            {"level": o.level, "category": o.category, "text": o.text} for o in area.opportunities
+                        ],
                     }
     except (AttributeError, FileNotFoundError, KeyError, RuntimeError, ValueError):
         pass

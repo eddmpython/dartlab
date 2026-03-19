@@ -85,9 +85,7 @@ def build_mention_matrix(
     # topic별 텍스트 합치기
     topic_texts: dict[str, str] = {}
     for topic in sections["topic"].unique().to_list():
-        rows = sections.filter(
-            (pl.col("topic") == topic) & (pl.col("blockType") == "text")
-        )
+        rows = sections.filter((pl.col("topic") == topic) & (pl.col("blockType") == "text"))
         if rows.height == 0:
             continue
         texts = rows[latest].drop_nulls().to_list()
@@ -129,7 +127,7 @@ def analyze_graph(
     filtered = {k: v for k, v in adjacency.items() if v >= threshold}
 
     degree: dict[str, int] = {}
-    for (src, tgt) in filtered:
+    for src, tgt in filtered:
         degree[src] = degree.get(src, 0) + 1
         degree[tgt] = degree.get(tgt, 0) + 1
 
