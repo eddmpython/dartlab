@@ -23,7 +23,7 @@ def _normalizeTextCell(value: Any) -> str:
 
 def _stableFingerprint(*parts: Any) -> str:
     raw = "||".join(_normalizeTextCell(part) for part in parts if part is not None)
-    return hashlib.md5(raw.encode("utf-8")).hexdigest()[:16]
+    return hashlib.md5(raw.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 def _tableMetrics(text: str) -> tuple[int, int, str, str]:

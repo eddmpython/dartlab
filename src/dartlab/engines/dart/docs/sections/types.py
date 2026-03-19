@@ -71,7 +71,7 @@ class YearSections:
                 line = line.strip()
                 if not line:
                     continue
-                h = hashlib.md5(line.encode()).hexdigest()[:12]
+                h = hashlib.md5(line.encode(), usedforsecurity=False).hexdigest()[:12]
                 rows.append(
                     {
                         "path": bp,

@@ -79,12 +79,12 @@ def _run_dev_mode(url: str) -> None:
     ui_dir = Path(__file__).resolve().parents[2] / "ui"
     if not (ui_dir / "node_modules").exists():
         print("npm install 실행 중...")
-        result = subprocess.run(["npm", "install"], cwd=str(ui_dir))
+        result = subprocess.run(["npm", "install"], cwd=str(ui_dir), timeout=300)  # noqa: S603, S607 — hardcoded constant args
         if result.returncode != 0:
             raise CLIError("UI 의존성 설치에 실패했습니다.")
 
     def run_vite() -> None:
-        result = subprocess.run(["npm", "run", "dev"], cwd=str(ui_dir))
+        result = subprocess.run(["npm", "run", "dev"], cwd=str(ui_dir))  # noqa: S603, S607 — hardcoded constant args
         if result.returncode != 0:
             print_warning("Svelte dev 서버가 비정상 종료되었습니다.")
 

@@ -32,7 +32,7 @@ def detect_claude_code() -> dict:
             capture_output=True,
             text=True,
             timeout=10,
-            shell=_IS_WINDOWS,
+            shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
         )
         if proc.returncode == 0:
             result["version"] = proc.stdout.strip()
@@ -45,7 +45,7 @@ def detect_claude_code() -> dict:
             capture_output=True,
             text=True,
             timeout=10,
-            shell=_IS_WINDOWS,
+            shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
         )
         result["authenticated"] = proc.returncode == 0
     except (subprocess.TimeoutExpired, OSError):

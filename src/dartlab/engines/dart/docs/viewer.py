@@ -950,7 +950,7 @@ def _buildChangeSummary(boRows: pl.DataFrame, periodCols: list[str]) -> ChangeSu
     for p in periodCols:
         val = row.get(p)
         if val is not None and str(val).strip():
-            h = hashlib.md5(str(val).encode()).hexdigest()[:12]
+            h = hashlib.md5(str(val).encode(), usedforsecurity=False).hexdigest()[:12]
             hashes.append((p, h))
 
     if len(hashes) < 2:

@@ -86,7 +86,7 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,
+                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             return result.returncode == 0
@@ -113,7 +113,7 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,
+                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             if result.returncode != 0:
@@ -145,7 +145,7 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,
+                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             if result.returncode == 0:
@@ -208,7 +208,7 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 timeout=_CLI_PROBE_TIMEOUT,
                 env=self._clean_env(),
-                shell=_IS_WINDOWS,
+                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, OSError):
@@ -324,7 +324,7 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 timeout=120,
                 env=self._clean_env(),
-                shell=_IS_WINDOWS,
+                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
             )
         except subprocess.TimeoutExpired:
             raise TimeoutError("Claude Code CLI 호출이 시간 초과되었습니다.")
@@ -377,7 +377,7 @@ class ClaudeCodeProvider(BaseProvider):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=self._clean_env(),
-            shell=_IS_WINDOWS,
+            shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
         )
 
         try:
