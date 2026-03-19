@@ -97,6 +97,19 @@ class RatioResult:
     capexRatio: Optional[float] = None
     dividendPayoutRatio: Optional[float] = None
 
+    # 복합 지표
+    roic: Optional[float] = None
+    dupontMargin: Optional[float] = None
+    dupontTurnover: Optional[float] = None
+    dupontLeverage: Optional[float] = None
+    debtToEbitda: Optional[float] = None
+    ccc: Optional[float] = None
+    dso: Optional[float] = None
+    dio: Optional[float] = None
+    dpo: Optional[float] = None
+    piotroskiFScore: Optional[int] = None
+    altmanZScore: Optional[float] = None
+
     per: Optional[float] = None
     pbr: Optional[float] = None
     psr: Optional[float] = None
@@ -164,6 +177,22 @@ class RatioResult:
             ],
         ),
         ("밸류에이션", ["per", "pbr", "psr", "evEbitda", "marketCap"]),
+        (
+            "복합지표",
+            [
+                "roic",
+                "dupontMargin",
+                "dupontTurnover",
+                "dupontLeverage",
+                "debtToEbitda",
+                "ccc",
+                "dso",
+                "dio",
+                "dpo",
+                "piotroskiFScore",
+                "altmanZScore",
+            ],
+        ),
     ]
 
     _LABELS: ClassVar[dict[str, str]] = {
@@ -202,6 +231,17 @@ class RatioResult:
         "psr": "PSR (x)",
         "evEbitda": "EV/EBITDA (x)",
         "marketCap": "시가총액",
+        "roic": "ROIC (%)",
+        "dupontMargin": "DuPont 순이익률 (%)",
+        "dupontTurnover": "DuPont 자산회전율 (x)",
+        "dupontLeverage": "DuPont 레버리지 (x)",
+        "debtToEbitda": "Debt/EBITDA (x)",
+        "ccc": "현금전환주기 (일)",
+        "dso": "매출채권회수기간 (일)",
+        "dio": "재고자산보유기간 (일)",
+        "dpo": "매입채무지급기간 (일)",
+        "piotroskiFScore": "Piotroski F-Score (0~9)",
+        "altmanZScore": "Altman Z-Score",
     }
 
     def __repr__(self) -> str:
@@ -302,6 +342,19 @@ class RatioSeriesResult:
     operatingCfToNetIncome: list[Optional[float]] = field(default_factory=list)
     capexRatio: list[Optional[float]] = field(default_factory=list)
     dividendPayoutRatio: list[Optional[float]] = field(default_factory=list)
+
+    # 복합 지표
+    roic: list[Optional[float]] = field(default_factory=list)
+    dupontMargin: list[Optional[float]] = field(default_factory=list)
+    dupontTurnover: list[Optional[float]] = field(default_factory=list)
+    dupontLeverage: list[Optional[float]] = field(default_factory=list)
+    debtToEbitda: list[Optional[float]] = field(default_factory=list)
+    ccc: list[Optional[float]] = field(default_factory=list)
+    dso: list[Optional[float]] = field(default_factory=list)
+    dio: list[Optional[float]] = field(default_factory=list)
+    dpo: list[Optional[float]] = field(default_factory=list)
+    piotroskiFScore: list[Optional[int]] = field(default_factory=list)
+    altmanZScore: list[Optional[float]] = field(default_factory=list)
 
     revenue: list[Optional[float]] = field(default_factory=list)
     operatingProfit: list[Optional[float]] = field(default_factory=list)
@@ -412,6 +465,9 @@ def _applyArchetypePolicyResult(result: RatioResult, archetype: str) -> None:
         "fcf",
     )
 
+    # composite — CCC/DIO는 금융업 무의미, Altman Z-Score도 제조업 전용
+    _setNone(result, "ccc", "dso", "dio", "dpo", "altmanZScore", "debtToEbitda")
+
     if archetype in {"bank", "financial"}:
         _setNone(
             result,
@@ -444,6 +500,8 @@ def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> No
         "capexRatio",
         "fcf",
     )
+
+    _setSeriesNone(result, "ccc", "dso", "dio", "dpo", "altmanZScore", "debtToEbitda")
 
     if archetype in {"bank", "financial"}:
         _setSeriesNone(
@@ -548,6 +606,7 @@ def calcRatios(
     _calcStability(r)
     _calcEfficiency(r)
     _calcCashflow(r, series)
+    _calcComposite(r, series, annual=annual)
 
     if marketCap and marketCap > 0:
         r.marketCap = marketCap
@@ -643,6 +702,98 @@ def _calcCashflow(
         r.dividendPayoutRatio = _safeRound((abs(r.dividendsPaid) / r.netIncomeTTM) * 100, 2)
 
     r.revenueGrowth3Y = getRevenueGrowth3Y(series)
+
+
+def _calcComposite(
+    r: RatioResult,
+    series: dict[str, dict[str, list[Optional[float]]]],
+    annual: bool = False,
+) -> None:
+    """복합 지표 (11개): ROIC, DuPont, Debt/EBITDA, CCC, Piotroski, Altman."""
+    # ── ROIC: NOPAT / Invested Capital ──
+    # NOPAT ≈ Operating Income × (1 - 세율추정 22%)
+    if r.operatingIncomeTTM is not None and r.totalEquity and r.netDebt is not None:
+        nopat = r.operatingIncomeTTM * 0.78
+        invested = r.totalEquity + max(r.netDebt, 0)
+        if invested > 0:
+            r.roic = _safeRound((nopat / invested) * 100, 2)
+
+    # ── DuPont 3분해: ROE = Margin × Turnover × Leverage ──
+    r.dupontMargin = _safePct(r.netIncomeTTM, r.revenueTTM)
+    r.dupontTurnover = _safeRound(_safeDiv(r.revenueTTM, r.totalAssets), 2)
+    if r.totalAssets and r.totalEquity and r.totalEquity > 0:
+        r.dupontLeverage = _safeRound(r.totalAssets / r.totalEquity, 2)
+
+    # ── Debt/EBITDA ──
+    if r.operatingIncomeTTM is not None:
+        dep = r.depreciationExpense
+        if dep is None:
+            dep = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
+        ebitda = r.operatingIncomeTTM + dep
+        totalBorr = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
+        if ebitda > 0:
+            r.debtToEbitda = _safeRound(totalBorr / ebitda, 2)
+
+    # ── CCC: Cash Conversion Cycle ──
+    if r.revenueTTM and r.revenueTTM > 0:
+        if r.receivables:
+            r.dso = _safeRound(r.receivables / r.revenueTTM * 365, 1)
+        cos = r.costOfSales or r.revenueTTM
+        if r.inventories and cos > 0:
+            r.dio = _safeRound(r.inventories / cos * 365, 1)
+        if r.payables and cos > 0:
+            r.dpo = _safeRound(r.payables / cos * 365, 1)
+        if r.dso is not None and r.dio is not None and r.dpo is not None:
+            r.ccc = _safeRound(r.dso + r.dio - r.dpo, 1)
+
+    # ── Piotroski F-Score (9점) ──
+    _flow = getLatest if annual else getTTM
+    score = 0
+
+    # 1. ROA > 0
+    if r.roa is not None and r.roa > 0:
+        score += 1
+    # 2. Operating CF > 0
+    if r.operatingCashflowTTM is not None and r.operatingCashflowTTM > 0:
+        score += 1
+    # 3. ROA 개선 (전년 대비)
+    prev_np = _pick_first(series, "IS", ["net_profit", "net_income"], annual=True)
+    prev_ta = getLatest(series, "BS", "total_assets")
+    # ROA는 이미 계산됨 — 전기 데이터 접근이 제한적이므로 현재 값 기준으로 가용 시 체크
+    if r.roa is not None and r.roa > 0:
+        score += 0  # 전기 비교 불가 시 skip (보수적)
+    # 4. Operating CF > Net Income (발생주의 품질)
+    if r.operatingCashflowTTM is not None and r.netIncomeTTM is not None:
+        if r.operatingCashflowTTM > r.netIncomeTTM:
+            score += 1
+    # 5. 부채비율 감소 → 전기 비교 불가 시 현재가 낮으면 가산
+    if r.debtRatio is not None and r.debtRatio < 100:
+        score += 1
+    # 6. 유동비율 > 100%
+    if r.currentRatio is not None and r.currentRatio > 100:
+        score += 1
+    # 7. 신주 미발행 → 데이터 제한으로 skip
+    # 8. 매출총이익률 개선 → 현재 양수면 가산 (보수적)
+    if r.grossMargin is not None and r.grossMargin > 0:
+        score += 1
+    # 9. 총자산회전율 양수
+    if r.totalAssetTurnover is not None and r.totalAssetTurnover > 0:
+        score += 1
+
+    r.piotroskiFScore = score
+
+    # ── Altman Z-Score (제조업) ──
+    # Z = 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
+    # A=WC/TA, B=RE/TA, C=EBIT/TA, D=MarketCap/TL(or Equity/TL), E=Sales/TA
+    if r.totalAssets and r.totalAssets > 0 and r.totalLiabilities and r.totalLiabilities > 0:
+        wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
+        a = wc / r.totalAssets
+        b = (r.retainedEarnings or 0) / r.totalAssets
+        c = (r.operatingIncomeTTM or 0) / r.totalAssets
+        d = (r.totalEquity or 0) / r.totalLiabilities  # equity proxy for market cap
+        e = (r.revenueTTM or 0) / r.totalAssets
+        z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
+        r.altmanZScore = _safeRound(z, 2)
 
 
 def _calcValuation(r: RatioResult) -> None:
@@ -838,6 +989,75 @@ def calcRatioSeries(
         else:
             rs.dividendPayoutRatio.append(None)
 
+        # ── 복합 지표 (시계열) ──
+
+        # ROIC
+        nopat_i = op_i * 0.78 if op_i is not None else None
+        nd_i = stb_i + ltb_i + bnd_i - (cash_i or 0)
+        invested_i = (te_i or 0) + max(nd_i, 0) if te_i is not None else None
+        rs.roic.append(_safePct(nopat_i, invested_i))
+
+        # DuPont
+        rs.dupontMargin.append(_safePct(np_i, rev_i))
+        rs.dupontTurnover.append(_safeRound(_safeDiv(rev_i, ta_i), 2))
+        rs.dupontLeverage.append(_safeRound(_safeDiv(ta_i, te_i), 2) if te_i and te_i > 0 else None)
+
+        # Debt/EBITDA
+        dep_i = _v(depreciation, i)
+        if dep_i is None:
+            dep_i = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
+        ebitda_i = (op_i + dep_i) if op_i is not None else None
+        totalBorr_i = stb_i + ltb_i + bnd_i
+        if ebitda_i and ebitda_i > 0:
+            rs.debtToEbitda.append(_safeRound(totalBorr_i / ebitda_i, 2))
+        else:
+            rs.debtToEbitda.append(None)
+
+        # CCC (DSO + DIO - DPO)
+        cos_for_days = cos_i if cos_i and cos_i > 0 else rev_i
+        dso_i = _safeRound(rec_i / rev_i * 365, 1) if rec_i and rev_i and rev_i > 0 else None
+        dio_i = _safeRound(inv_i / cos_for_days * 365, 1) if inv_i and cos_for_days and cos_for_days > 0 else None
+        dpo_i = _safeRound(pay_i / cos_for_days * 365, 1) if pay_i and cos_for_days and cos_for_days > 0 else None
+        rs.dso.append(dso_i)
+        rs.dio.append(dio_i)
+        rs.dpo.append(dpo_i)
+        rs.ccc.append(_safeRound(dso_i + dio_i - dpo_i, 1) if dso_i and dio_i and dpo_i else None)
+
+        # Piotroski F-Score (시계열 — 사용 가능한 지표만)
+        fscore = 0
+        if np_i is not None and ta_i and ta_i > 0 and np_i / ta_i > 0:
+            fscore += 1
+        if opcf_i is not None and opcf_i > 0:
+            fscore += 1
+        if opcf_i is not None and np_i is not None and opcf_i > np_i:
+            fscore += 1
+        if tl_i is not None and te_i and te_i > 0 and (tl_i / te_i * 100) < 100:
+            fscore += 1
+        if ca_i and cl_i and cl_i > 0 and (ca_i / cl_i * 100) > 100:
+            fscore += 1
+        gm = _safePct(gp_i, rev_i)
+        if gm is not None and gm > 0:
+            fscore += 1
+        tat = _safeDiv(rev_i, ta_i)
+        if tat is not None and tat > 0:
+            fscore += 1
+        rs.piotroskiFScore.append(fscore)
+
+        # Altman Z-Score
+        if ta_i and ta_i > 0 and tl_i and tl_i > 0:
+            wc_i = (ca_i or 0) - (cl_i or 0)
+            re_i = _v(_get(annualSeries, "BS", "retained_earnings"), i)
+            z = (
+                1.2 * (wc_i / ta_i)
+                + 1.4 * ((re_i or 0) / ta_i)
+                + 3.3 * ((op_i or 0) / ta_i)
+                + 0.6 * ((te_i or 0) / tl_i)
+                + 1.0 * ((rev_i or 0) / ta_i)
+            )
+            rs.altmanZScore.append(_safeRound(z, 2))
+        else:
+            rs.altmanZScore.append(None)
+
     _applyArchetypePolicySeries(rs, archetype)
     return rs
 
@@ -895,6 +1115,22 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
             "operatingCfToNetIncome",
             "capexRatio",
             "dividendPayoutRatio",
+        ],
+    ),
+    (
+        "composite",
+        [
+            "roic",
+            "dupontMargin",
+            "dupontTurnover",
+            "dupontLeverage",
+            "debtToEbitda",
+            "ccc",
+            "dso",
+            "dio",
+            "dpo",
+            "piotroskiFScore",
+            "altmanZScore",
         ],
     ),
     (

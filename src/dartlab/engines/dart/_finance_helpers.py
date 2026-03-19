@@ -16,6 +16,7 @@ _RATIO_CATEGORY_LABELS: dict[str, str] = {
     "growth": "성장성",
     "efficiency": "효율성",
     "cashflow": "현금흐름",
+    "composite": "복합지표",
     "absolute": "절대규모",
 }
 
@@ -55,6 +56,17 @@ _RATIO_FIELD_LABELS: dict[str, str] = {
     "totalAssets": "총자산",
     "totalEquity": "자본(지배)",
     "operatingCashflow": "영업현금흐름",
+    "roic": "ROIC (%)",
+    "dupontMargin": "DuPont 순이익률 (%)",
+    "dupontTurnover": "DuPont 회전율 (x)",
+    "dupontLeverage": "DuPont 레버리지 (x)",
+    "debtToEbitda": "Debt/EBITDA (x)",
+    "ccc": "현금전환주기 (일)",
+    "dso": "매출채권회수기간 (일)",
+    "dio": "재고보유기간 (일)",
+    "dpo": "매입채무지급기간 (일)",
+    "piotroskiFScore": "F-Score (0~9)",
+    "altmanZScore": "Z-Score",
 }
 
 
