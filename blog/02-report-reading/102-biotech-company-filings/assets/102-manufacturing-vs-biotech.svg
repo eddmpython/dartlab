@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">같은 항목, 다른 해석 — 제조업 vs 바이오</text>
+  <line x1="260" y1="56" x2="540" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Column Headers -->
+  <text x="200" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">항목</text>
+  <text x="420" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">제조업</text>
+  <text x="660" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">바이오·제약</text>
+  <line x1="60" y1="98" x2="740" y2="98" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Row 1: 매출 -->
+  <rect x="60" y="108" width="680" height="52" rx="6" fill="rgba(167,139,250,0.04)"/>
+  <text x="200" y="132" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">매출</text>
+  <text x="420" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">제품 판매 — 반복·예측 가능</text>
+  <text x="420" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">분기마다 비슷한 패턴</text>
+  <text x="660" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">마일스톤·보조금 — 일회성 이벤트</text>
+  <text x="660" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">분기 편차 극심</text>
+
+  <!-- Row 2: 핵심 비용 -->
+  <rect x="60" y="168" width="680" height="52" rx="6" fill="rgba(56,189,248,0.04)"/>
+  <text x="200" y="192" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 비용</text>
+  <text x="420" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출원가 (원재료+인건비)</text>
+  <text x="420" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">매출 연동, 변동비 중심</text>
+  <text x="660" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">연구개발비 (60~90%)</text>
+  <text x="660" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">매출 무관, 고정비 중심</text>
+
+  <!-- Row 3: 핵심 자산 -->
+  <rect x="60" y="228" width="680" height="52" rx="6" fill="rgba(52,211,153,0.04)"/>
+  <text x="200" y="252" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 자산</text>
+  <text x="420" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">유형자산 (공장·설비)</text>
+  <text x="420" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">감가상각으로 점진 감소</text>
+  <text x="660" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">개발비 + 현금성자산</text>
+  <text x="660" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">임상 실패 시 하루아침 손상</text>
+
+  <!-- Row 4: 적자 의미 -->
+  <rect x="60" y="288" width="680" height="52" rx="6" fill="rgba(251,146,60,0.04)"/>
+  <text x="200" y="312" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">적자 의미</text>
+  <text x="420" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출 < 비용 → 경영 위기 신호</text>
+  <text x="420" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">빠른 구조조정 필요</text>
+  <text x="660" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">R&D 투자 단계 → 정상적일 수도</text>
+  <text x="660" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">핵심은 현금 소진 속도</text>
+
+  <!-- Row 5: BS 읽기 순서 -->
+  <rect x="60" y="348" width="680" height="52" rx="6" fill="rgba(248,113,113,0.04)"/>
+  <text x="200" y="372" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">BS 우선순위</text>
+  <text x="420" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">유형자산 → 재고 → 채권</text>
+  <text x="420" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">생산 자산 중심</text>
+  <text x="660" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">개발비 → 현금 → 자본잠식</text>
+  <text x="660" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">생존 자산 중심</text>
+
+  <!-- Key takeaway -->
+  <rect x="100" y="420" width="600" height="60" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="446" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">바이오에서는 매출·이익이 아니라 파이프라인·개발비·현금이 3대 축이다</text>
+  <text x="400" y="466" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">제조업 프레임으로 읽으면 적자를 위기로, 자산화를 성장으로 오독한다</text>
+
+  <!-- Branding -->
+  <text x="400" y="508" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

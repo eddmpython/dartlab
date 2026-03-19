@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건강한 바이오 vs 과열된 바이오</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Column Headers -->
+  <rect x="60" y="70" width="330" height="32" rx="6" fill="rgba(52,211,153,0.10)"/>
+  <text x="225" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">건강한 구조</text>
+  <rect x="410" y="70" width="330" height="32" rx="6" fill="rgba(248,113,113,0.10)"/>
+  <text x="575" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">과열된 구조</text>
+
+  <!-- Row 1: 파이프라인 -->
+  <text x="60" y="130" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">파이프라인</text>
+  <rect x="60" y="138" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">핵심 2상+ 진입, 중간 데이터 공개</text>
+  <text x="225" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">적응증 다변화, 파트너 검증</text>
+  <rect x="410" y="138" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">전임상~1상 집중, 데이터 미공개</text>
+  <text x="575" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">단일 파이프라인 의존</text>
+
+  <!-- Row 2: 개발비 -->
+  <text x="60" y="200" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">개발비 자산화</text>
+  <rect x="60" y="208" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="228" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">3상 이후 자산화 시작</text>
+  <text x="225" y="242" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">실패 시 즉시 손상 인식</text>
+  <rect x="410" y="208" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="228" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">1상부터 자산화, 잔액만 증가</text>
+  <text x="575" y="242" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">적응증 변경으로 손상 회피</text>
+
+  <!-- Row 3: 기술이전 -->
+  <text x="60" y="270" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">기술이전</text>
+  <rect x="60" y="278" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="298" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">빅파마 파트너, 마일스톤 달성 중</text>
+  <text x="225" y="312" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">파트너 자체 임상 투자 진행</text>
+  <rect x="410" y="278" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="298" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">계약 규모만 부각, 업프론트만 수취</text>
+  <text x="575" y="312" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">마일스톤 미달성, 해지 리스크</text>
+
+  <!-- Row 4: 현금 -->
+  <text x="60" y="340" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">현금·자금</text>
+  <rect x="60" y="348" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">활주로 24개월+, 번 레이트 안정</text>
+  <text x="225" y="382" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">추가 조달 없이 다음 마일스톤 도달</text>
+  <rect x="410" y="348" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">활주로 12개월 미만, 유증·CB 반복</text>
+  <text x="575" y="382" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">발행 조건 악화, 희석 누적</text>
+
+  <!-- Row 5: 감사 -->
+  <text x="60" y="410" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">감사 의견</text>
+  <rect x="60" y="418" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="438" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">적정 의견, KAM에 개발비 미포함</text>
+  <text x="225" y="452" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">계속기업 불확실성 없음</text>
+  <rect x="410" y="418" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="438" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">KAM에 개발비 등장 또는 계속기업 기재</text>
+  <text x="575" y="452" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">자본잠식 진행 중</text>
+
+  <!-- Key takeaway -->
+  <rect x="100" y="470" width="600" height="24" rx="6" fill="rgba(167,139,250,0.06)"/>
+  <text x="400" y="487" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">같은 적자라도 루프가 건강하면 투자, 과열이면 소모 — 숫자의 방향이 다르다</text>
+
+  <!-- Branding -->
+  <text x="400" y="512" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

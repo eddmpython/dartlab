@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" fill="none">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="440" rx="12" fill="url(#bg2)"/>
+  <rect x="0.5" y="0.5" width="799" height="439" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">같은 항목, 다른 해석 — 제조업 vs 건설업</text>
+  <line x1="280" y1="54" x2="520" y2="54" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Column headers -->
+  <rect x="60" y="76" width="200" height="32" rx="6" fill="rgba(148,163,184,0.08)"/>
+  <text x="160" y="97" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">항목</text>
+
+  <rect x="280" y="76" width="220" height="32" rx="6" fill="rgba(56,189,248,0.08)"/>
+  <text x="390" y="97" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#38bdf8">제조업</text>
+
+  <rect x="520" y="76" width="220" height="32" rx="6" fill="rgba(167,139,250,0.08)"/>
+  <text x="630" y="97" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">건설업</text>
+
+  <!-- Row 1: 매출 인식 -->
+  <line x1="60" y1="118" x2="740" y2="118" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="160" y="140" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">매출 인식</text>
+  <text x="390" y="136" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">제품 인도 시점</text>
+  <text x="390" y="152" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">객관적 기준</text>
+  <text x="630" y="136" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">진행률 추정 기준</text>
+  <text x="630" y="152" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">경영진 판단 의존</text>
+
+  <!-- Row 2: 핵심 자산 -->
+  <line x1="60" y1="170" x2="740" y2="170" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="160" y="192" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 자산</text>
+  <text x="390" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">재고자산</text>
+  <text x="390" y="204" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">유형자산(설비)</text>
+  <text x="630" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">미청구공사(계약자산)</text>
+  <text x="630" y="204" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">PF 보증(우발부채)</text>
+
+  <!-- Row 3: 현금 흐름 순서 -->
+  <line x1="60" y1="222" x2="740" y2="222" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="160" y="244" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현금 흐름</text>
+  <text x="390" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매입 → 생산 → 판매 → 회수</text>
+  <text x="390" y="256" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">비교적 짧은 사이클</text>
+  <text x="630" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">수주 → 선급 → 집행 → 청구 → 회수</text>
+  <text x="630" y="256" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">수년 단위 긴 사이클</text>
+
+  <!-- Row 4: 주요 부채 -->
+  <line x1="60" y1="274" x2="740" y2="274" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="160" y="296" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">주요 부채</text>
+  <text x="390" y="292" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">차입금, 매입채무</text>
+  <text x="390" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">재고평가손실</text>
+  <text x="630" y="292" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">공사손실충당부채</text>
+  <text x="630" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">선수금(계약부채)</text>
+
+  <!-- Row 5: 위험 신호 -->
+  <line x1="60" y1="326" x2="740" y2="326" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="160" y="348" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">위험 신호</text>
+  <text x="390" y="344" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">재고 급증, 회전율 하락</text>
+  <text x="390" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출채권 회수 지연</text>
+  <text x="630" y="344" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">미청구 급증 + 선수금 감소</text>
+  <text x="630" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">진행률 급변 + 충당부채 급증</text>
+
+  <!-- Bottom insight -->
+  <rect x="100" y="388" width="600" height="32" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="409" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">건설업은 같은 재무제표라도 경영진 추정, 현금 사이클, 부채 성격이 근본적으로 다르다</text>
+
+  <text x="400" y="434" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" fill="none">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="440" rx="12" fill="url(#bg4)"/>
+  <rect x="0.5" y="0.5" width="799" height="439" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건강한 건설사 vs 위험한 건설사</text>
+  <line x1="280" y1="54" x2="520" y2="54" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Left column header: Healthy -->
+  <rect x="60" y="72" width="320" height="30" rx="6" fill="rgba(52,211,153,0.10)" stroke="#34d399" stroke-width="0.8"/>
+  <text x="220" y="92" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">건강한 구조</text>
+
+  <!-- Right column header: Risky -->
+  <rect x="420" y="72" width="320" height="30" rx="6" fill="rgba(248,113,113,0.10)" stroke="#f87171" stroke-width="0.8"/>
+  <text x="580" y="92" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">위험한 구조</text>
+
+  <!-- Row 1 -->
+  <text x="80" y="130" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="130" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">수주 마진이 유지되거나 개선</text>
+  <text x="440" y="130" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="130" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">저가수주 비중 상승</text>
+
+  <line x1="60" y1="142" x2="740" y2="142" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 2 -->
+  <text x="80" y="162" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="162" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">선수금 ≥ 미청구공사</text>
+  <text x="440" y="162" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="162" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">미청구 급증 + 선수금 감소</text>
+
+  <line x1="60" y1="174" x2="740" y2="174" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 3 -->
+  <text x="80" y="194" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="194" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">진행률 추정 안정 (분기 ±2~3%p)</text>
+  <text x="440" y="194" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="194" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">분기마다 총원가 추정 큰 변경</text>
+
+  <line x1="60" y1="206" x2="740" y2="206" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 4 -->
+  <text x="80" y="226" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="226" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">공사손실충당부채 없거나 소규모</text>
+  <text x="440" y="226" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="226" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">충당부채 전기 대비 급증</text>
+
+  <line x1="60" y1="238" x2="740" y2="238" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 5 -->
+  <text x="80" y="258" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="258" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">영업CF / 순이익 ≥ 0.8</text>
+  <text x="440" y="258" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="258" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">영업CF 마이너스 또는 순이익의 절반 미만</text>
+
+  <line x1="60" y1="270" x2="740" y2="270" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 6 -->
+  <text x="80" y="290" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="290" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">PF 보증 / 자기자본 &lt; 50%</text>
+  <text x="440" y="290" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="290" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">PF 보증 / 자기자본 &gt; 100%</text>
+
+  <line x1="60" y1="302" x2="740" y2="302" stroke="#1e2433" stroke-width="0.5"/>
+
+  <!-- Row 7 -->
+  <text x="80" y="322" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">&#x2714;</text>
+  <text x="100" y="322" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">팩토링 없이 현금 순환</text>
+  <text x="440" y="322" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">&#x2716;</text>
+  <text x="460" y="322" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#cbd5e1">팩토링·유동화로 현금흐름 보정</text>
+
+  <!-- Bottom note -->
+  <rect x="100" y="352" width="600" height="56" rx="8" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="376" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">위험 신호가 3개 이상이면 현금 전환 루프가 깨지고 있을 가능성이 높다</text>
+  <text x="400" y="396" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">특히 미청구 급증 + 충당부채 급증 + 영업CF 마이너스가 동시에 나타나면 가장 강한 경고</text>
+
+  <text x="400" y="434" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

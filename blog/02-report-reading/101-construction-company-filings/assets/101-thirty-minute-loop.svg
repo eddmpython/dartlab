@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="500" rx="12" fill="url(#bg5)"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건설업 사업보고서 30분 읽기 루프</text>
+  <line x1="270" y1="54" x2="530" y2="54" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Step 1 -->
+  <rect x="60" y="76" width="680" height="52" rx="8" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.8"/>
+  <text x="80" y="98" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#a78bfa">5분</text>
+  <text x="130" y="98" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">1단계 — 수주 현황</text>
+  <text x="130" y="118" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">사업의 내용 → 수주잔고, 신규 수주, 관급/민간/해외 비율, 수주 단가 변화</text>
+
+  <!-- Step 2 -->
+  <rect x="60" y="140" width="680" height="52" rx="8" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.8"/>
+  <text x="80" y="162" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#38bdf8">5분</text>
+  <text x="130" y="162" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">2단계 — 진행률과 매출</text>
+  <text x="130" y="182" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">주석 건설계약 → 프로젝트별 계약금액, 누적진행률, 추정총원가 변동 확인</text>
+
+  <!-- Step 3 -->
+  <rect x="60" y="204" width="680" height="52" rx="8" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.8"/>
+  <text x="80" y="226" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#34d399">5분</text>
+  <text x="130" y="226" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">3단계 — 미청구 vs 선수금</text>
+  <text x="130" y="246" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">BS → 계약자산(미청구)과 계약부채(선수금) 전기 대비 방향 확인</text>
+
+  <!-- Step 4 -->
+  <rect x="60" y="268" width="680" height="52" rx="8" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.8"/>
+  <text x="80" y="290" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#fb923c">5분</text>
+  <text x="130" y="290" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">4단계 — 원가와 충당부채</text>
+  <text x="130" y="310" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">주석 → 공사손실충당부채 증감, 적자 프로젝트 신규 발생 여부</text>
+
+  <!-- Step 5 -->
+  <rect x="60" y="332" width="680" height="52" rx="8" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="0.8"/>
+  <text x="80" y="354" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#f87171">5분</text>
+  <text x="130" y="354" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">5단계 — 현금흐름 검증</text>
+  <text x="130" y="374" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">CF표 → 영업CF와 순이익 비교, 차이 원인을 2~4단계와 연결</text>
+
+  <!-- Step 6 -->
+  <rect x="60" y="396" width="680" height="52" rx="8" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="80" y="418" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#fb923c">5분</text>
+  <text x="130" y="418" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">6단계 — PF 보증과 우발부채</text>
+  <text x="130" y="438" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">주석 → 지급보증·PF 보증 잔액 + 감사보고서 KAM에 건설계약·PF 언급 여부</text>
+
+  <!-- Total time -->
+  <rect x="240" y="464" width="320" height="24" rx="6" fill="rgba(167,139,250,0.08)"/>
+  <text x="400" y="481" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">합계 30분 — 건설사의 현금 전환 루프가 잡힌다</text>
+
+  <text x="400" y="497" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

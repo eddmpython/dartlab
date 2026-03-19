@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#94a3b8" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="480" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="479" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">바이오 가치 전환 루프 — 읽는 순서</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Step 1 -->
+  <rect x="60" y="80" width="160" height="64" rx="10" fill="rgba(167,139,250,0.10)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="140" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">1. 파이프라인</text>
+  <text x="140" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">임상 단계와 집중도</text>
+
+  <!-- Arrow 1→2 -->
+  <path d="M220 112 L280 112" stroke="#a78bfa" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 2 -->
+  <rect x="280" y="80" width="180" height="64" rx="10" fill="rgba(56,189,248,0.10)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="370" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">2. 개발비 자산화</text>
+  <text x="370" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">보수적인가 공격적인가</text>
+
+  <!-- Arrow 2→3 -->
+  <path d="M460 112 L520 112" stroke="#38bdf8" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 3 -->
+  <rect x="520" y="80" width="220" height="64" rx="10" fill="rgba(52,211,153,0.10)" stroke="#34d399" stroke-width="1"/>
+  <text x="630" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">3. 마일스톤·기술이전</text>
+  <text x="630" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">실제 수취 vs 계약 규모</text>
+
+  <!-- Arrow 3→4 (down) -->
+  <path d="M630 144 L630 180" stroke="#34d399" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 4 -->
+  <rect x="460" y="188" width="240" height="64" rx="10" fill="rgba(251,146,60,0.10)" stroke="#fb923c" stroke-width="1"/>
+  <text x="580" y="214" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">4. 임상 실패·손상</text>
+  <text x="580" y="234" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">손상 즉시 인식 vs 이월 지연</text>
+
+  <!-- Arrow 4→5 -->
+  <path d="M460 220 L340 220" stroke="#fb923c" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 5 -->
+  <rect x="100" y="188" width="240" height="64" rx="10" fill="rgba(248,113,113,0.10)" stroke="#f87171" stroke-width="1"/>
+  <text x="220" y="214" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">5. 현금 소진 속도</text>
+  <text x="220" y="234" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">번 레이트와 활주로</text>
+
+  <!-- Loop arrow back to 1 -->
+  <path d="M100 220 L60 220 L60 150 L60 112 L60 112" stroke="#f87171" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+
+  <!-- Key insight box -->
+  <rect x="100" y="290" width="600" height="80" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="318" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" font-weight="600" fill="#e2e8f0">핵심: 매출이 아니라 가치 전환 루프를 먼저 읽는다</text>
+  <text x="400" y="342" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">파이프라인 → 개발비 → 마일스톤 → 손상 → 현금 소진 — 이 루프가 건강한가 과열인가</text>
+  <text x="400" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">루프가 건강하면 적자는 투자, 루프가 과열이면 적자는 소모의 예고편</text>
+
+  <!-- Capital structure callout -->
+  <rect x="100" y="392" width="600" height="52" rx="8" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="120" y="416" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#fb923c">+</text>
+  <text x="140" y="416" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cbd5e1">자본 구조와 계속기업 반드시 추가 확인</text>
+  <text x="140" y="434" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">유증·CB·BW 반복 → 주주 희석 누적 — 현금 활주로 12개월 미만 시 각별 주의</text>
+
+  <!-- Branding -->
+  <text x="400" y="466" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

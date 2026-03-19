@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="560" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="559" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">바이오·제약 30분 읽기 루프</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Timeline line -->
+  <line x1="100" y1="86" x2="100" y2="500" stroke="#1e2433" stroke-width="2"/>
+
+  <!-- Step 1 -->
+  <circle cx="100" cy="100" r="16" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="100" y="105" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#a78bfa">1</text>
+  <text x="130" y="96" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">파이프라인 현황 (5분)</text>
+  <text x="130" y="114" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">사업의 내용 → 파이프라인표 → 임상 단계별 분포, 핵심 적응증, 파트너사</text>
+  <rect x="620" y="86" width="120" height="28" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="680" y="104" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#a78bfa">사업의 내용</text>
+
+  <!-- Step 2 -->
+  <circle cx="100" cy="168" r="16" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="100" y="173" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8">2</text>
+  <text x="130" y="164" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">개발비와 무형자산 (5분)</text>
+  <text x="130" y="182" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">BS 무형자산 잔액 → 주석 파이프라인별 자산화 금액 → 전기 대비 증가율</text>
+  <rect x="620" y="154" width="120" height="28" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.5"/>
+  <text x="680" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#38bdf8">BS + 주석</text>
+
+  <!-- Step 3 -->
+  <circle cx="100" cy="236" r="16" fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="100" y="241" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#34d399">3</text>
+  <text x="130" y="232" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">기술이전과 마일스톤 (5분)</text>
+  <text x="130" y="250" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">주석 수익 인식 → 업프론트 수취, 달성/미달성 마일스톤, 계약 해지 조건</text>
+  <rect x="620" y="222" width="120" height="28" rx="6" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="680" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#34d399">주석 + 사업내용</text>
+
+  <!-- Step 4 -->
+  <circle cx="100" cy="304" r="16" fill="rgba(251,146,60,0.15)" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="100" y="309" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#fb923c">4</text>
+  <text x="130" y="300" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">손상과 임상 이력 (5분)</text>
+  <text x="130" y="318" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">주석 무형자산 손상 이력 → 감사보고서 KAM → 임상 중단·실패 이력</text>
+  <rect x="620" y="290" width="120" height="28" rx="6" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="680" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fb923c">주석 + 감사보고서</text>
+
+  <!-- Step 5 -->
+  <circle cx="100" cy="372" r="16" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="1.5"/>
+  <text x="100" y="377" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#f87171">5</text>
+  <text x="130" y="368" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">현금 소진 속도 (5분)</text>
+  <text x="130" y="386" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">CF표 영업활동 → 월간 번 레이트 계산 → 현금성자산 대비 활주로 추정</text>
+  <rect x="620" y="358" width="120" height="28" rx="6" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="680" y="376" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#f87171">CF표</text>
+
+  <!-- Step 6 -->
+  <circle cx="100" cy="440" r="16" fill="rgba(129,140,248,0.15)" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="100" y="445" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#818cf8">6</text>
+  <text x="130" y="436" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#818cf8">자본 구조와 계속기업 (5분)</text>
+  <text x="130" y="454" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">자본잠식 여부 → 계속기업 불확실성 → CB·BW 전환 시 최대 희석 규모</text>
+  <rect x="620" y="426" width="120" height="28" rx="6" fill="rgba(129,140,248,0.08)" stroke="#818cf8" stroke-width="0.5"/>
+  <text x="680" y="444" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#818cf8">BS + 감사보고서</text>
+
+  <!-- Key insight -->
+  <rect x="100" y="486" width="600" height="40" rx="8" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="510" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">6단계를 순서대로 돌면 파이프라인 → 회계 → 현금 → 생존이 한 루프로 연결된다</text>
+
+  <!-- Branding -->
+  <text x="400" y="548" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

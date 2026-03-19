@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" fill="none">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="460" rx="12" fill="url(#bg3)"/>
+  <rect x="0.5" y="0.5" width="799" height="459" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건설업에서 먼저 봐야 할 5가지 숫자</text>
+  <line x1="280" y1="54" x2="520" y2="54" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Item 1 -->
+  <rect x="60" y="76" width="320" height="68" rx="10" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.8"/>
+  <text x="80" y="100" font-family="JetBrains Mono, monospace" font-size="20" font-weight="800" fill="#a78bfa" opacity="0.4">01</text>
+  <text x="116" y="100" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">수주잔고 / 연매출</text>
+  <text x="80" y="120" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">일감의 크기와 가격 — 질이 크기보다 먼저</text>
+  <text x="80" y="136" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#34d399">건강: 1.5~3배, 마진 유지</text>
+
+  <!-- Item 2 -->
+  <rect x="420" y="76" width="320" height="68" rx="10" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.8"/>
+  <text x="440" y="100" font-family="JetBrains Mono, monospace" font-size="20" font-weight="800" fill="#38bdf8" opacity="0.4">02</text>
+  <text x="476" y="100" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">진행률 안정성</text>
+  <text x="440" y="120" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">분기별 변동폭 — 추정의 신뢰도</text>
+  <text x="440" y="136" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">위험: 분기마다 ±5%p 이상 변동</text>
+
+  <!-- Item 3 -->
+  <rect x="60" y="164" width="320" height="68" rx="10" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.8"/>
+  <text x="80" y="188" font-family="JetBrains Mono, monospace" font-size="20" font-weight="800" fill="#34d399" opacity="0.4">03</text>
+  <text x="116" y="188" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">미청구 vs 선수금 비율</text>
+  <text x="80" y="208" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">현금 버퍼의 방향 — 선수금 ≥ 미청구가 건강</text>
+  <text x="80" y="224" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">위험: 미청구 급증 + 선수금 감소</text>
+
+  <!-- Item 4 -->
+  <rect x="420" y="164" width="320" height="68" rx="10" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.8"/>
+  <text x="440" y="188" font-family="JetBrains Mono, monospace" font-size="20" font-weight="800" fill="#fb923c" opacity="0.4">04</text>
+  <text x="476" y="188" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">공사손실충당부채</text>
+  <text x="440" y="208" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">적자 프로젝트의 미래 손실 선인식</text>
+  <text x="440" y="224" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">위험: 전기 대비 급증</text>
+
+  <!-- Item 5 (full width, emphasized) -->
+  <rect x="60" y="252" width="680" height="68" rx="10" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="1"/>
+  <text x="80" y="276" font-family="JetBrains Mono, monospace" font-size="20" font-weight="800" fill="#f87171" opacity="0.4">05</text>
+  <text x="116" y="276" font-family="Pretendard, Inter, sans-serif" font-size="14" font-weight="700" fill="#e2e8f0">영업현금흐름 / 순이익</text>
+  <text x="80" y="296" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">1~4번 모든 것의 최종 검증 — 0.8 이상이면 건강, 0.5 미만이거나 마이너스면 루프가 깨져 있다</text>
+  <text x="80" y="312" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#f87171">이 숫자 하나가 위 4가지의 합산 결과를 말해준다</text>
+
+  <!-- PF bonus -->
+  <rect x="60" y="340" width="680" height="52" rx="8" fill="rgba(251,146,60,0.05)" stroke="#fb923c" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="80" y="362" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#fb923c">+추가</text>
+  <text x="130" y="362" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cbd5e1">PF 보증잔액 / 자기자본 — 100% 초과 시 분양 실패에 따른 보증 현실화 리스크</text>
+  <text x="80" y="382" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">감사보고서 KAM에 건설계약·PF가 있으면 감사인도 경고하고 있다는 뜻</text>
+
+  <!-- Reading order note -->
+  <rect x="160" y="408" width="480" height="28" rx="6" fill="rgba(167,139,250,0.06)"/>
+  <text x="400" y="427" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">이 순서대로 읽으면 30분 안에 건설사의 큰 그림이 잡힌다</text>
+
+  <text x="400" y="454" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="540" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="539" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">바이오 5가지 핵심 숫자 — 과열 체크보드</text>
+  <line x1="260" y1="56" x2="540" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Item 1 -->
+  <rect x="60" y="76" width="680" height="72" rx="10" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.8"/>
+  <circle cx="92" cy="100" r="14" fill="rgba(167,139,250,0.2)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="92" y="105" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">1</text>
+  <text x="120" y="100" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">파이프라인 단계 분포</text>
+  <text x="120" y="118" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">2상 이상 진입 = 제품화 가시권 | 전임상~1상만 = 5~10년 거리</text>
+  <text x="120" y="136" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">과열: 전임상에 몰려 있는데 시가총액 수천억 이상</text>
+
+  <!-- Item 2 -->
+  <rect x="60" y="160" width="680" height="72" rx="10" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.8"/>
+  <circle cx="92" cy="184" r="14" fill="rgba(56,189,248,0.2)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="92" y="189" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">2</text>
+  <text x="120" y="184" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">개발비 자산화 정책</text>
+  <text x="120" y="202" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">3상 이후 자산화 = 보수적 | 1상부터 자산화 = 공격적</text>
+  <text x="120" y="220" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">과열: 잔액만 매년 증가, 상각 시작 파이프라인 없음</text>
+
+  <!-- Item 3 -->
+  <rect x="60" y="244" width="680" height="72" rx="10" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.8"/>
+  <circle cx="92" cy="268" r="14" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="1"/>
+  <text x="92" y="273" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#34d399">3</text>
+  <text x="120" y="268" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">마일스톤 실제 수취</text>
+  <text x="120" y="286" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">업프론트 + 개발 마일스톤 달성 = 파트너 검증 | 업프론트만 = 초기 단계</text>
+  <text x="120" y="304" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">과열: 총 계약 규모만 부각, 실수취는 업프론트뿐</text>
+
+  <!-- Item 4 -->
+  <rect x="60" y="328" width="680" height="72" rx="10" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.8"/>
+  <circle cx="92" cy="352" r="14" fill="rgba(251,146,60,0.2)" stroke="#fb923c" stroke-width="1"/>
+  <text x="92" y="357" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#fb923c">4</text>
+  <text x="120" y="352" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">임상 실패 후 손상 인식</text>
+  <text x="120" y="370" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">즉시 전액 손상 = 보수적 | 적응증 변경으로 이월 = 위험 지연</text>
+  <text x="120" y="388" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">과열: 실패 후에도 개발비 그대로, KAM에 개발비 등장</text>
+
+  <!-- Item 5 -->
+  <rect x="60" y="412" width="680" height="72" rx="10" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="0.8"/>
+  <circle cx="92" cy="436" r="14" fill="rgba(248,113,113,0.2)" stroke="#f87171" stroke-width="1"/>
+  <text x="92" y="441" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#f87171">5</text>
+  <text x="120" y="436" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">현금 소진 속도 (번 레이트)</text>
+  <text x="120" y="454" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">활주로 24개월+ = 여유 | 12개월 미만 = 곧 자금 조달 필요</text>
+  <text x="120" y="472" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fb923c">과열: 유증·CB 반복, 발행 조건 점점 불리, 자본잠식 진행</text>
+
+  <!-- Branding -->
+  <text x="400" y="528" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>
