@@ -26,8 +26,14 @@ from typing import Any
 from dartlab import Company
 
 from .cache import company_cache
-from .chat import build_dynamic_chat_prompt, build_focus_context, build_history_messages, build_snapshot
-from .dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta
+from .chat import (
+    build_diff_context,
+    build_dynamic_chat_prompt,
+    build_focus_context,
+    build_history_messages,
+    build_snapshot,
+)
+from .dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta, detect_viewer_intent
 from .models import AskRequest
 from .resolve import has_analysis_intent
 
@@ -49,6 +55,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         view_context=req.viewContext,
     )
     focus_context = await asyncio.to_thread(build_focus_context, c, state) if c is not None else None
+    diff_context = await asyncio.to_thread(build_diff_context, c) if c is not None else None
 
     if not_found_msg:
         yield {
@@ -250,6 +257,20 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 )
                 if pipeline_result:
                     context_text = context_text + pipeline_result
+
+            if diff_context:
+                context_text = context_text + "\n\n" + diff_context
+                yield {
+                    "event": "context",
+                    "data": json.dumps(
+                        {
+                            "module": "_diff",
+                            "label": "공시 텍스트 변화 핫스팟",
+                            "text": diff_context,
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
 
             meta_payload: dict[str, Any] = {
                 **conversation_state_to_meta(state),
@@ -460,5 +481,24 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             "event": "error",
             "data": json.dumps(error_payload, ensure_ascii=False),
         }
+
+    # "보여줘" 의도 감지 → viewer_navigate SSE 이벤트
+    if c is not None:
+        company_topics = None
+        try:
+            company_topics = list(getattr(c, "topics", None) or [])
+        except (AttributeError, TypeError):
+            pass
+        viewer_intent = detect_viewer_intent(req.question, topics=company_topics)
+        if viewer_intent is not None:
+            nav_payload: dict[str, Any] = {"topic": viewer_intent.get("topic", "")}
+            if state.stock_code:
+                nav_payload["stockCode"] = state.stock_code
+            if state.company:
+                nav_payload["company"] = state.company
+            yield {
+                "event": "viewer_navigate",
+                "data": json.dumps(nav_payload, ensure_ascii=False),
+            }
 
     yield {"event": "done", "data": json.dumps(done_payload, ensure_ascii=False)}

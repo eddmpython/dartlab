@@ -47,6 +47,23 @@ _EXPLORE_KEYWORDS = (
     "openapi",
 )
 _FOLLOW_UP_PREFIXES = ("그럼", "그러면", "이건", "이거", "그거", "왜", "어째서", "더", "계속", "이어")
+
+# "보여줘" 의도 감지 — Viewer 탭 전환 트리거
+_VIEWER_INTENT_KEYWORDS = (
+    "보여줘",
+    "보여 줘",
+    "보여주세요",
+    "열어줘",
+    "열어 줘",
+    "공시 보기",
+    "공시 열기",
+    "원문 보기",
+    "원문 보여",
+    "sections 보여",
+    "section 보여",
+    "show me",
+    "open viewer",
+)
 _DIALOGUE_MODE_LABELS = {
     "capability": "기능 탐색",
     "coding": "코딩 작업",
@@ -77,6 +94,9 @@ class ConversationState:
     topic_label: str | None = None
     question_types: tuple[str, ...] = ()
     modules: tuple[str, ...] = ()
+    prev_dialogue_mode: str | None = None
+    prev_question_types: tuple[str, ...] = ()
+    turn_count: int = 0
 
 
 def _infer_market(
@@ -133,6 +153,61 @@ def _parse_legacy_view_context(question: str) -> tuple[str, ViewContext | None]:
         return cleaned, ViewContext(type="data", data={"label": data_match.group("label")})
 
     return cleaned, None
+
+
+def detect_viewer_intent(question: str, *, topics: list[str] | None = None) -> dict[str, str] | None:
+    """질문에서 '보여줘' 의도 + topic을 감지한다.
+
+    Returns:
+        {"topic": "businessOverview"} 또는 None.
+        topic 특정 불가 시 {"topic": ""} (Viewer 탭만 전환).
+    """
+    lowered = question.lower().strip()
+    has_show = any(kw in lowered for kw in _VIEWER_INTENT_KEYWORDS)
+    if not has_show:
+        return None
+
+    # topic 추출 — topics 목록과 대조
+    if topics:
+        for t in topics:
+            if t.lower() in lowered or t in question:
+                return {"topic": t}
+
+    # 한국어 topic 힌트 → canonical topic 매핑
+    _TOPIC_HINTS: dict[str, str] = {
+        "사업": "businessOverview",
+        "사업 개요": "businessOverview",
+        "사업개요": "businessOverview",
+        "사업의 개요": "businessOverview",
+        "배당": "dividend",
+        "직원": "employee",
+        "임원": "executive",
+        "주주": "majorHolder",
+        "최대주주": "majorHolder",
+        "감사": "audit",
+        "리스크": "riskManagement",
+        "위험": "riskManagement",
+        "소송": "litigation",
+        "회사 개요": "companyOverview",
+        "회사개요": "companyOverview",
+        "재무": "financialStatements",
+        "연결재무": "consolidatedStatements",
+        "주석": "financialNotes",
+        "내부통제": "internalControl",
+        "투자": "investmentInOtherDetail",
+        "자회사": "subsidiaryDetail",
+        "R&D": "rndDetail",
+        "연구개발": "rndDetail",
+        "제품": "productService",
+        "매출": "salesRevenue",
+        "자본변동": "capitalChange",
+        "자금조달": "fundraising",
+    }
+    for hint, topic in _TOPIC_HINTS.items():
+        if hint in question:
+            return {"topic": topic}
+
+    return {"topic": ""}
 
 
 def _classify_dialogue_mode(question: str, *, has_company: bool) -> str:
@@ -201,6 +276,11 @@ def build_conversation_state(
         history_market=history_meta.market if history_meta else None,
     )
 
+    # 이전 대화 맥락
+    prev_dialogue_mode = history_meta.dialogueMode if history_meta else None
+    prev_question_types = tuple(history_meta.questionTypes or []) if history_meta and history_meta.questionTypes else ()
+    turn_count = len(history) if history else 0
+
     return ConversationState(
         question=cleaned_question or question,
         dialogue_mode=dialogue_mode,
@@ -212,6 +292,9 @@ def build_conversation_state(
         topic_label=topic_label,
         question_types=question_types,
         modules=modules,
+        prev_dialogue_mode=prev_dialogue_mode,
+        prev_question_types=prev_question_types,
+        turn_count=turn_count,
     )
 
 
@@ -225,8 +308,9 @@ def conversation_state_to_meta(state: ConversationState) -> dict[str, Any]:
         "dialogueMode": state.dialogue_mode,
         "questionTypes": list(state.question_types) if state.question_types else None,
         "userGoal": state.user_goal,
+        "turnCount": state.turn_count if state.turn_count > 0 else None,
     }
-    return {key: value for key, value in payload.items() if value not in (None, [], "")}
+    return {key: value for key, value in payload.items() if value not in (None, [], "", 0)}
 
 
 def build_dialogue_policy(state: ConversationState) -> str:
@@ -250,8 +334,26 @@ def build_dialogue_policy(state: ConversationState) -> str:
         lines.append(f"- 직전 분석 모듈: {', '.join(f'`{name}`' for name in state.modules[:8])}")
     if state.question_types:
         lines.append(f"- 감지된 질문 유형: {', '.join(state.question_types)}")
+    if state.turn_count > 0:
+        lines.append(f"- 대화 턴: {state.turn_count}회차")
+    if state.prev_dialogue_mode:
+        lines.append(f"- 직전 모드: {_DIALOGUE_MODE_LABELS.get(state.prev_dialogue_mode, state.prev_dialogue_mode)}")
+    if state.prev_question_types:
+        lines.append(f"- 직전 질문 유형: {', '.join(state.prev_question_types)}")
 
     lines.extend(["", "## 대화 진행 규칙"])
+
+    # 멀티턴 연속성 지시
+    if state.turn_count >= 2 and state.company:
+        lines.extend(
+            [
+                "### 멀티턴 연속성",
+                "- 이전 턴의 분석 결과와 맥락을 이어받으세요. 같은 회사 반복 소개 불필요.",
+                "- 사용자가 짧게 물으면 이전 맥락에서 가장 관련 있는 데이터를 자동 활용하세요.",
+                "- 직전 분석 모듈이 있으면 해당 모듈 데이터를 우선 참조하세요.",
+                "",
+            ]
+        )
     if state.dialogue_mode == "capability":
         lines.extend(
             [

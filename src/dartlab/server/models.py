@@ -59,3 +59,24 @@ class ConfigureRequest(BaseModel):
     model: str | None = None
     api_key: str | None = None
     base_url: str | None = None
+
+
+# --- Viewer 응답 스키마 ---
+
+
+class TocTopic(BaseModel):
+    topic: str
+    label: str
+    textCount: int
+    tableCount: int
+
+
+class TocChapter(BaseModel):
+    chapter: str
+    topics: list[TocTopic]
+
+
+class TocResponse(BaseModel):
+    stockCode: str
+    corpName: str
+    chapters: list[TocChapter]

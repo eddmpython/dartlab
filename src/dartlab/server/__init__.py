@@ -690,8 +690,6 @@ def _findPrevComparable(periods: list[str], target: str) -> str | None:
 
 def _filterBlocksByPeriod(blocks: list, period: str) -> list:
     """viewerBlocks를 특정 period + 직전 동주기로 필터링한다."""
-    import polars as pl
-
     filtered = []
     for block in blocks:
         if block.data is None:
@@ -1076,6 +1074,7 @@ def api_company_diff_topic_summary(code: str, topic: str):
 
             # sections에서 해당 topic의 모든 row에서 실제 변화 추출
             import difflib
+
             import polars as pl
 
             filtered = sec.filter(pl.col("topic") == topic)

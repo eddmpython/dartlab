@@ -140,6 +140,8 @@ def build_history_messages(history: list[HistoryMessage] | None) -> list[dict[st
                 summary_parts.append(f"목표: {h.meta.userGoal}")
             if h.meta.modules:
                 summary_parts.append(f"모듈: {', '.join(h.meta.modules)}")
+            if h.meta.questionTypes:
+                summary_parts.append(f"유형: {', '.join(h.meta.questionTypes)}")
             if summary_parts:
                 text = f"[이전 대화 상태: {' | '.join(summary_parts)}]\n{text}"
         prepared.append({"role": role, "content": _compress_history_text(text)})
@@ -222,6 +224,114 @@ def build_focus_context(company: Company | Any, state: ConversationState) -> str
             lines.append("### source trace")
             lines.append(_stringify_focus_value(trace, max_chars=1600))
 
+    # 현재 topic의 기간간 변화 요약
+    diff_text = _build_topic_diff_snippet(company, state.topic)
+    if diff_text:
+        lines.append("")
+        lines.append(diff_text)
+
+    return "\n".join(lines)
+
+
+def _build_topic_diff_snippet(company: Company | Any, topic: str, *, max_entries: int = 3) -> str | None:
+    """특정 topic의 최근 기간간 변화를 요약 텍스트로 반환."""
+    if not hasattr(company, "diff"):
+        return None
+    try:
+        topic_diff_df = company.diff(topic)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None
+    if topic_diff_df is None or not isinstance(topic_diff_df, pl.DataFrame) or topic_diff_df.height == 0:
+        return None
+
+    lines = ["### 기간간 변화 이력"]
+    for row in topic_diff_df.head(max_entries).iter_rows(named=True):
+        from_p = row.get("fromPeriod", "?")
+        to_p = row.get("toPeriod", "?")
+        status = row.get("status", "?")
+        from_len = row.get("fromLen", 0)
+        to_len = row.get("toLen", 0)
+        delta = to_len - from_len
+        sign = "+" if delta > 0 else ""
+        lines.append(f"- {from_p} → {to_p}: **{status}** (글자수 {from_len:,} → {to_len:,}, {sign}{delta:,})")
+    return "\n".join(lines)
+
+
+def build_diff_context(company: Company | Any, *, top_n: int = 8) -> str | None:
+    """전체 sections diff 요약을 LLM 컨텍스트 문자열로 변환.
+
+    변화율이 높은 topic을 top_n개 뽑아서 마크다운 테이블로 반환한다.
+    분석 모드에서 user content에 포함하면 LLM이 변화 핫스팟을 인지할 수 있다.
+    """
+    if not hasattr(company, "diff"):
+        return None
+    try:
+        summary_df = company.diff()
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None
+    if summary_df is None or not isinstance(summary_df, pl.DataFrame) or summary_df.height == 0:
+        return None
+
+    # diff() 반환 컬럼: chapter, topic, periods, changed, stable, changeRate
+    # (또는 totalPeriods, changedCount — 호환)
+    changed_col = "changed" if "changed" in summary_df.columns else "changedCount"
+    periods_col = "periods" if "periods" in summary_df.columns else "totalPeriods"
+    rate_col = "changeRate"
+
+    if changed_col not in summary_df.columns:
+        return None
+
+    # topic별 집계 (같은 topic의 여러 블록 합산)
+    agg_cols = [
+        pl.col(periods_col).max().alias("periods"),
+        pl.col(changed_col).sum().alias("changed"),
+    ]
+    if rate_col in summary_df.columns:
+        agg_cols.append(pl.col(rate_col).max().alias("changeRate"))
+    group_cols = ["topic"]
+    if "chapter" in summary_df.columns:
+        group_cols.insert(0, "chapter")
+    summary_df = summary_df.group_by(group_cols).agg(agg_cols)
+    # 집계 후 컬럼명 고정
+    changed_col = "changed"
+    periods_col = "periods"
+
+    # finance 엔진이 커버하는 재무제표 topic 제외
+    _FINANCE_TOPICS = {
+        "financialNotes",
+        "financialStatements",
+        "consolidatedStatements",
+        "auditReport",
+        "auditOpinion",
+    }
+    summary_df = summary_df.filter(~pl.col("topic").is_in(_FINANCE_TOPICS))
+
+    # 변화 있는 topic만 필터 후 변화율 내림차순 + 변경횟수 오름차순 (서술형 우선)
+    changed = summary_df.filter(pl.col(changed_col) > 0)
+    if changed.height == 0:
+        return None
+
+    if rate_col in changed.columns:
+        changed = changed.sort([rate_col, changed_col], descending=[True, False]).head(top_n)
+    else:
+        changed = changed.sort(changed_col, descending=True).head(top_n)
+
+    lines = [
+        "## 공시 텍스트 변화 핫스팟",
+        f"최근 기간간 텍스트 변경이 많은 topic {changed.height}개:",
+        "",
+        "| topic | 기간수 | 변경횟수 | 변화율 |",
+        "|-------|--------|----------|--------|",
+    ]
+    for row in changed.iter_rows(named=True):
+        topic = row.get("topic", "?")
+        total = row.get(periods_col, 0)
+        cnt = row.get(changed_col, 0)
+        rate = row.get(rate_col, cnt / max(total - 1, 1) if total > 1 else 0)
+        lines.append(f"| {topic} | {total} | {cnt} | {rate:.0%} |")
+
+    lines.append("")
+    lines.append("변화율이 높은 섹션은 사업 전략, 리스크, 실적 변동 등 핵심 변화를 담고 있을 가능성이 높습니다.")
     return "\n".join(lines)
 
 
@@ -366,3 +476,72 @@ def build_snapshot(company: Company) -> dict | None:
         snapshot["warnings"] = ratios.warnings[:3]
 
     return snapshot
+
+
+def build_topic_summary_prompt(
+    company: Company | Any,
+    topic: str,
+    *,
+    max_text_chars: int = 3000,
+) -> tuple[list[dict[str, str]], str] | None:
+    """topic 요약을 위한 LLM messages + context를 빌드한다.
+
+    Returns:
+        (messages, context_text) 또는 None.
+        caller가 LLM.stream(messages)으로 요약을 생성한다.
+    """
+    if not hasattr(company, "show"):
+        return None
+
+    try:
+        overview = company.show(topic)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None
+    if not isinstance(overview, pl.DataFrame) or overview.height == 0:
+        return None
+
+    corp_name = getattr(company, "corpName", "?")
+    stock_code = getattr(company, "stockCode", "?")
+
+    # 블록 데이터 수집
+    parts: list[str] = [f"# {corp_name} ({stock_code}) — {topic} 요약 근거"]
+    block_col = "block" if "block" in overview.columns else "blockOrder" if "blockOrder" in overview.columns else None
+    total_chars = 0
+    if block_col:
+        for row in overview.iter_rows(named=True):
+            block_idx = row.get(block_col)
+            if not isinstance(block_idx, int):
+                continue
+            try:
+                block_data = company.show(topic, block_idx)
+            except (AttributeError, KeyError, TypeError, ValueError):
+                continue
+            if block_data is None:
+                continue
+            block_text = _stringify_focus_value(block_data, max_rows=15, max_chars=1200)
+            if total_chars + len(block_text) > max_text_chars:
+                break
+            parts.append(f"\n## block {block_idx}")
+            parts.append(block_text)
+            total_chars += len(block_text)
+
+    # diff 정보 추가
+    diff_snippet = _build_topic_diff_snippet(company, topic, max_entries=5)
+    if diff_snippet:
+        parts.append(f"\n{diff_snippet}")
+
+    context_text = "\n".join(parts)
+
+    system = (
+        "당신은 한국 기업 공시 분석 전문가입니다. "
+        "아래 데이터를 기반으로 이 섹션의 핵심을 3~5문장으로 요약하세요.\n"
+        "- 수치가 있으면 반드시 포함\n"
+        "- 기간간 변화가 있으면 변화 포인트 언급\n"
+        "- 마지막에 한 줄 판단 (긍정/부정/중립)\n"
+        "- 질문과 같은 언어로 답변"
+    )
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"{context_text}\n\n위 데이터를 기반으로 '{topic}' 섹션을 요약해 주세요."},
+    ]
+    return messages, context_text
