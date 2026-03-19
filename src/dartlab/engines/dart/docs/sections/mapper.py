@@ -71,7 +71,9 @@ _PATTERN_MAPPINGS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^기업집단에소속된회사\(상세\)$"), "affiliateGroupDetail"),
     (re.compile(r"^생산설비의현황\(상세\)$"), "rawMaterial"),
     (
-        re.compile(r"^(?:해외생산설비현황\(상세\)|(?:(?:\[.+?\]|\(.+?\))\s*)*물류부문영업설비현황\((?:국내|국외|해외)\))$"),
+        re.compile(
+            r"^(?:해외생산설비현황\(상세\)|(?:(?:\[.+?\]|\(.+?\))\s*)*물류부문영업설비현황\((?:국내|국외|해외)\))$"
+        ),
         "rawMaterial",
     ),
     (re.compile(r"^\d+-\d+[,.]?사업의개요-생산설비의현황\(상세\)$"), "rawMaterial"),

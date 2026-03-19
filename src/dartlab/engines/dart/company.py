@@ -3788,9 +3788,13 @@ class Company:
 
         # exact match first, then normalized (Q4 → annual alias), then Q4 expansion
         q4Fallback = f"{requestedPeriod}Q4" if "Q" not in requestedPeriod else None
-        exactPeriod = normalizedPeriod if normalizedPeriod in payload.columns else (
-            requestedPeriod if requestedPeriod in payload.columns else (
-                q4Fallback if q4Fallback and q4Fallback in payload.columns else None
+        exactPeriod = (
+            normalizedPeriod
+            if normalizedPeriod in payload.columns
+            else (
+                requestedPeriod
+                if requestedPeriod in payload.columns
+                else (q4Fallback if q4Fallback and q4Fallback in payload.columns else None)
             )
         )
         if exactPeriod is not None:

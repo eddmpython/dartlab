@@ -61,10 +61,7 @@ def _is_heading(
         return False, 0
 
     # 다음 라인이 긴 본문이면 heading 확률 높음
-    next_is_body = (
-        next_line is not None
-        and len(next_line.strip()) > _MAX_HEADING_LEN
-    )
+    next_is_body = next_line is not None and len(next_line.strip()) > _MAX_HEADING_LEN
 
     # ALL CAPS → level 1
     if _RE_ALL_CAPS_HEADING.fullmatch(stripped):
@@ -124,19 +121,23 @@ def parseTextStructure(
             heading_stack.append((level, stripped))
 
             path = " > ".join(h[1] for h in heading_stack)
-            results.append({
-                "text": stripped,
-                "textNodeType": "heading",
-                "textLevel": level,
-                "textPath": path,
-            })
+            results.append(
+                {
+                    "text": stripped,
+                    "textNodeType": "heading",
+                    "textLevel": level,
+                    "textPath": path,
+                }
+            )
         else:
             path = " > ".join(h[1] for h in heading_stack) if heading_stack else ""
-            results.append({
-                "text": stripped,
-                "textNodeType": "body",
-                "textLevel": 0,
-                "textPath": path,
-            })
+            results.append(
+                {
+                    "text": stripped,
+                    "textNodeType": "body",
+                    "textLevel": 0,
+                    "textPath": path,
+                }
+            )
 
     return results
