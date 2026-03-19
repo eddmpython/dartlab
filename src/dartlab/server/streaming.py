@@ -37,7 +37,7 @@ from .chat import (
 )
 from .dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta, detect_viewer_intent
 from .models import AskRequest
-from .resolve import has_analysis_intent
+from .resolve import _is_pure_conversation, has_analysis_intent
 
 
 async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str | None = None):
@@ -50,11 +50,14 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
     from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
 
+    # 순수 대화이면 viewContext 무시 — meta에 이전 회사가 찍히는 것 방지
+    effective_view_context = None if _is_pure_conversation(req.question) else req.viewContext
+
     state = build_conversation_state(
         req.question,
         history=req.history,
         company=c,
-        view_context=req.viewContext,
+        view_context=effective_view_context,
     )
     if c is not None:
         focus_context, diff_context = await asyncio.gather(
