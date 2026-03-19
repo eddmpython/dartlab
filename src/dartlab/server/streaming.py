@@ -103,8 +103,10 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
         use_compact = config_.provider in ("ollama", "codex", "claude-code")
         # tool calling 가능 여부에 따라 context tier 결정
-        _tool_capable_providers = {"openai", "claude", "chatgpt"}
-        use_tools_tier = config_.provider in _tool_capable_providers and not use_compact
+        _tool_capable_providers = {"openai", "claude", "chatgpt", "ollama"}
+        use_tools_tier = config_.provider in _tool_capable_providers and not (
+            use_compact and config_.provider != "ollama"
+        )
         context_tier = "skeleton" if use_tools_tier else ("focused" if use_compact else "full")
         compressed = compress_history(req.history)
         history_msgs = build_history_messages(compressed)
@@ -437,6 +439,9 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             tool_runtime = build_tool_runtime(c, name="stream-agent")
             messages[0]["content"] += build_agent_system_addition(tool_runtime)
 
+            # 소형 모델(Ollama)은 도구 10개 제한
+            _agent_max_tools: int | None = 10 if config_.provider == "ollama" else None
+
             queue: asyncio.Queue = asyncio.Queue(maxsize=256)
             loop = asyncio.get_event_loop()
 
@@ -484,6 +489,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     messages,
                     c,
                     max_turns=5,
+                    max_tools=_agent_max_tools,
                     runtime=tool_runtime,
                     on_tool_call=_on_tool_call,
                     on_tool_result=_on_tool_result,

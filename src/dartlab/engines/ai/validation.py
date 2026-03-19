@@ -181,3 +181,37 @@ def validate_claims(claims: list[NumberClaim], company: Any) -> ValidationResult
                         )
 
     return result
+
+
+def validate_structured(structured: dict, expected_facts: list[dict]) -> dict:
+    """Structured 응답의 metrics에서 직접 name/value 매칭.
+
+    Args:
+            structured: {"metrics": [{"name": "sales", "value": 1234}], ...}
+            expected_facts: [{"metric": "sales", "value": 1234}]
+
+    Returns:
+            {"metrics_found": N, "numeric_facts": N, "matched": N, "coverage": float}
+    """
+    metrics = structured.get("metrics", [])
+    numeric_facts = [f for f in expected_facts if isinstance(f.get("value"), (int, float))]
+
+    matched = 0
+    for fact in numeric_facts:
+        expected_val = fact["value"]
+        expected_name = fact.get("metric", "")
+
+        for m in metrics:
+            if m.get("name") == expected_name:
+                actual_val = m.get("value")
+                if actual_val is not None and expected_val != 0:
+                    if abs(actual_val - expected_val) / abs(expected_val) < 0.15:
+                        matched += 1
+                        break
+
+    return {
+        "metrics_found": len(metrics),
+        "numeric_facts": len(numeric_facts),
+        "matched": matched,
+        "coverage": round(matched / max(len(numeric_facts), 1) * 100, 1),
+    }

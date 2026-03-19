@@ -23,6 +23,8 @@ COMMAND_SPECS = (
     CommandSpec("ai", "dartlab.cli.commands.ai"),
     CommandSpec("status", "dartlab.cli.commands.status"),
     CommandSpec("setup", "dartlab.cli.commands.setup"),
+    # MCP
+    CommandSpec("mcp", "dartlab.cli.commands.mcp"),
 )
 
 

@@ -116,5 +116,6 @@ def status() -> dict:
 
 
 from dartlab.engines.ai import aiParser as ai
+from dartlab.engines.ai.tool_plugin import get_plugin_registry, tool
 
-__all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "ai"]
+__all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "ai", "tool", "get_plugin_registry"]

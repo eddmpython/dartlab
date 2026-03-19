@@ -66,6 +66,9 @@ ai = [
     "uvicorn[standard]>=0.30.0",
     "sse-starlette>=2.0.0",
 ]
+mcp = [
+    "mcp[cli]>=1.0",
+]
 ui = [
     "dartlab[ai]",
 ]

@@ -6,6 +6,7 @@ OpenAI function calling 프로토콜을 사용.
 
 from __future__ import annotations
 
+import json
 from typing import Any, Callable, Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
@@ -15,6 +16,45 @@ from dartlab.engines.ai.tools_registry import (
     get_coding_runtime_policy,
 )
 
+# 소형 모델용 핵심 도구 우선순위 (max_tools 적용 시 이 순서로 선택)
+_CORE_TOOL_PRIORITY = [
+    "show_topic",
+    "get_data",
+    "compute_ratios",
+    "get_company_info",
+    "get_insight",
+    "list_topics",
+    "get_report_data",
+    "trace_topic",
+    "diff_topic",
+    "get_rank",
+]
+
+
+def _select_tools(tools: list[dict], max_tools: int | None) -> list[dict]:
+    """max_tools가 지정되면 핵심 도구만 선택, 아니면 전체 반환."""
+    if max_tools is None or len(tools) <= max_tools:
+        return tools
+
+    by_name: dict[str, dict] = {}
+    for t in tools:
+        name = t.get("function", {}).get("name", "")
+        by_name[name] = t
+
+    selected = []
+    for name in _CORE_TOOL_PRIORITY:
+        if name in by_name and len(selected) < max_tools:
+            selected.append(by_name[name])
+
+    # 우선순위 도구로 부족하면 나머지에서 채움
+    for t in tools:
+        if len(selected) >= max_tools:
+            break
+        if t not in selected:
+            selected.append(t)
+
+    return selected
+
 
 def agent_loop(
     provider: BaseProvider,
@@ -22,6 +62,7 @@ def agent_loop(
     company: Any,
     *,
     max_turns: int = 5,
+    max_tools: int | None = None,
     runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
@@ -38,6 +79,7 @@ def agent_loop(
             messages: 초기 메시지 (system + user)
             company: Company 인스턴스 (도구 바인딩용)
             max_turns: 최대 반복 횟수
+            max_tools: 도구 개수 제한 (None이면 전체). 소형 모델은 10개 권장.
             on_tool_call: 도구 호출 시 콜백 (UI용)
             on_tool_result: 도구 결과 시 콜백 (UI용)
 
@@ -45,7 +87,7 @@ def agent_loop(
             LLM의 최종 답변 텍스트
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-loop")
-    tools = tool_runtime.get_tool_schemas()
+    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools)
 
     last_answer = ""
 
@@ -80,6 +122,7 @@ def agent_loop_stream(
     company: Any,
     *,
     max_turns: int = 5,
+    max_tools: int | None = None,
     runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
@@ -90,7 +133,7 @@ def agent_loop_stream(
     최종 답변은 llm.stream()으로 실시간 청크 전달.
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
-    tools = tool_runtime.get_tool_schemas()
+    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools)
 
     for _turn in range(max_turns):
         response = provider.complete_with_tools(messages, tools)
@@ -228,3 +271,109 @@ def build_agent_system_addition(runtime: ToolRuntime | None = None) -> str:
 
 
 AGENT_SYSTEM_ADDITION = build_agent_system_addition()
+
+# ══════════════════════════════════════
+# Plan-Execute 에이전트 (소형 모델용)
+# ══════════════════════════════════════
+
+PLANNING_PROMPT = """당신은 DartLab 기업 분석 플래너입니다.
+사용자 질문을 분석하고, 필요한 도구 호출 계획을 JSON으로 출력하세요.
+
+사용 가능한 도구:
+{tool_list}
+
+반드시 아래 JSON 형식으로만 답변하세요:
+{{
+  "question_analysis": "질문 의도 요약",
+  "steps": [
+    {{"step": 1, "tool": "도구명", "args": {{"key": "value"}}, "reason": "이유"}}
+  ],
+  "final_synthesis": "최종 답변에서 종합할 내용"
+}}"""
+
+
+def agent_loop_planning(
+    provider: BaseProvider,
+    messages: list[dict],
+    company: Any,
+    *,
+    max_steps: int = 5,
+    max_tools: int | None = 10,
+    runtime: ToolRuntime | None = None,
+    on_plan: Callable[[dict], None] | None = None,
+    on_tool_call: Callable[[str, dict], None] | None = None,
+    on_tool_result: Callable[[str, str], None] | None = None,
+) -> str:
+    """Plan-Execute 에이전트: 1단계 계획 → 2단계 실행 → 3단계 종합.
+
+    소형 모델(Ollama qwen3 등)에서 복합 질문을 다단계로 분해하여 처리.
+    """
+    tool_runtime = runtime or build_tool_runtime(company, name="plan-execute")
+    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools)
+    tool_names = [t.get("function", {}).get("name", "") for t in tools]
+
+    # 1단계: 계획 생성 (JSON 구조)
+    question = messages[-1].get("content", "") if messages else ""
+    plan_prompt = PLANNING_PROMPT.format(tool_list=", ".join(tool_names))
+    plan_messages = [
+        {"role": "system", "content": plan_prompt},
+        {"role": "user", "content": question},
+    ]
+
+    if hasattr(provider, "complete_json"):
+        plan_resp = provider.complete_json(plan_messages)
+    else:
+        plan_resp = provider.complete(plan_messages)
+
+    try:
+        plan = json.loads(plan_resp.answer)
+    except (json.JSONDecodeError, ValueError):
+        # JSON 파싱 실패 → fallback to agent_loop
+        return agent_loop(
+            provider,
+            messages,
+            company,
+            max_tools=max_tools,
+            runtime=tool_runtime,
+            on_tool_call=on_tool_call,
+            on_tool_result=on_tool_result,
+        )
+
+    if on_plan:
+        on_plan(plan)
+
+    steps = plan.get("steps", [])[:max_steps]
+
+    # 2단계: 계획 순차 실행
+    results: list[dict[str, str]] = []
+    for step in steps:
+        tool_name = step.get("tool", "")
+        args = step.get("args", {})
+
+        if on_tool_call:
+            on_tool_call(tool_name, args)
+
+        result = tool_runtime.execute_tool(tool_name, args)
+
+        if on_tool_result:
+            on_tool_result(tool_name, result)
+
+        results.append({"tool": tool_name, "result": result[:3000]})
+
+    # 3단계: 종합 답변 생성
+    synthesis_parts = [f"질문: {question}", "", "## 수집된 데이터:"]
+    for r in results:
+        synthesis_parts.append(f"\n### {r['tool']}")
+        synthesis_parts.append(r["result"])
+    synthesis_parts.append("\n## 지시사항:")
+    synthesis_parts.append(
+        "위 데이터를 종합하여 사용자 질문에 대한 구조화된 답변을 작성하세요. "
+        "테이블을 활용하고, 모든 수치에 출처를 인용하세요."
+    )
+
+    synth_messages = [
+        {"role": "system", "content": messages[0].get("content", "") if messages else ""},
+        {"role": "user", "content": "\n".join(synthesis_parts)},
+    ]
+    final_resp = provider.complete(synth_messages)
+    return final_resp.answer

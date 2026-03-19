@@ -17,6 +17,11 @@ class OllamaProvider(BaseProvider):
     Ollama 미설치/미실행 시 OS별 설치 안내 제공.
     """
 
+    @property
+    def supports_native_tools(self) -> bool:
+        """Ollama v0.3.0+는 네이티브 tool calling 지원."""
+        return True
+
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         self._client = None

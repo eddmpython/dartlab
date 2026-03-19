@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "stock_code": "005930",
+    "question": "삼성전자의 최근 재무 건전성은?",
+    "expected_topics": ["부채비율", "유동비율", "자본", "건전"],
+    "expected_facts": [],
+    "category": "health"
+  },
+  {
+    "id": 2,
+    "stock_code": "005930",
+    "question": "삼성전자 매출 추이를 분석해줘",
+    "expected_topics": ["매출", "성장", "추이", "전년"],
+    "expected_facts": [],
+    "category": "performance"
+  },
+  {
+    "id": 3,
+    "stock_code": "005930",
+    "question": "삼성전자 배당 정책은?",
+    "expected_topics": ["배당", "DPS", "배당수익률", "배당성향"],
+    "expected_facts": [],
+    "category": "dividend"
+  },
+  {
+    "id": 4,
+    "stock_code": "005930",
+    "question": "삼성전자 수익성은 어때?",
+    "expected_topics": ["영업이익", "영업이익률", "ROE", "수익성"],
+    "expected_facts": [],
+    "category": "profitability"
+  },
+  {
+    "id": 5,
+    "stock_code": "005930",
+    "question": "삼성전자 현금흐름을 분석해줘",
+    "expected_topics": ["영업활동", "투자활동", "재무활동", "현금", "FCF"],
+    "expected_facts": [],
+    "category": "cashflow"
+  },
+  {
+    "id": 6,
+    "stock_code": "000660",
+    "question": "SK하이닉스 최근 실적은?",
+    "expected_topics": ["매출", "영업이익", "순이익", "반도체"],
+    "expected_facts": [],
+    "category": "performance"
+  },
+  {
+    "id": 7,
+    "stock_code": "005380",
+    "question": "현대차 부채 상황은?",
+    "expected_topics": ["부채", "부채비율", "차입금", "건전"],
+    "expected_facts": [],
+    "category": "health"
+  },
+  {
+    "id": 8,
+    "stock_code": "035420",
+    "question": "네이버 성장성 분석",
+    "expected_topics": ["매출", "성장", "CAGR", "전년"],
+    "expected_facts": [],
+    "category": "growth"
+  },
+  {
+    "id": 9,
+    "stock_code": "005930",
+    "question": "삼성전자의 종합 인사이트를 알려줘",
+    "expected_topics": ["실적", "수익성", "건전성", "현금흐름", "등급"],
+    "expected_facts": [],
+    "category": "insight"
+  },
+  {
+    "id": 10,
+    "stock_code": "005930",
+    "question": "삼성전자가 속한 섹터와 시장 순위는?",
+    "expected_topics": ["섹터", "순위", "반도체"],
+    "expected_facts": [],
+    "category": "meta"
+  }
+]

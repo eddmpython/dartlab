@@ -295,6 +295,12 @@ def build_tool_runtime(company: Any | None = None, *, name: str = "session") -> 
     """Build an isolated tool runtime populated with current default tools."""
     runtime = create_tool_runtime(name=name)
     register_defaults(company, runtime=runtime)
+
+    # 플러그인 도구 자동 주입
+    from dartlab.engines.ai.tool_plugin import get_plugin_registry, inject_plugins_into_runtime
+
+    inject_plugins_into_runtime(get_plugin_registry(), runtime)
+
     return runtime
 
 

@@ -618,7 +618,7 @@ def _build_compact_context_modules_inner(
     # ── 동적 topic 목록 + insights 자동 포함 ──
     # dartlab에 기능이 추가되면 AI가 자동으로 인식하도록
     # Company의 실제 topics에서 동적 생성
-    _topics_section = _build_topics_section(company)
+    _topics_section = _build_topics_section(company, compact=compact)
     if _topics_section:
         modules_dict["_topics"] = _topics_section
         included.append("_topics")
@@ -1429,10 +1429,13 @@ def build_context(
     return "\n".join(sections), included
 
 
-def _build_topics_section(company: Any) -> str | None:
+def _build_topics_section(company: Any, compact: bool = False) -> str | None:
     """Company의 topics 목록을 LLM이 사용할 수 있는 마크다운으로 변환.
 
     dartlab에 topic이 추가되면 자동으로 LLM 컨텍스트에 포함된다.
+
+    Args:
+            compact: True면 상위 10개 + 총 개수 요약 (93% 토큰 절감)
     """
     topics = getattr(company, "topics", None)
     if topics is None:
@@ -1440,6 +1443,14 @@ def _build_topics_section(company: Any) -> str | None:
     topic_list = list(topics) if not isinstance(topics, list) else topics
     if not topic_list:
         return None
+
+    if compact:
+        top10 = topic_list[:10]
+        return (
+            f"\n## 공시 topic ({len(topic_list)}개)\n"
+            f"주요: {', '.join(top10)}\n"
+            f"전체 목록은 `list_topics` 도구로 조회하세요."
+        )
 
     lines = [
         "\n## 조회 가능한 공시 topic 목록",
