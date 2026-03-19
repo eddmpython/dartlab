@@ -26,6 +26,8 @@ def run(args) -> int:
     if sections is None:
         print("데이터가 없습니다.")
         return 0
-    assert isinstance(sections, pl.DataFrame)
+    if not isinstance(sections, pl.DataFrame):
+        print("sections 데이터 형식 오류")
+        return 1
     print(sections)
     return 0
