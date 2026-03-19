@@ -89,7 +89,10 @@ class Notes:
             else:
                 result = self._company._call_module(module)
             df = extractor(result) if result else None
-        except (FileNotFoundError, ValueError, KeyError, AttributeError, TypeError):
+        except (FileNotFoundError, ValueError, KeyError, AttributeError):
+            import logging
+
+            logging.getLogger(__name__).debug("notes(%s) failed", name, exc_info=True)
             df = None
 
         self._cache[name] = df

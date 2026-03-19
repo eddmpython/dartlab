@@ -760,7 +760,10 @@ class Company:
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
         try:
             payload = self._get_primary(name)
-        except (KeyError, ValueError, TypeError, ImportError, FileNotFoundError, AttributeError):
+        except (KeyError, ValueError, TypeError, FileNotFoundError, AttributeError):
+            import logging
+
+            logging.getLogger(__name__).debug("_safePrimary(%s) failed", name, exc_info=True)
             return None
         return payload if isinstance(payload, pl.DataFrame) else None
 

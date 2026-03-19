@@ -268,7 +268,11 @@ def _analyzeProfitabilityFinancial(
 
     roe = (netIncome / totalEquity) * 100 if netIncome and totalEquity and totalEquity > 0 else None
     roa = (netIncome / totalAssets) * 100 if netIncome and totalAssets and totalAssets > 0 else None
-    cir = (opExpense / (opExpense + opIncome)) * 100 if opExpense is not None and opIncome and opIncome > 0 else None
+    cir = (
+        (opExpense / (opExpense + opIncome)) * 100
+        if opExpense is not None and opIncome is not None and (opExpense + opIncome) != 0
+        else None
+    )
 
     if roe is not None:
         if roe > 10:

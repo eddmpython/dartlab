@@ -629,7 +629,7 @@ def _calcCashflow(
     series: dict[str, dict[str, list[Optional[float]]]],
 ) -> None:
     """현금흐름 비율 (5개)."""
-    capexAmt = abs(r.capex) if r.capex and r.capex > 0 else 0
+    capexAmt = abs(r.capex) if r.capex else 0
     if r.operatingCashflowTTM is not None:
         r.fcf = r.operatingCashflowTTM - capexAmt
 

@@ -392,6 +392,9 @@ def buildTableDataFrame(
         try:
             frames.append(pl.DataFrame(rows))
         except (pl.exceptions.SchemaError, pl.exceptions.ComputeError, ValueError):
+            import logging
+
+            logging.getLogger(__name__).debug("tableParser group schema mismatch: %s", key, exc_info=True)
             # 같은 tableType 내에서도 스키마 다를 수 있음 → 개별 처리
             for row in rows:
                 try:
