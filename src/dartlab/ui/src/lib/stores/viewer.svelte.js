@@ -4,7 +4,7 @@
  * toc(목차), 선택 topic, 로딩 상태, 캐시 등을 관리한다.
  * workspace store와 독립 — viewer 내부 네비게이션에만 사용.
  */
-import { fetchCompanyToc, fetchCompanyViewer, fetchCompanyDiffSummary, fetchCompanyInsights, fetchCompanyNetwork, fetchSearchIndex } from "$lib/api.js";
+import { fetchCompanyInit, fetchCompanyToc, fetchCompanyViewer, fetchCompanyDiffSummary, fetchCompanyInsights, fetchCompanyNetwork, fetchSearchIndex } from "$lib/api.js";
 import MiniSearch from "minisearch";
 
 function loadBookmarks() {
@@ -81,24 +81,50 @@ export function createViewerStore() {
 
 		tocLoading = true;
 		try {
-			const res = await fetchCompanyToc(code);
-			toc = res;
+			// 배치 API — toc + 첫 topic viewer + diffSummary를 1회 왕복으로 수신
+			const res = await fetchCompanyInit(code);
+			toc = res.toc;
 			corpName = res.corpName;
-			// 첫 번째 chapter 자동 확장
-			if (res.chapters?.length > 0) {
-				expandedChapters = new Set([res.chapters[0].chapter]);
-				// 첫 번째 topic 자동 선택
-				if (res.chapters[0].topics?.length > 0) {
-					const first = res.chapters[0].topics[0];
-					await selectTopic(first.topic, res.chapters[0].chapter);
-				}
+
+			// 첫 번째 chapter 자동 확장 + topic 선택
+			if (res.toc?.chapters?.length > 0) {
+				expandedChapters = new Set([res.toc.chapters[0].chapter]);
 			}
+			if (res.firstTopic && res.viewer) {
+				selectedTopic = res.firstTopic;
+				selectedChapter = res.firstChapter;
+				topicData = res.viewer;
+				topicCache.set(res.firstTopic, res.viewer);
+				visitedTopics = new Set([res.firstTopic]);
+			}
+			if (res.diffSummary) {
+				diffSummary = res.diffSummary;
+			}
+
 			// 병렬로 insights + network + searchIndex 로드
 			loadInsights(code);
 			loadNetwork(code);
 			loadSearchIndex(code);
 		} catch (e) {
-			console.error("TOC 로드 실패:", e);
+			console.error("초기 로드 실패:", e);
+			// fallback: 개별 API 호출
+			try {
+				const tocRes = await fetchCompanyToc(code);
+				toc = tocRes;
+				corpName = tocRes.corpName;
+				if (tocRes.chapters?.length > 0) {
+					expandedChapters = new Set([tocRes.chapters[0].chapter]);
+					if (tocRes.chapters[0].topics?.length > 0) {
+						const first = tocRes.chapters[0].topics[0];
+						await selectTopic(first.topic, tocRes.chapters[0].chapter);
+					}
+				}
+				loadInsights(code);
+				loadNetwork(code);
+				loadSearchIndex(code);
+			} catch (e2) {
+				console.error("TOC 로드 실패:", e2);
+			}
 		}
 		tocLoading = false;
 	}

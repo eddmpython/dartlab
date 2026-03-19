@@ -8,6 +8,7 @@ dartlab ai 명령으로 실행:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -15,8 +16,9 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
+import msgpack
 import orjson
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -172,6 +174,49 @@ def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
         return {"type": "text", "data": payload}
 
     return {"type": "unknown", "data": str(payload)}
+
+
+def _compute_etag(data: Any) -> str:
+    """응답 데이터의 MD5 기반 ETag 생성."""
+    raw = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+    return f'"{hashlib.md5(raw).hexdigest()[:16]}"'  # noqa: S324
+
+
+def _etag_response(
+    request: Request,
+    response: Response,
+    data: dict[str, Any],
+    *,
+    max_age: int = 300,
+    swr: int = 1800,
+) -> dict[str, Any] | Response:
+    """ETag + stale-while-revalidate + MessagePack content negotiation.
+
+    If-None-Match가 일치하면 304 반환.
+    Accept: application/msgpack이면 바이너리 MessagePack 반환.
+    그 외 기본 JSON 반환.
+    """
+    etag = _compute_etag(data)
+    cache_control = f"private, max-age={max_age}, stale-while-revalidate={swr}"
+
+    if_none_match = request.headers.get("if-none-match")
+    if if_none_match == etag:
+        return Response(status_code=304, headers={"ETag": etag, "Cache-Control": cache_control})
+
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = cache_control
+
+    # MessagePack content negotiation
+    accept = request.headers.get("accept", "")
+    if "application/msgpack" in accept:
+        packed = msgpack.packb(data, use_bin_type=True)
+        return Response(
+            content=packed,
+            media_type="application/msgpack",
+            headers={"ETag": etag, "Cache-Control": cache_control},
+        )
+
+    return data
 
 
 app.add_middleware(GZipMiddleware, minimum_size=500)
@@ -785,145 +830,287 @@ def api_company(code: str):
 
 
 @app.get("/api/company/{code}/index")
-def api_company_index(code: str, response: Response):
+def api_company_index(code: str, request: Request, response: Response):
     """Company index DataFrame."""
     try:
         c = _get_company(code)
-        response.headers["Cache-Control"] = "private, max-age=300"
-        return {
+        data = {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "payload": _serialize_payload(c.index),
         }
+        return _etag_response(request, response, data, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.get("/api/company/{code}/sections")
-def api_company_sections(code: str, response: Response):
+def api_company_sections(code: str, request: Request, response: Response):
     """Company sections — 전체 지도."""
     try:
         c = _get_company(code)
-        response.headers["Cache-Control"] = "private, max-age=300"
-        return {
+        data = {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "payload": _serialize_payload(c.sections, max_rows=5000),
         }
+        return _etag_response(request, response, data, max_age=300, swr=1800)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+def _build_toc(c: Company) -> dict[str, Any]:
+    """TOC 빌드 — /toc 엔드포인트와 /init 배치 API에서 공유."""
+    sec = c.sections
+    if sec is None:
+        return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=[]).model_dump()
+
+    import polars as pl
+
+    chapterMap: dict[str, list[TocTopic]] = {}
+    chapterOrder: list[str] = []
+    seenTopics: set[str] = set()
+
+    # finance topics 먼저 추가 (III장)
+    _FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
+    financeChapter = "III. 재무에 관한 사항"
+    for ft in _FINANCE_TOPICS:
+        try:
+            df = getattr(c, ft, None) if ft != "ratios" else None
+            if ft == "ratios":
+                rsPair = c._ratioSeries() if getattr(c, "_hasFinance", False) else None
+                if rsPair is None:
+                    continue
+            elif df is None:
+                continue
+        except (AttributeError, TypeError):
+            continue
+        seenTopics.add(ft)
+        if financeChapter not in chapterMap:
+            chapterMap[financeChapter] = []
+            chapterOrder.append(financeChapter)
+        chapterMap[financeChapter].append(TocTopic(topic=ft, label=_safe_topic_label(c, ft), textCount=0, tableCount=1))
+
+    # 최신 2기간 변경 감지용 period 컬럼
+    import re as _re
+
+    _period_re = _re.compile(r"^\d{4}(Q[1-4])?$")
+    _period_cols = sorted(
+        [col for col in sec.columns if _period_re.fullmatch(col)],
+        reverse=True,
+    )
+    _latest2 = _period_cols[:2] if len(_period_cols) >= 2 else []
+
+    # sections topics
+    if "topic" in sec.columns:
+        for row in sec.iter_rows(named=True):
+            topic = row.get("topic")
+            if not isinstance(topic, str) or not topic or topic in seenTopics:
+                continue
+            seenTopics.add(topic)
+
+            topicFrame = sec.filter(pl.col("topic") == topic)
+            bt = topicFrame["blockType"] if "blockType" in topicFrame.columns else None
+            textCount = bt.eq("text").sum() if bt is not None else topicFrame.height
+            tableCount = bt.eq("table").sum() if bt is not None else 0
+
+            # 최신 2기간 텍스트 변경 감지
+            hasChanges = False
+            if _latest2 and bt is not None:
+                textRows = topicFrame.filter(pl.col("blockType") == "text")
+                for tr in textRows.iter_rows(named=True):
+                    v1 = str(tr.get(_latest2[0]) or "").strip()
+                    v2 = str(tr.get(_latest2[1]) or "").strip()
+                    if v1 and v2 and v1 != v2:
+                        hasChanges = True
+                        break
+
+            chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
+            chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else "기타"
+            if chapter not in chapterMap:
+                chapterMap[chapter] = []
+                chapterOrder.append(chapter)
+            chapterMap[chapter].append(
+                TocTopic(
+                    topic=topic,
+                    label=_safe_topic_label(c, topic),
+                    textCount=int(textCount),
+                    tableCount=int(tableCount),
+                    hasChanges=hasChanges,
+                )
+            )
+
+    # 챕터를 로마 숫자 순서로 정렬 (I, II, III, ... XII, 기타)
+    _ROMAN_ORDER = {
+        "I": 1,
+        "II": 2,
+        "III": 3,
+        "IV": 4,
+        "V": 5,
+        "VI": 6,
+        "VII": 7,
+        "VIII": 8,
+        "IX": 9,
+        "X": 10,
+        "XI": 11,
+        "XII": 12,
+    }
+
+    def _chapter_sort_key(ch: str) -> tuple[int, str]:
+        prefix = ch.split(".")[0].strip()
+        return (_ROMAN_ORDER.get(prefix, 99), ch)
+
+    sorted_chapters = sorted(chapterOrder, key=_chapter_sort_key)
+    chapters = [TocChapter(chapter=ch, topics=chapterMap[ch]) for ch in sorted_chapters]
+    toc_obj = TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=chapters)
+    return toc_obj.model_dump()
+
+
+def _build_viewer(c: Company, topic: str) -> dict[str, Any]:
+    """Viewer 블록 빌드 — /viewer/{topic}와 /init에서 공유."""
+    from dartlab.engines.dart.docs.viewer import (
+        serializeViewerBlock,
+        serializeViewerTextDocument,
+        viewerBlocks,
+        viewerTextDocument,
+    )
+
+    if not hasattr(c, "_viewer_cache"):
+        c._viewer_cache = {}
+    if topic in c._viewer_cache:
+        blocks = c._viewer_cache[topic]
+    else:
+        blocks = viewerBlocks(c, topic)
+        c._viewer_cache[topic] = blocks
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "topic": topic,
+        "topicLabel": _safe_topic_label(c, topic),
+        "period": None,
+        "blocks": [serializeViewerBlock(b) for b in blocks],
+        "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
+    }
+
+
+def _build_diff_summary(c: Company, topic: str) -> dict[str, Any] | None:
+    """Diff summary 빌드 — /diff/{topic}/summary와 /init에서 공유."""
+    try:
+        from dartlab.engines.common.docs.diff import sectionsDiff
+
+        sec = c.docs.sections
+        if sec is None:
+            return None
+
+        diffResult = sectionsDiff(sec)
+        topicSummaries = [s for s in diffResult.summaries if s.topic == topic]
+        totalChanged = sum(s.changedCount for s in topicSummaries)
+        maxPeriods = max((s.totalPeriods for s in topicSummaries), default=0)
+        changeRate = round(totalChanged / max(1, (maxPeriods - 1) * len(topicSummaries)), 3) if topicSummaries else 0.0
+
+        topicEntries = [e for e in diffResult.entries if e.topic == topic]
+        added: list[str] = []
+        removed: list[str] = []
+        latestFrom: str | None = None
+        latestTo: str | None = None
+
+        if topicEntries:
+            import difflib
+
+            import polars as pl
+
+            latest = max(topicEntries, key=lambda e: e.toPeriod)
+            latestFrom = latest.fromPeriod
+            latestTo = latest.toPeriod
+
+            filtered = sec.filter(pl.col("topic") == topic)
+            for row in filtered.iter_rows(named=True):
+                fromText = str(row.get(latestFrom) or "").strip()
+                toText = str(row.get(latestTo) or "").strip()
+                if not fromText and not toText:
+                    continue
+                if fromText == toText:
+                    continue
+                fromLines = fromText.splitlines()
+                toLines = toText.splitlines()
+                for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, fromLines, toLines).get_opcodes():
+                    if tag in ("insert", "replace"):
+                        for line in toLines[j1:j2]:
+                            line = line.strip()
+                            if line and len(added) < 3:
+                                added.append(line[:120])
+                    if tag in ("delete", "replace"):
+                        for line in fromLines[i1:i2]:
+                            line = line.strip()
+                            if line and len(removed) < 3:
+                                removed.append(line[:120])
+                if len(added) >= 3 and len(removed) >= 3:
+                    break
+
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "topic": topic,
+            "changeRate": changeRate,
+            "changedCount": totalChanged,
+            "totalPeriods": maxPeriods,
+            "latestFrom": latestFrom,
+            "latestTo": latestTo,
+            "added": added,
+            "removed": removed,
+        }
+    except _HANDLED_API_ERRORS:
+        return None
+
+
+@app.get("/api/company/{code}/init")
+def api_company_init(code: str, request: Request, response: Response):
+    """초기 로드 배치 — toc + 첫 topic viewer + diffSummary를 1회 왕복으로 전달."""
+    try:
+        c = _get_company(code)
+
+        # 1. TOC
+        toc_data = _build_toc(c)
+
+        # 2. 첫 topic 자동 선택
+        first_topic: str | None = None
+        first_chapter: str | None = None
+        chapters = toc_data.get("chapters", [])
+        if chapters:
+            topics = chapters[0].get("topics", [])
+            if topics:
+                first_topic = topics[0]["topic"]
+                first_chapter = chapters[0]["chapter"]
+
+        # 3. viewer + diffSummary (첫 topic)
+        viewer_data = None
+        diff_data = None
+        if first_topic:
+            viewer_data = _build_viewer(c, first_topic)
+            diff_data = _build_diff_summary(c, first_topic)
+
+        result = {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "toc": toc_data,
+            "firstTopic": first_topic,
+            "firstChapter": first_chapter,
+            "viewer": viewer_data,
+            "diffSummary": diff_data,
+        }
+        return _etag_response(request, response, result, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.get("/api/company/{code}/toc")
-def api_company_toc(code: str, response: Response):
+def api_company_toc(code: str, request: Request, response: Response):
     """뷰어용 목차 — chapter/topic 트리 + text/table 블록 카운트."""
     try:
         c = _get_company(code)
-        response.headers["Cache-Control"] = "private, max-age=300"
-        sec = c.sections
-        if sec is None:
-            return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=[])
-
-        import polars as pl
-
-        chapterMap: dict[str, list[TocTopic]] = {}
-        chapterOrder: list[str] = []
-        seenTopics: set[str] = set()
-
-        # finance topics 먼저 추가 (III장)
-        _FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
-        financeChapter = "III. 재무에 관한 사항"
-        for ft in _FINANCE_TOPICS:
-            try:
-                df = getattr(c, ft, None) if ft != "ratios" else None
-                if ft == "ratios":
-                    rsPair = c._ratioSeries() if getattr(c, "_hasFinance", False) else None
-                    if rsPair is None:
-                        continue
-                elif df is None:
-                    continue
-            except (AttributeError, TypeError):
-                continue
-            seenTopics.add(ft)
-            if financeChapter not in chapterMap:
-                chapterMap[financeChapter] = []
-                chapterOrder.append(financeChapter)
-            chapterMap[financeChapter].append(
-                TocTopic(topic=ft, label=_safe_topic_label(c, ft), textCount=0, tableCount=1)
-            )
-
-        # 최신 2기간 변경 감지용 period 컬럼
-        import re as _re
-
-        _period_re = _re.compile(r"^\d{4}(Q[1-4])?$")
-        _period_cols = sorted(
-            [col for col in sec.columns if _period_re.fullmatch(col)],
-            reverse=True,
-        )
-        _latest2 = _period_cols[:2] if len(_period_cols) >= 2 else []
-
-        # sections topics
-        if "topic" in sec.columns:
-            for row in sec.iter_rows(named=True):
-                topic = row.get("topic")
-                if not isinstance(topic, str) or not topic or topic in seenTopics:
-                    continue
-                seenTopics.add(topic)
-
-                topicFrame = sec.filter(pl.col("topic") == topic)
-                bt = topicFrame["blockType"] if "blockType" in topicFrame.columns else None
-                textCount = bt.eq("text").sum() if bt is not None else topicFrame.height
-                tableCount = bt.eq("table").sum() if bt is not None else 0
-
-                # 최신 2기간 텍스트 변경 감지
-                hasChanges = False
-                if _latest2 and bt is not None:
-                    textRows = topicFrame.filter(pl.col("blockType") == "text")
-                    for tr in textRows.iter_rows(named=True):
-                        v1 = str(tr.get(_latest2[0]) or "").strip()
-                        v2 = str(tr.get(_latest2[1]) or "").strip()
-                        if v1 and v2 and v1 != v2:
-                            hasChanges = True
-                            break
-
-                chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
-                chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else "기타"
-                if chapter not in chapterMap:
-                    chapterMap[chapter] = []
-                    chapterOrder.append(chapter)
-                chapterMap[chapter].append(
-                    TocTopic(
-                        topic=topic,
-                        label=_safe_topic_label(c, topic),
-                        textCount=int(textCount),
-                        tableCount=int(tableCount),
-                        hasChanges=hasChanges,
-                    )
-                )
-
-        # 챕터를 로마 숫자 순서로 정렬 (I, II, III, ... XII, 기타)
-        _ROMAN_ORDER = {
-            "I": 1,
-            "II": 2,
-            "III": 3,
-            "IV": 4,
-            "V": 5,
-            "VI": 6,
-            "VII": 7,
-            "VIII": 8,
-            "IX": 9,
-            "X": 10,
-            "XI": 11,
-            "XII": 12,
-        }
-
-        def _chapter_sort_key(ch: str) -> tuple[int, str]:
-            prefix = ch.split(".")[0].strip()
-            return (_ROMAN_ORDER.get(prefix, 99), ch)
-
-        sorted_chapters = sorted(chapterOrder, key=_chapter_sort_key)
-        chapters = [TocChapter(chapter=ch, topics=chapterMap[ch]) for ch in sorted_chapters]
-        return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=chapters)
+        data = _build_toc(c)
+        return _etag_response(request, response, data, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -932,6 +1119,7 @@ def api_company_toc(code: str, response: Response):
 def api_company_viewer_topic(
     code: str,
     topic: str,
+    request: Request,
     period: str | None = Query(None, description="특정 기간만 반환 (타임라인 클릭 최적화)"),
     response: Response = None,
 ):
@@ -941,36 +1129,38 @@ def api_company_viewer_topic(
     period 지정 → 해당 기간 + 직전 동주기만 포함한 경량 응답 (타임라인 클릭).
     """
     try:
-        response.headers["Cache-Control"] = "private, max-age=120"
-        from dartlab.engines.dart.docs.viewer import (
-            serializeViewerBlock,
-            serializeViewerTextDocument,
-            viewerBlocks,
-            viewerTextDocument,
-        )
-
         c = _get_company(code)
-        # viewerBlocks 캐시 — 같은 topic 재요청 시 즉시 반환
-        if not hasattr(c, "_viewer_cache"):
-            c._viewer_cache = {}
-        if topic in c._viewer_cache:
-            blocks = c._viewer_cache[topic]
-        else:
-            blocks = viewerBlocks(c, topic)
-            c._viewer_cache[topic] = blocks
 
         if period is not None:
-            blocks = _filterBlocksByPeriod(blocks, period)
+            # period 필터 시 _build_viewer 캐시 활용 + 필터링
+            from dartlab.engines.dart.docs.viewer import (
+                serializeViewerBlock,
+                serializeViewerTextDocument,
+                viewerBlocks,
+                viewerTextDocument,
+            )
 
-        return {
-            "stockCode": c.stockCode,
-            "corpName": c.corpName,
-            "topic": topic,
-            "topicLabel": _safe_topic_label(c, topic),
-            "period": period,
-            "blocks": [serializeViewerBlock(b) for b in blocks],
-            "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
-        }
+            if not hasattr(c, "_viewer_cache"):
+                c._viewer_cache = {}
+            if topic in c._viewer_cache:
+                blocks = c._viewer_cache[topic]
+            else:
+                blocks = viewerBlocks(c, topic)
+                c._viewer_cache[topic] = blocks
+            blocks = _filterBlocksByPeriod(blocks, period)
+            data = {
+                "stockCode": c.stockCode,
+                "corpName": c.corpName,
+                "topic": topic,
+                "topicLabel": _safe_topic_label(c, topic),
+                "period": period,
+                "blocks": [serializeViewerBlock(b) for b in blocks],
+                "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
+            }
+        else:
+            data = _build_viewer(c, topic)
+
+        return _etag_response(request, response, data, max_age=120, swr=600)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -1246,76 +1436,11 @@ def api_company_diff(code: str):
 def api_company_diff_topic_summary(code: str, topic: str):
     """뷰어용 diff 요약 — changeRate + 최신 변경의 added/removed 미리보기."""
     try:
-        from dartlab.engines.common.docs.diff import sectionsDiff
-
         c = _get_company(code)
-        sec = c.docs.sections
-        if sec is None:
+        result = _build_diff_summary(c, topic)
+        if result is None:
             raise HTTPException(status_code=404, detail="sections 없음")
-
-        diffResult = sectionsDiff(sec)
-        # topic에 해당하는 모든 row summary 집계
-        topicSummaries = [s for s in diffResult.summaries if s.topic == topic]
-        totalChanged = sum(s.changedCount for s in topicSummaries)
-        maxPeriods = max((s.totalPeriods for s in topicSummaries), default=0)
-        changeRate = round(totalChanged / max(1, (maxPeriods - 1) * len(topicSummaries)), 3) if topicSummaries else 0.0
-        changedCount = totalChanged
-        totalPeriods = maxPeriods
-
-        # 최신 변경쌍의 added/removed 미리보기
-        topicEntries = [e for e in diffResult.entries if e.topic == topic]
-        added: list[str] = []
-        removed: list[str] = []
-        latestFrom: str | None = None
-        latestTo: str | None = None
-
-        if topicEntries:
-            latest = max(topicEntries, key=lambda e: e.toPeriod)
-            latestFrom = latest.fromPeriod
-            latestTo = latest.toPeriod
-
-            # sections에서 해당 topic의 모든 row에서 실제 변화 추출
-            import difflib
-
-            import polars as pl
-
-            filtered = sec.filter(pl.col("topic") == topic)
-            for row in filtered.iter_rows(named=True):
-                fromText = str(row.get(latestFrom) or "").strip()
-                toText = str(row.get(latestTo) or "").strip()
-                if not fromText and not toText:
-                    continue
-                if fromText == toText:
-                    continue
-                # 줄 단위 diff
-                fromLines = fromText.splitlines()
-                toLines = toText.splitlines()
-                for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, fromLines, toLines).get_opcodes():
-                    if tag in ("insert", "replace"):
-                        for line in toLines[j1:j2]:
-                            line = line.strip()
-                            if line and len(added) < 3:
-                                added.append(line[:120])
-                    if tag in ("delete", "replace"):
-                        for line in fromLines[i1:i2]:
-                            line = line.strip()
-                            if line and len(removed) < 3:
-                                removed.append(line[:120])
-                if len(added) >= 3 and len(removed) >= 3:
-                    break
-
-        return {
-            "stockCode": c.stockCode,
-            "corpName": c.corpName,
-            "topic": topic,
-            "changeRate": changeRate,
-            "changedCount": changedCount,
-            "totalPeriods": totalPeriods,
-            "latestFrom": latestFrom,
-            "latestTo": latestTo,
-            "added": added,
-            "removed": removed,
-        }
+        return result
     except HTTPException:
         raise
     except _HANDLED_API_ERRORS as e:
@@ -1447,15 +1572,18 @@ def api_company_search_sections(code: str, q: str = Query("", description="검�
 
 
 @app.get("/api/company/{code}/searchIndex")
-def api_company_search_index(code: str, response: Response):
+def api_company_search_index(code: str, request: Request, response: Response):
     """MiniSearch 인덱스용 flat document list.
 
     회사의 sections 전체를 topic × period × blockType 단위 문서로 평탄화하여 반환.
     브라우저에서 MiniSearch.addAll() → 즉시 fuzzy/prefix/BM25 검색 가능.
+    text는 300자로 제한, 문서 수는 최대 1000개로 경량화.
     """
+    _MAX_DOCS = 1000
+    _MAX_TEXT_LEN = 300
+
     try:
         c = _get_company(code)
-        response.headers["Cache-Control"] = "private, max-age=600"
         sec = c.sections
         if sec is None:
             return {"stockCode": c.stockCode, "corpName": c.corpName, "documents": []}
@@ -1466,6 +1594,8 @@ def api_company_search_index(code: str, response: Response):
         documents: list[dict[str, Any]] = []
         doc_id = 0
         for row in sec.iter_rows(named=True):
+            if doc_id >= _MAX_DOCS:
+                break
             topic = row.get("topic", "")
             block_type = str(row.get("blockType", ""))
             block_order = row.get("blockOrder", 0)
@@ -1473,11 +1603,12 @@ def api_company_search_index(code: str, response: Response):
             label = _safe_topic_label(c, topic)
 
             for p in period_cols:
+                if doc_id >= _MAX_DOCS:
+                    break
                 val = row.get(p)
                 if not val or not isinstance(val, str):
                     continue
-                # 텍스트가 너무 길면 앞부분만 (MiniSearch 인덱싱 효율)
-                text = val[:2000] if len(val) > 2000 else val
+                text = val[:_MAX_TEXT_LEN] if len(val) > _MAX_TEXT_LEN else val
                 documents.append(
                     {
                         "id": doc_id,
@@ -1492,12 +1623,14 @@ def api_company_search_index(code: str, response: Response):
                 )
                 doc_id += 1
 
-        return {
+        data = {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "documentCount": len(documents),
+            "truncated": doc_id >= _MAX_DOCS,
             "documents": documents,
         }
+        return _etag_response(request, response, data, max_age=600, swr=1800)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 

@@ -1,8 +1,23 @@
 /**
  * DartLab API 클라이언트
  */
+import { decode as decodeMsgpack } from "@msgpack/msgpack";
 
 const BASE = "";  // 같은 origin (proxy or production)
+
+/** MessagePack content negotiation fetch — 대형 응답에 사용 */
+async function fetchPack(url) {
+	const res = await fetch(url, {
+		headers: { "Accept": "application/msgpack" },
+	});
+	if (!res.ok) throw new Error(`요청 실패: ${res.status}`);
+	const ct = res.headers.get("content-type") || "";
+	if (ct.includes("msgpack")) {
+		const buf = await res.arrayBuffer();
+		return decodeMsgpack(buf);
+	}
+	return res.json();
+}
 
 /** LLM provider 상태 확인 */
 export async function fetchStatus() {
@@ -221,11 +236,9 @@ export async function fetchCompanyTrace(code, topic) {
 	return res.json();
 }
 
-/** company sections 원본 */
+/** company sections 원본 (MessagePack) */
 export async function fetchCompanySections(code) {
-	const res = await fetch(`${BASE}/api/company/${code}/sections`);
-	if (!res.ok) throw new Error("sections 조회 실패");
-	return res.json();
+	return fetchPack(`${BASE}/api/company/${code}/sections`);
 }
 
 /** company diff 요약 */
@@ -235,6 +248,11 @@ export async function fetchCompanyDiff(code) {
 	return res.json();
 }
 
+/** 초기 로드 배치 — toc + 첫 topic viewer + diffSummary 1회 왕복 (MessagePack) */
+export async function fetchCompanyInit(code) {
+	return fetchPack(`${BASE}/api/company/${encodeURIComponent(code)}/init`);
+}
+
 /** 뷰어용 목차 — chapter/topic 트리 */
 export async function fetchCompanyToc(code) {
 	const res = await fetch(`${BASE}/api/company/${code}/toc`);
@@ -242,12 +260,10 @@ export async function fetchCompanyToc(code) {
 	return res.json();
 }
 
-/** 뷰어 전용 topic 데이터 — viewerBlocks + textDocument */
+/** 뷰어 전용 topic 데이터 — viewerBlocks + textDocument (MessagePack) */
 export async function fetchCompanyViewer(code, topic, period = null) {
 	const params = period ? `?period=${encodeURIComponent(period)}` : "";
-	const res = await fetch(`${BASE}/api/company/${code}/viewer/${encodeURIComponent(topic)}${params}`);
-	if (!res.ok) throw new Error("viewer 조회 실패");
-	return res.json();
+	return fetchPack(`${BASE}/api/company/${code}/viewer/${encodeURIComponent(topic)}${params}`);
 }
 
 /** diff 요약 — changeRate + added/removed 미리보기 */
@@ -273,11 +289,9 @@ export async function fetchCompanySearch(code, query) {
 	return res.json();
 }
 
-/** MiniSearch 인덱스용 flat document list */
+/** MiniSearch 인덱스용 flat document list (MessagePack) */
 export async function fetchSearchIndex(code) {
-	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/searchIndex`);
-	if (!res.ok) throw new Error("검색 인덱스 조회 실패");
-	return res.json();
+	return fetchPack(`${BASE}/api/company/${encodeURIComponent(code)}/searchIndex`);
 }
 
 /** 7영역 인사이트 등급 + 이상치 분석 */
