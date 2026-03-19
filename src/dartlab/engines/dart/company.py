@@ -1720,9 +1720,7 @@ class Company:
         # nonNull 계산: group_by + agg (벡터화)
         nonNullMap: dict[str, int] = {}
         if existingPeriods:
-            nonNullExprs = [
-                pl.col(c).is_not_null().any().cast(pl.Int8).alias(c) for c in existingPeriods
-            ]
+            nonNullExprs = [pl.col(c).is_not_null().any().cast(pl.Int8).alias(c) for c in existingPeriods]
             nonNullDf = sec.group_by("topic", maintain_order=True).agg(nonNullExprs)
             for row in nonNullDf.iter_rows(named=True):
                 nonNullMap[row["topic"]] = sum(1 for c in existingPeriods if row.get(c, 0))
@@ -1743,9 +1741,7 @@ class Company:
         # chapter: group_by first
         chapterMap: dict[str, str | None] = {}
         if "chapter" in sec.columns:
-            chapterDf = sec.group_by("topic", maintain_order=True).agg(
-                pl.col("chapter").first().alias("chapter")
-            )
+            chapterDf = sec.group_by("topic", maintain_order=True).agg(pl.col("chapter").first().alias("chapter"))
             for row in chapterDf.iter_rows(named=True):
                 chapterMap[row["topic"]] = row["chapter"]
 
