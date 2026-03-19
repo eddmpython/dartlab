@@ -13,10 +13,12 @@
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/pyversions/dartlab?style=for-the-badge&color=c83232&labelColor=050811&logo=python&logoColor=white" alt="Python"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
+<a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-90%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
+<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
 </p>
 
 <p>
@@ -44,7 +46,7 @@ c = dartlab.Company("005930")   # 삼성전자 (DART)
 c.sections                      # 전체 회사 맵 (topic × period)
 c.topics                        # topic 목록 (source, blocks, periods)
 c.show("companyOverview")       # topic 하나 열기
-c.show("IS", period=["2024Q4", "2023Q4"])  # 세로 뷰 (기간 × 항목)
+c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
 c.BS                            # 재무상태표
 c.ratios                        # 재무비율 시계열 (항목 × period)
 c.insights                      # 7영역 등급 (A~F)
@@ -97,7 +99,7 @@ c.show("BS")                # → finance DataFrame
 c.show("companyOverview")   # → sections 기반 텍스트 + 테이블
 c.show("dividend")          # → report DataFrame (전 분기)
 
-# 세로 뷰 — 특정 기간 비교
+# 특정 기간 비교
 c.show("IS", period=["2024Q4", "2023Q4"])  # 기간 × 항목
 
 # trace — docs/finance/report 중 어떤 source가 채택됐는지
@@ -227,13 +229,33 @@ c.report.extract("배당")  # report 엔진 직접
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
 
+## 바로 시작하기
+
+Marimo 인터랙티브 노트북으로 실제 기업 데이터를 바로 탐색할 수 있다:
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
+marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
+```
+
 ## 문서
+
+문서는 지속적으로 업데이트 중이다.
 
 - 문서: https://eddmpython.github.io/dartlab/
 - Sections 가이드: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - 빠른 시작: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API 개요: https://eddmpython.github.io/dartlab/docs/api/overview
 - 블로그: https://eddmpython.github.io/dartlab/blog/
+
+### 블로그
+
+[DartLab 블로그](https://eddmpython.github.io/dartlab/blog/)는 실전 공시 분석 주제를 다룬다 — 재무제표 읽는 법, 공시 패턴 해석, 리스크 신호 포착 등. 3개 카테고리 90편 이상:
+
+- **공시 제도** — DART/EDGAR 공시의 구조와 작동 원리
+- **보고서 읽기** — 감사보고서, 잠정실적, 재작성 등 실전 가이드
+- **재무 해석** — 재무제표, 비율, 공시 신호 해석
 
 ## 데이터
 

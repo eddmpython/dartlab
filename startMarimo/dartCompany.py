@@ -99,7 +99,7 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 세로 뷰 — 특정 기간 비교 (기간 × 항목)
+    # 특정 기간 비교 (항목 × 기간)
     c.show("IS", period=["2024Q4", "2023Q4"])
     return
 

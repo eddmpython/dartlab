@@ -13,10 +13,12 @@
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/pyversions/dartlab?style=for-the-badge&color=c83232&labelColor=050811&logo=python&logoColor=white" alt="Python"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
+<a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-90%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -44,7 +46,7 @@ c = dartlab.Company("005930")   # Samsung Electronics (DART)
 c.sections                      # full company map (topic × period)
 c.topics                        # topic list with source, blocks, periods
 c.show("companyOverview")       # open one topic
-c.show("IS", period=["2024Q4", "2023Q4"])  # vertical view (period × item)
+c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
 c.BS                            # balance sheet
 c.ratios                        # ratio time series (항목 × period)
 c.insights                      # 7-area grades (A~F)
@@ -97,7 +99,7 @@ c.show("BS")                # → finance DataFrame
 c.show("companyOverview")   # → sections-based text + tables
 c.show("dividend")          # → report DataFrame (all quarters)
 
-# vertical view — compare specific periods side by side
+# compare specific periods
 c.show("IS", period=["2024Q4", "2023Q4"])  # period × item
 
 # trace — why a topic came from docs, finance, or report
@@ -227,13 +229,33 @@ c.report.extract("배당")  # report engine directly
 
 See [docs/stability.md](docs/stability.md).
 
+## Try It Now
+
+Run the interactive Marimo notebooks to explore real company data immediately:
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # Korean company (DART)
+marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
+```
+
 ## Documentation
+
+Docs are continuously updated with new content.
 
 - Docs: https://eddmpython.github.io/dartlab/
 - Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API overview: https://eddmpython.github.io/dartlab/docs/api/overview
 - Blog: https://eddmpython.github.io/dartlab/blog/
+
+### Blog
+
+The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis topics — how to read financial reports, interpret disclosure patterns, and spot risk signals. 90+ articles across three categories:
+
+- **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
+- **Report Reading** — practical guide to reading audit reports, preliminary earnings, restatements
+- **Financial Interpretation** — interpreting financial statements, ratios, and disclosure signals
 
 ## Data
 
