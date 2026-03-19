@@ -40,3 +40,4 @@ experiments/**/output/
 experiments/**/*.parquet
 experiments/055_edgarDocs/*.parquet
 experiments/055_edgarDocs/batch/
+crates/
