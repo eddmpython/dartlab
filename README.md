@@ -223,6 +223,47 @@ c.insights.anomalies            # → outliers and red flags
 
 7 analysis areas: performance, profitability, health, cashflow, governance, risk, opportunity.
 
+### Charts & Visualization
+
+Built-in Plotly charts and a JSON-based ChartSpec protocol that works with or without Plotly:
+
+```python
+from dartlab.tools import chart, table, text
+
+# one-liner Plotly charts
+chart.revenue_trend(c).show()           # revenue + operating margin combo
+chart.cashflow_pattern(c).show()        # operating/investing/financing CF
+chart.dividend_analysis(c).show()       # DPS + yield + payout ratio
+chart.balance_sheet_composition(c).show()  # current/non-current assets
+chart.profitability_ratios(c).show()    # ROE, operating margin, net margin
+
+# auto-detect all available charts
+specs = chart.auto_chart(c)             # → list of ChartSpec dicts
+chart.chart_from_spec(specs[0]).show()  # render any spec as Plotly
+
+# generic charts from any DataFrame
+chart.line(c.dividend, y=["dps"])
+chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
+chart.waterfall(["Start", "Revenue", "COGS", "SGA", "End"], [100, 50, -30, -10, 110])
+```
+
+Data tools for table formatting and text analysis:
+
+```python
+# table tools
+table.yoy_change(c.dividend, value_cols=["dps"])       # add YoY% columns
+table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
+table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
+table.growth_matrix(df, value_cols=["revenue"])         # 1Y/2Y/3Y/5Y CAGR
+
+# text tools
+text.extract_keywords(narrative)                  # frequency-based keywords
+text.sentiment_indicators(narrative)              # positive/negative/risk score
+text.extract_numbers(narrative)                   # numbers + units + context
+```
+
+Install chart dependencies: `uv add "dartlab[charts]"`
+
 ### Network — Affiliate Map
 
 Visualize corporate ownership networks — who invests in whom, group structure, and circular ownership:

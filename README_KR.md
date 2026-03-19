@@ -223,6 +223,46 @@ c.insights.anomalies            # → 이상치, 위험 신호
 
 7개 분석 영역: 성과, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회.
 
+### 차트 & 시각화
+
+내장 Plotly 차트와 JSON 기반 ChartSpec 프로토콜:
+
+```python
+from dartlab.tools import chart, table, text
+
+# 한 줄 Plotly 차트
+chart.revenue_trend(c).show()           # 매출 + 영업이익률 콤보
+chart.cashflow_pattern(c).show()        # 영업/투자/재무 CF
+chart.dividend_analysis(c).show()       # DPS + 배당수익률 + 배당성향
+chart.balance_sheet_composition(c).show()  # 유동/비유동 자산
+chart.profitability_ratios(c).show()    # ROE, 영업이익률, 순이익률
+
+# 자동 감지 — 사용 가능한 모든 차트 스펙
+specs = chart.auto_chart(c)             # → ChartSpec dict 리스트
+chart.chart_from_spec(specs[0]).show()  # 아무 스펙 → Plotly 렌더링
+
+# 범용 차트 (아무 DataFrame 가능)
+chart.line(c.dividend, y=["dps"])
+chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
+```
+
+데이터 가공 + 텍스트 분석 도구:
+
+```python
+# 테이블 가공
+table.yoy_change(c.dividend, value_cols=["dps"])       # YoY% 컬럼 추가
+table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
+table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
+table.growth_matrix(df, value_cols=["revenue"])         # 1Y/2Y/3Y/5Y CAGR
+
+# 텍스트 분석
+text.extract_keywords(narrative)                  # 빈도 기반 키워드
+text.sentiment_indicators(narrative)              # 긍정/부정/리스크 점수
+text.extract_numbers(narrative)                   # 숫자 + 단위 + 맥락
+```
+
+차트 의존성 설치: `uv add "dartlab[charts]"`
+
 ### 관계 네트워크
 
 상장사 간 출자/지분 관계를 시각화한다 — 그룹 구조, 순환출자 탐지 포함:
