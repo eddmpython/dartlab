@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>IFRS 18 손익계산서 새 구조: 영업, 투자, 재무 3분류</title>
+  <desc>IFRS 18에서 손익계산서가 영업, 투자, 재무 세 범주로 나뉘는 구조를 보여주는 도식</desc>
+  <defs>
+    <filter id="shadow1" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <!-- 배경 -->
+  <rect width="1200" height="720" fill="#f8fafc" rx="12"/>
+  <!-- 제목 -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="26" font-weight="700" fill="#1e293b">IFRS 18 손익계산서 새 구조</text>
+  <text x="600" y="82" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" fill="#6b7280">수익과 비용을 세 범주로 분류 — 영업 / 투자 / 재무</text>
+  <!-- 매출 상단 -->
+  <rect x="400" y="110" width="400" height="54" rx="8" fill="#2563eb" filter="url(#shadow1)"/>
+  <text x="600" y="143" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="600" fill="#fff">매출액 (Revenue)</text>
+  <!-- 화살표 -->
+  <line x1="600" y1="164" x2="600" y2="195" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowGray)"/>
+  <defs>
+    <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <!-- 영업 범주 -->
+  <rect x="60" y="200" width="340" height="310" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2" filter="url(#shadow1)"/>
+  <rect x="60" y="200" width="340" height="44" rx="10" fill="#2563eb"/>
+  <rect x="60" y="230" width="340" height="14" fill="#2563eb"/>
+  <text x="230" y="229" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="17" font-weight="700" fill="#fff">영업 범주 (Operating)</text>
+  <text x="80" y="274" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">매출원가</text>
+  <text x="80" y="300" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">판매비와관리비</text>
+  <text x="80" y="326" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">감가상각비 (영업 관련)</text>
+  <text x="80" y="352" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">연구개발비</text>
+  <text x="80" y="378" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">기타 영업수익/비용</text>
+  <line x1="80" y1="396" x2="380" y2="396" stroke="#2563eb" stroke-width="1" stroke-dasharray="4"/>
+  <rect x="80" y="410" width="300" height="38" rx="6" fill="#eff6ff"/>
+  <text x="230" y="434" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#2563eb">= 영업이익 (Operating Profit)</text>
+  <text x="230" y="486" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">경영진 정의 영업이익 (MPM) 별도 공시 의무</text>
+  <!-- 투자 범주 -->
+  <rect x="430" y="200" width="340" height="310" rx="10" fill="#fff" stroke="#059669" stroke-width="2" filter="url(#shadow1)"/>
+  <rect x="430" y="200" width="340" height="44" rx="10" fill="#059669"/>
+  <rect x="430" y="230" width="340" height="14" fill="#059669"/>
+  <text x="600" y="229" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="17" font-weight="700" fill="#fff">투자 범주 (Investing)</text>
+  <text x="450" y="274" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">관계기업 지분법손익</text>
+  <text x="450" y="300" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">배당수익</text>
+  <text x="450" y="326" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">투자자산 처분손익</text>
+  <text x="450" y="352" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">공정가치 평가손익 (투자)</text>
+  <text x="450" y="378" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">이자수익 (투자 관련)</text>
+  <line x1="450" y1="396" x2="750" y2="396" stroke="#059669" stroke-width="1" stroke-dasharray="4"/>
+  <rect x="450" y="410" width="300" height="38" rx="6" fill="#ecfdf5"/>
+  <text x="600" y="434" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#059669">= 투자손익 소계</text>
+  <!-- 재무 범주 -->
+  <rect x="800" y="200" width="340" height="310" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="2" filter="url(#shadow1)"/>
+  <rect x="800" y="200" width="340" height="44" rx="10" fill="#f59e0b"/>
+  <rect x="800" y="230" width="340" height="14" fill="#f59e0b"/>
+  <text x="970" y="229" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="17" font-weight="700" fill="#fff">재무 범주 (Financing)</text>
+  <text x="820" y="274" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">이자비용</text>
+  <text x="820" y="300" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">리스부채 이자</text>
+  <text x="820" y="326" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">사채 상환손익</text>
+  <text x="820" y="352" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">외화차입금 환산손익</text>
+  <text x="820" y="378" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">기타 금융비용</text>
+  <line x1="820" y1="396" x2="1120" y2="396" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4"/>
+  <rect x="820" y="410" width="300" height="38" rx="6" fill="#fffbeb"/>
+  <text x="970" y="434" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#f59e0b">= 재무손익 소계</text>
+  <!-- 법인세 / 순이익 하단 -->
+  <line x1="230" y1="510" x2="600" y2="570" stroke="#6b7280" stroke-width="1.5"/>
+  <line x1="600" y1="510" x2="600" y2="570" stroke="#6b7280" stroke-width="1.5"/>
+  <line x1="970" y1="510" x2="600" y2="570" stroke="#6b7280" stroke-width="1.5"/>
+  <rect x="400" y="560" width="400" height="44" rx="8" fill="#6b7280" filter="url(#shadow1)"/>
+  <text x="600" y="588" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="600" fill="#fff">법인세 차감 전 이익</text>
+  <line x1="600" y1="604" x2="600" y2="630" stroke="#6b7280" stroke-width="2"/>
+  <rect x="400" y="630" width="400" height="44" rx="8" fill="#dc2626" filter="url(#shadow1)"/>
+  <text x="600" y="658" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="600" fill="#fff">법인세비용 차감 후 당기순이익</text>
+  <!-- 핵심 메시지 -->
+  <text x="600" y="706" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">IAS 1에서는 영업외손익 한 덩어리 → IFRS 18에서는 투자/재무로 분리하여 영업이익의 의미가 달라진다</text>
+</svg>

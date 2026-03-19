@@ -1,0 +1,70 @@
+<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="720" height="480" fill="#f8fafc" rx="12"/>
+
+  <text x="360" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">부문 공시 점검 체크리스트</text>
+
+  <!-- Section 1: 구조 확인 -->
+  <rect x="40" y="56" width="640" height="110" rx="8" fill="#2563eb" opacity="0.04" stroke="#2563eb" stroke-width="1"/>
+  <text x="60" y="78" font-size="13" font-weight="700" fill="#2563eb">1단계: 부문 구조 확인</text>
+
+  <rect x="60" y="90" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="86" y="103" font-size="11" fill="#1e293b">부문이 몇 개인가? 전기와 같은가?</text>
+
+  <rect x="360" y="90" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="386" y="103" font-size="11" fill="#1e293b">부문 구분 기준이 제품인가, 지역인가?</text>
+
+  <rect x="60" y="118" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="86" y="131" font-size="11" fill="#1e293b">부문 통합·분리 변경이 있었는가?</text>
+
+  <rect x="360" y="118" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="386" y="131" font-size="11" fill="#1e293b">"기타" 부문 비중이 15% 이하인가?</text>
+
+  <rect x="60" y="146" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="86" y="159" font-size="11" fill="#1e293b">전기 재작성(restate) 수치가 제공되는가?</text>
+
+  <!-- Section 2: 수익성 비교 -->
+  <rect x="40" y="180" width="640" height="82" rx="8" fill="#059669" opacity="0.04" stroke="#059669" stroke-width="1"/>
+  <text x="60" y="202" font-size="13" font-weight="700" fill="#059669">2단계: 부문별 수익성 비교</text>
+
+  <rect x="60" y="214" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="86" y="227" font-size="11" fill="#1e293b">부문별 영업이익률 차이가 큰가?</text>
+
+  <rect x="360" y="214" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="386" y="227" font-size="11" fill="#1e293b">어느 부문이 연결 이익을 주도하는가?</text>
+
+  <rect x="60" y="242" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="86" y="255" font-size="11" fill="#1e293b">적자 부문이 있는가? 추세가 개선 중인가?</text>
+
+  <rect x="360" y="242" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="386" y="255" font-size="11" fill="#1e293b">부문별 자산 배분과 이익 기여가 일치하는가?</text>
+
+  <!-- Section 3: 내부거래 -->
+  <rect x="40" y="276" width="640" height="82" rx="8" fill="#f59e0b" opacity="0.04" stroke="#f59e0b" stroke-width="1"/>
+  <text x="60" y="298" font-size="13" font-weight="700" fill="#f59e0b">3단계: 내부거래 점검</text>
+
+  <rect x="60" y="310" width="16" height="16" rx="3" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="86" y="323" font-size="11" fill="#1e293b">내부거래 매출 규모가 외부매출 대비 몇 %인가?</text>
+
+  <rect x="360" y="310" width="16" height="16" rx="3" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="386" y="323" font-size="11" fill="#1e293b">내부거래 비중이 전기 대비 변했는가?</text>
+
+  <rect x="60" y="338" width="16" height="16" rx="3" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="86" y="351" font-size="11" fill="#1e293b">내부거래 제거 후 부문별 이익이 반전되는가?</text>
+
+  <rect x="360" y="338" width="16" height="16" rx="3" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="386" y="351" font-size="11" fill="#1e293b">이전가격 변경 공시가 있는가?</text>
+
+  <!-- Section 4: 시계열 -->
+  <rect x="40" y="372" width="640" height="58" rx="8" fill="#dc2626" opacity="0.04" stroke="#dc2626" stroke-width="1"/>
+  <text x="60" y="394" font-size="13" font-weight="700" fill="#dc2626">4단계: 시계열 확인</text>
+
+  <rect x="60" y="406" width="16" height="16" rx="3" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="86" y="419" font-size="11" fill="#1e293b">3개년 부문별 매출·이익 추세가 일관적인가?</text>
+
+  <rect x="360" y="406" width="16" height="16" rx="3" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="386" y="419" font-size="11" fill="#1e293b">부문 구조 변경 시 재작성 전후 수치를 비교했는가?</text>
+
+  <!-- Bottom -->
+  <rect x="120" y="446" width="480" height="24" rx="6" fill="#1e293b" opacity="0.06"/>
+  <text x="360" y="462" text-anchor="middle" font-size="11" fill="#6b7280">4단계 순서대로 점검하면 부문 공시의 핵심을 빠뜨리지 않는다</text>
+</svg>

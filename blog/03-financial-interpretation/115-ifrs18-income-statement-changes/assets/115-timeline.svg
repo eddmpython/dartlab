@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>K-IFRS IFRS 18 도입 타임라인</title>
+  <desc>IFRS 18 확정부터 K-IFRS 의무 적용, 비교 재무제표 재작성까지의 일정을 보여주는 타임라인</desc>
+  <defs>
+    <filter id="sh3" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="720" fill="#f8fafc" rx="12"/>
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="24" font-weight="700" fill="#1e293b">IFRS 18 → K-IFRS 도입 타임라인</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">IASB 확정 → 한국회계기준원 번역·검토 → 금융위원회 최종 고시 → 의무 적용</text>
+  <!-- 타임라인 축 -->
+  <line x1="100" y1="300" x2="1100" y2="300" stroke="#6b7280" stroke-width="3"/>
+  <!-- 2024 -->
+  <circle cx="180" cy="300" r="14" fill="#2563eb"/>
+  <text x="180" y="305" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#fff">1</text>
+  <rect x="100" y="130" width="160" height="140" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2" filter="url(#sh3)"/>
+  <text x="180" y="158" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#2563eb">2024. 4</text>
+  <text x="180" y="182" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#1e293b">IASB 최종 확정</text>
+  <text x="180" y="204" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">IFRS 18 공표</text>
+  <text x="180" y="222" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">IAS 1 대체 확정</text>
+  <text x="180" y="244" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">3범주 구조 도입</text>
+  <line x1="180" y1="270" x2="180" y2="286" stroke="#2563eb" stroke-width="2"/>
+  <!-- 2025 -->
+  <circle cx="400" cy="300" r="14" fill="#059669"/>
+  <text x="400" y="305" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#fff">2</text>
+  <rect x="320" y="340" width="160" height="140" rx="10" fill="#fff" stroke="#059669" stroke-width="2" filter="url(#sh3)"/>
+  <line x1="400" y1="314" x2="400" y2="340" stroke="#059669" stroke-width="2"/>
+  <text x="400" y="368" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#059669">2025</text>
+  <text x="400" y="392" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#1e293b">번역 및 검토</text>
+  <text x="400" y="414" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">한국회계기준원</text>
+  <text x="400" y="432" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">K-IFRS 제1118호</text>
+  <text x="400" y="450" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">공개초안/의견수렴</text>
+  <!-- 2026 -->
+  <circle cx="620" cy="300" r="14" fill="#f59e0b"/>
+  <text x="620" y="305" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#fff">3</text>
+  <rect x="540" y="130" width="160" height="140" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="2" filter="url(#sh3)"/>
+  <line x1="620" y1="270" x2="620" y2="286" stroke="#f59e0b" stroke-width="2"/>
+  <text x="620" y="158" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#f59e0b">2026</text>
+  <text x="620" y="182" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#1e293b">조기 적용 가능</text>
+  <text x="620" y="204" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">금융위원회 고시</text>
+  <text x="620" y="222" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">기업 시스템 준비</text>
+  <text x="620" y="244" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">내부 교육 시작</text>
+  <!-- 2027 -->
+  <circle cx="840" cy="300" r="18" fill="#dc2626"/>
+  <text x="840" y="306" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="700" fill="#fff">4</text>
+  <rect x="760" y="340" width="160" height="160" rx="10" fill="#fff" stroke="#dc2626" stroke-width="2.5" filter="url(#sh3)"/>
+  <line x1="840" y1="318" x2="840" y2="340" stroke="#dc2626" stroke-width="2"/>
+  <text x="840" y="368" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#dc2626">2027. 1. 1~</text>
+  <text x="840" y="392" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#1e293b">의무 적용 시작</text>
+  <text x="840" y="416" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">1/1 이후 개시 회계연도</text>
+  <text x="840" y="436" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">비교 재무제표도</text>
+  <text x="840" y="456" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">IFRS 18 기준 재작성</text>
+  <text x="840" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#dc2626">전기(2026) 소급 재분류</text>
+  <!-- 2028 -->
+  <circle cx="1040" cy="300" r="14" fill="#6b7280"/>
+  <text x="1040" y="305" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#fff">5</text>
+  <rect x="960" y="130" width="160" height="140" rx="10" fill="#fff" stroke="#6b7280" stroke-width="2" filter="url(#sh3)"/>
+  <line x1="1040" y1="270" x2="1040" y2="286" stroke="#6b7280" stroke-width="2"/>
+  <text x="1040" y="158" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#6b7280">2028</text>
+  <text x="1040" y="182" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#1e293b">첫 연간 비교 가능</text>
+  <text x="1040" y="204" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">2027 vs 2026 모두</text>
+  <text x="1040" y="222" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">IFRS 18 기준</text>
+  <text x="1040" y="244" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">시계열 비교 정상화</text>
+  <!-- 하단 핵심 메시지 -->
+  <rect x="100" y="560" width="1000" height="48" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="600" y="590" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#dc2626">주의: 2027 사업보고서의 전기(2026) 수치는 IAS 1이 아니라 IFRS 18 기준 재작성본이다</text>
+  <rect x="100" y="622" width="1000" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="600" y="652" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#2563eb">2027 보고서 공시 시점(2028 초)에 기존 IAS 1 기반 영업이익 시계열은 끊긴다</text>
+  <text x="600" y="700" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">12월 결산 법인 기준 — 3월/6월 결산 법인은 적용 시점이 다를 수 있음</text>
+</svg>

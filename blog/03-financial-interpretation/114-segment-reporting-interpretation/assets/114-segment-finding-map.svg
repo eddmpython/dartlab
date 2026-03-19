@@ -1,0 +1,80 @@
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="720" height="420" fill="#f8fafc" rx="12"/>
+
+  <text x="360" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">사업보고서에서 부문 정보를 찾는 위치</text>
+
+  <!-- Source: 사업보고서 -->
+  <rect x="260" y="56" width="200" height="44" rx="8" fill="#1e293b" opacity="0.08" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="360" y="83" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">사업보고서</text>
+
+  <!-- Left branch: 사업의 내용 -->
+  <path d="M310 100 L160 140" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <!-- Right branch: 재무제표 주석 -->
+  <path d="M410 100 L560 140" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Left: 사업의 내용 -->
+  <rect x="40" y="140" width="240" height="48" rx="8" fill="#2563eb" opacity="0.1" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="160" y="162" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">II. 사업의 내용</text>
+  <text x="160" y="180" text-anchor="middle" font-size="10" fill="#6b7280">서술형 + 사업부문별 현황표</text>
+
+  <rect x="40" y="200" width="240" height="180" rx="8" fill="#2563eb" opacity="0.04"/>
+
+  <text x="56" y="224" font-size="11" font-weight="600" fill="#2563eb">찾을 수 있는 정보</text>
+
+  <circle cx="64" cy="248" r="3" fill="#2563eb"/>
+  <text x="76" y="252" font-size="10.5" fill="#1e293b">사업부문별 매출 현황 (표)</text>
+
+  <circle cx="64" cy="270" r="3" fill="#2563eb"/>
+  <text x="76" y="274" font-size="10.5" fill="#1e293b">주요 제품·서비스 설명</text>
+
+  <circle cx="64" cy="292" r="3" fill="#2563eb"/>
+  <text x="76" y="296" font-size="10.5" fill="#1e293b">부문별 시장 점유율·경쟁 상황</text>
+
+  <circle cx="64" cy="314" r="3" fill="#2563eb"/>
+  <text x="76" y="318" font-size="10.5" fill="#1e293b">부문별 생산능력·가동률</text>
+
+  <circle cx="64" cy="336" r="3" fill="#2563eb"/>
+  <text x="76" y="340" font-size="10.5" fill="#1e293b">부문별 수주 현황</text>
+
+  <rect x="56" y="354" width="208" height="20" rx="4" fill="#2563eb" opacity="0.08"/>
+  <text x="160" y="368" text-anchor="middle" font-size="10" fill="#2563eb" font-weight="600">강점: 사업 맥락·전략 파악에 유리</text>
+
+  <!-- Right: 재무제표 주석 -->
+  <rect x="440" y="140" width="240" height="48" rx="8" fill="#059669" opacity="0.1" stroke="#059669" stroke-width="1.5"/>
+  <text x="560" y="162" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">재무제표 주석: 부문정보</text>
+  <text x="560" y="180" text-anchor="middle" font-size="10" fill="#6b7280">K-IFRS 주석 (IFRS 8 준거)</text>
+
+  <rect x="440" y="200" width="240" height="180" rx="8" fill="#059669" opacity="0.04"/>
+
+  <text x="456" y="224" font-size="11" font-weight="600" fill="#059669">찾을 수 있는 정보</text>
+
+  <circle cx="464" cy="248" r="3" fill="#059669"/>
+  <text x="476" y="252" font-size="10.5" fill="#1e293b">부문별 매출 (외부+내부거래)</text>
+
+  <circle cx="464" cy="270" r="3" fill="#059669"/>
+  <text x="476" y="274" font-size="10.5" fill="#1e293b">부문별 영업이익</text>
+
+  <circle cx="464" cy="292" r="3" fill="#059669"/>
+  <text x="476" y="296" font-size="10.5" fill="#1e293b">부문별 자산·부채</text>
+
+  <circle cx="464" cy="314" r="3" fill="#059669"/>
+  <text x="476" y="318" font-size="10.5" fill="#1e293b">내부거래 제거 조정 금액</text>
+
+  <circle cx="464" cy="336" r="3" fill="#059669"/>
+  <text x="476" y="340" font-size="10.5" fill="#1e293b">부문 구분 기준·변경 사항</text>
+
+  <rect x="456" y="354" width="208" height="20" rx="4" fill="#059669" opacity="0.08"/>
+  <text x="560" y="368" text-anchor="middle" font-size="10" fill="#059669" font-weight="600">강점: 정량 비교·시계열 추적에 유리</text>
+
+  <!-- Bottom note -->
+  <text x="360" y="408" text-anchor="middle" font-size="11" fill="#6b7280">두 곳을 같이 봐야 부문의 서술 맥락과 정량 수치를 동시에 파악할 수 있다</text>
+
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#059669"/>
+    </marker>
+  </defs>
+</svg>

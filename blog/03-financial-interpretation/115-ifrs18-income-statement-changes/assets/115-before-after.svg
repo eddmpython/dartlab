@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820">
+  <title>IAS 1 vs IFRS 18 손익계산서 비교</title>
+  <desc>같은 회사의 손익계산서를 IAS 1 구조와 IFRS 18 구조로 나란히 비교한 도식</desc>
+  <rect width="1200" height="820" fill="#f8fafc" rx="12"/>
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="24" font-weight="700" fill="#1e293b">같은 회사, 다른 손익계산서 구조</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">가상 제조업 A사 — 동일 숫자를 IAS 1과 IFRS 18로 재배치</text>
+  <!-- IAS 1 쪽 -->
+  <rect x="40" y="100" width="540" height="680" rx="10" fill="#fff" stroke="#6b7280" stroke-width="1.5"/>
+  <rect x="40" y="100" width="540" height="48" rx="10" fill="#6b7280"/>
+  <rect x="40" y="136" width="540" height="12" fill="#6b7280"/>
+  <text x="310" y="131" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="700" fill="#fff">IAS 1 (현행 K-IFRS)</text>
+  <!-- IAS 1 항목 -->
+  <text x="70" y="182" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">매출액</text>
+  <text x="520" y="182" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">10,000</text>
+  <text x="70" y="210" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">매출원가</text>
+  <text x="520" y="210" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-7,000</text>
+  <line x1="70" y1="222" x2="540" y2="222" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="70" y="244" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">매출총이익</text>
+  <text x="520" y="244" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">3,000</text>
+  <text x="70" y="272" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">판관비</text>
+  <text x="520" y="272" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-1,500</text>
+  <line x1="70" y1="284" x2="540" y2="284" stroke="#e5e7eb" stroke-width="1"/>
+  <rect x="60" y="290" width="510" height="36" rx="6" fill="#eff6ff"/>
+  <text x="70" y="314" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#2563eb">영업이익</text>
+  <text x="520" y="314" text-anchor="end" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#2563eb">1,500</text>
+  <text x="70" y="352" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">영업외수익</text>
+  <text x="70" y="378" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">  지분법이익</text>
+  <text x="520" y="378" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+300</text>
+  <text x="70" y="402" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">  이자수익</text>
+  <text x="520" y="402" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+50</text>
+  <text x="70" y="426" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">  배당수익</text>
+  <text x="520" y="426" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+80</text>
+  <text x="70" y="454" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">영업외비용</text>
+  <text x="70" y="478" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">  이자비용</text>
+  <text x="520" y="478" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#dc2626">-200</text>
+  <text x="70" y="502" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">  외화환산손실</text>
+  <text x="520" y="502" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#dc2626">-30</text>
+  <line x1="70" y1="518" x2="540" y2="518" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="70" y="542" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">세전이익</text>
+  <text x="520" y="542" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">1,700</text>
+  <text x="70" y="570" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">법인세비용</text>
+  <text x="520" y="570" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-400</text>
+  <line x1="70" y1="582" x2="540" y2="582" stroke="#1e293b" stroke-width="2"/>
+  <text x="70" y="608" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#1e293b">당기순이익</text>
+  <text x="520" y="608" text-anchor="end" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#1e293b">1,300</text>
+  <!-- 영업이익률 표시 -->
+  <rect x="60" y="636" width="510" height="32" rx="6" fill="#fef3c7"/>
+  <text x="310" y="658" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#f59e0b">영업이익률 = 1,500 / 10,000 = 15.0%</text>
+  <text x="310" y="700" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">영업외손익이 하나의 덩어리로 묶여 있어</text>
+  <text x="310" y="718" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">투자/재무 원인을 분리하기 어렵다</text>
+  <!-- IFRS 18 쪽 -->
+  <rect x="620" y="100" width="540" height="680" rx="10" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="620" y="100" width="540" height="48" rx="10" fill="#2563eb"/>
+  <rect x="620" y="136" width="540" height="12" fill="#2563eb"/>
+  <text x="890" y="131" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="700" fill="#fff">IFRS 18 (2027~ 적용)</text>
+  <!-- IFRS 18 항목 -->
+  <text x="650" y="182" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">매출액</text>
+  <text x="1100" y="182" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">10,000</text>
+  <text x="650" y="210" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">매출원가</text>
+  <text x="1100" y="210" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-7,000</text>
+  <text x="650" y="238" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">판관비</text>
+  <text x="1100" y="238" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-1,500</text>
+  <line x1="650" y1="250" x2="1120" y2="250" stroke="#e5e7eb" stroke-width="1"/>
+  <rect x="640" y="256" width="510" height="36" rx="6" fill="#eff6ff"/>
+  <text x="650" y="280" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#2563eb">영업이익</text>
+  <text x="1100" y="280" text-anchor="end" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#2563eb">1,500</text>
+  <!-- 투자 범주 -->
+  <rect x="640" y="306" width="510" height="8" rx="4" fill="#059669" opacity="0.2"/>
+  <text x="650" y="334" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#059669">투자 범주</text>
+  <text x="660" y="358" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">관계기업 지분법이익</text>
+  <text x="1100" y="358" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+300</text>
+  <text x="660" y="382" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">이자수익</text>
+  <text x="1100" y="382" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+50</text>
+  <text x="660" y="406" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">배당수익</text>
+  <text x="1100" y="406" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#059669">+80</text>
+  <line x1="650" y1="418" x2="1120" y2="418" stroke="#059669" stroke-width="1" stroke-dasharray="4"/>
+  <text x="650" y="440" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#059669">투자손익 소계</text>
+  <text x="1100" y="440" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#059669">+430</text>
+  <!-- 재무 범주 -->
+  <rect x="640" y="456" width="510" height="8" rx="4" fill="#f59e0b" opacity="0.2"/>
+  <text x="650" y="484" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f59e0b">재무 범주</text>
+  <text x="660" y="508" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">이자비용</text>
+  <text x="1100" y="508" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#dc2626">-200</text>
+  <text x="660" y="532" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">외화차입금 환산손실</text>
+  <text x="1100" y="532" text-anchor="end" font-family="Pretendard, sans-serif" font-size="13" fill="#dc2626">-30</text>
+  <line x1="650" y1="544" x2="1120" y2="544" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4"/>
+  <text x="650" y="566" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f59e0b">재무손익 소계</text>
+  <text x="1100" y="566" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f59e0b">-230</text>
+  <line x1="650" y1="580" x2="1120" y2="580" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="650" y="604" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">세전이익</text>
+  <text x="1100" y="604" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#1e293b">1,700</text>
+  <text x="650" y="632" font-family="Pretendard, sans-serif" font-size="14" fill="#1e293b">법인세비용</text>
+  <text x="1100" y="632" text-anchor="end" font-family="Pretendard, sans-serif" font-size="14" fill="#dc2626">-400</text>
+  <line x1="650" y1="644" x2="1120" y2="644" stroke="#1e293b" stroke-width="2"/>
+  <text x="650" y="668" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#1e293b">당기순이익</text>
+  <text x="1100" y="668" text-anchor="end" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#1e293b">1,300</text>
+  <rect x="640" y="686" width="510" height="32" rx="6" fill="#ecfdf5"/>
+  <text x="890" y="708" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#059669">영업이익률 동일 15.0% — 하지만 투자/재무 원인이 분리됨</text>
+  <text x="890" y="760" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">순이익은 같지만, 영업이익 아래가 투자/재무로 분리되어 원인 분석이 가능하다</text>
+</svg>

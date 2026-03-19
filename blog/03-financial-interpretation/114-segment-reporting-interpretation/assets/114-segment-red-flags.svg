@@ -1,0 +1,74 @@
+<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="720" height="400" fill="#f8fafc" rx="12"/>
+
+  <text x="360" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">부문 공시에서 왜곡이 생기는 3가지 경로</text>
+
+  <!-- Path 1 -->
+  <rect x="40" y="60" width="200" height="290" rx="10" fill="#dc2626" opacity="0.06" stroke="#dc2626" stroke-width="1.5"/>
+  <rect x="40" y="60" width="200" height="36" rx="10" fill="#dc2626" opacity="0.12"/>
+  <text x="140" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626">부문 통합·재분류</text>
+
+  <text x="56" y="116" font-size="10.5" fill="#1e293b" font-weight="600">증상</text>
+  <text x="56" y="132" font-size="10" fill="#1e293b">전기까지 별도 부문이던 사업이</text>
+  <text x="56" y="146" font-size="10" fill="#1e293b">갑자기 다른 부문에 합쳐진다</text>
+
+  <text x="56" y="172" font-size="10.5" fill="#1e293b" font-weight="600">왜 위험한가</text>
+  <text x="56" y="188" font-size="10" fill="#1e293b">적자 부문을 흑자 부문에 묻어서</text>
+  <text x="56" y="202" font-size="10" fill="#1e293b">부문별 수익성 비교 불가</text>
+
+  <text x="56" y="228" font-size="10.5" fill="#1e293b" font-weight="600">확인 방법</text>
+  <text x="56" y="244" font-size="10" fill="#1e293b">주석 "보고부문 변경" 문단 확인</text>
+  <text x="56" y="258" font-size="10" fill="#1e293b">전기 재작성(restate) 수치와</text>
+  <text x="56" y="272" font-size="10" fill="#1e293b">이전 공시 원본 대비 확인</text>
+
+  <rect x="56" y="290" width="168" height="44" rx="6" fill="#dc2626" opacity="0.08"/>
+  <text x="140" y="310" text-anchor="middle" font-size="10" fill="#dc2626" font-weight="600">실전 사례: 건설사 해외부문</text>
+  <text x="140" y="326" text-anchor="middle" font-size="9.5" fill="#6b7280">적자 → 국내와 통합 공시</text>
+
+  <!-- Path 2 -->
+  <rect x="260" y="60" width="200" height="290" rx="10" fill="#f59e0b" opacity="0.06" stroke="#f59e0b" stroke-width="1.5"/>
+  <rect x="260" y="60" width="200" height="36" rx="10" fill="#f59e0b" opacity="0.12"/>
+  <text x="360" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#f59e0b">이전가격 조정</text>
+
+  <text x="276" y="116" font-size="10.5" fill="#1e293b" font-weight="600">증상</text>
+  <text x="276" y="132" font-size="10" fill="#1e293b">부문간 내부거래 규모가 크거나</text>
+  <text x="276" y="146" font-size="10" fill="#1e293b">갑자기 늘어난다</text>
+
+  <text x="276" y="172" font-size="10.5" fill="#1e293b" font-weight="600">왜 위험한가</text>
+  <text x="276" y="188" font-size="10" fill="#1e293b">부품 공급 부문의 이전가격을</text>
+  <text x="276" y="202" font-size="10" fill="#1e293b">올리면 특정 부문 이익 이동</text>
+
+  <text x="276" y="228" font-size="10.5" fill="#1e293b" font-weight="600">확인 방법</text>
+  <text x="276" y="244" font-size="10" fill="#1e293b">"부문간 내부매출" 금액 추적</text>
+  <text x="276" y="258" font-size="10" fill="#1e293b">연결 조정 제거 후 외부매출</text>
+  <text x="276" y="272" font-size="10" fill="#1e293b">대비 내부매출 비중 변화</text>
+
+  <rect x="276" y="290" width="168" height="44" rx="6" fill="#f59e0b" opacity="0.08"/>
+  <text x="360" y="310" text-anchor="middle" font-size="10" fill="#f59e0b" font-weight="600">실전 사례: 수직계열 그룹</text>
+  <text x="360" y="326" text-anchor="middle" font-size="9.5" fill="#6b7280">부품→완성품 이전가격 변경</text>
+
+  <!-- Path 3 -->
+  <rect x="480" y="60" width="200" height="290" rx="10" fill="#2563eb" opacity="0.06" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="480" y="60" width="200" height="36" rx="10" fill="#2563eb" opacity="0.12"/>
+  <text x="580" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">"기타" 부문 비대화</text>
+
+  <text x="496" y="116" font-size="10.5" fill="#1e293b" font-weight="600">증상</text>
+  <text x="496" y="132" font-size="10" fill="#1e293b">"기타" 부문의 매출·자산 비중이</text>
+  <text x="496" y="146" font-size="10" fill="#1e293b">점차 커진다</text>
+
+  <text x="496" y="172" font-size="10.5" fill="#1e293b" font-weight="600">왜 위험한가</text>
+  <text x="496" y="188" font-size="10" fill="#1e293b">10% 미달 부문을 기타에 묶으면</text>
+  <text x="496" y="202" font-size="10" fill="#1e293b">개별 추적 불가</text>
+
+  <text x="496" y="228" font-size="10.5" fill="#1e293b" font-weight="600">확인 방법</text>
+  <text x="496" y="244" font-size="10" fill="#1e293b">"기타" 비중이 전체 매출 15%</text>
+  <text x="496" y="258" font-size="10" fill="#1e293b">이상이면 과다 → 주석에서</text>
+  <text x="496" y="272" font-size="10" fill="#1e293b">기타 구성항목 확인 필요</text>
+
+  <rect x="496" y="290" width="168" height="44" rx="6" fill="#2563eb" opacity="0.08"/>
+  <text x="580" y="310" text-anchor="middle" font-size="10" fill="#2563eb" font-weight="600">실전 사례: 지주사</text>
+  <text x="580" y="326" text-anchor="middle" font-size="9.5" fill="#6b7280">신규 사업을 기타로 계속 묶음</text>
+
+  <!-- Bottom -->
+  <text x="360" y="384" text-anchor="middle" font-size="11" fill="#6b7280">세 경로 모두 "부문별 수익성 추적을 흐리게 만든다"는 공통점이 있다</text>
+</svg>

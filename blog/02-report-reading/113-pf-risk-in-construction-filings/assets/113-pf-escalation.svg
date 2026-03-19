@@ -1,0 +1,66 @@
+<svg viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg" font-family="'Pretendard', 'Apple SD Gothic Neo', sans-serif">
+  <rect width="800" height="560" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">PF 위험 에스컬레이션 흐름</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6b7280">분양 부진에서 건설사 유동성 위기까지의 연쇄 경로</text>
+
+  <!-- Stage 1: 미분양 증가 -->
+  <rect x="80" y="85" width="640" height="65" rx="8" fill="#059669" opacity="0.08" stroke="#059669" stroke-width="2"/>
+  <circle cx="120" cy="117" r="20" fill="#059669" opacity="0.15"/>
+  <text x="120" y="122" text-anchor="middle" font-size="16" font-weight="700" fill="#059669">1</text>
+  <text x="160" y="108" font-size="14" font-weight="700" fill="#059669">미분양 증가 / 분양률 저조</text>
+  <text x="160" y="128" font-size="12" fill="#1e293b">분양률 70% 미달 → 중도금 대출 미실행 → 시행사 자금 유입 둔화</text>
+  <text x="160" y="143" font-size="11" fill="#6b7280">사업보고서 확인: 사업의 내용 - 분양률, 미분양 현황</text>
+
+  <!-- Arrow -->
+  <path d="M400 150 L400 170" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Stage 2: 이자 연체 -->
+  <rect x="80" y="175" width="640" height="65" rx="8" fill="#f59e0b" opacity="0.08" stroke="#f59e0b" stroke-width="2"/>
+  <circle cx="120" cy="207" r="20" fill="#f59e0b" opacity="0.15"/>
+  <text x="120" y="212" text-anchor="middle" font-size="16" font-weight="700" fill="#f59e0b">2</text>
+  <text x="160" y="198" font-size="14" font-weight="700" fill="#f59e0b">PF 대출 이자 연체</text>
+  <text x="160" y="218" font-size="12" fill="#1e293b">시행사 자금 부족 → PF 대출 이자 미납 → 건설사에 자금보충 요청</text>
+  <text x="160" y="233" font-size="11" fill="#6b7280">사업보고서 확인: 주석 - 우발부채, 자금보충약정 이행 여부</text>
+
+  <!-- Arrow -->
+  <path d="M400 240 L400 260" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Stage 3: 기한이익상실 -->
+  <rect x="80" y="265" width="640" height="65" rx="8" fill="#dc2626" opacity="0.08" stroke="#dc2626" stroke-width="2"/>
+  <circle cx="120" cy="297" r="20" fill="#dc2626" opacity="0.15"/>
+  <text x="120" y="302" text-anchor="middle" font-size="16" font-weight="700" fill="#dc2626">3</text>
+  <text x="160" y="288" font-size="14" font-weight="700" fill="#dc2626">기한이익상실 선언</text>
+  <text x="160" y="308" font-size="12" fill="#1e293b">금융기관이 즉시 상환 요구 → 시행사 상환 불능 → 보증 채무 청구 개시</text>
+  <text x="160" y="323" font-size="11" fill="#6b7280">사업보고서 확인: 주석 - 기한이익상실 사유, 채무불이행 기재</text>
+
+  <!-- Arrow -->
+  <path d="M400 330 L400 350" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Stage 4: 보증 현실화 -->
+  <rect x="80" y="355" width="640" height="65" rx="8" fill="#dc2626" opacity="0.15" stroke="#dc2626" stroke-width="2"/>
+  <circle cx="120" cy="387" r="20" fill="#dc2626" opacity="0.25"/>
+  <text x="120" y="392" text-anchor="middle" font-size="16" font-weight="700" fill="#dc2626">4</text>
+  <text x="160" y="378" font-size="14" font-weight="700" fill="#dc2626">연대보증 · 자금보충 현실화</text>
+  <text x="160" y="398" font-size="12" fill="#1e293b">건설사가 시행사 대신 PF 원리금 상환 → 대규모 현금 유출 발생</text>
+  <text x="160" y="413" font-size="11" fill="#6b7280">사업보고서 확인: 지급보증 현황, 우발부채 → 확정부채 전환 금액</text>
+
+  <!-- Arrow -->
+  <path d="M400 420 L400 440" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Stage 5: 건설사 위기 -->
+  <rect x="80" y="445" width="640" height="75" rx="8" fill="#dc2626" opacity="0.25" stroke="#dc2626" stroke-width="3"/>
+  <circle cx="120" cy="482" r="20" fill="#dc2626" opacity="0.35"/>
+  <text x="120" y="487" text-anchor="middle" font-size="16" font-weight="700" fill="white">5</text>
+  <text x="160" y="470" font-size="14" font-weight="700" fill="#dc2626">건설사 유동성 위기</text>
+  <text x="160" y="490" font-size="12" fill="#1e293b">다수 PF 동시 현실화 → 자기자본 잠식 → 신용등급 강등 → 차환 실패</text>
+  <text x="160" y="510" font-size="11" fill="#dc2626">최종 결과: 워크아웃 · 법정관리 · 계속기업 불확실성</text>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowDown" markerWidth="8" markerHeight="8" refX="4" refY="8" orient="auto">
+      <polygon points="0 0, 8 0, 4 8" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>

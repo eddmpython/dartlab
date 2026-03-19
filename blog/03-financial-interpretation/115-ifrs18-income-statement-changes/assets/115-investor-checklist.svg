@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
+  <title>IFRS 18 전환기 투자자 점검 체크리스트</title>
+  <desc>IFRS 18 전환 시 투자자가 확인해야 할 5가지 핵심 항목을 체크리스트로 정리한 도식</desc>
+  <defs>
+    <filter id="sh4" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="720" fill="#f8fafc" rx="12"/>
+  <text x="540" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="24" font-weight="700" fill="#1e293b">IFRS 18 전환기 투자자 점검 체크리스트</text>
+  <text x="540" y="76" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">2027 사업보고서를 열기 전에 반드시 확인할 5가지</text>
+  <!-- 체크 1 -->
+  <rect x="60" y="110" width="960" height="100" rx="10" fill="#fff" stroke="#2563eb" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect x="60" y="110" width="8" height="100" rx="4" fill="#2563eb"/>
+  <text x="100" y="143" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#2563eb">1</text>
+  <text x="134" y="143" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#1e293b">영업이익 범위가 달라졌는지 확인</text>
+  <text x="134" y="168" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">지분법손익, 이자수익/비용, 배당수익이 영업이익에서 빠졌는지 직접 확인한다.</text>
+  <text x="134" y="190" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">특히 지주사, 금융업은 영업이익이 크게 바뀔 수 있다.</text>
+  <rect x="860" y="130" width="140" height="36" rx="6" fill="#fef2f2"/>
+  <text x="930" y="154" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#dc2626">영향도: 높음</text>
+  <!-- 체크 2 -->
+  <rect x="60" y="224" width="960" height="100" rx="10" fill="#fff" stroke="#059669" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect x="60" y="224" width="8" height="100" rx="4" fill="#059669"/>
+  <text x="100" y="257" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#059669">2</text>
+  <text x="134" y="257" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#1e293b">비교 재무제표가 재작성 기준인지 확인</text>
+  <text x="134" y="282" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">2027 보고서의 전기(2026) 숫자는 IFRS 18 기준 재분류본이다.</text>
+  <text x="134" y="304" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">기존 2026 사업보고서의 영업이익과 다를 수 있으므로 직접 비교하면 안 된다.</text>
+  <rect x="860" y="244" width="140" height="36" rx="6" fill="#fef2f2"/>
+  <text x="930" y="268" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#dc2626">영향도: 높음</text>
+  <!-- 체크 3 -->
+  <rect x="60" y="338" width="960" height="100" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect x="60" y="338" width="8" height="100" rx="4" fill="#f59e0b"/>
+  <text x="100" y="371" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#f59e0b">3</text>
+  <text x="134" y="371" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#1e293b">경영진 정의 영업이익(MPM)의 조정 항목 확인</text>
+  <text x="134" y="396" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">IFRS 18은 경영진이 자체 정의한 영업이익(MPM)을 주석으로 공시하게 한다.</text>
+  <text x="134" y="418" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">어떤 항목을 넣고 뺐는지, 표준 영업이익과의 차이를 조정표로 확인해야 한다.</text>
+  <rect x="860" y="358" width="140" height="36" rx="6" fill="#fef3c7"/>
+  <text x="930" y="382" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#f59e0b">영향도: 중간</text>
+  <!-- 체크 4 -->
+  <rect x="60" y="452" width="960" height="100" rx="10" fill="#fff" stroke="#2563eb" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect x="60" y="452" width="8" height="100" rx="4" fill="#2563eb"/>
+  <text x="100" y="485" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#2563eb">4</text>
+  <text x="134" y="485" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#1e293b">PER, 영업이익률 시계열의 단절 여부 확인</text>
+  <text x="134" y="510" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">영업이익 기반 밸류에이션을 쓰고 있었다면, 전환 시점 전후로 시계열이 끊긴다.</text>
+  <text x="134" y="532" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">2027년부터는 재작성 비교치를 기준으로 시계열을 다시 만들어야 한다.</text>
+  <rect x="860" y="472" width="140" height="36" rx="6" fill="#fef2f2"/>
+  <text x="930" y="496" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#dc2626">영향도: 높음</text>
+  <!-- 체크 5 -->
+  <rect x="60" y="566" width="960" height="100" rx="10" fill="#fff" stroke="#6b7280" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect x="60" y="566" width="8" height="100" rx="4" fill="#6b7280"/>
+  <text x="100" y="599" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#6b7280">5</text>
+  <text x="134" y="599" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#1e293b">동종 업계 비교 기준이 동일한지 확인</text>
+  <text x="134" y="624" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">같은 업종이라도 환율손익, 파생상품 분류가 회사마다 다를 수 있다.</text>
+  <text x="134" y="646" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">섹터 평균 영업이익률을 쓸 때 기준이 같은지 먼저 확인한다.</text>
+  <rect x="860" y="586" width="140" height="36" rx="6" fill="#fef3c7"/>
+  <text x="930" y="610" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#f59e0b">영향도: 중간</text>
+  <!-- 하단 요약 -->
+  <text x="540" y="700" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#6b7280">전환 첫해에는 숫자가 바뀐 게 아니라 분류가 바뀐 것이다 — 실적이 아닌 기준의 변화를 먼저 읽어야 한다</text>
+</svg>
