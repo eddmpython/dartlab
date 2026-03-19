@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건강한 금융사 vs 위험한 금융사</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Column Headers -->
+  <rect x="60" y="70" width="330" height="32" rx="6" fill="rgba(52,211,153,0.10)"/>
+  <text x="225" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">건강한 구조</text>
+  <rect x="410" y="70" width="330" height="32" rx="6" fill="rgba(248,113,113,0.10)"/>
+  <text x="575" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">위험한 구조</text>
+
+  <!-- Row 1: 수익 -->
+  <text x="60" y="130" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">수익 구조</text>
+  <rect x="60" y="138" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">NIM 안정·개선, 비이자 완충</text>
+  <text x="225" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">수익원 다변화, 경쟁 우위 유지</text>
+  <rect x="410" y="138" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">NIM 축소, 대출 경쟁 심화</text>
+  <text x="575" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">수수료 감소, CSM 하락</text>
+
+  <!-- Row 2: 건전성 -->
+  <text x="60" y="200" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">건전성</text>
+  <rect x="60" y="208" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="228" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">NPL < 1%, coverage > 150%</text>
+  <text x="225" y="242" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">충당금 넉넉, 포트폴리오 분산</text>
+  <rect x="410" y="208" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="228" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">NPL > 2%, coverage < 100%</text>
+  <text x="575" y="242" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">충당금 환입 이익 보정, 업종 편중</text>
+
+  <!-- Row 3: 자본 -->
+  <text x="60" y="270" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">자본·규제</text>
+  <rect x="60" y="278" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="298" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">BIS 규제 +3~5%p 여유</text>
+  <text x="225" y="312" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">배당 충분, 유증 불필요</text>
+  <rect x="410" y="278" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="298" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">규제 하한 근접, 하락 추세</text>
+  <text x="575" y="312" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">배당 축소, 유증 가능성</text>
+
+  <!-- Row 4: 포트폴리오 -->
+  <text x="60" y="340" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">포트폴리오</text>
+  <rect x="60" y="348" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">미실현손실 자기자본 10% 미만</text>
+  <text x="225" y="382" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">금리 변동 완충 가능</text>
+  <rect x="410" y="348" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">미실현손실 20%+, PF 부실 누적</text>
+  <text x="575" y="382" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">추가 금리 상승 시 자본 훼손</text>
+
+  <!-- Row 5: 유동성 -->
+  <text x="60" y="410" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">유동성</text>
+  <rect x="60" y="418" width="330" height="40" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="438" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">LCR > 120%, 예대율 < 100%</text>
+  <text x="225" y="452" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">안정 조달, 만기 분산</text>
+  <rect x="410" y="418" width="330" height="40" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="438" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">LCR ≈ 100%, 단기 조달 의존</text>
+  <text x="575" y="452" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">예금 이탈 시 급격 악화 가능</text>
+
+  <!-- Key takeaway -->
+  <rect x="100" y="470" width="600" height="24" rx="6" fill="rgba(167,139,250,0.06)"/>
+  <text x="400" y="487" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">금융업은 수익성보다 건전성이 먼저다 — 건전성이 무너지면 수익성은 의미가 없다</text>
+
+  <!-- Branding -->
+  <text x="400" y="512" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">같은 항목, 다른 세계 — 일반 기업 vs 지주사</text>
+  <line x1="240" y1="56" x2="560" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <text x="200" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">항목</text>
+  <text x="420" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">일반 기업</text>
+  <text x="660" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">지주사 (별도)</text>
+  <line x1="60" y1="98" x2="740" y2="98" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Row 1 -->
+  <rect x="60" y="108" width="680" height="52" rx="6" fill="rgba(167,139,250,0.04)"/>
+  <text x="200" y="132" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">매출</text>
+  <text x="420" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">제품·서비스 판매</text>
+  <text x="420" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">외부 고객 대상</text>
+  <text x="660" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">배당+로열티+임대+자문</text>
+  <text x="660" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">자회사 대상 내부거래</text>
+
+  <!-- Row 2 -->
+  <rect x="60" y="168" width="680" height="52" rx="6" fill="rgba(56,189,248,0.04)"/>
+  <text x="200" y="192" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 자산</text>
+  <text x="420" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">유형자산 (공장·설비)</text>
+  <text x="420" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">실물 생산 기반</text>
+  <text x="660" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">종속기업투자주식</text>
+  <text x="660" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">자산의 70~90%</text>
+
+  <!-- Row 3 -->
+  <rect x="60" y="228" width="680" height="52" rx="6" fill="rgba(52,211,153,0.04)"/>
+  <text x="200" y="252" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 이익</text>
+  <text x="420" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">영업이익</text>
+  <text x="420" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">매출-원가-판관비</text>
+  <text x="660" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">지분법이익</text>
+  <text x="660" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">현금 아닌 회계 이익</text>
+
+  <!-- Row 4 -->
+  <rect x="60" y="288" width="680" height="52" rx="6" fill="rgba(251,146,60,0.04)"/>
+  <text x="200" y="312" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">연결 vs 별도</text>
+  <text x="420" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">차이 비교적 작음</text>
+  <text x="420" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">종속사 적거나 규모 작음</text>
+  <text x="660" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">간극 10~50배</text>
+  <text x="660" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">연결=그룹 전체, 별도=지주만</text>
+
+  <!-- Row 5 -->
+  <rect x="60" y="348" width="680" height="52" rx="6" fill="rgba(248,113,113,0.04)"/>
+  <text x="200" y="372" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현금 경로</text>
+  <text x="420" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출 → 회수 → CF</text>
+  <text x="420" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">직접 영업 기반</text>
+  <text x="660" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">자회사 배당 → 지주 CF</text>
+  <text x="660" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">배당 막히면 현금 고갈</text>
+
+  <rect x="100" y="420" width="600" height="44" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="442" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">지주사는 본업이 없다 — 자회사가 본업이고, 배당이 현금이다</text>
+  <text x="400" y="458" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">연결 매출 100조여도 별도는 2조 — 두 재무제표를 나란히 봐야 읽힌다</text>
+
+  <text x="400" y="508" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

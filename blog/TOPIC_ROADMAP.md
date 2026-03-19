@@ -34,6 +34,9 @@
 
 최근 추가:
 
+- 105: 유통·플랫폼 사업보고서 읽는 법 — industry-reading 시리즈 5번째
+- 104: 지주사 사업보고서 읽는 법 — industry-reading 시리즈 4번째
+- 103: 금융업 사업보고서 읽는 법 — industry-reading 시리즈 3번째
 - 102: 바이오·제약 공시 과열 신호 — industry-reading 시리즈 2번째
 - 101: 건설업 사업보고서 읽는 법 — industry-reading 시리즈 1번째
 - 100: show(topic) 구조와 실전 활용 — data-automation 카테고리 7번째
@@ -51,7 +54,7 @@
 
 `scripts/auditBlog.py` 기준으로 지금 가장 중요한 수치는 아래다.
 
-- 포스트 수: `94`
+- 포스트 수: `97`
 - 1,200단어 미만 포스트: `0`
 - SVG 4개 미만 포스트: `0`
 - FAQ 없는 포스트: `0`

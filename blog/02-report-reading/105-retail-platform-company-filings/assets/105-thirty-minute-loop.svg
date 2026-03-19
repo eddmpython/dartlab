@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="540" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="539" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">유통·플랫폼 30분 읽기 루프</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <line x1="100" y1="86" x2="100" y2="480" stroke="#1e2433" stroke-width="2"/>
+
+  <circle cx="100" cy="100" r="16" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="100" y="105" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#a78bfa">1</text>
+  <text x="130" y="96" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">GMV vs 매출 구분 (5분)</text>
+  <text x="130" y="114" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">회계정책(총액/순액) 확인 → GMV와 매출 나란히 → 테이크레이트 계산</text>
+  <rect x="620" y="86" width="120" height="28" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="680" y="104" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#a78bfa">회계정책 + IS</text>
+
+  <circle cx="100" cy="164" r="16" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="100" y="169" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8">2</text>
+  <text x="130" y="160" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">수익 구조 분해 (5분)</text>
+  <text x="130" y="178" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">판매수수료 / 광고 / 이행수수료 / 구독 분리 → 성장 수익원 확인</text>
+  <rect x="620" y="150" width="120" height="28" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.5"/>
+  <text x="680" y="168" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#38bdf8">세그먼트 + IS</text>
+
+  <circle cx="100" cy="228" r="16" fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="100" y="233" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#34d399">3</text>
+  <text x="130" y="224" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">이행비용·물류 (5분)</text>
+  <text x="130" y="242" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">배송비+물류인건비+창고임차 분리 → 이행비용률 추이 → 규모의 경제 확인</text>
+  <rect x="620" y="214" width="120" height="28" rx="6" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="680" y="232" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#34d399">판관비 + 주석</text>
+
+  <circle cx="100" cy="292" r="16" fill="rgba(251,146,60,0.15)" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="100" y="297" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#fb923c">4</text>
+  <text x="130" y="288" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">마케팅·고객 지표 (5분)</text>
+  <text x="130" y="306" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">마케팅비율 → MAU/구매자수 추이 → CAC 추정 → 마케팅↓ 시 MAU 유지?</text>
+  <rect x="620" y="278" width="120" height="28" rx="6" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="680" y="296" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fb923c">판관비 + 사업현황</text>
+
+  <circle cx="100" cy="356" r="16" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="1.5"/>
+  <text x="100" y="361" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#f87171">5</text>
+  <text x="130" y="352" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">단위경제 추정 (5분)</text>
+  <text x="130" y="370" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출총이익 - 이행비용 ≈ 공헌이익 → 비율 추이 → 흑자 전환 가능성</text>
+  <rect x="620" y="342" width="120" height="28" rx="6" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="680" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#f87171">IS</text>
+
+  <circle cx="100" cy="420" r="16" fill="rgba(129,140,248,0.15)" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="100" y="425" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#818cf8">6</text>
+  <text x="130" y="416" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#818cf8">현금흐름·투자 사이클 (5분)</text>
+  <text x="130" y="434" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">영업CF → 물류 CAPEX 비중 → CAPEX 피크 확인 → 적자면 잔여 현금·burn rate</text>
+  <rect x="620" y="406" width="120" height="28" rx="6" fill="rgba(129,140,248,0.08)" stroke="#818cf8" stroke-width="0.5"/>
+  <text x="680" y="424" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#818cf8">CF + BS</text>
+
+  <rect x="100" y="466" width="600" height="40" rx="8" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="490" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">GMV → 수익구조 → 물류 → 마케팅 → 단위경제 → CF — 한 루프로 연결</text>
+
+  <text x="400" y="530" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

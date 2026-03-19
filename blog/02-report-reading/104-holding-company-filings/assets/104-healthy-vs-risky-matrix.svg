@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="500" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">건강한 지주사 vs 위험한 지주사</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <rect x="60" y="70" width="330" height="32" rx="6" fill="rgba(52,211,153,0.10)"/>
+  <text x="225" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">건강한 구조</text>
+  <rect x="410" y="70" width="330" height="32" rx="6" fill="rgba(248,113,113,0.10)"/>
+  <text x="575" y="91" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">위험한 구조</text>
+
+  <!-- Row 1 -->
+  <text x="60" y="128" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">배당 경로</text>
+  <rect x="60" y="136" width="330" height="36" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">자회사 배당 안정, 성향 30%+</text>
+  <rect x="410" y="136" width="330" height="36" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="158" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">배당 축소·중단, 지분법만 큼</text>
+
+  <!-- Row 2 -->
+  <text x="60" y="192" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">별도 영업</text>
+  <rect x="60" y="200" width="330" height="36" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="222" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">흑자, 자체 운영 가능</text>
+  <rect x="410" y="200" width="330" height="36" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="222" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">적자, 배당 없으면 존속 곤란</text>
+
+  <!-- Row 3 -->
+  <text x="60" y="256" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">포트폴리오</text>
+  <rect x="60" y="264" width="330" height="36" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="286" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">분산, 성장 자회사 보유</text>
+  <rect x="410" y="264" width="330" height="36" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="286" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">단일 의존, 핵심 자회사 부진</text>
+
+  <!-- Row 4 -->
+  <text x="60" y="320" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">내부거래</text>
+  <rect x="60" y="328" width="330" height="36" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="350" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">시장가 수준, 제재 없음</text>
+  <rect x="410" y="328" width="330" height="36" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="350" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">과도한 로열티, 규제 리스크</text>
+
+  <!-- Row 5 -->
+  <text x="60" y="384" font-family="Pretendard, Inter, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">차입 부담</text>
+  <rect x="60" y="392" width="330" height="36" rx="6" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="225" y="414" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">이자 < 배당수입, 부채비율 낮음</text>
+  <rect x="410" y="392" width="330" height="36" rx="6" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="575" y="414" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">이자 ≈ 배당, 지분매입 차입 과다</text>
+
+  <rect x="100" y="444" width="600" height="24" rx="6" fill="rgba(167,139,250,0.06)"/>
+  <text x="400" y="461" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">지주사는 자회사가 버는 돈이 아니라, 실제로 올라오는 돈이 전부다</text>
+
+  <text x="400" y="490" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

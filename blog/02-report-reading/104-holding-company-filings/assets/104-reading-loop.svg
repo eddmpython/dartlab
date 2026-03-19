@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#94a3b8" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="480" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="479" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">지주사 구조 해독 루프 — 읽는 순서</text>
+  <line x1="250" y1="56" x2="550" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Step 1 -->
+  <rect x="50" y="80" width="200" height="64" rx="10" fill="rgba(167,139,250,0.10)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="150" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">1. 연결 vs 별도 간극</text>
+  <text x="150" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출·이익·자산 배율</text>
+
+  <path d="M250 112 L295 112" stroke="#a78bfa" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 2 -->
+  <rect x="295" y="80" width="200" height="64" rx="10" fill="rgba(56,189,248,0.10)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="395" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">2. 지분법손익 실체</text>
+  <text x="395" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">회계 이익 vs 현금 배당</text>
+
+  <path d="M495 112 L540 112" stroke="#38bdf8" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 3 -->
+  <rect x="540" y="80" width="210" height="64" rx="10" fill="rgba(52,211,153,0.10)" stroke="#34d399" stroke-width="1"/>
+  <text x="645" y="106" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">3. 별도 수익 구조</text>
+  <text x="645" y="126" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">배당·로열티·임대·자문</text>
+
+  <path d="M645 144 L645 185" stroke="#34d399" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 4 -->
+  <rect x="440" y="192" width="260" height="64" rx="10" fill="rgba(251,146,60,0.10)" stroke="#fb923c" stroke-width="1"/>
+  <text x="570" y="218" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">4. 자회사 포트폴리오</text>
+  <text x="570" y="238" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">지분율·기여도·지배구조</text>
+
+  <path d="M440 224 L330 224" stroke="#fb923c" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 5 -->
+  <rect x="80" y="192" width="250" height="64" rx="10" fill="rgba(248,113,113,0.10)" stroke="#f87171" stroke-width="1"/>
+  <text x="205" y="218" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">5. 배당 파이프라인·CF</text>
+  <text x="205" y="238" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">자회사→지주→주주 경로</text>
+
+  <path d="M80 224 L50 224 L50 150 L50 112" stroke="#f87171" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+
+  <!-- Key insight -->
+  <rect x="100" y="290" width="600" height="80" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="318" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" font-weight="600" fill="#e2e8f0">핵심: 연결만 봐서도, 별도만 봐서도 안 된다</text>
+  <text x="400" y="342" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">간극 → 지분법 → 수익구조 → 포트폴리오 → 배당 경로를 한 루프로 돌려야 보인다</text>
+  <text x="400" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">지분법이익은 현금이 아니다 — 실제 배당 경로가 지주사 가치의 핵심</text>
+
+  <!-- Sub-type callout -->
+  <rect x="100" y="392" width="600" height="52" rx="8" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="120" y="416" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#fb923c">+</text>
+  <text x="140" y="416" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cbd5e1">지주사 유형별 핵심이 다르다</text>
+  <text x="140" y="434" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">순수=NAV 할인 | 사업=자체사업 분리 | 금융=이중레버리지 | 공기업=정책 변수</text>
+
+  <text x="400" y="466" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

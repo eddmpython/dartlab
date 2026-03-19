@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="560" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="559" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">같은 항목, 다른 세계 — 제조업 vs 금융업</text>
+  <line x1="260" y1="56" x2="540" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Column Headers -->
+  <text x="200" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">항목</text>
+  <text x="420" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">제조업</text>
+  <text x="660" y="86" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">금융업</text>
+  <line x1="60" y1="98" x2="740" y2="98" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Row 1: 수익원 -->
+  <rect x="60" y="108" width="680" height="52" rx="6" fill="rgba(167,139,250,0.04)"/>
+  <text x="200" y="132" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">수익원</text>
+  <text x="420" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">제품 판매 매출</text>
+  <text x="420" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">단가 × 수량</text>
+  <text x="660" y="128" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">이자·수수료·보험수익</text>
+  <text x="660" y="146" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">스프레드 × 자산 규모</text>
+
+  <!-- Row 2: 핵심 비용 -->
+  <rect x="60" y="168" width="680" height="52" rx="6" fill="rgba(56,189,248,0.04)"/>
+  <text x="200" y="192" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 비용</text>
+  <text x="420" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출원가 (원재료+인건비)</text>
+  <text x="420" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">매출 연동, 예측 가능</text>
+  <text x="660" y="188" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">대손충당금 전입액</text>
+  <text x="660" y="206" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">경기 역행, 수천억 변동</text>
+
+  <!-- Row 3: 핵심 자산 -->
+  <rect x="60" y="228" width="680" height="52" rx="6" fill="rgba(52,211,153,0.04)"/>
+  <text x="200" y="252" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">핵심 자산</text>
+  <text x="420" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">유형자산 (공장·설비)</text>
+  <text x="420" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">실물 생산 기반</text>
+  <text x="660" y="248" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">대출채권 + 유가증권</text>
+  <text x="660" y="266" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">금융 자산 기반</text>
+
+  <!-- Row 4: 부채 의미 -->
+  <rect x="60" y="288" width="680" height="52" rx="6" fill="rgba(251,146,60,0.04)"/>
+  <text x="200" y="312" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">부채 의미</text>
+  <text x="420" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">갚아야 할 빚</text>
+  <text x="420" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">부채비율 200% 이상 = 위험</text>
+  <text x="660" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">영업의 원료 (예금 등)</text>
+  <text x="660" y="326" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">부채비율 1000%+ = 정상</text>
+
+  <!-- Row 5: 건전성 기준 -->
+  <rect x="60" y="348" width="680" height="52" rx="6" fill="rgba(248,113,113,0.04)"/>
+  <text x="200" y="372" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">건전성 기준</text>
+  <text x="420" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">부채비율, 유동비율</text>
+  <text x="420" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">회계 기준만 준수</text>
+  <text x="660" y="368" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">BIS 비율, LCR, K-ICS</text>
+  <text x="660" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">감독 규제가 재무 직접 제약</text>
+
+  <!-- Row 6: 최대 리스크 -->
+  <rect x="60" y="408" width="680" height="52" rx="6" fill="rgba(129,140,248,0.04)"/>
+  <text x="200" y="432" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">최대 리스크</text>
+  <text x="420" y="428" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">매출 감소, 원가 상승</text>
+  <text x="420" y="446" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">점진적 악화</text>
+  <text x="660" y="428" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">대규모 부실, 유동성 위기</text>
+  <text x="660" y="446" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">급격한 붕괴 가능 (SVB 3일)</text>
+
+  <!-- Key takeaway -->
+  <rect x="100" y="476" width="600" height="44" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="498" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">금융업은 구조가 다르다 — 제조업 잣대를 그대로 가져오면 첫 페이지부터 막힌다</text>
+  <text x="400" y="514" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">부채비율 → BIS, 매출원가 → 충당금, 유형자산 → 대출채권으로 번역해야 읽힌다</text>
+
+  <!-- Branding -->
+  <text x="400" y="548" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

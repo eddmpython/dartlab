@@ -4,29 +4,60 @@
       <stop offset="0%" stop-color="#050811"/>
       <stop offset="100%" stop-color="#0f1219"/>
     </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#94a3b8" stroke-width="1"/>
+    </marker>
   </defs>
 
-  <!-- Background -->
   <rect width="800" height="420" rx="12" fill="url(#bg)"/>
   <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
-  <!-- Category badge -->
-  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1" opacity="0.8"/>
-  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#38bdf8" letter-spacing="0.04em">사업보고서 읽기</text>
-
-  <!-- Post number -->
-  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#38bdf8" opacity="0.15">067</text>
-
   <!-- Title -->
-  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">한정·부적정·의견거절 감사의견은 무엇이 다른가</text>
+  <text x="400" y="38" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="16" font-weight="700" fill="#f1f5f9">한정·부적정·의견거절 — 읽는 순서</text>
+  <line x1="300" y1="50" x2="500" y2="50" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
 
-  <!-- Divider -->
-  <line x1="340" y1="240" x2="460" y2="240" stroke="#38bdf8" stroke-width="1.5" opacity="0.4"/>
+  <!-- Step 1 -->
+  <rect x="40" y="72" width="200" height="58" rx="10" fill="rgba(167,139,250,0.10)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="140" y="96" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">1. 의견 유형 확인</text>
+  <text x="140" y="114" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">한정·부적정·의견거절 구분</text>
 
-  <!-- SVG type icon + subtitle -->
-  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#38bdf8" opacity="0.6">→</text>
-  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">읽기 순서</text>
+  <!-- Arrow 1->2 -->
+  <path d="M240 101 L280 101" stroke="#a78bfa" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
 
-  <!-- DartLab branding -->
-  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+  <!-- Step 2 -->
+  <rect x="290" y="72" width="220" height="58" rx="10" fill="rgba(56,189,248,0.10)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="400" y="96" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">2. 근거 문단 확인</text>
+  <text x="400" y="114" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">특정 항목인지 전반 문제인지</text>
+
+  <!-- Arrow 2->3 -->
+  <path d="M510 101 L550 101" stroke="#38bdf8" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 3 -->
+  <rect x="560" y="72" width="200" height="58" rx="10" fill="rgba(52,211,153,0.10)" stroke="#34d399" stroke-width="1"/>
+  <text x="660" y="96" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">3. 영향 범위 판단</text>
+  <text x="660" y="114" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">손익·자산·자본 어디까지인지</text>
+
+  <!-- Arrow 3->4 (down) -->
+  <path d="M660 130 L660 166" stroke="#34d399" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 4 -->
+  <rect x="440" y="174" width="280" height="58" rx="10" fill="rgba(251,146,60,0.10)" stroke="#fb923c" stroke-width="1"/>
+  <text x="580" y="198" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">4. 계속기업·자본잠식</text>
+  <text x="580" y="216" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">거래소 리스크로 번지는지 확인</text>
+
+  <!-- Arrow 4->5 -->
+  <path d="M440 203 L320 203" stroke="#fb923c" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 5 -->
+  <rect x="60" y="174" width="260" height="58" rx="10" fill="rgba(248,113,113,0.10)" stroke="#f87171" stroke-width="1"/>
+  <text x="190" y="198" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">5. 후속 공시 추적</text>
+  <text x="190" y="216" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">정정·재감사·경영진 설명 변화</text>
+
+  <!-- Key insight box -->
+  <rect x="80" y="268" width="640" height="72" rx="10" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="294" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" font-weight="600" fill="#e2e8f0">핵심: 비적정을 하나로 묶지 말고 유형별 대응 순서를 가른다</text>
+  <text x="400" y="316" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">유형 → 근거 → 영향 범위 → 거래소 연결 → 후속 공시 순서로 읽는다</text>
+
+  <!-- Branding -->
+  <text x="400" y="390" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

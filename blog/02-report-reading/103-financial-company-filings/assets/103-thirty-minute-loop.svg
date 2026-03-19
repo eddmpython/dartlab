@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="560" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="559" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="400" y="42" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="17" font-weight="700" fill="#f1f5f9">금융업 30분 읽기 루프</text>
+  <line x1="280" y1="56" x2="520" y2="56" stroke="#a78bfa" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Timeline line -->
+  <line x1="100" y1="86" x2="100" y2="500" stroke="#1e2433" stroke-width="2"/>
+
+  <!-- Step 1 -->
+  <circle cx="100" cy="100" r="16" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="100" y="105" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#a78bfa">1</text>
+  <text x="130" y="96" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">경영지표 요약 (5분)</text>
+  <text x="130" y="114" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">NIM, NPL, coverage, BIS(은행) / NCR(증권) / CSM, K-ICS(보험)</text>
+  <rect x="620" y="86" width="120" height="28" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="680" y="104" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#a78bfa">경영지표 테이블</text>
+
+  <!-- Step 2 -->
+  <circle cx="100" cy="168" r="16" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="100" y="173" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8">2</text>
+  <text x="130" y="164" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">수익 구조 분해 (5분)</text>
+  <text x="130" y="182" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">이자 vs 비이자(은행) / 수수료 vs 트레이딩(증권) / 보험 vs 투자(보험)</text>
+  <rect x="620" y="154" width="120" height="28" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="0.5"/>
+  <text x="680" y="172" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#38bdf8">IS</text>
+
+  <!-- Step 3 -->
+  <circle cx="100" cy="236" r="16" fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="100" y="241" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#34d399">3</text>
+  <text x="130" y="232" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#34d399">대손충당금·건전성 (5분)</text>
+  <text x="130" y="250" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">충당금 전입액 → 고정이하여신 → 업종별 대출 포트폴리오 → PF 익스포저</text>
+  <rect x="620" y="222" width="120" height="28" rx="6" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="680" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#34d399">주석</text>
+
+  <!-- Step 4 -->
+  <circle cx="100" cy="304" r="16" fill="rgba(251,146,60,0.15)" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="100" y="309" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#fb923c">4</text>
+  <text x="130" y="300" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#fb923c">자기자본비율·규제 여유 (5분)</text>
+  <text x="130" y="318" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">BIS / NCR / K-ICS → 규제 하한 대비 여유 → 위험가중자산 증가 속도</text>
+  <rect x="620" y="290" width="120" height="28" rx="6" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="680" y="308" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fb923c">경영지표 + 주석</text>
+
+  <!-- Step 5 -->
+  <circle cx="100" cy="372" r="16" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="1.5"/>
+  <text x="100" y="377" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#f87171">5</text>
+  <text x="130" y="368" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#f87171">유가증권·미실현손익 (5분)</text>
+  <text x="130" y="386" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">분류별 잔액 → FVOCI 미실현손익 → OCI 누적 → 보험부채 금리 민감도</text>
+  <rect x="620" y="358" width="120" height="28" rx="6" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="680" y="376" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#f87171">주석 + BS</text>
+
+  <!-- Step 6 -->
+  <circle cx="100" cy="440" r="16" fill="rgba(129,140,248,0.15)" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="100" y="445" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#818cf8">6</text>
+  <text x="130" y="436" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="700" fill="#818cf8">유동성·자금조달 (5분)</text>
+  <text x="130" y="454" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">LCR · NSFR → 예대율 → 조달 구성(예금 vs 시장) → 만기 분포</text>
+  <rect x="620" y="426" width="120" height="28" rx="6" fill="rgba(129,140,248,0.08)" stroke="#818cf8" stroke-width="0.5"/>
+  <text x="680" y="444" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#818cf8">경영지표 + 주석</text>
+
+  <!-- Key insight -->
+  <rect x="100" y="486" width="600" height="40" rx="8" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="4 3"/>
+  <text x="400" y="510" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">6단계를 순서대로 돌면 수익 → 건전성 → 자본 → 포트폴리오 → 유동성이 한 루프로 연결된다</text>
+
+  <!-- Branding -->
+  <text x="400" y="548" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>
