@@ -23,19 +23,19 @@
 	const homepageFaq: FaqItem[] = [
 		{
 			question: 'What is DartLab?',
-			answer: 'DartLab is an open-source Python library that automatically analyzes Korean DART and US SEC EDGAR disclosure data. It horizontalizes annual reports, financial statements, and disclosure text into a single company map (sections).'
+			answer: 'DartLab is an open-source Python library that turns corporate disclosure filings into structured, comparable data. It covers 2,700+ Korean companies (DART) and 970+ US companies (EDGAR), giving you financial statements, narrative text, and structured reports in one unified interface — no PDF reading required.'
 		},
 		{
-			question: 'How can I analyze DART disclosure data?',
-			answer: 'Create a Company object with a stock code like dartlab.Company("005930"). All report sections are automatically aligned into a topic x period matrix. Use show(topic) to query specific topics and diff() to detect text changes across periods.'
+			question: 'Who is DartLab for?',
+			answer: 'Anyone who works with corporate disclosure data — investors comparing companies across periods, quants building financial models, researchers creating NLP datasets from filings, developers building financial applications, and AI builders who need structured company context for LLMs.'
+		},
+		{
+			question: 'How is DartLab different from other financial data tools?',
+			answer: 'Most tools give you either financial numbers or document text, for either Korea or the US. DartLab combines all three data sources (docs, finance, reports) into one company map, aligns them across time periods, and works identically for both DART and EDGAR filings. trace() shows exactly where each data point came from.'
 		},
 		{
 			question: 'Does it support EDGAR 10-K and 10-Q?',
-			answer: 'Yes. Use a ticker like dartlab.Company("AAPL") to analyze US 10-K/10-Q filings. EDGAR sections mapping rate is 100%, verified across 974 companies. Same interface as DART (sections, show, trace).'
-		},
-		{
-			question: 'What are sections?',
-			answer: 'sections is the entire disclosure document horizontalized into a topic (subject) x period (time) matrix. All text and tables from business description, financial statements, audit reports, etc. are aligned side by side across periods. Samsung Electronics has 329 topics across 106 periods.'
+			answer: 'Yes. Use a ticker like dartlab.Company("AAPL") to analyze US 10-K/10-Q filings. EDGAR sections mapping rate is 100%, verified across 974 companies. Same interface as DART — sections, show, trace, diff, BS, IS, CF, ratios all work identically.'
 		}
 	];
 
@@ -49,13 +49,13 @@
 
 <svelte:head>
 	<title>DartLab — {brand.description}</title>
-	<meta name="description" content="DartLab is an open-source Python library for analyzing Korean DART and US SEC EDGAR disclosure data. Provides sections horizontalization, show/trace queries, diff change detection, and AI workflows." />
-	<meta name="keywords" content="DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab, sections" />
+	<meta name="description" content="Stop reading 200-page PDFs. DartLab turns Korean DART and US EDGAR filings into structured, comparable data — financials, text, and reports in one Python object. 2,700+ Korean and 970+ US companies ready to analyze." />
+	<meta name="keywords" content="DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab, sections, company analysis, financial data" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/" />
 
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="DartLab — {brand.description}" />
-	<meta property="og:description" content="Analyze Korean DART and US SEC EDGAR disclosures into one company map. Open-source Python library with sections horizontalization, show/trace queries, and AI workflows." />
+	<meta property="og:description" content="Stop reading 200-page PDFs. Turn Korean DART and US EDGAR filings into structured data — financials, text, and reports in one Python object. 2,700+ Korean and 970+ US companies." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
@@ -65,7 +65,7 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="DartLab — {brand.description}" />
-	<meta name="twitter:description" content="Analyze DART and SEC EDGAR disclosures into one company map. sections horizontalization, show/trace queries, AI-ready." />
+	<meta name="twitter:description" content="Stop reading 200-page PDFs. Turn DART and EDGAR filings into structured data — financials, text, and reports in one Python object. 2,700+ companies ready." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 
 	{@html `<script type="application/ld+json">${homepageJsonLd}</script>`}

@@ -1,11 +1,11 @@
 <script lang="ts">
 	const stats = [
-		{ value: '329', label: 'topics per company', sub: 'Samsung Electronics' },
-		{ value: '106', label: 'periods horizontalized', sub: 'annual + quarterly' },
-		{ value: '97%', label: 'account mapping rate', sub: '34,249 accounts' },
-		{ value: '100%', label: 'EDGAR sections mapped', sub: '974 companies verified' },
-		{ value: '283', label: 'DART companies verified', sub: 'zero errors' },
-		{ value: '42', label: 'data modules', sub: 'docs · finance · report' }
+		{ value: '2,700+', label: 'Korean companies', sub: 'financials + reports ready' },
+		{ value: '970+', label: 'US companies', sub: 'EDGAR 10-K/10-Q' },
+		{ value: '329', label: 'disclosure topics', sub: 'per company (Samsung)' },
+		{ value: '106', label: 'periods aligned', sub: 'annual + quarterly' },
+		{ value: '97%', label: 'account mapping', sub: '34,249 XBRL accounts' },
+		{ value: '47', label: 'financial ratios', sub: 'auto-calculated' }
 	];
 </script>
 
@@ -14,8 +14,8 @@
 
 	<div class="relative max-w-5xl mx-auto">
 		<div class="text-center mb-12">
-			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">By the Numbers</span>
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text">Built on Real Data, Not Promises</h2>
+			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">Data Scale</span>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text">Already Structured, Ready to Use</h2>
 		</div>
 
 		<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 stagger">

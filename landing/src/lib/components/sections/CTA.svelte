@@ -26,13 +26,11 @@
 						/>
 					</picture>
 				</div>
-				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">Start from the Company Map</h2>
+				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">See the Complete Picture</h2>
 				<p class="text-dl-text-muted mb-3 text-lg">
-					<span class="font-mono text-dl-text">sections</span> →
-					<span class="font-mono text-dl-text">show</span> →
-					<span class="font-mono text-dl-text">trace</span>
+					Every filing, every section, every period — structured and ready.
 				</p>
-				<p class="text-sm text-dl-text-dim mb-8">One line of Python turns an entire disclosure into a single DataFrame.</p>
+				<p class="text-sm text-dl-text-dim mb-8">One line of Python gives you what used to take days of PDF reading.</p>
 
 				<div class="flex flex-wrap items-center justify-center gap-4">
 					<Button href="#install">Install</Button>

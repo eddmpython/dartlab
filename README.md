@@ -29,6 +29,45 @@
 
 </div>
 
+## Why DartLab
+
+Corporate disclosures are the richest public record of a company — financials, risk factors, business strategy, governance, compensation, and more. But accessing this data today means:
+
+- **Manual PDF reading** — annual reports are 200+ page documents with no structure for programmatic access
+- **Fragmented tools** — one library for financial statements, another for text, another for EDGAR, none of them talking to each other
+- **No time axis** — even if you extract data, comparing the same section across 5 years of filings requires custom glue code every time
+- **Lost context** — financial numbers without the narrative that explains them, or text without the numbers that ground it
+
+DartLab solves this by building **one unified company map** from raw filings. Text, tables, and financial statements are aligned on the same topic-by-period spine. You get the complete picture — not fragments.
+
+### Who It's For
+
+| You are... | DartLab gives you... |
+|---|---|
+| **Investor / Analyst** | Instant access to any disclosure topic across all periods — no more PDF digging |
+| **Quant / Data Scientist** | Clean, structured DataFrames from 2,700+ companies ready for modeling |
+| **Developer** | A single `Company` object that unifies docs, finance, and report APIs |
+| **Researcher** | Standardized cross-company datasets with full text + financial data |
+| **AI Builder** | Pre-structured company context that LLMs can actually reason over |
+
+### What You Can Do
+
+- "How did Samsung change its business description between 2023 and 2024?" → `c.diff("businessOverview")`
+- "Show me Apple's risk factors from the latest 10-K" → `us.show("10-K::item1ARiskFactors")`
+- "Which listed companies have the highest debt-to-equity?" → `dartlab.debt("all")`
+- "Give me 5 years of income statements for comparison" → `c.IS`
+- "What governance issues exist across the entire market?" → `dartlab.governance()`
+
+### How It's Different
+
+| | DartLab | Typical tools |
+|---|---|---|
+| **Scope** | Full disclosure text + financials + structured reports | Usually one of these |
+| **Structure** | One horizontalized map (topic × period) | Flat outputs, no time alignment |
+| **Sources** | DART + EDGAR in the same interface | Korea-only or US-only |
+| **Data provenance** | `trace()` tells you exactly which source was used | Black box |
+| **AI-ready** | Structured sections feed directly into LLM context | Manual prompt engineering |
+
 ## What DartLab Is
 
 DartLab turns corporate filings into a single company map — for both Korean DART and US EDGAR.
