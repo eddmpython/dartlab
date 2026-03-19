@@ -9,16 +9,22 @@ snakeId 기준이므로 DART/EDGAR 매퍼의 mapToDart 결과와 직접 호환.
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Optional
 
 _DATA_PATH = Path(__file__).parent / "sortOrder.json"
 _sortOrderData: Optional[dict[str, dict]] = None
+_sortOrderLock = threading.Lock()
 
 
 def _ensureLoaded() -> dict[str, dict]:
     global _sortOrderData
-    if _sortOrderData is None:
+    if _sortOrderData is not None:
+        return _sortOrderData
+    with _sortOrderLock:
+        if _sortOrderData is not None:
+            return _sortOrderData
         with open(_DATA_PATH, encoding="utf-8") as f:
             _sortOrderData = json.load(f)
     return _sortOrderData

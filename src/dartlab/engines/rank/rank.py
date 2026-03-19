@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
@@ -229,24 +230,33 @@ def _loadCache() -> dict[str, RankInfo] | None:
 
 
 _SNAPSHOT: dict[str, RankInfo] | None = None
+_SNAPSHOT_LOCK = threading.Lock()
+
+
+def _ensureSnapshot() -> dict[str, RankInfo] | None:
+    global _SNAPSHOT
+    if _SNAPSHOT is not None:
+        return _SNAPSHOT
+    with _SNAPSHOT_LOCK:
+        if _SNAPSHOT is not None:
+            return _SNAPSHOT
+        _SNAPSHOT = _loadCache()
+    return _SNAPSHOT
 
 
 def getRank(stockCode: str) -> RankInfo | None:
     """종목 랭크 정보 조회. 스냅샷이 없으면 None."""
-    global _SNAPSHOT
-    if _SNAPSHOT is None:
-        _SNAPSHOT = _loadCache()
-    if _SNAPSHOT is None:
+    snap = _ensureSnapshot()
+    if snap is None:
         return None
-    return _SNAPSHOT.get(stockCode)
+    return snap.get(stockCode)
 
 
 def getRankOrBuild(stockCode: str, *, verbose: bool = True) -> RankInfo | None:
     """종목 랭크 정보 조회. 스냅샷이 없으면 빌드 후 조회."""
     global _SNAPSHOT
-    if _SNAPSHOT is None:
-        _SNAPSHOT = _loadCache()
-    if _SNAPSHOT is None:
+    snap = _ensureSnapshot()
+    if snap is None:
         if verbose:
             print("[dartlab] 랭크 스냅샷이 없습니다. 전체 종목 빌드를 시작합니다...")
         _SNAPSHOT = buildSnapshot(verbose=verbose)

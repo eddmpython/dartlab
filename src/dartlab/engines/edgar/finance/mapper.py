@@ -12,6 +12,7 @@ commonTags는 learnedSynonyms보다 우선한다.
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -70,12 +71,19 @@ class EdgarMapper:
     _stmtTagMap: Optional[dict[str, dict[str, str]]] = None
     _commonTags: Optional[set[str]] = None
     _accounts: Optional[list[dict]] = None
+    _lock = threading.Lock()
 
     @classmethod
     def _ensureLoaded(cls):
         if cls._tagMap is not None:
             return
+        with cls._lock:
+            if cls._tagMap is not None:
+                return
+            cls._loadData()
 
+    @classmethod
+    def _loadData(cls):
         stdPath = _DATA_DIR / "standardAccounts.json"
         with open(stdPath, encoding="utf-8") as f:
             stdData = json.load(f)

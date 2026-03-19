@@ -7,6 +7,7 @@ corpCode.xml (ZIP)을 한 번 다운받아 로컬 캐시하고 즉시 조회.
 from __future__ import annotations
 
 import io
+import threading
 import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime
@@ -21,6 +22,7 @@ _CACHE_DIR = Path.home() / ".dartlab"
 _CACHE_FILE = _CACHE_DIR / "corpCode.parquet"
 _CACHE_MAX_AGE_HOURS = 24
 _memCache: pl.DataFrame | None = None
+_memCacheLock = threading.Lock()
 
 
 def _isCacheFresh() -> bool:
@@ -78,15 +80,19 @@ def loadCorpCodes(client: DartClient, refresh: bool = False) -> pl.DataFrame:
     if not refresh and _memCache is not None:
         return _memCache
 
-    if not refresh and _isCacheFresh():
-        _memCache = pl.read_parquet(_CACHE_FILE)
-        return _memCache
+    with _memCacheLock:
+        if not refresh and _memCache is not None:
+            return _memCache
 
-    df = _downloadCorpCodes(client)
+        if not refresh and _isCacheFresh():
+            _memCache = pl.read_parquet(_CACHE_FILE)
+            return _memCache
 
-    _CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    df.write_parquet(_CACHE_FILE)
-    _memCache = df
+        df = _downloadCorpCodes(client)
+
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        df.write_parquet(_CACHE_FILE)
+        _memCache = df
     return df
 
 

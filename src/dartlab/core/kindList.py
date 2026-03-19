@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from html.parser import HTMLParser
 from pathlib import Path
@@ -23,6 +24,7 @@ KIND_DATA = {
 
 _memory: pl.DataFrame | None = None
 _memoryTs: float = 0.0
+_memoryLock = threading.Lock()
 
 
 class _TableParser(HTMLParser):
@@ -123,20 +125,26 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
         if (time.time() - _memoryTs) < CACHE_TTL:
             return _memory
 
-    if not forceRefresh:
-        cached = _loadCache()
-        if cached is not None:
-            _memory = cached
-            _memoryTs = time.time()
-            return cached
+    with _memoryLock:
+        # double-check
+        if not forceRefresh and _memory is not None:
+            if (time.time() - _memoryTs) < CACHE_TTL:
+                return _memory
 
-    print("[dartlab] KRX KIND 상장법인 목록 다운로드 중...")
-    df = _fetchKind()
-    _saveCache(df)
-    _memory = df
-    _memoryTs = time.time()
-    print(f"[dartlab] {df.height}개 종목 로드 완료")
-    return df
+        if not forceRefresh:
+            cached = _loadCache()
+            if cached is not None:
+                _memory = cached
+                _memoryTs = time.time()
+                return cached
+
+        print("[dartlab] KRX KIND 상장법인 목록 다운로드 중...")
+        df = _fetchKind()
+        _saveCache(df)
+        _memory = df
+        _memoryTs = time.time()
+        print(f"[dartlab] {df.height}개 종목 로드 완료")
+        return df
 
 
 def codeToName(stockCode: str) -> str | None:
