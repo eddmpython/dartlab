@@ -7,6 +7,7 @@ from dartlab.core.dataLoader import (
 )
 from dartlab.core.kindList import (
     codeToName,
+    fuzzySearch,
     getKindList,
     nameToCode,
     searchName,
@@ -25,6 +26,7 @@ __all__ = [
     "codeToName",
     "nameToCode",
     "searchName",
+    "fuzzySearch",
     "extractNotesContent",
     "findNumberedSection",
     "selectReport",

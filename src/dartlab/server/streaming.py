@@ -23,6 +23,8 @@ import asyncio
 import json
 from typing import Any
 
+import orjson
+
 from dartlab import Company
 
 from .cache import company_cache
@@ -60,18 +62,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
     if not_found_msg:
         yield {
             "event": "meta",
-            "data": json.dumps(conversation_state_to_meta(state), ensure_ascii=False),
+            "data": orjson.dumps(conversation_state_to_meta(state)).decode(),
         }
         yield {
             "event": "chunk",
-            "data": json.dumps({"text": not_found_msg}, ensure_ascii=False),
+            "data": orjson.dumps({"text": not_found_msg}).decode(),
         }
         yield {"event": "done", "data": "{}"}
         return
 
     yield {
         "event": "meta",
-        "data": json.dumps(conversation_state_to_meta(state), ensure_ascii=False),
+        "data": orjson.dumps(conversation_state_to_meta(state)).decode(),
     }
 
     done_payload: dict[str, Any] = {}
@@ -103,19 +105,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             if snapshot:
                 yield {
                     "event": "snapshot",
-                    "data": json.dumps(snapshot, ensure_ascii=False),
+                    "data": orjson.dumps(snapshot).decode(),
                 }
             if focus_context:
                 yield {
                     "event": "context",
-                    "data": json.dumps(
+                    "data": orjson.dumps(
                         {
                             "module": "_focus_topic",
                             "label": f"현재 섹션: {state.topic_label or state.topic}",
                             "text": focus_context,
                         },
-                        ensure_ascii=False,
-                    ),
+                    ).decode(),
                 }
 
             # Light mode용 간략 회사 컨텍스트 (topics + insights 요약)
@@ -168,7 +169,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             yield {
                 "event": "system_prompt",
-                "data": json.dumps({"text": light_prompt}, ensure_ascii=False),
+                "data": orjson.dumps({"text": light_prompt}).decode(),
             }
 
             llm = create_provider(config_)
@@ -183,7 +184,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     break
                 yield {
                     "event": "chunk",
-                    "data": json.dumps({"text": chunk}, ensure_ascii=False),
+                    "data": orjson.dumps({"text": chunk}).decode(),
                 }
             yield {"event": "done", "data": "{}"}
             return
@@ -206,7 +207,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             if snapshot:
                 yield {
                     "event": "snapshot",
-                    "data": json.dumps(snapshot, ensure_ascii=False),
+                    "data": orjson.dumps(snapshot).decode(),
                 }
 
             modules_dict, included_tables, header_text = await asyncio.to_thread(
@@ -224,25 +225,23 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     context_text = focus_context + "\n\n" + context_text
                     yield {
                         "event": "context",
-                        "data": json.dumps(
+                        "data": orjson.dumps(
                             {
                                 "module": "_focus_topic",
                                 "label": f"현재 섹션: {state.topic_label or state.topic}",
                                 "text": focus_context,
                             },
-                            ensure_ascii=False,
-                        ),
+                        ).decode(),
                     }
                 yield {
                     "event": "context",
-                    "data": json.dumps(
+                    "data": orjson.dumps(
                         {
                             "module": "_full",
                             "label": "전체 데이터",
                             "text": context_text,
                         },
-                        ensure_ascii=False,
-                    ),
+                    ).decode(),
                 }
                 # _full fallback에서도 topics/insights를 별도 이벤트로 전송
                 for _extra_key, _extra_label in (("_topics", "공시 topic 목록"), ("_insights", "인사이트 등급")):
@@ -250,10 +249,9 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                         context_text = context_text + "\n\n" + modules_dict[_extra_key]
                         yield {
                             "event": "context",
-                            "data": json.dumps(
+                            "data": orjson.dumps(
                                 {"module": _extra_key, "label": _extra_label, "text": modules_dict[_extra_key]},
-                                ensure_ascii=False,
-                            ),
+                            ).decode(),
                         }
             else:
                 _EXTRA_LABELS = {"_topics": "공시 topic 목록", "_insights": "인사이트 등급"}
@@ -265,14 +263,13 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     label = _EXTRA_LABELS.get(mod_name) or (meta_info.label if meta_info else mod_name)
                     yield {
                         "event": "context",
-                        "data": json.dumps(
+                        "data": orjson.dumps(
                             {
                                 "module": mod_name,
                                 "label": label,
                                 "text": mod_text,
                             },
-                            ensure_ascii=False,
-                        ),
+                        ).decode(),
                     }
                 parts = [header_text] if header_text else []
                 if focus_context:
@@ -284,14 +281,13 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 if focus_context:
                     yield {
                         "event": "context",
-                        "data": json.dumps(
+                        "data": orjson.dumps(
                             {
                                 "module": "_focus_topic",
                                 "label": f"현재 섹션: {state.topic_label or state.topic}",
                                 "text": focus_context,
                             },
-                            ensure_ascii=False,
-                        ),
+                        ).decode(),
                     }
 
             if not use_compact:
@@ -310,14 +306,13 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 context_text = context_text + "\n\n" + diff_context
                 yield {
                     "event": "context",
-                    "data": json.dumps(
+                    "data": orjson.dumps(
                         {
                             "module": "_diff",
                             "label": "공시 텍스트 변화 핫스팟",
                             "text": diff_context,
                         },
-                        ensure_ascii=False,
-                    ),
+                    ).decode(),
                 }
 
             meta_payload: dict[str, Any] = {
@@ -330,7 +325,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     meta_payload["dataYearRange"] = year_range
             yield {
                 "event": "meta",
-                "data": json.dumps(meta_payload, ensure_ascii=False),
+                "data": orjson.dumps(meta_payload).decode(),
             }
 
             sector = _get_sector(c)
@@ -350,7 +345,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             yield {
                 "event": "system_prompt",
-                "data": json.dumps({"text": system, "userContent": user_content}, ensure_ascii=False),
+                "data": orjson.dumps({"text": system, "userContent": user_content}).decode(),
             }
         else:
             chat_prompt = build_dynamic_chat_prompt(state)
@@ -360,7 +355,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             yield {
                 "event": "system_prompt",
-                "data": json.dumps({"text": chat_prompt}, ensure_ascii=False),
+                "data": orjson.dumps({"text": chat_prompt}).decode(),
             }
 
         llm = create_provider(config_)
@@ -402,7 +397,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 chunk_text = para if i == len(paragraphs) - 1 else para + "\n\n"
                 yield {
                     "event": "chunk",
-                    "data": json.dumps({"text": chunk_text}, ensure_ascii=False),
+                    "data": orjson.dumps({"text": chunk_text}).decode(),
                 }
                 if i < len(paragraphs) - 1:
                     await asyncio.sleep(0.02)
@@ -485,12 +480,12 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     full_response_parts.append(text)
                     yield {
                         "event": "chunk",
-                        "data": json.dumps({"text": text}, ensure_ascii=False),
+                        "data": orjson.dumps({"text": text}).decode(),
                     }
                 else:
                     yield {
                         "event": ev["event"],
-                        "data": json.dumps(ev, ensure_ascii=False),
+                        "data": orjson.dumps(ev).decode(),
                     }
 
             await task
@@ -507,7 +502,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 full_response_parts.append(chunk)
                 yield {
                     "event": "chunk",
-                    "data": json.dumps({"text": chunk}, ensure_ascii=False),
+                    "data": orjson.dumps({"text": chunk}).decode(),
                 }
 
         if c and full_response_parts:
@@ -539,7 +534,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
         yield {
             "event": "error",
-            "data": json.dumps(error_payload, ensure_ascii=False),
+            "data": orjson.dumps(error_payload).decode(),
         }
     except Exception as e:  # noqa: BLE001 — LLM provider 에러 (openai.OpenAIError 등)
         import logging
@@ -547,7 +542,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         logging.getLogger(__name__).warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
         yield {
             "event": "error",
-            "data": json.dumps({"error": f"{type(e).__name__}: {e}"}, ensure_ascii=False),
+            "data": orjson.dumps({"error": f"{type(e).__name__}: {e}"}).decode(),
         }
 
     # "보여줘" 의도 감지 → viewer_navigate SSE 이벤트
@@ -566,7 +561,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 nav_payload["company"] = state.company
             yield {
                 "event": "viewer_navigate",
-                "data": json.dumps(nav_payload, ensure_ascii=False),
+                "data": orjson.dumps(nav_payload).decode(),
             }
 
-    yield {"event": "done", "data": json.dumps(done_payload, ensure_ascii=False)}
+    yield {"event": "done", "data": orjson.dumps(done_payload).decode()}

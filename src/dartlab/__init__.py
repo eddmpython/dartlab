@@ -6,7 +6,7 @@ from importlib.metadata import version as _pkg_version
 
 from dartlab import config, core, engines
 from dartlab.company import Company
-from dartlab.core.kindList import codeToName, getKindList, nameToCode, searchName
+from dartlab.core.kindList import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
 from dartlab.engines.dart.company import Company as _DartEngineCompany
 from dartlab.engines.dart.openapi.dart import Dart, OpenDart
@@ -67,33 +67,18 @@ def network():
     Example::
 
         import dartlab
-        dartlab.network()  # 전체 엣지 DataFrame
+        dartlab.network().show()  # 브라우저에서 전체 네트워크
     """
-    import polars as pl
-
     from dartlab.engines.dart.affiliate import build_graph, export_full
+    from dartlab.tools.network import render_network
 
     data = build_graph()
     full = export_full(data)
-    node_map = {n["id"]: n for n in full["nodes"]}
-    rows = []
-    for e in full["edges"]:
-        src = node_map.get(e["source"])
-        tgt = node_map.get(e["target"])
-        rows.append(
-            {
-                "source": e["source"],
-                "sourceName": src["label"] if src else e["source"],
-                "sourceGroup": src["group"] if src else "",
-                "target": e["target"],
-                "targetName": tgt["label"] if tgt else e["target"],
-                "targetGroup": tgt["group"] if tgt else "",
-                "type": e["type"],
-                "purpose": e.get("purpose", ""),
-                "ownershipPct": e.get("ownershipPct"),
-            }
-        )
-    return pl.DataFrame(rows)
+    return render_network(
+        full["nodes"],
+        full["edges"],
+        "한국 상장사 관계 네트워크",
+    )
 
 
 class _Module(sys.modules[__name__].__class__):
@@ -137,4 +122,5 @@ __all__ = [
     "codeToName",
     "nameToCode",
     "searchName",
+    "fuzzySearch",
 ]

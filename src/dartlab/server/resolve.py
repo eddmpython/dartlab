@@ -272,9 +272,19 @@ def has_analysis_intent(question: str) -> bool:
         if entity.replace(" ", "") in q_lower:
             return False
 
+    # 순수 인사/감사 패턴 제외
+    q_stripped = question.strip().rstrip("!?.~")
+    if q_stripped in _GREETING_ONLY_PATTERNS or q_stripped.lower() in _GREETING_ONLY_PATTERNS:
+        return False
+
     has_kw = False
     for kw in _ANALYSIS_KEYWORDS:
         if kw in question:
+            # "감사" 키워드는 분석 맥락에서만 매칭
+            if kw == "감사":
+                analysis_contexts = _ANALYSIS_CONTEXT_OVERRIDES.get("감사", [])
+                if not any(ctx in question for ctx in analysis_contexts):
+                    continue
             has_kw = True
             break
     if not has_kw:
@@ -289,35 +299,55 @@ def _collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
     """검색 결과에서 매칭되는 후보를 수집한다.
 
     strict=True: 정확히 일치하거나 prefix 관계만 허용
-    strict=False: 부분 포함도 허용 (fuzzy)
+    strict=False: 부분 포함도 허용 (fuzzy — 초성/Levenshtein 포함)
     """
     if len(query) < 2:
         return []
     try:
         df = dartlab.search(query)
         if len(df) == 0:
-            return []
+            df = None
     except (ValueError, OSError):
-        return []
+        df = None
 
     exact: list[dict[str, str]] = []
     prefix: list[dict[str, str]] = []
     contains: list[dict[str, str]] = []
 
-    for row in df.to_dicts()[:10]:
-        name = row.get("회사명", row.get("corpName", ""))
-        code = row.get("종목코드", row.get("stockCode", ""))
-        if not code:
-            continue
-        entry = {"corpName": name, "stockCode": code}
-        if name == query:
-            exact.append(entry)
-        elif name.startswith(query) or query.startswith(name):
-            prefix.append(entry)
-        elif not strict and len(query) >= 3 and query in name:
-            contains.append(entry)
+    if df is not None:
+        for row in df.to_dicts()[:10]:
+            name = row.get("회사명", row.get("corpName", ""))
+            code = row.get("종목코드", row.get("stockCode", ""))
+            if not code:
+                continue
+            entry = {"corpName": name, "stockCode": code}
+            if name == query:
+                exact.append(entry)
+            elif name.startswith(query) or query.startswith(name):
+                prefix.append(entry)
+            elif not strict and len(query) >= 3 and query in name:
+                contains.append(entry)
 
-    return exact + prefix + contains
+    result = exact + prefix + contains
+
+    # fuzzy fallback: substring 매칭이 없으면 초성/Levenshtein 시도
+    if not result and not strict:
+        from dartlab.core.kindList import fuzzySearch
+
+        try:
+            fuzzy_df = fuzzySearch(query, maxResults=5)
+            if len(fuzzy_df) > 0:
+                seen = {e["stockCode"] for e in result}
+                for row in fuzzy_df.to_dicts():
+                    name = row.get("회사명", row.get("corpName", ""))
+                    code = row.get("종목코드", row.get("stockCode", ""))
+                    if code and code not in seen:
+                        seen.add(code)
+                        result.append({"corpName": name, "stockCode": code})
+        except (ValueError, OSError):
+            pass
+
+    return result
 
 
 def _search_suggestions(question: str) -> list[dict[str, str]]:

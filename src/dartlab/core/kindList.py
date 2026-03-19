@@ -171,3 +171,137 @@ def searchName(keyword: str) -> pl.DataFrame:
         return getKindList().head(0)
     df = getKindList()
     return df.filter(pl.col("회사명").str.contains(kw, literal=True))
+
+
+# ── 한글 초성/자모 유틸 ──────────────────────────────────────────
+
+_CHOSUNG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+_CHO_BASE = 0xAC00
+_CHO_PERIOD = 588  # 21 * 28
+
+
+def _decompose_char(ch: str) -> str:
+    """한글 음절 → 초성 추출. 이미 자모이면 그대로."""
+    cp = ord(ch)
+    if 0xAC00 <= cp <= 0xD7A3:
+        return _CHOSUNG[(cp - _CHO_BASE) // _CHO_PERIOD]
+    if ch in _CHOSUNG:
+        return ch
+    return ch
+
+
+def _extract_chosung(text: str) -> str:
+    """문자열의 초성만 추출. 비한글은 원문 그대로."""
+    return "".join(_decompose_char(c) for c in text)
+
+
+def _is_all_chosung(text: str) -> bool:
+    """입력이 모두 자음(초성)으로만 이루어졌는지 확인."""
+    return all(c in _CHOSUNG for c in text)
+
+
+def _levenshtein(s: str, t: str) -> int:
+    """최소 편집 거리 (Levenshtein distance)."""
+    if len(s) < len(t):
+        return _levenshtein(t, s)
+    if not t:
+        return len(s)
+    prev = list(range(len(t) + 1))
+    for i, sc in enumerate(s):
+        curr = [i + 1]
+        for j, tc in enumerate(t):
+            cost = 0 if sc == tc else 1
+            curr.append(min(curr[j] + 1, prev[j + 1] + 1, prev[j] + cost))
+        prev = curr
+    return prev[-1]
+
+
+def fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame:
+    """한글 fuzzy 종목 검색 — 초성 매칭 + Levenshtein 거리.
+
+    지원:
+    - 초성 검색: "ㅅㅅ" → 삼성전자, 삼성물산, ...
+    - 약칭 부분매칭: "삼전" → 삼성전자 (초성 "ㅅㅈ" ⊂ "ㅅㅅㅈㅈ")
+    - 오타 허용: "삼성전제" → 삼성전자 (편집거리 1)
+    - 영문 오타: "samsun" → "samsung"에 가까운 종목
+    - 기본 substring 매칭도 포함
+
+    Args:
+        keyword: 검색어 (한글, 영문, 초성, 혼합 모두 가능)
+        maxResults: 최대 반환 수 (기본 10)
+
+    Returns:
+        매칭된 종목 DataFrame (회사명, 종목코드, ...), 관련도 순.
+    """
+    kw = keyword.strip()
+    if not kw:
+        return getKindList().head(0)
+
+    df = getKindList()
+    names: list[str] = df["회사명"].to_list()
+    kw_lower = kw.lower()
+    kw_chosung = _extract_chosung(kw)
+    is_chosung_query = _is_all_chosung(kw)
+
+    scored: list[tuple[int, float, int]] = []  # (idx, score, order)
+
+    for idx, name in enumerate(names):
+        name_lower = name.lower()
+
+        # 1) 정확 일치
+        if name_lower == kw_lower:
+            scored.append((idx, 0.0, 0))
+            continue
+
+        # 2) substring 매칭
+        if kw_lower in name_lower:
+            # prefix > contains
+            score = 1.0 if name_lower.startswith(kw_lower) else 2.0
+            scored.append((idx, score, len(scored)))
+            continue
+
+        # 3) 초성 매칭
+        name_chosung = _extract_chosung(name)
+        if is_chosung_query:
+            # 순수 초성 입력: "ㅅㅅ" → 초성열에서 연속 매칭
+            if kw_chosung in name_chosung:
+                # 앞에서 매칭될수록 높은 점수
+                pos = name_chosung.index(kw_chosung)
+                scored.append((idx, 3.0 + pos * 0.1, len(scored)))
+                continue
+        else:
+            # 혼합 입력: 초성 subsequence 매칭
+            # "삼전"(ㅅㅈ) → "삼성전자"(ㅅㅅㅈㅈ) 순서 매칭
+            if len(kw) >= 2:
+                # 연속 substring 먼저 (더 정확)
+                if kw_chosung in name_chosung:
+                    pos = name_chosung.index(kw_chosung)
+                    scored.append((idx, 4.0 + pos * 0.1, len(scored)))
+                    continue
+                # subsequence fallback: 글자별 초성이 순서대로 나타나는지
+                ci = 0
+                first_pos = -1
+                for ni, nc in enumerate(name_chosung):
+                    if ci < len(kw_chosung) and nc == kw_chosung[ci]:
+                        if ci == 0:
+                            first_pos = ni
+                        ci += 1
+                if ci == len(kw_chosung) and first_pos >= 0:
+                    # gap penalty: 이름이 짧을수록 좋음
+                    scored.append((idx, 4.5 + first_pos * 0.1 + len(name) * 0.01, len(scored)))
+                    continue
+
+        # 4) Levenshtein (짧은 키워드에서만 — 비용 절약)
+        if 2 <= len(kw) <= 10:
+            dist = _levenshtein(kw_lower, name_lower)
+            max_dist = max(1, len(kw) // 3)  # 3자당 1 오타 허용
+            if dist <= max_dist:
+                scored.append((idx, 5.0 + dist, len(scored)))
+                continue
+
+    if not scored:
+        return df.head(0)
+
+    scored.sort(key=lambda x: (x[1], x[2]))
+    indices = [s[0] for s in scored[:maxResults]]
+    return df[indices]

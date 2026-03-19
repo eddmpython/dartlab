@@ -5,11 +5,12 @@
 	상단: 중앙 검색 바
 -->
 <script>
-	import { Loader2, FileText, Search, X, AlertCircle, Clock } from "lucide-svelte";
-	import { fetchCompanySearch } from "$lib/api.js";
+	import { Loader2, FileText, Search, X, AlertCircle, Clock, Building2 } from "lucide-svelte";
+	import { fetchCompanySearch, searchCompany } from "$lib/api.js";
 	import ViewerNav from "./ViewerNav.svelte";
 	import TopicRenderer from "./TopicRenderer.svelte";
 	import InsightDashboard from "./InsightDashboard.svelte";
+	import NetworkGraph from "./NetworkGraph.svelte";
 	import KeyboardHelp from "./KeyboardHelp.svelte";
 
 	let {
@@ -17,6 +18,8 @@
 		company = null,  // selected company
 		onAskAI = null,  // (text) => void — AI에게 물어보기 콜백
 		onTopicChange = null, // (topic, label) => void — workspace 동기화
+		recentCompanies = [], // 최근 검색한 종목 목록
+		onCompanySelect = null, // (company) => void — 종목 선택 콜백
 	} = $props();
 
 	// 모바일 TOC 드로어
@@ -100,6 +103,35 @@
 			recentHistory = loadHistory();
 		}
 	});
+
+	// 종목 검색 (뷰어 탭 진입 시)
+	let companySearchText = $state("");
+	let companySearchResults = $state([]);
+	let companySearchLoading = $state(false);
+	let companySearchDebounce = null;
+	let companySearchInput = $state(null);
+
+	$effect(() => {
+		const q = companySearchText.trim();
+		if (!q || q.length < 1) { companySearchResults = []; return; }
+		clearTimeout(companySearchDebounce);
+		companySearchLoading = true;
+		companySearchDebounce = setTimeout(async () => {
+			try {
+				const results = await searchCompany(q);
+				if (companySearchText.trim() === q) {
+					companySearchResults = results || [];
+				}
+			} catch { companySearchResults = []; }
+			companySearchLoading = false;
+		}, 200);
+	});
+
+	function selectCompanyResult(result) {
+		companySearchText = "";
+		companySearchResults = [];
+		onCompanySelect?.(result);
+	}
 
 	// 검색 결과
 	let searchResults = $state(null);
@@ -199,7 +231,7 @@
 		}
 	}
 
-	// 검색 실행 (toc 라벨 + 서버 텍스트 병합)
+	// 검색 실행 — MiniSearch 우선, fallback 서버 검색
 	$effect(() => {
 		const q = searchQuery.trim();
 		if (!q || !company?.stockCode) {
@@ -207,6 +239,14 @@
 			return;
 		}
 
+		// MiniSearch가 준비되었으면 로컬 전문 검색 (fuzzy/prefix/BM25)
+		if (viewer?.searchIndexReady) {
+			const msResults = viewer.searchSections(q);
+			searchResults = msResults.length > 0 ? msResults : null;
+			return;
+		}
+
+		// fallback: TOC 라벨 매칭 + 서버 substring
 		const localResults = [];
 		if (viewer?.toc?.chapters) {
 			const qLower = q.toLowerCase();
@@ -280,6 +320,23 @@
 					<div class="text-[12px] text-dl-text-dim">종목 미선택</div>
 				{/if}
 			</div>
+
+			<!-- company 없을 때: 최근 종목 목록 -->
+			{#if !company && recentCompanies.length > 0}
+				<div class="px-3 py-3 flex-1 overflow-y-auto">
+					<div class="text-[10px] text-dl-text-dim uppercase tracking-wider font-semibold mb-2">최근 종목</div>
+					{#each recentCompanies as rc}
+						<button
+							class="w-full text-left px-2 py-1.5 rounded-md text-[11px] text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors flex items-center gap-1.5"
+							onclick={() => onCompanySelect?.(rc)}
+						>
+							<Building2 size={11} class="text-dl-text-dim/30 flex-shrink-0" />
+							<span class="truncate">{rc.corpName || rc.company}</span>
+							<span class="text-[9px] font-mono text-dl-text-dim/40 ml-auto">{rc.stockCode}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
 
 			<ViewerNav
 				toc={viewer?.toc}
@@ -416,10 +473,64 @@
 			</div>
 		{/if}
 		{#if !company}
-			<div class="flex flex-col items-center justify-center h-full text-center px-8">
+			<div class="flex flex-col items-center justify-center h-full text-center px-8 max-w-lg mx-auto">
 				<FileText size={32} class="text-dl-text-dim/30 mb-3" />
-				<div class="text-[14px] text-dl-text-muted mb-1">공시 뷰어</div>
-				<div class="text-[12px] text-dl-text-dim">종목을 검색하여 공시 문서를 살펴보세요</div>
+				<div class="text-[14px] text-dl-text-muted mb-2">공시 뷰어</div>
+				<div class="text-[12px] text-dl-text-dim mb-6">종목을 검색하여 공시 문서를 살펴보세요</div>
+
+				<!-- 종목 검색 입력 -->
+				<div class="w-full max-w-sm relative">
+					<div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-dl-border/30 bg-dl-bg-darker/60 focus-within:border-dl-accent/40 transition-colors">
+						<Search size={14} class="text-dl-text-dim flex-shrink-0" />
+						<input
+							bind:this={companySearchInput}
+							bind:value={companySearchText}
+							placeholder="종목명 또는 종목코드..."
+							class="flex-1 bg-transparent text-[13px] text-dl-text outline-none placeholder:text-dl-text-dim"
+						/>
+						{#if companySearchLoading}
+							<Loader2 size={14} class="animate-spin text-dl-text-dim flex-shrink-0" />
+						{/if}
+					</div>
+
+					<!-- 검색 결과 드롭다운 -->
+					{#if companySearchResults.length > 0}
+						<div class="absolute top-full mt-1 w-full bg-dl-bg-card border border-dl-border/30 rounded-lg shadow-xl overflow-hidden z-30 max-h-[300px] overflow-y-auto">
+							{#each companySearchResults.slice(0, 10) as result}
+								<button
+									class="w-full text-left px-3 py-2 text-[13px] hover:bg-white/5 transition-colors flex items-center gap-2 border-b border-dl-border/5 last:border-b-0"
+									onclick={() => selectCompanyResult(result)}
+								>
+									<Building2 size={13} class="text-dl-text-dim/40 flex-shrink-0" />
+									<span class="text-dl-text truncate">{result.corpName || result.company}</span>
+									<span class="text-[10px] font-mono text-dl-text-dim ml-auto flex-shrink-0">{result.stockCode}</span>
+									{#if result.market}
+										<span class="text-[9px] px-1 py-0.5 rounded bg-dl-border/10 text-dl-text-dim/60">{result.market}</span>
+									{/if}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<!-- 최근 종목 -->
+				{#if recentCompanies.length > 0}
+					<div class="w-full max-w-sm mt-6">
+						<div class="text-[10px] text-dl-text-dim uppercase tracking-wider font-semibold mb-2 text-left">최근 검색</div>
+						<div class="space-y-0.5">
+							{#each recentCompanies as rc}
+								<button
+									class="w-full text-left px-3 py-2 rounded-lg text-[12px] text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors flex items-center gap-2"
+									onclick={() => onCompanySelect?.(rc)}
+								>
+									<Clock size={12} class="text-dl-text-dim/30 flex-shrink-0" />
+									<span class="truncate">{rc.corpName || rc.company}</span>
+									<span class="text-[10px] font-mono text-dl-text-dim/50 ml-auto">{rc.stockCode}</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			</div>
 		{:else if viewer?.tocLoading}
 			<div class="flex flex-col items-center justify-center h-full">
@@ -439,6 +550,18 @@
 					loading={viewer.insightLoading}
 					toc={viewer.toc}
 					onNavigateTopic={handleInsightNavigate}
+				/>
+
+				<NetworkGraph
+					data={viewer.networkData}
+					loading={viewer.networkLoading}
+					centerCode={company?.stockCode}
+					onNavigate={(code) => {
+						// 다른 회사로 이동: viewer reload
+						if (viewer && code !== company?.stockCode) {
+							viewer.loadCompany(code);
+						}
+					}}
 				/>
 
 				<div class="mt-4">

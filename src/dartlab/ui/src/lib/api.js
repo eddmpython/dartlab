@@ -273,10 +273,24 @@ export async function fetchCompanySearch(code, query) {
 	return res.json();
 }
 
+/** MiniSearch 인덱스용 flat document list */
+export async function fetchSearchIndex(code) {
+	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/searchIndex`);
+	if (!res.ok) throw new Error("검색 인덱스 조회 실패");
+	return res.json();
+}
+
 /** 7영역 인사이트 등급 + 이상치 분석 */
 export async function fetchCompanyInsights(code) {
 	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/insights`);
 	if (!res.ok) throw new Error("인사이트 조회 실패");
+	return res.json();
+}
+
+/** Ego network — 회사 중심 관계 그래프 */
+export async function fetchCompanyNetwork(code) {
+	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/network`);
+	if (!res.ok) throw new Error("네트워크 조회 실패");
 	return res.json();
 }
 
