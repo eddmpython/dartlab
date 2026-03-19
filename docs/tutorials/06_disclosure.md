@@ -2,15 +2,15 @@
 title: "6. Disclosure Text"
 ---
 
-# 6. 공시 텍스트 — sections로 읽는 서술형 공시
+# 6. Disclosure Text — Reading Narrative Disclosures with sections
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb)
 
-숫자 뒤에 숨겨진 텍스트를 읽는다. DartLab은 모든 공시 텍스트를 `sections`로 수평화한다. 사업보고서의 모든 섹션이 topic × period 매트릭스로 정리되어 있어서, 어떤 주제든 기간별로 나란히 비교할 수 있다.
+Read the text hidden behind the numbers. DartLab horizontalizes all disclosure text into `sections`. Every section of an annual report is organized into a topic × period matrix, so you can compare any subject side by side across periods.
 
 ---
 
-## 준비
+## Setup
 
 ```python
 import dartlab
@@ -21,13 +21,13 @@ c = dartlab.Company("005930")
 
 ---
 
-## sections로 전체 구조 보기
+## Viewing the Full Structure with sections
 
 ```python
 c.sections
 ```
 
-`sections`는 회사의 전체 공시 지도다. 모든 섹션이 topic × period 매트릭스로 수평화되어 있다. `blockType` 컬럼으로 텍스트와 테이블을 구분하고, `blockOrder`로 원본 순서를 보존한다.
+`sections` is the complete disclosure map of a company. All sections are horizontalized into a topic × period matrix. The `blockType` column distinguishes text from tables, and `blockOrder` preserves the original order.
 
 ```
 │ chapter │ topic            │ blockType │ blockOrder │ 2024   │ 2023   │ ...
@@ -38,163 +38,163 @@ c.sections
 
 ---
 
-## topic 목록 확인
+## Checking the Topic List
 
 ```python
 c.topics
 ```
 
-주요 topic 예시:
+Key topic examples:
 
-| topic | 설명 |
-|-------|------|
-| `companyOverview` | 회사의 개요 |
-| `businessOverview` | 사업의 내용 |
-| `riskFactors` | 위험 관리 |
-| `mdna` | 경영진단 및 분석의견 |
-| `salesOrder` | 매출·수주 현황 |
-| `rawMaterial` | 원재료 현황 |
-| `segments` | 사업부문 |
-| `companyHistory` | 회사 연혁 |
+| topic | Description |
+|-------|-------------|
+| `companyOverview` | Company overview |
+| `businessOverview` | Business description |
+| `riskFactors` | Risk management |
+| `mdna` | Management discussion & analysis |
+| `salesOrder` | Sales and orders |
+| `rawMaterial` | Raw materials |
+| `segments` | Business segments |
+| `companyHistory` | Company history |
 
-회사마다 보유한 topic이 다르다. `c.topics`로 해당 종목에서 사용 가능한 전체 목록을 확인한다.
+Available topics vary by company. Use `c.topics` to check the full list for a given stock.
 
 ---
 
-## show()로 topic 열기
+## Opening a Topic with show()
 
-`show()`는 sections에서 해당 topic을 꺼내 블록 단위로 보여준다.
+`show()` extracts the relevant topic from sections and presents it block by block.
 
 ```python
-# 블록 목차 — 어떤 블록이 있는지 확인
+# Block index — see what blocks are available
 c.show("businessOverview")
 ```
 
-목차에서 블록 번호를 확인한 뒤, 원하는 블록을 꺼낸다.
+After checking the block numbers in the index, retrieve the desired block.
 
 ```python
-# 블록 0: 텍스트 DataFrame (기간별 원문)
+# Block 0: Text DataFrame (original text by period)
 c.show("businessOverview", 0)
 
-# 블록 1: 테이블 DataFrame (항목 × 기간 매트릭스)
+# Block 1: Table DataFrame (items × periods matrix)
 c.show("businessOverview", 1)
 ```
 
-텍스트 블록은 기간별 원문 컬럼이 나란히 나오고, 테이블 블록은 항목명 × 기간 형태의 수평화된 DataFrame을 반환한다.
+Text blocks display original text columns side by side for each period, and table blocks return a horizontalized DataFrame in an items × periods format.
 
 ---
 
-## Polars로 sections 필터링
+## Filtering sections with Polars
 
-sections는 Polars DataFrame이므로 자유롭게 필터할 수 있다.
+Since sections is a Polars DataFrame, you can filter it freely.
 
 ```python
-# 특정 topic의 텍스트 블록만
+# Text blocks only for a specific topic
 text_rows = c.sections.filter(
     (pl.col("topic") == "businessOverview") & (pl.col("blockType") == "text")
 )
 
-# 특정 topic의 테이블 블록만
+# Table blocks only for a specific topic
 table_rows = c.sections.filter(
     (pl.col("topic") == "businessOverview") & (pl.col("blockType") == "table")
 )
 
-# 특정 기간의 원문 읽기
+# Reading original text for a specific period
 row = c.sections.filter(
     (pl.col("topic") == "companyOverview") & (pl.col("blockType") == "text")
 )
-print(row["2024"][0])  # 2024년 텍스트
+print(row["2024"][0])  # 2024 text
 ```
 
 ---
 
-## 기간별 탐색
+## Exploring by Period
 
 ```python
-# 사용 가능한 기간 목록
+# List of available periods
 c.sections.periods()
 
-# 최신 순 정렬
+# Sorted newest first
 c.sections.ordered()
 ```
 
-`periods()`는 해당 회사에 수록된 전체 기간 리스트를 반환한다. `ordered()`는 최신 기간이 먼저 오도록 컬럼을 재정렬한다.
+`periods()` returns the full list of periods available for the company. `ordered()` reorders the columns so the most recent period comes first.
 
 ---
 
-## diff()로 변경 감지
+## Detecting Changes with diff()
 
-두 기간 사이의 텍스트 변화를 추적한다. 공시 텍스트가 어느 해에 크게 바뀌었는지 한눈에 파악할 수 있다.
+Track text changes between two periods. Quickly identify which years saw significant changes in disclosure text.
 
 ```python
-# 전체 topic별 변경률 요약
+# Change rate summary by topic
 c.diff()
 
-# 특정 topic의 기간별 변경 이력
+# Period-by-period change history for a specific topic
 c.diff("businessOverview")
 
-# 두 기간 사이 라인 단위 상세 비교
+# Detailed line-by-line comparison between two periods
 c.diff("businessOverview", "2023", "2024")
 ```
 
-> 변경률이 높은 해에는 사업 구조 변경, 신사업 진출, 위험 요인 추가 등이 있을 수 있다. `diff()`로 변화 지점을 먼저 잡고, `show()`로 해당 기간의 원문을 읽는 것이 효율적인 분석 흐름이다.
+> Years with high change rates may indicate business restructuring, new business ventures, or added risk factors. An efficient analysis workflow is to first identify change points with `diff()`, then read the original text for that period with `show()`.
 
 ---
 
-## source namespace로 더 깊게
+## Going Deeper with the source Namespace
 
-`c.sections`는 merged view다. 원본 데이터에 더 깊이 접근하려면 `c.docs` namespace를 사용한다.
+`c.sections` is a merged view. To access the raw data at a deeper level, use the `c.docs` namespace.
 
 ```python
-# pure docs source view (finance/report 병합 전)
+# Pure docs source view (before finance/report merge)
 c.docs.sections
 
-# 원문 block retrieval (검색·AI용)
+# Original block retrieval (for search and AI)
 c.docs.retrievalBlocks
 
 # LLM context slice
 c.docs.contextSlices
 
-# K-IFRS 주석
+# K-IFRS notes
 c.docs.notes
 ```
 
 ---
 
-## 실전 예: 위험 요인 변화 추적
+## Practical Example: Tracking Risk Factor Changes
 
-위험 요인은 매년 업데이트되므로, 변경 지점을 추적하면 새로운 리스크를 빠르게 발견할 수 있다.
+Risk factors are updated every year, so tracking changes helps you quickly spot new risks.
 
 ```python
-# 위험 요인 블록 목차
+# Risk factors block index
 c.show("riskFactors")
 
-# 텍스트 블록 열기
+# Open text block
 c.show("riskFactors", 0)
 
-# 연도별 변경률 확인
+# Check change rates by year
 c.diff("riskFactors")
 
-# 2023→2024 상세 비교
+# Detailed comparison 2023→2024
 c.diff("riskFactors", "2023", "2024")
 ```
 
 ---
 
-## 출처 추적
+## Source Tracking
 
-어떤 topic의 데이터가 어디서 왔는지 확인한다.
+Check where the data for a topic originated.
 
 ```python
 c.trace("businessOverview")
 ```
 
-`trace()`는 해당 topic의 source(docs/finance/report), 기간 수, 텍스트·테이블 유무 등 메타데이터를 반환한다.
+`trace()` returns metadata such as the source (docs/finance/report), number of periods, and whether text or tables are present for that topic.
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [Sections 가이드](../getting-started/sections) — sections 구조 상세
-- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산, 관계기업
-- [8. 기업 간 비교](./cross-company) — 섹터, 인사이트, 순위
+- [Sections Guide](../getting-started/sections) — Detailed sections structure
+- [7. Advanced Analysis](./advanced) — K-IFRS notes, tangible assets, affiliates
+- [8. Cross-Company Comparison](./cross-company) — Sector, insight, ranking

@@ -1,84 +1,84 @@
-﻿---
+---
 title: finance.statements
 ---
 
 # finance.statements
 
-연결재무제표를 재무상태표(BS), 손익계산서(IS), 현금흐름표(CF)로 분리해서 시계열로 추출한다. `Company`의 기본 공개 흐름은 `sections -> show -> trace`지만, 상세 재무 계정을 직접 다루려면 `finance.statements` 계층으로 내려간다. 요약재무정보보다 **상세한 항목**(50~200개)을 원문 그대로 제공한다.
+Extracts consolidated financial statements into time series separated by Balance Sheet (BS), Income Statement (IS), and Cash Flow Statement (CF). While `Company`'s default public flow is `sections -> show -> trace`, drop down to the `finance.statements` layer when you need to work with detailed financial accounts directly. Provides **detailed line items** (50~200) from the original statements, more granular than the financial summary.
 
-## 사용법
+## Usage
 
-### Company shortcut
+### Company Shortcut
 
 ```python
 c = dartlab.Company("005930")
 
-c.BS   # 재무상태표
-c.IS   # 손익계산서
-c.CF   # 현금흐름표
+c.BS   # Balance Sheet
+c.IS   # Income Statement
+c.CF   # Cash Flow Statement
 ```
 
-### `get()`으로 전체 접근
+### Full Access via `get()`
 
 ```python
 result = c.get("statements")
 
-result.BS    # 재무상태표 — 자산, 부채, 자본 상세 항목
-result.IS    # 손익계산서 — 매출, 비용, 이익 상세 항목
-result.CF    # 현금흐름표 — 영업/투자/재무 활동
+result.BS    # Balance Sheet — detailed asset, liability, and equity items
+result.IS    # Income Statement — detailed revenue, expense, and profit items
+result.CF    # Cash Flow Statement — operating/investing/financing activities
 ```
 
-### 분기별·반기별
+### Quarterly / Semi-Annual
 
 ```python
-result = c.get("statements", period="q")   # 분기별
-result = c.get("statements", period="h")   # 반기별
+result = c.get("statements", period="q")   # Quarterly
+result = c.get("statements", period="h")   # Semi-annual
 ```
 
 ---
 
-## 파라미터
+## Parameters
 
-| 이름 | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `period` | `str` | `"y"` | `"y"` 연간, `"q"` 분기, `"h"` 반기 |
-| `ifrsOnly` | `bool` | `True` | K-IFRS 기간만 |
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `period` | `str` | `"y"` | `"y"` annual, `"q"` quarterly, `"h"` semi-annual |
+| `ifrsOnly` | `bool` | `True` | K-IFRS periods only |
 
 ---
 
 ## StatementsResult
 
-| 속성 | 타입 | 설명 |
-|------|------|------|
-| `corpName` | `str \| None` | 기업명 |
-| `period` | `str` | 분석 기간 |
-| `nYears` | `int` | 연도 수 |
-| `BS` | `pl.DataFrame \| None` | 재무상태표 |
-| `IS` | `pl.DataFrame \| None` | 손익계산서 |
-| `CF` | `pl.DataFrame \| None` | 현금흐름표 |
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `corpName` | `str \| None` | Company name |
+| `period` | `str` | Analysis period |
+| `nYears` | `int` | Number of years |
+| `BS` | `pl.DataFrame \| None` | Balance Sheet |
+| `IS` | `pl.DataFrame \| None` | Income Statement |
+| `CF` | `pl.DataFrame \| None` | Cash Flow Statement |
 
 ---
 
-## fsSummary vs statements 비교
+## fsSummary vs statements Comparison
 
-두 모듈은 같은 재무제표를 다른 소스에서 추출한다. 용도에 따라 선택한다.
+These two modules extract the same financial statements from different sources. Choose based on your use case.
 
 | | fsSummary (`c.fsSummary()`) | statements (`c.get("statements")`) |
 |-----|------------------------|------------|
-| **소스** | 요약재무정보 | 연결재무제표 본문 |
-| **항목 수** | 20~30개 핵심 항목 | 50~200개 상세 항목 |
-| **Bridge Matching** | 적용 (계정명 변경 자동 추적) | 미적용 (원문 그대로) |
-| **현금흐름표** | 없음 | 있음 (CF) |
-| **시계열 연속성** | 우수 (자동 추적) | 원문 의존 |
-| **용도** | 장기 트렌드 분석 | 상세 항목 확인 |
+| **Source** | Financial summary | Consolidated statement body |
+| **Item count** | 20~30 core items | 50~200 detailed items |
+| **Bridge Matching** | Applied (auto-tracks account name changes) | Not applied (original as-is) |
+| **Cash Flow Statement** | Not included | Included (CF) |
+| **Time series continuity** | Excellent (auto-tracking) | Depends on original |
+| **Use case** | Long-term trend analysis | Detailed line item inspection |
 
-> **일반 규칙**: 공개 board에서는 `c.show("BS")`로 시작한다. 더 상세한 계정 분해가 목적이면 `c.BS`, `c.CF`, `c.get("statements")`, `c.fsSummary()` 같은 finance 계층으로 내려간다.
+> **General rule**: Start with `c.show("BS")` on the public board. Drop down to the finance layer with `c.BS`, `c.CF`, `c.get("statements")`, or `c.fsSummary()` when you need more detailed account breakdowns.
 
 ---
 
-## 사용 예제
+## Usage Examples
 
-### 재무상태표 — 주요 항목
+### Balance Sheet — Key Items
 
 ```python
 import dartlab
@@ -96,7 +96,7 @@ print(c.BS)
 # 자본총계        | 199,054,608| 206,676,969| ... | ...
 ```
 
-### 현금흐름표
+### Cash Flow Statement
 
 ```python
 print(c.CF)
@@ -106,7 +106,7 @@ print(c.CF)
 # 재무활동 현금흐름        | -10,740,937| -9,756,700  | ...
 ```
 
-### 분기별 상세
+### Quarterly Detail
 
 ```python
 result = c.get("statements", period="q")
@@ -117,12 +117,11 @@ print(result.CF)
 # account  | 2023Q1 | 2023Q2 | 2023Q3 | 2023Q4 | 2024Q1 | ...
 ```
 
-### 재무제표 없는 항목 확인
+### Checking Missing Statement Items
 
 ```python
 result = c.get("statements")
-print(f"BS 항목 수: {result.BS.height if result.BS is not None else 0}")
-print(f"IS 항목 수: {result.IS.height if result.IS is not None else 0}")
-print(f"CF 항목 수: {result.CF.height if result.CF is not None else 0}")
+print(f"BS items: {result.BS.height if result.BS is not None else 0}")
+print(f"IS items: {result.IS.height if result.IS is not None else 0}")
+print(f"CF items: {result.CF.height if result.CF is not None else 0}")
 ```
-

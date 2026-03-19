@@ -1,12 +1,12 @@
 ---
-title: 시장 순위
+title: Market Ranking
 ---
 
-# 시장 순위
+# Market Ranking
 
-전체 상장사의 매출, 자산, 성장률 기준 순위를 산출한다. 시장 전체 순위와 섹터 내 순위를 모두 제공한다.
+Calculates rankings across all listed companies based on revenue, assets, and growth rate. Provides both overall market rankings and within-sector rankings.
 
-## 사용법
+## Usage
 
 ```python
 from dartlab.engines.rank import getRankOrBuild
@@ -17,25 +17,25 @@ rank.corpName              # "삼성전자"
 rank.sector                # "IT"
 rank.industryGroup         # "반도체"
 
-# 매출 순위
-rank.revenueRank           # 3 (전체 시장)
-rank.revenueTotal          # 2508 (전체 종목 수)
-rank.revenueRankInSector   # 1 (IT 섹터 내)
-rank.revenueSectorTotal    # 122 (IT 섹터 종목 수)
+# Revenue ranking
+rank.revenueRank           # 3 (overall market)
+rank.revenueTotal          # 2508 (total companies)
+rank.revenueRankInSector   # 1 (within IT sector)
+rank.revenueSectorTotal    # 122 (IT sector companies)
 
-# 자산 순위
+# Asset ranking
 rank.assetRank             # 5
 rank.assetRankInSector     # 2
 
-# 성장률 순위
+# Growth ranking
 rank.growthRank            # 320
 rank.growthRankInSector    # 45
 
-# 규모 등급
+# Size class
 rank.sizeClass             # "large"
 ```
 
-## 함수
+## Functions
 
 ### getRankOrBuild()
 
@@ -43,12 +43,12 @@ rank.sizeClass             # "large"
 getRankOrBuild(stockCode: str, *, verbose: bool = True) -> RankInfo | None
 ```
 
-캐시가 있으면 즉시 반환하고, 없으면 전체 스냅샷을 빌드한 후 반환한다.
+Returns immediately from cache if available; otherwise builds a full snapshot first.
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `stockCode` | str | 종목코드 |
-| `verbose` | bool | 빌드 시 진행 상황 출력 |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `stockCode` | str | Stock code |
+| `verbose` | bool | Print progress during build |
 
 ### getRank()
 
@@ -56,7 +56,7 @@ getRankOrBuild(stockCode: str, *, verbose: bool = True) -> RankInfo | None
 getRank(stockCode: str) -> RankInfo | None
 ```
 
-캐시에서만 조회한다. 캐시가 없으면 `None`.
+Looks up from cache only. Returns `None` if cache does not exist.
 
 ### buildSnapshot()
 
@@ -64,78 +64,78 @@ getRank(stockCode: str) -> RankInfo | None
 buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]
 ```
 
-전체 종목 스냅샷을 새로 빌드하고 로컬 캐시에 저장한다. 2,500+ 종목 기준 약 2분 소요.
+Builds a full snapshot of all companies and saves to local cache. Takes approximately 2 minutes for 2,500+ companies.
 
-프로세스:
-1. KRX 전체 종목 목록 로드
-2. 각 종목별 섹터 분류 + 재무 시계열 수집
-3. 매출/자산/성장률 기준 전체 정렬
-4. 섹터 내 순위 별도 계산
-5. 규모 등급 산정
-6. JSON 캐시 저장 (`{dataDir}/_cache/rank_snapshot.json`)
+Process:
+1. Load full KRX company list
+2. Classify sector + collect financial time series for each company
+3. Sort by revenue/assets/growth across all companies
+4. Calculate within-sector rankings separately
+5. Determine size class
+6. Save JSON cache (`{dataDir}/_cache/rank_snapshot.json`)
 
 ## RankInfo
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `stockCode` | str | 종목코드 |
-| `corpName` | str | 회사명 |
-| `sector` | str | 섹터명 (한글) |
-| `industryGroup` | str | 산업군명 (한글) |
-| **재무 지표** | | |
-| `revenue` | float (선택) | TTM 매출 (원) |
-| `totalAssets` | float (선택) | 총자산 (원) |
-| `revenueGrowth3Y` | float (선택) | 3년 매출 CAGR (%) |
-| **매출 순위** | | |
-| `revenueRank` | int (선택) | 전체 시장 순위 |
-| `revenueTotal` | int | 전체 순위 종목 수 |
-| `revenueRankInSector` | int (선택) | 섹터 내 순위 |
-| `revenueSectorTotal` | int | 섹터 내 종목 수 |
-| **자산 순위** | | |
-| `assetRank` | int (선택) | 전체 시장 순위 |
-| `assetTotal` | int | 전체 순위 종목 수 |
-| `assetRankInSector` | int (선택) | 섹터 내 순위 |
-| `assetSectorTotal` | int | 섹터 내 종목 수 |
-| **성장률 순위** | | |
-| `growthRank` | int (선택) | 전체 시장 순위 |
-| `growthTotal` | int | 전체 순위 종목 수 |
-| `growthRankInSector` | int (선택) | 섹터 내 순위 |
-| `growthSectorTotal` | int | 섹터 내 종목 수 |
-| **분류** | | |
-| `sizeClass` | str | 규모 등급 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `stockCode` | str | Stock code |
+| `corpName` | str | Company name |
+| `sector` | str | Sector name (Korean) |
+| `industryGroup` | str | Industry group name (Korean) |
+| **Financial Metrics** | | |
+| `revenue` | float (optional) | TTM revenue (KRW) |
+| `totalAssets` | float (optional) | Total assets (KRW) |
+| `revenueGrowth3Y` | float (optional) | 3-year revenue CAGR (%) |
+| **Revenue Ranking** | | |
+| `revenueRank` | int (optional) | Overall market rank |
+| `revenueTotal` | int | Total ranked companies |
+| `revenueRankInSector` | int (optional) | Within-sector rank |
+| `revenueSectorTotal` | int | Companies in sector |
+| **Asset Ranking** | | |
+| `assetRank` | int (optional) | Overall market rank |
+| `assetTotal` | int | Total ranked companies |
+| `assetRankInSector` | int (optional) | Within-sector rank |
+| `assetSectorTotal` | int | Companies in sector |
+| **Growth Ranking** | | |
+| `growthRank` | int (optional) | Overall market rank |
+| `growthTotal` | int | Total ranked companies |
+| `growthRankInSector` | int (optional) | Within-sector rank |
+| `growthSectorTotal` | int | Companies in sector |
+| **Classification** | | |
+| `sizeClass` | str | Size class |
 
-### 규모 등급
+### Size Classes
 
-| 등급 | 기준 |
-|------|------|
-| `large` | 매출 상위 10% |
-| `mid` | 매출 상위 10~30% |
-| `small` | 매출 상위 30% 이하 |
+| Class | Criteria |
+|-------|----------|
+| `large` | Top 10% by revenue |
+| `mid` | Top 10~30% by revenue |
+| `small` | Below top 30% by revenue |
 
-## 예시
+## Examples
 
 ```python
 from dartlab.engines.rank import getRankOrBuild, buildSnapshot
 
-# 단일 종목 조회
+# Single company lookup
 rank = getRankOrBuild("000660")
-print(f"{rank.corpName}: 매출 {rank.revenueRank}/{rank.revenueTotal}")
-print(f"  섹터({rank.sector}): {rank.revenueRankInSector}/{rank.revenueSectorTotal}")
-print(f"  규모: {rank.sizeClass}")
+print(f"{rank.corpName}: Revenue {rank.revenueRank}/{rank.revenueTotal}")
+print(f"  Sector ({rank.sector}): {rank.revenueRankInSector}/{rank.revenueSectorTotal}")
+print(f"  Size: {rank.sizeClass}")
 
-# 전체 스냅샷 빌드 (최초 1회)
+# Build full snapshot (first time)
 snapshot = buildSnapshot()
-print(f"총 {len(snapshot)}개 종목 순위 산출")
+print(f"Ranked {len(snapshot)} companies")
 
-# 특정 섹터 Top 10
+# Top 10 in a specific sector
 it_stocks = [(k, v) for k, v in snapshot.items() if v.sector == "IT" and v.revenueRankInSector]
 it_stocks.sort(key=lambda x: x[1].revenueRankInSector)
 for code, r in it_stocks[:10]:
-    print(f"  {r.revenueRankInSector}위: {r.corpName} ({code})")
+    print(f"  #{r.revenueRankInSector}: {r.corpName} ({code})")
 ```
 
-## 캐시
+## Cache
 
-스냅샷은 `{dataDir}/_cache/rank_snapshot.json`에 저장된다. `getRankOrBuild()`는 캐시가 있으면 즉시 로드하고, 없으면 빌드한다.
+The snapshot is saved to `{dataDir}/_cache/rank_snapshot.json`. `getRankOrBuild()` loads from cache immediately if available; otherwise builds a new snapshot.
 
-캐시를 갱신하려면 `buildSnapshot()`을 직접 호출한다.
+To refresh the cache, call `buildSnapshot()` directly.

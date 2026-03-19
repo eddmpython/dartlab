@@ -1,47 +1,47 @@
 ---
 title: About DartLab
-description: DartLab이 무엇을 만드는 프로젝트인지, 어떤 데이터를 다루는지, 누가 운영하는지 정리한 소개 페이지.
+description: What DartLab builds, what data it handles, and who maintains it.
 ---
 
 # About DartLab
 
-DartLab은 한국 금융감독원 DART 전자공시와 미국 SEC EDGAR 데이터를 구조적으로 읽기 위해 만든 오픈소스 프로젝트다. 목표는 단순 조회가 아니라, 재무 숫자와 공시 문서를 같은 데이터 흐름으로 묶어 반복 가능한 분석 기반을 만드는 것이다.
+DartLab is an open-source project built for structurally reading Korean FSS DART disclosures and US SEC EDGAR data. The goal is not simple lookup — it's creating a repeatable analysis foundation by unifying financial numbers and disclosure documents into a single data flow.
 
-## 무엇을 만드는가
+## What It Builds
 
-DartLab은 아래 세 층을 함께 다룬다.
+DartLab handles three layers together:
 
-- 재무제표와 비율 같은 정량 데이터
-- 사업보고서, 감사보고서, MD&A, 주석 같은 정성 데이터
-- 위 데이터를 코드에서 바로 재사용할 수 있게 하는 표준화 레이어
+- Quantitative data like financial statements and ratios
+- Qualitative data like annual reports, audit reports, MD&A, and footnotes
+- A standardization layer that makes all of the above directly reusable in code
 
-즉 "공시를 읽는 법"과 "공시를 데이터로 쓰는 법"을 한 프로젝트 안에서 연결하는 것이 핵심이다.
+The core idea: connecting "how to read disclosures" and "how to use disclosures as data" within one project.
 
-## 왜 만들었나
+## Why It Was Built
 
-DART와 EDGAR에는 좋은 정보가 많지만, 대부분은 사람이 직접 사이트를 열어 문서별로 따라가야 한다. 투자자, 연구자, 개발자는 같은 작업을 반복하게 된다.
+DART and EDGAR contain excellent information, but most of it requires manually opening websites and navigating documents one by one. Investors, researchers, and developers repeat the same work.
 
-DartLab은 이 비효율을 줄이기 위해 시작됐다.
+DartLab started to reduce this inefficiency:
 
-- 문서형 공시를 topic 단위로 구조화한다.
-- XBRL 재무 데이터를 시계열로 정리한다.
-- 공시 텍스트와 숫자를 같은 회사 객체 안에서 다룬다.
-- 블로그와 문서로 해석 방법까지 공개한다.
+- Structures disclosure documents by topic
+- Organizes XBRL financial data into time series
+- Handles disclosure text and numbers within the same company object
+- Publishes interpretation methods through blog posts and documentation
 
-## 어떤 데이터를 다루나
+## What Data It Covers
 
-주요 데이터 축은 다음과 같다.
+Key data sources:
 
-- DART 공시 문서 원문
-- OpenDART API와 XBRL 재무제표
-- DART 정기보고서 정형 데이터
-- SEC EDGAR filing 원문과 XBRL 데이터
+- DART disclosure document originals
+- OpenDART API and XBRL financial statements
+- DART periodic report structured data
+- SEC EDGAR filing originals and XBRL data
 
-여기서 중요한 원칙은 source-aware structure다. 숫자는 더 강한 source를 우선하고, 서술형 정보는 원문 문맥을 유지하는 쪽을 우선한다.
+An important principle is **source-aware structure**: numbers prioritize the stronger source, while narrative information prioritizes preserving original context.
 
-## 누가 운영하나
+## Who Maintains It
 
-프로젝트 작성자와 운영자는 `eddmpython`이다. GitHub, PyPI, YouTube, Threads, 블로그를 통해 관련 도구와 글을 계속 공개하고 있다.
+The project author and maintainer is `eddmpython`. Tools and articles are continuously published through GitHub, PyPI, YouTube, Threads, and blog.
 
 - GitHub: https://github.com/eddmpython
 - PyPI: https://pypi.org/user/eddmpython/
@@ -49,46 +49,46 @@ DartLab은 이 비효율을 줄이기 위해 시작됐다.
 - Threads: https://www.threads.net/@eddmpython
 - Blog: https://eddm.tistory.com
 
-## 이 사이트를 어떻게 읽는 것이 좋은가
+## How to Read This Site
 
-처음 들어왔다면 아래 순서가 가장 효율적이다.
+If you're visiting for the first time, this order is most efficient:
 
-1. 설치 문서
-2. Quickstart
+1. Installation guide
+2. Quick Start
 3. API Overview
-4. 블로그의 기초 글
+4. Introductory blog posts
 
-문서는 사용법과 구조를 설명하고, 블로그는 공시를 실제로 읽는 해석 프레임을 다룬다. 둘을 같이 보는 편이 더 빠르다.
+Documentation covers usage and structure; the blog covers interpretation frameworks for actually reading disclosures. Reading both together is faster.
 
-## 인용과 출처
+## Citations and Sources
 
-DartLab 사이트의 문서와 블로그는 가능한 한 공식 출처를 함께 남긴다. DART, OpenDART, SEC, IFRS 같은 1차 출처를 우선하고, 해석과 구현은 별도로 구분한다.
+DartLab documentation and blog posts include official sources wherever possible. Primary sources like DART, OpenDART, SEC, and IFRS are prioritized, with interpretations and implementations clearly separated.
 
-프로젝트를 인용할 때는 다음 페이지가 출발점으로 적절하다.
+When citing this project, these pages serve as good starting points:
 
-- 문서: `/docs/api/overview`
-- 설치: `/docs/getting-started/installation`
-- 블로그 허브: `/blog/`
-- GitHub 저장소: `https://github.com/eddmpython/dartlab`
+- Documentation: `/docs/api/overview`
+- Installation: `/docs/getting-started/installation`
+- Blog hub: `/blog/`
+- GitHub repository: `https://github.com/eddmpython/dartlab`
 
 ## FAQ
 
-### DartLab은 어떤 문제를 해결하나
+### What problem does DartLab solve?
 
-전자공시 데이터를 사람이 읽기만 하는 상태에서, 코드와 파이프라인에서 재사용할 수 있는 구조로 바꾸는 문제를 해결한다.
+It transforms disclosure data from a human-read-only state into a structure that can be reused in code and pipelines.
 
-### DartLab은 누구를 위한 프로젝트인가
+### Who is DartLab for?
 
-투자자, 퀀트 연구자, 데이터 엔지니어, 회계/공시 자동화 작업을 하는 개발자에게 가장 직접적으로 유용하다.
+It's most directly useful for investors, quant researchers, data engineers, and developers working on accounting/disclosure automation.
 
-### 이 사이트에서 가장 먼저 읽을 페이지는 어디인가
+### What should I read first on this site?
 
-대부분의 사용자는 설치 문서와 Quickstart부터 시작하는 것이 가장 효율적이다. 해석 관점이 필요하면 블로그 기초 글을 같이 보면 된다.
+Most users find it most efficient to start with the Installation guide and Quick Start. If you need an interpretation perspective, read the introductory blog posts alongside.
 
-### 데이터 출처는 무엇인가
+### What are the data sources?
 
-핵심 출처는 금융감독원 DART, OpenDART, SEC EDGAR, XBRL 원문, 정기보고서 API 데이터다.
+Core sources are FSS DART, OpenDART, SEC EDGAR, XBRL originals, and periodic report API data.
 
-### DartLab을 인용할 때 무엇을 참고하면 되나
+### How should I cite DartLab?
 
-문서의 canonical URL, 블로그 글의 canonical URL, GitHub 저장소 URL을 우선 참고하면 된다. 구현 논점은 GitHub, 해석 논점은 블로그/문서가 더 적절하다.
+Use the canonical URLs for documentation, blog posts, and the GitHub repository. For implementation topics, GitHub is more appropriate; for interpretation topics, use the blog/documentation.

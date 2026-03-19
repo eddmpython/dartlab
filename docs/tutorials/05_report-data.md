@@ -1,29 +1,29 @@
-﻿---
+---
 title: "5. Report Data"
 ---
 
-# 5. Report Data — 정기보고서 데이터
+# 5. Report Data — Periodic Report Data
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/05_report_data.ipynb)
 
-정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다.
+Deep analysis of non-financial data from periodic reports. Financial statements were covered in [2. Financial Statements](./financial-statements); here we cover data provided by periodic report APIs — dividends, employees, shareholders, audit, and more.
 
-> **canonical 접근 경로**: `c.show("dividend")`, `c.show("audit")` 등 `show(topic)`이 기본이다. 이 튜토리얼에서는 `report` namespace로 직접 내려가 세부 payload까지 확인하는 deep access 패턴도 함께 다룬다.
+> **Canonical access path**: `c.show("dividend")`, `c.show("audit")`, etc. via `show(topic)` is the default. This tutorial also shows deep access patterns via the `report` namespace for detailed payloads.
 
-- 배당 시계열 (DPS, 배당수익률, 배당성향)
-- 직원 현황 (인원, 평균연봉, 근속연수)
-- 최대주주와 지분 구조
-- 주주 종합 현황
-- 주식의 총수와 자기주식
-- 부문별 매출
-- 비용의 성격별 분류
-- 임원 현황과 보수
-- 감사의견과 감사보수
-- 채무증권과 타법인 출자
+- Dividend time series (DPS, dividend yield, payout ratio)
+- Employee data (headcount, average salary, tenure)
+- Largest shareholder and ownership structure
+- Comprehensive shareholder overview
+- Total shares and treasury stock
+- Segment revenue
+- Cost by nature breakdown
+- Executive roster and compensation
+- Audit opinion and audit fees
+- Debt securities and subsidiary investments
 
 ---
 
-## 준비
+## Setup
 
 ```python
 import dartlab
@@ -33,10 +33,10 @@ c = dartlab.Company("005930")
 
 ---
 
-## 배당
+## Dividends
 
 ```python
-# canonical 경로
+# canonical path
 c.show("dividend")
 
 # report namespace direct access
@@ -44,71 +44,71 @@ c.dividend
 # year | netIncome | eps | totalDividend | payoutRatio | dividendYield | dps | dpsPreferred
 ```
 
-연도별 DPS, 배당수익률, 배당성향을 시계열로 확인한다. 당기순이익 대비 배당성향 추이를 한눈에 볼 수 있다.
+View DPS, dividend yield, and payout ratio as a time series. Easily track payout ratio trends relative to net income.
 
 ```python
-# 최근 배당 정보 확인
+# check latest dividend info
 div = c.dividend
 if div is not None:
     last = div.row(-1, named=True)
-    print(f"DPS: {last['dps']}원")
-    print(f"배당수익률: {last['dividendYield']}%")
-    print(f"배당성향: {last['payoutRatio']}%")
+    print(f"DPS: {last['dps']} KRW")
+    print(f"Dividend Yield: {last['dividendYield']}%")
+    print(f"Payout Ratio: {last['payoutRatio']}%")
 ```
 
-| 컬럼 | 의미 |
-|------|------|
-| `netIncome` | 당기순이익 |
-| `eps` | 주당순이익 |
-| `totalDividend` | 배당금 총액 |
-| `payoutRatio` | 배당성향 (배당금/순이익) |
-| `dividendYield` | 배당수익률 (DPS/주가) |
-| `dps` | 보통주 1주당 배당금 |
-| `dpsPreferred` | 우선주 1주당 배당금 |
+| Column | Meaning |
+|--------|---------|
+| `netIncome` | Net income |
+| `eps` | Earnings per share |
+| `totalDividend` | Total dividend amount |
+| `payoutRatio` | Payout ratio (dividends / net income) |
+| `dividendYield` | Dividend yield (DPS / share price) |
+| `dps` | Common share dividend per share |
+| `dpsPreferred` | Preferred share dividend per share |
 
 ---
 
-## 직원 현황
+## Employee Data
 
 ```python
 c.employee
 # year | totalEmployees | avgTenure | totalSalary | avgSalary
 ```
 
-총 직원수, 평균 근속연수, 연간 급여 총액, 1인당 평균 연봉의 시계열이다.
+Time series of total headcount, average tenure, total annual salary, and average salary per employee.
 
-직원수의 급격한 변화는 사업 확장/축소 또는 구조조정의 신호일 수 있다. 평균연봉 대비 업계 수준을 비교하면 인재 유치 경쟁력을 가늠할 수 있다.
+Sharp changes in headcount may signal business expansion/contraction or restructuring. Comparing average salary against industry levels provides insight into talent competitiveness.
 
 ---
 
-## 최대주주
+## Largest Shareholder
 
 ```python
 c.majorHolder
 # year | majorHolder | majorRatio | totalRatio | holderCount | ...
 ```
 
-최대주주명과 지분율의 시계열이다. 더 상세한 정보가 필요하면 `report.extract()`로 접근한다.
+Time series of the largest shareholder's name and stake. For more detail, access via `report.extract()`:
 
 ```python
 result = c.report.extract("majorHolder")
 
 result.majorHolder   # "이재용"
 result.majorRatio    # 20.76
-result.totalRatio    # 특수관계인 합계 지분율
+result.totalRatio    # total related-party stake
 
-# 개별 주주 목록
+# individual shareholder list
 for h in result.holders:
     print(f"{h.name} ({h.relation}): {h.ratioEnd}%")
 ```
 
-최대주주 지분율이 너무 낮으면 경영권 리스크가 있고, 특수관계인 합계 지분율이 높으면 경영 안정성은 좋지만 소액주주 권익 침해 가능성을 살펴야 한다.
+A very low largest-shareholder stake may indicate management control risk. A high total related-party stake suggests management stability but may raise minority shareholder concerns.
 
 ---
 
-## 주주 종합 현황
+## Comprehensive Shareholder Overview
 
-5% 이상 주주, 소액주주, 의결권 현황을 종합적으로 조회한다.
+Query 5%+ holders, minority shareholders, and voting rights comprehensively.
 
 ```python
 result = c.holderOverview
@@ -117,183 +117,183 @@ for bh in result.bigHolders:
     print(f"{bh.name}: {bh.ratio}%")
 
 if result.minority:
-    print(f"소액주주 비율: {result.minority.ratio}%")
+    print(f"Minority shareholder ratio: {result.minority.ratio}%")
 
 if result.voting:
-    print(f"의결권 행사 가능: {result.voting.exercisableShares}")
+    print(f"Exercisable voting shares: {result.voting.exercisableShares}")
 ```
 
 ---
 
-## 주식의 총수
+## Total Shares
 
 ```python
 c.shareCapital
 # year | authorizedShares | issuedShares | treasuryShares | outstandingShares | ...
 ```
 
-발행주식, 자기주식, 유통주식의 시계열이다. `report.extract()`로 개별 필드도 접근 가능하다.
+Time series of issued shares, treasury stock, and outstanding shares. Individual fields accessible via `report.extract()`:
 
 ```python
 result = c.report.extract("shareCapital")
-print(f"발행주식: {result.issuedShares:,.0f}")
-print(f"자기주식: {result.treasuryShares:,.0f}")
-print(f"자사주 비율: {result.treasuryRatio:.2%}")
+print(f"Issued shares: {result.issuedShares:,.0f}")
+print(f"Treasury shares: {result.treasuryShares:,.0f}")
+print(f"Treasury ratio: {result.treasuryRatio:.2%}")
 ```
 
-자기주식 비율이 높으면 실질 유통주식이 적어 주가에 영향을 줄 수 있다. 자사주 매입/소각 추이도 확인해볼 만하다.
+A high treasury stock ratio means fewer shares in circulation, potentially impacting share price. Buyback and cancellation trends are also worth monitoring.
 
 ---
 
-## 부문별 매출
+## Segment Revenue
 
-K-IFRS 주석의 부문정보를 추출한다.
+Extracts segment information from K-IFRS footnotes.
 
 ```python
 c.notes.segments
-# 부문별 매출 시계열 DataFrame
+# segment revenue time-series DataFrame
 ```
 
-연도별 상세 테이블은 `report.extract()`로 접근한다.
+For detailed year-by-year tables, use `report.extract()`:
 
 ```python
 result = c.report.extract("segments")
-print(result.revenue)   # 부문별 매출 시계열
+print(result.revenue)   # segment revenue time series
 
 for year, tables in result.tables.items():
     for t in tables:
         print(f"[{year}] {t.tableType}: {t.columns}")
 ```
 
-매출이 특정 부문에 집중되어 있으면 해당 부문의 경기에 민감하다. 부문 다각화 추이를 보면 사업 전략을 읽을 수 있다.
+Revenue concentrated in a single segment means high sensitivity to that segment's business cycle. Segment diversification trends reveal business strategy.
 
 ---
 
-## 비용의 성격별 분류
+## Cost by Nature
 
-원재료비, 인건비, 감가상각비 등 비용 항목별 시계열이다.
+Time series of cost items: raw materials, labor, depreciation, etc.
 
 ```python
 c.notes.costByNature
-# 비용 항목별 시계열 DataFrame
+# cost-by-nature time-series DataFrame
 ```
 
-비용 비율과 교차 검증도 확인 가능하다.
+Cost ratios and cross-validation also available:
 
 ```python
 result = c.report.extract("costByNature")
-print(result.timeSeries)  # 비용 시계열
-print(result.ratios)      # 구성비
-print(result.crossCheck)  # 교차 검증 결과
+print(result.timeSeries)  # cost time series
+print(result.ratios)      # composition ratios
+print(result.crossCheck)  # cross-validation results
 ```
 
-원재료비 비중이 높으면 원자재 가격에 민감하고, 인건비 비중이 높으면 인력 집약적 사업이다.
+High raw material costs indicate commodity price sensitivity. High labor costs indicate a labor-intensive business.
 
 ---
 
-## 임원 현황
+## Executive Roster
 
 ```python
 c.executive
 # year | totalRegistered | insideDirectors | outsideDirectors | maleCount | femaleCount
 ```
 
-등기임원 구성의 시계열이다. 사내이사/사외이사 비율, 성별 구성 등을 추적한다.
+Time series of registered executive composition. Tracks inside/outside director ratio, gender composition.
 
-미등기임원 보수는 `report.extract()`로:
+For unregistered executive compensation:
 
 ```python
 result = c.report.extract("executive")
-print(result.executiveDf)   # 등기임원 시계열
-print(result.unregPayDf)    # 미등기임원 보수
+print(result.executiveDf)   # registered executive time series
+print(result.unregPayDf)    # unregistered executive compensation
 ```
 
 ---
 
-## 임원 보수
+## Executive Compensation
 
 ```python
 c.executivePay
 # year | category | headcount | totalPay | avgPay
 ```
 
-유형별 보수 시계열이다. 5억 초과 개인별 보수는 `report.extract()`로 접근한다.
+Compensation time series by category. For individual compensation above 500M KRW:
 
 ```python
 result = c.report.extract("executivePay")
-print(result.payByTypeDf)   # 유형별 보수
-print(result.topPayDf)      # 5억 초과 개인별 보수
+print(result.payByTypeDf)   # compensation by type
+print(result.topPayDf)      # individuals above 500M KRW
 ```
 
-임원 보수가 실적 대비 과도하면 지배구조 리스크 신호다. 5억 초과 공시 대상 임원의 보수 구조(급여 vs 상여 vs 주식보상)도 확인해볼 만하다.
+Excessive executive compensation relative to performance is a governance risk signal. The compensation structure (base vs. bonus vs. stock) of top-paid executives is also worth examining.
 
 ---
 
-## 감사의견
+## Audit Opinion
 
 ```python
 c.audit
 # year | auditor | opinion | keyAuditMatters
 ```
 
-감사법인, 감사의견, 핵심감사사항의 시계열이다. 감사보수는 `report.extract()`로 접근한다.
+Time series of audit firm, opinion, and key audit matters. For audit fees:
 
 ```python
 result = c.report.extract("audit")
-print(result.opinionDf)   # 감사의견 시계열
-print(result.feeDf)        # 감사보수 시계열
+print(result.opinionDf)   # audit opinion time series
+print(result.feeDf)        # audit fee time series
 ```
 
-| 감사의견 | 의미 |
-|----------|------|
-| 적정 | 정상 — 재무제표를 신뢰할 수 있다 |
-| 한정 | 일부 항목에 문제 — 해당 항목을 주의깊게 봐야 한다 |
-| 부적정 | 재무제표 전체를 신뢰할 수 없다 |
-| 의견거절 | 감사를 수행할 수 없었다 — 가장 심각한 경고 |
+| Audit Opinion | Meaning |
+|---------------|---------|
+| Unqualified | Normal — financial statements are trustworthy |
+| Qualified | Issues in some items — examine those items carefully |
+| Adverse | Cannot trust the financial statements as a whole |
+| Disclaimer | Audit could not be performed — most serious warning |
 
-감사의견이 "적정"이 아니면 다른 분석 결과를 모두 재검토해야 한다.
+If the audit opinion is anything other than "Unqualified", all other analysis results should be re-examined.
 
 ---
 
-## 채무증권
+## Debt Securities
 
 ```python
 c.bond
 # year | totalIssuances | totalAmount | unredeemedCount
 ```
 
-회사채, 기업어음 등 채무증권 발행 현황의 시계열이다.
+Time series of corporate bonds, commercial paper, and other debt securities.
 
-`report.extract()`로 개별 발행 내역:
+For individual issuance details via `report.extract()`:
 
 ```python
 result = c.report.extract("bond")
 for b in result.issuances[:5]:
-    print(f"{b.bondType} | {b.amount}백만원 | {b.interestRate}")
+    print(f"{b.bondType} | {b.amount}M KRW | {b.interestRate}")
 ```
 
 ---
 
-## 자회사
+## Subsidiary Investments
 
 ```python
 c.subsidiary
 # year | totalCount | listedCount | unlistedCount | totalBook
 ```
 
-`report.extract()`로 개별 투자법인:
+For individual investee details via `report.extract()`:
 
 ```python
 result = c.report.extract("subsidiary")
 for inv in result.investments[:5]:
-    print(f"{inv.name}: {inv.endRatio}%, 장부가 {inv.endBook}")
+    print(f"{inv.name}: {inv.endRatio}%, book value {inv.endBook}")
 ```
 
 ---
 
-## 여러 종목 비교
+## Comparing Across Companies
 
-같은 report payload를 여러 회사에서 반복 호출해 비교할 수 있다.
+The same report payload can be called repeatedly across companies for comparison.
 
 ```python
 import polars as pl
@@ -307,10 +307,10 @@ for code in codes:
     if div is not None:
         last = div.row(-1, named=True)
         rows.append({
-            "기업": c.corpName,
+            "Company": c.corpName,
             "DPS": last.get("dps"),
-            "배당수익률": last.get("dividendYield"),
-            "배당성향": last.get("payoutRatio")
+            "Dividend Yield": last.get("dividendYield"),
+            "Payout Ratio": last.get("payoutRatio")
         })
 
 print(pl.DataFrame(rows))
@@ -318,9 +318,8 @@ print(pl.DataFrame(rows))
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [6. 공시 텍스트](./disclosure) — 사업의 내용, MD&A, 회사의 개요
-- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산, 교차 분석
-
+- [6. Disclosure Text](./disclosure) — Business description, MD&A, company overview
+- [7. Advanced Analysis](./advanced) — K-IFRS footnotes, tangible assets, cross-analysis
 

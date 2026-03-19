@@ -1,49 +1,49 @@
-﻿---
-title: 전체 모듈 상세
+---
+title: Full Module Reference
 ---
 
-# 전체 모듈 상세
+# Full Module Reference
 
-`Company`의 공개 기본 경로는 `sections → show → trace`다. 이 문서는 그보다 한 단계 아래의 report/docs source namespace를 참고용으로 정리한 것이다.
+The public default path for `Company` is `sections -> show -> trace`. This document provides a reference for the report/docs source namespace one level below.
 
-> **⚠️ `c.report.extract(topic)`은 내부 API다.** 일상 분석은 `c.show(topic)`을 쓴다.
-> 아래 예제의 `c.report.extract()` 호출은 `c.report.extract(topic)` 또는 `c.docs.notes`로 접근하는 deep access 패턴이다.
+> **Warning: `c.report.extract(topic)` is an internal API.** For everyday analysis, use `c.show(topic)`.
+> The `c.report.extract()` calls in the examples below are deep access patterns using `c.report.extract(topic)` or `c.docs.notes`.
 >
 > ```python
-> # 권장 경로
-> c.show("dividend")           # show()가 source 우선순위 적용
+> # Recommended path
+> c.show("dividend")           # show() applies source priority
 > c.show("audit")
 >
-> # deep access (report namespace 직접)
-> c.report.extract("dividend") # report Result 객체
-> c.docs.notes.inventory       # K-IFRS 주석 직접
+> # Deep access (report namespace directly)
+> c.report.extract("dividend") # report Result object
+> c.docs.notes.inventory       # K-IFRS notes directly
 > ```
 
 ---
 
-## 배당·주주·자본 구조
+## Dividends, Shareholders & Capital Structure
 
-### c.dividend — 배당
+### c.dividend — Dividends
 
-배당 시계열. DPS, 배당성향, 배당수익률 등.
+Dividend time series. DPS, payout ratio, dividend yield, etc.
 
 ```python
 c.dividend
 # year | netIncome | eps | totalDividend | payoutRatio | dividendYield | dps | dpsPreferred
 ```
 
-**Result 속성:**
+**Result attributes:**
 
-| 속성 | 타입 | 설명 |
-|------|------|------|
-| `corpName` | `str \| None` | 기업명 |
-| `nYears` | `int` | 연도 수 |
-| `timeSeries` | `pl.DataFrame \| None` | 배당 시계열 |
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `corpName` | `str \| None` | Company name |
+| `nYears` | `int` | Number of years |
+| `timeSeries` | `pl.DataFrame \| None` | Dividend time series |
 
-**활용 예시:**
+**Usage example:**
 
 ```python
-# 최근 배당 정보
+# Recent dividend info
 div = c.dividend
 if div is not None:
     last = div.row(-1, named=True)
@@ -52,36 +52,36 @@ if div is not None:
 
 ---
 
-### c.majorHolder — 최대주주
+### c.majorHolder — Largest Shareholder
 
-최대주주와 특수관계인 지분율 시계열.
+Time series of the largest shareholder and related parties' ownership ratios.
 
 ```python
 c.majorHolder
 # year | majorHolder | majorRatio | totalRatio | holderCount | ...
 ```
 
-report namespace로 개별 주주 목록 접근:
+Access individual shareholder list via report namespace:
 
 ```python
-result = c.report.extract("majorHolder")  # 또는 c.show("majorHolder")
+result = c.report.extract("majorHolder")  # or c.show("majorHolder")
 result.majorHolder   # "이재용"
 result.majorRatio    # 20.76
-result.totalRatio    # 특수관계인 합계 지분율
-result.holders       # list[Holder] — 개별 주주 목록
+result.totalRatio    # Total related parties ownership ratio
+result.holders       # list[Holder] — Individual shareholder list
 ```
 
-**Holder 속성:**
+**Holder attributes:**
 
-| 속성 | 타입 | 설명 |
-|------|------|------|
-| `name` | `str` | 주주명 |
-| `relation` | `str` | 관계 (본인, 친인척, 임원 등) |
-| `stockType` | `str` | 주식 종류 |
-| `sharesEnd` | `float \| None` | 기말 주식수 |
-| `ratioEnd` | `float \| None` | 기말 지분율 (%) |
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `name` | `str` | Shareholder name |
+| `relation` | `str` | Relationship (self, relative, executive, etc.) |
+| `stockType` | `str` | Stock type |
+| `sharesEnd` | `float \| None` | Shares at period end |
+| `ratioEnd` | `float \| None` | Ownership ratio at period end (%) |
 
-**활용 예시:**
+**Usage example:**
 
 ```python
 result = c.report.extract("majorHolder")
@@ -92,19 +92,19 @@ for h in result.holders:
 
 ---
 
-### c.holderOverview — 주주 종합 현황
+### c.holderOverview — Shareholder Overview
 
-5% 이상 주주, 소액주주, 의결권 현황을 종합. Result 객체를 직접 반환한다.
+Comprehensive overview of 5%+ shareholders, minority shareholders, and voting rights. Returns a Result object directly.
 
 ```python
 result = c.holderOverview
 
-result.bigHolders    # list[BigHolder] — 5% 이상 주주
-result.minority      # Minority — 소액주주 현황
-result.voting        # VotingRights — 의결권 현황
+result.bigHolders    # list[BigHolder] — Shareholders with 5%+ ownership
+result.minority      # Minority — Minority shareholder status
+result.voting        # VotingRights — Voting rights status
 ```
 
-**활용 예시:**
+**Usage example:**
 
 ```python
 result = c.holderOverview
@@ -115,52 +115,52 @@ print(f"소액주주 비율: {result.minority.ratio}%")
 
 ---
 
-### c.shareCapital — 주식의 총수
+### c.shareCapital — Total Shares
 
-발행주식, 자기주식, 유통주식 시계열.
+Time series of authorized, issued, treasury, and outstanding shares.
 
 ```python
 c.shareCapital
 # year | authorizedShares | issuedShares | treasuryShares | outstandingShares | ...
 ```
 
-report namespace로 전체 접근:
+Full access via report namespace:
 
 ```python
 result = c.report.extract("shareCapital")
-result.authorizedShares    # 발행할 주식의 총수
-result.issuedShares        # 발행한 주식의 총수
-result.treasuryShares      # 자기주식
-result.outstandingShares   # 유통주식
-result.treasuryRatio       # 자사주 비율
-result.timeSeries          # 시계열 DataFrame
+result.authorizedShares    # Total authorized shares
+result.issuedShares        # Total issued shares
+result.treasuryShares      # Treasury shares
+result.outstandingShares   # Outstanding shares
+result.treasuryRatio       # Treasury share ratio
+result.timeSeries          # Time series DataFrame
 ```
 
 ---
 
-### c.capitalChange — 자본변동
+### c.capitalChange — Capital Changes
 
-자본금 변동, 주식의 총수, 자기주식 변동.
+Changes in paid-in capital, total shares, and treasury shares.
 
 ```python
 c.capitalChange
 # year | commonShares | preferredShares | commonParValue | ...
 ```
 
-report namespace로 추가 DataFrame:
+Additional DataFrames via report namespace:
 
 ```python
 result = c.report.extract("capitalChange")
-result.capitalDf     # 자본금 변동 시계열
-result.shareTotalDf  # 주식의 총수 시계열
-result.treasuryDf    # 자기주식 변동 시계열
+result.capitalDf     # Paid-in capital change time series
+result.shareTotalDf  # Total shares time series
+result.treasuryDf    # Treasury shares change time series
 ```
 
 ---
 
-### c.fundraising — 증자/감자
+### c.fundraising — Capital Increases/Decreases
 
-증자(감자) 현황.
+Capital increase (decrease) history.
 
 ```python
 c.fundraising
@@ -169,119 +169,119 @@ c.fundraising
 
 ---
 
-## 임원·거버넌스
+## Executives & Governance
 
-### c.executive — 임원 현황
+### c.executive — Executive Status
 
-등기임원 집계 시계열.
+Aggregate time series of registered executives.
 
 ```python
 c.executive
 # year | totalRegistered | insideDirectors | outsideDirectors | otherNonexec | maleCount | femaleCount
 ```
 
-report namespace로 미등기임원 보수 접근:
+Access unregistered executive compensation via report namespace:
 
 ```python
 result = c.report.extract("executive")
-result.executiveDf   # 등기임원 집계 시계열
-result.unregPayDf    # 미등기임원 보수 시계열
+result.executiveDf   # Registered executive aggregate time series
+result.unregPayDf    # Unregistered executive compensation time series
 ```
 
-**executiveDf 주요 컬럼:**
+**executiveDf key columns:**
 
-| 컬럼 | 설명 |
-|------|------|
-| `totalRegistered` | 등기임원 총 수 |
-| `insideDirectors` | 사내이사 |
-| `outsideDirectors` | 사외이사 |
-| `otherNonexec` | 기타비상무이사 |
-| `fullTimeCount` | 상근 |
-| `partTimeCount` | 비상근 |
-| `maleCount` | 남성 |
-| `femaleCount` | 여성 |
+| Column | Description |
+|--------|-------------|
+| `totalRegistered` | Total registered executives |
+| `insideDirectors` | Inside directors |
+| `outsideDirectors` | Outside directors |
+| `otherNonexec` | Other non-executive directors |
+| `fullTimeCount` | Full-time |
+| `partTimeCount` | Part-time |
+| `maleCount` | Male |
+| `femaleCount` | Female |
 
 ---
 
-### c.executivePay — 임원 보수
+### c.executivePay — Executive Compensation
 
-유형별(등기이사/사외이사/감사위원) 보수 시계열.
+Compensation time series by type (registered directors / outside directors / audit committee members).
 
 ```python
 c.executivePay
 # year | category | headcount | totalPay | avgPay
 ```
 
-report namespace로 5억 초과 개인별 보수:
+Individual compensation exceeding 500 million KRW via report namespace:
 
 ```python
 result = c.report.extract("executivePay")
-result.payByTypeDf   # 유형별 보수 시계열
-result.topPayDf      # 5억 초과 개인별 보수
+result.payByTypeDf   # Compensation by type time series
+result.topPayDf      # Individual compensation exceeding 500M KRW
 ```
 
 ---
 
-### c.boardOfDirectors — 이사회
+### c.boardOfDirectors — Board of Directors
 
-이사회 구성, 개최 횟수, 출석률 시계열.
+Board composition, meeting frequency, and attendance rate time series.
 
 ```python
 c.boardOfDirectors
 # year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
 ```
 
-report namespace로 위원회 구성:
+Committee composition via report namespace:
 
 ```python
 result = c.report.extract("boardOfDirectors")
-result.boardDf      # 이사회 시계열
-result.committeeDf  # 위원회 구성 (committeeName, composition, members)
+result.boardDf      # Board time series
+result.committeeDf  # Committee composition (committeeName, composition, members)
 ```
 
 ---
 
-### c.audit — 감사의견
+### c.audit — Audit Opinion
 
-감사법인, 감사의견, 핵심감사사항 시계열.
+Audit firm, audit opinion, and key audit matters time series.
 
 ```python
 c.audit
 # year | auditor | opinion | keyAuditMatters
 ```
 
-report namespace로 감사보수:
+Audit fees via report namespace:
 
 ```python
 result = c.report.extract("audit")
-result.opinionDf   # 감사의견 시계열
-result.feeDf       # 감사보수 시계열 (auditor, contractFee, contractHours, actualFee, actualHours)
+result.opinionDf   # Audit opinion time series
+result.feeDf       # Audit fee time series (auditor, contractFee, contractHours, actualFee, actualHours)
 ```
 
 ---
 
-### c.auditSystem — 감사제도
+### c.auditSystem — Audit System
 
-감사위원회 구성, 감사활동 내역.
+Audit committee composition and audit activity records.
 
 ```python
 c.auditSystem
 # name | role | detail
 ```
 
-report namespace로 감사활동:
+Audit activities via report namespace:
 
 ```python
 result = c.report.extract("auditSystem")
-result.committeeDf   # 감사위원 구성
-result.activityDf    # 감사활동 내역 (date, agenda, result)
+result.committeeDf   # Audit committee composition
+result.activityDf    # Audit activity records (date, agenda, result)
 ```
 
 ---
 
-### c.internalControl — 내부통제
+### c.internalControl — Internal Controls
 
-내부회계관리제도 운영 실태 평가.
+Evaluation of internal accounting control systems.
 
 ```python
 c.internalControl
@@ -290,9 +290,9 @@ c.internalControl
 
 ---
 
-### c.shareholderMeeting — 주주총회
+### c.shareholderMeeting — Shareholder Meeting
 
-주주총회 안건, 결의 결과.
+Shareholder meeting agendas and resolution results.
 
 ```python
 c.shareholderMeeting
@@ -301,50 +301,50 @@ c.shareholderMeeting
 
 ---
 
-## 리스크·규제
+## Risk & Regulation
 
-### c.contingentLiability — 우발부채
+### c.contingentLiability — Contingent Liabilities
 
-채무보증·소송 현황.
+Debt guarantees and litigation status.
 
 ```python
 c.contingentLiability
 # year | totalGuaranteeAmount | lineCount
 ```
 
-report namespace로 소송 현황:
+Litigation status via report namespace:
 
 ```python
 result = c.report.extract("contingentLiability")
-result.guaranteeDf  # 채무보증 시계열
-result.lawsuitDf    # 소송 현황 (filingDate, parties, description, amount, status)
+result.guaranteeDf  # Debt guarantee time series
+result.lawsuitDf    # Litigation status (filingDate, parties, description, amount, status)
 ```
 
 ---
 
-### c.relatedPartyTx — 관계자거래
+### c.relatedPartyTx — Related Party Transactions
 
-대주주 등과의 거래내용.
+Transactions with major shareholders and related parties.
 
 ```python
 c.relatedPartyTx
 # year | entity | sales | purchases
 ```
 
-report namespace로 채무보증, 자산 거래:
+Debt guarantees and asset transactions via report namespace:
 
 ```python
 result = c.report.extract("relatedPartyTx")
-result.revenueTxDf   # 매출입 거래 시계열
-result.guaranteeDf   # 채무보증 시계열
-result.assetTxDf     # 자산 거래 시계열
+result.revenueTxDf   # Revenue transaction time series
+result.guaranteeDf   # Debt guarantee time series
+result.assetTxDf     # Asset transaction time series
 ```
 
 ---
 
-### c.sanction — 제재
+### c.sanction — Sanctions
 
-제재·처벌 현황.
+Sanctions and penalties history.
 
 ```python
 c.sanction
@@ -353,43 +353,43 @@ c.sanction
 
 ---
 
-### c.riskDerivative — 위험관리
+### c.riskDerivative — Risk Management
 
-환율 민감도, 파생상품 계약 현황.
+FX sensitivity and derivative contract status.
 
 ```python
 c.riskDerivative
 # currency | upImpact | downImpact
 ```
 
-report namespace로 파생상품:
+Derivatives via report namespace:
 
 ```python
 result = c.report.extract("riskDerivative")
-result.fxDf          # 환율 민감도
-result.derivativeDf  # 파생상품 계약
+result.fxDf          # FX sensitivity
+result.derivativeDf  # Derivative contracts
 ```
 
 ---
 
-## 사업·제품·매출
+## Business, Products & Revenue
 
-### c.employee — 직원 현황
+### c.employee — Employee Status
 
-직원수, 평균연봉, 근속연수의 시계열이다.
+Time series of headcount, average salary, and tenure.
 
 ```python
 c.employee
 # year | totalEmployees | avgTenure | totalSalary | avgSalary
 ```
 
-| 속성 | 타입 | 설명 |
-|------|------|------|
-| `corpName` | `str \| None` | 기업명 |
-| `nYears` | `int` | 연도 수 |
-| `timeSeries` | `pl.DataFrame \| None` | 직원 현황 시계열 |
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `corpName` | `str \| None` | Company name |
+| `nYears` | `int` | Number of years |
+| `timeSeries` | `pl.DataFrame \| None` | Employee status time series |
 
-**활용 예시:**
+**Usage example:**
 
 ```python
 emp = c.employee
@@ -400,9 +400,9 @@ if emp is not None:
 
 ---
 
-### c.productService — 주요 제품
+### c.productService — Key Products
 
-주요 제품 및 서비스 현황.
+Key products and services status.
 
 ```python
 c.productService
@@ -411,28 +411,28 @@ c.productService
 
 ---
 
-### c.salesOrder — 매출/수주
+### c.salesOrder — Sales/Orders
 
-매출실적(부문/제품별) + 수주상황.
+Sales performance (by segment/product) and order backlog.
 
 ```python
 c.salesOrder
 # label | v1 | v2 | v3
 ```
 
-report namespace로 수주 현황:
+Order status via report namespace:
 
 ```python
 result = c.report.extract("salesOrder")
-result.salesDf   # 매출실적
-result.orderDf   # 수주상황
+result.salesDf   # Sales performance
+result.orderDf   # Order backlog
 ```
 
 ---
 
 ### c.rnd — R&D
 
-연구개발비용과 매출액 대비 비율.
+R&D expenses and ratio to revenue.
 
 ```python
 c.rnd
@@ -441,18 +441,18 @@ c.rnd
 
 ---
 
-## 재무·자산
+## Finance & Assets
 
-### c.subsidiary — 자회사
+### c.subsidiary — Subsidiaries
 
-타법인 출자 종합 현황 시계열.
+Comprehensive time series of investments in other companies.
 
 ```python
 c.subsidiary
 # year | totalCount | listedCount | unlistedCount | totalBook
 ```
 
-report namespace로 개별 투자법인:
+Individual investee companies via report namespace:
 
 ```python
 result = c.report.extract("subsidiary")
@@ -462,16 +462,16 @@ for inv in result.investments[:5]:
 
 ---
 
-### c.bond — 채무증권
+### c.bond — Debt Securities
 
-회사채, 기업어음 등 채무증권 발행실적.
+Corporate bonds, commercial paper, and other debt securities issuance records.
 
 ```python
 c.bond
 # year | totalIssuances | totalAmount | unredeemedCount
 ```
 
-report namespace로 개별 발행 내역:
+Individual issuance details via report namespace:
 
 ```python
 result = c.report.extract("bond")
@@ -481,28 +481,28 @@ for b in result.issuances:
 
 ---
 
-### c.otherFinance — 기타재무
+### c.otherFinance — Other Financial Items
 
-대손충당금, 재고자산 현황.
+Allowance for doubtful accounts and inventory status.
 
 ```python
 c.otherFinance
 # account | period | totalDebt | provision
 ```
 
-report namespace로 재고자산:
+Inventory via report namespace:
 
 ```python
 result = c.report.extract("otherFinance")
-result.badDebtDf     # 대손충당금
-result.inventoryDf   # 재고자산 현황
+result.badDebtDf     # Allowance for doubtful accounts
+result.inventoryDf   # Inventory status
 ```
 
 ---
 
-### c.investmentInOther — 타법인출자
+### c.investmentInOther — Investments in Other Companies
 
-타법인출자 현황.
+Investment status in other companies.
 
 ```python
 c.investmentInOther
@@ -511,11 +511,11 @@ c.investmentInOther
 
 ---
 
-## 회사 정보
+## Company Information
 
-### c.companyOverviewDetail — 회사 기본정보
+### c.companyOverviewDetail — Company Basic Information
 
-`dict`를 반환한다 (DataFrame이 아님).
+Returns a `dict` (not a DataFrame).
 
 ```python
 info = c.companyOverviewDetail
@@ -523,38 +523,38 @@ info = c.companyOverviewDetail
 info["foundedDate"]    # "1969-01-13"
 info["listedDate"]     # "1975-06-11"
 info["ceo"]            # "한종희"
-info["address"]        # 본점소재지
-info["mainBusiness"]   # 주요사업
-info["website"]        # 홈페이지 URL
+info["address"]        # Headquarters address
+info["mainBusiness"]   # Main business
+info["website"]        # Homepage URL
 ```
 
 ---
 
-### c.affiliateGroup — 계열사
+### c.affiliateGroup — Affiliates
 
-계열회사 현황.
+Affiliate company status.
 
 ```python
 c.affiliateGroup
 # name | listed
 ```
 
-report namespace로 추가 정보:
+Additional info via report namespace:
 
 ```python
 result = c.report.extract("affiliateGroup")
 result.groupName      # "삼성"
-result.listedCount    # 상장 계열사 수
-result.unlistedCount  # 비상장 계열사 수
-result.totalCount     # 총 계열사 수
-result.affiliateDf    # 계열사 DataFrame
+result.listedCount    # Number of listed affiliates
+result.unlistedCount  # Number of unlisted affiliates
+result.totalCount     # Total number of affiliates
+result.affiliateDf    # Affiliates DataFrame
 ```
 
 ---
 
-### c.companyHistory — 연혁
+### c.companyHistory — Company History
 
-회사의 연혁 이벤트.
+Company history events.
 
 ```python
 c.companyHistory
@@ -563,109 +563,109 @@ c.companyHistory
 
 ---
 
-### c.articlesOfIncorporation — 정관
+### c.articlesOfIncorporation — Articles of Incorporation
 
-정관 변경 이력, 사업목적 현황.
+Amendment history and business purpose status.
 
 ```python
 c.articlesOfIncorporation
 # date | meetingName | changes | reason
 ```
 
-report namespace로 사업목적:
+Business purposes via report namespace:
 
 ```python
 result = c.report.extract("articlesOfIncorporation")
-result.changesDf    # 정관 변경 이력
-result.purposesDf   # 사업목적 현황 (purpose, active)
+result.changesDf    # Amendment history
+result.purposesDf   # Business purposes (purpose, active)
 ```
 
 ---
 
-## 공시 텍스트
+## Disclosure Text
 
-> **권장 경로**: 공시 서술형 텍스트는 `c.show("businessOverview")`, `c.show("companyOverview")` 등 sections 기반 show()로 접근한다.
-> 아래 `c.business`, `c.mdna`는 docs namespace의 legacy 접근 경로다.
+> **Recommended path**: Access narrative disclosure text through sections-based show() such as `c.show("businessOverview")`, `c.show("companyOverview")`, etc.
+> The `c.business` and `c.mdna` below are legacy access paths via the docs namespace.
 
-### c.docs.business — 사업의 내용
+### c.docs.business — Business Description
 
 ```python
 biz = c.docs.business
 for s in biz:
-    print(f"[{s.key}] {s.title} ({s.chars}자)")
+    print(f"[{s.key}] {s.title} ({s.chars} chars)")
     print(s.text[:200])
 ```
 
-**주요 섹션 key:**
+**Key section keys:**
 
-| key | 설명 |
-|-----|------|
-| `overview` | 사업 개요 |
-| `products` | 주요 제품·서비스 |
-| `materials` | 원재료·가격변동 |
-| `sales` | 매출·수주 현황 |
-| `risk` | 위험 요인 |
-| `rnd` | 연구개발 현황 |
-| `financial` | 재무 관련 사항 |
-| `etc` | 기타 참고사항 |
+| key | Description |
+|-----|-------------|
+| `overview` | Business overview |
+| `products` | Key products & services |
+| `materials` | Raw materials & price changes |
+| `sales` | Sales & order status |
+| `risk` | Risk factors |
+| `rnd` | R&D status |
+| `financial` | Financial matters |
+| `etc` | Other reference items |
 
 ---
 
 ### c.docs.mdna — MD&A
 
-이사의 경영진단 및 분석의견.
+Management's discussion and analysis.
 
 ```python
-c.docs.mdna   # 사업 개요 텍스트
+c.docs.mdna   # Business overview text
 ```
 
 ---
 
-### c.docs.overview — 회사의 개요
+### c.docs.overview — Company Overview
 
-설립일, 주소, 신용등급 등 정량 데이터. Result 객체를 반환한다.
+Quantitative data including founding date, address, credit ratings, etc. Returns a Result object.
 
 ```python
 result = c.docs.overview
 
-result.founded          # 설립 연도
-result.address          # 소재지
-result.homepage         # 홈페이지
-result.subsidiaryCount  # 종속회사 수
-result.isSME            # 중소기업 여부
-result.isVenture        # 벤처기업 여부
-result.listedDate       # 상장일
+result.founded          # Founding year
+result.address          # Location
+result.homepage         # Website
+result.subsidiaryCount  # Number of subsidiaries
+result.isSME            # Whether SME
+result.isVenture        # Whether venture company
+result.listedDate       # Listing date
 ```
 
-신용등급 확인:
+Check credit ratings:
 
 ```python
 for cr in result.creditRatings:
     print(f"{cr.agency}: {cr.grade}")
 ```
 
-파싱 상태 확인:
+Check parsing status:
 
 ```python
-print(f"원문에 없음: {result.missing}")
-print(f"파싱 실패: {result.failed}")
+print(f"Not in original: {result.missing}")
+print(f"Parse failed: {result.failed}")
 ```
 
 ---
 
-### c.docs.rawMaterial — 원재료/설비
+### c.docs.rawMaterial — Raw Materials/Equipment
 
-원재료 매입, 유형자산, 설비투자 현황. Result 객체를 반환한다.
+Raw material procurement, tangible assets, and capital expenditure status. Returns a Result object.
 
 ```python
 result = c.docs.rawMaterial
 
-result.materials     # list[RawMaterial] — 원재료 목록
-result.equipment     # Equipment — 유형자산 현황
-result.capexItems    # list[CapexItem] — 설비투자 항목
+result.materials     # list[RawMaterial] — Raw material list
+result.equipment     # Equipment — Tangible asset status
+result.capexItems    # list[CapexItem] — Capital expenditure items
 ```
 
-**활용 예시:**
+**Usage example:**
 
 ```python
 result = c.rawMaterial
@@ -678,62 +678,62 @@ print(f"합계: {eq.total}, CAPEX: {eq.capex}")
 
 ---
 
-## K-IFRS 주석 (Notes)
+## K-IFRS Notes
 
-`c.notes`로 통합 접근한다. 상세는 [API Overview](./overview)의 Notes 섹션 참고.
+Access via `c.notes`. See the Notes section in [API Overview](./overview) for details.
 
-### 12개 주요 항목
-
-```python
-c.notes.inventory          # 재고자산 DataFrame
-c.notes.receivables        # 매출채권
-c.notes.borrowings         # 차입금
-c.notes.tangibleAsset      # 유형자산 변동표
-c.notes.intangibleAsset    # 무형자산
-c.notes.provisions         # 충당부채
-c.notes.eps                # 주당이익
-c.notes.lease              # 리스
-c.notes.investmentProperty # 투자부동산
-c.notes.affiliates         # 관계기업
-c.notes.segments           # 부문정보
-c.notes.costByNature       # 비용의 성격별 분류
-```
-
-### 한글 키 접근
+### 12 Key Items
 
 ```python
-c.notes["재고자산"]         # c.notes.inventory와 동일
+c.notes.inventory          # Inventory DataFrame
+c.notes.receivables        # Trade receivables
+c.notes.borrowings         # Borrowings
+c.notes.tangibleAsset      # Tangible asset movement schedule
+c.notes.intangibleAsset    # Intangible assets
+c.notes.provisions         # Provisions
+c.notes.eps                # Earnings per share
+c.notes.lease              # Leases
+c.notes.investmentProperty # Investment property
+c.notes.affiliates         # Associates
+c.notes.segments           # Segment information
+c.notes.costByNature       # Expenses by nature
 ```
 
-### 유형자산 변동표
+### Korean Key Access
+
+```python
+c.notes["재고자산"]         # Same as c.notes.inventory
+```
+
+### Tangible Asset Movement Schedule
 
 ```python
 result = c.notes.tangibleAsset
-result.reliability    # "high" 또는 "low"
-result.warnings       # 신뢰도 경고
-result.movementDf     # 카테고리별 기초/기말 시계열
+result.reliability    # "high" or "low"
+result.warnings       # Reliability warnings
+result.movementDf     # Category-level opening/closing time series
 ```
 
-### 부문정보
+### Segment Information
 
 ```python
 result = c.notes.segments
-result.revenue   # 부문별 매출 시계열 DataFrame
+result.revenue   # Segment revenue time series DataFrame
 for year, tables in result.tables.items():
     for t in tables:
         print(f"[{year}] {t.tableType}: {t.columns}")
 ```
 
-### 비용의 성격별 분류
+### Expenses by Nature
 
 ```python
 result = c.notes.costByNature
-result.timeSeries    # 비용 항목별 시계열
-result.ratios        # 구성비
-result.crossCheck    # 교차 검증 결과
+result.timeSeries    # Expense item time series
+result.ratios        # Composition ratios
+result.crossCheck    # Cross-check results
 ```
 
-### 미등록 키워드 직접 조회
+### Direct Lookup by Unregistered Keyword
 
 ```python
 c.notes.detail("법인세")       # NotesDetail result
@@ -743,5 +743,4 @@ c.notes.detail("특수관계자")
 c.notes.detail("특수관계자").tableDf
 ```
 
-전체 23개 키워드: `재고자산`, `주당이익`, `충당부채`, `차입금`, `매출채권`, `리스`, `투자부동산`, `무형자산`, `법인세`, `특수관계자`, `약정사항`, `금융자산`, `공정가치`, `이익잉여금`, `금융부채`, `기타포괄손익`, `사채`, `종업원급여`, `퇴직급여`, `확정급여`, `재무위험`, `우발부채`, `담보`
-
+All 23 keywords: `재고자산`, `주당이익`, `충당부채`, `차입금`, `매출채권`, `리스`, `투자부동산`, `무형자산`, `법인세`, `특수관계자`, `약정사항`, `금융자산`, `공정가치`, `이익잉여금`, `금융부채`, `기타포괄손익`, `사채`, `종업원급여`, `퇴직급여`, `확정급여`, `재무위험`, `우발부채`, `담보`

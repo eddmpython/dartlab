@@ -1,12 +1,12 @@
 ---
-title: 섹터 분류
+title: Sector Classification
 ---
 
-# 섹터 분류
+# Sector Classification
 
-WICS(Wise Industry Classification Standard) 기준으로 기업의 투자 섹터를 분류한다. 3단계 우선순위로 분류하며, 섹터별 밸류에이션 파라미터를 제공한다.
+Classifies companies into investment sectors based on the WICS (Wise Industry Classification Standard). Uses a 3-tier priority system and provides sector-specific valuation parameters.
 
-## 사용법
+## Usage
 
 ```python
 from dartlab.engines.sector import classify, getParams
@@ -29,46 +29,46 @@ params.label         # "반도체"
 classify(companyName: str, kindIndustry: str = None, mainProducts: str = None) -> SectorInfo
 ```
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `companyName` | str | 회사명 |
-| `kindIndustry` | str (선택) | KIND 업종명 (KSIC 기반) |
-| `mainProducts` | str (선택) | 주요제품 텍스트 |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `companyName` | str | Company name |
+| `kindIndustry` | str (optional) | KIND industry name (KSIC-based) |
+| `mainProducts` | str (optional) | Main products text |
 
-### 3단계 분류 우선순위
+### 3-Tier Classification Priority
 
-| 단계 | 방법 | 신뢰도 | 적용 대상 |
-|------|------|--------|----------|
-| 1 | 수동 오버라이드 | 0.95~1.0 | 대형주 ~100개 (삼성전자, SK하이닉스 등) |
-| 2 | 키워드 분석 | 0.6~0.9 | 주요제품 텍스트에서 키워드 매칭 |
-| 3 | KSIC 매핑 | 0.7 | KIND 업종명 → WICS 매핑 (200+ 항목) |
+| Tier | Method | Confidence | Target |
+|------|--------|------------|--------|
+| 1 | Manual override | 0.95~1.0 | ~100 large caps (삼성전자, SK하이닉스, etc.) |
+| 2 | Keyword analysis | 0.6~0.9 | Keyword matching from main products text |
+| 3 | KSIC mapping | 0.7 | KIND industry name to WICS mapping (200+ items) |
 
-모든 단계에서 매칭되지 않으면 `Sector.UNKNOWN` (신뢰도 0.0)을 반환한다.
+If no match is found at any tier, returns `Sector.UNKNOWN` (confidence 0.0).
 
 ## SectorInfo
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `sector` | Sector | WICS 대분류 (11개) |
-| `industryGroup` | IndustryGroup | WICS 중분류 (47개) |
-| `confidence` | float | 신뢰도 (0.0~1.0) |
-| `source` | str | 분류 근거 ("override", "keyword", "ksic", "unknown") |
+| Field | Type | Description |
+|-------|------|-------------|
+| `sector` | Sector | WICS major classification (11 sectors) |
+| `industryGroup` | IndustryGroup | WICS mid-level classification (47 groups) |
+| `confidence` | float | Confidence score (0.0~1.0) |
+| `source` | str | Classification basis ("override", "keyword", "ksic", "unknown") |
 
-## Sector (대분류 11개)
+## Sector (11 Major Classifications)
 
-| 값 | 한글 |
-|----|------|
-| `ENERGY` | 에너지 |
-| `MATERIALS` | 소재 |
-| `INDUSTRIALS` | 산업재 |
-| `CONSUMER_DISC` | 경기관련소비재 |
-| `CONSUMER_STAPLES` | 필수소비재 |
-| `HEALTHCARE` | 건강관리 |
-| `FINANCIALS` | 금융 |
-| `IT` | IT |
-| `COMMUNICATION` | 커뮤니케이션서비스 |
-| `UTILITIES` | 유틸리티 |
-| `REAL_ESTATE` | 부동산 |
+| Value | Korean | English |
+|-------|--------|---------|
+| `ENERGY` | 에너지 | Energy |
+| `MATERIALS` | 소재 | Materials |
+| `INDUSTRIALS` | 산업재 | Industrials |
+| `CONSUMER_DISC` | 경기관련소비재 | Consumer Discretionary |
+| `CONSUMER_STAPLES` | 필수소비재 | Consumer Staples |
+| `HEALTHCARE` | 건강관리 | Healthcare |
+| `FINANCIALS` | 금융 | Financials |
+| `IT` | IT | IT |
+| `COMMUNICATION` | 커뮤니케이션서비스 | Communication Services |
+| `UTILITIES` | 유틸리티 | Utilities |
+| `REAL_ESTATE` | 부동산 | Real Estate |
 
 ## getParams()
 
@@ -76,39 +76,39 @@ classify(companyName: str, kindIndustry: str = None, mainProducts: str = None) -
 getParams(sectorInfo: SectorInfo) -> SectorParams
 ```
 
-중분류 파라미터가 있으면 우선 사용하고, 없으면 대분류 파라미터로 fallback한다.
+Uses mid-level parameters if available; otherwise falls back to major classification parameters.
 
 ## SectorParams
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `discountRate` | float | 할인율 (%) |
-| `growthRate` | float | 성장률 (%) |
-| `perMultiple` | float | PER 멀티플 |
-| `pbrMultiple` | float | PBR 멀티플 |
-| `evEbitdaMultiple` | float | EV/EBITDA 멀티플 |
-| `label` | str | 섹터 라벨 (한글) |
+| Field | Type | Description |
+|-------|------|-------------|
+| `discountRate` | float | Discount rate (%) |
+| `growthRate` | float | Growth rate (%) |
+| `perMultiple` | float | PER multiple |
+| `pbrMultiple` | float | PBR multiple |
+| `evEbitdaMultiple` | float | EV/EBITDA multiple |
+| `label` | str | Sector label (Korean) |
 
-섹터별 파라미터는 업종 특성을 반영한 벤치마크 값이다. DCF, PER/PBR 밴드 분석 등에 활용된다.
+Sector parameters are benchmark values reflecting industry characteristics. Used in DCF, PER/PBR band analysis, etc.
 
-## 예시
+## Examples
 
 ```python
 from dartlab.engines.sector import classify, getParams, Sector
 
-# 대형주 — 수동 오버라이드로 즉시 분류
+# Large cap — Immediately classified via manual override
 info = classify("SK하이닉스")
 print(info)  # SectorInfo(IT/반도체, conf=1.00, src=override)
 
-# 중소형주 — 키워드 기반 분류
+# Mid/small cap — Keyword-based classification
 info = classify("에코프로비엠", mainProducts="양극재, 이차전지 소재")
 print(info)  # SectorInfo(IT/2차전지, conf=0.90, src=keyword)
 
-# KSIC 기반 분류
+# KSIC-based classification
 info = classify("미래에셋증권", kindIndustry="증권 중개업")
 print(info)  # SectorInfo(FINANCIALS/증권, conf=0.70, src=ksic)
 
-# 밸류에이션 파라미터
+# Valuation parameters
 params = getParams(info)
-print(f"PER: {params.perMultiple}, 할인율: {params.discountRate}%")
+print(f"PER: {params.perMultiple}, Discount rate: {params.discountRate}%")
 ```

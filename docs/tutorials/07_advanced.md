@@ -1,25 +1,25 @@
-﻿---
+---
 title: "7. Advanced Analysis"
 ---
 
-# 7. Advanced Analysis — 고급 분석
+# 7. Advanced Analysis
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/07_advanced.ipynb)
 
-K-IFRS 주석(Notes) 통합 접근, 유형자산 변동표, 관계기업 분석, 거버넌스 분석 등 심화 source namespace를 다룬다. 공개 기본 흐름은 `sections -> show -> trace`지만, 이 문서는 그 아래의 deep access를 설명한다.
+Covers deep source namespace access including K-IFRS Notes integration, tangible asset movement schedules, affiliate analysis, and governance analysis. The standard public flow is `sections -> show -> trace`, but this document explains the deep access layer beneath it.
 
-- Notes 통합 접근 (12개 항목)
-- 미등록 키워드 직접 조회 (23개)
-- 유형자산 변동표
-- 관계기업·공동기업 투자
-- 이사회와 감사제도
-- 거버넌스·리스크 분석
-- 여러 종목 비교 분석
-- Result 객체와 deep access 패턴
+- Notes integration (12 items)
+- Direct lookup for unregistered keywords (23 keywords)
+- Tangible asset movement schedule
+- Associates and joint ventures
+- Board of directors and audit system
+- Governance and risk analysis
+- Multi-company comparison
+- Result objects and deep access patterns
 
 ---
 
-## 준비
+## Setup
 
 ```python
 import dartlab
@@ -29,11 +29,11 @@ c = dartlab.Company("005930")
 
 ---
 
-## K-IFRS 주석 — Notes
+## K-IFRS Notes
 
-`c.notes`로 12개 K-IFRS 주석 항목에 통합 접근한다. 영문 속성과 한글 키 모두 지원한다.
+Access 12 K-IFRS note items through `c.notes`. Both English property names and Korean keys are supported.
 
-### 영문 속성으로 접근
+### Access via English Properties
 
 ```python
 c.notes.inventory          # 재고자산 DataFrame
@@ -50,45 +50,45 @@ c.notes.segments           # 부문정보
 c.notes.costByNature       # 비용의 성격별 분류
 ```
 
-### 한글 키로 접근
+### Access via Korean Keys
 
 ```python
-c.notes["재고자산"]         # c.notes.inventory와 동일
-c.notes["차입금"]           # c.notes.borrowings와 동일
-c.notes["유형자산"]         # c.notes.tangibleAsset과 동일
+c.notes["재고자산"]         # Same as c.notes.inventory
+c.notes["차입금"]           # Same as c.notes.borrowings
+c.notes["유형자산"]         # Same as c.notes.tangibleAsset
 ```
 
-### 전체 키 확인
+### Listing All Keys
 
 ```python
 c.notes.keys()       # ['receivables', 'inventory', 'tangibleAsset', ...]
 c.notes.keys_kr()    # ['매출채권', '재고자산', '유형자산', ...]
-c.notes.keys()       # 사용 가능한 notes 키
+c.notes.keys()       # Available notes keys
 ```
 
 ---
 
-## 미등록 키워드 직접 조회
+## Direct Lookup for Unregistered Keywords
 
-12개 주요 키워드 외에도 23개 키워드를 지원한다. Notes에 등록되지 않은 키워드는 `docs.notes` namespace에서 직접 호출한다.
+Beyond the 12 main keywords, 23 additional keywords are supported. Keywords not registered in Notes can be accessed directly via the `docs.notes` namespace.
 
 ```python
-# 법인세
+# Corporate tax
 result = c.docs.notes.detail("법인세")
 print(result.tableDf)
 
-# 특수관계자
+# Related parties
 result = c.docs.notes.detail("특수관계자")
 print(result.tableDf)
 ```
 
-### 전체 23개 키워드
+### All 23 Keywords
 
 `재고자산`, `주당이익`, `충당부채`, `차입금`, `매출채권`, `리스`, `투자부동산`, `무형자산`, `법인세`, `특수관계자`, `약정사항`, `금융자산`, `공정가치`, `이익잉여금`, `금융부채`, `기타포괄손익`, `사채`, `종업원급여`, `퇴직급여`, `확정급여`, `재무위험`, `우발부채`, `담보`
 
-### 연도별 상세 테이블
+### Year-by-Year Detail Tables
 
-Notes는 DataFrame만 반환하지만, 원본 Result를 통해 연도별 상세 테이블도 접근 가능하다.
+Notes returns only DataFrames, but year-by-year detail tables are also accessible through the raw Result object.
 
 ```python
 result = c.docs.notes.detail("재고자산")
@@ -101,87 +101,87 @@ for year, periods in result.tables.items():
 
 ---
 
-## 유형자산 변동표
+## Tangible Asset Movement Schedule
 
-Notes에서 접근한다. `report.extract()`로 전체 Result도 받을 수 있다.
+Accessed through Notes. The full Result can also be obtained via `report.extract()`.
 
 ```python
-# Notes 경유
-c.notes.tangibleAsset   # 카테고리별 기초/기말 시계열 DataFrame
+# Via Notes
+c.notes.tangibleAsset   # Opening/closing balance timeseries by category
 
-# report.extract()로 전체 Result
+# Full Result via report.extract()
 result = c.report.extract("tangibleAsset")
-print(f"신뢰도: {result.reliability}")  # "high" 또는 "low"
+print(f"Reliability: {result.reliability}")  # "high" or "low"
 if result.warnings:
-    print(f"경고: {result.warnings}")
-print(result.movementDf)   # 카테고리별 기초/기말 시계열
+    print(f"Warnings: {result.warnings}")
+print(result.movementDf)   # Opening/closing balance timeseries by category
 ```
 
-### 연도별 상세 변동
+### Year-by-Year Movement Details
 
 ```python
 for year, movements in result.movements.items():
     for m in movements:
         print(f"[{year}] {m.period}")
-        print(f"  카테고리: {m.categories}")
+        print(f"  Categories: {m.categories}")
         for row in m.rows:
             print(f"  {row}")
 ```
 
 ---
 
-## 관계기업·공동기업
+## Associates and Joint Ventures
 
-Notes에서 접근한다.
+Accessed through Notes.
 
 ```python
-# Notes 경유
-c.notes.affiliates   # 변동 시계열 DataFrame
+# Via Notes
+c.notes.affiliates   # Movement timeseries DataFrame
 
-# report.extract()로 전체 Result
+# Full Result via report.extract()
 result = c.report.extract("affiliates")
 for year, profiles in result.profiles.items():
     for p in profiles:
-        print(f"[{year}] {p.name}: {p.ratio}%, 장부가 {p.bookValue}")
+        print(f"[{year}] {p.name}: {p.ratio}%, book value {p.bookValue}")
 ```
 
 ---
 
-## 이사회
+## Board of Directors
 
 ```python
 c.boardOfDirectors
 # year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
 ```
 
-위원회 구성도 확인 가능하다.
+Committee composition is also available.
 
 ```python
 result = c.report.extract("boardOfDirectors")
-print(result.boardDf)       # 이사회 시계열
-print(result.committeeDf)   # 위원회 구성 (committeeName, composition, members)
+print(result.boardDf)       # Board timeseries
+print(result.committeeDf)   # Committee composition (committeeName, composition, members)
 ```
 
 ---
 
-## 감사제도
+## Audit System
 
 ```python
 c.auditSystem
 # name | role | detail
 ```
 
-감사활동 내역도 확인 가능하다.
+Audit activity details are also available.
 
 ```python
 result = c.report.extract("auditSystem")
-print(result.committeeDf)   # 감사위원 구성
-print(result.activityDf)    # 감사활동 내역 (date, agenda, result)
+print(result.committeeDf)   # Audit committee composition
+print(result.activityDf)    # Audit activities (date, agenda, result)
 ```
 
 ---
 
-## 내부통제
+## Internal Controls
 
 ```python
 c.internalControl
@@ -190,50 +190,50 @@ c.internalControl
 
 ---
 
-## 거버넌스·리스크 종합
+## Governance and Risk Overview
 
 ```python
-# 관계자거래
+# Related party transactions
 c.relatedPartyTx
 # year | entity | sales | purchases
 
-# 우발부채
+# Contingent liabilities
 c.contingentLiability
 # year | totalGuaranteeAmount
 
-# 제재 현황
+# Sanctions
 c.sanction
 # year | date | agency | action | amount
 
-# 위험관리
+# Risk management
 c.riskDerivative
 # currency | upImpact | downImpact
 ```
 
-### 관계자거래 상세
+### Related Party Transaction Details
 
 ```python
 result = c.report.extract("relatedPartyTx")
-print(result.revenueTxDf)    # 매출입 거래
-print(result.guaranteeDf)    # 채무보증
-print(result.assetTxDf)      # 자산 거래
+print(result.revenueTxDf)    # Revenue transactions
+print(result.guaranteeDf)    # Debt guarantees
+print(result.assetTxDf)      # Asset transactions
 ```
 
-### 우발부채 상세
+### Contingent Liability Details
 
 ```python
 result = c.report.extract("contingentLiability")
-print(result.guaranteeDf)    # 채무보증
-print(result.lawsuitDf)      # 소송 현황
+print(result.guaranteeDf)    # Debt guarantees
+print(result.lawsuitDf)      # Litigation status
 ```
 
 ---
 
-## 여러 종목 비교
+## Multi-Company Comparison
 
-같은 deep access payload를 여러 회사에서 반복 호출해 비교할 수 있다.
+You can call the same deep access payload across multiple companies for comparison.
 
-### 재무 비교
+### Financial Comparison
 
 ```python
 import polars as pl
@@ -245,7 +245,7 @@ for code in codes:
     c = dartlab.Company(code)
     bs = c.BS
     if bs is not None:
-        # 마지막 연도 자산총계 확인
+        # Check total assets for the latest year
         cols = [col for col in bs.columns if col != "account"]
         last_year = cols[-1]
         row = bs.filter(pl.col("account") == "자산총계")
@@ -258,7 +258,7 @@ for code in codes:
 print(pl.DataFrame(rows))
 ```
 
-### 배당 비교
+### Dividend Comparison
 
 ```python
 dividends = []
@@ -279,28 +279,26 @@ print(pl.DataFrame(dividends))
 
 ---
 
-## Result 객체 접근
+## Result Object Access
 
-property는 대표 DataFrame 하나를 반환한다. 모듈의 전체 데이터가 필요하면 `report.extract()`를 사용한다.
+Properties return a single representative DataFrame. When you need the full data from a module, use `report.extract()`.
 
 ```python
-# property → 대표 DataFrame
-c.audit   # opinionDf만 반환
+# Property → representative DataFrame
+c.audit   # Returns opinionDf only
 
-# report.extract() → 전체 Result 객체
+# report.extract() → full Result object
 result = c.report.extract("audit")
-result.opinionDf   # 감사의견
-result.feeDf       # 감사보수
+result.opinionDf   # Audit opinion
+result.feeDf       # Audit fees
 ```
 
-> 기본 경로는 `c.show("audit")`다. deep access가 필요한 경우에만 `c.report.extract()`로 내려간다.
+> The standard path is `c.show("audit")`. Only use `c.report.extract()` when deep access is needed.
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [8. 기업 간 비교](./cross-company) — 섹터 분류, 인사이트 등급, 시장 순위
-- [API Overview](../api/overview) — 공개 surface와 source namespace
-- [계정 표준화와 시계열](../api/timeseries) — 7단계 매핑, snakeId, 정규화 방식
-
-
+- [8. Cross-Company Comparison](./cross-company) — Sector classification, insight grades, market ranking
+- [API Overview](../api/overview) — Public surface and source namespaces
+- [Account Standardization and Timeseries](../api/timeseries) — 7-step mapping, snakeId, normalization

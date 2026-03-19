@@ -1,23 +1,23 @@
-﻿---
+---
 title: "2. Financial Statements"
 ---
 
-# 2. Financial Statements — 재무제표 조회
+# 2. Financial Statements
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb)
 
-재무제표는 기업 분석의 출발점이다. 이 튜토리얼에서는 DART 원본 재무제표를 조회하고, 데이터 구조를 이해하고, 원하는 항목을 추출하는 방법을 다룬다.
+Financial statements are the starting point of company analysis. This tutorial covers how to query DART financial statements, understand the data structure, and extract specific items.
 
-- 3대 재무제표 조회 (BS, IS, CF)
-- 연결 vs 별도 재무제표
-- 연도별 열 구조 이해
-- 특정 계정항목 필터링
-- 분기별 재무제표
-- 원본 데이터의 한계와 주의사항
+- Querying the 3 core statements (BS, IS, CF)
+- Consolidated vs. separate financial statements
+- Understanding the year column structure
+- Filtering specific accounts
+- Quarterly financial statements
+- Limitations and caveats of the raw data
 
 ---
 
-## 준비
+## Setup
 
 ```python
 import dartlab
@@ -27,79 +27,79 @@ c = dartlab.Company("005930")
 
 ---
 
-## 3대 재무제표
+## The 3 Core Statements
 
-`Company` 객체의 property로 3대 재무제표에 접근한다. 메서드 호출(`()`)이 아니라 속성 접근이다.
+Access the 3 core financial statements as properties on the `Company` object. These are property accesses, not method calls.
 
-### 재무상태표 (Balance Sheet)
+### Balance Sheet (BS)
 
 ```python
 c.BS
 ```
 
-재무상태표는 **특정 시점**의 자산, 부채, 자본 잔액을 보여준다. "12월 31일 기준으로 회사가 뭘 갖고 있고, 뭘 빚지고 있는가"라는 질문에 대한 답이다.
+The balance sheet shows the balances of assets, liabilities, and equity at a **specific point in time**. It answers: "As of December 31, what does the company own and owe?"
 
-| 구분 | 의미 | 주요 항목 |
-|------|------|----------|
-| 자산 | 회사가 보유한 경제적 자원 | 유동자산, 비유동자산, 자산총계 |
-| 부채 | 갚아야 할 의무 | 유동부채, 비유동부채, 부채총계 |
-| 자본 | 자산 - 부채 | 자본금, 이익잉여금, 자본총계 |
+| Category | Meaning | Key Items |
+|----------|---------|-----------|
+| Assets | Economic resources held | Current assets, non-current assets, total assets |
+| Liabilities | Obligations to repay | Current liabilities, non-current liabilities, total liabilities |
+| Equity | Assets − Liabilities | Share capital, retained earnings, total equity |
 
-핵심 등식: **자산 = 부채 + 자본**. 이 등식이 맞지 않으면 데이터에 문제가 있는 것이다.
+Core identity: **Assets = Liabilities + Equity**. If this doesn't hold, there's a data issue.
 
 ```python
 import polars as pl
 
 bs = c.BS
 if bs is not None:
-    # 행은 계정항목, 열은 연도
+    # rows are accounts, columns are years
     print(bs.columns)
     # ['account', '2015', '2016', '2017', ..., '2024']
 
-    # 자산총계 행만 필터링
+    # filter for total assets only
     total_assets = bs.filter(pl.col("account") == "자산총계")
     print(total_assets)
 ```
 
-### 손익계산서 (Income Statement)
+### Income Statement (IS)
 
 ```python
 c.IS
 ```
 
-손익계산서는 **일정 기간** 동안의 수익과 비용을 보여준다. "올해 얼마 벌고 얼마 썼는가"라는 질문에 대한 답이다.
+The income statement shows revenue and expenses over a **period of time**. It answers: "How much did the company earn and spend this year?"
 
-| 구분 | 의미 | 주요 항목 |
-|------|------|----------|
-| 수익 | 영업활동으로 벌어들인 돈 | 매출액(수익) |
-| 비용 | 수익 창출에 쓴 돈 | 매출원가, 판관비 |
-| 이익 | 수익 - 비용 | 영업이익, 당기순이익 |
+| Category | Meaning | Key Items |
+|----------|---------|-----------|
+| Revenue | Money earned from operations | Sales/Revenue |
+| Expenses | Money spent to generate revenue | Cost of sales, SG&A |
+| Profit | Revenue − Expenses | Operating income, net income |
 
 ```python
 is_df = c.IS
 if is_df is not None:
-    # 매출과 영업이익 행만 필터링
+    # filter for revenue and operating income
     key_items = is_df.filter(
         pl.col("account").is_in(["매출액", "수익(매출액)", "영업이익"])
     )
     print(key_items)
 ```
 
-> 같은 "매출"이라도 회사마다 계정명이 다르다. 삼성전자는 "수익(매출액)", SK하이닉스는 "영업수익"이다. 이 문제는 [3. 시계열 분석](./timeseries)에서 해결한다.
+> The same "revenue" may have different account names across companies. Samsung uses "수익(매출액)", SK Hynix uses "영업수익". This problem is solved in [3. Time Series](./timeseries).
 
-### 현금흐름표 (Cash Flow Statement)
+### Cash Flow Statement (CF)
 
 ```python
 c.CF
 ```
 
-현금흐름표는 **일정 기간** 동안 실제로 현금이 얼마나 들어오고 나갔는지를 보여준다. 이익이 나도 현금이 부족하면 부도가 나기 때문에, 손익계산서와 함께 봐야 한다.
+The cash flow statement shows how much cash actually came in and went out over a **period of time**. Even profitable companies can go bankrupt if they lack cash, so this should be read alongside the income statement.
 
-| 구분 | 의미 | 예시 |
-|------|------|------|
-| 영업활동 | 본업에서 벌어들인 현금 | 매출 수금, 급여 지급 |
-| 투자활동 | 설비·자산 관련 현금 | 공장 건설, 장비 구매 |
-| 재무활동 | 자금조달·상환 현금 | 차입, 배당 지급 |
+| Category | Meaning | Examples |
+|----------|---------|---------|
+| Operating | Cash from core business | Sales collection, salary payments |
+| Investing | Cash for assets/equipment | Factory construction, equipment purchases |
+| Financing | Cash from funding/repayment | Borrowing, dividend payments |
 
 ```python
 cf = c.CF
@@ -116,33 +116,33 @@ if cf is not None:
 
 ---
 
-## 연결 vs 별도
+## Consolidated vs. Separate
 
-DART에는 두 종류의 재무제표가 있다.
+DART has two types of financial statements:
 
-| 구분 | 포함 범위 | 보는 이유 |
-|------|----------|----------|
-| **연결** (CFS) | 모회사 + 자회사 전체 | 그룹 전체의 실질적 규모와 성과 |
-| **별도** (OFS) | 모회사만 | 모회사 자체의 재무 상태 |
+| Type | Scope | Why View It |
+|------|-------|-------------|
+| **Consolidated** (CFS) | Parent + all subsidiaries | Actual scale and performance of the entire group |
+| **Separate** (OFS) | Parent company only | Financial status of the parent alone |
 
-삼성전자의 연결 매출에는 삼성디스플레이, 삼성SDI 등 자회사의 매출이 포함된다. 별도 매출은 삼성전자 단독 매출만이다.
+Samsung Electronics' consolidated revenue includes subsidiaries like Samsung Display and Samsung SDI. Separate revenue is Samsung Electronics standalone only.
 
-DartLab은 **연결 재무제표를 우선** 사용한다. 연결이 없는 기업(자회사가 없는 단독 기업)만 별도 재무제표를 사용한다.
+DartLab **prioritizes consolidated statements**. Only companies without subsidiaries (standalone entities) use separate statements.
 
 ```python
-# BS, IS, CF는 자동으로 연결 우선
-c.BS   # 연결재무상태표 (있으면) 또는 별도재무상태표
+# BS, IS, CF automatically prioritize consolidated
+c.BS   # consolidated BS (if available) or separate BS
 
-# 원본 데이터에서 직접 확인하고 싶다면
+# to check directly in raw data
 result = c.fsSummary()
-print(f"연결 데이터 존재: {result.hasConsolidated}")
+print(f"Consolidated data exists: {result.hasConsolidated}")
 ```
 
 ---
 
-## 열 구조 이해
+## Understanding Column Structure
 
-반환되는 DataFrame의 열은 `account` + 연도들이다.
+The returned DataFrame columns are `account` + year columns.
 
 ```python
 bs = c.BS
@@ -150,25 +150,25 @@ print(bs.columns)
 # ['account', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024']
 ```
 
-- `account`: 계정항목명 (한글)
-- 연도 열: 해당 연도 결산 기준 금액 (백만원)
+- `account`: Account name (Korean)
+- Year columns: Amount as of that fiscal year-end (in KRW)
 
-### 특정 연도 데이터 가져오기
+### Getting Data for a Specific Year
 
 ```python
-# 2024년 자산총계
+# 2024 total assets
 bs = c.BS
 row = bs.filter(pl.col("account") == "자산총계")
 if row.height > 0:
     value = row["2024"][0]
-    print(f"2024년 자산총계: {value:,.0f} 백만원")
-    print(f"                = {value/1e6:,.1f} 조원")
+    print(f"2024 Total Assets: {value:,.0f} KRW")
+    print(f"                 = {value/1e12:,.1f} trillion KRW")
 ```
 
-### 여러 항목 한번에 추출
+### Extracting Multiple Items at Once
 
 ```python
-# 핵심 BS 항목만 뽑기
+# extract key BS items
 key_accounts = ["자산총계", "유동자산", "비유동자산", "부채총계", "자본총계"]
 summary = bs.filter(pl.col("account").is_in(key_accounts))
 print(summary)
@@ -176,19 +176,19 @@ print(summary)
 
 ---
 
-## 분기별 재무제표
+## Quarterly Financial Statements
 
-기본 BS/IS/CF는 연간 데이터다. 분기별 데이터가 필요하면 `fsSummary()`를 사용한다.
+The default BS/IS/CF are annual data. For quarterly data, use `fsSummary()`.
 
 ```python
 quarterly = c.fsSummary(period="q")
 
-quarterly.BS   # 분기별 재무상태표
-quarterly.IS   # 분기별 손익계산서
-quarterly.CF   # 분기별 현금흐름표
+quarterly.BS   # quarterly balance sheet
+quarterly.IS   # quarterly income statement
+quarterly.CF   # quarterly cash flow statement
 ```
 
-분기별 열 이름은 `2020Q1`, `2020Q2`, `2020Q3`, `2020Q4` 형식이다.
+Quarterly column names use the format `2020Q1`, `2020Q2`, `2020Q3`, `2020Q4`.
 
 ```python
 qbs = quarterly.BS
@@ -196,55 +196,55 @@ print(qbs.columns)
 # ['account', '2020Q1', '2020Q2', '2020Q3', '2020Q4', '2021Q1', ...]
 ```
 
-| period 값 | 포함 보고서 | 열 형식 |
-|-----------|------------|---------|
-| `"y"` (기본값) | 사업보고서만 | `2020`, `2021`, ... |
-| `"q"` | 1분기 + 반기 + 3분기 + 사업 | `2020Q1`, `2020Q2`, ... |
-| `"h"` | 반기 + 사업 | `2020H1`, `2020H2`, ... |
+| period value | Reports included | Column format |
+|-------------|-----------------|---------------|
+| `"y"` (default) | Annual reports only | `2020`, `2021`, ... |
+| `"q"` | Q1 + semi-annual + Q3 + annual | `2020Q1`, `2020Q2`, ... |
+| `"h"` | Semi-annual + annual | `2020H1`, `2020H2`, ... |
 
-> 분기별 손익계산서(IS)의 수치는 **누적값**이다. Q2 열의 매출은 "2분기 매출"이 아니라 "1~2분기 누적 매출"이다. 독립 분기 매출이 필요하면 [3. 시계열 분석](./timeseries)의 시계열 엔진을 사용한다.
+> Quarterly income statement (IS) values are **cumulative**. The Q2 column for revenue is not "Q2 revenue" but "Q1+Q2 cumulative revenue". For standalone quarterly revenue, use the time series engine in [3. Time Series](./timeseries).
 
 ---
 
-## 주의사항
+## Caveats
 
-### 계정명이 회사마다 다르다
+### Account names differ across companies
 
-같은 "매출"이라도 회사마다 다른 이름을 쓴다. `pl.col("account") == "매출액"`으로 필터링하면 일부 기업에서 빈 결과가 나올 수 있다.
-
-```python
-# 이렇게 하면 안 된다
-bs.filter(pl.col("account") == "매출액")   # 일부 기업에서 못 찾음
-
-# 이 문제를 해결하려면 시계열 엔진을 사용한다
-# → 3. 시계열 분석 참조
-```
-
-### 금액 단위
-
-DART 원본 데이터의 금액 단위는 **원(KRW)**이다. BS/IS/CF property에서 반환하는 값도 원 단위다.
+The same "revenue" may have different names at different companies. Filtering with `pl.col("account") == "매출액"` may return empty results for some companies.
 
 ```python
-# 삼성전자 자산총계가 4조가 아니라 400조인 이유
-# → 단위가 원이므로 400,000,000,000,000 (400조원)
+# this won't work for all companies
+bs.filter(pl.col("account") == "매출액")   # may not find in some companies
+
+# use the time series engine to solve this
+# → see 3. Time Series
 ```
 
-### None 반환
+### Amount unit
 
-데이터가 없는 기업은 `None`을 반환한다. 항상 `None` 체크를 해야 한다.
+DART raw data amounts are in **KRW (Korean Won)**. Values returned by BS/IS/CF properties are also in KRW.
+
+```python
+# Samsung total assets is 400 trillion, not 4 trillion
+# → unit is KRW, so 400,000,000,000,000 (400T KRW)
+```
+
+### None return
+
+Companies without data return `None`. Always check for `None`.
 
 ```python
 bs = c.BS
 if bs is not None:
     print(bs)
 else:
-    print("재무상태표 데이터 없음")
+    print("No balance sheet data available")
 ```
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [3. 시계열 분석](./timeseries) — 계정 표준화, 분기별 독립 시계열, TTM
-- [4. 재무비율](./ratios) — ROE, 부채비율, FCF 등 자동 계산
+- [3. Time Series](./timeseries) — Account standardization, standalone quarterly time series, TTM
+- [4. Ratios](./ratios) — ROE, debt ratio, FCF, and more auto-calculated
 

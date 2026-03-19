@@ -6,19 +6,19 @@ title: "1. Quickstart"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/01_quickstart.ipynb)
 
-지금 DartLab의 첫 분석 흐름은 `sections -> show -> trace`다.
+DartLab's core analysis flow is `sections → show → trace`.
 
-이 튜토리얼에서 다루는 내용:
+This tutorial covers:
 
-- `Company` 생성
-- `sections`로 회사 맵 보기
-- `show("topic")`으로 payload 열기
-- `trace("topic")`으로 source 확인
-- source namespace 직접 접근
+- Creating a `Company`
+- Viewing the company map with `sections`
+- Opening payloads with `show("topic")`
+- Checking sources with `trace("topic")`
+- Direct access to source namespaces
 
 ---
 
-## Company 생성
+## Creating a Company
 
 ```python
 import dartlab
@@ -28,7 +28,7 @@ c.corpName
 c.stockCode
 ```
 
-회사명으로도 가능하다.
+You can also use a company name:
 
 ```python
 c = dartlab.Company("카카오")
@@ -36,15 +36,15 @@ c = dartlab.Company("카카오")
 
 ---
 
-## 먼저 `sections`를 본다
+## Start with `sections`
 
 ```python
 c.sections
 ```
 
-`sections`는 회사의 canonical board다. 컬럼은 기간이고, row는 공시에서 정렬된 topic 구조다.
+`sections` is the company's canonical board. Columns are periods, rows are the topic structure aligned from disclosures.
 
-pure docs source가 필요하면:
+For the pure docs source:
 
 ```python
 c.docs.sections
@@ -52,7 +52,7 @@ c.docs.sections
 
 ---
 
-## topic을 연다
+## Open a Topic
 
 ```python
 c.show("BS")
@@ -60,15 +60,15 @@ c.show("companyOverview")
 c.show("audit")
 ```
 
-자주 쓰는 해석:
+Common source interpretation:
 
-- `BS`, `IS`, `CF` 같은 숫자 topic은 `finance`
-- `audit`, `dividend` 같은 정형 공시는 `report`
-- `companyOverview`, `business` 같은 서술/섹션 topic은 `docs`
+- Numeric topics like `BS`, `IS`, `CF` come from `finance`
+- Structured disclosure topics like `audit`, `dividend` come from `report`
+- Narrative/section topics like `companyOverview`, `business` come from `docs`
 
 ---
 
-## source를 추적한다
+## Trace the Source
 
 ```python
 c.trace("BS")
@@ -76,23 +76,23 @@ c.trace("companyOverview")
 c.trace("audit")
 ```
 
-`trace(...)`는 그 topic이 실제로 어느 source에서 왔는지 설명한다.
+`trace(...)` explains which source the topic actually came from.
 
 ---
 
-## 공시 목록
+## Filing List
 
 ```python
 c.filings()
 ```
 
-회사에 연결된 공시 목록과 기본 메타데이터를 확인할 수 있다.
+View the filings linked to the company and their basic metadata.
 
 ---
 
-## source namespace
+## Source Namespaces
 
-필요하면 source를 직접 내려간다.
+When needed, drill down directly to a source:
 
 ```python
 c.docs.sections
@@ -103,11 +103,11 @@ c.finance.BS
 c.report.audit
 ```
 
-하지만 공개 기본 흐름은 여전히 `sections -> show -> trace`다.
+But the default public flow is still `sections → show → trace`.
 
 ---
 
-## 상태와 검색
+## Status and Search
 
 ```python
 dartlab.Company.status()
@@ -117,7 +117,7 @@ dartlab.Company.listing()
 
 ---
 
-## 진행 표시 끄기
+## Disable Progress Display
 
 ```python
 import dartlab
@@ -128,7 +128,7 @@ c = dartlab.Company("005930")
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [2. 재무제표 조회](./financial-statements)
+- [2. Financial Statements](./financial-statements)
 - [API Overview](../api/overview)

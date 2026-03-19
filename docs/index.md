@@ -4,9 +4,9 @@ title: DartLab
 
 # DartLab
 
-DartLab은 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
+DartLab is a Python library that turns disclosures into one company map.
 
-지금 DartLab의 중심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 먼저 기간축으로 수평화하고, 그 위에 `finance`와 `report` 같은 더 강한 source를 얹는다.
+The core of DartLab is `sections`. It horizontalizes annual and quarterly report sections across the time axis first, then layers stronger sources like `finance` and `report` on top.
 
 ```python
 import dartlab
@@ -18,44 +18,44 @@ c.show("companyOverview")
 c.trace("BS")
 ```
 
-## 지금 공개 서사
+## How It Works
 
-- `Company` 하나로 시작한다
-- `sections`가 회사의 canonical board다
-- `show(topic)`으로 필요한 topic을 연다
-- `trace(topic)`으로 선택된 source와 provenance를 확인한다
+- Start with a single `Company`
+- `sections` is the canonical company board
+- `show(topic)` opens the topic you need
+- `trace(topic)` reveals the selected source and provenance
 
-즉 예전처럼 parser 목록을 먼저 외우는 흐름이 아니다. 회사 전체를 하나의 맵으로 보고, 필요한 topic으로 내려가는 흐름이다.
+You don't need to memorize a list of parsers first. Instead, you view the entire company as one map and drill down into the topic you need.
 
-## 왜 `sections`가 중요한가
+## Why sections Matters
 
-공시는 원래 세로 문서다. 회사의 개요, 사업의 내용, 재무에 관한 사항, 리스크, 지배구조가 시간에 따라 이어진다.
+Disclosures are inherently vertical documents. Company overview, business description, financial matters, risk, and governance flow sequentially across time.
 
-DartLab은 이 세로 문서를 그대로 소비하지 않고 다음처럼 바꾼다.
+DartLab transforms these vertical documents:
 
-1. 섹션 경계를 먼저 잡는다
-2. 같은 구조 단위를 연도/분기별로 옆으로 맞춘다
-3. 그 위에서 `finance`, `report`, `docs`를 source-aware하게 소비한다
+1. Identifies section boundaries
+2. Aligns matching structural units side by side across years/quarters
+3. Consumes `finance`, `report`, and `docs` source-aware on top
 
-이 구조 덕분에:
+This structure enables:
 
-- 회사 전체 구조를 한 번에 볼 수 있고
-- 같은 topic을 여러 기간에 걸쳐 비교할 수 있고
-- AI GUI도 같은 맵을 그대로 소비할 수 있다
+- Viewing the entire company structure at once
+- Comparing the same topic across multiple periods
+- AI interfaces consuming the same map directly
 
-## Company 구조
+## Company Structure
 
-- `c.sections`: 공개 company board
+- `c.sections`: public company board
 - `c.docs.sections`: pure docs horizontalization source
 - `c.finance`: authoritative numeric layer
 - `c.report`: authoritative structured disclosure layer
-- `c.profile`: docs spine 위에 merge된 최종 company layer
+- `c.profile`: merged company layer on top of docs spine
 
-현재 공개 사용 흐름은 `sections -> show -> trace`다.
+The public workflow is `sections → show → trace`.
 
-## 바로 시작
+## Get Started
 
-- [빠른 시작](getting-started/quickstart)
-- [API 개요](api/overview)
-- [안정성 안내](stability)
-- [변경 이력](changelog)
+- [Quick Start](getting-started/quickstart)
+- [API Overview](api/overview)
+- [Stability Policy](stability)
+- [Changelog](changelog)

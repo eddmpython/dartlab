@@ -1,25 +1,25 @@
-﻿---
+---
 title: "8. Cross-Company Comparison"
 ---
 
-# 8. 기업 간 비교 — 섹터, 인사이트, 순위
+# 8. Cross-Company Comparison — Sector, Insight, Ranking
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/08_cross_company.ipynb)
 
-DartLab의 분석 엔진을 활용해 기업을 섹터별로 분류하고, 7영역 인사이트 등급을 부여하고, 시장 내 순위를 확인하는 방법을 다룬다.
+Use DartLab's analysis engines to classify companies by sector, assign 7-area insight grades, and check market rankings.
 
-- 섹터 분류 (WICS 11개 섹터)
-- 섹터별 벤치마크 파라미터
-- 인사이트 등급 (7영역 A~F)
-- 이상치 탐지
-- 시장 내 순위
-- 종합 비교 테이블
+- Sector classification (WICS 11 sectors)
+- Sector-specific benchmark parameters
+- Insight grades (7 areas, A–F)
+- Anomaly detection
+- Market ranking
+- Comprehensive comparison table
 
-시계열 생성과 재무비율 비교는 [3. 시계열 분석](./timeseries)과 [4. 재무비율](./ratios)에서 다뤘으므로, 여기서는 분석 엔진에 집중한다.
+Timeseries generation and financial ratio comparison were covered in [3. Timeseries Analysis](./timeseries) and [4. Financial Ratios](./ratios), so this tutorial focuses on the analysis engines.
 
 ---
 
-## 준비
+## Setup
 
 ```python
 import dartlab
@@ -27,58 +27,58 @@ import dartlab
 
 ---
 
-## 섹터 분류
+## Sector Classification
 
-DartLab은 WICS(WiseFn Industry Classification Standard) 11섹터 체계로 기업을 자동 분류한다. 같은 섹터 내 기업끼리 비교해야 의미 있는 분석이 된다 — 반도체와 은행의 부채비율을 비교하는 건 무의미하다.
+DartLab automatically classifies companies using the WICS (WiseFn Industry Classification Standard) 11-sector system. Comparing companies within the same sector produces meaningful analysis — comparing the debt ratio of a semiconductor company with a bank is pointless.
 
 ```python
 from dartlab.engines.sector import classify
 
 for code in ["005930", "000660", "035420", "051910"]:
     info = classify(code)
-    print(f"{info.corpName}: {info.sector} > {info.industryGroup} (신뢰도: {info.confidence})")
+    print(f"{info.corpName}: {info.sector} > {info.industryGroup} (confidence: {info.confidence})")
 ```
 
-분류는 3단계로 이루어진다:
-1. **오버라이드 매핑** — 수동 지정된 기업 (삼성전자→정보기술 등)
-2. **키워드 매칭** — 기업명/사업내용에서 키워드 추출
-3. **KSIC 코드 매핑** — 한국표준산업분류 코드 기반
+Classification follows three steps:
+1. **Override mapping** — Manually assigned companies (e.g., 삼성전자 → Information Technology)
+2. **Keyword matching** — Extracting keywords from company name and business description
+3. **KSIC code mapping** — Based on the Korean Standard Industrial Classification code
 
-### 11개 섹터
+### 11 Sectors
 
-| 섹터 | 예시 기업 |
-|------|----------|
-| 에너지 | SK이노베이션, S-Oil |
-| 소재 | LG화학, POSCO |
-| 산업재 | 현대건설, 두산 |
-| 경기소비재 | 현대차, 삼성물산 |
-| 필수소비재 | 농심, CJ제일제당 |
-| 건강관리 | 삼성바이오, 셀트리온 |
-| 금융 | KB금융, 삼성생명 |
-| 정보기술 | 삼성전자, SK하이닉스 |
-| 커뮤니케이션서비스 | NAVER, 카카오 |
-| 유틸리티 | 한국전력, 한국가스 |
-| 부동산 | 신한알파리츠 |
+| Sector | Example Companies |
+|--------|------------------|
+| Energy | SK이노베이션, S-Oil |
+| Materials | LG화학, POSCO |
+| Industrials | 현대건설, 두산 |
+| Consumer Discretionary | 현대차, 삼성물산 |
+| Consumer Staples | 농심, CJ제일제당 |
+| Health Care | 삼성바이오, 셀트리온 |
+| Financials | KB금융, 삼성생명 |
+| Information Technology | 삼성전자, SK하이닉스 |
+| Communication Services | NAVER, 카카오 |
+| Utilities | 한국전력, 한국가스 |
+| Real Estate | 신한알파리츠 |
 
-### 섹터별 벤치마크
+### Sector Benchmarks
 
-각 섹터는 고유한 벤치마크 파라미터를 가진다. 밸류에이션 모델에서 할인율, 성장률, PER 멀티플을 섹터에 맞게 적용할 때 사용한다.
+Each sector has its own benchmark parameters. These are used when applying sector-appropriate discount rates, growth rates, and PER multiples in valuation models.
 
 ```python
 from dartlab.engines.sector import getParams
 
 params = getParams("005930")
-print(f"섹터: {params.sector}")
-print(f"할인율: {params.discountRate}%")
-print(f"성장률: {params.growthRate}%")
-print(f"PER 멀티플: {params.perMultiple}x")
+print(f"Sector: {params.sector}")
+print(f"Discount rate: {params.discountRate}%")
+print(f"Growth rate: {params.growthRate}%")
+print(f"PER multiple: {params.perMultiple}x")
 ```
 
 ---
 
-## 인사이트 등급
+## Insight Grades
 
-7개 영역을 A~F로 등급화하여 기업의 강점과 약점을 한눈에 파악한다. 30개 이상의 재무 지표를 자동 분석한다.
+Seven areas are graded A through F to quickly identify a company's strengths and weaknesses. Over 30 financial metrics are automatically analyzed.
 
 ```python
 from dartlab.engines.insight import analyze
@@ -92,32 +92,32 @@ for code in ["005930", "000660", "035420"]:
     print(f"{result.company.corpName} [{result.profile}]: {grade_str}")
 ```
 
-### 7개 등급 영역
+### 7 Grading Areas
 
-| 영역 | 평가 항목 | A등급 기준 (예시) |
-|------|----------|-----------------|
-| **performance** | 매출/영업이익 성장률 | 매출 20%+ 성장, 이익 30%+ 성장 |
-| **profitability** | 영업이익률, ROE | 영업이익률 15%+, ROE 15%+ |
-| **health** | 부채비율, 유동비율 | 부채비율 50% 이하, 유동비율 200%+ |
-| **cashflow** | 영업CF, FCF | 안정적인 영업CF, FCF 흑자 |
-| **governance** | 최대주주 지분, 감사의견 | 안정적 지배구조, 적정 감사의견 |
-| **risk** | 이상치, 우발부채, 관계자거래 | 이상치 없음, 우발부채 소규모 |
-| **opportunity** | 성장 포텐셜 | 성장률 + 수익성 조합 우수 |
+| Area | Evaluation Criteria | A-Grade Standard (example) |
+|------|---------------------|---------------------------|
+| **performance** | Revenue/operating profit growth | Revenue 20%+ growth, profit 30%+ growth |
+| **profitability** | Operating margin, ROE | Operating margin 15%+, ROE 15%+ |
+| **health** | Debt ratio, current ratio | Debt ratio below 50%, current ratio 200%+ |
+| **cashflow** | Operating CF, FCF | Stable operating CF, positive FCF |
+| **governance** | Largest shareholder stake, audit opinion | Stable governance, unqualified audit opinion |
+| **risk** | Anomalies, contingent liabilities, related party transactions | No anomalies, minor contingent liabilities |
+| **opportunity** | Growth potential | Strong combination of growth and profitability |
 
-등급은 A(최우수) ~ F(심각한 문제)의 6단계다.
+Grades range from A (excellent) to F (severe issues) in 6 levels.
 
-### 프로파일
+### Profile
 
-기업의 전반적 성격을 한 마디로 요약한다.
+Summarizes the company's overall character in a single word.
 
 ```python
 result = analyze("005930")
-print(result.profile)   # "안정형", "성장형", "위험형" 등
+print(result.profile)   # "안정형", "성장형", "위험형" etc.
 ```
 
-### 이상치 탐지
+### Anomaly Detection
 
-재무 지표에서 통계적 이상치(Z-score 기반)를 자동 탐지한다.
+Automatically detects statistical anomalies (Z-score based) in financial metrics.
 
 ```python
 result = analyze("005930")
@@ -125,13 +125,13 @@ for anomaly in result.anomalies:
     print(f"  {anomaly.metric}: Z-score {anomaly.zscore:.1f} ({anomaly.direction})")
 ```
 
-예를 들어 재고자산회전율이 갑자기 급락했거나, 매출채권 회수기간이 비정상적으로 길어졌다면 이상치로 탐지된다. 이는 분식회계, 재고 적체, 부실채권 등의 경고 신호일 수 있다.
+For example, a sudden drop in inventory turnover or an abnormally extended accounts receivable collection period would be detected as anomalies. These can be warning signs of accounting fraud, inventory buildup, or bad debts.
 
 ---
 
-## 시장 내 순위
+## Market Ranking
 
-전체 상장사 중 해당 기업의 위치를 확인한다. 매출, 자산 기준 전체 순위와 섹터 내 순위를 모두 제공한다.
+Check where a company stands among all listed companies. Both overall market ranking and within-sector ranking are provided for revenue and assets.
 
 ```python
 from dartlab.engines.rank import getRankOrBuild
@@ -141,18 +141,18 @@ for code in ["005930", "000660", "035420"]:
     if rank is None:
         continue
     print(f"\n{rank.corpName} ({rank.sector})")
-    print(f"  매출 순위: {rank.revenueRank}/{rank.revenueTotal} (섹터 내 {rank.revenueRankInSector}/{rank.revenueSectorTotal})")
-    print(f"  자산 순위: {rank.assetRank}/{rank.assetTotal}")
-    print(f"  규모: {rank.sizeClass}")
+    print(f"  Revenue rank: {rank.revenueRank}/{rank.revenueTotal} (in sector: {rank.revenueRankInSector}/{rank.revenueSectorTotal})")
+    print(f"  Asset rank: {rank.assetRank}/{rank.assetTotal}")
+    print(f"  Size class: {rank.sizeClass}")
 ```
 
-`sizeClass`는 기업 규모를 대/중/소로 구분한다. 이를 활용해 "같은 섹터, 비슷한 규모" 기업끼리 비교하는 게 가장 의미 있다.
+`sizeClass` categorizes company size as large, mid, or small. Using this to compare companies of "same sector, similar size" produces the most meaningful results.
 
 ---
 
-## 종합 비교 예시
+## Comprehensive Comparison Example
 
-여러 지표를 하나의 테이블로 정리하는 패턴이다.
+A pattern for consolidating multiple metrics into a single table.
 
 ```python
 import polars as pl
@@ -185,11 +185,9 @@ print(df)
 
 ---
 
-## 다음 단계
+## Next Steps
 
-- [계정 표준화와 시계열](../api/timeseries) — 7단계 매핑, snakeId 목록, 정규화 방식 상세
-- [섹터 분류](../api/sector) — 분류 기준과 벤치마크 파라미터
-- [인사이트 등급](../api/insight) — 7영역 등급 기준과 이상치 탐지
-- [시장 순위](../api/rank) — 전체/섹터 내 순위 산출
-
-
+- [Account Standardization and Timeseries](../api/timeseries) — 7-step mapping, snakeId list, normalization details
+- [Sector Classification](../api/sector) — Classification criteria and benchmark parameters
+- [Insight Grades](../api/insight) — 7-area grading criteria and anomaly detection
+- [Market Ranking](../api/rank) — Overall and within-sector ranking calculation
