@@ -2315,9 +2315,8 @@ def _kill_port(port: int) -> bool:
     if not pids:
         return False
 
-    import os
-
     import logging as _logging
+    import os
 
     _log = _logging.getLogger(__name__)
     my_pid = os.getpid()
