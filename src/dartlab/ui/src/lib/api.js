@@ -396,6 +396,24 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 
 	const controller = new AbortController();
 
+	// SSE chunk 배칭: rAF 단위로 모아서 한번에 DOM 업데이트 (스트리밍 끊김 방지)
+	let chunkBuffer = "";
+	let rafId = null;
+	const batchedChunk = onChunk ? (text) => {
+		chunkBuffer += text;
+		if (!rafId) {
+			rafId = requestAnimationFrame(() => {
+				onChunk(chunkBuffer);
+				chunkBuffer = "";
+				rafId = null;
+			});
+		}
+	} : null;
+	const flushChunkBuffer = () => {
+		if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+		if (chunkBuffer && onChunk) { onChunk(chunkBuffer); chunkBuffer = ""; }
+	};
+
 	fetch(`${BASE}/api/ask`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -436,11 +454,11 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "system_prompt") onSystemPrompt?.(parsed);
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
-							else if (currentEvent === "chunk") onChunk?.(parsed.text);
+							else if (currentEvent === "chunk") batchedChunk?.(parsed.text);
 							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "viewer_navigate") onViewerNavigate?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
-							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(); } }
+							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(); } }
 						} catch (e) {
 							console.warn("SSE JSON parse:", e);
 						}
@@ -449,13 +467,14 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 				}
 			}
 
-			if (!doneFired) { doneFired = true; onDone?.(); }
+			if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(); }
 		})
 		.catch((err) => {
 			if (err.name !== "AbortError") {
+				flushChunkBuffer();
 				onError?.(err.message);
 			}
 		});
 
-	return { abort: () => controller.abort() };
+	return { abort: () => { flushChunkBuffer(); controller.abort(); } };
 }

@@ -19,6 +19,24 @@
 	let isFullscreen = $state(false);
 	let rawMdPeriodIdx = $state(new Map()); // blockIdx → selected period index
 
+	// 점진 렌더 — 초기 10개 섹션만 표시, 스크롤 시 추가
+	let visibleSections = $state(10);
+	let sectionSentinel = $state(null);
+
+	// topic 변경 시 초기화
+	$effect(() => { if (selectedTopic) visibleSections = 10; });
+
+	$effect(() => {
+		if (!sectionSentinel) return;
+		const obs = new IntersectionObserver((entries) => {
+			if (entries[0]?.isIntersecting) {
+				visibleSections = Math.min(visibleSections + 10, textDocument?.sections?.length || 999);
+			}
+		}, { rootMargin: "400px" });
+		obs.observe(sectionSentinel);
+		return () => obs.disconnect();
+	});
+
 	const TOPIC_LABELS = {
 		companyOverview: "회사 개요", companyHistory: "회사 연혁", articlesOfIncorporation: "정관 사항",
 		capitalChange: "자본금 변동", shareCapital: "주식 현황", dividend: "배당",
@@ -497,7 +515,7 @@
 										</div>
 									</div>
 
-									{#each textDocument.sections as section}
+									{#each textDocument.sections.slice(0, visibleSections) as section}
 										{@const activeView = getActiveSectionView(section)}
 										{@const explicitSelection = hasExplicitTimelineSelection(section)}
 										<div class="vw-text-section {section.status === 'stale' ? 'vw-text-section-stale' : ''}">
@@ -608,6 +626,9 @@
 											{/if}
 										</div>
 									{/each}
+									{#if visibleSections < (textDocument?.sections?.length || 0)}
+										<div bind:this={sectionSentinel} class="h-4"></div>
+									{/if}
 								</section>
 							{/if}
 
@@ -830,6 +851,8 @@
 	.vw-text-section {
 		padding-bottom: 38px;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		content-visibility: auto;
+		contain-intrinsic-size: auto 300px;
 	}
 	.vw-text-section:last-child {
 		border-bottom: none;
@@ -1075,6 +1098,9 @@
 		border-radius: 6px;
 		border: 1px solid rgba(30, 36, 51, 0.4);
 		overflow: hidden;
+		content-visibility: auto;
+		contain-intrinsic-size: auto 200px;
+		contain: layout style paint;
 	}
 	.markdown-table :global(table) {
 		width: 100%;

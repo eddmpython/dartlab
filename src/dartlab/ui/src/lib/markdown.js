@@ -1,5 +1,43 @@
 /** 마크다운 → HTML 렌더러 (테이블, 코드블록, 숫자 하이라이트 포함) */
 
+/**
+ * 증분 마크다운 렌더러 — 스트리밍 중 새 텍스트만 파싱.
+ * 이전 완결 블록의 HTML을 캐시하고 마지막 미완결 블록만 재파싱.
+ */
+export function createIncrementalRenderer() {
+	let prevText = "";
+	let cachedHtml = "";
+	let lastCompleteIdx = 0;
+
+	return {
+		/** 전체 텍스트(누적)를 받아서 HTML을 반환. 새 부분만 재파싱. */
+		render(fullText) {
+			if (!fullText) return "";
+			// 마지막 완결된 블록(빈 줄로 구분)까지 캐시
+			const lastDoubleNewline = fullText.lastIndexOf("\n\n");
+			if (lastDoubleNewline > lastCompleteIdx && lastDoubleNewline <= fullText.length - 2) {
+				// 완결 부분이 늘어남 → 캐시 갱신
+				const completeText = fullText.slice(0, lastDoubleNewline + 2);
+				if (completeText !== prevText) {
+					cachedHtml = renderMarkdown(completeText);
+					prevText = completeText;
+					lastCompleteIdx = lastDoubleNewline;
+				}
+				// 미완결 꼬리만 파싱
+				const tail = fullText.slice(lastDoubleNewline + 2);
+				return tail ? cachedHtml + renderMarkdown(tail) : cachedHtml;
+			}
+			// 아직 완결 블록이 없으면 전체 파싱
+			return renderMarkdown(fullText);
+		},
+		reset() {
+			prevText = "";
+			cachedHtml = "";
+			lastCompleteIdx = 0;
+		},
+	};
+}
+
 function isNumericCell(text) {
 	const s = text.replace(/<\/?strong>/g, '').replace(/\*\*/g, '').trim();
 	return /^[−\-+]?[\d,]+\.?\d*[%조억만원배x]*$/.test(s) || s === '-' || s === '0';
