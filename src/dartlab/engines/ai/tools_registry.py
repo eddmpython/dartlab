@@ -994,10 +994,12 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "show_topic",
         show_topic,
-        "공시 topic의 데이터를 조회합니다. "
-        "block 없이 호출하면 블록 목차(block, type, source, preview)를 반환하고, "
-        "block=N으로 호출하면 해당 블록의 실제 데이터(텍스트 또는 테이블)를 반환합니다. "
-        "사용 가능한 topic 목록은 `list_topics` 도구로 확인하세요.",
+        "공시 topic의 데이터를 조회합니다. 공시 원문(텍스트/테이블)을 읽을 때 가장 먼저 사용하세요. "
+        "block 없이 호출 → 블록 목차(block번호, type, source, preview). "
+        "block=N → 해당 블록의 실제 데이터(원문 텍스트 또는 수치 테이블). "
+        "사용 시점: 사업 내용, 리스크, 배당 정책 등 공시 원문이 필요할 때. "
+        "사용하지 말 것: 단순 재무 수치만 필요하면 get_data(BS/IS/CF)가 더 빠릅니다. "
+        "topic을 모르면 먼저 list_topics를 호출하세요.",
         {
             "type": "object",
             "properties": {
@@ -1036,7 +1038,8 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         list_topics,
         "이 기업에서 조회 가능한 모든 공시 topic 목록을 반환합니다. "
         "각 topic의 라벨, 데이터 종류(docs/finance/report), 기간 수를 포함합니다. "
-        "show_topic 도구에 어떤 topic을 넣을 수 있는지 확인할 때 사용하세요.",
+        "사용 시점: show_topic에 넣을 topic을 모를 때, '어떤 공시가 있어?' 질문에 답할 때. "
+        "사용하지 말 것: 이미 topic을 알고 있으면 바로 show_topic을 호출하세요.",
         {"type": "object", "properties": {}},
     )
 
@@ -1054,7 +1057,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         "trace_topic",
         trace_topic,
         "topic 데이터의 출처를 추적합니다. "
-        "각 블록이 docs(공시원문), finance(재무제표), report(정기보고서) 중 어디서 왔는지 확인합니다.",
+        "각 블록이 docs(공시원문), finance(재무제표), report(정기보고서) 중 어디서 왔는지 확인합니다. "
+        "사용 시점: 데이터 신뢰성을 확인할 때, 수치의 원본 소스를 밝힐 때. "
+        "사용하지 말 것: 데이터 내용 자체를 보려면 show_topic을 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -1081,8 +1086,10 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         "diff_topic",
         diff_topic,
         "공시 텍스트의 기간간 변화를 분석합니다. "
-        "topic 없이 호출하면 전체 topic의 변화율 요약, "
-        "topic을 지정하면 해당 topic의 기간별 상세 변화(추가/삭제/수정)를 반환합니다.",
+        "topic 없이 호출 → 전체 topic의 변화율 요약 (어디가 많이 바뀌었는지). "
+        "topic 지정 → 해당 topic의 기간별 상세 변화(추가/삭제/수정). "
+        "사용 시점: '뭐가 바뀌었어?', '리스크 변화', '사업 구조 변경' 같은 변화 감지 질문. "
+        "사용하지 말 것: 현재 시점의 데이터만 필요하면 show_topic이 적절합니다.",
         {
             "type": "object",
             "properties": {
@@ -1110,7 +1117,10 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "list_modules",
         list_modules,
-        "이 기업에서 조회 가능한 모든 데이터 모듈 목록을 반환합니다. 어떤 데이터가 있는지 모를 때 먼저 호출하세요.",
+        "이 기업에서 조회 가능한 모든 데이터 모듈(BS, IS, CF, dividend, audit 등) 목록을 반환합니다. "
+        "사용 시점: get_data에 넣을 모듈명을 모를 때. "
+        "사용하지 말 것: 공시 원문(sections) 목록이 필요하면 list_topics를 사용하세요. "
+        "list_modules는 재무/정형 데이터, list_topics는 공시 문서 목록입니다.",
         {"type": "object", "properties": {}},
     )
 
@@ -1231,8 +1241,10 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "compute_ratios",
         compute_ratios,
-        "재무상태표(BS)와 손익계산서(IS)로 핵심 재무비율을 계산합니다. "
-        "부채비율, 유동비율, 영업이익률, 순이익률, ROE, ROA를 연도별로 반환.",
+        "재무상태표(BS)와 손익계산서(IS)로 핵심 재무비율을 자동 계산합니다. "
+        "반환: 부채비율, 유동비율, 영업이익률, 순이익률, ROE, ROA (연도별 테이블). "
+        "사용 시점: 건전성/수익성 분석, 비율 추세 확인. "
+        "사용하지 말 것: 원본 BS/IS 수치 자체가 필요하면 get_data를 사용하세요.",
         {"type": "object", "properties": {}},
     )
 
@@ -1254,7 +1266,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "detect_anomalies",
         find_anomalies,
-        "재무 데이터에서 이상치(급격한 변동, 부호 반전)를 탐지합니다.",
+        "재무 데이터에서 이상치(급격한 YoY 변동, 부호 반전)를 자동 탐지합니다. "
+        "사용 시점: 리스크 분석, 이상 징후 확인, '뭔가 이상한 게 있어?' 질문. "
+        "사용하지 말 것: 정상적인 재무 추세 분석에는 compute_ratios나 yoy_analysis가 적절합니다.",
         {
             "type": "object",
             "properties": {
@@ -1290,7 +1304,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "compute_growth",
         compute_growth,
-        "다기간 CAGR(복합연간성장률) 매트릭스를 계산합니다. 1Y, 2Y, 3Y, 5Y 성장률 반환.",
+        "다기간 CAGR(복합연간성장률) 매트릭스를 계산합니다. 1Y, 2Y, 3Y, 5Y 성장률 반환. "
+        "사용 시점: 성장성 분석, '매출 성장률이 어떻게 돼?' 질문. "
+        "사용하지 말 것: 단순 전년 대비는 yoy_analysis가 더 적절합니다.",
         {
             "type": "object",
             "properties": {
@@ -1324,7 +1340,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "yoy_analysis",
         yoy_analysis,
-        "데이터의 전년 대비(YoY) 변동률을 계산합니다.",
+        "데이터의 전년 대비(YoY) 변동률을 계산합니다. 각 항목의 연도별 증감률(%)을 반환. "
+        "사용 시점: '작년 대비 어떻게 변했어?', 수익성/배당 추이 분석. "
+        "사용하지 말 것: 다년간 CAGR이 필요하면 compute_growth를 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -1354,7 +1372,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_summary",
         get_summary,
-        "데이터의 요약 통계(평균, 최솟값, 최댓값, 표준편차, CAGR, 추세)를 계산합니다.",
+        "데이터의 요약 통계(평균, 최솟값, 최댓값, 표준편차, CAGR, 추세)를 계산합니다. "
+        "사용 시점: 전반적 데이터 개요, 장기 추세 요약이 필요할 때. "
+        "사용하지 말 것: 특정 연도 수치가 필요하면 get_data, 비율은 compute_ratios를 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -1384,13 +1404,11 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_report_data",
         get_report_data,
-        "OpenDART 정기보고서 API 데이터를 조회합니다. "
-        "api_type 예시: dividend(배당), employee(직원현황), executive(임원현황), "
-        "majorHolder(최대주주), auditOpinion(감사의견), capitalChange(증자감자), "
-        "corporateBond(회사채), stockTotal(주식총수), treasuryStock(자기주식), "
-        "investedCompany(타법인출자), outsideDirector(사외이사), "
-        "executivePayAllTotal(임원보수전체), topPay(5억이상 개인보수). "
-        "docsParser와 다르게 정기보고서 API의 표준화된 수치를 제공합니다.",
+        "DART 정기보고서 API의 표준화된 정형 데이터를 조회합니다. "
+        "api_type: dividend(배당), employee(직원), executive(임원), majorHolder(최대주주), "
+        "auditOpinion(감사의견), capitalChange(증자감자), stockTotal(주식총수), treasuryStock(자기주식). "
+        "사용 시점: 배당·직원·임원·주주 등 정형화된 수치가 필요할 때. get_data(BS/IS)와는 다른 소스. "
+        "사용하지 말 것: 공시 원문 텍스트가 필요하면 show_topic을 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -1419,7 +1437,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_company_info",
         get_company_info,
-        "기업의 기본 정보(기업명, 종목코드, 대표자, 업종 등)를 조회합니다.",
+        "기업의 기본 정보(기업명, 종목코드, 대표자, 주요사업, 업종)를 조회합니다. "
+        "사용 시점: 기업 개요 파악, 분석 시작 시 기본 정보 확인. "
+        "사용하지 말 것: 재무 수치가 필요하면 get_data, 공시 원문은 show_topic을 사용하세요.",
         {"type": "object", "properties": {}},
     )
 
@@ -1509,9 +1529,11 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_insight",
         get_insight,
-        "기업의 7영역 인사이트 분석을 실행합니다. "
-        "실적, 수익성, 재무건전성, 현금흐름, 지배구조, 리스크, 기회를 A~F 등급으로 평가. "
-        "이상치 탐지와 프로파일(premium/growth/stable/caution/distress) 분류를 포함합니다.",
+        "기업의 7영역 인사이트 종합 분석을 실행합니다. "
+        "영역: 실적, 수익성, 재무건전성, 현금흐름, 지배구조, 리스크, 기회 (각각 A~F 등급). "
+        "프로파일: premium/growth/stable/caution/distress 분류. 이상치 자동 탐지 포함. "
+        "사용 시점: 종합 분석, '이 회사 어때?', 투자 판단 근거가 필요할 때. "
+        "사용하지 말 것: 특정 재무 수치만 필요하면 get_data/compute_ratios가 빠릅니다.",
         {"type": "object", "properties": {}},
     )
 
@@ -1548,7 +1570,9 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_sector_info",
         get_sector_info,
-        "기업의 WICS 섹터 분류와 섹터 파라미터(PER, PBR, 할인율)를 조회합니다.",
+        "기업의 WICS 섹터 분류(대/중분류)와 섹터 기준 밸류에이션(PER, PBR, 할인율)을 조회합니다. "
+        "사용 시점: 업종 비교, 밸류에이션 판단, '동종업계 대비 어때?' 질문. "
+        "사용하지 말 것: 기업 자체 재무비율은 compute_ratios를 사용하세요.",
         {"type": "object", "properties": {}},
     )
 
@@ -1581,7 +1605,10 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     register_tool(
         "get_rank",
         get_rank_info,
-        "기업의 전체 시장 및 섹터 내 규모 순위(매출, 자산, 성장률)를 조회합니다.",
+        "기업의 전체 시장 및 섹터 내 규모 순위를 조회합니다. "
+        "매출/자산/성장률 순위와 상위 %를 반환. 규모 분류(대형/중형/소형) 포함. "
+        "사용 시점: 시장 내 위치 파악, '이 회사 규모가 어느 정도야?' 질문. "
+        "사용하지 말 것: 재무 수치 자체가 필요하면 get_data를 사용하세요.",
         {"type": "object", "properties": {}},
     )
 

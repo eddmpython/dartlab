@@ -1,4 +1,4 @@
-"""`dartlab ai` and deprecated `dartlab ui` commands."""
+"""`dartlab ai` command — AI 분석 웹 인터페이스."""
 
 from __future__ import annotations
 
@@ -14,11 +14,7 @@ from dartlab.cli.services.output import print_warning
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("ai", help="AI 분석 웹 인터페이스 실행")
     _add_shared_arguments(parser)
-    parser.set_defaults(handler=run, cli_alias="ai")
-
-    alias = subparsers.add_parser("ui")
-    _add_shared_arguments(alias)
-    alias.set_defaults(handler=run, cli_alias="ui")
+    parser.set_defaults(handler=run)
 
 
 def _add_shared_arguments(parser) -> None:
@@ -29,10 +25,6 @@ def _add_shared_arguments(parser) -> None:
 
 
 def run(args) -> int:
-    if getattr(args, "cli_alias", "ai") == "ui":
-        print_warning("dartlab ui는 더 이상 기본 명령이 아닙니다. dartlab ai를 사용하세요.")
-        print()
-
     port = args.port
     host = args.host
     url = f"http://localhost:{port}"

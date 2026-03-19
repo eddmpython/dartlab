@@ -45,6 +45,10 @@ class OpenAICompatProvider(BaseProvider):
     def default_model(self) -> str:
         return "gpt-4o"
 
+    @property
+    def supports_native_tools(self) -> bool:
+        return True
+
     def check_available(self) -> bool:
         try:
             self._get_client()
@@ -103,6 +107,7 @@ class OpenAICompatProvider(BaseProvider):
         }
         if tools:
             kwargs["tools"] = tools
+            kwargs["parallel_tool_calls"] = True
 
         response = client.chat.completions.create(**kwargs)
         choice = response.choices[0]

@@ -16,9 +16,9 @@ def test_build_parser_registers_all_commands():
 
     choices = parser._subparsers._group_actions[0].choices
     assert set(
-        ["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "show", "search", "ui"]
+        ["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "show", "search"]
     ).issubset(choices.keys())
-    assert choices["ui"].help == "==SUPPRESS=="
+    assert "ui" not in choices
 
 
 def test_parse_ask_options():
@@ -32,24 +32,6 @@ def test_parse_ask_options():
     assert args.include == ["BS", "IS"]
     assert args.stream is True
 
-
-def test_parse_ui_alias():
-    parser = build_parser()
-
-    args = parser.parse_args(["ui", "--port", "9000"])
-
-    assert args.command == "ui"
-    assert args.port == 9000
-    assert args.cli_alias == "ui"
-
-
-@patch("dartlab.cli.commands.ai.run", return_value=0)
-def test_main_dispatches_to_ui_handler(mock_run):
-    result = main(["ui", "--no-browser"])
-
-    assert result == 0
-    mock_run.assert_called_once()
-    assert mock_run.call_args[0][0].cli_alias == "ui"
 
 
 def test_main_without_command_prints_help(capsys):
@@ -114,14 +96,6 @@ def test_parse_statement_options():
     assert args.company == "005930"
     assert args.name == "CIS"
 
-
-def test_ui_alias_prints_deprecation_message(capsys):
-    with patch("dartlab.cli.commands.ai._check_built_ui", return_value=False):
-        result = main(["ui"])
-
-    captured = capsys.readouterr()
-    assert result == 0
-    assert "dartlab ai" in captured.err
 
 
 @patch("dartlab.cli.commands.ask.run", side_effect=KeyboardInterrupt)

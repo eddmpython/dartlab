@@ -165,43 +165,64 @@ _COMPRESS_TURN_THRESHOLD = 5  # 이 턴 수 이상이면 초기 턴 요약
 
 
 def compress_history(history: list[HistoryMessage] | None) -> list[HistoryMessage] | None:
-    """멀티턴 히스토리 압축: 오래된 턴을 요약으로 대체.
+    """멀티턴 히스토리 압축: 오래된 턴을 구조화된 요약으로 대체.
 
     5턴(10 메시지) 이상이면 가장 오래된 턴들을 1개 요약 메시지로 교체.
     최근 4턴(8 메시지)은 원본 유지.
+
+    요약에는 메타 정보(관심 기업, 분석 주제, 핵심 발견)를 구조적으로 추출.
     """
     if not history or len(history) <= _COMPRESS_TURN_THRESHOLD * 2:
         return history
 
-    # 최근 4턴(8메시지) 원본 유지, 나머지는 요약
     keep_count = 8
     old_messages = history[:-keep_count]
     recent_messages = history[-keep_count:]
 
-    # 오래된 메시지에서 핵심만 추출
-    summary_parts = []
+    # 구조화된 메타 정보 추출
+    companies_mentioned: set[str] = set()
+    topics_discussed: list[str] = []
+    qa_pairs: list[str] = []
+
     for msg in old_messages:
+        text = msg.text.strip()
+        if not text:
+            continue
+
+        # 기업명/종목코드 추출 (meta에서 또는 텍스트 패턴)
+        if msg.meta:
+            if msg.meta.company:
+                companies_mentioned.add(msg.meta.company)
+            if msg.meta.topicLabel:
+                topics_discussed.append(msg.meta.topicLabel)
+
         if msg.role == "user":
-            text = msg.text.strip()
-            if len(text) > 60:
-                text = text[:60] + "..."
-            summary_parts.append(f"Q: {text}")
+            brief = text[:80] + "..." if len(text) > 80 else text
+            qa_pairs.append(f"- Q: {brief}")
         elif msg.role == "assistant":
-            text = msg.text.strip()
-            # 첫 2문장만
             sentences = text.split(".")
             brief = ".".join(sentences[:2]).strip()
             if brief and not brief.endswith("."):
                 brief += "."
-            if len(brief) > 120:
-                brief = brief[:120] + "..."
+            if len(brief) > 150:
+                brief = brief[:150] + "..."
             if brief:
-                summary_parts.append(f"A: {brief}")
+                qa_pairs.append(f"  A: {brief}")
 
-    if not summary_parts:
+    if not qa_pairs:
         return history
 
-    summary_text = "[이전 분석 요약]\n" + "\n".join(summary_parts)
+    # 구조화된 요약 조립
+    summary_lines = ["[이전 대화 요약]"]
+    if companies_mentioned:
+        summary_lines.append(f"관심 기업: {', '.join(sorted(companies_mentioned))}")
+    if topics_discussed:
+        unique_topics = list(dict.fromkeys(topics_discussed))[:5]
+        summary_lines.append(f"분석 주제: {', '.join(unique_topics)}")
+    summary_lines.append("")
+    summary_lines.extend(qa_pairs[-8:])  # 최대 4턴분 Q&A만
+
+    summary_text = "\n".join(summary_lines)
     summary_msg = HistoryMessage(role="assistant", text=summary_text)
     return [summary_msg, *recent_messages]
 

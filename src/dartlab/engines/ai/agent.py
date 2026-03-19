@@ -30,24 +30,119 @@ _CORE_TOOL_PRIORITY = [
     "get_rank",
 ]
 
+# 질문 유형별 도구 라우팅 — 관련 도구만 노출하여 선택 정확도 향상
+_TOOL_ROUTING: dict[str, list[str]] = {
+    "건전성": [
+        "get_data",
+        "compute_ratios",
+        "get_insight",
+        "show_topic",
+        "get_company_info",
+        "get_sector_info",
+        "detect_anomalies",
+    ],
+    "수익성": [
+        "get_data",
+        "compute_ratios",
+        "get_insight",
+        "show_topic",
+        "yoy_analysis",
+        "compute_growth",
+        "get_sector_info",
+    ],
+    "성장성": [
+        "get_data",
+        "compute_growth",
+        "yoy_analysis",
+        "get_rank",
+        "get_insight",
+        "show_topic",
+        "get_sector_info",
+    ],
+    "배당": [
+        "get_data",
+        "get_report_data",
+        "show_topic",
+        "compute_ratios",
+        "get_insight",
+        "yoy_analysis",
+    ],
+    "리스크": [
+        "show_topic",
+        "diff_topic",
+        "detect_anomalies",
+        "get_insight",
+        "get_data",
+        "list_topics",
+        "trace_topic",
+    ],
+    "지배구조": [
+        "show_topic",
+        "get_report_data",
+        "diff_topic",
+        "get_insight",
+        "list_topics",
+        "trace_topic",
+    ],
+    "공시": [
+        "show_topic",
+        "list_topics",
+        "diff_topic",
+        "trace_topic",
+        "get_data",
+        "get_report_data",
+    ],
+    "사업": [
+        "show_topic",
+        "list_topics",
+        "diff_topic",
+        "trace_topic",
+        "get_data",
+        "get_insight",
+    ],
+}
 
-def _select_tools(tools: list[dict], max_tools: int | None) -> list[dict]:
-    """max_tools가 지정되면 핵심 도구만 선택, 아니면 전체 반환."""
-    if max_tools is None or len(tools) <= max_tools:
-        return tools
+# 모든 유형에 공통으로 추가되는 메타 도구
+_COMMON_TOOLS = ["get_system_spec", "search_company", "get_company_info"]
 
+
+def _select_tools(
+    tools: list[dict],
+    max_tools: int | None,
+    *,
+    question_type: str | None = None,
+) -> list[dict]:
+    """질문 유형 기반 도구 라우팅 + max_tools 제한.
+
+    question_type이 주어지면 해당 유형에 맞는 도구만 우선 선택.
+    max_tools가 지정되면 그 수만큼만 반환.
+    """
     by_name: dict[str, dict] = {}
     for t in tools:
         name = t.get("function", {}).get("name", "")
         by_name[name] = t
 
+    # 질문 유형별 라우팅 적용
+    if question_type and question_type in _TOOL_ROUTING:
+        routed_names = _TOOL_ROUTING[question_type] + _COMMON_TOOLS
+        routed = [by_name[n] for n in routed_names if n in by_name]
+        # 라우팅 도구 + 나머지 (라우팅 도구 우선)
+        remaining = [t for t in tools if t not in routed]
+        ordered = routed + remaining
+    else:
+        ordered = tools
+
+    if max_tools is None or len(ordered) <= max_tools:
+        return ordered
+
+    # max_tools 제한: 우선순위 기반 선택
     selected = []
-    for name in _CORE_TOOL_PRIORITY:
-        if name in by_name and len(selected) < max_tools:
+    priority_names = (_TOOL_ROUTING.get(question_type, []) + _COMMON_TOOLS) if question_type else _CORE_TOOL_PRIORITY
+    for name in priority_names:
+        if name in by_name and by_name[name] not in selected and len(selected) < max_tools:
             selected.append(by_name[name])
 
-    # 우선순위 도구로 부족하면 나머지에서 채움
-    for t in tools:
+    for t in ordered:
         if len(selected) >= max_tools:
             break
         if t not in selected:
@@ -66,6 +161,7 @@ def agent_loop(
     runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
+    question_type: str | None = None,
 ) -> str:
     """에이전트 루프: LLM ↔ 도구 반복 실행.
 
@@ -82,12 +178,13 @@ def agent_loop(
             max_tools: 도구 개수 제한 (None이면 전체). 소형 모델은 10개 권장.
             on_tool_call: 도구 호출 시 콜백 (UI용)
             on_tool_result: 도구 결과 시 콜백 (UI용)
+            question_type: 질문 유형 (Tool Routing용). None이면 전체 도구 노출.
 
     Returns:
             LLM의 최종 답변 텍스트
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-loop")
-    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools)
+    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools, question_type=question_type)
 
     last_answer = ""
 
@@ -116,6 +213,30 @@ def agent_loop(
     return last_answer
 
 
+# ══════════════════════════════════════
+# Reflection — 답변 자체 검증
+# ══════════════════════════════════════
+
+_REFLECTION_PROMPT = (
+    "당신의 이전 답변을 검토하세요. 다음 기준으로 평가하고 개선하세요:\n"
+    "1. **수치 근거**: 인용한 모든 수치에 출처(테이블명, 연도)가 있는가?\n"
+    "2. **완전성**: 사용자 질문에 완전히 답했는가? 빠진 관점은?\n"
+    "3. **근거 없는 주장**: 제공된 데이터로 뒷받침할 수 없는 주장이 있는가?\n\n"
+    "문제가 있으면 수정된 답변을 작성하세요. 문제가 없으면 원본 답변을 그대로 반환하세요."
+)
+
+
+def _reflect_on_answer(provider: BaseProvider, messages: list[dict], answer: str) -> str:
+    """답변 자체 검증 — 1회 reflection으로 품질 보완."""
+    reflect_messages = [
+        *messages,
+        {"role": "assistant", "content": answer},
+        {"role": "user", "content": _REFLECTION_PROMPT},
+    ]
+    response = provider.complete(reflect_messages)
+    return response.answer if response.answer.strip() else answer
+
+
 def agent_loop_stream(
     provider: BaseProvider,
     messages: list[dict],
@@ -126,6 +247,7 @@ def agent_loop_stream(
     runtime: ToolRuntime | None = None,
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
+    question_type: str | None = None,
 ) -> Generator[str, None, None]:
     """스트리밍 에이전트 루프: tool 실행 후 최종 답변을 청크로 yield.
 
@@ -133,7 +255,7 @@ def agent_loop_stream(
     최종 답변은 llm.stream()으로 실시간 청크 전달.
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
-    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools)
+    tools = _select_tools(tool_runtime.get_tool_schemas(), max_tools, question_type=question_type)
 
     for _turn in range(max_turns):
         response = provider.complete_with_tools(messages, tools)

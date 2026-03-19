@@ -27,6 +27,7 @@ def ask(
     provider: str | None = None,
     model: str | None = None,
     stream: bool = False,
+    reflect: bool = False,
     **kwargs: Any,
 ) -> str:
     """LLM에게 기업에 대해 질문.
@@ -111,6 +112,13 @@ def ask(
 
     response = llm.complete(messages)
     response.context_tables = included_tables
+    answer = response.answer
+
+    # Self-Critique: 답변 자체 검증 (1회 reflection)
+    if reflect and answer:
+        from dartlab.engines.ai.agent import _reflect_on_answer
+
+        answer = _reflect_on_answer(llm, messages, answer)
 
     from dartlab import config
 
@@ -119,7 +127,7 @@ def ask(
         if response.usage:
             print(f"  [LLM] tokens: {response.usage.get('total_tokens', '?')}")
 
-    return response.answer
+    return answer
 
 
 def chat(

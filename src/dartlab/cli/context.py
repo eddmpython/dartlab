@@ -11,7 +11,7 @@ EXIT_OK = 0
 EXIT_USAGE = 2
 EXIT_RUNTIME = 1
 EXIT_INTERRUPTED = 130
-DEPRECATED_ALIASES = {"ui": "ai"}
+DEPRECATED_ALIASES: dict[str, str] = {}
 
 
 @dataclass(frozen=True)

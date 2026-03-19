@@ -1424,9 +1424,55 @@ def build_context(
                     + ", ".join(available_list[:15])
                 )
 
+    # ── 정보 배치 최적화: 핵심 수치를 context 끝에 반복 (Lost-in-the-Middle 대응) ──
+    key_facts = _build_key_facts_recap(company, included)
+    if key_facts:
+        sections.append(key_facts)
+
     config.verbose = orig_verbose
 
     return "\n".join(sections), included
+
+
+def _build_key_facts_recap(company: Any, included: list[str]) -> str | None:
+    """context 끝에 핵심 수치를 간결하게 반복 — Lost-in-the-Middle 문제 대응."""
+    lines: list[str] = []
+
+    ratios = getattr(company, "ratios", None)
+    if ratios is not None and hasattr(ratios, "roe"):
+        facts = []
+        if ratios.roe is not None:
+            facts.append(f"ROE {ratios.roe:.1f}%")
+        if ratios.operatingMargin is not None:
+            facts.append(f"영업이익률 {ratios.operatingMargin:.1f}%")
+        if ratios.debtRatio is not None:
+            facts.append(f"부채비율 {ratios.debtRatio:.1f}%")
+        if ratios.currentRatio is not None:
+            facts.append(f"유동비율 {ratios.currentRatio:.1f}%")
+        if ratios.fcf is not None:
+            facts.append(f"FCF {_format_won(ratios.fcf)}")
+        if facts:
+            lines.append("---")
+            lines.append(f"**[핵심 지표 요약] {' | '.join(facts)}**")
+
+    # insight 등급 요약 (있으면)
+    try:
+        from dartlab.engines.insight import analyze
+
+        stockCode = getattr(company, "stockCode", None)
+        if stockCode:
+            result = analyze(stockCode, company=company)
+            if result is not None:
+                grades = result.grades()
+                grade_parts = [f"{k}={v}" for k, v in grades.items() if v != "N"]
+                if grade_parts:
+                    lines.append(f"**[인사이트 등급] {result.profile} — {', '.join(grade_parts[:5])}**")
+    except (ImportError, AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        pass
+
+    if not lines:
+        return None
+    return "\n".join(lines)
 
 
 def _build_topics_section(company: Any, compact: bool = False) -> str | None:
