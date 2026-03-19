@@ -35,6 +35,13 @@ class TemplateStore:
         self._dir = storeDir or _defaultDir()
         self._dir.mkdir(parents=True, exist_ok=True)
 
+    def _safe_path(self, templateId: str) -> Path:
+        """templateId → 안전한 파일 경로. path traversal 차단."""
+        path = (self._dir / f"{templateId}.json").resolve()
+        if not path.is_relative_to(self._dir.resolve()):
+            raise ValueError(f"잘못된 templateId: {templateId}")
+        return path
+
     def list(self) -> list[ExcelTemplate]:
         """프리셋 + 사용자 템플릿 전체 목록."""
         result: list[ExcelTemplate] = list(PRESETS.values())
@@ -57,7 +64,7 @@ class TemplateStore:
                     return preset
             return None
 
-        path = self._dir / f"{templateId}.json"
+        path = self._safe_path(templateId)
         if not path.exists():
             return None
         try:
@@ -74,7 +81,7 @@ class TemplateStore:
         import time
 
         template.updatedAt = time.time()
-        path = self._dir / f"{template.templateId}.json"
+        path = self._safe_path(template.templateId)
         path.write_text(template.toJson(), encoding="utf-8")
         return template.templateId
 
@@ -82,7 +89,7 @@ class TemplateStore:
         """삭제. 프리셋은 삭제 불가."""
         if templateId.startswith("preset_"):
             return False
-        path = self._dir / f"{templateId}.json"
+        path = self._safe_path(templateId)
         if path.exists():
             path.unlink()
             return True
@@ -92,4 +99,4 @@ class TemplateStore:
         """존재 여부 확인."""
         if templateId.startswith("preset_"):
             return any(p.templateId == templateId for p in PRESETS.values())
-        return (self._dir / f"{templateId}.json").exists()
+        return self._safe_path(templateId).exists()

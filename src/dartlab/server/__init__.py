@@ -639,22 +639,26 @@ def _start_oauth_callback_server(port: int):
                 self._respond_html("인증 실패", f"토큰 교환 실패: {e}")
 
         def _respond_html(self, title: str, message: str):
-            html = (
+            import html as _html
+
+            safe_title = _html.escape(title)
+            safe_message = _html.escape(message)
+            markup = (
                 "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                f"<title>{title}</title>"
+                f"<title>{safe_title}</title>"
                 "<style>body{font-family:system-ui;display:flex;align-items:center;"
                 "justify-content:center;min-height:100vh;margin:0;background:#050811;color:#e5e5e5}"
                 "div{text-align:center;padding:2rem}"
                 "h1{font-size:1.5rem;margin-bottom:1rem}"
                 "</style></head><body>"
-                f"<div><h1>{title}</h1><p>{message}</p></div>"
+                f"<div><h1>{safe_title}</h1><p>{safe_message}</p></div>"
                 "<script>setTimeout(()=>window.close(),3000)</script>"
                 "</body></html>"
             )
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
+            self.wfile.write(markup.encode("utf-8"))
 
         def log_message(self, fmt, *args):
             pass
