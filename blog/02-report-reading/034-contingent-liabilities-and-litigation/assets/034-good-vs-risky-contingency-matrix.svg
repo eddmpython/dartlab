@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <defs><linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
   <title id="title">좋은 공시와 위험한 공시 비교 매트릭스</title>
   <desc id="desc">우발부채와 소송 공시에서 구체성, 금액, 기간, 감사 연결, 후속 결과를 기준으로 건강한 경우와 위험한 경우를 비교한다.</desc>
-  <rect width="1200" height="820" fill="#f8fbff"/>
-  <text x="70" y="80" font-size="34" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#16355f">좋은 공시와 위험한 공시는 존재보다 설명의 질에서 갈린다</text>
-  <text x="70" y="116" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#5a7391">문제가 있다는 사실보다, 그 문제를 얼마나 구체적으로 업데이트하는지가 더 중요하다</text>
+  <rect width="1200" height="820" fill="#050811"/>
+  <rect x="0.5" y="0.5" width="1199" height="819" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+  <text x="70" y="80" font-size="34" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#f1f5f9">좋은 공시와 위험한 공시는 존재보다 설명의 질에서 갈린다</text>
+  <text x="70" y="116" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#94a3b8">문제가 있다는 사실보다, 그 문제를 얼마나 구체적으로 업데이트하는지가 더 중요하다</text>
 
   <rect x="70" y="170" width="250" height="560" rx="24" fill="#16355f"/>
   <text x="104" y="220" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#ffffff">관찰 포인트</text>
@@ -13,19 +15,19 @@
   <text x="104" y="570" font-size="22" font-family="'Segoe UI', Arial, sans-serif" fill="#d7e7ff">감사 연결</text>
   <text x="104" y="660" font-size="22" font-family="'Segoe UI', Arial, sans-serif" fill="#d7e7ff">후속 결과</text>
 
-  <rect x="350" y="170" width="365" height="560" rx="24" fill="#e6f6ed" stroke="#91c8a5" stroke-width="2"/>
-  <text x="386" y="220" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#1d6a43">상대적으로 건강한 경우</text>
-  <text x="386" y="300" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#325645">사건 종류와 진행 단계가 비교적 분명하다</text>
-  <text x="386" y="390" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#325645">청구액, 충당부채, 최대 노출액 중 하나는 나온다</text>
-  <text x="386" y="480" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#325645">전기 대비 변화와 올해 결과가 업데이트된다</text>
-  <text x="386" y="570" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#325645">감사 문구와 회사 설명의 강도가 대체로 맞는다</text>
-  <text x="386" y="660" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#325645">합의, 사용, 환입, 종결 여부가 다음 보고서에 반영된다</text>
+  <rect x="350" y="170" width="365" height="560" rx="24" fill="rgba(22,163,74,0.12)" stroke="#166534" stroke-width="2"/>
+  <text x="386" y="220" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#86efac">상대적으로 건강한 경우</text>
+  <text x="386" y="300" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#86efac">사건 종류와 진행 단계가 비교적 분명하다</text>
+  <text x="386" y="390" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#86efac">청구액, 충당부채, 최대 노출액 중 하나는 나온다</text>
+  <text x="386" y="480" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#86efac">전기 대비 변화와 올해 결과가 업데이트된다</text>
+  <text x="386" y="570" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#86efac">감사 문구와 회사 설명의 강도가 대체로 맞는다</text>
+  <text x="386" y="660" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#86efac">합의, 사용, 환입, 종결 여부가 다음 보고서에 반영된다</text>
 
-  <rect x="745" y="170" width="385" height="560" rx="24" fill="#fff0ed" stroke="#efb7a9" stroke-width="2"/>
-  <text x="782" y="220" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#8d3423">더 조심해야 하는 경우</text>
-  <text x="782" y="300" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#6b4038">분쟁이 있다고만 하고 무슨 사건인지 흐리다</text>
-  <text x="782" y="390" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#6b4038">금액이 거의 없고 추정 곤란만 반복된다</text>
-  <text x="782" y="480" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#6b4038">해마다 같은 문구만 남고 사건 기간은 길어진다</text>
-  <text x="782" y="570" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#6b4038">감사 문구는 무거운데 본문 설명은 지나치게 짧다</text>
-  <text x="782" y="660" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#6b4038">다음 보고서로 넘어가도 결론과 숫자 변화가 흐리다</text>
+  <rect x="745" y="170" width="385" height="560" rx="24" fill="rgba(220,38,38,0.1)" stroke="#991b1b" stroke-width="2"/>
+  <text x="782" y="220" font-size="24" font-family="'Segoe UI', Arial, sans-serif" font-weight="700" fill="#fca5a5">더 조심해야 하는 경우</text>
+  <text x="782" y="300" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#fca5a5">분쟁이 있다고만 하고 무슨 사건인지 흐리다</text>
+  <text x="782" y="390" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#fca5a5">금액이 거의 없고 추정 곤란만 반복된다</text>
+  <text x="782" y="480" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#fca5a5">해마다 같은 문구만 남고 사건 기간은 길어진다</text>
+  <text x="782" y="570" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#fca5a5">감사 문구는 무거운데 본문 설명은 지나치게 짧다</text>
+  <text x="782" y="660" font-size="19" font-family="'Segoe UI', Arial, sans-serif" fill="#fca5a5">다음 보고서로 넘어가도 결론과 숫자 변화가 흐리다</text>
 </svg>

@@ -664,6 +664,14 @@ def _get_company(code: str) -> Company:
     return c
 
 
+def _safe_topic_label(c, topic: str) -> str:
+    """Company._topicLabel 안전 호출 — EDGAR 등 메서드 없는 경우 fallback."""
+    try:
+        return c._topicLabel(topic)
+    except AttributeError:
+        return topic
+
+
 def _findPrevComparable(periods: list[str], target: str) -> str | None:
     """같은 보고서 유형의 직전 기간을 찾는다. (연간↔연간, Q1↔Q1)"""
     import re
@@ -792,18 +800,30 @@ def api_company_toc(code: str):
         _FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
         financeChapter = "III. 재무에 관한 사항"
         for ft in _FINANCE_TOPICS:
-            df = getattr(c, ft, None) if ft != "ratios" else None
-            if ft == "ratios":
-                rsPair = c._ratioSeries() if c._hasFinance else None
-                if rsPair is None:
+            try:
+                df = getattr(c, ft, None) if ft != "ratios" else None
+                if ft == "ratios":
+                    rsPair = c._ratioSeries() if getattr(c, "_hasFinance", False) else None
+                    if rsPair is None:
+                        continue
+                elif df is None:
                     continue
-            elif df is None:
+            except (AttributeError, TypeError):
                 continue
             seenTopics.add(ft)
             if financeChapter not in chapterMap:
                 chapterMap[financeChapter] = []
                 chapterOrder.append(financeChapter)
-            chapterMap[financeChapter].append(TocTopic(topic=ft, label=c._topicLabel(ft), textCount=0, tableCount=1))
+            chapterMap[financeChapter].append(TocTopic(topic=ft, label=_safe_topic_label(c,ft), textCount=0, tableCount=1))
+
+        # 최신 2기간 변경 감지용 period 컬럼
+        import re as _re
+        _period_re = _re.compile(r"^\d{4}(Q[1-4])?$")
+        _period_cols = sorted(
+            [col for col in sec.columns if _period_re.fullmatch(col)],
+            reverse=True,
+        )
+        _latest2 = _period_cols[:2] if len(_period_cols) >= 2 else []
 
         # sections topics
         if "topic" in sec.columns:
@@ -818,6 +838,17 @@ def api_company_toc(code: str):
                 textCount = bt.eq("text").sum() if bt is not None else topicFrame.height
                 tableCount = bt.eq("table").sum() if bt is not None else 0
 
+                # 최신 2기간 텍스트 변경 감지
+                hasChanges = False
+                if _latest2 and bt is not None:
+                    textRows = topicFrame.filter(pl.col("blockType") == "text")
+                    for tr in textRows.iter_rows(named=True):
+                        v1 = str(tr.get(_latest2[0]) or "").strip()
+                        v2 = str(tr.get(_latest2[1]) or "").strip()
+                        if v1 and v2 and v1 != v2:
+                            hasChanges = True
+                            break
+
                 chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
                 chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else "기타"
                 if chapter not in chapterMap:
@@ -826,9 +857,10 @@ def api_company_toc(code: str):
                 chapterMap[chapter].append(
                     TocTopic(
                         topic=topic,
-                        label=c._topicLabel(topic),
+                        label=_safe_topic_label(c,topic),
                         textCount=int(textCount),
                         tableCount=int(tableCount),
+                        hasChanges=hasChanges,
                     )
                 )
 
@@ -867,7 +899,7 @@ def api_company_viewer_topic(
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "topic": topic,
-            "topicLabel": c._topicLabel(topic),
+            "topicLabel": _safe_topic_label(c,topic),
             "period": period,
             "blocks": [serializeViewerBlock(b) for b in blocks],
             "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
@@ -1139,6 +1171,59 @@ def api_company_diff_topic(
             "toPeriod": toPeriod,
             "payload": _serialize_payload(result),
         }
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/search")
+def api_company_search_sections(code: str, q: str = Query("", description="검색어")):
+    """현재 회사의 sections 전체 텍스트에서 substring 검색."""
+    try:
+        import polars as pl
+
+        c = _get_company(code)
+        sec = c.sections
+        if sec is None or not q.strip():
+            return {"stockCode": c.stockCode, "corpName": c.corpName, "results": []}
+
+        query = q.strip().lower()
+        period_re = __import__("re").compile(r"^\d{4}(Q[1-4])?$")
+        period_cols = [col for col in sec.columns if period_re.fullmatch(col)]
+
+        results = []
+        seen_topics: set[str] = set()
+        for row in sec.iter_rows(named=True):
+            topic = row.get("topic", "")
+            if not topic or topic in seen_topics:
+                continue
+            bt = str(row.get("blockType", ""))
+            if bt != "text":
+                continue
+            for p in period_cols:
+                val = row.get(p)
+                if not val or not isinstance(val, str):
+                    continue
+                lower_val = val.lower()
+                if query in lower_val:
+                    # 매칭 스니펫 추출
+                    idx = lower_val.index(query)
+                    start = max(0, idx - 40)
+                    end = min(len(val), idx + len(query) + 60)
+                    snippet = ("..." if start > 0 else "") + val[start:end].strip() + ("..." if end < len(val) else "")
+                    match_count = lower_val.count(query)
+                    results.append({
+                        "topic": topic,
+                        "label": _safe_topic_label(c,topic),
+                        "period": p,
+                        "snippet": snippet,
+                        "matchCount": match_count,
+                    })
+                    seen_topics.add(topic)
+                    break
+            if len(results) >= 30:
+                break
+
+        return {"stockCode": c.stockCode, "corpName": c.corpName, "query": q, "results": results}
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 

@@ -1,5 +1,9 @@
 <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
-  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <defs>
+    <linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgDark)" rx="12"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
   <text x="400" y="40" text-anchor="middle" font-size="18" font-weight="bold" fill="#2563eb">진행률 vs 청구율 — 괴리가 벌어지는 과정</text>
 
   <!-- Axes -->
@@ -7,23 +11,23 @@
   <line x1="100" y1="420" x2="100" y2="80" stroke="#6b7280" stroke-width="2"/>
 
   <!-- Y-axis labels -->
-  <text x="90" y="420" text-anchor="end" font-size="12" fill="#6b7280">0%</text>
-  <text x="90" y="335" text-anchor="end" font-size="12" fill="#6b7280">25%</text>
-  <text x="90" y="250" text-anchor="end" font-size="12" fill="#6b7280">50%</text>
-  <text x="90" y="165" text-anchor="end" font-size="12" fill="#6b7280">75%</text>
-  <text x="90" y="80" text-anchor="end" font-size="12" fill="#6b7280">100%</text>
+  <text x="90" y="420" text-anchor="end" font-size="12" fill="#94a3b8">0%</text>
+  <text x="90" y="335" text-anchor="end" font-size="12" fill="#94a3b8">25%</text>
+  <text x="90" y="250" text-anchor="end" font-size="12" fill="#94a3b8">50%</text>
+  <text x="90" y="165" text-anchor="end" font-size="12" fill="#94a3b8">75%</text>
+  <text x="90" y="80" text-anchor="end" font-size="12" fill="#94a3b8">100%</text>
 
   <!-- X-axis labels -->
-  <text x="162" y="445" text-anchor="middle" font-size="12" fill="#6b7280">1Q</text>
-  <text x="286" y="445" text-anchor="middle" font-size="12" fill="#6b7280">2Q</text>
-  <text x="410" y="445" text-anchor="middle" font-size="12" fill="#6b7280">3Q</text>
-  <text x="534" y="445" text-anchor="middle" font-size="12" fill="#6b7280">4Q</text>
-  <text x="658" y="445" text-anchor="middle" font-size="12" fill="#6b7280">5Q</text>
+  <text x="162" y="445" text-anchor="middle" font-size="12" fill="#94a3b8">1Q</text>
+  <text x="286" y="445" text-anchor="middle" font-size="12" fill="#94a3b8">2Q</text>
+  <text x="410" y="445" text-anchor="middle" font-size="12" fill="#94a3b8">3Q</text>
+  <text x="534" y="445" text-anchor="middle" font-size="12" fill="#94a3b8">4Q</text>
+  <text x="658" y="445" text-anchor="middle" font-size="12" fill="#94a3b8">5Q</text>
 
   <!-- Grid lines -->
-  <line x1="100" y1="335" x2="720" y2="335" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4"/>
-  <line x1="100" y1="250" x2="720" y2="250" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4"/>
-  <line x1="100" y1="165" x2="720" y2="165" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="100" y1="335" x2="720" y2="335" stroke="#1e2433" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="100" y1="250" x2="720" y2="250" stroke="#1e2433" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="100" y1="165" x2="720" y2="165" stroke="#1e2433" stroke-width="1" stroke-dasharray="4"/>
 
   <!-- Progress rate line (blue, rising steadily) -->
   <polyline points="162,386 286,318 410,230 534,150 658,105" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,5 +63,5 @@
   <text x="416" y="68" font-size="13" fill="#dc2626" font-weight="600">미청구 간극</text>
 
   <!-- Annotation -->
-  <text x="400" y="478" text-anchor="middle" font-size="12" fill="#6b7280">시간이 지날수록 인식과 청구 사이의 간극이 벌어진다</text>
+  <text x="400" y="478" text-anchor="middle" font-size="12" fill="#94a3b8">시간이 지날수록 인식과 청구 사이의 간극이 벌어진다</text>
 </svg>

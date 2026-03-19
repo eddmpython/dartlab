@@ -69,6 +69,7 @@ class TocTopic(BaseModel):
     label: str
     textCount: int
     tableCount: int
+    hasChanges: bool = False
 
 
 class TocChapter(BaseModel):

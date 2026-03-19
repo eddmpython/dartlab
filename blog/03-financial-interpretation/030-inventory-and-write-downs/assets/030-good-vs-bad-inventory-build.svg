@@ -1,21 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <defs><linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
   <title id="title">좋은 재고 증가와 위험한 재고 증가 비교</title>
   <desc id="desc">좋은 재고 증가와 위험한 재고 누적을 비교한 카드</desc>
-  <rect width="1200" height="720" fill="#f2f5ef"/>
-  <rect x="100" y="110" width="430" height="500" rx="28" fill="#f2fbf2" stroke="#5e9d6b" stroke-width="4"/>
-  <rect x="670" y="110" width="430" height="500" rx="28" fill="#fff4f1" stroke="#cb6861" stroke-width="4"/>
-  <text x="315" y="180" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#2f6d46" font-weight="700">좋은 증가</text>
-  <text x="885" y="180" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#9f413b" font-weight="700">위험한 증가</text>
-  <text x="145" y="255" font-size="24" font-family="Arial, sans-serif" fill="#38664b">• 신규 제품 출시</text>
-  <text x="145" y="305" font-size="24" font-family="Arial, sans-serif" fill="#38664b">• 계절성 수요 대응</text>
-  <text x="145" y="355" font-size="24" font-family="Arial, sans-serif" fill="#38664b">• 출하와 매출 동행</text>
-  <text x="145" y="405" font-size="24" font-family="Arial, sans-serif" fill="#38664b">• 회전율 방어</text>
-  <text x="145" y="455" font-size="24" font-family="Arial, sans-serif" fill="#38664b">• 마진 유지</text>
-  <text x="715" y="255" font-size="24" font-family="Arial, sans-serif" fill="#8f4742">• 수요 둔화</text>
-  <text x="715" y="305" font-size="24" font-family="Arial, sans-serif" fill="#8f4742">• 채널 적체</text>
-  <text x="715" y="355" font-size="24" font-family="Arial, sans-serif" fill="#8f4742">• 매출보다 빠른 누적</text>
-  <text x="715" y="405" font-size="24" font-family="Arial, sans-serif" fill="#8f4742">• 마진 하락</text>
-  <text x="715" y="455" font-size="24" font-family="Arial, sans-serif" fill="#8f4742">• 평가손실 전조</text>
-  <text x="315" y="560" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#476655">준비된 생산</text>
-  <text x="885" y="560" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#7b5252">팔리지 않은 생산</text>
+  <rect width="1200" height="720" fill="#050811"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+  <rect x="100" y="110" width="430" height="500" rx="28" fill="rgba(22,163,74,0.1)" stroke="#5e9d6b" stroke-width="4"/>
+  <rect x="670" y="110" width="430" height="500" rx="28" fill="rgba(220,38,38,0.1)" stroke="#cb6861" stroke-width="4"/>
+  <text x="315" y="180" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#86efac" font-weight="700">좋은 증가</text>
+  <text x="885" y="180" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#fca5a5" font-weight="700">위험한 증가</text>
+  <text x="145" y="255" font-size="24" font-family="Arial, sans-serif" fill="#86efac">• 신규 제품 출시</text>
+  <text x="145" y="305" font-size="24" font-family="Arial, sans-serif" fill="#86efac">• 계절성 수요 대응</text>
+  <text x="145" y="355" font-size="24" font-family="Arial, sans-serif" fill="#86efac">• 출하와 매출 동행</text>
+  <text x="145" y="405" font-size="24" font-family="Arial, sans-serif" fill="#86efac">• 회전율 방어</text>
+  <text x="145" y="455" font-size="24" font-family="Arial, sans-serif" fill="#86efac">• 마진 유지</text>
+  <text x="715" y="255" font-size="24" font-family="Arial, sans-serif" fill="#fca5a5">• 수요 둔화</text>
+  <text x="715" y="305" font-size="24" font-family="Arial, sans-serif" fill="#fca5a5">• 채널 적체</text>
+  <text x="715" y="355" font-size="24" font-family="Arial, sans-serif" fill="#fca5a5">• 매출보다 빠른 누적</text>
+  <text x="715" y="405" font-size="24" font-family="Arial, sans-serif" fill="#fca5a5">• 마진 하락</text>
+  <text x="715" y="455" font-size="24" font-family="Arial, sans-serif" fill="#fca5a5">• 평가손실 전조</text>
+  <text x="315" y="560" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#94a3b8">준비된 생산</text>
+  <text x="885" y="560" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#fca5a5">팔리지 않은 생산</text>
 </svg>

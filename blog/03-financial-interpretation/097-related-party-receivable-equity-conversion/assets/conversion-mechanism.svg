@@ -1,59 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
-<rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+<defs><linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#bgDark)" rx="12"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 <text x="400" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#2563eb">관계사 채권 출자전환 메커니즘</text>
 
 <!-- Step 1: Receivable -->
-<rect x="40" y="70" width="200" height="100" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+<rect x="40" y="70" width="200" height="100" rx="14" fill="#0f1219" stroke="#2563eb" stroke-width="2"/>
 <text x="140" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="#2563eb">1. 관계사 채권 보유</text>
-<text x="140" y="122" text-anchor="middle" font-size="12" fill="#6b7280">대여금·매출채권 등</text>
-<text x="140" y="140" text-anchor="middle" font-size="12" fill="#6b7280">장부가 100억 원</text>
-<text x="140" y="158" text-anchor="middle" font-size="12" fill="#6b7280">회수 지연 상태</text>
+<text x="140" y="122" text-anchor="middle" font-size="12" fill="#94a3b8">대여금·매출채권 등</text>
+<text x="140" y="140" text-anchor="middle" font-size="12" fill="#94a3b8">장부가 100억 원</text>
+<text x="140" y="158" text-anchor="middle" font-size="12" fill="#94a3b8">회수 지연 상태</text>
 
 <!-- Arrow 1 -->
 <line x1="240" y1="120" x2="290" y2="120" stroke="#2563eb" stroke-width="2" marker-end="url(#arw)"/>
 <text x="265" y="110" text-anchor="middle" font-size="11" fill="#dc2626">회수 불확실</text>
 
 <!-- Step 2: Conversion Decision -->
-<rect x="300" y="70" width="200" height="100" rx="14" fill="#fff" stroke="#d97706" stroke-width="2"/>
+<rect x="300" y="70" width="200" height="100" rx="14" fill="#0f1219" stroke="#d97706" stroke-width="2"/>
 <text x="400" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="#d97706">2. 출자전환 결정</text>
-<text x="400" y="122" text-anchor="middle" font-size="12" fill="#6b7280">채권 → 지분으로 전환</text>
-<text x="400" y="140" text-anchor="middle" font-size="12" fill="#6b7280">이사회 결의·평가</text>
-<text x="400" y="158" text-anchor="middle" font-size="12" fill="#6b7280">전환 비율 결정</text>
+<text x="400" y="122" text-anchor="middle" font-size="12" fill="#94a3b8">채권 → 지분으로 전환</text>
+<text x="400" y="140" text-anchor="middle" font-size="12" fill="#94a3b8">이사회 결의·평가</text>
+<text x="400" y="158" text-anchor="middle" font-size="12" fill="#94a3b8">전환 비율 결정</text>
 
 <!-- Arrow 2 -->
 <line x1="500" y1="120" x2="550" y2="120" stroke="#d97706" stroke-width="2" marker-end="url(#arw)"/>
 <text x="525" y="110" text-anchor="middle" font-size="11" fill="#d97706">형식 변환</text>
 
 <!-- Step 3: Equity Stake -->
-<rect x="560" y="70" width="200" height="100" rx="14" fill="#fff" stroke="#059669" stroke-width="2"/>
+<rect x="560" y="70" width="200" height="100" rx="14" fill="#0f1219" stroke="#059669" stroke-width="2"/>
 <text x="660" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">3. 지분 취득</text>
-<text x="660" y="122" text-anchor="middle" font-size="12" fill="#6b7280">관계사 주식 보유</text>
-<text x="660" y="140" text-anchor="middle" font-size="12" fill="#6b7280">장부 채권 소멸</text>
-<text x="660" y="158" text-anchor="middle" font-size="12" fill="#6b7280">투자자산 계상</text>
+<text x="660" y="122" text-anchor="middle" font-size="12" fill="#94a3b8">관계사 주식 보유</text>
+<text x="660" y="140" text-anchor="middle" font-size="12" fill="#94a3b8">장부 채권 소멸</text>
+<text x="660" y="158" text-anchor="middle" font-size="12" fill="#94a3b8">투자자산 계상</text>
 
 <!-- Accounting entries box -->
-<rect x="40" y="210" width="340" height="140" rx="14" fill="#fff" stroke="#6b7280" stroke-width="1.5"/>
+<rect x="40" y="210" width="340" height="140" rx="14" fill="#0f1219" stroke="#6b7280" stroke-width="1.5"/>
 <text x="210" y="238" text-anchor="middle" font-size="15" font-weight="700" fill="#2563eb">회계 분개</text>
-<text x="60" y="264" font-size="13" fill="#6b7280">(차) 관계기업 투자주식  100억</text>
-<text x="60" y="286" font-size="13" fill="#6b7280">(대) 관계사 대여금      100억</text>
-<line x1="60" y1="300" x2="360" y2="300" stroke="#f3f4f6" stroke-width="1"/>
+<text x="60" y="264" font-size="13" fill="#94a3b8">(차) 관계기업 투자주식  100억</text>
+<text x="60" y="286" font-size="13" fill="#94a3b8">(대) 관계사 대여금      100억</text>
+<line x1="60" y1="300" x2="360" y2="300" stroke="#1e2433" stroke-width="1"/>
 <text x="60" y="320" font-size="12" fill="#dc2626">* 손익 인식 없이 자산 항목만 이동</text>
 <text x="60" y="340" font-size="12" fill="#dc2626">* 채권이 사라졌지만 회수된 것은 아님</text>
 
 <!-- Reality box -->
-<rect x="420" y="210" width="340" height="140" rx="14" fill="#fff" stroke="#dc2626" stroke-width="1.5"/>
+<rect x="420" y="210" width="340" height="140" rx="14" fill="#0f1219" stroke="#dc2626" stroke-width="1.5"/>
 <text x="590" y="238" text-anchor="middle" font-size="15" font-weight="700" fill="#dc2626">실질 의미</text>
-<text x="440" y="264" font-size="13" fill="#6b7280">현금 유입: 0원</text>
-<text x="440" y="286" font-size="13" fill="#6b7280">회수 불확실성: 그대로 잔존</text>
-<text x="440" y="308" font-size="13" fill="#6b7280">리스크 형태: 채권 → 지분</text>
+<text x="440" y="264" font-size="13" fill="#94a3b8">현금 유입: 0원</text>
+<text x="440" y="286" font-size="13" fill="#94a3b8">회수 불확실성: 그대로 잔존</text>
+<text x="440" y="308" font-size="13" fill="#94a3b8">리스크 형태: 채권 → 지분</text>
 <text x="440" y="330" font-size="13" fill="#dc2626">손실을 지분으로 포장한 구조</text>
-<text x="440" y="348" font-size="12" fill="#6b7280">→ 후속 손상 검사 필요</text>
+<text x="440" y="348" font-size="12" fill="#94a3b8">→ 후속 손상 검사 필요</text>
 
 <!-- Bottom summary -->
 <rect x="100" y="390" width="600" height="80" rx="14" fill="#2563eb" fill-opacity="0.08" stroke="#2563eb" stroke-width="1.5"/>
 <text x="400" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="#2563eb">핵심: 채권이 사라졌다고 회수가 아니다</text>
-<text x="400" y="440" text-anchor="middle" font-size="13" fill="#6b7280">현금이 들어오지 않았으므로 본질은 손실 정리에 가깝다</text>
-<text x="400" y="458" text-anchor="middle" font-size="13" fill="#6b7280">지분으로 바뀐 뒤 공정가치가 장부가에 못 미치면 추가 손상 발생</text>
+<text x="400" y="440" text-anchor="middle" font-size="13" fill="#94a3b8">현금이 들어오지 않았으므로 본질은 손실 정리에 가깝다</text>
+<text x="400" y="458" text-anchor="middle" font-size="13" fill="#94a3b8">지분으로 바뀐 뒤 공정가치가 장부가에 못 미치면 추가 손상 발생</text>
 
 <defs>
   <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">

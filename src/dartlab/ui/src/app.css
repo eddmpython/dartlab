@@ -347,6 +347,128 @@ button, a, input, textarea {
 	animation: shimmer 1.5s ease-in-out infinite;
 }
 
+/* ── Finance table ── */
+.finance-table {
+	border-collapse: separate;
+	width: 100%;
+	font-size: 0.82em;
+	border: 1px solid rgba(148, 163, 184, 0.08);
+	border-radius: 12px;
+	overflow: hidden;
+	background: rgba(15, 18, 25, 0.5);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.finance-table th {
+	text-align: right;
+	padding: 0.55rem 0.8rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--color-dl-text-muted);
+	font-weight: 500;
+	font-size: 0.8rem;
+	white-space: nowrap;
+	letter-spacing: 0.02em;
+	font-variant-numeric: tabular-nums;
+}
+.finance-table th:first-child {
+	text-align: left;
+	position: sticky;
+	left: 0;
+	z-index: 2;
+	background: rgba(15, 18, 25, 0.95);
+	min-width: 160px;
+}
+.finance-table td {
+	padding: 0.45rem 0.8rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.04);
+	color: var(--color-dl-text-muted);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	font-family: var(--font-mono);
+	font-size: 0.88em;
+	white-space: nowrap;
+}
+.finance-table td:first-child {
+	text-align: left;
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	background: rgba(15, 18, 25, 0.92);
+	font-family: var(--font-sans);
+	font-size: 1em;
+	color: var(--color-dl-text-muted);
+}
+.finance-table tbody tr { transition: background-color var(--motion-fast); }
+.finance-table tbody tr:hover td { background: rgba(148, 163, 184, 0.04); }
+.finance-table tbody tr:hover td:first-child { background: rgba(15, 18, 25, 0.95); }
+.finance-table tbody tr:last-child td { border-bottom: none; }
+.finance-table .row-key td { font-weight: 600; color: var(--color-dl-text); }
+.finance-table .row-key td:first-child { color: var(--color-dl-text); }
+.finance-table .val-neg { color: var(--color-dl-primary-light); }
+.finance-table .val-pos { color: var(--color-dl-text-muted); }
+
+/* ── Korean heading hierarchy in disclosure text ── */
+.disclosure-text {
+	line-height: 1.85;
+	color: var(--color-dl-text-muted);
+}
+.disclosure-text .ko-h1 {
+	font-size: 1.1em;
+	font-weight: 700;
+	color: var(--color-dl-text);
+	margin-top: 1.4em;
+	margin-bottom: 0.4em;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+.disclosure-text .ko-h2 {
+	font-size: 1.02em;
+	font-weight: 600;
+	color: #e2e8f0;
+	margin-top: 1.1em;
+	margin-bottom: 0.3em;
+}
+.disclosure-text .ko-h3 {
+	font-size: 0.95em;
+	font-weight: 500;
+	color: var(--color-dl-text-muted);
+	margin-top: 0.8em;
+	margin-bottom: 0.2em;
+}
+.disclosure-text .ko-h4 {
+	font-size: 0.92em;
+	color: var(--color-dl-text-dim);
+	margin-top: 0.6em;
+	margin-bottom: 0.15em;
+}
+.disclosure-text p {
+	margin-bottom: 0.7em;
+}
+
+/* ── Viewer nav active scroll ── */
+.viewer-nav-active {
+	scroll-margin-top: 60px;
+}
+
+/* ── Ask AI floating button ── */
+.ask-ai-float {
+	position: fixed;
+	z-index: 100;
+	padding: 4px 10px;
+	border-radius: 8px;
+	background: var(--color-dl-primary);
+	color: white;
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(234, 70, 71, 0.3);
+	transition: opacity 0.15s, transform 0.15s;
+	pointer-events: auto;
+}
+.ask-ai-float:hover {
+	transform: scale(1.05);
+}
+
 /* ── Mobile responsive ── */
 @media (max-width: 768px) {
 	.sidebar-overlay {

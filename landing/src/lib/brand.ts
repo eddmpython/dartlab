@@ -1,9 +1,9 @@
 export const brand = {
 	name: 'DartLab',
 	tagline: 'One company map from disclosure sections',
-	description: 'One company map from disclosure filings — DART + EDGAR',
-	descriptionKo: '공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR',
-	version: '0.5.1',
+	description: 'DART & EDGAR 전자공시 분석 Python 라이브러리',
+	descriptionKo: 'DART 전자공시와 SEC EDGAR를 하나의 회사 맵으로 분석하는 Python 라이브러리',
+	version: '0.6.0',
 	url: 'https://eddmpython.github.io/dartlab/',
 	repo: 'https://github.com/eddmpython/dartlab',
 	pypi: 'https://pypi.org/project/dartlab/',

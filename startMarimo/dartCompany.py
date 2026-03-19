@@ -46,7 +46,7 @@ def _(c):
 @app.cell
 def _(c):
     # 블록 번호 지정 → 실제 데이터
-    c.show("companyOverview", 4)
+    c.show("companyOverview", 3)
     return
 
 
@@ -101,19 +101,6 @@ def _(c):
 def _(c):
     # 세로 뷰 — 특정 기간 비교 (기간 × 항목)
     c.show("IS", period=["2024Q4", "2023Q4"])
-    return
-
-
-@app.cell
-def _(c):
-    ins = c.insights
-    if ins is not None:
-        ins.grades()
-    return
-
-
-@app.cell
-def _():
     return
 
 

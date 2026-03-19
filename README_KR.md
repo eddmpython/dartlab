@@ -245,7 +245,17 @@ DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다.
 | DART finance | 2,700+ 기업 | XBRL 재무제표 |
 | DART report | 2,700+ 기업 | 정형 공시 API |
 | EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
-| EDGAR finance | 970+ 기업 | SEC XBRL facts |
+| EDGAR finance | 주문형 | SEC XBRL facts (SEC API 자동 수집) |
+
+**자동 다운로드**: 별도 설정 불필요. `Company("005930")` 또는 `Company("AAPL")`을 처음 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 재무 데이터는 SEC EDGAR API에서 직접 가져온다.
+
+```python
+# 전체 다운로드 (선택사항 — 전 종목 일괄 다운로드)
+from dartlab.core.dataLoader import downloadAll
+downloadAll("docs")       # DART 공시 문서
+downloadAll("finance")    # DART 재무제표
+downloadAll("report")     # DART 정형 보고서
+```
 
 ## 기여
 

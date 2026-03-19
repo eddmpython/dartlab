@@ -1,7 +1,8 @@
 <svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, sans-serif">
   <defs>
+    <linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient>
     <marker id="arrowFlow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
     </marker>
     <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
@@ -10,9 +11,11 @@
       <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
     </marker>
   </defs>
+  <rect width="800" height="520" fill="url(#bgDark)" rx="12"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
   <!-- Title -->
-  <text x="400" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1e293b">ICFR 비적정 + 감사의견 적정 — 의사결정 흐름도</text>
+  <text x="400" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#f1f5f9">ICFR 비적정 + 감사의견 적정 — 의사결정 흐름도</text>
 
   <!-- Start -->
   <rect x="280" y="48" width="240" height="40" rx="20" fill="#2563eb" fill-opacity="0.1" stroke="#2563eb" stroke-width="2"/>
@@ -21,9 +24,9 @@
   <line x1="400" y1="88" x2="400" y2="110" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
 
   <!-- Decision 1: 취약점 유형 -->
-  <polygon points="400,112 520,152 400,192 280,152" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-  <text x="400" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">취약점 유형?</text>
-  <text x="400" y="162" text-anchor="middle" font-size="10" fill="#6b7280">설계 vs 운영</text>
+  <polygon points="400,112 520,152 400,192 280,152" fill="rgba(30,36,51,0.6)" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#f1f5f9">취약점 유형?</text>
+  <text x="400" y="162" text-anchor="middle" font-size="10" fill="#94a3b8">설계 vs 운영</text>
 
   <!-- Left: 설계 미비 -->
   <line x1="280" y1="152" x2="140" y2="152" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
@@ -45,9 +48,9 @@
   <line x1="400" y1="192" x2="400" y2="215" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
 
   <!-- Decision 2: 반복 여부 -->
-  <polygon points="400,217 510,252 400,287 290,252" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-  <text x="400" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">반복 발생?</text>
-  <text x="400" y="262" text-anchor="middle" font-size="10" fill="#6b7280">전기에도 비적정?</text>
+  <polygon points="400,217 510,252 400,287 290,252" fill="rgba(30,36,51,0.6)" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#f1f5f9">반복 발생?</text>
+  <text x="400" y="262" text-anchor="middle" font-size="10" fill="#94a3b8">전기에도 비적정?</text>
 
   <!-- Left: 최초 -->
   <line x1="290" y1="252" x2="170" y2="252" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
@@ -69,9 +72,9 @@
   <line x1="400" y1="287" x2="400" y2="310" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
 
   <!-- Decision 3: 경영진 대응 -->
-  <polygon points="400,312 520,347 400,382 280,347" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-  <text x="400" y="343" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">경영진 대응?</text>
-  <text x="400" y="357" text-anchor="middle" font-size="10" fill="#6b7280">시정 계획 구체성</text>
+  <polygon points="400,312 520,347 400,382 280,347" fill="rgba(30,36,51,0.6)" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="343" text-anchor="middle" font-size="11" font-weight="bold" fill="#f1f5f9">경영진 대응?</text>
+  <text x="400" y="357" text-anchor="middle" font-size="10" fill="#94a3b8">시정 계획 구체성</text>
 
   <!-- Left: 구체적 -->
   <line x1="280" y1="347" x2="170" y2="347" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>

@@ -1,16 +1,33 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">078 Good vs Risky</title>
-  <desc id="desc">Redemption pressure vs funding flexibility</desc>
-  <rect width="1280" height="720" fill="#0e1a2d"/>
-  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">078 Good vs Risky</text>
-  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Redemption pressure vs funding flexibility</text>
-  <rect x="160" y="170" width="900" height="420" rx="26" fill="#ffffff" opacity="0.95"/>
-  <line x1="610" y1="170" x2="610" y2="590" stroke="#27486d" stroke-width="4"/>
-  <line x1="160" y1="380" x2="1060" y2="380" stroke="#27486d" stroke-width="4"/>
-  <text x="610" y="640" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">Tighter redemption clock  →</text>
-  <text x="58" y="390" transform="rotate(-90 58 390)" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">↑ Better funding flexibility</text>
-  <text x="385" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Stable Equity</text><text x="385" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Long timing and real conversion path</text>
-  <text x="835" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Negotiated Risk</text><text x="835" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Near timing but terms can move</text>
-  <text x="385" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Label Risk</text><text x="385" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Looks like equity but funding thin</text>
-  <text x="835" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Cash Cliff</text><text x="835" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Near redemption and weak funding</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(251,146,60,0.12)" stroke="#fb923c" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#fb923c" letter-spacing="0.04em">공시 시스템</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#fb923c" opacity="0.15">078</text>
+
+  <!-- Title -->
+  <text x="400" y="188" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">RCPS 상환 압박과 자본 재분류는</text>
+  <text x="400" y="216" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">어디서 먼저 보이나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#fb923c" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#fb923c" opacity="0.6">◐</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">양호 vs 위험</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

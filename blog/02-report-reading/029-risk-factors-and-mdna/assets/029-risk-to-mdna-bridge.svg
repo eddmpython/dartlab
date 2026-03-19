@@ -1,29 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <defs><linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
   <title id="title">Risk Factors와 MD&amp;A 연결 구조도</title>
   <desc id="desc">리스크 문구, MD&amp;A 설명, 다음 숫자 점검을 왼쪽에서 오른쪽으로 연결한 구조도</desc>
-  <rect width="1200" height="720" fill="#f7f4ee"/>
-  <rect x="70" y="150" width="280" height="360" rx="28" fill="#fff2d8" stroke="#d4a24c" stroke-width="4"/>
-  <rect x="460" y="150" width="280" height="360" rx="28" fill="#e9f1ff" stroke="#4d78c9" stroke-width="4"/>
-  <rect x="850" y="150" width="280" height="360" rx="28" fill="#e8f7ef" stroke="#3f8a62" stroke-width="4"/>
-  <text x="210" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#7b5412" font-weight="700">Risk Factors</text>
-  <text x="600" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#274f95" font-weight="700">MD&amp;A</text>
-  <text x="990" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#236345" font-weight="700">다음 숫자</text>
-  <text x="210" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#5d4521">무엇이 흔들릴 수 있는가</text>
-  <text x="600" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#35527f">실제로 무엇이 벌어졌는가</text>
-  <text x="990" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#2f5a45">다음 보고서에서 확인할 것</text>
-  <text x="120" y="345" font-size="22" font-family="Arial, sans-serif" fill="#5d4521">• 새로 등장한 리스크</text>
-  <text x="120" y="390" font-size="22" font-family="Arial, sans-serif" fill="#5d4521">• 더 구체해진 문구</text>
-  <text x="120" y="435" font-size="22" font-family="Arial, sans-serif" fill="#5d4521">• 고객, 원재료, 규제</text>
-  <text x="510" y="345" font-size="22" font-family="Arial, sans-serif" fill="#35527f">• 매출과 마진 변화</text>
-  <text x="510" y="390" font-size="22" font-family="Arial, sans-serif" fill="#35527f">• 경영진의 해석</text>
-  <text x="510" y="435" font-size="22" font-family="Arial, sans-serif" fill="#35527f">• 일시적 vs 구조적</text>
-  <text x="900" y="345" font-size="22" font-family="Arial, sans-serif" fill="#2f5a45">• 재고와 채권</text>
-  <text x="900" y="390" font-size="22" font-family="Arial, sans-serif" fill="#2f5a45">• 현금흐름</text>
-  <text x="900" y="435" font-size="22" font-family="Arial, sans-serif" fill="#2f5a45">• 다음 분기 반복 여부</text>
+  <rect width="1200" height="720" fill="#050811"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+  <rect x="70" y="150" width="280" height="360" rx="28" fill="rgba(217,119,6,0.15)" stroke="#d4a24c" stroke-width="4"/>
+  <rect x="460" y="150" width="280" height="360" rx="28" fill="rgba(37,99,235,0.15)" stroke="#4d78c9" stroke-width="4"/>
+  <rect x="850" y="150" width="280" height="360" rx="28" fill="rgba(22,163,74,0.15)" stroke="#3f8a62" stroke-width="4"/>
+  <text x="210" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#fbbf24" font-weight="700">Risk Factors</text>
+  <text x="600" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#93c5fd" font-weight="700">MD&amp;A</text>
+  <text x="990" y="215" font-size="34" font-family="Arial, sans-serif" text-anchor="middle" fill="#86efac" font-weight="700">다음 숫자</text>
+  <text x="210" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#fcd34d">무엇이 흔들릴 수 있는가</text>
+  <text x="600" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#93c5fd">실제로 무엇이 벌어졌는가</text>
+  <text x="990" y="275" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#86efac">다음 보고서에서 확인할 것</text>
+  <text x="120" y="345" font-size="22" font-family="Arial, sans-serif" fill="#fcd34d">• 새로 등장한 리스크</text>
+  <text x="120" y="390" font-size="22" font-family="Arial, sans-serif" fill="#fcd34d">• 더 구체해진 문구</text>
+  <text x="120" y="435" font-size="22" font-family="Arial, sans-serif" fill="#fcd34d">• 고객, 원재료, 규제</text>
+  <text x="510" y="345" font-size="22" font-family="Arial, sans-serif" fill="#93c5fd">• 매출과 마진 변화</text>
+  <text x="510" y="390" font-size="22" font-family="Arial, sans-serif" fill="#93c5fd">• 경영진의 해석</text>
+  <text x="510" y="435" font-size="22" font-family="Arial, sans-serif" fill="#93c5fd">• 일시적 vs 구조적</text>
+  <text x="900" y="345" font-size="22" font-family="Arial, sans-serif" fill="#86efac">• 재고와 채권</text>
+  <text x="900" y="390" font-size="22" font-family="Arial, sans-serif" fill="#86efac">• 현금흐름</text>
+  <text x="900" y="435" font-size="22" font-family="Arial, sans-serif" fill="#86efac">• 다음 분기 반복 여부</text>
   <path d="M350 330 H440" stroke="#b9772b" stroke-width="10" fill="none" stroke-linecap="round"/>
   <polygon points="440,330 410,314 410,346" fill="#b9772b"/>
   <path d="M740 330 H830" stroke="#3975b7" stroke-width="10" fill="none" stroke-linecap="round"/>
   <polygon points="830,330 800,314 800,346" fill="#3975b7"/>
-  <text x="600" y="610" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#3b3b3b" font-weight="700">리스크 문구만 보면 과장되고, MD&amp;A만 보면 안심된다</text>
-  <text x="600" y="648" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#555">같은 이슈를 세 단계로 연결해야 진짜 신호가 보인다</text>
+  <text x="600" y="610" font-size="28" font-family="Arial, sans-serif" text-anchor="middle" fill="#f1f5f9" font-weight="700">리스크 문구만 보면 과장되고, MD&amp;A만 보면 안심된다</text>
+  <text x="600" y="648" font-size="24" font-family="Arial, sans-serif" text-anchor="middle" fill="#94a3b8">같은 이슈를 세 단계로 연결해야 진짜 신호가 보인다</text>
 </svg>

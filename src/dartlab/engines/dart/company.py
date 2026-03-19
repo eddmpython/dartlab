@@ -1152,10 +1152,13 @@ def _ensureData(stockCode: str, category: str) -> bool:
     dest = _dataDir(category) / f"{stockCode}.parquet"
     if dest.exists():
         return True
+    label = DATA_RELEASES[category]["label"]
+    print(f"[dartlab] {stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...")
     try:
         _download(stockCode, dest, category)
-        label = DATA_RELEASES[category]["label"]
-        print(f"[dartlab] {stockCode} ({label}) 다운로드 완료")
+        size = dest.stat().st_size
+        sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+        print(f"[dartlab] ✓ {label} 다운로드 완료 ({sizeStr})")
         return True
     except (OSError, RuntimeError):
         return False
@@ -2165,7 +2168,16 @@ class Company:
         self._financeChecked = False
 
         if not self._hasDocs and not self._hasFinanceParquet and not self._hasReport:
-            raise ValueError(f"'{self.stockCode}' 데이터 없음 (docs/finance/report 모두 없음)")
+            raise ValueError(
+                f"'{self.stockCode}' 데이터를 찾을 수 없습니다.\n"
+                f"\n"
+                f"  가능한 원인:\n"
+                f"  • 종목코드가 올바른지 확인하세요 (6자리, 예: '005930')\n"
+                f"  • 비상장 또는 dartlab 데이터셋에 미포함 종목일 수 있습니다\n"
+                f"  • 인터넷 연결을 확인하세요 (첫 사용 시 자동 다운로드 필요)\n"
+                f"\n"
+                f"  종목 검색: dartlab.search('삼성') 또는 dartlab.listing()"
+            )
 
         self._notesAccessor = Notes(self) if self._hasDocs else None
         self.docs = _DocsAccessor(self)

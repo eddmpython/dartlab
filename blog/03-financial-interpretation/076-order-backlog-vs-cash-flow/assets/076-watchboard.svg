@@ -1,12 +1,32 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">076 Watchboard</title>
-  <desc id="desc">Five checks after a backlog headline</desc>
-  <rect width="1280" height="720" fill="#0f1c31"/>
-  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">076 Watchboard</text>
-  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Five checks after a backlog headline</text>
-  <rect x="90" y="170" width="340" height="146" rx="24" fill="#ffffff" opacity="0.96"/><text x="118" y="218" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">1. Margin next?</text><text x="118" y="252" font-size="20" font-family="Arial, sans-serif" fill="#36506b">If margin fades, the</text><text x="118" y="280" font-size="20" font-family="Arial, sans-serif" fill="#36506b">backlog was bought cheap.</text>
-  <rect x="470" y="170" width="340" height="146" rx="24" fill="#ffffff" opacity="0.96"/><text x="498" y="218" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">2. Contract assets?</text><text x="498" y="252" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Recognized work without</text><text x="498" y="280" font-size="20" font-family="Arial, sans-serif" fill="#36506b">cash is a warning.</text>
-  <rect x="850" y="170" width="340" height="146" rx="24" fill="#ffffff" opacity="0.96"/><text x="878" y="218" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">3. Inventory load?</text><text x="878" y="252" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Backlog can eat cash</text><text x="878" y="280" font-size="20" font-family="Arial, sans-serif" fill="#36506b">before shipment happens.</text>
-  <rect x="280" y="386" width="340" height="146" rx="24" fill="#ffffff" opacity="0.96"/><text x="308" y="434" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">4. CFO catch-up?</text><text x="308" y="468" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Healthy backlog should</text><text x="308" y="496" font-size="20" font-family="Arial, sans-serif" fill="#36506b">show up in operating cash.</text>
-  <rect x="660" y="386" width="340" height="146" rx="24" fill="#ffffff" opacity="0.96"/><text x="688" y="434" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">5. Funding patch?</text><text x="688" y="468" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Factoring or SCF may</text><text x="688" y="496" font-size="20" font-family="Arial, sans-serif" fill="#36506b">be hiding the gap.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">076</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">수주잔고는 늘는데 왜 현금은 안 남나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">▣</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">감시 보드</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

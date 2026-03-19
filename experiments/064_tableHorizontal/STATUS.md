@@ -424,3 +424,47 @@ company.py 로직(패치 포함) 재현하여 정확한 None 비율 측정:
 ### 테스트 통과
 - `tests/test_company.py`: 27 passed
 - `tests/test_sections_pipeline.py`: 4 passed
+
+## 027~028 no_data_rows 심층 분석 (2026-03-19)
+
+### 027: no_data_rows 패턴 분류 (30종목)
+
+전체 서브테이블 108,947개 중 no_data_rows 28,084건 (25.8%):
+- **단위 헤더 빈 서브테이블 (~15,000건)**: `splitSubtables`가 분리한 단위/기준일 행. 실제 데이터는 다음 서브테이블에서 정상 처리. 수정 불필요.
+- **빈 테이블 (헤더+separator만)**: 데이터 없는 테이블. 정상 스킵.
+- **텍스트 오분류**: 마크다운 table 형식이지만 내용은 텍스트. 정상 스킵.
+- **단행 K-IFRS 요약행**: separator 없이 데이터 1행만. 정상 스킵.
+
+### 028: _stripUnitHeader 다중컬럼 확장
+
+적용한 수정 (`company.py`):
+1. `_stripUnitHeader`를 다중컬럼으로 확장 — 셀 합쳐서 단위/기준일 검사
+2. `if not dr: continue` 앞에 `_stripUnitHeader` 복구 시도 추가 (1단계/2단계 모두)
+
+효과:
+- 11종목 수평화율: **패치 전후 동일 (52.9%)** — 빈 서브테이블이라 복구 대상 없음
+- 코드는 방어적으로 유지 (향후 데이터 패턴 변화에 대비)
+
+### overlap_filtered 임계값 분석 (6종목)
+
+overlap 0.2-0.3 구간 (516건):
+- fsSummary 164건, financialNotes 113건, consolidatedNotes 70건 → K-IFRS 주석 (이력형 맞음)
+- boardOfDirectors 45건, employee 32건 → 인명/출석률 (이력형 맞음)
+- audit 22건 → 기수 항목 포함 (경계지만 threshold 변경 시 부작용)
+
+**결론: overlap threshold 0.3은 적절. 낮추면 이력형 데이터가 잘못 수평화됨.**
+
+### 수평화율 한계 분석
+
+현재 ~55% 수평화율에서 나머지 ~45% 실패 원인:
+- overlap_filtered 63%: 이력형 (K-IFRS 주석, 인명, R&D 과제) → **정상 스킵**
+- no_items 19%: 빈 테이블, 텍스트 오분류 → **정상 스킵**
+- list_type 11%: 종속기업 1000+, 임원 1500+ → **정상 스킵**
+- all_junk 6%: 날짜/순번 항목 이력형 → **정상 스킵**
+
+**전체 결론: 수평화율 ~55%가 현실적 상한선. 나머지 45%는 정당한 이유로 수평화 부적합.**
+
+향후 개선 가능 경로:
+1. bestHeader 그룹 선택을 다중 그룹으로 확장 (리팩터링 필요)
+2. multi_year 분기 보고서 지원 확대
+3. 복잡한 다중행 헤더 구조 인식

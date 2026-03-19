@@ -97,19 +97,23 @@ def loadData(
         )
     elif not path.exists():
         label = DATA_RELEASES[category]["label"]
-        print(f"[dartlab] {stockCode}.parquet ({label}) 로컬에 없음 → GitHub Release에서 다운로드...")
+        print(f"[dartlab] {stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...")
         try:
             _download(stockCode, path, category)
-            print(f"[dartlab] 저장 완료: {path}")
+            size = path.stat().st_size
+            sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
         except (URLError, socket.timeout, OSError) as e:
             if path.exists():
                 path.unlink()
             raise RuntimeError(
-                f"데이터 다운로드 실패 ({stockCode}): {e}\n"
+                f"데이터 다운로드 실패 ({stockCode}, {label}): {e}\n"
+                f"\n"
                 f"  해결 방법:\n"
-                f"  1. 네트워크 연결 확인\n"
-                f"  2. `dartlab download {stockCode}` 명령으로 수동 다운로드\n"
-                f"  3. GitHub Releases 페이지에서 직접 다운로드 후 {dataDir}/ 에 배치"
+                f"  1. 인터넷 연결을 확인하세요\n"
+                f"  2. dartlab download {stockCode} 명령으로 수동 다운로드\n"
+                f"  3. 해당 종목이 dartlab 데이터셋에 포함되어 있는지 확인하세요\n"
+                f"     → DART: 한국 상장기업 ~2,700개 / EDGAR: 미국 상장기업 ~970개"
             ) from e
         except ValueError:
             if path.exists():
@@ -141,14 +145,16 @@ def _ensureEdgarDocs(
 
     if not path.exists():
         label = DATA_RELEASES["edgarDocs"]["label"]
-        print(f"[dartlab] {stockCode}.parquet ({label}) 로컬에 없음 → GitHub Release에서 다운로드...")
+        print(f"[dartlab] {stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...")
         try:
             _download(stockCode, path, "edgarDocs")
-            print(f"[dartlab] 저장 완료: {path}")
+            size = path.stat().st_size
+            sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
         except (URLError, socket.timeout, OSError):
             if path.exists():
                 path.unlink()
-            print("[dartlab] GitHub Release에 없거나 다운로드 실패 → SEC EDGAR API 직접 수집으로 전환")
+            print("[dartlab] GitHub에 없음 → SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)")
             _rebuildEdgarDocs(stockCode, path, sinceYear=sinceYear, sourceMode="sec_api")
         return
 
@@ -229,50 +235,54 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
             skipped += 1
 
     if not toDownload:
-        print(f"[dartlab] 전체 {len(allAssets)}종목 이미 최신 ({dataDir})")
+        print(f"[dartlab] ✓ 전체 {len(allAssets)}종목 이미 최신")
         return
 
-    action = "다운로드 (신규+업데이트)" if forceUpdate else "신규 다운로드"
-    print(f"[dartlab] {action}: {len(toDownload)}종목 (스킵: {skipped})")
+    action = "신규 + 업데이트" if forceUpdate else "신규"
+    print(f"[dartlab] {action} {len(toDownload)}종목 다운로드 시작 (이미 존재: {skipped})")
 
     failed = 0
-    with alive_bar(len(toDownload), title="다운로드") as bar:
+    with alive_bar(len(toDownload), title=f"{label} 다운로드") as bar:
         for asset in toDownload:
             dest = dataDir / asset["name"]
             try:
                 _downloadWithRetry(asset["browser_download_url"], dest)
             except (URLError, socket.timeout, OSError) as e:
-                print(f"\n[dartlab] {asset['name']} 다운로드 실패 (3회 재시도 후): {e}")
+                print(f"\n[dartlab] ✗ {asset['name']} 실패: {e}")
                 if dest.exists():
                     dest.unlink()
                 failed += 1
             bar()
 
     if failed:
-        print(f"[dartlab] 완료 → {dataDir} (실패: {failed}건)")
+        print(f"[dartlab] ✓ 완료 (실패: {failed}건)")
     else:
-        print(f"[dartlab] 완료 → {dataDir}")
+        print(f"[dartlab] ✓ 전체 다운로드 완료 → {dataDir}")
 
 
 def download(stockCode: str) -> None:
-    """특정 종목의 docs + finance 데이터를 모두 다운로드."""
+    """특정 종목의 docs + finance + report 데이터를 모두 다운로드."""
     for category in DATA_RELEASES:
         if category in _EXPLICIT_DOWNLOAD_ONLY_CATEGORIES:
+            continue
+        if "tag" not in DATA_RELEASES[category] and "shards" not in DATA_RELEASES[category]:
             continue
         dataDir = _dataDir(category)
         dest = dataDir / f"{stockCode}.parquet"
         label = DATA_RELEASES[category]["label"]
         if dest.exists():
-            print(f"[dartlab] {stockCode} ({label}) 이미 존재")
+            print(f"[dartlab] ✓ {stockCode} ({label}) 이미 존재")
             continue
         print(f"[dartlab] {stockCode} ({label}) 다운로드 중...")
         try:
             _download(stockCode, dest, category)
-            print(f"[dartlab] 저장 완료: {dest}")
+            size = dest.stat().st_size
+            sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
         except (URLError, socket.timeout, OSError) as e:
             if dest.exists():
                 dest.unlink()
-            print(f"[dartlab] {stockCode} ({label}) 다운로드 실패 (3회 재시도 후): {e}")
+            print(f"[dartlab] ✗ {stockCode} ({label}) 다운로드 실패: {e}")
 
 
 DART_VIEWER = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="

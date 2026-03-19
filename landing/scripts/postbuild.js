@@ -155,10 +155,13 @@ for (const section of sections) {
 	llmsTxt += '\n';
 }
 
-writeFileSync(resolve(buildDir, 'llms.txt'), llmsTxt.trim() + '\n', 'utf-8');
+const llmsContent = llmsTxt.trim() + '\n';
+writeFileSync(resolve(buildDir, 'llms.txt'), llmsContent, 'utf-8');
+writeFileSync(resolve(__dirname, '..', 'static', 'llms.txt'), llmsContent, 'utf-8');
 console.log(`  -> llms.txt generated (${sections.reduce((n, s) => n + s.files.length, 0)} files)`);
 
-writeFileSync(resolve(buildDir, 'llms-full.txt'), fullParts.join('\n\n---\n\n') + '\n', 'utf-8');
+const fullContent = fullParts.join('\n\n---\n\n') + '\n';
+writeFileSync(resolve(buildDir, 'llms-full.txt'), fullContent, 'utf-8');
 console.log(`  -> llms-full.txt generated (${Math.round(fullParts.join('').length / 1024)}KB)`);
 
 // sitemap.xml — auto-generate with docs + blog

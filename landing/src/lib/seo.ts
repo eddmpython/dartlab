@@ -94,7 +94,7 @@ export function buildSoftwareApplicationJsonLd(): SeoThing {
 		applicationCategory: 'DeveloperApplication',
 		operatingSystem: 'Windows, macOS, Linux',
 		description:
-			'A Python library for comprehensive DART disclosure analysis. Parses financial statements, annual reports, and audit opinions into time-series data.',
+			'A Python library for DART and SEC EDGAR disclosure analysis. Parses financial statements, annual reports, and disclosure text into horizontalized time-series data.',
 		url: brand.url,
 		downloadUrl: brand.pypi,
 		softwareVersion: brand.version,

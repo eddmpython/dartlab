@@ -1,6 +1,11 @@
 <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, sans-serif">
+  <defs>
+    <linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgDark)" rx="12"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
   <!-- Title -->
-  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e293b">ICFR 비적정 후 경영진 대응 비교 — 양호 vs 미흡</text>
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#f1f5f9">ICFR 비적정 후 경영진 대응 비교 — 양호 vs 미흡</text>
 
   <!-- Good response column -->
   <rect x="30" y="55" width="360" height="45" rx="6" fill="#059669" fill-opacity="0.15" stroke="#059669" stroke-width="2"/>
@@ -14,57 +19,57 @@
   <!-- Row 1: 시정 계획 -->
   <rect x="30" y="110" width="360" height="55" rx="4" fill="#059669" fill-opacity="0.05" stroke="#059669" stroke-width="0.5"/>
   <text x="45" y="130" font-size="11" font-weight="bold" fill="#059669">시정 계획</text>
-  <text x="45" y="148" font-size="11" fill="#374151">"2분기까지 매출 인식 검토 절차 3단계 도입,</text>
-  <text x="45" y="161" font-size="11" fill="#374151">전담 인력 2명 배치, 외부 전문가 자문 계약"</text>
+  <text x="45" y="148" font-size="11" fill="#f1f5f9">"2분기까지 매출 인식 검토 절차 3단계 도입,</text>
+  <text x="45" y="161" font-size="11" fill="#f1f5f9">전담 인력 2명 배치, 외부 전문가 자문 계약"</text>
 
   <rect x="410" y="110" width="360" height="55" rx="4" fill="#dc2626" fill-opacity="0.05" stroke="#dc2626" stroke-width="0.5"/>
   <text x="425" y="130" font-size="11" font-weight="bold" fill="#dc2626">시정 계획</text>
-  <text x="425" y="148" font-size="11" fill="#374151">"내부통제를 지속적으로 강화해 나갈</text>
-  <text x="425" y="161" font-size="11" fill="#374151">예정입니다"</text>
+  <text x="425" y="148" font-size="11" fill="#f1f5f9">"내부통제를 지속적으로 강화해 나갈</text>
+  <text x="425" y="161" font-size="11" fill="#f1f5f9">예정입니다"</text>
 
   <!-- Row 2: 일정 -->
   <rect x="30" y="175" width="360" height="55" rx="4" fill="#059669" fill-opacity="0.05" stroke="#059669" stroke-width="0.5"/>
   <text x="45" y="195" font-size="11" font-weight="bold" fill="#059669">시정 일정</text>
-  <text x="45" y="213" font-size="11" fill="#374151">단계별 완료 시점 명시</text>
-  <text x="45" y="226" font-size="11" fill="#374151">(1차: 6월, 2차: 9월, 최종: 12월)</text>
+  <text x="45" y="213" font-size="11" fill="#f1f5f9">단계별 완료 시점 명시</text>
+  <text x="45" y="226" font-size="11" fill="#f1f5f9">(1차: 6월, 2차: 9월, 최종: 12월)</text>
 
   <rect x="410" y="175" width="360" height="55" rx="4" fill="#dc2626" fill-opacity="0.05" stroke="#dc2626" stroke-width="0.5"/>
   <text x="425" y="195" font-size="11" font-weight="bold" fill="#dc2626">시정 일정</text>
-  <text x="425" y="213" font-size="11" fill="#374151">기한 없음 또는 "연내 개선 예정"</text>
-  <text x="425" y="226" font-size="11" fill="#374151">구체적 마일스톤 없음</text>
+  <text x="425" y="213" font-size="11" fill="#f1f5f9">기한 없음 또는 "연내 개선 예정"</text>
+  <text x="425" y="226" font-size="11" fill="#f1f5f9">구체적 마일스톤 없음</text>
 
   <!-- Row 3: 감사위원회 -->
   <rect x="30" y="240" width="360" height="55" rx="4" fill="#059669" fill-opacity="0.05" stroke="#059669" stroke-width="0.5"/>
   <text x="45" y="260" font-size="11" font-weight="bold" fill="#059669">감사위원회 대응</text>
-  <text x="45" y="278" font-size="11" fill="#374151">전담 안건으로 상정, 분기별 후속 점검,</text>
-  <text x="45" y="291" font-size="11" fill="#374151">외부감사인과 별도 커뮤니케이션 기록</text>
+  <text x="45" y="278" font-size="11" fill="#f1f5f9">전담 안건으로 상정, 분기별 후속 점검,</text>
+  <text x="45" y="291" font-size="11" fill="#f1f5f9">외부감사인과 별도 커뮤니케이션 기록</text>
 
   <rect x="410" y="240" width="360" height="55" rx="4" fill="#dc2626" fill-opacity="0.05" stroke="#dc2626" stroke-width="0.5"/>
   <text x="425" y="260" font-size="11" font-weight="bold" fill="#dc2626">감사위원회 대응</text>
-  <text x="425" y="278" font-size="11" fill="#374151">활동내역에 ICFR 미언급 또는</text>
-  <text x="425" y="291" font-size="11" fill="#374151">형식적 1회 보고 후 종료</text>
+  <text x="425" y="278" font-size="11" fill="#f1f5f9">활동내역에 ICFR 미언급 또는</text>
+  <text x="425" y="291" font-size="11" fill="#f1f5f9">형식적 1회 보고 후 종료</text>
 
   <!-- Row 4: 외부 자원 -->
   <rect x="30" y="305" width="360" height="55" rx="4" fill="#059669" fill-opacity="0.05" stroke="#059669" stroke-width="0.5"/>
   <text x="45" y="325" font-size="11" font-weight="bold" fill="#059669">외부 전문가 활용</text>
-  <text x="45" y="343" font-size="11" fill="#374151">ICFR 컨설팅 계약 체결,</text>
-  <text x="45" y="356" font-size="11" fill="#374151">비감사보수에 관련 용역 반영</text>
+  <text x="45" y="343" font-size="11" fill="#f1f5f9">ICFR 컨설팅 계약 체결,</text>
+  <text x="45" y="356" font-size="11" fill="#f1f5f9">비감사보수에 관련 용역 반영</text>
 
   <rect x="410" y="305" width="360" height="55" rx="4" fill="#dc2626" fill-opacity="0.05" stroke="#dc2626" stroke-width="0.5"/>
   <text x="425" y="325" font-size="11" font-weight="bold" fill="#dc2626">외부 전문가 활용</text>
-  <text x="425" y="343" font-size="11" fill="#374151">외부 자원 투입 없음,</text>
-  <text x="425" y="356" font-size="11" fill="#374151">비감사보수 변화 없음</text>
+  <text x="425" y="343" font-size="11" fill="#f1f5f9">외부 자원 투입 없음,</text>
+  <text x="425" y="356" font-size="11" fill="#f1f5f9">비감사보수 변화 없음</text>
 
   <!-- Row 5: 다음 해 결과 -->
   <rect x="30" y="370" width="360" height="55" rx="4" fill="#059669" fill-opacity="0.05" stroke="#059669" stroke-width="0.5"/>
   <text x="45" y="390" font-size="11" font-weight="bold" fill="#059669">다음 해 전망</text>
-  <text x="45" y="408" font-size="11" fill="#374151">ICFR 적정 회복 가능성 높음,</text>
-  <text x="45" y="421" font-size="11" fill="#374151">관련 계정 수치 안정 유지</text>
+  <text x="45" y="408" font-size="11" fill="#f1f5f9">ICFR 적정 회복 가능성 높음,</text>
+  <text x="45" y="421" font-size="11" fill="#f1f5f9">관련 계정 수치 안정 유지</text>
 
   <rect x="410" y="370" width="360" height="55" rx="4" fill="#dc2626" fill-opacity="0.05" stroke="#dc2626" stroke-width="0.5"/>
   <text x="425" y="390" font-size="11" font-weight="bold" fill="#dc2626">다음 해 전망</text>
-  <text x="425" y="408" font-size="11" fill="#374151">ICFR 비적정 반복 가능성 높음,</text>
-  <text x="425" y="421" font-size="11" fill="#374151">감사의견 변경 위험 증가</text>
+  <text x="425" y="408" font-size="11" fill="#f1f5f9">ICFR 비적정 반복 가능성 높음,</text>
+  <text x="425" y="421" font-size="11" fill="#f1f5f9">감사의견 변경 위험 증가</text>
 
   <!-- Bottom summary -->
   <rect x="30" y="440" width="360" height="40" rx="6" fill="#059669" fill-opacity="0.1"/>

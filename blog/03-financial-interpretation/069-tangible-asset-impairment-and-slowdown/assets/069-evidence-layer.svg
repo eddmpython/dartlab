@@ -1,26 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title>???? ???? ?? ???</title>
-  <desc>??? ?? ??? ??? ?? ????? ????</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="100%" stop-color="#e2e8f0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
     </linearGradient>
   </defs>
-  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
-  <rect x="40" y="36" width="1200" height="648" rx="28" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="80" y="100" text-anchor="start" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">???? ???? ?? ???</text>
-  <text x="80" y="142" text-anchor="start" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="400" fill="#475569">??? ?? ??? ??? ?? ????? ????</text>
-  <rect x="100" y="210" width="1080" height="98" rx="20" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-  <text x="130" y="248" text-anchor="start" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">?? ?</text>
-  <text x="130" y="282" text-anchor="start" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="400" fill="#334155">?? ?????? ????? ???</text>
-  <rect x="100" y="324" width="1080" height="98" rx="20" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
-  <text x="130" y="362" text-anchor="start" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">?? ?</text>
-  <text x="130" y="396" text-anchor="start" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="400" fill="#334155">???? ????? ??? ????? ??</text>
-  <rect x="100" y="438" width="1080" height="98" rx="20" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="130" y="476" text-anchor="start" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">?? ?</text>
-  <text x="130" y="510" text-anchor="start" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="400" fill="#334155">????? ?? ??? ??? ??</text>
-  <rect x="100" y="552" width="1080" height="98" rx="20" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
-  <text x="130" y="590" text-anchor="start" font-size="24" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">?? ?</text>
-  <text x="130" y="624" text-anchor="start" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="400" fill="#334155">?? CAPEX? ?? ?? ??? ?? ??</text>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">069</text>
+
+  <!-- Title -->
+  <text x="400" y="188" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">유형자산 손상차손은 경기 둔화를</text>
+  <text x="400" y="216" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">어떻게 먼저 말해주나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">▤</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">근거 레이어</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

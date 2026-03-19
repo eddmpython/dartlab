@@ -1,14 +1,33 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">075 Decision Tree</title>
-  <desc id="desc">Is this a closing gap, a judgment shift, or a trust issue?</desc>
-  <rect width="1280" height="720" fill="#0f1c30"/>
-  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">075 Decision Tree</text>
-  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Is this a closing gap, a judgment shift, or a trust issue?</text>
-  <rect x="470" y="150" width="340" height="88" rx="24" fill="#ffffff" opacity="0.96"/><text x="640" y="200" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Why did the number move?</text>
-  <path d="M 640 238 L 640 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
-  <path d="M 640 310 L 250 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
-  <path d="M 640 310 L 1030 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
-  <rect x="110" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="250" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Closing Gap</text><text x="250" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Minor tax move</text><text x="250" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Scope already matched</text><text x="250" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Story stays stable</text>
-  <rect x="500" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="640" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Judgment Shift</text><text x="640" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Provision or loss changed</text><text x="640" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Need note support</text><text x="640" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Read the audit line</text>
-  <rect x="890" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="1030" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Trust Issue</text><text x="1030" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Story keeps changing</text><text x="1030" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Restatement repeated</text><text x="1030" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Future discount rises</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#38bdf8" letter-spacing="0.04em">사업보고서 읽기</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#38bdf8" opacity="0.15">075</text>
+
+  <!-- Title -->
+  <text x="400" y="188" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">잠정실적과 사업보고서 숫자가</text>
+  <text x="400" y="216" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">엇갈릴 때 무엇을 먼저 믿어야 하나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#38bdf8" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#38bdf8" opacity="0.6">◇</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">판단 흐름도</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

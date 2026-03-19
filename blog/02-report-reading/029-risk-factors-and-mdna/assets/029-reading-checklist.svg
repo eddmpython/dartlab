@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <defs><linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient></defs>
   <title id="title">Risk Factors와 MD&amp;A 읽기 체크리스트</title>
   <desc id="desc">두 섹션을 같이 읽을 때 바로 점검할 다섯 가지 질문을 정리한 체크리스트</desc>
-  <rect width="1200" height="720" fill="#fff8ee"/>
-  <rect x="180" y="90" width="840" height="540" rx="32" fill="#fffdf8" stroke="#d4aa55" stroke-width="4"/>
-  <text x="600" y="155" font-size="36" font-family="Arial, sans-serif" text-anchor="middle" fill="#8a6121" font-weight="700">10분 체크리스트</text>
+  <rect width="1200" height="720" fill="#050811"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+  <rect x="180" y="90" width="840" height="540" rx="32" fill="rgba(30,36,51,0.6)" stroke="#d4aa55" stroke-width="4"/>
+  <text x="600" y="155" font-size="36" font-family="Arial, sans-serif" text-anchor="middle" fill="#fbbf24" font-weight="700">10분 체크리스트</text>
   <circle cx="255" cy="235" r="22" fill="#d4aa55"/>
   <circle cx="255" cy="315" r="22" fill="#d4aa55"/>
   <circle cx="255" cy="395" r="22" fill="#d4aa55"/>
@@ -14,10 +16,10 @@
   <text x="255" y="403" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#fff" font-weight="700">3</text>
   <text x="255" y="483" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#fff" font-weight="700">4</text>
   <text x="255" y="563" font-size="22" font-family="Arial, sans-serif" text-anchor="middle" fill="#fff" font-weight="700">5</text>
-  <text x="320" y="243" font-size="26" font-family="Arial, sans-serif" fill="#5e4a26">새로 등장한 리스크가 있는가</text>
-  <text x="320" y="323" font-size="26" font-family="Arial, sans-serif" fill="#5e4a26">같은 이슈가 MD&amp;A에서 다시 설명되는가</text>
-  <text x="320" y="403" font-size="26" font-family="Arial, sans-serif" fill="#5e4a26">설명이 숫자 변화와 연결되는가</text>
-  <text x="320" y="483" font-size="26" font-family="Arial, sans-serif" fill="#5e4a26">일시적 요인인지 구조적 요인인지 구분되는가</text>
-  <text x="320" y="563" font-size="26" font-family="Arial, sans-serif" fill="#5e4a26">다음 분기에서 무엇을 다시 볼지 정했는가</text>
-  <text x="600" y="670" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#7a602f" font-weight="700">리스크 문구를 읽고 끝내지 말고 다음 숫자까지 이어서 본다</text>
+  <text x="320" y="243" font-size="26" font-family="Arial, sans-serif" fill="#fcd34d">새로 등장한 리스크가 있는가</text>
+  <text x="320" y="323" font-size="26" font-family="Arial, sans-serif" fill="#fcd34d">같은 이슈가 MD&amp;A에서 다시 설명되는가</text>
+  <text x="320" y="403" font-size="26" font-family="Arial, sans-serif" fill="#fcd34d">설명이 숫자 변화와 연결되는가</text>
+  <text x="320" y="483" font-size="26" font-family="Arial, sans-serif" fill="#fcd34d">일시적 요인인지 구조적 요인인지 구분되는가</text>
+  <text x="320" y="563" font-size="26" font-family="Arial, sans-serif" fill="#fcd34d">다음 분기에서 무엇을 다시 볼지 정했는가</text>
+  <text x="600" y="670" font-size="26" font-family="Arial, sans-serif" text-anchor="middle" fill="#fbbf24" font-weight="700">리스크 문구를 읽고 끝내지 말고 다음 숫자까지 이어서 본다</text>
 </svg>

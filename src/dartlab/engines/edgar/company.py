@@ -500,7 +500,14 @@ class Company:
 
         tickerRow = self._resolveTickerRow(self.ticker)
         if tickerRow is None:
-            raise ValueError(f"'{ticker}'에 해당하는 CIK를 찾을 수 없음")
+            raise ValueError(
+                f"'{ticker}'에 해당하는 종목을 찾을 수 없습니다.\n"
+                f"\n"
+                f"  가능한 원인:\n"
+                f"  • ticker 심볼이 올바른지 확인하세요 (예: 'AAPL', 'MSFT')\n"
+                f"  • SEC EDGAR에 등록되지 않은 종목일 수 있습니다\n"
+                f"  • 인터넷 연결을 확인하세요 (SEC API 조회 필요)"
+            )
         self.cik = tickerRow["cik"]
         self.corpName = tickerRow.get("title") or self.ticker
 

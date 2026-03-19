@@ -1,15 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title>OCI ?? ?? ???</title>
-  <desc>??? ???? ?? ?? ????? ??? ??</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="100%" stop-color="#e2e8f0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
     </linearGradient>
   </defs>
-  <rect width="1280" height="720" fill="url(#bg)" rx="36"/>
-  <rect x="40" y="36" width="1200" height="648" rx="28" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="80" y="100" font-size="36" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">OCI ?? ?? ???</text>
-  <text x="80" y="142" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#475569">??? ???? ?? ?? ????? ??? ??</text>
-  <rect x="450" y="160" width="380" height="110" rx="22" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/><text x="640.0" y="212" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#0f172a">?? OCI ??</text><text x="640.0" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#334155">??? ??? ??</text><line x1="640" y1="270" x2="270" y2="360" stroke="#94a3b8" stroke-width="5"/><rect x="110" y="360" width="320" height="170" rx="24" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="270" y="428" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#1d4ed8">?? ?? ??</text><text x="270" y="466" text-anchor="middle" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#334155">?? ????? ??? ????? ???</text><line x1="640" y1="270" x2="640" y2="360" stroke="#94a3b8" stroke-width="5"/><rect x="480" y="360" width="320" height="170" rx="24" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><text x="640" y="428" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#b45309">?? ?? ??</text><text x="640" y="466" text-anchor="middle" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#334155">??? ???? ???? ? ??</text><line x1="640" y1="270" x2="1010" y2="360" stroke="#94a3b8" stroke-width="5"/><rect x="850" y="360" width="320" height="170" rx="24" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="1010" y="428" text-anchor="middle" font-size="28" font-family="Pretendard, Noto Sans KR, sans-serif" font-weight="700" fill="#b91c1c">?? ?? ??</text><text x="1010" y="466" text-anchor="middle" font-size="18" font-family="Pretendard, Noto Sans KR, sans-serif" fill="#334155">?? ?? ?? ???? ??</text>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">062</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">기타포괄손익 누적은 무엇을 가리나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">◇</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">판단 흐름도</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

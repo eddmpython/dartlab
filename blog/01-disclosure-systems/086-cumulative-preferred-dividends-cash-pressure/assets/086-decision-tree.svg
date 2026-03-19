@@ -1,24 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">086 Decision Tree</title>
-  <desc id="desc">Classify the arrears before calling them harmless</desc>
-  <rect width="1280" height="720" fill="#0f172a"/>
-  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">086 Decision Tree</text>
-  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Classify the arrears before calling them harmless</text>
-  <rect x="450" y="170" width="380" height="120" rx="28" fill="#f8fbff"/>
-  <text x="640" y="225" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Manageable cost or latent cash pressure?</text>
-  <text x="640" y="255" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#4d6782">Start with the root question</text>
-  <path d="M640 290 L640 360" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
-  <path d="M640 360 L280 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M640 360 L640 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M640 360 L1000 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
-  <rect x="120" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
-  <rect x="480" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
-  <rect x="840" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
-  <text x="280" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#1f7a4d">Manageable</text>
-  <text x="280" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">Short delay and real cash room</text>
-  <text x="640" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#2467a8">Watch closely</text>
-  <text x="640" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">Costs are growing but contained</text>
-  <text x="1000" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#b34b2b">Cash pressure</text>
-  <text x="1000" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">Arrears, maturity, and weak cash align</text>
-  <text x="72" y="660" font-size="22" font-family="Arial, sans-serif" fill="#d8e3f1">Long unpaid arrears can turn into a cash wall.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(251,146,60,0.12)" stroke="#fb923c" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#fb923c" letter-spacing="0.04em">공시 시스템</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#fb923c" opacity="0.15">086</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">우선주 누적배당은 언제 현금 압박으로 돌아오나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#fb923c" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#fb923c" opacity="0.6">◇</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">판단 흐름도</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

@@ -38,12 +38,14 @@
 - sections/show/diff/search/finance를 MCP tool로 노출
 - 킬러: "삼성전자 리스크 섹션 올해 뭐 바뀌었어?" → diff 결과 즉시 반환
 
-### 축 2: dartlab AI 뷰어 강화 — 체감 포인트
-- sections 뷰어 고도화 (heading/body 시각적 구분, 테이블 인라인, diff 하이라이트)
-- 종목 탐색 UX → 검색 → Company 생성 → sections 자동 로드
-- AI 대화 통합 → 공시 보다가 선택 → AI에게 질문
-- 기간 비교 → 좌우 split diff (2025 vs 2024)
-- 모바일 대응 → 반응형
+### 축 2: dartlab AI 2-탭 (AI Chat / Viewer) — 체감 포인트 (핵심 집중과제)
+- **상단 2-탭**: AI Chat (대화 집중) / Viewer (데이터 탐색 집중)
+- **공시 뷰어** (Viewer 핵심): sections 교차나열, heading 최신 1개 고정, body 타임라인+diff
+  - 텍스트: heading 고정 → 타임라인 바 → 최신 본문 → diff 요약
+  - 테이블: Phase 1 원본 마크다운 → Phase 2 수평화 토글 → Phase 3 AI 보정
+- **Viewer 하위 뷰**: 공시뷰어 / 정보검색 / 데이터검색 / (향후 대시보드)
+- **Chat ↔ Viewer 연동**: 대화에서 "보여줘" → Viewer 전환, Viewer에서 선택 → Chat 질문
+- 상세 설계: `src/dartlab/ui/DEV.md`
 
 ### 축 3: EDGAR 커버리지 확대
 - S&P 500 전종목 → "any US company, 5 lines of code"
@@ -63,7 +65,7 @@
 
 | 순서 | 축 | 첫 마일스톤 |
 |------|-----|------------|
-| 1 | 축 2 뷰어 강화 | sections 뷰어 heading/body + diff |
+| 1 | 축 2 AI 2-탭 | 상단 탭 + 공시뷰어 heading/body + 타임라인 + diff |
 | 2 | 축 1 MCP | 첫 5개 tool 동작 |
 | 3 | 축 4 diff | 주간 변화 리포트 생성 |
 | 4 | 축 5 바이럴 | Colab 노트북 3개 배포 |

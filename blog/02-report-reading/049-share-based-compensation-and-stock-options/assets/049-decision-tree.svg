@@ -1,29 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title>??????? ???? ?? ??</title>
-  <desc>??????? ???? ?? ?? ?? ??</desc>
-  <rect width="1200" height="720" fill="#FCFBF8"/>
-  <rect x="32" y="28" width="1136" height="664" rx="28" fill="#FFFFFF" stroke="#E9E3D8"/>
-  <rect x="52" y="48" width="1096" height="92" rx="20" fill="#F6DFEA"/>
-  <text x="84" y="92" font-size="36" font-weight="700" fill="#4B1833">??????? ???? ?? ??</text>
-  <text x="84" y="126" font-size="18" fill="#4B1833">DartLab Blog Visual Guide</text>
-  <text x="96" y="200" font-size="24" font-weight="700" fill="#4B1833">?? ?? ? ??? ??? ?? ??</text>
-  <rect x="468" y="236" width="260" height="96" rx="20" fill="#F6DFEA" stroke="#8D3B66"/>
-  <text x="500" y="294" font-size="28" font-weight="700" fill="#4B1833">?? ?? ??</text>
-  <text x="430" y="360" font-size="20" font-weight="500" fill="#4B1833">??? ??? ??? ??? ?????</text>
-  <text x="482" y="392" font-size="20" font-weight="500" fill="#4B1833">? ??? ?? ?? ??</text>
-  <line x1="598" y1="332" x2="236" y2="430" stroke="#8D3B66" stroke-width="5" stroke-linecap="round"/>
-  <rect x="126" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#8D3B66"/>
-  <text x="150" y="476" font-size="24" font-weight="700" fill="#4B1833">?? ??</text>
-  <text x="150" y="516" font-size="18" font-weight="500" fill="#4B1833">?? ??? ???</text>
-  <text x="150" y="546" font-size="18" font-weight="500" fill="#4B1833">?? ??? ? ???</text>
-  <line x1="598" y1="332" x2="576" y2="430" stroke="#8D3B66" stroke-width="5" stroke-linecap="round"/>
-  <rect x="466" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#8D3B66"/>
-  <text x="490" y="476" font-size="24" font-weight="700" fill="#4B1833">?? ??</text>
-  <text x="490" y="516" font-size="18" font-weight="500" fill="#4B1833">?? ??? ???</text>
-  <text x="490" y="546" font-size="18" font-weight="500" fill="#4B1833">?? ??? ? ???</text>
-  <line x1="598" y1="332" x2="916" y2="430" stroke="#8D3B66" stroke-width="5" stroke-linecap="round"/>
-  <rect x="806" y="430" width="268" height="156" rx="20" fill="#FFFFFF" stroke="#8D3B66"/>
-  <text x="830" y="476" font-size="24" font-weight="700" fill="#4B1833">?? ??</text>
-  <text x="830" y="516" font-size="18" font-weight="500" fill="#4B1833">?? ??? ???</text>
-  <text x="830" y="546" font-size="18" font-weight="500" fill="#4B1833">?? ??? ? ???</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#38bdf8" letter-spacing="0.04em">사업보고서 읽기</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#38bdf8" opacity="0.15">049</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">주식기준보상과 스톡옵션은 실제로 무엇을 희석시키나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#38bdf8" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#38bdf8" opacity="0.6">◇</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">판단 흐름도</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

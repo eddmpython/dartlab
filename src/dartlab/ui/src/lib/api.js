@@ -235,11 +235,41 @@ export async function fetchCompanyDiff(code) {
 	return res.json();
 }
 
+/** 뷰어용 목차 — chapter/topic 트리 */
+export async function fetchCompanyToc(code) {
+	const res = await fetch(`${BASE}/api/company/${code}/toc`);
+	if (!res.ok) throw new Error("목차 조회 실패");
+	return res.json();
+}
+
+/** 뷰어 전용 topic 데이터 — viewerBlocks + textDocument */
+export async function fetchCompanyViewer(code, topic, period = null) {
+	const params = period ? `?period=${encodeURIComponent(period)}` : "";
+	const res = await fetch(`${BASE}/api/company/${code}/viewer/${encodeURIComponent(topic)}${params}`);
+	if (!res.ok) throw new Error("viewer 조회 실패");
+	return res.json();
+}
+
+/** diff 요약 — changeRate + added/removed 미리보기 */
+export async function fetchCompanyDiffSummary(code, topic) {
+	const res = await fetch(`${BASE}/api/company/${code}/diff/${encodeURIComponent(topic)}/summary`);
+	if (!res.ok) throw new Error("diff summary 조회 실패");
+	return res.json();
+}
+
 /** company topic diff (줄 단위) */
 export async function fetchCompanyTopicDiff(code, topic, fromPeriod, toPeriod) {
 	const params = new URLSearchParams({ from: fromPeriod, to: toPeriod });
 	const res = await fetch(`${BASE}/api/company/${code}/diff/${encodeURIComponent(topic)}?${params}`);
 	if (!res.ok) throw new Error("topic diff 조회 실패");
+	return res.json();
+}
+
+/** 뷰어 내 텍스트 검색 — sections 전체에서 substring 검색 */
+export async function fetchCompanySearch(code, query) {
+	const params = new URLSearchParams({ q: query });
+	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/search?${params}`);
+	if (!res.ok) throw new Error("검색 실패");
 	return res.json();
 }
 
@@ -272,7 +302,7 @@ export async function ask(company, question, options = {}) {
  * @param {function} onDone - done 이벤트 콜백
  * @param {function} onError - error 이벤트 콜백
  */
-export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChunk, onDone, onError }, history = null) {
+export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChunk, onDone, onError, onViewerNavigate }, history = null) {
 	const body = { question, stream: true, ...options };
 	if (company) body.company = company;
 	if (history && history.length > 0) body.history = history;
@@ -320,6 +350,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
 							else if (currentEvent === "chunk") onChunk?.(parsed.text);
+							else if (currentEvent === "viewer_navigate") onViewerNavigate?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
 							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(); } }
 						} catch {

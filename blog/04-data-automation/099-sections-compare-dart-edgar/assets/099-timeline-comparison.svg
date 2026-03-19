@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="620" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="619" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="600" y="45" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">전자공시 기간 비교 — 수동 vs sections</text>
+  <text x="600" y="68" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">같은 topic의 5개 기간을 비교하려면?</text>
+
+  <!-- Manual approach (left) -->
+  <rect x="60" y="100" width="500" height="440" rx="12" fill="rgba(220,38,38,0.04)" stroke="rgba(220,38,38,0.15)" stroke-width="1"/>
+  <text x="310" y="130" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#f87171">수동 비교</text>
+
+  <!-- Manual steps -->
+  <rect x="90" y="155" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="178" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">1.</text>
+  <text x="125" y="178" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">DART/EDGAR에서 2025 사업보고서 열기</text>
+
+  <rect x="90" y="200" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="223" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">2.</text>
+  <text x="125" y="223" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">"사업의 내용" 섹션 찾아서 복사</text>
+
+  <rect x="90" y="245" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="268" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">3.</text>
+  <text x="125" y="268" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">2024 보고서 열기, 같은 섹션 찾기, 복사</text>
+
+  <rect x="90" y="290" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="313" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">4.</text>
+  <text x="125" y="313" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">2023, 2022, 2021... 반복 (x5회)</text>
+
+  <rect x="90" y="335" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="358" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">5.</text>
+  <text x="125" y="358" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">엑셀/문서에 옮겨서 나란히 비교</text>
+
+  <rect x="90" y="380" width="440" height="36" rx="6" fill="rgba(220,38,38,0.06)"/>
+  <text x="105" y="403" font-family="JetBrains Mono, monospace" font-size="11" fill="#fca5a5">6.</text>
+  <text x="125" y="403" font-family="Pretendard, sans-serif" font-size="12" fill="#f1f5f9">테이블도 같은 방식으로 개별 추출</text>
+
+  <rect x="90" y="430" width="440" height="50" rx="8" fill="rgba(220,38,38,0.1)" stroke="rgba(220,38,38,0.3)" stroke-width="1"/>
+  <text x="310" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#fca5a5">1개 topic x 5개 기간 = 30분~1시간</text>
+  <text x="310" y="470" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">섹션 제목이 바뀌면 다시 찾아야 함</text>
+
+  <!-- sections approach (right) -->
+  <rect x="640" y="100" width="500" height="440" rx="12" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="890" y="130" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#34d399">sections 비교</text>
+
+  <!-- sections code -->
+  <rect x="670" y="155" width="440" height="120" rx="8" fill="rgba(30,36,51,0.7)" stroke="#1e2433" stroke-width="1"/>
+  <text x="690" y="180" font-family="JetBrains Mono, monospace" font-size="12" fill="#34d399">import</text>
+  <text x="745" y="180" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1f5f9"> dartlab</text>
+  <text x="690" y="204" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1f5f9">c = dartlab.Company(</text>
+  <text x="895" y="204" font-family="JetBrains Mono, monospace" font-size="12" fill="#fbbf24">"005930"</text>
+  <text x="972" y="204" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1f5f9">)</text>
+  <text x="690" y="228" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1f5f9">c.show(</text>
+  <text x="755" y="228" font-family="JetBrains Mono, monospace" font-size="12" fill="#fbbf24">"businessOverview"</text>
+  <text x="950" y="228" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1f5f9">, 0)</text>
+  <text x="690" y="260" font-family="JetBrains Mono, monospace" font-size="11" fill="#64748b"># 모든 기간이 이미 정렬되어 있음</text>
+
+  <!-- Result preview -->
+  <rect x="670" y="295" width="440" height="130" rx="8" fill="rgba(30,36,51,0.5)"/>
+  <text x="690" y="318" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">│ 2025Q4          │ 2024Q4          │ 2024Q3 │</text>
+  <text x="690" y="340" font-family="JetBrains Mono, monospace" font-size="11" fill="#cbd5e1">│ 반도체 HBM 생산 │ 메모리 수요 부진│  null  │</text>
+  <text x="690" y="362" font-family="JetBrains Mono, monospace" font-size="11" fill="#cbd5e1">│ 확대 기조 유지  │ 에 따른 실적... │        │</text>
+  <text x="690" y="384" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">│ ...             │ ...             │ ...    │</text>
+  <text x="690" y="406" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">shape: (1, 106)  ←  모든 기간 자동 수평화</text>
+
+  <rect x="670" y="430" width="440" height="50" rx="8" fill="rgba(52,211,153,0.1)" stroke="rgba(52,211,153,0.3)" stroke-width="1"/>
+  <text x="890" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#6ee7b7">모든 topics x 모든 기간 = 2초</text>
+  <text x="890" y="470" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8">섹션 제목 매핑 자동 (매핑률 99.95%)</text>
+
+  <!-- DartLab branding -->
+  <text x="600" y="580" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+</svg>

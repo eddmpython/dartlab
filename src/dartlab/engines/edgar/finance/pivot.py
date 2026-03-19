@@ -199,9 +199,36 @@ def buildAnnual(
 def _loadFacts(edgarDir: Path, cik: str) -> Optional[pl.DataFrame]:
     path = edgarDir / f"{cik}.parquet"
     if not path.exists():
-        return None
+        path = _autoDownloadEdgarFinance(cik, path)
+        if path is None:
+            return None
     df = pl.read_parquet(path)
     return df.filter(pl.col("namespace") == "us-gaap")
+
+
+def _autoDownloadEdgarFinance(cik: str, dest: Path) -> Optional[Path]:
+    """SEC EDGAR companyfacts API에서 재무 데이터를 자동 다운로드."""
+    from urllib.error import URLError
+
+    print(f"[dartlab] {cik} (SEC EDGAR 재무 데이터) 로컬에 없음 → SEC API에서 다운로드 중...")
+    try:
+        from dartlab.engines.edgar.openapi.facts import (
+            companyFactsToRows,
+            getCompanyFactsJson,
+        )
+
+        payload = getCompanyFactsJson(cik)
+        df = companyFactsToRows(payload)
+        if df.is_empty():
+            print(f"[dartlab] {cik} SEC API 응답이 비어있음 (데이터 없음)")
+            return None
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        df.write_parquet(dest)
+        print(f"[dartlab] 저장 완료: {dest}")
+        return dest
+    except (URLError, OSError, RuntimeError) as e:
+        print(f"[dartlab] {cik} SEC API 다운로드 실패: {e}")
+        return None
 
 
 def _guessStmt(tag: str) -> str:

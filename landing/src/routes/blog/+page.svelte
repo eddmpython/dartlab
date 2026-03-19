@@ -53,7 +53,7 @@
 
 <div class="blog-hub">
 	<section class="blog-hub-hero">
-		<h1 class="blog-hub-title">공시를 숫자가 아니라 구조와 맥락으로 읽는 아카이브</h1>
+		<h1 class="blog-hub-title">DART · EDGAR 전자공시를 구조와 맥락으로 읽는 아카이브</h1>
 		<p class="blog-hub-desc">
 			DART와 EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화를 카테고리 단위로 정리합니다.
 		</p>

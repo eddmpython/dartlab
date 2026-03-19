@@ -1,21 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-<rect width="1280" height="720" fill="#FFFDF8"/>
-<text x="70" y="82" font-size="34" font-weight="700" fill="#065F46">??? ?? ??? ??</text>
-<text x="70" y="116" font-size="18" fill="#475569">?? ??? ??? ?? ???? ??</text>
-<rect x="430" y="90" rx="26" ry="26" width="420" height="94" fill="#D1FAE5" stroke="#065F46" stroke-width="3"/>
-<text x="640" y="128" text-anchor="middle" font-size="26" font-weight="700" fill="#032F23">?? ??</text>
-<text x="640" y="160" text-anchor="middle" font-size="19" fill="#334155">??? ??? ???, ??? ??? ??? ? ??????</text>
-<rect x="100" y="300" rx="22" ry="22" width="300" height="230" fill="#D1FAE5" stroke="#065F46" stroke-width="2"/>
-<text x="124" y="338" font-size="24" font-weight="700" fill="#032F23">?? ?? ??? ??</text>
-<text x="126" y="374" font-size="18" fill="#334155">? ?? ?? ??? ??</text>
-<rect x="450" y="300" rx="22" ry="22" width="300" height="230" fill="#D1FAE5" stroke="#065F46" stroke-width="2"/>
-<text x="474" y="338" font-size="24" font-weight="700" fill="#032F23">?? ????? ?? ?? ??</text>
-<text x="476" y="374" font-size="18" fill="#334155">? ?? ????? ?? ?? ??</text>
-<rect x="800" y="300" rx="22" ry="22" width="360" height="230" fill="#D1FAE5" stroke="#065F46" stroke-width="2"/>
-<text x="824" y="338" font-size="24" font-weight="700" fill="#032F23">?? ??</text>
-<text x="826" y="374" font-size="18" fill="#334155">? ?? ?? + ?????? ??</text>
-<line x1="640" y1="184" x2="250" y2="300" stroke="#065F46" stroke-width="4"/>
-<line x1="640" y1="184" x2="600" y2="300" stroke="#065F46" stroke-width="4"/>
-<line x1="640" y1="184" x2="980" y2="300" stroke="#065F46" stroke-width="4"/>
-<text x="90" y="620" font-size="19" fill="#475569">????? ?? ???, ?????? ??? ??, ??, ??? ??? ?? ?? ???.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(251,146,60,0.12)" stroke="#fb923c" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#fb923c" letter-spacing="0.04em">공시 시스템</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#fb923c" opacity="0.15">094</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">우선주 배당 스텝업 조항은 언제 더 위험해지나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#fb923c" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#fb923c" opacity="0.6">◇</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">판단 흐름도</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

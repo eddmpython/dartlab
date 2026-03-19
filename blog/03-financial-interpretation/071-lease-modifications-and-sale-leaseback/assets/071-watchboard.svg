@@ -1,17 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title>?? ??? ?????? ?? ??</title>
-  <desc>?? ??? ?????? ?? ?? ?? ??? ?? ??? ??? ?????</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0b1320"/>
-      <stop offset="100%" stop-color="#12253e"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
     </linearGradient>
   </defs>
-  <rect width="100%" height="100%" fill="url(#bg)"/>
-  
-  <text x="88" y="82" font-size="42" font-family="Pretendard, sans-serif" font-weight="800" fill="#f6f8fb">?? ??? ?????? ?? ??</text>
-  <text x="88" y="122" font-size="22" font-family="Pretendard, sans-serif" fill="#cbd7e6">?? ??? ?? ???? ??? ?? ???? ??</text>
-  <rect x="88" y="154" width="1100" height="500" rx="28" fill="#10223a" opacity="0.62" stroke="#f4b942" stroke-width="2"/>
-  <rect x="118" y="190" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="229" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">1. ?? ??</text><text x="580" y="229" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="276" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="315" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">2. ?? ?? ???</text><text x="580" y="315" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="362" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="401" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">3. ???? ??</text><text x="580" y="401" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="448" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="487" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">4. ???? ??</text><text x="580" y="487" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="534" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="573" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">5. ?? ?? ??</text><text x="580" y="573" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text>
 
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">071</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">리스 개정과 세일앤리스백은 누구에게 유리한가</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">▣</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">감시 보드</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

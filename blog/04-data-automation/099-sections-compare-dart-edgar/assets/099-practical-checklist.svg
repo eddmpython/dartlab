@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1080" height="720" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1079" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="540" y="48" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">sections 실전 활용 체크리스트</text>
+  <text x="540" y="72" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">DART 전자공시와 EDGAR 공시를 코드로 분석하는 단계</text>
+
+  <!-- Check items -->
+  <!-- Row 1 -->
+  <rect x="60" y="100" width="480" height="80" rx="10" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" stroke-width="1"/>
+  <text x="90" y="128" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#34d399">1</text>
+  <text x="120" y="128" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">종목 선택과 Company 생성</text>
+  <text x="120" y="152" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c = dartlab.Company("005930")</text>
+  <text x="120" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">DART: 종목코드 6자리 / EDGAR: ticker 또는 CIK</text>
+
+  <rect x="560" y="100" width="460" height="80" rx="10" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" stroke-width="1"/>
+  <text x="590" y="128" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#34d399">2</text>
+  <text x="620" y="128" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">전체 topic 지도 확인</text>
+  <text x="620" y="152" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.topics</text>
+  <text x="620" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">삼성전자: 329 topics / Apple: ~50 topics</text>
+
+  <!-- Row 2 -->
+  <rect x="60" y="200" width="480" height="80" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.2)" stroke-width="1"/>
+  <text x="90" y="228" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#38bdf8">3</text>
+  <text x="120" y="228" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">sections 매트릭스 전체 보기</text>
+  <text x="120" y="252" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.sections</text>
+  <text x="120" y="268" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">topic x period 수평화 DataFrame (전 기간 포함)</text>
+
+  <rect x="560" y="200" width="460" height="80" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.2)" stroke-width="1"/>
+  <text x="590" y="228" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#38bdf8">4</text>
+  <text x="620" y="228" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">show()로 블록 단위 조회</text>
+  <text x="620" y="252" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.show("businessOverview")</text>
+  <text x="620" y="268" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">블록 목차 → c.show("businessOverview", 0)으로 상세</text>
+
+  <!-- Row 3 -->
+  <rect x="60" y="300" width="480" height="80" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+  <text x="90" y="328" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#a78bfa">5</text>
+  <text x="120" y="328" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">재무 데이터는 finance 소스 자동 선택</text>
+  <text x="120" y="352" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.show("BS") / c.show("IS") / c.show("CF")</text>
+  <text x="120" y="368" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">XBRL 정규화된 숫자가 자동으로 올라옴</text>
+
+  <rect x="560" y="300" width="460" height="80" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+  <text x="590" y="328" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#a78bfa">6</text>
+  <text x="620" y="328" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">출처 추적으로 데이터 신뢰 확인</text>
+  <text x="620" y="352" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.trace("BS")</text>
+  <text x="620" y="368" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">source: finance / periods: [...] / coverage</text>
+
+  <!-- Row 4 -->
+  <rect x="60" y="400" width="480" height="80" rx="10" fill="rgba(251,146,60,0.06)" stroke="rgba(251,146,60,0.2)" stroke-width="1"/>
+  <text x="90" y="428" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#fb923c">7</text>
+  <text x="120" y="428" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">기간 비교와 변화 감지</text>
+  <text x="120" y="452" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.diff("businessOverview", "2024Q4", "2025Q4")</text>
+  <text x="120" y="468" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">추가/삭제된 문장, 변경률 자동 계산</text>
+
+  <rect x="560" y="400" width="460" height="80" rx="10" fill="rgba(251,146,60,0.06)" stroke="rgba(251,146,60,0.2)" stroke-width="1"/>
+  <text x="590" y="428" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#fb923c">8</text>
+  <text x="620" y="428" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">AI 채팅으로 심화 분석</text>
+  <text x="620" y="452" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">dartlab ai</text>
+  <text x="620" y="468" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">sections 데이터를 기반으로 AI가 해석</text>
+
+  <!-- Bottom summary -->
+  <rect x="60" y="510" width="960" height="100" rx="10" fill="rgba(30,36,51,0.5)" stroke="#1e2433" stroke-width="1"/>
+  <text x="540" y="540" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="700" fill="#f1f5f9">DART와 EDGAR 모두 같은 인터페이스</text>
+  <text x="540" y="568" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">dartlab.Company("005930")  →  한국 DART 전자공시</text>
+  <text x="540" y="590" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">dartlab.Company("AAPL")    →  미국 SEC EDGAR</text>
+
+  <!-- Branding -->
+  <text x="540" y="660" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
+  <text x="540" y="680" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#374151">pip install dartlab</text>
+</svg>

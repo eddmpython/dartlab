@@ -1,16 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">081 Watchboard</title>
-  <desc id="desc">Revisit whether the gain really improved the business</desc>
-  <rect width="1280" height="720" fill="#0d1321"/>
-  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">081 Watchboard</text>
-  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Revisit whether the gain really improved the business</text>
-  <rect x="86" y="176" width="1108" height="470" rx="30" fill="#ffffff" opacity="0.97"/>
-  <text x="130" y="230" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">What to revisit next</text>
-  <line x1="120" y1="270" x2="1160" y2="270" stroke="#d7e3ef" stroke-width="2"/>
-  <text x="140" y="320" font-size="22" font-family="Arial, sans-serif" fill="#10233a">1. Does cash actually come in later?</text>
-  <text x="140" y="382" font-size="22" font-family="Arial, sans-serif" fill="#10233a">2. Does the affiliate balance grow instead?</text>
-  <text x="140" y="444" font-size="22" font-family="Arial, sans-serif" fill="#10233a">3. Is core profit still weak without the gain?</text>
-  <text x="140" y="506" font-size="22" font-family="Arial, sans-serif" fill="#10233a">4. Does the next report show more internal deals?</text>
-  <text x="140" y="568" font-size="22" font-family="Arial, sans-serif" fill="#10233a">5. Does the group still carry the economic burden?</text>
-  <text x="72" y="684" font-size="22" font-family="Arial, sans-serif" fill="#d8e3f1">A watchboard is more useful than one dramatic headline.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">081</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">관계사 자산 매각 이익은 왜 더 조심해야 하나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">▣</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">감시 보드</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

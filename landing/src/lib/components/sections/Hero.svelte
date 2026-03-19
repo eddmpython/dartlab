@@ -32,16 +32,16 @@
 		</Badge>
 
 		<h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
+			<span class="text-dl-text">DART · EDGAR</span><br />
 			<span
 				class="bg-gradient-to-r from-dl-primary via-dl-primary-light to-dl-primary bg-clip-text text-transparent"
-				>c.sections</span
-			><br />
-			<span class="text-dl-text">is the entire company</span>
+				>전자공시</span
+			><span class="text-dl-text">를 하나의 회사 맵으로</span>
 		</h1>
 
 		<p class="text-lg md:text-xl text-dl-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-			Every filing section, every period, one Polars DataFrame.<br />
-			<span class="text-dl-text font-medium">show · trace · diff</span> are just views on top of it.
+			모든 공시 섹션, 모든 기간을 하나의 <span class="text-dl-text font-medium">sections</span> DataFrame으로.<br />
+			<span class="text-dl-text font-medium">show · trace · diff</span>는 그 위에서 동작한다.
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">

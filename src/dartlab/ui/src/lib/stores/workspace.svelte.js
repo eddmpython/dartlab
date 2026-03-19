@@ -21,6 +21,9 @@ function saveState(s) {
 export function createWorkspaceStore() {
 	const stored = loadState();
 
+	// Main view state
+	let activeView = $state("chat"); // "chat" | "viewer"
+
 	// Panel state
 	let panelOpen = $state(false);
 	let panelMode = $state(null); // "viewer" | "data"
@@ -52,15 +55,18 @@ export function createWorkspaceStore() {
 		recentCompanies = [norm, ...recentCompanies.filter(c => c.stockCode !== norm.stockCode)].slice(0, MAX_RECENT);
 	}
 
+	function switchView(view) {
+		activeView = view;
+	}
+
 	// Open disclosure viewer for a company
 	function openViewer(company) {
 		if (company) {
 			selectedCompany = company;
 			updateRecent(company);
 		}
-		panelMode = "viewer";
-		panelData = null;
-		panelOpen = true;
+		activeView = "viewer";
+		panelOpen = false;
 		persist();
 	}
 
@@ -125,6 +131,15 @@ export function createWorkspaceStore() {
 
 	// Context for AI — what the user is currently viewing
 	function getViewContext() {
+		// Viewer 탭에서 보고 있는 topic도 AI 컨텍스트로 전달
+		if (activeView === "viewer" && selectedCompany && viewerTopic) {
+			return {
+				type: "viewer",
+				company: selectedCompany,
+				topic: viewerTopic,
+				topicLabel: viewerTopicLabel,
+			};
+		}
 		if (!panelOpen) return null;
 		if (panelMode === "viewer" && selectedCompany) {
 			return {
@@ -141,6 +156,7 @@ export function createWorkspaceStore() {
 	}
 
 	return {
+		get activeView() { return activeView; },
 		get panelOpen() { return panelOpen; },
 		get panelMode() { return panelMode; },
 		get panelData() { return panelData; },
@@ -151,6 +167,7 @@ export function createWorkspaceStore() {
 		get recentCompanies() { return recentCompanies; },
 		get viewerTopic() { return viewerTopic; },
 		get viewerTopicLabel() { return viewerTopicLabel; },
+		switchView,
 		openViewer,
 		openData,
 		openEvidence,

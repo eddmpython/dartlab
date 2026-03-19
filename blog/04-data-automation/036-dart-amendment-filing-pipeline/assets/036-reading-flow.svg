@@ -1,25 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
-<defs>
-<linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#10233D"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient>
-</defs>
-<rect x="0" y="0" width="1200" height="720" rx="0" fill="url(#g)" stroke="none" stroke-width="1"/>
-<rect x="36" y="36" width="1128" height="648" rx="36" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
-<rect x="36" y="36" width="1128" height="116" rx="36" fill="#10233D" stroke="none" stroke-width="1"/>
-<text x="72" y="96" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">036. ???? ????? ?? ??</text>
-<text x="72" y="132" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#E5E7EB">DartLab ?? ??? SVG</text>
-<rect x="70" y="210" width="280" height="180" rx="28" fill="#E0ECFF" stroke="#3B82F6" stroke-width="2"/>
-<text x="94" y="260" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#10233D">?? ?? ??</text>
-<rect x="410" y="210" width="280" height="180" rx="28" fill="#E0ECFF" stroke="#3B82F6" stroke-width="2"/>
-<text x="434" y="260" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#10233D">rcept_no ?? ??</text>
-<rect x="750" y="210" width="280" height="180" rx="28" fill="#E0ECFF" stroke="#3B82F6" stroke-width="2"/>
-<text x="774" y="260" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#10233D">?? ??? ??</text>
-<text x="94" y="300" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#10233D">? ???? ?? ??? ??</text>
-<text x="434" y="300" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#10233D">??? ??? ?? ??? ??</text>
-<text x="774" y="300" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="18" font-weight="500" fill="#10233D">?? ??? ???? ??</text>
-<text x="96" y="350" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="52" font-weight="800" fill="#3B82F6">1</text>
-<text x="436" y="350" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="52" font-weight="800" fill="#3B82F6">2</text>
-<text x="776" y="350" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="52" font-weight="800" fill="#3B82F6">3</text>
-<text x="72" y="470" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="24" font-weight="700" fill="#10233D">?? ???</text>
-<text x="72" y="512" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="22" font-weight="500" fill="#374151">?? -&gt; ?? -&gt; ?? ?? ??? ?? ??? ? ?? ?? ?? ???.</text>
-<text x="72" y="666" font-family="Pretendard, Noto Sans KR, sans-serif" font-size="20" font-weight="500" fill="#4B5563">??: ???? ?????? ? ? ???? ??? ?? ??? ?? ?? ??.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(52,211,153,0.12)" stroke="#34d399" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#34d399" letter-spacing="0.04em">데이터 자동화</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#34d399" opacity="0.15">036</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">DART 정정공시를 파이프라인에서 다루는 법</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#34d399" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#34d399" opacity="0.6">→</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">읽기 순서</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

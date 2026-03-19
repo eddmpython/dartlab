@@ -1,16 +1,32 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">076 Good vs Risky</title>
-  <desc id="desc">Cash conversion vs margin discipline</desc>
-  <rect width="1280" height="720" fill="#0e1a2d"/>
-  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">076 Good vs Risky</text>
-  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Cash conversion vs margin discipline</text>
-  <rect x="160" y="170" width="900" height="420" rx="26" fill="#ffffff" opacity="0.95"/>
-  <line x1="610" y1="170" x2="610" y2="590" stroke="#27486d" stroke-width="4"/>
-  <line x1="160" y1="380" x2="1060" y2="380" stroke="#27486d" stroke-width="4"/>
-  <text x="610" y="640" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">Weaker margin discipline  →</text>
-  <text x="58" y="390" transform="rotate(-90 58 390)" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">↑ Better cash conversion</text>
-  <text x="385" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Healthy Backlog</text><text x="385" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Advance payment helps</text>
-  <text x="835" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Price Risk</text><text x="835" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Cash okay but margin weak</text>
-  <text x="385" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Timing Stress</text><text x="385" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Margin fine but cash lags</text>
-  <text x="835" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Backlog Trap</text><text x="835" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Cash weak and price weak</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(167,139,250,0.12)" stroke="#a78bfa" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#a78bfa" letter-spacing="0.04em">재무 해석</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#a78bfa" opacity="0.15">076</text>
+
+  <!-- Title -->
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">수주잔고는 늘는데 왜 현금은 안 남나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#a78bfa" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#a78bfa" opacity="0.6">◐</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">양호 vs 위험</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

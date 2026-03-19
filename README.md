@@ -245,7 +245,17 @@ DartLab ships with pre-built datasets via GitHub Releases:
 | DART finance | 2,700+ companies | XBRL financial statements |
 | DART report | 2,700+ companies | Structured disclosure APIs |
 | EDGAR docs | 970+ companies | 10-K/10-Q sections |
-| EDGAR finance | 970+ companies | SEC XBRL facts |
+| EDGAR finance | On-demand | SEC XBRL facts (auto-fetched from SEC API) |
+
+**Auto-download**: No manual setup required. When you create a `Company("005930")` or `Company("AAPL")` for the first time, dartlab automatically downloads the required data. DART data comes from GitHub Releases; EDGAR finance data is fetched directly from the SEC EDGAR API.
+
+```python
+# Bulk download (optional — downloads all companies at once)
+from dartlab.core.dataLoader import downloadAll
+downloadAll("docs")       # DART disclosure documents
+downloadAll("finance")    # DART financial statements
+downloadAll("report")     # DART structured reports
+```
 
 ## Contributing
 

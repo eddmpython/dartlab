@@ -21,6 +21,19 @@ uv add "dartlab[ai]"
 uv run dartlab ai
 ```
 
+## 데이터 자동 다운로드
+
+`Company`를 처음 생성하면 필요한 데이터를 자동으로 다운로드한다. 별도 설정 불필요.
+
+```
+[dartlab] 005930 (DART 공시 문서 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ DART 공시 문서 데이터 다운로드 완료 (542KB)
+[dartlab] 005930 (재무 숫자 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
+```
+
+두 번째 실행부터는 로컬 캐시를 사용하므로 즉시 로드된다.
+
 ## sections = 회사 전체
 
 ```python

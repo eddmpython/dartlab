@@ -1,13 +1,33 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">078 Evidence Layer</title>
-  <desc id="desc">Use five layers before trusting the equity label</desc>
-  <rect width="1280" height="720" fill="#10213a"/>
-  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">078 Evidence Layer</text>
-  <text x="84" y="120" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Use five layers before trusting the equity label</text>
-  <rect x="88" y="152" width="1104" height="520" rx="28" fill="#0d1c30" opacity="0.7" stroke="#5dade2" stroke-width="2"/>
-  <rect x="112" y="176" width="1056" height="76" rx="18" fill="#ffffff" opacity="0.96"/><rect x="128" y="190" width="160" height="48" rx="14" fill="#173558"/><text x="208" y="221" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Rights</text><text x="318" y="221" font-size="24" font-family="Arial, sans-serif" fill="#19324d">Map put, call, dividend, and priority terms</text>
-  <rect x="112" y="278" width="1056" height="76" rx="18" fill="#ffffff" opacity="0.96"/><rect x="128" y="292" width="160" height="48" rx="14" fill="#173558"/><text x="208" y="323" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Timing</text><text x="318" y="323" font-size="24" font-family="Arial, sans-serif" fill="#19324d">The pressure starts when timing gets short</text>
-  <rect x="112" y="380" width="1056" height="76" rx="18" fill="#ffffff" opacity="0.96"/><rect x="128" y="394" width="160" height="48" rx="14" fill="#173558"/><text x="208" y="425" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Class</text><text x="318" y="425" font-size="24" font-family="Arial, sans-serif" fill="#19324d">Classification tells you how to frame the risk</text>
-  <rect x="112" y="482" width="1056" height="76" rx="18" fill="#ffffff" opacity="0.96"/><rect x="128" y="496" width="160" height="48" rx="14" fill="#173558"/><text x="208" y="527" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Funding</text><text x="318" y="527" font-size="24" font-family="Arial, sans-serif" fill="#19324d">Real risk lives in the redemption source</text>
-  <rect x="112" y="584" width="1056" height="76" rx="18" fill="#ffffff" opacity="0.96"/><rect x="128" y="598" width="160" height="48" rx="14" fill="#173558"/><text x="208" y="629" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Repeat</text><text x="318" y="629" font-size="24" font-family="Arial, sans-serif" fill="#19324d">If negotiation repeats, the burden is structural</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="799" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Category badge -->
+  <rect x="300" y="60" width="200" height="26" rx="13" fill="rgba(251,146,60,0.12)" stroke="#fb923c" stroke-width="1" opacity="0.8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#fb923c" letter-spacing="0.04em">공시 시스템</text>
+
+  <!-- Post number -->
+  <text x="400" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="800" fill="#fb923c" opacity="0.15">078</text>
+
+  <!-- Title -->
+  <text x="400" y="188" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">RCPS 상환 압박과 자본 재분류는</text>
+  <text x="400" y="216" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">어디서 먼저 보이나</text>
+
+  <!-- Divider -->
+  <line x1="340" y1="240" x2="460" y2="240" stroke="#fb923c" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- SVG type icon + subtitle -->
+  <text x="380" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#fb923c" opacity="0.6">▤</text>
+  <text x="420" y="278" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="14" fill="#94a3b8">근거 레이어</text>
+
+  <!-- DartLab branding -->
+  <text x="400" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569" letter-spacing="0.08em">DartLab 전자공시 분석</text>
 </svg>

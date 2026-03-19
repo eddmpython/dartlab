@@ -10,16 +10,17 @@
 ### dartCompany.py
 
 - `dartlab.Company("005930")` 로 삼성전자 생성
-- `c.index` 로 전체 제공 데이터 확인
-- `c.show("companyOverview")` 로 topic 상세 확인
-- `c.show("audit")` 로 report 데이터 확인
+- `c.sections` 로 전체 topic × period 맵 확인
+- `c.topics` 로 topic 목록 확인
+- `c.show("companyOverview")` 로 topic 블록 목차 확인
 - `c.show("IS")` 로 재무 시계열 확인
 - `c.trace("stockTotal")` 로 데이터 소스 추적
+- `c.diff()` 로 텍스트 변화 감지
 
 ### edgarCompany.py
 
 - `dartlab.Company("AAPL")` 로 Apple 생성
-- `c.index` 로 전체 제공 데이터 확인
+- `c.sections` 로 전체 topic × period 맵 확인
 - `c.show("riskFactors")` 로 docs topic 확인
 - `c.show("IS")` 로 재무 시계열 확인
 - `c.ratios` 로 재무비율 확인

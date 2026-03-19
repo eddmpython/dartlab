@@ -19,15 +19,18 @@
 	import { cn } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
+	import { createViewerStore } from "$lib/stores/viewer.svelte.js";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
 	import RightPanel from "$lib/components/RightPanel.svelte";
+	import DisclosureViewer from "$lib/components/DisclosureViewer.svelte";
 	import AutocompleteInput from "$lib/components/AutocompleteInput.svelte";
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Download, X, Loader2, Settings, Check, ExternalLink,
-		Key, AlertCircle, CheckCircle2, Terminal, LogOut, Database
+		Key, AlertCircle, CheckCircle2, Terminal, LogOut, Database,
+		MessageSquare, BookOpen
 	} from "lucide-svelte";
 
 	// ── State ──
@@ -70,6 +73,7 @@
 	let deleteDialog = $state(null);
 
 	const workspace = createWorkspaceStore();
+	const viewerStore = createViewerStore();
 
 	// Right panel width depends on content + fullscreen mode
 	let viewerFullscreen = $state(false);
@@ -604,6 +608,10 @@
 					currentStream = null;
 					scrollTrigger++;
 				},
+				onViewerNavigate(data) {
+					if (isStale()) return;
+					handleViewerNavigate(data);
+				},
 				onError(err, action, detail) {
 					if (isStale()) return;
 					store.updateLastMessage({ text: `오류: ${err}`, loading: false, error: true });
@@ -672,6 +680,28 @@
 		a.click();
 		URL.revokeObjectURL(url);
 		showToast("대화가 마크다운으로 내보내졌습니다", "success");
+	}
+
+	/** Viewer에서 "AI에게 물어보기" — Chat 탭으로 전환 + 선택 텍스트를 입력창에 */
+	function handleAskFromViewer(selectedText) {
+		workspace.switchView("chat");
+		const topicLabel = viewerStore.topicData?.topicLabel || "";
+		const prefix = topicLabel ? `[${topicLabel}] ` : "";
+		inputText = `${prefix}"${selectedText}" — 이 내용에 대해 설명해줘`;
+		requestAnimationFrame(() => {
+			const textarea = document.querySelector(".input-textarea");
+			if (textarea) textarea.focus();
+		});
+	}
+
+	/** SSE viewer_navigate 이벤트 처리 — Chat → Viewer 전환 */
+	function handleViewerNavigate(data) {
+		if (data?.topic) {
+			workspace.switchView("viewer");
+			if (data.chapter) {
+				viewerStore.selectTopic(data.topic, data.chapter);
+			}
+		}
 	}
 
 	function openSearchModal() {
@@ -746,8 +776,8 @@
 
 	<!-- Main -->
 	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
-		<!-- Top-left: sidebar toggle -->
-		<div class="absolute top-2 left-3 z-20 pointer-events-auto">
+		<!-- Top-left: sidebar toggle + view tabs -->
+		<div class="absolute top-2 left-3 z-20 pointer-events-auto flex items-center gap-1">
 			<button
 				class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
 				onclick={toggleSidebar}
@@ -758,6 +788,28 @@
 					<Menu size={18} />
 				{/if}
 			</button>
+
+			<!-- View tabs -->
+			<div class="flex items-center ml-2 rounded-lg bg-dl-bg-card/60 border border-dl-border/20 p-0.5">
+				<button
+					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'chat'
+						? 'text-dl-text bg-dl-surface-active font-medium'
+						: 'text-dl-text-dim hover:text-dl-text-muted'}"
+					onclick={() => workspace.switchView('chat')}
+				>
+					<MessageSquare size={12} />
+					<span>Chat</span>
+				</button>
+				<button
+					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'viewer'
+						? 'text-dl-text bg-dl-surface-active font-medium'
+						: 'text-dl-text-dim hover:text-dl-text-muted'}"
+					onclick={() => workspace.switchView('viewer')}
+				>
+					<BookOpen size={12} />
+					<span>Viewer</span>
+				</button>
+			</div>
 		</div>
 
 		<!-- Top-right fixed controls (GPT style) -->
@@ -812,48 +864,60 @@
 
 		<!-- Content -->
 		<div class="flex flex-1 min-h-0">
-			<!-- Chat area (always present) -->
-			<div class="min-w-0 flex-1 flex flex-col">
-				{#if hasConversation}
-					<ChatArea
-						messages={activeMessages}
-						{isLoading}
-						{scrollTrigger}
-						bind:inputText
-						selectedCompany={workspace.selectedCompany}
-						onSend={sendMessage}
-						onStop={stopStream}
-						onRegenerate={handleRegenerate}
-						onExport={handleExport}
-						onOpenData={handleOpenData}
-						onOpenEvidence={handleOpenEvidence}
-						onCompanySelect={handleCompanySelect}
-					/>
-				{:else}
-					<EmptyState
-						bind:inputText
-						onSend={sendMessage}
-						onCompanySelect={handleCompanySelect}
-					/>
-				{/if}
-			</div>
-
-			<!-- Right panel (contextual) -->
-			{#if !isMobile && workspace.panelOpen}
-				<div
-					class="flex-shrink-0 border-l border-dl-border/30 transition-all duration-300"
-					style="width: {panelWidth}; min-width: 360px; {viewerFullscreen ? '' : 'max-width: 75vw;'}"
-				>
-					<RightPanel
-						mode={workspace.panelMode}
+			{#if workspace.activeView === "viewer"}
+				<!-- Viewer mode: full-width disclosure viewer -->
+				<div class="min-w-0 flex-1 pt-10">
+					<DisclosureViewer
+						viewer={viewerStore}
 						company={workspace.selectedCompany}
-						data={workspace.panelData}
-						onClose={() => { viewerFullscreen = false; workspace.closePanel(); }}
+						onAskAI={handleAskFromViewer}
 						onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
-						onFullscreen={() => { viewerFullscreen = !viewerFullscreen; }}
-						isFullscreen={viewerFullscreen}
 					/>
 				</div>
+			{:else}
+				<!-- Chat mode -->
+				<div class="min-w-0 flex-1 flex flex-col">
+					{#if hasConversation}
+						<ChatArea
+							messages={activeMessages}
+							{isLoading}
+							{scrollTrigger}
+							bind:inputText
+							selectedCompany={workspace.selectedCompany}
+							onSend={sendMessage}
+							onStop={stopStream}
+							onRegenerate={handleRegenerate}
+							onExport={handleExport}
+							onOpenData={handleOpenData}
+							onOpenEvidence={handleOpenEvidence}
+							onCompanySelect={handleCompanySelect}
+						/>
+					{:else}
+						<EmptyState
+							bind:inputText
+							onSend={sendMessage}
+							onCompanySelect={handleCompanySelect}
+						/>
+					{/if}
+				</div>
+
+				<!-- Right panel (contextual, chat mode only) -->
+				{#if !isMobile && workspace.panelOpen}
+					<div
+						class="flex-shrink-0 border-l border-dl-border/30 transition-all duration-300"
+						style="width: {panelWidth}; min-width: 360px; {viewerFullscreen ? '' : 'max-width: 75vw;'}"
+					>
+						<RightPanel
+							mode={workspace.panelMode}
+							company={workspace.selectedCompany}
+							data={workspace.panelData}
+							onClose={() => { viewerFullscreen = false; workspace.closePanel(); }}
+							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
+							onFullscreen={() => { viewerFullscreen = !viewerFullscreen; }}
+							isFullscreen={viewerFullscreen}
+						/>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</div>

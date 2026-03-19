@@ -1,5 +1,9 @@
 <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
-  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <defs>
+    <linearGradient id="bgDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050811"/><stop offset="100%" stop-color="#0f1219"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgDark)" rx="12"/>
+  <rect x="0.5" y="0.5" width="799" height="499" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
   <text x="400" y="40" text-anchor="middle" font-size="18" font-weight="bold" fill="#2563eb">업종별 진행률-계약자산 괴리 허용 범위</text>
 
   <!-- Axis -->
@@ -7,61 +11,61 @@
   <line x1="200" y1="420" x2="750" y2="420" stroke="#6b7280" stroke-width="1.5"/>
 
   <!-- X-axis labels -->
-  <text x="475" y="460" text-anchor="middle" font-size="13" fill="#6b7280">괴리 허용 폭 (계약자산 증가율 - 매출 증가율, %p)</text>
-  <text x="275" y="440" text-anchor="middle" font-size="11" fill="#6b7280">5</text>
-  <text x="385" y="440" text-anchor="middle" font-size="11" fill="#6b7280">10</text>
-  <text x="495" y="440" text-anchor="middle" font-size="11" fill="#6b7280">15</text>
-  <text x="605" y="440" text-anchor="middle" font-size="11" fill="#6b7280">20</text>
-  <text x="715" y="440" text-anchor="middle" font-size="11" fill="#6b7280">25</text>
+  <text x="475" y="460" text-anchor="middle" font-size="13" fill="#94a3b8">괴리 허용 폭 (계약자산 증가율 - 매출 증가율, %p)</text>
+  <text x="275" y="440" text-anchor="middle" font-size="11" fill="#94a3b8">5</text>
+  <text x="385" y="440" text-anchor="middle" font-size="11" fill="#94a3b8">10</text>
+  <text x="495" y="440" text-anchor="middle" font-size="11" fill="#94a3b8">15</text>
+  <text x="605" y="440" text-anchor="middle" font-size="11" fill="#94a3b8">20</text>
+  <text x="715" y="440" text-anchor="middle" font-size="11" fill="#94a3b8">25</text>
 
   <!-- Grid lines -->
-  <line x1="275" y1="80" x2="275" y2="420" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3"/>
-  <line x1="385" y1="80" x2="385" y2="420" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3"/>
-  <line x1="495" y1="80" x2="495" y2="420" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3"/>
-  <line x1="605" y1="80" x2="605" y2="420" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3"/>
-  <line x1="715" y1="80" x2="715" y2="420" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="275" y1="80" x2="275" y2="420" stroke="#1e2433" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="385" y1="80" x2="385" y2="420" stroke="#1e2433" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="495" y1="80" x2="495" y2="420" stroke="#1e2433" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="605" y1="80" x2="605" y2="420" stroke="#1e2433" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="715" y1="80" x2="715" y2="420" stroke="#1e2433" stroke-width="1" stroke-dasharray="3"/>
 
   <!-- Industry 1: IT서비스 (narrow tolerance) -->
-  <text x="190" y="135" text-anchor="end" font-size="14" font-weight="600" fill="#333">IT서비스·SI</text>
+  <text x="190" y="135" text-anchor="end" font-size="14" font-weight="600" fill="#f1f5f9">IT서비스·SI</text>
   <rect x="200" y="115" width="75" height="35" rx="6" fill="#2563eb" opacity="0.7"/>
   <rect x="275" y="115" width="55" height="35" rx="0" fill="#d97706" opacity="0.4"/>
-  <text x="237" y="137" text-anchor="middle" font-size="11" fill="white" font-weight="bold">정상</text>
+  <text x="237" y="137" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="bold">정상</text>
   <text x="302" y="137" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">주의</text>
   <line x1="330" y1="115" x2="330" y2="150" stroke="#dc2626" stroke-width="2"/>
   <text x="345" y="137" font-size="10" fill="#dc2626" font-weight="bold">경고</text>
 
   <!-- Industry 2: 건설(토건) -->
-  <text x="190" y="215" text-anchor="end" font-size="14" font-weight="600" fill="#333">건설(토건)</text>
+  <text x="190" y="215" text-anchor="end" font-size="14" font-weight="600" fill="#f1f5f9">건설(토건)</text>
   <rect x="200" y="195" width="110" height="35" rx="6" fill="#2563eb" opacity="0.7"/>
   <rect x="310" y="195" width="75" height="35" rx="0" fill="#d97706" opacity="0.4"/>
-  <text x="255" y="217" text-anchor="middle" font-size="11" fill="white" font-weight="bold">정상</text>
+  <text x="255" y="217" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="bold">정상</text>
   <text x="347" y="217" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">주의</text>
   <line x1="385" y1="195" x2="385" y2="230" stroke="#dc2626" stroke-width="2"/>
   <text x="400" y="217" font-size="10" fill="#dc2626" font-weight="bold">경고</text>
 
   <!-- Industry 3: 조선·해양 -->
-  <text x="190" y="295" text-anchor="end" font-size="14" font-weight="600" fill="#333">조선·해양</text>
+  <text x="190" y="295" text-anchor="end" font-size="14" font-weight="600" fill="#f1f5f9">조선·해양</text>
   <rect x="200" y="275" width="185" height="35" rx="6" fill="#2563eb" opacity="0.7"/>
   <rect x="385" y="275" width="110" height="35" rx="0" fill="#d97706" opacity="0.4"/>
-  <text x="292" y="297" text-anchor="middle" font-size="11" fill="white" font-weight="bold">정상 (마일스톤)</text>
+  <text x="292" y="297" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="bold">정상 (마일스톤)</text>
   <text x="440" y="297" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">주의</text>
   <line x1="495" y1="275" x2="495" y2="310" stroke="#dc2626" stroke-width="2"/>
   <text x="510" y="297" font-size="10" fill="#dc2626" font-weight="bold">경고</text>
 
   <!-- Industry 4: 방산·우주항공 -->
-  <text x="190" y="375" text-anchor="end" font-size="14" font-weight="600" fill="#333">방산·항공</text>
+  <text x="190" y="375" text-anchor="end" font-size="14" font-weight="600" fill="#f1f5f9">방산·항공</text>
   <rect x="200" y="355" width="220" height="35" rx="6" fill="#2563eb" opacity="0.7"/>
   <rect x="420" y="355" width="130" height="35" rx="0" fill="#d97706" opacity="0.4"/>
-  <text x="310" y="377" text-anchor="middle" font-size="11" fill="white" font-weight="bold">정상 (정부 예산 주기)</text>
+  <text x="310" y="377" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="bold">정상 (정부 예산 주기)</text>
   <text x="485" y="377" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">주의</text>
   <line x1="550" y1="355" x2="550" y2="390" stroke="#dc2626" stroke-width="2"/>
   <text x="565" y="377" font-size="10" fill="#dc2626" font-weight="bold">경고</text>
 
   <!-- Legend -->
   <rect x="260" y="470" width="14" height="14" rx="3" fill="#2563eb" opacity="0.7"/>
-  <text x="280" y="482" font-size="12" fill="#6b7280">정상 범위</text>
+  <text x="280" y="482" font-size="12" fill="#94a3b8">정상 범위</text>
   <rect x="370" y="470" width="14" height="14" rx="3" fill="#d97706" opacity="0.4"/>
-  <text x="390" y="482" font-size="12" fill="#6b7280">주의 구간</text>
+  <text x="390" y="482" font-size="12" fill="#94a3b8">주의 구간</text>
   <line x1="480" y1="470" x2="480" y2="484" stroke="#dc2626" stroke-width="2"/>
-  <text x="490" y="482" font-size="12" fill="#6b7280">경고 진입선</text>
+  <text x="490" y="482" font-size="12" fill="#94a3b8">경고 진입선</text>
 </svg>
