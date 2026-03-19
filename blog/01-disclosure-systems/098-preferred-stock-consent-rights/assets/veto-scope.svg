@@ -1,0 +1,49 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <text x="400" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#2563eb">사전 동의가 필요한 경영 의사결정 범위</text>
+
+  <!-- Center circle -->
+  <circle cx="400" cy="270" r="60" fill="#2563eb" opacity="0.1" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="265" text-anchor="middle" font-size="14" font-weight="700" fill="#2563eb">동의권</text>
+  <text x="400" y="283" text-anchor="middle" font-size="12" fill="#2563eb">적용 범위</text>
+
+  <!-- Category 1: Capital (top-left) -->
+  <rect x="50" y="70" width="220" height="130" rx="10" fill="white" stroke="#dc2626" stroke-width="2"/>
+  <text x="160" y="95" text-anchor="middle" font-size="15" font-weight="600" fill="#dc2626">자본 변경</text>
+  <line x1="70" y1="105" x2="250" y2="105" stroke="#dc2626" stroke-width="0.5" opacity="0.3"/>
+  <text x="80" y="125" font-size="12" fill="#6b7280">- 유상증자 / 무상증자</text>
+  <text x="80" y="145" font-size="12" fill="#6b7280">- 전환사채 / 신주인수권 발행</text>
+  <text x="80" y="165" font-size="12" fill="#6b7280">- 감자 / 주식분할</text>
+  <text x="80" y="185" font-size="12" fill="#6b7280">- 우선주 추가 발행</text>
+  <line x1="270" y1="135" x2="345" y2="230" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4"/>
+
+  <!-- Category 2: Debt (top-right) -->
+  <rect x="530" y="70" width="220" height="130" rx="10" fill="white" stroke="#d97706" stroke-width="2"/>
+  <text x="640" y="95" text-anchor="middle" font-size="15" font-weight="600" fill="#d97706">차입 / 부채</text>
+  <line x1="550" y1="105" x2="730" y2="105" stroke="#d97706" stroke-width="0.5" opacity="0.3"/>
+  <text x="545" y="125" font-size="12" fill="#6b7280">- 일정 금액 이상 차입</text>
+  <text x="545" y="145" font-size="12" fill="#6b7280">- 담보 제공</text>
+  <text x="545" y="165" font-size="12" fill="#6b7280">- 보증 / 연대보증</text>
+  <text x="545" y="185" font-size="12" fill="#6b7280">- 사채 발행</text>
+  <line x1="530" y1="135" x2="455" y2="230" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4"/>
+
+  <!-- Category 3: M&A (bottom-left) -->
+  <rect x="50" y="320" width="220" height="130" rx="10" fill="white" stroke="#059669" stroke-width="2"/>
+  <text x="160" y="345" text-anchor="middle" font-size="15" font-weight="600" fill="#059669">M&amp;A / 구조변경</text>
+  <line x1="70" y1="355" x2="250" y2="355" stroke="#059669" stroke-width="0.5" opacity="0.3"/>
+  <text x="80" y="375" font-size="12" fill="#6b7280">- 합병 / 분할</text>
+  <text x="80" y="395" font-size="12" fill="#6b7280">- 영업양도 / 양수</text>
+  <text x="80" y="415" font-size="12" fill="#6b7280">- 대규모 자산 처분</text>
+  <text x="80" y="435" font-size="12" fill="#6b7280">- 주요 자회사 매각</text>
+  <line x1="270" y1="365" x2="345" y2="310" stroke="#059669" stroke-width="1.5" stroke-dasharray="4"/>
+
+  <!-- Category 4: Management (bottom-right) -->
+  <rect x="530" y="320" width="220" height="130" rx="10" fill="white" stroke="#6b7280" stroke-width="2"/>
+  <text x="640" y="345" text-anchor="middle" font-size="15" font-weight="600" fill="#6b7280">경영 / 인사</text>
+  <line x1="550" y1="355" x2="730" y2="355" stroke="#6b7280" stroke-width="0.5" opacity="0.3"/>
+  <text x="545" y="375" font-size="12" fill="#6b7280">- 대표이사 변경</text>
+  <text x="545" y="395" font-size="12" fill="#6b7280">- 이사회 구성 변경</text>
+  <text x="545" y="415" font-size="12" fill="#6b7280">- 정관 변경</text>
+  <text x="545" y="435" font-size="12" fill="#6b7280">- 배당 정책 변경</text>
+  <line x1="530" y1="365" x2="455" y2="310" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4"/>
+</svg>

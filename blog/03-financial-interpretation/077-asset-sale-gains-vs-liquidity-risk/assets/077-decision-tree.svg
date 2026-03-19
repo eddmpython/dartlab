@@ -1,0 +1,14 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">077 Decision Tree</title>
+  <desc id="desc">Is this a portfolio move, a liquidity patch, or a delayed crisis?</desc>
+  <rect width="1280" height="720" fill="#0f1c30"/>
+  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">077 Decision Tree</text>
+  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Is this a portfolio move, a liquidity patch, or a delayed crisis?</text>
+  <rect x="470" y="150" width="340" height="88" rx="24" fill="#ffffff" opacity="0.96"/><text x="640" y="200" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Why was the asset sold now?</text>
+  <path d="M 640 238 L 640 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 640 310 L 250 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 640 310 L 1030 310" stroke="#8cc6ff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="110" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="250" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Portfolio Move</text><text x="250" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Non-core sold</text><text x="250" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Cash remains</text><text x="250" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Operations stable</text>
+  <rect x="500" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="640" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Liquidity Patch</text><text x="640" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Cash arrives</text><text x="640" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Debt eats it fast</text><text x="640" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Need next-quarter proof</text>
+  <rect x="890" y="330" width="280" height="176" rx="24" fill="#ffffff" opacity="0.96"/><text x="1030" y="382" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#12263e">Crisis Delay</text><text x="1030" y="420" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Core assets sold</text><text x="1030" y="448" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Backlog and CFO weak</text><text x="1030" y="476" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">More funding follows</text>
+</svg>

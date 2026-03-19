@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>??????? ???? ?? ??</title>
+  <desc>??????? ???? ?? ?? ?? ??? ?? ??? ??? ?????</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1320"/>
+      <stop offset="100%" stop-color="#12253e"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  
+  <text x="72" y="86" font-size="42" font-family="Pretendard, sans-serif" font-weight="800" fill="#f6f8fb">??????? ???? ?? ??</text>
+  <text x="72" y="128" font-size="22" font-family="Pretendard, sans-serif" fill="#cbd7e6">?????? ??? ?? ??? ?? ??? ????</text>
+  <rect x="70" y="162" width="1140" height="18" rx="9" fill="#1e3657"/>
+  <rect x="70" y="210" width="214" height="120" rx="24" fill="#ffffff" opacity="0.96"/><circle cx="106" cy="246" r="18" fill="#f4b942"/><text x="106" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, sans-serif" fill="#0b1320">1</text><text x="142" y="260" font-size="28" font-family="Pretendard, sans-serif" font-weight="700" fill="#10233a">?? ??</text><text x="102" y="298" font-size="19" font-family="Pretendard, sans-serif" fill="#36506b">?? ??? ?? ??</text><path d="M 284 270 L 300 270" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/><rect x="300" y="210" width="214" height="120" rx="24" fill="#ffffff" opacity="0.96"/><circle cx="336" cy="246" r="18" fill="#7bd389"/><text x="336" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, sans-serif" fill="#0b1320">2</text><text x="372" y="260" font-size="28" font-family="Pretendard, sans-serif" font-weight="700" fill="#10233a">?? ??</text><text x="332" y="298" font-size="19" font-family="Pretendard, sans-serif" fill="#36506b">?? ??? ?? ??</text><path d="M 514 270 L 530 270" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/><rect x="530" y="210" width="214" height="120" rx="24" fill="#ffffff" opacity="0.96"/><circle cx="566" cy="246" r="18" fill="#5dade2"/><text x="566" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, sans-serif" fill="#0b1320">3</text><text x="602" y="260" font-size="28" font-family="Pretendard, sans-serif" font-weight="700" fill="#10233a">?? ??</text><text x="562" y="298" font-size="19" font-family="Pretendard, sans-serif" fill="#36506b">?? ??? ?? ??</text><path d="M 744 270 L 760 270" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/><rect x="760" y="210" width="214" height="120" rx="24" fill="#ffffff" opacity="0.96"/><circle cx="796" cy="246" r="18" fill="#f08a5d"/><text x="796" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, sans-serif" fill="#0b1320">4</text><text x="832" y="260" font-size="28" font-family="Pretendard, sans-serif" font-weight="700" fill="#10233a">?? ??</text><text x="792" y="298" font-size="19" font-family="Pretendard, sans-serif" fill="#36506b">?? ??? ?? ??</text><path d="M 974 270 L 990 270" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/><rect x="990" y="210" width="214" height="120" rx="24" fill="#ffffff" opacity="0.96"/><circle cx="1026" cy="246" r="18" fill="#c792ea"/><text x="1026" y="252" text-anchor="middle" font-size="18" font-family="Pretendard, sans-serif" fill="#0b1320">5</text><text x="1062" y="260" font-size="28" font-family="Pretendard, sans-serif" font-weight="700" fill="#10233a">?? ??</text><text x="1022" y="298" font-size="19" font-family="Pretendard, sans-serif" fill="#36506b">?? ??? ?? ??</text>
+  <text x="72" y="628" font-size="22" font-family="Pretendard, sans-serif" fill="#d8e3f1">??: ? ??? ??? ? ?? ??? ?? ?? ??</text>
+
+</svg>

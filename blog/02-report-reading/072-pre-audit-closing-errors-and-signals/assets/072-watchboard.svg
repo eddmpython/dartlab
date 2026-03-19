@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title>?? ? ???? ?? ?? ??</title>
+  <desc>?? ? ???? ?? ?? ?? ?? ??? ?? ??? ??? ?????</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1320"/>
+      <stop offset="100%" stop-color="#12253e"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  
+  <text x="88" y="82" font-size="42" font-family="Pretendard, sans-serif" font-weight="800" fill="#f6f8fb">?? ? ???? ?? ?? ??</text>
+  <text x="88" y="122" font-size="22" font-family="Pretendard, sans-serif" fill="#cbd7e6">?? ??? ?? ???? ??? ?? ???? ??</text>
+  <rect x="88" y="154" width="1100" height="500" rx="28" fill="#10223a" opacity="0.62" stroke="#f4b942" stroke-width="2"/>
+  <rect x="118" y="190" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="229" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">1. ?? ?? ??</text><text x="580" y="229" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="276" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="315" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">2. ?? ???</text><text x="580" y="315" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="362" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="401" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">3. ???? ??</text><text x="580" y="401" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="448" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="487" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">4. ?? ?? ??</text><text x="580" y="487" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text><rect x="118" y="534" width="1040" height="62" rx="18" fill="#ffffff" opacity="0.95"/><text x="150" y="573" font-size="25" font-family="Pretendard, sans-serif" font-weight="700" fill="#173558">5. ?? ???? ??</text><text x="580" y="573" font-size="22" font-family="Pretendard, sans-serif" fill="#48627d">?? ???? ?? ???? ???</text>
+
+</svg>

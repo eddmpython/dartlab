@@ -1,0 +1,16 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">078 Good vs Risky</title>
+  <desc id="desc">Redemption pressure vs funding flexibility</desc>
+  <rect width="1280" height="720" fill="#0e1a2d"/>
+  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">078 Good vs Risky</text>
+  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Redemption pressure vs funding flexibility</text>
+  <rect x="160" y="170" width="900" height="420" rx="26" fill="#ffffff" opacity="0.95"/>
+  <line x1="610" y1="170" x2="610" y2="590" stroke="#27486d" stroke-width="4"/>
+  <line x1="160" y1="380" x2="1060" y2="380" stroke="#27486d" stroke-width="4"/>
+  <text x="610" y="640" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">Tighter redemption clock  →</text>
+  <text x="58" y="390" transform="rotate(-90 58 390)" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">↑ Better funding flexibility</text>
+  <text x="385" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Stable Equity</text><text x="385" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Long timing and real conversion path</text>
+  <text x="835" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Negotiated Risk</text><text x="835" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Near timing but terms can move</text>
+  <text x="385" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Label Risk</text><text x="385" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Looks like equity but funding thin</text>
+  <text x="835" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Cash Cliff</text><text x="835" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Near redemption and weak funding</text>
+</svg>

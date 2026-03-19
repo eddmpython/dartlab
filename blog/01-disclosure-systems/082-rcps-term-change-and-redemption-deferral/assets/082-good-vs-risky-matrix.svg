@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">082 Good vs Risky Matrix</title>
+  <desc id="desc">A deferral is risky when liquidity is weak and investor rights improve further</desc>
+  <rect width="1280" height="720" fill="#101826"/>
+  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">082 Good vs Risky Matrix</text>
+  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">A deferral is risky when liquidity is weak and investor rights improve further</text>
+  <rect x="100" y="180" width="280" height="80" rx="20" fill="#253b57"/>
+  <rect x="380" y="180" width="360" height="80" rx="20" fill="#1d4d3c"/>
+  <rect x="740" y="180" width="440" height="80" rx="20" fill="#6a2f23"/>
+  <text x="240" y="228" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">Point</text>
+  <text x="560" y="228" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">More Healthy</text>
+  <text x="960" y="228" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">More Risky</text>
+  <rect x="100" y="280" width="280" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="380" y="280" width="360" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="740" y="280" width="440" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="100" y="390" width="280" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="380" y="390" width="360" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="740" y="390" width="440" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="100" y="500" width="280" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="380" y="500" width="360" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="740" y="500" width="440" height="90" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="100" y="610" width="280" height="70" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="380" y="610" width="360" height="70" rx="18" fill="#ffffff" opacity="0.96"/>
+  <rect x="740" y="610" width="440" height="70" rx="18" fill="#ffffff" opacity="0.96"/>
+  <text x="240" y="334" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Maturity</text>
+  <text x="560" y="334" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Extension buys real runway</text>
+  <text x="960" y="334" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Delay only postpones pressure</text>
+  <text x="240" y="444" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Dividend burden</text>
+  <text x="560" y="444" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Cost does not jump much</text>
+  <text x="960" y="444" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Accrued claims get heavier</text>
+  <text x="240" y="554" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Conversion reset</text>
+  <text x="560" y="554" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Limited dilution change</text>
+  <text x="960" y="554" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Reset improves investor upside</text>
+  <text x="240" y="655" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Next financing</text>
+  <text x="560" y="655" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">No urgent rescue deal</text>
+  <text x="960" y="655" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Another raise is immediately needed</text>
+</svg>

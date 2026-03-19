@@ -1,0 +1,49 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <text x="400" y="40" text-anchor="middle" font-size="18" font-weight="bold" fill="#2563eb">위험도 3단계 — 괴리 수준별 대응 기준</text>
+
+  <!-- Tier 1: Low -->
+  <rect x="50" y="75" width="700" height="115" rx="10" fill="#059669" opacity="0.08" stroke="#059669" stroke-width="2"/>
+  <rect x="50" y="75" width="8" height="115" rx="4" fill="#059669"/>
+  <text x="80" y="100" font-size="16" font-weight="bold" fill="#059669">관찰 구간</text>
+  <text x="200" y="100" font-size="13" fill="#6b7280">낮은 위험</text>
+  <text x="80" y="122" font-size="12" fill="#333">계약자산 증가율이 매출 증가율을 5%p 이내 초과</text>
+  <text x="80" y="142" font-size="12" fill="#333">영업현금흐름이 순이익의 70% 이상 커버</text>
+  <text x="80" y="162" font-size="12" fill="#333">청구 지연 1분기 이내 — 다음 분기 회복 추적</text>
+  <circle cx="720" cy="132" r="22" fill="#059669" opacity="0.15"/>
+  <text x="720" y="137" text-anchor="middle" font-size="14" font-weight="bold" fill="#059669">모니터</text>
+
+  <!-- Arrow down -->
+  <path d="M400,195 L400,215" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Tier 2: Medium -->
+  <rect x="50" y="220" width="700" height="115" rx="10" fill="#d97706" opacity="0.08" stroke="#d97706" stroke-width="2"/>
+  <rect x="50" y="220" width="8" height="115" rx="4" fill="#d97706"/>
+  <text x="80" y="245" font-size="16" font-weight="bold" fill="#d97706">경계 구간</text>
+  <text x="200" y="245" font-size="13" fill="#6b7280">중간 위험</text>
+  <text x="80" y="267" font-size="12" fill="#333">계약자산 증가율이 매출 증가율을 10~20%p 초과</text>
+  <text x="80" y="287" font-size="12" fill="#333">2분기 연속 계약자산 회전 둔화</text>
+  <text x="80" y="307" font-size="12" fill="#333">영업현금흐름이 순이익의 50% 미만 — 원가 변경·발주처 확인 필수</text>
+  <circle cx="720" cy="277" r="22" fill="#d97706" opacity="0.15"/>
+  <text x="720" y="282" text-anchor="middle" font-size="14" font-weight="bold" fill="#d97706">점검</text>
+
+  <!-- Arrow down -->
+  <path d="M400,340 L400,360" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+  <!-- Tier 3: High -->
+  <rect x="50" y="365" width="700" height="115" rx="10" fill="#dc2626" opacity="0.08" stroke="#dc2626" stroke-width="2"/>
+  <rect x="50" y="365" width="8" height="115" rx="4" fill="#dc2626"/>
+  <text x="80" y="390" font-size="16" font-weight="bold" fill="#dc2626">위험 구간</text>
+  <text x="200" y="390" font-size="13" fill="#6b7280">높은 위험</text>
+  <text x="80" y="412" font-size="12" fill="#333">계약자산 증가율이 매출 증가율의 2배 이상</text>
+  <text x="80" y="432" font-size="12" fill="#333">3분기 이상 연속 회전 악화 + 계약부채 감소 동반</text>
+  <text x="80" y="452" font-size="12" fill="#333">영업현금흐름 마이너스인데 순이익 플러스 — 충당·손실 전환 검토</text>
+  <circle cx="720" cy="422" r="22" fill="#dc2626" opacity="0.15"/>
+  <text x="720" y="427" text-anchor="middle" font-size="14" font-weight="bold" fill="#dc2626">대응</text>
+
+  <defs>
+    <marker id="arrowDown" markerWidth="10" markerHeight="7" refX="5" refY="0" orient="auto">
+      <polygon points="0 0, 10 0, 5 7" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>

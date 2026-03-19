@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" fill="#f6f8fb" />
+<rect x="32" y="28" width="1216" height="72" rx="24" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="62" font-size="30" font-weight="700" fill="#0f172a">??? ??????</text>
+<text x="64" y="88" font-size="16" fill="#475569">?? ???? ?? ? ?? 5?</text>
+<rect x="32" y="126" width="1216" height="562" rx="28" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="176" font-size="22" font-weight="700" fill="#0f172a">Watchboard</text>
+<text x="64" y="204" font-size="17" fill="#475569">?? ?? ??? ?? ???? ???? ????</text>
+<rect x="64" y="220" width="168" height="240" rx="22" fill="#ffffff" stroke="#cbd5e1" />
+<text x="88" y="254" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="88" y="284" font-size="16" fill="#475569">??? ?? ????</text>
+<text x="88" y="310" font-size="16" fill="#475569">?? ?? ??</text>
+<text x="88" y="336" font-size="16" fill="#475569">?? ????? ??</text><rect x="310" y="220" width="168" height="240" rx="22" fill="#ffffff" stroke="#cbd5e1" />
+<text x="334" y="254" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="334" y="284" font-size="16" fill="#475569">??? ? ????</text>
+<text x="334" y="310" font-size="16" fill="#475569">?? ?? ??</text>
+<text x="334" y="336" font-size="16" fill="#475569">?? ????? ??</text><rect x="556" y="220" width="168" height="240" rx="22" fill="#ffffff" stroke="#cbd5e1" />
+<text x="580" y="254" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="580" y="284" font-size="16" fill="#475569">???? ???</text>
+<text x="580" y="310" font-size="16" fill="#475569">?? ?? ??</text>
+<text x="580" y="336" font-size="16" fill="#475569">?? ????? ??</text><rect x="802" y="220" width="168" height="240" rx="22" fill="#ffffff" stroke="#cbd5e1" />
+<text x="826" y="254" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="826" y="284" font-size="16" fill="#475569">?? ??? ????</text>
+<text x="826" y="310" font-size="16" fill="#475569">?? ?? ??</text>
+<text x="826" y="336" font-size="16" fill="#475569">?? ????? ??</text><rect x="1048" y="220" width="168" height="240" rx="22" fill="#ffffff" stroke="#cbd5e1" />
+<text x="1072" y="254" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="1072" y="284" font-size="16" fill="#475569">????? ? ??</text>
+<text x="1072" y="310" font-size="16" fill="#475569">?? ?? ??</text>
+<text x="1072" y="336" font-size="16" fill="#475569">?? ????? ??</text>
+</svg>

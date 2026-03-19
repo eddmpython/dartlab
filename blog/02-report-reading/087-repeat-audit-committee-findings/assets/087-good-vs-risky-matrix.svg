@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" fill="#f6f8fb" />
+<rect x="32" y="28" width="1216" height="72" rx="24" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="62" font-size="30" font-weight="700" fill="#0f172a">????? ?? ??</text>
+<text x="64" y="88" font-size="16" fill="#475569">????? ??? ?? vs ? ???? ?? ??</text>
+<rect x="64" y="170" width="500" height="430" rx="26" fill="#ecfeff" stroke="#cbd5e1" />
+<rect x="716" y="170" width="500" height="430" rx="26" fill="#fef2f2" stroke="#cbd5e1" />
+<text x="96" y="214" font-size="28" font-weight="700" fill="#0f766e">????? ?? ??? ??</text>
+<text x="704" y="214" font-size="28" font-weight="700" fill="#b91c1c">? ???? ?? ??</text>
+<text x="96" y="250" font-size="18" fill="#475569">- ??? ????</text><text x="96" y="298" font-size="18" fill="#475569">- ?? ??? ???</text><text x="96" y="346" font-size="18" fill="#475569">- ????? ??</text><text x="96" y="394" font-size="18" fill="#475569">- ?? ? ????</text>
+<text x="704" y="250" font-size="18" fill="#475569">- ??? ???</text><text x="704" y="298" font-size="18" fill="#475569">- ??? ?? ????</text><text x="704" y="346" font-size="18" fill="#475569">- ??????? ???</text><text x="704" y="394" font-size="18" fill="#475569">- ?? ??? ????</text>
+<text x="96" y="562" font-size="16" fill="#475569">??: ?? ??? ?? ??</text>
+<text x="704" y="562" font-size="16" fill="#475569">??: ??, ??, ?? ??</text>
+</svg>

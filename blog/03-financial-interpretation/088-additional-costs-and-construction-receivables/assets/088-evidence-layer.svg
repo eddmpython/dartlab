@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" fill="#f6f8fb" />
+<rect x="32" y="28" width="1216" height="72" rx="24" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="62" font-size="30" font-weight="700" fill="#0f172a">???? + ?????</text>
+<text x="64" y="88" font-size="16" fill="#475569">?? ?? ?? ?? ?? ???</text>
+<rect x="32" y="126" width="1216" height="562" rx="28" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="170" font-size="22" font-weight="700" fill="#0f172a">??? ? ??? ?? ??</text>
+<text x="64" y="198" font-size="17" fill="#475569">?? ? ?? ??? ??, ??, ?? ??? ?? ??</text>
+<rect x="56" y="210" width="256" height="220" rx="22" fill="#ecfeff" stroke="#cbd5e1" />
+<text x="80" y="244" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="80" y="274" font-size="16" fill="#475569">??? ? ? ???</text>
+<text x="80" y="300" font-size="16" fill="#475569">?? ???? ?? ??? ??</text>
+<text x="80" y="326" font-size="16" fill="#475569">?? ??? ?? ??? ??</text><rect x="360" y="210" width="256" height="220" rx="22" fill="#eff6ff" stroke="#cbd5e1" />
+<text x="384" y="244" font-size="22" font-weight="700" fill="#0f172a">?????</text>
+<text x="384" y="274" font-size="16" fill="#475569">?? ???? ????</text>
+<text x="384" y="300" font-size="16" fill="#475569">?? ???? ?? ??? ??</text>
+<text x="384" y="326" font-size="16" fill="#475569">?? ??? ?? ??? ??</text><rect x="664" y="210" width="256" height="220" rx="22" fill="#fff7ed" stroke="#cbd5e1" />
+<text x="688" y="244" font-size="22" font-weight="700" fill="#0f172a">????</text>
+<text x="688" y="274" font-size="16" fill="#475569">??? ?? ???</text>
+<text x="688" y="300" font-size="16" fill="#475569">?? ???? ?? ??? ??</text>
+<text x="688" y="326" font-size="16" fill="#475569">?? ??? ?? ??? ??</text><rect x="968" y="210" width="256" height="220" rx="22" fill="#fef2f2" stroke="#cbd5e1" />
+<text x="992" y="244" font-size="22" font-weight="700" fill="#0f172a">??????</text>
+<text x="992" y="274" font-size="16" fill="#475569">??? ????</text>
+<text x="992" y="300" font-size="16" fill="#475569">?? ???? ?? ??? ??</text>
+<text x="992" y="326" font-size="16" fill="#475569">?? ??? ?? ??? ??</text>
+</svg>

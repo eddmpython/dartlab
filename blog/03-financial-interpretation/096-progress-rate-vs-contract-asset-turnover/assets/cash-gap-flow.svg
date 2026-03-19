@@ -1,0 +1,63 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <text x="400" y="40" text-anchor="middle" font-size="18" font-weight="bold" fill="#2563eb">매출 인식 → 현금 수취 흐름과 간극 발생 지점</text>
+
+  <!-- Step 1: Revenue Recognition -->
+  <rect x="40" y="100" width="150" height="70" rx="10" fill="#2563eb" opacity="0.9"/>
+  <text x="115" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="white">매출 인식</text>
+  <text x="115" y="150" text-anchor="middle" font-size="11" fill="white">(진행률 기준)</text>
+
+  <!-- Arrow 1 -->
+  <line x1="190" y1="135" x2="240" y2="135" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- Step 2: Contract Asset -->
+  <rect x="240" y="100" width="150" height="70" rx="10" fill="#d97706" opacity="0.9"/>
+  <text x="315" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="white">계약자산</text>
+  <text x="315" y="150" text-anchor="middle" font-size="11" fill="white">(미청구공사)</text>
+
+  <!-- Arrow 2 -->
+  <line x1="390" y1="135" x2="440" y2="135" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- Step 3: Billing -->
+  <rect x="440" y="100" width="150" height="70" rx="10" fill="#059669" opacity="0.9"/>
+  <text x="515" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="white">청구</text>
+  <text x="515" y="150" text-anchor="middle" font-size="11" fill="white">(기성 검수 후)</text>
+
+  <!-- Arrow 3 -->
+  <line x1="590" y1="135" x2="640" y2="135" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- Step 4: Cash -->
+  <rect x="640" y="100" width="120" height="70" rx="10" fill="#059669" opacity="0.7"/>
+  <text x="700" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="white">현금 수취</text>
+  <text x="700" y="150" text-anchor="middle" font-size="11" fill="white">(입금)</text>
+
+  <!-- Gap Zone 1 -->
+  <rect x="190" y="210" width="250" height="80" rx="8" fill="#dc2626" opacity="0.08" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6"/>
+  <text x="315" y="238" text-anchor="middle" font-size="14" font-weight="bold" fill="#dc2626">간극 1: 인식 vs 청구</text>
+  <text x="315" y="258" text-anchor="middle" font-size="12" fill="#dc2626">진행률은 올랐지만 기성이 승인되지 않음</text>
+  <text x="315" y="278" text-anchor="middle" font-size="11" fill="#6b7280">→ 계약자산(미청구공사) 누적</text>
+
+  <!-- Gap Zone 2 -->
+  <rect x="440" y="320" width="320" height="80" rx="8" fill="#d97706" opacity="0.08" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6"/>
+  <text x="600" y="348" text-anchor="middle" font-size="14" font-weight="bold" fill="#d97706">간극 2: 청구 vs 수금</text>
+  <text x="600" y="368" text-anchor="middle" font-size="12" fill="#d97706">청구는 했지만 발주처가 지급을 미룸</text>
+  <text x="600" y="388" text-anchor="middle" font-size="11" fill="#6b7280">→ 매출채권 증가 + 현금 부족</text>
+
+  <!-- Connecting lines -->
+  <path d="M240,170 L240,210" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4"/>
+  <path d="M440,170 L440,210" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4"/>
+  <path d="M515,170 L515,320" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4"/>
+  <path d="M700,170 L700,320" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4"/>
+
+  <!-- Bottom summary -->
+  <rect x="100" y="430" width="600" height="50" rx="8" fill="white" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="400" y="455" text-anchor="middle" font-size="13" fill="#2563eb" font-weight="600">두 간극이 동시에 벌어지면 → 이익은 나오는데 현금이 빠지는 구조</text>
+  <text x="400" y="472" text-anchor="middle" font-size="11" fill="#6b7280">영업현금흐름 / 순이익 비율 하락이 이 구조의 결과다</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowGray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+<text x="400" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#2563eb">출자전환 후 지분 손상 경로</text>
+
+<!-- Timeline -->
+<rect x="60" y="65" width="680" height="5" rx="2.5" fill="#6b7280" fill-opacity="0.25"/>
+
+<!-- Stage 0 -->
+<circle cx="100" cy="67" r="8" fill="#059669"/>
+<text x="100" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">전환 시점</text>
+<rect x="40" y="85" width="140" height="100" rx="10" fill="#fff" stroke="#059669" stroke-width="1.5"/>
+<text x="110" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">지분 취득</text>
+<text x="110" y="128" text-anchor="middle" font-size="11" fill="#6b7280">장부가 100억</text>
+<text x="110" y="146" text-anchor="middle" font-size="11" fill="#6b7280">손상 징후 없음</text>
+<text x="110" y="164" text-anchor="middle" font-size="11" fill="#6b7280">(표면상)</text>
+
+<!-- Stage 1 -->
+<circle cx="280" cy="67" r="8" fill="#d97706"/>
+<text x="280" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#d97706">1~2년 후</text>
+<rect x="210" y="85" width="140" height="100" rx="10" fill="#fff" stroke="#d97706" stroke-width="1.5"/>
+<text x="280" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#d97706">징후 포착</text>
+<text x="280" y="128" text-anchor="middle" font-size="11" fill="#6b7280">관계사 영업적자</text>
+<text x="280" y="146" text-anchor="middle" font-size="11" fill="#6b7280">자본잠식 진행</text>
+<text x="280" y="164" text-anchor="middle" font-size="11" fill="#d97706">손상 검사 필요</text>
+
+<!-- Stage 2 -->
+<circle cx="460" cy="67" r="8" fill="#dc2626"/>
+<text x="460" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#dc2626">2~3년 후</text>
+<rect x="390" y="85" width="140" height="100" rx="10" fill="#fff" stroke="#dc2626" stroke-width="1.5"/>
+<text x="460" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#dc2626">손상 인식</text>
+<text x="460" y="128" text-anchor="middle" font-size="11" fill="#6b7280">장부가 100 → 40억</text>
+<text x="460" y="146" text-anchor="middle" font-size="11" fill="#dc2626">손상차손 60억</text>
+<text x="460" y="164" text-anchor="middle" font-size="11" fill="#6b7280">당기순이익 급감</text>
+
+<!-- Stage 3 -->
+<circle cx="660" cy="67" r="8" fill="#6b7280"/>
+<text x="660" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#6b7280">추가 악화 시</text>
+<rect x="590" y="85" width="140" height="100" rx="10" fill="#fff" stroke="#6b7280" stroke-width="1.5"/>
+<text x="660" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#6b7280">추가 손상</text>
+<text x="660" y="128" text-anchor="middle" font-size="11" fill="#6b7280">장부가 40 → 0억</text>
+<text x="660" y="146" text-anchor="middle" font-size="11" fill="#6b7280">전액 상각</text>
+<text x="660" y="164" text-anchor="middle" font-size="11" fill="#dc2626">총 손실 100억 확정</text>
+
+<!-- Arrows -->
+<line x1="180" y1="135" x2="208" y2="135" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arw3)"/>
+<line x1="350" y1="135" x2="388" y2="135" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arw3)"/>
+<line x1="530" y1="135" x2="588" y2="135" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arw3)"/>
+
+<!-- Impact comparison -->
+<rect x="40" y="210" width="350" height="120" rx="12" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="215" y="238" text-anchor="middle" font-size="14" font-weight="700" fill="#2563eb">지분법 적용 시</text>
+<text x="60" y="262" font-size="12" fill="#6b7280">관계사 순손실의 지분율만큼 자동 반영</text>
+<text x="60" y="282" font-size="12" fill="#6b7280">매 분기 손실이 드러남</text>
+<text x="60" y="302" font-size="12" fill="#059669">→ 손실 인식이 분산되어 점진적</text>
+<text x="60" y="320" font-size="12" fill="#059669">→ 투자자가 추세를 볼 수 있다</text>
+
+<rect x="410" y="210" width="350" height="120" rx="12" fill="#fff" stroke="#dc2626" stroke-width="1.5"/>
+<text x="585" y="238" text-anchor="middle" font-size="14" font-weight="700" fill="#dc2626">공정가치 측정 시</text>
+<text x="430" y="262" font-size="12" fill="#6b7280">비상장이면 공정가치 산정 자체가 주관적</text>
+<text x="430" y="282" font-size="12" fill="#6b7280">손상 시점 판단이 경영진 재량</text>
+<text x="430" y="302" font-size="12" fill="#dc2626">→ 손실 인식이 한꺼번에 몰릴 수 있음</text>
+<text x="430" y="320" font-size="12" fill="#dc2626">→ 투자자가 징후를 미리 보기 어렵다</text>
+
+<!-- Bottom summary -->
+<rect x="100" y="360" width="600" height="110" rx="14" fill="#dc2626" fill-opacity="0.06" stroke="#dc2626" stroke-width="1.5"/>
+<text x="400" y="388" text-anchor="middle" font-size="15" font-weight="700" fill="#dc2626">손상 경로 핵심</text>
+<text x="400" y="412" text-anchor="middle" font-size="12" fill="#6b7280">출자전환 시점에 손실이 확정되지 않고 → 지분으로 옮겨진 뒤</text>
+<text x="400" y="432" text-anchor="middle" font-size="12" fill="#6b7280">1~3년에 걸쳐 손상이 나눠서 또는 한꺼번에 잡히는 구조</text>
+<text x="400" y="454" text-anchor="middle" font-size="13" font-weight="600" fill="#dc2626">결국 처음 채권 100억 중 회수된 현금은 0원이 될 수 있다</text>
+
+<defs>
+  <marker id="arw3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+  </marker>
+</defs>
+</svg>

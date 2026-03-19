@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect width="1280" height="720" fill="#FFFDF8"/>
+<text x="70" y="82" font-size="34" font-weight="700" fill="#1E429F">??? ??? ?? ?????</text>
+<text x="70" y="116" font-size="18" fill="#475569">??? ?? ??? ??? 5?? ?? ??</text>
+<rect x="60" y="220" rx="22" ry="22" width="200" height="220" fill="#E0E7FF" stroke="#1E429F" stroke-width="2"/>
+<circle cx="94" cy="254" r="22" fill="#1E429F"/>
+<text x="94" y="261" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">1</text>
+<text x="128" y="258" font-size="24" font-weight="700" fill="#172554">Step 1</text>
+<text x="86" y="294" font-size="18" fill="#334155">? ???? ?? ?? ??</text>
+<line x1="260" y1="330" x2="280" y2="330" stroke="#1E429F" stroke-width="4" stroke-linecap="round"/>
+<polygon points="280,330 266,322 266,338" fill="#1E429F"/>
+<rect x="300" y="220" rx="22" ry="22" width="200" height="220" fill="#E0E7FF" stroke="#1E429F" stroke-width="2"/>
+<circle cx="334" cy="254" r="22" fill="#1E429F"/>
+<text x="334" y="261" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">2</text>
+<text x="368" y="258" font-size="24" font-weight="700" fill="#172554">Step 2</text>
+<text x="326" y="294" font-size="18" fill="#334155">? ?? ??? ?? ??</text>
+<line x1="500" y1="330" x2="520" y2="330" stroke="#1E429F" stroke-width="4" stroke-linecap="round"/>
+<polygon points="520,330 506,322 506,338" fill="#1E429F"/>
+<rect x="540" y="220" rx="22" ry="22" width="200" height="220" fill="#E0E7FF" stroke="#1E429F" stroke-width="2"/>
+<circle cx="574" cy="254" r="22" fill="#1E429F"/>
+<text x="574" y="261" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">3</text>
+<text x="608" y="258" font-size="24" font-weight="700" fill="#172554">Step 3</text>
+<text x="566" y="294" font-size="18" fill="#334155">? ?? ??? ?? ??</text>
+<line x1="740" y1="330" x2="760" y2="330" stroke="#1E429F" stroke-width="4" stroke-linecap="round"/>
+<polygon points="760,330 746,322 746,338" fill="#1E429F"/>
+<rect x="780" y="220" rx="22" ry="22" width="200" height="220" fill="#E0E7FF" stroke="#1E429F" stroke-width="2"/>
+<circle cx="814" cy="254" r="22" fill="#1E429F"/>
+<text x="814" y="261" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">4</text>
+<text x="848" y="258" font-size="24" font-weight="700" fill="#172554">Step 4</text>
+<text x="806" y="294" font-size="18" fill="#334155">? ??? ?? ?? ??</text>
+<line x1="980" y1="330" x2="1000" y2="330" stroke="#1E429F" stroke-width="4" stroke-linecap="round"/>
+<polygon points="1000,330 986,322 986,338" fill="#1E429F"/>
+<rect x="1020" y="220" rx="22" ry="22" width="200" height="220" fill="#E0E7FF" stroke="#1E429F" stroke-width="2"/>
+<circle cx="1054" cy="254" r="22" fill="#1E429F"/>
+<text x="1054" y="261" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">5</text>
+<text x="1088" y="258" font-size="24" font-weight="700" fill="#172554">Step 5</text>
+<text x="1046" y="294" font-size="18" fill="#334155">? ?? ?? ?? ??</text>
+<text x="70" y="520" font-size="20" fill="#475569">??: ? ???? ??, ? 5??? ??? ??? ?? ??? ??? ??? ??? ???.</text>
+</svg>

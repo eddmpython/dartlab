@@ -1,0 +1,16 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">077 Good vs Risky</title>
+  <desc id="desc">Gain quality vs liquidity pressure</desc>
+  <rect width="1280" height="720" fill="#0e1a2d"/>
+  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">077 Good vs Risky</text>
+  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Gain quality vs liquidity pressure</text>
+  <rect x="160" y="170" width="900" height="420" rx="26" fill="#ffffff" opacity="0.95"/>
+  <line x1="610" y1="170" x2="610" y2="590" stroke="#27486d" stroke-width="4"/>
+  <line x1="160" y1="380" x2="1060" y2="380" stroke="#27486d" stroke-width="4"/>
+  <text x="610" y="640" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">Heavier liquidity pressure  →</text>
+  <text x="58" y="390" transform="rotate(-90 58 390)" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">↑ Better gain quality</text>
+  <text x="385" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Healthy Sale</text><text x="385" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Non-core sold and cash stays</text>
+  <text x="835" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Partial Relief</text><text x="835" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Gain looks good, debt still near</text>
+  <text x="385" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Optics Risk</text><text x="385" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Little pressure but gain dominates story</text>
+  <text x="835" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Crisis Mask</text><text x="835" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Gain headline, liquidity still weak</text>
+</svg>

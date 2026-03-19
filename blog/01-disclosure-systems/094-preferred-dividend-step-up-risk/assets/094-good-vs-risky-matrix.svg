@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect width="1280" height="720" fill="#FFFDF9"/>
+<text x="70" y="82" font-size="34" font-weight="700" fill="#065F46">??? ?? ??? ??</text>
+<text x="70" y="116" font-size="18" fill="#475569">????? ?? ??? ?? vs ? ???? ?? ??</text>
+<rect x="70" y="150" width="500" height="450" rx="24" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<rect x="710" y="150" width="500" height="450" rx="24" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+<text x="320" y="196" text-anchor="middle" font-size="28" font-weight="700" fill="#14532D">????? ?? ??</text>
+<text x="960" y="196" text-anchor="middle" font-size="28" font-weight="700" fill="#7F1D1D">? ???? ?</text>
+<text x="100" y="250" font-size="20" fill="#166534">? ?? ?? ??</text>
+<text x="740" y="250" font-size="20" fill="#991B1B">? ?? ??</text>
+<text x="100" y="318" font-size="20" fill="#166534">? ?? ?? ??</text>
+<text x="740" y="318" font-size="20" fill="#991B1B">? ?? ??? ???</text>
+<text x="100" y="386" font-size="20" fill="#166534">? ?? ?? ??</text>
+<text x="740" y="386" font-size="20" fill="#991B1B">? ?? ?? ??</text>
+<text x="100" y="454" font-size="20" fill="#166534">? ?? ?? ??</text>
+<text x="740" y="454" font-size="20" fill="#991B1B">? ?? ??? ?? ??</text>
+<text x="100" y="522" font-size="20" fill="#166534">? ??? ? ?? ??</text>
+<text x="740" y="522" font-size="20" fill="#991B1B">? ???? ? ??</text>
+<text x="70" y="650" font-size="19" fill="#475569">??: ?? ??? ?? ???? ??? ??, ??? ??? ??? ??? ??? ???? ??.</text>
+</svg>

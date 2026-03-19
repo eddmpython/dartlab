@@ -1,0 +1,80 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, sans-serif">
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e293b">통제 미비 유형 × 영향 수준 위험도 매트릭스</text>
+
+  <!-- Axis labels -->
+  <text x="30" y="270" text-anchor="middle" font-size="13" font-weight="bold" fill="#6b7280" transform="rotate(-90, 30, 270)">영향 수준</text>
+  <text x="430" y="480" text-anchor="middle" font-size="13" font-weight="bold" fill="#6b7280">통제 미비 유형</text>
+
+  <!-- Y-axis labels -->
+  <text x="115" y="110" text-anchor="end" font-size="12" fill="#374151">전사적 통제</text>
+  <text x="115" y="200" text-anchor="end" font-size="12" fill="#374151">복수 계정</text>
+  <text x="115" y="290" text-anchor="end" font-size="12" fill="#374151">단일 계정</text>
+  <text x="115" y="380" text-anchor="end" font-size="12" fill="#374151">단일 거래</text>
+
+  <!-- X-axis labels -->
+  <text x="270" y="460" text-anchor="middle" font-size="12" fill="#374151">설계 미비</text>
+  <text x="270" y="446" text-anchor="middle" font-size="10" fill="#6b7280">(절차 부재)</text>
+  <text x="530" y="460" text-anchor="middle" font-size="12" fill="#374151">운영 미비</text>
+  <text x="530" y="446" text-anchor="middle" font-size="10" fill="#6b7280">(절차 미준수)</text>
+
+  <!-- Grid lines -->
+  <line x1="130" y1="65" x2="130" y2="425" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="130" y1="425" x2="670" y2="425" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="400" y1="65" x2="400" y2="425" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="130" y1="155" x2="670" y2="155" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="130" y1="245" x2="670" y2="245" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="130" y1="335" x2="670" y2="335" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- Row 1: 전사적 통제 -->
+  <!-- 설계 미비 -->
+  <rect x="165" y="80" width="200" height="60" rx="6" fill="#d97706" fill-opacity="0.15" stroke="#d97706" stroke-width="1.5"/>
+  <text x="265" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97706">경고</text>
+  <text x="265" y="125" text-anchor="middle" font-size="10" fill="#92400e">절차 신설로 시정 가능하나</text>
+  <text x="265" y="137" text-anchor="middle" font-size="10" fill="#92400e">전사 영향 범위 넓음</text>
+
+  <!-- 운영 미비 -->
+  <rect x="435" y="80" width="200" height="60" rx="6" fill="#dc2626" fill-opacity="0.2" stroke="#dc2626" stroke-width="2"/>
+  <text x="535" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">심각 경고</text>
+  <text x="535" y="125" text-anchor="middle" font-size="10" fill="#991b1b">조직 문화·경영진 의지 문제</text>
+  <text x="535" y="137" text-anchor="middle" font-size="10" fill="#991b1b">시정 난이도 매우 높음</text>
+
+  <!-- Row 2: 복수 계정 -->
+  <rect x="165" y="170" width="200" height="60" rx="6" fill="#d97706" fill-opacity="0.1" stroke="#d97706" stroke-width="1"/>
+  <text x="265" y="195" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97706">주의</text>
+  <text x="265" y="215" text-anchor="middle" font-size="10" fill="#92400e">복수 절차 신설 필요</text>
+
+  <rect x="435" y="170" width="200" height="60" rx="6" fill="#dc2626" fill-opacity="0.15" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="535" y="195" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">경고</text>
+  <text x="535" y="215" text-anchor="middle" font-size="10" fill="#991b1b">재무제표 전반 신뢰 저하</text>
+
+  <!-- Row 3: 단일 계정 -->
+  <rect x="165" y="260" width="200" height="60" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="265" y="285" text-anchor="middle" font-size="13" font-weight="bold" fill="#059669">모니터링</text>
+  <text x="265" y="305" text-anchor="middle" font-size="10" fill="#065f46">시정 계획 확인 후 추적</text>
+
+  <rect x="435" y="260" width="200" height="60" rx="6" fill="#d97706" fill-opacity="0.1" stroke="#d97706" stroke-width="1"/>
+  <text x="535" y="285" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97706">주의</text>
+  <text x="535" y="305" text-anchor="middle" font-size="10" fill="#92400e">해당 계정 + 연관 계정 점검</text>
+
+  <!-- Row 4: 단일 거래 -->
+  <rect x="165" y="350" width="200" height="60" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="265" y="375" text-anchor="middle" font-size="13" font-weight="bold" fill="#059669">낮음</text>
+  <text x="265" y="395" text-anchor="middle" font-size="10" fill="#065f46">절차 추가로 해결 가능</text>
+
+  <rect x="435" y="350" width="200" height="60" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="535" y="375" text-anchor="middle" font-size="13" font-weight="bold" fill="#059669">모니터링</text>
+  <text x="535" y="395" text-anchor="middle" font-size="10" fill="#065f46">담당자 교육·점검 강화</text>
+
+  <!-- Legend arrow -->
+  <line x1="700" y1="100" x2="700" y2="400" stroke="#dc2626" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <text x="720" y="110" font-size="10" fill="#dc2626">높음</text>
+  <text x="720" y="400" font-size="10" fill="#059669">낮음</text>
+  <text x="720" y="250" font-size="10" fill="#6b7280" transform="rotate(90, 720, 250)">위험도</text>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+  </defs>
+</svg>

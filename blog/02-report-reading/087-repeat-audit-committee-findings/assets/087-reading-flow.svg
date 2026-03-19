@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8" />
+  </marker>
+</defs>
+<rect x="0" y="0" width="1280" height="720" fill="#f6f8fb" />
+<rect x="32" y="28" width="1216" height="72" rx="24" fill="#ffffff" stroke="#cbd5e1" />
+<text x="64" y="62" font-size="30" font-weight="700" fill="#0f172a">????? ?? ??</text>
+<text x="64" y="88" font-size="16" fill="#475569">??? ?? ???? ??? 5??</text>
+<rect x="32" y="126" width="1216" height="562" rx="28" fill="#ffffff" stroke="#cbd5e1" />
+<rect x="48" y="180" width="192" height="150" rx="22" fill="#ecfeff" stroke="#cbd5e1" />
+<text x="72" y="214" font-size="22" font-weight="700" fill="#0f172a">1. ?? ?? ??</text>
+<text x="72" y="244" font-size="16" fill="#475569">?? ??? ?? ???</text>
+<text x="72" y="270" font-size="16" fill="#475569">?? ??? ??? ??</text><rect x="296" y="180" width="192" height="150" rx="22" fill="#eff6ff" stroke="#cbd5e1" />
+<text x="320" y="214" font-size="22" font-weight="700" fill="#0f172a">2. ?? ???? ??</text>
+<text x="320" y="244" font-size="16" fill="#475569">?? ??? ?? ???</text>
+<text x="320" y="270" font-size="16" fill="#475569">?? ??? ??? ??</text><rect x="544" y="180" width="192" height="150" rx="22" fill="#ecfeff" stroke="#cbd5e1" />
+<text x="568" y="214" font-size="22" font-weight="700" fill="#0f172a">3. ??? ?? ??</text>
+<text x="568" y="244" font-size="16" fill="#475569">?? ??? ?? ???</text>
+<text x="568" y="270" font-size="16" fill="#475569">?? ??? ??? ??</text><rect x="792" y="180" width="192" height="150" rx="22" fill="#eff6ff" stroke="#cbd5e1" />
+<text x="816" y="214" font-size="22" font-weight="700" fill="#0f172a">4. ?? ?? ??</text>
+<text x="816" y="244" font-size="16" fill="#475569">?? ??? ?? ???</text>
+<text x="816" y="270" font-size="16" fill="#475569">?? ??? ??? ??</text><rect x="1040" y="180" width="192" height="150" rx="22" fill="#ecfeff" stroke="#cbd5e1" />
+<text x="1064" y="214" font-size="22" font-weight="700" fill="#0f172a">5. ?? ? ?? ??</text>
+<text x="1064" y="244" font-size="16" fill="#475569">?? ??? ?? ???</text>
+<text x="1064" y="270" font-size="16" fill="#475569">?? ??? ??? ??</text>
+<line x1="240" y1="255" x2="282" y2="255" stroke="#1d4ed8" stroke-width="4" marker-end="url(#arrow)" /><line x1="488" y1="255" x2="530" y2="255" stroke="#1d4ed8" stroke-width="4" marker-end="url(#arrow)" /><line x1="736" y1="255" x2="778" y2="255" stroke="#1d4ed8" stroke-width="4" marker-end="url(#arrow)" /><line x1="984" y1="255" x2="1026" y2="255" stroke="#1d4ed8" stroke-width="4" marker-end="url(#arrow)" />
+<text x="64" y="396" font-size="22" font-weight="700" fill="#0f172a">?? ??</text>
+<text x="64" y="430" font-size="18" fill="#475569">? ? ???? ??? ??? ?? ???</text>
+<text x="64" y="458" font-size="18" fill="#475569">??, ??, ?? ??? ?? ???? ????</text>
+<text x="64" y="486" font-size="18" fill="#475569">??? ??? ??? ??? ?? ?? ??</text>
+</svg>

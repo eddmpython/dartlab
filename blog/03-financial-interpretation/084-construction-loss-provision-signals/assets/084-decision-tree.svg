@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">084 Decision Tree</title>
+  <desc id="desc">Separate one project issue from a structural pattern</desc>
+  <rect width="1280" height="720" fill="#0f172a"/>
+  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">084 Decision Tree</text>
+  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Separate one project issue from a structural pattern</text>
+  <rect x="450" y="170" width="380" height="120" rx="28" fill="#f8fbff"/>
+  <text x="640" y="225" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Is this isolated or spread across the book?</text>
+  <text x="640" y="255" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#4d6782">Start with the root question</text>
+  <path d="M640 290 L640 360" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M640 360 L280 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M640 360 L640 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M640 360 L1000 420" stroke="#9cc7ff" stroke-width="6" stroke-linecap="round"/>
+  <rect x="120" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
+  <rect x="480" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
+  <rect x="840" y="420" width="320" height="180" rx="28" fill="#ffffff" opacity="0.97"/>
+  <text x="280" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#1f7a4d">Isolated issue</text>
+  <text x="280" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">One project and quick cleanup</text>
+  <text x="640" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#2467a8">Watch closely</text>
+  <text x="640" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">More than one weak sign</text>
+  <text x="1000" y="486" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#b34b2b">Structural issue</text>
+  <text x="1000" y="528" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#43607b">Price, billing, cash all weaken</text>
+  <text x="72" y="660" font-size="22" font-family="Arial, sans-serif" fill="#d8e3f1">The earlier warning signs matter more than the one provision.</text>
+</svg>

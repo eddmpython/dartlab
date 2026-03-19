@@ -1,0 +1,79 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#2563eb">분기별 추적 타임라인 — 무엇을 언제 확인하나</text>
+
+  <!-- Timeline line -->
+  <line x1="80" y1="100" x2="720" y2="100" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Quarter markers -->
+  <circle cx="140" cy="100" r="12" fill="#2563eb"/>
+  <text x="140" y="105" text-anchor="middle" font-size="11" fill="white" font-weight="bold">1Q</text>
+
+  <circle cx="300" cy="100" r="12" fill="#d97706"/>
+  <text x="300" y="105" text-anchor="middle" font-size="11" fill="white" font-weight="bold">2Q</text>
+
+  <circle cx="460" cy="100" r="12" fill="#d97706"/>
+  <text x="460" y="105" text-anchor="middle" font-size="11" fill="white" font-weight="bold">3Q</text>
+
+  <circle cx="620" cy="100" r="12" fill="#dc2626"/>
+  <text x="620" y="105" text-anchor="middle" font-size="11" fill="white" font-weight="bold">4Q</text>
+
+  <!-- Q1 tasks -->
+  <rect x="60" y="130" width="160" height="160" rx="8" fill="white" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="140" y="152" text-anchor="middle" font-size="13" font-weight="bold" fill="#2563eb">괴리 발견 분기</text>
+  <line x1="75" y1="162" x2="205" y2="162" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="78" y="182" font-size="11" fill="#333">계약자산 증가율 체크</text>
+  <text x="78" y="200" font-size="11" fill="#333">진행률 변동폭 확인</text>
+  <text x="78" y="218" font-size="11" fill="#333">청구율 추이 비교</text>
+  <text x="78" y="236" font-size="11" fill="#333">OCF/NI 비율 산출</text>
+  <text x="78" y="258" font-size="10" fill="#059669" font-weight="600">→ 위험도 1차 분류</text>
+
+  <!-- Q2 tasks -->
+  <rect x="220" y="130" width="160" height="160" rx="8" fill="white" stroke="#d97706" stroke-width="1.5"/>
+  <text x="300" y="152" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97706">1차 검증 분기</text>
+  <line x1="235" y1="162" x2="365" y2="162" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="238" y="182" font-size="11" fill="#333">계약자산 잔액 변동</text>
+  <text x="238" y="200" font-size="11" fill="#333">총예정원가 변경 여부</text>
+  <text x="238" y="218" font-size="11" fill="#333">계약부채 동반 감소?</text>
+  <text x="238" y="236" font-size="11" fill="#333">발주처 재무 상태</text>
+  <text x="238" y="258" font-size="10" fill="#d97706" font-weight="600">→ 지속 vs 회복 판단</text>
+
+  <!-- Q3 tasks -->
+  <rect x="380" y="130" width="160" height="160" rx="8" fill="white" stroke="#d97706" stroke-width="1.5"/>
+  <text x="460" y="152" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97706">추세 확정 분기</text>
+  <line x1="395" y1="162" x2="525" y2="162" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="398" y="182" font-size="11" fill="#333">3분기 연속 악화 여부</text>
+  <text x="398" y="200" font-size="11" fill="#333">충당부채 신규 설정?</text>
+  <text x="398" y="218" font-size="11" fill="#333">매출채권 회전일 변동</text>
+  <text x="398" y="236" font-size="11" fill="#333">핵심감사사항 확인</text>
+  <text x="398" y="258" font-size="10" fill="#d97706" font-weight="600">→ 구조적 문제 확정</text>
+
+  <!-- Q4 tasks -->
+  <rect x="540" y="130" width="160" height="160" rx="8" fill="white" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="620" y="152" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">결과 확인 분기</text>
+  <line x1="555" y1="162" x2="685" y2="162" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="558" y="182" font-size="11" fill="#333">손실 전환 프로젝트?</text>
+  <text x="558" y="200" font-size="11" fill="#333">계약자산 손상 검토</text>
+  <text x="558" y="218" font-size="11" fill="#333">연간 감사보고서 확인</text>
+  <text x="558" y="236" font-size="11" fill="#333">차기 수주 조건 변화</text>
+  <text x="558" y="258" font-size="10" fill="#dc2626" font-weight="600">→ 투자 판단 재검토</text>
+
+  <!-- Bottom note -->
+  <rect x="100" y="330" width="600" height="70" rx="8" fill="white" stroke="#6b7280" stroke-width="1"/>
+  <text x="400" y="355" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">핵심 원칙</text>
+  <text x="400" y="375" text-anchor="middle" font-size="12" fill="#6b7280">한 분기 괴리 → 모니터링 | 2분기 지속 → 원인 분석 | 3분기 이상 → 구조적 대응</text>
+  <text x="400" y="393" text-anchor="middle" font-size="11" fill="#6b7280">괴리 크기보다 지속 기간이 위험도를 결정한다</text>
+
+  <!-- Escalation arrows at bottom -->
+  <rect x="140" y="430" width="100" height="30" rx="6" fill="#059669" opacity="0.15"/>
+  <text x="190" y="450" text-anchor="middle" font-size="11" fill="#059669" font-weight="600">관찰</text>
+  <text x="260" y="450" font-size="14" fill="#6b7280">→</text>
+  <rect x="280" y="430" width="100" height="30" rx="6" fill="#d97706" opacity="0.15"/>
+  <text x="330" y="450" text-anchor="middle" font-size="11" fill="#d97706" font-weight="600">경계</text>
+  <text x="400" y="450" font-size="14" fill="#6b7280">→</text>
+  <rect x="420" y="430" width="100" height="30" rx="6" fill="#dc2626" opacity="0.15"/>
+  <text x="470" y="450" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="600">위험</text>
+  <text x="540" y="450" font-size="14" fill="#6b7280">→</text>
+  <rect x="560" y="430" width="100" height="30" rx="6" fill="#dc2626" opacity="0.3"/>
+  <text x="610" y="450" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="600">대응·판단</text>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f3f4f6" rx="12"/>
+<text x="400" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#dc2626">출자전환에서 왜곡이 생기는 지점</text>
+
+<!-- Timeline bar -->
+<rect x="60" y="65" width="680" height="6" rx="3" fill="#6b7280" fill-opacity="0.2"/>
+<circle cx="140" cy="68" r="10" fill="#2563eb"/>
+<circle cx="340" cy="68" r="10" fill="#d97706"/>
+<circle cx="540" cy="68" r="10" fill="#dc2626"/>
+<circle cx="700" cy="68" r="10" fill="#059669"/>
+
+<text x="140" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">채권 발생</text>
+<text x="340" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#d97706">회수 지연</text>
+<text x="540" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#dc2626">출자전환</text>
+<text x="700" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">후속 평가</text>
+
+<!-- Distortion 1 -->
+<rect x="40" y="95" width="340" height="115" rx="12" fill="#fff" stroke="#d97706" stroke-width="1.5"/>
+<text x="60" y="120" font-size="14" font-weight="700" fill="#d97706">왜곡 1: 충당금 지연</text>
+<text x="60" y="142" font-size="12" fill="#6b7280">채권 회수 가능성이 낮아졌는데</text>
+<text x="60" y="160" font-size="12" fill="#6b7280">충당금을 쌓지 않고 출자전환으로 넘기면</text>
+<text x="60" y="178" font-size="12" fill="#dc2626">→ 손실 인식을 우회한 것</text>
+<text x="60" y="196" font-size="12" fill="#6b7280">손익계산서에 비용이 안 잡힌다</text>
+
+<!-- Distortion 2 -->
+<rect x="420" y="95" width="340" height="115" rx="12" fill="#fff" stroke="#dc2626" stroke-width="1.5"/>
+<text x="440" y="120" font-size="14" font-weight="700" fill="#dc2626">왜곡 2: 전환 가격 부풀리기</text>
+<text x="440" y="142" font-size="12" fill="#6b7280">관계사 주식 공정가치가 50억인데</text>
+<text x="440" y="160" font-size="12" fill="#6b7280">채권 100억을 주식 100억으로 전환하면</text>
+<text x="440" y="178" font-size="12" fill="#dc2626">→ 50억 손실이 장부에 안 보인다</text>
+<text x="440" y="196" font-size="12" fill="#6b7280">과대계상된 투자자산이 생긴다</text>
+
+<!-- Distortion 3 -->
+<rect x="40" y="230" width="340" height="115" rx="12" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="60" y="255" font-size="14" font-weight="700" fill="#2563eb">왜곡 3: 후속 손상 지연</text>
+<text x="60" y="277" font-size="12" fill="#6b7280">전환 후 지분을 오래 들고 있으면서</text>
+<text x="60" y="295" font-size="12" fill="#6b7280">공정가치가 떨어져도 손상을 안 잡으면</text>
+<text x="60" y="313" font-size="12" fill="#dc2626">→ 또 한 번 손실 인식이 지연된다</text>
+<text x="60" y="331" font-size="12" fill="#6b7280">이중 지연 구조가 형성된다</text>
+
+<!-- Distortion 4 -->
+<rect x="420" y="230" width="340" height="115" rx="12" fill="#fff" stroke="#059669" stroke-width="1.5"/>
+<text x="440" y="255" font-size="14" font-weight="700" fill="#059669">왜곡 4: 지분법 적용 회피</text>
+<text x="440" y="277" font-size="12" fill="#6b7280">유의적 영향력이 있는데도</text>
+<text x="440" y="295" font-size="12" fill="#6b7280">기타포괄손익-공정가치로 분류하면</text>
+<text x="440" y="313" font-size="12" fill="#dc2626">→ 관계사 손실이 내 손익에 반영 안 됨</text>
+<text x="440" y="331" font-size="12" fill="#6b7280">지분법이면 손실 반영이 자동이다</text>
+
+<!-- Bottom warning -->
+<rect x="100" y="380" width="600" height="90" rx="14" fill="#dc2626" fill-opacity="0.06" stroke="#dc2626" stroke-width="1.5"/>
+<text x="400" y="408" text-anchor="middle" font-size="15" font-weight="700" fill="#dc2626">4개 왜곡이 겹치면</text>
+<text x="400" y="430" text-anchor="middle" font-size="13" fill="#6b7280">채권 100억이 장부에서 사라지고 손익에도 안 잡히고</text>
+<text x="400" y="450" text-anchor="middle" font-size="13" fill="#6b7280">투자자산 100억이 남지만 실질 가치는 그보다 훨씬 작을 수 있다</text>
+</svg>

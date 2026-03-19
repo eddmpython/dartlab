@@ -1,0 +1,109 @@
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, sans-serif">
+  <defs>
+    <marker id="arrowFlow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+    </marker>
+    <marker id="arrowRed2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1e293b">ICFR 비적정 + 감사의견 적정 — 의사결정 흐름도</text>
+
+  <!-- Start -->
+  <rect x="280" y="48" width="240" height="40" rx="20" fill="#2563eb" fill-opacity="0.1" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="73" text-anchor="middle" font-size="13" font-weight="bold" fill="#2563eb">ICFR 비적정 확인</text>
+
+  <line x1="400" y1="88" x2="400" y2="110" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+
+  <!-- Decision 1: 취약점 유형 -->
+  <polygon points="400,112 520,152 400,192 280,152" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">취약점 유형?</text>
+  <text x="400" y="162" text-anchor="middle" font-size="10" fill="#6b7280">설계 vs 운영</text>
+
+  <!-- Left: 설계 미비 -->
+  <line x1="280" y1="152" x2="140" y2="152" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="210" y="143" text-anchor="middle" font-size="10" fill="#059669">설계 미비</text>
+
+  <rect x="40" y="132" width="100" height="40" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="90" y="150" text-anchor="middle" font-size="10" font-weight="bold" fill="#059669">시정 용이</text>
+  <text x="90" y="165" text-anchor="middle" font-size="9" fill="#059669">절차 신설 가능</text>
+
+  <!-- Right: 운영 미비 -->
+  <line x1="520" y1="152" x2="660" y2="152" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+  <text x="590" y="143" text-anchor="middle" font-size="10" fill="#dc2626">운영 미비</text>
+
+  <rect x="660" y="132" width="110" height="40" rx="6" fill="#dc2626" fill-opacity="0.1" stroke="#dc2626" stroke-width="1"/>
+  <text x="715" y="150" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">시정 어려움</text>
+  <text x="715" y="165" text-anchor="middle" font-size="9" fill="#dc2626">조직·문화 문제</text>
+
+  <!-- Arrow down from decision 1 -->
+  <line x1="400" y1="192" x2="400" y2="215" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+
+  <!-- Decision 2: 반복 여부 -->
+  <polygon points="400,217 510,252 400,287 290,252" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">반복 발생?</text>
+  <text x="400" y="262" text-anchor="middle" font-size="10" fill="#6b7280">전기에도 비적정?</text>
+
+  <!-- Left: 최초 -->
+  <line x1="290" y1="252" x2="170" y2="252" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="230" y="243" text-anchor="middle" font-size="10" fill="#059669">최초 발생</text>
+
+  <rect x="60" y="232" width="110" height="40" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="115" y="250" text-anchor="middle" font-size="10" font-weight="bold" fill="#059669">다음 해 확인</text>
+  <text x="115" y="265" text-anchor="middle" font-size="9" fill="#059669">시정 계획 추적</text>
+
+  <!-- Right: 반복 -->
+  <line x1="510" y1="252" x2="640" y2="252" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+  <text x="575" y="243" text-anchor="middle" font-size="10" fill="#dc2626">2년+ 반복</text>
+
+  <rect x="640" y="232" width="130" height="40" rx="6" fill="#dc2626" fill-opacity="0.1" stroke="#dc2626" stroke-width="1"/>
+  <text x="705" y="250" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">경고 수준 상향</text>
+  <text x="705" y="265" text-anchor="middle" font-size="9" fill="#dc2626">감사위원회 대응 확인</text>
+
+  <!-- Arrow down -->
+  <line x1="400" y1="287" x2="400" y2="310" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+
+  <!-- Decision 3: 경영진 대응 -->
+  <polygon points="400,312 520,347 400,382 280,347" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="400" y="343" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">경영진 대응?</text>
+  <text x="400" y="357" text-anchor="middle" font-size="10" fill="#6b7280">시정 계획 구체성</text>
+
+  <!-- Left: 구체적 -->
+  <line x1="280" y1="347" x2="170" y2="347" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="225" y="338" text-anchor="middle" font-size="10" fill="#059669">구체적</text>
+
+  <rect x="50" y="327" width="120" height="40" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="110" y="345" text-anchor="middle" font-size="10" font-weight="bold" fill="#059669">모니터링 유지</text>
+  <text x="110" y="360" text-anchor="middle" font-size="9" fill="#059669">일정·인력·예산 확인</text>
+
+  <!-- Right: 추상적 -->
+  <line x1="520" y1="347" x2="640" y2="347" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+  <text x="580" y="338" text-anchor="middle" font-size="10" fill="#dc2626">추상적</text>
+
+  <rect x="640" y="327" width="130" height="40" rx="6" fill="#dc2626" fill-opacity="0.1" stroke="#dc2626" stroke-width="1"/>
+  <text x="705" y="345" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">재무제표 신뢰 재검토</text>
+  <text x="705" y="360" text-anchor="middle" font-size="9" fill="#dc2626">포지션 축소 검토</text>
+
+  <!-- Arrow down -->
+  <line x1="400" y1="382" x2="400" y2="405" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+
+  <!-- Final check -->
+  <rect x="220" y="407" width="360" height="50" rx="8" fill="#2563eb" fill-opacity="0.08" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="400" y="428" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">다음 분기·연차 보고서에서 재확인</text>
+  <text x="400" y="447" text-anchor="middle" font-size="10" fill="#2563eb">시정 진행 → 관련 계정 변동 → 정정공시 → ICFR·감사의견 변화</text>
+
+  <!-- Bottom outcomes -->
+  <line x1="310" y1="457" x2="180" y2="485" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <line x1="490" y1="457" x2="620" y2="485" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+
+  <rect x="80" y="480" width="200" height="30" rx="6" fill="#059669" fill-opacity="0.1" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="500" text-anchor="middle" font-size="11" font-weight="bold" fill="#059669">ICFR 적정 회복 → 종결</text>
+
+  <rect x="520" y="480" width="220" height="30" rx="6" fill="#dc2626" fill-opacity="0.1" stroke="#dc2626" stroke-width="1"/>
+  <text x="630" y="500" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">반복 → 감사의견 변경 위험</text>
+</svg>

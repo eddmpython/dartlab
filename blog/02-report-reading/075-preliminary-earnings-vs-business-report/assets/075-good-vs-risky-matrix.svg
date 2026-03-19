@@ -1,0 +1,16 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">075 Good vs Risky</title>
+  <desc id="desc">Explanation quality vs delta severity</desc>
+  <rect width="1280" height="720" fill="#0e1a2d"/>
+  <text x="84" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">075 Good vs Risky</text>
+  <text x="84" y="118" font-size="20" font-family="Arial, sans-serif" fill="#ced8e5">Explanation quality vs delta severity</text>
+  <rect x="160" y="170" width="900" height="420" rx="26" fill="#ffffff" opacity="0.95"/>
+  <line x1="610" y1="170" x2="610" y2="590" stroke="#27486d" stroke-width="4"/>
+  <line x1="160" y1="380" x2="1060" y2="380" stroke="#27486d" stroke-width="4"/>
+  <text x="610" y="640" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">Bigger and core delta  →</text>
+  <text x="58" y="390" transform="rotate(-90 58 390)" font-size="24" font-family="Arial, sans-serif" fill="#d8e3f1">↑ Better explanation</text>
+  <text x="385" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Manageable</text><text x="385" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Minor tax or reclass</text>
+  <text x="835" y="280" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Needs Review</text><text x="835" y="318" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Core line moved</text>
+  <text x="385" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Messy Process</text><text x="385" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Small delta but story shifts</text>
+  <text x="835" y="492" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#173a5e">Trust Break</text><text x="835" y="530" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#36506b">Core delta and unstable story</text>
+</svg>

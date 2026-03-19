@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">084 Reading Flow</title>
+  <desc id="desc">Loss provisions usually appear late, not early</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1320"/>
+      <stop offset="100%" stop-color="#18314f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">084 Reading Flow</text>
+  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Loss provisions usually appear late, not early</text>
+  <rect x="70" y="150" width="1140" height="22" rx="11" fill="#244668"/>
+  <rect x="80" y="220" width="214" height="132" rx="24" fill="#ffffff" opacity="0.96"/>
+  <circle cx="118" cy="256" r="18" fill="#ffcc66"/><text x="118" y="262" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#10233a">1</text>
+  <text x="150" y="262" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Read Pricing</text>
+  <text x="110" y="300" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Was the contract cheap?</text>
+  <text x="110" y="326" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Start here</text>
+  <path d="M 294 286 L 312 286" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="312" y="220" width="214" height="132" rx="24" fill="#ffffff" opacity="0.96"/>
+  <circle cx="350" cy="256" r="18" fill="#7bd389"/><text x="350" y="262" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#10233a">2</text>
+  <text x="382" y="262" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Map Progress</text>
+  <text x="342" y="300" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Did revenue run ahead?</text>
+  <text x="342" y="326" font-size="18" font-family="Arial, sans-serif" fill="#36506b">What changed?</text>
+  <path d="M 526 286 L 544 286" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="544" y="220" width="214" height="132" rx="24" fill="#ffffff" opacity="0.96"/>
+  <circle cx="582" cy="256" r="18" fill="#74b9ff"/><text x="582" y="262" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#10233a">3</text>
+  <text x="614" y="262" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Check Contract Asset</text>
+  <text x="574" y="300" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Was billing too slow?</text>
+  <text x="574" y="326" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Check proof</text>
+  <path d="M 758 286 L 776 286" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="776" y="220" width="214" height="132" rx="24" fill="#ffffff" opacity="0.96"/>
+  <circle cx="814" cy="256" r="18" fill="#ff8f70"/><text x="814" y="262" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#10233a">4</text>
+  <text x="846" y="262" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Read Cash</text>
+  <text x="806" y="300" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Did CFO confirm the work?</text>
+  <text x="806" y="326" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Read impact</text>
+  <path d="M 990 286 L 1008 286" stroke="#9cc7ff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="1008" y="220" width="214" height="132" rx="24" fill="#ffffff" opacity="0.96"/>
+  <circle cx="1046" cy="256" r="18" fill="#c792ea"/><text x="1046" y="262" text-anchor="middle" font-size="18" font-family="Arial, sans-serif" fill="#10233a">5</text>
+  <text x="1078" y="262" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">Track Cost Reset</text>
+  <text x="1038" y="300" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Did estimates worsen again?</text>
+  <text x="1038" y="326" font-size="18" font-family="Arial, sans-serif" fill="#36506b">Track repeat</text>
+  <text x="72" y="628" font-size="22" font-family="Arial, sans-serif" fill="#d8e3f1">A late provision often confirms an older problem.</text>
+</svg>

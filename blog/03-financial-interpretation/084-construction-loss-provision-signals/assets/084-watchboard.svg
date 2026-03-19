@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">084 Watchboard</title>
+  <desc id="desc">Revisit whether the clean-up really ends the pattern</desc>
+  <rect width="1280" height="720" fill="#0d1321"/>
+  <text x="72" y="82" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#f8fbff">084 Watchboard</text>
+  <text x="72" y="118" font-size="20" font-family="Arial, sans-serif" fill="#cdd9e7">Revisit whether the clean-up really ends the pattern</text>
+  <rect x="86" y="176" width="1108" height="470" rx="30" fill="#ffffff" opacity="0.97"/>
+  <text x="130" y="230" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#10233a">What to revisit next</text>
+  <line x1="120" y1="270" x2="1160" y2="270" stroke="#d7e3ef" stroke-width="2"/>
+  <text x="140" y="320" font-size="22" font-family="Arial, sans-serif" fill="#10233a">1. Do more projects show similar pain?</text>
+  <text x="140" y="382" font-size="22" font-family="Arial, sans-serif" fill="#10233a">2. Does contract asset finally fall?</text>
+  <text x="140" y="444" font-size="22" font-family="Arial, sans-serif" fill="#10233a">3. Does cash recover with revenue?</text>
+  <text x="140" y="506" font-size="22" font-family="Arial, sans-serif" fill="#10233a">4. Does the margin stay weak again?</text>
+  <text x="140" y="568" font-size="22" font-family="Arial, sans-serif" fill="#10233a">5. Does another loss provision appear soon?</text>
+  <text x="72" y="684" font-size="22" font-family="Arial, sans-serif" fill="#d8e3f1">A watchboard is more useful than one dramatic headline.</text>
+</svg>
