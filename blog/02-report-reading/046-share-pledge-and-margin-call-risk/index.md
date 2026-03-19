@@ -30,7 +30,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 어디서부터 위험을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 담보가 관리 가능한 차입 구조인가, 아니면 지배력과 시장 가격을 동시에 흔들 수 있는 압박 구조인가`.
 
@@ -71,7 +71,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![최대주주 주식담보에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/046-good-vs-risky-matrix.svg)
 
@@ -89,7 +89,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 담보 비율 숫자만 보고 작으면 안전하다고 생각한다
 
@@ -109,7 +109,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![최대주주 주식담보를 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/046-watchboard.svg)
 
@@ -132,7 +132,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 누가 담보를 제공했는지 확인했는가
 - 담보 비중을 전체 지배력 묶음 기준으로 봤는가
@@ -141,7 +141,7 @@ thumbnail: /avatar-curious.png
 - 후속 최대주주 변경·제3자배정 가능성을 체크했는가
 - 회사 숫자 약화와 같이 움직이는지 확인했는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 최대주주 주식담보는 무조건 나쁜가
 
@@ -161,7 +161,7 @@ thumbnail: /avatar-curious.png
 
 이 질문에 `누가 그 충격을 흡수할 여력이 있는가`까지 붙이면 해석이 한 단계 더 또렷해진다. 결국 담보는 숫자보다 방어력의 문제이기 때문이다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [대주주와 특수관계인은 어디를 먼저 봐야 하나](/blog/major-shareholder-and-related-parties)
 - [지배구조가 위험한 회사는 어떤 패턴을 보이나](/blog/governance-red-flags)
@@ -172,14 +172,14 @@ thumbnail: /avatar-curious.png
 - [합병·분할 공시는 어디를 먼저 봐야 하나](/blog/merger-and-spin-off-disclosure)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [기업공시 길라잡이](https://dart.fss.or.kr/info/main.do?menu=310)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [지분공시 종합정보조회](https://dart.fss.or.kr/dsac001/mainAll.do)
 - [2025년 주요위반사례 3 PDF](https://dart.fss.or.kr/info/downloadKeyCase.do?filename=2025%EB%85%84+%EC%A3%BC%EC%9A%94%EC%9C%84%EB%B0%98%EC%82%AC%EB%A1%80_3.pdf&seqno=41)
 
-## 정리
+## 핵심 정리
 
 최대주주 주식담보는 단순 차입이 아니라 지배력과 유동성 압박, 시장 충격 가능성을 같이 읽어야 하는 신호다. 그래서 담보 설정 여부보다 누가 얼마를 묶었는지, 왜 빌렸는지, 흔들릴 때 어떤 후속 이벤트가 붙을 수 있는지를 같이 봐야 한다.
 

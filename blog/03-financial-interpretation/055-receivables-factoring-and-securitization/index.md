@@ -32,7 +32,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -51,7 +51,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 현금 증가는 고객 회수 개선인가, 금융기법을 통한 현금 선반영인가, 분기 말 숫자 보정인가`.
 
@@ -63,7 +63,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![팩토링과 유동화 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/055-good-vs-risky-matrix.svg)
 
@@ -91,7 +91,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 영업현금흐름이 좋아지면 회수 구조가 개선됐다고 본다
 
@@ -111,7 +111,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![팩토링과 유동화를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/055-watchboard.svg)
 
@@ -130,7 +130,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 영업현금흐름 개선과 매출채권 변화를 같이 봤는가
 - 팩토링·유동화 구조가 있는지 확인했는가
@@ -139,7 +139,7 @@ thumbnail: /avatar-chart.png
 - 이번 현금 개선이 반복 가능한지 생각해 봤는가
 - 다음 분기에도 같은 거래가 필요한지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 팩토링과 유동화는 무조건 나쁜가
 
@@ -157,7 +157,7 @@ thumbnail: /avatar-chart.png
 
 이번 현금 개선은 본업 회수력의 결과인가, 금융기법의 결과인가다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [매출채권과 대손충당금 읽는 법](/blog/receivables-and-allowance)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -166,7 +166,7 @@ thumbnail: /avatar-chart.png
 - [판관비가 매출보다 빨리 불어날 때 무엇을 먼저 봐야 하나](/blog/sga-growth-vs-sales)
 - [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/non-operating-income-vs-core-earnings)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IAS 7 Statement of Cash Flows](https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows/)
 - [IFRS 7 Financial Instruments: Disclosures](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-7-financial-instruments-disclosures/)
@@ -175,7 +175,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 주석 일괄다운로드](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 매출채권 팩토링과 유동화는 영업현금흐름을 좋아 보이게 만들 수 있지만, 그 현금이 본업 회수력에서 온 것인지 금융기법에서 온 것인지는 다를 수 있다. 그래서 채권 양도 구조, 소구권, 수수료, 반복성을 같이 봐야 해석이 정확해진다.
 

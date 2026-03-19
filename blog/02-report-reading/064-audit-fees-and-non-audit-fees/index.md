@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 같은 항목인데 해석이 갈리는 이유
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 건강한 구조 vs 위험한 구조
 
 가장 실용적인 질문은 이것이다. `이 보수 구조는 감사 품질을 뒷받침하는가, 아니면 독립성과 긴장감을 약하게 만드는가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 업종과 맥락에 따라 달라지는 기준
 
 ![감사보수와 비감사보수에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/064-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 비교에서 자주 빠지는 함정
 
 ### 1. 감사보수는 낮을수록 좋다고 본다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기 비교에서 다시 확인할 것
 
 ![감사보수와 비감사보수를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/064-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 비교 체크리스트
 
 - 감사보수와 감사시간을 같이 봤는가
 - 회사 복잡도 대비 수준이 자연스러운지 생각해 봤는가
@@ -163,7 +163,7 @@ thumbnail: /avatar-study.png
 
 감사위원회 활동, 내부회계, 정정공시, 재감사, KAM을 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 함께 비교하면 좋은 글
 
 - [감사보고서와 KAM, 무엇을 먼저 봐야 하나](/blog/audit-report-and-kam)
 - [내부회계관리제도와 감사위원회 활동은 어디서 위험 신호가 보이나](/blog/internal-controls-and-audit-committee)
@@ -172,7 +172,7 @@ thumbnail: /avatar-study.png
 - [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/going-concern-uncertainty-signals)
 - [메자닌 보호조항과 리픽싱은 누구에게 유리한가](/blog/mezzanine-protections-and-refixing)
 
-## 참고한 공식 자료
+## 출처
 
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [2023년 사업보고서 중점 점검사항 사전 예고](https://dart.fss.or.kr/dsaa003/selectBodoMain.ax?seqno=26150)
@@ -180,7 +180,7 @@ thumbnail: /avatar-study.png
 - [KRX 2026 정기주총 관련 주요 안내사항 PDF](https://kind.krx.co.kr/external/notice/dst/20260202/kospi_1.pdf)
 - [주식회사 등의 외부감사에 관한 법률 시행령](https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A3%BC%EC%8B%9D%ED%9A%8C%EC%82%AC%EB%93%B1%EC%9D%98%EC%99%B8%EB%B6%80%EA%B0%90%EC%82%AC%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9)
 
-## 정리
+## 한 줄 정리
 
 감사보수와 비감사보수는 가격 문제가 아니라 신뢰 구조 문제다. 감사보수는 회사의 복잡도와 감사시간에 비해 충분한지 봐야 하고, 비감사보수는 규모보다 성격과 시점, 그리고 같은 감사인이 얼마나 많은 역할을 동시에 맡는지를 봐야 한다.
 

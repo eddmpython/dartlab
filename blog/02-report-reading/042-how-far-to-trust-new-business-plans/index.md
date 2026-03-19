@@ -36,7 +36,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 확인해야 하나
+## 최초 문서에서 잡아야 할 것
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -55,7 +55,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 후속 문서에서 바뀌는 것과 안 바뀌는 것
 
 가장 실용적인 질문은 이것이다. `이 계획은 문장 단계인가, 투자 단계인가, 실제 사업화 단계인가`.
 
@@ -69,7 +69,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 좋은 계획과 위험한 계획은 무엇이 다른가
+## 기간 비교에서 놓치기 쉬운 변화
 
 ![신규사업 계획이 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/042-good-vs-risky-matrix.svg)
 
@@ -107,7 +107,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 추적에서 자주 빠지는 착각
 
 ### 1. 시장 규모 설명을 사업 진행으로 착각한다
 
@@ -127,7 +127,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 후속 보고서에서 반드시 재확인할 항목
 
 ![신규사업 계획을 읽은 뒤 후속 공시와 숫자에서 다시 봐야 할 질문을 정리한 보드](./assets/042-watchboard.svg)
 
@@ -144,7 +144,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 추적 체크리스트
 
 - 실행 자원이 보이는가
 - 인허가와 생산 준비가 있는가
@@ -167,7 +167,7 @@ thumbnail: /avatar-study.png
 
 그래서 좋은 계획은 시간이 지날수록 홍보 문구가 줄고 실행 근거가 늘어난다. 반대로 나쁜 계획은 문장만 계속 커지고 숫자는 비어 있다.
 
-## FAQ
+## 자주 묻는 질문
 
 ### 신규사업 계획이 나오면 무조건 호재인가
 
@@ -185,7 +185,7 @@ thumbnail: /avatar-study.png
 
 사업의 내용 변화, 말과 숫자 충돌, 유상증자, CB/BW 글을 같이 보면 현실성이 더 잘 보인다.
 
-## 같이 읽으면 좋은 글
+## 추적에 필요한 배경 글
 
 - [사업보고서 II. 사업의 내용, 이 섹션이 투자 판단을 바꾼다](/blog/business-section-changes-judgment)
 - [사업보고서에서 CEO 말보다 숫자가 중요한 순간](/blog/when-numbers-matter-more-than-ceo-words)
@@ -193,14 +193,14 @@ thumbnail: /avatar-study.png
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [좋은 사업보고서와 위험한 사업보고서는 무엇이 다른가](/blog/good-vs-risky-business-reports)
 
-## 참고한 공식 자료
+## 관련 공식 자료
 
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [DART 기업공시길라잡이](https://dart.fss.or.kr/info/main.do?menu=120)
 - [OpenDART 주요사항보고서 주요정보조회](https://opendart.fss.or.kr/disclosureinfo/mainMatter/main.do)
 - [OpenDART 개발가이드 - 주요사항보고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005)
 
-## 정리
+## 추적 포인트 요약
 
 공시의 신규사업 계획은 문장만으로는 거의 판단할 수 없다. 실행 자원, 고객·계약, 자금조달, 후속 공시와 숫자가 붙는지를 봐야 한다.
 

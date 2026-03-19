@@ -42,6 +42,8 @@
 	<meta property="og:url" content={pageUrl} />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content={`${brand.url}og-image.png`} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content={pageTitle} />
 	<meta name="twitter:description" content={pageDesc} />

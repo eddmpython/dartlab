@@ -15,6 +15,7 @@ SHORT_POST_WORDS = 1200
 LOW_SVG_COUNT = 4
 LOW_INTERNAL_LINKS = 3
 LOW_SVG_TEXT_NODES = 4
+HIGH_TEMPLATE_REPETITION = 0.5
 
 
 @dataclass
@@ -30,6 +31,7 @@ class PostAudit:
     internal_links: int
     external_links: int
     h2_count: int
+    template_repetition_score: float
 
 
 @dataclass
@@ -70,15 +72,27 @@ def is_internal_link(target: str) -> bool:
     return target.startswith(("/blog/", "/docs/", "/", "./", "../"))
 
 
+def _compute_top_repeated(blog_root: Path, top_n: int = 20) -> set[str]:
+    """Pre-scan all posts to find the top-N most repeated H2 headings."""
+    counter: Counter[str] = Counter()
+    for file in sorted(blog_root.glob(POST_GLOB)):
+        raw = file.read_text(encoding="utf-8")
+        body = strip_frontmatter(raw)
+        counter.update(h.strip() for h in re.findall(r"^##\s+(.+)$", body, re.M))
+    return {heading for heading, _ in counter.most_common(top_n)}
+
+
 def audit_posts(blog_root: Path) -> list[PostAudit]:
+    top20 = _compute_top_repeated(blog_root, 20)
     rows: list[PostAudit] = []
     for file in sorted(blog_root.glob(POST_GLOB)):
         raw = file.read_text(encoding="utf-8")
         body = strip_frontmatter(raw)
-        headings = re.findall(r"^##\s+(.+)$", body, re.M)
+        headings = [h.strip() for h in re.findall(r"^##\s+(.+)$", body, re.M)]
         links = re.findall(r"\[[^\]]+\]\(([^)]+)\)", body)
         internal_links = [target for target in links if is_internal_link(target)]
         external_links = [target for target in links if target.startswith(("http://", "https://"))]
+        repetition = sum(1 for h in headings if h in top20) / len(headings) if headings else 0.0
         rows.append(
             PostAudit(
                 path=file.relative_to(blog_root).as_posix(),
@@ -87,11 +101,12 @@ def audit_posts(blog_root: Path) -> list[PostAudit]:
                 series=frontmatter_value(raw, "series"),
                 word_count=plain_word_count(body),
                 svg_count=len(re.findall(r"!\[[^\]]*\]\(\./assets/[^)]+\.svg\)", body)),
-                faq=any(heading.strip().lower() in {"faq", "자주 묻는 질문"} for heading in headings),
+                faq=any(heading.lower() in {"faq", "자주 묻는 질문"} for heading in headings),
                 checklist_heading=any("체크리스트" in heading or "checklist" in heading.lower() for heading in headings),
                 internal_links=len(internal_links),
                 external_links=len(external_links),
                 h2_count=len(headings),
+                template_repetition_score=round(repetition, 3),
             )
         )
     return rows
@@ -150,6 +165,10 @@ def build_report(blog_root: Path) -> dict[str, object]:
         "low_internal_links": [row.path for row in posts if row.internal_links < LOW_INTERNAL_LINKS],
         "svg_parse_errors": [row.path for row in svgs if row.parse_error],
         "svg_low_text_density": [row.path for row in svgs if not row.parse_error and row.text_nodes < LOW_SVG_TEXT_NODES],
+        "high_template_repetition": [
+            {"path": row.path, "score": row.template_repetition_score}
+            for row in posts if row.template_repetition_score >= HIGH_TEMPLATE_REPETITION
+        ],
         "top_repeated_h2": [{"heading": heading, "count": count} for heading, count in headings.most_common(10)],
         "series_counts": Counter(row.series for row in posts),
         "category_counts": Counter(row.category for row in posts),
@@ -174,6 +193,7 @@ def print_human(report: dict[str, object]) -> None:
     print(f"- low internal links (<{LOW_INTERNAL_LINKS}): {len(summary['low_internal_links'])}")
     print(f"- svg parse errors: {len(summary['svg_parse_errors'])}")
     print(f"- svg low text density (<{LOW_SVG_TEXT_NODES} text nodes): {len(summary['svg_low_text_density'])}")
+    print(f"- high template repetition (>={HIGH_TEMPLATE_REPETITION}): {len(summary['high_template_repetition'])}")
 
     print("\nTop repeated H2")
     for item in summary["top_repeated_h2"]:
@@ -186,6 +206,8 @@ def print_human(report: dict[str, object]) -> None:
         print(f"- svg parse error: {path}")
     for path in summary["short_posts"][:10]:
         print(f"- short post: {path}")
+    for item in summary["high_template_repetition"][:5]:
+        print(f"- high repetition ({item['score']:.1%}): {item['path']}")
 
 
 def parse_args() -> argparse.Namespace:

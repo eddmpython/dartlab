@@ -34,7 +34,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -55,7 +55,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 제도가 장기 정렬 장치인가, 아니면 조용한 희석 장치인가`.
 
@@ -73,7 +73,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![주식기준보상과 스톡옵션에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/049-good-vs-risky-matrix.svg)
 
@@ -111,7 +111,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 스톡옵션은 장기 정렬이니 무조건 좋다고 본다
 
@@ -131,7 +131,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 다음 공시와 후속 문서에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![주식기준보상과 스톡옵션을 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/049-watchboard.svg)
 
@@ -150,7 +150,7 @@ thumbnail: /avatar-curious.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 누가 얼마나 받는지 확인했는가
 - 행사 가격과 부여 시점을 봤는가
@@ -159,7 +159,7 @@ thumbnail: /avatar-curious.png
 - 잠재 희석 규모를 기존 주식 수 기준으로 생각해 봤는가
 - 보수 구조와 주주환원까지 함께 봤는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 스톡옵션이 있으면 무조건 주주 친화적인가
 
@@ -177,7 +177,7 @@ thumbnail: /avatar-curious.png
 
 이 제도가 장기 성과를 묶는지, 기존 주주 몫을 조용히 줄이는지다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [임원 보수 공시는 무엇을 말해주나](/blog/executive-pay-disclosure)
 - [좋은 오너십과 위험한 오너십의 차이](/blog/good-vs-risky-ownership)
@@ -186,7 +186,7 @@ thumbnail: /avatar-curious.png
 - [최대주주 주식담보와 반대매매 위험은 어떻게 읽어야 하나](/blog/share-pledge-and-margin-call-risk)
 - [주주총회소집공고에서 꼭 봐야 할 것은 무엇인가](/blog/how-to-read-agm-notice)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IFRS 2 Share-based Payment](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-2-share-based-payment/)
 - [IFRS 2 PDF](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ifrs-2-share-based-payment.pdf)
@@ -194,7 +194,7 @@ thumbnail: /avatar-curious.png
 - [기업공시 길라잡이](https://dart.fss.or.kr/info/main.do)
 - [OpenDART 지분공시 종합정보조회](https://opendart.fss.or.kr/disclosureinfo/qota/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 주식기준보상과 스톡옵션은 복지나 동기부여 제도이면서 동시에 보수 구조와 희석 구조다. 그래서 부여 대상, 행사 가격, 조건, 실제 행사와 신주 발행 여부를 같이 봐야 의미가 드러난다.
 

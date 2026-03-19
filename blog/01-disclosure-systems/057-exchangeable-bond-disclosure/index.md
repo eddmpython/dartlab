@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 조건이 협상력을 결정하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -51,7 +51,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 발행자 시각 vs 투자자 시각
 
 가장 실용적인 질문은 이것이다. `이 EB는 단순한 자금조달인가, 잠재 물량 이전 구조인가, 지배력과 이해관계 재편의 일부인가`.
 
@@ -65,7 +65,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 조건이 바뀔 때 무엇이 움직이나
 
 ![교환사채 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/057-good-vs-risky-matrix.svg)
 
@@ -99,7 +99,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 조건 해석에서 자주 놓치는 부분
 
 ### 1. EB도 그냥 CB처럼 읽는다
 
@@ -119,7 +119,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 후속 이벤트에서 다시 확인할 것
 
 ![교환사채를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/057-watchboard.svg)
 
@@ -138,7 +138,7 @@ EB는 발행 공시보다 후속 공시에서 더 많은 의미가 드러날 수
 
 ---
 
-## 10분 체크리스트
+## 실전 체크리스트
 
 - 교환 대상 주식이 무엇인지 확인했는가
 - 교환가액과 교환비율을 읽었는가
@@ -165,7 +165,7 @@ CB/BW, RCPS, 자기주식, 최대주주 변화 글을 같이 보면 좋다.
 
 이 EB는 돈을 빌리는 공시인가, 주식을 움직이는 공시인가다.
 
-## 같이 읽으면 좋은 글
+## 조건 분석에 참고할 글
 
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [우선주·RCPS·상환전환우선주는 누구에게 유리한가](/blog/preferred-stock-and-rcps-disclosure)
@@ -174,7 +174,7 @@ CB/BW, RCPS, 자기주식, 최대주주 변화 글을 같이 보면 좋다.
 - [최대주주 주식담보와 반대매매 위험은 어떻게 읽어야 하나](/blog/share-pledge-and-margin-call-risk)
 - [주식기준보상과 스톡옵션은 실제로 무엇을 희석시키나](/blog/share-based-compensation-and-stock-options)
 
-## 참고한 공식 자료
+## 관련 공시 출처
 
 - [OpenDART 주요사항보고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005)
 - [OpenDART 교환사채권 발행결정 개발가이드](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020035)
@@ -182,7 +182,7 @@ CB/BW, RCPS, 자기주식, 최대주주 변화 글을 같이 보면 좋다.
 - [OpenDART 지분공시 종합정보조회](https://opendart.fss.or.kr/disclosureinfo/qota/main.do)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 
-## 정리
+## 조건별 핵심 요약
 
 교환사채와 EB는 단순한 사채 공시가 아니라, 기존 주식이 어떤 조건으로 이동할 수 있는지를 보여주는 구조 공시다. 그래서 기초자산, 교환가액, 기간, 오버행, 지분 변화 가능성을 같이 봐야 의미가 드러난다.
 

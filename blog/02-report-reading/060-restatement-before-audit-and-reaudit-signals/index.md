@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 최초 문서에서 잡아야 할 것
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -49,7 +49,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 후속 문서에서 바뀌는 것과 안 바뀌는 것
 
 가장 실용적인 질문은 이것이다. `이번 정정은 제한적 보완인가, 회계 판단 수정인가, 통제 실패와 재감사 신호인가`.
 
@@ -63,7 +63,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 기간 비교에서 놓치기 쉬운 변화
 
 ![감사 전 정정과 재감사 흐름에서 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/060-good-vs-risky-matrix.svg)
 
@@ -99,7 +99,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 추적에서 자주 빠지는 착각
 
 ### 1. 정정 횟수만 센다
 
@@ -119,7 +119,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 후속 보고서에서 반드시 재확인할 항목
 
 ![감사 전 정정과 재감사 신호를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/060-watchboard.svg)
 
@@ -138,7 +138,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 추적 체크리스트
 
 - 정정 사유를 먼저 읽었는가
 - 정정 전후 핵심 숫자를 직접 비교했는가
@@ -147,7 +147,7 @@ thumbnail: /avatar-study.png
 - 같은 논점의 후속 정정이 있었는지 추적했는가
 - 정정 이후 공시 품질이 안정되는지 볼 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 정정 공시가 있으면 무조건 큰 문제인가
 
@@ -165,7 +165,7 @@ thumbnail: /avatar-study.png
 
 이번 정정은 과거 숫자만 고쳤는가, 앞으로 숫자를 믿는 방식도 바꿨는가다.
 
-## 같이 읽으면 좋은 글
+## 추적에 필요한 배경 글
 
 - [DART 정정공시를 파이프라인에서 다루는 법](/blog/dart-amendment-filing-pipeline)
 - [사업보고서에서 감사보고서와 KAM 읽는 법](/blog/audit-report-and-kam)
@@ -174,7 +174,7 @@ thumbnail: /avatar-study.png
 - [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/going-concern-uncertainty-signals)
 - [차입 약정 위반과 기한이익상실 위험은 어디서 먼저 드러나나](/blog/debt-covenant-breach-and-acceleration-risk)
 
-## 참고한 공식 자료
+## 관련 공식 자료
 
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [DART 소개 - 정정신고서 이용시 유의사항](https://dart.fss.or.kr/introduction/content4.do)
@@ -182,7 +182,7 @@ thumbnail: /avatar-study.png
 - [OpenDART 주석 일괄다운로드](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 추적 포인트 요약
 
 감사 전 재무제표 정정과 재감사 신호는 단순히 정정 횟수로 판단하면 거의 항상 틀린다. 정정 사유, 숫자 영향, 감사 문구, 내부통제, 후속 반복 여부를 같이 봐야 그 의미가 드러난다.
 

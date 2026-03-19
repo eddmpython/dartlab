@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 조건이 협상력을 결정하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -49,7 +49,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 발행자 시각 vs 투자자 시각
 
 가장 실용적인 질문은 이것이다. `이 증권이 성장 자금을 위한 파트너 자본인가, 투자자 보호가 과도하게 강한 구조인가, 지배력과 이해관계를 바꾸는 계약인가`.
 
@@ -61,7 +61,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 조건이 바뀔 때 무엇이 움직이나
 
 ![우선주와 RCPS 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/052-good-vs-risky-matrix.svg)
 
@@ -95,7 +95,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 조건 해석에서 자주 놓치는 부분
 
 ### 1. 우선주면 그냥 배당만 조금 다른 주식이라고 본다
 
@@ -115,7 +115,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 후속 이벤트에서 다시 확인할 것
 
 ![우선주와 RCPS 공시를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/052-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 체크리스트
 
 - 단순 우선주인지 RCPS인지 먼저 확인했는가
 - 전환 조건과 조정 조항을 읽었는가
@@ -165,7 +165,7 @@ thumbnail: /avatar-study.png
 
 이 한 줄만 정확히 적어도 RCPS 공시 해석의 방향이 훨씬 또렷해진다.
 
-## 같이 읽으면 좋은 글
+## 조건 분석에 참고할 글
 
 - [유상증자 공시 읽는 법](/blog/rights-offering-disclosure)
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
@@ -174,7 +174,7 @@ thumbnail: /avatar-study.png
 - [주식기준보상과 스톡옵션은 실제로 무엇을 희석시키나](/blog/share-based-compensation-and-stock-options)
 - [최대주주 주식담보와 반대매매 위험은 어떻게 읽어야 하나](/blog/share-pledge-and-margin-call-risk)
 
-## 참고한 공식 자료
+## 관련 공시 출처
 
 - [IAS 32 Financial Instruments: Presentation](https://www.ifrs.org/issued-standards/list-of-standards/ias-32-financial-instruments-presentation/)
 - [IFRS 7 Financial Instruments: Disclosures](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-7-financial-instruments-disclosures.html/)
@@ -183,7 +183,7 @@ thumbnail: /avatar-study.png
 - [OpenDART 증권신고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS006)
 - [기업공시 길라잡이 - 정기보고서](https://dart.fss.or.kr/info/main.do?menu=210)
 
-## 정리
+## 조건별 핵심 요약
 
 우선주와 RCPS는 자금조달 공시이지만 동시에 권리 구조 공시다. 전환권, 상환권, 우선배당, 청산 우선권, 리픽싱을 따로 적어 보면 누가 먼저 보호받고 누가 나중에 희석을 감수하는지 드러난다.
 

@@ -42,6 +42,8 @@
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/blog/" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="DartLab Blog | DART, EDGAR, 사업보고서, 재무 해석 — DartLab 전자공시 분석" />
 	<meta name="twitter:description" content="공시 시스템, 사업보고서 읽기, 재무 해석, 데이터 자동화를 카테고리별로 정리한 DartLab 블로그." />

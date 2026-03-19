@@ -34,7 +34,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어떤 숫자 조합을 먼저 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 확인 항목 | 왜 같이 봐야 하나 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 원인을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `현금이 왜 약한가`. 이 질문에 답하려면 아래 세 갈래로 먼저 나누면 좋다.
 
@@ -71,7 +71,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 좋은 경우와 위험한 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![영업현금흐름과 순이익이 건강하게 같이 움직이는 경우와 위험하게 어긋나는 경우를 비교한 매트릭스](./assets/035-good-vs-risky-matrix.svg)
 
@@ -115,7 +115,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 순이익이 늘면 현금도 같이 좋아졌다고 생각한다
 
@@ -135,7 +135,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서에서 무엇을 다시 확인해야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![영업현금흐름과 순이익 괴리를 다음 보고서에서 어떻게 추적할지 정리한 보드](./assets/035-watchboard.svg)
 
@@ -152,7 +152,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 순이익과 영업현금흐름이 같은 방향인가
 - 매출채권이 매출보다 더 빨리 늘지 않는가
@@ -161,7 +161,7 @@ thumbnail: /avatar-chart.png
 - 비현금 이익 비중이 커지지 않는가
 - 다음 보고서에서 회복 여부를 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 영업현금흐름이 순이익보다 약하면 무조건 위험한가
 
@@ -179,20 +179,20 @@ thumbnail: /avatar-chart.png
 
 성급하다. 다음 분기에도 같은 괴리가 반복되는지 봐야 구조 문제인지 일시 문제인지 구분할 수 있다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [매출채권과 대손충당금 읽는 법](/blog/receivables-and-allowance)
 - [재고자산과 평가손실 읽는 법](/blog/inventory-and-write-downs)
 - [매출은 느는데 왜 위험할 수 있나](/blog/why-rising-sales-can-still-be-risky)
 - [사업보고서에서 CEO 말보다 숫자가 중요한 순간](/blog/when-numbers-matter-more-than-ceo-words)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IFRS IAS 7 Statement of Cash Flows](https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows.html/)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [DART 기업공시길라잡이](https://dart.fss.or.kr/info/main.do?menu=120)
 
-## 정리
+## 핵심 정리
 
 순이익이 좋아도 영업현금흐름이 약하면 먼저 원인을 나눠 봐야 한다. 운전자본인지, 비현금 이익인지, 일시적 투자 구간인지부터 가르면 같은 실적 발표도 훨씬 다르게 보인다.
 

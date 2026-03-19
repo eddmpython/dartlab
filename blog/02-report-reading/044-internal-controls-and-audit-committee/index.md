@@ -39,7 +39,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -62,7 +62,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 위험을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 문구가 실제 통제 작동을 보여주는가, 아니면 형식적 보고에 가깝나`.
 
@@ -76,7 +76,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![내부회계와 감사위원회 활동에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/044-good-vs-risky-matrix.svg)
 
@@ -96,7 +96,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 출석률이 높으면 감독도 잘 된다고 생각한다
 
@@ -116,7 +116,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![내부회계와 감사위원회 활동을 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/044-watchboard.svg)
 
@@ -137,7 +137,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 감사위원회가 무엇을 다뤘는지 읽었는가
 - 내부회계 운영실태의 약점 문구를 확인했는가
@@ -146,7 +146,7 @@ thumbnail: /avatar-study.png
 - 숫자 쪽 위험과 연결해 봤는가
 - 다음 보고서에서 같은 약점이 반복되는지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 내부회계관리제도는 전문가만 볼 수 있는가
 
@@ -180,20 +180,20 @@ thumbnail: /avatar-study.png
 
 꾸준히.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](/blog/clean-audit-opinion-but-still-risky)
 - [사업보고서에서 감사보고서와 KAM 읽는 법](/blog/audit-report-and-kam)
 - [지급보증·담보·약정 공시는 어디가 위험 신호인가](/blog/guarantees-collateral-and-commitments)
 - [DART 정정공시를 파이프라인에서 다루는 법](/blog/dart-amendment-filing-pipeline)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [DART 소개 - 관계법규 등](https://dart.fss.or.kr/introduction/content3.do)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [기업공시 길라잡이](https://dart.fss.or.kr/info/main.do?menu=210)
 
-## 정리
+## 핵심 정리
 
 내부회계관리제도와 감사위원회 활동은 형식 문구처럼 보여도, 실제로는 통제 약점과 반복 리스크를 먼저 보여주는 구간이다. 그래서 적정 한 줄보다 반복 패턴과 후속 개선 여부를 보는 편이 훨씬 낫다.
 

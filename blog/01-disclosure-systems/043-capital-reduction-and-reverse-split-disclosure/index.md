@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 조치가 회계상 정리인가, 구조 재편인가, 후속 조달을 위한 준비인가`.
 
@@ -67,7 +67,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![감자와 주식병합 공시에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/043-good-vs-risky-matrix.svg)
 
@@ -87,7 +87,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 병합 후 주가가 높아 보이면 좋아졌다고 생각한다
 
@@ -107,7 +107,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![감자와 주식병합 이후 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/043-watchboard.svg)
 
@@ -128,7 +128,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 비율보다 목적을 먼저 읽었는가
 - 결손 보전 여부를 확인했는가
@@ -137,7 +137,7 @@ thumbnail: /avatar-study.png
 - 기존 주주에게 무엇이 달라지는지 적어봤는가
 - 다음 보고서에서 본업 개선을 확인할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 감자는 무조건 나쁜가
 
@@ -165,21 +165,21 @@ thumbnail: /avatar-study.png
 
 실전에서 특히 그렇다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [합병·분할 공시는 어디를 먼저 봐야 하나](/blog/merger-and-spin-off-disclosure)
 - [자기주식·제3자배정·최대주주 변경은 누구에게 유리한가](/blog/treasury-stock-third-party-allotment-and-major-shareholder-change)
 - [유상증자 공시 읽는 법](/blog/rights-offering-disclosure)
 - [주주총회소집공고에서 꼭 봐야 할 것은 무엇인가](/blog/how-to-read-agm-notice)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [OpenDART 개발가이드 - 감자 결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020026)
 - [OpenDART 주요사항보고서 주요정보조회](https://opendart.fss.or.kr/disclosureinfo/mainMatter/main.do)
 - [OpenDART 주요사항보고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 
-## 정리
+## 핵심 구조 요약
 
 감자와 주식병합은 숫자보다 목적과 후속 구조를 봐야 하는 공시다. 비율, 결손 보전 여부, 거래 일정, 후속 자금조달과 지배력 변화를 같이 보면 주가 착시에 덜 흔들린다.
 

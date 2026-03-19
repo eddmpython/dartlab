@@ -34,7 +34,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이번 현금 개선은 본업 협상력 강화인가, 금융기관을 통한 지급 지연 구조인가, 분기 말 숫자 보정인가`.
 
@@ -65,7 +65,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![공급망금융과 매입채무 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/059-good-vs-risky-matrix.svg)
 
@@ -93,7 +93,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 영업현금흐름이 좋아졌으니 본업도 좋아졌다고 본다
 
@@ -113,7 +113,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![공급망금융과 매입채무 구조를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/059-watchboard.svg)
 
@@ -132,7 +132,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 영업현금흐름 개선과 매입채무 변화를 같이 봤는가
 - 공급망금융 또는 금융기관 개입 설명이 있는지 확인했는가
@@ -141,7 +141,7 @@ thumbnail: /avatar-chart.png
 - 이번 현금 개선이 다음 분기에도 유지될지 생각해 봤는가
 - 다른 유동성 압박과 함께 움직이는지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 공급망금융은 무조건 나쁜가
 
@@ -159,7 +159,7 @@ thumbnail: /avatar-chart.png
 
 이번 현금 개선은 본업 협상력의 결과인가, 지급 시점 금융화의 결과인가다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
 - [매출채권 팩토링과 유동화는 현금흐름을 어떻게 좋게 보이게 하나](/blog/receivables-factoring-and-securitization)
@@ -168,7 +168,7 @@ thumbnail: /avatar-chart.png
 - [재고자산과 평가손실 읽는 법](/blog/inventory-and-write-downs)
 - [리스부채와 차입 만기 구조는 어디서 먼저 터지나](/blog/lease-liabilities-and-debt-maturity)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IAS 7 Statement of Cash Flows](https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows/)
 - [IFRS 7 Financial Instruments: Disclosures](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-7-financial-instruments-disclosures/)
@@ -176,7 +176,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 주석 일괄다운로드](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 공급망금융과 매입채무 구조는 영업현금흐름을 좋게 보이게 만들 수 있지만, 그 개선이 본업 경쟁력에서 온 것인지 지급 구조의 금융화에서 온 것인지는 다를 수 있다. 그래서 영업현금흐름, 매입채무, 조건 변화, 금융기관 개입, 다음 분기 되돌림을 같이 봐야 해석이 정확해진다.
 

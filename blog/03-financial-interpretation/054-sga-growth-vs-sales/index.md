@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 같은 항목인데 해석이 갈리는 이유
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -49,7 +49,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 건강한 구조 vs 위험한 구조
 
 가장 실용적인 질문은 이것이다. `이 판관비 증가는 성장 선행 투자인가, 고정비 체질 악화인가, 비효율 누적의 시작인가`.
 
@@ -61,7 +61,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 업종과 맥락에 따라 달라지는 기준
 
 ![판관비 증가 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/054-good-vs-risky-matrix.svg)
 
@@ -93,7 +93,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 비교에서 자주 빠지는 함정
 
 ### 1. 매출이 늘면 비용 증가는 다 괜찮다고 본다
 
@@ -113,7 +113,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기 비교에서 다시 확인할 것
 
 ![판관비 증가를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/054-watchboard.svg)
 
@@ -134,7 +134,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 비교 체크리스트
 
 - 매출 성장률과 판관비 성장률을 같이 적어봤는가
 - 판관비를 인건비, 광고비, 수수료 등으로 나눠 봤는가
@@ -163,7 +163,7 @@ thumbnail: /avatar-chart.png
 
 이 질문을 먼저 붙이면 비용 증가 headline을 훨씬 덜 낙관적으로, 더 정확하게 읽게 된다.
 
-## 같이 읽으면 좋은 글
+## 함께 비교하면 좋은 글
 
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 - [매출이 늘어도 위험할 수 있는 이유는 무엇인가](/blog/why-rising-sales-can-still-be-risky)
@@ -172,7 +172,7 @@ thumbnail: /avatar-chart.png
 - [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/non-operating-income-vs-core-earnings)
 - [공시에서 신규사업 계획은 어디까지 믿어야 하나](/blog/how-far-to-trust-new-business-plans)
 
-## 참고한 공식 자료
+## 출처
 
 - [IFRS 18 Presentation and Disclosure in Financial Statements](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2025/issued/part-a/ifrs-18-presentation-and-disclosure-in-financial-statements.pdf?bypass=on)
 - [IAS 1 Presentation of Financial Statements](https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements.html/)
@@ -181,7 +181,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART XBRL 재무제표 주석 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요 재무지표 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlindx/main.do)
 
-## 정리
+## 한 줄 정리
 
 판관비가 매출보다 빨리 불어나기 시작하면 성장 스토리는 곧바로 비용 구조 이야기로 바뀐다. 그래서 매출 성장률, 비용 항목, 매출총이익률, 영업현금흐름을 같이 붙여 봐야 성장의 질이 보인다.
 

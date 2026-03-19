@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -51,7 +51,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 위험은 일시적 재무비율 흔들림인가, 구조적 차환 압박인가, 이미 협상력이 크게 약해진 단계인가`.
 
@@ -63,7 +63,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![차입 약정 위반과 기한이익상실 위험에서 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/056-good-vs-risky-matrix.svg)
 
@@ -95,7 +95,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 위반 공시가 없으니 괜찮다고 본다
 
@@ -115,7 +115,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![차입 약정과 기한이익상실 위험을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/056-watchboard.svg)
 
@@ -134,7 +134,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 차입 만기 구조를 먼저 정리했는가
 - 약정 조건이 무엇인지 읽었는가
@@ -143,7 +143,7 @@ thumbnail: /avatar-study.png
 - 후속 자금조달 계획이 실제로 실행되는지 확인했는가
 - 다음 보고서에서 같은 약정 신호를 다시 볼 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 기한이익상실 공시가 없어도 위험할 수 있나
 
@@ -161,7 +161,7 @@ thumbnail: /avatar-study.png
 
 이 회사는 시간을 스스로 벌고 있는가, 금융기관에게 빌리고 있는가다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/going-concern-uncertainty-signals)
 - [리스부채와 차입 만기 구조는 어디서 먼저 터지나](/blog/lease-liabilities-and-debt-maturity)
@@ -170,7 +170,7 @@ thumbnail: /avatar-study.png
 - [유상증자 공시 읽는 법](/blog/rights-offering-disclosure)
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IAS 1 Presentation of Financial Statements](https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements.html/)
 - [Exposure Draft and comment letters: Non-current Liabilities with Covenants](https://www.ifrs.org/projects/completed-projects/2022/classification-of-debt-with-covenants-as-current-or-non-current-ias-1/exposure-draft-and-comment-letters/)
@@ -179,7 +179,7 @@ thumbnail: /avatar-study.png
 - [OpenDART 주석 일괄다운로드](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 핵심 정리
 
 차입 약정 위반과 기한이익상실 위험은 실제 사고보다 훨씬 앞에서 신호를 낸다. 만기 구조, 약정 조건, 면제·유예, 부채 분류, 후속 조달 계획을 같이 보면 회사가 시간을 벌고 있는지 잃고 있는지 읽을 수 있다.
 

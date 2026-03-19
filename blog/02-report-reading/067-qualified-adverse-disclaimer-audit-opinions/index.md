@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -51,7 +51,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 의견은 특정 예외를 경고하는가, 전체 재무제표 신뢰를 부정하는가, 아니면 아예 판단 불능을 말하는가`.
 
@@ -63,7 +63,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 덜 위험한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![한정·부적정·의견거절 감사의견에서 상대적으로 덜 위험한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/067-good-vs-risky-matrix.svg)
 
@@ -96,7 +96,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 비적정을 하나로 묶어 본다
 
@@ -116,7 +116,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![한정·부적정·의견거절 감사의견을 읽은 뒤 다음 공시에서 다시 봐야 할 질문을 정리한 보드](./assets/067-watchboard.svg)
 
@@ -137,7 +137,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 감사의견 유형을 정확히 적었는가
 - 근거 문단에서 원인 항목을 확인했는가
@@ -146,7 +146,7 @@ thumbnail: /avatar-study.png
 - 자본잠식·거래소 리스크를 확인했는가
 - 다음 보고서에서 의견 변화 여부를 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 한정도 바로 치명적인가
 
@@ -164,7 +164,7 @@ thumbnail: /avatar-study.png
 
 계속기업 관련 불확실성, 정정공시, 자본잠식, 거래소 공시를 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [감사보고서와 KAM, 무엇을 먼저 봐야 하나](/blog/audit-report-and-kam)
 - [적정 의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](/blog/clean-audit-opinion-but-still-risky)
@@ -173,7 +173,7 @@ thumbnail: /avatar-study.png
 - [감사 전 재무제표 정정과 재감사는 어디서 위험 신호가 보이나](/blog/restatement-before-audit-and-reaudit-signals)
 - [자본잠식과 관리종목 신호는 어디서 먼저 보이나](/blog/capital-impairment-and-watchlist-signals)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [기업공시 길라잡이](https://dart.fss.or.kr/info/main.do?menu=120)
@@ -181,7 +181,7 @@ thumbnail: /avatar-study.png
 - [코스닥시장 공시·상장관리 해설서 PDF](https://kind.krx.co.kr/external/dst/reference/10951/%28%EA%B3%B5%EC%A7%80%29%2024%EB%85%84%EC%BD%94%EC%8A%A4%EB%8B%A5%EC%8B%9C%EC%9E%A5%EA%B3%B5%EC%8B%9C%EC%83%81%EC%9E%A5%EA%B4%80%EB%A6%AC%ED%95%B4%EC%84%A4%EC%84%9C.pdf)
 - [ISA 570 Going Concern - IFAC](https://www.ifac.org/taxonomy/term/230?page=130)
 
-## 정리
+## 핵심 정리
 
 한정, 부적정, 의견거절은 모두 비적정이지만 같은 신호가 아니다. 한정은 예외 경고에 가깝고, 부적정은 전반 부정에 가깝고, 의견거절은 판단 불능에 가깝다. 그래서 같은 비적정이라도 투자자가 붙여야 할 질문과 다음 행동이 달라진다.
 

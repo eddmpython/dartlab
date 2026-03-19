@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -49,7 +49,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 회사는 부채 총액이 큰가보다, 가까운 만기를 감당할 수 있는가`.
 
@@ -67,7 +67,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![리스부채와 차입 만기 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/047-good-vs-risky-matrix.svg)
 
@@ -107,7 +107,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 부채비율이 낮으면 만기 위험도 낮다고 생각한다
 
@@ -127,7 +127,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![리스부채와 차입 구조를 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/047-watchboard.svg)
 
@@ -146,7 +146,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 단기 차입금과 장기 차입금을 구분했는가
 - 리스부채의 단기·장기 분포를 확인했는가
@@ -155,7 +155,7 @@ thumbnail: /avatar-chart.png
 - 차환이나 외부 조달 의존이 큰가
 - 다음 보고서에서 단기 압박이 완화되는지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 리스부채가 많으면 무조건 위험한가
 
@@ -173,7 +173,7 @@ thumbnail: /avatar-chart.png
 
 가까운 만기와 리스료 지급을 스스로 버틸 수 있는가다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -184,7 +184,7 @@ thumbnail: /avatar-chart.png
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [공시에서 신규사업 계획은 어디까지 믿어야 하나](/blog/how-far-to-trust-new-business-plans)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IFRS 16 Leases](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-16-leases/)
 - [IFRS 16 PDF](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2024/issued/part-a/ifrs-16-leases.pdf?bypass=on)
@@ -192,7 +192,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 - [OpenDART XBRL 재무제표 원문 내려받기](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrl/main.do)
 
-## 정리
+## 핵심 정리
 
 리스부채와 차입은 총액보다 만기와 현금 대응력이 더 중요하다. 그래서 단기 상환 부담, 리스료 지급, 영업현금흐름, 차환 가능성을 같이 봐야 실제 위험이 드러난다.
 

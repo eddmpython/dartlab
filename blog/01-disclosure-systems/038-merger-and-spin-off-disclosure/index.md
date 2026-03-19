@@ -20,7 +20,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 제목보다 먼저 무엇을 봐야 하나
+## 구조가 작동하는 순서
 
 합병은 성장 서사처럼 포장되기 쉽고, 분할은 가치 재평가 이야기처럼 포장되기 쉽다. 하지만 이런 해석은 구조를 보기 전에는 거의 의미가 없다.
 
@@ -40,7 +40,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 공시는 사업 재편인가, 지배력 재편인가, 주주 부담 확대인가`.
 
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 좋은 공시와 위험한 공시는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![합병과 분할 공시에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/038-good-vs-risky-matrix.svg)
 
@@ -90,7 +90,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 합병은 무조건 성장 이벤트라고 본다
 
@@ -110,7 +110,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 후속 공시와 다음 보고서에서 무엇을 봐야 하나
+## 놓치기 쉬운 예외
 
 ![합병과 분할 공시 이후 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/038-watchboard.svg)
 
@@ -123,7 +123,7 @@ thumbnail: /avatar-study.png
 
 합병과 분할은 발표 순간보다 후속 문서에서 구조가 더 분명해지는 경우가 많다. 그래서 이사회 결정 공시 한 건만 읽고 끝내면 거의 항상 부족하다.
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 비율과 산출 근거가 설명되는가
 - 어떤 사업과 자산이 이동하는가
@@ -158,7 +158,7 @@ thumbnail: /avatar-study.png
 
 이 추적 습관 하나가 복잡한 구조 재편 공시를 실전 문서로 바꾼다.
 
-## FAQ
+## 자주 묻는 질문
 
 ### 합병 공시는 비율만 보면 되나
 
@@ -176,21 +176,21 @@ thumbnail: /avatar-study.png
 
 주총 공고, 지배구조 위험, 사업의 내용 변화 글을 같이 붙여 보면 구조가 훨씬 빨라진다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [주주총회소집공고에서 꼭 봐야 할 것은 무엇인가](/blog/how-to-read-agm-notice)
 - [지배구조가 위험한 회사는 어떤 패턴을 보이나](/blog/governance-red-flags)
 - [사업보고서 II. 사업의 내용, 이 섹션이 투자 판단을 바꾼다](/blog/business-section-changes-judgment)
 - [최대주주와 특수관계인은 어떻게 읽어야 하나](/blog/major-shareholder-and-related-parties)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [OpenDART 개발가이드 - 회사합병 결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020050)
 - [OpenDART 개발가이드 - 회사분할 결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020051)
 - [OpenDART 개발가이드 - 주요사항보고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 
-## 정리
+## 핵심 구조 요약
 
 합병과 분할은 이름보다 구조를 봐야 한다. 비율, 사업 이전 내용, 외부평가, 주주 보호 장치, 후속 상장 구조를 먼저 잡으면 복잡해 보이는 공시도 훨씬 빨리 정리된다.
 

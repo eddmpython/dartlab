@@ -34,7 +34,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 투자 이익이 본업을 보강하는가, 아니면 본업 약화를 가리고 있는가`.
 
@@ -71,7 +71,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![관계기업·공동기업투자에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/048-good-vs-risky-matrix.svg)
 
@@ -119,7 +119,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 지분법손익도 어차피 순이익이니 본업과 섞어 본다
 
@@ -139,7 +139,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![관계기업·공동기업투자를 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/048-watchboard.svg)
 
@@ -158,7 +158,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 관계기업·공동기업투자주식 장부가를 확인했는가
 - 지분법손익이 순이익에서 차지하는 비중을 봤는가
@@ -167,7 +167,7 @@ thumbnail: /avatar-chart.png
 - 투자 목적 설명이 구체적인가
 - 다음 보고서에서 손상·처분 가능성을 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 지분법손익이 크면 좋은 것 아닌가
 
@@ -185,7 +185,7 @@ thumbnail: /avatar-chart.png
 
 이 투자 이익이 본업을 보강하는지, 본업 약화를 가리는지다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -194,7 +194,7 @@ thumbnail: /avatar-chart.png
 - [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/non-operating-income-vs-core-earnings)
 - [공시에서 신규사업 계획은 어디까지 믿어야 하나](/blog/how-far-to-trust-new-business-plans)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IAS 28 Investments in Associates and Joint Ventures](https://www.ifrs.org/issued-standards/list-of-standards/ias-28-investments-in-associates-and-joint-ventures/)
 - [IAS 28 PDF](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ias-28-investments-in-associates-and-joint-ventures.pdf?bypass=on)
@@ -202,7 +202,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 단일회사 주요계정 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 - [OpenDART 재무제표 주석 일괄다운로드](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 관계기업·공동기업투자는 본업을 보강하는 숫자일 수도 있고, 본업 약화를 흐리게 만드는 숫자일 수도 있다. 그래서 장부가, 지분법손익, 배당 현금 유입, 영업현금흐름을 같이 봐야 실제 의미가 드러난다.
 

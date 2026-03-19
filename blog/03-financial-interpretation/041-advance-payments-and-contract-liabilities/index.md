@@ -35,7 +35,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 같은 항목인데 해석이 갈리는 이유
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -54,7 +54,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 건강한 구조 vs 위험한 구조
 
 가장 실용적인 질문은 이것이다. `이 선수금이 강한 수요의 결과인가, 아니면 앞으로 이행해야 할 부담인가`.
 
@@ -72,7 +72,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 좋은 경우와 위험한 경우는 무엇이 다른가
+## 업종과 맥락에 따라 달라지는 기준
 
 ![선수금과 계약부채가 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/041-good-vs-risky-matrix.svg)
 
@@ -112,7 +112,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 비교에서 자주 빠지는 함정
 
 ### 1. 선수금이 많으면 무조건 좋은 회사라고 본다
 
@@ -132,7 +132,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 주석에서 무엇을 다시 봐야 하나
+## 다음 분기 비교에서 다시 확인할 것
 
 ![선수금과 계약부채를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/041-watchboard.svg)
 
@@ -149,7 +149,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 비교 체크리스트
 
 - 선수금·계약부채가 왜 생겼는가
 - 영업현금흐름이 같이 강한가
@@ -188,20 +188,20 @@ thumbnail: /avatar-chart.png
 
 현금흐름, 채권, 재고, 매출 성장의 질 글을 같이 붙여 보면 훨씬 정확해진다.
 
-## 같이 읽으면 좋은 글
+## 함께 비교하면 좋은 글
 
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
 - [매출채권과 대손충당금 읽는 법](/blog/receivables-and-allowance)
 - [재고자산과 평가손실 읽는 법](/blog/inventory-and-write-downs)
 - [매출은 느는데 왜 위험할 수 있나](/blog/why-rising-sales-can-still-be-risky)
 
-## 참고한 공식 자료
+## 출처
 
 - [IFRS 15 Revenue from Contracts with Customers](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ifrs-15-revenue-from-contracts-with-customers.pdf)
 - [IFRS IAS 7 Statement of Cash Flows](https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows.html/)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 
-## 정리
+## 한 줄 정리
 
 선수금·계약부채는 좋은 신호일 수도 있고 위험 신호일 수도 있다. 잔액 자체보다 왜 생겼고, 영업현금흐름과 어떻게 연결되고, 다음 보고서에서 어떻게 줄거나 늘어나는지가 훨씬 중요하다.
 

@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -49,7 +49,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 강해진다고 봐야 하나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 회사의 불확실성은 단기 유동성 압박인가, 조달 의존 심화인가, 본업이 시간을 벌지 못하는 구조인가`.
 
@@ -61,7 +61,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 관리 가능한 경우와 더 위험한 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![계속기업 관련 불확실성 해석에서 상대적으로 관리 가능한 경우와 더 위험한 경우를 비교한 매트릭스](./assets/053-good-vs-risky-matrix.svg)
 
@@ -95,7 +95,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 계속기업 문구가 있으면 곧바로 파산 직전이라고 본다
 
@@ -115,7 +115,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![계속기업 관련 불확실성 문구를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/053-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 감사보고서 문구를 정확히 읽었는가
 - 주석의 유동성 설명과 전제를 적어봤는가
@@ -145,7 +145,7 @@ thumbnail: /avatar-study.png
 - 후속 자금조달 공시가 실제로 실행되는지 확인했는가
 - 다음 분기에도 같은 전제를 다시 검증할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 계속기업 관련 불확실성 문구가 있으면 끝난 회사인가
 
@@ -166,7 +166,7 @@ thumbnail: /avatar-study.png
 그 한 줄이 보이면 감사 문구와 자금조달 공시, 현금흐름을 한 방향으로 묶어 읽기 쉬워진다.
 실전에서는 이 질문이 가장 오래 남는다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](/blog/clean-audit-opinion-but-still-risky)
 - [감사보고서와 KAM은 어디까지 믿어야 하나](/blog/audit-report-and-kam)
@@ -175,7 +175,7 @@ thumbnail: /avatar-study.png
 - [지급보증·담보·약정 공시는 어디가 위험 신호인가](/blog/guarantees-collateral-and-commitments)
 - [DART 정정공시를 파이프라인에서 다루는 법](/blog/dart-amendment-filing-pipeline)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IAS 1 Presentation of Financial Statements](https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements.html/)
 - [IFRS Foundation updates going concern educational material](https://www.ifrs.org/news-and-events/news/2025/05/ifrs-foundation-updates-going-concern-educational-material/)
@@ -184,7 +184,7 @@ thumbnail: /avatar-study.png
 - [DART 소개 - 정정신고서 이용시 유의사항](https://dart.fss.or.kr/introduction/content4.do)
 - [기업공시 길라잡이 - 정기보고서](https://dart.fss.or.kr/info/main.do?menu=210)
 
-## 정리
+## 핵심 정리
 
 계속기업 관련 불확실성 문구는 갑자기 하늘에서 떨어지는 경고가 아니다. 감사보고서, 유동성 설명, 차입 만기, 조달 의존, 후속 정정공시가 쌓이면서 점점 무거워지는 경우가 많다.
 

@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 회사는 자본을 실제로 회복하고 있는가, 아니면 지정 시점만 미루고 있는가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![자본잠식과 관리종목 신호에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/066-good-vs-risky-matrix.svg)
 
@@ -99,7 +99,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 관리종목 지정 전에는 괜찮다고 본다
 
@@ -119,7 +119,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![자본잠식과 관리종목 신호를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/066-watchboard.svg)
 
@@ -138,7 +138,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 누적 손실과 자본총계를 같이 봤는가
 - 자본잠식률과 감사보고서 시점을 연결했는가
@@ -147,7 +147,7 @@ thumbnail: /avatar-study.png
 - 자산 매각이 임시 대응인지 생각해 봤는가
 - 다음 보고서에서 본업과 현금흐름이 회복되는지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 관리종목 지정 문구가 없으면 아직 안전한가
 
@@ -165,7 +165,7 @@ thumbnail: /avatar-study.png
 
 계속기업 관련 불확실성, 차입 약정, 감자, 메자닌 조건변경, 자산 매각을 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/going-concern-uncertainty-signals)
 - [차입 약정 위반과 기한이익상실 위험은 어디서 먼저 드러나나](/blog/debt-covenant-breach-and-acceleration-risk)
@@ -174,7 +174,7 @@ thumbnail: /avatar-study.png
 - [메자닌 만기연장과 조건변경은 누구에게 유리한가](/blog/mezzanine-extension-and-condition-change)
 - [매각예정자산과 중단영업은 무엇을 가리나](/blog/held-for-sale-and-discontinued-operations)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [기업공시 길라잡이](https://dart.fss.or.kr/info/main.do?menu=120)
@@ -182,7 +182,7 @@ thumbnail: /avatar-study.png
 - [코스닥시장 상장규정](https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%BD%94%EC%8A%A4%EB%8B%A5%EC%8B%9C%EC%9E%A5%EC%83%81%EC%9E%A5%EA%B7%9C%EC%A0%95)
 - [유가증권시장 상장규정](https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%9C%A0%EA%B0%80%EC%A6%9D%EA%B6%8C%EC%8B%9C%EC%9E%A5%EC%83%81%EC%9E%A5%EA%B7%9C%EC%A0%95)
 
-## 정리
+## 핵심 정리
 
 자본잠식과 관리종목 신호는 공식 지정 문구보다 훨씬 먼저 나타난다. 손실 누적, 자본 훼손, 감사문구, 차입 압박, 자본거래 반복이 같이 움직이면 이미 경고 구조 안에 들어온 것이다.
 

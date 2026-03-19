@@ -36,7 +36,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 같은 항목인데 해석이 갈리는 이유
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -57,7 +57,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 건강한 구조 vs 위험한 구조
 
 가장 실용적인 질문은 이것이다. `이 순이익은 본업에서 온 것인가, 본업 밖 항목이 크게 보정한 것인가`.
 
@@ -75,7 +75,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 업종과 맥락에 따라 달라지는 기준
 
 ![영업외손익에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/050-good-vs-risky-matrix.svg)
 
@@ -127,7 +127,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 비교에서 자주 빠지는 함정
 
 ### 1. 순이익이 늘면 본업도 좋아졌다고 본다
 
@@ -147,7 +147,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기 비교에서 다시 확인할 것
 
 ![영업외손익을 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/050-watchboard.svg)
 
@@ -166,7 +166,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 비교 체크리스트
 
 - 영업이익과 순이익의 차이를 먼저 봤는가
 - 영업외손익을 항목별로 나눠 봤는가
@@ -193,7 +193,7 @@ thumbnail: /avatar-chart.png
 
 이번 순이익은 본업이 만든 것인지, 본업 밖 항목이 보정한 것인지다.
 
-## 같이 읽으면 좋은 글
+## 함께 비교하면 좋은 글
 
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -202,7 +202,7 @@ thumbnail: /avatar-chart.png
 - [사업보고서에서 CEO 말보다 숫자가 중요한 순간](/blog/when-numbers-matter-more-than-ceo-words)
 - [공시에서 신규사업 계획은 어디까지 믿어야 하나](/blog/how-far-to-trust-new-business-plans)
 
-## 참고한 공식 자료
+## 출처
 
 - [IAS 1 Presentation of Financial Statements](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ias-1-presentation-of-financial-statements.pdf?bypass=on)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
@@ -210,7 +210,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 단일회사 주요 재무지표 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlindx/main.do)
 - [OpenDART XBRL 재무제표 원문 내려받기](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrl/main.do)
 
-## 정리
+## 한 줄 정리
 
 영업외손익은 순이익을 크게 바꿀 수 있지만, 본업 경쟁력과 같은 이야기를 하지 않을 때가 많다. 그래서 영업이익, 영업외손익, 순이익, 영업현금흐름을 같이 놓고 항목별로 분해해 봐야 의미가 드러난다.
 

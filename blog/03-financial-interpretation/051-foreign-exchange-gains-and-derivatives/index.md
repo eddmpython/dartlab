@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -51,7 +51,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 손익은 자연 헤지의 결과인가, 회계상 평가 변동인가, 외화 부채 노출이 만든 부담인가`.
 
@@ -63,7 +63,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![환율 손익과 파생상품 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/051-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 환율 효과가 크면 수출 경쟁력이 좋아졌다고 본다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![환율 손익과 파생상품을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/051-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 회사가 어떤 통화로 벌고 어떤 통화로 쓰는지 적어봤는가
 - 외화 차입과 만기 구조를 확인했는가
@@ -145,7 +145,7 @@ thumbnail: /avatar-chart.png
 - 이번 숫자가 일시 효과인지 반복 구조인지 구분했는가
 - 다음 기수에 되돌림이나 조달 압박을 확인할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 환율 효과가 크면 무조건 좋은가
 
@@ -163,7 +163,7 @@ thumbnail: /avatar-chart.png
 
 이번 순이익은 본업이 만든 것인지, 환율과 파생상품이 보정한 것인지다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/non-operating-income-vs-core-earnings)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -172,7 +172,7 @@ thumbnail: /avatar-chart.png
 - [Risk Factors와 MD&A를 같이 읽는 법](/blog/risk-factors-and-mdna)
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IAS 21 The Effects of Changes in Foreign Exchange Rates](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2022/issued/part-a/ias-21-the-effects-of-changes-in-foreign-exchange-rates.pdf?bypass=on)
 - [IFRS 7 Financial Instruments: Disclosures](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-7-financial-instruments-disclosures.html/)
@@ -181,7 +181,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART XBRL 재무제표 원문 내려받기](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrl/main.do)
 - [OpenDART XBRL 재무제표 주석 조회](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 환율 손익과 파생상품 손익은 중요하지만 본업 경쟁력과 같은 속도로 움직이지 않을 때가 많다. 그래서 통화 노출, 헤지 목적, 손익 반영 위치, 현금 여부, 반복성을 따로 적어 두어야 해석이 정확해진다.
 

@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 구조가 작동하는 순서
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 어디에서 왜곡이 생기나
 
 가장 실용적인 질문은 이것이다. `이 분리는 체질 개선인가, 급한 현금 확보인가, 아니면 숫자 보기 좋게 만드는 분류 변화인가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 왜곡을 걸러내는 숫자 조합
 
 ![매각예정자산과 중단영업에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/063-good-vs-risky-matrix.svg)
 
@@ -93,7 +93,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 왜곡이 안 보일 때 의심할 것
 
 ### 1. 중단영업이면 자동으로 좋아졌다고 본다
 
@@ -113,7 +113,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 놓치기 쉬운 예외
 
 ![매각예정자산과 중단영업을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/063-watchboard.svg)
 
@@ -132,7 +132,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 빠른 점검 체크리스트
 
 - 무엇이 분리됐는지 한 줄로 적었는가
 - 계속영업 숫자를 따로 봤는가
@@ -141,7 +141,7 @@ thumbnail: /avatar-chart.png
 - 차입 압박 완화로 이어졌는지 봤는가
 - 다음 보고서에서 남은 회사의 숫자를 다시 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 중단영업이면 남은 회사는 자동으로 좋아진 것 아닌가
 
@@ -159,7 +159,7 @@ thumbnail: /avatar-chart.png
 
 영업외손익, 이연법인세, 영업현금흐름, 계속기업 관련 불확실성 문구를 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 구조를 더 깊이 이해하는 글
 
 - [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/non-operating-income-vs-core-earnings)
 - [이연법인세와 법인세 비용은 순이익을 어떻게 왜곡하나](/blog/deferred-tax-and-tax-expense-distortion)
@@ -168,7 +168,7 @@ thumbnail: /avatar-chart.png
 - [차입 약정 위반과 기한이익상실 위험은 어디서 먼저 드러나나](/blog/debt-covenant-breach-and-acceleration-risk)
 - [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/going-concern-uncertainty-signals)
 
-## 참고한 공식 자료
+## 참고 자료
 
 - [IFRS 5 Non-current Assets Held for Sale and Discontinued Operations](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-5-non-current-assets-held-for-sale-and-discontinued-operations/)
 - [IAS 7 Statement of Cash Flows](https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows/)
@@ -177,7 +177,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART 단일회사 주요계정](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 - [OpenDART XBRL 주석](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 
-## 정리
+## 핵심 구조 요약
 
 매각예정자산과 중단영업은 구조 개선 신호일 수도 있지만, 동시에 일회성 이익과 비교 기준 변화, 유동성 압박을 가리는 장치일 수도 있다. 그래서 무엇이 분리됐는지, 계속영업 숫자가 실제로 나아졌는지, 처분이익과 세금 효과를 뗀 뒤에도 남은 회사가 버티는지를 같이 봐야 한다.
 

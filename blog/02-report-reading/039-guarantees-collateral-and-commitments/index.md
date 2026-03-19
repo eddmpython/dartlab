@@ -34,7 +34,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 확인해야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 위험을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 구조가 사업 운영을 위한 보조 장치인가, 아니면 약한 주체를 떠받치는 부담인가`.
 
@@ -71,7 +71,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 좋은 경우와 위험한 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![지급보증과 담보 제공, 약정이 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/039-good-vs-risky-matrix.svg)
 
@@ -111,7 +111,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 지급보증은 실제 손실이 아니니 가볍게 본다
 
@@ -131,7 +131,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![지급보증, 담보 제공, 약정을 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/039-watchboard.svg)
 
@@ -148,7 +148,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 누구를 위해 보증하거나 담보를 제공했는가
 - 무엇을 위해 보증하거나 담보를 잡았는가
@@ -163,7 +163,7 @@ thumbnail: /avatar-study.png
 
 그래서 상대방 이름을 보고 끝내지 말고, 그 주체가 회사 전체에서 어떤 역할을 하는지까지 보는 편이 좋다. 이 구분이 붙는 순간 지급보증과 담보 제공은 단순 금융 문구가 아니라 지배구조와 이해관계 문제로 바뀐다.
 
-## FAQ
+## 자주 묻는 질문
 
 ### 지급보증이 있으면 무조건 위험한가
 
@@ -181,7 +181,7 @@ thumbnail: /avatar-study.png
 
 감사보고서, 우발부채, 특수관계인, 영업현금흐름 글을 같이 보면 구조가 훨씬 빨리 보인다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [감사보고서와 KAM은 어디까지 믿어야 하나](/blog/audit-report-and-kam)
 - [우발부채와 소송 공시 읽는 법](/blog/contingent-liabilities-and-litigation)
@@ -189,14 +189,14 @@ thumbnail: /avatar-study.png
 - [최대주주와 특수관계인은 어떻게 읽어야 하나](/blog/major-shareholder-and-related-parties)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IFRS IAS 37 Provisions, Contingent Liabilities and Contingent Assets](https://www.ifrs.org/issued-standards/list-of-standards/ias-37-provisions-contingent-liabilities-and-contingent-assets/)
 - [IFRS Agenda Decision - Guarantees Issued on Obligations of Other Entities](https://www.ifrs.org/content/dam/ifrs/supporting-implementation/agenda-decisions/2025/guarantees-issued-on-obligations-of-other-entities-apr-25.pdf)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [DART 기업공시길라잡이](https://dart.fss.or.kr/info/main.do?menu=120)
 
-## 정리
+## 핵심 정리
 
 지급보증·담보·약정은 아직 손실로 드러나지 않았지만 이미 회사의 재무 유연성을 제한하고 있을 수 있는 구조다. 그래서 금액보다 상대방, 담보 자산, 약정 수준, 위반 시 결과를 같이 봐야 한다.
 

@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 조건이 협상력을 결정하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 발행자 시각 vs 투자자 시각
 
 가장 실용적인 질문은 이것이다. `이 조건변경은 회사에 숨 쉴 시간을 주는가, 아니면 투자자 보호를 더 강하게 만들 뿐인가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 조건이 바뀔 때 무엇이 움직이나
 
 ![메자닌 만기연장과 조건변경에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/065-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 조건 해석에서 자주 놓치는 부분
 
 ### 1. 만기연장이면 좋은 뉴스라고 본다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 후속 이벤트에서 다시 확인할 것
 
 ![메자닌 만기연장과 조건변경을 읽은 뒤 다음 공시에서 다시 봐야 할 질문을 정리한 보드](./assets/065-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 체크리스트
 
 - 원래 만기와 전환 조건을 적었는가
 - 무엇이 얼마나 바뀌었는지 비교했는가
@@ -163,7 +163,7 @@ thumbnail: /avatar-study.png
 
 전환사채, RCPS, EB, 유상증자, 차입 약정, 최대주주 담보와 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 조건 분석에 참고할 글
 
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [메자닌 보호조항과 리픽싱은 누구에게 유리한가](/blog/mezzanine-protections-and-refixing)
@@ -172,7 +172,7 @@ thumbnail: /avatar-study.png
 - [차입 약정 위반과 기한이익상실 위험은 어디서 먼저 드러나나](/blog/debt-covenant-breach-and-acceleration-risk)
 - [최대주주 주식담보와 반대매매 위험은 어떻게 읽어야 하나](/blog/share-pledge-and-margin-call-risk)
 
-## 참고한 공식 자료
+## 관련 공시 출처
 
 - [OpenDART 전환사채권 발행결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020033)
 - [OpenDART 신주인수권부사채권 발행결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020034)
@@ -181,7 +181,7 @@ thumbnail: /avatar-study.png
 - [DART 정정신고서 이용시 유의사항](https://dart.fss.or.kr/introduction/content4.do)
 - [2025년 주요위반사례 3 PDF](https://dart.fss.or.kr/info/downloadKeyCase.do?filename=2025%EB%85%84+%EC%A3%BC%EC%9A%94%EC%9C%84%EB%B0%98%EC%82%AC%EB%A1%80_3.pdf&seqno=41)
 
-## 정리
+## 조건별 핵심 요약
 
 메자닌 만기연장과 조건변경은 단순 수정 공시가 아니라 위험 재배치 공시다. 회사는 시간을 벌고 싶어 하고, 투자자는 더 강한 방어를 원한다. 그래서 원래 조건과 바뀐 조건을 나란히 놓고 누가 무엇을 얻었는지 봐야 한다.
 

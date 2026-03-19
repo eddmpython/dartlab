@@ -30,7 +30,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 최초 문서에서 잡아야 할 것
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 후속 문서에서 바뀌는 것과 안 바뀌는 것
 
 가장 실용적인 질문은 이것이다. `이 리픽싱은 조건 조정에 그칠까, 실제 주식 공급 압력으로 이어질까`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 기간 비교에서 놓치기 쉬운 변화
 
 ![리픽싱 이후 실제 전환과 오버행에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/070-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 추적에서 자주 빠지는 착각
 
 ### 1. 리픽싱 공시에서 해석을 끝낸다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 공시와 후속 숫자에서 무엇을 다시 봐야 하나
+## 후속 보고서에서 반드시 재확인할 항목
 
 ![리픽싱 이후 실제 전환과 오버행을 읽은 뒤 다음 공시에서 다시 봐야 할 질문을 정리한 보드](./assets/070-watchboard.svg)
 
@@ -138,7 +138,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 추적 체크리스트
 
 - 조정 후 전환가액과 하한을 적었는가
 - 잔여 사채 금액을 확인했는가
@@ -147,7 +147,7 @@ thumbnail: /avatar-study.png
 - 보호예수와 보유 주체를 확인했는가
 - 최대주주 지분과 다른 메자닌까지 같이 볼 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 리픽싱이 있었으면 바로 오버행이 큰가
 
@@ -165,7 +165,7 @@ thumbnail: /avatar-study.png
 
 조건변경 메자닌, 전환사채, EB, 최대주주 지분 변화, 추가상장을 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 추적에 필요한 배경 글
 
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [메자닌 보호조항과 리픽싱은 누구에게 유리한가](/blog/mezzanine-protections-and-refixing)
@@ -174,7 +174,7 @@ thumbnail: /avatar-study.png
 - [우선주·RCPS·상환전환우선주는 누구에게 유리한가](/blog/preferred-stock-and-rcps-disclosure)
 - [최대주주 주식담보와 반대매매 위험은 어떻게 읽어야 하나](/blog/share-pledge-and-margin-call-risk)
 
-## 참고한 공식 자료
+## 관련 공식 자료
 
 - [OpenDART 전환사채권 발행결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020033)
 - [OpenDART 신주인수권부사채권 발행결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020034)
@@ -183,7 +183,7 @@ thumbnail: /avatar-study.png
 - [유가증권시장 공시·상장 업무해설서 PDF](https://kind.krx.co.kr/external/dst/reference/10827/%EC%9C%A0%EA%B0%80%EC%A6%9D%EA%B6%8C%EC%8B%9C%EC%9E%A5%20%EA%B3%B5%EC%8B%9C_%EC%83%81%EC%9E%A5%20%EC%97%85%EB%AC%B4%ED%95%B4%EC%84%A4%EC%84%9C.pdf)
 - [KIND 전환청구권 행사 공시 예시](https://kind.krx.co.kr/external/2024/10/25/000353/20241025000312/70109.htm)
 
-## 정리
+## 추적 포인트 요약
 
 리픽싱의 진짜 영향은 조정 공시가 아니라 그 뒤 실제 전환과 추가상장에서 드러난다. 그래서 전환가액, 잔여 사채 물량, 전환청구권 행사, 추가상장 일정, 최대주주 지분 변화를 같이 봐야 오버행을 제대로 읽을 수 있다.
 

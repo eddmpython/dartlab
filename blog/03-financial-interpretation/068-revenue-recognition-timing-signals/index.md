@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 변화는 사업 실질의 변화인가, 회계 정책의 이동인가, 아니면 성장 착시를 만드는 신호인가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![매출 인식 시점 변경에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/068-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 매출 증가를 실질 개선으로 바로 본다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![매출 인식 시점 변경을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/068-watchboard.svg)
 
@@ -140,7 +140,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 수익 인식 설명을 전기와 비교했는가
 - 한 시점·기간 기준이 달라졌는지 봤는가
@@ -149,7 +149,7 @@ thumbnail: /avatar-chart.png
 - 영업현금흐름이 뒤따르는지 확인했는가
 - 다음 분기에도 같은 패턴을 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 매출 인식 시점이 바뀌면 항상 위험한가
 
@@ -167,7 +167,7 @@ thumbnail: /avatar-chart.png
 
 계약부채, 선수금, 영업현금흐름, 매출채권, 성장의 질 관련 글을 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [선수금·계약부채는 좋은 신호인가 위험 신호인가](/blog/advance-payments-and-contract-liabilities)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -176,7 +176,7 @@ thumbnail: /avatar-chart.png
 - [공급망금융과 매입채무는 현금흐름을 어떻게 좋게 보이게 하나](/blog/supply-chain-finance-and-payables)
 - [매출이 늘어도 위험할 수 있는 이유는 무엇인가](/blog/why-rising-sales-can-still-be-risky)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IFRS 15 Revenue from Contracts with Customers PDF](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ifrs-15-revenue-from-contracts-with-customers.pdf)
 - [Clarifications to IFRS 15 Revenue from Contracts with Customers](https://www.ifrs.org/projects/completed-projects/2016/clarifications-to-ifrs-15-revenue-from-contracts-with-customers/)
@@ -185,7 +185,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART XBRL 주석](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 핵심 정리
 
 매출 인식 시점 변경은 작은 회계정책 메모처럼 보이지만, 실제로는 성장률과 이익의 타이밍을 크게 움직일 수 있다. 그래서 정책 설명, 매출채권과 계약자산, 계약부채, 영업현금흐름을 같이 봐야 실질 개선과 회계 이동을 구분할 수 있다.
 

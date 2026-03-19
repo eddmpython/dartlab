@@ -30,7 +30,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -52,7 +52,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 손상은 일시적 경기 둔화인가, 투자 과열의 결과인가, 아니면 구조조정의 시작인가`.
 
@@ -64,7 +64,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![유형자산 손상차손에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/069-good-vs-risky-matrix.svg)
 
@@ -97,7 +97,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 손상차손은 비현금이라 가볍게 본다
 
@@ -117,7 +117,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![유형자산 손상차손을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/069-watchboard.svg)
 
@@ -138,7 +138,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 어떤 유형자산이 손상됐는지 적었는가
 - 왜 이번 분기에 손상 인식이 나왔는지 확인했는가
@@ -147,7 +147,7 @@ thumbnail: /avatar-chart.png
 - 추가 CAPEX 계획이 유지되는지 확인했는가
 - 자산 매각·중단영업으로 이어지는지 추적할 계획이 있는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 유형자산 손상차손은 비현금이니 덜 중요하지 않나
 
@@ -165,7 +165,7 @@ thumbnail: /avatar-chart.png
 
 생산능력, 건설중인자산, 감가상각, 영업현금흐름, 중단영업 글을 같이 보면 좋다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [생산능력과 가동률, 무엇이 중요한가](/blog/capacity-utilization-capex)
 - [건설중인자산은 무엇을 말해주나](/blog/construction-in-progress)
@@ -174,7 +174,7 @@ thumbnail: /avatar-chart.png
 - [매각예정자산과 중단영업은 무엇을 가리나](/blog/held-for-sale-and-discontinued-operations)
 - [개발비·무형자산은 어디서 과열 신호가 보이나](/blog/development-costs-and-intangibles)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IAS 36 Impairment of Assets](https://www.ifrs.org/issued-standards/list-of-standards/ias-36-impairment-of-assets/)
 - [IAS 36 Impairment of Assets PDF](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2021/issued/part-a/ias-36-impairment-of-assets.pdf)
@@ -183,7 +183,7 @@ thumbnail: /avatar-chart.png
 - [OpenDART XBRL 주석](https://opendart.fss.or.kr/disclosureinfo/fnltt/xbrlnote/main.do)
 - [OpenDART 단일회사 주요계정](https://opendart.fss.or.kr/disclosureinfo/fnltt/singlacnt/main.do)
 
-## 정리
+## 핵심 정리
 
 유형자산 손상차손은 단순한 비현금 손실이 아니라, 이전의 설비투자 기대가 지금의 수요와 수익성에 맞지 않는다는 신호일 수 있다. 그래서 손상 금액보다 손상된 자산, 가동률, 매출과 마진, 현금흐름, 추가 CAPEX 계획을 같이 봐야 의미가 드러난다.
 

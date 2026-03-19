@@ -36,7 +36,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -57,7 +57,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 자산화가 실제 제품화와 수익화의 전단계인가, 아니면 비용 인식을 늦추는 완충 장치인가`.
 
@@ -75,7 +75,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 상대적으로 건강한 경우와 더 조심해야 하는 경우는 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![개발비와 무형자산에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/045-good-vs-risky-matrix.svg)
 
@@ -93,7 +93,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 무형자산이 늘면 성장 투자라고 바로 판단한다
 
@@ -113,7 +113,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 다음 보고서와 후속 숫자에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![개발비와 무형자산을 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/045-watchboard.svg)
 
@@ -136,7 +136,7 @@ thumbnail: /avatar-chart.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - 개발비와 취득 무형자산을 구분했는가
 - 자산화 정책 설명을 읽었는가
@@ -145,7 +145,7 @@ thumbnail: /avatar-chart.png
 - 매출과 영업현금흐름이 실제로 따라오는지 봤는가
 - 후속 증자나 사채 발행 가능성을 체크했는가
 
-## FAQ
+## 자주 묻는 질문
 
 ### 개발비가 많으면 무조건 나쁜가
 
@@ -167,7 +167,7 @@ thumbnail: /avatar-chart.png
 
 그래서 이 항목은 늘 다음 보고서까지 같이 보는 편이 낫다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
@@ -177,14 +177,14 @@ thumbnail: /avatar-chart.png
 - [유상증자 공시 읽는 법](/blog/rights-offering-disclosure)
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IAS 38 Intangible Assets](https://www.ifrs.org/content/dam/ifrs/publications/pdf-standards/english/2024/issued/part-a/ias-38-intangible-assets.pdf?bypass=on)
 - [IAS 36 Impairment of Assets](https://www.ifrs.org/issued-standards/list-of-standards/ias-36-impairment-of-assets/)
 - [전자공시 OPENDART 시스템 - SITE MAP](https://opendart.fss.or.kr/sitemap/main.do)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 
-## 정리
+## 핵심 정리
 
 개발비와 무형자산은 성장의 증거일 수도 있고, 아직 검증되지 않은 기대를 오래 붙드는 회계 구간일 수도 있다. 그래서 잔액 증가 자체보다 자산화 정책, 상각, 손상, 영업현금흐름, 후속 자금조달을 같이 보는 편이 훨씬 실전적이다.
 

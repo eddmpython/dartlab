@@ -36,7 +36,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 무엇을 먼저 붙여서 봐야 하나
+## 어떤 숫자 조합이 먼저 경고하나
 
 | 먼저 볼 항목 | 왜 중요한가 |
 | --- | --- |
@@ -53,7 +53,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 위험을 가르면 되나
+## 신호가 강해지는 순서
 
 가장 실용적인 질문은 이것이다. `이 회사의 위험은 회계 쟁점인가, 유동성 압박인가, 통제와 지배구조 문제인가`.
 
@@ -65,7 +65,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 건강한 적정과 불안한 적정은 무엇이 다른가
+## 위험도를 나누는 기준
 
 ![상대적으로 건강한 적정 의견과 더 불안한 적정 의견을 비교한 매트릭스](./assets/040-good-vs-risky-matrix.svg)
 
@@ -101,7 +101,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 자주 놓치는 해석 함정
 
 ### 1. 적정이면 위험이 해소됐다고 본다
 
@@ -121,7 +121,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 다음 보고서와 후속 공시에서 무엇을 다시 봐야 하나
+## 다음 분기에 다시 확인할 숫자
 
 ![적정 의견 아래 남아 있는 위험 신호를 다음 보고서에서 어떻게 추적할지 정리한 보드](./assets/040-watchboard.svg)
 
@@ -138,7 +138,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 10분 체크리스트
+## 실전 점검 체크리스트
 
 - KAM이 무엇을 가리키는가
 - 계속기업 관련 문구가 붙어 있는가
@@ -167,7 +167,7 @@ thumbnail: /avatar-study.png
 
 적정 의견은 끝이 아니라, 어디를 더 봐야 하는지 알려주는 출발점이라는 점만 기억해도 큰 차이가 난다.
 
-## FAQ
+## 자주 묻는 질문
 
 ### 감사의견 적정이면 안심해도 되나
 
@@ -185,7 +185,7 @@ thumbnail: /avatar-study.png
 
 감사보고서, 우발부채, 정정공시, 현금흐름, 지배구조 글을 같이 붙여 보면 신호가 훨씬 선명해진다.
 
-## 같이 읽으면 좋은 글
+## 관련 분석 글
 
 - [감사보고서와 KAM은 어디까지 믿어야 하나](/blog/audit-report-and-kam)
 - [우발부채와 소송 공시 읽는 법](/blog/contingent-liabilities-and-litigation)
@@ -193,14 +193,14 @@ thumbnail: /avatar-study.png
 - [DART 정정공시를 파이프라인에서 다루는 법](/blog/dart-amendment-filing-pipeline)
 - [지배구조가 위험한 회사는 어떤 패턴을 보이나](/blog/governance-red-flags)
 
-## 참고한 공식 자료
+## 공식 출처와 근거
 
 - [IFRS IAS 1 Presentation of Financial Statements](https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements/)
 - [Going concern — A focus on disclosure](https://www.ifrs.org/content/dam/ifrs/supporting-implementation/educational-materials/going-concern-2025.pdf)
 - [DART 소개 - 보고서정보](https://dart.fss.or.kr/introduction/content2.do)
 - [DART 소개 - 정정신고서 이용시 유의사항](https://dart.fss.or.kr/introduction/content4.do)
 
-## 정리
+## 핵심 정리
 
 감사의견 적정은 안전 확인서가 아니다. 적정 의견 아래에서도 KAM, 계속기업 관련 문구, 우발부채, 정정공시, 현금흐름은 충분히 불안한 신호를 만들 수 있다.
 

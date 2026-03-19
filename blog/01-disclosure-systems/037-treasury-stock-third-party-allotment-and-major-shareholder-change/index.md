@@ -24,7 +24,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 제목보다 먼저 무엇을 봐야 하나
+## 어떤 조건이 협상력을 결정하나
 
 자기주식 취득은 주주환원처럼 보이기 쉽고, 제3자배정은 전략적 투자 유치처럼 보이기 쉽고, 최대주주 변경은 새 주인이 들어오는 성장 이야기처럼 보이기 쉽다. 하지만 이 해석은 모두 절반만 맞다.
 
@@ -44,7 +44,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 어디서부터 해석을 가르면 되나
+## 발행자 시각 vs 투자자 시각
 
 가장 실용적인 질문은 이것이다. `이 사건이 주주환원인가, 구조 재편인가, 지배력 이동인가`.
 
@@ -56,7 +56,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 좋은 공시와 위험한 공시는 무엇이 다른가
+## 조건이 바뀔 때 무엇이 움직이나
 
 ![이 세 공시에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/037-good-vs-risky-matrix.svg)
 
@@ -94,7 +94,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 자주 놓치는 해석 4가지
+## 조건 해석에서 자주 놓치는 부분
 
 ### 1. 자기주식 취득이면 무조건 호재라고 본다
 
@@ -114,7 +114,7 @@ thumbnail: /avatar-study.png
 
 ---
 
-## 후속 공시와 다음 보고서에서 무엇을 봐야 하나
+## 후속 이벤트에서 다시 확인할 것
 
 ![이 세 공시를 읽은 뒤 후속 공시에서 다시 봐야 할 질문을 정리한 보드](./assets/037-watchboard.svg)
 
@@ -127,7 +127,7 @@ thumbnail: /avatar-study.png
 
 이벤트 발표 순간보다 후속 실행이 더 중요하다. 실제 소각이 있었는지, 납입이 완료됐는지, 최대주주가 실제로 바뀌었는지, 이사회와 주총 구조가 어떻게 달라졌는지까지 이어서 봐야 한다.
 
-## 10분 체크리스트
+## 실전 체크리스트
 
 - 상대방이 누구인지 분명한가
 - 가격과 할인 구조 설명이 충분한가
@@ -172,14 +172,14 @@ thumbnail: /avatar-study.png
 
 주주환원 정책, 일반 유상증자, CB/BW, 주총 안건 글을 같이 붙여 보면 구조가 훨씬 빨리 보인다.
 
-## 같이 읽으면 좋은 글
+## 조건 분석에 참고할 글
 
 - [주주환원 정책은 말과 숫자 중 무엇을 봐야 하나](/blog/shareholder-return-what-matters)
 - [유상증자 공시 읽는 법](/blog/rights-offering-disclosure)
 - [전환사채와 BW 공시 읽는 법](/blog/convertible-bond-and-bw-disclosure)
 - [주주총회소집공고에서 꼭 봐야 할 것은 무엇인가](/blog/how-to-read-agm-notice)
 
-## 참고한 공식 자료
+## 관련 공시 출처
 
 - [OpenDART 개발가이드 - 주요사항보고서 주요정보 목록](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS005)
 - [OpenDART 개발가이드 - 자기주식 취득 결정](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS005&apiId=2020038)
@@ -187,7 +187,7 @@ thumbnail: /avatar-study.png
 - [OpenDART 개발가이드 - 증권신고서 주요정보(지분증권)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS006&apiId=2020054)
 - [DART 기업공시길라잡이 - 임원·주요주주 대량보유 보고](https://dart.fss.or.kr/info/main.do?menu=310)
 
-## 정리
+## 조건별 핵심 요약
 
 자기주식, 제3자배정, 최대주주 변경은 모두 지배력과 이해관계를 움직이는 공시다. 그래서 가격만, 금액만, 이름만 보면 거의 항상 놓친다.
 
