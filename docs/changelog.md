@@ -11,6 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-19
+
+### Added
+
+- **세로 뷰**: `show(topic, period=["2024Q4", "2023Q4"])` — 특정 기간을 세로로 비교
+- **topics DataFrame**: `c.topics` → DataFrame (topic, source, blocks, periods)
+- **ratios 시계열**: `c.ratios` → 시계열 DataFrame (항목 × period, 최신 먼저)
+- **RatioResult `__repr__`**: 6개 카테고리별 한국어 라벨 + 억 단위 포맷
+- **report 분기 데이터**: Q1~Q4 전 분기 표시
+
+### Changed
+
+- finance/report 기간 정렬 최신 먼저 역순 통일
+- 2015년 데이터 제외 (standalone 변환 불가)
+- openai_compat provider `OpenAIError` catch 추가
+
+### Fixed
+
+- EDGAR index topics DataFrame 순회 수정
+- 테스트 topics 호환성 수정
+
 ## [0.5.1] - 2026-03-19
 
 ### Added

@@ -1341,8 +1341,9 @@ class TestEdgarCompanyInterface:
 
         c = Company("AAPL")
         topics = c.topics
-        assert isinstance(topics, list)
-        assert topics[:5] == ["BS", "IS", "CF", "CIS", "ratios"]
+        assert isinstance(topics, pl.DataFrame)
+        topicList = topics["topic"].to_list()
+        assert topicList[:5] == ["BS", "IS", "CF", "CIS", "ratios"]
 
     def test_show_with_block_and_period_filter(self):
         from dartlab.engines.edgar.company import Company

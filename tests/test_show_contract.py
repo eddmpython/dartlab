@@ -71,7 +71,7 @@ class TestShowTypeContract:
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        for topic in c.topics:
+        for topic in c.topics["topic"].to_list():
             result = c.show(topic)
             assert result is None or isinstance(result, pl.DataFrame), (
                 f"show('{topic}') returned {type(result).__name__}, expected DataFrame | None"

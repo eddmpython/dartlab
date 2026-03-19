@@ -9,8 +9,8 @@ title: "4. Ratios"
 시계열 데이터가 있으면 재무비율을 계산할 수 있다. DartLab은 6개 카테고리, 30+ 비율을 자동으로 계산한다.
 
 **두 가지 모드:**
-1. `Company.ratios` — 최신 단일 시점 (TTM + 최신 잔액)
-2. `calcRatioSeries()` — 연도별 시계열 (추세 분석용)
+1. `Company.ratios` — 재무비율 시계열 DataFrame (항목 × period, 최신 먼저)
+2. `Company.finance.ratios` — 최신 단일 시점 RatioResult (TTM + 최신 잔액)
 
 **6개 카테고리:**
 - 수익성 (8개): ROE, ROA, 영업이익률, 순이익률, 매출총이익률, EBITDA마진, 매출원가율, 판관비율
@@ -32,15 +32,19 @@ c = dartlab.Company("005930")
 
 ---
 
-## 재무비율 객체
+## 재무비율 시계열
 
-`Company.ratios` property로 재무비율 객체를 받는다.
+`Company.ratios`는 재무비율 시계열 DataFrame을 반환한다. 항목(행) × 기간(열) 형태이고 최신 기간이 먼저 온다.
 
 ```python
-r = c.ratios
+r = c.ratios  # DataFrame (비율명 × period, 최신 먼저)
 ```
 
-내부적으로 `timeseries`에서 시계열을 가져와 TTM(최근 4분기 합산)과 최신 잔액으로 비율을 계산한다. property이므로 처음 접근할 때 계산하고 이후 캐싱된다.
+최신 단일 시점의 `RatioResult` 객체가 필요하면 `c.finance.ratios`를 사용한다.
+
+```python
+rr = c.finance.ratios  # RatioResult (TTM + 최신 잔액)
+```
 
 `ratios`가 `None`이면 해당 기업의 재무 데이터가 부족한 것이다.
 

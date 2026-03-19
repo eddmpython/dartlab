@@ -34,7 +34,7 @@
 				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">diff</span><span class="text-dl-text-muted">(</span><span class="text-emerald-400">"businessOverview"</span><span class="text-dl-text-muted">)</span><br /><br />
 				<span class="text-dl-text-dim"># finance shortcuts</span><br />
 				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">BS</span> <span class="text-dl-text-dim"># balance sheet</span><br />
-				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">ratios</span> <span class="text-dl-text-dim"># 47 ratios</span><br />
+				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">ratios</span> <span class="text-dl-text-dim"># ratio time series</span><br />
 				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">insights</span> <span class="text-dl-text-dim"># 7-area grades</span>
 			</CodeWindow>
 		</div>

@@ -25,9 +25,9 @@ import dartlab
 from dartlab import Company
 
 from .cache import company_cache
-from .chat import OLLAMA_MODEL_GUIDE, build_dynamic_chat_prompt, build_history_messages
+from .chat import OLLAMA_MODEL_GUIDE, build_dynamic_chat_prompt, build_history_messages, build_topic_summary_prompt
 from .dialogue import build_conversation_state
-from .models import AskRequest, ConfigureRequest
+from .models import AskRequest, ConfigureRequest, TocChapter, TocResponse, TocTopic
 from .resolve import (
     ResolveResult,
     _collect_candidates,
@@ -664,6 +664,67 @@ def _get_company(code: str) -> Company:
     return c
 
 
+def _findPrevComparable(periods: list[str], target: str) -> str | None:
+    """같은 보고서 유형의 직전 기간을 찾는다. (연간↔연간, Q1↔Q1)"""
+    import re
+
+    m = re.fullmatch(r"(\d{4})(Q[1-4])?", target)
+    if not m:
+        return None
+    year, q = int(m.group(1)), m.group(2)
+    # 같은 유형의 가장 가까운 이전 기간 찾기
+    best: str | None = None
+    bestYear = -1
+    for p in periods:
+        if p == target:
+            continue
+        pm = re.fullmatch(r"(\d{4})(Q[1-4])?", p)
+        if not pm:
+            continue
+        pYear, pQ = int(pm.group(1)), pm.group(2)
+        if q == pQ and pYear < year and pYear > bestYear:
+            best = p
+            bestYear = pYear
+    return best
+
+
+def _filterBlocksByPeriod(blocks: list, period: str) -> list:
+    """viewerBlocks를 특정 period + 직전 동주기로 필터링한다."""
+    import polars as pl
+
+    filtered = []
+    for block in blocks:
+        if block.data is None:
+            filtered.append(block)
+            continue
+
+        allPeriods = block.meta.periods if block.meta.periods else []
+        if period not in allPeriods:
+            # period가 없는 블록은 그대로 (finance 등)
+            filtered.append(block)
+            continue
+
+        prev = _findPrevComparable(allPeriods, period)
+        keepPeriods = [p for p in [period, prev] if p is not None and p in block.data.columns]
+        nonPeriodCols = [c for c in block.data.columns if c not in allPeriods]
+        selectCols = nonPeriodCols + keepPeriods
+
+        from copy import copy
+
+        newBlock = copy(block)
+        newBlock.data = block.data.select([c for c in selectCols if c in block.data.columns])
+        newBlock.meta = type(block.meta)(
+            unit=block.meta.unit,
+            scale=block.meta.scale,
+            scaleDivisor=block.meta.scaleDivisor,
+            periods=keepPeriods,
+            rowCount=block.meta.rowCount,
+            colCount=len(keepPeriods),
+        )
+        filtered.append(newBlock)
+    return filtered
+
+
 @app.get("/api/company/{code}")
 def api_company(code: str):
     """기업 기본 정보 + 현재 공개 surface 안내."""
@@ -709,6 +770,109 @@ def api_company_sections(code: str):
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "payload": _serialize_payload(c.sections, max_rows=5000),
+        }
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/toc")
+def api_company_toc(code: str):
+    """뷰어용 목차 — chapter/topic 트리 + text/table 블록 카운트."""
+    try:
+        c = _get_company(code)
+        sec = c.sections
+        if sec is None:
+            return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=[])
+
+        import polars as pl
+
+        chapterMap: dict[str, list[TocTopic]] = {}
+        chapterOrder: list[str] = []
+        seenTopics: set[str] = set()
+
+        # finance topics 먼저 추가 (III장)
+        _FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
+        financeChapter = "III. 재무에 관한 사항"
+        for ft in _FINANCE_TOPICS:
+            df = getattr(c, ft, None) if ft != "ratios" else None
+            if ft == "ratios":
+                rsPair = c._ratioSeries() if c._hasFinance else None
+                if rsPair is None:
+                    continue
+            elif df is None:
+                continue
+            seenTopics.add(ft)
+            if financeChapter not in chapterMap:
+                chapterMap[financeChapter] = []
+                chapterOrder.append(financeChapter)
+            chapterMap[financeChapter].append(TocTopic(topic=ft, label=c._topicLabel(ft), textCount=0, tableCount=1))
+
+        # sections topics
+        if "topic" in sec.columns:
+            for row in sec.iter_rows(named=True):
+                topic = row.get("topic")
+                if not isinstance(topic, str) or not topic or topic in seenTopics:
+                    continue
+                seenTopics.add(topic)
+
+                topicFrame = sec.filter(pl.col("topic") == topic)
+                bt = topicFrame["blockType"] if "blockType" in topicFrame.columns else None
+                textCount = bt.eq("text").sum() if bt is not None else topicFrame.height
+                tableCount = bt.eq("table").sum() if bt is not None else 0
+
+                chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
+                chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else "기타"
+                if chapter not in chapterMap:
+                    chapterMap[chapter] = []
+                    chapterOrder.append(chapter)
+                chapterMap[chapter].append(
+                    TocTopic(
+                        topic=topic,
+                        label=c._topicLabel(topic),
+                        textCount=int(textCount),
+                        tableCount=int(tableCount),
+                    )
+                )
+
+        chapters = [TocChapter(chapter=ch, topics=chapterMap[ch]) for ch in chapterOrder]
+        return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=chapters)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/viewer/{topic}")
+def api_company_viewer_topic(
+    code: str,
+    topic: str,
+    period: str | None = Query(None, description="특정 기간만 반환 (타임라인 클릭 최적화)"),
+):
+    """뷰어 전용 — topic의 viewerBlocks + textDocument.
+
+    period 생략 → 전체 기간 반환 (초기 로드).
+    period 지정 → 해당 기간 + 직전 동주기만 포함한 경량 응답 (타임라인 클릭).
+    """
+    try:
+        from dartlab.engines.dart.docs.viewer import (
+            serializeViewerBlock,
+            serializeViewerTextDocument,
+            viewerBlocks,
+            viewerTextDocument,
+        )
+
+        c = _get_company(code)
+        blocks = viewerBlocks(c, topic)
+
+        if period is not None:
+            blocks = _filterBlocksByPeriod(blocks, period)
+
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "topic": topic,
+            "topicLabel": c._topicLabel(topic),
+            "period": period,
+            "blocks": [serializeViewerBlock(b) for b in blocks],
+            "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
         }
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -811,6 +975,59 @@ def api_company_trace(code: str, topic: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.get("/api/company/{code}/summary/{topic}")
+async def api_company_topic_summary(code: str, topic: str):
+    """topic별 AI 요약 생성 (SSE 스트리밍)."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    result = build_topic_summary_prompt(c, topic)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"topic '{topic}' 데이터 없음")
+
+    messages, context_text = result
+
+    async def _generate():
+        from dartlab.engines.ai import get_config
+        from dartlab.engines.ai.providers import create_provider
+
+        yield {
+            "event": "context",
+            "data": json.dumps(
+                {"module": "_topic_summary", "label": f"{topic} 요약 근거", "text": context_text},
+                ensure_ascii=False,
+            ),
+        }
+
+        try:
+            config_ = get_config()
+            llm = create_provider(config_)
+
+            def _stream():
+                yield from llm.stream(messages)
+
+            gen = _stream()
+            while True:
+                chunk = await asyncio.to_thread(next, gen, None)
+                if chunk is None:
+                    break
+                yield {
+                    "event": "chunk",
+                    "data": json.dumps({"text": chunk}, ensure_ascii=False),
+                }
+        except (ImportError, OSError, RuntimeError, ValueError) as e:
+            yield {
+                "event": "error",
+                "data": json.dumps({"error": str(e)}, ensure_ascii=False),
+            }
+
+        yield {"event": "done", "data": "{}"}
+
+    return EventSourceResponse(_generate())
+
+
 @app.get("/api/company/{code}/diff")
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""
@@ -821,6 +1038,85 @@ def api_company_diff(code: str):
             "corpName": c.corpName,
             "payload": _serialize_payload(c.diff()),
         }
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/company/{code}/diff/{topic}/summary")
+def api_company_diff_topic_summary(code: str, topic: str):
+    """뷰어용 diff 요약 — changeRate + 최신 변경의 added/removed 미리보기."""
+    try:
+        from dartlab.engines.common.docs.diff import sectionsDiff
+
+        c = _get_company(code)
+        sec = c.docs.sections
+        if sec is None:
+            raise HTTPException(status_code=404, detail="sections 없음")
+
+        diffResult = sectionsDiff(sec)
+        # topic에 해당하는 모든 row summary 집계
+        topicSummaries = [s for s in diffResult.summaries if s.topic == topic]
+        totalChanged = sum(s.changedCount for s in topicSummaries)
+        maxPeriods = max((s.totalPeriods for s in topicSummaries), default=0)
+        changeRate = round(totalChanged / max(1, (maxPeriods - 1) * len(topicSummaries)), 3) if topicSummaries else 0.0
+        changedCount = totalChanged
+        totalPeriods = maxPeriods
+
+        # 최신 변경쌍의 added/removed 미리보기
+        topicEntries = [e for e in diffResult.entries if e.topic == topic]
+        added: list[str] = []
+        removed: list[str] = []
+        latestFrom: str | None = None
+        latestTo: str | None = None
+
+        if topicEntries:
+            latest = max(topicEntries, key=lambda e: e.toPeriod)
+            latestFrom = latest.fromPeriod
+            latestTo = latest.toPeriod
+
+            # sections에서 해당 topic의 모든 row에서 실제 변화 추출
+            import difflib
+            import polars as pl
+
+            filtered = sec.filter(pl.col("topic") == topic)
+            for row in filtered.iter_rows(named=True):
+                fromText = str(row.get(latestFrom) or "").strip()
+                toText = str(row.get(latestTo) or "").strip()
+                if not fromText and not toText:
+                    continue
+                if fromText == toText:
+                    continue
+                # 줄 단위 diff
+                fromLines = fromText.splitlines()
+                toLines = toText.splitlines()
+                for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, fromLines, toLines).get_opcodes():
+                    if tag in ("insert", "replace"):
+                        for line in toLines[j1:j2]:
+                            line = line.strip()
+                            if line and len(added) < 3:
+                                added.append(line[:120])
+                    if tag in ("delete", "replace"):
+                        for line in fromLines[i1:i2]:
+                            line = line.strip()
+                            if line and len(removed) < 3:
+                                removed.append(line[:120])
+                if len(added) >= 3 and len(removed) >= 3:
+                    break
+
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "topic": topic,
+            "changeRate": changeRate,
+            "changedCount": changedCount,
+            "totalPeriods": totalPeriods,
+            "latestFrom": latestFrom,
+            "latestTo": latestTo,
+            "added": added,
+            "removed": removed,
+        }
+    except HTTPException:
+        raise
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))
 

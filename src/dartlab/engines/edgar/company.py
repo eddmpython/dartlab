@@ -380,7 +380,14 @@ class _FinanceAccessor:
                 row[str(year)] = values[i] if i < len(values) else None
             rows.append(row)
 
-        result = pl.DataFrame(rows) if rows else None
+        if not rows:
+            self._company._cache[cacheKey] = None
+            return None
+
+        result = pl.DataFrame(rows)
+        # 기간 컬럼 역순 정렬
+        periodCols = [c for c in result.columns if c != "account"]
+        result = result.select(["account"] + periodCols[::-1])
         self._company._cache[cacheKey] = result
         return result
 
@@ -673,12 +680,19 @@ class Company:
         return merged
 
     @property
-    def ratios(self):
-        return self.finance.ratios
-
-    @property
-    def ratioSeries(self):
-        return self.finance.ratioSeries
+    def ratios(self) -> pl.DataFrame | None:
+        """재무비율 시계열 DataFrame."""
+        rs = self.finance.ratioSeries
+        if rs is None:
+            return None
+        series, years = rs
+        df = _ratioSeriesToDataFrame(series, years)
+        if df is not None:
+            metaCols = [c for c in df.columns if not _isPeriodColumn(c)]
+            periodCols = [c for c in df.columns if _isPeriodColumn(c)]
+            periodCols.sort(reverse=True)
+            df = df.select(metaCols + periodCols)
+        return df
 
     @property
     def insights(self):
@@ -702,8 +716,9 @@ class Company:
         return self.docs.filings()
 
     @property
-    def topics(self) -> list[str]:
-        cacheKey = "_topics"
+    def topics(self) -> pl.DataFrame:
+        """topic별 요약 DataFrame (topic, source, blocks, periods)."""
+        cacheKey = "_topicsDataFrame"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
@@ -730,15 +745,38 @@ class Company:
                     ordered.append(topic)
                     seen.add(topic)
 
-        self._cache[cacheKey] = ordered
-        return ordered
+        # DataFrame으로 변환
+        rows: list[dict] = []
+        for topic in ordered:
+            if sec is not None and topic in sec["topic"].to_list():
+                topicRows = sec.filter(pl.col("topic") == topic)
+                sources = sorted(topicRows["source"].unique().to_list()) if "source" in topicRows.columns else ["docs"]
+                blocks = topicRows["blockOrder"].n_unique() if "blockOrder" in topicRows.columns else topicRows.height
+                periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+                periods = len(periodCols)
+            else:
+                sources = ["finance"]
+                blocks = 1
+                periods = 0
+            rows.append(
+                {
+                    "topic": topic,
+                    "source": ",".join(sources),
+                    "blocks": blocks,
+                    "periods": periods,
+                }
+            )
+
+        result = pl.DataFrame(rows) if rows else pl.DataFrame({"topic": [], "source": [], "blocks": [], "periods": []})
+        self._cache[cacheKey] = result
+        return result
 
     def show(
         self,
         topic: str,
         block: int | None = None,
         *,
-        period: str | None = None,
+        period: str | list[str] | None = None,
         **_kw: Any,
     ) -> pl.DataFrame | None:
         """topic의 데이터를 반환.
@@ -749,8 +787,15 @@ class Company:
         Args:
             topic: topic 이름 (BS, IS, 10-K::item1Business 등)
             block: blockOrder 인덱스. None이면 블록 목차.
-            period: 특정 기간 필터
+            period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
         """
+        # period가 리스트면 세로 뷰
+        if isinstance(period, list):
+            wide = self.show(topic, block)
+            if wide is None or not isinstance(wide, pl.DataFrame):
+                return None
+            return self._transposeToVertical(wide, period)
+
         sec = self.sections
         if sec is None:
             return None
@@ -813,6 +858,31 @@ class Company:
                 return self._applyPeriodFilter(tableRows.select(nonNullCols), period)
 
         return self._applyPeriodFilter(topicRows, period)
+
+    @staticmethod
+    def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
+        """수평화 DataFrame → 세로 뷰 (기간 × 항목)."""
+        labelCol = wide.columns[0]
+        labels = wide[labelCol].to_list()
+        periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
+
+        matched: list[str] = []
+        for p in periods:
+            if p in periodCols:
+                matched.append(p)
+            elif "Q" not in p and f"{p}Q4" in periodCols:
+                matched.append(f"{p}Q4")
+        if not matched:
+            return None
+
+        rows: list[dict] = []
+        for p in matched:
+            row: dict = {"기간": p}
+            for i, label in enumerate(labels):
+                row[label] = wide[p][i]
+            rows.append(row)
+
+        return pl.DataFrame(rows)
 
     def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
         """topic의 블록 목차 DataFrame."""
@@ -936,7 +1006,7 @@ class Company:
             return self._cache[cacheKey]
 
         rows: list[dict[str, Any]] = []
-        for topic in self.topics:
+        for topic in self.topics["topic"].to_list():
             traced = self.trace(topic)
             source = traced["primarySource"] if traced else None
             chapter, label = _topicChapterLabel(topic)

@@ -126,7 +126,13 @@ def _seriesToWide(
         for y, v in zip(yearCols, series):
             row[y] = v
         rows.append(row)
-    return pl.DataFrame(rows) if rows else None
+    if not rows:
+        return None
+    df = pl.DataFrame(rows)
+    # 최신 먼저 역순 정렬
+    periodCols = [c for c in df.columns if c != "metric"]
+    df = df.select(["metric"] + periodCols[::-1])
+    return df
 
 
 META_DROP_COLS = frozenset(

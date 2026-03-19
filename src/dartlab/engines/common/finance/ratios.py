@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import ClassVar, Optional
 
 from dartlab.engines.common.finance.extract import getLatest, getRevenueGrowth3Y, getTTM
 
@@ -105,6 +105,162 @@ class RatioResult:
     ebitdaEstimated: bool = True
 
     warnings: list[str] = field(default_factory=list)
+
+    # ── 카테고리별 필드 그룹 (표시용) ──────────────────────────
+    _DISPLAY_GROUPS: ClassVar[list[tuple[str, list[str]]]] = [
+        (
+            "수익성",
+            [
+                "roe",
+                "roa",
+                "operatingMargin",
+                "netMargin",
+                "grossMargin",
+                "ebitdaMargin",
+                "costOfSalesRatio",
+                "sgaRatio",
+            ],
+        ),
+        (
+            "안정성",
+            [
+                "debtRatio",
+                "currentRatio",
+                "quickRatio",
+                "equityRatio",
+                "interestCoverage",
+                "netDebtRatio",
+                "noncurrentRatio",
+            ],
+        ),
+        (
+            "성장성",
+            [
+                "revenueGrowth",
+                "operatingProfitGrowth",
+                "netProfitGrowth",
+                "assetGrowth",
+                "equityGrowthRate",
+                "revenueGrowth3Y",
+            ],
+        ),
+        (
+            "효율성",
+            [
+                "totalAssetTurnover",
+                "inventoryTurnover",
+                "receivablesTurnover",
+                "payablesTurnover",
+            ],
+        ),
+        (
+            "현금흐름",
+            [
+                "fcf",
+                "operatingCfMargin",
+                "operatingCfToNetIncome",
+                "capexRatio",
+                "dividendPayoutRatio",
+            ],
+        ),
+        ("밸류에이션", ["per", "pbr", "psr", "evEbitda", "marketCap"]),
+    ]
+
+    _LABELS: ClassVar[dict[str, str]] = {
+        "roe": "ROE (%)",
+        "roa": "ROA (%)",
+        "operatingMargin": "영업이익률 (%)",
+        "netMargin": "순이익률 (%)",
+        "grossMargin": "매출총이익률 (%)",
+        "ebitdaMargin": "EBITDA 마진 (%)",
+        "costOfSalesRatio": "매출원가율 (%)",
+        "sgaRatio": "판관비율 (%)",
+        "debtRatio": "부채비율 (%)",
+        "currentRatio": "유동비율 (%)",
+        "quickRatio": "당좌비율 (%)",
+        "equityRatio": "자기자본비율 (%)",
+        "interestCoverage": "이자보상배율 (x)",
+        "netDebtRatio": "순차입금비율 (%)",
+        "noncurrentRatio": "비유동비율 (%)",
+        "revenueGrowth": "매출성장률 (%)",
+        "operatingProfitGrowth": "영업이익성장률 (%)",
+        "netProfitGrowth": "순이익성장률 (%)",
+        "assetGrowth": "자산성장률 (%)",
+        "equityGrowthRate": "자본성장률 (%)",
+        "revenueGrowth3Y": "매출 3Y CAGR (%)",
+        "totalAssetTurnover": "총자산회전율 (x)",
+        "inventoryTurnover": "재고자산회전율 (x)",
+        "receivablesTurnover": "매출채권회전율 (x)",
+        "payablesTurnover": "매입채무회전율 (x)",
+        "fcf": "FCF",
+        "operatingCfMargin": "영업CF마진 (%)",
+        "operatingCfToNetIncome": "영업CF/순이익 (%)",
+        "capexRatio": "CAPEX비율 (%)",
+        "dividendPayoutRatio": "배당성향 (%)",
+        "per": "PER (x)",
+        "pbr": "PBR (x)",
+        "psr": "PSR (x)",
+        "evEbitda": "EV/EBITDA (x)",
+        "marketCap": "시가총액",
+    }
+
+    def __repr__(self) -> str:
+        lines: list[str] = []
+        for group, fields in self._DISPLAY_GROUPS:
+            rows = []
+            for f in fields:
+                v = getattr(self, f, None)
+                if v is None:
+                    continue
+                label = self._LABELS.get(f, f)
+                if isinstance(v, float) and abs(v) >= 1e8:
+                    formatted = f"{v / 1e8:>14,.0f}억"
+                elif isinstance(v, float):
+                    formatted = f"{v:>14,.2f}"
+                else:
+                    formatted = f"{v!s:>14}"
+                rows.append(f"  {label:<24s}{formatted}")
+            if rows:
+                lines.append(f"[{group}]")
+                lines.extend(rows)
+                lines.append("")
+        if self.warnings:
+            lines.append(f"⚠ {', '.join(self.warnings)}")
+        return "\n".join(lines) if lines else "RatioResult(empty)"
+
+    def _repr_html_(self) -> str:
+        """Jupyter/marimo용 HTML 테이블."""
+        rows: list[str] = []
+        for group, fields in self._DISPLAY_GROUPS:
+            has_data = False
+            group_rows: list[str] = []
+            for f in fields:
+                v = getattr(self, f, None)
+                if v is None:
+                    continue
+                has_data = True
+                label = self._LABELS.get(f, f)
+                if isinstance(v, float) and abs(v) >= 1e8:
+                    formatted = f"{v / 1e8:,.0f}억"
+                elif isinstance(v, float):
+                    formatted = f"{v:,.2f}"
+                else:
+                    formatted = str(v)
+                group_rows.append(
+                    f"<tr><td style='padding:2px 8px'>{label}</td>"
+                    f"<td style='padding:2px 8px;text-align:right'>{formatted}</td></tr>"
+                )
+            if has_data:
+                rows.append(
+                    f"<tr><td colspan='2' style='padding:6px 8px 2px;"
+                    f"font-weight:bold;border-bottom:1px solid #ccc'>{group}</td></tr>"
+                )
+                rows.extend(group_rows)
+        if self.warnings:
+            rows.append(
+                f"<tr><td colspan='2' style='padding:4px 8px;color:#c00'>⚠ {', '.join(self.warnings)}</td></tr>"
+            )
+        return "<table style='font-size:13px;border-collapse:collapse'>" + "".join(rows) + "</table>"
 
 
 @dataclass

@@ -41,7 +41,7 @@ c.trace("companyOverview")
 c.sections                  # topic × period 매트릭스
 c.sections.periods()        # 사용 가능한 기간 목록
 c.sections.ordered()        # 최신 순 정렬
-c.topics                    # topic 목록
+c.topics                    # topic 요약 DataFrame (source, blocks, periods)
 ```
 
 핵심 컬럼:

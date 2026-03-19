@@ -42,9 +42,11 @@ import dartlab
 
 c = dartlab.Company("005930")   # 삼성전자 (DART)
 c.sections                      # 전체 회사 맵 (topic × period)
+c.topics                        # topic 목록 (source, blocks, periods)
 c.show("companyOverview")       # topic 하나 열기
+c.show("IS", period=["2024Q4", "2023Q4"])  # 세로 뷰 (기간 × 항목)
 c.BS                            # 재무상태표
-c.ratios                        # 47개 재무비율
+c.ratios                        # 재무비율 시계열 (항목 × period)
 c.insights                      # 7영역 등급 (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -93,7 +95,10 @@ c = dartlab.Company("005930")
 # show — source 우선순위에 따라 topic을 연다
 c.show("BS")                # → finance DataFrame
 c.show("companyOverview")   # → sections 기반 텍스트 + 테이블
-c.show("dividend")          # → report DataFrame
+c.show("dividend")          # → report DataFrame (전 분기)
+
+# 세로 뷰 — 특정 기간 비교
+c.show("IS", period=["2024Q4", "2023Q4"])  # 기간 × 항목
 
 # trace — docs/finance/report 중 어떤 source가 채택됐는지
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -107,11 +112,12 @@ c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
 ### 재무제표와 재무비율
 
 ```python
-c.BS                    # 재무상태표 (계정 × 연도)
+c.BS                    # 재무상태표 (계정 × period, 최신 먼저)
 c.IS                    # 손익계산서
 c.CF                    # 현금흐름표
-c.finance.ratios        # 47개 비율 (ROE, 부채비율, 마진, …)
-c.finance.ratioSeries   # 비율 시계열
+c.ratios                # 재무비율 시계열 DataFrame (6개 카테고리 × period)
+c.finance.ratios        # 최신 단일 시점 RatioResult
+c.finance.ratioSeries   # 비율 시계열 across years
 c.finance.timeseries    # 원본 계정 시계열
 ```
 

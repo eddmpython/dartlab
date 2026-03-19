@@ -794,6 +794,9 @@ def _financeToDataFrame(
     rows.sort(key=lambda r: r["_sort"])
     df = pl.DataFrame(rows)
     df = df.drop(["_snakeId", "_level", "_sort"])
+    # 기간 컬럼을 최신 먼저 역순으로 정렬
+    periodCols = [c for c in df.columns if c != "계정명"]
+    df = df.select(["계정명"] + periodCols[::-1])
     return df
 
 
@@ -3287,6 +3290,7 @@ class Company:
         """단위행/기준일행이 헤더인 서브테이블 → 단위행 제거 + 나머지 반환.
 
         패턴: | (단위:천원) | | | → sep → 실제헤더 → 데이터
+        다중컬럼: | (기준일 : | 2018년 03월 31일 | ) | (단위 : 주) |
         반환: 실제헤더 행부터의 서브테이블 (기존 파서가 그대로 동작).
         해당하지 않으면 None.
         """
@@ -3311,11 +3315,21 @@ class Company:
             firstRow = [c for c in cells if c.strip()]
             break
 
-        if firstRow is None or len(firstRow) != 1:
+        if firstRow is None:
             return None
-        h = firstRow[0].strip()
-        if not (_UNIT_ONLY_RE.match(h) or _DATE_ONLY_RE.match(h)):
-            return None
+
+        # 단일 컬럼: 기존 방식
+        if len(firstRow) == 1:
+            h = firstRow[0].strip()
+            if not (_UNIT_ONLY_RE.match(h) or _DATE_ONLY_RE.match(h)):
+                return None
+        else:
+            # 다중 컬럼: 셀을 합쳐서 단위/기준일 패턴 검사
+            joined = " ".join(c.strip() for c in firstRow)
+            hasUnit = bool(re.search(r"단위\s*[:/]", joined))
+            hasDate = bool(re.search(r"기준일\s*[:/]", joined))
+            if not (hasUnit or hasDate):
+                return None
 
         # 첫 separator 이후의 행들을 새 서브테이블로 반환
         sepIdx = -1
@@ -3456,7 +3470,19 @@ class Company:
                     continue
                 dr = _dataRows(sub)
                 if not dr:
-                    continue
+                    # 데이터 없음 → 단위/기준일 헤더 strip 시도
+                    fixed = self._stripUnitHeader(sub)
+                    if fixed is not None:
+                        fixedHc = _headerCells(fixed)
+                        fixedDr = _dataRows(fixed)
+                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
+                            sub = fixed
+                            hc = fixedHc
+                            dr = fixedDr
+                        else:
+                            continue
+                    else:
+                        continue
                 structType = _classifyStructure(hc)
                 if structType == "skip":
                     fixed = self._stripUnitHeader(sub)
@@ -3500,7 +3526,19 @@ class Company:
                     continue
                 dr = _dataRows(sub)
                 if not dr:
-                    continue
+                    # 데이터 없음 → 단위/기준일 헤더 strip 시도
+                    fixed = self._stripUnitHeader(sub)
+                    if fixed is not None:
+                        fixedHc = _headerCells(fixed)
+                        fixedDr = _dataRows(fixed)
+                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
+                            sub = fixed
+                            hc = fixedHc
+                            dr = fixedDr
+                        else:
+                            continue
+                    else:
+                        continue
 
                 structType = _classifyStructure(hc)
 
@@ -3749,34 +3787,59 @@ class Company:
             return None
 
     def _reportFrameInner(self, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
-        # pivot 5개는 toWide()로 사용자 친화적 테이블 반환
-        pivotName = apiType if apiType in _ReportAccessor._PIVOT_NAMES else topic
-        if pivotName in _ReportAccessor._PIVOT_NAMES:
-            result = getattr(self.report, pivotName, None)
-            if result is not None and hasattr(result, "toWide"):
-                wide = result.toWide()
-                if wide is not None:
-                    if not raw and "metric" in wide.columns:
-                        wide = wide.rename({"metric": "항목"})
-                    return wide
-        df = self.report.extractAnnual(apiType)
+        from dartlab.engines.dart.report.extract import extractClean
+
+        df = extractClean(self.stockCode, apiType)
         if df is None or df.is_empty():
-            return df
-        _META_COLS = {"stlm_dt", "apiType", "stockCode", "year", "quarter", "quarterNum"}
+            return None
+
+        # 2015년 제외 (sections/finance와 통일)
+        df = df.filter(pl.col("year") != 2015)
+        if df.is_empty():
+            return None
+
+        # stock_knd 필터 (보통주 우선)
+        if "stock_knd" in df.columns:
+            common = df.filter(pl.col("stock_knd") == "보통주")
+            if not common.is_empty():
+                df = common
+
+        # se(항목) 컬럼이 있으면 se × period 수평화
+        if "se" in df.columns:
+            return self._reportPivotBySe(df, raw=raw)
+
+        # se 없는 apiType → 행 기반 반환
+        _META_COLS = {"stlm_dt", "apiType", "stockCode", "year", "quarter", "quarterNum", "stock_knd"}
         dropCols = [c for c in df.columns if c in _META_COLS]
         if dropCols:
             df = df.drop(dropCols)
-        if raw:
-            return df
-        # 영문 컬럼 → 한글 매핑 (OpenDART 공식)
-        renameMap = {c: _REPORT_COL_KR[c] for c in df.columns if c in _REPORT_COL_KR}
-        if renameMap:
-            # 중복 한글명 방지: 이미 존재하는 컬럼명은 건너뜀
-            existing = set(df.columns)
-            renameMap = {k: v for k, v in renameMap.items() if v not in existing or k == v}
+        if not raw:
+            renameMap = {c: _REPORT_COL_KR[c] for c in df.columns if c in _REPORT_COL_KR}
             if renameMap:
-                df = df.rename(renameMap)
+                existing = set(df.columns)
+                renameMap = {k: v for k, v in renameMap.items() if v not in existing or k == v}
+                if renameMap:
+                    df = df.rename(renameMap)
         return df
+
+    def _reportPivotBySe(self, df: pl.DataFrame, *, raw: bool = False) -> pl.DataFrame | None:
+        """report se(항목) × period 수평화. 분기별 전체 데이터."""
+        df = df.with_columns((pl.col("year").cast(pl.Utf8) + "Q" + pl.col("quarterNum").cast(pl.Utf8)).alias("_period"))
+        # null-only 행 제외
+        if "thstrm" in df.columns:
+            df = df.filter(pl.col("thstrm").is_not_null())
+        if df.is_empty():
+            return None
+
+        pivoted = df.pivot(on="_period", index="se", values="thstrm", aggregate_function="first")
+
+        # period 컬럼 역순 정렬
+        periodCols = [c for c in pivoted.columns if c != "se"]
+        periodCols.sort(key=lambda p: (int(p[:4]), int(p[-1])), reverse=True)
+        result = pivoted.select(["se"] + periodCols)
+        if not raw:
+            result = result.rename({"se": "항목"})
+        return result
 
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
@@ -3818,7 +3881,7 @@ class Company:
         topic: str,
         block: int | None = None,
         *,
-        period: str | None = None,
+        period: str | list[str] | None = None,
         raw: bool = False,
     ) -> pl.DataFrame | None:
         """topic의 데이터를 반환.
@@ -3829,9 +3892,16 @@ class Company:
         Args:
             topic: topic 이름 (BS, IS, dividend, companyOverview 등)
             block: blockOrder 인덱스. None이면 블록 목차.
-            period: 특정 기간 필터
+            period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
             raw: True면 원본 그대로
         """
+        # period가 리스트면 세로 뷰: 먼저 전체 데이터 → transpose
+        if isinstance(period, list):
+            wide = self.show(topic, block, raw=raw)
+            if wide is None or not isinstance(wide, pl.DataFrame):
+                return None
+            return self._transposeToVertical(wide, period)
+
         sec = self.sections
         if sec is None:
             return None
@@ -3876,6 +3946,40 @@ class Company:
             result = self._cleanFinanceDataFrame(result, topic)
 
         return result if isinstance(result, pl.DataFrame) else None
+
+    @staticmethod
+    def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
+        """수평화 DataFrame → 세로 뷰 (기간 × 항목).
+
+        wide: 항목(계정명/항목) | 2025Q3 | 2025Q2 | ... 형태
+        periods: ["2024Q4", "2023Q4"] 등 비교할 기간 리스트
+        Returns: 기간 | 항목1 | 항목2 | ... 형태
+        """
+        # 첫 컬럼이 항목명 (계정명/항목/se 등)
+        labelCol = wide.columns[0]
+        labels = wide[labelCol].to_list()
+        periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
+
+        # 요청된 period 매칭 (Q4 alias 포함)
+        matched: list[str] = []
+        for p in periods:
+            if p in periodCols:
+                matched.append(p)
+            elif "Q" not in p and f"{p}Q4" in periodCols:
+                matched.append(f"{p}Q4")
+        if not matched:
+            return None
+
+        # 세로 변환: 각 period를 행으로
+        rows: list[dict] = []
+        for p in matched:
+            row: dict = {"기간": p}
+            for i, label in enumerate(labels):
+                val = wide[p][i]
+                row[label] = val
+            rows.append(row)
+
+        return pl.DataFrame(rows)
 
     @staticmethod
     def _cleanFinanceDataFrame(df: pl.DataFrame, sjDiv: str) -> pl.DataFrame:
@@ -4183,8 +4287,44 @@ class Company:
         return parsed
 
     @property
-    def topics(self) -> list[str]:
-        return list(self._boardTopics())
+    def topics(self) -> pl.DataFrame:
+        """topic별 요약 DataFrame (topic, source, blocks, periods)."""
+        cacheKey = "_topicsDataFrame"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        sec = self.sections
+        topicOrder = self._boardTopics()
+
+        rows: list[dict] = []
+        if sec is not None and "topic" in sec.columns:
+            for topic in topicOrder:
+                topicRows = sec.filter(pl.col("topic") == topic)
+                if topicRows.is_empty():
+                    continue
+
+                # source 종류
+                sources = sorted(topicRows["source"].unique().to_list()) if "source" in topicRows.columns else ["docs"]
+
+                # block 수
+                blocks = topicRows["blockOrder"].n_unique() if "blockOrder" in topicRows.columns else topicRows.height
+
+                # period 수
+                periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+                periods = len(periodCols)
+
+                rows.append(
+                    {
+                        "topic": topic,
+                        "source": ",".join(sources),
+                        "blocks": blocks,
+                        "periods": periods,
+                    }
+                )
+
+        result = pl.DataFrame(rows) if rows else pl.DataFrame({"topic": [], "source": [], "blocks": [], "periods": []})
+        self._cache[cacheKey] = result
+        return result
 
     @property
     def sources(self) -> pl.DataFrame:
@@ -4489,20 +4629,26 @@ class Company:
         return result
 
     @property
-    def ratios(self):
-        """재무비율 (연결 기준, ROE, ROA, 마진, 부채비율 등).
-
-        Returns:
-            RatioResult dataclass.
+    def ratios(self) -> pl.DataFrame | None:
+        """재무비율 시계열 (분류/항목 × 기간 DataFrame).
 
         Example::
 
             c = Company("005930")
-            c.ratios.roe            # 8.57
-            c.ratios.operatingMargin  # 10.88
-            c.ratios.debtRatio      # 27.93
+            c.ratios  # 분류 | 항목 | 2025Q3 | 2025Q2 | ...
         """
-        return self.getRatios("CFS")
+        rs = self._ratioSeries()
+        if rs is None:
+            return None
+        series, periods = rs
+        df = _ratioSeriesToDataFrame(series, periods)
+        if df is not None:
+            # 기간 컬럼 역순 정렬
+            metaCols = [c for c in df.columns if not _isPeriodColumn(c)]
+            periodCols = [c for c in df.columns if _isPeriodColumn(c)]
+            periodCols.sort(key=lambda p: (int(p[:4]), int(p[-1])), reverse=True)
+            df = df.select(metaCols + periodCols)
+        return df
 
     @property
     def timeseries(self):

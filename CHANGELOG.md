@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-19
+
+### Added
+
+- **세로 뷰**: `show(topic, period=["2024Q4", "2023Q4"])` — 특정 기간을 세로(기간 × 항목)로 비교
+- **topics DataFrame**: `c.topics`가 리스트 대신 DataFrame 반환 (topic, source, blocks, periods 컬럼)
+- **ratios 시계열**: `c.ratios`가 단일 시점 대신 시계열 DataFrame 반환 (항목 × period, 최신 먼저)
+- **RatioResult `__repr__`**: 6개 카테고리별 한국어 라벨 + 억 단위 포맷 가독성 개선
+- **report 분기 데이터**: DART report가 Q4(연간)만 아닌 Q1~Q4 전 분기 표시
+- **EDGAR `_transposeToVertical`**: EDGAR에도 세로 뷰 지원 추가
+- **서버 viewer 기능 확장**: TOC, topic summary SSE, diff 엔드포인트 추가
+
+### Changed
+
+- **finance/report 기간 정렬**: 모든 재무/report DataFrame 컬럼이 최신 먼저 역순 정렬
+- **2015년 데이터 제외**: finance pivot에서 2015년 필터링 (Q4만 있어 standalone 변환 불가)
+- **openai_compat provider**: `OpenAIError`를 catch 목록에 추가 (서버 status 500 수정)
+- README/README_KR에 topics, ratios 시계열, 세로 뷰 반영
+- docs quickstart/overview/ratios 튜토리얼 현행화
+- 노트북 `c.name` → `c.corpName` 수정, topics DataFrame 반영
+- startMarimo 두 파일에 세로 뷰 데모 셀 추가
+- 랜딩 CodeDemo에서 `ratios` 설명 업데이트
+
+### Fixed
+
+- EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
+- 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
+
 ## [0.5.1] - 2026-03-19
 
 ### Added

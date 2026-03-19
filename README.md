@@ -42,9 +42,11 @@ import dartlab
 
 c = dartlab.Company("005930")   # Samsung Electronics (DART)
 c.sections                      # full company map (topic × period)
+c.topics                        # topic list with source, blocks, periods
 c.show("companyOverview")       # open one topic
+c.show("IS", period=["2024Q4", "2023Q4"])  # vertical view (period × item)
 c.BS                            # balance sheet
-c.ratios                        # 47 financial ratios
+c.ratios                        # ratio time series (항목 × period)
 c.insights                      # 7-area grades (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -93,7 +95,10 @@ c = dartlab.Company("005930")
 # show — open any topic with source-aware priority
 c.show("BS")                # → finance DataFrame
 c.show("companyOverview")   # → sections-based text + tables
-c.show("dividend")          # → report DataFrame
+c.show("dividend")          # → report DataFrame (all quarters)
+
+# vertical view — compare specific periods side by side
+c.show("IS", period=["2024Q4", "2023Q4"])  # period × item
 
 # trace — why a topic came from docs, finance, or report
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -107,10 +112,11 @@ c.diff("businessOverview", "2024", "2025")  # line-by-line diff
 ### Finance
 
 ```python
-c.BS                    # balance sheet (account × year)
+c.BS                    # balance sheet (account × period, newest first)
 c.IS                    # income statement
 c.CF                    # cash flow
-c.finance.ratios        # 47 ratios (ROE, debt ratio, margins, …)
+c.ratios                # ratio time series DataFrame (6 categories × period)
+c.finance.ratios        # latest single-point RatioResult
 c.finance.ratioSeries   # ratio time series across years
 c.finance.timeseries    # raw account time series
 ```

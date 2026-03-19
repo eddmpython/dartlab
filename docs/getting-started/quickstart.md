@@ -42,7 +42,7 @@ II      │ businessOverview │ text      │ "…"    │ "…"    │ "…"  
 이것만으로 회사의 전체 공시 구조가 보인다. topic 목록, 기간 범위, 텍스트/테이블 구분 전부 여기에 있다.
 
 ```python
-c.topics              # 이 회사의 topic 목록
+c.topics              # topic 요약 DataFrame (source, blocks, periods)
 c.sections.periods()  # 기간 목록
 c.sections.ordered()  # 최신 순 정렬
 ```
@@ -78,11 +78,12 @@ c.trace("companyOverview")  # docs source
 재무제표도 sections 위의 finance 뷰다:
 
 ```python
-c.BS                    # 재무상태표
+c.BS                    # 재무상태표 (최신 먼저)
 c.IS                    # 손익계산서
 c.CF                    # 현금흐름표
-c.ratios                # 47개 재무비율
-c.finance.ratioSeries   # 비율 시계열
+c.ratios                # 재무비율 시계열 DataFrame
+c.finance.ratios        # 최신 단일 시점 RatioResult
+c.finance.ratioSeries   # 비율 시계열 (raw)
 ```
 
 ## 인사이트

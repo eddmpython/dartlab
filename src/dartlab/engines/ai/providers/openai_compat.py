@@ -8,7 +8,12 @@ from typing import Generator
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolResponse
 
-_OPENAI_COMPAT_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError)
+try:
+    from openai import OpenAIError as _OpenAIError
+
+    _OPENAI_COMPAT_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError, _OpenAIError)
+except ImportError:
+    _OPENAI_COMPAT_ERRORS = (ImportError, OSError, RuntimeError, TypeError, ValueError)
 
 
 class OpenAICompatProvider(BaseProvider):

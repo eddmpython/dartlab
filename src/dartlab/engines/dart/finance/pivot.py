@@ -72,6 +72,11 @@ def _loadAndNormalize(
     if df.is_empty():
         return None
 
+    # 2015년 제외 — Q4(사업보고서)만 존재하여 standalone 변환 불가
+    df = df.filter(pl.col("bsns_year") != "2015")
+    if df.is_empty():
+        return None
+
     df = _applyCfsPriority(df, fsDivPref)
     df = _normalizeQ4(df)
 

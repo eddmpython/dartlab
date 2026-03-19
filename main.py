@@ -10,7 +10,7 @@ import dartlab
 def main():
     # 삼성전자
     c = dartlab.Company("005930")
-    print(f"=== {c.name} ===\n")
+    print(f"=== {c.corpName} ===\n")
 
     # sections: 회사 전체 맵 (topic × period)
     print("── sections ──")

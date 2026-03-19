@@ -473,8 +473,9 @@ class TestCompany:
         from dartlab import Company
 
         c = Company(SAMSUNG)
-        assert "BS" in c.topics
-        assert "ratios" in c.topics
+        topicList = c.topics["topic"].to_list()
+        assert "BS" in topicList
+        assert "ratios" in topicList
         assert isinstance(c.show("BS"), pl.DataFrame)
         assert isinstance(c.show("BS", raw=True), pl.DataFrame)
         assert isinstance(c.show("ratios"), pl.DataFrame)
