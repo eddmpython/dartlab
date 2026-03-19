@@ -5,9 +5,9 @@
 <section class="py-20 px-6 bg-dl-bg-darker/50">
 	<div class="max-w-6xl mx-auto text-center">
 		<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">Code Examples</span>
-		<h2 class="text-3xl md:text-4xl font-bold tracking-tight text-dl-text mb-3">One Company Surface</h2>
+		<h2 class="text-3xl md:text-4xl font-bold tracking-tight text-dl-text mb-3">sections is the whole company</h2>
 		<p class="text-dl-text-muted max-w-xl mx-auto mb-12">
-			The public flow is small on purpose.
+			One DataFrame. Every topic. Every period.
 		</p>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
@@ -29,13 +29,13 @@
 				<span class="text-dl-text-dim"># finance for numeric statements</span>
 			</CodeWindow>
 
-			<CodeWindow title="openapi-ai.py">
-				<span class="text-purple-400">from</span> <span class="text-dl-text">dartlab</span> <span class="text-purple-400">import</span> <span class="text-cyan-400">OpenEdgar</span><br /><br />
-				<span class="text-dl-text">e</span> <span class="text-dl-text-muted">=</span> <span class="text-cyan-400">OpenEdgar</span><span class="text-dl-text-muted">()</span><br />
-				<span class="text-dl-text">facts</span> <span class="text-dl-text-muted">=</span> <span class="text-dl-text">e</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">companyFactsJson</span><span class="text-dl-text-muted">(</span><span class="text-emerald-400">"AAPL"</span><span class="text-dl-text-muted">)</span><br /><br />
-				<span class="text-dl-text-dim"># same company map idea</span><br />
-				<span class="text-dl-text-dim"># same saved parquet contract</span><br />
-				<span class="text-dl-text-dim"># same AI-ready direction</span>
+			<CodeWindow title="diff-finance.py">
+				<span class="text-dl-text-dim"># text change detection</span><br />
+				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-cyan-400">diff</span><span class="text-dl-text-muted">(</span><span class="text-emerald-400">"businessOverview"</span><span class="text-dl-text-muted">)</span><br /><br />
+				<span class="text-dl-text-dim"># finance shortcuts</span><br />
+				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">BS</span> <span class="text-dl-text-dim"># balance sheet</span><br />
+				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">ratios</span> <span class="text-dl-text-dim"># 47 ratios</span><br />
+				<span class="text-dl-text">samsung</span><span class="text-dl-text-muted">.</span><span class="text-rose-300">insights</span> <span class="text-dl-text-dim"># 7-area grades</span>
 			</CodeWindow>
 		</div>
 	</div>

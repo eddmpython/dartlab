@@ -21,9 +21,9 @@
 		{
 			icon: LineChart,
 			step: '03',
-			title: 'Read the Map',
-			desc: 'Start from sections, then open a topic and trace the source that won.',
-			code: 'c.sections  # then c.show("BS")',
+			title: 'sections = the company',
+			desc: 'One DataFrame with every topic and every period. show, diff, trace are just views on top.',
+			code: 'c.sections  # that\'s it',
 			color: 'text-dl-success bg-dl-success/10 border-dl-success/20'
 		}
 	];

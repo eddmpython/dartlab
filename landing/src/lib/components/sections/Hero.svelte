@@ -32,16 +32,16 @@
 		</Badge>
 
 		<h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-			<span class="text-dl-text">One Company Map</span><br />
 			<span
 				class="bg-gradient-to-r from-dl-primary via-dl-primary-light to-dl-primary bg-clip-text text-transparent"
-				>from Disclosure Sections</span
-			>
+				>c.sections</span
+			><br />
+			<span class="text-dl-text">is the entire company</span>
 		</h1>
 
 		<p class="text-lg md:text-xl text-dl-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-			DartLab strips away parser sprawl and turns filings into one horizontal company map.<br />
-			<span class="text-dl-text font-medium">sections -> show -> trace</span> is the public contract that Python and the upcoming AI GUI share.
+			Every filing section, every period, one Polars DataFrame.<br />
+			<span class="text-dl-text font-medium">show · trace · diff</span> are just views on top of it.
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">
@@ -56,10 +56,10 @@
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
 			{#each [
-				{ value: 'sections', unit: '', label: 'canonical spine' },
-				{ value: 'show', unit: '', label: 'open one topic' },
-				{ value: 'trace', unit: '', label: 'source provenance' },
-				{ value: 'AI GUI', unit: '', label: 'same map, new interface' }
+				{ value: 'sections', unit: '', label: 'the entire company map' },
+				{ value: 'show', unit: '(topic)', label: 'open one topic' },
+				{ value: 'diff', unit: '(topic)', label: 'text change detection' },
+				{ value: 'BS · IS · CF', unit: '', label: 'finance shortcuts' }
 			] as stat}
 				<div
 					class="px-4 py-3 rounded-lg bg-dl-bg-card/50 border border-dl-border/50 hover:border-dl-primary/20 transition-colors"
