@@ -179,7 +179,7 @@ def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
 def _compute_etag(data: Any) -> str:
     """응답 데이터의 MD5 기반 ETag 생성."""
     raw = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
-    return f'"{hashlib.md5(raw).hexdigest()[:16]}"'  # noqa: S324
+    return f'"{hashlib.md5(raw, usedforsecurity=False).hexdigest()[:16]}"'
 
 
 def _etag_response(
@@ -2251,6 +2251,10 @@ def serve_spa(path: str = ""):
 
     file = _UI_DIR / path
     if path and file.is_file():
+        try:
+            file.resolve().relative_to(_UI_DIR.resolve())
+        except ValueError:
+            return HTMLResponse("Not found", status_code=404)
         return FileResponse(file)
 
     index = _UI_DIR / "index.html"
@@ -2289,6 +2293,7 @@ def _kill_port(port: int) -> bool:
             ["netstat", "-ano", "-p", "TCP"],
             capture_output=True,
             text=True,
+            timeout=10,
         )
         for line in result.stdout.splitlines():
             parts = line.split()
@@ -2301,6 +2306,7 @@ def _kill_port(port: int) -> bool:
             ["lsof", "-ti", f":{port}"],
             capture_output=True,
             text=True,
+            timeout=10,
         )
         for line in result.stdout.strip().splitlines():
             if line.strip().isdigit():
@@ -2311,12 +2317,16 @@ def _kill_port(port: int) -> bool:
 
     import os
 
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
     my_pid = os.getpid()
     for pid in pids:
         if pid == my_pid:
             continue
+        _log.info("Killing PID %d on port %d", pid, port)
         if system == "Windows":
-            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=10)
         else:
             import signal
 
@@ -2333,7 +2343,7 @@ def ensure_port(port: int) -> str:
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(("0.0.0.0", port))
+        sock.bind(("127.0.0.1", port))
         sock.close()
         return "ok"
     except OSError:

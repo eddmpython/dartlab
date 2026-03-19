@@ -65,9 +65,9 @@ class _TableParser(HTMLParser):
 
 def _fetchKind() -> pl.DataFrame:
     try:
-        r = requests.post(KIND_URL, data=KIND_DATA)
-    except requests.exceptions.SSLError:
-        r = requests.post(KIND_URL, data=KIND_DATA, verify=False)
+        r = requests.post(KIND_URL, data=KIND_DATA, timeout=30)
+    except (requests.exceptions.SSLError, requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8})
     html = r.content.decode("euc-kr", errors="replace")
 
     parser = _TableParser()
