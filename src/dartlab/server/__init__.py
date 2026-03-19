@@ -814,10 +814,13 @@ def api_company_toc(code: str):
             if financeChapter not in chapterMap:
                 chapterMap[financeChapter] = []
                 chapterOrder.append(financeChapter)
-            chapterMap[financeChapter].append(TocTopic(topic=ft, label=_safe_topic_label(c,ft), textCount=0, tableCount=1))
+            chapterMap[financeChapter].append(
+                TocTopic(topic=ft, label=_safe_topic_label(c, ft), textCount=0, tableCount=1)
+            )
 
         # 최신 2기간 변경 감지용 period 컬럼
         import re as _re
+
         _period_re = _re.compile(r"^\d{4}(Q[1-4])?$")
         _period_cols = sorted(
             [col for col in sec.columns if _period_re.fullmatch(col)],
@@ -857,7 +860,7 @@ def api_company_toc(code: str):
                 chapterMap[chapter].append(
                     TocTopic(
                         topic=topic,
-                        label=_safe_topic_label(c,topic),
+                        label=_safe_topic_label(c, topic),
                         textCount=int(textCount),
                         tableCount=int(tableCount),
                         hasChanges=hasChanges,
@@ -899,7 +902,7 @@ def api_company_viewer_topic(
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "topic": topic,
-            "topicLabel": _safe_topic_label(c,topic),
+            "topicLabel": _safe_topic_label(c, topic),
             "period": period,
             "blocks": [serializeViewerBlock(b) for b in blocks],
             "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
@@ -1058,6 +1061,60 @@ async def api_company_topic_summary(code: str, topic: str):
     return EventSourceResponse(_generate())
 
 
+@app.get("/api/company/{code}/insights")
+def api_company_insights(code: str):
+    """7영역 인사이트 등급 + 이상치 분석."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    from dartlab.engines.insight.pipeline import analyze as insight_analyze
+
+    try:
+        result = insight_analyze(c.stockCode, company=c)
+    except _HANDLED_API_ERRORS:
+        result = None
+
+    if result is None:
+        return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+
+    def _flag_dict(f):
+        return {"level": f.level, "category": f.category, "text": f.text}
+
+    def _insight_dict(ins):
+        return {
+            "grade": ins.grade,
+            "summary": ins.summary,
+            "details": ins.details,
+            "risks": [_flag_dict(r) for r in ins.risks],
+            "opportunities": [_flag_dict(o) for o in ins.opportunities],
+        }
+
+    def _anomaly_dict(a):
+        return {"severity": a.severity, "category": a.category, "text": a.text, "value": a.value}
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "available": True,
+        "isFinancial": result.isFinancial,
+        "grades": result.grades(),
+        "areas": {
+            "performance": _insight_dict(result.performance),
+            "profitability": _insight_dict(result.profitability),
+            "health": _insight_dict(result.health),
+            "cashflow": _insight_dict(result.cashflow),
+            "governance": _insight_dict(result.governance),
+            "risk": _insight_dict(result.risk),
+            "opportunity": _insight_dict(result.opportunity),
+        },
+        "anomalies": [_anomaly_dict(a) for a in result.anomalies],
+        "summary": result.summary,
+        "profile": result.profile,
+    }
+
+
 @app.get("/api/company/{code}/diff")
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""
@@ -1179,8 +1236,6 @@ def api_company_diff_topic(
 def api_company_search_sections(code: str, q: str = Query("", description="검색어")):
     """현재 회사의 sections 전체 텍스트에서 substring 검색."""
     try:
-        import polars as pl
-
         c = _get_company(code)
         sec = c.sections
         if sec is None or not q.strip():
@@ -1211,13 +1266,15 @@ def api_company_search_sections(code: str, q: str = Query("", description="검�
                     end = min(len(val), idx + len(query) + 60)
                     snippet = ("..." if start > 0 else "") + val[start:end].strip() + ("..." if end < len(val) else "")
                     match_count = lower_val.count(query)
-                    results.append({
-                        "topic": topic,
-                        "label": _safe_topic_label(c,topic),
-                        "period": p,
-                        "snippet": snippet,
-                        "matchCount": match_count,
-                    })
+                    results.append(
+                        {
+                            "topic": topic,
+                            "label": _safe_topic_label(c, topic),
+                            "period": p,
+                            "snippet": snippet,
+                            "matchCount": match_count,
+                        }
+                    )
                     seen_topics.add(topic)
                     break
             if len(results) >= 30:
