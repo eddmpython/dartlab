@@ -10,7 +10,7 @@ def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("excel", help="Excel 파일로 내보내기")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.add_argument("-o", "--output", default=None, help="출력 경로 (기본: {종목코드}_{회사명}.xlsx)")
-    parser.add_argument("--modules", nargs="+", default=None, help="포함할 시트 (IS BS CF ratios dividend employee)")
+    parser.add_argument("--modules", nargs="+", default=None, help="포함할 시트 (IS BS CF ratios 등)")
     parser.set_defaults(handler=run)
 
 

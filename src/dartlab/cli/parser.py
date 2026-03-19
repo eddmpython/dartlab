@@ -9,14 +9,19 @@ from dartlab.cli.context import DEPRECATED_ALIASES, CommandSpec
 from dartlab.cli.services.runtime import load_command_module
 
 COMMAND_SPECS = (
+    # 데이터 조회
+    CommandSpec("show", "dartlab.cli.commands.show"),
+    CommandSpec("search", "dartlab.cli.commands.search"),
+    CommandSpec("statement", "dartlab.cli.commands.statement"),
+    CommandSpec("sections", "dartlab.cli.commands.sections"),
+    CommandSpec("profile", "dartlab.cli.commands.profile"),
+    # AI / 내보내기
     CommandSpec("ask", "dartlab.cli.commands.ask"),
+    CommandSpec("excel", "dartlab.cli.commands.excel"),
+    # 서버 / 설정
+    CommandSpec("ai", "dartlab.cli.commands.ai"),
     CommandSpec("status", "dartlab.cli.commands.status"),
     CommandSpec("setup", "dartlab.cli.commands.setup"),
-    CommandSpec("ai", "dartlab.cli.commands.ai"),
-    CommandSpec("excel", "dartlab.cli.commands.excel"),
-    CommandSpec("profile", "dartlab.cli.commands.profile"),
-    CommandSpec("sections", "dartlab.cli.commands.sections"),
-    CommandSpec("statement", "dartlab.cli.commands.statement"),
 )
 
 
