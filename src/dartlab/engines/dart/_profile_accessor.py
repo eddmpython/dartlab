@@ -234,25 +234,25 @@ class _ProfileAccessor:
 
             docsDf = (
                 docsBlocks.filter(
-                    pl.col("period").is_not_null()
-                    & pl.col("blockText").is_not_null()
-                    & (pl.col("blockText") != "")
+                    pl.col("period").is_not_null() & pl.col("blockText").is_not_null() & (pl.col("blockText") != "")
                 )
                 .with_columns(topicExpr.alias("_topic"))
                 .filter(pl.col("_topic").is_not_null())
-                .select([
-                    pl.col("_topic").cast(pl.Utf8).alias("topic"),
-                    pl.col("period").cast(pl.Utf8).alias("period"),
-                    pl.lit("docs").alias("source"),
-                    (
-                        pl.col("blockType") if "blockType" in docsBlocks.columns else pl.lit("text")
-                    ).alias("valueType"),
-                    valueKeyExpr.alias("valueKey"),
-                    pl.col("blockText").cast(pl.Utf8).alias("value"),
-                    payloadExpr.alias("payloadRef"),
-                    pl.lit(100).alias("priority"),
-                    pl.col("blockText").cast(pl.Utf8).str.slice(0, 400).alias("summary"),
-                ])
+                .select(
+                    [
+                        pl.col("_topic").cast(pl.Utf8).alias("topic"),
+                        pl.col("period").cast(pl.Utf8).alias("period"),
+                        pl.lit("docs").alias("source"),
+                        (pl.col("blockType") if "blockType" in docsBlocks.columns else pl.lit("text")).alias(
+                            "valueType"
+                        ),
+                        valueKeyExpr.alias("valueKey"),
+                        pl.col("blockText").cast(pl.Utf8).alias("value"),
+                        payloadExpr.alias("payloadRef"),
+                        pl.lit(100).alias("priority"),
+                        pl.col("blockText").cast(pl.Utf8).str.slice(0, 400).alias("summary"),
+                    ]
+                )
             )
             if docsDf.height > 0:
                 frames.append(docsDf)
