@@ -11,15 +11,23 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import shutil
 import subprocess
 from typing import Generator
 
-_IS_WINDOWS = platform.system() == "Windows"
-
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMResponse
+
+
+def _claude_executable() -> str:
+    """Windows에서 shell=True 없이 실행 가능한 claude 경로를 반환한다.
+
+    shutil.which는 Windows에서 .cmd/.bat 확장자를 자동 해석하므로
+    반환된 절대경로를 직접 사용하면 shell=False로도 실행 가능하다.
+    """
+    path = shutil.which("claude")
+    return path if path else "claude"
+
 
 # CLI 별칭 → Anthropic SDK 모델ID 매핑
 _ALIAS_TO_MODEL = {
@@ -82,11 +90,10 @@ class ClaudeCodeProvider(BaseProvider):
             return bool(self._get_sdk_api_key()) and self._sdk_importable()
         try:
             result = subprocess.run(
-                ["claude", "auth", "status"],
+                [_claude_executable(), "auth", "status"],
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             return result.returncode == 0
@@ -109,11 +116,10 @@ class ClaudeCodeProvider(BaseProvider):
             raise FileNotFoundError(f"Claude Code CLI를 찾을 수 없습니다.\n\n{get_claude_code_install_guide()}")
         try:
             result = subprocess.run(
-                ["claude", "auth", "status"],
+                [_claude_executable(), "auth", "status"],
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             if result.returncode != 0:
@@ -141,11 +147,10 @@ class ClaudeCodeProvider(BaseProvider):
         # claude auth status에서 sessionKey 추출 시도
         try:
             result = subprocess.run(
-                ["claude", "auth", "status", "--json"],
+                [_claude_executable(), "auth", "status", "--json"],
                 capture_output=True,
                 text=True,
                 timeout=10,
-                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
                 env=self._clean_env(),
             )
             if result.returncode == 0:
@@ -194,7 +199,7 @@ class ClaudeCodeProvider(BaseProvider):
         try:
             result = subprocess.run(
                 [
-                    "claude",
+                    _claude_executable(),
                     "-p",
                     "ping",
                     "--output-format",
@@ -208,7 +213,6 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 timeout=_CLI_PROBE_TIMEOUT,
                 env=self._clean_env(),
-                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, OSError):
@@ -252,7 +256,7 @@ class ClaudeCodeProvider(BaseProvider):
     ) -> list[str]:
         fmt = "stream-json" if stream else "json"
         cmd = [
-            "claude",
+            _claude_executable(),
             "-p",
             prompt,
             "--output-format",
@@ -324,7 +328,6 @@ class ClaudeCodeProvider(BaseProvider):
                 capture_output=True,
                 timeout=120,
                 env=self._clean_env(),
-                shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
             )
         except subprocess.TimeoutExpired:
             raise TimeoutError("Claude Code CLI 호출이 시간 초과되었습니다.")
@@ -377,7 +380,6 @@ class ClaudeCodeProvider(BaseProvider):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=self._clean_env(),
-            shell=_IS_WINDOWS,  # noqa: S603 — hardcoded constant args
         )
 
         try:
