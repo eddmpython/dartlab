@@ -35,12 +35,24 @@ c.trace("companyOverview")
 
 ## sections
 
-`sections`는 회사의 canonical map이다.
+`sections`는 회사의 canonical map이다. Polars DataFrame으로, 각 행이 공시 블록이고 기간 컬럼이 원문을 담는다.
 
 ```python
-c.sections
-us.sections
+c.sections                  # topic × period 매트릭스
+c.sections.periods()        # 사용 가능한 기간 목록
+c.sections.ordered()        # 최신 순 정렬
+c.topics                    # topic 목록
 ```
+
+핵심 컬럼:
+
+| 컬럼 | 설명 |
+|------|------|
+| `chapter` | 대분류 (I~XII) |
+| `topic` | 표준 topic snakeId |
+| `blockType` | "text" 또는 "table" |
+| `blockOrder` | topic 내 순서 |
+| 기간 컬럼 | `2025`, `2024`, `2024Q3` 등 — 원문 payload |
 
 이 board의 의도는 다음과 같다.
 
@@ -49,6 +61,8 @@ us.sections
 - AI GUI와 Python이 같은 구조를 공유한다
 
 pure docs source가 필요하면 `c.docs.sections`를 쓴다.
+
+자세한 구조는 [Sections 가이드](../getting-started/sections)를 본다.
 
 ## show(topic)
 
@@ -87,6 +101,18 @@ c.trace("companyOverview")
 - provenance
 - fallback 여부
 - period coverage
+
+## diff()
+
+`diff()`는 기간 간 텍스트 변화를 감지한다.
+
+```python
+c.diff()                                # 전체 topic별 변경률
+c.diff("businessOverview")              # 기간별 변경 이력
+c.diff("businessOverview", "2023", "2024")  # 라인 단위 비교
+```
+
+변경률이 높은 해에는 사업 구조 변경, 신사업 진출, 위험 요인 추가가 있을 수 있다.
 
 ## source namespace
 

@@ -84,10 +84,11 @@ import dartlab
 # 한국: DART
 c = dartlab.Company("005930")
 
-c.sections                  # canonical company map
-c.show("BS")                # topic 하나 열기
+c.sections                  # canonical company map (topic × period 매트릭스)
+c.show("BS")                # topic 하나 열기 (finance source)
 c.show("companyOverview")   # sections 기반 공시 payload
 c.trace("BS")               # 선택된 source와 provenance
+c.diff("businessOverview")  # 기간 간 텍스트 변화 감지
 
 # 미국: EDGAR
 us = dartlab.Company("AAPL")
@@ -95,11 +96,21 @@ us.sections
 us.show("10-K::item1Business")
 ```
 
+`sections`는 Polars DataFrame이다. 각 행이 공시 블록, 각 기간 컬럼이 원문 payload를 담는다.
+
+```
+chapter │ topic            │ blockType │ 2025  │ 2024  │ 2024Q3 │ …
+I       │ companyOverview  │ text      │ "…"   │ "…"   │ "…"    │
+I       │ companyOverview  │ table     │ "…"   │ "…"   │ null   │
+II      │ businessOverview │ text      │ "…"   │ "…"   │ "…"    │
+```
+
 핵심 구분은 이렇다.
 
-- `c.sections`: 공개 company board
-- `c.docs.sections`: pure docs source view
-- `c.trace(...)`: `docs / finance / report` 중 어떤 source가 채택됐는지 설명
+- `c.sections`: 공개 company board (topic × period)
+- `c.show(topic)`: topic 하나를 source 우선순위에 따라 연다
+- `c.trace(topic)`: `docs / finance / report` 중 어떤 source가 채택됐는지 설명
+- `c.diff(topic)`: 기간 간 텍스트 변화를 추적
 
 ## OpenAPI
 
@@ -154,6 +165,7 @@ c.report.audit
 ## 문서
 
 - 문서: https://eddmpython.github.io/dartlab/
+- Sections 가이드: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - 빠른 시작: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API 개요: https://eddmpython.github.io/dartlab/docs/api/overview
 - 블로그: https://eddmpython.github.io/dartlab/blog/

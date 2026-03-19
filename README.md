@@ -84,10 +84,11 @@ import dartlab
 # KR: DART
 c = dartlab.Company("005930")
 
-c.sections                  # canonical company map
-c.show("BS")                # one topic payload
+c.sections                  # canonical company map (topic × period matrix)
+c.show("BS")                # one topic payload (finance source)
 c.show("companyOverview")   # sections-based disclosure payload
 c.trace("BS")               # chosen source + provenance
+c.diff("businessOverview")  # text change detection across periods
 
 # US: EDGAR
 us = dartlab.Company("AAPL")
@@ -95,11 +96,21 @@ us.sections
 us.show("10-K::item1Business")
 ```
 
+`sections` is a Polars DataFrame where each row is a disclosure block and each period column holds the raw payload:
+
+```
+chapter │ topic            │ blockType │ 2025  │ 2024  │ 2024Q3 │ …
+I       │ companyOverview  │ text      │ "…"   │ "…"   │ "…"    │
+I       │ companyOverview  │ table     │ "…"   │ "…"   │ null   │
+II      │ businessOverview │ text      │ "…"   │ "…"   │ "…"    │
+```
+
 The key distinction is:
 
-- `c.sections`: the public company board
-- `c.docs.sections`: the pure docs source view
-- `c.trace(...)`: why a topic came from `docs`, `finance`, or `report`
+- `c.sections`: the public company board (topic × period)
+- `c.show(topic)`: open one topic with source-aware priority
+- `c.trace(topic)`: why a topic came from `docs`, `finance`, or `report`
+- `c.diff(topic)`: track text changes between periods
 
 ## OpenAPI
 
@@ -154,6 +165,7 @@ See [docs/stability.md](docs/stability.md).
 ## Documentation
 
 - Docs: https://eddmpython.github.io/dartlab/
+- Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API overview: https://eddmpython.github.io/dartlab/docs/api/overview
 - Blog: https://eddmpython.github.io/dartlab/blog/

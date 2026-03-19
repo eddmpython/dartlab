@@ -1,19 +1,12 @@
-﻿---
+---
 title: "6. Disclosure Text"
 ---
 
-# 6. Disclosure Text — 공시 텍스트 분석
+# 6. 공시 텍스트 — sections로 읽는 서술형 공시
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb)
 
-숫자 뒤에 숨겨진 텍스트를 읽는다. 이 튜토리얼에서 다루는 내용은 다음과 같다.
-
-- 사업의 내용 (섹션별 분류, 변경 탐지)
-- 경영진단 및 분석의견 (MD&A)
-- 회사의 개요 (설립일, 신용등급, 중소기업 여부)
-- 회사 기본정보 (설립일, 상장일, 대표이사)
-- 원재료·설비투자 현황
-- 회사 연혁
+숫자 뒤에 숨겨진 텍스트를 읽는다. DartLab은 모든 공시 텍스트를 `sections`로 수평화한다. 사업보고서의 모든 섹션이 topic × period 매트릭스로 정리되어 있어서, 어떤 주제든 기간별로 나란히 비교할 수 있다.
 
 ---
 
@@ -21,189 +14,187 @@ title: "6. Disclosure Text"
 
 ```python
 import dartlab
+import polars as pl
 
 c = dartlab.Company("005930")
 ```
 
 ---
 
-## 사업의 내용
-
-사업보고서의 "사업의 내용" 섹션을 구조적으로 분류한다. property는 섹션 리스트를 반환한다.
+## sections로 전체 구조 보기
 
 ```python
-sections = c.business
-
-for s in sections:
-    print(f"[{s.key}] {s.title} ({s.chars}자)")
-    print(s.text[:200])
-    print("---")
+c.sections
 ```
 
-### 주요 섹션 key
+`sections`는 회사의 전체 공시 지도다. 모든 섹션이 topic × period 매트릭스로 수평화되어 있다. `blockType` 컬럼으로 텍스트와 테이블을 구분하고, `blockOrder`로 원본 순서를 보존한다.
 
-| key | 설명 | 주요 내용 |
-|-----|------|-----------|
-| `overview` | 사업 개요 | 회사 소개, 주요 사업 영역 |
-| `products` | 주요 제품·서비스 | 제품별 매출 비중, 가격 동향 |
-| `materials` | 원재료·가격변동 | 주요 원재료, 조달 현황 |
-| `sales` | 매출·수주 현황 | 부문별 매출, 수주 잔고 |
-| `risk` | 위험 요인 | 산업 리스크, 회사 고유 리스크 |
-| `rnd` | 연구개발 현황 | R&D 투자, 연구 인력 |
-| `financial` | 재무 관련 사항 | 재무 건전성, 자금 조달 |
-| `etc` | 기타 참고사항 | 그 밖의 중요 사항 |
-
-### 특정 섹션 찾기
-
-```python
-# 사업 개요만 읽기
-overview = next((s for s in c.business if s.key == "overview"), None)
-if overview:
-    print(overview.text[:500])
 ```
-
-### 연도별 변경 탐지
-
-텍스트 변경량을 연도별로 추적한다. `get()`으로 전체 Result를 받아야 접근 가능하다.
-
-```python
-result = c.get("business")
-
-# 변경 이력
-for change in result.changes:
-    print(f"{change.year}: 변경 {change.changedPct:.1%} | +{change.added:,}자 -{change.removed:,}자 | 총 {change.totalChars:,}자")
-```
-
-> 변경률이 높은 해에는 사업 구조 변경, 신사업 진출, 위험 요인 추가 등이 있을 수 있다.
-
----
-
-## 경영진단 및 분석의견 (MD&A)
-
-이사의 경영진단 및 분석의견의 개요 텍스트를 반환한다.
-
-```python
-c.mdna   # 사업 개요 텍스트
-```
-
-전체 섹션은 `get()`으로 접근한다.
-
-```python
-result = c.get("mdna")
-for section in result.sections:
-    print(f"[{section.category}] {section.title}")
-    print(f"  텍스트 {section.textLines}줄, 테이블 {section.tableLines}줄")
-    print(section.text[:200])
-    print("---")
-```
-
-### 주요 category
-
-| category | 설명 | 포함 내용 |
-|----------|------|-----------|
-| `overview` | 개요 | 사업 현황 요약 |
-| `forecast` | 전망 | 향후 사업 전망 |
-| `financials` | 재무 상태 | 재무제표 분석 |
-| `liquidity` | 유동성·자금 | 자금 조달, 현금 흐름 |
-
----
-
-## 회사의 개요 (정량)
-
-설립일, 주소, 신용등급 등 정량 데이터를 추출한다. Result 객체를 반환한다.
-
-```python
-result = c.overview
-
-print(f"설립: {result.founded}")
-print(f"소재지: {result.address}")
-print(f"홈페이지: {result.homepage}")
-print(f"종속회사: {result.subsidiaryCount}개")
-print(f"중소기업: {result.isSME}")
-print(f"벤처기업: {result.isVenture}")
-print(f"상장일: {result.listedDate}")
-```
-
-### 신용등급
-
-```python
-for cr in result.creditRatings:
-    print(f"{cr.agency}: {cr.grade}")
-```
-
-### 파싱 상태
-
-원문에서 찾지 못한 항목과 파싱 실패 항목을 확인한다.
-
-```python
-print(f"원문에 없음: {result.missing}")
-print(f"파싱 실패: {result.failed}")
+│ chapter │ topic            │ blockType │ blockOrder │ 2024   │ 2023   │ ...
+│ I       │ companyOverview  │ text      │ 0          │ 서술문 │ 서술문 │
+│ I       │ companyOverview  │ table     │ 1          │ 테이블 │ 테이블 │
+│ II      │ businessOverview │ text      │ 0          │ 서술문 │ 서술문 │
 ```
 
 ---
 
-## 회사 기본정보 (companyOverviewDetail)
-
-설립일, 상장일, 대표이사, 본점소재지 등을 dict로 반환한다.
+## topic 목록 확인
 
 ```python
-info = c.companyOverviewDetail
+c.topics
+```
 
-print(f"설립일: {info['foundedDate']}")
-print(f"상장일: {info['listedDate']}")
-print(f"대표이사: {info['ceo']}")
-print(f"소재지: {info['address']}")
-print(f"주요사업: {info['mainBusiness']}")
-print(f"홈페이지: {info['website']}")
+주요 topic 예시:
+
+| topic | 설명 |
+|-------|------|
+| `companyOverview` | 회사의 개요 |
+| `businessOverview` | 사업의 내용 |
+| `riskFactors` | 위험 관리 |
+| `mdna` | 경영진단 및 분석의견 |
+| `salesOrder` | 매출·수주 현황 |
+| `rawMaterial` | 원재료 현황 |
+| `segments` | 사업부문 |
+| `companyHistory` | 회사 연혁 |
+
+회사마다 보유한 topic이 다르다. `c.topics`로 해당 종목에서 사용 가능한 전체 목록을 확인한다.
+
+---
+
+## show()로 topic 열기
+
+`show()`는 sections에서 해당 topic을 꺼내 블록 단위로 보여준다.
+
+```python
+# 블록 목차 — 어떤 블록이 있는지 확인
+c.show("businessOverview")
+```
+
+목차에서 블록 번호를 확인한 뒤, 원하는 블록을 꺼낸다.
+
+```python
+# 블록 0: 텍스트 DataFrame (기간별 원문)
+c.show("businessOverview", 0)
+
+# 블록 1: 테이블 DataFrame (항목 × 기간 매트릭스)
+c.show("businessOverview", 1)
+```
+
+텍스트 블록은 기간별 원문 컬럼이 나란히 나오고, 테이블 블록은 항목명 × 기간 형태의 수평화된 DataFrame을 반환한다.
+
+---
+
+## Polars로 sections 필터링
+
+sections는 Polars DataFrame이므로 자유롭게 필터할 수 있다.
+
+```python
+# 특정 topic의 텍스트 블록만
+text_rows = c.sections.filter(
+    (pl.col("topic") == "businessOverview") & (pl.col("blockType") == "text")
+)
+
+# 특정 topic의 테이블 블록만
+table_rows = c.sections.filter(
+    (pl.col("topic") == "businessOverview") & (pl.col("blockType") == "table")
+)
+
+# 특정 기간의 원문 읽기
+row = c.sections.filter(
+    (pl.col("topic") == "companyOverview") & (pl.col("blockType") == "text")
+)
+print(row["2024"][0])  # 2024년 텍스트
 ```
 
 ---
 
-## 원재료·설비투자
-
-원재료 매입, 유형자산 기말잔액, 설비투자 현황이다. Result 객체를 반환한다.
+## 기간별 탐색
 
 ```python
-result = c.rawMaterial
+# 사용 가능한 기간 목록
+c.sections.periods()
+
+# 최신 순 정렬
+c.sections.ordered()
 ```
 
-### 원재료 매입
+`periods()`는 해당 회사에 수록된 전체 기간 리스트를 반환한다. `ordered()`는 최신 기간이 먼저 오도록 컬럼을 재정렬한다.
+
+---
+
+## diff()로 변경 감지
+
+두 기간 사이의 텍스트 변화를 추적한다. 공시 텍스트가 어느 해에 크게 바뀌었는지 한눈에 파악할 수 있다.
 
 ```python
-for m in result.materials:
-    print(f"{m.item}: {m.amount}백만원 ({m.ratio}%) — 공급처: {m.supplier}")
+# 전체 topic별 변경률 요약
+c.diff()
+
+# 특정 topic의 기간별 변경 이력
+c.diff("businessOverview")
+
+# 두 기간 사이 라인 단위 상세 비교
+c.diff("businessOverview", "2023", "2024")
 ```
 
-### 유형자산 기말잔액
+> 변경률이 높은 해에는 사업 구조 변경, 신사업 진출, 위험 요인 추가 등이 있을 수 있다. `diff()`로 변화 지점을 먼저 잡고, `show()`로 해당 기간의 원문을 읽는 것이 효율적인 분석 흐름이다.
+
+---
+
+## source namespace로 더 깊게
+
+`c.sections`는 merged view다. 원본 데이터에 더 깊이 접근하려면 `c.docs` namespace를 사용한다.
 
 ```python
-eq = result.equipment
-print(f"토지: {eq.land}, 건물: {eq.buildings}, 기계: {eq.machinery}")
-print(f"합계: {eq.total}, 감가상각: {eq.depreciation}, CAPEX: {eq.capex}")
-```
+# pure docs source view (finance/report 병합 전)
+c.docs.sections
 
-### 설비투자
+# 원문 block retrieval (검색·AI용)
+c.docs.retrievalBlocks
 
-```python
-for item in result.capexItems:
-    print(f"{item.segment}: {item.amount}백만원")
+# LLM context slice
+c.docs.contextSlices
+
+# K-IFRS 주석
+c.docs.notes
 ```
 
 ---
 
-## 회사 연혁
+## 실전 예: 위험 요인 변화 추적
+
+위험 요인은 매년 업데이트되므로, 변경 지점을 추적하면 새로운 리스크를 빠르게 발견할 수 있다.
 
 ```python
-c.companyHistory
-# date | event
+# 위험 요인 블록 목차
+c.show("riskFactors")
+
+# 텍스트 블록 열기
+c.show("riskFactors", 0)
+
+# 연도별 변경률 확인
+c.diff("riskFactors")
+
+# 2023→2024 상세 비교
+c.diff("riskFactors", "2023", "2024")
 ```
 
-주요 연혁 이벤트를 날짜별로 정리한 DataFrame이다.
+---
+
+## 출처 추적
+
+어떤 topic의 데이터가 어디서 왔는지 확인한다.
+
+```python
+c.trace("businessOverview")
+```
+
+`trace()`는 해당 topic의 source(docs/finance/report), 기간 수, 텍스트·테이블 유무 등 메타데이터를 반환한다.
 
 ---
 
 ## 다음 단계
 
-- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산 변동, 관계기업
+- [Sections 가이드](../getting-started/sections) — sections 구조 상세
+- [7. 고급 분석](./advanced) — K-IFRS 주석, 유형자산, 관계기업
 - [8. 기업 간 비교](./cross-company) — 섹터, 인사이트, 순위
-

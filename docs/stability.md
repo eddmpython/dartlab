@@ -16,9 +16,11 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 | API | 설명 |
 |-----|------|
 | `dartlab.Company(code)` | 종목 객체 생성 facade |
-| `Company.sections` | 공개 company board |
-| `Company.show()` | topic payload 조회 |
+| `Company.sections` | canonical company map (topic × period Polars DataFrame) |
+| `Company.show()` | topic payload 조회 (source-aware) |
 | `Company.trace()` | source provenance 조회 |
+| `Company.diff()` | 기간 간 텍스트 변화 감지 |
+| `Company.topics` | 사용 가능한 topic 목록 |
 | `Company.docs` | docs source namespace |
 | `Company.finance` | 재무제표 시계열 및 statement namespace |
 | `Company.report` | 정형 공시 namespace (28개 API 체계) |

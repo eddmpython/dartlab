@@ -117,5 +117,7 @@ e.companyFactsJson("AAPL")
 
 ## 다음 단계
 
-- [API 개요](../api/overview)
+- [Sections 가이드](./sections) — sections 구조와 필터링 상세
+- [API 개요](../api/overview) — 전체 API 흐름
+- [공시 텍스트 실전](../tutorials/disclosure) — 텍스트/테이블 블록 활용
 - [안정성 안내](../stability)
