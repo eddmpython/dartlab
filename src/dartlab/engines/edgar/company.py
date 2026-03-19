@@ -868,9 +868,8 @@ class Company:
 
     @staticmethod
     def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
-        """수평화 DataFrame → 세로 뷰 (기간 × 항목)."""
+        """수평화 DataFrame에서 요청 기간 컬럼만 추출."""
         labelCol = wide.columns[0]
-        labels = wide[labelCol].to_list()
         periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
 
         matched: list[str] = []
@@ -882,14 +881,7 @@ class Company:
         if not matched:
             return None
 
-        rows: list[dict] = []
-        for p in matched:
-            row: dict = {"기간": p}
-            for i, label in enumerate(labels):
-                row[label] = wide[p][i]
-            rows.append(row)
-
-        return pl.DataFrame(rows)
+        return wide.select([labelCol] + matched)
 
     def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
         """topic의 블록 목차 DataFrame."""

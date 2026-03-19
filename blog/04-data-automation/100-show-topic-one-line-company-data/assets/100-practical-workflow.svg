@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" rx="12" fill="url(#bg5)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">실전 활용 워크플로우</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#94a3b8">topic 탐색에서 데이터 추출까지 — 4단계</text>
+
+  <!-- Step 1 -->
+  <rect x="60" y="105" width="250" height="250" rx="12" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-width="1.5"/>
+  <rect x="80" y="120" width="32" height="32" rx="16" fill="rgba(56,189,248,0.2)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="96" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#38bdf8">1</text>
+  <text x="125" y="142" font-family="Pretendard, Inter, sans-serif" font-size="15" font-weight="700" fill="#38bdf8">topic 탐색</text>
+
+  <text x="80" y="175" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.topics</text>
+  <text x="80" y="200" font-family="Pretendard, sans-serif" font-size="11" fill="#f1f5f9">→ 문자열 리스트</text>
+  <text x="80" y="220" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">   어떤 topic이 있는지</text>
+
+  <rect x="80" y="240" width="210" height="1" fill="#1e2433"/>
+
+  <text x="80" y="265" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.index</text>
+  <text x="80" y="290" font-family="Pretendard, sans-serif" font-size="11" fill="#f1f5f9">→ 메타데이터 DataFrame</text>
+  <text x="80" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">   chapter, source, shape</text>
+  <text x="80" y="330" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">   데이터 풍부도 판단</text>
+
+  <path d="M310 230 L350 230" stroke="#34d399" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 2 -->
+  <rect x="355" y="105" width="250" height="250" rx="12" fill="rgba(52,211,153,0.06)" stroke="#34d399" stroke-width="1.5"/>
+  <rect x="375" y="120" width="32" height="32" rx="16" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="1"/>
+  <text x="391" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#34d399">2</text>
+  <text x="420" y="142" font-family="Pretendard, Inter, sans-serif" font-size="15" font-weight="700" fill="#34d399">블록 목차</text>
+
+  <text x="375" y="175" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.show("topic")</text>
+  <text x="375" y="200" font-family="Pretendard, sans-serif" font-size="11" fill="#f1f5f9">→ block, type, source, preview</text>
+
+  <rect x="375" y="220" width="210" height="1" fill="#1e2433"/>
+
+  <text x="375" y="245" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">block 0: text (서술형)</text>
+  <text x="375" y="265" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">block 1: table (수치)</text>
+  <text x="375" y="285" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">block 2: text (추가 설명)</text>
+
+  <rect x="375" y="300" width="210" height="1" fill="#1e2433"/>
+
+  <text x="375" y="325" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">블록이 1개면 바로 데이터</text>
+  <text x="375" y="342" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">BS, IS, CF → 목차 생략</text>
+
+  <path d="M605 230 L645 230" stroke="#34d399" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 3 -->
+  <rect x="650" y="105" width="250" height="250" rx="12" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-width="1.5"/>
+  <rect x="670" y="120" width="32" height="32" rx="16" fill="rgba(251,146,60,0.2)" stroke="#fb923c" stroke-width="1"/>
+  <text x="686" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#fb923c">3</text>
+  <text x="715" y="142" font-family="Pretendard, Inter, sans-serif" font-size="15" font-weight="700" fill="#fb923c">데이터 추출</text>
+
+  <text x="670" y="175" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.show("topic", N)</text>
+  <text x="670" y="200" font-family="Pretendard, sans-serif" font-size="11" fill="#f1f5f9">→ 항목 × 기간 DataFrame</text>
+
+  <rect x="670" y="220" width="210" height="1" fill="#1e2433"/>
+
+  <text x="670" y="245" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">text → 기간별 원문</text>
+  <text x="670" y="265" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">table → 수평화 숫자</text>
+  <text x="670" y="285" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">finance → XBRL 정규화</text>
+  <text x="670" y="305" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">report → API 구조 데이터</text>
+
+  <rect x="670" y="320" width="210" height="1" fill="#1e2433"/>
+
+  <text x="670" y="342" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">period 필터 적용 가능</text>
+
+  <path d="M900 230 L940 230" stroke="#34d399" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <!-- Step 4 -->
+  <rect x="945" y="105" width="200" height="250" rx="12" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1.5"/>
+  <rect x="965" y="120" width="32" height="32" rx="16" fill="rgba(167,139,250,0.2)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="981" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#a78bfa">4</text>
+  <text x="1010" y="142" font-family="Pretendard, Inter, sans-serif" font-size="15" font-weight="700" fill="#a78bfa">검증</text>
+
+  <text x="965" y="175" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">c.trace("topic")</text>
+  <text x="965" y="200" font-family="Pretendard, sans-serif" font-size="11" fill="#f1f5f9">→ 출처 추적</text>
+
+  <rect x="965" y="220" width="160" height="1" fill="#1e2433"/>
+
+  <text x="965" y="245" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">source 확인</text>
+  <text x="965" y="265" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">기간 수 확인</text>
+  <text x="965" y="285" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">text/table 존재 확인</text>
+
+  <rect x="965" y="300" width="160" height="1" fill="#1e2433"/>
+
+  <text x="965" y="325" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">데이터 어디서 왔는지</text>
+  <text x="965" y="342" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">검증과 디버깅용</text>
+
+  <!-- Bottom: Use cases -->
+  <rect x="60" y="390" width="1080" height="280" rx="10" fill="rgba(148,163,184,0.04)" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="600" y="425" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="16" font-weight="700" fill="#f1f5f9">자주 쓰는 패턴 모음</text>
+
+  <!-- Pattern cards -->
+  <rect x="90" y="450" width="310" height="85" rx="8" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-width="0.5"/>
+  <text x="110" y="475" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#38bdf8">재무제표 바로 꺼내기</text>
+  <text x="110" y="498" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">c.show("BS")</text>
+  <text x="110" y="518" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">블록 1개 → 목차 생략, 바로 DataFrame</text>
+
+  <rect x="440" y="450" width="310" height="85" rx="8" fill="rgba(52,211,153,0.06)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="460" y="475" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">텍스트 원문 꺼내기</text>
+  <text x="460" y="498" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">c.show("businessOverview", 0)</text>
+  <text x="460" y="518" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">block 0 = text → 기간별 서술형 원문</text>
+
+  <rect x="790" y="450" width="310" height="85" rx="8" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="810" y="475" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#fb923c">기간 비교 세로 뷰</text>
+  <text x="810" y="498" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">c.show("BS", period=[...])</text>
+  <text x="810" y="518" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">리스트 → 기간이 행, 계정이 열</text>
+
+  <rect x="90" y="555" width="310" height="85" rx="8" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="110" y="580" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">특정 연도만</text>
+  <text x="110" y="603" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">c.show("IS", period="2024")</text>
+  <text x="110" y="623" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">"2024" → "2024Q4" 자동 매칭</text>
+
+  <rect x="440" y="555" width="310" height="85" rx="8" fill="rgba(248,113,113,0.06)" stroke="#f87171" stroke-width="0.5"/>
+  <text x="460" y="580" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#f87171">EDGAR 동일 인터페이스</text>
+  <text x="460" y="603" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">e.show("riskFactors")</text>
+  <text x="460" y="623" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">DART든 EDGAR든 show(topic) 동일</text>
+
+  <rect x="790" y="555" width="310" height="85" rx="8" fill="rgba(148,163,184,0.06)" stroke="#94a3b8" stroke-width="0.5"/>
+  <text x="810" y="580" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">출처 추적</text>
+  <text x="810" y="603" font-family="JetBrains Mono, monospace" font-size="11" fill="#f1f5f9">c.trace("dividend")</text>
+  <text x="810" y="623" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">source, periods, hasText/Table 확인</text>
+
+  <text x="600" y="695" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

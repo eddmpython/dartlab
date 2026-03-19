@@ -3961,15 +3961,13 @@ class Company:
 
     @staticmethod
     def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
-        """수평화 DataFrame → 세로 뷰 (기간 × 항목).
+        """수평화 DataFrame에서 요청 기간 컬럼만 추출.
 
         wide: 항목(계정명/항목) | 2025Q3 | 2025Q2 | ... 형태
         periods: ["2024Q4", "2023Q4"] 등 비교할 기간 리스트
-        Returns: 기간 | 항목1 | 항목2 | ... 형태
+        Returns: 항목 | 2024Q4 | 2023Q4 형태 (기존 수평화와 동일 방향, 기간만 필터)
         """
-        # 첫 컬럼이 항목명 (계정명/항목/se 등)
         labelCol = wide.columns[0]
-        labels = wide[labelCol].to_list()
         periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
 
         # 요청된 period 매칭 (Q4 alias 포함)
@@ -3982,16 +3980,7 @@ class Company:
         if not matched:
             return None
 
-        # 세로 변환: 각 period를 행으로
-        rows: list[dict] = []
-        for p in matched:
-            row: dict = {"기간": p}
-            for i, label in enumerate(labels):
-                val = wide[p][i]
-                row[label] = val
-            rows.append(row)
-
-        return pl.DataFrame(rows)
+        return wide.select([labelCol] + matched)
 
     @staticmethod
     def _cleanFinanceDataFrame(df: pl.DataFrame, sjDiv: str) -> pl.DataFrame:
