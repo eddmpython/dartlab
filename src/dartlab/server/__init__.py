@@ -1514,6 +1514,22 @@ def api_company_scan(code: str, axis: str):
         return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
 
 
+@app.get("/api/company/{code}/scan/position")
+def api_company_scan_position(code: str):
+    """scan 4축 시장 내 위치 (percentile). 스냅샷 필요."""
+    from dartlab.engines.dart.scan.snapshot import getScanPosition
+
+    pos = getScanPosition(code)
+    if pos is None:
+        raise HTTPException(status_code=404, detail="scan 스냅샷 없음 — buildScanSnapshot() 선행 필요")
+
+    return {
+        "stockCode": code,
+        "available": True,
+        "position": pos,
+    }
+
+
 @app.get("/api/company/{code}/insights/unified")
 def api_company_insights_unified(code: str):
     """insight 7영역 + scan 4축 = 11영역 통합 payload."""

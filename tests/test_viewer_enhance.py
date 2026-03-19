@@ -290,6 +290,26 @@ class TestScanPayload(unittest.TestCase):
             self.assertIsNotNone(v)
 
 
+# ──────────────────────────── scan snapshot ────────────────────────────
+
+
+class TestScanSnapshot(unittest.TestCase):
+    """004 scan snapshot — percentile 조회."""
+
+    def test_percentile_basic(self):
+        from dartlab.engines.dart.scan.snapshot import _percentile
+
+        arr = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        self.assertAlmostEqual(_percentile(arr, 50), 50.0, places=0)
+        self.assertAlmostEqual(_percentile(arr, 100), 100.0, places=0)
+        self.assertAlmostEqual(_percentile(arr, 10), 10.0, places=0)
+
+    def test_percentile_empty(self):
+        from dartlab.engines.dart.scan.snapshot import _percentile
+
+        self.assertEqual(_percentile([], 50), 0.0)
+
+
 # ──────────────────────────── integration (real data) ────────────────────────
 
 
@@ -378,6 +398,27 @@ class TestIntegrationReal(unittest.TestCase):
         # 삼성전자는 최소 5개 이상 영역 유효
         valid = sum(1 for v in unified.values() if v is not None)
         self.assertGreaterEqual(valid, 5)
+
+    def test_scan_position_real(self):
+        from dartlab.engines.dart.scan.snapshot import getScanPosition
+
+        pos = getScanPosition("005930")
+        if pos is None:
+            self.skipTest("scan 스냅샷 없음")
+
+        # 삼성전자는 4축 모두 유효
+        self.assertIsNotNone(pos["governance"])
+        self.assertIsNotNone(pos["workforce"])
+        self.assertIsNotNone(pos["capital"])
+        self.assertIsNotNone(pos["debt"])
+
+        # governance percentile 범위
+        gov_pct = pos["governance"]["percentile"]
+        self.assertGreaterEqual(gov_pct, 0)
+        self.assertLessEqual(gov_pct, 100)
+
+        # capital은 분류
+        self.assertIn(pos["capital"]["class"], ("환원형", "중립", "희석형"))
 
 
 if __name__ == "__main__":

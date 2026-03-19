@@ -14,6 +14,10 @@ from dartlab.engines.dart.scan.payload import (  # noqa: F401
     build_scan_payload,
     build_unified_payload,
 )
+from dartlab.engines.dart.scan.snapshot import (  # noqa: F401
+    buildScanSnapshot,
+    getScanPosition,
+)
 
 
 def available_scans() -> list[str]:
