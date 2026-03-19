@@ -4,7 +4,18 @@
  * toc(목차), 선택 topic, 로딩 상태, 캐시 등을 관리한다.
  * workspace store와 독립 — viewer 내부 네비게이션에만 사용.
  */
-import { fetchCompanyToc, fetchCompanyViewer, fetchCompanyDiffSummary } from "$lib/api.js";
+import { fetchCompanyToc, fetchCompanyViewer, fetchCompanyDiffSummary, fetchCompanyInsights } from "$lib/api.js";
+
+function loadBookmarks() {
+	try {
+		const raw = localStorage.getItem("dartlab-bookmarks");
+		return raw ? JSON.parse(raw) : {};
+	} catch { return {}; }
+}
+
+function saveBookmarks(bm) {
+	try { localStorage.setItem("dartlab-bookmarks", JSON.stringify(bm)); } catch {}
+}
 
 export function createViewerStore() {
 	let stockCode = $state(null);
@@ -29,6 +40,16 @@ export function createViewerStore() {
 	// Cache
 	let topicCache = new Map();
 
+	// Insights (P1)
+	let insightData = $state(null);
+	let insightLoading = $state(false);
+
+	// Topic AI summary cache (P2)
+	let topicSummaryCache = $state(new Map());
+
+	// Bookmarks (P6)
+	let allBookmarks = $state(loadBookmarks());
+
 	async function loadCompany(code) {
 		if (code === stockCode && toc) return;
 		stockCode = code;
@@ -40,6 +61,8 @@ export function createViewerStore() {
 		diffSummary = null;
 		topicCache = new Map();
 		expandedChapters = new Set();
+		insightData = null;
+		topicSummaryCache = new Map();
 
 		tocLoading = true;
 		try {
@@ -55,10 +78,25 @@ export function createViewerStore() {
 					await selectTopic(first.topic, res.chapters[0].chapter);
 				}
 			}
+			// 병렬로 insights 로드 (P1)
+			loadInsights(code);
 		} catch (e) {
 			console.error("TOC 로드 실패:", e);
 		}
 		tocLoading = false;
+	}
+
+	async function loadInsights(code) {
+		if (insightData?.stockCode === code) return;
+		insightLoading = true;
+		try {
+			const res = await fetchCompanyInsights(code);
+			if (res.available) insightData = res;
+			else insightData = null;
+		} catch {
+			insightData = null;
+		}
+		insightLoading = false;
 	}
 
 	async function selectTopic(topic, chapter) {
@@ -109,6 +147,30 @@ export function createViewerStore() {
 		expandedChapters = next;
 	}
 
+	// P2: topic summary cache
+	function getTopicSummary(topic) {
+		return topicSummaryCache.get(topic) ?? null;
+	}
+	function setTopicSummary(topic, text) {
+		const next = new Map(topicSummaryCache);
+		next.set(topic, text);
+		topicSummaryCache = next;
+	}
+
+	// P6: bookmarks
+	function getBookmarks() {
+		return allBookmarks[stockCode] || [];
+	}
+	function isBookmarked(topic) {
+		return (allBookmarks[stockCode] || []).includes(topic);
+	}
+	function toggleBookmark(topic) {
+		const current = allBookmarks[stockCode] || [];
+		const next = current.includes(topic) ? current.filter(t => t !== topic) : [topic, ...current];
+		allBookmarks = { ...allBookmarks, [stockCode]: next };
+		saveBookmarks(allBookmarks);
+	}
+
 	return {
 		get stockCode() { return stockCode; },
 		get corpName() { return corpName; },
@@ -120,8 +182,15 @@ export function createViewerStore() {
 		get topicData() { return topicData; },
 		get topicLoading() { return topicLoading; },
 		get diffSummary() { return diffSummary; },
+		get insightData() { return insightData; },
+		get insightLoading() { return insightLoading; },
 		loadCompany,
 		selectTopic,
 		toggleChapter,
+		getTopicSummary,
+		setTopicSummary,
+		getBookmarks,
+		isBookmarked,
+		toggleBookmark,
 	};
 }

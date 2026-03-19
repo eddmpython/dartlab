@@ -16,6 +16,24 @@
 	let selectedPeriod = $state(null);
 	let showAll = $state(false);
 
+	// P7: 정렬
+	let sortCol = $state(null);
+	let sortDir = $state("asc"); // "asc" | "desc"
+
+	function handleSort(col) {
+		if (sortCol === col) {
+			sortDir = sortDir === "asc" ? "desc" : "asc";
+		} else {
+			sortCol = col;
+			sortDir = "asc";
+		}
+	}
+
+	function sortIndicator(col) {
+		if (sortCol !== col) return "";
+		return sortDir === "asc" ? " ▲" : " ▼";
+	}
+
 	// Finance 핵심 행 (한글/영문)
 	const KEY_ROWS = new Set([
 		"매출액", "revenue", "영업이익", "operating_income",
@@ -79,7 +97,22 @@
 		return periods[0] ?? null;
 	}
 
-	let displayRows = $derived(showAll ? (block?.data?.rows ?? []) : (block?.data?.rows ?? []).slice(0, maxRows));
+	let sortedRows = $derived.by(() => {
+		const rows = block?.data?.rows ?? [];
+		if (!sortCol) return rows;
+		const sorted = [...rows].sort((a, b) => {
+			let va = a[sortCol], vb = b[sortCol];
+			// numeric comparison
+			const na = typeof va === "number" ? va : parseFloat(String(va ?? "").replace(/,/g, ""));
+			const nb = typeof vb === "number" ? vb : parseFloat(String(vb ?? "").replace(/,/g, ""));
+			if (!isNaN(na) && !isNaN(nb)) return sortDir === "asc" ? na - nb : nb - na;
+			// string comparison
+			va = String(va ?? ""); vb = String(vb ?? "");
+			return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+		});
+		return sorted;
+	});
+	let displayRows = $derived(showAll ? sortedRows : sortedRows.slice(0, maxRows));
 </script>
 
 {#if block}
@@ -109,7 +142,7 @@
 				<thead>
 					<tr>
 						{#each block.data.columns ?? [] as col, ci}
-							<th>{col}</th>
+							<th class="cursor-pointer select-none hover:text-dl-text" onclick={() => handleSort(col)}>{col}{sortIndicator(col)}</th>
 						{/each}
 					</tr>
 				</thead>
@@ -149,7 +182,7 @@
 				<thead>
 					<tr>
 						{#each block.data.columns ?? [] as col}
-							<th>{col}</th>
+							<th class="cursor-pointer select-none hover:text-dl-text" onclick={() => handleSort(col)}>{col}{sortIndicator(col)}</th>
 						{/each}
 					</tr>
 				</thead>

@@ -214,6 +214,35 @@ def build_focus_context(company: Company | Any, state: ConversationState) -> str
                     lines.append(f"### 현재 섹션 대표 block={first_block}")
                     lines.append(_stringify_focus_value(block_value))
 
+    # 실제 텍스트 본문 포함 — AI가 원문을 근거로 답변할 수 있도록
+    if isinstance(overview, pl.DataFrame) and overview.height > 0:
+        block_col_for_text = (
+            "block" if "block" in overview.columns else "blockOrder" if "blockOrder" in overview.columns else None
+        )
+        if block_col_for_text:
+            text_chars = 0
+            max_text_body = 4000
+            for row in overview.iter_rows(named=True):
+                btype = row.get("type", row.get("blockType", ""))
+                if btype != "text":
+                    continue
+                bidx = row.get(block_col_for_text)
+                if not isinstance(bidx, int):
+                    continue
+                try:
+                    block_value = company.show(state.topic, bidx)
+                except (AttributeError, KeyError, TypeError, ValueError):
+                    continue
+                if block_value is None:
+                    continue
+                body = _stringify_focus_value(block_value, max_rows=20, max_chars=2000)
+                if text_chars + len(body) > max_text_body:
+                    break
+                lines.append("")
+                lines.append(f"### 공시 원문 (block {bidx})")
+                lines.append(body)
+                text_chars += len(body)
+
     if hasattr(company, "trace"):
         try:
             trace = company.trace(state.topic)
@@ -474,6 +503,17 @@ def build_snapshot(company: Company) -> dict | None:
         snapshot["trend"] = trend
     if ratios.warnings:
         snapshot["warnings"] = ratios.warnings[:3]
+
+    # P4: insight grades 통합
+    try:
+        from dartlab.engines.insight.pipeline import analyze as insight_analyze
+
+        insight_result = insight_analyze(company.stockCode, company=company)
+        if insight_result is not None:
+            snapshot["grades"] = insight_result.grades()
+            snapshot["anomalyCount"] = len(insight_result.anomalies)
+    except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+        pass
 
     return snapshot
 

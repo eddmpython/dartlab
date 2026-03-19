@@ -68,12 +68,14 @@ def _run_codex_meta_command(*args: str, timeout: int = 10) -> tuple[int, str, st
             [exe, *args],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             shell=False,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired, UnicodeDecodeError):
         return None
-    return result.returncode, result.stdout.strip(), result.stderr.strip()
+    return result.returncode, (result.stdout or "").strip(), (result.stderr or "").strip()
 
 
 def load_codex_config() -> dict[str, Any]:

@@ -395,6 +395,18 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     _enqueue_event,
                     {"event": "tool_result", "name": name, "result": result[:2000]},
                 )
+                # create_chart 도구 결과에서 ChartSpec 추출 → 별도 chart 이벤트
+                if name == "create_chart":
+                    try:
+                        parsed = json.loads(result)
+                        charts = parsed.get("charts")
+                        if charts:
+                            loop.call_soon_threadsafe(
+                                _enqueue_event,
+                                {"event": "chart", "charts": charts},
+                            )
+                    except (json.JSONDecodeError, TypeError, KeyError):
+                        pass
 
             def _run_agent_stream():
                 for chunk in agent_loop_stream(

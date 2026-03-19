@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-19
+
+### Added
+
+- **AI 공시 탐색 도구**: `show_topic`, `list_topics`, `trace_topic`, `diff_topic` — LLM이 Company 핵심 API 직접 호출
+- **ChartSpec JSON 프로토콜**: combo, radar, waterfall 등 6가지 차트 타입 지원
+- **UI 뷰어 리뉴얼**: DisclosureViewer, TopicRenderer 등 전면 개선
+
+### Changed
+
+- README/README_KR 자동 다운로드 설명 + Try It Now 섹션 추가
+- 서버 TOC 로마 숫자 순서 정렬
+- sections pipeline cadence 성능 개선
+
+### Fixed
+
+- CLI e2e 테스트 Windows 인코딩 수정
+
 ## [0.6.0] - 2026-03-19
 
 ### Added

@@ -867,7 +867,16 @@ def api_company_toc(code: str):
                     )
                 )
 
-        chapters = [TocChapter(chapter=ch, topics=chapterMap[ch]) for ch in chapterOrder]
+        # 챕터를 로마 숫자 순서로 정렬 (I, II, III, ... XII, 기타)
+        _ROMAN_ORDER = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6,
+                        "VII": 7, "VIII": 8, "IX": 9, "X": 10, "XI": 11, "XII": 12}
+
+        def _chapter_sort_key(ch: str) -> tuple[int, str]:
+            prefix = ch.split(".")[0].strip()
+            return (_ROMAN_ORDER.get(prefix, 99), ch)
+
+        sorted_chapters = sorted(chapterOrder, key=_chapter_sort_key)
+        chapters = [TocChapter(chapter=ch, topics=chapterMap[ch]) for ch in sorted_chapters]
         return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=chapters)
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))

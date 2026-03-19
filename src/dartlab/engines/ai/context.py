@@ -554,6 +554,19 @@ def build_context_by_module(
         text, inc = build_context(company, question, include, exclude, compact=True)
         return {"_full": text}, inc, ""
 
+    # ── 동적 topic 목록 + insights 자동 포함 ──
+    # dartlab에 기능이 추가되면 AI가 자동으로 인식하도록
+    # Company의 실제 topics에서 동적 생성
+    _topics_section = _build_topics_section(company)
+    if _topics_section:
+        modules_dict["_topics"] = _topics_section
+        included.append("_topics")
+
+    _insights_section = _build_insights_section(company)
+    if _insights_section:
+        modules_dict["_insights"] = _insights_section
+        included.append("_insights")
+
     config.verbose = orig_verbose
     return modules_dict, included, "\n".join(header_parts)
 
@@ -1345,3 +1358,88 @@ def build_context(
     config.verbose = orig_verbose
 
     return "\n".join(sections), included
+
+
+def _build_topics_section(company: Any) -> str | None:
+    """Company의 topics 목록을 LLM이 사용할 수 있는 마크다운으로 변환.
+
+    dartlab에 topic이 추가되면 자동으로 LLM 컨텍스트에 포함된다.
+    """
+    topics = getattr(company, "topics", None)
+    if topics is None:
+        return None
+    topic_list = list(topics) if not isinstance(topics, list) else topics
+    if not topic_list:
+        return None
+
+    lines = [
+        "\n## 조회 가능한 공시 topic 목록",
+        "`show_topic` 도구에 아래 topic을 넣으면 상세 데이터를 조회할 수 있습니다.",
+        "",
+    ]
+
+    # index가 있으면 label 정보 포함
+    index_df = getattr(company, "index", None)
+    if isinstance(index_df, pl.DataFrame) and index_df.height > 0:
+        label_col = "label" if "label" in index_df.columns else None
+        source_col = "source" if "source" in index_df.columns else None
+        for row in index_df.head(60).iter_rows(named=True):
+            topic = row.get("topic", "")
+            label = row.get(label_col, topic) if label_col else topic
+            source = row.get(source_col, "") if source_col else ""
+            lines.append(f"- `{topic}` ({label}) [{source}]")
+    else:
+        for t in topic_list[:60]:
+            lines.append(f"- `{t}`")
+
+    return "\n".join(lines)
+
+
+def _build_insights_section(company: Any) -> str | None:
+    """Company의 7영역 인사이트 등급을 컨텍스트에 자동 포함."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return None
+
+    try:
+        from dartlab.engines.insight.pipeline import analyze
+
+        result = analyze(stockCode, company=company)
+    except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if result is None:
+        return None
+
+    area_labels = {
+        "performance": "실적",
+        "profitability": "수익성",
+        "health": "건전성",
+        "cashflow": "현금흐름",
+        "governance": "지배구조",
+        "risk": "리스크",
+        "opportunity": "기회",
+    }
+
+    lines = [
+        "\n## 인사이트 등급 (자동 분석)",
+        f"프로파일: **{result.profile}**",
+        "",
+        "| 영역 | 등급 | 요약 |",
+        "| --- | --- | --- |",
+    ]
+    for key, label in area_labels.items():
+        ir = getattr(result, key, None)
+        grade = result.grades().get(key, "N")
+        summary = ir.summary if ir else "-"
+        lines.append(f"| {label} | {grade} | {summary} |")
+
+    if result.anomalies:
+        lines.append("")
+        lines.append("### 이상치 경고")
+        for a in result.anomalies[:5]:
+            lines.append(f"- [{a.severity}] {a.text}")
+
+    if result.summary:
+        lines.append(f"\n{result.summary}")
+
+    return "\n".join(lines)

@@ -22,6 +22,9 @@
 	"dependencies": {
 		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",
+		"d3-scale": "^4.0.2",
+		"d3-shape": "^3.2.0",
+		"layerchart": "^2.0.0-next.46",
 		"lucide-svelte": "^0.575.0",
 		"tailwind-merge": "^3.5.0"
 	}

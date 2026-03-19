@@ -970,6 +970,125 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     if company is None:
         return get_default_tool_runtime()
 
+    # ── Company 핵심 API — 범용 도구 ──
+    # dartlab에 기능이 추가되면 AI가 자동으로 접근할 수 있도록
+    # show/topics/trace/diff/insights를 Company 인터페이스 그대로 노출한다.
+
+    def show_topic(topic: str, block: str = "") -> str:
+        """show(topic) 또는 show(topic, blockIndex)를 호출."""
+        if not hasattr(company, "show"):
+            return "show() 인터페이스가 없습니다."
+        block_idx = _maybe_int(block)
+        try:
+            result = company.show(topic) if block_idx is None else company.show(topic, block_idx)
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"show('{topic}') 실패: {e}"
+        return _format_tool_value(result, max_rows=30, max_chars=6000)
+
+    register_tool(
+        "show_topic",
+        show_topic,
+        "공시 topic의 데이터를 조회합니다. "
+        "block 없이 호출하면 블록 목차(block, type, source, preview)를 반환하고, "
+        "block=N으로 호출하면 해당 블록의 실제 데이터(텍스트 또는 테이블)를 반환합니다. "
+        "사용 가능한 topic 목록은 `list_topics` 도구로 확인하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "조회할 topic (예: businessOverview, riskFactor, BS, IS, CF, dividend)",
+                },
+                "block": {
+                    "type": "string",
+                    "description": "블록 인덱스. 비워두면 블록 목차, 숫자면 해당 블록 데이터",
+                    "default": "",
+                },
+            },
+            "required": ["topic"],
+        },
+    )
+
+    def list_topics() -> str:
+        """Company의 모든 topic 목록을 반환."""
+        topics = getattr(company, "topics", None)
+        if topics is None:
+            return "topics 속성이 없습니다."
+        topic_list = list(topics) if not isinstance(topics, list) else topics
+        if not topic_list:
+            return "사용 가능한 topic이 없습니다."
+
+        # index가 있으면 label/source 정보도 포함
+        index_df = getattr(company, "index", None)
+        if isinstance(index_df, pl.DataFrame) and index_df.height > 0:
+            return _df_to_md(index_df, max_rows=60)
+
+        return "\n".join(f"- {t}" for t in topic_list)
+
+    register_tool(
+        "list_topics",
+        list_topics,
+        "이 기업에서 조회 가능한 모든 공시 topic 목록을 반환합니다. "
+        "각 topic의 라벨, 데이터 종류(docs/finance/report), 기간 수를 포함합니다. "
+        "show_topic 도구에 어떤 topic을 넣을 수 있는지 확인할 때 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    def trace_topic(topic: str) -> str:
+        """topic의 데이터 출처(docs/finance/report)를 추적."""
+        if not hasattr(company, "trace"):
+            return "trace() 인터페이스가 없습니다."
+        try:
+            result = company.trace(topic)
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"trace('{topic}') 실패: {e}"
+        return _format_tool_value(result, max_rows=20, max_chars=3000)
+
+    register_tool(
+        "trace_topic",
+        trace_topic,
+        "topic 데이터의 출처를 추적합니다. "
+        "각 블록이 docs(공시원문), finance(재무제표), report(정기보고서) 중 어디서 왔는지 확인합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "추적할 topic (예: businessOverview, IS, dividend)",
+                },
+            },
+            "required": ["topic"],
+        },
+    )
+
+    def diff_topic(topic: str = "") -> str:
+        """기간간 변화 분석. topic 없으면 전체 요약, 있으면 해당 topic 상세."""
+        if not hasattr(company, "diff"):
+            return "diff() 인터페이스가 없습니다."
+        try:
+            result = company.diff(topic) if topic else company.diff()
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"diff('{topic}') 실패: {e}"
+        return _format_tool_value(result, max_rows=20, max_chars=4000)
+
+    register_tool(
+        "diff_topic",
+        diff_topic,
+        "공시 텍스트의 기간간 변화를 분석합니다. "
+        "topic 없이 호출하면 전체 topic의 변화율 요약, "
+        "topic을 지정하면 해당 topic의 기간별 상세 변화(추가/삭제/수정)를 반환합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "분석할 topic. 비워두면 전체 요약",
+                    "default": "",
+                },
+            },
+        },
+    )
+
     # 0. list_modules: 사용 가능한 모듈 목록 조회
     def list_modules() -> str:
         from dartlab.engines.ai.context import scan_available_modules
@@ -1737,6 +1856,60 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         "로컬에 저장된 데이터 현황(카테고리별 파일 수)을 조회합니다. "
         "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
         {"type": "object", "properties": {}},
+    )
+
+    # ── 22. create_chart: 차트 생성 ──
+    def create_chart(chart_type: str = "auto") -> str:
+        """ChartSpec 기반 차트를 생성하여 JSON으로 반환한다."""
+        if company is None:
+            return json.dumps({"error": "회사를 먼저 선택하세요."}, ensure_ascii=False)
+
+        from dartlab.tools.chart import _SPEC_GENERATORS, auto_chart
+
+        if chart_type == "auto":
+            specs = auto_chart(company)
+        else:
+            gen = _SPEC_GENERATORS.get(chart_type)
+            if gen is None:
+                available = ", ".join(_SPEC_GENERATORS.keys())
+                return json.dumps(
+                    {"error": f"'{chart_type}' 차트를 찾을 수 없습니다. 사용 가능: {available}"},
+                    ensure_ascii=False,
+                )
+            result = gen(company)
+            specs = [result] if result is not None else []
+
+        if not specs:
+            return json.dumps({"error": "차트를 생성할 데이터가 없습니다."}, ensure_ascii=False)
+
+        return json.dumps({"charts": specs}, ensure_ascii=False)
+
+    register_tool(
+        "create_chart",
+        create_chart,
+        "기업의 재무 데이터를 차트로 시각화합니다. "
+        "매출 추이, 수익성, 현금흐름, 배당, 인사이트 레이더 등을 ChartSpec JSON으로 생성합니다. "
+        "사용자가 '차트 보여줘', '매출 추이 그래프', '시각화' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "chart_type": {
+                    "type": "string",
+                    "enum": [
+                        "auto", "revenue_trend", "cashflow", "balance_sheet",
+                        "profitability", "dividend", "insight_radar",
+                        "ratio_sparklines", "diff_heatmap",
+                    ],
+                    "description": (
+                        "차트 유형. auto는 사용 가능한 모든 차트를 자동 생성. "
+                        "revenue_trend=손익추이, cashflow=현금흐름, balance_sheet=자산구성, "
+                        "profitability=수익성추이, dividend=배당분석, insight_radar=인사이트레이더, "
+                        "ratio_sparklines=비율스파크라인, diff_heatmap=변화밀도"
+                    ),
+                    "default": "auto",
+                },
+            },
+        },
     )
 
     return get_default_tool_runtime()

@@ -372,6 +372,23 @@
 							{/each}
 						</div>
 					{/if}
+					<!-- P4: Insight grades -->
+					{#if message.snapshot.grades}
+						{@const gradeLabels = { performance: "실적", profitability: "수익성", health: "건전성", cashflow: "현금흐름", governance: "지배구조", risk: "리스크", opportunity: "기회" }}
+						<div class="px-3 py-1.5 border-t border-dl-border/30 flex flex-wrap gap-1.5">
+							{#each Object.entries(message.snapshot.grades) as [key, grade]}
+								{@const color = grade === "A" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : grade === "B" ? "bg-blue-500/15 text-blue-400 border-blue-500/30" : grade === "C" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : grade === "D" ? "bg-orange-500/15 text-orange-400 border-orange-500/30" : grade === "F" ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-dl-border/10 text-dl-text-dim border-dl-border/20"}
+								<span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {color}">
+									{gradeLabels[key] || key} {grade}
+								</span>
+							{/each}
+							{#if message.snapshot.anomalyCount > 0}
+								<span class="px-1.5 py-0.5 rounded text-[9px] font-bold border bg-red-500/10 text-red-400 border-red-500/20">
+									이상치 {message.snapshot.anomalyCount}건
+								</span>
+							{/if}
+						</div>
+					{/if}
 				</button>
 			{/if}
 

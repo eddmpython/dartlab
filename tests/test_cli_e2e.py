@@ -23,6 +23,8 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         check=False,
+        encoding="utf-8",
+        errors="replace",
     )
 
 

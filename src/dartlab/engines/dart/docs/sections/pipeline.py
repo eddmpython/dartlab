@@ -342,7 +342,13 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
     expanded: list[dict[str, object]] = []
     headingStateByTopic: dict[str, list[dict[str, object]]] = {}
 
-    if any(row.get("projectionKind") is not None for row in rows):
+    hasProjection = False
+    for row in rows:
+        if row.get("projectionKind") is not None:
+            hasProjection = True
+            break
+
+    if hasProjection:
         orderedRows = sorted(
             rows,
             key=lambda r: (
@@ -469,8 +475,21 @@ def _cadenceSortKey(cadence: str) -> int:
 
 
 def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
-    presentPeriods = [period for period, value in periodMap.items() if isinstance(value, str) and value.strip()]
-    if not presentPeriods:
+    annualPeriods: list[str] = []
+    quarterlyPeriods: list[str] = []
+    for period, value in periodMap.items():
+        if not isinstance(value, str) or not value.strip():
+            continue
+        suffix = period[-2:]
+        if suffix in ("Q1", "Q2", "Q3"):
+            quarterlyPeriods.append(period)
+        else:
+            annualPeriods.append(period)
+
+    annualCount = len(annualPeriods)
+    quarterlyCount = len(quarterlyPeriods)
+
+    if annualCount == 0 and quarterlyCount == 0:
         return {
             "cadenceKey": "none",
             "cadenceScope": "none",
@@ -480,26 +499,32 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
             "latestQuarterlyPeriod": None,
         }
 
-    cadenceKeys = sorted({_periodCadence(period) for period in presentPeriods}, key=_cadenceSortKey)
-    annualPeriods = [period for period in presentPeriods if _periodCadence(period) == "annual"]
-    quarterlyPeriods = [period for period in presentPeriods if _periodCadence(period) != "annual"]
-    hasAnnual = bool(annualPeriods)
-    hasQuarterly = bool(quarterlyPeriods)
-    if hasAnnual and hasQuarterly:
+    if annualCount > 0 and quarterlyCount > 0:
         cadenceScope = "mixed"
-    elif hasAnnual:
+    elif annualCount > 0:
         cadenceScope = "annual"
     else:
         cadenceScope = "quarterly"
 
-    latestAnnual = max(annualPeriods, key=_periodSortKey) if annualPeriods else None
-    latestQuarterly = max(quarterlyPeriods, key=_periodSortKey) if quarterlyPeriods else None
+    cadenceKeys: list[str] = []
+    if annualCount > 0:
+        cadenceKeys.append("annual")
+    cadenceSet = set()
+    for p in quarterlyPeriods:
+        c = _periodCadence(p)
+        if c not in cadenceSet:
+            cadenceSet.add(c)
+            cadenceKeys.append(c)
+    cadenceKeys.sort(key=_cadenceSortKey)
+
+    latestAnnual = max(annualPeriods) if annualPeriods else None
+    latestQuarterly = max(quarterlyPeriods) if quarterlyPeriods else None
 
     return {
         "cadenceKey": ",".join(cadenceKeys),
         "cadenceScope": cadenceScope,
-        "annualPeriodCount": len(annualPeriods),
-        "quarterlyPeriodCount": len(quarterlyPeriods),
+        "annualPeriodCount": annualCount,
+        "quarterlyPeriodCount": quarterlyCount,
         "latestAnnualPeriod": latestAnnual,
         "latestQuarterlyPeriod": latestQuarterly,
     }
@@ -1505,8 +1530,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     for topic_seq in sorted(topicFirstSeq.items(), key=lambda x: x[1]):
         topicIndex[topic_seq[0]] = len(topicIndex)
 
-    def _cadenceScopePriority(scope: str | None) -> int:
-        return {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}.get(str(scope or "none"), 9)
+    _CADENCE_SCOPE_PRIORITY = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
 
     def _topicRowSortKey(k: tuple[str, str]) -> tuple[int, int, int, int, int, int, int, int, str]:
         topic, _segmentKey = k
@@ -1518,7 +1542,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             majorNum,
             firstSeq,
             tIdx,
-            _cadenceScopePriority(str(cadenceMeta.get("cadenceScope") or "none")),
+            _CADENCE_SCOPE_PRIORITY.get(str(cadenceMeta.get("cadenceScope") or "none"), 9),
             int(info.get("latestMissing", 1)),
             int(info.get("latestRank", 999999999)),
             int(info.get("firstRank", 999999999)),
@@ -1640,7 +1664,11 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                 str(meta["sourceTopic"]) if isinstance(meta.get("sourceTopic"), str) else None
             )
             periodMap = topicMap.get(key, {})
-            for period in validPeriods:
-                dataColumns[period].append(periodMap.get(period))
+            if periodMap:
+                for period in validPeriods:
+                    dataColumns[period].append(periodMap.get(period))
+            else:
+                for period in validPeriods:
+                    dataColumns[period].append(None)
 
     return pl.DataFrame(dataColumns, schema=schema)

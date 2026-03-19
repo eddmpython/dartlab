@@ -273,6 +273,59 @@ export async function fetchCompanySearch(code, query) {
 	return res.json();
 }
 
+/** 7영역 인사이트 등급 + 이상치 분석 */
+export async function fetchCompanyInsights(code) {
+	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/insights`);
+	if (!res.ok) throw new Error("인사이트 조회 실패");
+	return res.json();
+}
+
+/** topic AI 요약 (SSE 스트리밍) */
+export function streamTopicSummary(code, topic, { onContext, onChunk, onDone, onError }) {
+	const controller = new AbortController();
+	fetch(`${BASE}/api/company/${encodeURIComponent(code)}/summary/${encodeURIComponent(topic)}`, {
+		signal: controller.signal,
+	})
+		.then(async (res) => {
+			if (!res.ok) {
+				onError?.("요약 생성 실패");
+				return;
+			}
+			const reader = res.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = "";
+			let currentEvent = null;
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				buffer += decoder.decode(value, { stream: true });
+				const lines = buffer.split("\n");
+				buffer = lines.pop() || "";
+
+				for (const line of lines) {
+					if (line.startsWith("event:")) {
+						currentEvent = line.slice(6).trim();
+					} else if (line.startsWith("data:") && currentEvent) {
+						try {
+							const parsed = JSON.parse(line.slice(5).trim());
+							if (currentEvent === "context") onContext?.(parsed);
+							else if (currentEvent === "chunk") onChunk?.(parsed.text);
+							else if (currentEvent === "error") onError?.(parsed.error);
+							else if (currentEvent === "done") onDone?.();
+						} catch {}
+						currentEvent = null;
+					}
+				}
+			}
+			onDone?.();
+		})
+		.catch((err) => {
+			if (err.name !== "AbortError") onError?.(err.message);
+		});
+	return { abort: () => controller.abort() };
+}
+
 /** LLM 질문 (동기) */
 export async function ask(company, question, options = {}) {
 	const body = { company, question, stream: false, ...options };

@@ -6,14 +6,17 @@
 -->
 <script>
 	import { renderMarkdown } from "$lib/markdown.js";
+	import { streamTopicSummary } from "$lib/api.js";
 	import TimelineBar from "./TimelineBar.svelte";
 	import TableRenderer from "./TableRenderer.svelte";
 	import DiffSummary from "./DiffSummary.svelte";
-	import { MessageSquare, Copy, Check } from "lucide-svelte";
+	import DiffCompare from "./DiffCompare.svelte";
+	import { MessageSquare, Copy, Check, Sparkles, Star, Loader2, ArrowLeftRight } from "lucide-svelte";
 
 	let {
 		topicData = null,    // viewer API response (blocks + textDocument)
 		diffSummary = null,  // diff summary API response
+		viewer = null,       // viewer store (for summary cache + bookmarks)
 		onAskAI = null,      // (selectedText) => void
 	} = $props();
 
@@ -24,6 +27,73 @@
 
 	// "AI에게 물어보기" floating button
 	let floatBtn = $state({ show: false, x: 0, y: 0, text: "" });
+
+	// P2: AI 요약
+	let summaryStreaming = $state(false);
+	let summaryText = $state("");
+	let summaryError = $state(null);
+	let summaryHandle = $state(null);
+
+	// Reset summary when topic changes
+	$effect(() => {
+		if (topicData?.topic) {
+			summaryStreaming = false;
+			summaryError = null;
+			const cached = viewer?.getTopicSummary?.(topicData.topic);
+			summaryText = cached || "";
+			if (summaryHandle) { summaryHandle.abort(); summaryHandle = null; }
+		}
+	});
+
+	function startSummary() {
+		if (!viewer?.stockCode || !topicData?.topic) return;
+		summaryStreaming = true;
+		summaryText = "";
+		summaryError = null;
+
+		summaryHandle = streamTopicSummary(viewer.stockCode, topicData.topic, {
+			onContext() {},
+			onChunk(text) { summaryText += text; },
+			onDone() {
+				summaryStreaming = false;
+				summaryHandle = null;
+				if (summaryText) viewer?.setTopicSummary?.(topicData.topic, summaryText);
+			},
+			onError(err) {
+				summaryStreaming = false;
+				summaryHandle = null;
+				summaryError = err;
+			},
+		});
+	}
+
+	// P6: bookmark derived
+	let isBookmarked = $derived(viewer?.isBookmarked?.(topicData?.topic) ?? false);
+
+	// 기간 비교 모드
+	let showDiffCompare = $state(false);
+
+	// topic 변경 시 비교 모드 닫기
+	$effect(() => {
+		if (topicData?.topic) {
+			showDiffCompare = false;
+		}
+	});
+
+	// 사용 가능한 기간 목록 (textDocument에서 추출)
+	let availablePeriods = $derived.by(() => {
+		if (!topicData?.textDocument?.sections?.length) return [];
+		const periods = new Set();
+		for (const s of topicData.textDocument.sections) {
+			if (s.timeline) {
+				for (const entry of s.timeline) {
+					const label = entry.period?.label || (entry.period?.year && entry.period?.quarter ? `${entry.period.year}Q${entry.period.quarter}` : null);
+					if (label) periods.add(label);
+				}
+			}
+		}
+		return [...periods].sort().reverse();
+	});
 
 	// ── textDocument helpers ──
 	let hasTextDoc = $derived(topicData?.textDocument?.sections?.length > 0);
@@ -230,14 +300,72 @@
 {#if topicData}
 	<div class="space-y-4">
 		<!-- Topic header -->
-		<div>
-			<h2 class="text-[16px] font-semibold text-dl-text">
+		<div class="flex items-center gap-2">
+			<h2 class="text-[16px] font-semibold text-dl-text flex-1">
 				{topicData.topicLabel || ""}
 			</h2>
+			<!-- P6: Bookmark -->
+			{#if viewer}
+				<button
+					class="p-1 rounded transition-colors {isBookmarked ? 'text-amber-400' : 'text-dl-text-dim/30 hover:text-amber-400/60'}"
+					onclick={() => viewer.toggleBookmark(topicData.topic)}
+					title={isBookmarked ? "북마크 해제" : "북마크 추가"}
+				>
+					<Star size={14} fill={isBookmarked ? "currentColor" : "none"} />
+				</button>
+			{/if}
+			<!-- 기간 비교 버튼 -->
+			{#if availablePeriods.length >= 2}
+				<button
+					class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors border
+						{showDiffCompare ? 'border-dl-accent/30 bg-dl-accent/10 text-dl-accent-light' : 'border-dl-border/20 text-dl-text-dim hover:text-dl-text hover:bg-white/5'}"
+					onclick={() => { showDiffCompare = !showDiffCompare; }}
+				>
+					<ArrowLeftRight size={10} />
+					<span>기간 비교</span>
+				</button>
+			{/if}
+			<!-- P2: AI 요약 버튼 -->
+			{#if viewer?.stockCode}
+				<button
+					class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors border
+						{summaryStreaming ? 'border-dl-accent/30 bg-dl-accent/10 text-dl-accent-light' : 'border-dl-border/20 text-dl-text-dim hover:text-dl-text hover:bg-white/5'}"
+					onclick={startSummary}
+					disabled={summaryStreaming}
+				>
+					{#if summaryStreaming}
+						<Loader2 size={10} class="animate-spin" />
+					{:else}
+						<Sparkles size={10} />
+					{/if}
+					<span>AI 요약</span>
+				</button>
+			{/if}
 		</div>
+
+		<!-- P2: AI Summary result -->
+		{#if summaryText || summaryStreaming || summaryError}
+			<div class="px-3 py-2 rounded-lg bg-dl-accent/5 border border-dl-accent/15 text-[12px] text-dl-text-muted leading-relaxed">
+				{#if summaryError}
+					<div class="text-red-400/80">{summaryError}</div>
+				{:else}
+					<div class="whitespace-pre-wrap">{summaryText}{#if summaryStreaming}<span class="inline-block w-1.5 h-3 bg-dl-accent/60 animate-pulse ml-0.5"></span>{/if}</div>
+				{/if}
+			</div>
+		{/if}
 
 		<!-- Diff summary card -->
 		<DiffSummary summary={diffSummary} />
+
+		<!-- 기간 비교 뷰 -->
+		{#if showDiffCompare && viewer?.stockCode}
+			<DiffCompare
+				stockCode={viewer.stockCode}
+				topic={topicData.topic}
+				periods={availablePeriods}
+				onClose={() => { showDiffCompare = false; }}
+			/>
+		{/if}
 
 		<!-- ═══ Rich textDocument 렌더링 ═══ -->
 		{#if hasTextDoc}
@@ -271,7 +399,9 @@
 			{#each td.sections as section (section.id)}
 				{@const activeView = getActiveView(section)}
 				{@const explicit = hasExplicitSelection(section)}
-				{@const diffUnits = explicit ? buildDiffUnits(activeView) : null}
+				{@const diffUnits = buildDiffUnits(activeView)}
+				{@const hasDiff = diffUnits && diffUnits.length > 0}
+				{@const showingDiff = hasDiff && (explicit || section.status === "updated")}
 
 				<div class="pt-2 pb-6 border-b border-dl-border/8 last:border-b-0 {section.status === 'stale' ? 'border-l-2 border-l-amber-400/40 pl-3' : ''}">
 					<!-- Heading path -->
@@ -326,8 +456,8 @@
 						</div>
 					{/if}
 
-					<!-- Digest (change summary) -->
-					{#if explicit && activeView?.digest?.items?.length > 0}
+					<!-- Digest (change summary) — 기간 변경점이 있으면 항상 표시 -->
+					{#if activeView?.digest?.items?.length > 0}
 						{@const dg = activeView.digest}
 						<div class="mb-3 px-3 py-2 rounded-lg border border-dl-border/15 bg-dl-surface-card/50 text-[11px] space-y-0.5 max-w-2xl">
 							<div class="text-dl-text-dim font-medium">{dg.to} vs {dg.from}</div>
@@ -343,18 +473,22 @@
 						</div>
 					{/if}
 
-					<!-- Body text -->
+					<!-- Body text — diff가 있으면 항상 diff 표시, 없으면 원문 -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div class="disclosure-text max-w-3xl" onmouseup={handleTextMouseUp}>
-						{#if explicit && diffUnits}
-							<!-- Diff view -->
+						{#if showingDiff}
+							<!-- Diff view: 추가/삭제/유지 컬러 표시 -->
 							{#each diffUnits as unit}
 								{#if unit.kind === "same"}
 									<p class="vw-para">{unit.text}</p>
 								{:else if unit.kind === "added"}
-									<div class="pl-3 py-1 mb-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-dl-text/85 text-[14px] leading-[1.85] rounded-r">{unit.text}</div>
+									<div class="pl-3 py-1 mb-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-dl-text/85 text-[14px] leading-[1.85] rounded-r">
+										<span class="text-emerald-500/50 text-[10px] mr-1">+</span>{unit.text}
+									</div>
 								{:else if unit.kind === "removed"}
-									<div class="pl-3 py-1 mb-1 border-l-2 border-red-400 bg-red-500/5 text-dl-text/50 text-[14px] leading-[1.85] rounded-r line-through decoration-red-400/30">{unit.text}</div>
+									<div class="pl-3 py-1 mb-1 border-l-2 border-red-400 bg-red-500/5 text-dl-text/50 text-[14px] leading-[1.85] rounded-r line-through decoration-red-400/30">
+										<span class="text-red-400/50 text-[10px] mr-1">-</span>{unit.text}
+									</div>
 								{/if}
 							{/each}
 						{:else if activeView?.body}

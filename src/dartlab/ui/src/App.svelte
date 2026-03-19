@@ -734,6 +734,14 @@
 		} else if (e.key === 'Escape' && workspace.panelOpen) {
 			workspace.closePanel();
 		}
+
+		// P5: 1/2 탭 전환 (입력 필드 외)
+		const tag = e.target?.tagName;
+		const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable;
+		if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+			if (e.key === '1') { workspace.switchView('chat'); return; }
+			if (e.key === '2') { workspace.switchView('viewer'); return; }
+		}
 	}
 
 	let activeMessages = $derived(store.active?.messages || []);

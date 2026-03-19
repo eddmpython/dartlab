@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-19
+
+### Added
+
+- **AI 공시 탐색 도구**: `show_topic`, `list_topics`, `trace_topic`, `diff_topic` — LLM이 Company의 핵심 API를 직접 호출
+- **AI 동적 컨텍스트**: Company의 실제 topics/insights를 자동으로 LLM 컨텍스트에 포함
+- **ChartSpec JSON 프로토콜**: `chart.spec_*()` → JSON dict → `chart.chart_from_spec()` 경로 추가 (combo, radar, waterfall, sparkline, heatmap, pie)
+- **UI 뷰어 대폭 개선**: DisclosureViewer, TopicRenderer, ViewerNav, TableRenderer 리뉴얼
+- **docs quickstart**: "바로 실행해보기" 섹션 추가 (startMarimo + Colab 링크)
+
+### Changed
+
+- **README/README_KR 개선**: 자동 다운로드 설명, Try It Now 섹션, 데이터 섹션 보강, Docs/Blog 뱃지
+- **서버 TOC 챕터 정렬**: 로마 숫자 순서(I~XII) 정렬 적용
+- **sections pipeline**: cadence 메타 계산 성능 개선 (불필요한 리스트 컴프리헨션 제거)
+- **AI agent 분석 절차**: sections 중심으로 재정렬 (`list_topics` → `show_topic` → `get_data` 순서)
+
+### Fixed
+
+- **CLI e2e 테스트**: Windows cp949 인코딩 오류 수정 (UTF-8 명시)
+
 ## [0.6.0] - 2026-03-19
 
 ### Added
@@ -34,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
+
+[0.7.0]: https://github.com/eddmpython/dartlab/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/eddmpython/dartlab/compare/v0.5.1...v0.6.0
+[0.5.1]: https://github.com/eddmpython/dartlab/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/eddmpython/dartlab/compare/v0.4.5...v0.5.0
 
 ## [0.5.1] - 2026-03-19
 

@@ -4,7 +4,7 @@
 	활성 topic 자동 스크롤, 데이터 유무 인디케이터.
 -->
 <script>
-	import { ChevronRight, ChevronDown, FileText, BarChart3, Loader2, Table2 } from "lucide-svelte";
+	import { ChevronRight, ChevronDown, FileText, BarChart3, Loader2, Table2, Star, Clock } from "lucide-svelte";
 	import { tick } from "svelte";
 
 	let {
@@ -12,6 +12,8 @@
 		loading = false,
 		selectedTopic = null,
 		expandedChapters = new Set(),
+		bookmarks = [],         // P6: 북마크된 topic 목록
+		recentHistory = [],     // 최근 본 topic 히스토리
 		onSelectTopic = null,
 		onToggleChapter = null,
 	} = $props();
@@ -47,6 +49,59 @@
 			<span class="text-[11px] text-dl-text-dim">목차 로딩 중...</span>
 		</div>
 	{:else if toc?.chapters}
+		<!-- P6: Bookmarks section -->
+		{#if bookmarks.length > 0}
+			{@const bookmarkTopics = bookmarks.map(bTopic => {
+				for (const ch of toc.chapters) {
+					const found = ch.topics.find(t => t.topic === bTopic);
+					if (found) return { ...found, chapter: ch.chapter };
+				}
+				return null;
+			}).filter(Boolean)}
+			{#if bookmarkTopics.length > 0}
+				<div class="mb-1 pb-1 border-b border-dl-border/15">
+					<div class="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-amber-400/70 uppercase tracking-wider">
+						<Star size={10} fill="currentColor" />
+						<span>즐겨찾기</span>
+					</div>
+					{#each bookmarkTopics as bt}
+						{@const isActive = selectedTopic === bt.topic}
+						<button
+							class="flex items-center gap-1.5 w-full px-2 py-1 rounded-md text-left text-[12px] transition-colors {isActive
+								? 'text-dl-text bg-dl-surface-active font-medium'
+								: 'text-dl-text-muted hover:text-dl-text hover:bg-white/5'}"
+							onclick={() => onSelectTopic?.(bt.topic, bt.chapter)}
+						>
+							<Star size={10} class="text-amber-400/60 flex-shrink-0" fill="currentColor" />
+							<span class="truncate">{bt.label}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		{/if}
+
+		<!-- 최근 본 topic -->
+		{#if recentHistory.length > 0 && bookmarks.length === 0}
+			{@const recentTopics = recentHistory.slice(0, 5).filter(h => h.topic !== selectedTopic)}
+			{#if recentTopics.length > 0}
+				<div class="mb-1 pb-1 border-b border-dl-border/15">
+					<div class="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-dl-text-dim/60 uppercase tracking-wider">
+						<Clock size={10} />
+						<span>최근</span>
+					</div>
+					{#each recentTopics as h}
+						<button
+							class="flex items-center gap-1.5 w-full px-2 py-1 rounded-md text-left text-[12px] transition-colors text-dl-text-dim hover:text-dl-text hover:bg-white/5"
+							onclick={() => onSelectTopic?.(h.topic, null)}
+						>
+							<Clock size={10} class="text-dl-text-dim/30 flex-shrink-0" />
+							<span class="truncate">{h.label}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		{/if}
+
 		{#each toc.chapters as ch, ci}
 			<div class="mb-0.5">
 				<!-- Chapter header -->

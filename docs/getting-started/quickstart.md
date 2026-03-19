@@ -135,6 +135,18 @@ c.report.extract("배당")  # report 엔진 직접
 
 하지만 대부분의 분석은 `c.sections`와 `c.show()` 두 개면 충분하다.
 
+## 바로 실행해보기
+
+코드를 직접 작성하지 않고 대화형 노트북으로 탐색할 수 있다:
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
+marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
+```
+
+또는 브라우저에서 [Colab 퀵스타트 노트북](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)을 바로 열 수 있다.
+
 ## 다음 단계
 
 - [Sections 가이드](./sections) — sections 구조, 컬럼, 필터링 상세
