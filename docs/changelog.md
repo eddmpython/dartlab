@@ -11,15 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-03-19
+
+### Added
+
+- EDGAR sections 텍스트 구조 메타데이터 추가 (`textNodeType`, `textLevel`, `textPath` — heading/body 분리)
+- EDGAR sections 연간 보고서 Q4 라벨 통일 (`2024` → `2024Q4`)
+- quickstart 문서에 insights 섹션 추가
+- pyproject.toml keywords에 `edgar`, `sec`, `sections` 추가
+
 ### Changed
 
-**공개 문서와 랜딩 메시지 재정렬**
-- README / README_KR를 `sections` 중심 회사 맵 서사로 재작성
-- docs 메인 흐름을 `Company -> sections -> show -> trace` 기준으로 통일
-- `index`, `ShowResult`, `40개 모듈`, legacy 비교 surface 중심 공개 문구를 메인 문서와 랜딩에서 제거
-- 랜딩 카피를 parser 카탈로그 중심에서 sections-first company map 중심으로 재구성
-- 튜토리얼 `quickstart`, `edgar`를 현행 공개 contract에 맞게 재정리
-- docs 상태 문서를 현행 공개 문서 구조 기준으로 갱신
+**공개 문서 전면 현행화**
+- README / README_KR를 `sections` 중심 회사 맵 서사로 재작성 (ratios, insights, diff, text structure, EDGAR 반영)
+- docs 전체 흐름을 `sections → show → trace` 기준으로 통일
+- `finance-others.md`의 `c.get()` 패턴을 `c.report.extract()` / `c.docs.notes` 경로로 전환
+- `stability.md`에서 profile CLI 제거, profile 설명 현행화
+- `sections.md`에 텍스트 구조 컬럼(textNodeType/textLevel/textPath) 반영, Q4 기간 표기 통일
+- `overview.md`에 텍스트 구조 컬럼 추가
+- pyproject.toml description에 EDGAR 반영
+- llms.txt description을 DART+EDGAR 통합으로 갱신
+- EDGAR `DEV.md` 현행화 (sections 형태, show 계약, profile 제거)
+
+### Removed
+
+- 중복 DEV 문서 2건 삭제 (`dart/dev/company.md`, `dart/docs/dev/learning.md`)
 
 ## [0.5.0] - 2026-03-15
 

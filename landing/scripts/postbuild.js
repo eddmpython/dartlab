@@ -123,10 +123,10 @@ const sections = [
 
 let llmsTxt = `# DartLab
 
-> A Python library for comprehensive DART disclosure analysis. Read Beyond the Numbers.
+> One company map from disclosure filings — DART + EDGAR.
 
-DartLab은 한국 금융감독원 DART 전자공시 데이터를 수집·분석하는 Python 라이브러리다.
-정량 데이터(재무제표, 밸류에이션)와 정성 데이터(감사의견, 지배구조), 공시 문서 텍스트를 모두 다룬다.
+DartLab은 한국 DART와 미국 SEC EDGAR 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
+sections(topic × period 수평화)가 뼈대이고, 그 위에 재무제표(BS/IS/CF), 47개 재무비율, 7영역 인사이트 등급이 올라간다.
 AI 크롤러와 답변 엔진을 위해 각 페이지의 markdown mirror도 함께 제공한다.
 
 `;

@@ -85,6 +85,18 @@ c.ratios                # 47개 재무비율
 c.finance.ratioSeries   # 비율 시계열
 ```
 
+## 인사이트
+
+7개 영역(성과, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회)의 등급 분석:
+
+```python
+c.insights                      # 7영역 분석
+c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
+c.insights.performance.grade    # → "A"
+c.insights.performance.details  # → ["매출 고성장 +8.3%", …]
+c.insights.anomalies            # → 이상치, 위험 신호
+```
+
 ## EDGAR도 동일
 
 ```python

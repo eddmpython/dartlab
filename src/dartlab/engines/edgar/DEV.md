@@ -12,22 +12,25 @@ EDGAR docs는 sections 수평화가 유일한 기초 경로다. 레거시 파서
 
 **sections 반환 형태** (DART와 동일):
 ```
-│ topic                  │ blockType │ 2020   │ 2021   │ 2022   │
-│ 10-K::item1Business    │ text      │ 서술문 │ 서술문 │ 서술문 │
-│ 10-K::item1Business    │ table     │ 테이블 │ null   │ 테이블 │
-│ 10-K::item7Mdna        │ text      │ 서술문 │ 서술문 │ 서술문 │
+│ topic                  │ blockType │ blockOrder │ textNodeType │ textLevel │ textPath │ 2024Q4 │ 2023Q4 │
+│ 10-K::item1Business    │ text      │ 0          │ heading      │ 1         │ Products │ Products│ ...   │
+│ 10-K::item1Business    │ text      │ 1          │ body         │ 0         │ Products │ iPhone…│ ...    │
+│ 10-K::item1Business    │ table     │ 2          │ null         │ null      │ null     │ 테이블  │ ...   │
+│ 10-K::item7Mdna        │ text      │ 0          │ heading      │ 1         │ Overview │ ...    │ ...   │
 ```
 
 - 같은 topic 안에서 blockType으로 text/table 분리
-- 기간 정렬은 ascending (오래된 순 → 최신 순, DART와 동일)
+- text는 heading/body로 세분화 (textNodeType, textLevel, textPath 메타)
+- 기간 정렬은 descending (최신 먼저, DART와 동일)
+- 연간 보고서는 Q4 라벨 (`2024` → `2024Q4`)
 
-**2. show() → ShowResult(text, table)**
+**2. show(topic, block) — sections 기반**
 
-DART Company와 동일한 `ShowResult(text, table)` NamedTuple 반환:
+DART Company와 동일한 show() 계약:
 ```python
-result = c.show("10-K::item1Business")
-result.text   # pl.DataFrame | None — 서술문
-result.table  # pl.DataFrame | None — 테이블
+c.show("10-K::item1Business")        # 블록 목차 DataFrame
+c.show("10-K::item1Business", 0)     # block 0의 실제 데이터
+c.show("BS")                         # finance DataFrame
 ```
 
 finance topic (BS/IS/CF/CIS, ratios)은 기존대로 DataFrame 반환.
@@ -70,15 +73,11 @@ c.topics                     # ["BS", "IS", "CF", "ratios", "10-K::...", ...]
 
 c.docs.sections              # (topic, blockType) × period DataFrame (pure source)
 c.docs.filings()             # filings 목록
-c.docs.show(topic)           # ShowResult(text, table)
-
 c.finance.BS / IS / CF / CIS # 연도별 재무제표
 c.finance.ratios / ratioSeries
 
-c.profile.sections           # finance + docs merged sections (연도별 finance 채움)
-
 c.BS                         # finance.BS 바로가기
-c.sections                   # docs.sections 바로가기
+c.sections                   # docs.sections 바로가기 (최신먼저, Q4 통일)
 c.filings()                  # docs.filings() 바로가기
 
 c.insights                   # 7영역 등급

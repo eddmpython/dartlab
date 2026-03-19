@@ -4,9 +4,20 @@ title: 전체 모듈 상세
 
 # 전체 모듈 상세
 
-`Company`의 공개 기본 경로는 `sections -> show -> trace`다. 이 문서는 그보다 한 단계 아래의 source namespace를 참고용으로 정리한 것이다. 각 shortcut이 어떤 DataFrame을 반환하는지, `get()`으로 접근 가능한 추가 데이터는 무엇인지 상세하게 다룬다.
+`Company`의 공개 기본 경로는 `sections → show → trace`다. 이 문서는 그보다 한 단계 아래의 report/docs source namespace를 참고용으로 정리한 것이다.
 
-> **canonical 접근 경로**: `c.show("dividend")`, `c.show("audit")` 등으로 시작한다. 이 문서의 `c.get(topic)` 호출은 `c.report.extract(topic)` 또는 `c.docs.notes`로 대체되는 deep access 패턴이다. 일상 분석은 `show()`로 충분하다.
+> **⚠️ `c.report.extract(topic)`은 내부 API다.** 일상 분석은 `c.show(topic)`을 쓴다.
+> 아래 예제의 `c.report.extract()` 호출은 `c.report.extract(topic)` 또는 `c.docs.notes`로 접근하는 deep access 패턴이다.
+>
+> ```python
+> # 권장 경로
+> c.show("dividend")           # show()가 source 우선순위 적용
+> c.show("audit")
+>
+> # deep access (report namespace 직접)
+> c.report.extract("dividend") # report Result 객체
+> c.docs.notes.inventory       # K-IFRS 주석 직접
+> ```
 
 ---
 
@@ -50,10 +61,10 @@ c.majorHolder
 # year | majorHolder | majorRatio | totalRatio | holderCount | ...
 ```
 
-`get()`으로 개별 주주 목록 접근:
+report namespace로 개별 주주 목록 접근:
 
 ```python
-result = c.get("majorHolder")
+result = c.report.extract("majorHolder")  # 또는 c.show("majorHolder")
 result.majorHolder   # "이재용"
 result.majorRatio    # 20.76
 result.totalRatio    # 특수관계인 합계 지분율
@@ -73,7 +84,7 @@ result.holders       # list[Holder] — 개별 주주 목록
 **활용 예시:**
 
 ```python
-result = c.get("majorHolder")
+result = c.report.extract("majorHolder")
 print(f"최대주주: {result.majorHolder} ({result.majorRatio}%)")
 for h in result.holders:
     print(f"  {h.name} ({h.relation}): {h.ratioEnd}%")
@@ -113,10 +124,10 @@ c.shareCapital
 # year | authorizedShares | issuedShares | treasuryShares | outstandingShares | ...
 ```
 
-`get()`으로 전체 접근:
+report namespace로 전체 접근:
 
 ```python
-result = c.get("shareCapital")
+result = c.report.extract("shareCapital")
 result.authorizedShares    # 발행할 주식의 총수
 result.issuedShares        # 발행한 주식의 총수
 result.treasuryShares      # 자기주식
@@ -136,10 +147,10 @@ c.capitalChange
 # year | commonShares | preferredShares | commonParValue | ...
 ```
 
-`get()`으로 추가 DataFrame:
+report namespace로 추가 DataFrame:
 
 ```python
-result = c.get("capitalChange")
+result = c.report.extract("capitalChange")
 result.capitalDf     # 자본금 변동 시계열
 result.shareTotalDf  # 주식의 총수 시계열
 result.treasuryDf    # 자기주식 변동 시계열
@@ -169,10 +180,10 @@ c.executive
 # year | totalRegistered | insideDirectors | outsideDirectors | otherNonexec | maleCount | femaleCount
 ```
 
-`get()`으로 미등기임원 보수 접근:
+report namespace로 미등기임원 보수 접근:
 
 ```python
-result = c.get("executive")
+result = c.report.extract("executive")
 result.executiveDf   # 등기임원 집계 시계열
 result.unregPayDf    # 미등기임원 보수 시계열
 ```
@@ -201,10 +212,10 @@ c.executivePay
 # year | category | headcount | totalPay | avgPay
 ```
 
-`get()`으로 5억 초과 개인별 보수:
+report namespace로 5억 초과 개인별 보수:
 
 ```python
-result = c.get("executivePay")
+result = c.report.extract("executivePay")
 result.payByTypeDf   # 유형별 보수 시계열
 result.topPayDf      # 5억 초과 개인별 보수
 ```
@@ -220,10 +231,10 @@ c.boardOfDirectors
 # year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
 ```
 
-`get()`으로 위원회 구성:
+report namespace로 위원회 구성:
 
 ```python
-result = c.get("boardOfDirectors")
+result = c.report.extract("boardOfDirectors")
 result.boardDf      # 이사회 시계열
 result.committeeDf  # 위원회 구성 (committeeName, composition, members)
 ```
@@ -239,10 +250,10 @@ c.audit
 # year | auditor | opinion | keyAuditMatters
 ```
 
-`get()`으로 감사보수:
+report namespace로 감사보수:
 
 ```python
-result = c.get("audit")
+result = c.report.extract("audit")
 result.opinionDf   # 감사의견 시계열
 result.feeDf       # 감사보수 시계열 (auditor, contractFee, contractHours, actualFee, actualHours)
 ```
@@ -258,10 +269,10 @@ c.auditSystem
 # name | role | detail
 ```
 
-`get()`으로 감사활동:
+report namespace로 감사활동:
 
 ```python
-result = c.get("auditSystem")
+result = c.report.extract("auditSystem")
 result.committeeDf   # 감사위원 구성
 result.activityDf    # 감사활동 내역 (date, agenda, result)
 ```
@@ -301,10 +312,10 @@ c.contingentLiability
 # year | totalGuaranteeAmount | lineCount
 ```
 
-`get()`으로 소송 현황:
+report namespace로 소송 현황:
 
 ```python
-result = c.get("contingentLiability")
+result = c.report.extract("contingentLiability")
 result.guaranteeDf  # 채무보증 시계열
 result.lawsuitDf    # 소송 현황 (filingDate, parties, description, amount, status)
 ```
@@ -320,10 +331,10 @@ c.relatedPartyTx
 # year | entity | sales | purchases
 ```
 
-`get()`으로 채무보증, 자산 거래:
+report namespace로 채무보증, 자산 거래:
 
 ```python
-result = c.get("relatedPartyTx")
+result = c.report.extract("relatedPartyTx")
 result.revenueTxDf   # 매출입 거래 시계열
 result.guaranteeDf   # 채무보증 시계열
 result.assetTxDf     # 자산 거래 시계열
@@ -351,10 +362,10 @@ c.riskDerivative
 # currency | upImpact | downImpact
 ```
 
-`get()`으로 파생상품:
+report namespace로 파생상품:
 
 ```python
-result = c.get("riskDerivative")
+result = c.report.extract("riskDerivative")
 result.fxDf          # 환율 민감도
 result.derivativeDf  # 파생상품 계약
 ```
@@ -409,10 +420,10 @@ c.salesOrder
 # label | v1 | v2 | v3
 ```
 
-`get()`으로 수주 현황:
+report namespace로 수주 현황:
 
 ```python
-result = c.get("salesOrder")
+result = c.report.extract("salesOrder")
 result.salesDf   # 매출실적
 result.orderDf   # 수주상황
 ```
@@ -441,10 +452,10 @@ c.subsidiary
 # year | totalCount | listedCount | unlistedCount | totalBook
 ```
 
-`get()`으로 개별 투자법인:
+report namespace로 개별 투자법인:
 
 ```python
-result = c.get("subsidiary")
+result = c.report.extract("subsidiary")
 for inv in result.investments[:5]:
     print(f"{inv.name}: {inv.endRatio}%, 장부가 {inv.endBook}")
 ```
@@ -460,10 +471,10 @@ c.bond
 # year | totalIssuances | totalAmount | unredeemedCount
 ```
 
-`get()`으로 개별 발행 내역:
+report namespace로 개별 발행 내역:
 
 ```python
-result = c.get("bond")
+result = c.report.extract("bond")
 for b in result.issuances:
     print(f"{b.bondType} | {b.amount}백만원 | {b.interestRate} | {b.rating}")
 ```
@@ -479,10 +490,10 @@ c.otherFinance
 # account | period | totalDebt | provision
 ```
 
-`get()`으로 재고자산:
+report namespace로 재고자산:
 
 ```python
-result = c.get("otherFinance")
+result = c.report.extract("otherFinance")
 result.badDebtDf     # 대손충당금
 result.inventoryDf   # 재고자산 현황
 ```
@@ -528,10 +539,10 @@ c.affiliateGroup
 # name | listed
 ```
 
-`get()`으로 추가 정보:
+report namespace로 추가 정보:
 
 ```python
-result = c.get("affiliateGroup")
+result = c.report.extract("affiliateGroup")
 result.groupName      # "삼성"
 result.listedCount    # 상장 계열사 수
 result.unlistedCount  # 비상장 계열사 수
@@ -561,10 +572,10 @@ c.articlesOfIncorporation
 # date | meetingName | changes | reason
 ```
 
-`get()`으로 사업목적:
+report namespace로 사업목적:
 
 ```python
-result = c.get("articlesOfIncorporation")
+result = c.report.extract("articlesOfIncorporation")
 result.changesDf    # 정관 변경 이력
 result.purposesDf   # 사업목적 현황 (purpose, active)
 ```
@@ -573,13 +584,14 @@ result.purposesDf   # 사업목적 현황 (purpose, active)
 
 ## 공시 텍스트
 
-### c.business — 사업의 내용
+> **권장 경로**: 공시 서술형 텍스트는 `c.show("businessOverview")`, `c.show("companyOverview")` 등 sections 기반 show()로 접근한다.
+> 아래 `c.business`, `c.mdna`는 docs namespace의 legacy 접근 경로다.
 
-섹션 리스트를 반환한다.
+### c.docs.business — 사업의 내용
 
 ```python
-sections = c.business
-for s in sections:
+biz = c.docs.business
+for s in biz:
     print(f"[{s.key}] {s.title} ({s.chars}자)")
     print(s.text[:200])
 ```
@@ -597,43 +609,24 @@ for s in sections:
 | `financial` | 재무 관련 사항 |
 | `etc` | 기타 참고사항 |
 
-`get()`으로 연도별 변경 탐지:
+---
+
+### c.docs.mdna — MD&A
+
+이사의 경영진단 및 분석의견.
 
 ```python
-result = c.get("business")
-for change in result.changes:
-    print(f"{change.year}: 변경 {change.changedPct:.1%} | +{change.added}자 -{change.removed}자")
+c.docs.mdna   # 사업 개요 텍스트
 ```
 
 ---
 
-### c.mdna — MD&A
-
-이사의 경영진단 및 분석의견. 개요 텍스트를 반환한다.
-
-```python
-c.mdna   # 사업 개요 텍스트
-```
-
-`get()`으로 전체 섹션:
-
-```python
-result = c.get("mdna")
-for section in result.sections:
-    print(f"[{section.category}] {section.title}")
-    print(f"  텍스트 {section.textLines}줄, 테이블 {section.tableLines}줄")
-```
-
-**주요 category:** `overview`, `forecast`, `financials`, `liquidity`
-
----
-
-### c.overview — 회사의 개요
+### c.docs.overview — 회사의 개요
 
 설립일, 주소, 신용등급 등 정량 데이터. Result 객체를 반환한다.
 
 ```python
-result = c.overview
+result = c.docs.overview
 
 result.founded          # 설립 연도
 result.address          # 소재지
@@ -660,12 +653,12 @@ print(f"파싱 실패: {result.failed}")
 
 ---
 
-### c.rawMaterial — 원재료/설비
+### c.docs.rawMaterial — 원재료/설비
 
 원재료 매입, 유형자산, 설비투자 현황. Result 객체를 반환한다.
 
 ```python
-result = c.rawMaterial
+result = c.docs.rawMaterial
 
 result.materials     # list[RawMaterial] — 원재료 목록
 result.equipment     # Equipment — 유형자산 현황
@@ -715,7 +708,7 @@ c.notes["재고자산"]         # c.notes.inventory와 동일
 ### 유형자산 변동표
 
 ```python
-result = c.get("tangibleAsset")
+result = c.notes.tangibleAsset
 result.reliability    # "high" 또는 "low"
 result.warnings       # 신뢰도 경고
 result.movementDf     # 카테고리별 기초/기말 시계열
@@ -724,7 +717,7 @@ result.movementDf     # 카테고리별 기초/기말 시계열
 ### 부문정보
 
 ```python
-result = c.get("segments")
+result = c.notes.segments
 result.revenue   # 부문별 매출 시계열 DataFrame
 for year, tables in result.tables.items():
     for t in tables:
@@ -734,7 +727,7 @@ for year, tables in result.tables.items():
 ### 비용의 성격별 분류
 
 ```python
-result = c.get("costByNature")
+result = c.notes.costByNature
 result.timeSeries    # 비용 항목별 시계열
 result.ratios        # 구성비
 result.crossCheck    # 교차 검증 결과
@@ -743,11 +736,11 @@ result.crossCheck    # 교차 검증 결과
 ### 미등록 키워드 직접 조회
 
 ```python
-result = c.get("notesDetail", keyword="법인세")
-result.tableDf
+c.notes.detail("법인세")       # NotesDetail result
+c.notes.detail("법인세").tableDf
 
-result = c.get("notesDetail", keyword="특수관계자")
-result.tableDf
+c.notes.detail("특수관계자")
+c.notes.detail("특수관계자").tableDf
 ```
 
 전체 23개 키워드: `재고자산`, `주당이익`, `충당부채`, `차입금`, `매출채권`, `리스`, `투자부동산`, `무형자산`, `법인세`, `특수관계자`, `약정사항`, `금융자산`, `공정가치`, `이익잉여금`, `금융부채`, `기타포괄손익`, `사채`, `종업원급여`, `퇴직급여`, `확정급여`, `재무위험`, `우발부채`, `담보`

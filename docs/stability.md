@@ -43,7 +43,7 @@ dartlab은 현재 **DART core 기준 안정적** 상태입니다. 이 문서는 
 | `Company.docs.retrievalBlocks` | 원문 block retrieval |
 | `Company.docs.contextSlices` | LLM/context slice view |
 | `Company.ask()` | LLM 기반 분석 |
-| `dartlab` subcommands/options | `ask`, `status`, `setup`, `ai`, `excel`, `profile` 명령 UX |
+| `dartlab` subcommands/options | `ask`, `status`, `setup`, `ai`, `excel` 명령 UX |
 | Server API `/api/*` | 웹 서버 엔드포인트 |
 | `engines.ai.*` | AI/LLM 엔진 |
 
@@ -93,7 +93,7 @@ DART core stable 판단 기준:
 - **semver 준수**: major=파괴적, minor=기능추가, patch=버그수정
 - DART core stable 범위는 minor 내에서 호환성을 우선한다
 - EDGAR과 일부 AI 기능은 Tier 정책에 따라 더 빠르게 바뀔 수 있다
-- `Company.profile` 보고서형 뷰는 아직 로드맵 단계이며, 향후 terminal/notebook 문서형 렌더로 추가될 예정이다
+- `Company.profile`은 docs spine 위에 finance/report를 merge한 레이어로, 내부 구현에 사용된다. `c.sections`와 `c.show()`가 공식 소비 경로다
 
 ## CLI 호환성 규칙
 

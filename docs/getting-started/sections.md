@@ -22,11 +22,11 @@ c.sections
 반환되는 DataFrame은 이런 형태다:
 
 ```
-chapter | topic            | blockType | blockOrder | 2025 | 2024 | 2024Q3 | ...
-I       | companyOverview  | text      | 0          | ...  | ...  | ...    |
-I       | companyOverview  | table     | 1          | ...  | ...  | ...    |
-II      | businessOverview | text      | 0          | ...  | ...  | ...    |
-II      | businessOverview | table     | 1          | ...  | ...  | ...    |
+chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
+I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ table     │ null         │ "…"    │ "…"    │ null   │
+II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
 ```
 
 ## 핵심 컬럼
@@ -39,10 +39,13 @@ II      | businessOverview | table     | 1          | ...  | ...  | ...    |
 | `topic` | 표준 topic 식별자. `companyOverview`, `businessOverview`, `BS`, `IS`, `CF` 등 snakeCase로 통일된 이름 |
 | `blockType` | `"text"` 또는 `"table"`. 같은 topic 안에 서술 블록과 테이블 블록이 섞여 있을 때 구분 |
 | `blockOrder` | topic 내 블록 순서. 원본 문서에서의 등장 순서를 그대로 보존 |
+| `textNodeType` | text 블록의 세부 유형: `"heading"` (섹션 제목) 또는 `"body"` (서술 본문). table에서는 null |
+| `textLevel` | heading의 깊이 레벨 (1, 2, 3, ...). body와 table에서는 null |
+| `textPath` | heading의 구조적 경로. 섹션 내 위치를 나타낸다 |
 
 ### 기간 컬럼
 
-`2025`, `2024`, `2024Q3`, `2024Q2`, `2024Q1`, ... 형태의 컬럼이 이어진다.
+`2025Q4`, `2024Q4`, `2024Q3`, `2024Q2`, `2024Q1`, ... 형태의 컬럼이 이어진다. 최신 기간이 먼저 오고, 연간 보고서는 Q4로 표시된다.
 
 - 각 셀에는 해당 기간의 원문 payload가 들어 있다
 - text 블록이면 서술형 텍스트, table 블록이면 마크다운 테이블
@@ -115,7 +118,7 @@ c.sections              # 바로가기
 c.docs.sections         # 명시적 경로 (동일)
 ```
 
-향후 `c.profile.sections`가 finance/report를 merge한 최종 뷰로 추가될 예정이다. 지금은 `show(topic)`이 source 우선순위를 적용해서 merge된 결과를 보여 주므로, 실사용에서는 `show()`를 쓰면 된다.
+`show(topic)`이 source 우선순위(finance > report > docs)를 적용해서 merge된 결과를 보여 주므로, 실사용에서는 `show()`를 쓰면 된다.
 
 ## EDGAR에서도 동일
 

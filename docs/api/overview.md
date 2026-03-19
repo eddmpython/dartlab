@@ -52,7 +52,10 @@ c.topics                    # topic 목록
 | `topic` | 표준 topic snakeId |
 | `blockType` | "text" 또는 "table" |
 | `blockOrder` | topic 내 순서 |
-| 기간 컬럼 | `2025`, `2024`, `2024Q3` 등 — 원문 payload |
+| `textNodeType` | text 블록 세부 유형: "heading" 또는 "body" |
+| `textLevel` | heading 깊이 레벨 |
+| `textPath` | heading 구조적 경로 |
+| 기간 컬럼 | `2025Q4`, `2024Q4`, `2024Q3` 등 — 원문 payload |
 
 이 board의 의도는 다음과 같다.
 
