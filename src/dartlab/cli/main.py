@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INTERRUPTED
     except BrokenPipeError:
         return EXIT_OK
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — CLI 진입점 최종 catch-all
         print_error(f"예상하지 못한 오류가 발생했습니다: {exc}")
         return EXIT_RUNTIME
 

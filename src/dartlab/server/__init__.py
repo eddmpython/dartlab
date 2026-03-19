@@ -220,11 +220,15 @@ def _etag_response(
 
 
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+_origins = _cors_origins()
+if _origins == ["*"]:
+    logger.warning("CORS allow_origins='*' — 프로덕션에서는 명시적 origin을 설정하세요")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins(),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_origins,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -1321,7 +1325,16 @@ async def api_company_topic_summary(
                     "event": "chunk",
                     "data": orjson.dumps({"text": chunk}).decode(),
                 }
-        except Exception as e:  # noqa: BLE001 — provider 초기화/스트림 에러
+        except (
+            ValueError,
+            RuntimeError,
+            ConnectionError,
+            OSError,
+            TimeoutError,
+            KeyError,
+            AttributeError,
+            ImportError,
+        ) as e:
             import logging
 
             logging.getLogger(__name__).warning("summary stream error: %s: %s", type(e).__name__, e)

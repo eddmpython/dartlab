@@ -564,7 +564,16 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             "event": "error",
             "data": orjson.dumps(error_payload).decode(),
         }
-    except Exception as e:  # noqa: BLE001 — LLM provider 에러 (openai.OpenAIError 등)
+    except (
+        ValueError,
+        RuntimeError,
+        ConnectionError,
+        OSError,
+        TimeoutError,
+        KeyError,
+        AttributeError,
+        ImportError,
+    ) as e:
         import logging
 
         logger = logging.getLogger(__name__)
