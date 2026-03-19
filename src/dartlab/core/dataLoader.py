@@ -504,7 +504,7 @@ def _rebuildEdgarDocs(stockCode: str, path: Path, *, sinceYear: int, sourceMode:
             sinceYear=sinceYear,
             sourceMode=sourceMode,
         )
-    except Exception:
+    except (URLError, OSError, ValueError):
         if path.exists():
             path.unlink()
         raise

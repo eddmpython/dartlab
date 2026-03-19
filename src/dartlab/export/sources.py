@@ -173,7 +173,7 @@ def _probeModule(c: Company, entry: DataEntry) -> SourceItem:
         attrName = entry.name
     try:
         data = getattr(c, attrName, None)
-    except Exception:
+    except (AttributeError, RuntimeError, TypeError, ValueError):
         data = None
 
     columns: list[str] = []

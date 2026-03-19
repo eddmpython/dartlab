@@ -14,6 +14,6 @@ def detect_provider() -> str:
             provider = create_provider(config)
             if provider.check_available():
                 return provider_name
-        except Exception:
+        except (ImportError, RuntimeError, ConnectionError, OSError):
             continue
     return "ollama"

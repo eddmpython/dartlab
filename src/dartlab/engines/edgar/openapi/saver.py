@@ -87,7 +87,7 @@ def _replaceWithValidation(
         if backupPath is not None and backupPath.exists():
             backupPath.unlink()
         return dest
-    except Exception:
+    except (OSError, ValueError, RuntimeError):
         if dest.exists():
             dest.unlink()
         if backupPath is not None and backupPath.exists():

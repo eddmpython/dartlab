@@ -40,7 +40,7 @@ def run(args) -> int:
 
     try:
         company = dartlab.Company(args.company)
-    except Exception as exc:
+    except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
         raise CLIError(str(exc)) from exc
 
     print(f"\n  {company.corpName} ({company.stockCode})")

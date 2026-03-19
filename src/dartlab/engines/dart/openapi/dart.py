@@ -1023,7 +1023,7 @@ class DartCompany:
                         endpoint = _REPORT_ENDPOINTS.get(cat, cat)
                         enriched = enrichReport(df, stockCode, corpCodeStr, cat, endpoint)
                         frames.append(enriched)
-                except (ValueError, Exception):
+                except (ValueError, KeyError, RuntimeError, OSError):
                     pass
                 bar()
 

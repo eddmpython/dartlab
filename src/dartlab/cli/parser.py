@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkg_version
 
 from dartlab.cli.context import DEPRECATED_ALIASES, CommandSpec
@@ -40,7 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     try:
         version = pkg_version("dartlab")
-    except Exception:
+    except PackageNotFoundError:
         version = "0.0.0"
     parser.add_argument("--version", action="version", version=f"%(prog)s {version}")
     visible_commands = ",".join(spec.name for spec in COMMAND_SPECS)

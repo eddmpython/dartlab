@@ -15,7 +15,7 @@ def configure_parser(subparsers) -> None:
 def run(args) -> int:
     try:
         from dartlab.engines.ai.cli_setup import detect_codex
-    except Exception as exc:
+    except (ImportError, ModuleNotFoundError) as exc:
         raise CLIError(f"setup 정보를 불러오지 못했습니다: {exc}") from exc
 
     if args.provider is None:

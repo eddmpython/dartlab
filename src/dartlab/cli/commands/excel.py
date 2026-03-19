@@ -26,7 +26,7 @@ def run(args) -> int:
 
     try:
         path = exportToExcel(company, outputPath=args.output, modules=args.modules)
-    except Exception as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         raise CLIError(str(exc)) from exc
 
     print(f"  {company.corpName} ({company.stockCode}) → {path}")
