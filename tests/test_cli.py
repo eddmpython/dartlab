@@ -33,7 +33,6 @@ def test_parse_ask_options():
     assert args.stream is True
 
 
-
 def test_main_without_command_prints_help(capsys):
     result = main([])
 
@@ -95,7 +94,6 @@ def test_parse_statement_options():
     assert args.command == "statement"
     assert args.company == "005930"
     assert args.name == "CIS"
-
 
 
 @patch("dartlab.cli.commands.ask.run", side_effect=KeyboardInterrupt)
