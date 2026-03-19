@@ -196,6 +196,7 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 | `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석을 잡아준다 |
 | `working-capital-and-earnings-quality` | 재고·채권·이익의 질 | 성장의 질과 회수 구조를 읽게 만든다 |
 | `data-automation` | 공시 데이터 파이프라인 | 공시를 실제 수집 구조로 연결하게 만든다 |
+| `industry-reading` | 업종별 공시 읽기 | 업종마다 다른 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
 | `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 희석, 자금조달, 지배력 변화를 읽게 만든다 |
 
 새 시리즈를 만들 때는 먼저 이 문서와 `landing/src/lib/blog/posts.ts`를 같이 갱신한다.

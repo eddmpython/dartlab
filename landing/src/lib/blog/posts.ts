@@ -125,6 +125,14 @@ export const seriesDefinitions = {
 		seoDescription: 'DartLab 대주주·보수·주주환원 시리즈. 최대주주, 특수관계인, 임원 보수, 주주환원, 주주총회소집공고, 최대주주 주식담보, 스톡옵션을 실제 판단 흐름으로 정리합니다.',
 		brandMessage: 'DartLab은 숫자만이 아니라, 누가 회사 방향을 정하고 누가 혜택을 가져가며 누가 지분 압박을 받고 있고 어떤 방식으로 희석이 생기는지까지 함께 읽습니다.'
 	},
+	'industry-reading': {
+		id: 'industry-reading',
+		label: '업종별 공시 읽기',
+		description: '건설, 바이오, 금융, 지주사, 유통·플랫폼처럼 업종마다 다른 공시 읽기 순서와 핵심 체크포인트를 정리하는 시리즈입니다.',
+		seoTitle: '업종별 공시 읽기 | 건설, 바이오, 금융, 지주사 사업보고서 읽는 법',
+		seoDescription: 'DartLab 업종별 공시 읽기 시리즈. 건설업 수주잔고, 바이오 개발비, 금융업 이자마진, 지주사 지분법, 유통 GMV처럼 업종마다 달라지는 공시 읽기 포인트를 실전 순서로 정리합니다.',
+		brandMessage: 'DartLab은 같은 항목이라도 업종이 다르면 읽는 순서가 달라진다는 것을 보여줍니다. 건설업의 수주잔고, 바이오의 개발비, 금융업의 충당금, 지주사의 지분법손익, 유통의 GMV를 각각의 맥락에서 읽는 법을 정리합니다.'
+	},
 	'corporate-actions-and-financing': {
 		id: 'corporate-actions-and-financing',
 		label: '이벤트·자금조달 공시',
