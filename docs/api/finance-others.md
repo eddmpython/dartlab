@@ -6,7 +6,7 @@ title: 전체 모듈 상세
 
 `Company`의 공개 기본 경로는 `sections -> show -> trace`다. 이 문서는 그보다 한 단계 아래의 source namespace를 참고용으로 정리한 것이다. 각 shortcut이 어떤 DataFrame을 반환하는지, `get()`으로 접근 가능한 추가 데이터는 무엇인지 상세하게 다룬다.
 
-> 모든 예제에서 `c = dartlab.Company("005930")`으로 생성된 상태를 가정한다. 실제 사용은 먼저 `c.show(...)`로 시작하고, 여기 문서는 deep access 참고용으로 보는 것이 맞다.
+> **canonical 접근 경로**: `c.show("dividend")`, `c.show("audit")` 등으로 시작한다. 이 문서의 `c.get(topic)` 호출은 `c.report.extract(topic)` 또는 `c.docs.notes`로 대체되는 deep access 패턴이다. 일상 분석은 `show()`로 충분하다.
 
 ---
 

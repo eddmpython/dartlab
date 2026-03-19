@@ -6,7 +6,7 @@
 
 <h3>DartLab</h3>
 
-<p><b>공시 섹션에서 하나의 회사 맵을 만든다</b></p>
+<p><b>공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR</b></p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>
@@ -29,39 +29,30 @@
 
 ## DartLab은 무엇인가
 
-DartLab은 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
+DartLab은 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다. 한국 DART와 미국 EDGAR를 모두 지원한다.
 
 핵심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 먼저 기간축으로 수평화하고, 그 위에 더 강한 source를 올린다.
 
-- `docs`: 섹션 구조, 서술 텍스트, detail block, 원문 증거층
-- `finance`: 재무 숫자 authoritative source
-- `report`: 정형 공시 API authoritative source
-- `profile`: 같은 spine 위에서 merge된 최종 company layer
-
-공개 기본 흐름은 단순하다.
+- **`docs`** — 섹션 구조, heading/body 분리된 서술 텍스트, 테이블, 원문 증거층
+- **`finance`** — 재무 숫자 authoritative source (BS, IS, CF)와 재무비율
+- **`report`** — 정형 공시 API authoritative source (DART 전용)
 
 ```python
 import dartlab
 
-c = dartlab.Company("005930")
+c = dartlab.Company("005930")   # 삼성전자 (DART)
+c.sections                      # 전체 회사 맵 (topic × period)
+c.show("companyOverview")       # topic 하나 열기
+c.BS                            # 재무상태표
+c.ratios                        # 47개 재무비율
+c.insights                      # 7영역 등급 (A~F)
 
-c.sections
-c.show("companyOverview")
-c.trace("BS")
+us = dartlab.Company("AAPL")    # Apple (EDGAR)
+us.sections
+us.show("10-K::item1Business")
+us.BS
+us.ratios
 ```
-
-## 왜 지금 구조가 중요한가
-
-예전 공시 도구는 parser가 늘어날수록 진입점도 늘어나고, 회사 전체 구조를 한 번에 설명하기 어려워졌다.
-
-DartLab은 그 방향을 버리고 다음으로 정리하고 있다.
-
-- 하나의 `Company`
-- 하나의 canonical `sections` 맵
-- 하나의 `show / trace` 소비 경로
-- 같은 구조를 Python, 문서, AI GUI가 함께 소비
-
-최근 성능과 품질 개선도 대부분 이 구조 단순화에 맞춰져 있다.
 
 ## 설치
 
@@ -78,88 +69,156 @@ uv run dartlab ai
 
 ## 빠른 시작
 
-```python
-import dartlab
+### Sections — 회사 맵
 
-# 한국: DART
+`sections`는 Polars DataFrame이다. 각 행이 공시 블록이고, 기간 컬럼이 원문 payload를 담는다. 최신 기간이 먼저, 연간보고서는 Q4로 표시된다.
+
+```
+chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
+I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ table     │ null         │ "…"    │ "…"    │ null   │
+II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
+III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
+VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
+```
+
+텍스트 블록은 구조 메타데이터를 갖는다 — `textNodeType` (heading/body), `textLevel`, `textPath` — 소제목과 본문을 구분할 수 있다.
+
+### Show, Trace, Diff
+
+```python
 c = dartlab.Company("005930")
 
-c.sections                  # canonical company map (topic × period 매트릭스)
-c.show("BS")                # topic 하나 열기 (finance source)
-c.show("companyOverview")   # sections 기반 공시 payload
-c.trace("BS")               # 선택된 source와 provenance
-c.diff("businessOverview")  # 기간 간 텍스트 변화 감지
+# show — source 우선순위에 따라 topic 열기
+c.show("BS")                # → finance DataFrame
+c.show("companyOverview")   # → sections 기반 텍스트 + 테이블
+c.show("dividend")          # → report DataFrame
 
-# 미국: EDGAR
+# trace — 어떤 source가 채택되었는지 확인
+c.trace("BS")               # → {"primarySource": "finance", ...}
+
+# diff — 텍스트 변화 감지 (3가지 모드)
+c.diff()                                    # 전체 요약
+c.diff("businessOverview")                  # topic 이력
+c.diff("businessOverview", "2024", "2025")  # 라인 단위 비교
+```
+
+### Finance
+
+```python
+c.BS                    # 재무상태표 (계정 × 연도)
+c.IS                    # 손익계산서
+c.CF                    # 현금흐름표
+c.finance.ratios        # 47개 비율 (ROE, 부채비율, 마진 등)
+c.finance.ratioSeries   # 비율 시계열
+c.finance.timeseries    # 계정 시계열
+```
+
+재무비율은 6개 카테고리: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
+
+### Insights
+
+```python
+c.insights                      # 7영역 분석
+c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
+c.insights.performance.grade    # → "A"
+c.insights.performance.details  # → ["매출 성장 +8.3%", …]
+c.insights.anomalies            # → 이상치와 경고 신호
+```
+
+7개 분석 영역: 실적, 수익성, 건전성, 현금흐름, 거버넌스, 리스크, 기회.
+
+### EDGAR (미국)
+
+같은 `Company` 인터페이스, 다른 데이터 소스:
+
+```python
 us = dartlab.Company("AAPL")
-us.sections
-us.show("10-K::item1Business")
+
+us.sections                         # 10-K/10-Q sections (heading/body 포함)
+us.show("10-K::item1Business")      # 사업 설명
+us.show("10-K::item1ARiskFactors")  # 리스크 요인
+us.BS                               # SEC XBRL 재무상태표
+us.ratios                           # 동일한 47개 비율
+us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
 ```
 
-`sections`는 Polars DataFrame이다. 각 행이 공시 블록, 각 기간 컬럼이 원문 payload를 담는다.
+EDGAR sections도 DART와 동일한 텍스트 구조 메타데이터(heading/body 분리, textLevel, textPath)를 갖는다.
 
-```
-chapter │ topic            │ blockType │ 2025  │ 2024  │ 2024Q3 │ …
-I       │ companyOverview  │ text      │ "…"   │ "…"   │ "…"    │
-I       │ companyOverview  │ table     │ "…"   │ "…"   │ null   │
-II      │ businessOverview │ text      │ "…"   │ "…"   │ "…"    │
-```
-
-핵심 구분은 이렇다.
-
-- `c.sections`: 공개 company board (topic × period)
-- `c.show(topic)`: topic 하나를 source 우선순위에 따라 연다
-- `c.trace(topic)`: `docs / finance / report` 중 어떤 source가 채택됐는지 설명
-- `c.diff(topic)`: 기간 간 텍스트 변화를 추적
-
-## OpenAPI
+## OpenAPI — 원본 공공 API
 
 원본 공공 API를 직접 다루고 싶다면 source-native wrapper를 쓴다.
 
+### OpenDart (한국)
+
 ```python
-from dartlab import OpenDart, OpenEdgar
+from dartlab import OpenDart
 
-d = OpenDart()
-e = OpenEdgar()
+d = OpenDart()                                  # API 키 자동 감지
+d = OpenDart(["key1", "key2"])                  # 멀티키 로테이션
 
-e.company("AAPL")
-e.filings("AAPL", forms=["10-K"])
-e.companyFactsJson("AAPL")
+d.search("카카오", listed=True)                  # 종목 검색
+d.filings("삼성전자", "2024")                    # 공시 목록
+d.company("삼성전자")                            # 기업 프로필
+d.finstate("삼성전자", 2024)                     # 재무제표
+d.report("삼성전자", "배당", 2024)                # 56개 보고서 카테고리
+
+# 편의 프록시
+s = d("삼성전자")
+s.finance(2024)
+s.report("배당", 2024)
+s.filings("2024")
 ```
 
-이 계층은 원본 surface를 최대한 왜곡하지 않고, 저장 parquet만 DartLab runtime과 호환되게 맞춘다.
+### OpenEdgar (미국)
+
+```python
+from dartlab import OpenEdgar
+
+e = OpenEdgar()
+
+e.search("Apple")                               # 티커 검색
+e.company("AAPL")                               # 기업 정보
+e.filings("AAPL", forms=["10-K", "10-Q"])       # 공시 목록
+e.companyFactsJson("AAPL")                      # XBRL facts
+e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # 단일 태그 시계열
+```
+
+이 래퍼는 원본 surface를 왜곡하지 않고, 저장 parquet만 DartLab runtime과 호환되게 맞춘다.
 
 ## 핵심 개념
 
 ### 1. Sections First
 
-`sections`가 뼈대다. 회사는 더 이상 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵으로 설명된다.
+`sections`가 뼈대다. 회사는 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵으로 설명된다.
 
 ### 2. Source-Aware Company
 
-`Company`는 raw source wrapper가 아니다. 같은 topic에서 `finance`나 `report`가 더 authoritative하면 그것이 docs를 대체한다.
+`Company`는 merged company object다. 같은 topic에서 `finance`나 `report`가 더 authoritative하면 자동으로 대체한다. `trace()`가 어떤 source가 채택됐는지 설명한다.
 
-### 3. AI-Ready Structure
+### 3. Text Structure
 
-앞으로의 AI GUI도 별도 스키마를 만드는 것이 아니라, 같은 `sections -> show -> trace` 구조를 그대로 소비한다.
+서술 텍스트는 flat string이 아니다. DartLab은 heading/body 행으로 분리하고 level, path 메타데이터를 부여해서 기간 간 구조 비교가 가능하다. 한국 DART와 영문 EDGAR 모두 동일하게 동작한다.
 
 ### 4. Raw Access
 
-더 깊게 내려가야 할 때는 source namespace를 직접 쓰면 된다.
+더 깊게 내려가야 할 때는 source namespace를 직접 쓴다.
 
 ```python
-c.docs.sections
-c.docs.retrievalBlocks
-c.docs.contextSlices
-c.finance.BS
-c.report.audit
+c.docs.sections          # pure docs 수평화
+c.finance.BS             # finance 엔진 직접
+c.report.extract("배당")  # report 엔진 직접
 ```
 
 ## 안정성
 
-- DART core `Company` 흐름이 안정성 중심이다
-- EDGAR는 빠르게 좋아지고 있지만 아직 더 낮은 안정성 tier다
-- 공개 메시지는 `sections -> show -> trace`를 기준으로 간다
+| Tier | 범위 |
+|------|------|
+| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
+| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
+| **Experimental** | AI tools, export |
+
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
 
 ## 문서
@@ -172,15 +231,15 @@ c.report.audit
 
 ## 데이터
 
-DartLab은 중앙 config로 데이터 릴리즈를 관리하고, source별 저장 포맷은 runtime loader와 호환되도록 고정한다.
+DartLab은 GitHub Releases를 통해 사전 구축된 데이터셋을 제공한다:
 
-현재 공개 릴리즈:
-
-- DART docs
-- DART finance
-- DART report
-- EDGAR docs
-- EDGAR finance
+| 데이터셋 | 범위 | 출처 |
+|---------|------|------|
+| DART docs | 260+ 기업 | 한국 공시 텍스트 + 테이블 |
+| DART finance | 2,700+ 기업 | XBRL 재무제표 |
+| DART report | 2,700+ 기업 | 정형 공시 API |
+| EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
+| EDGAR finance | 970+ 기업 | SEC XBRL facts |
 
 ## 기여
 

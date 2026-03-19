@@ -6,7 +6,7 @@
 
 <h3>DartLab</h3>
 
-<p><b>One company map from disclosure sections</b></p>
+<p><b>One company map from disclosure filings — DART + EDGAR</b></p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>
@@ -29,39 +29,30 @@
 
 ## What DartLab Is
 
-DartLab turns corporate filings into a single company map.
+DartLab turns corporate filings into a single company map — for both Korean DART and US EDGAR.
 
-The center of that map is `sections`: a horizontalized board built from disclosure sections across periods. Instead of treating a filing as a pile of unrelated parsers, DartLab aligns the document structure first, then lets stronger sources fill in what they own:
+The center of that map is `sections`: a horizontalized matrix built from disclosure sections across periods. Instead of treating a filing as a pile of unrelated parsers, DartLab aligns the document structure first, then lets stronger sources fill in what they own:
 
-- `docs` for section structure, narrative text, detail blocks, and evidence
-- `finance` for authoritative numeric statements
-- `report` for authoritative structured disclosure APIs
-- `profile` for the merged company layer built on top of the same spine
-
-The public workflow is now simple:
+- **`docs`** — section structure, narrative text with heading/body separation, tables, and evidence
+- **`finance`** — authoritative numeric statements (BS, IS, CF) and financial ratios
+- **`report`** — authoritative structured disclosure APIs (DART only)
 
 ```python
 import dartlab
 
-c = dartlab.Company("005930")
+c = dartlab.Company("005930")   # Samsung Electronics (DART)
+c.sections                      # full company map (topic × period)
+c.show("companyOverview")       # open one topic
+c.BS                            # balance sheet
+c.ratios                        # 47 financial ratios
+c.insights                      # 7-area grades (A~F)
 
-c.sections
-c.show("companyOverview")
-c.trace("BS")
+us = dartlab.Company("AAPL")    # Apple (EDGAR)
+us.sections
+us.show("10-K::item1Business")
+us.BS
+us.ratios
 ```
-
-## Why It Changed
-
-Older disclosure tooling often grew into a property zoo: many parsers, many entrypoints, and weak structural consistency.
-
-DartLab is moving away from that. The current design goal is:
-
-- one `Company`
-- one canonical `sections` map
-- one source-aware `show` / `trace` workflow
-- one shared structure that Python, docs, and the upcoming AI GUI can all consume
-
-This is where most of the recent quality and performance work went.
 
 ## Install
 
@@ -78,88 +69,156 @@ uv run dartlab ai
 
 ## Quick Start
 
-```python
-import dartlab
+### Sections — The Company Map
 
-# KR: DART
+`sections` is a Polars DataFrame where each row is a disclosure block and each period column holds the raw payload. Periods are sorted newest-first, and annual reports appear as Q4:
+
+```
+chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
+I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
+I       │ companyOverview  │ table     │ null         │ "…"    │ "…"    │ null   │
+II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
+III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
+VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
+```
+
+Text blocks carry structural metadata — `textNodeType` (heading/body), `textLevel`, and `textPath` — so you can distinguish section headers from narrative content.
+
+### Show, Trace, Diff
+
+```python
 c = dartlab.Company("005930")
 
-c.sections                  # canonical company map (topic × period matrix)
-c.show("BS")                # one topic payload (finance source)
-c.show("companyOverview")   # sections-based disclosure payload
-c.trace("BS")               # chosen source + provenance
-c.diff("businessOverview")  # text change detection across periods
+# show — open any topic with source-aware priority
+c.show("BS")                # → finance DataFrame
+c.show("companyOverview")   # → sections-based text + tables
+c.show("dividend")          # → report DataFrame
 
-# US: EDGAR
-us = dartlab.Company("AAPL")
-us.sections
-us.show("10-K::item1Business")
+# trace — why a topic came from docs, finance, or report
+c.trace("BS")               # → {"primarySource": "finance", ...}
+
+# diff — text change detection (3 modes)
+c.diff()                                    # full summary
+c.diff("businessOverview")                  # topic history
+c.diff("businessOverview", "2024", "2025")  # line-by-line diff
 ```
 
-`sections` is a Polars DataFrame where each row is a disclosure block and each period column holds the raw payload:
-
-```
-chapter │ topic            │ blockType │ 2025  │ 2024  │ 2024Q3 │ …
-I       │ companyOverview  │ text      │ "…"   │ "…"   │ "…"    │
-I       │ companyOverview  │ table     │ "…"   │ "…"   │ null   │
-II      │ businessOverview │ text      │ "…"   │ "…"   │ "…"    │
-```
-
-The key distinction is:
-
-- `c.sections`: the public company board (topic × period)
-- `c.show(topic)`: open one topic with source-aware priority
-- `c.trace(topic)`: why a topic came from `docs`, `finance`, or `report`
-- `c.diff(topic)`: track text changes between periods
-
-## OpenAPI
-
-Use the source-native wrappers when you want raw public APIs directly.
+### Finance
 
 ```python
-from dartlab import OpenDart, OpenEdgar
-
-d = OpenDart()
-e = OpenEdgar()
-
-e.company("AAPL")
-e.filings("AAPL", forms=["10-K"])
-e.companyFactsJson("AAPL")
+c.BS                    # balance sheet (account × year)
+c.IS                    # income statement
+c.CF                    # cash flow
+c.finance.ratios        # 47 ratios (ROE, debt ratio, margins, …)
+c.finance.ratioSeries   # ratio time series across years
+c.finance.timeseries    # raw account time series
 ```
 
-These wrappers keep the original source surface as intact as possible, while saved parquet stays compatible with DartLab's `Company` engine.
+Financial ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
+
+### Insights
+
+```python
+c.insights                      # 7-area analysis
+c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
+c.insights.performance.grade    # → "A"
+c.insights.performance.details  # → ["Revenue growth +8.3%", …]
+c.insights.anomalies            # → outliers and red flags
+```
+
+7 analysis areas: performance, profitability, health, cashflow, governance, risk, opportunity.
+
+### EDGAR (US)
+
+Same `Company` interface, different data source:
+
+```python
+us = dartlab.Company("AAPL")
+
+us.sections                         # 10-K/10-Q sections with heading/body
+us.show("10-K::item1Business")      # business description
+us.show("10-K::item1ARiskFactors")  # risk factors
+us.BS                               # SEC XBRL balance sheet
+us.ratios                           # same 47 ratios
+us.diff("10-K::item7Mdna")          # MD&A text changes
+```
+
+EDGAR sections include the same text structure metadata (heading/body separation, textLevel, textPath) as DART.
+
+## OpenAPI — Raw Public APIs
+
+Use source-native wrappers when you want raw disclosure APIs directly.
+
+### OpenDart (Korea)
+
+```python
+from dartlab import OpenDart
+
+d = OpenDart()                                  # auto-detect API key
+d = OpenDart(["key1", "key2"])                  # multi-key rotation
+
+d.search("카카오", listed=True)                  # company search
+d.filings("삼성전자", "2024")                    # filing list
+d.company("삼성전자")                            # corporate profile
+d.finstate("삼성전자", 2024)                     # financial statements
+d.report("삼성전자", "배당", 2024)                # 56 report categories
+
+# convenience proxy
+s = d("삼성전자")
+s.finance(2024)
+s.report("배당", 2024)
+s.filings("2024")
+```
+
+### OpenEdgar (US)
+
+```python
+from dartlab import OpenEdgar
+
+e = OpenEdgar()
+
+e.search("Apple")                               # ticker search
+e.company("AAPL")                               # company info
+e.filings("AAPL", forms=["10-K", "10-Q"])       # filing list
+e.companyFactsJson("AAPL")                      # XBRL facts
+e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # single tag series
+```
+
+These wrappers keep the original source surface intact, while saved parquet stays compatible with DartLab's `Company` engine.
 
 ## Core Ideas
 
 ### 1. Sections First
 
-`sections` is the backbone. A company is no longer documented as a loose set of outputs; it is described as one horizontalized map of disclosure units across periods.
+`sections` is the backbone. A company is described as one horizontalized map of disclosure units across periods — not a loose set of parser outputs.
 
 ### 2. Source-Aware Company
 
-`Company` is not a raw source wrapper. It is a merged company object that knows when `finance` or `report` should override docs.
+`Company` is a merged company object. When `finance` or `report` is more authoritative than docs for a given topic, it overrides automatically. `trace()` tells you which source was chosen and why.
 
-### 3. AI-Ready Structure
+### 3. Text Structure
 
-The same `sections -> show -> trace` contract is what the upcoming AI GUI will consume. The goal is not a different AI-only schema, but the same company map exposed through a different interface.
+Narrative text is not a flat string. DartLab splits it into heading/body rows with level and path metadata, enabling structural comparison across periods. This works for both Korean DART and English EDGAR filings.
 
-### 4. Raw Access Still Exists
+### 4. Raw Access
 
-You can still go deeper when needed:
+You can always go deeper:
 
 ```python
-c.docs.sections
-c.docs.retrievalBlocks
-c.docs.contextSlices
-c.finance.BS
-c.report.audit
+c.docs.sections          # pure docs horizontalization
+c.finance.BS             # finance engine directly
+c.report.extract("배당")  # report engine directly
 ```
 
 ## Stability
 
-- DART core `Company` flow is the stable center
-- EDGAR is improving quickly, but still a lower stability tier
-- Public messaging now favors `sections -> show -> trace`
+| Tier | Scope |
+|------|-------|
+| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
+| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
+| **Experimental** | AI tools, export |
+
 See [docs/stability.md](docs/stability.md).
 
 ## Documentation
@@ -172,15 +231,15 @@ See [docs/stability.md](docs/stability.md).
 
 ## Data
 
-DartLab uses centralized release config for downloadable datasets and keeps source-specific storage formats compatible with the runtime loaders.
+DartLab ships with pre-built datasets via GitHub Releases:
 
-Current public releases include:
-
-- DART docs
-- DART finance
-- DART report
-- EDGAR docs
-- EDGAR finance
+| Dataset | Coverage | Source |
+|---------|----------|--------|
+| DART docs | 260+ companies | Korean disclosure text + tables |
+| DART finance | 2,700+ companies | XBRL financial statements |
+| DART report | 2,700+ companies | Structured disclosure APIs |
+| EDGAR docs | 970+ companies | 10-K/10-Q sections |
+| EDGAR finance | 970+ companies | SEC XBRL facts |
 
 ## Contributing
 

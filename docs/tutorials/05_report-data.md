@@ -6,7 +6,9 @@ title: "5. Report Data"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/05_report_data.ipynb)
 
-정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다. 공개 기본 흐름은 `c.show(...)`지만, 여기서는 `report` 계층으로 직접 내려가 세부 payload를 확인한다.
+정기보고서에 포함된 재무 외 데이터를 깊이 있게 분석한다. 재무제표는 [2. 재무제표 조회](./financial-statements)에서 다뤘고, 여기서는 배당, 직원, 주주, 감사 등 정기보고서 API가 제공하는 데이터를 다룬다.
+
+> **canonical 접근 경로**: `c.show("dividend")`, `c.show("audit")` 등 `show(topic)`이 기본이다. 이 튜토리얼에서는 `report` namespace로 직접 내려가 세부 payload까지 확인하는 deep access 패턴도 함께 다룬다.
 
 - 배당 시계열 (DPS, 배당수익률, 배당성향)
 - 직원 현황 (인원, 평균연봉, 근속연수)
@@ -34,6 +36,10 @@ c = dartlab.Company("005930")
 ## 배당
 
 ```python
+# canonical 경로
+c.show("dividend")
+
+# report namespace direct access
 c.dividend
 # year | netIncome | eps | totalDividend | payoutRatio | dividendYield | dps | dpsPreferred
 ```
@@ -82,10 +88,10 @@ c.majorHolder
 # year | majorHolder | majorRatio | totalRatio | holderCount | ...
 ```
 
-최대주주명과 지분율의 시계열이다. 더 상세한 정보가 필요하면 `get()`으로 접근한다.
+최대주주명과 지분율의 시계열이다. 더 상세한 정보가 필요하면 `report.extract()`로 접근한다.
 
 ```python
-result = c.get("majorHolder")
+result = c.report.extract("majorHolder")
 
 result.majorHolder   # "이재용"
 result.majorRatio    # 20.76
@@ -126,10 +132,10 @@ c.shareCapital
 # year | authorizedShares | issuedShares | treasuryShares | outstandingShares | ...
 ```
 
-발행주식, 자기주식, 유통주식의 시계열이다. `get()`으로 개별 필드도 접근 가능하다.
+발행주식, 자기주식, 유통주식의 시계열이다. `report.extract()`로 개별 필드도 접근 가능하다.
 
 ```python
-result = c.get("shareCapital")
+result = c.report.extract("shareCapital")
 print(f"발행주식: {result.issuedShares:,.0f}")
 print(f"자기주식: {result.treasuryShares:,.0f}")
 print(f"자사주 비율: {result.treasuryRatio:.2%}")
@@ -148,10 +154,10 @@ c.notes.segments
 # 부문별 매출 시계열 DataFrame
 ```
 
-연도별 상세 테이블은 `get()`으로 접근한다.
+연도별 상세 테이블은 `report.extract()`로 접근한다.
 
 ```python
-result = c.get("segments")
+result = c.report.extract("segments")
 print(result.revenue)   # 부문별 매출 시계열
 
 for year, tables in result.tables.items():
@@ -175,7 +181,7 @@ c.notes.costByNature
 비용 비율과 교차 검증도 확인 가능하다.
 
 ```python
-result = c.get("costByNature")
+result = c.report.extract("costByNature")
 print(result.timeSeries)  # 비용 시계열
 print(result.ratios)      # 구성비
 print(result.crossCheck)  # 교차 검증 결과
@@ -194,10 +200,10 @@ c.executive
 
 등기임원 구성의 시계열이다. 사내이사/사외이사 비율, 성별 구성 등을 추적한다.
 
-미등기임원 보수는 `get()`으로:
+미등기임원 보수는 `report.extract()`로:
 
 ```python
-result = c.get("executive")
+result = c.report.extract("executive")
 print(result.executiveDf)   # 등기임원 시계열
 print(result.unregPayDf)    # 미등기임원 보수
 ```
@@ -211,10 +217,10 @@ c.executivePay
 # year | category | headcount | totalPay | avgPay
 ```
 
-유형별 보수 시계열이다. 5억 초과 개인별 보수는 `get()`으로 접근한다.
+유형별 보수 시계열이다. 5억 초과 개인별 보수는 `report.extract()`로 접근한다.
 
 ```python
-result = c.get("executivePay")
+result = c.report.extract("executivePay")
 print(result.payByTypeDf)   # 유형별 보수
 print(result.topPayDf)      # 5억 초과 개인별 보수
 ```
@@ -230,10 +236,10 @@ c.audit
 # year | auditor | opinion | keyAuditMatters
 ```
 
-감사법인, 감사의견, 핵심감사사항의 시계열이다. 감사보수는 `get()`으로 접근한다.
+감사법인, 감사의견, 핵심감사사항의 시계열이다. 감사보수는 `report.extract()`로 접근한다.
 
 ```python
-result = c.get("audit")
+result = c.report.extract("audit")
 print(result.opinionDf)   # 감사의견 시계열
 print(result.feeDf)        # 감사보수 시계열
 ```
@@ -258,10 +264,10 @@ c.bond
 
 회사채, 기업어음 등 채무증권 발행 현황의 시계열이다.
 
-`get()`으로 개별 발행 내역:
+`report.extract()`로 개별 발행 내역:
 
 ```python
-result = c.get("bond")
+result = c.report.extract("bond")
 for b in result.issuances[:5]:
     print(f"{b.bondType} | {b.amount}백만원 | {b.interestRate}")
 ```
@@ -275,10 +281,10 @@ c.subsidiary
 # year | totalCount | listedCount | unlistedCount | totalBook
 ```
 
-`get()`으로 개별 투자법인:
+`report.extract()`로 개별 투자법인:
 
 ```python
-result = c.get("subsidiary")
+result = c.report.extract("subsidiary")
 for inv in result.investments[:5]:
     print(f"{inv.name}: {inv.endRatio}%, 장부가 {inv.endBook}")
 ```

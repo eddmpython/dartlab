@@ -70,15 +70,15 @@ c.notes.keys()       # 사용 가능한 notes 키
 
 ## 미등록 키워드 직접 조회
 
-12개 주요 키워드 외에도 23개 키워드를 지원한다. Notes에 등록되지 않은 키워드는 `get()`으로 직접 호출한다.
+12개 주요 키워드 외에도 23개 키워드를 지원한다. Notes에 등록되지 않은 키워드는 `docs.notes` namespace에서 직접 호출한다.
 
 ```python
 # 법인세
-result = c.get("notesDetail", keyword="법인세")
+result = c.docs.notes.detail("법인세")
 print(result.tableDf)
 
 # 특수관계자
-result = c.get("notesDetail", keyword="특수관계자")
+result = c.docs.notes.detail("특수관계자")
 print(result.tableDf)
 ```
 
@@ -91,7 +91,7 @@ print(result.tableDf)
 Notes는 DataFrame만 반환하지만, 원본 Result를 통해 연도별 상세 테이블도 접근 가능하다.
 
 ```python
-result = c.get("notesDetail", keyword="재고자산")
+result = c.docs.notes.detail("재고자산")
 for year, periods in result.tables.items():
     for p in periods:
         print(f"[{year}] {p.period} (패턴: {p.pattern})")
@@ -103,14 +103,14 @@ for year, periods in result.tables.items():
 
 ## 유형자산 변동표
 
-Notes에서도 접근 가능하고, `get()`으로 전체 Result를 받을 수 있다.
+Notes에서 접근한다. `report.extract()`로 전체 Result도 받을 수 있다.
 
 ```python
 # Notes 경유
 c.notes.tangibleAsset   # 카테고리별 기초/기말 시계열 DataFrame
 
-# get()으로 전체 Result
-result = c.get("tangibleAsset")
+# report.extract()로 전체 Result
+result = c.report.extract("tangibleAsset")
 print(f"신뢰도: {result.reliability}")  # "high" 또는 "low"
 if result.warnings:
     print(f"경고: {result.warnings}")
@@ -132,14 +132,14 @@ for year, movements in result.movements.items():
 
 ## 관계기업·공동기업
 
-Notes에서도 접근 가능하다.
+Notes에서 접근한다.
 
 ```python
 # Notes 경유
 c.notes.affiliates   # 변동 시계열 DataFrame
 
-# get()으로 전체 Result
-result = c.get("affiliates")
+# report.extract()로 전체 Result
+result = c.report.extract("affiliates")
 for year, profiles in result.profiles.items():
     for p in profiles:
         print(f"[{year}] {p.name}: {p.ratio}%, 장부가 {p.bookValue}")
@@ -157,7 +157,7 @@ c.boardOfDirectors
 위원회 구성도 확인 가능하다.
 
 ```python
-result = c.get("boardOfDirectors")
+result = c.report.extract("boardOfDirectors")
 print(result.boardDf)       # 이사회 시계열
 print(result.committeeDf)   # 위원회 구성 (committeeName, composition, members)
 ```
@@ -174,7 +174,7 @@ c.auditSystem
 감사활동 내역도 확인 가능하다.
 
 ```python
-result = c.get("auditSystem")
+result = c.report.extract("auditSystem")
 print(result.committeeDf)   # 감사위원 구성
 print(result.activityDf)    # 감사활동 내역 (date, agenda, result)
 ```
@@ -213,7 +213,7 @@ c.riskDerivative
 ### 관계자거래 상세
 
 ```python
-result = c.get("relatedPartyTx")
+result = c.report.extract("relatedPartyTx")
 print(result.revenueTxDf)    # 매출입 거래
 print(result.guaranteeDf)    # 채무보증
 print(result.assetTxDf)      # 자산 거래
@@ -222,7 +222,7 @@ print(result.assetTxDf)      # 자산 거래
 ### 우발부채 상세
 
 ```python
-result = c.get("contingentLiability")
+result = c.report.extract("contingentLiability")
 print(result.guaranteeDf)    # 채무보증
 print(result.lawsuitDf)      # 소송 현황
 ```
@@ -281,17 +281,19 @@ print(pl.DataFrame(dividends))
 
 ## Result 객체 접근
 
-property는 대표 DataFrame 하나를 반환한다. 모듈의 전체 데이터가 필요하면 `get()`을 사용한다.
+property는 대표 DataFrame 하나를 반환한다. 모듈의 전체 데이터가 필요하면 `report.extract()`를 사용한다.
 
 ```python
 # property → 대표 DataFrame
 c.audit   # opinionDf만 반환
 
-# get() → 전체 Result 객체
-result = c.get("audit")
+# report.extract() → 전체 Result 객체
+result = c.report.extract("audit")
 result.opinionDf   # 감사의견
 result.feeDf       # 감사보수
 ```
+
+> 기본 경로는 `c.show("audit")`다. deep access가 필요한 경우에만 `c.report.extract()`로 내려간다.
 
 ---
 
