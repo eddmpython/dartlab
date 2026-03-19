@@ -513,6 +513,18 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
     - 메타 질문(버전, 사용법, 데이터 현황)은 종목 매칭 스킵
     - 검색 결과가 2개 이상이면 suggestions로 반환 (사용자 선택)
     """
+    import re
+
+    q = req.question
+
+    # 메타 질문은 company/viewContext가 있어도 회사 분석 스킵 — 최우선
+    if is_meta_question(q):
+        return ResolveResult()
+
+    # 순수 대화 ("응", "잘되나", "대화 계속 안되나" 등)는 회사 분석 스킵 — 최우선
+    if _is_pure_conversation(q):
+        return ResolveResult()
+
     if req.company:
         alias = _resolve_alias(req.company)
         if alias:
@@ -525,18 +537,6 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
         except (ValueError, OSError):
             suggestions = _search_suggestions(req.company)
             return ResolveResult(not_found=True, suggestions=suggestions)
-
-    import re
-
-    q = req.question
-
-    # 메타 질문은 viewContext가 있어도 회사 분석 스킵
-    if is_meta_question(q):
-        return ResolveResult()
-
-    # 순수 대화 ("응", "대화 계속 안되나" 등)는 회사 분석 스킵
-    if _is_pure_conversation(q):
-        return ResolveResult()
 
     if req.viewContext and req.viewContext.company:
         view_company = req.viewContext.company
