@@ -34,6 +34,7 @@ from .chat import (
     build_focus_context,
     build_history_messages,
     build_snapshot,
+    compress_history,
 )
 from .dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta, detect_viewer_intent
 from .models import AskRequest
@@ -101,7 +102,12 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             config_ = config_.merge(overrides)
 
         use_compact = config_.provider in ("ollama", "codex", "claude-code")
-        history_msgs = build_history_messages(req.history)
+        # tool calling 가능 여부에 따라 context tier 결정
+        _tool_capable_providers = {"openai", "claude", "chatgpt"}
+        use_tools_tier = config_.provider in _tool_capable_providers and not use_compact
+        context_tier = "skeleton" if use_tools_tier else ("focused" if use_compact else "full")
+        compressed = compress_history(req.history)
+        history_msgs = build_history_messages(compressed)
 
         if c and not has_analysis_intent(state.question):
             cached = company_cache.get(c.stockCode)
@@ -200,7 +206,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         elif c:
             from dartlab.engines.ai.context import (
                 _get_sector,
-                build_context_by_module,
+                build_context_tiered,
                 detect_year_range,
             )
             from dartlab.engines.ai.metadata import MODULE_META
@@ -219,15 +225,29 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 }
 
             modules_dict, included_tables, header_text = await asyncio.to_thread(
-                build_context_by_module,
+                build_context_tiered,
                 c,
                 state.question,
+                context_tier,
                 req.include,
                 req.exclude,
-                use_compact,
             )
 
-            if "_full" in modules_dict:
+            if "_skeleton" in modules_dict:
+                context_text = modules_dict["_skeleton"]
+                if focus_context:
+                    context_text = focus_context + "\n\n" + context_text
+                yield {
+                    "event": "context",
+                    "data": orjson.dumps(
+                        {
+                            "module": "_skeleton",
+                            "label": "핵심 요약 (도구로 상세 조회)",
+                            "text": context_text,
+                        },
+                    ).decode(),
+                }
+            elif "_full" in modules_dict:
                 context_text = modules_dict["_full"]
                 if focus_context:
                     context_text = focus_context + "\n\n" + context_text
@@ -298,7 +318,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                         ).decode(),
                     }
 
-            if not use_compact:
+            if context_tier == "full":
                 from dartlab.engines.ai.pipeline import run_pipeline
 
                 pipeline_result = await asyncio.to_thread(
@@ -343,7 +363,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 included_modules=included_tables,
                 sector=sector,
                 question_types=state.question_types or question_types,
-                compact=use_compact,
+                compact=context_tier != "full",
             )
             system = system + "\n\n" + build_dialogue_policy(state)
             messages = [{"role": "system", "content": system}]
@@ -592,5 +612,35 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 "event": "viewer_navigate",
                 "data": orjson.dumps(nav_payload).decode(),
             }
+
+    # Phase 5: 숫자 검증 — LLM 답변의 재무 수치를 실제 값과 대조
+    if c and full_response_parts:
+        try:
+            from dartlab.engines.ai.validation import extract_numbers, validate_claims
+
+            full_text = "".join(full_response_parts)
+            claims = extract_numbers(full_text)
+            if claims:
+                vresult = await asyncio.to_thread(validate_claims, claims, c)
+                if vresult.mismatches:
+                    yield {
+                        "event": "validation",
+                        "data": orjson.dumps(
+                            {
+                                "mismatches": [
+                                    {
+                                        "label": mm.label,
+                                        "claimed": mm.claimed,
+                                        "actual": mm.actual,
+                                        "diffPct": round(mm.diff_pct, 1),
+                                        "unit": mm.unit,
+                                    }
+                                    for mm in vresult.mismatches
+                                ],
+                            },
+                        ).decode(),
+                    }
+        except (ImportError, AttributeError, TypeError, ValueError, OSError):
+            pass
 
     yield {"event": "done", "data": orjson.dumps(done_payload).decode()}

@@ -161,6 +161,51 @@ def build_history_messages(history: list[HistoryMessage] | None) -> list[dict[st
     return list(reversed(selected))
 
 
+_COMPRESS_TURN_THRESHOLD = 5  # 이 턴 수 이상이면 초기 턴 요약
+
+
+def compress_history(history: list[HistoryMessage] | None) -> list[HistoryMessage] | None:
+    """멀티턴 히스토리 압축: 오래된 턴을 요약으로 대체.
+
+    5턴(10 메시지) 이상이면 가장 오래된 턴들을 1개 요약 메시지로 교체.
+    최근 4턴(8 메시지)은 원본 유지.
+    """
+    if not history or len(history) <= _COMPRESS_TURN_THRESHOLD * 2:
+        return history
+
+    # 최근 4턴(8메시지) 원본 유지, 나머지는 요약
+    keep_count = 8
+    old_messages = history[:-keep_count]
+    recent_messages = history[-keep_count:]
+
+    # 오래된 메시지에서 핵심만 추출
+    summary_parts = []
+    for msg in old_messages:
+        if msg.role == "user":
+            text = msg.text.strip()
+            if len(text) > 60:
+                text = text[:60] + "..."
+            summary_parts.append(f"Q: {text}")
+        elif msg.role == "assistant":
+            text = msg.text.strip()
+            # 첫 2문장만
+            sentences = text.split(".")
+            brief = ".".join(sentences[:2]).strip()
+            if brief and not brief.endswith("."):
+                brief += "."
+            if len(brief) > 120:
+                brief = brief[:120] + "..."
+            if brief:
+                summary_parts.append(f"A: {brief}")
+
+    if not summary_parts:
+        return history
+
+    summary_text = "[이전 분석 요약]\n" + "\n".join(summary_parts)
+    summary_msg = HistoryMessage(role="assistant", text=summary_text)
+    return [summary_msg, *recent_messages]
+
+
 def _compress_history_text(text: str) -> str:
     """길어진 과거 대화를 앞뒤 핵심만 남기도록 압축."""
     if len(text) <= _MAX_HISTORY_MESSAGE_CHARS:

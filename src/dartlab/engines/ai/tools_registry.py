@@ -1942,7 +1942,7 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
                     result = method()
                     if result is not None and isinstance(result, pl.DataFrame) and not result.is_empty():
                         parts.append(f"### {key}\n{_df_to_md(result)}")
-                except Exception:
+                except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
                     continue
             return "\n\n".join(parts) if parts else "(scan 데이터 없음)"
 
@@ -1958,7 +1958,7 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
             if result is None or (isinstance(result, pl.DataFrame) and result.is_empty()):
                 return f"({axis} 데이터 없음)"
             return _format_tool_value(result, max_rows=5)
-        except Exception as e:
+        except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
             return f"{axis} 스캔 실패: {e}"
 
     register_tool(

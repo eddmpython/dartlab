@@ -211,6 +211,12 @@ _FE_DISPLAY_ACCOUNTS = {
 }
 
 
+# 한글 라벨 → snakeId 역매핑 (Phase 5 validation용)
+ACCOUNT_LABEL_TO_SNAKE: dict[str, str] = {}
+for _sj_accounts in _FE_DISPLAY_ACCOUNTS.values():
+    for _snake_id, _label in _sj_accounts:
+        ACCOUNT_LABEL_TO_SNAKE[_label] = _snake_id
+
 _QUESTION_ACCOUNT_FILTER: dict[str, dict[str, set[str]]] = {
     "건전성": {
         "BS": {
@@ -297,17 +303,29 @@ def _build_finance_engine_section(
         return None
 
     sj_labels = {"BS": "재무상태표", "IS": "손익계산서", "CF": "현금흐름표"}
-    header = "| 계정 | " + " | ".join(display_years_reversed) + " |"
-    sep = "| --- | " + " | ".join(["---"] * len(display_years_reversed)) + " |"
+    header = "| 계정 | " + " | ".join(display_years_reversed) + " | YoY |"
+    sep = "| --- | " + " | ".join(["---"] * len(display_years_reversed)) + " | --- |"
 
     lines = [f"## {sj_labels.get(sj_div, sj_div)}", "(단위: 억/조원)", header, sep]
     for label, vals in rows_data:
         cells = []
         for v in vals:
             cells.append(_format_won(v) if v is not None else "-")
-        lines.append(f"| {label} | " + " | ".join(cells) + " |")
+        # YoY: 최신 2개년 비교 (vals[0]=최신, vals[1]=전년)
+        yoy_str = _calc_yoy(vals[0], vals[1] if len(vals) > 1 else None)
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {yoy_str} |")
 
     return "\n".join(lines)
+
+
+def _calc_yoy(current: float | None, previous: float | None) -> str:
+    """YoY 증감률 계산. |변동률|>50%면 ** 강조."""
+    if current is None or previous is None or previous == 0:
+        return "-"
+    pct = (current - previous) / abs(previous) * 100
+    sign = "+" if pct >= 0 else ""
+    marker = "**" if abs(pct) > 50 else ""
+    return f"{marker}{sign}{pct:.1f}%{marker}"
 
 
 def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
@@ -376,6 +394,24 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
         lines.append(f"| FCF | {_format_won(ratios.fcf)} | {'양호' if ratios.fcf > 0 else '주의'} |")
     if ratios.revenueGrowth3Y is not None:
         lines.append(f"| 매출 3Y CAGR | {ratios.revenueGrowth3Y:.1f}% | - |")
+
+    # ratioSeries 3년 추세 (있으면)
+    ratio_series = getattr(company, "ratioSeries", None)
+    if ratio_series is not None and hasattr(ratio_series, "roe") and ratio_series.roe:
+        trend_lines = []
+        for key, label in [("roe", "ROE"), ("operatingMargin", "영업이익률"), ("debtRatio", "부채비율")]:
+            series_vals = getattr(ratio_series, key, None)
+            if series_vals and len(series_vals) >= 2:
+                recent = [f"{v:.1f}%" for v in series_vals[-3:] if v is not None]
+                if recent:
+                    arrow = (
+                        "↗" if series_vals[-1] > series_vals[-2] else "↘" if series_vals[-1] < series_vals[-2] else "→"
+                    )
+                    trend_lines.append(f"- {label}: {' → '.join(recent)} {arrow}")
+        if trend_lines:
+            lines.append("")
+            lines.append("### 추세 (최근 3년)")
+            lines.extend(trend_lines)
 
     ttm_lines = []
     if ratios.revenueTTM is not None:
@@ -1465,3 +1501,152 @@ def _build_insights_section(company: Any) -> str | None:
         lines.append(f"\n{result.summary}")
 
     return "\n".join(lines)
+
+
+# ══════════════════════════════════════
+# Tiered Context Pipeline
+# ══════════════════════════════════════
+
+# skeleton tier에서 사용할 핵심 ratios 키
+_SKELETON_RATIO_KEYS = ("roe", "debtRatio", "currentRatio", "operatingMargin", "fcf", "revenueGrowth3Y")
+
+# skeleton tier에서 사용할 핵심 계정 (매출/영업이익/총자산)
+_SKELETON_ACCOUNTS: dict[str, list[tuple[str, str]]] = {
+    "IS": [("sales", "매출액"), ("operating_profit", "영업이익")],
+    "BS": [("total_assets", "자산총계")],
+}
+
+
+def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
+    """skeleton tier: ~500 토큰. tool calling provider용 최소 컨텍스트.
+
+    핵심 비율 6개 + 매출/영업이익/총자산 3계정 + insight 등급 1줄.
+    상세 데이터는 도구로 조회하도록 안내.
+    """
+    parts = [f"# {company.corpName} ({company.stockCode})"]
+    included = []
+
+    # 핵심 계정 3개 (최근 3년)
+    annual = getattr(company, "annual", None)
+    if annual is not None:
+        series, years = annual
+        if years:
+            display_years = years[-3:]
+            display_reversed = list(reversed(display_years))
+            year_offset = len(years) - 3
+
+            header = "| 계정 | " + " | ".join(display_reversed) + " |"
+            sep = "| --- | " + " | ".join(["---"] * len(display_reversed)) + " |"
+            rows = []
+            for sj, accts in _SKELETON_ACCOUNTS.items():
+                sj_data = series.get(sj, {})
+                for snake_id, label in accts:
+                    vals = sj_data.get(snake_id)
+                    if not vals:
+                        continue
+                    sliced = vals[max(0, year_offset) :]
+                    cells = [_format_won(v) if v is not None else "-" for v in reversed(sliced)]
+                    rows.append(f"| {label} | " + " | ".join(cells) + " |")
+
+            if rows:
+                parts.extend(["", "## 핵심 수치 (억/조원)", header, sep, *rows])
+                included.extend(["IS", "BS"])
+
+    # 핵심 비율 6개
+    ratios = getattr(company, "ratios", None)
+    if ratios is not None and hasattr(ratios, "roe"):
+        ratio_lines = []
+        for key in _SKELETON_RATIO_KEYS:
+            val = getattr(ratios, key, None)
+            if val is None:
+                continue
+            label_map = {
+                "roe": "ROE",
+                "debtRatio": "부채비율",
+                "currentRatio": "유동비율",
+                "operatingMargin": "영업이익률",
+                "fcf": "FCF",
+                "revenueGrowth3Y": "매출3Y CAGR",
+            }
+            label = label_map.get(key, key)
+            if key == "fcf":
+                ratio_lines.append(f"- {label}: {_format_won(val)}")
+            else:
+                ratio_lines.append(f"- {label}: {val:.1f}%")
+        if ratio_lines:
+            parts.extend(["", "## 핵심 비율", *ratio_lines])
+            included.append("ratios")
+
+    # insight 등급 1줄
+    try:
+        from dartlab.engines.insight.pipeline import analyze as _analyze
+
+        result = _analyze(company.stockCode, company=company)
+        if result is not None:
+            grades = result.grades()
+            grade_str = " / ".join(
+                f"{lbl}:{grades.get(k, 'N')}"
+                for k, lbl in [
+                    ("performance", "실적"),
+                    ("profitability", "수익성"),
+                    ("health", "건전성"),
+                    ("cashflow", "CF"),
+                ]
+                if grades.get(k)
+            )
+            parts.append(f"\n인사이트: {grade_str}")
+            if result.profile:
+                parts.append(f"프로파일: {result.profile}")
+            included.append("_insights")
+    except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+        pass
+
+    parts.extend(
+        [
+            "",
+            "---",
+            "상세 데이터는 `get_data`, `show_topic`, `compute_ratios` 등 도구로 조회하세요.",
+        ]
+    )
+
+    return "\n".join(parts), included
+
+
+def build_context_focused(
+    company: Any,
+    question: str,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> tuple[dict[str, str], list[str], str]:
+    """focused tier: ~2,000 토큰. tool calling 미지원 provider용.
+
+    skeleton + 질문 유형별 관련 모듈만 포함 (compact 형식).
+    """
+    return build_context_by_module(company, question, include, exclude, compact=True)
+
+
+ContextTier = str  # "skeleton" | "focused" | "full"
+
+
+def build_context_tiered(
+    company: Any,
+    question: str,
+    tier: ContextTier,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> tuple[dict[str, str], list[str], str]:
+    """tier별 context 빌더. streaming.py에서 호출.
+
+    Args:
+        tier: "skeleton" | "focused" | "full"
+
+    Returns:
+        (modules_dict, included_list, header_text)
+    """
+    if tier == "skeleton":
+        text, included = build_context_skeleton(company)
+        return {"_skeleton": text}, included, ""
+    elif tier == "focused":
+        return build_context_focused(company, question, include, exclude)
+    else:
+        return build_context_by_module(company, question, include, exclude, compact=False)

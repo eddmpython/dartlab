@@ -317,6 +317,18 @@ def conversation_state_to_meta(state: ConversationState) -> dict[str, Any]:
     return {key: value for key, value in payload.items() if value not in (None, [], "", 0)}
 
 
+_STATE_TRANSITION_HINTS: dict[str, str] = {
+    "general_chat→company_analysis": "일반 대화에서 분석으로 전환됨. 바로 분석 결과를 제시하세요. 이전 잡담 맥락은 무시.",
+    "general_chat→company_explore": "회사 탐색으로 전환됨. 해당 기업의 데이터 현황을 먼저 알려주세요.",
+    "company_analysis→follow_up": "심화 질문. 직전 분석의 핵심 수치를 기억하고 이어가세요.",
+    "company_analysis→general_chat": "분석에서 일반 대화로 전환됨. 짧고 친근하게.",
+    "company_explore→company_analysis": "탐색에서 분석으로 전환됨. 구체적 수치와 판단을 제시하세요.",
+    "follow_up→company_analysis": "새로운 분석 요청. 이전 맥락 참고하되 새 질문에 집중.",
+    "capability→company_analysis": "기능 질문 후 분석 요청. 바로 분석 결과를 제시하세요.",
+    "coding→company_analysis": "코드 작업에서 분석으로 전환됨. 코드 맥락은 내려놓고 재무 분석에 집중.",
+}
+
+
 def build_dialogue_policy(state: ConversationState) -> str:
     from dartlab.engines.ai.tools_registry import get_coding_runtime_policy
 
@@ -344,6 +356,13 @@ def build_dialogue_policy(state: ConversationState) -> str:
         lines.append(f"- 직전 모드: {_DIALOGUE_MODE_LABELS.get(state.prev_dialogue_mode, state.prev_dialogue_mode)}")
     if state.prev_question_types:
         lines.append(f"- 직전 질문 유형: {', '.join(state.prev_question_types)}")
+
+    # 상태 전환 힌트
+    if state.prev_dialogue_mode and state.prev_dialogue_mode != state.dialogue_mode:
+        transition = f"{state.prev_dialogue_mode}→{state.dialogue_mode}"
+        hint = _STATE_TRANSITION_HINTS.get(transition)
+        if hint:
+            lines.append(f"- 전환 힌트: {hint}")
 
     lines.extend(["", "## 대화 진행 규칙"])
 

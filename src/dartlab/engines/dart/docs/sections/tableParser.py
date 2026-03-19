@@ -391,12 +391,12 @@ def buildTableDataFrame(
     for key, rows in groups.items():
         try:
             frames.append(pl.DataFrame(rows))
-        except Exception:
+        except (pl.exceptions.SchemaError, pl.exceptions.ComputeError, ValueError):
             # 같은 tableType 내에서도 스키마 다를 수 있음 → 개별 처리
             for row in rows:
                 try:
                     frames.append(pl.DataFrame([row]))
-                except Exception:
+                except (pl.exceptions.SchemaError, pl.exceptions.ComputeError, ValueError):
                     pass
 
     if not frames:

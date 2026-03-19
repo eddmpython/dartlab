@@ -91,3 +91,94 @@ class TestWithData:
         assert df is not None
         assert "시장" in df.columns
         assert df.filter(pl.col("시장").is_null() | (pl.col("시장") == "")).is_empty()
+
+
+# ── scan 통합 테스트 (spec + tool + pipeline) ────────────────
+
+
+def test_scan_spec_registered():
+    """scan spec이 AI 엔진 총괄에 등록되어 있는지."""
+    from dartlab.engines.ai.spec import buildSpec
+
+    spec = buildSpec()
+    assert "dart.scan" in spec["engines"]
+    summary = spec["engines"]["dart.scan"]["summary"]
+    assert "governance" in summary
+    assert "workforce" in summary
+    assert "capital" in summary
+    assert "debt" in summary
+
+
+def test_scan_tool_registered_with_company():
+    """Company가 있을 때 get_scan_data tool이 등록되는지."""
+    import dartlab
+    from dartlab.engines.ai.tools_registry import register_defaults
+
+    c = dartlab.Company("005930")
+    rt = register_defaults(c)
+    names = [s["function"]["name"] for s in rt.get_tool_schemas()]
+    assert "get_scan_data" in names
+
+
+def test_scan_tool_not_registered_without_company():
+    """Company가 없을 때 get_scan_data tool이 없는지."""
+    from dartlab.engines.ai.tools_registry import register_defaults
+
+    rt = register_defaults(None)
+    names = [s["function"]["name"] for s in rt.get_tool_schemas()]
+    assert "get_scan_data" not in names
+
+
+def test_pipeline_classify_governance():
+    """거버넌스 질문이 '지배구조'로 분류되는지."""
+    from dartlab.engines.ai.pipeline import classify_question
+
+    assert classify_question("이 회사의 거버넌스는 어때?") == "지배구조"
+    assert classify_question("지배구조 현황을 알려줘") == "지배구조"
+
+
+def test_pipeline_scan_axes_mapping():
+    """질문 유형별 scan 축 매핑이 정의되어 있는지."""
+    from dartlab.engines.ai.pipeline import _SCAN_AXES_BY_QTYPE
+
+    assert "지배구조" in _SCAN_AXES_BY_QTYPE
+    assert "governance" in _SCAN_AXES_BY_QTYPE["지배구조"]
+    assert "리스크" in _SCAN_AXES_BY_QTYPE
+    assert "debt" in _SCAN_AXES_BY_QTYPE["리스크"]
+
+
+@requires_report
+class TestScanIntegration:
+    """scan 통합 테스트 — 데이터 필요."""
+
+    def test_scan_tool_execution(self):
+        """get_scan_data tool이 실제로 결과를 반환하는지."""
+        import dartlab
+        from dartlab.engines.ai.tools_registry import register_defaults
+
+        c = dartlab.Company("005930")
+        rt = register_defaults(c)
+        result = rt.execute_tool("get_scan_data", {"axis": "governance"})
+        assert "종목코드" in result
+        assert "005930" in result
+
+    def test_pipeline_scan_injection(self):
+        """pipeline이 지배구조 질문에 scan context를 주입하는지."""
+        import dartlab
+        from dartlab.engines.ai.pipeline import _run_scan
+
+        c = dartlab.Company("005930")
+        result = _run_scan(c, "지배구조")
+        assert result is not None
+        assert "지배구조 스캔" in result
+
+    def test_scan_all_axes(self):
+        """get_scan_data(axis='all')이 4축 모두 반환하는지."""
+        import dartlab
+        from dartlab.engines.ai.tools_registry import register_defaults
+
+        c = dartlab.Company("005930")
+        rt = register_defaults(c)
+        result = rt.execute_tool("get_scan_data", {"axis": "all"})
+        for key in ("governance", "workforce", "capital", "debt"):
+            assert key in result

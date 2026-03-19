@@ -45,6 +45,26 @@ class MockProvider:
         self._call_count += 1
         return self._responses[idx]
 
+    def format_tool_result(self, tool_call_id: str, result: str) -> dict:
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": result}
+
+    def format_assistant_tool_calls(self, answer: str | None, tool_calls: list) -> dict:
+        import json
+
+        msg: dict = {"role": "assistant", "content": answer}
+        msg["tool_calls"] = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.name,
+                    "arguments": json.dumps(tc.arguments, ensure_ascii=False),
+                },
+            }
+            for tc in tool_calls
+        ]
+        return msg
+
 
 # ══════════════════════════════════════
 # agent_loop

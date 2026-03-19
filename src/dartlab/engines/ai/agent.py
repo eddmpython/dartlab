@@ -6,7 +6,6 @@ OpenAI function calling 프로토콜을 사용.
 
 from __future__ import annotations
 
-import json
 from typing import Any, Callable, Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
@@ -57,25 +56,8 @@ def agent_loop(
         if not response.tool_calls:
             return response.answer
 
-        # assistant 메시지 추가 (tool_calls 포함)
-        assistant_msg: dict[str, Any] = {"role": "assistant"}
-        if response.answer:
-            assistant_msg["content"] = response.answer
-        else:
-            assistant_msg["content"] = None
-
-        assistant_msg["tool_calls"] = [
-            {
-                "id": tc.id,
-                "type": "function",
-                "function": {
-                    "name": tc.name,
-                    "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                },
-            }
-            for tc in response.tool_calls
-        ]
-        messages.append(assistant_msg)
+        # assistant 메시지 추가 (provider 형식에 맞게)
+        messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
 
         # 도구 실행 + 결과 추가
         for tc in response.tool_calls:
@@ -87,13 +69,7 @@ def agent_loop(
             if on_tool_result:
                 on_tool_result(tc.name, result)
 
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": result,
-                }
-            )
+            messages.append(provider.format_tool_result(tc.id, result))
 
     return last_answer
 
@@ -124,24 +100,11 @@ def agent_loop_stream(
                 yield from provider.stream(messages)
                 return
             messages.append({"role": "assistant", "content": response.answer or ""})
-            final_messages = [m for m in messages if m.get("role") != "tool" or True]
-            yield from provider.stream(final_messages)
+            yield from provider.stream(messages)
             return
 
-        assistant_msg: dict[str, Any] = {"role": "assistant"}
-        assistant_msg["content"] = response.answer if response.answer else None
-        assistant_msg["tool_calls"] = [
-            {
-                "id": tc.id,
-                "type": "function",
-                "function": {
-                    "name": tc.name,
-                    "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                },
-            }
-            for tc in response.tool_calls
-        ]
-        messages.append(assistant_msg)
+        # assistant 메시지 추가 (provider 형식에 맞게)
+        messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
 
         for tc in response.tool_calls:
             if on_tool_call:
@@ -152,13 +115,7 @@ def agent_loop_stream(
             if on_tool_result:
                 on_tool_result(tc.name, result)
 
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": result,
-                }
-            )
+            messages.append(provider.format_tool_result(tc.id, result))
 
     yield from provider.stream(messages)
 
