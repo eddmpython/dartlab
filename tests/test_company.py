@@ -345,6 +345,20 @@ class TestCompany:
         assert set(bodyStructureSummary["textNodeType"].unique().to_list()) == {"body"}
         assert set(bodyStructureChanges["textNodeType"].unique().to_list()) == {"body"}
 
+    def test_docs_sections_structure_helpers_return_valid_dataframes(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        registry = c.docs.sections.structureRegistry(topic="businessOverview", nodeType="body")
+        events = c.docs.sections.structureEvents(topic="businessOverview", nodeType="body")
+        summary = c.docs.sections.structureSummary(topic="businessOverview", nodeType="body")
+        changes = c.docs.sections.structureChanges(topic="businessOverview", nodeType="body")
+
+        assert isinstance(registry, pl.DataFrame)
+        assert isinstance(events, pl.DataFrame)
+        assert isinstance(summary, pl.DataFrame)
+        assert isinstance(changes, pl.DataFrame)
+
     def test_show_accepts_q4_alias_for_annual_sections_period(self):
         from dartlab import Company
 
@@ -357,6 +371,19 @@ class TestCompany:
         assert "2025" in annual.columns
         assert "2025Q4" in annualQ4.columns
         assert annual.item(0, "2025") == annualQ4.item(0, "2025Q4")
+
+    def test_show_period_filter_handles_finance_exact_q4_and_annual_alias(self):
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        exactQ4 = c.show("BS", period="2024Q4")
+        annualAlias = c.show("BS", period="2024")
+
+        assert isinstance(exactQ4, pl.DataFrame)
+        assert isinstance(annualAlias, pl.DataFrame)
+        assert exactQ4.columns == ["계정명", "2024Q4"]
+        assert annualAlias.columns == ["계정명", "2024"]
+        assert exactQ4["계정명"].to_list() == annualAlias["계정명"].to_list()
 
     def test_profile_facts_include_docs_source(self):
         from dartlab import Company

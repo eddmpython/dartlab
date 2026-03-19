@@ -166,5 +166,8 @@ def searchName(keyword: str) -> pl.DataFrame:
     Returns:
         매칭된 종목 DataFrame (회사명, 종목코드, ...).
     """
+    kw = keyword.strip()
+    if not kw:
+        return getKindList().head(0)
     df = getKindList()
-    return df.filter(pl.col("회사명").str.contains(keyword))
+    return df.filter(pl.col("회사명").str.contains(kw, literal=True))

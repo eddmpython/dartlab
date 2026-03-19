@@ -833,6 +833,8 @@ def _structurePattern(payload: object) -> str:
         return "variant"
 
     if len(leafs) == 1 and len(parents) > 1:
+        if activeCounts and max(activeCounts) > 1:
+            return "parallel"
         return "moved"
 
     if activeCounts:

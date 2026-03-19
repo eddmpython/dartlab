@@ -3778,12 +3778,19 @@ class Company:
         requestedPeriod = str(period)
         normalizedPeriod = rawPeriod(period)
 
-        if normalizedPeriod in payload.columns:
+        # exact match first, then normalized (Q4 → annual alias), then Q4 expansion
+        q4Fallback = f"{requestedPeriod}Q4" if "Q" not in requestedPeriod else None
+        exactPeriod = normalizedPeriod if normalizedPeriod in payload.columns else (
+            requestedPeriod if requestedPeriod in payload.columns else (
+                q4Fallback if q4Fallback and q4Fallback in payload.columns else None
+            )
+        )
+        if exactPeriod is not None:
             keepCols = [c for c in payload.columns if not _isPeriodColumn(c)]
-            keepCols.append(normalizedPeriod)
+            keepCols.append(exactPeriod)
             result = payload.select(keepCols)
-            if requestedPeriod != normalizedPeriod and normalizedPeriod in result.columns:
-                result = result.rename({normalizedPeriod: requestedPeriod})
+            if exactPeriod != requestedPeriod:
+                result = result.rename({exactPeriod: requestedPeriod})
             return result
 
         if "period" in payload.columns:

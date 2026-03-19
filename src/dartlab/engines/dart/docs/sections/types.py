@@ -192,8 +192,8 @@ class SectionResult:
 
         if path:
             kw = path.lower()
-            dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw))
-            dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw))
+            dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw, literal=True))
+            dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw, literal=True))
 
         allPaths = sorted(set(dfA["path"].to_list()) | set(dfB["path"].to_list()))
 
@@ -236,8 +236,8 @@ class SectionResult:
         dfB = ysB.toLinesDf()
 
         kw = path.lower()
-        dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw))
-        dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw))
+        dfA = dfA.filter(pl.col("path").str.to_lowercase().str.contains(kw, literal=True))
+        dfB = dfB.filter(pl.col("path").str.to_lowercase().str.contains(kw, literal=True))
 
         kept = dfA.join(dfB, on="hash", how="inner", suffix="_r").select(pl.lit("kept").alias("status"), pl.col("text"))
         added = dfB.join(dfA, on="hash", how="anti").select(pl.lit("added").alias("status"), pl.col("text"))

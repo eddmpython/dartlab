@@ -2080,3 +2080,41 @@ retrieval/context 메타 추가:
 - docs 283개 기준으로 신규 추가 종목군까지 core `sections()` raw residual이 사실상 정리되었다.
 - 남은 정보는 broad raw가 아니라 detail taxonomy에서 회수되는 구조로 닫혔다.
 - 현재 package 수준 기준에서 `sections()`는 core canonical 비교축, `retrievalBlocks/contextSlices`는 detail/semantic evidence layer 역할이 명확히 분리되었다.
+
+### 2026-03-19 전 docs 포트폴리오 mapper 감사 + 패턴형 보강
+
+실행 파일:
+- `experiments/056_sectionMap/053_fullDocsMapperAudit.py`
+
+추가 구현:
+- `src/dartlab/engines/dart/docs/sections/mapper.py`
+  - 기업명/번호가 붙은 detail 변형을 보수적 pattern rule로 흡수
+  - 범주:
+    - 연구개발실적/활동/현황 상세
+    - 지적재산권/특허 보유현황 상세
+    - 수주현황/수주상황 상세
+    - 금융업 상품/서비스 상세
+    - 신용파생상품/이자율스왑 상세
+    - 생산설비/영업설비 상세
+    - 감사보고서/외부감사실시내용/주석
+- `tests/test_sections_mapper.py`
+  - 새 pattern regression 추가
+
+검증:
+- `pytest tests/test_sections_mapper.py tests/test_sections_runtime.py tests/test_sections_pipeline.py -q`
+  - 결과: `23 passed`
+- latest annual title audit:
+  - 대상 회사: `245`
+  - title rows: `12,667`
+  - mapped rows: `12,661`
+  - mapped ratio: `0.999526`
+  - unmapped rows: `6`
+  - unmapped unique titles: `3`
+- 남은 title:
+  - `주유소부동산세부내역(상세)` `4`
+  - `4-6.사업의개요-시장여건및영업의개황등(상세)` `1`
+  - `사업의내용과관련된사항` `1`
+
+해석:
+- 현재 mapper는 broad/latest annual title 기준으로 사실상 포화다.
+- 남은 3개는 반복 빈도도 낮고 의미가 애매해 broad mapper보다 semantic/detail projector 또는 수동 검토가 맞다.

@@ -780,6 +780,42 @@ def test_structure_registry_distinguishes_variant_split_merge_and_parallel():
     assert set(bodyOnly["textNodeType"].unique().to_list()) == {"body"}
 
 
+def test_structure_registry_marks_same_leaf_multi_parent_concurrency_as_parallel():
+    df = pl.DataFrame(
+        {
+            "topic": ["businessOverview", "businessOverview"],
+            "blockType": ["text", "text"],
+            "textStructural": [True, True],
+            "textNodeType": ["body", "body"],
+            "textLevel": [2, 2],
+            "cadenceScope": ["annual", "annual"],
+            "textComparablePathKey": ["사업부문현황 > 산업의특성", "사업부문현황 > 산업의특성"],
+            "textComparableParentPathKey": ["사업부문현황", "사업부문현황"],
+            "textSemanticPathKey": [
+                "@topic:businessOverview > DX부문 > 산업의특성",
+                "@topic:businessOverview > CE부문 > 산업의특성",
+            ],
+            "textSemanticParentPathKey": [
+                "@topic:businessOverview > DX부문",
+                "@topic:businessOverview > CE부문",
+            ],
+            "segmentKey": ["p0", "p1"],
+            "sourceBlockOrder": [0, 1],
+            "latestAnnualPeriod": ["2025", "2025"],
+            "latestQuarterlyPeriod": [None, None],
+            "2024": ["a", "b"],
+            "2025": ["a", "b"],
+        }
+    )
+
+    registry = pipeline.structureRegistry(df, topic="businessOverview", nodeType="body")
+    assert registry.height == 1
+    row = registry.row(0, named=True)
+    assert row["structurePattern"] == "parallel"
+    assert row["activePathCounts"] == [2, 2]
+    assert row["latestPathCount"] == 2
+
+
 def test_structure_events_capture_transition_types():
     df = pl.DataFrame(
         {
