@@ -33,7 +33,7 @@ def test_cli_help_contract():
 
     assert result.returncode == 0
     assert "DartLab" in result.stdout
-    assert "{show,search,statement,sections,profile,ask,excel,ai,status,setup,mcp}" in result.stdout
+    assert "{show,search,statement,sections,profile,modules,ask,excel,ai,status,setup,mcp}" in result.stdout
     assert "ui" not in result.stdout
     assert result.stderr == ""
 

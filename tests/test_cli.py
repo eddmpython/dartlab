@@ -58,7 +58,7 @@ def test_main_without_command_prints_help(capsys):
     captured = capsys.readouterr()
     assert result == 0
     assert "usage:" in captured.out
-    assert "{show,search,statement,sections,profile,ask,excel,ai,status,setup,mcp}" in captured.out
+    assert "{show,search,statement,sections,profile,modules,ask,excel,ai,status,setup,mcp}" in captured.out
     assert "ui" not in captured.out
 
 

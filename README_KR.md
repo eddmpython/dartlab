@@ -14,7 +14,7 @@
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
 <a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
-<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-90%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-115%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
@@ -185,6 +185,24 @@ c.finance.timeseries    # 원본 계정 시계열
 
 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
+### 모듈 — 어떤 topic을 볼 수 있는가
+
+DartLab은 6개 카테고리에 걸쳐 100개 이상의 모듈을 제공한다. CLI로 확인:
+
+```bash
+dartlab modules                      # 전체 모듈 목록
+dartlab modules --category finance   # 카테고리 필터
+dartlab modules --search dividend    # 키워드 검색
+```
+
+Python에서:
+
+```python
+c.topics    # 이 회사에서 사용 가능한 전체 topic 목록
+```
+
+카테고리: `finance` (재무제표, 비율), `report` (배당, 지배구조, 감사), `notes` (K-IFRS 주석), `disclosure` (서술형 텍스트), `analysis` (인사이트, 순위), `raw` (원본 parquet).
+
 ### 인사이트
 
 ```python
@@ -304,6 +322,48 @@ e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # 단일 태그 시계열
 
 이 계층은 원본 surface를 최대한 왜곡하지 않으면서, 저장 parquet은 DartLab runtime과 호환되게 맞춘다.
 
+## MCP — AI 어시스턴트 연동
+
+DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. Claude Desktop, Cursor 등 MCP 호환 AI 어시스턴트에 직접 연결하면, DartLab의 전체 분석 엔진을 AI가 도구로 호출할 수 있다.
+
+```bash
+uv add "dartlab[mcp]"
+```
+
+### Claude Desktop
+
+Claude Desktop 설정 파일(`claude_desktop_config.json`)에 추가:
+
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
+
+### AI가 할 수 있는 것
+
+연결하면 AI 어시스턴트가 다음을 수행할 수 있다:
+
+- **기업 검색** — "삼성전자 찾아줘" → `search_company` 호출
+- **공시 항목 조회** — "삼성전자 사업개요 보여줘" → `show_topic` 호출
+- **기간 비교** — "2024년과 2023년 재무제표 비교해줘" → `get_timeseries` 호출
+- **비율 계산** — "부채비율 계산해줘" → `calculate_ratios` 호출
+- **등급 평가** — "이 회사 종합 등급은?" → `get_insights` 호출
+- **교차 시장 분석** — DART(한국)과 EDGAR(미국) 기업 모두 지원
+
+45개 이상의 도구가 MCP 브릿지를 통해 자동으로 사용 가능하다. AI는 원문이 아닌 구조화된 기업 데이터를 받으므로 정확하고 근거 있는 답변을 할 수 있다.
+
+### CLI
+
+```bash
+dartlab mcp    # MCP stdio 서버 시작
+```
+
 ## 핵심 개념
 
 ### 1. Sections First
@@ -369,7 +429,7 @@ downloadAll("report")     # DART 정형 보고서
 
 ### 블로그
 
-[DartLab 블로그](https://eddmpython.github.io/dartlab/blog/)는 실전 공시 분석 주제를 다룬다 — 재무제표 읽는 법, 공시 패턴 해석, 리스크 신호 포착 등. 3개 카테고리 90편 이상:
+[DartLab 블로그](https://eddmpython.github.io/dartlab/blog/)는 실전 공시 분석 주제를 다룬다 — 재무제표 읽는 법, 공시 패턴 해석, 리스크 신호 포착 등. 3개 카테고리 115편 이상:
 
 - **공시 제도** — DART/EDGAR 공시의 구조와 작동 원리
 - **보고서 읽기** — 감사보고서, 잠정실적, 재작성 등 실전 가이드

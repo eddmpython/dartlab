@@ -14,7 +14,7 @@
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
 <a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
-<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-90%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-115%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
@@ -185,6 +185,24 @@ c.finance.timeseries    # raw account time series
 
 Financial ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
+### Modules — What Topics Are Available
+
+DartLab exposes 100+ modules across 6 categories. Use the CLI to discover them:
+
+```bash
+dartlab modules                      # list all modules
+dartlab modules --category finance   # filter by category
+dartlab modules --search dividend    # search by keyword
+```
+
+Or in Python:
+
+```python
+c.topics    # list all available topics for this company
+```
+
+Categories: `finance` (statements, ratios), `report` (dividend, governance, audit), `notes` (K-IFRS annotations), `disclosure` (narrative text), `analysis` (insights, rankings), `raw` (original parquets).
+
 ### Insights
 
 ```python
@@ -304,6 +322,48 @@ e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # single tag series
 
 These wrappers keep the original source surface intact, while saved parquet stays compatible with DartLab's `Company` engine.
 
+## MCP — AI Assistant Integration
+
+DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server that connects directly to Claude Desktop, Cursor, and other MCP-compatible AI assistants. This turns DartLab's full analysis engine into a tool your AI assistant can call.
+
+```bash
+uv add "dartlab[mcp]"
+```
+
+### Claude Desktop
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
+
+### What the AI Can Do
+
+Once connected, your AI assistant can:
+
+- **Search companies** — "삼성전자 찾아줘" → calls `search_company`
+- **Read any disclosure topic** — "삼성전자 사업개요 보여줘" → calls `show_topic`
+- **Compare periods** — "2024년과 2023년 재무제표 비교해줘" → calls `get_timeseries`
+- **Calculate ratios** — "부채비율 계산해줘" → calls `calculate_ratios`
+- **Grade a company** — "이 회사 종합 등급은?" → calls `get_insights`
+- **Cross-market analysis** — works with both DART (Korean) and EDGAR (US) companies
+
+45+ tools are automatically available through the MCP bridge. The AI gets structured company data, not raw text — so it can give precise, grounded answers.
+
+### CLI
+
+```bash
+dartlab mcp    # start MCP stdio server
+```
+
 ## Core Ideas
 
 ### 1. Sections First
@@ -369,7 +429,7 @@ Docs are continuously updated with new content.
 
 ### Blog
 
-The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis topics — how to read financial reports, interpret disclosure patterns, and spot risk signals. 90+ articles across three categories:
+The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis topics — how to read financial reports, interpret disclosure patterns, and spot risk signals. 115+ articles across three categories:
 
 - **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
 - **Report Reading** — practical guide to reading audit reports, preliminary earnings, restatements
