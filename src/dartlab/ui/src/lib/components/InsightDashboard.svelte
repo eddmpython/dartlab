@@ -5,11 +5,14 @@
 -->
 <script>
 	import { AlertTriangle, TrendingUp, Shield, Wallet, Users, AlertCircle, Sparkles, ChevronDown, ChevronUp, Loader2, ExternalLink } from "lucide-svelte";
+	import { insightToRadarSpec } from "$lib/chart/specs.js";
 
 	let {
 		data = null,       // insights API response
 		loading = false,
+		corpName = '',     // 기업명 (레이더 차트 제목용)
 		onNavigateTopic = null,  // (topic) => void — P8: 관련 topic으로 이동
+		toc = null,        // B4: toc 데이터 — topic 존재 여부 체크용
 	} = $props();
 
 	let expandedArea = $state(null);
@@ -68,9 +71,27 @@
 		expandedArea = expandedArea === key ? null : key;
 	}
 
+	// B4: toc에서 실제 존재하는 topic Set 구축
+	let availableTopics = $derived.by(() => {
+		if (!toc?.chapters) return null;
+		const set = new Set();
+		for (const ch of toc.chapters) {
+			for (const t of ch.topics) set.add(t.topic);
+		}
+		return set;
+	});
+
 	let dangerAnomalies = $derived((data?.anomalies ?? []).filter(a => a.severity === "danger"));
 	let warningAnomalies = $derived((data?.anomalies ?? []).filter(a => a.severity === "warning"));
 	let areaKeys = $derived(data?.areas ? Object.keys(AREA_META).filter(k => data.areas[k]) : []);
+
+	// 레이더 차트 스펙
+	let radarSpec = $derived.by(() => {
+		if (!data?.areas || areaKeys.length < 3) return null;
+		const grades = {};
+		for (const k of areaKeys) grades[k] = { grade: data.areas[k].grade };
+		return insightToRadarSpec(grades, corpName);
+	});
 </script>
 
 {#if loading}
@@ -116,11 +137,18 @@
 			{/each}
 		</div>
 
+		<!-- Radar chart -->
+		{#if radarSpec}
+			{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
+				<ChartRenderer spec={radarSpec} class="max-w-xs mx-auto" />
+			{/await}
+		{/if}
+
 		<!-- Expanded detail -->
 		{#if expandedArea && data.areas[expandedArea]}
 			{@const area = data.areas[expandedArea]}
 			{@const meta = AREA_META[expandedArea]}
-			{@const relatedTopics = RELATED_TOPICS[expandedArea] || []}
+			{@const relatedTopics = (RELATED_TOPICS[expandedArea] || []).filter(t => !availableTopics || availableTopics.has(t))}
 			<div class="px-3 py-2 rounded-lg bg-dl-surface-card border border-dl-border/20 space-y-2 animate-fadeIn">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">

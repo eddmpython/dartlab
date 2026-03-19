@@ -351,11 +351,12 @@ export async function ask(company, question, options = {}) {
  * @param {function} onContext - context 이벤트 콜백 (모듈별, 여러 번 호출됨)
  * @param {function} onToolCall - tool_call 이벤트 콜백 (도구 호출)
  * @param {function} onToolResult - tool_result 이벤트 콜백 (도구 결과)
+ * @param {function} onChart - chart 이벤트 콜백 (ChartSpec 배열)
  * @param {function} onChunk - chunk 이벤트 콜백
  * @param {function} onDone - done 이벤트 콜백
  * @param {function} onError - error 이벤트 콜백
  */
-export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChunk, onDone, onError, onViewerNavigate }, history = null) {
+export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChart, onChunk, onDone, onError, onViewerNavigate }, history = null) {
 	const body = { question, stream: true, ...options };
 	if (company) body.company = company;
 	if (history && history.length > 0) body.history = history;
@@ -403,6 +404,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
 							else if (currentEvent === "chunk") onChunk?.(parsed.text);
+							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "viewer_navigate") onViewerNavigate?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
 							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(); } }

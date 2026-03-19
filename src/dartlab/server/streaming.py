@@ -74,6 +74,8 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         "data": json.dumps(conversation_state_to_meta(state), ensure_ascii=False),
     }
 
+    done_payload: dict[str, Any] = {}
+
     try:
         config_ = get_config()
         overrides: dict[str, Any] = {}
@@ -116,13 +118,47 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                     ),
                 }
 
-            light_prompt = (
-                build_dynamic_chat_prompt(state) + f"\n\n## 현재 대화 종목\n"
-                f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
-                f"아직 구체적 분석 요청은 아닙니다. 가볍게 대화하되, "
-                f"분석이 필요하면 어떤 분석을 원하는지 물어보세요.\n"
-                f"예: '어떤 분석을 원하시나요? 재무 건전성, 수익성, 배당, 종합 분석 등을 해드릴 수 있습니다.'"
+            # Light mode용 간략 회사 컨텍스트 (topics + insights 요약)
+            light_company_ctx = f"\n\n## 현재 대화 종목\n"
+            light_company_ctx += f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
+            # insights 등급 1줄 요약
+            try:
+                from dartlab.engines.insight.pipeline import analyze as _light_analyze
+
+                _light_result = _light_analyze(c.stockCode, company=c)
+                if _light_result is not None:
+                    _grades = _light_result.grades()
+                    _grade_str = " / ".join(
+                        f"{lbl}:{_grades.get(k, 'N')}"
+                        for k, lbl in [
+                            ("performance", "실적"),
+                            ("profitability", "수익성"),
+                            ("health", "건전성"),
+                            ("cashflow", "CF"),
+                            ("governance", "지배구조"),
+                            ("risk", "리스크"),
+                            ("opportunity", "기회"),
+                        ]
+                        if _grades.get(k)
+                    )
+                    light_company_ctx += f"- 인사이트 등급: {_grade_str}\n"
+                    if _light_result.profile:
+                        light_company_ctx += f"- 프로파일: {_light_result.profile}\n"
+            except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+                pass
+            # topics 상위 10개
+            try:
+                _topics = list(getattr(c, "topics", None) or [])[:10]
+                if _topics:
+                    light_company_ctx += f"- 조회 가능 topic(일부): {', '.join(_topics)}\n"
+            except (AttributeError, TypeError):
+                pass
+            light_company_ctx += (
+                "\n아직 구체적 분석 요청은 아닙니다. 가볍게 대화하되, "
+                "분석이 필요하면 어떤 분석을 원하는지 물어보세요.\n"
+                "예: '어떤 분석을 원하시나요? 재무 건전성, 수익성, 배당, 종합 분석 등을 해드릴 수 있습니다.'"
             )
+            light_prompt = build_dynamic_chat_prompt(state) + light_company_ctx
             messages = [{"role": "system", "content": light_prompt}]
             messages.extend(history_msgs)
             user_text = state.question
@@ -208,13 +244,25 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                         ensure_ascii=False,
                     ),
                 }
+                # _full fallback에서도 topics/insights를 별도 이벤트로 전송
+                for _extra_key, _extra_label in (("_topics", "공시 topic 목록"), ("_insights", "인사이트 등급")):
+                    if _extra_key in modules_dict:
+                        context_text = context_text + "\n\n" + modules_dict[_extra_key]
+                        yield {
+                            "event": "context",
+                            "data": json.dumps(
+                                {"module": _extra_key, "label": _extra_label, "text": modules_dict[_extra_key]},
+                                ensure_ascii=False,
+                            ),
+                        }
             else:
+                _EXTRA_LABELS = {"_topics": "공시 topic 목록", "_insights": "인사이트 등급"}
                 for mod_name in included_tables:
                     mod_text = modules_dict.get(mod_name, "")
                     if not mod_text:
                         continue
                     meta_info = MODULE_META.get(mod_name)
-                    label = meta_info.label if meta_info else mod_name
+                    label = _EXTRA_LABELS.get(mod_name) or (meta_info.label if meta_info else mod_name)
                     yield {
                         "event": "context",
                         "data": json.dumps(
@@ -321,7 +369,6 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         use_tools = not use_guided and hasattr(llm, "complete_with_tools")
 
         full_response_parts: list[str] = []
-        done_payload: dict[str, Any] = {}
 
         if use_guided:
             from dartlab.engines.ai.prompts import GUIDED_SCHEMA, guided_json_to_markdown
@@ -473,6 +520,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
     except (
         AttributeError,
+        ConnectionError,
         FileNotFoundError,
         ImportError,
         KeyError,
@@ -492,6 +540,14 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         yield {
             "event": "error",
             "data": json.dumps(error_payload, ensure_ascii=False),
+        }
+    except Exception as e:  # noqa: BLE001 — LLM provider 에러 (openai.OpenAIError 등)
+        import logging
+
+        logging.getLogger(__name__).warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
+        yield {
+            "event": "error",
+            "data": json.dumps({"error": f"{type(e).__name__}: {e}"}, ensure_ascii=False),
         }
 
     # "보여줘" 의도 감지 → viewer_navigate SSE 이벤트

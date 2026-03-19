@@ -7,23 +7,26 @@
 <script>
 	import { renderMarkdown } from "$lib/markdown.js";
 	import { streamTopicSummary } from "$lib/api.js";
+	import { financeBlockToChartSpec } from "$lib/chart/specs.js";
 	import TimelineBar from "./TimelineBar.svelte";
 	import TableRenderer from "./TableRenderer.svelte";
 	import DiffSummary from "./DiffSummary.svelte";
 	import DiffCompare from "./DiffCompare.svelte";
-	import { MessageSquare, Copy, Check, Sparkles, Star, Loader2, ArrowLeftRight } from "lucide-svelte";
+	import { MessageSquare, Copy, Check, Sparkles, Star, Loader2, ArrowLeftRight, BarChart3, Table2 } from "lucide-svelte";
 
 	let {
 		topicData = null,    // viewer API response (blocks + textDocument)
 		diffSummary = null,  // diff summary API response
 		viewer = null,       // viewer store (for summary cache + bookmarks)
 		onAskAI = null,      // (selectedText) => void
+		searchHighlight = null, // B3: 검색어 하이라이트
 	} = $props();
 
 	// ── State ──
 	let selectedPeriods = $state(new Map());     // blockIdx → period
 	let sectionTimeline = $state(new Map());     // sectionId → periodLabel
 	let copiedTable = $state(null);              // blockIdx of copied table
+	let chartMode = $state(new Map());           // blockIdx → boolean (true = chart view)
 
 	// "AI에게 물어보기" floating button
 	let floatBtn = $state({ show: false, x: 0, y: 0, text: "" });
@@ -256,6 +259,17 @@
 	function isTableBlock(block) {
 		return block.kind === "finance" || block.kind === "structured" || block.kind === "report" || block.kind === "raw_markdown";
 	}
+	function isChartable(block) {
+		return block.kind === "finance" && block.data?.rows?.length > 0 && block.data?.columns?.length > 2;
+	}
+	function getChartSpec(block) {
+		return financeBlockToChartSpec(block);
+	}
+	function toggleChart(blockIdx) {
+		const next = new Map(chartMode);
+		next.set(blockIdx, !next.get(blockIdx));
+		chartMode = next;
+	}
 
 	// ── Table copy ──
 	function copyTable(block, blockIdx) {
@@ -293,6 +307,24 @@
 	function handleDocClick() {
 		if (floatBtn.show) floatBtn = { show: false, x: 0, y: 0, text: "" };
 	}
+
+	// B3: 검색어 하이라이트 적용
+	function applyHighlight(html) {
+		if (!searchHighlight || !html) return html;
+		const escaped = searchHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const re = new RegExp(`(${escaped})`, 'gi');
+		return html.replace(re, '<mark class="bg-amber-400/30 text-dl-text rounded-sm px-0.5">$1</mark>');
+	}
+
+	// B3: 하이라이트 후 첫 번째 mark로 스크롤
+	$effect(() => {
+		if (searchHighlight && topicData?.topic) {
+			requestAnimationFrame(() => {
+				const firstMark = document.querySelector('.disclosure-text mark');
+				if (firstMark) firstMark.scrollIntoView({ block: 'center', behavior: 'smooth' });
+			});
+		}
+	});
 </script>
 
 <svelte:document onclick={handleDocClick} />
@@ -402,6 +434,7 @@
 				{@const diffUnits = buildDiffUnits(activeView)}
 				{@const hasDiff = diffUnits && diffUnits.length > 0}
 				{@const showingDiff = hasDiff && (explicit || section.status === "updated")}
+				{@const showNoDiffNote = explicit && !hasDiff && section.periodCount > 1}
 
 				<div class="pt-2 pb-6 border-b border-dl-border/8 last:border-b-0 {section.status === 'stale' ? 'border-l-2 border-l-amber-400/40 pl-3' : ''}">
 					<!-- Heading path -->
@@ -473,6 +506,13 @@
 						</div>
 					{/if}
 
+					<!-- B1: 기간 선택 시 diff 없으면 "이전과 동일" 안내 -->
+					{#if showNoDiffNote}
+						<div class="mb-2 px-3 py-1.5 rounded-lg border border-dl-border/15 bg-dl-surface-card/30 text-[11px] text-dl-text-dim">
+							이전 기간과 동일 — 변경 없음
+						</div>
+					{/if}
+
 					<!-- Body text — diff가 있으면 항상 diff 표시, 없으면 원문 -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div class="disclosure-text max-w-3xl" onmouseup={handleTextMouseUp}>
@@ -492,7 +532,7 @@
 								{/if}
 							{/each}
 						{:else if activeView?.body}
-							{@html renderDisclosureText(activeView.body)}
+							{@html applyHighlight(renderDisclosureText(activeView.body))}
 						{/if}
 					</div>
 				</div>
@@ -505,21 +545,41 @@
 				</div>
 			{/if}
 			{#each nonTextBlocks as block, i (block.block)}
+				{@const chartable = isChartable(block)}
+				{@const showChart = chartable && chartMode.get(block.block)}
+				{@const spec = showChart ? getChartSpec(block) : null}
 				<div class="group relative">
-					{#if block.data?.rows?.length > 0}
-						<button
-							class="absolute top-1 right-1 z-10 p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
-							onclick={() => copyTable(block, block.block)}
-							title="테이블 복사"
-						>
-							{#if copiedTable === block.block}
-								<Check size={12} class="text-dl-success" />
-							{:else}
-								<Copy size={12} />
-							{/if}
-						</button>
+					<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+						{#if chartable}
+							<button
+								class="p-1 rounded transition-colors {showChart ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
+								onclick={() => toggleChart(block.block)}
+								title={showChart ? '표로 보기' : '차트로 보기'}
+							>
+								{#if showChart}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
+							</button>
+						{/if}
+						{#if block.data?.rows?.length > 0}
+							<button
+								class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
+								onclick={() => copyTable(block, block.block)}
+								title="테이블 복사"
+							>
+								{#if copiedTable === block.block}
+									<Check size={12} class="text-dl-success" />
+								{:else}
+									<Copy size={12} />
+								{/if}
+							</button>
+						{/if}
+					</div>
+					{#if showChart && spec}
+						{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
+							<ChartRenderer {spec} />
+						{/await}
+					{:else}
+						<TableRenderer {block} />
 					{/if}
-					<TableRenderer {block} />
 				</div>
 			{/each}
 
@@ -550,27 +610,47 @@
 								<div class="text-[10px] text-dl-text-dim mb-1 font-mono">{displayPeriod}</div>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div class="disclosure-text" onmouseup={handleTextMouseUp}>
-									{@html renderDisclosureText(displayText)}
+									{@html applyHighlight(renderDisclosureText(displayText))}
 								</div>
 							{/if}
 						</div>
 					{/if}
 				{:else if isTableBlock(block)}
+					{@const chartable2 = isChartable(block)}
+					{@const showChart2 = chartable2 && chartMode.get(block.block)}
+					{@const spec2 = showChart2 ? getChartSpec(block) : null}
 					<div class="group relative">
-						{#if block.data?.rows?.length > 0}
-							<button
-								class="absolute top-1 right-1 z-10 p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
-								onclick={() => copyTable(block, block.block)}
-								title="테이블 복사"
-							>
-								{#if copiedTable === block.block}
-									<Check size={12} class="text-dl-success" />
-								{:else}
-									<Copy size={12} />
-								{/if}
-							</button>
+						<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							{#if chartable2}
+								<button
+									class="p-1 rounded transition-colors {showChart2 ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
+									onclick={() => toggleChart(block.block)}
+									title={showChart2 ? '표로 보기' : '차트로 보기'}
+								>
+									{#if showChart2}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
+								</button>
+							{/if}
+							{#if block.data?.rows?.length > 0}
+								<button
+									class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
+									onclick={() => copyTable(block, block.block)}
+									title="테이블 복사"
+								>
+									{#if copiedTable === block.block}
+										<Check size={12} class="text-dl-success" />
+									{:else}
+										<Copy size={12} />
+									{/if}
+								</button>
+							{/if}
+						</div>
+						{#if showChart2 && spec2}
+							{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
+								<ChartRenderer spec={spec2} />
+							{/await}
+						{:else}
+							<TableRenderer {block} />
 						{/if}
-						<TableRenderer {block} />
 					</div>
 				{/if}
 			{/each}
