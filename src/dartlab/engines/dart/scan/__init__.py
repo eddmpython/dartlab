@@ -10,7 +10,12 @@
 
 from __future__ import annotations
 
+from dartlab.engines.dart.scan.payload import (  # noqa: F401
+    build_scan_payload,
+    build_unified_payload,
+)
+
 
 def available_scans() -> list[str]:
     """가용한 scan 축 목록."""
-    return ["network", "governance", "workforce", "capital", "debt"]
+    return ["network", "governance", "workforce", "capital", "debt", "signal"]

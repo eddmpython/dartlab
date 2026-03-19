@@ -375,6 +375,87 @@ def diffSummaryDataFrame(diffResult: DiffResult) -> pl.DataFrame:
     )
 
 
+def build_diff_matrix(
+    sections: pl.DataFrame,
+    *,
+    textOnly: bool = False,
+) -> dict:
+    """topic × period 변화 매트릭스.
+
+    sectionsDiff()를 호출하여 entries에서 topic별 기간별 변화 여부를 매트릭스로 구축한다.
+    075-002 실험으로 검증 (3사 15×19~39 히트맵 정상 생성).
+
+    Args:
+        sections: sections DataFrame.
+        textOnly: True이면 blockType=="text" 행만 사용.
+
+    Returns:
+        {matrix: [{topic, chapter, changeRate, period1: 0|1, ...}],
+         periods: [...], topic_count, period_count}
+    """
+    df = sections
+    if textOnly and "blockType" in df.columns:
+        df = df.filter(pl.col("blockType") == "text")
+
+    result = sectionsDiff(df)
+
+    # entries에서 매트릭스 구축
+    topic_changes: dict[str, dict[str, str]] = {}
+    for entry in result.entries:
+        topic_changes.setdefault(entry.topic, {})[entry.toPeriod] = entry.status
+
+    summaries_map = {s.topic: s for s in result.summaries}
+
+    to_periods = sorted({e.toPeriod for e in result.entries}, reverse=True)
+
+    matrix_rows = []
+    for topic, summary in sorted(summaries_map.items(), key=lambda x: -x[1].changeRate):
+        row: dict = {"topic": topic, "chapter": summary.chapter, "changeRate": summary.changeRate}
+        changes = topic_changes.get(topic, {})
+        for p in to_periods:
+            row[p] = 1 if changes.get(p) == "CHANGED" else 0
+        matrix_rows.append(row)
+
+    return {
+        "matrix": matrix_rows,
+        "periods": to_periods,
+        "topic_count": len(matrix_rows),
+        "period_count": len(to_periods),
+    }
+
+
+def build_heatmap_spec(
+    matrix_data: dict,
+    company_name: str,
+    *,
+    top_n: int = 20,
+) -> dict:
+    """변화 매트릭스 → HeatmapChart ChartSpec dict.
+
+    Args:
+        matrix_data: build_diff_matrix() 결과.
+        company_name: 차트 제목에 사용할 회사명.
+        top_n: 상위 N개 topic만 포함.
+
+    Returns:
+        {chartType, title, xLabels, yLabels, data, meta}
+    """
+    rows = matrix_data["matrix"][:top_n]
+    periods = matrix_data["periods"]
+
+    return {
+        "chartType": "heatmap",
+        "title": f"{company_name} topic 변화 히트맵 (상위 {len(rows)}개)",
+        "xLabels": periods,
+        "yLabels": [r["topic"] for r in rows],
+        "data": [[r.get(p, -1) for p in periods] for r in rows],
+        "meta": {
+            "colorScale": {"0": "#e8f5e9", "1": "#ef5350", "-1": "#eeeeee"},
+            "legend": {"0": "변화없음", "1": "변화", "-1": "데이터없음"},
+        },
+    }
+
+
 def charDiff(fromText: str, toText: str) -> list[CharPart]:
     """두 텍스트의 글자 단위 diff.
 
