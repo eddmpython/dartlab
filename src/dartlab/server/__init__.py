@@ -688,18 +688,18 @@ async def api_ollama_pull(req: dict):
         import requests
 
         try:
-            resp = requests.post(
+            with requests.post(
                 "http://localhost:11434/api/pull",
                 json={"model": model_name, "stream": True},
                 stream=True,
                 timeout=600,
-            )
-            for line in resp.iter_lines():
-                if line:
-                    yield {
-                        "event": "progress",
-                        "data": line.decode("utf-8"),
-                    }
+            ) as resp:
+                for line in resp.iter_lines():
+                    if line:
+                        yield {
+                            "event": "progress",
+                            "data": line.decode("utf-8"),
+                        }
             yield {"event": "done", "data": "{}"}
         except _HANDLED_API_ERRORS as e:
             yield {"event": "error", "data": orjson.dumps({"error": str(e)}).decode()}
@@ -1317,14 +1317,17 @@ async def api_company_topic_summary(
                 yield from llm.stream(messages)
 
             gen = _stream()
-            while True:
-                chunk = await asyncio.to_thread(next, gen, None)
-                if chunk is None:
-                    break
-                yield {
-                    "event": "chunk",
-                    "data": orjson.dumps({"text": chunk}).decode(),
-                }
+            try:
+                while True:
+                    chunk = await asyncio.to_thread(next, gen, None)
+                    if chunk is None:
+                        break
+                    yield {
+                        "event": "chunk",
+                        "data": orjson.dumps({"text": chunk}).decode(),
+                    }
+            finally:
+                gen.close()
         except (
             ValueError,
             RuntimeError,

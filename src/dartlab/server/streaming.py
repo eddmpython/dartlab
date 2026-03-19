@@ -499,24 +499,28 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             task = asyncio.ensure_future(asyncio.to_thread(_run_agent_stream))
 
-            while True:
-                ev = await queue.get()
-                if ev["event"] == "_done":
-                    break
-                if ev["event"] == "chunk":
-                    text = ev["text"]
-                    full_response_parts.append(text)
-                    yield {
-                        "event": "chunk",
-                        "data": orjson.dumps({"text": text}).decode(),
-                    }
-                else:
-                    yield {
-                        "event": ev["event"],
-                        "data": orjson.dumps(ev).decode(),
-                    }
+            try:
+                while True:
+                    ev = await queue.get()
+                    if ev["event"] == "_done":
+                        break
+                    if ev["event"] == "chunk":
+                        text = ev["text"]
+                        full_response_parts.append(text)
+                        yield {
+                            "event": "chunk",
+                            "data": orjson.dumps({"text": text}).decode(),
+                        }
+                    else:
+                        yield {
+                            "event": ev["event"],
+                            "data": orjson.dumps(ev).decode(),
+                        }
 
-            await task
+                await task
+            except BaseException:
+                task.cancel()
+                raise
         else:
 
             def _gen():

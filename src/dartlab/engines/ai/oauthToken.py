@@ -14,6 +14,7 @@ import json
 import os
 import secrets
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
@@ -210,9 +211,24 @@ def get_account_id() -> str | None:
 
 
 def _save_token(data: dict[str, Any]) -> None:
+    import tempfile
+
     _TOKEN_DIR.mkdir(parents=True, exist_ok=True)
     expires_in = data.get("expires_in", 3600)
     data["expires_at"] = time.time() + expires_in
-    _TOKEN_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    if os.name != "nt":
-        _TOKEN_FILE.chmod(0o600)
+    content = json.dumps(data, indent=2)
+    fd, tmp_path = tempfile.mkstemp(dir=_TOKEN_DIR, suffix=".tmp")
+    try:
+        os.write(fd, content.encode("utf-8"))
+        os.close(fd)
+        fd = -1
+        tmp = Path(tmp_path)
+        if os.name != "nt":
+            tmp.chmod(0o600)
+        tmp.replace(_TOKEN_FILE)
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        with suppress(OSError):
+            os.unlink(tmp_path)
+        raise

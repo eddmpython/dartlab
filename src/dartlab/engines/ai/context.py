@@ -460,7 +460,20 @@ def build_context_by_module(
 
     orig_verbose = config.verbose
     config.verbose = False
+    try:
+        return _build_compact_context_modules_inner(company, question, include, exclude, compact, orig_verbose)
+    finally:
+        config.verbose = orig_verbose
 
+
+def _build_compact_context_modules_inner(
+    company: Any,
+    question: str,
+    include: list[str] | None,
+    exclude: list[str] | None,
+    compact: bool,
+    orig_verbose: bool,
+) -> tuple[dict[str, str], list[str], str]:
     n_years = _detect_year_hint(question)
     if compact:
         n_years = min(n_years, 4)
@@ -589,7 +602,6 @@ def build_context_by_module(
                 continue
 
     if not fe_loaded:
-        config.verbose = orig_verbose
         text, inc = build_context(company, question, include, exclude, compact=True)
         modules_dict_fallback: dict[str, str] = {"_full": text}
         # _full fallback에서도 topics/insights 포함
@@ -616,7 +628,6 @@ def build_context_by_module(
         modules_dict["_insights"] = _insights_section
         included.append("_insights")
 
-    config.verbose = orig_verbose
     return modules_dict, included, "\n".join(header_parts)
 
 
