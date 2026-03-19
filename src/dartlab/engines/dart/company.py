@@ -3134,21 +3134,13 @@ class Company:
 
         # 직접 연결 수
         direct = sum(
-            1 for e in full["edges"]
-            if e["type"] != "person_shareholder"
-            and (e["source"] == code or e["target"] == code)
+            1
+            for e in full["edges"]
+            if e["type"] != "person_shareholder" and (e["source"] == code or e["target"] == code)
         )
-        outgoing = sum(
-            1 for e in full["edges"]
-            if e["type"] == "investment" and e["source"] == code
-        )
-        incoming = sum(
-            1 for e in full["edges"]
-            if e["type"] != "person_shareholder" and e["target"] == code
-        )
-        my_cycles = [
-            cy for cy in data["cycles"] if code in cy
-        ]
+        outgoing = sum(1 for e in full["edges"] if e["type"] == "investment" and e["source"] == code)
+        incoming = sum(1 for e in full["edges"] if e["type"] != "person_shareholder" and e["target"] == code)
+        my_cycles = [cy for cy in data["cycles"] if code in cy]
 
         rows = [
             ("그룹", group if not is_independent else f"{group} (독립)"),
@@ -3163,20 +3155,19 @@ class Company:
 
     def _networkMembers(self, data: dict, code: str, group: str) -> pl.DataFrame:
         """같은 그룹 계열사 목록."""
-        members = [
-            n for n in data["all_node_ids"]
-            if data["code_to_group"].get(n) == group
-        ]
+        members = [n for n in data["all_node_ids"] if data["code_to_group"].get(n) == group]
         rows = []
         for m in sorted(members):
             meta = data["listing_meta"].get(m, {})
-            rows.append({
-                "종목코드": m,
-                "회사명": meta.get("name", m),
-                "시장": meta.get("market", ""),
-                "업종": meta.get("industry", ""),
-                "자기": m == code,
-            })
+            rows.append(
+                {
+                    "종목코드": m,
+                    "회사명": meta.get("name", m),
+                    "시장": meta.get("market", ""),
+                    "업종": meta.get("industry", ""),
+                    "자기": m == code,
+                }
+            )
         return pl.DataFrame(rows)
 
     def _networkEdges(self, full: dict, code: str) -> pl.DataFrame:
@@ -3189,29 +3180,43 @@ class Company:
             if e["source"] == code:
                 target = e["target"]
                 node = node_map.get(target)
-                rows.append({
-                    "종목코드": target,
-                    "회사명": node["label"] if node else target,
-                    "유형": e["type"],
-                    "방향": "출자 →",
-                    "목적": e.get("purpose", ""),
-                    "지분율": e.get("ownershipPct"),
-                    "그룹": node["group"] if node else "",
-                })
+                rows.append(
+                    {
+                        "종목코드": target,
+                        "회사명": node["label"] if node else target,
+                        "유형": e["type"],
+                        "방향": "출자 →",
+                        "목적": e.get("purpose", ""),
+                        "지분율": e.get("ownershipPct"),
+                        "그룹": node["group"] if node else "",
+                    }
+                )
             elif e["target"] == code:
                 source = e["source"]
                 node = node_map.get(source)
-                rows.append({
-                    "종목코드": source,
-                    "회사명": node["label"] if node else source,
-                    "유형": e["type"],
-                    "방향": "← 피출자",
-                    "목적": e.get("purpose", ""),
-                    "지분율": e.get("ownershipPct"),
-                    "그룹": node["group"] if node else "",
-                })
+                rows.append(
+                    {
+                        "종목코드": source,
+                        "회사명": node["label"] if node else source,
+                        "유형": e["type"],
+                        "방향": "← 피출자",
+                        "목적": e.get("purpose", ""),
+                        "지분율": e.get("ownershipPct"),
+                        "그룹": node["group"] if node else "",
+                    }
+                )
         if not rows:
-            return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8, "유형": pl.Utf8, "방향": pl.Utf8, "목적": pl.Utf8, "지분율": pl.Float64, "그룹": pl.Utf8})
+            return pl.DataFrame(
+                schema={
+                    "종목코드": pl.Utf8,
+                    "회사명": pl.Utf8,
+                    "유형": pl.Utf8,
+                    "방향": pl.Utf8,
+                    "목적": pl.Utf8,
+                    "지분율": pl.Float64,
+                    "그룹": pl.Utf8,
+                }
+            )
         return pl.DataFrame(rows).sort("지분율", descending=True, nulls_last=True)
 
     def _networkCycles(self, data: dict, code: str) -> pl.DataFrame:
@@ -3235,16 +3240,27 @@ class Company:
         for n in ego["nodes"]:
             if n["type"] != "company":
                 continue
-            rows.append({
-                "종목코드": n["id"],
-                "회사명": n["label"],
-                "그룹": n["group"],
-                "업종": n.get("industry", ""),
-                "연결수": n["degree"],
-                "자기": n["id"] == code,
-            })
+            rows.append(
+                {
+                    "종목코드": n["id"],
+                    "회사명": n["label"],
+                    "그룹": n["group"],
+                    "업종": n.get("industry", ""),
+                    "연결수": n["degree"],
+                    "자기": n["id"] == code,
+                }
+            )
         if not rows:
-            return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8, "그룹": pl.Utf8, "업종": pl.Utf8, "연결수": pl.Int64, "자기": pl.Boolean})
+            return pl.DataFrame(
+                schema={
+                    "종목코드": pl.Utf8,
+                    "회사명": pl.Utf8,
+                    "그룹": pl.Utf8,
+                    "업종": pl.Utf8,
+                    "연결수": pl.Int64,
+                    "자기": pl.Boolean,
+                }
+            )
         df = pl.DataFrame(rows)
         return df.sort("연결수", descending=True)
 

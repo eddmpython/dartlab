@@ -80,17 +80,19 @@ def network():
     for e in full["edges"]:
         src = node_map.get(e["source"])
         tgt = node_map.get(e["target"])
-        rows.append({
-            "source": e["source"],
-            "sourceName": src["label"] if src else e["source"],
-            "sourceGroup": src["group"] if src else "",
-            "target": e["target"],
-            "targetName": tgt["label"] if tgt else e["target"],
-            "targetGroup": tgt["group"] if tgt else "",
-            "type": e["type"],
-            "purpose": e.get("purpose", ""),
-            "ownershipPct": e.get("ownershipPct"),
-        })
+        rows.append(
+            {
+                "source": e["source"],
+                "sourceName": src["label"] if src else e["source"],
+                "sourceGroup": src["group"] if src else "",
+                "target": e["target"],
+                "targetName": tgt["label"] if tgt else e["target"],
+                "targetGroup": tgt["group"] if tgt else "",
+                "type": e["type"],
+                "purpose": e.get("purpose", ""),
+                "ownershipPct": e.get("ownershipPct"),
+            }
+        )
     return pl.DataFrame(rows)
 
 
