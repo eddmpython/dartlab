@@ -229,6 +229,7 @@ _PIPELINE_MAP: dict[str, list] = {
     "배당": [_run_dividend_analysis],
     "리스크": [_run_risk_analysis],
     "투자": [_run_growth_analysis],
+    "지배구조": [],  # scan runner가 L2에서 주입
     "종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis],
     "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
     "사업": [],  # show_topic 도구 사용 안내 — insight만 주입
@@ -262,8 +263,18 @@ _Q_TYPES_NEED_RANK = frozenset(
 )
 
 
+_Q_TYPES_NEED_SCAN = frozenset(
+    {
+        "지배구조",
+        "리스크",
+        "종합",
+        "투자",
+    }
+)
+
+
 def _run_l2_engines(company: Any, q_type: str) -> str | None:
-    """L2 엔진(sector, insight, rank) 결과를 분석 패키지로 조립."""
+    """L2 엔진(sector, insight, rank, scan) 결과를 분석 패키지로 조립."""
     stockCode = getattr(company, "stockCode", None)
     if not stockCode:
         return None
@@ -283,6 +294,11 @@ def _run_l2_engines(company: Any, q_type: str) -> str | None:
         rank_md = _run_rank(stockCode)
         if rank_md:
             parts.append(rank_md)
+
+    if q_type in _Q_TYPES_NEED_SCAN:
+        scan_md = _run_scan(company, q_type)
+        if scan_md:
+            parts.append(scan_md)
 
     if not parts:
         return None
@@ -425,3 +441,53 @@ def _run_rank(stockCode: str) -> str | None:
     except _PIPELINE_ERRORS as e:
         _log.debug("rank engine error: %s", e)
         return None
+
+
+# ══════════════════════════════════════
+# scan 엔진 통합
+# ══════════════════════════════════════
+
+_SCAN_AXES_BY_QTYPE: dict[str, list[str]] = {
+    "지배구조": ["governance", "capital"],
+    "리스크": ["debt", "governance"],
+    "종합": ["governance", "debt", "capital", "workforce"],
+    "투자": ["capital", "debt"],
+}
+
+
+def _run_scan(company: Any, q_type: str) -> str | None:
+    """scan 엔진: 질문 유형에 맞는 축만 조회하여 컨텍스트로 주입."""
+    axes = _SCAN_AXES_BY_QTYPE.get(q_type, [])
+    if not axes:
+        return None
+
+    parts: list[str] = []
+    _LABELS = {
+        "governance": "지배구조 스캔",
+        "workforce": "인력/급여 스캔",
+        "capital": "주주환원 스캔",
+        "debt": "부채구조 스캔",
+    }
+
+    for axis in axes:
+        method = getattr(company, axis, None)
+        if method is None:
+            continue
+        try:
+            result = method()
+            if result is None or not isinstance(result, pl.DataFrame) or result.is_empty():
+                continue
+            label = _LABELS.get(axis, axis)
+            lines = [f"### {label}"]
+            for col in result.columns:
+                val = result[col][0]
+                if val is not None:
+                    lines.append(f"- **{col}**: {val}")
+            if len(lines) > 1:
+                parts.append("\n".join(lines))
+        except _PIPELINE_ERRORS:
+            continue
+
+    if not parts:
+        return None
+    return "\n\n".join(parts)

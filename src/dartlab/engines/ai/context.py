@@ -844,6 +844,15 @@ _TOPIC_MAP: dict[str, list[str]] = {
     "세그먼트": ["segment"],
     "ESG": ["employee", "boardOfDirectors", "sanction", "internalControl"],
     "신용등급": ["companyOverview"],
+    # ── 스캔 ──
+    "거버넌스": ["majorHolder", "executive", "boardOfDirectors", "audit"],
+    "지배구조": ["majorHolder", "executive", "boardOfDirectors", "audit"],
+    "인력현황": ["employee", "executivePay"],
+    "주주환원": ["dividend", "shareCapital", "capitalChange"],
+    "부채위험": ["BS", "bond", "contingentLiability"],
+    "부채구조": ["BS", "bond", "contingentLiability"],
+    "종합진단": ["BS", "IS", "CF", "fsSummary", "dividend", "majorHolder", "audit", "employee"],
+    "스캔": ["BS", "IS", "dividend", "majorHolder", "audit", "employee"],
     "전반": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
     "종합": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
     # ── 영문 동의어 ──

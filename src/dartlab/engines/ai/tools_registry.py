@@ -1918,4 +1918,69 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
         },
     )
 
+    # ── scan: 전수 스캔 분석 (governance/workforce/capital/debt) ──
+
+    def get_scan_data(axis: str = "all") -> str:
+        """scan 엔진으로 기업의 종합 스캔 결과를 조회."""
+        if company is None:
+            return json.dumps({"error": "회사를 먼저 선택하세요."}, ensure_ascii=False)
+
+        _SCAN_METHODS = {
+            "governance": "governance",
+            "workforce": "workforce",
+            "capital": "capital",
+            "debt": "debt",
+        }
+
+        if axis == "all":
+            parts: list[str] = []
+            for key, method_name in _SCAN_METHODS.items():
+                method = getattr(company, method_name, None)
+                if method is None:
+                    continue
+                try:
+                    result = method()
+                    if result is not None and isinstance(result, pl.DataFrame) and not result.is_empty():
+                        parts.append(f"### {key}\n{_df_to_md(result)}")
+                except Exception:
+                    continue
+            return "\n\n".join(parts) if parts else "(scan 데이터 없음)"
+
+        method_name = _SCAN_METHODS.get(axis)
+        if method_name is None:
+            return f"알 수 없는 축: {axis}. 가능한 값: all, governance, workforce, capital, debt"
+
+        method = getattr(company, method_name, None)
+        if method is None:
+            return f"{axis} 스캔을 지원하지 않습니다."
+        try:
+            result = method()
+            if result is None or (isinstance(result, pl.DataFrame) and result.is_empty()):
+                return f"({axis} 데이터 없음)"
+            return _format_tool_value(result, max_rows=5)
+        except Exception as e:
+            return f"{axis} 스캔 실패: {e}"
+
+    register_tool(
+        "get_scan_data",
+        get_scan_data,
+        "기업의 종합 스캔 분석을 조회합니다. "
+        "거버넌스(지분율/사외이사/보수비율/감사의견 등급), "
+        "인력(직원수/평균급여/성장률/인건비부담), "
+        "주주환원(배당/자사주/증자 → 환원형/중립/희석형), "
+        "부채구조(부채비율/ICR → 안전/관찰/주의/고위험). "
+        "사용자가 '거버넌스', '인력현황', '주주환원', '부채위험', '종합진단' 등을 물을 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "axis": {
+                    "type": "string",
+                    "enum": ["all", "governance", "workforce", "capital", "debt"],
+                    "description": "스캔 축. all=전체, governance=지배구조, workforce=인력, capital=주주환원, debt=부채",
+                    "default": "all",
+                },
+            },
+        },
+    )
+
     return get_default_tool_runtime()

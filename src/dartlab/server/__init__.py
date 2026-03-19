@@ -1418,6 +1418,57 @@ def api_company_network(code: str, hops: int = 1):
         return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
 
 
+@app.get("/api/company/{code}/scan/{axis}")
+def api_company_scan(code: str, axis: str):
+    """scan 엔진 — governance/workforce/capital/debt/all."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    valid_axes = {"governance", "workforce", "capital", "debt"}
+
+    if axis == "all":
+        results = {}
+        for ax in valid_axes:
+            method = getattr(c, ax, None)
+            if method is None:
+                continue
+            try:
+                df = method()
+                if df is not None and not df.is_empty():
+                    results[ax] = _serialize_payload(df)
+            except _HANDLED_API_ERRORS:
+                continue
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "available": bool(results),
+            "scans": results,
+        }
+
+    if axis not in valid_axes:
+        raise HTTPException(status_code=400, detail=f"유효한 축: {', '.join(sorted(valid_axes))}, all")
+
+    method = getattr(c, axis, None)
+    if method is None:
+        return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+
+    try:
+        df = method()
+        if df is None or df.is_empty():
+            return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "available": True,
+            "scanType": axis,
+            "payload": _serialize_payload(df),
+        }
+    except _HANDLED_API_ERRORS:
+        return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+
+
 @app.get("/api/company/{code}/diff")
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""

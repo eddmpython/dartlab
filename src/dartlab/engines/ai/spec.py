@@ -11,6 +11,7 @@ from typing import Any
 _ENGINE_SPECS = [
     "dartlab.engines.dart.finance.spec",
     "dartlab.engines.dart.report.spec",
+    "dartlab.engines.dart.scan.spec",
     "dartlab.engines.sector.spec",
     "dartlab.engines.insight.spec",
     "dartlab.engines.rank.spec",
