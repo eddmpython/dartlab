@@ -18,7 +18,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="startMarimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -48,7 +48,7 @@ c.topics                        # topic list with source, blocks, periods
 c.show("companyOverview")       # open one topic
 c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
 c.BS                            # balance sheet
-c.ratios                        # ratio time series (항목 × period)
+c.ratios                        # ratio time series
 c.insights                      # 7-area grades (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -64,12 +64,33 @@ us.ratios
 uv add dartlab
 ```
 
+**No data setup required.** When you create a `Company` for the first time, dartlab automatically downloads the required data from GitHub Releases (DART) or SEC API (EDGAR finance). The second run loads instantly from local cache.
+
+```
+[dartlab] 005930 (DART 공시 문서 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ DART 공시 문서 데이터 다운로드 완료 (542KB)
+[dartlab] 005930 (재무 숫자 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
+```
+
 AI interface:
 
 ```bash
 uv add "dartlab[ai]"
 uv run dartlab ai
 ```
+
+## Try It Now
+
+Interactive Marimo notebooks let you explore real company data immediately — no code to write:
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # Korean company (DART)
+marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
+```
+
+Or open the [Colab quickstart notebook](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) in your browser.
 
 ## Quick Start
 
@@ -100,7 +121,7 @@ c.show("companyOverview")   # → sections-based text + tables
 c.show("dividend")          # → report DataFrame (all quarters)
 
 # compare specific periods
-c.show("IS", period=["2024Q4", "2023Q4"])  # period × item
+c.show("IS", period=["2024Q4", "2023Q4"])
 
 # trace — why a topic came from docs, finance, or report
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -229,14 +250,24 @@ c.report.extract("배당")  # report engine directly
 
 See [docs/stability.md](docs/stability.md).
 
-## Try It Now
+## Data
 
-Run the interactive Marimo notebooks to explore real company data immediately:
+DartLab ships with pre-built datasets via GitHub Releases. Data is continuously updated as new filings are collected.
 
-```bash
-uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # Korean company (DART)
-marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
+| Dataset | Coverage | Source |
+|---------|----------|--------|
+| DART docs | 260+ companies | Korean disclosure text + tables |
+| DART finance | 2,700+ companies | XBRL financial statements |
+| DART report | 2,700+ companies | Structured disclosure APIs |
+| EDGAR docs | 970+ companies | 10-K/10-Q sections |
+| EDGAR finance | On-demand | SEC XBRL facts (auto-fetched from SEC API) |
+
+```python
+# Bulk download (optional — downloads all companies at once)
+from dartlab.core.dataLoader import downloadAll
+downloadAll("docs")       # DART disclosure documents
+downloadAll("finance")    # DART financial statements
+downloadAll("report")     # DART structured reports
 ```
 
 ## Documentation
@@ -247,7 +278,6 @@ Docs are continuously updated with new content.
 - Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API overview: https://eddmpython.github.io/dartlab/docs/api/overview
-- Blog: https://eddmpython.github.io/dartlab/blog/
 
 ### Blog
 
@@ -256,28 +286,6 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 - **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
 - **Report Reading** — practical guide to reading audit reports, preliminary earnings, restatements
 - **Financial Interpretation** — interpreting financial statements, ratios, and disclosure signals
-
-## Data
-
-DartLab ships with pre-built datasets via GitHub Releases:
-
-| Dataset | Coverage | Source |
-|---------|----------|--------|
-| DART docs | 260+ companies | Korean disclosure text + tables |
-| DART finance | 2,700+ companies | XBRL financial statements |
-| DART report | 2,700+ companies | Structured disclosure APIs |
-| EDGAR docs | 970+ companies | 10-K/10-Q sections |
-| EDGAR finance | On-demand | SEC XBRL facts (auto-fetched from SEC API) |
-
-**Auto-download**: No manual setup required. When you create a `Company("005930")` or `Company("AAPL")` for the first time, dartlab automatically downloads the required data. DART data comes from GitHub Releases; EDGAR finance data is fetched directly from the SEC EDGAR API.
-
-```python
-# Bulk download (optional — downloads all companies at once)
-from dartlab.core.dataLoader import downloadAll
-downloadAll("docs")       # DART disclosure documents
-downloadAll("finance")    # DART financial statements
-downloadAll("report")     # DART structured reports
-```
 
 ## Contributing
 

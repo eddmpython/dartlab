@@ -18,7 +18,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
+<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="startMarimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
 </p>
 
 <p>
@@ -48,7 +48,7 @@ c.topics                        # topic 목록 (source, blocks, periods)
 c.show("companyOverview")       # topic 하나 열기
 c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
 c.BS                            # 재무상태표
-c.ratios                        # 재무비율 시계열 (항목 × period)
+c.ratios                        # 재무비율 시계열
 c.insights                      # 7영역 등급 (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -64,12 +64,33 @@ us.ratios
 uv add dartlab
 ```
 
+**데이터 설정 불필요.** `Company`를 처음 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 재무 데이터는 SEC API에서 직접 가져온다. 두 번째 실행부터는 로컬 캐시를 사용해 즉시 로드된다.
+
+```
+[dartlab] 005930 (DART 공시 문서 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ DART 공시 문서 데이터 다운로드 완료 (542KB)
+[dartlab] 005930 (재무 숫자 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
+[dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
+```
+
 AI 인터페이스:
 
 ```bash
 uv add "dartlab[ai]"
 uv run dartlab ai
 ```
+
+## 바로 시작하기
+
+Marimo 인터랙티브 노트북으로 실제 기업 데이터를 바로 탐색할 수 있다 — 코드 작성 불필요:
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
+marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
+```
+
+또는 브라우저에서 [Colab 빠른 시작 노트북](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)을 연다.
 
 ## 빠른 시작
 
@@ -100,7 +121,7 @@ c.show("companyOverview")   # → sections 기반 텍스트 + 테이블
 c.show("dividend")          # → report DataFrame (전 분기)
 
 # 특정 기간 비교
-c.show("IS", period=["2024Q4", "2023Q4"])  # 기간 × 항목
+c.show("IS", period=["2024Q4", "2023Q4"])
 
 # trace — docs/finance/report 중 어떤 source가 채택됐는지
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -229,14 +250,24 @@ c.report.extract("배당")  # report 엔진 직접
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
 
-## 바로 시작하기
+## 데이터
 
-Marimo 인터랙티브 노트북으로 실제 기업 데이터를 바로 탐색할 수 있다:
+DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다. 데이터는 새 공시가 수집될 때마다 지속 업데이트된다.
 
-```bash
-uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
-marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
+| 데이터셋 | 규모 | 출처 |
+|----------|------|------|
+| DART docs | 260+ 기업 | 한국 공시 텍스트 + 테이블 |
+| DART finance | 2,700+ 기업 | XBRL 재무제표 |
+| DART report | 2,700+ 기업 | 정형 공시 API |
+| EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
+| EDGAR finance | 주문형 | SEC XBRL facts (SEC API 자동 수집) |
+
+```python
+# 전체 다운로드 (선택사항 — 전 종목 일괄 다운로드)
+from dartlab.core.dataLoader import downloadAll
+downloadAll("docs")       # DART 공시 문서
+downloadAll("finance")    # DART 재무제표
+downloadAll("report")     # DART 정형 보고서
 ```
 
 ## 문서
@@ -247,7 +278,6 @@ marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
 - Sections 가이드: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - 빠른 시작: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API 개요: https://eddmpython.github.io/dartlab/docs/api/overview
-- 블로그: https://eddmpython.github.io/dartlab/blog/
 
 ### 블로그
 
@@ -256,28 +286,6 @@ marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
 - **공시 제도** — DART/EDGAR 공시의 구조와 작동 원리
 - **보고서 읽기** — 감사보고서, 잠정실적, 재작성 등 실전 가이드
 - **재무 해석** — 재무제표, 비율, 공시 신호 해석
-
-## 데이터
-
-DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다.
-
-| 데이터셋 | 규모 | 출처 |
-|----------|------|------|
-| DART docs | 260+ 기업 | 한국 공시 텍스트 + 테이블 |
-| DART finance | 2,700+ 기업 | XBRL 재무제표 |
-| DART report | 2,700+ 기업 | 정형 공시 API |
-| EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
-| EDGAR finance | 주문형 | SEC XBRL facts (SEC API 자동 수집) |
-
-**자동 다운로드**: 별도 설정 불필요. `Company("005930")` 또는 `Company("AAPL")`을 처음 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 재무 데이터는 SEC EDGAR API에서 직접 가져온다.
-
-```python
-# 전체 다운로드 (선택사항 — 전 종목 일괄 다운로드)
-from dartlab.core.dataLoader import downloadAll
-downloadAll("docs")       # DART 공시 문서
-downloadAll("finance")    # DART 재무제표
-downloadAll("report")     # DART 정형 보고서
-```
 
 ## 기여
 
