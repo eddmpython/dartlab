@@ -42,7 +42,6 @@ from dartlab.core.kindList import (
 # fsSummary/statements는 내부 디스패치 전용 (BS/IS/CF property가 statements를 호출)
 from dartlab.core.registry import getEntry as _getEntry
 from dartlab.core.registry import getModuleEntries as _getModuleEntries
-from dartlab.engines.dart.docs.notes import Notes
 
 # ── 분리된 모듈-레벨 헬퍼 re-export (외부 import 경로 유지) ──
 from dartlab.engines.dart._diff_helpers import (  # noqa: F401
@@ -56,6 +55,10 @@ from dartlab.engines.dart._diff_helpers import (  # noqa: F401
     _tableMetrics,
     _textSimilarity,
 )
+
+# ── 분리된 accessor 클래스 re-export (외부 import 경로 유지) ──
+from dartlab.engines.dart._docs_accessor import _DocsAccessor  # noqa: F401
+from dartlab.engines.dart._finance_accessor import _FinanceAccessor  # noqa: F401
 from dartlab.engines.dart._finance_helpers import (  # noqa: F401
     _RATIO_TEMPLATE_FIELDS,
     _financeCisAnnual,
@@ -68,19 +71,16 @@ from dartlab.engines.dart._finance_helpers import (  # noqa: F401
     _sceToDataFrame,
     _shouldFallbackToAnnualRatios,
 )
+from dartlab.engines.dart._profile_accessor import _ProfileAccessor  # noqa: F401
+from dartlab.engines.dart._report_accessor import _ReportAccessor  # noqa: F401
+from dartlab.engines.dart._sections_source import _SectionsSource  # noqa: F401
 from dartlab.engines.dart._utils import (  # noqa: F401
     _ensureData,
     _import_and_call,
     _isPeriodColumn,
     _shapeString,
 )
-
-# ── 분리된 accessor 클래스 re-export (외부 import 경로 유지) ──
-from dartlab.engines.dart._docs_accessor import _DocsAccessor  # noqa: F401
-from dartlab.engines.dart._finance_accessor import _FinanceAccessor  # noqa: F401
-from dartlab.engines.dart._profile_accessor import _ProfileAccessor  # noqa: F401
-from dartlab.engines.dart._report_accessor import _ReportAccessor  # noqa: F401
-from dartlab.engines.dart._sections_source import _SectionsSource  # noqa: F401
+from dartlab.engines.dart.docs.notes import Notes
 
 _MODULE_REGISTRY: list[tuple[str, str, str, Any]] = [
     ("dartlab.engines.dart.docs.finance.summary", "fsSummary", "요약재무정보", None),

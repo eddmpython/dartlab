@@ -119,7 +119,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 }
 
             # Light mode용 간략 회사 컨텍스트 (topics + insights 요약)
-            light_company_ctx = f"\n\n## 현재 대화 종목\n"
+            light_company_ctx = "\n\n## 현재 대화 종목\n"
             light_company_ctx += f"사용자가 **{c.corpName}** ({c.stockCode})에 대해 이야기하고 있습니다.\n"
             # insights 등급 1줄 요약
             try:

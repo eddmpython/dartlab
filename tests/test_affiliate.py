@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 from collections import Counter
+
+import pytest
 
 # 느린 파이프라인 → 모듈 수준에서 한번만 실행
 _data = None

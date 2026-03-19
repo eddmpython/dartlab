@@ -10,8 +10,6 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.engines.dart._utils import _isPeriodColumn
-
 _RATIO_CATEGORY_LABELS: dict[str, str] = {
     "profitability": "수익성",
     "stability": "안정성",

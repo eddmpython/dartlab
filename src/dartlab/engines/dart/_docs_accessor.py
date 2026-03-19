@@ -5,7 +5,7 @@ company.py에서 분리된 accessor 클래스.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import polars as pl
 

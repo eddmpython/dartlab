@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 
 import polars as pl
 
 from dartlab.engines.dart.affiliate.scanner import _normalize_company_name
-
 
 # ── investedCompany 엣지 ───────────────────────────────────
 
