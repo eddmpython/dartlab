@@ -7,13 +7,13 @@ import polars as pl
 _TOPIC_RE = re.compile(r"^(10-K|10-Q|20-F)::")
 
 
-def sortPeriods(periods: list[str]) -> list[str]:
+def sortPeriods(periods: list[str], *, descending: bool = False) -> list[str]:
     def key(period: str) -> tuple[int, int]:
         if "Q" not in period:
             return int(period), 4
         return int(period[:4]), int(period[-1])
 
-    return sorted(periods, key=key)
+    return sorted(periods, key=key, reverse=descending)
 
 
 def sortTopics(topics: list[str], topicOrder: dict[str, int]) -> list[str]:

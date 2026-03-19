@@ -705,11 +705,14 @@ def test_edgar_sections_pipeline_builds_topic_period_view(tmp_path, monkeypatch)
     assert df is not None
     assert "topic" in df.columns
     assert "blockType" in df.columns
-    assert "2024" in df.columns
+    # 연간 보고서는 Q4 라벨로 통일 (2024 → 2024Q4)
+    assert "2024Q4" in df.columns or "2024" in df.columns
     assert "2024Q1" in df.columns
     assert "10-K::item1Business" in df["topic"].to_list()
-    periodCols = [c for c in df.columns if c not in ("topic", "blockType")]
-    assert periodCols == sortPeriods(periodCols)
+    metaCols = {"topic", "blockType", "blockOrder", "textNodeType", "textLevel", "textPath"}
+    periodCols = [c for c in df.columns if c not in metaCols]
+    # 기간 정렬은 descending (최신 먼저)
+    assert periodCols == sortPeriods(periodCols, descending=True)
 
 
 def test_edgar_sections_pipeline_supports_form_native_structured_topics(tmp_path, monkeypatch):

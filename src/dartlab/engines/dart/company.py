@@ -2924,11 +2924,12 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        docsSec = self.docs.sections
-        if docsSec is None:
+        sectionsSource = self.docs.sections
+        if sectionsSource is None:
             self._cache[cacheKey] = None
             return None
 
+        docsSec = sectionsSource.raw
         periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
         chapterMap = self._chapterMap()
 
@@ -3042,10 +3043,17 @@ class Company:
                     result_frames.insert(insertIdx, chOrphans)
 
         if not result_frames:
-            self._cache[cacheKey] = docsSec
-            return docsSec
+            from dartlab.engines.dart.docs.sections import reorderPeriodColumns
+
+            result = reorderPeriodColumns(docsSec, descending=True, annualAsQ4=True)
+            self._cache[cacheKey] = result
+            return result
 
         merged = pl.concat(result_frames, how="diagonal_relaxed")
+
+        from dartlab.engines.dart.docs.sections import reorderPeriodColumns
+
+        merged = reorderPeriodColumns(merged, descending=True, annualAsQ4=True)
         self._cache[cacheKey] = merged
         return merged
 

@@ -4,23 +4,26 @@ source-native item/title을 유지한 form-native topic x period 뷰를 만든�
 topic namespace는 `form_type::topicId`를 사용한다.
 
 반환 형식:
-    (topic, blockType)(행) × period(열) DataFrame
-    ┌───────────────────────────┬───────────┬──────────┬──────────┐
-    │ topic                     │ blockType │ 2024     │ 2023     │
-    ├───────────────────────────┼───────────┼──────────┼──────────┤
-    │ 10-K::item1Business       │ text      │ 텍스트   │ 텍스트   │
-    │ 10-K::item1Business       │ table     │ 테이블   │ null     │
-    │ 10-K::item7Mdna           │ text      │ 텍스트   │ 텍스트   │
-    └───────────────────────────┴───────────┴──────────┴──────────┘
+    (topic, blockType, blockOrder, textNodeType, textLevel, textPath)(행) × period(열) DataFrame
+    ┌───────────────────────────┬───────────┬────────────┬──────────────┬───────────┬──────────┬──────────┐
+    │ topic                     │ blockType │ blockOrder │ textNodeType │ textLevel │ textPath │ 2024     │
+    ├───────────────────────────┼───────────┼────────────┼──────────────┼───────────┼──────────┼──────────┤
+    │ 10-K::item1Business       │ text      │ 0          │ heading      │ 1         │ Products │ Products │
+    │ 10-K::item1Business       │ text      │ 1          │ body         │ 0         │ Products │ iPhone…  │
+    │ 10-K::item1Business       │ table     │ 2          │ null         │ null      │ null     │ 테이블   │
+    └───────────────────────────┴───────────┴────────────┴──────────────┴───────────┴──────────┴──────────┘
 """
 
 from __future__ import annotations
+
+import re
 
 import polars as pl
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectEdgarReport
 from dartlab.engines.edgar.docs.sections.mapper import mapSectionTitle
+from dartlab.engines.edgar.docs.sections.textStructure import parseTextStructure
 from dartlab.engines.edgar.docs.sections.views import sortPeriods
 
 
@@ -105,9 +108,9 @@ def sections(stockCode: str, *, sinceYear: int | None = None) -> pl.DataFrame | 
 
     periods = sorted(
         [period for period in df["period_key"].drop_nulls().unique().to_list() if period],
-        reverse=False,
+        reverse=True,
     )
-    periods = sortPeriods(periods)
+    periods = sortPeriods(periods, descending=True)
     if not periods:
         return None
 
@@ -137,20 +140,104 @@ def sections(stockCode: str, *, sinceYear: int | None = None) -> pl.DataFrame | 
 
     sortedKeys = sorted(topicOrder.keys(), key=lambda k: topicOrder[k])
 
-    dfRows: list[dict[str, str | None]] = []
-    for key in sortedKeys:
-        topic, blockType = key
-        row: dict[str, str | None] = {"topic": topic, "blockType": blockType}
-        for period in periods:
-            row[period] = topicMap[key].get(period)
-        dfRows.append(row)
+    dfRows: list[dict[str, str | int | None]] = []
+    blockOrderCounter: dict[str, int] = {}
 
-    remaining = set(topicMap.keys()) - set(topicOrder.keys())
-    for key in sorted(remaining):
+    allKeys = list(sortedKeys) + sorted(set(topicMap.keys()) - set(topicOrder.keys()))
+    for key in allKeys:
         topic, blockType = key
-        row: dict[str, str | None] = {"topic": topic, "blockType": blockType}
-        for period in periods:
-            row[period] = topicMap[key].get(period)
-        dfRows.append(row)
+        periodTexts = {p: topicMap[key].get(p) for p in periods}
 
-    return pl.DataFrame(dfRows)
+        if blockType == "table":
+            bo = blockOrderCounter.get(topic, 0)
+            blockOrderCounter[topic] = bo + 1
+            row: dict[str, str | int | None] = {
+                "topic": topic,
+                "blockType": "table",
+                "blockOrder": bo,
+                "textNodeType": None,
+                "textLevel": None,
+                "textPath": None,
+            }
+            for p in periods:
+                row[p] = periodTexts.get(p)
+            dfRows.append(row)
+            continue
+
+        # text → heading/body 분리
+        # 최신 period의 텍스트로 구조를 결정하고, 각 period의 텍스트를 같은 구조로 분배
+        refText = None
+        for p in periods:
+            if periodTexts.get(p):
+                refText = periodTexts[p]
+                break
+        if refText is None:
+            continue
+
+        structuredRows = parseTextStructure(refText, topic=topic)
+        if not structuredRows:
+            bo = blockOrderCounter.get(topic, 0)
+            blockOrderCounter[topic] = bo + 1
+            row = {
+                "topic": topic,
+                "blockType": "text",
+                "blockOrder": bo,
+                "textNodeType": "body",
+                "textLevel": 0,
+                "textPath": None,
+            }
+            for p in periods:
+                row[p] = periodTexts.get(p)
+            dfRows.append(row)
+            continue
+
+        # 각 기간의 텍스트도 같은 파서로 분리
+        periodStructured: dict[str, list[dict]] = {}
+        for p in periods:
+            t = periodTexts.get(p)
+            if t:
+                periodStructured[p] = parseTextStructure(t, topic=topic)
+
+        for rowIdx, sRow in enumerate(structuredRows):
+            bo = blockOrderCounter.get(topic, 0)
+            blockOrderCounter[topic] = bo + 1
+            outRow: dict[str, str | int | None] = {
+                "topic": topic,
+                "blockType": "text",
+                "blockOrder": bo,
+                "textNodeType": sRow["textNodeType"],
+                "textLevel": sRow["textLevel"],
+                "textPath": sRow["textPath"],
+            }
+            for p in periods:
+                pRows = periodStructured.get(p)
+                if pRows and rowIdx < len(pRows):
+                    outRow[p] = pRows[rowIdx]["text"]
+                else:
+                    outRow[p] = None
+            dfRows.append(outRow)
+
+    # 스키마 명시 — period 컬럼은 Utf8
+    schema: dict[str, pl.DataType] = {
+        "topic": pl.Utf8,
+        "blockType": pl.Utf8,
+        "blockOrder": pl.Int64,
+        "textNodeType": pl.Utf8,
+        "textLevel": pl.Int64,
+        "textPath": pl.Utf8,
+    }
+    for p in periods:
+        schema[p] = pl.Utf8
+    result = pl.DataFrame(dfRows, schema=schema)
+
+    # 연간(YYYY) → Q4로 통일, 최신 먼저
+    renameMap: dict[str, str] = {}
+    for col in result.columns:
+        if re.fullmatch(r"\d{4}", col):
+            q4Label = f"{col}Q4"
+            if q4Label not in result.columns:
+                renameMap[col] = q4Label
+    if renameMap:
+        result = result.rename(renameMap)
+
+    return result
