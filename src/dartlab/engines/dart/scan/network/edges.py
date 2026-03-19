@@ -6,7 +6,7 @@ import re
 
 import polars as pl
 
-from dartlab.engines.dart.affiliate.scanner import _normalize_company_name
+from dartlab.engines.dart.scan.network.scanner import _normalize_company_name
 
 # ── investedCompany 엣지 ───────────────────────────────────
 

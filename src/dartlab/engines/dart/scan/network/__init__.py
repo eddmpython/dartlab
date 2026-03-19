@@ -13,24 +13,24 @@ import time
 
 import polars as pl
 
-from dartlab.engines.dart.affiliate.classifier import classify_balanced
-from dartlab.engines.dart.affiliate.cycles import detect_cycles
-from dartlab.engines.dart.affiliate.edges import (
+from dartlab.engines.dart.scan.network.classifier import classify_balanced
+from dartlab.engines.dart.scan.network.cycles import detect_cycles
+from dartlab.engines.dart.scan.network.edges import (
     build_holder_edges,
     build_invest_edges,
     deduplicate_edges,
 )
-from dartlab.engines.dart.affiliate.export import (
+from dartlab.engines.dart.scan.network.export import (
     export_ego,
     export_full,
     export_overview,
 )
-from dartlab.engines.dart.affiliate.scanner import (
+from dartlab.engines.dart.scan.network.scanner import (
     load_listing,
     scan_invested,
     scan_major_holders,
 )
-from dartlab.engines.dart.affiliate.scanner import (
+from dartlab.engines.dart.scan.network.scanner import (
     scan_affiliate_docs as _scan_affiliate_docs_fn,
 )
 

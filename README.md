@@ -158,6 +158,55 @@ c.insights.anomalies            # → outliers and red flags
 
 7 analysis areas: performance, profitability, health, cashflow, governance, risk, opportunity.
 
+### Network — Affiliate Map
+
+Visualize corporate ownership networks — who invests in whom, group structure, and circular ownership:
+
+```python
+c = dartlab.Company("005930")
+
+# interactive vis.js graph in browser
+c.network().show()           # ego view (1 hop)
+c.network(hops=2).show()     # 2-hop neighborhood
+
+# DataFrame views
+c.network("members")     # group affiliates
+c.network("edges")       # investment/shareholder connections
+c.network("cycles")      # circular ownership paths
+c.network("peers")       # ego subgraph as DataFrame
+
+# full market network (all listed companies)
+dartlab.network().show()
+```
+
+The browser view supports dark/light themes, company search, group filtering, hover tooltips with ownership percentages, and click-to-highlight connected companies.
+
+### Market Scan
+
+Scan the full listed market by theme, then zoom back into a single company row when needed:
+
+```python
+c = dartlab.Company("005930")
+
+# one company
+c.governance()
+c.workforce()
+c.capital()
+c.debt()
+
+# market summary
+c.governance("market")   # by market summary
+c.governance("all")      # full market DataFrame
+
+# module-level full scans
+dartlab.governance()
+dartlab.workforce()
+dartlab.capital()
+dartlab.debt()
+```
+
+These scans combine report + finance parquet data into market-wide DataFrames for governance quality, workforce/pay trends, shareholder return behavior, and debt risk.
+
 ### EDGAR (US)
 
 Same `Company` interface, different data source:

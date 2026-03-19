@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-03-20
+
+### Added
+
+- **시장 전수 스캔 4축**: `governance`, `workforce`, `capital`, `debt` 엔진 추가
+- **공개 API 확장**: `Company.governance/workforce/capital/debt()`와 모듈 레벨 `dartlab.governance/workforce/capital/debt()` 추가
+- **scan 개발 문서**: `src/dartlab/engines/dart/scan/DEV.md`, `src/dartlab/engines/dart/scan/network/DEV.md`, `src/dartlab/tools/DEV.md`
+- **공시뷰어 근본 재설계**: entries 기반 인터리브 렌더링 — 텍스트/테이블 원본 순서 복원
+- **heading level 전달**: sections `textLevel` → viewer → 프론트엔드까지 레벨 메타데이터 전파
+- **AI 순수 대화 감지**: `_is_pure_conversation()` — "잘되나", "대화 계속 안되나" 등 일상 대화 패턴 자동 감지
+- **서버 응답 최적화**: GZip 압축 + Cache-Control + asyncio.gather 병렬화
+
+### Changed
+
+- **관계 네트워크 경로 정리**: 내부 import 경로를 `affiliate`에서 `scan.network`로 통일
+- **TopicRenderer 단일 루프**: nonTextBlocks 이중 루프 → docEntries 단일 루프로 교체
+- **뷰어 UI 개선**: nav 접기 토글, 테이블 sticky 첫 컬럼, 숫자 정렬
+- **AI 프롬프트 강화**: 내부 구현 노출 금지 규칙 + 순수 대화 시 viewContext 무시
+- **oauthCodex timeout**: 300초 → 90초로 단축
+- README / README_KR에 관계 네트워크와 시장 스캔 사용 예시 반영
+
+### Fixed
+
+- 관계 네트워크 회귀 테스트 import 경로를 새 패키지 구조에 맞게 수정
+- `test_scan_axes.py`로 새 scan 축 import/분류 기본 검증 추가
+- `view=\"market\"` 요약에서 빈 시장 라벨을 `미분류`로 정리
+
 ## [0.7.0] - 2026-03-19
 
 ### Added
@@ -56,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
+[0.7.1]: https://github.com/eddmpython/dartlab/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/eddmpython/dartlab/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/eddmpython/dartlab/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/eddmpython/dartlab/compare/v0.5.0...v0.5.1

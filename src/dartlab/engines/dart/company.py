@@ -2314,6 +2314,135 @@ class Company:
         df = pl.DataFrame(rows)
         return df.sort("연결수", descending=True)
 
+    # ── governance (지배구조) ─────────────────────────────────
+
+    def _ensureGovernance(self) -> pl.DataFrame | None:
+        if "_governance" not in self._cache:
+            from dartlab.engines.dart.scan.governance import scan_governance
+
+            self._cache["_governance"] = scan_governance(verbose=False)
+        return self._cache["_governance"]
+
+    def governance(self, view: str | None = None) -> pl.DataFrame | None:
+        """지배구조 분석.
+
+        Args:
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+
+        Example::
+
+            c = Company("005930")
+            c.governance()           # 삼성전자 거버넌스
+            c.governance("all")      # 전체 상장사
+        """
+        return self._scanView(self._ensureGovernance(), view)
+
+    # ── workforce (인력) ───────────────────────────────────
+
+    def _ensureWorkforce(self) -> pl.DataFrame | None:
+        if "_workforce" not in self._cache:
+            from dartlab.engines.dart.scan.workforce import scan_workforce
+
+            self._cache["_workforce"] = scan_workforce(verbose=False)
+        return self._cache["_workforce"]
+
+    def workforce(self, view: str | None = None) -> pl.DataFrame | None:
+        """인력/급여 분석.
+
+        Args:
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+
+        Example::
+
+            c = Company("005930")
+            c.workforce()            # 삼성전자 인력 현황
+            c.workforce("all")       # 전체 상장사
+        """
+        return self._scanView(self._ensureWorkforce(), view)
+
+    # ── capital (주주환원) ─────────────────────────────────
+
+    def _ensureCapital(self) -> pl.DataFrame | None:
+        if "_capital" not in self._cache:
+            from dartlab.engines.dart.scan.capital import scan_capital
+
+            self._cache["_capital"] = scan_capital(verbose=False)
+        return self._cache["_capital"]
+
+    def capital(self, view: str | None = None) -> pl.DataFrame | None:
+        """주주환원 분석.
+
+        Args:
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+
+        Example::
+
+            c = Company("005930")
+            c.capital()              # 삼성전자 주주환원
+            c.capital("all")         # 전체 상장사
+        """
+        return self._scanView(self._ensureCapital(), view)
+
+    # ── debt (부채 구조) ──────────────────────────────────
+
+    def _ensureDebt(self) -> pl.DataFrame | None:
+        if "_debt" not in self._cache:
+            from dartlab.engines.dart.scan.debt import scan_debt
+
+            self._cache["_debt"] = scan_debt(verbose=False)
+        return self._cache["_debt"]
+
+    def debt(self, view: str | None = None) -> pl.DataFrame | None:
+        """부채 구조 분석.
+
+        Args:
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+
+        Example::
+
+            c = Company("005930")
+            c.debt()                 # 삼성전자 부채 구조
+            c.debt("all")            # 전체 상장사
+        """
+        return self._scanView(self._ensureDebt(), view)
+
+    # ── scan view 공통 헬퍼 ───────────────────────────────
+
+    def _scanView(self, df: pl.DataFrame | None, view: str | None) -> pl.DataFrame | None:
+        """scan DataFrame에서 view별 필터."""
+        if df is None or df.is_empty():
+            return None
+        if view == "all":
+            return df
+        if view == "market":
+            return self._scanMarketSummary(df)
+        # 기본: 이 회사 행
+        code = self.stockCode
+        row = df.filter(pl.col("종목코드") == code)
+        return row if not row.is_empty() else None
+
+    def _scanMarketSummary(self, df: pl.DataFrame) -> pl.DataFrame:
+        """시장별 요약 통계."""
+        from dartlab.engines.dart.scan._helpers import load_listing
+
+        _, _, _, listing_meta = load_listing()
+        code_to_market = {code: meta.get("market", "") for code, meta in listing_meta.items()}
+        df_with_market = df.with_columns(
+            pl.col("종목코드")
+            .replace_strict(code_to_market, default="미분류")
+            .replace("", "미분류")
+            .fill_null("미분류")
+            .alias("시장")
+        )
+        numeric_cols = [c for c in df.columns if c != "종목코드" and df[c].dtype in (pl.Float64, pl.Int64)]
+        if not numeric_cols:
+            return df_with_market.group_by("시장").len()
+        aggs = [pl.len().alias("종목수")]
+        for c in numeric_cols:
+            aggs.append(pl.col(c).mean().alias(f"{c}_평균"))
+            aggs.append(pl.col(c).median().alias(f"{c}_중간값"))
+        return df_with_market.group_by("시장").agg(aggs).sort("종목수", descending=True)
+
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
 

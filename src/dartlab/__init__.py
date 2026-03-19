@@ -81,6 +81,58 @@ def network():
     )
 
 
+def governance():
+    """한국 상장사 전체 지배구조 스캔.
+
+    Example::
+
+        import dartlab
+        df = dartlab.governance()
+    """
+    from dartlab.engines.dart.scan.governance import scan_governance
+
+    return scan_governance()
+
+
+def workforce():
+    """한국 상장사 전체 인력/급여 스캔.
+
+    Example::
+
+        import dartlab
+        df = dartlab.workforce()
+    """
+    from dartlab.engines.dart.scan.workforce import scan_workforce
+
+    return scan_workforce()
+
+
+def capital():
+    """한국 상장사 전체 주주환원 스캔.
+
+    Example::
+
+        import dartlab
+        df = dartlab.capital()
+    """
+    from dartlab.engines.dart.scan.capital import scan_capital
+
+    return scan_capital()
+
+
+def debt():
+    """한국 상장사 전체 부채 구조 스캔.
+
+    Example::
+
+        import dartlab
+        df = dartlab.debt()
+    """
+    from dartlab.engines.dart.scan.debt import scan_debt
+
+    return scan_debt()
+
+
 class _Module(sys.modules[__name__].__class__):
     """dartlab.verbose / dartlab.dataDir 프록시."""
 

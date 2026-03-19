@@ -158,6 +158,55 @@ c.insights.anomalies            # → 이상치, 위험 신호
 
 7개 분석 영역: 성과, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회.
 
+### 관계 네트워크
+
+상장사 간 출자/지분 관계를 시각화한다 — 그룹 구조, 순환출자 탐지 포함:
+
+```python
+c = dartlab.Company("005930")
+
+# 브라우저에서 인터랙티브 관계도
+c.network().show()           # ego 뷰 (1홉)
+c.network(hops=2).show()     # 2홉 이웃
+
+# DataFrame 뷰
+c.network("members")     # 같은 그룹 계열사
+c.network("edges")       # 출자/지분 연결
+c.network("cycles")      # 순환출자 경로
+c.network("peers")       # ego 서브그래프
+
+# 전체 시장 네트워크
+dartlab.network().show()
+```
+
+브라우저 뷰는 다크/라이트 테마, 회사 검색, 그룹 필터, 지분율 툴팁, 클릭 하이라이트를 지원한다.
+
+### 시장 전수 스캔
+
+회사 하나를 보다가 바로 시장 전체로 넓혀서 같은 축을 스캔할 수 있다:
+
+```python
+c = dartlab.Company("005930")
+
+# 개별 회사
+c.governance()
+c.workforce()
+c.capital()
+c.debt()
+
+# 시장 요약
+c.governance("market")   # 시장별 요약
+c.governance("all")      # 전체 상장사 DataFrame
+
+# 모듈 레벨 전체 스캔
+dartlab.governance()
+dartlab.workforce()
+dartlab.capital()
+dartlab.debt()
+```
+
+report + finance parquet를 결합해 지배구조, 인력/보수, 주주환원, 부채위험을 시장 전체 DataFrame으로 바로 뽑는다.
+
 ### EDGAR (미국)
 
 동일한 `Company` 인터페이스, 다른 데이터 소스:

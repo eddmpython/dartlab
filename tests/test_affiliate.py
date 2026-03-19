@@ -1,4 +1,4 @@
-"""affiliate 패키지 검증 테스트 — 015 실험의 40개 시나리오를 pytest로 전환."""
+"""network 패키지 검증 테스트 — 015 실험의 40개 시나리오를 pytest로 전환."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def _ensure_data():
     global _data, _full, _gc
     if _data is not None:
         return
-    from dartlab.engines.dart.affiliate import build_graph, export_full
+    from dartlab.engines.dart.scan.network import build_graph, export_full
 
     _data = build_graph(verbose=False)
     _full = export_full(_data)
@@ -182,7 +182,7 @@ def test_full_json_size():
 
 def test_ego_enrichment():
     """독립 회사 ego가 최소 2노드 이상."""
-    from dartlab.engines.dart.affiliate import export_ego
+    from dartlab.engines.dart.scan.network import export_ego
 
     _ensure_data()
     # 독립 회사 몇 개 샘플

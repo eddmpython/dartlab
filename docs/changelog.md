@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-03-20
+
+### Added
+
+- 시장 전수 스캔 4축 추가: `governance`, `workforce`, `capital`, `debt`
+- `Company.governance/workforce/capital/debt()` + 모듈 레벨 `dartlab.governance/workforce/capital/debt()` 공개
+- scan / network / tools 내부 개발 문서 추가
+- 공시뷰어 근본 재설계: entries 기반 인터리브 렌더링으로 텍스트/테이블 원본 순서 복원
+- heading level 전달: sections textLevel → viewer → 프론트엔드까지 레벨 메타데이터 전파
+- AI 순수 대화 감지: 일상 대화 패턴("잘되나" 등)에서 회사 분석 스킵
+- 서버 응답 최적화: GZip 압축 + Cache-Control + 병렬화
+
+### Changed
+
+- 관계 네트워크 내부 경로를 `affiliate`에서 `scan.network`로 정리
+- TopicRenderer 단일 루프: 텍스트/테이블 인터리브 렌더링으로 전환
+- 뷰어 UI 개선: nav 접기 토글, 테이블 sticky 첫 컬럼
+- AI 프롬프트 강화: 내부 구현 노출 금지 + 순수 대화 시 viewContext 무시
+- oauthCodex timeout 300초 → 90초
+- README / README_KR에 관계 네트워크와 시장 스캔 예시 반영
+
+### Fixed
+
+- 관계 네트워크 회귀 테스트 import 경로 수정
+- 새 scan 축 기본 테스트 추가
+- `view=\"market\"` 요약의 빈 시장 라벨을 `미분류`로 정리
+
 ## [0.7.0] - 2026-03-19
 
 ### Added
