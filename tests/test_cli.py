@@ -15,9 +15,9 @@ def test_build_parser_registers_all_commands():
     parser = build_parser()
 
     choices = parser._subparsers._group_actions[0].choices
-    assert set(["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "ui"]).issubset(
-        choices.keys()
-    )
+    assert set(
+        ["ask", "status", "setup", "ai", "excel", "profile", "sections", "statement", "show", "search", "ui"]
+    ).issubset(choices.keys())
     assert choices["ui"].help == "==SUPPRESS=="
 
 
@@ -58,7 +58,7 @@ def test_main_without_command_prints_help(capsys):
     captured = capsys.readouterr()
     assert result == 0
     assert "usage:" in captured.out
-    assert "{ask,status,setup,ai,excel,profile,sections,statement}" in captured.out
+    assert "{show,search,statement,sections,profile,ask,excel,ai,status,setup}" in captured.out
     assert "ui" not in captured.out
 
 
@@ -98,14 +98,11 @@ def test_excel_returns_non_zero_on_company_error(capsys):
 def test_parse_profile_options():
     parser = build_parser()
 
-    args = parser.parse_args(["profile", "005930", "--facts", "--index", "--show", "BS", "--trace", "dividend"])
+    args = parser.parse_args(["profile", "005930", "--facts"])
 
     assert args.command == "profile"
     assert args.company == "005930"
     assert args.facts is True
-    assert args.index is True
-    assert args.show == "BS"
-    assert args.trace == "dividend"
 
 
 def test_parse_statement_options():

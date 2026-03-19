@@ -16,7 +16,9 @@ def configure_parser(subparsers) -> None:
     parser.add_argument("--model", "-m", default=None, help="모델명")
     parser.add_argument("--base-url", default=None, help="커스텀 API URL")
     parser.add_argument("--api-key", default=None, help="API 키")
-    parser.add_argument("--include", "-i", nargs="+", default=None, help="포함할 topic (BS IS CF dividend companyOverview ...)")
+    parser.add_argument(
+        "--include", "-i", nargs="+", default=None, help="포함할 topic (BS IS CF dividend companyOverview ...)"
+    )
     parser.add_argument("--exclude", "-e", nargs="+", default=None, help="제외할 topic")
     parser.add_argument("--stream", "-s", action="store_true", help="스트리밍 출력")
     parser.set_defaults(handler=run)
