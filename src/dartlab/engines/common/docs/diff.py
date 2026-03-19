@@ -241,6 +241,116 @@ def topicDiff(
     )
 
 
+def lineDiffDataFrame(
+    sections: pl.DataFrame,
+    topic: str,
+    fromPeriod: str,
+    toPeriod: str,
+) -> pl.DataFrame | None:
+    """줄 단위 diff를 인터리빙 순서 DataFrame으로 반환.
+
+    Args:
+        sections: topic(행) × period(열) DataFrame.
+        topic: diff할 topic명.
+        fromPeriod: 이전 기간.
+        toPeriod: 이후 기간.
+
+    Returns:
+        DataFrame(line, status, text) 또는 None.
+    """
+    import difflib
+
+    topicCol = "topic"
+    if topicCol not in sections.columns:
+        return None
+    if fromPeriod not in sections.columns or toPeriod not in sections.columns:
+        return None
+
+    filtered = sections.filter(pl.col(topicCol) == topic)
+    if filtered.height == 0:
+        return None
+
+    fromText = str(filtered.item(0, fromPeriod) or "")
+    toText = str(filtered.item(0, toPeriod) or "")
+    fromLines = fromText.splitlines()
+    toLines = toText.splitlines()
+    rows: list[dict[str, str | int]] = []
+    lineNo = 0
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        None,
+        fromLines,
+        toLines,
+    ).get_opcodes():
+        if tag == "equal":
+            for line in fromLines[i1:i2]:
+                lineNo += 1
+                rows.append({"line": lineNo, "status": " ", "text": line})
+        elif tag == "insert":
+            for line in toLines[j1:j2]:
+                lineNo += 1
+                rows.append({"line": lineNo, "status": "+", "text": line})
+        elif tag == "delete":
+            for line in fromLines[i1:i2]:
+                lineNo += 1
+                rows.append({"line": lineNo, "status": "-", "text": line})
+        elif tag == "replace":
+            for line in fromLines[i1:i2]:
+                lineNo += 1
+                rows.append({"line": lineNo, "status": "-", "text": line})
+            for line in toLines[j1:j2]:
+                lineNo += 1
+                rows.append({"line": lineNo, "status": "+", "text": line})
+    return pl.DataFrame(rows) if rows else None
+
+
+def topicHistoryDataFrame(diffResult: DiffResult, topic: str) -> pl.DataFrame:
+    """특정 topic의 기간별 변경 이력 DataFrame."""
+    topicEntries = [e for e in diffResult.entries if e.topic == topic]
+    if not topicEntries:
+        return pl.DataFrame(
+            {
+                "fromPeriod": [],
+                "toPeriod": [],
+                "status": [],
+                "fromLen": [],
+                "toLen": [],
+                "delta": [],
+                "deltaRate": [],
+            }
+        )
+    return pl.DataFrame(
+        [
+            {
+                "fromPeriod": e.fromPeriod,
+                "toPeriod": e.toPeriod,
+                "status": e.status,
+                "fromLen": e.fromLen,
+                "toLen": e.toLen,
+                "delta": e.toLen - e.fromLen,
+                "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
+            }
+            for e in topicEntries
+        ]
+    )
+
+
+def diffSummaryDataFrame(diffResult: DiffResult) -> pl.DataFrame:
+    """전체 topic 변경 요약 DataFrame."""
+    return pl.DataFrame(
+        [
+            {
+                "chapter": s.chapter,
+                "topic": s.topic,
+                "periods": s.totalPeriods,
+                "changed": s.changedCount,
+                "stable": s.stableCount,
+                "changeRate": round(s.changeRate, 3),
+            }
+            for s in diffResult.summaries
+        ]
+    )
+
+
 def charDiff(fromText: str, toText: str) -> list[CharPart]:
     """두 텍스트의 글자 단위 diff.
 

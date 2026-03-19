@@ -1277,16 +1277,18 @@ class TestEdgarCompanyInterface:
             assert isinstance(df, pl.DataFrame)
             assert df.height > 0
 
-    def test_show_ratios_returns_block_index_and_data(self):
+    def test_show_ratios_returns_data(self):
         from dartlab.engines.edgar.company import Company
 
         c = Company("AAPL")
-        idx = c.show("ratios")
-        assert isinstance(idx, pl.DataFrame)
-        assert "block" in idx.columns
-        df = c.show("ratios", 0)
+        # ratios는 블록 1개 → auto unwrap으로 바로 데이터 반환 (DART 정합)
+        df = c.show("ratios")
         assert isinstance(df, pl.DataFrame)
         assert "category" in df.columns
+        # block=0 명시도 동일 결과
+        df2 = c.show("ratios", 0)
+        assert isinstance(df2, pl.DataFrame)
+        assert "category" in df2.columns
 
     def test_show_docs_topic_returns_dataframe(self):
         from dartlab.engines.edgar.company import Company

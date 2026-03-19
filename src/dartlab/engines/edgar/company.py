@@ -22,14 +22,11 @@ DART Company와 동일한 구조를 제공한다.
 
 from __future__ import annotations
 
-import logging
 import re
 from pathlib import Path
 from typing import Any
 
 import polars as pl
-
-_log = logging.getLogger("dartlab.engines.edgar.company")
 
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -333,7 +330,7 @@ class _DocsAccessor:
         cols = ["period_key", "form_type", "accession_no", "filed_date"]
         available = [c for c in cols if c in df.columns]
         result = (
-            df.select(available).unique(subset=["accession_no"]).sort("period_key", descending=False, nulls_last=True)
+            df.select(available).unique(subset=["accession_no"]).sort("period_key", descending=True, nulls_last=True)
         )
         self._company._cache[key] = result
         return result
@@ -449,30 +446,6 @@ class _ProfileAccessor:
     def __init__(self, company: Company):
         self._company = company
 
-    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
-        """topic의 source provenance 반환."""
-        if topic in {"BS", "IS", "CIS", "CF"}:
-            df = getattr(self._company.finance, topic, None)
-            if df is not None:
-                return {
-                    "topic": topic,
-                    "period": period,
-                    "primarySource": "finance",
-                    "fallbackSources": ["docs"],
-                    "whySelected": "finance authoritative priority",
-                }
-
-        docsSec = self._company.docs.sections
-        if docsSec is not None and topic in docsSec["topic"].to_list():
-            return {
-                "topic": topic,
-                "period": period,
-                "primarySource": "docs",
-                "fallbackSources": [],
-                "whySelected": "docs authoritative priority",
-            }
-        return None
-
 
 class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
@@ -487,8 +460,7 @@ class Company:
         c.finance.IS           # 연도별 손익계산서
         c.finance.CF           # 연도별 현금흐름표
         c.finance.CIS          # 연도별 포괄손익계산서
-        c.finance.ratios       # 재무비율
-        c.profile.trace(topic) # source provenance
+        c.finance.ratioSeries  # 재무비율 시계열
         c.BS                   # finance.BS 바로가기
         c.sections             # docs.sections 바로가기
         c.show(topic)          # 통합 조회 → DataFrame | None
@@ -571,31 +543,9 @@ class Company:
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다."""
-        import socket
-        import threading
-        import time
-        import webbrowser
+        from dartlab.engines.common.viewer import launchViewer
 
-        def _is_port_in_use(p: int) -> bool:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                return s.connect_ex(("127.0.0.1", p)) == 0
-
-        if not _is_port_in_use(port):
-
-            def _run():
-                import uvicorn
-
-                uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
-
-            t = threading.Thread(target=_run, daemon=True)
-            t.start()
-            for _ in range(30):
-                if _is_port_in_use(port):
-                    break
-                time.sleep(0.1)
-
-        url = f"http://127.0.0.1:{port}/?company={self.ticker}"
-        webbrowser.open(url)
+        launchViewer(self.ticker, port=port)
 
     @property
     def timeseries(self):
@@ -812,7 +762,10 @@ class Company:
             return None
 
         if block is None:
-            return self._buildBlockIndex(topicRows)
+            blockIndex = self._buildBlockIndex(topicRows)
+            if blockIndex.height == 1:
+                return self.show(topic, blockIndex["block"][0], period=period)
+            return blockIndex
 
         # 특정 block의 실제 데이터
         source = "docs"
@@ -868,56 +821,15 @@ class Company:
 
     @staticmethod
     def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
-        """수평화 DataFrame에서 요청 기간 컬럼만 추출."""
-        labelCol = wide.columns[0]
-        periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
+        from dartlab.engines.common.show import transposeToVertical
 
-        matched: list[str] = []
-        for p in periods:
-            if p in periodCols:
-                matched.append(p)
-            elif "Q" not in p and f"{p}Q4" in periodCols:
-                matched.append(f"{p}Q4")
-        if not matched:
-            return None
-
-        return wide.select([labelCol] + matched)
+        return transposeToVertical(wide, periods)
 
     def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
         """topic의 블록 목차 DataFrame."""
-        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
-        rows = []
-        seen: set[int] = set()
+        from dartlab.engines.common.show import buildBlockIndex
 
-        hasBlockOrder = "blockOrder" in topicRows.columns
-
-        for row in topicRows.iter_rows(named=True):
-            bt = row.get("blockType", "text")
-            source = row.get("source", "docs")
-
-            if hasBlockOrder:
-                bo = row.get("blockOrder", 0)
-                if bo is None:
-                    bo = len(seen)
-            else:
-                bo = len(seen)
-
-            if bo in seen:
-                continue
-            seen.add(bo)
-
-            preview = ""
-            if source in ("finance", "report"):
-                preview = f"({source})"
-            else:
-                for p in reversed(periodCols):
-                    val = row.get(p)
-                    if val:
-                        preview = str(val)[:50]
-                        break
-            rows.append({"block": bo, "type": bt, "source": source, "preview": preview})
-
-        return pl.DataFrame(rows)
+        return buildBlockIndex(topicRows)
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic in _FINANCE_TOPICS:
@@ -1090,10 +1002,20 @@ class Company:
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
             return payload
-        if period in payload.columns:
-            keepCols = [c for c in ("account", "category", "metric", "topic", "blockType") if c in payload.columns]
-            keepCols.append(period)
-            return payload.select(keepCols)
+        requestedPeriod = str(period)
+        q4Fallback = f"{requestedPeriod}Q4" if "Q" not in requestedPeriod else None
+        exactPeriod = (
+            requestedPeriod
+            if requestedPeriod in payload.columns
+            else (q4Fallback if q4Fallback and q4Fallback in payload.columns else None)
+        )
+        if exactPeriod is not None:
+            keepCols = [c for c in payload.columns if not _isPeriodColumn(c)]
+            keepCols.append(exactPeriod)
+            result = payload.select(keepCols)
+            if exactPeriod != requestedPeriod:
+                result = result.rename({exactPeriod: requestedPeriod})
+            return result
         return payload
 
     @staticmethod
@@ -1141,97 +1063,19 @@ class Company:
             c.diff("10-K::item1ARiskFactors") # 특정 topic 변경 이력
             c.diff("10-K::item7Mdna", "2023", "2024")  # 줄 단위 diff
         """
-        from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
+        from dartlab.engines.common.docs.diff import (
+            diffSummaryDataFrame,
+            lineDiffDataFrame,
+            sectionsDiff,
+            topicHistoryDataFrame,
+        )
 
         docsSections = self.docs.sections
         if docsSections is None:
             return None
-
-        # 줄 단위 상세 diff
         if topic is not None and fromPeriod is not None and toPeriod is not None:
-            result = topicDiff(docsSections, topic, fromPeriod, toPeriod)
-            if result is None:
-                return None
-            import difflib
-
-            filtered = docsSections.filter(pl.col("topic") == topic)
-            if filtered.height == 0:
-                return None
-            fromText = str(filtered.item(0, fromPeriod) or "")
-            toText = str(filtered.item(0, toPeriod) or "")
-            fromLines = fromText.splitlines()
-            toLines = toText.splitlines()
-            rows: list[dict[str, str | int]] = []
-            lineNo = 0
-            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-                None,
-                fromLines,
-                toLines,
-            ).get_opcodes():
-                if tag == "equal":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": " ", "text": line})
-                elif tag == "insert":
-                    for line in toLines[j1:j2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "+", "text": line})
-                elif tag == "delete":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "-", "text": line})
-                elif tag == "replace":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "-", "text": line})
-                    for line in toLines[j1:j2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "+", "text": line})
-            return pl.DataFrame(rows) if rows else None
-
+            return lineDiffDataFrame(docsSections, topic, fromPeriod, toPeriod)
         diffResult = sectionsDiff(docsSections)
-
-        # 특정 topic 변경 이력
         if topic is not None:
-            topicEntries = [e for e in diffResult.entries if e.topic == topic]
-            if not topicEntries:
-                return pl.DataFrame(
-                    {
-                        "fromPeriod": [],
-                        "toPeriod": [],
-                        "status": [],
-                        "fromLen": [],
-                        "toLen": [],
-                        "delta": [],
-                        "deltaRate": [],
-                    }
-                )
-            return pl.DataFrame(
-                [
-                    {
-                        "fromPeriod": e.fromPeriod,
-                        "toPeriod": e.toPeriod,
-                        "status": e.status,
-                        "fromLen": e.fromLen,
-                        "toLen": e.toLen,
-                        "delta": e.toLen - e.fromLen,
-                        "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
-                    }
-                    for e in topicEntries
-                ]
-            )
-
-        # 전체 요약
-        return pl.DataFrame(
-            [
-                {
-                    "chapter": s.chapter,
-                    "topic": s.topic,
-                    "periods": s.totalPeriods,
-                    "changed": s.changedCount,
-                    "stable": s.stableCount,
-                    "changeRate": round(s.changeRate, 3),
-                }
-                for s in diffResult.summaries
-            ]
-        )
+            return topicHistoryDataFrame(diffResult, topic)
+        return diffSummaryDataFrame(diffResult)

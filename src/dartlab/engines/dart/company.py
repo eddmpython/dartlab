@@ -14,8 +14,6 @@
 from __future__ import annotations
 
 import re
-from collections import OrderedDict
-from pathlib import Path
 from typing import Any
 
 import polars as pl
@@ -25,7 +23,6 @@ pl.Config.set_tbl_width_chars(200)
 
 from dartlab.core.dataLoader import (
     DART_VIEWER,
-    _dataDir,
     buildIndex,
     extractCorpName,
     loadData,
@@ -46,14 +43,7 @@ from dartlab.core.registry import getModuleEntries as _getModuleEntries
 # ── 분리된 모듈-레벨 헬퍼 re-export (외부 import 경로 유지) ──
 from dartlab.engines.dart._diff_helpers import (  # noqa: F401
     _buildTopicChangeLedger,
-    _buildTopicEvidence,
-    _canonicalBlockRecord,
-    _matchTopicBlocks,
     _normalizeTextCell,
-    _stableFingerprint,
-    _summarizeTopicChange,
-    _tableMetrics,
-    _textSimilarity,
 )
 
 # ── 분리된 accessor 클래스 re-export (외부 import 경로 유지) ──
@@ -72,6 +62,7 @@ from dartlab.engines.dart._finance_helpers import (  # noqa: F401
     _shouldFallbackToAnnualRatios,
 )
 from dartlab.engines.dart._profile_accessor import _ProfileAccessor  # noqa: F401
+from dartlab.engines.dart._report_accessor import REPORT_COL_KR as _REPORT_COL_KR  # noqa: F401
 from dartlab.engines.dart._report_accessor import _ReportAccessor  # noqa: F401
 from dartlab.engines.dart._sections_source import _SectionsSource  # noqa: F401
 from dartlab.engines.dart._utils import (  # noqa: F401
@@ -102,166 +93,25 @@ for entry in _MODULE_REGISTRY:
         continue
     _ALL_PROPERTIES.append((name, entry[2]))
 
-_CHAPTER_TITLES: OrderedDict[str, str] = OrderedDict(
-    [
-        ("I", "I. 회사의 개요"),
-        ("II", "II. 사업의 내용"),
-        ("III", "III. 재무에 관한 사항"),
-        ("IV", "IV. 이사의 경영진단 및 분석의견"),
-        ("V", "V. 감사인의 감사의견등"),
-        ("VI", "VI. 이사회등회사의기관및계열회사에관한사항"),
-        ("VII", "VII. 주주에 관한 사항"),
-        ("VIII", "VIII. 임원 및 직원 등에 관한 사항"),
-        ("IX", "IX. 이해관계자와의 거래내용"),
-        ("X", "X. 그 밖에 투자자 보호를 위하여 필요한 사항"),
-        ("XI", "XI. 재무제표등"),
-        ("XII", "XII. 상세표 및 부속명세서"),
-    ]
-)
+_CHAPTER_TITLES: dict[str, str] = {
+    "I": "I. 회사의 개요",
+    "II": "II. 사업의 내용",
+    "III": "III. 재무에 관한 사항",
+    "IV": "IV. 이사의 경영진단 및 분석의견",
+    "V": "V. 감사인의 감사의견등",
+    "VI": "VI. 이사회등회사의기관및계열회사에관한사항",
+    "VII": "VII. 주주에 관한 사항",
+    "VIII": "VIII. 임원 및 직원 등에 관한 사항",
+    "IX": "IX. 이해관계자와의 거래내용",
+    "X": "X. 그 밖에 투자자 보호를 위하여 필요한 사항",
+    "XI": "XI. 재무제표등",
+    "XII": "XII. 상세표 및 부속명세서",
+}
 
 _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CHAPTER_TITLES, start=1)}
 _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
     "audit": "auditOpinion",
 }
-# OpenDART 개발가이드 공식 한글 컬럼 매핑 (https://opendart.fss.or.kr/guide/)
-_REPORT_COL_KR: dict[str, str] = {
-    # 증자(감자) 현황 — apiId=2019004
-    "isu_dcrs_de": "주식발행(감소)일자",
-    "isu_dcrs_stle": "발행(감소)형태",
-    "isu_dcrs_stock_knd": "발행(감소)주식종류",
-    "isu_dcrs_qy": "발행(감소)수량",
-    "isu_dcrs_mstvdv_fval_amount": "주당액면가액",
-    "isu_dcrs_mstvdv_amount": "주당가액",
-    # 자기주식 취득/처분 — apiId=2019006
-    "stock_knd": "주식종류",
-    "acqs_mth1": "취득방법(대)",
-    "acqs_mth2": "취득방법(중)",
-    "acqs_mth3": "취득방법(소)",
-    "bsis_qy": "기초수량",
-    "change_qy_acqs": "변동수량(취득)",
-    "change_qy_dsps": "변동수량(처분)",
-    "change_qy_incnr": "변동수량(소각)",
-    "trmend_qy": "기말수량",
-    # 주식총수 현황 — apiId=2020002
-    "se": "구분",
-    "isu_stock_totqy": "발행할주식총수",
-    "now_to_isu_stock_totqy": "현재까지발행주식총수",
-    "now_to_dcrs_stock_totqy": "현재까지감소주식총수",
-    "redc": "감자",
-    "profit_incnr": "이익소각",
-    "rdmstk_repy": "상환주식상환",
-    "etc": "기타",
-    "istc_totqy": "발행주식총수",
-    "tesstk_co": "자기주식수",
-    "distb_stock_co": "유통주식수",
-    # 타법인 출자 현황 — apiId=2019015
-    "inv_prm": "법인명",
-    "frst_acqs_de": "최초취득일자",
-    "invstmnt_purps": "출자목적",
-    "frst_acqs_amount": "최초취득금액",
-    "bsis_blce_qy": "기초잔액(수량)",
-    "bsis_blce_qota_rt": "기초잔액(지분율)",
-    "bsis_blce_acntbk_amount": "기초잔액(장부가액)",
-    "incrs_dcrs_acqs_dsps_qy": "증감(취득처분)(수량)",
-    "incrs_dcrs_acqs_dsps_amount": "증감(취득처분)(금액)",
-    "incrs_dcrs_evl_lstmn": "증감(평가손액)",
-    "trmend_blce_qy": "기말잔액(수량)",
-    "trmend_blce_qota_rt": "기말잔액(지분율)",
-    "trmend_blce_acntbk_amount": "기말잔액(장부가액)",
-    "recent_bsns_year_fnnr_sttus_tot_assets": "최근사업연도재무현황(총자산)",
-    "recent_bsns_year_fnnr_sttus_thstrm_ntpf": "최근사업연도재무현황(당기순이익)",
-    # 최대주주 변동현황 — apiId=2019008
-    "change_on": "변동일",
-    "mxmm_shrholdr_nm": "최대주주명",
-    "posesn_stock_co": "소유주식수",
-    "qota_rt": "지분율",
-    "change_cause": "변동원인",
-    # 소액주주 현황 — apiId=2019009
-    "shrholdr_co": "주주수",
-    "shrholdr_tot_co": "전체주주수",
-    "shrholdr_rate": "주주비율",
-    "hold_stock_co": "보유주식수",
-    "stock_tot_co": "총발행주식수",
-    "hold_stock_rate": "보유주식비율",
-    # 사외이사 현황 — apiId=2020012
-    "drctr_co": "이사의수",
-    "otcmp_drctr_co": "사외이사수",
-    "apnt": "사외이사변동(선임)",
-    "rlsofc": "사외이사변동(해임)",
-    "mdstrm_resig": "사외이사변동(중도퇴임)",
-    # 공모자금 사용내역 — apiId=2020016
-    "se_nm": "구분",
-    "tm": "회차",
-    "pay_de": "납입일",
-    "pay_amount": "납입금액",
-    "on_dclrt_cptal_use_plan": "신고서상자금사용계획",
-    "real_cptal_use_sttus": "실제자금사용현황",
-    "rs_cptal_use_plan_useprps": "증권신고서자금사용계획(용도)",
-    "rs_cptal_use_plan_prcure_amount": "증권신고서자금사용계획(조달금액)",
-    "real_cptal_use_dtls_cn": "실제자금사용내역(내용)",
-    "real_cptal_use_dtls_amount": "실제자금사용내역(금액)",
-    "dffrnc_occrrnc_resn": "차이발생사유",
-    # 사모자금 사용내역 — apiId=2020017
-    "cptal_use_plan": "자금사용계획",
-    "mtrpt_cptal_use_plan_useprps": "주요사항보고서자금사용계획(용도)",
-    "mtrpt_cptal_use_plan_prcure_amount": "주요사항보고서자금사용계획(조달금액)",
-    # 회사채 미상환 잔액 — apiId=2020006
-    "sm": "합계",
-    "remndr_exprtn1": "잔여만기(대분류)",
-    "remndr_exprtn2": "잔여만기(소분류)",
-    "yy1_below": "1년이하",
-    "yy1_excess_yy2_below": "1년초과2년이하",
-    "yy2_excess_yy3_below": "2년초과3년이하",
-    "yy3_excess_yy4_below": "3년초과4년이하",
-    "yy4_excess_yy5_below": "4년초과5년이하",
-    "yy5_excess_yy10_below": "5년초과10년이하",
-    "yy10_excess": "10년초과",
-    # 단기사채 미상환 잔액 — apiId=2020005
-    "de10_below": "10일이하",
-    "de10_excess_de30_below": "10일초과30일이하",
-    "de30_excess_de90_below": "30일초과90일이하",
-    "de90_excess_de180_below": "90일초과180일이하",
-    "de180_excess_yy1_below": "180일초과1년이하",
-    "isu_lmt": "발행한도",
-    "remndr_lmt": "잔여한도",
-    # 감사용역 체결현황 — apiId=2020010
-    "bsns_year": "사업연도",
-    "adtor": "감사인",
-    "cn": "내용",
-    "mendng": "보수",
-    "tot_reqre_time": "총소요시간",
-    "adt_cntrct_dtls_mendng": "감사계약내역(보수)",
-    "adt_cntrct_dtls_time": "감사계약내역(시간)",
-    "real_exc_dtls_mendng": "실제수행내역(보수)",
-    "real_exc_dtls_time": "실제수행내역(시간)",
-    # 비감사 용역 계약현황 — apiId=2020011
-    "cntrct_cncls_de": "계약체결일",
-    "servc_cn": "용역내용",
-    "servc_exc_pd": "용역수행기간",
-    "servc_mendng": "용역보수",
-    # 이사·감사 보수현황 — apiId=2019013
-    "nmpr": "인원수",
-    "mendng_totamt": "보수총액",
-    "jan_avrg_mendng_am": "1인평균보수액",
-    # 개인별 보수현황 — apiId=2019012, 2019014
-    "nm": "이름",
-    "ofcps": "직위",
-    "mendng_totamt_ct_incls_mendng": "보수총액비포함보수",
-    # 미등기임원 보수현황 — apiId=2020013
-    "fyer_salary_totamt": "연간급여총액",
-    "jan_salary_am": "1인평균급여액",
-    # 공통
-    "rm": "비고",
-}
-_DOCS_TOPIC_HINTS: dict[str, tuple[str, ...]] = {
-    "costByNature": ("비용의 성격별 분류", "비용의성격별분류", "제조원가", "감가상각비"),
-    "tangibleAsset": ("유형자산", "감가상각비"),
-}
-_DOCS_TITLE_HINTS: dict[str, tuple[str, ...]] = {
-    "costByNature": ("비용의 성격별 분류", "비용의성격별분류", "제조원가명세서"),
-    "tangibleAsset": ("유형자산",),
-}
-
 _TOPIC_LABELS: dict[str, str] = {
     "businessOverview": "사업의 개요",
     "businessStatus": "사업현황",
@@ -312,9 +162,6 @@ _TOPIC_LABELS: dict[str, str] = {
 def listExportModules() -> list[tuple[str, str]]:
     """Excel/export용 DART 공개 모듈 목록."""
     return list(_ALL_PROPERTIES)
-
-
-from dartlab.engines.common.types import ShowResult
 
 
 class Company:
@@ -910,100 +757,12 @@ class Company:
         result = self._topicSubtables(topic)
         return None if result is None else result.long
 
-    # subtopic 자동 수평화를 건너뛰는 topic (이미 다른 경로에서 처리되거나 subtopic 과다)
-    _AUTO_SUBTOPIC_SKIP: frozenset[str] = frozenset(
-        {
-            # 이미 명시적 subtopic 경로
-            "salesOrder",
-            "riskDerivative",
-            "segments",
-            "rawMaterial",
-            "costByNature",
-            # 재무제표 — finance 엔진이 authoritative
-            "BS",
-            "IS",
-            "CIS",
-            "CF",
-            "SCE",
-            "ratios",
-            # fsSummary — subtopic 800+ (과다)
-            "fsSummary",
-            # 주석 — 너무 방대하여 subtopic 세분화 비효율
-            "consolidatedNotes",
-            "financialNotes",
-        }
-    )
-
-    _AUTO_SUBTOPIC_MAX = 100  # subtopic이 이 수를 넘으면 text fallback
-
-    def _autoSubtopicWide(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
-        """table-heavy docs topic을 자동으로 subtopic wide 수평화."""
-        if topic in self._AUTO_SUBTOPIC_SKIP:
-            return None
-        result = self._topicSubtables(topic)
-        if result is None:
-            return None
-        if result.wide.height > self._AUTO_SUBTOPIC_MAX:
-            return None
-        return result.long if raw else result.wide
-
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
         try:
             payload = self._get_primary(name)
         except (KeyError, ValueError, TypeError, ImportError, FileNotFoundError, AttributeError):
             return None
         return payload if isinstance(payload, pl.DataFrame) else None
-
-    def _hasDocsTopicHint(self, topic: str) -> bool:
-        cacheKey = f"_hasDocsTopicHint:{topic}"
-        if cacheKey in self._cache:
-            return bool(self._cache[cacheKey])
-        keywords = _DOCS_TOPIC_HINTS.get(topic)
-        if not self._hasDocs or not keywords:
-            self._cache[cacheKey] = False
-            return False
-        raw = self.rawDocs
-        if raw is None or raw.is_empty():
-            self._cache[cacheKey] = False
-            return False
-        matched = False
-        for keyword in keywords:
-            subset = raw.filter(
-                pl.col("section_title").str.contains(keyword, literal=True, strict=False)
-                | pl.col("section_content").str.contains(keyword, literal=True, strict=False)
-            )
-            if not subset.is_empty():
-                matched = True
-                break
-        self._cache[cacheKey] = matched
-        return matched
-
-    def _hasSectionTitleHint(self, topic: str) -> bool:
-        cacheKey = f"_hasSectionTitleHint:{topic}"
-        if cacheKey in self._cache:
-            return bool(self._cache[cacheKey])
-        keywords = _DOCS_TITLE_HINTS.get(topic)
-        if not self._hasDocs or not keywords:
-            self._cache[cacheKey] = False
-            return False
-        path = Path(_dataDir("docs")) / f"{self.stockCode}.parquet"
-        if not path.exists():
-            self._cache[cacheKey] = False
-            return False
-        matched = False
-        for keyword in keywords:
-            subset = (
-                pl.scan_parquet(path)
-                .select("section_title")
-                .filter(pl.col("section_title").str.contains(keyword, literal=True, strict=False))
-                .limit(1)
-                .collect()
-            )
-            if subset.height > 0:
-                matched = True
-                break
-        self._cache[cacheKey] = matched
-        return matched
 
     def _sceMatrix(self):
         if not self._hasFinance:
@@ -1405,35 +1164,9 @@ class Company:
 
     def _buildBlockIndex(self, topicRows: pl.DataFrame) -> pl.DataFrame:
         """topic의 블록 목차 DataFrame."""
-        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
-        rows = []
-        seen: set[int] = set()
-        for row in topicRows.iter_rows(named=True):
-            bo = row.get("blockOrder", 0)
-            if bo in seen:
-                continue
-            seen.add(bo)
-            bt = row.get("blockType", "text")
-            source = row.get("source", "docs")
-            # preview
-            preview = ""
-            if source in ("finance", "report"):
-                preview = f"({source})"
-            else:
-                for p in reversed(periodCols):
-                    val = row.get(p)
-                    if val:
-                        preview = str(val)[:50]
-                        break
-            rows.append(
-                {
-                    "block": bo,
-                    "type": bt,
-                    "source": source,
-                    "preview": preview,
-                }
-            )
-        return pl.DataFrame(rows)
+        from dartlab.engines.common.show import buildBlockIndex
+
+        return buildBlockIndex(topicRows)
 
     def _showFinanceTopic(self, topic: str, *, period: str | None = None) -> pl.DataFrame | None:
         """finance source topic의 실제 데이터 반환."""
@@ -1453,15 +1186,6 @@ class Company:
     def _showReportTopic(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
         """report source topic의 실제 데이터 반환."""
         return self._applyPeriodFilter(self._reportFrame(topic, raw=raw), period)
-
-    def _sectionTopicRaw(self, topic: str) -> pl.DataFrame | None:
-        """sections에서 topic의 원본 수평 행(text+table) 반환."""
-        docsSections = self.docs.sections
-        if docsSections is not None and "topic" in docsSections.columns:
-            topicFrame = docsSections.filter(pl.col("topic") == topic)
-            if not topicFrame.is_empty():
-                return topicFrame
-        return None
 
     def _showSectionBlock(
         self,
@@ -1508,80 +1232,10 @@ class Company:
 
     @staticmethod
     def _stripUnitHeader(sub: list[str]) -> list[str] | None:
-        """단위행/기준일행이 헤더인 서브테이블 → 단위행 제거 + 나머지 반환.
+        """단위행/기준일행이 헤더인 서브테이블 → 단위행 제거 + 나머지 반환."""
+        from dartlab.engines.dart._table_horizontalizer import stripUnitHeader
 
-        패턴: | (단위:천원) | | | → sep → 실제헤더 → 데이터
-        다중컬럼: | (기준일 : | 2018년 03월 31일 | ) | (단위 : 주) |
-        반환: 실제헤더 행부터의 서브테이블 (기존 파서가 그대로 동작).
-        해당하지 않으면 None.
-        """
-        # 단위행 변형: (단위:천원), (원화단위:백만원, 외화단위:천USD),
-        # [단위 : 백만원], <당분기> (단위: 원), （단위: 천원) 등
-        _UNIT_ONLY_RE = re.compile(
-            r"^[\(\[\（<〈]?\s*"
-            r"(?:<[^>]+>\s*)?"  # <당분기> 같은 앞쪽 태그
-            r"[\(\[\（]?\s*"
-            r"(?:단위|원화\s*단위|외화\s*단위|금액\s*단위)"
-            r".*$",
-            re.IGNORECASE,
-        )
-        _DATE_ONLY_RE = re.compile(r"^\(?\s*기준일\s*:")
-
-        # 첫 번째 비-separator 행 찾기
-        firstRow = None
-        for line in sub:
-            cells = [c.strip() for c in line.strip("|").split("|")]
-            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
-                continue
-            firstRow = [c for c in cells if c.strip()]
-            break
-
-        if firstRow is None:
-            return None
-
-        # 단일 컬럼: 기존 방식
-        if len(firstRow) == 1:
-            h = firstRow[0].strip()
-            if not (_UNIT_ONLY_RE.match(h) or _DATE_ONLY_RE.match(h)):
-                return None
-        else:
-            # 다중 컬럼: 셀을 합쳐서 단위/기준일 패턴 검사
-            joined = " ".join(c.strip() for c in firstRow)
-            hasUnit = bool(re.search(r"단위\s*[:/]", joined))
-            hasDate = bool(re.search(r"기준일\s*[:/]", joined))
-            if not (hasUnit or hasDate):
-                return None
-
-        # 첫 separator 이후의 행들을 새 서브테이블로 반환
-        sepIdx = -1
-        for i, line in enumerate(sub):
-            cells = [c.strip() for c in line.strip("|").split("|")]
-            if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
-                sepIdx = i
-                break
-
-        if sepIdx < 0 or sepIdx + 1 >= len(sub):
-            return None
-
-        remainder = sub[sepIdx + 1 :]
-        if not remainder:
-            return None
-
-        # 나머지에 separator가 있으면 그대로 반환 (정상적인 2-separator 구조)
-        hasSep = any(
-            all(set(c.strip()) <= {"-", ":"} for c in line.strip("|").split("|") if c.strip()) for line in remainder
-        )
-        if hasSep:
-            return remainder
-
-        # separator가 없으면 실제 헤더 + 인조 separator + 데이터 행으로 구성
-        if len(remainder) >= 2:
-            headerLine = remainder[0]
-            colCount = len(headerLine.strip("|").split("|"))
-            sepLine = "| " + " | ".join(["---"] * colCount) + " |"
-            return [headerLine, sepLine] + remainder[1:]
-
-        return None
+        return stripUnitHeader(sub)
 
     def _horizontalizeTableBlock(
         self,
@@ -1591,405 +1245,12 @@ class Company:
         period: str | None = None,
     ) -> pl.DataFrame | None:
         """table 블록을 기간 간 수평화 — 항목×기간 매트릭스."""
-        from dartlab.engines.dart.docs.sections.tableParser import (
-            _classifyStructure,
-            _dataRows,
-            _headerCells,
-            _isJunk,
-            splitSubtables,
-        )
+        from dartlab.engines.dart._table_horizontalizer import horizontalizeTableBlock
 
-        boRow = topicFrame.filter((pl.col("blockOrder") == blockOrder) & (pl.col("blockType") == "table"))
-        if boRow.is_empty():
+        df = horizontalizeTableBlock(topicFrame, blockOrder, periodCols, period)
+        if df is None:
             return None
-
-        from dartlab.engines.dart.docs.sections.tableParser import (
-            _parseKeyValueOrMatrix,
-            _parseMultiYear,
-        )
-
-        _SUFFIX_RE = re.compile(r"(사업)?부문$")
-        # 기수+상대기(당기/전기 등): 제76기(당기) → 당기, 제2기1분기(당분기) → 당분기
-        _KISU_RE = re.compile(
-            r"제\d+기\s*(?:\d*분기|반기|말)?\s*"
-            r"\(?(당기|전기|전전기|당반기|전반기|당분기|전분기)\)?"
-        )
-
-        _NOTE_REF_RE = re.compile(r"\(\*\d*(?:,\d+)*\)")  # (*), (*1), (*1,2) 등
-
-        def _normalizeItem(name: str) -> str:
-            name = _SUFFIX_RE.sub("", name).strip()
-            name = _NOTE_REF_RE.sub("", name).strip()  # 주석번호 제거
-            # 기수+상대기 → 상대기명으로 치환
-            m = _KISU_RE.search(name)
-            if m:
-                return m.group(1)
-            return name
-
-        def _collectMultiYear(sub: list[str], pYear: int, p: str) -> None:
-            triples, _ = _parseMultiYear(sub, pYear)
-            for rawItem, year, val in triples:
-                item = _normalizeItem(rawItem)
-                if year == str(pYear):
-                    if item not in seenItems:
-                        allItems.append(item)
-                        seenItems.add(item)
-                    if item not in periodItemVal:
-                        periodItemVal[item] = {}
-                    periodItemVal[item][p] = val
-
-        def _collectKvMatrix(sub: list[str], p: str) -> None:
-            rows, headerNames, _ = _parseKeyValueOrMatrix(sub)
-            for rawItem, vals in rows:
-                item = _normalizeItem(rawItem)
-                nonEmptyVals = [v for v in vals if v.strip()]
-                if len(headerNames) >= 2 and len(nonEmptyVals) >= 2 and len(nonEmptyVals) <= len(headerNames):
-                    # matrix: 헤더별 개별 항목으로 분리 (vals와 headerNames 수가 맞을 때만)
-                    for hi, hname in enumerate(headerNames):
-                        v = vals[hi].strip() if hi < len(vals) else ""
-                        if not v or v == "-":
-                            continue
-                        compoundItem = f"{item}_{hname}"
-                        if compoundItem not in seenItems:
-                            allItems.append(compoundItem)
-                            seenItems.add(compoundItem)
-                        if compoundItem not in periodItemVal:
-                            periodItemVal[compoundItem] = {}
-                        periodItemVal[compoundItem][p] = v
-                else:
-                    # key_value 또는 vals > headerNames: 전체 값 합침
-                    val = " | ".join(v for v in vals if v.strip()).strip()
-                    if val:
-                        if item not in seenItems:
-                            allItems.append(item)
-                            seenItems.add(item)
-                        if item not in periodItemVal:
-                            periodItemVal[item] = {}
-                        periodItemVal[item][p] = val
-
-        from dartlab.engines.dart.docs.sections.tableParser import _normalizeHeader
-
-        _PERIOD_KW_RE = re.compile(r"\d*분기|반기|당기|전기|전전기|당반기|전반기|당분기|전분기|당기말|전기말")
-
-        def _groupHeader(hc: list[str]) -> str:
-            """그룹핑용 헤더 시그니처 — 기간 키워드까지 제거."""
-            h = _normalizeHeader(hc)
-            h = _PERIOD_KW_RE.sub("", h)
-            h = re.sub(r"\| *\|", "|", h)  # 빈 파이프 정리
-            h = re.sub(r"\s+", " ", h).strip()
-            return h
-
-        # ── 1단계: 기간별 서브테이블의 헤더 시그니처 수집 ──
-        _headerGroups: dict[str, list[str]] = {}  # normHeader → [periods]
-        for p in periodCols:
-            md = boRow[p][0] if p in boRow.columns else None
-            if md is None:
-                continue
-            for sub in splitSubtables(str(md)):
-                hc = _headerCells(sub)
-                if _isJunk(hc):
-                    continue
-                dr = _dataRows(sub)
-                if not dr:
-                    # 데이터 없음 → 단위/기준일 헤더 strip 시도
-                    fixed = self._stripUnitHeader(sub)
-                    if fixed is not None:
-                        fixedHc = _headerCells(fixed)
-                        fixedDr = _dataRows(fixed)
-                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
-                            sub = fixed
-                            hc = fixedHc
-                            dr = fixedDr
-                        else:
-                            continue
-                    else:
-                        continue
-                structType = _classifyStructure(hc)
-                if structType == "skip":
-                    fixed = self._stripUnitHeader(sub)
-                    if fixed is not None:
-                        fixedHc = _headerCells(fixed)
-                        fixedDr = _dataRows(fixed)
-                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
-                            hc = fixedHc
-                gh = _groupHeader(hc)
-                if gh not in _headerGroups:
-                    _headerGroups[gh] = []
-                if p not in _headerGroups[gh]:
-                    _headerGroups[gh].append(p)
-
-        # 가장 많은 기간을 커버하는 헤더 그룹 선택
-        if _headerGroups:
-            bestHeader = max(_headerGroups, key=lambda k: len(_headerGroups[k]))
-            bestPeriods = set(_headerGroups[bestHeader])
-        else:
-            bestPeriods = set(periodCols)
-
-        # ── 2단계: 선택된 그룹의 기간에서만 수평화 ──
-        allItems: list[str] = []
-        seenItems: set[str] = set()
-        periodItemVal: dict[str, dict[str, str]] = {}
-
-        for p in periodCols:
-            if p not in bestPeriods:
-                continue
-            md = boRow[p][0] if p in boRow.columns else None
-            if md is None:
-                continue
-            m = re.match(r"\d{4}", p)
-            if m is None:
-                continue
-            pYear = int(m.group())
-
-            for sub in splitSubtables(str(md)):
-                hc = _headerCells(sub)
-                if _isJunk(hc):
-                    continue
-                dr = _dataRows(sub)
-                if not dr:
-                    # 데이터 없음 → 단위/기준일 헤더 strip 시도
-                    fixed = self._stripUnitHeader(sub)
-                    if fixed is not None:
-                        fixedHc = _headerCells(fixed)
-                        fixedDr = _dataRows(fixed)
-                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
-                            sub = fixed
-                            hc = fixedHc
-                            dr = fixedDr
-                        else:
-                            continue
-                    else:
-                        continue
-
-                structType = _classifyStructure(hc)
-
-                # 단위/기준일 헤더 → 실제 헤더로 재분류
-                if structType == "skip":
-                    fixed = self._stripUnitHeader(sub)
-                    if fixed is not None:
-                        fixedHc = _headerCells(fixed)
-                        fixedDr = _dataRows(fixed)
-                        if fixedHc and not _isJunk(fixedHc) and fixedDr:
-                            structType = _classifyStructure(fixedHc)
-                            hc = fixedHc
-                            sub = fixed  # 이후 파서에 strip된 서브테이블 전달
-
-                # 선택된 헤더 그룹의 서브테이블만 수집
-                gh = _groupHeader(hc)
-                if gh != bestHeader:
-                    continue
-
-                if structType == "multi_year":
-                    beforeLen = len(allItems)
-                    _collectMultiYear(sub, pYear, p)
-                    # multi_year 파싱 실패 → kv/matrix fallback
-                    if len(allItems) == beforeLen and len(hc) >= 2:
-                        _collectKvMatrix(sub, p)
-
-                elif structType in ("key_value", "matrix"):
-                    _collectKvMatrix(sub, p)
-
-        if not allItems:
-            return None
-
-        # 품질 필터: 숫자만 항목명 제거
-        def _isJunkItem(name: str) -> bool:
-            stripped = re.sub(r"[,.\-\s]", "", name)
-            return stripped.isdigit() or not stripped
-
-        allItems = [item for item in allItems if not _isJunkItem(item)]
-        if not allItems:
-            return None
-
-        # 이력형 감지: 기간 간 항목 겹침률이 낮으면 수평화 부적합
-        periodItemSets = {}
-        for item in allItems:
-            for p in periodItemVal.get(item, {}):
-                if p not in periodItemSets:
-                    periodItemSets[p] = set()
-                periodItemSets[p].add(item)
-        if len(periodItemSets) >= 2:
-            sets = list(periodItemSets.values())
-            totalOverlap = 0
-            totalPairs = 0
-            for i in range(len(sets)):
-                for j in range(i + 1, min(i + 4, len(sets))):  # 인접 기간만
-                    union = len(sets[i] | sets[j])
-                    inter = len(sets[i] & sets[j])
-                    if union > 0:
-                        totalOverlap += inter / union
-                        totalPairs += 1
-            avgOverlap = totalOverlap / totalPairs if totalPairs else 0
-            if avgOverlap < 0.3 and len(allItems) > 5:
-                # 이력형 → 수평화 스킵
-                return None
-
-        # 목록형 감지: 항목 수가 과다하면 수평화 부적합
-        if len(allItems) > 50:
-            return None
-
-        # DataFrame 구성
-        usedPeriods = [p for p in periodCols if any(p in periodItemVal.get(item, {}) for item in allItems)]
-        if not usedPeriods:
-            return None
-
-        # sparse 감지: 항목이 많고 대부분이 소수 기간에서만 값 → 수평화 부적합
-        # (기간별 서브테이블 구조가 다른 경우, 예: 이사 변동 + 사업조직 변경 혼재)
-        if len(usedPeriods) >= 3 and len(allItems) > 15:
-            totalCells = len(allItems) * len(usedPeriods)
-            filledCells = sum(1 for item in allItems for p in usedPeriods if periodItemVal.get(item, {}).get(p))
-            fillRate = filledCells / totalCells if totalCells > 0 else 0
-            if fillRate < 0.5:
-                return None
-
-        schema = {"항목": pl.Utf8}
-        for p in usedPeriods:
-            schema[p] = pl.Utf8
-
-        rows = []
-        for item in allItems:
-            if not any(periodItemVal.get(item, {}).get(p) for p in usedPeriods):
-                continue
-            row: dict[str, str | None] = {"항목": item}
-            for p in usedPeriods:
-                row[p] = periodItemVal.get(item, {}).get(p)
-            rows.append(row)
-
-        if not rows:
-            return None
-
-        df = pl.DataFrame(rows, schema=schema)
         return self._applyPeriodFilter(df, period)
-
-    @staticmethod
-    def _cleanSubtopicWide(df: pl.DataFrame) -> pl.DataFrame:
-        """subtopic wide에서 메타 컬럼 제거 + subtopic→항목 통일 + 내부 topic명 한글화."""
-        _DROP_META = {"topic", "sourceTopic", "subtopicOrder", "semanticTopic", "detailTopic"}
-        dropCols = [c for c in df.columns if c in _DROP_META]
-        if dropCols:
-            df = df.drop(dropCols)
-        if "subtopic" in df.columns:
-            df = df.rename({"subtopic": "항목"})
-        # 내부 topic명을 한글로 치환
-        if "항목" in df.columns:
-            df = df.with_columns(pl.col("항목").replace(_TOPIC_LABELS).alias("항목"))
-        return df
-
-    @staticmethod
-    def _ensurePeriodAscending(df: pl.DataFrame) -> pl.DataFrame:
-        """기간 컬럼을 오름차순으로 정렬."""
-        nonPeriodCols = [c for c in df.columns if not _isPeriodColumn(c)]
-        periodCols = [c for c in df.columns if _isPeriodColumn(c)]
-        if len(periodCols) < 2:
-            return df
-        sortedPeriods = sorted(periodCols)
-        if periodCols == sortedPeriods:
-            return df
-        return df.select([*nonPeriodCols, *sortedPeriods])
-
-    @staticmethod
-    def _dropOldPeriodColumns(df: pl.DataFrame, minYear: int) -> pl.DataFrame:
-        """기간 컬럼 중 minYear 미만 연도를 제거."""
-        keepCols = []
-        for c in df.columns:
-            if _isPeriodColumn(c) and int(c[:4]) < minYear:
-                continue
-            keepCols.append(c)
-        if len(keepCols) == len(df.columns):
-            return df
-        return df.select(keepCols)
-
-    def _trimOldPeriods(self, result: Any) -> Any:
-        """show() 반환값에서 _MIN_YEAR 이전 기간 제거."""
-        if result is None:
-            return None
-        minYear = self._MIN_YEAR
-        if isinstance(result, ShowResult):
-            text = self._dropOldPeriodColumns(result.text, minYear) if result.text is not None else None
-            table = self._dropOldPeriodColumns(result.table, minYear) if result.table is not None else None
-            # 기간 컬럼이 모두 제거된 경우
-            if text is not None:
-                hasPeriod = any(_isPeriodColumn(c) for c in text.columns)
-                if not hasPeriod:
-                    text = None
-            if table is not None:
-                hasPeriod = any(_isPeriodColumn(c) for c in table.columns)
-                if not hasPeriod:
-                    table = None
-            if text is None and table is None:
-                return None
-            return ShowResult(text=text, table=table)
-        if isinstance(result, pl.DataFrame):
-            trimmed = self._dropOldPeriodColumns(result, minYear)
-            # 기간 컬럼이 있었는데 모두 제거된 경우 → None
-            hadPeriod = any(_isPeriodColumn(c) for c in result.columns)
-            hasPeriod = any(_isPeriodColumn(c) for c in trimmed.columns)
-            if hadPeriod and not hasPeriod:
-                return None
-            return trimmed
-        return result
-
-    @staticmethod
-    def _unpivotTopicRows(topicFrame: pl.DataFrame) -> pl.DataFrame:
-        """topic × period 수평 행을 세로로 전환. blockType 유지."""
-        metaCols = {"chapter", "topic", "blockType", "blockOrder"}
-        periodCols = [c for c in topicFrame.columns if c not in metaCols]
-        hasBlockType = "blockType" in topicFrame.columns
-        hasBlockOrder = "blockOrder" in topicFrame.columns
-        rows: list[dict[str, str | None]] = []
-        for i in range(topicFrame.height):
-            ch = topicFrame["chapter"][i] if "chapter" in topicFrame.columns else None
-            tp = topicFrame["topic"][i] if "topic" in topicFrame.columns else None
-            bt = topicFrame["blockType"][i] if hasBlockType else None
-            bo = topicFrame["blockOrder"][i] if hasBlockOrder else None
-            for col in periodCols:
-                val = topicFrame[col][i]
-                if val is not None and str(val).strip():
-                    rows.append(
-                        {
-                            "chapter": ch,
-                            "topic": tp,
-                            "blockType": bt,
-                            "blockOrder": bo,
-                            "period": col,
-                            "content": str(val),
-                        }
-                    )
-        if not rows:
-            return pl.DataFrame(
-                {"chapter": [], "topic": [], "blockType": [], "blockOrder": [], "period": [], "content": []}
-            )
-        return pl.DataFrame(rows)
-
-    def _topicBlocks(self, topic: str) -> pl.DataFrame | None:
-        blocks = self._retrievalBlocks()
-        if blocks is None or blocks.is_empty():
-            return None
-        topicBlocks = blocks.filter(pl.col("topic") == topic)
-        if topicBlocks.is_empty():
-            return None
-        return topicBlocks
-
-    def _topicChangeLedger(self, topic: str) -> pl.DataFrame | None:
-        cacheKey = f"_topicLedger:{topic}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        blocks = self._topicBlocks(topic)
-        result = _buildTopicChangeLedger(blocks)
-        self._cache[cacheKey] = result
-        return result
-
-    def _topicEvidence(self, topic: str, period: str) -> pl.DataFrame:
-        from dartlab.engines.dart.docs.sections import rawPeriod
-
-        normalizedPeriod = rawPeriod(period)
-        cacheKey = f"_topicEvidence:{topic}:{normalizedPeriod}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        blocks = self._topicBlocks(topic)
-        result = _buildTopicEvidence(blocks, normalizedPeriod)
-        self._cache[cacheKey] = result
-        return result
 
     def _reportFrame(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         if self.report is None:
@@ -2008,59 +1269,10 @@ class Company:
             return None
 
     def _reportFrameInner(self, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
-        from dartlab.engines.dart.report.extract import extractClean
+        """report apiType의 정제된 DataFrame 반환."""
+        from dartlab.engines.dart._report_accessor import reportFrameInner
 
-        df = extractClean(self.stockCode, apiType)
-        if df is None or df.is_empty():
-            return None
-
-        # 2015년 제외 (sections/finance와 통일)
-        df = df.filter(pl.col("year") != 2015)
-        if df.is_empty():
-            return None
-
-        # stock_knd 필터 (보통주 우선)
-        if "stock_knd" in df.columns:
-            common = df.filter(pl.col("stock_knd") == "보통주")
-            if not common.is_empty():
-                df = common
-
-        # se(항목) 컬럼이 있으면 se × period 수평화
-        if "se" in df.columns:
-            return self._reportPivotBySe(df, raw=raw)
-
-        # se 없는 apiType → 행 기반 반환
-        _META_COLS = {"stlm_dt", "apiType", "stockCode", "year", "quarter", "quarterNum", "stock_knd"}
-        dropCols = [c for c in df.columns if c in _META_COLS]
-        if dropCols:
-            df = df.drop(dropCols)
-        if not raw:
-            renameMap = {c: _REPORT_COL_KR[c] for c in df.columns if c in _REPORT_COL_KR}
-            if renameMap:
-                existing = set(df.columns)
-                renameMap = {k: v for k, v in renameMap.items() if v not in existing or k == v}
-                if renameMap:
-                    df = df.rename(renameMap)
-        return df
-
-    def _reportPivotBySe(self, df: pl.DataFrame, *, raw: bool = False) -> pl.DataFrame | None:
-        """report se(항목) × period 수평화. 분기별 전체 데이터."""
-        df = df.with_columns((pl.col("year").cast(pl.Utf8) + "Q" + pl.col("quarterNum").cast(pl.Utf8)).alias("_period"))
-        # null-only 행 제외
-        if "thstrm" in df.columns:
-            df = df.filter(pl.col("thstrm").is_not_null())
-        if df.is_empty():
-            return None
-
-        pivoted = df.pivot(on="_period", index="se", values="thstrm", aggregate_function="first")
-
-        # period 컬럼 역순 정렬
-        periodCols = [c for c in pivoted.columns if c != "se"]
-        periodCols.sort(key=lambda p: (int(p[:4]), int(p[-1])), reverse=True)
-        result = pivoted.select(["se"] + periodCols)
-        if not raw:
-            result = result.rename({"se": "항목"})
-        return result
+        return reportFrameInner(self.stockCode, apiType, topic, raw=raw)
 
     def _applyPeriodFilter(self, payload: Any, period: str | None) -> Any:
         if period is None or not isinstance(payload, pl.DataFrame) or payload.is_empty():
@@ -2094,8 +1306,6 @@ class Company:
         if "year" in payload.columns:
             return payload.filter(pl.col("year").cast(pl.Utf8) == normalizedPeriod)
         return payload
-
-    _MIN_YEAR = 2016
 
     def show(
         self,
@@ -2170,26 +1380,9 @@ class Company:
 
     @staticmethod
     def _transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
-        """수평화 DataFrame에서 요청 기간 컬럼만 추출.
+        from dartlab.engines.common.show import transposeToVertical
 
-        wide: 항목(계정명/항목) | 2025Q3 | 2025Q2 | ... 형태
-        periods: ["2024Q4", "2023Q4"] 등 비교할 기간 리스트
-        Returns: 항목 | 2024Q4 | 2023Q4 형태 (기존 수평화와 동일 방향, 기간만 필터)
-        """
-        labelCol = wide.columns[0]
-        periodCols = [c for c in wide.columns if _isPeriodColumn(c)]
-
-        # 요청된 period 매칭 (Q4 alias 포함)
-        matched: list[str] = []
-        for p in periods:
-            if p in periodCols:
-                matched.append(p)
-            elif "Q" not in p and f"{p}Q4" in periodCols:
-                matched.append(f"{p}Q4")
-        if not matched:
-            return None
-
-        return wide.select([labelCol] + matched)
+        return transposeToVertical(wide, periods)
 
     @staticmethod
     def _cleanFinanceDataFrame(df: pl.DataFrame, sjDiv: str) -> pl.DataFrame:
@@ -2211,82 +1404,6 @@ class Company:
             )
             df = merged
         return df
-
-    def _showCore(
-        self,
-        topic: str,
-        *,
-        block: int | None = None,
-        period: str | None = None,
-        raw: bool = False,
-    ) -> Any:
-        if topic == "docsStatus":
-            return None
-
-        # block이 명시되면 sections 경로 우선 (blockOrder별 접근)
-        if block is not None:
-            topicFrame = self._sectionTopicRaw(topic)
-            if topicFrame is not None:
-                return self._showSectionBlock(topicFrame, block=block, period=period)
-
-        if topic in {"BS", "IS", "CIS", "CF", "SCE"}:
-            return self._applyPeriodFilter(getattr(self, topic), period)
-
-        if topic == "ratios":
-            ratioSeries = self._ratioSeries()
-            if ratioSeries is None:
-                return None
-            series, years = ratioSeries
-            templateKey = _ratioTemplateKeyForIndustryGroup(getattr(self.sector, "industryGroup", None))
-            fieldNames = _RATIO_TEMPLATE_FIELDS.get(templateKey)
-            ratioFrame = _ratioSeriesToDataFrame(series, years, fieldNames=fieldNames)
-            return self._applyPeriodFilter(ratioFrame, period)
-
-        if topic in {"salesOrder", "riskDerivative", "segments", "rawMaterial", "costByNature"}:
-            if topic == "costByNature" and not self._hasSectionTitleHint("costByNature"):
-                return None
-            if raw:
-                subtopicFrame = self._sectionsSubtopicLong(topic)
-                if subtopicFrame is not None:
-                    return self._applyPeriodFilter(subtopicFrame, period)
-            else:
-                subtopicFrame = self._sectionsSubtopicWide(topic)
-                if subtopicFrame is not None:
-                    subtopicFrame = self._cleanSubtopicWide(subtopicFrame)
-                    return self._applyPeriodFilter(subtopicFrame, period)
-            fallback_payload = {
-                "salesOrder": self._safePrimary("salesOrder"),
-                "riskDerivative": self._safePrimary("riskDerivative"),
-                "segments": self._safePrimary("segments"),
-                "rawMaterial": self._safePrimary("rawMaterial"),
-                "costByNature": self._safePrimary("costByNature") if self._hasDocsTopicHint("costByNature") else None,
-            }[topic]
-            if fallback_payload is not None:
-                payload = self._ensurePeriodAscending(fallback_payload)
-                # account/subtopic 등 → 항목 통일
-                if "account" in payload.columns:
-                    payload = payload.rename({"account": "항목"})
-                elif "subtopic" in payload.columns:
-                    payload = payload.rename({"subtopic": "항목"})
-                return self._applyPeriodFilter(payload, period)
-            return None
-
-        reportFrame = self._reportFrame(topic, raw=raw)
-        if reportFrame is not None:
-            return self._applyPeriodFilter(reportFrame, period)
-
-        if self.notes is not None:
-            from dartlab.engines.dart.docs.notes import _REGISTRY as _NOTES_REGISTRY
-
-            if topic in _NOTES_REGISTRY:
-                return self._applyPeriodFilter(self.notes._get(topic), period)
-
-        # docs topic — sections에서 blockOrder별 text/table 반환
-        topicFrame = self._sectionTopicRaw(topic)
-        if topicFrame is not None:
-            return self._showSectionBlock(topicFrame, block=block, period=period)
-
-        return None
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         if topic == "docsStatus" and not self._hasDocs:
@@ -2358,100 +1475,22 @@ class Company:
             c.diff("businessOverview")        # 특정 topic 변경 이력
             c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
         """
-        from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
+        from dartlab.engines.common.docs.diff import (
+            diffSummaryDataFrame,
+            lineDiffDataFrame,
+            sectionsDiff,
+            topicHistoryDataFrame,
+        )
 
         docsSections = self.docs.sections
         if docsSections is None:
             return None
-
-        # 줄 단위 상세 diff (인터리빙 순서로 맥락 유지)
         if topic is not None and fromPeriod is not None and toPeriod is not None:
-            result = topicDiff(docsSections, topic, fromPeriod, toPeriod)
-            if result is None:
-                return None
-            import difflib
-
-            filtered = docsSections.filter(pl.col("topic") == topic)
-            if filtered.height == 0:
-                return None
-            fromText = str(filtered.item(0, fromPeriod) or "")
-            toText = str(filtered.item(0, toPeriod) or "")
-            fromLines = fromText.splitlines()
-            toLines = toText.splitlines()
-            rows: list[dict[str, str | int]] = []
-            lineNo = 0
-            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-                None,
-                fromLines,
-                toLines,
-            ).get_opcodes():
-                if tag == "equal":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": " ", "text": line})
-                elif tag == "insert":
-                    for line in toLines[j1:j2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "+", "text": line})
-                elif tag == "delete":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "-", "text": line})
-                elif tag == "replace":
-                    for line in fromLines[i1:i2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "-", "text": line})
-                    for line in toLines[j1:j2]:
-                        lineNo += 1
-                        rows.append({"line": lineNo, "status": "+", "text": line})
-            return pl.DataFrame(rows) if rows else None
-
+            return lineDiffDataFrame(docsSections, topic, fromPeriod, toPeriod)
         diffResult = sectionsDiff(docsSections)
-
-        # 특정 topic 변경 이력
         if topic is not None:
-            topicEntries = [e for e in diffResult.entries if e.topic == topic]
-            if not topicEntries:
-                return pl.DataFrame(
-                    {
-                        "fromPeriod": [],
-                        "toPeriod": [],
-                        "status": [],
-                        "fromLen": [],
-                        "toLen": [],
-                        "delta": [],
-                        "deltaRate": [],
-                    }
-                )
-            return pl.DataFrame(
-                [
-                    {
-                        "fromPeriod": e.fromPeriod,
-                        "toPeriod": e.toPeriod,
-                        "status": e.status,
-                        "fromLen": e.fromLen,
-                        "toLen": e.toLen,
-                        "delta": e.toLen - e.fromLen,
-                        "deltaRate": round((e.toLen - e.fromLen) / e.fromLen, 3) if e.fromLen > 0 else None,
-                    }
-                    for e in topicEntries
-                ]
-            )
-
-        # 전체 요약
-        return pl.DataFrame(
-            [
-                {
-                    "chapter": s.chapter,
-                    "topic": s.topic,
-                    "periods": s.totalPeriods,
-                    "changed": s.changedCount,
-                    "stable": s.stableCount,
-                    "changeRate": round(s.changeRate, 3),
-                }
-                for s in diffResult.summaries
-            ]
-        )
+            return topicHistoryDataFrame(diffResult, topic)
+        return diffSummaryDataFrame(diffResult)
 
     def table(
         self,
@@ -2583,6 +1622,35 @@ class Company:
                 }
             )
 
+        rows.extend(self._indexFinanceRows())
+        rows.extend(self._indexDocsRows())
+        rows.extend(self._indexReportRows(existingTopics={r["topic"] for r in rows}))
+
+        rows.sort(key=lambda r: r.get("_sortKey", (99, 999)))
+        for r in rows:
+            r.pop("_sortKey", None)
+
+        df = (
+            pl.DataFrame(rows)
+            if rows
+            else pl.DataFrame(
+                schema={
+                    "chapter": pl.Utf8,
+                    "topic": pl.Utf8,
+                    "label": pl.Utf8,
+                    "kind": pl.Utf8,
+                    "source": pl.Utf8,
+                    "periods": pl.Utf8,
+                    "shape": pl.Utf8,
+                    "preview": pl.Utf8,
+                }
+            )
+        )
+        self._cache[cacheKey] = df
+        return df
+
+    def _indexFinanceRows(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         _STMT_ORDER = {"BS": 0, "IS": 1, "CIS": 2, "CF": 3, "SCE": 4}
         for stmt in ("BS", "IS", "CIS", "CF", "SCE"):
             df = getattr(self, stmt, None)
@@ -2632,102 +1700,90 @@ class Company:
                     "_sortKey": (3, 5),
                 }
             )
+        return rows
 
+    def _indexDocsRows(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         sec = self.docs.sections
-        if sec is not None and "topic" in sec.columns:
-            from dartlab.engines.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+        if sec is None or "topic" not in sec.columns:
+            return rows
 
-            periodCols = sortPeriods([c for c in sec.columns if _isPeriodColumn(c)], descending=True)
-            periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
-            topicOrder: list[str] = []
-            seenTopics: set[str] = set()
-            for row in sec.iter_rows(named=True):
-                topic = row.get("topic")
-                if isinstance(topic, str) and topic and topic not in seenTopics:
-                    seenTopics.add(topic)
-                    topicOrder.append(topic)
-            for rowIdx, topic in enumerate(topicOrder):
-                topicFrame = sec.filter(pl.col("topic") == topic)
-                if topicFrame.is_empty():
-                    continue
-                nonNull = sum(
-                    1 for c in periodCols if c in topicFrame.columns and topicFrame.get_column(c).drop_nulls().len() > 0
-                )
-                preview = "-"
-                for row in topicFrame.iter_rows(named=True):
-                    for col in periodCols:
-                        val = row.get(col)
-                        if val is not None:
-                            text = _normalizeTextCell(val)[:80]
-                            preview = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
-                            break
-                    if preview != "-":
+        from dartlab.engines.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+
+        periodCols = sortPeriods([c for c in sec.columns if _isPeriodColumn(c)], descending=True)
+        periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
+        topicOrder: list[str] = []
+        seenTopics: set[str] = set()
+        for row in sec.iter_rows(named=True):
+            topic = row.get("topic")
+            if isinstance(topic, str) and topic and topic not in seenTopics:
+                seenTopics.add(topic)
+                topicOrder.append(topic)
+        for rowIdx, topic in enumerate(topicOrder):
+            topicFrame = sec.filter(pl.col("topic") == topic)
+            if topicFrame.is_empty():
+                continue
+            nonNull = sum(
+                1 for c in periodCols if c in topicFrame.columns and topicFrame.get_column(c).drop_nulls().len() > 0
+            )
+            preview = "-"
+            for row in topicFrame.iter_rows(named=True):
+                for col in periodCols:
+                    val = row.get(col)
+                    if val is not None:
+                        text = _normalizeTextCell(val)[:80]
+                        preview = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
                         break
-                chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
-                chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else self._chapterForTopic(topic)
-                chapterNum = _CHAPTER_ORDER.get(chapter, 12)
-                rows.append(
-                    {
-                        "chapter": _CHAPTER_TITLES.get(chapter, chapter),
-                        "topic": topic,
-                        "label": self._topicLabel(topic),
-                        "kind": "docs",
-                        "source": "docs",
-                        "periods": periodRange,
-                        "shape": f"{nonNull}기간",
-                        "preview": preview,
-                        "_sortKey": (chapterNum, 100 + rowIdx),
-                    }
-                )
-
-        if self._hasReport:
-            from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES
-
-            existingTopics = {r["topic"] for r in rows}
-            for rIdx, apiType in enumerate(API_TYPES):
-                if apiType in existingTopics:
-                    continue
-                df = self.report.extract(apiType)
-                if df is None or df.is_empty():
-                    continue
-                chapter = self._chapterForTopic(apiType)
-                chapterNum = _CHAPTER_ORDER.get(chapter, 12)
-                rows.append(
-                    {
-                        "chapter": _CHAPTER_TITLES.get(chapter, chapter),
-                        "topic": apiType,
-                        "label": API_TYPE_LABELS.get(apiType, apiType),
-                        "kind": "report",
-                        "source": "report",
-                        "periods": "-",
-                        "shape": _shapeString(df),
-                        "preview": API_TYPE_LABELS.get(apiType, apiType),
-                        "_sortKey": (chapterNum, 200 + rIdx),
-                    }
-                )
-
-        rows.sort(key=lambda r: r.get("_sortKey", (99, 999)))
-        for r in rows:
-            r.pop("_sortKey", None)
-
-        df = (
-            pl.DataFrame(rows)
-            if rows
-            else pl.DataFrame(
-                schema={
-                    "chapter": pl.Utf8,
-                    "topic": pl.Utf8,
-                    "label": pl.Utf8,
-                    "kind": pl.Utf8,
-                    "source": pl.Utf8,
-                    "periods": pl.Utf8,
-                    "shape": pl.Utf8,
-                    "preview": pl.Utf8,
+                if preview != "-":
+                    break
+            chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
+            chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else self._chapterForTopic(topic)
+            chapterNum = _CHAPTER_ORDER.get(chapter, 12)
+            rows.append(
+                {
+                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                    "topic": topic,
+                    "label": self._topicLabel(topic),
+                    "kind": "docs",
+                    "source": "docs",
+                    "periods": periodRange,
+                    "shape": f"{nonNull}기간",
+                    "preview": preview,
+                    "_sortKey": (chapterNum, 100 + rowIdx),
                 }
             )
-        )
-        self._cache[cacheKey] = df
-        return df
+        return rows
+
+    def _indexReportRows(self, *, existingTopics: set[str] | None = None) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        if not self._hasReport:
+            return rows
+
+        from dartlab.engines.dart.report.types import API_TYPE_LABELS, API_TYPES
+
+        existing = existingTopics or set()
+        for rIdx, apiType in enumerate(API_TYPES):
+            if apiType in existing:
+                continue
+            df = self.report.extract(apiType)
+            if df is None or df.is_empty():
+                continue
+            chapter = self._chapterForTopic(apiType)
+            chapterNum = _CHAPTER_ORDER.get(chapter, 12)
+            rows.append(
+                {
+                    "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                    "topic": apiType,
+                    "label": API_TYPE_LABELS.get(apiType, apiType),
+                    "kind": "report",
+                    "source": "report",
+                    "periods": "-",
+                    "shape": _shapeString(df),
+                    "preview": API_TYPE_LABELS.get(apiType, apiType),
+                    "_sortKey": (chapterNum, 200 + rIdx),
+                }
+            )
+        return rows
 
     @property
     def profile(self) -> _ProfileAccessor:
@@ -3082,28 +2138,29 @@ class Company:
     def _ensureNetwork(self) -> tuple[dict, dict] | None:
         """network 파이프라인 캐싱 → (data, full)."""
         if "_network_data" not in self._cache:
-            from dartlab.engines.dart.affiliate import build_graph, export_full
+            from dartlab.engines.dart.network import build_graph, export_full
 
             data = build_graph(verbose=False)
             self._cache["_network_data"] = data
             self._cache["_network_full"] = export_full(data)
         return self._cache["_network_data"], self._cache["_network_full"]
 
-    def network(self, view: str | None = None, *, hops: int = 1) -> pl.DataFrame | None:
+    def network(self, view: str | None = None, *, hops: int = 1):
         """관계 네트워크.
 
         Args:
-            view: None이면 요약, "members"/"edges"/"cycles"/"peers" 중 택
-            hops: peers 뷰에서 홉 수
+            view: None이면 시각화(NetworkView), "members"/"edges"/"cycles"/"peers"이면 DataFrame
+            hops: peers/시각화 뷰에서 홉 수
 
         Example::
 
             c = Company("005930")
-            c.network()            # 요약
-            c.network("members")   # 같은 그룹 계열사
-            c.network("edges")     # 출자/지분 연결
-            c.network("cycles")    # 순환출자 경로
-            c.network("peers")     # 이 회사 중심 서브그래프
+            c.network()              # → NetworkView (.show()로 브라우저)
+            c.network().show()       # 브라우저 오픈
+            c.network("members")     # 같은 그룹 계열사 DataFrame
+            c.network("edges")       # 출자/지분 연결 DataFrame
+            c.network("cycles")      # 순환출자 경로 DataFrame
+            c.network("peers")       # 이 회사 중심 서브그래프 DataFrame
         """
         result = self._ensureNetwork()
         if result is None:
@@ -3113,7 +2170,17 @@ class Company:
         group = data["code_to_group"].get(code, self.corpName or code)
 
         if view is None:
-            return self._networkOverview(data, full, code, group)
+            from dartlab.engines.dart.network import export_ego
+            from dartlab.tools.network import render_network
+
+            ego = export_ego(data, full, code, hops=hops)
+            center_name = data["code_to_name"].get(code, code)
+            return render_network(
+                ego["nodes"],
+                ego["edges"],
+                f"{center_name} 관계 네트워크",
+                center_id=code,
+            )
         if view == "members":
             return self._networkMembers(data, code, group)
         if view == "edges":
@@ -3123,35 +2190,6 @@ class Company:
         if view == "peers":
             return self._networkPeers(data, full, code, hops=hops)
         return None
-
-    def _networkOverview(self, data: dict, full: dict, code: str, group: str) -> pl.DataFrame:
-        """요약 테이블."""
-        from collections import Counter
-
-        gc = Counter(data["code_to_group"][n] for n in data["all_node_ids"])
-        member_count = gc.get(group, 1)
-        is_independent = member_count == 1
-
-        # 직접 연결 수
-        direct = sum(
-            1
-            for e in full["edges"]
-            if e["type"] != "person_shareholder" and (e["source"] == code or e["target"] == code)
-        )
-        outgoing = sum(1 for e in full["edges"] if e["type"] == "investment" and e["source"] == code)
-        incoming = sum(1 for e in full["edges"] if e["type"] != "person_shareholder" and e["target"] == code)
-        my_cycles = [cy for cy in data["cycles"] if code in cy]
-
-        rows = [
-            ("그룹", group if not is_independent else f"{group} (독립)"),
-            ("계열사", f"{member_count}개"),
-            ("직접 연결", f"{direct}개사"),
-            ("출자 (→)", f"{outgoing}개"),
-            ("피출자 (←)", f"{incoming}개"),
-            ("순환출자", f"{len(my_cycles)}개 경로"),
-            ("업종", data["listing_meta"].get(code, {}).get("industry", "")),
-        ]
-        return pl.DataFrame({"항목": [r[0] for r in rows], "값": [r[1] for r in rows]})
 
     def _networkMembers(self, data: dict, code: str, group: str) -> pl.DataFrame:
         """같은 그룹 계열사 목록."""
@@ -3233,7 +2271,7 @@ class Company:
 
     def _networkPeers(self, data: dict, full: dict, code: str, *, hops: int = 1) -> pl.DataFrame:
         """이 회사 중심 서브그래프 (ego 뷰) → DataFrame."""
-        from dartlab.engines.dart.affiliate import export_ego
+        from dartlab.engines.dart.network import export_ego
 
         ego = export_ego(data, full, code, hops=hops)
         rows = []
@@ -3267,37 +2305,11 @@ class Company:
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
 
-        로컬 서버를 자동으로 띄우고 브라우저를 열어서
-        이 회사의 전체 공시를 DART 스타일로 탐색할 수 있습니다.
-
         Example::
 
             c = Company("005930")
             c.view()
         """
-        import socket
-        import threading
-        import time
-        import webbrowser
+        from dartlab.engines.common.viewer import launchViewer
 
-        def _is_port_in_use(p: int) -> bool:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                return s.connect_ex(("127.0.0.1", p)) == 0
-
-        if not _is_port_in_use(port):
-
-            def _run():
-                import uvicorn
-
-                uvicorn.run("dartlab.server:app", host="127.0.0.1", port=port, log_level="warning")
-
-            t = threading.Thread(target=_run, daemon=True)
-            t.start()
-            # 서버 준비 대기
-            for _ in range(30):
-                if _is_port_in_use(port):
-                    break
-                time.sleep(0.1)
-
-        url = f"http://127.0.0.1:{port}/?company={self.stockCode}"
-        webbrowser.open(url)
+        launchViewer(self.stockCode, port=port)

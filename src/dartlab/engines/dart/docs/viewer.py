@@ -1137,7 +1137,9 @@ def _buildTableBlock(
     periodCols: list[str],
 ) -> ViewerBlock | None:
     """table 블록 — 수평화 시도 후 structured / raw_markdown 분류."""
-    result = company._horizontalizeTableBlock(topicFrame, bo, periodCols, None)
+    from dartlab.engines.dart._table_horizontalizer import horizontalizeTableBlock
+
+    result = horizontalizeTableBlock(topicFrame, bo, periodCols, None)
 
     if result is not None and isinstance(result, pl.DataFrame):
         resPeriods = _periodCols(result)
