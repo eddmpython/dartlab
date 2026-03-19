@@ -56,18 +56,44 @@ def create_server():
 
     app = Server("dartlab")
 
+    # stock_code 파라미터 정의 — company 필요 도구에 주입
+    _STOCK_CODE_PROP = {
+        "stock_code": {
+            "type": "string",
+            "description": "종목코드 (예: 005930) 또는 티커 (예: AAPL). 기업별 도구 호출 시 필수.",
+        }
+    }
+
+    # company=None 일 때만 노출되는 도구 (stock_code 불필요)
+    _runtime_no_company = build_tool_runtime(None, name="mcp-schema-base")
+    _base_tool_names = {s["function"]["name"] for s in _runtime_no_company.get_tool_schemas()}
+
+    # dummy object로 전체 도구 스키마 수집 (실제 Company 로딩 없이)
+    _runtime_full = build_tool_runtime(object(), name="mcp-schema-full")
+
     @app.list_tools()
     async def list_tools() -> list[Tool]:
-        runtime = build_tool_runtime(None, name="mcp-list")
-        mcp_tools = build_mcp_tools(runtime)
-        return [
-            Tool(
-                name=t.name,
-                description=t.description,
-                inputSchema=t.inputSchema,
+        mcp_tools = build_mcp_tools(_runtime_full)
+        result = []
+        for t in mcp_tools:
+            schema = dict(t.inputSchema)
+            # company 필요 도구에 stock_code 파라미터 주입
+            if t.name not in _base_tool_names:
+                props = dict(schema.get("properties", {}))
+                props.update(_STOCK_CODE_PROP)
+                schema["properties"] = props
+                req = list(schema.get("required", []))
+                if "stock_code" not in req:
+                    req.insert(0, "stock_code")
+                schema["required"] = req
+            result.append(
+                Tool(
+                    name=t.name,
+                    description=t.description,
+                    inputSchema=schema,
+                )
             )
-            for t in mcp_tools
-        ]
+        return result
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:

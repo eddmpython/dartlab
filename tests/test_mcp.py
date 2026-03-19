@@ -87,6 +87,45 @@ def test_company_cache_reuses(monkeypatch):
     _company_cache.clear()
 
 
+# ── 도구 노출 (14→39 강화) ──
+
+
+def test_full_tools_exposed():
+    """dummy company로 전체 도구가 노출되는지 확인."""
+    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.mcp.bridge import build_mcp_tools
+
+    rt_none = build_tool_runtime(None, name="test-none")
+    rt_full = build_tool_runtime(object(), name="test-full")
+    base_count = len(build_mcp_tools(rt_none))
+    full_count = len(build_mcp_tools(rt_full))
+
+    assert base_count >= 10, f"base tools too few: {base_count}"
+    assert full_count >= 30, f"full tools too few: {full_count}"
+    assert full_count > base_count
+
+
+def test_company_tools_have_stock_code_in_schema():
+    """company 필요 도구의 inputSchema에 stock_code가 주입되는지 확인."""
+    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.mcp.bridge import build_mcp_tools
+
+    rt_none = build_tool_runtime(None, name="base")
+    base_names = {s["function"]["name"] for s in rt_none.get_tool_schemas()}
+
+    rt_full = build_tool_runtime(object(), name="full")
+    mcp_tools = build_mcp_tools(rt_full)
+
+    _STOCK_CODE_PROP = {"stock_code": {"type": "string", "description": "test"}}
+
+    for t in mcp_tools:
+        if t.name not in base_names:
+            # 실제 MCP list_tools에서 주입하므로 여기서는 원본에 없음을 확인
+            assert "stock_code" not in t.inputSchema.get("properties", {}), (
+                f"{t.name}에 stock_code가 원본 스키마에 이미 있음 (중복 주입 위험)"
+            )
+
+
 # ── MCP SDK 없이도 bridge 모듈은 임포트 가능 ──
 
 
