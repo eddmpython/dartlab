@@ -1,0 +1,140 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="purpleGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg1)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">삼성전자 vs TSMC — 연도별 CAPEX 규모 비교</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Capital expenditure comparison 2021-2024 (Samsung DS Division vs TSMC)</text>
+
+  <!-- Legend -->
+  <rect x="380" y="92" width="14" height="14" rx="3" fill="#a78bfa"/>
+  <text x="400" y="104" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Samsung DS</text>
+  <rect x="520" y="92" width="14" height="14" rx="3" fill="#38bdf8"/>
+  <text x="540" y="104" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">TSMC</text>
+  <rect x="640" y="92" width="14" height="14" rx="3" fill="none" stroke="#fb923c" stroke-width="2" stroke-dasharray="3,2"/>
+  <text x="660" y="104" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">CAPEX/Revenue ratio</text>
+
+  <!-- Chart area -->
+  <!-- Y-axis label (left: amount) -->
+  <text x="48" y="130" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">금액</text>
+
+  <!-- Y-axis gridlines and labels -->
+  <line x1="90" y1="150" x2="900" y2="150" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="154" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">60</text>
+  <line x1="90" y1="220" x2="900" y2="220" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="224" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">50</text>
+  <line x1="90" y1="290" x2="900" y2="290" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="294" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">40</text>
+  <line x1="90" y1="360" x2="900" y2="360" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="364" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">30</text>
+  <line x1="90" y1="430" x2="900" y2="430" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="434" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">20</text>
+  <line x1="90" y1="500" x2="900" y2="500" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="504" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">10</text>
+  <line x1="90" y1="570" x2="900" y2="570" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="574" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">0</text>
+
+  <!-- Unit label -->
+  <text x="48" y="574" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">(B USD)</text>
+
+  <!-- 2021 bars -->
+  <!-- Samsung DS 2021: ~43B (반도체 48.7조 ≈ 38B) -->
+  <rect x="140" y="248" width="70" height="322" rx="4" fill="url(#purpleGlow)" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="140" y="248" width="70" height="322" rx="4" fill="#a78bfa" fill-opacity="0.35"/>
+  <text x="175" y="240" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#a78bfa">38.4B</text>
+  <!-- TSMC 2021: 30.4B -->
+  <rect x="220" y="318" width="70" height="252" rx="4" fill="url(#blueGlow)" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="220" y="318" width="70" height="252" rx="4" fill="#38bdf8" fill-opacity="0.35"/>
+  <text x="255" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#38bdf8">30.4B</text>
+  <text x="210" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">2021</text>
+
+  <!-- 2022 bars -->
+  <!-- Samsung DS 2022: ~53.7B (반도체 59.2조) -->
+  <rect x="340" y="176" width="70" height="394" rx="4" fill="url(#purpleGlow)" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="340" y="176" width="70" height="394" rx="4" fill="#a78bfa" fill-opacity="0.35"/>
+  <text x="375" y="168" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#a78bfa">47.2B</text>
+  <!-- TSMC 2022: 36.3B -->
+  <rect x="420" y="276" width="70" height="294" rx="4" fill="url(#blueGlow)" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="420" y="276" width="70" height="294" rx="4" fill="#38bdf8" fill-opacity="0.35"/>
+  <text x="455" y="268" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#38bdf8">36.3B</text>
+  <text x="410" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">2022</text>
+
+  <!-- 2023 bars -->
+  <!-- Samsung DS 2023: ~33.8B (반도체 45.8조, 환율 상승) -->
+  <rect x="540" y="290" width="70" height="280" rx="4" fill="url(#purpleGlow)" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="540" y="290" width="70" height="280" rx="4" fill="#a78bfa" fill-opacity="0.35"/>
+  <text x="575" y="282" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#a78bfa">33.8B</text>
+  <!-- TSMC 2023: 30.5B -->
+  <rect x="620" y="320" width="70" height="250" rx="4" fill="url(#blueGlow)" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="620" y="320" width="70" height="250" rx="4" fill="#38bdf8" fill-opacity="0.35"/>
+  <text x="655" y="312" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#38bdf8">30.5B</text>
+  <text x="610" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">2023</text>
+
+  <!-- 2024 bars -->
+  <!-- Samsung DS 2024: ~39.5B -->
+  <rect x="740" y="250" width="70" height="320" rx="4" fill="url(#purpleGlow)" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="740" y="250" width="70" height="320" rx="4" fill="#a78bfa" fill-opacity="0.35"/>
+  <text x="775" y="242" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#a78bfa">39.5B</text>
+  <!-- TSMC 2024: 29.8B -->
+  <rect x="820" y="326" width="70" height="244" rx="4" fill="url(#blueGlow)" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+  <rect x="820" y="326" width="70" height="244" rx="4" fill="#38bdf8" fill-opacity="0.35"/>
+  <text x="855" y="318" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#38bdf8">29.8B</text>
+  <text x="810" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">2024</text>
+
+  <!-- Right panel: CAPEX/Revenue ratio -->
+  <rect x="940" y="130" width="240" height="490" rx="8" fill="rgba(100,116,139,0.04)" stroke="#1e2433" stroke-width="1"/>
+  <text x="1060" y="160" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">CAPEX / 매출 비율</text>
+  <text x="1060" y="178" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">Capital Intensity</text>
+
+  <!-- Ratio table -->
+  <text x="970" y="220" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Year</text>
+  <text x="1030" y="220" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">Samsung</text>
+  <text x="1120" y="220" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#38bdf8">TSMC</text>
+
+  <line x1="960" y1="232" x2="1160" y2="232" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="970" y="260" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">2021</text>
+  <text x="1030" y="260" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#a78bfa">44.2%</text>
+  <text x="1120" y="260" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#38bdf8">52.5%</text>
+
+  <text x="970" y="300" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">2022</text>
+  <text x="1030" y="300" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#a78bfa">53.1%</text>
+  <text x="1120" y="300" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#38bdf8">47.7%</text>
+
+  <text x="970" y="340" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">2023</text>
+  <text x="1030" y="340" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#a78bfa">61.8%</text>
+  <text x="1120" y="340" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#38bdf8">43.1%</text>
+
+  <text x="970" y="380" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">2024</text>
+  <text x="1030" y="380" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#a78bfa">39.7%</text>
+  <text x="1120" y="380" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#38bdf8">38.2%</text>
+
+  <!-- Insight box -->
+  <rect x="960" y="420" width="200" height="80" rx="6" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="1060" y="445" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#fb923c">Key Insight</text>
+  <text x="1060" y="465" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">2023년 삼성 DS 매출 급감에도</text>
+  <text x="1060" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">CAPEX 유지 → 비율 61.8% 급등</text>
+  <text x="1060" y="495" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">공격적 선제투자 vs TSMC 안정적</text>
+
+  <!-- Axis line -->
+  <line x1="90" y1="570" x2="900" y2="570" stroke="#64748b" stroke-width="1"/>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

@@ -2,7 +2,7 @@
 
 이 문서는 블로그를 `글 수 확장`보다 `사람에게 바로 도움이 되는 검색 허브`로 키우기 위한 운영 문서다.
 
-현재 기준은 워크트리 기준 109개 포스트다.
+현재 기준은 워크트리 기준 112개 포스트다.
 
 ## 지금 상태 요약
 
@@ -34,6 +34,9 @@
 
 최근 추가:
 
+- 112: 셀트리온 vs Amgen R&D·무형자산 비교 — global-comparison 시리즈 3번째
+- 111: 현대차 vs Toyota 재고·매출채권 비교 — global-comparison 시리즈 2번째
+- 110: 삼성전자 vs TSMC 설비투자·감가상각 비교 — global-comparison 시리즈 1번째
 - 109: DART-EDGAR 데이터 통합 구조 — data-automation 시리즈 11번째
 - 108: 수집 데이터 품질 검증 자동화 — data-automation 시리즈 10번째
 - 107: 대량 다운로드와 rate limit 전략 — data-automation 시리즈 9번째
@@ -57,7 +60,7 @@
 
 `scripts/auditBlog.py` 기준으로 지금 가장 중요한 수치는 아래다.
 
-- 포스트 수: `109`
+- 포스트 수: `112`
 - 1,200단어 미만 포스트: `0`
 - SVG 4개 미만 포스트: `0`
 - FAQ 없는 포스트: `0`
@@ -74,7 +77,8 @@
 
 - `기초 허브 글`, `시리즈 구조`, `SVG 체계`는 기준선에 도달했다.
 - 5-풀 H2 시스템 적용으로 035~094 템플릿 반복 해소 완료.
-- 04-data-automation 카테고리가 11편으로 확장 완료. 다음 병목은 `새 공백 선정`이다.
+- 04-data-automation 카테고리가 11편으로 확장 완료.
+- 05-global-comparison 카테고리 신설, 3편(110~112) 작성 완료.
 
 ## 운영 방향 전환
 
@@ -130,6 +134,7 @@
 | `working-capital-and-earnings-quality` | 재고·채권·이익의 질 | 매출 인식 시점 변경, 현금흐름·선수금, 미청구공사·선수수익 비대칭, 공사손실충당부채, 추가원가·공사미수금 동시 악화, 공사선수금 감소·공사미수금 증가, 팩토링·유동화, 공급망금융, 재고평가손실·저가수주 압박, 수주잔고와 현금 괴리, 진행률·계약자산 회전 둔화까지 포함해 핵심 허브 보강 완료 |
 | `data-automation` | 공시 데이터 파이프라인 | 11편: XBRL 매핑, 대량 수집, 품질 검증, DART-EDGAR 통합까지 확장 완료 |
 | `industry-reading` | 업종별 공시 읽기 | 5편 완성: 건설(101), 바이오(102), 금융(103), 지주사(104), 유통·플랫폼(105) |
+| `global-comparison` | 한미 공시 비교 실전 | 3편 완성: 삼성전자vsTSMC(110), 현대차vsToyota(111), 셀트리온vsAmgen(112) |
 | `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 우선주·RCPS, RCPS 상환 압박·자본 재분류, RCPS 조건변경·상환 유예, 우선주 누적배당 현금 압박, 우선주 의무배당 미지급과 협상력 역전, 우선주 배당 스텝업 조항, 우선주 동의권 조항, 교환사채·EB, 메자닌 보호조항, 만기연장·조건변경, 리픽싱 이후 실제 전환·오버행, 메자닌 조기상환 요구까지 포함해 핵심 허브 보강 완료 |
 
 ## 리라이트 우선순위
@@ -187,6 +192,14 @@
 | 104 | holding-company-filings | 지주사 공시는 연결과 별도 중 무엇을 먼저 봐야 하나 | 비교형 |
 | 105 | retail-platform-company-filings | 유통·플랫폼 공시는 매출 숫자를 어떻게 다르게 읽어야 하나 | 비교형 |
 
+### 05-global-comparison 한미 공시 비교 (110 ~ 112) `완료`
+
+| 번호 | 슬러그 | 제목 | 유형 |
+| --- | --- | --- | --- |
+| 110 | samsung-vs-tsmc-capex-and-depreciation | 삼성전자 vs TSMC — 설비투자와 감가상각은 어떻게 다른가 | 비교형 `published` |
+| 111 | hyundai-vs-toyota-inventory-and-receivables | 현대차 vs Toyota — 재고와 매출채권 구조는 왜 다른가 | 비교형 `published` |
+| 112 | celltrion-vs-amgen-rnd-and-intangibles | 셀트리온 vs Amgen — 연구개발비와 무형자산은 어디가 다른가 | 비교형 `published` |
+
 ### 04-data-automation 확장 (106 ~ 109) `완료`
 
 | 번호 | 슬러그 | 제목 | 유형 |
@@ -221,12 +234,19 @@
 - endpoint 소개보다 `수집기 설계`를 쓴다
 - corp_code, rcept_no, raw filing, XBRL, notes를 레이어로 나눠 설명한다
 
+### 05-global-comparison
+
+- 같은 산업의 한국·미국 기업을 DART/EDGAR 공시 원문 기준으로 나란히 비교한다
+- 회계 기준(K-IFRS vs US-GAAP) 차이가 재무 숫자에 미치는 영향을 실전 사례로 보여준다
+- 공시 구조 차이(어디에 무엇이 적혀 있는지)와 비교 체크리스트를 함께 제공한다
+
 ## 제작 상태
 
-- 작성 완료: `001` ~ `109`
+- 작성 완료: `001` ~ `112`
 - H2 5-풀 다양화: `035` ~ `094` 적용 완료 (546 headings in 59 posts)
 - industry-reading 시리즈: `101` ~ `105` 완성
 - data-automation 확장: `106` ~ `109` 완성
+- global-comparison 시리즈: `110` ~ `112` 완성
 - 핵심 허브 리라이트: `1차 완료`
 - 다음 유지 보강 우선: `입문 허브 첫 SVG 재정비`, `새 공백 발굴`
 

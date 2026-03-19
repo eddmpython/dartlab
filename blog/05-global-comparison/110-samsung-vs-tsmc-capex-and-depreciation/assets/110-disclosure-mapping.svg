@@ -1,0 +1,121 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="purpleGlow4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="blueGlow4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
+    </linearGradient>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#34d399" fill-opacity="0.6"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fb923c" fill-opacity="0.6"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f87171" fill-opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg4)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">CAPEX/감가상각 정보의 공시 위치 매핑</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Where to find the same information — DART vs EDGAR filing locations</text>
+
+  <!-- ====== LEFT: DART ====== -->
+  <rect x="40" y="100" width="460" height="560" rx="10" fill="url(#purpleGlow4)" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="270" y="132" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="17" font-weight="bold" fill="#a78bfa">DART 사업보고서</text>
+  <text x="270" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748b">K-IFRS Annual Report</text>
+
+  <!-- DART sections -->
+  <rect x="65" y="172" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="194" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">II. 사업의 내용</text>
+  <text x="85" y="214" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">설비 투자 계획, 생산능력, 가동률, 생산실적</text>
+
+  <rect x="65" y="240" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="262" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">III. 재무에 관한 사항</text>
+  <text x="85" y="282" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">재무제표 — 유형자산 변동 명세 (취득/처분/감가상각)</text>
+
+  <rect x="65" y="308" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="330" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">주석 — 유형자산</text>
+  <text x="85" y="350" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">내용연수, 상각방법, 자산별 취득원가/감가상각누계액/장부금액</text>
+
+  <rect x="65" y="376" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="398" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">주석 — 건설중인자산</text>
+  <text x="85" y="418" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">진행중인 CAPEX 프로젝트, 완공 예정 시점</text>
+
+  <rect x="65" y="444" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="466" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">현금흐름표</text>
+  <text x="85" y="486" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">투자활동: 유형자산 취득 금액 (= 실제 CAPEX)</text>
+
+  <rect x="65" y="512" width="410" height="56" rx="6" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="85" y="534" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#a78bfa">주석 — 회계정책</text>
+  <text x="85" y="554" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">자산별 내용연수 변경 여부, 손상 판단 기준</text>
+
+  <!-- Center Info Badge -->
+  <rect x="515" y="98" width="170" height="36" rx="18" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="600" y="121" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#34d399">같은 정보, 다른 위치</text>
+
+  <!-- ====== RIGHT: EDGAR ====== -->
+  <rect x="700" y="100" width="460" height="560" rx="10" fill="url(#blueGlow4)" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="930" y="132" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="17" font-weight="bold" fill="#38bdf8">EDGAR 10-K (20-F)</text>
+  <text x="930" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748b">US-GAAP Annual Report</text>
+
+  <!-- EDGAR sections -->
+  <rect x="725" y="172" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="194" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Item 1. Business</text>
+  <text x="745" y="214" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Manufacturing operations, capacity plans, facility expansion</text>
+
+  <rect x="725" y="240" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="262" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Item 2. Properties</text>
+  <text x="745" y="282" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Fab locations, owned/leased facilities, plant details</text>
+
+  <rect x="725" y="308" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="330" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Notes — Property, Plant &amp; Equipment</text>
+  <text x="745" y="350" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Useful life, method, cost/accumulated depreciation/net book value</text>
+
+  <rect x="725" y="376" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="398" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Notes — Commitments</text>
+  <text x="745" y="418" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Capital commitments for construction, purchase obligations</text>
+
+  <rect x="725" y="444" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="466" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Cash Flow Statement</text>
+  <text x="745" y="486" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Investing: Purchase of property and equipment (= actual CAPEX)</text>
+
+  <rect x="725" y="512" width="410" height="56" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="745" y="534" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#38bdf8">Notes — Accounting Policies</text>
+  <text x="745" y="554" font-family="Pretendard, sans-serif" font-size="10" fill="#cbd5e1">Depreciation policy, useful life changes, impairment criteria</text>
+
+  <!-- Connecting arrows (left → right) -->
+  <line x1="476" y1="200" x2="723" y2="200" stroke="#34d399" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <line x1="476" y1="268" x2="723" y2="258" stroke="#34d399" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <line x1="476" y1="336" x2="723" y2="336" stroke="#fb923c" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <line x1="476" y1="404" x2="723" y2="404" stroke="#fb923c" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <line x1="476" y1="472" x2="723" y2="472" stroke="#f87171" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <line x1="476" y1="540" x2="723" y2="540" stroke="#f87171" stroke-opacity="0.5" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+  <!-- Arrow labels -->
+  <text x="600" y="192" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#34d399">사업/설비</text>
+  <text x="600" y="258" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#34d399">재무/자산</text>
+  <text x="600" y="328" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#fb923c">주석/PPE</text>
+  <text x="600" y="396" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#fb923c">건설중</text>
+  <text x="600" y="464" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#f87171">현금흐름</text>
+  <text x="600" y="532" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#f87171">회계정책</text>
+
+  <!-- Legend -->
+  <text x="520" y="630" font-family="Pretendard, sans-serif" font-size="10" fill="#34d399">--- 사업 정보</text>
+  <text x="520" y="648" font-family="Pretendard, sans-serif" font-size="10" fill="#fb923c">--- 자산 상세</text>
+  <text x="520" y="666" font-family="Pretendard, sans-serif" font-size="10" fill="#f87171">--- 재무 수치</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="barHyundai1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="barHyundai2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="barHyundai3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="barHyundai4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fb923c" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="barHyundai5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f87171" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#f87171" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg)" rx="12"/>
+  <rect x="1" y="1" width="1198" height="718" fill="none" stroke="#1e2433" rx="12"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="26" font-weight="700" fill="#f1f5f9">재고 구성 비교</text>
+  <text x="600" y="80" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#64748b">Inventory Breakdown Comparison</text>
+
+  <!-- Divider line -->
+  <line x1="600" y1="100" x2="600" y2="640" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- LEFT: Hyundai -->
+  <text x="300" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Hyundai</text>
+  <text x="300" y="142" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">K-IFRS 연결 기준</text>
+
+  <!-- Hyundai stacked bar (total height 380, base y=160) -->
+  <!-- 원재료 28% = 106px -->
+  <rect x="180" y="160" width="240" height="106" fill="url(#barHyundai1)" rx="2"/>
+  <text x="300" y="205" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#1e1b3a">원재료</text>
+  <text x="300" y="222" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#1e1b3a">6.8조 (28%)</text>
+
+  <!-- 재공품 22% = 84px -->
+  <rect x="180" y="266" width="240" height="84" fill="url(#barHyundai2)" rx="2"/>
+  <text x="300" y="302" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#0c1524">재공품</text>
+  <text x="300" y="319" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#0c1524">5.3조 (22%)</text>
+
+  <!-- 제품 35% = 133px -->
+  <rect x="180" y="350" width="240" height="133" fill="url(#barHyundai3)" rx="2"/>
+  <text x="300" y="410" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#0c1524">제품</text>
+  <text x="300" y="427" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#0c1524">8.5조 (35%)</text>
+
+  <!-- 상품 8% = 30px -->
+  <rect x="180" y="483" width="240" height="30" fill="url(#barHyundai4)" rx="2"/>
+  <text x="300" y="503" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#1e1b3a">상품 1.9조 (8%)</text>
+
+  <!-- 기타 7% = 27px -->
+  <rect x="180" y="513" width="240" height="27" fill="url(#barHyundai5)" rx="2"/>
+  <text x="300" y="531" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#1e1b3a">기타 1.7조 (7%)</text>
+
+  <!-- Hyundai total -->
+  <rect x="220" y="556" width="160" height="36" rx="8" fill="#a78bfa" fill-opacity="0.15" stroke="#a78bfa" stroke-opacity="0.4"/>
+  <text x="300" y="579" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700" fill="#a78bfa">24.2조 원</text>
+
+  <!-- RIGHT: Toyota -->
+  <text x="900" y="120" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Toyota</text>
+  <text x="900" y="142" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748b">US GAAP Consolidated</text>
+
+  <!-- Toyota stacked bar -->
+  <!-- Finished goods 45% = 171px -->
+  <rect x="780" y="160" width="240" height="171" fill="url(#barHyundai3)" rx="2"/>
+  <text x="900" y="238" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#0c1524">Finished Goods</text>
+  <text x="900" y="258" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#0c1524">$20.3B (45%)</text>
+
+  <!-- Work in process 30% = 114px -->
+  <rect x="780" y="331" width="240" height="114" fill="url(#barHyundai2)" rx="2"/>
+  <text x="900" y="382" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#0c1524">Work in Process</text>
+  <text x="900" y="402" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#0c1524">$13.5B (30%)</text>
+
+  <!-- Raw materials 25% = 95px -->
+  <rect x="780" y="445" width="240" height="95" fill="url(#barHyundai1)" rx="2"/>
+  <text x="900" y="488" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1e1b3a">Raw Materials</text>
+  <text x="900" y="508" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#1e1b3a">$11.2B (25%)</text>
+
+  <!-- Toyota total -->
+  <rect x="820" y="556" width="160" height="36" rx="8" fill="#38bdf8" fill-opacity="0.15" stroke="#38bdf8" stroke-opacity="0.4"/>
+  <text x="900" y="579" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700" fill="#38bdf8">$45.0B</text>
+
+  <!-- Legend -->
+  <rect x="100" y="610" width="12" height="12" rx="2" fill="#a78bfa"/>
+  <text x="118" y="621" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">원재료 / Raw Materials</text>
+  <rect x="300" y="610" width="12" height="12" rx="2" fill="#38bdf8"/>
+  <text x="318" y="621" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">재공품 / Work in Process</text>
+  <rect x="520" y="610" width="12" height="12" rx="2" fill="#34d399"/>
+  <text x="538" y="621" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">제품 / Finished Goods</text>
+  <rect x="740" y="610" width="12" height="12" rx="2" fill="#fb923c"/>
+  <text x="758" y="621" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">상품</text>
+  <rect x="840" y="610" width="12" height="12" rx="2" fill="#f87171"/>
+  <text x="858" y="621" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">기타</text>
+
+  <!-- Footer -->
+  <text x="600" y="690" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>파이프라인 공시 비교 — DART vs EDGAR</title>
+  <desc>셀트리온(DART)의 구조화된 테이블과 Amgen(EDGAR)의 서술형 공시 구조 차이를 비교한다.</desc>
+  <defs>
+    <linearGradient id="bg112d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="12" fill="url(#bg112d)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">파이프라인 공시 비교</text>
+  <text x="600" y="66" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" fill="#64748b">같은 R&amp;D 파이프라인 정보가 한국과 미국 공시에서 어떻게 다르게 공개되는가</text>
+
+  <!-- Divider -->
+  <line x1="600" y1="84" x2="600" y2="660" stroke="#1e2433" stroke-width="1" stroke-dasharray="8 6"/>
+
+  <!-- LEFT: DART / Celltrion -->
+  <rect x="60" y="88" width="500" height="40" rx="8" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.4)"/>
+  <text x="310" y="113" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#a78bfa">DART — 셀트리온 사업보고서</text>
+
+  <!-- Path indicator -->
+  <rect x="80" y="144" width="460" height="28" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)"/>
+  <text x="310" y="163" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">II. 사업의 내용 &gt; 7. 연구개발활동 &gt; 연구개발 진행 현황</text>
+
+  <!-- Table structure mockup -->
+  <rect x="80" y="186" width="460" height="30" rx="4" fill="rgba(167,139,250,0.12)"/>
+  <text x="118" y="206" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#c4b5fd">구분</text>
+  <text x="200" y="206" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#c4b5fd">품목</text>
+  <text x="296" y="206" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#c4b5fd">적응증</text>
+  <text x="390" y="206" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#c4b5fd">단계</text>
+  <text x="478" y="206" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#c4b5fd">비고</text>
+
+  <!-- Table rows -->
+  <rect x="80" y="216" width="460" height="26" rx="0" fill="rgba(100,116,139,0.03)"/>
+  <text x="118" y="234" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">바이오시밀러</text>
+  <text x="200" y="234" font-family="JetBrains Mono,monospace" font-size="9" fill="#cbd5e1">CT-P17</text>
+  <text x="296" y="234" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">자가면역</text>
+  <text x="390" y="234" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#34d399">판매 중</text>
+  <text x="478" y="234" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">허가완료</text>
+
+  <rect x="80" y="242" width="460" height="26" rx="0" fill="rgba(100,116,139,0.06)"/>
+  <text x="118" y="260" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">바이오시밀러</text>
+  <text x="200" y="260" font-family="JetBrains Mono,monospace" font-size="9" fill="#cbd5e1">CT-P47</text>
+  <text x="296" y="260" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">안과</text>
+  <text x="390" y="260" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#fb923c">임상3상</text>
+  <text x="478" y="260" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">진행중</text>
+
+  <rect x="80" y="268" width="460" height="26" rx="0" fill="rgba(100,116,139,0.03)"/>
+  <text x="118" y="286" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">신약</text>
+  <text x="200" y="286" font-family="JetBrains Mono,monospace" font-size="9" fill="#cbd5e1">CT-P43</text>
+  <text x="296" y="286" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#cbd5e1">항암</text>
+  <text x="390" y="286" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#a78bfa">임상1상</text>
+  <text x="478" y="286" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">초기</text>
+
+  <text x="310" y="310" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">... (전체 파이프라인 테이블 계속)</text>
+
+  <!-- DART characteristics -->
+  <rect x="80" y="334" width="460" height="166" rx="10" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.12)"/>
+  <text x="100" y="360" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#a78bfa">DART 공시 특징</text>
+
+  <circle cx="108" cy="388" r="4" fill="#34d399"/>
+  <text x="120" y="392" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">구조화된 테이블 — 품목/적응증/단계 열 분리</text>
+
+  <circle cx="108" cy="412" r="4" fill="#34d399"/>
+  <text x="120" y="416" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">진행 단계 명시 (전임상, 임상1/2/3상, 허가, 판매)</text>
+
+  <circle cx="108" cy="436" r="4" fill="#34d399"/>
+  <text x="120" y="440" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">개발비 투입 현황 테이블 별도 존재</text>
+
+  <circle cx="108" cy="460" r="4" fill="#fb923c"/>
+  <text x="120" y="464" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#fed7aa">예상 출시 시기, 성공 확률 등은 미공시</text>
+
+  <circle cx="108" cy="484" r="4" fill="#34d399"/>
+  <text x="120" y="488" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">자산화 여부와 자산화 누적액 확인 가능</text>
+
+  <!-- RIGHT: EDGAR / Amgen -->
+  <rect x="640" y="88" width="500" height="40" rx="8" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.4)"/>
+  <text x="890" y="113" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#38bdf8">EDGAR — Amgen 10-K</text>
+
+  <!-- Path indicator -->
+  <rect x="660" y="144" width="460" height="28" rx="6" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.15)"/>
+  <text x="890" y="163" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#94a3b8">Item 1. Business &gt; Product Pipeline / R&amp;D Programs</text>
+
+  <!-- Narrative structure mockup -->
+  <rect x="660" y="186" width="460" height="128" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.12)"/>
+  <text x="680" y="208" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#7dd3fc">Our Pipeline</text>
+  <text x="680" y="228" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">We have a robust pipeline of potential new medicines...</text>
+  <text x="680" y="244" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">including biosimilar candidates and novel therapeutics.</text>
+
+  <text x="680" y="268" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#7dd3fc">Oncology</text>
+  <text x="680" y="286" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">Tarlatamab: Phase 3 trial in small cell lung cancer...</text>
+  <text x="680" y="302" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">demonstrated statistically significant improvement in PFS.</text>
+
+  <text x="890" y="326" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">... (질환별 서술형 설명 계속)</text>
+
+  <!-- EDGAR characteristics -->
+  <rect x="660" y="334" width="460" height="166" rx="10" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.12)"/>
+  <text x="680" y="360" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#38bdf8">EDGAR 공시 특징</text>
+
+  <circle cx="688" cy="388" r="4" fill="#38bdf8"/>
+  <text x="700" y="392" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">서술형 중심 — 질환 영역별 narrative 설명</text>
+
+  <circle cx="688" cy="412" r="4" fill="#38bdf8"/>
+  <text x="700" y="416" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">임상 결과 상세 서술 (통계 유의성, PFS 등)</text>
+
+  <circle cx="688" cy="436" r="4" fill="#38bdf8"/>
+  <text x="700" y="440" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">FDA 심사 일정, PDUFA date 기재</text>
+
+  <circle cx="688" cy="460" r="4" fill="#fb923c"/>
+  <text x="700" y="464" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#fed7aa">정형 테이블 없음 — 자동 추출 어려움</text>
+
+  <circle cx="688" cy="484" r="4" fill="#38bdf8"/>
+  <text x="700" y="488" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">인수 IPR&amp;D 공정가치 주석에서 확인</text>
+
+  <!-- Bottom comparison summary -->
+  <rect x="80" y="520" width="1040" height="130" rx="10" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.12)"/>
+  <text x="600" y="548" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="#f1f5f9">공시 구조가 분석 방법을 결정한다</text>
+
+  <rect x="110" y="564" width="300" height="68" rx="8" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.15)"/>
+  <text x="260" y="586" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#a78bfa">DART 강점</text>
+  <text x="260" y="606" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">정형 테이블 = 자동 추출 + 비교 용이</text>
+  <text x="260" y="622" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">자산화 금액까지 교차 검증 가능</text>
+
+  <rect x="450" y="564" width="300" height="68" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.15)"/>
+  <text x="600" y="586" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#38bdf8">EDGAR 강점</text>
+  <text x="600" y="606" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">임상 결과 상세 서술 = 정성 판단 가능</text>
+  <text x="600" y="622" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">FDA 일정 기재로 타임라인 예측</text>
+
+  <rect x="790" y="564" width="300" height="68" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.15)"/>
+  <text x="940" y="586" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#fb923c">교차 비교 시 주의</text>
+  <text x="940" y="606" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#fed7aa">양식 차이 = 정보 밀도 차이가 아님</text>
+  <text x="940" y="622" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">구조 이해 후 같은 질문을 다르게 추적</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

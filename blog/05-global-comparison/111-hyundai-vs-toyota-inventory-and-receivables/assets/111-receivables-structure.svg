@@ -1,0 +1,96 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg)" rx="12"/>
+  <rect x="1" y="1" width="1198" height="718" fill="none" stroke="#1e2433" rx="12"/>
+
+  <!-- Title -->
+  <text x="600" y="50" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="26" font-weight="700" fill="#f1f5f9">매출채권 구조 비교</text>
+  <text x="600" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Trade vs Financial Receivables Structure</text>
+
+  <!-- Divider -->
+  <line x1="600" y1="100" x2="600" y2="640" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ========== LEFT: Hyundai ========== -->
+  <text x="300" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Hyundai</text>
+
+  <!-- Total receivables box -->
+  <rect x="80" y="145" width="440" height="50" rx="8" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="300" y="168" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">총 매출채권 (연결)</text>
+  <text x="300" y="186" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#a78bfa">72.4조 원</text>
+
+  <!-- Trade receivables -->
+  <rect x="90" y="215" width="200" height="200" rx="10" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.4"/>
+  <text x="190" y="248" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#38bdf8">영업채권</text>
+  <text x="190" y="270" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">Trade Receivables</text>
+  <text x="190" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#38bdf8">18.6조</text>
+  <text x="190" y="332" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748b">25.7%</text>
+  <!-- Sub items -->
+  <text x="190" y="365" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">매출채권 + 미수금</text>
+  <text x="190" y="383" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">받을어음</text>
+
+  <!-- Financial receivables -->
+  <rect x="310" y="215" width="200" height="200" rx="10" fill="#fb923c" fill-opacity="0.08" stroke="#fb923c" stroke-opacity="0.4"/>
+  <text x="410" y="248" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#fb923c">금융채권</text>
+  <text x="410" y="270" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">Financial Receivables</text>
+  <text x="410" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#fb923c">53.8조</text>
+  <text x="410" y="332" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748b">74.3%</text>
+  <!-- Sub items -->
+  <text x="410" y="365" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">현대캐피탈 할부/리스</text>
+  <text x="410" y="383" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">현대카드 카드채권</text>
+
+  <!-- Hyundai allowance -->
+  <rect x="90" y="435" width="420" height="50" rx="8" fill="#f87171" fill-opacity="0.08" stroke="#f87171" stroke-opacity="0.3"/>
+  <text x="190" y="458" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">대손충당금</text>
+  <text x="190" y="476" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" fill="#f87171">-2.1조 원</text>
+  <text x="410" y="458" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">대손충당금률</text>
+  <text x="410" y="476" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" fill="#f87171">2.9%</text>
+
+  <!-- ========== RIGHT: Toyota ========== -->
+  <text x="900" y="120" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Toyota</text>
+
+  <!-- Total receivables box -->
+  <rect x="680" y="145" width="440" height="50" rx="8" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="900" y="168" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Total Receivables (Consolidated)</text>
+  <text x="900" y="186" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#a78bfa">$156.2B</text>
+
+  <!-- Trade receivables -->
+  <rect x="690" y="215" width="200" height="200" rx="10" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.4"/>
+  <text x="790" y="248" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#38bdf8">Trade</text>
+  <text x="790" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">Trade Receivables</text>
+  <text x="790" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#38bdf8">$26.8B</text>
+  <text x="790" y="332" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748b">17.2%</text>
+  <text x="790" y="365" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Vehicle sales</text>
+  <text x="790" y="383" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Parts &amp; components</text>
+
+  <!-- Financial receivables -->
+  <rect x="910" y="215" width="200" height="200" rx="10" fill="#fb923c" fill-opacity="0.08" stroke="#fb923c" stroke-opacity="0.4"/>
+  <text x="1010" y="248" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#fb923c">Financial</text>
+  <text x="1010" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">TFS Receivables</text>
+  <text x="1010" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#fb923c">$129.4B</text>
+  <text x="1010" y="332" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748b">82.8%</text>
+  <text x="1010" y="365" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Toyota Financial Services</text>
+  <text x="1010" y="383" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Retail / Dealer financing</text>
+
+  <!-- Toyota allowance -->
+  <rect x="690" y="435" width="420" height="50" rx="8" fill="#f87171" fill-opacity="0.08" stroke="#f87171" stroke-opacity="0.3"/>
+  <text x="790" y="458" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Allowance for Losses</text>
+  <text x="790" y="476" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" fill="#f87171">-$2.8B</text>
+  <text x="1010" y="458" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Allowance Rate</text>
+  <text x="1010" y="476" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" fill="#f87171">1.8%</text>
+
+  <!-- Bottom insight -->
+  <rect x="100" y="510" width="1000" height="90" rx="10" fill="#34d399" fill-opacity="0.05" stroke="#34d399" stroke-opacity="0.2"/>
+  <text x="600" y="540" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#34d399">핵심 인사이트</text>
+  <text x="600" y="565" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">두 회사 모두 금융 자회사의 할부/리스 채권이 전체의 70~80%를 차지한다.</text>
+  <text x="600" y="585" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">Toyota의 대손충당금률(1.8%)이 현대차(2.9%)보다 낮아 채권 건전성이 우수하다.</text>
+
+  <!-- Footer -->
+  <text x="600" y="690" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

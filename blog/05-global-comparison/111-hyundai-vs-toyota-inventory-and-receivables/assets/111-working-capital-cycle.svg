@@ -1,0 +1,91 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg)" rx="12"/>
+  <rect x="1" y="1" width="1198" height="718" fill="none" stroke="#1e2433" rx="12"/>
+
+  <!-- Title -->
+  <text x="600" y="50" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="26" font-weight="700" fill="#f1f5f9">운전자본 사이클 비교</text>
+  <text x="600" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Cash Conversion Cycle (CCC)</text>
+
+  <!-- Divider -->
+  <line x1="600" y1="95" x2="600" y2="640" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ========== LEFT: Hyundai ========== -->
+  <text x="300" y="118" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Hyundai</text>
+
+  <!-- Circular diagram center -->
+  <!-- Outer ring representing cycle -->
+  <circle cx="300" cy="320" r="140" fill="none" stroke="#1e2433" stroke-width="2"/>
+
+  <!-- DIO arc (top, purple) - 재고일수 38일 -->
+  <path d="M 300 180 A 140 140 0 0 1 421 258" fill="none" stroke="#a78bfa" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="400" y="200" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">재고일수</text>
+  <text x="400" y="218" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">38일</text>
+
+  <!-- DSO arc (right, blue) - 매출채권일수 25일 -->
+  <path d="M 421 258 A 140 140 0 0 1 370 452" fill="none" stroke="#38bdf8" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="450" y="370" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#38bdf8">매출채권일수</text>
+  <text x="450" y="388" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">25일</text>
+
+  <!-- DPO arc (bottom-left, green) - 매입채무일수 42일 -->
+  <path d="M 370 452 A 140 140 0 0 1 179 382" fill="none" stroke="#34d399" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="220" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">매입채무일수</text>
+  <text x="220" y="498" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#34d399">42일</text>
+
+  <!-- Gap (remaining) -->
+  <path d="M 179 382 A 140 140 0 0 1 300 180" fill="none" stroke="#1e2433" stroke-width="8" stroke-linecap="round" stroke-dasharray="6,4"/>
+
+  <!-- CCC center value -->
+  <circle cx="300" cy="320" r="60" fill="#a78bfa" fill-opacity="0.1" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="300" y="310" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">CCC</text>
+  <text x="300" y="338" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#a78bfa">21일</text>
+
+  <!-- Formula -->
+  <text x="300" y="570" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#94a3b8">38 + 25 - 42 = 21일</text>
+
+  <!-- ========== RIGHT: Toyota ========== -->
+  <text x="900" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Toyota</text>
+
+  <!-- Outer ring -->
+  <circle cx="900" cy="320" r="140" fill="none" stroke="#1e2433" stroke-width="2"/>
+
+  <!-- DIO arc (top, purple) - 재고일수 32일 -->
+  <path d="M 900 180 A 140 140 0 0 1 1021 258" fill="none" stroke="#a78bfa" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="1000" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">DIO</text>
+  <text x="1000" y="218" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">32일</text>
+
+  <!-- DSO arc (right, blue) - 매출채권일수 30일 -->
+  <path d="M 1021 258 A 140 140 0 0 1 970 452" fill="none" stroke="#38bdf8" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="1050" y="370" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#38bdf8">DSO</text>
+  <text x="1050" y="388" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">30일</text>
+
+  <!-- DPO arc (bottom-left, green) - 매입채무일수 45일 -->
+  <path d="M 970 452 A 140 140 0 0 1 779 382" fill="none" stroke="#34d399" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+  <text x="820" y="480" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#34d399">DPO</text>
+  <text x="820" y="498" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#34d399">45일</text>
+
+  <!-- Gap -->
+  <path d="M 779 382 A 140 140 0 0 1 900 180" fill="none" stroke="#1e2433" stroke-width="8" stroke-linecap="round" stroke-dasharray="6,4"/>
+
+  <!-- CCC center value -->
+  <circle cx="900" cy="320" r="60" fill="#38bdf8" fill-opacity="0.1" stroke="#38bdf8" stroke-opacity="0.3"/>
+  <text x="900" y="310" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">CCC</text>
+  <text x="900" y="338" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#38bdf8">17일</text>
+
+  <!-- Formula -->
+  <text x="900" y="570" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#94a3b8">32 + 30 - 45 = 17일</text>
+
+  <!-- Bottom comparison -->
+  <rect x="380" y="600" width="440" height="40" rx="8" fill="#fb923c" fill-opacity="0.08" stroke="#fb923c" stroke-opacity="0.3"/>
+  <text x="600" y="625" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#fb923c">Toyota CCC가 4일 짧다 -- 현금 회수 효율 우위</text>
+
+  <!-- Footer -->
+  <text x="600" y="690" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

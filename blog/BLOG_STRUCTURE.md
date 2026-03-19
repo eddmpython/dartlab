@@ -15,6 +15,7 @@
 - `02-report-reading`: 사업보고서 읽기, 서술 섹션 해석, 통합 읽기
 - `03-financial-interpretation`: 생산능력, 건설중인자산, 감가상각, 주석 해석
 - `04-data-automation`: 파이썬, 데이터 수집, 자동화 파이프라인
+- `05-global-comparison`: 같은 산업 한국/미국 기업 공시 비교
 
 카테고리 번호는 고정한다. 중간에 새 카테고리가 필요하면 기존 번호를 바꾸지 말고 새 번호를 추가한다.
 
@@ -48,7 +49,7 @@ blog/
 title: 글 제목
 date: YYYY-MM-DD
 description: 1문장 설명
-category: disclosure-systems | report-reading | financial-interpretation | data-automation
+category: disclosure-systems | report-reading | financial-interpretation | data-automation | global-comparison
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
@@ -198,6 +199,7 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 | `data-automation` | 공시 데이터 파이프라인 | 공시를 실제 수집 구조로 연결하게 만든다 |
 | `industry-reading` | 업종별 공시 읽기 | 업종마다 다른 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
 | `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 희석, 자금조달, 지배력 변화를 읽게 만든다 |
+| `global-comparison` | 한미 공시 비교 실전 | 같은 산업의 한국·미국 기업을 DART/EDGAR 공시로 나란히 비교한다 |
 
 새 시리즈를 만들 때는 먼저 이 문서와 `landing/src/lib/blog/posts.ts`를 같이 갱신한다.
 

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>무형자산 구성 비교 — 셀트리온 vs Amgen</title>
+  <desc>셀트리온은 자체 개발 무형자산 중심, Amgen은 인수 기반 무형자산 중심임을 도넛 차트로 비교한다.</desc>
+  <defs>
+    <linearGradient id="bg112c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="12" fill="url(#bg112c)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">무형자산 구성 비교</text>
+  <text x="600" y="66" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" fill="#64748b">자체 개발 vs 인수 — 무형자산의 출처가 기업 가치 해석을 바꾼다</text>
+
+  <!-- LEFT: Celltrion donut -->
+  <text x="300" y="108" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="16" font-weight="700" fill="#a78bfa">셀트리온 (K-IFRS)</text>
+
+  <!-- Donut chart - Celltrion (center 300, 300) -->
+  <!-- Outer radius 130, inner radius 75 -->
+  <!-- Segment 1: 개발비(자산화) 55% - purple - 0 to 198 degrees -->
+  <path d="M300 170 A130 130 0 0 1 423.5 340.5 L378.6 316.5 A75 75 0 0 0 300 225 Z" fill="rgba(167,139,250,0.7)" stroke="rgba(167,139,250,0.9)" stroke-width="1"/>
+  <!-- Segment 2: 산업재산권 25% - green - 198 to 288 degrees -->
+  <path d="M423.5 340.5 A130 130 0 0 1 251.4 419.7 L270.0 349.8 A75 75 0 0 0 378.6 316.5 Z" fill="rgba(52,211,153,0.7)" stroke="rgba(52,211,153,0.9)" stroke-width="1"/>
+  <!-- Segment 3: 기타 무형자산 12% - orange - 288 to 331.2 degrees -->
+  <path d="M251.4 419.7 A130 130 0 0 1 189.7 367.6 L234.4 337.5 A75 75 0 0 0 270.0 349.8 Z" fill="rgba(251,146,60,0.7)" stroke="rgba(251,146,60,0.9)" stroke-width="1"/>
+  <!-- Segment 4: 소프트웨어/기타 8% - blue - 331.2 to 360 degrees -->
+  <path d="M189.7 367.6 A130 130 0 0 1 300 170 L300 225 A75 75 0 0 0 234.4 337.5 Z" fill="rgba(56,189,248,0.7)" stroke="rgba(56,189,248,0.9)" stroke-width="1"/>
+
+  <!-- Center label -->
+  <text x="300" y="296" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="16" font-weight="700" fill="#f1f5f9">~4,200억</text>
+  <text x="300" y="316" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">무형자산 합계</text>
+
+  <!-- Celltrion legend -->
+  <rect x="100" y="468" width="14" height="14" rx="3" fill="rgba(167,139,250,0.7)"/>
+  <text x="122" y="480" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">개발비 (자산화)</text>
+  <text x="280" y="480" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#a78bfa">55%</text>
+
+  <rect x="100" y="494" width="14" height="14" rx="3" fill="rgba(52,211,153,0.7)"/>
+  <text x="122" y="506" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" fill="#6ee7b7">산업재산권</text>
+  <text x="280" y="506" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#34d399">25%</text>
+
+  <rect x="100" y="520" width="14" height="14" rx="3" fill="rgba(251,146,60,0.7)"/>
+  <text x="122" y="532" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" fill="#fdba74">기타 무형자산</text>
+  <text x="280" y="532" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#fb923c">12%</text>
+
+  <rect x="100" y="546" width="14" height="14" rx="3" fill="rgba(56,189,248,0.7)"/>
+  <text x="122" y="558" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" fill="#7dd3fc">소프트웨어 등</text>
+  <text x="280" y="558" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#38bdf8">8%</text>
+
+  <!-- Celltrion insight -->
+  <rect x="100" y="580" width="400" height="52" rx="8" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.15)"/>
+  <text x="300" y="602" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#a78bfa">자체 개발 비중 80% 이상</text>
+  <text x="300" y="620" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">바이오시밀러 허가 성공 시 가치 실현, 실패 시 손상 리스크</text>
+
+  <!-- Divider -->
+  <line x1="600" y1="100" x2="600" y2="650" stroke="#1e2433" stroke-width="1" stroke-dasharray="8 6"/>
+
+  <!-- RIGHT: Amgen donut -->
+  <text x="900" y="108" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="16" font-weight="700" fill="#38bdf8">Amgen (US-GAAP)</text>
+
+  <!-- Donut chart - Amgen (center 900, 300) -->
+  <!-- Segment 1: Goodwill 45% - blue - 0 to 162 degrees -->
+  <path d="M900 170 A130 130 0 0 1 979.8 420.4 L945.7 352.5 A75 75 0 0 0 900 225 Z" fill="rgba(56,189,248,0.7)" stroke="rgba(56,189,248,0.9)" stroke-width="1"/>
+  <!-- Segment 2: Acquired tech 30% - purple - 162 to 270 degrees -->
+  <path d="M979.8 420.4 A130 130 0 0 1 770 300 L825 300 A75 75 0 0 0 945.7 352.5 Z" fill="rgba(167,139,250,0.7)" stroke="rgba(167,139,250,0.9)" stroke-width="1"/>
+  <!-- Segment 3: IPR&D 15% - green - 270 to 324 degrees -->
+  <path d="M770 300 A130 130 0 0 1 823.5 193.3 L847.1 236.6 A75 75 0 0 0 825 300 Z" fill="rgba(52,211,153,0.7)" stroke="rgba(52,211,153,0.9)" stroke-width="1"/>
+  <!-- Segment 4: Licenses/other 10% - red - 324 to 360 degrees -->
+  <path d="M823.5 193.3 A130 130 0 0 1 900 170 L900 225 A75 75 0 0 0 847.1 236.6 Z" fill="rgba(248,113,113,0.7)" stroke="rgba(248,113,113,0.9)" stroke-width="1"/>
+
+  <!-- Center label -->
+  <text x="900" y="296" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="16" font-weight="700" fill="#f1f5f9">~$50B</text>
+  <text x="900" y="316" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Goodwill + Intangibles</text>
+
+  <!-- Amgen legend -->
+  <rect x="700" y="468" width="14" height="14" rx="3" fill="rgba(56,189,248,0.7)"/>
+  <text x="722" y="480" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#7dd3fc">Goodwill</text>
+  <text x="880" y="480" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#38bdf8">45%</text>
+
+  <rect x="700" y="494" width="14" height="14" rx="3" fill="rgba(167,139,250,0.7)"/>
+  <text x="722" y="506" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#c4b5fd">Acquired Technology</text>
+  <text x="880" y="506" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#a78bfa">30%</text>
+
+  <rect x="700" y="520" width="14" height="14" rx="3" fill="rgba(52,211,153,0.7)"/>
+  <text x="722" y="532" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#6ee7b7">IPR&amp;D</text>
+  <text x="880" y="532" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#34d399">15%</text>
+
+  <rect x="700" y="546" width="14" height="14" rx="3" fill="rgba(248,113,113,0.7)"/>
+  <text x="722" y="558" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#fca5a5">Licenses / Other</text>
+  <text x="880" y="558" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="12" font-weight="600" fill="#f87171">10%</text>
+
+  <!-- Amgen insight -->
+  <rect x="700" y="580" width="400" height="52" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.15)"/>
+  <text x="900" y="602" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#38bdf8">인수 기반 무형자산 90% 이상</text>
+  <text x="900" y="620" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Horizon 인수($28B) 이후 Goodwill 급증 — 매년 손상검사 필수</text>
+
+  <!-- Bottom comparison bar -->
+  <rect x="140" y="648" width="920" height="36" rx="8" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.15)"/>
+  <text x="600" y="672" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#fb923c">핵심: 무형자산 출처가 다르면 손상 리스크 경로도 완전히 다르다</text>
+
+  <!-- Footer -->
+  <text x="600" y="708" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

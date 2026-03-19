@@ -1,0 +1,111 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg3)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">감가상각비가 마진에 미치는 영향</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">How depreciation expense affects operating margins (2024 basis)</text>
+
+  <!-- ====== LEFT: Samsung DS ====== -->
+  <text x="300" y="110" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#a78bfa">Samsung DS Division (2024)</text>
+
+  <!-- Waterfall: Revenue → COGS → Operating Profit -->
+  <!-- Revenue bar (full height = 400px for ~99.5조 = ~75B) -->
+  <rect x="100" y="140" width="100" height="400" rx="4" fill="#a78bfa" fill-opacity="0.3" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="150" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">매출</text>
+  <text x="150" y="350" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#a78bfa">99.5조</text>
+
+  <!-- COGS block (감가상각비 포함) -->
+  <!-- COGS: ~68.7조 → height ~276 -->
+  <rect x="230" y="140" width="100" height="276" rx="4" fill="#f87171" fill-opacity="0.25" stroke="#f87171" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="280" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">매출원가</text>
+  <text x="280" y="250" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#fca5a5">68.7조</text>
+
+  <!-- Depreciation portion within COGS (약 30조 → height ~120) -->
+  <rect x="232" y="296" width="96" height="118" rx="0" fill="#fb923c" fill-opacity="0.35" stroke="#fb923c" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="280" y="348" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" font-weight="bold" fill="#fb923c">감가상각비</text>
+  <text x="280" y="366" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#fb923c">~30조</text>
+  <text x="280" y="384" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#fb923c">(매출의 30.2%)</text>
+
+  <!-- SGA block: ~10.5조 → height ~42 -->
+  <rect x="360" y="140" width="100" height="42" rx="4" fill="#64748b" fill-opacity="0.3" stroke="#64748b" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="410" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">판관비</text>
+  <text x="410" y="166" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">10.5조</text>
+
+  <!-- Operating Profit: ~20.3조 → height ~81, starts at 140+276+42=458 → but total should = 400 -->
+  <!-- OP = Revenue - COGS - SGA = 99.5 - 68.7 - 10.5 = 20.3 -->
+  <rect x="360" y="192" width="100" height="348" rx="4" fill="none" stroke="#64748b" stroke-opacity="0.2" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Operating Profit arrow -->
+  <line x1="210" y1="540" x2="490" y2="540" stroke="#34d399" stroke-width="2"/>
+  <rect x="360" y="458" width="100" height="82" rx="4" fill="#34d399" fill-opacity="0.25" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="410" y="495" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" font-weight="bold" fill="#34d399">영업이익</text>
+  <text x="410" y="513" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#34d399">20.3조</text>
+  <text x="410" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">OPM 20.4%</text>
+
+  <!-- Connection arrows -->
+  <path d="M200 340 L228 340" stroke="#64748b" stroke-width="1" stroke-dasharray="3,3" marker-end="none"/>
+
+  <!-- Samsung ratio box -->
+  <rect x="80" y="560" width="420" height="70" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="290" y="582" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#a78bfa">감가상각비 / 매출 = 30.2%</text>
+  <text x="290" y="602" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">CAPEX의 빠른 상각으로 매출원가 내 고정비 비중이 높음</text>
+  <text x="290" y="618" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">매출 변동 시 영업레버리지 효과 극대화</text>
+
+  <!-- ====== RIGHT: TSMC ====== -->
+  <text x="900" y="110" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#38bdf8">TSMC (2024)</text>
+
+  <!-- Revenue bar: ~87.9B USD → height 400 -->
+  <rect x="700" y="140" width="100" height="400" rx="4" fill="#38bdf8" fill-opacity="0.3" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="750" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">Revenue</text>
+  <text x="750" y="350" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#38bdf8">$87.9B</text>
+
+  <!-- COGS: ~40.7B → height ~185 -->
+  <rect x="830" y="140" width="100" height="185" rx="4" fill="#f87171" fill-opacity="0.25" stroke="#f87171" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="880" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">COGS</text>
+  <text x="880" y="225" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#fca5a5">$40.7B</text>
+
+  <!-- Depreciation portion within COGS: ~18.5B → height ~84 -->
+  <rect x="832" y="239" width="96" height="84" rx="0" fill="#fb923c" fill-opacity="0.35" stroke="#fb923c" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="880" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" font-weight="bold" fill="#fb923c">Depreciation</text>
+  <text x="880" y="294" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#fb923c">~$18.5B</text>
+  <text x="880" y="312" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#fb923c">(매출의 21.0%)</text>
+
+  <!-- OpEx: ~7.6B → height ~35 -->
+  <rect x="960" y="140" width="100" height="35" rx="4" fill="#64748b" fill-opacity="0.3" stroke="#64748b" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="1010" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f1f5f9">OpEx</text>
+  <text x="1010" y="162" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">$7.6B</text>
+
+  <!-- Operating Income: ~39.6B → height ~180 -->
+  <line x1="810" y1="540" x2="1090" y2="540" stroke="#34d399" stroke-width="2"/>
+  <rect x="960" y="358" width="100" height="182" rx="4" fill="#34d399" fill-opacity="0.25" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="1010" y="435" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" font-weight="bold" fill="#34d399">Operating</text>
+  <text x="1010" y="453" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#34d399">$39.6B</text>
+  <text x="1010" y="470" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">OPM 45.1%</text>
+
+  <!-- TSMC ratio box -->
+  <rect x="680" y="560" width="420" height="70" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="890" y="582" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#38bdf8">Depreciation / Revenue = 21.0%</text>
+  <text x="890" y="602" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">더 긴 내용연수 + 높은 가동률로 고정비 희석 극대화</text>
+  <text x="890" y="618" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">OPM 45% — 반도체 업계 최고 수준의 마진 방어력</text>
+
+  <!-- Center divider -->
+  <line x1="600" y1="100" x2="600" y2="640" stroke="#1e2433" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- Legend -->
+  <rect x="430" y="654" width="10" height="10" rx="2" fill="#fb923c" fill-opacity="0.5"/>
+  <text x="446" y="663" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">감가상각비 (Depreciation)</text>
+  <rect x="600" y="654" width="10" height="10" rx="2" fill="#34d399" fill-opacity="0.5"/>
+  <text x="616" y="663" font-family="Pretendard, sans-serif" font-size="10" fill="#94a3b8">영업이익 (Operating Profit)</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

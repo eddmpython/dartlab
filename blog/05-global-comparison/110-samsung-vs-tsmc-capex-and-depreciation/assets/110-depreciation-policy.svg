@@ -1,0 +1,101 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="purpleGlow2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="blueGlow2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.03"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg2)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">감가상각 정책 비교 — K-IFRS vs US-GAAP</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Depreciation policy differences: Samsung Electronics vs TSMC</text>
+
+  <!-- Left Panel: Samsung -->
+  <rect x="50" y="100" width="530" height="540" rx="10" fill="url(#purpleGlow2)" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="315" y="136" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#a78bfa">Samsung Electronics</text>
+  <text x="315" y="158" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#64748b">K-IFRS | DART 사업보고서 기준</text>
+
+  <!-- Samsung policy items -->
+  <rect x="80" y="180" width="470" height="64" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="100" y="204" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">상각 방법</text>
+  <text x="100" y="228" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">정액법 (Straight-line method)</text>
+  <text x="440" y="216" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#a78bfa">SLM</text>
+
+  <rect x="80" y="258" width="470" height="64" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="100" y="282" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">반도체 장비 내용연수</text>
+  <text x="100" y="306" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">기계장치 5년 (일부 전자장비 10년)</text>
+  <text x="440" y="294" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#a78bfa">5Y</text>
+
+  <rect x="80" y="336" width="470" height="64" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="100" y="360" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">건물 내용연수</text>
+  <text x="100" y="384" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">15~40년 (클린룸 포함)</text>
+  <text x="440" y="372" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#a78bfa">15-40Y</text>
+
+  <rect x="80" y="414" width="470" height="64" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="100" y="438" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">잔존가치</text>
+  <text x="100" y="462" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">비망가액 (거의 0)</text>
+  <text x="440" y="450" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#a78bfa">~0</text>
+
+  <rect x="80" y="492" width="470" height="64" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="100" y="516" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">연간 감가상각비 (2024)</text>
+  <text x="100" y="540" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">약 43.6조원 (전사 기준)</text>
+  <text x="440" y="528" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#a78bfa">~33B</text>
+
+  <!-- Impact box Samsung -->
+  <rect x="80" y="574" width="470" height="48" rx="6" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="315" y="602" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#fb923c">짧은 내용연수 → 초기 비용 부담 크지만, 빠른 상각 완료</text>
+
+  <!-- Right Panel: TSMC -->
+  <rect x="620" y="100" width="530" height="540" rx="10" fill="url(#blueGlow2)" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="885" y="136" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#38bdf8">TSMC</text>
+  <text x="885" y="158" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#64748b">US-GAAP | SEC 10-K / 20-F 기준</text>
+
+  <!-- TSMC policy items -->
+  <rect x="650" y="180" width="470" height="64" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="670" y="204" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">상각 방법</text>
+  <text x="670" y="228" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">정액법 (Straight-line method)</text>
+  <text x="1010" y="216" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#38bdf8">SLM</text>
+
+  <rect x="650" y="258" width="470" height="64" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="670" y="282" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">반도체 장비 내용연수</text>
+  <text x="670" y="306" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Machinery &amp; Equipment: 5~7년</text>
+  <text x="1010" y="294" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#38bdf8">5-7Y</text>
+
+  <rect x="650" y="336" width="470" height="64" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="670" y="360" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">건물 내용연수</text>
+  <text x="670" y="384" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Buildings: 10~20년</text>
+  <text x="1010" y="372" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#38bdf8">10-20Y</text>
+
+  <rect x="650" y="414" width="470" height="64" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="670" y="438" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">잔존가치</text>
+  <text x="670" y="462" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Nil or nominal</text>
+  <text x="1010" y="450" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#38bdf8">~0</text>
+
+  <rect x="650" y="492" width="470" height="64" rx="6" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="670" y="516" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f1f5f9">연간 감가상각비 (2024)</text>
+  <text x="670" y="540" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">약 NT$599B (≈18.5B USD)</text>
+  <text x="1010" y="528" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#38bdf8">~18.5B</text>
+
+  <!-- Impact box TSMC -->
+  <rect x="650" y="574" width="470" height="48" rx="6" fill="rgba(251,146,60,0.06)" stroke="#fb923c" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="885" y="602" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#fb923c">긴 내용연수 → 비용 분산, 마진 안정화 효과</text>
+
+  <!-- Center divider arrow -->
+  <line x1="600" y1="300" x2="600" y2="500" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="600" y="530" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">VS</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

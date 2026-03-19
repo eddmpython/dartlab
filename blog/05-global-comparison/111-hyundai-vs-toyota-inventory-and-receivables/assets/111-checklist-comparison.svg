@@ -1,0 +1,126 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg)" rx="12"/>
+  <rect x="1" y="1" width="1198" height="718" fill="none" stroke="#1e2433" rx="12"/>
+
+  <!-- Title -->
+  <text x="600" y="50" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="26" font-weight="700" fill="#f1f5f9">비교 체크리스트 대시보드</text>
+  <text x="600" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Hyundai vs Toyota -- Key Metrics at a Glance</text>
+
+  <!-- Table header -->
+  <rect x="80" y="100" width="1040" height="44" rx="8" fill="#1e2433" fill-opacity="0.6"/>
+  <text x="300" y="127" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#64748b">항목</text>
+  <text x="640" y="127" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#a78bfa">Hyundai</text>
+  <text x="880" y="127" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#38bdf8">Toyota</text>
+  <text x="1060" y="127" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#64748b">우위</text>
+
+  <!-- Row 1: 재고회전율 -->
+  <rect x="80" y="152" width="1040" height="60" rx="0" fill="#a78bfa" fill-opacity="0.03"/>
+  <line x1="80" y1="152" x2="1120" y2="152" stroke="#1e2433"/>
+  <circle cx="120" cy="182" r="16" fill="#a78bfa" fill-opacity="0.15" stroke="#a78bfa" stroke-opacity="0.4"/>
+  <text x="120" y="187" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#a78bfa">1</text>
+  <text x="155" y="177" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">재고회전율</text>
+  <text x="155" y="196" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Inventory Turnover</text>
+  <text x="640" y="187" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">9.6x</text>
+  <text x="880" y="187" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">11.4x</text>
+  <!-- Winner indicator -->
+  <rect x="1020" y="172" width="80" height="22" rx="11" fill="#38bdf8" fill-opacity="0.15"/>
+  <text x="1060" y="187" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">Toyota</text>
+
+  <!-- Row 2: 매출채권회전율 -->
+  <rect x="80" y="212" width="1040" height="60" rx="0" fill="transparent"/>
+  <line x1="80" y1="212" x2="1120" y2="212" stroke="#1e2433"/>
+  <circle cx="120" cy="242" r="16" fill="#38bdf8" fill-opacity="0.15" stroke="#38bdf8" stroke-opacity="0.4"/>
+  <text x="120" y="247" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#38bdf8">2</text>
+  <text x="155" y="237" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">매출채권회전율</text>
+  <text x="155" y="256" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Receivables Turnover</text>
+  <text x="640" y="247" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">14.6x</text>
+  <text x="880" y="247" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">12.2x</text>
+  <rect x="1020" y="232" width="80" height="22" rx="11" fill="#a78bfa" fill-opacity="0.15"/>
+  <text x="1060" y="247" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#a78bfa">Hyundai</text>
+
+  <!-- Row 3: 대손충당금률 -->
+  <rect x="80" y="272" width="1040" height="60" rx="0" fill="#a78bfa" fill-opacity="0.03"/>
+  <line x1="80" y1="272" x2="1120" y2="272" stroke="#1e2433"/>
+  <circle cx="120" cy="302" r="16" fill="#34d399" fill-opacity="0.15" stroke="#34d399" stroke-opacity="0.4"/>
+  <text x="120" y="307" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#34d399">3</text>
+  <text x="155" y="297" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">대손충당금률</text>
+  <text x="155" y="316" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Allowance Rate</text>
+  <text x="640" y="307" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">2.9%</text>
+  <text x="880" y="307" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">1.8%</text>
+  <rect x="1020" y="292" width="80" height="22" rx="11" fill="#38bdf8" fill-opacity="0.15"/>
+  <text x="1060" y="307" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">Toyota</text>
+
+  <!-- Row 4: CCC -->
+  <rect x="80" y="332" width="1040" height="60" rx="0" fill="transparent"/>
+  <line x1="80" y1="332" x2="1120" y2="332" stroke="#1e2433"/>
+  <circle cx="120" cy="362" r="16" fill="#fb923c" fill-opacity="0.15" stroke="#fb923c" stroke-opacity="0.4"/>
+  <text x="120" y="367" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#fb923c">4</text>
+  <text x="155" y="357" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">CCC</text>
+  <text x="155" y="376" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Cash Conversion Cycle</text>
+  <text x="640" y="367" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#a78bfa">21일</text>
+  <text x="880" y="367" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#38bdf8">17일</text>
+  <rect x="1020" y="352" width="80" height="22" rx="11" fill="#38bdf8" fill-opacity="0.15"/>
+  <text x="1060" y="367" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">Toyota</text>
+
+  <!-- Row 5: 금융채권 분리 -->
+  <rect x="80" y="392" width="1040" height="60" rx="0" fill="#a78bfa" fill-opacity="0.03"/>
+  <line x1="80" y1="392" x2="1120" y2="392" stroke="#1e2433"/>
+  <circle cx="120" cy="422" r="16" fill="#f87171" fill-opacity="0.15" stroke="#f87171" stroke-opacity="0.4"/>
+  <text x="120" y="427" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#f87171">5</text>
+  <text x="155" y="417" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">금융채권 분리 공시</text>
+  <text x="155" y="436" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Financial Receivables Disclosure</text>
+  <text x="640" y="422" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#a78bfa">현대캐피탈/카드</text>
+  <text x="640" y="438" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">주석에 분리 공시</text>
+  <text x="880" y="422" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#38bdf8">TFS Segment</text>
+  <text x="880" y="438" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Separate segment</text>
+  <rect x="1020" y="412" width="80" height="22" rx="11" fill="#34d399" fill-opacity="0.15"/>
+  <text x="1060" y="427" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#34d399">동등</text>
+
+  <!-- Row 6: 재고 구성 세분화 -->
+  <rect x="80" y="452" width="1040" height="60" rx="0" fill="transparent"/>
+  <line x1="80" y1="452" x2="1120" y2="452" stroke="#1e2433"/>
+  <circle cx="120" cy="482" r="16" fill="#a78bfa" fill-opacity="0.15" stroke="#a78bfa" stroke-opacity="0.4"/>
+  <text x="120" y="487" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#a78bfa">6</text>
+  <text x="155" y="477" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">재고 구성 세분화</text>
+  <text x="155" y="496" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Inventory Breakdown Detail</text>
+  <text x="640" y="487" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#a78bfa">5개 항목</text>
+  <text x="640" y="502" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">원재료/재공품/제품/상품/기타</text>
+  <text x="880" y="487" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#38bdf8">3 Items</text>
+  <text x="880" y="502" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Finished/WIP/Raw</text>
+  <rect x="1020" y="472" width="80" height="22" rx="11" fill="#a78bfa" fill-opacity="0.15"/>
+  <text x="1060" y="487" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#a78bfa">Hyundai</text>
+
+  <!-- Row 7: 공시 접근성 -->
+  <rect x="80" y="512" width="1040" height="60" rx="0" fill="#a78bfa" fill-opacity="0.03"/>
+  <line x1="80" y1="512" x2="1120" y2="512" stroke="#1e2433"/>
+  <circle cx="120" cy="542" r="16" fill="#38bdf8" fill-opacity="0.15" stroke="#38bdf8" stroke-opacity="0.4"/>
+  <text x="120" y="547" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#38bdf8">7</text>
+  <text x="155" y="537" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">공시 접근 경로</text>
+  <text x="155" y="556" font-family="Inter, sans-serif" font-size="11" fill="#64748b">Disclosure Access Path</text>
+  <text x="640" y="542" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#a78bfa">c.show('inventory')</text>
+  <text x="640" y="558" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">DART 주석 기반</text>
+  <text x="880" y="542" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#38bdf8">c.show('inventory')</text>
+  <text x="880" y="558" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748b">10-K Notes based</text>
+  <rect x="1020" y="532" width="80" height="22" rx="11" fill="#34d399" fill-opacity="0.15"/>
+  <text x="1060" y="547" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="600" fill="#34d399">동일</text>
+
+  <line x1="80" y1="572" x2="1120" y2="572" stroke="#1e2433"/>
+
+  <!-- Summary bar -->
+  <rect x="140" y="595" width="920" height="50" rx="10" fill="#fb923c" fill-opacity="0.06" stroke="#fb923c" stroke-opacity="0.2"/>
+  <text x="600" y="618" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#94a3b8">
+    Toyota 4승 / Hyundai 2승 / 동등 1 -- Toyota가 운전자본 효율에서 전반적 우위
+  </text>
+  <text x="600" y="637" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">단, 현대차가 재고 구성을 더 세분화하여 공시하며, 매출채권 회수 속도는 더 빠르다</text>
+
+  <!-- Footer -->
+  <text x="600" y="690" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>R&amp;D 회계처리 근본 차이 — K-IFRS vs US-GAAP</title>
+  <desc>같은 R&amp;D 지출이 K-IFRS와 US-GAAP에서 재무제표에 다르게 반영되는 흐름을 비교한다.</desc>
+  <defs>
+    <linearGradient id="bg112a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="12" fill="url(#bg112a)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">R&amp;D 회계처리 근본 차이</text>
+  <text x="600" y="66" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" fill="#64748b">같은 연구개발비가 재무제표에 다르게 나타나는 이유</text>
+
+  <!-- Common source at top center -->
+  <rect x="460" y="94" width="280" height="56" rx="10" fill="rgba(148,163,184,0.08)" stroke="rgba(148,163,184,0.3)"/>
+  <text x="600" y="118" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="#f1f5f9">R&amp;D 지출 발생</text>
+  <text x="600" y="138" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">연구 + 개발 활동에 투입된 비용</text>
+
+  <!-- Arrow down left -->
+  <path d="M520 150L300 190" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6 4"/>
+  <!-- Arrow down right -->
+  <path d="M680 150L900 190" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 4"/>
+
+  <!-- LEFT: K-IFRS (Celltrion) -->
+  <rect x="60" y="186" width="480" height="44" rx="8" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.4)"/>
+  <text x="300" y="213" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#a78bfa">K-IFRS (셀트리온)</text>
+
+  <!-- Research phase -->
+  <rect x="80" y="256" width="200" height="100" rx="10" fill="rgba(251,146,60,0.06)" stroke="rgba(251,146,60,0.25)"/>
+  <text x="180" y="282" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#fb923c">연구 단계</text>
+  <text x="180" y="304" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#fed7aa">기초/탐색 연구</text>
+  <text x="180" y="322" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">발생 즉시 비용 처리</text>
+  <text x="180" y="342" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="#f87171">100% P&amp;L</text>
+
+  <!-- Development phase -->
+  <rect x="320" y="256" width="200" height="100" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.25)"/>
+  <text x="420" y="282" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#a78bfa">개발 단계</text>
+  <text x="420" y="304" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#c4b5fd">6개 요건 충족 시</text>
+  <text x="420" y="322" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">무형자산 자산화 가능</text>
+  <text x="420" y="342" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="#34d399">B/S 자산</text>
+
+  <!-- Arrow from research to P&L -->
+  <path d="M180 356L180 416" stroke="#fb923c" stroke-width="2"/>
+  <polygon points="176,412 184,412 180,420" fill="#fb923c"/>
+  <!-- Arrow from dev to split -->
+  <path d="M420 356L420 390" stroke="#a78bfa" stroke-width="2"/>
+
+  <!-- Dev split -->
+  <path d="M420 390L320 416" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M420 390L520 416" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- K-IFRS 6 requirements box -->
+  <rect x="80" y="380" width="200" height="84" rx="8" fill="rgba(100,116,139,0.06)" stroke="rgba(100,116,139,0.2)"/>
+  <text x="180" y="400" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#94a3b8">6개 자산화 요건</text>
+  <text x="90" y="418" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">1. 기술적 실현 가능성</text>
+  <text x="90" y="432" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">2. 완성/사용/판매 의도</text>
+  <text x="90" y="446" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">3. 사용/판매 능력</text>
+  <text x="90" y="460" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">4. 미래 경제적 효익  5. 자원 가용  6. 측정 가능</text>
+
+  <!-- K-IFRS results -->
+  <rect x="300" y="420" width="100" height="44" rx="8" fill="rgba(248,113,113,0.08)" stroke="rgba(248,113,113,0.3)"/>
+  <text x="350" y="438" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#f87171">비용</text>
+  <text x="350" y="454" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">미충족 시</text>
+
+  <rect x="420" y="420" width="100" height="44" rx="8" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.3)"/>
+  <text x="470" y="438" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#34d399">자산</text>
+  <text x="470" y="454" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">충족 시</text>
+
+  <!-- RIGHT: US-GAAP (Amgen) -->
+  <rect x="660" y="186" width="480" height="44" rx="8" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.4)"/>
+  <text x="900" y="213" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="15" font-weight="700" fill="#38bdf8">US-GAAP (Amgen)</text>
+
+  <!-- Internal R&D -->
+  <rect x="680" y="256" width="200" height="100" rx="10" fill="rgba(248,113,113,0.06)" stroke="rgba(248,113,113,0.25)"/>
+  <text x="780" y="282" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#f87171">자체 R&amp;D</text>
+  <text x="780" y="304" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#fecaca">연구/개발 구분 없이</text>
+  <text x="780" y="322" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">전액 발생 시점 비용</text>
+  <text x="780" y="342" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="#f87171">100% P&amp;L</text>
+
+  <!-- Acquired IPR&D -->
+  <rect x="920" y="256" width="200" height="100" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.25)"/>
+  <text x="1020" y="282" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#38bdf8">인수 IPR&amp;D</text>
+  <text x="1020" y="304" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#bae6fd">기업 인수 시에만</text>
+  <text x="1020" y="322" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">공정가치로 자산 인식</text>
+  <text x="1020" y="342" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="#34d399">B/S 자산</text>
+
+  <!-- Arrow from internal to P&L -->
+  <path d="M780 356L780 420" stroke="#f87171" stroke-width="2"/>
+  <polygon points="776,416 784,416 780,424" fill="#f87171"/>
+
+  <!-- Arrow from acquired to B/S -->
+  <path d="M1020 356L1020 420" stroke="#38bdf8" stroke-width="2"/>
+  <polygon points="1016,416 1024,416 1020,424" fill="#38bdf8"/>
+
+  <!-- US-GAAP results -->
+  <rect x="700" y="424" width="160" height="44" rx="8" fill="rgba(248,113,113,0.08)" stroke="rgba(248,113,113,0.3)"/>
+  <text x="780" y="442" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#f87171">비용 (손익계산서)</text>
+  <text x="780" y="458" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">ASC 730 원칙</text>
+
+  <rect x="940" y="424" width="160" height="44" rx="8" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.3)"/>
+  <text x="1020" y="442" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" font-weight="600" fill="#34d399">무형자산 (대차대조표)</text>
+  <text x="1020" y="458" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">ASC 805 기업결합</text>
+
+  <!-- Impact summary bar -->
+  <rect x="60" y="510" width="1080" height="140" rx="10" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.15)"/>
+  <text x="600" y="538" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="#f1f5f9">재무제표 영향 비교</text>
+
+  <!-- Left impact -->
+  <rect x="90" y="556" width="480" height="76" rx="8" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.15)"/>
+  <text x="330" y="578" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#a78bfa">셀트리온 (K-IFRS)</text>
+  <text x="330" y="598" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">개발비 자산화 시 단기 이익 높아짐 + 무형자산 증가</text>
+  <text x="330" y="616" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">but 향후 상각/손상 리스크 내재</text>
+
+  <!-- Right impact -->
+  <rect x="630" y="556" width="480" height="76" rx="8" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.15)"/>
+  <text x="870" y="578" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#38bdf8">Amgen (US-GAAP)</text>
+  <text x="870" y="598" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#cbd5e1">자체 R&amp;D 전액 비용 처리 = 보수적 이익</text>
+  <text x="870" y="616" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#94a3b8">인수 무형자산만 B/S 반영 = 성장 경로 차이</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

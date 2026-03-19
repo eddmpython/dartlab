@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>셀트리온 vs Amgen 비교 체크리스트 대시보드</title>
+  <desc>7개 핵심 항목으로 셀트리온과 Amgen의 R&amp;D/무형자산 전략 차이를 대시보드로 요약한다.</desc>
+  <defs>
+    <linearGradient id="bg112e" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="12" fill="url(#bg112e)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">비교 체크리스트 대시보드</text>
+  <text x="600" y="66" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" fill="#64748b">7개 핵심 항목으로 보는 R&amp;D / 무형자산 전략 차이</text>
+
+  <!-- Column headers -->
+  <rect x="60" y="86" width="300" height="36" rx="8" fill="rgba(100,116,139,0.08)"/>
+  <text x="210" y="109" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#94a3b8">비교 항목</text>
+
+  <rect x="380" y="86" width="360" height="36" rx="8" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)"/>
+  <text x="560" y="109" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#a78bfa">셀트리온 (K-IFRS)</text>
+
+  <rect x="760" y="86" width="380" height="36" rx="8" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.3)"/>
+  <text x="950" y="109" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#38bdf8">Amgen (US-GAAP)</text>
+
+  <!-- Row 1: R&D/매출 -->
+  <rect x="60" y="134" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="158" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">1. R&amp;D / 매출 비율</text>
+  <text x="80" y="178" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">연구개발 투자 강도</text>
+
+  <rect x="380" y="134" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="158" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#a78bfa">~10%</text>
+  <text x="400" y="178" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">P&amp;L 기준 (자산화 제외)</text>
+  <text x="400" y="192" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#64748b">자산화 포함 시 ~15%</text>
+
+  <rect x="760" y="134" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="158" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#38bdf8">~19%</text>
+  <text x="780" y="178" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">전액 비용 처리 = 실질 투자 그대로 반영</text>
+
+  <!-- Row 2: 개발비 자산화율 -->
+  <rect x="60" y="208" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="232" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">2. 개발비 자산화율</text>
+  <text x="80" y="252" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">R&amp;D 중 B/S 반영 비중</text>
+
+  <rect x="380" y="208" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="232" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#fb923c">~30~40%</text>
+  <text x="400" y="252" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">6개 요건 충족 시 자산화 가능</text>
+
+  <rect x="760" y="208" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="232" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#34d399">0%</text>
+  <text x="780" y="252" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">ASC 730: 자체 R&amp;D 자산화 불가</text>
+
+  <!-- Row 3: 무형자산 구성 -->
+  <rect x="60" y="282" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="306" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">3. 무형자산 구성</text>
+  <text x="80" y="326" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">자체 개발 vs 인수 비율</text>
+
+  <rect x="380" y="282" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="306" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#a78bfa">자체 개발 80%+</text>
+  <text x="400" y="326" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">바이오시밀러 개발비 + 산업재산권</text>
+
+  <rect x="760" y="282" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="306" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#38bdf8">인수 기반 90%+</text>
+  <text x="780" y="326" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Goodwill + Acquired Tech + IPR&amp;D</text>
+
+  <!-- Row 4: 파이프라인 공시 -->
+  <rect x="60" y="356" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="380" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">4. 파이프라인 공시</text>
+  <text x="80" y="400" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">R&amp;D 진행 현황 형태</text>
+
+  <rect x="380" y="356" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="380" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#a78bfa">정형 테이블</text>
+  <text x="400" y="400" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">품목/적응증/단계 열 구분, 자동 추출 가능</text>
+
+  <rect x="760" y="356" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="380" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#38bdf8">서술형 Narrative</text>
+  <text x="780" y="400" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">질환별 상세 설명, FDA 일정 기재</text>
+
+  <!-- Row 5: 상각 정책 -->
+  <rect x="60" y="430" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="454" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">5. 상각 정책</text>
+  <text x="80" y="474" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">무형자산 비용화 방식</text>
+
+  <rect x="380" y="430" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="454" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#a78bfa">정액법 5~20년</text>
+  <text x="400" y="474" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">특허 만료/제품 수명 기준 내용연수</text>
+
+  <rect x="760" y="430" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="454" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#38bdf8">정액법 3~15년 + Goodwill 비상각</text>
+  <text x="780" y="474" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Goodwill은 매년 손상검사만</text>
+
+  <!-- Row 6: 손상 리스크 -->
+  <rect x="60" y="504" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="528" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">6. 손상 리스크</text>
+  <text x="80" y="548" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">자산 가치 급감 가능성</text>
+
+  <rect x="380" y="504" width="360" height="64" rx="6" fill="rgba(248,113,113,0.05)" stroke="rgba(248,113,113,0.15)"/>
+  <text x="400" y="528" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f87171">바이오시밀러 허가 실패 시</text>
+  <text x="400" y="548" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">자산화된 개발비 전액 손상 처리</text>
+
+  <rect x="760" y="504" width="380" height="64" rx="6" fill="rgba(248,113,113,0.05)" stroke="rgba(248,113,113,0.15)"/>
+  <text x="780" y="528" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f87171">인수 시너지 미달 시</text>
+  <text x="780" y="548" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#94a3b8">Goodwill 대규모 손상 ($10B+ 규모)</text>
+
+  <!-- Row 7: 공시 위치 -->
+  <rect x="60" y="578" width="300" height="64" rx="6" fill="rgba(100,116,139,0.04)" stroke="rgba(100,116,139,0.1)"/>
+  <text x="80" y="602" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#f1f5f9">7. 공시 위치</text>
+  <text x="80" y="622" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="10" fill="#64748b">어디서 찾아 볼 것인가</text>
+
+  <rect x="380" y="578" width="360" height="64" rx="6" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.1)"/>
+  <text x="400" y="598" font-family="JetBrains Mono,monospace" font-size="10" fill="#c4b5fd">II. 사업의 내용</text>
+  <text x="400" y="614" font-family="JetBrains Mono,monospace" font-size="10" fill="#c4b5fd">III. 재무에 관한 사항 &gt; 주석</text>
+  <text x="400" y="630" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">K-IFRS 무형자산 주석 (IAS 38)</text>
+
+  <rect x="760" y="578" width="380" height="64" rx="6" fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.1)"/>
+  <text x="780" y="598" font-family="JetBrains Mono,monospace" font-size="10" fill="#bae6fd">Item 1. Business</text>
+  <text x="780" y="614" font-family="JetBrains Mono,monospace" font-size="10" fill="#bae6fd">Item 8. Notes to Financial Statements</text>
+  <text x="780" y="630" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="9" fill="#94a3b8">ASC 350 Intangibles / ASC 805 Business Combinations</text>
+
+  <!-- Footer -->
+  <text x="600" y="698" text-anchor="middle" font-family="Pretendard,Inter,system-ui,sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>
