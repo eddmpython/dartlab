@@ -56,8 +56,13 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         company=c,
         view_context=req.viewContext,
     )
-    focus_context = await asyncio.to_thread(build_focus_context, c, state) if c is not None else None
-    diff_context = await asyncio.to_thread(build_diff_context, c) if c is not None else None
+    if c is not None:
+        focus_context, diff_context = await asyncio.gather(
+            asyncio.to_thread(build_focus_context, c, state),
+            asyncio.to_thread(build_diff_context, c),
+        )
+    else:
+        focus_context, diff_context = None, None
 
     if not_found_msg:
         yield {
@@ -539,10 +544,31 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
     except Exception as e:  # noqa: BLE001 — LLM provider 에러 (openai.OpenAIError 등)
         import logging
 
-        logging.getLogger(__name__).warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
+        logger = logging.getLogger(__name__)
+        logger.warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
+        error_msg = f"{type(e).__name__}: {e}"
+        error_payload_ex: dict[str, Any] = {"error": error_msg}
+
+        # OAuth GPT 에러 — 사용자에게 구체적 action 전달
+        err_type = type(e).__name__
+        if err_type == "ChatGPTOAuthError":
+            err_str = str(e).lower()
+            if "token" in err_str or "expire" in err_str or "login" in err_str:
+                error_payload_ex["action"] = "relogin"
+                error_payload_ex["error"] = "ChatGPT 인증이 만료되었습니다. 다시 로그인해주세요."
+            elif "rate" in err_str or "limit" in err_str:
+                error_payload_ex["action"] = "rate_limit"
+                error_payload_ex["error"] = "ChatGPT 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
+            else:
+                error_payload_ex["action"] = "relogin"
+                error_payload_ex["error"] = f"ChatGPT 연결 오류: {e}"
+        elif err_type == "OpenAIError" or "api_key" in str(e).lower():
+            error_payload_ex["action"] = "config"
+            error_payload_ex["error"] = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."
+
         yield {
             "event": "error",
-            "data": orjson.dumps({"error": f"{type(e).__name__}: {e}"}).decode(),
+            "data": orjson.dumps(error_payload_ex).decode(),
         }
 
     # "보여줘" 의도 감지 → viewer_navigate SSE 이벤트

@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import Any
 
 import orjson
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
@@ -173,6 +174,7 @@ def _serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
     return {"type": "unknown", "data": str(payload)}
 
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
@@ -783,10 +785,11 @@ def api_company(code: str):
 
 
 @app.get("/api/company/{code}/index")
-def api_company_index(code: str):
+def api_company_index(code: str, response: Response):
     """Company index DataFrame."""
     try:
         c = _get_company(code)
+        response.headers["Cache-Control"] = "private, max-age=300"
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -797,10 +800,11 @@ def api_company_index(code: str):
 
 
 @app.get("/api/company/{code}/sections")
-def api_company_sections(code: str):
+def api_company_sections(code: str, response: Response):
     """Company sections — 전체 지도."""
     try:
         c = _get_company(code)
+        response.headers["Cache-Control"] = "private, max-age=300"
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
@@ -811,10 +815,11 @@ def api_company_sections(code: str):
 
 
 @app.get("/api/company/{code}/toc")
-def api_company_toc(code: str):
+def api_company_toc(code: str, response: Response):
     """뷰어용 목차 — chapter/topic 트리 + text/table 블록 카운트."""
     try:
         c = _get_company(code)
+        response.headers["Cache-Control"] = "private, max-age=300"
         sec = c.sections
         if sec is None:
             return TocResponse(stockCode=c.stockCode, corpName=c.corpName, chapters=[])
@@ -928,6 +933,7 @@ def api_company_viewer_topic(
     code: str,
     topic: str,
     period: str | None = Query(None, description="특정 기간만 반환 (타임라인 클릭 최적화)"),
+    response: Response = None,
 ):
     """뷰어 전용 — topic의 viewerBlocks + textDocument.
 
@@ -935,6 +941,7 @@ def api_company_viewer_topic(
     period 지정 → 해당 기간 + 직전 동주기만 포함한 경량 응답 (타임라인 클릭).
     """
     try:
+        response.headers["Cache-Control"] = "private, max-age=120"
         from dartlab.engines.dart.docs.viewer import (
             serializeViewerBlock,
             serializeViewerTextDocument,
@@ -943,7 +950,14 @@ def api_company_viewer_topic(
         )
 
         c = _get_company(code)
-        blocks = viewerBlocks(c, topic)
+        # viewerBlocks 캐시 — 같은 topic 재요청 시 즉시 반환
+        if not hasattr(c, "_viewer_cache"):
+            c._viewer_cache = {}
+        if topic in c._viewer_cache:
+            blocks = c._viewer_cache[topic]
+        else:
+            blocks = viewerBlocks(c, topic)
+            c._viewer_cache[topic] = blocks
 
         if period is not None:
             blocks = _filterBlocksByPeriod(blocks, period)
@@ -1059,8 +1073,17 @@ def api_company_trace(code: str, topic: str):
 
 
 @app.get("/api/company/{code}/summary/{topic}")
-async def api_company_topic_summary(code: str, topic: str):
-    """topic별 AI 요약 생성 (SSE 스트리밍)."""
+async def api_company_topic_summary(
+    code: str,
+    topic: str,
+    provider: str | None = None,
+    model: str | None = None,
+):
+    """topic별 AI 요약 생성 (SSE 스트리밍).
+
+    provider/model 쿼리 파라미터로 사용자 선택 AI 전달 가능.
+    없으면 서버 기본 설정 사용.
+    """
     try:
         c = _get_company(code)
     except _HANDLED_API_ERRORS as e:
@@ -1085,6 +1108,11 @@ async def api_company_topic_summary(code: str, topic: str):
 
         try:
             config_ = get_config()
+            # 사용자가 provider/model을 지정하면 오버라이드
+            if provider:
+                config_ = {**config_, "provider": provider}
+            if model:
+                config_ = {**config_, "model": model}
             llm = create_provider(config_)
 
             def _stream():
@@ -1099,10 +1127,18 @@ async def api_company_topic_summary(code: str, topic: str):
                     "event": "chunk",
                     "data": orjson.dumps({"text": chunk}).decode(),
                 }
-        except (ImportError, OSError, RuntimeError, ValueError) as e:
+        except Exception as e:  # noqa: BLE001 — provider 초기화/스트림 에러
+            import logging
+
+            logging.getLogger(__name__).warning("summary stream error: %s: %s", type(e).__name__, e)
+            err_msg = str(e)
+            if "api_key" in err_msg.lower():
+                err_msg = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."
+            elif type(e).__name__ == "ChatGPTOAuthError":
+                err_msg = f"ChatGPT 연결 오류: {e}"
             yield {
                 "event": "error",
-                "data": orjson.dumps({"error": str(e)}).decode(),
+                "data": orjson.dumps({"error": err_msg}).decode(),
             }
 
         yield {"event": "done", "data": "{}"}
@@ -1179,7 +1215,7 @@ def api_company_network(code: str, hops: int = 1):
             return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
         data, full = result
 
-        from dartlab.engines.dart.affiliate.export import export_ego
+        from dartlab.engines.dart.scan.network.export import export_ego
 
         ego = export_ego(data, full, c.stockCode, hops=hops)
         return {
@@ -1411,7 +1447,7 @@ def api_company_search_sections(code: str, q: str = Query("", description="검�
 
 
 @app.get("/api/company/{code}/searchIndex")
-def api_company_search_index(code: str):
+def api_company_search_index(code: str, response: Response):
     """MiniSearch 인덱스용 flat document list.
 
     회사의 sections 전체를 topic × period × blockType 단위 문서로 평탄화하여 반환.
@@ -1419,6 +1455,7 @@ def api_company_search_index(code: str):
     """
     try:
         c = _get_company(code)
+        response.headers["Cache-Control"] = "private, max-age=600"
         sec = c.sections
         if sec is None:
             return {"stockCode": c.stockCode, "corpName": c.corpName, "documents": []}
