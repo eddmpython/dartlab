@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="4" fill="none" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">BS 항등식 검증 — 오매핑 탐지의 핵심</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Balance Sheet Identity Check: total_assets = total_liabilities + total_equity</text>
+
+  <!-- The equation box -->
+  <rect x="200" y="100" width="800" height="70" rx="10" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="600" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="20" fill="#f1f5f9">
+    <tspan fill="#a78bfa">total_assets</tspan> = <tspan fill="#38bdf8">total_liabilities</tspan> + <tspan fill="#34d399">total_equity</tspan>
+  </text>
+
+  <!-- Example: PASS case -->
+  <rect x="60" y="200" width="520" height="280" rx="12" fill="#34d399" fill-opacity="0.05" stroke="#34d399" stroke-opacity="0.3"/>
+  <rect x="80" y="212" width="60" height="24" rx="4" fill="#34d399" fill-opacity="0.2"/>
+  <text x="110" y="229" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#34d399">PASS</text>
+  <text x="155" y="229" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f1f5f9">정상 매핑 사례</text>
+  <text x="350" y="229" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">삼성전자 2024Q4</text>
+
+  <!-- Pass numbers -->
+  <g transform="translate(100, 255)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">자산총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#a78bfa">426,618,254,000,000</text>
+  </g>
+  <g transform="translate(100, 310)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">부채총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#38bdf8">101,263,782,000,000</text>
+  </g>
+  <g transform="translate(100, 365)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">자본총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#34d399">325,354,472,000,000</text>
+  </g>
+  <g transform="translate(100, 420)">
+    <rect width="440" height="36" rx="6" fill="#34d399" fill-opacity="0.1"/>
+    <text x="20" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">오차율</text>
+    <text x="420" y="24" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#34d399">0.0000%</text>
+  </g>
+
+  <!-- Example: FAIL case -->
+  <rect x="620" y="200" width="520" height="280" rx="12" fill="#f87171" fill-opacity="0.05" stroke="#f87171" stroke-opacity="0.3"/>
+  <rect x="640" y="212" width="60" height="24" rx="4" fill="#f87171" fill-opacity="0.2"/>
+  <text x="670" y="229" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#f87171">FAIL</text>
+  <text x="715" y="229" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f1f5f9">오매핑 사례</text>
+  <text x="900" y="229" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b">비지배지분 누락</text>
+
+  <!-- Fail numbers -->
+  <g transform="translate(660, 255)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">자산총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#a78bfa">426,618,254,000,000</text>
+  </g>
+  <g transform="translate(660, 310)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">부채총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#38bdf8">101,263,782,000,000</text>
+  </g>
+  <g transform="translate(660, 365)">
+    <rect width="440" height="44" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <text x="20" y="28" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">자본총계</text>
+    <text x="420" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#f87171">319,821,440,000,000</text>
+    <text x="420" y="42" text-anchor="end" font-family="Pretendard, sans-serif" font-size="10" fill="#f87171">NCI 5.5조 누락</text>
+  </g>
+  <g transform="translate(660, 420)">
+    <rect width="440" height="36" rx="6" fill="#f87171" fill-opacity="0.1"/>
+    <text x="20" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">오차율</text>
+    <text x="420" y="24" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#f87171">1.2965%</text>
+  </g>
+
+  <!-- Bottom section: 99.7% statistics -->
+  <rect x="60" y="510" width="1080" height="160" rx="12" fill="#38bdf8" fill-opacity="0.04" stroke="#38bdf8" stroke-opacity="0.2"/>
+  <text x="600" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#f1f5f9">2,700개 종목 전수 검증 결과</text>
+
+  <!-- Stats boxes -->
+  <g transform="translate(110, 565)">
+    <rect width="220" height="80" rx="8" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="110" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="bold" fill="#34d399">99.7%</text>
+    <text x="110" y="55" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">항등식 통과율</text>
+    <text x="110" y="72" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">오차 &lt; 0.1%</text>
+  </g>
+  <g transform="translate(370, 565)">
+    <rect width="220" height="80" rx="8" fill="#0f1219" stroke="#fb923c" stroke-opacity="0.3"/>
+    <text x="110" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="bold" fill="#fb923c">~160</text>
+    <text x="110" y="55" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">실패 포인트</text>
+    <text x="110" y="72" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">54,000건 중</text>
+  </g>
+  <g transform="translate(630, 565)">
+    <rect width="220" height="80" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="110" y="30" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#a78bfa">NCI / CFS 혼재</text>
+    <text x="110" y="55" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">주요 실패 원인</text>
+    <text x="110" y="72" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">비지배지분, 연결/별도</text>
+  </g>
+  <g transform="translate(890, 565)">
+    <rect width="220" height="80" rx="8" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <text x="110" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="bold" fill="#f87171">&gt;1%</text>
+    <text x="110" y="55" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#94a3b8">즉시 조사 기준</text>
+    <text x="110" y="72" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">오매핑 또는 소스 오류</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

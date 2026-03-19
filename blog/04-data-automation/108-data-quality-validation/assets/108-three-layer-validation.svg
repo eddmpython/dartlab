@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="layer1bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="layer2bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="layer3bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="4" fill="none" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">데이터 품질 검증 3계층 아키텍처</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Three-Layer Validation Architecture</text>
+
+  <!-- Arrow on left: bottom to top -->
+  <line x1="80" y1="610" x2="80" y2="130" stroke="#475569" stroke-width="2" stroke-dasharray="6,4"/>
+  <polygon points="80,120 74,136 86,136" fill="#475569"/>
+  <text x="80" y="650" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#64748b" transform="rotate(-90, 50, 400)">검증 깊이</text>
+
+  <!-- Layer 1: 구조 검증 -->
+  <rect x="120" y="110" width="960" height="160" rx="12" fill="url(#layer1bg)" stroke="#a78bfa" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="140" y="126" width="100" height="32" rx="6" fill="#a78bfa" fill-opacity="0.2" stroke="#a78bfa" stroke-width="1"/>
+  <text x="190" y="147" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#a78bfa">Layer 1</text>
+  <text x="260" y="147" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#f1f5f9">구조 검증</text>
+  <text x="380" y="147" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">Structural Validation</text>
+
+  <!-- Layer 1 items -->
+  <g transform="translate(160, 175)">
+    <rect width="180" height="72" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="90" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">schema</text>
+    <text x="90" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">필수 컬럼 존재 여부</text>
+    <text x="90" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">bsns_year, sj_div ...</text>
+  </g>
+  <g transform="translate(370, 175)">
+    <rect width="180" height="72" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="90" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">type</text>
+    <text x="90" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">금액 컬럼 타입 검사</text>
+    <text x="90" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">int64 / float64</text>
+  </g>
+  <g transform="translate(580, 175)">
+    <rect width="180" height="72" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="90" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">null</text>
+    <text x="90" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">null 비율 &lt; 50%</text>
+    <text x="90" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">데이터 소스 문제 감지</text>
+  </g>
+  <g transform="translate(790, 175)">
+    <rect width="180" height="72" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+    <text x="90" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">rows</text>
+    <text x="90" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">최소 행 수 검사</text>
+    <text x="90" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">BS>=10, IS>=5, CF>=5</text>
+  </g>
+
+  <!-- Layer 2: 회계 항등식 -->
+  <rect x="120" y="290" width="960" height="160" rx="12" fill="url(#layer2bg)" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="140" y="306" width="100" height="32" rx="6" fill="#38bdf8" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1"/>
+  <text x="190" y="327" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">Layer 2</text>
+  <text x="260" y="327" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#f1f5f9">회계 항등식</text>
+  <text x="390" y="327" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">Accounting Identity Checks</text>
+
+  <!-- Layer 2 items -->
+  <g transform="translate(160, 355)">
+    <rect width="280" height="72" rx="8" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <text x="140" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#38bdf8">BS Identity</text>
+    <text x="140" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">자산 = 부채 + 자본</text>
+    <text x="140" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">99.7% 통과율</text>
+  </g>
+  <g transform="translate(470, 355)">
+    <rect width="280" height="72" rx="8" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <text x="140" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#38bdf8">IS Relationship</text>
+    <text x="140" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출 - 원가 = 매출총이익</text>
+    <text x="140" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">수익/비용 매핑 검증</text>
+  </g>
+  <g transform="translate(780, 355)">
+    <rect width="280" height="72" rx="8" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <text x="140" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#38bdf8">CF Relationship</text>
+    <text x="140" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">영업 + 투자 + 재무 = 순변동</text>
+    <text x="140" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">현금흐름 정합성</text>
+  </g>
+
+  <!-- Layer 3: 통계/비즈니스 로직 -->
+  <rect x="120" y="470" width="960" height="160" rx="12" fill="url(#layer3bg)" stroke="#34d399" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="140" y="486" width="100" height="32" rx="6" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="1"/>
+  <text x="190" y="507" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#34d399">Layer 3</text>
+  <text x="260" y="507" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#f1f5f9">통계 검증</text>
+  <text x="370" y="507" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">Statistical &amp; Business Logic</text>
+
+  <!-- Layer 3 items -->
+  <g transform="translate(160, 535)">
+    <rect width="220" height="72" rx="8" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="110" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#34d399">spike</text>
+    <text x="110" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">전기 대비 급변 탐지</text>
+    <text x="110" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">100배 이상 = 오류</text>
+  </g>
+  <g transform="translate(410, 535)">
+    <rect width="220" height="72" rx="8" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="110" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#34d399">sign</text>
+    <text x="110" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">부호 전환 감지</text>
+    <text x="110" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">자산/매출 음수 = 불가</text>
+  </g>
+  <g transform="translate(660, 535)">
+    <rect width="220" height="72" rx="8" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="110" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#34d399">z-score</text>
+    <text x="110" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">업종 내 이상치 탐지</text>
+    <text x="110" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">|z| > 3 = 극단값</text>
+  </g>
+  <g transform="translate(910, 535)">
+    <rect width="160" height="72" rx="8" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <text x="80" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#34d399">industry</text>
+    <text x="80" y="44" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">업종별 규칙</text>
+    <text x="80" y="62" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">은행/건설/바이오</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

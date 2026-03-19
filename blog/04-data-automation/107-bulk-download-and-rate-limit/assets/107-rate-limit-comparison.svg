@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="6" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">OpenDART vs EDGAR rate limit 정책</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Rate Limit Policy Comparison — Daily vs Per-Second Throttling</text>
+
+  <!-- Divider line -->
+  <line x1="600" y1="110" x2="600" y2="530" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ===== LEFT: OpenDART (blue) ===== -->
+  <rect x="60" y="100" width="500" height="56" rx="10" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="310" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#38bdf8">OpenDART</text>
+
+  <!-- OpenDART details -->
+  <rect x="60" y="176" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="198" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">일간 호출 한도</text>
+  <text x="80" y="218" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">무료: 1,000건/일 ─ 등록: 10,000건/일</text>
+
+  <rect x="60" y="240" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="262" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">인증 방식</text>
+  <text x="80" y="282" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">API 키 기반 (crtfc_key 파라미터)</text>
+
+  <rect x="60" y="304" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="326" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">초과 시 응답</text>
+  <text x="80" y="346" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">020 에러코드 (일일 한도 초과)</text>
+
+  <rect x="60" y="368" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="390" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">특징</text>
+  <text x="80" y="410" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">일 단위 리셋, 초당 제한 미공개</text>
+
+  <rect x="60" y="432" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="454" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">대응 전략</text>
+  <text x="80" y="474" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">일간 카운터 추적, 한도 도달 시 다음 날 재개</text>
+
+  <!-- ===== RIGHT: EDGAR (orange) ===== -->
+  <rect x="640" y="100" width="500" height="56" rx="10" fill="#2e1a0c" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="890" y="134" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#fb923c">EDGAR</text>
+
+  <!-- EDGAR details -->
+  <rect x="640" y="176" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="660" y="198" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">초당 호출 한도</text>
+  <text x="660" y="218" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">10건/초 (초과 시 IP 차단)</text>
+
+  <rect x="640" y="240" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="660" y="262" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">인증 방식</text>
+  <text x="660" y="282" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">User-Agent 헤더 필수 (이메일 포함)</text>
+
+  <rect x="640" y="304" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="660" y="326" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">초과 시 응답</text>
+  <text x="660" y="346" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">HTTP 429 또는 IP 일시 차단</text>
+
+  <rect x="640" y="368" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="660" y="390" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">특징</text>
+  <text x="660" y="410" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">IP 기반 추적, 일간 한도 없음</text>
+
+  <rect x="640" y="432" width="500" height="52" rx="8" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="660" y="454" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">대응 전략</text>
+  <text x="660" y="474" font-family="JetBrains Mono, monospace" font-size="12" fill="#94a3b8">요청 간 100ms 간격, token bucket 알고리즘</text>
+
+  <!-- ===== Bottom: 공통 대응 전략 ===== -->
+  <rect x="120" y="540" width="960" height="120" rx="12" fill="#0a0e18" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="600" y="572" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#a78bfa">공통 대응 전략</text>
+
+  <!-- Strategy items -->
+  <circle cx="200" cy="608" r="5" fill="#34d399"/>
+  <text x="216" y="613" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">자동 재시도</text>
+  <text x="216" y="632" font-family="JetBrains Mono, monospace" font-size="11" fill="#64748b">최대 3회, 실패 로그 기록</text>
+
+  <circle cx="460" cy="608" r="5" fill="#34d399"/>
+  <text x="476" y="613" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">지수 백오프</text>
+  <text x="476" y="632" font-family="JetBrains Mono, monospace" font-size="11" fill="#64748b">1s → 2s → 4s → 8s</text>
+
+  <circle cx="720" cy="608" r="5" fill="#34d399"/>
+  <text x="736" y="613" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">큐 기반 스로틀링</text>
+  <text x="736" y="632" font-family="JetBrains Mono, monospace" font-size="11" fill="#64748b">asyncio.Semaphore 동시성 제어</text>
+
+  <circle cx="980" cy="608" r="5" fill="#34d399"/>
+  <text x="996" y="613" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">부분 재개</text>
+  <text x="996" y="632" font-family="JetBrains Mono, monospace" font-size="11" fill="#64748b">checkpoint 기반 이어받기</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

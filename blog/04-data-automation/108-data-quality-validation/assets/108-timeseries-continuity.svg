@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="4" fill="none" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">시계열 연속성 검증 — 정상 vs 이상 패턴</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Time Series Continuity: Normal Pattern vs Anomaly Detection</text>
+
+  <!-- Left panel: Normal -->
+  <rect x="40" y="100" width="550" height="570" rx="12" fill="#34d399" fill-opacity="0.03" stroke="#34d399" stroke-opacity="0.25"/>
+  <rect x="60" y="114" width="70" height="26" rx="5" fill="#34d399" fill-opacity="0.2"/>
+  <text x="95" y="132" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#34d399">정상</text>
+  <text x="145" y="132" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f1f5f9">안정적인 시계열</text>
+
+  <!-- Normal chart area -->
+  <rect x="80" y="155" width="480" height="200" rx="8" fill="#0f1219" stroke="#1e2433"/>
+  <!-- Y axis labels -->
+  <text x="75" y="180" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">5조</text>
+  <text x="75" y="220" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">4조</text>
+  <text x="75" y="260" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">3조</text>
+  <text x="75" y="300" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">2조</text>
+  <text x="75" y="340" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">1조</text>
+  <!-- Grid lines -->
+  <line x1="90" y1="175" x2="550" y2="175" stroke="#1e2433" stroke-width="0.5"/>
+  <line x1="90" y1="215" x2="550" y2="215" stroke="#1e2433" stroke-width="0.5"/>
+  <line x1="90" y1="255" x2="550" y2="255" stroke="#1e2433" stroke-width="0.5"/>
+  <line x1="90" y1="295" x2="550" y2="295" stroke="#1e2433" stroke-width="0.5"/>
+  <line x1="90" y1="335" x2="550" y2="335" stroke="#1e2433" stroke-width="0.5"/>
+  <!-- Normal line: gentle upward trend -->
+  <polyline points="110,310 150,300 190,295 230,285 270,278 310,270 350,260 390,252 430,245 470,235 510,228 540,220" fill="none" stroke="#34d399" stroke-width="2.5"/>
+  <!-- Dots -->
+  <circle cx="110" cy="310" r="3.5" fill="#34d399"/>
+  <circle cx="150" cy="300" r="3.5" fill="#34d399"/>
+  <circle cx="190" cy="295" r="3.5" fill="#34d399"/>
+  <circle cx="230" cy="285" r="3.5" fill="#34d399"/>
+  <circle cx="270" cy="278" r="3.5" fill="#34d399"/>
+  <circle cx="310" cy="270" r="3.5" fill="#34d399"/>
+  <circle cx="350" cy="260" r="3.5" fill="#34d399"/>
+  <circle cx="390" cy="252" r="3.5" fill="#34d399"/>
+  <circle cx="430" cy="245" r="3.5" fill="#34d399"/>
+  <circle cx="470" cy="235" r="3.5" fill="#34d399"/>
+  <circle cx="510" cy="228" r="3.5" fill="#34d399"/>
+  <circle cx="540" cy="220" r="3.5" fill="#34d399"/>
+  <!-- X axis labels -->
+  <text x="110" y="360" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">22Q1</text>
+  <text x="230" y="360" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">22Q4</text>
+  <text x="350" y="360" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">23Q3</text>
+  <text x="470" y="360" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">24Q2</text>
+
+  <!-- Normal characteristics -->
+  <g transform="translate(80, 385)">
+    <rect width="480" height="40" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.2"/>
+    <circle cx="25" cy="20" r="5" fill="#34d399"/>
+    <text x="45" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">연속적 성장 추세, 분기 누락 없음</text>
+  </g>
+  <g transform="translate(80, 435)">
+    <rect width="480" height="40" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.2"/>
+    <circle cx="25" cy="20" r="5" fill="#34d399"/>
+    <text x="45" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">전기 대비 변동률 &lt; 30% (정상 범위)</text>
+  </g>
+  <g transform="translate(80, 485)">
+    <rect width="480" height="40" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.2"/>
+    <circle cx="25" cy="20" r="5" fill="#34d399"/>
+    <text x="45" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">부호 일관 유지 (매출액 항상 양수)</text>
+  </g>
+  <g transform="translate(80, 535)">
+    <rect width="480" height="40" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.2"/>
+    <circle cx="25" cy="20" r="5" fill="#34d399"/>
+    <text x="45" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">계절성 반영 (Q4 매출 최고)</text>
+  </g>
+  <g transform="translate(80, 585)">
+    <rect width="480" height="40" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.2"/>
+    <circle cx="25" cy="20" r="5" fill="#34d399"/>
+    <text x="45" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">24개 분기 빈틈 없이 존재</text>
+  </g>
+
+  <!-- Right panel: Anomalies -->
+  <rect x="610" y="100" width="550" height="570" rx="12" fill="#f87171" fill-opacity="0.03" stroke="#f87171" stroke-opacity="0.25"/>
+  <rect x="630" y="114" width="70" height="26" rx="5" fill="#f87171" fill-opacity="0.2"/>
+  <text x="665" y="132" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="bold" fill="#f87171">이상</text>
+  <text x="715" y="132" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f1f5f9">탐지 대상 패턴 3가지</text>
+
+  <!-- Anomaly 1: Sudden Jump -->
+  <rect x="650" y="155" width="480" height="130" rx="8" fill="#0f1219" stroke="#fb923c" stroke-opacity="0.3"/>
+  <text x="670" y="175" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#fb923c">1. 급변 (Spike)</text>
+  <text x="830" y="175" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">전기 대비 100배 이상</text>
+  <!-- Mini chart: spike -->
+  <polyline points="670,240 700,238 730,235 760,233 790,230 820,170 850,172 880,228 910,225 940,222" fill="none" stroke="#fb923c" stroke-width="2"/>
+  <circle cx="820" cy="170" r="5" fill="#fb923c"/>
+  <text x="820" y="195" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#fb923c">x500</text>
+  <!-- Alert marker -->
+  <line x1="815" y1="185" x2="815" y2="260" stroke="#fb923c" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <text x="1010" y="210" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">단위 오류</text>
+  <text x="1010" y="228" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">원 vs 천원</text>
+  <text x="1010" y="246" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">가능성 높음</text>
+
+  <!-- Anomaly 2: Missing Quarter -->
+  <rect x="650" y="300" width="480" height="130" rx="8" fill="#0f1219" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="670" y="320" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#a78bfa">2. 분기 누락 (Gap)</text>
+  <text x="840" y="320" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">22Q3 데이터 없음</text>
+  <!-- Mini chart: gap -->
+  <polyline points="670,385 700,380 730,375" fill="none" stroke="#a78bfa" stroke-width="2"/>
+  <circle cx="670" cy="385" r="3" fill="#a78bfa"/>
+  <circle cx="700" cy="380" r="3" fill="#a78bfa"/>
+  <circle cx="730" cy="375" r="3" fill="#a78bfa"/>
+  <!-- Gap area -->
+  <rect x="748" y="340" width="50" height="78" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.3" stroke-dasharray="4,3"/>
+  <text x="773" y="383" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#a78bfa">?</text>
+  <!-- Continue after gap -->
+  <polyline points="815,365 845,360 875,355 905,350 935,345" fill="none" stroke="#a78bfa" stroke-width="2"/>
+  <circle cx="815" cy="365" r="3" fill="#a78bfa"/>
+  <circle cx="845" cy="360" r="3" fill="#a78bfa"/>
+  <circle cx="875" cy="355" r="3" fill="#a78bfa"/>
+  <circle cx="905" cy="350" r="3" fill="#a78bfa"/>
+  <circle cx="935" cy="345" r="3" fill="#a78bfa"/>
+  <text x="1010" y="360" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">수집 실패</text>
+  <text x="1010" y="378" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">또는</text>
+  <text x="1010" y="396" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">공시 미제출</text>
+
+  <!-- Anomaly 3: Sign Flip -->
+  <rect x="650" y="445" width="480" height="130" rx="8" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+  <text x="670" y="465" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f87171">3. 부호 전환 (Sign Flip)</text>
+  <text x="870" y="465" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">자산총계가 음수 전환</text>
+  <!-- Zero line -->
+  <line x1="670" y1="520" x2="940" y2="520" stroke="#475569" stroke-width="0.8" stroke-dasharray="4,3"/>
+  <text x="660" y="524" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="#475569">0</text>
+  <!-- Mini chart: sign flip -->
+  <polyline points="670,500 700,498 730,496 760,505 790,510 820,530 850,545 880,550 910,548" fill="none" stroke="#f87171" stroke-width="2"/>
+  <circle cx="670" cy="500" r="3" fill="#34d399"/>
+  <circle cx="700" cy="498" r="3" fill="#34d399"/>
+  <circle cx="730" cy="496" r="3" fill="#34d399"/>
+  <circle cx="760" cy="505" r="3" fill="#34d399"/>
+  <circle cx="790" cy="510" r="3" fill="#34d399"/>
+  <circle cx="820" cy="530" r="3" fill="#f87171"/>
+  <circle cx="850" cy="545" r="3" fill="#f87171"/>
+  <circle cx="880" cy="550" r="3" fill="#f87171"/>
+  <circle cx="910" cy="548" r="3" fill="#f87171"/>
+  <text x="690" y="490" font-family="JetBrains Mono, monospace" font-size="9" fill="#34d399">+</text>
+  <text x="870" y="565" font-family="JetBrains Mono, monospace" font-size="9" fill="#f87171">-</text>
+  <text x="1010" y="505" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">자산/매출</text>
+  <text x="1010" y="523" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">음수 전환은</text>
+  <text x="1010" y="541" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="bold" fill="#f87171">불가능</text>
+
+  <!-- Summary -->
+  <rect x="650" y="590" width="480" height="60" rx="8" fill="#38bdf8" fill-opacity="0.05" stroke="#38bdf8" stroke-opacity="0.2"/>
+  <text x="890" y="617" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">3가지 이상 패턴 모두 자동 탐지 대상</text>
+  <text x="890" y="638" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">시계열 전체를 순회하며 FLAG / REJECT 판정</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

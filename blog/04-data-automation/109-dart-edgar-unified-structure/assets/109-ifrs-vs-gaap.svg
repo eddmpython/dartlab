@@ -1,0 +1,113 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="purpleGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.03"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg1)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">K-IFRS vs US-GAAP 핵심 차이점 비교</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Practical differences affecting cross-border financial data integration</text>
+
+  <!-- Column Headers -->
+  <rect x="60" y="100" width="250" height="44" rx="6" fill="url(#purpleGlow)" stroke="#a78bfa" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="185" y="127" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#a78bfa">K-IFRS (한국)</text>
+
+  <rect x="890" y="100" width="250" height="44" rx="6" fill="url(#blueGlow)" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="1015" y="127" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#38bdf8">US-GAAP (미국)</text>
+
+  <!-- Row 1: R&D -->
+  <rect x="60" y="164" width="1080" height="100" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="560" y="186" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#34d399">연구개발비 (R&amp;D)</text>
+  <line x1="350" y1="198" x2="770" y2="198" stroke="#1e2433" stroke-width="1"/>
+
+  <rect x="80" y="208" width="230" height="40" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="195" y="224" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">개발비 조건부</text>
+  <text x="195" y="240" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">자본화 허용 (IAS 38)</text>
+
+  <rect x="910" y="208" width="210" height="40" rx="4" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="1015" y="224" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">거의 전액</text>
+  <text x="1015" y="240" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">비용 처리</text>
+
+  <text x="560" y="228" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">영업이익률 직접 비교 시 왜곡 가능</text>
+  <text x="560" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">→ 무형자산 / 당기비용 차이</text>
+
+  <!-- Row 2: Inventory -->
+  <rect x="60" y="278" width="1080" height="100" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="560" y="300" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#34d399">재고자산 평가</text>
+  <line x1="350" y1="312" x2="770" y2="312" stroke="#1e2433" stroke-width="1"/>
+
+  <rect x="80" y="322" width="230" height="40" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="195" y="338" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">LIFO 금지</text>
+  <text x="195" y="354" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">FIFO / 가중평균만 (IAS 2)</text>
+
+  <rect x="910" y="322" width="210" height="40" rx="4" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="1015" y="338" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">LIFO 허용</text>
+  <text x="1015" y="354" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">석유/화학업 다수 사용</text>
+
+  <text x="560" y="342" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">LIFO Reserve 조정 필요</text>
+  <text x="560" y="360" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">→ 매출원가 / 재고자산 차이</text>
+
+  <!-- Row 3: Lease -->
+  <rect x="60" y="392" width="1080" height="100" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="560" y="414" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#34d399">리스 회계</text>
+  <line x1="350" y1="426" x2="770" y2="426" stroke="#1e2433" stroke-width="1"/>
+
+  <rect x="80" y="436" width="230" height="40" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="195" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">IFRS 16 단일 모형</text>
+  <text x="195" y="468" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">모든 리스 동일 처리</text>
+
+  <rect x="910" y="436" width="210" height="40" rx="4" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="1015" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">ASC 842 이중 모형</text>
+  <text x="1015" y="468" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">운용 / 금융 구분</text>
+
+  <text x="560" y="456" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">항공/유통 업종에서 영업이익 차이</text>
+  <text x="560" y="474" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">→ 손익계산서 표시 방식 상이</text>
+
+  <!-- Row 4: Revenue Recognition -->
+  <rect x="60" y="506" width="1080" height="100" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="560" y="528" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#34d399">수익 인식</text>
+  <line x1="350" y1="540" x2="770" y2="540" stroke="#1e2433" stroke-width="1"/>
+
+  <rect x="80" y="550" width="230" height="40" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="195" y="566" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">IFRS 15 원칙 기반</text>
+  <text x="195" y="582" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#e2d9f3">5단계 모형</text>
+
+  <rect x="910" y="550" width="210" height="40" rx="4" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="1015" y="566" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">ASC 606 규칙 기반</text>
+  <text x="1015" y="582" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#d1ecf9">5단계 모형</text>
+
+  <text x="560" y="570" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">대부분 동일 — 라이선스/SW 업종 주의</text>
+  <text x="560" y="588" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">→ 세부 적용 지침 차이</text>
+
+  <!-- Arrows between columns -->
+  <line x1="320" y1="235" x2="900" y2="235" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="320" y1="349" x2="900" y2="349" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="320" y1="463" x2="900" y2="463" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="320" y1="573" x2="900" y2="573" stroke="#1e2433" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Legend -->
+  <rect x="380" y="630" width="440" height="36" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <circle cx="420" cy="648" r="5" fill="#fb923c"/>
+  <text x="432" y="652" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">통합 시 주의 항목</text>
+  <circle cx="570" cy="648" r="5" fill="#a78bfa"/>
+  <text x="582" y="652" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">K-IFRS</text>
+  <circle cx="660" cy="648" r="5" fill="#38bdf8"/>
+  <text x="672" y="652" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">US-GAAP</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

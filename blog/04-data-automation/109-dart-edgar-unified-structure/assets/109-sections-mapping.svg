@@ -1,0 +1,158 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="connectGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg3)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">sections 수평화 — DART 12장 vs EDGAR Part I/II</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">6 semantic pairs mapped across Korean and US disclosure structures</text>
+
+  <!-- DART Column -->
+  <rect x="50" y="98" width="420" height="40" rx="6" fill="#a78bfa" fill-opacity="0.12" stroke="#a78bfa" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="260" y="123" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#a78bfa">DART 사업보고서 12장</text>
+
+  <!-- EDGAR Column -->
+  <rect x="730" y="98" width="420" height="40" rx="6" fill="#38bdf8" fill-opacity="0.12" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="940" y="123" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">EDGAR 10-K Items</text>
+
+  <!-- DART Chapters -->
+  <rect x="60" y="152" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="171" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">I</text>
+  <text x="104" y="171" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">회사의 개요</text>
+  <text x="440" y="171" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">companyOverview</text>
+
+  <rect x="60" y="186" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="205" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">II</text>
+  <text x="104" y="205" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">사업의 내용</text>
+  <text x="440" y="205" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">businessOverview</text>
+
+  <rect x="60" y="220" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="239" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">III</text>
+  <text x="104" y="239" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">재무에 관한 사항</text>
+  <text x="440" y="239" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">financialMatters</text>
+
+  <rect x="60" y="254" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="273" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">IV</text>
+  <text x="104" y="273" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">감사인의 감사의견 등</text>
+  <text x="440" y="273" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">auditOpinion</text>
+
+  <rect x="60" y="288" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="307" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">V</text>
+  <text x="104" y="307" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">이사의 경영진단 및 분석의견</text>
+  <text x="440" y="307" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">mdna</text>
+
+  <rect x="60" y="322" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="341" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">VI</text>
+  <text x="104" y="341" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">이사회 등 회사의 기관에 관한 사항</text>
+
+  <rect x="60" y="356" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="375" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">VII</text>
+  <text x="104" y="375" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">주주에 관한 사항</text>
+
+  <rect x="60" y="390" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="409" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">VIII</text>
+  <text x="104" y="409" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">투자위험요소</text>
+  <text x="440" y="409" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">riskFactors</text>
+
+  <rect x="60" y="424" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="443" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">IX</text>
+  <text x="104" y="443" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">소송 사항</text>
+  <text x="440" y="443" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">legalProceedings</text>
+
+  <rect x="60" y="458" width="400" height="28" rx="4" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="76" y="477" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">X</text>
+  <text x="104" y="477" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">임원/직원 등에 관한 사항</text>
+
+  <rect x="60" y="492" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="511" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">XI</text>
+  <text x="104" y="511" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">재무제표 등</text>
+  <text x="440" y="511" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">financialStatements</text>
+
+  <rect x="60" y="526" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="76" y="545" font-family="Pretendard, sans-serif" font-size="12" fill="#a78bfa">XII</text>
+  <text x="104" y="545" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">내부통제에 관한 사항</text>
+  <text x="440" y="545" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">controls</text>
+
+  <!-- EDGAR Items -->
+  <rect x="740" y="152" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="171" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 1 — Business</text>
+  <text x="1120" y="171" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">business</text>
+
+  <rect x="740" y="186" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="205" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 1A — Risk Factors</text>
+  <text x="1120" y="205" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">riskFactors</text>
+
+  <rect x="740" y="220" width="400" height="28" rx="4" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="756" y="239" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Item 1B — Unresolved Comments</text>
+
+  <rect x="740" y="254" width="400" height="28" rx="4" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="756" y="273" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Item 2 — Properties</text>
+
+  <rect x="740" y="288" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="307" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 3 — Legal Proceedings</text>
+  <text x="1120" y="307" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">legalProceedings</text>
+
+  <rect x="740" y="322" width="400" height="28" rx="4" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="756" y="341" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Item 5 — Market Information</text>
+
+  <rect x="740" y="356" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="375" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 7 — MD&amp;A</text>
+  <text x="1120" y="375" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">mdna</text>
+
+  <rect x="740" y="390" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="409" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 8 — Financial Statements</text>
+  <text x="1120" y="409" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">financialStatements</text>
+
+  <rect x="740" y="424" width="400" height="28" rx="4" fill="#0d1117" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="756" y="443" font-family="Pretendard, sans-serif" font-size="12" fill="#34d399" font-weight="bold">Item 9A — Controls</text>
+  <text x="1120" y="443" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#34d399">controls</text>
+
+  <rect x="740" y="458" width="400" height="28" rx="4" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="756" y="477" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Item 10~14 — Directors, Compensation...</text>
+
+  <rect x="740" y="492" width="400" height="28" rx="4" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="756" y="511" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Item 15 — Exhibits</text>
+  <text x="1120" y="511" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">exhibits</text>
+
+  <!-- Connection lines (6 semantic pairs) -->
+  <!-- businessOverview → business -->
+  <path d="M460,200 C560,200 640,166 740,166" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- riskFactors → riskFactors -->
+  <path d="M460,404 C560,404 640,200 740,200" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- mdna → mdna -->
+  <path d="M460,302 C560,302 640,370 740,370" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- legalProceedings → legalProceedings -->
+  <path d="M460,438 C560,438 640,302 740,302" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- financialStatements → financialStatements -->
+  <path d="M460,506 C560,506 640,404 740,404" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- controls → controls -->
+  <path d="M460,540 C560,540 640,438 740,438" fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.6"/>
+
+  <!-- Legend -->
+  <rect x="300" y="580" width="600" height="56" rx="6" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <line x1="330" y1="608" x2="380" y2="608" stroke="#34d399" stroke-width="2"/>
+  <text x="390" y="612" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">의미적 대응 (6쌍)</text>
+  <rect x="530" y="600" width="16" height="16" rx="2" fill="none" stroke="#34d399" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="554" y="612" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">매핑됨</text>
+  <rect x="640" y="600" width="16" height="16" rx="2" fill="none" stroke="#64748b" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="664" y="612" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">대응 없음</text>
+
+  <!-- Stats -->
+  <text x="260" y="660" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">DART 매핑률 99.95%</text>
+  <text x="600" y="660" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#34d399">의미적 대응 6쌍</text>
+  <text x="940" y="660" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#38bdf8">EDGAR 매핑률 100%</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

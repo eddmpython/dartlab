@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">실전 5가지 함정과 해결</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">XBRL 계정 매핑에서 자주 만나는 문제와 DartLab의 대응</text>
+
+  <!-- Column headers -->
+  <text x="100" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#94a3b8">#</text>
+  <text x="340" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#f87171">함정</text>
+  <text x="600" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#94a3b8" opacity="0.5">|</text>
+  <text x="890" y="120" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="bold" fill="#34d399">해결</text>
+  <line x1="60" y1="132" x2="1140" y2="132" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Row 1 -->
+  <rect x="60" y="148" width="1080" height="96" rx="8" fill="none" stroke="#1e2433" stroke-width="0.5"/>
+  <rect x="60" y="148" width="1080" height="96" rx="8" fill="#f87171" opacity="0.02"/>
+
+  <!-- Number circle -->
+  <circle cx="100" cy="196" r="22" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.7"/>
+  <text x="100" y="202" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#a78bfa">1</text>
+
+  <!-- Problem -->
+  <text x="150" y="180" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f87171">분기별 공백 차이</text>
+  <text x="150" y="202" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">같은 계정이 분기마다 account_nm 공백이</text>
+  <text x="150" y="220" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">다름 ("영업이익" vs "영업 이익")</text>
+
+  <!-- Arrow -->
+  <text x="600" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#34d399" opacity="0.6">&#x2192;</text>
+
+  <!-- Solution -->
+  <text x="660" y="180" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">groupKey에서 account_nm 제외</text>
+  <text x="660" y="202" font-family="JetBrains Mono, monospace" font-size="11" fill="#38bdf8">[bsns_year, sj_div, account_id]</text>
+  <text x="660" y="220" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">계정ID만으로 그룹핑하여 공백 차이 무시</text>
+
+  <!-- Row 2 -->
+  <rect x="60" y="256" width="1080" height="96" rx="8" fill="none" stroke="#1e2433" stroke-width="0.5"/>
+  <rect x="60" y="256" width="1080" height="96" rx="8" fill="#fb923c" opacity="0.02"/>
+
+  <circle cx="100" cy="304" r="22" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.7"/>
+  <text x="100" y="310" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#38bdf8">2</text>
+
+  <text x="150" y="288" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#fb923c">CIS만 있는 회사</text>
+  <text x="150" y="310" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">IS(손익계산서) 없이 CIS(포괄손익계산서)</text>
+  <text x="150" y="328" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">만 제출하는 회사 2,329개</text>
+
+  <text x="600" y="308" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#34d399" opacity="0.6">&#x2192;</text>
+
+  <text x="660" y="288" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">IS 없으면 CIS fallback</text>
+  <text x="660" y="310" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">IS 조회 시 결과 없으면 자동으로 CIS에서</text>
+  <text x="660" y="328" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">매출/영업이익 추출</text>
+
+  <!-- Row 3 -->
+  <rect x="60" y="364" width="1080" height="96" rx="8" fill="none" stroke="#1e2433" stroke-width="0.5"/>
+  <rect x="60" y="364" width="1080" height="96" rx="8" fill="#f87171" opacity="0.02"/>
+
+  <circle cx="100" cy="412" r="22" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.7"/>
+  <text x="100" y="418" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#34d399">3</text>
+
+  <text x="150" y="396" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f87171">금융업 계정 누락</text>
+  <text x="150" y="418" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">은행/보험사는 revenue, current_assets 등</text>
+  <text x="150" y="436" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">일반 제조업 계정이 존재하지 않음</text>
+
+  <text x="600" y="416" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#34d399" opacity="0.6">&#x2192;</text>
+
+  <text x="660" y="396" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">업종별 대체 계정 규칙</text>
+  <text x="660" y="418" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">금융업은 이자수익, 보험수익 등</text>
+  <text x="660" y="436" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">업종 특화 계정으로 대체 매핑</text>
+
+  <!-- Row 4 -->
+  <rect x="60" y="472" width="1080" height="96" rx="8" fill="none" stroke="#1e2433" stroke-width="0.5"/>
+  <rect x="60" y="472" width="1080" height="96" rx="8" fill="#fb923c" opacity="0.02"/>
+
+  <circle cx="100" cy="520" r="22" fill="none" stroke="#fb923c" stroke-width="1.5" opacity="0.7"/>
+  <text x="100" y="526" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#fb923c">4</text>
+
+  <text x="150" y="504" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#fb923c">연결/별도 재무제표 차이</text>
+  <text x="150" y="526" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">CFS(연결)와 OFS(별도)에 같은 계정이</text>
+  <text x="150" y="544" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">중복 존재, 어느 쪽을 쓸지 결정 필요</text>
+
+  <text x="600" y="524" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#34d399" opacity="0.6">&#x2192;</text>
+
+  <text x="660" y="504" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">CFS(연결) 우선 정책</text>
+  <text x="660" y="526" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">행 단위로 CFS > OFS 중복 제거</text>
+  <text x="660" y="544" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">연결 재무제표가 기업 실체를 더 정확히 반영</text>
+
+  <!-- Row 5 -->
+  <rect x="60" y="580" width="1080" height="96" rx="8" fill="none" stroke="#1e2433" stroke-width="0.5"/>
+  <rect x="60" y="580" width="1080" height="96" rx="8" fill="#f87171" opacity="0.02"/>
+
+  <circle cx="100" cy="628" r="22" fill="none" stroke="#f87171" stroke-width="1.5" opacity="0.7"/>
+  <text x="100" y="634" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#f87171">5</text>
+
+  <text x="150" y="612" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f87171">학습 매퍼 오매핑</text>
+  <text x="150" y="634" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">ML 학습 과정에서 잘못 학습된 매핑이</text>
+  <text x="150" y="652" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">34,249개 중 소수 존재</text>
+
+  <text x="600" y="632" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#34d399" opacity="0.6">&#x2192;</text>
+
+  <text x="660" y="612" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">실험 검증 후 반영</text>
+  <text x="660" y="634" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">무분별한 수작업 수정 금지</text>
+  <text x="660" y="652" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">experiments/에서 검증 후 스크립트로만 제거</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

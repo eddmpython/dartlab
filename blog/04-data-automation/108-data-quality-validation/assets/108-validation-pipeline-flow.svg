@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <marker id="arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" rx="12" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">검증 파이프라인 전체 흐름</text>
+  <text x="600" y="74" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#94a3b8">개별 회사 → 교차 검증 → 시계열 → 이상치 보고서</text>
+
+  <!-- Stage 1 -->
+  <rect x="60" y="110" width="240" height="120" rx="10" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="180" y="145" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#38bdf8">1. 개별 회사</text>
+  <text x="180" y="172" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">스키마 검증</text>
+  <text x="180" y="192" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">BS 항등식</text>
+  <text x="180" y="212" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">핵심 계정 존재</text>
+
+  <path d="M310 170 L370 170" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- Stage 2 -->
+  <rect x="380" y="110" width="240" height="120" rx="10" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="500" y="145" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#a78bfa">2. 교차 검증</text>
+  <text x="500" y="172" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">IS ↔ BS 연결</text>
+  <text x="500" y="192" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">CF ↔ BS 현금 일치</text>
+  <text x="500" y="212" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">업종별 규칙 적용</text>
+
+  <path d="M630 170 L690 170" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- Stage 3 -->
+  <rect x="700" y="110" width="240" height="120" rx="10" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="1.5"/>
+  <text x="820" y="145" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#34d399">3. 시계열</text>
+  <text x="820" y="172" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">분기 연속성</text>
+  <text x="820" y="192" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">급변 탐지</text>
+  <text x="820" y="212" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">부호 반전 검사</text>
+
+  <path d="M950 170 L1010 170" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- Stage 4 -->
+  <rect x="1020" y="110" width="130" height="120" rx="10" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="1085" y="155" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#fb923c">이상치</text>
+  <text x="1085" y="178" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#fb923c">보고서</text>
+
+  <!-- Decision section -->
+  <text x="600" y="290" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#f1f5f9">검증 실패 시 의사결정</text>
+
+  <polygon points="600,330 720,400 600,470 480,400" fill="rgba(148,163,184,0.06)" stroke="#94a3b8" stroke-width="1"/>
+  <text x="600" y="395" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#f1f5f9">심각도</text>
+  <text x="600" y="415" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#f1f5f9">판단</text>
+
+  <!-- Flag -->
+  <path d="M480 400 L300 400" stroke="#34d399" stroke-width="1.5"/>
+  <text x="390" y="390" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">경미</text>
+  <rect x="120" y="365" width="180" height="70" rx="8" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="1"/>
+  <text x="210" y="395" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#34d399">Flag (경고)</text>
+  <text x="210" y="418" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">데이터 유지, 경고 태그 부착</text>
+
+  <!-- Reject -->
+  <path d="M720 400 L900 400" stroke="#f87171" stroke-width="1.5"/>
+  <text x="810" y="390" font-family="Pretendard, sans-serif" font-size="11" fill="#f87171">심각</text>
+  <rect x="900" y="365" width="180" height="70" rx="8" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="1"/>
+  <text x="990" y="395" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#f87171">Reject (거부)</text>
+  <text x="990" y="418" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">데이터 제외, 재수집 필요</text>
+
+  <!-- Auto-correct -->
+  <path d="M600 470 L600 520" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="625" y="500" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">정형화 가능</text>
+  <rect x="510" y="525" width="180" height="70" rx="8" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="1"/>
+  <text x="600" y="555" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#fb923c">Auto-correct</text>
+  <text x="600" y="578" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">규칙 기반 자동 보정 후 재검증</text>
+
+  <!-- Examples -->
+  <rect x="60" y="620" width="340" height="60" rx="8" fill="rgba(148,163,184,0.04)" stroke="#1e2433" stroke-width="1"/>
+  <text x="80" y="645" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">Flag 예시:</text>
+  <text x="80" y="665" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">YoY 매출 50% 변동, 마이너 계정 누락</text>
+
+  <rect x="430" y="620" width="340" height="60" rx="8" fill="rgba(148,163,184,0.04)" stroke="#1e2433" stroke-width="1"/>
+  <text x="450" y="645" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">Reject 예시:</text>
+  <text x="450" y="665" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">BS 불균형 > 10%, 음수 자산총계</text>
+
+  <rect x="800" y="620" width="340" height="60" rx="8" fill="rgba(148,163,184,0.04)" stroke="#1e2433" stroke-width="1"/>
+  <text x="820" y="645" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">Auto-correct 예시:</text>
+  <text x="820" y="665" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">단위 불일치(원 vs 천원), 부호 정규화</text>
+
+  <text x="600" y="710" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

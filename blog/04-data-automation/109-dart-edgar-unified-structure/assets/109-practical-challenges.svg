@@ -1,0 +1,95 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg5)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">실전 통합 시 부딪히는 5가지 벽</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Practical challenges when merging DART and EDGAR into a unified schema</text>
+
+  <!-- Wall 1: Fiscal Year -->
+  <rect x="60" y="105" width="520" height="115" rx="8" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="60" y="105" width="6" height="115" rx="3" fill="#a78bfa"/>
+  <text x="86" y="130" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#a78bfa">1. 회계연도 불일치</text>
+  <text x="86" y="152" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">삼성전자: 1월~12월 (Calendar Year)</text>
+  <text x="86" y="170" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Apple: 10월~9월 (Fiscal Year 2024 = 2023.10~2024.09)</text>
+
+  <rect x="86" y="182" width="200" height="24" rx="4" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="186" y="199" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">기간 메타데이터 투명 노출</text>
+
+  <!-- Wall 2: Currency -->
+  <rect x="620" y="105" width="520" height="115" rx="8" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="620" y="105" width="6" height="115" rx="3" fill="#38bdf8"/>
+  <text x="646" y="130" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">2. 통화 및 단위 차이</text>
+  <text x="646" y="152" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">DART: 원(KRW) 단위 — 302,231,009,000,000</text>
+  <text x="646" y="170" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">EDGAR: 백만 달러(USD millions) — 394,328</text>
+
+  <rect x="646" y="182" width="240" height="24" rx="4" fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="766" y="199" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#38bdf8">원본 통화 보존 + 명시적 환율 지정</text>
+
+  <!-- Wall 3: Segment Reporting -->
+  <rect x="60" y="240" width="520" height="115" rx="8" fill="#0d1117" stroke="#34d399" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="60" y="240" width="6" height="115" rx="3" fill="#34d399"/>
+  <text x="86" y="265" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#34d399">3. 부문(세그먼트) 보고 차이</text>
+  <text x="86" y="287" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">삼성전자: DS, SDC, MX, Harman, 기타 (5부문)</text>
+  <text x="86" y="305" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">Apple: Products, Services (2부문)</text>
+
+  <rect x="86" y="317" width="240" height="24" rx="4" fill="#34d399" fill-opacity="0.08" stroke="#34d399" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="206" y="334" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">원본 구조 그대로 sections에 보존</text>
+
+  <!-- Wall 4: Consolidated Complexity -->
+  <rect x="620" y="240" width="520" height="115" rx="8" fill="#0d1117" stroke="#fb923c" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="620" y="240" width="6" height="115" rx="3" fill="#fb923c"/>
+  <text x="646" y="265" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#fb923c">4. 연결/별도 재무제표 복잡성</text>
+  <text x="646" y="287" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">DART: 연결(CFS) + 별도(OFS) 모두 공시</text>
+  <text x="646" y="305" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">EDGAR: 연결(CFS)만 공시 (대부분)</text>
+
+  <rect x="646" y="317" width="240" height="24" rx="4" fill="#fb923c" fill-opacity="0.08" stroke="#fb923c" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="766" y="334" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#fb923c">CFS 우선 + OFS fallback (DART)</text>
+
+  <!-- Wall 5: Accounting Standard Gaps -->
+  <rect x="280" y="375" width="640" height="135" rx="8" fill="#0d1117" stroke="#f87171" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="280" y="375" width="6" height="135" rx="3" fill="#f87171"/>
+  <text x="306" y="400" font-family="Pretendard, sans-serif" font-size="15" font-weight="bold" fill="#f87171">5. 회계 기준 차이 — 계정 누락과 비대칭</text>
+  <text x="306" y="425" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">DART 매핑률 97.07% — 업종 특화 계정 미매핑 (보험계약부채, 예수부채 등)</text>
+  <text x="306" y="445" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">EDGAR 회사 고유(extension) 태그 — 표준 snakeId 매핑 불가</text>
+  <text x="306" y="465" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">R&amp;D 자본화 / LIFO / 리스 모형 차이 — 자동 조정 위험</text>
+
+  <rect x="306" y="478" width="280" height="24" rx="4" fill="#f87171" fill-opacity="0.08" stroke="#f87171" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="446" y="495" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#f87171">미매핑 원본 보존 + trace()로 출처 추적</text>
+
+  <!-- Summary Box -->
+  <rect x="140" y="540" width="920" height="100" rx="8" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="600" y="568" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#f1f5f9">해결 원칙</text>
+
+  <!-- Principle icons -->
+  <circle cx="240" cy="604" r="18" fill="#a78bfa" fill-opacity="0.12" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="240" y="609" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#a78bfa">1</text>
+  <text x="240" y="630" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">차이를 지우지 않는다</text>
+
+  <circle cx="440" cy="604" r="18" fill="#38bdf8" fill-opacity="0.12" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="440" y="609" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#38bdf8">2</text>
+  <text x="440" y="630" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">원본을 보존한다</text>
+
+  <circle cx="600" cy="604" r="18" fill="#34d399" fill-opacity="0.12" stroke="#34d399" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="600" y="609" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#34d399">3</text>
+  <text x="600" y="630" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">추적 가능하게 남긴다</text>
+
+  <circle cx="760" cy="604" r="18" fill="#fb923c" fill-opacity="0.12" stroke="#fb923c" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="760" y="609" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#fb923c">4</text>
+  <text x="760" y="630" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">같은 코드로 접근한다</text>
+
+  <circle cx="960" cy="604" r="18" fill="#f87171" fill-opacity="0.12" stroke="#f87171" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="960" y="609" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#f87171">5</text>
+  <text x="960" y="630" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">자동 조정은 최소화한다</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="4" fill="none" stroke="#1e2433"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">업종별 검증 규칙 차이</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Industry-Specific Validation Rules: Manufacturing / Banking / Construction</text>
+
+  <!-- Column 1: 제조업 -->
+  <rect x="40" y="100" width="360" height="570" rx="12" fill="#a78bfa" fill-opacity="0.04" stroke="#a78bfa" stroke-opacity="0.25"/>
+  <!-- Header -->
+  <rect x="60" y="115" width="320" height="56" rx="8" fill="#a78bfa" fill-opacity="0.12"/>
+  <text x="220" y="140" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#a78bfa">제조업</text>
+  <text x="220" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Manufacturing</text>
+
+  <!-- 제조업 checks -->
+  <g transform="translate(60, 186)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출액 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 232)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출원가 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 278)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">유동/비유동 자산 분류</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 324)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">BS 항등식</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 370)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">재고자산 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 416)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출 대비 판관비 &lt; 50%</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(60, 462)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">이자수익/비용 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <g transform="translate(60, 508)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">보험수익/비용 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <g transform="translate(60, 554)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">계약자산/부채 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <!-- Count -->
+  <rect x="60" y="604" width="320" height="44" rx="8" fill="#a78bfa" fill-opacity="0.08"/>
+  <text x="220" y="631" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#a78bfa">적용 규칙 6개</text>
+
+  <!-- Column 2: 금융업 -->
+  <rect x="420" y="100" width="360" height="570" rx="12" fill="#38bdf8" fill-opacity="0.04" stroke="#38bdf8" stroke-opacity="0.25"/>
+  <rect x="440" y="115" width="320" height="56" rx="8" fill="#38bdf8" fill-opacity="0.12"/>
+  <text x="600" y="140" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#38bdf8">금융업 (은행)</text>
+  <text x="600" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Banking / Financial</text>
+
+  <!-- 금융업 checks -->
+  <g transform="translate(440, 186)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#f87171" fill-opacity="0.2" stroke="#f87171" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#f87171">X</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b" text-decoration="line-through">매출액 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#f87171">스킵</text>
+  </g>
+  <g transform="translate(440, 232)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#f87171" fill-opacity="0.2" stroke="#f87171" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#f87171">X</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b" text-decoration="line-through">매출원가 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#f87171">스킵</text>
+  </g>
+  <g transform="translate(440, 278)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#f87171" fill-opacity="0.2" stroke="#f87171" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#f87171">X</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b" text-decoration="line-through">유동/비유동 자산 분류</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#f87171">스킵</text>
+  </g>
+  <g transform="translate(440, 324)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">BS 항등식</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(440, 370)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#f87171" fill-opacity="0.2" stroke="#f87171" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#f87171">X</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b" text-decoration="line-through">재고자산 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#f87171">스킵</text>
+  </g>
+  <g transform="translate(440, 416)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#f87171" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#f87171" fill-opacity="0.2" stroke="#f87171" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#f87171">X</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b" text-decoration="line-through">매출 대비 판관비</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#f87171">스킵</text>
+  </g>
+  <g transform="translate(440, 462)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#38bdf8" fill-opacity="0.2" stroke="#38bdf8" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#38bdf8">+</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">이자수익/비용 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#38bdf8">추가</text>
+  </g>
+  <g transform="translate(440, 508)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#38bdf8" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#38bdf8" fill-opacity="0.2" stroke="#38bdf8" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#38bdf8">+</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">순이자마진(NIM) 범위</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#38bdf8">추가</text>
+  </g>
+  <g transform="translate(440, 554)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">계약자산/부채 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <rect x="440" y="604" width="320" height="44" rx="8" fill="#38bdf8" fill-opacity="0.08"/>
+  <text x="600" y="631" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">적용 규칙 3개 (5개 스킵)</text>
+
+  <!-- Column 3: 건설업 -->
+  <rect x="800" y="100" width="360" height="570" rx="12" fill="#fb923c" fill-opacity="0.04" stroke="#fb923c" stroke-opacity="0.25"/>
+  <rect x="820" y="115" width="320" height="56" rx="8" fill="#fb923c" fill-opacity="0.12"/>
+  <text x="980" y="140" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="18" font-weight="bold" fill="#fb923c">건설업</text>
+  <text x="980" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">Construction</text>
+
+  <!-- 건설업 checks -->
+  <g transform="translate(820, 186)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출액 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(820, 232)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출원가 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(820, 278)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">유동/비유동 자산 분류</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(820, 324)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">BS 항등식</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(820, 370)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">재고자산 존재 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">선택</text>
+  </g>
+  <g transform="translate(820, 416)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#34d399" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#34d399" fill-opacity="0.2" stroke="#34d399" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#34d399">V</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">매출 대비 판관비 &lt; 30%</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#34d399">필수</text>
+  </g>
+  <g transform="translate(820, 462)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">이자수익/비용 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <g transform="translate(820, 508)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#475569" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#475569" fill-opacity="0.2" stroke="#475569" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">-</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">보험수익/비용 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#475569">N/A</text>
+  </g>
+  <g transform="translate(820, 554)">
+    <rect width="320" height="38" rx="6" fill="#0f1219" stroke="#fb923c" stroke-opacity="0.3"/>
+    <rect x="8" y="9" width="18" height="18" rx="3" fill="#fb923c" fill-opacity="0.2" stroke="#fb923c" stroke-width="0.8"/>
+    <text x="17" y="23" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#fb923c">+</text>
+    <text x="38" y="24" font-family="Pretendard, sans-serif" font-size="13" fill="#cbd5e1">계약자산/부채 검사</text>
+    <text x="310" y="24" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#fb923c">추가</text>
+  </g>
+  <rect x="820" y="604" width="320" height="44" rx="8" fill="#fb923c" fill-opacity="0.08"/>
+  <text x="980" y="631" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#fb923c">적용 규칙 6개 (+1 특화)</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

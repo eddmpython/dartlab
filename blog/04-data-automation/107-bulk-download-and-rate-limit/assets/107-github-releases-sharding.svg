@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="bar-docs" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="bar-f1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="bar-f2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="bar-f3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb923c" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="bar-f4" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f87171" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#f87171" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="6" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">GitHub Releases 데이터 분산 저장</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">Sharding Strategy — 1,000 Asset Limit Per Tag</text>
+
+  <!-- Constraint banner -->
+  <rect x="340" y="96" width="520" height="36" rx="18" fill="#1a0f0f" stroke="#f87171" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="600" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#f87171">GitHub 제한: 태그당 최대 1,000개 에셋</text>
+
+  <!-- Chart area -->
+  <!-- Y axis: 1000 limit line -->
+  <line x1="280" y1="185" x2="1100" y2="185" stroke="#f87171" stroke-width="1" stroke-dasharray="6,3" opacity="0.5"/>
+  <text x="1110" y="189" font-family="JetBrains Mono, monospace" font-size="10" fill="#f87171">1,000</text>
+
+  <!-- Grid lines -->
+  <line x1="280" y1="265" x2="1100" y2="265" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="1110" y="269" font-family="JetBrains Mono, monospace" font-size="10" fill="#475569">750</text>
+  <line x1="280" y1="345" x2="1100" y2="345" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="1110" y="349" font-family="JetBrains Mono, monospace" font-size="10" fill="#475569">500</text>
+  <line x1="280" y1="425" x2="1100" y2="425" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="1110" y="429" font-family="JetBrains Mono, monospace" font-size="10" fill="#475569">250</text>
+  <line x1="280" y1="505" x2="1100" y2="505" stroke="#1e2433" stroke-width="0.5"/>
+  <text x="1110" y="509" font-family="JetBrains Mono, monospace" font-size="10" fill="#475569">0</text>
+
+  <!-- Bar: data-docs (267) — height proportional to 267/1000 * 320 = 85.4 -->
+  <rect x="320" y="419" width="120" height="86" rx="4" fill="url(#bar-docs)" stroke="#a78bfa" stroke-width="1"/>
+  <text x="380" y="410" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#a78bfa">267</text>
+
+  <!-- Bar: data-finance-1 (928) — height = 297 -->
+  <rect x="480" y="208" width="120" height="297" rx="4" fill="url(#bar-f1)" stroke="#38bdf8" stroke-width="1"/>
+  <text x="540" y="198" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#38bdf8">928</text>
+
+  <!-- Bar: data-finance-2 (496) — height = 159 -->
+  <rect x="640" y="346" width="120" height="159" rx="4" fill="url(#bar-f2)" stroke="#34d399" stroke-width="1"/>
+  <text x="700" y="336" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#34d399">496</text>
+
+  <!-- Bar: data-finance-3 (378) — height = 121 -->
+  <rect x="800" y="384" width="120" height="121" rx="4" fill="url(#bar-f3)" stroke="#fb923c" stroke-width="1"/>
+  <text x="860" y="374" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#fb923c">378</text>
+
+  <!-- Bar: data-finance-4 (941) — height = 301 -->
+  <rect x="960" y="204" width="120" height="301" rx="4" fill="url(#bar-f4)" stroke="#f87171" stroke-width="1"/>
+  <text x="1020" y="194" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#f87171">941</text>
+
+  <!-- X axis labels -->
+  <text x="380" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#a78bfa">data-docs</text>
+  <text x="380" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">단일 태그</text>
+
+  <text x="540" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#38bdf8">finance-1</text>
+  <text x="540" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">000000–049999</text>
+
+  <text x="700" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#34d399">finance-2</text>
+  <text x="700" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">050000–099999</text>
+
+  <text x="860" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#fb923c">finance-3</text>
+  <text x="860" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">100000–199999</text>
+
+  <text x="1020" y="530" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#f87171">finance-4</text>
+  <text x="1020" y="546" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="#64748b">200000–999999</text>
+
+  <!-- Info box -->
+  <rect x="60" y="155" width="190" height="400" rx="10" fill="#0a0e18" stroke="#1e2433" stroke-width="1"/>
+  <text x="155" y="182" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#f1f5f9">분할 전략</text>
+
+  <text x="80" y="210" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">총 에셋 수</text>
+  <text x="80" y="230" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#f1f5f9">3,010개</text>
+
+  <text x="80" y="262" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">태그 수</text>
+  <text x="80" y="282" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#f1f5f9">5개</text>
+
+  <text x="80" y="314" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">분할 기준</text>
+  <text x="80" y="334" font-family="Pretendard, sans-serif" font-size="12" fill="#cbd5e1">종목코드 범위</text>
+
+  <line x1="80" y1="354" x2="230" y2="354" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="80" y="378" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">매핑 함수</text>
+  <text x="80" y="400" font-family="JetBrains Mono, monospace" font-size="11" fill="#a78bfa">financeTag()</text>
+  <text x="80" y="420" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">종목코드 → int 변환</text>
+  <text x="80" y="438" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">범위별 shard 결정</text>
+
+  <line x1="80" y1="456" x2="230" y2="456" stroke="#1e2433" stroke-width="1"/>
+
+  <text x="80" y="478" font-family="Pretendard, sans-serif" font-size="12" fill="#94a3b8">비숫자 코드</text>
+  <text x="80" y="498" font-family="JetBrains Mono, monospace" font-size="11" fill="#f87171">finance-4</text>
+  <text x="80" y="518" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">예: 0004V0</text>
+  <text x="80" y="536" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">마지막 shard에 수용</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

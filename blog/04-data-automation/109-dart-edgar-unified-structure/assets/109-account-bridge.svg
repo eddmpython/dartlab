@@ -1,0 +1,136 @@
+<svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+    <linearGradient id="bridgeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#34d399" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" fill="url(#bg2)"/>
+  <rect x="1" y="1" width="1198" height="718" rx="8" fill="none" stroke="#1e2433" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="bold" fill="#f1f5f9">DART-EDGAR 계정 매핑 브릿지</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">EDGAR_TO_DART_ALIASES — 37 bridge mappings between snakeId systems</text>
+
+  <!-- DART Column Header -->
+  <rect x="60" y="100" width="340" height="50" rx="8" fill="#a78bfa" fill-opacity="0.12" stroke="#a78bfa" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="230" y="122" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#a78bfa">DART snakeId</text>
+  <text x="230" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">34,249 mappings (K-IFRS)</text>
+
+  <!-- Bridge Column Header -->
+  <rect x="440" y="100" width="320" height="50" rx="8" fill="#34d399" fill-opacity="0.12" stroke="#34d399" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="600" y="122" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#34d399">ALIASES 브릿지</text>
+  <text x="600" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">37 cross-system bridges</text>
+
+  <!-- EDGAR Column Header -->
+  <rect x="800" y="100" width="340" height="50" rx="8" fill="#38bdf8" fill-opacity="0.12" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="970" y="122" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="bold" fill="#38bdf8">EDGAR snakeId</text>
+  <text x="970" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">11,660 mappings (US-GAAP)</text>
+
+  <!-- DART snakeIds -->
+  <rect x="80" y="175" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="197" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">revenue</text>
+
+  <rect x="80" y="220" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="242" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">cost_of_sales</text>
+
+  <rect x="80" y="265" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="287" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">operating_income</text>
+
+  <rect x="80" y="310" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="332" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">total_equity</text>
+
+  <rect x="80" y="355" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="377" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">total_assets</text>
+
+  <rect x="80" y="400" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="422" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">net_income</text>
+
+  <rect x="80" y="445" width="300" height="34" rx="5" fill="#0d1117" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="96" y="467" font-family="JetBrains Mono, monospace" font-size="13" fill="#a78bfa">issued_shares</text>
+
+  <!-- EDGAR snakeIds -->
+  <rect x="820" y="175" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="197" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">revenues</text>
+
+  <rect x="820" y="220" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="242" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">cost_of_goods_and_services_sold</text>
+
+  <rect x="820" y="265" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="287" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">operating_income_loss</text>
+
+  <rect x="820" y="310" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="332" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">stockholders_equity</text>
+
+  <rect x="820" y="355" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="377" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">assets</text>
+
+  <rect x="820" y="400" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="422" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">net_income_loss</text>
+
+  <rect x="820" y="445" width="300" height="34" rx="5" fill="#0d1117" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="836" y="467" font-family="JetBrains Mono, monospace" font-size="13" fill="#38bdf8">common_stock_shares_outstanding</text>
+
+  <!-- Bridge lines -->
+  <line x1="380" y1="192" x2="820" y2="192" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="237" x2="820" y2="237" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="282" x2="820" y2="282" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="327" x2="820" y2="327" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="372" x2="820" y2="372" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="417" x2="820" y2="417" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="380" y1="462" x2="820" y2="462" stroke="url(#bridgeGrad)" stroke-width="2" stroke-opacity="0.7"/>
+
+  <!-- Bridge arrows (center dots) -->
+  <circle cx="600" cy="192" r="4" fill="#34d399"/>
+  <circle cx="600" cy="237" r="4" fill="#34d399"/>
+  <circle cx="600" cy="282" r="4" fill="#34d399"/>
+  <circle cx="600" cy="327" r="4" fill="#34d399"/>
+  <circle cx="600" cy="372" r="4" fill="#34d399"/>
+  <circle cx="600" cy="417" r="4" fill="#34d399"/>
+  <circle cx="600" cy="462" r="4" fill="#34d399"/>
+
+  <!-- Pipeline diagram bottom -->
+  <rect x="100" y="510" width="1000" height="130" rx="8" fill="#0d1117" stroke="#1e2433" stroke-width="1"/>
+  <text x="600" y="536" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="bold" fill="#f1f5f9">매핑 파이프라인</text>
+
+  <!-- Pipeline steps -->
+  <rect x="130" y="555" width="140" height="34" rx="4" fill="#a78bfa" fill-opacity="0.1" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="200" y="576" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">prefix 제거</text>
+
+  <text x="285" y="576" font-family="Pretendard, sans-serif" font-size="14" fill="#475569">→</text>
+
+  <rect x="300" y="555" width="140" height="34" rx="4" fill="#a78bfa" fill-opacity="0.1" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="370" y="576" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#a78bfa">동의어 통합</text>
+
+  <text x="455" y="576" font-family="Pretendard, sans-serif" font-size="14" fill="#475569">→</text>
+
+  <rect x="470" y="555" width="140" height="34" rx="4" fill="#34d399" fill-opacity="0.1" stroke="#34d399" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="540" y="576" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">CORE_MAP</text>
+
+  <text x="625" y="576" font-family="Pretendard, sans-serif" font-size="14" fill="#475569">→</text>
+
+  <rect x="640" y="555" width="160" height="34" rx="4" fill="#34d399" fill-opacity="0.1" stroke="#34d399" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="720" y="576" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#34d399">accountMappings</text>
+
+  <text x="815" y="576" font-family="Pretendard, sans-serif" font-size="14" fill="#475569">→</text>
+
+  <rect x="830" y="555" width="140" height="34" rx="4" fill="#38bdf8" fill-opacity="0.1" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="900" y="576" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#38bdf8">표준 snakeId</text>
+
+  <!-- Stats -->
+  <text x="280" y="618" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">DART: 34,249개 매핑 | 매핑률 97.07%</text>
+  <text x="750" y="618" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8">EDGAR: 11,660개 매핑 | 브릿지 37개</text>
+
+  <!-- More indicator -->
+  <text x="600" y="490" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#475569">... 외 30개 브릿지 매핑</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>
