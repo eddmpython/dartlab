@@ -70,6 +70,8 @@ OpenDART를 이해하려면 DART 자체의 역사부터 봐야 한다.
 
 ## XBRL — 데이터 혁명의 시작
 
+![OpenDART Data Flow](./assets/002-data-flow.svg)
+
 XBRL(eXtensible Business Reporting Language)은 재무 데이터를 기계가 읽을 수 있도록 표준화하는 기술이다. 한국은 이 분야에서 세계적으로 선도적인 위치에 있다.
 
 ### 도입 타임라인

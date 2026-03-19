@@ -56,7 +56,7 @@ thumbnail: /avatar-chart.png
 - 나중에 추가 원가가 발생하면 진행률이 급락하거나 공사손실이 한꺼번에 터진다.
 - 분기별 진행률 변동이 크면 추정이 불안정하다는 신호다.
 
-[진행률은 오르는데 계약자산 회전이 느려질 때](/blog/progress-rate-and-contract-asset-slowdown)에서 진행률과 계약자산의 괴리가 왜 위험한지 상세하게 정리했다.
+[진행률은 오르는데 계약자산 회전이 느려질 때](/blog/progress-rate-vs-contract-asset-turnover)에서 진행률과 계약자산의 괴리가 왜 위험한지 상세하게 정리했다.
 
 ### 3. 미청구공사(계약자산)와 선수금(계약부채)의 균형
 
@@ -67,7 +67,7 @@ thumbnail: /avatar-chart.png
 
 건강한 구조는 **선수금이 미청구공사보다 크거나 비슷한 상태**다. 이 말은 발주처가 먼저 돈을 주고 있으니 회사의 현금 부담이 작다는 뜻이다. 반대로 미청구공사가 크고 선수금이 줄어드는 구조는 **회사가 일은 먼저 하고 돈은 나중에 받는 상태**이며, 현금 압박이 커진다.
 
-이 균형이 깨지는 패턴은 [공사선수금은 줄고 공사미수금은 늘 때](/blog/advance-down-receivable-up)에서, 미청구공사가 선수금을 추월하는 구조는 [선수수익보다 미청구공사가 더 빨리 늘 때](/blog/unbilled-revenue-vs-advance-received)에서 각각 깊게 다뤘다.
+이 균형이 깨지는 패턴은 [공사선수금은 줄고 공사미수금은 늘 때](/blog/advances-down-and-construction-receivables-up)에서, 미청구공사가 선수금을 추월하는 구조는 [선수수익보다 미청구공사가 더 빨리 늘 때](/blog/unbilled-construction-vs-deferred-revenue)에서 각각 깊게 다뤘다.
 
 ### 4. 원가 압박과 공사손실충당부채
 
@@ -76,7 +76,7 @@ thumbnail: /avatar-chart.png
 - **공사손실충당부채**: 적자가 확정된 프로젝트에서 앞으로 발생할 손실을 미리 인식한 것. 갑자기 크게 늘면 경영진이 그동안 원가를 낙관적으로 추정했다는 뜻이다.
 - **추가원가와 공사미수금 동시 증가**: 원가는 늘어나는데 청구도 밀리면 이중 압박이다.
 
-[공사손실충당부채는 언제 뒤늦게 크게 튀어나오나](/blog/construction-loss-provision-delayed-recognition)에서 이 충당부채가 왜 항상 늦게 잡히는지, [추가원가와 공사미수금이 함께 늘 때](/blog/additional-cost-and-construction-receivable)에서 비용과 회수가 동시에 악화되는 패턴을 정리했다.
+[공사손실충당부채는 언제 뒤늦게 크게 튀어나오나](/blog/construction-loss-provision-signals)에서 이 충당부채가 왜 항상 늦게 잡히는지, [추가원가와 공사미수금이 함께 늘 때](/blog/additional-costs-and-construction-receivables)에서 비용과 회수가 동시에 악화되는 패턴을 정리했다.
 
 ### 5. 영업현금흐름
 
@@ -109,7 +109,7 @@ thumbnail: /avatar-chart.png
 - 진행률이 갑자기 하락하거나, 분기마다 추정 총원가가 크게 변한다.
 - 공사손실충당부채가 급증한다. 경영진이 그동안 숨겼던 손실이 한꺼번에 나온다.
 - 영업현금흐름이 순이익보다 훨씬 작거나 마이너스다. 장부상 이익은 있지만 현금이 안 도는 상태다.
-- 팩토링이나 유동화로 채권을 매각해서 현금흐름을 보정하고 있다. [매출채권 팩토링과 유동화](/blog/factoring-and-securitization-cash-flow)에서 이 패턴을 상세하게 다뤘다.
+- 팩토링이나 유동화로 채권을 매각해서 현금흐름을 보정하고 있다. [매출채권 팩토링과 유동화](/blog/receivables-factoring-and-securitization)에서 이 패턴을 상세하게 다뤘다.
 
 ![건강한 건설사와 위험한 건설사의 핵심 지표 비교표](./assets/101-healthy-vs-risky-matrix.svg)
 
@@ -132,7 +132,7 @@ thumbnail: /avatar-chart.png
 
 ### PF(프로젝트 파이낸싱) 보증
 
-건설사 사업보고서에서 반드시 확인해야 할 항목이 PF 보증이다. 건설사가 시행사의 PF 대출에 연대보증을 서는 구조인데, 분양이 안 되거나 시행사가 부실해지면 보증 채무가 현실화된다. [지급보증·담보·약정 공시](/blog/guarantees-collateral-covenants)에서 보증 구조를 읽는 기본 프레임을 다뤘다.
+건설사 사업보고서에서 반드시 확인해야 할 항목이 PF 보증이다. 건설사가 시행사의 PF 대출에 연대보증을 서는 구조인데, 분양이 안 되거나 시행사가 부실해지면 보증 채무가 현실화된다. [지급보증·담보·약정 공시](/blog/guarantees-collateral-and-commitments)에서 보증 구조를 읽는 기본 프레임을 다뤘다.
 
 ---
 
@@ -192,7 +192,7 @@ thumbnail: /avatar-chart.png
 
 **PF 보증이 건설사를 위험하게 만드는 구조는?**
 
-건설사가 시행사의 PF 대출에 연대보증을 서면, 시행사가 원리금을 못 갚을 때 건설사가 대신 갚아야 한다. 분양이 잘 되면 문제없지만, 부동산 경기가 꺾이면 보증이 한꺼번에 현실화된다. PF 보증잔액이 자기자본 대비 100%를 넘으면 각별히 주의해야 한다. [지급보증·담보·약정 공시](/blog/guarantees-collateral-covenants)에서 보증 구조의 위험 판단 기준을 정리했다.
+건설사가 시행사의 PF 대출에 연대보증을 서면, 시행사가 원리금을 못 갚을 때 건설사가 대신 갚아야 한다. 분양이 잘 되면 문제없지만, 부동산 경기가 꺾이면 보증이 한꺼번에 현실화된다. PF 보증잔액이 자기자본 대비 100%를 넘으면 각별히 주의해야 한다. [지급보증·담보·약정 공시](/blog/guarantees-collateral-and-commitments)에서 보증 구조의 위험 판단 기준을 정리했다.
 
 **건설업에서 감사보고서는 무엇을 더 봐야 하나?**
 
@@ -208,24 +208,24 @@ thumbnail: /avatar-chart.png
 - [수주잔고는 늘는데 왜 현금은 안 남나](/blog/order-backlog-vs-cash-flow) — 잔고의 질을 가격, 마진, 회수 조건으로 판단
 
 **진행률과 매출 인식**
-- [진행률은 오르는데 계약자산 회전이 느려질 때](/blog/progress-rate-and-contract-asset-slowdown) — 진행률과 계약자산의 괴리가 왜 위험한지
+- [진행률은 오르는데 계약자산 회전이 느려질 때](/blog/progress-rate-vs-contract-asset-turnover) — 진행률과 계약자산의 괴리가 왜 위험한지
 - [매출 인식 시점 변경은 어디가 신호인가](/blog/revenue-recognition-timing-signals) — 수익 인식 정책 변경이 실적에 미치는 영향
 
 **미청구공사와 선수금**
-- [선수수익보다 미청구공사가 더 빨리 늘 때](/blog/unbilled-revenue-vs-advance-received) — 미청구가 선수금을 추월하는 구조
-- [공사선수금은 줄고 공사미수금은 늘 때](/blog/advance-down-receivable-up) — 현금 버퍼가 사라지는 패턴
+- [선수수익보다 미청구공사가 더 빨리 늘 때](/blog/unbilled-construction-vs-deferred-revenue) — 미청구가 선수금을 추월하는 구조
+- [공사선수금은 줄고 공사미수금은 늘 때](/blog/advances-down-and-construction-receivables-up) — 현금 버퍼가 사라지는 패턴
 
 **원가 압박과 충당부채**
-- [공사손실충당부채는 언제 뒤늦게 크게 튀어나오나](/blog/construction-loss-provision-delayed-recognition) — 왜 항상 늦게 잡히는지
-- [추가원가와 공사미수금이 함께 늘 때](/blog/additional-cost-and-construction-receivable) — 비용과 회수의 이중 악화
+- [공사손실충당부채는 언제 뒤늦게 크게 튀어나오나](/blog/construction-loss-provision-signals) — 왜 항상 늦게 잡히는지
+- [추가원가와 공사미수금이 함께 늘 때](/blog/additional-costs-and-construction-receivables) — 비용과 회수의 이중 악화
 
 **현금흐름 검증**
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income) — 건설업에서 가장 강하게 작동하는 프레임
-- [매출채권 팩토링과 유동화](/blog/factoring-and-securitization-cash-flow) — 현금흐름 보정 패턴
+- [매출채권 팩토링과 유동화](/blog/receivables-factoring-and-securitization) — 현금흐름 보정 패턴
 
 **감사와 보증**
 - [감사보고서와 핵심감사사항](/blog/audit-report-and-kam) — KAM에서 건설계약 리스크 읽기
-- [지급보증·담보·약정 공시](/blog/guarantees-collateral-covenants) — PF 보증 구조와 위험 판단
+- [지급보증·담보·약정 공시](/blog/guarantees-collateral-and-commitments) — PF 보증 구조와 위험 판단
 
 ---
 

@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <defs>
+    <linearGradient id="bg-lc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" rx="12" fill="url(#bg-lc)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">설비투자 생애주기</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">CAPEX 결정부터 손상검토까지 — 사업보고서에서 추적하는 5단계</text>
+
+  <!-- Timeline base line -->
+  <line x1="100" y1="200" x2="1100" y2="200" stroke="#1e2433" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Timeline dots and connectors -->
+  <circle cx="160" cy="200" r="8" fill="#a78bfa"/>
+  <circle cx="380" cy="200" r="8" fill="#38bdf8"/>
+  <circle cx="600" cy="200" r="8" fill="#34d399"/>
+  <circle cx="820" cy="200" r="8" fill="#fb923c"/>
+  <circle cx="1040" cy="200" r="8" fill="#f87171"/>
+
+  <!-- Connecting segments colored -->
+  <line x1="168" y1="200" x2="372" y2="200" stroke="#a78bfa" stroke-width="2" opacity="0.4"/>
+  <line x1="388" y1="200" x2="592" y2="200" stroke="#38bdf8" stroke-width="2" opacity="0.4"/>
+  <line x1="608" y1="200" x2="812" y2="200" stroke="#34d399" stroke-width="2" opacity="0.4"/>
+  <line x1="828" y1="200" x2="1032" y2="200" stroke="#fb923c" stroke-width="2" opacity="0.4"/>
+
+  <!-- Phase labels above timeline -->
+  <text x="160" y="175" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#a78bfa">CAPEX 결정</text>
+  <text x="380" y="175" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#38bdf8">건설중인자산</text>
+  <text x="600" y="175" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#34d399">본 계정 대체</text>
+  <text x="820" y="175" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#fb923c">감가상각</text>
+  <text x="1040" y="175" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="700" fill="#f87171">손상검토</text>
+
+  <!-- Phase 1 Detail Card (purple) -->
+  <rect x="60" y="240" width="200" height="280" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.25)" stroke-width="1"/>
+  <line x1="160" y1="208" x2="160" y2="240" stroke="rgba(167,139,250,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="160" y="275" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">투자 의사결정</text>
+  <line x1="85" y1="285" x2="235" y2="285" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+
+  <text x="80" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">확인 위치</text>
+  <text x="80" y="330" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">II. 사업의 내용</text>
+  <text x="80" y="348" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">IV. 경영진단의견</text>
+
+  <text x="80" y="378" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">핵심 질문</text>
+  <text x="80" y="398" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">왜 투자하는가?</text>
+  <text x="80" y="416" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">수요 근거가 있는가?</text>
+  <text x="80" y="434" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">유지보수 vs 증설?</text>
+
+  <text x="80" y="464" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">위험 신호</text>
+  <text x="80" y="484" font-family="Inter, sans-serif" font-size="10" fill="#f87171">가동률 낮은데 증설</text>
+  <text x="80" y="502" font-family="Inter, sans-serif" font-size="10" fill="#f87171">막연한 성장 전망</text>
+
+  <!-- Phase 2 Detail Card (blue) -->
+  <rect x="280" y="240" width="200" height="280" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.25)" stroke-width="1"/>
+  <line x1="380" y1="208" x2="380" y2="240" stroke="rgba(56,189,248,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="380" y="275" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#38bdf8">공사 진행 중</text>
+  <line x1="305" y1="285" x2="455" y2="285" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+
+  <text x="300" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">확인 위치</text>
+  <text x="300" y="330" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">유형자산 주석 (16번)</text>
+  <text x="300" y="348" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">건설중인자산 내역</text>
+
+  <text x="300" y="378" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">핵심 질문</text>
+  <text x="300" y="398" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">실제 집행이 되고 있는가?</text>
+  <text x="300" y="416" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">현금흐름표와 일치하는가?</text>
+  <text x="300" y="434" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">완공 일정은?</text>
+
+  <text x="300" y="464" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">위험 신호</text>
+  <text x="300" y="484" font-family="Inter, sans-serif" font-size="10" fill="#f87171">장기간 대체 안 됨</text>
+  <text x="300" y="502" font-family="Inter, sans-serif" font-size="10" fill="#f87171">현금유출 없이 잔액만 증가</text>
+
+  <!-- Phase 3 Detail Card (green) -->
+  <rect x="500" y="240" width="200" height="280" rx="10" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.25)" stroke-width="1"/>
+  <line x1="600" y1="208" x2="600" y2="240" stroke="rgba(52,211,153,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="600" y="275" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">가동 시작</text>
+  <line x1="525" y1="285" x2="675" y2="285" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+
+  <text x="520" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">확인 위치</text>
+  <text x="520" y="330" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">유형자산 변동표</text>
+  <text x="520" y="348" font-family="'JetBrains Mono', monospace" font-size="10" fill="#64748b">건설중 → 기계장치 대체</text>
+
+  <text x="520" y="378" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">핵심 질문</text>
+  <text x="520" y="398" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">생산능력이 실제로 늘었는가?</text>
+  <text x="520" y="416" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">매출에 반영되기 시작했는가?</text>
+  <text x="520" y="434" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">램프업 기간은?</text>
+
+  <text x="520" y="464" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">위험 신호</text>
+  <text x="520" y="484" font-family="Inter, sans-serif" font-size="10" fill="#f87171">대체 후 가동률 저조</text>
+  <text x="520" y="502" font-family="Inter, sans-serif" font-size="10" fill="#f87171">매출 대비 자산 비대</text>
+
+  <!-- Phase 4 Detail Card (orange) -->
+  <rect x="720" y="240" width="200" height="280" rx="10" fill="rgba(251,146,60,0.06)" stroke="rgba(251,146,60,0.25)" stroke-width="1"/>
+  <line x1="820" y1="208" x2="820" y2="240" stroke="rgba(251,146,60,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="820" y="275" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#fb923c">비용 반영</text>
+  <line x1="745" y1="285" x2="895" y2="285" stroke="rgba(251,146,60,0.15)" stroke-width="1"/>
+
+  <text x="740" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">확인 위치</text>
+  <text x="740" y="330" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">판관비/매출원가 내역</text>
+  <text x="740" y="348" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">비용의 성격별 분류 (35번)</text>
+
+  <text x="740" y="378" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">핵심 질문</text>
+  <text x="740" y="398" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">감가상각비 증가폭은?</text>
+  <text x="740" y="416" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">매출이 흡수할 수 있는가?</text>
+  <text x="740" y="434" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">마진 압박이 시작됐는가?</text>
+
+  <text x="740" y="464" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">위험 신호</text>
+  <text x="740" y="484" font-family="Inter, sans-serif" font-size="10" fill="#f87171">감가상각 급증 + 매출 정체</text>
+  <text x="740" y="502" font-family="Inter, sans-serif" font-size="10" fill="#f87171">영업이익률 하락 추세</text>
+
+  <!-- Phase 5 Detail Card (red) -->
+  <rect x="940" y="240" width="200" height="280" rx="10" fill="rgba(248,113,113,0.06)" stroke="rgba(248,113,113,0.25)" stroke-width="1"/>
+  <line x1="1040" y1="208" x2="1040" y2="240" stroke="rgba(248,113,113,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="1040" y="275" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#f87171">가치 재평가</text>
+  <line x1="965" y1="285" x2="1115" y2="285" stroke="rgba(248,113,113,0.15)" stroke-width="1"/>
+
+  <text x="960" y="310" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">확인 위치</text>
+  <text x="960" y="330" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">유형자산 손상차손</text>
+  <text x="960" y="348" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">핵심감사사항 (KAM)</text>
+
+  <text x="960" y="378" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">핵심 질문</text>
+  <text x="960" y="398" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">회수가능액이 장부가 이상?</text>
+  <text x="960" y="416" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">감사인이 손상검토를</text>
+  <text x="960" y="434" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8">KAM으로 지정했는가?</text>
+
+  <text x="960" y="464" font-family="Pretendard, sans-serif" font-size="11" fill="#e2e8f0">위험 신호</text>
+  <text x="960" y="484" font-family="Inter, sans-serif" font-size="10" fill="#f87171">대규모 손상차손 인식</text>
+  <text x="960" y="502" font-family="Inter, sans-serif" font-size="10" fill="#f87171">수요 전망 하향 + 자산 과대</text>
+
+  <!-- Duration indicators -->
+  <rect x="100" y="555" width="460" height="40" rx="6" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.1)" stroke-width="1"/>
+  <text x="330" y="580" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">투자 → 완공: 통상 1~3년 (대규모 설비는 5년+)</text>
+
+  <rect x="560" y="555" width="580" height="40" rx="6" fill="rgba(251,146,60,0.04)" stroke="rgba(251,146,60,0.1)" stroke-width="1"/>
+  <text x="850" y="580" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">가동 → 내용연수 종료: 기계장치 5~15년 / 건물 20~40년</text>
+
+  <!-- Cash flow mapping -->
+  <rect x="60" y="615" width="1080" height="50" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1"/>
+  <text x="100" y="645" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">현금흐름 추적</text>
+  <text x="310" y="645" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">투자CF 유출 →</text>
+  <text x="460" y="645" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">건설중 잔액 증가 →</text>
+  <text x="640" y="645" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">기계장치 대체 →</text>
+  <text x="810" y="645" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">감가상각비 반영 →</text>
+  <text x="990" y="645" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">손상차손 or 처분</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

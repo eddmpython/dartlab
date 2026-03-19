@@ -45,7 +45,7 @@ thumbnail: /avatar-chart.png
 
 실전에서는 먼저 미청구공사와 선수수익을 절대 금액보다 `증가 속도`로 본다. 둘 다 늘 수는 있지만, 미청구공사가 더 빠르게 커지면 `회사가 고객보다 먼저 자금을 쓰고 있는 구조`일 수 있다. 그다음엔 수주잔고와 마진을 붙인다. 수주잔고가 늘어도 마진이 낮아지고 있다면 `싼 가격으로 일감을 확보했지만 현금이 뒤따르지 않는 구조`일 수 있다.
 
-여기서 영업현금흐름이 가장 중요하다. 회사는 공정률이 올라가면 매출 인식상 좋아 보일 수 있다. 하지만 현금이 받쳐주지 않으면 결국 추가 차입이나 외부 조달에 의존하게 된다. 이 부분은 [매출채권 팩토링과 유동화는 무엇을 숨기나](/blog/receivables-factoring-and-securitization), [공급망금융은 영업현금흐름을 어떻게 왜곡하나](/blog/supply-chain-finance-and-cfo)와도 붙여 봐야 한다.
+여기서 영업현금흐름이 가장 중요하다. 회사는 공정률이 올라가면 매출 인식상 좋아 보일 수 있다. 하지만 현금이 받쳐주지 않으면 결국 추가 차입이나 외부 조달에 의존하게 된다. 이 부분은 [매출채권 팩토링과 유동화는 무엇을 숨기나](/blog/receivables-factoring-and-securitization), [공급망금융은 영업현금흐름을 어떻게 왜곡하나](/blog/supply-chain-finance-and-payables)와도 붙여 봐야 한다.
 
 ![미청구공사와 선수수익을 볼 때 붙여야 할 증거 레이어를 정리한 도식](./assets/080-evidence-layer.svg)
 
@@ -171,7 +171,7 @@ thumbnail: /avatar-chart.png
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)
 - [재고평가손실과 저가수주 압박은 어떻게 이어지나](/blog/inventory-write-downs-and-low-price-bidding)
 - [매출채권 팩토링과 유동화는 무엇을 숨기나](/blog/receivables-factoring-and-securitization)
-- [공급망금융은 영업현금흐름을 어떻게 왜곡하나](/blog/supply-chain-finance-and-cfo)
+- [공급망금융은 영업현금흐름을 어떻게 왜곡하나](/blog/supply-chain-finance-and-payables)
 
 ## 출처
 

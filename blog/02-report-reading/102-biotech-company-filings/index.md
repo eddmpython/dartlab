@@ -86,7 +86,7 @@ thumbnail: /avatar-chart.png
 - **현금 활주로(runway)**: 현금성자산 / 번 레이트 = 추가 자금 조달 없이 버틸 수 있는 개월 수. 12개월 미만이면 곧 유상증자나 CB/BW 발행이 나온다.
 - **자금 조달 이력**: 유상증자를 몇 번 했는지, 전환사채(CB)·신주인수권부사채(BW)를 발행했는지. 반복적인 자금 조달은 기존 주주 희석을 의미한다.
 
-[영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)의 기본 프레임이 바이오에서도 그대로 작동한다. [전환사채·신주인수권부사채 공시](/blog/convertible-bonds-and-warrants)에서 CB/BW 구조의 주주 희석 효과를 상세하게 다뤘다.
+[영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)의 기본 프레임이 바이오에서도 그대로 작동한다. [전환사채·신주인수권부사채 공시](/blog/convertible-bond-and-bw-disclosure)에서 CB/BW 구조의 주주 희석 효과를 상세하게 다뤘다.
 
 ![바이오에서 먼저 봐야 할 5가지 숫자와 각각의 과열 신호를 정리한 체크보드](./assets/102-five-numbers-checklist.svg)
 
@@ -192,7 +192,7 @@ thumbnail: /avatar-chart.png
 
 **유상증자를 하면 무조건 나쁜 신호인가?**
 
-바이오에서 유상증자는 사업 모델의 일부다. 매출이 없으니 외부 자금 조달이 불가피하다. 문제는 **빈도와 조건**이다. 2~3년마다 한 번이고 조건이 합리적이면 정상이다. 매년 반복하고, 할인율이 점점 커지며, CB·BW의 리픽싱 조건이 극단적이면 기존 주주를 희석시키면서 버티는 구조다. [유상증자 공시는 어디서 판단이 갈리나](/blog/capital-increase-disclosure)와 [전환사채·신주인수권부사채 공시](/blog/convertible-bonds-and-warrants)에서 상세하게 다뤘다.
+바이오에서 유상증자는 사업 모델의 일부다. 매출이 없으니 외부 자금 조달이 불가피하다. 문제는 **빈도와 조건**이다. 2~3년마다 한 번이고 조건이 합리적이면 정상이다. 매년 반복하고, 할인율이 점점 커지며, CB·BW의 리픽싱 조건이 극단적이면 기존 주주를 희석시키면서 버티는 구조다. [전환사채·신주인수권부사채 공시](/blog/convertible-bond-and-bw-disclosure)에서 상세하게 다뤘다.
 
 **CMO·CDMO는 일반 바이오와 같은 기준으로 읽어야 하나?**
 
@@ -220,8 +220,7 @@ thumbnail: /avatar-chart.png
 - [계속기업 불확실성은 어디가 진짜 위험인가](/blog/going-concern-uncertainty-signals) — 자본잠식, 계속기업 판단 기준
 
 **자금 조달과 주주 희석**
-- [유상증자 공시는 어디서 판단이 갈리나](/blog/capital-increase-disclosure) — 유증 빈도와 조건 해석
-- [전환사채·신주인수권부사채 공시](/blog/convertible-bonds-and-warrants) — CB·BW 구조와 희석 계산
+- [전환사채·신주인수권부사채 공시](/blog/convertible-bond-and-bw-disclosure) — CB·BW 구조와 희석 계산
 
 **감사와 경고 신호**
 - [감사보고서와 핵심감사사항은 무엇을 먼저 봐야 하나](/blog/audit-report-and-kam) — KAM에서 개발비 리스크 읽기

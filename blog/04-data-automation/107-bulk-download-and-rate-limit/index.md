@@ -678,7 +678,7 @@ class QuotaTracker:
 
 ---
 
-## 자주 묻는 질문
+## FAQ
 
 ### OpenDART 미등록 key와 등록 key의 차이는 무엇인가요?
 

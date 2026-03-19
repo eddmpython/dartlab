@@ -138,7 +138,7 @@ thumbnail: /avatar-chart.png
 - **편의점**: 프랜차이즈 모델. 가맹점 수와 점당 매출이 핵심. 로열티 수입이 안정적 수익.
 - **공통 확인 포인트**: 점포 수 증감, 기존점 성장률(SSS), 리스부채 규모, 온라인 전환 속도.
 
-오프라인 유통은 [리스부채·차입 만기 집중은 어디서 위험해지나](/blog/lease-liabilities-and-maturity-concentration)의 프레임이 직접 적용된다. 매장 임차가 핵심 고정비이기 때문이다.
+오프라인 유통은 [리스부채·차입 만기 집중은 어디서 위험해지나](/blog/lease-liabilities-and-debt-maturity)의 프레임이 직접 적용된다. 매장 임차가 핵심 고정비이기 때문이다.
 
 ### 온라인 커머스 (직매입·마켓플레이스)
 
@@ -225,20 +225,18 @@ thumbnail: /avatar-chart.png
 ## 기존 글로 더 깊이 들어가기
 
 **원가와 비용 구조**
-- [매출원가·판관비 비중이 달라지면 무슨 뜻인가](/blog/cogs-and-sga-ratio-changes) — 이행비용과 마케팅비가 판관비에서 차지하는 비중
+- [매출원가·판관비 비중이 달라지면 무슨 뜻인가](/blog/sga-growth-vs-sales) — 이행비용과 마케팅비가 판관비에서 차지하는 비중
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income) — 적자 기업의 현금 소진 속도 판단
 
 **재고와 운전자본**
-- [재고자산은 언제 사라지거나 부풀어 오르나](/blog/inventory-when-it-vanishes-or-inflates) — 직매입 모델의 재고 리스크
-- [운전자본 변화는 어디서 현금을 숨기나](/blog/working-capital-changes-where-cash-hides) — 유통업의 매입채무·재고 사이클
+- [재고자산은 언제 사라지거나 부풀어 오르나](/blog/inventory-write-downs-and-low-price-bidding) — 직매입 모델의 재고 리스크
 
 **투자와 자본 조달**
 - [건설중인자산은 왜 중요한가](/blog/construction-in-progress) — 물류센터 건설 투자의 의미
-- [유상증자 공시는 어디서 판단이 갈리나](/blog/capital-increase-disclosure) — 적자 플랫폼의 자금 조달
 - [CAPEX 뒤 감가상각은 언제 보이나](/blog/depreciation-after-capex) — 물류 인프라 투자의 비용화
 
 **리스와 고정비**
-- [리스부채·차입 만기 집중은 어디서 위험해지나](/blog/lease-liabilities-and-maturity-concentration) — 오프라인 매장·물류센터 임차 부담
+- [리스부채·차입 만기 집중은 어디서 위험해지나](/blog/lease-liabilities-and-debt-maturity) — 오프라인 매장·물류센터 임차 부담
 
 ---
 

@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <defs>
+    <linearGradient id="bg-ft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" rx="12" fill="url(#bg-ft)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">DART 공시 유형 구분</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">정기공시 · 주요사항보고서 · 기타 공시 — 세 축으로 분류되는 전자공시 체계</text>
+
+  <!-- Column 1: 정기공시 (purple) -->
+  <rect x="60" y="110" width="340" height="540" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.25)" stroke-width="1"/>
+  <text x="230" y="148" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#a78bfa">정기공시</text>
+  <text x="230" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">법정 기한 내 주기적 제출</text>
+
+  <!-- 정기공시 items -->
+  <rect x="85" y="195" width="290" height="70" rx="8" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+  <text x="100" y="220" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">사업보고서</text>
+  <text x="100" y="240" font-family="Inter, sans-serif" font-size="11" fill="#64748b">1년 | 90일 이내 | 정식 감사</text>
+  <text x="360" y="220" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#a78bfa">200~300p</text>
+
+  <rect x="85" y="280" width="290" height="70" rx="8" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+  <text x="100" y="305" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">반기보고서</text>
+  <text x="100" y="325" font-family="Inter, sans-serif" font-size="11" fill="#64748b">6개월 | 45일 이내 | 검토(Review)</text>
+  <text x="360" y="305" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#a78bfa">축약</text>
+
+  <rect x="85" y="365" width="290" height="70" rx="8" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+  <text x="100" y="390" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">분기보고서</text>
+  <text x="100" y="410" font-family="Inter, sans-serif" font-size="11" fill="#64748b">3개월/9개월 | 45일 이내 | 검토/면제</text>
+  <text x="360" y="390" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" fill="#a78bfa">1Q / 3Q</text>
+
+  <!-- Reliability bar -->
+  <text x="230" y="475" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">신뢰도</text>
+  <rect x="100" y="490" width="260" height="6" rx="3" fill="rgba(167,139,250,0.1)"/>
+  <rect x="100" y="490" width="260" height="6" rx="3" fill="url(#grad-purple)"/>
+  <defs>
+    <linearGradient id="grad-purple" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(167,139,250,0.15)"/>
+      <stop offset="100%" stop-color="rgba(167,139,250,0.6)"/>
+    </linearGradient>
+  </defs>
+  <text x="100" y="516" font-family="Inter, sans-serif" font-size="10" fill="#64748b">분기</text>
+  <text x="230" y="516" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">반기</text>
+  <text x="360" y="516" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#a78bfa">사업보고서</text>
+
+  <!-- 핵심 메시지 -->
+  <text x="230" y="560" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">기업 분석의 출발점</text>
+  <text x="230" y="580" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">재무제표 + 사업내용 + 주석 전체</text>
+
+  <!-- Column 2: 주요사항보고서 (blue) -->
+  <rect x="430" y="110" width="340" height="540" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.25)" stroke-width="1"/>
+  <text x="600" y="148" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#38bdf8">주요사항보고서</text>
+  <text x="600" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">중요 이벤트 발생 시 즉시 제출</text>
+
+  <!-- 주요사항 items -->
+  <rect x="455" y="195" width="290" height="55" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+  <text x="470" y="218" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">자금 조달</text>
+  <text x="470" y="236" font-family="Inter, sans-serif" font-size="11" fill="#64748b">유상증자, CB/BW 발행</text>
+
+  <rect x="455" y="265" width="290" height="55" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+  <text x="470" y="288" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">지배구조 변경</text>
+  <text x="470" y="306" font-family="Inter, sans-serif" font-size="11" fill="#64748b">최대주주 변경, 임원 선해임</text>
+
+  <rect x="455" y="335" width="290" height="55" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+  <text x="470" y="358" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">구조 변경</text>
+  <text x="470" y="376" font-family="Inter, sans-serif" font-size="11" fill="#64748b">합병, 분할, 영업양수도</text>
+
+  <rect x="455" y="405" width="290" height="55" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+  <text x="470" y="428" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">소송 및 분쟁</text>
+  <text x="470" y="446" font-family="Inter, sans-serif" font-size="11" fill="#64748b">대규모 소송 제기/판결</text>
+
+  <rect x="455" y="475" width="290" height="55" rx="8" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)" stroke-width="1"/>
+  <text x="470" y="498" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">재무 이벤트</text>
+  <text x="470" y="516" font-family="Inter, sans-serif" font-size="11" fill="#64748b">부도, 파산, 회생절차</text>
+
+  <!-- 핵심 메시지 -->
+  <text x="600" y="565" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">시장 즉각 영향</text>
+  <text x="600" y="585" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">공시 지연 자체가 제재 사유</text>
+
+  <!-- Column 3: 기타 공시 (green) -->
+  <rect x="800" y="110" width="340" height="540" rx="10" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.25)" stroke-width="1"/>
+  <text x="970" y="148" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#34d399">기타 공시</text>
+  <text x="970" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">자율공시 및 기타 법정 서류</text>
+
+  <!-- 기타 items -->
+  <rect x="825" y="195" width="290" height="55" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="840" y="218" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">자율공시</text>
+  <text x="840" y="236" font-family="Inter, sans-serif" font-size="11" fill="#64748b">실적 전망, MOU, 신제품 출시</text>
+
+  <rect x="825" y="265" width="290" height="55" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="840" y="288" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">지분공시</text>
+  <text x="840" y="306" font-family="Inter, sans-serif" font-size="11" fill="#64748b">대량보유 보고, 임원 소유 보고</text>
+
+  <rect x="825" y="335" width="290" height="55" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="840" y="358" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">증권신고서</text>
+  <text x="840" y="376" font-family="Inter, sans-serif" font-size="11" fill="#64748b">지분증권, 채무증권 발행 신고</text>
+
+  <rect x="825" y="405" width="290" height="55" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="840" y="428" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">정정공시</text>
+  <text x="840" y="446" font-family="Inter, sans-serif" font-size="11" fill="#64748b">기존 공시의 오류 수정</text>
+
+  <rect x="825" y="475" width="290" height="55" rx="8" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.15)" stroke-width="1"/>
+  <text x="840" y="498" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="#e2e8f0">IR 자료</text>
+  <text x="840" y="516" font-family="Inter, sans-serif" font-size="11" fill="#64748b">기업설명회, 투자설명서</text>
+
+  <!-- 핵심 메시지 -->
+  <text x="970" y="565" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">법적 의무 아님 (자율)</text>
+  <text x="970" y="585" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#94a3b8">IR 활동의 일환</text>
+
+  <!-- Bottom stats -->
+  <text x="230" y="632" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#a78bfa">3종</text>
+  <text x="230" y="652" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">보고서 유형</text>
+
+  <text x="600" y="632" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#38bdf8">36종</text>
+  <text x="600" y="652" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">주요사항 API</text>
+
+  <text x="970" y="632" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="700" fill="#34d399">720만+</text>
+  <text x="970" y="652" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="#64748b">누적 공시 문서</text>
+
+  <!-- Footer -->
+  <text x="600" y="700" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>

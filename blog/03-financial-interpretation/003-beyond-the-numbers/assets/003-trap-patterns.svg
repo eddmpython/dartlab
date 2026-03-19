@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <defs>
+    <linearGradient id="bg-tp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0f1219"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" rx="12" fill="url(#bg-tp)"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+
+  <!-- Title -->
+  <text x="600" y="52" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">흔한 해석 함정 패턴</text>
+  <text x="600" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#94a3b8">숫자만 보고 판단할 때 빠지기 쉬운 4가지 함정</text>
+
+  <!-- Trap 1: 단일 지표 의존 (purple) -->
+  <rect x="60" y="110" width="530" height="260" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.25)" stroke-width="1"/>
+  <circle cx="110" cy="160" r="28" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+  <text x="110" y="167" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#a78bfa">1</text>
+  <text x="155" y="155" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#a78bfa">단일 지표 의존</text>
+  <text x="155" y="175" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">하나의 숫자만 보고 판단하는 오류</text>
+
+  <!-- Example box -->
+  <rect x="85" y="195" width="480" height="55" rx="6" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.1)" stroke-width="1"/>
+  <text x="100" y="218" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">함정</text>
+  <text x="160" y="218" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">"PER 8배 — 저평가!"</text>
+  <text x="100" y="238" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현실</text>
+  <text x="160" y="238" font-family="Inter, sans-serif" font-size="12" fill="#f87171">일회성 이익으로 EPS 부풀림 → 정상 PER 20배+</text>
+
+  <!-- What to check -->
+  <rect x="85" y="265" width="480" height="85" rx="6" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1"/>
+  <text x="100" y="288" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">확인해야 할 것</text>
+  <text x="100" y="310" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 기타수익/기타비용 주석 (37번) — 일회성 항목 확인</text>
+  <text x="100" y="328" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 영업이익과 당기순이익의 괴리 — 영업 외 항목 비중</text>
+  <text x="100" y="346" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 최소 3년 치 EPS 추이 — 일시적 vs 구조적 판단</text>
+
+  <!-- Trap 2: 추세 무시 (blue) -->
+  <rect x="610" y="110" width="530" height="260" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.25)" stroke-width="1"/>
+  <circle cx="660" cy="160" r="28" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.3)" stroke-width="1"/>
+  <text x="660" y="167" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#38bdf8">2</text>
+  <text x="705" y="155" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#38bdf8">추세 무시</text>
+  <text x="705" y="175" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">최근 1개년만 보고 방향을 오판</text>
+
+  <!-- Example box -->
+  <rect x="635" y="195" width="480" height="55" rx="6" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.1)" stroke-width="1"/>
+  <text x="650" y="218" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">함정</text>
+  <text x="710" y="218" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">"영업이익률 12% — 우량주!"</text>
+  <text x="650" y="238" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현실</text>
+  <text x="710" y="238" font-family="Inter, sans-serif" font-size="12" fill="#f87171">3년 전 18% → 15% → 12% — 매년 하락 중</text>
+
+  <!-- What to check -->
+  <rect x="635" y="265" width="480" height="85" rx="6" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1"/>
+  <text x="650" y="288" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">확인해야 할 것</text>
+  <text x="650" y="310" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 최소 3~5년 시계열 — 방향과 속도 확인</text>
+  <text x="650" y="328" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• MD&amp;A 톤 변화 — 경영진 인식이 바뀌고 있는가</text>
+  <text x="650" y="346" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 원재료 가격/판관비 추이 — 마진 압박 원인 추적</text>
+
+  <!-- Trap 3: 업종 차이 무시 (orange) -->
+  <rect x="60" y="395" width="530" height="260" rx="10" fill="rgba(251,146,60,0.06)" stroke="rgba(251,146,60,0.25)" stroke-width="1"/>
+  <circle cx="110" cy="445" r="28" fill="rgba(251,146,60,0.1)" stroke="rgba(251,146,60,0.3)" stroke-width="1"/>
+  <text x="110" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#fb923c">3</text>
+  <text x="155" y="440" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#fb923c">업종 차이 무시</text>
+  <text x="155" y="460" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">다른 산업의 기업을 같은 기준으로 비교</text>
+
+  <!-- Example box -->
+  <rect x="85" y="480" width="480" height="55" rx="6" fill="rgba(251,146,60,0.04)" stroke="rgba(251,146,60,0.1)" stroke-width="1"/>
+  <text x="100" y="503" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">함정</text>
+  <text x="160" y="503" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">"부채비율 200% — 위험!"</text>
+  <text x="100" y="523" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현실</text>
+  <text x="160" y="523" font-family="Inter, sans-serif" font-size="12" fill="#f87171">금융업은 레버리지가 본질 → 업종 평균 800%+</text>
+
+  <!-- What to check -->
+  <rect x="85" y="550" width="480" height="85" rx="6" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1"/>
+  <text x="100" y="573" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">확인해야 할 것</text>
+  <text x="100" y="595" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 동종 업계 평균과 비교 — 절대값이 아닌 상대 위치</text>
+  <text x="100" y="613" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 비즈니스 모델 특성 — 자산경량 vs 장치산업</text>
+  <text x="100" y="631" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 은행/금융은 revenue, 유동자산 개념 자체가 다름</text>
+
+  <!-- Trap 4: 주석 건너뛰기 (red) -->
+  <rect x="610" y="395" width="530" height="260" rx="10" fill="rgba(248,113,113,0.06)" stroke="rgba(248,113,113,0.25)" stroke-width="1"/>
+  <circle cx="660" cy="445" r="28" fill="rgba(248,113,113,0.1)" stroke="rgba(248,113,113,0.3)" stroke-width="1"/>
+  <text x="660" y="452" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="22" font-weight="700" fill="#f87171">4</text>
+  <text x="705" y="440" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#f87171">주석 건너뛰기</text>
+  <text x="705" y="460" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">본문 숫자만 보고 상세 내역을 무시</text>
+
+  <!-- Example box -->
+  <rect x="635" y="480" width="480" height="55" rx="6" fill="rgba(248,113,113,0.04)" stroke="rgba(248,113,113,0.1)" stroke-width="1"/>
+  <text x="650" y="503" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">함정</text>
+  <text x="710" y="503" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8">"차입금 3,000억 — 관리 가능 수준"</text>
+  <text x="650" y="523" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#e2e8f0">현실</text>
+  <text x="710" y="523" font-family="Inter, sans-serif" font-size="12" fill="#f87171">만기 1년 이내 80% 집중 + 변동금리 → 차환 위험</text>
+
+  <!-- What to check -->
+  <rect x="635" y="550" width="480" height="85" rx="6" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1"/>
+  <text x="650" y="573" font-family="Pretendard, sans-serif" font-size="12" font-weight="600" fill="#34d399">확인해야 할 것</text>
+  <text x="650" y="595" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 차입금 주석 (22번) — 금리, 만기, 담보 여부</text>
+  <text x="650" y="613" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 충당부채 주석 (26번) — 소송, 보증, 복구 변동</text>
+  <text x="650" y="631" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8">• 우발부채 (27번) — 재무상태표 밖의 잠재 손실</text>
+
+  <!-- Bottom message -->
+  <text x="600" y="685" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#64748b">숫자만 보면 "무엇이 일어났는가"만 보인다 — 맥락까지 봐야 "왜"와 "앞으로"가 보인다</text>
+
+  <!-- Footer -->
+  <text x="600" y="710" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#475569">DartLab 전자공시 분석</text>
+</svg>
