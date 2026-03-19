@@ -4,7 +4,7 @@ date: 2026-03-19
 description: 내부회계관리제도가 비적정인데 감사의견은 적정이면 괴리 자체가 신호다. 통제 미비 유형, 재무제표 영향, 감사위원회 대응을 어떤 순서로 봐야 하는지 정리한다.
 category: report-reading
 series: audit-and-governance-reading
-seriesOrder: 10
+seriesOrder: 18
 thumbnail: /avatar-curious.png
 ---
 

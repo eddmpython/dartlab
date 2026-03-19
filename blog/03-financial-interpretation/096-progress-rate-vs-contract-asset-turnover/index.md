@@ -4,7 +4,7 @@ date: 2026-03-19
 description: 건설·조선·플랜트에서 진행률이 순조로워 보여도 계약자산 회전이 느려지면 인식과 현금화 사이에 간극이 벌어지고 있다는 뜻이다. 어디를 먼저 봐야 하는지 정리한다.
 category: financial-interpretation
 series: working-capital-and-earnings-quality
-seriesOrder: 10
+seriesOrder: 14
 thumbnail: /avatar-chart.png
 ---
 

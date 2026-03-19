@@ -4,7 +4,7 @@ date: 2026-03-19
 description: 관계사에 대한 채권을 출자전환하면 회수한 것처럼 보이지만 실제로는 회수 불확실성을 지분이라는 다른 형태로 옮긴 것에 가깝다. 어디서 왜곡이 생기고 무엇을 봐야 하는지 정리한다.
 category: financial-interpretation
 series: financial-context
-seriesOrder: 16
+seriesOrder: 18
 thumbnail: /avatar-study.png
 ---
 
