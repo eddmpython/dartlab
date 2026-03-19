@@ -558,7 +558,9 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         TypeError,
         ValueError,
     ) as e:
-        error_payload: dict[str, Any] = {"error": str(e)}
+        from dartlab.server import _sanitize_error
+
+        error_payload: dict[str, Any] = {"error": _sanitize_error(e)}
         if isinstance(e, FileNotFoundError):
             error_payload["action"] = "install"
         elif isinstance(e, PermissionError):
@@ -582,7 +584,9 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
         logger = logging.getLogger(__name__)
         logger.warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
-        error_msg = f"{type(e).__name__}: {e}"
+        from dartlab.server import _sanitize_error as _sanitize
+
+        error_msg = f"{type(e).__name__}: {_sanitize(e)}"
         error_payload_ex: dict[str, Any] = {"error": error_msg}
 
         # OAuth GPT 에러 — 사용자에게 구체적 action 전달
@@ -597,7 +601,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 error_payload_ex["error"] = "ChatGPT 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
             else:
                 error_payload_ex["action"] = "relogin"
-                error_payload_ex["error"] = f"ChatGPT 연결 오류: {e}"
+                error_payload_ex["error"] = f"ChatGPT 연결 오류: {_sanitize(e)}"
         elif err_type == "OpenAIError" or "api_key" in str(e).lower():
             error_payload_ex["action"] = "config"
             error_payload_ex["error"] = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."

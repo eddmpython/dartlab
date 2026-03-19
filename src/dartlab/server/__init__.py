@@ -76,6 +76,18 @@ _HANDLED_API_ERRORS = (
     ValueError,
 )
 
+import re as _re
+
+_PATH_PATTERN = _re.compile(
+    r"(?:[A-Za-z]:\\|/(?:home|Users|tmp|var|usr|etc|root)/)[\w\\/.~\- ]+",
+)
+
+
+def _sanitize_error(e: BaseException) -> str:
+    """에러 메시지에서 내부 파일 경로를 제거한다."""
+    msg = str(e)
+    return _PATH_PATTERN.sub("<path>", msg)
+
 
 async def _preload_ollama_once() -> None:
     """서버 시작 직후 Ollama 모델을 미리 깨워 cold start를 줄인다."""
@@ -219,6 +231,19 @@ def _etag_response(
     return data
 
 
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class _SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
+
+
+app.add_middleware(_SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 _origins = _cors_origins()
@@ -549,9 +574,9 @@ def api_codex_logout():
     try:
         logout_codex_cli()
     except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=404, detail=_sanitize_error(e)) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
     return {"ok": True}
 
 
@@ -702,7 +727,7 @@ async def api_ollama_pull(req: dict):
                         }
             yield {"event": "done", "data": "{}"}
         except _HANDLED_API_ERRORS as e:
-            yield {"event": "error", "data": orjson.dumps({"error": str(e)}).decode()}
+            yield {"event": "error", "data": orjson.dumps({"error": _sanitize_error(e)}).decode()}
 
     return EventSourceResponse(_stream_pull(), media_type="text/event-stream")
 
@@ -735,7 +760,7 @@ def api_search(q: str = Query(..., min_length=1)):
             )
         return {"results": mapped, "fuzzy": fuzzy_used}
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=_sanitize_error(e))
 
 
 def _get_company(code: str) -> Company:
@@ -834,7 +859,7 @@ def api_company(code: str):
             },
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/index")
@@ -849,7 +874,7 @@ def api_company_index(code: str, request: Request, response: Response):
         }
         return _etag_response(request, response, data, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/sections")
@@ -864,7 +889,7 @@ def api_company_sections(code: str, request: Request, response: Response):
         }
         return _etag_response(request, response, data, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 def _build_toc(c: Company) -> dict[str, Any]:
@@ -1109,7 +1134,7 @@ def api_company_init(code: str, request: Request, response: Response):
         }
         return _etag_response(request, response, result, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/toc")
@@ -1120,7 +1145,7 @@ def api_company_toc(code: str, request: Request, response: Response):
         data = _build_toc(c)
         return _etag_response(request, response, data, max_age=300, swr=1800)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/viewer/{topic}")
@@ -1170,7 +1195,7 @@ def api_company_viewer_topic(
 
         return _etag_response(request, response, data, max_age=120, swr=600)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/show/{topic}/all")
@@ -1199,7 +1224,7 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
             "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.post("/api/company/{code}/show/{topic}/{block_idx}/parse")
@@ -1229,7 +1254,7 @@ async def api_parse_raw_table(code: str, topic: str, block_idx: int):
     except HTTPException:
         raise
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/show/{topic}")
@@ -1252,7 +1277,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
             "payload": _serialize_payload(result),
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/trace/{topic}")
@@ -1267,7 +1292,7 @@ def api_company_trace(code: str, topic: str):
             "payload": _serialize_payload(c.trace(topic)),
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/summary/{topic}")
@@ -1285,7 +1310,7 @@ async def api_company_topic_summary(
     try:
         c = _get_company(code)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     result = build_topic_summary_prompt(c, topic)
     if result is None:
@@ -1341,7 +1366,7 @@ async def api_company_topic_summary(
             import logging
 
             logging.getLogger(__name__).warning("summary stream error: %s: %s", type(e).__name__, e)
-            err_msg = str(e)
+            err_msg = _sanitize_error(e)
             if "api_key" in err_msg.lower():
                 err_msg = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."
             elif type(e).__name__ == "ChatGPTOAuthError":
@@ -1362,7 +1387,7 @@ def api_company_insights(code: str):
     try:
         c = _get_company(code)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     from dartlab.engines.insight.pipeline import analyze as insight_analyze
 
@@ -1417,7 +1442,7 @@ def api_company_network(code: str, hops: int = 1):
     try:
         c = _get_company(code)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     try:
         result = c._ensureNetwork()
@@ -1444,7 +1469,7 @@ def api_company_scan(code: str, axis: str):
     try:
         c = _get_company(code)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     valid_axes = {"governance", "workforce", "capital", "debt"}
 
@@ -1489,6 +1514,161 @@ def api_company_scan(code: str, axis: str):
         return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
 
 
+@app.get("/api/company/{code}/insights/unified")
+def api_company_insights_unified(code: str):
+    """insight 7영역 + scan 4축 = 11영역 통합 payload."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    from dartlab.engines.dart.scan.payload import build_unified_payload
+
+    try:
+        unified = build_unified_payload(c)
+    except _HANDLED_API_ERRORS:
+        unified = {}
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "available": bool(unified),
+        "areas": unified,
+    }
+
+
+@app.get("/api/company/{code}/diff/matrix")
+def api_company_diff_matrix(
+    code: str,
+    textOnly: bool = Query(False),
+    topN: int = Query(20),
+):
+    """topic × period 변화 매트릭스 + 히트맵 스펙."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    from dartlab.engines.common.docs.diff import build_diff_matrix, build_heatmap_spec
+
+    try:
+        sections = c.docs.sections.raw
+        matrix_data = build_diff_matrix(sections, textOnly=textOnly)
+        heatmap = build_heatmap_spec(matrix_data, c.corpName, top_n=topN)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "matrix": matrix_data,
+        "heatmap": heatmap,
+    }
+
+
+@app.get("/api/company/{code}/bridge/{topic}")
+def api_company_bridge(
+    code: str,
+    topic: str,
+    period: str = Query("latest"),
+    tolerance: float = Query(0.05),
+):
+    """텍스트-재무 숫자 교차 참조."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    import re as _re
+
+    import polars as pl
+
+    from dartlab.engines.common.docs.bridge import (
+        extract_amounts_from_text,
+        get_finance_amounts,
+        match_amounts,
+    )
+
+    try:
+        sections = c.docs.sections.raw
+        periods = sorted(
+            [col for col in sections.columns if _re.fullmatch(r"\d{4}(Q[1-4])?", col)],
+            reverse=True,
+        )
+        if not periods:
+            raise HTTPException(status_code=404, detail="기간 없음")
+
+        target_period = periods[0] if period == "latest" else period
+        if target_period not in sections.columns:
+            raise HTTPException(status_code=400, detail=f"기간 {target_period} 없음")
+
+        # topic 텍스트 추출
+        topic_rows = sections.filter((pl.col("topic") == topic) & (pl.col("blockType") == "text"))
+        if topic_rows.height == 0:
+            raise HTTPException(status_code=404, detail=f"topic {topic} 텍스트 없음")
+
+        texts = topic_rows[target_period].drop_nulls().to_list()
+        full_text = "\n".join(str(t) for t in texts if t)
+
+        text_amounts = extract_amounts_from_text(full_text)
+        finance_amounts = get_finance_amounts(c, target_period)
+        matched = match_amounts(text_amounts, finance_amounts, tolerance=tolerance)
+    except HTTPException:
+        raise
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "topic": topic,
+        "period": target_period,
+        "extracted": len(text_amounts),
+        "matched": len(matched),
+        "matchRate": round(len(matched) / max(len(text_amounts), 1), 3),
+        "matches": matched,
+    }
+
+
+@app.get("/api/company/{code}/topics/graph")
+def api_company_topics_graph(
+    code: str,
+    threshold: int = Query(3),
+):
+    """topic간 상호 참조 그래프."""
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    from dartlab.engines.common.docs.topicGraph import (
+        analyze_graph,
+        build_mention_matrix,
+    )
+
+    try:
+        sections = c.docs.sections.raw
+        matrix = build_mention_matrix(sections)
+        analysis = analyze_graph(matrix.get("adjacency", {}), threshold=threshold)
+
+        # adjacency tuple key → 직렬화 가능한 list
+        edges = [{"source": src, "target": tgt, "weight": cnt} for (src, tgt), cnt in analysis.get("top_edges", [])]
+        hubs = [{"topic": t, "degree": d} for t, d in analysis.get("hubs", [])]
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
+
+    return {
+        "stockCode": c.stockCode,
+        "corpName": c.corpName,
+        "period": matrix.get("period"),
+        "edges": analysis.get("edges", 0),
+        "nodes": analysis.get("nodes", 0),
+        "avgDegree": analysis.get("avg_degree", 0),
+        "hubs": hubs,
+        "topEdges": edges,
+    }
+
+
 @app.get("/api/company/{code}/diff")
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""
@@ -1500,7 +1680,7 @@ def api_company_diff(code: str):
             "payload": _serialize_payload(c.diff()),
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/diff/{topic}/summary")
@@ -1515,7 +1695,7 @@ def api_company_diff_topic_summary(code: str, topic: str):
     except HTTPException:
         raise
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/diff/{topic}")
@@ -1586,7 +1766,7 @@ def api_company_diff_topic(
             "diff": diff_chunks,
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/search")
@@ -1639,7 +1819,7 @@ def api_company_search_sections(code: str, q: str = Query("", description="검�
 
         return {"stockCode": c.stockCode, "corpName": c.corpName, "query": q, "results": results}
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/searchIndex")
@@ -1703,7 +1883,7 @@ def api_company_search_index(code: str, request: Request, response: Response):
         }
         return _etag_response(request, response, data, max_age=600, swr=1800)
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/company/{code}/modules")
@@ -1716,7 +1896,7 @@ def api_company_modules(code: str):
         modules = scan_available_modules(c)
         return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
 
 @app.get("/api/data/sources/{code}")
@@ -1729,7 +1909,7 @@ async def api_data_sources(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     from dartlab.core.registry import getEntries
 
@@ -1786,7 +1966,7 @@ async def api_export_modules(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     from dartlab.export.excel import listAvailableModules
 
@@ -1804,7 +1984,7 @@ async def api_export_sources(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     from dartlab.export.sources import discoverSources
 
@@ -1872,7 +2052,7 @@ async def api_export_excel(
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     tmpDir = Path(tempfile.gettempdir())
     safeName = c.corpName.replace("/", "_").replace("\\", "_")
@@ -1890,7 +2070,7 @@ async def api_export_excel(
         try:
             await asyncio.to_thread(exportWithTemplate, c, tmpl, outPath)
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=400, detail=_sanitize_error(e))
         return FileResponse(
             path=str(outPath),
             filename=f"{c.stockCode}_{safeName}_{templateSafe}.xlsx",
@@ -1905,7 +2085,7 @@ async def api_export_excel(
 
         await asyncio.to_thread(exportToExcel, c, outputPath=outPath, modules=modList)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=_sanitize_error(e))
 
     return FileResponse(
         path=str(outPath),
@@ -2021,7 +2201,7 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=_sanitize_error(e))
 
     from dartlab.core.registry import getEntry
 
@@ -2115,11 +2295,11 @@ def api_data_stats():
             d = _dataDir(category)
             if d.exists():
                 files = list(d.glob("*.parquet"))
-                stats[category] = {"count": len(files), "path": str(d)}
+                stats[category] = {"count": len(files), "exists": True}
             else:
-                stats[category] = {"count": 0, "path": str(d)}
+                stats[category] = {"count": 0, "exists": False}
         except _HANDLED_API_ERRORS:
-            stats[category] = {"count": 0, "path": ""}
+            stats[category] = {"count": 0, "exists": False}
     return stats
 
 
@@ -2210,7 +2390,7 @@ async def api_ask(req: AskRequest):
             "answer": answer,
         }
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=_sanitize_error(e))
 
 
 async def _plain_chat(req: AskRequest):
@@ -2247,9 +2427,9 @@ async def _plain_chat(req: AskRequest):
     except PermissionError:
         raise HTTPException(status_code=401, detail="Codex CLI 로그인이 필요합니다. `codex login`을 실행하세요.")
     except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=404, detail=_sanitize_error(e)) from e
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=_sanitize_error(e))
 
 
 # ── Static Files (Svelte build) ──
