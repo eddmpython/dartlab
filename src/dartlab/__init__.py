@@ -69,7 +69,7 @@ def network():
         import dartlab
         dartlab.network().show()  # 브라우저에서 전체 네트워크
     """
-    from dartlab.engines.dart.affiliate import build_graph, export_full
+    from dartlab.engines.dart.scan.network import build_graph, export_full
     from dartlab.tools.network import render_network
 
     data = build_graph()
