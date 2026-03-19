@@ -13,7 +13,6 @@ DART/EDGAR 공통으로 사용. 060-003 실험으로 검증된 hash 기반 비�
 
 from __future__ import annotations
 
-import hashlib
 import re
 from dataclasses import dataclass, field
 
@@ -28,10 +27,6 @@ def _isPeriodCol(name: str) -> bool:
 
 def _periodCols(df: pl.DataFrame) -> list[str]:
     return [c for c in df.columns if _isPeriodCol(c)]
-
-
-def _textHash(text: str) -> str:
-    return hashlib.md5(text.encode()).hexdigest()[:12]
 
 
 @dataclass
@@ -100,44 +95,73 @@ def sectionsDiff(sections: pl.DataFrame) -> DiffResult:
         return DiffResult()
 
     hasChapter = "chapter" in sections.columns
+    hasTopic = "topic" in sections.columns
+    if not hasTopic:
+        return DiffResult()
+
+    # hash + len 벡터화 (md5 → xxhash64, ~6x 속도 향상)
+    hashExprs = []
+    lenExprs = []
+    for p in periods:
+        hashExprs.append(
+            pl.when(pl.col(p).is_not_null())
+            .then(pl.col(p).cast(pl.Utf8).hash())
+            .otherwise(pl.lit(None, dtype=pl.UInt64))
+            .alias(f"_h_{p}")
+        )
+        lenExprs.append(
+            pl.when(pl.col(p).is_not_null())
+            .then(pl.col(p).cast(pl.Utf8).str.len_bytes())
+            .otherwise(pl.lit(None, dtype=pl.UInt32))
+            .alias(f"_len_{p}")
+        )
+
+    work = sections.with_columns(hashExprs + lenExprs)
+
+    # to_list()로 추출 (iter_rows(named=True) 대비 dict 오버헤드 제거)
+    topicList = work.get_column("topic").to_list()
+    chapterList = work.get_column("chapter").to_list() if hasChapter else [None] * work.height
+
+    hashLists = {p: work.get_column(f"_h_{p}").to_list() for p in periods}
+    lenLists = {p: work.get_column(f"_len_{p}").to_list() for p in periods}
+
     entries: list[DiffEntry] = []
     summaries: list[DiffSummary] = []
 
-    for row in sections.iter_rows(named=True):
-        topic = row.get("topic", "")
-        chapter = row.get("chapter") if hasChapter else None
+    for rowIdx in range(work.height):
+        topic = topicList[rowIdx]
         if not topic:
             continue
+        chapter = chapterList[rowIdx]
 
-        prevHash: str | None = None
+        prevHash: int | None = None
         prevPeriod: str | None = None
         changedCount = 0
         totalPeriods = 0
 
-        for period in periods:
-            text = row.get(period)
-            if text is None:
+        for p in periods:
+            h = hashLists[p][rowIdx]
+            if h is None:
                 continue
             totalPeriods += 1
-            curHash = _textHash(str(text))
 
             if prevHash is not None and prevPeriod is not None:
-                if curHash != prevHash:
+                if h != prevHash:
                     changedCount += 1
                     entries.append(
                         DiffEntry(
                             topic=topic,
                             chapter=chapter,
                             fromPeriod=prevPeriod,
-                            toPeriod=period,
+                            toPeriod=p,
                             status="CHANGED",
-                            fromLen=len(str(row.get(prevPeriod, ""))),
-                            toLen=len(str(text)),
+                            fromLen=lenLists[prevPeriod][rowIdx] or 0,
+                            toLen=lenLists[p][rowIdx] or 0,
                         )
                     )
 
-            prevHash = curHash
-            prevPeriod = period
+            prevHash = h
+            prevPeriod = p
 
         summaries.append(
             DiffSummary(

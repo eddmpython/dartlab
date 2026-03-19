@@ -213,30 +213,49 @@ class _ProfileAccessor:
 
         docsBlocks = self._company.docs.retrievalBlocks
         if docsBlocks is not None and not docsBlocks.is_empty():
-            docsRows = []
-            for row in docsBlocks.iter_rows(named=True):
-                period = row.get("period")
-                blockText = row.get("blockText")
-                if period is None or not blockText:
-                    continue
-                topic = row.get("detailTopic") or row.get("semanticTopic") or row.get("topic")
-                if topic is None:
-                    continue
-                docsRows.append(
-                    {
-                        "topic": str(topic),
-                        "period": str(period),
-                        "source": "docs",
-                        "valueType": row.get("blockType") or "text",
-                        "valueKey": row.get("blockLabel") or row.get("rawTitle") or str(topic),
-                        "value": str(blockText),
-                        "payloadRef": row.get("cellKey") or f"docs:{topic}:{period}",
-                        "priority": 100,
-                        "summary": str(blockText)[:400],
-                    }
+            # topic = coalesce(detailTopic, semanticTopic, topic)
+            topicExpr = pl.col("topic")
+            if "semanticTopic" in docsBlocks.columns:
+                topicExpr = pl.coalesce(pl.col("semanticTopic"), topicExpr)
+            if "detailTopic" in docsBlocks.columns:
+                topicExpr = pl.coalesce(pl.col("detailTopic"), topicExpr)
+
+            valueKeyExpr = topicExpr.cast(pl.Utf8)
+            if "rawTitle" in docsBlocks.columns:
+                valueKeyExpr = pl.coalesce(pl.col("rawTitle"), valueKeyExpr)
+            if "blockLabel" in docsBlocks.columns:
+                valueKeyExpr = pl.coalesce(pl.col("blockLabel"), valueKeyExpr)
+
+            payloadExpr = pl.concat_str(
+                [pl.lit("docs:"), topicExpr.cast(pl.Utf8), pl.lit(":"), pl.col("period").cast(pl.Utf8)]
+            )
+            if "cellKey" in docsBlocks.columns:
+                payloadExpr = pl.coalesce(pl.col("cellKey"), payloadExpr)
+
+            docsDf = (
+                docsBlocks.filter(
+                    pl.col("period").is_not_null()
+                    & pl.col("blockText").is_not_null()
+                    & (pl.col("blockText") != "")
                 )
-            if docsRows:
-                frames.append(pl.DataFrame(docsRows))
+                .with_columns(topicExpr.alias("_topic"))
+                .filter(pl.col("_topic").is_not_null())
+                .select([
+                    pl.col("_topic").cast(pl.Utf8).alias("topic"),
+                    pl.col("period").cast(pl.Utf8).alias("period"),
+                    pl.lit("docs").alias("source"),
+                    (
+                        pl.col("blockType") if "blockType" in docsBlocks.columns else pl.lit("text")
+                    ).alias("valueType"),
+                    valueKeyExpr.alias("valueKey"),
+                    pl.col("blockText").cast(pl.Utf8).alias("value"),
+                    payloadExpr.alias("payloadRef"),
+                    pl.lit(100).alias("priority"),
+                    pl.col("blockText").cast(pl.Utf8).str.slice(0, 400).alias("summary"),
+                ])
+            )
+            if docsDf.height > 0:
+                frames.append(docsDf)
 
         result = pl.concat(frames, how="vertical_relaxed") if frames else None
         self._company._cache[cacheKey] = result

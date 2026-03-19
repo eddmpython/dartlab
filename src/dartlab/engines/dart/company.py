@@ -1712,31 +1712,47 @@ class Company:
 
         periodCols = sortPeriods([c for c in sec.columns if _isPeriodColumn(c)], descending=True)
         periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
-        topicOrder: list[str] = []
-        seenTopics: set[str] = set()
-        for row in sec.iter_rows(named=True):
-            topic = row.get("topic")
-            if isinstance(topic, str) and topic and topic not in seenTopics:
-                seenTopics.add(topic)
-                topicOrder.append(topic)
-        for rowIdx, topic in enumerate(topicOrder):
-            topicFrame = sec.filter(pl.col("topic") == topic)
-            if topicFrame.is_empty():
-                continue
-            nonNull = sum(
-                1 for c in periodCols if c in topicFrame.columns and topicFrame.get_column(c).drop_nulls().len() > 0
-            )
-            preview = "-"
-            for row in topicFrame.iter_rows(named=True):
-                for col in periodCols:
+        existingPeriods = [c for c in periodCols if c in sec.columns]
+
+        # topic 순서: Polars unique (iter_rows 제거)
+        topicOrder = sec.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
+
+        # nonNull 계산: group_by + agg (벡터화)
+        nonNullMap: dict[str, int] = {}
+        if existingPeriods:
+            nonNullExprs = [
+                pl.col(c).is_not_null().any().cast(pl.Int8).alias(c) for c in existingPeriods
+            ]
+            nonNullDf = sec.group_by("topic", maintain_order=True).agg(nonNullExprs)
+            for row in nonNullDf.iter_rows(named=True):
+                nonNullMap[row["topic"]] = sum(1 for c in existingPeriods if row.get(c, 0))
+
+        # preview: group_by first non-null (벡터화)
+        previewMap: dict[str, str] = {}
+        if existingPeriods:
+            firstExprs = [pl.col(c).drop_nulls().first().alias(c) for c in existingPeriods]
+            previewDf = sec.group_by("topic", maintain_order=True).agg(firstExprs)
+            for row in previewDf.iter_rows(named=True):
+                for col in existingPeriods:
                     val = row.get(col)
                     if val is not None:
-                        text = _normalizeTextCell(val)[:80]
-                        preview = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
+                        text = str(val).replace("\n", " ").strip()[:80]
+                        previewMap[row["topic"]] = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
                         break
-                if preview != "-":
-                    break
-            chapterVal = topicFrame.item(0, "chapter") if "chapter" in topicFrame.columns else None
+
+        # chapter: group_by first
+        chapterMap: dict[str, str | None] = {}
+        if "chapter" in sec.columns:
+            chapterDf = sec.group_by("topic", maintain_order=True).agg(
+                pl.col("chapter").first().alias("chapter")
+            )
+            for row in chapterDf.iter_rows(named=True):
+                chapterMap[row["topic"]] = row["chapter"]
+
+        for rowIdx, topic in enumerate(topicOrder):
+            nonNull = nonNullMap.get(topic, 0)
+            preview = previewMap.get(topic, "-")
+            chapterVal = chapterMap.get(topic)
             chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else self._chapterForTopic(topic)
             chapterNum = _CHAPTER_ORDER.get(chapter, 12)
             rows.append(
@@ -2138,7 +2154,7 @@ class Company:
     def _ensureNetwork(self) -> tuple[dict, dict] | None:
         """network 파이프라인 캐싱 → (data, full)."""
         if "_network_data" not in self._cache:
-            from dartlab.engines.dart.network import build_graph, export_full
+            from dartlab.engines.dart.scan.network import build_graph, export_full
 
             data = build_graph(verbose=False)
             self._cache["_network_data"] = data
@@ -2170,7 +2186,7 @@ class Company:
         group = data["code_to_group"].get(code, self.corpName or code)
 
         if view is None:
-            from dartlab.engines.dart.network import export_ego
+            from dartlab.engines.dart.scan.network import export_ego
             from dartlab.tools.network import render_network
 
             ego = export_ego(data, full, code, hops=hops)
@@ -2271,7 +2287,7 @@ class Company:
 
     def _networkPeers(self, data: dict, full: dict, code: str, *, hops: int = 1) -> pl.DataFrame:
         """이 회사 중심 서브그래프 (ego 뷰) → DataFrame."""
-        from dartlab.engines.dart.network import export_ego
+        from dartlab.engines.dart.scan.network import export_ego
 
         ego = export_ego(data, full, code, hops=hops)
         rows = []

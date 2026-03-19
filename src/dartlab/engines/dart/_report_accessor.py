@@ -385,9 +385,14 @@ class _ReportAccessor:
     @property
     def availableApiTypes(self) -> list[str]:
         """현재 parquet에 실제 존재하는 apiType 목록."""
+        cacheKey = "_availableApiTypes"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
         from dartlab.engines.dart.report.types import API_TYPES
 
-        return [name for name in API_TYPES if self.extract(name) is not None]
+        result = [name for name in API_TYPES if self.extract(name) is not None]
+        self._cache[cacheKey] = result
+        return result
 
     def __repr__(self):
         from dartlab.engines.dart.report.types import API_TYPES
