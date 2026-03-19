@@ -2,12 +2,17 @@
 	import { brand } from '$lib/brand';
 	import Header from '$lib/components/sections/Header.svelte';
 	import Hero from '$lib/components/sections/Hero.svelte';
+	import Numbers from '$lib/components/sections/Numbers.svelte';
 	import Problem from '$lib/components/sections/Problem.svelte';
 	import Alignment from '$lib/components/sections/Alignment.svelte';
 	import Layers from '$lib/components/sections/Layers.svelte';
 	import Workflow from '$lib/components/sections/Workflow.svelte';
 	import CodeDemo from '$lib/components/sections/CodeDemo.svelte';
+	import DataShowcase from '$lib/components/sections/DataShowcase.svelte';
 	import ModuleCatalog from '$lib/components/sections/ModuleCatalog.svelte';
+	import DartVsEdgar from '$lib/components/sections/DartVsEdgar.svelte';
+	import Performance from '$lib/components/sections/Performance.svelte';
+	import Stability from '$lib/components/sections/Stability.svelte';
 	import UseCases from '$lib/components/sections/UseCases.svelte';
 	import Install from '$lib/components/sections/Install.svelte';
 	import CTA from '$lib/components/sections/CTA.svelte';
@@ -17,20 +22,20 @@
 
 	const homepageFaq: FaqItem[] = [
 		{
-			question: 'DartLab이란 무엇인가?',
-			answer: 'DartLab은 한국 DART 전자공시와 미국 SEC EDGAR 공시 데이터를 자동 분석하는 오픈소스 Python 라이브러리입니다. 사업보고서, 재무제표, 공시 텍스트를 기간별로 수평화하여 하나의 회사 맵(sections)으로 만듭니다.'
+			question: 'What is DartLab?',
+			answer: 'DartLab is an open-source Python library that automatically analyzes Korean DART and US SEC EDGAR disclosure data. It horizontalizes annual reports, financial statements, and disclosure text into a single company map (sections).'
 		},
 		{
-			question: 'DART 전자공시 데이터를 어떻게 분석할 수 있나?',
-			answer: 'dartlab.Company("005930")처럼 종목코드로 Company 객체를 만들면 사업보고서의 모든 섹션이 topic x period 매트릭스로 자동 정렬됩니다. show(topic)으로 특정 주제를 조회하고, diff()로 기간별 텍스트 변화를 감지할 수 있습니다.'
+			question: 'How can I analyze DART disclosure data?',
+			answer: 'Create a Company object with a stock code like dartlab.Company("005930"). All report sections are automatically aligned into a topic x period matrix. Use show(topic) to query specific topics and diff() to detect text changes across periods.'
 		},
 		{
-			question: 'EDGAR 10-K, 10-Q도 분석할 수 있나?',
-			answer: '네. dartlab.Company("AAPL")처럼 ticker로 미국 기업의 10-K/10-Q를 분석할 수 있습니다. EDGAR sections 매핑률 100%, 974종목 검증 완료. DART와 동일한 인터페이스(sections, show, trace)를 사용합니다.'
+			question: 'Does it support EDGAR 10-K and 10-Q?',
+			answer: 'Yes. Use a ticker like dartlab.Company("AAPL") to analyze US 10-K/10-Q filings. EDGAR sections mapping rate is 100%, verified across 974 companies. Same interface as DART (sections, show, trace).'
 		},
 		{
-			question: 'sections란 무엇인가?',
-			answer: 'sections는 공시 문서 전체를 topic(주제) x period(기간) 매트릭스로 수평화한 것입니다. 사업의 내용, 재무제표, 감사보고서 등 모든 섹션의 텍스트와 테이블이 기간별로 나란히 정렬됩니다. 삼성전자 기준 329개 topic, 106개 기간.'
+			question: 'What are sections?',
+			answer: 'sections is the entire disclosure document horizontalized into a topic (subject) x period (time) matrix. All text and tables from business description, financial statements, audit reports, etc. are aligned side by side across periods. Samsung Electronics has 329 topics across 106 periods.'
 		}
 	];
 
@@ -44,13 +49,13 @@
 
 <svelte:head>
 	<title>DartLab — {brand.description}</title>
-	<meta name="description" content="DartLab은 한국 DART 전자공시와 미국 SEC EDGAR 공시 데이터를 자동 분석하는 오픈소스 Python 라이브러리다. sections 수평화, show/trace 조회, diff 변화 감지, AI 워크플로우를 제공한다." />
-	<meta name="keywords" content="전자공시, DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab" />
+	<meta name="description" content="DartLab is an open-source Python library for analyzing Korean DART and US SEC EDGAR disclosure data. Provides sections horizontalization, show/trace queries, diff change detection, and AI workflows." />
+	<meta name="keywords" content="DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab, sections" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/" />
 
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="DartLab — {brand.description}" />
-	<meta property="og:description" content={brand.descriptionKo} />
+	<meta property="og:description" content="Analyze Korean DART and US SEC EDGAR disclosures into one company map. Open-source Python library with sections horizontalization, show/trace queries, and AI workflows." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
@@ -60,7 +65,7 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="DartLab — {brand.description}" />
-	<meta name="twitter:description" content="DART 전자공시와 SEC EDGAR 공시를 하나의 회사 맵으로 분석하는 Python 라이브러리. sections 수평화, show/trace 조회, AI-ready." />
+	<meta name="twitter:description" content="Analyze DART and SEC EDGAR disclosures into one company map. sections horizontalization, show/trace queries, AI-ready." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 
 	{@html `<script type="application/ld+json">${homepageJsonLd}</script>`}
@@ -68,14 +73,30 @@
 
 <Header />
 <main class="overflow-x-hidden">
+	<!-- 1. Hook -->
 	<Hero />
+	<Numbers />
+
+	<!-- 2. Problem → Solution -->
 	<Problem />
 	<Alignment />
 	<Layers />
+
+	<!-- 3. How -->
 	<Workflow />
 	<CodeDemo />
+	<DataShowcase />
+
+	<!-- 4. What -->
 	<ModuleCatalog />
+	<DartVsEdgar />
+	<Performance />
+
+	<!-- 5. Trust -->
+	<Stability />
 	<UseCases />
+
+	<!-- 6. Action -->
 	<Install />
 	<CTA />
 	<Footer />

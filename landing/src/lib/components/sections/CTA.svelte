@@ -26,8 +26,13 @@
 						/>
 					</picture>
 				</div>
-				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-4">Start from the Company Map</h2>
-				<p class="text-dl-text-muted mb-8">Use the same `sections -> show -> trace` structure in Python today and in the upcoming AI GUI next.</p>
+				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">Start from the Company Map</h2>
+				<p class="text-dl-text-muted mb-3 text-lg">
+					<span class="font-mono text-dl-text">sections</span> →
+					<span class="font-mono text-dl-text">show</span> →
+					<span class="font-mono text-dl-text">trace</span>
+				</p>
+				<p class="text-sm text-dl-text-dim mb-8">One line of Python turns an entire disclosure into a single DataFrame.</p>
 
 				<div class="flex flex-wrap items-center justify-center gap-4">
 					<Button href="#install">Install</Button>

@@ -6,7 +6,7 @@
 
 	const commands = [
 		{ label: 'uv', cmd: 'uv add dartlab', highlight: true },
-		{ label: 'AI 기업분석', cmd: 'uv add dartlab[ai] && uv run dartlab ai', highlight: false }
+		{ label: 'AI analysis', cmd: 'uv add dartlab[ai] && uv run dartlab ai', highlight: false }
 	];
 
 	async function copy(idx: number) {

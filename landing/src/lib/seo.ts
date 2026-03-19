@@ -44,7 +44,7 @@ export function buildOrganizationJsonLd(): SeoThing {
 		name: brand.name,
 		url: brand.url,
 		logo: buildAbsoluteUrl('og-image.png'),
-		description: 'DartLab은 한국 DART 전자공시와 SEC EDGAR 데이터를 분석하는 오픈소스 도구다.',
+		description: 'DartLab is an open-source tool for analyzing Korean DART and US SEC EDGAR disclosure data.',
 		sameAs: [brand.repo, brand.pypi, brand.coffee]
 	};
 }
@@ -56,7 +56,7 @@ export function buildWebsiteJsonLd(): SeoThing {
 		'@id': websiteId,
 		name: brand.name,
 		url: brand.url,
-		description: 'DART 전자공시 분석과 공시 읽기 가이드를 제공하는 DartLab 공식 사이트',
+		description: 'Official DartLab site — DART disclosure analysis and filing guides.',
 		inLanguage: ['ko', 'en'],
 		publisher: { '@id': organizationId },
 		potentialAction: {
@@ -105,7 +105,7 @@ export function buildSoftwareApplicationJsonLd(): SeoThing {
 		license: 'https://opensource.org/licenses/MIT',
 		programmingLanguage: 'Python',
 		codeRepository: brand.repo,
-		keywords: ['DART', '전자공시', 'OpenDART', 'EDGAR', 'financial statements', 'annual report', 'Python']
+		keywords: ['DART', 'disclosure', 'OpenDART', 'EDGAR', 'financial statements', 'annual report', 'Python']
 	};
 }
 

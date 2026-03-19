@@ -7,7 +7,7 @@
 	<div class="mx-auto max-w-4xl">
 		<div class="text-center mb-16">
 			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">Most Filing Tools Still Think in Outputs</h2>
-			<p class="text-dl-text-muted text-lg">DartLab now thinks in company structure first.</p>
+			<p class="text-dl-text-muted text-lg">DartLab thinks in company structure first.</p>
 		</div>
 
 		<div class="grid md:grid-cols-2 gap-5">
@@ -62,7 +62,7 @@
 						<span class="text-dl-primary">✓</span> Source-aware `trace(...)`
 					</div>
 					<div class="flex items-center gap-3 text-dl-text">
-						<span class="text-dl-primary">✓</span> One shared structure for AI GUI
+						<span class="text-dl-primary">✓</span> One shared structure for AI
 					</div>
 					<div class="flex items-center gap-3 text-dl-text">
 						<span class="text-dl-accent">✓</span> Better performance from a simpler structure
