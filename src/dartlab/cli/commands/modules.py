@@ -26,7 +26,11 @@ def _run(args) -> None:
     # Search
     if args.search:
         q = args.search.lower()
-        entries = [e for e in entries if q in e.name.lower() or q in (e.label or "").lower() or q in (e.description or "").lower()]
+        entries = [
+            e
+            for e in entries
+            if q in e.name.lower() or q in (e.label or "").lower() or q in (e.description or "").lower()
+        ]
 
     if not entries:
         console.print("[yellow]일치하는 모듈이 없습니다.[/]")
