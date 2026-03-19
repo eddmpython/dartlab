@@ -153,6 +153,14 @@ def sectionsDiff(sections: pl.DataFrame) -> DiffResult:
 
 
 @dataclass
+class CharPart:
+    """글자 단위 diff 조각."""
+
+    kind: str  # "equal" | "insert" | "delete"
+    text: str
+
+
+@dataclass
 class LineDiff:
     """줄 단위 diff 결과."""
 
@@ -231,3 +239,26 @@ def topicDiff(
         removed=removed,
         kept=kept,
     )
+
+
+def charDiff(fromText: str, toText: str) -> list[CharPart]:
+    """두 텍스트의 글자 단위 diff.
+
+    diff-match-patch를 사용하여 변경된 글자 위치를 정확히 찾는다.
+    semantic cleanup을 적용하여 사람이 읽기 좋은 단위로 정리한다.
+
+    Args:
+        fromText: 이전 텍스트.
+        toText: 이후 텍스트.
+
+    Returns:
+        CharPart 리스트 — kind("equal"|"insert"|"delete") + text.
+    """
+    import diff_match_patch as dmp_module
+
+    dmp = dmp_module.diff_match_patch()
+    diffs = dmp.diff_main(fromText, toText)
+    dmp.diff_cleanupSemantic(diffs)
+
+    _OP_MAP = {0: "equal", 1: "insert", -1: "delete"}
+    return [CharPart(kind=_OP_MAP[op], text=text) for op, text in diffs if text]

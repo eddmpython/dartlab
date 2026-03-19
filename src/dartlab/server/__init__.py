@@ -1154,6 +1154,34 @@ def api_company_insights(code: str):
     }
 
 
+@app.get("/api/company/{code}/network")
+def api_company_network(code: str, hops: int = 1):
+    """Ego network — 회사 중심 관계 그래프."""
+    hops = max(1, min(hops, 3))
+    try:
+        c = _get_company(code)
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    try:
+        result = c._ensureNetwork()
+        if result is None:
+            return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+        data, full = result
+
+        from dartlab.engines.dart.affiliate.export import export_ego
+
+        ego = export_ego(data, full, c.stockCode, hops=hops)
+        return {
+            "stockCode": c.stockCode,
+            "corpName": c.corpName,
+            "available": True,
+            **ego,
+        }
+    except _HANDLED_API_ERRORS:
+        return {"stockCode": c.stockCode, "corpName": c.corpName, "available": False}
+
+
 @app.get("/api/company/{code}/diff")
 def api_company_diff(code: str):
     """Company sections 전체 diff 요약."""
@@ -1255,17 +1283,65 @@ def api_company_diff_topic(
     fromPeriod: str = Query(..., alias="from"),
     toPeriod: str = Query(..., alias="to"),
 ):
-    """Company 특정 topic의 두 기간 줄 단위 diff."""
+    """Company 특정 topic의 두 기간 줄+글자 단위 diff."""
     try:
         c = _get_company(code)
         result = c.diff(topic, fromPeriod, toPeriod)
+
+        diff_chunks: list[dict] = []
+        if result is not None:
+            from dartlab.engines.common.docs.diff import charDiff
+
+            rows = result.to_dicts()
+            # 인접 -/+ 쌍을 묶어 charDiff 계산
+            i = 0
+            while i < len(rows):
+                row = rows[i]
+                status = row.get("status", " ")
+                text = row.get("text", "")
+
+                if status == " ":
+                    diff_chunks.append({"kind": "same", "text": text})
+                    i += 1
+                elif status == "-":
+                    # 연속 - 줄 수집
+                    del_lines = [text]
+                    j = i + 1
+                    while j < len(rows) and rows[j].get("status") == "-":
+                        del_lines.append(rows[j].get("text", ""))
+                        j += 1
+                    # 이어지는 + 줄 수집
+                    add_lines = []
+                    while j < len(rows) and rows[j].get("status") == "+":
+                        add_lines.append(rows[j].get("text", ""))
+                        j += 1
+
+                    if add_lines:
+                        # replace 쌍: charDiff 계산
+                        from_text = "\n".join(del_lines)
+                        to_text = "\n".join(add_lines)
+                        parts = [{"kind": p.kind, "text": p.text} for p in charDiff(from_text, to_text)]
+                        diff_chunks.append({"kind": "removed", "text": from_text, "parts": parts})
+                        diff_chunks.append({"kind": "added", "text": to_text, "parts": parts})
+                    else:
+                        # 순수 삭제
+                        for line in del_lines:
+                            diff_chunks.append({"kind": "removed", "text": line})
+                    i = j
+                elif status == "+":
+                    # 순수 추가 (앞에 - 없이)
+                    diff_chunks.append({"kind": "added", "text": text})
+                    i += 1
+                else:
+                    i += 1
+
         return {
             "stockCode": c.stockCode,
             "corpName": c.corpName,
             "topic": topic,
             "fromPeriod": fromPeriod,
             "toPeriod": toPeriod,
-            "payload": _serialize_payload(result),
+            "diff": diff_chunks,
         }
     except _HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -2,6 +2,7 @@
 	DiffCompare — 기간간 텍스트 비교 뷰.
 	두 기간의 공시 텍스트를 좌우 또는 상하로 비교 표시.
 	추가/삭제/유지를 컬러로 구분.
+	replace 쌍은 글자 단위 하이라이트 (diff-match-patch).
 -->
 <script>
 	import { fetchCompanyTopicDiff } from "$lib/api.js";
@@ -58,10 +59,9 @@
 		if (!diffData?.diff) return { added: 0, removed: 0, same: 0 };
 		let added = 0, removed = 0, same = 0;
 		for (const chunk of diffData.diff) {
-			const count = chunk.paragraphs?.length || 1;
-			if (chunk.kind === "added") added += count;
-			else if (chunk.kind === "removed") removed += count;
-			else same += count;
+			if (chunk.kind === "added") added++;
+			else if (chunk.kind === "removed") removed++;
+			else same++;
 		}
 		return { added, removed, same };
 	});
@@ -136,22 +136,39 @@
 		{:else if diffData?.diff}
 			<div class="space-y-0.5">
 				{#each diffData.diff as chunk}
-					{#each chunk.paragraphs || [chunk.text || ""] as para}
-						{@const text = String(para || "").trim()}
-						{#if text}
-							{#if chunk.kind === "added"}
-								<div class="pl-3 py-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-dl-text/85 text-[13px] leading-[1.8] rounded-r">
-									<span class="text-emerald-500/60 text-[10px] mr-1">+</span>{text}
-								</div>
-							{:else if chunk.kind === "removed"}
-								<div class="pl-3 py-1 border-l-2 border-red-400 bg-red-500/5 text-dl-text/40 text-[13px] leading-[1.8] rounded-r line-through decoration-red-400/30">
-									<span class="text-red-400/60 text-[10px] mr-1">-</span>{text}
-								</div>
+					{#if chunk.kind === "added"}
+						<div class="pl-3 py-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-[13px] leading-[1.8] rounded-r">
+							<span class="text-emerald-500/60 text-[10px] mr-1">+</span>
+							{#if chunk.parts}
+								{#each chunk.parts as part}
+									{#if part.kind === "insert"}
+										<mark class="bg-emerald-400/25 text-emerald-300 rounded-sm px-[1px]">{part.text}</mark>
+									{:else if part.kind === "equal"}
+										<span class="text-dl-text/85">{part.text}</span>
+									{/if}
+								{/each}
 							{:else}
-								<p class="text-[13px] leading-[1.8] text-dl-text/70 py-0.5">{text}</p>
+								<span class="text-dl-text/85">{chunk.text}</span>
 							{/if}
-						{/if}
-					{/each}
+						</div>
+					{:else if chunk.kind === "removed"}
+						<div class="pl-3 py-1 border-l-2 border-red-400 bg-red-500/5 text-[13px] leading-[1.8] rounded-r">
+							<span class="text-red-400/60 text-[10px] mr-1">-</span>
+							{#if chunk.parts}
+								{#each chunk.parts as part}
+									{#if part.kind === "delete"}
+										<mark class="bg-red-400/25 text-red-300 line-through decoration-red-400/40 rounded-sm px-[1px]">{part.text}</mark>
+									{:else if part.kind === "equal"}
+										<span class="text-dl-text/40">{part.text}</span>
+									{/if}
+								{/each}
+							{:else}
+								<span class="text-dl-text/40 line-through decoration-red-400/30">{chunk.text}</span>
+							{/if}
+						</div>
+					{:else}
+						<p class="text-[13px] leading-[1.8] text-dl-text/70 py-0.5">{chunk.text}</p>
+					{/if}
 				{/each}
 			</div>
 		{:else}
