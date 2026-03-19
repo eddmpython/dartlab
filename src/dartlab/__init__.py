@@ -61,18 +61,37 @@ def listing(market: str | None = None):
     return _DartEngineCompany.listing()
 
 
-def affiliates():
+def network():
     """한국 상장사 전체 관계 지도.
 
     Example::
 
         import dartlab
-        data = dartlab.affiliates()
-        data["code_to_group"]["005930"]  # "삼성"
+        dartlab.network()  # 전체 엣지 DataFrame
     """
-    from dartlab.engines.dart.affiliate import build_graph
+    import polars as pl
 
-    return build_graph()
+    from dartlab.engines.dart.affiliate import build_graph, export_full
+
+    data = build_graph()
+    full = export_full(data)
+    node_map = {n["id"]: n for n in full["nodes"]}
+    rows = []
+    for e in full["edges"]:
+        src = node_map.get(e["source"])
+        tgt = node_map.get(e["target"])
+        rows.append({
+            "source": e["source"],
+            "sourceName": src["label"] if src else e["source"],
+            "sourceGroup": src["group"] if src else "",
+            "target": e["target"],
+            "targetName": tgt["label"] if tgt else e["target"],
+            "targetGroup": tgt["group"] if tgt else "",
+            "type": e["type"],
+            "purpose": e.get("purpose", ""),
+            "ownershipPct": e.get("ownershipPct"),
+        })
+    return pl.DataFrame(rows)
 
 
 class _Module(sys.modules[__name__].__class__):
@@ -109,6 +128,7 @@ __all__ = [
     "llm",
     "search",
     "listing",
+    "network",
     "verbose",
     "dataDir",
     "getKindList",

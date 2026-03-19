@@ -3077,51 +3077,176 @@ class Company:
         """통화 코드."""
         return "KRW"
 
-    # ── affiliate (관계 지도) ──────────────────────────────
+    # ── network (관계 지도) ──────────────────────────────────
 
-    def _ensureAffiliate(self) -> dict | None:
-        """affiliate 파이프라인 캐싱."""
-        if "_affiliate_data" not in self._cache:
-            from dartlab.engines.dart.affiliate import build_graph
+    def _ensureNetwork(self) -> tuple[dict, dict] | None:
+        """network 파이프라인 캐싱 → (data, full)."""
+        if "_network_data" not in self._cache:
+            from dartlab.engines.dart.affiliate import build_graph, export_full
 
-            self._cache["_affiliate_data"] = build_graph(verbose=False)
-        return self._cache["_affiliate_data"]
+            data = build_graph(verbose=False)
+            self._cache["_network_data"] = data
+            self._cache["_network_full"] = export_full(data)
+        return self._cache["_network_data"], self._cache["_network_full"]
 
-    @property
-    def group(self) -> str:
-        """계열 그룹명.
+    def network(self, view: str | None = None, *, hops: int = 1) -> pl.DataFrame | None:
+        """관계 네트워크.
 
-        Example::
-
-            Company("005930").group  # "삼성"
-            Company("001070").group  # "대한방직" (독립)
-        """
-        data = self._ensureAffiliate()
-        if data is None:
-            return self.corpName or self.stockCode
-        return data["code_to_group"].get(self.stockCode, self.corpName or self.stockCode)
-
-    def peers(self, *, hops: int = 1) -> dict | None:
-        """관계 네트워크 — 이 회사 중심 서브그래프.
-
-        독립 회사면 같은 업종 이웃이 자동 추가됩니다.
+        Args:
+            view: None이면 요약, "members"/"edges"/"cycles"/"peers" 중 택
+            hops: peers 뷰에서 홉 수
 
         Example::
 
-            Company("005930").peers()       # 삼성전자 1홉
-            Company("005930").peers(hops=2)  # 2홉
+            c = Company("005930")
+            c.network()            # 요약
+            c.network("members")   # 같은 그룹 계열사
+            c.network("edges")     # 출자/지분 연결
+            c.network("cycles")    # 순환출자 경로
+            c.network("peers")     # 이 회사 중심 서브그래프
         """
-        data = self._ensureAffiliate()
-        if data is None:
+        result = self._ensureNetwork()
+        if result is None:
             return None
-        if "_affiliate_full" not in self._cache:
-            from dartlab.engines.dart.affiliate import export_full
+        data, full = result
+        code = self.stockCode
+        group = data["code_to_group"].get(code, self.corpName or code)
 
-            self._cache["_affiliate_full"] = export_full(data)
-        full = self._cache["_affiliate_full"]
+        if view is None:
+            return self._networkOverview(data, full, code, group)
+        if view == "members":
+            return self._networkMembers(data, code, group)
+        if view == "edges":
+            return self._networkEdges(full, code)
+        if view == "cycles":
+            return self._networkCycles(data, code)
+        if view == "peers":
+            return self._networkPeers(data, full, code, hops=hops)
+        return None
+
+    def _networkOverview(self, data: dict, full: dict, code: str, group: str) -> pl.DataFrame:
+        """요약 테이블."""
+        from collections import Counter
+
+        gc = Counter(data["code_to_group"][n] for n in data["all_node_ids"])
+        member_count = gc.get(group, 1)
+        is_independent = member_count == 1
+
+        # 직접 연결 수
+        direct = sum(
+            1 for e in full["edges"]
+            if e["type"] != "person_shareholder"
+            and (e["source"] == code or e["target"] == code)
+        )
+        outgoing = sum(
+            1 for e in full["edges"]
+            if e["type"] == "investment" and e["source"] == code
+        )
+        incoming = sum(
+            1 for e in full["edges"]
+            if e["type"] != "person_shareholder" and e["target"] == code
+        )
+        my_cycles = [
+            cy for cy in data["cycles"] if code in cy
+        ]
+
+        rows = [
+            ("그룹", group if not is_independent else f"{group} (독립)"),
+            ("계열사", f"{member_count}개"),
+            ("직접 연결", f"{direct}개사"),
+            ("출자 (→)", f"{outgoing}개"),
+            ("피출자 (←)", f"{incoming}개"),
+            ("순환출자", f"{len(my_cycles)}개 경로"),
+            ("업종", data["listing_meta"].get(code, {}).get("industry", "")),
+        ]
+        return pl.DataFrame({"항목": [r[0] for r in rows], "값": [r[1] for r in rows]})
+
+    def _networkMembers(self, data: dict, code: str, group: str) -> pl.DataFrame:
+        """같은 그룹 계열사 목록."""
+        members = [
+            n for n in data["all_node_ids"]
+            if data["code_to_group"].get(n) == group
+        ]
+        rows = []
+        for m in sorted(members):
+            meta = data["listing_meta"].get(m, {})
+            rows.append({
+                "종목코드": m,
+                "회사명": meta.get("name", m),
+                "시장": meta.get("market", ""),
+                "업종": meta.get("industry", ""),
+                "자기": m == code,
+            })
+        return pl.DataFrame(rows)
+
+    def _networkEdges(self, full: dict, code: str) -> pl.DataFrame:
+        """이 회사의 출자/지분 연결."""
+        node_map = {n["id"]: n for n in full["nodes"]}
+        rows = []
+        for e in full["edges"]:
+            if e["type"] == "person_shareholder":
+                continue
+            if e["source"] == code:
+                target = e["target"]
+                node = node_map.get(target)
+                rows.append({
+                    "종목코드": target,
+                    "회사명": node["label"] if node else target,
+                    "유형": e["type"],
+                    "방향": "출자 →",
+                    "목적": e.get("purpose", ""),
+                    "지분율": e.get("ownershipPct"),
+                    "그룹": node["group"] if node else "",
+                })
+            elif e["target"] == code:
+                source = e["source"]
+                node = node_map.get(source)
+                rows.append({
+                    "종목코드": source,
+                    "회사명": node["label"] if node else source,
+                    "유형": e["type"],
+                    "방향": "← 피출자",
+                    "목적": e.get("purpose", ""),
+                    "지분율": e.get("ownershipPct"),
+                    "그룹": node["group"] if node else "",
+                })
+        if not rows:
+            return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8, "유형": pl.Utf8, "방향": pl.Utf8, "목적": pl.Utf8, "지분율": pl.Float64, "그룹": pl.Utf8})
+        return pl.DataFrame(rows).sort("지분율", descending=True, nulls_last=True)
+
+    def _networkCycles(self, data: dict, code: str) -> pl.DataFrame:
+        """이 회사가 포함된 순환출자 경로."""
+        rows = []
+        for i, cy in enumerate(data["cycles"]):
+            if code not in cy:
+                continue
+            path = " → ".join(data["code_to_name"].get(c, c) for c in cy)
+            rows.append({"번호": i + 1, "경로": path, "길이": len(cy) - 1})
+        if not rows:
+            return pl.DataFrame(schema={"번호": pl.Int64, "경로": pl.Utf8, "길이": pl.Int64})
+        return pl.DataFrame(rows)
+
+    def _networkPeers(self, data: dict, full: dict, code: str, *, hops: int = 1) -> pl.DataFrame:
+        """이 회사 중심 서브그래프 (ego 뷰) → DataFrame."""
         from dartlab.engines.dart.affiliate import export_ego
 
-        return export_ego(data, full, self.stockCode, hops=hops)
+        ego = export_ego(data, full, code, hops=hops)
+        rows = []
+        for n in ego["nodes"]:
+            if n["type"] != "company":
+                continue
+            rows.append({
+                "종목코드": n["id"],
+                "회사명": n["label"],
+                "그룹": n["group"],
+                "업종": n.get("industry", ""),
+                "연결수": n["degree"],
+                "자기": n["id"] == code,
+            })
+        if not rows:
+            return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8, "그룹": pl.Utf8, "업종": pl.Utf8, "연결수": pl.Int64, "자기": pl.Boolean})
+        df = pl.DataFrame(rows)
+        return df.sort("연결수", descending=True)
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
