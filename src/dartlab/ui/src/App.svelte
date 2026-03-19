@@ -142,7 +142,13 @@
 	const store = createConversationsStore();
 
 	// ── Provider/Model logic ──
-	$effect(() => { loadStatus(); });
+	let statusLoaded = false;
+	$effect(() => {
+		if (!statusLoaded) {
+			statusLoaded = true;
+			loadStatus();
+		}
+	});
 
 	let codexDetail = $state({});
 
@@ -218,7 +224,7 @@
 				if (savedKey) {
 					try {
 						await validateProvider(savedProvider, savedModel, savedKey);
-					} catch {}
+					} catch (e) { console.warn("validateProvider:", e); }
 				}
 				await loadModelsFor(savedProvider);
 				const models = providerModels[savedProvider] || [];
@@ -245,7 +251,7 @@
 					break;
 				}
 			}
-		} catch {}
+		} catch (e) { console.error("loadStatus:", e); }
 		statusLoading = false;
 	}
 
@@ -255,7 +261,8 @@
 		try {
 			const data = await fetchModels(provider);
 			providerModels = { ...providerModels, [provider]: data.models || [] };
-		} catch {
+		} catch (e) {
+			console.warn("loadModelsFor:", e);
 			providerModels = { ...providerModels, [provider]: [] };
 		}
 		modelsLoading = { ...modelsLoading, [provider]: false };
@@ -618,10 +625,8 @@
 					store.flush();
 					if (action === "login") {
 						showToast(`${err} — 설정에서 Codex 로그인을 확인하세요`);
-						openSettings();
 					} else if (action === "install") {
 						showToast(`${err} — 설정에서 Codex 설치 안내를 확인하세요`);
-						openSettings();
 					} else {
 						showToast(err);
 					}
@@ -770,16 +775,63 @@
 		<button class="sidebar-overlay" onclick={() => { sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
 	{/if}
 	<div class={isMobile ? (sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
-		<Sidebar
-			conversations={store.conversations}
-			activeId={store.activeId}
-			open={isMobile ? true : sidebarOpen}
-			version={appVersion}
-			onNewChat={() => { handleNewChat(); if (isMobile) sidebarOpen = false; }}
-			onSelect={(id) => { handleSelectConversation(id); if (isMobile) sidebarOpen = false; }}
-			onDelete={handleDeleteConversation}
-			onOpenSearch={openSearchModal}
-		/>
+		{#if workspace.activeView === "viewer"}
+			<!-- Viewer sidebar: 최근 종목 -->
+			<aside class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden {sidebarOpen ? 'w-[260px]' : 'w-[52px]'}">
+				{#if sidebarOpen}
+					<div class="flex flex-col h-full min-w-[260px]">
+						<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
+							<div class="flex items-center gap-2.5">
+								<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
+								<div>
+									<div class="text-sm font-semibold text-dl-text">공시뷰어</div>
+									<div class="text-[10px] text-dl-text-dim">Disclosure Viewer</div>
+								</div>
+							</div>
+						</div>
+						<div class="flex-1 overflow-y-auto px-2 py-2">
+							<div class="text-[10px] text-dl-text-dim uppercase tracking-widest font-semibold px-2 mb-2">최근 종목</div>
+							{#each workspace.recentCompanies || [] as company}
+								<button
+									class="w-full text-left px-3 py-2 rounded-lg text-[12px] transition-colors mb-0.5
+										{workspace.selectedCompany?.stockCode === company.stockCode
+											? 'bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20'
+											: 'text-dl-text-muted hover:bg-white/5 hover:text-dl-text'}"
+									onclick={() => { handleCompanySelect(company); if (isMobile) sidebarOpen = false; }}
+								>
+									<div class="font-medium">{company.name}</div>
+									<div class="text-[10px] text-dl-text-dim">{company.stockCode}</div>
+								</button>
+							{:else}
+								<div class="px-3 py-4 text-[11px] text-dl-text-dim text-center">
+									아직 조회한 종목이 없습니다
+								</div>
+							{/each}
+						</div>
+						{#if appVersion}
+							<div class="border-t border-dl-border/30 px-4 py-2 text-[10px] text-dl-text-dim/50">
+								v{appVersion}
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="flex flex-col items-center py-4 gap-2">
+						<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full opacity-60" />
+					</div>
+				{/if}
+			</aside>
+		{:else}
+			<Sidebar
+				conversations={store.conversations}
+				activeId={store.activeId}
+				open={isMobile ? true : sidebarOpen}
+				version={appVersion}
+				onNewChat={() => { handleNewChat(); if (isMobile) sidebarOpen = false; }}
+				onSelect={(id) => { handleSelectConversation(id); if (isMobile) sidebarOpen = false; }}
+				onDelete={handleDeleteConversation}
+				onOpenSearch={openSearchModal}
+			/>
+		{/if}
 	</div>
 
 	<!-- Main -->
@@ -878,6 +930,8 @@
 					<DisclosureViewer
 						viewer={viewerStore}
 						company={workspace.selectedCompany}
+						recentCompanies={workspace.recentCompanies}
+						onCompanySelect={handleCompanySelect}
 						onAskAI={handleAskFromViewer}
 						onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
 					/>

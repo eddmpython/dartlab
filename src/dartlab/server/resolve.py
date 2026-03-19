@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re as _re
+
 import dartlab
 from dartlab import Company
 
@@ -295,6 +297,48 @@ def has_analysis_intent(question: str) -> bool:
     return True
 
 
+# ── 순수 대화 패턴 ──
+# viewContext에 종목이 있어도 회사 분석을 스킵해야 하는 순수 대화 표현
+
+_PURE_CONVERSATION_TOKENS = frozenset({
+    "응", "ㅇㅇ", "ㅇ", "그래", "넵", "네", "뭐해", "ㅋㅋ", "ㅎㅎ",
+    "좋아", "오키", "ok", "yes", "no", "yeah", "알겠어", "그렇구나",
+    "아하", "오", "와", "ㅠㅠ", "ㅜㅜ", "ㄴㄴ", "아니", "됐어",
+})
+
+_PURE_CONVERSATION_RE = _re.compile(
+    r"대화.*계속|계속.*대화|대화.*안.*되|이어서.*얘기|잡담|그냥.*얘기"
+    r"|얘기.*하자|말.*걸어|채팅|아까.*말|다른.*얘기",
+)
+
+
+def _is_pure_conversation(question: str) -> bool:
+    """순수 대화 패턴인지 판별.
+
+    viewContext에 종목이 있어도 회사 분석 경로를 타면 안 되는 표현.
+    예: "대화 계속 안되나", "응", "ㅇㅇ", "그래"
+    """
+    q = question.strip()
+    q_low = q.lower()
+
+    # 정확 매치 (짧은 토큰)
+    if q_low in _PURE_CONVERSATION_TOKENS:
+        return True
+
+    # 정규식 패턴 매치
+    if _PURE_CONVERSATION_RE.search(q_low):
+        return True
+
+    # 6자 이하 + 분석 키워드 없음 → 순수 대화 가능성 높음
+    if len(q) <= 6:
+        for kw in _ANALYSIS_KEYWORDS:
+            if kw in q:
+                return False
+        return True
+
+    return False
+
+
 def _collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
     """검색 결과에서 매칭되는 후보를 수집한다.
 
@@ -464,6 +508,10 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
 
     # 메타 질문은 viewContext가 있어도 회사 분석 스킵
     if is_meta_question(q):
+        return ResolveResult()
+
+    # 순수 대화 ("응", "대화 계속 안되나" 등)는 회사 분석 스킵
+    if _is_pure_conversation(q):
         return ResolveResult()
 
     if req.viewContext and req.viewContext.company:

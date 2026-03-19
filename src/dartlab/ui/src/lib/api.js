@@ -295,9 +295,14 @@ export async function fetchCompanyNetwork(code) {
 }
 
 /** topic AI 요약 (SSE 스트리밍) */
-export function streamTopicSummary(code, topic, { onContext, onChunk, onDone, onError }) {
+export function streamTopicSummary(code, topic, { onContext, onChunk, onDone, onError, provider, model } = {}) {
 	const controller = new AbortController();
-	fetch(`${BASE}/api/company/${encodeURIComponent(code)}/summary/${encodeURIComponent(topic)}`, {
+	const params = new URLSearchParams();
+	if (provider) params.set("provider", provider);
+	if (model) params.set("model", model);
+	const qs = params.toString();
+	const url = `${BASE}/api/company/${encodeURIComponent(code)}/summary/${encodeURIComponent(topic)}${qs ? `?${qs}` : ""}`;
+	fetch(url, {
 		signal: controller.signal,
 	})
 		.then(async (res) => {
@@ -422,8 +427,8 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "viewer_navigate") onViewerNavigate?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
 							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(); } }
-						} catch {
-							// skip malformed JSON
+						} catch (e) {
+							console.warn("SSE JSON parse:", e);
 						}
 						currentEvent = null;
 					}

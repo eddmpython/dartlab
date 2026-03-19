@@ -80,6 +80,15 @@ button, a, input, textarea {
 	to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes progress-bar {
+	0% { width: 0; margin-left: 0; }
+	50% { width: 60%; margin-left: 20%; }
+	100% { width: 0; margin-left: 100%; }
+}
+.animate-progress-bar {
+	animation: progress-bar 1.5s ease-in-out infinite;
+}
+
 /* ── Input Box (shared across components) ── */
 .input-box {
 	display: flex;
@@ -406,6 +415,55 @@ button, a, input, textarea {
 .finance-table .row-key td:first-child { color: var(--color-dl-text); }
 .finance-table .val-neg { color: var(--color-dl-primary-light); }
 .finance-table .val-pos { color: var(--color-dl-text-muted); }
+
+/* ── Structured table (docs) ── */
+.structured-table {
+	border-collapse: separate;
+	width: 100%;
+	font-size: 0.82em;
+	border: 1px solid rgba(148, 163, 184, 0.08);
+	border-radius: 12px;
+	overflow: hidden;
+	background: rgba(15, 18, 25, 0.5);
+}
+.structured-table th {
+	text-align: left;
+	padding: 0.5rem 0.7rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--color-dl-text-muted);
+	font-weight: 500;
+	font-size: 0.8rem;
+	white-space: normal;
+	min-width: 100px;
+}
+.structured-table td {
+	padding: 0.4rem 0.7rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.04);
+	color: var(--color-dl-text-muted);
+	white-space: normal;
+	min-width: 100px;
+	font-size: 0.88em;
+	line-height: 1.5;
+}
+.structured-table .col-sticky {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	background: rgba(15, 18, 25, 0.92);
+	min-width: 140px;
+	font-weight: 500;
+}
+.structured-table thead .col-sticky {
+	z-index: 3;
+	background: rgba(15, 18, 25, 0.95);
+}
+.structured-table .val-pos { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); color: var(--color-dl-text-muted); }
+.structured-table .val-neg { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); color: var(--color-dl-primary-light); }
+.structured-table tbody tr { transition: background-color var(--motion-fast); }
+.structured-table tbody tr:hover td { background: rgba(148, 163, 184, 0.04); }
+.structured-table tbody tr:hover .col-sticky { background: rgba(15, 18, 25, 0.95); }
+.structured-table tbody tr:last-child td { border-bottom: none; }
 
 /* ── Korean heading hierarchy in disclosure text ── */
 .disclosure-text {

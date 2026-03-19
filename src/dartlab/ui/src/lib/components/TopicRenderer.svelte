@@ -6,7 +6,7 @@
 -->
 <script>
 	import { renderMarkdown } from "$lib/markdown.js";
-	import { streamTopicSummary } from "$lib/api.js";
+	import { streamTopicSummary, fetchCompanyTopicDiff } from "$lib/api.js";
 	import { financeBlockToChartSpec } from "$lib/chart/specs.js";
 	import TimelineBar from "./TimelineBar.svelte";
 	import TableRenderer from "./TableRenderer.svelte";
@@ -27,6 +27,26 @@
 	let sectionTimeline = $state(new Map());     // sectionId → periodLabel
 	let copiedTable = $state(null);              // blockIdx of copied table
 	let chartMode = $state(new Map());           // blockIdx → boolean (true = chart view)
+
+	// Lazy rendering — 초기 8개만 표시, 스크롤 시 점진 렌더
+	let visibleCount = $state(8);
+	let sentinelEl = $state(null);
+
+	// topic 변경 시 visibleCount 초기화
+	$effect(() => {
+		if (topicData?.topic) visibleCount = 8;
+	});
+
+	$effect(() => {
+		if (!sentinelEl) return;
+		const observer = new IntersectionObserver((entries) => {
+			if (entries[0]?.isIntersecting) {
+				visibleCount = Math.min(visibleCount + 10, topicData?.textDocument?.entries?.length || topicData?.textDocument?.sections?.length || 999);
+			}
+		}, { rootMargin: '200px' });
+		observer.observe(sentinelEl);
+		return () => observer.disconnect();
+	});
 
 	// "AI에게 물어보기" floating button
 	let floatBtn = $state({ show: false, x: 0, y: 0, text: "" });
@@ -54,7 +74,13 @@
 		summaryText = "";
 		summaryError = null;
 
+		// localStorage에서 사용자 선택 provider/model 읽기
+		const savedProvider = typeof localStorage !== "undefined" ? localStorage.getItem("dartlab-provider") : null;
+		const savedModel = typeof localStorage !== "undefined" ? localStorage.getItem("dartlab-model") : null;
+
 		summaryHandle = streamTopicSummary(viewer.stockCode, topicData.topic, {
+			provider: savedProvider || undefined,
+			model: savedModel || undefined,
 			onContext() {},
 			onChunk(text) { summaryText += text; },
 			onDone() {
@@ -73,13 +99,50 @@
 	// P6: bookmark derived
 	let isBookmarked = $derived(viewer?.isBookmarked?.(topicData?.topic) ?? false);
 
+	// charDiff 캐시 — sectionId:periodLabel → { diff: [...], from, to }
+	let charDiffCache = $state(new Map());
+	let charDiffLoading = $state(new Set());
+
+	async function loadCharDiff(sectionId, toPeriodLabel, fromPeriodLabel) {
+		if (!viewer?.stockCode || !topicData?.topic || !fromPeriodLabel || !toPeriodLabel) return;
+		const cacheKey = `${sectionId}:${toPeriodLabel}`;
+		if (charDiffCache.has(cacheKey) || charDiffLoading.has(cacheKey)) return;
+
+		charDiffLoading = new Set([...charDiffLoading, cacheKey]);
+		try {
+			const res = await fetchCompanyTopicDiff(viewer.stockCode, topicData.topic, fromPeriodLabel, toPeriodLabel);
+			const next = new Map(charDiffCache);
+			next.set(cacheKey, res);
+			charDiffCache = next;
+		} catch {
+			// charDiff 실패 시 무시 — paragraph diff는 유지
+		}
+		const ns = new Set(charDiffLoading);
+		ns.delete(cacheKey);
+		charDiffLoading = ns;
+	}
+
 	// 기간 비교 모드
 	let showDiffCompare = $state(false);
 
-	// topic 변경 시 비교 모드 닫기
+	// topic 변경 시 비교 모드 닫기 + charDiff 캐시 초기화
 	$effect(() => {
 		if (topicData?.topic) {
 			showDiffCompare = false;
+			charDiffCache = new Map();
+			charDiffLoading = new Set();
+		}
+	});
+
+	// updated section의 charDiff 자동 프리로드
+	$effect(() => {
+		const sections = topicData?.textDocument?.sections;
+		if (!sections || !viewer?.stockCode || !topicData?.topic) return;
+		for (const s of sections) {
+			if (s.status !== 'updated' || !s.timeline || s.timeline.length < 2) continue;
+			const latest = s.timeline[0]?.period?.label || periodDisplayLabel(s.timeline[0]?.period);
+			const prev = s.timeline[1]?.period?.label || periodDisplayLabel(s.timeline[1]?.period);
+			if (latest && prev) loadCharDiff(s.id, latest, prev);
 		}
 	});
 
@@ -100,7 +163,11 @@
 
 	// ── textDocument helpers ──
 	let hasTextDoc = $derived(topicData?.textDocument?.sections?.length > 0);
-	let nonTextBlocks = $derived((topicData?.blocks ?? []).filter(b => b.kind !== "text"));
+	let hasEntries = $derived(topicData?.textDocument?.entries?.length > 0);
+	// entries 기반 렌더링용 lookup maps
+	let sectionsByRef = $derived(new Map((topicData?.textDocument?.sections ?? []).map(s => [s.id, s])));
+	let blocksByRef = $derived(new Map((topicData?.blocks ?? []).map(b => [b.block, b])));
+	let docEntries = $derived(topicData?.textDocument?.entries ?? []);
 
 	function periodDisplayLabel(p) {
 		if (!p) return "";
@@ -109,7 +176,7 @@
 			if (!m) return p;
 			return m[3] ? `${m[1]}Q${m[3]}` : m[1];
 		}
-		if (p.kind === "annual") return `${p.year}Q4`;
+		if (p.kind === "annual") return `${p.year}`;
 		if (p.year && p.quarter) return `${p.year}Q${p.quarter}`;
 		return p.label || "";
 	}
@@ -144,10 +211,21 @@
 		return sectionTimeline.has(section.id);
 	}
 
-	function selectSectionPeriod(sectionId, periodLabel) {
+	function selectSectionPeriod(sectionId, periodLabel, section) {
 		const next = new Map(sectionTimeline);
 		if (next.get(sectionId) === periodLabel) next.delete(sectionId);
-		else next.set(sectionId, periodLabel);
+		else {
+			next.set(sectionId, periodLabel);
+			// charDiff 자동 로드 — 직전 기간 찾기
+			if (section?.timeline?.length > 1) {
+				const labels = section.timeline.map(e => e.period?.label || periodDisplayLabel(e.period));
+				const idx = labels.indexOf(periodLabel);
+				const prevLabel = idx >= 0 && idx < labels.length - 1 ? labels[idx + 1] : null;
+				if (prevLabel) {
+					loadCharDiff(sectionId, periodLabel, prevLabel);
+				}
+			}
+		}
 		sectionTimeline = next;
 	}
 
@@ -404,7 +482,7 @@
 			{@const td = topicData.textDocument}
 
 			<!-- Document meta badges -->
-			<div class="flex flex-wrap gap-1.5 text-[10px]">
+			<div class="flex flex-wrap gap-1.5 text-[10px] max-w-4xl">
 				{#if td.latestPeriod}
 					<span class="px-2 py-0.5 rounded-full border border-dl-border/20 bg-dl-surface-card text-dl-text-dim">
 						최신 {periodDisplayLabel(td.latestPeriod)}
@@ -427,161 +505,215 @@
 				{/if}
 			</div>
 
-			<!-- Sections -->
-			{#each td.sections as section (section.id)}
-				{@const activeView = getActiveView(section)}
-				{@const explicit = hasExplicitSelection(section)}
-				{@const diffUnits = buildDiffUnits(activeView)}
-				{@const hasDiff = diffUnits && diffUnits.length > 0}
-				{@const showingDiff = hasDiff && (explicit || section.status === "updated")}
-				{@const showNoDiffNote = explicit && !hasDiff && section.periodCount > 1}
+			<!-- Entries 기반 인터리브 렌더링 — 원본 blockOrder 순서 유지 -->
+			{#each docEntries.slice(0, visibleCount) as entry (entry.order)}
+				{#if entry.kind === "section"}
+					{@const section = sectionsByRef.get(entry.sectionId)}
+					{#if section}
+					{@const activeView = getActiveView(section)}
+					{@const explicit = hasExplicitSelection(section)}
+					{@const diffUnits = buildDiffUnits(activeView)}
+					{@const hasDiff = diffUnits && diffUnits.length > 0}
+					{@const charDiffKey = `${section.id}:${sectionTimeline.get(section.id) || section.timeline?.[0]?.period?.label || ''}`}
+					{@const charDiffData = charDiffCache.get(charDiffKey)}
+					{@const isCharDiffLoading = charDiffLoading.has(charDiffKey)}
+					{@const showingDiff = (hasDiff || charDiffData?.diff) && (explicit || section.status === "updated")}
+					{@const showNoDiffNote = explicit && !hasDiff && section.periodCount > 1}
 
-				<div class="pt-2 pb-6 border-b border-dl-border/8 last:border-b-0 {section.status === 'stale' ? 'border-l-2 border-l-amber-400/40 pl-3' : ''}">
-					<!-- Heading path -->
-					{#if section.headingPath?.length > 0}
-						<div class="mb-2 mt-2">
-							{#each section.headingPath as heading}
-								{@const text = heading.text?.trim()}
-								{#if text}
-									{#if isStructuralHeading(text)}
-										<div class="ko-h{headingLevel(text)}">{text}</div>
-									{:else}
-										<h4 class="text-[14px] font-semibold text-dl-text">{text}</h4>
+					<div class="max-w-4xl pt-2 pb-6 border-b border-dl-border/8 last:border-b-0 {section.status === 'stale' ? 'border-l-2 border-l-amber-400/40 pl-3' : ''}">
+						<!-- Heading path -->
+						{#if section.headingPath?.length > 0}
+							<div class="mb-2 mt-2">
+								{#each section.headingPath as heading}
+									{@const text = heading.text?.trim()}
+									{#if text}
+										{@const level = heading.level || headingLevel(text)}
+										{#if level > 0 || isStructuralHeading(text)}
+											<div class="ko-h{level || headingLevel(text)}">{text}</div>
+										{:else}
+											<h4 class="text-[14px] font-semibold text-dl-text">{text}</h4>
+										{/if}
 									{/if}
+								{/each}
+							</div>
+						{/if}
+
+						<!-- heading-only section (preview 짧고 heading만 있음)은 제목만 표시 -->
+						{#if !section.preview || section.preview.length < 30}
+							<!-- heading-only: 제목만 렌더, body/status/timeline 생략 -->
+						{:else}
+						<!-- Status + meta -->
+						<div class="flex flex-wrap items-center gap-1.5 mb-2">
+							<span class="px-1.5 py-0.5 rounded text-[9px] font-medium border {sectionStatusClass(section.status)}">
+								{sectionStatusLabel(section.status)}
+							</span>
+							{#if section.latestChange}
+								<span class="text-[10px] text-dl-text-dim font-mono">{section.latestChange}</span>
+							{/if}
+							{#if section.periodCount > 1}
+								<span class="text-[10px] text-dl-text-dim">{section.periodCount}기간</span>
+							{/if}
+						</div>
+
+						<!-- Section timeline -->
+						{#if section.timeline?.length >= 1 && section.preview && section.preview.length >= 30}
+							<div class="flex flex-wrap gap-1 mb-2">
+								{#each section.timeline as entry}
+									{@const pl = entry.period?.label || periodDisplayLabel(entry.period)}
+									<button
+										class="px-2 py-1 rounded-lg text-[10px] font-mono transition-colors border
+											{isActivePeriod(section, pl)
+												? 'border-dl-accent/30 bg-dl-accent/8 text-dl-accent-light font-medium'
+												: entry.status === 'updated'
+													? 'border-emerald-500/15 text-emerald-400/60 hover:bg-emerald-500/5'
+													: 'border-dl-border/15 text-dl-text-dim hover:bg-white/3'}"
+										onclick={() => selectSectionPeriod(section.id, pl, section)}
+									>
+										{periodDisplayLabel(entry.period)}
+										{#if entry.status === "updated"}
+											<span class="ml-0.5 text-emerald-400/50">*</span>
+										{/if}
+									</button>
+								{/each}
+							</div>
+						{/if}
+
+						<!-- Digest (change summary) -->
+						{#if activeView?.digest?.items?.length > 0}
+							{@const dg = activeView.digest}
+							<div class="mb-3 px-3 py-2 rounded-lg border border-dl-border/15 bg-dl-surface-card/50 text-[11px] space-y-0.5 max-w-2xl">
+								<div class="text-dl-text-dim font-medium">{dg.to} vs {dg.from}</div>
+								{#each dg.items.filter(it => it.kind === "numeric") as it}
+									<div class="text-blue-400/70 flex gap-1"><span class="w-1 h-1 rounded-full bg-blue-400/60 mt-1.5 shrink-0"></span>{it.text}</div>
+								{/each}
+								{#each dg.items.filter(it => it.kind === "added") as it}
+									<div class="text-emerald-400/70 flex gap-1"><span class="w-1 h-1 rounded-full bg-emerald-400/50 mt-1.5 shrink-0"></span>{it.text}</div>
+								{/each}
+								{#each dg.items.filter(it => it.kind === "removed") as it}
+									<div class="text-dl-text-dim/50 flex gap-1"><span class="w-1 h-1 rounded-full bg-red-400/40 mt-1.5 shrink-0"></span>{it.text}</div>
+								{/each}
+							</div>
+						{/if}
+
+						<!-- B1: 기간 선택 시 diff 없으면 "이전과 동일" 안내 -->
+						{#if showNoDiffNote}
+							<div class="mb-2 px-3 py-1.5 rounded-lg border border-dl-border/15 bg-dl-surface-card/30 text-[11px] text-dl-text-dim">
+								이전 기간과 동일 — 변경 없음
+							</div>
+						{/if}
+
+						<!-- Body text — charDiff / paragraph diff / 원문 -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="disclosure-text max-w-3xl" onmouseup={handleTextMouseUp}>
+							{#if showingDiff && charDiffData?.diff}
+								{#each charDiffData.diff as chunk}
+									{#if chunk.kind === "added"}
+										<div class="pl-3 py-1 mb-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-[14px] leading-[1.85] rounded-r">
+											<span class="text-emerald-500/50 text-[10px] mr-1">+</span>
+											{#if chunk.parts}
+												{#each chunk.parts as part}
+													{#if part.kind === "insert"}
+														<mark class="bg-emerald-400/25 text-emerald-300 rounded-sm px-[1px]">{part.text}</mark>
+													{:else if part.kind === "equal"}
+														<span class="text-dl-text/85">{part.text}</span>
+													{/if}
+												{/each}
+											{:else}
+												<span class="text-dl-text/85">{chunk.text}</span>
+											{/if}
+										</div>
+									{:else if chunk.kind === "removed"}
+										<div class="pl-3 py-1 mb-1 border-l-2 border-red-400 bg-red-500/5 text-[14px] leading-[1.85] rounded-r">
+											<span class="text-red-400/60 text-[10px] mr-1">-</span>
+											{#if chunk.parts}
+												{#each chunk.parts as part}
+													{#if part.kind === "delete"}
+														<mark class="bg-red-400/25 text-red-300 line-through decoration-red-400/40 rounded-sm px-[1px]">{part.text}</mark>
+													{:else if part.kind === "equal"}
+														<span class="text-dl-text/40">{part.text}</span>
+													{/if}
+												{/each}
+											{:else}
+												<span class="text-dl-text/40 line-through decoration-red-400/30">{chunk.text}</span>
+											{/if}
+										</div>
+									{:else}
+										<p class="vw-para">{chunk.text}</p>
+									{/if}
+								{/each}
+							{:else if showingDiff}
+								{#if isCharDiffLoading}
+									<div class="text-[10px] text-dl-text-dim/40 mb-1">글자 단위 비교 로딩 중...</div>
 								{/if}
-							{/each}
+								{#each diffUnits as unit}
+									{#if unit.kind === "same"}
+										<p class="vw-para">{unit.text}</p>
+									{:else if unit.kind === "added"}
+										<div class="pl-3 py-1 mb-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-dl-text/85 text-[14px] leading-[1.85] rounded-r">
+											<span class="text-emerald-500/50 text-[10px] mr-1">+</span>{unit.text}
+										</div>
+									{:else if unit.kind === "removed"}
+										<div class="pl-3 py-1 mb-1 border-l-2 border-red-400 bg-red-500/5 text-dl-text/50 text-[14px] leading-[1.85] rounded-r line-through decoration-red-400/30">
+											<span class="text-red-400/50 text-[10px] mr-1">-</span>{unit.text}
+										</div>
+									{/if}
+								{/each}
+							{:else if activeView?.body}
+								{@html applyHighlight(renderDisclosureText(activeView.body))}
+							{/if}
 						</div>
 					{/if}
-
-					<!-- Status + meta -->
-					<div class="flex flex-wrap items-center gap-1.5 mb-2">
-						<span class="px-1.5 py-0.5 rounded text-[9px] font-medium border {sectionStatusClass(section.status)}">
-							{sectionStatusLabel(section.status)}
-						</span>
-						{#if section.latestChange}
-							<span class="text-[10px] text-dl-text-dim font-mono">{section.latestChange}</span>
-						{/if}
-						{#if section.periodCount > 1}
-							<span class="text-[10px] text-dl-text-dim">{section.periodCount}기간</span>
-						{/if}
 					</div>
-
-					<!-- Section timeline -->
-					{#if section.timeline?.length > 1}
-						<div class="flex flex-wrap gap-1 mb-2">
-							{#each section.timeline as entry}
-								{@const pl = entry.period?.label || periodDisplayLabel(entry.period)}
+					{/if}
+				{:else if entry.kind === "block_ref"}
+					{@const block = blocksByRef.get(entry.blockRef)}
+					{#if block}
+					{@const chartable = isChartable(block)}
+					{@const showChart = chartable && chartMode.get(block.block)}
+					{@const spec = showChart ? getChartSpec(block) : null}
+					<div class="group relative">
+						<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							{#if chartable}
 								<button
-									class="px-2 py-1 rounded-lg text-[10px] font-mono transition-colors border
-										{isActivePeriod(section, pl)
-											? 'border-dl-accent/30 bg-dl-accent/8 text-dl-accent-light font-medium'
-											: entry.status === 'updated'
-												? 'border-emerald-500/15 text-emerald-400/60 hover:bg-emerald-500/5'
-												: 'border-dl-border/15 text-dl-text-dim hover:bg-white/3'}"
-									onclick={() => selectSectionPeriod(section.id, pl)}
+									class="p-1 rounded transition-colors {showChart ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
+									onclick={() => toggleChart(block.block)}
+									title={showChart ? '표로 보기' : '차트로 보기'}
 								>
-									{periodDisplayLabel(entry.period)}
-									{#if entry.status === "updated"}
-										<span class="ml-0.5 text-emerald-400/50">*</span>
+									{#if showChart}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
+								</button>
+							{/if}
+							{#if block.data?.rows?.length > 0}
+								<button
+									class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
+									onclick={() => copyTable(block, block.block)}
+									title="테이블 복사"
+								>
+									{#if copiedTable === block.block}
+										<Check size={12} class="text-dl-success" />
+									{:else}
+										<Copy size={12} />
 									{/if}
 								</button>
-							{/each}
+							{/if}
 						</div>
-					{/if}
-
-					<!-- Digest (change summary) — 기간 변경점이 있으면 항상 표시 -->
-					{#if activeView?.digest?.items?.length > 0}
-						{@const dg = activeView.digest}
-						<div class="mb-3 px-3 py-2 rounded-lg border border-dl-border/15 bg-dl-surface-card/50 text-[11px] space-y-0.5 max-w-2xl">
-							<div class="text-dl-text-dim font-medium">{dg.to} vs {dg.from}</div>
-							{#each dg.items.filter(it => it.kind === "numeric") as it}
-								<div class="text-blue-400/70 flex gap-1"><span class="w-1 h-1 rounded-full bg-blue-400/60 mt-1.5 shrink-0"></span>{it.text}</div>
-							{/each}
-							{#each dg.items.filter(it => it.kind === "added") as it}
-								<div class="text-emerald-400/70 flex gap-1"><span class="w-1 h-1 rounded-full bg-emerald-400/50 mt-1.5 shrink-0"></span>{it.text}</div>
-							{/each}
-							{#each dg.items.filter(it => it.kind === "removed") as it}
-								<div class="text-dl-text-dim/50 flex gap-1"><span class="w-1 h-1 rounded-full bg-red-400/40 mt-1.5 shrink-0"></span>{it.text}</div>
-							{/each}
-						</div>
-					{/if}
-
-					<!-- B1: 기간 선택 시 diff 없으면 "이전과 동일" 안내 -->
-					{#if showNoDiffNote}
-						<div class="mb-2 px-3 py-1.5 rounded-lg border border-dl-border/15 bg-dl-surface-card/30 text-[11px] text-dl-text-dim">
-							이전 기간과 동일 — 변경 없음
-						</div>
-					{/if}
-
-					<!-- Body text — diff가 있으면 항상 diff 표시, 없으면 원문 -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="disclosure-text max-w-3xl" onmouseup={handleTextMouseUp}>
-						{#if showingDiff}
-							<!-- Diff view: 추가/삭제/유지 컬러 표시 -->
-							{#each diffUnits as unit}
-								{#if unit.kind === "same"}
-									<p class="vw-para">{unit.text}</p>
-								{:else if unit.kind === "added"}
-									<div class="pl-3 py-1 mb-1 border-l-2 border-emerald-400 bg-emerald-500/5 text-dl-text/85 text-[14px] leading-[1.85] rounded-r">
-										<span class="text-emerald-500/50 text-[10px] mr-1">+</span>{unit.text}
-									</div>
-								{:else if unit.kind === "removed"}
-									<div class="pl-3 py-1 mb-1 border-l-2 border-red-400 bg-red-500/5 text-dl-text/50 text-[14px] leading-[1.85] rounded-r line-through decoration-red-400/30">
-										<span class="text-red-400/50 text-[10px] mr-1">-</span>{unit.text}
-									</div>
-								{/if}
-							{/each}
-						{:else if activeView?.body}
-							{@html applyHighlight(renderDisclosureText(activeView.body))}
+						{#if showChart && spec}
+							{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
+								<ChartRenderer {spec} />
+							{/await}
+						{:else}
+							<TableRenderer {block} />
 						{/if}
 					</div>
-				</div>
+					{/if}
+				{/if}
 			{/each}
 
-			<!-- Non-text blocks (tables) -->
-			{#if nonTextBlocks.length > 0}
-				<div class="mt-6 pt-4 border-t border-dl-border/10">
-					<div class="text-[10px] text-dl-text-dim uppercase tracking-widest font-semibold mb-3">표 · 정형 데이터</div>
+			<!-- Lazy rendering sentinel -->
+			{#if visibleCount < docEntries.length}
+				<div bind:this={sentinelEl} class="h-16 flex items-center justify-center">
+					<div class="text-[10px] text-dl-text-dim/40">더 불러오는 중... ({visibleCount}/{docEntries.length})</div>
 				</div>
 			{/if}
-			{#each nonTextBlocks as block, i (block.block)}
-				{@const chartable = isChartable(block)}
-				{@const showChart = chartable && chartMode.get(block.block)}
-				{@const spec = showChart ? getChartSpec(block) : null}
-				<div class="group relative">
-					<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-						{#if chartable}
-							<button
-								class="p-1 rounded transition-colors {showChart ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
-								onclick={() => toggleChart(block.block)}
-								title={showChart ? '표로 보기' : '차트로 보기'}
-							>
-								{#if showChart}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
-							</button>
-						{/if}
-						{#if block.data?.rows?.length > 0}
-							<button
-								class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
-								onclick={() => copyTable(block, block.block)}
-								title="테이블 복사"
-							>
-								{#if copiedTable === block.block}
-									<Check size={12} class="text-dl-success" />
-								{:else}
-									<Copy size={12} />
-								{/if}
-							</button>
-						{/if}
-					</div>
-					{#if showChart && spec}
-						{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
-							<ChartRenderer {spec} />
-						{/await}
-					{:else}
-						<TableRenderer {block} />
-					{/if}
-				</div>
-			{/each}
 
 		<!-- ═══ Fallback: viewerBlocks 기반 렌더링 ═══ -->
 		{:else}

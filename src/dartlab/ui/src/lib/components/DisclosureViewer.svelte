@@ -5,7 +5,7 @@
 	상단: 중앙 검색 바
 -->
 <script>
-	import { Loader2, FileText, Search, X, AlertCircle, Clock, Building2 } from "lucide-svelte";
+	import { Loader2, FileText, Search, X, AlertCircle, Clock, Building2, PanelLeftClose, PanelLeftOpen } from "lucide-svelte";
 	import { fetchCompanySearch, searchCompany } from "$lib/api.js";
 	import ViewerNav from "./ViewerNav.svelte";
 	import TopicRenderer from "./TopicRenderer.svelte";
@@ -54,19 +54,28 @@
 		}
 	}
 
-	// company 변경 시 자동 로드
+	let showInsightPanel = $state(false);
+	let navCollapsed = $state(false);
+
+	// company 변경 시 자동 로드 — stockCode만 의존
+	let lastLoadedCode = null;
 	$effect(() => {
-		if (company?.stockCode && viewer) {
-			viewer.loadCompany(company.stockCode);
+		const code = company?.stockCode;
+		if (code && code !== lastLoadedCode && viewer) {
+			lastLoadedCode = code;
+			viewer.loadCompany(code);
 		}
 	});
 
-	// topic 변경 시 workspace에 동기화 + 히스토리 기록
+	// topic 변경 시 workspace에 동기화 + 히스토리 기록 — topic 값만 의존
+	let lastSyncedTopic = null;
 	$effect(() => {
-		if (viewer?.selectedTopic && viewer?.topicData) {
-			onTopicChange?.(viewer.selectedTopic, viewer.topicData.topicLabel || viewer.selectedTopic);
-			// 최근 본 topic 히스토리에 추가
-			addToHistory(viewer.selectedTopic, viewer.topicData.topicLabel || viewer.selectedTopic);
+		const topic = viewer?.selectedTopic;
+		const label = viewer?.topicData?.topicLabel || topic;
+		if (topic && topic !== lastSyncedTopic) {
+			lastSyncedTopic = topic;
+			onTopicChange?.(topic, label);
+			addToHistory(topic, label);
 		}
 	});
 
@@ -135,6 +144,7 @@
 
 	// 검색 결과
 	let searchResults = $state(null);
+	let searchDisplayLimit = $state(15);
 	let searchLoading = $state(false);
 	let searchDebounce = null;
 
@@ -234,6 +244,7 @@
 	// 검색 실행 — MiniSearch 우선, fallback 서버 검색
 	$effect(() => {
 		const q = searchQuery.trim();
+		searchDisplayLimit = 15;
 		if (!q || !company?.stockCode) {
 			searchResults = null;
 			return;
@@ -294,7 +305,7 @@
 	<div
 		class="{isMobileViewer
 			? `fixed top-0 left-0 bottom-0 z-50 w-64 transition-transform duration-200 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`
-			: 'flex-shrink-0 w-56'} border-r border-dl-border/30 overflow-hidden bg-dl-bg-dark"
+			: `flex-shrink-0 transition-all duration-200 ${navCollapsed ? 'w-0 overflow-hidden' : 'w-56'}`} border-r border-dl-border/30 overflow-hidden bg-dl-bg-dark"
 	>
 		<div class="h-full flex flex-col">
 			<!-- Company header -->
@@ -349,7 +360,9 @@
 					viewer?.selectTopic(topic, chapter);
 					if (isMobileViewer) mobileNavOpen = false;
 				}}
-				onToggleChapter={(chapter) => viewer?.toggleChapter(chapter)}
+				visitedTopics={viewer?.visitedTopics ?? new Set()}
+			onToggleChapter={(chapter) => viewer?.toggleChapter(chapter)}
+			onPrefetch={(topic) => viewer?.prefetchTopic(topic)}
 			/>
 		</div>
 	</div>
@@ -359,9 +372,20 @@
 		<!-- 중앙 검색바 (항상 상단 노출) -->
 		{#if company && !isMobileViewer}
 			<div class="sticky top-0 z-20 px-6 py-2 bg-dl-bg-dark/95 backdrop-blur-sm border-b border-dl-border/10">
-				<div class="max-w-2xl mx-auto">
+				<div class="flex items-center gap-2 max-w-2xl mx-auto">
 					<button
-						class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg border border-dl-border/20 bg-dl-bg-darker/60 text-[12px] text-dl-text-dim hover:border-dl-border/40 hover:bg-dl-bg-darker transition-colors"
+						class="flex-shrink-0 p-1.5 rounded-md text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
+						onclick={() => { navCollapsed = !navCollapsed; }}
+						title={navCollapsed ? '목차 펼치기' : '목차 접기'}
+					>
+						{#if navCollapsed}
+							<PanelLeftOpen size={15} />
+						{:else}
+							<PanelLeftClose size={15} />
+						{/if}
+					</button>
+					<button
+						class="flex items-center gap-2 flex-1 px-3 py-1.5 rounded-lg border border-dl-border/20 bg-dl-bg-darker/60 text-[12px] text-dl-text-dim hover:border-dl-border/40 hover:bg-dl-bg-darker transition-colors"
 						onclick={toggleSearch}
 					>
 						<Search size={13} class="flex-shrink-0" />
@@ -395,7 +419,7 @@
 
 					<div class="max-h-[50vh] overflow-y-auto">
 						{#if searchResults}
-							{#each searchResults.slice(0, 15) as t}
+							{#each searchResults.slice(0, searchDisplayLimit) as t}
 								<button
 									class="w-full text-left px-4 py-2 text-[13px] text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors flex items-start gap-2 border-b border-dl-border/5"
 									onclick={() => navigateToTopic(t.topic)}
@@ -417,6 +441,14 @@
 									{/if}
 								</button>
 							{/each}
+							{#if searchResults.length > searchDisplayLimit}
+								<button
+									class="w-full py-2 text-[12px] text-dl-accent/70 hover:text-dl-accent hover:bg-white/3 transition-colors"
+									onclick={() => { searchDisplayLimit += 15; }}
+								>
+									더보기 ({searchResults.length - searchDisplayLimit}개 남음)
+								</button>
+							{/if}
 							{#if searchLoading}
 								<div class="flex items-center justify-center py-3">
 									<Loader2 size={14} class="animate-spin text-dl-text-dim" />
@@ -537,34 +569,28 @@
 				<Loader2 size={24} class="animate-spin text-dl-text-dim/40 mb-3" />
 				<div class="text-[12px] text-dl-text-dim">공시 데이터 로딩 중...</div>
 			</div>
-		{:else if viewer?.topicLoading}
-			<div class="flex flex-col items-center justify-center h-full">
-				<Loader2 size={20} class="animate-spin text-dl-text-dim/40 mb-2" />
-				<div class="text-[11px] text-dl-text-dim">섹션 로딩 중...</div>
+		{:else if viewer?.topicLoading && !viewer?.topicData}
+			<div class="max-w-7xl mx-auto px-6 py-4">
+				<!-- Skeleton placeholder -->
+				<div class="animate-pulse space-y-4">
+					<div class="h-5 bg-dl-surface-card/40 rounded w-2/3"></div>
+					<div class="h-3 bg-dl-surface-card/30 rounded w-full"></div>
+					<div class="h-3 bg-dl-surface-card/30 rounded w-5/6"></div>
+					<div class="h-20 bg-dl-surface-card/20 rounded"></div>
+					<div class="h-3 bg-dl-surface-card/30 rounded w-4/5"></div>
+					<div class="h-3 bg-dl-surface-card/30 rounded w-full"></div>
+					<div class="h-16 bg-dl-surface-card/20 rounded"></div>
+				</div>
 			</div>
 		{:else if viewer?.topicData}
-			<div class="max-w-4xl mx-auto px-6 py-4 animate-fadeIn">
-				<!-- P1: Insight Dashboard -->
-				<InsightDashboard
-					data={viewer.insightData}
-					loading={viewer.insightLoading}
-					toc={viewer.toc}
-					onNavigateTopic={handleInsightNavigate}
-				/>
-
-				<NetworkGraph
-					data={viewer.networkData}
-					loading={viewer.networkLoading}
-					centerCode={company?.stockCode}
-					onNavigate={(code) => {
-						// 다른 회사로 이동: viewer reload
-						if (viewer && code !== company?.stockCode) {
-							viewer.loadCompany(code);
-						}
-					}}
-				/>
-
-				<div class="mt-4">
+			<!-- 로딩 중이면 이전 콘텐츠를 흐리게 유지 -->
+			{#if viewer?.topicLoading}
+				<div class="absolute top-0 left-0 right-0 h-0.5 bg-dl-accent/20 overflow-hidden z-10">
+					<div class="h-full bg-dl-accent/60 animate-progress-bar"></div>
+				</div>
+			{/if}
+			<div class="max-w-7xl mx-auto px-6 py-4 {viewer?.topicLoading ? 'opacity-40 pointer-events-none' : 'animate-fadeIn'} transition-opacity duration-200">
+				<div class="mt-0">
 					<TopicRenderer
 						topicData={viewer.topicData}
 						diffSummary={viewer.diffSummary}
@@ -573,6 +599,41 @@
 						searchHighlight={viewer.searchHighlight}
 					/>
 				</div>
+
+				<!-- Insight + Network: 콘텐츠 아래, 기본 접힘 -->
+				{#if viewer.insightData || viewer.networkData || viewer.insightLoading || viewer.networkLoading}
+					<div class="mt-8 border-t border-dl-border/10 pt-4">
+						<button
+							class="flex items-center gap-2 text-[12px] text-dl-text-dim hover:text-dl-text transition-colors mb-3"
+							onclick={() => { showInsightPanel = !showInsightPanel; }}
+						>
+							<svg class="w-3 h-3 transition-transform {showInsightPanel ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+							</svg>
+							투자 인사이트 · 관계도
+						</button>
+						{#if showInsightPanel}
+							<div class="animate-fadeIn">
+								<InsightDashboard
+									data={viewer.insightData}
+									loading={viewer.insightLoading}
+									toc={viewer.toc}
+									onNavigateTopic={handleInsightNavigate}
+								/>
+								<NetworkGraph
+									data={viewer.networkData}
+									loading={viewer.networkLoading}
+									centerCode={company?.stockCode}
+									onNavigate={(code) => {
+										if (viewer && code !== company?.stockCode) {
+											viewer.loadCompany(code);
+										}
+									}}
+								/>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		{:else if viewer?.toc && !viewer?.selectedTopic}
 			<div class="flex flex-col items-center justify-center h-full text-center px-8">

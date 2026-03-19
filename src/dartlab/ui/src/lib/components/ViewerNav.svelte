@@ -14,9 +14,21 @@
 		expandedChapters = new Set(),
 		bookmarks = [],         // P6: 북마크된 topic 목록
 		recentHistory = [],     // 최근 본 topic 히스토리
+		visitedTopics = new Set(),  // 방문한 topic
 		onSelectTopic = null,
 		onToggleChapter = null,
+		onPrefetch = null,          // 호버 프리페치
 	} = $props();
+
+	// Hover 프리페치 (300ms 딜레이)
+	let hoverTimer = null;
+	function handleHover(topic) {
+		clearTimeout(hoverTimer);
+		hoverTimer = setTimeout(() => onPrefetch?.(topic), 300);
+	}
+	function handleHoverEnd() {
+		clearTimeout(hoverTimer);
+	}
 
 	const FINANCE_TOPICS = new Set(["BS", "IS", "CIS", "CF", "SCE", "ratios"]);
 
@@ -104,6 +116,7 @@
 		{/if}
 
 		{#each toc.chapters as ch, ci}
+			{@const visitedInCh = ch.topics.filter(t => visitedTopics.has(t.topic)).length}
 			<div class="mb-0.5">
 				<!-- Chapter header -->
 				<button
@@ -116,7 +129,7 @@
 						<ChevronRight size={12} />
 					{/if}
 					<span class="truncate">{ch.chapter}</span>
-					<span class="ml-auto text-[9px] text-dl-text-dim/60 font-mono">{ch.topics.length}</span>
+					<span class="ml-auto text-[9px] font-mono {visitedInCh === ch.topics.length && ch.topics.length > 0 ? 'text-emerald-400/60' : 'text-dl-text-dim/60'}">{visitedInCh}/{ch.topics.length}</span>
 				</button>
 
 				<!-- Topics -->
@@ -126,11 +139,16 @@
 							{@const Icon = kindIcon(t.topic)}
 							{@const indicator = topicIndicator(t)}
 							{@const isActive = selectedTopic === t.topic}
+							{@const isVisited = visitedTopics.has(t.topic)}
 							<button
 								class="{isActive ? 'viewer-nav-active-item' : ''} viewer-nav-active flex items-center gap-1.5 w-full px-2 py-1 rounded-md text-left text-[12px] transition-colors {isActive
 									? 'text-dl-text bg-dl-surface-active font-medium'
-									: 'text-dl-text-muted hover:text-dl-text hover:bg-white/5'}"
+									: isVisited
+										? 'text-dl-text/70 hover:text-dl-text hover:bg-white/5'
+										: 'text-dl-text-muted hover:text-dl-text hover:bg-white/5'}"
 								onclick={() => onSelectTopic?.(t.topic, ch.chapter)}
+								onmouseenter={() => handleHover(t.topic)}
+								onmouseleave={handleHoverEnd}
 							>
 								<Icon size={12} class="flex-shrink-0 opacity-50" />
 								<span class="truncate">{t.label}</span>

@@ -135,7 +135,7 @@ class OAuthCodexProvider(BaseProvider):
                 headers=headers,
                 json=body,
                 stream=stream,
-                timeout=300,
+                timeout=90,
             )
         except requests.ConnectionError:
             raise ChatGPTOAuthError(
@@ -163,7 +163,7 @@ class OAuthCodexProvider(BaseProvider):
                     headers=headers,
                     json=body,
                     stream=stream,
-                    timeout=300,
+                    timeout=90,
                 )
 
         if resp.status_code != 200:

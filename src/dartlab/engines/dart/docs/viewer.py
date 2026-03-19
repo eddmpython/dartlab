@@ -132,6 +132,7 @@ class ViewerBlock:
     changeSummary: ChangeSummary | None = None
     rawMarkdown: dict[str, str] | None = None
     textType: str | None = None  # "heading" | "body" | None (non-text)
+    textLevel: int | None = None  # sections textLevel (heading 계층 1~4)
 
 
 @dataclass
@@ -160,6 +161,7 @@ class ViewerTextHeading:
     block: int
     text: str
     period: PeriodRef
+    level: int = 0  # heading 계층 (1~4, 0=unknown)
 
 
 @dataclass
@@ -203,8 +205,19 @@ class ViewerTextSection:
 
 
 @dataclass
+class ViewerDocumentEntry:
+    """textDocument의 통합 항목 — text section 또는 non-text block 참조."""
+
+    kind: str  # "section" | "block_ref"
+    order: int  # blockOrder 기반 정렬 키
+    sectionId: str | None = None  # kind="section"일 때 — sections[].id
+    blockRef: int | None = None  # kind="block_ref"일 때 — blocks[].block 번호
+    blockKind: str | None = None  # "structured" | "finance" | "raw_markdown" 등
+
+
+@dataclass
 class ViewerTextDocument:
-    """텍스트 블록만으로 재구성한 읽기용 문서."""
+    """인터리브 문서 — text section과 non-text block을 원본 순서대로."""
 
     topic: str
     mode: str = "timeline_text"
@@ -217,6 +230,7 @@ class ViewerTextDocument:
     staleCount: int = 0
     stableCount: int = 0
     sections: list[ViewerTextSection] = field(default_factory=list)
+    entries: list[ViewerDocumentEntry] = field(default_factory=list)
 
 
 # ── 메인 진입점 ──
@@ -271,15 +285,29 @@ def viewerBlocks(company: Company, topic: str) -> list[ViewerBlock]:
 
 
 def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocument | None:
-    """text 블록만으로 읽기용 보고서 문서를 구성한다.
+    """인터리브 문서 — text section과 non-text block을 원본 순서대로 구성.
 
-    - 기본 단위는 body text block
-    - heading block은 다음 body block의 문서 헤더로 흡수
-    - table/report/finance 블록은 제외
+    - body text block → ViewerTextSection (timeline/diff 포함)
+    - heading block → 다음 body의 headingPath로 흡수
+    - non-text block → ViewerDocumentEntry(kind="block_ref")로 원본 위치 보존
+    - entries가 원본 blockOrder 순서를 그대로 유지
     """
     textBlocks = [b for b in blocks if b.kind == "text"]
     if not textBlocks:
-        return None
+        # text가 없어도 non-text block만으로 entries 구성 가능
+        nonTextBlocks = [b for b in blocks if b.kind != "text"]
+        if not nonTextBlocks:
+            return None
+        entries = [
+            ViewerDocumentEntry(
+                kind="block_ref",
+                order=b.block,
+                blockRef=b.block,
+                blockKind=b.kind,
+            )
+            for b in sorted(nonTextBlocks, key=lambda item: item.block)
+        ]
+        return ViewerTextDocument(topic=topic, entries=entries)
 
     textPeriods = sorted(
         {period for block in textBlocks for period in _textPeriodMap(block).keys()},
@@ -290,6 +318,7 @@ def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocum
 
     topicLatestPeriod = textPeriods[-1]
     sections: list[ViewerTextSection] = []
+    entries: list[ViewerDocumentEntry] = []
     pendingHeadings: list[ViewerBlock] = []
 
     for block in sorted(blocks, key=lambda item: item.block):
@@ -307,15 +336,29 @@ def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocum
             )
             if section is not None:
                 sections.append(section)
+                entries.append(
+                    ViewerDocumentEntry(
+                        kind="section",
+                        order=block.block,
+                        sectionId=section.id,
+                    )
+                )
             pendingHeadings = []
             continue
 
-        # heading 다음에 table/report/finance가 나오면 그 heading은
-        # 비텍스트 블록의 문맥으로 보고 body section에 이월하지 않는다.
+        # non-text block — 원본 위치에 block_ref entry 삽입
         if pendingHeadings:
             pendingHeadings = []
+        entries.append(
+            ViewerDocumentEntry(
+                kind="block_ref",
+                order=block.block,
+                blockRef=block.block,
+                blockKind=block.kind,
+            )
+        )
 
-    if not sections:
+    if not sections and not entries:
         return None
 
     updatedCount = sum(1 for s in sections if s.status == "updated")
@@ -334,6 +377,7 @@ def viewerTextDocument(topic: str, blocks: list[ViewerBlock]) -> ViewerTextDocum
         staleCount=staleCount,
         stableCount=stableCount,
         sections=sections,
+        entries=entries,
     )
 
 
@@ -436,6 +480,10 @@ def _buildTextBlock(boRows: pl.DataFrame, bo: int, periodCols: list[str]) -> Vie
     if row.get("textStructural") is False and textType == "heading":
         textType = "body"
 
+    # textLevel — sections 메타데이터에서 heading 계층 읽기
+    rawLevel = row.get("textLevel")
+    textLevel = int(rawLevel) if rawLevel is not None and rawLevel == rawLevel else None
+
     # heading이면 changeSummary 생성 안 함
     summary = _buildChangeSummary(boRows, nonNullCols) if textType == "body" else None
 
@@ -451,6 +499,7 @@ def _buildTextBlock(boRows: pl.DataFrame, bo: int, periodCols: list[str]) -> Vie
         ),
         changeSummary=summary,
         textType=textType,
+        textLevel=textLevel,
     )
 
 
@@ -598,6 +647,25 @@ def _buildPositionAnchoredDiff(
     return chunks
 
 
+def _headingLevel(line: str) -> int:
+    """한글 공시 heading 패턴에서 계층 레벨 추출. 0=unknown."""
+    import re
+
+    if re.match(r"^[IVX]+\.\s", line):
+        return 1
+    if re.match(r"^[가나다라마바사아자차카타파하]\.\s", line):
+        return 1
+    if re.match(r"^\[.+\]$", line) or re.match(r"^【.+】$", line):
+        return 1
+    if re.match(r"^\d+\.\s", line):
+        return 2
+    if re.match(r"^\(\d+\)\s", line) or re.match(r"^\([가-힣]\)\s", line):
+        return 3
+    if re.match(r"^[①②③④⑤⑥⑦⑧⑨⑩]\s", line):
+        return 4
+    return 0
+
+
 def _extractInlineHeadingLines(text: str) -> tuple[list[str], str]:
     """body 앞머리의 짧은 heading line을 구조 anchor로 분리한다."""
     if not text or not text.strip():
@@ -694,6 +762,7 @@ def _buildTextSection(
                 block=headingBlock.block,
                 text=headingText,
                 period=_periodRef(chosenPeriod),
+                level=headingBlock.textLevel or _headingLevel(headingText),
             )
         )
     for headingText in inlineHeadings:
@@ -702,6 +771,7 @@ def _buildTextSection(
                 block=block.block,
                 text=headingText,
                 period=_periodRef(latestPeriod),
+                level=_headingLevel(headingText),
             )
         )
 
@@ -1150,6 +1220,10 @@ def _buildTableBlock(
             if _isRawMarkdown(sampleVal):
                 return _buildRawMarkdownBlock(result, bo, resPeriods, firstCol)
 
+            # 파이프 합침 값 감지 → raw_markdown으로 재분류
+            if _hasPipeCells(result, resPeriods):
+                return _buildRawMarkdownBlock(result, bo, resPeriods, firstCol)
+
             result = _cleanStructuredTable(result, resPeriods, firstCol)
             resPeriods = _periodCols(result)
             scale, divisor = _detectScale(result, resPeriods)
@@ -1267,6 +1341,22 @@ def _isRawMarkdown(text: str) -> bool:
     return mdLines >= 2
 
 
+def _hasPipeCells(df: pl.DataFrame, periodCols: list[str]) -> bool:
+    """structured 테이블의 셀에 파이프 합침 값이 있는지 감지.
+
+    horizontalizeTableBlock에서 헤더/데이터 컬럼 수 불일치 시
+    `" | ".join(vals)` 형태로 합쳐진 셀을 감지한다.
+    첫 5행 중 하나라도 " | " 패턴이 있으면 True.
+    """
+    for col in periodCols[:2]:
+        if col not in df.columns:
+            continue
+        for val in df[col].head(5).to_list():
+            if val is not None and " | " in str(val):
+                return True
+    return False
+
+
 def _detectScale(df: pl.DataFrame, periodCols: list[str]) -> tuple[str | None, float]:
     """DataFrame 숫자 크기로 추천 스케일 판별."""
     maxAbs = 0.0
@@ -1369,6 +1459,7 @@ def serializeViewerTextDocument(document: ViewerTextDocument | None) -> dict[str
                         "block": heading.block,
                         "text": heading.text,
                         "period": _serializePeriodRef(heading.period),
+                        "level": heading.level,
                     }
                     for heading in section.headingPath
                 ],
@@ -1390,6 +1481,16 @@ def serializeViewerTextDocument(document: ViewerTextDocument | None) -> dict[str
                 "views": {label: _serializeViewerTextView(view) for label, view in section.views.items()},
             }
             for section in document.sections
+        ],
+        "entries": [
+            {
+                "kind": entry.kind,
+                "order": entry.order,
+                "sectionId": entry.sectionId,
+                "blockRef": entry.blockRef,
+                "blockKind": entry.blockKind,
+            }
+            for entry in document.entries
         ],
     }
 

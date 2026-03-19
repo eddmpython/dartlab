@@ -63,7 +63,7 @@ export function createViewerStore() {
 	let allBookmarks = $state(loadBookmarks());
 
 	async function loadCompany(code) {
-		if (code === stockCode && toc) return;
+		if (code === stockCode && (toc || tocLoading)) return;
 		stockCode = code;
 		corpName = null;
 		toc = null;
@@ -196,6 +196,7 @@ export function createViewerStore() {
 		// 캐시 확인
 		if (topicCache.has(topic)) {
 			topicData = topicCache.get(topic);
+			visitedTopics = new Set([...visitedTopics, topic]);
 			return;
 		}
 
@@ -219,6 +220,25 @@ export function createViewerStore() {
 			console.error("Topic 로드 실패:", e);
 		}
 		topicLoading = false;
+	}
+
+	// Prefetch — 캐시만 채우고 selectedTopic 변경 안 함
+	let prefetchInFlight = new Set();
+	let visitedTopics = $state(new Set());
+
+	async function prefetchTopic(topic) {
+		if (!topic || !stockCode || topicCache.has(topic) || prefetchInFlight.has(topic)) return;
+		prefetchInFlight.add(topic);
+		try {
+			const res = await fetchCompanyViewer(stockCode, topic);
+			topicCache.set(topic, res);
+		} catch { /* 프리페치 실패는 무시 */ }
+		prefetchInFlight.delete(topic);
+	}
+
+	function getAllTopics() {
+		if (!toc?.chapters) return [];
+		return toc.chapters.flatMap(ch => (ch.topics || []).map(t => ({ topic: t.topic, chapter: ch.chapter })));
 	}
 
 	function toggleChapter(chapter) {
@@ -275,7 +295,9 @@ export function createViewerStore() {
 		loadCompany,
 		setSearchHighlight,
 		searchSections,
+		get visitedTopics() { return visitedTopics; },
 		selectTopic,
+		prefetchTopic,
 		toggleChapter,
 		getTopicSummary,
 		setTopicSummary,

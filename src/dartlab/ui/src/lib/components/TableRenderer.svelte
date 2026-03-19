@@ -178,19 +178,21 @@
 	{:else if block.data?.rows}
 		<!-- Structured / report table -->
 		<div class="overflow-x-auto rounded-lg border border-dl-border/10">
-			<table class="prose-dartlab w-full text-[12px]">
+			<table class="structured-table">
 				<thead>
 					<tr>
-						{#each block.data.columns ?? [] as col}
-							<th class="cursor-pointer select-none hover:text-dl-text" onclick={() => handleSort(col)}>{col}{sortIndicator(col)}</th>
+						{#each block.data.columns ?? [] as col, ci}
+							<th class="{ci === 0 ? 'col-sticky' : ''} cursor-pointer select-none hover:text-dl-text" onclick={() => handleSort(col)}>{col}{sortIndicator(col)}</th>
 						{/each}
 					</tr>
 				</thead>
 				<tbody>
 					{#each displayRows as row}
 						<tr>
-							{#each block.data.columns ?? [] as col}
-								<td class={isNumeric(row[col]) ? "num" : ""}>{row[col] ?? ""}</td>
+							{#each block.data.columns ?? [] as col, ci}
+								{@const val = row[col]}
+								{@const isNum = ci > 0 && isNumeric(val)}
+								<td class="{ci === 0 ? 'col-sticky' : ''} {isNum ? (isNegative(val) ? 'val-neg' : 'val-pos') : ''}">{isNum ? formatNumber(val) : (val ?? "")}</td>
 							{/each}
 						</tr>
 					{/each}
