@@ -1896,9 +1896,15 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
                 "chart_type": {
                     "type": "string",
                     "enum": [
-                        "auto", "revenue_trend", "cashflow", "balance_sheet",
-                        "profitability", "dividend", "insight_radar",
-                        "ratio_sparklines", "diff_heatmap",
+                        "auto",
+                        "revenue_trend",
+                        "cashflow",
+                        "balance_sheet",
+                        "profitability",
+                        "dividend",
+                        "insight_radar",
+                        "ratio_sparklines",
+                        "diff_heatmap",
                     ],
                     "description": (
                         "차트 유형. auto는 사용 가능한 모든 차트를 자동 생성. "

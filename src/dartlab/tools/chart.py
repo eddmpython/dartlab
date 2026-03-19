@@ -521,8 +521,13 @@ def profitability_ratios(company: Any, *, n_years: int = 5) -> Any:
 # 7영역 인사이트 상수
 _AREA_NAMES = ["performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity"]
 _AREA_LABELS = {
-    "performance": "성과", "profitability": "수익성", "health": "건전성",
-    "cashflow": "현금흐름", "governance": "지배구조", "risk": "리스크", "opportunity": "기회",
+    "performance": "성과",
+    "profitability": "수익성",
+    "health": "건전성",
+    "cashflow": "현금흐름",
+    "governance": "지배구조",
+    "risk": "리스크",
+    "opportunity": "기회",
 }
 _GRADE_MAP = {"A": 5, "B": 4, "C": 3, "D": 2, "F": 0}
 
@@ -589,12 +594,14 @@ def spec_revenue_trend(company: Any, *, n_years: int = 5) -> dict | None:
         if vals is None:
             continue
         recent = vals[-n_years:]
-        series.append({
-            "name": label,
-            "data": [_safe_val(v) for v in recent],
-            "color": colors[i],
-            "type": chart_types[i],
-        })
+        series.append(
+            {
+                "name": label,
+                "data": [_safe_val(v) for v in recent],
+                "color": colors[i],
+                "type": chart_types[i],
+            }
+        )
 
     if not series:
         return None
@@ -666,13 +673,15 @@ def spec_balance_sheet(company: Any, *, n_years: int = 5) -> dict | None:
         if not arr:
             continue
         recent = arr[-n_years:]
-        series.append({
-            "name": label,
-            "data": [_safe_val(v) for v in recent],
-            "color": color,
-            "type": "bar",
-            "stack": "assets",
-        })
+        series.append(
+            {
+                "name": label,
+                "data": [_safe_val(v) for v in recent],
+                "color": color,
+                "type": "bar",
+                "stack": "assets",
+            }
+        )
 
     if not series:
         return None
@@ -707,13 +716,15 @@ def spec_profitability(company: Any, *, n_years: int = 5) -> dict | None:
         vals = ratio_dict.get(key, [])
         if not vals or not any(v is not None for v in vals):
             continue
-        recent = vals[-n_years * 4:]  # 분기별이므로
-        series.append({
-            "name": label,
-            "data": [_safe_val(v) for v in recent],
-            "color": color,
-            "type": "line",
-        })
+        recent = vals[-n_years * 4 :]  # 분기별이므로
+        series.append(
+            {
+                "name": label,
+                "data": [_safe_val(v) for v in recent],
+                "color": color,
+                "type": "line",
+            }
+        )
 
     if not series:
         return None
@@ -721,7 +732,7 @@ def spec_profitability(company: Any, *, n_years: int = 5) -> dict | None:
         "chartType": "line",
         "title": f"{company.corpName} 수익성 추이",
         "series": series,
-        "categories": periods[-len(series[0]["data"]):],
+        "categories": periods[-len(series[0]["data"]) :],
         "options": {"unit": "%"},
         "meta": _meta(company, "finance"),
     }
@@ -764,12 +775,14 @@ def spec_dividend(company: Any) -> dict | None:
     series = [{"name": "DPS(원)", "data": dps_vals, "color": COLORS[2], "type": "bar"}]
 
     if "dividendYield" in df.columns:
-        series.append({
-            "name": "배당수익률(%)",
-            "data": [_safe_val(v) for v in df["dividendYield"].to_list()],
-            "color": COLORS[0],
-            "type": "line",
-        })
+        series.append(
+            {
+                "name": "배당수익률(%)",
+                "data": [_safe_val(v) for v in df["dividendYield"].to_list()],
+                "color": COLORS[0],
+                "type": "line",
+            }
+        )
 
     return {
         "chartType": "combo",
@@ -836,15 +849,19 @@ def spec_ratio_sparklines(company: Any) -> dict | None:
                 continue
             latest = next((v for v in reversed(vals) if v is not None), None)
             recent_valid = [v for v in vals[-8:] if v is not None]
-            trend = "up" if len(recent_valid) >= 2 and recent_valid[-1] > recent_valid[-2] else (
-                "down" if len(recent_valid) >= 2 else "neutral"
+            trend = (
+                "up"
+                if len(recent_valid) >= 2 and recent_valid[-1] > recent_valid[-2]
+                else ("down" if len(recent_valid) >= 2 else "neutral")
             )
-            cat_items.append({
-                "field": field_name,
-                "values": [_safe_val(v) for v in vals[-20:]],
-                "latest": latest,
-                "trend": trend,
-            })
+            cat_items.append(
+                {
+                    "field": field_name,
+                    "values": [_safe_val(v) for v in vals[-20:]],
+                    "latest": latest,
+                    "trend": trend,
+                }
+            )
         if cat_items:
             sparklines.append({"category": cat_name, "metrics": cat_items[:3]})
 
@@ -1001,14 +1018,16 @@ def _radar_from_spec(go, spec: dict) -> Any:
         color = s.get("color", COLORS[0])
         # rgba 변환 (Plotly가 8자리 hex 미지원)
         fill_rgba = _hex_to_rgba(color, 0.2)
-        fig.add_trace(go.Scatterpolar(
-            r=data + [data[0]] if data else [],
-            theta=categories + [categories[0]] if categories else [],
-            fill="toself",
-            name=s.get("name", ""),
-            line=dict(color=color),
-            fillcolor=fill_rgba,
-        ))
+        fig.add_trace(
+            go.Scatterpolar(
+                r=data + [data[0]] if data else [],
+                theta=categories + [categories[0]] if categories else [],
+                fill="toself",
+                name=s.get("name", ""),
+                line=dict(color=color),
+                fillcolor=fill_rgba,
+            )
+        )
 
     fig.update_layout(
         title=spec.get("title", ""),
@@ -1032,15 +1051,17 @@ def _waterfall_from_spec(go, spec: dict) -> Any:
         else:
             measures.append("relative")
 
-    fig = go.Figure(go.Waterfall(
-        x=categories,
-        y=data,
-        measure=measures,
-        connector=dict(line=dict(color="#888", width=1)),
-        increasing=dict(marker_color=COLORS[2]),
-        decreasing=dict(marker_color=COLORS[0]),
-        totals=dict(marker_color=COLORS[4]),
-    ))
+    fig = go.Figure(
+        go.Waterfall(
+            x=categories,
+            y=data,
+            measure=measures,
+            connector=dict(line=dict(color="#888", width=1)),
+            increasing=dict(marker_color=COLORS[2]),
+            decreasing=dict(marker_color=COLORS[0]),
+            totals=dict(marker_color=COLORS[4]),
+        )
+    )
     unit = spec.get("options", {}).get("unit", "")
     fig.update_layout(
         title=spec.get("title", ""),
@@ -1058,15 +1079,14 @@ def _heatmap_from_spec(go, spec: dict) -> Any:
     topics = [d.get("topic", "") for d in heatmap_data]
     rates = [d.get("changeRate", 0) for d in heatmap_data]
 
-    fig = go.Figure(go.Bar(
-        x=rates,
-        y=topics,
-        orientation="h",
-        marker_color=[
-            COLORS[0] if r >= 0.5 else COLORS[6] if r >= 0.2 else COLORS[3]
-            for r in rates
-        ],
-    ))
+    fig = go.Figure(
+        go.Bar(
+            x=rates,
+            y=topics,
+            orientation="h",
+            marker_color=[COLORS[0] if r >= 0.5 else COLORS[6] if r >= 0.2 else COLORS[3] for r in rates],
+        )
+    )
     fig.update_layout(
         title=spec.get("title", ""),
         xaxis_title="변화율",
@@ -1094,7 +1114,7 @@ def _sparkline_from_spec(go, spec: dict) -> Any:
         for m in cat.get("metrics", []):
             titles.append(f"{cat['category']}/{m['field']}")
 
-    fig = make_subplots(rows=rows, cols=cols, subplot_titles=titles[:rows * cols])
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=titles[: rows * cols])
 
     idx = 0
     for cat in series_list:
@@ -1110,7 +1130,8 @@ def _sparkline_from_spec(go, spec: dict) -> Any:
                     line=dict(color=color, width=1.5),
                     showlegend=False,
                 ),
-                row=r, col=c_col,
+                row=r,
+                col=c_col,
             )
             idx += 1
 
@@ -1129,12 +1150,14 @@ def _pie_from_spec(go, spec: dict) -> Any:
     categories = spec.get("categories", [])
     data = series_list[0].get("data", []) if series_list else []
 
-    fig = go.Figure(go.Pie(
-        labels=categories,
-        values=data,
-        marker=dict(colors=COLORS[:len(categories)]),
-        textinfo="label+percent",
-    ))
+    fig = go.Figure(
+        go.Pie(
+            labels=categories,
+            values=data,
+            marker=dict(colors=COLORS[: len(categories)]),
+            textinfo="label+percent",
+        )
+    )
     fig.update_layout(title=spec.get("title", ""))
     _apply_theme(fig)
     return fig
