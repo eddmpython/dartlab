@@ -26,6 +26,7 @@
 		onOpenEvidence,
 		onCompanySelect,
 		selectedCompany = null,
+		viewerContext = null,   // B2: {topic, topicLabel, period} from viewer
 	} = $props();
 
 	function bridgeEvidence(msg) {
@@ -128,6 +129,15 @@
 							마크다운
 						</button>
 					{/if}
+				</div>
+			{/if}
+			<!-- B2: Viewer context badge -->
+			{#if viewerContext?.topic}
+				<div class="flex items-center gap-1.5 px-3 py-1 text-[10px] text-dl-text-dim">
+					<span class="px-1.5 py-0.5 rounded bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20 font-mono">
+						{viewerContext.topicLabel || viewerContext.topic}{#if viewerContext.period}&nbsp;({viewerContext.period}){/if}
+					</span>
+					<span>보는 중 — AI가 이 섹션을 참조합니다</span>
 				</div>
 			{/if}
 			<AutocompleteInput

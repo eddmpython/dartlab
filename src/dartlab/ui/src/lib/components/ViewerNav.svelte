@@ -80,9 +80,10 @@
 			{/if}
 		{/if}
 
-		<!-- 최근 본 topic -->
-		{#if recentHistory.length > 0 && bookmarks.length === 0}
-			{@const recentTopics = recentHistory.slice(0, 5).filter(h => h.topic !== selectedTopic)}
+		<!-- 최근 본 topic — 북마크와 공존 -->
+		{#if recentHistory.length > 0}
+			{@const bookmarkSet = new Set(bookmarks)}
+			{@const recentTopics = recentHistory.slice(0, 5).filter(h => h.topic !== selectedTopic && !bookmarkSet.has(h.topic))}
 			{#if recentTopics.length > 0}
 				<div class="mb-1 pb-1 border-b border-dl-border/15">
 					<div class="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-dl-text-dim/60 uppercase tracking-wider">

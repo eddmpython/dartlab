@@ -291,7 +291,8 @@ def _looks_like_code_task(text: str) -> bool:
 
 def build_codex_exec_command(*, model: str | None = None, sandbox: str = "read-only") -> list[str]:
     """Build a non-interactive Codex exec command."""
-    cmd = ["codex", "exec", "-", "--json", "--skip-git-repo-check", "--sandbox", sandbox]
+    exe = codex_path() or "codex"
+    cmd = [exe, "exec", "-", "--json", "--skip-git-repo-check", "--sandbox", sandbox]
     if model:
         cmd.extend(["--model", model])
     return cmd

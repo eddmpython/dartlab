@@ -892,6 +892,7 @@
 							{scrollTrigger}
 							bind:inputText
 							selectedCompany={workspace.selectedCompany}
+							viewerContext={workspace.viewerTopic ? { topic: workspace.viewerTopic, topicLabel: workspace.viewerTopicLabel, period: workspace.viewerPeriod } : null}
 							onSend={sendMessage}
 							onStop={stopStream}
 							onRegenerate={handleRegenerate}

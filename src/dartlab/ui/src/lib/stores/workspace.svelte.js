@@ -35,6 +35,7 @@ export function createWorkspaceStore() {
 	// Viewer에서 현재 보고 있는 topic (AI 컨텍스트용)
 	let viewerTopic = $state(null);     // "companyOverview", "BS" 등
 	let viewerTopicLabel = $state(null); // "회사 개요", "재무상태표" 등
+	let viewerPeriod = $state(null);    // "2024Q4" 등 (B2: 기간 동기화)
 
 	// Company state (persisted)
 	let selectedCompany = $state(stored.selectedCompany || null);
@@ -104,9 +105,10 @@ export function createWorkspaceStore() {
 	}
 
 	// Viewer에서 topic 변경 시 호출
-	function setViewerTopic(topic, label) {
+	function setViewerTopic(topic, label, period = null) {
 		viewerTopic = topic;
 		viewerTopicLabel = label || topic;
+		viewerPeriod = period;
 	}
 
 	function openEvidence(section, index = null) {
@@ -138,6 +140,7 @@ export function createWorkspaceStore() {
 				company: selectedCompany,
 				topic: viewerTopic,
 				topicLabel: viewerTopicLabel,
+				period: viewerPeriod,
 			};
 		}
 		if (!panelOpen) return null;
@@ -147,6 +150,7 @@ export function createWorkspaceStore() {
 				company: selectedCompany,
 				topic: viewerTopic,
 				topicLabel: viewerTopicLabel,
+				period: viewerPeriod,
 			};
 		}
 		if (panelMode === "data" && panelData) {
@@ -167,6 +171,7 @@ export function createWorkspaceStore() {
 		get recentCompanies() { return recentCompanies; },
 		get viewerTopic() { return viewerTopic; },
 		get viewerTopicLabel() { return viewerTopicLabel; },
+		get viewerPeriod() { return viewerPeriod; },
 		switchView,
 		openViewer,
 		openData,

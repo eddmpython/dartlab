@@ -31,6 +31,7 @@ class ViewContext(BaseModel):
     company: ViewContextCompany | None = None
     topic: str | None = None
     topicLabel: str | None = None
+    period: str | None = None  # B2: 현재 보고 있는 기간
     data: dict[str, Any] | None = None
 
 

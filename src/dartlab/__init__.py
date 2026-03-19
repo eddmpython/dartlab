@@ -61,6 +61,20 @@ def listing(market: str | None = None):
     return _DartEngineCompany.listing()
 
 
+def affiliates():
+    """한국 상장사 전체 관계 지도.
+
+    Example::
+
+        import dartlab
+        data = dartlab.affiliates()
+        data["code_to_group"]["005930"]  # "삼성"
+    """
+    from dartlab.engines.dart.affiliate import build_graph
+
+    return build_graph()
+
+
 class _Module(sys.modules[__name__].__class__):
     """dartlab.verbose / dartlab.dataDir 프록시."""
 

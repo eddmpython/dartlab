@@ -135,7 +135,12 @@
 		for (const ch of viewer.toc.chapters) {
 			const found = ch.topics.find(t => t.topic === topic);
 			if (found) {
+				// B3: 검색어 하이라이트를 viewer에 전달
+				const highlightQuery = searchQuery.trim();
 				viewer.selectTopic(topic, ch.chapter);
+				if (highlightQuery) {
+					viewer.setSearchHighlight?.(highlightQuery);
+				}
 				searchOpen = false;
 				searchQuery = "";
 				searchResults = null;
@@ -432,6 +437,7 @@
 				<InsightDashboard
 					data={viewer.insightData}
 					loading={viewer.insightLoading}
+					toc={viewer.toc}
 					onNavigateTopic={handleInsightNavigate}
 				/>
 
@@ -441,6 +447,7 @@
 						diffSummary={viewer.diffSummary}
 						{viewer}
 						{onAskAI}
+						searchHighlight={viewer.searchHighlight}
 					/>
 				</div>
 			</div>

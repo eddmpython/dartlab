@@ -47,6 +47,9 @@ export function createViewerStore() {
 	// Topic AI summary cache (P2)
 	let topicSummaryCache = $state(new Map());
 
+	// B3: Search highlight
+	let searchHighlight = $state(null);  // string | null
+
 	// Bookmarks (P6)
 	let allBookmarks = $state(loadBookmarks());
 
@@ -99,9 +102,14 @@ export function createViewerStore() {
 		insightLoading = false;
 	}
 
+	function setSearchHighlight(query) {
+		searchHighlight = query || null;
+	}
+
 	async function selectTopic(topic, chapter) {
 		if (topic === selectedTopic) return;
 		selectedTopic = topic;
+		searchHighlight = null;  // topic 변경 시 하이라이트 초기화
 		selectedChapter = chapter;
 
 		// 선택된 chapter 자동 확장
@@ -184,7 +192,9 @@ export function createViewerStore() {
 		get diffSummary() { return diffSummary; },
 		get insightData() { return insightData; },
 		get insightLoading() { return insightLoading; },
+		get searchHighlight() { return searchHighlight; },
 		loadCompany,
+		setSearchHighlight,
 		selectTopic,
 		toggleChapter,
 		getTopicSummary,

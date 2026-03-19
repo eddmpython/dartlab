@@ -315,6 +315,9 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
     ratios = getattr(company, "ratios", None)
     if ratios is None:
         return None
+    # ratios가 RatioResult가 아닌 경우 (DataFrame 등) 스킵
+    if not hasattr(ratios, "roe"):
+        return None
 
     isFinancial = False
     sectorInfo = getattr(company, "sector", None)
@@ -552,7 +555,17 @@ def build_context_by_module(
     if not fe_loaded:
         config.verbose = orig_verbose
         text, inc = build_context(company, question, include, exclude, compact=True)
-        return {"_full": text}, inc, ""
+        modules_dict_fallback: dict[str, str] = {"_full": text}
+        # _full fallback에서도 topics/insights 포함
+        _topics_fb = _build_topics_section(company)
+        if _topics_fb:
+            modules_dict_fallback["_topics"] = _topics_fb
+            inc.append("_topics")
+        _insights_fb = _build_insights_section(company)
+        if _insights_fb:
+            modules_dict_fallback["_insights"] = _insights_fb
+            inc.append("_insights")
+        return modules_dict_fallback, inc, ""
 
     # ── 동적 topic 목록 + insights 자동 포함 ──
     # dartlab에 기능이 추가되면 AI가 자동으로 인식하도록

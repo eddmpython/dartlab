@@ -76,7 +76,6 @@ _META_KEYWORDS = frozenset(
         "안녕",
         "반가",
         "고마",
-        "감사",
         "안녕하세요",
         "hello",
         "hi",
@@ -94,6 +93,29 @@ _META_KEYWORDS = frozenset(
         "docs",
         "파일",
         "저장",
+        # 시스템/API 관련
+        "opendart",
+        "openedgar",
+        "openapi",
+        "api",
+        "dart api",
+        "edgar api",
+        "엔진",
+        "engine",
+        "spec",
+        "스펙",
+        "tool",
+        "도구",
+        "런타임",
+        "runtime",
+        "codex",
+        "gpt",
+        "claude",
+        "mcp",
+        "서버",
+        "server",
+        "종목검색",
+        "search",
     }
 )
 
@@ -146,9 +168,74 @@ _ANALYSIS_KEYWORDS = frozenset(
 )
 
 
+_SYSTEM_ENTITIES = frozenset(
+    {
+        "opendart",
+        "openedgar",
+        "dartlab",
+        "dart api",
+        "edgar api",
+        "openapi",
+        "dart 시스템",
+        "edgar 시스템",
+        "mcp",
+        "codex",
+        "claude",
+        "gpt",
+        "ollama",
+    }
+)
+
+# 단독 인사말 — 회사 분석으로 라우팅하면 안 되는 패턴
+_GREETING_ONLY_PATTERNS = frozenset(
+    {
+        "안녕",
+        "안녕하세요",
+        "반갑",
+        "반갑습니다",
+        "고마",
+        "고맙습니다",
+        "감사합니다",
+        "감사해요",
+        "hello",
+        "hi",
+        "thanks",
+        "thank you",
+    }
+)
+
+# 분석 맥락에서 사용될 때는 meta가 아닌 키워드
+_ANALYSIS_CONTEXT_OVERRIDES = {
+    "감사": ["감사의견", "감사보고서", "감사인", "감사위원", "내부감사", "외부감사"],
+    "비교": ["비교해", "비교분석", "비교하"],
+}
+
+
 def is_meta_question(question: str) -> bool:
-    """라이브러리/시스템에 대한 메타 질문인지 판별."""
+    """라이브러리/시스템에 대한 메타 질문인지 판별.
+
+    시스템 엔티티(OpenDart, EDGAR, API 등)가 포함되면 meta 우선.
+    "감사합니다"(인사) vs "감사의견"(분석) 구분.
+    """
     q = question.lower().replace(" ", "")
+    q_raw = question.lower()
+
+    # 시스템 엔티티가 있으면 → meta 우선
+    for entity in _SYSTEM_ENTITIES:
+        if entity.replace(" ", "") in q:
+            return True
+
+    # 순수 인사/감사 체크 (짧은 문장)
+    q_stripped = question.strip().rstrip("!?.~")
+    if q_stripped in _GREETING_ONLY_PATTERNS or q_stripped.lower() in _GREETING_ONLY_PATTERNS:
+        return True
+
+    # "감사"가 있지만 분석 맥락 키워드도 있으면 meta 아님
+    for ambiguous, analysis_contexts in _ANALYSIS_CONTEXT_OVERRIDES.items():
+        if ambiguous in q_raw:
+            if any(ctx in q_raw for ctx in analysis_contexts):
+                return False
+
     for kw in _META_KEYWORDS:
         if kw.replace(" ", "") in q:
             return True
@@ -177,7 +264,14 @@ def has_analysis_intent(question: str) -> bool:
 
     "분석하고 싶은데" 등 의향 표현은 False (대화 경로로).
     "분석해줘" 등 명시적 요청은 True (분석 경로로).
+    시스템 엔티티 포함 질문은 분석 의도에서 제외.
     """
+    # 시스템 엔티티가 포함되면 분석 의도 아님
+    q_lower = question.lower().replace(" ", "")
+    for entity in _SYSTEM_ENTITIES:
+        if entity.replace(" ", "") in q_lower:
+            return False
+
     has_kw = False
     for kw in _ANALYSIS_KEYWORDS:
         if kw in question:
@@ -334,6 +428,14 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
             suggestions = _search_suggestions(req.company)
             return ResolveResult(not_found=True, suggestions=suggestions)
 
+    import re
+
+    q = req.question
+
+    # 메타 질문은 viewContext가 있어도 회사 분석 스킵
+    if is_meta_question(q):
+        return ResolveResult()
+
     if req.viewContext and req.viewContext.company:
         view_company = req.viewContext.company
         identifiers = [
@@ -348,13 +450,6 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
                 return ResolveResult(company=Company(identifier))
             except (ValueError, OSError):
                 continue
-
-    import re
-
-    q = req.question
-
-    if is_meta_question(q):
-        return ResolveResult()
 
     code_match = re.search(r"\b(\d{6})\b", q)
     if code_match:

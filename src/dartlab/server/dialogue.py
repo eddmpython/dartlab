@@ -92,6 +92,7 @@ class ConversationState:
     market: str | None = None
     topic: str | None = None
     topic_label: str | None = None
+    period: str | None = None  # B2: 현재 보고 있는 기간
     question_types: tuple[str, ...] = ()
     modules: tuple[str, ...] = ()
     prev_dialogue_mode: str | None = None
@@ -251,9 +252,11 @@ def build_conversation_state(
 
     topic = None
     topic_label = None
+    period = None
     if active_view and active_view.type == "viewer":
         topic = active_view.topic
         topic_label = active_view.topicLabel or active_view.topic
+        period = getattr(active_view, "period", None)
     elif history_meta:
         topic = history_meta.topic
         topic_label = history_meta.topicLabel or history_meta.topic
@@ -290,6 +293,7 @@ def build_conversation_state(
         market=market,
         topic=topic,
         topic_label=topic_label,
+        period=period,
         question_types=question_types,
         modules=modules,
         prev_dialogue_mode=prev_dialogue_mode,

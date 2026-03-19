@@ -230,6 +230,8 @@ _PIPELINE_MAP: dict[str, list] = {
     "리스크": [_run_risk_analysis],
     "투자": [_run_growth_analysis],
     "종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis],
+    "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
+    "사업": [],  # show_topic 도구 사용 안내 — insight만 주입
 }
 
 
@@ -244,6 +246,11 @@ _Q_TYPES_NEED_INSIGHT = frozenset(
         "성장성",
         "리스크",
         "종합",
+        "배당",
+        "지배구조",
+        "투자",
+        "공시",
+        "사업",
     }
 )
 

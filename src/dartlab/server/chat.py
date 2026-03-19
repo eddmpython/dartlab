@@ -186,11 +186,16 @@ def build_focus_context(company: Company | Any, state: ConversationState) -> str
     lines.append(f"- topic: `{state.topic}`")
     if state.topic_label:
         lines.append(f"- label: {state.topic_label}")
+    if state.period:
+        lines.append(f"- period: {state.period}")
     if state.company and state.stock_code:
         lines.append(f"- company: {state.company} ({state.stock_code})")
 
     try:
-        overview = company.show(state.topic)
+        if state.period:
+            overview = company.show(state.topic, period=state.period)
+        else:
+            overview = company.show(state.topic)
     except (AttributeError, KeyError, TypeError, ValueError):
         overview = None
 
@@ -378,6 +383,9 @@ def build_snapshot(company: Company) -> dict | None:
     """ratios + 핵심 시계열에서 즉시 표시할 스냅샷 데이터 추출."""
     ratios = getattr(company, "ratios", None)
     if ratios is None:
+        return None
+    # ratios가 RatioResult가 아닌 경우 (DataFrame 등) 스킵
+    if not hasattr(ratios, "revenueTTM"):
         return None
 
     isFinancial = False

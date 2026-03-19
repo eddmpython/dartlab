@@ -196,7 +196,16 @@ def api_status():
             available = provider.check_available()
             info["available"] = available
             info["model"] = provider.resolved_model
-        except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
+        except (
+            AttributeError,
+            FileNotFoundError,
+            ImportError,
+            OSError,
+            PermissionError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+        ):
             info["available"] = False
             info["model"] = None
         results[prov] = info
@@ -220,7 +229,16 @@ def api_status():
         from dartlab.engines.ai.cli_setup import detect_codex
 
         codex_detail = detect_codex()
-    except (FileNotFoundError, ImportError, OSError, PermissionError, RuntimeError, ValueError):
+    except (
+        AttributeError,
+        FileNotFoundError,
+        ImportError,
+        OSError,
+        PermissionError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+    ):
         codex_detail = {
             "installed": False,
             "authenticated": False,
