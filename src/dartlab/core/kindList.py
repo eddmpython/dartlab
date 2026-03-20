@@ -26,6 +26,9 @@ _memory: pl.DataFrame | None = None
 _memoryTs: float = 0.0
 _memoryLock = threading.Lock()
 
+# fuzzySearch 캐시 — getKindList() 갱신 시 함께 갱신
+_searchCache: dict[str, object] | None = None
+
 
 class _TableParser(HTMLParser):
     """KRX KIND HTML 테이블 → 리스트 변환."""
@@ -119,7 +122,7 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
     Returns:
         DataFrame (회사명, 종목코드, 업종, 주요제품, 상장일, 결산월, 대표자명, 홈페이지, 지역, ...).
     """
-    global _memory, _memoryTs
+    global _memory, _memoryTs, _searchCache
 
     if not forceRefresh and _memory is not None:
         if (time.time() - _memoryTs) < CACHE_TTL:
@@ -136,6 +139,7 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
             if cached is not None:
                 _memory = cached
                 _memoryTs = time.time()
+                _searchCache = None  # 데이터 변경 시 검색 캐시 무효화
                 return cached
 
         print("[dartlab] KRX KIND 상장법인 목록 다운로드 중...")
@@ -143,8 +147,27 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
         _saveCache(df)
         _memory = df
         _memoryTs = time.time()
+        _searchCache = None  # 데이터 변경 시 검색 캐시 무효화
         print(f"[dartlab] {df.height}개 종목 로드 완료")
         return df
+
+
+def _getSearchCache() -> dict[str, object]:
+    """fuzzySearch용 사전 계산 캐시. names, names_lower, names_chosung을 한 번만 계산."""
+    global _searchCache
+    if _searchCache is not None:
+        return _searchCache
+
+    df = getKindList()
+    names = df["회사명"].to_list()
+    names_lower = [n.lower() for n in names]
+    names_chosung = [_extract_chosung(n) for n in names]
+    _searchCache = {
+        "names": names,
+        "names_lower": names_lower,
+        "names_chosung": names_chosung,
+    }
+    return _searchCache
 
 
 def codeToName(stockCode: str) -> str | None:
@@ -211,7 +234,7 @@ def _is_all_chosung(text: str) -> bool:
 def _levenshtein(s: str, t: str) -> int:
     """최소 편집 거리 (Levenshtein distance)."""
     if len(s) < len(t):
-        return _levenshtein(t, s)
+        s, t = t, s
     if not t:
         return len(s)
     prev = list(range(len(t) + 1))
@@ -246,15 +269,19 @@ def fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame:
         return getKindList().head(0)
 
     df = getKindList()
-    names: list[str] = df["회사명"].to_list()
+    cache = _getSearchCache()
+    names: list[str] = cache["names"]
+    names_lower: list[str] = cache["names_lower"]
+    names_chosung: list[str] = cache["names_chosung"]
+
     kw_lower = kw.lower()
     kw_chosung = _extract_chosung(kw)
     is_chosung_query = _is_all_chosung(kw)
 
     scored: list[tuple[int, float, int]] = []  # (idx, score, order)
 
-    for idx, name in enumerate(names):
-        name_lower = name.lower()
+    for idx in range(len(names)):
+        name_lower = names_lower[idx]
 
         # 1) 정확 일치
         if name_lower == kw_lower:
@@ -269,7 +296,7 @@ def fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame:
             continue
 
         # 3) 초성 매칭
-        name_chosung = _extract_chosung(name)
+        name_chosung = names_chosung[idx]
         if is_chosung_query:
             # 순수 초성 입력: "ㅅㅅ" → 초성열에서 연속 매칭
             if kw_chosung in name_chosung:
@@ -296,7 +323,7 @@ def fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame:
                         ci += 1
                 if ci == len(kw_chosung) and first_pos >= 0:
                     # gap penalty: 이름이 짧을수록 좋음
-                    scored.append((idx, 4.5 + first_pos * 0.1 + len(name) * 0.01, len(scored)))
+                    scored.append((idx, 4.5 + first_pos * 0.1 + len(names[idx]) * 0.01, len(scored)))
                     continue
 
         # 4) Levenshtein (짧은 키워드에서만 — 비용 절약)

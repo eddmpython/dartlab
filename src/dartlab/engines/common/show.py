@@ -44,12 +44,18 @@ def buildBlockIndex(topicRows: pl.DataFrame) -> pl.DataFrame:
     seen: set[int] = set()
     hasBlockOrder = "blockOrder" in topicRows.columns
 
-    for row in topicRows.iter_rows(named=True):
-        bt = row.get("blockType", "text")
-        source = row.get("source", "docs")
+    # 컬럼 데이터 한 번에 추출
+    btList = topicRows["blockType"].to_list() if "blockType" in topicRows.columns else None
+    srcList = topicRows["source"].to_list() if "source" in topicRows.columns else None
+    boList = topicRows["blockOrder"].to_list() if hasBlockOrder else None
+    periodData = {p: topicRows[p].to_list() for p in periodCols}
+
+    for i in range(topicRows.height):
+        bt = btList[i] if btList else "text"
+        source = srcList[i] if srcList else "docs"
 
         if hasBlockOrder:
-            bo = row.get("blockOrder", 0)
+            bo = boList[i]
             if bo is None:
                 bo = len(seen)
         else:
@@ -64,7 +70,7 @@ def buildBlockIndex(topicRows: pl.DataFrame) -> pl.DataFrame:
             preview = f"({source})"
         else:
             for p in reversed(periodCols):
-                val = row.get(p)
+                val = periodData[p][i]
                 if val:
                     preview = str(val)[:50]
                     break

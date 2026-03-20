@@ -304,10 +304,48 @@ def _sceToDataFrame(
     return df.drop(["_cause", "_detail", "_sort"])
 
 
+def _buildCisSeries(
+    df: pl.DataFrame, periods: list[str], formatPeriod
+) -> dict[str, list[Any | None]]:
+    """CIS DataFrame에서 snakeId → 기간별 값 시리즈 추출 (공통 헬퍼)."""
+    from dartlab.engines.dart.finance.mapper import AccountMapper
+
+    periodIdx = {p: i for i, p in enumerate(periods)}
+    mapper = AccountMapper.get()
+    qSeries: dict[str, list[Any | None]] = {}
+
+    _QUARTER_MAP = {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}
+    _accIds = df["account_id"].to_list()
+    _accNms = df["account_nm"].to_list()
+    _bsnsYears = df["bsns_year"].to_list() if "bsns_year" in df.columns else [None] * df.height
+    _reprtNms = df["reprt_nm"].to_list() if "reprt_nm" in df.columns else [None] * df.height
+    _amounts = df["_normalized_amount"].to_list() if "_normalized_amount" in df.columns else [None] * df.height
+
+    for i in range(df.height):
+        accountId = _accIds[i] or ""
+        accountNm = _accNms[i] or ""
+        snakeId = mapper.map(accountId, accountNm)
+        if snakeId is None:
+            continue
+
+        pKey = formatPeriod(
+            _bsnsYears[i] or "", _QUARTER_MAP.get(_reprtNms[i] or "", 0)
+        )
+        idx = periodIdx.get(pKey)
+        if idx is None:
+            continue
+
+        if snakeId not in qSeries:
+            qSeries[snakeId] = [None] * len(periods)
+        if qSeries[snakeId][idx] is None:
+            qSeries[snakeId][idx] = _amounts[i]
+
+    return qSeries
+
+
 def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str, dict[str, list]], list[str]] | None:
     """finance 원본에서 CIS 연도별 시계열 생성."""
     from dartlab.engines.common.finance.period import extractYear, formatPeriod
-    from dartlab.engines.dart.finance.mapper import AccountMapper
     from dartlab.engines.dart.finance.pivot import _loadAndNormalize
 
     result = _loadAndNormalize(stockCode, fsDivPref)
@@ -319,28 +357,7 @@ def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str,
     if df.is_empty():
         return None
 
-    periodIdx = {p: i for i, p in enumerate(periods)}
-    mapper = AccountMapper.get()
-    qSeries: dict[str, list[Any | None]] = {}
-
-    for row in df.iter_rows(named=True):
-        accountId = row.get("account_id", "") or ""
-        accountNm = row.get("account_nm", "") or ""
-        snakeId = mapper.map(accountId, accountNm)
-        if snakeId is None:
-            continue
-
-        pKey = formatPeriod(
-            row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0)
-        )
-        idx = periodIdx.get(pKey)
-        if idx is None:
-            continue
-
-        if snakeId not in qSeries:
-            qSeries[snakeId] = [None] * len(periods)
-        if qSeries[snakeId][idx] is None:
-            qSeries[snakeId][idx] = row.get("_normalized_amount")
+    qSeries = _buildCisSeries(df, periods, formatPeriod)
 
     yearSet: dict[str, list[int]] = {}
     for i, p in enumerate(periods):
@@ -361,7 +378,6 @@ def _financeCisAnnual(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str,
 def _financeCisQuarterly(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[str, dict[str, list]], list[str]] | None:
     """finance 원본에서 CIS 분기별 시계열 생성 (연간 합산 없이)."""
     from dartlab.engines.common.finance.period import formatPeriod
-    from dartlab.engines.dart.finance.mapper import AccountMapper
     from dartlab.engines.dart.finance.pivot import _loadAndNormalize
 
     result = _loadAndNormalize(stockCode, fsDivPref)
@@ -373,27 +389,6 @@ def _financeCisQuarterly(stockCode: str, fsDivPref: str = "CFS") -> tuple[dict[s
     if df.is_empty():
         return None
 
-    periodIdx = {p: i for i, p in enumerate(periods)}
-    mapper = AccountMapper.get()
-    qSeries: dict[str, list[Any | None]] = {}
-
-    for row in df.iter_rows(named=True):
-        accountId = row.get("account_id", "") or ""
-        accountNm = row.get("account_nm", "") or ""
-        snakeId = mapper.map(accountId, accountNm)
-        if snakeId is None:
-            continue
-
-        pKey = formatPeriod(
-            row.get("bsns_year", ""), {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}.get(row.get("reprt_nm", ""), 0)
-        )
-        idx = periodIdx.get(pKey)
-        if idx is None:
-            continue
-
-        if snakeId not in qSeries:
-            qSeries[snakeId] = [None] * len(periods)
-        if qSeries[snakeId][idx] is None:
-            qSeries[snakeId][idx] = row.get("_normalized_amount")
+    qSeries = _buildCisSeries(df, periods, formatPeriod)
 
     return {"CIS": qSeries}, periods

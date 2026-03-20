@@ -975,13 +975,7 @@ class Company:
             return docsSec
 
         # topic 순서대로 순회하면서 extra 행을 끼워넣기
-        docsTopics = []
-        seenTopics: set[str] = set()
-        for row in docsSec.iter_rows(named=True):
-            t = row["topic"]
-            if t not in seenTopics:
-                docsTopics.append(t)
-                seenTopics.add(t)
+        docsTopics = docsSec.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
 
         schema = docsSchema
 
@@ -1720,33 +1714,39 @@ class Company:
         # topic 순서: Polars unique (iter_rows 제거)
         topicOrder = sec.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
 
-        # nonNull 계산: group_by + agg (벡터화)
+        # nonNull 계산: group_by + agg (벡터화) → to_list로 dict 구축
         nonNullMap: dict[str, int] = {}
         if existingPeriods:
             nonNullExprs = [pl.col(c).is_not_null().any().cast(pl.Int8).alias(c) for c in existingPeriods]
             nonNullDf = sec.group_by("topic", maintain_order=True).agg(nonNullExprs)
-            for row in nonNullDf.iter_rows(named=True):
-                nonNullMap[row["topic"]] = sum(1 for c in existingPeriods if row.get(c, 0))
+            _nnTopics = nonNullDf["topic"].to_list()
+            _nnData = {c: nonNullDf[c].to_list() for c in existingPeriods}
+            for i, t in enumerate(_nnTopics):
+                nonNullMap[t] = sum(1 for c in existingPeriods if _nnData[c][i])
 
-        # preview: group_by first non-null (벡터화)
+        # preview: group_by first non-null (벡터화) → to_list로 dict 구축
         previewMap: dict[str, str] = {}
         if existingPeriods:
             firstExprs = [pl.col(c).drop_nulls().first().alias(c) for c in existingPeriods]
             previewDf = sec.group_by("topic", maintain_order=True).agg(firstExprs)
-            for row in previewDf.iter_rows(named=True):
+            _pvTopics = previewDf["topic"].to_list()
+            _pvData = {c: previewDf[c].to_list() for c in existingPeriods}
+            for i, t in enumerate(_pvTopics):
                 for col in existingPeriods:
-                    val = row.get(col)
+                    val = _pvData[col][i]
                     if val is not None:
                         text = str(val).replace("\n", " ").strip()[:80]
-                        previewMap[row["topic"]] = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
+                        previewMap[t] = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
                         break
 
-        # chapter: group_by first
+        # chapter: group_by first → to_list로 dict 구축
         chapterMap: dict[str, str | None] = {}
         if "chapter" in sec.columns:
             chapterDf = sec.group_by("topic", maintain_order=True).agg(pl.col("chapter").first().alias("chapter"))
-            for row in chapterDf.iter_rows(named=True):
-                chapterMap[row["topic"]] = row["chapter"]
+            _chTopics = chapterDf["topic"].to_list()
+            _chVals = chapterDf["chapter"].to_list()
+            for i, t in enumerate(_chTopics):
+                chapterMap[t] = _chVals[i]
 
         for rowIdx, topic in enumerate(topicOrder):
             nonNull = nonNullMap.get(topic, 0)

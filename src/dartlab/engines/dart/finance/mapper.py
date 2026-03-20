@@ -271,45 +271,6 @@ class AccountMapper:
 
         return None
 
-    def suggestMatch(self, accountNm: str, top_k: int = 3, threshold: float = 0.90) -> list[dict]:
-        """미매핑 계정명에 대해 Jaro-Winkler 퍼지 매칭 후보를 추천.
-
-        polars-ds 기반. 설치 안 되어 있으면 빈 리스트 반환.
-
-        Returns:
-            [{"candidate": str, "snakeId": str, "score": float}] (score 내림차순)
-        """
-        try:
-            import polars as pl
-            import polars_ds as pds  # noqa: F811
-        except ImportError:
-            return []
-
-        if not accountNm or not self._mappings:
-            return []
-
-        # 한글 키만 추출 (영문 ID는 제외)
-        korean_keys = [k for k in self._mappings if any("\uac00" <= ch <= "\ud7a3" for ch in k)]
-        if not korean_keys:
-            return []
-
-        candidates_df = pl.DataFrame({"candidate": korean_keys})
-        scored = (
-            candidates_df.with_columns(pds.str_jw("candidate", pl.lit(accountNm)).alias("score"))
-            .filter(pl.col("score") >= threshold)
-            .sort("score", descending=True)
-            .head(top_k)
-        )
-
-        return [
-            {
-                "candidate": row["candidate"],
-                "snakeId": self._mappings[row["candidate"]],
-                "score": round(row["score"], 4),
-            }
-            for row in scored.iter_rows(named=True)
-        ]
-
     def labelMap(self) -> dict[str, str]:
         """snakeId → 대표 한글명 매핑 (캐싱).
 

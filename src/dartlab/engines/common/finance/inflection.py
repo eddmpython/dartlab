@@ -72,16 +72,20 @@ def detectInflections(
 
     results: list[Inflection] = []
 
-    for row in df.iter_rows(named=True):
-        account = str(row.get(acctCol, ""))
+    accounts = df[acctCol].to_list()
+    # 연도 컬럼 값들을 한 번에 추출 (to_list 1회씩만)
+    yearData: dict[str, list] = {c: df[c].to_list() for c in yearCols}
+
+    for rowIdx, account in enumerate(accounts):
         if not account:
             continue
+        account = str(account)
 
         for i in range(1, len(yearCols)):
             prevYear = yearCols[i - 1]
             currYear = yearCols[i]
-            prevVal = row.get(prevYear)
-            currVal = row.get(currYear)
+            prevVal = yearData[prevYear][rowIdx]
+            currVal = yearData[currYear][rowIdx]
 
             if prevVal is None or currVal is None:
                 continue

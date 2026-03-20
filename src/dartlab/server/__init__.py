@@ -2238,21 +2238,12 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
     if isinstance(data, pl.DataFrame):
         if "year" in data.columns:
             data = data.sort("year")
-        preview = data.head(max_rows)
-        rows = preview.to_dicts()
-        for row in rows:
-            for k, v in row.items():
-                if v is not None and not isinstance(v, (str, int, float, bool)):
-                    row[k] = str(v)
+        serialized = _serialize_payload(data, max_rows=max_rows)
         result: dict[str, Any] = {
-            "type": "table",
+            **serialized,
             "module": module,
             "label": entry.label,
             "unit": entry.unit,
-            "columns": preview.columns,
-            "rows": rows,
-            "totalRows": data.height,
-            "truncated": data.height > max_rows,
         }
         financeMeta = _build_finance_meta(module)
         if financeMeta:

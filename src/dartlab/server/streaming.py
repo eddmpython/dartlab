@@ -41,6 +41,50 @@ from .models import AskRequest
 from .resolve import _is_pure_conversation, has_analysis_intent
 
 
+async def _stream_llm_chunks(llm, messages: list[dict]):
+    """LLM stream을 큐 기반 async generator로 변환.
+
+    별도 스레드에서 generator를 실행하고 큐에 넣어
+    매 chunk마다 스레드 전환하는 오버헤드를 줄인다.
+    """
+    import queue as _queue_mod
+
+    sync_queue: _queue_mod.Queue = _queue_mod.Queue(maxsize=64)
+    _SENTINEL = object()
+
+    def _run():
+        try:
+            for chunk in llm.stream(messages):
+                sync_queue.put(chunk)  # blocking put — 배압 제어
+        except Exception as exc:
+            sync_queue.put(exc)
+        finally:
+            sync_queue.put(_SENTINEL)
+
+    loop = asyncio.get_event_loop()
+    task = loop.run_in_executor(None, _run)
+
+    while True:
+        item = await asyncio.to_thread(sync_queue.get)
+        if item is _SENTINEL:
+            break
+        if isinstance(item, Exception):
+            raise item
+        yield item
+
+    await task
+
+
+async def _get_snapshot(c: Company) -> dict | None:
+    """캐시 우선 snapshot 조회 (중복 제거 헬퍼)."""
+    cached = company_cache.get(c.stockCode)
+    if cached:
+        return cached[1]
+    snapshot = await asyncio.to_thread(build_snapshot, c)
+    company_cache.put(c.stockCode, c, snapshot)
+    return snapshot
+
+
 async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str | None = None):
     """SSE 스트리밍 generator.
 
@@ -112,12 +156,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         history_msgs = build_history_messages(compressed)
 
         if c and not has_analysis_intent(state.question):
-            cached = company_cache.get(c.stockCode)
-            if cached:
-                snapshot = cached[1]
-            else:
-                snapshot = await asyncio.to_thread(build_snapshot, c)
-                company_cache.put(c.stockCode, c, snapshot)
+            snapshot = await _get_snapshot(c)
             if snapshot:
                 yield {
                     "event": "snapshot",
@@ -190,14 +229,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
 
             llm = create_provider(config_)
 
-            def _gen_light():
-                yield from llm.stream(messages)
-
-            gen = _gen_light()
-            while True:
-                chunk = await asyncio.to_thread(next, gen, None)
-                if chunk is None:
-                    break
+            async for chunk in _stream_llm_chunks(llm, messages):
                 yield {
                     "event": "chunk",
                     "data": orjson.dumps({"text": chunk}).decode(),
@@ -214,12 +246,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
             from dartlab.engines.ai.metadata import MODULE_META
             from dartlab.engines.ai.prompts import _classify_question_multi, build_system_prompt
 
-            cached = company_cache.get(c.stockCode)
-            if cached:
-                snapshot = cached[1]
-            else:
-                snapshot = await asyncio.to_thread(build_snapshot, c)
-                company_cache.put(c.stockCode, c, snapshot)
+            snapshot = await _get_snapshot(c)
             if snapshot:
                 yield {
                     "event": "snapshot",
@@ -528,15 +555,7 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
                 task.cancel()
                 raise
         else:
-
-            def _gen():
-                yield from llm.stream(messages)
-
-            gen = _gen()
-            while True:
-                chunk = await asyncio.to_thread(next, gen, None)
-                if chunk is None:
-                    break
+            async for chunk in _stream_llm_chunks(llm, messages):
                 full_response_parts.append(chunk)
                 yield {
                     "event": "chunk",
@@ -564,6 +583,10 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         TypeError,
         ValueError,
     ) as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("stream_ask error: %s: %s", type(e).__name__, e)
         from dartlab.server import _sanitize_error
 
         error_payload: dict[str, Any] = {"error": _sanitize_error(e)}
@@ -572,49 +595,26 @@ async def stream_ask(c: Company | None, req: AskRequest, *, not_found_msg: str |
         elif isinstance(e, PermissionError):
             error_payload["action"] = "login"
 
-        yield {
-            "event": "error",
-            "data": orjson.dumps(error_payload).decode(),
-        }
-    except (
-        ValueError,
-        RuntimeError,
-        ConnectionError,
-        OSError,
-        TimeoutError,
-        KeyError,
-        AttributeError,
-        ImportError,
-    ) as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.warning("stream_ask unexpected error: %s: %s", type(e).__name__, e)
-        from dartlab.server import _sanitize_error as _sanitize
-
-        error_msg = f"{type(e).__name__}: {_sanitize(e)}"
-        error_payload_ex: dict[str, Any] = {"error": error_msg}
-
         # OAuth GPT 에러 — 사용자에게 구체적 action 전달
         err_type = type(e).__name__
         if err_type == "ChatGPTOAuthError":
             err_str = str(e).lower()
             if "token" in err_str or "expire" in err_str or "login" in err_str:
-                error_payload_ex["action"] = "relogin"
-                error_payload_ex["error"] = "ChatGPT 인증이 만료되었습니다. 다시 로그인해주세요."
+                error_payload["action"] = "relogin"
+                error_payload["error"] = "ChatGPT 인증이 만료되었습니다. 다시 로그인해주세요."
             elif "rate" in err_str or "limit" in err_str:
-                error_payload_ex["action"] = "rate_limit"
-                error_payload_ex["error"] = "ChatGPT 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
+                error_payload["action"] = "rate_limit"
+                error_payload["error"] = "ChatGPT 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
             else:
-                error_payload_ex["action"] = "relogin"
-                error_payload_ex["error"] = f"ChatGPT 연결 오류: {_sanitize(e)}"
+                error_payload["action"] = "relogin"
+                error_payload["error"] = f"ChatGPT 연결 오류: {_sanitize_error(e)}"
         elif err_type == "OpenAIError" or "api_key" in str(e).lower():
-            error_payload_ex["action"] = "config"
-            error_payload_ex["error"] = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."
+            error_payload["action"] = "config"
+            error_payload["error"] = "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요."
 
         yield {
             "event": "error",
-            "data": orjson.dumps(error_payload_ex).decode(),
+            "data": orjson.dumps(error_payload).decode(),
         }
 
     # "보여줘" 의도 감지 → viewer_navigate SSE 이벤트
