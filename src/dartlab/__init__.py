@@ -133,6 +133,70 @@ def debt():
     return scan_debt()
 
 
+def screen(preset: str = "가치주"):
+    """시장 스크리닝 — 프리셋 기반 종목 필터.
+
+    Args:
+        preset: 프리셋 이름 ("가치주", "성장주", "턴어라운드", "현금부자",
+                "고위험", "자본잠식", "소형고수익", "대형안정").
+
+    Example::
+
+        import dartlab
+        df = dartlab.screen("가치주")    # ROE≥10, 부채≤100 등
+        df = dartlab.screen("고위험")    # 부채≥200, ICR<3
+    """
+    from dartlab.engines.rank.screen import screen as _screen
+
+    return _screen(preset)
+
+
+def benchmark():
+    """섹터별 핵심 비율 벤치마크 (P10, median, P90).
+
+    Example::
+
+        import dartlab
+        bm = dartlab.benchmark()   # 섹터 × 비율 정상 범위
+    """
+    from dartlab.engines.rank.screen import benchmark as _benchmark
+
+    return _benchmark()
+
+
+def signal(keyword: str | None = None):
+    """서술형 공시 시장 시그널 — 키워드 트렌드 탐지.
+
+    Args:
+        keyword: 특정 키워드만 필터. None이면 전체 48개 키워드.
+
+    Example::
+
+        import dartlab
+        df = dartlab.signal()        # 전체 키워드 트렌드
+        df = dartlab.signal("AI")    # AI 키워드 연도별 추이
+    """
+    from dartlab.engines.dart.scan.signal import scan_signal
+
+    return scan_signal(keyword)
+
+
+def groupHealth():
+    """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
+
+    Returns:
+        (summary, weakLinks) 튜플.
+
+    Example::
+
+        import dartlab
+        summary, weakLinks = dartlab.groupHealth()
+    """
+    from dartlab.engines.dart.scan.network.health import groupHealth as _groupHealth
+
+    return _groupHealth()
+
+
 class _Module(sys.modules[__name__].__class__):
     """dartlab.verbose / dartlab.dataDir 프록시."""
 
@@ -168,6 +232,10 @@ __all__ = [
     "search",
     "listing",
     "network",
+    "screen",
+    "benchmark",
+    "signal",
+    "groupHealth",
     "verbose",
     "dataDir",
     "getKindList",

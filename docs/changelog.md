@@ -11,6 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-03-20
+
+### Added
+
+- **복합 재무비율 11개**: ROIC, DuPont 3분해, CCC, Z-Score, F-Score, EV/EBITDA, 이자보상배율, 배당성향, 배당수익률
+- **AI 대화 품질 Phase 1**: CoT 구조화, Tool Routing, Self-Critique/Reflection, 정보 배치 최적화
+- **MCP 39개 도구 노출**: OpenAI schema → MCP Tool 자동 변환
+- **증분 마크다운 렌더러**: 스트리밍 중 완결 블록 캐시 + 꼬리만 재파싱
+
+### Changed
+
+- **UI 성능 최적화**: content-visibility, SSE 배칭, 점진 렌더, contain 격리
+- **Tool Description 정밀화**: 15개 도구에 사용 시점/제외 가이드
+- **Parallel Tool Calling**: OpenAI parallel_tool_calls 활성화
+- **`dartlab ui` alias 제거**
+
+### Fixed
+
+- **보안 감사**: XSS, path traversal, bare except, CORS, 스레드 안전
+- **CAPEX 부호 버그** + ZeroDivision 방어
+
 ## [0.7.1] - 2026-03-20
 
 ### Added

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-03-20
+
+### Added
+
+- **복합 재무비율 11개**: ROIC, DuPont 3분해(마진·회전율·레버리지), CCC(현금전환주기), Altman Z-Score, Piotroski F-Score, EV/EBITDA, 이자보상배율, 배당성향, 배당수익률
+- **AI 대화 품질 Phase 1**: CoT 구조화 프레임워크(4단계 분석), Tool Routing(질문 유형별 도구 서브셋), Self-Critique/Reflection(답변 자체 검증), 정보 배치 최적화(Lost-in-the-Middle 대응)
+- **MCP 39개 도구 노출**: OpenAI function calling 스키마 → MCP Tool 자동 변환, stock_code 자동 주입
+- **증분 마크다운 렌더러**: `createIncrementalRenderer()` — 스트리밍 중 완결 블록 캐시 + 꼬리만 재파싱
+
+### Changed
+
+- **UI 성능 최적화**: `content-visibility: auto`(뷰포트 밖 스킵), SSE chunk rAF 배칭(스트리밍 끊김 방지), IntersectionObserver 점진 렌더(초기 10개), `contain: layout style paint`(테이블 격리)
+- **Tool Description 정밀화**: 15개 핵심 도구에 "사용 시점 / 사용하지 말 것" 가이드 추가
+- **Parallel Tool Calling**: OpenAI provider `parallel_tool_calls=True` 활성화
+- **히스토리 압축 개선**: 구조화된 메타 추출(관심 기업, 분석 주제, Q&A 쌍)
+- **`dartlab ui` alias 제거**: deprecated CLI alias 완전 제거, 테스트 정리
+
+### Fixed
+
+- **보안 감사 수정**: XSS 이스케이프, path traversal 차단, bare except 구체화, CORS 강화, MD5 usedforsecurity, subprocess 보안, SSL fallback
+- **CAPEX 부호 버그**: 음수 처리 수정 + ZeroDivision 방어
+- **글로벌 캐시 스레드 안전**: 5곳에 threading.Lock double-check 패턴 적용
+
 ## [0.7.1] - 2026-03-20
 
 ### Added
