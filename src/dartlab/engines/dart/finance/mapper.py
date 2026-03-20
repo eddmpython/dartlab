@@ -209,6 +209,7 @@ class AccountMapper:
     _instance: Optional[AccountMapper] = None
     _mappings: Optional[dict[str, str]] = None
     _stdAccounts: Optional[dict[str, dict]] = None
+    _noHyphenIndex: Optional[dict[str, str]] = None  # 하이픈 제거 역인덱스
 
     @classmethod
     def get(cls) -> AccountMapper:
@@ -223,6 +224,13 @@ class AccountMapper:
                 data = json.load(f)
             AccountMapper._mappings = data["mappings"]
             AccountMapper._stdAccounts = data.get("standardAccounts", {})
+            # 하이픈 제거 역인덱스: "당기손익공정가치측정금융자산" → snakeId
+            idx: dict[str, str] = {}
+            for key, snakeId in AccountMapper._mappings.items():
+                stripped = key.replace("-", "").replace("–", "").replace("—", "")
+                if stripped != key and stripped not in AccountMapper._mappings:
+                    idx[stripped] = snakeId
+            AccountMapper._noHyphenIndex = idx
 
     def map(self, accountId: str, accountNm: str) -> Optional[str]:
         """account_id + account_nm → snakeId.
@@ -253,7 +261,54 @@ class AccountMapper:
             if noParen != noSpace and noParen in self._mappings:
                 return self._mappings[noParen]
 
+            # 하이픈/대시 정규화 fallback (실험 081-001: 미매핑 98.5%가 하이픈 차이)
+            # 양방향: 입력에서 하이픈 제거 → 사전 조회, 사전에서 하이픈 제거 → 역인덱스 조회
+            noHyphen = noSpace.replace("-", "").replace("–", "").replace("—", "")
+            if noHyphen in self._mappings:
+                return self._mappings[noHyphen]
+            if self._noHyphenIndex and noHyphen in self._noHyphenIndex:
+                return self._noHyphenIndex[noHyphen]
+
         return None
+
+    def suggestMatch(self, accountNm: str, top_k: int = 3, threshold: float = 0.90) -> list[dict]:
+        """미매핑 계정명에 대해 Jaro-Winkler 퍼지 매칭 후보를 추천.
+
+        polars-ds 기반. 설치 안 되어 있으면 빈 리스트 반환.
+
+        Returns:
+            [{"candidate": str, "snakeId": str, "score": float}] (score 내림차순)
+        """
+        try:
+            import polars as pl
+            import polars_ds as pds  # noqa: F811
+        except ImportError:
+            return []
+
+        if not accountNm or not self._mappings:
+            return []
+
+        # 한글 키만 추출 (영문 ID는 제외)
+        korean_keys = [k for k in self._mappings if any("\uac00" <= ch <= "\ud7a3" for ch in k)]
+        if not korean_keys:
+            return []
+
+        candidates_df = pl.DataFrame({"candidate": korean_keys})
+        scored = (
+            candidates_df.with_columns(pds.str_jw("candidate", pl.lit(accountNm)).alias("score"))
+            .filter(pl.col("score") >= threshold)
+            .sort("score", descending=True)
+            .head(top_k)
+        )
+
+        return [
+            {
+                "candidate": row["candidate"],
+                "snakeId": self._mappings[row["candidate"]],
+                "score": round(row["score"], 4),
+            }
+            for row in scored.iter_rows(named=True)
+        ]
 
     def labelMap(self) -> dict[str, str]:
         """snakeId → 대표 한글명 매핑 (캐싱).
