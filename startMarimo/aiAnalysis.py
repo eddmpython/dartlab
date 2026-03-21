@@ -27,30 +27,103 @@ def _():
     return (c,)
 
 
+# ── 원스톱 ask ──────────────────────────────────────────────────
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## AI 분석 기본
+    ## 원스톱 AI 분석
 
-    `dartlab.ask("삼성전자 분석해줘")` — 한 문장이면 끝. 종목명을 자동 추출하고
-    재무제표, 공시, 비율 등을 종합하여 LLM이 답변합니다.
-    기존 2인자 형식 `dartlab.ask("005930", "질문")` 도 호환됩니다.
+    `dartlab.ask("삼성전자 분석해줘")` — 한 문장이면 끝.
+    종목명을 자동 추출하고, 재무제표·공시·비율 등을 종합하여 LLM이 답변합니다.
     """)
     return
 
 
 @app.cell
 def _(dartlab):
-    # 원스톱 분석 — 종목명을 텍스트에서 자동 추출
+    # 원스톱 — 종목명을 텍스트에서 자동 추출
     result = dartlab.ask("삼성전자 재무건전성 분석해줘", stream=False)
     print(result)
     return
 
 
+# ── 스트리밍 ────────────────────────────────────────────────────
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## 스트리밍 모드
+
+    `stream=True`가 기본값입니다. 제너레이터를 반환하므로 chunk 단위로 출력됩니다.
+    """)
+    return
+
+
+@app.cell
+def _(dartlab):
+    # stream=True (기본) → 제너레이터 반환
+    for chunk in dartlab.ask("삼성전자 수익성 추세를 분석해줘"):
+        print(chunk, end="", flush=True)
+    print()
+    return
+
+
+# ── 분석 패턴 (pattern) ────────────────────────────────────────
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## 분석 패턴
+
+    `pattern`으로 분석 프레임워크를 지정할 수 있습니다.
+    - `"financial"` — 수익성·안정성·성장성 종합
+    - `"risk"` — 리스크 요인 집중
+    - `"valuation"` — 밸류에이션 분석
+    - `"dividend"` — 배당 정책 분석
+    """)
+    return
+
+
+@app.cell
+def _(dartlab):
+    # 밸류에이션 패턴으로 분석
+    result_val = dartlab.ask(
+        "삼성전자 저평가인지 분석해줘",
+        pattern="valuation",
+        stream=False,
+    )
+    print(result_val)
+    return
+
+
+# ── Company에서 직접 질문 ──────────────────────────────────────
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## Company 직접 질문
+
+    `c.ask("질문")`으로 이미 로드된 Company에 바로 질문할 수 있습니다.
+    종목 지정이 필요 없어 편리합니다.
+    """)
+    return
+
+
+@app.cell
+def _(c):
+    # Company에서 바로 질문
+    result_direct = c.ask("배당 정책을 분석해줘", stream=False)
+    print(result_direct)
+    return
+
+
+# ── Provider 지정 ──────────────────────────────────────────────
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Provider 지정
+
+    `provider`로 LLM 백엔드를 선택합니다.
+    - `"ollama"` — 로컬 무료 (사전: `ollama pull llama3.2 && ollama serve`)
+    - `"openai"` — OpenAI API (사전: `export OPENAI_API_KEY=sk-...`)
+    - `"claude"` — Anthropic Claude
     """)
     return
 
@@ -58,42 +131,35 @@ def _(mo):
 @app.cell
 def _(dartlab):
     # Ollama (로컬, 무료)
-    # 사전: ollama pull llama3.2 && ollama serve
-    result_ollama = dartlab.ask("005930", "배당 정책을 분석해줘", provider="ollama")
+    result_ollama = dartlab.ask(
+        "삼성전자 부채 구조를 분석해줘",
+        provider="ollama",
+        stream=False,
+    )
     print(result_ollama)
     return
 
 
 @app.cell
 def _(dartlab):
-    # OpenAI API (API 키 필요)
-    # 사전: export OPENAI_API_KEY=sk-...
-    result_openai = dartlab.ask("005930", "밸류에이션을 분석해줘", provider="openai", model="gpt-4o")
+    # OpenAI API
+    result_openai = dartlab.ask(
+        "SK하이닉스 밸류에이션을 분석해줘",
+        provider="openai",
+        model="gpt-4o",
+        stream=False,
+    )
     print(result_openai)
     return
 
 
+# ── 데이터 필터링 ──────────────────────────────────────────────
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## 스트리밍 모드
-    """)
-    return
+    ## 데이터 필터링
 
-
-@app.cell
-def _(dartlab):
-    # stream=True가 기본값 → 제너레이터 반환 (chunk 단위 출력)
-    for chunk in dartlab.ask("삼성전자 수익성 추세를 분석해줘"):
-        print(chunk, end="", flush=True)
-    print()
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## 데이터 필터링 (include / exclude)
+    `include` / `exclude`로 LLM에 전달할 데이터를 제어합니다.
     """)
     return
 
@@ -102,9 +168,9 @@ def _(mo):
 def _(dartlab):
     # 특정 데이터만 포함
     result_focused = dartlab.ask(
-        "005930",
-        "재무상태표와 손익계산서만 보고 핵심 포인트를 알려줘",
+        "삼성전자 재무상태표와 손익계산서만 보고 핵심 포인트를 알려줘",
         include=["BS", "IS"],
+        stream=False,
     )
     print(result_focused)
     return
@@ -114,9 +180,9 @@ def _(dartlab):
 def _(dartlab):
     # 특정 데이터 제외
     result_exclude = dartlab.ask(
-        "005930",
-        "전반적으로 분석해줘",
+        "삼성전자를 전반적으로 분석해줘",
         exclude=["dividend", "segments"],
+        stream=False,
     )
     print(result_exclude)
     return

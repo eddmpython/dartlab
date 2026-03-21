@@ -9,7 +9,7 @@
 
 import marimo
 
-__generated_with = "0.20.4"
+__generated_with = "0.21.1"
 app = marimo.App(width="medium")
 
 
@@ -53,34 +53,31 @@ def _(c):
     return
 
 
-# ── trace: 출처 확인 ──────────────────────────────────────────
+# ── 재무제표 ──────────────────────────────────────────────────
 @app.cell
 def _(c):
-    c.trace("riskFactors")
-    return
-
-
-# ── diff: 텍스트 변화 감지 ────────────────────────────────────
-@app.cell
-def _(c):
-    c.diff()
-    return
-
-
-# ── 재무제표 / 비율 ──────────────────────────────────────────
-@app.cell
-def _(c):
-    c.BS
+    c.BS  # Balance Sheet
     return
 
 
 @app.cell
 def _(c):
-    c.ratios
+    c.IS  # Income Statement
     return
 
 
-# ── 특정 기간 비교 ────────────────────────────────────────────
+@app.cell
+def _(c):
+    c.CF  # Cash Flow Statement
+    return
+
+
+@app.cell
+def _(c):
+    c.ratios  # 재무비율 시계열
+    return
+
+
 @app.cell
 def _(c):
     # 특정 기간 비교 (항목 × 기간)
@@ -88,7 +85,36 @@ def _(c):
     return
 
 
-# ── 보고서 목록 ──────────────────────────────────────────────
+# ── trace / diff ──────────────────────────────────────────────
+@app.cell
+def _(c):
+    c.trace("riskFactors")
+    return
+
+
+@app.cell
+def _(c):
+    # 전체 topic별 텍스트 변경률
+    c.diff()
+    return
+
+
+# ── 분석 엔진 ─────────────────────────────────────────────────
+@app.cell
+def _(c):
+    # 섹터 분류
+    c.sector
+    return
+
+
+@app.cell
+def _(c):
+    # 인사이트 등급 (7영역)
+    c.insights
+    return
+
+
+# ── 보고서 목록 ───────────────────────────────────────────────
 @app.cell
 def _(c):
     c.filings()

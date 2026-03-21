@@ -9,10 +9,11 @@
 
 import marimo
 
-__generated_with = "0.20.4"
+__generated_with = "0.21.1"
 app = marimo.App()
 
 
+# ── Company 생성 ────────────────────────────────────────────────
 @app.cell
 def _():
     import dartlab
@@ -22,9 +23,10 @@ def _():
     return (c,)
 
 
+# ── sections: 회사 전체 맵 ──────────────────────────────────────
 @app.cell
 def _(c):
-    # topic × period 수평화 DataFrame
+    # topic × period 수평화 DataFrame — 회사의 전체 지도
     c.sections
     return
 
@@ -36,6 +38,7 @@ def _(c):
     return
 
 
+# ── show: topic 열기 ────────────────────────────────────────────
 @app.cell
 def _(c):
     # 서술형 topic → 블록 목차
@@ -50,38 +53,11 @@ def _(c):
     return
 
 
+# ── 재무제표 ────────────────────────────────────────────────────
 @app.cell
 def _(c):
     # 재무제표 topic → finance source (숫자 authoritative)
     c.show("IS")
-    return
-
-
-@app.cell
-def _(c):
-    # report 데이터 조회
-    c.show("dividend", 13)
-    return
-
-
-@app.cell
-def _(c):
-    # 어떤 source(docs/finance/report)가 채택됐는지
-    c.trace("stockTotal")
-    return
-
-
-@app.cell
-def _(c):
-    # 전체 topic별 변경률
-    c.diff()
-    return
-
-
-@app.cell
-def _(c):
-    # 특정 topic 기간별 이력
-    c.diff("businessOverview")
     return
 
 
@@ -93,7 +69,13 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.ratios  # 재무비율
+    c.CF  # 현금흐름표
+    return
+
+
+@app.cell
+def _(c):
+    c.ratios  # 재무비율 시계열
     return
 
 
@@ -104,9 +86,107 @@ def _(c):
     return
 
 
+# ── report 데이터 ──────────────────────────────────────────────
+@app.cell
+def _(c):
+    # 배당 데이터
+    c.show("dividend")
+    return
+
+
+# ── trace / diff ────────────────────────────────────────────────
+@app.cell
+def _(c):
+    # 어떤 source(docs/finance/report)가 채택됐는지
+    c.trace("stockTotal")
+    return
+
+
+@app.cell
+def _(c):
+    # 전체 topic별 텍스트 변경률
+    c.diff()
+    return
+
+
+@app.cell
+def _(c):
+    # 특정 topic 기간별 이력
+    c.diff("businessOverview")
+    return
+
+
+# ── K-IFRS 주석 (Notes) ────────────────────────────────────────
+@app.cell
+def _(c):
+    # K-IFRS 주석 — 12가지 항목
+    c.notes.keys()
+    return
+
+
+@app.cell
+def _(c):
+    # 재고자산 주석
+    c.notes.inventory
+    return
+
+
+# ── 분석 엔진 ──────────────────────────────────────────────────
+@app.cell
+def _(c):
+    # 섹터 분류 (WICS 11대 업종)
+    c.sector
+    return
+
+
+@app.cell
+def _(c):
+    # 인사이트 등급 (7영역 A~F)
+    c.insights
+    return
+
+
+@app.cell
+def _(c):
+    # 시장 규모 순위
+    c.rank
+    return
+
+
+# ── 네트워크 / 거버넌스 ────────────────────────────────────────
+@app.cell
+def _(c):
+    # 관계사 네트워크 — 계열사 목록
+    c.network("members")
+    return
+
+
+@app.cell
+def _(c):
+    # 지배구조 분석
+    c.governance()
+    return
+
+
+# ── 테이블 파싱 ─────────────────────────────────────────────────
+@app.cell
+def _(c):
+    # 서술형 블록 내 표를 구조화된 DataFrame으로 파싱
+    c.table("employee")
+    return
+
+
+# ── 보고서 목록 ─────────────────────────────────────────────────
+@app.cell
+def _(c):
+    c.filings()
+    return
+
+
+# ── 차트 (plotly 필요) ──────────────────────────────────────────
 @app.cell
 def _(c, dartlab):
-    # 차트 (plotly 필요: uv add "dartlab[charts]")
+    # 매출 차트 (plotly 필요: uv add "dartlab[charts]")
     dartlab.chart.revenue(c).show()
     return
 
