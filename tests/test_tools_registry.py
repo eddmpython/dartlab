@@ -4,7 +4,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.ai.tools_registry import (
+from dartlab.engines.ai.tools.registry import (
     build_tool_runtime,
     clear_registry,
     execute_tool,
@@ -187,7 +187,7 @@ class TestRegisterDefaults:
         assert "timeout_seconds" in result
 
     def test_get_coding_runtime_status(self, monkeypatch):
-        import dartlab.engines.ai.codex_cli as codex_cli
+        from dartlab.engines.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,
@@ -208,7 +208,7 @@ class TestRegisterDefaults:
         assert "workspace-write" in result
 
     def test_run_coding_task(self, monkeypatch):
-        import dartlab.engines.ai.codex_cli as codex_cli
+        from dartlab.engines.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,
@@ -244,7 +244,7 @@ class TestRegisterDefaults:
         assert "done: foo.py를 수정해줘" in result
 
     def test_run_codex_task(self, monkeypatch):
-        import dartlab.engines.ai.codex_cli as codex_cli
+        from dartlab.engines.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,

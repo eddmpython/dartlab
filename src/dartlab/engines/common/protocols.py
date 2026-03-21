@@ -60,6 +60,28 @@ class CompanyProtocol(Protocol):
 
     def view(self, *, port: int = 8400) -> None: ...
 
+    def ask(
+        self,
+        question: str,
+        *,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> str | Any: ...
+
+    def chat(
+        self,
+        question: str,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        max_turns: int = 5,
+        **kwargs: Any,
+    ) -> str: ...
+
 
 @runtime_checkable
 class DocsProtocol(Protocol):

@@ -25,7 +25,7 @@ function loadFromStorage() {
 	}
 }
 
-const EPHEMERAL_KEYS = ["systemPrompt", "userContent", "contexts", "snapshot", "toolEvents", "startedAt", "loading"];
+const EPHEMERAL_KEYS = ["systemPrompt", "userContent", "contexts", "snapshot", "toolEvents", "startedAt", "loading", "renderViews"];
 
 function stripEphemeral(convs) {
 	return convs.map(c => ({

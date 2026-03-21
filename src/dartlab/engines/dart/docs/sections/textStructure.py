@@ -19,9 +19,25 @@ _RE_PAREN_KOR = re.compile(r"^\(([가-힣])\)\s*(.+)$")
 _RE_CIRCLED = re.compile(r"^([①-⑳])\s*(.+)$")
 _RE_BRACKET = re.compile(r"^\[(.+?)\]$|^【(.+?)】$")
 _RE_SHORT_PAREN = re.compile(r"^\(([^)]+)\)$")
-_RE_HEADING_NOISE = re.compile(r"^(?:단위|주\d|참고|출처|비고)\b")
+_RE_HEADING_NOISE = re.compile(
+    r"^(?:"
+    r"단위|주\d|참고|출처|비고"
+    r"|계속|전문|요약|이하\s*여백"
+    r"|연결|별도|연결기준|별도기준"
+    r"|첨부|주석\s*참조"
+    r")\b"
+)
 _RE_NONWORD = re.compile(r"[^0-9A-Za-z가-힣]+")
-_RE_TEMPORAL_MARKER = re.compile(r"^(?:\d{4}년(?:\s*\d{1,2}월)?|\d{4}[./]\d{1,2})$")
+_RE_TEMPORAL_MARKER = re.compile(
+    r"^(?:"
+    r"\d{4}년(?:\s*\d{1,2}월(?:\s*\d{1,2}일)?)?"
+    r"|\d{4}[./]\d{1,2}(?:[./]\d{1,2})?"
+    r"|제\s*\d+\s*기(?:\s*\d*\s*분기)?"
+    r"|(?:당|전|전전)(?:기|반기|분기)"
+    r"|\d{4}년\s*(?:\d분기|상반기|하반기)"
+    r"|FY\s*\d{4}"
+    r")$"
+)
 _RE_SUFFIX_EGWANHAN = re.compile(r"에관한사항$")
 
 _TOPIC_SEGMENT_ALIASES: dict[str, dict[str, str]] = {
@@ -101,7 +117,7 @@ def _canonical_heading_key(
     level: int,
     topic: str | None,
 ) -> str:
-    if level == 1 and isinstance(topic, str) and topic:
+    if level <= 3 and isinstance(topic, str) and topic:
         mapped = mapSectionTitle(labelText)
         if mapped == topic:
             return f"@topic:{topic}"
@@ -161,34 +177,34 @@ def _detect_heading(line: str) -> tuple[int, str, bool] | None:
 
     m = _RE_ROMAN.match(stripped)
     if m:
-        return (1, m.group(1).strip(), True)
+        return (2, m.group(1).strip(), True)
 
     m = _RE_NUMERIC.match(stripped)
     if m:
-        return (1, m.group(1).strip(), True)
+        return (3, m.group(1).strip(), True)
 
     m = _RE_KOREAN.match(stripped)
     if m:
-        return (2, m.group(1).strip(), True)
+        return (4, m.group(1).strip(), True)
 
     m = _RE_PAREN_NUM.match(stripped)
     if m:
-        return (3, m.group(2).strip(), True)
+        return (5, m.group(2).strip(), True)
 
     m = _RE_PAREN_KOR.match(stripped)
     if m:
-        return (4, m.group(2).strip(), True)
+        return (6, m.group(2).strip(), True)
 
     m = _RE_CIRCLED.match(stripped)
     if m:
-        return (4, m.group(2).strip(), True)
+        return (6, m.group(2).strip(), True)
 
     m = _RE_SHORT_PAREN.match(stripped)
     if m:
         inner = m.group(1).strip()
         if inner and len(inner) <= 48 and not _RE_HEADING_NOISE.match(inner):
             structural = not _is_temporal_marker(inner)
-            return (3, inner, structural)
+            return (5, inner, structural)
 
     return None
 
@@ -264,7 +280,7 @@ def parseTextStructureWithState(
         redundantTopicAlias = (
             structural
             and bool(stack)
-            and level == 1
+            and level <= 3
             and str(stackKey).startswith("@topic:")
             and int(stack[-1]["level"]) == level
             and str(stack[-1]["key"]) == stackKey

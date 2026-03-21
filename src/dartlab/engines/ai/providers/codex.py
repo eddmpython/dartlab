@@ -9,8 +9,8 @@ from __future__ import annotations
 import shutil
 from typing import Generator
 
-from dartlab.engines.ai import codex_cli
 from dartlab.engines.ai.providers.base import BaseProvider
+from dartlab.engines.ai.providers.support import codex_cli
 from dartlab.engines.ai.types import LLMResponse
 
 
@@ -27,13 +27,13 @@ class CodexProvider(BaseProvider):
 
     def _ensure_available(self) -> None:
         if not shutil.which("codex"):
-            from dartlab.engines.ai.cli_setup import get_codex_install_guide
+            from dartlab.engines.ai.providers.support.cli_setup import get_codex_install_guide
 
             raise FileNotFoundError(f"Codex CLI를 찾을 수 없습니다.\n\n{get_codex_install_guide()}")
 
         info = codex_cli.inspect_codex_cli()
         if not info.get("installed"):
-            from dartlab.engines.ai.cli_setup import get_codex_install_guide
+            from dartlab.engines.ai.providers.support.cli_setup import get_codex_install_guide
 
             raise FileNotFoundError(f"Codex CLI를 찾을 수 없습니다.\n\n{get_codex_install_guide()}")
         if not info.get("authenticated"):

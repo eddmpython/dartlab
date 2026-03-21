@@ -57,6 +57,11 @@ class DataEntry:
     relatedModules: tuple[str, ...] = ()
     maxRows: int = 30
 
+    # AI 노출 메타데이터
+    aiExposed: bool = True
+    aiCategory: str = "data"
+    aiHint: str = ""
+
 
 _ENTRIES: list[DataEntry] = [
     # ═══════════════════════════════════════════════════════
@@ -1050,10 +1055,42 @@ def getNotesEntries() -> list[DataEntry]:
 
 
 def buildModuleDescription() -> str:
-    """LLM tool description용 모듈 목록 문자열 자동 생성."""
+    """LLM tool description용 모듈 목록 문자열 자동 생성.
+
+    모든 카테고리(finance 제외)의 aiExposed=True 엔트리를 포함.
+    """
     parts = []
     for e in _ENTRIES:
-        if e.category in ("finance", "raw"):
+        if e.category == "finance" or not e.aiExposed:
             continue
         parts.append(f"{e.name}({e.label})")
     return ", ".join(parts)
+
+
+def buildFeatureDescription(category: str | None = None) -> str:
+    """카테고리별 사용 가능한 기능을 상세히 안내한다.
+
+    Args:
+        category: finance, report, disclosure, notes, analysis, raw, all.
+                  None이면 "all"과 동일.
+    """
+    target = (category or "all").lower()
+    sections: list[str] = []
+
+    for cat, entries in _BY_CATEGORY.items():
+        if target != "all" and cat != target:
+            continue
+        exposed = [e for e in entries if e.aiExposed]
+        if not exposed:
+            continue
+        lines = [f"## {cat} ({len(exposed)}개)"]
+        for e in exposed:
+            hint = f" — {e.aiHint}" if e.aiHint else ""
+            lines.append(f"- **{e.name}** ({e.label}): {e.description}{hint}")
+        sections.append("\n".join(lines))
+
+    if not sections:
+        available = ", ".join(sorted(_BY_CATEGORY.keys()))
+        return f"'{category}' 카테고리가 없습니다. 사용 가능: {available}"
+
+    return "\n\n".join(sections)

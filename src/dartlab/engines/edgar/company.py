@@ -1079,3 +1079,70 @@ class Company:
         if topic is not None:
             return topicHistoryDataFrame(diffResult, topic)
         return diffSummaryDataFrame(diffResult)
+
+    # ── AI 분석 ──
+
+    def ask(
+        self,
+        question: str,
+        *,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        stream: bool = False,
+        reflect: bool = False,
+        **kwargs,
+    ) -> str:
+        """LLM에게 이 기업에 대해 질문.
+
+        Example::
+
+            c = Company("AAPL")
+            c.ask("What are the key risks?")
+            c.ask("Revenue trend analysis", provider="openai")
+        """
+        from dartlab.engines.ai.runtime.standalone import ask as _ask
+
+        return _ask(
+            self,
+            question,
+            include=include,
+            exclude=exclude,
+            provider=provider,
+            model=model,
+            stream=stream,
+            reflect=reflect,
+            **kwargs,
+        )
+
+    def chat(
+        self,
+        question: str,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        max_turns: int = 5,
+        on_tool_call=None,
+        on_tool_result=None,
+        **kwargs,
+    ) -> str:
+        """Agent mode: LLM selects tools for in-depth analysis.
+
+        Example::
+
+            c = Company("AAPL")
+            c.chat("Analyze dividend trends and find anomalies")
+        """
+        from dartlab.engines.ai.runtime.standalone import chat as _chat
+
+        return _chat(
+            self,
+            question,
+            provider=provider,
+            model=model,
+            max_turns=max_turns,
+            on_tool_call=on_tool_call,
+            on_tool_result=on_tool_result,
+            **kwargs,
+        )

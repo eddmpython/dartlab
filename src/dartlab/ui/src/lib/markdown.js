@@ -1,4 +1,21 @@
 /** 마크다운 → HTML 렌더러 (테이블, 코드블록, 숫자 하이라이트 포함) */
+import hljs from "highlight.js/lib/core";
+import python from "highlight.js/lib/languages/python";
+import javascript from "highlight.js/lib/languages/javascript";
+import json from "highlight.js/lib/languages/json";
+import sql from "highlight.js/lib/languages/sql";
+import bash from "highlight.js/lib/languages/bash";
+import xml from "highlight.js/lib/languages/xml";
+
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("js", javascript);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("sh", bash);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("xml", xml);
 
 /**
  * 증분 마크다운 렌더러 — 스트리밍 중 새 텍스트만 파싱.
@@ -50,7 +67,7 @@ export function renderMarkdown(text) {
 	let tableBlocks = [];
 	let processed = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
 		const idx = codeBlocks.length;
-		codeBlocks.push(code.trimEnd());
+		codeBlocks.push({ lang: lang || "", code: code.trimEnd() });
 		return `\n%%CODE_${idx}%%\n`;
 	});
 
@@ -125,9 +142,20 @@ export function renderMarkdown(text) {
 	}
 
 	for (let i = 0; i < codeBlocks.length; i++) {
-		const escaped = codeBlocks[i].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		const { lang, code } = codeBlocks[i];
+		let highlighted;
+		try {
+			if (lang && hljs.getLanguage(lang)) {
+				highlighted = hljs.highlight(code, { language: lang }).value;
+			} else {
+				highlighted = hljs.highlightAuto(code).value;
+			}
+		} catch {
+			highlighted = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+		const langLabel = lang ? `<span class="code-lang-label">${lang}</span>` : "";
 		html = html.replace(`%%CODE_${i}%%`,
-			`<div class="code-block-wrap"><button class="code-copy-btn" data-code-idx="${i}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button><pre><code>${escaped}</code></pre></div>`
+			`<div class="code-block-wrap">${langLabel}<button class="code-copy-btn" data-code-idx="${i}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button><pre><code class="hljs">${highlighted}</code></pre></div>`
 		);
 	}
 

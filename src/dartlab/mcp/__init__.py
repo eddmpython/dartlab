@@ -50,7 +50,7 @@ def create_server():
     except ImportError:
         raise ImportError("MCP SDK가 필요합니다.\n  uv add 'mcp[cli]>=1.0'\n또는: pip install 'mcp[cli]>=1.0'")
 
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.engines.ai.tools.registry import build_tool_runtime
 
     from .bridge import build_mcp_tools
 

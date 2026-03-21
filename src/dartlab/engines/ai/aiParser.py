@@ -79,7 +79,7 @@ def summarize(
     Returns:
             요약 텍스트 (2~5문장)
     """
-    from dartlab.engines.ai.context import df_to_markdown
+    from dartlab.engines.ai.context.builder import df_to_markdown
 
     # 데이터 → 텍스트
     if isinstance(data, pl.DataFrame):

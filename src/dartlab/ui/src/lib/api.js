@@ -1,101 +1,23 @@
 /**
  * DartLab API 클라이언트
  */
-import { decode as decodeMsgpack } from "@msgpack/msgpack";
+import { BASE, fetchPack } from "./api/http.js";
 
-const BASE = "";  // 같은 origin (proxy or production)
-
-/** MessagePack content negotiation fetch — 대형 응답에 사용 */
-async function fetchPack(url) {
-	const res = await fetch(url, {
-		headers: { "Accept": "application/msgpack" },
-	});
-	if (!res.ok) throw new Error(`요청 실패: ${res.status}`);
-	const ct = res.headers.get("content-type") || "";
-	if (ct.includes("msgpack")) {
-		const buf = await res.arrayBuffer();
-		return decodeMsgpack(buf);
-	}
-	return res.json();
-}
-
-/** LLM provider 상태 확인 */
-export async function fetchStatus() {
-	const res = await fetch(`${BASE}/api/status`);
-	if (!res.ok) throw new Error("상태 확인 실패");
-	return res.json();
-}
-
-/** LLM provider 검증 (서버 전역 상태는 변경하지 않음) */
-export async function validateProvider(provider, model = null, apiKey = null) {
-	const body = { provider };
-	if (model) body.model = model;
-	if (apiKey) body.api_key = apiKey;
-	const res = await fetch(`${BASE}/api/provider/validate`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(body),
-	});
-	if (!res.ok) throw new Error("설정 실패");
-	return res.json();
-}
-
-export const configure = validateProvider;
-
-/** Provider별 모델 목록 조회 */
-export async function fetchModels(provider) {
-	const res = await fetch(`${BASE}/api/models/${encodeURIComponent(provider)}`);
-	if (!res.ok) return { models: [] };
-	return res.json();
-}
-
-/** Ollama 모델 다운로드 (SSE 진행률) */
-export function pullOllamaModel(modelName, { onProgress, onDone, onError }) {
-	const controller = new AbortController();
-	fetch(`${BASE}/api/ollama/pull`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ model: modelName }),
-		signal: controller.signal,
-	})
-	.then(async (res) => {
-		if (!res.ok) { onError?.("다운로드 실패"); return; }
-		const reader = res.body.getReader();
-		const decoder = new TextDecoder();
-		let buffer = "";
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			buffer += decoder.decode(value, { stream: true });
-			const lines = buffer.split("\n");
-			buffer = lines.pop() || "";
-			for (const line of lines) {
-				if (line.startsWith("data:")) {
-					try {
-						const data = JSON.parse(line.slice(5).trim());
-						if (data.total && data.completed !== undefined) {
-							onProgress?.({ total: data.total, completed: data.completed, status: data.status });
-						} else if (data.status) {
-							onProgress?.({ status: data.status });
-						}
-					} catch {}
-				}
-			}
-		}
-		onDone?.();
-	})
-	.catch((err) => {
-		if (err.name !== "AbortError") onError?.(err.message);
-	});
-	return { abort: () => controller.abort() };
-}
-
-/** Codex CLI 로그아웃 */
-export async function codexLogout() {
-	const res = await fetch(`${BASE}/api/codex/logout`, { method: "POST" });
-	if (!res.ok) throw new Error("Codex 로그아웃 실패");
-	return res.json();
-}
+export {
+	codexLogout,
+	configure,
+	fetchAiProfile,
+	fetchModels,
+	fetchStatus,
+	oauthAuthorize,
+	oauthLogout,
+	oauthStatus,
+	pullOllamaModel,
+	subscribeAiProfileEvents,
+	updateAiProfile,
+	updateAiSecret,
+	validateProvider,
+} from "./api/ai.js";
 
 /** Excel 내보내기 가능한 모듈 목록 */
 export async function fetchExportModules(stockCode) {
@@ -266,6 +188,17 @@ export async function fetchCompanyViewer(code, topic, period = null) {
 	return fetchPack(`${BASE}/api/company/${code}/viewer/${encodeURIComponent(topic)}${params}`);
 }
 
+/** 여러 topic의 viewer 데이터를 한 번에 반환 — chapter 확장 시 N+1 제거 */
+export async function fetchCompanyViewerBatch(code, topics) {
+	const res = await fetch(`${BASE}/api/company/${encodeURIComponent(code)}/viewer/batch`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ topics }),
+	});
+	if (!res.ok) throw new Error("batch viewer 조회 실패");
+	return res.json();
+}
+
 /** diff 요약 — changeRate + added/removed 미리보기 */
 export async function fetchCompanyDiffSummary(code, topic) {
 	const res = await fetch(`${BASE}/api/company/${code}/diff/${encodeURIComponent(topic)}/summary`);
@@ -388,8 +321,9 @@ export async function ask(company, question, options = {}) {
  * @param {function} onChunk - chunk 이벤트 콜백
  * @param {function} onDone - done 이벤트 콜백
  * @param {function} onError - error 이벤트 콜백
+ * @param {function} onUiAction - ui_action 이벤트 콜백 (canonical action)
  */
-export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChart, onChunk, onDone, onError, onViewerNavigate }, history = null) {
+export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChart, onChunk, onDone, onError, onUiAction }, history = null) {
 	const body = { question, stream: true, ...options };
 	if (company) body.company = company;
 	if (history && history.length > 0) body.history = history;
@@ -456,7 +390,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
 							else if (currentEvent === "chunk") batchedChunk?.(parsed.text);
 							else if (currentEvent === "chart") onChart?.(parsed);
-							else if (currentEvent === "viewer_navigate") onViewerNavigate?.(parsed);
+							else if (currentEvent === "ui_action") onUiAction?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
 							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(); } }
 						} catch (e) {

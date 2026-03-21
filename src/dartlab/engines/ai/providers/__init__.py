@@ -11,12 +11,10 @@ if TYPE_CHECKING:
 
 _PROVIDER_MAP: dict[str, str] = {
     "openai": "dartlab.engines.ai.providers.openai_compat.OpenAICompatProvider",
-    "claude": "dartlab.engines.ai.providers.claude.ClaudeProvider",
     "ollama": "dartlab.engines.ai.providers.ollama.OllamaProvider",
     "custom": "dartlab.engines.ai.providers.openai_compat.OpenAICompatProvider",
-    "claude-code": "dartlab.engines.ai.providers.claude_code.ClaudeCodeProvider",
     "codex": "dartlab.engines.ai.providers.codex.CodexProvider",
-    "chatgpt": "dartlab.engines.ai.providers.codex.CodexProvider",
+    "oauth-codex": "dartlab.engines.ai.providers.oauth_codex.OAuthCodexProvider",
 }
 
 
@@ -32,12 +30,7 @@ def create_provider(config: "LLMConfig") -> "BaseProvider":
 
 
 def register_provider(name: str, class_path: str) -> None:
-    """새 provider 등록 (확장용).
-
-    Example::
-
-            register_provider("gemini", "mypackage.gemini.GeminiProvider")
-    """
+    """새 provider 등록 (확장용)."""
     _PROVIDER_MAP[name] = class_path
 
 

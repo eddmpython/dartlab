@@ -22,7 +22,7 @@ _REG_S_K_RE = re.compile(
     r"^Item\s+(?:405|103)\.\s+of\s+(?:SEC\s+)?Regulation\s+S-K.*$",
     re.IGNORECASE,
 )
-_ITEM_601_RE = re.compile(r"^Item 601\. of Regulation S-K.*$", re.IGNORECASE)
+_ITEM_601_RE = re.compile(r"^Item 601\..*Regulation S-K.*$", re.IGNORECASE)
 _ITEM_406_RE = re.compile(r"^Item 406\. of Regulation S-K.*$", re.IGNORECASE)
 # 3자리+ Regulation S-K/AB 항목 → 일괄 흡수
 _REG_3DIGIT_RE = re.compile(
@@ -131,8 +131,12 @@ def _normalizePartItem(text: str) -> str:
 
         if itemNum in {"5", "5A", "6", "7", "8"} and partNum == "I":
             partNum = "II"
-        if itemNum == "1A" and partNum == "I" and itemLabel.upper() == "RISK FACTORS":
-            partNum = "II"
+        if itemNum == "1A" and partNum == "I":
+            upperItemLabel = itemLabel.upper().replace("  ", " ")
+            if upperItemLabel == "RISK FACTORS":
+                partNum = "II"
+            elif "UNAUDITED SUPPLEMENTAL" in upperItemLabel or "NAUDITED SUPPLEMENTAL" in upperItemLabel:
+                return "Item 8A. Supplemental Financial Information"
         if itemNum == "1B" and partNum == "II":
             partNum = "I"
 
@@ -230,6 +234,15 @@ def normalizeSectionTitle(title: str) -> str:
     if item405Loose:
         return "Item 405. of Regulation S-K"
 
+    # Part-Item 형태에서 3자리+ Regulation S-K 참조 → Item 405 수렴
+    partRegMatch = re.match(
+        r"^Part\s+\S+\s*-\s*Item\s+\d{3,}\.\s*(?:of\s+)?(?:SEC\s+)?Regulation",
+        text,
+        re.IGNORECASE,
+    )
+    if partRegMatch:
+        return "Item 405. of Regulation S-K"
+
     partResult = _normalizePartItem(text)
     if partResult != text:
         return partResult
@@ -276,6 +289,10 @@ def normalizeSectionTitle(title: str) -> str:
     itemLabel = itemLabel.rstrip(".")
     upperLabel = itemLabel.upper()
 
+    # Item 1A in 10-Q: "UNAUDITED SUPPLEMENTAL" → Supplemental Financial
+    if itemNum == "1A" and "UNAUDITED SUPPLEMENTAL" in upperLabel:
+        return "Item 8A. Supplemental Financial Information"
+
     # 10-K Item 4A: Executive Officers
     if itemNum == "4A":
         if (
@@ -314,6 +331,21 @@ def normalizeSectionTitle(title: str) -> str:
     if itemNum == "15A":
         if not itemLabel or "FINANCIAL" in upperLabel or upperLabel == f"ITEM {itemNum}":
             return "Item 15. Exhibits & Schedules"
+
+    # Item 4B: Mine Safety Disclosures (오타 포함)
+    if itemNum == "4B":
+        if "MINE" in upperLabel and "SAFETY" in upperLabel:
+            return "Item 4B. Mine Safety Disclosures"
+
+    # Item 5A (20-F): "of this report" 변형
+    if itemNum == "5A":
+        if "OF THIS REPORT" in upperLabel or not itemLabel:
+            itemLabel = "Operating and Financial Review and Prospects"
+
+    # Item 3D (20-F): "Risk Factors on pages..." 변형
+    if itemNum == "3D":
+        if "RISK FACTORS" in upperLabel:
+            itemLabel = "Risk Factors"
 
     return f"Item {itemNum}. {itemLabel}".strip()
 

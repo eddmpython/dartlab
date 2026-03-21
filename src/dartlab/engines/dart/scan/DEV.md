@@ -1,7 +1,12 @@
 # scan/ — 상장사 전수 스캔 엔진
 
-report parquet + finance parquet 전수 스캔으로 상장사별 핵심 지표를 산출한다.
-각 축은 독립 모듈이며, Company 인터페이스와 모듈 레벨 함수를 통해 소비된다.
+scan의 정식 축은 `network / governance / workforce / capital / debt / signal` 6개다.
+
+- company-bound 축: `governance`, `workforce`, `capital`, `debt`
+- market-level 축: `network`, `signal`
+
+즉 scan 엔진은 6축이지만, `Company.get_scan_data()`와 company view는 여전히 4축만 다룬다.
+`signal`은 `dartlab.signal()` market API로만 노출한다.
 
 ## 파일 구조
 
@@ -10,6 +15,8 @@ engines/dart/scan/
 ├── __init__.py              # available_scans() 목록
 ├── _helpers.py              # scan_parquets, parse_num, load_listing 등 공용 유틸
 ├── network/                 # 관계 네트워크 (별도 DEV.md)
+├── signal/
+│   └── __init__.py          # scan_signal() market-level docs keyword trend
 ├── governance/
 │   ├── __init__.py          # scan_governance() 오케스트레이터
 │   ├── scanner.py           # majorHolder, outsideDirector, executivePay, auditOpinion
@@ -42,6 +49,12 @@ apiType별 DataFrame (전 종목)
 종합 pl.DataFrame
   ↓ Company.governance() / .workforce() / .capital() / .debt()
 view별 필터 (이 회사 / 전체 / 시장별)
+
+DART docs parquet (sections)
+  ↓ signal.scan_signal()
+연도 × 키워드 × category 집계
+  ↓ dartlab.signal()
+시장 단위 keyword trend DataFrame
 ```
 
 ## 공용 유틸 (_helpers.py)
@@ -137,9 +150,9 @@ view별 필터 (이 회사 / 전체 / 시장별)
 
 **DataFrame 컬럼**: 종목코드, 사채잔액, 단기잔액, 단기비중, 총부채, 부채비율, ICR, 위험등급
 
-## Company 인터페이스
+## 인터페이스 경계
 
-`engines/dart/company.py`에서 4개 메서드 제공:
+`engines/dart/company.py`의 company-bound scan 메서드는 4개만 유지한다:
 
 ```python
 c = dartlab.Company("005930")
@@ -163,12 +176,23 @@ dartlab.capital()
 dartlab.debt()
 ```
 
+`signal`은 company-bound API로 연결하지 않는다:
+
+```python
+df = dartlab.signal()        # 전체 키워드 트렌드
+df = dartlab.signal("AI")    # 특정 키워드 연도별 추이
+```
+
+현재 `signal` 결과는 local docs corpus에 존재하는 기업 범위에 한정된다.
+즉 시장 전체를 대표하는 실험적 market scan이지만, finance/report 기반 4축처럼 전종목 완전 커버리지는 아니다.
+
 `_ensure*()` 메서드가 `scan_*(verbose=False)`를 1회 실행하고 `_cache`에 저장.
 `_scanView(df, view)`가 view 분기 처리 (None=이 회사, "all"=전체, "market"=시장별).
 
 ## 검증 데이터
 
 - 소스 실험: `experiments/073_scanInsight/` (18개 실험 완료)
+- signal 재검증: `experiments/076_marketLab/013_signalRevalidation.py`
 - 거버넌스: 001~005, 인력: 006~009, 주주환원: 010~013, 부채: 014~016, 교차검증: 017~018
 - 실험 017: 4축 교차 상관분석 (거버넌스↔배당, 부채↔지배구조)
 - 실험 018: 시장별 분포 비교 (유가/코스닥 통계)

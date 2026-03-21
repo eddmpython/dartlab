@@ -111,7 +111,7 @@ class ClaudeCodeProvider(BaseProvider):
 
     def _ensure_available(self) -> None:
         if not shutil.which("claude"):
-            from dartlab.engines.ai.cli_setup import get_claude_code_install_guide
+            from dartlab.engines.ai.providers.support.cli_setup import get_claude_code_install_guide
 
             raise FileNotFoundError(f"Claude Code CLI를 찾을 수 없습니다.\n\n{get_claude_code_install_guide()}")
         try:

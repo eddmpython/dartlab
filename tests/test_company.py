@@ -124,10 +124,14 @@ class TestProfileChangeLedgerHelpers:
 
 @requires_samsung
 class TestCompany:
-    def test_init_by_code(self):
+    @classmethod
+    def setup_class(cls):
         from dartlab import Company
 
-        c = Company(SAMSUNG)
+        cls.c = Company(SAMSUNG)
+
+    def test_init_by_code(self):
+        c = self.c
         assert c.stockCode == SAMSUNG
         assert c.corpName == "삼성전자"
 
@@ -135,15 +139,13 @@ class TestCompany:
         import dartlab
 
         dartlab.verbose = False
-        c = dartlab.Company(SAMSUNG)
+        c = self.c
         assert "005930" in repr(c)
         assert "삼성전자" in repr(c)
         dartlab.verbose = True
 
     def test_filings(self):
-        from dartlab import Company
-
-        c = Company(SAMSUNG)
+        c = self.c
         filings = c.filings()
         assert isinstance(filings, pl.DataFrame)
         assert len(filings) > 0
@@ -170,7 +172,7 @@ class TestCompany:
         from dartlab import Company
         from dartlab.engines.dart.report.types import PREFERRED_QUARTER
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert c.docs is not None
         assert c.finance is not None
         assert c.report is not None
@@ -186,9 +188,8 @@ class TestCompany:
         )
 
     def test_sections_includes_docs_and_finance(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert c.sections is not None
         assert c.docs.sections is not None
         # sections ⊇ docs.sections (finance/report 행이 추가됨)
@@ -199,9 +200,8 @@ class TestCompany:
         assert "source" in c.sections.columns
 
     def test_first_layer_dataframe_contracts(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert isinstance(c.filings(), pl.DataFrame)
         assert c.docs.sections is not None
         assert isinstance(c.docs.sections.raw, pl.DataFrame)
@@ -214,9 +214,8 @@ class TestCompany:
         assert isinstance(c.finance.SCE, pl.DataFrame)
 
     def test_docs_sections_projection_and_semantic_registry_accessors(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         ordered = c.docs.sectionsOrdered()
         coverage = c.docs.sectionsCoverage(topic="businessOverview")
         annual = c.docs.sectionsCadence("annual")
@@ -346,9 +345,8 @@ class TestCompany:
         assert set(bodyStructureChanges["textNodeType"].unique().to_list()) == {"body"}
 
     def test_docs_sections_structure_helpers_return_valid_dataframes(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         registry = c.docs.sections.structureRegistry(topic="businessOverview", nodeType="body")
         events = c.docs.sections.structureEvents(topic="businessOverview", nodeType="body")
         summary = c.docs.sections.structureSummary(topic="businessOverview", nodeType="body")
@@ -360,9 +358,8 @@ class TestCompany:
         assert isinstance(changes, pl.DataFrame)
 
     def test_show_accepts_q4_alias_for_annual_sections_period(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         annual = c.show("companyOverview", 0, period="2025")
         annualQ4 = c.show("companyOverview", 0, period="2025Q4")
 
@@ -373,9 +370,8 @@ class TestCompany:
         assert annual.item(0, "2025") == annualQ4.item(0, "2025Q4")
 
     def test_show_period_filter_handles_finance_exact_q4_and_annual_alias(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         exactQ4 = c.show("BS", period="2024Q4")
         annualAlias = c.show("BS", period="2024")
 
@@ -386,35 +382,31 @@ class TestCompany:
         assert exactQ4["계정명"].to_list() == annualAlias["계정명"].to_list()
 
     def test_profile_facts_include_docs_source(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         facts = c.profile.facts
         assert facts is not None
         assert "source" in facts.columns
         assert "docs" in set(facts["source"].unique().to_list())
 
     def test_profile_trace_for_docs_topic(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         traced = c.profile.trace("riskDerivative")
         assert traced is not None
         assert traced["primarySource"] == "docs"
 
     def test_finance_cis_and_sce_are_exposed(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert isinstance(c.finance.CIS, pl.DataFrame)
         assert isinstance(c.CIS, pl.DataFrame)
         assert isinstance(c.finance.SCE, pl.DataFrame)
         assert isinstance(c.SCE, pl.DataFrame)
 
     def test_sections_contain_docs_topics(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         sections = c.sections
         assert sections is not None
         topics = sections["topic"].to_list()
@@ -423,9 +415,8 @@ class TestCompany:
             assert topic in topics
 
     def test_sections_hide_raw_source_topics(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         sections = c.sections
         assert sections is not None
         topics = set(sections["topic"].to_list())
@@ -434,9 +425,8 @@ class TestCompany:
         assert "I.회사의개황" not in topics
 
     def test_profile_trace_for_finance_and_report_topics(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert c.profile.trace("dividend")["primarySource"] == "report"
         assert c.profile.trace("BS")["primarySource"] == "finance"
         assert c.profile.trace("CIS")["primarySource"] == "finance"
@@ -448,9 +438,8 @@ class TestCompany:
         assert ratioTrace["yearCount"] is not None
 
     def test_index_and_profile_accessor(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         assert c.index.height > 0
         assert set(["chapter", "topic", "kind", "source", "periods", "shape", "preview"]).issubset(set(c.index.columns))
         assert c.sections is not None
@@ -459,9 +448,8 @@ class TestCompany:
         assert isinstance(c.profile.facts, pl.DataFrame)
 
     def test_profile_trace_returns_provenance(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         traced = c.profile.trace("BS")
         assert traced is not None
         assert traced["primarySource"] == "finance"
@@ -470,9 +458,8 @@ class TestCompany:
         assert traced_docs["primarySource"] == "docs"
 
     def test_open_and_topics_surface_company_payloads(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         topicList = c.topics["topic"].to_list()
         assert "BS" in topicList
         assert "ratios" in topicList
@@ -483,9 +470,8 @@ class TestCompany:
         assert isinstance(c.show("riskDerivative", raw=False), pl.DataFrame)
 
     def test_show_topic_returns_block_index(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         idx = c.show("salesOrder")
         assert isinstance(idx, pl.DataFrame)
         assert {"block", "type", "source"}.issubset(set(idx.columns))
@@ -494,9 +480,8 @@ class TestCompany:
         assert table is None or isinstance(table, pl.DataFrame)
 
     def test_show_block_returns_data(self):
-        from dartlab import Company
 
-        c = Company(SAMSUNG)
+        c = self.c
         # docs text
         text = c.show("companyOverview", 0)
         assert text is None or isinstance(text, pl.DataFrame)
@@ -511,7 +496,7 @@ class TestCompany:
         from dartlab import Company
         from dartlab.engines.dart.report.types import ReportResult
 
-        c = Company(SAMSUNG)
+        c = self.c
         dividend = c.report.result("dividend")
         treasury = c.report.result("treasuryStock")
 
@@ -526,7 +511,7 @@ class TestCompany:
     def test_index_includes_finance_ratio_series(self):
         import dartlab
 
-        c = dartlab.Company(SAMSUNG)
+        c = self.c
         ratios = c.index.filter(pl.col("topic") == "ratios")
         assert ratios.height == 1
         assert ratios.item(0, "chapter") == "III. 재무에 관한 사항"
@@ -536,7 +521,7 @@ class TestCompany:
     def test_public_index_show_trace_surface(self):
         import dartlab
 
-        c = dartlab.Company(SAMSUNG)
+        c = self.c
         assert isinstance(c.index, pl.DataFrame)
         assert c.index.height > 0
         overview = c.show("companyOverview")
@@ -548,7 +533,7 @@ class TestCompany:
     def test_show_returns_block_index_for_docs_topic(self):
         import dartlab
 
-        c = dartlab.Company(SAMSUNG)
+        c = self.c
         overview = c.show("companyOverview")
         assert overview is not None
         assert isinstance(overview, pl.DataFrame)

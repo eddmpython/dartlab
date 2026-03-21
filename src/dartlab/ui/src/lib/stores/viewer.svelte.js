@@ -4,7 +4,7 @@
  * toc(목차), 선택 topic, 로딩 상태, 캐시 등을 관리한다.
  * workspace store와 독립 — viewer 내부 네비게이션에만 사용.
  */
-import { fetchCompanyInit, fetchCompanyToc, fetchCompanyViewer, fetchCompanyDiffSummary, fetchCompanyInsights, fetchCompanyNetwork, fetchSearchIndex } from "$lib/api.js";
+import { fetchCompanyInit, fetchCompanyToc, fetchCompanyViewer, fetchCompanyViewerBatch, fetchCompanyDiffSummary, fetchCompanyInsights, fetchCompanyNetwork, fetchSearchIndex } from "$lib/api.js";
 import MiniSearch from "minisearch";
 
 function loadBookmarks() {
@@ -273,8 +273,30 @@ export function createViewerStore() {
 			next.delete(chapter);
 		} else {
 			next.add(chapter);
+			// chapter 확장 시 해당 chapter의 미캐시 topic들을 batch prefetch
+			batchPrefetchChapter(chapter);
 		}
 		expandedChapters = next;
+	}
+
+	async function batchPrefetchChapter(chapter) {
+		if (!toc?.chapters || !stockCode) return;
+		const ch = toc.chapters.find(c => c.chapter === chapter);
+		if (!ch?.topics) return;
+		const uncached = ch.topics
+			.map(t => t.topic)
+			.filter(t => !topicCache.has(t) && !prefetchInFlight.has(t));
+		if (uncached.length === 0) return;
+		for (const t of uncached) prefetchInFlight.add(t);
+		try {
+			const res = await fetchCompanyViewerBatch(stockCode, uncached);
+			if (res.results) {
+				for (const [topic, data] of Object.entries(res.results)) {
+					if (data) topicCache.set(topic, data);
+				}
+			}
+		} catch { /* batch prefetch 실패는 무시 — 개별 fetch로 fallback */ }
+		for (const t of uncached) prefetchInFlight.delete(t);
 	}
 
 	// P2: topic summary cache

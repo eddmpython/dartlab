@@ -40,6 +40,7 @@ class TestStatus:
         assert "providers" in data
         assert "version" in data
         assert isinstance(data["providers"], dict)
+        assert "claude" not in data["providers"]
         assert "claude-code" not in data["providers"]
         assert "chatgpt" not in data["providers"]
         for prov_info in data["providers"].values():
@@ -61,11 +62,105 @@ class TestStatus:
         assert "installed" in data["codex"]
         assert "authenticated" in data["codex"]
 
+    def test_status_oauth_codex_detail(self, client):
+        """GET /api/status — oauth-codex 상세 정보 포함."""
+        resp = client.get("/api/status")
+        data = resp.json()
+        assert "oauthCodex" in data
+        assert "authenticated" in data["oauthCodex"]
+        assert "tokenStored" in data["oauthCodex"]
+
     def test_status_version_not_unknown(self, client):
         """GET /api/status — 버전이 'unknown'이 아님."""
         resp = client.get("/api/status")
         data = resp.json()
         assert data["version"] != "unknown"
+
+    def test_status_provider_probe_only_targets_selected_provider(self, client, monkeypatch):
+        """GET /api/status?provider=codex — 선택 provider만 probe."""
+        probed: list[str] = []
+        ollama_probe_flags: list[bool] = []
+
+        def _fake_probe(prov):
+            probed.append(prov)
+            return True, f"{prov}-model", True
+
+        def _fake_ollama_detail(*, probe):
+            ollama_probe_flags.append(probe)
+            return {"installed": False, "running": None, "gpu": None, "checked": probe}
+
+        monkeypatch.setattr("dartlab.server.api.ai.probe_provider_availability", _fake_probe)
+        monkeypatch.setattr("dartlab.server.api.ai.build_ollama_detail", _fake_ollama_detail)
+
+        resp = client.get("/api/status", params={"provider": "codex"})
+        assert resp.status_code == 200
+        assert probed == ["codex"]
+        assert ollama_probe_flags == [False]
+
+    def test_status_probe_zero_skips_provider_checks(self, client, monkeypatch):
+        """GET /api/status?probe=0 — provider probe를 생략."""
+        monkeypatch.setattr(
+            "dartlab.server.api.ai.probe_provider_availability",
+            lambda prov: (_ for _ in ()).throw(AssertionError("provider probe should not run")),
+        )
+
+        resp = client.get("/api/status", params={"probe": 0})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["providers"]["codex"]["checked"] is False
+        assert data["providers"]["ollama"]["checked"] is False
+
+    def test_status_without_provider_probes_only_selected_provider(self, client, monkeypatch):
+        """GET /api/status — 명시하지 않으면 shared profile의 선택 provider만 probe."""
+        from dartlab.engines.ai import configure as configure_global
+
+        configure_global(provider="openai", model="gpt-5.4")
+
+        probed: list[str] = []
+        ollama_probe_flags: list[bool] = []
+
+        def _fake_probe(prov):
+            probed.append(prov)
+            return True, f"{prov}-model", True
+
+        def _fake_ollama_detail(*, probe):
+            ollama_probe_flags.append(probe)
+            return {"installed": True, "running": True, "gpu": None, "checked": probe}
+
+        monkeypatch.setattr("dartlab.server.api.ai.probe_provider_availability", _fake_probe)
+        monkeypatch.setattr("dartlab.server.api.ai.build_ollama_detail", _fake_ollama_detail)
+
+        resp = client.get("/api/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert probed == ["openai"]
+        assert ollama_probe_flags == [False]
+        assert data["providers"]["openai"]["checked"] is True
+        assert data["providers"]["ollama"]["checked"] is False
+
+    def test_should_preload_ollama_requires_selected_provider(self, monkeypatch):
+        """Ollama preload는 명시적 활성화 + 선택 provider가 ollama일 때만."""
+        from dartlab.engines.ai import configure as configure_global
+        from dartlab.server import _should_preload_ollama
+
+        monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
+
+        configure_global(provider="openai", model="gpt-5.4")
+        assert _should_preload_ollama() is False
+
+        configure_global(provider="ollama", model="qwen3")
+        assert _should_preload_ollama() is True
+
+    def test_should_preload_ollama_when_any_role_uses_ollama(self, monkeypatch):
+        """role binding 중 하나가 ollama면 preload 대상이다."""
+        from dartlab.engines.ai import configure as configure_global
+        from dartlab.server import _should_preload_ollama
+
+        monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
+
+        configure_global(provider="openai", model="gpt-5.4")
+        configure_global(provider="ollama", model="qwen3", role="summary")
+        assert _should_preload_ollama() is True
 
 
 class TestConfigure:
@@ -124,22 +219,55 @@ class TestConfigure:
         assert resp.json()["ok"] is True
 
 
+class TestAiProfile:
+    def test_get_ai_profile(self, client):
+        resp = client.get("/api/ai/profile")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "defaultProvider" in data
+        assert "catalog" in data
+        assert "providers" in data
+        assert "roles" in data
+        assert isinstance(data["catalog"], list)
+        assert all(item["id"] != "claude" for item in data["catalog"])
+        assert "codex" in data["providers"]
+
+    def test_put_ai_profile_updates_shared_config(self, client):
+        from dartlab.engines.ai import get_config
+
+        resp = client.put(
+            "/api/ai/profile",
+            json={"provider": "openai", "model": "gpt-5.4"},
+        )
+        assert resp.status_code == 200
+        config = get_config()
+        assert config.provider == "openai"
+        assert config.model == "gpt-5.4"
+
+    def test_post_ai_profile_secret_updates_shared_secret(self, client):
+        from dartlab.engines.ai import get_config
+
+        resp = client.post(
+            "/api/ai/profile/secrets",
+            json={"provider": "openai", "api_key": "sk-test"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["providers"]["openai"]["secretConfigured"] is True
+        config = get_config("openai")
+        assert config.api_key == "sk-test"
+
+
 class TestModels:
     def test_static_providers(self, client):
         """GET /api/models/{provider} — 정적 모델 목록."""
-        for prov in ("chatgpt", "codex"):
+        for prov in ("codex", "oauth-codex"):
             resp = client.get(f"/api/models/{prov}")
             assert resp.status_code == 200
             data = resp.json()
             assert "models" in data
             assert isinstance(data["models"], list)
             assert len(data["models"]) > 0
-
-    def test_hidden_provider_returns_empty_models(self, client):
-        """GET /api/models/claude-code — 비공개 provider는 노출하지 않음."""
-        resp = client.get("/api/models/claude-code")
-        assert resp.status_code == 200
-        assert resp.json()["models"] == []
 
     def test_ollama_models(self, client):
         """GET /api/models/ollama — Ollama 모델 목록 (형식 확인)."""
@@ -164,13 +292,13 @@ class TestModels:
         assert "models" in data
         assert len(data["models"]) > 0
 
-    def test_claude_without_key(self, client):
-        """GET /api/models/claude — API 키 없으면 fallback 목록."""
+    def test_removed_provider_returns_empty_models(self, client):
+        """GET /api/models/claude — 제거된 provider는 빈 목록."""
         resp = client.get("/api/models/claude")
         assert resp.status_code == 200
         data = resp.json()
         assert "models" in data
-        assert len(data["models"]) > 0
+        assert data["models"] == []
 
 
 class TestSpec:
@@ -287,7 +415,7 @@ class TestOAuth:
 class TestCodexAuth:
     def test_codex_logout(self, client, monkeypatch):
         """POST /api/codex/logout — Codex CLI 인증 제거."""
-        monkeypatch.setattr("dartlab.engines.ai.codex_cli.logout_codex_cli", lambda: None)
+        monkeypatch.setattr("dartlab.engines.ai.providers.support.codex_cli.logout_codex_cli", lambda: None)
         resp = client.post("/api/codex/logout")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
@@ -502,6 +630,56 @@ class TestAsk:
         assert captured["kwargs"]["provider"] == "openai"
         assert captured["kwargs"]["model"] == "gpt-5.4"
         assert captured["kwargs"]["api_key"] == "sk-test"
+
+    def test_plain_chat_uses_core_analysis_path(self, client, monkeypatch):
+        captured = {}
+
+        async def _fake_collect(company, question, **kwargs):
+            captured["company"] = company
+            captured["question"] = question
+            captured["kwargs"] = kwargs
+            return "core-answer"
+
+        monkeypatch.setattr("dartlab.server.services.ai_analysis.collect_analysis_text", _fake_collect)
+
+        resp = client.post(
+            "/api/ask",
+            json={"question": "안녕하세요", "stream": False, "provider": "openai", "model": "gpt-5.4"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["answer"] == "core-answer"
+        assert captured["company"] is None
+        assert captured["question"] == "안녕하세요"
+        assert captured["kwargs"]["provider"] == "openai"
+        assert captured["kwargs"]["model"] == "gpt-5.4"
+        assert captured["kwargs"]["use_tools"] is False
+
+    def test_topic_summary_uses_core_stream_path(self, client, monkeypatch):
+        class DummyCompany:
+            corpName = "테스트기업"
+            stockCode = "000000"
+
+            def show(self, topic):
+                if topic == "businessOverview":
+                    return pl.DataFrame({"topic": ["businessOverview"]})
+                return None
+
+        async def _fake_stream(company, question, **kwargs):
+            assert company.stockCode == "000000"
+            assert "businessOverview" in question
+            assert kwargs["view_context"]["topic"] == "businessOverview"
+            yield {"event": "context", "data": '{"module":"_focus","text":"ctx"}'}
+            yield {"event": "chunk", "data": '{"text":"summary"}'}
+
+        monkeypatch.setattr("dartlab.server.api.company.get_company", lambda code: DummyCompany())
+        monkeypatch.setattr("dartlab.server.services.ai_analysis.stream_analysis", _fake_stream)
+
+        with client.stream("GET", "/api/company/000000/summary/businessOverview") as resp:
+            body = b"".join(resp.iter_bytes()).decode()
+
+        assert "event: context" in body
+        assert "event: chunk" in body
+        assert "summary" in body
 
 
 # ── 유틸리티/로직 단위 테스트 ──

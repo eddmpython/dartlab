@@ -11,6 +11,8 @@ skipif 마커가 붙은 테스트에 자동으로 requires_data 마커를 추가
 → CI에서 -m "not requires_data" 한 줄이면 데이터 의존 테스트 전체 제외.
 """
 
+from pathlib import Path
+
 import pytest
 
 from dartlab.core.dataLoader import _dataDir
@@ -59,3 +61,34 @@ def pytest_collection_modifyitems(items):
             if reason in _DATA_SKIP_REASONS:
                 item.add_marker(data_mark)
                 break
+
+
+@pytest.fixture(autouse=True)
+def _isolated_dartlab_home(tmp_path, monkeypatch):
+    """shared AI profile/secret store를 테스트별 임시 경로로 격리."""
+    home = tmp_path / "dartlab-home"
+    home.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("DARTLAB_HOME", str(Path(home)))
+
+
+# ── Session-scoped Company fixtures: 한 번만 로드하여 재사용 ──
+
+
+@pytest.fixture(scope="session")
+def samsung():
+    """삼성전자 Company — 전체 세션에서 한 번만 로드."""
+    if not _has_data(SAMSUNG, "docs"):
+        pytest.skip("삼성전자 docs 데이터 없음")
+    from dartlab import Company
+
+    return Company(SAMSUNG)
+
+
+@pytest.fixture(scope="session")
+def samsung_with_finance():
+    """삼성전자 Company (finance 데이터 필수) — 세션에서 한 번만 로드."""
+    if not _has_data(SAMSUNG, "docs") or not _has_data(SAMSUNG, "finance"):
+        pytest.skip("삼성전자 docs/finance 데이터 없음")
+    from dartlab import Company
+
+    return Company(SAMSUNG)

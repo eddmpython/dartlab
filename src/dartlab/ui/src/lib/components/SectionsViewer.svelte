@@ -2,6 +2,17 @@
 	import { fetchCompanySections, fetchCompanyShowAll } from "$lib/api.js";
 	import { renderMarkdown } from "$lib/markdown.js";
 	import { ChevronRight, ChevronDown, FileText, Loader2, BookOpen, BarChart3, Maximize2, Minimize2 } from "lucide-svelte";
+	import {
+		topicLabel, chapterLabel, romanToInt,
+	} from "$lib/viewer/topicLabels.js";
+	import {
+		escapeHtml, normalizeDisclosureLine, isStructuralHeadingLine,
+		parseDisclosureUnits, formatDisclosureText, formatHeadingText,
+		isNumericCell, isNegative, formatScaledCell, formatCell,
+		sortPeriodsDesc, periodDisplayLabel,
+		sectionStatusLabel, sectionStatusClass, renderDiffStatus,
+	} from "$lib/viewer/disclosureText.js";
+	import "$lib/viewer/viewer.css";
 
 	let { stockCode = null, onTopicChange = null } = $props();
 
@@ -17,13 +28,12 @@
 	let selectedTextTimeline = $state(new Map());
 	let topicCache = new Map();
 	let isFullscreen = $state(false);
-	let rawMdPeriodIdx = $state(new Map()); // blockIdx → selected period index
+	let rawMdPeriodIdx = $state(new Map());
 
 	// 점진 렌더 — 초기 10개 섹션만 표시, 스크롤 시 추가
 	let visibleSections = $state(10);
 	let sectionSentinel = $state(null);
 
-	// topic 변경 시 초기화
 	$effect(() => { if (selectedTopic) visibleSections = 10; });
 
 	$effect(() => {
@@ -36,44 +46,6 @@
 		obs.observe(sectionSentinel);
 		return () => obs.disconnect();
 	});
-
-	const TOPIC_LABELS = {
-		companyOverview: "회사 개요", companyHistory: "회사 연혁", articlesOfIncorporation: "정관 사항",
-		capitalChange: "자본금 변동", shareCapital: "주식 현황", dividend: "배당",
-		productService: "사업 내용", rawMaterial: "원재료", businessOverview: "사업 개요",
-		salesOrder: "매출/수주", riskDerivative: "위험관리/파생", majorContractsAndRnd: "주요 계약/R&D",
-		otherReferences: "기타 참고사항", consolidatedStatements: "연결 재무제표", fsSummary: "재무제표 요약",
-		consolidatedNotes: "연결 주석", financialStatements: "개별 재무제표", financialNotes: "개별 주석",
-		fundraising: "자금조달", BS: "재무상태표", IS: "손익계산서", CIS: "포괄손익계산서",
-		CF: "현금흐름표", SCE: "자본변동표", ratios: "재무비율", audit: "감사 의견",
-		mdna: "경영진 분석(MD&A)", internalControl: "내부통제", auditContract: "감사 계약",
-		nonAuditContract: "비감사 계약", boardOfDirectors: "이사회", shareholderMeeting: "주주총회",
-		auditSystem: "감사 체계", outsideDirector: "사외이사", majorHolder: "주요 주주",
-		majorHolderChange: "주주 변동", minorityHolder: "소수주주", stockTotal: "주식 총수",
-		treasuryStock: "자기주식", employee: "직원 현황", executivePay: "임원 보수",
-		executive: "임원 현황", executivePayAllTotal: "전체 보수 총액", executivePayIndividual: "개인별 보수",
-		topPay: "5억이상 상위 보수", unregisteredExecutivePay: "미등기임원 보수", affiliateGroup: "계열회사",
-		investedCompany: "투자회사", relatedPartyTx: "특수관계 거래", corporateBond: "사채 관리",
-		privateOfferingUsage: "사모자금 사용", publicOfferingUsage: "공모자금 사용", shortTermBond: "단기사채",
-		investorProtection: "투자자 보호", disclosureChanges: "공시변경 사항", contingentLiability: "우발채무",
-		sanction: "제재/조치", subsequentEvents: "후발사건", expertConfirmation: "전문가 확인",
-		subsidiaryDetail: "종속회사 상세", affiliateGroupDetail: "계열회사 상세",
-		investmentInOtherDetail: "타법인 출자 상세", rndDetail: "R&D 상세",
-	};
-
-	const CHAPTER_LABELS = {
-		"I": "I. 회사의 개요", "II": "II. 사업의 내용", "III": "III. 재무에 관한 사항",
-		"IV": "IV. 감사인의 감사의견 등", "V": "V. 이사의 경영진단 및 분석의견",
-		"VI": "VI. 이사회 등 회사의 기관에 관한 사항", "VII": "VII. 주주에 관한 사항",
-		"VIII": "VIII. 임원 및 직원 등에 관한 사항", "IX": "IX. 계열회사 등에 관한 사항",
-		"X": "X. 대주주 등과의 거래내용", "XI": "XI. 그 밖에 투자자 보호를 위하여 필요한 사항",
-		"XII": "XII. 상세표",
-	};
-
-	const ROMAN_ORDER = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10, XI:11, XII:12 };
-	function romanToInt(ch) { return ROMAN_ORDER[ch] ?? 99; }
-	function topicLabel(topic) { return TOPIC_LABELS[topic] || topic; }
-	function chapterLabel(ch) { return CHAPTER_LABELS[ch] || ch || "기타"; }
 
 	$effect(() => { if (stockCode) loadData(); });
 
@@ -146,20 +118,6 @@
 		rawMdPeriodIdx = next;
 	}
 
-	function sectionStatusLabel(status) {
-		if (status === "updated") return "최근 수정";
-		if (status === "new") return "신규";
-		if (status === "stale") return "과거 유지";
-		return "유지";
-	}
-
-	function sectionStatusClass(status) {
-		if (status === "updated") return "updated";
-		if (status === "new") return "new";
-		if (status === "stale") return "stale";
-		return "stable";
-	}
-
 	function buildTocTree(rows) {
 		if (!rows) return [];
 		const chapterMap = new Map();
@@ -173,117 +131,6 @@
 			}
 		}
 		return [...chapterMap.values()].sort((a, b) => romanToInt(a.chapter) - romanToInt(b.chapter));
-	}
-
-	// ── 텍스트 ──
-
-	function escapeHtml(text) {
-		return String(text)
-			.replaceAll("&", "&amp;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;")
-			.replaceAll('"', "&quot;")
-			.replaceAll("'", "&#39;");
-	}
-
-	function normalizeDisclosureLine(line) {
-		return String(line || "")
-			.replaceAll("\u00a0", " ")
-			.replace(/\s+/g, " ")
-			.trim();
-	}
-
-	function isStructuralHeadingLine(line) {
-		if (!line || line.length > 88) return false;
-		return /^\[.+\]$/.test(line)
-			|| /^【.+】$/.test(line)
-			|| /^[IVX]+\.\s/.test(line)
-			|| /^\d+\.\s/.test(line)
-			|| /^[가-힣]\.\s/.test(line)
-			|| /^\(\d+\)\s/.test(line)
-			|| /^\([가-힣]\)\s/.test(line);
-	}
-
-	function headingTag(line) {
-		if (/^\(\d+\)\s/.test(line) || /^\([가-힣]\)\s/.test(line)) return "h5";
-		return "h4";
-	}
-
-	function headingClass(line) {
-		if (/^\[.+\]$/.test(line) || /^【.+】$/.test(line)) return "vw-h-bracket";
-		if (/^\(\d+\)\s/.test(line) || /^\([가-힣]\)\s/.test(line)) return "vw-h-sub";
-		return "vw-h-section";
-	}
-
-	function parseDisclosureUnits(text) {
-		if (!text) return [];
-		if (/^\|.+\|$/m.test(text) || /^#{1,3} /m.test(text) || /```/.test(text)) {
-			return [{ kind: "markdown", text }];
-		}
-
-		const units = [];
-		let paragraph = [];
-		const flushParagraph = () => {
-			if (paragraph.length === 0) return;
-			units.push({ kind: "paragraph", text: paragraph.join(" ") });
-			paragraph = [];
-		};
-
-		for (const rawLine of String(text).split("\n")) {
-			const line = normalizeDisclosureLine(rawLine);
-			if (!line) {
-				flushParagraph();
-				continue;
-			}
-			if (isStructuralHeadingLine(line)) {
-				flushParagraph();
-				units.push({ kind: "heading", text: line, tag: headingTag(line), className: headingClass(line) });
-				continue;
-			}
-			paragraph.push(line);
-		}
-		flushParagraph();
-		return units;
-	}
-
-	function periodDisplayLabel(period) {
-		if (!period) return "";
-		if (period.kind === "annual") return `${period.year}Q4`;
-		if (period.year && period.quarter) return `${period.year}Q${period.quarter}`;
-		return period.label || "";
-	}
-
-	function formatDisclosureText(text) {
-		const units = parseDisclosureUnits(text);
-		if (units.length === 0) return "";
-		if (units[0]?.kind === "markdown") return renderMarkdown(text);
-		let html = "";
-		for (const unit of units) {
-			if (unit.kind === "heading") {
-				html += `<${unit.tag} class="${unit.className}">${escapeHtml(unit.text)}</${unit.tag}>`;
-				continue;
-			}
-			html += `<p class="vw-para">${escapeHtml(unit.text)}</p>`;
-		}
-		return html;
-	}
-
-	function formatHeadingText(text) {
-		if (!text) return "";
-		const lines = text.trim().split("\n").filter(l => l.trim());
-		let html = "";
-		for (const line of lines) {
-			const t = line.trim();
-			if (/^[가-힣]\.\s/.test(t) || /^\d+[-.]/.test(t))
-				html += `<h4 class="vw-h-section">${t}</h4>`;
-			else if (/^\(\d+\)\s/.test(t) || /^\([가-힣]\)\s/.test(t))
-				html += `<h5 class="vw-h-sub">${t}</h5>`;
-			else if (/^\[.+\]$/.test(t) || /^【.+】$/.test(t))
-				html += `<h4 class="vw-h-bracket">${t}</h4>`;
-			else
-				html += `<h5 class="vw-h-sub">${t}</h5>`;
-		}
-		return html;
 	}
 
 	function getActiveSectionView(section) {
@@ -300,12 +147,6 @@
 
 	function hasExplicitTimelineSelection(section) {
 		return selectedTextTimeline.has(section.id);
-	}
-
-	function renderDiffStatus(status) {
-		if (status === "updated") return "변경 있음";
-		if (status === "new") return "직전 없음";
-		return "직전과 동일";
 	}
 
 	function buildDiffRenderUnits(view) {
@@ -346,49 +187,9 @@
 		return renderUnits;
 	}
 
-	// ── 숫자 ──
-
-	function isNumericCell(val) {
-		if (val == null) return false;
-		return /^-?[\d,.]+%?$/.test(String(val).trim().replace(/,/g, ""));
-	}
-	function isNegative(val) {
-		if (val == null) return false;
-		return /^-[\d.]+/.test(String(val).trim().replace(/,/g, ""));
-	}
-	function formatScaledCell(val, divisor) {
-		if (val == null || val === "") return "";
-		const num = typeof val === "number" ? val : Number(String(val).replace(/,/g, ""));
-		if (isNaN(num)) return String(val);
-		if (divisor <= 1) return num.toLocaleString("ko-KR");
-		const scaled = num / divisor;
-		return Number.isInteger(scaled) ? scaled.toLocaleString("ko-KR")
-			: scaled.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-	}
-	function formatCell(val) {
-		if (val == null || val === "") return "";
-		const s = String(val).trim();
-		if (s.includes(",")) return s;
-		const m = s.match(/^(-?\d+)(\.\d+)?(%?)$/);
-		if (m) return m[1].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (m[2] || "") + (m[3] || "");
-		return s;
-	}
-
 	function getTopicChapter(topic) {
 		if (!sections?.rows) return null;
 		return sections.rows.find(r => r.topic === topic)?.chapter || null;
-	}
-
-	/** 기간 정렬키: 최신 먼저 */
-	function periodSortKey(p) {
-		const m = p.match(/^(\d{4})(Q([1-4]))?$/);
-		if (!m) return "0000_0";
-		const y = m[1];
-		const q = m[3] || "5"; // 연간은 Q4 뒤
-		return `${y}_${q}`;
-	}
-	function sortPeriodsDesc(arr) {
-		return [...arr].sort((a, b) => periodSortKey(b).localeCompare(periodSortKey(a)));
 	}
 
 	let nonTextBlocks = $derived(topicBlocks.filter(block => block.kind !== "text"));
@@ -830,299 +631,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.vw-report-shell {
-		display: flex;
-		flex-direction: column;
-		gap: 22px;
-		margin-bottom: 44px;
-	}
-	.vw-report-header {
-		max-width: 840px;
-		padding-bottom: 4px;
-	}
-	.vw-report-badges,
-	.vw-section-meta {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-	.vw-text-section {
-		padding-bottom: 38px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-		content-visibility: auto;
-		contain-intrinsic-size: auto 300px;
-	}
-	.vw-text-section:last-child {
-		border-bottom: none;
-		padding-bottom: 0;
-	}
-	.vw-text-section-stale {
-		position: relative;
-	}
-	.vw-text-section-stale::before {
-		content: "";
-		position: absolute;
-		left: -14px;
-		top: 0;
-		bottom: 0;
-		width: 2px;
-		border-radius: 999px;
-		background: linear-gradient(180deg, rgba(251, 191, 36, 0.65), rgba(251, 191, 36, 0.08));
-	}
-	.vw-section-meta {
-		margin-bottom: 18px;
-	}
-	.vw-section-timeline {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		max-width: 840px;
-		margin-bottom: 18px;
-	}
-	.vw-timeline-chip {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 9px 11px;
-		border-radius: 10px;
-		border: 1px solid rgba(148, 163, 184, 0.12);
-		background: rgba(8, 11, 18, 0.32);
-		color: rgba(226, 232, 240, 0.72);
-		cursor: pointer;
-		transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
-	}
-	.vw-timeline-chip:hover {
-		border-color: rgba(148, 163, 184, 0.22);
-		background: rgba(255, 255, 255, 0.04);
-		color: rgba(241, 245, 249, 0.88);
-	}
-	.vw-timeline-chip.is-active {
-		border-color: rgba(251, 146, 60, 0.35);
-		background: rgba(251, 146, 60, 0.08);
-		color: rgba(255, 237, 213, 0.95);
-	}
-	.vw-timeline-label {
-		font-size: 11.5px;
-		font-weight: 600;
-		letter-spacing: 0.01em;
-	}
-	.vw-timeline-overflow {
-		display: inline-flex;
-		align-items: center;
-		padding: 0 4px;
-		font-size: 10px;
-		color: rgba(148, 163, 184, 0.46);
-	}
-	.vw-meta-pill,
-	.vw-status-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 4px 9px;
-		border-radius: 999px;
-		font-size: 11px;
-		font-weight: 500;
-		letter-spacing: 0.01em;
-		border: 1px solid rgba(148, 163, 184, 0.14);
-		background: rgba(15, 18, 25, 0.46);
-		color: rgba(226, 232, 240, 0.76);
-	}
-	.vw-status-pill.stable {
-		border-color: rgba(148, 163, 184, 0.16);
-		color: rgba(226, 232, 240, 0.72);
-	}
-	.vw-status-pill.updated {
-		border-color: rgba(52, 211, 153, 0.18);
-		background: rgba(52, 211, 153, 0.08);
-		color: rgba(167, 243, 208, 0.92);
-	}
-	.vw-status-pill.new {
-		border-color: rgba(96, 165, 250, 0.2);
-		background: rgba(59, 130, 246, 0.08);
-		color: rgba(191, 219, 254, 0.92);
-	}
-	.vw-status-pill.stale {
-		border-color: rgba(251, 191, 36, 0.18);
-		background: rgba(251, 191, 36, 0.08);
-		color: rgba(253, 230, 138, 0.92);
-	}
-	.vw-section-body {
-		margin-bottom: 18px;
-	}
-	.vw-body-frame {
-		padding: 24px 26px 10px;
-		border-radius: 16px;
-		border: 1px solid rgba(148, 163, 184, 0.1);
-		background:
-			linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012)),
-			rgba(7, 10, 17, 0.72);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-	}
-	.vw-section-actions {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 8px;
-		margin-top: 4px;
-		margin-bottom: 12px;
-	}
-	.vw-data-divider {
-		margin: 6px 0 18px;
-		padding-top: 14px;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
-	}
-	.vw-data-kicker {
-		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: rgba(148, 163, 184, 0.42);
-		margin-bottom: 6px;
-	}
-	.vw-data-title {
-		font-size: 13px;
-		font-weight: 600;
-		color: rgba(226, 232, 240, 0.9);
-	}
-	.vw-heading-block {
-		margin-top: 28px;
-		margin-bottom: 12px;
-	}
-	.vw-heading-node + .vw-heading-node {
-		margin-top: 2px;
-	}
-	.vw-heading-block :global(.vw-h-section) {
-		margin-top: 40px;
-		margin-bottom: 12px;
-		font-size: 18px;
-		font-weight: 700;
-		color: var(--color-dl-text);
-		line-height: 1.55;
-		letter-spacing: -0.01em;
-	}
-	.vw-heading-block :global(.vw-h-sub) {
-		margin-top: 20px;
-		margin-bottom: 8px;
-		font-size: 15.5px;
-		font-weight: 600;
-		color: var(--color-dl-text);
-		opacity: 0.92;
-		line-height: 1.55;
-	}
-	.vw-heading-block :global(.vw-h-bracket) {
-		margin-top: 34px;
-		margin-bottom: 12px;
-		font-size: 18.5px;
-		font-weight: 700;
-		color: var(--color-dl-text);
-		letter-spacing: -0.01em;
-	}
-	.vw-body-block {
-		margin-bottom: 28px;
-	}
-	.disclosure-text {
-		font-size: 15px;
-		line-height: 1.92;
-		max-width: 820px;
-	}
-	.disclosure-text :global(.vw-h-bracket) {
-		margin-top: 34px;
-		margin-bottom: 12px;
-		font-size: 18px;
-		font-weight: 700;
-		color: var(--color-dl-text);
-		letter-spacing: -0.01em;
-	}
-	.disclosure-text :global(.vw-h-section) {
-		margin-top: 34px;
-		margin-bottom: 12px;
-		font-size: 17px;
-		font-weight: 700;
-		color: var(--color-dl-text);
-	}
-	.disclosure-text :global(.vw-h-sub) {
-		margin-top: 18px;
-		margin-bottom: 8px;
-		font-size: 15.5px;
-		font-weight: 600;
-		color: var(--color-dl-text);
-		opacity: 0.92;
-	}
-	.disclosure-text :global(.vw-para) {
-		margin-bottom: 14px;
-		color: rgba(241, 245, 249, 0.82);
-	}
-	.disclosure-text :global(.vw-para:first-child) {
-		font-size: 15.5px;
-		color: rgba(248, 250, 252, 0.92);
-	}
-	.vw-digest {
-		margin-top: 12px;
-		margin-bottom: 14px;
-		padding: 14px 16px;
-		border-radius: 6px;
-		border: 1px solid rgba(30, 36, 51, 0.35);
-		background: rgba(15, 18, 25, 0.5);
-		max-width: 720px;
-	}
-	.vw-diff-deleted {
-		padding: 9px 14px 9px 16px;
-		margin-bottom: 8px;
-		border-left: 3px solid #f87171;
-		background: rgba(248, 113, 113, 0.06);
-		color: rgba(241, 245, 249, 0.55);
-		font-size: 14px;
-		line-height: 1.85;
-		border-radius: 0 4px 4px 0;
-		max-width: 820px;
-	}
-	.vw-diff-added {
-		padding: 9px 14px 9px 16px;
-		margin-bottom: 8px;
-		border-left: 3px solid #34d399;
-		background: rgba(52, 211, 153, 0.06);
-		color: rgba(241, 245, 249, 0.82);
-		font-size: 14px;
-		line-height: 1.85;
-		border-radius: 0 4px 4px 0;
-		max-width: 820px;
-	}
-	.vw-diff-flow {
-		padding-top: 2px;
-	}
-	.vw-table-wrap {
-		margin-top: 4px;
-		margin-bottom: 28px;
-		border-radius: 6px;
-		border: 1px solid rgba(30, 36, 51, 0.4);
-		overflow: hidden;
-		content-visibility: auto;
-		contain-intrinsic-size: auto 200px;
-		contain: layout style paint;
-	}
-	.markdown-table :global(table) {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 12px;
-	}
-	.markdown-table :global(th),
-	.markdown-table :global(td) {
-		padding: 6px 10px;
-		border-bottom: 1px solid rgba(255,255,255,0.04);
-		text-align: left;
-		white-space: nowrap;
-	}
-	.markdown-table :global(th) {
-		font-weight: 600;
-		font-size: 10.5px;
-		color: rgba(148, 163, 184, 0.7);
-	}
-	.markdown-table :global(td) {
-		color: rgba(148, 163, 184, 0.85);
-	}
-	.markdown-table :global(tr:nth-child(even)) {
-		background: rgba(255,255,255,0.012);
-	}
-</style>

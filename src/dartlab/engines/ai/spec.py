@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.core.capabilities import build_capability_summary, get_capability_specs
+
 _ENGINE_SPECS = [
     "dartlab.engines.dart.finance.spec",
     "dartlab.engines.dart.report.spec",
@@ -37,6 +39,11 @@ def buildSpec(depth: str = "summary") -> dict:
     """
     import dartlab
 
+    if not get_capability_specs():
+        from dartlab.engines.ai.tools.registry import build_tool_runtime
+
+        build_tool_runtime(object(), name="spec-capabilities")
+
     engines: dict[str, Any] = {}
     for path in _ENGINE_SPECS:
         spec = _loadEngineSpec(path)
@@ -52,6 +59,12 @@ def buildSpec(depth: str = "summary") -> dict:
             engines[name] = spec
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
+    capability_specs = get_capability_specs()
+    capabilities: dict[str, Any] = {
+        "summary": build_capability_summary(capability_specs),
+    }
+    if depth != "summary":
+        capabilities["items"] = [spec.to_dict(detail=True) for spec in capability_specs]
 
     return {
         "system": {
@@ -61,6 +74,7 @@ def buildSpec(depth: str = "summary") -> dict:
             "coverage": "한국 상장사 ~2,700개",
         },
         "engines": engines,
+        "capabilities": capabilities,
     }
 
 

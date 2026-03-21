@@ -5,20 +5,24 @@
 | Provider | 파일 | 인증 | 기본 모델 | 안정성 |
 |----------|------|------|----------|--------|
 | `openai` | openai_compat.py | API Key | gpt-4o | **안정** — 공식 SDK |
-| `claude` | claude.py | API Key / 프록시 | claude-sonnet-4-6 | **안정** — 공식 SDK |
 | `ollama` | ollama.py | 없음 (localhost) | llama3.1 | **안정** — 로컬 |
 | `custom` | openai_compat.py | API Key | gpt-4o | **안정** — OpenAI 호환 |
 | `chatgpt` | providers/__init__.py alias | `codex`로 정규화 | codex mirror | **호환용 alias** — 공개 surface 비노출 |
 | `codex` | codex.py | CLI 세션 | CLI config 또는 gpt-4.1 | **공식 경로 우선** — Codex CLI 의존 |
+| `oauth-codex` | oauthCodex.py | ChatGPT OAuth | gpt-5.4 | **공개 경로** — 비공식 backend API 의존 |
 | `claude-code` | claude_code.py | CLI 세션 | sonnet | **보류중** — OAuth 지원 전 비공개 |
 
 ---
 
 ## 현재 공개 경로
 
-- UI/서버/기본 provider surface에서 ChatGPT 구독 계정 경로는 `codex`가 단일 공식 진입점이다.
-- `chatgpt` 이름은 기존 설정/호환성 때문에 내부 alias로만 남아 있으며 실제 구현은 `codex`로 정규화된다.
-- 아래 ChatGPT OAuth 내용은 legacy/참고용이다. 공개 기능으로는 더 이상 우선 사용하지 않는다.
+- ChatGPT 구독 계정 경로는 2개다.
+  - `codex`: Codex CLI 로그인 기반
+  - `oauth-codex`: ChatGPT OAuth 직접 연결 기반
+- 공개 provider surface는 `codex`, `oauth-codex`, `openai`, `ollama`, `custom`만 유지한다.
+- `claude` provider는 public surface에서 제거되었고 legacy/internal 코드로만 남아 있다.
+- `chatgpt`는 기존 설정/호환성 때문에 내부 alias로만 남아 있으며 실제 구현은 `codex`로 정규화된다.
+- `chatgpt-oauth`는 내부/호환 alias로만 남아 있으며 실제 구현은 `oauth-codex`로 정규화된다.
 
 ## Tool Runtime 기반
 
@@ -32,7 +36,7 @@
 
 ### 왜 취약한가
 
-`chatgpt` provider는 **OpenAI 비공식 내부 API** (`chatgpt.com/backend-api/codex/responses`)를 사용한다.
+`oauth-codex` provider는 **OpenAI 비공식 내부 API** (`chatgpt.com/backend-api/codex/responses`)를 사용한다.
 공식 OpenAI API (`api.openai.com`)가 아니므로 **예고 없이 변경/차단될 수 있다**.
 
 ### 정기 체크 항목

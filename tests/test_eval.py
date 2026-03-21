@@ -77,7 +77,7 @@ def test_auto_score():
 
 
 def test_validate_structured():
-    from dartlab.engines.ai.validation import validate_structured
+    from dartlab.engines.ai.runtime.validation import validate_structured
 
     structured = {
         "metrics": [

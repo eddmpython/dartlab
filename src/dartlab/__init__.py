@@ -181,6 +181,102 @@ def signal(keyword: str | None = None):
     return scan_signal(keyword)
 
 
+def ask(
+    codeOrName: str,
+    question: str,
+    *,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+    stream: bool = False,
+    reflect: bool = False,
+    **kwargs,
+) -> str:
+    """LLM에게 기업에 대해 질문.
+
+    Args:
+        codeOrName: 종목코드, 회사명, 또는 US ticker.
+        question: 질문 텍스트.
+        provider: LLM provider ("openai", "codex", "oauth-codex", "ollama").
+        model: 모델 override.
+        stream: True면 제너레이터 반환 (chunk 단위).
+        include: 포함할 데이터 모듈.
+        exclude: 제외할 데이터 모듈.
+
+    Example::
+
+        import dartlab
+        dartlab.llm.configure(provider="openai", api_key="sk-...")
+
+        dartlab.ask("005930", "영업이익률 추세는?")
+        dartlab.ask("삼성전자", "핵심 리스크 3가지")
+        dartlab.ask("AAPL", "dividend trend?")
+
+        # 스트리밍
+        for chunk in dartlab.ask("005930", "배당 분석", stream=True):
+            print(chunk, end="")
+
+        # 배치
+        for code in ["005930", "000660", "035420"]:
+            print(dartlab.ask(code, "한줄 요약"))
+    """
+    from dartlab.engines.ai.runtime.standalone import ask as _ask
+
+    company = Company(codeOrName)
+    return _ask(
+        company,
+        question,
+        include=include,
+        exclude=exclude,
+        provider=provider,
+        model=model,
+        stream=stream,
+        reflect=reflect,
+        **kwargs,
+    )
+
+
+def chat(
+    codeOrName: str,
+    question: str,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+    max_turns: int = 5,
+    on_tool_call=None,
+    on_tool_result=None,
+    **kwargs,
+) -> str:
+    """에이전트 모드: LLM이 도구를 선택하여 심화 분석.
+
+    Args:
+        codeOrName: 종목코드, 회사명, 또는 US ticker.
+        question: 질문 텍스트.
+        provider: LLM provider.
+        model: 모델 override.
+        max_turns: 최대 도구 호출 반복 횟수.
+
+    Example::
+
+        import dartlab
+        dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+    """
+    from dartlab.engines.ai.runtime.standalone import chat as _chat
+
+    company = Company(codeOrName)
+    return _chat(
+        company,
+        question,
+        provider=provider,
+        model=model,
+        max_turns=max_turns,
+        on_tool_call=on_tool_call,
+        on_tool_result=on_tool_result,
+        **kwargs,
+    )
+
+
 def groupHealth():
     """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
 
@@ -229,6 +325,8 @@ __all__ = [
     "core",
     "engines",
     "llm",
+    "ask",
+    "chat",
     "search",
     "listing",
     "network",

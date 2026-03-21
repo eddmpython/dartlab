@@ -28,15 +28,6 @@ def run(args) -> int:
     dartlab = configure_dartlab()
 
     provider = args.provider or detect_provider()
-    kwargs = {"provider": provider}
-    if args.model:
-        kwargs["model"] = args.model
-    if args.base_url:
-        kwargs["base_url"] = args.base_url
-    if args.api_key:
-        kwargs["api_key"] = args.api_key
-
-    dartlab.llm.configure(**kwargs)
 
     try:
         company = dartlab.Company(args.company)
@@ -47,14 +38,18 @@ def run(args) -> int:
     print(f"  provider: {provider}")
     print()
 
-    from dartlab.engines.ai.standalone import ask as _ask
+    from dartlab.engines.ai.runtime.standalone import ask as _ask
 
     answer = _ask(
         company,
         args.question,
         include=args.include,
         exclude=args.exclude,
+        provider=provider,
+        model=args.model,
         stream=args.stream,
+        base_url=args.base_url,
+        api_key=args.api_key,
     )
 
     if not args.stream:

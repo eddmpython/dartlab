@@ -2,8 +2,8 @@
 
 import polars as pl
 
-import dartlab.engines.ai.pipeline as pipeline_module
-from dartlab.engines.ai.pipeline import (
+import dartlab.engines.ai.runtime.pipeline as pipeline_module
+from dartlab.engines.ai.runtime.pipeline import (
     _df_to_simple_md,
     _run_dividend_analysis,
     _run_growth_analysis,

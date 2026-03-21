@@ -6,6 +6,7 @@
     workforce   — 인력/급여 (직원수, 평균급여, 성장률, 고액보수)
     capital     — 주주환원 (배당, 자사주, 증자/감자)
     debt        — 부채 구조 (사채만기, 부채비율, ICR, 위험등급)
+    signal      — 서술형 공시 시장 시그널 (키워드 트렌드)
 """
 
 from __future__ import annotations

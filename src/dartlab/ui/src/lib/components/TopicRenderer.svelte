@@ -8,6 +8,10 @@
 	import { renderMarkdown } from "$lib/markdown.js";
 	import { streamTopicSummary, fetchCompanyTopicDiff } from "$lib/api.js";
 	import { financeBlockToChartSpec } from "$lib/chart/specs.js";
+	import {
+		escapeHtml, normalizeDisclosureLine, isStructuralHeadingLine,
+		periodDisplayLabel as periodDisplayLabelBase,
+	} from "$lib/viewer/disclosureText.js";
 	import TimelineBar from "./TimelineBar.svelte";
 	import TableRenderer from "./TableRenderer.svelte";
 	import DiffSummary from "./DiffSummary.svelte";
@@ -74,13 +78,7 @@
 		summaryText = "";
 		summaryError = null;
 
-		// localStorage에서 사용자 선택 provider/model 읽기
-		const savedProvider = typeof localStorage !== "undefined" ? localStorage.getItem("dartlab-provider") : null;
-		const savedModel = typeof localStorage !== "undefined" ? localStorage.getItem("dartlab-model") : null;
-
 		summaryHandle = streamTopicSummary(viewer.stockCode, topicData.topic, {
-			provider: savedProvider || undefined,
-			model: savedModel || undefined,
 			onContext() {},
 			onChunk(text) { summaryText += text; },
 			onDone() {
@@ -100,6 +98,8 @@
 	let isBookmarked = $derived(viewer?.isBookmarked?.(topicData?.topic) ?? false);
 
 	// charDiff 캐시 — sectionId:periodLabel → { diff: [...], from, to }
+	// LRU 제한: 최대 100 엔트리, 초과 시 오래된 것부터 제거
+	const CHAR_DIFF_CACHE_MAX = 100;
 	let charDiffCache = $state(new Map());
 	let charDiffLoading = $state(new Set());
 
@@ -113,6 +113,11 @@
 			const res = await fetchCompanyTopicDiff(viewer.stockCode, topicData.topic, fromPeriodLabel, toPeriodLabel);
 			const next = new Map(charDiffCache);
 			next.set(cacheKey, res);
+			// LRU eviction: 오래된 엔트리 제거
+			if (next.size > CHAR_DIFF_CACHE_MAX) {
+				const keysToDelete = [...next.keys()].slice(0, next.size - CHAR_DIFF_CACHE_MAX);
+				for (const k of keysToDelete) next.delete(k);
+			}
 			charDiffCache = next;
 		} catch {
 			// charDiff 실패 시 무시 — paragraph diff는 유지
@@ -229,21 +234,12 @@
 		sectionTimeline = next;
 	}
 
-	// ── Disclosure text rendering (Korean subheading patterns) ──
-	function escapeHtml(s) {
-		return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-	}
-
-	function normalizeDisclosureLine(line) {
-		return String(line || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-	}
+	// ── Disclosure text rendering ──
+	// escapeHtml, normalizeDisclosureLine, isStructuralHeadingLine imported from disclosureText.js
 
 	function isStructuralHeading(line) {
 		if (!line || line.length > 88) return false;
-		return /^\[.+\]$/.test(line) || /^【.+】$/.test(line)
-			|| /^[IVX]+\.\s/.test(line) || /^\d+\.\s/.test(line)
-			|| /^[가-힣]\.\s/.test(line) || /^\(\d+\)\s/.test(line)
-			|| /^\([가-힣]\)\s/.test(line) || /^[①②③④⑤⑥⑦⑧⑨⑩]\s/.test(line);
+		return isStructuralHeadingLine(line) || /^[①②③④⑤⑥⑦⑧⑨⑩]\s/.test(line);
 	}
 
 	function headingLevel(line) {
@@ -380,6 +376,25 @@
 	function handleAskAI() {
 		if (floatBtn.text && onAskAI) onAskAI(floatBtn.text);
 		floatBtn = { show: false, x: 0, y: 0, text: "" };
+	}
+
+	/** 블록 단위 AI 분석 요청 */
+	function handleBlockAnalyze(block) {
+		if (!onAskAI) return;
+		const topic = topicData?.topicLabel || topicData?.topic || "";
+		const blockData = {
+			topic: topicData?.topic,
+			topicLabel: topic,
+			blockIndex: block.block,
+			blockType: block.type || block.kind,
+			preview: block.preview || block.label || "",
+		};
+		if (block.data?.rows?.length) {
+			const cols = block.data.columns || [];
+			const rows = block.data.rows.slice(0, 30);
+			blockData.table = { columns: cols, rows };
+		}
+		onAskAI(`[${topic}] 이 블록을 분석해줘`, blockData);
 	}
 
 	function handleDocClick() {
@@ -695,6 +710,15 @@
 									{/if}
 								</button>
 							{/if}
+							{#if onAskAI}
+								<button
+									class="p-1 rounded text-dl-text-dim/30 hover:text-[#a78bfa] hover:bg-white/5 transition-colors"
+									onclick={() => handleBlockAnalyze(block)}
+									title="AI 분석"
+								>
+									<Sparkles size={12} />
+								</button>
+							{/if}
 						</div>
 						{#if showChart && spec}
 							{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
@@ -773,6 +797,15 @@
 									{:else}
 										<Copy size={12} />
 									{/if}
+								</button>
+							{/if}
+							{#if onAskAI}
+								<button
+									class="p-1 rounded text-dl-text-dim/30 hover:text-[#a78bfa] hover:bg-white/5 transition-colors"
+									onclick={() => handleBlockAnalyze(block)}
+									title="AI 분석"
+								>
+									<Sparkles size={12} />
 								</button>
 							{/if}
 						</div>

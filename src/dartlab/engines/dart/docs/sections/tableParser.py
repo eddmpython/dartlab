@@ -164,10 +164,15 @@ def _parseMultiYear(sub: list[str], periodYear: int) -> tuple[list[tuple[str, st
         cells = [c.strip() for c in line.strip("|").split("|")]
         if all(set(c.strip()) <= {"-", ":"} for c in cells if c.strip()):
             continue
-        if not cells or not cells[0].strip():
+        if not cells:
             continue
+        if not cells[0].strip():
+            if not prevItem:
+                continue
+            first = prevItem
+        else:
+            first = cells[0].strip()
 
-        first = cells[0].strip()
         if first.startswith("※"):
             continue
 
@@ -221,10 +226,16 @@ def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, list[str]]],
     dataStart = 1 if isSubHeader else 0
 
     prevGroupItem = ""
+    prevCarryItem = ""
     for row in rows[dataStart:]:
-        if not row or not row[0].strip():
+        if not row:
             continue
-        first = row[0].strip()
+        if not row[0].strip():
+            if not prevCarryItem:
+                continue
+            first = prevCarryItem
+        else:
+            first = row[0].strip()
         if first.startswith("※") or first.startswith("☞"):
             continue
 
@@ -243,6 +254,7 @@ def _parseKeyValueOrMatrix(sub: list[str]) -> tuple[list[tuple[str, list[str]]],
 
         if item:
             result.append((item, values))
+            prevCarryItem = first
 
     return result, headerNames, unit
 

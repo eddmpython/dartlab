@@ -1,121 +1,119 @@
-"""LLM 기반 기업분석 엔진.
-
-사용법::
-
-        import dartlab
-
-        # 설정
-        dartlab.llm.configure(provider="claude", api_key="sk-...")
-        dartlab.llm.configure(provider="ollama", model="llama3.1")
-
-        # 분석
-        c = dartlab.Company("005930")
-        c.ask("이 기업의 재무 건전성은?")
-        c.ask("배당 추세를 분석해줘", include=["dividend", "IS"])
-"""
+"""LLM 기반 기업분석 엔진."""
 
 from __future__ import annotations
 
+from dartlab.core.ai import (
+    AI_ROLES,
+    DEFAULT_ROLE,
+    get_profile_manager,
+    get_provider_spec,
+    normalize_provider,
+    normalize_role,
+)
 from dartlab.engines.ai.types import LLMConfig, LLMResponse
-
-_global_config: LLMConfig = LLMConfig()
 
 
 def configure(
-    provider: str = "openai",
+    provider: str = "codex",
     model: str | None = None,
     api_key: str | None = None,
     base_url: str | None = None,
+    role: str | None = None,
     temperature: float = 0.3,
     max_tokens: int = 4096,
     system_prompt: str | None = None,
 ) -> None:
-    """LLM 글로벌 설정.
-
-    Example::
-
-            import dartlab
-
-            # OpenAI / GPT
-            dartlab.llm.configure(provider="openai", api_key="sk-...")
-
-            # Claude (API 키)
-            dartlab.llm.configure(provider="claude", api_key="sk-ant-...")
-
-            # Claude (프록시 / CLIProxyAPI)
-            dartlab.llm.configure(provider="claude", base_url="http://localhost:8317/v1")
-
-            # Ollama (로컬, 무료)
-            dartlab.llm.configure(provider="ollama", model="llama3.1")
-
-            # 커스텀 OpenAI 호환 엔드포인트
-            dartlab.llm.configure(provider="custom", base_url="https://my-api.com/v1", api_key="key")
-
-            # Claude Code CLI (Claude Pro/Max 구독, API 키 불필요)
-            dartlab.llm.configure(provider="claude-code")
-            dartlab.llm.configure(provider="claude-code", model="opus")
-
-            # OpenAI Codex CLI (ChatGPT Plus/Pro 구독, API 키 불필요)
-            dartlab.llm.configure(provider="codex")
-    """
-    global _global_config
-    _global_config = LLMConfig(
-        provider=provider,
+    """공통 AI profile을 갱신한다."""
+    normalized = normalize_provider(provider) or provider
+    if get_provider_spec(normalized) is None:
+        raise ValueError(f"지원하지 않는 provider: {provider}")
+    normalized_role = normalize_role(role)
+    if role is not None and normalized_role is None:
+        raise ValueError(f"지원하지 않는 role: {role}. 지원: {AI_ROLES}")
+    manager = get_profile_manager()
+    manager.update(
+        provider=normalized,
         model=model,
-        api_key=api_key,
+        role=normalized_role,
         base_url=base_url,
         temperature=temperature,
         max_tokens=max_tokens,
         system_prompt=system_prompt,
+        updated_by="code",
     )
+    if api_key:
+        spec = get_provider_spec(normalized)
+        if spec and spec.auth_kind == "api_key":
+            manager.save_api_key(normalized, api_key, updated_by="code")
 
 
-def get_config() -> LLMConfig:
+def get_config(provider: str | None = None, *, role: str | None = None) -> LLMConfig:
     """현재 글로벌 LLM 설정 반환."""
-    return _global_config
+    normalized_role = normalize_role(role)
+    resolved = get_profile_manager().resolve(provider=provider, role=normalized_role)
+    return LLMConfig(**resolved)
 
 
-def status() -> dict:
-    """LLM 설정 및 provider 상태 확인.
-
-    Returns:
-            {
-                    "provider": "ollama",
-                    "model": "llama3.1",
-                    "available": True,
-                    "ollama": {...}  # ollama provider인 경우에만
-            }
-    """
+def status(provider: str | None = None, *, role: str | None = None) -> dict:
+    """LLM 설정 및 provider 상태 확인."""
     from dartlab.engines.ai.providers import create_provider
 
-    provider = create_provider(_global_config)
-    available = provider.check_available()
+    normalized_role = normalize_role(role)
+    config = get_config(provider, role=normalized_role)
+    selected_provider = config.provider
+    llm = create_provider(config)
+    available = llm.check_available()
 
     result = {
-        "provider": _global_config.provider,
-        "model": provider.resolved_model,
+        "provider": selected_provider,
+        "role": normalized_role or DEFAULT_ROLE,
+        "model": llm.resolved_model,
         "available": available,
+        "defaultProvider": get_profile_manager().load().default_provider,
     }
 
-    if _global_config.provider == "ollama":
-        from dartlab.engines.ai.ollama_setup import detect_ollama
+    if selected_provider == "ollama":
+        from dartlab.engines.ai.providers.support.ollama_setup import detect_ollama
 
         result["ollama"] = detect_ollama()
 
-    if _global_config.provider == "claude-code":
-        from dartlab.engines.ai.cli_setup import detect_claude_code
-
-        result["claude-code"] = detect_claude_code()
-
-    if _global_config.provider == "codex":
-        from dartlab.engines.ai.cli_setup import detect_codex
+    if selected_provider == "codex":
+        from dartlab.engines.ai.providers.support.cli_setup import detect_codex
 
         result["codex"] = detect_codex()
+
+    if selected_provider == "oauth-codex":
+        from dartlab.engines.ai.providers.support import oauth_token as oauthToken
+
+        token_stored = False
+        try:
+            token_stored = oauthToken.load_token() is not None
+        except (OSError, ValueError):
+            token_stored = False
+
+        try:
+            authenticated = oauthToken.is_authenticated()
+            account_id = oauthToken.get_account_id() if authenticated else None
+        except (
+            AttributeError,
+            OSError,
+            RuntimeError,
+            ValueError,
+            oauthToken.TokenRefreshError,
+        ):
+            authenticated = False
+            account_id = None
+
+        result["oauth-codex"] = {
+            "authenticated": authenticated,
+            "tokenStored": token_stored,
+            "accountId": account_id,
+        }
 
     return result
 
 
 from dartlab.engines.ai import aiParser as ai
-from dartlab.engines.ai.tool_plugin import get_plugin_registry, tool
+from dartlab.engines.ai.tools.plugin import get_plugin_registry, tool
 
 __all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "ai", "tool", "get_plugin_registry"]

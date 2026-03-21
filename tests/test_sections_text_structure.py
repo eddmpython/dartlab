@@ -21,7 +21,7 @@ def test_parse_text_structure_splits_levels_and_bodies():
     rows = parseTextStructure(text, sourceBlockOrder=0)
 
     assert [row["textNodeType"] for row in rows] == ["heading", "heading", "body", "heading", "body"]
-    assert [row["textLevel"] for row in rows] == [1, 2, 2, 2, 2]
+    assert [row["textLevel"] for row in rows] == [3, 4, 4, 4, 4]
     assert rows[1]["textPathKey"] == "회사의개요 > 회사의법적상업적명칭"
     assert rows[2]["textPathKey"] == "회사의개요 > 회사의법적상업적명칭"
 
@@ -87,7 +87,7 @@ def test_parse_text_structure_demotes_redundant_topic_root_alias(monkeypatch):
     monkeypatch.setattr(textStructure, "mapSectionTitle", fake_map_section_title)
 
     rows = parseTextStructure(
-        "1. 사업의 개요\nII. 사업의 내용\n가. 사업부문별 현황\n당사는 DX와 DS 부문을 운영합니다.",
+        "1. 사업의 개요\n2. 사업의 내용\n가. 사업부문별 현황\n당사는 DX와 DS 부문을 운영합니다.",
         sourceBlockOrder=0,
         topic="businessOverview",
     )

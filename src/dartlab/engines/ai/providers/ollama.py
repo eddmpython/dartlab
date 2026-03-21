@@ -82,7 +82,7 @@ class OllamaProvider(BaseProvider):
 
     def _ensure_available(self):
         if not self.check_available():
-            from dartlab.engines.ai.ollama_setup import get_install_guide
+            from dartlab.engines.ai.providers.support.ollama_setup import get_install_guide
 
             raise ConnectionError(f"Ollama 서버에 접근할 수 없습니다 ({OLLAMA_DEFAULT_URL}).\n\n{get_install_guide()}")
 

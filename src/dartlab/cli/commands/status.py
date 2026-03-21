@@ -18,8 +18,7 @@ def run(args) -> int:
     providers = [args.provider] if args.provider else PROVIDERS
 
     for provider_name in providers:
-        dartlab.llm.configure(provider=provider_name)
-        status = dartlab.llm.status()
+        status = dartlab.llm.status(provider=provider_name)
 
         available = status["available"]
         marker = "●" if available else "○"
@@ -46,7 +45,16 @@ def run(args) -> int:
             if not info["installed"]:
                 print("  setup:     dartlab setup codex")
 
-        elif provider_name in ("openai", "claude", "custom") and not available:
+        elif provider_name == "oauth-codex" and "oauth-codex" in status:
+            info = status["oauth-codex"]
+            print(f"  token:     {info['tokenStored']}")
+            print(f"  auth:      {info['authenticated']}")
+            if info.get("accountId"):
+                print(f"  account:   {info['accountId']}")
+            if not info["authenticated"]:
+                print("  setup:     UI 설정 패널에서 ChatGPT OAuth 로그인")
+
+        elif provider_name in ("openai", "custom") and not available:
             print(f"  setup:     dartlab ask ... -p {provider_name} --api-key YOUR_KEY")
 
     print()

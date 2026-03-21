@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-PROVIDERS = ["codex", "ollama", "openai", "claude", "custom"]
-CLI_PROVIDERS = ["codex", "ollama"]
+from dartlab.core.ai import cli_provider_choices, provider_choices
+
+PROVIDERS = provider_choices()
+CLI_PROVIDERS = cli_provider_choices()
 
 EXIT_OK = 0
 EXIT_USAGE = 2

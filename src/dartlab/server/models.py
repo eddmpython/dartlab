@@ -45,6 +45,7 @@ class AskRequest(BaseModel):
     company: str | None = None
     question: str
     provider: str | None = None
+    role: str | None = None
     model: str | None = None
     api_key: str | None = None
     base_url: str | None = None
@@ -57,9 +58,26 @@ class AskRequest(BaseModel):
 
 class ConfigureRequest(BaseModel):
     provider: str = "codex"
+    role: str | None = None
     model: str | None = None
     api_key: str | None = None
     base_url: str | None = None
+
+
+class AiProfileUpdateRequest(BaseModel):
+    provider: str | None = None
+    role: str | None = None
+    model: str | None = None
+    base_url: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    system_prompt: str | None = None
+
+
+class AiSecretUpdateRequest(BaseModel):
+    provider: str
+    api_key: str | None = None
+    clear: bool = False
 
 
 # --- Viewer 응답 스키마 ---

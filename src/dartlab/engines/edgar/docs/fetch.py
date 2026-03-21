@@ -383,7 +383,7 @@ def downloadListedEdgarDocs(
                 continue
 
             try:
-                fetchEdgarDocs(ticker, outPath, sinceYear=sinceYear)
+                fetchEdgarDocs(ticker, outPath, sinceYear=sinceYear, showProgress=False)
                 results.append({"ticker": ticker, "status": "downloaded", "reason": None})
             except (OSError, ValueError, requests.RequestException) as e:
                 results.append({"ticker": ticker, "status": "failed", "reason": str(e)})

@@ -3,7 +3,7 @@
 import polars as pl
 
 from dartlab.engines.ai.agent import agent_loop, build_agent_system_addition
-from dartlab.engines.ai.tools_registry import build_tool_runtime
+from dartlab.engines.ai.tools.registry import build_tool_runtime
 from dartlab.engines.ai.types import ToolCall, ToolResponse
 
 # ══════════════════════════════════════

@@ -2457,3 +2457,72 @@ class Company:
         from dartlab.engines.common.viewer import launchViewer
 
         launchViewer(self.stockCode, port=port)
+
+    def ask(
+        self,
+        question: str,
+        *,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        stream: bool = False,
+        reflect: bool = False,
+        **kwargs,
+    ) -> str:
+        """LLM에게 이 기업에 대해 질문.
+
+        Example::
+
+            c = Company("005930")
+            c.ask("영업이익률 추세는?")
+            c.ask("핵심 리스크 3가지", provider="codex")
+
+            # 스트리밍
+            for chunk in c.ask("배당 분석해줘", stream=True):
+                print(chunk, end="")
+        """
+        from dartlab.engines.ai.runtime.standalone import ask as _ask
+
+        return _ask(
+            self,
+            question,
+            include=include,
+            exclude=exclude,
+            provider=provider,
+            model=model,
+            stream=stream,
+            reflect=reflect,
+            **kwargs,
+        )
+
+    def chat(
+        self,
+        question: str,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        max_turns: int = 5,
+        on_tool_call=None,
+        on_tool_result=None,
+        **kwargs,
+    ) -> str:
+        """에이전트 모드: LLM이 도구를 선택하여 심화 분석.
+
+        Example::
+
+            c = Company("005930")
+            c.chat("배당 추세를 분석하고 이상 징후를 찾아줘")
+        """
+        from dartlab.engines.ai.runtime.standalone import chat as _chat
+
+        return _chat(
+            self,
+            question,
+            provider=provider,
+            model=model,
+            max_turns=max_turns,
+            on_tool_call=on_tool_call,
+            on_tool_result=on_tool_result,
+            **kwargs,
+        )

@@ -1,6 +1,6 @@
 """prompts 모듈 테스트."""
 
-from dartlab.engines.ai.prompts import (
+from dartlab.engines.ai.conversation.prompts import (
     _classify_question,
     _match_sector,
     build_system_prompt,
