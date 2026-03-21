@@ -87,6 +87,7 @@ def configure_parser(subparsers) -> None:
 # 설정 저장/로드
 # ---------------------------------------------------------------------------
 
+
 def _load_config() -> dict:
     """~/.dartlab/share.json 에서 저장된 설정을 로드한다."""
     if _SHARE_CONFIG_PATH.exists():
@@ -119,6 +120,7 @@ def _resolve_option(args_val, config_key: str, config: dict, default):
 # TTL
 # ---------------------------------------------------------------------------
 
+
 def _parse_ttl(ttl_str: str) -> int:
     """TTL 문자열을 초 단위로 변환. 예: '30m' -> 1800, '2h' -> 7200."""
     match = re.match(r"^(\d+)(m|h|s)?$", ttl_str.strip())
@@ -149,7 +151,7 @@ def _ask_ttl() -> int:
     for i, (_, _, label) in enumerate(_TTL_CHOICES, 1):
         marker = " *" if i == 2 else ""
         print(f"    {i}) {label}{marker}")
-    print(f"    6) 직접 입력")
+    print("    6) 직접 입력")
     print()
 
     try:
@@ -189,6 +191,7 @@ def _ask_ttl() -> int:
 # QR 코드 (ASCII — Windows cp949 호환)
 # ---------------------------------------------------------------------------
 
+
 def _print_qr(url: str) -> None:
     """URL을 터미널에 ASCII QR 코드로 출력한다. Windows 호환."""
     try:
@@ -214,6 +217,7 @@ def _ensure_qrcode() -> bool:
     """qrcode 패키지가 없으면 설치 여부를 묻는다. 설치되었으면 True."""
     try:
         import qrcode  # noqa: F401
+
         return True
     except ImportError:
         pass
@@ -246,6 +250,7 @@ def _ensure_qrcode() -> bool:
 # ---------------------------------------------------------------------------
 # 메인
 # ---------------------------------------------------------------------------
+
 
 def run(args) -> int:
     config = _load_config()
