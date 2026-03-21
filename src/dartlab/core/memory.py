@@ -6,7 +6,7 @@ import functools
 import gc
 import os
 from collections import OrderedDict
-from typing import Any, TypeVar, Callable
+from typing import Any, Callable, TypeVar
 
 F = TypeVar("F", bound=Callable)
 
