@@ -40,16 +40,19 @@ describe("UI contracts", () => {
 	});
 
 	it("keeps the workspace evidence panel readable and drill-down capable", () => {
-		const source = read("src/lib/components/DataExplorer.svelte");
+		const evidenceTab = read("src/lib/components/workspace/EvidenceTab.svelte");
 
-		expect(source).toContain('data-evidence-section="snapshot"');
-		expect(source).toContain('data-evidence-section="contexts"');
-		expect(source).toContain('data-evidence-section="tool-calls"');
-		expect(source).toContain('data-evidence-section="tool-results"');
-		expect(source).toContain("tool-result");
-		expect(source).toContain("프롬프트 투명성");
-		expect(source).toContain("도구 결과");
-		expect(source).toContain("selectedEvidenceIndex");
+		expect(evidenceTab).toContain('data-evidence-section="snapshot"');
+		expect(evidenceTab).toContain('data-evidence-section="contexts"');
+		expect(evidenceTab).toContain('data-evidence-section="tool-calls"');
+		expect(evidenceTab).toContain('data-evidence-section="tool-results"');
+		expect(evidenceTab).toContain("tool-result");
+		expect(evidenceTab).toContain("프롬프트 투명성");
+		expect(evidenceTab).toContain("도구 결과");
+
+		// DataExplorer still orchestrates evidence section routing
+		const explorer = read("src/lib/components/DataExplorer.svelte");
+		expect(explorer).toContain("selectedEvidenceIndex");
 	});
 
 	it("keeps the empty state aligned to the README product message", () => {

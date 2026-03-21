@@ -441,6 +441,20 @@ def chat(
     )
 
 
+def plugins():
+    """로드된 플러그인 목록 반환.
+
+    Example::
+
+        import dartlab
+        dartlab.plugins()  # [PluginMeta(name="esg-scores", ...)]
+    """
+    from dartlab.core.plugins import discover, get_loaded_plugins
+
+    discover()
+    return get_loaded_plugins()
+
+
 def groupHealth():
     """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
 
@@ -508,6 +522,7 @@ __all__ = [
     "benchmark",
     "signal",
     "groupHealth",
+    "plugins",
     "verbose",
     "dataDir",
     "getKindList",

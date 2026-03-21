@@ -418,7 +418,7 @@ wheels = [
 
 [[package]]
 name = "dartlab"
-version = "0.7.3"
+version = "0.7.4"
 source = { editable = "." }
 dependencies = [
     { name = "alive-progress" },
@@ -448,6 +448,33 @@ all = [
     { name = "msgpack" },
     { name = "openai" },
     { name = "plotly" },
+    { name = "sse-starlette" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+channel = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "msgpack" },
+    { name = "pycloudflared" },
+    { name = "sse-starlette" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+channel-full = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "msgpack" },
+    { name = "pycloudflared" },
+    { name = "pyngrok" },
+    { name = "python-telegram-bot" },
+    { name = "slack-bolt" },
+    { name = "sse-starlette" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+channel-ngrok = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "msgpack" },
+    { name = "pyngrok" },
     { name = "sse-starlette" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -492,7 +519,10 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.30.0,<2" },
     { name = "anthropic", marker = "extra == 'llm-anthropic'", specifier = ">=0.30.0,<2" },
     { name = "beautifulsoup4", specifier = ">=4.14.3,<5" },
+    { name = "dartlab", extras = ["ai"], marker = "extra == 'channel'" },
+    { name = "dartlab", extras = ["ai"], marker = "extra == 'channel-ngrok'" },
     { name = "dartlab", extras = ["ai"], marker = "extra == 'ui'" },
+    { name = "dartlab", extras = ["channel", "channel-ngrok"], marker = "extra == 'channel-full'" },
     { name = "diff-match-patch", specifier = ">=20230430" },
     { name = "fastapi", marker = "extra == 'ai'", specifier = ">=0.135.1,<1" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.135.1,<1" },
@@ -512,15 +542,19 @@ requires-dist = [
     { name = "plotly", marker = "extra == 'all'", specifier = ">=5.0.0,<6" },
     { name = "plotly", marker = "extra == 'charts'", specifier = ">=5.0.0,<6" },
     { name = "polars", specifier = ">=1.0.0,<2" },
+    { name = "pycloudflared", marker = "extra == 'channel'", specifier = ">=0.3" },
+    { name = "pyngrok", marker = "extra == 'channel-ngrok'", specifier = ">=7.0,<8" },
+    { name = "python-telegram-bot", marker = "extra == 'channel-full'", specifier = ">=21.0,<22" },
     { name = "requests", specifier = ">=2.32.5,<3" },
     { name = "rich", specifier = ">=14.3.3,<15" },
     { name = "scipy", marker = "extra == 'charts'", specifier = ">=1.17.1,<2" },
+    { name = "slack-bolt", marker = "extra == 'channel-full'", specifier = ">=1.18,<2" },
     { name = "sse-starlette", marker = "extra == 'ai'", specifier = ">=2.0.0,<3" },
     { name = "sse-starlette", marker = "extra == 'all'", specifier = ">=2.0.0,<3" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'ai'", specifier = ">=0.30.0,<1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30.0,<1" },
 ]
-provides-extras = ["llm", "llm-anthropic", "charts", "ai", "mcp", "ui", "all"]
+provides-extras = ["llm", "llm-anthropic", "charts", "ai", "mcp", "ui", "channel", "channel-ngrok", "channel-full", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1546,6 +1580,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pycloudflared"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f4/be/f5007de781eb463572fac429ad573abf66d62439703efa0ddc68b80d0d92/pycloudflared-0.3.0.tar.gz", hash = "sha256:d2df5c91715c0b0446e6cb03daf147f05e7d68f40d1c6147d8bee70d23d7038c", size = 4695, upload-time = "2025-11-26T08:34:21.163Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/59/8536f293fee58ccd07bb81160eee9329ebeef7b03e9c05ea8a100f2c207c/pycloudflared-0.3.0-py3-none-any.whl", hash = "sha256:2eaefd006849eaa2af6301eb2b7c7a6f71482b89477a59c01e2f643a9a9fb24b", size = 6674, upload-time = "2025-11-26T08:34:19.718Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1691,6 +1737,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyngrok"
+version = "7.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9e/8b/a254d57f6d5ec8797daa57510abd8e82eb7f7992fc1c455677f28e805893/pyngrok-7.5.1.tar.gz", hash = "sha256:934ec8a899ace8ec61c39120a27a8212aeb40293cad2f4ffc8a3d1a4bb6a8d6c", size = 43307, upload-time = "2026-03-06T18:03:44.774Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/c3/c73d882109bb19804383c375b42bbbdcbf3838fc3305217d9ba1bb051cfa/pyngrok-7.5.1-py3-none-any.whl", hash = "sha256:88f1ffb0ccc8dbc7810a29136eb9db3abb46b62436da438e277dfc1e70cf76ae", size = 24801, upload-time = "2026-03-06T18:03:43.746Z" },
+]
+
+[[package]]
 name = "pyproject-hooks"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1771,6 +1829,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/01/979e98d542a70714b0cb2b6728ed0b7c46792b695e3eaec3e20711271ca3/python_multipart-0.0.22.tar.gz", hash = "sha256:7340bef99a7e0032613f56dc36027b959fd3b30a787ed62d310e951f7c3a3a58", size = 37612, upload-time = "2026-01-25T10:15:56.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1b/d0/397f9626e711ff749a95d96b7af99b9c566a9bb5129b8e4c10fc4d100304/python_multipart-0.0.22-py3-none-any.whl", hash = "sha256:2b2cd894c83d21bf49d702499531c7bafd057d730c201782048f7945d82de155", size = 24579, upload-time = "2026-01-25T10:15:54.811Z" },
+]
+
+[[package]]
+name = "python-telegram-bot"
+version = "21.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/74/3ebdc3ee2c323b4577fcc57542f71aa064ac9dac154af0c2f5805e1b9fbd/python_telegram_bot-21.11.1.tar.gz", hash = "sha256:2abda5202f27a838f35e8140e5292af0f4f8fad6c2e5123b2defadd5f4e8ca02", size = 442624, upload-time = "2025-03-01T11:46:54.735Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/3b/8f6372e580ba4514335873f64924eb80b80c3d3f8359c2bb2e07bb6d01b9/python_telegram_bot-21.11.1-py3-none-any.whl", hash = "sha256:17f933a7a0569f519d9b672e06d71c29ab3688f1ec575ba59a3ca37922481113", size = 676058, upload-time = "2025-03-01T11:46:52.001Z" },
 ]
 
 [[package]]
@@ -2026,6 +2096,27 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b27b655beb4b4e9c62313a4e8da8c676e142cc210d58e/shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de", size = 10310, upload-time = "2023-10-24T04:13:40.426Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
+]
+
+[[package]]
+name = "slack-bolt"
+version = "1.27.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "slack-sdk" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/28/50ed0b86e48b48e6ddcc71de93b91c8ac14a55d1249e4bff0586494a2f90/slack_bolt-1.27.0.tar.gz", hash = "sha256:3db91d64e277e176a565c574ae82748aa8554f19e41a4fceadca4d65374ce1e0", size = 129101, upload-time = "2025-11-13T20:17:46.878Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/a8/1acb355759747ba4da5f45c1a33d641994b9e04b914908c9434f18bd97e8/slack_bolt-1.27.0-py2.py3-none-any.whl", hash = "sha256:c43c94bf34740f2adeb9b55566c83f1e73fed6ba2878bd346cdfd6fd8ad22360", size = 230428, upload-time = "2025-11-13T20:17:45.465Z" },
+]
+
+[[package]]
+name = "slack-sdk"
+version = "3.41.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/35/fc009118a13187dd9731657c60138e5a7c2dea88681a7f04dc406af5da7d/slack_sdk-3.41.0.tar.gz", hash = "sha256:eb61eb12a65bebeca9cb5d36b3f799e836ed2be21b456d15df2627cfe34076ca", size = 250568, upload-time = "2026-03-12T16:10:11.381Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a1/df/2e4be347ff98281b505cc0ccf141408cdd25eb5ca9f3830deb361b2472d3/slack_sdk-3.41.0-py2.py3-none-any.whl", hash = "sha256:bb18dcdfff1413ec448e759cf807ec3324090993d8ab9111c74081623b692a89", size = 313885, upload-time = "2026-03-12T16:10:09.811Z" },
 ]
 
 [[package]]

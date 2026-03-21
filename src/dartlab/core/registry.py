@@ -1016,6 +1016,44 @@ for _e in _ENTRIES:
     _BY_CATEGORY.setdefault(_e.category, []).append(_e)
 
 
+# ── 동적 등록 (플러그인용) ──
+
+
+class PluginNameCollisionError(ValueError):
+    """플러그인 DataEntry 이름이 기존 항목과 충돌."""
+
+
+def _rebuild_indices() -> None:
+    """_INDEX, _BY_CATEGORY 파생 인덱스 재구축."""
+    global _INDEX, _BY_CATEGORY
+    _INDEX = {e.name: e for e in _ENTRIES}
+    _BY_CATEGORY = {}
+    for e in _ENTRIES:
+        _BY_CATEGORY.setdefault(e.category, []).append(e)
+
+
+def registerEntry(entry: DataEntry, *, source: str = "core") -> None:
+    """DataEntry를 레지스트리에 동적 추가.
+
+    Args:
+        entry: 추가할 DataEntry.
+        source: 출처 태그 (예: "plugin:esg-scores").
+
+    Raises:
+        PluginNameCollisionError: 이름이 기존 항목과 충돌할 때.
+    """
+    if entry.name in _INDEX:
+        raise PluginNameCollisionError(f"이름 '{entry.name}' 이미 존재")
+    _ENTRIES.append(entry)
+    _rebuild_indices()
+
+
+def unregisterEntry(name: str) -> None:
+    """DataEntry를 레지스트리에서 제거 (테스트용)."""
+    _ENTRIES[:] = [e for e in _ENTRIES if e.name != name]
+    _rebuild_indices()
+
+
 # ── public API ──
 
 

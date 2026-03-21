@@ -21,6 +21,10 @@ def _isDartCode(s: str) -> bool:
 
 def Company(codeOrName: str) -> CompanyProtocol:
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성."""
+    from dartlab.core.plugins import discover
+
+    discover()  # 최초 1회만 실행, 이후 즉시 반환
+
     normalized = codeOrName.strip()
     if not normalized:
         raise ValueError("종목코드 또는 회사명을 입력해 주세요.")

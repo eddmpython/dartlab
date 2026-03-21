@@ -42,7 +42,8 @@ def test_main_without_command_prints_help(capsys):
     assert result == 0
     assert "usage:" in captured.out
     assert (
-        "{show,search,statement,sections,profile,modules,ask,report,excel,collect,ai,status,setup,mcp}" in captured.out
+        "{show,search,statement,sections,profile,modules,ask,report,excel,collect,ai,share,status,setup,mcp}"
+        in captured.out
     )
     assert "ui" not in captured.out
 

@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.7.3"
+version = "0.7.4"
 description = "공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -72,6 +72,19 @@ mcp = [
 ui = [
     "dartlab[ai]",
 ]
+channel = [
+    "dartlab[ai]",
+    "pycloudflared>=0.3",
+]
+channel-ngrok = [
+    "dartlab[ai]",
+    "pyngrok>=7.0,<8",
+]
+channel-full = [
+    "dartlab[channel,channel-ngrok]",
+    "python-telegram-bot>=21.0,<22",
+    "slack-bolt>=1.18,<2",
+]
 all = [
     "openai>=1.0.0,<3",
     "anthropic>=0.30.0,<2",
@@ -86,6 +99,8 @@ all = [
 [project.scripts]
 dartlab = "dartlab.cli.main:main"
 
+[project.entry-points."dartlab.plugins"]
+
 [project.urls]
 Homepage = "https://github.com/eddmpython/dartlab"
 Repository = "https://github.com/eddmpython/dartlab"
@@ -97,6 +112,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dartlab"]
+exclude = ["**/_reference/**"]
 
 [tool.hatch.build.targets.sdist]
 include = [

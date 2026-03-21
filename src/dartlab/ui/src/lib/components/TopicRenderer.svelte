@@ -16,7 +16,8 @@
 	import TableRenderer from "./TableRenderer.svelte";
 	import DiffSummary from "./DiffSummary.svelte";
 	import DiffCompare from "./DiffCompare.svelte";
-	import { MessageSquare, Copy, Check, Sparkles, Star, Loader2, ArrowLeftRight, BarChart3, Table2 } from "lucide-svelte";
+	import { MessageSquare, Sparkles, Star, Loader2, ArrowLeftRight } from "lucide-svelte";
+	import BlockToolbar from "./viewer/BlockToolbar.svelte";
 
 	let {
 		topicData = null,    // viewer API response (blocks + textDocument)
@@ -687,39 +688,16 @@
 					{@const showChart = chartable && chartMode.get(block.block)}
 					{@const spec = showChart ? getChartSpec(block) : null}
 					<div class="group relative">
-						<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-							{#if chartable}
-								<button
-									class="p-1 rounded transition-colors {showChart ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
-									onclick={() => toggleChart(block.block)}
-									title={showChart ? '표로 보기' : '차트로 보기'}
-								>
-									{#if showChart}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
-								</button>
-							{/if}
-							{#if block.data?.rows?.length > 0}
-								<button
-									class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
-									onclick={() => copyTable(block, block.block)}
-									title="테이블 복사"
-								>
-									{#if copiedTable === block.block}
-										<Check size={12} class="text-dl-success" />
-									{:else}
-										<Copy size={12} />
-									{/if}
-								</button>
-							{/if}
-							{#if onAskAI}
-								<button
-									class="p-1 rounded text-dl-text-dim/30 hover:text-[#a78bfa] hover:bg-white/5 transition-colors"
-									onclick={() => handleBlockAnalyze(block)}
-									title="AI 분석"
-								>
-									<Sparkles size={12} />
-								</button>
-							{/if}
-						</div>
+						<BlockToolbar
+							{chartable}
+							{showChart}
+							hasRows={block.data?.rows?.length > 0}
+							isCopied={copiedTable === block.block}
+							hasAskAI={!!onAskAI}
+							onToggleChart={() => toggleChart(block.block)}
+							onCopy={() => copyTable(block, block.block)}
+							onAnalyze={() => handleBlockAnalyze(block)}
+						/>
 						{#if showChart && spec}
 							{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
 								<ChartRenderer {spec} />
@@ -776,39 +754,16 @@
 					{@const showChart2 = chartable2 && chartMode.get(block.block)}
 					{@const spec2 = showChart2 ? getChartSpec(block) : null}
 					<div class="group relative">
-						<div class="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-							{#if chartable2}
-								<button
-									class="p-1 rounded transition-colors {showChart2 ? 'text-dl-accent-light bg-dl-accent/10' : 'text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5'}"
-									onclick={() => toggleChart(block.block)}
-									title={showChart2 ? '표로 보기' : '차트로 보기'}
-								>
-									{#if showChart2}<Table2 size={12} />{:else}<BarChart3 size={12} />{/if}
-								</button>
-							{/if}
-							{#if block.data?.rows?.length > 0}
-								<button
-									class="p-1 rounded text-dl-text-dim/30 hover:text-dl-text-muted hover:bg-white/5 transition-colors"
-									onclick={() => copyTable(block, block.block)}
-									title="테이블 복사"
-								>
-									{#if copiedTable === block.block}
-										<Check size={12} class="text-dl-success" />
-									{:else}
-										<Copy size={12} />
-									{/if}
-								</button>
-							{/if}
-							{#if onAskAI}
-								<button
-									class="p-1 rounded text-dl-text-dim/30 hover:text-[#a78bfa] hover:bg-white/5 transition-colors"
-									onclick={() => handleBlockAnalyze(block)}
-									title="AI 분석"
-								>
-									<Sparkles size={12} />
-								</button>
-							{/if}
-						</div>
+						<BlockToolbar
+							chartable={chartable2}
+							showChart={showChart2}
+							hasRows={block.data?.rows?.length > 0}
+							isCopied={copiedTable === block.block}
+							hasAskAI={!!onAskAI}
+							onToggleChart={() => toggleChart(block.block)}
+							onCopy={() => copyTable(block, block.block)}
+							onAnalyze={() => handleBlockAnalyze(block)}
+						/>
 						{#if showChart2 && spec2}
 							{#await import("$lib/chart/ChartRenderer.svelte") then { default: ChartRenderer }}
 								<ChartRenderer spec={spec2} />

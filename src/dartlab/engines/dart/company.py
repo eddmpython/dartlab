@@ -73,25 +73,55 @@ from dartlab.engines.dart._utils import (  # noqa: F401
 )
 from dartlab.engines.dart.docs.notes import Notes
 
-_MODULE_REGISTRY: list[tuple[str, str, str, Any]] = [
-    ("dartlab.engines.dart.docs.finance.summary", "fsSummary", "요약재무정보", None),
-    ("dartlab.engines.dart.docs.finance.statements", "statements", "재무제표", None),
-] + [(e.modulePath, e.funcName, e.label, e.extractor) for e in _getModuleEntries()]
+# 플러그인 등록 후 재구축 가능하도록 lazy 초기화
+_MODULE_REGISTRY: list[tuple[str, str, str, Any]] | None = None
+_MODULE_INDEX: dict[str, int] | None = None
+_ALL_PROPERTIES: list[tuple[str, str]] | None = None
 
-# 모듈명 → 레지스트리 인덱스
-_MODULE_INDEX: dict[str, int] = {entry[1]: i for i, entry in enumerate(_MODULE_REGISTRY)}
 
-# all()에서 사용할 순서 (fsSummary, statements 제외 — BS/IS/CF로 대체)
-_ALL_PROPERTIES: list[tuple[str, str]] = [
-    ("BS", "재무상태표"),
-    ("IS", "손익계산서"),
-    ("CF", "현금흐름표"),
-]
-for entry in _MODULE_REGISTRY:
-    name = entry[1]
-    if name in ("fsSummary", "statements", "companyOverview"):
-        continue
-    _ALL_PROPERTIES.append((name, entry[2]))
+def _get_module_registry() -> list[tuple[str, str, str, Any]]:
+    """lazy 모듈 레지스트리 — 최초 접근 시 구축."""
+    global _MODULE_REGISTRY, _MODULE_INDEX
+    if _MODULE_REGISTRY is None:
+        _MODULE_REGISTRY = [
+            ("dartlab.engines.dart.docs.finance.summary", "fsSummary", "요약재무정보", None),
+            ("dartlab.engines.dart.docs.finance.statements", "statements", "재무제표", None),
+        ] + [(e.modulePath, e.funcName, e.label, e.extractor) for e in _getModuleEntries()]
+        _MODULE_INDEX = {entry[1]: i for i, entry in enumerate(_MODULE_REGISTRY)}
+    return _MODULE_REGISTRY
+
+
+def _get_module_index() -> dict[str, int]:
+    """lazy 모듈 인덱스 — 최초 접근 시 구축."""
+    global _MODULE_INDEX
+    if _MODULE_INDEX is None:
+        _get_module_registry()
+    return _MODULE_INDEX  # type: ignore[return-value]
+
+
+def _get_all_properties() -> list[tuple[str, str]]:
+    """lazy all() 순서 목록 — 최초 접근 시 구축."""
+    global _ALL_PROPERTIES
+    if _ALL_PROPERTIES is None:
+        _ALL_PROPERTIES = [
+            ("BS", "재무상태표"),
+            ("IS", "손익계산서"),
+            ("CF", "현금흐름표"),
+        ]
+        for entry in _get_module_registry():
+            name = entry[1]
+            if name in ("fsSummary", "statements", "companyOverview"):
+                continue
+            _ALL_PROPERTIES.append((name, entry[2]))
+    return _ALL_PROPERTIES
+
+
+def rebuild_module_registry() -> None:
+    """플러그인 등록 후 호출 — 모듈 레지스트리 캐시 무효화."""
+    global _MODULE_REGISTRY, _MODULE_INDEX, _ALL_PROPERTIES
+    _MODULE_REGISTRY = None
+    _MODULE_INDEX = None
+    _ALL_PROPERTIES = None
 
 _CHAPTER_TITLES: dict[str, str] = {
     "I": "I. 회사의 개요",
@@ -196,7 +226,7 @@ _TOPIC_LABELS: dict[str, str] = {
 
 def listExportModules() -> list[tuple[str, str]]:
     """Excel/export용 DART 공개 모듈 목록."""
-    return list(_ALL_PROPERTIES)
+    return list(_get_all_properties())
 
 
 class Company:
@@ -296,8 +326,8 @@ class Company:
         cacheKey = f"{name}:{kwargs}" if kwargs else name
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        idx = _MODULE_INDEX[name]
-        entry = _MODULE_REGISTRY[idx]
+        idx = _get_module_index()[name]
+        entry = _get_module_registry()[idx]
         result = _import_and_call(entry[0], entry[1], self.stockCode, **kwargs)
         self._cache[cacheKey] = result
         return result
@@ -323,8 +353,8 @@ class Company:
         from dartlab import config
 
         cacheKey = f"{name}:{kwargs}" if kwargs else name
-        idx = _MODULE_INDEX[name]
-        entry = _MODULE_REGISTRY[idx]
+        idx = _get_module_index()[name]
+        entry = _get_module_registry()[idx]
         label = entry[2]
 
         if config.verbose and cacheKey not in self._cache and name != "sections":
@@ -1191,7 +1221,7 @@ class Company:
         entry = _getEntry(topic)
         if entry is not None:
             return entry.label
-        for name, label in _ALL_PROPERTIES:
+        for name, label in _get_all_properties():
             if name == topic:
                 return label
         return topic

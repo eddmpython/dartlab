@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-03-22
+
+### Added
+
+- **`dartlab collect` CLI 명령**: DART 공시문서 HTML → parquet 수집
+- **`dartlab report` CLI 명령**: 기업 분석 보고서 Markdown 자동 생성
+- **AI 분석 validation 모듈**: `runtime/validation.py` — LLM 응답 품질 검증 로직 분리
+- **테스트 8개 신규**: `test_api_common`(17), `test_company_validation`(12), `test_resolve_messages`(6), `test_screen_presets`(5), `test_models_validation`(15), `test_context_coverage`(8), `test_mapping_integrity`, `test_ratios_golden` — 서버 보안/입력 검증/비즈니스 로직 커버리지 확대
+- **`.env.example`**: 15개 환경변수 문서화 (DARTLAB_DATA_DIR, DART_API_KEY, OPENAI_API_KEY 등)
+- **보안 pre-commit 훅**: `detect-private-key`, `bandit` 추가
+- **CI security job**: `pip-audit --strict` 의존성 취약점 검사
+- **서버 입력 검증 강화**: Pydantic Field 제약 (question max_length=5000, company max_length=100 등), 종목코드 path traversal 방어 regex (`^[A-Za-z0-9가-힣]{1,20}$`)
+- **에러 메시지 credential 마스킹**: api_key, token, secret, password, bearer 패턴 자동 `***` 치환
+
+### Changed
+
+- **AI context builder 리팩토링**: 컨텍스트 조립 로직 구조화 (builder.py 113줄 변경)
+- **AI 런타임 파이프라인 리팩토링**: core.py, pipeline.py — 분석 흐름을 validation/events/core로 모듈 분리
+- **CI test 마커 필터 보강**: `-m "not requires_data"` → `-m "not requires_data and not heavy"` (CI에서 heavy 테스트 제외)
+- **pre-commit ruff 버전 동기화**: v0.9.0 → v0.11.4 (CI ruff 버전과 일치시켜 format 불일치 해소)
+- **ruff exclude에 `_reference/` 추가**: 레거시 참조 파일 lint 제외
+- **의존성 상한 추가**: polars<2, requests<3, rich<14, beautifulsoup4<5 등 주요 의존성에 major version 상한 설정
+- **rank 엔진 print → logger**: `rank.py`, `screen.py`의 print문을 `logging.getLogger(__name__)` 전환
+- **서버 bare except 구체화**: `streaming.py`의 `except Exception` → OSError, RuntimeError 등 7개 구체 예외 타입
+- **publish.yml 버전 검증 추가**: git tag와 pyproject.toml 버전 불일치 시 빌드 자동 실패
+- **test_cli_e2e 안정화**: CLI subcommand 목록 하드코딩 → 핵심 명령 개별 존재 체크 (새 명령 추가 시 테스트 안 깨짐)
+- **test_server LRU 안정화**: 메모리 압박 환경에서 `_max_size` 동적 축소로 인한 테스트 실패 → 메모리 체크 모킹
+
+### Fixed
+
+- **CI lint 10연패 해결**: `_reference/` 폴더의 레거시 코드(F601 중복키, E722 bare except, F403 star import) 44개 에러 → ruff exclude 설정으로 근본 해소
+- **CI format 실패**: pre-commit ruff v0.9.0과 CI ruff v0.11.4 버전 차이로 42개 파일 포맷 불일치 → 버전 동기화
+- **CI test_cli 실패**: `dartlab.core.ai.detect` 모듈이 git에 미커밋 상태에서 테스트가 import 시도 → 누락 파일 추가
+- **CompanyCache LRU 테스트**: 메모리 1.5GB 초과 시 캐시 크기가 5→1로 축소되어 `assert len(cache) == 5` 실패 → `_check_memory_pressure` 모킹
+
 ## [0.7.3] - 2026-03-21
 
 ### Added
@@ -142,7 +177,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/eddmpython/dartlab/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/eddmpython/dartlab/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/eddmpython/dartlab/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/eddmpython/dartlab/compare/v0.7.0...v0.7.1

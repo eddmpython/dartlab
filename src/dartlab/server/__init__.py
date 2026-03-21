@@ -94,6 +94,21 @@ class _SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# --- 터널 모드 보안 미들웨어 (조건부) ---
+from .security import TokenManager, TunnelKillSwitch, TunnelSecurityMiddleware, is_tunnel_mode
+
+if is_tunnel_mode():
+    _tunnel_token = os.environ.get("DARTLAB_TUNNEL_TOKEN")
+    _tunnel_ttl = int(os.environ.get("DARTLAB_TUNNEL_TTL", "3600"))
+    _token_manager = TokenManager(_tunnel_token)
+    _kill_switch = TunnelKillSwitch(_tunnel_ttl)
+    app.add_middleware(
+        TunnelSecurityMiddleware,
+        token_manager=_token_manager,
+        kill_switch=_kill_switch,
+    )
+    logger.info("터널 보안 모드 활성화 — TTL %ds, 화이트리스트/Rate Limit/감사로그 적용", _tunnel_ttl)
+
 app.add_middleware(_SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 

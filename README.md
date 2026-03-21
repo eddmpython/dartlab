@@ -529,11 +529,15 @@ See [docs/stability.md](docs/stability.md).
 
 ## Data
 
-DartLab ships with pre-built datasets via GitHub Releases. Data is continuously updated as new filings are collected.
+DartLab ships with pre-built datasets via GitHub Releases.
+
+- **finance / report**: Already collected and up-to-date for 2,700+ listed companies.
+- **docs**: Being collected gradually to avoid overloading the DART EDGAR system — currently **320+ companies** stored in the `data-docs` release, updated as collection progresses.
+- **EDGAR finance**: Fetched on-demand from SEC XBRL API (no pre-built dataset needed).
 
 | Dataset | Coverage | Source |
 |---------|----------|--------|
-| DART docs | 260+ companies | Korean disclosure text + tables |
+| DART docs | 320+ companies (growing) | Korean disclosure text + tables |
 | DART finance | 2,700+ companies | XBRL financial statements |
 | DART report | 2,700+ companies | Structured disclosure APIs |
 | EDGAR docs | 970+ companies | 10-K/10-Q sections |

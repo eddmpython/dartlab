@@ -25,6 +25,7 @@ COMMAND_SPECS = (
     CommandSpec("collect", "dartlab.cli.commands.collect"),
     # 서버 / 설정
     CommandSpec("ai", "dartlab.cli.commands.ai"),
+    CommandSpec("share", "dartlab.cli.commands.share"),
     CommandSpec("status", "dartlab.cli.commands.status"),
     CommandSpec("setup", "dartlab.cli.commands.setup"),
     # MCP

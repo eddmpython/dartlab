@@ -529,11 +529,15 @@ c.report.extract("배당")  # report 엔진 직접
 
 ## 데이터
 
-DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다. 데이터는 새 공시가 수집될 때마다 지속 업데이트된다.
+DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다.
+
+- **finance / report**: 상장 2,700+ 기업 전수 수집 완료, 최신 상태 유지.
+- **docs**: 전자공시시스템에 부하를 주지 않도록 천천히 수집 중 — 현재 **320+ 기업**이 `data-docs` 릴리즈에 저장되어 있으며, 수집하는 대로 업데이트.
+- **EDGAR finance**: SEC XBRL API에서 주문형 수집 (사전 데이터셋 불필요).
 
 | 데이터셋 | 규모 | 출처 |
 |----------|------|------|
-| DART docs | 260+ 기업 | 한국 공시 텍스트 + 테이블 |
+| DART docs | 320+ 기업 (수집 중) | 한국 공시 텍스트 + 테이블 |
 | DART finance | 2,700+ 기업 | XBRL 재무제표 |
 | DART report | 2,700+ 기업 | 정형 공시 API |
 | EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
