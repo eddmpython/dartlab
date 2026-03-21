@@ -122,7 +122,22 @@ def api_status(
         }
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
-    return {
+
+    # Room 정보 (터널 모드에서 협업 세션 활성 시)
+    room_info = None
+    try:
+        from ..room import room_manager
+
+        active_room = room_manager.get_room()
+        if active_room is not None:
+            room_info = {
+                "roomId": active_room.room_id,
+                "members": len(active_room.members),
+            }
+    except ImportError:
+        pass
+
+    resp: dict[str, Any] = {
         "providers": results,
         "ollama": ollama_detail,
         "codex": codex_detail,
@@ -130,6 +145,9 @@ def api_status(
         "profile": profile_snapshot,
         "version": version,
     }
+    if room_info is not None:
+        resp["room"] = room_info
+    return resp
 
 
 @router.post("/api/provider/validate")

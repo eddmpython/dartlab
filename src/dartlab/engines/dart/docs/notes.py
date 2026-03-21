@@ -17,6 +17,8 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
+from dartlab.core.memory import BoundedCache
+
 if TYPE_CHECKING:
     import polars as pl
 
@@ -56,7 +58,7 @@ class Notes:
 
     def __init__(self, company: Any):
         object.__setattr__(self, "_company", company)
-        object.__setattr__(self, "_cache", {})
+        object.__setattr__(self, "_cache", BoundedCache(max_entries=20, pressure_mb=1200.0))
 
     def __getattr__(self, name: str) -> pl.DataFrame | None:
         if name.startswith("_"):

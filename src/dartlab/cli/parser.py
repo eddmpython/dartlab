@@ -30,6 +30,8 @@ COMMAND_SPECS = (
     CommandSpec("setup", "dartlab.cli.commands.setup"),
     # MCP
     CommandSpec("mcp", "dartlab.cli.commands.mcp"),
+    # 플러그인
+    CommandSpec("plugin", "dartlab.cli.commands.plugin"),
 )
 
 

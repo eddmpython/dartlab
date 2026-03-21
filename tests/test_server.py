@@ -1001,3 +1001,83 @@ class TestCompanyCache:
         cache.update_snapshot("005930", {"new": True})
         result = cache.get("005930")
         assert result[1] == {"new": True}
+
+
+# ── Phase 1-5: 추가 Company API 엔드포인트 ──
+
+
+class TestCompanyAPIExtended:
+    """sections, toc, insights, network, scan 등 추가 엔드포인트."""
+
+    @requires_samsung_any
+    def test_company_sections(self, client):
+        """GET /api/company/{code}/sections — sections 수평화 테이블."""
+        resp = client.get(f"/api/company/{SAMSUNG}/sections")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["stockCode"] == SAMSUNG
+        assert "payload" in data
+
+    def test_company_sections_not_found(self, client):
+        resp = client.get("/api/company/999999/sections")
+        assert resp.status_code == 404
+
+    @requires_samsung_any
+    def test_company_toc(self, client):
+        """GET /api/company/{code}/toc — 목차."""
+        resp = client.get(f"/api/company/{SAMSUNG}/toc")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "chapters" in data
+
+    def test_company_toc_not_found(self, client):
+        resp = client.get("/api/company/999999/toc")
+        assert resp.status_code == 404
+
+    @requires_samsung_any
+    def test_company_init(self, client):
+        """GET /api/company/{code}/init — 초기화 번들."""
+        resp = client.get(f"/api/company/{SAMSUNG}/init")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["stockCode"] == SAMSUNG
+        assert "toc" in data
+        assert "firstTopic" in data
+
+    @pytest.mark.skipif(not _has_samsung_finance, reason="삼성전자 finance 데이터 없음")
+    def test_company_insights(self, client):
+        """GET /api/company/{code}/insights — 인사이트 등급."""
+        resp = client.get(f"/api/company/{SAMSUNG}/insights")
+        if resp.status_code == 200:
+            data = resp.json()
+            assert "grades" in data or "insights" in data or "profile" in data
+
+    def test_company_insights_not_found(self, client):
+        resp = client.get("/api/company/999999/insights")
+        assert resp.status_code == 404
+
+    @requires_samsung_any
+    def test_company_network(self, client):
+        """GET /api/company/{code}/network — 관계 네트워크."""
+        resp = client.get(f"/api/company/{SAMSUNG}/network")
+        # 네트워크 데이터가 없을 수 있으므로 200 또는 404 허용
+        assert resp.status_code in (200, 404)
+
+    @requires_samsung_any
+    def test_company_scan(self, client):
+        """GET /api/company/{code}/scan/{axis} — 축별 스캔."""
+        resp = client.get(f"/api/company/{SAMSUNG}/scan/profitability")
+        # 스캔 데이터가 없을 수 있으므로 200 또는 404 허용
+        assert resp.status_code in (200, 404, 422)
+
+    @requires_samsung_any
+    def test_company_show_all(self, client):
+        """GET /api/company/{code}/show-all/{topic} — 전체 블록."""
+        resp = client.get(f"/api/company/{SAMSUNG}/show-all/companyOverview")
+        assert resp.status_code in (200, 404)
+
+    @requires_samsung_any
+    def test_company_viewer_topic(self, client):
+        """GET /api/company/{code}/viewer/{topic} — 뷰어 데이터."""
+        resp = client.get(f"/api/company/{SAMSUNG}/viewer/companyOverview")
+        assert resp.status_code in (200, 404)

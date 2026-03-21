@@ -329,12 +329,12 @@ class TestComposite:
         assert r.ccc == pytest.approx(49.9, abs=1.0)
 
     def test_piotroski_f_score(self):
-        """Piotroski F-Score: 건강한 기업 → 고점수."""
+        """Piotroski F-Score: 건강한 기업 → 고점수 (9점 만점)."""
         r = _calc()
-        # ROA>0(1) + CF>0(1) + ROA개선(skip) + CF>NI(1) + 부채비율<100(1) + 유동비율>100(1)
-        # + 신주(skip) + 매출총이익률>0(1) + 자산회전율>0(1) = 6/7
+        # 9점 만점: ROA>0, CF>0, ROA개선, CF>NI, 부채비율↓, 유동비율↑,
+        # 신주미발행, 매출총이익률↑, 총자산회전율↑
         assert r.piotroskiFScore >= 5
-        assert r.piotroskiMaxScore == 7
+        assert r.piotroskiMaxScore == 9
 
     def test_altman_z_score(self):
         """Altman Z-Score: 제조업 공식.

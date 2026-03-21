@@ -202,6 +202,79 @@ class TestGetParams:
         assert params.perMultiple == 20
 
 
+class TestGetParamsMore:
+    """추가 섹터 파라미터 조회."""
+
+    def test_healthcare_params(self):
+        info = SectorInfo(Sector.HEALTHCARE, IndustryGroup.PHARMA_BIO, 1.0, "override")
+        params = getParams(info)
+        assert params.label == "제약/바이오"
+        assert params.discountRate > 10.0
+
+    def test_energy_params(self):
+        info = SectorInfo(Sector.ENERGY, IndustryGroup.OIL_GAS, 1.0, "override")
+        params = getParams(info)
+        assert params.discountRate > 0
+
+    def test_materials_sector_fallback(self):
+        info = SectorInfo(Sector.MATERIALS, IndustryGroup.UNKNOWN, 0.5, "test")
+        params = getParams(info)
+        assert params.label == "소재"
+
+    def test_utilities_params(self):
+        info = SectorInfo(Sector.UTILITIES, IndustryGroup.ELECTRIC, 1.0, "override")
+        params = getParams(info)
+        assert params.discountRate > 0
+
+    def test_consumer_disc_auto(self):
+        info = SectorInfo(Sector.CONSUMER_DISC, IndustryGroup.AUTO, 1.0, "override")
+        params = getParams(info)
+        assert params.label == "자동차"
+
+
+class TestKeywordConfidence:
+    """키워드 매칭 confidence 검증."""
+
+    def test_single_keyword_confidence(self):
+        info = classify("무명회사", mainProducts="리튬 소재")
+        if info.source == "keyword":
+            assert 0.6 <= info.confidence <= 0.9
+
+    def test_multi_keyword_higher_confidence(self):
+        info = classify("무명회사", mainProducts="DRAM NAND 메모리반도체 파운드리 웨이퍼")
+        assert info.source == "keyword"
+        assert info.confidence > 0.7
+
+    def test_empty_products_no_keyword(self):
+        info = classify("무명회사", mainProducts="")
+        assert info.source != "keyword"
+
+    def test_none_products_no_keyword(self):
+        info = classify("무명회사", mainProducts=None)
+        assert info.source != "keyword"
+
+    def test_holding_skips_keyword_matching(self):
+        info = classify("무명지주회사", mainProducts="지주회사, DRAM 반도체")
+        assert info.source != "keyword"
+
+
+class TestEdgeCases:
+    """경계 케이스."""
+
+    def test_very_short_company_name(self):
+        """1글자 이름은 partial override에 걸리지 않으므로 UNKNOWN."""
+        info = classify("X")
+        assert info.sector == Sector.UNKNOWN
+
+    def test_none_industry(self):
+        info = classify("무명회사", kindIndustry=None)
+        assert info is not None
+
+    def test_invalid_industry_string(self):
+        info = classify("무명회사", kindIndustry="존재하지않는업종")
+        assert info.sector == Sector.UNKNOWN
+
+
 class TestSectorInfoRepr:
     """SectorInfo repr 테스트."""
 

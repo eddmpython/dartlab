@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
+from dartlab.core.memory import BoundedCache
+
 if TYPE_CHECKING:
     from dartlab.engines.dart.company import Company
 
@@ -223,7 +225,7 @@ class _ReportAccessor:
 
     def __init__(self, company: "Company"):
         self._company = company
-        self._cache: dict[str, Any] = {}
+        self._cache: BoundedCache = BoundedCache(max_entries=50, pressure_mb=1200.0)
 
     def _pivot(self, name: str) -> Any:
         if name in self._cache:

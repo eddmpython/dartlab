@@ -490,6 +490,49 @@ def groupHealth():
     return _groupHealth()
 
 
+def digest(
+    *,
+    sector: str | None = None,
+    top_n: int = 20,
+    format: str = "dataframe",
+    stock_codes: list[str] | None = None,
+    verbose: bool = False,
+):
+    """시장 전체 공시 변화 다이제스트.
+
+    로컬에 다운로드된 docs 데이터를 순회하며 중요도 높은 변화를 집계한다.
+
+    Args:
+        sector: 섹터 필터 (예: "반도체"). None이면 전체.
+        top_n: 상위 N개.
+        format: "dataframe", "markdown", "json".
+        stock_codes: 직접 종목코드 목록 지정.
+        verbose: 진행 상황 출력.
+
+    Example::
+
+        import dartlab
+        dartlab.digest()                          # 전체 시장
+        dartlab.digest(sector="반도체")             # 섹터별
+        dartlab.digest(format="markdown")          # 마크다운 출력
+    """
+    from dartlab.engines.watch.digest import build_digest
+    from dartlab.engines.watch.scanner import scan_market
+
+    scan_df = scan_market(
+        sector=sector,
+        top_n=top_n,
+        stock_codes=stock_codes,
+        verbose=verbose,
+    )
+
+    if format == "dataframe":
+        return scan_df
+
+    title = f"{sector} 섹터 변화 다이제스트" if sector else None
+    return build_digest(scan_df, format=format, title=title, top_n=top_n)
+
+
 class _Module(sys.modules[__name__].__class__):
     """dartlab.verbose / dartlab.dataDir / dartlab.chart|table|text 프록시."""
 
@@ -541,6 +584,7 @@ __all__ = [
     "benchmark",
     "signal",
     "groupHealth",
+    "digest",
     "plugins",
     "reload_plugins",
     "verbose",

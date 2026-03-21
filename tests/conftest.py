@@ -14,18 +14,30 @@ DARTLAB_DATA_DIR 환경변수 또는 dartlab.dataDir로 변경 가능.
   pytest -m "not unit and not heavy" -v  # 중간 테스트
   pytest -m "heavy" -v             # 무거운 테스트 (단독)
   ⚠ pytest tests/ -v 전체 한번에 돌리면 메모리 크래시 위험
+  ⚠ Polars 네이티브 Rust 메모리는 gc.collect()로 회수 불가 — fixture 해제가 유일한 방법
+
+메모리 안전 정책:
+  - Company fixture는 module scope (session scope 금지)
+  - 각 모듈 테스트 완료 후 GC 강제 실행
+  - 1200MB 초과 시 pytest.exit()으로 안전 종료
 """
 
+import gc
 from pathlib import Path
 
 import pytest
 
 from dartlab.core.dataLoader import _dataDir
+from dartlab.core.memory import PRESSURE_CRITICAL_MB, get_memory_mb
 
 SAMSUNG = "005930"
 HYUNDAI = "005380"
 SHINHAN = "055550"
 KAKAO = "035720"
+
+# ── 메모리 안전 한계 (MB) ──
+# 이 값을 넘으면 pytest 자체를 안전 종료하여 OOM 방지
+_PYTEST_MEMORY_LIMIT_MB = PRESSURE_CRITICAL_MB
 
 
 def _has_data(code: str, category: str = "docs") -> bool:
@@ -76,6 +88,29 @@ def _isolated_dartlab_home(tmp_path, monkeypatch):
     monkeypatch.setenv("DARTLAB_HOME", str(Path(home)))
 
 
+@pytest.fixture(autouse=True)
+def _memory_guard_per_test():
+    """매 테스트 후 메모리 체크 + GC.
+
+    PRESSURE_CRITICAL_MB 초과 시 pytest를 안전 종료하여 OOM/시스템 크래시 방지.
+    Polars 네이티브 메모리는 gc.collect()로 회수 불가하므로,
+    이 시점에서 잡히면 이미 위험한 상태 → 즉시 종료가 유일한 안전책.
+    """
+    yield
+    gc.collect()
+    mem = get_memory_mb()
+    if mem > _PYTEST_MEMORY_LIMIT_MB:
+        pytest.exit(
+            f"⚠ 메모리 안전 종료: {mem:.0f}MB > {_PYTEST_MEMORY_LIMIT_MB:.0f}MB 한계 초과.\n"
+            f"  Polars 네이티브 메모리는 GC로 회수 불가합니다.\n"
+            f"  테스트를 그룹별로 분리해서 실행하세요:\n"
+            f"    pytest -m unit -v\n"
+            f"    pytest -m 'not unit and not heavy' -v\n"
+            f"    pytest -m heavy -v",
+            returncode=99,
+        )
+
+
 # ── Module-scoped Company fixtures: 모듈 단위로 로드/해제 ──
 # ⚠ session scope는 메모리 크래시 원인이므로 사용 금지 (2026-03-21)
 
@@ -90,6 +125,7 @@ def samsung():
     c = Company(SAMSUNG)
     yield c
     del c
+    gc.collect()
 
 
 @pytest.fixture(scope="module")
@@ -102,3 +138,4 @@ def samsung_with_finance():
     c = Company(SAMSUNG)
     yield c
     del c
+    gc.collect()

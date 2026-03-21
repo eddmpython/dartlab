@@ -180,6 +180,15 @@ def get_loaded_plugins() -> list[PluginMeta]:
     return list(_loaded_plugins)
 
 
+def rediscover() -> list[PluginMeta]:
+    """플러그인을 다시 스캔. pip install 후 호출하면 재시작 없이 인식."""
+    global _discovered
+    _loaded_plugins.clear()
+    _loaded_names.clear()
+    _discovered = False
+    return discover()
+
+
 def reset_for_testing() -> None:
     """테스트용 — 플러그인 상태 초기화."""
     global _discovered

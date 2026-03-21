@@ -83,6 +83,9 @@ def loadData(
     columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """종목코드 → DataFrame. 로컬에 없으면 릴리즈에서 자동 다운로드."""
+    from dartlab.core.memory import check_memory_and_gc
+
+    check_memory_and_gc(f"loadData({stockCode},{category})")
     dataDir = _dataDir(category)
     path = dataDir / f"{stockCode}.parquet"
     effectiveSinceYear = sinceYear
@@ -120,29 +123,29 @@ def loadData(
             if path.exists():
                 path.unlink()
             raise
-    # docs/edgarDocs: lazy scan + year 필터로 메모리 절감
-    if category in ("docs", "edgarDocs") and sinceYear is not None:
+    # lazy scan: sinceYear 필터 또는 컬럼 프로젝션이 있으면 scan_parquet 사용
+    _YEAR_COLS = {"year": "year", "bsns_year": "bsns_year"}
+    use_lazy = sinceYear is not None or columns is not None
+    if use_lazy:
         lf = pl.scan_parquet(str(path))
         schema_names = lf.collect_schema().names()
-        if "year" in schema_names:
-            year_col = pl.col("year")
-            # year가 문자열이면 cast
-            if str(lf.collect_schema()["year"]) == "String":
-                year_col = year_col.cast(pl.Int32, strict=False)
-            lf = lf.filter(year_col >= sinceYear)
+        # sinceYear 필터 (year 또는 bsns_year 컬럼)
+        if sinceYear is not None:
+            for col_name in _YEAR_COLS:
+                if col_name in schema_names:
+                    year_col = pl.col(col_name)
+                    if str(lf.collect_schema()[col_name]) == "String":
+                        year_col = year_col.cast(pl.Int32, strict=False)
+                    lf = lf.filter(year_col >= sinceYear)
+                    break
+        # 컬럼 프로젝션
         if columns:
             available = [c for c in columns if c in schema_names]
             if available:
                 lf = lf.select(available)
         df = lf.collect()
     else:
-        if columns:
-            # parquet 파일에 존재하는 컬럼만 프로젝션 (스키마 불일치 방지)
-            schema_names = pl.read_parquet_schema(str(path)).keys()
-            safe_cols = [c for c in columns if c in schema_names]
-            df = pl.read_parquet(str(path), columns=safe_cols if safe_cols else None)
-        else:
-            df = pl.read_parquet(str(path))
+        df = pl.read_parquet(str(path))
     return _normalizeLoadedFrame(df, category)
 
 

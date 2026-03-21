@@ -6,12 +6,12 @@
 1. calcRatios(series) → RatioResult (최신 단일 시점, 하위호환)
 2. calcRatioSeries(annualSeries, years) → RatioSeriesResult (연도별 시계열)
 
-비율 분류 (6개 카테고리, 30+ 비율):
-- 수익성: ROE, ROA, 영업이익률, 순이익률, 매출총이익률, EBITDA마진, 매출원가율, 판관비율
-- 안정성: 부채비율, 유동비율, 당좌비율, 자기자본비율, 이자보상배율, 순차입금비율, 비유동비율
+비율 분류 (6개 카테고리, 50+ 비율):
+- 수익성: ROE, ROA, ROCE, 영업이익률, 순이익률, 세전이익률, 매출총이익률, EBITDA마진, 매출원가율, 판관비율, 유효세율, 이익품질비율
+- 안정성: 부채비율, 유동비율, 당좌비율, 현금비율, 자기자본비율, 이자보상배율, 순차입금비율, 비유동비율, 운전자본
 - 성장성: 매출성장률, 영업이익성장률, 순이익성장률, 자산성장률, 자본성장률
-- 효율성: 총자산회전율, 재고자산회전율, 매출채권회전율, 매입채무회전율
-- 현금흐름: FCF, 영업CF마진, 영업CF/순이익, CAPEX비율, 배당성향
+- 효율성: 총자산회전율, 유형자산회전율, 재고자산회전율, 매출채권회전율, 매입채무회전율, 영업순환주기
+- 현금흐름: FCF, 영업CF마진, 영업CF/순이익, 영업CF/유동부채, CAPEX비율, 배당성향, FCF/OCF비율
 - 주당지표: EPS, BPS (시가총액 필요: PER, PBR, PSR, EV/EBITDA)
 """
 
@@ -53,6 +53,8 @@ class RatioResult:
     tangibleAssets: Optional[float] = None
     intangibleAssets: Optional[float] = None
     retainedEarnings: Optional[float] = None
+    profitBeforeTax: Optional[float] = None
+    incomeTaxExpense: Optional[float] = None
     financeIncome: Optional[float] = None
     financeCosts: Optional[float] = None
     capex: Optional[float] = None
@@ -63,21 +65,27 @@ class RatioResult:
 
     roe: Optional[float] = None
     roa: Optional[float] = None
+    roce: Optional[float] = None
     operatingMargin: Optional[float] = None
     netMargin: Optional[float] = None
+    preTaxMargin: Optional[float] = None
     grossMargin: Optional[float] = None
     ebitdaMargin: Optional[float] = None
     costOfSalesRatio: Optional[float] = None
     sgaRatio: Optional[float] = None
+    effectiveTaxRate: Optional[float] = None
+    incomeQualityRatio: Optional[float] = None
 
     debtRatio: Optional[float] = None
     currentRatio: Optional[float] = None
     quickRatio: Optional[float] = None
+    cashRatio: Optional[float] = None
     equityRatio: Optional[float] = None
     interestCoverage: Optional[float] = None
     netDebt: Optional[float] = None
     netDebtRatio: Optional[float] = None
     noncurrentRatio: Optional[float] = None
+    workingCapital: Optional[float] = None
 
     revenueGrowth: Optional[float] = None
     operatingProfitGrowth: Optional[float] = None
@@ -87,15 +95,19 @@ class RatioResult:
     revenueGrowth3Y: Optional[float] = None
 
     totalAssetTurnover: Optional[float] = None
+    fixedAssetTurnover: Optional[float] = None
     inventoryTurnover: Optional[float] = None
     receivablesTurnover: Optional[float] = None
     payablesTurnover: Optional[float] = None
+    operatingCycle: Optional[float] = None
 
     fcf: Optional[float] = None
     operatingCfMargin: Optional[float] = None
     operatingCfToNetIncome: Optional[float] = None
+    operatingCfToCurrentLiab: Optional[float] = None
     capexRatio: Optional[float] = None
     dividendPayoutRatio: Optional[float] = None
+    fcfToOcfRatio: Optional[float] = None
 
     # 복합 지표
     roic: Optional[float] = None
@@ -108,7 +120,7 @@ class RatioResult:
     dio: Optional[float] = None
     dpo: Optional[float] = None
     piotroskiFScore: Optional[int] = None
-    piotroskiMaxScore: int = 7  # 현재 구현 가능 항목 기준 (9점 중 2항목 데이터 미접근)
+    piotroskiMaxScore: int = 9
     altmanZScore: Optional[float] = None
 
     per: Optional[float] = None
@@ -127,12 +139,16 @@ class RatioResult:
             [
                 "roe",
                 "roa",
+                "roce",
                 "operatingMargin",
                 "netMargin",
+                "preTaxMargin",
                 "grossMargin",
                 "ebitdaMargin",
                 "costOfSalesRatio",
                 "sgaRatio",
+                "effectiveTaxRate",
+                "incomeQualityRatio",
             ],
         ),
         (
@@ -141,10 +157,12 @@ class RatioResult:
                 "debtRatio",
                 "currentRatio",
                 "quickRatio",
+                "cashRatio",
                 "equityRatio",
                 "interestCoverage",
                 "netDebtRatio",
                 "noncurrentRatio",
+                "workingCapital",
             ],
         ),
         (
@@ -162,9 +180,11 @@ class RatioResult:
             "효율성",
             [
                 "totalAssetTurnover",
+                "fixedAssetTurnover",
                 "inventoryTurnover",
                 "receivablesTurnover",
                 "payablesTurnover",
+                "operatingCycle",
             ],
         ),
         (
@@ -173,8 +193,10 @@ class RatioResult:
                 "fcf",
                 "operatingCfMargin",
                 "operatingCfToNetIncome",
+                "operatingCfToCurrentLiab",
                 "capexRatio",
                 "dividendPayoutRatio",
+                "fcfToOcfRatio",
             ],
         ),
         ("밸류에이션", ["per", "pbr", "psr", "evEbitda", "marketCap"]),
@@ -199,19 +221,25 @@ class RatioResult:
     _LABELS: ClassVar[dict[str, str]] = {
         "roe": "ROE (%)",
         "roa": "ROA (%)",
+        "roce": "ROCE (%)",
         "operatingMargin": "영업이익률 (%)",
         "netMargin": "순이익률 (%)",
+        "preTaxMargin": "세전이익률 (%)",
         "grossMargin": "매출총이익률 (%)",
         "ebitdaMargin": "EBITDA 마진 (%)",
         "costOfSalesRatio": "매출원가율 (%)",
         "sgaRatio": "판관비율 (%)",
+        "effectiveTaxRate": "유효세율 (%)",
+        "incomeQualityRatio": "이익품질비율 (%)",
         "debtRatio": "부채비율 (%)",
         "currentRatio": "유동비율 (%)",
         "quickRatio": "당좌비율 (%)",
+        "cashRatio": "현금비율 (%)",
         "equityRatio": "자기자본비율 (%)",
         "interestCoverage": "이자보상배율 (x)",
         "netDebtRatio": "순차입금비율 (%)",
         "noncurrentRatio": "비유동비율 (%)",
+        "workingCapital": "운전자본",
         "revenueGrowth": "매출성장률 (%)",
         "operatingProfitGrowth": "영업이익성장률 (%)",
         "netProfitGrowth": "순이익성장률 (%)",
@@ -219,14 +247,18 @@ class RatioResult:
         "equityGrowthRate": "자본성장률 (%)",
         "revenueGrowth3Y": "매출 3Y CAGR (%)",
         "totalAssetTurnover": "총자산회전율 (x)",
+        "fixedAssetTurnover": "유형자산회전율 (x)",
         "inventoryTurnover": "재고자산회전율 (x)",
         "receivablesTurnover": "매출채권회전율 (x)",
         "payablesTurnover": "매입채무회전율 (x)",
+        "operatingCycle": "영업순환주기 (일)",
         "fcf": "FCF",
         "operatingCfMargin": "영업CF마진 (%)",
         "operatingCfToNetIncome": "영업CF/순이익 (%)",
+        "operatingCfToCurrentLiab": "영업CF/유동부채 (%)",
         "capexRatio": "CAPEX비율 (%)",
         "dividendPayoutRatio": "배당성향 (%)",
+        "fcfToOcfRatio": "FCF/OCF비율 (%)",
         "per": "PER (x)",
         "pbr": "PBR (x)",
         "psr": "PSR (x)",
@@ -241,8 +273,8 @@ class RatioResult:
         "dso": "매출채권회수기간 (일)",
         "dio": "재고자산보유기간 (일)",
         "dpo": "매입채무지급기간 (일)",
-        "piotroskiFScore": "Piotroski F-Score (0~7, 현재 구현 기준)",
-        "piotroskiMaxScore": "Piotroski 현재 최대 점수 (구현 항목 기준)",
+        "piotroskiFScore": "Piotroski F-Score (0~9)",
+        "piotroskiMaxScore": "Piotroski 최대 점수",
         "altmanZScore": "Altman Z-Score",
     }
 
@@ -313,20 +345,26 @@ class RatioSeriesResult:
 
     roe: list[Optional[float]] = field(default_factory=list)
     roa: list[Optional[float]] = field(default_factory=list)
+    roce: list[Optional[float]] = field(default_factory=list)
     operatingMargin: list[Optional[float]] = field(default_factory=list)
     netMargin: list[Optional[float]] = field(default_factory=list)
+    preTaxMargin: list[Optional[float]] = field(default_factory=list)
     grossMargin: list[Optional[float]] = field(default_factory=list)
     ebitdaMargin: list[Optional[float]] = field(default_factory=list)
     costOfSalesRatio: list[Optional[float]] = field(default_factory=list)
     sgaRatio: list[Optional[float]] = field(default_factory=list)
+    effectiveTaxRate: list[Optional[float]] = field(default_factory=list)
+    incomeQualityRatio: list[Optional[float]] = field(default_factory=list)
 
     debtRatio: list[Optional[float]] = field(default_factory=list)
     currentRatio: list[Optional[float]] = field(default_factory=list)
     quickRatio: list[Optional[float]] = field(default_factory=list)
+    cashRatio: list[Optional[float]] = field(default_factory=list)
     equityRatio: list[Optional[float]] = field(default_factory=list)
     interestCoverage: list[Optional[float]] = field(default_factory=list)
     netDebtRatio: list[Optional[float]] = field(default_factory=list)
     noncurrentRatio: list[Optional[float]] = field(default_factory=list)
+    workingCapital: list[Optional[float]] = field(default_factory=list)
 
     revenueGrowth: list[Optional[float]] = field(default_factory=list)
     operatingProfitGrowth: list[Optional[float]] = field(default_factory=list)
@@ -335,15 +373,19 @@ class RatioSeriesResult:
     equityGrowthRate: list[Optional[float]] = field(default_factory=list)
 
     totalAssetTurnover: list[Optional[float]] = field(default_factory=list)
+    fixedAssetTurnover: list[Optional[float]] = field(default_factory=list)
     inventoryTurnover: list[Optional[float]] = field(default_factory=list)
     receivablesTurnover: list[Optional[float]] = field(default_factory=list)
     payablesTurnover: list[Optional[float]] = field(default_factory=list)
+    operatingCycle: list[Optional[float]] = field(default_factory=list)
 
     fcf: list[Optional[float]] = field(default_factory=list)
     operatingCfMargin: list[Optional[float]] = field(default_factory=list)
     operatingCfToNetIncome: list[Optional[float]] = field(default_factory=list)
+    operatingCfToCurrentLiab: list[Optional[float]] = field(default_factory=list)
     capexRatio: list[Optional[float]] = field(default_factory=list)
     dividendPayoutRatio: list[Optional[float]] = field(default_factory=list)
+    fcfToOcfRatio: list[Optional[float]] = field(default_factory=list)
 
     # 복합 지표
     roic: list[Optional[float]] = field(default_factory=list)
@@ -462,20 +504,25 @@ def _applyArchetypePolicyResult(result: RatioResult, archetype: str) -> None:
         "debtRatio",
         "currentRatio",
         "quickRatio",
+        "cashRatio",
         "interestCoverage",
         "netDebt",
         "netDebtRatio",
         "noncurrentRatio",
+        "workingCapital",
         "inventoryTurnover",
+        "fixedAssetTurnover",
         "receivablesTurnover",
         "payablesTurnover",
+        "operatingCycle",
         "operatingCfMargin",
         "operatingCfToNetIncome",
+        "operatingCfToCurrentLiab",
         "capexRatio",
         "fcf",
+        "fcfToOcfRatio",
     )
 
-    # composite — CCC/DIO는 금융업 무의미, Altman Z-Score도 제조업 전용
     _setNone(result, "ccc", "dso", "dio", "dpo", "altmanZScore", "debtToEbitda")
 
     if archetype in {"bank", "financial"}:
@@ -483,10 +530,12 @@ def _applyArchetypePolicyResult(result: RatioResult, archetype: str) -> None:
             result,
             "operatingMargin",
             "netMargin",
+            "preTaxMargin",
             "grossMargin",
             "ebitdaMargin",
             "costOfSalesRatio",
             "sgaRatio",
+            "roce",
         )
 
 
@@ -499,16 +548,22 @@ def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> No
         "debtRatio",
         "currentRatio",
         "quickRatio",
+        "cashRatio",
         "interestCoverage",
         "netDebtRatio",
         "noncurrentRatio",
+        "workingCapital",
         "inventoryTurnover",
+        "fixedAssetTurnover",
         "receivablesTurnover",
         "payablesTurnover",
+        "operatingCycle",
         "operatingCfMargin",
         "operatingCfToNetIncome",
+        "operatingCfToCurrentLiab",
         "capexRatio",
         "fcf",
+        "fcfToOcfRatio",
     )
 
     _setSeriesNone(result, "ccc", "dso", "dio", "dpo", "altmanZScore", "debtToEbitda")
@@ -518,10 +573,12 @@ def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> No
             result,
             "operatingMargin",
             "netMargin",
+            "preTaxMargin",
             "grossMargin",
             "ebitdaMargin",
             "costOfSalesRatio",
             "sgaRatio",
+            "roce",
         )
 
 
@@ -612,6 +669,9 @@ def calcRatios(
     r.noncurrentAssets = getLatest(series, "BS", "noncurrent_assets")
     r.noncurrentLiabilities = getLatest(series, "BS", "noncurrent_liabilities")
 
+    r.profitBeforeTax = _pick_first(series, "IS", ["profit_before_tax", "income_before_tax"], annual=annual)
+    r.incomeTaxExpense = _flow(series, "IS", "income_tax_expense")
+
     _calcProfitability(r)
     _calcStability(r)
     _calcEfficiency(r)
@@ -636,7 +696,7 @@ def calcRatios(
 
 
 def _calcProfitability(r: RatioResult) -> None:
-    """수익성 비율 (8개)."""
+    """수익성 비율 (12개)."""
     r.roe = _safePct(r.netIncomeTTM, r.ownersEquity)
     if r.roe is not None and not (-500 <= r.roe <= 500):
         r.warnings.append(f"ROE {r.roe:.0f}% 범위 초과")
@@ -647,11 +707,28 @@ def _calcProfitability(r: RatioResult) -> None:
         r.warnings.append(f"ROA {r.roa:.0f}% 범위 초과")
         r.roa = None
 
+    # ROCE: EBIT / Capital Employed (총자산 - 유동부채)
+    if r.operatingIncomeTTM is not None and r.totalAssets and r.currentLiabilities is not None:
+        capitalEmployed = r.totalAssets - r.currentLiabilities
+        if capitalEmployed > 0:
+            r.roce = _safeRound((r.operatingIncomeTTM / capitalEmployed) * 100, 2)
+
     r.operatingMargin = _safePct(r.operatingIncomeTTM, r.revenueTTM)
     r.netMargin = _safePct(r.netIncomeTTM, r.revenueTTM)
+    r.preTaxMargin = _safePct(r.profitBeforeTax, r.revenueTTM)
     r.grossMargin = _safePct(r.grossProfit, r.revenueTTM)
     r.costOfSalesRatio = _safePct(r.costOfSales, r.revenueTTM)
     r.sgaRatio = _safePct(r.sga, r.revenueTTM)
+
+    # 유효세율
+    if r.profitBeforeTax and r.profitBeforeTax > 0 and r.incomeTaxExpense is not None:
+        etRate = r.incomeTaxExpense / r.profitBeforeTax
+        if 0 <= etRate <= 1:
+            r.effectiveTaxRate = _safeRound(etRate * 100, 2)
+
+    # 이익품질비율: 영업CF / 순이익 (100% 이상이면 이익의 현금 뒷받침 양호)
+    if r.operatingCashflowTTM is not None and r.netIncomeTTM and r.netIncomeTTM > 0:
+        r.incomeQualityRatio = _safeRound((r.operatingCashflowTTM / r.netIncomeTTM) * 100, 2)
 
     if r.operatingIncomeTTM is not None and r.revenueTTM and r.revenueTTM > 0:
         depreciation = r.depreciationExpense
@@ -665,7 +742,7 @@ def _calcProfitability(r: RatioResult) -> None:
 
 
 def _calcStability(r: RatioResult) -> None:
-    """안정성 비율 (7개)."""
+    """안정성 비율 (9개)."""
     r.debtRatio = _safePct(r.totalLiabilities, r.totalEquity)
     if r.debtRatio is not None and r.debtRatio > 5000:
         r.debtRatio = None
@@ -677,6 +754,9 @@ def _calcStability(r: RatioResult) -> None:
     if r.currentAssets is not None and r.inventories is not None and r.currentLiabilities and r.currentLiabilities > 0:
         quickAssets = r.currentAssets - r.inventories
         r.quickRatio = _safeRound((quickAssets / r.currentLiabilities) * 100, 2)
+
+    # 현금비율: (현금 + 현금성자산) / 유동부채
+    r.cashRatio = _safePct(r.cash, r.currentLiabilities)
 
     r.equityRatio = _safePct(r.totalEquity, r.totalAssets)
 
@@ -691,22 +771,30 @@ def _calcStability(r: RatioResult) -> None:
     if r.noncurrentAssets is not None and r.totalEquity and r.totalEquity > 0:
         r.noncurrentRatio = _safeRound((r.noncurrentAssets / r.totalEquity) * 100, 2)
 
+    # 운전자본: 유동자산 - 유동부채
+    if r.currentAssets is not None and r.currentLiabilities is not None:
+        r.workingCapital = r.currentAssets - r.currentLiabilities
+
 
 def _calcEfficiency(r: RatioResult) -> None:
-    """효율성 비율 (4개)."""
+    """효율성 비율 (6개)."""
     r.totalAssetTurnover = _safeRound(_safeDiv(r.revenueTTM, r.totalAssets), 2)
+    r.fixedAssetTurnover = _safeRound(_safeDiv(r.revenueTTM, r.tangibleAssets), 2)
     r.inventoryTurnover = _safeRound(_safeDiv(r.revenueTTM, r.inventories), 2)
     r.receivablesTurnover = _safeRound(_safeDiv(r.revenueTTM, r.receivables), 2)
 
     if r.costOfSales is not None:
         r.payablesTurnover = _safeRound(_safeDiv(r.costOfSales, r.payables), 2)
 
+    # 영업순환주기: DSO + DIO (CCC에서 DPO 빼기 전 — 매출+재고 회수에 걸리는 일수)
+    # DSO/DIO는 _calcComposite에서 계산되므로 여기서는 placeholder만 설정
+
 
 def _calcCashflow(
     r: RatioResult,
     series: dict[str, dict[str, list[Optional[float]]]],
 ) -> None:
-    """현금흐름 비율 (5개)."""
+    """현금흐름 비율 (7개)."""
     capexAmt = abs(r.capex) if r.capex else 0
     if r.operatingCashflowTTM is not None:
         r.fcf = r.operatingCashflowTTM - capexAmt
@@ -714,11 +802,18 @@ def _calcCashflow(
     r.operatingCfMargin = _safePct(r.operatingCashflowTTM, r.revenueTTM)
     r.operatingCfToNetIncome = _safePct(r.operatingCashflowTTM, r.netIncomeTTM)
 
+    # 영업CF/유동부채: 단기 채무를 영업현금흐름으로 상환할 수 있는 능력
+    r.operatingCfToCurrentLiab = _safePct(r.operatingCashflowTTM, r.currentLiabilities)
+
     if r.capex and r.revenueTTM and r.revenueTTM > 0:
         r.capexRatio = _safeRound((abs(r.capex) / r.revenueTTM) * 100, 2)
 
     if r.dividendsPaid and r.netIncomeTTM and r.netIncomeTTM > 0:
         r.dividendPayoutRatio = _safeRound((abs(r.dividendsPaid) / r.netIncomeTTM) * 100, 2)
+
+    # FCF/OCF비율: FCF가 영업CF의 몇 %인지 (CAPEX 부담 측정)
+    if r.fcf is not None and r.operatingCashflowTTM and r.operatingCashflowTTM > 0:
+        r.fcfToOcfRatio = _safeRound((r.fcf / r.operatingCashflowTTM) * 100, 2)
 
     r.revenueGrowth3Y = getRevenueGrowth3Y(series)
 
@@ -772,8 +867,11 @@ def _calcComposite(
         if r.dso is not None and r.dio is not None and r.dpo is not None:
             r.ccc = _safeRound(r.dso + r.dio - r.dpo, 1)
 
-    # ── Piotroski F-Score (9점) ──
-    _flow = getLatest if annual else getTTM
+    # 영업순환주기: DSO + DIO (CCC와 달리 DPO를 빼지 않음)
+    if r.dso is not None and r.dio is not None:
+        r.operatingCycle = _safeRound(r.dso + r.dio, 1)
+
+    # ── Piotroski F-Score (9점 만점) ──
     score = 0
 
     # 1. ROA > 0
@@ -782,28 +880,68 @@ def _calcComposite(
     # 2. Operating CF > 0
     if r.operatingCashflowTTM is not None and r.operatingCashflowTTM > 0:
         score += 1
-    # 3. ROA 개선 (전년 대비)
-    prev_np = _pick_first(series, "IS", ["net_profit", "net_income"], annual=True)
-    prev_ta = getLatest(series, "BS", "total_assets")
-    # ROA는 이미 계산됨 — 전기 데이터 접근이 제한적이므로 현재 값 기준으로 가용 시 체크
-    if r.roa is not None and r.roa > 0:
-        score += 0  # 전기 비교 불가 시 skip (보수적)
+    # 3. ROA 개선 (전년 대비) — 시계열에서 전기 ROA 계산
+    npSeries = _pick_series(series, "IS", ["net_profit", "net_income"])
+    taSeries = _get(series, "BS", "total_assets")
+    if len(npSeries) >= 2 and len(taSeries) >= 2:
+        curROA = _safeDiv(npSeries[-1], taSeries[-1]) if npSeries[-1] is not None and taSeries[-1] else None
+        prevROA = _safeDiv(npSeries[-2], taSeries[-2]) if npSeries[-2] is not None and taSeries[-2] else None
+        if curROA is not None and prevROA is not None and curROA > prevROA:
+            score += 1
     # 4. Operating CF > Net Income (발생주의 품질)
     if r.operatingCashflowTTM is not None and r.netIncomeTTM is not None:
         if r.operatingCashflowTTM > r.netIncomeTTM:
             score += 1
-    # 5. 부채비율 감소 → 전기 비교 불가 시 현재가 낮으면 가산
-    if r.debtRatio is not None and r.debtRatio < 100:
+    # 5. 부채비율 감소 — 시계열에서 전기 비교
+    tlSeries = _get(series, "BS", "total_liabilities")
+    teSeries = _get(series, "BS", "total_stockholders_equity")
+    if not any(v is not None for v in teSeries):
+        teSeries = _get(series, "BS", "owners_of_parent_equity")
+    if len(tlSeries) >= 2 and len(teSeries) >= 2:
+        curDR = _safeDiv(tlSeries[-1], teSeries[-1])
+        prevDR = _safeDiv(tlSeries[-2], teSeries[-2])
+        if curDR is not None and prevDR is not None and curDR < prevDR:
+            score += 1
+    elif r.debtRatio is not None and r.debtRatio < 100:
+        score += 1  # 전기 비교 불가 시 fallback
+    # 6. 유동비율 개선 — 시계열 비교 or 현재 > 100%
+    caSeries = _get(series, "BS", "current_assets")
+    clSeries = _get(series, "BS", "current_liabilities")
+    if len(caSeries) >= 2 and len(clSeries) >= 2:
+        curCR = _safeDiv(caSeries[-1], clSeries[-1])
+        prevCR = _safeDiv(caSeries[-2], clSeries[-2])
+        if curCR is not None and prevCR is not None and curCR > prevCR:
+            score += 1
+    elif r.currentRatio is not None and r.currentRatio > 100:
         score += 1
-    # 6. 유동비율 > 100%
-    if r.currentRatio is not None and r.currentRatio > 100:
+    # 7. 신주 미발행 — 자본금 시계열 비교
+    issuedCapital = _get(series, "BS", "issued_capital")
+    if not any(v is not None for v in issuedCapital):
+        issuedCapital = _get(series, "BS", "capital_stock")
+    if len(issuedCapital) >= 2:
+        cur_cap = issuedCapital[-1]
+        prev_cap = issuedCapital[-2]
+        if cur_cap is not None and prev_cap is not None and cur_cap <= prev_cap:
+            score += 1
+    else:
+        score += 1  # 데이터 없으면 신주 미발행으로 간주 (보수적)
+    # 8. 매출총이익률 개선 — 시계열 비교
+    gpSeries = _get(series, "IS", "gross_profit")
+    revSeries = _pick_series(series, "IS", ["sales", "revenue"])
+    if len(gpSeries) >= 2 and len(revSeries) >= 2:
+        curGM = _safeDiv(gpSeries[-1], revSeries[-1])
+        prevGM = _safeDiv(gpSeries[-2], revSeries[-2])
+        if curGM is not None and prevGM is not None and curGM > prevGM:
+            score += 1
+    elif r.grossMargin is not None and r.grossMargin > 0:
         score += 1
-    # 7. 신주 미발행 → 데이터 제한으로 skip
-    # 8. 매출총이익률 개선 → 현재 양수면 가산 (보수적)
-    if r.grossMargin is not None and r.grossMargin > 0:
-        score += 1
-    # 9. 총자산회전율 양수
-    if r.totalAssetTurnover is not None and r.totalAssetTurnover > 0:
+    # 9. 총자산회전율 개선 — 시계열 비교
+    if len(revSeries) >= 2 and len(taSeries) >= 2:
+        curTAT = _safeDiv(revSeries[-1], taSeries[-1])
+        prevTAT = _safeDiv(revSeries[-2], taSeries[-2])
+        if curTAT is not None and prevTAT is not None and curTAT > prevTAT:
+            score += 1
+    elif r.totalAssetTurnover is not None and r.totalAssetTurnover > 0:
         score += 1
 
     r.piotroskiFScore = score
@@ -953,11 +1091,37 @@ def calcRatioSeries(
 
         rs.roe.append(_safePct(np_i, oe_i))
         rs.roa.append(_safePct(np_i, ta_i))
+
+        # ROCE
+        if op_i is not None and ta_i and cl_i is not None:
+            ce_i = ta_i - cl_i
+            rs.roce.append(_safeRound((op_i / ce_i) * 100, 2) if ce_i > 0 else None)
+        else:
+            rs.roce.append(None)
+
         rs.operatingMargin.append(_safePct(op_i, rev_i))
         rs.netMargin.append(_safePct(np_i, rev_i))
+
+        pbt_i = _v(profitBeforeTax, i)
+        rs.preTaxMargin.append(_safePct(pbt_i, rev_i))
+
         rs.grossMargin.append(_safePct(gp_i, rev_i))
         rs.costOfSalesRatio.append(_safePct(cos_i, rev_i))
         rs.sgaRatio.append(_safePct(sga_i, rev_i))
+
+        # 유효세율
+        tax_i = _v(incomeTaxExpense, i)
+        if pbt_i and pbt_i > 0 and tax_i is not None:
+            et_rate = tax_i / pbt_i
+            rs.effectiveTaxRate.append(_safeRound(et_rate * 100, 2) if 0 <= et_rate <= 1 else None)
+        else:
+            rs.effectiveTaxRate.append(None)
+
+        # 이익품질비율
+        if opcf_i is not None and np_i and np_i > 0:
+            rs.incomeQualityRatio.append(_safeRound((opcf_i / np_i) * 100, 2))
+        else:
+            rs.incomeQualityRatio.append(None)
 
         dep = _v(depreciation, i)
         if dep is None:
@@ -972,6 +1136,9 @@ def calcRatioSeries(
             rs.quickRatio.append(_safeRound(((ca_i - inv_i) / cl_i) * 100, 2))
         else:
             rs.quickRatio.append(None)
+
+        # 현금비율
+        rs.cashRatio.append(_safePct(cash_i, cl_i))
 
         rs.equityRatio.append(_safePct(te_i, ta_i))
 
@@ -988,6 +1155,12 @@ def calcRatioSeries(
         else:
             rs.noncurrentRatio.append(None)
 
+        # 운전자본
+        if ca_i is not None and cl_i is not None:
+            rs.workingCapital.append(ca_i - cl_i)
+        else:
+            rs.workingCapital.append(None)
+
         rs.revenueGrowth.append(_yoy(revenue, i, yoyLag) if len(revenue) > i else None)
         rs.operatingProfitGrowth.append(_yoy(opProfit, i, yoyLag) if len(opProfit) > i else None)
         rs.netProfitGrowth.append(_yoy(netProfit, i, yoyLag) if len(netProfit) > i else None)
@@ -995,18 +1168,24 @@ def calcRatioSeries(
         rs.equityGrowthRate.append(_yoy(totalEquity, i, yoyLag) if len(totalEquity) > i else None)
 
         rs.totalAssetTurnover.append(_safeRound(_safeDiv(rev_i, ta_i), 2))
+        rs.fixedAssetTurnover.append(_safeRound(_safeDiv(rev_i, tan_i), 2))
         rs.inventoryTurnover.append(_safeRound(_safeDiv(rev_i, inv_i), 2))
         rs.receivablesTurnover.append(_safeRound(_safeDiv(rev_i, rec_i), 2))
         rs.payablesTurnover.append(_safeRound(_safeDiv(cos_i, pay_i), 2))
 
         capAmt = abs(cap_i) if cap_i and cap_i > 0 else 0
         if opcf_i is not None:
-            rs.fcf.append(opcf_i - capAmt)
+            fcf_i = opcf_i - capAmt
+            rs.fcf.append(fcf_i)
         else:
+            fcf_i = None
             rs.fcf.append(None)
 
         rs.operatingCfMargin.append(_safePct(opcf_i, rev_i))
         rs.operatingCfToNetIncome.append(_safePct(opcf_i, np_i))
+
+        # 영업CF/유동부채
+        rs.operatingCfToCurrentLiab.append(_safePct(opcf_i, cl_i))
 
         if cap_i and rev_i and rev_i > 0:
             rs.capexRatio.append(_safeRound((abs(cap_i) / rev_i) * 100, 2))
@@ -1017,6 +1196,12 @@ def calcRatioSeries(
             rs.dividendPayoutRatio.append(_safeRound((abs(div_i) / np_i) * 100, 2))
         else:
             rs.dividendPayoutRatio.append(None)
+
+        # FCF/OCF비율
+        if fcf_i is not None and opcf_i and opcf_i > 0:
+            rs.fcfToOcfRatio.append(_safeRound((fcf_i / opcf_i) * 100, 2))
+        else:
+            rs.fcfToOcfRatio.append(None)
 
         # ── 복합 지표 (시계열) ──
 
@@ -1059,24 +1244,85 @@ def calcRatioSeries(
         rs.dpo.append(dpo_i)
         rs.ccc.append(_safeRound(dso_i + dio_i - dpo_i, 1) if dso_i and dio_i and dpo_i else None)
 
-        # Piotroski F-Score (시계열 — 사용 가능한 지표만)
+        # 영업순환주기
+        rs.operatingCycle.append(_safeRound(dso_i + dio_i, 1) if dso_i is not None and dio_i is not None else None)
+
+        # Piotroski F-Score (9/9 시계열)
         fscore = 0
+        # 1. ROA > 0
         if np_i is not None and ta_i and ta_i > 0 and np_i / ta_i > 0:
             fscore += 1
+        # 2. Operating CF > 0
         if opcf_i is not None and opcf_i > 0:
             fscore += 1
+        # 3. ROA 개선 (전기 대비)
+        if i >= yoyLag:
+            prev_np_i = _v(netProfit, i - yoyLag)
+            prev_ta_i = _v(totalAssets, i - yoyLag)
+            curROA_i = _safeDiv(np_i, ta_i)
+            prevROA_i = _safeDiv(prev_np_i, prev_ta_i)
+            if curROA_i is not None and prevROA_i is not None and curROA_i > prevROA_i:
+                fscore += 1
+        # 4. Operating CF > Net Income (발생주의 품질)
         if opcf_i is not None and np_i is not None and opcf_i > np_i:
             fscore += 1
-        if tl_i is not None and te_i and te_i > 0 and (tl_i / te_i * 100) < 100:
+        # 5. 부채비율 감소
+        if i >= yoyLag:
+            prev_tl_i = _v(totalLiab, i - yoyLag)
+            prev_te_i = _v(totalEquity, i - yoyLag)
+            curDR_i = _safeDiv(tl_i, te_i)
+            prevDR_i = _safeDiv(prev_tl_i, prev_te_i)
+            if curDR_i is not None and prevDR_i is not None and curDR_i < prevDR_i:
+                fscore += 1
+        elif tl_i is not None and te_i and te_i > 0 and (tl_i / te_i * 100) < 100:
             fscore += 1
-        if ca_i and cl_i and cl_i > 0 and (ca_i / cl_i * 100) > 100:
+        # 6. 유동비율 개선
+        if i >= yoyLag:
+            prev_ca_i = _v(curAssets, i - yoyLag)
+            prev_cl_i = _v(curLiab, i - yoyLag)
+            curCR_i = _safeDiv(ca_i, cl_i)
+            prevCR_i = _safeDiv(prev_ca_i, prev_cl_i)
+            if curCR_i is not None and prevCR_i is not None and curCR_i > prevCR_i:
+                fscore += 1
+        elif ca_i and cl_i and cl_i > 0 and (ca_i / cl_i * 100) > 100:
             fscore += 1
-        gm = _safePct(gp_i, rev_i)
-        if gm is not None and gm > 0:
-            fscore += 1
-        tat = _safeDiv(rev_i, ta_i)
-        if tat is not None and tat > 0:
-            fscore += 1
+        # 7. 신주 미발행
+        issuedCap = _get(annualSeries, "BS", "issued_capital")
+        if not any(v is not None for v in issuedCap):
+            issuedCap = _get(annualSeries, "BS", "capital_stock")
+        if i >= yoyLag and i < len(issuedCap) and (i - yoyLag) < len(issuedCap):
+            cur_cap_i = issuedCap[i]
+            prev_cap_i = issuedCap[i - yoyLag]
+            if cur_cap_i is not None and prev_cap_i is not None and cur_cap_i <= prev_cap_i:
+                fscore += 1
+            elif cur_cap_i is None and prev_cap_i is None:
+                fscore += 1  # 데이터 없으면 미발행 간주
+        else:
+            fscore += 1  # 데이터 없으면 미발행 간주
+        # 8. 매출총이익률 개선
+        if i >= yoyLag:
+            prev_gp_i = _v(grossProfit, i - yoyLag)
+            prev_rev_i = _v(revenue, i - yoyLag)
+            curGM_i = _safeDiv(gp_i, rev_i)
+            prevGM_i = _safeDiv(prev_gp_i, prev_rev_i)
+            if curGM_i is not None and prevGM_i is not None and curGM_i > prevGM_i:
+                fscore += 1
+        else:
+            gm = _safePct(gp_i, rev_i)
+            if gm is not None and gm > 0:
+                fscore += 1
+        # 9. 총자산회전율 개선
+        if i >= yoyLag:
+            prev_rev_i2 = _v(revenue, i - yoyLag)
+            prev_ta_i2 = _v(totalAssets, i - yoyLag)
+            curTAT_i = _safeDiv(rev_i, ta_i)
+            prevTAT_i = _safeDiv(prev_rev_i2, prev_ta_i2)
+            if curTAT_i is not None and prevTAT_i is not None and curTAT_i > prevTAT_i:
+                fscore += 1
+        else:
+            tat = _safeDiv(rev_i, ta_i)
+            if tat is not None and tat > 0:
+                fscore += 1
         rs.piotroskiFScore.append(fscore)
 
         # Altman Z-Score
@@ -1104,12 +1350,16 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
         [
             "roe",
             "roa",
+            "roce",
             "operatingMargin",
             "netMargin",
+            "preTaxMargin",
             "grossMargin",
             "ebitdaMargin",
             "costOfSalesRatio",
             "sgaRatio",
+            "effectiveTaxRate",
+            "incomeQualityRatio",
         ],
     ),
     (
@@ -1118,10 +1368,12 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
             "debtRatio",
             "currentRatio",
             "quickRatio",
+            "cashRatio",
             "equityRatio",
             "interestCoverage",
             "netDebtRatio",
             "noncurrentRatio",
+            "workingCapital",
         ],
     ),
     (
@@ -1138,9 +1390,11 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
         "efficiency",
         [
             "totalAssetTurnover",
+            "fixedAssetTurnover",
             "inventoryTurnover",
             "receivablesTurnover",
             "payablesTurnover",
+            "operatingCycle",
         ],
     ),
     (
@@ -1149,8 +1403,10 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
             "fcf",
             "operatingCfMargin",
             "operatingCfToNetIncome",
+            "operatingCfToCurrentLiab",
             "capexRatio",
             "dividendPayoutRatio",
+            "fcfToOcfRatio",
         ],
     ),
     (
