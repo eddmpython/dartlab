@@ -15,12 +15,12 @@ Full DART company exploration — sections, financial statements, analysis engin
 - `dartlab.Company("005930")` — Samsung Electronics
 - `c.sections` — full topic × period map
 - `c.topics` — topic list
-- `c.show("companyOverview")` — open a topic
+- `c.show("overview")` — open a topic
 - `c.show("IS")` — financial time series
 - `c.BS`, `c.CF`, `c.ratios` — financial data shortcuts
 - `c.show("IS", period=["2024Q4", "2023Q4"])` — period comparison
 - `c.show("dividend")` — report data
-- `c.trace("stockTotal")` — data source provenance
+- `c.trace("stock")` — data source provenance
 - `c.diff()` — text change detection
 - `c.notes.inventory` — K-IFRS notes (12 items)
 - `c.sector`, `c.insights`, `c.rank` — analysis engines

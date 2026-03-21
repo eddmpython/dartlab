@@ -112,6 +112,41 @@ _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CH
 _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
     "audit": "auditOpinion",
 }
+# ── topic 단축 alias ────────────────────────────────────────────
+# show("board") → show("boardOfDirectors") 등 짧은 이름으로 접근 가능
+_TOPIC_ALIASES: dict[str, str] = {
+    # 지배구조 / 경영
+    "board": "boardOfDirectors",
+    "directors": "boardOfDirectors",
+    "pay": "executivePay",
+    "holder": "majorHolder",
+    "holders": "holderOverview",
+    "meeting": "shareholderMeeting",
+    # 위험 / 공시
+    "contingent": "contingentLiability",
+    "relatedParty": "relatedPartyTx",
+    "risk": "riskDerivative",
+    "control": "internalControl",
+    # 자산 / 투자
+    "tangible": "tangibleAsset",
+    "intangible": "intangibleAsset",
+    "material": "rawMaterial",
+    "cost": "costByNature",
+    "sales": "salesOrder",
+    "product": "productService",
+    "invested": "investedCompany",
+    "investment": "investmentInOther",
+    # 기타
+    "overview": "companyOverview",
+    "history": "companyHistory",
+    "articles": "articlesOfIncorporation",
+    "capital": "shareCapital",
+    "capitalChange": "capitalChange",
+    "stock": "stockTotal",
+    "treasury": "treasuryStock",
+    "summary": "fsSummary",
+}
+
 _TOPIC_LABELS: dict[str, str] = {
     "businessOverview": "사업의 개요",
     "businessStatus": "사업현황",
@@ -1323,6 +1358,9 @@ class Company:
             period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
             raw: True면 원본 그대로
         """
+        # alias 해석 (board → boardOfDirectors 등)
+        topic = _TOPIC_ALIASES.get(topic, topic)
+
         # period가 리스트면 세로 뷰: 먼저 전체 데이터 → transpose
         if isinstance(period, list):
             wide = self.show(topic, block, raw=raw)
@@ -1416,6 +1454,7 @@ class Company:
         return df
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        topic = _TOPIC_ALIASES.get(topic, topic)
         if topic == "docsStatus" and not self._hasDocs:
             return {
                 "topic": topic,
@@ -1485,6 +1524,8 @@ class Company:
             c.diff("businessOverview")        # 특정 topic 변경 이력
             c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
         """
+        if topic is not None:
+            topic = _TOPIC_ALIASES.get(topic, topic)
         from dartlab.engines.common.docs.diff import (
             diffSummaryDataFrame,
             lineDiffDataFrame,
@@ -1865,40 +1906,23 @@ class Company:
         return result
 
     def getTimeseries(self, period: str = "q", fsDivPref: str = "CFS"):
-        """재무 시계열 조회.
+        """Deprecated — use ``c.timeseries`` property instead.
 
         Args:
             period: "q" (분기별 standalone), "y" (연도별), "cum" (분기별 누적).
             fsDivPref: "CFS" (연결) 또는 "OFS" (별도).
-
-        Returns:
-            (series, periods) 또는 None.
-            series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
-            periods = ["2016-Q1", ...] (q/cum) 또는 ["2016", ...] (y)
-
-        Example::
-
-            c = Company("005930")
-            series, periods = c.getTimeseries("y")
-            series, periods = c.getTimeseries("q", fsDivPref="OFS")
         """
+        import warnings
+
+        warnings.warn(
+            "getTimeseries()는 deprecated입니다. c.timeseries / c.annual / c.cumulative를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._getFinanceBuild(period, fsDivPref)
 
-    def getRatios(self, fsDivPref: str = "CFS"):
-        """재무비율 계산.
-
-        Args:
-            fsDivPref: "CFS" (연결) 또는 "OFS" (별도).
-
-        Returns:
-            RatioResult dataclass.
-
-        Example::
-
-            c = Company("005930")
-            c.getRatios().roe
-            c.getRatios("OFS").debtRatio
-        """
+    def _getRatiosInternal(self, fsDivPref: str = "CFS"):
+        """내부용 재무비율 계산 (deprecation 없음)."""
         cacheKey = f"_ratios_{fsDivPref}"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -1921,6 +1945,17 @@ class Company:
 
         self._cache[cacheKey] = result
         return result
+
+    def getRatios(self, fsDivPref: str = "CFS"):
+        """Deprecated — use ``c.ratios`` property instead."""
+        import warnings
+
+        warnings.warn(
+            "getRatios()는 deprecated입니다. c.ratios를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._getRatiosInternal(fsDivPref)
 
     @property
     def ratios(self) -> pl.DataFrame | None:

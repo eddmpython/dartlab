@@ -150,7 +150,7 @@ for year, profiles in result.profiles.items():
 ## Board of Directors
 
 ```python
-c.boardOfDirectors
+c.show("board")   # alias for boardOfDirectors
 # year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
 ```
 
@@ -167,11 +167,7 @@ print(result.committeeDf)   # Committee composition (committeeName, composition,
 ## Audit System
 
 ```python
-# canonical path
 c.show("auditSystem")
-
-# direct property (also works)
-c.auditSystem
 # name | role | detail
 ```
 
@@ -188,7 +184,7 @@ print(result.activityDf)    # Audit activities (date, agenda, result)
 ## Internal Controls
 
 ```python
-c.internalControl
+c.show("control")   # alias for internalControl
 # year | opinion | auditor | hasWeakness
 ```
 
@@ -198,19 +194,19 @@ c.internalControl
 
 ```python
 # Related party transactions
-c.relatedPartyTx
+c.show("relatedParty")   # alias for relatedPartyTx
 # year | entity | sales | purchases
 
 # Contingent liabilities
-c.contingentLiability
+c.show("contingent")     # alias for contingentLiability
 # year | totalGuaranteeAmount
 
 # Sanctions
-c.sanction
+c.show("sanction")
 # year | date | agency | action | amount
 
 # Risk management
-c.riskDerivative
+c.show("risk")           # alias for riskDerivative
 # currency | upImpact | downImpact
 ```
 

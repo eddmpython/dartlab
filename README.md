@@ -84,7 +84,7 @@ import dartlab
 c = dartlab.Company("005930")   # Samsung Electronics (DART)
 c.sections                      # full company map (topic × period)
 c.topics                        # topic list with source, blocks, periods
-c.show("companyOverview")       # open one topic
+c.show("overview")              # open one topic (alias for companyOverview)
 c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
 c.BS                            # balance sheet
 c.ratios                        # ratio time series
@@ -92,7 +92,7 @@ c.insights                      # 7-area grades (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
 us.sections
-us.show("10-K::item1Business")
+us.show("business")             # alias for item1Business
 us.BS
 us.ratios
 ```
@@ -167,7 +167,7 @@ c = dartlab.Company("005930")
 
 # show — open any topic with source-aware priority
 c.show("BS")                # → finance DataFrame
-c.show("companyOverview")   # → sections-based text + tables
+c.show("overview")          # → sections-based text + tables
 c.show("dividend")          # → report DataFrame (all quarters)
 
 # compare specific periods
@@ -324,7 +324,7 @@ Same `Company` interface, different data source:
 us = dartlab.Company("AAPL")
 
 us.sections                         # 10-K/10-Q sections with heading/body
-us.show("10-K::item1Business")      # business description
+us.show("business")      # business description
 us.show("10-K::item1ARiskFactors")  # risk factors
 us.BS                               # SEC XBRL balance sheet
 us.ratios                           # same 47 ratios

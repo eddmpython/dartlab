@@ -65,7 +65,7 @@ c.sections.ordered()  # sorted newest first
 When you want to drill into a single topic instead of viewing all sections:
 
 ```python
-c.show("companyOverview")       # block index
+c.show("overview")       # block index
 c.show("companyOverview", 0)    # actual data for block 0
 c.show("BS")                    # balance sheet (finance source)
 c.show("dividend")              # dividend (report source)
@@ -83,7 +83,7 @@ Check which source was selected:
 
 ```python
 c.trace("BS")               # finance source
-c.trace("companyOverview")  # docs source
+c.trace("overview")  # docs source
 ```
 
 ## Financial Statements and Ratios

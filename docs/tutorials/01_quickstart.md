@@ -56,7 +56,7 @@ c.docs.sections
 
 ```python
 c.show("BS")
-c.show("companyOverview")
+c.show("overview")
 c.show("audit")
 ```
 
@@ -64,7 +64,7 @@ Common source interpretation:
 
 - Numeric topics like `BS`, `IS`, `CF` come from `finance`
 - Structured disclosure topics like `audit`, `dividend` come from `report`
-- Narrative/section topics like `companyOverview`, `business` come from `docs`
+- Narrative/section topics like `overview`, `business` come from `docs`
 
 ---
 
@@ -72,7 +72,7 @@ Common source interpretation:
 
 ```python
 c.trace("BS")
-c.trace("companyOverview")
+c.trace("overview")
 c.trace("audit")
 ```
 

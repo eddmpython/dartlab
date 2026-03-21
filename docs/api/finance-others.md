@@ -222,12 +222,14 @@ result.topPayDf      # Individual compensation exceeding 500M KRW
 
 ---
 
-### c.boardOfDirectors — Board of Directors
+### c.show("board") — Board of Directors
+
+> Alias: `board` → `boardOfDirectors`
 
 Board composition, meeting frequency, and attendance rate time series.
 
 ```python
-c.boardOfDirectors
+c.show("board")
 # year | totalDirectors | outsideDirectors | meetingCount | avgAttendanceRate
 ```
 
@@ -279,12 +281,14 @@ result.activityDf    # Audit activity records (date, agenda, result)
 
 ---
 
-### c.internalControl — Internal Controls
+### c.show("control") — Internal Controls
+
+> Alias: `control` → `internalControl`
 
 Evaluation of internal accounting control systems.
 
 ```python
-c.internalControl
+c.show("control")
 # year | opinion | auditor | hasWeakness
 ```
 
@@ -303,12 +307,14 @@ c.shareholderMeeting
 
 ## Risk & Regulation
 
-### c.contingentLiability — Contingent Liabilities
+### c.show("contingent") — Contingent Liabilities
+
+> Alias: `contingent` → `contingentLiability`
 
 Debt guarantees and litigation status.
 
 ```python
-c.contingentLiability
+c.show("contingent")
 # year | totalGuaranteeAmount | lineCount
 ```
 
@@ -322,12 +328,14 @@ result.lawsuitDf    # Litigation status (filingDate, parties, description, amoun
 
 ---
 
-### c.relatedPartyTx — Related Party Transactions
+### c.show("relatedParty") — Related Party Transactions
+
+> Alias: `relatedParty` → `relatedPartyTx`
 
 Transactions with major shareholders and related parties.
 
 ```python
-c.relatedPartyTx
+c.show("relatedParty")
 # year | entity | sales | purchases
 ```
 
@@ -353,12 +361,14 @@ c.sanction
 
 ---
 
-### c.riskDerivative — Risk Management
+### c.show("risk") — Risk Management
+
+> Alias: `risk` → `riskDerivative`
 
 FX sensitivity and derivative contract status.
 
 ```python
-c.riskDerivative
+c.show("risk")
 # currency | upImpact | downImpact
 ```
 
@@ -584,7 +594,7 @@ result.purposesDf   # Business purposes (purpose, active)
 
 ## Disclosure Text
 
-> **Recommended path**: Access narrative disclosure text through sections-based show() such as `c.show("businessOverview")`, `c.show("companyOverview")`, etc.
+> **Recommended path**: Access narrative disclosure text through sections-based show() such as `c.show("businessOverview")`, `c.show("overview")`, etc.
 > The `c.business` and `c.mdna` below are legacy access paths via the docs namespace.
 
 ### c.docs.business — Business Description

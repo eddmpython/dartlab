@@ -26,7 +26,7 @@ us = dartlab.Company("AAPL")
 ```python
 c.sections
 c.show("BS")
-c.trace("companyOverview")
+c.trace("overview")
 ```
 
 - `c.sections`: The public company board
@@ -71,7 +71,7 @@ See the [Sections Guide](../getting-started/sections) for detailed structure.
 
 ```python
 c.show("BS")
-c.show("companyOverview")
+c.show("overview")
 c.show("audit")
 
 us.show("BS")
@@ -93,7 +93,7 @@ In other words, `Company` is not a raw source wrapper but a source-aware merged 
 ```python
 c.trace("BS")
 c.trace("dividend")
-c.trace("companyOverview")
+c.trace("overview")
 ```
 
 `trace(topic)` explains which source was actually selected for the same topic.

@@ -21,7 +21,9 @@ _ADAPTER_ERRORS = (
 
 def get_headline_ratios(company: Any) -> Any | None:
     """Return RatioResult-like object regardless of facade surface."""
-    getter = getattr(company, "getRatios", None)
+    # 내부용 _getRatiosInternal 우선 (deprecation warning 없음)
+    internal = getattr(company, "_getRatiosInternal", None)
+    getter = internal if callable(internal) else getattr(company, "getRatios", None)
     if callable(getter):
         try:
             result = getter()

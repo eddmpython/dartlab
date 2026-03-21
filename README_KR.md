@@ -84,7 +84,7 @@ import dartlab
 c = dartlab.Company("005930")   # 삼성전자 (DART)
 c.sections                      # 전체 회사 맵 (topic × period)
 c.topics                        # topic 목록 (source, blocks, periods)
-c.show("companyOverview")       # topic 하나 열기
+c.show("overview")       # topic 하나 열기
 c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
 c.BS                            # 재무상태표
 c.ratios                        # 재무비율 시계열
@@ -92,7 +92,7 @@ c.insights                      # 7영역 등급 (A~F)
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
 us.sections
-us.show("10-K::item1Business")
+us.show("business")
 us.BS
 us.ratios
 ```
@@ -167,7 +167,7 @@ c = dartlab.Company("005930")
 
 # show — source 우선순위에 따라 topic을 연다
 c.show("BS")                # → finance DataFrame
-c.show("companyOverview")   # → sections 기반 텍스트 + 테이블
+c.show("overview")   # → sections 기반 텍스트 + 테이블
 c.show("dividend")          # → report DataFrame (전 분기)
 
 # 특정 기간 비교
@@ -324,7 +324,7 @@ report + finance parquet를 결합해 지배구조, 인력/보수, 주주환원,
 us = dartlab.Company("AAPL")
 
 us.sections                         # 10-K/10-Q sections (heading/body 분리)
-us.show("10-K::item1Business")      # 사업 설명
+us.show("business")      # 사업 설명
 us.show("10-K::item1ARiskFactors")  # 리스크 요인
 us.BS                               # SEC XBRL 재무상태표
 us.ratios                           # 동일한 47개 비율

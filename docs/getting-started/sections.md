@@ -56,7 +56,7 @@ Columns like `2025Q4`, `2024Q4`, `2024Q3`, `2024Q2`, `2024Q1`, ... follow in ord
 After exploring `sections`, use `show()` when you want to dive deeper into a specific topic.
 
 ```python
-c.show("companyOverview")       # block index DataFrame (block, type, source, preview)
+c.show("overview")       # block index DataFrame (block, type, source, preview)
 c.show("companyOverview", 0)    # actual data for block 0
 c.show("BS")                    # balance sheet (finance source)
 ```
@@ -75,7 +75,7 @@ To see which source was actually selected, use `trace()`.
 
 ```python
 c.trace("BS")               # finance source, per-period coverage
-c.trace("companyOverview")  # docs source
+c.trace("overview")  # docs source
 ```
 
 The result includes:

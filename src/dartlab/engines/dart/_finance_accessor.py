@@ -53,7 +53,7 @@ class _FinanceAccessor:
 
     @property
     def ratios(self):
-        return self._company.getRatios("CFS")
+        return self._company._getRatiosInternal("CFS")
 
     @property
     def ratioSeries(self):

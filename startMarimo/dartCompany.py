@@ -42,7 +42,7 @@ def _(c):
 @app.cell
 def _(c):
     # 서술형 topic → 블록 목차
-    c.show("companyOverview")
+    c.show("overview")
     return
 
 
@@ -98,7 +98,7 @@ def _(c):
 @app.cell
 def _(c):
     # 어떤 source(docs/finance/report)가 채택됐는지
-    c.trace("stockTotal")
+    c.trace("stock")
     return
 
 

@@ -14,7 +14,7 @@ import dartlab
 c = dartlab.Company("005930")
 
 c.sections
-c.show("companyOverview")
+c.show("overview")
 c.trace("BS")
 ```
 

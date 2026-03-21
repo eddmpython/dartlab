@@ -32,6 +32,24 @@ _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
 
+# ── topic 단축 alias ────────────────────────────────────────────
+_TOPIC_ALIASES: dict[str, str] = {
+    # 10-K 주요 항목 짧은 이름
+    "business": "item1Business",
+    "riskFactors": "item1ARiskFactors",
+    "risk": "item1ARiskFactors",
+    "cybersecurity": "item1CCybersecurity",
+    "properties": "item2Properties",
+    "legal": "item3LegalProceedings",
+    "mdna": "item7Mdna",
+    "marketRisk": "item7AMarketRiskDisclosures",
+    "governance": "item10DirectorsAndCorporateGovernance",
+    "compensation": "item11ExecutiveCompensation",
+    "ownership": "item12SecurityOwnership",
+    "relatedTx": "item13RelatedTransactions",
+    "summary": "fsSummary",
+}
+
 # topic → chapter / label 매핑 (DART index와 구조 통일)
 _FINANCE_LABELS: dict[str, tuple[str, str]] = {
     "BS": ("Financial Statements", "Balance Sheet"),
@@ -746,6 +764,9 @@ class Company:
             block: blockOrder 인덱스. None이면 블록 목차.
             period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
         """
+        # alias 해석 (riskFactors → item1ARiskFactors 등)
+        topic = _TOPIC_ALIASES.get(topic, topic)
+
         # period가 리스트면 세로 뷰
         if isinstance(period, list):
             wide = self.show(topic, block)
@@ -832,6 +853,7 @@ class Company:
         return buildBlockIndex(topicRows)
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        topic = _TOPIC_ALIASES.get(topic, topic)
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
             if df is None:
