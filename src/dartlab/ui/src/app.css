@@ -2,11 +2,16 @@
 @import "highlight.js/styles/github-dark-dimmed.min.css";
 
 @theme {
+	/* ── Brand (theme-invariant) ── */
 	--color-dl-primary: #ea4647;
 	--color-dl-primary-dark: #c83232;
 	--color-dl-primary-light: #f87171;
 	--color-dl-accent: #fb923c;
 	--color-dl-accent-light: #fdba74;
+	--color-dl-success: #34d399;
+	--color-dl-warning: #fbbf24;
+
+	/* ── Dark theme (default) ── */
 	--color-dl-bg-dark: #050811;
 	--color-dl-bg-darker: #030509;
 	--color-dl-bg-card: #0f1219;
@@ -15,8 +20,6 @@
 	--color-dl-text-muted: #94a3b8;
 	--color-dl-text-dim: #64748b;
 	--color-dl-border: #1e2433;
-	--color-dl-success: #34d399;
-	--color-dl-warning: #fbbf24;
 	--color-dl-surface-base: rgba(7, 10, 17, 0.94);
 	--color-dl-surface-panel: rgba(15, 18, 25, 0.88);
 	--color-dl-surface-card: rgba(19, 24, 34, 0.94);
@@ -36,6 +39,46 @@
 
 	--font-sans: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+/* ── Light theme override ── */
+[data-theme="light"] {
+	--color-dl-bg-dark: #f8fafc;
+	--color-dl-bg-darker: #f1f5f9;
+	--color-dl-bg-card: #ffffff;
+	--color-dl-bg-card-hover: #f1f5f9;
+	--color-dl-text: #0f172a;
+	--color-dl-text-muted: #475569;
+	--color-dl-text-dim: #94a3b8;
+	--color-dl-border: #e2e8f0;
+	--color-dl-surface-base: rgba(248, 250, 252, 0.96);
+	--color-dl-surface-panel: rgba(255, 255, 255, 0.92);
+	--color-dl-surface-card: rgba(255, 255, 255, 0.96);
+	--color-dl-surface-active: rgba(234, 70, 71, 0.06);
+	--shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.06);
+	--shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.08);
+	--shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Auto-detect system preference ── */
+@media (prefers-color-scheme: light) {
+	[data-theme="auto"] {
+		--color-dl-bg-dark: #f8fafc;
+		--color-dl-bg-darker: #f1f5f9;
+		--color-dl-bg-card: #ffffff;
+		--color-dl-bg-card-hover: #f1f5f9;
+		--color-dl-text: #0f172a;
+		--color-dl-text-muted: #475569;
+		--color-dl-text-dim: #94a3b8;
+		--color-dl-border: #e2e8f0;
+		--color-dl-surface-base: rgba(248, 250, 252, 0.96);
+		--color-dl-surface-panel: rgba(255, 255, 255, 0.92);
+		--color-dl-surface-card: rgba(255, 255, 255, 0.96);
+		--color-dl-surface-active: rgba(234, 70, 71, 0.06);
+		--shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.06);
+		--shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.08);
+		--shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.12);
+	}
 }
 
 html, body, #app {
@@ -574,6 +617,77 @@ button, a, input, textarea {
 	.mobile-workspace-sheet {
 		top: max(10vh, env(safe-area-inset-top, 0px) + 32px);
 	}
+}
+
+/* ── Light theme component overrides ── */
+[data-theme="light"] .glow-bg,
+[data-theme="auto"] .glow-bg {
+	background: var(--color-dl-bg-dark);
+}
+@media (prefers-color-scheme: light) {
+	[data-theme="auto"] .glow-bg {
+		background: var(--color-dl-bg-dark);
+	}
+}
+[data-theme="light"] .input-box,
+[data-theme="light"] .message-live-tail {
+	background: var(--color-dl-surface-card);
+	border-color: var(--color-dl-border);
+}
+[data-theme="light"] .prose-dartlab pre,
+[data-theme="light"] .prose-dartlab code {
+	background: #f1f5f9;
+	border-color: #e2e8f0;
+	color: #334155;
+}
+[data-theme="light"] .prose-dartlab pre code {
+	color: #334155;
+}
+[data-theme="light"] .prose-dartlab h3,
+[data-theme="light"] .prose-dartlab strong,
+[data-theme="light"] .disclosure-text .ko-h2 {
+	color: #1e293b;
+}
+[data-theme="light"] .finance-table,
+[data-theme="light"] .structured-table,
+[data-theme="light"] .prose-dartlab table {
+	background: #ffffff;
+	border-color: #e2e8f0;
+}
+[data-theme="light"] .finance-table th,
+[data-theme="light"] .structured-table th,
+[data-theme="light"] .prose-dartlab th {
+	background: #f8fafc;
+	border-color: #e2e8f0;
+	color: #475569;
+}
+[data-theme="light"] .finance-table td,
+[data-theme="light"] .structured-table td,
+[data-theme="light"] .prose-dartlab td {
+	border-color: #f1f5f9;
+	color: #475569;
+}
+[data-theme="light"] .finance-table td:first-child,
+[data-theme="light"] .structured-table .col-sticky {
+	background: #ffffff;
+}
+[data-theme="light"] .skeleton-line {
+	background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+	background-size: 800px 100%;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+	background: #94a3b8;
+}
+[data-theme="light"] .code-copy-btn {
+	background: rgba(255, 255, 255, 0.9);
+	border-color: #e2e8f0;
+	color: #64748b;
+}
+[data-theme="light"] .sidebar-overlay {
+	background: rgba(0, 0, 0, 0.2);
 }
 
 @media (prefers-reduced-motion: reduce) {

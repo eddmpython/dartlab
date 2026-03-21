@@ -1,5 +1,9 @@
 """tools.text 모듈 테스트 — 데이터 의존 없음."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.tools.text import (
     extract_keywords,
     extract_numbers,

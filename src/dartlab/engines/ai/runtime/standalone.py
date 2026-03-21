@@ -38,8 +38,10 @@ def ask(
     exclude: list[str] | None = None,
     provider: str | None = None,
     model: str | None = None,
-    stream: bool = False,
+    stream: bool = True,
     reflect: bool = False,
+    pattern: str | None = None,
+    history: list[dict[str, str]] | None = None,
     **kwargs: Any,
 ) -> str | Generator[str, None, None]:
     """LLM에게 기업에 대해 질문.
@@ -53,22 +55,34 @@ def ask(
         model: per-call model override.
         stream: True면 제너레이터 반환 (chunk 단위).
         reflect: True면 답변 자체 검증 (1회 reflection).
+        pattern: 분석 패턴 이름 (financial, risk, valuation 등).
+        history: 이전 대화 메시지 리스트 (대화 연속 모드).
         **kwargs: LLMConfig override.
 
     Returns:
         str (stream=False) 또는 Generator[str] (stream=True).
     """
+    # 패턴 적용 → 질문 앞에 패턴 프롬프트 삽입
+    effective_question = question
+    if pattern:
+        from dartlab.engines.ai.patterns import get_pattern
+
+        pattern_text = get_pattern(pattern)
+        if pattern_text:
+            effective_question = f"{pattern_text}\n\n---\n\n{question}"
+
     from dartlab.engines.ai.runtime.core import analyze
 
     events = analyze(
         company,
-        question,
+        effective_question,
         include=include,
         exclude=exclude,
         provider=provider,
         model=model,
         use_tools=False,
         reflect=reflect,
+        history=history,
         **kwargs,
     )
 

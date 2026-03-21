@@ -1,5 +1,9 @@
 """core.tableParser 순수 함수 테스트 (데이터 의존 없음)."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.core.tableParser import detectUnit, parseAmount, parseNotesTable
 
 

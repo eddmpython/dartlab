@@ -7,7 +7,7 @@ def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("modules", help="사용 가능한 모듈 목록 보기")
     parser.add_argument("--category", "-c", help="카테고리 필터 (finance, report, notes, disclosure, analysis, raw)")
     parser.add_argument("--search", "-s", help="모듈 이름/설명 검색")
-    parser.set_defaults(func=_run)
+    parser.set_defaults(handler=_run)
 
 
 def _run(args) -> None:

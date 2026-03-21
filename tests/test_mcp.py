@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab.mcp import _company_cache, _get_or_create_company
 from dartlab.mcp.bridge import MCPToolDef, build_mcp_tools, openai_schema_to_mcp_tool
 

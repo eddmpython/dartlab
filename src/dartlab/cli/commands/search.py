@@ -18,10 +18,16 @@ def run(args) -> int:
 
     result = dartlab.search(args.keyword)
     if result is None:
-        print("검색 결과가 없습니다.")
+        from dartlab.cli.services.output import get_console
+
+        get_console().print("[dim]검색 결과가 없습니다.[/]")
         return 0
     if isinstance(result, pl.DataFrame):
-        print(result)
+        from dartlab.cli.services.output import print_search_results
+
+        print_search_results(result)
     else:
-        print(result)
+        from dartlab.cli.services.output import get_console
+
+        get_console().print(str(result))
     return 0

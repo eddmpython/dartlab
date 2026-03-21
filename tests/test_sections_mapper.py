@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.dart.docs.sections.mapper import (
     loadSectionMappings,
     mapSectionTitle,

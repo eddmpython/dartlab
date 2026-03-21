@@ -77,6 +77,107 @@ def register_scan_tools(company: Any, register_tool) -> None:
         },
     )
 
+    # ── screen_market ──
+
+    def screen_market(preset: str = "가치주") -> str:
+        """시장 스크리닝 — 프리셋 기반 종목 필터."""
+        try:
+            from dartlab.engines.rank.screen import screen as _screen
+
+            result = _screen(preset)
+            return format_tool_value(result, max_rows=10)
+        except (ImportError, KeyError, OSError, RuntimeError, ValueError) as e:
+            return f"스크리닝 실패: {e}"
+
+    register_tool(
+        "screen_market",
+        screen_market,
+        "시장 스크리닝 — 프리셋 기반 종목 필터. "
+        "가치주/성장주/턴어라운드/현금부자/고위험/자본잠식/소형고수익/대형안정 등 프리셋으로 종목을 필터링합니다. "
+        "사용자가 '가치주 찾아줘', '고위험 종목', '시장 스크리닝' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "preset": {
+                    "type": "string",
+                    "enum": ["가치주", "성장주", "턴어라운드", "현금부자", "고위험", "자본잠식", "소형고수익", "대형안정"],
+                    "description": "스크리닝 프리셋",
+                    "default": "가치주",
+                },
+            },
+        },
+    )
+
+    # ── benchmark_sector ──
+
+    def benchmark_sector() -> str:
+        """섹터별 핵심 비율 벤치마크 (P10, median, P90)."""
+        try:
+            from dartlab.engines.rank.screen import benchmark as _benchmark
+
+            result = _benchmark()
+            return format_tool_value(result, max_rows=10)
+        except (ImportError, KeyError, OSError, RuntimeError, ValueError) as e:
+            return f"벤치마크 실패: {e}"
+
+    register_tool(
+        "benchmark_sector",
+        benchmark_sector,
+        "섹터별 핵심 비율 벤치마크 (P10, median, P90). "
+        "사용자가 '업종 평균', '섹터 비교', '벤치마크' 같은 요청을 할 때 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
+    # ── scan_signal ──
+
+    def scan_signal(keyword: str = "") -> str:
+        """서술형 공시 키워드 트렌드 탐지."""
+        try:
+            from dartlab.engines.dart.scan.signal import scan_signal as _scan
+
+            result = _scan(keyword if keyword else None)
+            return format_tool_value(result, max_rows=10)
+        except (ImportError, KeyError, OSError, RuntimeError, ValueError) as e:
+            return f"시그널 스캔 실패: {e}"
+
+    register_tool(
+        "scan_signal",
+        scan_signal,
+        "서술형 공시 시장 시그널 — 키워드 트렌드 탐지. "
+        "48개 키워드(AI, ESG, 구조조정 등)의 연도별 공시 언급 추이를 분석합니다. "
+        "사용자가 'AI 트렌드', '시장 시그널', '키워드 분석' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "특정 키워드만 필터. 빈 문자열이면 전체 48개 키워드.",
+                    "default": "",
+                },
+            },
+        },
+    )
+
+    # ── group_health ──
+
+    def group_health() -> str:
+        """그룹사 건전성 종합 평가."""
+        try:
+            import dartlab as _dl
+
+            result = _dl.groupHealth()
+            return format_tool_value(result, max_rows=10)
+        except (ImportError, KeyError, OSError, RuntimeError, ValueError) as e:
+            return f"그룹 건전성 조회 실패: {e}"
+
+    register_tool(
+        "group_health",
+        group_health,
+        "한국 주요 기업집단(삼성/현대/SK/LG 등)의 건전성을 종합 평가합니다. "
+        "사용자가 '삼성그룹 건전성', '기업집단 비교', '그룹사 현황' 같은 요청을 할 때 사용하세요.",
+        {"type": "object", "properties": {}},
+    )
+
     # ── create_chart ──
 
     def create_chart(chart_type: str = "auto") -> str:

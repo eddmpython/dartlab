@@ -1,5 +1,9 @@
 """dialogue 상태/모드 유틸 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.server.dialogue import build_conversation_state, build_dialogue_policy, conversation_state_to_meta
 from dartlab.server.models import HistoryMessage, HistoryMeta, ViewContext
 

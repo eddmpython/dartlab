@@ -45,16 +45,18 @@ def scan_icr() -> dict[str, float]:
     for pf in parquet_files:
         code = pf.stem
         try:
-            df = pl.read_parquet(str(pf))
-        except (pl.exceptions.ComputeError, OSError):
+            is_df = (
+                pl.scan_parquet(str(pf))
+                .filter(
+                    pl.col("sj_div").is_in(["IS", "CIS"])
+                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+                )
+                .collect()
+            )
+        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
             continue
-        if df.is_empty() or "account_id" not in df.columns:
+        if is_df.is_empty() or "account_id" not in is_df.columns:
             continue
-
-        is_df = df.filter(
-            pl.col("sj_div").is_in(["IS", "CIS"])
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-        )
         if is_df.is_empty():
             continue
         cfs = is_df.filter(pl.col("fs_nm").str.contains("연결"))

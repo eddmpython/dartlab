@@ -6,45 +6,16 @@ import re as _re
 
 import dartlab
 from dartlab import Company
-
-from .models import AskRequest, HistoryMessage
-
-_RESOLVE_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
-
-_COMPANY_SUFFIXES = (
-    "차",
-    "전자",
-    "그룹",
-    "건설",
-    "화학",
-    "제약",
-    "바이오",
-    "증권",
-    "보험",
-    "은행",
-    "금융",
-    "지주",
-    "산업",
-    "통신",
-    "에너지",
+from dartlab.core.resolve import (
+    COMMON_ALIASES as _COMMON_ALIASES,
+    COMPANY_SUFFIXES as _COMPANY_SUFFIXES,
+    _RESOLVE_ERRORS,
+    collect_candidates as _collect_candidates,
+    resolve_alias as _resolve_alias,
+    search_suggestions as _search_suggestions,
 )
 
-_COMMON_ALIASES: dict[str, str] = {
-    "삼전": "삼성전자",
-    "현차": "현대자동차",
-    "현대차": "현대자동차",
-    "기차": "기아",
-    "삼바": "삼성바이오로직스",
-    "삼성바이오": "삼성바이오로직스",
-    "셀트리온헬스케어": "셀트리온",
-    "네이버": "NAVER",
-    "포스코": "포스코홀딩스",
-    "에코프로": "에코프로비엠",
-    "LG엔솔": "LG에너지솔루션",
-    "엔솔": "LG에너지솔루션",
-    "카뱅": "카카오뱅크",
-    "카페": "카카오",
-}
+from .models import AskRequest, HistoryMessage
 
 # ── 의도 분류: engines/ai/intent.py에서 re-export ──
 from dartlab.engines.ai.conversation.intent import (
@@ -55,92 +26,6 @@ from dartlab.engines.ai.conversation.intent import (
     is_meta_question,
     is_pure_conversation as _is_pure_conversation,
 )
-
-
-def _collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
-    """검색 결과에서 매칭되는 후보를 수집한다.
-
-    strict=True: 정확히 일치하거나 prefix 관계만 허용
-    strict=False: 부분 포함도 허용 (fuzzy — 초성/Levenshtein 포함)
-    """
-    if len(query) < 2:
-        return []
-    try:
-        df = dartlab.search(query)
-        if len(df) == 0:
-            df = None
-    except (ValueError, OSError):
-        df = None
-
-    exact: list[dict[str, str]] = []
-    prefix: list[dict[str, str]] = []
-    contains: list[dict[str, str]] = []
-
-    if df is not None:
-        for row in df.to_dicts()[:10]:
-            name = row.get("회사명", row.get("corpName", ""))
-            code = row.get("종목코드", row.get("stockCode", ""))
-            if not code:
-                continue
-            entry = {"corpName": name, "stockCode": code}
-            if name == query:
-                exact.append(entry)
-            elif name.startswith(query) or query.startswith(name):
-                prefix.append(entry)
-            elif not strict and len(query) >= 3 and query in name:
-                contains.append(entry)
-
-    result = exact + prefix + contains
-
-    # fuzzy fallback: substring 매칭이 없으면 초성/Levenshtein 시도
-    if not result and not strict:
-        from dartlab.core.kindList import fuzzySearch
-
-        try:
-            fuzzy_df = fuzzySearch(query, maxResults=5)
-            if len(fuzzy_df) > 0:
-                seen = {e["stockCode"] for e in result}
-                for row in fuzzy_df.to_dicts():
-                    name = row.get("회사명", row.get("corpName", ""))
-                    code = row.get("종목코드", row.get("stockCode", ""))
-                    if code and code not in seen:
-                        seen.add(code)
-                        result.append({"corpName": name, "stockCode": code})
-        except (ValueError, OSError):
-            pass
-
-    return result
-
-
-def _search_suggestions(question: str) -> list[dict[str, str]]:
-    """질문에서 단어를 추출하여 비슷한 종목 후보를 검색한다."""
-    import re
-
-    words = re.split(r"\s+", question)
-    seen_codes: set[str] = set()
-    suggestions: list[dict[str, str]] = []
-
-    for word in words:
-        if len(word) < 2:
-            continue
-        queries = [word]
-        for suffix in _COMPANY_SUFFIXES:
-            if word.endswith(suffix) and len(word) > len(suffix):
-                queries.append(word[: -len(suffix)])
-        for q in queries:
-            try:
-                df = dartlab.search(q)
-                for row in df.head(3).to_dicts():
-                    code = row.get("종목코드", row.get("stockCode", ""))
-                    name = row.get("회사명", row.get("corpName", ""))
-                    if code and code not in seen_codes:
-                        seen_codes.add(code)
-                        suggestions.append({"corpName": name, "stockCode": code})
-                        if len(suggestions) >= 5:
-                            return suggestions
-            except _RESOLVE_ERRORS:
-                continue
-    return suggestions
 
 
 class ResolveResult:
@@ -190,11 +75,6 @@ def build_ambiguous_msg(suggestions: list[dict[str, str]]) -> str:
         lines.append(f"- **{s['corpName']}** ({s['stockCode']})")
     lines.append("\n종목명이나 종목코드를 정확히 입력해 주세요.")
     return "\n".join(lines)
-
-
-def _resolve_alias(text: str) -> str | None:
-    """_COMMON_ALIASES에서 매칭되는 정식 종목명 반환. 없으면 None."""
-    return _COMMON_ALIASES.get(text)
 
 
 def try_resolve_company(req: AskRequest) -> ResolveResult:

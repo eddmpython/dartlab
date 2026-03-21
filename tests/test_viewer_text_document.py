@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 from dartlab.engines.dart.docs.viewer import (

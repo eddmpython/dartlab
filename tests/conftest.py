@@ -6,9 +6,14 @@ DARTLAB_DATA_DIR 환경변수 또는 dartlab.dataDir로 변경 가능.
 마커 구조:
 - requires_samsung, requires_finance 등: 개별 데이터 의존성 (로컬에 없으면 skip)
 - requires_data: CI 통합 마커 (pytest -m "not requires_data" 로 데이터 의존 테스트 제외)
+- unit: 순수 로직/mock만 — 데이터 로드 없음, 병렬 안전
+- heavy: 대량 데이터 로드 — 단독 실행 필수
 
-skipif 마커가 붙은 테스트에 자동으로 requires_data 마커를 추가한다.
-→ CI에서 -m "not requires_data" 한 줄이면 데이터 의존 테스트 전체 제외.
+테스트 실행 가이드:
+  pytest -m "unit" -v              # 가벼운 테스트만 (안전, 빠름)
+  pytest -m "not unit and not heavy" -v  # 중간 테스트
+  pytest -m "heavy" -v             # 무거운 테스트 (단독)
+  ⚠ pytest tests/ -v 전체 한번에 돌리면 메모리 크래시 위험
 """
 
 from pathlib import Path
@@ -71,24 +76,29 @@ def _isolated_dartlab_home(tmp_path, monkeypatch):
     monkeypatch.setenv("DARTLAB_HOME", str(Path(home)))
 
 
-# ── Session-scoped Company fixtures: 한 번만 로드하여 재사용 ──
+# ── Module-scoped Company fixtures: 모듈 단위로 로드/해제 ──
+# ⚠ session scope는 메모리 크래시 원인이므로 사용 금지 (2026-03-21)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def samsung():
-    """삼성전자 Company — 전체 세션에서 한 번만 로드."""
+    """삼성전자 Company — 모듈 단위로 로드/해제."""
     if not _has_data(SAMSUNG, "docs"):
         pytest.skip("삼성전자 docs 데이터 없음")
     from dartlab import Company
 
-    return Company(SAMSUNG)
+    c = Company(SAMSUNG)
+    yield c
+    del c
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def samsung_with_finance():
-    """삼성전자 Company (finance 데이터 필수) — 세션에서 한 번만 로드."""
+    """삼성전자 Company (finance 데이터 필수) — 모듈 단위로 로드/해제."""
     if not _has_data(SAMSUNG, "docs") or not _has_data(SAMSUNG, "finance"):
         pytest.skip("삼성전자 docs/finance 데이터 없음")
     from dartlab import Company
 
-    return Company(SAMSUNG)
+    c = Company(SAMSUNG)
+    yield c
+    del c

@@ -7,6 +7,8 @@ CI에서 데이터 없으면 skip.
 
 import pytest
 
+pytestmark = pytest.mark.heavy
+
 from tests.conftest import _has_data
 
 CORE_ACCOUNTS = {

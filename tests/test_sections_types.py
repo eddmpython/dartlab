@@ -1,5 +1,9 @@
 """sections 타입 유틸 회귀 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.dart.docs.sections.types import SectionChunk, SectionResult, YearSections
 
 

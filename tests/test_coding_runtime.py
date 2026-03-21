@@ -1,5 +1,9 @@
 """coding_runtime 모듈 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.ai.tools.coding import CodexCodingBackend, create_coding_runtime
 
 

@@ -133,22 +133,23 @@ def scan_finance_parquets(
     parquet_files = sorted(finance_dir.glob("*.parquet"))
 
     result: dict[str, float] = {}
+    sj_divs = [statement] if statement != "IS" else ["IS", "CIS"]
     for pf in parquet_files:
         code = pf.stem
         try:
-            df = pl.read_parquet(str(pf))
-        except (pl.exceptions.ComputeError, OSError):
+            # lazy scan: 필터를 Rust 엔진으로 밀어넣어 메모리 절감
+            target = (
+                pl.scan_parquet(str(pf))
+                .filter(
+                    pl.col("sj_div").is_in(sj_divs)
+                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+                )
+                .collect()
+            )
+        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
             continue
 
-        if df.is_empty() or "account_id" not in df.columns:
-            continue
-
-        sj_divs = [statement] if statement != "IS" else ["IS", "CIS"]
-        target = df.filter(
-            pl.col("sj_div").is_in(sj_divs)
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-        )
-        if target.is_empty():
+        if target.is_empty() or "account_id" not in target.columns:
             continue
 
         cfs = target.filter(pl.col("fs_nm").str.contains("연결"))

@@ -1,5 +1,9 @@
 """aiParser 모듈 테스트 — LLM 불필요한 통계 기능만."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 from dartlab.engines.ai.aiParser import (

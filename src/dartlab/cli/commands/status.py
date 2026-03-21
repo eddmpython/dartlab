@@ -17,11 +17,15 @@ _SETUP_HINTS = {
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("status", help="LLM 연결 상태 확인")
     parser.add_argument("--provider", "-p", default=None, choices=PROVIDERS, help="확인할 provider")
+    parser.add_argument("--cost", action="store_true", help="누적 토큰/비용 통계")
     parser.set_defaults(handler=run)
 
 
 def run(args) -> int:
     dartlab = configure_dartlab()
+
+    if args.cost:
+        return _show_cost()
 
     providers = [args.provider] if args.provider else PROVIDERS
     single = len(providers) == 1
@@ -93,3 +97,25 @@ def _print_detail(provider_name: str, status: dict) -> None:
         print(f"  setup:     dartlab setup {provider_name}")
 
     print()
+
+
+def _show_cost() -> int:
+    """누적 토큰/비용 통계 출력."""
+    try:
+        from dartlab.cli.services.history import get_total_usage
+
+        usage = get_total_usage()
+    except (ImportError, OSError):
+        print("  비용 데이터가 없습니다.")
+        return 0
+
+    from dartlab.cli.services.output import get_console
+
+    console = get_console()
+    console.print("\n  [bold]토큰 사용량 통계[/]\n")
+    console.print(f"  총 요청 수:    {usage['총_요청수']:,}")
+    console.print(f"  입력 토큰:     {usage['입력_토큰']:,}")
+    console.print(f"  출력 토큰:     {usage['출력_토큰']:,}")
+    console.print(f"  총 비용 (USD): ${usage['총_비용_USD']:.4f}")
+    console.print()
+    return 0

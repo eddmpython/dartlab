@@ -1,5 +1,9 @@
 """sectorEngine 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.sector import (
     IndustryGroup,
     Sector,

@@ -1,5 +1,9 @@
 """context 모듈 테스트 — 데이터 의존 없음."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 from dartlab.core.registry import ColumnMeta, DataEntry

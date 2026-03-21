@@ -5,6 +5,8 @@ import importlib.util
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.unit
+
 HAS_PLOTLY = importlib.util.find_spec("plotly") is not None
 
 requires_plotly = pytest.mark.skipif(not HAS_PLOTLY, reason="plotly not installed")

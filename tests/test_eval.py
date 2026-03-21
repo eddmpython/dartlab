@@ -2,6 +2,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def test_load_golden_dataset():
     from dartlab.engines.ai.eval import load_golden_dataset

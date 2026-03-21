@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab.cli.context import EXIT_INTERRUPTED, EXIT_RUNTIME, EXIT_USAGE
 from dartlab.cli.main import main
 from dartlab.cli.parser import build_parser
@@ -27,7 +29,7 @@ def test_parse_ask_options():
     args = parser.parse_args(["ask", "005930", "분석", "--provider", "codex", "--include", "BS", "IS", "--stream"])
 
     assert args.command == "ask"
-    assert args.company == "005930"
+    assert args.query == ["005930", "분석"]
     assert args.provider == "codex"
     assert args.include == ["BS", "IS"]
     assert args.stream is True
@@ -52,16 +54,13 @@ def test_main_invalid_command_returns_usage_code(capsys):
 
 
 def test_ask_returns_non_zero_on_company_error(capsys):
-    mock_dartlab = MagicMock()
-    mock_dartlab.Company.side_effect = ValueError("bad company")
-    mock_dartlab.llm = MagicMock()
-
-    with patch.dict("sys.modules", {"dartlab": mock_dartlab}):
+    # resolve_from_text가 종목을 못 찾으면 CLIError → exit code 1
+    with patch("dartlab.core.resolve.resolve_from_text", return_value=(None, "bad question")):
         result = main(["ask", "bad", "question"])
 
     captured = capsys.readouterr()
     assert result == 1
-    assert "오류: bad company" in captured.err
+    assert "종목을 찾을 수 없습니다" in captured.err
 
 
 def test_excel_returns_non_zero_on_company_error(capsys):

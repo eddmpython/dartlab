@@ -6,6 +6,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.heavy
+
 from tests.conftest import SAMSUNG, _has_data
 
 requires_samsung_finance = pytest.mark.skipif(not _has_data(SAMSUNG, "finance"), reason="삼성전자 finance 데이터 없음")

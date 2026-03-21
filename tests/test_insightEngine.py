@@ -2,6 +2,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.common.finance.ratios import RatioResult
 from dartlab.engines.insight.anomaly import (
     _yoyChange,

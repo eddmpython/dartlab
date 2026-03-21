@@ -5,6 +5,8 @@ from __future__ import annotations
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab.tools import chart, table, text
 
 # ── table ──

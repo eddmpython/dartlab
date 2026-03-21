@@ -2,6 +2,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.ai.metadata import (
     MODULE_META,
     ColumnMeta,

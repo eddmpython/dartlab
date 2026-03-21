@@ -1,5 +1,9 @@
 """agent 모듈 테스트 — mock provider로 LLM 불필요."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 from dartlab.engines.ai.agent import agent_loop, build_agent_system_addition

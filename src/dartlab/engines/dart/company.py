@@ -1336,6 +1336,19 @@ class Company:
 
         topicRows = sec.filter(pl.col("topic") == topic)
         if topicRows.is_empty():
+            import difflib
+
+            all_topics = sec["topic"].unique().sort().to_list() if "topic" in sec.columns else []
+            similar = difflib.get_close_matches(topic, all_topics, n=3, cutoff=0.4)
+            if similar:
+                import warnings
+
+                warnings.warn(
+                    f"'{topic}' topic을 찾을 수 없습니다. "
+                    f"유사한 topic: {', '.join(similar)}. "
+                    f"전체 목록은 c.topics로 확인하세요.",
+                    stacklevel=2,
+                )
             return None
 
         if block is None:

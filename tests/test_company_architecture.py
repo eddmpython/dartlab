@@ -1,5 +1,9 @@
 """Company 레이어 구조 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from pathlib import Path
 
 import dartlab

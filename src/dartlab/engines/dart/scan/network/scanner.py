@@ -234,15 +234,16 @@ def scan_affiliate_docs(
     for pf in parquet_files:
         code = pf.stem
         try:
-            df = pl.read_parquet(str(pf))
-        except (pl.exceptions.ComputeError, OSError):
+            affiliate = (
+                pl.scan_parquet(str(pf))
+                .filter(
+                    pl.col("section_title").str.contains("계열회사 현황")
+                    | pl.col("section_title").str.contains("계열회사에 관한 사항")
+                )
+                .collect()
+            )
+        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError, pl.exceptions.ColumnNotFoundError):
             continue
-        if "section_title" not in df.columns or "section_content" not in df.columns:
-            continue
-        affiliate = df.filter(
-            pl.col("section_title").str.contains("계열회사 현황")
-            | pl.col("section_title").str.contains("계열회사에 관한 사항")
-        )
         if len(affiliate) == 0:
             continue
         if "year" in affiliate.columns:

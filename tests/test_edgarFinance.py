@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from dartlab import config
 
 EDGAR_DIR = Path(config.dataDir) / "edgar" / "finance"

@@ -22,14 +22,22 @@ def _isDartCode(s: str) -> bool:
 def Company(codeOrName: str) -> CompanyProtocol:
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성."""
     normalized = codeOrName.strip()
+    if not normalized:
+        raise ValueError("종목코드 또는 회사명을 입력해 주세요.")
 
-    if _isDartCode(normalized):
-        return _DartEngineCompany(normalized.upper())
+    try:
+        if _isDartCode(normalized):
+            return _DartEngineCompany(normalized.upper())
 
-    if any("\uac00" <= ch <= "\ud7a3" for ch in normalized):
+        if any("\uac00" <= ch <= "\ud7a3" for ch in normalized):
+            return _DartEngineCompany(normalized)
+
+        if _isUSTicker(normalized):
+            return _EdgarEngineCompany(normalized)
+
         return _DartEngineCompany(normalized)
-
-    if _isUSTicker(normalized):
-        return _EdgarEngineCompany(normalized)
-
-    return _DartEngineCompany(normalized)
+    except (ValueError, FileNotFoundError, OSError) as exc:
+        raise ValueError(
+            f"'{codeOrName}'을(를) 찾을 수 없습니다. "
+            f"dartlab.search('{codeOrName}')로 검색해 보세요."
+        ) from exc

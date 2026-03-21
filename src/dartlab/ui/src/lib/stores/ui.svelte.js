@@ -407,6 +407,32 @@ export function createUiStore() {
 		return { provider: "oauth-codex", model: nextModel };
 	}
 
+	// ── Theme ──
+	let theme = $state(
+		(typeof localStorage !== "undefined" && localStorage.getItem("dl-theme")) || "dark"
+	);
+
+	function setTheme(value) {
+		theme = value;
+		if (typeof document !== "undefined") {
+			document.documentElement.setAttribute("data-theme", value);
+		}
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("dl-theme", value);
+		}
+	}
+
+	function cycleTheme() {
+		const order = ["dark", "light", "auto"];
+		const next = order[(order.indexOf(theme) + 1) % order.length];
+		setTheme(next);
+	}
+
+	// Apply saved theme on creation
+	if (typeof document !== "undefined") {
+		document.documentElement.setAttribute("data-theme", theme);
+	}
+
 	// ── Mobile detection ──
 	function checkMobile() {
 		isMobile = window.innerWidth <= 768;
@@ -517,6 +543,11 @@ export function createUiStore() {
 		// constants
 		CHAT_ROLE,
 		OLLAMA_MODELS,
+
+		// theme
+		get theme() { return theme; },
+		setTheme,
+		cycleTheme,
 
 		// AI action
 		applyAiAction,

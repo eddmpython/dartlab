@@ -1,5 +1,9 @@
 """KIND 상장법인 검색 회귀 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 

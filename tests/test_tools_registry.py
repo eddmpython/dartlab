@@ -1,5 +1,9 @@
 """tools_registry 모듈 테스트 — LLM 불필요."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from pathlib import Path
 
 import polars as pl

@@ -325,3 +325,105 @@ def register_finance_tools(company: Any, register_tool) -> None:
         kind=CapabilityKind.DATA,
         requires_company=True,
     )
+
+    # ── compare_companies ──
+
+    def compare_companies(codes: str, metrics: str = "revenue,operating_income,net_income,total_assets,roe") -> str:
+        """복수 종목 핵심 지표 비교표를 생성합니다."""
+        from dartlab import Company as _Company
+
+        code_list = [c.strip() for c in codes.split(",") if c.strip()]
+        metric_list = [m.strip() for m in metrics.split(",") if m.strip()]
+        if len(code_list) < 2:
+            return "비교하려면 2개 이상의 종목코드를 쉼표로 구분해 주세요."
+
+        rows: list[dict] = []
+        for code in code_list[:5]:
+            try:
+                c = _Company(code)
+                row: dict = {"종목": f"{c.corpName} ({c.stockCode})"}
+                ratios = getattr(c, "ratios", None)
+                if ratios is not None and isinstance(ratios, pl.DataFrame):
+                    for m in metric_list:
+                        matched = ratios.filter(pl.col("항목") == m)
+                        if not matched.is_empty():
+                            cols = [c for c in matched.columns if c != "항목"]
+                            if cols:
+                                row[m] = str(matched[cols[-1]][0])
+                rows.append(row)
+            except (ValueError, FileNotFoundError, OSError):
+                rows.append({"종목": code, "error": "데이터 없음"})
+
+        if not rows:
+            return "비교 데이터를 찾을 수 없습니다."
+        result_df = pl.DataFrame(rows)
+        return df_to_md(result_df)
+
+    register_tool(
+        "compare_companies",
+        compare_companies,
+        "복수 종목의 핵심 재무 지표를 비교 테이블로 생성합니다. "
+        "사용자가 '삼성전자 vs SK하이닉스', '종목 비교', '어떤 회사가 나은지' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "codes": {
+                    "type": "string",
+                    "description": "비교할 종목코드/종목명을 쉼표로 구분 (예: 005930,000660,035420)",
+                },
+                "metrics": {
+                    "type": "string",
+                    "description": "비교할 지표를 쉼표로 구분. 기본: revenue,operating_income,net_income,total_assets,roe",
+                    "default": "revenue,operating_income,net_income,total_assets,roe",
+                },
+            },
+            "required": ["codes"],
+        },
+        kind=CapabilityKind.ANALYSIS,
+    )
+
+    # ── custom_ratio ──
+
+    def custom_ratio(numerator: str, denominator: str, label: str = "사용자정의비율") -> str:
+        """사용자 정의 재무비율을 계산합니다."""
+        if company is None:
+            return "회사를 먼저 선택하세요."
+        try:
+            ts = getattr(company, "timeseries", None)
+            if ts is None or not isinstance(ts, dict):
+                return "시계열 데이터가 없습니다."
+            num_data = ts.get(numerator)
+            den_data = ts.get(denominator)
+            if num_data is None:
+                return f"'{numerator}' 계정을 찾을 수 없습니다."
+            if den_data is None:
+                return f"'{denominator}' 계정을 찾을 수 없습니다."
+
+            results: list[dict] = []
+            for period in sorted(set(num_data.keys()) & set(den_data.keys())):
+                n, d = num_data[period], den_data[period]
+                if n is not None and d is not None and d != 0:
+                    results.append({"기간": period, label: round(n / d * 100, 2)})
+            if not results:
+                return "계산 가능한 기간이 없습니다."
+            return df_to_md(pl.DataFrame(results))
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"비율 계산 실패: {e}"
+
+    register_tool(
+        "custom_ratio",
+        custom_ratio,
+        "사용자 정의 재무비율을 계산합니다. 분자/분모 계정명을 지정하면 기간별 비율(%)을 반환합니다. "
+        "사용자가 '연구개발비/매출 비율', '인건비/영업이익' 같은 커스텀 비율을 요청할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "numerator": {"type": "string", "description": "분자 계정명 (예: research_development)"},
+                "denominator": {"type": "string", "description": "분모 계정명 (예: revenue)"},
+                "label": {"type": "string", "description": "결과 컬럼 라벨", "default": "사용자정의비율"},
+            },
+            "required": ["numerator", "denominator"],
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )

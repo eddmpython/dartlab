@@ -6,6 +6,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.heavy
+
 from tests.conftest import _has_data
 
 BENCHMARK_STOCKS = [

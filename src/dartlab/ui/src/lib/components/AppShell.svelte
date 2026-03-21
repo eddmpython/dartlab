@@ -87,7 +87,7 @@
 	<header class="dl-topbar">
 		<div class="dl-topbar-left">
 			{#if isMobile}
-				<button class="dl-icon-btn" onclick={() => sidebarOpen = !sidebarOpen}>
+				<button class="dl-icon-btn" aria-label="메뉴 열기" onclick={() => sidebarOpen = !sidebarOpen}>
 					<Menu size={18} />
 				</button>
 			{/if}
@@ -109,19 +109,23 @@
 
 		<div class="dl-topbar-right">
 			<!-- 우측 패널 탭 -->
-			<div class="dl-panel-tabs">
+			<div class="dl-panel-tabs" role="tablist" aria-label="패널 탭">
 				<button
 					class={cn("dl-panel-tab", rightPanelTab === "chat" && rightPanelOpen && "active")}
+					role="tab"
+					aria-selected={rightPanelTab === "chat" && rightPanelOpen}
 					onclick={() => setRightTab("chat")}
 				>
 					<MessageSquare size={14} />
 					<span>AI</span>
 					{#if hasMessages}
-						<span class="dl-dot"></span>
+						<span class="dl-dot" aria-label="새 메시지"></span>
 					{/if}
 				</button>
 				<button
 					class={cn("dl-panel-tab", rightPanelTab === "data" && rightPanelOpen && "active")}
+					role="tab"
+					aria-selected={rightPanelTab === "data" && rightPanelOpen}
 					onclick={() => setRightTab("data")}
 				>
 					<Database size={14} />
@@ -129,7 +133,7 @@
 				</button>
 			</div>
 
-			<button class="dl-icon-btn" onclick={toggleRightPanel}>
+			<button class="dl-icon-btn" aria-label={rightPanelOpen ? "패널 닫기" : "패널 열기"} onclick={toggleRightPanel}>
 				{#if rightPanelOpen}
 					<PanelRightClose size={16} />
 				{:else}
@@ -137,7 +141,7 @@
 				{/if}
 			</button>
 
-			<button class="dl-icon-btn" onclick={() => showSettings = true}>
+			<button class="dl-icon-btn" aria-label="설정" onclick={() => showSettings = true}>
 				<Settings size={16} />
 			</button>
 		</div>
@@ -195,7 +199,7 @@
 
 		<!-- ── 우측: AI + 데이터 패널 ── -->
 		{#if rightPanelOpen}
-			<aside class="dl-right-panel">
+			<aside class="dl-right-panel" aria-label="분석 패널">
 				{#if rightPanelTab === "chat"}
 					<!-- AI 대화 -->
 					<div class="dl-panel-content">
@@ -260,7 +264,8 @@
 
 	<!-- 모바일 사이드바 오버레이 -->
 	{#if isMobile && sidebarOpen}
-		<div class="dl-overlay" onclick={() => sidebarOpen = false}></div>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="dl-overlay" role="presentation" onclick={() => sidebarOpen = false}></div>
 		<div class="dl-mobile-sidebar">
 			<Sidebar
 				conversations={store.conversations}
@@ -522,7 +527,8 @@
 
 	/* ═══ 우측 패널 ═══ */
 	.dl-right-panel {
-		width: 420px;
+		width: min(420px, 40vw);
+		min-width: 300px;
 		display: flex;
 		flex-direction: column;
 		background: var(--color-dl-bg-card);

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("mcp", help="MCP 서버 실행 (stdio)")
-    parser.set_defaults(func=_run)
+    parser.set_defaults(handler=_run)
 
 
 def _run(args) -> None:

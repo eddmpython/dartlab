@@ -1,5 +1,9 @@
 """pipeline 모듈 테스트 — LLM 불필요."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import polars as pl
 
 import dartlab.engines.ai.runtime.pipeline as pipeline_module

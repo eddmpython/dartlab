@@ -80,16 +80,18 @@ def scan_debt_mix() -> dict[str, dict]:
     for pf in parquet_files:
         code = pf.stem
         try:
-            df = pl.read_parquet(str(pf))
-        except (pl.exceptions.ComputeError, OSError):
+            bs = (
+                pl.scan_parquet(str(pf))
+                .filter(
+                    (pl.col("sj_div") == "BS")
+                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+                )
+                .collect()
+            )
+        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
             continue
-        if df.is_empty() or "account_id" not in df.columns:
+        if bs.is_empty() or "account_id" not in bs.columns:
             continue
-
-        bs = df.filter(
-            (pl.col("sj_div") == "BS")
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-        )
         if bs.is_empty():
             continue
         cfs = bs.filter(pl.col("fs_nm").str.contains("연결"))

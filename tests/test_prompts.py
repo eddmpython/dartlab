@@ -1,5 +1,9 @@
 """prompts 모듈 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from dartlab.engines.ai.conversation.prompts import (
     _classify_question,
     _match_sector,

@@ -182,48 +182,73 @@ def signal(keyword: str | None = None):
 
 
 def ask(
-    codeOrName: str,
-    question: str,
-    *,
+    *args: str,
     include: list[str] | None = None,
     exclude: list[str] | None = None,
     provider: str | None = None,
     model: str | None = None,
-    stream: bool = False,
+    stream: bool = True,
     reflect: bool = False,
+    pattern: str | None = None,
     **kwargs,
-) -> str:
-    """LLM에게 기업에 대해 질문.
+):
+    """LLM에게 기업에 대해 질문 — 한 문장이면 끝.
 
     Args:
-        codeOrName: 종목코드, 회사명, 또는 US ticker.
-        question: 질문 텍스트.
+        *args: 자연어 질문 (1개) 또는 (종목, 질문) 2개.
         provider: LLM provider ("openai", "codex", "oauth-codex", "ollama").
         model: 모델 override.
-        stream: True면 제너레이터 반환 (chunk 단위).
+        stream: True면 제너레이터 반환 (기본값). False면 전체 텍스트.
         include: 포함할 데이터 모듈.
         exclude: 제외할 데이터 모듈.
+        reflect: True면 답변 자체 검증 (1회 reflection).
 
     Example::
 
         import dartlab
         dartlab.llm.configure(provider="openai", api_key="sk-...")
 
-        dartlab.ask("005930", "영업이익률 추세는?")
-        dartlab.ask("삼성전자", "핵심 리스크 3가지")
-        dartlab.ask("AAPL", "dividend trend?")
-
-        # 스트리밍
-        for chunk in dartlab.ask("005930", "배당 분석", stream=True):
+        # 원스톱 — 이게 끝
+        for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
             print(chunk, end="")
+
+        # 약칭도 OK
+        for chunk in dartlab.ask("삼전 배당"):
+            print(chunk, end="")
+
+        # 전체 텍스트
+        answer = dartlab.ask("삼성전자 분석", stream=False)
+
+        # 기존 호환 (종목, 질문 분리)
+        dartlab.ask("005930", "영업이익률 추세는?", stream=False)
+        dartlab.ask("AAPL", "dividend trend?", stream=False)
 
         # 배치
         for code in ["005930", "000660", "035420"]:
-            print(dartlab.ask(code, "한줄 요약"))
+            print(dartlab.ask(code, "한줄 요약", stream=False))
     """
     from dartlab.engines.ai.runtime.standalone import ask as _ask
 
-    company = Company(codeOrName)
+    if len(args) == 2:
+        # 기존 호환: (codeOrName, question)
+        company = Company(args[0])
+        question = args[1]
+    elif len(args) == 1:
+        # 원스톱: 자연어에서 종목+질문 자동 분리
+        from dartlab.core.resolve import resolve_from_text
+
+        company, question = resolve_from_text(args[0])
+        if company is None:
+            raise ValueError(
+                f"종목을 찾을 수 없습니다: '{args[0]}'\n"
+                "종목명 또는 종목코드를 포함해 주세요. "
+                "예: dartlab.ask('삼성전자 재무건전성 분석해줘')"
+            )
+    elif len(args) == 0:
+        raise TypeError("질문을 입력해 주세요. 예: dartlab.ask('삼성전자 분석해줘')")
+    else:
+        raise TypeError(f"인자는 1~2개만 허용됩니다 (받은 수: {len(args)})")
+
     return _ask(
         company,
         question,
@@ -233,6 +258,7 @@ def ask(
         model=model,
         stream=stream,
         reflect=reflect,
+        pattern=pattern,
         **kwargs,
     )
 

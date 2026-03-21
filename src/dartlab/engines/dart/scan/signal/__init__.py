@@ -75,10 +75,10 @@ def _read_signal_text(path: Path) -> pl.DataFrame | None:
     """signal 스캔에 필요한 최소 컬럼(year + text)만 읽는다."""
     for text_col in ("section_content", "content"):
         try:
-            return pl.read_parquet(
-                str(path),
-                columns=["year", text_col],
-            ).rename({text_col: "text"})
+            lf = pl.scan_parquet(str(path))
+            if text_col not in lf.collect_schema().names():
+                continue
+            return lf.select("year", text_col).collect().rename({text_col: "text"})
         except pl.exceptions.ColumnNotFoundError:
             continue
         except (OSError, pl.exceptions.ComputeError):

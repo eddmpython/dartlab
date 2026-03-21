@@ -236,3 +236,165 @@ def register_ui_tools(company: Any, register_tool) -> None:
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         result_kind="ui_action",
     )
+
+    # ── render_dashboard ──
+
+    def render_dashboard(widgets: str, title: str = "AI 대시보드") -> str:
+        """위젯 조합으로 동적 대시보드를 구성한다.
+
+        widgets: 쉼표 구분 위젯 목록 (chart:trend, chart:radar, table:BS, comparison)
+        """
+        widget_specs = []
+        for w in widgets.split(","):
+            w = w.strip()
+            if not w:
+                continue
+            if ":" in w:
+                wtype, warg = w.split(":", 1)
+            else:
+                wtype, warg = w, ""
+            props: dict[str, Any] = {}
+            if wtype == "chart" and warg:
+                specs = _resolve_chart_specs(warg, "", "")
+                if specs:
+                    props["spec"] = specs[0]
+            elif wtype == "table" and warg:
+                props["topic"] = warg
+                sc = getattr(company, "stockCode", getattr(company, "ticker", None)) if company else None
+                if sc:
+                    props["stockCode"] = sc
+            elif wtype == "comparison":
+                sc = getattr(company, "stockCode", getattr(company, "ticker", None)) if company else None
+                if sc:
+                    props["stockCode"] = sc
+            widget_specs.append({"widget": wtype, "props": props, "key": f"{wtype}_{warg}"})
+
+        if not widget_specs:
+            return ui_action_json(UiAction.toast("대시보드에 추가할 위젯이 없습니다.", level="warning"))
+        return ui_action_json(
+            UiAction.render(
+                view={
+                    "layout": "grid",
+                    "title": title,
+                    "widgets": widget_specs,
+                }
+            )
+        )
+
+    register_tool(
+        "render_dashboard",
+        render_dashboard,
+        "위젯을 조합하여 동적 대시보드를 구성합니다. "
+        "사용자가 '대시보드 보여줘', '종합 현황판' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "widgets": {
+                    "type": "string",
+                    "description": "쉼표 구분 위젯 목록 (예: chart:trend,chart:radar,table:BS,comparison)",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "대시보드 제목",
+                    "default": "AI 대시보드",
+                },
+            },
+            "required": ["widgets"],
+        },
+        kind=CapabilityKind.UI_ACTION,
+        channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
+        requires_company=True,
+        result_kind="ui_action",
+        ai_hint="여러 위젯을 grid 레이아웃으로 조합한 대시보드 UI action",
+    )
+
+    # ── pin_insight ──
+
+    def pin_insight(insight: str, category: str = "general", priority: str = "normal") -> str:
+        return ui_action_json(
+            UiAction.update(
+                "sidebar.pin",
+                {
+                    "insight": insight,
+                    "category": category,
+                    "priority": priority,
+                    "stockCode": getattr(company, "stockCode", getattr(company, "ticker", None)) if company else None,
+                },
+            )
+        )
+
+    register_tool(
+        "pin_insight",
+        pin_insight,
+        "핵심 인사이트를 사이드바에 고정합니다. "
+        "분석 중 발견한 중요 사항을 사용자가 쉽게 참조할 수 있도록 핀합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "insight": {
+                    "type": "string",
+                    "description": "고정할 인사이트 텍스트",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "카테고리 (risk, financial, valuation, general)",
+                    "default": "general",
+                },
+                "priority": {
+                    "type": "string",
+                    "description": "중요도 (high, normal, low)",
+                    "default": "normal",
+                },
+            },
+            "required": ["insight"],
+        },
+        kind=CapabilityKind.UI_ACTION,
+        channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
+        result_kind="ui_action",
+    )
+
+    # ── open_comparison_view ──
+
+    def open_comparison_view(company_a: str, company_b: str, topics: str = "BS,IS") -> str:
+        topic_list = [t.strip() for t in topics.split(",") if t.strip()]
+        return ui_action_json(
+            UiAction.render_widget(
+                "dual_comparison",
+                {
+                    "companyA": company_a,
+                    "companyB": company_b,
+                    "topics": topic_list,
+                },
+                title=f"{company_a} vs {company_b}",
+            )
+        )
+
+    register_tool(
+        "open_comparison_view",
+        open_comparison_view,
+        "두 종목을 좌우 비교하는 뷰를 엽니다. "
+        "사용자가 'A vs B 비교', '두 회사 비교해줘' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "company_a": {
+                    "type": "string",
+                    "description": "첫 번째 종목 (코드 또는 이름)",
+                },
+                "company_b": {
+                    "type": "string",
+                    "description": "두 번째 종목 (코드 또는 이름)",
+                },
+                "topics": {
+                    "type": "string",
+                    "description": "비교할 topic 목록 (쉼표 구분, 예: BS,IS,ratios)",
+                    "default": "BS,IS",
+                },
+            },
+            "required": ["company_a", "company_b"],
+        },
+        kind=CapabilityKind.UI_ACTION,
+        channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
+        result_kind="ui_action",
+        ai_hint="두 종목의 데이터를 나란히 비교하는 dual comparison UI action",
+    )

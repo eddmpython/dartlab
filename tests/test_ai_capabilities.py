@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from types import SimpleNamespace
 
 import polars as pl

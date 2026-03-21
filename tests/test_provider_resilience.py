@@ -1,5 +1,9 @@
 """public provider 예외 경계 테스트."""
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from unittest.mock import MagicMock, patch
 
 from dartlab.engines.ai.providers.ollama import OllamaProvider

@@ -6,6 +6,8 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.heavy
+
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 FIXTURE_EDGAR_DOCS = FIXTURE_DIR / "AAPL.edgarDocs.parquet"
 

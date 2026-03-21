@@ -22,24 +22,27 @@ def configure_parser(subparsers) -> None:
     parser.set_defaults(handler=run)
 
 
-def _print_result(result) -> int:
+def _print_result(result, title: str | None = None) -> int:
+    from dartlab.cli.services.output import get_console, print_dataframe
+
+    console = get_console()
     if result is None:
-        print("데이터가 없습니다.")
+        console.print("[dim]데이터가 없습니다.[/]")
         return 0
     if isinstance(result, pl.DataFrame):
-        with pl.Config(
-            tbl_rows=100,
-            tbl_cols=20,
-            fmt_str_lengths=80,
-            tbl_width_chars=200,
-        ):
-            print(result)
+        print_dataframe(result, title=title)
         return 0
     if isinstance(result, dict):
+        from rich.table import Table
+
+        table = Table(show_header=False, padding=(0, 2))
+        table.add_column("항목", style="bold")
+        table.add_column("값")
         for k, v in result.items():
-            print(f"  {k}: {v}")
+            table.add_row(str(k), str(v) if v is not None else "")
+        console.print(table)
         return 0
-    print(result)
+    console.print(str(result))
     return 0
 
 
@@ -51,7 +54,10 @@ def run(args) -> int:
     except (ValueError, OSError) as exc:
         raise CLIError(str(exc)) from exc
 
-    print(f"\n  {company.corpName} ({company.stockCode})\n")
+    from dartlab.cli.services.output import get_console
+
+    console = get_console()
+    console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})\n")
 
     # trace 모드
     if args.trace:
