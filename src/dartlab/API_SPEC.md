@@ -303,6 +303,7 @@ us.cik                       # "0000320193"
 | `dio` | `Optional` | None |
 | `dpo` | `Optional` | None |
 | `piotroskiFScore` | `Optional` | None |
+| `piotroskiMaxScore` | `int` | 7 |
 | `altmanZScore` | `Optional` | None |
 | `per` | `Optional` | None |
 | `pbr` | `Optional` | None |
