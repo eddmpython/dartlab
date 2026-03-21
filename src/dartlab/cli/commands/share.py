@@ -11,9 +11,11 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -26,6 +28,12 @@ _TTL_CHOICES = [
     ("12h", 43200, "12시간"),
     ("24h", 86400, "24시간"),
 ]
+
+# dartlab 컬러 팔레트 (display.py 동일)
+_PR = "#ea4647"
+_AC = "#fb923c"
+_TM = "#94a3b8"
+_TX = "#f1f5f9"
 
 
 def configure_parser(subparsers) -> None:
@@ -79,6 +87,27 @@ def configure_parser(subparsers) -> None:
         "--reset",
         action="store_true",
         help="저장된 기본 설정 초기화",
+    )
+    # 메시징 채널
+    parser.add_argument(
+        "--telegram",
+        metavar="TOKEN",
+        help="Telegram 봇 토큰 (BotFather에서 발급)",
+    )
+    parser.add_argument(
+        "--slack",
+        metavar="BOT_TOKEN",
+        help="Slack 봇 토큰 (xoxb-...)",
+    )
+    parser.add_argument(
+        "--slack-app-token",
+        metavar="APP_TOKEN",
+        help="Slack 앱 토큰 (xapp-..., Socket Mode용)",
+    )
+    parser.add_argument(
+        "--discord",
+        metavar="TOKEN",
+        help="Discord 봇 토큰",
     )
     parser.set_defaults(handler=run)
 
@@ -179,7 +208,6 @@ def _ask_ttl() -> int:
             raise SystemExit(0)
         return _parse_ttl(custom)
 
-    # 직접 입력한 시간 문자열일 수 있음 (예: "2h")
     try:
         return _parse_ttl(choice)
     except SystemExit:
@@ -188,41 +216,17 @@ def _ask_ttl() -> int:
 
 
 # ---------------------------------------------------------------------------
-# QR 코드 (ASCII — Windows cp949 호환)
+# QR 코드 — qrcode 내장 print_ascii 사용
 # ---------------------------------------------------------------------------
 
 
-def _print_qr(url: str) -> None:
-    """URL을 터미널에 ASCII QR 코드로 출력한다. Windows 호환."""
-    try:
-        import qrcode  # type: ignore[import-untyped]
-    except ImportError:
-        return
-
-    qr = qrcode.QRCode(box_size=1, border=2, error_correction=qrcode.constants.ERROR_CORRECT_L)
-    qr.add_data(url)
-    qr.make(fit=True)
-    matrix = qr.get_matrix()
-
-    # ASCII: "##" = 검정 (dark module), "  " = 흰색
-    # QR 스캐너는 밝은 배경 + 어두운 모듈을 기대하므로, 반전 출력
-    for row in matrix:
-        line = "    "
-        for cell in row:
-            line += "##" if cell else "  "
-        print(line)
-
-
 def _ensure_qrcode() -> bool:
-    """qrcode 패키지가 없으면 설치 여부를 묻는다. 설치되었으면 True."""
+    """qrcode 패키지가 없으면 설치 여부를 묻는다."""
     try:
         import qrcode  # noqa: F401
-
         return True
     except ImportError:
         pass
-
-    import subprocess
 
     print()
     print("  QR 코드 출력에 qrcode 패키지가 필요합니다.")
@@ -245,6 +249,109 @@ def _ensure_qrcode() -> bool:
 
     print("  설치 완료!")
     return True
+
+
+def _render_qr(url: str) -> str:
+    """URL을 QR 코드 문자열로 렌더링한다. 다크 터미널 호환."""
+    import qrcode  # type: ignore[import-untyped]
+
+    qr = qrcode.QRCode(border=2, error_correction=qrcode.constants.ERROR_CORRECT_L)
+    qr.add_data(url)
+    qr.make(fit=True)
+    buf = io.StringIO()
+    qr.print_ascii(out=buf, invert=True)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Rich 출력
+# ---------------------------------------------------------------------------
+
+
+def _print_share_info(
+    *,
+    full_url: str,
+    readonly_url: str,
+    ttl_display: str,
+    tunnel_backend: str,
+    readonly: bool,
+    has_qr: bool,
+    show_save_tip: bool,
+) -> None:
+    """Rich Panel로 공유 정보를 출력한다."""
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
+
+    from dartlab.cli.services.output import get_console
+
+    console = get_console()
+
+    # 내부 콘텐츠 조립
+    parts: list[str | Text] = []
+
+    # QR 코드
+    if has_qr:
+        qr_text = _render_qr(full_url)
+        parts.append(qr_text)
+
+    # URL 정보 테이블
+    info = Table.grid(padding=(0, 2))
+    info.add_column(style=f"bold {_TM}", justify="right")
+    info.add_column(style=f"bold {_TX}")
+
+    info.add_row("URL", full_url)
+    if not readonly:
+        info.add_row("Read-only", readonly_url)
+    info.add_row("TTL", ttl_display)
+    info.add_row("Tunnel", tunnel_backend)
+    info.add_row("Room", "협업 모드 활성 (최대 10명)")
+    if readonly:
+        info.add_row("Mode", "readonly")
+
+    # Panel 출력
+    from rich.console import Group
+
+    group_items = []
+    if has_qr:
+        group_items.append(Text.from_ansi(qr_text))
+    group_items.append(info)
+
+    # 임베드 스니펫
+    embed_tip = Text()
+    embed_tip.append("\n")
+    embed_tip.append("Embed: ", style=f"bold {_AC}")
+    # public_url 추출 (full_url에서 ?token= 앞부분)
+    base = full_url.split("/?")[0] if "/?" in full_url else full_url
+    ro_token = readonly_url.split("token=")[-1] if "token=" in readonly_url else ""
+    embed_tip.append(
+        f'<script src="{base}/embed.js" data-code="종목코드" data-token="{ro_token}"></script>',
+        style=_TX,
+    )
+    group_items.append(embed_tip)
+
+    if show_save_tip:
+        tip = Text()
+        tip.append("\n")
+        tip.append("Tip: ", style=f"bold {_AC}")
+        tip.append("dartlab share --save", style=f"bold {_TX}")
+        tip.append(" 로 이 설정을 저장하세요", style=_TM)
+        group_items.append(tip)
+
+    footer = Text()
+    footer.append("\nCtrl+C", style=f"bold {_TX}")
+    footer.append(" 로 종료", style=_TM)
+    group_items.append(footer)
+
+    panel = Panel(
+        Group(*group_items),
+        title="[bold]DartLab Share[/]",
+        border_style=_PR,
+        padding=(1, 2),
+    )
+    console.print()
+    console.print(panel)
+    console.print()
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +392,6 @@ def run(args) -> int:
         _save_config(save_data)
         print(f"\n  설정 저장됨: {_SHARE_CONFIG_PATH}")
         print(f"    터널={tunnel_backend}, TTL={_ttl_to_str(ttl)}, 포트={port}")
-        print("    다음부터 dartlab share 만 입력하면 이 설정으로 시작합니다.")
         print()
 
     # --- 보안 환경변수 설정 ---
@@ -305,7 +411,6 @@ def run(args) -> int:
     token_manager = TokenManager(args.token)
     kill_switch = TunnelKillSwitch(ttl)
 
-    # 환경변수에 토큰 저장 (서버가 읽을 수 있도록)
     os.environ["DARTLAB_TUNNEL_TOKEN"] = token_manager.full_token
 
     # --- 포트 확보 ---
@@ -331,45 +436,22 @@ def run(args) -> int:
     os.environ["DARTLAB_CORS_ORIGINS"] = f"http://127.0.0.1:{port},http://localhost:{port},{public_url}"
 
     # --- 접속 정보 출력 ---
-    ttl_display = _ttl_to_str(ttl)
     full_url = f"{public_url}/?token={token_manager.full_token}"
     readonly_url = f"{public_url}/?token={token_manager.readonly_token}"
-
-    print()
-    print("  +----------------------------------------------+")
-    print("  |           DartLab Share                       |")
-    print("  +----------------------------------------------+")
-    print(f"  |  tunnel:   {tunnel_backend:<34}|")
-    print(f"  |  TTL:      {ttl_display:<34}|")
-    if readonly:
-        print("  |  mode:     readonly                          |")
-    print("  +----------------------------------------------+")
-
-    # --- QR 코드 (모바일 접속) ---
     has_qr = _ensure_qrcode()
-    if has_qr:
-        print()
-        print("  Mobile (scan QR):")
-        print()
-        _print_qr(full_url)
 
-    print()
-    print("  Full access URL:")
-    print(f"    {full_url}")
-    print()
-    if not readonly:
-        print("  Read-only URL:")
-        print(f"    {readonly_url}")
-        print()
+    _print_share_info(
+        full_url=full_url,
+        readonly_url=readonly_url,
+        ttl_display=_ttl_to_str(ttl),
+        tunnel_backend=tunnel_backend,
+        readonly=readonly,
+        has_qr=has_qr,
+        show_save_tip=not config and not args.save,
+    )
 
-    # 첫 사용이고 설정 저장 안 했으면 안내
-    if not config and not args.save:
-        print("  Tip: dartlab share --save 로 이 설정을 저장하면")
-        print("       다음부터 dartlab share 한 줄로 시작됩니다.")
-        print()
-
-    print("  Ctrl+C 로 종료")
-    print()
+    # --- 메시징 채널 시작 (백그라운드) ---
+    adapters = _start_messaging_adapters(args)
 
     # --- 서버 시작 (blocking) ---
     from dartlab.server import run_server
@@ -379,8 +461,64 @@ def run(args) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        for adapter in adapters:
+            print(f"\n  {adapter.name} 어댑터 종료 중...")
         print("\n  터널 종료 중...")
         tunnel.stop()
         print("  종료 완료.")
 
     return 0
+
+
+def _start_messaging_adapters(args) -> list:
+    """CLI 인자에 따라 메시징 어댑터를 백그라운드로 시작한다."""
+    import threading
+
+    adapters = []
+
+    if getattr(args, "telegram", None):
+        from dartlab.channel.adapters import create_adapter
+
+        adapter = create_adapter("telegram", token=args.telegram)
+        adapters.append(adapter)
+        t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
+        t.start()
+        print(f"  Telegram 봇 시작됨")
+
+    if getattr(args, "slack", None):
+        app_token = getattr(args, "slack_app_token", None)
+        if not app_token:
+            print("  Slack은 --slack-app-token 이 필요합니다 (Socket Mode)", file=sys.stderr)
+        else:
+            from dartlab.channel.adapters import create_adapter
+
+            adapter = create_adapter("slack", bot_token=args.slack, app_token=app_token)
+            adapters.append(adapter)
+            t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
+            t.start()
+            print(f"  Slack 봇 시작됨")
+
+    if getattr(args, "discord", None):
+        from dartlab.channel.adapters import create_adapter
+
+        adapter = create_adapter("discord", token=args.discord)
+        adapters.append(adapter)
+        t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
+        t.start()
+        print(f"  Discord 봇 시작됨")
+
+    return adapters
+
+
+def _run_adapter(adapter) -> None:
+    """어댑터를 별도 이벤트 루프에서 실행한다."""
+    import asyncio
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(adapter.start())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        loop.close()

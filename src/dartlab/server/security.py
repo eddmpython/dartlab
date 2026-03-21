@@ -62,6 +62,9 @@ _WHITELIST_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"^/api/ai/profile$"),
     # AI 질문 (POST — full-access 토큰만)
     re.compile(r"^/api/ask$"),
+    # 협업 세션 (GET: stream/state, POST: join/leave/heartbeat/ask/navigate/chat/react)
+    re.compile(r"^/api/room/(stream|state)$"),
+    re.compile(r"^/api/room/(join|leave|heartbeat|ask|navigate|chat|react)$"),
     # 뷰어 배치 (POST)
     re.compile(r"^/api/company/[A-Za-z0-9]+/viewer/batch$"),
 ]
@@ -70,6 +73,12 @@ _WHITELIST_PATTERNS: list[re.Pattern[str]] = [
 _POST_WHITELIST: set[str] = {"/api/ask"}
 _POST_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"^/api/company/[A-Za-z0-9]+/viewer/batch$"),
+    re.compile(r"^/api/room/(ask|navigate)$"),  # full-access only
+]
+
+# POST 허용 경로 (readonly 토큰도 가능)
+_POST_READONLY_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"^/api/room/(join|leave|heartbeat|chat|react)$"),
 ]
 
 
@@ -372,12 +381,13 @@ class TunnelSecurityMiddleware(BaseHTTPMiddleware):
                 status_code=403,
             )
 
-        # --- Readonly 토큰의 POST 차단 ---
+        # --- Readonly 토큰의 POST 차단 (room join/leave/heartbeat/chat/react는 허용) ---
         if method == "POST" and access_level == "readonly":
-            return JSONResponse(
-                {"error": "읽기 전용 토큰으로는 이 작업을 수행할 수 없습니다."},
-                status_code=403,
-            )
+            if not any(p.match(path) for p in _POST_READONLY_PATTERNS):
+                return JSONResponse(
+                    {"error": "읽기 전용 토큰으로는 이 작업을 수행할 수 없습니다."},
+                    status_code=403,
+                )
 
         # --- Rate Limiting ---
         if not self.rate_limiter.check(path):

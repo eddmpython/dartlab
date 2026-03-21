@@ -9,7 +9,8 @@
 		"preview": "vite preview",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:e2e": "node ./tests/e2e/run-smoke.mjs"
+		"test:e2e": "node ./tests/e2e/run-smoke.mjs",
+		"build:widget": "vite build --config vite.widget.config.js"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",

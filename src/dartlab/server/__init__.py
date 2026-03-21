@@ -19,7 +19,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 import dartlab
 
-from .api import ai_router, analysis_router, ask_router, company_router, data_router
+from .api import ai_router, analysis_router, ask_router, company_router, data_router, room_router
+from .embed import router as embed_router
 from .runtime import ensure_port, run_server  # noqa: F401 — re-exported
 from .services.ai_profile import should_preload_ollama as _should_preload_ollama
 from .web import register_spa
@@ -57,9 +58,20 @@ async def _preload_ollama_once() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     preload_task = asyncio.create_task(_preload_ollama_once()) if _should_preload_ollama() else None
+
+    # 터널 모드: 협업 룸 자동 생성 + 백그라운드 정리
+    from .room import room_manager
+
+    if is_tunnel_mode():
+        room_manager.create_room()
+        room_manager.start_background_cleanup()
+
     try:
         yield
     finally:
+        room_manager.stop_background_cleanup()
+        room_manager.destroy_room()
+
         if preload_task is not None and not preload_task.done():
             preload_task.cancel()
         with suppress(asyncio.CancelledError):
@@ -119,7 +131,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "X-Room-Member"],
 )
 
 app.include_router(ai_router)
@@ -127,5 +139,7 @@ app.include_router(analysis_router)
 app.include_router(ask_router)
 app.include_router(company_router)
 app.include_router(data_router)
+app.include_router(room_router)
+app.include_router(embed_router)
 
 register_spa(app)

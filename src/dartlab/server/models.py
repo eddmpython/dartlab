@@ -100,3 +100,38 @@ class TocResponse(BaseModel):
     stockCode: str
     corpName: str
     chapters: list[TocChapter]
+
+
+# --- Room 협업 세션 ---
+
+
+class RoomJoinRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=30)
+
+
+class RoomJoinResponse(BaseModel):
+    memberId: str
+    roomId: str
+    members: list[dict]
+    navState: dict
+    chatHistory: list[dict]
+
+
+class RoomAskRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=5000)
+    company: str | None = Field(None, max_length=100)
+
+
+class RoomNavigateRequest(BaseModel):
+    stockCode: str | None = None
+    topic: str | None = None
+    period: str | None = None
+
+
+class RoomChatRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=500)
+
+
+class RoomReactRequest(BaseModel):
+    emoji: str = Field(..., max_length=4)
+    targetEvent: str | None = None
