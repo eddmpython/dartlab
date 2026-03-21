@@ -809,31 +809,40 @@ def _detect_navigate_action(company: Any, question: str) -> AnalysisEvent | None
 
 
 def _run_validation(company: Any, full_response_parts: list[str]) -> AnalysisEvent | None:
-    """LLM 답변의 재무 수치를 실제 값과 대조."""
+    """LLM 답변의 재무 수치를 실제 값과 대조 + context 내부 교차검증."""
     try:
-        from dartlab.engines.ai.runtime.validation import extract_numbers, validate_claims
+        from dartlab.engines.ai.runtime.validation import (
+            cross_validate_context,
+            extract_numbers,
+            validate_claims,
+        )
 
+        payload: dict[str, Any] = {}
+
+        # 1) LLM 답변 숫자 검증
         full_text = "".join(full_response_parts)
         claims = extract_numbers(full_text)
-        if not claims:
-            return None
-        vresult = validate_claims(claims, company)
-        if vresult.mismatches:
-            return AnalysisEvent(
-                "validation",
-                {
-                    "mismatches": [
-                        {
-                            "label": mm.label,
-                            "claimed": mm.claimed,
-                            "actual": mm.actual,
-                            "diffPct": round(mm.diff_pct, 1),
-                            "unit": mm.unit,
-                        }
-                        for mm in vresult.mismatches
-                    ],
-                },
-            )
+        if claims:
+            vresult = validate_claims(claims, company)
+            if vresult.mismatches:
+                payload["mismatches"] = [
+                    {
+                        "label": mm.label,
+                        "claimed": mm.claimed,
+                        "actual": mm.actual,
+                        "diffPct": round(mm.diff_pct, 1),
+                        "unit": mm.unit,
+                    }
+                    for mm in vresult.mismatches
+                ]
+
+        # 2) context 내부 교차검증
+        cross_warnings = cross_validate_context(company)
+        if cross_warnings:
+            payload["crossValidation"] = cross_warnings
+
+        if payload:
+            return AnalysisEvent("validation", payload)
     except (ImportError, AttributeError, TypeError, ValueError, OSError):
         pass
     return None

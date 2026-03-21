@@ -196,7 +196,6 @@ def setup(provider: str | None = None):
         dartlab.setup("ollama")      # Ollama 설치 안내
     """
     from dartlab.core.ai.guide import (
-        no_provider_message,
         provider_guide,
         providers_status,
         resolve_alias,

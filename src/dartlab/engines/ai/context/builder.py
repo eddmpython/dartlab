@@ -21,11 +21,111 @@ _CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, V
 # ══════════════════════════════════════
 
 
-def _build_report_sections(company: Any, compact: bool = False) -> dict[str, str]:
-    """reportEngine pivot 결과 → LLM context 섹션 dict."""
+_QUESTION_MODULES: dict[str, list[str]] = {
+    "건전성": ["audit", "internalControl", "contingentLiability"],
+    "수익성": ["segments", "costByNature", "productService"],
+    "성장성": ["rnd", "salesOrder"],
+    "배당": ["dividend", "shareCapital", "capitalChange"],
+    "지배구조": [
+        "majorHolder",
+        "executive",
+        "executivePay",
+        "boardOfDirectors",
+        "auditSystem",
+        "shareholderMeeting",
+    ],
+    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx"],
+    "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising"],
+    "종합": ["dividend", "employee", "majorHolder", "audit", "rnd", "segments"],
+    "공시": [],
+    "사업": ["productService", "segments", "companyHistory"],
+}
+
+_ALWAYS_INCLUDE_MODULES = {"employee"}
+
+_CONTEXT_MODULE_BUDGET = 6000  # 총 모듈 context 글자 수 상한
+
+
+def _extract_module_context(company: Any, module_name: str, max_rows: int = 10) -> str | None:
+    """registry 모듈 → 마크다운 요약. DataFrame/dict/list/text 모두 처리."""
+    try:
+        data = getattr(company, module_name, None)
+        if data is None:
+            data = company.show(module_name) if hasattr(company, "show") else None
+        if data is None:
+            return None
+
+        if callable(data) and not isinstance(data, type):
+            try:
+                data = data()
+            except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+                return None
+
+        meta = MODULE_META.get(module_name)
+        label = meta.label if meta else module_name
+
+        if isinstance(data, pl.DataFrame):
+            if data.is_empty():
+                return None
+            md = df_to_markdown(data, max_rows=max_rows, meta=meta, compact=True)
+            return f"## {label}\n{md}"
+
+        if isinstance(data, dict):
+            items = list(data.items())[:max_rows]
+            lines = [f"## {label}"]
+            for k, v in items:
+                lines.append(f"- {k}: {v}")
+            return "\n".join(lines)
+
+        if isinstance(data, list):
+            if not data:
+                return None
+            lines = [f"## {label}"]
+            for item in data[:max_rows]:
+                if hasattr(item, "title") and hasattr(item, "chars"):
+                    lines.append(f"- **{item.title}** ({item.chars}자)")
+                else:
+                    lines.append(f"- {item}")
+            if len(data) > max_rows:
+                lines.append(f"(... 상위 {max_rows}건, 전체 {len(data)}건)")
+            return "\n".join(lines)
+
+        text = str(data)
+        if len(text) > 300:
+            text = text[:300] + f"... (전체 {len(str(data))}자, show_topic('{module_name}')으로 전문 확인)"
+        return f"## {label}\n{text}" if text.strip() else None
+
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+
+
+def _build_report_sections(company: Any, compact: bool = False, q_types: list[str] | None = None) -> dict[str, str]:
+    """reportEngine pivot 결과 + 질문 유형별 모듈 자동 주입 → LLM context 섹션 dict."""
     report = getattr(company, "report", None)
+    sections: dict[str, str] = {}
+
+    # 질문 유형별 추가 모듈 주입
+    extra_modules: set[str] = set(_ALWAYS_INCLUDE_MODULES)
+    if q_types:
+        for qt in q_types:
+            for mod in _QUESTION_MODULES.get(qt, []):
+                extra_modules.add(mod)
+
+    # 하드코딩된 기존 report 모듈들의 이름 (중복 방지용)
+    _HARDCODED_REPORT = {"dividend", "employee", "majorHolder", "executive", "audit"}
+
+    # 동적 모듈 주입 (하드코딩에 없는 것만)
+    budget_used = 0
+    for mod in sorted(extra_modules - _HARDCODED_REPORT):
+        if budget_used >= _CONTEXT_MODULE_BUDGET:
+            break
+        content = _extract_module_context(company, mod, max_rows=8 if compact else 12)
+        if content:
+            budget_used += len(content)
+            sections[f"module_{mod}"] = content
+
     if report is None:
-        return {}
+        return sections
 
     sections: dict[str, str] = {}
     max_years = 3 if compact else 99
@@ -746,7 +846,7 @@ def _build_compact_context_modules_inner(
         if "ratios" not in included:
             included.append("ratios")
 
-    report_sections = _build_report_sections(company, compact=compact)
+    report_sections = _build_report_sections(company, compact=compact, q_types=q_types)
     for key, section in report_sections.items():
         modules_dict[key] = section
         included.append(key)
@@ -1618,7 +1718,10 @@ def build_context(
         except _CONTEXT_ERRORS:
             continue
 
-    report_sections = _build_report_sections(company)
+    from dartlab.engines.ai.conversation.prompts import _classify_question_multi
+
+    _q_types = _classify_question_multi(question, max_types=2) if question else []
+    report_sections = _build_report_sections(company, q_types=_q_types)
     for key, section in report_sections.items():
         sections.append(section)
         included.append(key)

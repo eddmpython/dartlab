@@ -20,8 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import dartlab
 
 from .api import ai_router, analysis_router, ask_router, company_router, data_router
-from .runtime import default_host as _default_host
-from .runtime import ensure_port, run_server
+from .runtime import ensure_port, run_server  # noqa: F401 — re-exported
 from .services.ai_profile import should_preload_ollama as _should_preload_ollama
 from .web import register_spa
 

@@ -976,14 +976,18 @@ class TestCompanyCache:
         assert cache.get("005930") is None
 
     def test_lru_eviction(self):
+        from unittest.mock import patch
+
         from dartlab.server.cache import CompanyCache
 
         cache = CompanyCache()
-        for i in range(10):
-            code = f"{i:06d}"
-            m = MagicMock()
-            m.stockCode = code
-            cache.put(code, m, None)
+        # 메모리 압박으로 _max_size가 줄어드는 것을 방지
+        with patch.object(cache, "_check_memory_pressure"):
+            for i in range(10):
+                code = f"{i:06d}"
+                m = MagicMock()
+                m.stockCode = code
+                cache.put(code, m, None)
         assert len(cache) == 5
         assert cache.get("000000") is None
         assert cache.get("000009") is not None

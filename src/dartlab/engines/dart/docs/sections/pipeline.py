@@ -1544,8 +1544,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         topic, _segmentKey = k
         majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
         tIdx = topicIndex.get(topic, 999999)
-        info = rowOrder.get(k, {})
-        cadenceMeta = cadenceMetaByKey.get(k, {})
+        info = rowOrder.get(k, {})  # noqa: F821 — closure variable
+        cadenceMeta = cadenceMetaByKey.get(k, {})  # noqa: F821 — closure variable
         return (
             majorNum,
             firstSeq,

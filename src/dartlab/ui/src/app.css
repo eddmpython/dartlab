@@ -25,10 +25,13 @@
 	--color-dl-surface-card: rgba(19, 24, 34, 0.94);
 	--color-dl-surface-active: rgba(234, 70, 71, 0.08);
 
+	--radius-xs: 6px;
 	--radius-sm: 12px;
 	--radius-md: 16px;
 	--radius-lg: 20px;
+	--radius-xl: 24px;
 
+	--shadow-surface: 0 1px 3px rgba(0, 0, 0, 0.12);
 	--shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.16);
 	--shadow-raised: 0 18px 44px rgba(0, 0, 0, 0.24);
 	--shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.34);
@@ -36,6 +39,9 @@
 	--motion-fast: 120ms;
 	--motion-base: 180ms;
 	--motion-slow: 260ms;
+
+	/* ── Ring (focus) ── */
+	--color-dl-ring: rgba(234, 70, 71, 0.5);
 
 	--font-sans: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;

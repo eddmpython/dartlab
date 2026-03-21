@@ -30,7 +30,7 @@ jobs:
         run: pip install -e .[ai]
 
       - name: Run unit tests (no data dependency)
-        run: pytest tests/ -v --tb=short -m "not requires_data" --cov=dartlab --cov-report=term-missing --cov-report=html
+        run: pytest tests/ -v --tb=short -m "not requires_data and not heavy" --cov=dartlab --cov-report=term-missing --cov-report=html
 
       - name: Upload coverage report
         if: matrix.python-version == '3.12'

@@ -7,6 +7,7 @@ core.analyze()가 생산하는 이벤트 스트림의 단위.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 class EventKind:

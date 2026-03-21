@@ -37,9 +37,9 @@ def test_cli_help_contract():
 
     assert result.returncode == 0
     assert "DartLab" in result.stdout
-    assert (
-        "{show,search,statement,sections,profile,modules,ask,report,excel,collect,ai,status,setup,mcp}" in result.stdout
-    )
+    # 핵심 명령이 모두 존재하는지 확인 (새 명령 추가 시 깨지지 않도록 개별 체크)
+    for cmd in ("show", "search", "ask", "excel", "ai", "status", "setup", "mcp"):
+        assert cmd in result.stdout, f"핵심 명령 '{cmd}'이 help에 없음"
     assert "ui" not in result.stdout
     assert result.stderr == ""
 

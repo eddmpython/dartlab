@@ -44,17 +44,32 @@ class ValidationResult:
 
 # 한국어 재무 용어 → snakeId 매핑
 _LABEL_PATTERNS: dict[str, str] = {
+    # 손익계산서
     "매출액": "sales",
     "매출": "sales",
     "영업이익": "operating_profit",
     "당기순이익": "net_profit",
     "순이익": "net_profit",
+    "매출원가": "cost_of_sales",
+    "매출총이익": "gross_profit",
+    "판관비": "selling_and_admin",
+    "판매관리비": "selling_and_admin",
+    "법인세비용": "income_tax_expense",
+    "세전이익": "profit_before_tax",
+    # 재무상태표
     "자산총계": "total_assets",
     "총자산": "total_assets",
     "부채총계": "total_liabilities",
     "자본총계": "owners_of_parent_equity",
     "유동자산": "current_assets",
     "유동부채": "current_liabilities",
+    "재고자산": "inventories",
+    "매출채권": "trade_and_other_receivables",
+    "매입채무": "trade_and_other_payables",
+    "차입금": "short_term_borrowings",
+    "이익잉여금": "retained_earnings",
+    "유형자산": "tangible_assets",
+    # 현금흐름표
     "영업활동CF": "operating_cashflow",
     "영업활동현금흐름": "operating_cashflow",
     "투자활동CF": "investing_cashflow",
@@ -64,6 +79,7 @@ _LABEL_PATTERNS: dict[str, str] = {
 
 # 비율 용어 매핑
 _RATIO_PATTERNS: dict[str, str] = {
+    # 수익성
     "ROE": "roe",
     "ROA": "roa",
     "ROIC": "roic",
@@ -71,15 +87,26 @@ _RATIO_PATTERNS: dict[str, str] = {
     "순이익률": "netMargin",
     "매출총이익률": "grossMargin",
     "EBITDA마진": "ebitdaMargin",
+    # 안정성
     "부채비율": "debtRatio",
     "유동비율": "currentRatio",
     "당좌비율": "quickRatio",
     "자기자본비율": "equityRatio",
     "이자보상배율": "interestCoverage",
+    "순차입금비율": "netDebtRatio",
+    # 효율성·활동성
     "총자산회전율": "totalAssetTurnover",
+    "매출성장률": "salesGrowth",
+    "영업이익성장률": "operatingProfitGrowth",
+    # 현금흐름
+    "영업CF마진": "operatingCashflowMargin",
+    "CAPEX비율": "capexRatio",
+    # 밸류에이션·복합
     "배당성향": "dividendPayoutRatio",
     "Piotroski": "piotroskiFScore",
     "피오트로스키": "piotroskiFScore",
+    "Altman": "altmanZScore",
+    "CCC": "cashConversionCycle",
 }
 
 # 숫자 추출 패턴: "매출 1,234억", "매출액 약 30조", "ROE 15.2%"
@@ -192,6 +219,63 @@ def validate_claims(claims: list[NumberClaim], company: Any) -> ValidationResult
                         )
 
     return result
+
+
+def cross_validate_context(company: Any) -> list[str]:
+    """context 내부 수치 일관성 검증.
+
+    IS 정합: 매출 - 매출원가 ≈ 매출총이익
+    CF 정합: 영업CF + 투자CF + 재무CF ≈ 현금변동
+
+    Returns:
+        경고 메시지 리스트 (비어있으면 정합)
+    """
+    warnings: list[str] = []
+    annual = getattr(company, "annual", None)
+    if annual is None:
+        return warnings
+
+    raw_series, _years = annual
+
+    def _latest(sj: str, key: str) -> float | None:
+        vals = raw_series.get(sj, {}).get(key)
+        if not vals:
+            return None
+        return next((v for v in reversed(vals) if v is not None), None)
+
+    # IS 정합: 매출 - 매출원가 ≈ 매출총이익
+    sales = _latest("IS", "sales")
+    cogs = _latest("IS", "cost_of_sales")
+    gp = _latest("IS", "gross_profit")
+    if sales is not None and cogs is not None and gp is not None:
+        expected_gp = sales - cogs
+        if abs(gp) > 0:
+            diff = abs(expected_gp - gp) / abs(gp) * 100
+            if diff > 5:
+                warnings.append(
+                    f"IS 정합 경고: 매출({sales:,.0f}) - 매출원가({cogs:,.0f}) = "
+                    f"{expected_gp:,.0f} ≠ 매출총이익({gp:,.0f}), 차이 {diff:.1f}%"
+                )
+
+    # CF 정합: 영업CF + 투자CF + 재무CF ≈ 현금변동
+    ocf = _latest("CF", "operating_cashflow")
+    icf = _latest("CF", "investing_cashflow")
+    fcf = _latest("CF", "cash_flows_from_financing_activities")
+    if ocf is not None and icf is not None and fcf is not None:
+        total_cf = ocf + icf + fcf
+        # 현금변동이 0이 아닌 경우만 의미있는 검증
+        if abs(total_cf) > 1:
+            # 개별 CF 합이 0에 가까우면 정상 (증감이 거의 없는 경우)
+            # 여기서는 각 CF의 절대값 합 대비 편차를 본다
+            scale = max(abs(ocf), abs(icf), abs(fcf), 1)
+            if abs(total_cf) / scale > 0.5:
+                # 큰 순현금 변동이 있으면 환율효과 등 누락 가능 → 참고 경고
+                warnings.append(
+                    f"CF 참고: 영업CF({ocf:,.0f}) + 투자CF({icf:,.0f}) + "
+                    f"재무CF({fcf:,.0f}) = {total_cf:,.0f} (환율효과 등 미포함 가능)"
+                )
+
+    return warnings
 
 
 def validate_structured(structured: dict, expected_facts: list[dict]) -> dict:

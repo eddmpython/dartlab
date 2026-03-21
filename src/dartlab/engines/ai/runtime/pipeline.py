@@ -331,14 +331,102 @@ def _run_composite_scoring(company: Any, tables: list[str]) -> str | None:
     return "\n".join(parts)
 
 
+def _run_governance_analysis(company: Any, tables: list[str]) -> str | None:
+    """지배구조: majorHolder 지분율 + audit 의견 + executive 규모."""
+    parts: list[str] = []
+
+    report = getattr(company, "report", None)
+    if report is None:
+        return None
+
+    mh = getattr(report, "majorHolder", None)
+    if mh is not None and mh.years and mh.totalShareRatio:
+        latest_ratio = mh.totalShareRatio[-1]
+        if latest_ratio is not None:
+            parts.append(f"- 최대주주 합산 지분율: {latest_ratio:.1f}% ({mh.years[-1]}년)")
+            if len(mh.totalShareRatio) >= 2:
+                prev = mh.totalShareRatio[-2]
+                if prev is not None:
+                    diff = latest_ratio - prev
+                    parts.append(f"  전년 대비: {diff:+.1f}%p")
+
+    aud = getattr(report, "audit", None)
+    if aud is not None and aud.years and aud.opinions:
+        latest_opinion = aud.opinions[-1]
+        parts.append(f"- 최근 감사의견: {latest_opinion or '-'} ({aud.years[-1]}년)")
+
+    exe = getattr(report, "executive", None)
+    if exe is not None and exe.totalCount > 0:
+        outside_pct = exe.outsideCount / max(exe.registeredCount + exe.outsideCount, 1) * 100
+        parts.append(f"- 임원 {exe.totalCount}명 (사외이사 비율 {outside_pct:.0f}%)")
+
+    if not parts:
+        return None
+    return "### 지배구조 분석\n" + "\n".join(parts)
+
+
+def _run_business_analysis(company: Any, tables: list[str]) -> str | None:
+    """사업: segments 매출 구성 + productService 주요제품."""
+    parts: list[str] = []
+
+    try:
+        segments = getattr(company, "segments", None)
+        if isinstance(segments, pl.DataFrame) and not segments.is_empty():
+            parts.append("### 사업 부문 (segments)")
+            parts.append(_df_to_simple_md(segments, max_rows=8))
+    except _PIPELINE_ERRORS:
+        pass
+
+    try:
+        ps = getattr(company, "productService", None)
+        if isinstance(ps, pl.DataFrame) and not ps.is_empty():
+            parts.append("### 주요 제품/서비스")
+            parts.append(_df_to_simple_md(ps, max_rows=8))
+    except _PIPELINE_ERRORS:
+        pass
+
+    return "\n\n".join(parts) if parts else None
+
+
+def _run_investment_analysis(company: Any, tables: list[str]) -> str | None:
+    """투자: R&D/매출 비율 + CAPEX + 자회사 현황."""
+    from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+
+    parts: list[str] = []
+
+    ratios = get_headline_ratios(company)
+    if ratios is not None:
+        capex = getattr(ratios, "capexRatio", None)
+        if capex is not None:
+            parts.append(f"- CAPEX/매출: {capex:.1f}%")
+
+    try:
+        rnd = getattr(company, "rnd", None)
+        if isinstance(rnd, pl.DataFrame) and not rnd.is_empty():
+            parts.append("### R&D 현황")
+            parts.append(_df_to_simple_md(rnd, max_rows=5))
+    except _PIPELINE_ERRORS:
+        pass
+
+    try:
+        sub = getattr(company, "subsidiary", None)
+        if isinstance(sub, pl.DataFrame) and not sub.is_empty():
+            parts.append(f"### 종속기업 ({sub.height}개)")
+            parts.append(_df_to_simple_md(sub, max_rows=5))
+    except _PIPELINE_ERRORS:
+        pass
+
+    return "\n\n".join(parts) if parts else None
+
+
 _PIPELINE_MAP: dict[str, list] = {
     "건전성": [_run_health_analysis, _run_quality_of_earnings, _run_composite_scoring],
     "수익성": [_run_profitability_analysis, _run_quality_of_earnings, _run_dupont_analysis],
     "성장성": [_run_growth_analysis],
     "배당": [_run_dividend_analysis],
     "리스크": [_run_risk_analysis, _run_composite_scoring],
-    "투자": [_run_growth_analysis],
-    "지배구조": [],  # scan runner가 L2에서 주입
+    "투자": [_run_investment_analysis, _run_growth_analysis],
+    "지배구조": [_run_governance_analysis],
     "종합": [
         _run_health_analysis,
         _run_profitability_analysis,
@@ -348,7 +436,7 @@ _PIPELINE_MAP: dict[str, list] = {
         _run_composite_scoring,
     ],
     "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
-    "사업": [],  # show_topic 도구 사용 안내 — insight만 주입
+    "사업": [_run_business_analysis],
 }
 
 
@@ -570,9 +658,16 @@ _SCAN_AXES_BY_QTYPE: dict[str, list[str]] = {
     "투자": ["capital", "debt"],
 }
 
+_SCAN_SUPPLEMENTARY: dict[str, list[str]] = {
+    "governance": ["boardOfDirectors", "auditSystem", "internalControl"],
+    "debt": ["bond", "contingentLiability"],
+    "capital": ["capitalChange", "fundraising"],
+    "workforce": ["executivePay"],
+}
+
 
 def _run_scan(company: Any, q_type: str) -> str | None:
-    """scan 엔진: 질문 유형에 맞는 축만 조회하여 컨텍스트로 주입."""
+    """scan 엔진: 질문 유형에 맞는 축만 조회 + 보충 모듈 핵심 수치 주입."""
     axes = _SCAN_AXES_BY_QTYPE.get(q_type, [])
     if not axes:
         return None
@@ -599,6 +694,18 @@ def _run_scan(company: Any, q_type: str) -> str | None:
                 val = result[col][0]
                 if val is not None:
                     lines.append(f"- **{col}**: {val}")
+
+            # 보충 모듈 핵심 수치
+            for mod_name in _SCAN_SUPPLEMENTARY.get(axis, []):
+                try:
+                    mod_data = getattr(company, mod_name, None)
+                    if isinstance(mod_data, pl.DataFrame) and not mod_data.is_empty():
+                        lines.append(f"- [{mod_name}] {mod_data.height}건 데이터 존재")
+                    elif mod_data is not None:
+                        lines.append(f"- [{mod_name}] 데이터 있음")
+                except _PIPELINE_ERRORS:
+                    pass
+
             if len(lines) > 1:
                 parts.append("\n".join(lines))
         except _PIPELINE_ERRORS:
