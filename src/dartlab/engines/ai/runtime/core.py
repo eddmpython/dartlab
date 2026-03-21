@@ -236,6 +236,22 @@ def analyze(
         if val_event:
             yield val_event
 
+    # ── 후처리: plugin hints ──
+    if question:
+        from dartlab.core.plugins import get_loaded_plugins
+        from dartlab.engines.ai.runtime.plugin_hints import (
+            detect_plugin_hints,
+            format_plugin_hints,
+        )
+
+        loaded_names = [p.name for p in get_loaded_plugins()]
+        hints = detect_plugin_hints(question, loaded_names)
+        if hints:
+            done_payload["pluginHints"] = hints
+            hint_text = format_plugin_hints(hints)
+            if hint_text:
+                done_payload["pluginHintsText"] = hint_text
+
     # ── Done 이벤트 ──
     done_payload.setdefault("includedModules", included_tables)
     yield AnalysisEvent("done", done_payload)

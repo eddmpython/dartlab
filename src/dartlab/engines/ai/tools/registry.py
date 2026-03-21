@@ -83,6 +83,9 @@ def build_tool_runtime(company: Any | None = None, *, name: str = "session") -> 
     runtime = create_tool_runtime(name=name)
     register_defaults(company, runtime=runtime)
 
+    # 내장 플러그인 도구 등록 (import 시 @tool 데코레이터가 레지스트리에 추가)
+    import dartlab.engines.ai.tools.plugin_creator  # noqa: F401
+
     # 플러그인 도구 자동 주입
     from .plugin import get_plugin_registry, inject_plugins_into_runtime
 

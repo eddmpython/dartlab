@@ -123,6 +123,7 @@ def rebuild_module_registry() -> None:
     _MODULE_INDEX = None
     _ALL_PROPERTIES = None
 
+
 _CHAPTER_TITLES: dict[str, str] = {
     "I": "I. 회사의 개요",
     "II": "II. 사업의 내용",
