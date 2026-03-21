@@ -118,6 +118,7 @@ def analyze(
     max_turns: int = 5,
     max_tools: int | None = None,
     reflect: bool = False,
+    report_mode: bool = False,
     # 자동 계산 OR pre-computed
     snapshot: dict | None = None,
     auto_snapshot: bool = True,
@@ -207,6 +208,7 @@ def analyze(
             max_turns=max_turns,
             max_tools=max_tools,
             reflect=reflect,
+            report_mode=report_mode,
             snapshot=snapshot,
             auto_snapshot=auto_snapshot,
             focus_context=focus_context,
@@ -289,6 +291,7 @@ def _analyze_inner(
     max_turns: int,
     max_tools: int | None,
     reflect: bool,
+    report_mode: bool,
     snapshot: dict | None,
     auto_snapshot: bool,
     focus_context: str | None,
@@ -312,6 +315,13 @@ def _analyze_inner(
     from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
 
+    # ── report_mode 강제 설정 ──
+    if report_mode:
+        context_tier_override = "full"
+        max_turns = max(max_turns, 10)
+    else:
+        context_tier_override = None
+
     # ── 1. Config 해석 ──
     config_ = get_config(role=role)
     overrides = {
@@ -329,7 +339,7 @@ def _analyze_inner(
         config_ = config_.merge(overrides)
 
     resolved_provider = config_.provider
-    context_tier = _resolve_context_tier(resolved_provider, use_tools)
+    context_tier = context_tier_override or _resolve_context_tier(resolved_provider, use_tools)
     is_compact = context_tier != "full"
 
     corp_name = getattr(company, "corpName", "Unknown") if company else None
@@ -487,7 +497,10 @@ def _analyze_inner(
 
         try:
             pipeline_result = run_pipeline(company, question, _included_tables)
-        except Exception:
+        except (ValueError, TypeError, AttributeError, KeyError, FileNotFoundError, OSError) as e:
+            import logging
+
+            logging.getLogger(__name__).debug("pipeline failed: %s", e)
             pipeline_result = ""
         if pipeline_result:
             context_text = context_text + pipeline_result
@@ -509,6 +522,7 @@ def _analyze_inner(
         question_type=q_type,
         question_types=list(question_types) if question_types else None,
         compact=is_compact,
+        report_mode=report_mode,
     )
 
     if dialogue_policy:

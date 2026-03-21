@@ -229,7 +229,7 @@ def _run_risk_analysis(company: Any, tables: list[str]) -> str | None:
 
 
 def _run_quality_of_earnings(company: Any, tables: list[str]) -> str | None:
-    """이익의 질: 영업CF/순이익, CCC 분석."""
+    """이익의 질: 영업CF/순이익, CCC, Accrual Ratio 분석."""
     from dartlab.engines.ai.context.company_adapter import get_headline_ratios
 
     ratios = get_headline_ratios(company)
@@ -260,9 +260,66 @@ def _run_quality_of_earnings(company: Any, tables: list[str]) -> str | None:
             rows.append(f"| DPO(매입채무지급) | {dpo:.0f}일 | - |")
         if capex_ratio is not None:
             rows.append(f"| CAPEX비율 | {capex_ratio:.1f}% | - |")
+
+        # Accrual Ratio = (순이익 - 영업CF) / 평균총자산
+        accrual = _calc_accrual_ratio(company)
+        if accrual is not None:
+            q = "⚠️ 주의" if accrual > 10.0 else ("보통" if accrual > 5.0 else "양호")
+            rows.append(f"| Accrual Ratio | {accrual:.1f}% | {q} |")
+
         parts.append("\n".join(rows))
 
     return "\n".join(parts) if parts else None
+
+
+def _calc_accrual_ratio(company: Any) -> float | None:
+    """Accrual Ratio = (순이익 - 영업CF) / 평균총자산 × 100."""
+    try:
+        from dartlab.tools.table import pivot_accounts
+
+        is_ = getattr(company, "IS", None)
+        cf = getattr(company, "CF", None)
+        bs = getattr(company, "BS", None)
+        if not all(isinstance(d, pl.DataFrame) for d in (is_, cf, bs)):
+            return None
+
+        # 최근 연도 순이익
+        is_piv = pivot_accounts(is_)
+        ni_col = next((c for c in is_piv.columns if c in ("당기순이익", "net_income")), None)
+        if ni_col is None or "year" not in is_piv.columns:
+            return None
+        is_sorted = is_piv.sort("year", descending=True)
+        ni = is_sorted[ni_col][0]
+        if ni is None:
+            return None
+
+        # 최근 연도 영업CF
+        cf_piv = pivot_accounts(cf)
+        ocf_col = next((c for c in cf_piv.columns if c in ("영업활동현금흐름", "operating_cash_flow")), None)
+        if ocf_col is None or "year" not in cf_piv.columns:
+            return None
+        cf_sorted = cf_piv.sort("year", descending=True)
+        ocf = cf_sorted[ocf_col][0]
+        if ocf is None:
+            return None
+
+        # 평균총자산 (최근 2개 연도)
+        bs_piv = pivot_accounts(bs)
+        ta_col = next((c for c in bs_piv.columns if c in ("자산총계", "total_assets")), None)
+        if ta_col is None or "year" not in bs_piv.columns:
+            return None
+        bs_sorted = bs_piv.sort("year", descending=True)
+        ta_latest = bs_sorted[ta_col][0]
+        ta_prev = bs_sorted[ta_col][1] if bs_sorted.height >= 2 else ta_latest
+        if ta_latest is None or ta_prev is None:
+            return None
+        avg_ta = (ta_latest + ta_prev) / 2
+        if avg_ta == 0:
+            return None
+
+        return (ni - ocf) / avg_ta * 100
+    except _PIPELINE_ERRORS:
+        return None
 
 
 def _run_dupont_analysis(company: Any, tables: list[str]) -> str | None:
@@ -366,6 +423,19 @@ def _run_governance_analysis(company: Any, tables: list[str]) -> str | None:
         outside_pct = exe.outsideCount / max(exe.registeredCount + exe.outsideCount, 1) * 100
         parts.append(f"- 임원 {exe.totalCount}명 (사외이사 비율 {outside_pct:.0f}%)")
 
+    # 임원 보수 정보
+    ep = getattr(report, "executivePay", None)
+    if ep is not None:
+        try:
+            total = getattr(ep, "totalAmount", None)
+            avg = getattr(ep, "averageAmount", None)
+            if total is not None:
+                parts.append(f"- 임원 보수 총액: {total:,.0f}백만원")
+            if avg is not None:
+                parts.append(f"- 임원 1인 평균 보수: {avg:,.0f}백만원")
+        except _PIPELINE_ERRORS:
+            pass
+
     if not parts:
         return None
     return "### 지배구조 분석\n" + "\n".join(parts)
@@ -388,6 +458,24 @@ def _run_business_analysis(company: Any, tables: list[str]) -> str | None:
         if isinstance(ps, pl.DataFrame) and not ps.is_empty():
             parts.append("### 주요 제품/서비스")
             parts.append(_df_to_simple_md(ps, max_rows=8))
+    except _PIPELINE_ERRORS:
+        pass
+
+    # rawMaterial — 원재료 의존도
+    try:
+        rm = getattr(company, "rawMaterial", None)
+        if isinstance(rm, pl.DataFrame) and not rm.is_empty():
+            parts.append("### 원재료 현황")
+            parts.append(_df_to_simple_md(rm, max_rows=6))
+    except _PIPELINE_ERRORS:
+        pass
+
+    # salesOrder — 수주 현황
+    try:
+        so = getattr(company, "salesOrder", None)
+        if isinstance(so, pl.DataFrame) and not so.is_empty():
+            parts.append("### 수주 현황")
+            parts.append(_df_to_simple_md(so, max_rows=6))
     except _PIPELINE_ERRORS:
         pass
 
@@ -425,12 +513,131 @@ def _run_investment_analysis(company: Any, tables: list[str]) -> str | None:
     return "\n\n".join(parts) if parts else None
 
 
+def _run_red_flags(company: Any, tables: list[str]) -> str | None:
+    """적색 신호 자동 탐지 — 프롬프트 지시사항의 데이터 뒷받침."""
+    from dartlab.tools.table import pivot_accounts
+
+    flags: list[str] = []
+
+    is_ = getattr(company, "IS", None)
+    bs = getattr(company, "BS", None)
+    cf = getattr(company, "CF", None)
+
+    # ── 1. 감사인 교체 ──
+    try:
+        report = getattr(company, "report", None)
+        if report is not None:
+            aud = getattr(report, "audit", None)
+            if aud is not None and hasattr(aud, "auditors") and len(getattr(aud, "auditors", [])) >= 2:
+                auditors = aud.auditors
+                if auditors[-1] != auditors[-2]:
+                    flags.append(
+                        f"- 🔴 **감사인 교체**: {auditors[-2]} → {auditors[-1]} ({aud.years[-1]}년)"
+                    )
+    except _PIPELINE_ERRORS:
+        pass
+
+    # ── 2. 매출채권 증가율 >> 매출 증가율 ──
+    try:
+        if isinstance(is_, pl.DataFrame) and isinstance(bs, pl.DataFrame):
+            is_piv = pivot_accounts(is_)
+            bs_piv = pivot_accounts(bs)
+
+            rev_col = next((c for c in is_piv.columns if c in ("매출액", "revenue")), None)
+            ar_col = next((c for c in bs_piv.columns if c in ("매출채권", "trade_receivables")), None)
+
+            if rev_col and ar_col and "year" in is_piv.columns and "year" in bs_piv.columns:
+                is_s = is_piv.sort("year", descending=True)
+                bs_s = bs_piv.sort("year", descending=True)
+                if is_s.height >= 2 and bs_s.height >= 2:
+                    rev_now, rev_prev = is_s[rev_col][0], is_s[rev_col][1]
+                    ar_now, ar_prev = bs_s[ar_col][0], bs_s[ar_col][1]
+                    if all(v is not None and v != 0 for v in (rev_now, rev_prev, ar_now, ar_prev)):
+                        rev_g = (rev_now - rev_prev) / abs(rev_prev) * 100
+                        ar_g = (ar_now - ar_prev) / abs(ar_prev) * 100
+                        if ar_g > rev_g + 15:
+                            flags.append(
+                                f"- 🟠 **매출채권 급증**: 매출채권 {ar_g:+.1f}% vs 매출 {rev_g:+.1f}% → 회수 지연 가능성"
+                            )
+    except _PIPELINE_ERRORS:
+        pass
+
+    # ── 3. 재고 증가율 >> 매출원가 증가율 ──
+    try:
+        if isinstance(is_, pl.DataFrame) and isinstance(bs, pl.DataFrame):
+            is_piv = pivot_accounts(is_)
+            bs_piv = pivot_accounts(bs)
+
+            cogs_col = next((c for c in is_piv.columns if c in ("매출원가", "cost_of_sales")), None)
+            inv_col = next((c for c in bs_piv.columns if c in ("재고자산", "inventories")), None)
+
+            if cogs_col and inv_col and "year" in is_piv.columns and "year" in bs_piv.columns:
+                is_s = is_piv.sort("year", descending=True)
+                bs_s = bs_piv.sort("year", descending=True)
+                if is_s.height >= 2 and bs_s.height >= 2:
+                    cogs_now, cogs_prev = is_s[cogs_col][0], is_s[cogs_col][1]
+                    inv_now, inv_prev = bs_s[inv_col][0], bs_s[inv_col][1]
+                    if all(v is not None and v != 0 for v in (cogs_now, cogs_prev, inv_now, inv_prev)):
+                        cogs_g = (cogs_now - cogs_prev) / abs(cogs_prev) * 100
+                        inv_g = (inv_now - inv_prev) / abs(inv_prev) * 100
+                        if inv_g > cogs_g + 15:
+                            flags.append(
+                                f"- 🟠 **재고 급증**: 재고 {inv_g:+.1f}% vs 매출원가 {cogs_g:+.1f}% → 재고 부실화 가능성"
+                            )
+    except _PIPELINE_ERRORS:
+        pass
+
+    # ── 4. 3년 연속 영업CF < 순이익 ──
+    try:
+        if isinstance(is_, pl.DataFrame) and isinstance(cf, pl.DataFrame):
+            is_piv = pivot_accounts(is_)
+            cf_piv = pivot_accounts(cf)
+
+            ni_col = next((c for c in is_piv.columns if c in ("당기순이익", "net_income")), None)
+            ocf_col = next((c for c in cf_piv.columns if c in ("영업활동현금흐름", "operating_cash_flow")), None)
+
+            if ni_col and ocf_col and "year" in is_piv.columns and "year" in cf_piv.columns:
+                is_s = is_piv.sort("year", descending=True).head(3)
+                cf_s = cf_piv.sort("year", descending=True).head(3)
+                if is_s.height >= 3 and cf_s.height >= 3:
+                    count = 0
+                    for i in range(3):
+                        ni_v = is_s[ni_col][i]
+                        ocf_v = cf_s[ocf_col][i]
+                        if ni_v is not None and ocf_v is not None and ocf_v < ni_v:
+                            count += 1
+                    if count == 3:
+                        flags.append(
+                            "- 🔴 **3년 연속 영업CF < 순이익**: 발생주의 이익 과대 가능성 (Accrual 의심)"
+                        )
+    except _PIPELINE_ERRORS:
+        pass
+
+    # ── 5. 유동비율 < 100% ──
+    try:
+        from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+
+        ratios = get_headline_ratios(company)
+        if ratios is not None:
+            cr = getattr(ratios, "currentRatio", None)
+            if cr is not None and cr < 100:
+                flags.append(
+                    f"- 🟠 **유동비율 {cr:.0f}%**: 100% 미만 → 단기 유동성 리스크"
+                )
+    except _PIPELINE_ERRORS:
+        pass
+
+    if not flags:
+        return None
+    return "### ⚠️ 적색 신호 탐지\n" + "\n".join(flags)
+
+
 _PIPELINE_MAP: dict[str, list] = {
-    "건전성": [_run_health_analysis, _run_quality_of_earnings, _run_composite_scoring],
+    "건전성": [_run_health_analysis, _run_quality_of_earnings, _run_composite_scoring, _run_red_flags],
     "수익성": [_run_profitability_analysis, _run_quality_of_earnings, _run_dupont_analysis],
-    "성장성": [_run_growth_analysis],
-    "배당": [_run_dividend_analysis],
-    "리스크": [_run_risk_analysis, _run_composite_scoring],
+    "성장성": [_run_growth_analysis, _run_investment_analysis],
+    "배당": [_run_dividend_analysis, _run_quality_of_earnings],
+    "리스크": [_run_risk_analysis, _run_composite_scoring, _run_red_flags],
     "투자": [_run_investment_analysis, _run_growth_analysis],
     "지배구조": [_run_governance_analysis],
     "종합": [
@@ -440,8 +647,9 @@ _PIPELINE_MAP: dict[str, list] = {
         _run_quality_of_earnings,
         _run_dupont_analysis,
         _run_composite_scoring,
+        _run_red_flags,
     ],
-    "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
+    "공시": [_run_red_flags],
     "사업": [_run_business_analysis],
 }
 

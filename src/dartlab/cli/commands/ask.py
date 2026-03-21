@@ -29,6 +29,7 @@ def configure_parser(subparsers) -> None:
     parser.add_argument("--no-stream", dest="stream", action="store_false", help="스트리밍 비활성화")
     parser.add_argument("--continue", dest="cont", action="store_true", help="이전 대화 이어가기")
     parser.add_argument("--pattern", default=None, help="분석 패턴 (financial, risk, valuation)")
+    parser.add_argument("--report", action="store_true", help="전문 분석보고서 모드 (7섹션 구조화 보고서)")
     parser.set_defaults(handler=run)
 
 
@@ -97,6 +98,7 @@ def run(args) -> int:
         api_key=args.api_key,
         history=history,
         pattern=args.pattern,
+        report_mode=args.report,
     )
 
     if args.stream:

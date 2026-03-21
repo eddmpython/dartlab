@@ -28,6 +28,12 @@ from .templates.analysis_rules import (
     TOPIC_COMPACT as _TOPIC_COMPACT,
 )
 from .templates.analysis_rules import (
+    REPORT_PROMPT as _REPORT_PROMPT,
+)
+from .templates.analysis_rules import (
+    REPORT_PROMPT_COMPACT as _REPORT_PROMPT_COMPACT,
+)
+from .templates.analysis_rules import (
     TOPIC_PROMPTS as _TOPIC_PROMPTS,
 )
 from .templates.benchmarks import _INDUSTRY_BENCHMARKS, _SECTOR_MAP
@@ -44,6 +50,16 @@ from .templates.system_base import (
     SYSTEM_PROMPT_EN,
     SYSTEM_PROMPT_KR,
 )
+
+# ── 플러그인 시스템 프롬프트 ──────────────────────────────────
+
+_PLUGIN_SYSTEM_PROMPT = """
+## 플러그인 확장 시스템
+- dartlab은 플러그인으로 확장 가능합니다. `uv pip install dartlab-plugin-xxx` 한 줄로 새 데이터/도구/분석을 추가할 수 있습니다.
+- 사용자가 "플러그인 만들어줘", "커스텀 분석 만들기", "ESG 플러그인" 같은 요청을 하면 `create_plugin` 도구를 사용하세요.
+- `create_plugin`은 즉시 사용 가능한 완전한 패키지 구조(pyproject.toml + register 함수 + 로직 파일)를 자동 생성합니다.
+- 분석 중 플러그인 추천 힌트가 제공되면, 답변 끝에 자연스럽게 안내하세요.
+"""
 
 # ══════════════════════════════════════
 # 질문 분류
@@ -117,6 +133,7 @@ def build_system_prompt(
     question_type: str | None = None,
     question_types: list[str] | None = None,
     compact: bool = False,
+    report_mode: bool = False,
 ) -> str:
     """시스템 프롬프트 조립.
 
@@ -128,6 +145,7 @@ def build_system_prompt(
             question_type: 단일 질문 유형 → Few-shot 예시 추가 (하위호환)
             question_types: 복수 질문 유형 → question_type보다 우선
             compact: True면 소형 모델용 간결 프롬프트 (Ollama)
+            report_mode: True면 전문 분석보고서 구조 프롬프트 추가
     """
     if custom:
         return custom
@@ -138,10 +156,11 @@ def build_system_prompt(
         base = SYSTEM_PROMPT_COMPACT
         appended: list[str] = []
 
-        if sector:
-            benchmark_key = _match_sector(sector)
-            if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
-                appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+        benchmark_key = _match_sector(sector) if sector else None
+        if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
+            appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+        elif "일반" in _INDUSTRY_BENCHMARKS:
+            appended.append(_INDUSTRY_BENCHMARKS["일반"])
 
         if included_modules:
             module_set = set(included_modules)
@@ -158,6 +177,14 @@ def build_system_prompt(
             if qt in _FEW_SHOT_COMPACT:
                 appended.append(_FEW_SHOT_COMPACT[qt])
 
+        if report_mode:
+            appended.append(_REPORT_PROMPT_COMPACT)
+
+        appended.append(
+            "\n플러그인: 사용자가 '플러그인 만들어줘'하면 create_plugin 도구 사용. "
+            "플러그인 추천 힌트가 있으면 답변 끝에 안내."
+        )
+
         if appended:
             return base + "\n".join(appended)
         return base
@@ -165,10 +192,11 @@ def build_system_prompt(
     base = SYSTEM_PROMPT_KR if lang == "ko" else SYSTEM_PROMPT_EN
     appended = []
 
-    if sector:
-        benchmark_key = _match_sector(sector)
-        if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
-            appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+    benchmark_key = _match_sector(sector) if sector else None
+    if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
+        appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+    elif "일반" in _INDUSTRY_BENCHMARKS:
+        appended.append(_INDUSTRY_BENCHMARKS["일반"])
 
     if included_modules:
         module_set = set(included_modules)
@@ -184,6 +212,12 @@ def build_system_prompt(
     for qt in q_types[:2]:
         if qt in _FEW_SHOT_EXAMPLES:
             appended.append(_FEW_SHOT_EXAMPLES[qt])
+
+    if report_mode:
+        appended.append(_REPORT_PROMPT)
+
+    # 플러그인 시스템 안내 (도구 호출 가능 환경에서만)
+    appended.append(_PLUGIN_SYSTEM_PROMPT)
 
     if appended:
         return base + "\n".join(appended)

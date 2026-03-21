@@ -17,15 +17,29 @@ from typing import Any, Generator
 
 
 def _collect_text(events) -> str:
-    """이벤트 스트림에서 chunk 텍스트만 수집."""
-    return "".join(ev.data["text"] for ev in events if ev.kind == "chunk")
+    """이벤트 스트림에서 chunk 텍스트만 수집 + 플러그인 힌트 append."""
+    parts: list[str] = []
+    hint_text = ""
+    for ev in events:
+        if ev.kind == "chunk":
+            parts.append(ev.data["text"])
+        elif ev.kind == "done":
+            hint_text = ev.data.get("pluginHintsText", "")
+    answer = "".join(parts)
+    if hint_text:
+        answer += f"\n\n{hint_text}"
+    return answer
 
 
 def _stream_chunks(events) -> Generator[str, None, None]:
-    """이벤트 스트림에서 chunk 텍스트만 제너레이터로 반환."""
+    """이벤트 스트림에서 chunk 텍스트 + 플러그인 힌트를 제너레이터로 반환."""
     for ev in events:
         if ev.kind == "chunk":
             yield ev.data["text"]
+        elif ev.kind == "done":
+            hint = ev.data.get("pluginHintsText")
+            if hint:
+                yield f"\n\n{hint}"
 
 
 def ask(
@@ -38,6 +52,7 @@ def ask(
     model: str | None = None,
     stream: bool = True,
     reflect: bool = False,
+    report_mode: bool = False,
     pattern: str | None = None,
     history: list[dict[str, str]] | None = None,
     **kwargs: Any,
@@ -53,6 +68,7 @@ def ask(
         model: per-call model override.
         stream: True면 제너레이터 반환 (chunk 단위).
         reflect: True면 답변 자체 검증 (1회 reflection).
+        report_mode: True면 전문 분석보고서 모드 (7섹션 구조화).
         pattern: 분석 패턴 이름 (financial, risk, valuation 등).
         history: 이전 대화 메시지 리스트 (대화 연속 모드).
         **kwargs: LLMConfig override.
@@ -80,6 +96,7 @@ def ask(
         model=model,
         use_tools=False,
         reflect=reflect,
+        report_mode=report_mode,
         history=history,
         **kwargs,
     )

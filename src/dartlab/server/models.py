@@ -52,6 +52,7 @@ class AskRequest(BaseModel):
     include: list[str] | None = None
     exclude: list[str] | None = None
     stream: bool = False
+    reportMode: bool = False
     history: list[HistoryMessage] | None = Field(None, max_length=50)
     viewContext: ViewContext | None = None
 

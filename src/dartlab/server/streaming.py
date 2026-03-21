@@ -104,6 +104,7 @@ async def _build_kwargs(
         "history": [h.model_dump() for h in req.history] if req.history else None,
         "view_context": req.viewContext.model_dump() if req.viewContext else None,
         "not_found_msg": not_found_msg,
+        "report_mode": req.reportMode,
     }
 
     # snapshot 캐시: 서버 세션에서 Company별 1회 계산
