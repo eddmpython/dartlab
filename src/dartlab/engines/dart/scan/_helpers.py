@@ -146,7 +146,7 @@ def scan_finance_parquets(
                 )
                 .collect()
             )
-        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
+        except (pl.exceptions.PolarsError, OSError):
             continue
 
         if target.is_empty() or "account_id" not in target.columns:

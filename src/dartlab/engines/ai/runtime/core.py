@@ -29,6 +29,23 @@ from dartlab.engines.ai.runtime.events import AnalysisEvent, EventKind
 _COMPACT_PROVIDERS = frozenset({"ollama", "codex"})
 
 
+# ── 질문 복잡도 → 동적 max_turns ─────────────────────────
+
+_MULTI_KEYWORDS = frozenset({"비교", "vs", "종합", "전체", "전반", "왜", "구체적", "상세", "분석해"})
+
+
+def _estimate_max_turns(question: str, q_type: str) -> int:
+    """질문 복잡도에 따라 agent loop max_turns를 5~10 범위로 결정."""
+    turns = 5
+    if any(k in question for k in _MULTI_KEYWORDS):
+        turns += 2
+    if q_type in ("사업", "리스크", "공시"):
+        turns += 1
+    if q_type == "종합":
+        turns += 3
+    return min(turns, 10)
+
+
 # ── context tier 결정 ─────────────────────────────────────
 
 
@@ -468,7 +485,10 @@ def _analyze_inner(
     if context_tier == "full" and company is not None:
         from dartlab.engines.ai.runtime.pipeline import run_pipeline
 
-        pipeline_result = run_pipeline(company, question, _included_tables)
+        try:
+            pipeline_result = run_pipeline(company, question, _included_tables)
+        except Exception:
+            pipeline_result = ""
         if pipeline_result:
             context_text = context_text + pipeline_result
 
@@ -504,6 +524,22 @@ def _analyze_inner(
         messages.extend(history_messages)
 
     user_content = f"{context_text}\n\n---\n\n질문: {question}" if context_text else question
+
+    # 플러그인 힌트를 LLM context에 주입 (AI가 자연스럽게 안내)
+    if question:
+        from dartlab.core.plugins import get_loaded_plugins
+        from dartlab.engines.ai.runtime.plugin_hints import (
+            detect_plugin_hints,
+            format_plugin_hints,
+        )
+
+        _loaded = [p.name for p in get_loaded_plugins()]
+        _hints = detect_plugin_hints(question, _loaded)
+        if _hints:
+            _hint_ctx = format_plugin_hints(_hints)
+            if _hint_ctx:
+                user_content += f"\n\n---\n{_hint_ctx}"
+
     messages.append({"role": "user", "content": user_content})
 
     if emit_system_prompt:
@@ -526,12 +562,13 @@ def _analyze_inner(
     elif tool_capable:
         if max_tools is None and resolved_provider == "ollama":
             max_tools = 10
+        effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))
         yield from _run_agent(
             llm,
             messages,
             company,
             question,
-            max_turns=max_turns,
+            max_turns=effective_turns,
             max_tools=max_tools,
             q_type=q_type,
             _full_response_parts=_full_response_parts,

@@ -88,7 +88,7 @@ def scan_debt_mix() -> dict[str, dict]:
                 )
                 .collect()
             )
-        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
+        except (pl.exceptions.PolarsError, OSError):
             continue
         if bs.is_empty() or "account_id" not in bs.columns:
             continue

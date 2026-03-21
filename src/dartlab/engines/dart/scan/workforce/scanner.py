@@ -115,7 +115,7 @@ def scan_revenue_per_employee() -> dict[str, float]:
                 )
                 .collect()
             )
-        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
+        except (pl.exceptions.PolarsError, OSError):
             continue
         if is_df.is_empty() or "account_id" not in is_df.columns:
             continue

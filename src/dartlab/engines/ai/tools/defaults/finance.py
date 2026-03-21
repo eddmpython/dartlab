@@ -6,7 +6,7 @@ from typing import Any
 
 import polars as pl
 
-from .helpers import df_to_md
+from .helpers import df_to_md, format_tool_value
 
 
 def register_finance_tools(company: Any, register_tool) -> None:
@@ -474,5 +474,80 @@ def register_finance_tools(company: Any, register_tool) -> None:
             "required": ["account"],
         },
         kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    # ── get_ratio_series ──
+
+    def get_ratio_series(ratio: str = "") -> str:
+        """재무비율 시계열 조회."""
+        rs = getattr(company, "ratioSeries", None)
+        if rs is None:
+            return "ratioSeries 데이터가 없습니다. compute_ratios()로 현재 비율을 확인하세요."
+        if ratio:
+            val = rs.get(ratio) if isinstance(rs, dict) else getattr(rs, ratio, None)
+            if val is None:
+                available = list(rs.keys()) if isinstance(rs, dict) else dir(rs)
+                return f"'{ratio}' 비율이 없습니다. 사용 가능: {', '.join(str(k) for k in available[:20])}"
+            return format_tool_value(val, max_rows=20, max_chars=3000)
+        return format_tool_value(rs, max_rows=30, max_chars=4000)
+
+    register_tool(
+        "get_ratio_series",
+        get_ratio_series,
+        "재무비율의 연도별 시계열 데이터를 조회합니다. "
+        "ratio를 지정하면 해당 비율만, 비워두면 전체 비율 시계열을 반환합니다. "
+        "사용 시점: '부채비율 추이', 'ROE 3년간 변화', '비율 트렌드' 같은 추세 분석. "
+        "사용하지 말 것: 현재 시점 비율만 필요하면 compute_ratios가 빠릅니다.",
+        {
+            "type": "object",
+            "properties": {
+                "ratio": {
+                    "type": "string",
+                    "description": "조회할 비율명 (예: roe, debtRatio, currentRatio). 비워두면 전체",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.DATA,
+        requires_company=True,
+    )
+
+    # ── get_timeseries ──
+
+    def get_timeseries(account: str, statement: str = "IS") -> str:
+        """특정 계정의 분기별/연도별 시계열 조회."""
+        ts_func = getattr(company, "timeseries", None)
+        if ts_func is None:
+            return "timeseries 인터페이스가 없습니다. get_data(IS/BS/CF)로 전체 재무제표를 조회하세요."
+        try:
+            result = ts_func(account, statement) if callable(ts_func) else ts_func
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"timeseries('{account}', '{statement}') 실패: {e}"
+        return format_tool_value(result, max_rows=20, max_chars=3000)
+
+    register_tool(
+        "get_timeseries",
+        get_timeseries,
+        "특정 계정과목의 분기별/연도별 시계열을 조회합니다. "
+        "예: get_timeseries('sales', 'IS') → 매출액 분기별 시계열. "
+        "사용 시점: 특정 계정의 세밀한 추이 분석, 분기별 패턴 확인. "
+        "사용하지 말 것: 전체 재무제표가 필요하면 get_data(IS/BS/CF)를 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "string",
+                    "description": "계정명 (snakeId, 예: sales, operating_profit, total_assets, net_income)",
+                },
+                "statement": {
+                    "type": "string",
+                    "description": "재무제표 유형 (IS, BS, CF)",
+                    "default": "IS",
+                },
+            },
+            "required": ["account"],
+        },
+        kind=CapabilityKind.DATA,
         requires_company=True,
     )

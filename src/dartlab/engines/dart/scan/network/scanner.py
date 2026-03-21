@@ -242,7 +242,7 @@ def scan_affiliate_docs(
                 )
                 .collect()
             )
-        except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError, pl.exceptions.ColumnNotFoundError):
+        except (pl.exceptions.PolarsError, OSError):
             continue
         if len(affiliate) == 0:
             continue

@@ -22,9 +22,9 @@ _CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, V
 
 
 _QUESTION_MODULES: dict[str, list[str]] = {
-    "건전성": ["audit", "internalControl", "contingentLiability"],
-    "수익성": ["segments", "costByNature", "productService"],
-    "성장성": ["rnd", "salesOrder"],
+    "건전성": ["audit", "internalControl", "contingentLiability", "relatedPartyTx"],
+    "수익성": ["segments", "costByNature", "productService", "salesOrder"],
+    "성장성": ["rnd", "salesOrder", "segments", "productService", "subsidiary"],
     "배당": ["dividend", "shareCapital", "capitalChange"],
     "지배구조": [
         "majorHolder",
@@ -34,11 +34,13 @@ _QUESTION_MODULES: dict[str, list[str]] = {
         "auditSystem",
         "shareholderMeeting",
     ],
-    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx"],
+    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx",
+              "riskFactor", "rawMaterial"],
     "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising"],
     "종합": ["dividend", "employee", "majorHolder", "audit", "rnd", "segments"],
     "공시": [],
-    "사업": ["productService", "segments", "companyHistory"],
+    "사업": ["productService", "segments", "companyHistory", "salesOrder",
+            "rawMaterial", "businessOverview"],
 }
 
 _ALWAYS_INCLUDE_MODULES = {"employee"}
@@ -942,6 +944,11 @@ def _build_compact_context_modules_inner(
         modules_dict["_topics"] = _topics_section
         included.append("_topics")
 
+    _change_section = _build_change_summary(company)
+    if _change_section:
+        modules_dict["_changes"] = _change_section
+        included.append("_changes")
+
     _insights_section = _build_insights_section(company)
     if _insights_section:
         modules_dict["_insights"] = _insights_section
@@ -1797,6 +1804,43 @@ def _build_key_facts_recap(company: Any, included: list[str]) -> str | None:
     return "\n".join(lines)
 
 
+def _build_change_summary(company: Any, max_topics: int = 5) -> str | None:
+    """기간간 변화가 큰 topic top-N을 자동 요약하여 AI 컨텍스트에 제공."""
+    try:
+        diff_df = company.diff()
+    except _CONTEXT_ERRORS:
+        return None
+
+    if diff_df is None or (isinstance(diff_df, pl.DataFrame) and diff_df.is_empty()):
+        return None
+
+    if not isinstance(diff_df, pl.DataFrame):
+        return None
+
+    # changeRate > 0 인 topic만 필터, 상위 N개
+    if "changeRate" not in diff_df.columns or "topic" not in diff_df.columns:
+        return None
+
+    changed = diff_df.filter(pl.col("changeRate") > 0).sort("changeRate", descending=True)
+    if changed.is_empty():
+        return None
+
+    top = changed.head(max_topics)
+    lines = [
+        "\n## 주요 변화 (최근 공시 vs 직전)",
+        "| topic | 변화율 | 기간수 |",
+        "| --- | --- | --- |",
+    ]
+    for row in top.iter_rows(named=True):
+        rate_pct = round(row["changeRate"] * 100, 1)
+        periods = row.get("periods", "")
+        lines.append(f"| `{row['topic']}` | {rate_pct}% | {periods} |")
+
+    lines.append("")
+    lines.append("깊이 분석이 필요하면 `show_topic(topic)`으로 원문을, `diff_topic(topic)`으로 상세 변화를 확인하세요.")
+    return "\n".join(lines)
+
+
 def _build_topics_section(company: Any, compact: bool = False) -> str | None:
     """Company의 topics 목록을 LLM이 사용할 수 있는 마크다운으로 변환.
 
@@ -2005,11 +2049,34 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
     except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
         pass
 
+    # 조회 가능한 topics 요약
+    topics_raw = getattr(company, "topics", None)
+    if topics_raw is not None:
+        if isinstance(topics_raw, pl.DataFrame) and "topic" in topics_raw.columns:
+            topic_list = topics_raw["topic"].to_list()
+        elif isinstance(topics_raw, list):
+            topic_list = topics_raw
+        else:
+            topic_list = list(topics_raw) if topics_raw is not None else []
+        if topic_list:
+            parts.append(f"\n## 조회 가능한 공시 데이터 ({len(topic_list)}개 topic)")
+            parts.append(f"주요: {', '.join(topic_list[:15])}")
+            if len(topic_list) > 15:
+                parts.append(f"외 {len(topic_list) - 15}개. 전체는 `list_topics()`로 확인.")
+
     parts.extend(
         [
             "",
-            "---",
-            "상세 데이터는 `get_data`, `show_topic`, `compute_ratios` 등 도구로 조회하세요.",
+            "## DartLab 분석 가이드",
+            "이 기업의 모든 공시 데이터는 **sections** (topic × 기간 수평화)으로 구조화되어 있습니다.",
+            "- `list_topics()` → 전체 topic 목록 (평균 120+개)",
+            "- `show_topic(topic)` → 블록 목차 → `show_topic(topic, N)` → 실제 데이터",
+            "- `diff_topic(topic)` → 기간간 변화 | `trace_topic(topic)` → 출처 추적",
+            "- `get_data(BS/IS/CF)` → 재무제표 | `compute_ratios()` → 재무비율",
+            "- `get_insight()` → 7영역 종합 등급 | `get_report_data(apiType)` → 정기보고서",
+            "",
+            "**분석 절차**: 질문 이해 → 관련 topic 탐색 → 원문 데이터 조회 → 교차 검증 → 종합 답변",
+            "**핵심**: '데이터 없음'으로 답하기 전에 반드시 도구로 확인. sections에 거의 모든 공시 데이터가 있습니다.",
         ]
     )
 

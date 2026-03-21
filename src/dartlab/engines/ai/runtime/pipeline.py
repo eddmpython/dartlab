@@ -19,7 +19,10 @@ import polars as pl
 from dartlab.engines.ai.conversation.prompts import _classify_question
 
 _log = logging.getLogger(__name__)
-_PIPELINE_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
+_PIPELINE_ERRORS = (
+    AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError,
+    pl.exceptions.PolarsError,
+)
 
 
 def classify_question(question: str) -> str:
@@ -50,7 +53,10 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
         except _PIPELINE_ERRORS:
             continue
 
-    l2 = _run_l2_engines(company, q_type)
+    try:
+        l2 = _run_l2_engines(company, q_type)
+    except _PIPELINE_ERRORS:
+        l2 = None
     if l2:
         sections.append(l2)
 

@@ -21,15 +21,16 @@ def register_company_tools(company: Any, register_tool) -> None:
             result = company.show(topic) if block_idx is None else company.show(topic, block_idx)
         except (AttributeError, KeyError, TypeError, ValueError) as e:
             return f"show('{topic}') 실패: {e}"
-        return format_tool_value(result, max_rows=30, max_chars=6000)
+        return format_tool_value(result, max_rows=50, max_chars=8000)
 
     register_tool(
         "show_topic",
         show_topic,
         "공시 topic의 데이터를 조회합니다. 공시 원문(텍스트/테이블)을 읽을 때 가장 먼저 사용하세요. "
-        "block 없이 호출 → 블록 목차(block번호, type, source, preview). "
+        "block 없이 호출 → 블록 목차(block번호, type, source, period, preview). "
         "block=N → 해당 블록의 실제 데이터(원문 텍스트 또는 수치 테이블). "
-        "사용 시점: 사업 내용, 리스크, 배당 정책 등 공시 원문이 필요할 때. "
+        "**여러 기간의 블록이 존재하므로, 기간간 비교가 필요하면 각 기간의 block을 순서대로 조회하세요.** "
+        "사용 시점: 사업 내용, 리스크, 배당 정책, 부문별 매출, 원재료 등 공시 원문이 필요할 때. "
         "사용하지 말 것: 단순 재무 수치만 필요하면 get_data(BS/IS/CF)가 더 빠릅니다. "
         "topic을 모르면 먼저 list_topics를 호출하세요.",
         {
@@ -337,4 +338,41 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["codes"],
         },
+    )
+
+    # ── get_notes ──
+
+    def get_notes(keyword: str = "") -> str:
+        """K-IFRS 주석(재무제표 각주) 조회."""
+        notes = getattr(company, "notes", None)
+        if notes is None:
+            return "notes 인터페이스가 없습니다. show_topic()으로 주석 관련 topic을 조회하세요."
+        try:
+            if keyword:
+                result = notes.search(keyword) if hasattr(notes, "search") else notes(keyword)
+            else:
+                result = notes.topics if hasattr(notes, "topics") else str(notes)
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"notes 조회 실패: {e}"
+        return format_tool_value(result, max_rows=20, max_chars=4000)
+
+    register_tool(
+        "get_notes",
+        get_notes,
+        "K-IFRS 주석(재무제표 각주)을 조회합니다. "
+        "키워드를 지정하면 관련 주석을 검색, 비워두면 전체 주석 topic 목록을 반환합니다. "
+        "사용 시점: 회계정책 확인, 우발채무 세부사항, 관계회사 거래, 금융상품 공정가치, 리스 부채 세부. "
+        "사용하지 말 것: 재무제표 본문 수치는 get_data(BS/IS/CF)가 적절합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "검색할 키워드 (예: '우발채무', '리스', '관계회사', '공정가치'). 비워두면 전체 목록",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.DATA,
+        requires_company=True,
     )

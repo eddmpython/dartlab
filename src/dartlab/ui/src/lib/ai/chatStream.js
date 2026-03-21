@@ -144,13 +144,21 @@ export function createAskStreamCallbacks({
 			store.updateLastMessage({ text: `${last?.text || ""}${text}` });
 			bumpScroll?.();
 		},
-		onDone() {
+		onDone(data) {
 			if (isStale()) return;
 			const last = getLastMessage(store);
 			const duration = last?.startedAt
 				? ((Date.now() - last.startedAt) / 1000).toFixed(1)
 				: null;
-			store.updateLastMessage({ loading: false, duration });
+			const updates = { loading: false, duration };
+			if (!last?.text?.trim()) {
+				updates.text = "분석 중 응답을 생성하지 못했습니다. 다시 시도해 주세요.";
+				updates.error = true;
+			}
+			if (data?.pluginHints?.length) {
+				updates.pluginHints = data.pluginHints;
+			}
+			store.updateLastMessage(updates);
 			store.flush();
 			onStreamSettled?.();
 			bumpScroll?.();

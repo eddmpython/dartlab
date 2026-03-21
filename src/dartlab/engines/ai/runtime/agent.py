@@ -40,6 +40,8 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "get_company_info",
         "get_sector_info",
         "detect_anomalies",
+        "list_topics",
+        "get_report_data",
     ],
     "수익성": [
         "get_data",
@@ -49,6 +51,8 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "yoy_analysis",
         "compute_growth",
         "get_sector_info",
+        "list_topics",
+        "list_modules",
     ],
     "성장성": [
         "get_data",
@@ -58,6 +62,8 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "get_insight",
         "show_topic",
         "get_sector_info",
+        "list_topics",
+        "diff_topic",
     ],
     "배당": [
         "get_data",
@@ -66,6 +72,8 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "compute_ratios",
         "get_insight",
         "yoy_analysis",
+        "list_topics",
+        "diff_topic",
     ],
     "리스크": [
         "show_topic",
@@ -84,6 +92,15 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "list_topics",
         "trace_topic",
     ],
+    "투자": [
+        "show_topic",
+        "get_data",
+        "get_report_data",
+        "list_topics",
+        "diff_topic",
+        "compute_ratios",
+        "get_insight",
+    ],
     "공시": [
         "show_topic",
         "list_topics",
@@ -100,10 +117,22 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "get_data",
         "get_insight",
     ],
+    "종합": [
+        "get_insight",
+        "compute_ratios",
+        "get_data",
+        "list_topics",
+        "show_topic",
+        "diff_topic",
+        "get_sector_info",
+        "get_rank",
+        "detect_anomalies",
+        "yoy_analysis",
+    ],
 }
 
 # 모든 유형에 공통으로 추가되는 메타 도구
-_COMMON_TOOLS = ["get_system_spec", "search_company", "get_company_info"]
+_COMMON_TOOLS = ["get_system_spec", "search_company", "get_company_info", "list_topics"]
 
 
 def _select_tools(
@@ -382,6 +411,14 @@ def build_agent_system_addition(runtime: ToolRuntime | None = None) -> str:
             "7. 필요 시 `get_insight`, `get_sector_info`, `get_rank` 등으로 심층 분석",
             "8. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
             "9. 모든 수치에 출처(테이블명, 연도)를 반드시 인용",
+            "",
+            "### 질문 유형별 추천 도구 플로우:",
+            "- **사업 구조**: list_topics → show_topic('businessOverview') → show_topic('segments') → show_topic('productService')",
+            "- **재무 분석**: get_data('IS') → compute_ratios() → get_insight() → show_topic('costByNature')",
+            "- **리스크**: show_topic('riskFactor') → show_topic('contingentLiability') → diff_topic('riskFactor')",
+            "- **배당**: get_report_data('dividend') → show_topic('dividend') → get_data('CF')",
+            "- **변화 감지**: diff_topic() (전체) → 변화율 높은 topic에 show_topic()",
+            "- **종합 평가**: get_insight() → compute_ratios() → list_topics() → 핵심 topic 2-3개 show_topic()",
             "",
             "### 답변 방식:",
             '- 사용자가 "뭘 할 수 있어?", "EDGAR에서 더 받을 수 있어?", "OpenAPI로 뭐가 돼?", "GPT 연결하면 코딩도 돼?"처럼 범위를 물으면',
