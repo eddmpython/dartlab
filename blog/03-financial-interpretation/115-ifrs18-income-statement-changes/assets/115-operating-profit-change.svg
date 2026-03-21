@@ -12,8 +12,9 @@
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
     </filter>
   </defs>
-  <rect width="1200" height="720" fill="#f8fafc" rx="12"/>
-  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="24" font-weight="700" fill="#1e293b">영업이익 정의 변화 → 투자 지표 재계산 필요</text>
+  <rect width="1200" height="720" fill="#0f1219" rx="12"/>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
+  <text x="600" y="48" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="24" font-weight="700" fill="#e2e8f0">영업이익 정의 변화 → 투자 지표 재계산 필요</text>
   <text x="600" y="76" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" fill="#6b7280">IFRS 18은 영업이익의 경계를 재정의한다 — 기존 비교 기준이 깨질 수 있다</text>
   <!-- 출발: 영업이익 정의 변화 -->
   <rect x="420" y="100" width="360" height="60" rx="10" fill="#2563eb" filter="url(#sh2)"/>
@@ -23,41 +24,41 @@
   <line x1="600" y1="160" x2="600" y2="220" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow2)"/>
   <line x1="700" y1="160" x2="1000" y2="220" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow2)"/>
   <!-- 왼쪽: 관계기업 지분법 -->
-  <rect x="50" y="220" width="300" height="100" rx="10" fill="#fff" stroke="#059669" stroke-width="2" filter="url(#sh2)"/>
+  <rect x="50" y="220" width="300" height="100" rx="10" fill="#1a2233" stroke="#059669" stroke-width="2" filter="url(#sh2)"/>
   <text x="200" y="252" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#059669">관계기업 지분법손익</text>
-  <text x="200" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">영업외 → 투자 범주로 이동</text>
+  <text x="200" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">영업외 → 투자 범주로 이동</text>
   <text x="200" y="300" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">영업이익에서 제외 확정</text>
   <!-- 가운데: 환율/파생 -->
-  <rect x="420" y="220" width="360" height="100" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="2" filter="url(#sh2)"/>
+  <rect x="420" y="220" width="360" height="100" rx="10" fill="#1a2233" stroke="#f59e0b" stroke-width="2" filter="url(#sh2)"/>
   <text x="600" y="252" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#f59e0b">환율손익 / 파생상품 손익</text>
-  <text x="600" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">영업/투자/재무 중 실질에 따라 배분</text>
+  <text x="600" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">영업/투자/재무 중 실질에 따라 배분</text>
   <text x="600" y="300" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">회사마다 분류가 달라질 수 있음</text>
   <!-- 오른쪽: 이자수익/비용 -->
-  <rect x="850" y="220" width="300" height="100" rx="10" fill="#fff" stroke="#dc2626" stroke-width="2" filter="url(#sh2)"/>
+  <rect x="850" y="220" width="300" height="100" rx="10" fill="#1a2233" stroke="#dc2626" stroke-width="2" filter="url(#sh2)"/>
   <text x="1000" y="252" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="600" fill="#dc2626">이자수익 / 이자비용</text>
-  <text x="1000" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">투자/재무 범주로 명확 분리</text>
+  <text x="1000" y="276" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">투자/재무 범주로 명확 분리</text>
   <text x="1000" y="300" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" fill="#6b7280">금융업은 영업에 포함 가능</text>
   <!-- 영향 흐름: 3개 지표 -->
   <line x1="200" y1="320" x2="200" y2="400" stroke="#dc2626" stroke-width="2" marker-end="url(#arrowRed)"/>
   <line x1="600" y1="320" x2="600" y2="400" stroke="#dc2626" stroke-width="2" marker-end="url(#arrowRed)"/>
   <line x1="1000" y1="320" x2="1000" y2="400" stroke="#dc2626" stroke-width="2" marker-end="url(#arrowRed)"/>
   <!-- 영업이익률 -->
-  <rect x="50" y="400" width="300" height="120" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
+  <rect x="50" y="400" width="300" height="120" rx="10" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
   <text x="200" y="432" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#dc2626">영업이익률 변동</text>
-  <text x="200" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">지분법이익이 빠지면</text>
-  <text x="200" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">지주사/투자 비중 높은 기업</text>
+  <text x="200" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">지분법이익이 빠지면</text>
+  <text x="200" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">지주사/투자 비중 높은 기업</text>
   <text x="200" y="500" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#dc2626">영업이익률 하락</text>
   <!-- PER -->
-  <rect x="420" y="400" width="360" height="120" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
+  <rect x="420" y="400" width="360" height="120" rx="10" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
   <text x="600" y="432" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#dc2626">PER 비교 불연속</text>
-  <text x="600" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">영업이익 기반 PER이</text>
-  <text x="600" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">전환 전후 불연속</text>
+  <text x="600" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">영업이익 기반 PER이</text>
+  <text x="600" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">전환 전후 불연속</text>
   <text x="600" y="500" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#dc2626">시계열 단절 발생</text>
   <!-- 섹터 비교 -->
-  <rect x="850" y="400" width="300" height="120" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
+  <rect x="850" y="400" width="300" height="120" rx="10" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="1.5" filter="url(#sh2)"/>
   <text x="1000" y="432" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="16" font-weight="700" fill="#dc2626">섹터 비교 기준 붕괴</text>
-  <text x="1000" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">같은 업종 내에서도</text>
-  <text x="1000" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#1e293b">MPM 정의가 회사마다 달라</text>
+  <text x="1000" y="460" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">같은 업종 내에서도</text>
+  <text x="1000" y="480" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" fill="#e2e8f0">MPM 정의가 회사마다 달라</text>
   <text x="1000" y="500" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="14" font-weight="600" fill="#dc2626">동일 기준 비교 불가</text>
   <!-- 하단 대응 -->
   <line x1="200" y1="520" x2="600" y2="590" stroke="#2563eb" stroke-width="1.5"/>

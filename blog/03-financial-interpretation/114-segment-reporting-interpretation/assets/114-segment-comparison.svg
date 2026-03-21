@@ -1,11 +1,12 @@
 <svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
-  <rect width="720" height="440" fill="#f8fafc" rx="12"/>
+  <rect width="720" height="440" fill="#0f1219" rx="12"/>
+  <rect x="0.5" y="0.5" width="719" height="439" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
-  <text x="360" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">삼성전자 부문별 매출·영업이익 비교 (예시)</text>
+  <text x="360" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#e2e8f0">삼성전자 부문별 매출·영업이익 비교 (예시)</text>
   <text x="360" y="52" text-anchor="middle" font-size="10" fill="#6b7280">* 설명용 가상 수치. 실제 공시와 다를 수 있음</text>
 
   <!-- Headers -->
-  <text x="60" y="86" font-size="12" font-weight="600" fill="#1e293b">부문</text>
+  <text x="60" y="86" font-size="12" font-weight="600" fill="#e2e8f0">부문</text>
   <text x="250" y="86" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">매출(조 원)</text>
   <text x="430" y="86" text-anchor="middle" font-size="12" font-weight="600" fill="#059669">영업이익(조 원)</text>
   <text x="600" y="86" text-anchor="middle" font-size="12" font-weight="600" fill="#f59e0b">영업이익률</text>
@@ -13,44 +14,44 @@
   <line x1="40" y1="96" x2="680" y2="96" stroke="#6b7280" stroke-width="0.5" opacity="0.3"/>
 
   <!-- DS (반도체) -->
-  <text x="60" y="128" font-size="12" font-weight="500" fill="#1e293b">DS (반도체)</text>
+  <text x="60" y="128" font-size="12" font-weight="500" fill="#e2e8f0">DS (반도체)</text>
   <rect x="160" y="114" width="180" height="20" rx="4" fill="#2563eb" opacity="0.15"/>
   <rect x="160" y="114" width="130" height="20" rx="4" fill="#2563eb" opacity="0.7"/>
-  <text x="250" y="128" text-anchor="middle" font-size="11" fill="#f8fafc" font-weight="600">108</text>
+  <text x="250" y="128" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="600">108</text>
   <rect x="350" y="114" width="160" height="20" rx="4" fill="#059669" opacity="0.15"/>
   <rect x="350" y="114" width="110" height="20" rx="4" fill="#059669" opacity="0.7"/>
-  <text x="430" y="128" text-anchor="middle" font-size="11" fill="#f8fafc" font-weight="600">35.2</text>
+  <text x="430" y="128" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="600">35.2</text>
   <text x="600" y="128" text-anchor="middle" font-size="12" font-weight="600" fill="#059669">32.6%</text>
 
   <!-- DX (모바일/가전) -->
-  <text x="60" y="168" font-size="12" font-weight="500" fill="#1e293b">DX (MX+VD)</text>
+  <text x="60" y="168" font-size="12" font-weight="500" fill="#e2e8f0">DX (MX+VD)</text>
   <rect x="160" y="154" width="180" height="20" rx="4" fill="#2563eb" opacity="0.15"/>
   <rect x="160" y="154" width="155" height="20" rx="4" fill="#2563eb" opacity="0.7"/>
-  <text x="250" y="168" text-anchor="middle" font-size="11" fill="#f8fafc" font-weight="600">128</text>
+  <text x="250" y="168" text-anchor="middle" font-size="11" fill="#0f1219" font-weight="600">128</text>
   <rect x="350" y="154" width="160" height="20" rx="4" fill="#059669" opacity="0.15"/>
   <rect x="350" y="154" width="55" height="20" rx="4" fill="#059669" opacity="0.7"/>
-  <text x="430" y="168" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">14.8</text>
-  <text x="600" y="168" text-anchor="middle" font-size="12" font-weight="500" fill="#1e293b">11.6%</text>
+  <text x="430" y="168" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">14.8</text>
+  <text x="600" y="168" text-anchor="middle" font-size="12" font-weight="500" fill="#e2e8f0">11.6%</text>
 
   <!-- SDC (디스플레이) -->
-  <text x="60" y="208" font-size="12" font-weight="500" fill="#1e293b">SDC (디스플레이)</text>
+  <text x="60" y="208" font-size="12" font-weight="500" fill="#e2e8f0">SDC (디스플레이)</text>
   <rect x="160" y="194" width="180" height="20" rx="4" fill="#2563eb" opacity="0.15"/>
   <rect x="160" y="194" width="60" height="20" rx="4" fill="#2563eb" opacity="0.7"/>
-  <text x="250" y="208" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">38</text>
+  <text x="250" y="208" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">38</text>
   <rect x="350" y="194" width="160" height="20" rx="4" fill="#059669" opacity="0.15"/>
   <rect x="350" y="194" width="30" height="20" rx="4" fill="#059669" opacity="0.7"/>
-  <text x="430" y="208" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">4.1</text>
-  <text x="600" y="208" text-anchor="middle" font-size="12" font-weight="500" fill="#1e293b">10.8%</text>
+  <text x="430" y="208" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">4.1</text>
+  <text x="600" y="208" text-anchor="middle" font-size="12" font-weight="500" fill="#e2e8f0">10.8%</text>
 
   <!-- Harman -->
-  <text x="60" y="248" font-size="12" font-weight="500" fill="#1e293b">Harman</text>
+  <text x="60" y="248" font-size="12" font-weight="500" fill="#e2e8f0">Harman</text>
   <rect x="160" y="234" width="180" height="20" rx="4" fill="#2563eb" opacity="0.15"/>
   <rect x="160" y="234" width="25" height="20" rx="4" fill="#2563eb" opacity="0.7"/>
-  <text x="250" y="248" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">15</text>
+  <text x="250" y="248" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">15</text>
   <rect x="350" y="234" width="160" height="20" rx="4" fill="#059669" opacity="0.15"/>
   <rect x="350" y="234" width="14" height="20" rx="4" fill="#059669" opacity="0.7"/>
-  <text x="430" y="248" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">1.3</text>
-  <text x="600" y="248" text-anchor="middle" font-size="12" font-weight="500" fill="#1e293b">8.7%</text>
+  <text x="430" y="248" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">1.3</text>
+  <text x="600" y="248" text-anchor="middle" font-size="12" font-weight="500" fill="#e2e8f0">8.7%</text>
 
   <line x1="40" y1="268" x2="680" y2="268" stroke="#6b7280" stroke-width="0.5" opacity="0.3"/>
 
@@ -60,17 +61,17 @@
   <text x="430" y="296" text-anchor="middle" font-size="11" fill="#dc2626">-2.1</text>
   <text x="600" y="296" text-anchor="middle" font-size="11" fill="#6b7280">-</text>
 
-  <line x1="40" y1="310" x2="680" y2="310" stroke="#1e293b" stroke-width="1"/>
+  <line x1="40" y1="310" x2="680" y2="310" stroke="#e2e8f0" stroke-width="1"/>
 
   <!-- 연결 합계 -->
-  <text x="60" y="336" font-size="13" font-weight="700" fill="#1e293b">연결 합계</text>
+  <text x="60" y="336" font-size="13" font-weight="700" fill="#e2e8f0">연결 합계</text>
   <text x="250" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">269</text>
   <text x="430" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">53.3</text>
-  <text x="600" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">19.8%</text>
+  <text x="600" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#e2e8f0">19.8%</text>
 
   <!-- Insight box -->
   <rect x="60" y="360" width="600" height="60" rx="8" fill="#dc2626" opacity="0.06" stroke="#dc2626" stroke-width="1"/>
   <text x="80" y="383" font-size="11" font-weight="600" fill="#dc2626">읽기 포인트</text>
-  <text x="80" y="400" font-size="10.5" fill="#1e293b">DS 부문이 매출 40%에 영업이익 66%를 차지한다. 연결 전체 마진을 DS가 끌어올리고 있으며,</text>
-  <text x="80" y="414" font-size="10.5" fill="#1e293b">DS 부진 시 연결 이익률이 급락할 수 있다. 내부거래 20조 원은 부문간 반도체 납품 등이다.</text>
+  <text x="80" y="400" font-size="10.5" fill="#e2e8f0">DS 부문이 매출 40%에 영업이익 66%를 차지한다. 연결 전체 마진을 DS가 끌어올리고 있으며,</text>
+  <text x="80" y="414" font-size="10.5" fill="#e2e8f0">DS 부진 시 연결 이익률이 급락할 수 있다. 내부거래 20조 원은 부문간 반도체 납품 등이다.</text>
 </svg>

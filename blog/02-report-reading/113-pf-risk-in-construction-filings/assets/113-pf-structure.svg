@@ -1,8 +1,9 @@
 <svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" font-family="'Pretendard', 'Apple SD Gothic Neo', sans-serif">
-  <rect width="800" height="520" fill="#f8fafc"/>
+  <rect width="800" height="520" fill="#0f1219"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
   <!-- Title -->
-  <text x="400" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">PF(프로젝트파이낸싱) 구조도</text>
+  <text x="400" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#e2e8f0">PF(프로젝트파이낸싱) 구조도</text>
   <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6b7280">건설사 사업보고서에서 읽어야 할 관계 구조</text>
 
   <!-- 시행사 (center top) -->
@@ -32,8 +33,8 @@
 
   <!-- Arrows and labels -->
   <!-- 시행사 → 건설사 -->
-  <line x1="400" y1="140" x2="400" y2="210" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="415" y="180" font-size="11" fill="#1e293b">도급계약</text>
+  <line x1="400" y1="140" x2="400" y2="210" stroke="#e2e8f0" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="415" y="180" font-size="11" fill="#e2e8f0">도급계약</text>
 
   <!-- 금융기관 → 시행사 -->
   <line x1="175" y1="210" x2="310" y2="140" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
@@ -59,7 +60,7 @@
   <!-- Bottom note box -->
   <rect x="60" y="440" width="680" height="60" rx="6" fill="#dc2626" opacity="0.06" stroke="#dc2626" stroke-width="1"/>
   <text x="400" y="462" text-anchor="middle" font-size="13" font-weight="600" fill="#dc2626">건설사의 PF 리스크 핵심</text>
-  <text x="400" y="484" text-anchor="middle" font-size="12" fill="#1e293b">분양 실패 시 → 시행사 디폴트 → 연대보증·자금보충약정 현실화 → 건설사 유동성 위기</text>
+  <text x="400" y="484" text-anchor="middle" font-size="12" fill="#e2e8f0">분양 실패 시 → 시행사 디폴트 → 연대보증·자금보충약정 현실화 → 건설사 유동성 위기</text>
 
   <!-- Arrow markers -->
   <defs>

@@ -24,12 +24,13 @@ from __future__ import annotations
 
 from typing import Any
 
-# 회사 세션 캐시
+# 회사 세션 캐시 — LRU 5개, 무한 누적 방지
+_MCP_CACHE_MAX = 5
 _company_cache: dict[str, Any] = {}
 
 
 def _get_or_create_company(stock_code: str | None) -> Any | None:
-    """종목코드로 Company 인스턴스 가져오기 (캐싱)."""
+    """종목코드로 Company 인스턴스 가져오기 (LRU 캐싱, 최대 5개)."""
     if not stock_code:
         return None
     if stock_code in _company_cache:
@@ -38,6 +39,10 @@ def _get_or_create_company(stock_code: str | None) -> Any | None:
     from dartlab import Company
 
     c = Company(stock_code)
+    # LRU 퇴출: 가장 오래된 항목 제거
+    if len(_company_cache) >= _MCP_CACHE_MAX:
+        oldest = next(iter(_company_cache))
+        del _company_cache[oldest]
     _company_cache[stock_code] = c
     return c
 

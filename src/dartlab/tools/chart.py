@@ -4,7 +4,7 @@ Polars DataFrame → Plotly Figure 변환. .show(), .to_html(), .write_image() �
 LLM 의존성 없음. plotly는 optional dependency.
 
 두 가지 경로:
-1. **기존**: ``chart.revenue_trend(c).show()`` — Plotly Figure 직행
+1. **기존**: ``dartlab.chart.revenue(c).show()`` — Plotly Figure 직행
 2. **ChartSpec**: ``chart.spec_revenue_trend(c)`` → JSON dict → ``chart.chart_from_spec(spec).show()``
 
 ChartSpec JSON 프로토콜::
@@ -25,7 +25,7 @@ ChartSpec JSON 프로토콜::
     c = Company("005930")
 
     # Plotly 직행 (기존)
-    chart.revenue_trend(c).show()
+    dartlab.chart.revenue(c).show()
 
     # ChartSpec 경로
     spec = chart.spec_revenue_trend(c)   # → dict
@@ -274,7 +274,7 @@ def _extract_account_series(df: pl.DataFrame, keyword: str) -> dict[str, float |
     return {yr: row.get(yr) for yr in year_cols if row.get(yr) is not None}
 
 
-def revenue_trend(company: Any, *, n_years: int = 5) -> Any:
+def revenue(company: Any, *, n_years: int = 5) -> Any:
     """매출·영업이익·순이익 추세 차트.
 
     바: 매출액 | 라인: 영업이익률, 순이익률
@@ -357,7 +357,7 @@ def revenue_trend(company: Any, *, n_years: int = 5) -> Any:
     return fig
 
 
-def cashflow_pattern(company: Any, *, n_years: int = 5) -> Any:
+def cashflow(company: Any, *, n_years: int = 5) -> Any:
     """영업CF/투자CF/재무CF 패턴 차트."""
     go = _ensure_plotly()
 
@@ -387,7 +387,7 @@ def cashflow_pattern(company: Any, *, n_years: int = 5) -> Any:
     return fig
 
 
-def dividend_analysis(company: Any) -> Any:
+def dividend(company: Any) -> Any:
     """DPS + 배당수익률 + 배당성향 차트."""
     go = _ensure_plotly()
     from plotly.subplots import make_subplots
@@ -445,7 +445,7 @@ def dividend_analysis(company: Any) -> Any:
     return fig
 
 
-def balance_sheet_composition(company: Any, *, n_years: int = 5) -> Any:
+def balance_sheet(company: Any, *, n_years: int = 5) -> Any:
     """자산/부채/자본 구성 누적 바 차트."""
     go = _ensure_plotly()
 
@@ -474,7 +474,7 @@ def balance_sheet_composition(company: Any, *, n_years: int = 5) -> Any:
     return fig
 
 
-def profitability_ratios(company: Any, *, n_years: int = 5) -> Any:
+def profitability(company: Any, *, n_years: int = 5) -> Any:
     """영업이익률·순이익률·ROE 추세 라인 차트."""
     go = _ensure_plotly()
 
@@ -1194,3 +1194,14 @@ def auto_chart(company: Any) -> list[dict]:
         except (AttributeError, KeyError, OSError, TypeError, ValueError):
             continue
     return specs
+
+
+# ══════════════════════════════════════
+# 하위호환 alias (v0.7.2 이전 이름)
+# ══════════════════════════════════════
+
+revenue_trend = revenue
+cashflow_pattern = cashflow
+dividend_analysis = dividend
+balance_sheet_composition = balance_sheet
+profitability_ratios = profitability

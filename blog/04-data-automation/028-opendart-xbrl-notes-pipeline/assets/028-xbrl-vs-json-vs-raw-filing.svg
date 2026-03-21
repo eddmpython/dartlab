@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420" fill="none">
   <rect width="800" height="420" rx="28" fill="#0b1120"/>
-  <text x="400" y="44" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">JSON vs Raw Filing vs XBRL vs Notes</text>
+  <text x="400" y="44" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">JSON vs Raw Filing vs XBRL vs Notes</text>
   <rect x="48" y="104" width="160" height="248" rx="18" fill="#134e4a" stroke="#2dd4bf"/>
   <text x="128" y="136" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">JSON</text>
   <text x="128" y="176" text-anchor="middle" fill="#99f6e4" font-family="Inter, system-ui, sans-serif" font-size="12">fast</text>
@@ -17,7 +17,7 @@
   <text x="496" y="204" text-anchor="middle" fill="#fed7aa" font-family="Inter, system-ui, sans-serif" font-size="12">raw facts</text>
   <text x="496" y="232" text-anchor="middle" fill="#fed7aa" font-family="Inter, system-ui, sans-serif" font-size="12">mapping check</text>
   <rect x="600" y="104" width="160" height="248" rx="18" fill="#581c87" stroke="#c084fc"/>
-  <text x="680" y="136" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Notes</text>
+  <text x="680" y="136" text-anchor="middle" fill="rgba(124,58,237,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Notes</text>
   <text x="680" y="176" text-anchor="middle" fill="#e9d5ff" font-family="Inter, system-ui, sans-serif" font-size="12">inventory</text>
   <text x="680" y="204" text-anchor="middle" fill="#e9d5ff" font-family="Inter, system-ui, sans-serif" font-size="12">debt</text>
   <text x="680" y="232" text-anchor="middle" fill="#e9d5ff" font-family="Inter, system-ui, sans-serif" font-size="12">lease / provisions</text>

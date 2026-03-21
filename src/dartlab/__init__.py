@@ -294,7 +294,7 @@ def groupHealth():
 
 
 class _Module(sys.modules[__name__].__class__):
-    """dartlab.verbose / dartlab.dataDir 프록시."""
+    """dartlab.verbose / dartlab.dataDir / dartlab.chart|table|text 프록시."""
 
     @property
     def verbose(self):
@@ -311,6 +311,15 @@ class _Module(sys.modules[__name__].__class__):
     @dataDir.setter
     def dataDir(self, value):
         config.dataDir = str(value)
+
+    def __getattr__(self, name):
+        if name in ("chart", "table", "text"):
+            import importlib
+
+            mod = importlib.import_module(f"dartlab.tools.{name}")
+            setattr(self, name, mod)
+            return mod
+        raise AttributeError(f"module 'dartlab' has no attribute {name!r}")
 
 
 sys.modules[__name__].__class__ = _Module
@@ -341,4 +350,7 @@ __all__ = [
     "nameToCode",
     "searchName",
     "fuzzySearch",
+    "chart",
+    "table",
+    "text",
 ]

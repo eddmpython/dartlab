@@ -112,11 +112,13 @@ uv add dartlab
 [dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
 ```
 
-AI interface:
+AI interface (web UI + CLI):
 
 ```bash
 uv add "dartlab[ai]"
-uv run dartlab ai
+uv run dartlab              # web UI
+uv run dartlab setup        # provider setup guide
+uv run dartlab ask 005930 "재무 건전성 분석"   # CLI one-shot
 ```
 
 ## Try It Now
@@ -127,6 +129,7 @@ Interactive Marimo notebooks let you explore real company data immediately — n
 uv add dartlab marimo
 marimo edit startMarimo/dartCompany.py    # Korean company (DART)
 marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
+marimo edit startMarimo/aiAnalysis.py     # AI analysis examples
 ```
 
 Or open any tutorial in Colab — no install needed:
@@ -228,38 +231,38 @@ c.insights.anomalies            # → outliers and red flags
 Built-in Plotly charts and a JSON-based ChartSpec protocol that works with or without Plotly:
 
 ```python
-from dartlab.tools import chart, table, text
+import dartlab
+
+c = dartlab.Company("005930")
 
 # one-liner Plotly charts
-chart.revenue_trend(c).show()           # revenue + operating margin combo
-chart.cashflow_pattern(c).show()        # operating/investing/financing CF
-chart.dividend_analysis(c).show()       # DPS + yield + payout ratio
-chart.balance_sheet_composition(c).show()  # current/non-current assets
-chart.profitability_ratios(c).show()    # ROE, operating margin, net margin
+dartlab.chart.revenue(c).show()          # revenue + operating margin combo
+dartlab.chart.cashflow(c).show()         # operating/investing/financing CF
+dartlab.chart.dividend(c).show()         # DPS + yield + payout ratio
+dartlab.chart.balance_sheet(c).show()    # current/non-current assets
+dartlab.chart.profitability(c).show()    # ROE, operating margin, net margin
 
 # auto-detect all available charts
-specs = chart.auto_chart(c)             # → list of ChartSpec dicts
-chart.chart_from_spec(specs[0]).show()  # render any spec as Plotly
+specs = dartlab.chart.auto_chart(c)             # → list of ChartSpec dicts
+dartlab.chart.chart_from_spec(specs[0]).show()  # render any spec as Plotly
 
 # generic charts from any DataFrame
-chart.line(c.dividend, y=["dps"])
-chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
-chart.waterfall(["Start", "Revenue", "COGS", "SGA", "End"], [100, 50, -30, -10, 110])
+dartlab.chart.line(c.dividend, y=["dps"])
+dartlab.chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
 ```
 
 Data tools for table formatting and text analysis:
 
 ```python
 # table tools
-table.yoy_change(c.dividend, value_cols=["dps"])       # add YoY% columns
-table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
-table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
-table.growth_matrix(df, value_cols=["revenue"])         # 1Y/2Y/3Y/5Y CAGR
+dartlab.table.yoy_change(c.dividend, value_cols=["dps"])       # add YoY% columns
+dartlab.table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
+dartlab.table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
 
 # text tools
-text.extract_keywords(narrative)                  # frequency-based keywords
-text.sentiment_indicators(narrative)              # positive/negative/risk score
-text.extract_numbers(narrative)                   # numbers + units + context
+dartlab.text.extract_keywords(narrative)              # frequency-based keywords
+dartlab.text.sentiment_indicators(narrative)           # positive/negative/risk score
+dartlab.text.extract_numbers(narrative)                # numbers + units + context
 ```
 
 Install chart dependencies: `uv add "dartlab[charts]"`
@@ -335,6 +338,14 @@ EDGAR sections include the same text structure metadata (heading/body separation
 Use source-native wrappers when you want raw disclosure APIs directly.
 
 ### OpenDart (Korea)
+
+> **Note:** The `Company` interface does **not** require an API key — it works with pre-built datasets from GitHub Releases.
+> `OpenDart` uses the raw DART API and requires an API key from [https://opendart.fss.or.kr](https://opendart.fss.or.kr) (free registration).
+>
+> ```bash
+> export DART_API_KEY=your_key_here   # Linux/Mac
+> $env:DART_API_KEY = 'your_key_here' # PowerShell
+> ```
 
 ```python
 from dartlab import OpenDart
@@ -412,6 +423,55 @@ Once connected, your AI assistant can:
 ```bash
 dartlab mcp    # start MCP stdio server
 ```
+
+## AI Analysis
+
+DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. The system automatically selects relevant data (financials, ratios, disclosure text) based on your question.
+
+### Python API
+
+```python
+import dartlab
+
+# basic analysis — auto-detects provider
+answer = dartlab.ask("005930", "재무 건전성을 분석해줘")
+
+# provider + model override
+answer = dartlab.ask("삼성전자", "밸류에이션 분석", provider="openai", model="gpt-4o")
+
+# streaming
+for chunk in dartlab.ask("005930", "수익성 추세", stream=True):
+    print(chunk, end="")
+
+# data filtering
+answer = dartlab.ask("005930", "핵심 포인트", include=["BS", "IS"])
+
+# agent mode — LLM selects tools for deeper analysis
+answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+```
+
+### CLI
+
+```bash
+# provider setup (interactive guide)
+dartlab setup              # list all providers
+dartlab setup ollama       # local LLM (free)
+dartlab setup openai       # OpenAI API
+
+# check status
+dartlab status             # all providers (table view)
+dartlab status -p ollama   # single provider detail
+
+# ask questions (streaming by default)
+dartlab ask 005930 "재무 건전성 분석"
+dartlab ask 005930 "배당 정책 분석" -p openai -m gpt-4o
+dartlab ask AAPL "risk analysis" -p ollama
+
+# web UI
+dartlab                    # open browser UI
+```
+
+5 providers supported: `oauth-codex` (ChatGPT subscription), `codex` (Codex CLI), `ollama` (local, free), `openai` (API key), `custom` (OpenAI-compatible).
 
 ## Core Ideas
 

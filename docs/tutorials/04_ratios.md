@@ -416,18 +416,23 @@ if r.totalEquity:
 Single-period ratios can't reveal direction. Year-over-year trends show "improving or deteriorating."
 
 ```python
-from dartlab.engines.dart.finance.pivot import buildAnnual
-from dartlab.engines.common.finance.ratios import calcRatioSeries
+import dartlab
 
-annual = buildAnnual("005930")
-if annual:
-    aSeries, aYears = annual
-    rs = calcRatioSeries(aSeries, aYears)
+c = dartlab.Company("005930")
+rs = c.finance.ratioSeries  # (series_dict, years) tuple
 
-    print(f"Years: {rs.years}")
+if rs:
+    series, years = rs
+    ratio_data = series.get("RATIO", {})
+    roe_vals = ratio_data.get("roe", [])
+    margin_vals = ratio_data.get("operatingMargin", [])
+
+    print(f"Years: {years}")
     print()
-    for year, roe, margin in zip(rs.years, rs.roe, rs.operatingMargin):
-        print(f"  {year}: ROE {roe or '-':>6}%  OpMargin {margin or '-':>6}%")
+    for year, roe, margin in zip(years, roe_vals, margin_vals):
+        roe_str = f"{roe:.1f}" if roe is not None else "-"
+        margin_str = f"{margin:.1f}" if margin is not None else "-"
+        print(f"  {year}: ROE {roe_str:>6}%  OpMargin {margin_str:>6}%")
 ```
 
 All 29 ratios available in time-series mode:

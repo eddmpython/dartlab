@@ -11,7 +11,7 @@
   <rect width="1200" height="820" rx="28" fill="url(#bg004b)"/>
   <rect x="20" y="20" width="1160" height="780" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">무엇이 궁금한가에 따라 먼저 열 섹션이 달라진다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">무엇이 궁금한가에 따라 먼저 열 섹션이 달라진다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">사업보고서는 순서대로 읽는 문서가 아니라, 질문에 따라 다른 곳부터 여는 문서다.</text>
 
   <text x="72" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">읽는 목적</text>
@@ -22,7 +22,7 @@
   <text x="998" y="206" fill="#64748b" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">주주·특관</text>
 
   <rect x="70" y="236" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
-  <text x="96" y="286" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숫자 신뢰성 확인</text>
+  <text x="96" y="286" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숫자 신뢰성 확인</text>
   <rect x="330" y="252" width="130" height="52" rx="14" fill="#ea4647"/>
   <text x="395" y="286" text-anchor="middle" fill="#fff" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">최우선</text>
   <rect x="484" y="252" width="130" height="52" rx="14" fill="#334155"/>
@@ -32,7 +32,7 @@
   <rect x="976" y="252" width="130" height="52" rx="14" fill="#1e293b"/>
 
   <rect x="70" y="338" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
-  <text x="96" y="388" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숨은 리스크 확인</text>
+  <text x="96" y="388" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">숨은 리스크 확인</text>
   <rect x="330" y="354" width="130" height="52" rx="14" fill="#334155"/>
   <text x="395" y="388" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
   <rect x="484" y="354" width="130" height="52" rx="14" fill="#f97316"/>
@@ -42,7 +42,7 @@
   <rect x="976" y="354" width="130" height="52" rx="14" fill="#1e293b"/>
 
   <rect x="70" y="440" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
-  <text x="96" y="490" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">사업 구조와 성장 검증</text>
+  <text x="96" y="490" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">사업 구조와 성장 검증</text>
   <rect x="330" y="456" width="130" height="52" rx="14" fill="#1e293b"/>
   <rect x="484" y="456" width="130" height="52" rx="14" fill="#334155"/>
   <text x="549" y="490" text-anchor="middle" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">보조</text>
@@ -53,7 +53,7 @@
   <rect x="976" y="456" width="130" height="52" rx="14" fill="#1e293b"/>
 
   <rect x="70" y="542" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
-  <text x="96" y="592" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">경영진 설명 검증</text>
+  <text x="96" y="592" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">경영진 설명 검증</text>
   <rect x="330" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
   <rect x="484" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
   <rect x="654" y="558" width="130" height="52" rx="14" fill="#334155"/>
@@ -63,7 +63,7 @@
   <rect x="976" y="558" width="130" height="52" rx="14" fill="#1e293b"/>
 
   <rect x="70" y="644" width="1040" height="84" rx="18" fill="#111a28" stroke="#263244"/>
-  <text x="96" y="694" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">이해상충과 지배구조 확인</text>
+  <text x="96" y="694" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">이해상충과 지배구조 확인</text>
   <rect x="330" y="660" width="130" height="52" rx="14" fill="#1e293b"/>
   <rect x="484" y="660" width="130" height="52" rx="14" fill="#1e293b"/>
   <rect x="654" y="660" width="130" height="52" rx="14" fill="#1e293b"/>

@@ -11,31 +11,31 @@
   <rect width="1200" height="720" rx="28" fill="url(#bg026b)"/>
   <rect x="20" y="20" width="1160" height="680" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주총공고는 사람 -> 보상 -> 규칙 순서가 실용적이다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주총공고는 사람 -> 보상 -> 규칙 순서가 실용적이다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">친숙한 배당 안건부터 보는 것보다, 회사 운영 방향을 먼저 바꾸는 안건부터 읽는 편이 좋다.</text>
 
   <rect x="72" y="176" width="1056" height="88" rx="20" fill="#132131" stroke="#38bdf8" stroke-width="2"/>
   <text x="102" y="228" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700">PRIORITY 1</text>
-  <text x="312" y="228" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">이사 선임·재선임</text>
+  <text x="312" y="228" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">이사 선임·재선임</text>
   <text x="706" y="228" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">누가 의사결정을 맡는지 바꾸는 안건</text>
 
   <rect x="72" y="286" width="1056" height="88" rx="20" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="102" y="338" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700">PRIORITY 2</text>
-  <text x="312" y="338" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">보수한도·주식보상</text>
+  <text x="312" y="338" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">보수한도·주식보상</text>
   <text x="706" y="338" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">경영진 인센티브와 희석 방향을 읽는 안건</text>
 
   <rect x="72" y="396" width="1056" height="88" rx="20" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
   <text x="102" y="448" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700">PRIORITY 3</text>
-  <text x="312" y="448" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">정관변경</text>
+  <text x="312" y="448" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">정관변경</text>
   <text x="706" y="448" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">회사 규칙을 바꾸는 문구는 짧아도 의미가 크다</text>
 
   <rect x="72" y="506" width="516" height="126" rx="22" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
   <text x="100" y="552" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">PRIORITY 4</text>
-  <text x="100" y="590" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">배당·자본정책 안건</text>
+  <text x="100" y="590" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">배당·자본정책 안건</text>
   <text x="100" y="618" fill="#ddd6fe" font-family="Pretendard, Inter, sans-serif" font-size="17">숫자를 같이 볼 수 있어 초보자에게 친숙하지만, 위 안건들을 본 뒤에 읽는 편이 해석이 정확하다.</text>
 
   <rect x="612" y="506" width="516" height="126" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="640" y="552" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">PRIORITY 5</text>
-  <text x="640" y="590" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">기타 형식 안건</text>
+  <text x="640" y="590" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">기타 형식 안건</text>
   <text x="640" y="618" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="17">절차성 안건이나 반복 안건은 중요도가 낮을 수 있지만, 배경 문서와 충돌하는지 정도는 확인한다.</text>
 </svg>

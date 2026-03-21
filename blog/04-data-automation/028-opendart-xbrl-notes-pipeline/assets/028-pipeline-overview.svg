@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="360" viewBox="0 0 800 360" fill="none">
   <rect width="800" height="360" rx="28" fill="#0f172a"/>
-  <text x="400" y="44" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">OpenDART Financial Pipeline</text>
+  <text x="400" y="44" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">OpenDART Financial Pipeline</text>
   <text x="400" y="68" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">From company identity to notes depth</text>
   <g>
     <rect x="44" y="132" width="116" height="72" rx="18" fill="#1d4ed8"/>
-    <text x="102" y="174" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="14">corp_code</text>
+    <text x="102" y="174" text-anchor="middle" fill="rgba(37,99,235,0.15)" font-family="Inter, system-ui, sans-serif" font-size="14">corp_code</text>
     <rect x="186" y="132" width="116" height="72" rx="18" fill="#2563eb"/>
-    <text x="244" y="174" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="14">search</text>
+    <text x="244" y="174" text-anchor="middle" fill="rgba(37,99,235,0.15)" font-family="Inter, system-ui, sans-serif" font-size="14">search</text>
     <rect x="328" y="132" width="116" height="72" rx="18" fill="#0f766e"/>
     <text x="386" y="174" text-anchor="middle" fill="#ecfeff" font-family="Inter, system-ui, sans-serif" font-size="14">rcept_no</text>
     <rect x="470" y="132" width="116" height="72" rx="18" fill="#ea580c"/>
-    <text x="528" y="174" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="14">JSON / XBRL</text>
+    <text x="528" y="174" text-anchor="middle" fill="rgba(234,88,12,0.15)" font-family="Inter, system-ui, sans-serif" font-size="14">JSON / XBRL</text>
     <rect x="612" y="132" width="144" height="72" rx="18" fill="#7c3aed"/>
-    <text x="684" y="174" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="14">notes download</text>
+    <text x="684" y="174" text-anchor="middle" fill="rgba(124,58,237,0.15)" font-family="Inter, system-ui, sans-serif" font-size="14">notes download</text>
   </g>
   <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
     <path d="M160 168H186"/>

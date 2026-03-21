@@ -89,7 +89,7 @@ def _clean_line(line: str) -> str:
     return line.replace("\u00a0", " ").replace("\t", " ").rstrip()
 
 
-@lru_cache(maxsize=32768)
+@lru_cache(maxsize=2048)
 def _normalize_heading_text(text: str) -> str:
     cleaned = stripSectionPrefix(text.strip())
     cleaned = cleaned.strip("[]【】")
@@ -102,7 +102,7 @@ def _normalize_heading_text(text: str) -> str:
     return cleaned.strip()
 
 
-@lru_cache(maxsize=32768)
+@lru_cache(maxsize=2048)
 def _heading_key(text: str) -> str:
     normalized = _normalize_heading_text(text)
     normalized = normalized.replace("·", "").replace("ㆍ", "")
@@ -124,7 +124,7 @@ def _canonical_heading_key(
     return labelKey
 
 
-@lru_cache(maxsize=65536)
+@lru_cache(maxsize=4096)
 def _semantic_segment_key(labelKey: str, *, topic: str | None) -> str:
     if not labelKey or labelKey.startswith("@"):
         return labelKey
@@ -146,13 +146,13 @@ def _semantic_segment_key(labelKey: str, *, topic: str | None) -> str:
     return key
 
 
-@lru_cache(maxsize=32768)
+@lru_cache(maxsize=512)
 def _is_temporal_marker(text: str) -> bool:
     normalized = _normalize_heading_text(text)
     return bool(_RE_TEMPORAL_MARKER.fullmatch(normalized))
 
 
-@lru_cache(maxsize=32768)
+@lru_cache(maxsize=8192)
 def _body_anchor(text: str) -> str:
     normalized = " ".join(text.split())
     if not normalized:
@@ -161,7 +161,7 @@ def _body_anchor(text: str) -> str:
     return hashlib.blake2b(anchor.encode("utf-8"), digest_size=8).hexdigest()[:12]
 
 
-@lru_cache(maxsize=32768)
+@lru_cache(maxsize=16384)
 def _detect_heading(line: str) -> tuple[int, str, bool] | None:
     stripped = line.strip()
     if not stripped or stripped.startswith("|"):

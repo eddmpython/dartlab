@@ -1,8 +1,9 @@
 <svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" font-family="'Pretendard', 'Apple SD Gothic Neo', sans-serif">
-  <rect width="800" height="520" fill="#f8fafc"/>
+  <rect width="800" height="520" fill="#0f1219"/>
+  <rect x="0.5" y="0.5" width="799" height="519" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
   <!-- Title -->
-  <text x="400" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">건강한 PF 노출 vs 위험한 PF 노출</text>
+  <text x="400" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#e2e8f0">건강한 PF 노출 vs 위험한 PF 노출</text>
   <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6b7280">사업보고서에서 읽을 수 있는 핵심 판단 기준 7가지</text>
 
   <!-- Header row -->
@@ -14,66 +15,66 @@
   <text x="650" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="white">위험한 구조</text>
 
   <!-- Row 1 -->
-  <rect x="40" y="115" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="137" font-size="12" font-weight="600" fill="#1e293b">PF 보증잔액 / 자기자본</text>
+  <rect x="40" y="115" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="137" font-size="12" font-weight="600" fill="#e2e8f0">PF 보증잔액 / 자기자본</text>
   <text x="55" y="153" font-size="10" fill="#6b7280">(총 PF 노출 비율)</text>
-  <rect x="290" y="115" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="115" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="145" text-anchor="middle" font-size="12" fill="#059669">50% 미만</text>
-  <rect x="540" y="115" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="115" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="145" text-anchor="middle" font-size="12" fill="#dc2626">100% 초과</text>
 
   <!-- Row 2 -->
-  <rect x="40" y="165" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="187" font-size="12" font-weight="600" fill="#1e293b">PF 사업 분양률</text>
+  <rect x="40" y="165" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="187" font-size="12" font-weight="600" fill="#e2e8f0">PF 사업 분양률</text>
   <text x="55" y="203" font-size="10" fill="#6b7280">(핵심 선행 지표)</text>
-  <rect x="290" y="165" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="165" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="195" text-anchor="middle" font-size="12" fill="#059669">80% 이상 (중도금 정상 유입)</text>
-  <rect x="540" y="165" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="165" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="195" text-anchor="middle" font-size="12" fill="#dc2626">50% 미만 (자금 유입 차단)</text>
 
   <!-- Row 3 -->
-  <rect x="40" y="215" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="237" font-size="12" font-weight="600" fill="#1e293b">자금보충약정 이행 이력</text>
+  <rect x="40" y="215" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="237" font-size="12" font-weight="600" fill="#e2e8f0">자금보충약정 이행 이력</text>
   <text x="55" y="253" font-size="10" fill="#6b7280">(실제 현금 유출 여부)</text>
-  <rect x="290" y="215" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="215" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="245" text-anchor="middle" font-size="12" fill="#059669">이행 이력 없음</text>
-  <rect x="540" y="215" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="215" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="245" text-anchor="middle" font-size="12" fill="#dc2626">반복 이행 (연쇄 우려)</text>
 
   <!-- Row 4 -->
-  <rect x="40" y="265" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="287" font-size="12" font-weight="600" fill="#1e293b">PF 사업 지역 집중도</text>
+  <rect x="40" y="265" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="287" font-size="12" font-weight="600" fill="#e2e8f0">PF 사업 지역 집중도</text>
   <text x="55" y="303" font-size="10" fill="#6b7280">(포트폴리오 분산)</text>
-  <rect x="290" y="265" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="265" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="295" text-anchor="middle" font-size="12" fill="#059669">수도권 + 주요 도시 분산</text>
-  <rect x="540" y="265" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="265" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="295" text-anchor="middle" font-size="12" fill="#dc2626">지방 비수도권 집중</text>
 
   <!-- Row 5 -->
-  <rect x="40" y="315" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="337" font-size="12" font-weight="600" fill="#1e293b">감사보고서 KAM</text>
+  <rect x="40" y="315" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="337" font-size="12" font-weight="600" fill="#e2e8f0">감사보고서 KAM</text>
   <text x="55" y="353" font-size="10" fill="#6b7280">(감사인의 리스크 판단)</text>
-  <rect x="290" y="315" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="315" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="345" text-anchor="middle" font-size="12" fill="#059669">PF 관련 KAM 없음</text>
-  <rect x="540" y="315" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="315" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="345" text-anchor="middle" font-size="12" fill="#dc2626">PF 보증이 KAM에 등장</text>
 
   <!-- Row 6 -->
-  <rect x="40" y="365" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="387" font-size="12" font-weight="600" fill="#1e293b">책임준공 미이행 가능성</text>
+  <rect x="40" y="365" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="387" font-size="12" font-weight="600" fill="#e2e8f0">책임준공 미이행 가능성</text>
   <text x="55" y="403" font-size="10" fill="#6b7280">(시공 완료 리스크)</text>
-  <rect x="290" y="365" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="365" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="395" text-anchor="middle" font-size="12" fill="#059669">공정률 정상 진행</text>
-  <rect x="540" y="365" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="365" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="395" text-anchor="middle" font-size="12" fill="#dc2626">공사 중단 · 지연 사업 존재</text>
 
   <!-- Row 7 -->
-  <rect x="40" y="415" width="240" height="50" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="55" y="437" font-size="12" font-weight="600" fill="#1e293b">PF 만기 구조</text>
+  <rect x="40" y="415" width="240" height="50" fill="white" stroke="#2d3748" stroke-width="1"/>
+  <text x="55" y="437" font-size="12" font-weight="600" fill="#e2e8f0">PF 만기 구조</text>
   <text x="55" y="453" font-size="10" fill="#6b7280">(차환 리스크)</text>
-  <rect x="290" y="415" width="240" height="50" fill="#059669" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="290" y="415" width="240" height="50" fill="#059669" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="410" y="445" text-anchor="middle" font-size="12" fill="#059669">만기 분산 + 차환 실적 양호</text>
-  <rect x="540" y="415" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="415" width="220" height="50" fill="#dc2626" opacity="0.05" stroke="#2d3748" stroke-width="1"/>
   <text x="650" y="445" text-anchor="middle" font-size="12" fill="#dc2626">1년 내 만기 집중</text>
 
   <!-- Bottom note -->

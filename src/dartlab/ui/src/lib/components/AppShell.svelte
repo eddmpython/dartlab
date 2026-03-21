@@ -35,7 +35,7 @@
 		activeModel = null,
 		providers = {},
 		currentStream = null,
-		scrollTrigger = 0,
+		// scrollTrigger removed — ChatArea uses rAF loop now
 		// 콜백
 		onSendMessage,
 		onStopStream,
@@ -203,7 +203,6 @@
 							<ChatArea
 								messages={store.messages}
 								{isLoading}
-								{scrollTrigger}
 								{activeProvider}
 								{activeModel}
 								{selectedCompany}

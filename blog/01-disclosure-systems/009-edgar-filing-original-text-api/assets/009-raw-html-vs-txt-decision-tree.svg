@@ -14,11 +14,11 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg009b)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="74" y="84" fill="#f8fafc" font-family="Inter, Pretendard, sans-serif" font-size="34" font-weight="700">어떤 파일을 저장할지는 목적에 따라 달라진다</text>
+  <text x="74" y="84" fill="#0f1219" font-family="Inter, Pretendard, sans-serif" font-size="34" font-weight="700">어떤 파일을 저장할지는 목적에 따라 달라진다</text>
   <text x="74" y="122" fill="#94a3b8" font-family="Inter, Pretendard, sans-serif" font-size="18">사람이 읽을지, 원본을 보존할지, 첨부 문서까지 추적할지에 따라 HTML, TXT, exhibits의 우선순위가 달라진다.</text>
 
-  <rect x="430" y="174" width="340" height="98" rx="20" fill="#172335" stroke="#e2e8f0" stroke-width="2"/>
-  <text x="600" y="216" text-anchor="middle" fill="#f8fafc" font-family="Inter, Pretendard, sans-serif" font-size="28" font-weight="700">지금 필요한 건 무엇인가</text>
+  <rect x="430" y="174" width="340" height="98" rx="20" fill="#172335" stroke="#2d3748" stroke-width="2"/>
+  <text x="600" y="216" text-anchor="middle" fill="#0f1219" font-family="Inter, Pretendard, sans-serif" font-size="28" font-weight="700">지금 필요한 건 무엇인가</text>
   <text x="600" y="248" text-anchor="middle" fill="#94a3b8" font-family="Inter, Pretendard, sans-serif" font-size="18">읽기 / 보존 / 이벤트 추적</text>
 
   <path d="M600 272V336" stroke="#475569" stroke-width="4" marker-end="url(#arrow009b)"/>
@@ -48,5 +48,5 @@
   <text x="816" y="570" fill="#94a3b8" font-family="Inter, Pretendard, sans-serif" font-size="18">이벤트형 filing은 primary document 하나만으로 부족하다.</text>
 
   <rect x="74" y="632" width="1052" height="70" rx="18" fill="#101826"/>
-  <text x="108" y="676" fill="#f8fafc" font-family="Inter, Pretendard, sans-serif" font-size="24" font-weight="700">실전 기본형: HTML + TXT + index를 저장하고, 8-K는 exhibits 분기를 추가한다.</text>
+  <text x="108" y="676" fill="#0f1219" font-family="Inter, Pretendard, sans-serif" font-size="24" font-weight="700">실전 기본형: HTML + TXT + index를 저장하고, 8-K는 exhibits 분기를 추가한다.</text>
 </svg>

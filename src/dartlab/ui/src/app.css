@@ -194,9 +194,11 @@ button, a, input, textarea {
 
 .message-committed {
 	min-height: 1.25rem;
+	overflow-anchor: auto;
 }
 
 .message-live-tail {
+	contain: content;
 	position: relative;
 	margin-top: 0.8rem;
 	padding: 0.9rem 1rem 1rem;
@@ -239,6 +241,11 @@ button, a, input, textarea {
 	color: var(--color-dl-text-muted);
 	background: transparent;
 	border: none;
+}
+
+.message-draft-table,
+.message-draft-code {
+	min-height: 2rem;
 }
 
 .message-draft-table pre,

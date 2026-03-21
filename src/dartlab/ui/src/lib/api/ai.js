@@ -106,7 +106,7 @@ export function pullOllamaModel(modelName, { onProgress, onDone, onError }) {
 						} else if (data.status) {
 							onProgress?.({ status: data.status });
 						}
-					} catch {}
+					} catch (e) { console.warn("SSE parse:", e); }
 				}
 			}
 		}

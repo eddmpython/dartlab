@@ -104,5 +104,12 @@ def _(c):
     return
 
 
+@app.cell
+def _(c, dartlab):
+    # 차트 (plotly 필요: uv add "dartlab[charts]")
+    dartlab.chart.revenue(c).show()
+    return
+
+
 if __name__ == "__main__":
     app.run()

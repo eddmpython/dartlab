@@ -14,26 +14,26 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg020a)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">좋은 문장보다 먼저 볼 숫자가 있다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">좋은 문장보다 먼저 볼 숫자가 있다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">경영진의 말은 맥락을 주지만, 현금과 채권과 재고와 마진이 다른 말을 하면 숫자를 먼저 봐야 한다.</text>
 
   <rect x="72" y="178" width="286" height="240" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
   <text x="102" y="222" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 1</text>
-  <text x="102" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">경영진 서술</text>
+  <text x="102" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">경영진 서술</text>
   <text x="102" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">성장, 수요 회복,</text>
   <text x="102" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">투자 확대, 안정성 강조</text>
   <text x="102" y="364" fill="#bae6fd" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 무엇을 자신 있게 말하나</text>
 
   <rect x="456" y="178" width="286" height="240" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="486" y="222" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 2</text>
-  <text x="486" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">먼저 볼 숫자</text>
+  <text x="486" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">먼저 볼 숫자</text>
   <text x="486" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">영업현금흐름</text>
   <text x="486" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">매출채권, 재고, 마진</text>
   <text x="486" y="364" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 결과도 같은 방향인가</text>
 
   <rect x="840" y="178" width="286" height="240" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="870" y="222" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 3</text>
-  <text x="870" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">다음 이동</text>
+  <text x="870" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">다음 이동</text>
   <text x="870" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">주석, 감사보고서,</text>
   <text x="870" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">리스크, 사업의 내용 재확인</text>
   <text x="870" y="364" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 숫자를 설명하는 문서가 있나</text>
@@ -42,7 +42,7 @@
   <path d="M744 294H828" stroke="#475569" stroke-width="4" marker-end="url(#arrow020a)"/>
 
   <rect x="72" y="474" width="1056" height="206" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
-  <text x="104" y="518" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">경고가 특히 강해지는 조합</text>
+  <text x="104" y="518" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">경고가 특히 강해지는 조합</text>
   <text x="104" y="556" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="20">성장 서사 + 영업현금흐름 악화</text>
   <text x="104" y="586" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="20">수요 자신감 + 재고·채권 증가</text>
   <text x="104" y="616" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="20">투자 확대 + 마진 하락 + 감가상각 부담</text>

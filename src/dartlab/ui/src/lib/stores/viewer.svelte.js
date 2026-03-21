@@ -15,7 +15,7 @@ function loadBookmarks() {
 }
 
 function saveBookmarks(bm) {
-	try { localStorage.setItem("dartlab-bookmarks", JSON.stringify(bm)); } catch {}
+	try { localStorage.setItem("dartlab-bookmarks", JSON.stringify(bm)); } catch (e) { console.warn("bookmarks persist:", e); }
 }
 
 export function createViewerStore() {

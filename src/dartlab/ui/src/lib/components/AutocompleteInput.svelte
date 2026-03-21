@@ -8,6 +8,8 @@
 		isLoading = false,
 		large = false,
 		placeholder = "메시지를 입력하세요...",
+		providerLabel = null,
+		modelLabel = null,
 		onSend,
 		onStop,
 		onCompanySelect,
@@ -106,19 +108,26 @@
 			onblur={handleBlur}
 			class="input-textarea"
 		></textarea>
-		{#if isLoading && onStop}
-			<button class="send-btn active" onclick={onStop}>
-				<Square size={14} />
-			</button>
-		{:else}
-			<button
-				class={cn("send-btn", inputText.trim() && "active")}
-				onclick={() => { showSuggestions = false; onSend?.(); }}
-				disabled={!inputText.trim()}
-			>
-				<ArrowUp size={large ? 18 : 16} strokeWidth={2.5} />
-			</button>
-		{/if}
+		<div class="flex items-center gap-1.5 flex-shrink-0">
+			{#if providerLabel && !large}
+				<span class="text-[10px] text-dl-text-dim/60 whitespace-nowrap select-none hidden sm:inline">
+					{providerLabel}{#if modelLabel}<span class="text-dl-text-dim/40"> / </span><span class="max-w-[60px] truncate inline-block align-bottom">{modelLabel}</span>{/if}
+				</span>
+			{/if}
+			{#if isLoading && onStop}
+				<button class="send-btn active" onclick={onStop}>
+					<Square size={14} />
+				</button>
+			{:else}
+				<button
+					class={cn("send-btn", inputText.trim() && "active")}
+					onclick={() => { showSuggestions = false; onSend?.(); }}
+					disabled={!inputText.trim()}
+				>
+					<ArrowUp size={large ? 18 : 16} strokeWidth={2.5} />
+				</button>
+			{/if}
+		</div>
 	</div>
 
 	{#if showSuggestions && suggestions.length > 0}

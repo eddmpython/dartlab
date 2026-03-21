@@ -53,7 +53,7 @@
 	let isLoading = $state(false);
 	let currentStream = $state(null);
 	let pendingBlockData = $state(null);
-	let scrollTrigger = $state(0);
+	// scrollTrigger removed — ChatArea uses isLoading-driven rAF loop
 	let showSearchModal = $state(false);
 
 	// ── Derived ──
@@ -154,7 +154,7 @@
 
 		store.addMessage("assistant", "");
 		store.updateLastMessage({ loading: true, startedAt: Date.now() });
-		scrollTrigger++;
+		// scrollTrigger removed — rAF loop auto-follows
 
 		const conv = store.active;
 		const { history, lastAnalyzedCode } = buildConversationHistory(conv);
@@ -177,7 +177,7 @@
 			showToast: (msg, type) => ui.showToast(msg, type),
 			appendRenderViews,
 			onStreamSettled: handleStreamSettled,
-			bumpScroll: () => { scrollTrigger += 1; },
+			bumpScroll: null,  // scroll handled by ChatArea rAF loop
 			onCompanySelect: handleCompanySelect,
 		});
 
@@ -460,12 +460,13 @@
 						<ChatArea
 							messages={activeMessages}
 							{isLoading}
-							{scrollTrigger}
 							bind:inputText
 							selectedCompany={workspace.selectedCompany}
 							viewerContext={workspace.viewerTopic ? { topic: workspace.viewerTopic, topicLabel: workspace.viewerTopicLabel, period: workspace.viewerPeriod } : null}
 							pendingBlockLabel={pendingBlockData ? (pendingBlockData.topicLabel || pendingBlockData.topic || "블록") : null}
 							onClearBlock={() => { pendingBlockData = null; }}
+							providerLabel={ui.providers[ui.activeProvider]?.label || ui.activeProvider || null}
+							modelLabel={ui.activeModel || null}
 							onSend={sendMessage}
 							onStop={stopStream}
 							onRegenerate={handleRegenerate}

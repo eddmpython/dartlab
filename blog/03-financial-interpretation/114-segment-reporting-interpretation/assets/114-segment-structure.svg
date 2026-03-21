@@ -1,22 +1,23 @@
 <svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, -apple-system, sans-serif">
-  <rect width="720" height="420" fill="#f8fafc" rx="12"/>
+  <rect width="720" height="420" fill="#0f1219" rx="12"/>
+  <rect x="0.5" y="0.5" width="719" height="419" rx="12" stroke="#1e2433" stroke-width="1" fill="none"/>
 
-  <text x="360" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">IFRS 8 영업부문 결정 구조</text>
+  <text x="360" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="#e2e8f0">IFRS 8 영업부문 결정 구조</text>
 
   <!-- Step 1: 경영진 -->
   <rect x="240" y="56" width="240" height="54" rx="8" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="1.5"/>
   <text x="360" y="80" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">최고영업의사결정자(CODM)</text>
-  <text x="360" y="98" text-anchor="middle" font-size="11" fill="#1e293b">경영진이 내부적으로 사용하는 부문 구분</text>
+  <text x="360" y="98" text-anchor="middle" font-size="11" fill="#e2e8f0">경영진이 내부적으로 사용하는 부문 구분</text>
 
   <!-- Arrow -->
   <path d="M360 110 L360 138" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowGray)"/>
 
   <!-- Step 2: 보고 부문 판단 -->
   <rect x="140" y="140" width="440" height="70" rx="8" fill="#f59e0b" opacity="0.1" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="360" y="163" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">보고 부문 판단 기준 (양적 임계치)</text>
-  <text x="200" y="185" text-anchor="start" font-size="11" fill="#1e293b">매출 10% 이상</text>
-  <text x="360" y="185" text-anchor="middle" font-size="11" fill="#1e293b">영업손익 10% 이상</text>
-  <text x="520" y="185" text-anchor="end" font-size="11" fill="#1e293b">자산 10% 이상</text>
+  <text x="360" y="163" text-anchor="middle" font-size="13" font-weight="600" fill="#e2e8f0">보고 부문 판단 기준 (양적 임계치)</text>
+  <text x="200" y="185" text-anchor="start" font-size="11" fill="#e2e8f0">매출 10% 이상</text>
+  <text x="360" y="185" text-anchor="middle" font-size="11" fill="#e2e8f0">영업손익 10% 이상</text>
+  <text x="520" y="185" text-anchor="end" font-size="11" fill="#e2e8f0">자산 10% 이상</text>
   <text x="360" y="201" text-anchor="middle" font-size="10" fill="#6b7280">하나라도 충족하면 별도 보고 부문</text>
 
   <!-- Arrow -->
@@ -25,18 +26,18 @@
   <!-- Step 3: 경영진 재량 -->
   <rect x="40" y="240" width="200" height="60" rx="8" fill="#dc2626" opacity="0.1" stroke="#dc2626" stroke-width="1.5"/>
   <text x="140" y="263" text-anchor="middle" font-size="12" font-weight="600" fill="#dc2626">경영진 재량 영역</text>
-  <text x="140" y="281" text-anchor="middle" font-size="10" fill="#1e293b">부문 통합·분리 가능</text>
-  <text x="140" y="294" text-anchor="middle" font-size="10" fill="#1e293b">기준 미달 부문도 자발 공시 가능</text>
+  <text x="140" y="281" text-anchor="middle" font-size="10" fill="#e2e8f0">부문 통합·분리 가능</text>
+  <text x="140" y="294" text-anchor="middle" font-size="10" fill="#e2e8f0">기준 미달 부문도 자발 공시 가능</text>
 
   <rect x="260" y="240" width="200" height="60" rx="8" fill="#059669" opacity="0.1" stroke="#059669" stroke-width="1.5"/>
   <text x="360" y="263" text-anchor="middle" font-size="12" font-weight="600" fill="#059669">공시 부문 확정</text>
-  <text x="360" y="281" text-anchor="middle" font-size="10" fill="#1e293b">부문별 매출·영업이익·자산</text>
-  <text x="360" y="294" text-anchor="middle" font-size="10" fill="#1e293b">내부거래 제거 조정</text>
+  <text x="360" y="281" text-anchor="middle" font-size="10" fill="#e2e8f0">부문별 매출·영업이익·자산</text>
+  <text x="360" y="294" text-anchor="middle" font-size="10" fill="#e2e8f0">내부거래 제거 조정</text>
 
   <rect x="480" y="240" width="200" height="60" rx="8" fill="#2563eb" opacity="0.1" stroke="#2563eb" stroke-width="1.5"/>
   <text x="580" y="263" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">주석 공시</text>
-  <text x="580" y="281" text-anchor="middle" font-size="10" fill="#1e293b">부문정보 (K-IFRS 주석)</text>
-  <text x="580" y="294" text-anchor="middle" font-size="10" fill="#1e293b">사업부문별 현황 (사업의 내용)</text>
+  <text x="580" y="281" text-anchor="middle" font-size="10" fill="#e2e8f0">부문정보 (K-IFRS 주석)</text>
+  <text x="580" y="294" text-anchor="middle" font-size="10" fill="#e2e8f0">사업부문별 현황 (사업의 내용)</text>
 
   <!-- Arrows from step 2 to step 3 -->
   <path d="M260 210 L140 240" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3"/>
@@ -45,7 +46,7 @@
 
   <!-- Bottom note -->
   <rect x="60" y="330" width="600" height="60" rx="8" fill="#1e293b" opacity="0.05"/>
-  <text x="360" y="353" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">핵심 포인트</text>
+  <text x="360" y="353" text-anchor="middle" font-size="12" font-weight="600" fill="#e2e8f0">핵심 포인트</text>
   <text x="360" y="373" text-anchor="middle" font-size="11" fill="#6b7280">부문 구분은 회계 기준이 정하는 것이 아니라 경영진이 정한다.</text>
   <text x="360" y="388" text-anchor="middle" font-size="11" fill="#6b7280">같은 사업도 회사마다 부문 단위가 다를 수 있다.</text>
 

@@ -975,14 +975,14 @@ class TestCompanyCache:
         from dartlab.server.cache import CompanyCache
 
         cache = CompanyCache()
-        for i in range(25):
+        for i in range(10):
             code = f"{i:06d}"
             m = MagicMock()
             m.stockCode = code
             cache.put(code, m, None)
-        assert len(cache) == 20
+        assert len(cache) == 5
         assert cache.get("000000") is None
-        assert cache.get("000024") is not None
+        assert cache.get("000009") is not None
 
     def test_update_snapshot(self):
         from dartlab.server.cache import CompanyCache

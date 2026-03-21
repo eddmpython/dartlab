@@ -11,42 +11,42 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg011e)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">건설중인자산은 숫자 하나가 아니라 다섯 숫자로 읽는다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">건설중인자산은 숫자 하나가 아니라 다섯 숫자로 읽는다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">가동률과 현금유출, 건설중인자산 잔액, 유형자산 전환, 감가상각 흡수까지 이어서 보면 투자 설명의 신뢰도가 올라간다.</text>
 
   <rect x="72" y="180" width="206" height="226" rx="22" fill="#132131" stroke="#38bdf8" stroke-width="2"/>
   <text x="96" y="224" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">1. 가동률</text>
-  <text x="96" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">기존 설비 압박</text>
+  <text x="96" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">기존 설비 압박</text>
   <text x="96" y="302" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">이미 높다면 증설 논리가 강해진다</text>
   <text x="96" y="332" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">낮다면 과잉투자 가능성을 묻는다</text>
 
   <rect x="300" y="180" width="206" height="226" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="324" y="224" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">2. 현금유출</text>
-  <text x="324" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">말이 아니라 집행</text>
+  <text x="324" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">말이 아니라 집행</text>
   <text x="324" y="302" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">유형자산 취득 현금이 실제로 나갔는가</text>
   <text x="324" y="332" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">차입 의존이 과도하진 않은가</text>
 
   <rect x="528" y="180" width="206" height="226" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
   <text x="552" y="224" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">3. 잔액 변화</text>
-  <text x="552" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">쌓이는 속도</text>
+  <text x="552" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">쌓이는 속도</text>
   <text x="552" y="302" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">정상적인 진행인지</text>
   <text x="552" y="332" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">오래 멈춰 있는지 본다</text>
 
   <rect x="756" y="180" width="206" height="226" rx="22" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
   <text x="780" y="224" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">4. 전환</text>
-  <text x="780" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">유형자산 이동</text>
+  <text x="780" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="26" font-weight="700">유형자산 이동</text>
   <text x="780" y="302" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">기계장치, 건물로</text>
   <text x="780" y="332" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">실제로 넘어가는지 확인</text>
 
   <rect x="984" y="180" width="144" height="226" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="1004" y="224" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">5. 흡수</text>
-  <text x="1004" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">마진</text>
+  <text x="1004" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">마진</text>
   <text x="1004" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="16">감가상각을</text>
   <text x="1004" y="324" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="16">매출과 이익이</text>
   <text x="1004" y="348" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="16">버틸 수 있나</text>
 
   <rect x="72" y="468" width="1056" height="204" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
-  <text x="104" y="512" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">좋은 진행과 위험한 진행을 가르는 기준</text>
+  <text x="104" y="512" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">좋은 진행과 위험한 진행을 가르는 기준</text>
   <text x="104" y="550" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="20">좋은 진행: 가동률이 높고, 현금 집행이 분명하며, 잔액이 결국 유형자산으로 전환된다</text>
   <text x="104" y="582" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="20">중립 구간: 대형 프로젝트라 잔액이 오래 쌓일 수 있지만 일정과 이유가 설명된다</text>
   <text x="104" y="614" fill="#fecaca" font-family="Pretendard, Inter, sans-serif" font-size="20">위험 구간: 현금유출은 약한데 잔액만 커지고, 전환과 수익성 흡수 논리가 흐리다</text>

@@ -11,6 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-03-21
+
+### Added
+
+- **도구 모듈 루트 접근**: `dartlab.chart`, `dartlab.table`, `dartlab.text` 직접 사용 — lazy import
+- **CLI OAuth 브라우저 로그인**: `dartlab setup oauth-codex` 브라우저 자동 열림 + PKCE
+- **CLI 스트리밍 기본값**: `dartlab ask` 스트리밍 출력 (`--no-stream`으로 비활성화)
+- **CLI provider 안내**: `dartlab setup` 5개 provider 가이드
+- **CLI 상태 테이블**: `dartlab status` 전체 provider 테이블 요약
+- **AI Marimo 노트북**: `startMarimo/aiAnalysis.py`
+- **README AI 분석 섹션**: `dartlab.ask()` + CLI + OpenDART API 키
+
+### Changed
+
+- **차트 메서드명 단순화**: `revenue_trend` → `revenue` 등 5개 (기존 이름 alias 유지)
+- **README 차트 예시**: `dartlab.chart.*` 단축 경로
+- **메모리 최적화 — OOM 크래시 해결**: LRU 캐시 축소, CompanyCache 5개 제한, MCP LRU 퇴출, Categorical 자동 전환, Int32 다운캐스트, loadData columns 경량 읽기, sections() 중간 dict 조기 해제
+- **채팅 UI**: rAF 스크롤, monotonic splitter, provider chip, 사이드바 미리보기
+
+### Fixed
+
+- **docs**: `fsSummary()` → 공개 API, 내부 import → 공개 API
+- **CLI 스트리밍 출력 누락** 수정
+- **startMarimo**: 깊은 import → `dartlab.ask()` 루트 진입점
+
 ## [0.7.2] - 2026-03-20
 
 ### Added

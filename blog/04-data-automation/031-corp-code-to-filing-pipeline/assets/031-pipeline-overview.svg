@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420" fill="none">
   <rect width="800" height="420" rx="28" fill="#0f172a"/>
-  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">DART Collection Pipeline</text>
+  <text x="400" y="42" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">DART Collection Pipeline</text>
   <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">corp_code to filing source of truth</text>
 
   <rect x="36" y="118" width="136" height="86" rx="18" fill="#1d4ed8"/>
-  <text x="104" y="150" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">corp_code</text>
+  <text x="104" y="150" text-anchor="middle" fill="rgba(37,99,235,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">corp_code</text>
   <text x="104" y="172" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">company master</text>
   <text x="104" y="190" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">ticker and name map</text>
 
   <rect x="190" y="118" width="136" height="86" rx="18" fill="#2563eb"/>
-  <text x="258" y="150" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">search</text>
+  <text x="258" y="150" text-anchor="middle" fill="rgba(37,99,235,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">search</text>
   <text x="258" y="172" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">report list</text>
   <text x="258" y="190" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">baseline document</text>
 
@@ -19,12 +19,12 @@
   <text x="412" y="190" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="12">version anchor</text>
 
   <rect x="498" y="118" width="136" height="86" rx="18" fill="#ea580c"/>
-  <text x="566" y="150" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">filing files</text>
+  <text x="566" y="150" text-anchor="middle" fill="rgba(234,88,12,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">filing files</text>
   <text x="566" y="172" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="12">raw filing</text>
   <text x="566" y="190" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="12">attachments and XBRL</text>
 
   <rect x="652" y="118" width="112" height="86" rx="18" fill="#7c3aed"/>
-  <text x="708" y="150" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">ops</text>
+  <text x="708" y="150" text-anchor="middle" fill="rgba(124,58,237,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">ops</text>
   <text x="708" y="172" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="12">watch</text>
   <text x="708" y="190" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="12">batch sync</text>
 
@@ -36,7 +36,7 @@
   </g>
 
   <rect x="52" y="252" width="696" height="122" rx="22" fill="#111827" stroke="#334155"/>
-  <text x="78" y="286" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Design rules</text>
+  <text x="78" y="286" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Design rules</text>
   <text x="78" y="312" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">1. corp_code is the company key</text>
   <text x="78" y="334" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">2. search output becomes the baseline filing ledger</text>
   <text x="78" y="356" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">3. rcept_no is the document key for raw filing, XBRL, notes, and amendments</text>

@@ -6,21 +6,19 @@
  */
 
 const TABLE_LINE_RE = /^\s*\|.+\|\s*$/;
+const CODE_FENCE_RE = /^```[\w-]*$/;
 
-export function splitStreamingContent(text, loading) {
-	if (!text) return { committed: "", draft: "", draftType: "none" };
-	if (!loading) return { committed: text, draft: "", draftType: "none" };
-
+function computeSplit(text) {
 	const lines = text.split("\n");
 	let safeIndex = lines.length;
 
 	if (!text.endsWith("\n")) safeIndex = Math.min(safeIndex, lines.length - 1);
 
-	// 열린 코드 펜스 감지
+	// 열린 코드 펜스 감지 (언어 지정도 인식)
 	let codeFenceCount = 0;
 	let lastFenceLine = -1;
 	for (let i = 0; i < lines.length; i++) {
-		if (lines[i].trim().startsWith("```")) {
+		if (CODE_FENCE_RE.test(lines[i].trim())) {
 			codeFenceCount += 1;
 			lastFenceLine = i;
 		}
@@ -44,18 +42,54 @@ export function splitStreamingContent(text, loading) {
 		safeIndex = Math.min(safeIndex, trailingTableStart);
 	}
 
+	let draftType = "text";
+	if (trailingTableStart >= 0 && trailingTableStart <= safeIndex) draftType = "table";
+	else if (codeFenceCount % 2 === 1) draftType = "code";
+
+	return { lines, safeIndex, draftType };
+}
+
+export function splitStreamingContent(text, loading) {
+	if (!text) return { committed: "", draft: "", draftType: "none" };
+	if (!loading) return { committed: text, draft: "", draftType: "none" };
+
+	const { lines, safeIndex, draftType } = computeSplit(text);
+
 	if (safeIndex <= 0) {
-		return {
-			committed: "",
-			draft: text,
-			draftType: trailingTableStart === 0 ? "table" : codeFenceCount % 2 === 1 ? "code" : "text",
-		};
+		return { committed: "", draft: text, draftType };
 	}
 
 	const committed = lines.slice(0, safeIndex).join("\n");
 	const draft = lines.slice(safeIndex).join("\n");
-	let draftType = "text";
-	if (draft && trailingTableStart >= safeIndex) draftType = "table";
-	else if (draft && codeFenceCount % 2 === 1) draftType = "code";
-	return { committed, draft, draftType };
+	return { committed, draft, draftType: draft ? draftType : "none" };
+}
+
+/**
+ * Monotonic 스트림 분리기 — committed 영역이 줄어드는 것을 방지.
+ * 메시지별로 인스턴스를 생성해서 사용.
+ */
+export function createStreamSplitter() {
+	let maxSafeIndex = 0;
+
+	return {
+		split(text, loading) {
+			if (!text) return { committed: "", draft: "", draftType: "none" };
+			if (!loading) { maxSafeIndex = 0; return { committed: text, draft: "", draftType: "none" }; }
+
+			const { lines, safeIndex, draftType } = computeSplit(text);
+			// monotonic: committed 영역은 줄어들지 않음
+			const effectiveIndex = Math.max(safeIndex, maxSafeIndex);
+			const clamped = Math.min(effectiveIndex, lines.length);
+			maxSafeIndex = clamped;
+
+			if (clamped <= 0) {
+				return { committed: "", draft: text, draftType };
+			}
+
+			const committed = lines.slice(0, clamped).join("\n");
+			const draft = lines.slice(clamped).join("\n");
+			return { committed, draft, draftType: draft ? draftType : "none" };
+		},
+		reset() { maxSafeIndex = 0; },
+	};
 }

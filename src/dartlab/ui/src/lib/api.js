@@ -279,7 +279,7 @@ export function streamTopicSummary(code, topic, { onContext, onChunk, onDone, on
 							else if (currentEvent === "chunk") onChunk?.(parsed.text);
 							else if (currentEvent === "error") onError?.(parsed.error);
 							else if (currentEvent === "done") onDone?.();
-						} catch {}
+						} catch (e) { console.warn("SSE parse:", e); }
 						currentEvent = null;
 					}
 				}

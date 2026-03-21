@@ -18,7 +18,7 @@
   <rect width="1200" height="720" rx="28" fill="url(#bg004a)"/>
   <rect x="18" y="18" width="1164" height="684" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="80" y="84" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">사업보고서 첫 10분 읽기</text>
+  <text x="80" y="84" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">사업보고서 첫 10분 읽기</text>
   <text x="80" y="122" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">처음부터 끝까지 읽지 말고, 위험을 먼저 거른 뒤 사업과 설명을 확인한다.</text>
 
   <rect x="80" y="162" width="1040" height="16" rx="8" fill="url(#accent004a)" opacity="0.92"/>
@@ -30,43 +30,43 @@
 
   <rect x="80" y="212" width="134" height="132" rx="18" fill="#1d2838" stroke="#ea4647" stroke-width="2"/>
   <text x="104" y="244" fill="#fda4a4" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">0-2 min</text>
-  <text x="104" y="280" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">감사의견</text>
+  <text x="104" y="280" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">감사의견</text>
   <text x="104" y="312" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">적정 여부</text>
   <text x="104" y="336" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">KAM</text>
 
   <rect x="334" y="212" width="134" height="132" rx="18" fill="#1d2838" stroke="#f97316" stroke-width="2"/>
   <text x="358" y="244" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">2-4 min</text>
-  <text x="358" y="280" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">투자자 보호</text>
+  <text x="358" y="280" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">투자자 보호</text>
   <text x="358" y="312" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">소송</text>
   <text x="358" y="336" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">보증·약정</text>
 
   <rect x="588" y="212" width="134" height="132" rx="18" fill="#1d2838" stroke="#38bdf8" stroke-width="2"/>
   <text x="612" y="244" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">4-7 min</text>
-  <text x="612" y="280" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">사업의 내용</text>
+  <text x="612" y="280" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">사업의 내용</text>
   <text x="612" y="312" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">고객</text>
   <text x="612" y="336" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">원가·가동률</text>
 
   <rect x="842" y="212" width="134" height="132" rx="18" fill="#1d2838" stroke="#22c55e" stroke-width="2"/>
   <text x="866" y="244" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">7-9 min</text>
-  <text x="866" y="280" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">MD&amp;A</text>
+  <text x="866" y="280" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">MD&amp;A</text>
   <text x="866" y="312" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">숫자 설명</text>
   <text x="866" y="336" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="16">톤 변화</text>
 
   <rect x="1080" y="212" width="88" height="132" rx="18" fill="#1d2838" stroke="#a78bfa" stroke-width="2"/>
   <text x="1098" y="244" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">9-10</text>
   <text x="1098" y="268" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">min</text>
-  <text x="1098" y="304" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">지배</text>
+  <text x="1098" y="304" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">지배</text>
   <text x="1098" y="330" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="15">주주·특관</text>
 
   <rect x="80" y="400" width="500" height="230" rx="24" fill="#131c2a" stroke="#334155" stroke-width="2"/>
-  <text x="112" y="446" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">좋은 순서가 되는 이유</text>
+  <text x="112" y="446" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">좋은 순서가 되는 이유</text>
   <text x="112" y="494" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">1. 숫자를 믿어도 되는지 먼저 본다</text>
   <text x="112" y="530" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">2. 재무제표 밖 리스크를 먼저 걸러낸다</text>
   <text x="112" y="566" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">3. 사업 변화와 경영진 설명을 그다음에 본다</text>
   <text x="112" y="602" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">4. 마지막에 이해상충 가능성을 보정한다</text>
 
   <rect x="620" y="400" width="500" height="230" rx="24" fill="#131c2a" stroke="#334155" stroke-width="2"/>
-  <text x="652" y="446" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">초보자가 가장 많이 틀리는 시작점</text>
+  <text x="652" y="446" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">초보자가 가장 많이 틀리는 시작점</text>
   <text x="652" y="494" fill="#fda4a4" font-family="Pretendard, Inter, sans-serif" font-size="20" font-weight="700">재무제표 숫자만 확인하고 닫기</text>
   <text x="652" y="530" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="19">숫자 결과는 보이지만, 신뢰성·소송·사업 변화·</text>
   <text x="652" y="558" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="19">경영진 톤 변화·특수관계자 리스크를 놓치기 쉽다.</text>

@@ -1518,6 +1518,9 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                     "_repPeriod": periodKey,
                 }
 
+    # 메모리 해제: periodRows는 topicMap에 흡수 완료
+    del periodRows
+
     if not validPeriods or not topicMap:
         return None
 
@@ -1670,5 +1673,15 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             else:
                 for period in validPeriods:
                     dataColumns[period].append(None)
+
+    # 메모리 해제: DataFrame 생성 전 중간 dict 퇴출
+    del topicMap, rowMeta, rowOrder
+    del pathVariantsByKey, parentPathVariantsByKey
+    del semanticPathVariantsByKey, semanticParentPathVariantsByKey
+    del cadenceMetaByKey
+
+    import gc
+
+    gc.collect()
 
     return pl.DataFrame(dataColumns, schema=schema)

@@ -11,8 +11,8 @@ from collections import OrderedDict
 
 from dartlab import Company
 
-MAX_SIZE = 20
-TTL_SECONDS = 1800
+MAX_SIZE = 5
+TTL_SECONDS = 600
 
 
 class _CacheEntry:

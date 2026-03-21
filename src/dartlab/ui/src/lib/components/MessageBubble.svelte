@@ -24,7 +24,8 @@
 	} from "lucide-svelte";
 	import { renderMarkdown } from "$lib/markdown.js";
 	import { estimateTokens, formatTokens } from "$lib/chat/tokenEstimator.js";
-	import { splitStreamingContent } from "$lib/chat/contentSplitter.js";
+	import { createStreamSplitter } from "$lib/chat/contentSplitter.js";
+	import { createIncrementalRenderer } from "$lib/markdown.js";
 	import ViewSpecRenderer from "$lib/ai/ViewSpecRenderer.svelte";
 	import TransparencyBadges from "./TransparencyBadges.svelte";
 	import EvidenceModal from "./EvidenceModal.svelte";
@@ -127,7 +128,9 @@
 
 	let toolCallEvents = $derived((message.toolEvents || []).filter(e => e.type === "call"));
 	let toolResultEvents = $derived((message.toolEvents || []).filter(e => e.type === "result"));
-	let streamingContent = $derived.by(() => splitStreamingContent(message.text || "", message.loading));
+	const splitter = createStreamSplitter();
+	const incRenderer = createIncrementalRenderer();
+	let streamingContent = $derived.by(() => splitter.split(message.text || "", message.loading));
 	let activityBadges = $derived.by(() => {
 		const badges = [];
 		if (message.meta?.includedModules?.length > 0) badges.push({ label: `모듈 ${message.meta.includedModules.length}개`, icon: Database });
@@ -137,6 +140,19 @@
 		if (message.systemPrompt) badges.push({ label: "시스템 프롬프트", icon: Brain });
 		if (message.userContent) badges.push({ label: "LLM 입력", icon: FileText });
 		return badges;
+	});
+
+	// elapsed time for loading state
+	let elapsed = $state(0);
+	let elapsedTimer = null;
+	$effect(() => {
+		if (message.loading && message.startedAt) {
+			elapsed = Math.round((Date.now() - message.startedAt) / 1000);
+			elapsedTimer = setInterval(() => { elapsed = Math.round((Date.now() - message.startedAt) / 1000); }, 1000);
+		} else {
+			if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+		}
+		return () => { if (elapsedTimer) clearInterval(elapsedTimer); };
 	});
 
 	let loadingSteps = $derived.by(() => {
@@ -194,10 +210,13 @@
 									<span class="text-dl-text-muted">{step.label}</span>
 								{:else}
 									<Loader2 size={14} class="animate-spin flex-shrink-0 text-dl-text-dim" />
-									<span class="text-dl-text-dim">{step.label}</span>
+									<span class="text-dl-text-dim animate-pulse">{step.label}</span>
 								{/if}
 							</div>
 						{/each}
+						{#if elapsed > 0}
+							<div class="text-[10px] text-dl-text-dim/60 mt-1 font-mono">{elapsed}초 경과</div>
+						{/if}
 					</div>
 					<div class="space-y-2.5">
 						<div class="skeleton-line w-full"></div>
@@ -221,7 +240,7 @@
 				>
 					{#if streamingContent.committed}
 						<div class="message-committed">
-							{@html renderMarkdown(streamingContent.committed)}
+							{@html message.loading ? incRenderer.render(streamingContent.committed) : renderMarkdown(streamingContent.committed)}
 						</div>
 					{/if}
 					{#if streamingContent.draft}

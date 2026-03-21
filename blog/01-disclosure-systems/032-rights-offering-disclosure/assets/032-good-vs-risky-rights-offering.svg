@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
   <rect width="800" height="430" rx="28" fill="#0f172a"/>
-  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Good vs Risky Offering</text>
+  <text x="400" y="40" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Good vs Risky Offering</text>
   <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">read the combination, not the headline</text>
 
   <rect x="56" y="106" width="300" height="258" rx="22" fill="#111827" stroke="#065f46"/>

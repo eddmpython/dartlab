@@ -19,35 +19,16 @@ c.IS   # Income Statement DataFrame
 
 > The default public flow is `c.show("BS")`, but come here when you need Bridge Matching analysis results or quarterly/semi-annual financial summaries.
 
-### fsSummary() Method (Detailed)
+### Public API
 
 ```python
-result = c.fsSummary()
-result = c.fsSummary(period="q")           # Quarterly
-result = c.fsSummary(period="h")           # Semi-annual
-result = c.fsSummary(ifrsOnly=False)       # Include K-GAAP
+c.BS    # Balance Sheet DataFrame
+c.IS    # Income Statement DataFrame
+c.CF    # Cash Flow Statement DataFrame
+c.ratios  # Financial ratios time-series DataFrame
 ```
 
----
-
-## Parameters
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `period` | `str` | `"y"` | `"y"` annual, `"q"` quarterly, `"h"` semi-annual |
-| `ifrsOnly` | `bool` | `True` | K-IFRS periods only (2011~) |
-
-### period Values
-
-| Value | Meaning | Included Reports | Column Format |
-|-------|---------|-----------------|---------------|
-| `"y"` | Annual | Annual reports | `2020`, `2021`, ... |
-| `"q"` | Quarterly | Q1 + semi-annual + Q3 + annual | `2020Q1`, `2020Q2`, ... |
-| `"h"` | Semi-annual | Semi-annual + annual | `2020H1`, `2020H2`, ... |
-
-### Return
-
-`AnalysisResult | None`
+> `fsSummary()` is an internal pipeline function used by Bridge Matching. Use the public properties above for general access.
 
 ---
 
@@ -165,8 +146,11 @@ print(c.IS)   # Income Statement
 
 ### Bridge Matching Details
 
+Bridge Matching statistics are available through the internal `finance.summary` pipeline. For most users, the public properties (`c.BS`, `c.IS`, `c.CF`) are sufficient.
+
 ```python
-result = c.fsSummary()
+# Internal usage (advanced):
+result = c.finance.summary
 
 # Overall statistics
 print(f"Analysis years: {result.nYears}")
@@ -200,20 +184,12 @@ for seg in result.segments:
     print(f"{seg.startYear}~{seg.endYear} ({seg.nYears} years, match rate {seg.rate:.1%})")
 ```
 
-### Quarterly Analysis
+### Financial Statements
 
 ```python
-result = c.fsSummary(period="q")
+c = dartlab.Company("005930")
 
-print(result.BS)   # Quarterly Balance Sheet
-# account | 2020Q1 | 2020Q2 | 2020Q3 | 2020Q4 | 2021Q1 | ...
-
-print(result.IS)   # Quarterly Income Statement
-```
-
-### BS + IS Combined Time Series
-
-```python
-result = c.fsSummary()
-print(result.FS)   # Balance Sheet + Income Statement in one DataFrame
+print(c.BS)   # Balance Sheet (annual time series)
+print(c.IS)   # Income Statement (annual time series)
+print(c.CF)   # Cash Flow Statement (annual time series)
 ```

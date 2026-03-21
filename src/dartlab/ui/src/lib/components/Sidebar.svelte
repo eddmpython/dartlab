@@ -104,12 +104,20 @@
 								)}
 							>
 								<button
-									class="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-0.5 text-left"
+									class="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg px-1 py-0.5 text-left"
 									onclick={() => onSelect?.(conv.id)}
 									aria-current={conv.id === activeId ? "true" : undefined}
 								>
-									<MessageSquare size={14} class="flex-shrink-0 opacity-50" />
-									<span class="flex-1 truncate">{conv.title}</span>
+									<div class="flex items-center gap-2 w-full">
+										<MessageSquare size={14} class="flex-shrink-0 opacity-50" />
+										<span class="flex-1 truncate">{conv.title}</span>
+									</div>
+									{#if conv.messages?.length > 0}
+										{@const lastMsg = conv.messages[conv.messages.length - 1]}
+										<div class="text-[10px] text-dl-text-dim truncate pl-6 w-full">
+											{lastMsg.text?.slice(0, 50) || ""}
+										</div>
+									{/if}
 								</button>
 								<button
 									class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-dl-bg-card-hover text-dl-text-dim hover:text-dl-primary transition-all"

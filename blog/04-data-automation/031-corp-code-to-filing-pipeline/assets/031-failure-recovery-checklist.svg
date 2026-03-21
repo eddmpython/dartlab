@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" fill="none">
   <rect width="800" height="450" rx="28" fill="#0f172a"/>
-  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Failure Recovery Checklist</text>
+  <text x="400" y="42" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Failure Recovery Checklist</text>
   <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">common weak patterns and the recovery rule</text>
 
   <rect x="42" y="106" width="330" height="284" rx="22" fill="#111827" stroke="#7f1d1d"/>

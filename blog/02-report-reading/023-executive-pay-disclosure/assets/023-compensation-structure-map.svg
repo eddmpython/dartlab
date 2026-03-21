@@ -14,33 +14,33 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg023a)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">임원 보수는 총액보다 구조를 묻는 표다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">임원 보수는 총액보다 구조를 묻는 표다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">같은 총액이어도 무엇을 잘해야 보상받는지에 따라 회사가 주는 신호는 완전히 달라진다.</text>
 
   <rect x="72" y="178" width="240" height="220" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
   <text x="98" y="222" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">1. 급여</text>
-  <text x="98" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">고정 보상</text>
+  <text x="98" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">고정 보상</text>
   <text x="98" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">기본급이 크면</text>
   <text x="98" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">실적과 분리될 수 있다</text>
   <text x="98" y="362" fill="#bae6fd" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 너무 굳어 있지 않나</text>
 
   <rect x="346" y="178" width="240" height="220" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="372" y="222" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">2. 상여</text>
-  <text x="372" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">단기 성과급</text>
+  <text x="372" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">단기 성과급</text>
   <text x="372" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">무엇을 성과로 보나</text>
   <text x="372" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">설명과 숫자가 맞나</text>
   <text x="372" y="362" fill="#bbf7d0" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 기준이 구체적인가</text>
 
   <rect x="620" y="178" width="240" height="220" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
   <text x="646" y="222" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">3. 주식보상</text>
-  <text x="646" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">장기 정렬</text>
+  <text x="646" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">장기 정렬</text>
   <text x="646" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">베스팅 기간과 조건</text>
   <text x="646" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">희석 가능성 확인</text>
   <text x="646" y="362" fill="#fde68a" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 주주와 같은 방향인가</text>
 
   <rect x="894" y="178" width="234" height="220" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="920" y="222" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">4. 기타 보상</text>
-  <text x="920" y="264" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">퇴직과 일회성</text>
+  <text x="920" y="264" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">퇴직과 일회성</text>
   <text x="920" y="300" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">올해 숫자를 왜곡할 수 있다</text>
   <text x="920" y="326" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="18">반복 가능한 보상인지 본다</text>
   <text x="920" y="362" fill="#fed7aa" font-family="Pretendard, Inter, sans-serif" font-size="18">질문: 올해만 큰 숫자인가</text>
@@ -50,7 +50,7 @@
   <path d="M860 288H884" stroke="#475569" stroke-width="4" marker-end="url(#arrow023a)"/>
 
   <rect x="72" y="458" width="1056" height="206" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
-  <text x="104" y="502" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">마지막으로 붙여볼 질문</text>
+  <text x="104" y="502" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">마지막으로 붙여볼 질문</text>
   <text x="104" y="540" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">실적이 나빠질 때 보수 구조도 같이 조정되는가</text>
   <text x="104" y="572" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">주주환원과 보수 설명이 같은 방향을 가리키는가</text>
   <text x="104" y="604" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">보수한도 안건이 현재 보수 구조와 자연스럽게 이어지는가</text>

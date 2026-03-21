@@ -80,6 +80,7 @@ def loadData(
     sinceYear: int | None = None,
     asOf: str | None = None,
     refresh: str = "auto",
+    columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """종목코드 → DataFrame. 로컬에 없으면 릴리즈에서 자동 다운로드."""
     dataDir = _dataDir(category)
@@ -119,7 +120,7 @@ def loadData(
             if path.exists():
                 path.unlink()
             raise
-    df = pl.read_parquet(str(path))
+    df = pl.read_parquet(str(path), columns=columns)
     return _normalizeLoadedFrame(df, category)
 
 
@@ -545,12 +546,45 @@ def _incrementalUpdateEdgarDocs(
     merged.write_parquet(path)
 
 
+# ── 메모리 최적화: Categorical + 다운캐스트 ──────────────
+
+# 반복 빈도 높은 문자열 컬럼 → Categorical (정수 인덱스로 90%+ 절감)
+_CATEGORICAL_COLS = frozenset({
+    "source",           # dart/edgar (== 비교만 사용)
+    "account_id",       # XBRL 계정 ID (수백 종류, 수만 행, == 비교만)
+    "blockType",        # text/table/heading 등 (== 비교만)
+    "form_type",        # 10-K/10-Q 등 (== 비교만)
+    # 제외: report_type, section_title, sj_div, topic → .str 연산 사용
+})
+
+# 작은 정수 컬럼 → Int32 (Int64 대비 50% 절감 + CPU 캐시 친화)
+_DOWNCAST_INT_COLS = frozenset({
+    "year",
+    "section_order",
+    "bsns_year",
+})
+
+
+def _optimizeMemory(df: pl.DataFrame) -> pl.DataFrame:
+    """Categorical 전환 + Int 다운캐스트로 메모리 절감."""
+    exprs: list[pl.Expr] = []
+    for col in df.columns:
+        dtype = df[col].dtype
+        if col in _CATEGORICAL_COLS and dtype == pl.Utf8:
+            exprs.append(pl.col(col).cast(pl.Categorical))
+        elif col in _DOWNCAST_INT_COLS and dtype == pl.Int64:
+            exprs.append(pl.col(col).cast(pl.Int32))
+    if exprs:
+        return df.with_columns(exprs)
+    return df
+
+
 def _normalizeLoadedFrame(df: pl.DataFrame, category: str) -> pl.DataFrame:
     if category == "docs":
-        return _normalizeDartDocs(df)
-    if category == "edgarDocs":
-        return _normalizeEdgarDocs(df)
-    return df
+        df = _normalizeDartDocs(df)
+    elif category == "edgarDocs":
+        df = _normalizeEdgarDocs(df)
+    return _optimizeMemory(df)
 
 
 def _normalizeDartDocs(df: pl.DataFrame) -> pl.DataFrame:

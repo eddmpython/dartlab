@@ -14,40 +14,40 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg026a)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주총공고는 안건을 배경 문서와 연결할 때 읽힌다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">주총공고는 안건을 배경 문서와 연결할 때 읽힌다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">일정 확인으로 끝내지 말고, 어떤 안건이 왜 지금 올라왔는지 순서대로 묻는다.</text>
 
   <rect x="72" y="184" width="184" height="168" rx="22" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
   <text x="96" y="224" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 1</text>
-  <text x="96" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">안건 목록</text>
+  <text x="96" y="262" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">안건 목록</text>
   <text x="96" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">이사 선임</text>
   <text x="96" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보수한도</text>
   <text x="96" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">정관변경</text>
 
   <rect x="294" y="184" width="184" height="168" rx="22" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="318" y="224" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 2</text>
-  <text x="318" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">우선순위</text>
+  <text x="318" y="262" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">우선순위</text>
   <text x="318" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">사람</text>
   <text x="318" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보상</text>
   <text x="318" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">규칙 변화</text>
 
   <rect x="516" y="184" width="184" height="168" rx="22" fill="#231d16" stroke="#f59e0b" stroke-width="2"/>
   <text x="540" y="224" fill="#fcd34d" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 3</text>
-  <text x="540" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">배경 문서</text>
+  <text x="540" y="262" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">배경 문서</text>
   <text x="540" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">사업보고서</text>
   <text x="540" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">보수 공시</text>
   <text x="540" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">오너십 표</text>
 
   <rect x="738" y="184" width="184" height="168" rx="22" fill="#241b2a" stroke="#a78bfa" stroke-width="2"/>
   <text x="762" y="224" fill="#c4b5fd" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 4</text>
-  <text x="762" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">질문 만들기</text>
+  <text x="762" y="262" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">질문 만들기</text>
   <text x="762" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">왜 지금인가</text>
   <text x="762" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">누구에게 유리한가</text>
   <text x="762" y="342" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">무엇이 바뀌나</text>
 
   <rect x="960" y="184" width="168" height="168" rx="22" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="984" y="224" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 5</text>
-  <text x="984" y="262" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">판단</text>
+  <text x="984" y="262" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="24" font-weight="700">판단</text>
   <text x="984" y="294" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">통과되면</text>
   <text x="984" y="318" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="17">무슨 방향이 되나</text>
 
@@ -57,7 +57,7 @@
   <path d="M924 268H948" stroke="#475569" stroke-width="4" marker-end="url(#arrow026a)"/>
 
   <rect x="72" y="434" width="1056" height="238" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
-  <text x="104" y="478" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">초보자에게 특히 유용한 연결</text>
+  <text x="104" y="478" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">초보자에게 특히 유용한 연결</text>
 
   <rect x="104" y="514" width="304" height="112" rx="18" fill="#132131" stroke="#38bdf8"/>
   <text x="128" y="552" fill="#7dd3fc" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">이사 선임</text>

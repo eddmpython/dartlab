@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
   <rect width="800" height="430" rx="28" fill="#0f172a"/>
-  <text x="400" y="40" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Post-Issuance Tracking Map</text>
+  <text x="400" y="40" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700">Post-Issuance Tracking Map</text>
   <text x="400" y="64" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">after the first filing, keep following the chain</text>
 
   <rect x="44" y="128" width="140" height="86" rx="18" fill="#1d4ed8"/>
-  <text x="114" y="160" text-anchor="middle" fill="#eff6ff" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">issuance</text>
+  <text x="114" y="160" text-anchor="middle" fill="rgba(37,99,235,0.15)" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">issuance</text>
   <text x="114" y="184" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="12">starting terms</text>
 
   <rect x="210" y="128" width="140" height="86" rx="18" fill="#0f766e"/>
@@ -12,11 +12,11 @@
   <text x="280" y="184" text-anchor="middle" fill="#ccfbf1" font-family="Inter, system-ui, sans-serif" font-size="12">term changes</text>
 
   <rect x="376" y="128" width="140" height="86" rx="18" fill="#ea580c"/>
-  <text x="446" y="160" text-anchor="middle" fill="#fff7ed" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">conversion</text>
+  <text x="446" y="160" text-anchor="middle" fill="rgba(234,88,12,0.15)" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">conversion</text>
   <text x="446" y="184" text-anchor="middle" fill="#ffedd5" font-family="Inter, system-ui, sans-serif" font-size="12">exercise reality</text>
 
   <rect x="542" y="128" width="140" height="86" rx="18" fill="#7c3aed"/>
-  <text x="612" y="160" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">capital change</text>
+  <text x="612" y="160" text-anchor="middle" fill="rgba(124,58,237,0.15)" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">capital change</text>
   <text x="612" y="184" text-anchor="middle" fill="#ede9fe" font-family="Inter, system-ui, sans-serif" font-size="12">share count effect</text>
 
   <rect x="708" y="128" width="48" height="86" rx="18" fill="#334155"/>
@@ -31,6 +31,6 @@
   </g>
 
   <rect x="74" y="278" width="652" height="98" rx="20" fill="#111827" stroke="#334155"/>
-  <text x="100" y="310" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Tracking rule</text>
+  <text x="100" y="310" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Tracking rule</text>
   <text x="100" y="336" fill="#cbd5e1" font-family="Inter, system-ui, sans-serif" font-size="13">The first filing tells you the design. The later filings tell you whether dilution and funding pressure are actually materializing.</text>
 </svg>

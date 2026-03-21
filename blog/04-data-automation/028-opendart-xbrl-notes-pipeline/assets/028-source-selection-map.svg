@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420" fill="none">
   <rect width="800" height="420" rx="28" fill="#111827"/>
-  <text x="400" y="46" text-anchor="middle" fill="#f8fafc" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">Source Selection Map</text>
+  <text x="400" y="46" text-anchor="middle" fill="#0f1219" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700">Source Selection Map</text>
   <text x="400" y="70" text-anchor="middle" fill="#94a3b8" font-family="Inter, system-ui, sans-serif" font-size="12">Different layers solve different jobs</text>
   <rect x="56" y="116" width="200" height="110" rx="20" fill="#1e3a8a" stroke="#60a5fa"/>
   <text x="156" y="148" text-anchor="middle" fill="#dbeafe" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Search / Metadata</text>
@@ -15,6 +15,6 @@
   <text x="644" y="182" text-anchor="middle" fill="#fed7aa" font-family="Inter, system-ui, sans-serif" font-size="12">Original structure</text>
   <text x="644" y="204" text-anchor="middle" fill="#fed7aa" font-family="Inter, system-ui, sans-serif" font-size="12">Tag validation</text>
   <rect x="228" y="268" width="344" height="96" rx="20" fill="#581c87" stroke="#c084fc"/>
-  <text x="400" y="302" text-anchor="middle" fill="#f5f3ff" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Notes Download</text>
+  <text x="400" y="302" text-anchor="middle" fill="rgba(124,58,237,0.15)" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700">Notes Download</text>
   <text x="400" y="330" text-anchor="middle" fill="#e9d5ff" font-family="Inter, system-ui, sans-serif" font-size="12">Depth for inventory, debt, lease, provisions</text>
 </svg>

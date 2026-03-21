@@ -17,7 +17,6 @@
 		messages = [],
 		isLoading = false,
 		inputText = $bindable(""),
-		scrollTrigger = 0,
 		onSend,
 		onStop,
 		onRegenerate,
@@ -29,6 +28,8 @@
 		viewerContext = null,   // B2: {topic, topicLabel, period} from viewer
 		pendingBlockLabel = null,  // 뷰어에서 첨부된 블록 라벨
 		onClearBlock = null,       // 블록 첨부 해제 콜백
+		providerLabel = null,
+		modelLabel = null,
 	} = $props();
 
 	function bridgeEvidence(msg) {
@@ -114,21 +115,29 @@
 		showJumpToLatest = false;
 	}
 
+	// 스트리밍 중 rAF 루프로 부드럽게 스크롤 — scrollTrigger 과호출 제거
+	let scrollRafId = null;
+	function scrollLoop() {
+		if (!streamAnchor) return;
+		if (followStream || isNearBottom) {
+			streamAnchor.scrollIntoView({ block: "end", behavior: "auto" });
+			showJumpToLatest = false;
+		}
+		scrollRafId = requestAnimationFrame(scrollLoop);
+	}
+
 	$effect(() => {
-		scrollTrigger;
-		if (!chatContainer || !streamAnchor) return;
-		requestAnimationFrame(() => {
-			if (!chatContainer || !streamAnchor) return;
-			if (followStream || isNearBottom) {
-				streamAnchor.scrollIntoView({
-					block: "end",
-					behavior: isLoading ? "auto" : "smooth",
-				});
+		if (isLoading) {
+			if (!scrollRafId) scrollRafId = requestAnimationFrame(scrollLoop);
+		} else {
+			if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; }
+			// 완료 시 한 번 smooth 스크롤
+			if (streamAnchor && (followStream || isNearBottom)) {
+				streamAnchor.scrollIntoView({ block: "end", behavior: "smooth" });
 				showJumpToLatest = false;
-			} else {
-				showJumpToLatest = true;
 			}
-		});
+		}
+		return () => { if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; } };
 	});
 
 </script>
@@ -213,6 +222,8 @@
 			<AutocompleteInput
 				bind:inputText
 				{isLoading}
+				{providerLabel}
+				{modelLabel}
 				placeholder="메시지를 입력하세요..."
 				onSend={onSend}
 				onStop={onStop}

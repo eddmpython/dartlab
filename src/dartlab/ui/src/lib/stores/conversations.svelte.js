@@ -57,7 +57,7 @@ function saveToStorage(data) {
 					activeId: data.activeId,
 				};
 				localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
-			} catch {}
+			} catch (e) { console.warn("conversations persist:", e); }
 		}
 	}
 }

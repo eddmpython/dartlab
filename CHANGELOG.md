@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-03-21
+
+### Added
+
+- **도구 모듈 루트 접근**: `dartlab.chart`, `dartlab.table`, `dartlab.text`로 직접 사용 가능 — `_Module.__getattr__` lazy import, 기존 `from dartlab.tools import chart` 경로도 유지
+- **CLI OAuth 브라우저 로그인**: `dartlab setup oauth-codex` 실행 시 브라우저 자동 열림 + PKCE 콜백 서버 대기 (120초 타임아웃)
+- **CLI 스트리밍 기본값**: `dartlab ask`가 기본 스트리밍 출력 (`--no-stream`으로 비활성화)
+- **CLI provider 전체 안내**: `dartlab setup`에 5개 provider (oauth-codex, codex, ollama, openai, custom) 설치/설정 가이드 추가
+- **CLI 상태 테이블**: `dartlab status`가 전체 provider를 테이블 형식으로 요약
+- **AI Marimo 노트북**: `startMarimo/aiAnalysis.py` — `dartlab.ask()` 사용 예시 (기본, provider 지정, 스트리밍, include/exclude)
+- **README AI 분석 섹션**: `dartlab.ask()` + CLI 사용법 + OpenDART API 키 안내
+
+### Changed
+
+- **차트 메서드명 단순화**: `revenue_trend` → `revenue`, `cashflow_pattern` → `cashflow`, `dividend_analysis` → `dividend`, `balance_sheet_composition` → `balance_sheet`, `profitability_ratios` → `profitability` (기존 이름은 alias로 유지)
+- **README/README_KR 차트 예시**: `from dartlab.tools import chart` → `dartlab.chart.*` 단축 경로로 변경
+- **메모리 최적화 — OOM 크래시 해결**: 32GB 시스템에서 Python 37GB+31GB 소비 → 크래시 발생. 8개 기법 적용:
+  - LRU 캐시 maxsize 85% 축소 (textStructure.py 6개, 실측 working set 기준)
+  - CompanyCache 20→5, TTL 30분→10분
+  - MCP 캐시에 LRU 퇴출 정책 적용 (기존 무제한 dict)
+  - Polars Categorical 자동 전환 (sj_div, topic, account_id 등 반복 문자열)
+  - Int64→Int32 다운캐스트 (year, section_order 등)
+  - `loadData()` columns 파라미터 추가 — Company 초기화 시 corpName만 경량 읽기
+  - sections() 파이프라인 중간 dict 조기 해제 + `gc.collect()`
+- **채팅 UI rAF 스크롤**: 스트리밍 흔들림 해소
+- **contentSplitter monotonic 보장**: committed 영역이 줄어들지 않는 증분 마크다운 렌더러
+- **채팅 입력 provider/model chip**: 현재 설정 표시
+- **사이드바 대화 미리보기**: 마지막 메시지 50자 미리보기
+
+### Fixed
+
+- **docs/api/finance-summary.md**: 존재하지 않는 `c.fsSummary()` 참조를 공개 API (`c.BS`, `c.IS`, `c.CF`)로 수정
+- **docs/tutorials/04_ratios.md**: 내부 모듈 경로 (`engines.dart.finance.pivot`)를 공개 API (`c.finance.ratioSeries`)로 수정
+- **CLI 스트리밍 출력 누락**: `dartlab ask` 스트리밍 제너레이터 미소비 버그 수정
+- **startMarimo/aiAnalysis.py**: 깊은 import 경로를 `dartlab.ask()` 루트 진입점으로 수정
+
 ## [0.7.2] - 2026-03-20
 
 ### Added

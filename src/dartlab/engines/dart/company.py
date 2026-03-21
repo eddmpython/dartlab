@@ -215,7 +215,7 @@ class Company:
         self._hasReport = _ensureData(self.stockCode, "report")
 
         if self._hasDocs:
-            df = loadData(self.stockCode, category="docs")
+            df = loadData(self.stockCode, category="docs", columns=["corp_name"])
             self.corpName = extractCorpName(df)
         else:
             self.corpName = codeToName(self.stockCode)

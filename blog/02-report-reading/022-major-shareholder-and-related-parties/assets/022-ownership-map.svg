@@ -14,12 +14,12 @@
   <rect width="1200" height="760" rx="28" fill="url(#bg022a)"/>
   <rect x="20" y="20" width="1160" height="720" rx="24" stroke="#1e293b" stroke-width="2"/>
 
-  <text x="72" y="82" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">최대주주 표는 지분율 표가 아니라 지배력 지도다</text>
+  <text x="72" y="82" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="34" font-weight="700">최대주주 표는 지분율 표가 아니라 지배력 지도다</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Pretendard, Inter, sans-serif" font-size="18">개인 지분만 보면 반쪽 해석이 된다. 합계와 구성, 변동까지 묶어야 실제 통제력이 보인다.</text>
 
   <rect x="72" y="176" width="286" height="268" rx="24" fill="#142033" stroke="#38bdf8" stroke-width="2"/>
   <text x="104" y="222" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 1</text>
-  <text x="104" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">개인 지분 확인</text>
+  <text x="104" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">개인 지분 확인</text>
   <text x="104" y="306" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">최대주주 본인 지분</text>
   <text x="104" y="336" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">최근 2~3년 변동</text>
   <text x="104" y="366" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">개인에서 법인으로 이동 여부</text>
@@ -28,7 +28,7 @@
 
   <rect x="458" y="176" width="286" height="268" rx="24" fill="#16231f" stroke="#22c55e" stroke-width="2"/>
   <text x="490" y="222" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 2</text>
-  <text x="490" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">특수관계인 묶기</text>
+  <text x="490" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">특수관계인 묶기</text>
   <text x="490" y="306" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">가족 지분</text>
   <text x="490" y="336" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">계열사와 재단, 우호 법인</text>
   <text x="490" y="366" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">합계가 단순한지 복잡한지</text>
@@ -37,7 +37,7 @@
 
   <rect x="844" y="176" width="286" height="268" rx="24" fill="#2b1d1b" stroke="#f97316" stroke-width="2"/>
   <text x="876" y="222" fill="#fdba74" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">STEP 3</text>
-  <text x="876" y="266" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">실제 판단</text>
+  <text x="876" y="266" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">실제 판단</text>
   <text x="876" y="306" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">이사회까지 영향이 이어지나</text>
   <text x="876" y="336" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">최근 변동 이유가 설명되나</text>
   <text x="876" y="366" fill="#cbd5e1" font-family="Pretendard, Inter, sans-serif" font-size="20">주총 안건과 연결되는가</text>
@@ -48,7 +48,7 @@
   <path d="M744 310H832" stroke="#475569" stroke-width="4" marker-end="url(#arrow022a)"/>
 
   <rect x="72" y="494" width="1058" height="194" rx="24" fill="#101926" stroke="#334155" stroke-width="2"/>
-  <text x="104" y="538" fill="#f8fafc" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">한 화면에서 바로 던질 질문</text>
+  <text x="104" y="538" fill="#0f1219" font-family="Pretendard, Inter, sans-serif" font-size="28" font-weight="700">한 화면에서 바로 던질 질문</text>
 
   <rect x="104" y="566" width="228" height="86" rx="18" fill="#132131" stroke="#38bdf8"/>
   <text x="126" y="600" fill="#7dd3fc" font-family="Pretendard, Inter, sans-serif" font-size="22" font-weight="700">개인 지분</text>

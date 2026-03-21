@@ -20,7 +20,8 @@ def configure_parser(subparsers) -> None:
         "--include", "-i", nargs="+", default=None, help="포함할 topic (BS IS CF dividend companyOverview ...)"
     )
     parser.add_argument("--exclude", "-e", nargs="+", default=None, help="제외할 topic")
-    parser.add_argument("--stream", "-s", action="store_true", help="스트리밍 출력")
+    parser.add_argument("--stream", "-s", action="store_true", default=True, help="스트리밍 출력 (기본값)")
+    parser.add_argument("--no-stream", dest="stream", action="store_false", help="스트리밍 비활성화")
     parser.set_defaults(handler=run)
 
 
@@ -35,7 +36,11 @@ def run(args) -> int:
         raise CLIError(str(exc)) from exc
 
     print(f"\n  {company.corpName} ({company.stockCode})")
-    print(f"  provider: {provider}")
+    print(f"  provider: {provider}", end="")
+    if args.model:
+        print(f" / {args.model}")
+    else:
+        print()
     print()
 
     from dartlab.engines.ai.runtime.standalone import ask as _ask
@@ -52,6 +57,12 @@ def run(args) -> int:
         api_key=args.api_key,
     )
 
-    if not args.stream:
+    if args.stream:
+        import sys
+        for chunk in answer:
+            sys.stdout.write(chunk)
+            sys.stdout.flush()
+        print()
+    else:
         print(answer)
     return 0
