@@ -164,5 +164,10 @@ export function renderMarkdown(text) {
 			'<span class="num-highlight">$1$2$3</span>');
 	});
 
+	// 소스 인용 각주: [1], [2] 등 → 인라인 참조 뱃지
+	html = html.replace(/(?<![<\w])\[(\d{1,2})\](?![<(])/g,
+		'<sup class="cite-ref" data-cite="$1">[$1]</sup>'
+	);
+
 	return '<p>' + html + '</p>';
 }

@@ -18,6 +18,7 @@
 	import DiffCompare from "./DiffCompare.svelte";
 	import { MessageSquare, Sparkles, Star, Loader2, ArrowLeftRight } from "lucide-svelte";
 	import BlockToolbar from "./viewer/BlockToolbar.svelte";
+	import { ErrorBoundary } from "$lib/components/ui/error-boundary/index.js";
 
 	let {
 		topicData = null,    // viewer API response (blocks + textDocument)
@@ -703,7 +704,9 @@
 								<ChartRenderer {spec} />
 							{/await}
 						{:else}
-							<TableRenderer {block} />
+							<ErrorBoundary title="테이블을 표시할 수 없습니다">
+								<TableRenderer {block} />
+							</ErrorBoundary>
 						{/if}
 					</div>
 					{/if}
@@ -769,7 +772,9 @@
 								<ChartRenderer spec={spec2} />
 							{/await}
 						{:else}
-							<TableRenderer {block} />
+							<ErrorBoundary title="테이블을 표시할 수 없습니다">
+								<TableRenderer {block} />
+							</ErrorBoundary>
 						{/if}
 					</div>
 				{/if}

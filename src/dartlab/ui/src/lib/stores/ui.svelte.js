@@ -45,23 +45,30 @@ export function createUiStore() {
 	let viewerFullscreen = $state(false);
 	let isMobile = $state(false);
 
-	// ── Toast ──
-	let toastMessage = $state("");
-	let toastType = $state("error");
-	let toastVisible = $state(false);
-	let toastTimer = null;
+	// ── Toast Queue ──
+	let toastQueue = $state([]);
+	let toastIdCounter = 0;
 
 	function showToast(msg, type = "error", duration = 4000) {
-		toastMessage = msg;
-		toastType = type;
-		toastVisible = true;
-		if (toastTimer) clearTimeout(toastTimer);
-		toastTimer = setTimeout(() => { toastVisible = false; toastTimer = null; }, duration);
+		const id = ++toastIdCounter;
+		const timer = setTimeout(() => dismissToast(id), duration);
+		const entry = { id, message: msg, type, duration, timer };
+		// max 5 toasts
+		if (toastQueue.length >= 5) {
+			const oldest = toastQueue[0];
+			clearTimeout(oldest.timer);
+			toastQueue = [...toastQueue.slice(1), entry];
+		} else {
+			toastQueue = [...toastQueue, entry];
+		}
 	}
 
-	function dismissToast() {
-		toastVisible = false;
-		if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+	function dismissToast(id) {
+		const idx = toastQueue.findIndex(t => t.id === id);
+		if (idx >= 0) {
+			clearTimeout(toastQueue[idx].timer);
+			toastQueue = [...toastQueue.slice(0, idx), ...toastQueue.slice(idx + 1)];
+		}
 	}
 
 	// ── Modals ──
@@ -481,9 +488,11 @@ export function createUiStore() {
 		checkMobile,
 
 		// toast
-		get toastMessage() { return toastMessage; },
-		get toastType() { return toastType; },
-		get toastVisible() { return toastVisible; },
+		get toastQueue() { return toastQueue; },
+		get toastMessage() { return toastQueue.length > 0 ? toastQueue[toastQueue.length - 1].message : ""; },
+		get toastType() { return toastQueue.length > 0 ? toastQueue[toastQueue.length - 1].type : "error"; },
+		get toastVisible() { return toastQueue.length > 0; },
+		get toastDuration() { return toastQueue.length > 0 ? toastQueue[toastQueue.length - 1].duration : 4000; },
 		showToast,
 		dismissToast,
 

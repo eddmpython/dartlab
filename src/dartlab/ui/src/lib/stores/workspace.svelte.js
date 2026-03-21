@@ -37,6 +37,10 @@ export function createWorkspaceStore() {
 	let viewerTopicLabel = $state(null); // "회사 개요", "재무상태표" 등
 	let viewerPeriod = $state(null);    // "2024Q4" 등 (B2: 기간 동기화)
 
+	// Artifact: AI 생성물 히스토리
+	let artifactHistory = $state([]);  // [{view, timestamp}]
+	let artifactIndex = $state(-1);    // 현재 보고 있는 artifact 인덱스
+
 	// Company state (persisted)
 	let selectedCompany = $state(stored.selectedCompany || null);
 	let recentCompanies = $state(stored.recentCompanies || []);
@@ -111,6 +115,31 @@ export function createWorkspaceStore() {
 		viewerPeriod = period;
 	}
 
+	// Artifact 패널 열기
+	function openArtifact(view) {
+		const entry = { view, timestamp: Date.now() };
+		// 중복 방지: 같은 제목의 최근 항목이 있으면 교체
+		const existing = artifactHistory.findIndex(
+			a => a.view?.title === view?.title && Date.now() - a.timestamp < 60000
+		);
+		if (existing >= 0) {
+			artifactHistory[existing] = entry;
+			artifactIndex = existing;
+		} else {
+			artifactHistory = [...artifactHistory, entry].slice(-20);  // 최대 20개
+			artifactIndex = artifactHistory.length - 1;
+		}
+		panelMode = "artifact";
+		panelData = view;
+		panelOpen = true;
+	}
+
+	function navigateArtifact(index) {
+		if (index < 0 || index >= artifactHistory.length) return;
+		artifactIndex = index;
+		panelData = artifactHistory[index].view;
+	}
+
 	function openEvidence(section, index = null) {
 		panelMode = "data";
 		panelOpen = true;
@@ -172,9 +201,13 @@ export function createWorkspaceStore() {
 		get viewerTopic() { return viewerTopic; },
 		get viewerTopicLabel() { return viewerTopicLabel; },
 		get viewerPeriod() { return viewerPeriod; },
+		get artifactHistory() { return artifactHistory; },
+		get artifactIndex() { return artifactIndex; },
 		switchView,
 		openViewer,
 		openData,
+		openArtifact,
+		navigateArtifact,
 		openEvidence,
 		closePanel,
 		selectCompany,

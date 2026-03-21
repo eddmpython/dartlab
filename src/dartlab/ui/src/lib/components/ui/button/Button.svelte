@@ -21,7 +21,7 @@
 {#if restProps.href}
 	<a
 		class={cn(
-			"inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer no-underline",
+			"inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer no-underline active:scale-95",
 			variants[variant], sizes[size], className
 		)}
 		{...restProps}
@@ -31,7 +31,7 @@
 {:else}
 	<button
 		class={cn(
-			"inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer",
+			"inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer active:scale-95",
 			variants[variant], sizes[size], className
 		)}
 		{...restProps}

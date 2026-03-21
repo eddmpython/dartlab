@@ -6,6 +6,7 @@
 -->
 <script>
 	import { Loader2, FileText, Search, X, AlertCircle, Clock, Building2, PanelLeftClose, PanelLeftOpen } from "lucide-svelte";
+	import Skeleton from "$lib/components/ui/skeleton/Skeleton.svelte";
 	import { fetchCompanySearch, searchCompany } from "$lib/api.js";
 	import ViewerNav from "./ViewerNav.svelte";
 	import TopicRenderer from "./TopicRenderer.svelte";
@@ -565,22 +566,29 @@
 				{/if}
 			</div>
 		{:else if viewer?.tocLoading}
-			<div class="flex flex-col items-center justify-center h-full">
-				<Loader2 size={24} class="animate-spin text-dl-text-dim/40 mb-3" />
-				<div class="text-[12px] text-dl-text-dim">공시 데이터 로딩 중...</div>
+			<div class="max-w-7xl mx-auto px-6 py-6 space-y-6 animate-fadeIn">
+				<Skeleton class="h-6 w-48" />
+				<div class="space-y-3">
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-5/6" />
+					<Skeleton class="h-4 w-4/5" />
+				</div>
+				<Skeleton class="h-24 w-full rounded-xl" />
+				<div class="space-y-3">
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-3/4" />
+				</div>
+				<div class="text-[12px] text-dl-text-dim text-center">공시 데이터 로딩 중...</div>
 			</div>
 		{:else if viewer?.topicLoading && !viewer?.topicData}
-			<div class="max-w-7xl mx-auto px-6 py-4">
-				<!-- Skeleton placeholder -->
-				<div class="animate-pulse space-y-4">
-					<div class="h-5 bg-dl-surface-card/40 rounded w-2/3"></div>
-					<div class="h-3 bg-dl-surface-card/30 rounded w-full"></div>
-					<div class="h-3 bg-dl-surface-card/30 rounded w-5/6"></div>
-					<div class="h-20 bg-dl-surface-card/20 rounded"></div>
-					<div class="h-3 bg-dl-surface-card/30 rounded w-4/5"></div>
-					<div class="h-3 bg-dl-surface-card/30 rounded w-full"></div>
-					<div class="h-16 bg-dl-surface-card/20 rounded"></div>
-				</div>
+			<div class="max-w-7xl mx-auto px-6 py-4 space-y-4 animate-fadeIn">
+				<Skeleton class="h-5 w-2/3" />
+				<Skeleton class="h-3 w-full" />
+				<Skeleton class="h-3 w-5/6" />
+				<Skeleton class="h-20 w-full rounded-xl" />
+				<Skeleton class="h-3 w-4/5" />
+				<Skeleton class="h-3 w-full" />
+				<Skeleton class="h-16 w-full rounded-xl" />
 			</div>
 		{:else if viewer?.topicData}
 			<!-- 로딩 중이면 이전 콘텐츠를 흐리게 유지 -->
@@ -590,6 +598,22 @@
 				</div>
 			{/if}
 			<div class="max-w-7xl mx-auto px-6 py-4 {viewer?.topicLoading ? 'opacity-40 pointer-events-none' : 'animate-fadeIn'} transition-opacity duration-200">
+				<!-- 브레드크럼 -->
+				{#if !isMobileViewer && (viewer?.corpName || viewer?.selectedChapter || viewer?.selectedTopic)}
+					<nav class="flex items-center gap-1 text-[11px] text-dl-text-dim mb-3 overflow-x-auto" aria-label="경로">
+						{#if viewer?.corpName}
+							<span class="text-dl-text-muted font-medium truncate max-w-[160px]">{viewer.corpName}</span>
+						{/if}
+						{#if viewer?.selectedChapter}
+							<span class="text-dl-border/60 mx-0.5">/</span>
+							<span class="truncate max-w-[200px]">{viewer.selectedChapter}</span>
+						{/if}
+						{#if viewer?.topicData?.topicLabel || viewer?.selectedTopic}
+							<span class="text-dl-border/60 mx-0.5">/</span>
+							<span class="text-dl-text-muted truncate max-w-[200px]">{viewer.topicData?.topicLabel || viewer.selectedTopic}</span>
+						{/if}
+					</nav>
+				{/if}
 				<div class="mt-0">
 					<TopicRenderer
 						topicData={viewer.topicData}

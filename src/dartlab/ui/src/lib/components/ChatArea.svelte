@@ -23,6 +23,8 @@
 		onExport,
 		onOpenData,
 		onOpenEvidence,
+		onOpenArtifact,
+		onEditResend,
 		onCompanySelect,
 		selectedCompany = null,
 		viewerContext = null,   // B2: {topic, topicLabel, period} from viewer
@@ -53,6 +55,19 @@
 	let followStream = $state(true);
 	let showJumpToLatest = $state(false);
 	let isNearBottom = $state(true);
+
+	// 스태거 애니메이션: 초기 로드 시에만 적용
+	let staggerReady = $state(true);
+	let prevMsgCount = $state(0);
+	$effect(() => {
+		if (messages.length !== prevMsgCount) {
+			if (prevMsgCount > 0 && messages.length > prevMsgCount) {
+				// 새 메시지 추가됨 — 스태거 비활성화
+				staggerReady = false;
+			}
+			prevMsgCount = messages.length;
+		}
+	});
 
 	// Load more: 최근 PAGE_SIZE개만 렌더, 위로 스크롤 시 더 불러오기
 	const PAGE_SIZE = 30;
@@ -144,7 +159,7 @@
 
 <!-- shared contract marker: onOpenEvidence={onOpenEvidence} -->
 <div class="relative flex flex-col h-full min-h-0">
-	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll}>
+	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll} role="log" aria-live="polite" aria-label="대화 내용">
 		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-5 pb-10 space-y-8">
 				{#if hasMore}
 					<div bind:this={loadMoreSentinel} class="flex justify-center py-3">
@@ -156,11 +171,14 @@
 						</button>
 					</div>
 				{/if}
-				{#each visibleMessages as msg}
+				{#each visibleMessages as msg, i}
 					<MessageBubble
 						message={msg}
+						staggerIndex={staggerReady && i < 15 ? i : 0}
 						onRegenerate={isLastAssistant(msg) ? onRegenerate : undefined}
 						onOpenEvidence={onOpenData ? bridgeEvidence(msg) : undefined}
+						{onOpenArtifact}
+						onEditResend={msg.role === "user" ? onEditResend : undefined}
 					/>
 				{/each}
 				<div bind:this={streamAnchor} class="h-px w-full"></div>

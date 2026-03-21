@@ -22,31 +22,37 @@
 		getLastAssistantStockCode,
 	} from "$lib/ai/chatStream.js";
 	import { normalizeProvider } from "$lib/ai/providerProfile.js";
-	import { cn } from "$lib/utils.js";
+	import { cn, createSwipeHandler } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
 	import { createViewerStore } from "$lib/stores/viewer.svelte.js";
 	import { createUiStore } from "$lib/stores/ui.svelte.js";
+	import { createRoomStore } from "$lib/stores/room.svelte.js";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
 	import RightPanel from "$lib/components/RightPanel.svelte";
-	import DisclosureViewer from "$lib/components/DisclosureViewer.svelte";
-	import SettingsPanel from "$lib/components/SettingsPanel.svelte";
+	// 동적 import — 코드 스플리팅
+	// DisclosureViewer와 SettingsPanel은 사용자가 탭 전환/설정 열기 시 로드
 	import SearchModal from "$lib/components/SearchModal.svelte";
 	import DeleteDialog from "$lib/components/DeleteDialog.svelte";
 	import ToastNotification from "$lib/components/ToastNotification.svelte";
+	import PanelResizer from "$lib/components/PanelResizer.svelte";
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Loader2, Settings, AlertCircle,
-		MessageSquare, BookOpen
+		MessageSquare, BookOpen, Users
 	} from "lucide-svelte";
+	import RoomBar from "$lib/components/room/RoomBar.svelte";
+	import RoomChat from "$lib/components/room/RoomChat.svelte";
+	import FloatingReactions from "$lib/components/room/FloatingReactions.svelte";
 
 	// ── Stores ──
 	const ui = createUiStore();
 	const store = createConversationsStore();
 	const workspace = createWorkspaceStore();
 	const viewerStore = createViewerStore();
+	const room = createRoomStore(ui);
 
 	// ── State (App-specific only) ──
 	let inputText = $state("");
@@ -55,10 +61,40 @@
 	let pendingBlockData = $state(null);
 	// scrollTrigger removed — ChatArea uses isLoading-driven rAF loop
 	let showSearchModal = $state(false);
+	let showRoomChat = $state(false);
+	let showRoomJoin = $state(false);
+
+	// ── 리사이저블 패널 ──
+	let sidebarWidth = $state(260);
+	let rightPanelPct = $state(null);  // null = 기본값 사용
+
+	function handleSidebarResize(delta) {
+		sidebarWidth = Math.max(180, Math.min(400, sidebarWidth + delta));
+	}
+
+	function handleRightPanelResize(delta) {
+		const total = window.innerWidth;
+		const currentPct = rightPanelPct ?? (workspace.panelMode === "viewer" ? 65 : 50);
+		// delta가 음수면 패널 커짐 (왼쪽으로 드래그)
+		const newPct = Math.max(25, Math.min(85, currentPct - (delta / total) * 100));
+		rightPanelPct = newPct;
+	}
+
+	// ── 모바일 스와이프 ──
+	$effect(() => {
+		if (!ui.isMobile) return;
+		return createSwipeHandler(document.body, {
+			edgeOnly: true,
+			edgeWidth: 30,
+			onSwipeRight: () => { if (!ui.sidebarOpen) ui.sidebarOpen = true; },
+			onSwipeLeft: () => { if (ui.sidebarOpen) ui.sidebarOpen = false; },
+		});
+	});
 
 	// ── Derived ──
 	let panelWidth = $derived(
 		ui.viewerFullscreen ? "100%" :
+		rightPanelPct != null ? `${rightPanelPct}%` :
 		workspace.panelMode === "viewer" ? "65%" : "50%"
 	);
 	let activeMessages = $derived(store.active?.messages || []);
@@ -74,7 +110,27 @@
 	// ── Init ──
 	let statusLoaded = false;
 	$effect(() => {
-		if (!statusLoaded) { statusLoaded = true; ui.loadStatus(); }
+		if (!statusLoaded) { statusLoaded = true; ui.loadStatus(); room.checkRoom(); }
+	});
+
+	// Room: 네비게이션 인바운드 (SSE → workspace)
+	$effect(() => {
+		const nav = room.navState;
+		if (!nav || !room.joined || room.isNavFromRemote === false) return;
+		if (nav.stockCode) {
+			handleCompanySelect({ stockCode: nav.stockCode, corpName: nav.stockCode });
+		}
+		if (nav.topic) {
+			workspace.setViewerTopic(nav.topic, nav.topicLabel || nav.topic);
+		}
+	});
+
+	// Room: 페이지 떠날 때 정리
+	$effect(() => {
+		if (!room.joined) return;
+		const onUnload = () => { room.leave(); };
+		window.addEventListener("beforeunload", onUnload);
+		return () => window.removeEventListener("beforeunload", onUnload);
 	});
 
 	$effect(() => {
@@ -109,6 +165,12 @@
 	}
 
 	// ── Chat actions ──
+	// 패널 모드 변경 시 커스텀 폭 리셋
+	$effect(() => {
+		workspace.panelMode;  // track
+		rightPanelPct = null;
+	});
+
 	function handleNewChat() {
 		store.createConversation();
 		inputText = "";
@@ -195,6 +257,12 @@
 		}
 	}
 
+	function handleEditResend(newText) {
+		if (!newText || isLoading) return;
+		// 편집한 사용자 메시지 이후의 모든 메시지를 제거하고 재전송
+		sendMessage(newText);
+	}
+
 	function handleRegenerate() {
 		const conv = store.active;
 		if (!conv || conv.messages.length < 2) return;
@@ -228,7 +296,10 @@
 	}
 
 	// ── Navigation ──
-	function handleCompanySelect(company) { workspace.openViewer(company); }
+	function handleCompanySelect(company) {
+		workspace.openViewer(company);
+		if (room.joined) room.navigate({ stockCode: company.stockCode });
+	}
 
 	function handleOpenData(data) { workspace.openData(data); }
 	function handleOpenEvidence(section, index = null) { workspace.openEvidence(section, index); }
@@ -265,6 +336,7 @@
 		if (!data?.topic) return;
 		workspace.switchView("viewer");
 		await viewerStore.selectTopic?.(data.topic, data.chapter || null);
+		if (room.joined) room.navigate({ topic: data.topic });
 	}
 
 	// ── Keyboard shortcuts ──
@@ -296,9 +368,9 @@
 	<div class={ui.isMobile ? (ui.sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
 		{#if workspace.activeView === "viewer"}
 			<!-- Viewer sidebar: 최근 종목 -->
-			<aside class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden {ui.sidebarOpen ? 'w-[260px]' : 'w-[52px]'}">
+			<aside class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden" style="{ui.sidebarOpen ? `width: ${sidebarWidth}px` : 'width: 52px'}">
 				{#if ui.sidebarOpen}
-					<div class="flex flex-col h-full min-w-[260px]">
+					<div class="flex flex-col h-full" style="min-width: {sidebarWidth}px">
 						<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
 							<div class="flex items-center gap-2.5">
 								<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
@@ -344,12 +416,17 @@
 				conversations={store.conversations}
 				activeId={store.activeId}
 				open={ui.isMobile ? true : ui.sidebarOpen}
+				width={sidebarWidth}
 				version={ui.appVersion}
 				onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
 				onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
 				onDelete={handleDeleteConversation}
+				onRename={(id, title) => { if (title) convStore.updateTitle(id, title); }}
 				onOpenSearch={() => { showSearchModal = true; }}
 			/>
+		{/if}
+		{#if !ui.isMobile && ui.sidebarOpen}
+			<PanelResizer onResize={handleSidebarResize} />
 		{/if}
 	</div>
 
@@ -368,8 +445,8 @@
 				{/if}
 			</button>
 
-			<!-- View tabs -->
-			<div class="flex items-center ml-2 rounded-lg bg-dl-bg-card/60 border border-dl-border/20 p-0.5">
+			<!-- View tabs (모바일은 하단 탭 바 사용) -->
+			<div class="items-center ml-2 rounded-lg bg-dl-bg-card/60 border border-dl-border/20 p-0.5 {ui.isMobile ? 'hidden' : 'flex'}">
 				<button
 					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'chat'
 						? 'text-dl-text bg-dl-surface-active font-medium'
@@ -441,18 +518,45 @@
 			</button>
 		</div>
 
+		<!-- Room 참여 안내 (데스크톱, 미참여 시) -->
+		{#if !ui.isMobile && room.roomAvailable && !room.joined}
+			<button
+				class="flex items-center justify-center gap-2 h-7 bg-dl-accent/10 border-b border-dl-accent/20 text-xs text-dl-accent hover:bg-dl-accent/15 transition-colors"
+				onclick={() => { showRoomJoin = true; }}
+			>
+				<Users size={12} />
+				<span>협업 세션이 활성 중입니다 — 클릭하여 참여</span>
+			</button>
+		{/if}
+
+		<!-- Room Bar (데스크톱) -->
+		{#if !ui.isMobile && room.joined}
+			<RoomBar
+				{room}
+				onToggleChat={() => { showRoomChat = !showRoomChat; if (showRoomChat) room.markRoomViewed(); }}
+				onLeave={() => room.leave()}
+			/>
+		{/if}
+
 		<!-- Content -->
 		<div class="flex flex-1 min-h-0">
-			{#if workspace.activeView === "viewer"}
+			{#if workspace.activeView === "room" && room.joined}
+				<!-- 모바일 Room 전체 화면 -->
 				<div class="min-w-0 flex-1 pt-10">
-					<DisclosureViewer
-						viewer={viewerStore}
-						company={workspace.selectedCompany}
-						recentCompanies={workspace.recentCompanies}
-						onCompanySelect={handleCompanySelect}
-						onAskAI={handleAskFromViewer}
-						onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
-					/>
+					<RoomChat {room} showMembers={true} />
+				</div>
+			{:else if workspace.activeView === "viewer"}
+				<div class="min-w-0 flex-1 pt-10">
+					{#await import("$lib/components/DisclosureViewer.svelte") then { default: DisclosureViewer }}
+						<DisclosureViewer
+							viewer={viewerStore}
+							company={workspace.selectedCompany}
+							recentCompanies={workspace.recentCompanies}
+							onCompanySelect={handleCompanySelect}
+							onAskAI={handleAskFromViewer}
+							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
+						/>
+					{/await}
 				</div>
 			{:else}
 				<div class="min-w-0 flex-1 flex flex-col">
@@ -473,6 +577,8 @@
 							onExport={handleExport}
 							onOpenData={handleOpenData}
 							onOpenEvidence={handleOpenEvidence}
+							onOpenArtifact={(view) => workspace.openArtifact(view)}
+							onEditResend={handleEditResend}
 							onCompanySelect={handleCompanySelect}
 						/>
 					{:else}
@@ -485,9 +591,12 @@
 				</div>
 
 				{#if !ui.isMobile && workspace.panelOpen}
+					{#if !ui.viewerFullscreen}
+						<PanelResizer onResize={handleRightPanelResize} />
+					{/if}
 					<div
-						class="flex-shrink-0 border-l border-dl-border/30 transition-all duration-300"
-						style="width: {panelWidth}; min-width: 360px; {ui.viewerFullscreen ? '' : 'max-width: 75vw;'}"
+						class="flex-shrink-0 transition-all duration-300"
+						style="width: {panelWidth}; min-width: 360px; {ui.viewerFullscreen ? '' : 'max-width: 85vw;'}"
 					>
 						<RightPanel
 							mode={workspace.panelMode}
@@ -497,16 +606,101 @@
 							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
 							onFullscreen={() => { ui.viewerFullscreen = !ui.viewerFullscreen; }}
 							isFullscreen={ui.viewerFullscreen}
+							artifactHistory={workspace.artifactHistory}
+							artifactIndex={workspace.artifactIndex}
+							onNavigateArtifact={(idx) => workspace.navigateArtifact(idx)}
 						/>
 					</div>
 				{/if}
 			{/if}
+
+			<!-- 데스크톱 Room Chat 사이드 패널 -->
+			{#if !ui.isMobile && showRoomChat && room.joined}
+				<div class="flex-shrink-0 w-72 border-l border-dl-border/30">
+					<RoomChat {room} showMembers={false} />
+				</div>
+			{/if}
 		</div>
 	</div>
+
+	<!-- 모바일 하단 탭 바 -->
+	{#if ui.isMobile}
+		<nav class="flex items-center justify-around h-12 border-t border-dl-border/30 bg-dl-bg-darker/95 backdrop-blur-sm flex-shrink-0 safe-area-bottom" aria-label="메인 탐색">
+			<button
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'chat' ? 'text-dl-accent' : 'text-dl-text-dim'}"
+				onclick={() => workspace.switchView('chat')}
+			>
+				<MessageSquare size={18} />
+				<span class="text-[9px] font-medium">Chat</span>
+			</button>
+			<button
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'viewer' ? 'text-dl-accent' : 'text-dl-text-dim'}"
+				onclick={() => workspace.switchView('viewer')}
+			>
+				<BookOpen size={18} />
+				<span class="text-[9px] font-medium">Viewer</span>
+			</button>
+			<button
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
+				onclick={() => { showSearchModal = true; }}
+			>
+				<Search size={18} />
+				<span class="text-[9px] font-medium">검색</span>
+			</button>
+			{#if room.roomAvailable || room.joined}
+				<button
+					class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors relative
+						{workspace.activeView === 'room' ? 'text-dl-accent' : 'text-dl-text-dim'}"
+					onclick={() => {
+						if (!room.joined) { showRoomJoin = true; }
+						else { workspace.switchView('room'); room.markRoomViewed(); }
+					}}
+				>
+					<Users size={18} />
+					<span class="text-[9px] font-medium">Room</span>
+					{#if room.unreadCount > 0}
+						<span class="absolute top-0.5 right-1/4 w-3.5 h-3.5 rounded-full bg-dl-primary text-white text-[8px] flex items-center justify-center font-bold">
+							{room.unreadCount > 9 ? "9+" : room.unreadCount}
+						</span>
+					{/if}
+				</button>
+			{/if}
+			<button
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
+				onclick={() => ui.openSettings()}
+			>
+				<Settings size={18} />
+				<span class="text-[9px] font-medium">설정</span>
+			</button>
+		</nav>
+	{/if}
 </div>
 
 <!-- Modals -->
-<SettingsPanel {ui} />
-<SearchModal bind:open={showSearchModal} recentCompanies={workspace.recentCompanies} onSelect={handleCompanySelect} />
+{#if ui.settingsOpen}
+	{#await import("$lib/components/SettingsPanel.svelte") then { default: SettingsPanel }}
+		<SettingsPanel {ui} />
+	{/await}
+{/if}
+<SearchModal
+	bind:open={showSearchModal}
+	recentCompanies={workspace.recentCompanies}
+	onSelect={handleCompanySelect}
+	onAction={(id) => {
+		if (id === "newChat") handleNewChat();
+		else if (id === "viewChat") workspace.switchView("chat");
+		else if (id === "viewViewer") workspace.switchView("viewer");
+		else if (id === "openSettings") ui.openSettings();
+		else if (id === "exportChat") handleExport();
+	}}
+/>
+{#if showRoomJoin && room.roomAvailable}
+	{#await import("$lib/components/room/RoomJoinDialog.svelte") then { default: RoomJoinDialog }}
+		<RoomJoinDialog {room} onClose={() => { showRoomJoin = false; }} />
+	{/await}
+{/if}
+{#if room.joined}
+	<FloatingReactions reactions={room.reactions} />
+{/if}
 <DeleteDialog {ui} onConfirm={confirmDelete} />
 <ToastNotification {ui} />

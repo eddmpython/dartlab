@@ -5,19 +5,24 @@
 	내용: 공시 뷰어 / 뱃지 데이터 / 종목 데이터
 -->
 <script>
-	import { X, Download, Loader2, Maximize2, Minimize2 } from "lucide-svelte";
+	import { X, Download, Loader2, Maximize2, Minimize2, ChevronLeft, ChevronRight } from "lucide-svelte";
 	import { downloadExcel } from "$lib/api.js";
 	import { renderMarkdown } from "$lib/markdown.js";
 	import SectionsViewer from "./SectionsViewer.svelte";
+	import ViewSpecRenderer from "$lib/ai/ViewSpecRenderer.svelte";
 
 	let {
-		mode = null,       // "viewer" | "data"
+		mode = null,       // "viewer" | "data" | "artifact"
 		company = null,    // selected company
-		data = null,       // data for "data" mode
+		data = null,       // data for "data"/"artifact" mode
 		onClose,
 		onTopicChange = null,
 		onFullscreen = null,  // 전체화면 토글 콜백
 		isFullscreen = false,
+		// Artifact navigation
+		artifactHistory = [],
+		artifactIndex = -1,
+		onNavigateArtifact = null,
 	} = $props();
 
 	let downloading = $state(false);
@@ -47,6 +52,27 @@
 			{#if mode === "viewer" && company}
 				<span class="text-[12px] font-semibold text-dl-text truncate">{company.corpName || company.company}</span>
 				<span class="text-[10px] font-mono text-dl-text-dim">{company.stockCode}</span>
+			{:else if mode === "artifact"}
+				<div class="flex items-center gap-1.5">
+					{#if artifactHistory.length > 1}
+						<button
+							class="p-0.5 rounded text-dl-text-dim hover:text-dl-text disabled:opacity-30 transition-colors"
+							onclick={() => onNavigateArtifact?.(artifactIndex - 1)}
+							disabled={artifactIndex <= 0}
+						>
+							<ChevronLeft size={14} />
+						</button>
+						<span class="text-[10px] text-dl-text-dim font-mono">{artifactIndex + 1}/{artifactHistory.length}</span>
+						<button
+							class="p-0.5 rounded text-dl-text-dim hover:text-dl-text disabled:opacity-30 transition-colors"
+							onclick={() => onNavigateArtifact?.(artifactIndex + 1)}
+							disabled={artifactIndex >= artifactHistory.length - 1}
+						>
+							<ChevronRight size={14} />
+						</button>
+					{/if}
+					<span class="text-[12px] font-semibold text-dl-text truncate">{data?.title || "Artifact"}</span>
+				</div>
 			{:else if mode === "data" && data?.label}
 				<span class="text-[12px] font-semibold text-dl-text">{data.label}</span>
 			{:else if mode === "data"}
@@ -95,6 +121,10 @@
 				stockCode={company.stockCode}
 				onTopicChange={onTopicChange}
 			/>
+		{:else if mode === "artifact" && data}
+			<div class="p-4">
+				<ViewSpecRenderer view={data} />
+			</div>
 		{:else if mode === "data" && data}
 			<div class="p-4">
 				{#if typeof data === "string"}

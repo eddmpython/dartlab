@@ -19,6 +19,18 @@ export {
 	validateProvider,
 } from "./api/ai.js";
 
+export {
+	roomState,
+	roomJoin,
+	roomLeave,
+	roomHeartbeat,
+	roomStream,
+	roomAsk,
+	roomNavigate,
+	roomChat,
+	roomReact,
+} from "./api/room.js";
+
 /** Excel 내보내기 가능한 모듈 목록 */
 export async function fetchExportModules(stockCode) {
 	const res = await fetch(`${BASE}/api/export/modules/${encodeURIComponent(stockCode)}`);
@@ -392,7 +404,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "ui_action") onUiAction?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
-							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(); } }
+							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(parsed); } }
 						} catch (e) {
 							console.warn("SSE JSON parse:", e);
 						}

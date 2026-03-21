@@ -42,5 +42,16 @@ def _(dartlab):
     return
 
 
+@app.cell
+def _(dartlab):
+    dartlab.ask('삼성전자 성격별 비용 분류도 알수있나')
+    return
+
+
+@app.cell
+def _():
+    return
+
+
 if __name__ == "__main__":
     app.run()

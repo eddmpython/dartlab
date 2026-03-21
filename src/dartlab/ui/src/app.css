@@ -129,6 +129,17 @@ button, a, input, textarea {
 	from { opacity: 0; transform: translateY(8px); }
 	to { opacity: 1; transform: translateY(0); }
 }
+.animate-fadeIn {
+	animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes message-enter {
+	from { opacity: 0; transform: translateY(12px) scale(0.98); }
+	to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-message-enter {
+	animation: message-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
 @keyframes progress-bar {
 	0% { width: 0; margin-left: 0; }
@@ -200,11 +211,6 @@ button, a, input, textarea {
 .send-btn.active:hover { background: var(--color-dl-text-muted); }
 .send-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
-/* ── Animations ── */
-.animate-fadeIn {
-	animation: fadeIn 0.3s ease-out;
-}
-
 .surface-panel {
 	background:
 		linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0)),
@@ -259,15 +265,16 @@ button, a, input, textarea {
 	box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
-.message-live-tail::after {
+.message-live-tail pre::after {
 	content: "";
-	position: absolute;
-	left: 1rem;
-	bottom: 0.75rem;
+	display: inline-block;
 	width: 0.45rem;
-	height: 1rem;
+	height: 1em;
+	margin-left: 2px;
 	border-radius: 999px;
 	background: rgba(251, 146, 60, 0.7);
+	box-shadow: 0 0 8px rgba(251, 146, 60, 0.4);
+	vertical-align: text-bottom;
 	animation: typing 1.2s ease-in-out infinite;
 }
 
@@ -416,6 +423,31 @@ button, a, input, textarea {
 	font-weight: 500;
 }
 
+/* ── Source citation references ── */
+.cite-ref {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--color-dl-accent);
+	background: color-mix(in srgb, var(--color-dl-accent) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-dl-accent) 20%, transparent);
+	border-radius: 4px;
+	padding: 0 4px;
+	margin: 0 1px;
+	cursor: pointer;
+	vertical-align: super;
+	line-height: 1;
+	transition: all 0.15s ease;
+	font-variant-numeric: tabular-nums;
+}
+.cite-ref:hover {
+	background: color-mix(in srgb, var(--color-dl-accent) 22%, transparent);
+	border-color: color-mix(in srgb, var(--color-dl-accent) 40%, transparent);
+	transform: translateY(-1px);
+}
+
 /* ── Skeleton shimmer ── */
 @keyframes shimmer {
 	0% { background-position: -400px 0; }
@@ -427,6 +459,45 @@ button, a, input, textarea {
 	background: linear-gradient(90deg, rgba(148,163,184,0.06) 25%, rgba(148,163,184,0.12) 50%, rgba(148,163,184,0.06) 75%);
 	background-size: 800px 100%;
 	animation: shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-block {
+	border-radius: 8px;
+	background: linear-gradient(90deg, rgba(148,163,184,0.05) 25%, rgba(148,163,184,0.10) 50%, rgba(148,163,184,0.05) 75%);
+	background-size: 800px 100%;
+	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Stagger animation ── */
+@keyframes stagger-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.animate-stagger-in {
+	animation: stagger-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(var(--stagger-index, 0) * 40ms);
+}
+
+/* ── Column resize handle ── */
+.col-resize-handle {
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	cursor: col-resize;
+	user-select: none;
+	touch-action: none;
+}
+.col-resize-handle:hover,
+.col-resize-handle:active {
+	background: var(--color-dl-accent, #60a5fa);
+	opacity: 0.5;
 }
 
 /* ── Finance table ── */
@@ -694,6 +765,23 @@ button, a, input, textarea {
 }
 [data-theme="light"] .sidebar-overlay {
 	background: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Mobile safe area ── */
+.safe-area-bottom {
+	padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ── Theme transition ── */
+html, body,
+.bg-dl-bg-dark, .bg-dl-bg-sidebar, .bg-dl-bg-card {
+	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ── Focus ring consistency ── */
+.dl-focus-ring:focus-visible {
+	outline: 2px solid var(--color-dl-ring, var(--color-dl-accent));
+	outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -45,6 +45,9 @@
     const pad = 18;
     return [CX + (R + pad) * Math.cos(a), CY + (R + pad) * Math.sin(a)];
   }
+
+  // ── 호버 ──
+  let hoverAxis = $state(-1);
 </script>
 
 <div class="w-full">
@@ -68,17 +71,36 @@
         stroke={s.color || COLORS[si]} stroke-width="2" />
       {#each s.data as v, i}
         {@const p = pt(i, v ?? 0)}
-        <circle cx={p[0]} cy={p[1]} r="3.5" fill={s.color || COLORS[si]} stroke="#1a1e2a" stroke-width="1.5">
-          <title>{categories[i]}: {v}</title>
-        </circle>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <circle
+          cx={p[0]} cy={p[1]}
+          r={hoverAxis === i ? 6 : 3.5}
+          fill={s.color || COLORS[si]}
+          stroke="#1a1e2a"
+          stroke-width="1.5"
+          class="transition-all duration-150 cursor-pointer"
+          onmouseenter={() => { hoverAxis = i; }}
+          onmouseleave={() => { hoverAxis = -1; }}
+        />
       {/each}
     {/each}
+
+    <!-- Hover axis highlight -->
+    {#if hoverAxis >= 0}
+      <line x1={CX} y1={CY} x2={pt(hoverAxis, maxVal)[0]} y2={pt(hoverAxis, maxVal)[1]} stroke="#6b7280" stroke-width="1.5" opacity="0.4" />
+    {/if}
 
     <!-- Labels -->
     {#each categories as cat, i}
       {@const lp = labelPos(i)}
-      <text x={lp[0]} y={lp[1]} text-anchor="middle" dominant-baseline="central"
-        fill="#9ca3af" font-size="11">{cat}</text>
+      <text
+        x={lp[0]} y={lp[1]}
+        text-anchor="middle"
+        dominant-baseline="central"
+        fill={hoverAxis === i ? '#e5e7eb' : '#9ca3af'}
+        font-size="11"
+        font-weight={hoverAxis === i ? '600' : '400'}
+      >{cat}{#if hoverAxis === i && series[0]?.data[i] != null}: {series[0].data[i]}{/if}</text>
     {/each}
   </svg>
 </div>

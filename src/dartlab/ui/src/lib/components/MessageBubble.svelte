@@ -29,10 +29,16 @@
 	import ViewSpecRenderer from "$lib/ai/ViewSpecRenderer.svelte";
 	import TransparencyBadges from "./TransparencyBadges.svelte";
 	import EvidenceModal from "./EvidenceModal.svelte";
+	import CitationPopover from "./CitationPopover.svelte";
 
-	let { message, onRegenerate, onOpenEvidence } = $props();
+	import { Pencil, Send } from "lucide-svelte";
+	let { message, onRegenerate, onOpenEvidence, onOpenArtifact, onEditResend, staggerIndex = 0 } = $props();
 	let openModal = $state(null);
 	let modalType = $state("context");
+
+	// 사용자 메시지 인라인 편집
+	let isEditing = $state(false);
+	let editText = $state("");
 
 	let loadingPhase = $derived.by(() => {
 		if (!message.loading) return "";
@@ -91,14 +97,26 @@
 	const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-dl-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
 	function handleContentClick(e) {
+		// 코드 복사 버튼
 		const btn = e.target.closest('.code-copy-btn');
-		if (!btn) return;
-		const wrap = btn.closest('.code-block-wrap');
-		const code = wrap?.querySelector('code')?.textContent || "";
-		navigator.clipboard.writeText(code).then(() => {
-			btn.innerHTML = ICON_CHECK;
-			setTimeout(() => { btn.innerHTML = ICON_COPY; }, 2000);
-		});
+		if (btn) {
+			const wrap = btn.closest('.code-block-wrap');
+			const code = wrap?.querySelector('code')?.textContent || "";
+			navigator.clipboard.writeText(code).then(() => {
+				btn.innerHTML = ICON_CHECK;
+				setTimeout(() => { btn.innerHTML = ICON_COPY; }, 2000);
+			});
+			return;
+		}
+
+		// 소스 인용 각주 클릭 → 해당 컨텍스트 모달 열기
+		const cite = e.target.closest('.cite-ref');
+		if (cite) {
+			const idx = parseInt(cite.dataset.cite, 10) - 1; // 1-based → 0-based
+			if (message.contexts && idx >= 0 && idx < message.contexts.length) {
+				openContextModal(idx);
+			}
+		}
 	}
 
 	function openContextModal(idx) {
@@ -170,18 +188,58 @@
 </script>
 
 {#if message.role === "user"}
-	<div class="flex items-start gap-3 animate-fadeIn">
+	<div class="flex items-start gap-3 animate-message-enter group/user {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
 		<div class="w-7 h-7 rounded-full bg-dl-bg-card-hover border border-dl-border flex items-center justify-center text-[10px] font-semibold text-dl-text-muted flex-shrink-0 mt-0.5">
 			You
 		</div>
-		<div class="flex-1 pt-0.5">
-			<p class="text-[15px] text-dl-text leading-relaxed">{message.text}</p>
+		<div class="flex-1 pt-0.5 min-w-0">
+			{#if isEditing}
+				<div class="flex flex-col gap-2">
+					<textarea
+						bind:value={editText}
+						class="w-full bg-dl-bg-darker border border-dl-border/40 rounded-lg px-3 py-2 text-[15px] text-dl-text outline-none resize-none focus:border-dl-accent/40 transition-colors"
+						rows={Math.min(6, editText.split("\n").length + 1)}
+						onkeydown={(e) => {
+							if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onEditResend?.(editText.trim()); isEditing = false; }
+							if (e.key === "Escape") { isEditing = false; }
+						}}
+					></textarea>
+					<div class="flex items-center gap-2">
+						<button
+							class="flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-medium text-dl-text bg-dl-accent/20 hover:bg-dl-accent/30 transition-colors"
+							onclick={() => { onEditResend?.(editText.trim()); isEditing = false; }}
+						>
+							<Send size={10} />
+							<span>재전송</span>
+						</button>
+						<button
+							class="px-3 py-1 rounded-lg text-[11px] text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
+							onclick={() => { isEditing = false; }}
+						>
+							취소
+						</button>
+					</div>
+				</div>
+			{:else}
+				<div class="flex items-start gap-2">
+					<p class="text-[15px] text-dl-text leading-relaxed flex-1">{message.text}</p>
+					{#if onEditResend}
+						<button
+							class="p-1 rounded text-dl-text-dim opacity-0 group-hover/user:opacity-60 hover:!opacity-100 hover:text-dl-text transition-all flex-shrink-0 mt-0.5"
+							onclick={() => { editText = message.text; isEditing = true; }}
+							title="편집 후 재전송"
+						>
+							<Pencil size={12} />
+						</button>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 {:else}
-	<div class="flex items-start gap-3 animate-fadeIn">
+	<div class="flex items-start gap-3 animate-message-enter {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
 		<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5" />
-		<div class="message-shell flex-1 pt-0.5 min-w-0">
+		<div class="message-shell flex-1 pt-0.5 min-w-0 relative">
 
 			<TransparencyBadges
 				{message}
@@ -257,11 +315,29 @@
 					{/if}
 				</div>
 
+				{#if message.contexts?.length > 0 && !message.loading}
+					<CitationPopover contexts={message.contexts} {contentEl} />
+				{/if}
+
 				<!-- ── Canonical ViewSpec 렌더 ── -->
 				{#if message.renderViews?.length}
 					<div class="mt-3 space-y-3">
 						{#each message.renderViews as view}
-							<ViewSpecRenderer {view} />
+							<ViewSpecRenderer {view} {onOpenArtifact} />
+						{/each}
+					</div>
+				{/if}
+
+				<!-- ── 플러그인 추천 카드 ── -->
+				{#if message.pluginHints?.length}
+					<div class="mt-3 p-3 rounded-lg border border-dl-accent/20 bg-dl-accent/5">
+						<p class="text-xs font-medium text-dl-accent mb-2">확장 플러그인 추천</p>
+						{#each message.pluginHints as hint}
+							<div class="flex flex-col gap-0.5 mb-2 last:mb-0">
+								<span class="text-sm font-medium text-dl-text">{hint.name}</span>
+								<span class="text-xs text-dl-text-dim">{hint.description}</span>
+								<code class="text-[11px] text-dl-accent/80 bg-dl-bg-alt px-1.5 py-0.5 rounded w-fit mt-0.5">{hint.install}</code>
+							</div>
 						{/each}
 					</div>
 				{/if}

@@ -7,14 +7,18 @@
 		conversations = [],
 		activeId = null,
 		open = true,
+		width = 260,
 		version = "",
 		onNewChat,
 		onSelect,
 		onDelete,
 		onOpenSearch,
+		onRename,
 	} = $props();
 
 	let searchQuery = $state("");
+	let editingId = $state(null);
+	let editTitle = $state("");
 
 	function groupByDate(convs) {
 		const today = new Date().setHours(0, 0, 0, 0);
@@ -47,12 +51,12 @@
 	let groups = $derived(groupByDate(filteredConversations));
 </script>
 
-<aside class={cn(
-	"surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden",
-	open ? "w-[260px]" : "w-[52px]"
-)}>
+<aside
+	class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden"
+	style="{open ? `width: ${width}px` : 'width: 52px'}"
+>
 	{#if open}
-		<div class="flex flex-col h-full min-w-[260px]">
+		<div class="flex flex-col h-full animate-fadeIn" style="min-width: {width}px">
 			<!-- Brand -->
 			<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
 				<div class="flex items-center gap-2.5">
@@ -94,10 +98,11 @@
 						<div class="px-2 py-1.5 text-[11px] font-medium text-dl-text-dim uppercase tracking-wider">
 							{group.label}
 						</div>
-						{#each group.items as conv}
+						{#each group.items as conv, ci}
 							<div
+								style="--stagger-index: {ci}"
 								class={cn(
-									"w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left text-[13px] transition-all duration-200 group",
+									"w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left text-[13px] transition-all duration-200 group animate-stagger-in",
 									conv.id === activeId
 										? "bg-dl-surface-card text-dl-text border border-dl-primary/30 shadow-sm shadow-black/15"
 										: "text-dl-text-muted border border-transparent hover:bg-dl-bg-card/50 hover:text-dl-text hover:border-dl-border/60"
@@ -110,7 +115,25 @@
 								>
 									<div class="flex items-center gap-2 w-full">
 										<MessageSquare size={14} class="flex-shrink-0 opacity-50" />
-										<span class="flex-1 truncate">{conv.title}</span>
+										{#if editingId === conv.id}
+											<input
+												type="text"
+												bind:value={editTitle}
+												class="flex-1 bg-transparent border-none outline-none text-[13px] text-dl-text"
+												onkeydown={(e) => {
+													if (e.key === 'Enter') { onRename?.(conv.id, editTitle.trim()); editingId = null; }
+													if (e.key === 'Escape') { editingId = null; }
+												}}
+												onblur={() => { onRename?.(conv.id, editTitle.trim()); editingId = null; }}
+												onfocus={(e) => e.target.select()}
+											/>
+										{:else}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="flex-1 truncate"
+												ondblclick={(e) => { e.stopPropagation(); editingId = conv.id; editTitle = conv.title; }}
+											>{conv.title}</span>
+										{/if}
 									</div>
 									{#if conv.messages?.length > 0}
 										{@const lastMsg = conv.messages[conv.messages.length - 1]}
@@ -140,7 +163,7 @@
 		</div>
 	{:else}
 		<!-- Collapsed: icon-only -->
-		<div class="flex flex-col items-center h-full min-w-[52px] py-3 gap-2">
+		<div class="flex flex-col items-center h-full min-w-[52px] py-3 gap-2 animate-fadeIn">
 			<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full shadow-sm mb-1" />
 			<button
 				class="p-2.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-dl-bg-card/50 transition-colors"
