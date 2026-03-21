@@ -22,12 +22,13 @@ def configure_parser(subparsers) -> None:
     parser.set_defaults(handler=run)
 
 
-def _print_result(result, title: str | None = None) -> int:
+def _print_result(result, title: str | None = None, *, context: str = "") -> int:
     from dartlab.cli.services.output import get_console, print_dataframe
 
     console = get_console()
     if result is None:
-        console.print("[dim]데이터가 없습니다.[/]")
+        label = f"{context} " if context else ""
+        console.print(f"[dim]{label}데이터가 없습니다.[/]")
         return 0
     if isinstance(result, pl.DataFrame):
         print_dataframe(result, title=title)
@@ -61,11 +62,14 @@ def run(args) -> int:
 
     # trace 모드
     if args.trace:
-        return _print_result(company.trace(args.trace))
+        return _print_result(
+            company.trace(args.trace),
+            context=f"{company.corpName} trace({args.trace})",
+        )
 
     # topic 미지정 → index (전체 topic 목차)
     if args.topic is None:
-        return _print_result(company.index)
+        return _print_result(company.index, context=f"{company.corpName} index")
 
     # period 처리
     period = args.period
@@ -73,4 +77,4 @@ def run(args) -> int:
         period = period[0]
 
     result = company.show(args.topic, args.block, period=period, raw=args.raw)
-    return _print_result(result)
+    return _print_result(result, context=f"{company.corpName} {args.topic}")

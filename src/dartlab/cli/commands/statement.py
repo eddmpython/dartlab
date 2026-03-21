@@ -9,6 +9,14 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 _STATEMENTS = ("BS", "IS", "CIS", "CF", "SCE")
 
+_LABELS = {
+    "BS": "재무상태표",
+    "IS": "손익계산서",
+    "CIS": "포괄손익계산서",
+    "CF": "현금흐름표",
+    "SCE": "자본변동표",
+}
+
 
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("statement", help="재무제표/자본변동표 출력")
@@ -17,23 +25,26 @@ def configure_parser(subparsers) -> None:
     parser.set_defaults(handler=run)
 
 
-def _print_statement(value) -> int:
-    if value is None:
-        print("데이터가 없습니다.")
-        return 0
-    if isinstance(value, pl.DataFrame):
-        print(value)
-        return 0
-    print(value)
-    return 0
-
-
 def run(args) -> int:
+    from dartlab.cli.services.output import get_console, print_dataframe
+
     dartlab = configure_dartlab()
+    console = get_console()
 
     try:
         company = dartlab.Company(args.company)
     except (ValueError, OSError) as exc:
         raise CLIError(str(exc)) from exc
 
-    return _print_statement(getattr(company, args.name))
+    label = _LABELS.get(args.name, args.name)
+    console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode}) — {label}\n")
+
+    value = getattr(company, args.name)
+    if value is None:
+        console.print(f"[dim]{company.corpName} {label} 데이터가 없습니다.[/]")
+        return 0
+    if isinstance(value, pl.DataFrame):
+        print_dataframe(value, title=label)
+        return 0
+    console.print(str(value))
+    return 0

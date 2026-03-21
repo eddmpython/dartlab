@@ -36,9 +36,11 @@ def run(args) -> int:
     if args.output:
         from pathlib import Path
 
+        from dartlab.cli.services.output import get_console
+
         out = Path(args.output)
         out.write_text(report, encoding="utf-8")
-        print(f"  {name} ({code}) → {out}")
+        get_console().print(f"  [bold green]완료[/] {name} ({code}) → {out}")
     else:
         print(report)
     return 0
@@ -64,7 +66,7 @@ def _build_report(company, name: str, code: str, include: set | None) -> str:
             elif isinstance(overview, str):
                 parts.append(overview[:2000])
         except (AttributeError, KeyError, ValueError):
-            parts.append("기업 개요 데이터 없음.\n")
+            parts.append("기업 개요 데이터가 없습니다.\n")
 
     # ── 재무제표 ──
     if include is None or "finance" in include:
@@ -89,7 +91,7 @@ def _build_report(company, name: str, code: str, include: set | None) -> str:
             if isinstance(ratios, pl.DataFrame) and ratios.height > 0:
                 parts.append(_df_to_md(ratios.head(20)))
         except (AttributeError, KeyError, ValueError):
-            parts.append("재무비율 데이터 없음.\n")
+            parts.append("재무비율 데이터가 없습니다.\n")
 
     # ── 인사이트 ──
     if include is None or "insights" in include:
@@ -104,7 +106,7 @@ def _build_report(company, name: str, code: str, include: set | None) -> str:
                     for area, grade in grades.items():
                         parts.append(f"| {area} | {grade} |")
         except (AttributeError, KeyError, ValueError):
-            parts.append("인사이트 데이터 없음.\n")
+            parts.append("인사이트 데이터가 없습니다.\n")
 
     parts.append("")
     return "\n".join(parts)

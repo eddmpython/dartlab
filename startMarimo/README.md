@@ -48,10 +48,10 @@ US company exploration — 10-K/10-Q sections, XBRL financials, analysis engines
 
 LLM-powered company analysis with multiple providers and analysis patterns.
 
-- `dartlab.ask("삼성전자 분석해줘")` — one-stop AI analysis
+- `dartlab.ask("삼성전자 분석해줘")` — auto-streams to stdout, returns full text
 - `dartlab.ask(..., pattern="valuation")` — analysis framework: `financial`, `risk`, `valuation`, `dividend`
 - `c.ask("배당 정책을 분석해줘")` — ask directly on a Company
-- Streaming: `stream=True` (default) returns a generator
+- `dartlab.ask(..., raw=True)` — returns a generator for custom UI
 - Provider selection: `provider="ollama"`, `provider="openai"`, `provider="claude"`
 - Data filtering: `include=["BS", "IS"]`, `exclude=["dividend"]`
 - **Prerequisite**: run `dartlab setup` to configure a provider

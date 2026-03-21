@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pprint
-
 import polars as pl
 
 from dartlab.cli.services.errors import CLIError
@@ -21,27 +19,37 @@ def configure_parser(subparsers) -> None:
     parser.set_defaults(handler=run)
 
 
-def _print_payload(payload) -> int:
-    if payload is None:
-        print("데이터가 없습니다.")
-        return 0
-    if isinstance(payload, pl.DataFrame):
-        print(payload)
-        return 0
-    pprint.pprint(payload, sort_dicts=False, width=120)
-    return 0
-
-
 def run(args) -> int:
+    from dartlab.cli.services.output import get_console, print_dataframe
+
     dartlab = configure_dartlab()
+    console = get_console()
 
     try:
         company = dartlab.Company(args.company)
     except (ValueError, OSError) as exc:
         raise CLIError(str(exc)) from exc
 
-    if args.facts:
-        payload = company.profile.facts
-    else:
-        payload = company.index
-    return _print_payload(payload)
+    console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})\n")
+
+    mode = "facts" if args.facts else "index"
+    payload = company.profile.facts if args.facts else company.index
+
+    if payload is None:
+        console.print(f"[dim]{company.corpName} {mode} 데이터가 없습니다.[/]")
+        return 0
+    if isinstance(payload, pl.DataFrame):
+        print_dataframe(payload, title=mode.capitalize())
+        return 0
+    if isinstance(payload, dict):
+        from rich.table import Table
+
+        table = Table(show_header=False, padding=(0, 2))
+        table.add_column("항목", style="bold")
+        table.add_column("값")
+        for k, v in payload.items():
+            table.add_row(str(k), str(v) if v is not None else "")
+        console.print(table)
+        return 0
+    console.print(str(payload))
+    return 0

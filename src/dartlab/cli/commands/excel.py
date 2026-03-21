@@ -29,5 +29,7 @@ def run(args) -> int:
     except (OSError, ValueError, RuntimeError) as exc:
         raise CLIError(str(exc)) from exc
 
-    print(f"  {company.corpName} ({company.stockCode}) → {path}")
+    from dartlab.cli.services.output import get_console
+
+    get_console().print(f"  [bold green]완료[/] {company.corpName} ({company.stockCode}) → {path}")
     return 0

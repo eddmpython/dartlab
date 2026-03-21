@@ -433,25 +433,20 @@ DartLab includes a built-in AI analysis layer that feeds structured company data
 ```python
 import dartlab
 
-# one-stop analysis — company name auto-detected, streaming by default
-for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
-    print(chunk, end="")
+# streams to stdout, returns full text
+answer = dartlab.ask("삼성전자 재무건전성 분석해줘")
 
 # provider + model override
-for chunk in dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o"):
-    print(chunk, end="")
+answer = dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o")
 
 # data filtering
-for chunk in dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"]):
-    print(chunk, end="")
+answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"])
 
 # analysis pattern (framework-guided)
-for chunk in dartlab.ask("삼성전자 분석", pattern="financial"):
-    print(chunk, end="")
+answer = dartlab.ask("삼성전자 분석", pattern="financial")
 
-# legacy 2-arg form still works
-for chunk in dartlab.ask("005930", "재무 건전성 분석"):
-    print(chunk, end="")
+# 2-arg form
+answer = dartlab.ask("005930", "재무 건전성 분석")
 
 # agent mode — LLM selects tools for deeper analysis
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")

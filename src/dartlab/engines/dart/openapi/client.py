@@ -29,6 +29,34 @@ _ERROR_MESSAGES: dict[str, str] = {
 }
 
 
+def _loadDotenvKeys() -> list[str]:
+    """프로젝트 루트의 .env에서 DART_API_KEY(S) 읽기. 없으면 빈 리스트."""
+    from pathlib import Path
+
+    for d in [Path.cwd(), *Path.cwd().parents]:
+        envFile = d / ".env"
+        if envFile.is_file():
+            try:
+                text = envFile.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            for line in text.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip()
+                val = val.strip().strip("'\"")
+                if key == "DART_API_KEYS" and val:
+                    return [k.strip() for k in val.split(",") if k.strip()]
+                if key == "DART_API_KEY" and val:
+                    return [val]
+            break  # .env 찾았으면 상위 탐색 중단
+    return []
+
+
 class DartApiError(Exception):
     """OpenDART API 에러."""
 
@@ -66,10 +94,12 @@ class DartClient:
         self._keys = self._resolveKeys(apiKey, apiKeys)
         if not self._keys:
             raise ValueError(
-                "API 키가 필요합니다.\n"
-                "  Dart(apiKey='...')  또는\n"
-                "  Dart(apiKeys=['k1','k2'])  또는\n"
-                "  환경변수 DART_API_KEY / DART_API_KEYS 설정"
+                "DART API 키가 필요합니다.\n"
+                "  설정 방법 (우선순위 순):\n"
+                "  1. DartClient(apiKey='...')  직접 전달\n"
+                "  2. 환경변수 DART_API_KEY 또는 DART_API_KEYS(쉼표 구분) 설정\n"
+                "  3. 프로젝트 루트 .env 파일에 DART_API_KEY=... 작성\n"
+                "  발급: https://opendart.fss.or.kr → 인증키 신청"
             )
         self._keyIndex = 0
         self._minInterval = 60.0 / requestsPerMinute
@@ -78,7 +108,7 @@ class DartClient:
 
     @staticmethod
     def _resolveKeys(apiKey: str | None, apiKeys: list[str] | None) -> list[str]:
-        """키 탐색 우선순위."""
+        """키 탐색 우선순위: 파라미터 → 환경변수 → .env 파일."""
         if apiKeys:
             return [k.strip() for k in apiKeys if k.strip()]
         if apiKey:
@@ -89,6 +119,10 @@ class DartClient:
         envKey = os.environ.get("DART_API_KEY", "")
         if envKey:
             return [envKey.strip()]
+        # .env 파일 fallback (cwd → parents → 프로젝트 루트)
+        dotenvKeys = _loadDotenvKeys()
+        if dotenvKeys:
+            return dotenvKeys
         return []
 
     @property

@@ -15,19 +15,24 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    from dartlab.cli.services.output import get_console, print_dataframe
+
     dartlab = configure_dartlab()
+    console = get_console()
 
     try:
         company = dartlab.Company(args.company)
     except (ValueError, OSError) as exc:
         raise CLIError(str(exc)) from exc
 
+    console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})\n")
+
     sections = company.docs.sections
     if sections is None:
-        print("데이터가 없습니다.")
+        console.print(f"[dim]{company.corpName} sections 데이터가 없습니다.[/]")
         return 0
     if not isinstance(sections, pl.DataFrame):
-        print("sections 데이터 형식 오류")
+        console.print("[bold red]오류:[/] sections 데이터 형식이 올바르지 않습니다.")
         return 1
-    print(sections)
+    print_dataframe(sections, title="Sections")
     return 0

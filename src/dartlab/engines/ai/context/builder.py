@@ -264,12 +264,26 @@ _QUESTION_ACCOUNT_FILTER: dict[str, dict[str, set[str]]] = {
 }
 
 
+def _get_quarter_counts(company: Any) -> dict[str, int]:
+    """company.timeseries periods에서 연도별 분기 수 계산."""
+    ts = getattr(company, "timeseries", None)
+    if ts is None:
+        return {}
+    _, periods = ts
+    counts: dict[str, int] = {}
+    for p in periods:
+        year = p.split("-")[0] if "-" in p else p[:4]
+        counts[year] = counts.get(year, 0) + 1
+    return counts
+
+
 def _build_finance_engine_section(
     series: dict,
     years: list[str],
     sj_div: str,
     n_years: int,
     account_filter: set[str] | None = None,
+    quarter_counts: dict[str, int] | None = None,
 ) -> str | None:
     """financeEngine annual series → compact 마크다운 테이블.
 
@@ -283,7 +297,20 @@ def _build_finance_engine_section(
         return None
 
     display_years = years[-n_years:]
-    display_years_reversed = list(reversed(display_years))
+
+    # 부분 연도 표시: IS/CF는 4분기 미만이면 "(~Q3)" 등 표시, BS는 시점잔액이므로 불필요
+    display_years_labeled = []
+    for y in display_years:
+        qc = (quarter_counts or {}).get(y, 4)
+        if sj_div != "BS" and qc < 4:
+            display_years_labeled.append(f"{y}(~Q{qc})")
+        else:
+            display_years_labeled.append(y)
+    display_years_reversed = list(reversed(display_years_labeled))
+
+    # 최신 연도가 부분이면 YoY 비교 무의미
+    latest_year = display_years[-1]
+    latest_partial = sj_div != "BS" and (quarter_counts or {}).get(latest_year, 4) < 4
 
     sj_data = series.get(sj_div, {})
     if not sj_data:
@@ -312,8 +339,11 @@ def _build_finance_engine_section(
         cells = []
         for v in vals:
             cells.append(_format_won(v) if v is not None else "-")
-        # YoY: 최신 2개년 비교 (vals[0]=최신, vals[1]=전년)
-        yoy_str = _calc_yoy(vals[0], vals[1] if len(vals) > 1 else None)
+        # YoY: 부분 연도면 비교 불가
+        if latest_partial:
+            yoy_str = "-"
+        else:
+            yoy_str = _calc_yoy(vals[0], vals[1] if len(vals) > 1 else None)
         lines.append(f"| {label} | " + " | ".join(cells) + f" | {yoy_str} |")
 
     return "\n".join(lines)
@@ -508,14 +538,22 @@ def _build_compact_context_modules_inner(
     annual = getattr(company, "annual", None)
     if annual is not None:
         series, years = annual
+        quarter_counts = _get_quarter_counts(company)
         if years:
             yr_min = years[max(0, len(years) - n_years)]
             yr_max = years[-1]
-            header_parts.append(f"\n**데이터 기준: {yr_min}~{yr_max}년** (가장 최근: {yr_max}년, 금액: 억/조원)\n")
+            header = f"\n**데이터 기준: {yr_min}~{yr_max}년** (가장 최근: {yr_max}년, 금액: 억/조원)\n"
+
+            partial = [y for y in years[-n_years:] if quarter_counts.get(y, 4) < 4]
+            if partial:
+                notes = ", ".join(f"{y}년=Q1~Q{quarter_counts[y]}" for y in partial)
+                header += f"⚠️ **부분 연도 주의**: {notes} (해당 연도는 분기 누적이므로 전년 연간과 직접 비교 불가)\n"
+
+            header_parts.append(header)
 
             for sj in ("IS", "BS", "CF"):
                 af = acct_filters.get(sj) if acct_filters else None
-                section = _build_finance_engine_section(series, years, sj, n_years, af)
+                section = _build_finance_engine_section(series, years, sj, n_years, af, quarter_counts=quarter_counts)
                 if section:
                     modules_dict[sj] = section
                     included.append(sj)
@@ -1598,9 +1636,18 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
     annual = getattr(company, "annual", None)
     if annual is not None:
         series, years = annual
+        quarter_counts = _get_quarter_counts(company)
         if years:
             display_years = years[-3:]
-            display_reversed = list(reversed(display_years))
+            # 부분 연도 표시
+            display_labeled = []
+            for y in display_years:
+                qc = quarter_counts.get(y, 4)
+                if qc < 4:
+                    display_labeled.append(f"{y}(~Q{qc})")
+                else:
+                    display_labeled.append(y)
+            display_reversed = list(reversed(display_labeled))
             year_offset = len(years) - 3
 
             header = "| 계정 | " + " | ".join(display_reversed) + " |"
@@ -1617,7 +1664,12 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                     rows.append(f"| {label} | " + " | ".join(cells) + " |")
 
             if rows:
-                parts.extend(["", "## 핵심 수치 (억/조원)", header, sep, *rows])
+                partial = [y for y in display_years if quarter_counts.get(y, 4) < 4]
+                partial_note = ""
+                if partial:
+                    notes = ", ".join(f"{y}=Q1~Q{quarter_counts[y]}" for y in partial)
+                    partial_note = f"\n⚠️ 부분 연도: {notes}"
+                parts.extend(["", f"## 핵심 수치 (억/조원){partial_note}", header, sep, *rows])
                 included.extend(["IS", "BS"])
 
     # 핵심 비율 6개
