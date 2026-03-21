@@ -120,7 +120,23 @@ def loadData(
             if path.exists():
                 path.unlink()
             raise
-    df = pl.read_parquet(str(path), columns=columns)
+    # docs/edgarDocs: lazy scan + year 필터로 메모리 절감
+    if category in ("docs", "edgarDocs") and sinceYear is not None:
+        lf = pl.scan_parquet(str(path))
+        schema_names = lf.collect_schema().names()
+        if "year" in schema_names:
+            year_col = pl.col("year")
+            # year가 문자열이면 cast
+            if str(lf.collect_schema()["year"]) == "String":
+                year_col = year_col.cast(pl.Int32, strict=False)
+            lf = lf.filter(year_col >= sinceYear)
+        if columns:
+            available = [c for c in columns if c in schema_names]
+            if available:
+                lf = lf.select(available)
+        df = lf.collect()
+    else:
+        df = pl.read_parquet(str(path), columns=columns)
     return _normalizeLoadedFrame(df, category)
 
 

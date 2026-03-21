@@ -169,7 +169,7 @@ def iterPeriodSubsets(
     loadData를 1회만 호출하고, pipeline/views 양쪽이 공유한다.
     sinceYear 이전 기간은 건너뛴다 (finance 없는 기간 제외).
     """
-    df = loadData(stockCode)
+    df = loadData(stockCode, sinceYear=sinceYear)
     ccol = detectContentCol(df)
     years = sorted(df["year"].unique().to_list(), reverse=True)
 

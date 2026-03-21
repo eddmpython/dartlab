@@ -18,13 +18,12 @@ def get_memory_mb() -> float:
     """
     try:
         import ctypes
+        import ctypes.wintypes
 
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-        # PROCESS_MEMORY_COUNTERS_EX
         class PMC(ctypes.Structure):
             _fields_ = [
-                ("cb", ctypes.c_uint32),
-                ("PageFaultCount", ctypes.c_uint32),
+                ("cb", ctypes.wintypes.DWORD),
+                ("PageFaultCount", ctypes.wintypes.DWORD),
                 ("PeakWorkingSetSize", ctypes.c_size_t),
                 ("WorkingSetSize", ctypes.c_size_t),
                 ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
@@ -35,13 +34,22 @@ def get_memory_mb() -> float:
                 ("PeakPagefileUsage", ctypes.c_size_t),
             ]
 
-        psapi = ctypes.windll.psapi  # type: ignore[attr-defined]
+        GetCurrentProcess = ctypes.windll.kernel32.GetCurrentProcess  # type: ignore[attr-defined]
+        GetCurrentProcess.restype = ctypes.wintypes.HANDLE
+
+        GetProcessMemoryInfo = ctypes.windll.psapi.GetProcessMemoryInfo  # type: ignore[attr-defined]
+        GetProcessMemoryInfo.argtypes = [
+            ctypes.wintypes.HANDLE,
+            ctypes.POINTER(PMC),
+            ctypes.wintypes.DWORD,
+        ]
+        GetProcessMemoryInfo.restype = ctypes.wintypes.BOOL
+
         pmc = PMC()
         pmc.cb = ctypes.sizeof(PMC)
-        handle = kernel32.GetCurrentProcess()
-        if psapi.GetProcessMemoryInfo(handle, ctypes.byref(pmc), pmc.cb):
+        if GetProcessMemoryInfo(GetCurrentProcess(), ctypes.byref(pmc), pmc.cb):
             return pmc.WorkingSetSize / (1024 * 1024)
-    except (AttributeError, OSError):
+    except (AttributeError, OSError, ImportError):
         pass
 
     # Linux/macOS fallback
