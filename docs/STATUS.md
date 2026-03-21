@@ -55,5 +55,5 @@ docs/
 - [x] tutorials/01_quickstart, tutorials/09_edgar 현행화
 - [x] stability 문서에서 `index`, legacy 비교 surface 공개 노출 정리
 - [x] 랜딩 hero / architecture / workflow / CTA 메시지 재작성
-- [ ] finance 상세 문서(`api/finance-*`)의 sections-first 서사 추가 정리
-- [ ] 나머지 튜토리얼 구간의 오래된 property 중심 문구 추가 정리
+- [x] finance 상세 문서(`api/finance-*`)의 sections-first 서사 추가 정리
+- [x] 나머지 튜토리얼 구간의 오래된 property 중심 문구 추가 정리

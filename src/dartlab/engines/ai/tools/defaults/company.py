@@ -291,3 +291,50 @@ def register_company_tools(company: Any, register_tool) -> None:
         "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
         {"type": "object", "properties": {}},
     )
+
+    # ── batch_query ──
+
+    def batch_query(codes: str, topic: str = "BS") -> str:
+        """복수 종목에 동일 topic을 일괄 조회하여 비교 테이블을 반환한다."""
+        import dartlab as _dl
+
+        code_list = [c.strip() for c in codes.split(",") if c.strip()]
+        if not code_list:
+            return "종목코드를 쉼표로 구분하여 입력하세요. 예: 005930,000660,035420"
+        if len(code_list) > 10:
+            return "최대 10개 종목까지 조회 가능합니다."
+
+        results: list[str] = []
+        for code in code_list:
+            try:
+                comp = _dl.Company(code)
+                name = getattr(comp, "corpName", code) or code
+                val = comp.show(topic)
+                preview = format_tool_value(val, max_rows=5, max_chars=1500)
+                results.append(f"### {name} ({code})\n{preview}")
+            except (KeyError, ValueError, RuntimeError, OSError) as e:
+                results.append(f"### {code}\n조회 실패: {e}")
+        return "\n\n".join(results)
+
+    register_tool(
+        "batch_query",
+        batch_query,
+        "복수 종목에 동일한 topic을 일괄 조회하여 비교합니다. "
+        "사용자가 '삼성전자와 SK하이닉스 재무 비교', '여러 종목 배당 비교' 같은 요청을 할 때 사용하세요. "
+        "codes는 쉼표로 구분된 종목코드(최대 10개), topic은 조회할 데이터 모듈입니다.",
+        {
+            "type": "object",
+            "properties": {
+                "codes": {
+                    "type": "string",
+                    "description": "쉼표로 구분된 종목코드 (예: 005930,000660,035420)",
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "조회할 topic (예: BS, IS, ratios, companyOverview)",
+                    "default": "BS",
+                },
+            },
+            "required": ["codes"],
+        },
+    )

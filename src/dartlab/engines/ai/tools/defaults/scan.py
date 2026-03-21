@@ -241,3 +241,51 @@ def register_scan_tools(company: Any, register_tool) -> None:
         result_kind="chart",
         ai_hint="ChartSpec JSON 생성",
     )
+
+    # ── network_graph ──
+
+    def network_graph(hops: int = 1) -> str:
+        """기업 관계망(투자/주주) 데이터를 조회한다."""
+        if company is None:
+            return "회사를 먼저 선택하세요."
+        try:
+            net_func = getattr(company, "network", None)
+            if net_func is None:
+                return "network() 인터페이스가 없습니다."
+
+            members = net_func("members")
+            edges = net_func("edges")
+            cycles = net_func("cycles")
+
+            parts: list[str] = []
+            if isinstance(members, pl.DataFrame) and members.height > 0:
+                parts.append(f"### 계열사 ({members.height}개)\n{df_to_md(members.head(20))}")
+            if isinstance(edges, pl.DataFrame) and edges.height > 0:
+                parts.append(f"### 투자/주주 관계 ({edges.height}건)\n{df_to_md(edges.head(20))}")
+            if isinstance(cycles, pl.DataFrame) and cycles.height > 0:
+                parts.append(f"### 순환출자 ({cycles.height}건)\n{df_to_md(cycles)}")
+            elif isinstance(cycles, pl.DataFrame):
+                parts.append("### 순환출자\n순환출자 없음")
+
+            return "\n\n".join(parts) if parts else "네트워크 데이터가 없습니다."
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as e:
+            return f"네트워크 조회 실패: {e}"
+
+    register_tool(
+        "network_graph",
+        network_graph,
+        "기업의 투자/주주 관계망(계열사, 투자관계, 순환출자)을 조회합니다. "
+        "사용자가 '삼성 계열사', '관계 지도', '순환출자', '지배구조' 같은 요청을 할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "hops": {
+                    "type": "integer",
+                    "description": "관계 탐색 깊이 (1=직접 관계, 2=2단계)",
+                    "default": 1,
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )

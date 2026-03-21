@@ -167,6 +167,10 @@ print(result.committeeDf)   # Committee composition (committeeName, composition,
 ## Audit System
 
 ```python
+# canonical path
+c.show("auditSystem")
+
+# direct property (also works)
 c.auditSystem
 # name | role | detail
 ```

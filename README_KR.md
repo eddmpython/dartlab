@@ -118,7 +118,7 @@ AI 인터페이스 (웹 UI + CLI):
 uv add "dartlab[ai]"
 uv run dartlab              # 웹 UI
 uv run dartlab setup        # provider 설정 안내
-uv run dartlab ask 005930 "재무 건전성 분석"   # CLI 한 줄 질문
+uv run dartlab ask "삼성전자 재무건전성 분석해줘"   # CLI 한 줄 질문
 ```
 
 ## 바로 시작하기
@@ -433,18 +433,24 @@ DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이
 ```python
 import dartlab
 
-# 기본 분석 — provider 자동 감지
-answer = dartlab.ask("005930", "재무 건전성을 분석해줘")
-
-# provider + model 지정
-answer = dartlab.ask("삼성전자", "밸류에이션 분석", provider="openai", model="gpt-4o")
-
-# 스트리밍
-for chunk in dartlab.ask("005930", "수익성 추세", stream=True):
+# 원스톱 분석 — 종목명을 텍스트에서 자동 추출
+for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
     print(chunk, end="")
 
+# 전체 텍스트 (비스트리밍)
+answer = dartlab.ask("삼성전자 밸류에이션 분석", stream=False)
+
+# provider + model 지정
+answer = dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o", stream=False)
+
 # 데이터 필터링
-answer = dartlab.ask("005930", "핵심 포인트", include=["BS", "IS"])
+answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"], stream=False)
+
+# 분석 패턴 (프레임워크 기반)
+answer = dartlab.ask("삼성전자 분석", pattern="financial", stream=False)
+
+# 기존 2인자 형식도 호환
+answer = dartlab.ask("005930", "재무 건전성 분석", stream=False)
 
 # 에이전트 모드 — LLM이 도구를 선택하여 심화 분석
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
@@ -461,17 +467,35 @@ dartlab setup openai       # OpenAI API
 # 상태 확인
 dartlab status             # 전체 provider (테이블 뷰)
 dartlab status -p ollama   # 단일 provider 상세
+dartlab status --cost      # 누적 토큰/비용 통계
 
 # 질문 (스트리밍 기본값)
-dartlab ask 005930 "재무 건전성 분석"
-dartlab ask 005930 "배당 정책 분석" -p openai -m gpt-4o
-dartlab ask AAPL "risk analysis" -p ollama
+dartlab ask "삼성전자 재무건전성 분석해줘"
+dartlab ask "삼성전자 배당 분석" -p openai -m gpt-4o
+dartlab ask "AAPL risk analysis" -p ollama
+dartlab ask --continue "배당 추세는?"          # 직전 대화 이어가기
+dartlab ask "삼성전자 분석" --pattern financial  # 분석 프레임워크
+
+# 보고서 자동 생성 (Markdown)
+dartlab report "삼성전자"
+dartlab report "삼성전자" -o report.md
 
 # 웹 UI
 dartlab                    # 브라우저 UI 실행
 ```
 
 5개 provider 지원: `oauth-codex` (ChatGPT 구독), `codex` (Codex CLI), `ollama` (로컬, 무료), `openai` (API 키), `custom` (OpenAI 호환).
+
+### 프로젝트 설정 (`.dartlab.yml`)
+
+프로젝트 루트 또는 홈 디렉토리에 `.dartlab.yml`을 두면 기본값을 설정할 수 있다:
+
+```yaml
+company: 005930         # 기본 종목
+provider: openai        # 기본 LLM provider
+model: gpt-4o           # 기본 모델
+verbose: false
+```
 
 ## 핵심 개념
 

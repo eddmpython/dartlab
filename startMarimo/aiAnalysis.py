@@ -32,16 +32,17 @@ def _(mo):
     mo.md("""
     ## AI 분석 기본
 
-    `dartlab.ask(종목코드, 질문)` — 회사 데이터를 자동으로 수집하여 LLM에 전달합니다.
-    별도 설정 없이도 재무제표, 공시, 비율 등을 종합하여 답변합니다.
+    `dartlab.ask("삼성전자 분석해줘")` — 한 문장이면 끝. 종목명을 자동 추출하고
+    재무제표, 공시, 비율 등을 종합하여 LLM이 답변합니다.
+    기존 2인자 형식 `dartlab.ask("005930", "질문")` 도 호환됩니다.
     """)
     return
 
 
 @app.cell
 def _(dartlab):
-    # 기본 분석 — 자동으로 provider 감지
-    result = dartlab.ask("005930", "이 회사의 재무 건전성을 분석해줘")
+    # 원스톱 분석 — 종목명을 텍스트에서 자동 추출
+    result = dartlab.ask("삼성전자 재무건전성 분석해줘", stream=False)
     print(result)
     return
 
@@ -82,8 +83,8 @@ def _(mo):
 
 @app.cell
 def _(dartlab):
-    # stream=True → 제너레이터 반환 (chunk 단위 출력)
-    for chunk in dartlab.ask("005930", "수익성 추세를 분석해줘", stream=True):
+    # stream=True가 기본값 → 제너레이터 반환 (chunk 단위 출력)
+    for chunk in dartlab.ask("삼성전자 수익성 추세를 분석해줘"):
         print(chunk, end="", flush=True)
     print()
     return

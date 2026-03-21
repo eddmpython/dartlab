@@ -4,6 +4,8 @@ title: finance.statements
 
 # finance.statements
 
+> **기본 경로**: `c.show("BS")`, `c.show("IS")`, `c.show("CF")` — sections에 통합되어 있으므로 대부분의 경우 이 경로로 충분합니다. 아래 finance.statements 레이어는 50~200개 세부 계정 항목이 필요할 때 사용합니다.
+
 Extracts consolidated financial statements into time series separated by Balance Sheet (BS), Income Statement (IS), and Cash Flow Statement (CF). While `Company`'s default public flow is `sections -> show -> trace`, drop down to the `finance.statements` layer when you need to work with detailed financial accounts directly. Provides **detailed line items** (50~200) from the original statements, more granular than the financial summary.
 
 ## Usage

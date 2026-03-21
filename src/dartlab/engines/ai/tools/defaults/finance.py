@@ -427,3 +427,52 @@ def register_finance_tools(company: Any, register_tool) -> None:
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
     )
+
+    # ── timeseries_filter ──
+
+    def timeseries_filter(account: str, since: str = "", until: str = "") -> str:
+        """특정 계정의 시계열 데이터를 기간 필터링하여 반환한다."""
+        if company is None:
+            return "회사를 먼저 선택하세요."
+        try:
+            ts = getattr(company, "timeseries", None)
+            if ts is None or not isinstance(ts, dict):
+                return "시계열 데이터가 없습니다."
+            data = ts.get(account)
+            if data is None:
+                available = ", ".join(list(ts.keys())[:20])
+                return f"'{account}' 계정을 찾을 수 없습니다. 사용 가능: {available}"
+
+            rows: list[dict] = []
+            for period in sorted(data.keys()):
+                if since and period < since:
+                    continue
+                if until and period > until:
+                    continue
+                val = data[period]
+                if val is not None:
+                    rows.append({"기간": period, account: val})
+            if not rows:
+                return f"'{account}' 계정의 해당 기간 데이터가 없습니다."
+            return df_to_md(pl.DataFrame(rows))
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            return f"시계열 필터 실패: {e}"
+
+    register_tool(
+        "timeseries_filter",
+        timeseries_filter,
+        "특정 계정의 시계열 데이터를 기간 범위로 필터링하여 반환합니다. "
+        "사용자가 '최근 3년 매출 추이', '2020년부터 영업이익', '특정 계정 시계열' 같은 요청을 할 때 사용하세요. "
+        "account는 계정명(snakeId), since/until은 기간 필터(예: 2020, 2022Q2)입니다.",
+        {
+            "type": "object",
+            "properties": {
+                "account": {"type": "string", "description": "계정명 (예: revenue, operating_income, total_assets)"},
+                "since": {"type": "string", "description": "시작 기간 (예: 2020, 2021Q1)", "default": ""},
+                "until": {"type": "string", "description": "종료 기간 (예: 2024, 2024Q4)", "default": ""},
+            },
+            "required": ["account"],
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )

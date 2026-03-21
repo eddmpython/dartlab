@@ -1,50 +1,51 @@
 # startMarimo
 
-`startMarimo` 는 `dartlab.Company`의 현재 공개 흐름을 바로 확인하는 marimo 예제 폴더다.
+Interactive [Marimo](https://marimo.io/) notebooks for exploring `dartlab.Company` — no code to write, just run and interact.
 
-현재 예제:
+## Examples
 
-- **dartCompany.py** — DART (한국 상장기업)
-- **edgarCompany.py** — EDGAR (미국 상장기업)
-- **aiAnalysis.py** — AI 기업 분석 (LLM 기반 대화형)
+- **dartCompany.py** — Korean listed company (DART)
+- **edgarCompany.py** — US listed company (EDGAR)
+- **aiAnalysis.py** — AI-powered company analysis (LLM-based)
 
 ### dartCompany.py
 
-- `dartlab.Company("005930")` 로 삼성전자 생성
-- `c.sections` 로 전체 topic × period 맵 확인
-- `c.topics` 로 topic 목록 확인
-- `c.show("companyOverview")` 로 topic 블록 목차 확인
-- `c.show("IS")` 로 재무 시계열 확인
-- `c.trace("stockTotal")` 로 데이터 소스 추적
-- `c.diff()` 로 텍스트 변화 감지
+- `dartlab.Company("005930")` — Samsung Electronics
+- `c.sections` — full topic x period map
+- `c.topics` — topic list
+- `c.show("companyOverview")` — open a topic
+- `c.show("IS")` — financial time series
+- `c.trace("stockTotal")` — data source provenance
+- `c.diff()` — text change detection
 
 ### edgarCompany.py
 
-- `dartlab.Company("AAPL")` 로 Apple 생성
-- `c.sections` 로 전체 topic × period 맵 확인
-- `c.show("riskFactors")` 로 docs topic 확인
-- `c.show("IS")` 로 재무 시계열 확인
-- `c.ratios` 로 재무비율 확인
-- `c.filings()` 로 보고서 목록 확인
-- `c.trace("riskFactors")` 로 데이터 소스 추적
+- `dartlab.Company("AAPL")` — Apple
+- `c.sections` — full topic x period map
+- `c.show("riskFactors")` — docs topic
+- `c.show("IS")` — financial time series
+- `c.ratios` — financial ratios
+- `c.filings()` — filing list
+- `c.trace("riskFactors")` — data source provenance
 
 ### aiAnalysis.py
 
-- `ask(company, question)` — AI에게 기업 분석 질문
-- Provider 선택: `provider="ollama"`, `provider="openai"`
-- 스트리밍: `stream=True` — 실시간 출력
-- 데이터 필터: `include=["BS", "IS"]`, `exclude=["dividend"]`
-- **사전 조건**: `dartlab setup` 으로 provider 설정 필요
+- `dartlab.ask("삼성전자 분석해줘")` — one-stop AI analysis
+- Provider selection: `provider="ollama"`, `provider="openai"`
+- Streaming: enabled by default
+- Data filtering: `include=["BS", "IS"]`, `exclude=["dividend"]`
+- Analysis patterns: `pattern="financial"`, `pattern="risk"`
+- **Prerequisite**: run `dartlab setup` to configure a provider
 
-## 실행
+## Running
 
-marimo가 아직 없으면:
+Install Marimo if you haven't:
 
 ```bash
 uv add marimo
 ```
 
-예제 열기:
+Open an example:
 
 ```bash
 uv run marimo edit startMarimo/dartCompany.py
@@ -52,4 +53,4 @@ uv run marimo edit startMarimo/edgarCompany.py
 uv run marimo edit startMarimo/aiAnalysis.py
 ```
 
-원하면 새 예제 파일을 같은 폴더에 추가해서 같은 방식으로 열면 된다.
+Add your own `.py` files to the same folder and open them the same way.

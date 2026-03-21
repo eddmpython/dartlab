@@ -40,7 +40,8 @@ export const navigation: NavItem[] = [
 			{ title: '6. Disclosure Text', href: '/docs/tutorials/disclosure' },
 			{ title: '7. Advanced', href: '/docs/tutorials/advanced' },
 			{ title: '8. Cross-Company', href: '/docs/tutorials/cross-company' },
-			{ title: '9. US Stocks (EDGAR)', href: '/docs/tutorials/edgar' }
+			{ title: '9. US Stocks (EDGAR)', href: '/docs/tutorials/edgar' },
+			{ title: '10. Network Analysis', href: '/docs/tutorials/network' }
 		]
 	},
 	{

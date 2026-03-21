@@ -118,7 +118,7 @@ AI interface (web UI + CLI):
 uv add "dartlab[ai]"
 uv run dartlab              # web UI
 uv run dartlab setup        # provider setup guide
-uv run dartlab ask 005930 "재무 건전성 분석"   # CLI one-shot
+uv run dartlab ask "삼성전자 재무건전성 분석해줘"   # CLI one-shot
 ```
 
 ## Try It Now
@@ -433,18 +433,24 @@ DartLab includes a built-in AI analysis layer that feeds structured company data
 ```python
 import dartlab
 
-# basic analysis — auto-detects provider
-answer = dartlab.ask("005930", "재무 건전성을 분석해줘")
-
-# provider + model override
-answer = dartlab.ask("삼성전자", "밸류에이션 분석", provider="openai", model="gpt-4o")
-
-# streaming
-for chunk in dartlab.ask("005930", "수익성 추세", stream=True):
+# one-stop analysis — company name auto-detected from text
+for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
     print(chunk, end="")
 
+# full text (non-streaming)
+answer = dartlab.ask("삼성전자 밸류에이션 분석", stream=False)
+
+# provider + model override
+answer = dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o", stream=False)
+
 # data filtering
-answer = dartlab.ask("005930", "핵심 포인트", include=["BS", "IS"])
+answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"], stream=False)
+
+# analysis pattern (framework-guided)
+answer = dartlab.ask("삼성전자 분석", pattern="financial", stream=False)
+
+# legacy 2-arg form still works
+answer = dartlab.ask("005930", "재무 건전성 분석", stream=False)
 
 # agent mode — LLM selects tools for deeper analysis
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
@@ -461,17 +467,35 @@ dartlab setup openai       # OpenAI API
 # check status
 dartlab status             # all providers (table view)
 dartlab status -p ollama   # single provider detail
+dartlab status --cost      # cumulative token/cost stats
 
 # ask questions (streaming by default)
-dartlab ask 005930 "재무 건전성 분석"
-dartlab ask 005930 "배당 정책 분석" -p openai -m gpt-4o
-dartlab ask AAPL "risk analysis" -p ollama
+dartlab ask "삼성전자 재무건전성 분석해줘"
+dartlab ask "삼성전자 배당 분석" -p openai -m gpt-4o
+dartlab ask "AAPL risk analysis" -p ollama
+dartlab ask --continue "배당 추세는?"          # continue previous conversation
+dartlab ask "삼성전자 분석" --pattern financial  # analysis framework
+
+# auto-generate report (Markdown)
+dartlab report "삼성전자"
+dartlab report "삼성전자" -o report.md
 
 # web UI
 dartlab                    # open browser UI
 ```
 
 5 providers supported: `oauth-codex` (ChatGPT subscription), `codex` (Codex CLI), `ollama` (local, free), `openai` (API key), `custom` (OpenAI-compatible).
+
+### Project Settings (`.dartlab.yml`)
+
+Place a `.dartlab.yml` in your project root or home directory to set defaults:
+
+```yaml
+company: 005930         # default company
+provider: openai        # default LLM provider
+model: gpt-4o           # default model
+verbose: false
+```
 
 ## Core Ideas
 

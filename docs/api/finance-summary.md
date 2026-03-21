@@ -4,6 +4,8 @@ title: finance.summary
 
 # finance.summary
 
+> **기본 경로**: `c.show("BS")`, `c.show("IS")`, `c.show("CF")` — sections에 통합되어 있으므로 대부분의 경우 이 경로로 충분합니다. 아래 finance 레이어는 Bridge Matching 분석, 분기/반기 재무 등 심화 용도로 내려갈 때 사용합니다.
+
 Extracts financial summary data as time series. While `Company`'s default public flow is `sections -> show -> trace`, drop down to the `finance.summary` layer when you want a deeper look at financial time series. **Bridge Matching** automatically tracks account name changes to ensure time series continuity.
 
 ## Usage
