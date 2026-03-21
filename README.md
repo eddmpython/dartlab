@@ -29,44 +29,32 @@
 
 </div>
 
-## Why DartLab
+## Install
 
-Corporate disclosures are the richest public record of a company — financials, risk factors, business strategy, governance, compensation, and more. But accessing this data today means:
+```bash
+uv add dartlab
+```
 
-- **Manual PDF reading** — annual reports are 200+ page documents with no structure for programmatic access
-- **Fragmented tools** — one library for financial statements, another for text, another for EDGAR, none of them talking to each other
-- **No time axis** — even if you extract data, comparing the same section across 5 years of filings requires custom glue code every time
-- **Lost context** — financial numbers without the narrative that explains them, or text without the numbers that ground it
+**No data setup required.** When you create a `Company`, dartlab automatically downloads the required data from GitHub Releases (DART) or SEC API (EDGAR). The second run loads instantly from local cache.
 
-DartLab solves this by building **one unified company map** from raw filings. Text, tables, and financial statements are aligned on the same topic-by-period spine. You get the complete picture — not fragments.
+## Quick Start
 
-### Who It's For
+```python
+import dartlab
 
-| You are... | DartLab gives you... |
-|---|---|
-| **Investor / Analyst** | Instant access to any disclosure topic across all periods — no more PDF digging |
-| **Quant / Data Scientist** | Clean, structured DataFrames from 2,700+ companies ready for modeling |
-| **Developer** | A single `Company` object that unifies docs, finance, and report APIs |
-| **Researcher** | Standardized cross-company datasets with full text + financial data |
-| **AI Builder** | Pre-structured company context that LLMs can actually reason over |
+c = dartlab.Company("005930")   # Samsung Electronics (DART)
+c.sections                      # full company map (topic × period)
+c.show("overview")              # open one topic
+c.BS                            # balance sheet
+c.ratios                        # financial ratio time series
+c.insights                      # 7-area grades (A~F)
 
-### What You Can Do
-
-- "How did Samsung change its business description between 2023 and 2024?" → `c.diff("businessOverview")`
-- "Show me Apple's risk factors from the latest 10-K" → `us.show("10-K::item1ARiskFactors")`
-- "Which listed companies have the highest debt-to-equity?" → `dartlab.debt("all")`
-- "Give me 5 years of income statements for comparison" → `c.IS`
-- "What governance issues exist across the entire market?" → `dartlab.governance()`
-
-### How It's Different
-
-| | DartLab | Typical tools |
-|---|---|---|
-| **Scope** | Full disclosure text + financials + structured reports | Usually one of these |
-| **Structure** | One horizontalized map (topic × period) | Flat outputs, no time alignment |
-| **Sources** | DART + EDGAR in the same interface | Korea-only or US-only |
-| **Data provenance** | `trace()` tells you exactly which source was used | Black box |
-| **AI-ready** | Structured sections feed directly into LLM context | Manual prompt engineering |
+us = dartlab.Company("AAPL")    # Apple (EDGAR)
+us.sections
+us.show("business")
+us.BS
+us.ratios
+```
 
 ## What DartLab Is
 
@@ -78,87 +66,23 @@ The center of that map is `sections`: a horizontalized matrix built from disclos
 - **`finance`** — authoritative numeric statements (BS, IS, CF) and financial ratios
 - **`report`** — authoritative structured disclosure APIs (DART only)
 
-```python
-import dartlab
-
-c = dartlab.Company("005930")   # Samsung Electronics (DART)
-c.sections                      # full company map (topic × period)
-c.topics                        # topic list with source, blocks, periods
-c.show("overview")              # open one topic (alias for companyOverview)
-c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
-c.BS                            # balance sheet
-c.ratios                        # ratio time series
-c.insights                      # 7-area grades (A~F)
-
-us = dartlab.Company("AAPL")    # Apple (EDGAR)
-us.sections
-us.show("business")             # alias for item1Business
-us.BS
-us.ratios
-```
-
-## Install
-
-```bash
-uv add dartlab
-```
-
-**No data setup required.** When you create a `Company` for the first time, dartlab automatically downloads the required data from GitHub Releases (DART) or SEC API (EDGAR finance). The second run loads instantly from local cache.
-
-```
-[dartlab] 005930 (DART 공시 문서 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
-[dartlab] ✓ DART 공시 문서 데이터 다운로드 완료 (542KB)
-[dartlab] 005930 (재무 숫자 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
-[dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
-```
-
-AI interface (web UI + CLI):
-
-```bash
-uv add "dartlab[ai]"
-uv run dartlab              # web UI
-uv run dartlab setup        # provider setup guide
-uv run dartlab ask "삼성전자 재무건전성 분석해줘"   # CLI one-shot
-```
-
-## Try It Now
-
-Interactive Marimo notebooks let you explore real company data immediately — no code to write:
-
-```bash
-uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # Korean company (DART)
-marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
-marimo edit startMarimo/aiAnalysis.py     # AI analysis examples
-```
-
-Or open any tutorial in Colab — no install needed:
-
-| Notebook | Topic |
-|---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **Quick Start** — sections, show, trace, diff |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **Financial Statements** — BS, IS, CF |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **Ratios** — 47 financial ratios |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **Disclosure** — sections, text parsing |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — US SEC filings |
-
-## Quick Start
-
-### Sections — The Company Map
-
-`sections` is a Polars DataFrame where each row is a disclosure block and each period column holds the raw payload. Periods are sorted newest-first, and annual reports appear as Q4:
-
 ```
 chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
 I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
 I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
-I       │ companyOverview  │ table     │ null         │ "…"    │ "…"    │ null   │
 II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
 III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
 VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
 ```
 
-Text blocks carry structural metadata — `textNodeType` (heading/body), `textLevel`, and `textPath` — so you can distinguish section headers from narrative content.
+### Core Principles
+
+1. **Sections First** — A company is one horizontalized map, not a loose set of parser outputs
+2. **Source-Aware** — When `finance` or `report` is more authoritative, it overrides automatically. `trace()` tells you which source was chosen
+3. **Text Structure** — Narrative text is split into heading/body rows with level and path metadata, for both DART and EDGAR
+4. **Raw Access** — Go deeper when needed: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
+
+## Features
 
 ### Show, Trace, Diff
 
@@ -169,9 +93,7 @@ c = dartlab.Company("005930")
 c.show("BS")                # → finance DataFrame
 c.show("overview")          # → sections-based text + tables
 c.show("dividend")          # → report DataFrame (all quarters)
-
-# compare specific periods
-c.show("IS", period=["2024Q4", "2023Q4"])
+c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
 
 # trace — why a topic came from docs, finance, or report
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -196,24 +118,6 @@ c.finance.timeseries    # raw account time series
 
 Financial ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
-### Modules — What Topics Are Available
-
-DartLab exposes 100+ modules across 6 categories. Use the CLI to discover them:
-
-```bash
-dartlab modules                      # list all modules
-dartlab modules --category finance   # filter by category
-dartlab modules --search dividend    # search by keyword
-```
-
-Or in Python:
-
-```python
-c.topics    # list all available topics for this company
-```
-
-Categories: `finance` (statements, ratios), `report` (dividend, governance, audit), `notes` (K-IFRS annotations), `disclosure` (narrative text), `analysis` (insights, rankings), `raw` (original parquets).
-
 ### Insights
 
 ```python
@@ -224,52 +128,55 @@ c.insights.performance.details  # → ["Revenue growth +8.3%", …]
 c.insights.anomalies            # → outliers and red flags
 ```
 
-7 analysis areas: performance, profitability, health, cashflow, governance, risk, opportunity.
+### Modules
+
+DartLab exposes 100+ modules across 6 categories:
+
+```bash
+dartlab modules                      # list all modules
+dartlab modules --category finance   # filter by category
+dartlab modules --search dividend    # search by keyword
+```
+
+```python
+c.topics    # list all available topics for this company
+```
+
+Categories: `finance` (statements, ratios), `report` (dividend, governance, audit), `notes` (K-IFRS annotations), `disclosure` (narrative text), `analysis` (insights, rankings), `raw` (original parquets).
 
 ### Charts & Visualization
 
-Built-in Plotly charts and a JSON-based ChartSpec protocol that works with or without Plotly:
-
 ```python
-import dartlab
-
 c = dartlab.Company("005930")
 
 # one-liner Plotly charts
 dartlab.chart.revenue(c).show()          # revenue + operating margin combo
 dartlab.chart.cashflow(c).show()         # operating/investing/financing CF
 dartlab.chart.dividend(c).show()         # DPS + yield + payout ratio
-dartlab.chart.balance_sheet(c).show()    # current/non-current assets
 dartlab.chart.profitability(c).show()    # ROE, operating margin, net margin
 
 # auto-detect all available charts
-specs = dartlab.chart.auto_chart(c)             # → list of ChartSpec dicts
-dartlab.chart.chart_from_spec(specs[0]).show()  # render any spec as Plotly
+specs = dartlab.chart.auto_chart(c)
+dartlab.chart.chart_from_spec(specs[0]).show()
 
 # generic charts from any DataFrame
 dartlab.chart.line(c.dividend, y=["dps"])
 dartlab.chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
 ```
 
-Data tools for table formatting and text analysis:
+Data tools:
 
 ```python
-# table tools
 dartlab.table.yoy_change(c.dividend, value_cols=["dps"])       # add YoY% columns
 dartlab.table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
 dartlab.table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
-
-# text tools
-dartlab.text.extract_keywords(narrative)              # frequency-based keywords
-dartlab.text.sentiment_indicators(narrative)           # positive/negative/risk score
-dartlab.text.extract_numbers(narrative)                # numbers + units + context
+dartlab.text.extract_keywords(narrative)                        # frequency-based keywords
+dartlab.text.sentiment_indicators(narrative)                     # positive/negative/risk
 ```
 
 Install chart dependencies: `uv add "dartlab[charts]"`
 
 ### Network — Affiliate Map
-
-Visualize corporate ownership networks — who invests in whom, group structure, and circular ownership:
 
 ```python
 c = dartlab.Company("005930")
@@ -282,41 +189,26 @@ c.network(hops=2).show()     # 2-hop neighborhood
 c.network("members")     # group affiliates
 c.network("edges")       # investment/shareholder connections
 c.network("cycles")      # circular ownership paths
-c.network("peers")       # ego subgraph as DataFrame
 
-# full market network (all listed companies)
+# full market network
 dartlab.network().show()
 ```
 
-The browser view supports dark/light themes, company search, group filtering, hover tooltips with ownership percentages, and click-to-highlight connected companies.
-
 ### Market Scan
-
-Scan the full listed market by theme, then zoom back into a single company row when needed:
 
 ```python
 c = dartlab.Company("005930")
 
-# one company
-c.governance()
-c.workforce()
-c.capital()
-c.debt()
-
-# market summary
-c.governance("market")   # by market summary
+# one company → market-wide
+c.governance()           # single company
 c.governance("all")      # full market DataFrame
-
-# module-level full scans
-dartlab.governance()
+dartlab.governance()     # module-level scan
 dartlab.workforce()
 dartlab.capital()
 dartlab.debt()
 ```
 
-These scans combine report + finance parquet data into market-wide DataFrames for governance quality, workforce/pay trends, shareholder return behavior, and debt risk.
-
-### EDGAR (US)
+## EDGAR (US)
 
 Same `Company` interface, different data source:
 
@@ -324,109 +216,16 @@ Same `Company` interface, different data source:
 us = dartlab.Company("AAPL")
 
 us.sections                         # 10-K/10-Q sections with heading/body
-us.show("business")      # business description
+us.show("business")                 # business description
 us.show("10-K::item1ARiskFactors")  # risk factors
 us.BS                               # SEC XBRL balance sheet
 us.ratios                           # same 47 ratios
 us.diff("10-K::item7Mdna")          # MD&A text changes
 ```
 
-EDGAR sections include the same text structure metadata (heading/body separation, textLevel, textPath) as DART.
-
-## OpenAPI — Raw Public APIs
-
-Use source-native wrappers when you want raw disclosure APIs directly.
-
-### OpenDart (Korea)
-
-> **Note:** The `Company` interface does **not** require an API key — it works with pre-built datasets from GitHub Releases.
-> `OpenDart` uses the raw DART API and requires an API key from [https://opendart.fss.or.kr](https://opendart.fss.or.kr) (free registration).
->
-> ```bash
-> export DART_API_KEY=your_key_here   # Linux/Mac
-> $env:DART_API_KEY = 'your_key_here' # PowerShell
-> ```
-
-```python
-from dartlab import OpenDart
-
-d = OpenDart()                                  # auto-detect API key
-d = OpenDart(["key1", "key2"])                  # multi-key rotation
-
-d.search("카카오", listed=True)                  # company search
-d.filings("삼성전자", "2024")                    # filing list
-d.company("삼성전자")                            # corporate profile
-d.finstate("삼성전자", 2024)                     # financial statements
-d.report("삼성전자", "배당", 2024)                # 56 report categories
-
-# convenience proxy
-s = d("삼성전자")
-s.finance(2024)
-s.report("배당", 2024)
-s.filings("2024")
-```
-
-### OpenEdgar (US)
-
-```python
-from dartlab import OpenEdgar
-
-e = OpenEdgar()
-
-e.search("Apple")                               # ticker search
-e.company("AAPL")                               # company info
-e.filings("AAPL", forms=["10-K", "10-Q"])       # filing list
-e.companyFactsJson("AAPL")                      # XBRL facts
-e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # single tag series
-```
-
-These wrappers keep the original source surface intact, while saved parquet stays compatible with DartLab's `Company` engine.
-
-## MCP — AI Assistant Integration
-
-DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server that connects directly to Claude Desktop, Cursor, and other MCP-compatible AI assistants. This turns DartLab's full analysis engine into a tool your AI assistant can call.
-
-```bash
-uv add "dartlab[mcp]"
-```
-
-### Claude Desktop
-
-Add to your Claude Desktop config (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "dartlab": {
-      "command": "uv",
-      "args": ["run", "dartlab", "mcp"]
-    }
-  }
-}
-```
-
-### What the AI Can Do
-
-Once connected, your AI assistant can:
-
-- **Search companies** — "삼성전자 찾아줘" → calls `search_company`
-- **Read any disclosure topic** — "삼성전자 사업개요 보여줘" → calls `show_topic`
-- **Compare periods** — "2024년과 2023년 재무제표 비교해줘" → calls `get_timeseries`
-- **Calculate ratios** — "부채비율 계산해줘" → calls `calculate_ratios`
-- **Grade a company** — "이 회사 종합 등급은?" → calls `get_insights`
-- **Cross-market analysis** — works with both DART (Korean) and EDGAR (US) companies
-
-45+ tools are automatically available through the MCP bridge. The AI gets structured company data, not raw text — so it can give precise, grounded answers.
-
-### CLI
-
-```bash
-dartlab mcp    # start MCP stdio server
-```
-
 ## AI Analysis
 
-DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. The system automatically selects relevant data (financials, ratios, disclosure text) based on your question.
+DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. The system automatically selects relevant data based on your question.
 
 ### Python API
 
@@ -445,9 +244,6 @@ answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"])
 # analysis pattern (framework-guided)
 answer = dartlab.ask("삼성전자 분석", pattern="financial")
 
-# 2-arg form
-answer = dartlab.ask("005930", "재무 건전성 분석")
-
 # agent mode — LLM selects tools for deeper analysis
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
 ```
@@ -455,36 +251,32 @@ answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 
 ### CLI
 
 ```bash
-# provider setup (interactive guide)
+# provider setup
 dartlab setup              # list all providers
 dartlab setup ollama       # local LLM (free)
 dartlab setup openai       # OpenAI API
 
-# check status
+# status
 dartlab status             # all providers (table view)
-dartlab status -p ollama   # single provider detail
 dartlab status --cost      # cumulative token/cost stats
 
 # ask questions (streaming by default)
 dartlab ask "삼성전자 재무건전성 분석해줘"
-dartlab ask "삼성전자 배당 분석" -p openai -m gpt-4o
 dartlab ask "AAPL risk analysis" -p ollama
-dartlab ask --continue "배당 추세는?"          # continue previous conversation
-dartlab ask "삼성전자 분석" --pattern financial  # analysis framework
+dartlab ask --continue "배당 추세는?"
 
-# auto-generate report (Markdown)
-dartlab report "삼성전자"
+# auto-generate report
 dartlab report "삼성전자" -o report.md
 
 # web UI
 dartlab                    # open browser UI
 ```
 
-5 providers supported: `oauth-codex` (ChatGPT subscription), `codex` (Codex CLI), `ollama` (local, free), `openai` (API key), `custom` (OpenAI-compatible).
+5 providers: `oauth-codex` (ChatGPT subscription), `codex` (Codex CLI), `ollama` (local, free), `openai` (API key), `custom` (OpenAI-compatible).
+
+Install AI dependencies: `uv add "dartlab[ai]"`
 
 ### Project Settings (`.dartlab.yml`)
-
-Place a `.dartlab.yml` in your project root or home directory to set defaults:
 
 ```yaml
 company: 005930         # default company
@@ -493,29 +285,105 @@ model: gpt-4o           # default model
 verbose: false
 ```
 
-## Core Ideas
+## MCP — AI Assistant Integration
 
-### 1. Sections First
+DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server for Claude Desktop, Cursor, and other MCP-compatible assistants.
 
-`sections` is the backbone. A company is described as one horizontalized map of disclosure units across periods — not a loose set of parser outputs.
+```bash
+uv add "dartlab[mcp]"
+```
 
-### 2. Source-Aware Company
+Add to Claude Desktop config (`claude_desktop_config.json`):
 
-`Company` is a merged company object. When `finance` or `report` is more authoritative than docs for a given topic, it overrides automatically. `trace()` tells you which source was chosen and why.
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
 
-### 3. Text Structure
+45+ tools are automatically available through the MCP bridge — search, show topics, compare periods, calculate ratios, grade companies, across both DART and EDGAR.
 
-Narrative text is not a flat string. DartLab splits it into heading/body rows with level and path metadata, enabling structural comparison across periods. This works for both Korean DART and English EDGAR filings.
+## OpenAPI — Raw Public APIs
 
-### 4. Raw Access
+Use source-native wrappers when you want raw disclosure APIs directly.
 
-You can always go deeper:
+### OpenDart (Korea)
+
+> **Note:** `Company` does **not** require an API key — it uses pre-built datasets.
+> `OpenDart` uses the raw DART API and requires a key from [opendart.fss.or.kr](https://opendart.fss.or.kr) (free).
 
 ```python
-c.docs.sections          # pure docs horizontalization
-c.finance.BS             # finance engine directly
-c.report.extract("배당")  # report engine directly
+from dartlab import OpenDart
+
+d = OpenDart()
+d.search("카카오", listed=True)
+d.filings("삼성전자", "2024")
+d.finstate("삼성전자", 2024)
+d.report("삼성전자", "배당", 2024)
 ```
+
+### OpenEdgar (US)
+
+```python
+from dartlab import OpenEdgar
+
+e = OpenEdgar()
+e.search("Apple")
+e.filings("AAPL", forms=["10-K", "10-Q"])
+e.companyFactsJson("AAPL")
+```
+
+## Data
+
+**No manual setup required.** When you create a `Company`, dartlab automatically downloads the required data per company. DART data comes from GitHub Releases, EDGAR data from the SEC API.
+
+| Dataset | Coverage | Source |
+|---------|----------|--------|
+| DART docs | 320+ companies (growing) | Korean disclosure text + tables |
+| DART finance | 2,700+ companies | XBRL financial statements |
+| DART report | 2,700+ companies | Structured disclosure APIs |
+| EDGAR | On-demand | SEC XBRL + 10-K/10-Q (auto-fetched) |
+
+## Try It Now
+
+### Marimo Notebooks
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # Korean company (DART)
+marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
+marimo edit startMarimo/aiAnalysis.py     # AI analysis examples
+```
+
+### Colab Tutorials
+
+| Notebook | Topic |
+|---|---|
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **Quick Start** — sections, show, trace, diff |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **Financial Statements** — BS, IS, CF |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **Ratios** — 47 financial ratios |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **Disclosure** — sections, text parsing |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — US SEC filings |
+
+## Documentation
+
+- Docs: https://eddmpython.github.io/dartlab/
+- Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
+- Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
+- API overview: https://eddmpython.github.io/dartlab/docs/api/overview
+
+### Blog
+
+The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis — how to read reports, interpret patterns, and spot risk signals. 115+ articles across three categories:
+
+- **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
+- **Report Reading** — practical guide to audit reports, preliminary earnings, restatements
+- **Financial Interpretation** — financial statements, ratios, and disclosure signals
 
 ## Stability
 
@@ -526,47 +394,6 @@ c.report.extract("배당")  # report engine directly
 | **Experimental** | AI tools, export |
 
 See [docs/stability.md](docs/stability.md).
-
-## Data
-
-DartLab ships with pre-built datasets via GitHub Releases.
-
-- **finance / report**: Already collected and up-to-date for 2,700+ listed companies.
-- **docs**: Being collected gradually to avoid overloading the DART EDGAR system — currently **320+ companies** stored in the `data-docs` release, updated as collection progresses.
-- **EDGAR finance**: Fetched on-demand from SEC XBRL API (no pre-built dataset needed).
-
-| Dataset | Coverage | Source |
-|---------|----------|--------|
-| DART docs | 320+ companies (growing) | Korean disclosure text + tables |
-| DART finance | 2,700+ companies | XBRL financial statements |
-| DART report | 2,700+ companies | Structured disclosure APIs |
-| EDGAR docs | 970+ companies | 10-K/10-Q sections |
-| EDGAR finance | On-demand | SEC XBRL facts (auto-fetched from SEC API) |
-
-```python
-# Bulk download (optional — downloads all companies at once)
-from dartlab.core.dataLoader import downloadAll
-downloadAll("docs")       # DART disclosure documents
-downloadAll("finance")    # DART financial statements
-downloadAll("report")     # DART structured reports
-```
-
-## Documentation
-
-Docs are continuously updated with new content.
-
-- Docs: https://eddmpython.github.io/dartlab/
-- Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
-- Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
-- API overview: https://eddmpython.github.io/dartlab/docs/api/overview
-
-### Blog
-
-The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis topics — how to read financial reports, interpret disclosure patterns, and spot risk signals. 115+ articles across three categories:
-
-- **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
-- **Report Reading** — practical guide to reading audit reports, preliminary earnings, restatements
-- **Financial Interpretation** — interpreting financial statements, ratios, and disclosure signals
 
 ## Contributing
 

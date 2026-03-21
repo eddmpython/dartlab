@@ -455,6 +455,25 @@ def plugins():
     return get_loaded_plugins()
 
 
+def reload_plugins():
+    """플러그인 재스캔 — pip install 후 재시작 없이 즉시 인식.
+
+    Example::
+
+        # 1. 새 플러그인 설치
+        # !uv pip install dartlab-plugin-esg
+
+        # 2. 재스캔
+        dartlab.reload_plugins()
+
+        # 3. 즉시 사용
+        dartlab.Company("005930").show("esgScore")
+    """
+    from dartlab.core.plugins import rediscover
+
+    return rediscover()
+
+
 def groupHealth():
     """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
 
@@ -523,6 +542,7 @@ __all__ = [
     "signal",
     "groupHealth",
     "plugins",
+    "reload_plugins",
     "verbose",
     "dataDir",
     "getKindList",

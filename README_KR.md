@@ -29,63 +29,22 @@
 
 </div>
 
-## 왜 DartLab인가
+## 설치
 
-기업 공시는 가장 풍부한 공개 정보다 — 재무제표, 리스크, 사업 전략, 지배구조, 보수, 그 이상. 하지만 지금까지 이 데이터에 접근하려면:
+```bash
+uv add dartlab
+```
 
-- **PDF 수동 읽기** — 사업보고서는 200페이지가 넘고, 프로그래밍으로 접근할 구조가 없다
-- **파편화된 도구들** — 재무제표는 이 라이브러리, 텍스트는 저 라이브러리, EDGAR는 또 다른 도구. 서로 연결이 안 된다
-- **시간축이 없다** — 데이터를 추출해도 같은 섹션을 5년치 비교하려면 매번 접착 코드를 짜야 한다
-- **맥락의 단절** — 숫자를 설명하는 서술문이 없거나, 텍스트를 뒷받침하는 숫자가 없다
+**설정 불필요.** `Company`를 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 데이터는 SEC API에서 가져온다. 두 번째 실행부터는 로컬 캐시로 즉시 로드된다.
 
-DartLab은 원본 공시에서 **하나의 통합 회사 맵**을 만든다. 텍스트, 테이블, 재무제표가 같은 topic × period 뼈대 위에 정렬된다. 파편이 아니라 전체 그림을 얻는다.
-
-### 누구를 위한 도구인가
-
-| 당신이... | DartLab이 주는 것 |
-|---|---|
-| **투자자 / 애널리스트** | 모든 공시 항목을 전 기간에 걸쳐 즉시 조회 — PDF 뒤질 필요 없음 |
-| **퀀트 / 데이터 사이언티스트** | 2,700개+ 상장사의 정제된 DataFrame, 모델링에 바로 투입 |
-| **개발자** | docs, finance, report API를 하나의 `Company` 객체로 통합 |
-| **연구자** | 텍스트 + 재무 데이터가 결합된 표준화 기업 간 비교 데이터셋 |
-| **AI 개발자** | LLM이 실제로 추론할 수 있는 구조화된 기업 맥락 |
-
-### 이런 걸 할 수 있다
-
-- "삼성전자가 2023→2024 사업 설명을 어떻게 바꿨지?" → `c.diff("businessOverview")`
-- "Apple 최신 10-K 리스크 요인을 보여줘" → `us.show("10-K::item1ARiskFactors")`
-- "상장사 중 부채비율이 가장 높은 곳은?" → `dartlab.debt("all")`
-- "5년치 손익계산서를 비교하고 싶다" → `c.IS`
-- "시장 전체 지배구조 현황은?" → `dartlab.governance()`
-
-### 기존 도구와 뭐가 다른가
-
-| | DartLab | 기존 도구들 |
-|---|---|---|
-| **범위** | 공시 전문 + 재무제표 + 정형 보고서 | 보통 이 중 하나만 |
-| **구조** | 하나의 수평화 맵 (topic × period) | 플랫 출력, 시간축 정렬 없음 |
-| **소스** | DART + EDGAR 같은 인터페이스 | 한국만 또는 미국만 |
-| **데이터 출처** | `trace()`로 어떤 source가 선택됐는지 정확히 확인 | 블랙박스 |
-| **AI 연동** | 구조화된 sections가 LLM 맥락에 바로 들어감 | 수동 프롬프트 엔지니어링 |
-
-## DartLab은 무엇인가
-
-DartLab은 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다. 한국 DART와 미국 EDGAR를 모두 지원한다.
-
-핵심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 기간축으로 수평화하고, 그 위에 더 강한 source를 올린다.
-
-- **`docs`** — 섹션 구조, heading/body로 분리된 서술 텍스트, 테이블, 원문 증거층
-- **`finance`** — 재무 숫자 authoritative source (BS, IS, CF) + 재무비율
-- **`report`** — 정형 공시 API authoritative source (DART만 해당)
+## 빠른 시작
 
 ```python
 import dartlab
 
 c = dartlab.Company("005930")   # 삼성전자 (DART)
 c.sections                      # 전체 회사 맵 (topic × period)
-c.topics                        # topic 목록 (source, blocks, periods)
-c.show("overview")       # topic 하나 열기
-c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
+c.show("overview")              # topic 하나 열기
 c.BS                            # 재무상태표
 c.ratios                        # 재무비율 시계열
 c.insights                      # 7영역 등급 (A~F)
@@ -97,68 +56,33 @@ us.BS
 us.ratios
 ```
 
-## 설치
+## DartLab은 무엇인가
 
-```bash
-uv add dartlab
-```
+DartLab은 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다. 한국 DART와 미국 EDGAR를 모두 지원한다.
 
-**데이터 설정 불필요.** `Company`를 처음 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 재무 데이터는 SEC API에서 직접 가져온다. 두 번째 실행부터는 로컬 캐시를 사용해 즉시 로드된다.
+핵심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 기간축으로 수평화하고, 그 위에 더 강한 source를 올린다.
 
-```
-[dartlab] 005930 (DART 공시 문서 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
-[dartlab] ✓ DART 공시 문서 데이터 다운로드 완료 (542KB)
-[dartlab] 005930 (재무 숫자 데이터) → 첫 사용: GitHub에서 자동 다운로드 중...
-[dartlab] ✓ 재무 숫자 데이터 다운로드 완료 (38KB)
-```
-
-AI 인터페이스 (웹 UI + CLI):
-
-```bash
-uv add "dartlab[ai]"
-uv run dartlab              # 웹 UI
-uv run dartlab setup        # provider 설정 안내
-uv run dartlab ask "삼성전자 재무건전성 분석해줘"   # CLI 한 줄 질문
-```
-
-## 바로 시작하기
-
-Marimo 인터랙티브 노트북으로 실제 기업 데이터를 바로 탐색할 수 있다 — 코드 작성 불필요:
-
-```bash
-uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
-marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
-marimo edit startMarimo/aiAnalysis.py     # AI 분석 예시
-```
-
-또는 Colab에서 바로 열 수 있다 — 설치 불필요:
-
-| 노트북 | 주제 |
-|---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **빠른 시작** — sections, show, trace, diff |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **재무제표** — BS, IS, CF |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **재무비율** — 47개 비율 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **공시 텍스트** — sections, 텍스트 파싱 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — 미국 SEC 공시 |
-
-## 빠른 시작
-
-### Sections — 회사 맵
-
-`sections`는 Polars DataFrame이다. 각 행이 공시 블록, 각 기간 컬럼이 원문 payload를 담는다. 최신 기간이 먼저 오고, 연간 보고서는 Q4로 표시된다.
+- **`docs`** — 섹션 구조, heading/body로 분리된 서술 텍스트, 테이블, 원문 증거층
+- **`finance`** — 재무 숫자 authoritative source (BS, IS, CF) + 재무비율
+- **`report`** — 정형 공시 API authoritative source (DART만 해당)
 
 ```
 chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
 I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
 I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
-I       │ companyOverview  │ table     │ null         │ "…"    │ "…"    │ null   │
 II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
 III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
 VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
 ```
 
-텍스트 블록은 구조 메타데이터를 함께 담는다 — `textNodeType` (heading/body), `textLevel`, `textPath` — 섹션 제목과 서술 본문을 구분할 수 있다.
+### 핵심 원칙
+
+1. **Sections First** — 회사는 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵이다
+2. **Source-Aware** — `finance`나 `report`가 더 authoritative하면 자동으로 대체한다. `trace()`로 어떤 source가 채택됐는지 확인
+3. **텍스트 구조** — 서술 텍스트는 heading/body로 분리되고, 레벨과 경로 메타데이터를 갖는다. DART와 EDGAR 모두 동일
+4. **Raw Access** — 더 깊게: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
+
+## 기능
 
 ### Show, Trace, Diff
 
@@ -167,11 +91,9 @@ c = dartlab.Company("005930")
 
 # show — source 우선순위에 따라 topic을 연다
 c.show("BS")                # → finance DataFrame
-c.show("overview")   # → sections 기반 텍스트 + 테이블
+c.show("overview")          # → sections 기반 텍스트 + 테이블
 c.show("dividend")          # → report DataFrame (전 분기)
-
-# 특정 기간 비교
-c.show("IS", period=["2024Q4", "2023Q4"])
+c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
 
 # trace — docs/finance/report 중 어떤 source가 채택됐는지
 c.trace("BS")               # → {"primarySource": "finance", ...}
@@ -196,24 +118,6 @@ c.finance.timeseries    # 원본 계정 시계열
 
 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
-### 모듈 — 어떤 topic을 볼 수 있는가
-
-DartLab은 6개 카테고리에 걸쳐 100개 이상의 모듈을 제공한다. CLI로 확인:
-
-```bash
-dartlab modules                      # 전체 모듈 목록
-dartlab modules --category finance   # 카테고리 필터
-dartlab modules --search dividend    # 키워드 검색
-```
-
-Python에서:
-
-```python
-c.topics    # 이 회사에서 사용 가능한 전체 topic 목록
-```
-
-카테고리: `finance` (재무제표, 비율), `report` (배당, 지배구조, 감사), `notes` (K-IFRS 주석), `disclosure` (서술형 텍스트), `analysis` (인사이트, 순위), `raw` (원본 parquet).
-
 ### 인사이트
 
 ```python
@@ -224,27 +128,36 @@ c.insights.performance.details  # → ["매출 고성장 +8.3%", …]
 c.insights.anomalies            # → 이상치, 위험 신호
 ```
 
-7개 분석 영역: 성과, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회.
+### 모듈
+
+DartLab은 6개 카테고리에 걸쳐 100개 이상의 모듈을 제공한다:
+
+```bash
+dartlab modules                      # 전체 모듈 목록
+dartlab modules --category finance   # 카테고리 필터
+dartlab modules --search dividend    # 키워드 검색
+```
+
+```python
+c.topics    # 이 회사에서 사용 가능한 전체 topic 목록
+```
+
+카테고리: `finance` (재무제표, 비율), `report` (배당, 지배구조, 감사), `notes` (K-IFRS 주석), `disclosure` (서술형 텍스트), `analysis` (인사이트, 순위), `raw` (원본 parquet).
 
 ### 차트 & 시각화
 
-내장 Plotly 차트와 JSON 기반 ChartSpec 프로토콜:
-
 ```python
-import dartlab
-
 c = dartlab.Company("005930")
 
 # 한 줄 Plotly 차트
 dartlab.chart.revenue(c).show()          # 매출 + 영업이익률 콤보
 dartlab.chart.cashflow(c).show()         # 영업/투자/재무 CF
 dartlab.chart.dividend(c).show()         # DPS + 배당수익률 + 배당성향
-dartlab.chart.balance_sheet(c).show()    # 유동/비유동 자산
 dartlab.chart.profitability(c).show()    # ROE, 영업이익률, 순이익률
 
 # 자동 감지 — 사용 가능한 모든 차트 스펙
-specs = dartlab.chart.auto_chart(c)             # → ChartSpec dict 리스트
-dartlab.chart.chart_from_spec(specs[0]).show()  # 아무 스펙 → Plotly 렌더링
+specs = dartlab.chart.auto_chart(c)
+dartlab.chart.chart_from_spec(specs[0]).show()
 
 # 범용 차트 (아무 DataFrame 가능)
 dartlab.chart.line(c.dividend, y=["dps"])
@@ -254,22 +167,16 @@ dartlab.chart.bar(df, x="year", y=["revenue", "operating_income"], stacked=True)
 데이터 가공 + 텍스트 분석 도구:
 
 ```python
-# 테이블 가공
 dartlab.table.yoy_change(c.dividend, value_cols=["dps"])       # YoY% 컬럼 추가
 dartlab.table.format_korean(c.BS, unit="백만원")                # 1.2조원, 350억원
 dartlab.table.summary_stats(c.dividend, value_cols=["dps"])     # mean/CAGR/trend
-
-# 텍스트 분석
-dartlab.text.extract_keywords(narrative)              # 빈도 기반 키워드
-dartlab.text.sentiment_indicators(narrative)           # 긍정/부정/리스크 점수
-dartlab.text.extract_numbers(narrative)                # 숫자 + 단위 + 맥락
+dartlab.text.extract_keywords(narrative)                        # 빈도 기반 키워드
+dartlab.text.sentiment_indicators(narrative)                     # 긍정/부정/리스크
 ```
 
 차트 의존성 설치: `uv add "dartlab[charts]"`
 
 ### 관계 네트워크
-
-상장사 간 출자/지분 관계를 시각화한다 — 그룹 구조, 순환출자 탐지 포함:
 
 ```python
 c = dartlab.Company("005930")
@@ -282,41 +189,26 @@ c.network(hops=2).show()     # 2홉 이웃
 c.network("members")     # 같은 그룹 계열사
 c.network("edges")       # 출자/지분 연결
 c.network("cycles")      # 순환출자 경로
-c.network("peers")       # ego 서브그래프
 
 # 전체 시장 네트워크
 dartlab.network().show()
 ```
 
-브라우저 뷰는 다크/라이트 테마, 회사 검색, 그룹 필터, 지분율 툴팁, 클릭 하이라이트를 지원한다.
-
 ### 시장 전수 스캔
-
-회사 하나를 보다가 바로 시장 전체로 넓혀서 같은 축을 스캔할 수 있다:
 
 ```python
 c = dartlab.Company("005930")
 
-# 개별 회사
-c.governance()
-c.workforce()
-c.capital()
-c.debt()
-
-# 시장 요약
-c.governance("market")   # 시장별 요약
+# 개별 회사 → 시장 전체
+c.governance()           # 개별 회사
 c.governance("all")      # 전체 상장사 DataFrame
-
-# 모듈 레벨 전체 스캔
-dartlab.governance()
+dartlab.governance()     # 모듈 레벨 스캔
 dartlab.workforce()
 dartlab.capital()
 dartlab.debt()
 ```
 
-report + finance parquet를 결합해 지배구조, 인력/보수, 주주환원, 부채위험을 시장 전체 DataFrame으로 바로 뽑는다.
-
-### EDGAR (미국)
+## EDGAR (미국)
 
 동일한 `Company` 인터페이스, 다른 데이터 소스:
 
@@ -324,109 +216,16 @@ report + finance parquet를 결합해 지배구조, 인력/보수, 주주환원,
 us = dartlab.Company("AAPL")
 
 us.sections                         # 10-K/10-Q sections (heading/body 분리)
-us.show("business")      # 사업 설명
+us.show("business")                 # 사업 설명
 us.show("10-K::item1ARiskFactors")  # 리스크 요인
 us.BS                               # SEC XBRL 재무상태표
 us.ratios                           # 동일한 47개 비율
 us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
 ```
 
-EDGAR sections도 DART와 동일한 텍스트 구조 메타데이터(heading/body 분리, textLevel, textPath)를 갖는다.
-
-## OpenAPI — 원본 공공 API
-
-원본 공시 API를 직접 다루고 싶을 때 source-native wrapper를 쓴다.
-
-### OpenDart (한국)
-
-> **참고:** `Company` 인터페이스는 API 키가 **필요 없다** — GitHub Releases의 사전 구축 데이터셋으로 동작한다.
-> `OpenDart`는 DART 원본 API를 직접 사용하므로 [https://opendart.fss.or.kr](https://opendart.fss.or.kr) 에서 API 키를 발급받아야 한다 (무료 회원가입).
->
-> ```bash
-> export DART_API_KEY=your_key_here   # Linux/Mac
-> $env:DART_API_KEY = 'your_key_here' # PowerShell
-> ```
-
-```python
-from dartlab import OpenDart
-
-d = OpenDart()                                  # API 키 자동 탐색
-d = OpenDart(["key1", "key2"])                  # 멀티 키 로테이션
-
-d.search("카카오", listed=True)                  # 기업 검색
-d.filings("삼성전자", "2024")                    # 공시 목록
-d.company("삼성전자")                            # 기업 개황
-d.finstate("삼성전자", 2024)                     # 재무제표
-d.report("삼성전자", "배당", 2024)                # 56개 보고서 유형
-
-# 편의 프록시
-s = d("삼성전자")
-s.finance(2024)
-s.report("배당", 2024)
-s.filings("2024")
-```
-
-### OpenEdgar (미국)
-
-```python
-from dartlab import OpenEdgar
-
-e = OpenEdgar()
-
-e.search("Apple")                               # 종목 검색
-e.company("AAPL")                               # 기업 정보
-e.filings("AAPL", forms=["10-K", "10-Q"])       # 공시 목록
-e.companyFactsJson("AAPL")                      # XBRL 팩트
-e.companyConceptJson("AAPL", "us-gaap", "Revenue")  # 단일 태그 시계열
-```
-
-이 계층은 원본 surface를 최대한 왜곡하지 않으면서, 저장 parquet은 DartLab runtime과 호환되게 맞춘다.
-
-## MCP — AI 어시스턴트 연동
-
-DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. Claude Desktop, Cursor 등 MCP 호환 AI 어시스턴트에 직접 연결하면, DartLab의 전체 분석 엔진을 AI가 도구로 호출할 수 있다.
-
-```bash
-uv add "dartlab[mcp]"
-```
-
-### Claude Desktop
-
-Claude Desktop 설정 파일(`claude_desktop_config.json`)에 추가:
-
-```json
-{
-  "mcpServers": {
-    "dartlab": {
-      "command": "uv",
-      "args": ["run", "dartlab", "mcp"]
-    }
-  }
-}
-```
-
-### AI가 할 수 있는 것
-
-연결하면 AI 어시스턴트가 다음을 수행할 수 있다:
-
-- **기업 검색** — "삼성전자 찾아줘" → `search_company` 호출
-- **공시 항목 조회** — "삼성전자 사업개요 보여줘" → `show_topic` 호출
-- **기간 비교** — "2024년과 2023년 재무제표 비교해줘" → `get_timeseries` 호출
-- **비율 계산** — "부채비율 계산해줘" → `calculate_ratios` 호출
-- **등급 평가** — "이 회사 종합 등급은?" → `get_insights` 호출
-- **교차 시장 분석** — DART(한국)과 EDGAR(미국) 기업 모두 지원
-
-45개 이상의 도구가 MCP 브릿지를 통해 자동으로 사용 가능하다. AI는 원문이 아닌 구조화된 기업 데이터를 받으므로 정확하고 근거 있는 답변을 할 수 있다.
-
-### CLI
-
-```bash
-dartlab mcp    # MCP stdio 서버 시작
-```
-
 ## AI 분석
 
-DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. 질문에 따라 재무제표, 비율, 공시 텍스트 등 관련 데이터를 자동으로 선택한다.
+DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. 질문에 따라 관련 데이터를 자동으로 선택한다.
 
 ### Python API
 
@@ -445,9 +244,6 @@ answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"])
 # 분석 패턴
 answer = dartlab.ask("삼성전자 분석", pattern="financial")
 
-# (종목, 질문) 분리
-answer = dartlab.ask("005930", "재무 건전성 분석")
-
 # 에이전트 모드 — LLM이 도구를 선택하여 심화 분석
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
 ```
@@ -455,25 +251,21 @@ answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 
 ### CLI
 
 ```bash
-# provider 설정 (대화형 안내)
+# provider 설정
 dartlab setup              # 전체 provider 목록
 dartlab setup ollama       # 로컬 LLM (무료)
 dartlab setup openai       # OpenAI API
 
 # 상태 확인
 dartlab status             # 전체 provider (테이블 뷰)
-dartlab status -p ollama   # 단일 provider 상세
 dartlab status --cost      # 누적 토큰/비용 통계
 
 # 질문 (스트리밍 기본값)
 dartlab ask "삼성전자 재무건전성 분석해줘"
-dartlab ask "삼성전자 배당 분석" -p openai -m gpt-4o
 dartlab ask "AAPL risk analysis" -p ollama
-dartlab ask --continue "배당 추세는?"          # 직전 대화 이어가기
-dartlab ask "삼성전자 분석" --pattern financial  # 분석 프레임워크
+dartlab ask --continue "배당 추세는?"
 
-# 보고서 자동 생성 (Markdown)
-dartlab report "삼성전자"
+# 보고서 자동 생성
 dartlab report "삼성전자" -o report.md
 
 # 웹 UI
@@ -482,9 +274,9 @@ dartlab                    # 브라우저 UI 실행
 
 5개 provider 지원: `oauth-codex` (ChatGPT 구독), `codex` (Codex CLI), `ollama` (로컬, 무료), `openai` (API 키), `custom` (OpenAI 호환).
 
-### 프로젝트 설정 (`.dartlab.yml`)
+AI 의존성 설치: `uv add "dartlab[ai]"`
 
-프로젝트 루트 또는 홈 디렉토리에 `.dartlab.yml`을 두면 기본값을 설정할 수 있다:
+### 프로젝트 설정 (`.dartlab.yml`)
 
 ```yaml
 company: 005930         # 기본 종목
@@ -493,67 +285,92 @@ model: gpt-4o           # 기본 모델
 verbose: false
 ```
 
-## 핵심 개념
+## MCP — AI 어시스턴트 연동
 
-### 1. Sections First
+DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. Claude Desktop, Cursor 등 MCP 호환 AI 어시스턴트에 직접 연결할 수 있다.
 
-`sections`가 뼈대다. 회사는 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵으로 설명된다.
-
-### 2. Source-Aware Company
-
-`Company`는 raw source wrapper가 아니다. 같은 topic에서 `finance`나 `report`가 더 authoritative하면 자동으로 대체한다. `trace()`로 어떤 source가 채택됐는지 확인할 수 있다.
-
-### 3. 텍스트 구조
-
-서술 텍스트는 flat string이 아니다. heading/body로 분리되고, 레벨과 경로 메타데이터를 갖는다. 한국어 DART와 영문 EDGAR 공시 모두 동일한 구조를 제공한다.
-
-### 4. Raw Access
-
-더 깊게 내려가야 할 때는 source namespace를 직접 쓴다.
-
-```python
-c.docs.sections          # pure docs 수평화
-c.finance.BS             # finance 엔진 직접
-c.report.extract("배당")  # report 엔진 직접
+```bash
+uv add "dartlab[mcp]"
 ```
 
-## 안정성
+Claude Desktop 설정 파일(`claude_desktop_config.json`)에 추가:
 
-| Tier | 범위 |
-|------|------|
-| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
-| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
-| **Experimental** | AI 도구, export |
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
 
-자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
+45개 이상의 도구가 MCP 브릿지를 통해 자동으로 사용 가능하다 — 기업 검색, 공시 조회, 기간 비교, 비율 계산, 등급 평가, DART와 EDGAR 모두 지원.
+
+## OpenAPI — 원본 공공 API
+
+원본 공시 API를 직접 다루고 싶을 때 source-native wrapper를 쓴다.
+
+### OpenDart (한국)
+
+> **참고:** `Company`는 API 키가 **필요 없다** — 사전 구축 데이터셋으로 동작한다.
+> `OpenDart`는 DART 원본 API를 직접 사용하므로 [opendart.fss.or.kr](https://opendart.fss.or.kr) 에서 API 키가 필요하다 (무료).
+
+```python
+from dartlab import OpenDart
+
+d = OpenDart()
+d.search("카카오", listed=True)
+d.filings("삼성전자", "2024")
+d.finstate("삼성전자", 2024)
+d.report("삼성전자", "배당", 2024)
+```
+
+### OpenEdgar (미국)
+
+```python
+from dartlab import OpenEdgar
+
+e = OpenEdgar()
+e.search("Apple")
+e.filings("AAPL", forms=["10-K", "10-Q"])
+e.companyFactsJson("AAPL")
+```
 
 ## 데이터
 
-DartLab은 GitHub Releases로 사전 구축 데이터셋을 제공한다.
-
-- **finance / report**: 상장 2,700+ 기업 전수 수집 완료, 최신 상태 유지.
-- **docs**: 전자공시시스템에 부하를 주지 않도록 천천히 수집 중 — 현재 **320+ 기업**이 `data-docs` 릴리즈에 저장되어 있으며, 수집하는 대로 업데이트.
-- **EDGAR finance**: SEC XBRL API에서 주문형 수집 (사전 데이터셋 불필요).
+**설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 데이터는 SEC API에서 가져온다.
 
 | 데이터셋 | 규모 | 출처 |
 |----------|------|------|
 | DART docs | 320+ 기업 (수집 중) | 한국 공시 텍스트 + 테이블 |
 | DART finance | 2,700+ 기업 | XBRL 재무제표 |
 | DART report | 2,700+ 기업 | 정형 공시 API |
-| EDGAR docs | 970+ 기업 | 10-K/10-Q sections |
-| EDGAR finance | 주문형 | SEC XBRL facts (SEC API 자동 수집) |
+| EDGAR | 주문형 | SEC XBRL + 10-K/10-Q (자동 수집) |
 
-```python
-# 전체 다운로드 (선택사항 — 전 종목 일괄 다운로드)
-from dartlab.core.dataLoader import downloadAll
-downloadAll("docs")       # DART 공시 문서
-downloadAll("finance")    # DART 재무제표
-downloadAll("report")     # DART 정형 보고서
+## 바로 시작하기
+
+### Marimo 노트북
+
+```bash
+uv add dartlab marimo
+marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
+marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
+marimo edit startMarimo/aiAnalysis.py     # AI 분석 예시
 ```
 
-## 문서
+### Colab 튜토리얼
 
-문서는 지속적으로 업데이트 중이다.
+| 노트북 | 주제 |
+|---|---|
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **빠른 시작** — sections, show, trace, diff |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **재무제표** — BS, IS, CF |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **재무비율** — 47개 비율 |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **공시 텍스트** — sections, 텍스트 파싱 |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — 미국 SEC 공시 |
+
+## 문서
 
 - 문서: https://eddmpython.github.io/dartlab/
 - Sections 가이드: https://eddmpython.github.io/dartlab/docs/getting-started/sections
@@ -567,6 +384,16 @@ downloadAll("report")     # DART 정형 보고서
 - **공시 제도** — DART/EDGAR 공시의 구조와 작동 원리
 - **보고서 읽기** — 감사보고서, 잠정실적, 재작성 등 실전 가이드
 - **재무 해석** — 재무제표, 비율, 공시 신호 해석
+
+## 안정성
+
+| Tier | 범위 |
+|------|------|
+| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
+| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
+| **Experimental** | AI 도구, export |
+
+자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
 
 ## 기여
 
