@@ -59,10 +59,7 @@ class AiProfile:
 
 def _default_roles(provider: str, providers: dict[str, ProviderProfile]) -> dict[str, RoleBinding]:
     default_model = providers.get(provider).model if provider in providers else None
-    return {
-        role: RoleBinding(provider=provider, model=default_model)
-        for role in AI_ROLES
-    }
+    return {role: RoleBinding(provider=provider, model=default_model) for role in AI_ROLES}
 
 
 class AiProfileManager:
@@ -99,7 +96,9 @@ class AiProfileManager:
                     base_url=item.get("base_url") or item.get("baseUrl"),
                 )
 
-        default_provider = normalize_provider(data.get("defaultProvider")) or normalize_provider(data.get("provider")) or "codex"
+        default_provider = (
+            normalize_provider(data.get("defaultProvider")) or normalize_provider(data.get("provider")) or "codex"
+        )
         if get_provider_spec(default_provider) is None:
             default_provider = "codex"
 
@@ -188,7 +187,11 @@ class AiProfileManager:
         if normalized is None:
             raise ValueError(f"지원하지 않는 role: {role}")
         if normalized not in profile.roles:
-            default_model = profile.providers.get(profile.default_provider).model if profile.default_provider in profile.providers else None
+            default_model = (
+                profile.providers.get(profile.default_provider).model
+                if profile.default_provider in profile.providers
+                else None
+            )
             profile.roles[normalized] = RoleBinding(provider=profile.default_provider, model=default_model)
         return profile.roles[normalized]
 
@@ -343,8 +346,7 @@ class AiProfileManager:
     def fingerprint(self) -> str:
         profile = self.load()
         role_fingerprint = ",".join(
-            f"{role}:{binding.provider}:{binding.model or ''}"
-            for role, binding in sorted(profile.roles.items())
+            f"{role}:{binding.provider}:{binding.model or ''}" for role, binding in sorted(profile.roles.items())
         )
         return f"{profile.revision}:{profile.updated_at}:{profile.updated_by}:{profile.default_provider}:{role_fingerprint}"
 

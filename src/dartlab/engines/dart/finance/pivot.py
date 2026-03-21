@@ -62,8 +62,14 @@ def _loadAndNormalize(
     from dartlab.core.dataLoader import loadData
 
     _FINANCE_COLS = [
-        "sj_div", "fs_div", "account_id", "account_nm",
-        "bsns_year", "reprt_nm", "thstrm_amount", "thstrm_add_amount",
+        "sj_div",
+        "fs_div",
+        "account_id",
+        "account_nm",
+        "bsns_year",
+        "reprt_nm",
+        "thstrm_amount",
+        "thstrm_add_amount",
     ]
     df = loadData(stockCode, category="finance", columns=_FINANCE_COLS)
     if df is None or df.is_empty():
@@ -258,16 +264,10 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
             & (pl.col("thstrm_amount").is_null() | (pl.col("thstrm_amount") == pl.col("thstrm_add_amount")))
         )
         .then(
-            pl.when(pl.col("_prevAdd").is_null())
-            .then(None)
-            .otherwise(pl.col("thstrm_add_amount") - pl.col("_prevAdd"))
+            pl.when(pl.col("_prevAdd").is_null()).then(None).otherwise(pl.col("thstrm_add_amount") - pl.col("_prevAdd"))
         )
         .when((pl.col("reprt_nm") == "4분기") & pl.col("thstrm_add_amount").is_null())
-        .then(
-            pl.when(pl.col("_prevAdd").is_null())
-            .then(None)
-            .otherwise(pl.col("thstrm_amount") - pl.col("_prevAdd"))
-        )
+        .then(pl.when(pl.col("_prevAdd").is_null()).then(None).otherwise(pl.col("thstrm_amount") - pl.col("_prevAdd")))
         .otherwise(pl.col("thstrm_amount"))
         .alias("_normalized_amount")
     )
@@ -430,8 +430,13 @@ def buildSceMatrix(
     from dartlab.core.dataLoader import loadData
 
     _SCE_COLS = [
-        "sj_div", "fs_div", "account_id", "account_nm",
-        "bsns_year", "reprt_nm", "thstrm_amount",
+        "sj_div",
+        "fs_div",
+        "account_id",
+        "account_nm",
+        "bsns_year",
+        "reprt_nm",
+        "thstrm_amount",
     ]
     df = loadData(stockCode, category="finance", columns=_SCE_COLS)
     if df is None or df.is_empty():

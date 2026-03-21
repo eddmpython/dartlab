@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-
 # 감지 우선순위 (가장 범용적 → 특수)
 _DETECT_ORDER = ("oauth-codex", "openai", "ollama", "codex")
 

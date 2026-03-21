@@ -9,27 +9,40 @@ from __future__ import annotations
 import re as _re
 from typing import Any
 
-# ── 템플릿 데이터 임포트 ──────────────────────────────────
+from .templates.analysis_rules import (
+    CROSS_VALIDATION_COMPACT as _CROSS_VALIDATION_COMPACT,
+)
+from .templates.analysis_rules import (
+    CROSS_VALIDATION_RULES as _CROSS_VALIDATION_RULES,
+)
+from .templates.analysis_rules import (
+    FEW_SHOT_COMPACT as _FEW_SHOT_COMPACT,
+)
+from .templates.analysis_rules import (
+    FEW_SHOT_EXAMPLES as _FEW_SHOT_EXAMPLES,
+)
+from .templates.analysis_rules import (
+    QUESTION_TYPE_MAP as _QUESTION_TYPE_MAP,
+)
+from .templates.analysis_rules import (
+    TOPIC_COMPACT as _TOPIC_COMPACT,
+)
+from .templates.analysis_rules import (
+    TOPIC_PROMPTS as _TOPIC_PROMPTS,
+)
+from .templates.benchmarks import _INDUSTRY_BENCHMARKS, _SECTOR_MAP
+from .templates.self_critique import (
+    SELF_CRITIQUE_PROMPT,
+)
+from .templates.self_critique import (
+    SIGNAL_KEYWORDS as _SIGNAL_KEYWORDS,
+)
 
+# ── 템플릿 데이터 임포트 ──────────────────────────────────
 from .templates.system_base import (
     SYSTEM_PROMPT_COMPACT,
     SYSTEM_PROMPT_EN,
     SYSTEM_PROMPT_KR,
-)
-from .templates.benchmarks import _INDUSTRY_BENCHMARKS, _SECTOR_MAP
-from .templates.analysis_rules import (
-    CROSS_VALIDATION_COMPACT as _CROSS_VALIDATION_COMPACT,
-    CROSS_VALIDATION_RULES as _CROSS_VALIDATION_RULES,
-    FEW_SHOT_COMPACT as _FEW_SHOT_COMPACT,
-    FEW_SHOT_EXAMPLES as _FEW_SHOT_EXAMPLES,
-    QUESTION_TYPE_MAP as _QUESTION_TYPE_MAP,
-    TOPIC_COMPACT as _TOPIC_COMPACT,
-    TOPIC_PROMPTS as _TOPIC_PROMPTS,
-)
-from .templates.self_critique import (
-    GUIDED_SCHEMA,
-    SELF_CRITIQUE_PROMPT,
-    SIGNAL_KEYWORDS as _SIGNAL_KEYWORDS,
 )
 
 # ══════════════════════════════════════

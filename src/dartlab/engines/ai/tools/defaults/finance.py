@@ -6,7 +6,7 @@ from typing import Any
 
 import polars as pl
 
-from .helpers import df_to_md, format_tool_value
+from .helpers import df_to_md
 
 
 def register_finance_tools(company: Any, register_tool) -> None:

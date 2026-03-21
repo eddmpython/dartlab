@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .helpers import format_tool_value, maybe_int, csv_list
+from .helpers import csv_list, format_tool_value, maybe_int
 
 
 def register_openapi_tools(register_tool) -> None:

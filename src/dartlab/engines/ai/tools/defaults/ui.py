@@ -165,7 +165,9 @@ def register_ui_tools(company: Any, register_tool) -> None:
             UiAction.render_widget(
                 "comparison",
                 {
-                    "stockCode": getattr(company, "stockCode", getattr(company, "ticker", None)) if company is not None else None,
+                    "stockCode": getattr(company, "stockCode", getattr(company, "ticker", None))
+                    if company is not None
+                    else None,
                     "topics": topic_list,
                     "periods": [p.strip() for p in periods.split(",") if p.strip()] if periods else [],
                 },
@@ -176,8 +178,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     register_tool(
         "show_comparison",
         show_comparison,
-        "기간간 비교 뷰를 표시합니다. "
-        "사용자가 '기간 비교', '전년 대비 보여줘' 같은 요청을 할 때 사용하세요.",
+        "기간간 비교 뷰를 표시합니다. 사용자가 '기간 비교', '전년 대비 보여줘' 같은 요청을 할 때 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -216,8 +217,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     register_tool(
         "highlight_section",
         highlight_section,
-        "특정 섹션에서 키워드를 하이라이트합니다. "
-        "사용자가 특정 텍스트를 찾거나 강조하고 싶을 때 사용하세요.",
+        "특정 섹션에서 키워드를 하이라이트합니다. 사용자가 특정 텍스트를 찾거나 강조하고 싶을 때 사용하세요.",
         {
             "type": "object",
             "properties": {
@@ -326,8 +326,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     register_tool(
         "pin_insight",
         pin_insight,
-        "핵심 인사이트를 사이드바에 고정합니다. "
-        "분석 중 발견한 중요 사항을 사용자가 쉽게 참조할 수 있도록 핀합니다.",
+        "핵심 인사이트를 사이드바에 고정합니다. 분석 중 발견한 중요 사항을 사용자가 쉽게 참조할 수 있도록 핀합니다.",
         {
             "type": "object",
             "properties": {
@@ -372,8 +371,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     register_tool(
         "open_comparison_view",
         open_comparison_view,
-        "두 종목을 좌우 비교하는 뷰를 엽니다. "
-        "사용자가 'A vs B 비교', '두 회사 비교해줘' 같은 요청을 할 때 사용하세요.",
+        "두 종목을 좌우 비교하는 뷰를 엽니다. 사용자가 'A vs B 비교', '두 회사 비교해줘' 같은 요청을 할 때 사용하세요.",
         {
             "type": "object",
             "properties": {

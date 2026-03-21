@@ -20,8 +20,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import dartlab
 
 from .api import ai_router, analysis_router, ask_router, company_router, data_router
+from .runtime import default_host as _default_host
+from .runtime import ensure_port, run_server
 from .services.ai_profile import should_preload_ollama as _should_preload_ollama
-from .runtime import default_host as _default_host, ensure_port, run_server
 from .web import register_spa
 
 logger = logging.getLogger(__name__)

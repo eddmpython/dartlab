@@ -52,6 +52,7 @@ def _setup_oauth_codex() -> None:
     # 이미 인증됐는지 확인
     try:
         from dartlab.engines.ai.providers.support.oauth_token import is_authenticated
+
         if is_authenticated():
             print("  ✓ 이미 인증되어 있습니다.\n")
             print("  재인증하려면 아래를 입력하세요:")
@@ -80,7 +81,7 @@ def _do_oauth_login() -> None:
         )
     except ImportError:
         print("  OAuth 모듈을 불러올 수 없습니다.")
-        print("  dartlab[ai] 설치가 필요합니다: uv add \"dartlab[ai]\"\n")
+        print('  dartlab[ai] 설치가 필요합니다: uv add "dartlab[ai]"\n')
         return
 
     auth_url, verifier, state = build_auth_url()

@@ -16,7 +16,7 @@ import subprocess
 from typing import Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
-from dartlab.engines.ai.types import LLMResponse
+from dartlab.engines.ai.types import LLMConfig, LLMResponse
 
 
 def _claude_executable() -> str:
@@ -48,7 +48,7 @@ class ClaudeCodeProvider(BaseProvider):
     Anthropic SDK로 자동 fallback한다.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: LLMConfig):
         super().__init__(config)
         # VSCode Claude Code 확장 내부면 CLI가 hang되므로 즉시 SDK fallback
         self._use_sdk = bool(os.environ.get("CLAUDECODE"))

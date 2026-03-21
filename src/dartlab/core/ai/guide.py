@@ -28,10 +28,7 @@ _SETUP_GUIDES: dict[str, dict[str, str]] = {
         "short": "API 키 필요 (GPT-5.4, o4 등)",
         "setup_notebook": 'dartlab.llm.configure(provider="openai", api_key="sk-...")',
         "setup_cli": "dartlab setup openai",
-        "detail": (
-            "OpenAI API 키가 필요합니다.\n"
-            "https://platform.openai.com/api-keys 에서 발급받으세요."
-        ),
+        "detail": ("OpenAI API 키가 필요합니다.\nhttps://platform.openai.com/api-keys 에서 발급받으세요."),
     },
     "ollama": {
         "name": "로컬 LLM (무료)",
@@ -48,10 +45,7 @@ _SETUP_GUIDES: dict[str, dict[str, str]] = {
         "short": "코딩 에이전트용",
         "setup_notebook": 'dartlab.setup("codex")',
         "setup_cli": "dartlab setup codex",
-        "detail": (
-            "코딩 에이전트 전용 provider입니다.\n"
-            "`npm install -g @openai/codex` 설치 후 `codex login`."
-        ),
+        "detail": ("코딩 에이전트 전용 provider입니다.\n`npm install -g @openai/codex` 설치 후 `codex login`."),
     },
 }
 

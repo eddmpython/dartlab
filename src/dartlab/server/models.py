@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HistoryMeta(BaseModel):
@@ -42,17 +42,17 @@ class HistoryMessage(BaseModel):
 
 
 class AskRequest(BaseModel):
-    company: str | None = None
-    question: str
-    provider: str | None = None
-    role: str | None = None
-    model: str | None = None
-    api_key: str | None = None
-    base_url: str | None = None
+    company: str | None = Field(None, max_length=100)
+    question: str = Field(..., min_length=1, max_length=5000)
+    provider: str | None = Field(None, max_length=50)
+    role: str | None = Field(None, max_length=50)
+    model: str | None = Field(None, max_length=100)
+    api_key: str | None = Field(None, max_length=500)
+    base_url: str | None = Field(None, max_length=500)
     include: list[str] | None = None
     exclude: list[str] | None = None
     stream: bool = False
-    history: list[HistoryMessage] | None = None
+    history: list[HistoryMessage] | None = Field(None, max_length=50)
     viewContext: ViewContext | None = None
 
 

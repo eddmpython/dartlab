@@ -41,7 +41,8 @@ class SecretStore:
         if not isinstance(data, dict):
             raise SecretStoreError("secret store 형식이 올바르지 않습니다")
         return {
-            str(key): value for key, value in data.items()
+            str(key): value
+            for key, value in data.items()
             if isinstance(value, dict) and isinstance(value.get("backend"), str) and isinstance(value.get("value"), str)
         }
 

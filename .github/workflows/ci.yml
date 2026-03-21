@@ -145,6 +145,25 @@ jobs:
           print(f'dartlab imported OK, {len(entries)} registry entries')
           "
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit --strict --desc on
+        continue-on-error: true
+
   notebooks:
     runs-on: ubuntu-latest
     steps:

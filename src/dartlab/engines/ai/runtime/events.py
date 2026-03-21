@@ -7,6 +7,8 @@ core.analyze()가 생산하는 이벤트 스트림의 단위.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
+
 class EventKind:
     """이벤트 종류 상수.
 

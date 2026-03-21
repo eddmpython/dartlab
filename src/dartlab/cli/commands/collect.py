@@ -24,7 +24,8 @@ def configure_parser(subparsers) -> None:
         help="종목코드 (예: 005930 000660)",
     )
     parser.add_argument(
-        "--quarters", "-q",
+        "--quarters",
+        "-q",
         type=int,
         default=8,
         help="최근 분기 수 (기본 8 = 2년치)",

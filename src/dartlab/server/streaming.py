@@ -139,7 +139,7 @@ async def _sync_gen_to_async(gen_fn, *args, **kwargs):
         try:
             for item in gen_fn(*args, **kwargs):
                 sync_queue.put(item)
-        except Exception as exc:
+        except (OSError, RuntimeError, ValueError, TypeError, KeyError, StopIteration, AnalysisStreamError) as exc:
             sync_queue.put(exc)
         finally:
             sync_queue.put(_SENTINEL)

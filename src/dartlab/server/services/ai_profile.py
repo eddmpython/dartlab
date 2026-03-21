@@ -32,8 +32,7 @@ def should_preload_ollama() -> bool:
     if selected_provider() == "ollama":
         return True
     return any(
-        (normalize_provider(binding.provider) or binding.provider) == "ollama"
-        for binding in profile.roles.values()
+        (normalize_provider(binding.provider) or binding.provider) == "ollama" for binding in profile.roles.values()
     )
 
 

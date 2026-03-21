@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
-
 _PR = "#ea4647"
 _AC = "#fb923c"
 _TX = "#f1f5f9"

@@ -23,9 +23,9 @@ CLI::
 
 from __future__ import annotations
 
+import random
 import re
 import time
-import random
 from datetime import datetime
 from pathlib import Path
 
@@ -59,9 +59,7 @@ _MULTI_PAGE_RE = re.compile(
     r"\s+node[12]\['tocNo'\][ =]+\"(\d+)\";"
 )
 
-_SINGLE_PAGE_RE = re.compile(
-    r"\t\tviewDoc\('(\d+)', '(\d+)', '(\d+)', '(\d+)', '(\d+)', '(\S+)',''\)\;"
-)
+_SINGLE_PAGE_RE = re.compile(r"\t\tviewDoc\('(\d+)', '(\d+)', '(\d+)', '(\d+)', '(\d+)', '(\S+)',''\)\;")
 
 
 # ── HTML → 텍스트 변환 ───────────────────────────────
@@ -136,12 +134,14 @@ def _parseSubDocs(content: str, rcpNo: str) -> list[dict]:
         result = []
         for idx, m in enumerate(matches):
             params = f"rcpNo={m[2]}&dcmNo={m[3]}&eleId={m[4]}&offset={m[5]}&length={m[6]}&dtd={m[7]}"
-            result.append({
-                "title": m[0],
-                "url": f"{_DART_VIEWER_BASE}?{params}",
-                "order": idx,
-                "rcept_no": rcpNo,
-            })
+            result.append(
+                {
+                    "title": m[0],
+                    "url": f"{_DART_VIEWER_BASE}?{params}",
+                    "order": idx,
+                    "rcept_no": rcpNo,
+                }
+            )
         return result
 
     matches = _SINGLE_PAGE_RE.findall(content)
@@ -150,12 +150,14 @@ def _parseSubDocs(content: str, rcpNo: str) -> list[dict]:
         docTitle = titleTag.text.strip() if titleTag else "unknown"
         m = matches[0]
         params = f"rcpNo={m[0]}&dcmNo={m[1]}&eleId={m[2]}&offset={m[3]}&length={m[4]}&dtd={m[5]}"
-        return [{
-            "title": docTitle,
-            "url": f"{_DART_VIEWER_BASE}?{params}",
-            "order": 0,
-            "rcept_no": rcpNo,
-        }]
+        return [
+            {
+                "title": docTitle,
+                "url": f"{_DART_VIEWER_BASE}?{params}",
+                "order": 0,
+                "rcept_no": rcpNo,
+            }
+        ]
 
     return []
 
@@ -166,13 +168,15 @@ def _parseSubDocs(content: str, rcpNo: str) -> list[dict]:
 def _makeSession() -> requests.Session:
     """크롤링용 세션."""
     s = requests.Session()
-    s.headers.update({
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/131.0.0.0 Safari/537.36"
-        ),
-    })
+    s.headers.update(
+        {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+        }
+    )
     return s
 
 
@@ -250,9 +254,7 @@ class DocsCollector:
             filings = filings.filter(mask & ~qMask)
 
         if self._existingReports:
-            filings = filings.filter(
-                ~pl.col("rcept_no").is_in(list(self._existingReports))
-            )
+            filings = filings.filter(~pl.col("rcept_no").is_in(list(self._existingReports)))
 
         return filings
 
@@ -316,9 +318,7 @@ class DocsCollector:
         rceptDates = filings["rcept_dt"].to_list()
         reportNames = filings["report_nm"].to_list()
         corpNames = (
-            filings["corp_name"].to_list()
-            if "corp_name" in filings.columns
-            else [self.corpName] * len(rceptNos)
+            filings["corp_name"].to_list() if "corp_name" in filings.columns else [self.corpName] * len(rceptNos)
         )
 
         from alive_progress import alive_bar
@@ -410,19 +410,21 @@ class DocsCollector:
             rceptDate = sd["rcept_date"]
             year = rceptDate[:4] if len(rceptDate) >= 4 else "unknown"
 
-            allSections.append({
-                "corp_code": self._corpCode,
-                "corp_name": sd["corp_name"],
-                "stock_code": self.stockCode,
-                "year": year,
-                "rcept_date": rceptDate,
-                "rcept_no": rcpNo,
-                "report_type": sd["report_type"],
-                "section_order": sd["order"],
-                "section_title": sd["title"],
-                "section_url": url,
-                "section_content": text,
-            })
+            allSections.append(
+                {
+                    "corp_code": self._corpCode,
+                    "corp_name": sd["corp_name"],
+                    "stock_code": self.stockCode,
+                    "year": year,
+                    "rcept_date": rceptDate,
+                    "rcept_no": rcpNo,
+                    "report_type": sd["report_type"],
+                    "section_order": sd["order"],
+                    "section_title": sd["title"],
+                    "section_url": url,
+                    "section_content": text,
+                }
+            )
             seenReports.add(rcpNo)
 
         if allSections:
@@ -510,10 +512,7 @@ def listUncollected(*, client: DartClient | None = None) -> list[tuple[str, str]
     c = client or DartClient()
     codes = loadCorpCodes(c)
 
-    listed = codes.filter(
-        pl.col("stock_code").is_not_null()
-        & (pl.col("stock_code").str.strip_chars() != "")
-    )
+    listed = codes.filter(pl.col("stock_code").is_not_null() & (pl.col("stock_code").str.strip_chars() != ""))
 
     dataDir = _resolveDataDir()
     existing = {f.stem for f in dataDir.glob("*.parquet") if not f.name.startswith(".")}
@@ -532,10 +531,7 @@ def collectionStats(*, client: DartClient | None = None) -> dict:
     c = client or DartClient()
     codes = loadCorpCodes(c)
 
-    listed = codes.filter(
-        pl.col("stock_code").is_not_null()
-        & (pl.col("stock_code").str.strip_chars() != "")
-    )
+    listed = codes.filter(pl.col("stock_code").is_not_null() & (pl.col("stock_code").str.strip_chars() != ""))
 
     dataDir = _resolveDataDir()
     existing = {f.stem for f in dataDir.glob("*.parquet") if not f.name.startswith(".")}

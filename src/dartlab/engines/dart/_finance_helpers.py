@@ -304,9 +304,7 @@ def _sceToDataFrame(
     return df.drop(["_cause", "_detail", "_sort"])
 
 
-def _buildCisSeries(
-    df: pl.DataFrame, periods: list[str], formatPeriod
-) -> dict[str, list[Any | None]]:
+def _buildCisSeries(df: pl.DataFrame, periods: list[str], formatPeriod) -> dict[str, list[Any | None]]:
     """CIS DataFrame에서 snakeId → 기간별 값 시리즈 추출 (공통 헬퍼)."""
     from dartlab.engines.dart.finance.mapper import AccountMapper
 
@@ -328,9 +326,7 @@ def _buildCisSeries(
         if snakeId is None:
             continue
 
-        pKey = formatPeriod(
-            _bsnsYears[i] or "", _QUARTER_MAP.get(_reprtNms[i] or "", 0)
-        )
+        pKey = formatPeriod(_bsnsYears[i] or "", _QUARTER_MAP.get(_reprtNms[i] or "", 0))
         idx = periodIdx.get(pKey)
         if idx is None:
             continue

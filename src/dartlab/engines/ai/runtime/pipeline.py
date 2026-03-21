@@ -339,7 +339,14 @@ _PIPELINE_MAP: dict[str, list] = {
     "리스크": [_run_risk_analysis, _run_composite_scoring],
     "투자": [_run_growth_analysis],
     "지배구조": [],  # scan runner가 L2에서 주입
-    "종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis, _run_quality_of_earnings, _run_dupont_analysis, _run_composite_scoring],
+    "종합": [
+        _run_health_analysis,
+        _run_profitability_analysis,
+        _run_growth_analysis,
+        _run_quality_of_earnings,
+        _run_dupont_analysis,
+        _run_composite_scoring,
+    ],
     "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
     "사업": [],  # show_topic 도구 사용 안내 — insight만 주입
 }

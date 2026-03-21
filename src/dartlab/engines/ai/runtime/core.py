@@ -24,13 +24,13 @@ from typing import Any, Generator
 
 from dartlab.engines.ai.runtime.events import AnalysisEvent, EventKind
 
-
 # ── 상수 ──────────────────────────────────────────────────
 
 _COMPACT_PROVIDERS = frozenset({"ollama", "codex"})
 
 
 # ── context tier 결정 ─────────────────────────────────────
+
 
 def _resolve_context_tier(provider: str, use_tools: bool) -> str:
     """standalone의 이진 선택과 server의 3단 선택을 통합."""
@@ -45,6 +45,7 @@ def _resolve_context_tier(provider: str, use_tools: bool) -> str:
 
 
 # ── 에러 분류 ─────────────────────────────────────────────
+
 
 def _classify_error(e: Exception) -> dict[str, str]:
     """예외 → {error: str, action: str} 매핑."""
@@ -81,6 +82,7 @@ def _enrich_with_guide(result: dict[str, str]) -> dict[str, str]:
 
 
 # ── 통합 오케스트레이터 ──────────────────────────────────
+
 
 def analyze(
     company: Any | None,
@@ -159,10 +161,7 @@ def analyze(
     if not_found_msg:
         meta = conversation_meta or {}
         corp_name = getattr(company, "corpName", None) if company else None
-        stock_id = (
-            getattr(company, "stockCode", getattr(company, "ticker", ""))
-            if company else None
-        )
+        stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
         if corp_name:
             meta.setdefault("company", corp_name)
         if stock_id:
@@ -178,17 +177,32 @@ def analyze(
 
     try:
         yield from _analyze_inner(
-            company, question,
-            provider=provider, role=role, model=model, api_key=api_key, base_url=base_url,
-            include=include, exclude=exclude,
-            use_tools=use_tools, max_turns=max_turns, max_tools=max_tools,
+            company,
+            question,
+            provider=provider,
+            role=role,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            include=include,
+            exclude=exclude,
+            use_tools=use_tools,
+            max_turns=max_turns,
+            max_tools=max_tools,
             reflect=reflect,
-            snapshot=snapshot, auto_snapshot=auto_snapshot,
-            focus_context=focus_context, diff_context=diff_context, auto_diff=auto_diff,
-            history=history, history_messages=history_messages,
-            view_context=view_context, dialogue_policy=dialogue_policy,
-            conversation_meta=conversation_meta, question_types=question_types,
-            validate=validate, detect_navigate=detect_navigate,
+            snapshot=snapshot,
+            auto_snapshot=auto_snapshot,
+            focus_context=focus_context,
+            diff_context=diff_context,
+            auto_diff=auto_diff,
+            history=history,
+            history_messages=history_messages,
+            view_context=view_context,
+            dialogue_policy=dialogue_policy,
+            conversation_meta=conversation_meta,
+            question_types=question_types,
+            validate=validate,
+            detect_navigate=detect_navigate,
             emit_system_prompt=emit_system_prompt,
             _full_response_parts=full_response_parts,
             _done_payload=done_payload,
@@ -196,9 +210,17 @@ def analyze(
             **kwargs,
         )
     except (
-        AttributeError, ConnectionError, FileNotFoundError, ImportError,
-        KeyError, OSError, PermissionError, RuntimeError, TimeoutError,
-        TypeError, ValueError,
+        AttributeError,
+        ConnectionError,
+        FileNotFoundError,
+        ImportError,
+        KeyError,
+        OSError,
+        PermissionError,
+        RuntimeError,
+        TimeoutError,
+        TypeError,
+        ValueError,
     ) as e:
         yield AnalysisEvent("error", _enrich_with_guide(_classify_error(e)))
 
@@ -223,17 +245,31 @@ def _analyze_inner(
     company: Any | None,
     question: str,
     *,
-    provider: str | None, role: str | None, model: str | None,
-    api_key: str | None, base_url: str | None,
-    include: list[str] | None, exclude: list[str] | None,
-    use_tools: bool, max_turns: int, max_tools: int | None,
+    provider: str | None,
+    role: str | None,
+    model: str | None,
+    api_key: str | None,
+    base_url: str | None,
+    include: list[str] | None,
+    exclude: list[str] | None,
+    use_tools: bool,
+    max_turns: int,
+    max_tools: int | None,
     reflect: bool,
-    snapshot: dict | None, auto_snapshot: bool,
-    focus_context: str | None, diff_context: str | None, auto_diff: bool,
-    history: list | None, history_messages: list[dict] | None,
-    view_context: dict | None, dialogue_policy: str | None,
-    conversation_meta: dict | None, question_types: tuple[str, ...],
-    validate: bool, detect_navigate: bool, emit_system_prompt: bool,
+    snapshot: dict | None,
+    auto_snapshot: bool,
+    focus_context: str | None,
+    diff_context: str | None,
+    auto_diff: bool,
+    history: list | None,
+    history_messages: list[dict] | None,
+    view_context: dict | None,
+    dialogue_policy: str | None,
+    conversation_meta: dict | None,
+    question_types: tuple[str, ...],
+    validate: bool,
+    detect_navigate: bool,
+    emit_system_prompt: bool,
     _full_response_parts: list[str],
     _done_payload: dict[str, Any],
     _included_tables: list[str],
@@ -248,8 +284,10 @@ def _analyze_inner(
     overrides = {
         k: v
         for k, v in {
-            "provider": provider, "model": model,
-            "api_key": api_key, "base_url": base_url,
+            "provider": provider,
+            "model": model,
+            "api_key": api_key,
+            "base_url": base_url,
             **kwargs,
         }.items()
         if v is not None
@@ -262,11 +300,7 @@ def _analyze_inner(
     is_compact = context_tier != "full"
 
     corp_name = getattr(company, "corpName", "Unknown") if company else None
-    stock_id = (
-        getattr(company, "stockCode", getattr(company, "ticker", ""))
-        if company
-        else None
-    )
+    stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
 
     # ── 2. 대화 상태 자동 빌드 ──
     state = None
@@ -279,6 +313,7 @@ def _analyze_inner(
 
         # 순수 대화이면 viewContext 무시
         from dartlab.engines.ai.conversation.intent import is_pure_conversation
+
         if is_pure_conversation(question):
             light_view = None
 
@@ -292,11 +327,13 @@ def _analyze_inner(
         # dialogue_policy 자동 생성
         if dialogue_policy is None:
             from dartlab.engines.ai.conversation.dialogue import build_dialogue_policy
+
             dialogue_policy = build_dialogue_policy(state)
 
         # conversation_meta 자동 생성
         if conversation_meta is None:
             from dartlab.engines.ai.conversation.dialogue import conversation_state_to_meta
+
             conversation_meta = conversation_state_to_meta(state)
 
         # question_types 자동 추출
@@ -315,23 +352,24 @@ def _analyze_inner(
     # ── 4. Auto-snapshot ──
     if snapshot is None and auto_snapshot and company is not None:
         from dartlab.engines.ai.context.snapshot import build_snapshot
+
         snapshot = build_snapshot(company)
 
     # ── 5. Auto focus/diff context ──
     if focus_context is None and state is not None and company is not None and state.topic:
         from dartlab.engines.ai.conversation.focus import build_focus_context
+
         focus_context = build_focus_context(company, state)
 
     if diff_context is None and auto_diff and company is not None:
         from dartlab.engines.ai.conversation.focus import build_diff_context
+
         diff_context = build_diff_context(company)
 
     # ── 6. Intent 분류 → light mode 감지 ──
     from dartlab.engines.ai.conversation.intent import has_analysis_intent
 
-    is_light = company is not None and not has_analysis_intent(
-        state.question if state else question
-    )
+    is_light = company is not None and not has_analysis_intent(state.question if state else question)
 
     # ── 7. Meta 이벤트 ──
     meta = conversation_meta or {}
@@ -348,7 +386,10 @@ def _analyze_inner(
     # ── 9. Light mode 경로 ──
     if is_light:
         yield from _run_light_mode(
-            company, question, config_, state,
+            company,
+            question,
+            config_,
+            state,
             focus_context=focus_context,
             history_messages=history_messages,
             dialogue_policy=dialogue_policy,
@@ -368,25 +409,29 @@ def _analyze_inner(
         )
 
         modules_dict, included_tables_local, header_text = build_context_tiered(
-            company, question, context_tier, include, exclude,
+            company,
+            question,
+            context_tier,
+            include,
+            exclude,
         )
         _included_tables.extend(included_tables_local)
 
         # 모듈별 context 이벤트 yield
         for module_name, module_text in modules_dict.items():
-            yield AnalysisEvent("context", {
-                "module": module_name,
-                "text": module_text,
-            })
+            yield AnalysisEvent(
+                "context",
+                {
+                    "module": module_name,
+                    "text": module_text,
+                },
+            )
 
         # context_text 조립
         context_parts = [header_text] if header_text else []
         if focus_context:
             context_parts.append(focus_context)
-        context_parts.extend(
-            modules_dict[name] for name in included_tables_local
-            if name in modules_dict
-        )
+        context_parts.extend(modules_dict[name] for name in included_tables_local if name in modules_dict)
         context_text = "\n\n".join(context_parts)
 
     # focus/diff context 합류
@@ -394,11 +439,14 @@ def _analyze_inner(
         context_text = focus_context
     if diff_context:
         context_text = f"{context_text}\n\n{diff_context}" if context_text else diff_context
-        yield AnalysisEvent("context", {
-            "module": "_diff",
-            "label": "공시 텍스트 변화 핫스팟",
-            "text": diff_context,
-        })
+        yield AnalysisEvent(
+            "context",
+            {
+                "module": "_diff",
+                "label": "공시 텍스트 변화 핫스팟",
+                "text": diff_context,
+            },
+        )
 
     # Pipeline (full tier만)
     if context_tier == "full" and company is not None:
@@ -414,6 +462,7 @@ def _analyze_inner(
     sector = None
     if company is not None:
         from dartlab.engines.ai.context.builder import _get_sector
+
         sector = _get_sector(company)
 
     q_type = _classify_question(question)
@@ -462,7 +511,10 @@ def _analyze_inner(
         if max_tools is None and resolved_provider == "ollama":
             max_tools = 10
         yield from _run_agent(
-            llm, messages, company, question,
+            llm,
+            messages,
+            company,
+            question,
             max_turns=max_turns,
             max_tools=max_tools,
             q_type=q_type,
@@ -485,6 +537,7 @@ def _analyze_inner(
         meta_update: dict[str, Any] = {"includedModules": _included_tables}
         if not is_compact and company is not None:
             from dartlab.engines.ai.context.builder import detect_year_range
+
             year_range = detect_year_range(company, _included_tables)
             if year_range:
                 meta_update["dataYearRange"] = year_range
@@ -492,6 +545,7 @@ def _analyze_inner(
 
 
 # ── Light mode ────────────────────────────────────────────
+
 
 def _run_light_mode(
     company: Any,
@@ -510,14 +564,17 @@ def _run_light_mode(
     from dartlab.engines.ai.providers import create_provider
 
     if focus_context:
-        yield AnalysisEvent("context", {
-            "module": "_focus_topic",
-            "label": f"현재 섹션: {getattr(state, 'topic_label', '') or getattr(state, 'topic', '')}",
-            "text": focus_context,
-        })
+        yield AnalysisEvent(
+            "context",
+            {
+                "module": "_focus_topic",
+                "label": f"현재 섹션: {getattr(state, 'topic_label', '') or getattr(state, 'topic', '')}",
+                "text": focus_context,
+            },
+        )
 
     # 간략 회사 컨텍스트
-    light_company_ctx = f"\n\n## 현재 대화 종목\n"
+    light_company_ctx = "\n\n## 현재 대화 종목\n"
     light_company_ctx += f"사용자가 **{company.corpName}** ({getattr(company, 'stockCode', getattr(company, 'ticker', ''))})에 대해 이야기하고 있습니다.\n"
 
     # insights 등급 1줄 요약
@@ -533,9 +590,12 @@ def _run_light_mode(
             _grade_str = " / ".join(
                 f"{lbl}:{_grades.get(k, 'N')}"
                 for k, lbl in [
-                    ("performance", "실적"), ("profitability", "수익성"),
-                    ("health", "건전성"), ("cashflow", "CF"),
-                    ("governance", "지배구조"), ("risk", "리스크"),
+                    ("performance", "실적"),
+                    ("profitability", "수익성"),
+                    ("health", "건전성"),
+                    ("cashflow", "CF"),
+                    ("governance", "지배구조"),
+                    ("risk", "리스크"),
                     ("opportunity", "기회"),
                 ]
                 if _grades.get(k)
@@ -582,6 +642,7 @@ def _run_light_mode(
 
 # ── Guided JSON ───────────────────────────────────────────
 
+
 def _run_guided_json(
     llm,
     messages: list[dict],
@@ -604,9 +665,7 @@ def _run_guided_json(
                 "signals": {
                     "positive": [p[:20] for p in parsed.get("positives", [])[:3]],
                     "negative": [
-                        r.get("description", "")[:20]
-                        for r in parsed.get("risks", [])[:3]
-                        if isinstance(r, dict)
+                        r.get("description", "")[:20] for r in parsed.get("risks", [])[:3] if isinstance(r, dict)
                     ],
                 },
                 "tables_count": 1,
@@ -623,6 +682,7 @@ def _run_guided_json(
 
 
 # ── 내부 헬퍼 ────────────────────────────────────────────
+
 
 def _run_stream(
     llm,
@@ -683,7 +743,9 @@ def _run_agent(
             pass
 
     for chunk in agent_loop_stream(
-        llm, messages, company,
+        llm,
+        messages,
+        company,
         max_turns=max_turns,
         max_tools=max_tools,
         runtime=runtime,
@@ -719,6 +781,7 @@ def _run_agent(
 
 
 # ── 후처리 헬퍼 ──────────────────────────────────────────
+
 
 def _detect_navigate_action(company: Any, question: str) -> AnalysisEvent | None:
     """질문에서 viewer 이동 의도를 감지해 navigate ui_action을 만든다."""
@@ -756,18 +819,21 @@ def _run_validation(company: Any, full_response_parts: list[str]) -> AnalysisEve
             return None
         vresult = validate_claims(claims, company)
         if vresult.mismatches:
-            return AnalysisEvent("validation", {
-                "mismatches": [
-                    {
-                        "label": mm.label,
-                        "claimed": mm.claimed,
-                        "actual": mm.actual,
-                        "diffPct": round(mm.diff_pct, 1),
-                        "unit": mm.unit,
-                    }
-                    for mm in vresult.mismatches
-                ],
-            })
+            return AnalysisEvent(
+                "validation",
+                {
+                    "mismatches": [
+                        {
+                            "label": mm.label,
+                            "claimed": mm.claimed,
+                            "actual": mm.actual,
+                            "diffPct": round(mm.diff_pct, 1),
+                            "unit": mm.unit,
+                        }
+                        for mm in vresult.mismatches
+                    ],
+                },
+            )
     except (ImportError, AttributeError, TypeError, ValueError, OSError):
         pass
     return None

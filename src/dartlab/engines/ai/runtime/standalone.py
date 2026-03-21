@@ -18,9 +18,7 @@ from typing import Any, Generator
 
 def _collect_text(events) -> str:
     """이벤트 스트림에서 chunk 텍스트만 수집."""
-    return "".join(
-        ev.data["text"] for ev in events if ev.kind == "chunk"
-    )
+    return "".join(ev.data["text"] for ev in events if ev.kind == "chunk")
 
 
 def _stream_chunks(events) -> Generator[str, None, None]:
@@ -94,8 +92,8 @@ def ask(
     # Self-Critique: 답변 자체 검증 (1회 reflection)
     if reflect and answer:
         from dartlab.engines.ai import get_config
-        from dartlab.engines.ai.runtime.agent import _reflect_on_answer
         from dartlab.engines.ai.providers import create_provider
+        from dartlab.engines.ai.runtime.agent import _reflect_on_answer
 
         config_ = get_config(role=kwargs.get("role"))
         overrides = {k: v for k, v in {"provider": provider, "model": model, **kwargs}.items() if v is not None}

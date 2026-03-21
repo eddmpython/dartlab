@@ -75,73 +75,93 @@ def build_snapshot(company: Any) -> dict | None:
     if ratios.revenueTTM is not None:
         items.append({"label": "매출(TTM)", "value": _fmt(ratios.revenueTTM), "status": None})
     if ratios.operatingIncomeTTM is not None:
-        items.append({
-            "label": "영업이익(TTM)",
-            "value": _fmt(ratios.operatingIncomeTTM),
-            "status": "good" if ratios.operatingIncomeTTM > 0 else "danger",
-        })
+        items.append(
+            {
+                "label": "영업이익(TTM)",
+                "value": _fmt(ratios.operatingIncomeTTM),
+                "status": "good" if ratios.operatingIncomeTTM > 0 else "danger",
+            }
+        )
     if ratios.netIncomeTTM is not None:
-        items.append({
-            "label": "순이익(TTM)",
-            "value": _fmt(ratios.netIncomeTTM),
-            "status": "good" if ratios.netIncomeTTM > 0 else "danger",
-        })
+        items.append(
+            {
+                "label": "순이익(TTM)",
+                "value": _fmt(ratios.netIncomeTTM),
+                "status": "good" if ratios.netIncomeTTM > 0 else "danger",
+            }
+        )
     if ratios.operatingMargin is not None:
-        items.append({
-            "label": "영업이익률",
-            "value": _pct(ratios.operatingMargin),
-            "status": _judge_pct(ratios.operatingMargin, 10, 5),
-        })
+        items.append(
+            {
+                "label": "영업이익률",
+                "value": _pct(ratios.operatingMargin),
+                "status": _judge_pct(ratios.operatingMargin, 10, 5),
+            }
+        )
     if ratios.roe is not None:
         items.append({"label": "ROE", "value": _pct(ratios.roe), "status": _judge_pct(ratios.roe, roeGood, roeCaution)})
     if ratios.roa is not None:
         items.append({"label": "ROA", "value": _pct(ratios.roa), "status": _judge_pct(ratios.roa, roaGood, roaCaution)})
     if ratios.debtRatio is not None:
-        items.append({
-            "label": "부채비율",
-            "value": _pct(ratios.debtRatio),
-            "status": _judge_pct_inv(ratios.debtRatio, 100, 200),
-        })
+        items.append(
+            {
+                "label": "부채비율",
+                "value": _pct(ratios.debtRatio),
+                "status": _judge_pct_inv(ratios.debtRatio, 100, 200),
+            }
+        )
     if ratios.currentRatio is not None:
-        items.append({
-            "label": "유동비율",
-            "value": _pct(ratios.currentRatio),
-            "status": _judge_pct(ratios.currentRatio, 150, 100),
-        })
+        items.append(
+            {
+                "label": "유동비율",
+                "value": _pct(ratios.currentRatio),
+                "status": _judge_pct(ratios.currentRatio, 150, 100),
+            }
+        )
     if ratios.fcf is not None:
         items.append({"label": "FCF", "value": _fmt(ratios.fcf), "status": "good" if ratios.fcf > 0 else "danger"})
     if ratios.revenueGrowth3Y is not None:
-        items.append({
-            "label": "매출 3Y CAGR",
-            "value": _pct(ratios.revenueGrowth3Y),
-            "status": _judge_pct(ratios.revenueGrowth3Y, 5, 0),
-        })
+        items.append(
+            {
+                "label": "매출 3Y CAGR",
+                "value": _pct(ratios.revenueGrowth3Y),
+                "status": _judge_pct(ratios.revenueGrowth3Y, 5, 0),
+            }
+        )
     if ratios.roic is not None:
-        items.append({
-            "label": "ROIC",
-            "value": _pct(ratios.roic),
-            "status": _judge_pct(ratios.roic, 15, 8),
-        })
+        items.append(
+            {
+                "label": "ROIC",
+                "value": _pct(ratios.roic),
+                "status": _judge_pct(ratios.roic, 15, 8),
+            }
+        )
     if ratios.interestCoverage is not None:
-        items.append({
-            "label": "이자보상배율",
-            "value": f"{ratios.interestCoverage:.1f}x",
-            "status": _judge_pct(ratios.interestCoverage, 5, 1),
-        })
+        items.append(
+            {
+                "label": "이자보상배율",
+                "value": f"{ratios.interestCoverage:.1f}x",
+                "status": _judge_pct(ratios.interestCoverage, 5, 1),
+            }
+        )
     pf = getattr(ratios, "piotroskiFScore", None)
     if pf is not None:
-        items.append({
-            "label": "Piotroski F",
-            "value": f"{pf}/9",
-            "status": "good" if pf >= 7 else ("caution" if pf >= 4 else "danger"),
-        })
+        items.append(
+            {
+                "label": "Piotroski F",
+                "value": f"{pf}/9",
+                "status": "good" if pf >= 7 else ("caution" if pf >= 4 else "danger"),
+            }
+        )
     az = getattr(ratios, "altmanZScore", None)
     if az is not None:
-        items.append({
-            "label": "Altman Z",
-            "value": f"{az:.2f}",
-            "status": "good" if az > 2.99 else ("caution" if az >= 1.81 else "danger"),
-        })
+        items.append(
+            {
+                "label": "Altman Z",
+                "value": f"{az:.2f}",
+                "status": "good" if az > 2.99 else ("caution" if az >= 1.81 else "danger"),
+            }
+        )
 
     annual = getattr(company, "annual", None)
     trend = None

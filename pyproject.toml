@@ -34,53 +34,53 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "alive-progress>=3.3.0",
-    "beautifulsoup4>=4.14.3",
-    "lxml>=6.0.2",
-    "marimo>=0.20.4",
-    "openpyxl>=3.1.5",
+    "alive-progress>=3.3.0,<4",
+    "beautifulsoup4>=4.14.3,<5",
+    "lxml>=6.0.2,<7",
+    "marimo>=0.20.4,<1",
+    "openpyxl>=3.1.5,<4",
     "diff-match-patch>=20230430",
-    "orjson>=3.10.0",
-    "polars>=1.0.0",
-    "requests>=2.32.5",
-    "rich>=14.3.3",
+    "orjson>=3.10.0,<4",
+    "polars>=1.0.0,<2",
+    "requests>=2.32.5,<3",
+    "rich>=14.3.3,<15",
 ]
 
 [project.optional-dependencies]
 llm = [
-    "openai>=1.0.0",
+    "openai>=1.0.0,<3",
 ]
 llm-anthropic = [
-    "openai>=1.0.0",
-    "anthropic>=0.30.0",
+    "openai>=1.0.0,<3",
+    "anthropic>=0.30.0,<2",
 ]
 charts = [
-    "networkx>=3.6.1",
-    "plotly>=5.0.0",
-    "scipy>=1.17.1",
+    "networkx>=3.6.1,<4",
+    "plotly>=5.0.0,<6",
+    "scipy>=1.17.1,<2",
 ]
 ai = [
-    "fastapi>=0.135.1",
-    "httpx>=0.28.1",
-    "msgpack>=1.1.0",
-    "uvicorn[standard]>=0.30.0",
-    "sse-starlette>=2.0.0",
+    "fastapi>=0.135.1,<1",
+    "httpx>=0.28.1,<1",
+    "msgpack>=1.1.0,<2",
+    "uvicorn[standard]>=0.30.0,<1",
+    "sse-starlette>=2.0.0,<3",
 ]
 mcp = [
-    "mcp[cli]>=1.0",
+    "mcp[cli]>=1.0,<2",
 ]
 ui = [
     "dartlab[ai]",
 ]
 all = [
-    "openai>=1.0.0",
-    "anthropic>=0.30.0",
-    "plotly>=5.0.0",
-    "fastapi>=0.135.1",
-    "httpx>=0.28.1",
-    "msgpack>=1.1.0",
-    "uvicorn[standard]>=0.30.0",
-    "sse-starlette>=2.0.0",
+    "openai>=1.0.0,<3",
+    "anthropic>=0.30.0,<2",
+    "plotly>=5.0.0,<6",
+    "fastapi>=0.135.1,<1",
+    "httpx>=0.28.1,<1",
+    "msgpack>=1.1.0,<2",
+    "uvicorn[standard]>=0.30.0,<1",
+    "sse-starlette>=2.0.0,<3",
 ]
 
 [project.scripts]
@@ -154,6 +154,10 @@ reportMissingTypeStubs = false
 reportUnknownParameterType = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
+
+[tool.bandit]
+exclude_dirs = ["experiments", "tests"]
+skips = ["B101"]
 
 [dependency-groups]
 dev = [

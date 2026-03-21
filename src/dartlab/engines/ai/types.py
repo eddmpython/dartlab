@@ -137,18 +137,17 @@ def history_from_dicts(items: list[dict] | None) -> list[HistoryItem] | None:
             if hasattr(meta_raw, "model_dump"):
                 meta_raw = meta_raw.model_dump()
             if isinstance(meta_raw, dict):
-                meta = HistoryMeta(**{
-                    k: v for k, v in meta_raw.items()
-                    if k in HistoryMeta.__dataclass_fields__
-                })
+                meta = HistoryMeta(**{k: v for k, v in meta_raw.items() if k in HistoryMeta.__dataclass_fields__})
             elif isinstance(meta_raw, HistoryMeta):
                 meta = meta_raw
 
-        result.append(HistoryItem(
-            role=item.get("role", "user"),
-            text=item.get("text", ""),
-            meta=meta,
-        ))
+        result.append(
+            HistoryItem(
+                role=item.get("role", "user"),
+                text=item.get("text", ""),
+                meta=meta,
+            )
+        )
     return result
 
 
@@ -168,10 +167,9 @@ def view_context_from_dict(data: Any | None) -> ViewContextInfo | None:
         if hasattr(company_raw, "model_dump"):
             company_raw = company_raw.model_dump()
         if isinstance(company_raw, dict):
-            company = ViewContextCompany(**{
-                k: v for k, v in company_raw.items()
-                if k in ViewContextCompany.__dataclass_fields__
-            })
+            company = ViewContextCompany(
+                **{k: v for k, v in company_raw.items() if k in ViewContextCompany.__dataclass_fields__}
+            )
         elif isinstance(company_raw, ViewContextCompany):
             company = company_raw
 

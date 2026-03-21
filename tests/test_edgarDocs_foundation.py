@@ -401,7 +401,9 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
     ) -> pl.DataFrame:
         return universe
 
-    def fakeFetchEdgarDocs(ticker: str, outPath: Path, *, sinceYear: int = 2009, showProgress: bool = True, maxFilings=None) -> Path:
+    def fakeFetchEdgarDocs(
+        ticker: str, outPath: Path, *, sinceYear: int = 2009, showProgress: bool = True, maxFilings=None
+    ) -> Path:
         fetched.append((ticker, sinceYear))
         outPath.parent.mkdir(parents=True, exist_ok=True)
         pl.DataFrame({"ticker": [ticker]}).write_parquet(outPath)

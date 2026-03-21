@@ -83,8 +83,7 @@ def build_system_spec_markdown() -> str:
 def build_tool_catalog_markdown(include_parameters: bool = False) -> str:
     """현재 등록된 tool schema를 마크다운으로 노출."""
     schemas_by_name = {
-        schema.get("function", {}).get("name", ""): schema
-        for schema in get_default_tool_runtime().get_tool_schemas()
+        schema.get("function", {}).get("name", ""): schema for schema in get_default_tool_runtime().get_tool_schemas()
     }
     specs = sorted(get_capability_specs(channel=CapabilityChannel.CHAT), key=lambda spec: spec.id)
     lines = [f"# 등록된 대화 도구 ({len(specs)}개)"]
@@ -93,7 +92,9 @@ def build_tool_catalog_markdown(include_parameters: bool = False) -> str:
         fn = schema.get("function", {})
         lines.append(f"## `{spec.id}`")
         lines.append(f"- {spec.description}")
-        lines.append(f"- kind: `{spec.kind}` / result: `{spec.result_kind}` / channels: {', '.join(f'`{c}`' for c in spec.channels)}")
+        lines.append(
+            f"- kind: `{spec.kind}` / result: `{spec.result_kind}` / channels: {', '.join(f'`{c}`' for c in spec.channels)}"
+        )
         if include_parameters:
             params = fn.get("parameters", {}).get("properties", {})
             required = set(fn.get("parameters", {}).get("required", []))
@@ -143,7 +144,9 @@ def build_runtime_capabilities_markdown(company: Any | None = None) -> str:
     registry_counts = {category: len(getEntries(category=category)) for category in getCategories()}
     capability_specs = get_capability_specs()
     capability_summary = build_capability_summary(capability_specs)
-    tool_names = [schema.get("function", {}).get("name", "") for schema in get_default_tool_runtime().get_tool_schemas()]
+    tool_names = [
+        schema.get("function", {}).get("name", "") for schema in get_default_tool_runtime().get_tool_schemas()
+    ]
     codex_info = inspect_codex_cli()
     coding_runtime = get_default_coding_runtime()
     coding_backends = coding_runtime.inspect_backends()

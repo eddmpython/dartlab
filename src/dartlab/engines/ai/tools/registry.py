@@ -14,21 +14,16 @@ from dartlab.core.capabilities import (
     clear_capability_registry,
     register_tool_capability,
 )
-from .coding import get_default_coding_runtime
+
+# ── 공개 헬퍼: _helpers.py에서 가져오되, 기존 import 경로 호환 ──
+from ._helpers import (
+    get_coding_runtime_policy as _get_coding_runtime_policy,
+)
 from .runtime import (
     ToolRuntime,
     create_tool_runtime,
     get_default_tool_runtime,
     set_default_tool_runtime,
-)
-
-# ── 공개 헬퍼: _helpers.py에서 가져오되, 기존 import 경로 호환 ──
-from ._helpers import (
-    build_coding_runtime_markdown as _build_coding_runtime_markdown,
-    build_runtime_capabilities_markdown as _build_runtime_capabilities_markdown,
-    build_system_spec_markdown as _build_system_spec_markdown,
-    build_tool_catalog_markdown as _build_tool_catalog_markdown,
-    get_coding_runtime_policy as _get_coding_runtime_policy,
 )
 
 

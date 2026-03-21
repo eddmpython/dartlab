@@ -2,30 +2,33 @@
 
 from __future__ import annotations
 
-import re as _re
-
-import dartlab
 from dartlab import Company
 from dartlab.core.resolve import (
-    COMMON_ALIASES as _COMMON_ALIASES,
-    COMPANY_SUFFIXES as _COMPANY_SUFFIXES,
     _RESOLVE_ERRORS,
+)
+from dartlab.core.resolve import (
+    COMMON_ALIASES as _COMMON_ALIASES,
+)
+from dartlab.core.resolve import (
     collect_candidates as _collect_candidates,
+)
+from dartlab.core.resolve import (
     resolve_alias as _resolve_alias,
+)
+from dartlab.core.resolve import (
     search_suggestions as _search_suggestions,
 )
 
-from .models import AskRequest, HistoryMessage
-
 # ── 의도 분류: engines/ai/intent.py에서 re-export ──
 from dartlab.engines.ai.conversation.intent import (
-    _ANALYSIS_KEYWORDS,
-    _META_KEYWORDS,
-    _SYSTEM_ENTITIES,
     has_analysis_intent,
     is_meta_question,
+)
+from dartlab.engines.ai.conversation.intent import (
     is_pure_conversation as _is_pure_conversation,
 )
+
+from .models import AskRequest, HistoryMessage
 
 
 class ResolveResult:

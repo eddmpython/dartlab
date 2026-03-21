@@ -488,37 +488,37 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alive-progress", specifier = ">=3.3.0" },
-    { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.30.0" },
-    { name = "anthropic", marker = "extra == 'llm-anthropic'", specifier = ">=0.30.0" },
-    { name = "beautifulsoup4", specifier = ">=4.14.3" },
+    { name = "alive-progress", specifier = ">=3.3.0,<4" },
+    { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.30.0,<2" },
+    { name = "anthropic", marker = "extra == 'llm-anthropic'", specifier = ">=0.30.0,<2" },
+    { name = "beautifulsoup4", specifier = ">=4.14.3,<5" },
     { name = "dartlab", extras = ["ai"], marker = "extra == 'ui'" },
     { name = "diff-match-patch", specifier = ">=20230430" },
-    { name = "fastapi", marker = "extra == 'ai'", specifier = ">=0.135.1" },
-    { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.135.1" },
-    { name = "httpx", marker = "extra == 'ai'", specifier = ">=0.28.1" },
-    { name = "httpx", marker = "extra == 'all'", specifier = ">=0.28.1" },
-    { name = "lxml", specifier = ">=6.0.2" },
-    { name = "marimo", specifier = ">=0.20.4" },
-    { name = "mcp", extras = ["cli"], marker = "extra == 'mcp'", specifier = ">=1.0" },
-    { name = "msgpack", marker = "extra == 'ai'", specifier = ">=1.1.0" },
-    { name = "msgpack", marker = "extra == 'all'", specifier = ">=1.1.0" },
-    { name = "networkx", marker = "extra == 'charts'", specifier = ">=3.6.1" },
-    { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0" },
-    { name = "openai", marker = "extra == 'llm'", specifier = ">=1.0.0" },
-    { name = "openai", marker = "extra == 'llm-anthropic'", specifier = ">=1.0.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "orjson", specifier = ">=3.10.0" },
-    { name = "plotly", marker = "extra == 'all'", specifier = ">=5.0.0" },
-    { name = "plotly", marker = "extra == 'charts'", specifier = ">=5.0.0" },
-    { name = "polars", specifier = ">=1.0.0" },
-    { name = "requests", specifier = ">=2.32.5" },
-    { name = "rich", specifier = ">=14.3.3" },
-    { name = "scipy", marker = "extra == 'charts'", specifier = ">=1.17.1" },
-    { name = "sse-starlette", marker = "extra == 'ai'", specifier = ">=2.0.0" },
-    { name = "sse-starlette", marker = "extra == 'all'", specifier = ">=2.0.0" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'ai'", specifier = ">=0.30.0" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30.0" },
+    { name = "fastapi", marker = "extra == 'ai'", specifier = ">=0.135.1,<1" },
+    { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.135.1,<1" },
+    { name = "httpx", marker = "extra == 'ai'", specifier = ">=0.28.1,<1" },
+    { name = "httpx", marker = "extra == 'all'", specifier = ">=0.28.1,<1" },
+    { name = "lxml", specifier = ">=6.0.2,<7" },
+    { name = "marimo", specifier = ">=0.20.4,<1" },
+    { name = "mcp", extras = ["cli"], marker = "extra == 'mcp'", specifier = ">=1.0,<2" },
+    { name = "msgpack", marker = "extra == 'ai'", specifier = ">=1.1.0,<2" },
+    { name = "msgpack", marker = "extra == 'all'", specifier = ">=1.1.0,<2" },
+    { name = "networkx", marker = "extra == 'charts'", specifier = ">=3.6.1,<4" },
+    { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0,<3" },
+    { name = "openai", marker = "extra == 'llm'", specifier = ">=1.0.0,<3" },
+    { name = "openai", marker = "extra == 'llm-anthropic'", specifier = ">=1.0.0,<3" },
+    { name = "openpyxl", specifier = ">=3.1.5,<4" },
+    { name = "orjson", specifier = ">=3.10.0,<4" },
+    { name = "plotly", marker = "extra == 'all'", specifier = ">=5.0.0,<6" },
+    { name = "plotly", marker = "extra == 'charts'", specifier = ">=5.0.0,<6" },
+    { name = "polars", specifier = ">=1.0.0,<2" },
+    { name = "requests", specifier = ">=2.32.5,<3" },
+    { name = "rich", specifier = ">=14.3.3,<15" },
+    { name = "scipy", marker = "extra == 'charts'", specifier = ">=1.17.1,<2" },
+    { name = "sse-starlette", marker = "extra == 'ai'", specifier = ">=2.0.0,<3" },
+    { name = "sse-starlette", marker = "extra == 'all'", specifier = ">=2.0.0,<3" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'ai'", specifier = ">=0.30.0,<1" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30.0,<1" },
 ]
 provides-extras = ["llm", "llm-anthropic", "charts", "ai", "mcp", "ui", "all"]
 
@@ -1453,15 +1453,15 @@ wheels = [
 
 [[package]]
 name = "plotly"
-version = "6.6.0"
+version = "5.24.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "narwhals" },
     { name = "packaging" },
+    { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/24/fb/41efe84970cfddefd4ccf025e2cbfafe780004555f583e93dba3dac2cdef/plotly-6.6.0.tar.gz", hash = "sha256:b897f15f3b02028d69f755f236be890ba950d0a42d7dfc619b44e2d8cea8748c", size = 7027956, upload-time = "2026-03-02T21:10:25.321Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/4f/428f6d959818d7425a94c190a6b26fbc58035cbef40bf249be0b62a9aedd/plotly-5.24.1.tar.gz", hash = "sha256:dbc8ac8339d248a4bcc36e08a5659bacfe1b079390b8953533f4eb22169b4bae", size = 9479398, upload-time = "2024-09-12T15:36:31.068Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl", hash = "sha256:8d6daf0f87412e0c0bfe72e809d615217ab57cc715899a1e5145135a7800d1d0", size = 9910315, upload-time = "2026-03-02T21:10:18.131Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/ae/580600f441f6fc05218bd6c9d5794f4aef072a7d9093b291f1c50a9db8bc/plotly-5.24.1-py3-none-any.whl", hash = "sha256:f67073a1e637eb0dc3e46324d9d51e2fe76e9727c892dde64ddf1e1b51f29089", size = 19054220, upload-time = "2024-09-12T15:36:24.08Z" },
 ]
 
 [[package]]
@@ -2048,15 +2048,14 @@ wheels = [
 
 [[package]]
 name = "sse-starlette"
-version = "3.3.3"
+version = "2.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "starlette" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/14/2f/9223c24f568bb7a0c03d751e609844dce0968f13b39a3f73fbb3a96cd27a/sse_starlette-3.3.3.tar.gz", hash = "sha256:72a95d7575fd5129bd0ae15275ac6432bb35ac542fdebb82889c24bb9f3f4049", size = 32420, upload-time = "2026-03-17T20:05:55.529Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/3e/eae74d8d33e3262bae0a7e023bb43d8bdd27980aa3557333f4632611151f/sse_starlette-2.4.1.tar.gz", hash = "sha256:7c8a800a1ca343e9165fc06bbda45c78e4c6166320707ae30b416c42da070926", size = 18635, upload-time = "2025-07-06T09:41:33.631Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/e2/b8cff57a67dddf9a464d7e943218e031617fb3ddc133aeeb0602ff5f6c85/sse_starlette-3.3.3-py3-none-any.whl", hash = "sha256:c5abb5082a1cc1c6294d89c5290c46b5f67808cfdb612b7ec27e8ba061c22e8d", size = 14329, upload-time = "2026-03-17T20:05:54.35Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/f1/6c7eaa8187ba789a6dd6d74430307478d2a91c23a5452ab339b6fbe15a08/sse_starlette-2.4.1-py3-none-any.whl", hash = "sha256:08b77ea898ab1a13a428b2b6f73cfe6d0e607a7b4e15b9bb23e4a37b087fd39a", size = 10824, upload-time = "2025-07-06T09:41:32.321Z" },
 ]
 
 [[package]]
@@ -2070,6 +2069,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c4/68/79977123bb7be889ad680d79a40f339082c1978b5cfcf62c2d8d196873ac/starlette-0.52.1.tar.gz", hash = "sha256:834edd1b0a23167694292e94f597773bc3f89f362be6effee198165a35d62933", size = 2653702, upload-time = "2026-01-18T13:34:11.062Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/0d/13d1d239a25cbfb19e740db83143e95c772a1fe10202dda4b76792b114dd/starlette-0.52.1-py3-none-any.whl", hash = "sha256:0029d43eb3d273bc4f83a08720b4912ea4b071087a3b48db01b7c839f7954d74", size = 74272, upload-time = "2026-01-18T13:34:09.188Z" },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/c6/ee486fd809e357697ee8a44d3d69222b344920433d3b6666ccd9b374630c/tenacity-9.1.4.tar.gz", hash = "sha256:adb31d4c263f2bd041081ab33b498309a57c77f9acf2db65aadf0898179cf93a", size = 49413, upload-time = "2026-02-07T10:45:33.841Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/c1/eb8f9debc45d3b7918a32ab756658a0904732f75e555402972246b0b8e71/tenacity-9.1.4-py3-none-any.whl", hash = "sha256:6095a360c919085f28c6527de529e76a06ad89b23659fa881ae0649b867a9d55", size = 28926, upload-time = "2026-02-07T10:45:32.24Z" },
 ]
 
 [[package]]

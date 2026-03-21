@@ -8,10 +8,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from dartlab.core.dataConfig import DATA_RELEASES
 
@@ -89,7 +92,7 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
     records: list[dict] = []
     for i, code in enumerate(codes):
         if verbose and i % 500 == 0:
-            print(f"  [rank] {i}/{len(codes)}...")
+            logger.info("[rank] %d/%d...", i, len(codes))
 
         info = classify(names[i], industries[i], products[i])
 
@@ -213,7 +216,7 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
     cachePath.write_text(json.dumps(serializable, ensure_ascii=False), encoding="utf-8")
 
     if verbose:
-        print(f"  [rank] {len(result)}종목 스냅샷 저장: {cachePath}")
+        logger.info("[rank] %d종목 스냅샷 저장: %s", len(result), cachePath)
 
     return result
 
@@ -258,6 +261,6 @@ def getRankOrBuild(stockCode: str, *, verbose: bool = True) -> RankInfo | None:
     snap = _ensureSnapshot()
     if snap is None:
         if verbose:
-            print("[dartlab] 랭크 스냅샷이 없습니다. 전체 종목 빌드를 시작합니다...")
+            logger.info("[dartlab] 랭크 스냅샷이 없습니다. 전체 종목 빌드를 시작합니다...")
         _SNAPSHOT = buildSnapshot(verbose=verbose)
     return _SNAPSHOT.get(stockCode)

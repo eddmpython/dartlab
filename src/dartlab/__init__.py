@@ -220,6 +220,7 @@ def _setup_oauth_interactive():
     """노트북/CLI에서 ChatGPT OAuth 브라우저 로그인."""
     try:
         from dartlab.engines.ai.providers.support.oauth_token import is_authenticated
+
         if is_authenticated():
             print("\n  ✓ ChatGPT OAuth 이미 인증되어 있습니다.")
             print('  재인증: dartlab.setup("chatgpt")  # 재실행하면 갱신\n')
@@ -229,6 +230,7 @@ def _setup_oauth_interactive():
 
     try:
         from dartlab.cli.commands.setup import _do_oauth_login
+
         _do_oauth_login()
     except ImportError:
         print("\n  ChatGPT OAuth 브라우저 로그인:")
@@ -251,6 +253,7 @@ def _setup_openai_interactive():
 
     try:
         from getpass import getpass
+
         key = getpass("  API 키 입력 (Enter로 건너뛰기): ").strip()
         if key:
             llm.configure(provider="openai", api_key=key)
@@ -358,22 +361,43 @@ def ask(
 
     if raw:
         return _ask(
-            company, question, include=include, exclude=exclude,
-            provider=provider, model=model, stream=stream,
-            reflect=reflect, pattern=pattern, **kwargs,
+            company,
+            question,
+            include=include,
+            exclude=exclude,
+            provider=provider,
+            model=model,
+            stream=stream,
+            reflect=reflect,
+            pattern=pattern,
+            **kwargs,
         )
 
     if not stream:
         return _ask(
-            company, question, include=include, exclude=exclude,
-            provider=provider, model=model, stream=False,
-            reflect=reflect, pattern=pattern, **kwargs,
+            company,
+            question,
+            include=include,
+            exclude=exclude,
+            provider=provider,
+            model=model,
+            stream=False,
+            reflect=reflect,
+            pattern=pattern,
+            **kwargs,
         )
 
     gen = _ask(
-        company, question, include=include, exclude=exclude,
-        provider=provider, model=model, stream=True,
-        reflect=reflect, pattern=pattern, **kwargs,
+        company,
+        question,
+        include=include,
+        exclude=exclude,
+        provider=provider,
+        model=model,
+        stream=True,
+        reflect=reflect,
+        pattern=pattern,
+        **kwargs,
     )
     return _auto_stream(gen)
 

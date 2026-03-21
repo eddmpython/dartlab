@@ -12,6 +12,13 @@ wheels/
 
 # Secrets
 .env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 
 CLAUDE.md

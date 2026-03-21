@@ -571,20 +571,24 @@ def _incrementalUpdateEdgarDocs(
 # ── 메모리 최적화: Categorical + 다운캐스트 ──────────────
 
 # 반복 빈도 높은 문자열 컬럼 → Categorical (정수 인덱스로 90%+ 절감)
-_CATEGORICAL_COLS = frozenset({
-    "source",           # dart/edgar (== 비교만 사용)
-    "account_id",       # XBRL 계정 ID (수백 종류, 수만 행, == 비교만)
-    "blockType",        # text/table/heading 등 (== 비교만)
-    "form_type",        # 10-K/10-Q 등 (== 비교만)
-    # 제외: report_type, section_title, sj_div, topic → .str 연산 사용
-})
+_CATEGORICAL_COLS = frozenset(
+    {
+        "source",  # dart/edgar (== 비교만 사용)
+        "account_id",  # XBRL 계정 ID (수백 종류, 수만 행, == 비교만)
+        "blockType",  # text/table/heading 등 (== 비교만)
+        "form_type",  # 10-K/10-Q 등 (== 비교만)
+        # 제외: report_type, section_title, sj_div, topic → .str 연산 사용
+    }
+)
 
 # 작은 정수 컬럼 → Int32 (Int64 대비 50% 절감 + CPU 캐시 친화)
-_DOWNCAST_INT_COLS = frozenset({
-    "year",
-    "section_order",
-    "bsns_year",
-})
+_DOWNCAST_INT_COLS = frozenset(
+    {
+        "year",
+        "section_order",
+        "bsns_year",
+    }
+)
 
 
 def _optimizeMemory(df: pl.DataFrame) -> pl.DataFrame:

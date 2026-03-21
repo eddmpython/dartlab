@@ -199,9 +199,7 @@ class UiAction:
         return cls(action="toast", payload={"message": message, "level": level})
 
     @classmethod
-    def layout(
-        cls, target: str, value: str = "toggle"
-    ) -> "UiAction":
+    def layout(cls, target: str, value: str = "toggle") -> "UiAction":
         """사이드바/풀스크린 등 레이아웃 제어. target: sidebar|fullscreen, value: open|close|toggle"""
         return cls(action="layout", payload={"target": target, "value": value})
 
@@ -211,9 +209,7 @@ class UiAction:
         return cls(action="switch_view", payload={"target": view})
 
     @classmethod
-    def select_company(
-        cls, stock_code: str, corp_name: str = "", market: str = ""
-    ) -> "UiAction":
+    def select_company(cls, stock_code: str, corp_name: str = "", market: str = "") -> "UiAction":
         """종목 선택 + 뷰어 로드."""
         return cls(
             action="select_company",

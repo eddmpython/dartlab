@@ -195,8 +195,11 @@ def build_diff_context(company: Any, *, top_n: int = 8) -> str | None:
     periods_col = "periods"
 
     _FINANCE_TOPICS = {
-        "financialNotes", "financialStatements", "consolidatedStatements",
-        "auditReport", "auditOpinion",
+        "financialNotes",
+        "financialStatements",
+        "consolidatedStatements",
+        "auditReport",
+        "auditOpinion",
     }
     summary_df = summary_df.filter(~pl.col("topic").is_in(_FINANCE_TOPICS))
 

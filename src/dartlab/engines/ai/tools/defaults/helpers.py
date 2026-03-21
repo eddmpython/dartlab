@@ -13,6 +13,7 @@ def df_to_md(df: pl.DataFrame, max_rows: int = 15) -> str:
     if df is None or df.height == 0:
         return "(데이터 없음)"
     from dartlab.engines.ai.context.builder import df_to_markdown
+
     return df_to_markdown(df, max_rows=max_rows)
 
 

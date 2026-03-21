@@ -100,7 +100,16 @@ def register_scan_tools(company: Any, register_tool) -> None:
             "properties": {
                 "preset": {
                     "type": "string",
-                    "enum": ["가치주", "성장주", "턴어라운드", "현금부자", "고위험", "자본잠식", "소형고수익", "대형안정"],
+                    "enum": [
+                        "가치주",
+                        "성장주",
+                        "턴어라운드",
+                        "현금부자",
+                        "고위험",
+                        "자본잠식",
+                        "소형고수익",
+                        "대형안정",
+                    ],
                     "description": "스크리닝 프리셋",
                     "default": "가치주",
                 },

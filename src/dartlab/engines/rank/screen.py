@@ -13,11 +13,14 @@ Example::
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import asdict
 from pathlib import Path
 
 import polars as pl
+
+logger = logging.getLogger(__name__)
 
 from dartlab.core.dataConfig import DATA_RELEASES
 
@@ -166,7 +169,7 @@ def buildMarketRatios(*, verbose: bool = True) -> pl.DataFrame:
     for i, code in enumerate(codes):
         if verbose and (i + 1) % 500 == 0:
             elapsed = time.time() - t0
-            print(f"  [screen] {i + 1}/{len(codes)} ({elapsed:.0f}s)")
+            logger.info("[screen] %d/%d (%ds)", i + 1, len(codes), elapsed)
 
         row: dict = {"stockCode": code, "corpName": names[i]}
 
@@ -201,7 +204,7 @@ def buildMarketRatios(*, verbose: bool = True) -> pl.DataFrame:
 
     if verbose:
         elapsed = time.time() - t0
-        print(f"  [screen] {len(rows)}종목 완료 ({elapsed:.0f}s)")
+        logger.info("[screen] %d종목 완료 (%ds)", len(rows), elapsed)
 
     return pl.DataFrame(rows)
 

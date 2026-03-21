@@ -9,10 +9,10 @@ from types import SimpleNamespace
 import polars as pl
 
 from dartlab.core.capabilities import CapabilityKind, UiAction, get_capability_specs
-from dartlab.engines.ai.context.company_adapter import get_headline_ratios, get_ratio_series
 from dartlab.engines.ai.context import build_context_skeleton
-from dartlab.engines.ai.runtime.events import EventKind
+from dartlab.engines.ai.context.company_adapter import get_headline_ratios, get_ratio_series
 from dartlab.engines.ai.context.snapshot import build_snapshot
+from dartlab.engines.ai.runtime.events import EventKind
 from dartlab.engines.ai.spec import buildSpec
 from dartlab.engines.ai.tools.registry import build_tool_runtime
 

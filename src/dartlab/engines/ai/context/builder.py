@@ -461,13 +461,19 @@ def _build_ratios_section(
         if not compact and ratios.equityRatio is not None:
             stab_rows.append(f"| 자기자본비율 | {ratios.equityRatio:.1f}% | {_judge(ratios.equityRatio, 50, 30)} |")
         if ratios.interestCoverage is not None:
-            stab_rows.append(f"| 이자보상배율 | {ratios.interestCoverage:.1f}x | {_judge(ratios.interestCoverage, 5, 1)} |")
+            stab_rows.append(
+                f"| 이자보상배율 | {ratios.interestCoverage:.1f}x | {_judge(ratios.interestCoverage, 5, 1)} |"
+            )
         if not compact and ratios.debtToEbitda is not None:
             stab_rows.append(f"| Debt/EBITDA | {ratios.debtToEbitda:.1f}x | {_judge_inv(ratios.debtToEbitda, 3, 5)} |")
         if not compact and ratios.netDebt is not None:
-            stab_rows.append(f"| 순차입금 | {_format_won(ratios.netDebt)} | {'양호' if ratios.netDebt <= 0 else '주의'} |")
+            stab_rows.append(
+                f"| 순차입금 | {_format_won(ratios.netDebt)} | {'양호' if ratios.netDebt <= 0 else '주의'} |"
+            )
         if not compact and ratios.netDebtRatio is not None:
-            stab_rows.append(f"| 순차입금비율 | {ratios.netDebtRatio:.1f}% | {_judge_inv(ratios.netDebtRatio, 30, 80)} |")
+            stab_rows.append(
+                f"| 순차입금비율 | {ratios.netDebtRatio:.1f}% | {_judge_inv(ratios.netDebtRatio, 30, 80)} |"
+            )
         if stab_rows:
             lines.append("\n### 안정성")
             lines.append("| 지표 | 값 | 판단 |")
@@ -542,7 +548,7 @@ def _build_ratios_section(
                 driver = "효율성 주도형"
             else:
                 driver = "레버리지 주도형"
-            comp_lines.append(f"\n### DuPont 분해")
+            comp_lines.append("\n### DuPont 분해")
             comp_lines.append(
                 f"ROE {ratios.roe:.1f}% = 순이익률({dm:.1f}%) × 자산회전율({dt:.2f}x) × 레버리지({dl:.2f}x)"
             )
@@ -552,7 +558,7 @@ def _build_ratios_section(
         pf = getattr(ratios, "piotroskiFScore", None)
         if pf is not None:
             pf_label = "우수" if pf >= 7 else ("보통" if pf >= 4 else "취약")
-            comp_lines.append(f"\n### 복합 재무 지표")
+            comp_lines.append("\n### 복합 재무 지표")
             comp_lines.append(f"- **Piotroski F-Score**: {pf}/9 ({pf_label}) — ≥7 우수, 4-6 보통, <4 취약")
 
         # Altman Z-Score
@@ -560,7 +566,7 @@ def _build_ratios_section(
         if az is not None:
             az_label = "안전" if az > 2.99 else ("회색" if az >= 1.81 else "부실위험")
             if pf is None:
-                comp_lines.append(f"\n### 복합 재무 지표")
+                comp_lines.append("\n### 복합 재무 지표")
             comp_lines.append(f"- **Altman Z-Score**: {az:.2f} ({az_label}) — >2.99 안전, 1.81-2.99 회색, <1.81 부실")
 
         # ROIC
@@ -576,7 +582,7 @@ def _build_ratios_section(
         cfni = ratios.operatingCfToNetIncome
         has_quality = ccc is not None or cfni is not None
         if has_quality:
-            comp_lines.append(f"\n### 이익의 질")
+            comp_lines.append("\n### 이익의 질")
             if cfni is not None:
                 q = "양호" if cfni >= 100 else ("보통" if cfni >= 50 else "주의")
                 comp_lines.append(f"- 영업CF/순이익: {cfni:.0f}% ({q}) — ≥100% 양호")

@@ -38,6 +38,5 @@ def Company(codeOrName: str) -> CompanyProtocol:
         return _DartEngineCompany(normalized)
     except (ValueError, FileNotFoundError, OSError) as exc:
         raise ValueError(
-            f"'{codeOrName}'을(를) 찾을 수 없습니다. "
-            f"dartlab.search('{codeOrName}')로 검색해 보세요."
+            f"'{codeOrName}'을(를) 찾을 수 없습니다. dartlab.search('{codeOrName}')로 검색해 보세요."
         ) from exc

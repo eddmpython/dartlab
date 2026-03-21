@@ -6,7 +6,7 @@ server/chat.py의 build_history_messages(), compress_history()에서 추출.
 
 from __future__ import annotations
 
-from ..types import HistoryItem, HistoryMeta
+from ..types import HistoryItem
 
 _MAX_HISTORY_TURNS = 10
 _MAX_HISTORY_CHARS = 12000
@@ -27,7 +27,7 @@ def build_history_messages(history: list[HistoryItem] | None) -> list[dict[str, 
     """히스토리를 LLM messages 포맷으로 변환. 최근 N턴만 유지."""
     if not history:
         return []
-    trimmed = history[-(_MAX_HISTORY_TURNS * 2):]
+    trimmed = history[-(_MAX_HISTORY_TURNS * 2) :]
     prepared: list[dict[str, str]] = []
     for h in trimmed:
         role = h.role if h.role in ("user", "assistant") else "user"
