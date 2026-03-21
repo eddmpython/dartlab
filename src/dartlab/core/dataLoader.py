@@ -136,7 +136,13 @@ def loadData(
                 lf = lf.select(available)
         df = lf.collect()
     else:
-        df = pl.read_parquet(str(path), columns=columns)
+        if columns:
+            # parquet 파일에 존재하는 컬럼만 프로젝션 (스키마 불일치 방지)
+            schema_names = pl.read_parquet_schema(str(path)).keys()
+            safe_cols = [c for c in columns if c in schema_names]
+            df = pl.read_parquet(str(path), columns=safe_cols if safe_cols else None)
+        else:
+            df = pl.read_parquet(str(path))
     return _normalizeLoadedFrame(df, category)
 
 

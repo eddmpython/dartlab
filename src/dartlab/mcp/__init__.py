@@ -22,19 +22,25 @@ Claude Desktop config.json 예시::
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
-# 회사 세션 캐시 — LRU 5개, 무한 누적 방지
+# 회사 세션 캐시 — LRU 5개, TTL 600초, 무한 누적 방지
 _MCP_CACHE_MAX = 5
-_company_cache: dict[str, Any] = {}
+_MCP_CACHE_TTL = 600
+_company_cache: dict[str, tuple[Any, float]] = {}
 
 
 def _get_or_create_company(stock_code: str | None) -> Any | None:
-    """종목코드로 Company 인스턴스 가져오기 (LRU 캐싱, 최대 5개)."""
+    """종목코드로 Company 인스턴스 가져오기 (LRU 캐싱, TTL 600초, 최대 5개)."""
     if not stock_code:
         return None
-    if stock_code in _company_cache:
-        return _company_cache[stock_code]
+    entry = _company_cache.get(stock_code)
+    if entry is not None:
+        company, created = entry
+        if (time.monotonic() - created) < _MCP_CACHE_TTL:
+            return company
+        del _company_cache[stock_code]
 
     from dartlab import Company
 
@@ -43,7 +49,7 @@ def _get_or_create_company(stock_code: str | None) -> Any | None:
     if len(_company_cache) >= _MCP_CACHE_MAX:
         oldest = next(iter(_company_cache))
         del _company_cache[oldest]
-    _company_cache[stock_code] = c
+    _company_cache[stock_code] = (c, time.monotonic())
     return c
 
 

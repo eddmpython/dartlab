@@ -350,17 +350,27 @@ def _build_finance_engine_section(
 
 
 def _calc_yoy(current: float | None, previous: float | None) -> str:
-    """YoY 증감률 계산. |변동률|>50%면 ** 강조."""
-    if current is None or previous is None or previous == 0:
+    """YoY 증감률 계산. 부호 전환 시 '-', |변동률|>50%면 ** 강조."""
+    from dartlab.engines.common.finance.ratios import yoy_pct
+
+    pct = yoy_pct(current, previous)
+    if pct is None:
         return "-"
-    pct = (current - previous) / abs(previous) * 100
     sign = "+" if pct >= 0 else ""
     marker = "**" if abs(pct) > 50 else ""
     return f"{marker}{sign}{pct:.1f}%{marker}"
 
 
-def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
-    """financeEngine RatioResult → 마크다운."""
+def _build_ratios_section(
+    company: Any,
+    compact: bool = False,
+    q_types: list[str] | None = None,
+) -> str | None:
+    """financeEngine RatioResult → 마크다운 (질문 유형별 필터링).
+
+    q_types가 주어지면 관련 비율 그룹만 노출하여 토큰 절약.
+    None이면 전체 노출.
+    """
     ratios = get_headline_ratios(company)
     if ratios is None:
         return None
@@ -377,59 +387,221 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
         except (ImportError, AttributeError):
             isFinancial = False
 
-    lines = ["## 핵심 재무비율 (자동계산)"]
-    lines.append("| 지표 | 값 | 판단 |")
-    lines.append("| --- | --- | --- |")
-
-    def _judge(val, good, caution):
+    # ── 판단 헬퍼 ──
+    def _judge(val: float | None, good: float, caution: float) -> str:
         if val is None:
             return "-"
-        if val >= good:
-            return "양호"
-        if val >= caution:
-            return "주의"
-        return "위험"
+        return "양호" if val >= good else ("주의" if val >= caution else "위험")
 
-    def _judge_inv(val, good, caution):
+    def _judge_inv(val: float | None, good: float, caution: float) -> str:
         if val is None:
             return "-"
-        if val <= good:
-            return "양호"
-        if val <= caution:
-            return "주의"
-        return "위험"
+        return "양호" if val <= good else ("주의" if val <= caution else "위험")
+
+    # ── 질문 유형 → 노출 그룹 매핑 ──
+    _Q_TYPE_TO_GROUPS: dict[str, list[str]] = {
+        "건전성": ["수익성_core", "안정성", "현금흐름", "복합"],
+        "수익성": ["수익성", "효율성", "복합"],
+        "성장성": ["수익성_core", "성장"],
+        "배당": ["수익성_core", "현금흐름"],
+        "리스크": ["안정성", "현금흐름", "복합"],
+        "투자": ["수익성_core", "성장", "현금흐름"],
+        "종합": ["수익성", "안정성", "성장", "효율성", "현금흐름", "복합"],
+    }
+
+    active_groups: set[str] = set()
+    if q_types:
+        for qt in q_types:
+            active_groups.update(_Q_TYPE_TO_GROUPS.get(qt, []))
+    if not active_groups:
+        active_groups = {"수익성", "안정성", "성장", "효율성", "현금흐름", "복합"}
+
+    # "수익성_core"는 수익성의 핵심만 (ROE, ROA, 영업이익률, 순이익률)
+    show_profitability_full = "수익성" in active_groups
+    show_profitability_core = show_profitability_full or "수익성_core" in active_groups
 
     roeGood, roeCaution = (8, 5) if isFinancial else (10, 5)
     roaGood, roaCaution = (0.5, 0.2) if isFinancial else (5, 2)
 
-    if ratios.roe is not None:
-        lines.append(f"| ROE | {ratios.roe:.1f}% | {_judge(ratios.roe, roeGood, roeCaution)} |")
-    if ratios.roa is not None:
-        lines.append(f"| ROA | {ratios.roa:.1f}% | {_judge(ratios.roa, roaGood, roaCaution)} |")
-    if ratios.operatingMargin is not None:
-        lines.append(f"| 영업이익률 | {ratios.operatingMargin:.1f}% | - |")
-    if not compact and ratios.netMargin is not None:
-        lines.append(f"| 순이익률 | {ratios.netMargin:.1f}% | - |")
-    if ratios.debtRatio is not None:
-        lines.append(f"| 부채비율 | {ratios.debtRatio:.1f}% | {_judge_inv(ratios.debtRatio, 100, 200)} |")
-    if ratios.currentRatio is not None:
-        lines.append(f"| 유동비율 | {ratios.currentRatio:.1f}% | {_judge(ratios.currentRatio, 150, 100)} |")
-    if not compact and ratios.equityRatio is not None:
-        lines.append(f"| 자기자본비율 | {ratios.equityRatio:.1f}% | {_judge(ratios.equityRatio, 50, 30)} |")
-    if not compact and ratios.netDebt is not None:
-        lines.append(f"| 순차입금 | {_format_won(ratios.netDebt)} | {'양호' if ratios.netDebt <= 0 else '주의'} |")
-    if not compact and ratios.netDebtRatio is not None:
-        lines.append(f"| 순차입금비율 | {ratios.netDebtRatio:.1f}% | {_judge_inv(ratios.netDebtRatio, 30, 80)} |")
-    if ratios.fcf is not None:
-        lines.append(f"| FCF | {_format_won(ratios.fcf)} | {'양호' if ratios.fcf > 0 else '주의'} |")
-    if ratios.revenueGrowth3Y is not None:
-        lines.append(f"| 매출 3Y CAGR | {ratios.revenueGrowth3Y:.1f}% | - |")
+    lines = ["## 핵심 재무비율 (자동계산)"]
 
-    # ratioSeries 3년 추세 (있으면)
+    # ── 수익성 ──
+    if show_profitability_core:
+        prof_rows: list[str] = []
+        if ratios.roe is not None:
+            prof_rows.append(f"| ROE | {ratios.roe:.1f}% | {_judge(ratios.roe, roeGood, roeCaution)} |")
+        if ratios.roa is not None:
+            prof_rows.append(f"| ROA | {ratios.roa:.1f}% | {_judge(ratios.roa, roaGood, roaCaution)} |")
+        if ratios.operatingMargin is not None:
+            prof_rows.append(f"| 영업이익률 | {ratios.operatingMargin:.1f}% | - |")
+        if not compact and ratios.netMargin is not None:
+            prof_rows.append(f"| 순이익률 | {ratios.netMargin:.1f}% | - |")
+        if show_profitability_full:
+            if ratios.grossMargin is not None:
+                prof_rows.append(f"| 매출총이익률 | {ratios.grossMargin:.1f}% | - |")
+            if ratios.ebitdaMargin is not None:
+                prof_rows.append(f"| EBITDA마진 | {ratios.ebitdaMargin:.1f}% | - |")
+            if not compact and ratios.roic is not None:
+                prof_rows.append(f"| ROIC | {ratios.roic:.1f}% | {_judge(ratios.roic, 15, 8)} |")
+        if prof_rows:
+            lines.append("\n### 수익성")
+            lines.append("| 지표 | 값 | 판단 |")
+            lines.append("| --- | --- | --- |")
+            lines.extend(prof_rows)
+
+    # ── 안정성 ──
+    if "안정성" in active_groups:
+        stab_rows: list[str] = []
+        if ratios.debtRatio is not None:
+            stab_rows.append(f"| 부채비율 | {ratios.debtRatio:.1f}% | {_judge_inv(ratios.debtRatio, 100, 200)} |")
+        if ratios.currentRatio is not None:
+            stab_rows.append(f"| 유동비율 | {ratios.currentRatio:.1f}% | {_judge(ratios.currentRatio, 150, 100)} |")
+        if not compact and ratios.quickRatio is not None:
+            stab_rows.append(f"| 당좌비율 | {ratios.quickRatio:.1f}% | {_judge(ratios.quickRatio, 100, 50)} |")
+        if not compact and ratios.equityRatio is not None:
+            stab_rows.append(f"| 자기자본비율 | {ratios.equityRatio:.1f}% | {_judge(ratios.equityRatio, 50, 30)} |")
+        if ratios.interestCoverage is not None:
+            stab_rows.append(f"| 이자보상배율 | {ratios.interestCoverage:.1f}x | {_judge(ratios.interestCoverage, 5, 1)} |")
+        if not compact and ratios.debtToEbitda is not None:
+            stab_rows.append(f"| Debt/EBITDA | {ratios.debtToEbitda:.1f}x | {_judge_inv(ratios.debtToEbitda, 3, 5)} |")
+        if not compact and ratios.netDebt is not None:
+            stab_rows.append(f"| 순차입금 | {_format_won(ratios.netDebt)} | {'양호' if ratios.netDebt <= 0 else '주의'} |")
+        if not compact and ratios.netDebtRatio is not None:
+            stab_rows.append(f"| 순차입금비율 | {ratios.netDebtRatio:.1f}% | {_judge_inv(ratios.netDebtRatio, 30, 80)} |")
+        if stab_rows:
+            lines.append("\n### 안정성")
+            lines.append("| 지표 | 값 | 판단 |")
+            lines.append("| --- | --- | --- |")
+            lines.extend(stab_rows)
+
+    # ── 성장성 ──
+    if "성장" in active_groups:
+        grow_rows: list[str] = []
+        if ratios.revenueGrowth is not None:
+            grow_rows.append(f"| 매출성장률(YoY) | {ratios.revenueGrowth:.1f}% | - |")
+        if ratios.operatingProfitGrowth is not None:
+            grow_rows.append(f"| 영업이익성장률 | {ratios.operatingProfitGrowth:.1f}% | - |")
+        if ratios.netProfitGrowth is not None:
+            grow_rows.append(f"| 순이익성장률 | {ratios.netProfitGrowth:.1f}% | - |")
+        if ratios.revenueGrowth3Y is not None:
+            grow_rows.append(f"| 매출 3Y CAGR | {ratios.revenueGrowth3Y:.1f}% | - |")
+        if not compact and ratios.assetGrowth is not None:
+            grow_rows.append(f"| 자산성장률 | {ratios.assetGrowth:.1f}% | - |")
+        if grow_rows:
+            lines.append("\n### 성장성")
+            lines.append("| 지표 | 값 | 판단 |")
+            lines.append("| --- | --- | --- |")
+            lines.extend(grow_rows)
+
+    # ── 효율성 ──
+    if "효율성" in active_groups and not compact:
+        eff_rows: list[str] = []
+        if ratios.totalAssetTurnover is not None:
+            eff_rows.append(f"| 총자산회전율 | {ratios.totalAssetTurnover:.2f}x | - |")
+        if ratios.inventoryTurnover is not None:
+            eff_rows.append(f"| 재고자산회전율 | {ratios.inventoryTurnover:.1f}x | - |")
+        if ratios.receivablesTurnover is not None:
+            eff_rows.append(f"| 매출채권회전율 | {ratios.receivablesTurnover:.1f}x | - |")
+        if eff_rows:
+            lines.append("\n### 효율성")
+            lines.append("| 지표 | 값 | 판단 |")
+            lines.append("| --- | --- | --- |")
+            lines.extend(eff_rows)
+
+    # ── 현금흐름 ──
+    if "현금흐름" in active_groups:
+        cf_rows: list[str] = []
+        if ratios.fcf is not None:
+            cf_rows.append(f"| FCF | {_format_won(ratios.fcf)} | {'양호' if ratios.fcf > 0 else '주의'} |")
+        if ratios.operatingCfToNetIncome is not None:
+            quality = _judge(ratios.operatingCfToNetIncome, 100, 50)
+            cf_rows.append(f"| 영업CF/순이익 | {ratios.operatingCfToNetIncome:.0f}% | {quality} |")
+        if not compact and ratios.capexRatio is not None:
+            cf_rows.append(f"| CAPEX비율 | {ratios.capexRatio:.1f}% | - |")
+        if not compact and ratios.dividendPayoutRatio is not None:
+            cf_rows.append(f"| 배당성향 | {ratios.dividendPayoutRatio:.1f}% | - |")
+        if cf_rows:
+            lines.append("\n### 현금흐름")
+            lines.append("| 지표 | 값 | 판단 |")
+            lines.append("| --- | --- | --- |")
+            lines.extend(cf_rows)
+
+    # ── 복합 지표 ──
+    if "복합" in active_groups and not compact:
+        comp_lines: list[str] = []
+
+        # DuPont 분해
+        dm = getattr(ratios, "dupontMargin", None)
+        dt = getattr(ratios, "dupontTurnover", None)
+        dl = getattr(ratios, "dupontLeverage", None)
+        if dm is not None and dt is not None and dl is not None and ratios.roe is not None:
+            # 주요 동인 판별
+            if dm >= dt and dm >= dl:
+                driver = "수익성 주도형"
+            elif dt >= dm and dt >= dl:
+                driver = "효율성 주도형"
+            else:
+                driver = "레버리지 주도형"
+            comp_lines.append(f"\n### DuPont 분해")
+            comp_lines.append(
+                f"ROE {ratios.roe:.1f}% = 순이익률({dm:.1f}%) × 자산회전율({dt:.2f}x) × 레버리지({dl:.2f}x)"
+            )
+            comp_lines.append(f"→ **{driver}**")
+
+        # Piotroski F-Score
+        pf = getattr(ratios, "piotroskiFScore", None)
+        if pf is not None:
+            pf_label = "우수" if pf >= 7 else ("보통" if pf >= 4 else "취약")
+            comp_lines.append(f"\n### 복합 재무 지표")
+            comp_lines.append(f"- **Piotroski F-Score**: {pf}/9 ({pf_label}) — ≥7 우수, 4-6 보통, <4 취약")
+
+        # Altman Z-Score
+        az = getattr(ratios, "altmanZScore", None)
+        if az is not None:
+            az_label = "안전" if az > 2.99 else ("회색" if az >= 1.81 else "부실위험")
+            if pf is None:
+                comp_lines.append(f"\n### 복합 재무 지표")
+            comp_lines.append(f"- **Altman Z-Score**: {az:.2f} ({az_label}) — >2.99 안전, 1.81-2.99 회색, <1.81 부실")
+
+        # ROIC
+        if ratios.roic is not None:
+            roic_label = "우수" if ratios.roic >= 15 else ("적정" if ratios.roic >= 8 else "미흡")
+            comp_lines.append(f"- **ROIC**: {ratios.roic:.1f}% ({roic_label})")
+
+        # 이익의 질 — CCC
+        ccc = getattr(ratios, "ccc", None)
+        dso = getattr(ratios, "dso", None)
+        dio = getattr(ratios, "dio", None)
+        dpo = getattr(ratios, "dpo", None)
+        cfni = ratios.operatingCfToNetIncome
+        has_quality = ccc is not None or cfni is not None
+        if has_quality:
+            comp_lines.append(f"\n### 이익의 질")
+            if cfni is not None:
+                q = "양호" if cfni >= 100 else ("보통" if cfni >= 50 else "주의")
+                comp_lines.append(f"- 영업CF/순이익: {cfni:.0f}% ({q}) — ≥100% 양호")
+            if ccc is not None:
+                ccc_parts = []
+                if dso is not None:
+                    ccc_parts.append(f"DSO:{dso:.0f}")
+                if dio is not None:
+                    ccc_parts.append(f"DIO:{dio:.0f}")
+                if dpo is not None:
+                    ccc_parts.append(f"DPO:{dpo:.0f}")
+                detail = f" ({' + '.join(ccc_parts)})" if ccc_parts else ""
+                comp_lines.append(f"- CCC(현금전환주기): {ccc:.0f}일{detail}")
+
+        if comp_lines:
+            lines.extend(comp_lines)
+
+    # ── ratioSeries 3년 추세 ──
     ratio_series = get_ratio_series(company)
     if ratio_series is not None and hasattr(ratio_series, "roe") and ratio_series.roe:
-        trend_lines = []
-        for key, label in [("roe", "ROE"), ("operatingMargin", "영업이익률"), ("debtRatio", "부채비율")]:
+        trend_keys = [("roe", "ROE"), ("operatingMargin", "영업이익률"), ("debtRatio", "부채비율")]
+        if not compact and "성장" in active_groups:
+            trend_keys.append(("revenueGrowth", "매출성장률"))
+        trend_lines: list[str] = []
+        for key, label in trend_keys:
             series_vals = getattr(ratio_series, key, None)
             if series_vals and len(series_vals) >= 2:
                 recent = [f"{v:.1f}%" for v in series_vals[-3:] if v is not None]
@@ -443,7 +615,8 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
             lines.append("### 추세 (최근 3년)")
             lines.extend(trend_lines)
 
-    ttm_lines = []
+    # ── TTM ──
+    ttm_lines: list[str] = []
     if ratios.revenueTTM is not None:
         ttm_lines.append(f"- TTM 매출: {_format_won(ratios.revenueTTM)}")
     if ratios.operatingIncomeTTM is not None:
@@ -455,6 +628,7 @@ def _build_ratios_section(company: Any, compact: bool = False) -> str | None:
         lines.append("### TTM (최근 4분기 합산)")
         lines.extend(ttm_lines)
 
+    # ── 경고 ──
     if ratios.warnings:
         lines.append("")
         lines.append("### 경고")
@@ -525,11 +699,12 @@ def _build_compact_context_modules_inner(
     except _CONTEXT_ERRORS:
         pass
 
+    from dartlab.engines.ai.conversation.prompts import _classify_question_multi
+
+    q_types = _classify_question_multi(question, max_types=2)
+
     acct_filters: dict[str, set[str]] = {}
     if compact:
-        from dartlab.engines.ai.conversation.prompts import _classify_question_multi
-
-        q_types = _classify_question_multi(question, max_types=2)
         for qt in q_types:
             for sj, ids in _QUESTION_ACCOUNT_FILTER.get(qt, {}).items():
                 acct_filters.setdefault(sj, set()).update(ids)
@@ -559,7 +734,7 @@ def _build_compact_context_modules_inner(
                     included.append(sj)
                     fe_loaded = True
 
-    ratios_section = _build_ratios_section(company, compact=compact)
+    ratios_section = _build_ratios_section(company, compact=compact, q_types=q_types or None)
     if ratios_section:
         modules_dict["ratios"] = ratios_section
         if "ratios" not in included:

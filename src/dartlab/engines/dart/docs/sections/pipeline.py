@@ -22,6 +22,7 @@ period key 형식:
 
 from __future__ import annotations
 
+import gc
 import re
 from collections.abc import Iterator
 
@@ -1428,9 +1429,9 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     topicChapter: dict[str, str] = {}
     topicFirstSeq: dict[str, tuple[int, int]] = {}
 
-    for periodKey in validPeriods:
+    for _pIdx, periodKey in enumerate(validPeriods):
         projected = applyProjections(
-            periodRows.get(periodKey, []),
+            periodRows.pop(periodKey, []),
             teacherTopics,
         )
         for row in _expandStructuredRows(projected):
@@ -1518,7 +1519,11 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                     "_repPeriod": periodKey,
                 }
 
-    # 메모리 해제: periodRows는 topicMap에 흡수 완료
+        # 매 4기간마다 GC — 중간 객체 해제
+        if _pIdx % 4 == 3:
+            gc.collect()
+
+    # 메모리 해제: periodRows는 pop으로 이미 소진, 빈 dict 정리
     del periodRows
 
     if not validPeriods or not topicMap:
@@ -1679,8 +1684,6 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     del pathVariantsByKey, parentPathVariantsByKey
     del semanticPathVariantsByKey, semanticParentPathVariantsByKey
     del cadenceMetaByKey
-
-    import gc
 
     gc.collect()
 

@@ -10,6 +10,9 @@ wheels/
 .venv
 .venv-wsl
 
+# Secrets
+.env
+
 
 CLAUDE.md
 AGENTS.md
@@ -17,9 +20,6 @@ AGENTS.md
 .claude/
 # Data (available via gh release)
 data/
-
-# eddmpython관련 레퍼런스(로컬 전용, git 미포함)
-_reference/
 
 # Backup (파일 삭제 대신 이동)
 _backup/

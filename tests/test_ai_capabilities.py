@@ -33,6 +33,10 @@ class FakeRatioResult:
         self.equityRatio = 63.1
         self.netDebt = -1200
         self.netDebtRatio = -3.2
+        self.roic = 12.5
+        self.interestCoverage = 8.3
+        self.piotroskiFScore = 7
+        self.altmanZScore = 3.45
         self.warnings = []
 
 

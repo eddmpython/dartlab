@@ -222,15 +222,124 @@ def _run_risk_analysis(company: Any, tables: list[str]) -> str | None:
     return "\n".join(parts) if parts else None
 
 
+def _run_quality_of_earnings(company: Any, tables: list[str]) -> str | None:
+    """이익의 질: 영업CF/순이익, CCC 분석."""
+    from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+
+    ratios = get_headline_ratios(company)
+    if ratios is None:
+        return None
+
+    parts: list[str] = []
+    cfni = getattr(ratios, "operatingCfToNetIncome", None)
+    ccc = getattr(ratios, "ccc", None)
+    dso = getattr(ratios, "dso", None)
+    dio = getattr(ratios, "dio", None)
+    dpo = getattr(ratios, "dpo", None)
+    capex_ratio = getattr(ratios, "capexRatio", None)
+
+    if cfni is not None or ccc is not None:
+        parts.append("### 이익의 질 분석")
+        rows = ["| 지표 | 값 | 판단 |", "| --- | --- | --- |"]
+        if cfni is not None:
+            q = "양호" if cfni >= 100 else ("보통" if cfni >= 50 else "주의")
+            rows.append(f"| 영업CF/순이익 | {cfni:.0f}% | {q} |")
+        if ccc is not None:
+            rows.append(f"| CCC(현금전환주기) | {ccc:.0f}일 | - |")
+        if dso is not None:
+            rows.append(f"| DSO(매출채권회수) | {dso:.0f}일 | - |")
+        if dio is not None:
+            rows.append(f"| DIO(재고보유) | {dio:.0f}일 | - |")
+        if dpo is not None:
+            rows.append(f"| DPO(매입채무지급) | {dpo:.0f}일 | - |")
+        if capex_ratio is not None:
+            rows.append(f"| CAPEX비율 | {capex_ratio:.1f}% | - |")
+        parts.append("\n".join(rows))
+
+    return "\n".join(parts) if parts else None
+
+
+def _run_dupont_analysis(company: Any, tables: list[str]) -> str | None:
+    """DuPont 분해: ROE = 순이익률 × 자산회전율 × 레버리지."""
+    from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+
+    ratios = get_headline_ratios(company)
+    if ratios is None:
+        return None
+
+    dm = getattr(ratios, "dupontMargin", None)
+    dt = getattr(ratios, "dupontTurnover", None)
+    dl = getattr(ratios, "dupontLeverage", None)
+    roe = getattr(ratios, "roe", None)
+    if dm is None or dt is None or dl is None or roe is None:
+        return None
+
+    # 주요 동인 판별
+    factors = {"수익성(순이익률)": dm, "효율성(자산회전율)": dt, "레버리지": dl}
+    driver = max(factors, key=lambda k: factors[k])
+
+    parts = [
+        "### DuPont 분해 분석",
+        f"ROE **{roe:.1f}%** = 순이익률({dm:.1f}%) × 자산회전율({dt:.2f}x) × 레버리지({dl:.2f}x)",
+        f"→ **{driver} 주도형**",
+    ]
+
+    return "\n".join(parts)
+
+
+def _run_composite_scoring(company: Any, tables: list[str]) -> str | None:
+    """복합 스코어링: Piotroski F-Score, Altman Z-Score, ROIC."""
+    from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+
+    ratios = get_headline_ratios(company)
+    if ratios is None:
+        return None
+
+    pf = getattr(ratios, "piotroskiFScore", None)
+    az = getattr(ratios, "altmanZScore", None)
+    roic = getattr(ratios, "roic", None)
+    ic = getattr(ratios, "interestCoverage", None)
+
+    if pf is None and az is None and roic is None:
+        return None
+
+    parts = ["### 복합 재무 지표"]
+    rows = ["| 지표 | 값 | 판단 | 기준 |", "| --- | --- | --- | --- |"]
+    has_rows = False
+
+    if pf is not None:
+        label = "우수" if pf >= 7 else ("보통" if pf >= 4 else "취약")
+        rows.append(f"| Piotroski F-Score | {pf}/9 | {label} | ≥7 우수, 4-6 보통, <4 취약 |")
+        has_rows = True
+    if az is not None:
+        label = "안전" if az > 2.99 else ("회색" if az >= 1.81 else "부실위험")
+        rows.append(f"| Altman Z-Score | {az:.2f} | {label} | >2.99 안전, 1.81-2.99 회색, <1.81 부실 |")
+        has_rows = True
+    if roic is not None:
+        label = "우수" if roic >= 15 else ("적정" if roic >= 8 else "미흡")
+        rows.append(f"| ROIC | {roic:.1f}% | {label} | ≥15% 우수, 8-15% 적정, <8% 미흡 |")
+        has_rows = True
+    if ic is not None:
+        label = "양호" if ic >= 5 else ("주의" if ic >= 1 else "위험")
+        rows.append(f"| 이자보상배율 | {ic:.1f}x | {label} | ≥5x 양호, 1-5x 주의, <1x 위험 |")
+        has_rows = True
+
+    if not has_rows:
+        return None
+
+    parts.append("\n".join(rows))
+    return "\n".join(parts)
+
+
 _PIPELINE_MAP: dict[str, list] = {
-    "건전성": [_run_health_analysis],
-    "수익성": [_run_profitability_analysis],
+    "건전성": [_run_health_analysis, _run_quality_of_earnings, _run_composite_scoring],
+    "수익성": [_run_profitability_analysis, _run_quality_of_earnings, _run_dupont_analysis],
     "성장성": [_run_growth_analysis],
     "배당": [_run_dividend_analysis],
-    "리스크": [_run_risk_analysis],
+    "리스크": [_run_risk_analysis, _run_composite_scoring],
     "투자": [_run_growth_analysis],
     "지배구조": [],  # scan runner가 L2에서 주입
-    "종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis],
+    "종합": [_run_health_analysis, _run_profitability_analysis, _run_growth_analysis, _run_quality_of_earnings, _run_dupont_analysis, _run_composite_scoring],
     "공시": [],  # show_topic 도구 사용 안내 — insight만 주입
     "사업": [],  # show_topic 도구 사용 안내 — insight만 주입
 }

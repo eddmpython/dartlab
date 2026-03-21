@@ -2,18 +2,9 @@
 
 from __future__ import annotations
 
-from dartlab.engines.ai.providers import create_provider
-from dartlab.engines.ai.types import LLMConfig
-
 
 def detect_provider() -> str:
-    """Return the first available local-first provider."""
-    for provider_name in ["codex", "ollama"]:
-        config = LLMConfig(provider=provider_name)
-        try:
-            provider = create_provider(config)
-            if provider.check_available():
-                return provider_name
-        except (ImportError, RuntimeError, ConnectionError, OSError):
-            continue
-    return "ollama"
+    """Return the first available provider (smart detection)."""
+    from dartlab.core.ai.detect import auto_detect_provider
+
+    return auto_detect_provider() or "ollama"

@@ -32,14 +32,14 @@ def _scoreToGrade(score: int, maxScore: int) -> str:
 
 
 def _getGrowthYoY(annualVals: list[Optional[float]]) -> Optional[float]:
+    from dartlab.engines.common.finance.ratios import yoy_pct
+
     valid = [(i, v) for i, v in enumerate(annualVals) if v is not None]
     if len(valid) < 2:
         return None
     _, prev = valid[-2]
     _, curr = valid[-1]
-    if prev and prev != 0:
-        return ((curr - prev) / abs(prev)) * 100
-    return None
+    return yoy_pct(curr, prev)
 
 
 def _getVolatility(qVals: list[Optional[float]]) -> Optional[float]:

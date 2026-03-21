@@ -108,6 +108,7 @@ class RatioResult:
     dio: Optional[float] = None
     dpo: Optional[float] = None
     piotroskiFScore: Optional[int] = None
+    piotroskiMaxScore: int = 7  # 현재 구현 가능 항목 기준 (9점 중 2항목 데이터 미접근)
     altmanZScore: Optional[float] = None
 
     per: Optional[float] = None
@@ -240,7 +241,8 @@ class RatioResult:
         "dso": "매출채권회수기간 (일)",
         "dio": "재고자산보유기간 (일)",
         "dpo": "매입채무지급기간 (일)",
-        "piotroskiFScore": "Piotroski F-Score (0~9)",
+        "piotroskiFScore": "Piotroski F-Score (0~7, 현재 구현 기준)",
+        "piotroskiMaxScore": "Piotroski 현재 최대 점수 (구현 항목 기준)",
         "altmanZScore": "Altman Z-Score",
     }
 
@@ -383,11 +385,13 @@ def _safeRound(v: Optional[float], n: int = 2) -> Optional[float]:
     return round(v, n)
 
 
-def _yoy(vals: list[Optional[float]], i: int, lag: int = 1) -> Optional[float]:
-    if i < lag:
-        return None
-    cur = vals[i]
-    prev = vals[i - lag]
+def yoy_pct(cur: Optional[float], prev: Optional[float]) -> Optional[float]:
+    """전년 대비 증감률(%). 부호 전환 시 None 반환.
+
+    - 양수→양수 또는 음수→음수: 정상 계산
+    - 부호 전환(흑자↔적자): None (단순 비교 불가)
+    - 분모 0 또는 None: None
+    """
     if cur is None or prev is None or prev == 0:
         return None
     if prev > 0 and cur >= 0:
@@ -395,6 +399,12 @@ def _yoy(vals: list[Optional[float]], i: int, lag: int = 1) -> Optional[float]:
     if prev < 0 and cur < 0:
         return round(((cur - prev) / abs(prev)) * 100, 2)
     return None
+
+
+def _yoy(vals: list[Optional[float]], i: int, lag: int = 1) -> Optional[float]:
+    if i < lag:
+        return None
+    return yoy_pct(vals[i], vals[i - lag])
 
 
 def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
@@ -612,6 +622,15 @@ def calcRatios(
         r.marketCap = marketCap
         _calcValuation(r)
 
+    # BS 항등식 검증: 자산 ≈ 부채 + 자본
+    if r.totalAssets and r.totalLiabilities is not None and r.totalEquity is not None:
+        lhs = r.totalAssets
+        rhs = r.totalLiabilities + r.totalEquity
+        if lhs > 0:
+            diff = abs(lhs - rhs) / lhs
+            if diff > 0.01:
+                r.warnings.append(f"BS 항등식 불일치: 자산 {lhs:,.0f} ≠ 부채+자본 {rhs:,.0f} (차이 {diff:.1%})")
+
     _applyArchetypePolicyResult(r, archetype)
     return r
 
@@ -711,9 +730,16 @@ def _calcComposite(
 ) -> None:
     """복합 지표 (11개): ROIC, DuPont, Debt/EBITDA, CCC, Piotroski, Altman."""
     # ── ROIC: NOPAT / Invested Capital ──
-    # NOPAT ≈ Operating Income × (1 - 세율추정 22%)
+    # 유효세율 동적 계산. 불가능하면 22% 기본값.
+    effective_tax = 0.22
+    pbt = getTTM(series, "IS", "profit_before_tax")
+    tax_exp = getTTM(series, "IS", "income_tax_expense")
+    if pbt and pbt > 0 and tax_exp is not None:
+        _et = tax_exp / pbt
+        if 0 <= _et <= 0.5:
+            effective_tax = _et
     if r.operatingIncomeTTM is not None and r.totalEquity and r.netDebt is not None:
-        nopat = r.operatingIncomeTTM * 0.78
+        nopat = r.operatingIncomeTTM * (1 - effective_tax)
         invested = r.totalEquity + max(r.netDebt, 0)
         if invested > 0:
             r.roic = _safeRound((nopat / invested) * 100, 2)
@@ -871,6 +897,9 @@ def calcRatioSeries(
     bonds = _get(annualSeries, "BS", "debentures")
     ncAssets = _get(annualSeries, "BS", "noncurrent_assets")
 
+    profitBeforeTax = _get(annualSeries, "IS", "profit_before_tax")
+    incomeTaxExpense = _get(annualSeries, "IS", "income_tax_expense")
+
     opCf = _get(annualSeries, "CF", "operating_cashflow")
     capex = _get(annualSeries, "CF", "purchase_of_property_plant_and_equipment")
     divPaid = _get(annualSeries, "CF", "dividends_paid")
@@ -991,8 +1020,15 @@ def calcRatioSeries(
 
         # ── 복합 지표 (시계열) ──
 
-        # ROIC
-        nopat_i = op_i * 0.78 if op_i is not None else None
+        # ROIC — 유효세율 동적 계산
+        pbt_i = _v(profitBeforeTax, i)
+        tax_i = _v(incomeTaxExpense, i)
+        et_i = 0.22
+        if pbt_i and pbt_i > 0 and tax_i is not None:
+            _et_i = tax_i / pbt_i
+            if 0 <= _et_i <= 0.5:
+                et_i = _et_i
+        nopat_i = op_i * (1 - et_i) if op_i is not None else None
         nd_i = stb_i + ltb_i + bnd_i - (cash_i or 0)
         invested_i = (te_i or 0) + max(nd_i, 0) if te_i is not None else None
         rs.roic.append(_safePct(nopat_i, invested_i))

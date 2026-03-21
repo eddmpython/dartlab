@@ -116,6 +116,32 @@ def build_snapshot(company: Any) -> dict | None:
             "value": _pct(ratios.revenueGrowth3Y),
             "status": _judge_pct(ratios.revenueGrowth3Y, 5, 0),
         })
+    if ratios.roic is not None:
+        items.append({
+            "label": "ROIC",
+            "value": _pct(ratios.roic),
+            "status": _judge_pct(ratios.roic, 15, 8),
+        })
+    if ratios.interestCoverage is not None:
+        items.append({
+            "label": "이자보상배율",
+            "value": f"{ratios.interestCoverage:.1f}x",
+            "status": _judge_pct(ratios.interestCoverage, 5, 1),
+        })
+    pf = getattr(ratios, "piotroskiFScore", None)
+    if pf is not None:
+        items.append({
+            "label": "Piotroski F",
+            "value": f"{pf}/9",
+            "status": "good" if pf >= 7 else ("caution" if pf >= 4 else "danger"),
+        })
+    az = getattr(ratios, "altmanZScore", None)
+    if az is not None:
+        items.append({
+            "label": "Altman Z",
+            "value": f"{az:.2f}",
+            "status": "good" if az > 2.99 else ("caution" if az >= 1.81 else "danger"),
+        })
 
     annual = getattr(company, "annual", None)
     trend = None

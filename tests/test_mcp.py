@@ -79,9 +79,11 @@ def test_get_or_create_company_none():
 
 
 def test_company_cache_reuses(monkeypatch):
+    import time
+
     sentinel = object()
     _company_cache.clear()
-    _company_cache["TEST"] = sentinel
+    _company_cache["TEST"] = (sentinel, time.monotonic())
 
     result = _get_or_create_company("TEST")
 

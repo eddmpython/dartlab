@@ -486,7 +486,9 @@ class Company:
 
     def __init__(self, ticker: str):
         self.ticker = ticker.upper()
-        self._cache: dict[str, Any] = {}
+        from dartlab.core.memory import BoundedCache
+
+        self._cache: BoundedCache = BoundedCache(max_entries=30)
 
         tickerRow = self._resolveTickerRow(self.ticker)
         if tickerRow is None:

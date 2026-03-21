@@ -17,6 +17,7 @@ from dartlab.engines.common.finance.ratios import (
     calcRatios,
     calcRatioSeries,
     toSeriesDict,
+    yoy_pct,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "RATIO_CATEGORIES",
     "RatioResult",
     "RatioSeriesResult",
+    "yoy_pct",
 ]

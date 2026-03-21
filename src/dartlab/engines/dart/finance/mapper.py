@@ -208,8 +208,8 @@ class AccountMapper:
 
     _instance: Optional[AccountMapper] = None
     _mappings: Optional[dict[str, str]] = None
-    _stdAccounts: Optional[dict[str, dict]] = None
-    _noHyphenIndex: Optional[dict[str, str]] = None  # 하이픈 제거 역인덱스
+    _stdAccountsRaw: Optional[dict[str, dict]] = None
+    _noHyphenIndex: Optional[dict[str, str]] = None  # lazy 빌드
 
     @classmethod
     def get(cls) -> AccountMapper:
@@ -217,20 +217,38 @@ class AccountMapper:
             cls._instance = cls()
         return cls._instance
 
+    @classmethod
+    def release(cls) -> None:
+        """메모리 해제. 다음 get() 호출 시 자동 재로드."""
+        cls._instance = None
+        cls._mappings = None
+        cls._stdAccountsRaw = None
+        cls._noHyphenIndex = None
+
     def __init__(self):
         if AccountMapper._mappings is None:
             path = _DATA_DIR / "accountMappings.json"
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             AccountMapper._mappings = data["mappings"]
-            AccountMapper._stdAccounts = data.get("standardAccounts", {})
-            # 하이픈 제거 역인덱스: "당기손익공정가치측정금융자산" → snakeId
+            AccountMapper._stdAccountsRaw = data.get("standardAccounts", {})
+
+    @property
+    def _stdAccounts(self) -> dict[str, dict]:
+        if AccountMapper._stdAccountsRaw is None:
+            return {}
+        return AccountMapper._stdAccountsRaw
+
+    def _getNoHyphenIndex(self) -> dict[str, str]:
+        """하이픈 제거 역인덱스 — 첫 접근 시 lazy 빌드."""
+        if AccountMapper._noHyphenIndex is None:
             idx: dict[str, str] = {}
-            for key, snakeId in AccountMapper._mappings.items():
+            for key, snakeId in self._mappings.items():
                 stripped = key.replace("-", "").replace("–", "").replace("—", "")
-                if stripped != key and stripped not in AccountMapper._mappings:
+                if stripped != key and stripped not in self._mappings:
                     idx[stripped] = snakeId
             AccountMapper._noHyphenIndex = idx
+        return AccountMapper._noHyphenIndex
 
     def map(self, accountId: str, accountNm: str) -> Optional[str]:
         """account_id + account_nm → snakeId.
@@ -266,8 +284,9 @@ class AccountMapper:
             noHyphen = noSpace.replace("-", "").replace("–", "").replace("—", "")
             if noHyphen in self._mappings:
                 return self._mappings[noHyphen]
-            if self._noHyphenIndex and noHyphen in self._noHyphenIndex:
-                return self._noHyphenIndex[noHyphen]
+            nhIdx = self._getNoHyphenIndex()
+            if noHyphen in nhIdx:
+                return nhIdx[noHyphen]
 
         return None
 

@@ -181,6 +181,86 @@ def signal(keyword: str | None = None):
     return scan_signal(keyword)
 
 
+def setup(provider: str | None = None):
+    """AI provider 설정 안내 + 인터랙티브 설정.
+
+    Args:
+        provider: 특정 provider 설정. None이면 전체 현황.
+
+    Example::
+
+        import dartlab
+        dartlab.setup()              # 전체 provider 현황
+        dartlab.setup("chatgpt")     # ChatGPT OAuth 브라우저 로그인
+        dartlab.setup("openai")      # OpenAI API 키 설정
+        dartlab.setup("ollama")      # Ollama 설치 안내
+    """
+    from dartlab.core.ai.guide import (
+        no_provider_message,
+        provider_guide,
+        providers_status,
+        resolve_alias,
+    )
+
+    if provider is None:
+        print(providers_status())
+        return
+
+    provider = resolve_alias(provider)
+
+    if provider == "oauth-codex":
+        _setup_oauth_interactive()
+    elif provider == "openai":
+        _setup_openai_interactive()
+    else:
+        print(provider_guide(provider))
+
+
+def _setup_oauth_interactive():
+    """노트북/CLI에서 ChatGPT OAuth 브라우저 로그인."""
+    try:
+        from dartlab.engines.ai.providers.support.oauth_token import is_authenticated
+        if is_authenticated():
+            print("\n  ✓ ChatGPT OAuth 이미 인증되어 있습니다.")
+            print('  재인증: dartlab.setup("chatgpt")  # 재실행하면 갱신\n')
+            return
+    except ImportError:
+        pass
+
+    try:
+        from dartlab.cli.commands.setup import _do_oauth_login
+        _do_oauth_login()
+    except ImportError:
+        print("\n  ChatGPT OAuth 브라우저 로그인:")
+        print("  CLI에서 실행: dartlab setup oauth-codex\n")
+
+
+def _setup_openai_interactive():
+    """노트북에서 OpenAI API 키 인라인 설정."""
+    import os
+
+    from dartlab.core.ai.guide import provider_guide
+
+    existing_key = os.environ.get("OPENAI_API_KEY")
+    if existing_key:
+        print(f"\n  ✓ OPENAI_API_KEY 환경변수가 설정되어 있습니다. (sk-...{existing_key[-4:]})\n")
+        return
+
+    print(provider_guide("openai"))
+    print()
+
+    try:
+        from getpass import getpass
+        key = getpass("  API 키 입력 (Enter로 건너뛰기): ").strip()
+        if key:
+            llm.configure(provider="openai", api_key=key)
+            print("\n  ✓ OpenAI API 키가 설정되었습니다.\n")
+        else:
+            print("\n  건너뛰었습니다.\n")
+    except (EOFError, KeyboardInterrupt):
+        print("\n  건너뛰었습니다.\n")
+
+
 def _auto_stream(gen) -> str:
     """Generator를 소비하면서 stdout에 스트리밍 출력, 전체 텍스트 반환."""
     import sys
@@ -244,6 +324,19 @@ def ask(
             custom_process(chunk)
     """
     from dartlab.engines.ai.runtime.standalone import ask as _ask
+
+    # provider 미지정 시 auto-detect
+    if provider is None:
+        from dartlab.core.ai.detect import auto_detect_provider
+
+        detected = auto_detect_provider()
+        if detected is None:
+            from dartlab.core.ai.guide import no_provider_message
+
+            msg = no_provider_message()
+            print(msg)
+            raise RuntimeError("AI provider가 설정되지 않았습니다. dartlab.setup()을 실행하세요.")
+        provider = detected
 
     if len(args) == 2:
         company = Company(args[0])
@@ -384,6 +477,7 @@ __all__ = [
     "llm",
     "ask",
     "chat",
+    "setup",
     "search",
     "listing",
     "network",

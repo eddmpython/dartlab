@@ -1,4 +1,4 @@
-"""5차원 답변 채점기.
+"""6차원 답변 채점기.
 
 차원:
     1. factual_accuracy — 수치 정확도 (실제 finance 값 대비)
@@ -6,6 +6,7 @@
     3. source_citation — 출처(테이블명, 연도) 인용 비율
     4. hallucination — 허위 수치 포함 여부
     5. actionability — 결론/판단/제안 포함 여부
+    6. ratio_utilization — 제공된 복합 지표(DuPont, Piotroski F, Altman Z 등) 활용도
 """
 
 from __future__ import annotations
@@ -16,24 +17,26 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ScoreCard:
-    """5차원 채점 결과."""
+    """6차원 채점 결과."""
 
     factual_accuracy: float = 0.0  # 0~1
     completeness: float = 0.0  # 0~1
     source_citation: float = 0.0  # 0~1
     hallucination: float = 1.0  # 1=없음, 0=있음
     actionability: float = 0.0  # 0~1
+    ratio_utilization: float = 0.0  # 0~1
     details: dict = field(default_factory=dict)
 
     @property
     def overall(self) -> float:
-        """5차원 가중 평균 (5.0 만점)."""
+        """6차원 가중 평균 (5.5 만점)."""
         return (
             self.factual_accuracy * 1.5
             + self.completeness * 1.0
             + self.source_citation * 0.5
             + self.hallucination * 1.0
             + self.actionability * 1.0
+            + self.ratio_utilization * 0.5
         )
 
 
@@ -152,10 +155,43 @@ def score_actionability(answer: str) -> float:
     return min(found / 3, 1.0)
 
 
+_COMPOSITE_INDICATORS = [
+    "DuPont",
+    "듀퐁",
+    "Piotroski",
+    "피오트로스키",
+    "F-Score",
+    "Altman",
+    "Z-Score",
+    "ROIC",
+    "CCC",
+    "현금전환주기",
+    "이익의 질",
+    "영업CF/순이익",
+]
+
+
+def score_ratio_utilization(answer: str, provided_indicators: list[str] | None = None) -> float:
+    """제공된 복합 지표가 답변에서 실제 활용되었는지 측정.
+
+    Args:
+        provided_indicators: context에 제공된 복합 지표 이름 리스트.
+            None이면 _COMPOSITE_INDICATORS 전체에서 탐색.
+    """
+    indicators = provided_indicators or _COMPOSITE_INDICATORS
+    if not indicators:
+        return 1.0
+
+    found = sum(1 for ind in indicators if ind.lower() in answer.lower())
+    # 제공된 지표 중 최소 30%를 활용했으면 만점
+    return min(found / max(len(indicators) * 0.3, 1), 1.0)
+
+
 def auto_score(
     answer: str,
     expected_facts: list[dict] | None = None,
     expected_topics: list[str] | None = None,
+    provided_indicators: list[str] | None = None,
 ) -> ScoreCard:
     """답변 자동 채점."""
     facts = expected_facts or []
@@ -167,4 +203,5 @@ def auto_score(
         source_citation=score_source_citation(answer),
         hallucination=score_hallucination(answer, facts),
         actionability=score_actionability(answer),
+        ratio_utilization=score_ratio_utilization(answer, provided_indicators),
     )

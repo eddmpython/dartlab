@@ -68,6 +68,18 @@ def _classify_error(e: Exception) -> dict[str, str]:
     return {"error": err_str, "action": ""}
 
 
+def _enrich_with_guide(result: dict[str, str]) -> dict[str, str]:
+    """설정 관련 에러에 guide 메시지를 추가."""
+    if result.get("action") in ("config", "install", "login", "relogin"):
+        try:
+            from dartlab.core.ai.guide import no_provider_message
+
+            result["guide"] = no_provider_message()
+        except ImportError:
+            pass
+    return result
+
+
 # ── 통합 오케스트레이터 ──────────────────────────────────
 
 def analyze(
@@ -188,7 +200,7 @@ def analyze(
         KeyError, OSError, PermissionError, RuntimeError, TimeoutError,
         TypeError, ValueError,
     ) as e:
-        yield AnalysisEvent("error", _classify_error(e))
+        yield AnalysisEvent("error", _enrich_with_guide(_classify_error(e)))
 
     # ── 후처리: navigate ui_action ──
     if detect_navigate and company is not None:

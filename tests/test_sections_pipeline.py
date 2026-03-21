@@ -36,7 +36,7 @@ def test_sections_pipeline_preserves_markdown_tables_and_period_order(monkeypatc
         }
     )
 
-    def fakeLoadData(stockCode: str):
+    def fakeLoadData(stockCode: str, **kwargs):
         return df
 
     def fakeSelectReport(frame: pl.DataFrame, year: str, reportKind: str):
@@ -80,7 +80,7 @@ def test_sections_pipeline_preserves_multiple_blocks_within_same_topic(monkeypat
         }
     )
 
-    def fakeLoadData(stockCode: str):
+    def fakeLoadData(stockCode: str, **kwargs):
         return df
 
     def fakeSelectReport(frame: pl.DataFrame, year: str, reportKind: str):
@@ -125,7 +125,7 @@ def test_sections_pipeline_hides_detail_topics_from_core_view(monkeypatch):
         }
     )
 
-    def fakeLoadData(stockCode: str):
+    def fakeLoadData(stockCode: str, **kwargs):
         return df
 
     def fakeSelectReport(frame: pl.DataFrame, year: str, reportKind: str):

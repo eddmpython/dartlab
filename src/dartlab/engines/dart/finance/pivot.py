@@ -61,7 +61,11 @@ def _loadAndNormalize(
     """finance parquet → 정규화된 DataFrame + periods (내부용)."""
     from dartlab.core.dataLoader import loadData
 
-    df = loadData(stockCode, category="finance")
+    _FINANCE_COLS = [
+        "sj_div", "fs_div", "account_id", "account_nm",
+        "bsns_year", "reprt_nm", "thstrm_amount", "thstrm_add_amount",
+    ]
+    df = loadData(stockCode, category="finance", columns=_FINANCE_COLS)
     if df is None or df.is_empty():
         return None
 
@@ -243,7 +247,9 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         .then(
             pl.when(pl.col("_qOrd") == 1)
             .then(pl.col("thstrm_amount"))
-            .otherwise(pl.col("thstrm_amount") - pl.col("_prevAmount").fill_null(0))
+            .when(pl.col("_prevAmount").is_null())
+            .then(None)
+            .otherwise(pl.col("thstrm_amount") - pl.col("_prevAmount"))
         )
         .when((pl.col("reprt_nm") == "1분기") & pl.col("thstrm_amount").is_null())
         .then(pl.col("thstrm_add_amount"))
@@ -251,9 +257,17 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
             (pl.col("reprt_nm") != "1분기")
             & (pl.col("thstrm_amount").is_null() | (pl.col("thstrm_amount") == pl.col("thstrm_add_amount")))
         )
-        .then(pl.col("thstrm_add_amount") - pl.col("_prevAdd").fill_null(0))
+        .then(
+            pl.when(pl.col("_prevAdd").is_null())
+            .then(None)
+            .otherwise(pl.col("thstrm_add_amount") - pl.col("_prevAdd"))
+        )
         .when((pl.col("reprt_nm") == "4분기") & pl.col("thstrm_add_amount").is_null())
-        .then(pl.col("thstrm_amount") - pl.col("_prevAdd").fill_null(0))
+        .then(
+            pl.when(pl.col("_prevAdd").is_null())
+            .then(None)
+            .otherwise(pl.col("thstrm_amount") - pl.col("_prevAdd"))
+        )
         .otherwise(pl.col("thstrm_amount"))
         .alias("_normalized_amount")
     )
@@ -415,7 +429,11 @@ def buildSceMatrix(
     """
     from dartlab.core.dataLoader import loadData
 
-    df = loadData(stockCode, category="finance")
+    _SCE_COLS = [
+        "sj_div", "fs_div", "account_id", "account_nm",
+        "bsns_year", "reprt_nm", "thstrm_amount",
+    ]
+    df = loadData(stockCode, category="finance", columns=_SCE_COLS)
     if df is None or df.is_empty():
         return None
 

@@ -66,11 +66,20 @@ _LABEL_PATTERNS: dict[str, str] = {
 _RATIO_PATTERNS: dict[str, str] = {
     "ROE": "roe",
     "ROA": "roa",
+    "ROIC": "roic",
     "영업이익률": "operatingMargin",
     "순이익률": "netMargin",
+    "매출총이익률": "grossMargin",
+    "EBITDA마진": "ebitdaMargin",
     "부채비율": "debtRatio",
     "유동비율": "currentRatio",
+    "당좌비율": "quickRatio",
     "자기자본비율": "equityRatio",
+    "이자보상배율": "interestCoverage",
+    "총자산회전율": "totalAssetTurnover",
+    "배당성향": "dividendPayoutRatio",
+    "Piotroski": "piotroskiFScore",
+    "피오트로스키": "piotroskiFScore",
 }
 
 # 숫자 추출 패턴: "매출 1,234억", "매출액 약 30조", "ROE 15.2%"

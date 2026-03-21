@@ -243,7 +243,9 @@ class Company:
             if code is None:
                 raise ValueError(f"'{normalized}'에 해당하는 종목을 찾을 수 없음")
             self.stockCode = code
-        self._cache: dict[str, Any] = {}
+        from dartlab.core.memory import BoundedCache
+
+        self._cache: BoundedCache = BoundedCache(max_entries=30)
 
         self._hasDocs = _ensureData(self.stockCode, "docs")
         self._hasFinanceParquet = _ensureData(self.stockCode, "finance")

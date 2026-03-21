@@ -257,11 +257,10 @@ def format_korean(
     Returns:
             문자열 컬럼으로 변환된 DataFrame
     """
-    result = df.clone()
-
     if cols is None:
         cols = [c for c in df.columns if df[c].dtype in (pl.Float64, pl.Float32, pl.Int64, pl.Int32)]
 
+    result = df
     for col in cols:
         if col not in result.columns:
             continue
