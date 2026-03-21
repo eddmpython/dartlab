@@ -933,6 +933,10 @@ class TestChatUtils:
             currentRatio = None
             fcf = None
             revenueGrowth3Y = None
+            roic = None
+            interestCoverage = None
+            piotroskiFScore = None
+            altmanZScore = None
             warnings = []
 
         class DummyCompany:
