@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI test 마커 필터 보강**: `-m "not requires_data"` → `-m "not requires_data and not heavy"` (CI에서 heavy 테스트 제외)
 - **pre-commit ruff 버전 동기화**: v0.9.0 → v0.11.4 (CI ruff 버전과 일치시켜 format 불일치 해소)
 - **ruff exclude에 `_reference/` 추가**: 참조 파일 lint 제외
-- **의존성 상한 추가**: polars<2, requests<3, rich<14, beautifulsoup4<5 등 주요 의존성에 major version 상한 설정
+- **의존성 상한 추가**: `polars<2`, `requests<3`, `rich<14`, `beautifulsoup4<5` 등 주요 의존성에 major version 상한 설정
 - **rank 엔진 print → logger**: `rank.py`, `screen.py`의 print문을 `logging.getLogger(__name__)` 전환
 - **서버 bare except 구체화**: `streaming.py`의 `except Exception` → OSError, RuntimeError 등 7개 구체 예외 타입
 - **publish.yml 버전 검증 추가**: git tag와 pyproject.toml 버전 불일치 시 빌드 자동 실패
