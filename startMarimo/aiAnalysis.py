@@ -34,34 +34,15 @@ def _(mo):
     ## 원스톱 AI 분석
 
     `dartlab.ask("삼성전자 분석해줘")` — 한 문장이면 끝.
-    종목명을 자동 추출하고, 재무제표·공시·비율 등을 종합하여 LLM이 답변합니다.
+    종목명을 자동 추출하고, 재무제표·공시·비율 등을 종합하여 LLM이 스트리밍으로 답변합니다.
     """)
     return
 
 
 @app.cell
 def _(dartlab):
-    # 원스톱 — 종목명을 텍스트에서 자동 추출
-    result = dartlab.ask("삼성전자 재무건전성 분석해줘", stream=False)
-    print(result)
-    return
-
-
-# ── 스트리밍 ────────────────────────────────────────────────────
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## 스트리밍 모드
-
-    `stream=True`가 기본값입니다. 제너레이터를 반환하므로 chunk 단위로 출력됩니다.
-    """)
-    return
-
-
-@app.cell
-def _(dartlab):
-    # stream=True (기본) → 제너레이터 반환
-    for chunk in dartlab.ask("삼성전자 수익성 추세를 분석해줘"):
+    # 원스톱 — 종목명을 텍스트에서 자동 추출, 스트리밍 기본
+    for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
         print(chunk, end="", flush=True)
     print()
     return
@@ -85,12 +66,18 @@ def _(mo):
 @app.cell
 def _(dartlab):
     # 밸류에이션 패턴으로 분석
-    result_val = dartlab.ask(
-        "삼성전자 저평가인지 분석해줘",
-        pattern="valuation",
-        stream=False,
-    )
-    print(result_val)
+    for chunk in dartlab.ask("삼성전자 저평가인지 분석해줘", pattern="valuation"):
+        print(chunk, end="", flush=True)
+    print()
+    return
+
+
+@app.cell
+def _(dartlab):
+    # 리스크 패턴
+    for chunk in dartlab.ask("삼성전자 리스크 요인을 분석해줘", pattern="risk"):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 
@@ -108,9 +95,10 @@ def _(mo):
 
 @app.cell
 def _(c):
-    # Company에서 바로 질문
-    result_direct = c.ask("배당 정책을 분석해줘", stream=False)
-    print(result_direct)
+    # Company에서 바로 질문 — 스트리밍 기본
+    for chunk in c.ask("배당 정책을 분석해줘"):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 
@@ -131,25 +119,18 @@ def _(mo):
 @app.cell
 def _(dartlab):
     # Ollama (로컬, 무료)
-    result_ollama = dartlab.ask(
-        "삼성전자 부채 구조를 분석해줘",
-        provider="ollama",
-        stream=False,
-    )
-    print(result_ollama)
+    for chunk in dartlab.ask("삼성전자 부채 구조를 분석해줘", provider="ollama"):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 
 @app.cell
 def _(dartlab):
     # OpenAI API
-    result_openai = dartlab.ask(
-        "SK하이닉스 밸류에이션을 분석해줘",
-        provider="openai",
-        model="gpt-4o",
-        stream=False,
-    )
-    print(result_openai)
+    for chunk in dartlab.ask("SK하이닉스 밸류에이션을 분석해줘", provider="openai", model="gpt-4o"):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 
@@ -167,24 +148,24 @@ def _(mo):
 @app.cell
 def _(dartlab):
     # 특정 데이터만 포함
-    result_focused = dartlab.ask(
+    for chunk in dartlab.ask(
         "삼성전자 재무상태표와 손익계산서만 보고 핵심 포인트를 알려줘",
         include=["BS", "IS"],
-        stream=False,
-    )
-    print(result_focused)
+    ):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 
 @app.cell
 def _(dartlab):
     # 특정 데이터 제외
-    result_exclude = dartlab.ask(
+    for chunk in dartlab.ask(
         "삼성전자를 전반적으로 분석해줘",
         exclude=["dividend", "segments"],
-        stream=False,
-    )
-    print(result_exclude)
+    ):
+        print(chunk, end="", flush=True)
+    print()
     return
 
 

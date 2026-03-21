@@ -433,24 +433,25 @@ DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이
 ```python
 import dartlab
 
-# 원스톱 분석 — 종목명을 텍스트에서 자동 추출
+# 원스톱 분석 — 종목명을 텍스트에서 자동 추출, 스트리밍 기본
 for chunk in dartlab.ask("삼성전자 재무건전성 분석해줘"):
     print(chunk, end="")
 
-# 전체 텍스트 (비스트리밍)
-answer = dartlab.ask("삼성전자 밸류에이션 분석", stream=False)
-
 # provider + model 지정
-answer = dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o", stream=False)
+for chunk in dartlab.ask("삼성전자 분석", provider="openai", model="gpt-4o"):
+    print(chunk, end="")
 
 # 데이터 필터링
-answer = dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"], stream=False)
+for chunk in dartlab.ask("삼성전자 핵심 포인트", include=["BS", "IS"]):
+    print(chunk, end="")
 
 # 분석 패턴 (프레임워크 기반)
-answer = dartlab.ask("삼성전자 분석", pattern="financial", stream=False)
+for chunk in dartlab.ask("삼성전자 분석", pattern="financial"):
+    print(chunk, end="")
 
 # 기존 2인자 형식도 호환
-answer = dartlab.ask("005930", "재무 건전성 분석", stream=False)
+for chunk in dartlab.ask("005930", "재무 건전성 분석"):
+    print(chunk, end="")
 
 # 에이전트 모드 — LLM이 도구를 선택하여 심화 분석
 answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
