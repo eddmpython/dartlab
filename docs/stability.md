@@ -27,6 +27,10 @@ Changes include a deprecation period with a migration guide.
 | `dartlab.search()` | Company search |
 | `dartlab.listing()` | Full listed company directory |
 | `Company.IS/BS/CF` | Authoritative statement shortcuts |
+| `Company.CIS` | Comprehensive income statement shortcut |
+| `Company.index` | Canonical topic × period board DataFrame |
+| `Company.filings()` | Filing document list |
+| `Company.profile` | Merged canonical company namespace |
 | `dartlab` CLI entrypoint | Public CLI command entry point |
 
 ### Tier 2: Beta
@@ -46,6 +50,21 @@ May change after a warning. Recorded in CHANGELOG.
 | `dartlab` subcommands/options | `ask`, `status`, `setup`, `ai`, `excel` command UX |
 | Server API `/api/*` | Web server endpoints |
 | `engines.ai.*` | AI/LLM engines |
+| `Company.SCE` | Statement of changes in equity (DART) |
+| `Company.sceMatrix` | SCE matrix view (DART) |
+| `Company.timeseries` | Quarterly standalone time-series |
+| `Company.annual` | Annual time-series |
+| `Company.ratios` | Financial ratio calculation |
+| `Company.ratioSeries` | Ratio time-series |
+| `Company.network()` | Affiliate network graph |
+| `Company.governance()` | Corporate governance data |
+| `Company.workforce()` | Workforce data |
+| `Company.capital()` | Capital structure |
+| `Company.debt()` | Debt details |
+| `Company.table()` | Inline table extraction |
+| `dartlab.chart` | Chart tool module |
+| `dartlab.table` | Table tool module |
+| `dartlab.text` | Text tool module |
 
 ### Tier 3: Experimental
 
@@ -101,3 +120,23 @@ DART core stable criteria:
 - Public subcommand and major option changes require at least 1 minor version of deprecated warning.
 - Exit codes are treated as contracts: `0` success, `1` runtime error, `2` usage error, `130` user interrupt.
 - Deprecated aliases may be hidden from help but must remain executable until removal.
+
+## EDGAR Topic Naming Convention
+
+EDGAR topics use `{formType}::{itemId}` format:
+
+- `10-K::item1Business` — Business description
+- `10-K::item1ARiskFactors` — Risk factors
+- `10-K::item7Mdna` — Management Discussion & Analysis
+
+Short aliases also work: `business`, `risk`, `mdna`, `governance`
+
+## DART / EDGAR Namespace Differences
+
+> DART `docs` namespace includes additional sections analysis methods
+> (coverage, cadence, semanticRegistry, structureRegistry, etc.)
+> not yet available for EDGAR. These are Tier 2 (Beta).
+>
+> DART has a `report` namespace (28 structured disclosure API types)
+> that does not exist in EDGAR — this reflects the structural difference
+> between DART and SEC filing systems.

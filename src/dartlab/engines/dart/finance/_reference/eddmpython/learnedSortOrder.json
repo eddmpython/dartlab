@@ -1,0 +1,6020 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "description": "재무제표 계정 정렬 순서 (K-IFRS 기준)",
+    "lastUpdated": "2026-01-24",
+    "source": "K-IFRS 표준 재무제표 양식 + standardAccounts.json korName 기반",
+    "note": "standardAccounts.json의 code는 정렬에 사용하지 않음. korName과 snakeId만 매핑에 사용"
+  },
+  "BS": {
+    "_description": "재무상태표: 유동자산 → 비유동자산 → 자산총계 → 유동부채 → 비유동부채 → 부채총계 → 자본 → 부채와자본총계",
+    "accounts": [
+      {
+        "accountNm": "유동자산",
+        "sortOrder": 1000,
+        "level": 1,
+        "snakeId": "current_assets"
+      },
+      {
+        "accountNm": "현금및현금성자산",
+        "sortOrder": 1010,
+        "level": 2,
+        "snakeId": "cash_and_cash_equivalents"
+      },
+      {
+        "accountNm": "현금및예치금",
+        "sortOrder": 1011,
+        "level": 2,
+        "snakeId": "cash_and_receivables_from_banks"
+      },
+      {
+        "accountNm": "단기금융상품",
+        "sortOrder": 1020,
+        "level": 2,
+        "snakeId": "shortterm_financial_instruments"
+      },
+      {
+        "accountNm": "단기금융자산",
+        "sortOrder": 1021,
+        "level": 2,
+        "snakeId": "current_financial_assets"
+      },
+      {
+        "accountNm": "단기투자자산",
+        "sortOrder": 1025,
+        "level": 2,
+        "snakeId": "shortterm_investment_assets"
+      },
+      {
+        "accountNm": "단기상각후원가금융자산",
+        "sortOrder": 1030,
+        "level": 2
+      },
+      {
+        "accountNm": "유동상각후원가측정금융자산",
+        "sortOrder": 1031,
+        "level": 2,
+        "snakeId": "financial_assets_at_amortised_cost"
+      },
+      {
+        "accountNm": "상각후원가측정유가증권",
+        "sortOrder": 1032,
+        "level": 2,
+        "snakeId": "securities_at_amortised_cost"
+      },
+      {
+        "accountNm": "상각후원가측정대출채권",
+        "sortOrder": 1033,
+        "level": 2,
+        "snakeId": "loans"
+      },
+      {
+        "accountNm": "단기당기손익-공정가치금융자산",
+        "sortOrder": 1040,
+        "level": 2
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산",
+        "sortOrder": 1041,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "단기당기손익인식금융자산",
+        "sortOrder": 1042,
+        "level": 2
+      },
+      {
+        "accountNm": "단기매매금융자산",
+        "sortOrder": 1043,
+        "level": 2,
+        "snakeId": "shortterm_trading_financial_assets"
+      },
+      {
+        "accountNm": "유동기타포괄손익-공정가치측정금융자산",
+        "sortOrder": 1045,
+        "level": 2,
+        "snakeId": "shortterm_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "유동기타포괄손익공정가치금융자산",
+        "sortOrder": 1046,
+        "level": 2,
+        "snakeId": "shortterm_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "유동당기손익인식지정금융자산",
+        "sortOrder": 1047,
+        "level": 2,
+        "snakeId": "shortterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "단기매도가능금융자산",
+        "sortOrder": 1050,
+        "level": 2,
+        "snakeId": "shortterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "유동매도가능금융자산",
+        "sortOrder": 1051,
+        "level": 2,
+        "snakeId": "shortterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "단기만기보유금융자산",
+        "sortOrder": 1055,
+        "level": 2,
+        "snakeId": "shortterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "기타단기금융자산",
+        "sortOrder": 1058,
+        "level": 2,
+        "snakeId": "other_current_financial_assets"
+      },
+      {
+        "accountNm": "단기파생상품자산",
+        "sortOrder": 1059,
+        "level": 2,
+        "snakeId": "shortterm_derivative_assets"
+      },
+      {
+        "accountNm": "매출채권",
+        "sortOrder": 1060,
+        "level": 2,
+        "snakeId": "trade_receivables"
+      },
+      {
+        "accountNm": "매출채권및기타채권",
+        "sortOrder": 1061,
+        "level": 2,
+        "snakeId": "trade_and_other_current_receivables"
+      },
+      {
+        "accountNm": "단기대출채권",
+        "sortOrder": 1062,
+        "level": 2,
+        "snakeId": "shortterm_loans"
+      },
+      {
+        "accountNm": "매출채권및기타유동채권",
+        "sortOrder": 1062,
+        "level": 2,
+        "snakeId": "trade_and_other_current_receivables"
+      },
+      {
+        "accountNm": "단기대여금",
+        "sortOrder": 1063,
+        "level": 2,
+        "snakeId": "shortterm_loans"
+      },
+      {
+        "accountNm": "금융리스채권",
+        "sortOrder": 1064,
+        "level": 2,
+        "snakeId": "assets_held_under_a_finance_lease"
+      },
+      {
+        "accountNm": "대출채권및기타수취채권",
+        "sortOrder": 1065,
+        "level": 2,
+        "snakeId": "longterm_loans"
+      },
+      {
+        "accountNm": "미수금",
+        "sortOrder": 1070,
+        "level": 2,
+        "snakeId": "receivables"
+      },
+      {
+        "accountNm": "단기미수금",
+        "sortOrder": 1071,
+        "level": 2,
+        "snakeId": "shortterm_other_receivables"
+      },
+      {
+        "accountNm": "기타미수금",
+        "sortOrder": 1072,
+        "level": 2,
+        "snakeId": "other_receivables"
+      },
+      {
+        "accountNm": "기타채권",
+        "sortOrder": 1073,
+        "level": 2,
+        "snakeId": "other_receivables"
+      },
+      {
+        "accountNm": "미수수익",
+        "sortOrder": 1075,
+        "level": 2,
+        "snakeId": "accrued_income"
+      },
+      {
+        "accountNm": "기타미수수익",
+        "sortOrder": 1076,
+        "level": 2,
+        "snakeId": "other_accrued_income"
+      },
+      {
+        "accountNm": "선급금",
+        "sortOrder": 1080,
+        "level": 2,
+        "snakeId": "advance_payments"
+      },
+      {
+        "accountNm": "기타선급금",
+        "sortOrder": 1081,
+        "level": 2,
+        "snakeId": "other_advance_payments"
+      },
+      {
+        "accountNm": "선급비용",
+        "sortOrder": 1085,
+        "level": 2,
+        "snakeId": "prepaid_expenses"
+      },
+      {
+        "accountNm": "유동만기보유금융자산",
+        "sortOrder": 1085,
+        "level": 2,
+        "snakeId": "shortterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "단기선급비용",
+        "sortOrder": 1086,
+        "level": 2,
+        "snakeId": "shortterm_prepaid_expenses"
+      },
+      {
+        "accountNm": "유동단기매매금융자산",
+        "sortOrder": 1088,
+        "level": 2,
+        "snakeId": "shortterm_trading_financial_assets"
+      },
+      {
+        "accountNm": "유동당기손익인식금융자산",
+        "sortOrder": 1089,
+        "level": 2,
+        "snakeId": "financial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "재고자산",
+        "sortOrder": 1090,
+        "level": 2,
+        "snakeId": "inventories"
+      },
+      {
+        "accountNm": "기타재고자산",
+        "sortOrder": 1091,
+        "level": 2,
+        "snakeId": "other_inventories"
+      },
+      {
+        "accountNm": "당기법인세자산",
+        "sortOrder": 1095,
+        "level": 2,
+        "snakeId": "current_income_tax_assetsprepaid_income_tax_payments"
+      },
+      {
+        "accountNm": "당기법인세자산(선급법인세)",
+        "sortOrder": 1096,
+        "level": 2,
+        "snakeId": "current_income_tax_assetsprepaid_income_tax_payments"
+      },
+      {
+        "accountNm": "기타유동자산",
+        "sortOrder": 1100,
+        "level": 2,
+        "snakeId": "other_current_assets"
+      },
+      {
+        "accountNm": "기타유동금융자산",
+        "sortOrder": 1101,
+        "level": 2,
+        "snakeId": "other_current_financial_assets"
+      },
+      {
+        "accountNm": "매각예정자산",
+        "sortOrder": 1110,
+        "level": 2,
+        "snakeId": "asset_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정분류자산",
+        "sortOrder": 1111,
+        "level": 2,
+        "snakeId": "noncurrent_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "매각예정비유동자산및처분자산",
+        "sortOrder": 1112,
+        "level": 2,
+        "snakeId": "noncurrent_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "매각예정비유동자산",
+        "sortOrder": 1113,
+        "level": 2,
+        "snakeId": "noncurrent_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "단기미수수익",
+        "sortOrder": 1145,
+        "level": 2,
+        "snakeId": "accrued_income"
+      },
+      {
+        "accountNm": "단기대여금및수취채권",
+        "sortOrder": 1146,
+        "level": 2,
+        "snakeId": "shortterm_loans"
+      },
+      {
+        "accountNm": "유동재고자산",
+        "sortOrder": 1180,
+        "level": 2,
+        "snakeId": "inventories"
+      },
+      {
+        "accountNm": "원재료",
+        "sortOrder": 1183,
+        "level": 2,
+        "snakeId": "raw_materialssubmaterials"
+      },
+      {
+        "accountNm": "기타재고",
+        "sortOrder": 1184,
+        "level": 2,
+        "snakeId": "inventories"
+      },
+      {
+        "accountNm": "소비용생물자산",
+        "sortOrder": 1185,
+        "level": 2,
+        "snakeId": "biological_assets"
+      },
+      {
+        "accountNm": "미착품",
+        "sortOrder": 1186,
+        "level": 2,
+        "snakeId": "goods_in_transit"
+      },
+      {
+        "accountNm": "재공품",
+        "sortOrder": 1187,
+        "level": 2,
+        "snakeId": "work_in_process"
+      },
+      {
+        "accountNm": "저장품",
+        "sortOrder": 1188,
+        "level": 2,
+        "snakeId": "suppliesconsumables"
+      },
+      {
+        "accountNm": "유동파생상품자산",
+        "sortOrder": 1190,
+        "level": 2,
+        "snakeId": "current_derivative_assets"
+      },
+      {
+        "accountNm": "단기보증금자산",
+        "sortOrder": 1192,
+        "level": 2,
+        "snakeId": "shortterm_deposits_provided"
+      },
+      {
+        "accountNm": "계약자산",
+        "sortOrder": 1195,
+        "level": 2,
+        "snakeId": "contract_assets"
+      },
+      {
+        "accountNm": "대손충당금",
+        "sortOrder": 1196,
+        "level": 2,
+        "snakeId": "allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "부가가치세대급금",
+        "sortOrder": 1197,
+        "level": 2,
+        "snakeId": "advance_payments"
+      },
+      {
+        "accountNm": "미청구공사",
+        "sortOrder": 1198,
+        "level": 2,
+        "snakeId": "construction_in_progress_receivables"
+      },
+      {
+        "accountNm": "기타수취채권",
+        "sortOrder": 1199,
+        "level": 2,
+        "snakeId": "other_receivables"
+      },
+      {
+        "accountNm": "비유동자산",
+        "sortOrder": 1200,
+        "level": 1,
+        "snakeId": "noncurrent_assets"
+      },
+      {
+        "accountNm": "장기금융상품",
+        "sortOrder": 1210,
+        "level": 2,
+        "snakeId": "longterm_financial_instruments"
+      },
+      {
+        "accountNm": "장기금융자산",
+        "sortOrder": 1211,
+        "level": 2,
+        "snakeId": "longterm_financial_assets"
+      },
+      {
+        "accountNm": "장기투자자산",
+        "sortOrder": 1215,
+        "level": 2,
+        "snakeId": "longterm_investment_assets"
+      },
+      {
+        "accountNm": "상각후원가금융자산",
+        "sortOrder": 1220,
+        "level": 2
+      },
+      {
+        "accountNm": "상각후원가측정금융자산",
+        "sortOrder": 1221,
+        "level": 2,
+        "snakeId": "financial_assets_at_amortised_cost"
+      },
+      {
+        "accountNm": "당기손익-공정가치금융자산",
+        "sortOrder": 1230,
+        "level": 2,
+        "snakeId": "other_current_financial_assets"
+      },
+      {
+        "accountNm": "장기당기손익인식금융자산",
+        "sortOrder": 1231,
+        "level": 2,
+        "snakeId": "longterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "비유동당기손익인식금융자산",
+        "sortOrder": 1232,
+        "level": 2,
+        "snakeId": "longterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치금융자산",
+        "sortOrder": 1240,
+        "level": 2
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산",
+        "sortOrder": 1241,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치 측정 비유동금융자산",
+        "sortOrder": 1242,
+        "level": 2
+      },
+      {
+        "accountNm": "비유동기타포괄손익공정가치금융자산",
+        "sortOrder": 1243,
+        "level": 2,
+        "snakeId": "longterm_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정유가증권",
+        "sortOrder": 1244,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "장기매도가능금융자산",
+        "sortOrder": 1250,
+        "level": 2,
+        "snakeId": "longterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "비유동매도가능금융자산",
+        "sortOrder": 1251,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타장기매도가능금융자산",
+        "sortOrder": 1252,
+        "level": 2,
+        "snakeId": "other_longterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "만기보유금융자산",
+        "sortOrder": 1260,
+        "level": 2,
+        "snakeId": "held_to_maturity_investments"
+      },
+      {
+        "accountNm": "비유동만기보유금융자산",
+        "sortOrder": 1261,
+        "level": 2,
+        "snakeId": "longterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "장기만기보유금융자산",
+        "sortOrder": 1262,
+        "level": 2,
+        "snakeId": "longterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "기타장기만기보유금융자산",
+        "sortOrder": 1263,
+        "level": 2,
+        "snakeId": "other_longterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "기타비유동금융자산",
+        "sortOrder": 1265,
+        "level": 2,
+        "snakeId": "other_noncurrent_financial_assets"
+      },
+      {
+        "accountNm": "장기파생상품자산",
+        "sortOrder": 1266,
+        "level": 2,
+        "snakeId": "longterm_derivative_assets"
+      },
+      {
+        "accountNm": "기타장기파생상품자산",
+        "sortOrder": 1267,
+        "level": 2,
+        "snakeId": "other_longterm_derivatives"
+      },
+      {
+        "accountNm": "위험회피목적파생상품자산",
+        "sortOrder": 1268,
+        "level": 2,
+        "snakeId": "longterm_derivative_assets"
+      },
+      {
+        "accountNm": "파생상품자산",
+        "sortOrder": 1269,
+        "level": 2,
+        "snakeId": "derivatives_assets"
+      },
+      {
+        "accountNm": "종속기업투자",
+        "sortOrder": 1270,
+        "level": 2,
+        "snakeId": "investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업, 관계기업 및 공동기업 투자",
+        "sortOrder": 1271,
+        "level": 2
+      },
+      {
+        "accountNm": "종속기업,조인트벤처와관계기업에대한투자자산",
+        "sortOrder": 1272,
+        "level": 2,
+        "snakeId": "investments_in_associates_subsidiaries_and_joint_venteures"
+      },
+      {
+        "accountNm": "종속기업에대한투자자산",
+        "sortOrder": 1273,
+        "level": 2,
+        "snakeId": "investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "관계기업투자",
+        "sortOrder": 1280,
+        "level": 2,
+        "snakeId": "investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업 및 공동기업 투자",
+        "sortOrder": 1281,
+        "level": 2,
+        "snakeId": "investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업투자(지분법적용투자)",
+        "sortOrder": 1282,
+        "level": 2,
+        "snakeId": "investments_in_associatesinvestments_in_equity_method"
+      },
+      {
+        "accountNm": "관계기업투자등(지분법적용투자주식)",
+        "sortOrder": 1283,
+        "level": 2,
+        "snakeId": "investments_in_associatesequity_method_securities"
+      },
+      {
+        "accountNm": "관계기업등지분관련투자자산",
+        "sortOrder": 1284,
+        "level": 2,
+        "snakeId": "investments_in_associates_subsidiaries_and_joint_venteures"
+      },
+      {
+        "accountNm": "관계종속기업투자자산-지분법",
+        "sortOrder": 1285,
+        "level": 2
+      },
+      {
+        "accountNm": "지분법적용투자지분",
+        "sortOrder": 1286,
+        "level": 2,
+        "snakeId": "investments_in_equity_method"
+      },
+      {
+        "accountNm": "지분법적용투자주식",
+        "sortOrder": 1287,
+        "level": 2
+      },
+      {
+        "accountNm": "관계기업에대한투자자산",
+        "sortOrder": 1288,
+        "level": 2,
+        "snakeId": "investments_in_associates"
+      },
+      {
+        "accountNm": "장기대여금",
+        "sortOrder": 1290,
+        "level": 2,
+        "snakeId": "longterm_loans"
+      },
+      {
+        "accountNm": "장기대출채권",
+        "sortOrder": 1291,
+        "level": 2,
+        "snakeId": "longterm_loans"
+      },
+      {
+        "accountNm": "장기미수금",
+        "sortOrder": 1295,
+        "level": 2,
+        "snakeId": "longterm_receivables"
+      },
+      {
+        "accountNm": "장기미수금등",
+        "sortOrder": 1296,
+        "level": 2,
+        "snakeId": "longterm_accounts_receivablesconstruction_work"
+      },
+      {
+        "accountNm": "장기매출채권",
+        "sortOrder": 1297,
+        "level": 2,
+        "snakeId": "longterm_trade_receivables"
+      },
+      {
+        "accountNm": "기타비유동채권",
+        "sortOrder": 1298,
+        "level": 2,
+        "snakeId": "lt_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "장기매출채권및기타채권",
+        "sortOrder": 1298,
+        "level": 2,
+        "snakeId": "lt_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "장기매출채권및기타비유동채권",
+        "sortOrder": 1299,
+        "level": 2,
+        "snakeId": "lt_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "유형자산",
+        "sortOrder": 1300,
+        "level": 2,
+        "snakeId": "property_plant_and_equipment"
+      },
+      {
+        "accountNm": "기타유형자산",
+        "sortOrder": 1301,
+        "level": 2,
+        "snakeId": "other_property_plant_equipment"
+      },
+      {
+        "accountNm": "건설중인자산",
+        "sortOrder": 1302,
+        "level": 2,
+        "snakeId": "construction_in_progress"
+      },
+      {
+        "accountNm": "사용권자산",
+        "sortOrder": 1310,
+        "level": 2,
+        "snakeId": "right_of_use_assets"
+      },
+      {
+        "accountNm": "리스자산",
+        "sortOrder": 1311,
+        "level": 2,
+        "snakeId": "leased_assets"
+      },
+      {
+        "accountNm": "리스(사용권)자산",
+        "sortOrder": 1312,
+        "level": 2,
+        "snakeId": "leased_assets"
+      },
+      {
+        "accountNm": "기타리스(사용권)자산",
+        "sortOrder": 1313,
+        "level": 2,
+        "snakeId": "other_leased_assets"
+      },
+      {
+        "accountNm": "기타리스자산",
+        "sortOrder": 1314,
+        "level": 2,
+        "snakeId": "other_leased_assets"
+      },
+      {
+        "accountNm": "렌탈자산",
+        "sortOrder": 1315,
+        "level": 2,
+        "snakeId": "rental_assets"
+      },
+      {
+        "accountNm": "생산용생물자산",
+        "sortOrder": 1350,
+        "level": 2,
+        "snakeId": "biological_assets"
+      },
+      {
+        "accountNm": "무형자산",
+        "sortOrder": 1400,
+        "level": 2,
+        "snakeId": "intangible_assets"
+      },
+      {
+        "accountNm": "기타무형자산",
+        "sortOrder": 1401,
+        "level": 2,
+        "snakeId": "other_intangible_assets"
+      },
+      {
+        "accountNm": "개발중인무형자산",
+        "sortOrder": 1402,
+        "level": 2,
+        "snakeId": "intangible_assets_under_development"
+      },
+      {
+        "accountNm": "영업권",
+        "sortOrder": 1410,
+        "level": 2,
+        "snakeId": "goodwill"
+      },
+      {
+        "accountNm": "투자부동산",
+        "sortOrder": 1450,
+        "level": 2,
+        "snakeId": "investment_in_properties"
+      },
+      {
+        "accountNm": "기타투자부동산",
+        "sortOrder": 1451,
+        "level": 2,
+        "snakeId": "other_investment_in_properties"
+      },
+      {
+        "accountNm": "순확정급여자산",
+        "sortOrder": 1500,
+        "level": 2,
+        "snakeId": "defined_benefit_assets"
+      },
+      {
+        "accountNm": "확정급여자산",
+        "sortOrder": 1501,
+        "level": 2,
+        "snakeId": "defined_benefit_assets"
+      },
+      {
+        "accountNm": "퇴직급여자산",
+        "sortOrder": 1502,
+        "level": 2
+      },
+      {
+        "accountNm": "이연법인세자산",
+        "sortOrder": 1600,
+        "level": 2,
+        "snakeId": "deferred_tax_assets"
+      },
+      {
+        "accountNm": "장기선급비용",
+        "sortOrder": 1700,
+        "level": 2,
+        "snakeId": "longterm_prepaid_expenses"
+      },
+      {
+        "accountNm": "장기선급금",
+        "sortOrder": 1710,
+        "level": 2,
+        "snakeId": "longterm_advance_payments"
+      },
+      {
+        "accountNm": "장기보증금자산",
+        "sortOrder": 1720,
+        "level": 2,
+        "snakeId": "longterm_gurarantee"
+      },
+      {
+        "accountNm": "장기임차보증금",
+        "sortOrder": 1721,
+        "level": 2,
+        "snakeId": "longterm_leasehold_deposits_provided"
+      },
+      {
+        "accountNm": "보험계약자산",
+        "sortOrder": 1750,
+        "level": 2,
+        "snakeId": "insurance_contract_assets"
+      },
+      {
+        "accountNm": "재보험계약자산",
+        "sortOrder": 1751,
+        "level": 2,
+        "snakeId": "reinsurance_assets"
+      },
+      {
+        "accountNm": "특별계정자산_IFRS4",
+        "sortOrder": 1760,
+        "level": 2,
+        "snakeId": "separate_account_credits"
+      },
+      {
+        "accountNm": "기타비유동자산",
+        "sortOrder": 1800,
+        "level": 2,
+        "snakeId": "other_noncurrent_financial_assets"
+      },
+      {
+        "accountNm": "기타자산",
+        "sortOrder": 1801,
+        "level": 2,
+        "snakeId": "other_assets"
+      },
+      {
+        "accountNm": "자산총계",
+        "sortOrder": 1900,
+        "level": 1,
+        "snakeId": "assets"
+      },
+      {
+        "accountNm": "자산",
+        "sortOrder": 1901,
+        "level": 1,
+        "snakeId": "assets"
+      },
+      {
+        "accountNm": "유동부채",
+        "sortOrder": 2000,
+        "level": 1,
+        "snakeId": "current_liabilities"
+      },
+      {
+        "accountNm": "매입채무",
+        "sortOrder": 2010,
+        "level": 2,
+        "snakeId": "trade_payables"
+      },
+      {
+        "accountNm": "매입채무및기타채무",
+        "sortOrder": 2011,
+        "level": 2,
+        "snakeId": "trade_and_other_current_payables"
+      },
+      {
+        "accountNm": "단기매입채무및기타유동채무",
+        "sortOrder": 2012,
+        "level": 2,
+        "snakeId": "shortterm_trade_and_other_current_payables"
+      },
+      {
+        "accountNm": "매입채무및기타유동채무",
+        "sortOrder": 2015,
+        "level": 2,
+        "snakeId": "trade_and_other_payables"
+      },
+      {
+        "accountNm": "단기차입금",
+        "sortOrder": 2020,
+        "level": 2,
+        "snakeId": "shortterm_borrowings"
+      },
+      {
+        "accountNm": "기타단기차입금",
+        "sortOrder": 2021,
+        "level": 2,
+        "snakeId": "other_shortterm_borrowings"
+      },
+      {
+        "accountNm": "금융기관차입금",
+        "sortOrder": 2022,
+        "level": 2,
+        "snakeId": "borrowings_from_financial_institutes"
+      },
+      {
+        "accountNm": "차입금",
+        "sortOrder": 2023,
+        "level": 2,
+        "snakeId": "borrowings"
+      },
+      {
+        "accountNm": "차입부채",
+        "sortOrder": 2024,
+        "level": 2,
+        "snakeId": "borrowings"
+      },
+      {
+        "accountNm": "단기사채",
+        "sortOrder": 2025,
+        "level": 2,
+        "snakeId": "shortterm_bonds"
+      },
+      {
+        "accountNm": "상각후원가측정금융부채",
+        "sortOrder": 2026,
+        "level": 2,
+        "snakeId": "financial_liabilities_at_amortised_cost"
+      },
+      {
+        "accountNm": "미지급금",
+        "sortOrder": 2030,
+        "level": 2,
+        "snakeId": "other_payables"
+      },
+      {
+        "accountNm": "단기미지급금",
+        "sortOrder": 2031,
+        "level": 2,
+        "snakeId": "other_payables"
+      },
+      {
+        "accountNm": "기타미지급금",
+        "sortOrder": 2032,
+        "level": 2,
+        "snakeId": "other_payables_others"
+      },
+      {
+        "accountNm": "미지급비용",
+        "sortOrder": 2040,
+        "level": 2,
+        "snakeId": "accrued_expenses"
+      },
+      {
+        "accountNm": "단기미지급비용",
+        "sortOrder": 2041,
+        "level": 2,
+        "snakeId": "shortterm_accrued_expenses"
+      },
+      {
+        "accountNm": "기타미지급비용",
+        "sortOrder": 2042,
+        "level": 2,
+        "snakeId": "other_accrued_expenses"
+      },
+      {
+        "accountNm": "기타지급채무",
+        "sortOrder": 2045,
+        "level": 2,
+        "snakeId": "other_payables"
+      },
+      {
+        "accountNm": "선수금",
+        "sortOrder": 2050,
+        "level": 2,
+        "snakeId": "advance_from_customers"
+      },
+      {
+        "accountNm": "단기선수금",
+        "sortOrder": 2051,
+        "level": 2,
+        "snakeId": "shortterm_advance_from_customers"
+      },
+      {
+        "accountNm": "기타선수금",
+        "sortOrder": 2052,
+        "level": 2,
+        "snakeId": "others_in_advance_from_customers"
+      },
+      {
+        "accountNm": "선수수익",
+        "sortOrder": 2055,
+        "level": 2,
+        "snakeId": "unearned_income"
+      },
+      {
+        "accountNm": "계약부채",
+        "sortOrder": 2056,
+        "level": 2,
+        "snakeId": "contract_liabilities"
+      },
+      {
+        "accountNm": "예수금",
+        "sortOrder": 2060,
+        "level": 2,
+        "snakeId": "withholdings"
+      },
+      {
+        "accountNm": "단기예수금",
+        "sortOrder": 2061,
+        "level": 2,
+        "snakeId": "withholdings"
+      },
+      {
+        "accountNm": "기타예수금",
+        "sortOrder": 2062,
+        "level": 2,
+        "snakeId": "other_withholdings"
+      },
+      {
+        "accountNm": "예수부채",
+        "sortOrder": 2063,
+        "level": 2,
+        "snakeId": "deposits_liabilities"
+      },
+      {
+        "accountNm": "예수보증금",
+        "sortOrder": 2065,
+        "level": 2,
+        "snakeId": "guarantee_deposits_withhold"
+      },
+      {
+        "accountNm": "미지급법인세",
+        "sortOrder": 2070,
+        "level": 2,
+        "snakeId": "income_taxes_payable"
+      },
+      {
+        "accountNm": "당기법인세부채",
+        "sortOrder": 2075,
+        "level": 2,
+        "snakeId": "current_income_tax_liabilitiesincome_taxes_payable"
+      },
+      {
+        "accountNm": "유동성장기부채",
+        "sortOrder": 2080,
+        "level": 2,
+        "snakeId": "current_portion_of_longterm_debt"
+      },
+      {
+        "accountNm": "유동성장기차입금",
+        "sortOrder": 2081,
+        "level": 2,
+        "snakeId": "current_portion_of_longterm_borrowings"
+      },
+      {
+        "accountNm": "유동성사채",
+        "sortOrder": 2082,
+        "level": 2,
+        "snakeId": "current_portion_of_bonds"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융부채",
+        "sortOrder": 2083,
+        "level": 2,
+        "snakeId": "financial_liabilities_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정지정금융부채",
+        "sortOrder": 2084,
+        "level": 2,
+        "snakeId": "financial_liabilities_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "단기금융부채",
+        "sortOrder": 2085,
+        "level": 2,
+        "snakeId": "shortterm_financial_liabilities"
+      },
+      {
+        "accountNm": "단기파생상품부채",
+        "sortOrder": 2086,
+        "level": 2,
+        "snakeId": "shortterm_derivative_liabilities"
+      },
+      {
+        "accountNm": "기타유동금융부채",
+        "sortOrder": 2087,
+        "level": 2,
+        "snakeId": "other_current_financial_liabilities"
+      },
+      {
+        "accountNm": "유동리스부채",
+        "sortOrder": 2088,
+        "level": 2,
+        "snakeId": "current_lease_liabilities"
+      },
+      {
+        "accountNm": "유동당기손익인식지정금융부채",
+        "sortOrder": 2089,
+        "level": 2,
+        "snakeId": "shortterm_trading_financial_liabilities"
+      },
+      {
+        "accountNm": "충당부채",
+        "sortOrder": 2090,
+        "level": 2,
+        "snakeId": "provisions"
+      },
+      {
+        "accountNm": "리스부채",
+        "sortOrder": 2090,
+        "level": 2,
+        "snakeId": "lease_obligations"
+      },
+      {
+        "accountNm": "유동충당부채",
+        "sortOrder": 2091,
+        "level": 2,
+        "snakeId": "current_provisions"
+      },
+      {
+        "accountNm": "단기충당부채",
+        "sortOrder": 2092,
+        "level": 2,
+        "snakeId": "other_shortterm_provisions"
+      },
+      {
+        "accountNm": "기타단기충당부채",
+        "sortOrder": 2093,
+        "level": 2,
+        "snakeId": "other_shortterm_provisions"
+      },
+      {
+        "accountNm": "기타충당부채",
+        "sortOrder": 2094,
+        "level": 2,
+        "snakeId": "other_allowance"
+      },
+      {
+        "accountNm": "퇴직급여부채",
+        "sortOrder": 2095,
+        "level": 2,
+        "snakeId": "defined_benefit_liability"
+      },
+      {
+        "accountNm": "기타유동부채",
+        "sortOrder": 2100,
+        "level": 2,
+        "snakeId": "other_current_liabilities"
+      },
+      {
+        "accountNm": "기타 유동부채",
+        "sortOrder": 2101,
+        "level": 2,
+        "snakeId": "other_current_liabilities"
+      },
+      {
+        "accountNm": "매각예정분류부채",
+        "sortOrder": 2110,
+        "level": 2
+      },
+      {
+        "accountNm": "매각예정부채",
+        "sortOrder": 2111,
+        "level": 2,
+        "snakeId": "liabilities_included_in_disposal_groups_classified_as_held_for_sale"
+      },
+      {
+        "accountNm": "비유동파생상품자산",
+        "sortOrder": 2190,
+        "level": 2,
+        "snakeId": "noncurrent_derivative_assets"
+      },
+      {
+        "accountNm": "기타금융자산",
+        "sortOrder": 2195,
+        "level": 2,
+        "snakeId": "other_financial_assets"
+      },
+      {
+        "accountNm": "비유동부채",
+        "sortOrder": 2200,
+        "level": 1,
+        "snakeId": "noncurrent_liabilities"
+      },
+      {
+        "accountNm": "공동기업투자",
+        "sortOrder": 2200,
+        "level": 2,
+        "snakeId": "investments_in_joint_ventures"
+      },
+      {
+        "accountNm": "사채",
+        "sortOrder": 2210,
+        "level": 2,
+        "snakeId": "bonds"
+      },
+      {
+        "accountNm": "장기금융리스채권",
+        "sortOrder": 2210,
+        "level": 2,
+        "snakeId": "longterm_finance_lease_receivables"
+      },
+      {
+        "accountNm": "전환사채",
+        "sortOrder": 2211,
+        "level": 2,
+        "snakeId": "convertible_bonds"
+      },
+      {
+        "accountNm": "신주인수권부사채",
+        "sortOrder": 2212,
+        "level": 2,
+        "snakeId": "bonds_with_stock_warrants"
+      },
+      {
+        "accountNm": "장기차입금",
+        "sortOrder": 2220,
+        "level": 2,
+        "snakeId": "longterm_borrowings"
+      },
+      {
+        "accountNm": "정부보조금",
+        "sortOrder": 2220,
+        "level": 2,
+        "snakeId": "government_grants"
+      },
+      {
+        "accountNm": "기타장기차입금",
+        "sortOrder": 2221,
+        "level": 2,
+        "snakeId": "other_longterm_borrowings"
+      },
+      {
+        "accountNm": "장기금융부채",
+        "sortOrder": 2225,
+        "level": 2,
+        "snakeId": "longterm_financial_liabilities"
+      },
+      {
+        "accountNm": "비유동당기손익인식금융부채",
+        "sortOrder": 2226,
+        "level": 2,
+        "snakeId": "financial_liability_at_fv_through_profit"
+      },
+      {
+        "accountNm": "장기미지급금",
+        "sortOrder": 2230,
+        "level": 2,
+        "snakeId": "longterm_other_payables"
+      },
+      {
+        "accountNm": "차량운반구",
+        "sortOrder": 2230,
+        "level": 2,
+        "snakeId": "motor_vehicles"
+      },
+      {
+        "accountNm": "기타장기미지급금",
+        "sortOrder": 2231,
+        "level": 2,
+        "snakeId": "longterm_other_payables_others"
+      },
+      {
+        "accountNm": "공구와기구",
+        "sortOrder": 2231,
+        "level": 2,
+        "snakeId": "tools_and_office_equipment"
+      },
+      {
+        "accountNm": "장기미지급비용",
+        "sortOrder": 2232,
+        "level": 2,
+        "snakeId": "longterm_accrued_expenses"
+      },
+      {
+        "accountNm": "구축물",
+        "sortOrder": 2232,
+        "level": 2,
+        "snakeId": "structures"
+      },
+      {
+        "accountNm": "장기미지급금및지급채무",
+        "sortOrder": 2233,
+        "level": 2,
+        "snakeId": "longterm_other_payables"
+      },
+      {
+        "accountNm": "사무용비품",
+        "sortOrder": 2233,
+        "level": 2,
+        "snakeId": "tools_and_office_equipment"
+      },
+      {
+        "accountNm": "집기",
+        "sortOrder": 2234,
+        "level": 2,
+        "snakeId": "office_furniture_and_equipment"
+      },
+      {
+        "accountNm": "장기매입채무및기타비유동채무",
+        "sortOrder": 2235,
+        "level": 2,
+        "snakeId": "longterm_trade_and_other_noncurrent_payables"
+      },
+      {
+        "accountNm": "시설물",
+        "sortOrder": 2235,
+        "level": 2,
+        "snakeId": "facilities"
+      },
+      {
+        "accountNm": "장기매입채무및기타채무",
+        "sortOrder": 2236,
+        "level": 2,
+        "snakeId": "longterm_trade_and_other_noncurrent_payables"
+      },
+      {
+        "accountNm": "장기선수금",
+        "sortOrder": 2240,
+        "level": 2,
+        "snakeId": "longterm_advance_from_customers"
+      },
+      {
+        "accountNm": "감가상각누계액",
+        "sortOrder": 2240,
+        "level": 2,
+        "snakeId": "accumulated_depreciation"
+      },
+      {
+        "accountNm": "장기선수수익",
+        "sortOrder": 2241,
+        "level": 2,
+        "snakeId": "longterm_unearned_income"
+      },
+      {
+        "accountNm": "손상차손누계액",
+        "sortOrder": 2241,
+        "level": 2,
+        "snakeId": "accumulated_impairment_losses"
+      },
+      {
+        "accountNm": "장기예수보증금",
+        "sortOrder": 2245,
+        "level": 2,
+        "snakeId": "longterm_guarantee_deposits_withhold"
+      },
+      {
+        "accountNm": "장기파생상품부채",
+        "sortOrder": 2250,
+        "level": 2,
+        "snakeId": "longterm_derivative_liabilities"
+      },
+      {
+        "accountNm": "사외적립자산의공정가치",
+        "sortOrder": 2250,
+        "level": 2,
+        "snakeId": "plan_assets"
+      },
+      {
+        "accountNm": "기타장기파생상품부채",
+        "sortOrder": 2251,
+        "level": 2,
+        "snakeId": "other_longterm_derivatives"
+      },
+      {
+        "accountNm": "퇴직급여운용자산/퇴직연금운용자산",
+        "sortOrder": 2251,
+        "level": 2,
+        "snakeId": "plan_assets"
+      },
+      {
+        "accountNm": "위험회피목적파생상품부채",
+        "sortOrder": 2252,
+        "level": 2,
+        "snakeId": "longterm_derivative_liabilities"
+      },
+      {
+        "accountNm": "파생상품부채",
+        "sortOrder": 2253,
+        "level": 2,
+        "snakeId": "derivatives_liabilities"
+      },
+      {
+        "accountNm": "기타비유동금융부채",
+        "sortOrder": 2255,
+        "level": 2,
+        "snakeId": "other_longterm_financial_liabilities"
+      },
+      {
+        "accountNm": "비유동리스부채",
+        "sortOrder": 2260,
+        "level": 2,
+        "snakeId": "noncurrent_lease_liabilities"
+      },
+      {
+        "accountNm": "컴퓨터소프트웨어",
+        "sortOrder": 2260,
+        "level": 2,
+        "snakeId": "computer_software"
+      },
+      {
+        "accountNm": "비유동금융리스부채",
+        "sortOrder": 2261,
+        "level": 2,
+        "snakeId": "noncurrent_lease_liabilities"
+      },
+      {
+        "accountNm": "저작권,특허권,기타산업재산권,용역운영권",
+        "sortOrder": 2270,
+        "level": 2,
+        "snakeId": "copyrights"
+      },
+      {
+        "accountNm": "순확정급여부채",
+        "sortOrder": 2300,
+        "level": 2,
+        "snakeId": "defined_benefit_liabilities"
+      },
+      {
+        "accountNm": "확정급여부채",
+        "sortOrder": 2301,
+        "level": 2,
+        "snakeId": "defined_benefit_liability"
+      },
+      {
+        "accountNm": "퇴직급여충당부채",
+        "sortOrder": 2302,
+        "level": 2
+      },
+      {
+        "accountNm": "비유동종업원급여충당부채",
+        "sortOrder": 2303,
+        "level": 2,
+        "snakeId": "noncurrent_provisions_for_employee_benefits"
+      },
+      {
+        "accountNm": "확정급여채무의현재가치",
+        "sortOrder": 2305,
+        "level": 2,
+        "snakeId": "present_value_of_defined_benefit_obligations"
+      },
+      {
+        "accountNm": "이연법인세부채",
+        "sortOrder": 2400,
+        "level": 2,
+        "snakeId": "deferred_tax_liabilities"
+      },
+      {
+        "accountNm": "장기당기법인세부채",
+        "sortOrder": 2401,
+        "level": 2
+      },
+      {
+        "accountNm": "장기충당부채",
+        "sortOrder": 2500,
+        "level": 2,
+        "snakeId": "longterm_provisions"
+      },
+      {
+        "accountNm": "비유동충당부채",
+        "sortOrder": 2501,
+        "level": 2,
+        "snakeId": "noncurrent_provisions"
+      },
+      {
+        "accountNm": "기타장기충당부채",
+        "sortOrder": 2502,
+        "level": 2,
+        "snakeId": "other_longterm_provisions"
+      },
+      {
+        "accountNm": "기타비유동부채",
+        "sortOrder": 2600,
+        "level": 2,
+        "snakeId": "other_noncurrent_liabilities"
+      },
+      {
+        "accountNm": "기타 비유동 부채",
+        "sortOrder": 2601,
+        "level": 2,
+        "snakeId": "other_noncurrent_liabilities"
+      },
+      {
+        "accountNm": "기타부채",
+        "sortOrder": 2602,
+        "level": 2,
+        "snakeId": "other_liabilities"
+      },
+      {
+        "accountNm": "보험계약부채",
+        "sortOrder": 2700,
+        "level": 2,
+        "snakeId": "insurance_contract_liabilities"
+      },
+      {
+        "accountNm": "재보험계약부채",
+        "sortOrder": 2701,
+        "level": 2,
+        "snakeId": "reserve_for_outstanding_claims_for_reinsurance_ceded"
+      },
+      {
+        "accountNm": "투자계약부채",
+        "sortOrder": 2702,
+        "level": 2,
+        "snakeId": "financial_liabilities_at_amortised_cost"
+      },
+      {
+        "accountNm": "특별계정부채_IFRS4",
+        "sortOrder": 2710,
+        "level": 2,
+        "snakeId": "separate_account_liabilities"
+      },
+      {
+        "accountNm": "부채총계",
+        "sortOrder": 2900,
+        "level": 1,
+        "snakeId": "liabilities"
+      },
+      {
+        "accountNm": "부채",
+        "sortOrder": 2901,
+        "level": 1,
+        "snakeId": "liabilities"
+      },
+      {
+        "accountNm": "지배기업 소유주지분",
+        "sortOrder": 3000,
+        "level": 1,
+        "snakeId": "owners_of_parent_equity"
+      },
+      {
+        "accountNm": "지배기업의 소유주에게 귀속되는 자본",
+        "sortOrder": 3001,
+        "level": 1,
+        "snakeId": "owners_of_parent_equity"
+      },
+      {
+        "accountNm": "지배주주지분",
+        "sortOrder": 3002,
+        "level": 1,
+        "snakeId": "owners_of_parent_equity"
+      },
+      {
+        "accountNm": "납입자본",
+        "sortOrder": 3005,
+        "level": 2,
+        "snakeId": "paidin_capital"
+      },
+      {
+        "accountNm": "자본금",
+        "sortOrder": 3010,
+        "level": 2,
+        "snakeId": "capital_stock"
+      },
+      {
+        "accountNm": "보통주자본금",
+        "sortOrder": 3011,
+        "level": 3,
+        "snakeId": "common_stock"
+      },
+      {
+        "accountNm": "우선주자본금",
+        "sortOrder": 3012,
+        "level": 3,
+        "snakeId": "preferred_stock"
+      },
+      {
+        "accountNm": "주식발행초과금",
+        "sortOrder": 3100,
+        "level": 2,
+        "snakeId": "paidin_capital_in_excess_of_par_value"
+      },
+      {
+        "accountNm": "자본잉여금",
+        "sortOrder": 3110,
+        "level": 2,
+        "snakeId": "capital_surplus"
+      },
+      {
+        "accountNm": "기타자본잉여금",
+        "sortOrder": 3111,
+        "level": 2,
+        "snakeId": "other_capital_surplus"
+      },
+      {
+        "accountNm": "재평가잉여금",
+        "sortOrder": 3115,
+        "level": 2,
+        "snakeId": "revaluation_surplus"
+      },
+      {
+        "accountNm": "이익잉여금",
+        "sortOrder": 3200,
+        "level": 2,
+        "snakeId": "retained_earnings"
+      },
+      {
+        "accountNm": "이익잉여금(결손금)",
+        "sortOrder": 3201,
+        "level": 2,
+        "snakeId": "retained_earnings"
+      },
+      {
+        "accountNm": "미처분이익잉여금",
+        "sortOrder": 3210,
+        "level": 2,
+        "snakeId": "unappropriated_retained_earnings_deficit"
+      },
+      {
+        "accountNm": "미처분이익잉여금(결손금)",
+        "sortOrder": 3211,
+        "level": 2,
+        "snakeId": "unappropriated_retained_earnings_deficit"
+      },
+      {
+        "accountNm": "기타이익잉여금",
+        "sortOrder": 3215,
+        "level": 2,
+        "snakeId": "other_retained_earnings"
+      },
+      {
+        "accountNm": "기타자본항목",
+        "sortOrder": 3300,
+        "level": 2,
+        "snakeId": "other_reserves"
+      },
+      {
+        "accountNm": "기타자본구성요소",
+        "sortOrder": 3301,
+        "level": 2,
+        "snakeId": "other_equity"
+      },
+      {
+        "accountNm": "기타자본",
+        "sortOrder": 3302,
+        "level": 2,
+        "snakeId": "other_reserves"
+      },
+      {
+        "accountNm": "자본조정",
+        "sortOrder": 3305,
+        "level": 2,
+        "snakeId": "other_reserves"
+      },
+      {
+        "accountNm": "자기주식",
+        "sortOrder": 3310,
+        "level": 2,
+        "snakeId": "treasury_stock"
+      },
+      {
+        "accountNm": "계약자지분조정",
+        "sortOrder": 3320,
+        "level": 2,
+        "snakeId": "policyholders_equity_adjustment"
+      },
+      {
+        "accountNm": "기타포괄손익누계액",
+        "sortOrder": 3400,
+        "level": 2,
+        "snakeId": "accumulated_other_comprehensive_income"
+      },
+      {
+        "accountNm": "매각예정분류기타자본항목",
+        "sortOrder": 3450,
+        "level": 2,
+        "snakeId": "noncurrent_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "매각예정자산과관련된자본",
+        "sortOrder": 3451,
+        "level": 2,
+        "snakeId": "equity_related_to_assets_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정자산관련기타포괄손익누계액",
+        "sortOrder": 3452,
+        "level": 2,
+        "snakeId": "accumulated_oci_related_to_assets_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정자산관련기타포괄순익누계액",
+        "sortOrder": 3453,
+        "level": 2,
+        "snakeId": "accumulated_oci_related_to_assets_held_for_sale"
+      },
+      {
+        "accountNm": "신종자본증권",
+        "sortOrder": 3500,
+        "level": 2,
+        "snakeId": "hybrid_bond"
+      },
+      {
+        "accountNm": "비지배지분",
+        "sortOrder": 3600,
+        "level": 1,
+        "snakeId": "noncontrolling_interests_equity"
+      },
+      {
+        "accountNm": "비지배주주지분",
+        "sortOrder": 3601,
+        "level": 1,
+        "snakeId": "noncontrolling_interests_equity"
+      },
+      {
+        "accountNm": "자본총계",
+        "sortOrder": 3900,
+        "level": 1,
+        "snakeId": "stockholders_equity"
+      },
+      {
+        "accountNm": "자본",
+        "sortOrder": 3901,
+        "level": 1,
+        "snakeId": "stockholders_equity"
+      },
+      {
+        "accountNm": "부채와자본총계",
+        "sortOrder": 4000,
+        "level": 1
+      },
+      {
+        "accountNm": "자본과부채총계",
+        "sortOrder": 4001,
+        "level": 1,
+        "snakeId": "total_liabilities_and_equity"
+      },
+      {
+        "accountNm": "유동파생상품부채",
+        "sortOrder": 4110,
+        "level": 2,
+        "snakeId": "current_derivative_liabilities"
+      },
+      {
+        "accountNm": "유동성전환사채",
+        "sortOrder": 4120,
+        "level": 2,
+        "snakeId": "current_portion_of_convertible_bonds"
+      },
+      {
+        "accountNm": "미지급배당금",
+        "sortOrder": 4130,
+        "level": 2,
+        "snakeId": "accrued_dividends"
+      },
+      {
+        "accountNm": "유동성전환상환우선주부채",
+        "sortOrder": 4140,
+        "level": 2,
+        "snakeId": "longterm_preferred_stock_of_redemption"
+      },
+      {
+        "accountNm": "유동금융보증부채",
+        "sortOrder": 4150,
+        "level": 2,
+        "snakeId": "current_financial_guarantee_liabilities"
+      },
+      {
+        "accountNm": "반품충당부채",
+        "sortOrder": 4160,
+        "level": 2,
+        "snakeId": "returned_products_provisions"
+      },
+      {
+        "accountNm": "유동반품충당부채",
+        "sortOrder": 4165,
+        "level": 2,
+        "snakeId": "returned_products_provisions"
+      },
+      {
+        "accountNm": "유동성금융리스부채",
+        "sortOrder": 4170,
+        "level": 2,
+        "snakeId": "current_portion_of_lease_obligationsother_payables"
+      },
+      {
+        "accountNm": "부가가치세예수금",
+        "sortOrder": 4180,
+        "level": 2,
+        "snakeId": "withholdings"
+      },
+      {
+        "accountNm": "초과청구공사",
+        "sortOrder": 4190,
+        "level": 2,
+        "snakeId": "gross_amount_due_to_customers_for_contract_work"
+      },
+      {
+        "accountNm": "단기임대보증금",
+        "sortOrder": 4200,
+        "level": 2,
+        "snakeId": "leasehold_deposits_received"
+      },
+      {
+        "accountNm": "유동성신주인수권부사채",
+        "sortOrder": 4210,
+        "level": 2,
+        "snakeId": "bonds_with_stock_warrants"
+      },
+      {
+        "accountNm": "유동성장기미지급금",
+        "sortOrder": 4220,
+        "level": 2,
+        "snakeId": "current_portion_of_longterm_debt"
+      },
+      {
+        "accountNm": "유동성교환사채",
+        "sortOrder": 4230,
+        "level": 2,
+        "snakeId": "current_portion_of_bonds"
+      },
+      {
+        "accountNm": "비유동파생상품부채",
+        "sortOrder": 5110,
+        "level": 2,
+        "snakeId": "noncurrent_derivative_liabilities"
+      },
+      {
+        "accountNm": "장기매입채무",
+        "sortOrder": 5115,
+        "level": 2,
+        "snakeId": "longterm_trade_payables"
+      },
+      {
+        "accountNm": "장기임대보증금",
+        "sortOrder": 5120,
+        "level": 2,
+        "snakeId": "longterm_leasehold_deposits_received"
+      },
+      {
+        "accountNm": "복구충당부채",
+        "sortOrder": 5130,
+        "level": 2,
+        "snakeId": "provisions_for_restoration_costs"
+      },
+      {
+        "accountNm": "비유동금융보증부채",
+        "sortOrder": 5140,
+        "level": 2,
+        "snakeId": "noncurrent_financial_guarantee_liabilities"
+      },
+      {
+        "accountNm": "전환상환우선주부채",
+        "sortOrder": 5150,
+        "level": 2,
+        "snakeId": "convertible_bonds"
+      },
+      {
+        "accountNm": "소송충당부채",
+        "sortOrder": 5160,
+        "level": 2,
+        "snakeId": "legal_proceedings_provisions"
+      },
+      {
+        "accountNm": "하자보수충당부채",
+        "sortOrder": 5170,
+        "level": 2,
+        "snakeId": "provision_for_construction_provisions"
+      },
+      {
+        "accountNm": "교환사채",
+        "sortOrder": 5180,
+        "level": 2,
+        "snakeId": "convertible_bonds"
+      },
+      {
+        "accountNm": "판매보증충당부채",
+        "sortOrder": 5190,
+        "level": 2,
+        "snakeId": "product_warranties_provisions"
+      },
+      {
+        "accountNm": "기타금융부채",
+        "sortOrder": 5200,
+        "level": 2,
+        "snakeId": "other_financial_institutions_liabilities"
+      },
+      {
+        "accountNm": "비유동계약부채",
+        "sortOrder": 5210,
+        "level": 2,
+        "snakeId": "contract_liabilities"
+      },
+      {
+        "accountNm": "현재가치할인차금",
+        "sortOrder": 5220,
+        "level": 2,
+        "snakeId": "present_value_discount"
+      },
+      {
+        "accountNm": "이연수익",
+        "sortOrder": 5230,
+        "level": 2,
+        "snakeId": "government_grants_deferred_income"
+      },
+      {
+        "accountNm": "공사손실충당부채",
+        "sortOrder": 5240,
+        "level": 2,
+        "snakeId": "estimates_of_contract_losses"
+      },
+      {
+        "accountNm": "평가충당금",
+        "sortOrder": 5250,
+        "level": 2,
+        "snakeId": "allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "감자차익",
+        "sortOrder": 7090,
+        "level": 2,
+        "snakeId": "gains_from_capital_reduction"
+      },
+      {
+        "accountNm": "기타불입자본",
+        "sortOrder": 7095,
+        "level": 2,
+        "snakeId": "other_paid_in_capital"
+      },
+      {
+        "accountNm": "미처분이익잉여금(미처리결손금)",
+        "sortOrder": 7120,
+        "level": 2,
+        "snakeId": "unappropriated_retained_earnings_deficit"
+      },
+      {
+        "accountNm": "이익준비금",
+        "sortOrder": 7130,
+        "level": 2,
+        "snakeId": "legal_reserve"
+      },
+      {
+        "accountNm": "임의적립금",
+        "sortOrder": 7140,
+        "level": 2,
+        "snakeId": "voluntary_reserves"
+      },
+      {
+        "accountNm": "기타법정적립금",
+        "sortOrder": 7145,
+        "level": 2,
+        "snakeId": "other_legal_reserves"
+      },
+      {
+        "accountNm": "주식선택권",
+        "sortOrder": 7150,
+        "level": 2,
+        "snakeId": "stock_options"
+      },
+      {
+        "accountNm": "전환권대가",
+        "sortOrder": 7155,
+        "level": 2,
+        "snakeId": "consideration_for_conversion_rights"
+      },
+      {
+        "accountNm": "신주인수권대가",
+        "sortOrder": 7156,
+        "level": 2,
+        "snakeId": "consideration_for_stock_warrants"
+      },
+      {
+        "accountNm": "자기주식처분이익",
+        "sortOrder": 7160,
+        "level": 2,
+        "snakeId": "gains_on_disposition_of_treasury_stock"
+      },
+      {
+        "accountNm": "매도가능금융자산평가이익",
+        "sortOrder": 7165,
+        "level": 2,
+        "snakeId": "gains_on_valuation_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산평가손실",
+        "sortOrder": 7166,
+        "level": 2,
+        "snakeId": "losses_on_valuation_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산평가손익",
+        "sortOrder": 7167,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산평가손실적립금",
+        "sortOrder": 7168,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "해외사업환산이익",
+        "sortOrder": 7170,
+        "level": 2,
+        "snakeId": "gains_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "해외사업환산손실",
+        "sortOrder": 7175,
+        "level": 2,
+        "snakeId": "losses_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "지분법기타포괄손익변동",
+        "sortOrder": 7180,
+        "level": 2,
+        "snakeId": "other_comprehensive_income_of_associates_etc"
+      }
+    ]
+  },
+  "IS": {
+    "_description": "손익계산서: 매출 → 비용 → 이익 순서",
+    "accounts": [
+      {
+        "accountNm": "매출액",
+        "sortOrder": 1000,
+        "level": 1,
+        "snakeId": "sales"
+      },
+      {
+        "accountNm": "수익(매출액)",
+        "sortOrder": 1001,
+        "level": 1
+      },
+      {
+        "accountNm": "영업수익",
+        "sortOrder": 1002,
+        "level": 1,
+        "snakeId": "operating_revenues"
+      },
+      {
+        "accountNm": "재화의판매로인한수익(매출액)",
+        "sortOrder": 1010,
+        "level": 2,
+        "snakeId": "sales_of_merchandise_finished_goods"
+      },
+      {
+        "accountNm": "용역의제공으로인한수익(매출액)",
+        "sortOrder": 1020,
+        "level": 2,
+        "snakeId": "service_revenue"
+      },
+      {
+        "accountNm": "기타수익(매출액)",
+        "sortOrder": 1030,
+        "level": 2,
+        "snakeId": "other_sales"
+      },
+      {
+        "accountNm": "상품매출액",
+        "sortOrder": 1040,
+        "level": 2,
+        "snakeId": "sales_of_merchandise"
+      },
+      {
+        "accountNm": "제품매출액",
+        "sortOrder": 1050,
+        "level": 2,
+        "snakeId": "sales_of_finished_goods"
+      },
+      {
+        "accountNm": "건설매출액",
+        "sortOrder": 1060,
+        "level": 2
+      },
+      {
+        "accountNm": "매출원가",
+        "sortOrder": 1100,
+        "level": 1,
+        "snakeId": "cost_of_sales"
+      },
+      {
+        "accountNm": "영업비용",
+        "sortOrder": 1101,
+        "level": 1,
+        "snakeId": "operating_expenses"
+      },
+      {
+        "accountNm": "매출총이익",
+        "sortOrder": 1200,
+        "level": 1,
+        "snakeId": "gross_profit"
+      },
+      {
+        "accountNm": "매출총이익(손실)",
+        "sortOrder": 1201,
+        "level": 1
+      },
+      {
+        "accountNm": "판매비와관리비",
+        "sortOrder": 1300,
+        "level": 1,
+        "snakeId": "sga"
+      },
+      {
+        "accountNm": "판매비와 관리비",
+        "sortOrder": 1301,
+        "level": 1,
+        "snakeId": "sga"
+      },
+      {
+        "accountNm": "영업이익",
+        "sortOrder": 1400,
+        "level": 1,
+        "snakeId": "operating_profit"
+      },
+      {
+        "accountNm": "영업이익(손실)",
+        "sortOrder": 1401,
+        "level": 1
+      },
+      {
+        "accountNm": "기타수익",
+        "sortOrder": 1500,
+        "level": 2,
+        "snakeId": "other_sales"
+      },
+      {
+        "accountNm": "기타이익",
+        "sortOrder": 1501,
+        "level": 2
+      },
+      {
+        "accountNm": "기타영업외수익",
+        "sortOrder": 1502,
+        "level": 2,
+        "snakeId": "other_nonoperating_income"
+      },
+      {
+        "accountNm": "기타비용",
+        "sortOrder": 1600,
+        "level": 2,
+        "snakeId": "others_expense"
+      },
+      {
+        "accountNm": "기타손실",
+        "sortOrder": 1601,
+        "level": 2
+      },
+      {
+        "accountNm": "기타영업외비용",
+        "sortOrder": 1602,
+        "level": 2,
+        "snakeId": "other_nonoperating_expenses"
+      },
+      {
+        "accountNm": "금융수익",
+        "sortOrder": 1700,
+        "level": 2,
+        "snakeId": "financial_income"
+      },
+      {
+        "accountNm": "금융이익",
+        "sortOrder": 1701,
+        "level": 2
+      },
+      {
+        "accountNm": "이자수익",
+        "sortOrder": 1710,
+        "level": 3,
+        "snakeId": "interest_income"
+      },
+      {
+        "accountNm": "배당금수익",
+        "sortOrder": 1720,
+        "level": 3,
+        "snakeId": "stock_dividends"
+      },
+      {
+        "accountNm": "파생상품평가이익(금융수익)",
+        "sortOrder": 1750,
+        "level": 3,
+        "snakeId": "gains_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "금융비용",
+        "sortOrder": 1800,
+        "level": 2,
+        "snakeId": "financing_expenses"
+      },
+      {
+        "accountNm": "금융원가",
+        "sortOrder": 1801,
+        "level": 2,
+        "snakeId": "financial_costs"
+      },
+      {
+        "accountNm": "이자비용",
+        "sortOrder": 1810,
+        "level": 3,
+        "snakeId": "interest_expenses"
+      },
+      {
+        "accountNm": "지분법이익",
+        "sortOrder": 1850,
+        "level": 2,
+        "snakeId": "gains_on_valuation_of_equity_method_securities"
+      },
+      {
+        "accountNm": "지분법손익",
+        "sortOrder": 1851,
+        "level": 2,
+        "snakeId": "gainslosses_in_equity_method"
+      },
+      {
+        "accountNm": "지분법손실",
+        "sortOrder": 1860,
+        "level": 2,
+        "snakeId": "losses_on_valuation_of_equity_method_securities"
+      },
+      {
+        "accountNm": "관계기업투자손익",
+        "sortOrder": 1870,
+        "level": 2
+      },
+      {
+        "accountNm": "법인세비용차감전순이익",
+        "sortOrder": 1900,
+        "level": 1,
+        "snakeId": "profit_before_tax"
+      },
+      {
+        "accountNm": "법인세비용차감전순이익(손실)",
+        "sortOrder": 1901,
+        "level": 1
+      },
+      {
+        "accountNm": "법인세비용차감전계속영업이익",
+        "sortOrder": 1902,
+        "level": 1
+      },
+      {
+        "accountNm": "법인세비용차감전계속영업이익(손실)",
+        "sortOrder": 1903,
+        "level": 1
+      },
+      {
+        "accountNm": "법인세비용",
+        "sortOrder": 2000,
+        "level": 1,
+        "snakeId": "income_taxes"
+      },
+      {
+        "accountNm": "법인세비용(수익)",
+        "sortOrder": 2001,
+        "level": 1,
+        "snakeId": "income_taxes"
+      },
+      {
+        "accountNm": "상품매출원가",
+        "sortOrder": 2005,
+        "level": 2,
+        "snakeId": "cost_of_merchandise_sold"
+      },
+      {
+        "accountNm": "제품매출원가",
+        "sortOrder": 2010,
+        "level": 2,
+        "snakeId": "cost_of_finished_goods_sold"
+      },
+      {
+        "accountNm": "재화의판매로인한수익(매출액)에대한매출원가",
+        "sortOrder": 2015,
+        "level": 2,
+        "snakeId": "cost_of_merchandise_finished_goods"
+      },
+      {
+        "accountNm": "용역의제공으로인한수익(매출액)에대한매출원가",
+        "sortOrder": 2020,
+        "level": 2,
+        "snakeId": "cost_of_service"
+      },
+      {
+        "accountNm": "건설매출원가",
+        "sortOrder": 2025,
+        "level": 2
+      },
+      {
+        "accountNm": "기타매출원가",
+        "sortOrder": 2030,
+        "level": 2,
+        "snakeId": "other_cost_of_sales"
+      },
+      {
+        "accountNm": "계속영업이익",
+        "sortOrder": 2100,
+        "level": 1,
+        "snakeId": "profit_from_continuing_operations"
+      },
+      {
+        "accountNm": "계속영업이익(손실)",
+        "sortOrder": 2101,
+        "level": 1,
+        "snakeId": "profit_from_continuing_operations"
+      },
+      {
+        "accountNm": "중단영업이익",
+        "sortOrder": 2200,
+        "level": 1,
+        "snakeId": "profit_from_discontinued_operations"
+      },
+      {
+        "accountNm": "중단영업이익(손실)",
+        "sortOrder": 2201,
+        "level": 1,
+        "snakeId": "profit_from_discontinued_operations"
+      },
+      {
+        "accountNm": "당기순이익",
+        "sortOrder": 2300,
+        "level": 1,
+        "snakeId": "net_profit"
+      },
+      {
+        "accountNm": "당기순이익(손실)",
+        "sortOrder": 2301,
+        "level": 1
+      },
+      {
+        "accountNm": "분기순이익",
+        "sortOrder": 2310,
+        "level": 1
+      },
+      {
+        "accountNm": "분기순이익(손실)",
+        "sortOrder": 2311,
+        "level": 1
+      },
+      {
+        "accountNm": "반기순이익",
+        "sortOrder": 2320,
+        "level": 1
+      },
+      {
+        "accountNm": "반기순이익(손실)",
+        "sortOrder": 2321,
+        "level": 1
+      },
+      {
+        "accountNm": "지배기업의 소유주에게 귀속되는 당기순이익",
+        "sortOrder": 2400,
+        "level": 2
+      },
+      {
+        "accountNm": "지배기업의 소유주에게 귀속되는 당기순이익(손실)",
+        "sortOrder": 2401,
+        "level": 2,
+        "snakeId": "net_incomenet_loss_for_the_year_attributable_toowners_of_parent_equity"
+      },
+      {
+        "accountNm": "지배기업 소유주지분",
+        "sortOrder": 2402,
+        "level": 2,
+        "snakeId": "owners_of_parent_equity"
+      },
+      {
+        "accountNm": "지배기업의소유주에게귀속될계속영업손익",
+        "sortOrder": 2410,
+        "level": 2,
+        "snakeId": "profit_from_continuing_operations_attributable_to_owners_of_parent"
+      },
+      {
+        "accountNm": "지배기업의소유주에게귀속될중단영업손익",
+        "sortOrder": 2420,
+        "level": 2,
+        "snakeId": "profit_from_discontinued_operations_attributable_to_owners_of_parent"
+      },
+      {
+        "accountNm": "비지배지분",
+        "sortOrder": 2500,
+        "level": 2,
+        "snakeId": "noncontrolling_interests_equity"
+      },
+      {
+        "accountNm": "비지배지분순이익",
+        "sortOrder": 2501,
+        "level": 2,
+        "snakeId": "profit_attributable_to_noncontrolling_interests"
+      },
+      {
+        "accountNm": "비지배지분에귀속되는당기순이익(손실)",
+        "sortOrder": 2510,
+        "level": 2,
+        "snakeId": "net_incomenet_loss_for_the_year_attributable_tononcontrolling_interests_equity"
+      },
+      {
+        "accountNm": "비지배지분에귀속될계속영업이익(손실)",
+        "sortOrder": 2511,
+        "level": 2,
+        "snakeId": "profit_from_continuing_operations_attributable_to_noncontrolling_interests"
+      },
+      {
+        "accountNm": "비지배지분에귀속될중단영업이익(손실)",
+        "sortOrder": 2512,
+        "level": 2,
+        "snakeId": "profit_from_discontinued_operations_attributable_to_noncontrolling_interests"
+      },
+      {
+        "accountNm": "기타포괄손익",
+        "sortOrder": 2600,
+        "level": 1,
+        "snakeId": "other_comprehensive_income"
+      },
+      {
+        "accountNm": "세후기타포괄손익",
+        "sortOrder": 2601,
+        "level": 1
+      },
+      {
+        "accountNm": "당기손익으로재분류되지않는항목(세후기타포괄손익)",
+        "sortOrder": 2610,
+        "level": 2,
+        "snakeId": "other_comprehensive_income_not_to_be_reclassified"
+      },
+      {
+        "accountNm": "확정급여제도의재측정손익(세후기타포괄손익)",
+        "sortOrder": 2611,
+        "level": 2,
+        "snakeId": "remeasurement_elements_of_defined_benefit_plans"
+      },
+      {
+        "accountNm": "확정급여제도의보험수리적손익의세후기타포괄손익",
+        "sortOrder": 2612,
+        "level": 2,
+        "snakeId": "actuarial_gains_or_losses_on_defined_benefit_plans"
+      },
+      {
+        "accountNm": "자산재평가손익(세후기타포괄손익)",
+        "sortOrder": 2613,
+        "level": 2,
+        "snakeId": "gains_on_assets_revaluations"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산평가손익",
+        "sortOrder": 2620,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "매도가능금융자산평가손익",
+        "sortOrder": 2621,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산평가손익(세후기타포괄손익)",
+        "sortOrder": 2622,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산평가손익의세후재분류조정",
+        "sortOrder": 2623,
+        "level": 2,
+        "snakeId": "reclassification_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치지분상품처분손익",
+        "sortOrder": 2624,
+        "level": 2,
+        "snakeId": "gainslosses_on_disposal_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산평가손익(세후기타포괄손익)",
+        "sortOrder": 2625,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익공정가치측정금융자산평가손익(주식)",
+        "sortOrder": 2626,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정지분증권평가손익",
+        "sortOrder": 2627,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정지분증권처분손익",
+        "sortOrder": 2628,
+        "level": 2,
+        "snakeId": "gainslosses_on_disposal_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "당기손익으로재분류될수있는항목(세후기타포괄손익)",
+        "sortOrder": 2630,
+        "level": 2,
+        "snakeId": "other_comprehensive_income_to_be_reclassified"
+      },
+      {
+        "accountNm": "지분법자본변동",
+        "sortOrder": 2640,
+        "level": 2,
+        "snakeId": "capital_change_in_equity_method"
+      },
+      {
+        "accountNm": "지분법적용대상관계기업과공동기업의기타포괄손익에대한지분(세후기타포괄손익)",
+        "sortOrder": 2641,
+        "level": 2,
+        "snakeId": "share_of_other_comprehensive_income_of_associates_and_joint_ventures"
+      },
+      {
+        "accountNm": "해외사업환산손익",
+        "sortOrder": 2650,
+        "level": 2,
+        "snakeId": "foreign_currency_translation"
+      },
+      {
+        "accountNm": "해외사업장환산외환차이(세후기타포괄손익)",
+        "sortOrder": 2651,
+        "level": 2,
+        "snakeId": "foreign_currency_translation_differences"
+      },
+      {
+        "accountNm": "해외사업장순투자의위험회피손익(세후기타포괄손익)",
+        "sortOrder": 2652,
+        "level": 2,
+        "snakeId": "hedges_of_net_investment_in_foreign_operations"
+      },
+      {
+        "accountNm": "파생금융상품평가이익",
+        "sortOrder": 2660,
+        "level": 2,
+        "snakeId": "gains_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "파생상품평가손익",
+        "sortOrder": 2661,
+        "level": 2,
+        "snakeId": "derivative_valuation"
+      },
+      {
+        "accountNm": "현금흐름위험회피손익(세후기타포괄손익)",
+        "sortOrder": 2670,
+        "level": 2,
+        "snakeId": "cash_flow_hedges"
+      },
+      {
+        "accountNm": "현금흐름위험회피파생상품평가손익",
+        "sortOrder": 2671,
+        "level": 2,
+        "snakeId": "cash_flow_hedges"
+      },
+      {
+        "accountNm": "총포괄이익",
+        "sortOrder": 2700,
+        "level": 1,
+        "snakeId": "total_comprehensive_income"
+      },
+      {
+        "accountNm": "총포괄손익",
+        "sortOrder": 2701,
+        "level": 1
+      },
+      {
+        "accountNm": "총포괄손익,지배기업의소유주에게귀속되는지분",
+        "sortOrder": 2710,
+        "level": 2,
+        "snakeId": "total_comprehensive_income_owners_of_parent"
+      },
+      {
+        "accountNm": "주당이익",
+        "sortOrder": 2800,
+        "level": 1,
+        "snakeId": "earnings_per_share"
+      },
+      {
+        "accountNm": "기본주당이익",
+        "sortOrder": 2810,
+        "level": 2,
+        "snakeId": "basic_earnings_per_share"
+      },
+      {
+        "accountNm": "기본주당순이익",
+        "sortOrder": 2811,
+        "level": 2
+      },
+      {
+        "accountNm": "기본주당순이익(손실)",
+        "sortOrder": 2812,
+        "level": 2
+      },
+      {
+        "accountNm": "계속영업기본주당이익(손실)",
+        "sortOrder": 2815,
+        "level": 2,
+        "snakeId": "basic_earnings_per_share_from_continuing_operations"
+      },
+      {
+        "accountNm": "중단영업기본주당이익(손실)",
+        "sortOrder": 2816,
+        "level": 2,
+        "snakeId": "basic_earnings_per_share_from_discontinued_operations"
+      },
+      {
+        "accountNm": "희석주당이익",
+        "sortOrder": 2820,
+        "level": 2,
+        "snakeId": "diluted_earnings_per_share"
+      },
+      {
+        "accountNm": "희석주당순이익",
+        "sortOrder": 2821,
+        "level": 2
+      },
+      {
+        "accountNm": "희석주당순이익(손실)",
+        "sortOrder": 2822,
+        "level": 2
+      },
+      {
+        "accountNm": "계속영업희석주당이익(손실)",
+        "sortOrder": 2825,
+        "level": 2,
+        "snakeId": "diluted_earnings_per_share_from_continuing_operations"
+      },
+      {
+        "accountNm": "중단영업희석주당이익(손실)",
+        "sortOrder": 2826,
+        "level": 2,
+        "snakeId": "diluted_earnings_per_share_from_discontinued_operations"
+      },
+      {
+        "accountNm": "급여",
+        "sortOrder": 4010,
+        "level": 2,
+        "snakeId": "salaries_and_wages"
+      },
+      {
+        "accountNm": "퇴직급여",
+        "sortOrder": 4015,
+        "level": 2,
+        "snakeId": "severance_and_retirement_benefits"
+      },
+      {
+        "accountNm": "복리후생비",
+        "sortOrder": 4020,
+        "level": 2,
+        "snakeId": "employee_benefits"
+      },
+      {
+        "accountNm": "소모품비",
+        "sortOrder": 4025,
+        "level": 2,
+        "snakeId": "supplies"
+      },
+      {
+        "accountNm": "접대비",
+        "sortOrder": 4030,
+        "level": 2,
+        "snakeId": "entertainment"
+      },
+      {
+        "accountNm": "여비교통비",
+        "sortOrder": 4035,
+        "level": 2,
+        "snakeId": "traveling_expenses"
+      },
+      {
+        "accountNm": "임차료",
+        "sortOrder": 4036,
+        "level": 2,
+        "snakeId": "rent"
+      },
+      {
+        "accountNm": "감가상각비",
+        "sortOrder": 4037,
+        "level": 2,
+        "snakeId": "depreciation"
+      },
+      {
+        "accountNm": "광고선전비",
+        "sortOrder": 4038,
+        "level": 2,
+        "snakeId": "advertising_expenses"
+      },
+      {
+        "accountNm": "지급수수료",
+        "sortOrder": 4039,
+        "level": 2,
+        "snakeId": "commission_expenses"
+      },
+      {
+        "accountNm": "도서인쇄비",
+        "sortOrder": 4040,
+        "level": 2,
+        "snakeId": "periodicals_and_printing_expenses"
+      },
+      {
+        "accountNm": "통신비",
+        "sortOrder": 4041,
+        "level": 2,
+        "snakeId": "communication_expenses"
+      },
+      {
+        "accountNm": "차량유지비",
+        "sortOrder": 4042,
+        "level": 2,
+        "snakeId": "vehicle_maintenance_expenses"
+      },
+      {
+        "accountNm": "수선비",
+        "sortOrder": 4043,
+        "level": 2,
+        "snakeId": "repairs_and_maintenance_expenses"
+      },
+      {
+        "accountNm": "보험료",
+        "sortOrder": 4044,
+        "level": 2,
+        "snakeId": "insurance_premium"
+      },
+      {
+        "accountNm": "세금과공과",
+        "sortOrder": 4045,
+        "level": 2,
+        "snakeId": "taxes_and_dues"
+      },
+      {
+        "accountNm": "교육훈련비",
+        "sortOrder": 4046,
+        "level": 2,
+        "snakeId": "training_expenses"
+      },
+      {
+        "accountNm": "수도광열비",
+        "sortOrder": 4047,
+        "level": 2,
+        "snakeId": "water_light_and_heating_expenses"
+      },
+      {
+        "accountNm": "유형자산감가상각비",
+        "sortOrder": 4048,
+        "level": 2,
+        "snakeId": "depreciation"
+      },
+      {
+        "accountNm": "무형자산상각비",
+        "sortOrder": 4049,
+        "level": 2,
+        "snakeId": "amortization_of_intangible_assets"
+      },
+      {
+        "accountNm": "대손상각비(대손충당금환입)",
+        "sortOrder": 4050,
+        "level": 2,
+        "snakeId": "expenses_of_allowance_for_doubtful_accounts_provision_for_allowance_for_bad_debits"
+      },
+      {
+        "accountNm": "운반비",
+        "sortOrder": 4051,
+        "level": 2,
+        "snakeId": "transportation_expenses"
+      },
+      {
+        "accountNm": "주식보상비용(환입)",
+        "sortOrder": 4052,
+        "level": 2,
+        "snakeId": "stock_compensation_expenses"
+      },
+      {
+        "accountNm": "매출채권손상차손(환입)",
+        "sortOrder": 4053,
+        "level": 2,
+        "snakeId": "impairment_losses_on_financial_assets"
+      },
+      {
+        "accountNm": "대손상각비(대손충당금환입),판관비",
+        "sortOrder": 4055,
+        "level": 2,
+        "snakeId": "expenses_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "판매촉진비",
+        "sortOrder": 4056,
+        "level": 2,
+        "snakeId": "sales_promotion_expenses"
+      },
+      {
+        "accountNm": "포장비",
+        "sortOrder": 4057,
+        "level": 2,
+        "snakeId": "packing_expenses"
+      },
+      {
+        "accountNm": "기타판매비와관리비",
+        "sortOrder": 4060,
+        "level": 2,
+        "snakeId": "other_sga"
+      },
+      {
+        "accountNm": "경상개발비",
+        "sortOrder": 4070,
+        "level": 2,
+        "snakeId": "research_development"
+      },
+      {
+        "accountNm": "기타영업비용",
+        "sortOrder": 4080,
+        "level": 2,
+        "snakeId": "other_operating_expenses"
+      },
+      {
+        "accountNm": "영업외손익",
+        "sortOrder": 5500,
+        "level": 1,
+        "snakeId": "nonoperating_income_expenses"
+      },
+      {
+        "accountNm": "기타금융수익",
+        "sortOrder": 6010,
+        "level": 2,
+        "snakeId": "other_financial_income"
+      },
+      {
+        "accountNm": "배당금수익(금융수익)",
+        "sortOrder": 6015,
+        "level": 2,
+        "snakeId": "dividends"
+      },
+      {
+        "accountNm": "잡이익",
+        "sortOrder": 6020,
+        "level": 2,
+        "snakeId": "miscellaneous_income_for_lease"
+      },
+      {
+        "accountNm": "임대수익",
+        "sortOrder": 6025,
+        "level": 2,
+        "snakeId": "rental_lease_income"
+      },
+      {
+        "accountNm": "수입임대료",
+        "sortOrder": 6026,
+        "level": 2,
+        "snakeId": "rental_income"
+      },
+      {
+        "accountNm": "유형자산처분이익",
+        "sortOrder": 6030,
+        "level": 2,
+        "snakeId": "gains_on_disposal_of_tangible_assets"
+      },
+      {
+        "accountNm": "외환차익(금융수익)",
+        "sortOrder": 6040,
+        "level": 2,
+        "snakeId": "gains_on_foreign_currencies_transaction"
+      },
+      {
+        "accountNm": "외화환산이익(금융수익)",
+        "sortOrder": 6050,
+        "level": 2,
+        "snakeId": "gains_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "종속기업투자주식처분이익",
+        "sortOrder": 6060,
+        "level": 2,
+        "snakeId": "gains_on_disposition_of_subsidiaries"
+      },
+      {
+        "accountNm": "지분법투자주식처분이익",
+        "sortOrder": 6062,
+        "level": 2,
+        "snakeId": "gains_on_disposition_of_equity_method_securities"
+      },
+      {
+        "accountNm": "관계기업/공동기업투자처분이익",
+        "sortOrder": 6065,
+        "level": 2,
+        "snakeId": "gains_on_disposition_of_associates"
+      },
+      {
+        "accountNm": "기타대손충당금환입",
+        "sortOrder": 6070,
+        "level": 2,
+        "snakeId": "reversal_of_allowance_for_other_doubtful_accounts"
+      },
+      {
+        "accountNm": "당기손익인식금융자산평가이익(금융수익)",
+        "sortOrder": 6080,
+        "level": 2,
+        "snakeId": "gains_on_valuation_of_shortterm_trading_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산처분이익(금융수익)",
+        "sortOrder": 6081,
+        "level": 2,
+        "snakeId": "gains_on_disposal_of_other_assets"
+      },
+      {
+        "accountNm": "투자자산처분이익",
+        "sortOrder": 6082,
+        "level": 2,
+        "snakeId": "gains_on_disposition_of_investments"
+      },
+      {
+        "accountNm": "무형자산처분이익",
+        "sortOrder": 6083,
+        "level": 2,
+        "snakeId": "gains_on_disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "잡손실",
+        "sortOrder": 7050,
+        "level": 2,
+        "snakeId": "miscellaneous_losses"
+      },
+      {
+        "accountNm": "기타의대손상각비",
+        "sortOrder": 7060,
+        "level": 2,
+        "snakeId": "other_expenses_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "기부금",
+        "sortOrder": 7070,
+        "level": 2,
+        "snakeId": "donations"
+      },
+      {
+        "accountNm": "외환차손(금융원가)",
+        "sortOrder": 7080,
+        "level": 2,
+        "snakeId": "losses_on_foreign_currencies_transaction"
+      },
+      {
+        "accountNm": "종속기업투자주식처분손실",
+        "sortOrder": 7090,
+        "level": 2,
+        "snakeId": "losses_on_disposition_of_subsidiaries"
+      },
+      {
+        "accountNm": "관계기업/공동기업투자처분손실",
+        "sortOrder": 7095,
+        "level": 2,
+        "snakeId": "losses_on_disposition_of_associates"
+      },
+      {
+        "accountNm": "외화환산손실(금융원가)",
+        "sortOrder": 7100,
+        "level": 2,
+        "snakeId": "losses_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "외화환산손실",
+        "sortOrder": 7105,
+        "level": 2,
+        "snakeId": "losses_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "외환차손",
+        "sortOrder": 7110,
+        "level": 2,
+        "snakeId": "losses_on_foreign_currencies_transaction"
+      },
+      {
+        "accountNm": "무형자산처분손실",
+        "sortOrder": 7120,
+        "level": 2,
+        "snakeId": "losses_on_disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "유형자산처분손실",
+        "sortOrder": 7130,
+        "level": 2,
+        "snakeId": "losses_on_disposal_of_tangible_assets"
+      },
+      {
+        "accountNm": "무형자산손상차손",
+        "sortOrder": 7140,
+        "level": 2,
+        "snakeId": "impairment_losses_on_intangible_assets"
+      },
+      {
+        "accountNm": "관계기업/공동기업투자손상차손",
+        "sortOrder": 7150,
+        "level": 2,
+        "snakeId": "impairment_losses_on_associates"
+      },
+      {
+        "accountNm": "당기손익인식금융자산평가손실(금융원가)",
+        "sortOrder": 7160,
+        "level": 2,
+        "snakeId": "losses_on_valuation_of_shortterm_trading_financial_assets"
+      },
+      {
+        "accountNm": "기타금융원가",
+        "sortOrder": 7170,
+        "level": 2,
+        "snakeId": "other_financial_expenses"
+      },
+      {
+        "accountNm": "파생상품평가손실(금융원가)",
+        "sortOrder": 7175,
+        "level": 2,
+        "snakeId": "losses_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "투자자산처분손실",
+        "sortOrder": 7180,
+        "level": 2,
+        "snakeId": "losses_on_disposition_of_investments"
+      },
+      {
+        "accountNm": "재고자산평가손실",
+        "sortOrder": 7185,
+        "level": 2,
+        "snakeId": "losses_on_evaluation_of_inventories"
+      },
+      {
+        "accountNm": "유형자산손상차손",
+        "sortOrder": 7190,
+        "level": 2,
+        "snakeId": "impairment_losses_on_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "매도가능금융자산손상차손",
+        "sortOrder": 7195,
+        "level": 2,
+        "snakeId": "impairment_losses_on_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "종속기업투자주식손상차손",
+        "sortOrder": 7200,
+        "level": 2,
+        "snakeId": "impairment_losses_on_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "우선주기본주당순이익(손실)",
+        "sortOrder": 9510,
+        "level": 2,
+        "snakeId": "basic_earnings_per_share_preferred"
+      },
+      {
+        "accountNm": "확정급여제도의재측정손익(세전기타포괄손익)",
+        "sortOrder": 9600,
+        "level": 2,
+        "snakeId": "remeasurement_elements_of_defined_benefit_plans_before_tax"
+      },
+      {
+        "accountNm": "당기손익으로재분류되지않는항목과관련된법인세",
+        "sortOrder": 9610,
+        "level": 2,
+        "snakeId": "tax_on_items_not_reclassified_to_profit_or_loss"
+      },
+      {
+        "accountNm": "해외사업장환산외환차이(세전기타포괄이익)",
+        "sortOrder": 9620,
+        "level": 2,
+        "snakeId": "foreign_currency_translation_differences_before_tax"
+      },
+      {
+        "accountNm": "당기손익으로재분류될수있는항목과관련된법인세",
+        "sortOrder": 9630,
+        "level": 2,
+        "snakeId": "tax_on_items_reclassified_to_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익으로재분류되지않는항목(세전기타포괄손익)",
+        "sortOrder": 9640,
+        "level": 2,
+        "snakeId": "other_comprehensive_income_not_to_be_reclassified_before_tax"
+      },
+      {
+        "accountNm": "당기손익으로재분류될수있는항목(세전기타포괄손익)",
+        "sortOrder": 9650,
+        "level": 2,
+        "snakeId": "other_comprehensive_income_to_be_reclassified_before_tax"
+      },
+      {
+        "accountNm": "매도가능금융자산평가손익(세전기타포괄손익)",
+        "sortOrder": 9660,
+        "level": 2,
+        "snakeId": "gainslosses_on_valuation_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산처분손익",
+        "sortOrder": 9665,
+        "level": 2,
+        "snakeId": "impairment_losses_on_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "지분법이익잉여금변동",
+        "sortOrder": 9670,
+        "level": 2,
+        "snakeId": "change_of_retained_earnings_in_equity_method"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산평가손익의세후재분류조정",
+        "sortOrder": 9680,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "지배기업의소유주에게귀속되는계속영업포괄손익",
+        "sortOrder": 9700,
+        "level": 2,
+        "snakeId": "total_comprehensive_income_from_continuing_operations_owners_of_parent"
+      },
+      {
+        "accountNm": "지배기업의소유주에게귀속되는중단영업포괄손익",
+        "sortOrder": 9710,
+        "level": 2,
+        "snakeId": "total_comprehensive_income_from_discontinued_operations_owners_of_parent"
+      }
+    ]
+  },
+  "CF": {
+    "_description": "현금흐름표: 영업 → 투자 → 재무 → 현금증감",
+    "accounts": [
+      {
+        "accountNm": "영업활동현금흐름",
+        "sortOrder": 1000,
+        "level": 1,
+        "snakeId": "cash_flows_from_operating_activities"
+      },
+      {
+        "accountNm": "영업활동으로인한현금흐름",
+        "sortOrder": 1001,
+        "level": 1,
+        "snakeId": "cash_flows_from_operatings"
+      },
+      {
+        "accountNm": "당기순이익",
+        "sortOrder": 1010,
+        "level": 2,
+        "snakeId": "net_profit"
+      },
+      {
+        "accountNm": "당기순이익(손실)",
+        "sortOrder": 1011,
+        "level": 2
+      },
+      {
+        "accountNm": "당기순이익조정을위한가감",
+        "sortOrder": 1095,
+        "level": 2,
+        "snakeId": "adjustments_to_reconcile_net_income"
+      },
+      {
+        "accountNm": "중단영업이익(손실)",
+        "sortOrder": 1096,
+        "level": 3,
+        "snakeId": "profit_from_discontinued_operations"
+      },
+      {
+        "accountNm": "투자활동현금흐름이나재무활동현금흐름으로분류되는기타모든항목",
+        "sortOrder": 1097,
+        "level": 3,
+        "snakeId": "other_items_classified_as_investing_or_financing_activities"
+      },
+      {
+        "accountNm": "감가상각비와상각비의조정",
+        "sortOrder": 1098,
+        "level": 3,
+        "snakeId": "depreciation_other_amortization_and_impairment_losses_expense"
+      },
+      {
+        "accountNm": "조정",
+        "sortOrder": 1100,
+        "level": 2,
+        "snakeId": "adjustments_for_sales"
+      },
+      {
+        "accountNm": "비현금항목조정",
+        "sortOrder": 1101,
+        "level": 2
+      },
+      {
+        "accountNm": "현금의유출이없는비용등의가산",
+        "sortOrder": 1102,
+        "level": 2
+      },
+      {
+        "accountNm": "현금의유입이없는수익등의차감",
+        "sortOrder": 1103,
+        "level": 2
+      },
+      {
+        "accountNm": "감가상각비",
+        "sortOrder": 1110,
+        "level": 3,
+        "snakeId": "depreciation"
+      },
+      {
+        "accountNm": "무형자산상각비",
+        "sortOrder": 1111,
+        "level": 3,
+        "snakeId": "amortization_of_intangible_assets"
+      },
+      {
+        "accountNm": "대손상각비",
+        "sortOrder": 1112,
+        "level": 3,
+        "snakeId": "expenses_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "퇴직급여",
+        "sortOrder": 1113,
+        "level": 3,
+        "snakeId": "severance_and_retirement_benefits"
+      },
+      {
+        "accountNm": "금융수익",
+        "sortOrder": 1114,
+        "level": 3,
+        "snakeId": "financial_income"
+      },
+      {
+        "accountNm": "금융비용",
+        "sortOrder": 1115,
+        "level": 3,
+        "snakeId": "financing_expenses"
+      },
+      {
+        "accountNm": "법인세비용",
+        "sortOrder": 1116,
+        "level": 3,
+        "snakeId": "income_taxes"
+      },
+      {
+        "accountNm": "외화환산이익",
+        "sortOrder": 1117,
+        "level": 3,
+        "snakeId": "gains_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "외화환산손실",
+        "sortOrder": 1118,
+        "level": 3,
+        "snakeId": "losses_on_foreign_currency_translation"
+      },
+      {
+        "accountNm": "유형자산처분이익",
+        "sortOrder": 1119,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_tangible_assets"
+      },
+      {
+        "accountNm": "유형자산처분손실",
+        "sortOrder": 1120,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_tangible_assets"
+      },
+      {
+        "accountNm": "유형자산손상차손",
+        "sortOrder": 1121,
+        "level": 3,
+        "snakeId": "impairment_losses_on_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "무형자산처분이익",
+        "sortOrder": 1122,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "무형자산처분손실",
+        "sortOrder": 1123,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "무형자산손상차손",
+        "sortOrder": 1124,
+        "level": 3,
+        "snakeId": "impairment_losses_on_intangible_assets"
+      },
+      {
+        "accountNm": "지분법손실",
+        "sortOrder": 1125,
+        "level": 3,
+        "snakeId": "losses_on_valuation_of_equity_method_securities"
+      },
+      {
+        "accountNm": "지분법이익",
+        "sortOrder": 1126,
+        "level": 3,
+        "snakeId": "gains_on_valuation_of_equity_method_securities"
+      },
+      {
+        "accountNm": "파생상품평가이익",
+        "sortOrder": 1127,
+        "level": 3,
+        "snakeId": "gains_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "파생상품평가손실",
+        "sortOrder": 1128,
+        "level": 3,
+        "snakeId": "losses_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "재고자산평가손실",
+        "sortOrder": 1129,
+        "level": 3,
+        "snakeId": "losses_on_evaluation_of_inventories"
+      },
+      {
+        "accountNm": "재고자산폐기손실",
+        "sortOrder": 1130,
+        "level": 3,
+        "snakeId": "losses_on_inventory_clearing"
+      },
+      {
+        "accountNm": "매출채권처분손실",
+        "sortOrder": 1131,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_trade_receivables"
+      },
+      {
+        "accountNm": "당기손익인식금융자산평가이익",
+        "sortOrder": 1132,
+        "level": 3,
+        "snakeId": "gains_on_valuation_of_financial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "당기손익인식금융자산평가손실",
+        "sortOrder": 1133,
+        "level": 3,
+        "snakeId": "losses_on_valuation_of_financial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "당기손익-공정가치금융자산평가이익",
+        "sortOrder": 1134,
+        "level": 3,
+        "snakeId": "gains_on_valuation_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산평가이익",
+        "sortOrder": 1134,
+        "level": 3,
+        "snakeId": "gains_on_valuation_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치금융자산평가손실",
+        "sortOrder": 1135,
+        "level": 3,
+        "snakeId": "losses_on_valuation_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산평가손실",
+        "sortOrder": 1135,
+        "level": 3,
+        "snakeId": "losses_on_valuation_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "종속기업투자주식손상차손",
+        "sortOrder": 1136,
+        "level": 3,
+        "snakeId": "impairment_losses_on_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "사채상환손실",
+        "sortOrder": 1137,
+        "level": 3,
+        "snakeId": "losses_on_redemption_of_bonds"
+      },
+      {
+        "accountNm": "사채상환이익",
+        "sortOrder": 1138,
+        "level": 3,
+        "snakeId": "gains_on_redemption_of_bonds"
+      },
+      {
+        "accountNm": "종속기업투자주식처분손실",
+        "sortOrder": 1139,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업투자주식처분이익",
+        "sortOrder": 1140,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_subsidiaries"
+      },
+      {
+        "accountNm": "관계기업투자주식처분손실",
+        "sortOrder": 1141,
+        "level": 3
+      },
+      {
+        "accountNm": "관계기업투자주식처분이익",
+        "sortOrder": 1142,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_associates"
+      },
+      {
+        "accountNm": "사용권자산감가상각비",
+        "sortOrder": 1143,
+        "level": 3,
+        "snakeId": "depreciation"
+      },
+      {
+        "accountNm": "리스해지이익",
+        "sortOrder": 1144,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_leased_housing_assets"
+      },
+      {
+        "accountNm": "리스해지손실",
+        "sortOrder": 1145,
+        "level": 3,
+        "snakeId": "other_reserves"
+      },
+      {
+        "accountNm": "매각예정자산처분이익",
+        "sortOrder": 1146,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_assets"
+      },
+      {
+        "accountNm": "매각예정자산처분손실",
+        "sortOrder": 1147,
+        "level": 3,
+        "snakeId": "impairment_losses_on_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "투자부동산처분이익",
+        "sortOrder": 1148,
+        "level": 3,
+        "snakeId": "gains_on_investment_in_properties"
+      },
+      {
+        "accountNm": "투자부동산처분손실",
+        "sortOrder": 1149,
+        "level": 3,
+        "snakeId": "losses_on_investment_in_properties"
+      },
+      {
+        "accountNm": "주식보상비용",
+        "sortOrder": 1150,
+        "level": 3,
+        "snakeId": "stock_compensation_expenses"
+      },
+      {
+        "accountNm": "충당부채전입(환입)",
+        "sortOrder": 1153,
+        "level": 3
+      },
+      {
+        "accountNm": "이자수익(조정)",
+        "sortOrder": 1155,
+        "level": 3
+      },
+      {
+        "accountNm": "이자비용(조정)",
+        "sortOrder": 1156,
+        "level": 3
+      },
+      {
+        "accountNm": "배당금수익",
+        "sortOrder": 1157,
+        "level": 3,
+        "snakeId": "stock_dividends"
+      },
+      {
+        "accountNm": "감가상각비(투자부동산)",
+        "sortOrder": 1158,
+        "level": 3
+      },
+      {
+        "accountNm": "관계기업투자주식손상차손",
+        "sortOrder": 1159,
+        "level": 3
+      },
+      {
+        "accountNm": "당기손익인식금융자산처분이익",
+        "sortOrder": 1160,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익인식금융자산처분손실",
+        "sortOrder": 1161,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_designatedfinancial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "매도가능금융자산처분이익",
+        "sortOrder": 1162,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산처분손실",
+        "sortOrder": 1163,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산손상차손",
+        "sortOrder": 1164,
+        "level": 3,
+        "snakeId": "impairment_losses_on_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치금융자산처분이익",
+        "sortOrder": 1165,
+        "level": 3
+      },
+      {
+        "accountNm": "유형자산재평가차손",
+        "sortOrder": 1166,
+        "level": 3
+      },
+      {
+        "accountNm": "전환권조정상각",
+        "sortOrder": 1167,
+        "level": 3
+      },
+      {
+        "accountNm": "사채할인발행차금상각",
+        "sortOrder": 1168,
+        "level": 3,
+        "snakeId": "amortization_of_discount_on_bonds"
+      },
+      {
+        "accountNm": "비유동자산처분손실(이익)",
+        "sortOrder": 1169,
+        "level": 3,
+        "snakeId": "gainslosses_on_disposition_of_noncurrent_assets"
+      },
+      {
+        "accountNm": "기타의대손상각비",
+        "sortOrder": 1170,
+        "level": 3,
+        "snakeId": "other_expenses_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "금융자산처분이익",
+        "sortOrder": 1171,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_financial_assets"
+      },
+      {
+        "accountNm": "금융자산처분손실",
+        "sortOrder": 1172,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_financial_assets"
+      },
+      {
+        "accountNm": "종속기업/관계기업/공동기업투자손상차손",
+        "sortOrder": 1173,
+        "level": 3,
+        "snakeId": "impairment_losses_on_investments_in_subsidiaries_associates_joint_ventures"
+      },
+      {
+        "accountNm": "종속기업/관계기업/공동기업투자처분이익",
+        "sortOrder": 1174,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_associates_subsidiaries_joint_ventures"
+      },
+      {
+        "accountNm": "종속기업/관계기업/공동기업투자처분손실",
+        "sortOrder": 1175,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_associates_subsidiaries_joint_ventures"
+      },
+      {
+        "accountNm": "지분법손익",
+        "sortOrder": 1176,
+        "level": 3,
+        "snakeId": "gainslosses_in_equity_method"
+      },
+      {
+        "accountNm": "파생금융자산평가손실",
+        "sortOrder": 1177,
+        "level": 3,
+        "snakeId": "losses_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "대손충당금환입",
+        "sortOrder": 1178,
+        "level": 3,
+        "snakeId": "reversal_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "잡이익",
+        "sortOrder": 1179,
+        "level": 3,
+        "snakeId": "miscellaneous_income_for_lease"
+      },
+      {
+        "accountNm": "잡손실",
+        "sortOrder": 1180,
+        "level": 3,
+        "snakeId": "miscellaneous_losses"
+      },
+      {
+        "accountNm": "주식보상비용(환입)",
+        "sortOrder": 1181,
+        "level": 3,
+        "snakeId": "stock_compensation_expenses"
+      },
+      {
+        "accountNm": "투자자산처분이익",
+        "sortOrder": 1182,
+        "level": 3,
+        "snakeId": "gains_on_disposition_of_investments"
+      },
+      {
+        "accountNm": "투자자산처분손실",
+        "sortOrder": 1183,
+        "level": 3,
+        "snakeId": "losses_on_disposition_of_investments"
+      },
+      {
+        "accountNm": "당기순이익조정을위한기타가감",
+        "sortOrder": 1184,
+        "level": 3,
+        "snakeId": "other_adjustments_to_reconcile_net_income"
+      },
+      {
+        "accountNm": "파생금융자산거래손실",
+        "sortOrder": 1185,
+        "level": 3,
+        "snakeId": "losses_on_derivatives_transactions"
+      },
+      {
+        "accountNm": "파생금융자산거래이익",
+        "sortOrder": 1186,
+        "level": 3,
+        "snakeId": "gains_on_derivatives_transactions"
+      },
+      {
+        "accountNm": "재고자산평가손실환입",
+        "sortOrder": 1187,
+        "level": 3,
+        "snakeId": "recovery_of_losses_on_evaluation_of_inventories"
+      },
+      {
+        "accountNm": "파생금융부채평가손실",
+        "sortOrder": 1188,
+        "level": 3,
+        "snakeId": "losses_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "파생금융부채평가이익",
+        "sortOrder": 1189,
+        "level": 3,
+        "snakeId": "gains_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "무형자산손상차손환입",
+        "sortOrder": 1190,
+        "level": 3,
+        "snakeId": "recovery_of_impairment_losses_on_intangible_assets"
+      },
+      {
+        "accountNm": "유형자산폐기손실",
+        "sortOrder": 1191,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_assets"
+      },
+      {
+        "accountNm": "충당부채전입액",
+        "sortOrder": 1192,
+        "level": 3,
+        "snakeId": "liability_provisions"
+      },
+      {
+        "accountNm": "충당부채환입액",
+        "sortOrder": 1193,
+        "level": 3,
+        "snakeId": "reversion_of_liability_provisions"
+      },
+      {
+        "accountNm": "투자부동산감가상각비",
+        "sortOrder": 1194,
+        "level": 3,
+        "snakeId": "depreciation"
+      },
+      {
+        "accountNm": "당기손익으로인식된손상차손(손상차손환입)",
+        "sortOrder": 1195,
+        "level": 3,
+        "snakeId": "recovery_of_impairment_losses_on_assets"
+      },
+      {
+        "accountNm": "기타현금의유출없는비용등",
+        "sortOrder": 1196,
+        "level": 3,
+        "snakeId": "addition_of_expenses_of_noncash_transactions"
+      },
+      {
+        "accountNm": "기타현금의유입없는수익등",
+        "sortOrder": 1197,
+        "level": 3,
+        "snakeId": "other_revenues_without_cash_inflows"
+      },
+      {
+        "accountNm": "투자자산손상차손",
+        "sortOrder": 1198,
+        "level": 3,
+        "snakeId": "impairment_losses_on_investments"
+      },
+      {
+        "accountNm": "투자자산평가이익",
+        "sortOrder": 1199,
+        "level": 3,
+        "snakeId": "gains_on_valuation_of_investments"
+      },
+      {
+        "accountNm": "영업활동으로인한자산부채의변동",
+        "sortOrder": 1200,
+        "level": 2
+      },
+      {
+        "accountNm": "투자자산평가손실",
+        "sortOrder": 1200,
+        "level": 3,
+        "snakeId": "losses_on_valuation_of_investment_assets"
+      },
+      {
+        "accountNm": "영업활동자산부채변동",
+        "sortOrder": 1201,
+        "level": 2
+      },
+      {
+        "accountNm": "투자부동산평가손실",
+        "sortOrder": 1201,
+        "level": 3,
+        "snakeId": "losses_on_investment_in_properties"
+      },
+      {
+        "accountNm": "운전자본의변동",
+        "sortOrder": 1202,
+        "level": 2
+      },
+      {
+        "accountNm": "채무조정이익",
+        "sortOrder": 1202,
+        "level": 3,
+        "snakeId": "gains_on_debt_restructuring"
+      },
+      {
+        "accountNm": "영업활동으로인한자산ㆍ부채의변동",
+        "sortOrder": 1203,
+        "level": 2,
+        "snakeId": "change_in_working_capital"
+      },
+      {
+        "accountNm": "매각예정비유동자산처분이익",
+        "sortOrder": 1204,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "매각예정비유동자산손상차손",
+        "sortOrder": 1205,
+        "level": 3,
+        "snakeId": "impairment_losses_on_asset_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "매각예정비유동자산처분손실",
+        "sortOrder": 1206,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_held_for_sale_or_disposal_group"
+      },
+      {
+        "accountNm": "유형자산손상차손환입",
+        "sortOrder": 1207,
+        "level": 3,
+        "snakeId": "recovery_of_impairment_losses_on_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "관계기업투자자산손상차손",
+        "sortOrder": 1208,
+        "level": 3,
+        "snakeId": "impairment_losses_on_associates"
+      },
+      {
+        "accountNm": "사용권자산손상차손",
+        "sortOrder": 1209,
+        "level": 3,
+        "snakeId": "impairment_losses_on_right_of_use_assets"
+      },
+      {
+        "accountNm": "매출채권의감소(증가)",
+        "sortOrder": 1210,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_trade_receivables"
+      },
+      {
+        "accountNm": "미수금의감소(증가)",
+        "sortOrder": 1211,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_receivables"
+      },
+      {
+        "accountNm": "선급금의감소(증가)",
+        "sortOrder": 1212,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_advance_payments"
+      },
+      {
+        "accountNm": "선급비용의감소(증가)",
+        "sortOrder": 1213,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_prepaid_expenses"
+      },
+      {
+        "accountNm": "재고자산의감소(증가)",
+        "sortOrder": 1214,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_inventories"
+      },
+      {
+        "accountNm": "매입채무의증가(감소)",
+        "sortOrder": 1215,
+        "level": 3,
+        "snakeId": "increasedecrease_in_trade_payables"
+      },
+      {
+        "accountNm": "미지급금의증가(감소)",
+        "sortOrder": 1216,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_payables"
+      },
+      {
+        "accountNm": "미지급비용의증가(감소)",
+        "sortOrder": 1217,
+        "level": 3,
+        "snakeId": "increasedecrease_in_accrued_expenses"
+      },
+      {
+        "accountNm": "예수금의증가(감소)",
+        "sortOrder": 1218,
+        "level": 3,
+        "snakeId": "increasedecrease_in_withholdings"
+      },
+      {
+        "accountNm": "선수금의증가(감소)",
+        "sortOrder": 1219,
+        "level": 3,
+        "snakeId": "increasedecrease_in_advance_from_customers"
+      },
+      {
+        "accountNm": "선수수익의증가(감소)",
+        "sortOrder": 1220,
+        "level": 3,
+        "snakeId": "increasedecrease_in_deferred_revenue"
+      },
+      {
+        "accountNm": "미지급법인세의증가(감소)",
+        "sortOrder": 1221,
+        "level": 3,
+        "snakeId": "increasedecrease_in_current_income_tax_liabilitiesincome_taxes_payable"
+      },
+      {
+        "accountNm": "충당부채의증가(감소)",
+        "sortOrder": 1222,
+        "level": 3,
+        "snakeId": "increasedecrease_in_provisions"
+      },
+      {
+        "accountNm": "퇴직금의지급",
+        "sortOrder": 1223,
+        "level": 3,
+        "snakeId": "payments_of_retirement_allowance"
+      },
+      {
+        "accountNm": "사외적립자산의감소(증가)",
+        "sortOrder": 1224,
+        "level": 3
+      },
+      {
+        "accountNm": "기타유동자산의감소(증가)",
+        "sortOrder": 1225,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_current_assets"
+      },
+      {
+        "accountNm": "퇴직급여채무의증가(감소)",
+        "sortOrder": 1225,
+        "level": 3,
+        "snakeId": "increasedecrease_in_defined_benefit_liabilities"
+      },
+      {
+        "accountNm": "기타유동부채의증가(감소)",
+        "sortOrder": 1226,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_current_liabilities"
+      },
+      {
+        "accountNm": "사외적립자산의공정가치의감소(증가)",
+        "sortOrder": 1226,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_plan_assets"
+      },
+      {
+        "accountNm": "기타비유동자산의감소(증가)",
+        "sortOrder": 1227,
+        "level": 3
+      },
+      {
+        "accountNm": "확정급여채무의현재가치의증가(감소)",
+        "sortOrder": 1227,
+        "level": 3,
+        "snakeId": "increasedecrease_in_defined_benefit_liability"
+      },
+      {
+        "accountNm": "기타비유동부채의증가(감소)",
+        "sortOrder": 1228,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_noncurrent_liabilities"
+      },
+      {
+        "accountNm": "계약자산의감소(증가)",
+        "sortOrder": 1229,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_contract_assetscosts"
+      },
+      {
+        "accountNm": "계약부채의증가(감소)",
+        "sortOrder": 1230,
+        "level": 3,
+        "snakeId": "increasedecrease_in_contract_liabilities"
+      },
+      {
+        "accountNm": "장기미수금의감소(증가)",
+        "sortOrder": 1231,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_longterm_receivables"
+      },
+      {
+        "accountNm": "장기미지급금의증가(감소)",
+        "sortOrder": 1232,
+        "level": 3,
+        "snakeId": "increasedecrease_in_longterm_other_payables"
+      },
+      {
+        "accountNm": "장기선수금의증가(감소)",
+        "sortOrder": 1233,
+        "level": 3,
+        "snakeId": "longterm_advance_from_customers"
+      },
+      {
+        "accountNm": "장기선급비용의감소(증가)",
+        "sortOrder": 1234,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_longterm_prepaid_expenses"
+      },
+      {
+        "accountNm": "당기법인세자산부채의변동",
+        "sortOrder": 1235,
+        "level": 3
+      },
+      {
+        "accountNm": "이연법인세자산부채의변동",
+        "sortOrder": 1236,
+        "level": 3
+      },
+      {
+        "accountNm": "재고자산감모손실",
+        "sortOrder": 1240,
+        "level": 3,
+        "snakeId": "impairment_loss_on_inventories"
+      },
+      {
+        "accountNm": "판매보증비",
+        "sortOrder": 1241,
+        "level": 3,
+        "snakeId": "product_warranties_expenses"
+      },
+      {
+        "accountNm": "비현금항목에관한기타조정",
+        "sortOrder": 1242,
+        "level": 3,
+        "snakeId": "other_noncash_adjustments"
+      },
+      {
+        "accountNm": "리스변경이익",
+        "sortOrder": 1243,
+        "level": 3,
+        "snakeId": "other_nonoperating_income"
+      },
+      {
+        "accountNm": "지급수수료",
+        "sortOrder": 1244,
+        "level": 3,
+        "snakeId": "commission_expenses"
+      },
+      {
+        "accountNm": "주식기준보상",
+        "sortOrder": 1245,
+        "level": 3,
+        "snakeId": "reserve_of_sharebased_payments"
+      },
+      {
+        "accountNm": "기타장기종업원급여",
+        "sortOrder": 1246,
+        "level": 3,
+        "snakeId": "others_longterm_employee_benefits_liabilitiesbonuses_etc"
+      },
+      {
+        "accountNm": "연결대상범위의변동",
+        "sortOrder": 1247,
+        "level": 3,
+        "snakeId": "change_of_consolidated_scope"
+      },
+      {
+        "accountNm": "금융보증비용",
+        "sortOrder": 1248,
+        "level": 3,
+        "snakeId": "provision_for_loss_on_acceptances_and_guarantees"
+      },
+      {
+        "accountNm": "종속기업/관계기업/공동기업투자손상차손환입",
+        "sortOrder": 1249,
+        "level": 3,
+        "snakeId": "recovery_of_impairment_losses_on_associates"
+      },
+      {
+        "accountNm": "하자보수비",
+        "sortOrder": 1250,
+        "level": 3,
+        "snakeId": "provision_for_construction_provisions"
+      },
+      {
+        "accountNm": "소모품비",
+        "sortOrder": 1251,
+        "level": 3,
+        "snakeId": "supplies"
+      },
+      {
+        "accountNm": "파생금융부채거래이익",
+        "sortOrder": 1252,
+        "level": 3,
+        "snakeId": "gains_on_valuations_of_derivatives"
+      },
+      {
+        "accountNm": "파생금융부채거래손실",
+        "sortOrder": 1253,
+        "level": 3,
+        "snakeId": "losses_on_derivatives_transactions"
+      },
+      {
+        "accountNm": "파생상품거래손실",
+        "sortOrder": 1254,
+        "level": 3,
+        "snakeId": "losses_on_derivatives_transactions"
+      },
+      {
+        "accountNm": "만기보유금융자산손상차손",
+        "sortOrder": 1255,
+        "level": 3,
+        "snakeId": "impairment_losses_on_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "매도가능금융자산손상차손환입",
+        "sortOrder": 1256,
+        "level": 3,
+        "snakeId": "recovery_of_impairment_losses_on_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융상품처분이익",
+        "sortOrder": 1257,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_financial_liabilities_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산처분손실",
+        "sortOrder": 1258,
+        "level": 3,
+        "snakeId": "losses_on_disposal_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "염가매수차익",
+        "sortOrder": 1259,
+        "level": 3,
+        "snakeId": "gains_on_bargain_purchase"
+      },
+      {
+        "accountNm": "매입채무및기타채무의증가(감소)",
+        "sortOrder": 1260,
+        "level": 3,
+        "snakeId": "increasedecrease_in_trade_and_other_payables"
+      },
+      {
+        "accountNm": "복구충당부채환입액",
+        "sortOrder": 1260,
+        "level": 3,
+        "snakeId": "reversion_of_provisions_for_restoration_costs"
+      },
+      {
+        "accountNm": "기타의대손충당금환입",
+        "sortOrder": 1261,
+        "level": 3,
+        "snakeId": "reversal_of_allowance_for_doubtful_accounts"
+      },
+      {
+        "accountNm": "유형자산재평가손실",
+        "sortOrder": 1261,
+        "level": 3,
+        "snakeId": "losses_on_revaluation_of_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "선급금의증가",
+        "sortOrder": 1262,
+        "level": 3,
+        "snakeId": "increase_in_advance_payments"
+      },
+      {
+        "accountNm": "중단영업(처분)손실",
+        "sortOrder": 1262,
+        "level": 3,
+        "snakeId": "discontinued_operating_incomeloss"
+      },
+      {
+        "accountNm": "매출채권및기타채권의감소(증가)",
+        "sortOrder": 1263,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "해외사업환산손익",
+        "sortOrder": 1263,
+        "level": 3,
+        "snakeId": "foreign_currency_translation"
+      },
+      {
+        "accountNm": "매출채권및기타유동채권의감소(증가)",
+        "sortOrder": 1264,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_trade_and_other_current_receivables"
+      },
+      {
+        "accountNm": "외환차익",
+        "sortOrder": 1264,
+        "level": 3,
+        "snakeId": "gains_on_foreign_currencies_transaction"
+      },
+      {
+        "accountNm": "파생상품자산의감소(증가)",
+        "sortOrder": 1265,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_derivative_assets"
+      },
+      {
+        "accountNm": "기타충당부채전입액",
+        "sortOrder": 1265,
+        "level": 3,
+        "snakeId": "provisions_for_others"
+      },
+      {
+        "accountNm": "파생상품부채의증가(감소)",
+        "sortOrder": 1266,
+        "level": 3,
+        "snakeId": "increasedecrease_in_derivative_liabilities"
+      },
+      {
+        "accountNm": "매입채무및기타유동채무의증가(감소)",
+        "sortOrder": 1267,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_trade_and_payables"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산처분이익",
+        "sortOrder": 1267,
+        "level": 3,
+        "snakeId": "gains_on_disposal_of_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "부가가치세선급금의감소(증가)",
+        "sortOrder": 1268,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_advance_payments"
+      },
+      {
+        "accountNm": "복리후생비",
+        "sortOrder": 1268,
+        "level": 3,
+        "snakeId": "employee_benefits"
+      },
+      {
+        "accountNm": "부가가치세예수금의증가(감소)",
+        "sortOrder": 1269,
+        "level": 3,
+        "snakeId": "longterm_withholdings"
+      },
+      {
+        "accountNm": "금융보증수익",
+        "sortOrder": 1269,
+        "level": 3,
+        "snakeId": "reversal_of_allowance_for_acceptances_and_guarantees"
+      },
+      {
+        "accountNm": "미수수익의감소(증가)",
+        "sortOrder": 1270,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_accrued_revenues"
+      },
+      {
+        "accountNm": "채무조정손실",
+        "sortOrder": 1270,
+        "level": 3,
+        "snakeId": "other_financing_cost"
+      },
+      {
+        "accountNm": "보증금의감소(증가)",
+        "sortOrder": 1271,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_deposits_provided"
+      },
+      {
+        "accountNm": "임차료",
+        "sortOrder": 1271,
+        "level": 3,
+        "snakeId": "rent"
+      },
+      {
+        "accountNm": "기타비유동비금융자산의감소(증가)",
+        "sortOrder": 1272,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_noncurrent_assets"
+      },
+      {
+        "accountNm": "기타충당부채의환입",
+        "sortOrder": 1273,
+        "level": 3,
+        "snakeId": "reversal_of_other_provisions"
+      },
+      {
+        "accountNm": "당기법인세자산의감소(증가)",
+        "sortOrder": 1274,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_current_income_tax_assetsprepaid_income_tax_payments"
+      },
+      {
+        "accountNm": "기타유동금융자산의감소(증가)",
+        "sortOrder": 1275,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_current_financial_assets"
+      },
+      {
+        "accountNm": "매출채권및기타채권의감소(증가)조정",
+        "sortOrder": 1276,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "기타금융부채의증가(감소)",
+        "sortOrder": 1277,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "기타비유동금융자산의감소(증가)",
+        "sortOrder": 1278,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_noncurrent_financial_assets"
+      },
+      {
+        "accountNm": "기타비유동금융부채의증가(감소)",
+        "sortOrder": 1279,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "기타유동금융부채의증가(감소)",
+        "sortOrder": 1280,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "장기매출채권및기타비유동채권의감소(증가)",
+        "sortOrder": 1281,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_trade_and_other_noncurrent_receivables"
+      },
+      {
+        "accountNm": "장기매출채권의감소(증가)",
+        "sortOrder": 1282,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_longterm_trade_receivables"
+      },
+      {
+        "accountNm": "기타자산의감소(증가)",
+        "sortOrder": 1283,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_assets"
+      },
+      {
+        "accountNm": "기타부채의감소",
+        "sortOrder": 1284,
+        "level": 3,
+        "snakeId": "decrease_in_other_liabilities"
+      },
+      {
+        "accountNm": "기타수취채권의감소(증가)",
+        "sortOrder": 1285,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_receivables"
+      },
+      {
+        "accountNm": "유동충당부채의증가(감소)",
+        "sortOrder": 1286,
+        "level": 3,
+        "snakeId": "increasedecrease_in_liability_provisions"
+      },
+      {
+        "accountNm": "기타채권의감소(증가)",
+        "sortOrder": 1287,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_receivables"
+      },
+      {
+        "accountNm": "장기매입채무및기타비유동채무의증가(감소)",
+        "sortOrder": 1288,
+        "level": 3,
+        "snakeId": "increasedecrease_in_longterm_trade_and_other_payables"
+      },
+      {
+        "accountNm": "금융리스부채의증가(감소)",
+        "sortOrder": 1289,
+        "level": 3,
+        "snakeId": "increase_in_lease_obligations"
+      },
+      {
+        "accountNm": "비유동종업원급여충당부채의증가(감소)",
+        "sortOrder": 1290,
+        "level": 3,
+        "snakeId": "increasedecrease_in_provisions_for_employee_benefits"
+      },
+      {
+        "accountNm": "비유동충당부채의증가(감소)",
+        "sortOrder": 1291,
+        "level": 3,
+        "snakeId": "increasedecrease_in_noncurrent_provisions"
+      },
+      {
+        "accountNm": "임차보증금의감소(증가)",
+        "sortOrder": 1292,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_deposits_provided"
+      },
+      {
+        "accountNm": "단기보증금의감소(증가)",
+        "sortOrder": 1293,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_shortterm_deposits_provided"
+      },
+      {
+        "accountNm": "기타금융자산의감소(증가)",
+        "sortOrder": 1294,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_financial_assets"
+      },
+      {
+        "accountNm": "기타금융부채의감소",
+        "sortOrder": 1295,
+        "level": 3,
+        "snakeId": "decrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "임대보증금의증가(감소)",
+        "sortOrder": 1296,
+        "level": 3,
+        "snakeId": "leasehold_deposits_received"
+      },
+      {
+        "accountNm": "기타충당부채의증가(감소)",
+        "sortOrder": 1297,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_provisions"
+      },
+      {
+        "accountNm": "기타영업활동관련채무의증가(감소)",
+        "sortOrder": 1298,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_liabilities"
+      },
+      {
+        "accountNm": "기타유동비금융자산의감소(증가)",
+        "sortOrder": 1299,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_other_trade_and_other_receivables"
+      },
+      {
+        "accountNm": "영업에서창출된현금흐름",
+        "sortOrder": 1300,
+        "level": 2,
+        "snakeId": "cash_flows_from_business"
+      },
+      {
+        "accountNm": "기타비유동비금융부채의증가(감소)",
+        "sortOrder": 1300,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "영업에서창출(유출)된현금흐름",
+        "sortOrder": 1301,
+        "level": 2,
+        "snakeId": "cash_flows_from_business"
+      },
+      {
+        "accountNm": "기타유동비금융부채의증가(감소)",
+        "sortOrder": 1301,
+        "level": 3,
+        "snakeId": "increasedecrease_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "영업에서창출된현금",
+        "sortOrder": 1302,
+        "level": 2,
+        "snakeId": "cash_flows_from_business"
+      },
+      {
+        "accountNm": "영업으로부터창출된현금흐름",
+        "sortOrder": 1303,
+        "level": 2,
+        "snakeId": "cash_flows_from_business"
+      },
+      {
+        "accountNm": "영업활동으로인한현금유입액",
+        "sortOrder": 1304,
+        "level": 2,
+        "snakeId": "cash_flows_from_operating_activities"
+      },
+      {
+        "accountNm": "장기선급금의감소(증가)",
+        "sortOrder": 1305,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_longterm_advance_payments"
+      },
+      {
+        "accountNm": "장기보증금의감소(증가)",
+        "sortOrder": 1306,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_longterm_deposits_provided"
+      },
+      {
+        "accountNm": "반품충당부채의증가(감소)",
+        "sortOrder": 1307,
+        "level": 3,
+        "snakeId": "returned_products_provisions"
+      },
+      {
+        "accountNm": "기타비유동금융부채의증가",
+        "sortOrder": 1308,
+        "level": 3,
+        "snakeId": "increase_in_other_financial_liabilities"
+      },
+      {
+        "accountNm": "판매보증충당부채의증가(감소)",
+        "sortOrder": 1309,
+        "level": 3,
+        "snakeId": "increasedecrease_in_product_warranties_provisions"
+      },
+      {
+        "accountNm": "금융보증부채의증가(감소)",
+        "sortOrder": 1310,
+        "level": 3,
+        "snakeId": "financial_guarantee_provisions"
+      },
+      {
+        "accountNm": "미청구공사의감소(증가)",
+        "sortOrder": 1311,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_construction_in_progress_receivables"
+      },
+      {
+        "accountNm": "이연법인세자산의감소(증가)",
+        "sortOrder": 1312,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_deferred_income_tax_assets"
+      },
+      {
+        "accountNm": "이연법인세부채의증가(감소)",
+        "sortOrder": 1313,
+        "level": 3,
+        "snakeId": "increasedecrease_in_deferred_income_tax_liabilities"
+      },
+      {
+        "accountNm": "장기미지급비용의증가(감소)",
+        "sortOrder": 1314,
+        "level": 3,
+        "snakeId": "longterm_accrued_expenses"
+      },
+      {
+        "accountNm": "예치금의감소(증가)",
+        "sortOrder": 1315,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_due_from_banks"
+      },
+      {
+        "accountNm": "초과청구공사의증가(감소)",
+        "sortOrder": 1316,
+        "level": 3,
+        "snakeId": "increasedecrease_in_excess_billing"
+      },
+      {
+        "accountNm": "복구충당부채의증가(감소)",
+        "sortOrder": 1317,
+        "level": 3,
+        "snakeId": "increasedecrease_in_provisions_for_restoration_costs"
+      },
+      {
+        "accountNm": "장기임대보증금의증가(감소)",
+        "sortOrder": 1318,
+        "level": 3,
+        "snakeId": "longterm_guarantee_deposits_withhold"
+      },
+      {
+        "accountNm": "단기선급비용의감소(증가)",
+        "sortOrder": 1319,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_shortterm_prepaid_expenses"
+      },
+      {
+        "accountNm": "단기미수금의감소(증가)",
+        "sortOrder": 1320,
+        "level": 3,
+        "snakeId": "decreaseincrease_in_receivables"
+      },
+      {
+        "accountNm": "생물자산의감소(증가)",
+        "sortOrder": 1321,
+        "level": 3,
+        "snakeId": "decrease_in_biological_assets"
+      },
+      {
+        "accountNm": "기타유동금융자산과기타유동비금융자산의감소(증가)",
+        "sortOrder": 1322,
+        "level": 3,
+        "snakeId": "other_current_financial_assets"
+      },
+      {
+        "accountNm": "기타채권(비유동)의감소(증가)",
+        "sortOrder": 1323,
+        "level": 3,
+        "snakeId": "trade_and_other_noncurrent_receivables"
+      },
+      {
+        "accountNm": "기타유동금융부채와기타유동비금융부채의증가(감소)",
+        "sortOrder": 1324,
+        "level": 3,
+        "snakeId": "other_current_financial_liabilities"
+      },
+      {
+        "accountNm": "미지급배당금의증가(감소)",
+        "sortOrder": 1325,
+        "level": 3,
+        "snakeId": "increasedecrease_in_dividends_payable"
+      },
+      {
+        "accountNm": "이자수취",
+        "sortOrder": 1400,
+        "level": 2,
+        "snakeId": "interest_received"
+      },
+      {
+        "accountNm": "이자의수취",
+        "sortOrder": 1401,
+        "level": 2
+      },
+      {
+        "accountNm": "이자지급",
+        "sortOrder": 1500,
+        "level": 2,
+        "snakeId": "interest_paid"
+      },
+      {
+        "accountNm": "이자의지급",
+        "sortOrder": 1501,
+        "level": 2,
+        "snakeId": "interest_expensesamortization_of_discount_on_bonds_etc"
+      },
+      {
+        "accountNm": "이자지급(영업)",
+        "sortOrder": 1502,
+        "level": 2,
+        "snakeId": "interest_paid"
+      },
+      {
+        "accountNm": "배당금수취",
+        "sortOrder": 1600,
+        "level": 2,
+        "snakeId": "dividends_received"
+      },
+      {
+        "accountNm": "배당금의수취",
+        "sortOrder": 1601,
+        "level": 2
+      },
+      {
+        "accountNm": "배당금수취(영업)",
+        "sortOrder": 1602,
+        "level": 2,
+        "snakeId": "dividends_received"
+      },
+      {
+        "accountNm": "배당금지급(영업)",
+        "sortOrder": 1650,
+        "level": 2,
+        "snakeId": "dividends_paid"
+      },
+      {
+        "accountNm": "법인세납부",
+        "sortOrder": 1700,
+        "level": 2,
+        "snakeId": "payments_of_income_taxes"
+      },
+      {
+        "accountNm": "법인세의납부",
+        "sortOrder": 1701,
+        "level": 2,
+        "snakeId": "income_taxes"
+      },
+      {
+        "accountNm": "법인세납부(환급)",
+        "sortOrder": 1702,
+        "level": 2,
+        "snakeId": "payments_of_income_taxes"
+      },
+      {
+        "accountNm": "법인세납부(영업)",
+        "sortOrder": 1703,
+        "level": 2,
+        "snakeId": "payments_of_income_taxes"
+      },
+      {
+        "accountNm": "법인세환급(영업)",
+        "sortOrder": 1704,
+        "level": 2,
+        "snakeId": "refunds_of_income_taxes"
+      },
+      {
+        "accountNm": "법인세환급(납부)",
+        "sortOrder": 1705,
+        "level": 2,
+        "snakeId": "refunds_payments_of_income_taxes"
+      },
+      {
+        "accountNm": "투자활동현금흐름",
+        "sortOrder": 2000,
+        "level": 1,
+        "snakeId": "cash_flows_from_investing_activities"
+      },
+      {
+        "accountNm": "투자활동으로인한현금흐름",
+        "sortOrder": 2001,
+        "level": 1,
+        "snakeId": "cash_flows_from_investing"
+      },
+      {
+        "accountNm": "투자활동으로인한현금유입액",
+        "sortOrder": 2002,
+        "level": 2,
+        "snakeId": "cash_inflows_from_investing_activities"
+      },
+      {
+        "accountNm": "투자활동으로인한현금유출액",
+        "sortOrder": 2003,
+        "level": 2,
+        "snakeId": "cash_outflows_from_investing_activities"
+      },
+      {
+        "accountNm": "단기금융상품의순증감",
+        "sortOrder": 2010,
+        "level": 2
+      },
+      {
+        "accountNm": "단기금융상품의증가",
+        "sortOrder": 2011,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_financial_instruments"
+      },
+      {
+        "accountNm": "단기금융상품의감소",
+        "sortOrder": 2012,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_financial_instruments"
+      },
+      {
+        "accountNm": "단기금융상품의처분",
+        "sortOrder": 2013,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_financial_instruments"
+      },
+      {
+        "accountNm": "단기금융상품의취득",
+        "sortOrder": 2014,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_financial_instruments"
+      },
+      {
+        "accountNm": "장기금융상품의순증감",
+        "sortOrder": 2020,
+        "level": 2
+      },
+      {
+        "accountNm": "장기금융상품의처분",
+        "sortOrder": 2021,
+        "level": 2,
+        "snakeId": "decrease_in_longterm_financial_instruments"
+      },
+      {
+        "accountNm": "장기금융상품의취득",
+        "sortOrder": 2022,
+        "level": 2,
+        "snakeId": "increase_in_longterm_financial_instruments"
+      },
+      {
+        "accountNm": "단기대여금의증가",
+        "sortOrder": 2030,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_loans"
+      },
+      {
+        "accountNm": "단기대여금의감소",
+        "sortOrder": 2031,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_loans"
+      },
+      {
+        "accountNm": "장기대여금의증가",
+        "sortOrder": 2032,
+        "level": 2,
+        "snakeId": "increase_in_loans"
+      },
+      {
+        "accountNm": "장기대여금의감소",
+        "sortOrder": 2033,
+        "level": 2,
+        "snakeId": "decrease_in_loans"
+      },
+      {
+        "accountNm": "대여금의증가",
+        "sortOrder": 2034,
+        "level": 2,
+        "snakeId": "increase_in_loans"
+      },
+      {
+        "accountNm": "대여금의감소",
+        "sortOrder": 2035,
+        "level": 2,
+        "snakeId": "decreaseincrease_in_loans"
+      },
+      {
+        "accountNm": "대여금및수취채권의취득",
+        "sortOrder": 2036,
+        "level": 2,
+        "snakeId": "increase_in_loans_and_receivables"
+      },
+      {
+        "accountNm": "대여금및수취채권의처분",
+        "sortOrder": 2037,
+        "level": 2,
+        "snakeId": "decrease_in_loans_and_receivables"
+      },
+      {
+        "accountNm": "당기손익인식금융자산의취득",
+        "sortOrder": 2040,
+        "level": 2,
+        "snakeId": "increase_in_financial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "당기손익인식금융자산의처분",
+        "sortOrder": 2041,
+        "level": 2,
+        "snakeId": "decrease_in_financial_assets_at_fv_through_profit"
+      },
+      {
+        "accountNm": "당기손익-공정가치금융자산의취득",
+        "sortOrder": 2042,
+        "level": 2
+      },
+      {
+        "accountNm": "당기손익-공정가치금융자산의처분",
+        "sortOrder": 2043,
+        "level": 2
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산의처분",
+        "sortOrder": 2044,
+        "level": 2,
+        "snakeId": "decrease_in_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산의취득",
+        "sortOrder": 2045,
+        "level": 2,
+        "snakeId": "increase_in_financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "유동당기손익인식금융자산의취득",
+        "sortOrder": 2046,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "당기손익-공정가치측정금융자산",
+        "sortOrder": 2046,
+        "level": 2,
+        "snakeId": "financial_assets_measured_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "유동당기손익인식금융자산의처분",
+        "sortOrder": 2047,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "비유동당기손익인식금융자산의취득",
+        "sortOrder": 2048,
+        "level": 2,
+        "snakeId": "increase_in_longterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "비유동당기손익인식금융자산의처분",
+        "sortOrder": 2049,
+        "level": 2,
+        "snakeId": "decrease_in_longterm_financial_assets_at_fair_value_through_profit_or_loss"
+      },
+      {
+        "accountNm": "매도가능금융자산의취득",
+        "sortOrder": 2050,
+        "level": 2,
+        "snakeId": "increase_in_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "매도가능금융자산의처분",
+        "sortOrder": 2051,
+        "level": 2,
+        "snakeId": "decrease_in_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치금융자산의취득",
+        "sortOrder": 2052,
+        "level": 2,
+        "snakeId": "increase_in_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치금융자산의처분",
+        "sortOrder": 2053,
+        "level": 2,
+        "snakeId": "gains_on_disposal_of_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타금융자산의취득",
+        "sortOrder": 2054,
+        "level": 2,
+        "snakeId": "increase_in_other_financial_assets"
+      },
+      {
+        "accountNm": "기타금융자산의처분",
+        "sortOrder": 2055,
+        "level": 2,
+        "snakeId": "decrease_in_other_financial_assets"
+      },
+      {
+        "accountNm": "기타비유동금융자산의취득",
+        "sortOrder": 2056,
+        "level": 2,
+        "snakeId": "increase_in_other_noncurrent_financial_assets"
+      },
+      {
+        "accountNm": "기타비유동금융자산의처분",
+        "sortOrder": 2057,
+        "level": 2,
+        "snakeId": "decrease_in_other_noncurrent_financial_assets"
+      },
+      {
+        "accountNm": "만기보유금융자산의취득",
+        "sortOrder": 2058,
+        "level": 2,
+        "snakeId": "increase_in_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "만기보유금융자산의처분",
+        "sortOrder": 2059,
+        "level": 2,
+        "snakeId": "decrease_in_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "임차보증금의증가",
+        "sortOrder": 2060,
+        "level": 2,
+        "snakeId": "increase_in_leasehold_deposits_provided"
+      },
+      {
+        "accountNm": "임차보증금의감소",
+        "sortOrder": 2061,
+        "level": 2,
+        "snakeId": "decrease_in_leasehold_deposits_provided"
+      },
+      {
+        "accountNm": "임대보증금의증가",
+        "sortOrder": 2062,
+        "level": 2,
+        "snakeId": "increase_in_leasehold_deposits_received"
+      },
+      {
+        "accountNm": "임대보증금의감소",
+        "sortOrder": 2063,
+        "level": 2,
+        "snakeId": "decrease_in_leasehold_deposits_received"
+      },
+      {
+        "accountNm": "보증금의증가",
+        "sortOrder": 2064,
+        "level": 2,
+        "snakeId": "increasedecrease_in_deposits_provided"
+      },
+      {
+        "accountNm": "보증금의감소",
+        "sortOrder": 2065,
+        "level": 2,
+        "snakeId": "decrease_in_guarantee_deposits"
+      },
+      {
+        "accountNm": "단기보증금의증가",
+        "sortOrder": 2066,
+        "level": 2
+      },
+      {
+        "accountNm": "단기보증금의감소",
+        "sortOrder": 2067,
+        "level": 2
+      },
+      {
+        "accountNm": "장기보증금의증가",
+        "sortOrder": 2068,
+        "level": 2
+      },
+      {
+        "accountNm": "장기보증금의감소",
+        "sortOrder": 2069,
+        "level": 2
+      },
+      {
+        "accountNm": "상각후원가금융자산의취득",
+        "sortOrder": 2070,
+        "level": 2
+      },
+      {
+        "accountNm": "상각후원가금융자산의처분",
+        "sortOrder": 2071,
+        "level": 2,
+        "snakeId": "financial_assets_at_amortised_cost"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산의처분",
+        "sortOrder": 2080,
+        "level": 2,
+        "snakeId": "decrease_in_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타포괄손익-공정가치측정금융자산의취득",
+        "sortOrder": 2081,
+        "level": 2,
+        "snakeId": "increase_in_financial_assets_measured_at_fair_value_through_other_comprehensive_income"
+      },
+      {
+        "accountNm": "기타유동금융자산의처분",
+        "sortOrder": 2082,
+        "level": 2,
+        "snakeId": "decrease_in_other_current_financial_assets"
+      },
+      {
+        "accountNm": "기타유동금융자산의취득",
+        "sortOrder": 2083,
+        "level": 2,
+        "snakeId": "increase_in_other_current_financial_assets"
+      },
+      {
+        "accountNm": "금융상품의처분",
+        "sortOrder": 2084,
+        "level": 2,
+        "snakeId": "decrease_in_financial_instruments"
+      },
+      {
+        "accountNm": "금융상품의취득",
+        "sortOrder": 2085,
+        "level": 2,
+        "snakeId": "increase_in_financial_instruments"
+      },
+      {
+        "accountNm": "비유동매도가능금융자산의취득",
+        "sortOrder": 2086,
+        "level": 2,
+        "snakeId": "increase_in_longterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "비유동매도가능금융자산의처분",
+        "sortOrder": 2087,
+        "level": 2,
+        "snakeId": "decrease_in_longterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "유동매도가능금융자산의취득",
+        "sortOrder": 2088,
+        "level": 2,
+        "snakeId": "availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "유동매도가능금융자산의처분",
+        "sortOrder": 2089,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_availableforsale_financial_assets"
+      },
+      {
+        "accountNm": "상각후원가측정금융자산의취득",
+        "sortOrder": 2090,
+        "level": 2,
+        "snakeId": "increase_in_financial_assets_at_amortised_cost"
+      },
+      {
+        "accountNm": "상각후원가측정금융자산의처분",
+        "sortOrder": 2091,
+        "level": 2,
+        "snakeId": "decrease_in_financial_assets_at_amortised_cost"
+      },
+      {
+        "accountNm": "비유동만기보유금융자산의처분",
+        "sortOrder": 2092,
+        "level": 2,
+        "snakeId": "decrease_in_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "유동만기보유금융자산의처분",
+        "sortOrder": 2093,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "유동만기보유금융자산의취득",
+        "sortOrder": 2094,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "비유동만기보유금융자산의취득",
+        "sortOrder": 2095,
+        "level": 2,
+        "snakeId": "longterm_held_to_maturity_investments"
+      },
+      {
+        "accountNm": "유형자산의취득",
+        "sortOrder": 2100,
+        "level": 2,
+        "snakeId": "purchase_of_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "유형자산의처분",
+        "sortOrder": 2101,
+        "level": 2,
+        "snakeId": "disposal_of_tangible_assets"
+      },
+      {
+        "accountNm": "투자부동산의취득",
+        "sortOrder": 2110,
+        "level": 2,
+        "snakeId": "increase_in_investment_in_properties"
+      },
+      {
+        "accountNm": "투자부동산의처분",
+        "sortOrder": 2111,
+        "level": 2,
+        "snakeId": "decrease_in_investment_in_properties"
+      },
+      {
+        "accountNm": "사업결합으로인한현금흐름",
+        "sortOrder": 2120,
+        "level": 2
+      },
+      {
+        "accountNm": "사용권자산의취득",
+        "sortOrder": 2130,
+        "level": 2,
+        "snakeId": "increase_in_right_of_use_assets"
+      },
+      {
+        "accountNm": "기타장기성자산의취득",
+        "sortOrder": 2140,
+        "level": 2,
+        "snakeId": "increase_in_other_longterm_assets"
+      },
+      {
+        "accountNm": "기타장기성자산의처분",
+        "sortOrder": 2141,
+        "level": 2,
+        "snakeId": "gainslosses_on_disposition_of_other_noncurrent_assets"
+      },
+      {
+        "accountNm": "건설중인자산의취득",
+        "sortOrder": 2150,
+        "level": 2,
+        "snakeId": "increase_in_construction_in_progress"
+      },
+      {
+        "accountNm": "건설중인자산의처분",
+        "sortOrder": 2151,
+        "level": 2,
+        "snakeId": "decrease_in_construction_in_progress"
+      },
+      {
+        "accountNm": "차량운반구의처분",
+        "sortOrder": 2160,
+        "level": 2,
+        "snakeId": "decrease_in_motor_vehicles"
+      },
+      {
+        "accountNm": "기계장치의취득",
+        "sortOrder": 2160,
+        "level": 2,
+        "snakeId": "increase_in_machinery_and_equipment"
+      },
+      {
+        "accountNm": "차량운반구의취득",
+        "sortOrder": 2161,
+        "level": 2,
+        "snakeId": "increase_in_motor_vehicles"
+      },
+      {
+        "accountNm": "기계장치의처분",
+        "sortOrder": 2161,
+        "level": 2,
+        "snakeId": "decrease_in_machinery_and_equipment"
+      },
+      {
+        "accountNm": "토지의취득",
+        "sortOrder": 2162,
+        "level": 2,
+        "snakeId": "increase_in_land"
+      },
+      {
+        "accountNm": "토지의처분",
+        "sortOrder": 2163,
+        "level": 2,
+        "snakeId": "decrease_in_land"
+      },
+      {
+        "accountNm": "건물의취득",
+        "sortOrder": 2164,
+        "level": 2,
+        "snakeId": "increase_in_buildings_and_structures"
+      },
+      {
+        "accountNm": "건물의처분",
+        "sortOrder": 2165,
+        "level": 2,
+        "snakeId": "decrease_in_buildings_and_structures"
+      },
+      {
+        "accountNm": "비품의취득",
+        "sortOrder": 2166,
+        "level": 2,
+        "snakeId": "increase_in_property_and_equipment"
+      },
+      {
+        "accountNm": "비품의처분",
+        "sortOrder": 2167,
+        "level": 2
+      },
+      {
+        "accountNm": "구축물의취득",
+        "sortOrder": 2168,
+        "level": 2,
+        "snakeId": "increase_in_structures"
+      },
+      {
+        "accountNm": "구축물의처분",
+        "sortOrder": 2169,
+        "level": 2,
+        "snakeId": "decrease_in_structures"
+      },
+      {
+        "accountNm": "금융리스자산의처분",
+        "sortOrder": 2170,
+        "level": 2,
+        "snakeId": "disposal_of_finance_lease_assets"
+      },
+      {
+        "accountNm": "기타유형자산의취득",
+        "sortOrder": 2170,
+        "level": 2,
+        "snakeId": "increase_in_other_property_and_equipment"
+      },
+      {
+        "accountNm": "금융리스채권의감소(증가)",
+        "sortOrder": 2171,
+        "level": 2,
+        "snakeId": "decreaseincrease_in_financing_leases_receivables"
+      },
+      {
+        "accountNm": "기타유형자산의처분",
+        "sortOrder": 2171,
+        "level": 2,
+        "snakeId": "decrease_in_other_property_and_equipment"
+      },
+      {
+        "accountNm": "집기의취득",
+        "sortOrder": 2172,
+        "level": 2,
+        "snakeId": "increase_in_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "집기의처분",
+        "sortOrder": 2173,
+        "level": 2,
+        "snakeId": "decrease_in_property_plant_and_equipment"
+      },
+      {
+        "accountNm": "사무용비품의처분",
+        "sortOrder": 2174,
+        "level": 2,
+        "snakeId": "decrease_in_tools_and_office_equipment"
+      },
+      {
+        "accountNm": "무형자산의취득",
+        "sortOrder": 2200,
+        "level": 2,
+        "snakeId": "purchase_of_intangible_assets"
+      },
+      {
+        "accountNm": "무형자산의처분",
+        "sortOrder": 2201,
+        "level": 2,
+        "snakeId": "disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "영업권이외의무형자산의처분",
+        "sortOrder": 2201,
+        "level": 2,
+        "snakeId": "decrease_in_intangible_assets"
+      },
+      {
+        "accountNm": "영업권이외의무형자산의취득",
+        "sortOrder": 2202,
+        "level": 2,
+        "snakeId": "increase_in_intangible_assets"
+      },
+      {
+        "accountNm": "기타무형자산의취득",
+        "sortOrder": 2203,
+        "level": 2,
+        "snakeId": "other_intangible_assets"
+      },
+      {
+        "accountNm": "기타무형자산의처분",
+        "sortOrder": 2204,
+        "level": 2,
+        "snakeId": "gains_on_disposal_of_intangible_assets"
+      },
+      {
+        "accountNm": "산업재산권의취득",
+        "sortOrder": 2205,
+        "level": 2,
+        "snakeId": "increase_in_industrial_property_rights"
+      },
+      {
+        "accountNm": "컴퓨터소프트웨어의취득",
+        "sortOrder": 2206,
+        "level": 2,
+        "snakeId": "increase_in_intangible_assets"
+      },
+      {
+        "accountNm": "개발중인무형자산의취득",
+        "sortOrder": 2207,
+        "level": 2,
+        "snakeId": "increase_in_intangible_assets"
+      },
+      {
+        "accountNm": "영업권의취득",
+        "sortOrder": 2208,
+        "level": 2,
+        "snakeId": "increase_in_goodwill"
+      },
+      {
+        "accountNm": "영업권의처분",
+        "sortOrder": 2209,
+        "level": 2,
+        "snakeId": "decrease_in_goodwill"
+      },
+      {
+        "accountNm": "컴퓨터소프트웨어의처분",
+        "sortOrder": 2210,
+        "level": 2,
+        "snakeId": "software"
+      },
+      {
+        "accountNm": "관계기업투자주식의취득",
+        "sortOrder": 2300,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업투자주식의처분",
+        "sortOrder": 2301,
+        "level": 2,
+        "snakeId": "investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업에대한투자자산의취득",
+        "sortOrder": 2310,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업에대한투자자산의처분",
+        "sortOrder": 2311,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_associates"
+      },
+      {
+        "accountNm": "종속기업,조인트벤처와관계기업에대한투자자산의취득",
+        "sortOrder": 2312,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_associates_subsidiaries_and_joint_venteures"
+      },
+      {
+        "accountNm": "관계기업투자자산의취득",
+        "sortOrder": 2313,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_associates"
+      },
+      {
+        "accountNm": "관계기업투자자산의처분",
+        "sortOrder": 2314,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_associates"
+      },
+      {
+        "accountNm": "종속기업,조인트벤처와관계기업에대한투자자산의처분",
+        "sortOrder": 2315,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_associates_subsidiaries_and_joint_venteures"
+      },
+      {
+        "accountNm": "지분법적용투자지분의취득",
+        "sortOrder": 2320,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_associatesequity_method_securities"
+      },
+      {
+        "accountNm": "지분법적용투자지분의처분",
+        "sortOrder": 2321,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_associatesequity_method_securities"
+      },
+      {
+        "accountNm": "공동기업투자주식의취득",
+        "sortOrder": 2330,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_joint_ventures"
+      },
+      {
+        "accountNm": "공동기업투자의처분",
+        "sortOrder": 2331,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_joint_ventures"
+      },
+      {
+        "accountNm": "조인트벤처에대한투자자산의취득",
+        "sortOrder": 2340,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_joint_ventures"
+      },
+      {
+        "accountNm": "조인트벤처투자지분의처분에따른기타현금유입",
+        "sortOrder": 2341,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_joint_ventures"
+      },
+      {
+        "accountNm": "출자금의증가",
+        "sortOrder": 2350,
+        "level": 2,
+        "snakeId": "increase_in_equity_investments"
+      },
+      {
+        "accountNm": "관계기업및공동기업주식취득및처분",
+        "sortOrder": 2351,
+        "level": 2,
+        "snakeId": "investments_in_associates_and_joint_ventures_transactions"
+      },
+      {
+        "accountNm": "출자금의감소",
+        "sortOrder": 2352,
+        "level": 2,
+        "snakeId": "decrease_in_equity_investments"
+      },
+      {
+        "accountNm": "종속기업의취득",
+        "sortOrder": 2400,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업의처분",
+        "sortOrder": 2401,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업에대한투자자산의취득",
+        "sortOrder": 2402,
+        "level": 2,
+        "snakeId": "increase_in_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업에대한투자자산의처분",
+        "sortOrder": 2403,
+        "level": 2,
+        "snakeId": "decrease_in_investments_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업에대한소유지분의변동으로인한처분",
+        "sortOrder": 2404,
+        "level": 2,
+        "snakeId": "disposition_of_interest_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업에대한소유지분의변동으로인한지급",
+        "sortOrder": 2405,
+        "level": 2,
+        "snakeId": "disposition_of_interest_in_subsidiaries"
+      },
+      {
+        "accountNm": "종속기업과기타사업의지배력획득에따른현금흐름",
+        "sortOrder": 2406,
+        "level": 2,
+        "snakeId": "cash_flows_from_control_of_subsidiaries_or_other_businesses"
+      },
+      {
+        "accountNm": "종속기업과기타사업의지배력상실에따른현금흐름",
+        "sortOrder": 2407,
+        "level": 2,
+        "snakeId": "cash_flows_from_loss_of_control_of_subsidiaries_or_other_businesses"
+      },
+      {
+        "accountNm": "사업결합",
+        "sortOrder": 2410,
+        "level": 2,
+        "snakeId": "business_combination"
+      },
+      {
+        "accountNm": "사업결합으로인한순현금흐름",
+        "sortOrder": 2411,
+        "level": 2
+      },
+      {
+        "accountNm": "매각예정으로분류된비유동자산이나처분자산집단의처분",
+        "sortOrder": 2500,
+        "level": 2,
+        "snakeId": "decrease_in_noncurrent_asset_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정자산의처분",
+        "sortOrder": 2501,
+        "level": 2,
+        "snakeId": "decrease_in_noncurrent_asset_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정으로분류된비유동자산이나처분자산집단의취득",
+        "sortOrder": 2502,
+        "level": 2,
+        "snakeId": "increase_in_noncurrent_asset_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정비유동자산의대체",
+        "sortOrder": 2503,
+        "level": 2,
+        "snakeId": "transfer_to_assets_held_for_sale"
+      },
+      {
+        "accountNm": "매각예정으로분류된처분자산집단에포함된부채의처분",
+        "sortOrder": 2504,
+        "level": 2,
+        "snakeId": "decrease_in_liabilities_held_for_sale"
+      },
+      {
+        "accountNm": "선물계약,선도계약,옵션계약및스왑계약에따른현금유출",
+        "sortOrder": 2600,
+        "level": 2,
+        "snakeId": "cash_outflows_from_derivatives"
+      },
+      {
+        "accountNm": "선물계약,선도계약,옵션계약및스왑계약에따른현금유입",
+        "sortOrder": 2601,
+        "level": 2,
+        "snakeId": "cash_inflows_from_derivatives"
+      },
+      {
+        "accountNm": "다른기업의지분상품이나채무상품의취득에따른기타현금유출",
+        "sortOrder": 2610,
+        "level": 2,
+        "snakeId": "cash_outflows_from_acquisition_of_equity_or_debt_instruments"
+      },
+      {
+        "accountNm": "다른기업의지분상품이나채무상품의처분에따른기타현금유입",
+        "sortOrder": 2611,
+        "level": 2,
+        "snakeId": "cash_inflows_from_disposal_of_equity_or_debt_instruments"
+      },
+      {
+        "accountNm": "제3자에대한선급금및대여금의회수에따른현금유입",
+        "sortOrder": 2620,
+        "level": 2,
+        "snakeId": "collection_of_advance_payments_and_loans_to_third_parties"
+      },
+      {
+        "accountNm": "현금의기타유입(유출)",
+        "sortOrder": 2900,
+        "level": 2,
+        "snakeId": "other_cash_inflows_outflows"
+      },
+      {
+        "accountNm": "정부보조금의수취",
+        "sortOrder": 2910,
+        "level": 2,
+        "snakeId": "government_grants_received"
+      },
+      {
+        "accountNm": "사업양도로인한현금유입",
+        "sortOrder": 2920,
+        "level": 2
+      },
+      {
+        "accountNm": "보상금수취",
+        "sortOrder": 2930,
+        "level": 2,
+        "snakeId": "other_operating_income"
+      },
+      {
+        "accountNm": "재무활동현금흐름",
+        "sortOrder": 3000,
+        "level": 1,
+        "snakeId": "cash_flows_from_financing_activities"
+      },
+      {
+        "accountNm": "재무활동으로인한현금흐름",
+        "sortOrder": 3001,
+        "level": 1,
+        "snakeId": "cash_flows_from_financing"
+      },
+      {
+        "accountNm": "단기차입금의순증감",
+        "sortOrder": 3010,
+        "level": 2,
+        "snakeId": "increasedecrease_in_shortterm_borrowings"
+      },
+      {
+        "accountNm": "단기차입금의증가",
+        "sortOrder": 3011,
+        "level": 2,
+        "snakeId": "increase_in_shortterm_borrowings"
+      },
+      {
+        "accountNm": "단기차입금의상환",
+        "sortOrder": 3012,
+        "level": 2,
+        "snakeId": "repayment_of_shortterm_borrowings"
+      },
+      {
+        "accountNm": "단기차입금의감소",
+        "sortOrder": 3013,
+        "level": 2,
+        "snakeId": "decrease_in_shortterm_borrowings"
+      },
+      {
+        "accountNm": "장기차입금의차입",
+        "sortOrder": 3100,
+        "level": 2,
+        "snakeId": "increase_in_longterm_borrowings"
+      },
+      {
+        "accountNm": "장기차입금의상환",
+        "sortOrder": 3101,
+        "level": 2,
+        "snakeId": "repayment_of_longterm_borrowings"
+      },
+      {
+        "accountNm": "장기차입금의증가",
+        "sortOrder": 3102,
+        "level": 2,
+        "snakeId": "increase_in_longtermborrowings"
+      },
+      {
+        "accountNm": "차입금의상환",
+        "sortOrder": 3103,
+        "level": 2,
+        "snakeId": "repayment_of_borrowings"
+      },
+      {
+        "accountNm": "차입금의차입",
+        "sortOrder": 3104,
+        "level": 2
+      },
+      {
+        "accountNm": "유동성장기차입금의상환",
+        "sortOrder": 3105,
+        "level": 2,
+        "snakeId": "redemption_of_current_portion_of_longterm_borrowings"
+      },
+      {
+        "accountNm": "유동성사채의상환",
+        "sortOrder": 3106,
+        "level": 2
+      },
+      {
+        "accountNm": "차입금의증가",
+        "sortOrder": 3107,
+        "level": 2,
+        "snakeId": "increase_in_borrowings"
+      },
+      {
+        "accountNm": "리스부채의상환",
+        "sortOrder": 3110,
+        "level": 2,
+        "snakeId": "decrease_in_lease_obligations"
+      },
+      {
+        "accountNm": "리스료의지급",
+        "sortOrder": 3111,
+        "level": 2,
+        "snakeId": "decrease_in_lease_obligations"
+      },
+      {
+        "accountNm": "금융리스부채의상환",
+        "sortOrder": 3112,
+        "level": 2
+      },
+      {
+        "accountNm": "금융리스부채의증가",
+        "sortOrder": 3113,
+        "level": 2,
+        "snakeId": "increase_in_lease_obligations"
+      },
+      {
+        "accountNm": "사채의발행",
+        "sortOrder": 3200,
+        "level": 2,
+        "snakeId": "issuance_of_bonds"
+      },
+      {
+        "accountNm": "사채의상환",
+        "sortOrder": 3201,
+        "level": 2,
+        "snakeId": "repayments_of_bonds"
+      },
+      {
+        "accountNm": "사채의증가",
+        "sortOrder": 3202,
+        "level": 2,
+        "snakeId": "increase_of_longtermbonds"
+      },
+      {
+        "accountNm": "사채발행비지급",
+        "sortOrder": 3203,
+        "level": 2,
+        "snakeId": "losses_on_redemption_of_bonds"
+      },
+      {
+        "accountNm": "전환사채의증가",
+        "sortOrder": 3210,
+        "level": 2,
+        "snakeId": "increase_of_convertible_bonds"
+      },
+      {
+        "accountNm": "전환사채의감소",
+        "sortOrder": 3211,
+        "level": 2,
+        "snakeId": "decrease_of_convertible_bonds"
+      },
+      {
+        "accountNm": "전환사채의상환",
+        "sortOrder": 3212,
+        "level": 2,
+        "snakeId": "repayment_of_convertible_bonds"
+      },
+      {
+        "accountNm": "신주인수권부사채의발행",
+        "sortOrder": 3220,
+        "level": 2
+      },
+      {
+        "accountNm": "신주인수권부사채의상환",
+        "sortOrder": 3221,
+        "level": 2
+      },
+      {
+        "accountNm": "신주인수권부사채의감소",
+        "sortOrder": 3222,
+        "level": 2,
+        "snakeId": "bonds_with_stock_warrants"
+      },
+      {
+        "accountNm": "신주인수권부사채의증가",
+        "sortOrder": 3223,
+        "level": 2,
+        "snakeId": "increase_in_bonds"
+      },
+      {
+        "accountNm": "교환사채의발행",
+        "sortOrder": 3230,
+        "level": 2,
+        "snakeId": "exchangeable_bonds"
+      },
+      {
+        "accountNm": "교환사채의상환",
+        "sortOrder": 3231,
+        "level": 2
+      },
+      {
+        "accountNm": "교환사채의증가",
+        "sortOrder": 3232,
+        "level": 2,
+        "snakeId": "increase_of_exchangeable_bonds"
+      },
+      {
+        "accountNm": "교환사채의감소",
+        "sortOrder": 3233,
+        "level": 2,
+        "snakeId": "decrease_of_exchangeable_bonds"
+      },
+      {
+        "accountNm": "자기주식의취득",
+        "sortOrder": 3300,
+        "level": 2,
+        "snakeId": "purchase_of_treasury_stock"
+      },
+      {
+        "accountNm": "자기주식의처분",
+        "sortOrder": 3301,
+        "level": 2,
+        "snakeId": "sale_of_treasury_stock"
+      },
+      {
+        "accountNm": "배당금지급",
+        "sortOrder": 3400,
+        "level": 2,
+        "snakeId": "dividends_paid"
+      },
+      {
+        "accountNm": "배당금의지급",
+        "sortOrder": 3401,
+        "level": 2,
+        "snakeId": "dividends_paid"
+      },
+      {
+        "accountNm": "주식의발행",
+        "sortOrder": 3500,
+        "level": 2,
+        "snakeId": "issuance_of_common_stock"
+      },
+      {
+        "accountNm": "신주발행비지급",
+        "sortOrder": 3501,
+        "level": 2,
+        "snakeId": "payment_of_stock_issuance_costs"
+      },
+      {
+        "accountNm": "주식발행비용",
+        "sortOrder": 3502,
+        "level": 2,
+        "snakeId": "paidin_capital_in_excess_of_par_value"
+      },
+      {
+        "accountNm": "주식발행비",
+        "sortOrder": 3503,
+        "level": 2,
+        "snakeId": "paidin_capital_in_excess_of_par_value"
+      },
+      {
+        "accountNm": "주식선택권행사로인한현금유입",
+        "sortOrder": 3510,
+        "level": 2,
+        "snakeId": "exercise_of_stock_options"
+      },
+      {
+        "accountNm": "전환권/신주인수권행사로인한현금유입",
+        "sortOrder": 3511,
+        "level": 2,
+        "snakeId": "cash_inflows_from_exercise_of_conversion_rights"
+      },
+      {
+        "accountNm": "비지배지분의증가",
+        "sortOrder": 3520,
+        "level": 2,
+        "snakeId": "increase_in_noncontrolling_interests"
+      },
+      {
+        "accountNm": "비지배지분의감소",
+        "sortOrder": 3521,
+        "level": 2,
+        "snakeId": "decrease_in_noncontrolling_interests"
+      },
+      {
+        "accountNm": "비지배지분의출자",
+        "sortOrder": 3522,
+        "level": 2,
+        "snakeId": "contribution_from_noncontrolling_interests"
+      },
+      {
+        "accountNm": "유상증자",
+        "sortOrder": 3530,
+        "level": 2,
+        "snakeId": "paid_in_capital_increase"
+      },
+      {
+        "accountNm": "유상감자",
+        "sortOrder": 3531,
+        "level": 2,
+        "snakeId": "paid_in_capital_decrease"
+      },
+      {
+        "accountNm": "상환우선주발행",
+        "sortOrder": 3540,
+        "level": 2,
+        "snakeId": "increase_in_preferred_stock_of_redemption"
+      },
+      {
+        "accountNm": "상환우선주상환",
+        "sortOrder": 3541,
+        "level": 2,
+        "snakeId": "redemption_of_callable_stock"
+      },
+      {
+        "accountNm": "기타지분상품의발행",
+        "sortOrder": 3550,
+        "level": 2,
+        "snakeId": "paid_in_capital_increase"
+      },
+      {
+        "accountNm": "신종자본증권의발행",
+        "sortOrder": 3551,
+        "level": 2,
+        "snakeId": "issue_of_hybrid_bond"
+      },
+      {
+        "accountNm": "신종자본증권의상환",
+        "sortOrder": 3552,
+        "level": 2,
+        "snakeId": "redemption_of_hybrid_bond"
+      },
+      {
+        "accountNm": "신종자본증권의배당",
+        "sortOrder": 3553,
+        "level": 2,
+        "snakeId": "hybrid_bond_dividends"
+      },
+      {
+        "accountNm": "주식의취득이나상환",
+        "sortOrder": 3560,
+        "level": 2,
+        "snakeId": "purchase_of_treasury_stock"
+      },
+      {
+        "accountNm": "감자로인한현금유출",
+        "sortOrder": 3570,
+        "level": 2,
+        "snakeId": "paid_in_capital_decrease"
+      },
+      {
+        "accountNm": "합병으로인한증가",
+        "sortOrder": 3580,
+        "level": 2,
+        "snakeId": "change_by_merger_and_acquisition"
+      },
+      {
+        "accountNm": "지배력을획득하거나상실한종속기업또는기타사업이보유한현금및현금성자산",
+        "sortOrder": 3590,
+        "level": 2,
+        "snakeId": "cash_from_acquisition_or_loss_of_control_of_subsidiaries"
+      },
+      {
+        "accountNm": "정부보조금의상환",
+        "sortOrder": 3600,
+        "level": 2,
+        "snakeId": "repayments_of_government_grants"
+      },
+      {
+        "accountNm": "연결자본거래로인한현금유출",
+        "sortOrder": 3610,
+        "level": 2,
+        "snakeId": "decrease_in_consolidated_capital_transaction"
+      },
+      {
+        "accountNm": "연결자본거래로인한현금유입",
+        "sortOrder": 3611,
+        "level": 2,
+        "snakeId": "increase_in_consolidated_capital_transaction"
+      },
+      {
+        "accountNm": "중단영업으로인한현금유입",
+        "sortOrder": 3620,
+        "level": 2,
+        "snakeId": "cash_inflows_from_discontinued_operations"
+      },
+      {
+        "accountNm": "중단영업으로인한현금유출",
+        "sortOrder": 3621,
+        "level": 2,
+        "snakeId": "cash_outflows_from_discontinued_operations"
+      },
+      {
+        "accountNm": "환율변동효과",
+        "sortOrder": 4000,
+        "level": 1,
+        "snakeId": "difference_by_changes_in_foreign_exchange_rates"
+      },
+      {
+        "accountNm": "현금및현금성자산에대한환율변동효과",
+        "sortOrder": 4001,
+        "level": 1,
+        "snakeId": "effect_of_exchange_rate_changes"
+      },
+      {
+        "accountNm": "외화표시현금및현금성자산의환율변동효과",
+        "sortOrder": 4002,
+        "level": 1,
+        "snakeId": "difference_by_changes_in_foreign_exchange_rates"
+      },
+      {
+        "accountNm": "환율변동효과반영전현금및현금성자산의순증가(감소)",
+        "sortOrder": 4990,
+        "level": 1,
+        "snakeId": "increasedecrease_in_cash_and_cash_equivalents"
+      },
+      {
+        "accountNm": "현금및현금성자산의순증감",
+        "sortOrder": 5000,
+        "level": 1
+      },
+      {
+        "accountNm": "현금및현금성자산의증가(감소)",
+        "sortOrder": 5001,
+        "level": 1
+      },
+      {
+        "accountNm": "현금의증가(감소)",
+        "sortOrder": 5002,
+        "level": 1
+      },
+      {
+        "accountNm": "현금및현금성자산의순증가(감소)",
+        "sortOrder": 5003,
+        "level": 1,
+        "snakeId": "increasedecrease_in_cash_and_cash_equivalents"
+      },
+      {
+        "accountNm": "기초현금및현금성자산",
+        "sortOrder": 6000,
+        "level": 1,
+        "snakeId": "cash_and_cash_equivalents_at_the_beginning_of_year"
+      },
+      {
+        "accountNm": "기초의현금및현금성자산",
+        "sortOrder": 6001,
+        "level": 1
+      },
+      {
+        "accountNm": "기초현금",
+        "sortOrder": 6002,
+        "level": 1
+      },
+      {
+        "accountNm": "기말현금및현금성자산",
+        "sortOrder": 7000,
+        "level": 1,
+        "snakeId": "cash_and_cash_equivalents_at_the_end_of_year"
+      },
+      {
+        "accountNm": "기말의현금및현금성자산",
+        "sortOrder": 7001,
+        "level": 1
+      },
+      {
+        "accountNm": "기말현금",
+        "sortOrder": 7002,
+        "level": 1
+      },
+      {
+        "accountNm": "현금및현금성자산",
+        "sortOrder": 7003,
+        "level": 1,
+        "snakeId": "cash_and_cash_equivalents"
+      }
+    ]
+  },
+  "CIS": {
+    "_description": "포괄손익계산서: IS와 동일 순서 사용",
+    "_note": "CIS는 IS 매핑 사용. 별도 accounts 없음"
+  }
+}

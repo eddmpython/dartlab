@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-03-22
+
+### Added
+
+- **`_reference/` 공개**: DART/EDGAR finance 계정학습 메커니즘 및 매핑 도구를 git 추적 대상으로 전환. wheel 배포에서는 제외
+- **stability.md 확장**: `index`, `filings()`, `profile`, `CIS`, `SCE`, `timeseries`, `ratios`, 도구 모듈 등 누락 API의 안정성 등급 명시
+- **EDGAR topic naming convention 문서화**: `{formType}::{itemId}` 형식 및 짧은 alias 설명
+- **DART/EDGAR namespace 차이 문서화**: docs/report namespace 비대칭 설명 추가
+
+### Changed
+
+- **`sce` deprecation**: `finance.sce` / `c.sce`에 DeprecationWarning 추가 → v0.8.0에서 제거 예정. `SCE`(대문자)가 공식 경로
+- **`filings()` type hint 통일**: DART `filings()` 반환 타입을 `DataFrame` → `DataFrame | None`으로 Protocol과 일치 (실제 동작 변경 없음)
+- **CLAUDE.md `_reference/` 정책 갱신**: 계정학습 메커니즘 공개, git 추적 대상으로 재정의
+
 ## [0.7.4] - 2026-03-22
 
 ### Added
@@ -27,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AI 런타임 파이프라인 리팩토링**: core.py, pipeline.py — 분석 흐름을 validation/events/core로 모듈 분리
 - **CI test 마커 필터 보강**: `-m "not requires_data"` → `-m "not requires_data and not heavy"` (CI에서 heavy 테스트 제외)
 - **pre-commit ruff 버전 동기화**: v0.9.0 → v0.11.4 (CI ruff 버전과 일치시켜 format 불일치 해소)
-- **ruff exclude에 `_reference/` 추가**: 레거시 참조 파일 lint 제외
+- **ruff exclude에 `_reference/` 추가**: 참조 파일 lint 제외
 - **의존성 상한 추가**: polars<2, requests<3, rich<14, beautifulsoup4<5 등 주요 의존성에 major version 상한 설정
 - **rank 엔진 print → logger**: `rank.py`, `screen.py`의 print문을 `logging.getLogger(__name__)` 전환
 - **서버 bare except 구체화**: `streaming.py`의 `except Exception` → OSError, RuntimeError 등 7개 구체 예외 타입
@@ -37,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **CI lint 10연패 해결**: `_reference/` 폴더의 레거시 코드(F601 중복키, E722 bare except, F403 star import) 44개 에러 → ruff exclude 설정으로 근본 해소
+- **CI lint 10연패 해결**: `_reference/` 폴더의 참조 코드(F601 중복키, E722 bare except, F403 star import) 44개 에러 → ruff exclude 설정으로 근본 해소
 - **CI format 실패**: pre-commit ruff v0.9.0과 CI ruff v0.11.4 버전 차이로 42개 파일 포맷 불일치 → 버전 동기화
 - **CI test_cli 실패**: `dartlab.core.ai.detect` 모듈이 git에 미커밋 상태에서 테스트가 import 시도 → 누락 파일 추가
 - **CompanyCache LRU 테스트**: 메모리 1.5GB 초과 시 캐시 크기가 5→1로 축소되어 `assert len(cache) == 5` 실패 → `_check_memory_pressure` 모킹
@@ -178,6 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
 [Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.4...HEAD
+[0.7.5]: https://github.com/eddmpython/dartlab/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/eddmpython/dartlab/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/eddmpython/dartlab/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/eddmpython/dartlab/compare/v0.7.1...v0.7.2

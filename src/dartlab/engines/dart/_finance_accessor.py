@@ -61,6 +61,13 @@ class _FinanceAccessor:
 
     @property
     def sce(self):
+        import warnings
+
+        warnings.warn(
+            "finance.sce는 v0.8.0에서 제거됩니다. finance.SCE를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._company._sce()
 
     @property

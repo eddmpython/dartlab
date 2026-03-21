@@ -1,0 +1,448 @@
+{
+  "timestamp": "2026-03-10T10:38:25.481596",
+  "action": "rollback_bad_fixes",
+  "experiment": "005_rollbackBadFixes",
+  "description": "004 검증 결과 오수정 롤백",
+  "deleted": [
+    "increasedecreaseinothercurrentliabilities",
+    "otherliabilitiescurrent",
+    "otherliabilitiesnoncurrent",
+    "increasedecreaseinothernoncurrentassets",
+    "increasedecreaseinothernoncurrentliabilities",
+    "increasedecreaseinotheroperatingliabilities"
+  ],
+  "restored": [
+    {
+      "tag": "accountspayableandaccruedliabilitiescurrent",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "pensionandotherpostretirementandpostemploymentbenefitplansliabilitiescurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "deferredtaxassetsliabilitiesnet",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_assets"
+    },
+    {
+      "tag": "liabilitiesofdisposalgroupincludingdiscontinuedoperationnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "otheraccruedliabilitiescurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "pensionandotherpostretirementdefinedbenefitplansliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "pensionandotherpostretirementdefinedbenefitplanscurrentliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "deferredtaxassetsliabilitiesnetcurrent",
+      "from": "total_liabilities",
+      "to": "other_current_assets"
+    },
+    {
+      "tag": "deferredcompensationliabilityclassifiednoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "otherpostretirementdefinedbenefitplanliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "definedbenefitpensionplanliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "liabilitiesofdisposalgroupincludingdiscontinuedoperation",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "otherliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "accruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "accruedliabilitiesandotherliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "interestbearingdepositliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "noninterestbearingdepositliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "deferredcompensationliabilitycurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "accruedliabilitiescurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "disposalgroupincludingdiscontinuedoperationaccruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "noncashorpartnoncashacquisitionnetnonmonetaryassetsacquiredliabilitiesassumed1",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "disposalgroupincludingdiscontinuedoperationotherliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "accountspayableandaccruedliabilitiescurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "otherliabilitiesfairvaluedisclosure",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "noninterestbearingdepositliabilitiesdomestic",
+      "from": "total_liabilities",
+      "to": "other_current_liabilities"
+    },
+    {
+      "tag": "businesscombinationrecognizedidentifiableassetsacquiredandliabilitiesassumedcurrentassetsmarketablesecurities",
+      "from": "total_liabilities",
+      "to": "other_current_assets"
+    },
+    {
+      "tag": "noncashorpartnoncashacquisitionvalueofliabilitiesassumed1",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "noncashorpartnoncashacquisitionotherliabilitiesassumed1",
+      "from": "total_liabilities",
+      "to": "other_noncash_items"
+    },
+    {
+      "tag": "relatedpartydepositliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "businesscombinationcontingentconsiderationliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "workerscompensationliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "liabilitiesofassetsheldforsale",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "businesscombinationrecognizedidentifiableassetsacquiredandliabilitiesassumeddeferredtaxliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_assets"
+    },
+    {
+      "tag": "otheraccountspayableandaccruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "accountspayableandotheraccruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "postemploymentbenefitsliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "pensionandotherpostretirementandpostemploymentbenefitplansliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "assetretirementobligationliabilitiessettled",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "assetretirementobligationliabilitiesincurred",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "regulatoryliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "liabilitiesotherthanlongtermdebtnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "increasedecreaseinfuturepolicybenefitreservesandotherinsuranceliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "increasedecreaseinlifeinsuranceliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "increasedecreaseinaccountspayableandotheroperatingliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "interestbearingdepositliabilitiesdomestic",
+      "from": "total_liabilities",
+      "to": "other_current_liabilities"
+    },
+    {
+      "tag": "businesscombinationrecognizedidentifiableassetsacquiredandliabilitiesassumeddeferredtaxliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_current_assets"
+    },
+    {
+      "tag": "depositliabilitiesaccruedinterest",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "disposalgroupincludingdiscontinuedoperationothernoncurrentliabilities",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "businesscombinationrecognizedidentifiableassetsacquiredandliabilitiesassumedcurrentliabilitieslongtermdebt",
+      "from": "total_liabilities",
+      "to": "other_current_assets"
+    },
+    {
+      "tag": "depositcontractsliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "othersundryliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "closedblockliabilitiesotherpolicyholderfunds",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "closedblockliabilitiesotherclosedblockliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "accruedliabilitiesforcommissionsexpenseandtaxes",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "depositliabilitiescollateralissuedfinancialinstruments",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "pensionandotherpostretirementdefinedbenefitplansnoncurrentliabilities",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "liabilitiessubjecttocompromiseotherliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "deferredcreditsandotherliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "depositliabilitiesreclassifiedasloansreceivable1",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "deferredcreditsandotherliabilities",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "businesscombinationrecognizedidentifiableassetsacquiredandliabilitiesassumeddeferredtaxassets",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_assets"
+    },
+    {
+      "tag": "noncashorpartnoncashacquisitionnetnonmonetaryassetsacquiredliabilitiesassumed",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "interestbearingdepositliabilitiesforeign",
+      "from": "total_liabilities",
+      "to": "other_current_liabilities"
+    },
+    {
+      "tag": "othernoncurrentliabilities",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "customerrefundliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "energymarketingcontractliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "liabilitiesofbusinesstransferredundercontractualarrangementnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "accountspayableandaccruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "oilandgasreclamationliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "otherdeferredcompensationarrangementsliabilitycurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "deferredcompensationcashbasedarrangementsliabilitycurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "variableinterestentityconsolidatedliabilitiesnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "decommissioningliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "minereclamationandclosingliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "taxcutsandjobsactof2017transitiontaxforaccumulatedforeignearningsliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "frequentflierliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "otherdeferredcompensationarrangementsliabilityclassifiednoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "workerscompensationliabilitycurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "increasedecreaseinfinancialguaranteeinsurancecontractliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "otheraccruedliabilities",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "governmentassistanceliabilitynoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "postemploymentbenefitsliabilitycurrentandnoncurrent",
+      "from": "non_current_assets",
+      "to": "other_note_detail"
+    },
+    {
+      "tag": "interestexpensedomesticdepositliabilities",
+      "from": "total_liabilities",
+      "to": "other_income_expense"
+    },
+    {
+      "tag": "interestexpensedomesticdepositliabilitieswithdrawalpenalties",
+      "from": "total_liabilities",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "deferredcompensationcashbasedarrangementsliabilityclassifiednoncurrent",
+      "from": "non_current_assets",
+      "to": "other_noncurrent_liabilities"
+    },
+    {
+      "tag": "noncashorpartnoncashacquisitionvalueofliabilitiesassumed",
+      "from": "total_liabilities",
+      "to": "other_note_detail"
+    }
+  ],
+  "totalDeleted": 6,
+  "totalRestored": 86
+}

@@ -429,7 +429,7 @@ class Company:
         )
         return docs
 
-    def filings(self) -> pl.DataFrame:
+    def filings(self) -> pl.DataFrame | None:
         """공시 문서 목록 + DART 뷰어 링크."""
         return self._filings()
 
@@ -1576,6 +1576,79 @@ class Company:
             return topicHistoryDataFrame(diffResult, topic)
         return diffSummaryDataFrame(diffResult)
 
+    def watch(
+        self,
+        topic: str | None = None,
+    ) -> pl.DataFrame | None:
+        """공시 변화 감지 — 중요도 스코어링 기반 변화 요약.
+
+        사용법::
+
+            c.watch()                    # 전체 topic 중요도 순 요약
+            c.watch("riskManagement")    # 특정 topic 상세
+        """
+        from dartlab.engines.watch.scanner import scan_company
+
+        result = scan_company(self, topic=topic)
+        if result is None:
+            return None
+        return result.to_dataframe()
+
+    def eventStudy(
+        self,
+        event_type: str | None = None,
+        *,
+        window: object | None = None,
+    ) -> pl.DataFrame | None:
+        """공시 발표일 전후 주가 비정상 수익률(CAR) 분석.
+
+        사용법::
+
+            c.eventStudy()                       # 전체 공시 → 주가 영향
+            c.eventStudy("사업보고서")              # 유형별 필터
+
+        의존성: pip install dartlab[event]
+        """
+        from dartlab.engines.event.study import analyze_events, impacts_to_dataframe
+
+        result = analyze_events(self, event_type=event_type, window=window)
+        if result is None:
+            return None
+        return impacts_to_dataframe(result.impacts)
+
+    @property
+    def esg(self):
+        """ESG 공시 분석 — 환경(E)/사회(S)/지배구조(G) 종합 등급.
+
+        사용법::
+
+            c.esg                   # EsgResult (총점 + 등급)
+            c.esg.environment       # 환경 pillar 상세
+            c.esg.governance        # 지배구조 pillar 상세
+        """
+        if not hasattr(self, "_esg_cache"):
+            from dartlab.engines.esg.extractor import analyze_esg
+
+            self._esg_cache = analyze_esg(self)
+        return self._esg_cache
+
+    @property
+    def supply(self):
+        """공급망 분석 — 고객/공급사 관계 + 리스크 스코어링.
+
+        사용법::
+
+            c.supply                # SupplyChainResult
+            c.supply.customers      # 주요 고객
+            c.supply.suppliers      # 주요 공급사
+            c.supply.riskScore      # 리스크 점수
+        """
+        if not hasattr(self, "_supply_cache"):
+            from dartlab.engines.supply.risk import analyze_supply_chain
+
+            self._supply_cache = analyze_supply_chain(self)
+        return self._supply_cache
+
     def table(
         self,
         topic: str,
@@ -2079,19 +2152,24 @@ class Company:
     def sce(self):
         """자본변동표 DataFrame (연결 기준).
 
+        .. deprecated::
+            v0.8.0에서 제거. ``c.SCE`` 사용.
+
         Returns:
             계정명 × 연도 컬럼 DataFrame 또는 None.
-
-        Example::
-
-            c = Company("005930")
-            c.sce
         """
-        return self.finance.sce
+        import warnings
+
+        warnings.warn(
+            "c.sce는 v0.8.0에서 제거됩니다. c.SCE를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.finance.SCE
 
     @property
     def SCE(self):
-        """자본변동표 DataFrame (대문자 alias)."""
+        """자본변동표 DataFrame (연결 기준)."""
         return self.finance.SCE
 
     @property

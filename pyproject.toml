@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.7.4"
+version = "0.7.5"
 description = "공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -66,6 +66,9 @@ ai = [
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
 ]
+event = [
+    "yfinance>=0.2.30,<1",
+]
 mcp = [
     "mcp[cli]>=1.0,<2",
 ]
@@ -84,6 +87,7 @@ channel-full = [
     "dartlab[channel,channel-ngrok]",
     "python-telegram-bot>=21.0,<22",
     "slack-bolt>=1.18,<2",
+    "discord.py>=2.4,<3",
 ]
 all = [
     "openai>=1.0.0,<3",
@@ -94,6 +98,7 @@ all = [
     "msgpack>=1.1.0,<2",
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
+    "yfinance>=0.2.30,<1",
 ]
 
 [project.scripts]

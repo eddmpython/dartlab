@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "lastUpdate": "2026-01-23",
+  "description": "YTD(Year-To-Date) 방식으로 분기 데이터를 보고하는 종목 목록",
+  "ytdOnlyTickers": [
+    "GOOG",
+    "GOOGL"
+  ],
+  "suspectedYtdTickers": [],
+  "notes": {
+    "GOOG": "Q2/Q3를 개별 분기가 아닌 YTD 누적으로 보고. Q2=$144B (실제 개별 ~$64B), Q3=$221B (실제 개별 ~$77B)",
+    "GOOGL": "GOOG와 동일한 회사이므로 동일한 패턴 예상"
+  }
+}
