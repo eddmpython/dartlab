@@ -218,8 +218,7 @@ def emit(key: str, *, raise_as: type | None = None, **kwargs: Any) -> str:
 
     # structured 메시지(hint/error)는 verbose 무관하게 항상 출력
     if key in _STRUCTURED:
-        if _ctx.verbose:
-            print(f"{_PREFIX} {text}")
+        print(f"{_PREFIX} {text}")
     else:
         # simple 메시지는 verbose일 때만 출력
         if _ctx.verbose:
