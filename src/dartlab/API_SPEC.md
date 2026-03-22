@@ -317,11 +317,17 @@ us.cik                       # "0000320193"
 | `piotroskiFScore` | `Optional` | None |
 | `piotroskiMaxScore` | `int` | 9 |
 | `altmanZScore` | `Optional` | None |
+| `beneishMScore` | `Optional` | None |
+| `sloanAccrualRatio` | `Optional` | None |
+| `eps` | `Optional` | None |
+| `bps` | `Optional` | None |
+| `dps` | `Optional` | None |
 | `per` | `Optional` | None |
 | `pbr` | `Optional` | None |
 | `psr` | `Optional` | None |
 | `evEbitda` | `Optional` | None |
 | `marketCap` | `Optional` | None |
+| `sharesOutstanding` | `Optional` | None |
 | `ebitdaEstimated` | `bool` | True |
 | `warnings` | `list` | [] |
 
