@@ -45,7 +45,7 @@ def _run_light_mode(
 
     # insights 등급 1줄 요약
     try:
-        from dartlab.engines.insight.pipeline import analyze as _light_analyze
+        from dartlab.engines.analysis.insight.pipeline import analyze as _light_analyze
 
         _light_result = _light_analyze(
             getattr(company, "stockCode", getattr(company, "ticker", "")),

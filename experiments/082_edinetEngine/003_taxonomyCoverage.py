@@ -54,7 +54,7 @@ from pathlib import Path
 
 # dartlab import
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from dartlab.engines.edinet.finance.mapper import EdinetMapper
+from dartlab.engines.company.edinet.finance.mapper import EdinetMapper
 
 
 def main():

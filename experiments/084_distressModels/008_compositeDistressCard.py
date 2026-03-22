@@ -147,7 +147,7 @@ def axis_audit_risk(code: str) -> float:
     count = 0
 
     try:
-        from dartlab.engines.dart.docs.finance.audit.pipeline import audit
+        from dartlab.engines.company.dart.docs.finance.audit.pipeline import audit
         result = audit(code)
         if result and result.opinionDf is not None:
             df = result.opinionDf
@@ -184,7 +184,7 @@ def axis_audit_risk(code: str) -> float:
         pass
 
     try:
-        from dartlab.engines.dart.docs.finance.internalControl.pipeline import internalControl
+        from dartlab.engines.company.dart.docs.finance.internalControl.pipeline import internalControl
         ic = internalControl(code)
         if ic and ic.controlDf is not None and "hasWeakness" in ic.controlDf.columns:
             if any(w for w in ic.controlDf["hasWeakness"].to_list() if w):
@@ -253,7 +253,7 @@ def axis_trend(series: dict) -> float:
 def axis_contingent(code: str, equity: float | None) -> float:
     score = 0.0
     try:
-        from dartlab.engines.dart.docs.finance.contingentLiability.pipeline import contingentLiability
+        from dartlab.engines.company.dart.docs.finance.contingentLiability.pipeline import contingentLiability
         cl = contingentLiability(code)
         if cl:
             if cl.lawsuitDf is not None:

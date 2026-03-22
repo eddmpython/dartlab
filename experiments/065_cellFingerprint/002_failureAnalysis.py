@@ -30,7 +30,7 @@ import re
 from collections import defaultdict, Counter
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
     _headerCells,
     _isJunk,

@@ -5,43 +5,43 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from dartlab.engines.common.finance.ratios import RatioResult
-from dartlab.engines.insight.anomaly import (
+from dartlab.engines.analysis.insight.anomaly import (
     _yoyChange,
     detectBalanceSheetShift,
     detectCashBurn,
     detectEarningsQuality,
     runAnomalyDetection,
 )
-from dartlab.engines.insight.benchmark import (
+from dartlab.engines.analysis.insight.benchmark import (
     BENCHMARKS,
     DEFAULT_BENCHMARK,
     getBenchmark,
     sectorAdjustment,
 )
-from dartlab.engines.insight.detector import (
+from dartlab.engines.analysis.insight.detector import (
     detectIncompleteYear,
 )
-from dartlab.engines.insight.grading import (
+from dartlab.engines.analysis.insight.grading import (
     _getGrowthYoY,
     _scoreToGrade,
     analyzeOpportunitySummary,
     analyzeProfitability,
     analyzeRiskSummary,
 )
-from dartlab.engines.insight.summary import (
+from dartlab.engines.analysis.insight.summary import (
     _eunNeun,
     _iGa,
     classifyProfile,
     generateSummary,
 )
-from dartlab.engines.insight.types import (
+from dartlab.engines.analysis.insight.types import (
     AnalysisResult,
     Anomaly,
     Flag,
     InsightResult,
 )
-from dartlab.engines.rank.rank import RankInfo
-from dartlab.engines.sector.types import Sector
+from dartlab.engines.analysis.rank.rank import RankInfo
+from dartlab.engines.analysis.sector.types import Sector
 
 
 class TestTypes:

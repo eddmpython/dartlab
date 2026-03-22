@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-
 from typing import TYPE_CHECKING
 
 from dartlab.engines.common.finance.extract import (
@@ -422,7 +421,7 @@ def extract_historical_ratios(
                         matches += 1
             if matches >= max(1, check_n - 1):
                 dep_in_sga = True
-                warnings.append(f"IS 구조 감지: D&A가 SGA에 포함 — 별도 차감 생략 (EBITDA 계산에만 사용)")
+                warnings.append("IS 구조 감지: D&A가 SGA에 포함 — 별도 차감 생략 (EBITDA 계산에만 사용)")
 
     # 유효세율
     tax_ratios = _safe_ratio_list(tax_vals, pbt_vals) if tax_vals and pbt_vals else []

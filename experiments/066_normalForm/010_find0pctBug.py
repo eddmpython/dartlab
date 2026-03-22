@@ -19,7 +19,7 @@ import unittest.mock
 with unittest.mock.patch.object(mod, '__name__', 'not_main'):
     spec.loader.exec_module(mod)
 
-from dartlab.engines.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
 
 code = "005930"
 sec = buildSections(code)

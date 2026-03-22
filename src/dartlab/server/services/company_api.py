@@ -185,7 +185,7 @@ def build_toc(company: Company) -> dict[str, Any]:
 
 
 def build_viewer(company: Company, topic: str) -> dict[str, Any]:
-    from dartlab.engines.dart.docs.viewer import (
+    from dartlab.engines.company.dart.docs.viewer import (
         serializeViewerBlock,
         serializeViewerTextDocument,
         viewerBlocks,

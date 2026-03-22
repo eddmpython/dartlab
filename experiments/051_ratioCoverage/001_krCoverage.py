@@ -37,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 def main():
     from dartlab.engines.gather.listing import getKindList
     from dartlab.company import _ensureData
-    from dartlab.engines.dart.finance.pivot import buildAnnual
+    from dartlab.engines.company.dart.finance.pivot import buildAnnual
     from dartlab.engines.common.finance.ratios import RatioResult, calcRatios
 
     kindList = getKindList()

@@ -45,7 +45,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 
 
 RE_MAJOR = re.compile(r"^([가-힣])\.\s+(.+)$")

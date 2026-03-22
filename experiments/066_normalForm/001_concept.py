@@ -99,7 +99,7 @@ def _parseMdTable(md_lines: list[str]) -> tuple[list[str], list[list[str]]]:
 
 def _splitSubtables(md: str) -> list[list[str]]:
     """기존 splitSubtables와 동일한 로직."""
-    from dartlab.engines.dart.docs.sections.tableParser import splitSubtables
+    from dartlab.engines.company.dart.docs.sections.tableParser import splitSubtables
     return splitSubtables(md)
 
 

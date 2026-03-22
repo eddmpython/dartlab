@@ -40,7 +40,7 @@ class TestReportStructure:
 
 class TestReportPivots:
     def test_pivotDividend(self, reportDf):
-        from dartlab.engines.dart.report import pivotDividend
+        from dartlab.engines.company.dart.report import pivotDividend
 
         with _patchLoadData(reportDf):
             result = pivotDividend("005930")
@@ -51,7 +51,7 @@ class TestReportPivots:
         assert len(result.years) > 0
 
     def test_pivotEmployee(self, reportDf):
-        from dartlab.engines.dart.report import pivotEmployee
+        from dartlab.engines.company.dart.report import pivotEmployee
 
         with _patchLoadData(reportDf):
             result = pivotEmployee("005930")
@@ -61,7 +61,7 @@ class TestReportPivots:
         assert hasattr(result, "totalEmployee")
 
     def test_pivotMajorHolder(self, reportDf):
-        from dartlab.engines.dart.report import pivotMajorHolder
+        from dartlab.engines.company.dart.report import pivotMajorHolder
 
         with _patchLoadData(reportDf):
             result = pivotMajorHolder("005930")
@@ -71,7 +71,7 @@ class TestReportPivots:
         assert hasattr(result, "totalShareRatio")
 
     def test_pivotAudit(self, reportDf):
-        from dartlab.engines.dart.report import pivotAudit
+        from dartlab.engines.company.dart.report import pivotAudit
 
         with _patchLoadData(reportDf):
             result = pivotAudit("005930")

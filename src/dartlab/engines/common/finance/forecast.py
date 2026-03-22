@@ -17,7 +17,7 @@ from dartlab.engines.common.finance.valuation import (
     DCFResult,
     dcf_valuation,
 )
-from dartlab.engines.sector.types import SectorParams
+from dartlab.engines.analysis.sector.types import SectorParams
 
 # ── 순수 Python OLS ──────────────────────────────────────
 

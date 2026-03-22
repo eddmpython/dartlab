@@ -195,7 +195,7 @@ def measureCoverage():
     import polars as pl
 
     from dartlab import config
-    from dartlab.engines.edgar.finance.mapper import EdgarMapper
+    from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
     EdgarMapper._tagMap = None
     EdgarMapper._ensureLoaded()

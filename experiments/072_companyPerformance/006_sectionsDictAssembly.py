@@ -39,7 +39,7 @@ sys.path.insert(0, "src")
 def main():
     import polars as pl
     import dartlab
-    from dartlab.engines.dart.docs.sections import pipeline
+    from dartlab.engines.company.dart.docs.sections import pipeline
 
     # sections 함수를 monkey-patch해서 단계별 시간 측정
     original_sections = pipeline.sections

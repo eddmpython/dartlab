@@ -7,11 +7,11 @@ pytestmark = pytest.mark.unit
 from pathlib import Path
 
 import dartlab
-import dartlab.engines.dart as dart_engine
-import dartlab.engines.edgar as edgar_engine
+import dartlab.engines.company.dart as dart_engine
+import dartlab.engines.company.edgar as edgar_engine
 from dartlab import Company
-from dartlab.engines.dart import Company as DartEngineCompany
-from dartlab.engines.edgar import Company as EdgarEngineCompany
+from dartlab.engines.company.dart import Company as DartEngineCompany
+from dartlab.engines.company.edgar import Company as EdgarEngineCompany
 
 
 def _read(relpath: str) -> str:
@@ -34,15 +34,15 @@ def test_engine_exports_exist():
 
 
 def test_report_api_surface_is_28():
-    from dartlab.engines.dart.report.types import API_TYPES
+    from dartlab.engines.company.dart.report.types import API_TYPES
 
     assert len(API_TYPES) == 28
 
 
 def test_engine_modules_do_not_import_root_company_or_compare():
     targets = [
-        "src/dartlab/engines/dart/company.py",
-        "src/dartlab/engines/edgar/company.py",
+        "src/dartlab/engines/company/dart/company.py",
+        "src/dartlab/engines/company/edgar/company.py",
     ]
     banned = [
         "from dartlab.company import",
@@ -63,8 +63,8 @@ def test_compare_modules_are_removed():
     root = Path(__file__).resolve().parents[1]
     targets = [
         "src/dartlab/compare.py",
-        "src/dartlab/engines/dart/compare.py",
-        "src/dartlab/engines/edgar/compare.py",
+        "src/dartlab/engines/company/dart/compare.py",
+        "src/dartlab/engines/company/edgar/compare.py",
     ]
     for target in targets:
         assert not (root / target).exists(), f"{target} should be removed"
@@ -91,4 +91,4 @@ def test_public_docs_do_not_reference_legacy_company_names():
 def test_export_module_does_not_depend_on_root_company_internals():
     text = _read("src/dartlab/export/excel.py")
     assert "from dartlab.company import _ALL_PROPERTIES" not in text
-    assert "from dartlab.engines.dart.company import listExportModules" in text
+    assert "from dartlab.engines.company.dart.company import listExportModules" in text

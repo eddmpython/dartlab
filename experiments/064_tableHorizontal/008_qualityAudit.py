@@ -31,8 +31,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.pipeline import sections
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
     _headerCells,
     _isJunk,
@@ -187,7 +187,7 @@ def auditStock(code: str) -> list[dict]:
     topics = sec["topic"].unique().to_list()
 
     # _horizontalizeTableBlock와 동일한 로직으로 수평화 시도
-    from dartlab.engines.dart.docs.sections.tableParser import (
+    from dartlab.engines.company.dart.docs.sections.tableParser import (
         _normalizeItemName as _ni,
     )
     _SUFFIX_RE = re.compile(r"(사업)?부문$")
@@ -415,7 +415,7 @@ if __name__ == "__main__":
     noitems_cases = reasons.get("no_items", [])
     if noitems_cases:
         # 샘플 10개에서 원인 분석
-        from dartlab.engines.dart.docs.sections.pipeline import sections as load_sections
+        from dartlab.engines.company.dart.docs.sections.pipeline import sections as load_sections
         sample_codes = list(set(c["code"] for c in noitems_cases[:100]))[:5]
         for code in sample_codes:
             try:

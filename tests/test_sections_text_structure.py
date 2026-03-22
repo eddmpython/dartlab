@@ -3,8 +3,14 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab import Company
-from dartlab.engines.dart.docs.sections import displayPeriod, pipeline, rawPeriod, reorderPeriodColumns, textStructure
-from dartlab.engines.dart.docs.sections.textStructure import parseTextStructure, parseTextStructureWithState
+from dartlab.engines.company.dart.docs.sections import (
+    displayPeriod,
+    pipeline,
+    rawPeriod,
+    reorderPeriodColumns,
+    textStructure,
+)
+from dartlab.engines.company.dart.docs.sections.textStructure import parseTextStructure, parseTextStructureWithState
 
 SAMSUNG = "005930"
 

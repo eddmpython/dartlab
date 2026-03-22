@@ -151,7 +151,7 @@ def _parseMdTable(md_lines: list[str]) -> tuple[list[str], list[list[str]], int]
 
 
 def _splitSubtables(md: str) -> list[list[str]]:
-    from dartlab.engines.dart.docs.sections.tableParser import splitSubtables
+    from dartlab.engines.company.dart.docs.sections.tableParser import splitSubtables
     return splitSubtables(md)
 
 

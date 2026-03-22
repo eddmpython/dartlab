@@ -30,8 +30,8 @@ import polars as pl
 
 from dartlab import config
 from dartlab.core.dataLoader import loadData
-from dartlab.engines.edgar.docs.sections.pipeline import sections as buildSections
-from dartlab.engines.edgar.finance.pivot import buildTimeseries, buildAnnual
+from dartlab.engines.company.edgar.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.edgar.finance.pivot import buildTimeseries, buildAnnual
 
 
 class _DocsAccessor:
@@ -213,7 +213,7 @@ class _CompanyProto:
     @property
     def insights(self):
         if "_insights" not in self._cache:
-            from dartlab.engines.insight.pipeline import analyze
+            from dartlab.engines.analysis.insight.pipeline import analyze
             ts = self.finance.timeseries
             annual = self.finance.annual
             if ts is None or annual is None:

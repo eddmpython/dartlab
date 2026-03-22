@@ -21,7 +21,7 @@ def financeDf():
 
 class TestMapperWithFixture:
     def _mapper(self):
-        from dartlab.engines.dart.finance.mapper import AccountMapper
+        from dartlab.engines.company.dart.finance.mapper import AccountMapper
 
         return AccountMapper.get()
 
@@ -58,7 +58,7 @@ class TestMapperWithFixture:
 
 class TestPivotWithFixture:
     def test_buildTimeseriesFromDf(self, financeDf):
-        from dartlab.engines.dart.finance.pivot import buildTimeseries
+        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildTimeseries("005930")
@@ -71,7 +71,7 @@ class TestPivotWithFixture:
         assert len(periods) > 0
 
     def test_timeseriesHasRevenue(self, financeDf):
-        from dartlab.engines.dart.finance.pivot import buildTimeseries
+        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             series, periods = buildTimeseries("005930")
@@ -82,7 +82,7 @@ class TestPivotWithFixture:
         assert len(nonNull) > 0
 
     def test_timeseriesHasAssets(self, financeDf):
-        from dartlab.engines.dart.finance.pivot import buildTimeseries
+        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             series, periods = buildTimeseries("005930")
@@ -90,7 +90,7 @@ class TestPivotWithFixture:
         assert "total_assets" in series["BS"]
 
     def test_buildAnnualFromDf(self, financeDf):
-        from dartlab.engines.dart.finance.pivot import buildAnnual
+        from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildAnnual("005930")
@@ -102,7 +102,7 @@ class TestPivotWithFixture:
 
     def test_ratiosFromFixture(self, financeDf):
         from dartlab.engines.common.finance.ratios import calcRatios
-        from dartlab.engines.dart.finance.pivot import buildAnnual
+        from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildAnnual("005930")
@@ -114,7 +114,7 @@ class TestPivotWithFixture:
         assert ratios.roe is not None or ratios.operatingMargin is not None
 
     def test_q1_cf_stays_standalone(self):
-        from dartlab.engines.dart.finance.pivot import buildTimeseries
+        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
         df = pl.DataFrame(
             {
@@ -197,7 +197,7 @@ class TestRatioQuality:
     def test_ratio_result_has_headline_signal(self):
         from types import SimpleNamespace
 
-        from dartlab.engines.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
+        from dartlab.engines.company.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
 
         assert _ratioResultHasHeadlineSignal(None) is False
         assert (
@@ -268,8 +268,8 @@ class TestRatioQuality:
         )
 
     def test_ratio_template_fields_by_financial_industry(self):
-        from dartlab.engines.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
-        from dartlab.engines.sector.types import IndustryGroup
+        from dartlab.engines.company.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
+        from dartlab.engines.analysis.sector.types import IndustryGroup
 
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.BANK) == "bank"
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.INSURANCE) == "insurance"
@@ -281,7 +281,7 @@ class TestRatioQuality:
         assert "roe" in _RATIO_TEMPLATE_FIELDS["insurance"]
 
     def test_ratio_series_to_dataframe_can_apply_field_template(self):
-        from dartlab.engines.dart.company import _ratioSeriesToDataFrame
+        from dartlab.engines.company.dart.company import _ratioSeriesToDataFrame
 
         series = {
             "RATIO": {

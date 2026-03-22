@@ -170,7 +170,7 @@ def _extractEmployeeCost(stockCode: str) -> dict:
 def runCostFingerprint(*, verbose: bool = True) -> pl.DataFrame:
     """비용 구조 핑거프린팅 실행."""
     from dartlab.engines.common.finance.ratios import calcRatios
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     rows = []
     for stockCode, corpName, sector in ALL_COMPANIES:

@@ -62,7 +62,7 @@ def build_snapshot(company: Any) -> dict | None:
     sectorInfo = getattr(company, "sector", None)
     if sectorInfo is not None:
         try:
-            from dartlab.engines.sector.types import Sector
+            from dartlab.engines.analysis.sector.types import Sector
 
             isFinancial = sectorInfo.sector == Sector.FINANCIALS
         except (ImportError, AttributeError):
@@ -186,7 +186,7 @@ def build_snapshot(company: Any) -> dict | None:
 
     # insight grades 통합
     try:
-        from dartlab.engines.insight.pipeline import analyze as insight_analyze
+        from dartlab.engines.analysis.insight.pipeline import analyze as insight_analyze
 
         insight_result = insight_analyze(company.stockCode, company=company)
         if insight_result is not None:

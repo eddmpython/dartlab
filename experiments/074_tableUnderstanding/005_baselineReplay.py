@@ -38,7 +38,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from dartlab.engines.dart._table_horizontalizer import horizontalizeTableBlock
+from dartlab.engines.company.dart._table_horizontalizer import horizontalizeTableBlock
 
 ROOT = Path(__file__).resolve().parent
 

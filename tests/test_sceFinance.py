@@ -5,7 +5,7 @@ from tests.conftest import SAMSUNG, requires_finance
 
 class TestSceMapper:
     def test_normalizeCauseExact(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeCause
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeCause
 
         assert normalizeCause("당기순이익") == "net_income"
         assert normalizeCause("기초자본") == "beginning_equity"
@@ -14,25 +14,25 @@ class TestSceMapper:
         assert normalizeCause("자기주식의 취득") == "treasury_acquired"
 
     def test_normalizeCauseSpaceRemoval(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeCause
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeCause
 
         assert normalizeCause("기초 자 본") == "beginning_equity"
         assert normalizeCause("배당 금 지급") == "dividends"
 
     def test_normalizeCauseFallback(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeCause
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeCause
 
         assert normalizeCause("미래를위한해외사업장XYZ") == "fx_translation"
         assert normalizeCause("종목별공정가치변동") == "fvoci_valuation"
 
     def test_normalizeCauseUnmapped(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeCause
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeCause
 
         result = normalizeCause("완전히_알수없는_계정명_XYZABC")
         assert result.startswith("unmapped:")
 
     def test_normalizeDetailBasic(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeDetail
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeDetail
 
         assert normalizeDetail("자본금 [member]") == "share_capital"
         assert normalizeDetail("이익잉여금 [구성요소]") == "retained_earnings"
@@ -40,20 +40,20 @@ class TestSceMapper:
         assert normalizeDetail("") == "unknown"
 
     def test_normalizeDetailPipe(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeDetail
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeDetail
 
         assert normalizeDetail("지배기업 소유주지분|이익잉여금 [member]") == "retained_earnings"
         assert normalizeDetail("연결재무제표 [member]") == "total"
 
     def test_normalizeDetailFallback(self):
-        from dartlab.engines.dart.finance.sceMapper import normalizeDetail
+        from dartlab.engines.company.dart.finance.sceMapper import normalizeDetail
 
         assert normalizeDetail("기타포괄손익누계액 관련항목 [member]") == "accumulated_oci"
 
     def test_unmapped_rows_are_preserved_in_matrix(self):
         import polars as pl
 
-        from dartlab.engines.dart.finance.pivot import _buildSceMatrixFromDf
+        from dartlab.engines.company.dart.finance.pivot import _buildSceMatrixFromDf
 
         df = pl.DataFrame(
             {
@@ -83,7 +83,7 @@ class TestSceMapper:
 @requires_finance
 class TestScePivot:
     def test_buildSceMatrixBasic(self):
-        from dartlab.engines.dart.finance.pivot import buildSceMatrix
+        from dartlab.engines.company.dart.finance.pivot import buildSceMatrix
 
         result = buildSceMatrix(SAMSUNG)
         assert result is not None
@@ -95,7 +95,7 @@ class TestScePivot:
         assert "ending_equity" in matrix[latestYear]
 
     def test_buildSceMatrixCauses(self):
-        from dartlab.engines.dart.finance.pivot import buildSceMatrix
+        from dartlab.engines.company.dart.finance.pivot import buildSceMatrix
 
         result = buildSceMatrix(SAMSUNG)
         matrix, years = result
@@ -107,7 +107,7 @@ class TestScePivot:
         assert "net_income" in allCauses
 
     def test_buildSceAnnualBasic(self):
-        from dartlab.engines.dart.finance.pivot import buildSceAnnual
+        from dartlab.engines.company.dart.finance.pivot import buildSceAnnual
 
         result = buildSceAnnual(SAMSUNG)
         assert result is not None
@@ -117,7 +117,7 @@ class TestScePivot:
         assert "ending_equity__total" in series["SCE"]
 
     def test_buildSceAnnualSeriesLength(self):
-        from dartlab.engines.dart.finance.pivot import buildSceAnnual
+        from dartlab.engines.company.dart.finance.pivot import buildSceAnnual
 
         result = buildSceAnnual(SAMSUNG)
         series, years = result
@@ -126,7 +126,7 @@ class TestScePivot:
             assert len(vals) == nYears, f"{key}: {len(vals)} != {nYears}"
 
     def test_sceMatrixIntegrity(self):
-        from dartlab.engines.dart.finance.pivot import buildSceMatrix
+        from dartlab.engines.company.dart.finance.pivot import buildSceMatrix
 
         result = buildSceMatrix(SAMSUNG)
         matrix, years = result

@@ -31,7 +31,7 @@ from collections import defaultdict
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
 from rapidfuzz import fuzz
-from dartlab.engines.dart.company import Company
+from dartlab.engines.company.dart.company import Company
 from dartlab.core.dataLoader import _dataDir
 
 

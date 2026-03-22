@@ -839,8 +839,8 @@ def _verifyRatios(edgarDir: Path):
     print(f"{'='*70}")
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-    from dartlab.engines.dart.finance.ratios import calcRatios
-    from dartlab.engines.dart.finance.extract import getLatest
+    from dartlab.engines.company.dart.finance.ratios import calcRatios
+    from dartlab.engines.company.dart.finance.extract import getLatest
 
     for ticker, cik in TICKER_CIK.items():
         aResult = buildAnnual(edgarDir, cik)

@@ -56,7 +56,7 @@ def analyzeFormat():
     fixturePath = ROOT / "tests" / "fixtures" / "005930.finance.parquet"
     financeDf = pl.read_parquet(fixturePath)
 
-    from dartlab.engines.dart.finance.pivot import buildTimeseries as dartBuildTs
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries as dartBuildTs
     with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
         dartResult = dartBuildTs("005930")
 
@@ -79,7 +79,7 @@ def analyzeFormat():
         tickers = [p for p in parquets if p.stem != "tickers"]
         if tickers:
             cik = tickers[0].stem
-            from dartlab.engines.edgar.finance.pivot import buildTimeseries as edgarBuildTs
+            from dartlab.engines.company.edgar.finance.pivot import buildTimeseries as edgarBuildTs
             edgarResult = edgarBuildTs(cik, edgarDir=edgarDir)
             if edgarResult:
                 _, edgarPeriods = edgarResult
@@ -142,7 +142,7 @@ def analyzeFormat():
     print("=" * 60)
 
     if dartResult:
-        from dartlab.engines.dart.finance.pivot import buildAnnual as dartBuildAnnual
+        from dartlab.engines.company.dart.finance.pivot import buildAnnual as dartBuildAnnual
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             dartAnnual = dartBuildAnnual("005930")
         if dartAnnual:

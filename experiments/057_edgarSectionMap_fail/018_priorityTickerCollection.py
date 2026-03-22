@@ -19,7 +19,7 @@ from pathlib import Path
 from alive_progress import alive_bar
 
 from dartlab import config
-from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs, summarizeEdgarDocsParquet
+from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs, summarizeEdgarDocsParquet
 
 TARGET_TICKERS = [
     "AAPL",

@@ -82,7 +82,7 @@ def register_scan_tools(company: Any, register_tool) -> None:
     def screen_market(preset: str = "가치주") -> str:
         """시장 스크리닝 — 프리셋 기반 종목 필터."""
         try:
-            from dartlab.engines.rank.screen import screen as _screen
+            from dartlab.engines.analysis.rank.screen import screen as _screen
 
             result = _screen(preset)
             return format_tool_value(result, max_rows=10)
@@ -122,7 +122,7 @@ def register_scan_tools(company: Any, register_tool) -> None:
     def benchmark_sector() -> str:
         """섹터별 핵심 비율 벤치마크 (P10, median, P90)."""
         try:
-            from dartlab.engines.rank.screen import benchmark as _benchmark
+            from dartlab.engines.analysis.rank.screen import benchmark as _benchmark
 
             result = _benchmark()
             return format_tool_value(result, max_rows=10)
@@ -142,7 +142,7 @@ def register_scan_tools(company: Any, register_tool) -> None:
     def scan_signal(keyword: str = "") -> str:
         """서술형 공시 키워드 트렌드 탐지."""
         try:
-            from dartlab.engines.dart.scan.signal import scan_signal as _scan
+            from dartlab.engines.company.dart.scan.signal import scan_signal as _scan
 
             result = _scan(keyword if keyword else None)
             return format_tool_value(result, max_rows=10)

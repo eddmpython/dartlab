@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.engines.analyst.types import AnalystReport, ValuationMethod, _classify_opinion
-from dartlab.engines.analyst.synthesizer import synthesize, DEFAULT_WEIGHTS
-from dartlab.engines.analyst.calibrator import calibrate_scenarios
+from dartlab.engines.analysis.analyst.types import AnalystReport, ValuationMethod, _classify_opinion
+from dartlab.engines.analysis.analyst.synthesizer import synthesize, DEFAULT_WEIGHTS
+from dartlab.engines.analysis.analyst.calibrator import calibrate_scenarios
 from dartlab.engines.gather.types import ConsensusData, MarketSnapshot
 
 

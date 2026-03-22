@@ -166,7 +166,7 @@ def discover() -> list[PluginMeta]:
     # DART Company 모듈 레지스트리 캐시 무효화
     if _loaded_plugins:
         try:
-            from dartlab.engines.dart.company import rebuild_module_registry
+            from dartlab.engines.company.dart.company import rebuild_module_registry
 
             rebuild_module_registry()
         except ImportError:

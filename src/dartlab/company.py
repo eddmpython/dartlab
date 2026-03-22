@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 
 from dartlab.engines.common.protocols import CompanyProtocol
-from dartlab.engines.dart.company import Company as _DartEngineCompany
-from dartlab.engines.edgar.company import Company as _EdgarEngineCompany
+from dartlab.engines.company.dart.company import Company as _DartEngineCompany
+from dartlab.engines.company.edgar.company import Company as _EdgarEngineCompany
 
 
 def _isUSTicker(s: str) -> bool:

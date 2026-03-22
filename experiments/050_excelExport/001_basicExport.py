@@ -36,7 +36,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, numbers
 from openpyxl.utils import get_column_letter
 
-from dartlab.engines.dart.finance.pivot import buildAnnual
+from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
 
 HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)

@@ -242,8 +242,9 @@ class TestSeriesMock:
 
 class TestTransform:
     def _sample_df(self, n=24):
-        import polars as pl
         from datetime import date, timedelta
+
+        import polars as pl
 
         dates = [date(2022, 1, 1) + timedelta(days=30 * i) for i in range(n)]
         values = [100 + i * 2.5 for i in range(n)]

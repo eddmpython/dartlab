@@ -138,7 +138,7 @@ def _getSeriesValues(series_dict: dict, keys: list[str]) -> list:
 
 def runCashConversion(*, verbose: bool = True) -> pl.DataFrame:
     """현금전환 효율 패턴화 실행."""
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     rows = []
     for stockCode, corpName, sector in ALL_COMPANIES:

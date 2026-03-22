@@ -39,9 +39,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-import dartlab.engines.dart.docs.sections.textStructure as ts_mod
-import dartlab.engines.dart.docs.sections.tableParser as tp_mod
-from dartlab.engines.dart.docs.sections import pipeline
+import dartlab.engines.company.dart.docs.sections.textStructure as ts_mod
+import dartlab.engines.company.dart.docs.sections.tableParser as tp_mod
+from dartlab.engines.company.dart.docs.sections import pipeline
 from dartlab.core.dataLoader import _dataDir
 
 

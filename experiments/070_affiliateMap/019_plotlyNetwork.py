@@ -31,7 +31,7 @@ def ego_chart(code: str = "005930", hops: int = 1):
     import networkx as nx
     import plotly.graph_objects as go
 
-    from dartlab.engines.dart.affiliate import build_graph, export_ego, export_full
+    from dartlab.engines.company.dart.affiliate import build_graph, export_ego, export_full
 
     t0 = time.time()
     data = build_graph(verbose=False)
@@ -155,7 +155,7 @@ def overview_chart():
     import networkx as nx
     import plotly.graph_objects as go
 
-    from dartlab.engines.dart.affiliate import (
+    from dartlab.engines.company.dart.affiliate import (
         build_graph,
         export_full,
         export_overview,

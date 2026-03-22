@@ -87,7 +87,7 @@ ALL_COMPANIES = [
 
 def _extractRevenueTimeseries(stockCode: str) -> dict[int, float]:
     """연도별 매출 시계열 추출."""
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     try:
         result = buildTimeseries(stockCode)

@@ -160,7 +160,7 @@ SECTOR_COMPANIES = {
 
 def _checkFinance(stockCode: str) -> dict:
     """finance parquet 로드하여 BS/IS/CF 존재 여부 + 기간 수 확인."""
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     try:
         result = buildTimeseries(stockCode)

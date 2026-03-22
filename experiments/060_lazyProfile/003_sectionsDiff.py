@@ -80,7 +80,7 @@ def computeDiff(sections):
 
 
 def main():
-    from dartlab.engines.dart.company import Company
+    from dartlab.engines.company.dart.company import Company
     import polars as pl
 
     c = Company("005930")

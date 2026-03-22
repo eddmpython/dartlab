@@ -18,8 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.pipeline import sections
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
     _headerCells,
     _isJunk,

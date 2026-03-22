@@ -105,7 +105,7 @@ NO_DIVIDEND_SERIES = _make_series(
 
 @pytest.fixture
 def sector_params():
-    from dartlab.engines.sector.types import SectorParams
+    from dartlab.engines.analysis.sector.types import SectorParams
 
     return SectorParams(
         discountRate=10.0,

@@ -17,7 +17,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         if not stockCode:
             return "종목코드가 없어 인사이트 분석을 실행할 수 없습니다."
         try:
-            from dartlab.engines.insight import analyze
+            from dartlab.engines.analysis.insight import analyze
 
             result = analyze(stockCode, company=company)
             if result is None:
@@ -65,7 +65,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
 
     def get_sector_info() -> str:
         try:
-            from dartlab.engines.sector import classify, getParams
+            from dartlab.engines.analysis.sector import classify, getParams
 
             corpName = getattr(company, "corpName", "")
             overview = company.show("companyOverview") if hasattr(company, "show") else None
@@ -108,7 +108,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         if not stockCode:
             return "종목코드가 없습니다."
         try:
-            from dartlab.engines.rank import getRank
+            from dartlab.engines.analysis.rank import getRank
 
             rank = getRank(stockCode)
             if rank is None:

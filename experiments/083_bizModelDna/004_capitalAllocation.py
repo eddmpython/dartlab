@@ -241,7 +241,7 @@ def _extractCapexAndDividend(series: dict) -> dict:
 def runCapitalAllocation(*, verbose: bool = True) -> pl.DataFrame:
     """자본배분 프로파일 분류 실행."""
     from dartlab.engines.common.finance.ratios import calcRatios
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     rows = []
     for stockCode, corpName, sector in ALL_COMPANIES:

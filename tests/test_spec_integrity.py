@@ -48,7 +48,7 @@ def test_get_engine_spec_not_found():
 
 def test_insight_areas_match_code():
     """insight spec의 areas가 실제 grading.py 분석 함수와 일치하는지."""
-    from dartlab.engines.insight.spec import AREAS
+    from dartlab.engines.analysis.insight.spec import AREAS
 
     expected = {"performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity"}
     assert set(AREAS.keys()) == expected
@@ -56,8 +56,8 @@ def test_insight_areas_match_code():
 
 def test_sector_spec_extracts_enums():
     """sector spec이 실제 Sector enum에서 추출하는지."""
-    from dartlab.engines.sector.spec import buildSpec
-    from dartlab.engines.sector.types import Sector
+    from dartlab.engines.analysis.sector.spec import buildSpec
+    from dartlab.engines.analysis.sector.types import Sector
 
     spec = buildSpec()
     sectorCount = len([s for s in Sector if s != Sector.UNKNOWN])
@@ -66,8 +66,8 @@ def test_sector_spec_extracts_enums():
 
 def test_report_spec_matches_api_types():
     """report spec의 apiTypes가 실제 API_TYPES와 일치하는지."""
-    from dartlab.engines.dart.report.spec import buildSpec
-    from dartlab.engines.dart.report.types import API_TYPES
+    from dartlab.engines.company.dart.report.spec import buildSpec
+    from dartlab.engines.company.dart.report.types import API_TYPES
 
     spec = buildSpec()
     assert spec["summary"]["apiTypes"] == len(API_TYPES)
@@ -79,7 +79,7 @@ def test_finance_spec_ratios_match_dataclass():
     import dataclasses
 
     from dartlab.engines.common.finance.ratios import RatioResult
-    from dartlab.engines.dart.finance.spec import buildSpec
+    from dartlab.engines.company.dart.finance.spec import buildSpec
 
     spec = buildSpec()
     expected = [f.name for f in dataclasses.fields(RatioResult) if f.name != "warnings"]

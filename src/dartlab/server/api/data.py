@@ -355,7 +355,7 @@ def _resolve_module_data(c: Company, entry) -> Any:
         if not stmt_data or not periods:
             return None
 
-        from dartlab.engines.dart.finance.mapper import AccountMapper
+        from dartlab.engines.company.dart.finance.mapper import AccountMapper
 
         order = AccountMapper.get().sortOrder(stmt)
 
@@ -411,7 +411,7 @@ def _build_finance_meta(moduleName: str) -> dict[str, Any]:
         return {}
 
     _, stmt = moduleName.split(".", 1)
-    from dartlab.engines.dart.finance.mapper import AccountMapper
+    from dartlab.engines.company.dart.finance.mapper import AccountMapper
 
     mapper = AccountMapper.get()
     labels = mapper.labelMap()

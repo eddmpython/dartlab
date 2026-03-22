@@ -29,7 +29,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
+from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
 
 
 TARGETS = ["AAPL", "AMZN", "A", "AA"]

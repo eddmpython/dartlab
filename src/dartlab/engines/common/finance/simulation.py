@@ -20,7 +20,7 @@ from dartlab.engines.common.finance.extract import (
     getLatest,
     getTTM,
 )
-from dartlab.engines.sector.types import SectorParams
+from dartlab.engines.analysis.sector.types import SectorParams
 
 # ══════════════════════════════════════
 # Layer 1: 거시경제 시나리오

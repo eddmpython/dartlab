@@ -38,7 +38,7 @@ def main() -> None:
     print(f"=== 058-006 EDGAR Company 전종목 검증 ===")
     print(f"tickers with docs: {len(tickers)}\n")
 
-    from dartlab.engines.edgar.company import Company
+    from dartlab.engines.company.edgar.company import Company
 
     success = 0
     noFinance = 0

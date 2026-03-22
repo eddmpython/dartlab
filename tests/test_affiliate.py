@@ -20,7 +20,7 @@ def _ensure_data():
     global _data, _full, _gc
     if _data is not None:
         return
-    from dartlab.engines.dart.scan.network import build_graph, export_full
+    from dartlab.engines.company.dart.scan.network import build_graph, export_full
 
     _data = build_graph(verbose=False)
     _full = export_full(_data)
@@ -182,7 +182,7 @@ def test_full_json_size():
 
 def test_ego_enrichment():
     """독립 회사 ego가 최소 2노드 이상."""
-    from dartlab.engines.dart.scan.network import export_ego
+    from dartlab.engines.company.dart.scan.network import export_ego
 
     _ensure_data()
     # 독립 회사 몇 개 샘플

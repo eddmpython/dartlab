@@ -205,7 +205,7 @@ class TestScanPayload(unittest.TestCase):
     """001 scan payload — converter 함수."""
 
     def test_governance_converter(self):
-        from dartlab.engines.dart.scan.payload import governance_to_insight
+        from dartlab.engines.company.dart.scan.payload import governance_to_insight
 
         row = {"등급": "B", "총점": 65, "지분율": 55.0, "사외이사비율": 42.0, "pay_ratio": 3.0, "감사의견": "적정의견"}
         result = governance_to_insight(row)
@@ -219,7 +219,7 @@ class TestScanPayload(unittest.TestCase):
         self.assertTrue(any("사외이사" in o["text"] for o in result["opportunities"]))
 
     def test_governance_audit_partial_match(self):
-        from dartlab.engines.dart.scan.payload import governance_to_insight
+        from dartlab.engines.company.dart.scan.payload import governance_to_insight
 
         # "적정" 부분 매칭 — "적정의견" 포함이면 비적정 아님
         row = {"등급": "A", "총점": 80, "감사의견": "적정의견(한정제외)"}
@@ -228,7 +228,7 @@ class TestScanPayload(unittest.TestCase):
         self.assertFalse(any("비적정" in r["text"] for r in result["risks"]))
 
     def test_workforce_grades(self):
-        from dartlab.engines.dart.scan.payload import workforce_to_insight
+        from dartlab.engines.company.dart.scan.payload import workforce_to_insight
 
         # A등급: rev_per >= 5
         result = workforce_to_insight({"직원수": 1000, "직원당매출_억": 6.0})
@@ -239,21 +239,21 @@ class TestScanPayload(unittest.TestCase):
         self.assertEqual(result["grade"], "F")
 
     def test_capital_grades(self):
-        from dartlab.engines.dart.scan.payload import capital_to_insight
+        from dartlab.engines.company.dart.scan.payload import capital_to_insight
 
         result = capital_to_insight({"분류": "환원형", "배당여부": True, "DPS": 1000, "배당수익률": 3.5})
         self.assertEqual(result["grade"], "A")
         self.assertTrue(any("배당수익률" in o["text"] for o in result["opportunities"]))
 
     def test_debt_grades(self):
-        from dartlab.engines.dart.scan.payload import debt_to_insight
+        from dartlab.engines.company.dart.scan.payload import debt_to_insight
 
         result = debt_to_insight({"위험등급": "안전", "부채비율": 50.0, "ICR": 8.0})
         self.assertEqual(result["grade"], "A")
         self.assertTrue(any("ICR 양호" in o["text"] for o in result["opportunities"]))
 
     def test_none_on_missing_key(self):
-        from dartlab.engines.dart.scan.payload import (
+        from dartlab.engines.company.dart.scan.payload import (
             capital_to_insight,
             debt_to_insight,
             governance_to_insight,
@@ -267,7 +267,7 @@ class TestScanPayload(unittest.TestCase):
 
     def test_unified_payload_keys(self):
         """build_unified_payload가 올바른 키 구조를 반환하는지 (mock)."""
-        from dartlab.engines.dart.scan.payload import build_scan_payload
+        from dartlab.engines.company.dart.scan.payload import build_scan_payload
 
         # Mock company
         class MockCompany:
@@ -297,7 +297,7 @@ class TestScanSnapshot(unittest.TestCase):
     """004 scan snapshot — percentile 조회."""
 
     def test_percentile_basic(self):
-        from dartlab.engines.dart.scan.snapshot import _percentile
+        from dartlab.engines.company.dart.scan.snapshot import _percentile
 
         arr = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         self.assertAlmostEqual(_percentile(arr, 50), 50.0, places=0)
@@ -305,7 +305,7 @@ class TestScanSnapshot(unittest.TestCase):
         self.assertAlmostEqual(_percentile(arr, 10), 10.0, places=0)
 
     def test_percentile_empty(self):
-        from dartlab.engines.dart.scan.snapshot import _percentile
+        from dartlab.engines.company.dart.scan.snapshot import _percentile
 
         self.assertEqual(_percentile([], 50), 0.0)
 
@@ -392,7 +392,7 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreater(len(related), 0)
 
     def test_scan_payload_real(self):
-        from dartlab.engines.dart.scan.payload import build_unified_payload
+        from dartlab.engines.company.dart.scan.payload import build_unified_payload
 
         unified = build_unified_payload(self.c)
         # 삼성전자는 최소 5개 이상 영역 유효
@@ -400,7 +400,7 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreaterEqual(valid, 5)
 
     def test_scan_position_real(self):
-        from dartlab.engines.dart.scan.snapshot import getScanPosition
+        from dartlab.engines.company.dart.scan.snapshot import getScanPosition
 
         pos = getScanPosition("005930")
         if pos is None:

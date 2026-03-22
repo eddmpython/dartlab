@@ -8,7 +8,6 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-
 POST_GLOB = "*/*/index.md"
 SVG_GLOB = "*/*/assets/*.svg"
 SHORT_POST_WORDS = 1200

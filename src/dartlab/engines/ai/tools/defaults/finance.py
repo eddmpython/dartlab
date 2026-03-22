@@ -307,7 +307,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             return "정기보고서 데이터가 없습니다."
         df = report.extract(api_type)
         if df is None:
-            from dartlab.engines.dart.report.types import API_TYPE_LABELS
+            from dartlab.engines.company.dart.report.types import API_TYPE_LABELS
 
             available = ", ".join(f"`{k}` ({v})" for k, v in list(API_TYPE_LABELS.items())[:10])
             return f"'{api_type}' 데이터가 없습니다. 사용 가능한 타입 예시: {available}"
@@ -571,7 +571,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             full_valuation,
             relative_valuation,
         )
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -636,7 +636,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def forecast(metric: str = "revenue", horizon: str = "3") -> str:
         """시계열 예측."""
         from dartlab.engines.common.finance.forecast import forecast_metric as _fm
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -677,7 +677,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def scenario(current_price: str = "") -> str:
         """시나리오 분석 (Bull/Base/Bear DCF)."""
         from dartlab.engines.common.finance.forecast import scenario_analysis as _sa
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -713,7 +713,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def sensitivity(wacc_range: str = "2", growth_range: str = "1") -> str:
         """민감도 분석 (WACC × 영구성장률 매트릭스)."""
         from dartlab.engines.common.finance.forecast import sensitivity_analysis as _sens
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -765,7 +765,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             simulate_all_scenarios,
             simulate_scenario,
         )
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -826,7 +826,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def monte_carlo(scenario: str = "baseline", iterations: str = "10000") -> str:
         """Monte Carlo 확률 분포 예측."""
         from dartlab.engines.common.finance.simulation import monte_carlo_forecast
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -875,7 +875,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def stress_test_tool(scenario: str = "adverse") -> str:
         """CCAR 스타일 스트레스 테스트."""
         from dartlab.engines.common.finance.simulation import stress_test as _st
-        from dartlab.engines.sector.params import getParams
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:

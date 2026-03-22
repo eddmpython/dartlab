@@ -39,7 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     _STOCK_TYPES,
     _classifyStructure,
     _dataRows,
@@ -48,7 +48,7 @@ from dartlab.engines.dart.docs.sections.tableParser import (
     _normalizeItemName,
     splitSubtables,
 )
-from dartlab.engines.dart.docs.sections.pipeline import iterPeriodSubsets
+from dartlab.engines.company.dart.docs.sections.pipeline import iterPeriodSubsets
 
 
 # ── 원본 함수 (baseline) ──

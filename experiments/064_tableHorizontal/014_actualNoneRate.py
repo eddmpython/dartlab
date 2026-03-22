@@ -22,8 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.pipeline import sections
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
     _headerCells,
     _isJunk,
@@ -32,7 +32,7 @@ from dartlab.engines.dart.docs.sections.tableParser import (
     _parseMultiYear,
     _parseKeyValueOrMatrix,
 )
-from dartlab.engines.dart.company import Company as DartCompany
+from dartlab.engines.company.dart.company import Company as DartCompany
 
 
 def _isPeriodCol(c: str) -> bool:

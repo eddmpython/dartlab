@@ -52,9 +52,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.dart.docs.finance.audit.pipeline import audit
-from dartlab.engines.dart.docs.finance.internalControl.pipeline import internalControl
-from dartlab.engines.dart.docs.finance.contingentLiability.pipeline import contingentLiability
+from dartlab.engines.company.dart.docs.finance.audit.pipeline import audit
+from dartlab.engines.company.dart.docs.finance.internalControl.pipeline import internalControl
+from dartlab.engines.company.dart.docs.finance.contingentLiability.pipeline import contingentLiability
 
 
 TEST_STOCKS = [

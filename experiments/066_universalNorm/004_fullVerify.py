@@ -29,8 +29,8 @@ from dataclasses import dataclass
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
-from dartlab.engines.dart.docs.sections.pipeline import sections
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables, _headerCells, _isJunk, _dataRows, _classifyStructure,
     _normalizeHeader, _normalizeItemName, _parseMultiYear, _parseKeyValueOrMatrix, _extractUnit,
 )
@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
         # 기존 방식: Company.show() 사용
         try:
-            from dartlab.engines.dart.company import Company
+            from dartlab.engines.company.dart.company import Company
             comp = Company(code)
         except Exception:
             continue

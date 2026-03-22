@@ -18,7 +18,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab import Company
-from dartlab.engines.dart.docs.sections.views import sortPeriods
+from dartlab.engines.company.dart.docs.sections.views import sortPeriods
 
 DEFAULT_STOCK_CODE = "005930"
 DEFAULT_TOPICS = [

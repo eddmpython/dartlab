@@ -439,7 +439,7 @@ def test_fingerprint_vs_header():
 
         # 헤더 텍스트 비교 (현행 방식 시뮬레이션)
         sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
-        from dartlab.engines.dart.docs.sections.tableParser import _normalizeHeader
+        from dartlab.engines.company.dart.docs.sections.tableParser import _normalizeHeader
         h1 = _normalizeHeader(fp1.headers)
         h2 = _normalizeHeader(fp2.headers)
         headerMatch = h1 == h2

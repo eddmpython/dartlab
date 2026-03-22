@@ -35,7 +35,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
 
 RE_CHAPTER = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")

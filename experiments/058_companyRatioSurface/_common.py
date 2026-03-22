@@ -59,8 +59,8 @@ def localFinanceCodes(limit: int | None = None) -> list[str]:
 
 def ratioSurfaceFrame(code: str) -> tuple[pl.DataFrame | None, int | None]:
     from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
-    from dartlab.engines.dart.company import _ratioSeriesToDataFrame
-    from dartlab.engines.dart.finance.pivot import buildAnnual
+    from dartlab.engines.company.dart.company import _ratioSeriesToDataFrame
+    from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
     annual = buildAnnual(code)
     if annual is None:

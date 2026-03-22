@@ -37,12 +37,12 @@ from uuid import uuid4
 from alive_progress import alive_bar
 
 from dartlab import config
-from dartlab.engines.edgar.docs.fetch import (
+from dartlab.engines.company.edgar.docs.fetch import (
     fetchEdgarDocs,
     prepareEdgarCollectibleUniverse,
     summarizeEdgarDocsParquet,
 )
-from dartlab.engines.edgar.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
+from dartlab.engines.company.edgar.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
 
 
 SINCE_YEAR = 2009

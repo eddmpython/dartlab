@@ -434,7 +434,7 @@ def build_governance_score() -> pl.DataFrame:
 
 def analyze_by_market(df: pl.DataFrame) -> None:
     """시장별/업종별 등급 분포."""
-    from dartlab.engines.dart.scan.network.scanner import load_listing
+    from dartlab.engines.company.dart.scan.network.scanner import load_listing
 
     _, _, _, listing_meta = load_listing()
 

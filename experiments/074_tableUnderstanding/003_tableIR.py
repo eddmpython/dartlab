@@ -44,7 +44,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.tableParser import _classifyStructure, _dataRows, _headerCells, _normalizeHeader, splitSubtables
+from dartlab.engines.company.dart.docs.sections.tableParser import _classifyStructure, _dataRows, _headerCells, _normalizeHeader, splitSubtables
 
 ROOT = Path(__file__).resolve().parent
 

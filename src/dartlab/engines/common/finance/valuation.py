@@ -19,7 +19,7 @@ from dartlab.engines.common.finance.extract import (
     getRevenueGrowth3Y,
     getTTM,
 )
-from dartlab.engines.sector.types import SectorParams
+from dartlab.engines.analysis.sector.types import SectorParams
 
 # ── 결과 타입 ──────────────────────────────────────────────
 

@@ -93,7 +93,7 @@ def lazyIndex(c):
             })
 
     if c._hasReport:
-        from dartlab.engines.dart.report.types import API_TYPES, API_TYPE_LABELS
+        from dartlab.engines.company.dart.report.types import API_TYPES, API_TYPE_LABELS
         for apiType in API_TYPES:
             df = c.report.extract(apiType)
             if df is not None and not df.is_empty():
@@ -113,7 +113,7 @@ def lazyIndex(c):
 
 
 def main():
-    from dartlab.engines.dart.company import Company
+    from dartlab.engines.company.dart.company import Company
 
     c = Company("005930")
 

@@ -448,7 +448,7 @@ def _isEdgarDocsCheckExpired(path: Path) -> bool:
 
 
 def _getLatestRegularEdgarFiling(stockCode: str, *, sinceYear: int) -> dict[str, str] | None:
-    from dartlab.engines.edgar.docs.fetch import _findFilings, _getSubmissions, _resolveTickerMeta
+    from dartlab.engines.company.edgar.docs.fetch import _findFilings, _getSubmissions, _resolveTickerMeta
 
     meta = _resolveTickerMeta(stockCode.upper())
     submissions = _getSubmissions(meta["cik"])
@@ -520,7 +520,7 @@ def _callFetchEdgarDocs(
 
 
 def _rebuildEdgarDocs(stockCode: str, path: Path, *, sinceYear: int, sourceMode: str) -> None:
-    from dartlab.engines.edgar.docs.fetch import fetchEdgarDocs
+    from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
 
     try:
         _callFetchEdgarDocs(
@@ -543,7 +543,7 @@ def _incrementalUpdateEdgarDocs(
     sinceYear: int,
     latestRemote: dict[str, str],
 ) -> None:
-    from dartlab.engines.edgar.docs.fetch import (
+    from dartlab.engines.company.edgar.docs.fetch import (
         FILING_TIMEOUT_SECONDS,
         _collectFilingRows,
         _findFilings,

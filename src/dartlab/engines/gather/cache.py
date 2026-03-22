@@ -7,7 +7,6 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass
 
-
 # TTL 기본값 (초)
 TTL_PRICE = 300  # 5분
 TTL_CONSENSUS = 24 * 3600  # 24시간

@@ -35,8 +35,8 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle
-from dartlab.engines.dart.docs.sections.chunker import chunkRows
+from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
+from dartlab.engines.company.dart.docs.sections.chunker import chunkRows
 
 
 RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")

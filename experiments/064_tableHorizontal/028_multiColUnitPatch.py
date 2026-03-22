@@ -44,7 +44,7 @@ def _isPeriodColumn(c: str) -> bool:
 
 
 def measureRate(maxCompanies: int = 0):
-    from dartlab.engines.dart.company import Company
+    from dartlab.engines.company.dart.company import Company
     from dartlab.engines.gather.listing import getKindList
 
     kindList = getKindList()

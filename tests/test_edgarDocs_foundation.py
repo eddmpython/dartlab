@@ -180,7 +180,7 @@ def test_loadData_falls_back_to_edgar_api(monkeypatch, tmp_path):
         return outPath
 
     monkeypatch.setattr("dartlab.core.dataLoader._download", fakeDownload)
-    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
+    monkeypatch.setattr("dartlab.engines.company.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
 
     df = loadData("AAPL", category="edgarDocs")
 
@@ -209,7 +209,7 @@ def test_loadData_edgarDocs_sinceYear_override(monkeypatch, tmp_path):
         return outPath
 
     monkeypatch.setattr("dartlab.core.dataLoader._download", fakeDownload)
-    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
+    monkeypatch.setattr("dartlab.engines.company.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
 
     loadData("AAPL", category="edgarDocs", sinceYear=2015)
 
@@ -342,7 +342,7 @@ def test_selectEdgarReport_annual_and_quarter():
 
 
 def test_htmlToText_preserves_table_markdown():
-    from dartlab.engines.edgar.docs.fetch import _htmlToText
+    from dartlab.engines.company.edgar.docs.fetch import _htmlToText
 
     html = """
     <html><body>
@@ -362,7 +362,7 @@ def test_htmlToText_preserves_table_markdown():
 
 
 def test_htmlToText_table_cells_keep_word_boundaries():
-    from dartlab.engines.edgar.docs.fetch import _htmlToText
+    from dartlab.engines.company.edgar.docs.fetch import _htmlToText
 
     html = """
     <html><body>
@@ -381,7 +381,7 @@ def test_htmlToText_table_cells_keep_word_boundaries():
 
 def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_path):
     from dartlab import config
-    from dartlab.engines.edgar.docs.fetch import downloadListedEdgarDocs
+    from dartlab.engines.company.edgar.docs.fetch import downloadListedEdgarDocs
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
 
@@ -410,9 +410,9 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
         return outPath
 
     monkeypatch.setattr(
-        "dartlab.engines.edgar.docs.fetch.buildEdgarCollectibleUniverse", fakeBuildEdgarCollectibleUniverse
+        "dartlab.engines.company.edgar.docs.fetch.buildEdgarCollectibleUniverse", fakeBuildEdgarCollectibleUniverse
     )
-    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
+    monkeypatch.setattr("dartlab.engines.company.edgar.docs.fetch.fetchEdgarDocs", fakeFetchEdgarDocs)
 
     result = downloadListedEdgarDocs(limit=10, sinceYear=2009, batchSize=0, cooldownSeconds=0)
 
@@ -421,7 +421,7 @@ def test_downloadListedEdgarDocs_uses_exchange_listed_universe(monkeypatch, tmp_
 
 
 def test_findFilings_includes_40f_and_excludes_6k():
-    from dartlab.engines.edgar.docs.fetch import _findFilings
+    from dartlab.engines.company.edgar.docs.fetch import _findFilings
 
     submissions = {
         "cik": "0001308648",
@@ -443,14 +443,14 @@ def test_findFilings_includes_40f_and_excludes_6k():
 
 
 def test_periodKey_treats_40f_as_annual():
-    from dartlab.engines.edgar.docs.fetch import _periodKey
+    from dartlab.engines.company.edgar.docs.fetch import _periodKey
 
     assert _periodKey("40-F", "2024-12-31", "2025") == "2024"
     assert _periodKey("40-F", None, "2024") == "2024"
 
 
 def test_summarizeEdgarDocsFrame_flags_unexpected_full_document():
-    from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
+    from dartlab.engines.company.edgar.docs.fetch import summarizeEdgarDocsFrame
 
     df = pl.DataFrame(
         {
@@ -471,7 +471,7 @@ def test_summarizeEdgarDocsFrame_flags_unexpected_full_document():
 
 
 def test_summarizeEdgarDocsFrame_allows_40f_full_document_fallback():
-    from dartlab.engines.edgar.docs.fetch import summarizeEdgarDocsFrame
+    from dartlab.engines.company.edgar.docs.fetch import summarizeEdgarDocsFrame
 
     df = pl.DataFrame(
         {
@@ -489,7 +489,7 @@ def test_summarizeEdgarDocsFrame_allows_40f_full_document_fallback():
 
 
 def test_dedupeIssuerUniverse_prefers_base_ticker():
-    from dartlab.engines.edgar.docs.fetch import _dedupeIssuerUniverse
+    from dartlab.engines.company.edgar.docs.fetch import _dedupeIssuerUniverse
 
     df = pl.DataFrame(
         {
@@ -506,7 +506,7 @@ def test_dedupeIssuerUniverse_prefers_base_ticker():
 
 
 def test_interleaveIssuerUniverse_spreads_tickers_across_buckets():
-    from dartlab.engines.edgar.docs.fetch import _interleaveIssuerUniverse
+    from dartlab.engines.company.edgar.docs.fetch import _interleaveIssuerUniverse
 
     df = pl.DataFrame(
         {
@@ -524,7 +524,7 @@ def test_interleaveIssuerUniverse_spreads_tickers_across_buckets():
 
 def test_prepareEdgarCollectibleUniverse_writes_incremental_cache_and_progress(monkeypatch, tmp_path):
     from dartlab import config
-    from dartlab.engines.edgar.docs.fetch import prepareEdgarCollectibleUniverse
+    from dartlab.engines.company.edgar.docs.fetch import prepareEdgarCollectibleUniverse
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
 
@@ -563,7 +563,7 @@ def test_prepareEdgarCollectibleUniverse_writes_incremental_cache_and_progress(m
         }
 
     monkeypatch.setattr("dartlab.core.dataLoader.loadEdgarListedUniverse", fakeLoadListedUniverse)
-    monkeypatch.setattr("dartlab.engines.edgar.docs.fetch._getSubmissions", fakeGetSubmissions)
+    monkeypatch.setattr("dartlab.engines.company.edgar.docs.fetch._getSubmissions", fakeGetSubmissions)
 
     progressPath = tmp_path / "universe.progress.jsonl"
     result = prepareEdgarCollectibleUniverse(limit=2, sinceYear=2009, progressPath=progressPath, flushEvery=1)
@@ -694,7 +694,7 @@ def test_download_batch_prepare_state_archives_stale_progress(tmp_path):
 
 def test_edgar_sections_pipeline_builds_topic_period_view(tmp_path, monkeypatch):
     from dartlab import config
-    from dartlab.engines.edgar.docs.sections import sections, sortPeriods
+    from dartlab.engines.company.edgar.docs.sections import sections, sortPeriods
 
     dataRoot = tmp_path / "data"
     docsDir = dataRoot / "edgar" / "docs"
@@ -722,9 +722,9 @@ def test_edgar_sections_pipeline_builds_topic_period_view(tmp_path, monkeypatch)
 def test_edgar_sections_pipeline_supports_form_native_structured_topics(tmp_path, monkeypatch):
     import importlib
 
-    from dartlab.engines.edgar.docs.sections import sections
+    from dartlab.engines.company.edgar.docs.sections import sections
 
-    pipelineModule = importlib.import_module("dartlab.engines.edgar.docs.sections.pipeline")
+    pipelineModule = importlib.import_module("dartlab.engines.company.edgar.docs.sections.pipeline")
 
     df = pl.DataFrame(
         {
@@ -760,7 +760,7 @@ def test_edgar_sections_pipeline_supports_form_native_structured_topics(tmp_path
 
 
 def test_edgar_sections_artifacts_and_views():
-    from dartlab.engines.edgar.docs.sections import (
+    from dartlab.engines.company.edgar.docs.sections import (
         buildMarkdownWide,
         fallbackTopic,
         loadCanonicalRows,
@@ -783,7 +783,7 @@ def test_edgar_sections_artifacts_and_views():
 
 
 def test_splitItems_splits_quarterly_items_with_inline_titles():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 | Part I | |
@@ -818,7 +818,7 @@ Exhibits body
 
 
 def test_splitItems_splits_quarterly_items_with_standalone_headers():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 PART I. FINANCIAL INFORMATION
@@ -856,7 +856,7 @@ Exhibits body
 
 
 def test_splitItems_splits_quarterly_items_with_en_dash_titles():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 PART I. FINANCIAL INFORMATION
@@ -889,7 +889,7 @@ Exhibits body
 
 
 def test_splitItems_splits_quarterly_items_with_split_part_and_title_lines():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 PART
@@ -930,7 +930,7 @@ Exhibits body
 
 
 def test_splitItems_prefers_quarterly_body_items_over_toc_items():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 TABLE OF CONTENTS
@@ -974,7 +974,7 @@ Exhibits body
 
 
 def test_splitItems_splits_quarterly_items_with_item_number_on_next_line():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 PART I. FINANCIAL INFORMATION
@@ -1010,7 +1010,7 @@ Exhibits body
 
 
 def test_splitItems_splits_10k_from_table_rows():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 | PART I |  |  |  |
@@ -1035,7 +1035,7 @@ Financial body
 
 
 def test_splitItems_prefers_10k_body_table_items_over_toc_rows():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 Table of Contents
@@ -1064,7 +1064,7 @@ Financial body
 
 
 def test_splitItems_prefers_10k_body_items_over_toc_item_lines():
-    from dartlab.engines.edgar.docs.fetch import _splitItems
+    from dartlab.engines.company.edgar.docs.fetch import _splitItems
 
     text = """
 Table of Contents
@@ -1095,7 +1095,7 @@ Financial body
 
 
 def test_submissionTextUrl_uses_accession_txt_name():
-    from dartlab.engines.edgar.docs.fetch import _filingIndexJsonUrl, _submissionTextUrl
+    from dartlab.engines.company.edgar.docs.fetch import _filingIndexJsonUrl, _submissionTextUrl
 
     filing = {
         "accessionNumber": "0001907982-24-000049",
@@ -1111,7 +1111,7 @@ def test_submissionTextUrl_uses_accession_txt_name():
 
 
 def test_classify40FDocumentName_identifies_supporting_documents():
-    from dartlab.engines.edgar.docs.fetch import _classify40FDocumentName
+    from dartlab.engines.company.edgar.docs.fetch import _classify40FDocumentName
 
     assert _classify40FDocumentName("a997-annualinformationfo.htm") == "Annual Information Form"
     assert _classify40FDocumentName("mda20250331q42025.htm") == "MD&A"
@@ -1120,7 +1120,7 @@ def test_classify40FDocumentName_identifies_supporting_documents():
 
 
 def test_split40FPrimaryText_splits_uppercase_headings():
-    from dartlab.engines.edgar.docs.fetch import _split40FPrimaryText
+    from dartlab.engines.company.edgar.docs.fetch import _split40FPrimaryText
 
     text = """
 FORM 40-F
@@ -1251,7 +1251,7 @@ _skipNoEdgarTickers = pytest.mark.skipif(
 @_skipNoEdgarTickers
 class TestEdgarCompanyInterface:
     def test_index_returns_dataframe_with_required_columns(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         idx = c.index
@@ -1260,7 +1260,7 @@ class TestEdgarCompanyInterface:
         assert set(["topic", "kind", "source", "periods", "shape", "preview"]).issubset(set(idx.columns))
 
     def test_index_includes_finance_and_docs(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         idx = c.index
@@ -1273,7 +1273,7 @@ class TestEdgarCompanyInterface:
         assert len(docTopics) > 0
 
     def test_show_finance_returns_dataframe(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         for stmt in ("BS", "IS", "CF"):
@@ -1282,7 +1282,7 @@ class TestEdgarCompanyInterface:
             assert df.height > 0
 
     def test_show_ratios_returns_data(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         # ratios는 블록 1개 → auto unwrap으로 바로 데이터 반환 (DART 정합)
@@ -1295,20 +1295,20 @@ class TestEdgarCompanyInterface:
         assert "category" in df2.columns
 
     def test_show_docs_topic_returns_dataframe(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         biz = c.show("10-K::item1Business")
         assert biz is None or isinstance(biz, pl.DataFrame)
 
     def test_show_nonexistent_topic_returns_none(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         assert c.show("completelyFakeTopic") is None
 
     def test_trace_finance_topic(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         traced = c.trace("BS")
@@ -1317,7 +1317,7 @@ class TestEdgarCompanyInterface:
         assert traced["topic"] == "BS"
 
     def test_trace_ratios_topic(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         traced = c.trace("ratios")
@@ -1329,7 +1329,7 @@ class TestEdgarCompanyInterface:
         assert traced["coverage"] in ("full", "partial", "missing")
 
     def test_trace_docs_topic(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         traced = c.trace("10-K::item1Business")
@@ -1337,13 +1337,13 @@ class TestEdgarCompanyInterface:
         assert traced["primarySource"] == "docs"
 
     def test_trace_nonexistent_returns_none(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         assert c.trace("completelyFakeTopic") is None
 
     def test_topics_list_is_ordered(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         topics = c.topics
@@ -1352,7 +1352,7 @@ class TestEdgarCompanyInterface:
         assert topicList[:5] == ["BS", "IS", "CF", "CIS", "ratios"]
 
     def test_show_with_block_and_period_filter(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         df = c.show("BS", 0, period="2024")
@@ -1360,7 +1360,7 @@ class TestEdgarCompanyInterface:
         assert "2024" in df.columns
 
     def test_filings_returns_dataframe(self):
-        from dartlab.engines.edgar.company import Company
+        from dartlab.engines.company.edgar.company import Company
 
         c = Company("AAPL")
         f = c.filings()

@@ -23,12 +23,26 @@ DARTLAB_DATA_DIR 환경변수 또는 dartlab.dataDir로 변경 가능.
 """
 
 import gc
+import os
 from pathlib import Path
 
 import pytest
 
 from dartlab.core.dataLoader import _dataDir
 from dartlab.core.memory import PRESSURE_CRITICAL_MB, get_memory_mb
+
+
+def pytest_configure(config):
+    """테스트 시작 전 안전 검사."""
+    # test-lock.sh 없이 직접 pytest를 호출한 경우 경고
+    if not os.environ.get("DARTLAB_TEST_LOCKED"):
+        import warnings
+        warnings.warn(
+            "⚠ test-lock.sh 없이 pytest 직접 실행 — "
+            "다른 세션과 동시 실행 시 OOM 위험.\n"
+            "  권장: bash scripts/test-lock.sh tests/ -m unit -v",
+            stacklevel=1,
+        )
 
 SAMSUNG = "005930"
 HYUNDAI = "005380"

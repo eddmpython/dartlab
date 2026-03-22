@@ -76,7 +76,7 @@ def _make_series() -> tuple[dict, list[str], dict, list[str]]:
 
 def test_analyze_returns_result():
     """mock 데이터로 analyze() 호출 시 AnalysisResult 반환."""
-    from dartlab.engines.insight import AnalysisResult, analyze
+    from dartlab.engines.analysis.insight import AnalysisResult, analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -93,7 +93,7 @@ def test_analyze_returns_result():
 
 def test_analyze_has_7_grades():
     """7영역 등급이 모두 존재."""
-    from dartlab.engines.insight import analyze
+    from dartlab.engines.analysis.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -113,7 +113,7 @@ def test_analyze_has_7_grades():
 
 def test_analyze_has_profile():
     """profile 문자열 존재."""
-    from dartlab.engines.insight import analyze
+    from dartlab.engines.analysis.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -129,7 +129,7 @@ def test_analyze_has_profile():
 
 def test_analyze_has_summary():
     """summary 텍스트 존재."""
-    from dartlab.engines.insight import analyze
+    from dartlab.engines.analysis.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -145,7 +145,7 @@ def test_analyze_has_summary():
 
 def test_analyze_anomalies_list():
     """anomalies가 리스트 타입."""
-    from dartlab.engines.insight import Anomaly, analyze
+    from dartlab.engines.analysis.insight import Anomaly, analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -162,7 +162,7 @@ def test_analyze_anomalies_list():
 
 def test_analyze_repr():
     """AnalysisResult repr 정상 동작."""
-    from dartlab.engines.insight import analyze
+    from dartlab.engines.analysis.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -181,7 +181,7 @@ def test_analyze_repr():
 
 def test_grading_score_to_grade():
     """_scoreToGrade 경계값 테스트."""
-    from dartlab.engines.insight.grading import _scoreToGrade
+    from dartlab.engines.analysis.insight.grading import _scoreToGrade
 
     assert _scoreToGrade(8, 10) == "A"
     assert _scoreToGrade(5, 10) == "B"
@@ -195,7 +195,7 @@ def test_grading_score_to_grade():
 
 def test_anomaly_detection_clean_data():
     """정상 데이터에서 이상치 탐지 실행."""
-    from dartlab.engines.insight.anomaly import runAnomalyDetection
+    from dartlab.engines.analysis.insight.anomaly import runAnomalyDetection
 
     _, _, aSeries, _ = _make_series()
     anomalies = runAnomalyDetection(aSeries, isFinancial=False)
@@ -206,7 +206,7 @@ def test_anomaly_detection_clean_data():
 
 
 def test_insight_result_dataclass():
-    from dartlab.engines.insight.types import InsightResult
+    from dartlab.engines.analysis.insight.types import InsightResult
 
     ir = InsightResult(grade="A", summary="좋음", details=["상세1"], risks=[], opportunities=[])
     assert ir.grade == "A"
@@ -214,14 +214,14 @@ def test_insight_result_dataclass():
 
 
 def test_flag_dataclass():
-    from dartlab.engines.insight.types import Flag
+    from dartlab.engines.analysis.insight.types import Flag
 
     f = Flag(level="warning", category="debt", text="부채비율 높음")
     assert f.level == "warning"
 
 
 def test_anomaly_dataclass():
-    from dartlab.engines.insight.types import Anomaly
+    from dartlab.engines.analysis.insight.types import Anomaly
 
     a = Anomaly(severity="danger", category="earningsQuality", text="이익 품질 의심", value=50.0)
     assert a.value == 50.0

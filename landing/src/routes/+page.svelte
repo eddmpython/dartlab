@@ -4,10 +4,12 @@
 	import Hero from '$lib/components/sections/Hero.svelte';
 	import Numbers from '$lib/components/sections/Numbers.svelte';
 	import Problem from '$lib/components/sections/Problem.svelte';
+	import AccountPipeline from '$lib/components/sections/AccountPipeline.svelte';
 	import Alignment from '$lib/components/sections/Alignment.svelte';
 	import Layers from '$lib/components/sections/Layers.svelte';
 	import Workflow from '$lib/components/sections/Workflow.svelte';
 	import CodeDemo from '$lib/components/sections/CodeDemo.svelte';
+	import AskDemo from '$lib/components/sections/AskDemo.svelte';
 	import DataShowcase from '$lib/components/sections/DataShowcase.svelte';
 	import ModuleCatalog from '$lib/components/sections/ModuleCatalog.svelte';
 	import DartVsEdgar from '$lib/components/sections/DartVsEdgar.svelte';
@@ -36,6 +38,10 @@
 		{
 			question: 'Does it support EDGAR 10-K and 10-Q?',
 			answer: 'Yes. Use a ticker like dartlab.Company("AAPL") to analyze US 10-K/10-Q filings. EDGAR sections mapping rate is 100%, verified across 974 companies. Same interface as DART — sections, show, trace, diff, BS, IS, CF, ratios all work identically.'
+		},
+		{
+			question: 'Do I need to write code to use DartLab?',
+			answer: 'No. The CLI command "dartlab ask" lets you ask questions in natural language — e.g. dartlab ask "삼성전자 재무건전성 분석해줘". DartLab automatically structures company data and feeds it to an LLM. For deeper analysis and custom workflows, Python gives you full control.'
 		}
 	];
 
@@ -79,12 +85,14 @@
 
 	<!-- 2. Problem → Solution -->
 	<Problem />
+	<AccountPipeline />
 	<Alignment />
 	<Layers />
 
 	<!-- 3. How -->
 	<Workflow />
 	<CodeDemo />
+	<AskDemo />
 	<DataShowcase />
 
 	<!-- 4. What -->

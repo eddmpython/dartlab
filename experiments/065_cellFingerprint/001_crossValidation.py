@@ -31,7 +31,7 @@ import re
 from collections import defaultdict
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
     _headerCells,
     _isJunk,
@@ -298,7 +298,7 @@ def analyzeKvMatrix(stockCode: str, stockName: str, topic: str = "audit"):
     if topicRows.is_empty():
         return None
 
-    from dartlab.engines.dart.docs.sections.tableParser import _parseKeyValueOrMatrix
+    from dartlab.engines.company.dart.docs.sections.tableParser import _parseKeyValueOrMatrix
 
     periodCols = [col for col in topicRows.columns
                   if re.match(r"\d{4}", col) and "Q" not in col]

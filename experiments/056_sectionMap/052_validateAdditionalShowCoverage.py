@@ -18,8 +18,8 @@ from pathlib import Path
 
 import polars as pl
 
-import dartlab.engines.dart.company as dart_company
-from dartlab.engines.dart.company import Company
+import dartlab.engines.company.dart.company as dart_company
+from dartlab.engines.company.dart.company import Company
 
 DOCS_DIR = Path("data/dart/docs")
 OUTPUT_DIR = Path("data/dart/docs/sectionsViews")
@@ -99,8 +99,8 @@ def _run_stock_check(stock_code: str) -> tuple[list[dict[str, object]], list[dic
 import json
 from pathlib import Path
 import polars as pl
-import dartlab.engines.dart.company as dart_company
-from dartlab.engines.dart.company import Company
+import dartlab.engines.company.dart.company as dart_company
+from dartlab.engines.company.dart.company import Company
 
 TOPICS = {TOPICS!r}
 STOCK_CODE = {stock_code!r}

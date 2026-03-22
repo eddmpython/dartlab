@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import time
-import threading
 from unittest.mock import MagicMock
 
-import pytest
-
-from dartlab.engines.gather.cache import GatherCache, TTL_CONSENSUS, TTL_PRICE
+from dartlab.engines.gather.cache import GatherCache
 from dartlab.engines.gather.http import GatherHttpClient, _DomainRateLimiter, _DomainSemaphore
 from dartlab.engines.gather.types import (
     ConsensusData,
@@ -19,7 +16,6 @@ from dartlab.engines.gather.types import (
     PeerData,
     PriceSnapshot,
 )
-
 
 # ══════════════════════════════════════
 # GatherCache 테스트

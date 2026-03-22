@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 # ══════════════════════════════════════
 # 데이터 구조
 # ══════════════════════════════════════
@@ -190,12 +189,12 @@ def _compute_adjustments(signals: ContextSignals) -> tuple[dict[str, float], lis
     # 규칙 1: 수익성 위험 (profitability D/F → adverse +5%p)
     if grades.get("profitability") in ("D", "F"):
         _add("adverse", 0.05, f"수익성 등급 {grades['profitability']} → 하방 리스크 +5%p")
-        _add("baseline", -0.05, f"수익성 약화 → baseline -5%p")
+        _add("baseline", -0.05, "수익성 약화 → baseline -5%p")
 
     # 규칙 2: 재무건전성 위험 (health D/F → adverse +5%p)
     if grades.get("health") in ("D", "F"):
         _add("adverse", 0.05, f"건전성 등급 {grades['health']} → 하방 리스크 +5%p")
-        _add("baseline", -0.05, f"건전성 약화 → baseline -5%p")
+        _add("baseline", -0.05, "건전성 약화 → baseline -5%p")
 
     # 규칙 3: 리스크 급변 (risk_change > 60% → adverse +5%p)
     if signals.risk_change_rate > 60:

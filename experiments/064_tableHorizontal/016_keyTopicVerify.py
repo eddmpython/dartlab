@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
-from dartlab.engines.dart.company import Company
+from dartlab.engines.company.dart.company import Company
 
 def _isPeriodCol(c):
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

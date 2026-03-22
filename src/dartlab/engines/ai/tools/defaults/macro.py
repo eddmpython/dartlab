@@ -6,7 +6,6 @@ LLM이 경제지표를 직접 조회·비교·분석할 수 있게 한다.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Callable
 

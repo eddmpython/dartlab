@@ -71,7 +71,7 @@ def main():
         cacheKey = "_availableApiTypes"
         if cacheKey in accessor._cache:
             return accessor._cache[cacheKey]
-        from dartlab.engines.dart.report.types import API_TYPES
+        from dartlab.engines.company.dart.report.types import API_TYPES
         result = [name for name in API_TYPES if accessor.extract(name) is not None]
         accessor._cache[cacheKey] = result
         return result

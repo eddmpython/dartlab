@@ -27,41 +27,41 @@ _skipNoData = pytest.mark.skipif(
 
 class TestEdgarMapper:
     def test_commonTagMapping(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         assert EdgarMapper.mapToDart("Assets", "BS") == "total_assets"
         assert EdgarMapper.mapToDart("Liabilities", "BS") == "total_liabilities"
 
     def test_aliasConversion(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         assert EdgarMapper.mapToDart("CashAndCashEquivalentsAtCarryingValue", "BS") == "cash_and_cash_equivalents"
 
     def test_stmtOverride_netIncome(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         assert EdgarMapper.mapToDart("NetIncomeLoss", "IS") == "net_profit"
         assert EdgarMapper.mapToDart("NetIncomeLoss", "CF") == "net_income_cf"
 
     def test_learnedSynonym(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         result = EdgarMapper.mapToDart("accountsreceivablenetcurrent", "BS")
         assert result is not None
 
     def test_unknownTag(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         assert EdgarMapper.mapToDart("CompletelyFakeTag12345", "BS") is None
 
     def test_isCommonTag(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         assert EdgarMapper.isCommonTag("Assets") is True
         assert EdgarMapper.isCommonTag("completelyfaketag") is False
 
     def test_classifyTagsByStmt(self):
-        from dartlab.engines.edgar.finance.mapper import EdgarMapper
+        from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
 
         stmtTags = EdgarMapper.classifyTagsByStmt()
         assert "IS" in stmtTags
@@ -75,7 +75,7 @@ class TestEdgarMapper:
 @_skipNoData
 class TestBuildTimeseries:
     def test_aaplRevenue(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(AAPL_CIK, edgarDir=EDGAR_DIR)
         assert result is not None
@@ -86,7 +86,7 @@ class TestBuildTimeseries:
         assert rev[idx] == pytest.approx(119_575_000_000, rel=1e-6)
 
     def test_aaplNetIncome(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(AAPL_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
@@ -95,7 +95,7 @@ class TestBuildTimeseries:
         assert ni[idx] == pytest.approx(14_736_000_000, rel=1e-6)
 
     def test_msftRevenue(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(MSFT_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
@@ -104,7 +104,7 @@ class TestBuildTimeseries:
         assert rev[idx] == pytest.approx(62_020_000_000, rel=1e-6)
 
     def test_nvdaRevenue(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
@@ -113,7 +113,7 @@ class TestBuildTimeseries:
         assert rev[idx] == pytest.approx(39_331_000_000, rel=1e-6)
 
     def test_l2Coverage(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(AAPL_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
@@ -154,13 +154,13 @@ class TestBuildTimeseries:
         assert len(covered) >= 24
 
     def test_nonexistentCik(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries("9999999999", edgarDir=EDGAR_DIR)
         assert result is None
 
     def test_seriesStructure(self):
-        from dartlab.engines.edgar.finance.pivot import buildTimeseries
+        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
         result = buildTimeseries(AAPL_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
@@ -178,7 +178,7 @@ class TestBuildTimeseries:
 @_skipNoData
 class TestBuildAnnual:
     def test_aaplFY2024(self):
-        from dartlab.engines.edgar.finance.pivot import buildAnnual
+        from dartlab.engines.company.edgar.finance.pivot import buildAnnual
 
         result = buildAnnual(AAPL_CIK, edgarDir=EDGAR_DIR)
         assert result is not None
@@ -191,7 +191,7 @@ class TestBuildAnnual:
         assert ni == pytest.approx(93_736_000_000, rel=1e-6)
 
     def test_msftFY2024(self):
-        from dartlab.engines.edgar.finance.pivot import buildAnnual
+        from dartlab.engines.company.edgar.finance.pivot import buildAnnual
 
         result = buildAnnual(MSFT_CIK, edgarDir=EDGAR_DIR)
         series, years = result
@@ -199,7 +199,7 @@ class TestBuildAnnual:
         assert series["IS"]["sales"][idx] == pytest.approx(245_122_000_000, rel=1e-6)
 
     def test_nvdaFY2025(self):
-        from dartlab.engines.edgar.finance.pivot import buildAnnual
+        from dartlab.engines.company.edgar.finance.pivot import buildAnnual
 
         result = buildAnnual(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, years = result
@@ -212,7 +212,7 @@ class TestBuildAnnual:
 class TestCalcRatiosCompat:
     def test_ratiosWithEdgarData(self):
         from dartlab.engines.common.finance.ratios import calcRatios
-        from dartlab.engines.edgar.finance.pivot import buildAnnual
+        from dartlab.engines.company.edgar.finance.pivot import buildAnnual
 
         result = buildAnnual(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, years = result

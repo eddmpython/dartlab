@@ -728,7 +728,7 @@ def _run_l2_engines(company: Any, q_type: str) -> str | None:
 def _run_sector(company: Any) -> str | None:
     """sector 엔진: 업종 분류 + 섹터 파라미터."""
     try:
-        from dartlab.engines.sector import classify, getParams
+        from dartlab.engines.analysis.sector import classify, getParams
 
         corpName = getattr(company, "corpName", "")
         overview = getattr(company, "companyOverview", None)
@@ -768,7 +768,7 @@ def _run_sector(company: Any) -> str | None:
 def _run_insight(stockCode: str, company: Any) -> str | None:
     """insight 엔진: 7영역 등급 + 이상치 + 프로파일."""
     try:
-        from dartlab.engines.insight import analyze
+        from dartlab.engines.analysis.insight import analyze
 
         result = analyze(stockCode, company=company)
         if result is None:
@@ -819,7 +819,7 @@ def _run_insight(stockCode: str, company: Any) -> str | None:
 def _run_rank(stockCode: str) -> str | None:
     """rank 엔진: 시장 내 규모 순위."""
     try:
-        from dartlab.engines.rank import getRank
+        from dartlab.engines.analysis.rank import getRank
 
         rank = getRank(stockCode)
         if rank is None:

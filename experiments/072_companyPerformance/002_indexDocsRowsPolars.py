@@ -38,7 +38,7 @@ sys.path.insert(0, "src")
 def main():
     import polars as pl
     import dartlab
-    from dartlab.engines.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
     from dartlab.engines.common.show import isPeriodColumn
 
     c = dartlab.Company("005930")
@@ -115,7 +115,7 @@ def main():
                 chapterMap[row["topic"]] = row["chapter"]
 
         # 5) 조립
-        from dartlab.engines.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
+        from dartlab.engines.company.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
 
         for rowIdx, topic in enumerate(topicOrder):
             nonNull = nonNullMap.get(topic, 0)

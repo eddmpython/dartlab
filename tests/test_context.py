@@ -15,7 +15,7 @@ from dartlab.engines.ai.context import (
     scan_available_modules,
 )
 from dartlab.engines.ai.metadata import ModuleMeta
-from dartlab.engines.sector.types import IndustryGroup, Sector, SectorInfo
+from dartlab.engines.analysis.sector.types import IndustryGroup, Sector, SectorInfo
 
 # ══════════════════════════════════════
 # df_to_markdown

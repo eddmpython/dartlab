@@ -52,14 +52,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,
     _isJunk,
     splitSubtables,
 )
-from dartlab.engines.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
 
 # ── 단위행 정규식 (company.py에서 가져옴) ──
 _UNIT_ONLY_RE = re.compile(

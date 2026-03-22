@@ -55,18 +55,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.dart.docs.sections._common import (
+from dartlab.engines.company.dart.docs.sections._common import (
     REPORT_KINDS,
     detectContentCol,
     sortPeriods,
 )
-from dartlab.engines.dart.docs.sections.pipeline import (
+from dartlab.engines.company.dart.docs.sections.pipeline import (
     _expandStructuredRows,
     _reportRowsToTopicRows,
     _rowCadenceMeta,
     sections,
 )
-from dartlab.engines.dart.docs.sections.runtime import (
+from dartlab.engines.company.dart.docs.sections.runtime import (
     applyProjections,
     chapterTeacherTopics,
     detailTopicForTopic,

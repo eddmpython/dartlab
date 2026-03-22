@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
 
 def splitTables(content: str) -> list[dict[str, str]]:

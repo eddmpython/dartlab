@@ -12,7 +12,7 @@
 3. 대표 키워드 3개 이상에서 연도별 변곡이 재현된다
 
 방법:
-1. `dartlab.engines.dart.scan.signal`의 공식 keyword set과 reader를 사용
+1. `dartlab.engines.company.dart.scan.signal`의 공식 keyword set과 reader를 사용
 2. docs parquet 319개를 전수 스캔해 raw keyword rows를 생성
 3. 연도별 trend와 keyword first appearance를 함께 계산
 4. AI, ESG, 2차전지를 대표 키워드로 gate를 판정
@@ -54,7 +54,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from dartlab import config
-from dartlab.engines.dart.scan.signal import _ALL_KEYWORDS, _read_signal_text
+from dartlab.engines.company.dart.scan.signal import _ALL_KEYWORDS, _read_signal_text
 
 
 def buildRawSignalRows() -> pl.DataFrame:

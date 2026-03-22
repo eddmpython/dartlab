@@ -12,7 +12,7 @@
 
 방법:
 1. data/edgar/docs/*.parquet를 순회한다.
-2. 각 ticker에 대해 `dartlab.engines.edgar.docs.sections.sections()`를 호출한다.
+2. 각 ticker에 대해 `dartlab.engines.company.edgar.docs.sections.sections()`를 호출한다.
 3. shape, period 수, topic 수, 에러 유무를 기록한다.
 
 결과 (실험 후 작성):
@@ -31,7 +31,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.edgar.docs.sections import sections
+from dartlab.engines.company.edgar.docs.sections import sections
 
 
 def main() -> None:

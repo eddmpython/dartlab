@@ -485,7 +485,7 @@ def _build_ratios_section(
     sectorInfo = getattr(company, "sector", None)
     if sectorInfo is not None:
         try:
-            from dartlab.engines.sector.types import Sector
+            from dartlab.engines.analysis.sector.types import Sector
 
             isFinancial = sectorInfo.sector == Sector.FINANCIALS
         except (ImportError, AttributeError):

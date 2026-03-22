@@ -50,8 +50,8 @@ import polars as pl
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from dartlab.engines.dart.scan.capital import scan_capital
-from dartlab.engines.dart.scan.debt import scan_debt
+from dartlab.engines.company.dart.scan.capital import scan_capital
+from dartlab.engines.company.dart.scan.debt import scan_debt
 
 
 def _loadCoverageModule():

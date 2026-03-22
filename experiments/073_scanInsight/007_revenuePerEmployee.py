@@ -294,7 +294,7 @@ def compute_revenue_per_employee(
 
 def analyze_by_market(df: pl.DataFrame) -> None:
     """업종별/시장별 직원당 매출 분석."""
-    from dartlab.engines.dart.scan.network.scanner import load_listing
+    from dartlab.engines.company.dart.scan.network.scanner import load_listing
 
     _, _, _, listing_meta = load_listing()
 

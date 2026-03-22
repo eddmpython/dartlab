@@ -25,7 +25,7 @@
 
 from __future__ import annotations
 
-from dartlab.engines.edgar.docs.sections.pipeline import sections
+from dartlab.engines.company.edgar.docs.sections.pipeline import sections
 
 
 SAMPLE_TICKERS = [

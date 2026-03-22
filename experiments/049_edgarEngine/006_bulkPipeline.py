@@ -305,7 +305,7 @@ class BulkDownloader:
 
 
 def _verify(edgarDir: Path):
-    from dartlab.engines.edgar.finance.pivot import buildTimeseries
+    from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
 
     testCases = {
         "AAPL": "0000320193",

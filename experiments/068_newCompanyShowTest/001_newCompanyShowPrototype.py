@@ -52,7 +52,7 @@ import polars as pl
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from dartlab import Company
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _extractUnit,

@@ -29,7 +29,7 @@ import polars as pl
 
 from dartlab import config
 from dartlab.core.dataLoader import loadData
-from dartlab.engines.edgar.docs.sections.pipeline import sections
+from dartlab.engines.company.edgar.docs.sections.pipeline import sections
 
 
 class EdgarDocsProto:

@@ -37,7 +37,7 @@ def _topicBlocksFrame(topic: str, rows: list[dict[str, object]]) -> pl.DataFrame
 
 class TestProfileChangeLedgerHelpers:
     def test_change_point_collapses_repeated_periods(self):
-        from dartlab.engines.dart.company import _buildTopicChangeLedger
+        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -54,7 +54,7 @@ class TestProfileChangeLedgerHelpers:
         assert set(ledger["period"].to_list()) == {"2024Q1", "2024Q3"}
 
     def test_restated_text_is_separated_from_edited_text(self):
-        from dartlab.engines.dart.company import _buildTopicChangeLedger
+        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -71,7 +71,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "restated"
 
     def test_table_structure_change_is_not_treated_as_value_edit(self):
-        from dartlab.engines.dart.company import _buildTopicChangeLedger
+        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "salesOrder",
@@ -101,7 +101,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "added"
 
     def test_placeholder_is_tracked_with_own_change_type(self):
-        from dartlab.engines.dart.company import _buildTopicChangeLedger
+        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -159,7 +159,7 @@ class TestCompany:
 
     def test_alphanumeric_dart_codes_are_routed_and_resolved(self):
         from dartlab import Company
-        from dartlab.engines.dart.company import Company as DartEngineCompany
+        from dartlab.engines.company.dart.company import Company as DartEngineCompany
 
         c = Company("0009K0")
         assert isinstance(c, DartEngineCompany)
@@ -169,7 +169,7 @@ class TestCompany:
         assert payload is None or isinstance(payload, pl.DataFrame)
 
     def test_source_namespaces(self):
-        from dartlab.engines.dart.report.types import PREFERRED_QUARTER
+        from dartlab.engines.company.dart.report.types import PREFERRED_QUARTER
 
         c = self.c
         assert c.docs is not None
@@ -475,7 +475,7 @@ class TestCompany:
         assert bs is None or isinstance(bs, pl.DataFrame)
 
     def test_report_result_surface_is_unified(self):
-        from dartlab.engines.dart.report.types import ReportResult
+        from dartlab.engines.company.dart.report.types import ReportResult
 
         c = self.c
         dividend = c.report.result("dividend")

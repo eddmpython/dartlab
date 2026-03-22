@@ -8,9 +8,9 @@ from dartlab import config, core, engines
 from dartlab.company import Company
 from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
-from dartlab.engines.dart.company import Company as _DartEngineCompany
-from dartlab.engines.dart.openapi.dart import Dart, OpenDart
-from dartlab.engines.edgar.openapi.edgar import OpenEdgar
+from dartlab.engines.company.dart.company import Company as _DartEngineCompany
+from dartlab.engines.company.dart.openapi.dart import Dart, OpenDart
+from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
 from dartlab.engines.gather.fred import Fred
 
 try:
@@ -32,7 +32,7 @@ def search(keyword: str):
         return _DartEngineCompany.search(keyword)
     if keyword.isascii() and keyword.isalpha():
         try:
-            from dartlab.engines.edgar.company import Company as _US
+            from dartlab.engines.company.edgar.company import Company as _US
 
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
@@ -54,7 +54,7 @@ def listing(market: str | None = None):
     """
     if market and market.upper() == "US":
         try:
-            from dartlab.engines.edgar.company import Company as _US
+            from dartlab.engines.company.edgar.company import Company as _US
 
             return _US.listing()
         except (ImportError, AttributeError, NotImplementedError):
@@ -70,7 +70,7 @@ def network():
         import dartlab
         dartlab.network().show()  # 브라우저에서 전체 네트워크
     """
-    from dartlab.engines.dart.scan.network import build_graph, export_full
+    from dartlab.engines.company.dart.scan.network import build_graph, export_full
     from dartlab.tools.network import render_network
 
     data = build_graph()
@@ -90,7 +90,7 @@ def governance():
         import dartlab
         df = dartlab.governance()
     """
-    from dartlab.engines.dart.scan.governance import scan_governance
+    from dartlab.engines.company.dart.scan.governance import scan_governance
 
     return scan_governance()
 
@@ -103,7 +103,7 @@ def workforce():
         import dartlab
         df = dartlab.workforce()
     """
-    from dartlab.engines.dart.scan.workforce import scan_workforce
+    from dartlab.engines.company.dart.scan.workforce import scan_workforce
 
     return scan_workforce()
 
@@ -116,7 +116,7 @@ def capital():
         import dartlab
         df = dartlab.capital()
     """
-    from dartlab.engines.dart.scan.capital import scan_capital
+    from dartlab.engines.company.dart.scan.capital import scan_capital
 
     return scan_capital()
 
@@ -129,7 +129,7 @@ def debt():
         import dartlab
         df = dartlab.debt()
     """
-    from dartlab.engines.dart.scan.debt import scan_debt
+    from dartlab.engines.company.dart.scan.debt import scan_debt
 
     return scan_debt()
 
@@ -147,7 +147,7 @@ def screen(preset: str = "가치주"):
         df = dartlab.screen("가치주")    # ROE≥10, 부채≤100 등
         df = dartlab.screen("고위험")    # 부채≥200, ICR<3
     """
-    from dartlab.engines.rank.screen import screen as _screen
+    from dartlab.engines.analysis.rank.screen import screen as _screen
 
     return _screen(preset)
 
@@ -160,7 +160,7 @@ def benchmark():
         import dartlab
         bm = dartlab.benchmark()   # 섹터 × 비율 정상 범위
     """
-    from dartlab.engines.rank.screen import benchmark as _benchmark
+    from dartlab.engines.analysis.rank.screen import benchmark as _benchmark
 
     return _benchmark()
 
@@ -177,7 +177,7 @@ def signal(keyword: str | None = None):
         df = dartlab.signal()        # 전체 키워드 트렌드
         df = dartlab.signal("AI")    # AI 키워드 연도별 추이
     """
-    from dartlab.engines.dart.scan.signal import scan_signal
+    from dartlab.engines.company.dart.scan.signal import scan_signal
 
     return scan_signal(keyword)
 
@@ -486,7 +486,7 @@ def groupHealth():
         import dartlab
         summary, weakLinks = dartlab.groupHealth()
     """
-    from dartlab.engines.dart.scan.network.health import groupHealth as _groupHealth
+    from dartlab.engines.company.dart.scan.network.health import groupHealth as _groupHealth
 
     return _groupHealth()
 
@@ -517,8 +517,8 @@ def digest(
         dartlab.digest(sector="반도체")             # 섹터별
         dartlab.digest(format="markdown")          # 마크다운 출력
     """
-    from dartlab.engines.watch.digest import build_digest
-    from dartlab.engines.watch.scanner import scan_market
+    from dartlab.engines.analysis.watch.digest import build_digest
+    from dartlab.engines.analysis.watch.scanner import scan_market
 
     scan_df = scan_market(
         sector=sector,

@@ -6,10 +6,10 @@ import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables, _headerCells, _isJunk, _dataRows, _normalizeHeader,
 )
-from dartlab.engines.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
 
 # ── 006 인라인 함수 그대로 복사 ──
 _MULTI_YEAR_KW = {"당기", "전기", "전전기", "당반기", "전반기", "당분기", "전분기"}

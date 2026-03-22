@@ -50,9 +50,9 @@ from time import perf_counter
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.dart._table_horizontalizer import horizontalizeTableBlock
-from dartlab.engines.dart.docs.sections.pipeline import sections
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart._table_horizontalizer import horizontalizeTableBlock
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,

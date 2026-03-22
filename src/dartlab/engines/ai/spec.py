@@ -11,12 +11,12 @@ from typing import Any
 from dartlab.core.capabilities import build_capability_summary, get_capability_specs
 
 _ENGINE_SPECS = [
-    "dartlab.engines.dart.finance.spec",
-    "dartlab.engines.dart.report.spec",
-    "dartlab.engines.dart.scan.spec",
-    "dartlab.engines.sector.spec",
-    "dartlab.engines.insight.spec",
-    "dartlab.engines.rank.spec",
+    "dartlab.engines.company.dart.finance.spec",
+    "dartlab.engines.company.dart.report.spec",
+    "dartlab.engines.company.dart.scan.spec",
+    "dartlab.engines.analysis.sector.spec",
+    "dartlab.engines.analysis.insight.spec",
+    "dartlab.engines.analysis.rank.spec",
     "dartlab.engines.gather.fred.spec",
 ]
 

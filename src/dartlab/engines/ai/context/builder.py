@@ -618,7 +618,7 @@ def _build_key_facts_recap(company: Any, included: list[str]) -> str | None:
 
     # insight 등급 요약 (있으면)
     try:
-        from dartlab.engines.insight import analyze
+        from dartlab.engines.analysis.insight import analyze
 
         stockCode = getattr(company, "stockCode", None)
         if stockCode:
@@ -726,7 +726,7 @@ def _build_insights_section(company: Any) -> str | None:
         return None
 
     try:
-        from dartlab.engines.insight.pipeline import analyze
+        from dartlab.engines.analysis.insight.pipeline import analyze
 
         result = analyze(stockCode, company=company)
     except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
@@ -884,7 +884,7 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
     try:
         insights_obj = getattr(company, "insights", None)
         if insights_obj is None:
-            from dartlab.engines.insight.pipeline import analyze as _analyze
+            from dartlab.engines.analysis.insight.pipeline import analyze as _analyze
 
             insights_obj = _analyze(company.stockCode, company=company)
         if insights_obj is not None:

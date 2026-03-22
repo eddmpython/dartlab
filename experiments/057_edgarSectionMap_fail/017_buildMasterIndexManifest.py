@@ -19,7 +19,7 @@ from alive_progress import alive_bar
 
 from dartlab import config
 from dartlab.core.dataLoader import loadEdgarListedUniverse
-from dartlab.engines.edgar.docs.fetch import (
+from dartlab.engines.company.edgar.docs.fetch import (
     _FilingTimeout,
     _htmlToText,
     _periodKey,

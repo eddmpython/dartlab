@@ -99,7 +99,7 @@ def run(args) -> int:
 
 
 def _runStats(console) -> int:
-    from dartlab.engines.dart.openapi.collector import collectionStats
+    from dartlab.engines.company.dart.openapi.collector import collectionStats
 
     stats = collectionStats()
     console.print(f"전체 상장: {stats['totalListed']}")
@@ -109,7 +109,7 @@ def _runStats(console) -> int:
 
 
 def _runUncollected(console, limit: int) -> int:
-    from dartlab.engines.dart.openapi.collector import listUncollectedKind
+    from dartlab.engines.company.dart.openapi.collector import listUncollectedKind
 
     stocks = listUncollectedKind()
     showing = min(limit, len(stocks))
@@ -120,7 +120,7 @@ def _runUncollected(console, limit: int) -> int:
 
 
 def _runAuto(console, args) -> int:
-    from dartlab.engines.dart.openapi.collector import (
+    from dartlab.engines.company.dart.openapi.collector import (
         collectMultiple,
         listUncollectedKind,
     )
@@ -157,7 +157,7 @@ def _runAuto(console, args) -> int:
 
 
 def _runCollect(console, args) -> int:
-    from dartlab.engines.dart.openapi.collector import DocsCollector, collectMultiple
+    from dartlab.engines.company.dart.openapi.collector import DocsCollector, collectMultiple
 
     codes = args.codes
     includeQ = not args.annual_only

@@ -65,10 +65,10 @@ def _load_sections(code: str, market: str) -> dict | None:
     """sections pipeline으로 로드 후 통계 반환."""
     try:
         if market == "DART":
-            from dartlab.engines.dart.docs.sections.pipeline import sections
+            from dartlab.engines.company.dart.docs.sections.pipeline import sections
             df = sections(code)
         else:
-            from dartlab.engines.edgar.docs.sections.pipeline import sections
+            from dartlab.engines.company.edgar.docs.sections.pipeline import sections
             df = sections(code)
 
         if df is None or df.height == 0:

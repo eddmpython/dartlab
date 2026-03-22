@@ -10,7 +10,7 @@ import sys
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.views import contextSlices, saveView
+from dartlab.engines.company.dart.docs.sections.views import contextSlices, saveView
 
 
 DEFAULT_STOCK_CODE = "005930"

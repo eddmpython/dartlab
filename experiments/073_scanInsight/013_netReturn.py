@@ -358,7 +358,7 @@ def compute_net_return() -> pl.DataFrame:
 
 
 def analyze_by_market(df: pl.DataFrame) -> None:
-    from dartlab.engines.dart.scan.network.scanner import load_listing
+    from dartlab.engines.company.dart.scan.network.scanner import load_listing
     _, _, _, listing_meta = load_listing()
 
     rows = []

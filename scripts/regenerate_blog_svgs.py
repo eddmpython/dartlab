@@ -3,7 +3,6 @@
 각 포스트에 decision-tree, evidence-layer, good-vs-risky-matrix, reading-flow, watchboard 5개 SVG를 생성.
 """
 
-import os
 import re
 from pathlib import Path
 

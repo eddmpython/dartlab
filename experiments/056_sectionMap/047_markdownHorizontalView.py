@@ -10,7 +10,7 @@ import sys
 
 import polars as pl
 
-from dartlab.engines.dart.docs.sections.views import (
+from dartlab.engines.company.dart.docs.sections.views import (
     buildMarkdownBlocks,
     buildMarkdownWide,
     saveView,

@@ -9,7 +9,7 @@ import pytest
 
 from dartlab.export.excel import exportToExcel, listAvailableModules
 
-PATCH_TARGET = "dartlab.engines.dart.finance.pivot.buildAnnual"
+PATCH_TARGET = "dartlab.engines.company.dart.finance.pivot.buildAnnual"
 
 
 class _ShowableMock(MagicMock):

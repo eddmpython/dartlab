@@ -2,17 +2,33 @@
 
 이 문서는 `src/dartlab/engines/` 하위 엔진 구조를 설명하는 내부 개발 문서다.
 
-## 레이어
+## 레이어 (5-Pillar 구조)
 
-- 루트 facade
-  - `dartlab.Company`
-- 엔진 본체
-  - `dartlab.engines.dart.*`
-  - `dartlab.engines.edgar.*`
+```
+engines/
+├── common/      # L0: 공유 유틸 (protocols, finance, docs)
+├── company/     # L1: 데이터 소스 → Company 객체
+│   ├── dart/    # 한국 DART
+│   ├── edgar/   # 미국 EDGAR
+│   └── edinet/  # 일본 EDINET
+├── gather/      # L2: 외부 수집 (naver/yahoo/fred/listing)
+├── analysis/    # L2: 분석 모듈 통합
+│   ├── sector/  # WICS 섹터 분류
+│   ├── insight/ # 7영역 등급
+│   ├── rank/    # 시장 순위
+│   ├── esg/     # ESG 분석
+│   ├── supply/  # 공급망
+│   ├── event/   # 이벤트 스터디
+│   ├── watch/   # 공시 변화 감지
+│   └── analyst/ # 밸류에이션 합성
+└── ai/          # L3: LLM 분석 (7 providers)
+```
 
 의존 방향:
-- 루트 facade -> 엔진 본체
+- 루트 facade (`dartlab.Company`) -> 엔진 본체
 - 엔진 본체 -> 루트 facade 금지
+- L2 analysis -> L1 company (lazy import만)
+- L3 ai -> L1 + L2 (모두 소비)
 
 ## Company 핵심 사상 (2026-03-18 확정)
 
@@ -123,5 +139,5 @@ DART/EDGAR 동일 인터페이스. CompanyProtocol로 보장.
 - 뷰어의 table 정렬/표시 문제를 `Compare` 개념으로 설명하지 않는다.
 
 상세 문서:
-- `src/dartlab/engines/dart/DEV.md`
-- `src/dartlab/engines/edgar/DEV.md`
+- `src/dartlab/engines/company/dart/DEV.md`
+- `src/dartlab/engines/company/edgar/DEV.md`

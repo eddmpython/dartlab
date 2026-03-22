@@ -35,7 +35,7 @@ import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
-from dartlab.engines.dart.docs.sections.tableParser import (
+from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables, _headerCells, _isJunk, _dataRows,
     _normalizeHeader,
 )

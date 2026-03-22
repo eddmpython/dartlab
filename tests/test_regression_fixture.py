@@ -44,7 +44,7 @@ def _getAnnualValue(series, periods, stmt, snakeId, year):
 
 @pytest.fixture(scope="module")
 def samsungAnnual():
-    from dartlab.engines.dart.finance.pivot import buildAnnual
+    from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
     df = pl.read_parquet(FIXTURE_FINANCE)
     with patch("dartlab.core.dataLoader.loadData", return_value=df):

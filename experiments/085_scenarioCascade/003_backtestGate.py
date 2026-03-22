@@ -95,7 +95,7 @@ ALL_COMPANIES = [
 
 def _extractFinancials(stockCode: str) -> dict[int, dict]:
     """연도별 매출, 영업이익, 영업이익률 추출."""
-    from dartlab.engines.dart.finance.pivot import buildTimeseries
+    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
 
     try:
         result = buildTimeseries(stockCode)

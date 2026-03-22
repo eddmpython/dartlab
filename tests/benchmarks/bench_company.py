@@ -30,7 +30,7 @@ def _median(fn, rounds=ROUNDS):
 
 
 def main():
-    from dartlab.engines.dart.company import Company
+    from dartlab.engines.company.dart.company import Company
 
     print("=" * 60)
     print(f"Company 성능 기준치 ({ROUNDS}회 median)")

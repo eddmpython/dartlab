@@ -36,8 +36,8 @@ import polars as pl
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.dart.docs.sections.chunker import chunkRows
-from dartlab.engines.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.engines.company.dart.docs.sections.chunker import chunkRows
+from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 
 
 _REPORT_KINDS = [
