@@ -254,6 +254,7 @@ def test_analyze_distress_exists():
 
 def test_analyze_with_market_data_5axis():
     """MarketDataForDistress 전달 시 5축(시장 기반 축 포함)."""
+    pytest.importorskip("scipy")
     import random
 
     from dartlab.engines.analysis.insight import MarketDataForDistress, analyze
