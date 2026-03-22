@@ -27,6 +27,7 @@ snakeId는 standardAccounts.json 기준 그대로 사용.
 
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 import polars as pl
@@ -34,6 +35,8 @@ import polars as pl
 from dartlab.engines.common.finance.ordering import sortSeries
 from dartlab.engines.common.finance.period import extractYear, formatPeriod
 from dartlab.engines.dart.finance.mapper import AccountMapper
+
+_log = logging.getLogger(__name__)
 
 QUARTER_ORDER = {"1분기": 1, "2분기": 2, "3분기": 3, "4분기": 4}
 
@@ -197,6 +200,18 @@ def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
         .alias("_fsPriority")
     )
 
+    # 혼합 소스 감지: 같은 (연도, 재무제표)에서 CFS/OFS가 섞이면 경고
+    groupCols = ["bsns_year", "sj_div"]
+    if all(c in df.columns for c in groupCols):
+        mixed = df.group_by(groupCols).agg(pl.col("fs_div").n_unique().alias("_nSource")).filter(pl.col("_nSource") > 1)
+        if not mixed.is_empty():
+            for row in mixed.iter_rows(named=True):
+                _log.warning(
+                    "CFS/OFS 혼합: %s %s — 행 단위 중복 제거로 소스 혼합 가능",
+                    row["bsns_year"],
+                    row["sj_div"],
+                )
+
     df = df.sort(["bsns_year", "reprt_nm", "sj_div", "account_id", "_fsPriority"])
     df = df.unique(
         ["bsns_year", "reprt_nm", "sj_div", "account_id", "account_nm"],
@@ -208,9 +223,29 @@ def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
 
 
 def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
-    """IS/CIS/CF 누적값 → standalone 변환. BS는 시점 잔액이므로 그대로."""
+    """IS/CIS/CF 누적값 → standalone(분기 단독) 변환.
+
+    DART 원본 데이터 구조:
+    - thstrm_amount: 당기금액 (IS/CIS: 누적, CF: 누적, BS: 시점잔액)
+    - thstrm_add_amount: 당기추가금액 (IS/CIS Q4 사업보고서 전용 — 연간 누적)
+
+    Standalone 변환 로직:
+    - BS: 시점 잔액이므로 thstrm_amount 그대로
+    - CF: Q1은 그대로, Q2~Q4는 전분기 thstrm_amount 차분
+    - IS/CIS:
+      - Q1: thstrm_amount 그대로 (없으면 thstrm_add_amount fallback)
+      - Q2~Q3: thstrm_add_amount - 전분기 thstrm_add_amount
+        (thstrm_amount가 null이거나 thstrm_add_amount와 같으면 누적 기반)
+      - Q4 특수: thstrm_add_amount가 없으면 thstrm_amount를 Q4 누적으로 간주
+        → thstrm_amount - 전분기 thstrm_add_amount로 standalone 추출
+
+    Fallback 경로:
+    - thstrm_add_amount null + Q4 IS/CIS → thstrm_amount로 대체 후 차분
+    - 전분기 값 null → None (standalone 계산 불가)
+    """
     df = df.with_columns(pl.col("reprt_nm").replace(QUARTER_ORDER).cast(pl.Int32).alias("_qOrd"))
 
+    # 문자열 금액 → Float64 변환 (빈 문자열, "-" → null)
     for col in ["thstrm_amount", "thstrm_add_amount"]:
         if col in df.columns:
             df = df.with_columns(
@@ -231,6 +266,7 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
 
     df = df.with_columns(pl.col("thstrm_add_amount").shift(1).over(groupKey).alias("_prevAdd"))
 
+    # Q4 IS/CIS: thstrm_add_amount가 null이면 thstrm_amount를 연간 누적으로 간주
     df = df.with_columns(
         pl.when(
             pl.col("sj_div").is_in(["IS", "CIS"])
@@ -242,13 +278,15 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         .alias("thstrm_add_amount")
     )
 
+    # prevAdd/prevAmount 재계산 (Q4 fallback 적용 후)
     df = df.with_columns(pl.col("thstrm_add_amount").shift(1).over(groupKey).alias("_prevAdd"))
-
     df = df.with_columns(pl.col("thstrm_amount").shift(1).over(groupKey).alias("_prevAmount"))
 
     df = df.with_columns(
+        # BS: 시점 잔액 그대로
         pl.when(pl.col("sj_div") == "BS")
         .then(pl.col("thstrm_amount"))
+        # CF: Q1 그대로, Q2~Q4 전분기 차분
         .when(pl.col("sj_div") == "CF")
         .then(
             pl.when(pl.col("_qOrd") == 1)
@@ -257,8 +295,10 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
             .then(None)
             .otherwise(pl.col("thstrm_amount") - pl.col("_prevAmount"))
         )
+        # IS/CIS Q1: thstrm_amount null이면 thstrm_add_amount fallback
         .when((pl.col("reprt_nm") == "1분기") & pl.col("thstrm_amount").is_null())
         .then(pl.col("thstrm_add_amount"))
+        # IS/CIS Q2~Q4: 누적 기반 차분 (thstrm_amount가 null이거나 add와 같으면)
         .when(
             (pl.col("reprt_nm") != "1분기")
             & (pl.col("thstrm_amount").is_null() | (pl.col("thstrm_amount") == pl.col("thstrm_add_amount")))
@@ -266,8 +306,10 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         .then(
             pl.when(pl.col("_prevAdd").is_null()).then(None).otherwise(pl.col("thstrm_add_amount") - pl.col("_prevAdd"))
         )
+        # IS/CIS Q4: thstrm_add_amount null fallback — thstrm_amount에서 차분
         .when((pl.col("reprt_nm") == "4분기") & pl.col("thstrm_add_amount").is_null())
         .then(pl.when(pl.col("_prevAdd").is_null()).then(None).otherwise(pl.col("thstrm_amount") - pl.col("_prevAdd")))
+        # 기본: thstrm_amount 사용 (IS/CIS Q1 정상 경로)
         .otherwise(pl.col("thstrm_amount"))
         .alias("_normalized_amount")
     )
@@ -308,6 +350,10 @@ def _pivotToSeries(
         "CF": {},
     }
 
+    totalRows = 0
+    unmappedRows = 0
+    unmappedAccounts: dict[str, int] = {}
+
     for row in df.iter_rows(named=True):
         sjDiv = row.get("sj_div", "")
         if sjDiv == "CIS":
@@ -315,10 +361,15 @@ def _pivotToSeries(
         if sjDiv not in result:
             continue
 
+        totalRows += 1
         accountId = row.get("account_id", "") or ""
         accountNm = row.get("account_nm", "") or ""
         snakeId = mapper.map(accountId, accountNm)
         if snakeId is None:
+            unmappedRows += 1
+            key = f"{accountId}|{accountNm}"
+            unmappedAccounts[key] = unmappedAccounts.get(key, 0) + 1
+            _log.debug("미매핑 계정: id=%s nm=%s", accountId, accountNm)
             continue
 
         amount = row.get("_normalized_amount")
@@ -338,6 +389,17 @@ def _pivotToSeries(
 
         if target[snakeId][idx] is None:
             target[snakeId][idx] = amount
+
+    if unmappedAccounts:
+        _log.info(
+            "finance 매핑: %d/%d 행 매핑 완료, %d 행 미매핑 (%d 고유 계정)",
+            totalRows - unmappedRows,
+            totalRows,
+            unmappedRows,
+            len(unmappedAccounts),
+        )
+        for acct, cnt in sorted(unmappedAccounts.items(), key=lambda x: -x[1])[:5]:
+            _log.debug("  미매핑 상위: %s (%d회)", acct, cnt)
 
     sortSeries(result)
     return result

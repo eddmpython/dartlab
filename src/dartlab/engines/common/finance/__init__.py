@@ -10,6 +10,28 @@ from dartlab.engines.common.finance.extract import (
     getRevenueGrowth3Y,
     getTTM,
 )
+from dartlab.engines.common.finance.forecast import (
+    ForecastResult,
+    ScenarioResult,
+    SensitivityResult,
+    forecast_all,
+    forecast_metric,
+    scenario_analysis,
+    sensitivity_analysis,
+)
+from dartlab.engines.common.finance.pricetarget import (
+    PriceTargetResult,
+    ScenarioPriceTarget,
+    compute_price_target,
+)
+from dartlab.engines.common.finance.proforma import (
+    HistoricalRatios,
+    ProFormaResult,
+    ProFormaYear,
+    build_proforma,
+    compute_company_wacc,
+    extract_historical_ratios,
+)
 from dartlab.engines.common.finance.ratios import (
     RATIO_CATEGORIES,
     RatioResult,
@@ -18,6 +40,28 @@ from dartlab.engines.common.finance.ratios import (
     calcRatioSeries,
     toSeriesDict,
     yoy_pct,
+)
+from dartlab.engines.common.finance.simulation import (
+    PRESET_SCENARIOS,
+    MacroScenario,
+    MonteCarloResult,
+    SectorElasticity,
+    SimulationResult,
+    StressTestResult,
+    monte_carlo_forecast,
+    simulate_all_scenarios,
+    simulate_scenario,
+    stress_test,
+)
+from dartlab.engines.common.finance.valuation import (
+    DCFResult,
+    DDMResult,
+    RelativeValuationResult,
+    ValuationSummary,
+    dcf_valuation,
+    ddm_valuation,
+    full_valuation,
+    relative_valuation,
 )
 
 __all__ = [
@@ -32,4 +76,43 @@ __all__ = [
     "RatioResult",
     "RatioSeriesResult",
     "yoy_pct",
+    # valuation
+    "DCFResult",
+    "DDMResult",
+    "RelativeValuationResult",
+    "ValuationSummary",
+    "dcf_valuation",
+    "ddm_valuation",
+    "full_valuation",
+    "relative_valuation",
+    # forecast
+    "ForecastResult",
+    "ScenarioResult",
+    "SensitivityResult",
+    "forecast_all",
+    "forecast_metric",
+    "scenario_analysis",
+    "sensitivity_analysis",
+    # simulation
+    "MacroScenario",
+    "SectorElasticity",
+    "SimulationResult",
+    "MonteCarloResult",
+    "StressTestResult",
+    "PRESET_SCENARIOS",
+    "simulate_scenario",
+    "simulate_all_scenarios",
+    "monte_carlo_forecast",
+    "stress_test",
+    # proforma
+    "HistoricalRatios",
+    "ProFormaYear",
+    "ProFormaResult",
+    "extract_historical_ratios",
+    "compute_company_wacc",
+    "build_proforma",
+    # price target
+    "ScenarioPriceTarget",
+    "PriceTargetResult",
+    "compute_price_target",
 ]

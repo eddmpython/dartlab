@@ -95,7 +95,7 @@ def analyze(
 
     sector = Sector.UNKNOWN
     if company is not None:
-        sectorInfo = company.sector
+        sectorInfo = getattr(company, "sector", None)
         sector = sectorInfo.sector if sectorInfo else Sector.UNKNOWN
 
     insights = {}

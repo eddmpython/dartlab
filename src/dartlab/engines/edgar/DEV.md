@@ -72,12 +72,22 @@ c.trace("10-K::item1Business")  # {..., "chapter": "Part I", "label": "Business"
 c.topics                     # ["BS", "IS", "CF", "ratios", "10-K::...", ...]
 
 c.docs.sections              # (topic, blockType) × period DataFrame (pure source)
+c.docs.retrievalBlocks       # block × period unpivot (LLM 검색용)
+c.docs.contextSlices         # 슬라이스 (LLM 컨텍스트 창 크기 대응)
+c.docs.notes()               # XBRL TextBlock 주석 (AccountingPolicies 등)
+c.docs.cadence()             # topic × period 분포 매트릭스
+c.docs.coverage()            # topic별 커버리지 요약
 c.docs.filings()             # filings 목록
 c.finance.BS / IS / CF / CIS # 연도별 재무제표
+c.finance.SCE                # 자본변동표 (BS delta + CF equity 거래)
 c.finance.ratios / ratioSeries
+c.finance.explore("Revenue") # XBRL 태그 검색 (전 기간 값 탐색)
+c.finance.listTags()         # 보고된 모든 us-gaap 태그 목록
+c.profile.sections           # docs + finance merge (= c.sections)
 
 c.BS                         # finance.BS 바로가기
-c.sections                   # docs.sections 바로가기 (최신먼저, Q4 통일)
+c.sections                   # profile.sections 위임 (docs+finance 통합)
+c.stockCode                  # ticker alias (서버 API 호환)
 c.filings()                  # docs.filings() 바로가기
 
 c.insights                   # 7영역 등급
@@ -167,7 +177,30 @@ print(f'총: {totalRows}, 매핑: {mappedRows} ({mappedRows/totalRows*100:.4f}%)
 for t, c in unmapped.most_common(20): print(f'  {c}x  {t}')
 ```
 
-## 검증 (2026-03-15)
+## 파일 구조 (2026-03-22)
+
+```
+engines/edgar/
+├── company.py               # Company 본체 (~1,050줄)
+├── _docs_accessor.py        # docs namespace (sections, retrievalBlocks, contextSlices, notes, cadence, coverage, filings)
+├── _finance_accessor.py     # finance namespace (BS/IS/CF/CIS/SCE/ratios/ratioSeries/explore/listTags)
+├── _profile_accessor.py     # profile namespace (docs+finance merge)
+├── docs/
+│   ├── notes.py             # XBRL TextBlock 주석 추출
+│   └── sections/
+│       ├── pipeline.py      # sections() 메인 함수
+│       ├── mapper.py        # section title → topic 매핑
+│       ├── views.py         # sortPeriods, retrievalBlocks, contextSlices, cadence, coverage
+│       ├── textStructure.py # 영문 heading/body 파서
+│       └── mapperData/      # sectionMappings.json (182개)
+├── finance/
+│   ├── mapper.py            # XBRL tag → snakeId 매핑
+│   ├── pivot.py             # buildTimeseries, buildAnnual, buildSce
+│   └── explore.py           # XBRL Fact Explorer (태그 검색, 목록)
+└── openapi/                 # SEC public API wrapper
+```
+
+## 검증 (2026-03-22)
 
 - **974개 ticker 전수조사**: 에러 0, sections None 0
 - **sections 매퍼**: 100.0000% (442,025/442,025행, 182개 매핑)
@@ -176,4 +209,11 @@ for t, c in unmapped.most_common(20): print(f'  {c}x  {t}')
 - **show()**: 974종목 ShowResult 반환 성공
 - **profile**: 974종목 생성 성공
 - **index**: 8컬럼 DART 동일 구조 (chapter, topic, label, kind, source, periods, shape, preview)
-- **테스트**: 62개 통과
+- **테스트**: 48개 통과 (기존 30 + 신규 18)
+- **accessor 분리**: company.py 1,243→1,050줄, 3개 accessor 파일 분리
+- **retrievalBlocks/contextSlices**: views.py 40→420줄, LLM 증거층 + cadence/coverage
+- **서버 API**: resolve.py US ticker 인식 추가, stockCode 호환 property
+- **SCE**: BS equity 컴포넌트 delta + CF equity 거래 + IS net income + CI OCI
+- **XBRL Fact Explorer**: 태그 단위 전 기간 값 탐색, 태그 목록
+- **XBRL Notes**: TextBlock 주석 추출 (20개 주요 태그 label 내장)
+- **insight pipeline**: EDGAR Company 완전 지원 (governance graceful fallback)

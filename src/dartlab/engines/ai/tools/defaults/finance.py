@@ -9,6 +9,15 @@ import polars as pl
 from .helpers import df_to_md, format_tool_value
 
 
+def _unwrap_timeseries(ts: Any) -> dict | None:
+    """timeseries가 (dict, list) tuple이면 dict만 꺼낸다."""
+    if ts is None:
+        return None
+    if isinstance(ts, tuple):
+        return ts[0] if ts else None
+    return ts
+
+
 def register_finance_tools(company: Any, register_tool) -> None:
     """재무 데이터 관련 도구를 등록한다."""
     from dartlab.core.capabilities import CapabilityKind
@@ -549,5 +558,484 @@ def register_finance_tools(company: Any, register_tool) -> None:
             "required": ["account"],
         },
         kind=CapabilityKind.DATA,
+        requires_company=True,
+    )
+
+    # ── 밸류에이션 / 예측 도구 ──────────────────────────────
+
+    def intrinsic_value(model: str = "all") -> str:
+        """내재가치 추정 (DCF/DDM/상대가치)."""
+        from dartlab.engines.common.finance.valuation import (
+            dcf_valuation,
+            ddm_valuation,
+            full_valuation,
+            relative_valuation,
+        )
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+
+        mc = getattr(company, "marketCap", None)
+        shares = getattr(company, "sharesOutstanding", None)
+        price = getattr(company, "currentPrice", None)
+
+        if model == "all":
+            result = full_valuation(
+                series,
+                shares=shares,
+                sector_params=sp,
+                market_cap=mc,
+                current_price=price,
+            )
+            parts = []
+            if result.dcf:
+                parts.append(repr(result.dcf))
+            if result.ddm:
+                parts.append(repr(result.ddm))
+            if result.relative:
+                parts.append(repr(result.relative))
+            parts.append(repr(result))
+            return "\n\n".join(parts)
+        elif model == "dcf":
+            result = dcf_valuation(series, shares=shares, sector_params=sp, current_price=price)
+            return repr(result)
+        elif model == "ddm":
+            result = ddm_valuation(series, shares=shares, sector_params=sp, current_price=price)
+            return repr(result)
+        elif model == "relative":
+            result = relative_valuation(series, sector_params=sp, market_cap=mc, shares=shares, current_price=price)
+            return repr(result)
+        else:
+            return f"미지원 모델: {model}. 선택지: all, dcf, ddm, relative"
+
+    register_tool(
+        "intrinsic_value",
+        intrinsic_value,
+        "내재가치를 추정합니다. DCF(현금흐름할인), DDM(배당할인), 상대가치(섹터배수) 3가지 모델을 지원합니다. "
+        "사용 시점: 적정 주가/기업가치 판단, 저평가/고평가 분석. "
+        "model 파라미터: 'all'(종합), 'dcf', 'ddm', 'relative' 중 선택.",
+        {
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "밸류에이션 모델 (all, dcf, ddm, relative)",
+                    "default": "all",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    def forecast(metric: str = "revenue", horizon: str = "3") -> str:
+        """시계열 예측."""
+        from dartlab.engines.common.finance.forecast import forecast_metric as _fm
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+
+        result = _fm(series, metric=metric, horizon=int(horizon), sector_params=sp)
+        return repr(result)
+
+    register_tool(
+        "forecast",
+        forecast,
+        "매출/영업이익/순이익/영업CF의 미래 값을 예측합니다. "
+        "선형회귀, CAGR 감속, 평균 회귀 중 데이터에 맞는 방법을 자동 선택합니다. "
+        "사용 시점: 미래 실적 전망, DCF 입력값 확인. "
+        "metric: revenue(매출), operating_income(영업이익), net_income(순이익), operating_cashflow(영업CF).",
+        {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "type": "string",
+                    "description": "예측 대상 (revenue, operating_income, net_income, operating_cashflow)",
+                    "default": "revenue",
+                },
+                "horizon": {
+                    "type": "string",
+                    "description": "예측 기간 (년, 1~5)",
+                    "default": "3",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    def scenario(current_price: str = "") -> str:
+        """시나리오 분석 (Bull/Base/Bear DCF)."""
+        from dartlab.engines.common.finance.forecast import scenario_analysis as _sa
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+        shares = getattr(company, "sharesOutstanding", None)
+        price = float(current_price) if current_price else getattr(company, "currentPrice", None)
+
+        result = _sa(series, shares=shares, sector_params=sp, current_price=price)
+        return repr(result)
+
+    register_tool(
+        "scenario",
+        scenario,
+        "Bull/Base/Bear 3개 시나리오별 DCF 분석을 수행하고 확률 가중 적정가치를 산출합니다. "
+        "사용 시점: 투자 의사결정 시 다양한 가능성 검토, 리스크-보상 분석.",
+        {
+            "type": "object",
+            "properties": {
+                "current_price": {
+                    "type": "string",
+                    "description": "현재 주가 (원, 선택사항)",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    def sensitivity(wacc_range: str = "2", growth_range: str = "1") -> str:
+        """민감도 분석 (WACC × 영구성장률 매트릭스)."""
+        from dartlab.engines.common.finance.forecast import sensitivity_analysis as _sens
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+        shares = getattr(company, "sharesOutstanding", None)
+
+        result = _sens(
+            series,
+            shares=shares,
+            sector_params=sp,
+            wacc_range=float(wacc_range),
+            growth_range=float(growth_range),
+        )
+        return repr(result)
+
+    register_tool(
+        "sensitivity",
+        sensitivity,
+        "WACC와 영구성장률 조합에 따른 주당 내재가치 민감도 테이블을 생성합니다. "
+        "사용 시점: DCF 결과의 핵심 가정 변화에 따른 가치 변동 확인.",
+        {
+            "type": "object",
+            "properties": {
+                "wacc_range": {
+                    "type": "string",
+                    "description": "WACC ± 범위 (%p, 기본 2)",
+                    "default": "2",
+                },
+                "growth_range": {
+                    "type": "string",
+                    "description": "영구성장률 ± 범위 (%p, 기본 1)",
+                    "default": "1",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    # ── 경제 시나리오 시뮬레이션 도구 ──────────────────────────
+
+    def economic_forecast(scenario: str = "all") -> str:
+        """거시경제 시나리오별 실적 시뮬레이션."""
+        from dartlab.engines.common.finance.simulation import (
+            PRESET_SCENARIOS,
+            simulate_all_scenarios,
+            simulate_scenario,
+        )
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+        shares = getattr(company, "sharesOutstanding", None)
+        sector_key = sector_info.get("sector", None) if sector_info else None
+
+        if scenario == "all":
+            results = simulate_all_scenarios(
+                series,
+                sector_key=sector_key,
+                sector_params=sp,
+                shares=shares,
+            )
+            lines = []
+            for name, r in results.items():
+                lines.append(repr(r))
+                lines.append("")
+            return "\n".join(lines)
+
+        if scenario in PRESET_SCENARIOS:
+            result = simulate_scenario(
+                series,
+                scenario=scenario,
+                sector_key=sector_key,
+                sector_params=sp,
+                shares=shares,
+            )
+            return repr(result)
+
+        return f"알 수 없는 시나리오: {scenario}. 사용 가능: {', '.join(PRESET_SCENARIOS.keys())}"
+
+    register_tool(
+        "economic_forecast",
+        economic_forecast,
+        "거시경제 시나리오(GDP/금리/환율)에 따른 3년 실적 시뮬레이션을 수행합니다. "
+        "업종별 경기감응도(β)를 자동 적용하여 매출·영업이익·FCF 경로를 추정합니다. "
+        "사용 시점: 경기침체/금리인상/중국둔화 등 거시 변수가 기업에 미치는 영향 분석. "
+        "사전 정의 시나리오: baseline(기준), adverse(경기침체), china_slowdown(중국둔화), "
+        "rate_hike(금리인상), semiconductor_down(반도체불황), all(전체).",
+        {
+            "type": "object",
+            "properties": {
+                "scenario": {
+                    "type": "string",
+                    "description": "시나리오 이름 (baseline/adverse/china_slowdown/rate_hike/semiconductor_down/all)",
+                    "default": "all",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    def monte_carlo(scenario: str = "baseline", iterations: str = "10000") -> str:
+        """Monte Carlo 확률 분포 예측."""
+        from dartlab.engines.common.finance.simulation import monte_carlo_forecast
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+        shares = getattr(company, "sharesOutstanding", None)
+        sector_key = sector_info.get("sector", None) if sector_info else None
+
+        result = monte_carlo_forecast(
+            series,
+            sector_key=sector_key,
+            sector_params=sp,
+            shares=shares,
+            scenario=scenario,
+            iterations=int(iterations),
+        )
+        return repr(result)
+
+    register_tool(
+        "monte_carlo",
+        monte_carlo,
+        "Monte Carlo 시뮬레이션으로 매출/영업이익/FCF의 확률 분포(5th~95th 백분위)를 산출합니다. "
+        "10,000회 반복으로 기업 실적의 변동성과 위험을 정량화합니다. "
+        "사용 시점: 단일 점 추정이 아닌 확률적 범위로 실적 예측이 필요할 때.",
+        {
+            "type": "object",
+            "properties": {
+                "scenario": {
+                    "type": "string",
+                    "description": "기반 거시경제 시나리오 (baseline/adverse/china_slowdown/rate_hike/semiconductor_down)",
+                    "default": "baseline",
+                },
+                "iterations": {
+                    "type": "string",
+                    "description": "시뮬레이션 반복 횟수 (기본 10000)",
+                    "default": "10000",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    def stress_test_tool(scenario: str = "adverse") -> str:
+        """CCAR 스타일 스트레스 테스트."""
+        from dartlab.engines.common.finance.simulation import stress_test as _st
+        from dartlab.engines.sector.params import getParams
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sp = getParams(sector_info) if sector_info else None
+        sector_key = sector_info.get("sector", None) if sector_info else None
+
+        result = _st(
+            series,
+            sector_key=sector_key,
+            sector_params=sp,
+            scenario=scenario,
+        )
+        return repr(result)
+
+    register_tool(
+        "stress_test",
+        stress_test_tool,
+        "CCAR 스타일 스트레스 테스트를 수행하여 경기침체 시 기업의 생존 가능성을 평가합니다. "
+        "3년간 매출/마진 변화, 부채비율 추이, 배당 지속 가능성, 생존 위험도를 산출합니다. "
+        "사용 시점: 극단적 경제 상황에서 기업의 재무 복원력 평가.",
+        {
+            "type": "object",
+            "properties": {
+                "scenario": {
+                    "type": "string",
+                    "description": "스트레스 시나리오 (adverse/china_slowdown/semiconductor_down 등)",
+                    "default": "adverse",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    # ── Pro-Forma 재무제표 예측 ──
+
+    def proforma_forecast(
+        growth: str = "5,4,3,2.5,2",
+        scenario_name: str = "base",
+    ) -> str:
+        """3-Statement Pro-Forma 재무제표 생성 (IS→BS→CF 연결 모델)."""
+        from dartlab.engines.common.finance.proforma import build_proforma as _build
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        growth_path = [float(g.strip()) for g in growth.split(",")]
+
+        market_info = getattr(company, "market", None)
+        market_cap = None
+        if market_info and hasattr(market_info, "get"):
+            market_cap = market_info.get("marketCap")
+
+        result = _build(
+            series,
+            revenue_growth_path=growth_path,
+            market_cap=market_cap,
+            scenario_name=scenario_name,
+        )
+        return repr(result)
+
+    register_tool(
+        "proforma_forecast",
+        proforma_forecast,
+        "3-Statement Pro-Forma 재무제표를 생성합니다. 과거 비율(중위값) 기반으로 "
+        "IS→BS→CF 연결 모델을 구축하고 BS 균형을 검증합니다. "
+        "매출 성장 경로를 입력하면 5년간 예측 재무제표가 생성됩니다. "
+        "사용 시점: 기업의 미래 재무 상태 시뮬레이션, 투자 분석.",
+        {
+            "type": "object",
+            "properties": {
+                "growth": {
+                    "type": "string",
+                    "description": "연도별 매출 성장률(%), 콤마 구분. 예: '5,4,3,2.5,2'",
+                    "default": "5,4,3,2.5,2",
+                },
+                "scenario_name": {
+                    "type": "string",
+                    "description": "시나리오 이름 (예: base, optimistic, pessimistic)",
+                    "default": "base",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
+    # ── 확률 가중 주가 목표가 ──
+
+    def price_target_tool(
+        current_price: str = "",
+        shares: str = "",
+        mc_iterations: str = "5000",
+    ) -> str:
+        """5개 매크로 시나리오 × Pro-Forma → DCF → Monte Carlo → 확률 가중 목표가."""
+        from dartlab.engines.common.finance.pricetarget import compute_price_target as _cpt
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        sector_info = getattr(company, "sectorInfo", None)
+        sector_key = sector_info.get("sector", None) if sector_info else None
+
+        market_info = getattr(company, "market", None)
+        market_cap = None
+        cp = None
+        sh = None
+        if market_info and hasattr(market_info, "get"):
+            market_cap = market_info.get("marketCap")
+            cp = market_info.get("closePrice") or market_info.get("price")
+            sh = market_info.get("sharesOutstanding") or market_info.get("listedShares")
+
+        # 사용자 입력 우선
+        if current_price:
+            cp = float(current_price)
+        if shares:
+            sh = int(shares)
+
+        result = _cpt(
+            series,
+            sector_key=sector_key,
+            current_price=cp,
+            shares=sh,
+            market_cap=market_cap,
+            mc_iterations=int(mc_iterations),
+        )
+        return repr(result)
+
+    register_tool(
+        "price_target",
+        price_target_tool,
+        "확률 가중 주가 목표가를 산출합니다. 5개 매크로 시나리오(기준/금리인상/중국둔화/반도체하강/경기침체)별 "
+        "Pro-Forma 재무제표 → DCF 밸류에이션 → Monte Carlo 5000회 시뮬레이션을 수행합니다. "
+        "P10~P90 분포, 현재가 대비 업사이드, 투자 신호(strong_buy~strong_sell)를 제공합니다. "
+        "사용 시점: 종합적인 주가 분석, 매수/매도 판단 근거 도출.",
+        {
+            "type": "object",
+            "properties": {
+                "current_price": {
+                    "type": "string",
+                    "description": "현재 주가(원). 빈 문자열이면 market 데이터에서 자동 조회.",
+                    "default": "",
+                },
+                "shares": {
+                    "type": "string",
+                    "description": "발행주식수. 빈 문자열이면 market 데이터에서 자동 조회.",
+                    "default": "",
+                },
+                "mc_iterations": {
+                    "type": "string",
+                    "description": "Monte Carlo 반복 횟수 (기본 5000)",
+                    "default": "5000",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
         requires_company=True,
     )

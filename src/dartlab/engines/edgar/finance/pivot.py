@@ -619,3 +619,123 @@ def _computeDerived(
             for i in range(n):
                 if existing[i] is None and derived[i] is not None:
                     existing[i] = derived[i]
+
+
+# ── SCE (자본변동표) ─────────────────────────────────────────────
+
+# BS equity 컴포넌트 → SCE cause 매핑
+_EQUITY_COMPONENTS: list[tuple[str, str]] = [
+    ("common_stock", "Common Stock"),
+    ("additional_paid_in_capital", "Additional Paid-in Capital"),
+    ("retained_earnings", "Retained Earnings"),
+    ("treasury_stock", "Treasury Stock"),
+    ("accumulated_other_comprehensive_income", "Accumulated OCI"),
+    ("noncontrolling_interests_equity", "Noncontrolling Interest"),
+    ("owners_of_parent_equity", "Total Parent Equity"),
+    ("total_stockholders_equity", "Total Equity"),
+]
+
+# CF equity 거래 → SCE 참고 항목
+_EQUITY_TRANSACTIONS: list[tuple[str, str]] = [
+    ("dividends_paid", "Dividends Paid"),
+    ("stock_repurchase", "Share Repurchase"),
+    ("stock_issuance", "Share Issuance"),
+    ("stock_compensation", "Stock-Based Compensation"),
+]
+
+
+def buildSce(
+    cik: str,
+    *,
+    edgarDir: Path | None = None,
+) -> pl.DataFrame | None:
+    """BS equity 컴포넌트 연간 변화 + CF equity 거래로 SCE 구성.
+
+    Returns:
+        DataFrame with columns: component, label, {year columns...}
+        각 셀은 해당 연도의 변화량 (당기말 - 전기말). 첫 연도는 None.
+    """
+    annual = buildAnnual(cik, edgarDir=edgarDir)
+    if annual is None:
+        return None
+
+    series, years = annual
+    bs = series.get("BS", {})
+    cf = series.get("CF", {})
+    isStmt = series.get("IS", {})
+
+    rows: list[dict] = []
+    nYears = len(years)
+
+    # 1. BS equity 컴포넌트 연간 변화량
+    for snakeId, label in _EQUITY_COMPONENTS:
+        vals = bs.get(snakeId)
+        if vals is None:
+            continue
+        hasData = False
+        row: dict = {"component": snakeId, "label": label}
+        for i, year in enumerate(years):
+            if i == 0:
+                row[str(year)] = None
+            else:
+                prev = vals[i - 1]
+                curr = vals[i]
+                if prev is not None and curr is not None:
+                    row[str(year)] = curr - prev
+                    hasData = True
+                else:
+                    row[str(year)] = None
+        if hasData:
+            rows.append(row)
+
+    # 2. Net Income (IS)
+    netIncome = isStmt.get("net_profit") or isStmt.get("net_income")
+    if netIncome is not None:
+        row = {"component": "net_income", "label": "Net Income"}
+        hasData = False
+        for i, year in enumerate(years):
+            val = netIncome[i]
+            row[str(year)] = val
+            if val is not None:
+                hasData = True
+        if hasData:
+            rows.append(row)
+
+    # 3. CF equity 거래
+    for snakeId, label in _EQUITY_TRANSACTIONS:
+        vals = cf.get(snakeId)
+        if vals is None:
+            continue
+        hasData = False
+        row = {"component": snakeId, "label": label}
+        for i, year in enumerate(years):
+            val = vals[i]
+            row[str(year)] = val
+            if val is not None:
+                hasData = True
+        if hasData:
+            rows.append(row)
+
+    # 4. OCI (CI statement)
+    ci = series.get("CI", {})
+    oci = ci.get("other_comprehensive_income") or ci.get("total_other_comprehensive_income")
+    if oci is not None:
+        row = {"component": "other_comprehensive_income", "label": "Other Comprehensive Income"}
+        hasData = False
+        for i, year in enumerate(years):
+            val = oci[i]
+            row[str(year)] = val
+            if val is not None:
+                hasData = True
+        if hasData:
+            rows.append(row)
+
+    if not rows:
+        return None
+
+    df = pl.DataFrame(rows)
+    # 기간 컬럼 역순 정렬 (최신 먼저)
+    metaCols = ["component", "label"]
+    periodCols = [c for c in df.columns if c not in metaCols]
+    periodCols.sort(reverse=True)
+    return df.select(metaCols + periodCols)

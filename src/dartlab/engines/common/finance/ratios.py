@@ -123,11 +123,21 @@ class RatioResult:
     piotroskiMaxScore: int = 9
     altmanZScore: Optional[float] = None
 
+    # 이익 품질 지표
+    beneishMScore: Optional[float] = None
+    sloanAccrualRatio: Optional[float] = None
+
+    # 주당지표
+    eps: Optional[float] = None
+    bps: Optional[float] = None
+    dps: Optional[float] = None
+
     per: Optional[float] = None
     pbr: Optional[float] = None
     psr: Optional[float] = None
     evEbitda: Optional[float] = None
     marketCap: Optional[float] = None
+    sharesOutstanding: Optional[int] = None
     ebitdaEstimated: bool = True
 
     warnings: list[str] = field(default_factory=list)
@@ -199,6 +209,7 @@ class RatioResult:
                 "fcfToOcfRatio",
             ],
         ),
+        ("주당지표", ["eps", "bps", "dps"]),
         ("밸류에이션", ["per", "pbr", "psr", "evEbitda", "marketCap"]),
         (
             "복합지표",
@@ -214,6 +225,8 @@ class RatioResult:
                 "dpo",
                 "piotroskiFScore",
                 "altmanZScore",
+                "beneishMScore",
+                "sloanAccrualRatio",
             ],
         ),
     ]
@@ -259,6 +272,9 @@ class RatioResult:
         "capexRatio": "CAPEX비율 (%)",
         "dividendPayoutRatio": "배당성향 (%)",
         "fcfToOcfRatio": "FCF/OCF비율 (%)",
+        "eps": "EPS (원)",
+        "bps": "BPS (원)",
+        "dps": "DPS (원)",
         "per": "PER (x)",
         "pbr": "PBR (x)",
         "psr": "PSR (x)",
@@ -276,6 +292,8 @@ class RatioResult:
         "piotroskiFScore": "Piotroski F-Score (0~9)",
         "piotroskiMaxScore": "Piotroski 최대 점수",
         "altmanZScore": "Altman Z-Score",
+        "beneishMScore": "Beneish M-Score",
+        "sloanAccrualRatio": "Sloan Accrual Ratio (%)",
     }
 
     def __repr__(self) -> str:
@@ -399,6 +417,8 @@ class RatioSeriesResult:
     dpo: list[Optional[float]] = field(default_factory=list)
     piotroskiFScore: list[Optional[int]] = field(default_factory=list)
     altmanZScore: list[Optional[float]] = field(default_factory=list)
+    beneishMScore: list[Optional[float]] = field(default_factory=list)
+    sloanAccrualRatio: list[Optional[float]] = field(default_factory=list)
 
     revenue: list[Optional[float]] = field(default_factory=list)
     operatingProfit: list[Optional[float]] = field(default_factory=list)
@@ -454,34 +474,56 @@ def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
 
 
 def _detectArchetype(series: dict[str, dict[str, list[Optional[float]]]]) -> str:
+    """점수 기반 업종 분류. 하이브리드 기업도 정확히 분류.
+
+    각 archetype의 시그니처 계정 존재 여부로 점수를 매기고,
+    가장 높은 점수의 archetype을 반환. 복수 archetype이 비슷하면 "financial" 반환.
+    """
     isKeys = set(series.get("IS", {}))
     bsKeys = set(series.get("BS", {}))
 
-    if {
+    scores: dict[str, int] = {
+        "insurance": 0,
+        "bank": 0,
+        "securities": 0,
+    }
+
+    # 보험 시그니처
+    _INSURANCE_IS = {
         "insurance_revenue",
         "assumed_reinsurance_premiums",
         "benefit_payments",
-    }.intersection(isKeys):
-        return "insurance"
+        "insurance_service_expense",
+        "net_insurance_finance_expense",
+    }
+    scores["insurance"] = len(_INSURANCE_IS.intersection(isKeys))
 
-    if "interest_income" in isKeys and {
-        "loans",
-        "cash_and_deposits",
-        "debt_securities_at_amortized_cost",
-    }.intersection(bsKeys):
-        return "bank"
+    # 은행 시그니처
+    _BANK_IS = {"interest_income", "net_interest_income"}
+    _BANK_BS = {"loans", "cash_and_deposits", "debt_securities_at_amortized_cost", "deposits_from_customers"}
+    scores["bank"] = len(_BANK_IS.intersection(isKeys)) + len(_BANK_BS.intersection(bsKeys))
 
-    if "commission_income" in isKeys and {
+    # 증권 시그니처
+    _SEC_IS = {"commission_income", "fee_and_commission_income"}
+    _SEC_BS = {
         "financial_assets_at_fv_through_profit",
         "financial_assets_at_fv_through_oci",
         "financial_assets_at_amortized_cost",
-    }.intersection(bsKeys):
-        return "securities"
+    }
+    scores["securities"] = len(_SEC_IS.intersection(isKeys)) + len(_SEC_BS.intersection(bsKeys))
 
-    if any(token in isKeys for token in ("interest_income", "insurance_revenue", "commission_income")):
+    # 최고 점수 archetype 선택
+    max_score = max(scores.values())
+    if max_score == 0:
+        return "general"
+
+    top = [k for k, v in scores.items() if v == max_score]
+
+    # 복수 archetype이 동점이면 "financial" (하이브리드)
+    if len(top) > 1:
         return "financial"
 
-    return "general"
+    return top[0]
 
 
 def _setNone(result: RatioResult, *fieldNames: str) -> None:
@@ -610,6 +652,7 @@ def calcRatios(
     marketCap: Optional[float] = None,
     annual: bool = False,
     archetypeOverride: str | None = None,
+    shares: Optional[int] = None,
 ) -> RatioResult:
     """시계열에서 재무비율 계산 (최신 단일 시점).
 
@@ -618,6 +661,7 @@ def calcRatios(
             marketCap: 시가총액 (원 단위). None이면 밸류에이션 멀티플 건너뜀.
             annual: True면 IS/CF에 getLatest 사용 (연간 시계열).
                     False면 getTTM 사용 (분기 시계열, 기본값).
+            shares: 발행주식수. None이면 주당지표(EPS/BPS/DPS) 건너뜀.
 
     Returns:
             RatioResult.
@@ -678,6 +722,10 @@ def calcRatios(
     _calcCashflow(r, series)
     _calcComposite(r, series, annual=annual)
 
+    if shares and shares > 0:
+        r.sharesOutstanding = shares
+        _calcPerShare(r)
+
     if marketCap and marketCap > 0:
         r.marketCap = marketCap
         _calcValuation(r)
@@ -690,6 +738,16 @@ def calcRatios(
             diff = abs(lhs - rhs) / lhs
             if diff > 0.01:
                 r.warnings.append(f"BS 항등식 불일치: 자산 {lhs:,.0f} ≠ 부채+자본 {rhs:,.0f} (차이 {diff:.1%})")
+
+    # IS-CF 교차 검증: 순이익 일치 여부
+    cfNetIncome = _flow(series, "CF", "net_income") or _flow(series, "CF", "net_profit")
+    if r.netIncomeTTM is not None and cfNetIncome is not None:
+        if r.netIncomeTTM != 0:
+            niDiff = abs(r.netIncomeTTM - cfNetIncome) / abs(r.netIncomeTTM)
+            if niDiff > 0.05:
+                r.warnings.append(
+                    f"IS-CF 순이익 불일치: IS {r.netIncomeTTM:,.0f} vs CF {cfNetIncome:,.0f} (차이 {niDiff:.1%})"
+                )
 
     _applyArchetypePolicyResult(r, archetype)
     return r
@@ -958,6 +1016,188 @@ def _calcComposite(
         e = (r.revenueTTM or 0) / r.totalAssets
         z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
         r.altmanZScore = _safeRound(z, 2)
+
+    # ── Sloan Accrual Ratio ──
+    # (순이익 - 영업CF) / 총자산. 높으면 발생주의 이익 비중 과다 (조작 의심)
+    if r.netIncomeTTM is not None and r.operatingCashflowTTM is not None and r.totalAssets and r.totalAssets > 0:
+        accrual = r.netIncomeTTM - r.operatingCashflowTTM
+        r.sloanAccrualRatio = _safeRound((accrual / r.totalAssets) * 100, 2)
+
+    # ── Beneish M-Score (8변수 모델) ──
+    # M = -4.84 + 0.920×DSRI + 0.528×GMI + 0.404×AQI + 0.892×SGI
+    #     + 0.115×DEPI - 0.172×SGAI + 4.679×TATA - 0.327×LVGI
+    # M > -2.22이면 이익 조작 가능성
+    _calcBeneish(r, series, annual)
+
+
+def _calcBeneishForPeriod(
+    *,
+    rev_t: Optional[float],
+    rev_p: Optional[float],
+    rec_t: Optional[float],
+    rec_p: Optional[float],
+    cogs_t: Optional[float],
+    cogs_p: Optional[float],
+    ta_t: Optional[float],
+    ta_p: Optional[float],
+    ca_t: Optional[float],
+    ca_p: Optional[float],
+    sga_t: Optional[float],
+    sga_p: Optional[float],
+    dep_t: Optional[float],
+    dep_p: Optional[float],
+    tan_t: Optional[float],
+    tan_p: Optional[float],
+    np_t: Optional[float],
+    ocf_t: Optional[float],
+    tl_t: Optional[float],
+    tl_p: Optional[float],
+) -> Optional[float]:
+    """Beneish M-Score 단일 기간 계산 (현재 t vs 전기 p)."""
+    if rev_t is None or rev_p is None or rev_p == 0:
+        return None
+    if ta_t is None or ta_p is None or ta_p == 0:
+        return None
+
+    # DSRI
+    dsri = None
+    if rec_t is not None and rec_p is not None and rev_t > 0:
+        dsr_t = rec_t / rev_t
+        dsr_p = rec_p / rev_p
+        if dsr_p > 0:
+            dsri = dsr_t / dsr_p
+
+    # GMI
+    gmi = None
+    if cogs_t is not None and cogs_p is not None and rev_t > 0:
+        gm_t = (rev_t - cogs_t) / rev_t
+        gm_p = (rev_p - cogs_p) / rev_p
+        if gm_t > 0:
+            gmi = gm_p / gm_t
+
+    # AQI
+    aqi = None
+    if ca_t is not None and ca_p is not None:
+        ppe_t = tan_t or 0
+        ppe_p = tan_p or 0
+        aq_t = 1 - (ca_t + ppe_t) / ta_t if ta_t > 0 else None
+        aq_p = 1 - (ca_p + ppe_p) / ta_p if ta_p > 0 else None
+        if aq_t is not None and aq_p is not None and aq_p != 0:
+            aqi = aq_t / aq_p
+
+    # SGI
+    sgi = rev_t / rev_p
+
+    # DEPI
+    depi = None
+    if dep_t is not None and dep_p is not None:
+        ppe_t = tan_t or 0
+        ppe_p = tan_p or 0
+        if ppe_t + dep_t > 0 and ppe_p + dep_p > 0:
+            dr_t = dep_t / (ppe_t + dep_t)
+            dr_p = dep_p / (ppe_p + dep_p)
+            if dr_t > 0:
+                depi = dr_p / dr_t
+
+    # SGAI
+    sgai = None
+    if sga_t is not None and sga_p is not None and rev_t > 0 and rev_p > 0:
+        sga_r_t = sga_t / rev_t
+        sga_r_p = sga_p / rev_p
+        if sga_r_p > 0:
+            sgai = sga_r_t / sga_r_p
+
+    # TATA
+    tata = None
+    if np_t is not None and ocf_t is not None and ta_t > 0:
+        tata = (np_t - ocf_t) / ta_t
+
+    # LVGI
+    lvgi = None
+    if tl_t is not None and tl_p is not None and ta_t > 0 and ta_p > 0:
+        lev_t = tl_t / ta_t
+        lev_p = tl_p / ta_p
+        if lev_p > 0:
+            lvgi = lev_t / lev_p
+
+    vs = [dsri, gmi, aqi, sgi, depi, sgai, tata, lvgi]
+    if all(v is not None for v in vs):
+        m = (
+            -4.84
+            + 0.920 * dsri
+            + 0.528 * gmi
+            + 0.404 * aqi
+            + 0.892 * sgi
+            + 0.115 * depi
+            - 0.172 * sgai
+            + 4.679 * tata
+            - 0.327 * lvgi
+        )
+        return _safeRound(m, 2)
+    return None
+
+
+def _calcBeneish(
+    r: RatioResult,
+    series: dict[str, dict[str, list[Optional[float]]]],
+    annual: bool = False,
+) -> None:
+    """Beneish M-Score 8변수 모델 — _calcBeneishForPeriod에 위임."""
+    revSeries = _pick_series(series, "IS", ["sales", "revenue"])
+    taSeries = _get(series, "BS", "total_assets")
+
+    if len(revSeries) < 2 or len(taSeries) < 2:
+        return
+
+    t, p = len(revSeries) - 1, len(revSeries) - 2
+
+    def _val(s: list, i: int) -> Optional[float]:
+        return s[i] if i < len(s) and s[i] is not None else None
+
+    depSeries = _pick_series(series, "CF", ["depreciation_and_amortization", "depreciation_cf", "depreciation"])
+    npSeries = _pick_series(series, "IS", ["net_profit", "net_income"])
+    tlSeries = _get(series, "BS", "total_liabilities")
+    tanSeries = _get(series, "BS", "tangible_assets")
+
+    r.beneishMScore = _calcBeneishForPeriod(
+        rev_t=_val(revSeries, t),
+        rev_p=_val(revSeries, p),
+        rec_t=_val(_get(series, "BS", "trade_and_other_receivables"), t),
+        rec_p=_val(_get(series, "BS", "trade_and_other_receivables"), p),
+        cogs_t=_val(_get(series, "IS", "cost_of_sales"), t),
+        cogs_p=_val(_get(series, "IS", "cost_of_sales"), p),
+        ta_t=_val(taSeries, t),
+        ta_p=_val(taSeries, p),
+        ca_t=_val(_get(series, "BS", "current_assets"), t),
+        ca_p=_val(_get(series, "BS", "current_assets"), p),
+        sga_t=_val(_get(series, "IS", "selling_and_administrative_expenses"), t),
+        sga_p=_val(_get(series, "IS", "selling_and_administrative_expenses"), p),
+        dep_t=_val(depSeries, t),
+        dep_p=_val(depSeries, p),
+        tan_t=_val(tanSeries, t),
+        tan_p=_val(tanSeries, p),
+        np_t=_val(npSeries, t),
+        ocf_t=_val(_get(series, "CF", "operating_cashflow"), t),
+        tl_t=_val(tlSeries, t),
+        tl_p=_val(tlSeries, p),
+    )
+
+
+def _calcPerShare(r: RatioResult) -> None:
+    """주당지표 (발행주식수 필요)."""
+    s = r.sharesOutstanding
+    if not s or s <= 0:
+        return
+
+    if r.netIncomeTTM is not None:
+        r.eps = round(r.netIncomeTTM / s, 0)
+
+    equity = r.ownersEquity or r.totalEquity
+    if equity is not None:
+        r.bps = round(equity / s, 0)
+
+    if r.dividendsPaid is not None and r.dividendsPaid != 0:
+        r.dps = round(abs(r.dividendsPaid) / s, 0)
 
 
 def _calcValuation(r: RatioResult) -> None:
@@ -1339,6 +1579,51 @@ def calcRatioSeries(
             rs.altmanZScore.append(_safeRound(z, 2))
         else:
             rs.altmanZScore.append(None)
+
+        # Sloan Accrual Ratio
+        if np_i is not None and opcf_i is not None and ta_i and ta_i > 0:
+            rs.sloanAccrualRatio.append(_safeRound((np_i - opcf_i) / ta_i * 100, 2))
+        else:
+            rs.sloanAccrualRatio.append(None)
+
+        # Beneish M-Score (2년 이상 데이터 필요)
+        if i >= 1:
+            rev_p = _v(revenue, i - 1)
+            rec_p = _v(receivables, i - 1)
+            cos_p = _v(costOfSales, i - 1)
+            ta_p = _v(totalAssets, i - 1)
+            ca_p = _v(curAssets, i - 1)
+            sga_p = _v(sga, i - 1)
+            dep_p = _v(depreciation, i - 1)
+            dep_i_val = _v(depreciation, i)
+            tan_p = _v(tangible, i - 1)
+            tl_p = _v(totalLiab, i - 1)
+
+            m = _calcBeneishForPeriod(
+                rev_t=rev_i,
+                rev_p=rev_p,
+                rec_t=rec_i,
+                rec_p=rec_p,
+                cogs_t=cos_i,
+                cogs_p=cos_p,
+                ta_t=ta_i,
+                ta_p=ta_p,
+                ca_t=ca_i,
+                ca_p=ca_p,
+                sga_t=sga_i,
+                sga_p=sga_p,
+                dep_t=dep_i_val,
+                dep_p=dep_p,
+                tan_t=tan_i,
+                tan_p=tan_p,
+                np_t=np_i,
+                ocf_t=opcf_i,
+                tl_t=tl_i,
+                tl_p=tl_p,
+            )
+            rs.beneishMScore.append(m)
+        else:
+            rs.beneishMScore.append(None)
 
     _applyArchetypePolicySeries(rs, archetype)
     return rs

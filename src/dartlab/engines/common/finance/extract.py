@@ -9,6 +9,8 @@ def getTTM(
     series: dict[str, dict[str, list[Optional[float]]]],
     sjDiv: str,
     snakeId: str,
+    *,
+    strict: bool = True,
 ) -> Optional[float]:
     """최근 4개 non-null 값의 합 (IS/CF용 TTM).
 
@@ -16,6 +18,7 @@ def getTTM(
         series: buildTimeseries() 결과.
         sjDiv: "IS" 또는 "CF".
         snakeId: 계정 snakeId.
+        strict: True면 4/4 분기 모두 필요. False면 3/4로 연환산 (×4/3).
 
     Returns:
         TTM 합계 또는 None.
@@ -26,6 +29,8 @@ def getTTM(
     last4 = [v for v in vals[-4:] if v is not None]
     if len(last4) == 4:
         return sum(last4)
+    if not strict and len(last4) == 3:
+        return sum(last4) * 4 / 3
     return None
 
 

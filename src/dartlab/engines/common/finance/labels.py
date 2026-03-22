@@ -7,7 +7,6 @@ AI 컨텍스트와 도구 반환에서 한글/영문 라벨을 제공한다.
 from __future__ import annotations
 
 import json
-import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -15,13 +14,7 @@ from pathlib import Path
 @lru_cache(maxsize=1)
 def _load_standard_accounts() -> dict[str, dict]:
     """DART mapperData/standardAccounts → {snakeId: {korName, code, level, sj}}."""
-    mapper_path = (
-        Path(__file__).resolve().parents[2]
-        / "dart"
-        / "finance"
-        / "mapperData"
-        / "accountMappings.json"
-    )
+    mapper_path = Path(__file__).resolve().parents[2] / "dart" / "finance" / "mapperData" / "accountMappings.json"
     if not mapper_path.exists():
         return {}
     data = json.loads(mapper_path.read_text(encoding="utf-8"))

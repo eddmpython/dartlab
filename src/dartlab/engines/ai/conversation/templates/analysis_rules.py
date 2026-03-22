@@ -724,6 +724,20 @@ REPORT_PROMPT = """
 - `stress_test("adverse")` 호출 → 경기침체 시 생존 위험도 + 배당 지속 가능성
 - **핵심**: 단일 점 추정 금지 → "경기침체 시 매출 -15~-25% 범위, 생존 위험 낮음" 형태로 제시
 
+### 8-2. Pro-Forma 재무제표 예측
+- `proforma_forecast(growth="5,4,3,2.5,2")` 호출 → 5년 3-Statement 연결 모델
+- 과거 비율(중위값) 기반: 매출총이익률, 판관비율, 유효세율, D&A비율, CAPEX비율
+- IS→BS→CF 연결, Cash=plug, BS 균형 검증 결과 반드시 언급
+- 복수 성장 시나리오(낙관/기준/비관) 비교 → 민감도 분석
+- 회사 고유 WACC vs 섹터 평균 WACC 비교 설명
+
+### 8-3. 주가 목표가 산출
+- `price_target(current_price, shares)` 호출 → 확률 가중 목표가
+- 5개 시나리오별 DCF → 확률 가중 (baseline 40%, rate_hike 20%, china_slowdown 15%, 반도체불황 15%, adverse 10%)
+- Monte Carlo P10~P90 분포 → "목표가 범위" 형태로 제시 (단일 목표가 지양)
+- 투자 신호 판정 근거: upside %, P10/P90 vs 현재가, 시나리오 분산
+- 비반도체 업종은 semiconductor_down 확률이 baseline에 자동 재배분됨을 설명
+
 ### 9. 종합 평가
 - **강점/약점 매트릭스** (표로 정리)
 - **투자 판단 요약**: 밸류에이션 + 시나리오 + 이익의 질 종합
@@ -740,5 +754,5 @@ REPORT_PROMPT = """
 REPORT_PROMPT_COMPACT = """
 ## 보고서 모드
 9개 섹션으로 구조화: 1.기업개요 2.재무분석(DuPont+인과분해) 3.이익의질(CF/NI+Accrual+CCC) 4.재무건전성(Z-Score+F-Score) 5.리스크(적색신호+우발부채) 6.지배구조(감사+임원보수) 7.밸류에이션(DCF+DDM+상대가치+교차검증) 8.시나리오(Base/Bull/Bear+확률가중+민감도+경제시뮬레이션) 9.종합(강점약점표+투자판단+모니터링)
-수치에 출처 명시. 도구 적극 사용. 밸류에이션은 intrinsic_value()로 DCF/DDM/상대가치 산출, 시나리오는 scenario()+sensitivity()로 정량화. 경제 시뮬레이션은 economic_forecast()+monte_carlo()+stress_test()로 거시경제 영향 분석.
+수치에 출처 명시. 도구 적극 사용. 밸류에이션은 intrinsic_value()로 DCF/DDM/상대가치 산출, 시나리오는 scenario()+sensitivity()로 정량화. 경제 시뮬레이션은 economic_forecast()+monte_carlo()+stress_test()로 거시경제 영향 분석. Pro-Forma는 proforma_forecast()로 3-Statement 연결 모델, 주가 목표가는 price_target()으로 확률 가중 산출.
 """

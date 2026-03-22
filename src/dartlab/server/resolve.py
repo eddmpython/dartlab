@@ -137,6 +137,20 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
         except (ValueError, OSError):
             return ResolveResult(not_found=True)
 
+    # US ticker 패턴: $AAPL, AAPL, MSFT 등 (영문 대문자 1~5자리)
+    us_match = re.search(r"\$?([A-Z]{1,5})\b", q)
+    if us_match:
+        ticker = us_match.group(1)
+        # 영어 일반 단어 오탐 방지: 2글자 이하는 $접두사 필수
+        has_dollar = q[us_match.start()] == "$"
+        if has_dollar or len(ticker) >= 3:
+            try:
+                c = Company(ticker)
+                if hasattr(c, "market") and c.market == "US":
+                    return ResolveResult(company=c)
+            except (ValueError, OSError):
+                pass
+
     intent = has_analysis_intent(q)
 
     words = re.split(r"\s+", q)

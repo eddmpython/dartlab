@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from functools import lru_cache
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 _INDUSTRY_PREFIX_RE = re.compile(r"^\([^)]*업\)")
 _MULTISPACE_RE = re.compile(r"\s+")
@@ -148,3 +151,42 @@ def mapSectionTitle(title: str) -> str:
         if pattern.match(normalized):
             return topic
     return normalized
+
+
+def measureMappingRate(titles: list[str]) -> dict:
+    """section title 리스트의 매핑률을 측정.
+
+    Returns:
+        {"total": N, "mapped": M, "rate": float, "unmapped_top": [...]}
+    """
+    total = len(titles)
+    unmapped: dict[str, int] = {}
+    mapped = 0
+
+    for title in titles:
+        normalized = normalizeSectionTitle(title)
+        result = mapSectionTitle(title)
+        if result != normalized:
+            mapped += 1
+        else:
+            unmapped[normalized] = unmapped.get(normalized, 0) + 1
+
+    rate = (mapped / total * 100) if total > 0 else 100.0
+    top_unmapped = sorted(unmapped.items(), key=lambda x: -x[1])[:10]
+
+    _log.info(
+        "section 매핑률: %d/%d (%.1f%%), 미매핑 고유 %d개",
+        mapped,
+        total,
+        rate,
+        len(unmapped),
+    )
+    for title, cnt in top_unmapped[:5]:
+        _log.info("  미매핑 상위: '%s' (%d회)", title, cnt)
+
+    return {
+        "total": total,
+        "mapped": mapped,
+        "rate": rate,
+        "unmapped_top": [{"title": t, "count": c} for t, c in top_unmapped],
+    }

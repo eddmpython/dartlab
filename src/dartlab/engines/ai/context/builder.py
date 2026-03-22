@@ -2031,7 +2031,7 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
 
     parts = [f"# {company.corpName} ({company.stockCode})"]
     if is_us:
-        parts[0] += f" | Market: US (SEC EDGAR) | Currency: USD"
+        parts[0] += " | Market: US (SEC EDGAR) | Currency: USD"
     included = []
 
     # 핵심 계정 3개 (최근 3년)
@@ -2061,7 +2061,7 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                     vals = sj_data.get(snake_id)
                     if not vals:
                         continue
-                    sliced = vals[max(0, year_offset):]
+                    sliced = vals[max(0, year_offset) :]
                     cells = [fmt_val(v) if v is not None else "-" for v in reversed(sliced)]
                     rows.append(f"| {label} | " + " | ".join(cells) + " |")
 
@@ -2084,12 +2084,20 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
             if val is None:
                 continue
             label_map_kr = {
-                "roe": "ROE", "debtRatio": "부채비율", "currentRatio": "유동비율",
-                "operatingMargin": "영업이익률", "fcf": "FCF", "revenueGrowth3Y": "매출3Y CAGR",
+                "roe": "ROE",
+                "debtRatio": "부채비율",
+                "currentRatio": "유동비율",
+                "operatingMargin": "영업이익률",
+                "fcf": "FCF",
+                "revenueGrowth3Y": "매출3Y CAGR",
             }
             label_map_en = {
-                "roe": "ROE", "debtRatio": "Debt Ratio", "currentRatio": "Current Ratio",
-                "operatingMargin": "Op. Margin", "fcf": "FCF", "revenueGrowth3Y": "Rev. 3Y CAGR",
+                "roe": "ROE",
+                "debtRatio": "Debt Ratio",
+                "currentRatio": "Current Ratio",
+                "operatingMargin": "Op. Margin",
+                "fcf": "FCF",
+                "revenueGrowth3Y": "Rev. 3Y CAGR",
             }
             label = (label_map_en if is_us else label_map_kr).get(key, key)
             if key == "fcf":
@@ -2106,15 +2114,24 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
         insights_obj = getattr(company, "insights", None)
         if insights_obj is None:
             from dartlab.engines.insight.pipeline import analyze as _analyze
+
             insights_obj = _analyze(company.stockCode, company=company)
         if insights_obj is not None:
             grades = insights_obj.grades()
-            grade_labels_kr = [("performance", "실적"), ("profitability", "수익성"), ("health", "건전성"), ("cashflow", "CF")]
-            grade_labels_en = [("performance", "Perf"), ("profitability", "Profit"), ("health", "Health"), ("cashflow", "CF")]
+            grade_labels_kr = [
+                ("performance", "실적"),
+                ("profitability", "수익성"),
+                ("health", "건전성"),
+                ("cashflow", "CF"),
+            ]
+            grade_labels_en = [
+                ("performance", "Perf"),
+                ("profitability", "Profit"),
+                ("health", "Health"),
+                ("cashflow", "CF"),
+            ]
             grade_labels = grade_labels_en if is_us else grade_labels_kr
-            grade_str = " / ".join(
-                f"{lbl}:{grades.get(k, 'N')}" for k, lbl in grade_labels if grades.get(k)
-            )
+            grade_str = " / ".join(f"{lbl}:{grades.get(k, 'N')}" for k, lbl in grade_labels if grades.get(k))
             insight_prefix = "Insights" if is_us else "인사이트"
             parts.append(f"\n{insight_prefix}: {grade_str}")
             if insights_obj.profile:
@@ -2147,34 +2164,38 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
 
     # 분석 가이드
     if is_us:
-        parts.extend([
-            "",
-            "## DartLab Analysis Guide",
-            "All filing data is structured as **sections** (topic × period horizontalization).",
-            "- `list_topics()` → full topic list | `show_topic(topic)` → block index → `show_topic(topic, N)` → data",
-            "- `get_evidence(topic)` → original filing text for citations",
-            "- `diff_topic(topic)` → period-over-period changes | `trace_topic(topic)` → source provenance",
-            "- `get_data(BS/IS/CF)` → financials | `compute_ratios()` → ratios",
-            "- `get_insight()` → 7-area grades | `get_topic_coverage()` → data availability",
-            "",
-            "**Note**: This is a US company (SEC EDGAR). No `report` namespace — all narrative data via sections.",
-            "**Procedure**: Understand question → explore topics → retrieve data → cross-verify → synthesize answer",
-        ])
+        parts.extend(
+            [
+                "",
+                "## DartLab Analysis Guide",
+                "All filing data is structured as **sections** (topic × period horizontalization).",
+                "- `list_topics()` → full topic list | `show_topic(topic)` → block index → `show_topic(topic, N)` → data",
+                "- `get_evidence(topic)` → original filing text for citations",
+                "- `diff_topic(topic)` → period-over-period changes | `trace_topic(topic)` → source provenance",
+                "- `get_data(BS/IS/CF)` → financials | `compute_ratios()` → ratios",
+                "- `get_insight()` → 7-area grades | `get_topic_coverage()` → data availability",
+                "",
+                "**Note**: This is a US company (SEC EDGAR). No `report` namespace — all narrative data via sections.",
+                "**Procedure**: Understand question → explore topics → retrieve data → cross-verify → synthesize answer",
+            ]
+        )
     else:
-        parts.extend([
-            "",
-            "## DartLab 분석 가이드",
-            "이 기업의 모든 공시 데이터는 **sections** (topic × 기간 수평화)으로 구조화되어 있습니다.",
-            "- `list_topics()` → 전체 topic 목록 (평균 120+개)",
-            "- `show_topic(topic)` → 블록 목차 → `show_topic(topic, N)` → 실제 데이터",
-            "- `get_evidence(topic)` → 원문 증거 검색 (인용용)",
-            "- `diff_topic(topic)` → 기간간 변화 | `trace_topic(topic)` → 출처 추적",
-            "- `get_data(BS/IS/CF)` → 재무제표 | `compute_ratios()` → 재무비율",
-            "- `get_insight()` → 7영역 종합 등급 | `get_report_data(apiType)` → 정기보고서",
-            "",
-            "**분석 절차**: 질문 이해 → 관련 topic 탐색 → 원문 데이터 조회 → 교차 검증 → 종합 답변",
-            "**핵심**: '데이터 없음'으로 답하기 전에 반드시 도구로 확인. sections에 거의 모든 공시 데이터가 있습니다.",
-        ])
+        parts.extend(
+            [
+                "",
+                "## DartLab 분석 가이드",
+                "이 기업의 모든 공시 데이터는 **sections** (topic × 기간 수평화)으로 구조화되어 있습니다.",
+                "- `list_topics()` → 전체 topic 목록 (평균 120+개)",
+                "- `show_topic(topic)` → 블록 목차 → `show_topic(topic, N)` → 실제 데이터",
+                "- `get_evidence(topic)` → 원문 증거 검색 (인용용)",
+                "- `diff_topic(topic)` → 기간간 변화 | `trace_topic(topic)` → 출처 추적",
+                "- `get_data(BS/IS/CF)` → 재무제표 | `compute_ratios()` → 재무비율",
+                "- `get_insight()` → 7영역 종합 등급 | `get_report_data(apiType)` → 정기보고서",
+                "",
+                "**분석 절차**: 질문 이해 → 관련 topic 탐색 → 원문 데이터 조회 → 교차 검증 → 종합 답변",
+                "**핵심**: '데이터 없음'으로 답하기 전에 반드시 도구로 확인. sections에 거의 모든 공시 데이터가 있습니다.",
+            ]
+        )
 
     return "\n".join(parts), included
 

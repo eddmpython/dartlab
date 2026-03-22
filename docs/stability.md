@@ -40,8 +40,17 @@ May change after a warning. Recorded in CHANGELOG.
 | API | Description |
 |-----|-------------|
 | `dartlab.Company("AAPL")` | EDGAR Company facade (US stocks) |
-| `engines.edgar.docs` | EDGAR 10-K/10-Q sections |
+| `engines.edgar.docs` | EDGAR 10-K/10-Q/20-F sections horizontalization |
+| `engines.edgar.docs.retrievalBlocks` | EDGAR block-level retrieval for LLM |
+| `engines.edgar.docs.contextSlices` | EDGAR context slicing for LLM windows |
 | `engines.edgar.finance` | SEC XBRL financial statements |
+| `engines.edgar.finance.SCE` | Statement of Changes in Equity (BS delta + CF) |
+| `engines.edgar.finance.explore()` | XBRL Fact Explorer (tag-level history) |
+| `engines.edgar.finance.listTags()` | XBRL tag inventory |
+| `engines.edgar.docs.notes()` | XBRL TextBlock note extraction |
+| `engines.edgar.docs.cadence()` | Topic × period distribution matrix |
+| `engines.edgar.docs.coverage()` | Topic coverage summary |
+| `engines.edgar.profile` | EDGAR docs + finance merge layer |
 | `Company.insights` | Insight grading (7 areas) |
 | `Company.rank` | Market size ranking |
 | `Company.docs.retrievalBlocks` | Original block retrieval |
@@ -135,6 +144,10 @@ Short aliases also work: `business`, `risk`, `mdna`, `governance`
 
 ## DART / EDGAR Namespace Differences
 
+> EDGAR now has accessor separation (_DocsAccessor, _FinanceAccessor,
+> _ProfileAccessor), retrievalBlocks, contextSlices, and server API
+> support — matching the DART architecture for core functionality.
+>
 > DART `docs` namespace includes additional sections analysis methods
 > (coverage, cadence, semanticRegistry, structureRegistry, etc.)
 > not yet available for EDGAR. These are Tier 2 (Beta).
