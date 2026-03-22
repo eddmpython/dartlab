@@ -28,6 +28,10 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.engines.edgar._docs_accessor import _DocsAccessor
+from dartlab.engines.edgar._finance_accessor import _FinanceAccessor
+from dartlab.engines.edgar._profile_accessor import _ProfileAccessor
+
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
@@ -318,153 +322,6 @@ def _isPeriodColumn(col: str) -> bool:
     return bool(_PERIOD_COLUMN_RE.fullmatch(col))
 
 
-class _DocsAccessor:
-    """EDGAR docs namespace. sections 수평화가 유일한 기초 경로."""
-
-    def __init__(self, company: Company):
-        self._company = company
-
-    @property
-    def sections(self) -> pl.DataFrame | None:
-        key = "_docs_sections"
-        if key not in self._company._cache:
-            from dartlab.engines.edgar.docs.sections.pipeline import sections
-
-            self._company._cache[key] = sections(self._company.ticker)
-        return self._company._cache[key]
-
-    def filings(self) -> pl.DataFrame | None:
-        key = "_docs_filings"
-        if key in self._company._cache:
-            return self._company._cache[key]
-
-        from dartlab.core.dataLoader import loadData
-
-        df = loadData(self._company.ticker, category="edgarDocs")
-        if df is None or df.is_empty():
-            self._company._cache[key] = None
-            return None
-
-        cols = ["period_key", "form_type", "accession_no", "filed_date"]
-        available = [c for c in cols if c in df.columns]
-        result = (
-            df.select(available).unique(subset=["accession_no"]).sort("period_key", descending=True, nulls_last=True)
-        )
-        self._company._cache[key] = result
-        return result
-
-
-class _FinanceAccessor:
-    """EDGAR finance namespace. XBRL 정규화 재무 데이터."""
-
-    def __init__(self, company: Company):
-        self._company = company
-
-    @property
-    def timeseries(self):
-        return self._company._cache.get("_ts")
-
-    @property
-    def annual(self):
-        if "_annual" not in self._company._cache:
-            from dartlab.engines.edgar.finance.pivot import buildAnnual
-
-            self._company._cache["_annual"] = buildAnnual(self._company.cik)
-        return self._company._cache["_annual"]
-
-    def _stmtDf(self, stmtKey: str) -> pl.DataFrame | None:
-        cacheKey = f"_finance_{stmtKey}"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-
-        annual = self.annual
-        if annual is None:
-            self._company._cache[cacheKey] = None
-            return None
-
-        series, years = annual
-        stmtData = series.get(stmtKey)
-        if not stmtData:
-            self._company._cache[cacheKey] = None
-            return None
-
-        rows = []
-        for snakeId, values in stmtData.items():
-            row: dict[str, Any] = {"account": snakeId}
-            for i, year in enumerate(years):
-                row[str(year)] = values[i] if i < len(values) else None
-            rows.append(row)
-
-        if not rows:
-            self._company._cache[cacheKey] = None
-            return None
-
-        result = pl.DataFrame(rows)
-        # 기간 컬럼 역순 정렬
-        periodCols = [c for c in result.columns if c != "account"]
-        result = result.select(["account"] + periodCols[::-1])
-        self._company._cache[cacheKey] = result
-        return result
-
-    @property
-    def BS(self) -> pl.DataFrame | None:
-        return self._stmtDf("BS")
-
-    @property
-    def IS(self) -> pl.DataFrame | None:
-        return self._stmtDf("IS")
-
-    @property
-    def CF(self) -> pl.DataFrame | None:
-        return self._stmtDf("CF")
-
-    @property
-    def CIS(self) -> pl.DataFrame | None:
-        return self._stmtDf("CI")
-
-    @property
-    def ratios(self):
-        if "_ratios" not in self._company._cache:
-            from dartlab.engines.common.finance.ratios import calcRatios
-
-            annual = self.annual
-            if annual is None:
-                self._company._cache["_ratios"] = None
-            else:
-                aSeries, _ = annual
-                self._company._cache["_ratios"] = calcRatios(aSeries, annual=True)
-        return self._company._cache["_ratios"]
-
-    @property
-    def ratioSeries(self):
-        cacheKey = "_ratioSeries"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
-        annual = self.annual
-        if annual is None:
-            return None
-        aSeries, years = annual
-        from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
-
-        rs = calcRatioSeries(aSeries, years)
-        result = toSeriesDict(rs)
-        self._company._cache[cacheKey] = result
-        return result
-
-
-class _ProfileAccessor:
-    """EDGAR profile namespace — docs spine + finance/report merge layer.
-
-    DART Company.profile과 동일한 사상:
-    - docs.sections가 구조적 뼈대
-    - finance가 숫자 authoritative → docs 요약재무 대체
-    - 서술형/정성 정보는 docs authoritative
-    """
-
-    def __init__(self, company: Company):
-        self._company = company
-
-
 class Company:
     """SEC EDGAR 기반 미국 기업 진입점.
 
@@ -554,6 +411,11 @@ class Company:
         return f"Company('{self.ticker}', {self.corpName})"
 
     @property
+    def stockCode(self) -> str:
+        """서버 API 호환용 — ticker를 stockCode로 노출."""
+        return self.ticker
+
+    @property
     def market(self) -> str:
         return "US"
 
@@ -592,69 +454,13 @@ class Company:
         return self.finance.CIS
 
     @property
+    def SCE(self) -> pl.DataFrame | None:
+        return self.finance.SCE
+
+    @property
     def sections(self) -> pl.DataFrame | None:
-        """sections — docs + finance 통합 지도."""
-        cacheKey = "_sections"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        docsSec = self.docs.sections
-        if docsSec is None:
-            self._cache[cacheKey] = None
-            return None
-
-        periodCols = [c for c in docsSec.columns if _isPeriodColumn(c)]
-
-        # source 컬럼 추가
-        if "source" not in docsSec.columns:
-            docsSec = docsSec.with_columns(pl.lit("docs").alias("source"))
-
-        # finance topics 추가
-        extraRows: list[dict[str, Any]] = []
-        for ft in ("BS", "IS", "CF", "CIS"):
-            df = getattr(self.finance, ft, None)
-            if df is not None:
-                extraRows.append(
-                    {
-                        "chapter": "Financial Statements",
-                        "topic": ft,
-                        "blockType": "table",
-                        "blockOrder": 0,
-                        "source": "finance",
-                        **{p: None for p in periodCols},
-                    }
-                )
-        if self.finance.ratioSeries is not None:
-            extraRows.append(
-                {
-                    "chapter": "Financial Statements",
-                    "topic": "ratios",
-                    "blockType": "table",
-                    "blockOrder": 0,
-                    "source": "finance",
-                    **{p: None for p in periodCols},
-                }
-            )
-
-        if not extraRows:
-            self._cache[cacheKey] = docsSec
-            return docsSec
-
-        extraDf = pl.DataFrame(
-            extraRows,
-            schema={
-                "chapter": pl.Utf8,
-                "topic": pl.Utf8,
-                "blockType": pl.Utf8,
-                "blockOrder": pl.Int64,
-                "source": pl.Utf8,
-                **{p: pl.Utf8 for p in periodCols},
-            },
-        )
-
-        merged = pl.concat([docsSec, extraDf], how="diagonal_relaxed")
-        self._cache[cacheKey] = merged
-        return merged
+        """sections — profile.sections 위임 (docs + finance 통합 지도)."""
+        return self.profile.sections
 
     @property
     def ratios(self) -> pl.DataFrame | None:
@@ -683,6 +489,7 @@ class Company:
             else:
                 self._cache["_insights"] = analyze(
                     self.cik,
+                    company=self,
                     corpName=self.corpName,
                     qSeriesPair=ts,
                     aSeriesPair=annual,

@@ -46,6 +46,8 @@ from .templates.self_critique import (
 
 # ── 템플릿 데이터 임포트 ──────────────────────────────────
 from .templates.system_base import (
+    EDGAR_SUPPLEMENT_EN,
+    EDGAR_SUPPLEMENT_KR,
     SYSTEM_PROMPT_COMPACT,
     SYSTEM_PROMPT_EN,
     SYSTEM_PROMPT_KR,
@@ -134,6 +136,7 @@ def build_system_prompt(
     question_types: list[str] | None = None,
     compact: bool = False,
     report_mode: bool = False,
+    market: str = "KR",
 ) -> str:
     """시스템 프롬프트 조립 (단일 문자열 반환).
 
@@ -146,6 +149,7 @@ def build_system_prompt(
             question_types: 복수 질문 유형 → question_type보다 우선
             compact: True면 소형 모델용 간결 프롬프트 (Ollama)
             report_mode: True면 전문 분석보고서 구조 프롬프트 추가
+            market: "KR" 또는 "US" — EDGAR 기업이면 US 보충 프롬프트 추가
     """
     static, dynamic = build_system_prompt_parts(
         custom=custom,
@@ -156,6 +160,7 @@ def build_system_prompt(
         question_types=question_types,
         compact=compact,
         report_mode=report_mode,
+        market=market,
     )
     if dynamic:
         return static + "\n" + dynamic
@@ -171,6 +176,7 @@ def build_system_prompt_parts(
     question_types: list[str] | None = None,
     compact: bool = False,
     report_mode: bool = False,
+    market: str = "KR",
 ) -> tuple[str, str]:
     """시스템 프롬프트를 (정적, 동적) 2파트로 분리 반환.
 
@@ -220,6 +226,9 @@ def build_system_prompt_parts(
             "플러그인 추천 힌트가 있으면 답변 끝에 안내."
         )
 
+        if market == "US":
+            static_parts.append(EDGAR_SUPPLEMENT_KR)
+
         static = base + "\n".join(static_parts) if static_parts else base
         dynamic = "\n".join(dynamic_parts)
         return static, dynamic
@@ -249,6 +258,11 @@ def build_system_prompt_parts(
     for qt in q_types[:2]:
         if qt in _FEW_SHOT_EXAMPLES:
             static_parts.append(_FEW_SHOT_EXAMPLES[qt])
+
+    # EDGAR(US) 보충 프롬프트
+    if market == "US":
+        edgar_supp = EDGAR_SUPPLEMENT_EN if lang == "en" else EDGAR_SUPPLEMENT_KR
+        static_parts.append(edgar_supp)
 
     # 동적: report_mode + 플러그인
     if report_mode:

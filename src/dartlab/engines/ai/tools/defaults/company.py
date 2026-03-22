@@ -340,6 +340,98 @@ def register_company_tools(company: Any, register_tool) -> None:
         },
     )
 
+    # ── get_evidence ──
+
+    def get_evidence(topic: str, period: str = "") -> str:
+        """topic의 원문 증거 블록을 검색한다. period 지정 시 해당 기간만."""
+        docs = getattr(company, "docs", None)
+        if docs is None:
+            return "docs 네임스페이스 없음. show_topic()을 사용하세요."
+        rb = getattr(docs, "retrievalBlocks", None)
+        if rb is None or not isinstance(rb, pl.DataFrame) or rb.is_empty():
+            return f"'{topic}' 증거 블록 없음. show_topic('{topic}')을 사용하세요."
+        filtered = rb.filter(pl.col("topic") == topic)
+        if period:
+            filtered = filtered.filter(pl.col("period") == period)
+        if filtered.is_empty():
+            return f"'{topic}' (기간: '{period}') 에 해당하는 증거 없음."
+        result = (
+            filtered.sort(["periodOrder", "blockPriority"], descending=[True, False])
+            .head(15)
+            .select(["period", "blockType", "textPath", "blockText", "chars"])
+        )
+        return df_to_md(result, max_rows=15)
+
+    register_tool(
+        "get_evidence",
+        get_evidence,
+        "공시 원문의 증거 블록을 검색합니다. "
+        "topic의 실제 텍스트/테이블 블록을 기간별로 조회합니다. "
+        "사용 시점: 주장의 근거를 원문에서 찾을 때, 리스크/전략 분석에서 원문 인용이 필요할 때. "
+        "period를 비워두면 최신 기간 우선으로 반환합니다. "
+        "EDGAR topic 예: '10-K::item1ARiskFactors', DART topic 예: 'riskFactor'.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "조회할 topic (예: riskFactor, businessOverview, 10-K::item1Business)",
+                },
+                "period": {
+                    "type": "string",
+                    "description": "특정 기간 (예: 2024Q4, 2023Q4). 비워두면 최신 기간 우선",
+                    "default": "",
+                },
+            },
+            "required": ["topic"],
+        },
+        kind=CapabilityKind.DATA,
+        requires_company=True,
+    )
+
+    # ── get_topic_coverage ──
+
+    def get_topic_coverage(topic: str = "") -> str:
+        """topic의 기간별 커버리지와 구조 메타데이터를 반환한다."""
+        docs = getattr(company, "docs", None)
+        if docs is None:
+            return "docs 네임스페이스 없음."
+        cov_fn = getattr(docs, "coverage", None)
+        if cov_fn is None:
+            return "coverage 미지원."
+        try:
+            cov = cov_fn() if callable(cov_fn) else cov_fn
+        except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
+            return f"coverage 조회 실패: {e}"
+        if cov is None or (isinstance(cov, pl.DataFrame) and cov.is_empty()):
+            return "커버리지 데이터 없음."
+        if topic and isinstance(cov, pl.DataFrame):
+            cov = cov.filter(pl.col("topic").str.contains(topic))
+        if isinstance(cov, pl.DataFrame) and cov.is_empty():
+            return f"'{topic}' 에 해당하는 커버리지 없음."
+        return df_to_md(cov, max_rows=40)
+
+    register_tool(
+        "get_topic_coverage",
+        get_topic_coverage,
+        "topic의 기간 커버리지 요약을 조회합니다. "
+        "몇 기간 데이터가 있는지, text/table 여부, 총 글자 수를 확인합니다. "
+        "사용 시점: 분석 전에 데이터 범위를 파악할 때, 특정 topic이 언제부터 공시되는지 확인할 때. "
+        "topic을 비워두면 전체 topic의 커버리지를 반환합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "조회할 topic (비워두면 전체). 부분 매칭 지원 (예: 'risk')",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.DATA,
+        requires_company=True,
+    )
+
     # ── get_notes ──
 
     def get_notes(keyword: str = "") -> str:

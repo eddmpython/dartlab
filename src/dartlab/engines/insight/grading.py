@@ -481,6 +481,55 @@ def _analyzeCashflowFinancial(aSeries: dict) -> InsightResult:
     return InsightResult(grade, summary, details, risks, opps)
 
 
+def _analyzeGovernanceFromSections(company: Company) -> InsightResult:
+    """report가 없을 때 sections 기반 governance 분석 (EDGAR 등)."""
+    import polars as pl
+
+    docs = getattr(company, "docs", None)
+    if docs is None:
+        return InsightResult("N", "지배구조 데이터 없음")
+    sec = getattr(docs, "sections", None)
+    if sec is None or not isinstance(sec, pl.DataFrame) or sec.is_empty():
+        return InsightResult("N", "지배구조 데이터 없음")
+
+    # governance 관련 topic 검색 (EDGAR: director, compensation, ownership)
+    gov_pattern = "(?i)governance|director|compensation|ownership|security.?owner|executive.?comp"
+    gov_topics = sec.filter(pl.col("topic").str.contains(gov_pattern))
+
+    if gov_topics.is_empty():
+        return InsightResult("N", "지배구조 데이터 없음")
+
+    # 데이터 존재량으로 점수 부여
+    n_topics = gov_topics.select("topic").unique().height
+    n_blocks = gov_topics.height
+    # 메타 컬럼 제외한 기간 컬럼 수
+    meta_cols = {"topic", "blockType", "blockOrder", "textNodeType", "textLevel", "textPath", "source", "chapter"}
+    period_cols = [c for c in gov_topics.columns if c not in meta_cols]
+    n_periods = 0
+    for col in period_cols:
+        if gov_topics[col].drop_nulls().len() > 0:
+            n_periods += 1
+
+    details: list[str] = []
+    score = 0
+    max_score = 3
+
+    if n_topics >= 3:
+        score += 2
+        details.append(f"지배구조 관련 {n_topics}개 topic, {n_blocks}개 블록 공시")
+    elif n_topics >= 1:
+        score += 1
+        details.append(f"지배구조 관련 {n_topics}개 topic 공시")
+
+    if n_periods >= 3:
+        score += 1
+        details.append(f"{n_periods}개 기간 연속 공시 (일관성 양호)")
+
+    grade = _scoreToGrade(score, max_score)
+    summary = "지배구조 " + ("양호" if grade in ("A", "B") else "보통" if grade == "C" else "제한적 정보")
+    return InsightResult(grade, summary, details)
+
+
 def analyzeGovernance(company: Company | None) -> InsightResult:
     """지배구조 분석."""
     details: list[str] = []
@@ -489,8 +538,12 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
     score = 0
     maxScore = 0
 
-    if company is None or company.report is None:
-        return InsightResult("N", "정기보고서 데이터 없음")
+    if company is None:
+        return InsightResult("N", "기업 데이터 없음")
+
+    # report namespace가 없으면 sections 기반 fallback (EDGAR 등)
+    if not hasattr(company, "report") or company.report is None:
+        return _analyzeGovernanceFromSections(company)
 
     rpt = company.report
 

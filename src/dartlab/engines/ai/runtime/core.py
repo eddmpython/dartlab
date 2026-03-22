@@ -524,6 +524,7 @@ def _analyze_inner(
         sector = _get_sector(company)
 
     q_type = _classify_question(question)
+    company_market = getattr(company, "market", "KR") if company else "KR"
     static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
         included_modules=_included_tables,
@@ -532,6 +533,7 @@ def _analyze_inner(
         question_types=list(question_types) if question_types else None,
         compact=is_compact,
         report_mode=report_mode,
+        market=company_market,
     )
 
     if dialogue_policy:

@@ -650,6 +650,9 @@ _PIPELINE_MAP: dict[str, list] = {
     ],
     "공시": [_run_red_flags],
     "사업": [_run_business_analysis],
+    "관계사": [_run_governance_analysis, _run_red_flags],
+    "자본": [_run_health_analysis, _run_dividend_analysis],
+    "인력": [_run_business_analysis, _run_governance_analysis],
 }
 
 

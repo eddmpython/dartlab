@@ -8,13 +8,16 @@ from typing import Any
 import polars as pl
 
 
-def df_to_md(df: pl.DataFrame, max_rows: int = 15) -> str:
+def df_to_md(df: pl.DataFrame, max_rows: int = 15, max_chars: int = 0, market: str = "KR") -> str:
     """DataFrame → 마크다운 테이블."""
     if df is None or df.height == 0:
         return "(데이터 없음)"
     from dartlab.engines.ai.context.builder import df_to_markdown
 
-    return df_to_markdown(df, max_rows=max_rows)
+    result = df_to_markdown(df, max_rows=max_rows, market=market)
+    if max_chars and len(result) > max_chars:
+        return result[:max_chars] + "\n... (truncated)"
+    return result
 
 
 def json_to_text(value: Any, max_chars: int = 4000) -> str:

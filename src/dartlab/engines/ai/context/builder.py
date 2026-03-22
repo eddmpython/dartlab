@@ -22,10 +22,10 @@ _CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, V
 
 
 _QUESTION_MODULES: dict[str, list[str]] = {
-    "건전성": ["audit", "internalControl", "contingentLiability", "relatedPartyTx"],
-    "수익성": ["segments", "costByNature", "productService", "salesOrder"],
-    "성장성": ["rnd", "salesOrder", "segments", "productService", "subsidiary"],
-    "배당": ["dividend", "shareCapital", "capitalChange"],
+    "건전성": ["audit", "internalControl", "contingentLiability", "relatedPartyTx", "guaranteeBalance"],
+    "수익성": ["segments", "costByNature", "productService", "salesOrder", "operationalAsset"],
+    "성장성": ["rnd", "salesOrder", "segments", "productService", "subsidiary", "investmentInOther"],
+    "배당": ["dividend", "shareCapital", "capitalChange", "treasuryStock"],
     "지배구조": [
         "majorHolder",
         "executive",
@@ -33,17 +33,38 @@ _QUESTION_MODULES: dict[str, list[str]] = {
         "boardOfDirectors",
         "auditSystem",
         "shareholderMeeting",
+        "affiliateStatus",
     ],
-    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx", "riskFactor", "rawMaterial"],
-    "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising"],
+    "리스크": [
+        "contingentLiability",
+        "sanction",
+        "riskDerivative",
+        "relatedPartyTx",
+        "riskFactor",
+        "rawMaterial",
+        "lawsuit",
+    ],
+    "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising", "investmentInOther", "operationalAsset"],
     "종합": ["dividend", "employee", "majorHolder", "audit", "rnd", "segments"],
     "공시": [],
     "사업": ["productService", "segments", "companyHistory", "salesOrder", "rawMaterial", "businessOverview"],
+    "관계사": ["affiliate", "affiliateStatus", "relatedPartyTx", "subsidiary"],
+    "자본": ["shareCapital", "capitalChange", "treasuryStock", "fundraising"],
+    "인력": ["employee", "executivePay", "boardOfDirectors"],
 }
 
 _ALWAYS_INCLUDE_MODULES = {"employee"}
 
-_CONTEXT_MODULE_BUDGET = 6000  # 총 모듈 context 글자 수 상한
+_CONTEXT_MODULE_BUDGET = 6000  # 총 모듈 context 글자 수 상한 (focused tier 기본값)
+
+
+def _resolve_context_budget(tier: str = "focused") -> int:
+    """컨텍스트 tier별 모듈 예산."""
+    return {
+        "skeleton": 2000,  # tool-capable: 최소 맥락, 도구로 보충
+        "focused": 6000,  # 현재 기본값
+        "full": 12000,  # non-tool 모델: 최대한 포함
+    }.get(tier, 6000)
 
 
 def _extract_module_context(company: Any, module_name: str, max_rows: int = 10) -> str | None:
@@ -99,10 +120,16 @@ def _extract_module_context(company: Any, module_name: str, max_rows: int = 10) 
         return None
 
 
-def _build_report_sections(company: Any, compact: bool = False, q_types: list[str] | None = None) -> dict[str, str]:
+def _build_report_sections(
+    company: Any,
+    compact: bool = False,
+    q_types: list[str] | None = None,
+    tier: str = "focused",
+) -> dict[str, str]:
     """reportEngine pivot 결과 + 질문 유형별 모듈 자동 주입 → LLM context 섹션 dict."""
     report = getattr(company, "report", None)
     sections: dict[str, str] = {}
+    budget = _resolve_context_budget(tier)
 
     # 질문 유형별 추가 모듈 주입
     extra_modules: set[str] = set(_ALWAYS_INCLUDE_MODULES)
@@ -117,7 +144,7 @@ def _build_report_sections(company: Any, compact: bool = False, q_types: list[st
     # 동적 모듈 주입 (하드코딩에 없는 것만)
     budget_used = 0
     for mod in sorted(extra_modules - _HARDCODED_REPORT):
-        if budget_used >= _CONTEXT_MODULE_BUDGET:
+        if budget_used >= budget:
             break
         content = _extract_module_context(company, mod, max_rows=8 if compact else 12)
         if content:
@@ -434,7 +461,13 @@ def _build_finance_engine_section(
     header = "| 계정 | " + " | ".join(display_years_reversed) + " | YoY |"
     sep = "| --- | " + " | ".join(["---"] * len(display_years_reversed)) + " | --- |"
 
-    lines = [f"## {sj_labels.get(sj_div, sj_div)}", "(단위: 억/조원)", header, sep]
+    # 기간 메타데이터 명시
+    sj_meta = {"BS": "시점 잔액", "IS": "기간 flow (standalone)", "CF": "기간 flow (standalone)"}
+    meta_line = f"(단위: 억/조원 | {sj_meta.get(sj_div, 'standalone')})"
+    if latest_partial:
+        meta_line += f" ⚠️ {display_years_labeled[-1]}은 부분연도 — 연간 직접 비교 불가"
+
+    lines = [f"## {sj_labels.get(sj_div, sj_div)}", meta_line, header, sep]
     for label, vals in rows_data:
         cells = []
         for v in vals:
@@ -1293,14 +1326,27 @@ def df_to_markdown(
     max_rows: int = 30,
     meta: ModuleMeta | None = None,
     compact: bool = False,
+    market: str = "KR",
 ) -> str:
     """Polars DataFrame → 메타데이터 주석 포함 Markdown 테이블.
 
     Args:
             compact: True면 숫자를 억/조 단위로 변환 (LLM 컨텍스트용).
+            market: "KR"이면 한글 라벨, "US"면 영문 라벨.
     """
     if df is None or df.height == 0:
         return "(데이터 없음)"
+
+    # account 컬럼의 snakeId → 한글/영문 라벨 자동 변환
+    if "account" in df.columns:
+        try:
+            from dartlab.engines.common.finance.labels import get_account_labels
+
+            locale = "kr" if market == "KR" else "en"
+            _labels = get_account_labels(locale)
+            df = df.with_columns(pl.col("account").replace(_labels).alias("account"))
+        except ImportError:
+            pass
 
     effective_max = meta.maxRows if meta else max_rows
     if compact:
@@ -1943,10 +1989,31 @@ def _build_insights_section(company: Any) -> str | None:
 _SKELETON_RATIO_KEYS = ("roe", "debtRatio", "currentRatio", "operatingMargin", "fcf", "revenueGrowth3Y")
 
 # skeleton tier에서 사용할 핵심 계정 (매출/영업이익/총자산)
-_SKELETON_ACCOUNTS: dict[str, list[tuple[str, str]]] = {
+_SKELETON_ACCOUNTS_KR: dict[str, list[tuple[str, str]]] = {
     "IS": [("sales", "매출액"), ("operating_profit", "영업이익")],
     "BS": [("total_assets", "자산총계")],
 }
+_SKELETON_ACCOUNTS_EN: dict[str, list[tuple[str, str]]] = {
+    "IS": [("sales", "Revenue"), ("operating_profit", "Operating Income")],
+    "BS": [("total_assets", "Total Assets")],
+}
+
+
+def _format_usd(val: float) -> str:
+    """USD 숫자를 읽기 좋은 영문 단위로 변환."""
+    abs_val = abs(val)
+    sign = "-" if val < 0 else ""
+    if abs_val >= 1e12:
+        return f"{sign}${abs_val / 1e12:,.1f}T"
+    if abs_val >= 1e9:
+        return f"{sign}${abs_val / 1e9:,.1f}B"
+    if abs_val >= 1e6:
+        return f"{sign}${abs_val / 1e6:,.0f}M"
+    if abs_val >= 1e3:
+        return f"{sign}${abs_val / 1e3:,.0f}K"
+    if abs_val >= 1:
+        return f"{sign}${abs_val:,.0f}"
+    return "$0"
 
 
 def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
@@ -1954,8 +2021,17 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
 
     핵심 비율 6개 + 매출/영업이익/총자산 3계정 + insight 등급 1줄.
     상세 데이터는 도구로 조회하도록 안내.
+    EDGAR(US) / DART(KR) 자동 감지.
     """
+    market = getattr(company, "market", "KR")
+    is_us = market == "US"
+    fmt_val = _format_usd if is_us else _format_won
+    skel_accounts = _SKELETON_ACCOUNTS_EN if is_us else _SKELETON_ACCOUNTS_KR
+    unit_label = "USD" if is_us else "억/조원"
+
     parts = [f"# {company.corpName} ({company.stockCode})"]
+    if is_us:
+        parts[0] += f" | Market: US (SEC EDGAR) | Currency: USD"
     included = []
 
     # 핵심 계정 3개 (최근 3년)
@@ -1965,7 +2041,6 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
         quarter_counts = _get_quarter_counts(company)
         if years:
             display_years = years[-3:]
-            # 부분 연도 표시
             display_labeled = []
             for y in display_years:
                 qc = quarter_counts.get(y, 4)
@@ -1976,17 +2051,18 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
             display_reversed = list(reversed(display_labeled))
             year_offset = len(years) - 3
 
-            header = "| 계정 | " + " | ".join(display_reversed) + " |"
+            col_header = "Account" if is_us else "계정"
+            header = f"| {col_header} | " + " | ".join(display_reversed) + " |"
             sep = "| --- | " + " | ".join(["---"] * len(display_reversed)) + " |"
             rows = []
-            for sj, accts in _SKELETON_ACCOUNTS.items():
+            for sj, accts in skel_accounts.items():
                 sj_data = series.get(sj, {})
                 for snake_id, label in accts:
                     vals = sj_data.get(snake_id)
                     if not vals:
                         continue
-                    sliced = vals[max(0, year_offset) :]
-                    cells = [_format_won(v) if v is not None else "-" for v in reversed(sliced)]
+                    sliced = vals[max(0, year_offset):]
+                    cells = [fmt_val(v) if v is not None else "-" for v in reversed(sliced)]
                     rows.append(f"| {label} | " + " | ".join(cells) + " |")
 
             if rows:
@@ -1994,8 +2070,9 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                 partial_note = ""
                 if partial:
                     notes = ", ".join(f"{y}=Q1~Q{quarter_counts[y]}" for y in partial)
-                    partial_note = f"\n⚠️ 부분 연도: {notes}"
-                parts.extend(["", f"## 핵심 수치 (억/조원){partial_note}", header, sep, *rows])
+                    partial_note = f"\n⚠️ {'Partial year' if is_us else '부분 연도'}: {notes}"
+                section_title = f"Key Financials ({unit_label})" if is_us else f"핵심 수치 ({unit_label})"
+                parts.extend(["", f"## {section_title}{partial_note}", header, sep, *rows])
                 included.extend(["IS", "BS"])
 
     # 핵심 비율 6개
@@ -2006,43 +2083,43 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
             val = getattr(ratios, key, None)
             if val is None:
                 continue
-            label_map = {
-                "roe": "ROE",
-                "debtRatio": "부채비율",
-                "currentRatio": "유동비율",
-                "operatingMargin": "영업이익률",
-                "fcf": "FCF",
-                "revenueGrowth3Y": "매출3Y CAGR",
+            label_map_kr = {
+                "roe": "ROE", "debtRatio": "부채비율", "currentRatio": "유동비율",
+                "operatingMargin": "영업이익률", "fcf": "FCF", "revenueGrowth3Y": "매출3Y CAGR",
             }
-            label = label_map.get(key, key)
+            label_map_en = {
+                "roe": "ROE", "debtRatio": "Debt Ratio", "currentRatio": "Current Ratio",
+                "operatingMargin": "Op. Margin", "fcf": "FCF", "revenueGrowth3Y": "Rev. 3Y CAGR",
+            }
+            label = (label_map_en if is_us else label_map_kr).get(key, key)
             if key == "fcf":
-                ratio_lines.append(f"- {label}: {_format_won(val)}")
+                ratio_lines.append(f"- {label}: {fmt_val(val)}")
             else:
                 ratio_lines.append(f"- {label}: {val:.1f}%")
         if ratio_lines:
-            parts.extend(["", "## 핵심 비율", *ratio_lines])
+            section_title = "Key Ratios" if is_us else "핵심 비율"
+            parts.extend(["", f"## {section_title}", *ratio_lines])
             included.append("ratios")
 
     # insight 등급 1줄
     try:
-        from dartlab.engines.insight.pipeline import analyze as _analyze
-
-        result = _analyze(company.stockCode, company=company)
-        if result is not None:
-            grades = result.grades()
+        insights_obj = getattr(company, "insights", None)
+        if insights_obj is None:
+            from dartlab.engines.insight.pipeline import analyze as _analyze
+            insights_obj = _analyze(company.stockCode, company=company)
+        if insights_obj is not None:
+            grades = insights_obj.grades()
+            grade_labels_kr = [("performance", "실적"), ("profitability", "수익성"), ("health", "건전성"), ("cashflow", "CF")]
+            grade_labels_en = [("performance", "Perf"), ("profitability", "Profit"), ("health", "Health"), ("cashflow", "CF")]
+            grade_labels = grade_labels_en if is_us else grade_labels_kr
             grade_str = " / ".join(
-                f"{lbl}:{grades.get(k, 'N')}"
-                for k, lbl in [
-                    ("performance", "실적"),
-                    ("profitability", "수익성"),
-                    ("health", "건전성"),
-                    ("cashflow", "CF"),
-                ]
-                if grades.get(k)
+                f"{lbl}:{grades.get(k, 'N')}" for k, lbl in grade_labels if grades.get(k)
             )
-            parts.append(f"\n인사이트: {grade_str}")
-            if result.profile:
-                parts.append(f"프로파일: {result.profile}")
+            insight_prefix = "Insights" if is_us else "인사이트"
+            parts.append(f"\n{insight_prefix}: {grade_str}")
+            if insights_obj.profile:
+                profile_prefix = "Profile" if is_us else "프로파일"
+                parts.append(f"{profile_prefix}: {insights_obj.profile}")
             included.append("_insights")
     except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
         pass
@@ -2057,26 +2134,47 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
         else:
             topic_list = list(topics_raw) if topics_raw is not None else []
         if topic_list:
-            parts.append(f"\n## 조회 가능한 공시 데이터 ({len(topic_list)}개 topic)")
-            parts.append(f"주요: {', '.join(topic_list[:15])}")
-            if len(topic_list) > 15:
-                parts.append(f"외 {len(topic_list) - 15}개. 전체는 `list_topics()`로 확인.")
+            if is_us:
+                parts.append(f"\n## Available Filing Data ({len(topic_list)} topics)")
+                parts.append(f"Key: {', '.join(topic_list[:15])}")
+                if len(topic_list) > 15:
+                    parts.append(f"+ {len(topic_list) - 15} more. Use `list_topics()` for full list.")
+            else:
+                parts.append(f"\n## 조회 가능한 공시 데이터 ({len(topic_list)}개 topic)")
+                parts.append(f"주요: {', '.join(topic_list[:15])}")
+                if len(topic_list) > 15:
+                    parts.append(f"외 {len(topic_list) - 15}개. 전체는 `list_topics()`로 확인.")
 
-    parts.extend(
-        [
+    # 분석 가이드
+    if is_us:
+        parts.extend([
+            "",
+            "## DartLab Analysis Guide",
+            "All filing data is structured as **sections** (topic × period horizontalization).",
+            "- `list_topics()` → full topic list | `show_topic(topic)` → block index → `show_topic(topic, N)` → data",
+            "- `get_evidence(topic)` → original filing text for citations",
+            "- `diff_topic(topic)` → period-over-period changes | `trace_topic(topic)` → source provenance",
+            "- `get_data(BS/IS/CF)` → financials | `compute_ratios()` → ratios",
+            "- `get_insight()` → 7-area grades | `get_topic_coverage()` → data availability",
+            "",
+            "**Note**: This is a US company (SEC EDGAR). No `report` namespace — all narrative data via sections.",
+            "**Procedure**: Understand question → explore topics → retrieve data → cross-verify → synthesize answer",
+        ])
+    else:
+        parts.extend([
             "",
             "## DartLab 분석 가이드",
             "이 기업의 모든 공시 데이터는 **sections** (topic × 기간 수평화)으로 구조화되어 있습니다.",
             "- `list_topics()` → 전체 topic 목록 (평균 120+개)",
             "- `show_topic(topic)` → 블록 목차 → `show_topic(topic, N)` → 실제 데이터",
+            "- `get_evidence(topic)` → 원문 증거 검색 (인용용)",
             "- `diff_topic(topic)` → 기간간 변화 | `trace_topic(topic)` → 출처 추적",
             "- `get_data(BS/IS/CF)` → 재무제표 | `compute_ratios()` → 재무비율",
             "- `get_insight()` → 7영역 종합 등급 | `get_report_data(apiType)` → 정기보고서",
             "",
             "**분석 절차**: 질문 이해 → 관련 topic 탐색 → 원문 데이터 조회 → 교차 검증 → 종합 답변",
             "**핵심**: '데이터 없음'으로 답하기 전에 반드시 도구로 확인. sections에 거의 모든 공시 데이터가 있습니다.",
-        ]
-    )
+        ])
 
     return "\n".join(parts), included
 
