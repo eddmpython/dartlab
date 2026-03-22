@@ -46,3 +46,32 @@ analyst ← gather (절대 import)
 - 7/8 모듈에 `spec.py` 존재 (analyst 미구현)
 - `engines/ai/spec.py`가 전체 수집
 - `test_spec_integrity.py`로 spec-코드 일치 검증
+
+## 공통 패턴
+
+모든 모듈은 다음 구조를 따른다:
+
+```
+analysis/{module}/
+├── __init__.py      # public API export
+├── spec.py          # 메타데이터 (buildSpec())
+├── types.py         # 타입 정의
+└── [로직 파일들]
+```
+
+새 모듈 추가 시:
+1. `analysis/` 아래 디렉토리 생성
+2. `spec.py` 작성 (buildSpec() → dict 반환)
+3. `ai/spec.py`의 `_ENGINE_SPECS`에 경로 등록
+4. Company 부착이 필요하면 `company.py`에 lazy import 추가
+
+## 모듈별 상세
+
+- `sector/DEV.md` — WICS 3단계 분류
+- `insight/DEV.md` — 7영역 등급 + 부실 모델
+- `rank/DEV.md` — 시장 규모 순위
+- `esg/DEV.md` — ESG 3축 분석
+- `supply/DEV.md` — 공급망 리스크
+- `event/DEV.md` — 이벤트 스터디
+- `watch/DEV.md` — 공시 변화 감지
+- `analyst/DEV.md` — 밸류에이션 합성

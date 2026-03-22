@@ -138,6 +138,24 @@ DART/EDGAR 동일 인터페이스. CompanyProtocol로 보장.
 - 기업 간 비교가 다시 필요해지면 기존 `Compare` 추상화를 복원하지 않고 `Company` 기반 API 위에서 새로 설계한다.
 - 뷰어의 table 정렬/표시 문제를 `Compare` 개념으로 설명하지 않는다.
 
-상세 문서:
-- `src/dartlab/engines/company/dart/DEV.md`
-- `src/dartlab/engines/company/edgar/DEV.md`
+## 엔진 추가 규칙
+
+1. **새 엔진 폴더 생성 전 기존 엔진에 모듈로 추가할 수 있는지 먼저 검토**
+2. 같은 계층(L1/L2/L3)의 같은 성격 기능은 하나의 엔진 아래 모듈로 구성
+3. 엔진 폴더 1개 = 500줄짜리 파일이 아니라 의미 있는 도메인 단위
+4. 새 L2 분석 기능 → `analysis/` 아래 모듈로 추가
+5. 새 외부 수집 소스 → `gather/domains/` 아래 파일로 추가
+6. 새 국가 데이터 소스 → `company/` 아래 엔진으로 추가
+7. `spec.py` 필수: 새 모듈 추가 시 `spec.py` 작성 → `ai/spec.py`에 등록
+8. 기존 5-Pillar 구조(common/company/gather/analysis/ai)를 넘는 6번째 기둥은 만들지 않는다
+
+## 상세 문서
+
+- `engines/company/DEV.md` — L1 데이터 소스 통합
+- `engines/company/dart/DEV.md` — DART 본체
+- `engines/company/edgar/DEV.md` — EDGAR 본체
+- `engines/analysis/DEV.md` — L2 분석 모듈 통합
+- `engines/gather/DEV.md` — L2 외부 수집
+- `engines/ai/DEV.md` — L3 LLM 분석
+- `engines/common/finance/DEV.md` — 재무 분석 유틸
+- `engines/common/docs/DEV.md` — 문서 공통 유틸
