@@ -37,12 +37,14 @@ def pytest_configure(config):
     # test-lock.sh 없이 직접 pytest를 호출한 경우 경고
     if not os.environ.get("DARTLAB_TEST_LOCKED"):
         import warnings
+
         warnings.warn(
             "⚠ test-lock.sh 없이 pytest 직접 실행 — "
             "다른 세션과 동시 실행 시 OOM 위험.\n"
             "  권장: bash scripts/test-lock.sh tests/ -m unit -v",
             stacklevel=1,
         )
+
 
 SAMSUNG = "005930"
 HYUNDAI = "005380"
