@@ -323,6 +323,7 @@ def _fundamentalGrowth(series: dict) -> tuple[float | None, dict]:
     cashVals = getAnnualValues(series, "BS", "cash_and_cash_equivalents")
     deltaNwc = 0.0
     if len(caVals) >= 2 and len(clVals) >= 2:
+
         def _nwcAt(idx: int) -> float | None:
             ca = caVals[idx] if idx < len(caVals) else None
             cl = clVals[idx] if idx < len(clVals) else None

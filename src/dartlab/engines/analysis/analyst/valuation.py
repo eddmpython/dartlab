@@ -492,7 +492,9 @@ def fullValuation(
     """DCF + DDM + 상대가치 종합 밸류에이션."""
     dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
     ddm = ddmValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
-    rel = relativeValuation(series, sectorParams=sectorParams, marketCap=marketCap, shares=shares, currentPrice=currentPrice)
+    rel = relativeValuation(
+        series, sectorParams=sectorParams, marketCap=marketCap, shares=shares, currentPrice=currentPrice
+    )
 
     estimates: list[float] = []
     if dcf.perShareValue is not None and dcf.perShareValue > 0:

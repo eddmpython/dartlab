@@ -298,9 +298,7 @@ def _extractBaseMetrics(series: dict) -> dict[str, Optional[float]]:
     finCosts = getTTM(series, "IS", "finance_costs") or getTTM(series, "IS", "interest_expense")
 
     debtRatio = (totalLiab / totalEquity * 100) if totalLiab and totalEquity and totalEquity > 0 else None
-    currentRatio = (
-        (currentAssets / currentLiab * 100) if currentAssets and currentLiab and currentLiab > 0 else None
-    )
+    currentRatio = (currentAssets / currentLiab * 100) if currentAssets and currentLiab and currentLiab > 0 else None
     interestCov = (oi / abs(finCosts)) if oi and finCosts and abs(finCosts) > 0 else None
     netDebt = stb + ltb + bonds - cash
 
@@ -550,9 +548,7 @@ def simulateAllScenarios(
     """모든 사전 정의 시나리오 일괄 시뮬레이션."""
     keys = scenarios or list(PRESET_SCENARIOS.keys())
     return {
-        key: simulateScenario(series, key, sectorKey, sectorParams, shares)
-        for key in keys
-        if key in PRESET_SCENARIOS
+        key: simulateScenario(series, key, sectorKey, sectorParams, shares) for key in keys if key in PRESET_SCENARIOS
     }
 
 

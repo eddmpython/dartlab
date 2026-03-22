@@ -1069,7 +1069,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         # 수주잔고
         if result.backlogSignal:
             bs = result.backlogSignal
-            lines.append(f"\n## 수주잔고 시그널: {bs.brRatioTrend} (B/R={bs.backlogRevenueRatio:.2f}, 내재성장={bs.impliedRevenueGrowth:.1f}%)")
+            lines.append(
+                f"\n## 수주잔고 시그널: {bs.brRatioTrend} (B/R={bs.backlogRevenueRatio:.2f}, 내재성장={bs.impliedRevenueGrowth:.1f}%)"
+            )
 
         # AI 컨텍스트
         if result.aiContext:

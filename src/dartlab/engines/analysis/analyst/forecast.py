@@ -360,8 +360,7 @@ def forecastAll(
 ) -> dict[str, ForecastResult]:
     """모든 주요 메트릭 예측."""
     return {
-        key: forecastMetric(series, metric=key, horizon=horizon, sectorParams=sectorParams)
-        for key in FORECAST_TARGETS
+        key: forecastMetric(series, metric=key, horizon=horizon, sectorParams=sectorParams) for key in FORECAST_TARGETS
     }
 
 
