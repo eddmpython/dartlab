@@ -59,6 +59,11 @@ from dartlab.engines.common.finance.simulation import (
     simulate_scenario,
     stress_test,
 )
+from dartlab.engines.common.finance.merton import (
+    MertonResult,
+    calcEquityVolatility,
+    solveMerton,
+)
 from dartlab.engines.common.finance.valuation import (
     DCFResult,
     DDMResult,
@@ -126,4 +131,8 @@ __all__ = [
     "ScenarioPriceTarget",
     "PriceTargetResult",
     "compute_price_target",
+    # merton (structural model)
+    "MertonResult",
+    "calcEquityVolatility",
+    "solveMerton",
 ]

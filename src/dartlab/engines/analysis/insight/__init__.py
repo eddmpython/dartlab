@@ -17,14 +17,22 @@ from dartlab.engines.analysis.insight.pipeline import analyze
 from dartlab.engines.analysis.insight.types import (
     AnalysisResult,
     Anomaly,
+    DistressAxis,
+    DistressResult,
     Flag,
     InsightResult,
+    MarketDataForDistress,
+    ModelScore,
 )
 
 __all__ = [
     "analyze",
     "AnalysisResult",
     "Anomaly",
+    "DistressAxis",
+    "DistressResult",
     "Flag",
     "InsightResult",
+    "MarketDataForDistress",
+    "ModelScore",
 ]

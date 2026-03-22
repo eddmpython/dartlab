@@ -225,3 +225,124 @@ def test_anomaly_dataclass():
 
     a = Anomaly(severity="danger", category="earningsQuality", text="이익 품질 의심", value=50.0)
     assert a.value == 50.0
+
+
+# ── distress + Merton ──
+
+
+def test_analyze_distress_exists():
+    """distress 필드가 DistressResult이고 4축(기본)인지 확인."""
+    from dartlab.engines.analysis.insight import DistressResult, analyze
+
+    qSeries, qPeriods, aSeries, aYears = _make_series()
+    result = analyze(
+        "999999",
+        corpName="테스트기업",
+        qSeriesPair=(qSeries, qPeriods),
+        aSeriesPair=(aSeries, aYears),
+    )
+    assert result is not None
+    assert result.distress is not None
+    assert isinstance(result.distress, DistressResult)
+    assert len(result.distress.axes) == 4  # mertonResult=None → 4축
+    axis_names = {ax.name for ax in result.distress.axes}
+    assert "정량 분석" in axis_names
+    assert "이익 품질" in axis_names
+    assert "추세 분석" in axis_names
+    assert "감사 위험" in axis_names
+
+
+def test_analyze_with_market_data_5axis():
+    """MarketDataForDistress 전달 시 5축(시장 기반 축 포함)."""
+    import random
+
+    from dartlab.engines.analysis.insight import MarketDataForDistress, analyze
+
+    random.seed(42)
+    daily_returns = [random.gauss(0, 0.02) for _ in range(200)]
+
+    qSeries, qPeriods, aSeries, aYears = _make_series()
+    market_data = MarketDataForDistress(
+        marketCap=50e12,  # 50조
+        dailyReturns=daily_returns,
+        riskFreeRate=0.035,
+    )
+    result = analyze(
+        "999999",
+        corpName="테스트기업",
+        qSeriesPair=(qSeries, qPeriods),
+        aSeriesPair=(aSeries, aYears),
+        marketData=market_data,
+    )
+    assert result is not None
+    assert result.distress is not None
+    assert len(result.distress.axes) == 5  # Merton 포함 → 5축
+    axis_names = {ax.name for ax in result.distress.axes}
+    assert "시장 기반" in axis_names
+    # 가중치 합 = 1.0
+    weight_sum = sum(ax.weight for ax in result.distress.axes)
+    assert abs(weight_sum - 1.0) < 0.001
+
+
+def test_analyze_market_data_none_backward_compat():
+    """marketData=None → 기존 4축과 동일한 점수."""
+    from dartlab.engines.analysis.insight import analyze
+
+    qSeries, qPeriods, aSeries, aYears = _make_series()
+
+    r1 = analyze(
+        "999999",
+        corpName="테스트기업",
+        qSeriesPair=(qSeries, qPeriods),
+        aSeriesPair=(aSeries, aYears),
+    )
+    r2 = analyze(
+        "999999",
+        corpName="테스트기업",
+        qSeriesPair=(qSeries, qPeriods),
+        aSeriesPair=(aSeries, aYears),
+        marketData=None,
+    )
+    assert r1 is not None and r2 is not None
+    assert r1.distress.overall == r2.distress.overall
+    assert len(r1.distress.axes) == len(r2.distress.axes) == 4
+
+
+def test_merton_solver_basic():
+    """solveMerton 수렴 + D2D 범위 검증."""
+    from dartlab.engines.common.finance.merton import solveMerton
+
+    # 건전 기업: E >> D
+    result = solveMerton(equityValue=400e12, debtFaceValue=100e12, equityVolatility=0.30)
+    assert result is not None
+    assert result.converged
+    assert result.d2d > 3.0
+    assert result.pd < 1.0
+
+    # 위험 기업: D > E
+    result2 = solveMerton(equityValue=100e9, debtFaceValue=5000e9, equityVolatility=0.60)
+    assert result2 is not None
+    assert result2.converged
+    assert result2.d2d < 3.0
+
+    # 입력 불가: E=0
+    assert solveMerton(0, 1000, 0.3) is None
+
+
+def test_equity_volatility_basic():
+    """calcEquityVolatility 합성 데이터 검증."""
+    import math
+    import random
+
+    from dartlab.engines.common.finance.merton import calcEquityVolatility
+
+    random.seed(123)
+    daily_sigma = 0.02
+    returns = [random.gauss(0, daily_sigma) for _ in range(252)]
+
+    vol = calcEquityVolatility(returns)
+    expected = daily_sigma * math.sqrt(252)
+    assert abs(vol - expected) / expected < 0.25  # 25% 이내
+
+    # 데이터 부족
+    assert calcEquityVolatility([0.01] * 10) == 0.0

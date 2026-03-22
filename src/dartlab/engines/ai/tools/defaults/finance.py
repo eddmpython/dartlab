@@ -18,6 +18,59 @@ def _unwrap_timeseries(ts: Any) -> dict | None:
     return ts
 
 
+def _build_company_data_bundle(company: Any):
+    """Company → CompanyDataBundle 빌드 (안전하게 — 실패 시 빈 bundle)."""
+    from dartlab.engines.common.finance.revenue_forecast import CompanyDataBundle
+
+    bundle = CompanyDataBundle()
+
+    # 세그먼트 매출
+    try:
+        seg = getattr(company, "segments", None)
+        if seg is not None:
+            rev = getattr(seg, "revenue", None)
+            if rev is not None and hasattr(rev, "columns"):
+                bundle.segment_revenue = rev
+    except (AttributeError, TypeError):
+        pass
+
+    # 수주/매출 (salesOrder)
+    try:
+        so = getattr(company, "salesOrder", None)
+        if so is not None:
+            bundle.sales_df = getattr(so, "salesDf", None)
+            bundle.order_df = getattr(so, "orderDf", None)
+    except (AttributeError, TypeError):
+        pass
+
+    # 수출비율 추출 시도 (salesOrder salesDf에서)
+    try:
+        if bundle.sales_df is not None and hasattr(bundle.sales_df, "columns"):
+            df = bundle.sales_df
+            if "label" in df.columns:
+                labels = df["label"].to_list()
+                for i, lab in enumerate(labels):
+                    if lab and "수출" in str(lab):
+                        # 첫 번째 값 컬럼에서 수출 비율 추출
+                        val_cols = [c for c in df.columns if c != "label"]
+                        if val_cols:
+                            total_row = None
+                            for j, l2 in enumerate(labels):
+                                if l2 and "합계" in str(l2):
+                                    total_row = j
+                                    break
+                            if total_row is not None:
+                                export_val = df[val_cols[0]][i]
+                                total_val = df[val_cols[0]][total_row]
+                                if total_val and total_val > 0:
+                                    bundle.export_ratio = float(export_val) / float(total_val)
+                        break
+    except (AttributeError, TypeError, IndexError, ZeroDivisionError):
+        pass
+
+    return bundle
+
+
 def register_finance_tools(company: Any, register_tool) -> None:
     """재무 데이터 관련 도구를 등록한다."""
     from dartlab.core.capabilities import CapabilityKind
@@ -967,11 +1020,14 @@ def register_finance_tools(company: Any, register_tool) -> None:
         requires_company=True,
     )
 
-    # ── 매출 앙상블 예측 (4-소스) ──
+    # ── 매출 앙상블 예측 (7-소스 v3) ──
 
     def forecast_revenue_tool(horizon: str = "3") -> str:
-        """매출 앙상블 예측 — 시계열+컨센서스+ROIC+매크로 4소스."""
-        from dartlab.engines.common.finance.revenue_forecast import forecast_revenue as _fr
+        """매출 앙상블 예측 v3 — 7소스 + 세그먼트 + 시나리오."""
+        from dartlab.engines.common.finance.revenue_forecast import (
+            CompanyDataBundle,
+            forecast_revenue as _fr,
+        )
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -980,11 +1036,43 @@ def register_finance_tools(company: Any, register_tool) -> None:
         stock_code = getattr(company.profile, "stockCode", None) if hasattr(company, "profile") else None
         sector_info = getattr(company, "sectorInfo", None)
         sector_key = sector_info.get("sector", None) if sector_info else None
+        market = getattr(company, "market", "KR") or "KR"
 
-        result = _fr(series, stock_code=stock_code, sector_key=sector_key, horizon=int(horizon))
+        # CompanyDataBundle 빌드 — L1 데이터를 L0에 전달
+        bundle = _build_company_data_bundle(company)
 
-        # AI 컨텍스트도 함께 표시
+        result = _fr(
+            series,
+            stock_code=stock_code,
+            sector_key=sector_key,
+            market=market,
+            horizon=int(horizon),
+            company_data=bundle,
+        )
+
         lines = [repr(result)]
+
+        # 시나리오
+        if result.scenarios:
+            lines.append("\n## 시나리오 (Base/Bull/Bear)")
+            for name, vals in result.scenarios.items():
+                prob = result.scenario_probabilities.get(name, 0)
+                vals_str = ", ".join(f"{v / 1e8:,.0f}억" for v in vals)
+                lines.append(f"- **{name.title()}** ({prob:.0%}): {vals_str}")
+
+        # 세그먼트
+        if result.segment_forecasts:
+            lines.append("\n## 세그먼트 Bottom-Up")
+            for sf in result.segment_forecasts:
+                proj_str = ", ".join(f"{v / 1e8:,.0f}억" for v in sf.projected)
+                lines.append(f"- {sf.name}: {proj_str} (lifecycle={sf.lifecycle})")
+
+        # 수주잔고
+        if result.backlog_signal:
+            bs = result.backlog_signal
+            lines.append(f"\n## 수주잔고 시그널: {bs.trend} (B/R={bs.br_ratio:.2f}, 내재성장={bs.implied_growth:.1f}%)")
+
+        # AI 컨텍스트
         if result.ai_context:
             ctx = result.ai_context
             lines.append("\n## AI 보정 참고 컨텍스트")
@@ -998,14 +1086,17 @@ def register_finance_tools(company: Any, register_tool) -> None:
                 lines.append(f"- 컨센서스 vs 시계열 괴리: {ctx['consensus_vs_ts_gap']:+}%p")
             if ctx.get("uncertainty_flags"):
                 lines.append(f"- 불확실성: {', '.join(ctx['uncertainty_flags'])}")
+
+        if result.forward_test_key:
+            lines.append(f"\n> Forward test key: `{result.forward_test_key}`")
+
         return "\n".join(lines)
 
     register_tool(
         "forecast_revenue",
         forecast_revenue_tool,
-        "매출 앙상블 예측 엔진. 시계열+컨센서스+ROIC+매크로 4소스를 결합하여 "
-        "향후 매출을 예측합니다. 기업 라이프사이클(고성장/성숙/전환/쇠퇴)을 "
-        "자동 판별하고 소스별 가중치를 조정합니다. "
+        "매출 앙상블 예측 v3. 7소스(시계열+컨센서스+ROIC+매크로+세그먼트+수주잔고+환율) 결합. "
+        "세그먼트 Bottom-Up 예측, 3-시나리오(Base/Bull/Bear) 출력, 수주잔고 선행지표 포함. "
         "사용 시점: 매출 전망, 성장성 평가, 밸류에이션 입력. "
         "forecast 도구와의 차이: forecast는 단일 시계열, forecast_revenue는 다중 소스 앙상블.",
         {
