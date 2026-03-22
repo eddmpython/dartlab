@@ -1,11 +1,12 @@
 """원재료 및 생산설비 섹션 구조 탐색 — 삼성전자/SK하이닉스/NAVER."""
 
-import sys
 import io
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

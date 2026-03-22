@@ -10,12 +10,12 @@ import sys
 
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+import polars as pl
+
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.finance.statements import statements
 from dartlab.finance.statements.extractor import extractConsolidatedContent
-
-import polars as pl
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"
 

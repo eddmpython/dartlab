@@ -1,15 +1,21 @@
 """빠른 디버그: 왜 0% 인지."""
-import re, sys
+import re
+import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
+
 import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
-from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _normalizeHeader,
-)
 from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _normalizeHeader,
+    splitSubtables,
+)
 
 code = "005930"  # 삼성전자
 sec = buildSections(code)

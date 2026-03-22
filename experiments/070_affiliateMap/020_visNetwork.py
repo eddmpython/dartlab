@@ -29,7 +29,6 @@ import time
 import webbrowser
 from pathlib import Path
 
-
 # ── 그룹별 색상 — DartWings 계열 ──
 GROUP_PALETTE = [
     "#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6",

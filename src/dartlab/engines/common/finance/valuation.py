@@ -13,13 +13,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
     getLatest,
     getRevenueGrowth3Y,
     getTTM,
 )
-from dartlab.engines.analysis.sector.types import SectorParams
 
 # ── 결과 타입 ──────────────────────────────────────────────
 

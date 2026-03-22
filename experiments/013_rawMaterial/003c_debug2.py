@@ -1,11 +1,12 @@
 """삼성전자 생산설비 유형자산 테이블 상세 디버깅."""
 
-import sys
 import io
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

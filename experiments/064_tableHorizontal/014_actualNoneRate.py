@@ -13,8 +13,8 @@
 실험일: 2026-03-17
 """
 
-import sys
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -22,17 +22,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
+from dartlab.engines.company.dart.company import Company as DartCompany
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
-    _parseMultiYear,
     _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
-from dartlab.engines.company.dart.company import Company as DartCompany
 
 
 def _isPeriodCol(c: str) -> bool:

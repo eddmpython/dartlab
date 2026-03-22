@@ -52,9 +52,10 @@
 import json
 import re
 import time
-import polars as pl
-from pathlib import Path
 from collections import Counter, defaultdict
+from pathlib import Path
+
+import polars as pl
 
 # ═══════════════════════════════════════════════════════════════
 # 1. 데이터 로딩

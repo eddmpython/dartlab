@@ -168,8 +168,8 @@ def exploreSamsung():
 
 
 def scanAllStocks():
-    from dartlab.core.dataLoader import loadData
     from dartlab.core.dataConfig import listStockCodes
+    from dartlab.core.dataLoader import loadData
 
     codes = listStockCodes("finance")
     total = len(codes)

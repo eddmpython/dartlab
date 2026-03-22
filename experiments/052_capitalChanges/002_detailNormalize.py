@@ -1002,6 +1002,7 @@ def exploreSamsung():
 
 def scanMultipleCompanies():
     import pathlib
+
     from dartlab import config
 
     dataDir = pathlib.Path(config.dataDir) / "finance"

@@ -10,8 +10,8 @@
 실험일: 2026-03-17
 """
 
-import sys
 import re
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
@@ -20,12 +20,13 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
+    splitSubtables,
 )
+
 
 def _isPeriodCol(c: str) -> bool:
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

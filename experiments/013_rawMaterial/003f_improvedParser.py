@@ -1,12 +1,13 @@
 """원재료 + 생산설비 개선 파서 — 10개 종목 테스트."""
 
-import sys
 import io
 import re
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

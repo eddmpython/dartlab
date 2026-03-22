@@ -51,6 +51,7 @@ def analyzeFormat():
     print("=" * 60)
 
     from unittest.mock import patch
+
     import polars as pl
 
     fixturePath = ROOT / "tests" / "fixtures" / "005930.finance.parquet"

@@ -36,7 +36,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 RE_CHAPTER = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 RE_MAJOR = re.compile(r"^([가-힣])\.\s+(.+)$")
 RE_MINOR = re.compile(r"^\((\d+)\)\s*(.+)$")

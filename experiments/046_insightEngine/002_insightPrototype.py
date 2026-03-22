@@ -34,17 +34,19 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
 from dataclasses import dataclass, field
 from typing import Optional
 
 import dartlab
+
 dartlab.verbose = False
 
-from dartlab.engines.financeEngine.pivot import buildTimeseries, buildAnnual
-from dartlab.engines.financeEngine.ratios import calcRatios, RatioResult
-from dartlab.engines.financeEngine.extract import getLatest, getAnnualValues
+from dartlab.engines.financeEngine.extract import getAnnualValues, getLatest
+from dartlab.engines.financeEngine.pivot import buildAnnual, buildTimeseries
+from dartlab.engines.financeEngine.ratios import RatioResult, calcRatios
 
 
 @dataclass

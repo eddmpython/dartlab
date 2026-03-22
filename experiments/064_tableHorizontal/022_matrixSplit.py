@@ -25,15 +25,25 @@
 실험일: 2026-03-17
 """
 
-import sys, re
-from collections import defaultdict, Counter
+import re
+import sys
+from collections import Counter, defaultdict
+
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
+
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _classifyStructure,
-    _parseMultiYear, _parseKeyValueOrMatrix, _normalizeItemName,
+    _classifyStructure,
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _normalizeItemName,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
+
 
 def _isPeriodCol(c):
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

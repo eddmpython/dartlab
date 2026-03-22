@@ -35,7 +35,6 @@ import polars as pl
 
 from dartlab import config
 
-
 MIN_FILING_COVERAGE = 0.5
 
 

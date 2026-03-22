@@ -41,6 +41,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, normalizeSectionTitle
+
 DOCS_DIR = Path("data/dart/docs")
 ANNUAL_KEYWORD = "사업보고서"
 

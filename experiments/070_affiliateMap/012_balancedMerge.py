@@ -52,11 +52,12 @@
 실험일: 2026-03-19
 """
 
-import time
-import polars as pl
-from pathlib import Path
-from collections import Counter, defaultdict
 import importlib.util
+import time
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import polars as pl
 
 _parent = Path(__file__).resolve().parent
 

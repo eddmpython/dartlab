@@ -7,12 +7,14 @@ difflib로:
 - diff 원문 출력 (추가/삭제된 줄)
 """
 
-import sys
 import difflib
+import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-from dartlab.core import loadData
 import polars as pl
+
+from dartlab.core import loadData
 
 
 def getBusinessText(df: pl.DataFrame, year: str) -> str | None:

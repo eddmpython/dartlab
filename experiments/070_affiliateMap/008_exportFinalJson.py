@@ -54,12 +54,13 @@
 실험일: 2026-03-19
 """
 
+import importlib.util
 import json
 import time
-import polars as pl
-from pathlib import Path
 from collections import defaultdict
-import importlib.util
+from pathlib import Path
+
+import polars as pl
 
 _parent = Path(__file__).resolve().parent
 _output = _parent / "output"

@@ -1,13 +1,14 @@
 """엔씨소프트 변동표 블록 상세 확인."""
 
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
-from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from step03_parser import splitPeriodBlocks
 
+from dartlab.core.dataLoader import loadData
+from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
+from dartlab.core.reportSelector import selectReport
 
 df = loadData("036570")
 years = sorted(df["year"].unique().to_list(), reverse=True)

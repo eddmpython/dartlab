@@ -1,12 +1,14 @@
 """남은 13개 실패 케이스 raw 확인."""
 
 import sys
+
 sys.path.insert(0, "src")
 
+from step03_parser import isAssetCategory, isMovementRow, splitCells, splitPeriodBlocks
+
 from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-from step03_parser import splitPeriodBlocks, splitCells, isMovementRow, isAssetCategory
+from dartlab.core.reportSelector import selectReport
 
 SAMPLES = [
     ("010130", "고려아연", 6378),

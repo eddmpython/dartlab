@@ -42,8 +42,9 @@
 """
 
 import time
-import polars as pl
 from pathlib import Path
+
+import polars as pl
 
 
 def scan_all_invested() -> pl.DataFrame:

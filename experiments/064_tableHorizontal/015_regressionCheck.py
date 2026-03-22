@@ -1,17 +1,25 @@
 """Quick regression check: companyOverview -3."""
-import sys
 import re
+import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
+from dartlab.core.dataLoader import _dataDir
+from dartlab.engines.company.dart.company import Company
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _classifyStructure,
-    _parseMultiYear, _parseKeyValueOrMatrix,
+    _classifyStructure,
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
-from dartlab.engines.company.dart.company import Company
-from dartlab.core.dataLoader import _dataDir
+
 
 def _isPeriodCol(c):
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

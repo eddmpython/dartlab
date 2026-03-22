@@ -1,12 +1,14 @@
 """실패 35개 중 대표 케이스 디버깅."""
 
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport
+from step03_parser import isAssetCategory, isMovementRow, splitCells, splitPeriodBlocks
+
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-from step03_parser import splitPeriodBlocks, splitCells, isMovementRow, isAssetCategory
+from dartlab.core.reportSelector import selectReport
 
 SAMPLES = [
     ("000020", "동화약품"),

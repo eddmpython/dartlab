@@ -26,8 +26,9 @@
 실험일: 2026-03-14
 """
 
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 import polars as pl
@@ -93,7 +94,7 @@ def lazyIndex(c):
             })
 
     if c._hasReport:
-        from dartlab.engines.company.dart.report.types import API_TYPES, API_TYPE_LABELS
+        from dartlab.engines.company.dart.report.types import API_TYPE_LABELS, API_TYPES
         for apiType in API_TYPES:
             df = c.report.extract(apiType)
             if df is not None and not df.is_empty():

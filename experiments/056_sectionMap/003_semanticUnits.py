@@ -35,7 +35,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 PATTERNS: dict[str, str] = {
     "korean_heading": r"(?m)^([가-힣])\.\s+",
     "paren_number": r"(?m)^\((\d+)\)",

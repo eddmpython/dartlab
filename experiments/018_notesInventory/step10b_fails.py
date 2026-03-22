@@ -5,11 +5,11 @@ import sys
 
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from step10_genericParser import parseNotesTable
+
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import selectReport
-
-from step10_genericParser import parseNotesTable
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"
 

@@ -38,17 +38,18 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
 from typing import Optional
 
 import dartlab
+
 dartlab.verbose = False
 
+from dartlab.engines.financeEngine.extract import getAnnualValues, getLatest
 from dartlab.engines.financeEngine.pivot import buildAnnual
 from dartlab.engines.financeEngine.ratios import calcRatios
-from dartlab.engines.financeEngine.extract import getLatest, getAnnualValues
-
 
 FINANCIAL_STOCKS = {
     "105560": "KB금융",

@@ -268,8 +268,8 @@ class TestRatioQuality:
         )
 
     def test_ratio_template_fields_by_financial_industry(self):
-        from dartlab.engines.company.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
         from dartlab.engines.analysis.sector.types import IndustryGroup
+        from dartlab.engines.company.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
 
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.BANK) == "bank"
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.INSURANCE) == "insurance"

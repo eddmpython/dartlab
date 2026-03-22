@@ -37,7 +37,6 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
-
 RE_CHAPTER = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 RE_MAJOR = re.compile(r"^([가-힣])\.\s+(.+)$")
 RE_MINOR = re.compile(r"^\((\d+)\)\s*(.+)$")

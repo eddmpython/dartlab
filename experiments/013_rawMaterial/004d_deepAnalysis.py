@@ -1,13 +1,14 @@
 """실패 종목 심층 분석 — 매입액 테이블이 진짜 있는지."""
 
-import sys
 import io
-import re
 import os
+import re
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

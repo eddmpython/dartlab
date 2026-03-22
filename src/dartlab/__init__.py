@@ -6,12 +6,12 @@ from importlib.metadata import version as _pkg_version
 
 from dartlab import config, core, engines
 from dartlab.company import Company
-from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 from dartlab.engines import ai as llm
 from dartlab.engines.company.dart.company import Company as _DartEngineCompany
 from dartlab.engines.company.dart.openapi.dart import Dart, OpenDart
 from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
 from dartlab.engines.gather.fred import Fred
+from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 
 try:
     __version__ = _pkg_version("dartlab")

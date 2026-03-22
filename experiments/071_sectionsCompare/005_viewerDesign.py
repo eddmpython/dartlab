@@ -64,6 +64,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
 from dartlab import Company
 
 _WORD_RE = re.compile(r"[가-힣]{2,}")

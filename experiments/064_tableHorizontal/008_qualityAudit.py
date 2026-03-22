@@ -21,8 +21,8 @@
 실험일: 2026-03-17
 """
 
-import sys
 import re
+import sys
 import traceback
 from collections import defaultdict
 from pathlib import Path
@@ -33,14 +33,14 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
-    _parseMultiYear,
-    _parseKeyValueOrMatrix,
     _normalizeItemName,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
 
 

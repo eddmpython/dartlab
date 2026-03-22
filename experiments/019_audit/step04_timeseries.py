@@ -37,13 +37,13 @@ DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\d
 
 sys.path.insert(0, os.path.dirname(__file__))
 from step03_parser import (
-    extractTableBlocks,
-    classifyBlock,
-    parseOpinionBlock,
-    parseFeeBlock,
-    fiscalPeriodToYear,
-    findAuditSections,
     _dedup,
+    classifyBlock,
+    extractTableBlocks,
+    findAuditSections,
+    fiscalPeriodToYear,
+    parseFeeBlock,
+    parseOpinionBlock,
 )
 
 

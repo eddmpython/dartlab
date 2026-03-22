@@ -6,13 +6,14 @@
 3. 금융업/복합업종 접두사 처리
 """
 
-import sys
 import re
+import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-from dartlab.core import loadData
 import polars as pl
 
+from dartlab.core import loadData
 
 SECTION_KEYS = {
     "overview": ["사업의 개요"],

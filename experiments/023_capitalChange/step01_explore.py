@@ -26,15 +26,15 @@
 """
 
 import os
-import sys
 import re
+import sys
 from collections import Counter
 
 sys.path.insert(0, r"C:\Users\MSI\OneDrive\Desktop\sideProject\dartlab\src")
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 
 

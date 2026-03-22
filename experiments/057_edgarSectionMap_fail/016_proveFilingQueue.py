@@ -25,8 +25,8 @@ from alive_progress import alive_bar
 
 from dartlab import config
 from dartlab.engines.company.edgar.docs.fetch import (
-    _FilingTimeout,
     _downloadFilingSource,
+    _FilingTimeout,
     _findFilings,
     _getSubmissions,
     _htmlToText,

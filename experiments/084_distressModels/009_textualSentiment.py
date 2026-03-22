@@ -59,8 +59,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
-from dartlab import Company
 
+from dartlab import Company
 
 # ── 한국어 부정/위험 키워드 사전 (Loughran-McDonald 한국어 적응) ──
 NEGATIVE_KEYWORDS = {

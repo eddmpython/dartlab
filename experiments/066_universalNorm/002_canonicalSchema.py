@@ -46,30 +46,30 @@
 실험일: 2026-03-18
 """
 
-import sys
-import re
 import json
-from pathlib import Path
+import re
+import sys
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
+    _extractUnit,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
     _normalizeHeader,
     _normalizeItemName,
-    _parseMultiYear,
     _parseKeyValueOrMatrix,
-    _extractUnit,
+    _parseMultiYear,
+    splitSubtables,
 )
-
 
 # ══════════════════════════════════════════════════════════════
 # Phase 1: 전 기간 동시 스캔 → 캐노니컬 스키마 구축

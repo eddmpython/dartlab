@@ -28,8 +28,9 @@
 """
 
 import hashlib
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 
@@ -80,8 +81,9 @@ def computeDiff(sections):
 
 
 def main():
-    from dartlab.engines.company.dart.company import Company
     import polars as pl
+
+    from dartlab.engines.company.dart.company import Company
 
     c = Company("005930")
 

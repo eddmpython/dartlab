@@ -13,12 +13,14 @@
 실험일: 2026-03-08
 """
 
-import os, sys, re
+import os
+import re
+import sys
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"
 sys.path.insert(0, r"C:\Users\MSI\OneDrive\Desktop\sideProject\dartlab\src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 
 

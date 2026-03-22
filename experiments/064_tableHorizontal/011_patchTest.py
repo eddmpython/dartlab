@@ -14,8 +14,8 @@
 실험일: 2026-03-17
 """
 
-import sys
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -25,14 +25,14 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
-    _isJunk,
-    _classifyStructure,
-    _parseMultiYear,
-    _parseKeyValueOrMatrix,
-    _normalizeItemName,
     _MULTI_YEAR_KW,
+    _classifyStructure,
     _extractUnit,
+    _isJunk,
+    _normalizeItemName,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
 
 _UNIT_ONLY_RE = re.compile(r"^\(?\s*단위\s*[:/]?\s*[^)]*\)?\s*$")
@@ -274,7 +274,8 @@ if __name__ == "__main__":
     ]
     topics = ["dividend", "audit", "companyOverview", "employee", "salesOrder"]
 
-    from dartlab.engines.company.dart.docs.sections.tableParser import _headerCells as _hcOld, _dataRows as _drOld
+    from dartlab.engines.company.dart.docs.sections.tableParser import _dataRows as _drOld
+    from dartlab.engines.company.dart.docs.sections.tableParser import _headerCells as _hcOld
 
     for code, name in stocks:
         try:

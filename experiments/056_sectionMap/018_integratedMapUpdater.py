@@ -35,7 +35,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 CHAPTER_RE = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 INDUSTRY_PREFIX_RE = re.compile(r"^\([^)]*업\)")
 

@@ -63,13 +63,12 @@
 
 from __future__ import annotations
 
+import importlib.util
 import pathlib
 from collections import Counter
 from typing import Optional
 
 import polars as pl
-
-import importlib.util
 
 _modPath = pathlib.Path(__file__).parent / "002_detailNormalize.py"
 _spec = importlib.util.spec_from_file_location("detailNormalize", _modPath)

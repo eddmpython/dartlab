@@ -53,13 +53,15 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
 import importlib.util
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import dartlab
+
 dartlab.verbose = False
 
 protoPath = Path(__file__).parent / "008_financialInsightIntegration.py"

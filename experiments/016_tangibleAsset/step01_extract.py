@@ -1,12 +1,13 @@
 """유형자산 주석 섹션 추출 + 포맷 분류 실험."""
 
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-from dartlab.core.tableParser import extractTables, parseAmount, detectUnit
+from dartlab.core.reportSelector import selectReport
+from dartlab.core.tableParser import detectUnit, extractTables, parseAmount
 
 TARGETS = [
     ("005930", "삼성전자"),

@@ -35,9 +35,10 @@ SEED = 42
 
 def main():
     import polars as pl
+
     from dartlab import config
-    from dartlab.engines.company.edgar.finance.pivot import buildAnnual
     from dartlab.engines.common.finance.ratios import RatioResult, calcRatios
+    from dartlab.engines.company.edgar.finance.pivot import buildAnnual
 
     edgarDir = Path(config.dataDir) / "edgar" / "finance"
     tickerPath = Path(config.dataDir) / "edgar" / "tickers.parquet"

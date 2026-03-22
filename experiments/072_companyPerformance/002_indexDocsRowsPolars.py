@@ -30,16 +30,18 @@
 실험일: 2026-03-19
 """
 
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 
 def main():
     import polars as pl
+
     import dartlab
-    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
     from dartlab.engines.common.show import isPeriodColumn
+    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
 
     c = dartlab.Company("005930")
 

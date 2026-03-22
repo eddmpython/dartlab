@@ -35,7 +35,6 @@ import polars as pl
 from dartlab import config
 from dartlab.engines.company.edgar.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
 
-
 MIN_FILING_COVERAGE = 0.5
 
 

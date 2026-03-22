@@ -10,6 +10,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
 )
@@ -17,7 +18,6 @@ from dartlab.engines.common.finance.valuation import (
     DCFResult,
     dcf_valuation,
 )
-from dartlab.engines.analysis.sector.types import SectorParams
 
 # ── 순수 Python OLS ──────────────────────────────────────
 

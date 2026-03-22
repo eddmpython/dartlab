@@ -9,13 +9,13 @@
 
 import re
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-from dartlab.core.tableParser import parseAmount, detectUnit
-
+from dartlab.core.reportSelector import selectReport
+from dartlab.core.tableParser import detectUnit, parseAmount
 
 LABEL_MAP = {
     "기초 유형자산": "기초",

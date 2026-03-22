@@ -22,9 +22,9 @@
 
 실험일: 2026-03-07
 """
+import io
 import re
 import sys
-import io
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")

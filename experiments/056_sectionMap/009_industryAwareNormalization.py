@@ -33,7 +33,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 TARGET_CODES = ["005930", "000660", "035420", "035720", "005380", "005490", "012330", "051910", "066570", "207940"]
 CHAPTER_RE = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 PREFIX_RE = re.compile(r"^\([^)]*업\)")

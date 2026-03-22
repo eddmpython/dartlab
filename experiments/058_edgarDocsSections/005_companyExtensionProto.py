@@ -31,7 +31,7 @@ import polars as pl
 from dartlab import config
 from dartlab.core.dataLoader import loadData
 from dartlab.engines.company.edgar.docs.sections.pipeline import sections as buildSections
-from dartlab.engines.company.edgar.finance.pivot import buildTimeseries, buildAnnual
+from dartlab.engines.company.edgar.finance.pivot import buildAnnual, buildTimeseries
 
 
 class _DocsAccessor:

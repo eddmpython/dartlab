@@ -30,7 +30,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 FEATURE_COLS = [
     "kwProduct",
     "kwRawMaterial",

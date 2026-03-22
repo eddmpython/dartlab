@@ -58,6 +58,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 from dartlab.engines.company.dart.docs.sections._common import (
@@ -65,11 +66,13 @@ from dartlab.engines.company.dart.docs.sections._common import (
     detectContentCol,
     sortPeriods,
 )
+from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
+from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 from dartlab.engines.company.dart.docs.sections.pipeline import (
     _expandStructuredRows,
+    _periodCadence,
     _reportRowsToTopicRows,
     _rowCadenceMeta,
-    _periodCadence,
     _splitContentBlocks,
     sections,
 )
@@ -78,8 +81,6 @@ from dartlab.engines.company.dart.docs.sections.runtime import (
     chapterTeacherTopics,
     projectionSuppressedTopics,
 )
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
-from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
 from dartlab.engines.company.dart.docs.sections.textStructure import parseTextStructureWithState
 
 

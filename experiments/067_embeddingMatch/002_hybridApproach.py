@@ -27,8 +27,9 @@
 
 import re
 import time
-import numpy as np
 from difflib import SequenceMatcher
+
+import numpy as np
 
 # ── 정규화 함수들 ──
 

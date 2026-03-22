@@ -15,14 +15,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import polars as pl
 
 from dartlab import Company
 from dartlab.engines.company.dart.docs.sections.views import sortPeriods
-
 
 DEFAULT_STOCK_CODE = "005930"
 OUTPUT_DIR = Path("data/dart/docs/sectionsViews")

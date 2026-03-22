@@ -62,7 +62,6 @@ from dartlab.engines.company.dart.docs.sections.textStructure import (
     parseTextStructureWithState,
 )
 
-
 # ── 6-level _detect_heading ──
 
 

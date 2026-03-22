@@ -35,8 +35,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+
 from dartlab.core.dataLoader import _dataDir
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
 
 def splitSubtables(md: str) -> list[list[str]]:

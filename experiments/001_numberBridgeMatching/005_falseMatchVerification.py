@@ -52,18 +52,20 @@
 실험일: 2026-03-06
 """
 
-import polars as pl
+import io
 import re
 import sys
-import io
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
+
+import polars as pl
 
 # Windows 콘솔 UTF-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # 004에서 공유 함수 import
-from importlib.util import spec_from_file_location, module_from_spec
+from importlib.util import module_from_spec, spec_from_file_location
+
 spec = spec_from_file_location("pipeline", Path(__file__).parent / "004_fullPipeline.py")
 pipeline = module_from_spec(spec)
 spec.loader.exec_module(pipeline)

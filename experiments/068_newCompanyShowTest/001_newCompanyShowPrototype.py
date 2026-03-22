@@ -65,7 +65,6 @@ from dartlab.engines.company.dart.docs.sections.tableParser import (
     splitSubtables,
 )
 
-
 _SUFFIX_RE = re.compile(r"(사업)?부문$")
 _KISU_RE = re.compile(
     r"제\d+기\s*(?:\d*분기|반기|말)?\s*"

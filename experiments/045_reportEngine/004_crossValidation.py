@@ -24,8 +24,9 @@
 실험일: 2026-03-09
 """
 
-import polars as pl
 from pathlib import Path
+
+import polars as pl
 
 REPORT_DIR = Path(r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\report")
 META_COLS = {"rcept_no", "corp_cls", "corp_code", "corp_name", "corpCode", "fsDiv", "collectStatus", "apiName"}

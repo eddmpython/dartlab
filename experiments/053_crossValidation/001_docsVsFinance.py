@@ -39,9 +39,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 def main():
     from dartlab import config
     from dartlab.core.dataConfig import DATA_RELEASES
-    from dartlab.engines.company.dart.finance.pivot import buildAnnual
-    from dartlab.engines.company.dart.finance.mapper import AccountMapper, ACCOUNT_NAME_SYNONYMS
     from dartlab.engines.company.dart.docs.finance.summary.pipeline import fsSummary
+    from dartlab.engines.company.dart.finance.mapper import ACCOUNT_NAME_SYNONYMS, AccountMapper
+    from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
     dataDir = Path(config.dataDir)
     financeDir = dataDir / DATA_RELEASES["finance"]["dir"]

@@ -35,9 +35,8 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
 from dartlab.engines.company.dart.docs.sections.chunker import chunkRows
-
+from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
 
 RE_SPLIT_SUFFIX = re.compile(r" \[\d+/\d+\]$")
 RE_LEAF_PREFIX = re.compile(r"^\d+\.\s*|^[가-힣]\.\s*")

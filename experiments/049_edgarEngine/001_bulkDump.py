@@ -40,20 +40,19 @@
 실험일: 2026-03-10
 """
 
-import sys
-import json
-import shutil
-import zipfile
 import datetime
+import json
 import multiprocessing
-from pathlib import Path
-from datetime import timezone
+import shutil
+import sys
+import zipfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import timezone
+from pathlib import Path
 
 import polars as pl
 import requests
 from tqdm import tqdm
-
 
 SEC_ARCHIVES_BASE = "https://www.sec.gov/Archives/edgar"
 SEC_FILES_BASE = "https://www.sec.gov/files"

@@ -42,7 +42,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 CHAPTER_RE = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 LEAF_PREFIX_RE = re.compile(r"^\d+\.\s*|^[가-힣]\.\s*")
 LEAF_PREFIX_EXT_RE = re.compile(r"^\d+\.\s*|^\d+\)\s*|^\(\d+\)\s*|^[가-힣]\.\s*")

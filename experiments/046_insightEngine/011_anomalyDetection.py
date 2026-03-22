@@ -41,18 +41,20 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
+from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
-from collections import Counter
 
 import dartlab
+
 dartlab.verbose = False
 
-from dartlab.engines.financeEngine.pivot import buildTimeseries, buildAnnual
+from dartlab.engines.financeEngine.extract import getAnnualValues, getLatest
+from dartlab.engines.financeEngine.pivot import buildAnnual, buildTimeseries
 from dartlab.engines.financeEngine.ratios import calcRatios
-from dartlab.engines.financeEngine.extract import getLatest, getAnnualValues
 
 
 @dataclass

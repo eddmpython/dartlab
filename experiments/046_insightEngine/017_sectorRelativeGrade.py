@@ -38,19 +38,19 @@
 실험일: 2026-03-09
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from collections import defaultdict
 from pathlib import Path
 
-from dartlab.engines.gather.listing import getKindList
 from dartlab.core.dataConfig import DATA_RELEASES
-from dartlab.engines.sectorEngine import classify
 from dartlab.engines.financeEngine.pivot import buildAnnual
 from dartlab.engines.financeEngine.ratios import calcRatios
-
+from dartlab.engines.gather.listing import getKindList
+from dartlab.engines.sectorEngine import classify
 
 TEST_STOCKS = [
     ("005930", "삼성전자"), ("000660", "SK하이닉스"), ("005380", "현대자동차"),

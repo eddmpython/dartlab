@@ -1,14 +1,17 @@
 """전 종목 회사의 개요 파싱 커버리지 테스트."""
 
 import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-from dartlab.core import loadData, buildIndex
-from dartlab.core.reportSelector import selectReport, extractReportYear
 import polars as pl
+
+from dartlab.core import buildIndex, loadData
+from dartlab.core.reportSelector import extractReportYear, selectReport
 
 sys.path.insert(0, "experiments/015_companyOverview")
 import importlib
+
 ext = importlib.import_module("002_parseFields")
 
 

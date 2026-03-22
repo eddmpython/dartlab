@@ -45,10 +45,10 @@
 실험일: 2026-03-06
 """
 
-import polars as pl
 import re
 from pathlib import Path
 
+import polars as pl
 
 DATA_DIR = Path("data/docsData")
 

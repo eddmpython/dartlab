@@ -51,13 +51,14 @@
 실험일: 2026-03-19
 """
 
+import importlib.util
 import json
 import re
 import time
-import polars as pl
-from pathlib import Path
 from collections import defaultdict
-import importlib.util
+from pathlib import Path
+
+import polars as pl
 
 _parent = Path(__file__).resolve().parent
 _spec2 = importlib.util.spec_from_file_location("_e2", str(_parent / "002_buildEdges.py"))

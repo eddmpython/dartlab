@@ -52,7 +52,6 @@ from dartlab.engines.company.dart.docs.sections.mapper import (
     stripSectionPrefix,
 )
 
-
 _REPORT_KINDS = [
     ("annual", ""),
     ("Q1", "Q1"),

@@ -45,27 +45,27 @@
 실험일: 2026-03-18
 """
 
-import sys
 import re
+import sys
 import time
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 import polars as pl
+
+from dartlab.core.dataLoader import _dataDir
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
     _normalizeHeader,
+    splitSubtables,
 )
-from dartlab.core.dataLoader import _dataDir
-
 
 # ── 특성 추출 ──
 
@@ -324,14 +324,14 @@ def _printDistribution(featureNames: list[str], X, y, label0Name: str, label1Nam
 
 if __name__ == "__main__":
     import numpy as np
-    from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.model_selection import train_test_split
     from sklearn.metrics import (
-        classification_report,
         accuracy_score,
+        classification_report,
         confusion_matrix,
     )
+    from sklearn.model_selection import train_test_split
+    from sklearn.tree import DecisionTreeClassifier
 
     pl.Config.set_tbl_cols(8)
     pl.Config.set_fmt_str_lengths(40)

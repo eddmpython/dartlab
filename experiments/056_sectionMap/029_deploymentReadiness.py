@@ -35,7 +35,6 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
-
 TARGET_CODES = [
     "005930",
     "000660",

@@ -36,16 +36,17 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
 from typing import Optional
 
 import dartlab
+
 dartlab.verbose = False
 
-from dartlab.engines.financeEngine.pivot import buildTimeseries, buildAnnual
 from dartlab.engines.financeEngine.extract import getAnnualValues
-
+from dartlab.engines.financeEngine.pivot import buildAnnual, buildTimeseries
 
 STOCK = "005930"
 

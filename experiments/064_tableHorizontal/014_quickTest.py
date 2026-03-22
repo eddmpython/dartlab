@@ -1,12 +1,16 @@
 """Quick test of patched _horizontalizeTableBlock."""
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import re
+
 import polars as pl
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+
 from dartlab.engines.company.dart.company import Company
+from dartlab.engines.company.dart.docs.sections.pipeline import sections
+
 
 def _isPeriodCol(c):
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

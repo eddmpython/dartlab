@@ -10,6 +10,7 @@ from pathlib import Path
 # 002_segmentParse 모듈 임포트
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import importlib
+
 sp = importlib.import_module("002_segmentParse")
 
 DATA_DIR = Path("data/docsData")

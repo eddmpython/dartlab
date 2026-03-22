@@ -30,7 +30,11 @@ sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 # ── 시작: 004_analysis.py에서 복사 ──
 
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _normalizeHeader,
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _normalizeHeader,
+    splitSubtables,
 )
 
 _MULTI_YEAR_KW = {"당기", "전기", "전전기", "당반기", "전반기", "당분기", "전분기"}

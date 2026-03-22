@@ -277,10 +277,10 @@ def _printResults(df: pl.DataFrame) -> None:
 
     # 기업별 상세 (이상값 확인)
     print(f"\n[기업별 MAPE 상세 — 이상값 TOP 5]")
-        sorted_df = df.filter(pl.col("mapeGDP").is_not_null()).sort("mapeGDP", descending=True)
-        for row in sorted_df.head(5).iter_rows(named=True):
-            print(f"  {row['corpName']:12s} {row['year']} | "
-                  f"GDP={row['mapeGDP']:6.1f}% MR={row['mapeMR']:6.1f}%")
+    sorted_df = df.filter(pl.col("mapeGDP").is_not_null()).sort("mapeGDP", descending=True)
+    for row in sorted_df.head(5).iter_rows(named=True):
+        print(f"  {row['corpName']:12s} {row['year']} | "
+              f"GDP={row['mapeGDP']:6.1f}% MR={row['mapeMR']:6.1f}%")
 
 
 if __name__ == "__main__":

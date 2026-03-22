@@ -1,13 +1,16 @@
 """006의 hzTopic를 삼성전자 dividend에 직접 호출하여 0% 원인 확인."""
-import re, sys
+import re
+import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
+
 import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
 # 006의 코드를 그대로 exec로 로드
 import importlib.util
+
 spec = importlib.util.spec_from_file_location(
     "fastbench",
     "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/experiments/066_normalForm/006_fastBench.py",
@@ -16,6 +19,7 @@ mod = importlib.util.module_from_spec(spec)
 
 # main 실행 방지
 import unittest.mock
+
 with unittest.mock.patch.object(mod, '__name__', 'not_main'):
     spec.loader.exec_module(mod)
 

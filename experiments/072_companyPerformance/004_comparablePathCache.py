@@ -27,13 +27,15 @@
 실험일: 2026-03-19
 """
 
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 
 def main():
     import functools
+
     import dartlab
     from dartlab.engines.company.dart.docs.sections import pipeline
 

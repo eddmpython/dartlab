@@ -1,11 +1,12 @@
 """10개 종목 원재료/생산설비 섹션 구조 비교."""
 
-import sys
 import io
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

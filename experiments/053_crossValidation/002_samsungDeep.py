@@ -54,9 +54,9 @@ KEY_ACCOUNTS = [
 
 
 def main():
-    from dartlab.engines.company.dart.finance.pivot import buildAnnual
-    from dartlab.engines.company.dart.finance.mapper import AccountMapper
     from dartlab.engines.company.dart.docs.finance.summary.pipeline import fsSummary
+    from dartlab.engines.company.dart.finance.mapper import AccountMapper
+    from dartlab.engines.company.dart.finance.pivot import buildAnnual
 
     mapper = AccountMapper.get()
 

@@ -46,9 +46,10 @@
 
 import re
 import time
-import polars as pl
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
+
+import polars as pl
 
 
 def scan_all_major_holders() -> pl.DataFrame:

@@ -157,6 +157,7 @@ def _extractItemHeaders(soup) -> None:
 def htmlToText(html: str) -> str:
     """HTML → 텍스트+마크다운 변환 (eddmpython 패턴)"""
     import warnings
+
     from bs4 import XMLParsedAsHTMLWarning
     warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 

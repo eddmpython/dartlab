@@ -1,15 +1,15 @@
 """삼성전자 원재료 + 생산설비 테이블 상세 디버깅."""
 
-import sys
 import io
 import re
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-
 
 df = loadData("005930")
 years = sorted(df["year"].unique().to_list(), reverse=True)

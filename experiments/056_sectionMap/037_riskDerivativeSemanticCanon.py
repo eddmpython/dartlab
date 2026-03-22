@@ -47,7 +47,6 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 
-
 RE_MAJOR = re.compile(r"^([가-힣])\.\s+(.+)$")
 RE_MINOR = re.compile(r"^\((\d+)\)\s*(.+)$")
 RE_PAREN_LABEL = re.compile(r"^\(([^)]+)\)$")

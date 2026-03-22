@@ -35,6 +35,7 @@
 """
 
 import sys
+
 sys.path.insert(0, "src")
 
 import polars as pl
@@ -115,7 +116,7 @@ def buildOrderedIndex(c):
 
     reportRows = []
     if c._hasReport:
-        from dartlab.engines.company.dart.report.types import API_TYPES, API_TYPE_LABELS
+        from dartlab.engines.company.dart.report.types import API_TYPE_LABELS, API_TYPES
         existingTopics = {r["topic"] for r in financeStmts + docsRows}
         for rIdx, apiType in enumerate(API_TYPES):
             if apiType in existingTopics:

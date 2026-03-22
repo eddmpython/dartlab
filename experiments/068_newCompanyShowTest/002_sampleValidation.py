@@ -58,7 +58,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from dartlab import Company
 
-
 ROOT = Path(__file__).resolve().parent
 PROTO_PATH = ROOT / "001_newCompanyShowPrototype.py"
 

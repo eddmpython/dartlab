@@ -39,7 +39,6 @@ from dartlab.core.reportSelector import selectReport
 from dartlab.engines.company.dart.docs.sections.chunker import chunkRows
 from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
 
-
 _REPORT_KINDS = [
     ("annual", ""),
     ("Q1", "Q1"),

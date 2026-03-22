@@ -1,6 +1,7 @@
 """횡전개 파서 디버깅."""
 import re
 from pathlib import Path
+
 import polars as pl
 
 DATA_DIR = Path("data/docsData")

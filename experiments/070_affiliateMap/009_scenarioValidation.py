@@ -52,8 +52,8 @@
 
 import json
 import time
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 _parent = Path(__file__).resolve().parent
 _output = _parent / "output"

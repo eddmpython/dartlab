@@ -26,10 +26,10 @@
 
 실험일: 2026-03-08
 """
+import collections
 import os
 import re
 import sys
-import collections
 
 import polars as pl
 

@@ -4,11 +4,11 @@ import sys
 
 sys.path.insert(0, "src")
 
+from step08_inventoryParser import extractRawTables
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import selectReport
-
-from step08_inventoryParser import extractRawTables
 
 if __name__ == "__main__":
     df = loadData("005930")

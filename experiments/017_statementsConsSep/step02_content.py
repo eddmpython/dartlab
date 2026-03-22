@@ -11,7 +11,7 @@ sys.path.insert(0, "src")
 
 import polars as pl
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 
 

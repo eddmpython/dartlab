@@ -25,14 +25,16 @@
 실험일: 2026-03-11
 """
 
-import sys, re
+import re
+import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, r"C:\Users\MSI\OneDrive\Desktop\sideProject\dartlab\src")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-
 
 ROMAN_MAP = {
     "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,

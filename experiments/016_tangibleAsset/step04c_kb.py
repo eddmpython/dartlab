@@ -1,14 +1,14 @@
 """KB금융 디버깅."""
 
 import sys
+
 sys.path.insert(0, "src")
 
-from step03_parser import splitPeriodBlocks, splitCells, isMovementRow, isAssetCategory, normalizeLabel
+from step03_parser import isAssetCategory, isMovementRow, normalizeLabel, splitCells, splitPeriodBlocks
 
 from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-
+from dartlab.core.reportSelector import selectReport
 
 df = loadData("105560")
 years = sorted(df["year"].unique().to_list(), reverse=True)

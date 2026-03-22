@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import selectReport
 

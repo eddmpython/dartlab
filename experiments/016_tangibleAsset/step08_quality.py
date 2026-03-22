@@ -2,12 +2,14 @@
 
 import os
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport
-from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from step03_parser import findMovementTables, getTotalValue
+
+from dartlab.core.dataLoader import extractCorpName, loadData
+from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
+from dartlab.core.reportSelector import selectReport
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"
 

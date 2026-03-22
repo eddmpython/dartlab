@@ -29,7 +29,6 @@ import polars as pl
 
 from dartlab.engines.company.edgar.docs.sections.pipeline import sections
 
-
 SEMANTIC_PAIRS = {
     "riskFactors": ("item1ARiskFactors", "partIIItem1ARiskFactors"),
     "mdna": ("item7Mdna", "partIItem2Mdna"),

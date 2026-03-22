@@ -30,16 +30,19 @@
 실험일: 2026-03-19
 """
 
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 
 def main():
-    import polars as pl
-    import dartlab
-    from dartlab.engines.common.docs.diff import sectionsDiff, DiffResult, DiffEntry, DiffSummary
     import re
+
+    import polars as pl
+
+    import dartlab
+    from dartlab.engines.common.docs.diff import DiffEntry, DiffResult, DiffSummary, sectionsDiff
 
     c = dartlab.Company("005930")
     sec = c.docs.sections

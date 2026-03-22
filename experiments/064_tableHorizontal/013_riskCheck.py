@@ -1,16 +1,24 @@
 """Quick check: riskDerivative 000020 after strip patch."""
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import re
+
 import polars as pl
+
+from dartlab.engines.company.dart.company import Company
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _classifyStructure,
-    _parseMultiYear, _parseKeyValueOrMatrix,
+    _classifyStructure,
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
-from dartlab.engines.company.dart.company import Company
 
 sec = sections("000020")
 periodCols = [c for c in sec.columns if re.match(r"^\d{4}(Q[1-4])?$", c)]

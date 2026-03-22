@@ -1,9 +1,9 @@
 """
 003b: 개요 섹션 누락 디버깅 - 삼성전자/SK하이닉스
 """
+import io
 import re
 import sys
-import io
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")

@@ -27,8 +27,9 @@
 실험일: 2026-03-14
 """
 
-import time
 import sys
+import time
+
 sys.path.insert(0, "src")
 
 

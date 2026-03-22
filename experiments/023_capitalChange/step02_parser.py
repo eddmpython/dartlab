@@ -39,7 +39,6 @@ DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\d
 from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.reportSelector import selectReport
 
-
 # ──────────────────────────────────────────────
 # 유틸리티
 # ──────────────────────────────────────────────

@@ -30,7 +30,6 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.mapper import loadSectionMappings
 
-
 KEYWORDS = {
     "kwProduct": "제품|서비스",
     "kwRawMaterial": "원재료|생산설비",

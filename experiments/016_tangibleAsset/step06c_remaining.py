@@ -1,11 +1,12 @@
 """나머지 실패 케이스 raw 확인."""
 
 import sys
+
 sys.path.insert(0, "src")
 
 from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
+from dartlab.core.reportSelector import selectReport
 
 SAMPLES = [
     ("010130", "고려아연"),

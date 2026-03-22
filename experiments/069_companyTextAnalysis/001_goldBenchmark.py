@@ -48,12 +48,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from dartlab.core.dataLoader import _dataDir  # noqa: E402
 from dartlab.engines.company.dart.docs.sections.views import (  # noqa: E402
     retrievalBlocks,
     splitContextText,
     splitMarkdownTable,
 )
-from dartlab.core.dataLoader import _dataDir  # noqa: E402
 
 EXPERIMENT_DATE = "2026-03-18"
 EXPERIMENT_DIR = Path(__file__).resolve().parent

@@ -4,8 +4,7 @@ import sys
 
 sys.path.insert(0, "src")
 
-from dartlab.core.tableParser import extractTables, detectUnit
-
+from dartlab.core.tableParser import detectUnit, extractTables
 
 # SPAC BS content (482690 대신밸런스)
 content = """| 재무상태표 |

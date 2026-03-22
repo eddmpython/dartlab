@@ -32,7 +32,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
+import re
+
 import polars as pl
+
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
     _classifyStructure,
@@ -45,7 +48,6 @@ from dartlab.engines.company.dart.docs.sections.tableParser import (
     _parseMultiYear,
     splitSubtables,
 )
-import re
 
 
 def parseSingleCellTable(md: str, periodYear: int) -> list[dict]:

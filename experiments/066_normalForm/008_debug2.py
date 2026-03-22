@@ -1,15 +1,21 @@
 """핵심 디버그: hzTopic 내부에서 무엇이 실패하는지."""
-import re, sys
+import re
+import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
+
 import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
-from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _normalizeHeader,
-)
 from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.engines.company.dart.docs.sections.tableParser import (
+    _dataRows,
+    _headerCells,
+    _isJunk,
+    _normalizeHeader,
+    splitSubtables,
+)
 
 # ── 006에서 복사한 인라인 함수들 (필요 최소) ──
 _MULTI_YEAR_KW = {"당기", "전기", "전전기", "당반기", "전반기", "당분기", "전분기"}

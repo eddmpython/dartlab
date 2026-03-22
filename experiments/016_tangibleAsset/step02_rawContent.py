@@ -1,11 +1,12 @@
 """각 포맷 유형별 대표 기업의 raw 주석 내용 확인."""
 
 import sys
+
 sys.path.insert(0, "src")
 
 from dartlab.core.dataLoader import loadData
-from dartlab.core.reportSelector import selectReport
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
+from dartlab.core.reportSelector import selectReport
 
 SAMPLES = {
     "MOVEMENT_FULL": ("005930", "삼성전자"),

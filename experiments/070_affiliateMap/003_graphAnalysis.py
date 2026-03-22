@@ -56,12 +56,13 @@
 실험일: 2026-03-19
 """
 
-import time
-import polars as pl
-from collections import defaultdict
 import importlib.util
 import sys
+import time
+from collections import defaultdict
 from pathlib import Path
+
+import polars as pl
 
 _mod_path = Path(__file__).resolve().parent / "002_buildEdges.py"
 _spec = importlib.util.spec_from_file_location("_edges", str(_mod_path))

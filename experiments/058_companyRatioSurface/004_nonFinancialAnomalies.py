@@ -30,7 +30,6 @@
 from __future__ import annotations
 
 import polars as pl
-
 from _common import classifyStatus, kindMeta, localFinanceCodes, ratioSurfaceFrame
 
 

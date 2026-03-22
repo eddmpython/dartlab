@@ -5,6 +5,7 @@
 """
 import re
 from pathlib import Path
+
 import polars as pl
 
 DATA_DIR = Path("data/docsData")

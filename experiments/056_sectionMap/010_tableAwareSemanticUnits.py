@@ -33,7 +33,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 TARGET_TITLES = ["4. 매출 및 수주상황", "5. 위험관리 및 파생거래", "6. 주요계약 및 연구개발활동"]
 
 

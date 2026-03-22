@@ -46,7 +46,6 @@ import polars as pl
 
 import dartlab
 
-
 # 금액 추출 패턴
 # "약 300조 5,230억원", "매출액 2,587,849백만원", "3조 1,200억" 등
 AMOUNT_PATTERNS = [

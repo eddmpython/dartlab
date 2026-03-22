@@ -7,13 +7,16 @@
 """
 
 import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-from dartlab.core import loadData, buildIndex
 import polars as pl
+
+from dartlab.core import buildIndex, loadData
 
 sys.path.insert(0, "experiments/014_business")
 import importlib
+
 ext = importlib.import_module("002_sectionExtract")
 
 

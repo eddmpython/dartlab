@@ -43,9 +43,9 @@
 실험일: 2026-03-06
 """
 
-import polars as pl
 import re
 
+import polars as pl
 
 DATA_PATH = "data/docsData/005930.parquet"
 

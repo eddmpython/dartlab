@@ -44,7 +44,6 @@ from dartlab.engines.company.edgar.docs.fetch import (
 )
 from dartlab.engines.company.edgar.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
 
-
 SINCE_YEAR = 2009
 BATCH_SIZE = 25
 COOLDOWN_SECONDS = 8.0

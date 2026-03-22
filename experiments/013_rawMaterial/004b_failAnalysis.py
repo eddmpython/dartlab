@@ -1,13 +1,14 @@
 """실패 종목 분석 — 원재료/생산설비 섹션은 있지만 파싱 실패."""
 
-import sys
 import io
-import re
 import os
+import re
+import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 import polars as pl
+
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
 

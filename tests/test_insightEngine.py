@@ -4,7 +4,6 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.engines.common.finance.ratios import RatioResult
 from dartlab.engines.analysis.insight.anomaly import (
     _yoyChange,
     detectBalanceSheetShift,
@@ -42,6 +41,7 @@ from dartlab.engines.analysis.insight.types import (
 )
 from dartlab.engines.analysis.rank.rank import RankInfo
 from dartlab.engines.analysis.sector.types import Sector
+from dartlab.engines.common.finance.ratios import RatioResult
 
 
 class TestTypes:

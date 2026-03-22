@@ -24,11 +24,14 @@
 실험일: 2026-03-14
 """
 import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
 
-import polars as pl
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
+
+import polars as pl
+
 from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, normalizeSectionTitle
 
 # docs parquet 디렉토리 (두 곳 합산)

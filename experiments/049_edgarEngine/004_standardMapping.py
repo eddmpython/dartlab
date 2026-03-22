@@ -286,7 +286,7 @@ def verifyWithPivot(edgarDir: Path, fullMap: dict[str, str]):
     print(f"  003 피벗 결과 + 매핑 통합 검증 (AAPL)")
     print(f"{'='*70}")
 
-    from importlib.util import spec_from_file_location, module_from_spec
+    from importlib.util import module_from_spec, spec_from_file_location
     pivotPath = str(Path(__file__).parent / "003_pivotNormalize.py")
     spec = spec_from_file_location("pivot", pivotPath)
     mod = module_from_spec(spec)

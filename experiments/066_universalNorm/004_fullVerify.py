@@ -21,20 +21,31 @@
 실험일: 2026-03-18
 """
 
-import sys, re, time
-from pathlib import Path
+import re
+import sys
+import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
+from dartlab.core.dataLoader import _dataDir
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows, _classifyStructure,
-    _normalizeHeader, _normalizeItemName, _parseMultiYear, _parseKeyValueOrMatrix, _extractUnit,
+    _classifyStructure,
+    _dataRows,
+    _extractUnit,
+    _headerCells,
+    _isJunk,
+    _normalizeHeader,
+    _normalizeItemName,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
-from dartlab.core.dataLoader import _dataDir
 
 # 002에서 가져온 핵심 함수들
 _SUFFIX_RE = re.compile(r"(사업)?부문$")

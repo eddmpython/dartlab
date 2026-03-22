@@ -47,13 +47,13 @@
 실험일: 2026-03-19
 """
 
+import importlib.util
 import json
 import time
-from pathlib import Path
 from collections import Counter, defaultdict
+from pathlib import Path
 
 import polars as pl
-import importlib.util
 
 _parent = Path(__file__).resolve().parent
 _sp13 = importlib.util.spec_from_file_location("_m13", str(_parent / "013_consolidatedPipeline.py"))

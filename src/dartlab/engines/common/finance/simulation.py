@@ -15,12 +15,12 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
     getLatest,
     getTTM,
 )
-from dartlab.engines.analysis.sector.types import SectorParams
 
 # ══════════════════════════════════════
 # Layer 1: 거시경제 시나리오

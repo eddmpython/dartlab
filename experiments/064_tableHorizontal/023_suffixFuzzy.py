@@ -25,13 +25,16 @@
 실험일: 2026-03-17
 """
 
-import sys, re
+import re
+import sys
 from collections import defaultdict
+
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
 from rapidfuzz import fuzz
-from dartlab.engines.company.dart.company import Company
+
 from dartlab.core.dataLoader import _dataDir
+from dartlab.engines.company.dart.company import Company
 
 
 def _splitCompound(item: str) -> tuple[str, str]:

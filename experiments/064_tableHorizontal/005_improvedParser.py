@@ -36,16 +36,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 import re
 
 from dartlab.engines.company.dart.docs.sections.tableParser import (
+    _STOCK_TYPES,
     _classifyStructure,
     _dataRows,
     _extractUnit,
     _headerCells,
     _isJunk,
     _normalizeItemName,
-    _STOCK_TYPES,
     splitSubtables,
 )
-
 
 # ── 개선된 multi_year 파서 ──
 
@@ -240,8 +239,9 @@ def parseCellSubtablesV2(md: str, periodYear: int) -> list[ParsedSubtable]:
 
 
 if __name__ == "__main__":
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
     import polars as pl
+
+    from dartlab.engines.company.dart.docs.sections.pipeline import sections
 
     # ── 과제1 검증: dividend 당기 추출 개선 ──
     print("=" * 70)

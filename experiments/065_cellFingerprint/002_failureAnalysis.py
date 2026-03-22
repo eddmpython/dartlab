@@ -24,22 +24,24 @@
 """
 
 import sys
+
 sys.path.insert(0, r"C:\Users\MSI\OneDrive\Desktop\sideProject\dartlab\src")
 
 import re
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+
 import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
+    _dataRows,
     _headerCells,
     _isJunk,
-    _dataRows,
-    _classifyStructure,
-    _parseMultiYear,
-    _parseKeyValueOrMatrix,
-    _normalizeItemName,
     _normalizeHeader,
+    _normalizeItemName,
+    _parseKeyValueOrMatrix,
+    _parseMultiYear,
+    splitSubtables,
 )
 
 

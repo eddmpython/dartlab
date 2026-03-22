@@ -47,14 +47,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 def run_benchmark(qa_subset: list[dict], provider_name: str, *, timeout: int = 60) -> list[dict]:
     """주어진 provider로 QA subset에 대해 답변 생성 + 채점."""
-    from dartlab.engines.ai.types import LLMConfig
-    from dartlab.engines.ai.providers import create_provider
-    from dartlab.engines.ai.pipeline import run_pipeline
-    from dartlab.engines.ai.prompts import SYSTEM_PROMPT_KR
-    import dartlab
-
     # 002 모듈 동적 로드
     import importlib.util
+
+    import dartlab
+    from dartlab.engines.ai.pipeline import run_pipeline
+    from dartlab.engines.ai.prompts import SYSTEM_PROMPT_KR
+    from dartlab.engines.ai.providers import create_provider
+    from dartlab.engines.ai.types import LLMConfig
 
     _spec = importlib.util.spec_from_file_location(
         "_scoring", Path(__file__).parent / "002_scoringRubric.py"

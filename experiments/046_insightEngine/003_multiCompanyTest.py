@@ -34,13 +34,14 @@
 실험일: 2026-03-09
 """
 
-import sys
 import importlib.util
+import sys
 from pathlib import Path
 
 sys.path.insert(0, "src")
 
 import dartlab
+
 dartlab.verbose = False
 
 protoPath = Path(__file__).parent / "002_insightPrototype.py"

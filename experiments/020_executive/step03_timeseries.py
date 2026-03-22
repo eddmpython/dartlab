@@ -38,18 +38,17 @@ DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\d
 
 sys.path.insert(0, os.path.dirname(__file__))
 from step02_parser import (
-    findExecutiveSection,
-    extractTableBlocks,
-    classifyBlock,
-    parseExecutiveBlock,
-    aggregateExecutives,
-    parseUnregisteredPayBlock,
-    _parseFloat,
     _cellsFromLine,
-    _isSeparator,
     _flatText,
+    _isSeparator,
+    _parseFloat,
+    aggregateExecutives,
+    classifyBlock,
+    extractTableBlocks,
+    findExecutiveSection,
+    parseExecutiveBlock,
+    parseUnregisteredPayBlock,
 )
-
 
 # ──────────────────────────────────────────────
 # 직원현황 합계행 파서 (개선)

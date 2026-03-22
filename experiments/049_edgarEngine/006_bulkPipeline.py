@@ -37,13 +37,13 @@
 from __future__ import annotations
 
 import json
-import time
-import shutil
-import zipfile
 import multiprocessing
+import shutil
+import time
+import zipfile
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import polars as pl
 import requests

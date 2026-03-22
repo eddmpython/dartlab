@@ -8,11 +8,12 @@
 """
 
 import sys
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-from dartlab.core import loadData, buildIndex
 import polars as pl
 
+from dartlab.core import buildIndex, loadData
 
 idx = buildIndex()
 codes = idx["stockCode"].to_list()

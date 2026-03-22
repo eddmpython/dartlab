@@ -46,7 +46,6 @@ from dartlab.engines.company.dart.docs.sections.textStructure import (
     _RE_SHORT_PAREN,
 )
 
-
 # ── 원본 필터 ──
 
 _RE_NOISE_ORIG = re.compile(r"^(?:단위|주\d|참고|출처|비고)\b")

@@ -31,7 +31,6 @@ import polars as pl
 from dartlab import config
 from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
 
-
 TARGETS = ["AAPL", "AMZN", "A", "AA"]
 
 

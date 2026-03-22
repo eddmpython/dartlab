@@ -1,12 +1,12 @@
 """실패 케이스 변동표 위치 탐색."""
 
 import sys
+
 sys.path.insert(0, "src")
 
-from dartlab.core.dataLoader import loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport
+from dartlab.core.dataLoader import extractCorpName, loadData
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
-
+from dartlab.core.reportSelector import selectReport
 
 FAILS = [
     ("207940", "삼성바이오로직스"),

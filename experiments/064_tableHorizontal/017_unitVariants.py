@@ -14,9 +14,9 @@
 실험일: 2026-03-17
 """
 
-import sys
 import re
-from collections import defaultdict, Counter
+import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
@@ -25,10 +25,10 @@ import polars as pl
 
 from dartlab.engines.company.dart.docs.sections.pipeline import sections
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables,
+    _classifyStructure,
     _headerCells,
     _isJunk,
-    _classifyStructure,
+    splitSubtables,
 )
 
 

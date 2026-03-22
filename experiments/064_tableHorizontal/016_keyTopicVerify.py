@@ -1,11 +1,14 @@
 """10종목 핵심 topic 품질 검증."""
-import sys
 import re
+import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
+
 from dartlab.engines.company.dart.company import Company
+
 
 def _isPeriodCol(c):
     return bool(re.match(r"^\d{4}(Q[1-4])?$", c))

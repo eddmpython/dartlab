@@ -36,10 +36,12 @@ import polars as pl
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
 from dartlab.engines.company.dart.docs.sections.tableParser import (
-    splitSubtables, _headerCells, _isJunk, _dataRows,
+    _dataRows,
+    _headerCells,
+    _isJunk,
     _normalizeHeader,
+    splitSubtables,
 )
-
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Normal Form 데이터 구조 (002에서 가져옴, 최소 수정)

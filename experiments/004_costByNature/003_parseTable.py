@@ -33,8 +33,8 @@ import polars as pl
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.core.tableParser import extractAccounts, parseAmount
 from dartlab.core.reportSelector import selectReport
+from dartlab.core.tableParser import extractAccounts, parseAmount
 
 DATA_DIR = Path("data/docsData")
 

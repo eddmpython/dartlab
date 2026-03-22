@@ -55,15 +55,16 @@
 실험일: 2026-03-19
 """
 
+import importlib.util
 import re
 import time
-import polars as pl
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
+
+import polars as pl
 
 from dartlab.core.dataLoader import _dataDir
 
-import importlib.util
 _parent = Path(__file__).resolve().parent
 _sp2 = importlib.util.spec_from_file_location("_e2", str(_parent / "002_buildEdges.py"))
 _m2 = importlib.util.module_from_spec(_sp2); _sp2.loader.exec_module(_m2)

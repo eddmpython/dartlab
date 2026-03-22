@@ -15,14 +15,16 @@
 실험일: 2026-03-18
 """
 
-import sys, re
-from collections import defaultdict, Counter
+import re
+import sys
+from collections import Counter, defaultdict
+
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
 from rapidfuzz import fuzz
-from dartlab.engines.company.dart.company import Company
-from dartlab.core.dataLoader import _dataDir
 
+from dartlab.core.dataLoader import _dataDir
+from dartlab.engines.company.dart.company import Company
 
 _BRACKET_RE = re.compile(r"\([^)]*\)")
 # 날짜/연도/인명 패턴 — 이 패턴이 괄호 안에 있으면 통합 금지

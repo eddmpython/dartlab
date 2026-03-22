@@ -53,10 +53,10 @@ WATCH_RATIOS = ["roe", "debtRatio", "operatingMargin", "revenueTTM", "totalAsset
 
 def collectRatioTimeSeries(*, maxCompanies: int | None = None, verbose: bool = True) -> pl.DataFrame:
     """전체 종목의 연도별 핵심 비율 시계열 수집."""
+    import dartlab
+    from dartlab.engines.analysis.sector.classifier import classify
     from dartlab.engines.common.finance.ratios import calcRatios
     from dartlab.engines.company.dart.finance.pivot import buildTimeseries
-    from dartlab.engines.analysis.sector.classifier import classify
-    import dartlab
 
     kindDf = dartlab.listing()
     codes = kindDf["종목코드"].to_list()

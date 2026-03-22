@@ -14,8 +14,8 @@ sys.path.insert(0, "src")
 
 import polars as pl
 
-from dartlab.core.dataLoader import PERIOD_KINDS, loadData, extractCorpName
-from dartlab.core.reportSelector import selectReport, parsePeriodKey
+from dartlab.core.dataLoader import PERIOD_KINDS, extractCorpName, loadData
+from dartlab.core.reportSelector import parsePeriodKey, selectReport
 from dartlab.core.tableParser import extractAccounts
 
 DATA_DIR = r"C:\Users\MSI\OneDrive\Desktop\sideProject\nicegui\eddmpython\data\dartData\docsData"

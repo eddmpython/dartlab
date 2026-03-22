@@ -27,15 +27,15 @@
 
 import re
 import sys
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import polars as pl
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.core.tableParser import parseAmount, detectUnit
 from dartlab.core.reportSelector import selectReport
+from dartlab.core.tableParser import detectUnit, parseAmount
 
 DATA_DIR = Path("data/docsData")
 
