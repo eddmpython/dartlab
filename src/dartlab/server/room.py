@@ -76,9 +76,7 @@ class Room:
         self.members[host.member_id] = host
 
     @staticmethod
-    def _create_member(
-        name: str, *, role: str = "viewer", access_level: str = "readonly"
-    ) -> RoomMember:
+    def _create_member(name: str, *, role: str = "viewer", access_level: str = "readonly") -> RoomMember:
         return RoomMember(
             member_id=secrets.token_hex(4),
             name=name,
@@ -94,9 +92,7 @@ class Room:
             member = self._create_member(name, access_level=access_level)
             self.members[member.member_id] = member
 
-        await self.broadcast(
-            "member_join", member.info(), exclude=member.member_id
-        )
+        await self.broadcast("member_join", member.info(), exclude=member.member_id)
         logger.info("[ROOM] %s 참여 (%s)", name, member.member_id[:4])
         return member
 

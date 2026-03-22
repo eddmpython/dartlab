@@ -30,13 +30,21 @@ def _openai_tools_to_anthropic(tools: list[dict]) -> list[dict]:
     return result
 
 
-def _split_system_and_user(messages: list[dict]) -> tuple[str, list[dict]]:
-    """system 메시지를 분리하고 Anthropic 형식 user 메시지 리스트 반환."""
-    system_msg = ""
+def _split_system_and_user(messages: list[dict]) -> tuple[str | list[dict], list[dict]]:
+    """system 메시지를 분리하고 Anthropic 형식 user 메시지 리스트 반환.
+
+    system이 cache_control 블록 리스트면 그대로 반환 (prompt caching용).
+    """
+    system_msg: str | list[dict] = ""
     user_messages = []
     for m in messages:
         if m["role"] == "system":
-            system_msg = m["content"] if isinstance(m["content"], str) else m["content"]
+            content = m["content"]
+            # cache_control 블록 리스트면 그대로 사용 (Anthropic prompt caching)
+            if isinstance(content, list):
+                system_msg = content
+            else:
+                system_msg = content
         else:
             user_messages.append(m)
     return system_msg, user_messages

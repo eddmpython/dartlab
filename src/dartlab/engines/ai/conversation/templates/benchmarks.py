@@ -69,9 +69,7 @@ def render_benchmark(key: str) -> str:
 
 
 # 렌더링 캐시 — 기존 코드 호환용
-_INDUSTRY_BENCHMARKS: dict[str, str] = {
-    key: render_benchmark(key) for key in BENCHMARK_DATA
-}
+_INDUSTRY_BENCHMARKS: dict[str, str] = {key: render_benchmark(key) for key in BENCHMARK_DATA}
 
 
 # KRX 업종명 → 벤치마크 키 매핑

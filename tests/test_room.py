@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -15,9 +13,7 @@ from dartlab.server.room import (
     QUEUE_MAX_SIZE,
     Room,
     RoomManager,
-    room_manager,
 )
-
 
 # ---------------------------------------------------------------------------
 # Room 기본 기능

@@ -224,6 +224,7 @@ def _ensure_qrcode() -> bool:
     """qrcode 패키지가 없으면 설치 여부를 묻는다."""
     try:
         import qrcode  # noqa: F401
+
         return True
     except ImportError:
         pass
@@ -483,7 +484,7 @@ def _start_messaging_adapters(args) -> list:
         adapters.append(adapter)
         t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
         t.start()
-        print(f"  Telegram 봇 시작됨")
+        print("  Telegram 봇 시작됨")
 
     if getattr(args, "slack", None):
         app_token = getattr(args, "slack_app_token", None)
@@ -496,7 +497,7 @@ def _start_messaging_adapters(args) -> list:
             adapters.append(adapter)
             t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
             t.start()
-            print(f"  Slack 봇 시작됨")
+            print("  Slack 봇 시작됨")
 
     if getattr(args, "discord", None):
         from dartlab.channel.adapters import create_adapter
@@ -505,7 +506,7 @@ def _start_messaging_adapters(args) -> list:
         adapters.append(adapter)
         t = threading.Thread(target=_run_adapter, args=(adapter,), daemon=True)
         t.start()
-        print(f"  Discord 봇 시작됨")
+        print("  Discord 봇 시작됨")
 
     return adapters
 

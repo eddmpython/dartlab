@@ -25,13 +25,13 @@ from .templates.analysis_rules import (
     QUESTION_TYPE_MAP as _QUESTION_TYPE_MAP,
 )
 from .templates.analysis_rules import (
-    TOPIC_COMPACT as _TOPIC_COMPACT,
-)
-from .templates.analysis_rules import (
     REPORT_PROMPT as _REPORT_PROMPT,
 )
 from .templates.analysis_rules import (
     REPORT_PROMPT_COMPACT as _REPORT_PROMPT_COMPACT,
+)
+from .templates.analysis_rules import (
+    TOPIC_COMPACT as _TOPIC_COMPACT,
 )
 from .templates.analysis_rules import (
     TOPIC_PROMPTS as _TOPIC_PROMPTS,
@@ -135,7 +135,7 @@ def build_system_prompt(
     compact: bool = False,
     report_mode: bool = False,
 ) -> str:
-    """시스템 프롬프트 조립.
+    """시스템 프롬프트 조립 (단일 문자열 반환).
 
     Args:
             custom: 사용자 지정 프롬프트 (있으면 이것만 사용)
@@ -147,82 +147,118 @@ def build_system_prompt(
             compact: True면 소형 모델용 간결 프롬프트 (Ollama)
             report_mode: True면 전문 분석보고서 구조 프롬프트 추가
     """
+    static, dynamic = build_system_prompt_parts(
+        custom=custom,
+        lang=lang,
+        included_modules=included_modules,
+        sector=sector,
+        question_type=question_type,
+        question_types=question_types,
+        compact=compact,
+        report_mode=report_mode,
+    )
+    if dynamic:
+        return static + "\n" + dynamic
+    return static
+
+
+def build_system_prompt_parts(
+    custom: str | None = None,
+    lang: str = "ko",
+    included_modules: list[str] | None = None,
+    sector: str | None = None,
+    question_type: str | None = None,
+    question_types: list[str] | None = None,
+    compact: bool = False,
+    report_mode: bool = False,
+) -> tuple[str, str]:
+    """시스템 프롬프트를 (정적, 동적) 2파트로 분리 반환.
+
+    정적 부분: base + 벤치마크 + 토픽 + 교차검증 + Few-shot (캐시 대상)
+    동적 부분: report_mode + 플러그인 (매 요청 변경 가능)
+
+    Claude prompt caching의 cache_control breakpoint를 적용할 때
+    정적 부분 끝에 마커를 삽입하면 캐시 히트율이 극대화된다.
+    """
     if custom:
-        return custom
+        return custom, ""
 
     q_types = question_types or ([question_type] if question_type else [])
 
     if compact:
         base = SYSTEM_PROMPT_COMPACT
-        appended: list[str] = []
+        static_parts: list[str] = []
+        dynamic_parts: list[str] = []
 
         benchmark_key = _match_sector(sector) if sector else None
         if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
-            appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+            static_parts.append(_INDUSTRY_BENCHMARKS[benchmark_key])
         elif "일반" in _INDUSTRY_BENCHMARKS:
-            appended.append(_INDUSTRY_BENCHMARKS["일반"])
+            static_parts.append(_INDUSTRY_BENCHMARKS["일반"])
 
         if included_modules:
             module_set = set(included_modules)
             for _tname, (trigger_modules, prompt_text) in _TOPIC_COMPACT.items():
                 if module_set & trigger_modules:
-                    appended.append(prompt_text)
+                    static_parts.append(prompt_text)
 
         if included_modules:
             fs_modules = {"BS", "IS", "CF"}
             if fs_modules & set(included_modules):
-                appended.append(_CROSS_VALIDATION_COMPACT)
+                static_parts.append(_CROSS_VALIDATION_COMPACT)
 
         for qt in q_types[:1]:
             if qt in _FEW_SHOT_COMPACT:
-                appended.append(_FEW_SHOT_COMPACT[qt])
+                static_parts.append(_FEW_SHOT_COMPACT[qt])
 
+        # 동적: report_mode + 플러그인
         if report_mode:
-            appended.append(_REPORT_PROMPT_COMPACT)
+            dynamic_parts.append(_REPORT_PROMPT_COMPACT)
 
-        appended.append(
+        dynamic_parts.append(
             "\n플러그인: 사용자가 '플러그인 만들어줘'하면 create_plugin 도구 사용. "
             "플러그인 추천 힌트가 있으면 답변 끝에 안내."
         )
 
-        if appended:
-            return base + "\n".join(appended)
-        return base
+        static = base + "\n".join(static_parts) if static_parts else base
+        dynamic = "\n".join(dynamic_parts)
+        return static, dynamic
 
     base = SYSTEM_PROMPT_KR if lang == "ko" else SYSTEM_PROMPT_EN
-    appended = []
+    static_parts = []
+    dynamic_parts = []
 
+    # 정적: 벤치마크 + 토픽 + 교차검증 + Few-shot
     benchmark_key = _match_sector(sector) if sector else None
     if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
-        appended.append(_INDUSTRY_BENCHMARKS[benchmark_key])
+        static_parts.append(_INDUSTRY_BENCHMARKS[benchmark_key])
     elif "일반" in _INDUSTRY_BENCHMARKS:
-        appended.append(_INDUSTRY_BENCHMARKS["일반"])
+        static_parts.append(_INDUSTRY_BENCHMARKS["일반"])
 
     if included_modules:
         module_set = set(included_modules)
         for _topic_name, (trigger_modules, prompt_text) in _TOPIC_PROMPTS.items():
             if module_set & trigger_modules:
-                appended.append(prompt_text)
+                static_parts.append(prompt_text)
 
     if included_modules:
         fs_modules = {"BS", "IS", "CF"}
         if fs_modules & set(included_modules):
-            appended.append(_CROSS_VALIDATION_RULES)
+            static_parts.append(_CROSS_VALIDATION_RULES)
 
     for qt in q_types[:2]:
         if qt in _FEW_SHOT_EXAMPLES:
-            appended.append(_FEW_SHOT_EXAMPLES[qt])
+            static_parts.append(_FEW_SHOT_EXAMPLES[qt])
 
+    # 동적: report_mode + 플러그인
     if report_mode:
-        appended.append(_REPORT_PROMPT)
+        dynamic_parts.append(_REPORT_PROMPT)
 
-    # 플러그인 시스템 안내 (도구 호출 가능 환경에서만)
-    appended.append(_PLUGIN_SYSTEM_PROMPT)
+    dynamic_parts.append(_PLUGIN_SYSTEM_PROMPT)
 
-    if appended:
-        return base + "\n".join(appended)
-
-    return base
+    static = base + "\n".join(static_parts) if static_parts else base
+    dynamic = "\n".join(dynamic_parts)
+    return static, dynamic
 
 
 # ══════════════════════════════════════

@@ -20,7 +20,12 @@ from dartlab.engines.ai.conversation.prompts import _classify_question
 
 _log = logging.getLogger(__name__)
 _PIPELINE_ERRORS = (
-    AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError,
+    AttributeError,
+    KeyError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
     pl.exceptions.PolarsError,
 )
 
@@ -531,9 +536,7 @@ def _run_red_flags(company: Any, tables: list[str]) -> str | None:
             if aud is not None and hasattr(aud, "auditors") and len(getattr(aud, "auditors", [])) >= 2:
                 auditors = aud.auditors
                 if auditors[-1] != auditors[-2]:
-                    flags.append(
-                        f"- 🔴 **감사인 교체**: {auditors[-2]} → {auditors[-1]} ({aud.years[-1]}년)"
-                    )
+                    flags.append(f"- 🔴 **감사인 교체**: {auditors[-2]} → {auditors[-1]} ({aud.years[-1]}년)")
     except _PIPELINE_ERRORS:
         pass
 
@@ -607,9 +610,7 @@ def _run_red_flags(company: Any, tables: list[str]) -> str | None:
                         if ni_v is not None and ocf_v is not None and ocf_v < ni_v:
                             count += 1
                     if count == 3:
-                        flags.append(
-                            "- 🔴 **3년 연속 영업CF < 순이익**: 발생주의 이익 과대 가능성 (Accrual 의심)"
-                        )
+                        flags.append("- 🔴 **3년 연속 영업CF < 순이익**: 발생주의 이익 과대 가능성 (Accrual 의심)")
     except _PIPELINE_ERRORS:
         pass
 
@@ -621,9 +622,7 @@ def _run_red_flags(company: Any, tables: list[str]) -> str | None:
         if ratios is not None:
             cr = getattr(ratios, "currentRatio", None)
             if cr is not None and cr < 100:
-                flags.append(
-                    f"- 🟠 **유동비율 {cr:.0f}%**: 100% 미만 → 단기 유동성 리스크"
-                )
+                flags.append(f"- 🟠 **유동비율 {cr:.0f}%**: 100% 미만 → 단기 유동성 리스크")
     except _PIPELINE_ERRORS:
         pass
 

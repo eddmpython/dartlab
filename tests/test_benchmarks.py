@@ -54,9 +54,7 @@ def test_sector_map_covers_all_benchmarks():
 
     benchmark_keys = set(BENCHMARK_DATA.keys())
     for sector, mapped_key in _SECTOR_MAP.items():
-        assert mapped_key in benchmark_keys, (
-            f"_SECTOR_MAP['{sector}'] = '{mapped_key}'가 BENCHMARK_DATA에 없음"
-        )
+        assert mapped_key in benchmark_keys, f"_SECTOR_MAP['{sector}'] = '{mapped_key}'가 BENCHMARK_DATA에 없음"
 
 
 def test_industry_benchmarks_cache_matches_render():

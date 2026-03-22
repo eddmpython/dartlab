@@ -34,13 +34,11 @@ _QUESTION_MODULES: dict[str, list[str]] = {
         "auditSystem",
         "shareholderMeeting",
     ],
-    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx",
-              "riskFactor", "rawMaterial"],
+    "리스크": ["contingentLiability", "sanction", "riskDerivative", "relatedPartyTx", "riskFactor", "rawMaterial"],
     "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising"],
     "종합": ["dividend", "employee", "majorHolder", "audit", "rnd", "segments"],
     "공시": [],
-    "사업": ["productService", "segments", "companyHistory", "salesOrder",
-            "rawMaterial", "businessOverview"],
+    "사업": ["productService", "segments", "companyHistory", "salesOrder", "rawMaterial", "businessOverview"],
 }
 
 _ALWAYS_INCLUDE_MODULES = {"employee"}

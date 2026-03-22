@@ -512,7 +512,10 @@ def _analyze_inner(
             context_text = context_text + pipeline_result
 
     # ── 11. 프롬프트 조립 ──
-    from dartlab.engines.ai.conversation.prompts import _classify_question, build_system_prompt
+    from dartlab.engines.ai.conversation.prompts import (
+        _classify_question,
+        build_system_prompt_parts,
+    )
 
     sector = None
     if company is not None:
@@ -521,7 +524,7 @@ def _analyze_inner(
         sector = _get_sector(company)
 
     q_type = _classify_question(question)
-    system = build_system_prompt(
+    static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
         included_modules=_included_tables,
         sector=sector,
@@ -532,13 +535,23 @@ def _analyze_inner(
     )
 
     if dialogue_policy:
-        system = system + "\n\n" + dialogue_policy
+        dynamic_part = dynamic_part + "\n\n" + dialogue_policy if dynamic_part else dialogue_policy
+
+    system = static_part + "\n" + dynamic_part if dynamic_part else static_part
 
     if emit_system_prompt:
         yield AnalysisEvent("system_prompt", {"text": system})
 
-    # ── 12. Messages 조립 ──
-    messages: list[dict[str, str]] = [{"role": "system", "content": system}]
+    # ── 12. Messages 조립 (Claude prompt caching 적용) ──
+    # Claude provider면 정적/동적 분리 → cache_control 블록으로 전달
+    if resolved_provider == "claude" and dynamic_part:
+        system_content: str | list[dict] = [
+            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": dynamic_part},
+        ]
+    else:
+        system_content = system
+    messages: list[dict] = [{"role": "system", "content": system_content}]
 
     if history_messages:
         messages.extend(history_messages)
@@ -615,5 +628,3 @@ def _analyze_inner(
             if year_range:
                 meta_update["dataYearRange"] = year_range
         yield AnalysisEvent("meta", meta_update)
-
-

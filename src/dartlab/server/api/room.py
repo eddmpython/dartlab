@@ -138,17 +138,20 @@ async def room_ask(req: RoomAskRequest, request: Request):
     room._analyzing = True
     try:
         # 시작 브로드캐스트
-        await room.broadcast("ask_start", {
-            "memberId": member.member_id,
-            "name": member.name,
-            "question": req.question,
-            "company": req.company,
-        })
+        await room.broadcast(
+            "ask_start",
+            {
+                "memberId": member.member_id,
+                "name": member.name,
+                "question": req.question,
+                "company": req.company,
+            },
+        )
 
         # 기존 스트리밍 인프라 재사용
-        from ..streaming import stream_ask
         from ..models import AskRequest
         from ..resolve import try_resolve_company
+        from ..streaming import stream_ask
 
         ask_req = AskRequest(
             company=req.company,
@@ -175,10 +178,7 @@ async def room_ask(req: RoomAskRequest, request: Request):
 
             # 네비게이션 상태 업데이트 (meta 이벤트에서 종목 정보 추출)
             if event_name == "meta":
-                room.nav_state.update({
-                    k: v for k, v in data.items()
-                    if k in ("stockCode", "corpName")
-                })
+                room.nav_state.update({k: v for k, v in data.items() if k in ("stockCode", "corpName")})
 
     finally:
         room._analyzing = False
@@ -196,11 +196,14 @@ async def room_navigate(req: RoomNavigateRequest, request: Request):
     nav_update = {k: v for k, v in req.model_dump().items() if v is not None}
     room.nav_state.update(nav_update)
 
-    await room.broadcast("navigate", {
-        "memberId": member.member_id,
-        "name": member.name,
-        **nav_update,
-    })
+    await room.broadcast(
+        "navigate",
+        {
+            "memberId": member.member_id,
+            "name": member.name,
+            **nav_update,
+        },
+    )
     return {"status": "ok"}
 
 
@@ -224,11 +227,14 @@ async def room_react(req: RoomReactRequest, request: Request):
     room = _get_room()
     member = _get_member(request, room)
 
-    await room.broadcast("react", {
-        "memberId": member.member_id,
-        "name": member.name,
-        "emoji": req.emoji,
-        "targetEvent": req.targetEvent,
-        "timestamp": time.time(),
-    })
+    await room.broadcast(
+        "react",
+        {
+            "memberId": member.member_id,
+            "name": member.name,
+            "emoji": req.emoji,
+            "targetEvent": req.targetEvent,
+            "timestamp": time.time(),
+        },
+    )
     return {"status": "ok"}
