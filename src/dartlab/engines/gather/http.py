@@ -1,14 +1,19 @@
-"""Gather HTTP 클라이언트 — 도메인별 rate limit + semaphore + retry."""
+"""Gather HTTP 클라이언트 — 도메인별 rate limit + semaphore + retry (async).
+
+다른 도메인: asyncio.gather() 병렬
+같은 도메인: asyncio.Semaphore + sliding window rate limiter 순차
+"""
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import random
-import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
-import requests
+import httpx
 
 from .types import DomainConfig, RateLimitExceededError, SourceUnavailableError
 
@@ -42,12 +47,32 @@ _USER_AGENTS = [
 
 
 # ══════════════════════════════════════
-# Rate Limiter + Semaphore
+# Event loop 안전 실행 헬퍼
+# ══════════════════════════════════════
+
+_thread_pool = ThreadPoolExecutor(max_workers=1)
+
+
+def run_async(coro):
+    """코루틴을 동기 컨텍스트에서 안전하게 실행.
+
+    이미 event loop가 실행 중이면(FastAPI/Slack 등) 별도 스레드에서 새 loop 생성.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    # 이미 loop 실행 중 → 별도 스레드
+    return _thread_pool.submit(asyncio.run, coro).result()
+
+
+# ══════════════════════════════════════
+# Async Rate Limiter + Semaphore
 # ══════════════════════════════════════
 
 
-class _DomainRateLimiter:
-    """도메인별 sliding window rate limiter. Thread-safe."""
+class _AsyncRateLimiter:
+    """도메인별 sliding window rate limiter (async)."""
 
     __slots__ = ("_domain", "_rpm", "_window", "_timestamps", "_lock")
 
@@ -56,12 +81,12 @@ class _DomainRateLimiter:
         self._rpm = rpm
         self._window = 60.0
         self._timestamps: list[float] = []
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
 
-    def acquire(self, timeout: float = 30.0) -> None:
+    async def acquire(self, timeout: float = 30.0) -> None:
         deadline = time.monotonic() + timeout
         while True:
-            with self._lock:
+            async with self._lock:
                 now = time.monotonic()
                 cutoff = now - self._window
                 self._timestamps = [t for t in self._timestamps if t > cutoff]
@@ -71,65 +96,53 @@ class _DomainRateLimiter:
                 wait = self._timestamps[0] + self._window - now
             if time.monotonic() > deadline:
                 raise RateLimitExceededError(f"{self._domain} RPM={self._rpm} 초과")
-            time.sleep(min(wait + 0.05, 1.0))
-
-
-class _DomainSemaphore:
-    """도메인별 동시 연결 제한."""
-
-    __slots__ = ("_semaphore",)
-
-    def __init__(self, max_concurrent: int = 2) -> None:
-        self._semaphore = threading.Semaphore(max_concurrent)
-
-    def acquire(self, timeout: float = 30.0) -> bool:
-        return self._semaphore.acquire(timeout=timeout)
-
-    def release(self) -> None:
-        self._semaphore.release()
+            await asyncio.sleep(min(wait + 0.05, 1.0))
 
 
 # ══════════════════════════════════════
-# 통합 HTTP 클라이언트
+# 통합 HTTP 클라이언트 (async)
 # ══════════════════════════════════════
 
 
 class GatherHttpClient:
     """도메인별 rate limit + semaphore + retry + connection pooling.
 
-    - 같은 도메인: RPM 제한 내 순차
-    - 다른 도메인: ThreadPoolExecutor 병렬 (caller 측에서)
-    - requests.Session 재사용
+    - 같은 도메인: RPM 제한 내 + asyncio.Semaphore 동시 연결 제한
+    - 다른 도메인: asyncio.gather()로 진짜 병렬 (caller 측)
+    - httpx.AsyncClient로 커넥션 풀링
     - 지수 백오프 재시도 (최대 3회)
     """
 
     def __init__(self) -> None:
-        self._session = requests.Session()
-        self._session.headers["Accept"] = "text/html,application/json"
-        self._session.headers["Accept-Language"] = "ko-KR,ko;q=0.9,en;q=0.8"
-        self._session.headers["User-Agent"] = random.choice(_USER_AGENTS)
-        self._limiters: dict[str, _DomainRateLimiter] = {}
-        self._semaphores: dict[str, _DomainSemaphore] = {}
-        self._lock = threading.Lock()
+        self._client = httpx.AsyncClient(
+            timeout=httpx.Timeout(10.0, connect=5.0),
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            headers={
+                "Accept": "text/html,application/json",
+                "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+                "User-Agent": random.choice(_USER_AGENTS),
+            },
+            follow_redirects=True,
+        )
+        self._limiters: dict[str, _AsyncRateLimiter] = {}
+        self._semaphores: dict[str, asyncio.Semaphore] = {}
 
     def _get_policy(self, domain: str) -> DomainConfig:
         return DOMAIN_POLICY.get(domain, _DEFAULT_POLICY)
 
-    def _get_limiter(self, domain: str) -> _DomainRateLimiter:
-        with self._lock:
-            if domain not in self._limiters:
-                policy = self._get_policy(domain)
-                self._limiters[domain] = _DomainRateLimiter(domain, policy.rpm)
-            return self._limiters[domain]
+    def _get_limiter(self, domain: str) -> _AsyncRateLimiter:
+        if domain not in self._limiters:
+            policy = self._get_policy(domain)
+            self._limiters[domain] = _AsyncRateLimiter(domain, policy.rpm)
+        return self._limiters[domain]
 
-    def _get_semaphore(self, domain: str) -> _DomainSemaphore:
-        with self._lock:
-            if domain not in self._semaphores:
-                policy = self._get_policy(domain)
-                self._semaphores[domain] = _DomainSemaphore(policy.concurrency)
-            return self._semaphores[domain]
+    def _get_semaphore(self, domain: str) -> asyncio.Semaphore:
+        if domain not in self._semaphores:
+            policy = self._get_policy(domain)
+            self._semaphores[domain] = asyncio.Semaphore(policy.concurrency)
+        return self._semaphores[domain]
 
-    def get(
+    async def get(
         self,
         url: str,
         *,
@@ -137,8 +150,8 @@ class GatherHttpClient:
         headers: dict | None = None,
         timeout: float | None = None,
         max_retries: int = 3,
-    ) -> requests.Response:
-        """GET 요청 — rate limit + semaphore + 재시도.
+    ) -> httpx.Response:
+        """GET 요청 — rate limit + semaphore + 재시도 (async).
 
         Raises:
             SourceUnavailableError: 모든 재시도 실패.
@@ -153,38 +166,39 @@ class GatherHttpClient:
         for attempt in range(max_retries):
             # 랜덤 지터: 동일 도메인 연속 호출 시 버스트 패턴 방지
             jitter = random.uniform(policy.jitter_min, policy.jitter_max)
-            time.sleep(jitter)
+            await asyncio.sleep(jitter)
 
-            limiter.acquire()
-            if not semaphore.acquire(timeout=30.0):
-                raise SourceUnavailableError(f"{domain} 동시 연결 제한 초과")
-            try:
-                req_headers = dict(self._session.headers)
-                req_headers["User-Agent"] = random.choice(_USER_AGENTS)
-                if headers:
-                    req_headers.update(headers)
-                resp = self._session.get(url, params=params, headers=req_headers, timeout=req_timeout)
-                if resp.status_code == 429:
-                    wait = 2**attempt + random.uniform(0.1, 0.5)
-                    log.warning("%s 429 rate limited, %.1fs 대기", domain, wait)
-                    time.sleep(wait)
-                    continue
-                if resp.status_code >= 500:
-                    wait = 2**attempt + random.uniform(0.1, 0.5)
-                    log.warning("%s %d 서버 오류, %.1fs 대기", domain, resp.status_code, wait)
-                    time.sleep(wait)
-                    continue
-                resp.raise_for_status()
-                return resp
-            except requests.RequestException as exc:
-                last_exc = exc
-                if attempt < max_retries - 1:
-                    time.sleep(2**attempt + random.uniform(0.1, 0.5))
-            finally:
-                semaphore.release()
+            await limiter.acquire()
+            async with semaphore:
+                try:
+                    req_headers = {"User-Agent": random.choice(_USER_AGENTS)}
+                    if headers:
+                        req_headers.update(headers)
+                    resp = await self._client.get(
+                        url,
+                        params=params,
+                        headers=req_headers,
+                        timeout=req_timeout,
+                    )
+                    if resp.status_code == 429:
+                        wait = 2**attempt + random.uniform(0.1, 0.5)
+                        log.warning("%s 429 rate limited, %.1fs 대기", domain, wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    if resp.status_code >= 500:
+                        wait = 2**attempt + random.uniform(0.1, 0.5)
+                        log.warning("%s %d 서버 오류, %.1fs 대기", domain, resp.status_code, wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    resp.raise_for_status()
+                    return resp
+                except httpx.HTTPError as exc:
+                    last_exc = exc
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))
 
         raise SourceUnavailableError(f"{domain} 요청 실패 ({max_retries}회 재시도): {last_exc}")
 
-    def close(self) -> None:
-        """HTTP 세션 종료."""
-        self._session.close()
+    async def close(self) -> None:
+        """HTTP 클라이언트 종료."""
+        await self._client.aclose()

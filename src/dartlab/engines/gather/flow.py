@@ -10,16 +10,16 @@ from .types import FlowData, GatherError
 log = logging.getLogger(__name__)
 
 
-def fetch(
+async def fetch(
     stock_code: str,
     *,
     client=None,
 ) -> FlowData | None:
-    """수급 — fallback 체인."""
+    """수급 — fallback 체인 (async)."""
     for domain_name in FLOW_FALLBACK:
         try:
             module = load_domain(domain_name)
-            result = module.fetch_flow(stock_code, client)
+            result = await module.fetch_flow(stock_code, client)
             if result:
                 return result
         except (GatherError, ImportError, OSError) as exc:

@@ -10,18 +10,18 @@ import logging
 from datetime import datetime, timezone
 
 from ..market_config import resolve_ticker
-from ..types import GatherError, PriceSnapshot
+from ..types import GatherError, PriceSnapshot, RevenueConsensus
 
 log = logging.getLogger(__name__)
 
 _CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 
 
-def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot | None:
+async def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot | None:
     """현재가 스냅샷 — Yahoo v8 chart API (range=1d)."""
     ticker = resolve_ticker(stock_code, market, "yahoo_direct")
     try:
-        resp = client.get(
+        resp = await client.get(
             _CHART_URL.format(ticker=ticker),
             params={"range": "1d", "interval": "1d", "includePrePost": "false"},
         )
@@ -74,7 +74,7 @@ def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot
     )
 
 
-def fetch_history(
+async def fetch_history(
     stock_code: str,
     client,
     *,
@@ -96,7 +96,7 @@ def fetch_history(
     period2 = int(datetime.strptime(end, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
 
     try:
-        resp = client.get(
+        resp = await client.get(
             _CHART_URL.format(ticker=ticker),
             params={
                 "period1": str(period1),
@@ -142,3 +142,107 @@ def fetch_history(
         })
 
     return rows
+
+
+# ══════════════════════════════════════
+# Yahoo quoteSummary — Revenue Consensus
+# ══════════════════════════════════════
+
+_SUMMARY_URL = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticker}"
+
+
+async def fetch_revenue_consensus(
+    stock_code: str,
+    client,
+    *,
+    market: str = "US",
+) -> list[RevenueConsensus]:
+    """Yahoo quoteSummary에서 매출/이익 컨센서스 추출.
+
+    modules: earningsTrend (연도별 revenue estimate), financialData (실적).
+
+    Returns:
+        RevenueConsensus 리스트 (actual + estimate).
+    """
+    ticker = resolve_ticker(stock_code, market, "yahoo_direct")
+    try:
+        resp = await client.get(
+            _SUMMARY_URL.format(ticker=ticker),
+            params={"modules": "earningsTrend,financialData"},
+        )
+    except GatherError:
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+
+    quote_summary = data.get("quoteSummary", {}).get("result")
+    if not quote_summary:
+        return []
+
+    result_data = quote_summary[0] if quote_summary else {}
+    items: list[RevenueConsensus] = []
+
+    # earningsTrend: 분기/연간 estimates
+    earnings_trend = result_data.get("earningsTrend", {}).get("trend", [])
+    for trend in earnings_trend:
+        period = trend.get("period", "")
+        # 연간만 ("+1y", "+2y", "0y" 등)
+        if "y" not in period:
+            continue
+
+        end_date = trend.get("endDate", "")
+        # endDate → fiscal year 추출
+        fy = 0
+        if end_date:
+            try:
+                fy = int(end_date[:4])
+            except (ValueError, IndexError):
+                pass
+        if fy == 0:
+            continue
+
+        revenue_est_raw = trend.get("revenueEstimate", {})
+        revenue_avg = revenue_est_raw.get("avg", {}).get("raw", 0)
+
+        earnings_est_raw = trend.get("earningsEstimate", {})
+        eps_avg = earnings_est_raw.get("avg", {}).get("raw")
+
+        if revenue_avg <= 0:
+            continue
+
+        # Yahoo는 USD 단위 → 억원 변환하지 않음 (EDGAR는 원화가 아님)
+        # source에 "yahoo_consensus"를 마킹하여 통화 구분
+        source = "yahoo_consensus" if period.startswith("+") else "yahoo_actual"
+
+        items.append(
+            RevenueConsensus(
+                fiscal_year=fy,
+                revenue_est=revenue_avg,  # USD 기준 (원화 아님)
+                operating_profit_est=None,
+                net_income_est=None,
+                eps_est=eps_avg,
+                per_est=None,
+                source=source,
+            )
+        )
+
+    # financialData: 현재 실적 (totalRevenue)
+    fin_data = result_data.get("financialData", {})
+    total_revenue = fin_data.get("totalRevenue", {}).get("raw", 0)
+    if total_revenue > 0 and not any(
+        i.source == "yahoo_actual" for i in items
+    ):
+        # fiscal year 추정: 가장 최근 완료 연도
+        current_year = datetime.now(timezone.utc).year
+        items.append(
+            RevenueConsensus(
+                fiscal_year=current_year - 1,
+                revenue_est=total_revenue,
+                source="yahoo_actual",
+            )
+        )
+
+    return items

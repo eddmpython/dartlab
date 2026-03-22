@@ -42,11 +42,11 @@ def _clean_number(text: str | None) -> float | None:
 # ══════════════════════════════════════
 
 
-def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None:
+async def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None:
     """네이버 → 현재가 + PER/PBR + 52주 범위."""
     url = f"{_API_BASE}/{stock_code}/basic"
     try:
-        resp = client.get(url, headers={"Accept": "application/json"})
+        resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
         log.warning("naver price API 실패 (%s): %s", stock_code, exc)
@@ -74,11 +74,11 @@ def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None:
     )
 
 
-def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
+async def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
     """네이버 → 컨센서스 목표가 + 투자의견."""
     url = f"{_API_BASE}/{stock_code}/integration"
     try:
-        resp = client.get(url, headers={"Accept": "application/json"})
+        resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
         log.warning("naver consensus API 실패 (%s): %s", stock_code, exc)
@@ -124,11 +124,11 @@ def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
     )
 
 
-def fetch_flow(stock_code: str, client) -> FlowData | None:
+async def fetch_flow(stock_code: str, client) -> FlowData | None:
     """네이버 → 외국인/기관 순매수."""
     url = f"{_API_BASE}/{stock_code}/integration"
     try:
-        resp = client.get(url, headers={"Accept": "application/json"})
+        resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
         log.warning("naver flow API 실패 (%s): %s", stock_code, exc)
@@ -169,7 +169,7 @@ def fetch_flow(stock_code: str, client) -> FlowData | None:
     )
 
 
-def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
+async def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
     """네이버 → 연간 매출/영업이익/순이익 컨센서스.
 
     finance/annual API에서 isConsensus='Y'인 기간의 재무 추정치를 추출한다.
@@ -177,7 +177,7 @@ def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
     """
     url = f"{_API_BASE}/{stock_code}/finance/annual"
     try:
-        resp = client.get(url, headers={"Accept": "application/json"})
+        resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
         log.warning("naver finance/annual API 실패 (%s): %s", stock_code, exc)
@@ -231,11 +231,11 @@ def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
     return results
 
 
-def fetch_sector_per(stock_code: str, client) -> float | None:
+async def fetch_sector_per(stock_code: str, client) -> float | None:
     """네이버 → 동종업종 PER."""
     url = f"{_API_BASE}/{stock_code}/integration"
     try:
-        resp = client.get(url, headers={"Accept": "application/json"})
+        resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
         log.warning("naver sector PER API 실패 (%s): %s", stock_code, exc)
@@ -253,14 +253,14 @@ def fetch_sector_per(stock_code: str, client) -> float | None:
 # ══════════════════════════════════════
 
 
-def fetch_all(stock_code: str, client) -> GatherResult:
+async def fetch_all(stock_code: str, client) -> GatherResult:
     """네이버에서 가져올 수 있는 모든 데이터를 수집."""
     result = GatherResult(domain="naver")
     try:
-        result.price = fetch_price(stock_code, client)
-        result.consensus = fetch_consensus(stock_code, client)
-        result.flow = fetch_flow(stock_code, client)
-        result.sector_per = fetch_sector_per(stock_code, client)
+        result.price = await fetch_price(stock_code, client)
+        result.consensus = await fetch_consensus(stock_code, client)
+        result.flow = await fetch_flow(stock_code, client)
+        result.sector_per = await fetch_sector_per(stock_code, client)
     except SourceUnavailableError as exc:
         result.error = str(exc)
     return result

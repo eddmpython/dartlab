@@ -45,6 +45,7 @@ dependencies = [
     "marimo>=0.20.4,<1",
     "openpyxl>=3.1.5,<4",
     "diff-match-patch>=20230430",
+    "httpx>=0.28.1,<1",
     "orjson>=3.10.0,<4",
     "polars>=1.0.0,<2",
     "requests>=2.32.5,<3",

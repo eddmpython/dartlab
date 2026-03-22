@@ -251,19 +251,20 @@ class TestPriceFallback:
     """시장별 동적 fallback — mock 기반."""
 
     def test_kr_uses_naver_first(self):
-        from unittest.mock import MagicMock
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock
 
         from dartlab.engines.gather import price
 
-        mock_client = MagicMock()
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "closePrice": "200,000",
             "per": "12.50",
         }
-        mock_client.get.return_value = mock_resp
+        mock_client = MagicMock()
+        mock_client.get = AsyncMock(return_value=mock_resp)
 
-        result = price.fetch("005930", market="KR", client=mock_client)
+        result = asyncio.run(price.fetch("005930", market="KR", client=mock_client))
         assert result is not None
         assert result.current == 200000
 

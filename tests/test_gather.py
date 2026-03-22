@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from dartlab.engines.gather.cache import GatherCache
-from dartlab.engines.gather.http import GatherHttpClient, _DomainRateLimiter, _DomainSemaphore
+from dartlab.engines.gather.http import GatherHttpClient, _AsyncRateLimiter
 from dartlab.engines.gather.types import (
     ConsensusData,
     FlowData,
@@ -94,37 +95,32 @@ class TestGatherCache:
 # ══════════════════════════════════════
 
 
-class TestDomainRateLimiter:
-    """Rate limiter 기본 동작."""
+class TestAsyncRateLimiter:
+    """Async rate limiter 기본 동작."""
 
     def test_acquire_within_limit(self):
-        limiter = _DomainRateLimiter("test.com", rpm=60)
-        for _ in range(5):
-            limiter.acquire()
+        limiter = _AsyncRateLimiter("test.com", rpm=60)
+
+        async def run():
+            for _ in range(5):
+                await limiter.acquire()
+
+        asyncio.run(run())
 
     def test_domain_stored(self):
-        limiter = _DomainRateLimiter("example.com", rpm=30)
+        limiter = _AsyncRateLimiter("example.com", rpm=30)
         assert limiter._domain == "example.com"
         assert limiter._rpm == 30
-
-
-class TestDomainSemaphore:
-    """동시 연결 제한."""
-
-    def test_acquire_release(self):
-        sem = _DomainSemaphore(max_concurrent=2)
-        assert sem.acquire(timeout=1.0)
-        assert sem.acquire(timeout=1.0)
-        sem.release()
-        sem.release()
 
 
 class TestGatherHttpClient:
     """GatherHttpClient 기본 동작."""
 
     def test_close(self):
+        from dartlab.engines.gather.http import run_async
+
         client = GatherHttpClient()
-        client.close()  # 에러 없이 종료
+        run_async(client.close())  # 에러 없이 종료
 
 
 # ══════════════════════════════════════
@@ -244,19 +240,26 @@ class TestDataTypes:
 
 
 # ══════════════════════════════════════
-# Naver Source 테스트 (mock)
+# Naver Source 테스트 (mock) — async
 # ══════════════════════════════════════
 
 
+def _make_async_client(json_data):
+    """async mock client 생성 — client.get()이 코루틴 반환."""
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = json_data
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(return_value=mock_resp)
+    return mock_client
+
+
 class TestNaverSource:
-    """네이버 소스 — mock HTTP 응답."""
+    """네이버 소스 — mock HTTP 응답 (async)."""
 
     def test_fetch_price_success(self):
         from dartlab.engines.gather.domains.naver import fetch_price
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
+        mock_client = _make_async_client({
             "closePrice": "200,000",
             "per": "12.50",
             "pbr": "1.30",
@@ -264,10 +267,9 @@ class TestNaverSource:
             "marketCap": "3,564,000",
             "high52wPrice": "250,000",
             "low52wPrice": "150,000",
-        }
-        mock_client.get.return_value = mock_resp
+        })
 
-        result = fetch_price("005930", mock_client)
+        result = asyncio.run(fetch_price("005930", mock_client))
         assert result is not None
         assert result.current == 200000
         assert result.per == 12.5
@@ -277,9 +279,7 @@ class TestNaverSource:
     def test_fetch_consensus_success(self):
         from dartlab.engines.gather.domains.naver import fetch_consensus
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
+        mock_client = _make_async_client({
             "consensusInfo": {
                 "targetPrice": "300,000",
                 "analystCount": 15,
@@ -291,10 +291,9 @@ class TestNaverSource:
                     {"opinion": "매도", "count": 2},
                 ],
             }
-        }
-        mock_client.get.return_value = mock_resp
+        })
 
-        result = fetch_consensus("005930", mock_client)
+        result = asyncio.run(fetch_consensus("005930", mock_client))
         assert result is not None
         assert result.target_price == 300000
         assert result.analyst_count == 15
@@ -305,29 +304,22 @@ class TestNaverSource:
     def test_fetch_consensus_no_data(self):
         from dartlab.engines.gather.domains.naver import fetch_consensus
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {}
-        mock_client.get.return_value = mock_resp
-
-        result = fetch_consensus("005930", mock_client)
+        mock_client = _make_async_client({})
+        result = asyncio.run(fetch_consensus("005930", mock_client))
         assert result is None
 
     def test_fetch_flow_success(self):
         from dartlab.engines.gather.domains.naver import fetch_flow
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
+        mock_client = _make_async_client({
             "foreignSummary": {"foreignOwnershipRatio": "55.30"},
             "dealTrendByInvestor": [
                 {"investorType": "외국인", "accumulatedNetBuyVolume": "-2,500,000"},
                 {"investorType": "기관", "accumulatedNetBuyVolume": "1,200,000"},
             ],
-        }
-        mock_client.get.return_value = mock_resp
+        })
 
-        result = fetch_flow("005930", mock_client)
+        result = asyncio.run(fetch_flow("005930", mock_client))
         assert result is not None
         assert result.foreign_holding_ratio == 55.3
         assert result.foreign_net == -2500000
@@ -345,8 +337,18 @@ class TestNaverSource:
 
 
 # ══════════════════════════════════════
-# Gather Facade 테스트 (mock)
+# Gather Facade 테스트 (mock) — async client
 # ══════════════════════════════════════
+
+
+def _make_facade_client(json_data):
+    """Gather facade용 async mock client."""
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = json_data
+    mock_client = MagicMock(spec=GatherHttpClient)
+    mock_client.get = AsyncMock(return_value=mock_resp)
+    mock_client.close = AsyncMock()
+    return mock_client
 
 
 class TestGatherFacade:
@@ -355,16 +357,13 @@ class TestGatherFacade:
     def test_collect_builds_snapshot(self):
         from dartlab.engines.gather import Gather
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
+        mock_client = _make_facade_client({
             "closePrice": "200,000",
             "per": "12.50",
             "pbr": "1.30",
             "high52wPrice": "250,000",
             "low52wPrice": "150,000",
-        }
-        mock_client.get.return_value = mock_resp
+        })
 
         g = Gather(client=mock_client)
         snapshot = g.collect("005930")
@@ -376,10 +375,7 @@ class TestGatherFacade:
     def test_collect_caches_result(self):
         from dartlab.engines.gather import Gather
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {"closePrice": "100000"}
-        mock_client.get.return_value = mock_resp
+        mock_client = _make_facade_client({"closePrice": "100000"})
 
         g = Gather(client=mock_client)
 
@@ -393,15 +389,16 @@ class TestGatherFacade:
         from dartlab.engines.gather import Gather
         from dartlab.engines.gather.types import SourceUnavailableError
 
-        def mock_get(url, **kwargs):
+        async def mock_get(url, **kwargs):
             if "basic" in url:
                 resp = MagicMock()
                 resp.json.return_value = {"closePrice": "200000"}
                 return resp
             raise SourceUnavailableError("mock failure")
 
-        mock_client = MagicMock()
-        mock_client.get.side_effect = mock_get
+        mock_client = MagicMock(spec=GatherHttpClient)
+        mock_client.get = AsyncMock(side_effect=mock_get)
+        mock_client.close = AsyncMock()
 
         g = Gather(client=mock_client)
         snapshot = g.collect("005930")
@@ -416,13 +413,10 @@ class TestGatherFacade:
         """price() — 개별 조회."""
         from dartlab.engines.gather import Gather
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
+        mock_client = _make_facade_client({
             "closePrice": "200,000",
             "per": "12.50",
-        }
-        mock_client.get.return_value = mock_resp
+        })
 
         g = Gather(client=mock_client)
         price = g.price("005930")
@@ -433,10 +427,7 @@ class TestGatherFacade:
     def test_invalidate(self):
         from dartlab.engines.gather import Gather
 
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {"closePrice": "100000"}
-        mock_client.get.return_value = mock_resp
+        mock_client = _make_facade_client({"closePrice": "100000"})
 
         g = Gather(client=mock_client)
         g.collect("005930")

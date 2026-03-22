@@ -1,7 +1,8 @@
-"""주가 fallback facade — 시장별 동적 fallback + circuit breaker + health tracking."""
+"""주가 fallback facade — 시장별 동적 fallback + circuit breaker + health tracking (async)."""
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import logging
 import time
@@ -18,13 +19,13 @@ log = logging.getLogger(__name__)
 _stale_cache = GatherCache(max_entries=100)
 
 
-def fetch(
+async def fetch(
     stock_code: str,
     *,
     market: str = "KR",
     client=None,
 ) -> PriceSnapshot | None:
-    """주가 — 시장별 fallback 체인 + circuit breaker + health scoring.
+    """주가 — 시장별 fallback 체인 + circuit breaker + health scoring (async).
 
     1. health score로 fallback 순서 재정렬
     2. circuit open인 소스 skip
@@ -43,10 +44,16 @@ def fetch(
         t0 = time.monotonic()
         try:
             module = load_domain(source_name)
-            if hasattr(module, "fetch_price"):
-                result = module.fetch_price(stock_code, client, market=market)
-            else:
+            if not hasattr(module, "fetch_price"):
                 continue
+
+            # yahoo는 동기(yfinance) → to_thread 필요
+            if source_name == "yahoo":
+                result = await asyncio.to_thread(
+                    module.fetch_price, stock_code, client, market=market,
+                )
+            else:
+                result = await module.fetch_price(stock_code, client, market=market)
 
             latency = time.monotonic() - t0
 

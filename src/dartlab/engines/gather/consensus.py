@@ -10,16 +10,16 @@ from .types import ConsensusData, GatherError
 log = logging.getLogger(__name__)
 
 
-def fetch(
+async def fetch(
     stock_code: str,
     *,
     client=None,
 ) -> ConsensusData | None:
-    """컨센서스 — fallback 체인."""
+    """컨센서스 — fallback 체인 (async)."""
     for domain_name in CONSENSUS_FALLBACK:
         try:
             module = load_domain(domain_name)
-            result = module.fetch_consensus(stock_code, client)
+            result = await module.fetch_consensus(stock_code, client)
             if result:
                 return result
         except (GatherError, ImportError, OSError) as exc:

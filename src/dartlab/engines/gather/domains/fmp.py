@@ -21,7 +21,7 @@ def _get_api_key() -> str | None:
     return os.environ.get("FMP_API_KEY")
 
 
-def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot | None:
+async def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot | None:
     """현재가 — /quote/{ticker}."""
     key = _get_api_key()
     if not key:
@@ -30,7 +30,7 @@ def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot
     ticker = resolve_ticker(stock_code, market, "fmp")
 
     try:
-        resp = client.get(
+        resp = await client.get(
             f"{_BASE}/quote/{ticker}",
             params={"apikey": key},
         )
@@ -69,7 +69,7 @@ def fetch_price(stock_code: str, client, *, market: str = "US") -> PriceSnapshot
     )
 
 
-def fetch_history(
+async def fetch_history(
     stock_code: str,
     client,
     *,
@@ -89,7 +89,7 @@ def fetch_history(
     ticker = resolve_ticker(stock_code, market, "fmp")
 
     try:
-        resp = client.get(
+        resp = await client.get(
             f"{_BASE}/historical-price-full/{ticker}",
             params={"apikey": key, "from": start, "to": end},
         )

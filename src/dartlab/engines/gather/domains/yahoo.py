@@ -1,10 +1,13 @@
 """Yahoo Finance 데이터 수집 — yfinance 기반 주가 + 히스토리.
 
 yfinance는 선택적 의존성. 미설치 시 None 반환.
+yfinance 자체가 동기 라이브러리이므로 fetch_price/fetch_history는 동기 유지.
+async 컨텍스트에서는 asyncio.to_thread()로 호출.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 
@@ -135,11 +138,14 @@ def fetch_market_returns(
 # ══════════════════════════════════════
 
 
-def fetch_all(stock_code: str, client=None, *, market: str = "KR") -> GatherResult:
-    """yahoo에서 가져올 수 있는 모든 데이터를 수집."""
+async def fetch_all(stock_code: str, client=None, *, market: str = "KR") -> GatherResult:
+    """yahoo에서 가져올 수 있는 모든 데이터를 수집.
+
+    yfinance는 동기 라이브러리 → asyncio.to_thread()로 블로킹 회피.
+    """
     result = GatherResult(domain="yahoo")
     try:
-        result.price = fetch_price(stock_code, client, market=market)
+        result.price = await asyncio.to_thread(fetch_price, stock_code, client, market=market)
     except ImportError:
         result.error = "yfinance 미설치"
     except OSError as exc:
