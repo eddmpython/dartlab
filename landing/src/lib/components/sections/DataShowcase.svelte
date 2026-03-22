@@ -45,6 +45,34 @@
 			footer: 'TTM basis — trailing four quarters cumulative'
 		},
 		{
+			label: 'show("text")',
+			code: 'samsung.show("businessOverview")',
+			desc: 'Narrative topic — heading/body text + embedded tables',
+			headers: ['blockType', 'nodeType', '2024', '2023'],
+			rows: [
+				['text', 'heading', '1. 산업의 특성', '1. 산업의 특성'],
+				['text', 'body', '반도체 산업은 기술 집약적…', '반도체 산업은 기술 집약적…'],
+				['table', '—', 'DataFrame(5×3)', 'DataFrame(5×3)'],
+				['text', 'heading', '2. 시장 현황', '2. 시장 현황'],
+				['text', 'body', 'AI 반도체 수요 급증…', '메모리 수요 회복 지연…']
+			],
+			footer: 'shape: (12, 5) — text + table blocks with period columns'
+		},
+		{
+			label: 'trace',
+			code: 'samsung.trace("BS")',
+			desc: 'Source attribution — which namespace provided the data',
+			headers: ['field', 'value'],
+			rows: [
+				['primarySource', 'finance'],
+				['reason', 'finance is authoritative for numeric statements'],
+				['docsAvailable', 'true (text version in sections)'],
+				['reportAvailable', 'false (BS is not a report API)'],
+				['fallback', 'docs.sections → raw text table']
+			],
+			footer: 'trace() reveals the source priority chain for any topic'
+		},
+		{
 			label: 'diff',
 			code: 'samsung.diff("businessOverview")',
 			desc: 'Text change detection — compare narrative across periods',

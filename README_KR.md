@@ -83,7 +83,17 @@ DartLab은 두 가지 표준화 엔진으로 이 문제를 해결한다.
   → 결과: revenue, operatingIncome, totalAssets, …
 ```
 
-모든 회사의 모든 계정이 동일한 `snakeId`로 수렴한다. 삼성전자의 매출과 SK하이닉스의 매출이 같은 식별자를 갖기 때문에, 회사 간 비교가 수작업 없이 가능하다.
+실제로 세 회사의 같은 "매출액" 계정이 원본에서 어떻게 다른지:
+
+```
+Before (원본 XBRL):                        After (표준화):
+회사        account_id          account_nm   →  snakeId    label
+삼성전자    ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
+SK하이닉스  dart_Revenue        매출액       →  revenue    매출액
+LG에너지    Revenue             매출         →  revenue    매출액
+```
+
+모든 회사의 모든 계정이 동일한 `snakeId`로 수렴한다. 회사 간 비교가 수작업 없이 가능하다.
 
 매핑 테이블은 전체 상장사의 ~97%를 커버한다. 나머지 예외(신규 XBRL 분류체계, 비표준 공시)는 원본 ID를 보존한 채 그대로 통과한다.
 
@@ -101,6 +111,15 @@ employee              ✓         ✓         ✓         ✓
 dividend              ✓         ✓         ✓         ✓
 audit                 ✓         ✓         ✓         ✓
 …                    (98개 canonical topics)
+```
+
+같은 내용의 섹션이 회사마다 다른 제목으로 등장한다:
+
+```
+Before (원본 섹션 제목):                     After (canonical topic):
+삼성전자    "II. 사업의 내용"                → businessOverview
+현대차      "II. 사업의 내용 [자동차부문]"    → businessOverview
+카카오      "2. 사업의 내용"                 → businessOverview
 ```
 
 매핑 파이프라인: **텍스트 정규화**(업종 접두사, 번호, 구두점 제거) → **545개 하드코딩 매핑** → **73개 regex 패턴** → canonical topic 할당. 전체 상장사 대비 ~95%+ 매핑률을 달성한다.
@@ -179,6 +198,29 @@ c.trace("BS")               # → {"primarySource": "finance", ...}
 c.diff()                                    # 전체 요약
 c.diff("businessOverview")                  # topic 이력
 c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
+```
+
+실제 출력 예시:
+
+```
+>>> c.show("businessOverview")
+shape: (12, 5)
+┌───────────┬──────────┬──────────────────────────────┬──────────────────────────────┐
+│ blockType │ nodeType │ 2024                         │ 2023                         │
+├───────────┼──────────┼──────────────────────────────┼──────────────────────────────┤
+│ text      │ heading  │ 1. 산업의 특성                │ 1. 산업의 특성                │
+│ text      │ body     │ 반도체 산업은 기술 집약적 …   │ 반도체 산업은 기술 집약적 …    │
+│ table     │ null     │ DataFrame(5×3)               │ DataFrame(5×3)               │
+└───────────┴──────────┴──────────────────────────────┴──────────────────────────────┘
+
+>>> c.diff("businessOverview", "2023", "2024")
+┌──────────┬─────────────────────────────────────────────┐
+│ status   │ text                                        │
+├──────────┼─────────────────────────────────────────────┤
+│ added    │ AI 반도체 수요 급증에 따른 HBM 매출 확대 …   │
+│ modified │ 매출액 258.9조원 → 300.9조원                 │
+│ removed  │ 반도체 부문 수익성 악화 우려 …               │
+└──────────┴─────────────────────────────────────────────┘
 ```
 
 ### 재무제표와 재무비율
@@ -300,6 +342,19 @@ us.ratios                           # 동일한 47개 비율
 us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
 ```
 
+인터페이스가 동일하다 — 같은 메서드, 같은 구조:
+
+```python
+# Korea (DART)                          # US (EDGAR)
+c = dartlab.Company("005930")           c = dartlab.Company("AAPL")
+c.sections                              c.sections
+c.show("businessOverview")              c.show("business")
+c.BS                                    c.BS
+c.ratios                                c.ratios
+c.diff("businessOverview")              c.diff("10-K::item7Mdna")
+c.insights.grades()                     c.insights.grades()
+```
+
 ## AI 분석
 
 DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. **코드 없이** 자연어로 질문하면 DartLab이 모든 것을 처리한다: 데이터 선택, 컨텍스트 조립, 답변 스트리밍.
@@ -309,7 +364,22 @@ DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이
 dartlab ask "삼성전자 재무건전성 분석해줘"
 ```
 
-DartLab이 데이터를 구조화하고, 관련 컨텍스트(재무제표, 인사이트, 섹터 벤치마크)를 선택해서 LLM에 전달한다. 2-Tier 아키텍처로 기본 분석은 어떤 provider에서든 동작하고, tool-calling provider(OpenAI, Claude)는 대화 중 추가 데이터를 요청해 더 깊이 분석할 수 있다.
+DartLab이 데이터를 구조화하고, 관련 컨텍스트(재무제표, 인사이트, 섹터 벤치마크)를 선택해서 LLM에 전달한다:
+
+```
+$ dartlab ask "삼성전자 재무건전성 분석해줘"
+
+삼성전자의 재무건전성은 A등급입니다.
+
+▸ 부채비율 31.8% — 업종 평균(45.2%) 대비 양호
+▸ 유동비율 258.6% — 200% 안전 기준 상회
+▸ 이자보상배수 22.1배 — 이자 부담 매우 낮음
+▸ ROE 회복세: 1.6% → 10.2% (4분기 연속 개선)
+
+[데이터 출처: 2024Q4 사업보고서, dartlab insights 엔진]
+```
+
+2-Tier 아키텍처로 기본 분석은 어떤 provider에서든 동작하고, tool-calling provider(OpenAI, Claude)는 대화 중 추가 데이터를 요청해 더 깊이 분석할 수 있다.
 
 ### Python API
 

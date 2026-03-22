@@ -31,6 +31,38 @@
 			<p class="text-dl-text-muted text-lg">Korean DART and US SEC EDGAR through one Company interface</p>
 		</div>
 
+		<!-- Side-by-side code comparison -->
+		<div class="rounded-lg overflow-hidden border border-dl-border bg-dl-bg-card/50 mb-10">
+			<div class="px-4 py-2.5 bg-white/[0.03] border-b border-dl-border flex items-center gap-1.5">
+				<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+				<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+				<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+				<span class="ml-2 text-xs text-dl-text-dim font-mono">Same code, different markets</span>
+			</div>
+			<div class="grid md:grid-cols-2 divide-x divide-dl-border/50">
+				<div class="p-4">
+					<div class="text-[10px] font-mono text-dl-primary uppercase tracking-wider mb-3">Korea (DART)</div>
+					<pre class="font-mono text-xs text-dl-text-muted leading-relaxed"><code>c = Company(<span class="text-dl-primary">"005930"</span>)
+c.sections
+c.show(<span class="text-dl-primary">"businessOverview"</span>)
+c.BS
+c.ratios
+c.diff(<span class="text-dl-primary">"businessOverview"</span>)
+c.insights.grades()</code></pre>
+				</div>
+				<div class="p-4">
+					<div class="text-[10px] font-mono text-dl-accent uppercase tracking-wider mb-3">US (EDGAR)</div>
+					<pre class="font-mono text-xs text-dl-text-muted leading-relaxed"><code>c = Company(<span class="text-dl-accent">"AAPL"</span>)
+c.sections
+c.show(<span class="text-dl-accent">"business"</span>)
+c.BS
+c.ratios
+c.diff(<span class="text-dl-accent">"10-K::item7Mdna"</span>)
+c.insights.grades()</code></pre>
+				</div>
+			</div>
+		</div>
+
 		<div class="grid md:grid-cols-2 gap-6 mb-8">
 			<!-- DART Card -->
 			<Card hover={false} class="border-dl-primary/20">

@@ -67,5 +67,35 @@
 				</div>
 			</Card>
 		</div>
+
+		<!-- Code before/after -->
+		<div class="grid md:grid-cols-2 gap-4 mt-8">
+			<div class="rounded-lg overflow-hidden border border-dl-border bg-dl-bg-card/50">
+				<div class="px-4 py-2 bg-white/[0.03] border-b border-dl-border">
+					<span class="text-[10px] font-mono text-dl-warning uppercase tracking-wider">Without DartLab</span>
+				</div>
+				<pre class="p-4 font-mono text-xs text-dl-text-dim leading-relaxed overflow-x-auto"><code><span class="text-dl-text-dim"># 1. Download PDF from DART</span>
+pdf = download_report("005930", "2024")
+<span class="text-dl-text-dim"># 2. Extract tables from PDF</span>
+tables = parse_pdf_tables(pdf)
+<span class="text-dl-text-dim"># 3. Manual account mapping</span>
+mapped = manual_map(tables, my_schema)
+<span class="text-dl-text-dim"># 4. Repeat for each quarter...</span>
+<span class="text-dl-text-dim"># 5. Repeat for each company...</span>
+<span class="text-dl-text-dim"># 6. Hope the formats match</span></code></pre>
+			</div>
+
+			<div class="rounded-lg overflow-hidden border border-dl-primary/30 bg-dl-bg-card">
+				<div class="px-4 py-2 bg-dl-primary/5 border-b border-dl-primary/20">
+					<span class="text-[10px] font-mono text-dl-primary uppercase tracking-wider">With DartLab</span>
+				</div>
+				<pre class="p-4 font-mono text-xs text-dl-text leading-relaxed overflow-x-auto"><code><span class="text-cyan-400">import</span> dartlab
+
+c = dartlab.Company(<span class="text-dl-primary">"005930"</span>)
+c.BS       <span class="text-dl-text-dim"># standardized balance sheet</span>
+c.ratios   <span class="text-dl-text-dim"># 47 financial ratios</span>
+c.diff()   <span class="text-dl-text-dim"># 5 years of changes</span></code></pre>
+			</div>
+		</div>
 	</div>
 </section>

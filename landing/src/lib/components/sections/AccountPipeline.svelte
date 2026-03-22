@@ -79,6 +79,31 @@
 			{/each}
 		</div>
 
+		<!-- Before / After -->
+		<div class="grid md:grid-cols-2 gap-4 mb-10">
+			<!-- Before -->
+			<Card hover={false}>
+				<div class="text-[10px] font-mono text-dl-warning uppercase tracking-wider mb-3">Before — Raw XBRL</div>
+				<div class="space-y-2 font-mono text-xs">
+					<div class="flex justify-between"><span class="text-dl-text-dim">Samsung</span><span class="text-dl-text-muted">ifrs-full_Revenue</span></div>
+					<div class="flex justify-between"><span class="text-dl-text-dim">SK Hynix</span><span class="text-dl-text-muted">dart_Revenue</span></div>
+					<div class="flex justify-between"><span class="text-dl-text-dim">LG Energy</span><span class="text-dl-text-muted">Revenue</span></div>
+				</div>
+				<div class="mt-3 pt-3 border-t border-dl-border text-xs text-dl-text-dim">3 companies, 3 different account IDs for the same concept</div>
+			</Card>
+
+			<!-- After -->
+			<Card hover={false} class="border-dl-primary/20">
+				<div class="text-[10px] font-mono text-dl-primary uppercase tracking-wider mb-3">After — Standardized</div>
+				<div class="space-y-2 font-mono text-xs">
+					<div class="flex justify-between"><span class="text-dl-text">Samsung</span><span class="text-dl-primary">revenue</span></div>
+					<div class="flex justify-between"><span class="text-dl-text">SK Hynix</span><span class="text-dl-primary">revenue</span></div>
+					<div class="flex justify-between"><span class="text-dl-text">LG Energy</span><span class="text-dl-primary">revenue</span></div>
+				</div>
+				<div class="mt-3 pt-3 border-t border-dl-border text-xs text-dl-text">All resolve to <code class="text-dl-primary">revenue</code> — cross-company comparison just works</div>
+			</Card>
+		</div>
+
 		<!-- Result -->
 		<Card hover={false} class="border-dl-primary/20 bg-dl-bg-card">
 			<div class="flex flex-wrap items-center justify-center gap-6 text-center">
@@ -93,10 +118,8 @@
 				</div>
 				<div class="hidden md:block w-px h-10 bg-dl-border"></div>
 				<div>
-					<div class="text-sm text-dl-text-muted max-w-xs">
-						Samsung's <code class="text-dl-primary">revenue</code> and SK Hynix's
-						<code class="text-dl-primary">revenue</code> resolve to the same snakeId
-					</div>
+					<div class="text-2xl font-black text-dl-text tabular-nums">34,249</div>
+					<div class="text-xs text-dl-text-dim">XBRL mappings</div>
 				</div>
 			</div>
 		</Card>

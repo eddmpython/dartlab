@@ -83,7 +83,17 @@ Raw XBRL account_id
   → Result: revenue, operatingIncome, totalAssets, …
 ```
 
-Every account across every company resolves to the same `snakeId`. Samsung's revenue and SK Hynix's revenue share the same identifier — cross-company comparison requires zero manual work.
+Here's what this looks like in practice — the same "revenue" account from three companies:
+
+```
+Before (raw XBRL):                          After (standardized):
+Company     account_id          account_nm   →  snakeId    label
+Samsung     ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
+SK Hynix    dart_Revenue        매출액       →  revenue    매출액
+LG Energy   Revenue             매출         →  revenue    매출액
+```
+
+Every account across every company resolves to the same `snakeId`. Cross-company comparison requires zero manual work.
 
 The mapping table covers ~97% of all listed companies. The remaining edge cases (novel XBRL taxonomies, non-standard filings) fall through gracefully with the original ID preserved.
 
@@ -101,6 +111,15 @@ employee              ✓         ✓         ✓         ✓
 dividend              ✓         ✓         ✓         ✓
 audit                 ✓         ✓         ✓         ✓
 …                    (98 canonical topics)
+```
+
+The same section content appears under different titles across companies:
+
+```
+Before (raw section titles):              After (canonical topic):
+Samsung    "II. 사업의 내용"               → businessOverview
+Hyundai    "II. 사업의 내용 [자동차부문]"   → businessOverview
+Kakao      "2. 사업의 내용"               → businessOverview
 ```
 
 The mapping pipeline: **text normalization** (strip industry prefixes, numbering, punctuation) → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic assignment. This achieves ~95%+ mapping rate across all listed companies.
@@ -179,6 +198,29 @@ c.trace("BS")               # → {"primarySource": "finance", ...}
 c.diff()                                    # full summary
 c.diff("businessOverview")                  # topic history
 c.diff("businessOverview", "2024", "2025")  # line-by-line diff
+```
+
+What the output looks like:
+
+```
+>>> c.show("businessOverview")
+shape: (12, 5)
+┌───────────┬──────────┬──────────────────────────────┬──────────────────────────────┐
+│ blockType │ nodeType │ 2024                         │ 2023                         │
+├───────────┼──────────┼──────────────────────────────┼──────────────────────────────┤
+│ text      │ heading  │ 1. 산업의 특성                │ 1. 산업의 특성                │
+│ text      │ body     │ 반도체 산업은 기술 집약적 …   │ 반도체 산업은 기술 집약적 …    │
+│ table     │ null     │ DataFrame(5×3)               │ DataFrame(5×3)               │
+└───────────┴──────────┴──────────────────────────────┴──────────────────────────────┘
+
+>>> c.diff("businessOverview", "2023", "2024")
+┌──────────┬─────────────────────────────────────────────┐
+│ status   │ text                                        │
+├──────────┼─────────────────────────────────────────────┤
+│ added    │ AI 반도체 수요 급증에 따른 HBM 매출 확대 …   │
+│ modified │ 매출액 258.9조원 → 300.9조원                 │
+│ removed  │ 반도체 부문 수익성 악화 우려 …               │
+└──────────┴─────────────────────────────────────────────┘
 ```
 
 ### Finance
@@ -300,6 +342,19 @@ us.ratios                           # same 47 ratios
 us.diff("10-K::item7Mdna")          # MD&A text changes
 ```
 
+The interface is identical — same methods, same structure:
+
+```python
+# Korea (DART)                          # US (EDGAR)
+c = dartlab.Company("005930")           c = dartlab.Company("AAPL")
+c.sections                              c.sections
+c.show("businessOverview")              c.show("business")
+c.BS                                    c.BS
+c.ratios                                c.ratios
+c.diff("businessOverview")              c.diff("10-K::item7Mdna")
+c.insights.grades()                     c.insights.grades()
+```
+
 ## AI Analysis
 
 DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. **No code required** — you can ask questions in plain language and DartLab handles everything: data selection, context assembly, and streaming the answer.
@@ -309,7 +364,22 @@ DartLab includes a built-in AI analysis layer that feeds structured company data
 dartlab ask "삼성전자 재무건전성 분석해줘"
 ```
 
-DartLab structures the data, selects relevant context (financials, insights, sector benchmarks), and lets the LLM explain. The 2-tier architecture means basic analysis works with any provider, while tool-calling providers (OpenAI, Claude) can go deeper by requesting additional data mid-conversation.
+DartLab structures the data, selects relevant context (financials, insights, sector benchmarks), and lets the LLM explain:
+
+```
+$ dartlab ask "삼성전자 재무건전성 분석해줘"
+
+삼성전자의 재무건전성은 A등급입니다.
+
+▸ 부채비율 31.8% — 업종 평균(45.2%) 대비 양호
+▸ 유동비율 258.6% — 200% 안전 기준 상회
+▸ 이자보상배수 22.1배 — 이자 부담 매우 낮음
+▸ ROE 회복세: 1.6% → 10.2% (4분기 연속 개선)
+
+[데이터 출처: 2024Q4 사업보고서, dartlab insights 엔진]
+```
+
+The 2-tier architecture means basic analysis works with any provider, while tool-calling providers (OpenAI, Claude) can go deeper by requesting additional data mid-conversation.
 
 ### Python API
 
