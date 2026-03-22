@@ -259,15 +259,17 @@ class TestNaverSource:
     def test_fetch_price_success(self):
         from dartlab.engines.gather.domains.naver import fetch_price
 
-        mock_client = _make_async_client({
-            "closePrice": "200,000",
-            "per": "12.50",
-            "pbr": "1.30",
-            "dividendYield": "2.10",
-            "marketCap": "3,564,000",
-            "high52wPrice": "250,000",
-            "low52wPrice": "150,000",
-        })
+        mock_client = _make_async_client(
+            {
+                "closePrice": "200,000",
+                "per": "12.50",
+                "pbr": "1.30",
+                "dividendYield": "2.10",
+                "marketCap": "3,564,000",
+                "high52wPrice": "250,000",
+                "low52wPrice": "150,000",
+            }
+        )
 
         result = asyncio.run(fetch_price("005930", mock_client))
         assert result is not None
@@ -279,19 +281,21 @@ class TestNaverSource:
     def test_fetch_consensus_success(self):
         from dartlab.engines.gather.domains.naver import fetch_consensus
 
-        mock_client = _make_async_client({
-            "consensusInfo": {
-                "targetPrice": "300,000",
-                "analystCount": 15,
-                "targetPriceHigh": "350,000",
-                "targetPriceLow": "250,000",
-                "investmentOpinion": [
-                    {"opinion": "매수", "count": 10},
-                    {"opinion": "중립", "count": 3},
-                    {"opinion": "매도", "count": 2},
-                ],
+        mock_client = _make_async_client(
+            {
+                "consensusInfo": {
+                    "targetPrice": "300,000",
+                    "analystCount": 15,
+                    "targetPriceHigh": "350,000",
+                    "targetPriceLow": "250,000",
+                    "investmentOpinion": [
+                        {"opinion": "매수", "count": 10},
+                        {"opinion": "중립", "count": 3},
+                        {"opinion": "매도", "count": 2},
+                    ],
+                }
             }
-        })
+        )
 
         result = asyncio.run(fetch_consensus("005930", mock_client))
         assert result is not None
@@ -311,13 +315,15 @@ class TestNaverSource:
     def test_fetch_flow_success(self):
         from dartlab.engines.gather.domains.naver import fetch_flow
 
-        mock_client = _make_async_client({
-            "foreignSummary": {"foreignOwnershipRatio": "55.30"},
-            "dealTrendByInvestor": [
-                {"investorType": "외국인", "accumulatedNetBuyVolume": "-2,500,000"},
-                {"investorType": "기관", "accumulatedNetBuyVolume": "1,200,000"},
-            ],
-        })
+        mock_client = _make_async_client(
+            {
+                "foreignSummary": {"foreignOwnershipRatio": "55.30"},
+                "dealTrendByInvestor": [
+                    {"investorType": "외국인", "accumulatedNetBuyVolume": "-2,500,000"},
+                    {"investorType": "기관", "accumulatedNetBuyVolume": "1,200,000"},
+                ],
+            }
+        )
 
         result = asyncio.run(fetch_flow("005930", mock_client))
         assert result is not None
@@ -357,13 +363,15 @@ class TestGatherFacade:
     def test_collect_builds_snapshot(self):
         from dartlab.engines.gather import Gather
 
-        mock_client = _make_facade_client({
-            "closePrice": "200,000",
-            "per": "12.50",
-            "pbr": "1.30",
-            "high52wPrice": "250,000",
-            "low52wPrice": "150,000",
-        })
+        mock_client = _make_facade_client(
+            {
+                "closePrice": "200,000",
+                "per": "12.50",
+                "pbr": "1.30",
+                "high52wPrice": "250,000",
+                "low52wPrice": "150,000",
+            }
+        )
 
         g = Gather(client=mock_client)
         snapshot = g.collect("005930")
@@ -413,10 +421,12 @@ class TestGatherFacade:
         """price() — 개별 조회."""
         from dartlab.engines.gather import Gather
 
-        mock_client = _make_facade_client({
-            "closePrice": "200,000",
-            "per": "12.50",
-        })
+        mock_client = _make_facade_client(
+            {
+                "closePrice": "200,000",
+                "per": "12.50",
+            }
+        )
 
         g = Gather(client=mock_client)
         price = g.price("005930")

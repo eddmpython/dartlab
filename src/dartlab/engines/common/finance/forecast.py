@@ -54,7 +54,8 @@ def _ols(x: list[float], y: list[float]) -> tuple[float, float, float]:
 
 
 def _detect_structural_break(
-    vals: list[float], min_segment: int = 4,
+    vals: list[float],
+    min_segment: int = 4,
 ) -> int | None:
     """Chow Test 기반 구조적 변화점 감지.
 
@@ -320,10 +321,7 @@ def forecast_metric(
         n_after = len(y_vals) - break_idx
         if n_after >= 3:
             # break 이후 데이터로 교체
-            warnings.append(
-                f"구조적 전환 감지 (데이터 {n_before}→{n_after}개 분할) "
-                f"— 전환 이후 데이터 기반 예측"
-            )
+            warnings.append(f"구조적 전환 감지 (데이터 {n_before}→{n_after}개 분할) — 전환 이후 데이터 기반 예측")
             x_vals = x_vals[break_idx:]
             y_vals = y_vals[break_idx:]
 

@@ -17,6 +17,7 @@ from dartlab.engines.analysis.insight.pipeline import analyze
 from dartlab.engines.analysis.insight.types import (
     AnalysisResult,
     Anomaly,
+    AuditDataForAnomaly,
     DistressAxis,
     DistressResult,
     Flag,
@@ -29,6 +30,7 @@ __all__ = [
     "analyze",
     "AnalysisResult",
     "Anomaly",
+    "AuditDataForAnomaly",
     "DistressAxis",
     "DistressResult",
     "Flag",

@@ -105,12 +105,17 @@ def solveMerton(
     for i in range(maxIter):
         if V <= 0 or sigma_A <= 0:
             return MertonResult(
-                assetValue=V, assetVolatility=sigma_A,
-                d2d=0.0, pd=100.0,
-                equityValue=E, debtFaceValue=D,
-                riskFreeRate=riskFreeRate, maturity=maturity,
+                assetValue=V,
+                assetVolatility=sigma_A,
+                d2d=0.0,
+                pd=100.0,
+                equityValue=E,
+                debtFaceValue=D,
+                riskFreeRate=riskFreeRate,
+                maturity=maturity,
                 equityVolatility=sigma_E,
-                converged=False, iterations=i,
+                converged=False,
+                iterations=i,
             )
 
         d1 = (math.log(V / D) + (riskFreeRate + 0.5 * sigma_A**2) * maturity) / (sigma_A * sqrtT)

@@ -73,6 +73,22 @@ class DistressAxis:
 
 
 @dataclass
+class AuditDataForAnomaly:
+    """감사 탐지기 입력 DTO.
+
+    pipeline이 Company에서 추출하여 anomaly에 전달.
+    각 필드는 연도별 시계열 (최신이 마지막).
+    """
+
+    auditors: list[str | None] = field(default_factory=list)  # 감사인명 시계열
+    opinions: list[str | None] = field(default_factory=list)  # 감사의견 시계열
+    fees: list[float | None] = field(default_factory=list)  # 감사보수 시계열 (백만원)
+    kamCounts: list[int | None] = field(default_factory=list)  # KAM 건수 시계열
+    hasGoingConcern: bool = False  # 계속기업 불확실성 여부 (최신기)
+    hasInternalControlWeakness: bool = False  # 내부통제 취약점 여부 (최신기)
+
+
+@dataclass
 class MarketDataForDistress:
     """시장 기반 부실 분석 입력 데이터.
 

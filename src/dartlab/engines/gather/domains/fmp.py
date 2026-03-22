@@ -107,13 +107,15 @@ async def fetch_history(
 
     rows = []
     for h in reversed(historical):  # FMP는 최신→과거 순 → 역순
-        rows.append({
-            "date": h.get("date", ""),
-            "open": h.get("open", 0.0),
-            "high": h.get("high", 0.0),
-            "low": h.get("low", 0.0),
-            "close": h.get("close", 0.0),
-            "volume": h.get("volume", 0),
-        })
+        rows.append(
+            {
+                "date": h.get("date", ""),
+                "open": h.get("open", 0.0),
+                "high": h.get("high", 0.0),
+                "low": h.get("low", 0.0),
+                "close": h.get("close", 0.0),
+                "volume": h.get("volume", 0),
+            }
+        )
 
     return rows

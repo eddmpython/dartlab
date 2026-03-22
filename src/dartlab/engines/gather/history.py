@@ -58,7 +58,11 @@ async def fetch(
                         return result
             elif hasattr(module, "fetch_history"):
                 result = await module.fetch_history(
-                    stock_code, client, start=start, end=end, market=market,
+                    stock_code,
+                    client,
+                    start=start,
+                    end=end,
+                    market=market,
                 )
                 if result:
                     return result

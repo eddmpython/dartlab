@@ -5,13 +5,14 @@ from __future__ import annotations
 from dartlab.cli.context import CLI_PROVIDERS
 from dartlab.cli.services.errors import CLIError
 
-
 _SETUP_CHOICES = [*CLI_PROVIDERS, "dart-key"]
 
 
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser("setup", help="LLM provider 및 API 키 설정 안내")
-    parser.add_argument("provider", nargs="?", default=None, choices=_SETUP_CHOICES, help="설정할 provider 또는 dart-key")
+    parser.add_argument(
+        "provider", nargs="?", default=None, choices=_SETUP_CHOICES, help="설정할 provider 또는 dart-key"
+    )
     parser.add_argument("--login", action="store_true", help="oauth-codex 브라우저 로그인 강제 실행")
     parser.set_defaults(handler=run)
 
@@ -302,11 +303,11 @@ def _setup_dart_key() -> int:
 
     _save_dart_key_to_dotenv(key)
 
-    print(f"\n  ✓ .env에 DART_API_KEY 저장 완료")
+    print("\n  ✓ .env에 DART_API_KEY 저장 완료")
     print("    (이 키는 git에 공유되지 않습니다)\n")
     print("  수집 시작:")
-    print(f"    dartlab collect 005930")
-    print(f"    dartlab collect --auto\n")
+    print("    dartlab collect 005930")
+    print("    dartlab collect --auto\n")
     print("  참고: docs 수집은 DART 서버 부하 방지를 위해 섹션당 5~10초 간격으로")
     print("        크롤링하므로 종목당 2~10분이 소요됩니다.\n")
     return 0

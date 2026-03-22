@@ -62,6 +62,7 @@ _SIMPLE: dict[str, str] = {
 
 # ── Structured Messages (actions + hasDartApiKey 분기) ───────────
 
+
 class _StructuredMsg:
     """structured 메시지 정의. actions_with_key / actions_without_key로 분기."""
 
@@ -135,6 +136,7 @@ _STRUCTURED: dict[str, _StructuredMsg] = {
 
 # ── Lazy Context ─────────────────────────────────────────────────
 
+
 class _Context:
     """hasDartApiKey, verbose 캐시 — lazy import으로 circular dependency 방지."""
 
@@ -147,6 +149,7 @@ class _Context:
         if self._dart_key is None:
             try:
                 from dartlab.engines.company.dart.openapi.client import hasDartApiKey
+
                 self._dart_key = hasDartApiKey()
             except ImportError:
                 self._dart_key = False
@@ -156,6 +159,7 @@ class _Context:
     def verbose(self) -> bool:
         if self._verbose is None:
             from dartlab import config
+
             self._verbose = config.verbose
         return self._verbose
 
@@ -169,6 +173,7 @@ _ctx = _Context()
 
 
 # ── Internal Formatting ──────────────────────────────────────────
+
 
 def _format_simple(key: str, **kwargs: Any) -> str:
     return _SIMPLE[key].format(**kwargs)
@@ -193,6 +198,7 @@ def _format_structured(msg: _StructuredMsg, **kwargs: Any) -> str:
 
 
 # ── Public API ───────────────────────────────────────────────────
+
 
 def emit(key: str, *, raise_as: type | None = None, **kwargs: Any) -> str:
     """메시지 조립 + 출력 (또는 예외).

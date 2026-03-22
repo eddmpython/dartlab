@@ -100,7 +100,8 @@ def loadData(
             refresh=refresh,
         )
     elif not path.exists():
-        from dartlab.core.guidance import emit, format as gfmt
+        from dartlab.core.guidance import emit
+        from dartlab.core.guidance import format as gfmt
 
         label = DATA_RELEASES[category]["label"]
         emit("download:start", stockCode=stockCode, label=label)
@@ -113,9 +114,7 @@ def loadData(
             if path.exists():
                 path.unlink()
             key = "error:download_failed" if category == "docs" else "error:download_failed"
-            raise RuntimeError(
-                gfmt(key, stockCode=stockCode, label=label, error=str(e))
-            ) from e
+            raise RuntimeError(gfmt(key, stockCode=stockCode, label=label, error=str(e))) from e
         except ValueError:
             if path.exists():
                 path.unlink()
@@ -275,7 +274,7 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
             try:
                 _downloadWithRetry(asset["browser_download_url"], dest)
             except (URLError, socket.timeout, OSError) as e:
-                print(f"\n", end="")
+                print("\n", end="")
                 emit("download:failed_item", name=asset["name"], error=str(e))
                 if dest.exists():
                     dest.unlink()

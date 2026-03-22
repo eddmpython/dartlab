@@ -132,14 +132,16 @@ async def fetch_history(
         if i >= len(closes) or closes[i] is None:
             continue
         dt = datetime.fromtimestamp(ts, tz=timezone.utc)
-        rows.append({
-            "date": dt.strftime("%Y-%m-%d"),
-            "open": opens[i] if i < len(opens) and opens[i] is not None else 0.0,
-            "high": highs[i] if i < len(highs) and highs[i] is not None else 0.0,
-            "low": lows[i] if i < len(lows) and lows[i] is not None else 0.0,
-            "close": closes[i],
-            "volume": volumes[i] if i < len(volumes) and volumes[i] is not None else 0,
-        })
+        rows.append(
+            {
+                "date": dt.strftime("%Y-%m-%d"),
+                "open": opens[i] if i < len(opens) and opens[i] is not None else 0.0,
+                "high": highs[i] if i < len(highs) and highs[i] is not None else 0.0,
+                "low": lows[i] if i < len(lows) and lows[i] is not None else 0.0,
+                "close": closes[i],
+                "volume": volumes[i] if i < len(volumes) and volumes[i] is not None else 0,
+            }
+        )
 
     return rows
 
@@ -232,9 +234,7 @@ async def fetch_revenue_consensus(
     # financialData: 현재 실적 (totalRevenue)
     fin_data = result_data.get("financialData", {})
     total_revenue = fin_data.get("totalRevenue", {}).get("raw", 0)
-    if total_revenue > 0 and not any(
-        i.source == "yahoo_actual" for i in items
-    ):
+    if total_revenue > 0 and not any(i.source == "yahoo_actual" for i in items):
         # fiscal year 추정: 가장 최근 완료 연도
         current_year = datetime.now(timezone.utc).year
         items.append(

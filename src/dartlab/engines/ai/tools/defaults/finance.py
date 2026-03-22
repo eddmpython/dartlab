@@ -1025,7 +1025,6 @@ def register_finance_tools(company: Any, register_tool) -> None:
     def forecast_revenue_tool(horizon: str = "3") -> str:
         """매출 앙상블 예측 v3 — 7소스 + 세그먼트 + 시나리오."""
         from dartlab.engines.common.finance.revenue_forecast import (
-            CompanyDataBundle,
             forecast_revenue as _fr,
         )
 

@@ -613,6 +613,68 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
                 risks.append(Flag("danger", "audit", f"감사의견 비적정: {latest}"))
                 score -= 2
 
+    # 감사인 안정성 (PCAOB AS 3101) — Big4 + 장기 유지
+    _big4_kw = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
+    if audit is not None and audit.auditors:
+        maxScore += 2
+        uniqueAuditors = [a for a in audit.auditors if a is not None]
+        latestAuditor = uniqueAuditors[-1] if uniqueAuditors else None
+
+        if latestAuditor and any(kw in latestAuditor for kw in _big4_kw):
+            # Big4 판정
+            changeCount = sum(1 for i in range(1, len(uniqueAuditors)) if uniqueAuditors[i] != uniqueAuditors[i - 1])
+            if changeCount == 0 and len(uniqueAuditors) >= 3:
+                details.append(f"감사인: {latestAuditor} (Big4, 3년+ 유지)")
+                score += 2
+            elif changeCount == 0:
+                details.append(f"감사인: {latestAuditor} (Big4)")
+                score += 1
+            else:
+                details.append(f"감사인: {latestAuditor} (Big4, {changeCount}회 교체)")
+                score += 1
+        elif latestAuditor:
+            details.append(f"감사인: {latestAuditor} (비Big4)")
+            # 빈번 교체 시 감점
+            changeCount = sum(1 for i in range(1, len(uniqueAuditors)) if uniqueAuditors[i] != uniqueAuditors[i - 1])
+            if changeCount >= 2:
+                score -= 1
+                risks.append(Flag("warning", "audit", f"감사인 빈번 교체 ({changeCount}회)"))
+
+    # 내부통제 (SOX 302/404)
+    try:
+        ic = getattr(rpt, "internalControl", None)
+        if ic is not None:
+            controlDf = getattr(ic, "controlDf", None)
+            if controlDf is not None and len(controlDf) > 0:
+                maxScore += 2
+                latestRow = controlDf.row(-1, named=True)
+                hasWeakness = latestRow.get("hasWeakness", False)
+                opinion = latestRow.get("opinion", "")
+                if hasWeakness:
+                    score -= 2
+                    details.append(f"내부통제: 취약점 보고 ({opinion})")
+                    risks.append(Flag("danger", "governance", "내부통제 취약점"))
+                else:
+                    score += 2
+                    details.append(f"내부통제: {opinion or '적정'}")
+    except (AttributeError, IndexError):
+        pass
+
+    # 감사위원회 활동
+    try:
+        auditSys = getattr(rpt, "auditSystem", None)
+        if auditSys is not None:
+            activity = getattr(auditSys, "activity", None) or []
+            if activity:
+                maxScore += 1
+                score += 1
+                details.append(f"감사위원회: {len(activity)}건 활동")
+            elif getattr(auditSys, "committee", None):
+                maxScore += 1
+                details.append("감사위원회: 설치됨 (활동 미확인)")
+    except AttributeError:
+        pass
+
     div = rpt.dividend
     if div is not None and div.dps:
         maxScore += 3

@@ -19,6 +19,11 @@ from dartlab.engines.common.finance.forecast import (
     scenario_analysis,
     sensitivity_analysis,
 )
+from dartlab.engines.common.finance.merton import (
+    MertonResult,
+    calcEquityVolatility,
+    solveMerton,
+)
 from dartlab.engines.common.finance.prediction import (
     ContextSignals,
     adjust_probabilities,
@@ -58,11 +63,6 @@ from dartlab.engines.common.finance.simulation import (
     simulate_all_scenarios,
     simulate_scenario,
     stress_test,
-)
-from dartlab.engines.common.finance.merton import (
-    MertonResult,
-    calcEquityVolatility,
-    solveMerton,
 )
 from dartlab.engines.common.finance.valuation import (
     DCFResult,

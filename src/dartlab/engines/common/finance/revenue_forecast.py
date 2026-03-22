@@ -35,7 +35,6 @@ from dartlab.engines.common.finance.extract import (
     getTTM,
 )
 from dartlab.engines.common.finance.forecast import (
-    ForecastResult,
     forecast_metric,
 )
 
@@ -44,16 +43,25 @@ log = logging.getLogger(__name__)
 # β > 0.5이고 R² 극저가 아닌 섹터만 매크로 조정 적용
 # simulation.py SECTOR_ELASTICITY에서 β ≥ 0.8인 섹터
 _MACRO_VALID_SECTORS = {
-    "반도체", "자동차", "화학", "철강", "건설",
-    "금융/증권", "IT/소프트웨어", "유통", "섬유/의류",
-    "금융/은행", "금융/보험", "산업재",
+    "반도체",
+    "자동차",
+    "화학",
+    "철강",
+    "건설",
+    "금융/증권",
+    "IT/소프트웨어",
+    "유통",
+    "섬유/의류",
+    "금융/은행",
+    "금융/보험",
+    "산업재",
 }
 # R² 극저 — β가 있어도 신호 대비 노이즈가 큼
 _MACRO_SKIP_SECTORS: set[str] = set()
 
 # β 크기별 매크로 가중치 (시계열에서 할당)
-_MACRO_WEIGHT_HIGH = 0.10   # β ≥ 1.2
-_MACRO_WEIGHT_MED = 0.05    # 0.8 ≤ β < 1.2
+_MACRO_WEIGHT_HIGH = 0.10  # β ≥ 1.2
+_MACRO_WEIGHT_MED = 0.05  # 0.8 ≤ β < 1.2
 
 # ROIC 기반 성장 소스 가중치 (시계열에서 할당)
 _ROIC_WEIGHT = 0.15
@@ -188,7 +196,11 @@ class RevenueForecastResult:
 
         valid_hist = [v for v in self.historical if v is not None]
         if self.projected and valid_hist:
-            base = self.projected[0] / (1 + self.growth_rates[0] / 100) if self.growth_rates and self.growth_rates[0] != -100 else valid_hist[-1]
+            base = (
+                self.projected[0] / (1 + self.growth_rates[0] / 100)
+                if self.growth_rates and self.growth_rates[0] != -100
+                else valid_hist[-1]
+            )
             lines.append(f"  기준 매출: {base / 1e8:,.0f}억")
         elif valid_hist:
             lines.append(f"  최근 실적: {valid_hist[-1] / 1e8:,.0f}억")
@@ -204,19 +216,29 @@ class RevenueForecastResult:
                 sg = self.scenario_growth_rates.get(label, [])
                 prob = probs.get(label, 0)
                 if sc:
-                    lines.append(f"  {label.title()}({prob:.0f}%): {sc[0] / 1e8:,.0f}억 ({sg[0]:+.1f}%)" if sg else f"  {label.title()}: {sc[0] / 1e8:,.0f}억")
+                    lines.append(
+                        f"  {label.title()}({prob:.0f}%): {sc[0] / 1e8:,.0f}억 ({sg[0]:+.1f}%)"
+                        if sg
+                        else f"  {label.title()}: {sc[0] / 1e8:,.0f}억"
+                    )
 
         # v3: 세그먼트
         if self.segment_forecasts:
             lines.append(f"  세그먼트: {len(self.segment_forecasts)}개 부문")
             for sf in self.segment_forecasts[:3]:  # 상위 3개만 표시
                 if sf.projected:
-                    lines.append(f"    {sf.name}({sf.share_of_revenue:.0f}%): {sf.projected[0] / 1e8:,.0f}억 ({sf.growth_rates[0]:+.1f}%)" if sf.growth_rates else f"    {sf.name}: {sf.projected[0] / 1e8:,.0f}억")
+                    lines.append(
+                        f"    {sf.name}({sf.share_of_revenue:.0f}%): {sf.projected[0] / 1e8:,.0f}억 ({sf.growth_rates[0]:+.1f}%)"
+                        if sf.growth_rates
+                        else f"    {sf.name}: {sf.projected[0] / 1e8:,.0f}억"
+                    )
 
         # v3: 수주잔고
         if self.backlog_signal:
             bs = self.backlog_signal
-            lines.append(f"  수주잔고: B/R={bs.backlog_revenue_ratio:.1f}x ({bs.br_ratio_trend}), 내재 성장 {bs.implied_revenue_growth:+.1f}%")
+            lines.append(
+                f"  수주잔고: B/R={bs.backlog_revenue_ratio:.1f}x ({bs.br_ratio_trend}), 내재 성장 {bs.implied_revenue_growth:+.1f}%"
+            )
 
         if self.assumptions:
             for a in self.assumptions:
@@ -234,7 +256,8 @@ class RevenueForecastResult:
 
 
 def _fetch_consensus_revenue(
-    stock_code: str, market: str = "KR",
+    stock_code: str,
+    market: str = "KR",
 ) -> list[tuple[int, float, str]]:
     """gather에서 매출 컨센서스를 가져온다.
 
@@ -252,11 +275,7 @@ def _fetch_consensus_revenue(
             g.close()
         except RuntimeError:
             pass  # event loop already closed
-        return [
-            (item.fiscal_year, item.revenue_est, item.source)
-            for item in items
-            if item.revenue_est > 0
-        ]
+        return [(item.fiscal_year, item.revenue_est, item.source) for item in items if item.revenue_est > 0]
     except (ImportError, OSError) as exc:
         log.debug("컨센서스 수집 실패: %s", exc)
         return []
@@ -512,6 +531,7 @@ def _compute_weights(
     if sector_key and sector_key not in _MACRO_SKIP_SECTORS and "timeseries" in weights:
         try:
             from dartlab.engines.common.finance.simulation import get_elasticity
+
             beta = get_elasticity(sector_key).revenue_to_gdp
         except (ImportError, AttributeError):
             beta = 0
@@ -608,9 +628,9 @@ def _extract_segment_forecasts(
     if segment_revenue is None:
         return []
 
-    try:
-        import polars as pl_rt
-    except ImportError:
+    import importlib.util
+
+    if importlib.util.find_spec("polars") is None:
         return []
 
     df = segment_revenue
@@ -813,9 +833,7 @@ def _compute_backlog_signal(
         # 전환율: 역사적 평균 (매출/수주잔고)
         conversion_rate = 1.0 / br_ratio if br_ratio > 0 else 0.0
 
-        is_applicable = bool(
-            sector_key and any(s in sector_key for s in _BACKLOG_SECTORS)
-        )
+        is_applicable = bool(sector_key and any(s in sector_key for s in _BACKLOG_SECTORS))
 
         return BacklogSignal(
             backlog_revenue_ratio=round(br_ratio, 2),
@@ -934,6 +952,7 @@ def _compute_fx_adjustment(
     fx_beta = 0.5
     try:
         from dartlab.engines.common.finance.simulation import get_elasticity
+
         elasticity = get_elasticity(sector_key or "")
         if hasattr(elasticity, "revenue_to_fx") and elasticity.revenue_to_fx > 0:
             fx_beta = elasticity.revenue_to_fx
@@ -1005,11 +1024,14 @@ def forecast_revenue(
     seg_growth_rates: list[float] = []
     if company_data and company_data.segment_revenue is not None:
         segment_forecasts = _extract_segment_forecasts(
-            company_data.segment_revenue, horizon,
+            company_data.segment_revenue,
+            horizon,
         )
         if segment_forecasts:
             seg_growth_rates = _segment_bottom_up_growth(
-                segment_forecasts, horizon, last_revenue,
+                segment_forecasts,
+                horizon,
+                last_revenue,
             )
 
     # ── Source 6: 수주잔고 선행지표 ──
@@ -1051,7 +1073,9 @@ def forecast_revenue(
     fx_adj = 0.0
     if company_data:
         fx_adj = _compute_fx_adjustment(
-            company_data.export_ratio, company_data.fx_rate, sector_key,
+            company_data.export_ratio,
+            company_data.fx_rate,
+            sector_key,
         )
         if abs(fx_adj) > 0.01:
             macro_adj = [m + fx_adj for m in macro_adj]
@@ -1131,8 +1155,7 @@ def forecast_revenue(
         roic_ts_gap = roic_growth_rate - avg_ts_g
         if abs(roic_ts_gap) > 10:
             warnings.append(
-                f"ROIC 내재 성장률({roic_growth_rate:.1f}%)과 "
-                f"시계열 성장률({avg_ts_g:.1f}%) 괴리 {roic_ts_gap:+.1f}%p"
+                f"ROIC 내재 성장률({roic_growth_rate:.1f}%)과 시계열 성장률({avg_ts_g:.1f}%) 괴리 {roic_ts_gap:+.1f}%p"
             )
 
     # 앙상블: 성장률 기반 블렌딩 (스케일 불일치 방지)
@@ -1142,7 +1165,11 @@ def forecast_revenue(
             break
 
         # 시계열 성장률
-        ts_g = ts_growth_rates[yr_offset - 1] if yr_offset <= len(ts_growth_rates) else (ts_growth_rates[-1] if ts_growth_rates else 0.0)
+        ts_g = (
+            ts_growth_rates[yr_offset - 1]
+            if yr_offset <= len(ts_growth_rates)
+            else (ts_growth_rates[-1] if ts_growth_rates else 0.0)
+        )
 
         # 컨센서스 성장률
         con_g = con_growth_rates[yr_offset - 1] if yr_offset <= len(con_growth_rates) else None
@@ -1164,7 +1191,11 @@ def forecast_revenue(
 
         # v3: 세그먼트 Bottom-Up 성장률
         if seg_growth_rates and "segments" in weights:
-            seg_g = seg_growth_rates[yr_offset - 1] if yr_offset <= len(seg_growth_rates) else (seg_growth_rates[-1] if seg_growth_rates else 0.0)
+            seg_g = (
+                seg_growth_rates[yr_offset - 1]
+                if yr_offset <= len(seg_growth_rates)
+                else (seg_growth_rates[-1] if seg_growth_rates else 0.0)
+            )
             blended_growth += seg_g * weights.get("segments", 0)
 
         # v3: 수주잔고 내재 성장률
@@ -1255,7 +1286,9 @@ def forecast_revenue(
                 assumptions.append(f"ROIC({w:.0%}): g=ROIC×재투자율={roic_growth_rate:.1f}%")
 
     if lifecycle != "unknown":
-        assumptions.append(f"라이프사이클: {lifecycle} (CAGR {lifecycle_detail.get('cagr_3y', 'N/A')}%, CV {lifecycle_detail.get('cv', 'N/A')})")
+        assumptions.append(
+            f"라이프사이클: {lifecycle} (CAGR {lifecycle_detail.get('cagr_3y', 'N/A')}%, CV {lifecycle_detail.get('cv', 'N/A')})"
+        )
 
     # ── AI 컨텍스트 (Tier 2 브릿지) ──
     # 컨센서스 vs 시계열 괴리
@@ -1295,8 +1328,11 @@ def forecast_revenue(
 
     # ── v3: 3-시나리오 ──
     scenarios, scenario_grs, scenario_probs = _build_scenarios(
-        projected, [round(g, 1) for g in growth_rates],
-        historical, lifecycle, last_revenue,
+        projected,
+        [round(g, 1) for g in growth_rates],
+        historical,
+        lifecycle,
+        last_revenue,
     )
 
     # v3: 세그먼트/수주잔고 AI 컨텍스트
@@ -1318,6 +1354,7 @@ def forecast_revenue(
     ft_key = None
     if stock_code:
         from dartlab.engines.common.finance.forward_test import generate_key
+
         ft_key = generate_key(stock_code, horizon)
 
     return RevenueForecastResult(
@@ -1382,7 +1419,11 @@ def apply_ai_overlay(
 
     # 보정 적용
     new_projected: list[float] = []
-    prev = result.projected[0] / (1 + result.growth_rates[0] / 100) if result.projected and result.growth_rates and result.growth_rates[0] != -100 else 0
+    prev = (
+        result.projected[0] / (1 + result.growth_rates[0] / 100)
+        if result.projected and result.growth_rates and result.growth_rates[0] != -100
+        else 0
+    )
 
     for i, (proj, gr) in enumerate(zip(result.projected, result.growth_rates)):
         new_gr = gr + adj[i]
@@ -1396,7 +1437,11 @@ def apply_ai_overlay(
     new_growth_rates = []
     for i, p in enumerate(new_projected):
         if i == 0:
-            base = result.projected[0] / (1 + result.growth_rates[0] / 100) if result.projected and result.growth_rates and result.growth_rates[0] != -100 else 0
+            base = (
+                result.projected[0] / (1 + result.growth_rates[0] / 100)
+                if result.projected and result.growth_rates and result.growth_rates[0] != -100
+                else 0
+            )
             if base > 0:
                 new_growth_rates.append(round((p / base - 1) * 100, 1))
             else:
@@ -1431,7 +1476,9 @@ def apply_ai_overlay(
         projected=new_projected,
         horizon=result.horizon,
         method=result.method,
-        confidence=overlay.confidence_override if hasattr(overlay, "confidence_override") and overlay.confidence_override else result.confidence,  # type: ignore[attr-defined]
+        confidence=overlay.confidence_override
+        if hasattr(overlay, "confidence_override") and overlay.confidence_override
+        else result.confidence,  # type: ignore[attr-defined]
         growth_rates=new_growth_rates,
         sources=result.sources,
         source_weights=result.source_weights,

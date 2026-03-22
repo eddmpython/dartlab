@@ -49,6 +49,9 @@ ANOMALY_DETECTORS = [
     "financial_sector",
     "trend_deterioration",
     "ccc_deterioration",
+    "audit_red_flags",
+    "benford_law",
+    "revenue_quality",
 ]
 
 
@@ -77,10 +80,22 @@ DISTRESS_MODELS = {
 
 DISTRESS_SCORECARD = {
     "axes": [
-        {"name": "정량 분석", "weight": "0.30 (Merton 있을 때) / 0.40 (없을 때)", "models": ["ohlsonOScore", "altmanZppScore", "altmanZScore"]},
+        {
+            "name": "정량 분석",
+            "weight": "0.30 (Merton 있을 때) / 0.40 (없을 때)",
+            "models": ["ohlsonOScore", "altmanZppScore", "altmanZScore"],
+        },
         {"name": "시장 기반", "weight": "0.20 (Merton 있을 때) / 0 (없을 때)", "models": ["mertonD2D"]},
-        {"name": "이익 품질", "weight": "0.15 (Merton 있을 때) / 0.20 (없을 때)", "models": ["beneishMScore", "sloanAccrual", "piotroskiFScore"]},
-        {"name": "추세 분석", "weight": "0.25 (Merton 있을 때) / 0.30 (없을 때)", "source": "anomaly (trendDeterioration, cccDeterioration)"},
+        {
+            "name": "이익 품질",
+            "weight": "0.15 (Merton 있을 때) / 0.20 (없을 때)",
+            "models": ["beneishMScore", "sloanAccrual", "piotroskiFScore"],
+        },
+        {
+            "name": "추세 분석",
+            "weight": "0.25 (Merton 있을 때) / 0.30 (없을 때)",
+            "source": "anomaly (trendDeterioration, cccDeterioration)",
+        },
         {"name": "감사 위험", "weight": 0.10, "source": "anomaly (audit, governance)"},
     ],
     "creditGrade": "AAA~D (S&P PD 매핑, 10단계)",

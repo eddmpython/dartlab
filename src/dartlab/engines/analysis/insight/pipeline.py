@@ -17,7 +17,7 @@ from dartlab.engines.analysis.insight.grading import (
     analyzeRiskSummary,
 )
 from dartlab.engines.analysis.insight.summary import classifyProfile, generateSummary
-from dartlab.engines.analysis.insight.types import AnalysisResult, MarketDataForDistress
+from dartlab.engines.analysis.insight.types import AnalysisResult, AuditDataForAnomaly, MarketDataForDistress
 from dartlab.engines.analysis.sector.types import Sector
 from dartlab.engines.common.finance.ratios import calcRatios
 
@@ -25,6 +25,106 @@ if TYPE_CHECKING:
     from dartlab.engines.company.dart.company import Company
 
 SeriesPair = tuple[dict, list[str]]
+
+
+def _extractAuditData(company: Company | None) -> AuditDataForAnomaly | None:
+    """Company에서 감사 데이터를 추출하여 AuditDataForAnomaly DTO 생성."""
+    if company is None:
+        return None
+
+    rpt = getattr(company, "report", None)
+    if rpt is None:
+        return None
+
+    auditors: list[str | None] = []
+    opinions: list[str | None] = []
+    fees: list[float | None] = []
+    kamCounts: list[int | None] = []
+    hasGoingConcern = False
+    hasInternalControlWeakness = False
+
+    # docs 파이프라인 감사 데이터 (opinionDf, feeDf)
+    try:
+        auditResult = getattr(rpt, "audit", None)
+        if auditResult is not None:
+            # Report API 기반: auditors, opinions 시계열
+            rawAuditors = getattr(auditResult, "auditors", None)
+            rawOpinions = getattr(auditResult, "opinions", None)
+            if rawAuditors:
+                auditors = list(rawAuditors)
+            if rawOpinions:
+                opinions = list(rawOpinions)
+
+            # docs 기반: opinionDf (KAM, goingConcern 포함)
+            opDf = getattr(auditResult, "opinionDf", None)
+            if opDf is not None and len(opDf) > 0:
+                # KAM 건수 추출
+                if "keyAuditMatters" in opDf.columns:
+                    for row in opDf.iter_rows(named=True):
+                        kam = row.get("keyAuditMatters")
+                        if kam and isinstance(kam, str) and len(kam.strip()) > 0:
+                            kamCounts.append(kam.count(",") + 1)
+                        else:
+                            kamCounts.append(0)
+
+                # goingConcern 확인 (최신기)
+                if "goingConcern" in opDf.columns:
+                    latestGc = opDf.row(-1, named=True).get("goingConcern")
+                    if latestGc and isinstance(latestGc, str) and len(latestGc.strip()) > 0:
+                        hasGoingConcern = True
+
+                # opinionDf에서 auditors/opinions 보강 (Report API 없을 때)
+                if not auditors and "auditor" in opDf.columns:
+                    auditors = opDf["auditor"].to_list()
+                if not opinions and "opinion" in opDf.columns:
+                    opinions = opDf["opinion"].to_list()
+
+            # feeDf에서 보수 추출
+            feeDf = getattr(auditResult, "feeDf", None)
+            if feeDf is not None and len(feeDf) > 0:
+                feeCol = (
+                    "actualFee"
+                    if "actualFee" in feeDf.columns
+                    else "contractFee"
+                    if "contractFee" in feeDf.columns
+                    else None
+                )
+                if feeCol:
+                    fees = feeDf[feeCol].to_list()
+    except (AttributeError, TypeError):
+        pass
+
+    # 내부통제 취약점
+    try:
+        ic = getattr(rpt, "internalControl", None)
+        if ic is not None:
+            controlDf = getattr(ic, "controlDf", None)
+            if controlDf is not None and len(controlDf) > 0:
+                latestRow = controlDf.row(-1, named=True)
+                if latestRow.get("hasWeakness"):
+                    hasInternalControlWeakness = True
+    except (AttributeError, IndexError):
+        pass
+
+    # 데이터가 하나도 없으면 None
+    if (
+        not auditors
+        and not opinions
+        and not fees
+        and not kamCounts
+        and not hasGoingConcern
+        and not hasInternalControlWeakness
+    ):
+        return None
+
+    return AuditDataForAnomaly(
+        auditors=auditors,
+        opinions=opinions,
+        fees=fees,
+        kamCounts=kamCounts,
+        hasGoingConcern=hasGoingConcern,
+        hasInternalControlWeakness=hasInternalControlWeakness,
+    )
 
 
 def _ratio_archetype_override(company: Company | None) -> str | None:
@@ -110,7 +210,9 @@ def analyze(
     insights["risk"] = analyzeRiskSummary(insights)
     insights["opportunity"] = analyzeOpportunitySummary(insights)
 
-    anomalies = runAnomalyDetection(aSeries, isFinancial)
+    # 감사 데이터 추출 (Company가 있을 때만)
+    auditData = _extractAuditData(company) if company is not None else None
+    anomalies = runAnomalyDetection(aSeries, isFinancial, auditData=auditData)
 
     # Merton 시장 기반 모델 (비금융 + marketData 제공 시)
     mertonResult = None

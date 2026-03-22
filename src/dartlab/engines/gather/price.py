@@ -50,7 +50,10 @@ async def fetch(
             # yahoo는 동기(yfinance) → to_thread 필요
             if source_name == "yahoo":
                 result = await asyncio.to_thread(
-                    module.fetch_price, stock_code, client, market=market,
+                    module.fetch_price,
+                    stock_code,
+                    client,
+                    market=market,
                 )
             else:
                 result = await module.fetch_price(stock_code, client, market=market)

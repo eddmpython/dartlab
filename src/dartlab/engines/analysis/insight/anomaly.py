@@ -1,10 +1,11 @@
-"""이상치 탐지 — 9개 룰 기반."""
+"""이상치 탐지 — 11개 룰 기반."""
 
 from __future__ import annotations
 
+import math
 from typing import Optional
 
-from dartlab.engines.analysis.insight.types import Anomaly
+from dartlab.engines.analysis.insight.types import Anomaly, AuditDataForAnomaly
 from dartlab.engines.common.finance.extract import getAnnualValues
 
 
@@ -461,11 +462,288 @@ def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Ano
     return anomalies
 
 
+# ── Big4 감사법인 목록 ──
+
+_BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
+
+
+def _isBig4(auditor: str | None) -> bool:
+    """감사인이 Big4인지 판정."""
+    if not auditor:
+        return False
+    return any(kw in auditor for kw in _BIG4_KEYWORDS)
+
+
+def detectAuditRedFlags(auditData: AuditDataForAnomaly | None) -> list[Anomaly]:
+    """감사 Red Flag 탐지 — PCAOB AS 3101, ISA 570/701/705, SOX 302/404.
+
+    6개 항목: 감사인 교체, 감사보수 급변, 계속기업 불확실성,
+    내부통제 취약점, 감사의견 비적정, KAM 급증.
+    """
+    if auditData is None:
+        return []
+
+    anomalies: list[Anomaly] = []
+
+    # 1. 감사인 비정상 교체 (PCAOB AS 3101)
+    auditors = auditData.auditors
+    if len(auditors) >= 2:
+        # 고유 감사인 수 (None 제외)
+        unique = [a for a in auditors if a is not None]
+        changes = []
+        for i in range(1, len(unique)):
+            if unique[i] != unique[i - 1]:
+                changes.append((i, unique[i - 1], unique[i]))
+
+        if len(changes) >= 3:
+            anomalies.append(
+                Anomaly(
+                    "danger",
+                    "audit",
+                    f"감사인 {len(changes)}회 교체 (5년 내) — 빈번 교체 Red Flag",
+                    float(len(changes)),
+                )
+            )
+        elif len(changes) >= 2:
+            anomalies.append(Anomaly("danger", "audit", "감사인 2년 이내 재교체 — Red Flag", float(len(changes))))
+        elif len(changes) == 1:
+            _, prev, curr = changes[0]
+            if _isBig4(prev) and not _isBig4(curr):
+                anomalies.append(Anomaly("warning", "audit", f"Big4→비Big4 교체 ({prev} → {curr})", 1.0))
+
+    # 2. 감사보수 급변 (ISA 260, ±30% YoY)
+    fees = auditData.fees
+    if len(fees) >= 2:
+        validFees = [(i, f) for i, f in enumerate(fees) if f is not None and f > 0]
+        if len(validFees) >= 2:
+            _, prevFee = validFees[-2]
+            _, currFee = validFees[-1]
+            feeChange = (currFee - prevFee) / prevFee * 100
+            if abs(feeChange) > 30:
+                direction = "급증" if feeChange > 0 else "급감"
+                anomalies.append(Anomaly("warning", "audit", f"감사보수 {direction} ({feeChange:+.0f}%)", feeChange))
+
+    # 3. 계속기업 불확실성 (ISA 570)
+    if auditData.hasGoingConcern:
+        anomalies.append(Anomaly("danger", "audit", "계속기업 불확실성 — 감사인 보고 (ISA 570)", 1.0))
+
+    # 4. 내부통제 취약점 (SOX 302/404)
+    if auditData.hasInternalControlWeakness:
+        anomalies.append(Anomaly("danger", "audit", "내부회계관리제도 취약점 보고 (SOX 302/404)", 1.0))
+
+    # 5. 감사의견 비적정 (ISA 705)
+    opinions = auditData.opinions
+    if opinions:
+        latest = None
+        for v in reversed(opinions):
+            if v is not None:
+                latest = v
+                break
+        if latest is not None and "적정" not in str(latest):
+            anomalies.append(Anomaly("danger", "audit", f"감사의견 비적정: {latest} (ISA 705)", 1.0))
+
+    # 6. KAM 급증 (ISA 701)
+    kamCounts = auditData.kamCounts
+    if len(kamCounts) >= 2:
+        validKam = [(i, k) for i, k in enumerate(kamCounts) if k is not None]
+        if len(validKam) >= 2:
+            _, prevKam = validKam[-2]
+            _, currKam = validKam[-1]
+            if currKam > prevKam + 2:
+                anomalies.append(
+                    Anomaly(
+                        "info",
+                        "audit",
+                        f"KAM 급증 ({prevKam}건 → {currKam}건) — 감사인 위험 인식 확대",
+                        float(currKam - prevKam),
+                    )
+                )
+
+    return anomalies
+
+
+def detectBenfordAnomaly(aSeries: dict) -> list[Anomaly]:
+    """Benford's Law 이상치 탐지 — 회계 조작 의심 신호.
+
+    Nigrini (1996), AICPA 공식 감사 절차.
+    재무제표 수치의 첫째 유효 자릿수 분포를 Benford 기대 분포와 비교.
+    χ² > 15.51 (df=8, p<0.05) → warning, χ² > 20.09 (p<0.01) → danger.
+    """
+    anomalies: list[Anomaly] = []
+
+    # 모든 IS/BS/CF 값에서 첫째 유효 자릿수 추출
+    digits: list[int] = []
+    for sjDiv in ("IS", "BS", "CF"):
+        section = aSeries.get(sjDiv, {})
+        for _key, vals in section.items():
+            if not isinstance(vals, list):
+                continue
+            for v in vals:
+                if v is None or not isinstance(v, (int, float)):
+                    continue
+                if v == 0 or not math.isfinite(v):
+                    continue
+                # 첫째 유효 자릿수 추출
+                absV = abs(v)
+                d = int(str(absV).lstrip("0").lstrip(".").lstrip("0")[:1]) if absV != 0 else 0
+                if 1 <= d <= 9:
+                    digits.append(d)
+
+    # 최소 50개 이상 숫자 필요
+    if len(digits) < 50:
+        return anomalies
+
+    n = len(digits)
+    # Benford 기대 분포: P(d) = log10(1 + 1/d)
+    expected = {d: math.log10(1 + 1 / d) for d in range(1, 10)}
+    observed = {d: 0 for d in range(1, 10)}
+    for d in digits:
+        observed[d] += 1
+
+    # χ² 검정
+    chi2 = 0.0
+    for d in range(1, 10):
+        exp_count = expected[d] * n
+        obs_count = observed[d]
+        if exp_count > 0:
+            chi2 += (obs_count - exp_count) ** 2 / exp_count
+
+    # df=8, p<0.01 → 20.09, p<0.05 → 15.51
+    if chi2 > 20.09:
+        anomalies.append(
+            Anomaly(
+                "danger",
+                "earningsQuality",
+                f"Benford's Law 위반 (χ²={chi2:.1f}, p<0.01) — 회계 수치 분포 이상",
+                chi2,
+            )
+        )
+    elif chi2 > 15.51:
+        anomalies.append(
+            Anomaly(
+                "warning",
+                "earningsQuality",
+                f"Benford's Law 이탈 (χ²={chi2:.1f}, p<0.05) — 회계 수치 분포 주의",
+                chi2,
+            )
+        )
+
+    return anomalies
+
+
+def detectRevenueQuality(aSeries: dict) -> list[Anomaly]:
+    """매출 품질 탐지 — Dechow & Dichev (2002).
+
+    OCF/Revenue 비율 추세: 매출이 늘어도 현금이 안 들어오면 의심.
+    - OCF/Revenue < 0 (매출 흑자인데 영업CF 적자) → danger
+    - OCF/Revenue 3기 연속 하락 → warning
+    - 매출채권 증가율 > 매출 증가율 × 1.5 (3기 연속) → warning
+    """
+    anomalies: list[Anomaly] = []
+
+    revVals = getAnnualValues(aSeries, "IS", "sales")
+    cfVals = getAnnualValues(aSeries, "CF", "operating_cashflow")
+    arVals = getAnnualValues(aSeries, "BS", "trade_and_other_receivables")
+
+    # OCF/Revenue 비율 시계열
+    n = min(len(revVals), len(cfVals)) if revVals and cfVals else 0
+    ocfRevRatios: list[float | None] = []
+    for i in range(n):
+        rv = revVals[i]
+        cf = cfVals[i]
+        if rv is not None and cf is not None and rv > 0:
+            ocfRevRatios.append(cf / rv)
+        else:
+            ocfRevRatios.append(None)
+
+    # OCF/Revenue < 0 (최신기, 매출 흑자인데 영업CF 적자)
+    if ocfRevRatios:
+        latest = None
+        for v in reversed(ocfRevRatios):
+            if v is not None:
+                latest = v
+                break
+        if latest is not None and latest < 0:
+            anomalies.append(
+                Anomaly(
+                    "danger",
+                    "earningsQuality",
+                    f"매출 대비 영업CF 적자 (OCF/Revenue={latest:.1%}) — 매출 품질 의심",
+                    latest * 100,
+                )
+            )
+
+    # OCF/Revenue 3기 연속 하락
+    validRatios = [r for r in ocfRevRatios if r is not None]
+    if len(validRatios) >= 3:
+        consecutive_decline = 0
+        for i in range(len(validRatios) - 1, 0, -1):
+            if validRatios[i] < validRatios[i - 1]:
+                consecutive_decline += 1
+            else:
+                break
+        if consecutive_decline >= 3:
+            anomalies.append(
+                Anomaly(
+                    "warning",
+                    "earningsQuality",
+                    f"OCF/Revenue {consecutive_decline}기 연속 하락 — 매출 품질 악화 추세",
+                    float(consecutive_decline),
+                )
+            )
+
+    # 매출채권 증가율 > 매출 증가율 × 1.5 (3기 연속)
+    if arVals and revVals and len(arVals) >= 3 and len(revVals) >= 3:
+        n2 = min(len(arVals), len(revVals))
+        arGrowths: list[float | None] = []
+        revGrowths: list[float | None] = []
+        for i in range(1, n2):
+            ar_prev, ar_curr = arVals[i - 1], arVals[i]
+            rv_prev, rv_curr = revVals[i - 1], revVals[i]
+            if ar_prev and ar_prev > 0 and ar_curr is not None:
+                arGrowths.append((ar_curr - ar_prev) / ar_prev * 100)
+            else:
+                arGrowths.append(None)
+            if rv_prev and rv_prev > 0 and rv_curr is not None:
+                revGrowths.append((rv_curr - rv_prev) / rv_prev * 100)
+            else:
+                revGrowths.append(None)
+
+        # 최근 3기 매출채권 증가 > 매출 × 1.5
+        consecutive_ar = 0
+        for i in range(len(arGrowths) - 1, -1, -1):
+            ag = arGrowths[i]
+            rg = revGrowths[i]
+            if ag is not None and rg is not None and rg >= 0 and ag > rg * 1.5 and ag > 10:
+                consecutive_ar += 1
+            else:
+                break
+        if consecutive_ar >= 3:
+            anomalies.append(
+                Anomaly(
+                    "warning",
+                    "earningsQuality",
+                    f"매출채권 증가율 > 매출 증가율×1.5 {consecutive_ar}기 연속 — 수금 품질 의심",
+                    float(consecutive_ar),
+                )
+            )
+
+    return anomalies
+
+
 def runAnomalyDetection(
     aSeries: dict,
     isFinancial: bool = False,
+    *,
+    auditData: AuditDataForAnomaly | None = None,
 ) -> list[Anomaly]:
-    """전체 이상치 탐지 실행."""
+    """전체 이상치 탐지 실행.
+
+    Args:
+        aSeries: 연간 재무 시계열.
+        isFinancial: 금융업 여부.
+        auditData: 감사 데이터 (None이면 감사 탐지기 스킵, 하위호환).
+    """
     anomalies: list[Anomaly] = []
     anomalies.extend(detectEarningsQuality(aSeries, isFinancial))
     anomalies.extend(detectWorkingCapitalAnomaly(aSeries))
@@ -475,6 +753,10 @@ def runAnomalyDetection(
     anomalies.extend(detectFinancialSectorAnomaly(aSeries, isFinancial))
     anomalies.extend(detectTrendDeterioration(aSeries, isFinancial))
     anomalies.extend(detectCCCDeterioration(aSeries, isFinancial))
+    # 세계적 감사 기법 — Phase 086
+    anomalies.extend(detectAuditRedFlags(auditData))
+    anomalies.extend(detectBenfordAnomaly(aSeries))
+    anomalies.extend(detectRevenueQuality(aSeries))
 
     anomalies.sort(key=lambda a: {"danger": 0, "warning": 1, "info": 2}.get(a.severity, 3))
     return anomalies

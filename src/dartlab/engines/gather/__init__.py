@@ -25,7 +25,7 @@ from . import flow as _flow
 from . import history as _history
 from . import price as _price
 from .cache import GatherCache
-from .domains import get_price_fallback, load_domain
+from .domains import load_domain
 from .http import GatherHttpClient, run_async
 from .market_config import get_market_config
 from .types import (
@@ -89,7 +89,10 @@ class Gather:
         return result
 
     def revenue_consensus(
-        self, stock_code: str, *, market: str = "KR",
+        self,
+        stock_code: str,
+        *,
+        market: str = "KR",
     ) -> list[RevenueConsensus]:
         """매출/이익 컨센서스 — KR: 네이버, US: Yahoo quoteSummary."""
         cache_key = f"{stock_code}_{market}"
@@ -102,9 +105,13 @@ class Gather:
                 result = run_async(module.fetch_revenue_consensus(stock_code, self._client))
             else:
                 module = load_domain("yahoo_direct")
-                result = run_async(module.fetch_revenue_consensus(
-                    stock_code, self._client, market=market,
-                ))
+                result = run_async(
+                    module.fetch_revenue_consensus(
+                        stock_code,
+                        self._client,
+                        market=market,
+                    )
+                )
         except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
             log.debug("revenue_consensus 실패 (%s, %s): %s", stock_code, market, exc)
             result = []
@@ -133,9 +140,15 @@ class Gather:
         cached = self._cache.get(cache_key)
         if cached is not None:
             return cached  # type: ignore[return-value]
-        result = run_async(_history.fetch(
-            stock_code, start=start, end=end, market=market, client=self._client,
-        ))
+        result = run_async(
+            _history.fetch(
+                stock_code,
+                start=start,
+                end=end,
+                market=market,
+                client=self._client,
+            )
+        )
         if result:
             from .cache import TTL_HISTORY
 

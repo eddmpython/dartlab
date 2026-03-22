@@ -240,6 +240,26 @@ def _interpretMerton(result: MertonResult) -> ModelScore:
     )
 
 
+def _interpretAuditRedFlags(flagCount: int, hasCritical: bool) -> ModelScore:
+    """감사 Red Flag 수 → ModelScore."""
+    if flagCount == 0:
+        zone, interp = "safe", "감사 관련 Red Flag 없음."
+    elif hasCritical:
+        zone, interp = "distress", f"심각한 감사 Red Flag {flagCount}건. 부실 징후 가능."
+    elif flagCount <= 2:
+        zone, interp = "gray", f"감사 주의 신호 {flagCount}건. 모니터링 필요."
+    else:
+        zone, interp = "distress", f"감사 Red Flag {flagCount}건 누적. 회계 품질 점검 필요."
+    return ModelScore(
+        name="Audit Red Flags",
+        rawValue=float(flagCount),
+        displayValue=f"{flagCount}건" + (" (심각 포함)" if hasCritical else ""),
+        zone=zone,
+        interpretation=interp,
+        reference="PCAOB AS 3101, ISA 570/701/705, SOX 302/404",
+    )
+
+
 def _normalizeMerton(d2d: float) -> float:
     """D2D → 0~100 (높을수록 위험). D2D>4→0, D2D<0.5→100."""
     if d2d > 4.0:
@@ -346,11 +366,7 @@ def calcDistress(
     isFinancial=True이면 Merton을 무시한다 (은행 부채 구조적 왜곡).
     """
     # Merton 사용 여부: 비금융 + 수렴된 결과만
-    useMerton = (
-        mertonResult is not None
-        and not isFinancial
-        and mertonResult.converged
-    )
+    useMerton = mertonResult is not None and not isFinancial and mertonResult.converged
 
     # ── 1. 정량 축 ──
     quant_models: list[ModelScore] = []
@@ -454,6 +470,16 @@ def calcDistress(
     # ── 4. 감사 축 ──
     audit_score = 0.0
     audit_anomalies = [a for a in anomalies if a.category in ("audit", "governance")]
+    audit_models: list[ModelScore] = []
+
+    # 감사 Red Flag 수 기반 점수
+    n_critical = sum(1 for a in audit_anomalies if a.severity == "danger")
+    n_warning = sum(1 for a in audit_anomalies if a.severity == "warning")
+    n_total = len(audit_anomalies)
+
+    if n_total > 0:
+        audit_models.append(_interpretAuditRedFlags(n_total, n_critical > 0))
+
     for a in audit_anomalies:
         if a.severity == "danger":
             audit_score += 50
@@ -463,13 +489,16 @@ def calcDistress(
 
     if not audit_anomalies:
         audit_summary = "감사 이상징후 없음."
+    elif n_critical > 0:
+        audit_summary = f"감사 Red Flag {n_total}건 (심각 {n_critical}건). 즉각 점검 필요."
     else:
-        audit_summary = f"감사/지배구조 이상 {len(audit_anomalies)}건 탐지."
+        audit_summary = f"감사 이상 {n_total}건 탐지. 모니터링 권고."
 
     audit_axis = DistressAxis(
         name="감사 위험",
         score=round(audit_score, 1),
         weight=0.10,
+        models=audit_models,
         summary=audit_summary,
     )
 

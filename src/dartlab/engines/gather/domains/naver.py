@@ -218,15 +218,17 @@ async def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsen
         if revenue is None and op_profit is None:
             continue
 
-        results.append(RevenueConsensus(
-            fiscal_year=fiscal_year,
-            revenue_est=revenue or 0.0,
-            operating_profit_est=op_profit,
-            net_income_est=net_income,
-            eps_est=eps,
-            per_est=per,
-            source="naver_consensus" if is_consensus else "naver_actual",
-        ))
+        results.append(
+            RevenueConsensus(
+                fiscal_year=fiscal_year,
+                revenue_est=revenue or 0.0,
+                operating_profit_est=op_profit,
+                net_income_est=net_income,
+                eps_est=eps,
+                per_est=per,
+                source="naver_consensus" if is_consensus else "naver_actual",
+            )
+        )
 
     return results
 
