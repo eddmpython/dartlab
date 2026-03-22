@@ -27,7 +27,7 @@ from dartlab.core.dataLoader import (
     extractCorpName,
     loadData,
 )
-from dartlab.core.kindList import (
+from dartlab.engines.gather.listing import (
     codeToName,
     getKindList,
     nameToCode,

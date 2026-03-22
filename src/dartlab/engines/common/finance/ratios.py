@@ -6,17 +6,19 @@
 1. calcRatios(series) → RatioResult (최신 단일 시점, 하위호환)
 2. calcRatioSeries(annualSeries, years) → RatioSeriesResult (연도별 시계열)
 
-비율 분류 (6개 카테고리, 50+ 비율):
+비율 분류 (6개 카테고리, 60+ 비율):
 - 수익성: ROE, ROA, ROCE, 영업이익률, 순이익률, 세전이익률, 매출총이익률, EBITDA마진, 매출원가율, 판관비율, 유효세율, 이익품질비율
 - 안정성: 부채비율, 유동비율, 당좌비율, 현금비율, 자기자본비율, 이자보상배율, 순차입금비율, 비유동비율, 운전자본
 - 성장성: 매출성장률, 영업이익성장률, 순이익성장률, 자산성장률, 자본성장률
 - 효율성: 총자산회전율, 유형자산회전율, 재고자산회전율, 매출채권회전율, 매입채무회전율, 영업순환주기
 - 현금흐름: FCF, 영업CF마진, 영업CF/순이익, 영업CF/유동부채, CAPEX비율, 배당성향, FCF/OCF비율
 - 주당지표: EPS, BPS (시가총액 필요: PER, PBR, PSR, EV/EBITDA)
+- 부실예측: Ohlson O-Score, Altman Z''-Score, Springate S-Score, Zmijewski X-Score
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import ClassVar, Optional
 
@@ -127,6 +129,13 @@ class RatioResult:
     beneishMScore: Optional[float] = None
     sloanAccrualRatio: Optional[float] = None
 
+    # 부실 예측 모델
+    ohlsonOScore: Optional[float] = None
+    ohlsonProbability: Optional[float] = None
+    altmanZppScore: Optional[float] = None
+    springateSScore: Optional[float] = None
+    zmijewskiXScore: Optional[float] = None
+
     # 주당지표
     eps: Optional[float] = None
     bps: Optional[float] = None
@@ -225,6 +234,11 @@ class RatioResult:
                 "dpo",
                 "piotroskiFScore",
                 "altmanZScore",
+                "altmanZppScore",
+                "ohlsonOScore",
+                "ohlsonProbability",
+                "springateSScore",
+                "zmijewskiXScore",
                 "beneishMScore",
                 "sloanAccrualRatio",
             ],
@@ -292,6 +306,11 @@ class RatioResult:
         "piotroskiFScore": "Piotroski F-Score (0~9)",
         "piotroskiMaxScore": "Piotroski 최대 점수",
         "altmanZScore": "Altman Z-Score",
+        "altmanZppScore": "Altman Z''-Score (신흥시장)",
+        "ohlsonOScore": "Ohlson O-Score",
+        "ohlsonProbability": "부도확률 (%)",
+        "springateSScore": "Springate S-Score",
+        "zmijewskiXScore": "Zmijewski X-Score",
         "beneishMScore": "Beneish M-Score",
         "sloanAccrualRatio": "Sloan Accrual Ratio (%)",
     }
@@ -1028,6 +1047,101 @@ def _calcComposite(
     #     + 0.115×DEPI - 0.172×SGAI + 4.679×TATA - 0.327×LVGI
     # M > -2.22이면 이익 조작 가능성
     _calcBeneish(r, series, annual)
+
+    # ── Altman Z''-Score (비제조업/신흥시장, 1995) ──
+    # Z'' = 6.56×(WC/TA) + 3.26×(RE/TA) + 6.72×(EBIT/TA) + 1.05×(BV_Equity/TL)
+    # Sales/TA 제거 → 금융업/서비스업도 적용 가능
+    if r.totalAssets and r.totalAssets > 0 and r.totalLiabilities and r.totalLiabilities > 0:
+        wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
+        zpp = (
+            6.56 * (wc / r.totalAssets)
+            + 3.26 * ((r.retainedEarnings or 0) / r.totalAssets)
+            + 6.72 * ((r.operatingIncomeTTM or 0) / r.totalAssets)
+            + 1.05 * ((r.totalEquity or 0) / r.totalLiabilities)
+        )
+        r.altmanZppScore = _safeRound(zpp, 2)
+
+    # ── Ohlson O-Score (1980) — 9변수 로지스틱 ──
+    # 금융업 포함 범용. P(bankruptcy) = 1 / (1 + exp(-O))
+    if r.totalAssets and r.totalAssets > 0:
+        ni = r.netIncomeTTM or 0
+        tl = r.totalLiabilities or 0
+        ca = r.currentAssets or 0
+        cl = r.currentLiabilities or 0
+
+        size = math.log(max(r.totalAssets / 1e6, 1))  # 백만원 단위
+        tlta = tl / r.totalAssets
+        wcta = (ca - cl) / r.totalAssets
+        clca = cl / ca if ca > 0 else 0
+        oeneg = 1 if tl > r.totalAssets else 0
+        nita = ni / r.totalAssets
+        futl = 0  # FFO 간이 대체 (보수적)
+
+        # INTWO: 최근 2기 연속 적자
+        npSeries = _pick_series(series, "IS", ["net_profit", "net_income"])
+        intwo = 0
+        if len(npSeries) >= 2:
+            n1 = npSeries[-1]
+            n2 = npSeries[-2]
+            if n1 is not None and n2 is not None and n1 < 0 and n2 < 0:
+                intwo = 1
+
+        # CHIN: 순이익 변화율
+        chin = 0
+        if len(npSeries) >= 2 and npSeries[-1] is not None and npSeries[-2] is not None:
+            denom = abs(npSeries[-1]) + abs(npSeries[-2])
+            if denom > 0:
+                chin = (npSeries[-1] - npSeries[-2]) / denom
+
+        o = (
+            -1.32
+            - 0.407 * size
+            + 6.03 * tlta
+            - 1.43 * wcta
+            + 0.0757 * clca
+            - 1.72 * oeneg
+            - 2.37 * nita
+            - 1.83 * futl
+            + 0.285 * intwo
+            - 0.521 * chin
+        )
+        r.ohlsonOScore = _safeRound(o, 4)
+        r.ohlsonProbability = _safeRound(1 / (1 + math.exp(-o)) * 100, 2)
+
+    # ── Springate S-Score (1978) ──
+    # S = 1.03×(WC/TA) + 3.07×(EBIT/TA) + 0.66×(EBT/CL) + 0.40×(Sales/TA)
+    # S < 0.862 → 부실 위험
+    if r.totalAssets and r.totalAssets > 0 and r.currentLiabilities and r.currentLiabilities > 0:
+        wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
+        ebit = r.operatingIncomeTTM or 0
+        ebt = r.profitBeforeTax if r.profitBeforeTax is not None else (r.netIncomeTTM or 0)
+        rev = r.revenueTTM or 0
+        s = (
+            1.03 * (wc / r.totalAssets)
+            + 3.07 * (ebit / r.totalAssets)
+            + 0.66 * (ebt / r.currentLiabilities)
+            + 0.40 * (rev / r.totalAssets)
+        )
+        r.springateSScore = _safeRound(s, 4)
+
+    # ── Zmijewski X-Score (1984) — 3변수 프로빗 ──
+    # X = -4.336 - 4.513×(NI/TA) + 5.679×(TL/TA) + 0.004×(CA/CL)
+    # X > 0 → 부실 위험. 금융업 부채비율 왜곡 주의.
+    if (
+        r.totalAssets
+        and r.totalAssets > 0
+        and r.totalLiabilities is not None
+        and r.currentAssets is not None
+        and r.currentLiabilities
+        and r.currentLiabilities > 0
+    ):
+        x = (
+            -4.336
+            - 4.513 * ((r.netIncomeTTM or 0) / r.totalAssets)
+            + 5.679 * (r.totalLiabilities / r.totalAssets)
+            + 0.004 * (r.currentAssets / r.currentLiabilities)
+        )
+        r.zmijewskiXScore = _safeRound(x, 4)
 
 
 def _calcBeneishForPeriod(

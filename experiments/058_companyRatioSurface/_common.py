@@ -28,7 +28,7 @@ def isFinancialIndustry(industry: str | None) -> bool:
 
 
 def kindMeta() -> dict[str, dict[str, Any]]:
-    from dartlab.core.kindList import getKindList
+    from dartlab.engines.gather.listing import getKindList
 
     kind = getKindList()
     codeCol, nameCol, marketCol, industryCol, listedCol = (

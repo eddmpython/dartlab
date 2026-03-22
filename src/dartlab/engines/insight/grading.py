@@ -380,9 +380,35 @@ def analyzeHealth(ratios: RatioResult, isFinancial: bool = False) -> InsightResu
                 risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
                 score -= 1
 
-    grade = _scoreToGrade(score, 5)
+    # ── 부실 예측 모델 신호 (ratios에서 계산된 값 활용) ──
+    # Ohlson O-Score: P(bankruptcy) > 10% → 경고
+    if ratios.ohlsonProbability is not None:
+        if ratios.ohlsonProbability > 20:
+            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}% — 고위험")
+            risks.append(Flag("danger", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
+            score -= 2
+        elif ratios.ohlsonProbability > 10:
+            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}% — 주의")
+            risks.append(Flag("warning", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
+            score -= 1
+
+    # Altman Z''-Score (금융업 포함 범용)
+    if ratios.altmanZppScore is not None:
+        if ratios.altmanZppScore < 1.1:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 부실 영역")
+            risks.append(Flag("danger", "distress", f"Z'' {ratios.altmanZppScore:.2f} (부실)"))
+            score -= 2
+        elif ratios.altmanZppScore < 2.6:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 회색 영역")
+            risks.append(Flag("warning", "distress", f"Z'' {ratios.altmanZppScore:.2f} (회색)"))
+            score -= 1
+        elif ratios.altmanZppScore > 5:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 안전")
+            score += 1
+
+    grade = _scoreToGrade(score, 7)
     label = "금융업 재무건전성" if isFinancial else "재무건전성"
-    summary = f"{label} " + ("우수" if score >= 4 else "안정" if score >= 2 else "보통" if score >= 0 else "주의 필요")
+    summary = f"{label} " + ("우수" if score >= 5 else "안정" if score >= 2 else "보통" if score >= 0 else "주의 필요")
     return InsightResult(grade, summary, details, risks, opps)
 
 

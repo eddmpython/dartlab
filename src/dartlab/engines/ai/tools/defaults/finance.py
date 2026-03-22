@@ -999,6 +999,15 @@ def register_finance_tools(company: Any, register_tool) -> None:
         if shares:
             sh = int(shares)
 
+        # v2: ContextSignals 수집 (Company 객체에서)
+        context_signals = None
+        try:
+            from dartlab.engines.common.finance.prediction import collect_signals as _cs
+
+            context_signals = _cs(company)
+        except (ImportError, TypeError):
+            pass
+
         result = _cpt(
             series,
             sector_key=sector_key,
@@ -1006,6 +1015,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             shares=sh,
             market_cap=market_cap,
             mc_iterations=int(mc_iterations),
+            context_signals=context_signals,
         )
         return repr(result)
 

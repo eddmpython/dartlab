@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from dartlab.engines.common.finance.ratios import calcRatios
 from dartlab.engines.insight.anomaly import runAnomalyDetection
 from dartlab.engines.insight.detector import detectFinancialSector
+from dartlab.engines.insight.distress import calcDistress
 from dartlab.engines.insight.grading import (
     analyzeCashflow,
     analyzeGovernance,
@@ -108,6 +109,7 @@ def analyze(
     insights["opportunity"] = analyzeOpportunitySummary(insights)
 
     anomalies = runAnomalyDetection(aSeries, isFinancial)
+    distress = calcDistress(ratios, anomalies, isFinancial)
 
     resolvedName = corpName or (company.corpName if company else stockCode)
     grades = {k: v.grade for k, v in insights.items()}
@@ -126,6 +128,7 @@ def analyze(
         risk=insights["risk"],
         opportunity=insights["opportunity"],
         anomalies=anomalies,
+        distress=distress,
         summary=summaryText,
         profile=profile,
     )

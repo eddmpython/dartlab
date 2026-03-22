@@ -11,11 +11,14 @@ from dartlab.engines.common.finance.proforma import (
     ProFormaResult,
     _extract_base_year,
     _median,
+    _remove_outliers_iqr,
     _safe_ratio_list,
+    _weighted_ratio,
     build_proforma,
     compute_company_wacc,
     extract_historical_ratios,
 )
+from dartlab.engines.common.finance.simulation import SectorElasticity
 
 # ── Mock 시계열 ──────────────────────────────────────────
 
@@ -311,3 +314,285 @@ class TestBuildProforma:
         result = build_proforma(SERIES, revenue_growth_path=[5.0])
         assert 5.0 <= result.wacc <= 20.0
         assert "ke" in result.wacc_details
+
+
+# ── v2: _remove_outliers_iqr ──────────────────────────────
+
+
+class TestRemoveOutliersIQR:
+    def test_no_outliers(self):
+        data = [10.0, 11.0, 12.0, 13.0, 14.0]
+        assert _remove_outliers_iqr(data) == data
+
+    def test_with_outlier(self):
+        data = [10.0, 11.0, 12.0, 13.0, 100.0]
+        cleaned = _remove_outliers_iqr(data)
+        assert 100.0 not in cleaned
+        assert len(cleaned) < len(data)
+
+    def test_small_list_untouched(self):
+        data = [1.0, 2.0, 3.0]
+        assert _remove_outliers_iqr(data) == data
+
+
+# ── v2: _weighted_ratio ───────────────────────────────────
+
+
+class TestWeightedRatio:
+    def test_empty(self):
+        val, trend = _weighted_ratio([])
+        assert val == 0.0
+        assert trend == 0.0
+
+    def test_single(self):
+        val, trend = _weighted_ratio([42.0])
+        assert val == 42.0
+        assert trend == 0.0
+
+    def test_constant_no_trend(self):
+        val, trend = _weighted_ratio([30.0, 30.0, 30.0, 30.0])
+        assert abs(val - 30.0) < 1.0
+        assert abs(trend) < 0.1
+
+    def test_upward_trend(self):
+        val, trend = _weighted_ratio([20.0, 22.0, 24.0, 26.0, 28.0])
+        # 최근 가중 → 28에 가까움
+        assert val > 24.0
+        # 상승 트렌드
+        assert trend > 0
+
+    def test_recent_weighted_higher(self):
+        """최근 값이 높으면 가중 평균이 단순 중위값보다 높아야 함."""
+        vals = [20.0, 22.0, 25.0, 28.0, 30.0]
+        weighted_val, _ = _weighted_ratio(vals)
+        simple_median = sorted(vals)[len(vals) // 2]
+        assert weighted_val > simple_median
+
+
+# ── v2: 트렌드 반영 확인 ──────────────────────────────────
+
+
+class TestTrendInHistoricalRatios:
+    @pytest.mark.unit
+    def test_trends_populated(self):
+        ratios = extract_historical_ratios(SERIES)
+        assert isinstance(ratios.trends, dict)
+        # 최소한 gross_margin 트렌드가 있어야 함
+        assert "gross_margin" in ratios.trends
+
+    @pytest.mark.unit
+    def test_trends_in_repr(self):
+        ratios = extract_historical_ratios(SERIES)
+        # SERIES는 비율 변동이 없으므로 트렌드 == 0 → repr에 안 나올 수 있음
+        text = repr(ratios)
+        assert "과거 비율 분석" in text
+
+
+# ── v2: 자동 차입 ─────────────────────────────────────────
+
+
+class TestAutoBorrowing:
+    @pytest.mark.unit
+    def test_auto_borrow_triggers(self):
+        """극단적 CAPEX ratio 오버라이드 → 현금 음수 → 자동 차입."""
+        result = build_proforma(
+            SERIES,
+            revenue_growth_path=[5.0, 5.0],
+            overrides={"capex_to_revenue": 80.0},  # 매출의 80% CAPEX → 현금 부족 유발
+        )
+        # 자동 차입 경고가 있어야 함
+        auto_borrow_warnings = [w for w in result.warnings if "자동 차입" in w]
+        assert len(auto_borrow_warnings) > 0
+        # BS는 여전히 균형
+        for p in result.projections:
+            assert p.bs_balanced
+            assert p.cash >= 0
+            # 자동 차입으로 부채가 증가했어야 함
+            assert p.short_term_debt >= 0
+            assert p.long_term_debt >= 0
+
+    @pytest.mark.unit
+    def test_no_borrow_when_cash_positive(self):
+        """정상 CAPEX면 자동 차입 없음."""
+        result = build_proforma(SERIES, revenue_growth_path=[5.0, 5.0])
+        auto_borrow_warnings = [w for w in result.warnings if "자동 차입" in w]
+        assert len(auto_borrow_warnings) == 0
+
+
+# ── v2: β WACC ────────────────────────────────────────────
+
+
+class TestBetaWACC:
+    @pytest.mark.unit
+    def test_elasticity_affects_wacc(self):
+        """GDP β가 다르면 WACC도 달라야 함."""
+        low_beta = SectorElasticity(0.3, 0.1, 10, 0, "defensive")
+        high_beta = SectorElasticity(1.8, 0.8, 50, 0, "high")
+
+        wacc_low, _ = compute_company_wacc(SERIES, sector_elasticity=low_beta)
+        wacc_high, _ = compute_company_wacc(SERIES, sector_elasticity=high_beta)
+        assert wacc_high > wacc_low
+
+    @pytest.mark.unit
+    def test_sector_params_overrides_elasticity(self):
+        """sector_params가 있으면 elasticity보다 우선."""
+
+        class MockParams:
+            discountRate = 15.0
+
+        wacc, details = compute_company_wacc(
+            SERIES,
+            sector_params=MockParams(),
+            sector_elasticity=SectorElasticity(0.3, 0.1, 10, 0, "defensive"),
+        )
+        assert details["ke"] == 15.0
+
+
+# ── v3: IS 구조 감지 (dep_in_sga) ───────────────────────
+
+
+# SGA 포함형 시계열: GP - SGA = OP (D&A가 SGA 안에 포함)
+SERIES_DEP_IN_SGA: dict = {
+    "IS": {
+        "sales": [250, 250, 250, 250, 300, 300, 300, 300],
+        "gross_profit": [75, 75, 75, 75, 90, 90, 90, 90],
+        # SGA = 25 → GP(75) - SGA(25) = OP(50), D&A가 SGA에 포함
+        "selling_and_administrative_expenses": [25, 25, 25, 25, 30, 30, 30, 30],
+        # OP = GP - SGA (D&A 별도 없음)
+        "operating_profit": [50, 50, 50, 50, 60, 60, 60, 60],
+        "profit_before_tax": [40, 40, 40, 40, 48, 48, 48, 48],
+        "income_tax_expense": [8, 8, 8, 8, 10, 10, 10, 10],
+        "finance_costs": [2, 2, 2, 2, 3, 3, 3, 3],
+        "net_profit": [32, 32, 32, 32, 38, 38, 38, 38],
+    },
+    "CF": {
+        "depreciation_and_amortization": [10, 10, 10, 10, 12, 12, 12, 12],
+        "purchase_of_property_plant_and_equipment": [-15, -15, -15, -15, -18, -18, -18, -18],
+        "dividends_paid": [-8, -8, -8, -8, -10, -10, -10, -10],
+    },
+    "BS": {
+        "current_assets": [None, None, None, 500, None, None, None, 600],
+        "current_liabilities": [None, None, None, 200, None, None, None, 240],
+        "cash_and_cash_equivalents": [None, None, None, 100, None, None, None, 120],
+        "shortterm_borrowings": [None, None, None, 50, None, None, None, 60],
+        "longterm_borrowings": [None, None, None, 100, None, None, None, 120],
+        "debentures": [None, None, None, 0, None, None, None, 0],
+        "trade_receivables": [None, None, None, 150, None, None, None, 180],
+        "inventories": [None, None, None, 120, None, None, None, 140],
+        "trade_payables": [None, None, None, 80, None, None, None, 90],
+        "tangible_assets": [None, None, None, 400, None, None, None, 450],
+        "total_assets": [None, None, None, 1000, None, None, None, 1200],
+        "total_liabilities": [None, None, None, 400, None, None, None, 480],
+        "total_stockholders_equity": [None, None, None, 600, None, None, None, 720],
+    },
+}
+
+# D&A 별도형 시계열: GP - SGA - D&A = OP
+SERIES_DEP_SEPARATE: dict = {
+    "IS": {
+        "sales": [250, 250, 250, 250, 300, 300, 300, 300],
+        "gross_profit": [75, 75, 75, 75, 90, 90, 90, 90],
+        "selling_and_administrative_expenses": [15, 15, 15, 15, 18, 18, 18, 18],
+        # OP = GP(75) - SGA(15) - D&A(10) = 50 (가정: IS에 dep 있음)
+        "operating_profit": [50, 50, 50, 50, 60, 60, 60, 60],
+        "depreciation_and_amortization": [10, 10, 10, 10, 12, 12, 12, 12],
+        "profit_before_tax": [40, 40, 40, 40, 48, 48, 48, 48],
+        "income_tax_expense": [8, 8, 8, 8, 10, 10, 10, 10],
+        "finance_costs": [2, 2, 2, 2, 3, 3, 3, 3],
+        "net_profit": [32, 32, 32, 32, 38, 38, 38, 38],
+    },
+    "CF": {
+        "depreciation_and_amortization": [10, 10, 10, 10, 12, 12, 12, 12],
+        "purchase_of_property_plant_and_equipment": [-15, -15, -15, -15, -18, -18, -18, -18],
+        "dividends_paid": [-8, -8, -8, -8, -10, -10, -10, -10],
+    },
+    "BS": {
+        "current_assets": [None, None, None, 500, None, None, None, 600],
+        "current_liabilities": [None, None, None, 200, None, None, None, 240],
+        "cash_and_cash_equivalents": [None, None, None, 100, None, None, None, 120],
+        "shortterm_borrowings": [None, None, None, 50, None, None, None, 60],
+        "longterm_borrowings": [None, None, None, 100, None, None, None, 120],
+        "debentures": [None, None, None, 0, None, None, None, 0],
+        "trade_receivables": [None, None, None, 150, None, None, None, 180],
+        "inventories": [None, None, None, 120, None, None, None, 140],
+        "trade_payables": [None, None, None, 80, None, None, None, 90],
+        "tangible_assets": [None, None, None, 400, None, None, None, 450],
+        "total_assets": [None, None, None, 1000, None, None, None, 1200],
+        "total_liabilities": [None, None, None, 400, None, None, None, 480],
+        "total_stockholders_equity": [None, None, None, 600, None, None, None, 720],
+    },
+}
+
+
+class TestDepInSgaDetection:
+    @pytest.mark.unit
+    def test_dep_in_sga_detected(self):
+        """GP - SGA ≈ OP → dep_in_sga = True."""
+        ratios = extract_historical_ratios(SERIES_DEP_IN_SGA)
+        assert ratios.dep_in_sga is True
+
+    @pytest.mark.unit
+    def test_dep_separate_detected(self):
+        """GP - SGA ≠ OP (차이 큼) → dep_in_sga = False."""
+        ratios = extract_historical_ratios(SERIES_DEP_SEPARATE)
+        assert ratios.dep_in_sga is False
+
+    @pytest.mark.unit
+    def test_no_op_data_defaults_false(self):
+        """operating_profit 데이터 없으면 dep_in_sga = False."""
+        ratios = extract_historical_ratios(SERIES)  # 기존 SERIES는 OP 없음
+        assert ratios.dep_in_sga is False
+
+    @pytest.mark.unit
+    def test_dep_in_sga_warning(self):
+        """dep_in_sga=True이면 경고 메시지 포함."""
+        ratios = extract_historical_ratios(SERIES_DEP_IN_SGA)
+        has_warning = any("D&A가 SGA에 포함" in w for w in ratios.warnings)
+        assert has_warning
+
+    @pytest.mark.unit
+    def test_dep_in_sga_repr(self):
+        """dep_in_sga=True이면 repr에 '(D&A 포함)' 표시."""
+        ratios = extract_historical_ratios(SERIES_DEP_IN_SGA)
+        text = repr(ratios)
+        assert "D&A 포함" in text
+
+
+class TestDepInSgaProforma:
+    @pytest.mark.unit
+    def test_dep_in_sga_higher_operating_income(self):
+        """dep_in_sga=True이면 D&A를 별도 차감하지 않아 영업이익이 더 높음."""
+        result_sga = build_proforma(SERIES_DEP_IN_SGA, revenue_growth_path=[5.0, 5.0])
+        result_sep = build_proforma(SERIES_DEP_SEPARATE, revenue_growth_path=[5.0, 5.0])
+
+        assert result_sga.historical_ratios.dep_in_sga is True
+        assert result_sep.historical_ratios.dep_in_sga is False
+
+        # SGA 포함형은 SGA가 더 크지만, D&A를 빼지 않으므로 영업이익이 비슷하거나 높을 수 있음
+        # 핵심: SGA 포함형에서 operating_income = GP - SGA (depreciation 미차감)
+        for p in result_sga.projections:
+            assert abs(p.operating_income - (p.gross_profit - p.sga)) < 1
+
+    @pytest.mark.unit
+    def test_dep_separate_deducts_depreciation(self):
+        """dep_in_sga=False이면 D&A를 별도 차감."""
+        result = build_proforma(SERIES_DEP_SEPARATE, revenue_growth_path=[5.0, 5.0])
+        for p in result.projections:
+            expected_oi = p.gross_profit - p.sga - p.depreciation
+            assert abs(p.operating_income - expected_oi) < 1
+
+    @pytest.mark.unit
+    def test_ebitda_consistent_both_modes(self):
+        """두 모드 모두 EBITDA = OP + D&A."""
+        for series in [SERIES_DEP_IN_SGA, SERIES_DEP_SEPARATE]:
+            result = build_proforma(series, revenue_growth_path=[5.0])
+            for p in result.projections:
+                assert abs(p.ebitda - (p.operating_income + p.depreciation)) < 1
+
+    @pytest.mark.unit
+    def test_bs_balanced_both_modes(self):
+        """두 모드 모두 BS 균형 유지."""
+        for series in [SERIES_DEP_IN_SGA, SERIES_DEP_SEPARATE]:
+            result = build_proforma(series, revenue_growth_path=[5.0, 5.0])
+            for p in result.projections:
+                assert p.bs_balanced

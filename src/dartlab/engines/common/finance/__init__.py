@@ -19,6 +19,12 @@ from dartlab.engines.common.finance.forecast import (
     scenario_analysis,
     sensitivity_analysis,
 )
+from dartlab.engines.common.finance.prediction import (
+    ContextSignals,
+    adjust_probabilities,
+    collect_signals,
+    get_noise_sigma,
+)
 from dartlab.engines.common.finance.pricetarget import (
     PriceTargetResult,
     ScenarioPriceTarget,
@@ -111,6 +117,11 @@ __all__ = [
     "extract_historical_ratios",
     "compute_company_wacc",
     "build_proforma",
+    # prediction (context signal fusion)
+    "ContextSignals",
+    "collect_signals",
+    "adjust_probabilities",
+    "get_noise_sigma",
     # price target
     "ScenarioPriceTarget",
     "PriceTargetResult",

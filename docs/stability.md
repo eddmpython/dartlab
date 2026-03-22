@@ -52,6 +52,7 @@ May change after a warning. Recorded in CHANGELOG.
 | `engines.edgar.docs.coverage()` | Topic coverage summary |
 | `engines.edgar.profile` | EDGAR docs + finance merge layer |
 | `Company.insights` | Insight grading (7 areas) |
+| `Company.insights.distress` | Distress prediction scorecard (4-axis, credit grade, cash runway) |
 | `Company.rank` | Market size ranking |
 | `Company.docs.retrievalBlocks` | Original block retrieval |
 | `Company.docs.contextSlices` | LLM/context slice view |

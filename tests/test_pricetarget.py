@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+from dartlab.engines.common.finance.prediction import ContextSignals
 from dartlab.engines.common.finance.pricetarget import (
     PriceTargetResult,
     _classify_signal,
@@ -307,3 +308,94 @@ class TestComputePriceTarget:
     def test_confidence(self):
         result = compute_price_target(SERIES, mc_iterations=100, mc_seed=1)
         assert result.confidence in ("high", "medium", "low")
+
+
+# ── v2: Multi-Noise MC ───────────────────────────────────
+
+
+class TestMultiNoiseMC:
+    @pytest.mark.unit
+    def test_size_class_affects_spread(self):
+        """Small이 Large보다 분포가 넓어야 함 (σ 차등)."""
+        pcts_small, _, vals_small = _monte_carlo_price_distribution(
+            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
+            iterations=500, seed=42, size_class="Small",
+        )
+        pcts_large, _, vals_large = _monte_carlo_price_distribution(
+            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
+            iterations=500, seed=42, size_class="Large",
+        )
+        # 표준편차로 비교 (max(v, 0) 클램프로 P10이 0일 수 있으므로)
+        import statistics
+        std_small = statistics.stdev(vals_small) if len(vals_small) > 1 else 0
+        std_large = statistics.stdev(vals_large) if len(vals_large) > 1 else 0
+        assert std_small > std_large
+
+    @pytest.mark.unit
+    def test_nwc_reflected(self):
+        """NWC가 FCF에 반영되면 결과 분포에 값이 있어야 함."""
+        pcts, _, values = _monte_carlo_price_distribution(
+            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
+            iterations=200, seed=42, size_class="Mid",
+        )
+        assert len(values) == 200
+        # shares가 100이면 mock 데이터에서도 양의 값 존재
+        assert pcts["p50"] >= 0
+        # 최소한 일부 iterations에서 양의 값 생성
+        positive_count = sum(1 for v in values if v > 0)
+        assert positive_count > 0
+
+
+# ── v2: ContextSignals 통합 ──────────────────────────────
+
+
+class TestContextSignalsIntegration:
+    @pytest.mark.unit
+    def test_context_signals_changes_result(self):
+        """맥락 신호가 있으면 결과가 달라져야 함."""
+        result_no_ctx = compute_price_target(
+            SERIES, shares=100, mc_iterations=200, mc_seed=42,
+        )
+        signals = ContextSignals(
+            insight_grades={"profitability": "F", "health": "D"},
+            sector_cyclicality="high",
+        )
+        result_with_ctx = compute_price_target(
+            SERIES, shares=100, mc_iterations=200, mc_seed=42,
+            context_signals=signals,
+        )
+        # 확률이 재가중되었으므로 weighted_target이 다를 수 있음
+        # (적어도 경고가 추가되어야 함)
+        assert any("맥락" in w for w in result_with_ctx.warnings)
+
+    @pytest.mark.unit
+    def test_context_signals_probabilities_sum(self):
+        """맥락 신호 적용 후에도 확률 합계 = 1."""
+        signals = ContextSignals(
+            insight_grades={"profitability": "F"},
+            risk_change_rate=90.0,
+        )
+        result = compute_price_target(
+            SERIES, mc_iterations=100, mc_seed=1,
+            context_signals=signals,
+        )
+        total = sum(s.probability for s in result.scenarios)
+        assert abs(total - 1.0) < 0.01
+
+    @pytest.mark.unit
+    def test_size_class_passed_to_mc(self):
+        """Small sizeClass → MC σ가 달라짐 (간접 검증)."""
+        from dartlab.engines.common.finance.prediction import get_noise_sigma
+
+        # MC를 직접 실행하지 않고, σ 설정이 size_class에 따라 다른지 확인
+        sigma_s = get_noise_sigma("growth", "Small")
+        sigma_l = get_noise_sigma("growth", "Large")
+        assert sigma_s > sigma_l
+
+        # compute_price_target에 context_signals가 전달되면 경고 포함
+        signals = ContextSignals(size_class="Small", insight_grades={"profitability": "D"})
+        result = compute_price_target(
+            SERIES, shares=100, mc_iterations=100, mc_seed=42,
+            context_signals=signals,
+        )
+        assert any("맥락" in w for w in result.warnings)

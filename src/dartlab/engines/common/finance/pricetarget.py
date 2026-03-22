@@ -11,6 +11,11 @@ import random
 from dataclasses import dataclass, field
 
 from dartlab.engines.common.finance.extract import getLatest, getTTM
+from dartlab.engines.common.finance.prediction import (
+    ContextSignals,
+    adjust_probabilities,
+    get_noise_sigma,
+)
 from dartlab.engines.common.finance.proforma import (
     ProFormaResult,
     build_proforma,
@@ -182,18 +187,20 @@ def _dcf_from_proforma(
             terminal_value = last.fcf * (1 + tg) / (discount_rate - tg)
         else:
             terminal_value = last.fcf * 20
+        pv_tv = terminal_value / ((1 + discount_rate) ** last_year)
+        enterprise_value = pv_fcf + pv_tv
     else:
-        # CAPEX 집약 산업 (반도체 등) — EBITDA 기반 exit multiple
+        # CAPEX 집약 산업 — EBITDA exit multiple로 전체 EV 대체
+        # FCF PV가 음수인 경우 누적 FCF를 사용하면 EBITDA TV를 압도하므로,
+        # EBITDA 기반 순수 EV 계산으로 전환
         ebitda = last.ebitda if last.ebitda > 0 else last.operating_income
         if ebitda > 0:
             exit_multiple = max(6.0, min(1 / discount_rate, 15.0))
             terminal_value = ebitda * exit_multiple
+            pv_tv = terminal_value / ((1 + discount_rate) ** last_year)
+            enterprise_value = pv_tv  # FCF PV 무시, EBITDA exit만 사용
         else:
-            terminal_value = 0
-
-    pv_tv = terminal_value / ((1 + discount_rate) ** last_year)
-
-    enterprise_value = pv_fcf + pv_tv
+            enterprise_value = 0
 
     # EV → Equity
     total_debt = proforma.base_year.get("total_debt", 0)
@@ -218,8 +225,12 @@ def _monte_carlo_price_distribution(
     shares: int | None,
     iterations: int = 5000,
     seed: int | None = None,
+    size_class: str = "Mid",
 ) -> tuple[dict[str, float], float | None, list[float]]:
-    """revenue/margin에 noise → N회 DCF → 분포.
+    """v2 Multi-Noise MC — 5변수 동시 noise + NWC + sizeClass σ.
+
+    5개 변수: growth, margin, wacc, capex, tax
+    sizeClass별 σ 차등: Small 1.5x, Mid 1.0x, Large 0.8x
 
     Returns:
         (percentiles, probability_above_current, all_values)
@@ -244,46 +255,76 @@ def _monte_carlo_price_distribution(
     tg = terminal_growth / 100
     values: list[float] = []
 
+    # v2: sizeClass별 σ
+    sigma_growth = get_noise_sigma("growth", size_class)
+    sigma_margin = get_noise_sigma("margin", size_class)
+    sigma_wacc = get_noise_sigma("wacc", size_class)
+    sigma_capex = get_noise_sigma("capex", size_class)
+    sigma_tax = get_noise_sigma("tax", size_class)
+
     for _ in range(iterations):
-        # noise: growth ±3%p, margin ±5%p
-        growth_noise = random.gauss(0, 1.5)
-        margin_noise = random.gauss(0, 2.5)
+        # v2: 5변수 noise
+        growth_noise = random.gauss(0, sigma_growth)
+        margin_noise = random.gauss(0, sigma_margin)
+        wacc_noise = random.gauss(0, sigma_wacc)
+        capex_noise = random.gauss(0, sigma_capex)
+        tax_noise = random.gauss(0, sigma_tax)
 
         noisy_growth = base_growth + growth_noise
-        noisy_margin = ratios.gross_margin + margin_noise
-        noisy_margin = max(5.0, min(noisy_margin, 80.0))
+        noisy_margin = max(5.0, min(ratios.gross_margin + margin_noise, 80.0))
+        noisy_wacc = max(0.03, min(discount_rate + wacc_noise / 100, 0.25))
+        noisy_capex = max(0.5, ratios.capex_to_revenue + capex_noise)
+        noisy_tax = max(5.0, min(ratios.effective_tax_rate + tax_noise, 50.0))
 
-        # 간소화 IS-only 5년 DCF
+        # v2: IS + NWC 반영 5년 DCF
         rev = base["revenue"]
         fcf_pv = 0.0
         last_fcf = 0.0
         last_ebitda = 0.0
+        prev_nwc = (
+            rev * ratios.receivables_to_revenue / 100
+            + rev * ratios.inventory_to_revenue / 100
+            - rev * ratios.payables_to_revenue / 100
+        )
         for yr in range(1, 6):
             rev = rev * (1 + noisy_growth / 100)
             gross = rev * noisy_margin / 100
             dep = rev * ratios.depreciation_ratio / 100
-            op_income = gross - rev * ratios.sga_ratio / 100 - dep
+            # v3: IS 구조 분기 — D&A가 SGA에 포함된 경우 별도 차감하지 않음
+            if ratios.dep_in_sga:
+                op_income = gross - rev * ratios.sga_ratio / 100
+            else:
+                op_income = gross - rev * ratios.sga_ratio / 100 - dep
             ebitda = op_income + dep
             ebt = max(op_income, 0)
-            ni = ebt * (1 - ratios.effective_tax_rate / 100)
-            fcf = ni + dep - rev * ratios.capex_to_revenue / 100
-            df = (1 + discount_rate) ** yr
+            ni = ebt * (1 - noisy_tax / 100)
+            capex = rev * noisy_capex / 100
+            # v2: NWC 변동 반영
+            nwc = (
+                rev * ratios.receivables_to_revenue / 100
+                + rev * ratios.inventory_to_revenue / 100
+                - rev * ratios.payables_to_revenue / 100
+            )
+            delta_nwc = nwc - prev_nwc
+            fcf = ni + dep - delta_nwc - capex
+            df = (1 + noisy_wacc) ** yr
             fcf_pv += fcf / df
             last_fcf = fcf
             last_ebitda = ebitda
+            prev_nwc = nwc
 
         # Terminal Value — FCF 음수 시 EBITDA exit multiple fallback
         if last_fcf > 0:
-            if discount_rate > tg:
-                tv = last_fcf * (1 + tg) / (discount_rate - tg)
+            if noisy_wacc > tg:
+                tv = last_fcf * (1 + tg) / (noisy_wacc - tg)
             else:
                 tv = last_fcf * 20
         elif last_ebitda > 0:
-            exit_mult = max(6.0, min(1 / discount_rate, 15.0))
+            exit_mult = max(6.0, min(1 / noisy_wacc, 15.0))
             tv = last_ebitda * exit_mult
         else:
             tv = 0
-        pv_tv = tv / ((1 + discount_rate) ** 5)
+        pv_tv = tv / ((1 + noisy_wacc) ** 5)
 
         ev = fcf_pv + pv_tv
         eq = ev - base["total_debt"] + base["cash"]
@@ -344,8 +385,11 @@ def compute_price_target(
     mc_iterations: int = 5000,
     mc_seed: int | None = None,
     scenario_probabilities: dict[str, float] | None = None,
+    context_signals: ContextSignals | None = None,
 ) -> PriceTargetResult:
     """메인 — 5시나리오 × pro-forma → DCF → Monte Carlo → 확률 분포 → signal.
+
+    v2: context_signals가 있으면 확률 동적 재가중 + sizeClass별 MC σ 차등.
 
     Args:
         series: 시계열 dict (unwrap 완료).
@@ -357,14 +401,24 @@ def compute_price_target(
         mc_iterations: Monte Carlo 반복 횟수.
         mc_seed: 난수 시드 (재현용).
         scenario_probabilities: 시나리오별 확률 오버라이드.
+        context_signals: v2 맥락 신호 (확률 재가중 + MC σ 차등).
     """
     warnings: list[str] = []
     probs = scenario_probabilities or dict(SCENARIO_PROBABILITIES)
     elasticity = get_elasticity(sector_key)
 
-    # WACC 계산
+    # v2: context_signals가 있으면 확률 재가중
+    size_class = "Mid"
+    if context_signals:
+        size_class = context_signals.size_class
+        probs = adjust_probabilities(probs, context_signals)
+        if context_signals.reasoning:
+            warnings.append(f"맥락 기반 확률 재가중 ({len(context_signals.reasoning)}개 규칙 적용)")
+
+    # WACC 계산 — v2: 업종 β 활용
     wacc, wacc_details = compute_company_wacc(
         series,
+        sector_elasticity=elasticity,
         market_cap=market_cap,
     )
 
@@ -398,6 +452,7 @@ def compute_price_target(
         pf = build_proforma(
             series,
             revenue_growth_path=rev_path,
+            sector_elasticity=elasticity,
             market_cap=market_cap,
             scenario_name=scenario.label,
         )
@@ -434,6 +489,7 @@ def compute_price_target(
         shares,
         mc_iterations,
         mc_seed,
+        size_class=size_class,
     )
 
     # upside

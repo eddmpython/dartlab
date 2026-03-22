@@ -1,4 +1,4 @@
-"""이상치 탐지 — 6개 룰 기반."""
+"""이상치 탐지 — 9개 룰 기반."""
 
 from __future__ import annotations
 
@@ -308,6 +308,163 @@ def detectFinancialSectorAnomaly(aSeries: dict, isFinancial: bool) -> list[Anoma
     return anomalies
 
 
+def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Anomaly]:
+    """시계열 악화 패턴 탐지: 연속적자, ICR<1, 부채비율 상승.
+
+    실험 084/006 검증 결과 기반.
+    severity: 4기+ danger, 3기 warning, 2기 info.
+    """
+    anomalies: list[Anomaly] = []
+
+    # 순이익 연속 적자
+    niVals = getAnnualValues(aSeries, "IS", "net_profit")
+    if not niVals:
+        niVals = getAnnualValues(aSeries, "IS", "net_income")
+    streak = 0
+    for v in reversed(niVals):
+        if v is not None and v < 0:
+            streak += 1
+        else:
+            break
+    if streak >= 2:
+        sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
+        anomalies.append(
+            Anomaly(sev, "trendDeterioration", f"순이익 {streak}기 연속 적자", float(streak))
+        )
+
+    # 영업CF 연속 적자
+    cfVals = getAnnualValues(aSeries, "CF", "operating_cashflow")
+    streak = 0
+    for v in reversed(cfVals):
+        if v is not None and v < 0:
+            streak += 1
+        else:
+            break
+    if streak >= 2:
+        sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
+        anomalies.append(
+            Anomaly(sev, "trendDeterioration", f"영업CF {streak}기 연속 적자", float(streak))
+        )
+
+    if isFinancial:
+        return anomalies  # ICR, 부채비율 추이는 금융업 구조적 왜곡
+
+    # ICR < 1 연속 (금융업 제외)
+    opVals = getAnnualValues(aSeries, "IS", "operating_profit")
+    if not opVals:
+        opVals = getAnnualValues(aSeries, "IS", "operating_income")
+    fcVals = getAnnualValues(aSeries, "IS", "finance_costs")
+    if not fcVals:
+        fcVals = getAnnualValues(aSeries, "IS", "interest_expense")
+
+    if opVals and fcVals:
+        n = min(len(opVals), len(fcVals))
+        streak = 0
+        for i in range(n - 1, -1, -1):
+            op_v = opVals[i]
+            fc_v = fcVals[i]
+            if op_v is not None and fc_v is not None and fc_v > 0 and op_v / fc_v < 1:
+                streak += 1
+            else:
+                break
+        if streak >= 2:
+            sev = "danger" if streak >= 3 else "warning"
+            anomalies.append(
+                Anomaly(sev, "trendDeterioration", f"ICR<1 {streak}기 연속", float(streak))
+            )
+
+    # 부채비율 연속 상승 (3기+)
+    tlVals = getAnnualValues(aSeries, "BS", "total_liabilities")
+    eqVals = getAnnualValues(aSeries, "BS", "owners_of_parent_equity")
+    if not eqVals:
+        eqVals = getAnnualValues(aSeries, "BS", "total_stockholders_equity")
+
+    if tlVals and eqVals:
+        n = min(len(tlVals), len(eqVals))
+        drSeries = []
+        for i in range(n):
+            if tlVals[i] is not None and eqVals[i] is not None and eqVals[i] > 0:
+                drSeries.append(tlVals[i] / eqVals[i] * 100)
+            else:
+                drSeries.append(None)
+
+        streak = 0
+        for i in range(len(drSeries) - 1, 0, -1):
+            if drSeries[i] is not None and drSeries[i - 1] is not None and drSeries[i] > drSeries[i - 1]:
+                streak += 1
+            else:
+                break
+        if streak >= 3:
+            sev = "warning" if streak >= 4 else "info"
+            anomalies.append(
+                Anomaly(sev, "trendDeterioration", f"부채비율 {streak}기 연속 상승", float(streak))
+            )
+
+    return anomalies
+
+
+def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Anomaly]:
+    """CCC(현금전환주기) 악화 탐지.
+
+    실험 084/007 검증 결과 기반.
+    CCC 3기+ 연속 확대 시 운전자본 경색 경고.
+    금융업 제외 (DSO/DIO/CCC 비적용).
+    """
+    if isFinancial:
+        return []
+
+    anomalies: list[Anomaly] = []
+    revVals = getAnnualValues(aSeries, "IS", "sales")
+    if not revVals:
+        revVals = getAnnualValues(aSeries, "IS", "revenue")
+    recVals = getAnnualValues(aSeries, "BS", "trade_and_other_receivables")
+    invVals = getAnnualValues(aSeries, "BS", "inventories")
+    payVals = getAnnualValues(aSeries, "BS", "trade_and_other_payables")
+    cogsVals = getAnnualValues(aSeries, "IS", "cost_of_sales")
+
+    n = min(len(revVals), len(recVals), len(invVals), len(payVals)) if revVals and recVals and invVals and payVals else 0
+    if n < 3:
+        return anomalies
+
+    cccSeries: list[Optional[float]] = []
+    for i in range(n):
+        rv = revVals[i]
+        rc = recVals[i]
+        iv = invVals[i]
+        pa = payVals[i]
+        co = cogsVals[i] if cogsVals and i < len(cogsVals) else rv
+
+        if rv and rv > 0 and rc is not None and iv is not None and pa is not None and co and co > 0:
+            dso = rc / rv * 365
+            dio = iv / co * 365
+            dpo = pa / co * 365
+            cccSeries.append(dso + dio - dpo)
+        else:
+            cccSeries.append(None)
+
+    # 연속 확대 탐지
+    streak = 0
+    for i in range(len(cccSeries) - 1, 0, -1):
+        if cccSeries[i] is not None and cccSeries[i - 1] is not None and cccSeries[i] > cccSeries[i - 1]:
+            streak += 1
+        else:
+            break
+
+    if streak >= 3:
+        latest = cccSeries[-1]
+        sev = "warning" if streak >= 4 else "info"
+        anomalies.append(
+            Anomaly(
+                sev,
+                "cccDeterioration",
+                f"CCC {streak}기 연속 확대 (최신 {latest:.0f}일)" if latest else f"CCC {streak}기 연속 확대",
+                float(streak),
+            )
+        )
+
+    return anomalies
+
+
 def runAnomalyDetection(
     aSeries: dict,
     isFinancial: bool = False,
@@ -320,6 +477,8 @@ def runAnomalyDetection(
     anomalies.extend(detectCashBurn(aSeries, isFinancial))
     anomalies.extend(detectMarginDivergence(aSeries))
     anomalies.extend(detectFinancialSectorAnomaly(aSeries, isFinancial))
+    anomalies.extend(detectTrendDeterioration(aSeries, isFinancial))
+    anomalies.extend(detectCCCDeterioration(aSeries, isFinancial))
 
     anomalies.sort(key=lambda a: {"danger": 0, "warning": 1, "info": 2}.get(a.severity, 3))
     return anomalies

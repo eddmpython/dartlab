@@ -17,6 +17,7 @@ _ENGINE_SPECS = [
     "dartlab.engines.sector.spec",
     "dartlab.engines.insight.spec",
     "dartlab.engines.rank.spec",
+    "dartlab.engines.gather.fred.spec",
 ]
 
 

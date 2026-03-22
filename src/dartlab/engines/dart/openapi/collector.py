@@ -562,7 +562,7 @@ def listUncollectedKind(
     list
         [(종목코드, 회사명), ...]
     """
-    from dartlab.core.kindList import getKindList
+    from dartlab.engines.gather.listing import getKindList
 
     kindDf = getKindList()
     kindDf = kindDf.filter(pl.col("종목코드").str.contains(r"^\d{6}$"))

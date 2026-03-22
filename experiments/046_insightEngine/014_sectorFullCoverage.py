@@ -40,7 +40,7 @@
 import sys
 sys.path.insert(0, "src")
 
-from dartlab.core.kindList import getKindList
+from dartlab.engines.gather.listing import getKindList
 import polars as pl
 
 MANUAL_OVERRIDES = {

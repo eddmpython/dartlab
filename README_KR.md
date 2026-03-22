@@ -14,7 +14,7 @@
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
 <a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
-<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-115%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-120%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
@@ -54,32 +54,109 @@ us.sections
 us.show("business")
 us.BS
 us.ratios
+
+# 코드 없이 자연어로 질문
+dartlab.ask("삼성전자 재무건전성 분석해줘")
 ```
 
 ## DartLab은 무엇인가
 
-DartLab은 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다. 한국 DART와 미국 EDGAR를 모두 지원한다.
+DartLab은 사업보고서의 **숫자**(재무제표)와 **텍스트**(사업 개요, 리스크, 감사보고서)를 모두 분석하는 Python 라이브러리다. 한국(DART), 미국(EDGAR)을 지원하고, 일본(EDINET)은 연구 중이다.
 
-핵심은 `sections`다. 사업보고서와 분기보고서의 섹션 구조를 기간축으로 수평화하고, 그 위에 더 강한 source를 올린다.
+모든 회사는 다른 방식으로 공시한다. 같은 "매출액"이 `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`로 표기되고, 한글명도 "매출", "수익", "영업수익", "매출액합계" 등 수십 가지 변형이 있다. 섹션 제목도 회사, 연도, 업종마다 다르다. 두 회사를 수작업으로 비교하려면 몇 시간의 재정렬이 필요하다.
 
-- **`docs`** — 섹션 구조, heading/body로 분리된 서술 텍스트, 테이블, 원문 증거층
-- **`finance`** — 재무 숫자 authoritative source (BS, IS, CF) + 재무비율
-- **`report`** — 정형 공시 API authoritative source (DART만 해당)
+DartLab은 두 가지 표준화 엔진으로 이 문제를 해결한다.
+
+### 계정 표준화
+
+재무제표는 XBRL을 쓰지만, 계정 ID는 회사마다 다르다. DartLab은 4단계 파이프라인으로 이를 정규화한다:
 
 ```
-chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
-I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
-I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
-II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
-III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
-VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
+원본 XBRL account_id
+  → 1단계: 접두사 제거 (ifrs-full_, dart_, ifrs_, ifrs-smes_)
+  → 2단계: 영문 ID 동의어 (59개 규칙)
+           예) NetIncome, Profit, NetProfit → ProfitLoss
+  → 3단계: 한글명 동의어 (104개 규칙)
+           예) 매출, 수익, 영업수익, 매출액합계 → 매출액
+  → 4단계: 학습된 매핑 테이블 (34,249개 엔트리)
+           AccountMapper가 표준 snakeId로 변환
+  → 결과: revenue, operatingIncome, totalAssets, …
 ```
+
+모든 회사의 모든 계정이 동일한 `snakeId`로 수렴한다. 삼성전자의 매출과 SK하이닉스의 매출이 같은 식별자를 갖기 때문에, 회사 간 비교가 수작업 없이 가능하다.
+
+매핑 테이블은 전체 상장사의 ~97%를 커버한다. 나머지 예외(신규 XBRL 분류체계, 비표준 공시)는 원본 ID를 보존한 채 그대로 통과한다.
+
+### 섹션 수평화
+
+사업보고서에는 구조화된 섹션(사업 개요, 리스크, 배당 정책 등)이 있지만, 섹션 제목이 회사·연도·업종마다 다르다. DartLab은 모든 섹션을 **topic × period** 격자로 정규화한다:
+
+```
+                    2025Q4    2024Q4    2024Q3    2023Q4    …
+companyOverview       ✓         ✓         ✓         ✓
+businessOverview      ✓         ✓         ✓         ✓
+productService        ✓         ✓         ✓         ✓
+salesOrder            ✓         ✓         —         ✓
+employee              ✓         ✓         ✓         ✓
+dividend              ✓         ✓         ✓         ✓
+audit                 ✓         ✓         ✓         ✓
+…                    (98개 canonical topics)
+```
+
+매핑 파이프라인: **텍스트 정규화**(업종 접두사, 번호, 구두점 제거) → **545개 하드코딩 매핑** → **73개 regex 패턴** → canonical topic 할당. 전체 상장사 대비 ~95%+ 매핑률을 달성한다.
+
+격자의 각 셀에는 heading/body로 분리된 원문, 테이블, 증거가 들어 있다. "작년 대비 올해 리스크 기술이 어떻게 바뀌었는지"를 `diff()` 한 줄로 비교할 수 있다.
+
+### Company — 통합된 회사 맵
+
+`Company`는 모든 것이 합쳐지는 지점이다. `sections`(docs에서 온 텍스트 구조)를 spine으로 두고, 그 위에 더 강한 데이터 소스를 올린다:
+
+```
+레이어        제공하는 것                       우선순위
+─────────────────────────────────────────────────────────
+docs          섹션 텍스트, 테이블, 증거           기본 spine
+finance       BS, IS, CF, 비율, 시계열           숫자 topic 대체
+report        28개 정형 API (DART 전용)          정형 topic 채움
+─────────────────────────────────────────────────────────
+profile       통합 뷰 (사용자 기본값)             최상위
+```
+
+- **`docs`**는 서술 텍스트를 담당한다 — 사업 개요, 리스크, 감사 의견
+- **`finance`**는 숫자가 더 강한 곳을 대체한다 — BS, IS, CF가 authoritative DataFrame이 된다
+- **`report`**는 DART 전용 정형 데이터를 채운다 — 배당 정책, 임원 보수, 지배구조 상세
+
+네 가지 namespace로 다른 관점을 제공한다:
+
+```python
+c.docs.sections     # 순수 텍스트 소스 (sections spine)
+c.finance.BS        # authoritative 재무제표
+c.report.extract()  # 정형 DART API 데이터
+c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
+```
+
+`c.sections`는 통합 뷰다. `c.trace("BS")`로 어떤 소스가 왜 채택됐는지 확인한다.
+
+### 데이터 — 자동 수집
+
+`Company`를 생성하면 필요한 데이터를 자동으로 다운로드한다. `Company` 사용에 API 키는 필요 없다 — 모든 것이 사전 구축되었거나 자동 수집된다.
+
+| 데이터셋 | 규모 | 상태 | 출처 |
+|----------|------|------|------|
+| DART docs | 320+ 기업 | 적극 수집 중 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
+| DART finance | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shard) |
+| DART report | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shard) |
+| EDGAR | 주문형 | 자동 수집 | SEC XBRL + 10-K/10-Q API |
+| EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
+
+DART docs는 릴리즈마다 더 많은 기업이 추가된다. finance와 report 데이터는 전체 상장 시장(2,700+ 기업)을 이미 커버한다.
+
+GitHub는 릴리즈당 1,000개 에셋 제한이 있다. finance와 report 데이터셋은 **4-shard 전략**을 사용한다 — 종목코드를 4개 범위로 나누어 각각 별도 릴리즈 태그에 호스팅한다.
 
 ### 핵심 원칙
 
 1. **Sections First** — 회사는 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵이다
 2. **Source-Aware** — `finance`나 `report`가 더 authoritative하면 자동으로 대체한다. `trace()`로 어떤 source가 채택됐는지 확인
-3. **텍스트 구조** — 서술 텍스트는 heading/body로 분리되고, 레벨과 경로 메타데이터를 갖는다. DART와 EDGAR 모두 동일
+3. **텍스트 + 숫자** — 서술 텍스트(heading/body + 메타데이터)와 재무 숫자(표준화된 계정)가 같은 구조에 공존한다
 4. **Raw Access** — 더 깊게: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
 
 ## 기능
@@ -116,7 +193,7 @@ c.finance.ratioSeries   # 비율 시계열 across years
 c.finance.timeseries    # 원본 계정 시계열
 ```
 
-재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
+모든 계정은 4단계 표준화 파이프라인을 거친다 — 삼성전자의 `revenue`와 LG의 `revenue`는 같은 `snakeId`다. 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
 ### 인사이트
 
@@ -210,7 +287,7 @@ dartlab.debt()
 
 ## EDGAR (미국)
 
-동일한 `Company` 인터페이스, 다른 데이터 소스:
+동일한 `Company` 인터페이스, 동일한 계정 표준화 파이프라인, 다른 데이터 소스. EDGAR 데이터는 SEC API에서 자동 수집된다 — 사전 다운로드 불필요:
 
 ```python
 us = dartlab.Company("AAPL")
@@ -225,7 +302,14 @@ us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
 
 ## AI 분석
 
-DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. 질문에 따라 관련 데이터를 자동으로 선택한다.
+DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. **코드 없이** 자연어로 질문하면 DartLab이 모든 것을 처리한다: 데이터 선택, 컨텍스트 조립, 답변 스트리밍.
+
+```bash
+# 터미널 한 줄 — Python 코드 필요 없음
+dartlab ask "삼성전자 재무건전성 분석해줘"
+```
+
+DartLab이 데이터를 구조화하고, 관련 컨텍스트(재무제표, 인사이트, 섹터 벤치마크)를 선택해서 LLM에 전달한다. 2-Tier 아키텍처로 기본 분석은 어떤 provider에서든 동작하고, tool-calling provider(OpenAI, Claude)는 대화 중 추가 데이터를 요청해 더 깊이 분석할 수 있다.
 
 ### Python API
 
@@ -370,6 +454,8 @@ d.report("삼성전자", "배당", 2024)
 
 ### OpenEdgar (미국)
 
+> **API 키 불필요.** SEC EDGAR는 공공 API다 — 등록 없이 사용 가능.
+
 ```python
 from dartlab import OpenEdgar
 
@@ -381,14 +467,16 @@ e.companyFactsJson("AAPL")
 
 ## 데이터
 
-**설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 데이터는 SEC API에서 가져온다.
+**설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다. DART 데이터는 [GitHub Releases](https://github.com/eddmpython/dartlab/releases)에서, EDGAR 데이터는 SEC API에서 가져온다.
 
-| 데이터셋 | 규모 | 출처 |
-|----------|------|------|
-| DART docs | 320+ 기업 (수집 중) | 한국 공시 텍스트 + 테이블 |
-| DART finance | 2,700+ 기업 | XBRL 재무제표 |
-| DART report | 2,700+ 기업 | 정형 공시 API |
-| EDGAR | 주문형 | SEC XBRL + 10-K/10-Q (자동 수집) |
+| 데이터셋 | 규모 | 상태 | 출처 |
+|----------|------|------|------|
+| DART docs | 320+ 기업 | 적극 수집 중 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
+| DART finance | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shard) |
+| DART report | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shard) |
+| EDGAR docs | 주문형 | 자동 수집 | SEC 10-K/10-Q API |
+| EDGAR finance | 주문형 | 자동 수집 | SEC XBRL API |
+| EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
 
 ## 바로 시작하기
 
@@ -420,7 +508,7 @@ marimo edit startMarimo/aiAnalysis.py     # AI 분석 예시
 
 ### 블로그
 
-[DartLab 블로그](https://eddmpython.github.io/dartlab/blog/)는 실전 공시 분석 주제를 다룬다 — 재무제표 읽는 법, 공시 패턴 해석, 리스크 신호 포착 등. 3개 카테고리 115편 이상:
+[DartLab 블로그](https://eddmpython.github.io/dartlab/blog/)는 실전 공시 분석 주제를 다룬다 — 재무제표 읽는 법, 공시 패턴 해석, 리스크 신호 포착 등. 3개 카테고리 120편 이상:
 
 - **공시 제도** — DART/EDGAR 공시의 구조와 작동 원리
 - **보고서 읽기** — 감사보고서, 잠정실적, 재작성 등 실전 가이드

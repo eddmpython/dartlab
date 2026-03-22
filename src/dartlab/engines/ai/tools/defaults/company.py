@@ -214,7 +214,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     # ── 중복 등록: search / download / data_status (company-bound) ──
 
     def search_company(keyword: str) -> str:
-        from dartlab.core.kindList import searchName
+        from dartlab.engines.gather.listing import searchName
 
         results = searchName(keyword)
         if results is None or (isinstance(results, pl.DataFrame) and results.is_empty()):

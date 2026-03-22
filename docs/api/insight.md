@@ -50,9 +50,10 @@ Returns `None` if data is insufficient.
 2. Calculate financial ratios
 3. Auto-detect financial sector (6 signals: debt ratio, interest income, etc.)
 4. Grade 7 areas
-5. Detect anomalies (6 rules)
-6. Classify profile
-7. Generate Korean-language summary
+5. Detect anomalies (8 rules)
+6. Calculate distress scorecard (4-axis composite)
+7. Classify profile
+8. Generate Korean-language summary
 
 ## 7 Analysis Areas
 
@@ -139,6 +140,7 @@ Synthesizes opportunity flags from the other 6 areas.
 | `risk` | InsightResult | Overall risk |
 | `opportunity` | InsightResult | Investment opportunity |
 | `anomalies` | list[Anomaly] | List of anomalies |
+| `distress` | DistressResult | Distress prediction scorecard |
 | `summary` | str | Korean-language summary |
 | `profile` | str | Company profile |
 
@@ -164,7 +166,7 @@ Analysis result for each area.
 
 ## Anomaly Detection
 
-Detects financial anomaly signals using 6 rules.
+Detects financial anomaly signals using 8 rules.
 
 | Category | Detection Target |
 |----------|-----------------|
@@ -174,6 +176,8 @@ Detects financial anomaly signals using 6 rules.
 | `cashBurn` | Sharp cash decline, operating CF deficit + financing CF positive (debt-dependent) |
 | `marginDivergence` | Operating margin changed by +/-5%p, non-operating income sharp change |
 | `financialSector` | Financial sector debt ratio sharp change, net income sharp decline |
+| `trendDeterioration` | Consecutive net losses, operating CF losses, ICR<1, rising debt ratio |
+| `cccDeterioration` | Cash conversion cycle expanding 3+ consecutive years |
 
 ```python
 for a in result.anomalies:
@@ -189,6 +193,80 @@ for a in result.anomalies:
 | `category` | str | Anomaly type |
 | `text` | str | Detailed description |
 | `value` | float (optional) | Numeric value |
+
+## Distress Prediction Scorecard
+
+The `distress` field provides a comprehensive distress prediction report with evidence-based formatting.
+
+```python
+result = analyze("005930")
+print(result.distress)
+# === 부실 예측 스코어카드 ===
+# 종합: safe (2.1/100) | 신용등급: AAA (투자적격 최상위)
+# ...
+```
+
+### DistressResult
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `level` | str | safe/watch/warning/danger/critical |
+| `overall` | float | Composite score (0~100) |
+| `creditGrade` | str | S&P-mapped credit grade (AAA~D) |
+| `creditDescription` | str | Grade description in Korean |
+| `axes` | list[DistressAxis] | 4 weighted axes with model details |
+| `cashRunwayMonths` | float? | Estimated months of cash runway |
+| `liquidityAlert` | str? | Liquidity alert level |
+| `riskFactors` | list[str] | Structured risk factors |
+| `modelCount` | int | Number of models used |
+| `dataQuality` | str | 충분/보통/부족 |
+
+### 4 Axes
+
+| Axis | Weight | Models |
+|------|--------|--------|
+| 정량 분석 | 40% | Ohlson O-Score, Altman Z''-Score, Altman Z-Score |
+| 이익 품질 | 20% | Beneish M-Score, Sloan Accrual, Piotroski F-Score |
+| 추세 분석 | 30% | trendDeterioration, cccDeterioration anomalies |
+| 감사 위험 | 10% | audit/governance anomalies |
+
+### Credit Grade Mapping
+
+| Overall Score | Grade | Description |
+|---------------|-------|-------------|
+| < 5 | AAA | 투자적격 최상위 |
+| < 10 | AA | 투자적격 상위 |
+| < 15 | A | 투자적격 |
+| < 25 | BBB | 투자적격 하한 |
+| < 35 | BB | 투기등급 |
+| < 50 | B | 투기등급 하위 |
+| < 65 | CCC | 상당한 부실 위험 |
+| < 80 | CC | 부실 임박 |
+| < 90 | C | 부도 직전 |
+| ≥ 90 | D | 부도 수준 |
+
+### ModelScore
+
+Each quantitative/quality model produces a `ModelScore`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | str | Model name (e.g., "Ohlson O-Score") |
+| `rawValue` | float | Raw computed value |
+| `displayValue` | str | Human-readable value (e.g., "P(부도) 0.5%") |
+| `zone` | str | safe / gray / distress |
+| `interpretation` | str | Evidence-based interpretation |
+| `reference` | str | Academic reference |
+
+### DistressAxis
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | str | Axis name |
+| `score` | float | Normalized score (0~100) |
+| `weight` | float | Weight in composite (0.0~1.0) |
+| `models` | list[ModelScore] | Individual model results |
+| `summary` | str | Axis-level summary |
 
 ## Company Profiles
 

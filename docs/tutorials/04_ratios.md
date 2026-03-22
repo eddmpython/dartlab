@@ -12,13 +12,14 @@ With time series data, financial ratios can be calculated. DartLab automatically
 1. `Company.ratios` — Financial ratios time-series DataFrame (metric × period, newest first)
 2. `Company.finance.ratios` — Latest single-period RatioResult (TTM + latest balances)
 
-**6 categories:**
+**7 categories:**
 - Profitability (8): ROE, ROA, operating margin, net margin, gross margin, EBITDA margin, COGS ratio, SG&A ratio
 - Stability (7): Debt ratio, current ratio, quick ratio, equity ratio, interest coverage, net debt ratio, non-current ratio
 - Growth (6): Revenue growth, operating income growth, net income growth, asset growth, equity growth, 3-year CAGR
 - Efficiency (4): Total asset turnover, inventory turnover, receivables turnover, payables turnover
 - Cash Flow (5): FCF, operating CF margin, operating CF/net income, CAPEX ratio, dividend payout ratio
 - Valuation (5): PER, PBR, PSR, EV/EBITDA, market cap (requires market cap input)
+- Composite (8): O-Score, Z''-Score, Springate, Zmijewski, Beneish M-Score, Sloan Accrual, Piotroski F-Score, Income Quality
 
 ---
 
@@ -629,6 +630,40 @@ Same code structure — just change the `codes` list to compare any companies. 5
 | EV/EBITDA | (Market Cap + Net Debt) ÷ EBITDA | x |
 
 > Valuation ratios require passing market cap: `calcRatios(series, marketCap=market_cap)`
+
+---
+
+## Composite Indicators (Distress & Quality)
+
+Beyond traditional ratios, DartLab computes academic-grade composite indicators for distress prediction and earnings quality assessment.
+
+### Distress Prediction Models
+
+| Indicator | Field | Description |
+|-----------|-------|-------------|
+| Ohlson O-Score | `ohlsonOScore` | 9-variable logistic bankruptcy probability (Ohlson, 1980) |
+| Ohlson P(bankruptcy) | `ohlsonProbability` | O-Score converted to probability (%) |
+| Altman Z''-Score | `altmanZppScore` | Non-manufacturing/emerging market variant (Altman, 1995) |
+| Springate S-Score | `springateSScore` | 4-variable Canadian variant (Springate, 1978). S < 0.862 = distress |
+| Zmijewski X-Score | `zmijewskiXScore` | 3-variable probit model (Zmijewski, 1984). X > 0 = distress |
+
+```python
+r = c.ratios
+if r and r.ohlsonProbability is not None:
+    print(f"O-Score P(bankruptcy): {r.ohlsonProbability:.1f}%")
+if r and r.altmanZppScore is not None:
+    print(f"Z''-Score: {r.altmanZppScore:.2f}")
+```
+
+### Earnings Quality Models
+
+| Indicator | Field | Description |
+|-----------|-------|-------------|
+| Beneish M-Score | `beneishMScore` | 8-variable manipulation detection (Beneish, 1999). M > -2.22 = suspect |
+| Sloan Accrual Ratio | `sloanAccrualRatio` | Accrual-based earnings proportion (Sloan, 1996). \|ratio\| > 10% = suspect |
+| Piotroski F-Score | `piotroskiFScore` | 9-point fundamental strength (Piotroski, 2000). F >= 7 = strong |
+
+These composite indicators feed into the **distress prediction scorecard** available via `Company.insights.distress`. See [Insight Grades](../api/insight) for details.
 
 ---
 

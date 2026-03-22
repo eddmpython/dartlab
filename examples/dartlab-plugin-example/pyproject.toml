@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dartlab-plugin-example"
+version = "0.1.0"
+description = "dartlab 플러그인 예제 — 커스텀 점수 모듈"
+requires-python = ">=3.12"
+dependencies = ["dartlab"]
+
+[project.entry-points."dartlab.plugins"]
+example = "dartlab_plugin_example:register"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dartlab_plugin_example"]

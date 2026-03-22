@@ -78,7 +78,7 @@ def buildSnapshot(*, verbose: bool = True) -> dict[str, RankInfo]:
     Returns:
         stockCode → RankInfo 매핑 dict.
     """
-    from dartlab.core.kindList import getKindList
+    from dartlab.engines.gather.listing import getKindList
     from dartlab.engines.common.finance.ratios import calcRatios
     from dartlab.engines.dart.finance.pivot import buildAnnual
     from dartlab.engines.sector import classify

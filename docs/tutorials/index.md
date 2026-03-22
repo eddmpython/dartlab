@@ -18,6 +18,7 @@ Learn DartLab's core features step by step. The central flow across all tutorial
 | 06 | Disclosure Text | Business description, MD&A, company overview, raw materials | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) |
 | 07 | Advanced Analysis | K-IFRS Notes, tangible assets, affiliates, governance | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/07_advanced.ipynb) |
 | 08 | Cross-Company | Sector classification, insight grades, market ranking, comprehensive comparison | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/08_cross_company.ipynb) |
+| 11 | Distress Scorecard | 4-axis distress prediction, credit grade, cash runway, risk factors | |
 
 ## Before You Start
 

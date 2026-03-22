@@ -1,0 +1,1427 @@
+[
+  {
+    "id": "001_005930_health",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "health",
+    "question": "삼성전자의 재무건전성은 어떤가요? 부채비율과 유동비율을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 26.64,
+        "source": "ratios"
+      },
+      {
+        "metric": "currentRatio",
+        "value": 262.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 2.41,
+        "source": "ratios"
+      },
+      {
+        "metric": "equityRatio",
+        "value": 78.96,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_005930_profitability",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "profitability",
+    "question": "삼성전자의 수익성을 분석해주세요. ROE, 영업이익률, 순이익률을 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 8.29,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 9.51,
+        "source": "ratios"
+      },
+      {
+        "metric": "netMargin",
+        "value": 10.56,
+        "source": "ratios"
+      },
+      {
+        "metric": "ebitdaMargin",
+        "value": 13.6,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_005930_growth",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "growth",
+    "question": "삼성전자의 매출과 이익 성장 추세를 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "revenueTTM",
+        "value": 315556836000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 33319454000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 9.51,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_dividend",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "dividend",
+    "question": "삼성전자의 배당 정책과 배당성향은 어떤가요?",
+    "expected_facts": [
+      {
+        "metric": "dividendPayoutRatio",
+        "value": 29.73,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 33319454000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 27479332000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_cashflow",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "cashflow",
+    "question": "삼성전자의 현금흐름 구조를 분석해주세요. 영업/투자/잉여현금흐름 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "operatingCashflowTTM",
+        "value": 78537767000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "investingCashflowTTM",
+        "value": -49389100000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 27479332000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingCfToNetIncome",
+        "value": 235.71,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_005930_valuation",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "valuation",
+    "question": "삼성전자의 현재 밸류에이션은 적정한가요? PER, PBR 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "totalAssets",
+        "value": 523659586000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "totalEquity",
+        "value": 413501494000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "roe",
+        "value": 8.29,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 33319454000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_risk",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "risk",
+    "question": "삼성전자의 주요 재무 리스크는 무엇인가요?",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 26.64,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 2.41,
+        "source": "ratios"
+      },
+      {
+        "metric": "netDebtRatio",
+        "value": -9.16,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_business",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "business",
+    "question": "삼성전자의 사업 구조와 주요 사업부문을 설명해주세요.",
+    "expected_facts": [
+      {
+        "metric": "topics_count",
+        "value": 47,
+        "source": "sections"
+      },
+      {
+        "metric": "has_businessOverview",
+        "value": true,
+        "source": "sections"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_comparison",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "comparison",
+    "question": "삼성전자의 수익성과 건전성은 같은 업종 내에서 어떤 위치인가요?",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 8.29,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 9.51,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 26.64,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_005930_comprehensive",
+    "stock_code": "005930",
+    "company_name": "삼성전자",
+    "question_type": "comprehensive",
+    "question": "삼성전자에 대해 종합적으로 분석해주세요. 투자 관점에서 강점과 약점을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 8.29,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 9.51,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 26.64,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 27479332000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 33319454000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_health",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "health",
+    "question": "SK하이닉스의 재무건전성은 어떤가요? 부채비율과 유동비율을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 48.43,
+        "source": "ratios"
+      },
+      {
+        "metric": "currentRatio",
+        "value": 191.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 5.3,
+        "source": "ratios"
+      },
+      {
+        "metric": "equityRatio",
+        "value": 67.37,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_000660_profitability",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "profitability",
+    "question": "SK하이닉스의 수익성을 분석해주세요. ROE, 영업이익률, 순이익률을 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 35.71,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 42.95,
+        "source": "ratios"
+      },
+      {
+        "metric": "netMargin",
+        "value": 42.47,
+        "source": "ratios"
+      },
+      {
+        "metric": "ebitdaMargin",
+        "value": 47.48,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_000660_growth",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "growth",
+    "question": "SK하이닉스의 매출과 이익 성장 추세를 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "revenueTTM",
+        "value": 84087057000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 35708436000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 42.95,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_dividend",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "dividend",
+    "question": "SK하이닉스의 배당 정책과 배당성향은 어떤가요?",
+    "expected_facts": [
+      {
+        "metric": "dividendPayoutRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 35708436000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 20611088000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_cashflow",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "cashflow",
+    "question": "SK하이닉스의 현금흐름 구조를 분석해주세요. 영업/투자/잉여현금흐름 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "operatingCashflowTTM",
+        "value": 43532512000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "investingCashflowTTM",
+        "value": -41527853000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 20611088000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingCfToNetIncome",
+        "value": 121.91,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_000660_valuation",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "valuation",
+    "question": "SK하이닉스의 현재 밸류에이션은 적정한가요? PER, PBR 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "totalAssets",
+        "value": 148435030000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "totalEquity",
+        "value": 100006279000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "roe",
+        "value": 35.71,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 35708436000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_risk",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "risk",
+    "question": "SK하이닉스의 주요 재무 리스크는 무엇인가요?",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 48.43,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 5.3,
+        "source": "ratios"
+      },
+      {
+        "metric": "netDebtRatio",
+        "value": -7.15,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_business",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "business",
+    "question": "SK하이닉스의 사업 구조와 주요 사업부문을 설명해주세요.",
+    "expected_facts": [
+      {
+        "metric": "topics_count",
+        "value": 46,
+        "source": "sections"
+      },
+      {
+        "metric": "has_businessOverview",
+        "value": true,
+        "source": "sections"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_comparison",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "comparison",
+    "question": "SK하이닉스의 수익성과 건전성은 같은 업종 내에서 어떤 위치인가요?",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 35.71,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 42.95,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 48.43,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_000660_comprehensive",
+    "stock_code": "000660",
+    "company_name": "SK하이닉스",
+    "question_type": "comprehensive",
+    "question": "SK하이닉스에 대해 종합적으로 분석해주세요. 투자 관점에서 강점과 약점을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 35.71,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 42.95,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 48.43,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 20611088000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 35708436000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_health",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "health",
+    "question": "KB금융의 재무건전성은 어떤가요? 부채비율과 유동비율을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "currentRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "equityRatio",
+        "value": 7.71,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_105560_profitability",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "profitability",
+    "question": "KB금융의 수익성을 분석해주세요. ROE, 영업이익률, 순이익률을 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 9.39,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netMargin",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "ebitdaMargin",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_105560_growth",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "growth",
+    "question": "KB금융의 매출과 이익 성장 추세를 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "revenueTTM",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 5760618000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_dividend",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "dividend",
+    "question": "KB금융의 배당 정책과 배당성향은 어떤가요?",
+    "expected_facts": [
+      {
+        "metric": "dividendPayoutRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 5760618000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_cashflow",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "cashflow",
+    "question": "KB금융의 현금흐름 구조를 분석해주세요. 영업/투자/잉여현금흐름 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "operatingCashflowTTM",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "investingCashflowTTM",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingCfToNetIncome",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_105560_valuation",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "valuation",
+    "question": "KB금융의 현재 밸류에이션은 적정한가요? PER, PBR 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "totalAssets",
+        "value": 796063202000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "totalEquity",
+        "value": 61371093000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "roe",
+        "value": 9.39,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 5760618000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_risk",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "risk",
+    "question": "KB금융의 주요 재무 리스크는 무엇인가요?",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netDebtRatio",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_business",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "business",
+    "question": "KB금융의 사업 구조와 주요 사업부문을 설명해주세요.",
+    "expected_facts": [
+      {
+        "metric": "topics_count",
+        "value": 45,
+        "source": "sections"
+      },
+      {
+        "metric": "has_businessOverview",
+        "value": true,
+        "source": "sections"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_comparison",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "comparison",
+    "question": "KB금융의 수익성과 건전성은 같은 업종 내에서 어떤 위치인가요?",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 9.39,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": null,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_105560_comprehensive",
+    "stock_code": "105560",
+    "company_name": "KB금융",
+    "question_type": "comprehensive",
+    "question": "KB금융에 대해 종합적으로 분석해주세요. 투자 관점에서 강점과 약점을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 9.39,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 5760618000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_health",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "health",
+    "question": "LG화학의 재무건전성은 어떤가요? 부채비율과 유동비율을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 113.02,
+        "source": "ratios"
+      },
+      {
+        "metric": "currentRatio",
+        "value": 113.39,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 0.4,
+        "source": "ratios"
+      },
+      {
+        "metric": "equityRatio",
+        "value": 46.94,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_051910_profitability",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "profitability",
+    "question": "LG화학의 수익성을 분석해주세요. ROE, 영업이익률, 순이익률을 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": -0.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 2.87,
+        "source": "ratios"
+      },
+      {
+        "metric": "netMargin",
+        "value": -0.64,
+        "source": "ratios"
+      },
+      {
+        "metric": "ebitdaMargin",
+        "value": 9.9,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_051910_growth",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "growth",
+    "question": "LG화학의 매출과 이익 성장 추세를 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "revenueTTM",
+        "value": 47121498000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": -303446000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 2.87,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_dividend",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "dividend",
+    "question": "LG화학의 배당 정책과 배당성향은 어떤가요?",
+    "expected_facts": [
+      {
+        "metric": "dividendPayoutRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": -303446000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": -4675234000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_cashflow",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "cashflow",
+    "question": "LG화학의 현금흐름 구조를 분석해주세요. 영업/투자/잉여현금흐름 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "operatingCashflowTTM",
+        "value": 9917337000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "investingCashflowTTM",
+        "value": -13429597000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": -4675234000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingCfToNetIncome",
+        "value": -3268.24,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_051910_valuation",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "valuation",
+    "question": "LG화학의 현재 밸류에이션은 적정한가요? PER, PBR 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "totalAssets",
+        "value": 98475116000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "totalEquity",
+        "value": 46228488000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "roe",
+        "value": -0.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": -303446000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_risk",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "risk",
+    "question": "LG화학의 주요 재무 리스크는 무엇인가요?",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 113.02,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 0.4,
+        "source": "ratios"
+      },
+      {
+        "metric": "netDebtRatio",
+        "value": -18.58,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_business",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "business",
+    "question": "LG화학의 사업 구조와 주요 사업부문을 설명해주세요.",
+    "expected_facts": [
+      {
+        "metric": "topics_count",
+        "value": 46,
+        "source": "sections"
+      },
+      {
+        "metric": "has_businessOverview",
+        "value": true,
+        "source": "sections"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_comparison",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "comparison",
+    "question": "LG화학의 수익성과 건전성은 같은 업종 내에서 어떤 위치인가요?",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": -0.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 2.87,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 113.02,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_051910_comprehensive",
+    "stock_code": "051910",
+    "company_name": "LG화학",
+    "question_type": "comprehensive",
+    "question": "LG화학에 대해 종합적으로 분석해주세요. 투자 관점에서 강점과 약점을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": -0.94,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 2.87,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 113.02,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": -4675234000000.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": -303446000000.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_health",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "health",
+    "question": "카카오의 재무건전성은 어떤가요? 부채비율과 유동비율을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 83.52,
+        "source": "ratios"
+      },
+      {
+        "metric": "currentRatio",
+        "value": 140.85,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 1.41,
+        "source": "ratios"
+      },
+      {
+        "metric": "equityRatio",
+        "value": 54.49,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_035720_profitability",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "profitability",
+    "question": "카카오의 수익성을 분석해주세요. ROE, 영업이익률, 순이익률을 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 1.6,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 7.24,
+        "source": "ratios"
+      },
+      {
+        "metric": "netMargin",
+        "value": 2.14,
+        "source": "ratios"
+      },
+      {
+        "metric": "ebitdaMargin",
+        "value": 15.11,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_035720_growth",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "growth",
+    "question": "카카오의 매출과 이익 성장 추세를 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "revenueTTM",
+        "value": 7935669684961.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 169804605883.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 7.24,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_dividend",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "dividend",
+    "question": "카카오의 배당 정책과 배당성향은 어떤가요?",
+    "expected_facts": [
+      {
+        "metric": "dividendPayoutRatio",
+        "value": null,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 169804605883.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 814134242168.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_cashflow",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "cashflow",
+    "question": "카카오의 현금흐름 구조를 분석해주세요. 영업/투자/잉여현금흐름 중심으로.",
+    "expected_facts": [
+      {
+        "metric": "operatingCashflowTTM",
+        "value": 1207131882906.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "investingCashflowTTM",
+        "value": -104764616694.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 814134242168.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingCfToNetIncome",
+        "value": 710.89,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "easy",
+    "requires_tool": false
+  },
+  {
+    "id": "001_035720_valuation",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "valuation",
+    "question": "카카오의 현재 밸류에이션은 적정한가요? PER, PBR 분석해주세요.",
+    "expected_facts": [
+      {
+        "metric": "totalAssets",
+        "value": 26891357685700.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "totalEquity",
+        "value": 14653351777305.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "roe",
+        "value": 1.6,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 169804605883.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_risk",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "risk",
+    "question": "카카오의 주요 재무 리스크는 무엇인가요?",
+    "expected_facts": [
+      {
+        "metric": "debtRatio",
+        "value": 83.52,
+        "source": "ratios"
+      },
+      {
+        "metric": "interestCoverage",
+        "value": 1.41,
+        "source": "ratios"
+      },
+      {
+        "metric": "netDebtRatio",
+        "value": -29.36,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_business",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "business",
+    "question": "카카오의 사업 구조와 주요 사업부문을 설명해주세요.",
+    "expected_facts": [
+      {
+        "metric": "topics_count",
+        "value": 49,
+        "source": "sections"
+      },
+      {
+        "metric": "has_businessOverview",
+        "value": true,
+        "source": "sections"
+      }
+    ],
+    "difficulty": "medium",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_comparison",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "comparison",
+    "question": "카카오의 수익성과 건전성은 같은 업종 내에서 어떤 위치인가요?",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 1.6,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 7.24,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 83.52,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  },
+  {
+    "id": "001_035720_comprehensive",
+    "stock_code": "035720",
+    "company_name": "카카오",
+    "question_type": "comprehensive",
+    "question": "카카오에 대해 종합적으로 분석해주세요. 투자 관점에서 강점과 약점을 알려주세요.",
+    "expected_facts": [
+      {
+        "metric": "roe",
+        "value": 1.6,
+        "source": "ratios"
+      },
+      {
+        "metric": "operatingMargin",
+        "value": 7.24,
+        "source": "ratios"
+      },
+      {
+        "metric": "debtRatio",
+        "value": 83.52,
+        "source": "ratios"
+      },
+      {
+        "metric": "fcf",
+        "value": 814134242168.0,
+        "source": "ratios"
+      },
+      {
+        "metric": "netIncomeTTM",
+        "value": 169804605883.0,
+        "source": "ratios"
+      }
+    ],
+    "difficulty": "hard",
+    "requires_tool": true
+  }
+]

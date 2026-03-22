@@ -34,7 +34,7 @@ def api_search(q: str = Query(..., min_length=1)):
         fuzzy_used = False
 
         if not rows:
-            from dartlab.core.kindList import fuzzySearch
+            from dartlab.engines.gather.listing import fuzzySearch
 
             df = fuzzySearch(q, maxResults=20)
             rows = df.to_dicts() if len(df) > 0 else []

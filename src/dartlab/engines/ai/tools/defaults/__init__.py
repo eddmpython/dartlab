@@ -9,6 +9,20 @@ from __future__ import annotations
 from typing import Any, Callable
 
 
+def _register_macro_if_available(register_fn: Callable) -> None:
+    """FRED_API_KEY가 있을 때만 매크로 도구 등록."""
+    import os
+
+    if not os.environ.get("FRED_API_KEY"):
+        return
+    try:
+        from .macro import register_macro_tools
+
+        register_macro_tools(register_fn)
+    except ImportError:
+        pass
+
+
 def register_all_defaults(
     company: Any | None,
     register_fn: Callable,
@@ -25,6 +39,7 @@ def register_all_defaults(
     # Global tools (company 없어도 동작)
     register_system_tools(register_fn, company=company)
     register_openapi_tools(register_fn)
+    _register_macro_if_available(register_fn)
 
     # Company-bound tools
     if company is not None:

@@ -152,7 +152,7 @@ def buildMarketRatios(*, verbose: bool = True) -> pl.DataFrame:
     Returns:
         DataFrame (stockCode, corpName, sector, industryGroup, + 29 ratio columns).
     """
-    from dartlab.core.kindList import getKindList
+    from dartlab.engines.gather.listing import getKindList
     from dartlab.engines.common.finance.ratios import calcRatios
     from dartlab.engines.dart.finance.pivot import buildTimeseries
     from dartlab.engines.sector import classify

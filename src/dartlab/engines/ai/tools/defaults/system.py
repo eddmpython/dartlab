@@ -261,7 +261,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     def search_company(keyword: str) -> str:
         import polars as pl
 
-        from dartlab.core.kindList import searchName
+        from dartlab.engines.gather.listing import searchName
 
         from .helpers import df_to_md
 

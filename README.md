@@ -14,7 +14,7 @@
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-94a3b8?style=for-the-badge&labelColor=050811" alt="License"></a>
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
 <a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
-<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-115%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
+<a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-120%2B_Articles-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
 </p>
 
 <p>
@@ -54,32 +54,109 @@ us.sections
 us.show("business")
 us.BS
 us.ratios
+
+# No code needed — ask in natural language
+dartlab.ask("Analyze Samsung Electronics financial health")
 ```
 
 ## What DartLab Is
 
-DartLab turns corporate filings into a single company map — for both Korean DART and US EDGAR.
+DartLab analyzes corporate disclosure filings — both the **numbers** (financial statements) and the **text** (business descriptions, risk factors, audit reports). It covers Korea (DART), the United States (EDGAR), and is researching Japan (EDINET).
 
-The center of that map is `sections`: a horizontalized matrix built from disclosure sections across periods. Instead of treating a filing as a pile of unrelated parsers, DartLab aligns the document structure first, then lets stronger sources fill in what they own:
+Every company files differently. The same "revenue" can appear as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations. Section titles change by company, year, and industry. Comparing two companies manually means hours of realignment.
 
-- **`docs`** — section structure, narrative text with heading/body separation, tables, and evidence
-- **`finance`** — authoritative numeric statements (BS, IS, CF) and financial ratios
-- **`report`** — authoritative structured disclosure APIs (DART only)
+DartLab solves this with two standardization engines that turn raw filings into a single, comparable company map.
+
+### Account Standardization
+
+Financial statements use XBRL, but account IDs vary wildly across companies. DartLab normalizes them through a 4-step pipeline:
 
 ```
-chapter │ topic            │ blockType │ textNodeType │ 2025Q4 │ 2024Q4 │ 2024Q3 │ …
-I       │ companyOverview  │ text      │ heading      │ "…"    │ "…"    │ "…"    │
-I       │ companyOverview  │ text      │ body         │ "…"    │ "…"    │ "…"    │
-II      │ businessOverview │ text      │ heading      │ "…"    │ "…"    │ "…"    │
-III     │ BS               │ table     │ null         │ —      │ —      │ —      │ (finance)
-VII     │ dividend         │ table     │ null         │ —      │ —      │ —      │ (report)
+Raw XBRL account_id
+  → Step 1: Strip prefixes (ifrs-full_, dart_, ifrs_, ifrs-smes_)
+  → Step 2: English ID synonyms (59 rules)
+            e.g. NetIncome, Profit, NetProfit → ProfitLoss
+  → Step 3: Korean name synonyms (104 rules)
+            e.g. 매출, 수익, 영업수익, 매출액합계 → 매출액
+  → Step 4: Learned mapping table (34,249 entries)
+            AccountMapper resolves to a standardized snakeId
+  → Result: revenue, operatingIncome, totalAssets, …
 ```
+
+Every account across every company resolves to the same `snakeId`. Samsung's revenue and SK Hynix's revenue share the same identifier — cross-company comparison requires zero manual work.
+
+The mapping table covers ~97% of all listed companies. The remaining edge cases (novel XBRL taxonomies, non-standard filings) fall through gracefully with the original ID preserved.
+
+### Sections Horizontalization
+
+Annual reports have structured sections (business overview, risk factors, dividend policy, etc.), but section titles differ by company, year, and industry. DartLab normalizes every section into a **topic × period** grid:
+
+```
+                    2025Q4    2024Q4    2024Q3    2023Q4    …
+companyOverview       ✓         ✓         ✓         ✓
+businessOverview      ✓         ✓         ✓         ✓
+productService        ✓         ✓         ✓         ✓
+salesOrder            ✓         ✓         —         ✓
+employee              ✓         ✓         ✓         ✓
+dividend              ✓         ✓         ✓         ✓
+audit                 ✓         ✓         ✓         ✓
+…                    (98 canonical topics)
+```
+
+The mapping pipeline: **text normalization** (strip industry prefixes, numbering, punctuation) → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic assignment. This achieves ~95%+ mapping rate across all listed companies.
+
+Each cell in the grid contains the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
+
+### Company — The Merged Map
+
+`Company` is where everything comes together. It uses `sections` (the text structure from docs) as the spine, then overlays stronger data sources on top:
+
+```
+Layer         What it provides                   Priority
+─────────────────────────────────────────────────────────
+docs          Section text, tables, evidence      Base spine
+finance       BS, IS, CF, ratios, time series     Replaces numeric topics
+report        28 structured APIs (DART only)      Fills structured topics
+─────────────────────────────────────────────────────────
+profile       Merged view (default for users)     Highest
+```
+
+- **`docs`** owns narrative text — business descriptions, risk factors, audit opinions
+- **`finance`** replaces docs where numbers are stronger — BS, IS, CF become authoritative financial DataFrames
+- **`report`** fills in DART-specific structured data — dividend policy, executive compensation, governance details
+
+Four namespaces expose different views:
+
+```python
+c.docs.sections     # pure text source (sections spine)
+c.finance.BS        # authoritative financial statements
+c.report.extract()  # structured DART API data
+c.profile.sections  # merged view — what users see by default
+```
+
+`c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
+
+### Data — Automatic Collection
+
+When you create a `Company`, DartLab automatically downloads the required data. No API keys needed for `Company` — everything is pre-built or auto-fetched.
+
+| Dataset | Coverage | How it works |
+|---------|----------|--------------|
+| DART docs | 320+ companies (growing) | Pre-built on [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
+| DART finance | 2,700+ companies | Pre-built on GitHub Releases ([4 shards](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1)) |
+| DART report | 2,700+ companies | Pre-built on GitHub Releases ([4 shards](https://github.com/eddmpython/dartlab/releases/tag/data-report-1)) |
+| EDGAR | On-demand | Auto-fetched from SEC XBRL + 10-K/10-Q APIs |
+| EDINET (Japan) | Researching | Engine exists, data pipeline in development |
+
+DART docs collection is ongoing — more companies are added with each release. Finance and report data already cover the full listed market (2,700+ companies).
+
+GitHub imposes a 1,000-asset limit per release. Finance and report datasets use a **4-shard strategy** — stock codes are partitioned into 4 ranges, each hosted on its own release tag.
 
 ### Core Principles
 
 1. **Sections First** — A company is one horizontalized map, not a loose set of parser outputs
 2. **Source-Aware** — When `finance` or `report` is more authoritative, it overrides automatically. `trace()` tells you which source was chosen
-3. **Text Structure** — Narrative text is split into heading/body rows with level and path metadata, for both DART and EDGAR
+3. **Text + Numbers** — Both narrative text (heading/body with metadata) and financial numbers (standardized accounts) live in the same structure
 4. **Raw Access** — Go deeper when needed: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
 
 ## Features
@@ -116,7 +193,7 @@ c.finance.ratioSeries   # ratio time series across years
 c.finance.timeseries    # raw account time series
 ```
 
-Financial ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
+All accounts are normalized through the 4-step standardization pipeline — Samsung's `revenue` and LG's `revenue` are the same `snakeId`. Ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
 ### Insights
 
@@ -210,7 +287,7 @@ dartlab.debt()
 
 ## EDGAR (US)
 
-Same `Company` interface, different data source:
+Same `Company` interface, same account standardization pipeline, different data source. EDGAR data is auto-fetched from the SEC API — no pre-download needed:
 
 ```python
 us = dartlab.Company("AAPL")
@@ -225,7 +302,14 @@ us.diff("10-K::item7Mdna")          # MD&A text changes
 
 ## AI Analysis
 
-DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. The system automatically selects relevant data based on your question.
+DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. **No code required** — you can ask questions in plain language and DartLab handles everything: data selection, context assembly, and streaming the answer.
+
+```bash
+# terminal one-liner — no Python needed
+dartlab ask "삼성전자 재무건전성 분석해줘"
+```
+
+DartLab structures the data, selects relevant context (financials, insights, sector benchmarks), and lets the LLM explain. The 2-tier architecture means basic analysis works with any provider, while tool-calling providers (OpenAI, Claude) can go deeper by requesting additional data mid-conversation.
 
 ### Python API
 
@@ -370,6 +454,8 @@ d.report("삼성전자", "배당", 2024)
 
 ### OpenEdgar (US)
 
+> **No API key required.** SEC EDGAR is a public API — no registration needed.
+
 ```python
 from dartlab import OpenEdgar
 
@@ -381,14 +467,16 @@ e.companyFactsJson("AAPL")
 
 ## Data
 
-**No manual setup required.** When you create a `Company`, dartlab automatically downloads the required data per company. DART data comes from GitHub Releases, EDGAR data from the SEC API.
+**No manual setup required.** When you create a `Company`, dartlab automatically downloads the required data. DART data comes from [GitHub Releases](https://github.com/eddmpython/dartlab/releases), EDGAR data from the SEC API.
 
-| Dataset | Coverage | Source |
-|---------|----------|--------|
-| DART docs | 320+ companies (growing) | Korean disclosure text + tables |
-| DART finance | 2,700+ companies | XBRL financial statements |
-| DART report | 2,700+ companies | Structured disclosure APIs |
-| EDGAR | On-demand | SEC XBRL + 10-K/10-Q (auto-fetched) |
+| Dataset | Coverage | Status | Source |
+|---------|----------|--------|--------|
+| DART docs | 320+ companies | Actively collecting | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
+| DART finance | 2,700+ companies | Complete | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shards) |
+| DART report | 2,700+ companies | Complete | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shards) |
+| EDGAR docs | On-demand | Auto-fetched | SEC 10-K/10-Q API |
+| EDGAR finance | On-demand | Auto-fetched | SEC XBRL API |
+| EDINET (Japan) | Researching | In development | EDINET API |
 
 ## Try It Now
 
@@ -440,7 +528,7 @@ marimo edit startMarimo/aiAnalysis.py     # AI analysis examples
 
 ### Blog
 
-The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis — how to read reports, interpret patterns, and spot risk signals. 115+ articles across three categories:
+The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical disclosure analysis — how to read reports, interpret patterns, and spot risk signals. 120+ articles across three categories:
 
 - **Disclosure Systems** — structure and mechanics of DART/EDGAR filings
 - **Report Reading** — practical guide to audit reports, preliminary earnings, restatements
