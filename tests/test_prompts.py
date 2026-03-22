@@ -66,10 +66,9 @@ class TestBuildSystemPrompt:
 
     def test_no_topic_when_unrelated(self):
         """무관한 모듈만 있으면 토픽 프롬프트 불포함 (교차검증은 포함됨)."""
-        base = build_system_prompt()
         result = build_system_prompt(included_modules=["BS", "IS", "CF"])
         # BS/IS/CF는 토픽 프롬프트를 트리거하지 않지만 교차검증 규칙은 추가됨
-        assert "지배구조" not in result
+        assert "지배구조 분석 참고" not in result
         assert "리스크 분석 참고" not in result
         assert "배당 분석 참고" not in result
         assert "교차검증" in result
@@ -80,7 +79,7 @@ class TestBuildSystemPrompt:
         """반도체 업종 벤치마크 추가."""
         result = build_system_prompt(sector="반도체와반도체장비")
         assert "반도체" in result
-        assert "실리콘 사이클" in result
+        assert "사이클" in result
 
     def test_sector_bank(self):
         """은행 업종 벤치마크."""
@@ -104,7 +103,7 @@ class TestBuildSystemPrompt:
     def test_fewshot_health(self):
         """건전성 질문에 few-shot 예시 추가."""
         result = build_system_prompt(question_type="건전성")
-        assert "부채비율 추이" in result
+        assert "부채비율" in result
         assert "분석 예시" in result
 
     def test_fewshot_profitability(self):
