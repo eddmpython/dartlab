@@ -48,10 +48,10 @@ us.market                    # "US"
 
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
-| `dartlab.engines.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
-| `dartlab.engines.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
-| `dartlab.engines.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
-| `dartlab.engines.dart.Company.resolve(codeOrName)` | str \| None | 종목코드/회사명 → 종목코드 |
+| `dartlab.engines.company.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
+| `dartlab.engines.company.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
+| `dartlab.engines.company.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
+| `dartlab.engines.company.dart.Company.resolve(codeOrName)` | str \| None | 종목코드/회사명 → 종목코드 |
 
 ### 핵심 property
 
@@ -319,6 +319,11 @@ us.cik                       # "0000320193"
 | `altmanZScore` | `Optional` | None |
 | `beneishMScore` | `Optional` | None |
 | `sloanAccrualRatio` | `Optional` | None |
+| `ohlsonOScore` | `Optional` | None |
+| `ohlsonProbability` | `Optional` | None |
+| `altmanZppScore` | `Optional` | None |
+| `springateSScore` | `Optional` | None |
+| `zmijewskiXScore` | `Optional` | None |
 | `eps` | `Optional` | None |
 | `bps` | `Optional` | None |
 | `dps` | `Optional` | None |
@@ -381,6 +386,7 @@ us.cik                       # "0000320193"
 | `risk` | `InsightResult` |  |
 | `opportunity` | `InsightResult` |  |
 | `anomalies` | `list` | [] |
+| `distress` | `Optional` | None |
 | `summary` | `str` |  |
 | `profile` | `str` |  |
 

@@ -18,7 +18,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="startMarimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
+<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="notebooks/marimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
 </p>
 
 <p>
@@ -154,22 +154,6 @@ c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
 ```
 
 `c.sections`는 통합 뷰다. `c.trace("BS")`로 어떤 소스가 왜 채택됐는지 확인한다.
-
-### 데이터 — 자동 수집
-
-`Company`를 생성하면 필요한 데이터를 자동으로 다운로드한다. `Company` 사용에 API 키는 필요 없다 — 모든 것이 사전 구축되었거나 자동 수집된다.
-
-| 데이터셋 | 규모 | 상태 | 출처 |
-|----------|------|------|------|
-| DART docs | 320+ 기업 | 적극 수집 중 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
-| DART finance | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shard) |
-| DART report | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shard) |
-| EDGAR | 주문형 | 자동 수집 | SEC XBRL + 10-K/10-Q API |
-| EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
-
-DART docs는 릴리즈마다 더 많은 기업이 추가된다. finance와 report 데이터는 전체 상장 시장(2,700+ 기업)을 이미 커버한다.
-
-GitHub는 릴리즈당 1,000개 에셋 제한이 있다. finance와 report 데이터셋은 **4-shard 전략**을 사용한다 — 종목코드를 4개 범위로 나누어 각각 별도 릴리즈 태그에 호스팅한다.
 
 ### 핵심 원칙
 
@@ -426,7 +410,21 @@ dartlab report "삼성전자" -o report.md
 dartlab                    # 브라우저 UI 실행
 ```
 
-5개 provider 지원: `oauth-codex` (ChatGPT 구독), `codex` (Codex CLI), `ollama` (로컬, 무료), `openai` (API 키), `custom` (OpenAI 호환).
+### Provider
+
+| Provider | 인증 | 비용 | Tool Calling |
+|----------|------|------|:---:|
+| `oauth-codex` | ChatGPT 구독 (Plus/Team/Enterprise) | 구독에 포함 | Yes |
+| `codex` | Codex CLI 로컬 설치 | 무료 (Codex 세션 사용) | Yes |
+| `ollama` | 로컬 설치, 계정 불필요 | 무료 | 모델에 따라 다름 |
+| `openai` | API 키 (`OPENAI_API_KEY`) | 토큰당 과금 | Yes |
+| `custom` | OpenAI 호환 엔드포인트 | 다양 | 다양 |
+
+**Claude provider가 없는 이유:** Anthropic은 OAuth 기반 접근을 제공하지 않는다. OAuth 없이는 사용자가 기존 구독으로 인증할 방법이 없어서 API 키를 직접 입력하게 해야 하는데, 이는 DartLab의 마찰 없는 설계에 맞지 않는다. Anthropic이 향후 OAuth를 지원하면 Claude provider를 추가할 예정이다. 현재 Claude는 **MCP**로 사용 가능 — Claude Desktop, Claude Code, Cursor에서 DartLab의 60개 도구를 직접 호출할 수 있다.
+
+**`oauth-codex`**가 권장 provider다 — ChatGPT 구독이 있으면 API 키 없이 바로 작동한다. `dartlab setup oauth-codex`로 인증.
+
+**웹 UI (`dartlab`)** 는 브라우저 기반 대화형 분석 인터페이스를 실행한다. 이 기능은 현재 **실험적** 단계로, 시각화와 협업 기능의 범위와 UX를 검토 중이다.
 
 AI 의존성 설치: `uv add "dartlab[ai]"`
 
@@ -554,9 +552,9 @@ e.companyFactsJson("AAPL")
 
 ```bash
 uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # 한국 기업 (DART)
-marimo edit startMarimo/edgarCompany.py   # 미국 기업 (EDGAR)
-marimo edit startMarimo/aiAnalysis.py     # AI 분석 예시
+marimo edit notebooks/marimo/dartCompany.py    # 한국 기업 (DART)
+marimo edit notebooks/marimo/edgarCompany.py   # 미국 기업 (EDGAR)
+marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 ```
 
 ### Colab 튜토리얼

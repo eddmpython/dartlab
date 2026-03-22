@@ -176,7 +176,7 @@ Detects financial anomaly signals using 8 rules.
 | `cashBurn` | Sharp cash decline, operating CF deficit + financing CF positive (debt-dependent) |
 | `marginDivergence` | Operating margin changed by +/-5%p, non-operating income sharp change |
 | `financialSector` | Financial sector debt ratio sharp change, net income sharp decline |
-| `trendDeterioration` | Consecutive net losses, operating CF losses, ICR<1, rising debt ratio |
+| `trendDeterioration` | Consecutive net losses, operating CF losses, ICR below 1, rising debt ratio |
 | `cccDeterioration` | Cash conversion cycle expanding 3+ consecutive years |
 
 ```python
@@ -234,16 +234,16 @@ print(result.distress)
 
 | Overall Score | Grade | Description |
 |---------------|-------|-------------|
-| < 5 | AAA | 투자적격 최상위 |
-| < 10 | AA | 투자적격 상위 |
-| < 15 | A | 투자적격 |
-| < 25 | BBB | 투자적격 하한 |
-| < 35 | BB | 투기등급 |
-| < 50 | B | 투기등급 하위 |
-| < 65 | CCC | 상당한 부실 위험 |
-| < 80 | CC | 부실 임박 |
-| < 90 | C | 부도 직전 |
-| ≥ 90 | D | 부도 수준 |
+| 5 미만 | AAA | 투자적격 최상위 |
+| 10 미만 | AA | 투자적격 상위 |
+| 15 미만 | A | 투자적격 |
+| 25 미만 | BBB | 투자적격 하한 |
+| 35 미만 | BB | 투기등급 |
+| 50 미만 | B | 투기등급 하위 |
+| 65 미만 | CCC | 상당한 부실 위험 |
+| 80 미만 | CC | 부실 임박 |
+| 90 미만 | C | 부도 직전 |
+| 90 이상 | D | 부도 수준 |
 
 ### ModelScore
 

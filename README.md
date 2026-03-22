@@ -18,7 +18,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="startMarimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="notebooks/marimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -154,22 +154,6 @@ c.profile.sections  # merged view — what users see by default
 ```
 
 `c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
-
-### Data — Automatic Collection
-
-When you create a `Company`, DartLab automatically downloads the required data. No API keys needed for `Company` — everything is pre-built or auto-fetched.
-
-| Dataset | Coverage | How it works |
-|---------|----------|--------------|
-| DART docs | 320+ companies (growing) | Pre-built on [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
-| DART finance | 2,700+ companies | Pre-built on GitHub Releases ([4 shards](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1)) |
-| DART report | 2,700+ companies | Pre-built on GitHub Releases ([4 shards](https://github.com/eddmpython/dartlab/releases/tag/data-report-1)) |
-| EDGAR | On-demand | Auto-fetched from SEC XBRL + 10-K/10-Q APIs |
-| EDINET (Japan) | Researching | Engine exists, data pipeline in development |
-
-DART docs collection is ongoing — more companies are added with each release. Finance and report data already cover the full listed market (2,700+ companies).
-
-GitHub imposes a 1,000-asset limit per release. Finance and report datasets use a **4-shard strategy** — stock codes are partitioned into 4 ranges, each hosted on its own release tag.
 
 ### Core Principles
 
@@ -426,7 +410,21 @@ dartlab report "삼성전자" -o report.md
 dartlab                    # open browser UI
 ```
 
-5 providers: `oauth-codex` (ChatGPT subscription), `codex` (Codex CLI), `ollama` (local, free), `openai` (API key), `custom` (OpenAI-compatible).
+### Providers
+
+| Provider | Auth | Cost | Tool Calling |
+|----------|------|------|:---:|
+| `oauth-codex` | ChatGPT subscription (Plus/Team/Enterprise) | Included in subscription | Yes |
+| `codex` | Codex CLI installed locally | Free (uses your Codex session) | Yes |
+| `ollama` | Local install, no account needed | Free | Depends on model |
+| `openai` | API key (`OPENAI_API_KEY`) | Pay-per-token | Yes |
+| `custom` | Any OpenAI-compatible endpoint | Varies | Varies |
+
+**Why no Claude provider?** Anthropic does not offer OAuth-based access. Without OAuth, there is no way to let users authenticate with their existing subscription — we would have to ask users to paste API keys, which goes against DartLab's frictionless design. If Anthropic adds OAuth support in the future, we will add a Claude provider. For now, Claude works through **MCP** (see below) — Claude Desktop, Claude Code, and Cursor can call DartLab's 60 tools directly.
+
+**`oauth-codex`** is the recommended provider — if you have a ChatGPT subscription, it works out of the box with no API keys. Run `dartlab setup oauth-codex` to authenticate.
+
+**Web UI (`dartlab`)** launches a browser-based chat interface for interactive analysis. This feature is currently **experimental** — we are evaluating the right scope and UX for visualization and collaborative features.
 
 Install AI dependencies: `uv add "dartlab[ai]"`
 
@@ -554,9 +552,9 @@ e.companyFactsJson("AAPL")
 
 ```bash
 uv add dartlab marimo
-marimo edit startMarimo/dartCompany.py    # Korean company (DART)
-marimo edit startMarimo/edgarCompany.py   # US company (EDGAR)
-marimo edit startMarimo/aiAnalysis.py     # AI analysis examples
+marimo edit notebooks/marimo/dartCompany.py    # Korean company (DART)
+marimo edit notebooks/marimo/edgarCompany.py   # US company (EDGAR)
+marimo edit notebooks/marimo/aiAnalysis.py     # AI analysis examples
 ```
 
 ### Colab Notebooks

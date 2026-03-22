@@ -644,8 +644,8 @@ Beyond traditional ratios, DartLab computes academic-grade composite indicators 
 | Ohlson O-Score | `ohlsonOScore` | 9-variable logistic bankruptcy probability (Ohlson, 1980) |
 | Ohlson P(bankruptcy) | `ohlsonProbability` | O-Score converted to probability (%) |
 | Altman Z''-Score | `altmanZppScore` | Non-manufacturing/emerging market variant (Altman, 1995) |
-| Springate S-Score | `springateSScore` | 4-variable Canadian variant (Springate, 1978). S < 0.862 = distress |
-| Zmijewski X-Score | `zmijewskiXScore` | 3-variable probit model (Zmijewski, 1984). X > 0 = distress |
+| Springate S-Score | `springateSScore` | 4-variable Canadian variant (Springate, 1978). S below 0.862 = distress |
+| Zmijewski X-Score | `zmijewskiXScore` | 3-variable probit model (Zmijewski, 1984). X above 0 = distress |
 
 ```python
 r = c.ratios
