@@ -967,6 +967,61 @@ def register_finance_tools(company: Any, register_tool) -> None:
         requires_company=True,
     )
 
+    # ── 매출 앙상블 예측 (4-소스) ──
+
+    def forecast_revenue_tool(horizon: str = "3") -> str:
+        """매출 앙상블 예측 — 시계열+컨센서스+ROIC+매크로 4소스."""
+        from dartlab.engines.common.finance.revenue_forecast import forecast_revenue as _fr
+
+        series = _unwrap_timeseries(company.finance.timeseries)
+        if not series:
+            return "재무 시계열 데이터가 없습니다."
+
+        stock_code = getattr(company.profile, "stockCode", None) if hasattr(company, "profile") else None
+        sector_info = getattr(company, "sectorInfo", None)
+        sector_key = sector_info.get("sector", None) if sector_info else None
+
+        result = _fr(series, stock_code=stock_code, sector_key=sector_key, horizon=int(horizon))
+
+        # AI 컨텍스트도 함께 표시
+        lines = [repr(result)]
+        if result.ai_context:
+            ctx = result.ai_context
+            lines.append("\n## AI 보정 참고 컨텍스트")
+            if ctx.get("lifecycle"):
+                lines.append(f"- 라이프사이클: {ctx['lifecycle']}")
+            if ctx.get("roic_growth") is not None:
+                lines.append(f"- ROIC 내재 성장률: {ctx['roic_growth']}%")
+            if ctx.get("roic_ts_gap") is not None:
+                lines.append(f"- ROIC vs 시계열 괴리: {ctx['roic_ts_gap']:+}%p")
+            if ctx.get("consensus_vs_ts_gap") is not None:
+                lines.append(f"- 컨센서스 vs 시계열 괴리: {ctx['consensus_vs_ts_gap']:+}%p")
+            if ctx.get("uncertainty_flags"):
+                lines.append(f"- 불확실성: {', '.join(ctx['uncertainty_flags'])}")
+        return "\n".join(lines)
+
+    register_tool(
+        "forecast_revenue",
+        forecast_revenue_tool,
+        "매출 앙상블 예측 엔진. 시계열+컨센서스+ROIC+매크로 4소스를 결합하여 "
+        "향후 매출을 예측합니다. 기업 라이프사이클(고성장/성숙/전환/쇠퇴)을 "
+        "자동 판별하고 소스별 가중치를 조정합니다. "
+        "사용 시점: 매출 전망, 성장성 평가, 밸류에이션 입력. "
+        "forecast 도구와의 차이: forecast는 단일 시계열, forecast_revenue는 다중 소스 앙상블.",
+        {
+            "type": "object",
+            "properties": {
+                "horizon": {
+                    "type": "string",
+                    "description": "예측 기간 (년, 1~5)",
+                    "default": "3",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+    )
+
     # ── 확률 가중 주가 목표가 ──
 
     def price_target_tool(

@@ -57,6 +57,15 @@ def _loadDotenvKeys() -> list[str]:
     return []
 
 
+def hasDartApiKey() -> bool:
+    """DART API 키가 설정되어 있는지 확인 (DartClient 생성 없이).
+
+    환경변수, .env 파일을 모두 탐색하되 DartClient를 인스턴스화하지 않으므로
+    키가 없어도 ValueError를 던지지 않는다.
+    """
+    return bool(DartClient._resolveKeys(None, None))
+
+
 class DartApiError(Exception):
     """OpenDART API 에러."""
 

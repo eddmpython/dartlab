@@ -142,13 +142,15 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
                 _searchCache = None  # 데이터 변경 시 검색 캐시 무효화
                 return cached
 
-        print("[dartlab] KRX KIND 상장법인 목록 다운로드 중...")
+        from dartlab.core.guidance import emit
+
+        emit("listing:download")
         df = _fetchKind()
         _saveCache(df)
         _memory = df
         _memoryTs = time.time()
         _searchCache = None  # 데이터 변경 시 검색 캐시 무효화
-        print(f"[dartlab] {df.height}개 종목 로드 완료")
+        emit("listing:done", count=df.height)
         return df
 
 

@@ -6,9 +6,12 @@ from dartlab.cli.context import CLI_PROVIDERS
 from dartlab.cli.services.errors import CLIError
 
 
+_SETUP_CHOICES = [*CLI_PROVIDERS, "dart-key"]
+
+
 def configure_parser(subparsers) -> None:
-    parser = subparsers.add_parser("setup", help="LLM provider 설치 및 인증 안내")
-    parser.add_argument("provider", nargs="?", default=None, choices=CLI_PROVIDERS, help="설정할 provider")
+    parser = subparsers.add_parser("setup", help="LLM provider 및 API 키 설정 안내")
+    parser.add_argument("provider", nargs="?", default=None, choices=_SETUP_CHOICES, help="설정할 provider 또는 dart-key")
     parser.add_argument("--login", action="store_true", help="oauth-codex 브라우저 로그인 강제 실행")
     parser.set_defaults(handler=run)
 
@@ -20,13 +23,18 @@ def run(args) -> int:
         raise CLIError(f"setup 정보를 불러오지 못했습니다: {exc}") from exc
 
     if args.provider is None:
-        print("\n사용 가능한 provider:\n")
+        print("\n[ 데이터 수집 ]\n")
+        print("  dartlab setup dart-key     DART OpenAPI 키 설정 (공시 데이터 직접 수집)\n")
+        print("[ AI 분석 ]\n")
         print("  dartlab setup oauth-codex  ChatGPT 구독 계정 — 브라우저 OAuth (권장)")
         print("  dartlab setup codex        Codex CLI — 코딩 에이전트용")
         print("  dartlab setup ollama       로컬 LLM (무료, 오프라인)")
         print("  dartlab setup openai       OpenAI API — GPT-4o 등 (API 키 필요)")
         print("  dartlab setup custom       OpenAI 호환 API — vLLM, Together 등\n")
         return 0
+
+    if args.provider == "dart-key":
+        return _setup_dart_key()
 
     if args.provider == "oauth-codex" and getattr(args, "login", False):
         handler = _do_oauth_login
@@ -259,3 +267,70 @@ def _setup_custom() -> None:
     print("     export CUSTOM_BASE_URL=http://localhost:8000/v1")
     print("     export CUSTOM_API_KEY=YOUR_KEY")
     print()
+
+
+# ── DART API 키 설정 ──────────────────────────────────
+
+
+def _setup_dart_key() -> int:
+    """DART OpenAPI 키 설정 — 대화형 입력 → .env 저장."""
+    from dartlab.engines.company.dart.openapi.client import hasDartApiKey
+
+    print("\n[ DART OpenAPI 키 설정 ]\n")
+    print("  DART 전자공시 데이터를 직접 수집하려면 OpenAPI 키가 필요합니다.")
+    print("  GitHub Release에 포함되지 않은 종목도 키만 있으면 수집할 수 있습니다.\n")
+    print("  키 발급: https://opendart.fss.or.kr → 인증키 신청 (무료)\n")
+
+    if hasDartApiKey():
+        print("  ✓ DART API 키가 이미 설정되어 있습니다.\n")
+        print("  수집 명령:")
+        print("    dartlab collect 005930              단일 종목 (최근 8분기)")
+        print("    dartlab collect 005930 -q 20        단일 종목 (20분기)")
+        print("    dartlab collect --auto              미수집 전체")
+        print("    dartlab collect --stats             수집 현황\n")
+        print("  참고: docs 수집은 DART 서버 부하 방지를 위해 섹션당 5~10초 간격으로")
+        print("        크롤링하므로 종목당 2~10분이 소요됩니다.\n")
+        return 0
+
+    print("  키를 입력하면 프로젝트 루트의 .env 파일에 저장됩니다.")
+    print("  .env 파일은 .gitignore에 포함되어 있어 git에 공유되지 않습니다.\n")
+
+    key = input("  DART API KEY: ").strip()
+    if not key:
+        print("\n  취소됨.\n")
+        return 1
+
+    _save_dart_key_to_dotenv(key)
+
+    print(f"\n  ✓ .env에 DART_API_KEY 저장 완료")
+    print("    (이 키는 git에 공유되지 않습니다)\n")
+    print("  수집 시작:")
+    print(f"    dartlab collect 005930")
+    print(f"    dartlab collect --auto\n")
+    print("  참고: docs 수집은 DART 서버 부하 방지를 위해 섹션당 5~10초 간격으로")
+    print("        크롤링하므로 종목당 2~10분이 소요됩니다.\n")
+    return 0
+
+
+def _save_dart_key_to_dotenv(key: str) -> None:
+    """프로젝트 루트의 .env에 DART_API_KEY 추가/갱신."""
+    from pathlib import Path
+
+    envPath = Path.cwd() / ".env"
+    lines: list[str] = []
+    replaced = False
+
+    if envPath.exists():
+        text = envPath.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("DART_API_KEY=") or stripped.startswith("DART_API_KEYS="):
+                lines.append(f"DART_API_KEY={key}")
+                replaced = True
+            else:
+                lines.append(line)
+
+    if not replaced:
+        lines.append(f"DART_API_KEY={key}")
+
+    envPath.write_text("\n".join(lines) + "\n", encoding="utf-8")

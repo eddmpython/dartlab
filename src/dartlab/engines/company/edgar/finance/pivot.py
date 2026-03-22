@@ -210,7 +210,9 @@ def _autoDownloadEdgarFinance(cik: str, dest: Path) -> Optional[Path]:
     """SEC EDGAR companyfacts API에서 재무 데이터를 자동 다운로드."""
     from urllib.error import URLError
 
-    print(f"[dartlab] {cik} (SEC EDGAR 재무 데이터) 로컬에 없음 → SEC API에서 다운로드 중...")
+    from dartlab.core.guidance import emit
+
+    emit("edgar:sec_download", cik=cik)
     try:
         from dartlab.engines.company.edgar.openapi.facts import (
             companyFactsToRows,
@@ -220,14 +222,14 @@ def _autoDownloadEdgarFinance(cik: str, dest: Path) -> Optional[Path]:
         payload = getCompanyFactsJson(cik)
         df = companyFactsToRows(payload)
         if df.is_empty():
-            print(f"[dartlab] {cik} SEC API 응답이 비어있음 (데이터 없음)")
+            emit("edgar:empty", cik=cik)
             return None
         dest.parent.mkdir(parents=True, exist_ok=True)
         df.write_parquet(dest)
-        print(f"[dartlab] 저장 완료: {dest}")
+        emit("edgar:save_done", path=str(dest))
         return dest
     except (URLError, OSError, RuntimeError) as e:
-        print(f"[dartlab] {cik} SEC API 다운로드 실패: {e}")
+        emit("edgar:download_failed", cik=cik, error=str(e))
         return None
 
 

@@ -16,6 +16,8 @@ class DomainConfig:
     rpm: int = 30
     concurrency: int = 2
     timeout: float = 10.0
+    jitter_min: float = 0.3  # 요청 전 최소 랜덤 대기 (초)
+    jitter_max: float = 1.5  # 요청 전 최대 랜덤 대기 (초)
 
 
 # ══════════════════════════════════════
@@ -39,9 +41,15 @@ class PriceSnapshot:
     dividend_yield: float | None = None
     source: str = ""
     fetched_at: str = ""
+    # 글로벌 확장 (기본값 → 하위호환)
+    currency: str = "KRW"
+    exchange: str = ""
+    market: str = "KR"
+    is_stale: bool = False
 
     def __repr__(self) -> str:
-        lines = [f"[주가 — {self.source}]"]
+        stale_tag = " [stale]" if self.is_stale else ""
+        lines = [f"[주가 — {self.source}{stale_tag}]"]
         lines.append(f"  현재가: {self.current:,.0f}")
         if self.change != 0:
             lines.append(f"  변동: {self.change:+,.0f} ({self.change_pct:+.2f}%)")
@@ -72,6 +80,29 @@ class ConsensusData:
             f"buy={self.buy_ratio:.0%}, "
             f"range={self.low:,.0f}~{self.high:,.0f})"
         )
+
+
+@dataclass
+class RevenueConsensus:
+    """애널리스트 매출/이익 컨센서스 — 네이버 금융 finance/annual API."""
+
+    fiscal_year: int = 0
+    revenue_est: float = 0.0  # 예상 매출 (억원)
+    operating_profit_est: float | None = None  # 예상 영업이익 (억원)
+    net_income_est: float | None = None  # 예상 순이익 (억원)
+    eps_est: float | None = None  # 예상 EPS (원)
+    per_est: float | None = None  # 예상 PER (배)
+    source: str = ""
+
+    def __repr__(self) -> str:
+        parts = [f"RevenueConsensus({self.fiscal_year})"]
+        if self.revenue_est:
+            parts.append(f"매출={self.revenue_est:,.0f}억")
+        if self.operating_profit_est:
+            parts.append(f"영업이익={self.operating_profit_est:,.0f}억")
+        if self.eps_est:
+            parts.append(f"EPS={self.eps_est:,.0f}원")
+        return " ".join(parts)
 
 
 @dataclass
@@ -270,3 +301,7 @@ class SourceUnavailableError(GatherError):
 
 class RateLimitExceededError(GatherError):
     """Rate limit 초과."""
+
+
+class CircuitOpenError(SourceUnavailableError):
+    """Circuit breaker open — 소스 일시 차단."""

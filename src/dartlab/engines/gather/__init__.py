@@ -20,10 +20,12 @@ from datetime import datetime, timezone
 
 from . import consensus as _consensus
 from . import flow as _flow
+from . import history as _history
 from . import price as _price
 from .cache import GatherCache
-from .domains import load_domain
+from .domains import get_price_fallback, load_domain
 from .http import GatherHttpClient
+from .market_config import get_market_config
 from .types import (
     ConsensusData,
     FlowData,
@@ -32,6 +34,7 @@ from .types import (
     MarketSnapshot,
     PeerData,
     PriceSnapshot,
+    RevenueConsensus,
     SourceUnavailableError,
 )
 
@@ -83,6 +86,51 @@ class Gather:
             self._cache.put_typed(stock_code, "flow", result)
         return result
 
+    def revenue_consensus(self, stock_code: str) -> list[RevenueConsensus]:
+        """매출/이익 컨센서스 — 네이버 finance/annual API."""
+        cached = self._cache.get_typed(stock_code, "revenue_consensus")
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        try:
+            module = load_domain("naver")
+            result = module.fetch_revenue_consensus(stock_code, self._client)
+        except (SourceUnavailableError, ImportError, OSError) as exc:
+            log.debug("revenue_consensus 실패 (%s): %s", stock_code, exc)
+            result = []
+        if result:
+            self._cache.put_typed(stock_code, "revenue_consensus", result)
+        return result
+
+    def history(
+        self,
+        stock_code: str,
+        *,
+        start: str,
+        end: str,
+        market: str = "KR",
+    ) -> list[dict]:
+        """히스토리 OHLCV — fallback 체인 (yahoo_direct → fmp → yahoo).
+
+        Args:
+            start: "2024-01-01"
+            end: "2024-12-31"
+
+        Returns:
+            [{"date": ..., "open": ..., "high": ..., "low": ..., "close": ..., "volume": ...}, ...]
+        """
+        cache_key = f"{stock_code}:history:{start}:{end}"
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        result = _history.fetch(
+            stock_code, start=start, end=end, market=market, client=self._client,
+        )
+        if result:
+            from .cache import TTL_HISTORY
+
+            self._cache.put(cache_key, result, TTL_HISTORY)
+        return result
+
     # ── 전체 병렬 수집 ──
 
     def collect(self, stock_code: str, *, market: str = "KR") -> GatherSnapshot:
@@ -95,9 +143,9 @@ class Gather:
         if cached is not None:
             return cached  # type: ignore[return-value]
 
-        domains = ["naver"]
-        if market == "US":
-            domains = ["yahoo"]
+        config = get_market_config(market)
+        # collect는 모든 가용 도메인에서 병렬 수집
+        domains = list(dict.fromkeys(config.fallback_chain))  # 순서 유지 중복 제거
 
         results: dict[str, GatherResult] = {}
         with ThreadPoolExecutor(max_workers=len(domains)) as executor:
@@ -122,9 +170,16 @@ class Gather:
     def _fetch_domain(self, domain_name: str, stock_code: str, market: str) -> GatherResult:
         """단일 도메인에서 모든 데이터 수집."""
         module = load_domain(domain_name)
-        if domain_name == "yahoo":
+        # fetch_all이 있는 도메인 (naver, yahoo)
+        if hasattr(module, "fetch_all"):
+            if domain_name == "naver":
+                return module.fetch_all(stock_code, self._client)
             return module.fetch_all(stock_code, self._client, market=market)
-        return module.fetch_all(stock_code, self._client)
+        # fetch_price만 있는 도메인 (yahoo_direct, fmp)
+        price = None
+        if hasattr(module, "fetch_price"):
+            price = module.fetch_price(stock_code, self._client, market=market)
+        return GatherResult(domain=domain_name, price=price)
 
     def invalidate(self, stock_code: str) -> None:
         """특정 종목의 캐시 무효화."""
@@ -148,4 +203,5 @@ __all__ = [
     "ConsensusData",
     "FlowData",
     "GatherResult",
+    "RevenueConsensus",
 ]

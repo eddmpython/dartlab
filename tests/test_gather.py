@@ -36,8 +36,9 @@ class TestGatherCache:
 
     def test_ttl_expiry(self):
         cache = GatherCache()
-        cache.put("key1", "value1", ttl=0)
-        time.sleep(0.01)
+        cache.put("key1", "value1", ttl=1)
+        # 수동으로 만료시킴 (sleep 대신 정확한 제어)
+        cache._store["key1"].expires_at = time.monotonic() - 1.0
         assert cache.get("key1") is None
 
     def test_max_entries_eviction(self):

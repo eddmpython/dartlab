@@ -17,7 +17,7 @@ from dartlab.engines.analysis.insight.grading import (
     analyzeRiskSummary,
 )
 from dartlab.engines.analysis.insight.summary import classifyProfile, generateSummary
-from dartlab.engines.analysis.insight.types import AnalysisResult
+from dartlab.engines.analysis.insight.types import AnalysisResult, MarketDataForDistress
 from dartlab.engines.analysis.sector.types import Sector
 from dartlab.engines.common.finance.ratios import calcRatios
 
@@ -53,6 +53,7 @@ def analyze(
     corpName: str | None = None,
     qSeriesPair: SeriesPair | None = None,
     aSeriesPair: SeriesPair | None = None,
+    marketData: MarketDataForDistress | None = None,
 ) -> AnalysisResult | None:
     """종목 종합 인사이트 분석.
 
@@ -62,6 +63,7 @@ def analyze(
         corpName: 회사명. company가 없을 때 사용.
         qSeriesPair: (qSeries, qPeriods). None이면 DART pivot에서 빌드.
         aSeriesPair: (aSeries, aYears). None이면 DART pivot에서 빌드.
+        marketData: 시장 기반 부실 분석 입력. None이면 4축, 제공 시 Merton 5축.
 
     Returns:
         AnalysisResult 또는 데이터 부족 시 None.
@@ -109,7 +111,22 @@ def analyze(
     insights["opportunity"] = analyzeOpportunitySummary(insights)
 
     anomalies = runAnomalyDetection(aSeries, isFinancial)
-    distress = calcDistress(ratios, anomalies, isFinancial)
+
+    # Merton 시장 기반 모델 (비금융 + marketData 제공 시)
+    mertonResult = None
+    if not isFinancial and marketData is not None:
+        from dartlab.engines.common.finance.merton import calcEquityVolatility, solveMerton
+
+        vol = calcEquityVolatility(marketData.dailyReturns)
+        if vol > 0:
+            mertonResult = solveMerton(
+                equityValue=marketData.marketCap,
+                debtFaceValue=ratios.totalLiabilities or 0,
+                equityVolatility=vol,
+                riskFreeRate=marketData.riskFreeRate,
+            )
+
+    distress = calcDistress(ratios, anomalies, isFinancial, mertonResult=mertonResult)
 
     resolvedName = corpName or (company.corpName if company else stockCode)
     grades = {k: v.grade for k, v in insights.items()}

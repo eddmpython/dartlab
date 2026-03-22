@@ -56,7 +56,7 @@ def test_cli_setup_contract():
     result = _run_cli("setup")
 
     assert result.returncode == 0
-    assert "사용 가능한 provider" in result.stdout
+    assert "데이터 수집" in result.stdout or "AI 분석" in result.stdout
     assert "dartlab setup codex" in result.stdout
     assert "claude-code" not in result.stdout
     assert result.stderr == ""

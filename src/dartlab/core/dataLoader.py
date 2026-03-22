@@ -100,24 +100,21 @@ def loadData(
             refresh=refresh,
         )
     elif not path.exists():
+        from dartlab.core.guidance import emit, format as gfmt
+
         label = DATA_RELEASES[category]["label"]
-        print(f"[dartlab] {stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...")
+        emit("download:start", stockCode=stockCode, label=label)
         try:
             _download(stockCode, path, category)
             size = path.stat().st_size
             sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
-            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
+            emit("download:done_short", sizeStr=sizeStr)
         except (URLError, socket.timeout, OSError) as e:
             if path.exists():
                 path.unlink()
+            key = "error:download_failed" if category == "docs" else "error:download_failed"
             raise RuntimeError(
-                f"데이터 다운로드 실패 ({stockCode}, {label}): {e}\n"
-                f"\n"
-                f"  해결 방법:\n"
-                f"  1. 인터넷 연결을 확인하세요\n"
-                f"  2. dartlab download {stockCode} 명령으로 수동 다운로드\n"
-                f"  3. 해당 종목이 dartlab 데이터셋에 포함되어 있는지 확인하세요\n"
-                f"     → DART: 한국 상장기업 ~2,700개 / EDGAR: 미국 상장기업 ~970개"
+                gfmt(key, stockCode=stockCode, label=label, error=str(e))
             ) from e
         except ValueError:
             if path.exists():
@@ -170,17 +167,19 @@ def _ensureEdgarDocs(
         return
 
     if not path.exists():
+        from dartlab.core.guidance import emit
+
         label = DATA_RELEASES["edgarDocs"]["label"]
-        print(f"[dartlab] {stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...")
+        emit("download:start", stockCode=stockCode, label=label)
         try:
             _download(stockCode, path, "edgarDocs")
             size = path.stat().st_size
             sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
-            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
+            emit("download:done_short", sizeStr=sizeStr)
         except (URLError, socket.timeout, OSError):
             if path.exists():
                 path.unlink()
-            print("[dartlab] GitHub에 없음 → SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)")
+            emit("edgar:fallback")
             _rebuildEdgarDocs(stockCode, path, sinceYear=sinceYear, sourceMode="sec_api")
         return
 
@@ -242,12 +241,14 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
     else:
         tags = [conf["tag"]]
 
+    from dartlab.core.guidance import emit
+
     allAssets: list[dict] = []
-    print(f"[dartlab] {label} — GitHub Release 에셋 목록 조회 중... ({len(tags)}개 태그)")
+    emit("download_all:query", label=label, tagCount=len(tags))
     for tag in tags:
         assets = _fetchAssets(tag)
         allAssets.extend(assets)
-        print(f"  {tag}: {len(assets)}개")
+        emit("download_all:tag_count", tag=tag, count=len(assets))
 
     toDownload = []
     skipped = 0
@@ -261,11 +262,11 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
             skipped += 1
 
     if not toDownload:
-        print(f"[dartlab] ✓ 전체 {len(allAssets)}종목 이미 최신")
+        emit("download_all:uptodate", count=len(allAssets))
         return
 
     action = "신규 + 업데이트" if forceUpdate else "신규"
-    print(f"[dartlab] {action} {len(toDownload)}종목 다운로드 시작 (이미 존재: {skipped})")
+    emit("download_all:start", action=action, count=len(toDownload), skipped=skipped)
 
     failed = 0
     with alive_bar(len(toDownload), title=f"{label} 다운로드") as bar:
@@ -274,20 +275,23 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
             try:
                 _downloadWithRetry(asset["browser_download_url"], dest)
             except (URLError, socket.timeout, OSError) as e:
-                print(f"\n[dartlab] ✗ {asset['name']} 실패: {e}")
+                print(f"\n", end="")
+                emit("download:failed_item", name=asset["name"], error=str(e))
                 if dest.exists():
                     dest.unlink()
                 failed += 1
             bar()
 
     if failed:
-        print(f"[dartlab] ✓ 완료 (실패: {failed}건)")
+        emit("download_all:done_with_errors", failed=failed)
     else:
-        print(f"[dartlab] ✓ 전체 다운로드 완료 → {dataDir}")
+        emit("download_all:done", dataDir=str(dataDir))
 
 
 def download(stockCode: str) -> None:
     """특정 종목의 docs + finance + report 데이터를 모두 다운로드."""
+    from dartlab.core.guidance import emit
+
     for category in DATA_RELEASES:
         if category in _EXPLICIT_DOWNLOAD_ONLY_CATEGORIES:
             continue
@@ -297,18 +301,18 @@ def download(stockCode: str) -> None:
         dest = dataDir / f"{stockCode}.parquet"
         label = DATA_RELEASES[category]["label"]
         if dest.exists():
-            print(f"[dartlab] ✓ {stockCode} ({label}) 이미 존재")
+            emit("download:exists", stockCode=stockCode, label=label)
             continue
-        print(f"[dartlab] {stockCode} ({label}) 다운로드 중...")
+        emit("download:progress", stockCode=stockCode, label=label)
         try:
             _download(stockCode, dest, category)
             size = dest.stat().st_size
             sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
-            print(f"[dartlab] ✓ 다운로드 완료 ({sizeStr})")
+            emit("download:done", label=label, sizeStr=sizeStr)
         except (URLError, socket.timeout, OSError) as e:
             if dest.exists():
                 dest.unlink()
-            print(f"[dartlab] ✗ {stockCode} ({label}) 다운로드 실패: {e}")
+            emit("download:failed_single", stockCode=stockCode, label=label, error=str(e))
 
 
 DART_VIEWER = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="
@@ -370,7 +374,9 @@ def updateEdgarListedUniverse(*, force: bool = False) -> Path:
     if not force and path.exists() and not _isLocalCacheExpired(path, _EDGAR_UNIVERSE_TTL_HOURS):
         return path
 
-    print("[dartlab] SEC listed universe 갱신 중...")
+    from dartlab.core.guidance import emit
+
+    emit("edgar:universe_update")
     data = _fetchJson(EDGAR_LISTED_UNIVERSE_URL)
 
     records = []
@@ -395,7 +401,7 @@ def updateEdgarListedUniverse(*, force: bool = False) -> Path:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(records).write_parquet(path)
-    print(f"[dartlab] 저장 완료: {path}")
+    emit("edgar:universe_save", path=str(path))
     return path
 
 

@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
-# 데이터 유형별 fallback 순서
-PRICE_FALLBACK = ["naver", "yahoo"]
+from ..market_config import get_market_config
+
+# 데이터 유형별 fallback 순서 (KR 기본값 — 하위호환)
+PRICE_FALLBACK = ["naver", "yahoo_direct", "yahoo"]
 CONSENSUS_FALLBACK = ["naver"]
 FLOW_FALLBACK = ["naver"]
-HISTORY_FALLBACK = ["yahoo"]
+HISTORY_FALLBACK = ["yahoo_direct", "yahoo"]
+
+
+def get_price_fallback(market: str = "KR") -> list[str]:
+    """시장별 주가 fallback 체인."""
+    config = get_market_config(market)
+    return list(config.fallback_chain)
 
 
 def load_domain(name: str):
@@ -19,4 +27,12 @@ def load_domain(name: str):
         from . import yahoo
 
         return yahoo
+    if name == "yahoo_direct":
+        from . import yahoo_direct
+
+        return yahoo_direct
+    if name == "fmp":
+        from . import fmp
+
+        return fmp
     raise ValueError(f"알 수 없는 도메인: {name}")

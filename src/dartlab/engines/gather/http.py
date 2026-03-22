@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import threading
 import time
 from urllib.parse import urlparse
@@ -18,18 +19,26 @@ log = logging.getLogger(__name__)
 # ══════════════════════════════════════
 
 DOMAIN_POLICY: dict[str, DomainConfig] = {
-    "m.stock.naver.com": DomainConfig(rpm=30, concurrency=2),
-    "finance.naver.com": DomainConfig(rpm=30, concurrency=2),
-    "query1.finance.yahoo.com": DomainConfig(rpm=20, concurrency=2),
-    "data-api.krx.co.kr": DomainConfig(rpm=30, concurrency=2),
-    "ecos.bok.or.kr": DomainConfig(rpm=30, concurrency=2),
+    # 국내 — 민감 도메인, 넉넉한 지터
+    "m.stock.naver.com": DomainConfig(rpm=30, concurrency=2, jitter_min=0.5, jitter_max=2.0),
+    "finance.naver.com": DomainConfig(rpm=30, concurrency=2, jitter_min=0.5, jitter_max=2.0),
+    "data-api.krx.co.kr": DomainConfig(rpm=30, concurrency=2, jitter_min=0.3, jitter_max=1.5),
+    "ecos.bok.or.kr": DomainConfig(rpm=30, concurrency=2, jitter_min=0.3, jitter_max=1.5),
+    # 해외 — 상대적 관대
+    "query1.finance.yahoo.com": DomainConfig(rpm=20, concurrency=2, jitter_min=0.2, jitter_max=1.0),
+    "query2.finance.yahoo.com": DomainConfig(rpm=20, concurrency=2, jitter_min=0.2, jitter_max=1.0),
+    "financialmodelingprep.com": DomainConfig(rpm=4, concurrency=1, timeout=15.0, jitter_min=1.0, jitter_max=3.0),
 }
 
 _DEFAULT_POLICY = DomainConfig(rpm=30, concurrency=2)
 
-_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-)
+_USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
+]
 
 
 # ══════════════════════════════════════
@@ -98,7 +107,7 @@ class GatherHttpClient:
         self._session = requests.Session()
         self._session.headers["Accept"] = "text/html,application/json"
         self._session.headers["Accept-Language"] = "ko-KR,ko;q=0.9,en;q=0.8"
-        self._session.headers["User-Agent"] = _USER_AGENT
+        self._session.headers["User-Agent"] = random.choice(_USER_AGENTS)
         self._limiters: dict[str, _DomainRateLimiter] = {}
         self._semaphores: dict[str, _DomainSemaphore] = {}
         self._lock = threading.Lock()
@@ -142,22 +151,27 @@ class GatherHttpClient:
 
         last_exc: Exception | None = None
         for attempt in range(max_retries):
+            # 랜덤 지터: 동일 도메인 연속 호출 시 버스트 패턴 방지
+            jitter = random.uniform(policy.jitter_min, policy.jitter_max)
+            time.sleep(jitter)
+
             limiter.acquire()
             if not semaphore.acquire(timeout=30.0):
                 raise SourceUnavailableError(f"{domain} 동시 연결 제한 초과")
             try:
                 req_headers = dict(self._session.headers)
+                req_headers["User-Agent"] = random.choice(_USER_AGENTS)
                 if headers:
                     req_headers.update(headers)
                 resp = self._session.get(url, params=params, headers=req_headers, timeout=req_timeout)
                 if resp.status_code == 429:
-                    wait = 2**attempt
-                    log.warning("%s 429 rate limited, %ds 대기", domain, wait)
+                    wait = 2**attempt + random.uniform(0.1, 0.5)
+                    log.warning("%s 429 rate limited, %.1fs 대기", domain, wait)
                     time.sleep(wait)
                     continue
                 if resp.status_code >= 500:
-                    wait = 2**attempt
-                    log.warning("%s %d 서버 오류, %ds 대기", domain, resp.status_code, wait)
+                    wait = 2**attempt + random.uniform(0.1, 0.5)
+                    log.warning("%s %d 서버 오류, %.1fs 대기", domain, resp.status_code, wait)
                     time.sleep(wait)
                     continue
                 resp.raise_for_status()
@@ -165,7 +179,7 @@ class GatherHttpClient:
             except requests.RequestException as exc:
                 last_exc = exc
                 if attempt < max_retries - 1:
-                    time.sleep(2**attempt)
+                    time.sleep(2**attempt + random.uniform(0.1, 0.5))
             finally:
                 semaphore.release()
 

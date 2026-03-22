@@ -106,7 +106,9 @@ def scan_signal(
     files = sorted(docsDir.glob("*.parquet"))
 
     if verbose:
-        print(f"[dartlab] 서술형 시그널 스캔: {len(files)}사")
+        from dartlab.core.guidance import emit
+
+        emit("scan:signal_start", count=len(files))
 
     targetKws = _ALL_KEYWORDS
     if keyword is not None:

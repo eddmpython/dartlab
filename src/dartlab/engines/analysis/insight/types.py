@@ -73,14 +73,31 @@ class DistressAxis:
 
 
 @dataclass
+class MarketDataForDistress:
+    """시장 기반 부실 분석 입력 데이터.
+
+    gather 엔진에서 수집한 시장 데이터를 pipeline에 전달하기 위한 DTO.
+    pipeline이 직접 gather를 호출하지 않고, 호출자가 준비하여 전달.
+    """
+
+    marketCap: float  # 시가총액 (원)
+    dailyReturns: list[float]  # 일별 수익률 (최소 60일 권장)
+    riskFreeRate: float = 0.035  # 무위험이자율 (3.5%)
+
+
+@dataclass
 class DistressResult:
     """부실 예측 종합 스코어카드.
 
-    4축 가중 평균 (100점 만점, 0=안전 100=위험):
-    - 정량 분석 (40%): O-Score, Z''-Score, Z-Score
-    - 이익 품질 (20%): Beneish M-Score, Sloan Accrual, Piotroski F-Score
-    - 추세 분석 (30%): 연속적자, ICR<1, CCC 확대 등
+    5축 가중 평균 (100점 만점, 0=안전 100=위험):
+    - 정량 분석 (30%): O-Score, Z''-Score, Z-Score  [Merton 있을 때, 없으면 40%]
+    - 시장 기반 (20%): Merton D2D + PD               [Merton 없으면 0%]
+    - 이익 품질 (15%): Beneish M-Score, Sloan Accrual, Piotroski F-Score  [없으면 20%]
+    - 추세 분석 (25%): 연속적자, ICR<1, CCC 확대 등    [없으면 30%]
     - 감사 위험 (10%): 비적정 의견 등
+
+    Merton 미제공 시 기존 4축(40/20/30/10) 그대로 동작 (하위호환 100%).
+    금융업(isFinancial=True) → Merton 무시 (은행 부채 구조적 왜곡).
 
     레벨: safe(<15), watch(<30), warning(<50), danger(<70), critical(>=70)
     신용등급: AAA~D (S&P PD 매핑)
@@ -92,7 +109,7 @@ class DistressResult:
     creditGrade: str  # AAA~D
     creditDescription: str  # "투자적격 최상위" 등
 
-    # 4축 상세
+    # 축 상세 (4축 또는 5축)
     axes: list[DistressAxis] = field(default_factory=list)
 
     # 유동성 경보

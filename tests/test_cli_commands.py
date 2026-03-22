@@ -134,7 +134,7 @@ def test_setup_no_provider(capsys):
     rc = run(_ns(provider=None))
     assert rc == 0
     out = capsys.readouterr().out
-    assert "provider" in out.lower() or "Provider" in out or "사용 가능" in out
+    assert "데이터 수집" in out or "AI 분석" in out or "dart-key" in out
 
 
 # ── 5. show (topic=None → index) ──

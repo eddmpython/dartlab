@@ -60,6 +60,7 @@ from dartlab.engines.company.dart._report_accessor import REPORT_COL_KR as _REPO
 from dartlab.engines.company.dart._report_accessor import _ReportAccessor  # noqa: F401
 from dartlab.engines.company.dart._sections_source import _SectionsSource  # noqa: F401
 from dartlab.engines.company.dart._utils import (  # noqa: F401
+    _checkDartDocsFreshness,
     _ensureData,
     _import_and_call,
     _isPeriodColumn,
@@ -279,6 +280,8 @@ class Company:
         self._cache: BoundedCache = BoundedCache(max_entries=30)
 
         self._hasDocs = _ensureData(self.stockCode, "docs")
+        if self._hasDocs:
+            _checkDartDocsFreshness(self.stockCode, "docs")
         self._hasFinanceParquet = _ensureData(self.stockCode, "finance")
         self._hasReport = _ensureData(self.stockCode, "report")
 
@@ -292,16 +295,9 @@ class Company:
         self._financeChecked = False
 
         if not self._hasDocs and not self._hasFinanceParquet and not self._hasReport:
-            raise ValueError(
-                f"'{self.stockCode}' 데이터를 찾을 수 없습니다.\n"
-                f"\n"
-                f"  가능한 원인:\n"
-                f"  • 종목코드가 올바른지 확인하세요 (6자리, 예: '005930')\n"
-                f"  • 비상장 또는 dartlab 데이터셋에 미포함 종목일 수 있습니다\n"
-                f"  • 인터넷 연결을 확인하세요 (첫 사용 시 자동 다운로드 필요)\n"
-                f"\n"
-                f"  종목 검색: dartlab.search('삼성') 또는 dartlab.listing()"
-            )
+            from dartlab.core.guidance import emit
+
+            emit("error:no_data", stockCode=self.stockCode, raise_as=ValueError)
 
         self._notesAccessor = Notes(self) if self._hasDocs else None
         self.docs = _DocsAccessor(self)

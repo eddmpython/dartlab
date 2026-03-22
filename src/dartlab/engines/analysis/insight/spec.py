@@ -69,18 +69,23 @@ DISTRESS_MODELS = {
         "label": "Zmijewski X-Score",
         "description": "3변수 프로빗 모델 (1984). X > 0 부실. 금융업 왜곡 주의.",
     },
+    "mertonD2D": {
+        "label": "Merton D2D",
+        "description": "구조 모형 부도 거리 (1974). 주가변동성+부채 기반. Moody's KMV 글로벌 표준.",
+    },
 }
 
 DISTRESS_SCORECARD = {
     "axes": [
-        {"name": "정량 분석", "weight": 0.40, "models": ["ohlsonOScore", "altmanZppScore", "altmanZScore"]},
-        {"name": "이익 품질", "weight": 0.20, "models": ["beneishMScore", "sloanAccrual", "piotroskiFScore"]},
-        {"name": "추세 분석", "weight": 0.30, "source": "anomaly (trendDeterioration, cccDeterioration)"},
+        {"name": "정량 분석", "weight": "0.30 (Merton 있을 때) / 0.40 (없을 때)", "models": ["ohlsonOScore", "altmanZppScore", "altmanZScore"]},
+        {"name": "시장 기반", "weight": "0.20 (Merton 있을 때) / 0 (없을 때)", "models": ["mertonD2D"]},
+        {"name": "이익 품질", "weight": "0.15 (Merton 있을 때) / 0.20 (없을 때)", "models": ["beneishMScore", "sloanAccrual", "piotroskiFScore"]},
+        {"name": "추세 분석", "weight": "0.25 (Merton 있을 때) / 0.30 (없을 때)", "source": "anomaly (trendDeterioration, cccDeterioration)"},
         {"name": "감사 위험", "weight": 0.10, "source": "anomaly (audit, governance)"},
     ],
     "creditGrade": "AAA~D (S&P PD 매핑, 10단계)",
     "cashRunway": "현금 소진 예상 개월 수 + 유동성 경보",
-    "riskFactors": "anomaly + ratios에서 구조화된 위험 요인 자동 추출",
+    "riskFactors": "anomaly + ratios + Merton D2D에서 구조화된 위험 요인 자동 추출",
     "levels": ["safe (<15)", "watch (<30)", "warning (<50)", "danger (<70)", "critical (>=70)"],
 }
 
@@ -94,7 +99,7 @@ def buildSpec() -> dict:
             "areas": list(AREAS.keys()),
             "grading": "A~F (6단계, 점수 기반)",
             "anomaly": f"룰 기반 {len(ANOMALY_DETECTORS)}개 탐지기",
-            "distress": f"4축 부실 예측 스코어카드 ({len(DISTRESS_MODELS)}개 모델) + 신용등급 + 유동성 경보",
+            "distress": f"5축 부실 예측 스코어카드 ({len(DISTRESS_MODELS)}개 모델, Merton D2D 포함) + 신용등급 + 유동성 경보",
             "profile": "classifyProfile (수비형/공격형/성장형/가치형 등)",
         },
         "detail": {area: meta for area, meta in AREAS.items()},

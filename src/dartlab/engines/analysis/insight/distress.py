@@ -1,13 +1,17 @@
 """부실 예측 종합 스코어카드.
 
-4축 가중 평균으로 기업 부실 위험을 종합 판정한다.
-실험 084_distressModels Phase 1-4 검증 결과 기반.
+5축 가중 평균으로 기업 부실 위험을 종합 판정한다.
+실험 084_distressModels Phase 1-4 + 085_mertonEngine 검증 결과 기반.
 
 축 구성 (100점 만점, 0=안전 100=위험):
-- 정량 분석 (40%): O-Score, Z''-Score, Z-Score 정규화
-- 이익 품질 (20%): Beneish M-Score, Sloan Accrual, Piotroski F-Score
-- 추세 분석 (30%): anomaly에서 탐지된 시계열 패턴
+- 정량 분석 (30%): O-Score, Z''-Score, Z-Score  [Merton 없으면 40%]
+- 시장 기반 (20%): Merton D2D + PD              [Merton 없으면 0%]
+- 이익 품질 (15%): Beneish M-Score, Sloan Accrual, Piotroski F-Score  [없으면 20%]
+- 추세 분석 (25%): anomaly에서 탐지된 시계열 패턴  [없으면 30%]
 - 감사 위험 (10%): 감사의견 비적정 등
+
+Merton 미제공 시 기존 4축(40/20/30/10) 그대로 동작 (하위호환 100%).
+금융업(isFinancial=True) → Merton 무시 (은행 부채 구조적 왜곡).
 
 레벨: safe(<15), watch(<30), warning(<50), danger(<70), critical(>=70)
 신용등급: AAA~D (S&P PD 매핑)
@@ -23,6 +27,7 @@ from dartlab.engines.analysis.insight.types import (
     DistressResult,
     ModelScore,
 )
+from dartlab.engines.common.finance.merton import MertonResult
 from dartlab.engines.common.finance.ratios import RatioResult
 
 # ── 신용등급 매핑 테이블 (S&P PD↔Rating 대응) ──
@@ -211,6 +216,39 @@ def _normalizeFScore(f: int) -> float:
     return 0
 
 
+# ── Merton D2D 해석 ──
+
+
+def _interpretMerton(result: MertonResult) -> ModelScore:
+    """Merton D2D → ModelScore."""
+    d2d = result.d2d
+    if d2d > 4.0:
+        zone, interp = "safe", "부도 거리 매우 충분. 시장이 평가하는 신용 건전성 우수."
+    elif d2d > 2.0:
+        zone, interp = "gray", "부도 거리 보통. 시장 변동성 확대 시 주의."
+    elif d2d > 1.0:
+        zone, interp = "distress", "부도 거리 부족. 자산가치가 부채에 근접."
+    else:
+        zone, interp = "distress", "부도 거리 극히 부족. 부도 임박 가능성."
+    return ModelScore(
+        name="Merton D2D",
+        rawValue=round(d2d, 3),
+        displayValue=f"D2D = {d2d:.2f}, PD = {result.pd:.2f}%",
+        zone=zone,
+        interpretation=interp,
+        reference="Merton (1974), 구조 모형. Moody's KMV 글로벌 표준.",
+    )
+
+
+def _normalizeMerton(d2d: float) -> float:
+    """D2D → 0~100 (높을수록 위험). D2D>4→0, D2D<0.5→100."""
+    if d2d > 4.0:
+        return 0.0
+    if d2d < 0.5:
+        return 100.0
+    return (1 - (d2d - 0.5) / 3.5) * 100
+
+
 # ── 유동성 경보 ──
 
 
@@ -296,12 +334,23 @@ def calcDistress(
     ratios: RatioResult,
     anomalies: list[Anomaly],
     isFinancial: bool = False,
+    *,
+    mertonResult: MertonResult | None = None,
 ) -> DistressResult:
     """부실 예측 종합 스코어카드 계산.
 
     각 모델의 원시 값 → zone 판정 → 해석 텍스트 → 학술 참조를 포함한
     세계 수준의 근거 기반 레포트를 생성한다.
+
+    mertonResult가 제공되면 5축(30/20/15/25/10), 미제공 시 4축(40/20/30/10).
+    isFinancial=True이면 Merton을 무시한다 (은행 부채 구조적 왜곡).
     """
+    # Merton 사용 여부: 비금융 + 수렴된 결과만
+    useMerton = (
+        mertonResult is not None
+        and not isFinancial
+        and mertonResult.converged
+    )
 
     # ── 1. 정량 축 ──
     quant_models: list[ModelScore] = []
@@ -334,7 +383,7 @@ def calcDistress(
     quant_axis = DistressAxis(
         name="정량 분석",
         score=round(quant_score, 1),
-        weight=0.40,
+        weight=0.30 if useMerton else 0.40,
         models=quant_models,
         summary=quant_summary,
     )
@@ -368,7 +417,7 @@ def calcDistress(
     eq_axis = DistressAxis(
         name="이익 품질",
         score=round(eq_score, 1),
-        weight=0.20,
+        weight=0.15 if useMerton else 0.20,
         models=eq_models,
         summary=eq_summary,
     )
@@ -398,7 +447,7 @@ def calcDistress(
     trend_axis = DistressAxis(
         name="추세 분석",
         score=round(trend_score, 1),
-        weight=0.30,
+        weight=0.25 if useMerton else 0.30,
         summary=trend_summary,
     )
 
@@ -424,8 +473,37 @@ def calcDistress(
         summary=audit_summary,
     )
 
+    # ── 5. 시장 기반 축 (Merton) ──
+    axes = [quant_axis]
+
+    if useMerton:
+        assert mertonResult is not None  # type narrowing
+        merton_model = _interpretMerton(mertonResult)
+        merton_norm = _normalizeMerton(mertonResult.d2d)
+        merton_score = merton_norm
+
+        if mertonResult.d2d > 4:
+            merton_summary = f"D2D {mertonResult.d2d:.2f} — 시장 기반 부도 거리 충분."
+        elif mertonResult.d2d > 2:
+            merton_summary = f"D2D {mertonResult.d2d:.2f} — 모니터링 필요."
+        elif mertonResult.d2d > 1:
+            merton_summary = f"D2D {mertonResult.d2d:.2f} — 부실 위험 영역."
+        else:
+            merton_summary = f"D2D {mertonResult.d2d:.2f} — 부도 임박 영역."
+
+        market_axis = DistressAxis(
+            name="시장 기반",
+            score=round(merton_score, 1),
+            weight=0.20,
+            models=[merton_model],
+            summary=merton_summary,
+        )
+        axes.append(market_axis)
+
+    axes.extend([eq_axis, trend_axis, audit_axis])
+
     # ── 종합 ──
-    overall = quant_score * 0.40 + eq_score * 0.20 + trend_score * 0.30 + audit_score * 0.10
+    overall = sum(ax.score * ax.weight for ax in axes)
 
     if overall >= 70:
         level = "critical"
@@ -445,9 +523,11 @@ def calcDistress(
 
     # 위험 요인
     riskFactors = _extractRiskFactors(anomalies, ratios)
+    if useMerton and mertonResult is not None and mertonResult.d2d < 2.0:
+        riskFactors.append(f"Merton D2D {mertonResult.d2d:.2f} (부실 영역, PD={mertonResult.pd:.1f}%)")
 
     # 모델 수 / 데이터 품질
-    modelCount = len(quant_models) + len(eq_models)
+    modelCount = len(quant_models) + len(eq_models) + (1 if useMerton else 0)
     dataQuality = _assessDataQuality(modelCount)
 
     return DistressResult(
@@ -455,7 +535,7 @@ def calcDistress(
         overall=round(overall, 1),
         creditGrade=creditGrade,
         creditDescription=creditDesc,
-        axes=[quant_axis, eq_axis, trend_axis, audit_axis],
+        axes=axes,
         cashRunwayMonths=cashMonths,
         liquidityAlert=liquidityAlert,
         riskFactors=riskFactors,

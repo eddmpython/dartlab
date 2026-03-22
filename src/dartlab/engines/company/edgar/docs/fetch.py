@@ -168,11 +168,13 @@ def fetchEdgarDocs(
     if not filings:
         raise ValueError(f"{ticker} EDGAR docs filing 없음 (since {sinceYear})")
 
+    from dartlab.core.guidance import emit
+
     if maxFilings is not None and len(filings) > maxFilings:
         filings = filings[-maxFilings:]
-        print(f"[dartlab] {ticker} filing 수가 많아 최근 {maxFilings}건만 수집")
+        emit("edgar:filing_limit", ticker=ticker, maxFilings=maxFilings)
 
-    print(f"[dartlab] {ticker} EDGAR docs 원문 수집 시작 ({len(filings)} filings, since {sinceYear})")
+    emit("edgar:docs_start", ticker=ticker, count=len(filings), sinceYear=sinceYear)
 
     rows: list[dict] = []
     skippedFilings: list[str] = []
@@ -192,8 +194,8 @@ def fetchEdgarDocs(
         _assertEdgarDocsQuality(summary)
     df.write_parquet(outPath)
     if skippedFilings:
-        print(f"[dartlab] {ticker} filing {len(skippedFilings)}건 skip")
-    print(f"[dartlab] 저장 완료: {outPath}")
+        emit("edgar:docs_skip", ticker=ticker, count=len(skippedFilings))
+    emit("edgar:docs_save", path=str(outPath))
     return outPath
 
 
@@ -371,7 +373,9 @@ def downloadListedEdgarDocs(
 
     tickers = universe["ticker"].to_list()
     total = len(tickers)
-    print(f"[dartlab] EDGAR docs 배치 수집 시작 ({total} tickers, since {sinceYear})")
+    from dartlab.core.guidance import emit
+
+    emit("edgar:batch_start", total=total, sinceYear=sinceYear)
 
     results: list[dict] = []
     with alive_bar(total, title="EDGAR docs 배치 수집") as bar:
@@ -391,7 +395,8 @@ def downloadListedEdgarDocs(
                 bar()
 
             if batchSize > 0 and idx < total and idx % batchSize == 0:
-                print(f"\n[dartlab] {idx}건 처리 완료 → {cooldownSeconds:.1f}초 휴지")
+                print()
+                emit("edgar:batch_progress", idx=idx, cooldown=cooldownSeconds)
                 time.sleep(cooldownSeconds)
 
     return pl.DataFrame(results)

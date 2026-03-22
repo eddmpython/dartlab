@@ -57,6 +57,7 @@ _TOOL_ROUTING: dict[str, list[str]] = {
     "성장성": [
         "get_data",
         "compute_growth",
+        "forecast_revenue",
         "yoy_analysis",
         "get_rank",
         "get_insight",
@@ -123,6 +124,7 @@ _TOOL_ROUTING: dict[str, list[str]] = {
         "get_insight",
         "compute_ratios",
         "get_data",
+        "forecast_revenue",
         "list_topics",
         "show_topic",
         "diff_topic",

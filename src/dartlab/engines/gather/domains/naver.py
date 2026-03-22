@@ -14,6 +14,7 @@ from ..types import (
     FlowData,
     GatherResult,
     PriceSnapshot,
+    RevenueConsensus,
     SourceUnavailableError,
 )
 
@@ -41,7 +42,7 @@ def _clean_number(text: str | None) -> float | None:
 # ══════════════════════════════════════
 
 
-def fetch_price(stock_code: str, client) -> PriceSnapshot | None:
+def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None:
     """네이버 → 현재가 + PER/PBR + 52주 범위."""
     url = f"{_API_BASE}/{stock_code}/basic"
     try:
@@ -68,6 +69,8 @@ def fetch_price(stock_code: str, client) -> PriceSnapshot | None:
         dividend_yield=_clean_number(data.get("dividendYield")),
         source="naver",
         fetched_at=datetime.now(timezone.utc).isoformat(),
+        currency="KRW",
+        market="KR",
     )
 
 
@@ -164,6 +167,68 @@ def fetch_flow(stock_code: str, client) -> FlowData | None:
         foreign_holding_ratio=foreign_holding_ratio,
         source="naver",
     )
+
+
+def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
+    """네이버 → 연간 매출/영업이익/순이익 컨센서스.
+
+    finance/annual API에서 isConsensus='Y'인 기간의 재무 추정치를 추출한다.
+    실적 확정 기간(isConsensus='N')도 함께 반환하여 시계열 비교 가능.
+    """
+    url = f"{_API_BASE}/{stock_code}/finance/annual"
+    try:
+        resp = client.get(url, headers={"Accept": "application/json"})
+        data = resp.json()
+    except (SourceUnavailableError, ValueError) as exc:
+        log.warning("naver finance/annual API 실패 (%s): %s", stock_code, exc)
+        return []
+
+    fi = data.get("financeInfo")
+    if not fi:
+        return []
+
+    titles = fi.get("trTitleList", [])
+    rows = fi.get("rowList", [])
+    if not titles or not rows:
+        return []
+
+    # 항목별 dict 구축
+    row_map: dict[str, dict] = {}
+    for row in rows:
+        title = row.get("title", "")
+        cols = row.get("columns")
+        if title and isinstance(cols, dict):
+            row_map[title] = cols
+
+    results: list[RevenueConsensus] = []
+    for t in titles:
+        key = t.get("key", "")
+        is_consensus = t.get("isConsensus") == "Y"
+        if not key or len(key) < 4:
+            continue
+
+        fiscal_year = int(key[:4])
+
+        revenue = _clean_number(row_map.get("매출액", {}).get(key, {}).get("value"))
+        op_profit = _clean_number(row_map.get("영업이익", {}).get(key, {}).get("value"))
+        net_income = _clean_number(row_map.get("당기순이익", {}).get(key, {}).get("value"))
+        eps = _clean_number(row_map.get("EPS", {}).get(key, {}).get("value"))
+        per = _clean_number(row_map.get("PER", {}).get(key, {}).get("value"))
+
+        if revenue is None and op_profit is None:
+            continue
+
+        results.append(RevenueConsensus(
+            fiscal_year=fiscal_year,
+            revenue_est=revenue or 0.0,
+            operating_profit_est=op_profit,
+            net_income_est=net_income,
+            eps_est=eps,
+            per_est=per,
+            source="naver_consensus" if is_consensus else "naver_actual",
+        ))
+
+    return results
 
 
 def fetch_sector_per(stock_code: str, client) -> float | None:

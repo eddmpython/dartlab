@@ -25,7 +25,9 @@ def groupHealth(*, verbose: bool = True) -> tuple[pl.DataFrame, pl.DataFrame]:
     from dartlab.engines.company.dart.scan.network import build_graph
 
     if verbose:
-        print("[dartlab] 그룹 건전성 분석 중...")
+        from dartlab.core.guidance import emit
+
+        emit("scan:network_health")
 
     data = build_graph(verbose=False)
     code_to_group = data["code_to_group"]

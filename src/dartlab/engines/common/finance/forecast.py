@@ -53,6 +53,74 @@ def _ols(x: list[float], y: list[float]) -> tuple[float, float, float]:
     return slope, intercept, max(0.0, r_squared)
 
 
+def _detect_structural_break(
+    vals: list[float], min_segment: int = 4,
+) -> int | None:
+    """Chow Test 기반 구조적 변화점 감지.
+
+    전체 OLS SSR vs 분할 OLS SSR을 비교하여 F-statistic이
+    임계치를 초과하면 구조적 break로 판정.
+
+    Args:
+        vals: 시계열 값 (None 제외된 순수 float).
+        min_segment: 각 분할 구간의 최소 데이터 수.
+
+    Returns:
+        break 위치 인덱스 (없으면 None). break 이후 데이터만으로 예측 권장.
+    """
+    n = len(vals)
+    if n < min_segment * 2:
+        return None
+
+    x_all = list(range(n))
+    _, _, r2_full = _ols([float(x) for x in x_all], vals)
+    # 전체 SSR
+    mean_y = sum(vals) / n
+    ss_tot = sum((v - mean_y) ** 2 for v in vals)
+    ssr_full = ss_tot * (1 - r2_full) if ss_tot > 0 else 0
+
+    best_break: int | None = None
+    best_f = 0.0
+    k = 2  # OLS 파라미터 수 (slope, intercept)
+
+    for bp in range(min_segment, n - min_segment + 1):
+        # 구간 1: [0, bp), 구간 2: [bp, n)
+        x1 = [float(i) for i in range(bp)]
+        y1 = vals[:bp]
+        x2 = [float(i) for i in range(bp, n)]
+        y2 = vals[bp:]
+
+        _, _, r2_1 = _ols(x1, y1)
+        _, _, r2_2 = _ols(x2, y2)
+
+        ss_tot_1 = sum((v - sum(y1) / len(y1)) ** 2 for v in y1) if len(y1) > 0 else 0
+        ss_tot_2 = sum((v - sum(y2) / len(y2)) ** 2 for v in y2) if len(y2) > 0 else 0
+
+        ssr_1 = ss_tot_1 * (1 - r2_1) if ss_tot_1 > 0 else 0
+        ssr_2 = ss_tot_2 * (1 - r2_2) if ss_tot_2 > 0 else 0
+
+        ssr_split = ssr_1 + ssr_2
+        denom = ssr_split / max(n - 2 * k, 1)
+        if denom < 1e-12:
+            continue
+
+        f_stat = ((ssr_full - ssr_split) / k) / denom
+
+        if f_stat > best_f:
+            best_f = f_stat
+            best_break = bp
+
+    # F 임계치: k=2, df=n-2k, α=0.05 근사
+    # n이 작을수록 임계치가 높아야 함 (보수적 판정)
+    df = max(n - 2 * k, 1)
+    # 간이 F 임계치: df>10이면 ~3.0, df<10이면 ~4.0+
+    f_critical = 3.0 + max(0, 10 - df) * 0.3
+
+    if best_f > f_critical and best_break is not None:
+        return best_break
+    return None
+
+
 def _coefficient_of_variation(values: list[float]) -> float:
     """변동계수 (CV = stdev / |mean|)."""
     if len(values) < 2:
@@ -244,6 +312,20 @@ def forecast_metric(
 
     x_vals = [float(p[0]) for p in valid_pairs]
     y_vals = [p[1] for p in valid_pairs]
+
+    # 구조적 변화점 감지 — break 이후 데이터만 사용
+    break_idx = _detect_structural_break(y_vals, min_segment=4)
+    if break_idx is not None and break_idx < len(y_vals):
+        n_before = break_idx
+        n_after = len(y_vals) - break_idx
+        if n_after >= 3:
+            # break 이후 데이터로 교체
+            warnings.append(
+                f"구조적 전환 감지 (데이터 {n_before}→{n_after}개 분할) "
+                f"— 전환 이후 데이터 기반 예측"
+            )
+            x_vals = x_vals[break_idx:]
+            y_vals = y_vals[break_idx:]
 
     # 방법 자동 선택
     cv = _coefficient_of_variation(y_vals)
