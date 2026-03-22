@@ -138,7 +138,7 @@
 				image: pageImage,
 				datePublished: postInfo?.date ?? '',
 				section: postInfo?.categoryLabel ?? '',
-				keywords: [postInfo?.categoryLabel, postInfo?.seriesLabel, '전자공시', 'DartLab'].filter(Boolean),
+				keywords: [postInfo?.categoryLabel, postInfo?.seriesLabel, ...(meta?.keywords ?? []), '전자공시', 'DartLab'].filter(Boolean),
 				isPartOf: postInfo ? `${brand.url}blog/category/${postInfo.category}` : `${brand.url}blog/`
 			}),
 			buildBreadcrumbJsonLd([
@@ -220,6 +220,7 @@
 		<meta property="article:published_time" content={postInfo.date} />
 	{/if}
 	<meta property="article:author" content="eddmpython" />
+	<meta name="keywords" content={[postInfo?.categoryLabel, postInfo?.seriesLabel, ...(meta?.keywords ?? []), '전자공시', 'DartLab', 'DART'].filter(Boolean).join(', ')} />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content={pageTitle} />
 	<meta name="twitter:description" content={pageDesc} />

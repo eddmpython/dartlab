@@ -23,3 +23,7 @@ User-agent: Applebot-Extended
 Allow: /
 
 Sitemap: https://eddmpython.github.io/dartlab/sitemap.xml
+
+# AI-readable documentation
+# https://llmstxt.org/
+# llms.txt: https://eddmpython.github.io/dartlab/llms.txt

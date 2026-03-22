@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 14px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 12px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="400" rx="12" fill="#0f172a"/>
+
+  <!-- 질문 -->
+  <rect x="30" y="170" width="120" height="60" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="90" y="195" text-anchor="middle" class="label">"삼성전자</text>
+  <text x="90" y="210" text-anchor="middle" class="label">재무 분석해줘"</text>
+
+  <!-- 질문 분류 -->
+  <rect x="200" y="160" width="130" height="80" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="265" y="185" text-anchor="middle" class="label">질문 분류</text>
+  <text x="265" y="202" text-anchor="middle" class="desc">종목 추출</text>
+  <text x="265" y="216" text-anchor="middle" class="desc">유형: 건전성/수익성</text>
+  <text x="265" y="230" text-anchor="middle" class="desc">패키지 선택</text>
+
+  <!-- Tier 1 -->
+  <rect x="380" y="40" width="180" height="140" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="470" y="65" text-anchor="middle" class="title" fill="#10b981">Tier 1: 시스템 주도</text>
+  <text x="470" y="88" text-anchor="middle" class="desc">모든 provider 동작</text>
+  <line x1="400" y1="100" x2="540" y2="100" stroke="#334155" stroke-width="1"/>
+  <text x="470" y="118" text-anchor="middle" class="desc">sections → 데이터 수집</text>
+  <text x="470" y="135" text-anchor="middle" class="desc">finance → 재무 계산</text>
+  <text x="470" y="152" text-anchor="middle" class="desc">insight → 등급 판정</text>
+  <text x="470" y="169" text-anchor="middle" class="desc">컨텍스트 패키지 조립</text>
+
+  <!-- Tier 2 -->
+  <rect x="380" y="210" width="180" height="130" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="470" y="235" text-anchor="middle" class="title" fill="#f59e0b">Tier 2: LLM 주도</text>
+  <text x="470" y="258" text-anchor="middle" class="desc">tool calling provider만</text>
+  <line x1="400" y1="268" x2="540" y2="268" stroke="#334155" stroke-width="1"/>
+  <text x="470" y="288" text-anchor="middle" class="desc">부족 판단 → 도구 호출</text>
+  <text x="470" y="305" text-anchor="middle" class="desc">원본 시계열 탐색</text>
+  <text x="470" y="322" text-anchor="middle" class="desc">복수 기업 비교</text>
+
+  <!-- LLM -->
+  <rect x="610" y="120" width="140" height="80" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="680" y="150" text-anchor="middle" class="label">LLM 해석</text>
+  <text x="680" y="168" text-anchor="middle" class="desc">GPT-4o / Claude /</text>
+  <text x="680" y="182" text-anchor="middle" class="desc">Ollama / Codex</text>
+
+  <!-- 답변 -->
+  <rect x="610" y="250" width="140" height="50" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="680" y="280" text-anchor="middle" class="label">스트리밍 답변</text>
+
+  <!-- 화살표 -->
+  <line x1="150" y1="200" x2="198" y2="200" class="arrow"/>
+  <line x1="330" y1="185" x2="378" y2="110" class="arrow"/>
+  <line x1="330" y1="215" x2="378" y2="270" class="arrow"/>
+  <line x1="560" y1="110" x2="608" y2="145" class="arrow"/>
+  <line x1="560" y1="275" x2="608" y2="190" class="arrow"/>
+  <line x1="680" y1="200" x2="680" y2="248" class="arrow"/>
+</svg>

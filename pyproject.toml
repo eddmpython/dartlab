@@ -18,6 +18,11 @@ keywords = [
     "accounting",
     "polars",
     "sections",
+    "mcp",
+    "ai-analysis",
+    "annual-report",
+    "10-k",
+    "xbrl",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",

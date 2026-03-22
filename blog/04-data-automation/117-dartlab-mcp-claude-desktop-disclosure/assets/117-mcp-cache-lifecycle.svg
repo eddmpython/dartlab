@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 240" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .label { font-size: 12px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="240" rx="12" fill="#0f172a"/>
+
+  <!-- 첫 요청 -->
+  <rect x="20" y="80" width="120" height="60" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="80" y="105" text-anchor="middle" class="label">첫 요청</text>
+  <text x="80" y="122" text-anchor="middle" class="desc">005930</text>
+
+  <!-- 로드 -->
+  <rect x="180" y="80" width="120" height="60" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="240" y="105" text-anchor="middle" class="label">Company 로드</text>
+  <text x="240" y="122" text-anchor="middle" class="desc">~3초 (첫 로딩)</text>
+
+  <!-- 캐시 저장 -->
+  <rect x="340" y="80" width="120" height="60" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="400" y="105" text-anchor="middle" class="label">LRU 캐시</text>
+  <text x="400" y="122" text-anchor="middle" class="desc">최대 5개 보관</text>
+
+  <!-- 재요청 -->
+  <rect x="500" y="80" width="120" height="60" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="560" y="105" text-anchor="middle" class="label">재요청</text>
+  <text x="560" y="122" text-anchor="middle" class="desc">즉시 반환</text>
+
+  <!-- TTL 만료 -->
+  <rect x="340" y="170" width="120" height="45" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="400" y="197" text-anchor="middle" class="label">TTL 600초 만료</text>
+
+  <!-- 화살표 -->
+  <line x1="140" y1="110" x2="178" y2="110" class="arrow"/>
+  <line x1="300" y1="110" x2="338" y2="110" class="arrow"/>
+  <line x1="460" y1="110" x2="498" y2="110" class="arrow"/>
+  <line x1="400" y1="140" x2="400" y2="168" class="arrow"/>
+
+  <!-- 6번째 종목 -->
+  <text x="400" y="35" text-anchor="middle" class="desc">6번째 종목 요청 시 → 가장 오래된 종목 퇴출 (LRU)</text>
+</svg>

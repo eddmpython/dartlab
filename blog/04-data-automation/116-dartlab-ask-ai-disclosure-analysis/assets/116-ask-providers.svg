@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .check { font-size: 11px; fill: #10b981; }
+    .cross { font-size: 11px; fill: #ef4444; }
+    .header { font-size: 10px; font-weight: 700; fill: #64748b; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .row-bg { rx: 4; ry: 4; }
+  </style>
+
+  <rect width="720" height="300" rx="12" fill="#0f172a"/>
+
+  <!-- 헤더 -->
+  <text x="30" y="35" class="title">Provider 비교</text>
+  <line x1="30" y1="48" x2="690" y2="48" stroke="#334155" stroke-width="1"/>
+
+  <!-- 컬럼 헤더 -->
+  <text x="30" y="70" class="header">Provider</text>
+  <text x="175" y="70" class="header">인증</text>
+  <text x="310" y="70" class="header">Tool Calling</text>
+  <text x="430" y="70" class="header">비용</text>
+  <text x="560" y="70" class="header">추천 용도</text>
+
+  <!-- OpenAI -->
+  <rect x="20" y="80" width="680" height="36" class="row-bg" fill="#1e293b"/>
+  <text x="30" y="103" class="label">OpenAI</text>
+  <text x="175" y="103" class="desc">API Key</text>
+  <text x="310" y="103" class="check">지원</text>
+  <text x="430" y="103" class="desc">종량제</text>
+  <text x="560" y="103" class="desc">가장 정확한 분석</text>
+
+  <!-- Ollama -->
+  <rect x="20" y="122" width="680" height="36" class="row-bg" fill="#0f172a"/>
+  <text x="30" y="145" class="label">Ollama</text>
+  <text x="175" y="145" class="desc">없음 (로컬)</text>
+  <text x="310" y="145" class="check">지원</text>
+  <text x="430" y="145" class="desc">무료</text>
+  <text x="560" y="145" class="desc">오프라인 / 비용 절감</text>
+
+  <!-- Codex -->
+  <rect x="20" y="164" width="680" height="36" class="row-bg" fill="#1e293b"/>
+  <text x="30" y="187" class="label">Codex</text>
+  <text x="175" y="187" class="desc">CLI 설치</text>
+  <text x="310" y="187" class="cross">미지원</text>
+  <text x="430" y="187" class="desc">종량제</text>
+  <text x="560" y="187" class="desc">코드 환경 통합</text>
+
+  <!-- OAuth Codex -->
+  <rect x="20" y="206" width="680" height="36" class="row-bg" fill="#0f172a"/>
+  <text x="30" y="229" class="label">OAuth Codex</text>
+  <text x="175" y="229" class="desc">ChatGPT 구독</text>
+  <text x="310" y="229" class="cross">미지원</text>
+  <text x="430" y="229" class="desc">구독 포함</text>
+  <text x="560" y="229" class="desc">API 키 없이 바로 시작</text>
+
+  <!-- Custom -->
+  <rect x="20" y="248" width="680" height="36" class="row-bg" fill="#1e293b"/>
+  <text x="30" y="271" class="label">Custom</text>
+  <text x="175" y="271" class="desc">API Key</text>
+  <text x="310" y="271" class="check">지원</text>
+  <text x="430" y="271" class="desc">종량제</text>
+  <text x="560" y="271" class="desc">OpenAI 호환 서버</text>
+</svg>

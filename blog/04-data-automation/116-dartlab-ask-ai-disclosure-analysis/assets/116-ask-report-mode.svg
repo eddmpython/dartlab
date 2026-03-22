@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .num { font-size: 12px; font-weight: 700; fill: #3b82f6; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+  </style>
+
+  <rect width="600" height="380" rx="12" fill="#0f172a"/>
+
+  <text x="300" y="32" text-anchor="middle" class="title">보고서 모드 — 7섹션 구조</text>
+  <text x="300" y="50" text-anchor="middle" class="desc">dartlab ask "삼성전자 종합 분석" --report</text>
+  <line x1="30" y1="62" x2="570" y2="62" stroke="#334155" stroke-width="1"/>
+
+  <!-- 7 섹션 -->
+  <rect x="30" y="78" width="540" height="36" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="50" y="100" class="num">1</text>
+  <text x="75" y="100" class="label">기업 개요</text>
+  <text x="350" y="100" class="desc">업종, 규모, 시장 위치</text>
+
+  <rect x="30" y="122" width="540" height="36" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="50" y="144" class="num">2</text>
+  <text x="75" y="144" class="label">재무 분석</text>
+  <text x="350" y="144" class="desc">BS/IS/CF 핵심 지표 + 추세</text>
+
+  <rect x="30" y="166" width="540" height="36" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="50" y="188" class="num">3</text>
+  <text x="75" y="188" class="label">수익성·효율성</text>
+  <text x="350" y="188" class="desc">ROE, 마진율, 자산회전율</text>
+
+  <rect x="30" y="210" width="540" height="36" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="50" y="232" class="num">4</text>
+  <text x="75" y="232" class="label">재무 건전성</text>
+  <text x="350" y="232" class="desc">부채비율, 유동비율, 이자보상배수</text>
+
+  <rect x="30" y="254" width="540" height="36" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="50" y="276" class="num">5</text>
+  <text x="75" y="276" class="label">성장성·투자</text>
+  <text x="350" y="276" class="desc">매출 성장률, CAPEX, R&D</text>
+
+  <rect x="30" y="298" width="540" height="36" class="box" fill="#1e293b" stroke="#06b6d4"/>
+  <text x="50" y="320" class="num">6</text>
+  <text x="75" y="320" class="label">리스크·주의 사항</text>
+  <text x="350" y="320" class="desc">감사 의견, 지배구조, 소송</text>
+
+  <rect x="30" y="342" width="540" height="36" class="box" fill="#1e293b" stroke="#a78bfa"/>
+  <text x="50" y="364" class="num">7</text>
+  <text x="75" y="364" class="label">종합 의견</text>
+  <text x="350" y="364" class="desc">핵심 인사이트 + 후속 질문 제안</text>
+</svg>

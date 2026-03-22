@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .header { font-size: 11px; font-weight: 700; fill: #64748b; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+  </style>
+
+  <rect width="700" height="320" rx="12" fill="#0f172a"/>
+
+  <!-- CLI 컬럼 -->
+  <rect x="30" y="20" width="300" height="280" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="180" y="50" text-anchor="middle" class="title" fill="#3b82f6">CLI (터미널)</text>
+  <line x1="50" y1="62" x2="310" y2="62" stroke="#334155" stroke-width="1"/>
+
+  <text x="50" y="85" class="header">진입점</text>
+  <text x="50" y="102" class="desc">dartlab ask "삼성전자 배당 추세"</text>
+
+  <text x="50" y="130" class="header">스트리밍</text>
+  <text x="50" y="147" class="desc">Rich Live 콘솔 실시간 렌더링 (기본)</text>
+
+  <text x="50" y="175" class="header">대화 연속</text>
+  <text x="50" y="192" class="desc">--continue 플래그</text>
+
+  <text x="50" y="220" class="header">보고서 모드</text>
+  <text x="50" y="237" class="desc">--report 플래그</text>
+
+  <text x="50" y="265" class="header">Provider 전환</text>
+  <text x="50" y="282" class="desc">--provider openai --model gpt-4o</text>
+
+  <!-- API 컬럼 -->
+  <rect x="370" y="20" width="300" height="280" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="520" y="50" text-anchor="middle" class="title" fill="#10b981">Python API (코드)</text>
+  <line x1="390" y1="62" x2="650" y2="62" stroke="#334155" stroke-width="1"/>
+
+  <text x="390" y="85" class="header">진입점</text>
+  <text x="390" y="102" class="desc">dartlab.ask("005930", "배당 추세")</text>
+
+  <text x="390" y="130" class="header">스트리밍</text>
+  <text x="390" y="147" class="desc">Generator 반환 (stream=True 기본)</text>
+
+  <text x="390" y="175" class="header">대화 연속</text>
+  <text x="390" y="192" class="desc">history=messages 파라미터</text>
+
+  <text x="390" y="220" class="header">보고서 모드</text>
+  <text x="390" y="237" class="desc">report_mode=True</text>
+
+  <text x="390" y="265" class="header">Provider 전환</text>
+  <text x="390" y="282" class="desc">provider="openai", model="gpt-4o"</text>
+</svg>
