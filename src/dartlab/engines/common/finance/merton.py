@@ -18,7 +18,10 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from scipy.stats import norm
+try:
+    from scipy.stats import norm
+except ImportError:  # scipy는 optional — CI/경량 환경에서 없을 수 있음
+    norm = None  # type: ignore[assignment]
 
 
 @dataclass(slots=True)
@@ -82,6 +85,9 @@ def solveMerton(
     Returns:
         MertonResult 또는 입력 부적절 시 None.
     """
+    if norm is None:
+        raise ImportError("scipy 필요: pip install scipy")
+
     E = equityValue
     D = debtFaceValue
     sigma_E = equityVolatility

@@ -310,6 +310,7 @@ def test_analyze_market_data_none_backward_compat():
 
 def test_merton_solver_basic():
     """solveMerton 수렴 + D2D 범위 검증."""
+    pytest.importorskip("scipy")
     from dartlab.engines.common.finance.merton import solveMerton
 
     # 건전 기업: E >> D

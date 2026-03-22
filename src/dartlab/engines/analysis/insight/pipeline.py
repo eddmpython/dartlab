@@ -115,16 +115,19 @@ def analyze(
     # Merton 시장 기반 모델 (비금융 + marketData 제공 시)
     mertonResult = None
     if not isFinancial and marketData is not None:
-        from dartlab.engines.common.finance.merton import calcEquityVolatility, solveMerton
+        try:
+            from dartlab.engines.common.finance.merton import calcEquityVolatility, solveMerton
 
-        vol = calcEquityVolatility(marketData.dailyReturns)
-        if vol > 0:
-            mertonResult = solveMerton(
-                equityValue=marketData.marketCap,
-                debtFaceValue=ratios.totalLiabilities or 0,
-                equityVolatility=vol,
-                riskFreeRate=marketData.riskFreeRate,
-            )
+            vol = calcEquityVolatility(marketData.dailyReturns)
+            if vol > 0:
+                mertonResult = solveMerton(
+                    equityValue=marketData.marketCap,
+                    debtFaceValue=ratios.totalLiabilities or 0,
+                    equityVolatility=vol,
+                    riskFreeRate=marketData.riskFreeRate,
+                )
+        except ImportError:
+            pass  # scipy 미설치 → Merton 축 제외, 4축으로 동작
 
     distress = calcDistress(ratios, anomalies, isFinancial, mertonResult=mertonResult)
 
