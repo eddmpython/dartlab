@@ -106,6 +106,51 @@ class TestPipelineCoverage:
         )
 
 
+class TestRegistryCentralization:
+    """registry 기반 자동 생성 검증."""
+
+    def test_registry_question_types_valid(self):
+        """registry aiQuestionTypes 값이 모두 유효한 질문 유형."""
+        from dartlab.core.registry import buildQuestionModules
+        from dartlab.engines.ai.conversation.templates.analysis_rules import QUESTION_TYPE_MAP
+
+        valid = set(QUESTION_TYPE_MAP.keys())
+        for qt in buildQuestionModules():
+            assert qt in valid, f"유효하지 않은 질문 유형: {qt}"
+
+    def test_ai_exposed_report_has_ai_metadata(self):
+        """report/disclosure의 aiExposed 모듈은 aiQuestionTypes 또는 aiKeywords 중 최소 1개."""
+        from dartlab.core._entries import _ENTRIES
+
+        # 재무제표 직접 / 범용 모듈은 제외
+        _EXEMPT = {"BS", "IS", "CF", "fsSummary", "sections", "companyOverviewDetail"}
+        missing = []
+        for e in _ENTRIES:
+            if e.aiExposed and e.category in ("report", "disclosure") and e.name not in _EXEMPT:
+                if not e.aiQuestionTypes and not e.aiKeywords:
+                    missing.append(e.name)
+        assert not missing, f"aiExposed인데 AI 메타 없음: {missing}"
+
+    def test_topic_map_covers_all_registry_keywords(self):
+        """_TOPIC_MAP이 registry aiKeywords를 모두 포함."""
+        from dartlab.core.registry import buildKeywordMap
+        from dartlab.engines.ai.context.builder import _TOPIC_MAP
+
+        for kw in buildKeywordMap():
+            assert kw in _TOPIC_MAP, f"키워드 '{kw}'가 _TOPIC_MAP에 없음"
+
+    def test_question_modules_superset_of_registry(self):
+        """_QUESTION_MODULES가 registry 자동 생성 결과를 포함."""
+        from dartlab.core.registry import buildQuestionModules
+
+        auto = buildQuestionModules()
+        for qt, mods in auto.items():
+            final_set = set(_QUESTION_MODULES.get(qt, []))
+            auto_set = set(mods)
+            missing = auto_set - final_set
+            assert not missing, f"'{qt}': registry 모듈이 _QUESTION_MODULES에 빠짐: {missing}"
+
+
 class TestValidationCoverage:
     """validation.py 매핑 커버리지 검증."""
 

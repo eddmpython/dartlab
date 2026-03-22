@@ -280,8 +280,13 @@ def build_compact_context(
 # 질문 키워드 → 자동 포함 데이터 매핑
 # ══════════════════════════════════════
 
-_TOPIC_MAP: dict[str, list[str]] = {
-    # ── 재무제표 ──
+from dartlab.core.registry import buildKeywordMap
+
+# registry aiKeywords 자동 역인덱스 (~55 모듈 키워드)
+_KEYWORD_MAP = buildKeywordMap()
+
+# 재무제표 직접 매핑 (registry 범위 밖 — BS/IS/CF 등 재무 코드)
+_FINANCIAL_MAP: dict[str, list[str]] = {
     "재무": ["BS", "IS", "CF", "fsSummary", "costByNature"],
     "건전성": ["BS", "audit", "contingentLiability", "internalControl", "bond"],
     "수익": ["IS", "segment", "productService", "costByNature"],
@@ -291,76 +296,26 @@ _TOPIC_MAP: dict[str, list[str]] = {
     "순이익": ["IS", "fsSummary"],
     "현금": ["CF", "BS"],
     "자산": ["BS", "tangibleAsset", "investmentInOther"],
-    "유형자산": ["tangibleAsset"],
     "성장": ["IS", "CF", "productService", "salesOrder", "rnd"],
     "원가": ["costByNature", "IS"],
     "비용": ["costByNature", "IS"],
-    # ── 배당·자본 ──
     "배당": ["dividend", "IS", "shareCapital"],
     "자본": ["BS", "capitalChange", "shareCapital", "fundraising"],
-    "증자": ["fundraising", "capitalChange", "shareCapital"],
-    "감자": ["fundraising", "capitalChange"],
-    "자기주식": ["shareCapital", "capitalChange"],
-    "주식": ["shareCapital", "capitalChange", "fundraising"],
-    # ── 주주·지배구조 ──
-    "주주": ["majorHolder", "holderOverview", "dividend", "shareCapital", "shareholderMeeting"],
-    "지배": ["majorHolder", "executive", "boardOfDirectors", "holderOverview"],
-    "임원": ["executive", "executivePay", "boardOfDirectors"],
-    "보수": ["executivePay", "employee"],
-    "급여": ["employee", "executivePay"],
-    "이사회": ["boardOfDirectors", "executive"],
-    "사외이사": ["boardOfDirectors", "executive"],
-    "직원": ["employee"],
-    "주총": ["shareholderMeeting"],
-    # ── 감사·통제·리스크 ──
-    "감사": ["audit", "auditSystem", "internalControl"],
-    "내부통제": ["internalControl", "auditSystem"],
-    "리스크": ["contingentLiability", "sanction", "riskDerivative", "audit", "internalControl"],
-    "소송": ["contingentLiability", "sanction"],
-    "보증": ["contingentLiability"],
-    "제재": ["sanction"],
-    "파생": ["riskDerivative"],
-    "환율": ["riskDerivative"],
-    "환위험": ["riskDerivative"],
-    # ── 투자·사업 ──
     "투자": ["CF", "rnd", "subsidiary", "investmentInOther", "tangibleAsset"],
-    "연구": ["rnd"],
-    "연구개발": ["rnd"],
-    "R&D": ["rnd"],
-    "기술": ["rnd", "business"],
-    "자회사": ["subsidiary", "affiliateGroup", "investmentInOther"],
-    "계열사": ["affiliateGroup", "relatedPartyTx", "subsidiary"],
-    "계열": ["affiliateGroup", "relatedPartyTx"],
-    "관계사": ["affiliateGroup", "relatedPartyTx", "subsidiary"],
-    "출자": ["investmentInOther"],
-    "제품": ["productService"],
-    "수주": ["salesOrder"],
-    "설비": ["tangibleAsset", "rawMaterial"],
-    "원재료": ["rawMaterial", "costByNature"],
-    "채무증권": ["bond"],
-    "사채": ["bond"],
     "부채": ["BS", "bond", "contingentLiability", "capitalChange"],
-    # ── 서술·개요 ──
-    "사업": ["business", "companyOverview", "companyOverviewDetail", "companyHistory"],
-    "개요": ["companyOverviewDetail", "companyOverview"],
-    "연혁": ["companyHistory"],
-    "정관": ["articlesOfIncorporation"],
-    "MD&A": ["mdna"],
-    "경영진단": ["mdna"],
-    "대손": ["otherFinance"],
-    "재고": ["otherFinance"],
-    # ── 복합 분석 ──
+    "리스크": ["contingentLiability", "sanction", "riskDerivative", "audit", "internalControl"],
+    "지배": ["majorHolder", "executive", "boardOfDirectors", "holderOverview"],
+}
+
+# 복합 분석 (여러 재무제표 조합)
+_COMPOSITE_MAP: dict[str, list[str]] = {
     "ROE": ["IS", "BS", "fsSummary"],
     "ROA": ["IS", "BS", "fsSummary"],
     "PER": ["IS", "fsSummary", "dividend"],
     "PBR": ["BS", "fsSummary"],
     "EPS": ["IS", "fsSummary", "dividend"],
     "EBITDA": ["IS", "CF", "fsSummary"],
-    "부문": ["segment"],
-    "세그먼트": ["segment"],
     "ESG": ["employee", "boardOfDirectors", "sanction", "internalControl"],
-    "신용등급": ["companyOverview"],
-    # ── 스캔 ──
     "거버넌스": ["majorHolder", "executive", "boardOfDirectors", "audit"],
     "지배구조": ["majorHolder", "executive", "boardOfDirectors", "audit"],
     "인력현황": ["employee", "executivePay"],
@@ -371,7 +326,7 @@ _TOPIC_MAP: dict[str, list[str]] = {
     "스캔": ["BS", "IS", "dividend", "majorHolder", "audit", "employee"],
     "전반": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
     "종합": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
-    # ── 영문 동의어 ──
+    # 영문
     "revenue": ["IS", "segment", "productService"],
     "profit": ["IS", "fsSummary"],
     "debt": ["BS", "bond", "contingentLiability"],
@@ -386,7 +341,10 @@ _TOPIC_MAP: dict[str, list[str]] = {
     "subsidiary": ["subsidiary", "affiliateGroup", "investmentInOther"],
     "capex": ["CF", "tangibleAsset"],
     "operating": ["IS", "fsSummary", "segment"],
-    # ── 자연어 질문 패턴 ──
+}
+
+# 자연어 질문 패턴
+_NATURAL_LANG_MAP: dict[str, list[str]] = {
     "돈": ["BS", "CF"],
     "벌": ["IS", "fsSummary"],
     "잘": ["IS", "fsSummary", "segment"],
@@ -403,6 +361,9 @@ _TOPIC_MAP: dict[str, list[str]] = {
     "뭐하는": ["business", "productService", "segment", "companyOverviewDetail"],
     "어떤 사업": ["business", "productService", "segment", "companyOverviewDetail"],
 }
+
+# 병합: registry 키워드 → 재무제표 → 복합 → 자연어 (후순위가 오버라이드)
+_TOPIC_MAP: dict[str, list[str]] = {**_KEYWORD_MAP, **_FINANCIAL_MAP, **_COMPOSITE_MAP, **_NATURAL_LANG_MAP}
 
 # 항상 포함되는 기본 컨텍스트
 _BASE_CONTEXT = ["fsSummary"]

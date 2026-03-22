@@ -14,40 +14,30 @@ from dartlab.engines.ai.metadata import MODULE_META
 _CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
 
 # ══════════════════════════════════════
-# 질문 유형별 모듈 매핑
+# 질문 유형별 모듈 매핑 (registry 자동 생성 + override)
 # ══════════════════════════════════════
 
-_QUESTION_MODULES: dict[str, list[str]] = {
-    "건전성": ["audit", "internalControl", "contingentLiability", "relatedPartyTx", "guaranteeBalance"],
-    "수익성": ["segments", "costByNature", "productService", "salesOrder", "operationalAsset"],
-    "성장성": ["rnd", "salesOrder", "segments", "productService", "subsidiary", "investmentInOther"],
-    "배당": ["dividend", "shareCapital", "capitalChange", "treasuryStock"],
-    "지배구조": [
-        "majorHolder",
-        "executive",
-        "executivePay",
-        "boardOfDirectors",
-        "auditSystem",
-        "shareholderMeeting",
-        "affiliateStatus",
-    ],
-    "리스크": [
-        "contingentLiability",
-        "sanction",
-        "riskDerivative",
-        "relatedPartyTx",
-        "riskFactor",
-        "rawMaterial",
-        "lawsuit",
-    ],
-    "투자": ["rnd", "tangibleAsset", "subsidiary", "affiliate", "fundraising", "investmentInOther", "operationalAsset"],
-    "종합": ["dividend", "employee", "majorHolder", "audit", "rnd", "segments"],
+from dartlab.core.registry import buildQuestionModules
+
+# registry에 없는 모듈(sections topic 전용 등)은 override로 추가
+_QUESTION_MODULES_OVERRIDE: dict[str, list[str]] = {
     "공시": [],
-    "사업": ["productService", "segments", "companyHistory", "salesOrder", "rawMaterial", "businessOverview"],
-    "관계사": ["affiliate", "affiliateStatus", "relatedPartyTx", "subsidiary"],
-    "자본": ["shareCapital", "capitalChange", "treasuryStock", "fundraising"],
-    "인력": ["employee", "executivePay", "boardOfDirectors"],
+    "건전성": ["guaranteeBalance"],
+    "수익성": ["operationalAsset"],
+    "투자": ["operationalAsset"],
+    "배당": ["treasuryStock"],
+    "자본": ["treasuryStock"],
+    "지배구조": ["affiliateStatus"],
+    "리스크": ["riskFactor", "lawsuit"],
+    "사업": ["businessOverview"],
+    "관계사": ["affiliateStatus"],
 }
+
+_QUESTION_MODULES: dict[str, list[str]] = {}
+for _qt, _mods in buildQuestionModules().items():
+    _QUESTION_MODULES[_qt] = list(_mods)
+for _qt, _extra in _QUESTION_MODULES_OVERRIDE.items():
+    _QUESTION_MODULES.setdefault(_qt, []).extend(m for m in _extra if m not in _QUESTION_MODULES.get(_qt, []))
 
 _ALWAYS_INCLUDE_MODULES = {"employee"}
 

@@ -61,6 +61,8 @@ class DataEntry:
     aiExposed: bool = True
     aiCategory: str = "data"
     aiHint: str = ""
+    aiQuestionTypes: tuple[str, ...] = ()
+    aiKeywords: tuple[str, ...] = ()
 
 
 # DataEntry 목록은 _entries.py에서 관리 (942줄 → 별도 파일)
@@ -191,3 +193,25 @@ def buildFeatureDescription(category: str | None = None) -> str:
         return f"'{category}' 카테고리가 없습니다. 사용 가능: {available}"
 
     return "\n\n".join(sections)
+
+
+def buildQuestionModules() -> dict[str, list[str]]:
+    """DataEntry.aiQuestionTypes → {질문유형: [모듈명]} 역인덱스 자동 생성."""
+    result: dict[str, list[str]] = {}
+    for e in _ENTRIES:
+        if not e.aiExposed:
+            continue
+        for qt in e.aiQuestionTypes:
+            result.setdefault(qt, []).append(e.name)
+    return result
+
+
+def buildKeywordMap() -> dict[str, list[str]]:
+    """DataEntry.aiKeywords → {키워드: [모듈명]} 역인덱스."""
+    result: dict[str, list[str]] = {}
+    for e in _ENTRIES:
+        if not e.aiExposed:
+            continue
+        for kw in e.aiKeywords:
+            result.setdefault(kw, []).append(e.name)
+    return result

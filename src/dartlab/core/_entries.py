@@ -183,6 +183,8 @@ _ENTRIES: list[DataEntry] = [
             "부문별 수익성 차이와 성장 기여도",
         ),
         relatedModules=("IS", "productService"),
+        aiQuestionTypes=("수익성", "성장성", "사업", "종합"),
+        aiKeywords=("부문", "세그먼트", "segment"),
     ),
     DataEntry(
         name="tangibleAsset",
@@ -199,6 +201,8 @@ _ENTRIES: list[DataEntry] = [
             "자산 처분 규모 확인",
         ),
         relatedModules=("CF", "BS"),
+        aiQuestionTypes=("투자",),
+        aiKeywords=("유형자산", "설비"),
     ),
     DataEntry(
         name="costByNature",
@@ -215,6 +219,8 @@ _ENTRIES: list[DataEntry] = [
             "원재료비 변동이 매출원가율에 미치는 영향",
         ),
         relatedModules=("IS", "rawMaterial"),
+        aiQuestionTypes=("수익성",),
+        aiKeywords=("원재료",),
     ),
     # ── 정기보고서 — 재무 관련 ──
     DataEntry(
@@ -243,6 +249,8 @@ _ENTRIES: list[DataEntry] = [
             "배당수익률 변화",
         ),
         relatedModules=("IS", "shareCapital"),
+        aiQuestionTypes=("배당", "종합"),
+        aiKeywords=("배당", "dividend"),
     ),
     DataEntry(
         name="majorHolder",
@@ -267,6 +275,8 @@ _ENTRIES: list[DataEntry] = [
             "특수관계인 포함 총 지분율 30% 이상이면 경영권 안정",
         ),
         relatedModules=("holderOverview", "executive"),
+        aiQuestionTypes=("지배구조", "종합"),
+        aiKeywords=("주주",),
     ),
     DataEntry(
         name="employee",
@@ -284,6 +294,8 @@ _ENTRIES: list[DataEntry] = [
             "평균 연봉 수준 및 변화",
         ),
         relatedModules=("IS", "executivePay"),
+        aiQuestionTypes=("인력", "종합"),
+        aiKeywords=("직원", "employee"),
     ),
     DataEntry(
         name="subsidiary",
@@ -301,6 +313,8 @@ _ENTRIES: list[DataEntry] = [
             "주요 자회사 지분율 변동",
         ),
         relatedModules=("investmentInOther", "affiliateGroup"),
+        aiQuestionTypes=("성장성", "투자", "관계사"),
+        aiKeywords=("자회사", "subsidiary"),
     ),
     DataEntry(
         name="bond",
@@ -317,6 +331,7 @@ _ENTRIES: list[DataEntry] = [
             "이자율 수준과 신용등급 연계",
         ),
         relatedModules=("BS", "CF", "contingentLiability"),
+        aiKeywords=("채무증권", "사채"),
     ),
     DataEntry(
         name="shareCapital",
@@ -334,6 +349,8 @@ _ENTRIES: list[DataEntry] = [
             "유통주식수 변동이 주가에 미치는 영향",
         ),
         relatedModules=("capitalChange", "fundraising", "dividend"),
+        aiQuestionTypes=("배당", "자본"),
+        aiKeywords=("주식", "자기주식"),
     ),
     DataEntry(
         name="executive",
@@ -356,6 +373,8 @@ _ENTRIES: list[DataEntry] = [
         ),
         analysisHints=("사외이사 비율 1/3 이상은 법적 요건",),
         relatedModules=("boardOfDirectors", "executivePay"),
+        aiQuestionTypes=("지배구조",),
+        aiKeywords=("임원",),
     ),
     DataEntry(
         name="executivePay",
@@ -376,6 +395,8 @@ _ENTRIES: list[DataEntry] = [
         ),
         analysisHints=("평균 보수 대비 실적 적정성 판단",),
         relatedModules=("executive", "employee"),
+        aiQuestionTypes=("지배구조", "인력"),
+        aiKeywords=("보수", "급여", "employee"),
     ),
     DataEntry(
         name="audit",
@@ -400,6 +421,8 @@ _ENTRIES: list[DataEntry] = [
             "핵심감사사항의 반복 패턴",
         ),
         relatedModules=("auditSystem", "internalControl"),
+        aiQuestionTypes=("건전성", "종합"),
+        aiKeywords=("감사", "audit"),
     ),
     DataEntry(
         name="boardOfDirectors",
@@ -420,6 +443,8 @@ _ENTRIES: list[DataEntry] = [
         ),
         analysisHints=("이사회 활동성(개최횟수)과 출석률 확인",),
         relatedModules=("executive", "auditSystem"),
+        aiQuestionTypes=("지배구조", "인력"),
+        aiKeywords=("이사회", "사외이사"),
     ),
     DataEntry(
         name="capitalChange",
@@ -434,6 +459,8 @@ _ENTRIES: list[DataEntry] = [
         unit="주 (주식수), 원 (액면)",
         analysisHints=("증자/감자 이벤트와 지분 희석 효과",),
         relatedModules=("shareCapital", "fundraising"),
+        aiQuestionTypes=("배당", "자본"),
+        aiKeywords=("증자", "감자", "주식"),
     ),
     DataEntry(
         name="contingentLiability",
@@ -455,6 +482,8 @@ _ENTRIES: list[DataEntry] = [
             "소송 규모와 진행 상태",
         ),
         relatedModules=("BS", "sanction"),
+        aiQuestionTypes=("건전성", "리스크"),
+        aiKeywords=("소송", "보증"),
     ),
     DataEntry(
         name="internalControl",
@@ -468,6 +497,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("내부통제 취약점은 재무제표 신뢰성 리스크",),
         relatedModules=("audit", "auditSystem"),
+        aiQuestionTypes=("건전성",),
+        aiKeywords=("내부통제",),
     ),
     DataEntry(
         name="relatedPartyTx",
@@ -481,6 +512,7 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("관계자 거래 비중이 매출의 10%+ 이면 주의",),
         relatedModules=("affiliateGroup", "majorHolder"),
+        aiQuestionTypes=("건전성", "리스크", "관계사"),
     ),
     DataEntry(
         name="rnd",
@@ -502,6 +534,8 @@ _ENTRIES: list[DataEntry] = [
             "R&D 투자 추세와 매출 성장의 관계",
         ),
         relatedModules=("IS", "productService"),
+        aiQuestionTypes=("성장성", "투자", "종합"),
+        aiKeywords=("연구", "연구개발", "R&D", "기술"),
     ),
     DataEntry(
         name="sanction",
@@ -515,6 +549,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("제재 이력은 규제 리스크 신호", "반복 제재 패턴 확인"),
         relatedModules=("contingentLiability",),
+        aiQuestionTypes=("리스크",),
+        aiKeywords=("제재",),
     ),
     DataEntry(
         name="affiliateGroup",
@@ -529,6 +565,8 @@ _ENTRIES: list[DataEntry] = [
         analysisHints=("그룹 규모와 계열사 변동 추적",),
         relatedModules=("relatedPartyTx", "subsidiary"),
         maxRows=15,
+        aiQuestionTypes=("리스크", "관계사", "지배구조"),
+        aiKeywords=("계열사", "계열"),
     ),
     DataEntry(
         name="fundraising",
@@ -542,6 +580,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("증자 빈도와 목적 (시설/운영/차환)", "감자 이유 확인"),
         relatedModules=("capitalChange", "shareCapital"),
+        aiQuestionTypes=("투자", "자본"),
+        aiKeywords=("증자", "감자"),
     ),
     DataEntry(
         name="productService",
@@ -555,6 +595,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("매출 집중도(단일 제품 의존도) 확인",),
         relatedModules=("segments", "salesOrder"),
+        aiQuestionTypes=("수익성", "성장성", "사업"),
+        aiKeywords=("제품",),
     ),
     DataEntry(
         name="salesOrder",
@@ -568,6 +610,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("수주잔고 추이로 미래 매출 가시성 확인",),
         relatedModules=("IS", "productService"),
+        aiQuestionTypes=("수익성", "성장성", "사업"),
+        aiKeywords=("수주",),
     ),
     DataEntry(
         name="riskDerivative",
@@ -584,6 +628,8 @@ _ENTRIES: list[DataEntry] = [
             "파생상품 평가손익 추이",
         ),
         relatedModules=("IS", "BS"),
+        aiQuestionTypes=("리스크",),
+        aiKeywords=("파생", "환율", "환위험"),
     ),
     DataEntry(
         name="articlesOfIncorporation",
@@ -596,6 +642,7 @@ _ENTRIES: list[DataEntry] = [
         extractor=lambda r: r.changesDf,
         requires="docs",
         analysisHints=("사업목적 추가/변경 사항 확인",),
+        aiKeywords=("정관",),
     ),
     DataEntry(
         name="otherFinance",
@@ -609,6 +656,7 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("대손충당금 적립률 추이", "재고자산 회전율 변동"),
         relatedModules=("BS", "IS"),
+        aiKeywords=("대손", "재고"),
     ),
     DataEntry(
         name="companyHistory",
@@ -622,6 +670,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("최근 M&A, 사업 전환, 상장 등 주요 이벤트",),
         maxRows=20,
+        aiQuestionTypes=("사업",),
+        aiKeywords=("연혁",),
     ),
     DataEntry(
         name="shareholderMeeting",
@@ -635,6 +685,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("안건 부결 여부, 특수 안건 확인",),
         relatedModules=("majorHolder",),
+        aiQuestionTypes=("지배구조",),
+        aiKeywords=("주총",),
     ),
     DataEntry(
         name="auditSystem",
@@ -648,6 +700,7 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("감사위원회 전원 사외이사 여부 확인",),
         relatedModules=("audit", "boardOfDirectors"),
+        aiQuestionTypes=("지배구조",),
     ),
     DataEntry(
         name="affiliate",
@@ -664,6 +717,8 @@ _ENTRIES: list[DataEntry] = [
             "투자 포트폴리오 변동(취득/처분) 추적",
         ),
         relatedModules=("subsidiary", "investmentInOther", "affiliateGroup"),
+        aiQuestionTypes=("투자", "관계사"),
+        aiKeywords=("관계사",),
     ),
     DataEntry(
         name="investmentInOther",
@@ -678,6 +733,8 @@ _ENTRIES: list[DataEntry] = [
         analysisHints=("비핵심 투자 비중과 수익성",),
         relatedModules=("subsidiary", "affiliateGroup"),
         maxRows=20,
+        aiQuestionTypes=("성장성", "투자", "관계사"),
+        aiKeywords=("출자",),
     ),
     DataEntry(
         name="companyOverviewDetail",
@@ -712,6 +769,8 @@ _ENTRIES: list[DataEntry] = [
             "소액주주 비율과 유통주식 비율",
         ),
         relatedModules=("majorHolder", "shareCapital"),
+        aiQuestionTypes=("지배구조",),
+        aiKeywords=("주주",),
     ),
     # ═══════════════════════════════════════════════════════
     # disclosure — 서술형 공시
@@ -731,6 +790,7 @@ _ENTRIES: list[DataEntry] = [
             "산업 리스크 요인 확인",
         ),
         maxRows=5,
+        aiKeywords=("사업",),
     ),
     DataEntry(
         name="companyOverview",
@@ -742,6 +802,7 @@ _ENTRIES: list[DataEntry] = [
         funcName="companyOverview",
         extractor=None,
         requires="docs",
+        aiKeywords=("개요", "신용등급"),
     ),
     DataEntry(
         name="mdna",
@@ -757,6 +818,7 @@ _ENTRIES: list[DataEntry] = [
             "경영진의 실적 자기평가와 전망",
             "언급된 리스크 요인",
         ),
+        aiKeywords=("MD&A", "경영진단"),
     ),
     DataEntry(
         name="rawMaterial",
@@ -770,6 +832,8 @@ _ENTRIES: list[DataEntry] = [
         requires="docs",
         analysisHints=("원재료 조달 집중도", "시설투자 규모 추이"),
         relatedModules=("costByNature", "tangibleAsset"),
+        aiQuestionTypes=("사업", "리스크"),
+        aiKeywords=("원재료", "설비"),
     ),
     DataEntry(
         name="sections",
