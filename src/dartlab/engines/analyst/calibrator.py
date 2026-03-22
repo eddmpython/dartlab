@@ -43,12 +43,18 @@ def calibrate_scenarios(
             ratio = consensus_price / dcf_baseline_price
             if ratio > 1.5:
                 # 컨센서스가 DCF보다 50% 이상 높음 → optimistic ↑
-                _adjust("optimistic", 0.05, f"컨센서스({consensus_price:,.0f})가 DCF baseline보다 {ratio:.1f}배 → optimistic +5%p")
+                _adjust(
+                    "optimistic",
+                    0.05,
+                    f"컨센서스({consensus_price:,.0f})가 DCF baseline보다 {ratio:.1f}배 → optimistic +5%p",
+                )
                 _adjust("baseline", -0.03, "컨센서스 상향 → baseline -3%p")
                 _adjust("adverse", -0.02, "컨센서스 상향 → adverse -2%p")
             elif ratio < 0.7:
                 # 컨센서스가 DCF보다 30% 이상 낮음 → adverse ↑
-                _adjust("adverse", 0.05, f"컨센서스({consensus_price:,.0f})가 DCF baseline보다 {ratio:.1f}배 → adverse +5%p")
+                _adjust(
+                    "adverse", 0.05, f"컨센서스({consensus_price:,.0f})가 DCF baseline보다 {ratio:.1f}배 → adverse +5%p"
+                )
                 _adjust("baseline", -0.03, "컨센서스 하향 → baseline -3%p")
                 _adjust("optimistic", -0.02, "컨센서스 하향 → optimistic -2%p")
 

@@ -64,8 +64,12 @@ class Fred:
             aggregation: 집계 (avg/sum/eop).
         """
         return fetch_series(
-            self._client, series_id,
-            start=start, end=end, frequency=frequency, aggregation=aggregation,
+            self._client,
+            series_id,
+            start=start,
+            end=end,
+            frequency=frequency,
+            aggregation=aggregation,
         )
 
     def search(self, query: str, *, limit: int = 20) -> pl.DataFrame:
@@ -86,8 +90,11 @@ class Fred:
     ) -> pl.DataFrame:
         """복수 시계열 비교 → wide DataFrame ``(date, GDP, UNRATE, ...)``."""
         return fetch_multi(
-            self._client, series_ids,
-            start=start, end=end, frequency=frequency,
+            self._client,
+            series_ids,
+            start=start,
+            end=end,
+            frequency=frequency,
         )
 
     def releases(self, *, limit: int = 20) -> pl.DataFrame:
@@ -125,8 +132,12 @@ class Fred:
         return _transform.mom(df)
 
     def movingAverage(
-        self, series_id: str, *, window: int = 12,
-        start: str | None = None, end: str | None = None,
+        self,
+        series_id: str,
+        *,
+        window: int = 12,
+        start: str | None = None,
+        end: str | None = None,
     ) -> pl.DataFrame:
         """이동평균."""
         df = self.series(series_id, start=start, end=end)

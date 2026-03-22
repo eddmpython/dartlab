@@ -20,7 +20,10 @@ class TestAnalystTypes:
 
     def test_valuation_method_repr(self):
         m = ValuationMethod(
-            name="dcf", value=200000, weight=0.3, confidence=0.6,
+            name="dcf",
+            value=200000,
+            weight=0.3,
+            confidence=0.6,
             reasoning="MC 시뮬레이션",
         )
         r = repr(m)
@@ -83,8 +86,12 @@ class TestSynthesizer:
             stock_code="005930",
             current_price=200000,
             consensus=ConsensusData(
-                target_price=300000, analyst_count=15,
-                buy_ratio=0.8, high=350000, low=250000, source="naver",
+                target_price=300000,
+                analyst_count=15,
+                buy_ratio=0.8,
+                high=350000,
+                low=250000,
+                source="naver",
             ),
         )
         report = synthesize(
@@ -103,8 +110,10 @@ class TestSynthesizer:
             stock_code="005930",
             current_price=200000,
             consensus=ConsensusData(
-                target_price=300000, analyst_count=15,
-                buy_ratio=0.8, source="naver",
+                target_price=300000,
+                analyst_count=15,
+                buy_ratio=0.8,
+                source="naver",
             ),
             multiples={"per": 12.5, "pbr": 1.3, "sector_per": 15.0},
             price_range_52w=(150000, 250000),
@@ -132,8 +141,10 @@ class TestSynthesizer:
         """애널리스트 2명 → 컨센서스 가중치 감소."""
         market = MarketSnapshot(
             consensus=ConsensusData(
-                target_price=300000, analyst_count=2,
-                buy_ratio=0.5, source="naver",
+                target_price=300000,
+                analyst_count=2,
+                buy_ratio=0.5,
+                source="naver",
             ),
         )
         report = synthesize(
@@ -221,7 +232,9 @@ class TestCalibrator:
             consensus=ConsensusData(target_price=300000, analyst_count=10, source="naver"),
         )
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["optimistic"] > self.BASE_PROBS["optimistic"]
         assert len(reasons) > 0
@@ -232,7 +245,9 @@ class TestCalibrator:
             consensus=ConsensusData(target_price=50000, analyst_count=10, source="naver"),
         )
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["adverse"] > self.BASE_PROBS["adverse"]
 
@@ -240,11 +255,16 @@ class TestCalibrator:
         """매수의견 80% → baseline ↑."""
         market = MarketSnapshot(
             consensus=ConsensusData(
-                target_price=100000, analyst_count=10, buy_ratio=0.85, source="naver",
+                target_price=100000,
+                analyst_count=10,
+                buy_ratio=0.85,
+                source="naver",
             ),
         )
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["baseline"] > self.BASE_PROBS["baseline"] - 0.01  # 근사
 
@@ -254,7 +274,9 @@ class TestCalibrator:
             supply_demand={"foreign_net": -5_000_000},
         )
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["adverse"] > self.BASE_PROBS["adverse"]
 
@@ -264,7 +286,9 @@ class TestCalibrator:
             supply_demand={"foreign_net": 5_000_000},
         )
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["baseline"] >= self.BASE_PROBS["baseline"]
 
@@ -272,7 +296,9 @@ class TestCalibrator:
         """고금리 → rate_hike ↑."""
         market = MarketSnapshot(macro={"base_rate": 5.0})
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert probs["rate_hike"] > self.BASE_PROBS["rate_hike"]
 
@@ -284,7 +310,9 @@ class TestCalibrator:
             macro={"base_rate": 5.0},
         )
         probs, _ = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         assert abs(sum(probs.values()) - 1.0) < 0.001
 
@@ -292,14 +320,18 @@ class TestCalibrator:
         """확률 하한 1%p."""
         market = MarketSnapshot(
             consensus=ConsensusData(
-                target_price=1000000, analyst_count=20,
-                buy_ratio=0.95, source="naver",
+                target_price=1000000,
+                analyst_count=20,
+                buy_ratio=0.95,
+                source="naver",
             ),
             supply_demand={"foreign_net": 10_000_000},
             macro={"base_rate": 1.0},
         )
         probs, _ = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=10000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=10000,
+            market=market,
         )
         for v in probs.values():
             assert v >= 0.005  # 정규화 후 1%p 이상
@@ -308,7 +340,9 @@ class TestCalibrator:
         """빈 시장 데이터 → 변경 없음."""
         market = MarketSnapshot()
         probs, reasons = calibrate_scenarios(
-            dict(self.BASE_PROBS), dcf_baseline_price=100000, market=market,
+            dict(self.BASE_PROBS),
+            dcf_baseline_price=100000,
+            market=market,
         )
         # 조정 규칙 적용 안 됨 → 원본과 유사
         assert len(reasons) == 0

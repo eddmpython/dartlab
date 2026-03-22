@@ -101,10 +101,7 @@ class Gather:
 
         results: dict[str, GatherResult] = {}
         with ThreadPoolExecutor(max_workers=len(domains)) as executor:
-            futures = {
-                executor.submit(self._fetch_domain, name, stock_code, market): name
-                for name in domains
-            }
+            futures = {executor.submit(self._fetch_domain, name, stock_code, market): name for name in domains}
             for future in as_completed(futures):
                 name = futures[future]
                 try:

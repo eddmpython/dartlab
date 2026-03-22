@@ -245,7 +245,12 @@ def adjust_probabilities(
         재가중된 확률 dict.
     """
     # adjustments가 아직 계산되지 않았으면 자동 계산
-    if not signals.adjustments and (signals.insight_grades or signals.risk_change_rate > 0 or signals.sector_cyclicality != "moderate" or signals.growth_rank_pct <= 20):
+    if not signals.adjustments and (
+        signals.insight_grades
+        or signals.risk_change_rate > 0
+        or signals.sector_cyclicality != "moderate"
+        or signals.growth_rank_pct <= 20
+    ):
         adj, reasoning = _compute_adjustments(signals)
         signals.adjustments = adj
         signals.reasoning = reasoning

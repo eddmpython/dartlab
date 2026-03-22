@@ -98,19 +98,23 @@ def _dataclassesSection() -> str:
     lines = ["## 주요 데이터 타입\n"]
 
     from dartlab.engines.common.finance.ratios import RatioResult
+
     lines.append(_dataclassTable(RatioResult, "RatioResult"))
 
     from dartlab.engines.insight.types import AnalysisResult, Anomaly, Flag, InsightResult
+
     lines.append(_dataclassTable(InsightResult, "InsightResult"))
     lines.append(_dataclassTable(Anomaly, "Anomaly"))
     lines.append(_dataclassTable(Flag, "Flag"))
     lines.append(_dataclassTable(AnalysisResult, "AnalysisResult"))
 
     from dartlab.engines.sector.types import SectorInfo, SectorParams
+
     lines.append(_dataclassTable(SectorInfo, "SectorInfo"))
     lines.append(_dataclassTable(SectorParams, "SectorParams"))
 
     from dartlab.engines.rank.rank import RankInfo
+
     lines.append(_dataclassTable(RankInfo, "RankInfo"))
 
     return "\n".join(lines)
@@ -240,8 +244,7 @@ def generateApiSpec() -> str:
     """API_SPEC.md 생성."""
     parts = [
         _header(
-            "dartlab API 스펙",
-            "이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다. 직접 수정하지 마세요."
+            "dartlab API 스펙", "이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다. 직접 수정하지 마세요."
         ),
         _companySection(),
         _registrySection(),
@@ -286,21 +289,23 @@ def generateLlmsTxt() -> str:
             lines.append(f"- **{e.name}** ({e.label}): {e.description}")
         lines.append("")
 
-    lines.extend([
-        "## 분석 엔진",
-        "",
-        "- **섹터 분류**: WICS 11섹터 자동 분류 (오버라이드 → 키워드 → KSIC 3단계)",
-        "- **인사이트 등급**: 7영역 A~F 등급 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회)",
-        "- **시장 순위**: 매출/자산/성장률 전체+섹터내 순위",
-        "- **재무비율**: ROE, ROA, 영업이익률, 부채비율, PER, PBR, FCF 등 자동 계산",
-        "",
-        "## 링크",
-        "",
-        "- 문서: https://eddmpython.github.io/dartlab/docs/",
-        "- GitHub: https://github.com/eddmpython/dartlab",
-        "- PyPI: https://pypi.org/project/dartlab/",
-        "",
-    ])
+    lines.extend(
+        [
+            "## 분석 엔진",
+            "",
+            "- **섹터 분류**: WICS 11섹터 자동 분류 (오버라이드 → 키워드 → KSIC 3단계)",
+            "- **인사이트 등급**: 7영역 A~F 등급 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회)",
+            "- **시장 순위**: 매출/자산/성장률 전체+섹터내 순위",
+            "- **재무비율**: ROE, ROA, 영업이익률, 부채비율, PER, PBR, FCF 등 자동 계산",
+            "",
+            "## 링크",
+            "",
+            "- 문서: https://eddmpython.github.io/dartlab/docs/",
+            "- GitHub: https://github.com/eddmpython/dartlab",
+            "- PyPI: https://pypi.org/project/dartlab/",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -308,10 +313,7 @@ def generateLlmsTxt() -> str:
 def generateSkillRef() -> str:
     """Claude Code 스킬용 reference.md 생성."""
     parts = [
-        _header(
-            "dartlab API Reference (Skills용)",
-            "이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다."
-        ),
+        _header("dartlab API Reference (Skills용)", "이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다."),
         _companySection(),
         _registrySection(),
         _dataclassesSection(),

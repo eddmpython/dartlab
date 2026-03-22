@@ -16,10 +16,7 @@ class ValuationMethod:
     reasoning: str = ""  # 산출 근거
 
     def __repr__(self) -> str:
-        return (
-            f"{self.name}: {self.value:,.0f}원 "
-            f"(가중치={self.weight:.0%}, 신뢰도={self.confidence:.0%})"
-        )
+        return f"{self.name}: {self.value:,.0f}원 (가중치={self.weight:.0%}, 신뢰도={self.confidence:.0%})"
 
 
 # 투자 의견 매핑

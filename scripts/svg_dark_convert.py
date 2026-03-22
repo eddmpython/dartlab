@@ -6,6 +6,7 @@
 글 단위 변환:
   uv run python scripts/svg_dark_convert.py blog/03-financial-interpretation/115-ifrs18-income-statement-changes/assets/
 """
+
 import re
 import sys
 from pathlib import Path
@@ -111,7 +112,7 @@ def add_border(lines: list[str]) -> list[str]:
                     # rx 추출
                     rx_match = re.search(r'rx="(\d+)"', line)
                     rx = rx_match.group(1) if rx_match else "12"
-                    border = f'  <rect x="0.5" y="0.5" width="{w-1}" height="{h-1}" rx="{rx}" stroke="#1e2433" stroke-width="1" fill="none"/>\n'
+                    border = f'  <rect x="0.5" y="0.5" width="{w - 1}" height="{h - 1}" rx="{rx}" stroke="#1e2433" stroke-width="1" fill="none"/>\n'
                     # 이미 border가 있는지 확인
                     if i + 1 < len(lines) and "#1e2433" in lines[i + 1]:
                         break

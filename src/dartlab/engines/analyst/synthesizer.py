@@ -58,13 +58,15 @@ def synthesize(
 
     # ── 1. DCF 밸류에이션 ──
     if dcf_target and dcf_target > 0:
-        methods.append(ValuationMethod(
-            name="dcf",
-            value=dcf_target,
-            weight=weights.get("dcf", 0.30),
-            confidence=dcf_confidence,
-            reasoning="자체 DCF 엔진 (MC 시뮬레이션 + 시나리오 가중)",
-        ))
+        methods.append(
+            ValuationMethod(
+                name="dcf",
+                value=dcf_target,
+                weight=weights.get("dcf", 0.30),
+                confidence=dcf_confidence,
+                reasoning="자체 DCF 엔진 (MC 시뮬레이션 + 시나리오 가중)",
+            )
+        )
     else:
         # DCF 미가용 → 가중치 재배분
         removed = weights.pop("dcf", 0)
@@ -117,8 +119,7 @@ def synthesize(
         gap = abs(dcf_target - consensus_target) / max(dcf_target, consensus_target)
         if gap > 0.5:
             reasoning.append(
-                f"DCF({dcf_target:,.0f})와 컨센서스({consensus_target:,.0f}) "
-                f"괴리 {gap:.0%} — DCF 가중치 하향 적용"
+                f"DCF({dcf_target:,.0f})와 컨센서스({consensus_target:,.0f}) 괴리 {gap:.0%} — DCF 가중치 하향 적용"
             )
             # DCF 가중치 ×0.7 재조정
             for m in methods:
@@ -136,8 +137,7 @@ def synthesize(
 
     # 판단 근거 생성
     reasoning.append(
-        f"종합 목표가 {target_price:,.0f}원 "
-        f"= {' + '.join(f'{m.name}({m.value:,.0f}×{m.weight:.0%})' for m in methods)}"
+        f"종합 목표가 {target_price:,.0f}원 = {' + '.join(f'{m.name}({m.value:,.0f}×{m.weight:.0%})' for m in methods)}"
     )
 
     return AnalystReport(
@@ -201,17 +201,16 @@ def _extract_consensus(
         _redistribute({k: v for k, v in weights.items() if k != "consensus"}, removed)
         warnings.append(f"애널리스트 {c.analyst_count}명 — 컨센서스 신뢰도 낮음")
 
-    methods.append(ValuationMethod(
-        name="consensus",
-        value=c.target_price,
-        weight=weights.get("consensus", 0.35),
-        confidence=confidence,
-        reasoning=f"시장 컨센서스 (애널리스트 {c.analyst_count}명, 매수비율 {c.buy_ratio:.0%})",
-    ))
-    reasoning.append(
-        f"컨센서스 목표가 {c.target_price:,.0f}원 "
-        f"(범위: {c.low:,.0f}~{c.high:,.0f}, {c.analyst_count}명)"
+    methods.append(
+        ValuationMethod(
+            name="consensus",
+            value=c.target_price,
+            weight=weights.get("consensus", 0.35),
+            confidence=confidence,
+            reasoning=f"시장 컨센서스 (애널리스트 {c.analyst_count}명, 매수비율 {c.buy_ratio:.0%})",
+        )
     )
+    reasoning.append(f"컨센서스 목표가 {c.target_price:,.0f}원 (범위: {c.low:,.0f}~{c.high:,.0f}, {c.analyst_count}명)")
     return c.target_price
 
 
@@ -243,13 +242,15 @@ def _extract_peer_multiple(
         return
 
     peer_target = sector_per * eps
-    methods.append(ValuationMethod(
-        name="peer_multiple",
-        value=peer_target,
-        weight=weights.get("peer_multiple", 0.20),
-        confidence=0.6,
-        reasoning=f"업종 PER({sector_per:.1f}) × EPS({eps:,.0f})",
-    ))
+    methods.append(
+        ValuationMethod(
+            name="peer_multiple",
+            value=peer_target,
+            weight=weights.get("peer_multiple", 0.20),
+            confidence=0.6,
+            reasoning=f"업종 PER({sector_per:.1f}) × EPS({eps:,.0f})",
+        )
+    )
     reasoning.append(f"피어 멀티플 목표가 {peer_target:,.0f}원 (업종PER {sector_per:.1f}×EPS {eps:,.0f})")
 
 
@@ -292,11 +293,13 @@ def _extract_relative(
         relative_target = midpoint
         reasoning_text = f"52주 범위 중간값 ({low_52w:,.0f}~{high_52w:,.0f})"
 
-    methods.append(ValuationMethod(
-        name="relative",
-        value=relative_target,
-        weight=weights.get("relative", 0.15),
-        confidence=0.5,
-        reasoning=reasoning_text,
-    ))
+    methods.append(
+        ValuationMethod(
+            name="relative",
+            value=relative_target,
+            weight=weights.get("relative", 0.15),
+            confidence=0.5,
+            reasoning=reasoning_text,
+        )
+    )
     reasoning.append(f"상대가치 목표가 {relative_target:,.0f}원 ({reasoning_text})")

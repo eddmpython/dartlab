@@ -18,34 +18,22 @@ def yoy(df: pl.DataFrame, col: str = "value") -> pl.DataFrame:
     분기별 데이터는 4행 전, 연간은 1행 전.
     """
     period = _infer_period(df)
-    return df.with_columns(
-        ((pl.col(col) / pl.col(col).shift(period) - 1) * 100)
-        .alias(f"{col}_yoy")
-    )
+    return df.with_columns(((pl.col(col) / pl.col(col).shift(period) - 1) * 100).alias(f"{col}_yoy"))
 
 
 def mom(df: pl.DataFrame, col: str = "value") -> pl.DataFrame:
     """전월 대비 변화율 (%). 일별 데이터는 전일 대비."""
-    return df.with_columns(
-        ((pl.col(col) / pl.col(col).shift(1) - 1) * 100)
-        .alias(f"{col}_mom")
-    )
+    return df.with_columns(((pl.col(col) / pl.col(col).shift(1) - 1) * 100).alias(f"{col}_mom"))
 
 
 def diff(df: pl.DataFrame, col: str = "value", periods: int = 1) -> pl.DataFrame:
     """차분 (현재 값 - N기간 전 값)."""
-    return df.with_columns(
-        (pl.col(col) - pl.col(col).shift(periods))
-        .alias(f"{col}_diff{periods}")
-    )
+    return df.with_columns((pl.col(col) - pl.col(col).shift(periods)).alias(f"{col}_diff{periods}"))
 
 
 def moving_average(df: pl.DataFrame, col: str = "value", window: int = 12) -> pl.DataFrame:
     """이동평균."""
-    return df.with_columns(
-        pl.col(col).rolling_mean(window_size=window)
-        .alias(f"{col}_ma{window}")
-    )
+    return df.with_columns(pl.col(col).rolling_mean(window_size=window).alias(f"{col}_ma{window}"))
 
 
 def normalize(df: pl.DataFrame, col: str = "value", base_date: str | None = None) -> pl.DataFrame:
@@ -56,6 +44,7 @@ def normalize(df: pl.DataFrame, col: str = "value", base_date: str | None = None
     """
     if base_date is not None:
         from datetime import datetime
+
         target = datetime.strptime(base_date, "%Y-%m-%d").date()
         base_row = df.filter(pl.col("date") == target)
         if base_row.is_empty():
@@ -73,9 +62,7 @@ def normalize(df: pl.DataFrame, col: str = "value", base_date: str | None = None
     if base_val is None or base_val == 0:
         return df.with_columns(pl.lit(None).alias(f"{col}_norm"))
 
-    return df.with_columns(
-        (pl.col(col) / base_val * 100).alias(f"{col}_norm")
-    )
+    return df.with_columns((pl.col(col) / base_val * 100).alias(f"{col}_norm"))
 
 
 def normalize_multi(df: pl.DataFrame, base_date: str | None = None) -> pl.DataFrame:
@@ -121,9 +108,7 @@ def correlation(df: pl.DataFrame, method: str = "pearson") -> pl.DataFrame:
             if i == j:
                 row[value_cols[j]] = 1.0
             else:
-                corr_val = clean.select(
-                    pl.corr(value_cols[i], value_cols[j])
-                ).item()
+                corr_val = clean.select(pl.corr(value_cols[i], value_cols[j])).item()
                 row[value_cols[j]] = round(corr_val, 4) if corr_val is not None else None
         rows.append(row)
 
@@ -156,14 +141,14 @@ def lead_lag(
         if lag == 0:
             corr_val = clean.select(pl.corr(col_a, col_b)).item()
         elif lag > 0:
-            shifted = pl.DataFrame({col_a: a[lag:], col_b: b[:len(b) - lag]})
+            shifted = pl.DataFrame({col_a: a[lag:], col_b: b[: len(b) - lag]})
             if shifted.height < 3:
                 corr_val = None
             else:
                 corr_val = shifted.select(pl.corr(col_a, col_b)).item()
         else:
             shift_abs = abs(lag)
-            shifted = pl.DataFrame({col_a: a[:len(a) - shift_abs], col_b: b[shift_abs:]})
+            shifted = pl.DataFrame({col_a: a[: len(a) - shift_abs], col_b: b[shift_abs:]})
             if shifted.height < 3:
                 corr_val = None
             else:

@@ -20,8 +20,9 @@ def _make_key(*parts: Any) -> str:
     return hashlib.md5(raw.encode()).hexdigest()
 
 
-def get(series_id: str, start: str | None, end: str | None,
-        frequency: str | None, aggregation: str | None) -> Any | None:
+def get(
+    series_id: str, start: str | None, end: str | None, frequency: str | None, aggregation: str | None
+) -> Any | None:
     """캐시 조회. TTL 만료 시 None."""
     key = _make_key(series_id, start, end, frequency, aggregation)
     entry = _cache.get(key)
@@ -34,9 +35,16 @@ def get(series_id: str, start: str | None, end: str | None,
     return value
 
 
-def put(series_id: str, start: str | None, end: str | None,
-        frequency: str | None, aggregation: str | None,
-        value: Any, *, daily: bool = False) -> None:
+def put(
+    series_id: str,
+    start: str | None,
+    end: str | None,
+    frequency: str | None,
+    aggregation: str | None,
+    value: Any,
+    *,
+    daily: bool = False,
+) -> None:
     """캐시 저장."""
     key = _make_key(series_id, start, end, frequency, aggregation)
     ttl = _TTL_DAILY if daily else _TTL_OTHER

@@ -28,9 +28,7 @@ DOMAIN_POLICY: dict[str, DomainConfig] = {
 _DEFAULT_POLICY = DomainConfig(rpm=30, concurrency=2)
 
 _USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/131.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
 
 
@@ -151,16 +149,14 @@ class GatherHttpClient:
                 req_headers = dict(self._session.headers)
                 if headers:
                     req_headers.update(headers)
-                resp = self._session.get(
-                    url, params=params, headers=req_headers, timeout=req_timeout
-                )
+                resp = self._session.get(url, params=params, headers=req_headers, timeout=req_timeout)
                 if resp.status_code == 429:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     log.warning("%s 429 rate limited, %ds 대기", domain, wait)
                     time.sleep(wait)
                     continue
                 if resp.status_code >= 500:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     log.warning("%s %d 서버 오류, %ds 대기", domain, resp.status_code, wait)
                     time.sleep(wait)
                     continue
@@ -169,13 +165,11 @@ class GatherHttpClient:
             except requests.RequestException as exc:
                 last_exc = exc
                 if attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
             finally:
                 semaphore.release()
 
-        raise SourceUnavailableError(
-            f"{domain} 요청 실패 ({max_retries}회 재시도): {last_exc}"
-        )
+        raise SourceUnavailableError(f"{domain} 요청 실패 ({max_retries}회 재시도): {last_exc}")
 
     def close(self) -> None:
         """HTTP 세션 종료."""

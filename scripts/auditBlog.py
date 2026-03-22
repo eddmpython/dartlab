@@ -102,7 +102,9 @@ def audit_posts(blog_root: Path) -> list[PostAudit]:
                 word_count=plain_word_count(body),
                 svg_count=len(re.findall(r"!\[[^\]]*\]\(\./assets/[^)]+\.svg\)", body)),
                 faq=any(heading.lower() in {"faq", "자주 묻는 질문"} for heading in headings),
-                checklist_heading=any("체크리스트" in heading or "checklist" in heading.lower() for heading in headings),
+                checklist_heading=any(
+                    "체크리스트" in heading or "checklist" in heading.lower() for heading in headings
+                ),
                 internal_links=len(internal_links),
                 external_links=len(external_links),
                 h2_count=len(headings),
@@ -164,10 +166,13 @@ def build_report(blog_root: Path) -> dict[str, object]:
         "missing_checklist_heading": [row.path for row in posts if not row.checklist_heading],
         "low_internal_links": [row.path for row in posts if row.internal_links < LOW_INTERNAL_LINKS],
         "svg_parse_errors": [row.path for row in svgs if row.parse_error],
-        "svg_low_text_density": [row.path for row in svgs if not row.parse_error and row.text_nodes < LOW_SVG_TEXT_NODES],
+        "svg_low_text_density": [
+            row.path for row in svgs if not row.parse_error and row.text_nodes < LOW_SVG_TEXT_NODES
+        ],
         "high_template_repetition": [
             {"path": row.path, "score": row.template_repetition_score}
-            for row in posts if row.template_repetition_score >= HIGH_TEMPLATE_REPETITION
+            for row in posts
+            if row.template_repetition_score >= HIGH_TEMPLATE_REPETITION
         ],
         "top_repeated_h2": [{"heading": heading, "count": count} for heading, count in headings.most_common(10)],
         "series_counts": Counter(row.series for row in posts),

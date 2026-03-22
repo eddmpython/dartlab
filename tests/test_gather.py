@@ -146,8 +146,12 @@ class TestDataTypes:
 
     def test_consensus_repr(self):
         c = ConsensusData(
-            target_price=300000, analyst_count=15,
-            buy_ratio=0.8, high=350000, low=250000, source="naver",
+            target_price=300000,
+            analyst_count=15,
+            buy_ratio=0.8,
+            high=350000,
+            low=250000,
+            source="naver",
         )
         r = repr(c)
         assert "300,000" in r
@@ -217,8 +221,12 @@ class TestDataTypes:
                 "naver": GatherResult(
                     domain="naver",
                     price=PriceSnapshot(
-                        current=200000, per=12.5, pbr=1.3,
-                        high_52w=250000, low_52w=150000, source="naver",
+                        current=200000,
+                        per=12.5,
+                        pbr=1.3,
+                        high_52w=250000,
+                        low_52w=150000,
+                        source="naver",
                     ),
                     consensus=ConsensusData(target_price=300000, analyst_count=10, source="naver"),
                     flow=FlowData(foreign_net=-2500000, institution_net=1200000, foreign_holding_ratio=55.3),

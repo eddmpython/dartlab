@@ -109,8 +109,7 @@ class DistressResult:
     def __repr__(self) -> str:
         lines = [
             "=== 부실 예측 스코어카드 ===",
-            f"종합: {self.level} ({self.overall:.1f}/100) | "
-            f"신용등급: {self.creditGrade} ({self.creditDescription})",
+            f"종합: {self.level} ({self.overall:.1f}/100) | 신용등급: {self.creditGrade} ({self.creditDescription})",
             "",
         ]
         for axis in self.axes:

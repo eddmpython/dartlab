@@ -22,13 +22,17 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("UMCSENT", "소비자심리", "growth", "Monthly", "Index 1966:Q1=100", "미시간대 소비자심리지수"),
     ],
     "inflation": [
-        CatalogEntry("CPIAUCSL", "CPI (전체)", "inflation", "Monthly", "Index 1982-84=100", "소비자물가지수 (도시 전체)"),
+        CatalogEntry(
+            "CPIAUCSL", "CPI (전체)", "inflation", "Monthly", "Index 1982-84=100", "소비자물가지수 (도시 전체)"
+        ),
         CatalogEntry("CPILFESL", "Core CPI", "inflation", "Monthly", "Index 1982-84=100", "식품·에너지 제외 CPI"),
         CatalogEntry("PCEPI", "PCE 물가", "inflation", "Monthly", "Index 2017=100", "개인소비지출 물가지수"),
         CatalogEntry("PCEPILFE", "Core PCE", "inflation", "Monthly", "Index 2017=100", "식품·에너지 제외 PCE"),
         CatalogEntry("T5YIE", "기대인플레이션 (5Y)", "inflation", "Daily", "Percent", "5년 손익분기 인플레이션율"),
         CatalogEntry("T10YIE", "기대인플레이션 (10Y)", "inflation", "Daily", "Percent", "10년 손익분기 인플레이션율"),
-        CatalogEntry("PPIFIS", "PPI (최종수요)", "inflation", "Monthly", "Index Nov 2009=100", "생산자물가지수 최종수요"),
+        CatalogEntry(
+            "PPIFIS", "PPI (최종수요)", "inflation", "Monthly", "Index Nov 2009=100", "생산자물가지수 최종수요"
+        ),
     ],
     "rates": [
         CatalogEntry("FEDFUNDS", "연방기금금리", "rates", "Monthly", "Percent", "실효 연방기금금리"),
@@ -46,7 +50,9 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("ICSA", "실업수당 청구", "employment", "Weekly", "Number", "신규 실업수당 청구건수"),
         CatalogEntry("JTSJOL", "구인건수", "employment", "Monthly", "Level in Thousands", "JOLTs 구인건수"),
         CatalogEntry("AWHAETP", "주당 근로시간", "employment", "Monthly", "Hours", "민간 비농업 주당 평균 근로시간"),
-        CatalogEntry("CES0500000003", "시간당 임금", "employment", "Monthly", "Dollars per Hour", "민간 비농업 시간당 평균 임금"),
+        CatalogEntry(
+            "CES0500000003", "시간당 임금", "employment", "Monthly", "Dollars per Hour", "민간 비농업 시간당 평균 임금"
+        ),
         CatalogEntry("CIVPART", "경제활동참가율", "employment", "Monthly", "Percent", "노동력 참가율"),
     ],
     "markets": [
@@ -56,12 +62,21 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("VIXCLS", "VIX", "markets", "Daily", "Index", "CBOE 변동성 지수"),
         CatalogEntry("DTWEXBGS", "달러인덱스", "markets", "Daily", "Index Jan 2006=100", "무역가중 달러인덱스 (광의)"),
         CatalogEntry("DCOILWTICO", "WTI 유가", "markets", "Daily", "Dollars per Barrel", "WTI 원유 현물 가격"),
-        CatalogEntry("GOLDAMGBD228NLBM", "금 가격", "markets", "Daily", "U.S. Dollars per Troy Ounce", "런던 금 현물 (오전)"),
+        CatalogEntry(
+            "GOLDAMGBD228NLBM", "금 가격", "markets", "Daily", "U.S. Dollars per Troy Ounce", "런던 금 현물 (오전)"
+        ),
     ],
     "housing": [
         CatalogEntry("HOUST", "주택착공", "housing", "Monthly", "Thousands of Units", "신규 주택착공 건수"),
         CatalogEntry("PERMIT", "건축허가", "housing", "Monthly", "Thousands of Units", "신규 건축허가 건수"),
-        CatalogEntry("CSUSHPISA", "케이스실러 주택가격", "housing", "Monthly", "Index Jan 2000=100", "S&P/케이스실러 20대도시 주택가격"),
+        CatalogEntry(
+            "CSUSHPISA",
+            "케이스실러 주택가격",
+            "housing",
+            "Monthly",
+            "Index Jan 2000=100",
+            "S&P/케이스실러 20대도시 주택가격",
+        ),
         CatalogEntry("MORTGAGE30US", "30년 모기지", "housing", "Weekly", "Percent", "30년 고정 모기지 금리"),
         CatalogEntry("MORTGAGE15US", "15년 모기지", "housing", "Weekly", "Percent", "15년 고정 모기지 금리"),
         CatalogEntry("EXHOSLUSM495S", "기존주택판매", "housing", "Monthly", "Number of Units", "기존 주택 판매건수"),
@@ -71,7 +86,9 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("BOGMBASE", "본원통화", "money", "Biweekly", "Billions of Dollars", "본원통화 (Monetary Base)"),
         CatalogEntry("WALCL", "연준 총자산", "money", "Weekly", "Millions of Dollars", "연준 대차대조표 총자산"),
         CatalogEntry("RRPONTSYD", "역레포", "money", "Daily", "Billions of Dollars", "오버나이트 역레포 잔액"),
-        CatalogEntry("TOTRESNS", "은행 지급준비금", "money", "Monthly", "Billions of Dollars", "예금기관 총 지급준비금"),
+        CatalogEntry(
+            "TOTRESNS", "은행 지급준비금", "money", "Monthly", "Billions of Dollars", "예금기관 총 지급준비금"
+        ),
     ],
 }
 
@@ -122,11 +139,25 @@ def to_dataframe(group: str | None = None) -> pl.DataFrame:
     entries = get_group(group) if group else get_all_entries()
     if not entries:
         return pl.DataFrame(
-            schema={"id": pl.Utf8, "label": pl.Utf8, "group": pl.Utf8,
-                    "frequency": pl.Utf8, "unit": pl.Utf8, "description": pl.Utf8}
+            schema={
+                "id": pl.Utf8,
+                "label": pl.Utf8,
+                "group": pl.Utf8,
+                "frequency": pl.Utf8,
+                "unit": pl.Utf8,
+                "description": pl.Utf8,
+            }
         )
-    return pl.DataFrame([
-        {"id": e.id, "label": e.label, "group": e.group,
-         "frequency": e.frequency, "unit": e.unit, "description": e.description}
-        for e in entries
-    ])
+    return pl.DataFrame(
+        [
+            {
+                "id": e.id,
+                "label": e.label,
+                "group": e.group,
+                "frequency": e.frequency,
+                "unit": e.unit,
+                "description": e.description,
+            }
+            for e in entries
+        ]
+    )

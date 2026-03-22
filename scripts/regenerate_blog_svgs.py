@@ -2,6 +2,7 @@
 블로그 포스트 035~094의 깨진 SVG 5개를 다크 테마로 재생성하는 스크립트.
 각 포스트에 decision-tree, evidence-layer, good-vs-risky-matrix, reading-flow, watchboard 5개 SVG를 생성.
 """
+
 import os
 import re
 from pathlib import Path
@@ -10,19 +11,19 @@ BLOG_ROOT = Path(__file__).parent.parent / "blog"
 
 # 카테고리별 accent 색상
 CAT_COLORS = {
-    "01-disclosure-systems":      {"accent": "#fb923c", "accentDim": "rgba(251,146,60,0.12)", "label": "공시 시스템"},
-    "02-report-reading":          {"accent": "#38bdf8", "accentDim": "rgba(56,189,248,0.12)", "label": "사업보고서 읽기"},
+    "01-disclosure-systems": {"accent": "#fb923c", "accentDim": "rgba(251,146,60,0.12)", "label": "공시 시스템"},
+    "02-report-reading": {"accent": "#38bdf8", "accentDim": "rgba(56,189,248,0.12)", "label": "사업보고서 읽기"},
     "03-financial-interpretation": {"accent": "#a78bfa", "accentDim": "rgba(167,139,250,0.12)", "label": "재무 해석"},
-    "04-data-automation":         {"accent": "#34d399", "accentDim": "rgba(52,211,153,0.12)", "label": "데이터 자동화"},
+    "04-data-automation": {"accent": "#34d399", "accentDim": "rgba(52,211,153,0.12)", "label": "데이터 자동화"},
 }
 
 # SVG 타입별 부제목과 아이콘 힌트
 SVG_TYPES = {
-    "decision-tree":       {"subtitle": "판단 흐름도",   "icon": "◇"},
-    "evidence-layer":      {"subtitle": "근거 레이어",   "icon": "▤"},
-    "good-vs-risky-matrix":{"subtitle": "양호 vs 위험",  "icon": "◐"},
-    "reading-flow":        {"subtitle": "읽기 순서",     "icon": "→"},
-    "watchboard":          {"subtitle": "감시 보드",     "icon": "▣"},
+    "decision-tree": {"subtitle": "판단 흐름도", "icon": "◇"},
+    "evidence-layer": {"subtitle": "근거 레이어", "icon": "▤"},
+    "good-vs-risky-matrix": {"subtitle": "양호 vs 위험", "icon": "◐"},
+    "reading-flow": {"subtitle": "읽기 순서", "icon": "→"},
+    "watchboard": {"subtitle": "감시 보드", "icon": "▣"},
 }
 
 
@@ -49,12 +50,12 @@ def truncate_title(title: str, max_len: int = 28) -> list[str]:
     for sep in ["은 ", "는 ", "이 ", "가 ", "를 ", "을 ", "와 ", "과 ", " 때 ", "에서 "]:
         idx = title.find(sep, max_len // 2)
         if 0 < idx < len(title) - 3:
-            return [title[:idx + len(sep)].rstrip(), title[idx + len(sep):]]
+            return [title[: idx + len(sep)].rstrip(), title[idx + len(sep) :]]
     # 강제 분할
     mid = len(title) // 2
     space = title.rfind(" ", 0, mid + 5)
     if space > 0:
-        return [title[:space], title[space+1:]]
+        return [title[:space], title[space + 1 :]]
     return [title[:max_len], title[max_len:]]
 
 

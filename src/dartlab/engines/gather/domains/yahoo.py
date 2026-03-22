@@ -28,9 +28,7 @@ def _ensure_yfinance():
         import yfinance  # noqa: F401
     except ImportError:
         raise ImportError(
-            "주가 데이터에는 yfinance가 필요합니다.\n"
-            "설치: pip install yfinance\n"
-            "또는: pip install dartlab[event]"
+            "주가 데이터에는 yfinance가 필요합니다.\n설치: pip install yfinance\n또는: pip install dartlab[event]"
         )
 
 
@@ -109,9 +107,7 @@ def fetch_history(
     if hasattr(data.columns, "levels"):
         data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
 
-    df = pl.from_pandas(
-        data[["Date", "Close"]].rename(columns={"Date": "date", "Close": "close"})
-    )
+    df = pl.from_pandas(data[["Date", "Close"]].rename(columns={"Date": "date", "Close": "close"}))
     df = df.with_columns(
         pl.col("date").cast(pl.Date),
         pl.col("close").cast(pl.Float64),

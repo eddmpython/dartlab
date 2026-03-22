@@ -19,9 +19,13 @@ class TestTypes:
         from dartlab.engines.gather.fred.types import SeriesMeta
 
         meta = SeriesMeta(
-            id="GDP", title="Gross Domestic Product", frequency="Quarterly",
-            units="Billions of Dollars", seasonal_adjustment="Seasonally Adjusted",
-            observation_start="1947-01-01", observation_end="2024-01-01",
+            id="GDP",
+            title="Gross Domestic Product",
+            frequency="Quarterly",
+            units="Billions of Dollars",
+            seasonal_adjustment="Seasonally Adjusted",
+            observation_start="1947-01-01",
+            observation_end="2024-01-01",
             last_updated="2024-03-28",
         )
         assert meta.id == "GDP"
@@ -174,10 +178,12 @@ class TestSeriesMock:
         def mock_get(endpoint, **params):
             call_count[0] += 1
             sid = params.get("series_id", "A")
-            return {"observations": [
-                {"date": "2024-01-01", "value": str(call_count[0] * 10)},
-                {"date": "2024-02-01", "value": str(call_count[0] * 20)},
-            ]}
+            return {
+                "observations": [
+                    {"date": "2024-01-01", "value": str(call_count[0] * 10)},
+                    {"date": "2024-02-01", "value": str(call_count[0] * 20)},
+                ]
+            }
 
         client = MagicMock()
         client.get.side_effect = mock_get
@@ -193,8 +199,14 @@ class TestSeriesMock:
         client = MagicMock()
         client.get.return_value = {
             "seriess": [
-                {"id": "GDP", "title": "Gross Domestic Product", "frequency": "Quarterly",
-                 "units": "Billions of Dollars", "seasonal_adjustment_short": "SA", "popularity": 95},
+                {
+                    "id": "GDP",
+                    "title": "Gross Domestic Product",
+                    "frequency": "Quarterly",
+                    "units": "Billions of Dollars",
+                    "seasonal_adjustment_short": "SA",
+                    "popularity": 95,
+                },
             ]
         }
 
@@ -207,12 +219,19 @@ class TestSeriesMock:
 
         client = MagicMock()
         client.get.return_value = {
-            "seriess": [{
-                "id": "GDP", "title": "GDP", "frequency": "Quarterly",
-                "units": "Billions", "seasonal_adjustment": "SA",
-                "observation_start": "1947-01-01", "observation_end": "2024-01-01",
-                "last_updated": "2024-03-28", "notes": "",
-            }]
+            "seriess": [
+                {
+                    "id": "GDP",
+                    "title": "GDP",
+                    "frequency": "Quarterly",
+                    "units": "Billions",
+                    "seasonal_adjustment": "SA",
+                    "observation_start": "1947-01-01",
+                    "observation_end": "2024-01-01",
+                    "last_updated": "2024-03-28",
+                    "notes": "",
+                }
+            ]
         }
         meta = fetch_meta(client, "GDP")
         assert meta.id == "GDP"
@@ -228,9 +247,7 @@ class TestTransform:
 
         dates = [date(2022, 1, 1) + timedelta(days=30 * i) for i in range(n)]
         values = [100 + i * 2.5 for i in range(n)]
-        return pl.DataFrame({"date": dates, "value": values}).with_columns(
-            pl.col("date").cast(pl.Date)
-        )
+        return pl.DataFrame({"date": dates, "value": values}).with_columns(pl.col("date").cast(pl.Date))
 
     def test_yoy(self):
         from dartlab.engines.gather.fred.transform import yoy
@@ -276,11 +293,13 @@ class TestTransform:
     def test_correlation(self):
         from dartlab.engines.gather.fred.transform import correlation
 
-        df = pl.DataFrame({
-            "date": [date(2024, 1, 1), date(2024, 2, 1), date(2024, 3, 1), date(2024, 4, 1)],
-            "A": [1.0, 2.0, 3.0, 4.0],
-            "B": [2.0, 4.0, 6.0, 8.0],
-        })
+        df = pl.DataFrame(
+            {
+                "date": [date(2024, 1, 1), date(2024, 2, 1), date(2024, 3, 1), date(2024, 4, 1)],
+                "A": [1.0, 2.0, 3.0, 4.0],
+                "B": [2.0, 4.0, 6.0, 8.0],
+            }
+        )
         result = correlation(df)
         assert result.height == 2
         # A와 B는 완전 상관
@@ -289,10 +308,12 @@ class TestTransform:
     def test_lead_lag(self):
         from dartlab.engines.gather.fred.transform import lead_lag
 
-        df = pl.DataFrame({
-            "A": list(range(30)),
-            "B": list(range(30)),
-        }).cast(pl.Float64)
+        df = pl.DataFrame(
+            {
+                "A": list(range(30)),
+                "B": list(range(30)),
+            }
+        ).cast(pl.Float64)
         result = lead_lag(df, "A", "B", max_lag=3)
         assert "lag" in result.columns
         assert "correlation" in result.columns
@@ -343,6 +364,7 @@ class TestFredFacade:
         """Fred repr에 카탈로그 수와 그룹이 포함."""
         with patch("dartlab.engines.gather.fred.client.FredClient.__init__", return_value=None):
             from dartlab.engines.gather.fred import Fred
+
             f = Fred.__new__(Fred)
             f._client = MagicMock()
             r = repr(f)

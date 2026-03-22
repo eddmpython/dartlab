@@ -318,15 +318,30 @@ class TestMultiNoiseMC:
     def test_size_class_affects_spread(self):
         """Small이 Large보다 분포가 넓어야 함 (σ 차등)."""
         pcts_small, _, vals_small = _monte_carlo_price_distribution(
-            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
-            iterations=500, seed=42, size_class="Small",
+            SERIES,
+            5.0,
+            DEFAULT_ELASTICITY,
+            10.0,
+            2.0,
+            100,
+            iterations=500,
+            seed=42,
+            size_class="Small",
         )
         pcts_large, _, vals_large = _monte_carlo_price_distribution(
-            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
-            iterations=500, seed=42, size_class="Large",
+            SERIES,
+            5.0,
+            DEFAULT_ELASTICITY,
+            10.0,
+            2.0,
+            100,
+            iterations=500,
+            seed=42,
+            size_class="Large",
         )
         # 표준편차로 비교 (max(v, 0) 클램프로 P10이 0일 수 있으므로)
         import statistics
+
         std_small = statistics.stdev(vals_small) if len(vals_small) > 1 else 0
         std_large = statistics.stdev(vals_large) if len(vals_large) > 1 else 0
         assert std_small > std_large
@@ -335,8 +350,15 @@ class TestMultiNoiseMC:
     def test_nwc_reflected(self):
         """NWC가 FCF에 반영되면 결과 분포에 값이 있어야 함."""
         pcts, _, values = _monte_carlo_price_distribution(
-            SERIES, 5.0, DEFAULT_ELASTICITY, 10.0, 2.0, 100,
-            iterations=200, seed=42, size_class="Mid",
+            SERIES,
+            5.0,
+            DEFAULT_ELASTICITY,
+            10.0,
+            2.0,
+            100,
+            iterations=200,
+            seed=42,
+            size_class="Mid",
         )
         assert len(values) == 200
         # shares가 100이면 mock 데이터에서도 양의 값 존재
@@ -354,14 +376,20 @@ class TestContextSignalsIntegration:
     def test_context_signals_changes_result(self):
         """맥락 신호가 있으면 결과가 달라져야 함."""
         result_no_ctx = compute_price_target(
-            SERIES, shares=100, mc_iterations=200, mc_seed=42,
+            SERIES,
+            shares=100,
+            mc_iterations=200,
+            mc_seed=42,
         )
         signals = ContextSignals(
             insight_grades={"profitability": "F", "health": "D"},
             sector_cyclicality="high",
         )
         result_with_ctx = compute_price_target(
-            SERIES, shares=100, mc_iterations=200, mc_seed=42,
+            SERIES,
+            shares=100,
+            mc_iterations=200,
+            mc_seed=42,
             context_signals=signals,
         )
         # 확률이 재가중되었으므로 weighted_target이 다를 수 있음
@@ -376,7 +404,9 @@ class TestContextSignalsIntegration:
             risk_change_rate=90.0,
         )
         result = compute_price_target(
-            SERIES, mc_iterations=100, mc_seed=1,
+            SERIES,
+            mc_iterations=100,
+            mc_seed=1,
             context_signals=signals,
         )
         total = sum(s.probability for s in result.scenarios)
@@ -395,7 +425,10 @@ class TestContextSignalsIntegration:
         # compute_price_target에 context_signals가 전달되면 경고 포함
         signals = ContextSignals(size_class="Small", insight_grades={"profitability": "D"})
         result = compute_price_target(
-            SERIES, shares=100, mc_iterations=100, mc_seed=42,
+            SERIES,
+            shares=100,
+            mc_iterations=100,
+            mc_seed=42,
             context_signals=signals,
         )
         assert any("맥락" in w for w in result.warnings)

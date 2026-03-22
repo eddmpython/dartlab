@@ -159,15 +159,14 @@ def register_macro_tools(register_tool: Callable) -> None:
     register_tool(
         "fred_compare",
         fred_compare,
-        "복수 FRED 시계열을 나란히 비교합니다. "
-        "normalize_to로 기준일=100 정규화하면 단위가 다른 지표도 추세 비교 가능.",
+        "복수 FRED 시계열을 나란히 비교합니다. normalize_to로 기준일=100 정규화하면 단위가 다른 지표도 추세 비교 가능.",
         {
             "type": "object",
             "properties": {
                 "series_ids": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "비교할 시리즈 ID 목록 (예: [\"GDP\", \"UNRATE\", \"FEDFUNDS\"]).",
+                    "description": '비교할 시리즈 ID 목록 (예: ["GDP", "UNRATE", "FEDFUNDS"]).',
                 },
                 "start": {"type": "string", "description": "시작일 (YYYY-MM-DD)."},
                 "end": {"type": "string", "description": "종료일 (YYYY-MM-DD)."},
@@ -195,6 +194,7 @@ def register_macro_tools(register_tool: Callable) -> None:
 
         if df.is_empty():
             from dartlab.engines.gather.fred.catalog import get_groups
+
             return f"그룹을 찾을 수 없습니다. 사용 가능: {', '.join(get_groups())}"
 
         return df.to_pandas().to_markdown(index=False)
@@ -288,7 +288,7 @@ def register_macro_tools(register_tool: Callable) -> None:
                 "lead_lag_pair": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "선행/후행 분석 대상 쌍 (예: [\"FEDFUNDS\", \"UNRATE\"]). 선택사항.",
+                    "description": '선행/후행 분석 대상 쌍 (예: ["FEDFUNDS", "UNRATE"]). 선택사항.',
                 },
                 "max_lag": {
                     "type": "integer",

@@ -13,8 +13,10 @@ def load_domain(name: str):
     """도메인 모듈 lazy import."""
     if name == "naver":
         from . import naver
+
         return naver
     if name == "yahoo":
         from . import yahoo
+
         return yahoo
     raise ValueError(f"알 수 없는 도메인: {name}")

@@ -166,7 +166,12 @@ async def api_fred_correlation(
         if len(pair) == 2:
             try:
                 ll = await asyncio.to_thread(
-                    f.leadLag, pair[0], pair[1], max_lag=max_lag, start=start, end=end,
+                    f.leadLag,
+                    pair[0],
+                    pair[1],
+                    max_lag=max_lag,
+                    start=start,
+                    end=end,
                 )
                 result["lead_lag"] = _to_records(ll)
             except FredError as exc:

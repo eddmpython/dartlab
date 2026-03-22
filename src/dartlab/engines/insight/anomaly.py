@@ -328,9 +328,7 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
             break
     if streak >= 2:
         sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
-        anomalies.append(
-            Anomaly(sev, "trendDeterioration", f"순이익 {streak}기 연속 적자", float(streak))
-        )
+        anomalies.append(Anomaly(sev, "trendDeterioration", f"순이익 {streak}기 연속 적자", float(streak)))
 
     # 영업CF 연속 적자
     cfVals = getAnnualValues(aSeries, "CF", "operating_cashflow")
@@ -342,9 +340,7 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
             break
     if streak >= 2:
         sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
-        anomalies.append(
-            Anomaly(sev, "trendDeterioration", f"영업CF {streak}기 연속 적자", float(streak))
-        )
+        anomalies.append(Anomaly(sev, "trendDeterioration", f"영업CF {streak}기 연속 적자", float(streak)))
 
     if isFinancial:
         return anomalies  # ICR, 부채비율 추이는 금융업 구조적 왜곡
@@ -369,9 +365,7 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
                 break
         if streak >= 2:
             sev = "danger" if streak >= 3 else "warning"
-            anomalies.append(
-                Anomaly(sev, "trendDeterioration", f"ICR<1 {streak}기 연속", float(streak))
-            )
+            anomalies.append(Anomaly(sev, "trendDeterioration", f"ICR<1 {streak}기 연속", float(streak)))
 
     # 부채비율 연속 상승 (3기+)
     tlVals = getAnnualValues(aSeries, "BS", "total_liabilities")
@@ -396,9 +390,7 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
                 break
         if streak >= 3:
             sev = "warning" if streak >= 4 else "info"
-            anomalies.append(
-                Anomaly(sev, "trendDeterioration", f"부채비율 {streak}기 연속 상승", float(streak))
-            )
+            anomalies.append(Anomaly(sev, "trendDeterioration", f"부채비율 {streak}기 연속 상승", float(streak)))
 
     return anomalies
 
@@ -422,7 +414,11 @@ def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Ano
     payVals = getAnnualValues(aSeries, "BS", "trade_and_other_payables")
     cogsVals = getAnnualValues(aSeries, "IS", "cost_of_sales")
 
-    n = min(len(revVals), len(recVals), len(invVals), len(payVals)) if revVals and recVals and invVals and payVals else 0
+    n = (
+        min(len(revVals), len(recVals), len(invVals), len(payVals))
+        if revVals and recVals and invVals and payVals
+        else 0
+    )
     if n < 3:
         return anomalies
 

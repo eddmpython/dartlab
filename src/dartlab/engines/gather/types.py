@@ -252,9 +252,7 @@ class MarketSnapshot:
             mult_str = ", ".join(f"{k}={v:.2f}" for k, v in self.multiples.items())
             lines.append(f"  멀티플: {mult_str}")
         if self.price_range_52w:
-            lines.append(
-                f"  52주 범위: {self.price_range_52w[0]:,.0f}~{self.price_range_52w[1]:,.0f}"
-            )
+            lines.append(f"  52주 범위: {self.price_range_52w[0]:,.0f}~{self.price_range_52w[1]:,.0f}")
         return "\n".join(lines)
 
 

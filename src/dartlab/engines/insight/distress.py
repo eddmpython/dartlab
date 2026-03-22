@@ -375,9 +375,7 @@ def calcDistress(
 
     # ── 3. 추세 축 ──
     trend_score = 0.0
-    trend_anomalies = [
-        a for a in anomalies if a.category in ("trendDeterioration", "cccDeterioration")
-    ]
+    trend_anomalies = [a for a in anomalies if a.category in ("trendDeterioration", "cccDeterioration")]
     for a in trend_anomalies:
         if a.severity == "danger":
             trend_score += 40
@@ -427,12 +425,7 @@ def calcDistress(
     )
 
     # ── 종합 ──
-    overall = (
-        quant_score * 0.40
-        + eq_score * 0.20
-        + trend_score * 0.30
-        + audit_score * 0.10
-    )
+    overall = quant_score * 0.40 + eq_score * 0.20 + trend_score * 0.30 + audit_score * 0.10
 
     if overall >= 70:
         level = "critical"

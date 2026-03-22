@@ -132,24 +132,34 @@ def search_series(
 
     rows = []
     for s in serieses:
-        rows.append({
-            "id": s.get("id", ""),
-            "title": s.get("title", ""),
-            "frequency": s.get("frequency", ""),
-            "units": s.get("units", ""),
-            "seasonal_adjustment": s.get("seasonal_adjustment_short", ""),
-            "popularity": s.get("popularity", 0),
-            "observation_start": s.get("observation_start", ""),
-            "observation_end": s.get("observation_end", ""),
-        })
+        rows.append(
+            {
+                "id": s.get("id", ""),
+                "title": s.get("title", ""),
+                "frequency": s.get("frequency", ""),
+                "units": s.get("units", ""),
+                "seasonal_adjustment": s.get("seasonal_adjustment_short", ""),
+                "popularity": s.get("popularity", 0),
+                "observation_start": s.get("observation_start", ""),
+                "observation_end": s.get("observation_end", ""),
+            }
+        )
 
-    return pl.DataFrame(rows) if rows else pl.DataFrame(
-        schema={
-            "id": pl.Utf8, "title": pl.Utf8, "frequency": pl.Utf8,
-            "units": pl.Utf8, "seasonal_adjustment": pl.Utf8,
-            "popularity": pl.Int64, "observation_start": pl.Utf8,
-            "observation_end": pl.Utf8,
-        }
+    return (
+        pl.DataFrame(rows)
+        if rows
+        else pl.DataFrame(
+            schema={
+                "id": pl.Utf8,
+                "title": pl.Utf8,
+                "frequency": pl.Utf8,
+                "units": pl.Utf8,
+                "seasonal_adjustment": pl.Utf8,
+                "popularity": pl.Int64,
+                "observation_start": pl.Utf8,
+                "observation_end": pl.Utf8,
+            }
+        )
     )
 
 
@@ -159,6 +169,7 @@ def fetch_meta(client: FredClient, series_id: str) -> SeriesMeta:
     serieses = data.get("seriess", [])
     if not serieses:
         from .types import SeriesNotFoundError
+
         raise SeriesNotFoundError(f"시리즈를 찾을 수 없습니다: {series_id}")
 
     s = serieses[0]
@@ -182,13 +193,17 @@ def fetch_releases(client: FredClient, *, limit: int = 20) -> pl.DataFrame:
 
     rows = []
     for r in releases:
-        rows.append({
-            "id": r.get("id", 0),
-            "name": r.get("name", ""),
-            "press_release": r.get("press_release", "false") == "true",
-            "link": r.get("link", ""),
-        })
+        rows.append(
+            {
+                "id": r.get("id", 0),
+                "name": r.get("name", ""),
+                "press_release": r.get("press_release", "false") == "true",
+                "link": r.get("link", ""),
+            }
+        )
 
-    return pl.DataFrame(rows) if rows else pl.DataFrame(
-        schema={"id": pl.Int64, "name": pl.Utf8, "press_release": pl.Boolean, "link": pl.Utf8}
+    return (
+        pl.DataFrame(rows)
+        if rows
+        else pl.DataFrame(schema={"id": pl.Int64, "name": pl.Utf8, "press_release": pl.Boolean, "link": pl.Utf8})
     )

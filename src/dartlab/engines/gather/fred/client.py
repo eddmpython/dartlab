@@ -118,5 +118,5 @@ class FredClient:
 
     @staticmethod
     def _backoff(attempt: int) -> None:
-        delay = min(2 ** attempt, 8)
+        delay = min(2**attempt, 8)
         time.sleep(delay)

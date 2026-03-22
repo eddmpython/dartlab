@@ -57,7 +57,9 @@ class HistoricalRatios:
         lines.append(f"  NWC/매출: {self.nwc_to_revenue:.1f}%")
         lines.append(f"  배당성향: {self.dividend_payout:.1f}%")
         if self.trends:
-            lines.append(f"  트렌드: {', '.join(f'{k}={v:+.2f}%p/yr' for k, v in self.trends.items() if abs(v) > 0.01)}")
+            lines.append(
+                f"  트렌드: {', '.join(f'{k}={v:+.2f}%p/yr' for k, v in self.trends.items() if abs(v) > 0.01)}"
+            )
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
@@ -420,9 +422,7 @@ def extract_historical_ratios(
                         matches += 1
             if matches >= max(1, check_n - 1):
                 dep_in_sga = True
-                warnings.append(
-                    f"IS 구조 감지: D&A가 SGA에 포함 — 별도 차감 생략 (EBITDA 계산에만 사용)"
-                )
+                warnings.append(f"IS 구조 감지: D&A가 SGA에 포함 — 별도 차감 생략 (EBITDA 계산에만 사용)")
 
     # 유효세율
     tax_ratios = _safe_ratio_list(tax_vals, pbt_vals) if tax_vals and pbt_vals else []
@@ -724,7 +724,9 @@ def build_proforma(
     prev_other_ncl = max(prev_other_ncl, 0)
 
     # v2: 비율 트렌드 경로 — 연도별 비율이 트렌드 방향으로 점진 변화
-    def _ratio_for_year(base_val: float, trend_key: str, yr_idx: int, floor: float = 0.0, ceiling: float = 100.0) -> float:
+    def _ratio_for_year(
+        base_val: float, trend_key: str, yr_idx: int, floor: float = 0.0, ceiling: float = 100.0
+    ) -> float:
         trend = ratios.trends.get(trend_key, 0.0)
         val = base_val + trend * yr_idx
         return max(floor, min(val, ceiling))
@@ -871,9 +873,7 @@ def build_proforma(
         proj_opm = projections[0].operating_income / projections[0].revenue * 100 if projections[0].revenue > 0 else 0
         gap = abs(proj_opm - base_opm)
         if gap > 5.0:
-            warnings.append(
-                f"영업이익률 괴리 경고: 기준 {base_opm:.1f}% → 예측 {proj_opm:.1f}% (차이 {gap:.1f}%p)"
-            )
+            warnings.append(f"영업이익률 괴리 경고: 기준 {base_opm:.1f}% → 예측 {proj_opm:.1f}% (차이 {gap:.1f}%p)")
 
     return ProFormaResult(
         historical_ratios=ratios,
