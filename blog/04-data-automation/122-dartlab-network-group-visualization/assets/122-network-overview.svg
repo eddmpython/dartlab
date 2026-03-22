@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">network 전체 흐름 — 공시에서 관계 그래프까지</text>
+
+  <rect x="20" y="60" width="120" height="80" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="80" y="85" text-anchor="middle" class="label">DART 공시</text>
+  <text x="80" y="102" text-anchor="middle" class="desc">지분 공시</text>
+  <text x="80" y="117" text-anchor="middle" class="desc">대주주 공시</text>
+
+  <rect x="175" y="60" width="120" height="80" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="235" y="85" text-anchor="middle" class="label">그래프 구축</text>
+  <text x="235" y="102" text-anchor="middle" class="desc">노드 2종</text>
+  <text x="235" y="117" text-anchor="middle" class="desc">엣지 3종</text>
+
+  <rect x="330" y="60" width="120" height="80" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="390" y="85" text-anchor="middle" class="label">사이클 감지</text>
+  <text x="390" y="102" text-anchor="middle" class="desc">DFS 순회</text>
+  <text x="390" y="117" text-anchor="middle" class="desc">순환출자 경로</text>
+
+  <rect x="485" y="50" width="100" height="45" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="535" y="73" text-anchor="middle" class="label">Full</text>
+  <text x="535" y="88" text-anchor="middle" class="desc">전체</text>
+
+  <rect x="485" y="100" width="100" height="45" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="535" y="123" text-anchor="middle" class="label">Overview</text>
+  <text x="535" y="138" text-anchor="middle" class="desc">그룹</text>
+
+  <rect x="600" y="75" width="80" height="45" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="640" y="98" text-anchor="middle" class="label">Ego</text>
+  <text x="640" y="113" text-anchor="middle" class="desc">기업 중심</text>
+
+  <line x1="140" y1="100" x2="173" y2="100" class="arrow"/>
+  <line x1="295" y1="100" x2="328" y2="100" class="arrow"/>
+  <line x1="450" y1="85" x2="483" y2="75" class="arrow"/>
+  <line x1="450" y1="110" x2="483" y2="118" class="arrow"/>
+  <line x1="585" y1="97" x2="598" y2="97" class="arrow"/>
+</svg>

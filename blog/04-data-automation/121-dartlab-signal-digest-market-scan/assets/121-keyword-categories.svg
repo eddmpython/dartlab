@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .cat { font-size: 12px; font-weight: 700; }
+    .count { font-size: 10px; font-weight: 600; }
+    .kw { font-size: 9px; fill: #cbd5e1; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+  </style>
+
+  <rect width="700" height="280" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">48개 키워드 — 3개 카테고리</text>
+
+  <!-- 트렌드 -->
+  <rect x="20" y="50" width="660" height="65" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="35" y="72" class="cat" fill="#3b82f6">트렌드</text>
+  <text x="120" y="72" class="count" fill="#3b82f6">18개</text>
+  <text x="35" y="92" class="kw">AI  인공지능  ESG  탄소중립  수소  전기차  자율주행  메타버스  블록체인</text>
+  <text x="35" y="106" class="kw">클라우드  데이터센터  로봇  2차전지  배터리  반도체  바이오  디지털전환  플랫폼</text>
+
+  <!-- 리스크 -->
+  <rect x="20" y="125" width="660" height="65" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="35" y="147" class="cat" fill="#ef4444">리스크</text>
+  <text x="110" y="147" class="count" fill="#ef4444">14개</text>
+  <text x="35" y="167" class="kw">환율  금리  인플레이션  경기침체  공급망  원자재  유가  지정학</text>
+  <text x="35" y="181" class="kw">규제  소송  유동성  파산  구조조정  감사의견</text>
+
+  <!-- 기회 -->
+  <rect x="20" y="200" width="660" height="55" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="35" y="222" class="cat" fill="#10b981">기회</text>
+  <text x="85" y="222" class="count" fill="#10b981">9개</text>
+  <text x="35" y="242" class="kw">수출  수주  신규사업  M&amp;A  시장점유율  해외진출  신약  FDA  특허</text>
+</svg>

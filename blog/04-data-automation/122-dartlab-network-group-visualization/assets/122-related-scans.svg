@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 6; ry: 6; stroke-width: 1; }
+  </style>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">관계망 기반 분석 함수들</text>
+
+  <rect x="20" y="50" width="125" height="55" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="82" y="72" text-anchor="middle" class="label">network()</text>
+  <text x="82" y="90" text-anchor="middle" class="desc">관계 그래프</text>
+
+  <rect x="160" y="50" width="125" height="55" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="222" y="72" text-anchor="middle" class="label">governance()</text>
+  <text x="222" y="90" text-anchor="middle" class="desc">지배구조</text>
+
+  <rect x="300" y="50" width="125" height="55" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="362" y="72" text-anchor="middle" class="label">workforce()</text>
+  <text x="362" y="90" text-anchor="middle" class="desc">인력/급여</text>
+
+  <rect x="440" y="50" width="125" height="55" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="502" y="72" text-anchor="middle" class="label">capital()</text>
+  <text x="502" y="90" text-anchor="middle" class="desc">주주환원</text>
+
+  <rect x="20" y="120" width="125" height="55" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="82" y="142" text-anchor="middle" class="label">debt()</text>
+  <text x="82" y="160" text-anchor="middle" class="desc">부채 구조</text>
+
+  <rect x="160" y="120" width="125" height="55" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="222" y="142" text-anchor="middle" class="label">groupHealth()</text>
+  <text x="222" y="160" text-anchor="middle" class="desc">그룹사 건전성</text>
+
+  <rect x="340" y="120" width="230" height="55" class="box" fill="#0f172a" stroke="#64748b"/>
+  <text x="455" y="142" text-anchor="middle" class="desc">모두 dartlab.* 단일 진입점에서 호출</text>
+  <text x="455" y="160" text-anchor="middle" class="desc">network() 관계 데이터 위에서 특화 분석</text>
+</svg>

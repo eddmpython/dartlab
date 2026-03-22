@@ -2,7 +2,7 @@
 
 이 문서는 블로그를 `글 수 확장`보다 `사람에게 바로 도움이 되는 검색 허브`로 키우기 위한 운영 문서다.
 
-현재 기준은 워크트리 기준 117개 포스트다.
+현재 기준은 워크트리 기준 122개 포스트다.
 
 ## 지금 상태 요약
 
@@ -34,6 +34,11 @@
 
 최근 추가:
 
+- 122: dartlab network — 상장사 전체 관계망 시각화 — data-automation 시리즈 18번째
+- 121: dartlab signal — 48개 키워드로 시장 공시 변화 추적 — data-automation 시리즈 17번째
+- 120: dartlab screen/benchmark — 2700개 종목 스크리닝 + 섹터 비교 — data-automation 시리즈 16번째
+- 119: dartlab insights — 7영역 등급 기업 건강 체크 — data-automation 시리즈 15번째
+- 118: dartlab finance — 재무제표 한 줄 + 50개 비율 자동 계산 — data-automation 시리즈 14번째
 - 117: dartlab MCP — Claude Desktop에서 전자공시 바로 조회 — data-automation 시리즈 13번째
 - 116: dartlab ask — GPT 하나로 전자공시 AI 분석 — data-automation 시리즈 12번째
 - 115: IFRS 18 손익계산서 변경과 투자자 대응 — financial-context 시리즈

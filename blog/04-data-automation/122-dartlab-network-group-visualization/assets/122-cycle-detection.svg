@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .pct { font-size: 9px; font-weight: 600; fill: #ef4444; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">순환출자 감지 — DFS 기반 사이클 탐지</text>
+
+  <!-- 순환 예시 -->
+  <circle cx="200" cy="80" r="30" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <text x="200" y="84" text-anchor="middle" class="label">A사</text>
+
+  <circle cx="400" cy="80" r="30" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <text x="400" y="84" text-anchor="middle" class="label">B사</text>
+
+  <circle cx="300" cy="170" r="30" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <text x="300" y="174" text-anchor="middle" class="label">C사</text>
+
+  <!-- 화살표 -->
+  <line x1="230" y1="75" x2="368" y2="75" stroke="#ef4444" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="300" y="68" text-anchor="middle" class="pct">30%</text>
+
+  <line x1="418" y1="105" x2="325" y2="150" stroke="#ef4444" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="385" y="140" text-anchor="middle" class="pct">20%</text>
+
+  <line x1="275" y1="150" x2="185" y2="105" stroke="#ef4444" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="215" y="140" text-anchor="middle" class="pct">5%</text>
+
+  <!-- 설명 -->
+  <rect x="480" y="55" width="200" height="120" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="490" y="78" class="label" fill="#ef4444">순환출자 감지</text>
+  <text x="490" y="100" class="desc">DFS (깊이 우선 탐색)</text>
+  <text x="490" y="118" class="desc">A → B → C → A</text>
+  <text x="490" y="140" class="desc">자동으로 경로 추출</text>
+  <text x="490" y="160" class="desc">수일 걸리는 작업 → 즉시</text>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">인사이트 전체 흐름 — 재무 데이터에서 등급까지</text>
+
+  <rect x="20" y="70" width="120" height="60" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="80" y="95" text-anchor="middle" class="label">c.timeseries</text>
+  <text x="80" y="112" text-anchor="middle" class="desc">재무 시계열</text>
+
+  <rect x="175" y="70" width="120" height="60" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="235" y="95" text-anchor="middle" class="label">7영역 채점</text>
+  <text x="235" y="112" text-anchor="middle" class="desc">A-F 등급</text>
+
+  <rect x="330" y="70" width="120" height="60" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="390" y="95" text-anchor="middle" class="label">이상치 감지</text>
+  <text x="390" y="112" text-anchor="middle" class="desc">6가지 규칙</text>
+
+  <rect x="485" y="70" width="100" height="60" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="535" y="95" text-anchor="middle" class="label">프로파일</text>
+  <text x="535" y="112" text-anchor="middle" class="desc">유형 분류</text>
+
+  <rect x="615" y="55" width="65" height="90" class="box" fill="#0f172a" stroke="#8b5cf6"/>
+  <text x="647" y="85" text-anchor="middle" class="label" fill="#8b5cf6">AI</text>
+  <text x="647" y="102" text-anchor="middle" class="desc">ask()</text>
+  <text x="647" y="117" text-anchor="middle" class="desc">해석</text>
+  <text x="647" y="132" text-anchor="middle" class="desc">(선택)</text>
+
+  <line x1="140" y1="100" x2="173" y2="100" class="arrow"/>
+  <line x1="295" y1="100" x2="328" y2="100" class="arrow"/>
+  <line x1="450" y1="100" x2="483" y2="100" class="arrow"/>
+  <line x1="585" y1="100" x2="613" y2="100" class="arrow"/>
+</svg>

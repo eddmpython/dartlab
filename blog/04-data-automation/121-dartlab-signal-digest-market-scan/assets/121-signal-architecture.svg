@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .label { font-size: 12px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+
+  <rect x="20" y="60" width="130" height="80" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="85" y="88" text-anchor="middle" class="label">키워드 입력</text>
+  <text x="85" y="108" text-anchor="middle" class="desc">"AI" 또는 전체</text>
+  <text x="85" y="123" text-anchor="middle" class="desc">48개 키워드</text>
+
+  <rect x="185" y="60" width="140" height="80" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="255" y="88" text-anchor="middle" class="label">전체 공시 스캔</text>
+  <text x="255" y="108" text-anchor="middle" class="desc">사업보고서 텍스트</text>
+  <text x="255" y="123" text-anchor="middle" class="desc">2700+ 상장사</text>
+
+  <rect x="360" y="60" width="140" height="80" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="430" y="88" text-anchor="middle" class="label">연도별 집계</text>
+  <text x="430" y="108" text-anchor="middle" class="desc">companies 수</text>
+  <text x="430" y="123" text-anchor="middle" class="desc">totalMentions</text>
+
+  <rect x="535" y="60" width="145" height="80" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="607" y="88" text-anchor="middle" class="label">트렌드 분석</text>
+  <text x="607" y="108" text-anchor="middle" class="desc">확산 속도, 피크</text>
+  <text x="607" y="123" text-anchor="middle" class="desc">카테고리별 비교</text>
+
+  <line x1="150" y1="100" x2="183" y2="100" class="arrow"/>
+  <line x1="325" y1="100" x2="358" y2="100" class="arrow"/>
+  <line x1="500" y1="100" x2="533" y2="100" class="arrow"/>
+</svg>

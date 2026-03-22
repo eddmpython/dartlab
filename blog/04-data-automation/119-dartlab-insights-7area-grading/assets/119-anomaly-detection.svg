@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 10px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 9px; fill: #94a3b8; }
+    .sev { font-size: 9px; font-weight: 700; }
+    .box { rx: 6; ry: 6; stroke-width: 1.5; }
+  </style>
+
+  <rect width="700" height="220" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">이상치 탐지 — 6가지 규칙</text>
+
+  <rect x="20" y="50" width="210" height="50" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="30" y="70" class="label">earningsQuality</text>
+  <text x="30" y="85" class="desc">영업이익↑ but 영업CF↓</text>
+  <text x="200" y="85" text-anchor="end" class="sev" fill="#ef4444">danger</text>
+
+  <rect x="245" y="50" width="210" height="50" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="255" y="70" class="label">workingCapital</text>
+  <text x="255" y="85" class="desc">유동자산/부채 급변</text>
+  <text x="425" y="85" text-anchor="end" class="sev" fill="#f59e0b">warning</text>
+
+  <rect x="470" y="50" width="210" height="50" class="box" fill="#1e293b" stroke="#64748b"/>
+  <text x="480" y="70" class="label">balanceSheet</text>
+  <text x="480" y="85" class="desc">재무상태표 구조 변화</text>
+  <text x="650" y="85" text-anchor="end" class="sev" fill="#64748b">info</text>
+
+  <rect x="20" y="115" width="210" height="50" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="30" y="135" class="label">cashBurn</text>
+  <text x="30" y="150" class="desc">현금 급감</text>
+  <text x="200" y="150" text-anchor="end" class="sev" fill="#ef4444">danger</text>
+
+  <rect x="245" y="115" width="210" height="50" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="255" y="135" class="label">marginDivergence</text>
+  <text x="255" y="150" class="desc">매출총이익률↔영업이익률 괴리</text>
+  <text x="425" y="150" text-anchor="end" class="sev" fill="#f59e0b">warning</text>
+
+  <rect x="470" y="115" width="210" height="50" class="box" fill="#1e293b" stroke="#64748b"/>
+  <text x="480" y="135" class="label">financialSector</text>
+  <text x="480" y="150" class="desc">금융업 특화 이상 징후</text>
+  <text x="650" y="150" text-anchor="end" class="sev" fill="#64748b">info</text>
+
+  <rect x="20" y="180" width="660" height="25" rx="4" fill="#1e293b"/>
+  <text x="350" y="197" text-anchor="middle" class="desc">심각도: danger (즉시 주의) → warning (모니터링) → info (참고)</text>
+</svg>

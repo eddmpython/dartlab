@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">dartlab 분석 흐름 — 스크리닝에서 AI까지</text>
+
+  <rect x="20" y="60" width="130" height="80" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="85" y="85" text-anchor="middle" class="label">screen()</text>
+  <text x="85" y="102" text-anchor="middle" class="desc">2700 → 100개</text>
+  <text x="85" y="117" text-anchor="middle" class="desc">프리셋 필터링</text>
+
+  <rect x="175" y="60" width="130" height="80" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="240" y="85" text-anchor="middle" class="label">benchmark()</text>
+  <text x="240" y="102" text-anchor="middle" class="desc">섹터 위치 파악</text>
+  <text x="240" y="117" text-anchor="middle" class="desc">P10~P90</text>
+
+  <rect x="330" y="60" width="130" height="80" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="395" y="85" text-anchor="middle" class="label">insights</text>
+  <text x="395" y="102" text-anchor="middle" class="desc">7영역 심층 분석</text>
+  <text x="395" y="117" text-anchor="middle" class="desc">A-F 등급</text>
+
+  <rect x="485" y="60" width="100" height="80" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="535" y="85" text-anchor="middle" class="label">ask()</text>
+  <text x="535" y="102" text-anchor="middle" class="desc">AI 해석</text>
+  <text x="535" y="117" text-anchor="middle" class="desc">자연어 분석</text>
+
+  <rect x="610" y="60" width="70" height="80" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="645" y="85" text-anchor="middle" class="label">MCP</text>
+  <text x="645" y="102" text-anchor="middle" class="desc">IDE에서</text>
+  <text x="645" y="117" text-anchor="middle" class="desc">직접 조회</text>
+
+  <line x1="150" y1="100" x2="173" y2="100" class="arrow"/>
+  <line x1="305" y1="100" x2="328" y2="100" class="arrow"/>
+  <line x1="460" y1="100" x2="483" y2="100" class="arrow"/>
+  <line x1="585" y1="100" x2="608" y2="100" class="arrow"/>
+
+  <text x="350" y="175" text-anchor="middle" class="desc">넓게 → 좁게 → 깊게 → 해석 — dartlab의 분석 파이프라인</text>
+</svg>

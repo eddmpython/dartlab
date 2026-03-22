@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .label { font-size: 12px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .val { font-size: 10px; font-weight: 600; fill: #10b981; }
+    .year { font-size: 10px; font-weight: 600; fill: #f59e0b; }
+    .box { rx: 6; ry: 6; stroke-width: 1; }
+  </style>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+
+  <text x="350" y="28" text-anchor="middle" font-size="13" font-weight="700" fill="#e2e8f0">ratioSeries 구조 — 연간 비율 추이</text>
+
+  <rect x="20" y="45" width="120" height="140" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="80" y="68" text-anchor="middle" class="label">c.ratioSeries</text>
+  <text x="80" y="88" text-anchor="middle" class="desc">series, years</text>
+  <text x="80" y="108" text-anchor="middle" class="desc">= c.ratioSeries</text>
+
+  <rect x="170" y="45" width="510" height="140" class="box" fill="#1e293b" stroke="#334155"/>
+
+  <text x="190" y="68" class="year">years:</text>
+  <text x="270" y="68" class="desc">["2019", "2020", "2021", "2022", "2023"]</text>
+
+  <text x="190" y="98" class="label">series["RATIO"]["roe"]</text>
+  <text x="190" y="116" class="val">[8.69, 13.20, 16.55, 22.05, 7.01]</text>
+
+  <text x="190" y="140" class="label">series["RATIO"]["debtRatio"]</text>
+  <text x="190" y="158" class="val">[72.5, 68.2, 59.7, 58.1, 54.8]</text>
+
+  <text x="190" y="175" class="desc">... 50개 이상의 비율 시계열</text>
+</svg>

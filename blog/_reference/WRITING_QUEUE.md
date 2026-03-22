@@ -14,6 +14,11 @@
 
 - 116: dartlab ask — GPT 하나로 전자공시 AI 분석하는 법 (data-automation #12, SVG 5개)
 - 117: dartlab MCP — Claude Desktop에서 전자공시 바로 조회하는 법 (data-automation #13, SVG 5개)
+- 118: dartlab 재무제표 — 한 줄로 꺼내고 50개 비율까지 자동 계산 (data-automation #14, SVG 5개)
+- 119: dartlab 인사이트 — 7영역 등급으로 기업 건강 체크 (data-automation #15, SVG 5개)
+- 120: dartlab 스크리닝 — 2700개 종목 8가지 프리셋 필터링 (data-automation #16, SVG 5개)
+- 121: dartlab signal — 48개 키워드로 시장 공시 변화 추적 (data-automation #17, SVG 5개)
+- 122: dartlab network — 상장사 전체 관계망 시각화 (data-automation #18, SVG 5개)
 
 ## 리라이트 우선 배치
 

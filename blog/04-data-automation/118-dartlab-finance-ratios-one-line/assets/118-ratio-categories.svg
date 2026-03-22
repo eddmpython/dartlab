@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .cat { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .count { font-size: 10px; font-weight: 700; }
+    .items { font-size: 9px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+  </style>
+
+  <rect width="700" height="320" rx="12" fill="#0f172a"/>
+  <text x="350" y="30" text-anchor="middle" class="title">50+ 재무비율 — 6개 카테고리</text>
+
+  <rect x="20" y="50" width="210" height="75" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="30" y="72" class="cat">수익성</text>
+  <text x="200" y="72" text-anchor="end" class="count" fill="#3b82f6">12개</text>
+  <text x="30" y="90" class="items">ROE, ROA, ROCE, 영업이익률, 순이익률,</text>
+  <text x="30" y="104" class="items">EBITDA마진, 매출총이익률, 유효세율 ...</text>
+
+  <rect x="245" y="50" width="210" height="75" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="255" y="72" class="cat">안정성</text>
+  <text x="425" y="72" text-anchor="end" class="count" fill="#10b981">9개</text>
+  <text x="255" y="90" class="items">부채비율, 유동비율, 당좌비율, 현금비율,</text>
+  <text x="255" y="104" class="items">자기자본비율, 이자보상배수, 운전자본 ...</text>
+
+  <rect x="470" y="50" width="210" height="75" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="480" y="72" class="cat">성장성</text>
+  <text x="650" y="72" text-anchor="end" class="count" fill="#f59e0b">5개</text>
+  <text x="480" y="90" class="items">매출성장률, 영업이익성장률,</text>
+  <text x="480" y="104" class="items">순이익성장률, 자산성장률, 자기자본성장률</text>
+
+  <rect x="20" y="140" width="210" height="75" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="30" y="162" class="cat">효율성</text>
+  <text x="200" y="162" text-anchor="end" class="count" fill="#ef4444">6개</text>
+  <text x="30" y="180" class="items">총자산회전율, 고정자산회전율,</text>
+  <text x="30" y="194" class="items">재고회전율, 매출채권회전율, 영업주기 ...</text>
+
+  <rect x="245" y="140" width="210" height="75" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="255" y="162" class="cat">현금흐름</text>
+  <text x="425" y="162" text-anchor="end" class="count" fill="#8b5cf6">7개</text>
+  <text x="255" y="180" class="items">FCF, 영업CF마진, 영업CF/순이익,</text>
+  <text x="255" y="194" class="items">설비투자비율, 배당성향, FCF/OCF비율 ...</text>
+
+  <rect x="470" y="140" width="210" height="75" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="480" y="162" class="cat">복합지표</text>
+  <text x="650" y="162" text-anchor="end" class="count" fill="#ec4899">11개</text>
+  <text x="480" y="180" class="items">ROIC, DuPont 분해, CCC,</text>
+  <text x="480" y="194" class="items">Piotroski F-Score, Altman Z-Score ...</text>
+
+  <rect x="20" y="240" width="660" height="60" class="box" fill="#0f172a" stroke="#64748b"/>
+  <text x="350" y="265" text-anchor="middle" class="cat">+ 절대값 6개: 매출, 영업이익, 순이익, 총자산, 자기자본, 영업현금흐름</text>
+  <text x="350" y="285" text-anchor="middle" class="items">총 50개 이상 — 코드 한 줄로 자동 계산</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .code { font-size: 10px; font-weight: 600; fill: #10b981; font-family: 'JetBrains Mono', monospace; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">digest() — 3가지 출력 형식</text>
+
+  <!-- Center -->
+  <rect x="250" y="55" width="200" height="50" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="350" y="78" text-anchor="middle" class="label">dartlab.digest()</text>
+  <text x="350" y="95" text-anchor="middle" class="desc">시장 전체 공시 변화 집계</text>
+
+  <!-- 3 outputs -->
+  <rect x="20" y="130" width="200" height="55" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="120" y="150" text-anchor="middle" class="code">format="dataframe"</text>
+  <text x="120" y="170" text-anchor="middle" class="desc">Polars DataFrame → 데이터 분석</text>
+
+  <rect x="250" y="130" width="200" height="55" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="350" y="150" text-anchor="middle" class="code">format="markdown"</text>
+  <text x="350" y="170" text-anchor="middle" class="desc">문자열 → 보고서, 블로그</text>
+
+  <rect x="480" y="130" width="200" height="55" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="580" y="150" text-anchor="middle" class="code">format="json"</text>
+  <text x="580" y="170" text-anchor="middle" class="desc">dict → API 연동</text>
+
+  <line x1="300" y1="105" x2="120" y2="128" class="arrow"/>
+  <line x1="350" y1="105" x2="350" y2="128" class="arrow"/>
+  <line x1="400" y1="105" x2="580" y2="128" class="arrow"/>
+</svg>

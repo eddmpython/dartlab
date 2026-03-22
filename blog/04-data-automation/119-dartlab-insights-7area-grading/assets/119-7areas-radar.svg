@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .area { font-size: 10px; font-weight: 600; fill: #f8fafc; }
+    .kr { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 6; ry: 6; stroke-width: 1; }
+  </style>
+
+  <rect width="700" height="280" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">7영역 분석 — 각 영역이 보는 것</text>
+
+  <rect x="20" y="50" width="200" height="60" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="30" y="72" class="area">performance</text>
+  <text x="30" y="90" class="kr">매출·이익 성장률, 3년 CAGR, 분기 추세</text>
+
+  <rect x="250" y="50" width="200" height="60" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="260" y="72" class="area">profitability</text>
+  <text x="260" y="90" class="kr">ROE, ROA, 영업이익률, EBITDA 마진</text>
+
+  <rect x="480" y="50" width="200" height="60" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="490" y="72" class="area">health</text>
+  <text x="490" y="90" class="kr">부채비율, 유동비율, 이자보상배수</text>
+
+  <rect x="20" y="125" width="200" height="60" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="30" y="147" class="area">cashflow</text>
+  <text x="30" y="165" class="kr">FCF, 영업CF마진, 설비투자비율</text>
+
+  <rect x="250" y="125" width="200" height="60" class="box" fill="#1e293b" stroke="#ec4899"/>
+  <text x="260" y="147" class="area">governance</text>
+  <text x="260" y="165" class="kr">감사의견, 대주주 변동, 내부거래</text>
+
+  <rect x="480" y="125" width="200" height="60" class="box" fill="#1e293b" stroke="#ef4444"/>
+  <text x="490" y="147" class="area">risk</text>
+  <text x="490" y="165" class="kr">재무 리스크 플래그 종합</text>
+
+  <rect x="250" y="200" width="200" height="60" class="box" fill="#1e293b" stroke="#06b6d4"/>
+  <text x="260" y="222" class="area">opportunity</text>
+  <text x="260" y="240" class="kr">성장 기회 플래그 종합</text>
+</svg>

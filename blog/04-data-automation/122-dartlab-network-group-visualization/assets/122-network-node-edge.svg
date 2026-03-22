@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .edge-label { font-size: 9px; fill: #f59e0b; font-weight: 600; }
+  </style>
+
+  <rect width="700" height="220" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">network() — 노드와 엣지 구조</text>
+
+  <!-- 노드 타입 -->
+  <rect x="20" y="50" width="200" height="80" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="30" y="72" class="label" fill="#3b82f6">노드 (2종)</text>
+  <circle cx="45" cy="93" r="8" fill="#3b82f6" opacity="0.3" stroke="#3b82f6" stroke-width="1"/>
+  <text x="60" y="97" class="desc">기업 — degree 포함</text>
+  <circle cx="45" cy="115" r="8" fill="#8b5cf6" opacity="0.3" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="60" y="119" class="desc">인물 — 대주주·임원</text>
+
+  <!-- 엣지 타입 -->
+  <rect x="250" y="50" width="200" height="80" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="260" y="72" class="label" fill="#f59e0b">엣지 (3종)</text>
+  <line x1="265" y1="90" x2="310" y2="90" stroke="#10b981" stroke-width="2"/>
+  <text x="318" y="94" class="desc">investment — 지분 투자</text>
+  <line x1="265" y1="110" x2="310" y2="110" stroke="#3b82f6" stroke-width="2"/>
+  <text x="318" y="114" class="desc">shareholder — 주주 관계</text>
+  <line x1="265" y1="130" x2="310" y2="130" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="318" y="134" class="desc">person — 인적 주주</text>
+
+  <!-- 그래프 예시 -->
+  <rect x="480" y="50" width="200" height="150" class="box" fill="#1e293b" stroke="#334155"/>
+  <circle cx="540" cy="100" r="20" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="540" y="104" text-anchor="middle" font-size="8" fill="#f8fafc">A기업</text>
+  <circle cx="630" cy="80" r="15" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="630" y="84" text-anchor="middle" font-size="8" fill="#f8fafc">B기업</text>
+  <circle cx="630" cy="140" r="15" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="630" y="144" text-anchor="middle" font-size="8" fill="#f8fafc">C기업</text>
+  <circle cx="540" cy="170" r="12" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="540" y="174" text-anchor="middle" font-size="7" fill="#f8fafc">대주주</text>
+
+  <line x1="558" y1="92" x2="615" y2="80" stroke="#10b981" stroke-width="1.5"/>
+  <text x="585" y="80" class="edge-label">30%</text>
+  <line x1="558" y1="112" x2="615" y2="135" stroke="#10b981" stroke-width="1.5"/>
+  <text x="585" y="130" class="edge-label">20%</text>
+  <line x1="540" y1="158" x2="540" y2="120" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,2"/>
+</svg>

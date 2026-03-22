@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .label { font-size: 12px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .num { font-size: 14px; font-weight: 700; fill: #3b82f6; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+
+  <rect x="20" y="60" width="140" height="80" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="90" y="88" text-anchor="middle" class="num">2,700+</text>
+  <text x="90" y="108" text-anchor="middle" class="label">전체 상장사</text>
+  <text x="90" y="125" text-anchor="middle" class="desc">비율 미리 계산</text>
+
+  <rect x="200" y="60" width="140" height="80" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="270" y="88" text-anchor="middle" class="label">프리셋 필터</text>
+  <text x="270" y="108" text-anchor="middle" class="desc">8가지 조건 조합</text>
+  <text x="270" y="125" text-anchor="middle" class="desc">AND 결합</text>
+
+  <rect x="380" y="60" width="140" height="80" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="450" y="88" text-anchor="middle" class="label">결과 DataFrame</text>
+  <text x="450" y="108" text-anchor="middle" class="desc">조건 통과 종목</text>
+  <text x="450" y="125" text-anchor="middle" class="desc">+ 비율 데이터</text>
+
+  <rect x="560" y="60" width="120" height="80" class="box" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="620" y="88" text-anchor="middle" class="label">분석</text>
+  <text x="620" y="108" text-anchor="middle" class="desc">insights 심층</text>
+  <text x="620" y="125" text-anchor="middle" class="desc">ask() AI 해석</text>
+
+  <line x1="160" y1="100" x2="198" y2="100" class="arrow"/>
+  <line x1="340" y1="100" x2="378" y2="100" class="arrow"/>
+  <line x1="520" y1="100" x2="558" y2="100" class="arrow"/>
+</svg>

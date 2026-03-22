@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" fill="none">
+  <style>
+    text { font-family: 'Pretendard', 'Inter', system-ui, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .label { font-size: 11px; font-weight: 600; fill: #f8fafc; }
+    .desc { font-size: 10px; fill: #94a3b8; }
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="200" rx="12" fill="#0f172a"/>
+  <text x="350" y="28" text-anchor="middle" class="title">signal + digest — 공시 텍스트에서 시장 방향까지</text>
+
+  <rect x="20" y="55" width="130" height="70" class="box" fill="#1e293b" stroke="#3b82f6"/>
+  <text x="85" y="80" text-anchor="middle" class="label">공시 텍스트</text>
+  <text x="85" y="97" text-anchor="middle" class="desc">2700+ 사업보고서</text>
+  <text x="85" y="112" text-anchor="middle" class="desc">연도별 축적</text>
+
+  <rect x="180" y="45" width="140" height="40" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="250" y="70" text-anchor="middle" class="label">signal("AI")</text>
+
+  <rect x="180" y="95" width="140" height="40" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="250" y="120" text-anchor="middle" class="label">digest()</text>
+
+  <rect x="360" y="45" width="140" height="40" class="box" fill="#1e293b" stroke="#f59e0b"/>
+  <text x="430" y="65" text-anchor="middle" class="desc">키워드 추적</text>
+  <text x="430" y="80" text-anchor="middle" class="desc">연도별 확산</text>
+
+  <rect x="360" y="95" width="140" height="40" class="box" fill="#1e293b" stroke="#10b981"/>
+  <text x="430" y="115" text-anchor="middle" class="desc">시장 전체 요약</text>
+  <text x="430" y="130" text-anchor="middle" class="desc">MD / JSON / DF</text>
+
+  <rect x="540" y="55" width="140" height="70" class="box" fill="#0f172a" stroke="#8b5cf6"/>
+  <text x="610" y="80" text-anchor="middle" class="label" fill="#8b5cf6">ask() AI 해석</text>
+  <text x="610" y="97" text-anchor="middle" class="desc">맥락과 의미</text>
+  <text x="610" y="112" text-anchor="middle" class="desc">(선택)</text>
+
+  <line x1="150" y1="75" x2="178" y2="65" class="arrow"/>
+  <line x1="150" y1="95" x2="178" y2="115" class="arrow"/>
+  <line x1="320" y1="65" x2="358" y2="65" class="arrow"/>
+  <line x1="320" y1="115" x2="358" y2="115" class="arrow"/>
+  <line x1="500" y1="75" x2="538" y2="85" class="arrow"/>
+  <line x1="500" y1="115" x2="538" y2="100" class="arrow"/>
+</svg>
