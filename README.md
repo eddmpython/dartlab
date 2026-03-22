@@ -287,13 +287,15 @@ verbose: false
 
 ## MCP — AI Assistant Integration
 
-DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server for Claude Desktop, Cursor, and other MCP-compatible assistants.
+DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server that exposes 60 tools (16 global + 44 per-company) to Claude Desktop, Claude Code, Cursor, and any MCP-compatible client.
 
 ```bash
 uv add "dartlab[mcp]"
 ```
 
-Add to Claude Desktop config (`claude_desktop_config.json`):
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -306,7 +308,46 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 }
 ```
 
-45+ tools are automatically available through the MCP bridge — search, show topics, compare periods, calculate ratios, grade companies, across both DART and EDGAR.
+### Claude Code
+
+```bash
+claude mcp add dartlab -- uv run dartlab mcp
+```
+
+Or add to `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json` with the same config format as Claude Desktop.
+
+### What's Available
+
+Once connected, your AI assistant can:
+
+- **Search** — find companies by name or code (`search_company`)
+- **Show** — read any disclosure topic (`show_topic`, `list_topics`, `diff_topic`)
+- **Finance** — balance sheet, income statement, cash flow, ratios (`get_financial_statements`, `get_ratios`)
+- **Analysis** — insights, sector ranking, valuation (`get_insight`, `get_ranking`)
+- **EDGAR** — same tools work for US companies (`stock_code: "AAPL"`)
+
+Auto-generate config for your platform:
+
+```bash
+dartlab mcp --config claude-desktop
+dartlab mcp --config claude-code
+dartlab mcp --config cursor
+```
 
 ## OpenAPI — Raw Public APIs
 
@@ -410,7 +451,7 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 | Tier | Scope |
 |------|-------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
-| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
+| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP server |
 | **Experimental** | AI tools, export |
 
 See [docs/stability.md](docs/stability.md).

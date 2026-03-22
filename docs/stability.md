@@ -65,6 +65,8 @@ May change after a warning. Recorded in CHANGELOG.
 | `dartlab.chart` | Chart tool module |
 | `dartlab.table` | Table tool module |
 | `dartlab.text` | Text tool module |
+| MCP server | MCP protocol server (60 tools, stdio) |
+| `dartlab mcp` | MCP CLI command |
 
 ### Tier 3: Experimental
 

@@ -287,13 +287,15 @@ verbose: false
 
 ## MCP — AI 어시스턴트 연동
 
-DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. Claude Desktop, Cursor 등 MCP 호환 AI 어시스턴트에 직접 연결할 수 있다.
+DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. 60개 도구 (글로벌 16 + 기업별 44)를 Claude Desktop, Claude Code, Cursor 등 MCP 호환 클라이언트에 노출한다.
 
 ```bash
 uv add "dartlab[mcp]"
 ```
 
-Claude Desktop 설정 파일(`claude_desktop_config.json`)에 추가:
+### Claude Desktop
+
+`claude_desktop_config.json`에 추가:
 
 ```json
 {
@@ -306,7 +308,46 @@ Claude Desktop 설정 파일(`claude_desktop_config.json`)에 추가:
 }
 ```
 
-45개 이상의 도구가 MCP 브릿지를 통해 자동으로 사용 가능하다 — 기업 검색, 공시 조회, 기간 비교, 비율 계산, 등급 평가, DART와 EDGAR 모두 지원.
+### Claude Code
+
+```bash
+claude mcp add dartlab -- uv run dartlab mcp
+```
+
+또는 `~/.claude/settings.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "dartlab": {
+      "command": "uv",
+      "args": ["run", "dartlab", "mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+`.cursor/mcp.json`에 Claude Desktop과 동일한 형식으로 추가.
+
+### 사용 가능한 기능
+
+연결하면 AI 어시스턴트가 다음을 수행할 수 있다:
+
+- **검색** — 이름이나 코드로 기업 찾기 (`search_company`)
+- **공시 조회** — 임의 topic의 공시 데이터 열기 (`show_topic`, `list_topics`, `diff_topic`)
+- **재무** — BS, IS, CF, 재무비율 (`get_financial_statements`, `get_ratios`)
+- **분석** — 인사이트, 섹터 순위, 밸류에이션 (`get_insight`, `get_ranking`)
+- **EDGAR** — 미국 기업도 동일한 도구로 지원 (`stock_code: "AAPL"`)
+
+플랫폼별 설정 자동 생성:
+
+```bash
+dartlab mcp --config claude-desktop
+dartlab mcp --config claude-code
+dartlab mcp --config cursor
+```
 
 ## OpenAPI — 원본 공공 API
 
@@ -390,7 +431,7 @@ marimo edit startMarimo/aiAnalysis.py     # AI 분석 예시
 | Tier | 범위 |
 |------|------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
-| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API |
+| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP 서버 |
 | **Experimental** | AI 도구, export |
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.

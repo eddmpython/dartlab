@@ -155,6 +155,17 @@ The principle is:
 - Storage format is compatible with DartLab runtime
 - The derived `Company` layer is a separate responsibility
 
+## MCP Server
+
+DartLab includes a built-in MCP server that exposes 60 tools for Claude Desktop, Claude Code, and Cursor.
+
+```bash
+dartlab mcp              # start MCP server (stdio)
+dartlab mcp --config claude-desktop   # show config for Claude Desktop
+```
+
+See the [MCP Guide](mcp) for setup instructions and the full tool list.
+
 ## Stability
 
 - DART core `Company` is centered on stable

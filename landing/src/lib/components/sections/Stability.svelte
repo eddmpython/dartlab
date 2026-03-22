@@ -25,7 +25,8 @@
 				'insights (7-area grading)',
 				'rank / sector',
 				'Excel export',
-				'Server API (FastAPI 40+ endpoints)'
+				'Server API (FastAPI 40+ endpoints)',
+				'MCP server (60 tools)'
 			]
 		},
 		{
@@ -35,7 +36,6 @@
 			items: [
 				'AI analysis (7 providers)',
 				'AI GUI (Desktop)',
-				'MCP server (planned)',
 				'Network scanner (new)'
 			]
 		}
@@ -44,7 +44,7 @@
 	const roadmap = [
 		{ quarter: 'Now', label: 'v0.6', items: ['sections text structure', 'EDGAR sections 100%', 'Network scanner'] },
 		{ quarter: 'Next', label: 'v0.7', items: ['profile.sections merged view', 'TopicView implementation', 'show() completion'] },
-		{ quarter: 'Later', label: 'v0.8+', items: ['MCP server', 'AI GUI improvements', 'Rust pipeline (sections)'] }
+		{ quarter: 'Later', label: 'v0.8+', items: ['EDINET engine', 'AI GUI improvements', 'Rust pipeline (sections)'] }
 	];
 </script>
 
