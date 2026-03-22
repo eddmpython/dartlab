@@ -20,7 +20,7 @@ def _unwrap_timeseries(ts: Any) -> dict | None:
 
 def _build_company_data_bundle(company: Any):
     """Company → CompanyDataBundle 빌드 (안전하게 — 실패 시 빈 bundle)."""
-    from dartlab.engines.common.finance.revenue_forecast import CompanyDataBundle
+    from dartlab.engines.analysis.analyst.revenueForecast import CompanyDataBundle
 
     bundle = CompanyDataBundle()
 
@@ -30,7 +30,7 @@ def _build_company_data_bundle(company: Any):
         if seg is not None:
             rev = getattr(seg, "revenue", None)
             if rev is not None and hasattr(rev, "columns"):
-                bundle.segment_revenue = rev
+                bundle.segmentRevenue = rev
     except (AttributeError, TypeError):
         pass
 
@@ -38,15 +38,15 @@ def _build_company_data_bundle(company: Any):
     try:
         so = getattr(company, "salesOrder", None)
         if so is not None:
-            bundle.sales_df = getattr(so, "salesDf", None)
-            bundle.order_df = getattr(so, "orderDf", None)
+            bundle.salesDf = getattr(so, "salesDf", None)
+            bundle.orderDf = getattr(so, "orderDf", None)
     except (AttributeError, TypeError):
         pass
 
     # 수출비율 추출 시도 (salesOrder salesDf에서)
     try:
-        if bundle.sales_df is not None and hasattr(bundle.sales_df, "columns"):
-            df = bundle.sales_df
+        if bundle.salesDf is not None and hasattr(bundle.salesDf, "columns"):
+            df = bundle.salesDf
             if "label" in df.columns:
                 labels = df["label"].to_list()
                 for i, lab in enumerate(labels):
@@ -618,13 +618,13 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def intrinsic_value(model: str = "all") -> str:
         """내재가치 추정 (DCF/DDM/상대가치)."""
-        from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.valuation import (
-            dcf_valuation,
-            ddm_valuation,
-            full_valuation,
-            relative_valuation,
+        from dartlab.engines.analysis.analyst.valuation import (
+            dcfValuation,
+            ddmValuation,
+            fullValuation,
+            relativeValuation,
         )
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -638,7 +638,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
         price = getattr(company, "currentPrice", None)
 
         if model == "all":
-            result = full_valuation(
+            result = fullValuation(
                 series,
                 shares=shares,
                 sector_params=sp,
@@ -655,13 +655,13 @@ def register_finance_tools(company: Any, register_tool) -> None:
             parts.append(repr(result))
             return "\n\n".join(parts)
         elif model == "dcf":
-            result = dcf_valuation(series, shares=shares, sector_params=sp, current_price=price)
+            result = dcfValuation(series, shares=shares, sector_params=sp, current_price=price)
             return repr(result)
         elif model == "ddm":
-            result = ddm_valuation(series, shares=shares, sector_params=sp, current_price=price)
+            result = ddmValuation(series, shares=shares, sector_params=sp, current_price=price)
             return repr(result)
         elif model == "relative":
-            result = relative_valuation(series, sector_params=sp, market_cap=mc, shares=shares, current_price=price)
+            result = relativeValuation(series, sector_params=sp, market_cap=mc, shares=shares, current_price=price)
             return repr(result)
         else:
             return f"미지원 모델: {model}. 선택지: all, dcf, ddm, relative"
@@ -688,8 +688,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def forecast(metric: str = "revenue", horizon: str = "3") -> str:
         """시계열 예측."""
+        from dartlab.engines.analysis.analyst.forecast import forecastMetric as _fm
         from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.forecast import forecast_metric as _fm
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -729,8 +729,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def scenario(current_price: str = "") -> str:
         """시나리오 분석 (Bull/Base/Bear DCF)."""
+        from dartlab.engines.analysis.analyst.forecast import scenarioAnalysis as _sa
         from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.forecast import scenario_analysis as _sa
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -765,8 +765,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def sensitivity(wacc_range: str = "2", growth_range: str = "1") -> str:
         """민감도 분석 (WACC × 영구성장률 매트릭스)."""
+        from dartlab.engines.analysis.analyst.forecast import sensitivityAnalysis as _sens
         from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.forecast import sensitivity_analysis as _sens
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -813,12 +813,12 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def economic_forecast(scenario: str = "all") -> str:
         """거시경제 시나리오별 실적 시뮬레이션."""
-        from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.simulation import (
+        from dartlab.engines.analysis.analyst.simulation import (
             PRESET_SCENARIOS,
-            simulate_all_scenarios,
-            simulate_scenario,
+            simulateAllScenarios,
+            simulateScenario,
         )
+        from dartlab.engines.analysis.sector.params import getParams
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -830,7 +830,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
         sector_key = sector_info.get("sector", None) if sector_info else None
 
         if scenario == "all":
-            results = simulate_all_scenarios(
+            results = simulateAllScenarios(
                 series,
                 sector_key=sector_key,
                 sector_params=sp,
@@ -843,7 +843,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             return "\n".join(lines)
 
         if scenario in PRESET_SCENARIOS:
-            result = simulate_scenario(
+            result = simulateScenario(
                 series,
                 scenario=scenario,
                 sector_key=sector_key,
@@ -878,8 +878,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def monte_carlo(scenario: str = "baseline", iterations: str = "10000") -> str:
         """Monte Carlo 확률 분포 예측."""
+        from dartlab.engines.analysis.analyst.simulation import monteCarloForecast
         from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.simulation import monte_carlo_forecast
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -890,7 +890,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
         shares = getattr(company, "sharesOutstanding", None)
         sector_key = sector_info.get("sector", None) if sector_info else None
 
-        result = monte_carlo_forecast(
+        result = monteCarloForecast(
             series,
             sector_key=sector_key,
             sector_params=sp,
@@ -927,8 +927,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def stress_test_tool(scenario: str = "adverse") -> str:
         """CCAR 스타일 스트레스 테스트."""
+        from dartlab.engines.analysis.analyst.simulation import stressTest as _st
         from dartlab.engines.analysis.sector.params import getParams
-        from dartlab.engines.common.finance.simulation import stress_test as _st
 
         series = _unwrap_timeseries(company.finance.timeseries)
         if not series:
@@ -1024,8 +1024,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def forecast_revenue_tool(horizon: str = "3") -> str:
         """매출 앙상블 예측 v3 — 7소스 + 세그먼트 + 시나리오."""
-        from dartlab.engines.common.finance.revenue_forecast import (
-            forecast_revenue as _fr,
+        from dartlab.engines.analysis.analyst.revenueForecast import (
+            forecastRevenue as _fr,
         )
 
         series = _unwrap_timeseries(company.finance.timeseries)
@@ -1055,25 +1055,25 @@ def register_finance_tools(company: Any, register_tool) -> None:
         if result.scenarios:
             lines.append("\n## 시나리오 (Base/Bull/Bear)")
             for name, vals in result.scenarios.items():
-                prob = result.scenario_probabilities.get(name, 0)
+                prob = result.scenarioProbabilities.get(name, 0)
                 vals_str = ", ".join(f"{v / 1e8:,.0f}억" for v in vals)
                 lines.append(f"- **{name.title()}** ({prob:.0%}): {vals_str}")
 
         # 세그먼트
-        if result.segment_forecasts:
+        if result.segmentForecasts:
             lines.append("\n## 세그먼트 Bottom-Up")
-            for sf in result.segment_forecasts:
+            for sf in result.segmentForecasts:
                 proj_str = ", ".join(f"{v / 1e8:,.0f}억" for v in sf.projected)
                 lines.append(f"- {sf.name}: {proj_str} (lifecycle={sf.lifecycle})")
 
         # 수주잔고
-        if result.backlog_signal:
-            bs = result.backlog_signal
-            lines.append(f"\n## 수주잔고 시그널: {bs.trend} (B/R={bs.br_ratio:.2f}, 내재성장={bs.implied_growth:.1f}%)")
+        if result.backlogSignal:
+            bs = result.backlogSignal
+            lines.append(f"\n## 수주잔고 시그널: {bs.brRatioTrend} (B/R={bs.backlogRevenueRatio:.2f}, 내재성장={bs.impliedRevenueGrowth:.1f}%)")
 
         # AI 컨텍스트
-        if result.ai_context:
-            ctx = result.ai_context
+        if result.aiContext:
+            ctx = result.aiContext
             lines.append("\n## AI 보정 참고 컨텍스트")
             if ctx.get("lifecycle"):
                 lines.append(f"- 라이프사이클: {ctx['lifecycle']}")
@@ -1086,8 +1086,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
             if ctx.get("uncertainty_flags"):
                 lines.append(f"- 불확실성: {', '.join(ctx['uncertainty_flags'])}")
 
-        if result.forward_test_key:
-            lines.append(f"\n> Forward test key: `{result.forward_test_key}`")
+        if result.forwardTestKey:
+            lines.append(f"\n> Forward test key: `{result.forwardTestKey}`")
 
         return "\n".join(lines)
 
@@ -1147,7 +1147,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
         # v2: ContextSignals 수집 (Company 객체에서)
         context_signals = None
         try:
-            from dartlab.engines.common.finance.prediction import collect_signals as _cs
+            from dartlab.engines.analysis.analyst.prediction import collectSignals as _cs
 
             context_signals = _cs(company)
         except (ImportError, TypeError):

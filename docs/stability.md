@@ -87,6 +87,15 @@ Breaking changes are allowed. Not recommended for production use.
 | `export.*` | Excel export |
 | `engines.ai.tools.*` | LLM tool calling |
 
+### Tier 4: Alpha
+
+Early-stage features. Functional but incomplete — expect rough edges and missing structure.
+
+| Feature | Description |
+|---------|-------------|
+| Desktop App (Windows .exe) | Standalone desktop application — functional but incomplete |
+| Sections Viewer | Horizontalized disclosure viewer — core concept works, but structural framework not yet established |
+
 ## Deprecation Policy
 
 | Tier | Notice | Removal |
@@ -94,6 +103,7 @@ Breaking changes are allowed. Not recommended for production use.
 | Tier 1 | 2 minor versions ahead | Deprecated warning → removed in next minor |
 | Tier 2 | 1 minor version ahead | Changed after CHANGELOG entry |
 | Tier 3 | Immediate | CHANGELOG entry only |
+| Tier 4 | None | May change or disappear without notice |
 
 Deprecation warning example:
 

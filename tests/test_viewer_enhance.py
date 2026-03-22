@@ -9,6 +9,9 @@ from __future__ import annotations
 import unittest
 
 import polars as pl
+import pytest
+
+pytestmark = pytest.mark.integration
 
 # ──────────────────────────── diff matrix ────────────────────────────
 

@@ -1,5 +1,9 @@
 """Spec 무결성 테스트 — 코드와 spec의 불일치를 CI에서 검증."""
 
+import pytest
+
+pytestmark = pytest.mark.integration
+
 
 def test_all_engines_have_spec():
     """모든 등록된 엔진이 유효한 spec을 반환하는지."""

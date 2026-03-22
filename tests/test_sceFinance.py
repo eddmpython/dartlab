@@ -1,6 +1,10 @@
 """SCE(자본변동표) 피벗 테스트."""
 
+import pytest
+
 from tests.conftest import SAMSUNG, requires_finance
+
+pytestmark = pytest.mark.integration
 
 
 class TestSceMapper:

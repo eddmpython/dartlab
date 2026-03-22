@@ -132,7 +132,7 @@ A browser opens at `http://localhost:8400`. You'll need Ollama — install from 
 
 ## Data
 
-DartLab uses Parquet files parsed from DART disclosure originals. Over 260 listed companies are available on [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs).
+DartLab uses Parquet files parsed from DART disclosure originals. Over 320 listed companies are available on [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs).
 
 You don't need to download data manually. When you call `dartlab.Company("005930")`, missing files are **downloaded automatically**.
 

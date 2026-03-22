@@ -8,7 +8,7 @@ import pytest
 
 from tests.conftest import requires_samsung
 
-pytestmark = requires_samsung
+pytestmark = [pytest.mark.integration, requires_samsung]
 
 # 느린 파이프라인 → 모듈 수준에서 한번만 실행
 _data = None

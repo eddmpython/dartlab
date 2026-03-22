@@ -10,23 +10,23 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
-from dartlab.engines.common.finance.extract import getLatest, getTTM
-from dartlab.engines.common.finance.prediction import (
+from dartlab.engines.analysis.analyst.prediction import (
     ContextSignals,
-    adjust_probabilities,
-    get_noise_sigma,
+    adjustProbabilities,
+    getNoiseSigma,
 )
+from dartlab.engines.analysis.analyst.simulation import (
+    PRESET_SCENARIOS,
+    MacroScenario,
+    SectorElasticity,
+    getElasticity,
+)
+from dartlab.engines.common.finance.extract import getLatest, getTTM
 from dartlab.engines.common.finance.proforma import (
     ProFormaResult,
     build_proforma,
     compute_company_wacc,
     extract_historical_ratios,
-)
-from dartlab.engines.common.finance.simulation import (
-    PRESET_SCENARIOS,
-    MacroScenario,
-    SectorElasticity,
-    get_elasticity,
 )
 
 # ══════════════════════════════════════
@@ -132,19 +132,19 @@ def _derive_revenue_path_from_macro(
 
     baseline GDP 대비 시나리오 GDP 차이에 β를 곱해 성장률 조정.
     """
-    baseline_gdp = PRESET_SCENARIOS["baseline"].gdp_growth
+    baseline_gdp = PRESET_SCENARIOS["baseline"].gdpGrowth
     path = []
     for i in range(years):
-        gdp_idx = min(i, len(scenario.gdp_growth) - 1)
+        gdp_idx = min(i, len(scenario.gdpGrowth) - 1)
         base_gdp_idx = min(i, len(baseline_gdp) - 1)
 
-        gdp_delta = scenario.gdp_growth[gdp_idx] - baseline_gdp[base_gdp_idx]
+        gdp_delta = scenario.gdpGrowth[gdp_idx] - baseline_gdp[base_gdp_idx]
         fx_delta = 0.0
-        if i < len(scenario.krw_usd) and scenario.krw_usd[0] > 0:
-            fx_pct = (scenario.krw_usd[min(i, len(scenario.krw_usd) - 1)] / scenario.krw_usd[0] - 1) * 100
-            fx_delta = fx_pct / 10 * elasticity.revenue_to_fx  # 환율 10% 변화당
+        if i < len(scenario.krwUsd) and scenario.krwUsd[0] > 0:
+            fx_pct = (scenario.krwUsd[min(i, len(scenario.krwUsd) - 1)] / scenario.krwUsd[0] - 1) * 100
+            fx_delta = fx_pct / 10 * elasticity.revenueToFx  # 환율 10% 변화당
 
-        growth = base_growth + gdp_delta * elasticity.revenue_to_gdp + fx_delta
+        growth = base_growth + gdp_delta * elasticity.revenueToGdp + fx_delta
         # mean reversion: 극단 시나리오는 3~5년차에 baseline 복귀 경향
         if i >= 2:
             growth = growth * 0.7 + base_growth * 0.3
@@ -256,11 +256,11 @@ def _monte_carlo_price_distribution(
     values: list[float] = []
 
     # v2: sizeClass별 σ
-    sigma_growth = get_noise_sigma("growth", size_class)
-    sigma_margin = get_noise_sigma("margin", size_class)
-    sigma_wacc = get_noise_sigma("wacc", size_class)
-    sigma_capex = get_noise_sigma("capex", size_class)
-    sigma_tax = get_noise_sigma("tax", size_class)
+    sigma_growth = getNoiseSigma("growth", size_class)
+    sigma_margin = getNoiseSigma("margin", size_class)
+    sigma_wacc = getNoiseSigma("wacc", size_class)
+    sigma_capex = getNoiseSigma("capex", size_class)
+    sigma_tax = getNoiseSigma("tax", size_class)
 
     for _ in range(iterations):
         # v2: 5변수 noise
@@ -405,13 +405,13 @@ def compute_price_target(
     """
     warnings: list[str] = []
     probs = scenario_probabilities or dict(SCENARIO_PROBABILITIES)
-    elasticity = get_elasticity(sector_key)
+    elasticity = getElasticity(sector_key)
 
     # v2: context_signals가 있으면 확률 재가중
     size_class = "Mid"
     if context_signals:
-        size_class = context_signals.size_class
-        probs = adjust_probabilities(probs, context_signals)
+        size_class = context_signals.sizeClass
+        probs = adjustProbabilities(probs, context_signals)
         if context_signals.reasoning:
             warnings.append(f"맥락 기반 확률 재가중 ({len(context_signals.reasoning)}개 규칙 적용)")
 

@@ -6,6 +6,8 @@ import asyncio
 import time
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
 from dartlab.engines.gather.cache import GatherCache
 from dartlab.engines.gather.http import GatherHttpClient, _AsyncRateLimiter
 from dartlab.engines.gather.types import (
@@ -17,6 +19,8 @@ from dartlab.engines.gather.types import (
     PeerData,
     PriceSnapshot,
 )
+
+pytestmark = pytest.mark.integration
 
 # ══════════════════════════════════════
 # GatherCache 테스트

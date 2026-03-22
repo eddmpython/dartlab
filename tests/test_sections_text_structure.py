@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
 from dartlab import Company
+
+pytestmark = pytest.mark.integration
 from dartlab.engines.company.dart.docs.sections import (
     displayPeriod,
     pipeline,

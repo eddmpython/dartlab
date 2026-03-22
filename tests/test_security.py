@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from dartlab.server.security import (
     AnomalyDetector,
     SlidingWindowLimiter,
@@ -23,6 +25,8 @@ from dartlab.server.security import (
     validate_stock_code,
     validate_topic,
 )
+
+pytestmark = pytest.mark.integration
 
 # ──────────────────────────────────────────────────────────
 # TokenManager

@@ -125,40 +125,40 @@ def sector_params():
 @pytest.mark.unit
 class TestDCF:
     def test_dcf_basic(self, sector_params):
-        from dartlab.engines.common.finance.valuation import dcf_valuation
+        from dartlab.engines.analysis.analyst.valuation import dcfValuation as dcf_valuation
 
         result = dcf_valuation(
             HEALTHY_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
-            current_price=50_000,
+            sectorParams=sector_params,
+            currentPrice=50_000,
         )
-        assert result.enterprise_value > 0
-        assert result.equity_value > 0
-        assert result.per_share_value is not None
-        assert result.per_share_value > 0
-        assert result.margin_of_safety is not None
-        assert len(result.fcf_projections) == 5
-        assert result.discount_rate == 10.0
+        assert result.enterpriseValue > 0
+        assert result.equityValue > 0
+        assert result.perShareValue is not None
+        assert result.perShareValue > 0
+        assert result.marginOfSafety is not None
+        assert len(result.fcfProjections) == 5
+        assert result.discountRate == 10.0
 
     def test_dcf_no_shares(self, sector_params):
-        from dartlab.engines.common.finance.valuation import dcf_valuation
+        from dartlab.engines.analysis.analyst.valuation import dcfValuation as dcf_valuation
 
-        result = dcf_valuation(HEALTHY_SERIES, sector_params=sector_params)
-        assert result.enterprise_value > 0
-        assert result.per_share_value is None
+        result = dcf_valuation(HEALTHY_SERIES, sectorParams=sector_params)
+        assert result.enterpriseValue > 0
+        assert result.perShareValue is None
 
     def test_dcf_empty_series(self, sector_params):
-        from dartlab.engines.common.finance.valuation import dcf_valuation
+        from dartlab.engines.analysis.analyst.valuation import dcfValuation as dcf_valuation
 
-        result = dcf_valuation({"IS": {}, "BS": {}, "CF": {}}, sector_params=sector_params)
+        result = dcf_valuation({"IS": {}, "BS": {}, "CF": {}}, sectorParams=sector_params)
         assert len(result.warnings) > 0
-        assert result.enterprise_value == 0
+        assert result.enterpriseValue == 0
 
     def test_dcf_repr(self, sector_params):
-        from dartlab.engines.common.finance.valuation import dcf_valuation
+        from dartlab.engines.analysis.analyst.valuation import dcfValuation as dcf_valuation
 
-        result = dcf_valuation(HEALTHY_SERIES, shares=1_000_000, sector_params=sector_params)
+        result = dcf_valuation(HEALTHY_SERIES, shares=1_000_000, sectorParams=sector_params)
         text = repr(result)
         assert "DCF" in text
         assert "투자 권유" in text
@@ -172,34 +172,34 @@ class TestDCF:
 @pytest.mark.unit
 class TestDDM:
     def test_ddm_with_dividends(self, sector_params):
-        from dartlab.engines.common.finance.valuation import ddm_valuation
+        from dartlab.engines.analysis.analyst.valuation import ddmValuation as ddm_valuation
 
         result = ddm_valuation(
             HEALTHY_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
-            current_price=50_000,
+            sectorParams=sector_params,
+            currentPrice=50_000,
         )
-        assert result.model_used == "gordon"
-        assert result.intrinsic_value is not None
-        assert result.intrinsic_value > 0
-        assert result.dividend_per_share is not None
+        assert result.modelUsed == "gordon"
+        assert result.intrinsicValue is not None
+        assert result.intrinsicValue > 0
+        assert result.dividendPerShare is not None
 
     def test_ddm_no_dividends(self, sector_params):
-        from dartlab.engines.common.finance.valuation import ddm_valuation
+        from dartlab.engines.analysis.analyst.valuation import ddmValuation as ddm_valuation
 
         result = ddm_valuation(
             NO_DIVIDEND_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
+            sectorParams=sector_params,
         )
-        assert result.model_used == "N/A"
-        assert result.intrinsic_value is None
+        assert result.modelUsed == "N/A"
+        assert result.intrinsicValue is None
 
     def test_ddm_repr(self, sector_params):
-        from dartlab.engines.common.finance.valuation import ddm_valuation
+        from dartlab.engines.analysis.analyst.valuation import ddmValuation as ddm_valuation
 
-        result = ddm_valuation(HEALTHY_SERIES, shares=1_000_000, sector_params=sector_params)
+        result = ddm_valuation(HEALTHY_SERIES, shares=1_000_000, sectorParams=sector_params)
         text = repr(result)
         assert "DDM" in text
 
@@ -212,29 +212,29 @@ class TestDDM:
 @pytest.mark.unit
 class TestRelativeValuation:
     def test_relative_basic(self, sector_params):
-        from dartlab.engines.common.finance.valuation import relative_valuation
+        from dartlab.engines.analysis.analyst.valuation import relativeValuation as relative_valuation
 
         result = relative_valuation(
             HEALTHY_SERIES,
-            sector_params=sector_params,
-            market_cap=500e8,
+            sectorParams=sector_params,
+            marketCap=500e8,
             shares=1_000_000,
-            current_price=50_000,
+            currentPrice=50_000,
         )
-        assert result.sector_multiples["PER"] == 15
-        assert result.sector_multiples["PBR"] == 1.5
-        assert result.implied_values["PER"] is not None
-        assert result.consensus_value is not None
+        assert result.sectorMultiples["PER"] == 15
+        assert result.sectorMultiples["PBR"] == 1.5
+        assert result.impliedValues["PER"] is not None
+        assert result.consensusValue is not None
 
     def test_relative_no_market_cap(self, sector_params):
-        from dartlab.engines.common.finance.valuation import relative_valuation
+        from dartlab.engines.analysis.analyst.valuation import relativeValuation as relative_valuation
 
         result = relative_valuation(
             HEALTHY_SERIES,
-            sector_params=sector_params,
+            sectorParams=sector_params,
             shares=1_000_000,
         )
-        assert result.current_multiples["PER"] is None  # 시가총액 없으면 현재 PER 없음
+        assert result.currentMultiples["PER"] is None  # 시가총액 없으면 현재 PER 없음
 
 
 # ══════════════════════════════════════
@@ -245,19 +245,19 @@ class TestRelativeValuation:
 @pytest.mark.unit
 class TestFullValuation:
     def test_full_valuation(self, sector_params):
-        from dartlab.engines.common.finance.valuation import full_valuation
+        from dartlab.engines.analysis.analyst.valuation import fullValuation as full_valuation
 
         result = full_valuation(
             HEALTHY_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
-            market_cap=500e8,
-            current_price=50_000,
+            sectorParams=sector_params,
+            marketCap=500e8,
+            currentPrice=50_000,
         )
         assert result.dcf is not None
         assert result.ddm is not None
         assert result.relative is not None
-        assert result.fair_value_range is not None
+        assert result.fairValueRange is not None
         assert result.verdict in ("저평가", "적정", "고평가", "판단불가")
 
 
@@ -269,34 +269,34 @@ class TestFullValuation:
 @pytest.mark.unit
 class TestForecast:
     def test_forecast_revenue(self, sector_params):
-        from dartlab.engines.common.finance.forecast import forecast_metric
+        from dartlab.engines.analysis.analyst.forecast import forecastMetric as forecast_metric
 
-        result = forecast_metric(HEALTHY_SERIES, metric="revenue", horizon=3, sector_params=sector_params)
+        result = forecast_metric(HEALTHY_SERIES, metric="revenue", horizon=3, sectorParams=sector_params)
         assert result.metric == "revenue"
         assert len(result.projected) == 3
         assert result.confidence in ("high", "medium", "low")
-        assert result.r_squared >= 0
+        assert result.rSquared >= 0
 
     def test_forecast_insufficient_data(self, sector_params):
-        from dartlab.engines.common.finance.forecast import forecast_metric
+        from dartlab.engines.analysis.analyst.forecast import forecastMetric as forecast_metric
 
         short = _make_series(revenue=[100e8, 120e8])
-        result = forecast_metric(short, metric="revenue", sector_params=sector_params)
+        result = forecast_metric(short, metric="revenue", sectorParams=sector_params)
         assert len(result.projected) == 0
         assert len(result.warnings) > 0
 
     def test_forecast_all(self, sector_params):
-        from dartlab.engines.common.finance.forecast import forecast_all
+        from dartlab.engines.analysis.analyst.forecast import forecastAll as forecast_all
 
-        results = forecast_all(HEALTHY_SERIES, sector_params=sector_params)
+        results = forecast_all(HEALTHY_SERIES, sectorParams=sector_params)
         assert "revenue" in results
         assert "operating_income" in results
         assert "net_income" in results
 
     def test_forecast_unknown_metric(self, sector_params):
-        from dartlab.engines.common.finance.forecast import forecast_metric
+        from dartlab.engines.analysis.analyst.forecast import forecastMetric as forecast_metric
 
-        result = forecast_metric(HEALTHY_SERIES, metric="unknown_metric", sector_params=sector_params)
+        result = forecast_metric(HEALTHY_SERIES, metric="unknown_metric", sectorParams=sector_params)
         assert len(result.warnings) > 0
 
 
@@ -308,24 +308,24 @@ class TestForecast:
 @pytest.mark.unit
 class TestScenario:
     def test_scenario_basic(self, sector_params):
-        from dartlab.engines.common.finance.forecast import scenario_analysis
+        from dartlab.engines.analysis.analyst.forecast import scenarioAnalysis as scenario_analysis
 
         result = scenario_analysis(
             HEALTHY_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
-            current_price=50_000,
+            sectorParams=sector_params,
+            currentPrice=50_000,
         )
-        assert result.base["per_share_value"] > 0
-        assert result.bull["per_share_value"] >= result.base["per_share_value"]
-        assert result.bear["per_share_value"] <= result.base["per_share_value"]
-        assert result.weighted_value is not None
+        assert result.base["perShareValue"] > 0
+        assert result.bull["perShareValue"] >= result.base["perShareValue"]
+        assert result.bear["perShareValue"] <= result.base["perShareValue"]
+        assert result.weightedValue is not None
         assert result.probability["base"] == 50
 
     def test_scenario_repr(self, sector_params):
-        from dartlab.engines.common.finance.forecast import scenario_analysis
+        from dartlab.engines.analysis.analyst.forecast import scenarioAnalysis as scenario_analysis
 
-        result = scenario_analysis(HEALTHY_SERIES, shares=1_000_000, sector_params=sector_params)
+        result = scenario_analysis(HEALTHY_SERIES, shares=1_000_000, sectorParams=sector_params)
         text = repr(result)
         assert "시나리오" in text
         assert "Bull" in text
@@ -340,22 +340,22 @@ class TestScenario:
 @pytest.mark.unit
 class TestSensitivity:
     def test_sensitivity_basic(self, sector_params):
-        from dartlab.engines.common.finance.forecast import sensitivity_analysis
+        from dartlab.engines.analysis.analyst.forecast import sensitivityAnalysis as sensitivity_analysis
 
         result = sensitivity_analysis(
             HEALTHY_SERIES,
             shares=1_000_000,
-            sector_params=sector_params,
+            sectorParams=sector_params,
         )
-        assert len(result.wacc_values) == 5
-        assert len(result.growth_values) == 5
+        assert len(result.waccValues) == 5
+        assert len(result.growthValues) == 5
         assert len(result.matrix) == 5
         assert len(result.matrix[0]) == 5
 
     def test_sensitivity_repr(self, sector_params):
-        from dartlab.engines.common.finance.forecast import sensitivity_analysis
+        from dartlab.engines.analysis.analyst.forecast import sensitivityAnalysis as sensitivity_analysis
 
-        result = sensitivity_analysis(HEALTHY_SERIES, shares=1_000_000, sector_params=sector_params)
+        result = sensitivity_analysis(HEALTHY_SERIES, shares=1_000_000, sectorParams=sector_params)
         text = repr(result)
         assert "민감도" in text
         assert "WACC" in text
@@ -369,7 +369,7 @@ class TestSensitivity:
 @pytest.mark.unit
 class TestOLS:
     def test_perfect_linear(self):
-        from dartlab.engines.common.finance.forecast import _ols
+        from dartlab.engines.analysis.analyst.forecast import _ols
 
         x = [1.0, 2.0, 3.0, 4.0, 5.0]
         y = [2.0, 4.0, 6.0, 8.0, 10.0]
@@ -379,7 +379,7 @@ class TestOLS:
         assert abs(r2 - 1.0) < 0.01
 
     def test_constant(self):
-        from dartlab.engines.common.finance.forecast import _ols
+        from dartlab.engines.analysis.analyst.forecast import _ols
 
         x = [1.0, 2.0, 3.0]
         y = [5.0, 5.0, 5.0]
@@ -388,7 +388,7 @@ class TestOLS:
         assert abs(intercept - 5.0) < 0.01
 
     def test_single_point(self):
-        from dartlab.engines.common.finance.forecast import _ols
+        from dartlab.engines.analysis.analyst.forecast import _ols
 
         slope, intercept, r2 = _ols([1.0], [5.0])
         assert r2 == 0.0

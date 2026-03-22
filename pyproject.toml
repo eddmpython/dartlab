@@ -167,6 +167,7 @@ addopts = "-v --tb=short"
 markers = [
     "requires_data: 로컬 parquet 데이터 필요 (CI에서 skip)",
     "unit: 순수 로직/mock만 — 데이터 로드 없음, 병렬 안전",
+    "integration: Company 1개 로딩 필요 — 중간 무게",
     "heavy: 대량 데이터 로드 — 단독 실행 필수",
 ]
 

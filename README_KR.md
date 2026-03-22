@@ -22,18 +22,27 @@
 </p>
 
 <p>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-260%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
+<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-320%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
 <a href="https://github.com/eddmpython/dartlab/releases/tag/data-finance-1"><img src="https://img.shields.io/badge/Finance-2,700%2B_Companies-818cf8?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Finance Data"></a>
 <a href="https://github.com/eddmpython/dartlab/releases/tag/data-report-1"><img src="https://img.shields.io/badge/Report-2,700%2B_Companies-34d399?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Report Data"></a>
 </p>
 
 </div>
 
+> **참고:** DartLab은 활발히 개발 중이다. 버전 간 API가 바뀔 수 있으며, 문서가 최신 코드를 따라가지 못하는 경우가 있다.
+
 ## 설치
 
 ```bash
+# 안정 릴리즈 (PyPI)
 uv add dartlab
+
+# 최신 기능 — 빠르지만 breaking change 가능
+git clone https://github.com/eddmpython/dartlab.git
+cd dartlab && uv pip install -e .
 ```
+
+PyPI 배포는 코어가 안정적일 때만 한다. 최신 기능(감사, 예측, 밸류에이션 등 실험적 기능 포함)을 바로 쓰고 싶다면 git clone을 권장하지만, 간헐적 breaking change에 주의해야 한다.
 
 **설정 불필요.** `Company`를 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 데이터는 SEC API에서 가져온다. 두 번째 실행부터는 로컬 캐시로 즉시 로드된다.
 
@@ -588,7 +597,8 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 |------|------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
 | **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP 서버 |
-| **Experimental** | AI 도구, export |
+| **Experimental** | AI 도구, export, audit, forecast, valuation |
+| **Alpha** | Desktop App (Windows .exe) — 동작하지만 불완전, Sections Viewer — 수평화된 공시 뷰어, 아직 체계 미완성 |
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.
 

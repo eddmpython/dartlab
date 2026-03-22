@@ -22,18 +22,27 @@
 </p>
 
 <p>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-260%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
+<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-320%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
 <a href="https://github.com/eddmpython/dartlab/releases/tag/data-finance-1"><img src="https://img.shields.io/badge/Finance-2,700%2B_Companies-818cf8?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Finance Data"></a>
 <a href="https://github.com/eddmpython/dartlab/releases/tag/data-report-1"><img src="https://img.shields.io/badge/Report-2,700%2B_Companies-34d399?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Report Data"></a>
 </p>
 
 </div>
 
+> **Note:** DartLab is under active development. APIs may change between versions, and documentation may lag behind the latest code.
+
 ## Install
 
 ```bash
+# Stable release (PyPI)
 uv add dartlab
+
+# Bleeding edge — latest features, but breaking changes possible
+git clone https://github.com/eddmpython/dartlab.git
+cd dartlab && uv pip install -e .
 ```
+
+PyPI releases are published only when the core is stable. If you want the latest features (including experimental ones like audit, forecast, valuation), clone the repo directly — but expect occasional breaking changes.
 
 **No data setup required.** When you create a `Company`, dartlab automatically downloads the required data from GitHub Releases (DART) or SEC API (EDGAR). The second run loads instantly from local cache.
 
@@ -608,7 +617,8 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 |------|-------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
 | **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP server |
-| **Experimental** | AI tools, export |
+| **Experimental** | AI tools, export, audit, forecast, valuation |
+| **Alpha** | Desktop App (Windows .exe) — functional but incomplete, Sections Viewer — horizontalized disclosure viewer, not yet fully structured |
 
 See [docs/stability.md](docs/stability.md).
 

@@ -5,6 +5,8 @@ import pytest
 
 from tests.conftest import SAMSUNG, requires_samsung
 
+pytestmark = pytest.mark.integration
+
 
 def _topicBlocksFrame(topic: str, rows: list[dict[str, object]]) -> pl.DataFrame:
     records: list[dict[str, object]] = []

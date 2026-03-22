@@ -17,7 +17,7 @@ from dartlab.engines.common.finance.extract import (
 )
 
 if TYPE_CHECKING:
-    from dartlab.engines.common.finance.simulation import SectorElasticity
+    from dartlab.engines.analysis.analyst.simulation import SectorElasticity
 
 # ══════════════════════════════════════
 # 데이터 구조
@@ -560,9 +560,9 @@ def compute_company_wacc(
     # Ke (자기자본비용) — v2: 업종 β 활용
     if sector_params and hasattr(sector_params, "discountRate"):
         ke = sector_params.discountRate
-    elif sector_elasticity and hasattr(sector_elasticity, "revenue_to_gdp"):
+    elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
         # GDP 감응도를 equity β proxy로 사용
-        beta = max(0.5, min(sector_elasticity.revenue_to_gdp, 2.5))
+        beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
         ke = risk_free_rate + beta * market_premium
     else:
         beta = 1.0  # 시장 평균

@@ -13,7 +13,7 @@
     result.profile         # "premium"
 """
 
-from dartlab.engines.analysis.insight.pipeline import analyze
+from dartlab.engines.analysis.insight.pipeline import analyze, analyzeAudit
 from dartlab.engines.analysis.insight.types import (
     AnalysisResult,
     Anomaly,
@@ -28,6 +28,7 @@ from dartlab.engines.analysis.insight.types import (
 
 __all__ = [
     "analyze",
+    "analyzeAudit",
     "AnalysisResult",
     "Anomaly",
     "AuditDataForAnomaly",

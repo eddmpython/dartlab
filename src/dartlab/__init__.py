@@ -475,6 +475,76 @@ def reload_plugins():
     return rediscover()
 
 
+def audit(codeOrName: str):
+    """감사 Red Flag 분석.
+
+    Example::
+
+        import dartlab
+        dartlab.audit("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.insight.pipeline import analyzeAudit
+
+    return analyzeAudit(c)
+
+
+def forecast(codeOrName: str, *, horizon: int = 3):
+    """매출 앙상블 예측.
+
+    Example::
+
+        import dartlab
+        dartlab.forecast("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
+
+    series = c.finance.timeseries
+    return forecastRevenue(
+        series,
+        stockCode=getattr(c, "stockCode", None),
+        sectorKey=getattr(c, "sectorKey", None) if hasattr(c, "sectorKey") else None,
+        market=getattr(c, "market", "KR"),
+        horizon=horizon,
+    )
+
+
+def valuation(codeOrName: str, *, shares: int | None = None):
+    """종합 밸류에이션 (DCF + DDM + 상대가치).
+
+    Example::
+
+        import dartlab
+        dartlab.valuation("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+    series = c.finance.timeseries
+    if shares is None:
+        profile = getattr(c, "profile", None)
+        if profile:
+            shares = getattr(profile, "sharesOutstanding", None)
+            if shares:
+                shares = int(shares)
+    return fullValuation(series, shares=shares)
+
+
+def insights(codeOrName: str):
+    """7영역 등급 분석.
+
+    Example::
+
+        import dartlab
+        dartlab.insights("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.insight import analyze
+
+    return analyze(c.stockCode, company=c)
+
+
 def groupHealth():
     """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
 
@@ -585,6 +655,10 @@ __all__ = [
     "screen",
     "benchmark",
     "signal",
+    "audit",
+    "forecast",
+    "valuation",
+    "insights",
     "groupHealth",
     "digest",
     "plugins",

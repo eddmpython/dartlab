@@ -13,6 +13,8 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.integration
+
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 FIXTURE_FINANCE = FIXTURE_DIR / "005930.finance.parquet"
 

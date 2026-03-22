@@ -9,6 +9,8 @@ import pytest
 
 from dartlab.export.excel import exportToExcel, listAvailableModules
 
+pytestmark = pytest.mark.integration
+
 PATCH_TARGET = "dartlab.engines.company.dart.finance.pivot.buildAnnual"
 
 

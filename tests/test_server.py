@@ -21,6 +21,8 @@ _has_any_samsung = _has_samsung_docs or _has_samsung_finance
 
 requires_samsung_any = pytest.mark.skipif(not _has_any_samsung, reason="삼성전자 데이터 없음")
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def client():

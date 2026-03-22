@@ -2293,6 +2293,36 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
+    def audit(self):
+        """감사 Red Flag 분석."""
+        from dartlab.engines.analysis.insight.pipeline import analyzeAudit
+
+        return analyzeAudit(self)
+
+    def forecast(self, *, horizon: int = 3):
+        """매출 앙상블 예측."""
+        from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
+
+        series = self.finance.timeseries
+        return forecastRevenue(
+            series,
+            stockCode=self.stockCode,
+            sectorKey=getattr(self, "sectorKey", None),
+            market="KR",
+            horizon=horizon,
+        )
+
+    def valuation(self, *, shares: int | None = None):
+        """종합 밸류에이션 (DCF + DDM + 상대가치)."""
+        from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+        series = self.finance.timeseries
+        if shares is None:
+            shares = getattr(self.profile, "sharesOutstanding", None)
+            if shares:
+                shares = int(shares)
+        return fullValuation(series, shares=shares)
+
     @property
     def market(self) -> str:
         """시장 코드."""

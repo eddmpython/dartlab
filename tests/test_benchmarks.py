@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.integration
+
 
 def test_all_benchmarks_have_meta():
     """모든 벤치마크에 _meta (updated, source) 존재 확인."""

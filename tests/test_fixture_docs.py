@@ -9,6 +9,8 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.integration
+
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 FIXTURE_DOCS = FIXTURE_DIR / "005930.docs.parquet"
 

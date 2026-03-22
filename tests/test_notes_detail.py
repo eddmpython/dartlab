@@ -5,6 +5,8 @@ import pytest
 
 from tests.conftest import SAMSUNG, requires_samsung
 
+pytestmark = pytest.mark.integration
+
 
 @requires_samsung
 class TestNotesDetail:

@@ -10,6 +10,8 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.integration
+
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 FIXTURE_REPORT = FIXTURE_DIR / "005930.report.parquet"
 

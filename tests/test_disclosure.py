@@ -1,6 +1,10 @@
 """disclosure 모듈 테스트."""
 
+import pytest
+
 from tests.conftest import SAMSUNG, requires_samsung
+
+pytestmark = pytest.mark.integration
 
 
 @requires_samsung

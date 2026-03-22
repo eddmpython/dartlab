@@ -3,6 +3,8 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _ticker_df() -> pl.DataFrame:
     return pl.DataFrame(

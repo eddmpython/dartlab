@@ -3,16 +3,17 @@
 데이터 경로는 dartlab 패키지의 config.dataDir 기준.
 DARTLAB_DATA_DIR 환경변수 또는 dartlab.dataDir로 변경 가능.
 
-마커 구조:
-- requires_samsung, requires_finance 등: 개별 데이터 의존성 (로컬에 없으면 skip)
-- requires_data: CI 통합 마커 (pytest -m "not requires_data" 로 데이터 의존 테스트 제외)
+마커 구조 (3-tier):
 - unit: 순수 로직/mock만 — 데이터 로드 없음, 병렬 안전
+- integration: Company 1개 로딩 필요 — 중간 무게
 - heavy: 대량 데이터 로드 — 단독 실행 필수
+- requires_data: CI 통합 마커 (pytest -m "not requires_data" 로 데이터 의존 테스트 제외)
+- requires_samsung, requires_finance 등: 개별 데이터 의존성 (로컬에 없으면 skip)
 
-테스트 실행 가이드:
-  pytest -m "unit" -v              # 가벼운 테스트만 (안전, 빠름)
-  pytest -m "not unit and not heavy" -v  # 중간 테스트
-  pytest -m "heavy" -v             # 무거운 테스트 (단독)
+테스트 실행 가이드 (반드시 test-lock.sh 경유):
+  bash scripts/test-lock.sh tests/ -m "unit" -v --tb=short             # 1단계: unit (안전, 빠름)
+  bash scripts/test-lock.sh tests/ -m "integration" -v --tb=short      # 2단계: integration (Company 로딩)
+  bash scripts/test-lock.sh tests/ -m "heavy" -v --tb=short            # 3단계: heavy (단독)
   ⚠ pytest tests/ -v 전체 한번에 돌리면 메모리 크래시 위험
   ⚠ Polars 네이티브 Rust 메모리는 gc.collect()로 회수 불가 — fixture 해제가 유일한 방법
 

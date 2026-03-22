@@ -1,8 +1,11 @@
 """reportEngine 통합 테스트."""
 
 import polars as pl
+import pytest
 
 from tests.conftest import SAMSUNG, requires_report
+
+pytestmark = pytest.mark.integration
 
 
 @requires_report

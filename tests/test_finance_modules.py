@@ -1,8 +1,11 @@
 """나머지 finance 모듈 통합 테스트."""
 
 import polars as pl
+import pytest
 
 from tests.conftest import SAMSUNG, requires_samsung
+
+pytestmark = pytest.mark.integration
 
 
 @requires_samsung

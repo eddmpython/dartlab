@@ -7,6 +7,8 @@ import pytest
 from dartlab.engines.common.protocols import CompanyProtocol, DocsProtocol, FinanceProtocol
 from tests.conftest import SAMSUNG, requires_samsung
 
+pytestmark = pytest.mark.integration
+
 
 def _get_protocol_required_members(proto) -> set[str]:
     """Protocol이 요구하는 멤버 이름 추출."""

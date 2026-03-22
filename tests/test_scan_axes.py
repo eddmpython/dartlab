@@ -9,6 +9,8 @@ import pytest
 
 from tests.conftest import requires_report
 
+pytestmark = pytest.mark.integration
+
 # ── import 테스트 (데이터 불필요) ─────────────────────────────
 
 

@@ -165,8 +165,69 @@ def _extract_from_company(
     return stock_code, company_name, shares, financials or None
 
 
+from .forecast import (
+    ForecastResult,
+    ScenarioResult,
+    SensitivityResult,
+    forecastAll,
+    forecastMetric,
+    scenarioAnalysis,
+    sensitivityAnalysis,
+)
+from .revenueForecast import (
+    RevenueForecastResult,
+    forecastRevenue,
+)
+from .simulation import (
+    MonteCarloResult,
+    SimulationResult,
+    StressTestResult,
+    monteCarloForecast,
+    simulateAllScenarios,
+    simulateScenario,
+    stressTest,
+)
+from .valuation import (
+    DCFResult,
+    DDMResult,
+    RelativeValuationResult,
+    ValuationSummary,
+    dcfValuation,
+    ddmValuation,
+    fullValuation,
+    relativeValuation,
+)
+
 __all__ = [
     "Analyst",
     "AnalystReport",
     "ValuationMethod",
+    # forecast
+    "ForecastResult",
+    "ScenarioResult",
+    "SensitivityResult",
+    "forecastMetric",
+    "forecastAll",
+    "scenarioAnalysis",
+    "sensitivityAnalysis",
+    # valuation
+    "DCFResult",
+    "DDMResult",
+    "RelativeValuationResult",
+    "ValuationSummary",
+    "dcfValuation",
+    "ddmValuation",
+    "fullValuation",
+    "relativeValuation",
+    # simulation
+    "SimulationResult",
+    "MonteCarloResult",
+    "StressTestResult",
+    "simulateScenario",
+    "simulateAllScenarios",
+    "monteCarloForecast",
+    "stressTest",
+    # revenue forecast
+    "RevenueForecastResult",
+    "forecastRevenue",
 ]

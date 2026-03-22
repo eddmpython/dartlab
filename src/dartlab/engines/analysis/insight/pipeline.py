@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dartlab.engines.analysis.insight.anomaly import runAnomalyDetection
+from dartlab.engines.analysis.insight.anomaly import detectAuditRedFlags, runAnomalyDetection
 from dartlab.engines.analysis.insight.detector import detectFinancialSector
 from dartlab.engines.analysis.insight.distress import calcDistress
 from dartlab.engines.analysis.insight.grading import (
@@ -17,7 +17,7 @@ from dartlab.engines.analysis.insight.grading import (
     analyzeRiskSummary,
 )
 from dartlab.engines.analysis.insight.summary import classifyProfile, generateSummary
-from dartlab.engines.analysis.insight.types import AnalysisResult, AuditDataForAnomaly, MarketDataForDistress
+from dartlab.engines.analysis.insight.types import AnalysisResult, Anomaly, AuditDataForAnomaly, MarketDataForDistress
 from dartlab.engines.analysis.sector.types import Sector
 from dartlab.engines.common.finance.ratios import calcRatios
 
@@ -254,3 +254,9 @@ def analyze(
         summary=summaryText,
         profile=profile,
     )
+
+
+def analyzeAudit(company) -> list[Anomaly]:
+    """감사 Red Flag만 단독 분석."""
+    auditData = _extractAuditData(company)
+    return detectAuditRedFlags(auditData)

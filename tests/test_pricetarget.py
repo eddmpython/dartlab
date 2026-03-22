@@ -8,7 +8,12 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.engines.common.finance.prediction import ContextSignals
+from dartlab.engines.analysis.analyst.prediction import ContextSignals
+from dartlab.engines.analysis.analyst.simulation import (
+    DEFAULT_ELASTICITY,
+    PRESET_SCENARIOS,
+    SectorElasticity,
+)
 from dartlab.engines.common.finance.pricetarget import (
     PriceTargetResult,
     _classify_signal,
@@ -18,11 +23,6 @@ from dartlab.engines.common.finance.pricetarget import (
     compute_price_target,
 )
 from dartlab.engines.common.finance.proforma import build_proforma
-from dartlab.engines.common.finance.simulation import (
-    DEFAULT_ELASTICITY,
-    PRESET_SCENARIOS,
-    SectorElasticity,
-)
 
 # ── Mock 시계열 (test_proforma와 동일) ──────────────────
 
@@ -382,8 +382,8 @@ class TestContextSignalsIntegration:
             mc_seed=42,
         )
         signals = ContextSignals(
-            insight_grades={"profitability": "F", "health": "D"},
-            sector_cyclicality="high",
+            insightGrades={"profitability": "F", "health": "D"},
+            sectorCyclicality="high",
         )
         result_with_ctx = compute_price_target(
             SERIES,
@@ -400,8 +400,8 @@ class TestContextSignalsIntegration:
     def test_context_signals_probabilities_sum(self):
         """맥락 신호 적용 후에도 확률 합계 = 1."""
         signals = ContextSignals(
-            insight_grades={"profitability": "F"},
-            risk_change_rate=90.0,
+            insightGrades={"profitability": "F"},
+            riskChangeRate=90.0,
         )
         result = compute_price_target(
             SERIES,
@@ -415,7 +415,7 @@ class TestContextSignalsIntegration:
     @pytest.mark.unit
     def test_size_class_passed_to_mc(self):
         """Small sizeClass → MC σ가 달라짐 (간접 검증)."""
-        from dartlab.engines.common.finance.prediction import get_noise_sigma
+        from dartlab.engines.analysis.analyst.prediction import getNoiseSigma as get_noise_sigma
 
         # MC를 직접 실행하지 않고, σ 설정이 size_class에 따라 다른지 확인
         sigma_s = get_noise_sigma("growth", "Small")
@@ -423,7 +423,7 @@ class TestContextSignalsIntegration:
         assert sigma_s > sigma_l
 
         # compute_price_target에 context_signals가 전달되면 경고 포함
-        signals = ContextSignals(size_class="Small", insight_grades={"profitability": "D"})
+        signals = ContextSignals(sizeClass="Small", insightGrades={"profitability": "D"})
         result = compute_price_target(
             SERIES,
             shares=100,
