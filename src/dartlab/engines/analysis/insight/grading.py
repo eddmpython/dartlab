@@ -165,6 +165,7 @@ def analyzeProfitability(
     aSeries: dict,
     isFinancial: bool = False,
     sector: Sector = Sector.UNKNOWN,
+    market: str = "KR",
 ) -> InsightResult:
     """수익성 분석."""
     details: list[str] = []
@@ -233,7 +234,7 @@ def analyzeProfitability(
             details.append("낮은 레버리지로 고ROE — 진성 수익성")
             opps.append(Flag("strong", "finance", f"레버리지 {leverage:.1f}x로 ROE {roe:.1f}%"))
 
-    bm = getBenchmark(sector)
+    bm = getBenchmark(sector, market)
     omAdj = sectorAdjustment(om, bm.omMedian, bm.omQ1, bm.omQ3)
     roeAdj = sectorAdjustment(roe, bm.roeMedian, bm.roeQ1, bm.roeQ3)
     adj = omAdj + roeAdj
@@ -320,7 +321,7 @@ def _analyzeProfitabilityFinancial(
     return InsightResult(grade, summary, details, risks, opps)
 
 
-def analyzeHealth(ratios: RatioResult, isFinancial: bool = False) -> InsightResult:
+def analyzeHealth(ratios: RatioResult, isFinancial: bool = False, currency: str = "KRW") -> InsightResult:
     """재무건전성 분석."""
     details: list[str] = []
     risks: list[Flag] = []
@@ -344,6 +345,41 @@ def analyzeHealth(ratios: RatioResult, isFinancial: bool = False) -> InsightResu
             else:
                 details.append(f"부채비율 {dr:.0f}% — 금융업 과다")
                 risks.append(Flag("warning", "finance", f"금융업 부채비율 {dr:.0f}%"))
+                score -= 1
+    elif currency == "USD":
+        # US 기업: 자사주매입으로 equity 축소가 일반적, 부채비율 높음이 정상
+        if dr is not None:
+            if dr < 100:
+                details.append(f"부채비율 매우 양호 ({dr:.0f}%)")
+                opps.append(Flag("strong", "finance", f"부채비율 {dr:.0f}%"))
+                score += 3
+            elif dr < 200:
+                details.append(f"부채비율 양호 ({dr:.0f}%)")
+                opps.append(Flag("positive", "finance", f"부채비율 {dr:.0f}%"))
+                score += 2
+            elif dr < 400:
+                details.append(f"부채비율 보통 ({dr:.0f}%)")
+                score += 1
+            elif dr < 600:
+                details.append(f"부채비율 다소 높음 ({dr:.0f}%)")
+            else:
+                details.append(f"부채비율 과다 ({dr:.0f}%)")
+                risks.append(Flag("warning", "finance", f"부채비율 {dr:.0f}%"))
+                score -= 1
+
+        if cr is not None:
+            if cr > 150:
+                details.append(f"유동성 매우 충분 ({cr:.0f}%)")
+                opps.append(Flag("positive", "finance", f"유동비율 {cr:.0f}%"))
+                score += 2
+            elif cr > 100:
+                details.append(f"유동성 충분 ({cr:.0f}%)")
+                score += 1
+            elif cr > 80:
+                details.append(f"유동성 보통 ({cr:.0f}%)")
+            else:
+                details.append(f"유동성 부족 ({cr:.0f}%)")
+                risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
                 score -= 1
     else:
         if dr is not None:

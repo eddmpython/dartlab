@@ -175,50 +175,43 @@ def buildCumulative(
 
 
 def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
-    """CFS/OFS 행 단위 중복 제거. pref 우선."""
+    """시트(연도×분기×재무제표) 단위 CFS/OFS 선택. pref 우선.
+
+    같은 시트에서 CFS가 1행이라도 있으면 CFS만 사용하고,
+    CFS가 없는 시트는 OFS 전체로 폴백한다.
+    행 단위 혼합은 합계 불일치를 유발하므로 금지한다.
+    """
     if "fs_div" not in df.columns:
         return df
 
     available = set(df["fs_div"].drop_nulls().unique().to_list())
-    if pref not in available:
-        if pref == "CFS" and "OFS" in available:
-            pref = "OFS"
-        elif pref == "OFS" and "CFS" in available:
-            pref = "CFS"
-        elif available:
-            pref = next(iter(available))
-        else:
-            return df
+    if len(available) <= 1:
+        return df
 
-    prefPriority = 1
-    otherPriority = 2
+    # 시트별(연도, 분기, 재무제표) 소스 결정
+    groupCols = ["bsns_year", "reprt_nm", "sj_div"]
+    if not all(c in df.columns for c in groupCols):
+        return df
 
-    df = df.with_columns(
-        pl.when(pl.col("fs_div") == pref)
-        .then(pl.lit(prefPriority))
-        .otherwise(pl.lit(otherPriority))
-        .alias("_fsPriority")
+    sheetSources = df.group_by(groupCols).agg(pl.col("fs_div").drop_nulls().unique().alias("_sources"))
+
+    def _pickSource(sources: list[str]) -> str:
+        """시트별 선택할 fs_div 결정."""
+        sourceSet = set(sources)
+        if pref in sourceSet:
+            return pref
+        fallback = "OFS" if pref == "CFS" else "CFS"
+        if fallback in sourceSet:
+            return fallback
+        return sources[0]
+
+    sheetSources = sheetSources.with_columns(
+        pl.col("_sources").map_elements(_pickSource, return_dtype=pl.Utf8).alias("_targetFs")
     )
 
-    # 혼합 소스 감지: 같은 (연도, 재무제표)에서 CFS/OFS가 섞이면 경고
-    groupCols = ["bsns_year", "sj_div"]
-    if all(c in df.columns for c in groupCols):
-        mixed = df.group_by(groupCols).agg(pl.col("fs_div").n_unique().alias("_nSource")).filter(pl.col("_nSource") > 1)
-        if not mixed.is_empty():
-            for row in mixed.iter_rows(named=True):
-                _log.warning(
-                    "CFS/OFS 혼합: %s %s — 행 단위 중복 제거로 소스 혼합 가능",
-                    row["bsns_year"],
-                    row["sj_div"],
-                )
-
-    df = df.sort(["bsns_year", "reprt_nm", "sj_div", "account_id", "_fsPriority"])
-    df = df.unique(
-        ["bsns_year", "reprt_nm", "sj_div", "account_id", "account_nm"],
-        keep="first",
-    )
-    df = df.drop("_fsPriority")
-
+    df = df.join(sheetSources.select(groupCols + ["_targetFs"]), on=groupCols, how="left")
+    df = df.filter(pl.col("fs_div") == pl.col("_targetFs"))
+    df = df.drop("_targetFs")
     return df
 
 

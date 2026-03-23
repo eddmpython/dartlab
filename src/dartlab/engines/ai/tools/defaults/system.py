@@ -344,6 +344,100 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         priority=30,
     )
 
+    def checkDataReady(stockCode: str) -> str:
+        """종목의 데이터 준비 상태를 확인한다."""
+        from datetime import datetime
+
+        from dartlab.core.dataLoader import _dataDir
+
+        categories = ["docs", "finance", "report"]
+        lines = [f"## {stockCode} 데이터 상태", ""]
+        allReady = True
+        for cat in categories:
+            d = _dataDir(cat)
+            fp = d / f"{stockCode}.parquet"
+            if fp.exists():
+                mtime = datetime.fromtimestamp(fp.stat().st_mtime)
+                lines.append(f"- **{cat}**: ✅ 있음 (최종 갱신: {mtime:%Y-%m-%d %H:%M})")
+            else:
+                lines.append(f"- **{cat}**: ❌ 없음")
+                allReady = False
+
+        if allReady:
+            lines.append("\n모든 데이터가 준비되어 있습니다. 바로 분석을 진행할 수 있습니다.")
+        else:
+            lines.append(
+                "\n일부 데이터가 없습니다. `download_data` 도구로 다운로드하거나, "
+                "사용자에게 다운로드 여부를 물어보세요."
+            )
+        return "\n".join(lines)
+
+    register_tool(
+        "checkDataReady",
+        checkDataReady,
+        "종목의 데이터 준비 상태(docs/finance/report)를 확인합니다. 분석 전 데이터가 있는지 확인할 때 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "stockCode": {
+                    "type": "string",
+                    "description": "종목코드 (예: 005930)",
+                },
+            },
+            "required": ["stockCode"],
+        },
+        category="global",
+        priority=75,
+    )
+
+    def estimateTime(operation: str, stockCode: str = "") -> str:
+        """작업 예상 시간을 반환한다."""
+        estimates = {
+            "company_load": ("Company 객체 로드", "3~5초"),
+            "full_analysis": ("전체 분석 (insights)", "10~20초"),
+            "forecast": ("매출 예측", "5~10초"),
+            "valuation": ("밸류에이션", "5~10초"),
+            "simulation": ("시나리오 시뮬레이션", "5~10초"),
+            "market_scan": ("시장 전체 스캔", "1~3분"),
+            "download_docs": ("docs 다운로드 (전체)", "2~5분"),
+            "download_finance": ("finance 다운로드 (전체)", "3~8분"),
+            "download_single": ("단일 종목 다운로드", "5~15초"),
+        }
+        if operation in estimates:
+            label, time = estimates[operation]
+            msg = f"**{label}**: 약 {time}"
+            if stockCode:
+                msg += f" ({stockCode})"
+            return msg
+        available = ", ".join(estimates.keys())
+        return f"알 수 없는 작업입니다. 지원 작업: {available}"
+
+    register_tool(
+        "estimateTime",
+        estimateTime,
+        "작업의 예상 소요 시간을 안내합니다. "
+        "오래 걸리는 작업 전에 사용자에게 미리 안내할 때 사용하세요. "
+        "operation: company_load, full_analysis, forecast, valuation, simulation, "
+        "market_scan, download_docs, download_finance, download_single.",
+        {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "description": "작업 종류",
+                },
+                "stockCode": {
+                    "type": "string",
+                    "description": "종목코드 (선택)",
+                    "default": "",
+                },
+            },
+            "required": ["operation"],
+        },
+        category="global",
+        priority=70,
+    )
+
     def data_status() -> str:
         from dartlab.core.dataLoader import DATA_RELEASES, _dataDir
 

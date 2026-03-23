@@ -154,6 +154,7 @@ def analyze(
     qSeriesPair: SeriesPair | None = None,
     aSeriesPair: SeriesPair | None = None,
     marketData: MarketDataForDistress | None = None,
+    currency: str | None = None,
 ) -> AnalysisResult | None:
     """종목 종합 인사이트 분석.
 
@@ -164,6 +165,7 @@ def analyze(
         qSeriesPair: (qSeries, qPeriods). None이면 DART pivot에서 빌드.
         aSeriesPair: (aSeries, aYears). None이면 DART pivot에서 빌드.
         marketData: 시장 기반 부실 분석 입력. None이면 4축, 제공 시 Merton 5축.
+        currency: 통화 코드. None이면 company에서 자동 추출 (기본 KRW).
 
     Returns:
         AnalysisResult 또는 데이터 부족 시 None.
@@ -184,7 +186,13 @@ def analyze(
 
     qSeries, qPeriods = qSeriesPair
     aSeries, aYears = aSeriesPair
-    ratios = calcRatios(aSeries, archetypeOverride=_ratio_archetype_override(company))
+
+    # currency 자동 추출: company에서 가져오거나 기본 KRW
+    if currency is None:
+        currency = getattr(company, "currency", "KRW")
+    market = "US" if currency == "USD" else "KR"
+
+    ratios = calcRatios(aSeries, archetypeOverride=_ratio_archetype_override(company), currency=currency)
 
     if company is None and corpName is None:
         try:
@@ -203,8 +211,8 @@ def analyze(
 
     insights = {}
     insights["performance"] = analyzePerformance(aSeries, aYears, qSeries, qPeriods, isFinancial)
-    insights["profitability"] = analyzeProfitability(ratios, aSeries, isFinancial, sector=sector)
-    insights["health"] = analyzeHealth(ratios, isFinancial)
+    insights["profitability"] = analyzeProfitability(ratios, aSeries, isFinancial, sector=sector, market=market)
+    insights["health"] = analyzeHealth(ratios, isFinancial, currency=currency)
     insights["cashflow"] = analyzeCashflow(ratios, aSeries, isFinancial)
     insights["governance"] = analyzeGovernance(company) if company else analyzeGovernance(None)
     insights["risk"] = analyzeRiskSummary(insights)

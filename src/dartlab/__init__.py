@@ -501,12 +501,14 @@ def forecast(codeOrName: str, *, horizon: int = 3):
     from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
 
     ts = c.finance.timeseries
+    if ts is None:
+        return None
     series = ts[0] if isinstance(ts, tuple) else ts
     currency = getattr(c, "currency", "KRW")
     return forecastRevenue(
         series,
         stockCode=getattr(c, "stockCode", None),
-        sectorKey=getattr(c, "sectorKey", None) if hasattr(c, "sectorKey") else None,
+        sectorKey=getattr(c, "sectorKey", None),
         market=getattr(c, "market", "KR"),
         horizon=horizon,
         currency=currency,
@@ -525,6 +527,8 @@ def valuation(codeOrName: str, *, shares: int | None = None):
     from dartlab.engines.analysis.analyst.valuation import fullValuation
 
     ts = c.finance.timeseries
+    if ts is None:
+        return None
     series = ts[0] if isinstance(ts, tuple) else ts
     currency = getattr(c, "currency", "KRW")
     if shares is None:
@@ -548,6 +552,28 @@ def insights(codeOrName: str):
     from dartlab.engines.analysis.insight import analyze
 
     return analyze(c.stockCode, company=c)
+
+
+def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
+    """경제 시나리오 시뮬레이션.
+
+    Example::
+
+        import dartlab
+        dartlab.simulation("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios
+
+    ts = c.finance.timeseries
+    if ts is None:
+        return None
+    series = ts[0] if isinstance(ts, tuple) else ts
+    return simulateAllScenarios(
+        series,
+        sectorKey=getattr(c, "sectorKey", None),
+        scenarios=scenarios,
+    )
 
 
 def groupHealth():
@@ -664,6 +690,11 @@ __all__ = [
     "forecast",
     "valuation",
     "insights",
+    "simulation",
+    "governance",
+    "workforce",
+    "capital",
+    "debt",
     "groupHealth",
     "digest",
     "plugins",

@@ -149,6 +149,7 @@ class RatioResult:
     sharesOutstanding: Optional[int] = None
     ebitdaEstimated: bool = True
 
+    currency: str = "KRW"
     warnings: list[str] = field(default_factory=list)
 
     # ── 카테고리별 필드 그룹 (표시용) ──────────────────────────
@@ -672,6 +673,7 @@ def calcRatios(
     annual: bool = False,
     archetypeOverride: str | None = None,
     shares: Optional[int] = None,
+    currency: str = "KRW",
 ) -> RatioResult:
     """시계열에서 재무비율 계산 (최신 단일 시점).
 
@@ -681,11 +683,13 @@ def calcRatios(
             annual: True면 IS/CF에 getLatest 사용 (연간 시계열).
                     False면 getTTM 사용 (분기 시계열, 기본값).
             shares: 발행주식수. None이면 주당지표(EPS/BPS/DPS) 건너뜀.
+            currency: 통화 코드. grading에서 시장별 임계값 분기에 사용.
 
     Returns:
             RatioResult.
     """
     r = RatioResult()
+    r.currency = currency
     archetype = archetypeOverride or _detectArchetype(series)
 
     _flow = getLatest if annual else getTTM
@@ -733,7 +737,7 @@ def calcRatios(
     r.noncurrentLiabilities = getLatest(series, "BS", "noncurrent_liabilities")
 
     r.profitBeforeTax = _pick_first(series, "IS", ["profit_before_tax", "income_before_tax"], annual=annual)
-    r.incomeTaxExpense = _flow(series, "IS", "income_tax_expense")
+    r.incomeTaxExpense = _pick_first(series, "IS", ["income_tax_expense", "income_taxes"], annual=annual)
 
     _calcProfitability(r)
     _calcStability(r)
@@ -905,7 +909,7 @@ def _calcComposite(
     # 유효세율 동적 계산. 불가능하면 22% 기본값.
     effective_tax = 0.22
     pbt = getTTM(series, "IS", "profit_before_tax")
-    tax_exp = getTTM(series, "IS", "income_tax_expense")
+    tax_exp = getTTM(series, "IS", "income_tax_expense") or getTTM(series, "IS", "income_taxes")
     if pbt and pbt > 0 and tax_exp is not None:
         _et = tax_exp / pbt
         if 0 <= _et <= 0.5:
@@ -1390,7 +1394,7 @@ def calcRatioSeries(
     ncAssets = _get(annualSeries, "BS", "noncurrent_assets")
 
     profitBeforeTax = _get(annualSeries, "IS", "profit_before_tax")
-    incomeTaxExpense = _get(annualSeries, "IS", "income_tax_expense")
+    incomeTaxExpense = _get(annualSeries, "IS", "income_tax_expense") or _get(annualSeries, "IS", "income_taxes")
 
     opCf = _get(annualSeries, "CF", "operating_cashflow")
     capex = _get(annualSeries, "CF", "purchase_of_property_plant_and_equipment")

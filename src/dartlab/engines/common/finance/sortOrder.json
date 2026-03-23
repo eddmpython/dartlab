@@ -1791,7 +1791,7 @@
       "level": 2
     },
     "selling_and_administrative_expenses": {
-      "sortOrder": 1050,
+      "sortOrder": 1300,
       "level": 1
     },
     "income_tax_expense": {
@@ -1811,7 +1811,7 @@
       "level": 1
     },
     "loss_before_tax": {
-      "sortOrder": 1350,
+      "sortOrder": 1905,
       "level": 1
     },
     "stock_compensation_expense": {

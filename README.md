@@ -318,6 +318,11 @@ dartlab.governance()     # module-level scan
 dartlab.workforce()
 dartlab.capital()
 dartlab.debt()
+
+# screening & benchmarking
+dartlab.screen()         # multi-factor screening
+dartlab.benchmark()      # peer comparison
+dartlab.signal()         # change detection signals
 ```
 
 ## EDGAR (US)
@@ -355,6 +360,8 @@ c.insights.grades()                     c.insights.grades()
 ```
 
 ## AI Analysis
+
+> **Tip:** New to financial analysis or prefer natural language? Use `dartlab.ask()` — the AI assistant handles everything from data download to analysis. No coding knowledge required.
 
 DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. **No code required** — you can ask questions in plain language and DartLab handles everything: data selection, context assembly, and streaming the answer.
 

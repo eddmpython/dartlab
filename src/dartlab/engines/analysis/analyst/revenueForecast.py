@@ -354,13 +354,13 @@ def _fundamentalGrowth(series: dict) -> tuple[float | None, dict]:
 
     detail = {
         "roic": round(roic, 2),
-        "reinvestment_rate": round(reinvestmentRate * 100, 1),
+        "reinvestmentRate": round(reinvestmentRate * 100, 1),
         "nopat": nopat,
-        "invested_capital": invested,
+        "investedCapital": invested,
         "capex": capex,
         "depreciation": dep,
-        "delta_nwc": deltaNwc,
-        "fundamental_growth": round(fundamentalG, 2),
+        "deltaNwc": deltaNwc,
+        "fundamentalGrowth": round(fundamentalG, 2),
     }
 
     return fundamentalG, detail
@@ -401,12 +401,12 @@ def _classifyLifecycle(series: dict) -> tuple[str, dict]:
     detail = {
         "cagr_3y": round(cagr, 1),
         "cv": round(cv, 3),
-        "sign_changes": signChanges,
-        "data_points": len(valid),
+        "signChanges": signChanges,
+        "dataPoints": len(valid),
     }
 
     # signChanges 임계: 분기 데이터(>8개)는 3회, 연간은 2회
-    signThreshold = 3 if len(recent) > 8 else 2
+    signThreshold = 3 if len(valid) > 8 else 2
     if cv > 0.4 or signChanges >= signThreshold:
         return "transition", detail
     if cagr > 15 and cv < 0.3:

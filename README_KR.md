@@ -318,6 +318,11 @@ dartlab.governance()     # 모듈 레벨 스캔
 dartlab.workforce()
 dartlab.capital()
 dartlab.debt()
+
+# 스크리닝 & 벤치마크
+dartlab.screen()         # 멀티팩터 스크리닝
+dartlab.benchmark()      # 동종업체 비교
+dartlab.signal()         # 공시 변화 감지 시그널
 ```
 
 ## EDGAR (미국)
@@ -355,6 +360,8 @@ c.insights.grades()                     c.insights.grades()
 ```
 
 ## AI 분석
+
+> **Tip:** 코드를 모르거나 자연어를 선호한다면 `dartlab.ask()`를 사용하세요. AI 비서가 데이터 다운로드부터 분석까지 모든 것을 처리합니다.
 
 DartLab은 구조화된 기업 데이터를 LLM에 전달하는 AI 분석 레이어를 내장하고 있다. **코드 없이** 자연어로 질문하면 DartLab이 모든 것을 처리한다: 데이터 선택, 컨텍스트 조립, 답변 스트리밍.
 

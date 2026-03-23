@@ -172,9 +172,64 @@ DEFAULT_BENCHMARK = SectorBenchmark(
     n=2167,
 )
 
+# ── US (S&P 500) 섹터 벤치마크 ── 공개 데이터 기반 추정, 추후 실험으로 정밀 보정
+US_BENCHMARKS: dict[Sector, SectorBenchmark] = {
+    Sector.IT: SectorBenchmark(
+        omMedian=22.0, omQ1=12.0, omQ3=32.0,
+        roeMedian=28.0, roeQ1=15.0, roeQ3=45.0, n=75,
+    ),
+    Sector.HEALTHCARE: SectorBenchmark(
+        omMedian=8.0, omQ1=-5.0, omQ3=25.0,
+        roeMedian=18.0, roeQ1=5.0, roeQ3=35.0, n=60,
+    ),
+    Sector.FINANCIALS: SectorBenchmark(
+        omMedian=30.0, omQ1=20.0, omQ3=42.0,
+        roeMedian=12.0, roeQ1=8.0, roeQ3=18.0, n=70,
+    ),
+    Sector.CONSUMER_DISC: SectorBenchmark(
+        omMedian=10.0, omQ1=4.0, omQ3=18.0,
+        roeMedian=25.0, roeQ1=10.0, roeQ3=40.0, n=55,
+    ),
+    Sector.CONSUMER_STAPLES: SectorBenchmark(
+        omMedian=12.0, omQ1=7.0, omQ3=20.0,
+        roeMedian=22.0, roeQ1=12.0, roeQ3=35.0, n=35,
+    ),
+    Sector.INDUSTRIALS: SectorBenchmark(
+        omMedian=12.0, omQ1=6.0, omQ3=18.0,
+        roeMedian=22.0, roeQ1=10.0, roeQ3=35.0, n=70,
+    ),
+    Sector.COMMUNICATION: SectorBenchmark(
+        omMedian=18.0, omQ1=5.0, omQ3=30.0,
+        roeMedian=15.0, roeQ1=5.0, roeQ3=30.0, n=25,
+    ),
+    Sector.ENERGY: SectorBenchmark(
+        omMedian=15.0, omQ1=5.0, omQ3=25.0,
+        roeMedian=18.0, roeQ1=8.0, roeQ3=30.0, n=23,
+    ),
+    Sector.MATERIALS: SectorBenchmark(
+        omMedian=12.0, omQ1=5.0, omQ3=18.0,
+        roeMedian=15.0, roeQ1=8.0, roeQ3=25.0, n=28,
+    ),
+    Sector.UTILITIES: SectorBenchmark(
+        omMedian=20.0, omQ1=14.0, omQ3=28.0,
+        roeMedian=10.0, roeQ1=7.0, roeQ3=14.0, n=28,
+    ),
+    Sector.REAL_ESTATE: SectorBenchmark(
+        omMedian=30.0, omQ1=20.0, omQ3=45.0,
+        roeMedian=8.0, roeQ1=4.0, roeQ3=14.0, n=30,
+    ),
+}
 
-def getBenchmark(sector: Sector) -> SectorBenchmark:
+US_DEFAULT_BENCHMARK = SectorBenchmark(
+    omMedian=14.0, omQ1=5.0, omQ3=25.0,
+    roeMedian=18.0, roeQ1=8.0, roeQ3=32.0, n=500,
+)
+
+
+def getBenchmark(sector: Sector, market: str = "KR") -> SectorBenchmark:
     """섹터별 벤치마크 반환."""
+    if market == "US":
+        return US_BENCHMARKS.get(sector, US_DEFAULT_BENCHMARK)
     return BENCHMARKS.get(sector, DEFAULT_BENCHMARK)
 
 

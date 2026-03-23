@@ -2326,6 +2326,20 @@ class Company:
                 shares = int(shares)
         return fullValuation(series, shares=shares, currency="KRW")
 
+    def simulation(self, *, scenarios: list[str] | None = None):
+        """경제 시나리오 시뮬레이션."""
+        from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios
+
+        ts = self.finance.timeseries
+        if ts is None:
+            return None
+        series = ts[0] if isinstance(ts, tuple) else ts
+        return simulateAllScenarios(
+            series,
+            sectorKey=getattr(self, "sectorKey", None),
+            scenarios=scenarios,
+        )
+
     @property
     def market(self) -> str:
         """시장 코드."""

@@ -52,6 +52,22 @@ def _estimate_max_turns(question: str, q_type: str) -> int:
     return min(turns, 10)
 
 
+# ── 데이터 신선도 추출 ────────────────────────────────────
+
+
+def _extract_data_date(company: Any) -> str | None:
+    """Company에서 최신 데이터 기준일을 추출한다."""
+    try:
+        filings = company.filings() if callable(getattr(company, "filings", None)) else None
+        if filings is not None and hasattr(filings, "columns") and "date" in filings.columns:
+            dates = filings["date"].drop_nulls()
+            if len(dates) > 0:
+                return str(dates.max())
+    except (AttributeError, TypeError, KeyError):
+        pass
+    return None
+
+
 # ── context tier 결정 ─────────────────────────────────────
 
 
@@ -420,12 +436,16 @@ def _analyze_inner(
 
     is_light = company is not None and not has_analysis_intent(state.question if state else question)
 
-    # ── 7. Meta 이벤트 ──
+    # ── 7. Meta 이벤트 (데이터 신선도 포함) ──
     meta = conversation_meta or {}
     if corp_name:
         meta.setdefault("company", corp_name)
     if stock_id:
         meta.setdefault("stockCode", stock_id)
+    if company is not None:
+        _dataDate = _extract_data_date(company)
+        if _dataDate:
+            meta.setdefault("dataDate", _dataDate)
     yield AnalysisEvent("meta", meta)
 
     # ── 8. Snapshot 이벤트 ──
