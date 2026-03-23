@@ -651,10 +651,17 @@ def _pick_first(
     annual: bool = False,
     maxTrailingNones: int | None = None,
 ) -> Optional[float]:
+    def _getTtmValue(
+        targetSeries: dict[str, dict[str, list[Optional[float]]]],
+        targetSjDiv: str,
+        targetSnakeId: str,
+    ) -> Optional[float]:
+        return getTTM(targetSeries, targetSjDiv, targetSnakeId, maxTrailingNones=maxTrailingNones)
+
     if annual:
         getter = getLatest
     else:
-        getter = lambda s, d, i: getTTM(s, d, i, maxTrailingNones=maxTrailingNones)
+        getter = _getTtmValue
     for snakeId in snakeIds:
         val = getter(series, sjDiv, snakeId)
         if val is not None:
@@ -703,7 +710,14 @@ def calcRatios(
         _flow = getLatest
         ttmMaxTrailingNones = None
     else:
-        _flow = lambda s, d, i: getTTM(s, d, i, maxTrailingNones=0)
+        def _flowTtm(
+            targetSeries: dict[str, dict[str, list[Optional[float]]]],
+            targetSjDiv: str,
+            targetSnakeId: str,
+        ) -> Optional[float]:
+            return getTTM(targetSeries, targetSjDiv, targetSnakeId, maxTrailingNones=0)
+
+        _flow = _flowTtm
         ttmMaxTrailingNones = 0
 
     r.revenueTTM = _pick_first(series, "IS", ["sales", "revenue"], annual=annual, maxTrailingNones=ttmMaxTrailingNones)
