@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dartlab.engines.ai.eval.scorer import ScoreCard, auto_score
 from dartlab.engines.ai.eval.replayRunner import (
     PersonaEvalCase,
     ReplayResult,
@@ -23,6 +22,7 @@ from dartlab.engines.ai.eval.replayRunner import (
     replaySuite,
     summarizeReplayResults,
 )
+from dartlab.engines.ai.eval.scorer import ScoreCard, auto_score
 
 _GOLDEN_PATH = Path(__file__).parent / "golden.json"
 

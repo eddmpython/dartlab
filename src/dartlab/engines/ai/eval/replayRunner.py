@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from statistics import mean
 from typing import Any, Callable
@@ -147,7 +147,9 @@ def _resolve_company(stockCode: str | None) -> Any | None:
     return Company(stockCode)
 
 
-def _collect_replay_data(events: list[AnalysisEvent]) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], str, list[dict[str, Any]]]:
+def _collect_replay_data(
+    events: list[AnalysisEvent],
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], str, list[dict[str, Any]]]:
     meta: dict[str, Any] = {}
     done: dict[str, Any] = {}
     contexts: list[dict[str, Any]] = []
@@ -175,7 +177,9 @@ def _collect_replay_data(events: list[AnalysisEvent]) -> tuple[dict[str, Any], d
     return meta, done, contexts, toolEvents, "".join(chunks), errors
 
 
-def evaluateReplay(case: PersonaEvalCase, events: list[AnalysisEvent], *, provider: str | None = None, model: str | None = None) -> ReplayResult:
+def evaluateReplay(
+    case: PersonaEvalCase, events: list[AnalysisEvent], *, provider: str | None = None, model: str | None = None
+) -> ReplayResult:
     """Evaluate already-collected analysis events."""
     meta, done, contexts, toolEvents, answer, errors = _collect_replay_data(events)
     includedModules = list(done.get("includedModules") or meta.get("includedModules") or [])

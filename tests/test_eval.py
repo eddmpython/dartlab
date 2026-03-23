@@ -146,7 +146,7 @@ def test_evaluate_replay_uses_structural_and_answer_checks():
     )
     events = [
         AnalysisEvent("meta", {"company": "삼성전자", "includedModules": ["dividend", "CF"]}),
-        AnalysisEvent("context", {"module": "report_dividend", "label": "배당 데이터", "text": "..." }),
+        AnalysisEvent("context", {"module": "report_dividend", "label": "배당 데이터", "text": "..."}),
         AnalysisEvent("chunk", {"text": "배당과 현금흐름을 같이 보면 추가 확인이 필요합니다."}),
         AnalysisEvent("done", {"route": "hybrid", "includedModules": ["dividend", "CF"]}),
     ]
@@ -173,7 +173,14 @@ def test_runtime_evidence_labels_include_user_facing_names():
 
 def test_append_and_load_review_log(tmp_path, monkeypatch):
     import dartlab.engines.ai.eval.replayRunner as replayRunner
-    from dartlab.engines.ai.eval import PersonaEvalCase, ReplayResult, ScoreCard, StructuralEval, appendReviewEntry, loadReviewLog
+    from dartlab.engines.ai.eval import (
+        PersonaEvalCase,
+        ReplayResult,
+        ScoreCard,
+        StructuralEval,
+        appendReviewEntry,
+        loadReviewLog,
+    )
 
     monkeypatch.setattr(replayRunner, "_REVIEW_LOG_DIR", tmp_path / "reviewLog")
 

@@ -238,7 +238,9 @@ def score_false_unavailable(answer: str, must_not_say: list[str] | None = None, 
     return 0.0 if any(phrase.lower() in answer_lower for phrase in forbidden) else 1.0
 
 
-def score_grounding_quality(answer: str, must_include: list[str] | None = None, expected_topics: list[str] | None = None) -> float:
+def score_grounding_quality(
+    answer: str, must_include: list[str] | None = None, expected_topics: list[str] | None = None
+) -> float:
     """답변이 기대 근거 표현을 실제로 사용했는지."""
     cues = [cue for cue in (must_include or []) if cue]
     if not cues:
