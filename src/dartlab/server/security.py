@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 _WHITELIST_PATTERNS: list[re.Pattern[str]] = [
     # 상태/검색/스펙
     re.compile(r"^/api/status$"),
+    re.compile(r"^/api/suggest$"),
     re.compile(r"^/api/search$"),
     re.compile(r"^/api/spec$"),
     re.compile(r"^/api/data/stats$"),

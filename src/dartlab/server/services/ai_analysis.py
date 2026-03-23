@@ -69,7 +69,7 @@ async def run_plain_chat(req: AskRequest) -> dict[str, str]:
             base_url=req.base_url,
             history=[h.model_dump() for h in req.history] if req.history else None,
             view_context=req.viewContext.model_dump() if req.viewContext else None,
-            use_tools=False,
+            use_tools=True,
             validate=False,
             detect_navigate=False,
             emit_system_prompt=False,

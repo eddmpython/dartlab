@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from dartlab.channel.adapters.base import ChannelAdapter
@@ -22,6 +23,7 @@ class TelegramAdapter(ChannelAdapter):
     def __init__(self, token: str):
         self._token = token
         self._app = None
+        self._stop_event = None
 
     async def start(self) -> None:
         try:
@@ -38,6 +40,7 @@ class TelegramAdapter(ChannelAdapter):
 
         app = ApplicationBuilder().token(self._token).build()
         self._app = app
+        self._stop_event = asyncio.Event()
 
         adapter = self
 
@@ -74,17 +77,17 @@ class TelegramAdapter(ChannelAdapter):
         await app.start()
         await app.updater.start_polling()
 
-        # polling은 non-blocking이므로 여기서 대기
-        import asyncio
-
         try:
-            await asyncio.Event().wait()
+            await self._stop_event.wait()
         except asyncio.CancelledError:
             pass
 
     async def stop(self) -> None:
+        if self._stop_event is not None and not self._stop_event.is_set():
+            self._stop_event.set()
         if self._app:
-            await self._app.updater.stop()
+            if self._app.updater:
+                await self._app.updater.stop()
             await self._app.stop()
             await self._app.shutdown()
 

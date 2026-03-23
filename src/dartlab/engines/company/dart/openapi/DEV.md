@@ -48,6 +48,7 @@ d.corpCodes()                # 전체 11만+ DataFrame
 openapi/
 ├── __init__.py      # OpenDart / Dart export
 ├── dart.py          # Dart facade (사용자 진입점)
+├── dartKey.py       # DART key 탐색/상태/저장/검증 공용 계층
 ├── client.py        # DartClient (멀티 키, rate limit, 자동 재시도)
 ├── corpCode.py      # corp_code 관리 (캐시 ~/.dartlab/corpCode.parquet)
 ├── collector.py     # 공시문서 수집기 (eddmpython DartDocs.py 포팅)
@@ -136,6 +137,14 @@ dartlab collect --stats               # 수집 현황 통계
 2. `OpenDart("key")` — 직접 단일
 3. 환경변수 `DART_API_KEYS` (쉼표 구분)
 4. 환경변수 `DART_API_KEY` (단일)
+5. 프로젝트 루트 `.env`
+
+## 키 상태 / 저장 정책
+
+- OpenDART 키 상태 source-of-truth는 `dartKey.py`다.
+- `DartClient`, CLI `setup dart-key`, 서버 `/api/status`, UI SettingsPanel이 모두 같은 helper를 사용한다.
+- UI가 관리하는 저장 위치는 프로젝트 루트 `.env`다.
+- OS 환경변수에 키가 있으면 `.env`보다 우선하고, UI는 이를 `source=env`로만 표시한다.
 
 ## rate limit 전략
 

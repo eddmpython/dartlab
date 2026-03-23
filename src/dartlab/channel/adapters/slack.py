@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 
 from dartlab.channel.adapters.base import ChannelAdapter
@@ -24,6 +26,7 @@ class SlackAdapter(ChannelAdapter):
         self._app_token = app_token
         self._app = None
         self._client = None
+        self._handler = None
 
     async def start(self) -> None:
         try:
@@ -64,10 +67,23 @@ class SlackAdapter(ChannelAdapter):
 
         logger.info("Slack 봇 시작 (Socket Mode)")
         handler = SocketModeHandler(app, self._app_token)
-        handler.start()  # blocking
+        self._handler = handler
+        await asyncio.to_thread(handler.start)
 
     async def stop(self) -> None:
-        pass  # SocketModeHandler가 자체 관리
+        if self._handler is None:
+            return
+        close = getattr(self._handler, "close", None)
+        if callable(close):
+            await asyncio.to_thread(close)
+            return
+
+        client = getattr(self._handler, "client", None)
+        disconnect = getattr(client, "disconnect", None) if client else None
+        if callable(disconnect):
+            result = disconnect()
+            if inspect.isawaitable(result):
+                await result
 
     async def send_text(self, channel_id: str, text: str) -> None:
         if self._client:

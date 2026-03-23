@@ -152,3 +152,19 @@ class EdgarMapper:
                 for tag in acct.get("commonTags", []):
                     stmtTags[stmt].add(tag)
         return stmtTags
+
+    @classmethod
+    def getTagsForSnakeIds(cls, snakeIds: list[str]) -> set[str]:
+        """지정한 snakeId에 매핑된 모든 원본 태그를 반환."""
+        cls._ensureLoaded()
+        sidSet = set(snakeIds)
+        # EDGAR_TO_DART_ALIASES 역방향 포함
+        for edgarSid, dartSid in EDGAR_TO_DART_ALIASES.items():
+            if dartSid in sidSet:
+                sidSet.add(edgarSid)
+        tags: set[str] = set()
+        for acct in cls._accounts:
+            if acct["snakeId"] in sidSet:
+                for tag in acct.get("commonTags", []):
+                    tags.add(tag)
+        return tags

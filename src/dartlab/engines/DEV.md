@@ -21,7 +21,7 @@ engines/
 │   ├── event/   # 이벤트 스터디
 │   ├── watch/   # 공시 변화 감지
 │   └── analyst/ # 밸류에이션 합성
-└── ai/          # L3: LLM 분석 (7 providers)
+└── ai/          # L3: LLM 분석 (5 providers)
 ```
 
 의존 방향:
@@ -147,6 +147,8 @@ DART/EDGAR 동일 인터페이스. CompanyProtocol로 보장.
 5. 새 외부 수집 소스 → `gather/domains/` 아래 파일로 추가
 6. 새 국가 데이터 소스 → `company/` 아래 엔진으로 추가
 7. `spec.py` 필수: 새 모듈 추가 시 `spec.py` 작성 → `ai/spec.py`에 등록
+   - 현재 spec.py 보유: sector, insight, rank, esg, supply, event, watch (7/8 모듈)
+   - analyst 모듈은 spec.py 미구현 — 향후 추가 필요
 8. 기존 5-Pillar 구조(common/company/gather/analysis/ai)를 넘는 6번째 기둥은 만들지 않는다
 
 ## 상세 문서

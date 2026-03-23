@@ -1264,3 +1264,48 @@ def register_finance_tools(company: Any, register_tool) -> None:
         questionTypes=("투자",),
         priority=85,
     )
+
+    # ── run_simulation ──
+
+    def run_simulation(scenarios: str = "") -> str:
+        """경제 시나리오 시뮬레이션."""
+        ts = getattr(company.finance, "timeseries", None) if hasattr(company, "finance") else None
+        ts = _unwrap_timeseries(ts)
+        if ts is None:
+            return "시계열 데이터가 없어 시뮬레이션을 실행할 수 없습니다."
+        try:
+            from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios
+
+            scenarioList = [s.strip() for s in scenarios.split(",") if s.strip()] or None
+            result = simulateAllScenarios(
+                ts,
+                sectorKey=getattr(company, "sectorKey", None),
+                scenarios=scenarioList,
+            )
+            return repr(result) if result else "시뮬레이션 결과가 없습니다."
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
+            return f"시뮬레이션 실패: {e}"
+
+    register_tool(
+        "run_simulation",
+        run_simulation,
+        "경제 시나리오 시뮬레이션을 실행합니다. "
+        "기준/금리인상/금리인하/경기침체/기술하강 등 매크로 시나리오별 재무 영향을 추정합니다. "
+        "사용 시점: '경기침체 시 이 회사는?', '금리 인상 영향', '시나리오 분석' 질문. "
+        "사용하지 말 것: 과거 실적 분석에는 compute_ratios/get_data가 적절합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "scenarios": {
+                    "type": "string",
+                    "description": "시나리오 이름 (쉼표 구분). 비워두면 전체 프리셋. 예: baseline,adverse,rate_hike",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=True,
+        category="valuation",
+        questionTypes=("투자", "종합"),
+        priority=70,
+    )

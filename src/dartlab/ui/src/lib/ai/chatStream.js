@@ -16,6 +16,12 @@ function appendMessageList(store, key, item) {
 	store.updateLastMessage({ [key]: [...prev, item] });
 }
 
+function isMissingDartKeyToolResult(name, result) {
+	if (!["list_live_filings", "read_filing"].includes(name)) return false;
+	if (typeof result !== "string") return false;
+	return result.includes("OpenDART API 키") || result.includes("DART_API_KEY");
+}
+
 export function getLastAssistantStockCode(conv = null) {
 	if (!conv) return null;
 	for (let i = conv.messages.length - 1; i >= 0; i -= 1) {
@@ -133,6 +139,10 @@ export function createAskStreamCallbacks({
 				name: ev.name,
 				result: ev.result,
 			});
+			if (isMissingDartKeyToolResult(ev.name, ev.result)) {
+				showToast?.("OpenDART API 키가 필요합니다. 설정 화면을 엽니다.", "warning", 5000);
+				uiStore?.openSettings?.("openDart");
+			}
 		},
 		onChart(data) {
 			if (isStale()) return;
@@ -151,6 +161,9 @@ export function createAskStreamCallbacks({
 				? ((Date.now() - last.startedAt) / 1000).toFixed(1)
 				: null;
 			const updates = { loading: false, duration };
+			if (data?.dataReady) {
+				updates.meta = { ...(last?.meta || {}), dataReady: data.dataReady };
+			}
 			if (!last?.text?.trim()) {
 				updates.text = "분석 중 응답을 생성하지 못했습니다. 다시 시도해 주세요.";
 				updates.error = true;

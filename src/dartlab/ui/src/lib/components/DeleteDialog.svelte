@@ -10,12 +10,14 @@
 		if (!ui.deleteConfirmId || !dialogEl) return;
 		requestAnimationFrame(() => dialogEl?.focus());
 	});
+
+	let isBulkDelete = $derived(ui.deleteConfirmMode === "all");
 </script>
 
 {#if ui.deleteConfirmId}
 	<div
 		class="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn"
-		onclick={(e) => { if (e.target === e.currentTarget) ui.deleteConfirmId = null; }}
+		onclick={(e) => { if (e.target === e.currentTarget) { ui.deleteConfirmId = null; ui.deleteConfirmMode = "single"; } }}
 		role="presentation"
 	>
 		<div
@@ -26,12 +28,18 @@
 			aria-labelledby="delete-dialog-title"
 			tabindex="-1"
 		>
-			<div id="delete-dialog-title" class="text-[14px] font-medium text-dl-text mb-1.5">대화 삭제</div>
-			<div class="text-[12px] text-dl-text-muted mb-4">이 대화를 삭제하시겠습니까? 삭제된 대화는 복구할 수 없습니다.</div>
+			<div id="delete-dialog-title" class="text-[14px] font-medium text-dl-text mb-1.5">{isBulkDelete ? "전체 대화 삭제" : "대화 삭제"}</div>
+			<div class="text-[12px] text-dl-text-muted mb-4">
+				{#if isBulkDelete}
+					저장된 모든 대화를 삭제하시겠습니까? 삭제된 대화는 복구할 수 없습니다.
+				{:else}
+					이 대화를 삭제하시겠습니까? 삭제된 대화는 복구할 수 없습니다.
+				{/if}
+			</div>
 			<div class="flex items-center justify-end gap-2">
 				<button
 					class="px-3.5 py-1.5 rounded-lg text-[12px] text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
-					onclick={() => ui.deleteConfirmId = null}
+					onclick={() => { ui.deleteConfirmId = null; ui.deleteConfirmMode = "single"; }}
 				>
 					취소
 				</button>

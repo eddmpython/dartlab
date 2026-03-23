@@ -12,6 +12,7 @@
 		onNewChat,
 		onSelect,
 		onDelete,
+		onDeleteAll,
 		onOpenSearch,
 		onRename,
 	} = $props();
@@ -70,10 +71,22 @@
 
 			<!-- New Chat -->
 			<div class="p-3 pb-2">
-				<Button variant="secondary" class="w-full justify-start gap-2" onclick={onNewChat}>
-					<Plus size={16} />
-					새 대화
-				</Button>
+				<div class="flex items-center gap-2">
+					<Button variant="secondary" class="flex-1 justify-start gap-2" onclick={onNewChat}>
+						<Plus size={16} />
+						새 대화
+					</Button>
+					{#if conversations.length > 0}
+						<button
+							class="p-2.5 rounded-xl border border-dl-border/60 text-dl-text-dim hover:text-dl-primary hover:border-dl-primary/30 hover:bg-dl-primary/5 transition-colors"
+							onclick={onDeleteAll}
+							title="모든 대화 삭제"
+							aria-label="모든 대화 삭제"
+						>
+							<Trash2 size={14} />
+						</button>
+					{/if}
+				</div>
 			</div>
 
 			<!-- Search -->

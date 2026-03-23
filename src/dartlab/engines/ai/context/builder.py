@@ -23,6 +23,7 @@ from dartlab.engines.ai.context.finance_context import (
     _build_report_sections,
     _detect_year_hint,
     _get_quarter_counts,
+    _resolve_module_data,
     detect_year_range,
     scan_available_modules,
 )
@@ -37,6 +38,315 @@ from dartlab.engines.ai.context.formatting import (
 from dartlab.engines.ai.metadata import MODULE_META
 
 _CONTEXT_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
+
+_ROUTE_FINANCE_TYPES = frozenset({"건전성", "수익성", "성장성", "자본"})
+_ROUTE_SECTIONS_TYPES = frozenset({"사업", "리스크", "공시"})
+_ROUTE_REPORT_KEYWORDS: dict[str, str] = {
+    "배당": "dividend",
+    "직원": "employee",
+    "임원": "executive",
+    "최대주주": "majorHolder",
+    "주주": "majorHolder",
+    "감사": "audit",
+    "자기주식": "treasuryStock",
+}
+_ROUTE_SECTIONS_KEYWORDS = frozenset(
+    {
+        "공시",
+        "사업",
+        "리스크",
+        "관계사",
+        "지배구조",
+        "근거",
+        "변화",
+        "최근 공시",
+        "무슨 사업",
+        "뭐하는",
+        "어떤 회사",
+    }
+)
+_ROUTE_HYBRID_KEYWORDS = frozenset({"종합", "전반", "전체", "비교"})
+_ROUTE_FINANCE_KEYWORDS = frozenset(
+    {
+        "재무",
+        "영업이익",
+        "영업이익률",
+        "매출",
+        "순이익",
+        "실적",
+        "현금흐름",
+        "부채",
+        "자산",
+        "수익성",
+        "건전성",
+        "성장성",
+        "이익률",
+        "마진",
+        "revenue",
+        "profit",
+        "margin",
+        "cash flow",
+        "cashflow",
+        "debt",
+        "asset",
+    }
+)
+_SECTIONS_TYPE_DEFAULTS: dict[str, list[str]] = {
+    "사업": ["businessOverview", "productService", "salesOrder"],
+    "리스크": ["riskDerivative", "contingentLiability", "internalControl"],
+    "공시": ["disclosureChanges", "subsequentEvents", "otherReference"],
+    "지배구조": ["governanceOverview", "boardOfDirectors", "holderOverview"],
+}
+_SECTIONS_KEYWORD_TOPICS: dict[str, list[str]] = {
+    "관계사": ["affiliateGroupDetail", "subsidiaryDetail", "investedCompany"],
+    "지배구조": ["governanceOverview", "boardOfDirectors", "holderOverview"],
+    "무슨 사업": ["businessOverview", "productService"],
+    "뭐하는": ["businessOverview", "productService"],
+    "어떤 회사": ["businessOverview", "companyHistory"],
+    "최근 공시": ["disclosureChanges", "subsequentEvents"],
+    "변화": ["disclosureChanges", "businessStatus"],
+}
+_FINANCIAL_ONLY = {"BS", "IS", "CF", "fsSummary", "ratios"}
+_SECTIONS_ROUTE_EXCLUDE_TOPICS = {
+    "fsSummary",
+    "financialStatements",
+    "financialNotes",
+    "consolidatedStatements",
+    "consolidatedNotes",
+    "dividend",
+    "employee",
+    "majorHolder",
+    "audit",
+}
+
+
+def _section_key_to_module_name(key: str) -> str:
+    if key.startswith("report_"):
+        return key.removeprefix("report_")
+    if key.startswith("module_"):
+        return key.removeprefix("module_")
+    if key.startswith("section_"):
+        return key.removeprefix("section_")
+    return key
+
+
+def _build_module_section(name: str, data: Any, *, compact: bool, max_rows: int | None = None) -> str | None:
+    meta = MODULE_META.get(name)
+    label = meta.label if meta else name
+    max_rows_value = max_rows or (8 if compact else 15)
+
+    if isinstance(data, pl.DataFrame):
+        if data.is_empty():
+            return None
+        md = df_to_markdown(data, max_rows=max_rows_value, meta=meta, compact=True)
+        return f"\n## {label}\n{md}"
+
+    if isinstance(data, dict):
+        items = list(data.items())[:max_rows_value]
+        lines = [f"\n## {label}"]
+        lines.extend(f"- {k}: {v}" for k, v in items)
+        return "\n".join(lines)
+
+    if isinstance(data, list):
+        max_items = min(meta.maxRows if meta else 10, 5 if compact else 10)
+        lines = [f"\n## {label}"]
+        for item in data[:max_items]:
+            if hasattr(item, "title") and hasattr(item, "chars"):
+                lines.append(f"- **{item.title}** ({item.chars}자)")
+            else:
+                lines.append(f"- {item}")
+        if len(data) > max_items:
+            lines.append(f"(... 상위 {max_items}건, 전체 {len(data)}건)")
+        return "\n".join(lines)
+
+    text = str(data).strip()
+    if not text:
+        return None
+    max_text = 500 if compact else 1000
+    return f"\n## {label}\n{text[:max_text]}"
+
+
+def _resolve_context_route(
+    question: str,
+    *,
+    include: list[str] | None,
+    q_types: list[str],
+) -> str:
+    if include:
+        return "hybrid"
+
+    q_set = set(q_types)
+    for keyword in _ROUTE_REPORT_KEYWORDS:
+        if keyword in question:
+            return "report"
+
+    if any(keyword in question for keyword in _ROUTE_SECTIONS_KEYWORDS):
+        return "sections"
+
+    if q_set & _ROUTE_SECTIONS_TYPES:
+        return "sections"
+
+    if q_set and q_set.issubset(_ROUTE_FINANCE_TYPES):
+        return "finance"
+
+    if any(keyword in question for keyword in _ROUTE_FINANCE_KEYWORDS):
+        return "finance"
+
+    if q_set and len(q_set) > 1:
+        return "hybrid"
+
+    if q_set & {"종합"}:
+        return "hybrid"
+
+    if any(keyword in question for keyword in _ROUTE_HYBRID_KEYWORDS):
+        return "hybrid"
+
+    return "finance" if q_set else "hybrid"
+
+
+def _resolve_report_modules_for_question(
+    question: str,
+    *,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> list[str]:
+    modules: list[str] = []
+
+    for keyword, name in _ROUTE_REPORT_KEYWORDS.items():
+        if keyword in question and name not in modules:
+            modules.append(name)
+
+    if include:
+        for name in include:
+            if name in {"dividend", "employee", "majorHolder", "executive", "audit", "treasuryStock"} and name not in modules:
+                modules.append(name)
+
+    if exclude:
+        modules = [name for name in modules if name not in exclude]
+
+    return modules
+
+
+def _resolve_sections_topics(
+    company: Any,
+    question: str,
+    *,
+    q_types: list[str],
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    limit: int = 2,
+) -> list[str]:
+    docs = getattr(company, "docs", None)
+    sections = getattr(docs, "sections", None)
+    if sections is None:
+        return []
+
+    manifest = sections.outline() if hasattr(sections, "outline") else None
+    available = (
+        manifest["topic"].drop_nulls().to_list()
+        if isinstance(manifest, pl.DataFrame) and "topic" in manifest.columns
+        else sections.topics() if hasattr(sections, "topics") else []
+    )
+    availableTopics = [topic for topic in available if isinstance(topic, str) and topic]
+    availableSet = set(availableTopics)
+    if not availableSet:
+        return []
+
+    selected: list[str] = []
+
+    def append(topic: str) -> None:
+        if topic in _SECTIONS_ROUTE_EXCLUDE_TOPICS:
+            return
+        if topic in availableSet and topic not in selected:
+            selected.append(topic)
+
+    if include:
+        for name in include:
+            append(name)
+
+    for name in _resolve_tables(question, None, exclude):
+        append(name)
+
+    for q_type in q_types:
+        for topic in _SECTIONS_TYPE_DEFAULTS.get(q_type, []):
+            append(topic)
+
+    for keyword, topics in _SECTIONS_KEYWORD_TOPICS.items():
+        if keyword in question:
+            for topic in topics:
+                append(topic)
+
+    if not selected and availableTopics:
+        selected.append(availableTopics[0])
+
+    return selected[:limit]
+
+
+def _build_sections_context(
+    company: Any,
+    topics: list[str],
+    *,
+    compact: bool,
+) -> dict[str, str]:
+    docs = getattr(company, "docs", None)
+    sections = getattr(docs, "sections", None)
+    if sections is None:
+        return {}
+
+    result: dict[str, str] = {}
+    for topic in topics:
+        outline = sections.outline(topic) if hasattr(sections, "outline") else None
+        if outline is None or not isinstance(outline, pl.DataFrame) or outline.is_empty():
+            continue
+
+        label_fn = getattr(company, "_topicLabel", None)
+        label = label_fn(topic) if callable(label_fn) else topic
+        lines = [f"\n## {label}"]
+        lines.append(df_to_markdown(outline.head(6 if compact else 10), max_rows=6 if compact else 10, compact=True))
+
+        try:
+            raw_sections = sections.raw if hasattr(sections, "raw") else None
+        except _CONTEXT_ERRORS:
+            raw_sections = None
+
+        topic_rows = (
+            raw_sections.filter(pl.col("topic") == topic)
+            if isinstance(raw_sections, pl.DataFrame) and "topic" in raw_sections.columns
+            else None
+        )
+
+        block_builder = getattr(company, "_buildBlockIndex", None)
+        block_index = block_builder(topic_rows) if callable(block_builder) and isinstance(topic_rows, pl.DataFrame) else None
+
+        if isinstance(block_index, pl.DataFrame) and not block_index.is_empty():
+            lines.append("\n### block index")
+            lines.append(df_to_markdown(block_index.head(4 if compact else 6), max_rows=4 if compact else 6, compact=True))
+
+            block_col = "block" if "block" in block_index.columns else "blockOrder" if "blockOrder" in block_index.columns else None
+            type_col = "type" if "type" in block_index.columns else "blockType" if "blockType" in block_index.columns else None
+            sample_block = None
+            if block_col:
+                for row in block_index.iter_rows(named=True):
+                    block_no = row.get(block_col)
+                    block_type = row.get(type_col)
+                    if isinstance(block_no, int) and block_type in {"text", "table"}:
+                        sample_block = block_no
+                        break
+            if sample_block is not None:
+                show_section_block = getattr(company, "_showSectionBlock", None)
+                block_data = (
+                    show_section_block(topic_rows, block=sample_block)
+                    if callable(show_section_block) and isinstance(topic_rows, pl.DataFrame)
+                    else None
+                )
+                section = _build_module_section(topic, block_data, compact=compact, max_rows=4 if compact else 6)
+                if section:
+                    lines.append("\n### 대표 block")
+                    lines.append(section.replace(f"\n## {label}", "", 1).strip())
+
+        result[f"section_{topic}"] = "\n".join(lines)
+
+    return result
 
 
 def build_context_by_module(
@@ -102,6 +412,8 @@ def _build_compact_context_modules_inner(
     from dartlab.engines.ai.conversation.prompts import _classify_question_multi
 
     q_types = _classify_question_multi(question, max_types=2)
+    route = _resolve_context_route(question, include=include, q_types=q_types)
+    report_modules = _resolve_report_modules_for_question(question, include=include, exclude=exclude)
 
     acct_filters: dict[str, set[str]] = {}
     if compact:
@@ -109,60 +421,86 @@ def _build_compact_context_modules_inner(
             for sj, ids in _QUESTION_ACCOUNT_FILTER.get(qt, {}).items():
                 acct_filters.setdefault(sj, set()).update(ids)
 
-    fe_loaded = False
-    annual = getattr(company, "annual", None)
-    if annual is not None:
-        series, years = annual
-        quarter_counts = _get_quarter_counts(company)
-        if years:
-            yr_min = years[max(0, len(years) - n_years)]
-            yr_max = years[-1]
-            header = f"\n**데이터 기준: {yr_min}~{yr_max}년** (가장 최근: {yr_max}년, 금액: 억/조원)\n"
+    if route in {"finance", "hybrid"}:
+        annual = getattr(company, "annual", None)
+        if annual is not None:
+            series, years = annual
+            quarter_counts = _get_quarter_counts(company)
+            if years:
+                yr_min = years[max(0, len(years) - n_years)]
+                yr_max = years[-1]
+                header = f"\n**데이터 기준: {yr_min}~{yr_max}년** (가장 최근: {yr_max}년, 금액: 억/조원)\n"
 
-            partial = [y for y in years[-n_years:] if quarter_counts.get(y, 4) < 4]
-            if partial:
-                notes = ", ".join(f"{y}년=Q1~Q{quarter_counts[y]}" for y in partial)
-                header += f"⚠️ **부분 연도 주의**: {notes} (해당 연도는 분기 누적이므로 전년 연간과 직접 비교 불가)\n"
+                partial = [y for y in years[-n_years:] if quarter_counts.get(y, 4) < 4]
+                if partial:
+                    notes = ", ".join(f"{y}년=Q1~Q{quarter_counts[y]}" for y in partial)
+                    header += f"⚠️ **부분 연도 주의**: {notes} (해당 연도는 분기 누적이므로 전년 연간과 직접 비교 불가)\n"
 
-            header_parts.append(header)
+                header_parts.append(header)
 
-            for sj in ("IS", "BS", "CF"):
-                af = acct_filters.get(sj) if acct_filters else None
-                section = _build_finance_engine_section(series, years, sj, n_years, af, quarter_counts=quarter_counts)
-                if section:
-                    modules_dict[sj] = section
-                    included.append(sj)
-                    fe_loaded = True
+                for sj in ("IS", "BS", "CF"):
+                    af = acct_filters.get(sj) if acct_filters else None
+                    section = _build_finance_engine_section(
+                        series,
+                        years,
+                        sj,
+                        n_years,
+                        af,
+                        quarter_counts=quarter_counts,
+                    )
+                    if section:
+                        modules_dict[sj] = section
+                        included.append(sj)
 
-    ratios_section = _build_ratios_section(company, compact=compact, q_types=q_types or None)
-    if ratios_section:
-        modules_dict["ratios"] = ratios_section
-        if "ratios" not in included:
-            included.append("ratios")
+        ratios_section = _build_ratios_section(company, compact=compact, q_types=q_types or None)
+        if ratios_section:
+            modules_dict["ratios"] = ratios_section
+            if "ratios" not in included:
+                included.append("ratios")
 
-    report_sections = _build_report_sections(company, compact=compact, q_types=q_types)
-    for key, section in report_sections.items():
-        modules_dict[key] = section
-        included.append(key)
+    if route == "report":
+        requested_report_modules = report_modules or ["dividend", "employee", "majorHolder", "executive", "audit"]
+        report_sections = _build_report_sections(
+            company,
+            compact=compact,
+            q_types=q_types,
+            tier="focused" if compact else "full",
+            report_names=requested_report_modules,
+        )
+        for key, section in report_sections.items():
+            modules_dict[key] = section
+            included_name = _section_key_to_module_name(key)
+            if included_name not in included:
+                included.append(included_name)
+
+    if route in {"sections", "hybrid"}:
+        topics = _resolve_sections_topics(
+            company,
+            question,
+            q_types=q_types,
+            include=include,
+            exclude=exclude,
+            limit=1 if route == "hybrid" else 2,
+        )
+        sections_context = _build_sections_context(company, topics, compact=compact)
+        for key, section in sections_context.items():
+            modules_dict[key] = section
+            included_name = _section_key_to_module_name(key)
+            if included_name not in included:
+                included.append(included_name)
 
     has_docs = getattr(company, "_hasDocs", False)
 
-    if has_docs:
-        _FINANCIAL_ONLY = {"BS", "IS", "CF", "fsSummary", "ratios"}
+    if has_docs and include:
         tables_requested = _resolve_tables(question, include, exclude)
         qualitative_tables = [t for t in tables_requested if t not in _FINANCIAL_ONLY]
 
         if exclude:
             qualitative_tables = [t for t in qualitative_tables if t not in exclude]
 
-        cache = getattr(company, "_cache", {})
-
         for name in qualitative_tables:
-            if not include and name not in cache:
-                continue
-
             try:
-                data = getattr(company, name, None)
+                data = _resolve_module_data(company, name)
                 if data is None:
                     continue
 
@@ -178,75 +516,26 @@ def _build_compact_context_modules_inner(
                     except _CONTEXT_ERRORS:
                         continue
 
-                meta = MODULE_META.get(name)
-                label = meta.label if meta else name
-
-                section_parts = [f"\n## {label}"]
-
-                max_rows_qual = 8 if compact else 15
-                if isinstance(data, pl.DataFrame):
-                    md = df_to_markdown(data, max_rows=max_rows_qual, meta=meta, compact=True)
-                    section_parts.append(md)
-                elif isinstance(data, dict):
-                    items = list(data.items())
-                    if compact:
-                        items = items[:8]
-                    dict_lines = [f"- {k}: {v}" for k, v in items]
-                    section_parts.append("\n".join(dict_lines))
-                elif isinstance(data, list):
-                    max_items = min(meta.maxRows if meta else 10, 5 if compact else 10)
-                    list_lines = []
-                    for item in data[:max_items]:
-                        if hasattr(item, "title") and hasattr(item, "chars"):
-                            list_lines.append(f"- **{item.title}** ({item.chars}자)")
-                        else:
-                            list_lines.append(f"- {item}")
-                    if len(data) > max_items:
-                        list_lines.append(f"(... 상위 {max_items}건, 전체 {len(data)}건)")
-                    section_parts.append("\n".join(list_lines))
-                else:
-                    max_text = 500 if compact else 1000
-                    section_parts.append(str(data)[:max_text])
-
-                modules_dict[name] = "\n".join(section_parts)
-                included.append(name)
+                section = _build_module_section(name, data, compact=compact)
+                if not section:
+                    continue
+                modules_dict[name] = section
+                if name not in included:
+                    included.append(name)
 
             except _CONTEXT_ERRORS:
                 continue
 
-    if not fe_loaded:
+    if not modules_dict:
         text, inc = build_context(company, question, include, exclude, compact=True)
-        modules_dict_fallback: dict[str, str] = {"_full": text}
-        # _full fallback에서도 topics/insights 포함
-        _topics_fb = _build_topics_section(company)
-        if _topics_fb:
-            modules_dict_fallback["_topics"] = _topics_fb
-            inc.append("_topics")
-        _insights_fb = _build_insights_section(company)
-        if _insights_fb:
-            modules_dict_fallback["_insights"] = _insights_fb
-            inc.append("_insights")
-        return modules_dict_fallback, inc, ""
+        return {"_full": text}, inc, ""
 
-    # ── 동적 topic 목록 + insights 자동 포함 ──
-    # dartlab에 기능이 추가되면 AI가 자동으로 인식하도록
-    # Company의 실제 topics에서 동적 생성
-    _topics_section = _build_topics_section(company, compact=compact)
-    if _topics_section:
-        modules_dict["_topics"] = _topics_section
-        included.append("_topics")
+    deduped_included: list[str] = []
+    for name in included:
+        if name not in deduped_included:
+            deduped_included.append(name)
 
-    _change_section = _build_change_summary(company)
-    if _change_section:
-        modules_dict["_changes"] = _change_section
-        included.append("_changes")
-
-    _insights_section = _build_insights_section(company)
-    if _insights_section:
-        modules_dict["_insights"] = _insights_section
-        included.append("_insights")
-
-    return modules_dict, included, "\n".join(header_parts)
+    return modules_dict, deduped_included, "\n".join(header_parts)
 
 
 def build_compact_context(
@@ -289,10 +578,10 @@ _KEYWORD_MAP = buildKeywordMap()
 _FINANCIAL_MAP: dict[str, list[str]] = {
     "재무": ["BS", "IS", "CF", "fsSummary", "costByNature"],
     "건전성": ["BS", "audit", "contingentLiability", "internalControl", "bond"],
-    "수익": ["IS", "segment", "productService", "costByNature"],
-    "실적": ["IS", "segment", "fsSummary", "productService", "salesOrder"],
-    "매출": ["IS", "segment", "productService", "salesOrder"],
-    "영업이익": ["IS", "fsSummary", "segment"],
+    "수익": ["IS", "segments", "productService", "costByNature"],
+    "실적": ["IS", "segments", "fsSummary", "productService", "salesOrder"],
+    "매출": ["IS", "segments", "productService", "salesOrder"],
+    "영업이익": ["IS", "fsSummary", "segments"],
     "순이익": ["IS", "fsSummary"],
     "현금": ["CF", "BS"],
     "자산": ["BS", "tangibleAsset", "investmentInOther"],
@@ -327,7 +616,7 @@ _COMPOSITE_MAP: dict[str, list[str]] = {
     "전반": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
     "종합": ["BS", "IS", "CF", "fsSummary", "audit", "majorHolder"],
     # 영문
-    "revenue": ["IS", "segment", "productService"],
+    "revenue": ["IS", "segments", "productService"],
     "profit": ["IS", "fsSummary"],
     "debt": ["BS", "bond", "contingentLiability"],
     "cash flow": ["CF"],
@@ -340,26 +629,26 @@ _COMPOSITE_MAP: dict[str, list[str]] = {
     "employee": ["employee", "executivePay"],
     "subsidiary": ["subsidiary", "affiliateGroup", "investmentInOther"],
     "capex": ["CF", "tangibleAsset"],
-    "operating": ["IS", "fsSummary", "segment"],
+    "operating": ["IS", "fsSummary", "segments"],
 }
 
 # 자연어 질문 패턴
 _NATURAL_LANG_MAP: dict[str, list[str]] = {
     "돈": ["BS", "CF"],
     "벌": ["IS", "fsSummary"],
-    "잘": ["IS", "fsSummary", "segment"],
+    "잘": ["IS", "fsSummary", "segments"],
     "위험": ["contingentLiability", "sanction", "riskDerivative", "audit", "internalControl"],
     "안전": ["BS", "audit", "contingentLiability", "internalControl"],
     "건강": ["BS", "IS", "CF", "audit"],
-    "전망": ["IS", "CF", "rnd", "segment", "mdna"],
+    "전망": ["IS", "CF", "rnd", "segments", "mdna"],
     "비교": ["IS", "BS", "CF", "fsSummary"],
     "추세": ["IS", "BS", "CF", "fsSummary"],
     "트렌드": ["IS", "BS", "CF", "fsSummary"],
     "분석": ["BS", "IS", "CF", "fsSummary"],
     "어떤 회사": ["companyOverviewDetail", "companyOverview", "business", "companyHistory"],
-    "무슨 사업": ["business", "productService", "segment", "companyOverviewDetail"],
-    "뭐하는": ["business", "productService", "segment", "companyOverviewDetail"],
-    "어떤 사업": ["business", "productService", "segment", "companyOverviewDetail"],
+    "무슨 사업": ["business", "productService", "segments", "companyOverviewDetail"],
+    "뭐하는": ["business", "productService", "segments", "companyOverviewDetail"],
+    "어떤 사업": ["business", "productService", "segments", "companyOverviewDetail"],
 }
 
 # 병합: registry 키워드 → 재무제표 → 복합 → 자연어 (후순위가 오버라이드)
@@ -684,7 +973,19 @@ def _build_topics_section(company: Any, compact: bool = False) -> str | None:
     topics = getattr(company, "topics", None)
     if topics is None:
         return None
-    topic_list = list(topics) if not isinstance(topics, list) else topics
+    if isinstance(topics, pl.DataFrame):
+        if "topic" not in topics.columns:
+            return None
+        topic_list = [topic for topic in topics["topic"].drop_nulls().to_list() if isinstance(topic, str) and topic]
+    elif isinstance(topics, pl.Series):
+        topic_list = [topic for topic in topics.drop_nulls().to_list() if isinstance(topic, str) and topic]
+    elif isinstance(topics, list):
+        topic_list = [topic for topic in topics if isinstance(topic, str) and topic]
+    else:
+        try:
+            topic_list = [topic for topic in list(topics) if isinstance(topic, str) and topic]
+        except TypeError:
+            return None
     if not topic_list:
         return None
 
@@ -879,59 +1180,6 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
             section_title = "Key Ratios" if is_us else "핵심 비율"
             parts.extend(["", f"## {section_title}", *ratio_lines])
             included.append("ratios")
-
-    # insight 등급 1줄
-    try:
-        insights_obj = getattr(company, "insights", None)
-        if insights_obj is None:
-            from dartlab.engines.analysis.insight.pipeline import analyze as _analyze
-
-            insights_obj = _analyze(company.stockCode, company=company)
-        if insights_obj is not None:
-            grades = insights_obj.grades()
-            grade_labels_kr = [
-                ("performance", "실적"),
-                ("profitability", "수익성"),
-                ("health", "건전성"),
-                ("cashflow", "CF"),
-            ]
-            grade_labels_en = [
-                ("performance", "Perf"),
-                ("profitability", "Profit"),
-                ("health", "Health"),
-                ("cashflow", "CF"),
-            ]
-            grade_labels = grade_labels_en if is_us else grade_labels_kr
-            grade_str = " / ".join(f"{lbl}:{grades.get(k, 'N')}" for k, lbl in grade_labels if grades.get(k))
-            insight_prefix = "Insights" if is_us else "인사이트"
-            parts.append(f"\n{insight_prefix}: {grade_str}")
-            if insights_obj.profile:
-                profile_prefix = "Profile" if is_us else "프로파일"
-                parts.append(f"{profile_prefix}: {insights_obj.profile}")
-            included.append("_insights")
-    except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
-        pass
-
-    # 조회 가능한 topics 요약
-    topics_raw = getattr(company, "topics", None)
-    if topics_raw is not None:
-        if isinstance(topics_raw, pl.DataFrame) and "topic" in topics_raw.columns:
-            topic_list = topics_raw["topic"].to_list()
-        elif isinstance(topics_raw, list):
-            topic_list = topics_raw
-        else:
-            topic_list = list(topics_raw) if topics_raw is not None else []
-        if topic_list:
-            if is_us:
-                parts.append(f"\n## Available Filing Data ({len(topic_list)} topics)")
-                parts.append(f"Key: {', '.join(topic_list[:15])}")
-                if len(topic_list) > 15:
-                    parts.append(f"+ {len(topic_list) - 15} more. Use `list_topics()` for full list.")
-            else:
-                parts.append(f"\n## 조회 가능한 공시 데이터 ({len(topic_list)}개 topic)")
-                parts.append(f"주요: {', '.join(topic_list[:15])}")
-                if len(topic_list) > 15:
-                    parts.append(f"외 {len(topic_list) - 15}개. 전체는 `list_topics()`로 확인.")
 
     # 분석 가이드
     if is_us:

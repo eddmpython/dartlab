@@ -15,6 +15,7 @@
 		companyName = null,
 		dataYearRange = null,
 		dialogueModeLabel = null,
+		dataReadyInfo = null,
 		activityBadges = [],
 		onOpenContextModal,
 		onOpenSnapshotModal,
@@ -38,7 +39,7 @@
 </script>
 
 <!-- ── 상단 메타 뱃지 (데이터 투명성) ── -->
-{#if companyName || dataYearRange || message.contexts?.length > 0 || message.meta?.includedModules || activityBadges.length > 0}
+{#if companyName || dataYearRange || dataReadyInfo || message.contexts?.length > 0 || message.meta?.includedModules || activityBadges.length > 0}
 	<div class="message-section-slot message-transparency-slot mb-3 rounded-2xl border border-dl-border/40 bg-dl-bg-card/20 p-3">
 		<div class="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-dl-text-dim">
 			<Activity size={11} />
@@ -47,6 +48,12 @@
 		<div class="mb-2 text-[11px] leading-relaxed text-dl-text-dim">
 			이 응답을 만들 때 실제로 참조한 회사, 기간, 컨텍스트, 툴 활동을 바로 열어볼 수 있습니다.
 		</div>
+		{#if dataReadyInfo}
+			<div class="mb-2 rounded-xl border px-2.5 py-2 text-[11px] leading-relaxed {dataReadyInfo.allReady ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300' : 'border-amber-500/20 bg-amber-500/[0.06] text-amber-200'}">
+				<span class="font-medium">{dataReadyInfo.label}</span>
+				<span class="ml-1 text-dl-text-muted">{dataReadyInfo.summary}</span>
+			</div>
+		{/if}
 		<div class="flex flex-wrap items-center gap-1.5">
 		{#if companyName}
 			<Badge variant="muted">{companyName}</Badge>

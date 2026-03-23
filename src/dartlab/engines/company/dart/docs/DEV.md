@@ -1,8 +1,6 @@
 # DART Docs Development Guide
 
-상세 문서:
-- `src/dartlab/engines/dart/docs/dev/sections.md`
-- `src/dartlab/engines/dart/docs/dev/learning.md`
+sections 핵심 원칙과 텍스트 구조 계층 규칙은 아래에 기술한다.
 
 ## 데이터 수집 (openapi/collector.py)
 
@@ -113,8 +111,7 @@ eddmpython DartDocs.py의 수집 로직을 dartlab으로 완전 포팅하여 외
 ### 현재 정확한 기준 위치 (2026-03-18)
 
 - 이번 `sections` 텍스트 구조 개선의 정확한 source of truth는 아래 두 문서다.
-  - 개요/원칙/책임: `src/dartlab/engines/dart/docs/DEV.md`
-  - 세부 스키마/row spine 규칙: `src/dartlab/engines/dart/docs/dev/sections.md`
+  - 개요/원칙/책임: `src/dartlab/engines/company/dart/docs/DEV.md`
 - 핵심 변경 요약:
   - text row spine은 `sourceBlockOrder`가 아니라 `textPathKey + occurrence` 기준이다.
   - top-level root alias는 `@topic:{topic}` canonical root로 정규화한다.
@@ -128,9 +125,9 @@ eddmpython DartDocs.py의 수집 로직을 dartlab으로 완전 포팅하여 외
   - `structureRegistry()`는 comparable spine 기준 `activePathCounts`와 `structurePattern`을 계산해 구조 이동과 병합/분화를 진단한다.
   - `structureEvents()`는 comparable spine 기준으로 `fromPeriod -> toPeriod` 구조 전이 row를 만든다.
 - 실제 구현 기준 파일:
-  - `src/dartlab/engines/dart/docs/sections/textStructure.py`
-  - `src/dartlab/engines/dart/docs/sections/pipeline.py`
-  - `src/dartlab/engines/dart/company.py`
+  - `src/dartlab/engines/company/dart/docs/sections/textStructure.py`
+  - `src/dartlab/engines/company/dart/docs/sections/pipeline.py`
+  - `src/dartlab/engines/company/dart/company.py`
 
 ### 다종목 검증 기준과 다음 단계 (2026-03-18)
 

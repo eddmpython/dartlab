@@ -7,6 +7,7 @@ export {
 	codexLogout,
 	configure,
 	fetchAiProfile,
+	fetchAiSuggestions,
 	fetchModels,
 	fetchStatus,
 	oauthAuthorize,

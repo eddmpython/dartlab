@@ -57,6 +57,7 @@ c.show("overview")              # open one topic
 c.BS                            # balance sheet
 c.ratios                        # financial ratio time series
 c.insights                      # 7-area grades (A~F)
+c.filings()                     # disclosure document list
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
 us.sections
@@ -223,14 +224,17 @@ c.BS                    # balance sheet (account × period, newest first)
 c.IS                    # income statement
 c.CF                    # cash flow
 c.ratios                # ratio time series DataFrame (6 categories × period)
-c.finance.ratios        # latest single-point RatioResult
 c.finance.ratioSeries   # ratio time series across years
 c.finance.timeseries    # raw account time series
+c.annual                # annual time series
+c.filings()             # disclosure document list (Tier 1 Stable)
 ```
 
 All accounts are normalized through the 4-step standardization pipeline — Samsung's `revenue` and LG's `revenue` are the same `snakeId`. Ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
-### Insights
+### Insights (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
 ```python
 c.insights                      # 7-area analysis
@@ -238,6 +242,47 @@ c.insights.grades()             # → {"performance": "A", "profitability": "B",
 c.insights.performance.grade    # → "A"
 c.insights.performance.details  # → ["Revenue growth +8.3%", …]
 c.insights.anomalies            # → outliers and red flags
+
+# distress scorecard — 6-model bankruptcy/fraud prediction
+c.insights.distress             # Altman Z-Score, Beneish M-Score, Ohlson O-Score,
+                                # Merton Distance-to-Default, Piotroski F-Score, Sloan Ratio
+```
+
+### Valuation, Forecast & Simulation
+
+```python
+dartlab.valuation("005930")           # DCF + DDM + relative valuation
+dartlab.forecast("005930")            # revenue forecast (4-source ensemble)
+dartlab.simulation("005930")          # scenario simulation (macro presets)
+
+# also available as Company methods
+c.valuation()
+c.forecast(horizon=3)
+c.simulation(scenarios=["adverse", "rate_hike"])
+```
+
+Auto-detects currency — KRW for DART companies, USD for EDGAR. Works with both `dartlab.valuation("AAPL")` and `dartlab.valuation("005930")`.
+
+### Audit (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+
+```python
+dartlab.audit("005930")               # 11 red flag detectors
+
+# Benford's Law (digit distribution), auditor change (PCAOB AS 3101),
+# going concern (ISA 570), internal control (SOX 302/404),
+# revenue quality (Dechow & Dichev), Merton default probability, ...
+```
+
+### Market Intelligence (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+
+```python
+dartlab.digest()                      # market-wide disclosure change digest
+dartlab.digest(sector="반도체")        # sector filter
+dartlab.groupHealth()                 # group health: network × financial ratios
 ```
 
 ### Modules
@@ -256,7 +301,9 @@ c.topics    # list all available topics for this company
 
 Categories: `finance` (statements, ratios), `report` (dividend, governance, audit), `notes` (K-IFRS annotations), `disclosure` (narrative text), `analysis` (insights, rankings), `raw` (original parquets).
 
-### Charts & Visualization
+### Charts & Visualization (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
 ```python
 c = dartlab.Company("005930")
@@ -288,7 +335,9 @@ dartlab.text.sentiment_indicators(narrative)                     # positive/nega
 
 Install chart dependencies: `uv add "dartlab[charts]"`
 
-### Network — Affiliate Map
+### Network — Affiliate Map (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
 ```python
 c = dartlab.Company("005930")
@@ -306,7 +355,9 @@ c.network("cycles")      # circular ownership paths
 dartlab.network().show()
 ```
 
-### Market Scan
+### Market Scan (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
 ```python
 c = dartlab.Company("005930")
@@ -324,6 +375,25 @@ dartlab.screen()         # multi-factor screening
 dartlab.benchmark()      # peer comparison
 dartlab.signal()         # change detection signals
 ```
+
+### Export (experimental)
+
+> **Experimental** — Breaking changes possible. Not for production.
+
+```bash
+dartlab excel "005930" -o samsung.xlsx
+```
+
+Install: `uv add "dartlab[ai]"` (Excel export is included in the AI extras).
+
+### Plugins
+
+```python
+dartlab.plugins()               # list loaded plugins
+dartlab.reload_plugins()        # rescan after installing a plugin
+```
+
+Plugins can extend DartLab with custom data sources, tools, or analysis engines. See `dartlab plugin create --help` for scaffolding.
 
 ## EDGAR (US)
 
@@ -359,6 +429,26 @@ c.diff("businessOverview")              c.diff("10-K::item7Mdna")
 c.insights.grades()                     c.insights.grades()
 ```
 
+### DART vs EDGAR Namespaces
+
+|               | DART           | EDGAR          |
+|---------------|:--------------:|:--------------:|
+| `docs`        | ✓              | ✓              |
+| `finance`     | ✓              | ✓              |
+| `report`      | ✓ (28 API types) | ✗ (not applicable) |
+| `profile`     | ✓              | ✓              |
+
+DART has a `report` namespace with 28 structured disclosure APIs (dividend, governance, executive compensation, etc.). This does not exist in EDGAR — SEC filings are structured differently.
+
+**EDGAR topic naming**: Topics use `{formType}::{itemId}` format. Short aliases also work:
+
+```python
+us.show("10-K::item1Business")     # full form
+us.show("business")                # short alias
+us.show("risk")                    # → 10-K::item1ARiskFactors
+us.show("mdna")                    # → 10-K::item7Mdna
+```
+
 ## AI Analysis
 
 > **Tip:** New to financial analysis or prefer natural language? Use `dartlab.ask()` — the AI assistant handles everything from data download to analysis. No coding knowledge required.
@@ -380,6 +470,8 @@ $ dartlab ask "삼성전자 재무건전성 분석해줘"
 ▸ 부채비율 31.8% — 업종 평균(45.2%) 대비 양호
 ▸ 유동비율 258.6% — 200% 안전 기준 상회
 ▸ 이자보상배수 22.1배 — 이자 부담 매우 낮음
+
+For real-time market-wide disclosure questions such as `최근 7일 수주공시 알려줘` or `이번 주 삼성전자 공시 뭐 있었어`, the UI can store an `OpenDART API key` in project `.env` and the AI will search recent filing lists directly.
 ▸ ROE 회복세: 1.6% → 10.2% (4분기 연속 개선)
 
 [데이터 출처: 2024Q4 사업보고서, dartlab insights 엔진]
@@ -431,6 +523,30 @@ dartlab report "삼성전자" -o report.md
 # web UI
 dartlab                    # open browser UI
 ```
+
+<details>
+<summary>All CLI commands (16)</summary>
+
+| Category | Command | Description |
+|----------|---------|-------------|
+| Data | `show` | Open any topic by name |
+| Data | `search` | Find companies by name or code |
+| Data | `statement` | BS / IS / CF / SCE output |
+| Data | `sections` | Raw docs sections |
+| Data | `profile` | Company index and facts |
+| Data | `modules` | List all available modules |
+| AI | `ask` | Natural language question |
+| AI | `report` | Auto-generate analysis report |
+| Export | `excel` | Export to Excel (experimental) |
+| Collect | `collect` | Download / refresh data |
+| Server | `ai` | Launch web UI (localhost:8400) |
+| Server | `share` | Tunnel sharing (ngrok / cloudflared) |
+| Server | `status` | Provider connection status |
+| Server | `setup` | Provider setup wizard |
+| MCP | `mcp` | Start MCP stdio server |
+| Plugin | `plugin` | Create / list plugins |
+
+</details>
 
 ### Providers
 
@@ -531,6 +647,7 @@ Use source-native wrappers when you want raw disclosure APIs directly.
 
 > **Note:** `Company` does **not** require an API key — it uses pre-built datasets.
 > `OpenDart` uses the raw DART API and requires a key from [opendart.fss.or.kr](https://opendart.fss.or.kr) (free).
+> Recent filing-list AI questions across the whole market also use this key. In the UI, open Settings and manage `OpenDART API key` there.
 
 ```python
 from dartlab import OpenDart
@@ -568,17 +685,7 @@ e.companyFactsJson("AAPL")
 | EDGAR finance | On-demand | Auto-fetched | SEC XBRL API |
 | EDINET (Japan) | Researching | In development | EDINET API |
 
-DART docs are pre-built on GitHub Releases for 320+ companies. If a company is not in the release, dartlab fetches individual disclosure sections from DART — this can be **very slow**. To pre-download a DART company's data (docs + finance + report) from the release:
-
-```python
-from dartlab.core.dataLoader import download
-
-download("005930")  # Samsung — pulls from GitHub Releases
-```
-
-EDGAR data is fetched in real-time from the SEC API on first `Company` creation. This may take a moment due to API rate limits.
-
-See [Installation — Data](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data) for details.
+DART docs are pre-built on GitHub Releases for 320+ companies. If a company is not in the release, dartlab fetches individual disclosure sections from DART — this can be **very slow**. EDGAR data is fetched in real-time from the SEC API on first `Company` creation, which may take a moment due to rate limits. See [Installation — Data](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data) for pre-download options.
 
 ## Try It Now
 
@@ -640,10 +747,10 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 
 | Tier | Scope |
 |------|-------|
-| **Stable** | DART Company, EDGAR Company core (sections, show, trace, diff, BS/IS/CF, ratios), valuation, forecast, simulation |
-| **Beta** | EDGAR power-user (SCE, explore, listTags, notes, cadence, coverage), insights, OpenDart, OpenEdgar, Server API, MCP server |
-| **Experimental** | AI tools, export, charts, network graph |
-| **Alpha** | Desktop App (Windows .exe) — functional but incomplete, Sections Viewer — horizontalized disclosure viewer, not yet fully structured |
+| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, CIS, index, filings, profile), EDGAR Company core, valuation, forecast, simulation |
+| **Beta** | EDGAR power-user (SCE, notes, cadence, coverage), insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text tools, ask/chat, OpenDart, OpenEdgar, Server API, MCP, CLI subcommands |
+| **Experimental** | AI tool calling, export |
+| **Alpha** | Desktop App (Windows .exe) — functional but incomplete, Sections Viewer — not yet fully structured |
 
 See [docs/stability.md](docs/stability.md).
 

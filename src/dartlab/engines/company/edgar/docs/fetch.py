@@ -290,8 +290,11 @@ def _collectFilingRows(
 ) -> None:
     for filing in filings:
         try:
-            with _FilingTimeout(filingTimeout):
+            timer = _FilingTimeout(filingTimeout)
+            with timer:
                 html = _downloadFilingSource(filing)
+                if timer.timedOut:
+                    raise TimeoutError("filing fetch timed out")
                 text = _htmlToText(html)
                 if filing["formType"] == "40-F":
                     items = _split40FSections(filing, text)
@@ -332,24 +335,47 @@ _HAS_SIGALRM = hasattr(signal, "SIGALRM")
 
 
 class _FilingTimeout:
+    """크로스 플랫폼 타임아웃 컨텍스트 매니저.
+
+    Unix: signal.SIGALRM 사용 (메인 스레드에서만 동작).
+    Windows: threading.Timer 폴백 (메인 스레드 인터럽트 불가하므로
+    requests의 timeout 파라미터에 의존하되, 전체 작업 타임아웃은
+    Timer로 _timedOut 플래그 설정).
+    """
+
     def __init__(self, seconds: int):
         self.seconds = max(int(seconds), 0)
         self._previousHandler = None
+        self._timer = None
+        self.timedOut = False
 
     def __enter__(self):
-        if self.seconds <= 0 or not _HAS_SIGALRM:
+        if self.seconds <= 0:
             return self
-        self._previousHandler = signal.getsignal(signal.SIGALRM)
-        signal.signal(signal.SIGALRM, self._handle)
-        signal.alarm(self.seconds)
+        if _HAS_SIGALRM:
+            self._previousHandler = signal.getsignal(signal.SIGALRM)
+            signal.signal(signal.SIGALRM, self._handle)
+            signal.alarm(self.seconds)
+        else:
+            import threading
+
+            self._timer = threading.Timer(self.seconds, self._markTimedOut)
+            self._timer.daemon = True
+            self._timer.start()
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        if self.seconds > 0 and _HAS_SIGALRM:
-            signal.alarm(0)
-            if self._previousHandler is not None:
-                signal.signal(signal.SIGALRM, self._previousHandler)
+        if self.seconds > 0:
+            if _HAS_SIGALRM:
+                signal.alarm(0)
+                if self._previousHandler is not None:
+                    signal.signal(signal.SIGALRM, self._previousHandler)
+            elif self._timer is not None:
+                self._timer.cancel()
         return False
+
+    def _markTimedOut(self):
+        self.timedOut = True
 
     @staticmethod
     def _handle(signum, frame):
@@ -628,11 +654,19 @@ def _findFilings(submissions: dict, sinceYear: int) -> list[dict]:
     return converted
 
 
-def _downloadHtml(url: str) -> str:
-    time.sleep(REQUEST_INTERVAL)
-    resp = requests.get(url, headers=HEADERS, timeout=60)
-    resp.raise_for_status()
-    return resp.text
+def _downloadHtml(url: str, *, maxRetries: int = 3) -> str:
+    """HTML 다운로드 (재시도 포함)."""
+    lastErr: Exception | None = None
+    for attempt in range(maxRetries):
+        time.sleep(REQUEST_INTERVAL if attempt == 0 else REQUEST_INTERVAL * (2 ** attempt))
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp.raise_for_status()
+            return resp.text
+        except (requests.ConnectionError, requests.Timeout) as e:
+            lastErr = e
+            continue
+    raise lastErr or requests.RequestException(f"failed after {maxRetries} retries: {url}")
 
 
 def _submissionTextUrl(filing: dict) -> str:
@@ -809,6 +843,12 @@ def _htmlToText(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
     for tag in soup(["script", "style", "meta", "link", "header", "footer", "nav"]):
         tag.decompose()
+    for tag in soup.find_all(style=True):
+        style = str(tag.get("style") or "").lower()
+        if "display:none" in style or "visibility:hidden" in style:
+            tag.decompose()
+    for tag in soup.find_all(re.compile(r"^(ix:header|ix:hidden|ix:references|ix:resources|xbrli:|dei:|link:)")):
+        tag.decompose()
     for ix_tag in soup.find_all(re.compile(r"^ix:")):
         ix_tag.unwrap()
     _extractItemHeaders(soup)
@@ -822,8 +862,8 @@ def _htmlToText(html: str) -> str:
         br.replace_with("\n")
     for p in soup.find_all(["p", "div", "li", "h1", "h2", "h3", "h4"]):
         p.insert_after("\n")
-    text = soup.get_text()
-    lines = [line.strip() for line in text.splitlines()]
+    text = (soup.body or soup).get_text("\n")
+    lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
     text = "\n".join(line for line in lines if line)
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 

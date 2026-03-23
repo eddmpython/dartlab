@@ -315,23 +315,6 @@ def _setup_dart_key() -> int:
 
 def _save_dart_key_to_dotenv(key: str) -> None:
     """프로젝트 루트의 .env에 DART_API_KEY 추가/갱신."""
-    from pathlib import Path
+    from dartlab.engines.company.dart.openapi.dartKey import saveDartKeyToDotenv
 
-    envPath = Path.cwd() / ".env"
-    lines: list[str] = []
-    replaced = False
-
-    if envPath.exists():
-        text = envPath.read_text(encoding="utf-8")
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("DART_API_KEY=") or stripped.startswith("DART_API_KEYS="):
-                lines.append(f"DART_API_KEY={key}")
-                replaced = True
-            else:
-                lines.append(line)
-
-    if not replaced:
-        lines.append(f"DART_API_KEY={key}")
-
-    envPath.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    saveDartKeyToDotenv(key)

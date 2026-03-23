@@ -28,9 +28,14 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.engines.company.filingHelpers import filingRecord
+from dartlab.engines.company.filingHelpers import filterFilingsByKeyword
+from dartlab.engines.company.filingHelpers import resolveDateWindow
+from dartlab.engines.company.filingHelpers import truncateText
 from dartlab.engines.company.edgar._docs_accessor import _DocsAccessor
 from dartlab.engines.company.edgar._finance_accessor import _FinanceAccessor
 from dartlab.engines.company.edgar._profile_accessor import _ProfileAccessor
+from dartlab.engines.company.edgar.openapi.submissions import SUPPORTED_REGULAR_FORMS
 
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -342,7 +347,13 @@ class Company:
     """
 
     def __init__(self, ticker: str):
-        self.ticker = ticker.upper()
+        if not ticker or not isinstance(ticker, str):
+            raise ValueError("ticker는 비어있지 않은 문자열이어야 합니다.")
+        cleaned = ticker.strip().upper()
+        # CIK (순수 숫자) 또는 ticker (영문+숫자, 1-10자)
+        if not (cleaned.isdigit() and len(cleaned) <= 10) and not re.match(r"^[A-Z][A-Z0-9./-]{0,9}$", cleaned):
+            raise ValueError(f"올바르지 않은 ticker/CIK: '{ticker}' (예: 'AAPL', '0000320193')")
+        self.ticker = cleaned
         from dartlab.core.memory import BoundedCache
 
         self._cache: BoundedCache = BoundedCache(max_entries=30)
@@ -498,6 +509,170 @@ class Company:
 
     def filings(self) -> pl.DataFrame | None:
         return self.docs.filings()
+
+    def liveFilings(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int | None = None,
+        limit: int = 20,
+        keyword: str | None = None,
+        forms: list[str] | tuple[str, ...] | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame:
+        """SEC EDGAR 기준 실시간 filing 목록."""
+        del finalOnly  # EDGAR regular filings에는 finalOnly 개념이 없다.
+
+        startDate, endDate = resolveDateWindow(start, end, days=days)
+        normalizedForms = tuple(forms or SUPPORTED_REGULAR_FORMS)
+        cacheKey = f"liveFilings:{startDate}:{endDate}:{limit}:{keyword}:{normalizedForms}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        from dartlab.core.guidance import progress
+
+        from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
+
+        progress(
+            f"{self.corpName} 최신 공시 목록 조회 중... "
+            f"(SEC EDGAR, {startDate}~{endDate}, forms={','.join(normalizedForms)})"
+        )
+        df = OpenEdgar()(self.ticker).filings(
+            forms=list(normalizedForms),
+            since=startDate,
+            until=endDate,
+        )
+        if df is None or df.is_empty():
+            result = pl.DataFrame(
+                schema={
+                    "docId": pl.Utf8,
+                    "filedAt": pl.Utf8,
+                    "title": pl.Utf8,
+                    "formType": pl.Utf8,
+                    "docUrl": pl.Utf8,
+                    "indexUrl": pl.Utf8,
+                    "market": pl.Utf8,
+                    "ticker": pl.Utf8,
+                    "cik": pl.Utf8,
+                    "accessionNo": pl.Utf8,
+                    "filingUrl": pl.Utf8,
+                    "filingIndexUrl": pl.Utf8,
+                    "primaryDocument": pl.Utf8,
+                    "reportDate": pl.Utf8,
+                }
+            )
+            self._cache[cacheKey] = result
+            return result
+
+        normalized = (
+            filterFilingsByKeyword(
+                df,
+                keyword=keyword,
+                columns=["title", "primary_doc_description", "form"],
+            )
+            .with_columns(
+                [
+                    pl.col("accession_no").cast(pl.Utf8).alias("docId"),
+                    pl.col("filing_date").cast(pl.Utf8).alias("filedAt"),
+                    pl.col("title").cast(pl.Utf8).alias("title"),
+                    pl.col("form").cast(pl.Utf8).alias("formType"),
+                    pl.col("filing_url").cast(pl.Utf8).alias("docUrl"),
+                    pl.col("filing_index_url").cast(pl.Utf8).alias("indexUrl"),
+                    pl.lit("US").alias("market"),
+                    pl.col("ticker").cast(pl.Utf8).alias("ticker"),
+                    pl.col("cik").cast(pl.Utf8).alias("cik"),
+                    pl.col("accession_no").cast(pl.Utf8).alias("accessionNo"),
+                    pl.col("filing_url").cast(pl.Utf8).alias("filingUrl"),
+                    pl.col("filing_index_url").cast(pl.Utf8).alias("filingIndexUrl"),
+                    pl.col("primary_document").cast(pl.Utf8).alias("primaryDocument"),
+                    pl.col("report_date").cast(pl.Utf8).alias("reportDate"),
+                ]
+            )
+            .select(
+                [
+                    "docId",
+                    "filedAt",
+                    "title",
+                    "formType",
+                    "docUrl",
+                    "indexUrl",
+                    "market",
+                    "ticker",
+                    "cik",
+                    "accessionNo",
+                    "filingUrl",
+                    "filingIndexUrl",
+                    "primaryDocument",
+                    "reportDate",
+                ]
+            )
+        )
+        result = normalized.head(limit) if limit > 0 else normalized
+        self._cache[cacheKey] = result
+        return result
+
+    def readFiling(
+        self,
+        filing: Any,
+        *,
+        maxChars: int | None = None,
+    ) -> dict[str, Any]:
+        """filing URL 또는 live filings row로 원문을 읽는다."""
+        record = filingRecord(filing) or {}
+
+        if isinstance(filing, str):
+            if filing.startswith("http://") or filing.startswith("https://"):
+                docUrl = filing.strip()
+                accessionNo = ""
+            else:
+                docUrl = ""
+                accessionNo = filing.strip()
+        else:
+            docUrl = str(record.get("docUrl") or record.get("filingUrl") or "")
+            accessionNo = str(record.get("accessionNo") or record.get("docId") or "")
+
+        primaryDocument = str(record.get("primaryDocument") or "")
+        if not docUrl and accessionNo and primaryDocument:
+            accessionNoDash = accessionNo.replace("-", "")
+            docUrl = f"https://www.sec.gov/Archives/edgar/data/{self.cik}/{accessionNoDash}/{primaryDocument}"
+        if not docUrl and accessionNo:
+            candidates = self.liveFilings(limit=50)
+            matched = candidates.filter(pl.col("docId") == accessionNo) if not candidates.is_empty() else None
+            if matched is not None and matched.height > 0:
+                row = matched.row(0, named=True)
+                docUrl = str(row.get("docUrl") or "")
+                accessionNo = str(row.get("accessionNo") or accessionNo)
+                primaryDocument = str(row.get("primaryDocument") or primaryDocument)
+
+        if not docUrl:
+            raise ValueError("EDGAR filing 읽기에는 filing URL 또는 accessionNo가 필요합니다.")
+
+        from dartlab.core.guidance import progress
+
+        from dartlab.engines.company.edgar.docs.fetch import _downloadFilingSource
+        from dartlab.engines.company.edgar.docs.fetch import _htmlToText
+
+        progress(f"{self.corpName} 공시 원문 다운로드 중... ({accessionNo or Path(docUrl).name})")
+        filingPayload = {
+            "filingUrl": docUrl,
+            "accessionNumber": accessionNo,
+        }
+        rawText = _downloadFilingSource(filingPayload)
+        progress(f"{self.corpName} 공시 원문 정리 중... ({accessionNo or Path(docUrl).name})")
+        normalizedText = _htmlToText(rawText) if "<" in rawText and ">" in rawText else rawText
+        textPreview, truncated = truncateText(normalizedText, maxChars=maxChars)
+        rawPreview, _ = truncateText(rawText, maxChars=maxChars)
+        return {
+            "docId": accessionNo,
+            "market": "US",
+            "title": record.get("title") or "",
+            "docUrl": docUrl,
+            "indexUrl": record.get("indexUrl") or record.get("filingIndexUrl") or "",
+            "raw": rawPreview,
+            "text": textPreview,
+            "truncated": truncated,
+        }
 
     @property
     def topics(self) -> pl.DataFrame:

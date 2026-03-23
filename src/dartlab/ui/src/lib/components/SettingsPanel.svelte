@@ -5,7 +5,7 @@
 <script>
 	import { cn } from "$lib/utils.js";
 	import {
-		X, Loader2, Settings, Check, ExternalLink,
+		X, Loader2, Check, ExternalLink,
 		Key, AlertCircle, CheckCircle2, Terminal, LogOut,
 		Download
 	} from "lucide-svelte";
@@ -23,6 +23,16 @@
 	$effect(() => {
 		return () => ui.cleanupProfileEvents();
 	});
+
+	const OPEN_DART_SOURCE_LABELS = {
+		env: "시스템 환경변수",
+		dotenv: "프로젝트 .env",
+		none: "미설정",
+	};
+
+	function openDartSourceLabel(source) {
+		return OPEN_DART_SOURCE_LABELS[source] || source || "미설정";
+	}
 </script>
 
 {#if ui.settingsOpen}
@@ -43,8 +53,8 @@
 			<div class="border-b border-dl-border/40 px-6 pt-5 pb-3">
 				<div class="flex items-center justify-between">
 					<div>
-						<div id="settings-dialog-title" class="text-[14px] font-semibold text-dl-text">AI Provider 설정</div>
-						<div class="mt-1 text-[11px] text-dl-text-dim">사용할 모델과 인증 상태를 한 곳에서 관리합니다.</div>
+						<div id="settings-dialog-title" class="text-[14px] font-semibold text-dl-text">AI / 공시 API 설정</div>
+						<div class="mt-1 text-[11px] text-dl-text-dim">AI provider와 한국 실시간 공시 조회용 OpenDART 키를 한 곳에서 관리합니다.</div>
 					</div>
 					<button
 						class="p-1 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
@@ -58,6 +68,252 @@
 
 			<div class="px-6 pb-5 max-h-[70vh] overflow-y-auto">
 				<div class="space-y-2.5">
+					<div
+						class={cn(
+							"rounded-xl border p-4 transition-all",
+							ui.settingsSection === "openDart"
+								? "border-dl-primary/40 bg-dl-primary/[0.03]"
+								: "border-dl-border"
+						)}
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<div class="flex items-center gap-2">
+									<span class="text-[13px] font-medium text-dl-text">OpenDART API 키</span>
+									{#if ui.openDart.configured}
+										<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-dl-success/15 text-dl-success">설정됨</span>
+									{:else}
+										<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/15 text-amber-400">필요</span>
+									{/if}
+								</div>
+								<div class="mt-1 text-[11px] text-dl-text-dim">
+									한국 최근 공시목록 조회와 공시 원문 읽기에 사용합니다. 예: 수주공시, 단일판매공급계약, 최근 공시 요약.
+								</div>
+							</div>
+							<div class="flex items-center gap-2 text-[10px] text-dl-text-dim">
+								<Key size={12} />
+								{openDartSourceLabel(ui.openDart.source)}
+							</div>
+						</div>
+
+						<div class="mt-3 rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-3">
+							<div class="flex items-center justify-between gap-3">
+								<div>
+									<div class="text-[11px] font-medium text-dl-text">처음 설정하는 방법</div>
+									<div class="mt-1 text-[10px] leading-relaxed text-dl-text-dim">
+										1. OpenDART에서 API 키를 발급받습니다.
+										<br />
+										2. 아래 입력칸에 붙여넣고 `검증` 또는 `저장`을 누릅니다.
+										<br />
+										3. 저장 후 `최근 7일 수주공시 알려줘`처럼 바로 질문하면 됩니다.
+									</div>
+								</div>
+								<a
+									class="inline-flex items-center gap-1 rounded-lg border border-dl-border px-2.5 py-1.5 text-[10px] text-dl-text-dim hover:text-dl-text hover:border-dl-primary/30 transition-colors"
+									href="https://opendart.fss.or.kr/intro/main.do"
+									target="_blank"
+									rel="noreferrer"
+								>
+									<ExternalLink size={11} />
+									키 발급
+								</a>
+							</div>
+						</div>
+
+						<div class="mt-3 grid gap-2 text-[11px]">
+							<div class="flex items-center justify-between gap-3 rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-2">
+								<span class="text-dl-text-dim">현재 적용 위치</span>
+								<span class="text-dl-text">{openDartSourceLabel(ui.openDart.source)}</span>
+							</div>
+							<div class="flex items-center justify-between gap-3 rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-2">
+								<span class="text-dl-text-dim">지금 바로 사용 가능</span>
+								<span class="text-dl-text">{ui.openDart.configured ? "예" : "아니오"}</span>
+							</div>
+							<div class="flex items-center justify-between gap-3 rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-2">
+								<span class="text-dl-text-dim">이 프로젝트에 저장 가능</span>
+								<span class="text-dl-text">{ui.openDart.writable ? "예" : "아니오"}</span>
+							</div>
+							{#if ui.openDart.envPath}
+								<div class="rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-2">
+									<div class="text-dl-text-dim">저장 경로</div>
+									<div class="mt-1 break-all text-dl-text">{ui.openDart.envPath}</div>
+								</div>
+							{/if}
+						</div>
+
+						{#if ui.openDart.source === "env"}
+							<div class="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+								<AlertCircle size={12} class="mt-0.5 text-amber-400 flex-shrink-0" />
+								<div class="text-[10px] text-amber-400/90">
+									현재는 OS 환경변수의 DART 키가 우선 적용 중입니다. 아래 저장은 프로젝트 `.env`를 갱신하지만 실제 사용 키는 OS env가 계속 우선입니다.
+								</div>
+							</div>
+						{/if}
+
+						<div class="mt-3">
+							<div class="flex items-center gap-2">
+								<input
+									type="password"
+									bind:value={ui.dartKeyInput}
+									placeholder="OpenDART API 키"
+									class="flex-1 bg-dl-bg-darker border border-dl-border rounded-lg px-3 py-2 text-[12px] text-dl-text placeholder:text-dl-text-dim outline-none focus:border-dl-primary/50 transition-colors"
+									onkeydown={(e) => { if (e.key === 'Enter') ui.submitDartKey(); }}
+								/>
+								<button
+									class="px-3 py-2 rounded-lg bg-dl-bg-darker border border-dl-border text-[11px] text-dl-text hover:border-dl-primary/30 transition-colors disabled:opacity-40"
+									onclick={() => ui.validateDartKey()}
+									disabled={!ui.dartKeyInput.trim() || ui.dartKeyValidating || ui.dartKeySaving}
+								>
+									{#if ui.dartKeyValidating}<Loader2 size={12} class="animate-spin" />{:else}검증{/if}
+								</button>
+								<button
+									class="px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[11px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
+									onclick={() => ui.submitDartKey()}
+									disabled={!ui.dartKeyInput.trim() || ui.dartKeySaving}
+								>
+									{#if ui.dartKeySaving}<Loader2 size={12} class="animate-spin" />{:else}저장{/if}
+								</button>
+								{#if ui.openDart.configured}
+									<button
+										class="px-3 py-2 rounded-lg border border-dl-border text-[11px] text-dl-text-dim hover:text-dl-text hover:border-dl-primary/30 transition-colors disabled:opacity-40"
+										onclick={() => ui.removeDartKey()}
+										disabled={ui.dartKeySaving || ui.openDart.source === "env"}
+									>
+										삭제
+									</button>
+								{/if}
+							</div>
+							{#if ui.dartKeyResult === "error"}
+								<div class="mt-2 flex items-center gap-1.5 text-[11px] text-dl-primary-light">
+									<AlertCircle size={12} />
+									OpenDART 키 검증 또는 저장에 실패했습니다.
+								</div>
+							{:else if ui.dartKeyResult === "valid" || ui.dartKeyResult === "saved"}
+								<div class="mt-2 flex items-center gap-1.5 text-[11px] text-dl-success">
+									<CheckCircle2 size={12} />
+									OpenDART 키가 정상적으로 확인되었습니다.
+								</div>
+							{/if}
+							<div class="mt-2 text-[10px] leading-relaxed text-dl-text-dim">
+								키가 없으면 한국 실시간 공시 질문은 진행할 수 없습니다. 설정 후 같은 질문을 다시 보내면 바로 이어서 분석합니다.
+							</div>
+						</div>
+
+						<div class="mt-3 rounded-lg border border-dl-border/60 bg-dl-bg-darker px-3 py-3">
+							<div class="text-[11px] font-medium text-dl-text">예시 질문</div>
+							<div class="mt-2 space-y-1 text-[10px] text-dl-text-dim">
+								<div>`최근 7일 수주공시 알려줘`</div>
+								<div>`이번 주 삼성전자 공시 뭐 있었어`</div>
+								<div>`최근 2주 단일판매공급계약 공시 요약해줘`</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class={cn(
+							"rounded-xl border p-4 transition-all",
+							ui.settingsSection === "channels"
+								? "border-dl-primary/40 bg-dl-primary/[0.03]"
+								: "border-dl-border"
+						)}
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<div class="flex items-center gap-2">
+									<span class="text-[13px] font-medium text-dl-text">외부 채널 연결</span>
+									<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-dl-bg-darker text-dl-text-dim">세션 전용</span>
+								</div>
+								<div class="mt-1 text-[11px] text-dl-text-dim">
+									Telegram / Slack / Discord 봇을 현재 `dartlab ai` 서버 세션에 바로 연결합니다. 토큰은 UI에 저장하지 않습니다.
+								</div>
+							</div>
+							<button
+								class="text-[10px] text-dl-text-dim hover:text-dl-text transition-colors"
+								onclick={() => ui.openSettings("channels")}
+							>
+								이 섹션 고정
+							</button>
+						</div>
+
+						<div class="mt-3 space-y-3">
+							{#each Object.entries(ui.channels) as [platform, info]}
+								{@const isSlack = platform === "slack"}
+								<div class="rounded-xl border border-dl-border/60 bg-dl-bg-darker/80 px-3 py-3">
+									<div class="flex items-start justify-between gap-3">
+										<div>
+											<div class="flex items-center gap-2">
+												<span class="text-[12px] font-medium text-dl-text">{info.label}</span>
+												<span class={cn(
+													"px-1.5 py-0.5 rounded text-[9px] font-semibold",
+													info.running
+														? "bg-dl-success/15 text-dl-success"
+														: "bg-dl-border/40 text-dl-text-dim"
+												)}>
+													{info.running ? "연결됨" : "미연결"}
+												</span>
+											</div>
+											<div class="mt-1 text-[10px] text-dl-text-dim">{info.description}</div>
+											{#if info.error}
+												<div class="mt-1 text-[10px] text-dl-primary-light">{info.error}</div>
+											{/if}
+										</div>
+										<div class="text-[10px] text-dl-text-dim">
+											{#if info.startedAt}
+												실행 중
+											{:else}
+												대기
+											{/if}
+										</div>
+									</div>
+
+									<div class="mt-3 grid gap-2">
+										{#if isSlack}
+											<input
+												type="password"
+												value={ui.channelInputs.slack?.botToken || ""}
+												placeholder="Slack bot token (xoxb-...)"
+												class="w-full bg-dl-bg-dark border border-dl-border rounded-lg px-3 py-2 text-[12px] text-dl-text placeholder:text-dl-text-dim outline-none focus:border-dl-primary/50 transition-colors"
+												oninput={(e) => ui.setChannelInput("slack", "botToken", e.currentTarget.value)}
+											/>
+											<input
+												type="password"
+												value={ui.channelInputs.slack?.appToken || ""}
+												placeholder="Slack app token (xapp-...)"
+												class="w-full bg-dl-bg-dark border border-dl-border rounded-lg px-3 py-2 text-[12px] text-dl-text placeholder:text-dl-text-dim outline-none focus:border-dl-primary/50 transition-colors"
+												oninput={(e) => ui.setChannelInput("slack", "appToken", e.currentTarget.value)}
+											/>
+										{:else}
+											<input
+												type="password"
+												value={ui.channelInputs[platform]?.token || ""}
+												placeholder={`${info.label} token`}
+												class="w-full bg-dl-bg-dark border border-dl-border rounded-lg px-3 py-2 text-[12px] text-dl-text placeholder:text-dl-text-dim outline-none focus:border-dl-primary/50 transition-colors"
+												oninput={(e) => ui.setChannelInput(platform, "token", e.currentTarget.value)}
+											/>
+										{/if}
+									</div>
+
+									<div class="mt-3 flex items-center justify-end gap-2">
+										<button
+											class="px-3 py-2 rounded-lg border border-dl-border text-[11px] text-dl-text-dim hover:text-dl-text hover:border-dl-primary/30 transition-colors disabled:opacity-40"
+											onclick={() => ui.stopChannel(platform)}
+											disabled={!info.running || ui.channelBusy[platform]}
+										>
+											{#if ui.channelBusy[platform]}<Loader2 size={12} class="animate-spin inline-block mr-1" />{/if}종료
+										</button>
+										<button
+											class="px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[11px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
+											onclick={() => ui.startChannel(platform)}
+											disabled={ui.channelBusy[platform]}
+										>
+											{#if ui.channelBusy[platform]}<Loader2 size={12} class="animate-spin inline-block mr-1" />{/if}연결
+										</button>
+									</div>
+								</div>
+							{/each}
+						</div>
+					</div>
+
 					{#each Object.entries(ui.providers) as [name, info]}
 						{@const isActive = name === ui.activeProvider}
 						{@const isExpanded = ui.expandedProvider === name}
@@ -99,6 +355,9 @@
 										{/if}
 									</div>
 									<div class="text-[11px] text-dl-text-dim mt-0.5">{info.desc || ""}</div>
+									{#if info.credentialSource && info.auth !== "none"}
+										<div class="text-[10px] text-dl-text-dim mt-1">credential: {info.credentialSource}</div>
+									{/if}
 								</div>
 								<div class="flex items-center gap-2 flex-shrink-0">
 									{#if info.available}

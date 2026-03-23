@@ -444,6 +444,65 @@ class TestCompany:
         assert traced_docs is not None
         assert traced_docs["primarySource"] == "docs"
 
+    def test_report_available_api_types_matches_extract_without_extract_caches(self):
+        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.engines.company.dart.report.types import API_TYPES
+
+        fastCompany = DartCompany(SAMSUNG)
+        available = fastCompany.report.availableApiTypes
+
+        reportCacheKeys = set(fastCompany.report._cache._store.keys())
+        assert "_availableApiTypes" in reportCacheKeys
+        assert not any(key.startswith("_extract_") for key in reportCacheKeys)
+
+        baselineCompany = DartCompany(SAMSUNG)
+        expected = [name for name in API_TYPES if baselineCompany.report.extract(name) is not None]
+        assert available == expected
+
+    def test_finance_trace_fast_path_matches_profile_trace_without_heavy_caches(self):
+        from dartlab.engines.company.dart.company import Company as DartCompany
+
+        for topic in ("BS", "IS", "CF", "CIS", "SCE"):
+            fastCompany = DartCompany(SAMSUNG)
+            traced = fastCompany.trace(topic, period="2024")
+
+            assert traced is not None
+            assert traced["primarySource"] == "finance"
+            cacheKeys = set(fastCompany._cache._store.keys())
+            assert "_profileFacts" not in cacheKeys
+            assert "retrievalBlocks" not in cacheKeys
+            assert "sections" not in cacheKeys
+            assert "_sections" not in cacheKeys
+
+            baselineCompany = DartCompany(SAMSUNG)
+            assert traced == baselineCompany.profile.trace(topic, period="2024")
+
+    def test_show_finance_fast_path_avoids_sections(self):
+        from dartlab.engines.company.dart.company import Company as DartCompany
+
+        for topic in ("BS", "IS", "CF", "CIS", "SCE", "ratios"):
+            fastCompany = DartCompany(SAMSUNG)
+            result = fastCompany.show(topic)
+
+            assert result is not None
+            assert isinstance(result, pl.DataFrame)
+            assert fastCompany.show(topic, 0).equals(result, null_equal=True)
+            cacheKeys = set(fastCompany._cache._store.keys())
+            assert "sections" not in cacheKeys
+            assert "_sections" not in cacheKeys
+
+            baselineCompany = DartCompany(SAMSUNG)
+            sections = baselineCompany.sections
+            assert sections is not None
+            topicRows = sections.filter(pl.col("topic") == topic)
+            blockIndex = baselineCompany._buildBlockIndex(topicRows)
+            assert blockIndex.height == 1
+            expected = baselineCompany._showFinanceTopic(topic)
+            assert expected is not None
+            if topic in {"BS", "IS", "CF", "CIS", "SCE"}:
+                expected = baselineCompany._cleanFinanceDataFrame(expected, topic)
+            assert result.equals(expected, null_equal=True)
+
     def test_open_and_topics_surface_company_payloads(self):
         c = self.c
         topicList = c.topics["topic"].to_list()

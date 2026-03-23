@@ -102,6 +102,8 @@ c.BS                         # finance.BS 바로가기
 c.sections                   # profile.sections 위임 (docs+finance 통합)
 c.stockCode                  # ticker alias (서버 API 호환)
 c.filings()                  # docs.filings() 바로가기
+c.liveFilings()              # SEC source-native 최신 filing 목록
+c.readFiling(rowOrUrl)       # filing HTML/.txt 원문 회수
 
 c.insights                   # 7영역 등급
 ```

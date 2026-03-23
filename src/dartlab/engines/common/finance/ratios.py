@@ -714,6 +714,14 @@ def calcRatios(
         ["depreciation_and_amortization", "depreciation_cf", "depreciation"],
         annual=annual,
     )
+    # CF에 없으면 IS의 D&A 시도 (EDGAR는 IS에 별도 기재하는 경우 있음)
+    if r.depreciationExpense is None:
+        r.depreciationExpense = _pick_first(
+            series,
+            "IS",
+            ["depreciation_amortization", "depreciation_and_amortization"],
+            annual=annual,
+        )
 
     r.totalAssets = getLatest(series, "BS", "total_assets")
     r.totalEquity = getLatest(series, "BS", "total_stockholders_equity") or getLatest(
@@ -739,6 +747,9 @@ def calcRatios(
     r.profitBeforeTax = _pick_first(series, "IS", ["profit_before_tax", "income_before_tax"], annual=annual)
     r.incomeTaxExpense = _pick_first(series, "IS", ["income_tax_expense", "income_taxes"], annual=annual)
 
+    if marketCap and marketCap > 0:
+        r.marketCap = marketCap
+
     _calcProfitability(r)
     _calcStability(r)
     _calcEfficiency(r)
@@ -749,8 +760,7 @@ def calcRatios(
         r.sharesOutstanding = shares
         _calcPerShare(r)
 
-    if marketCap and marketCap > 0:
-        r.marketCap = marketCap
+    if r.marketCap and r.marketCap > 0:
         _calcValuation(r)
 
     # BS 항등식 검증: 자산 ≈ 부채 + 자본
@@ -1027,18 +1037,27 @@ def _calcComposite(
 
     r.piotroskiFScore = score
 
-    # ── Altman Z-Score (제조업) ──
+    # ── Altman Z-Score (제조업, 1968) ──
     # Z = 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
-    # A=WC/TA, B=RE/TA, C=EBIT/TA, D=MarketCap/TL(or Equity/TL), E=Sales/TA
+    # A=WC/TA, B=RE/TA, C=EBIT/TA, D=MarketCap/TL, E=Sales/TA
+    # marketCap 없으면 원본 Z 계산 불가 → Z' (비상장 모델, 1983) 사용
+    # Z' = 0.717×A + 0.847×B + 3.107×C + 0.420×D' + 0.998×E (D'=BookEquity/TL)
     if r.totalAssets and r.totalAssets > 0 and r.totalLiabilities and r.totalLiabilities > 0:
         wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
         a = wc / r.totalAssets
         b = (r.retainedEarnings or 0) / r.totalAssets
         c = (r.operatingIncomeTTM or 0) / r.totalAssets
-        d = (r.totalEquity or 0) / r.totalLiabilities  # equity proxy for market cap
         e = (r.revenueTTM or 0) / r.totalAssets
-        z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
-        r.altmanZScore = _safeRound(z, 2)
+        if r.marketCap is not None:
+            # 원본 Altman Z (상장 기업용)
+            d = r.marketCap / r.totalLiabilities
+            z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
+            r.altmanZScore = _safeRound(z, 2)
+        else:
+            # Z' (비상장 기업용, 장부가)
+            dPrime = (r.totalEquity or 0) / r.totalLiabilities
+            zPrime = 0.717 * a + 0.847 * b + 3.107 * c + 0.420 * dPrime + 0.998 * e
+            r.altmanZScore = _safeRound(zPrime, 2)
 
     # ── Sloan Accrual Ratio ──
     # (순이익 - 영업CF) / 총자산. 높으면 발생주의 이익 비중 과다 (조작 의심)
@@ -1190,7 +1209,7 @@ def _calcBeneishForPeriod(
     if cogs_t is not None and cogs_p is not None and rev_t > 0:
         gm_t = (rev_t - cogs_t) / rev_t
         gm_p = (rev_p - cogs_p) / rev_p
-        if gm_t > 0:
+        if gm_t > 0 and gm_p > 0:
             gmi = gm_p / gm_t
 
     # AQI
@@ -1683,18 +1702,19 @@ def calcRatioSeries(
                 fscore += 1
         rs.piotroskiFScore.append(fscore)
 
-        # Altman Z-Score
+        # Altman Z'-Score (비상장 모델 — 시계열에 marketCap 없으므로 항상 Z')
         if ta_i and ta_i > 0 and tl_i and tl_i > 0:
             wc_i = (ca_i or 0) - (cl_i or 0)
             re_i = _v(_get(annualSeries, "BS", "retained_earnings"), i)
-            z = (
-                1.2 * (wc_i / ta_i)
-                + 1.4 * ((re_i or 0) / ta_i)
-                + 3.3 * ((op_i or 0) / ta_i)
-                + 0.6 * ((te_i or 0) / tl_i)
-                + 1.0 * ((rev_i or 0) / ta_i)
+            dPrime = (te_i or 0) / tl_i
+            zPrime = (
+                0.717 * (wc_i / ta_i)
+                + 0.847 * ((re_i or 0) / ta_i)
+                + 3.107 * ((op_i or 0) / ta_i)
+                + 0.420 * dPrime
+                + 0.998 * ((rev_i or 0) / ta_i)
             )
-            rs.altmanZScore.append(_safeRound(z, 2))
+            rs.altmanZScore.append(_safeRound(zPrime, 2))
         else:
             rs.altmanZScore.append(None)
 

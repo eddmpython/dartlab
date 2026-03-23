@@ -1,7 +1,7 @@
 # DART Report Development Guide
 
 본체 위치:
-- `src/dartlab/engines/dart/report/`
+- `src/dartlab/engines/company/dart/report/`
 
 ## 구조
 
@@ -50,3 +50,4 @@
 - `report`는 sections보다 더 좋은 structured 시계열을 채우는 source다.
 - `show()`에서 report topic은 `pl.DataFrame` 또는 `None` 계약을 유지한다.
 - `trace()`는 report가 primary source로 선택됐는지 보여준다.
+- `availableApiTypes`는 metadata-only scan이다. `extract()` 28회를 돌려 availability를 확인하지 않는다.

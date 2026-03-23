@@ -337,19 +337,57 @@ class TestComposite:
         assert r.piotroskiMaxScore == 9
 
     def test_altman_z_score(self):
-        """Altman Z-Score: 제조업 공식.
+        """Altman Z'-Score: marketCap=None → 비상장 모델 (1983).
 
         WC = 50000-30000 = 20000
         A = WC/TA = 20000/200000 = 0.1
         B = RE/TA = 60000/200000 = 0.3
         C = EBIT/TA = 20000/200000 = 0.1
-        D = Equity/TL = 120000/80000 = 1.5
+        D' = Equity/TL = 120000/80000 = 1.5
         E = Sales/TA = 100000/200000 = 0.5
-        Z = 1.2×0.1 + 1.4×0.3 + 3.3×0.1 + 0.6×1.5 + 1.0×0.5
-          = 0.12 + 0.42 + 0.33 + 0.9 + 0.5 = 2.27
+        Z' = 0.717×0.1 + 0.847×0.3 + 3.107×0.1 + 0.420×1.5 + 0.998×0.5
+           = 0.0717 + 0.2541 + 0.3107 + 0.63 + 0.499 = 1.77
         """
         r = _calc()
-        assert r.altmanZScore == pytest.approx(2.27, abs=0.1)
+        assert r.altmanZScore == pytest.approx(1.77, abs=0.1)
+
+    def test_altman_z_score_with_market_cap_uses_original_model(self):
+        """marketCap 제공 시 원본 Altman Z (상장기업 모델) 사용."""
+        r = _calc(marketCap=300_000)
+        assert r.altmanZScore == pytest.approx(3.62, abs=0.1)
+
+    def test_ratio_series_uses_z_prime_coefficients(self):
+        from dartlab.engines.common.finance.ratios import calcRatioSeries
+
+        rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"])
+        assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
+
+    def test_beneish_returns_none_when_prior_gross_margin_is_nonpositive(self):
+        from dartlab.engines.common.finance.ratios import _calcBeneishForPeriod
+
+        score = _calcBeneishForPeriod(
+            rev_t=100.0,
+            rev_p=100.0,
+            rec_t=10.0,
+            rec_p=10.0,
+            cogs_t=60.0,
+            cogs_p=120.0,
+            ta_t=200.0,
+            ta_p=180.0,
+            ca_t=50.0,
+            ca_p=45.0,
+            sga_t=10.0,
+            sga_p=9.0,
+            dep_t=5.0,
+            dep_p=4.0,
+            tan_t=70.0,
+            tan_p=65.0,
+            np_t=10.0,
+            ocf_t=8.0,
+            tl_t=80.0,
+            tl_p=75.0,
+        )
+        assert score is None
 
 
 # ══════════════════════════════════════

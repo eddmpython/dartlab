@@ -9,6 +9,32 @@ import polars as pl
 from .helpers import df_to_md, format_tool_value, maybe_int
 
 
+def _is_kr_company(company: Any) -> bool:
+    """현재 company가 한국(DART) 기업인지 판단한다."""
+    try:
+        return getattr(company, "market", None) == "KR"
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+
+def _missing_dart_key_help(actionLabel: str) -> str:
+    """실시간 DART 공시 기능용 키 안내 메시지."""
+    return (
+        "OpenDART API 키가 필요합니다.\n"
+        f"- 지금 요청은 `{actionLabel}` 기능을 사용합니다.\n"
+        "- 우상단 설정 -> `OpenDART API 키`에서 바로 검증하고 저장할 수 있습니다.\n"
+        "- 키는 프로젝트 루트 `.env`의 `DART_API_KEY`로 저장됩니다.\n"
+        "- 저장 후 같은 질문을 다시 보내면 바로 계속 진행합니다.\n"
+        "- 공시 원문 조회는 XML/HTML 원문을 내려받아 정리하므로 큰 문서는 10~30초 정도 걸릴 수 있습니다."
+    )
+
+
+def _looks_like_missing_dart_key(errorText: str) -> bool:
+    """에러 문자열이 DART 키 누락인지 느슨하게 판별한다."""
+    text = str(errorText or "")
+    return "OpenDART API 키" in text or "DART_API_KEY" in text
+
+
 def register_company_tools(company: Any, register_tool) -> None:
     """Company 바인딩 핵심 도구를 등록한다."""
     from dartlab.core.capabilities import CapabilityKind
@@ -232,6 +258,177 @@ def register_company_tools(company: Any, register_tool) -> None:
         category="company",
         questionTypes=("종합",),
         priority=75,
+    )
+
+    # ── list_filings ──
+
+    def list_filings(limit: int = 20) -> str:
+        """공시 문서 목록 조회."""
+        if not hasattr(company, "filings"):
+            return "filings() 인터페이스가 없습니다."
+        try:
+            result = company.filings()
+            if result is None or (isinstance(result, pl.DataFrame) and result.is_empty()):
+                return "공시 문서가 없습니다."
+            if isinstance(result, pl.DataFrame):
+                return df_to_md(result.head(limit), max_rows=limit)
+            return str(result)[:3000]
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as e:
+            return f"공시 목록 조회 실패: {e}"
+
+    register_tool(
+        "list_filings",
+        list_filings,
+        "기업의 로컬 docs 기준 공시 문서 목록을 조회합니다. "
+        "이미 저장된 parquet/docs에서 filings() 결과를 보여줍니다. "
+        "사용 시점: 로컬에 수집된 문서 목록을 확인할 때. "
+        "사용하지 말 것: 실시간 최근 공시가 필요하면 list_live_filings, 본문이 필요하면 read_filing을 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "description": "최대 반환 건수 (기본 20)",
+                    "default": 20,
+                },
+            },
+        },
+        category="company",
+        questionTypes=("공시", "종합"),
+        priority=55,
+    )
+
+    def list_live_filings(
+        days: int = 30,
+        limit: int = 20,
+        keyword: str = "",
+        forms: str = "",
+        final_only: bool = False,
+    ) -> str:
+        """실시간 filing 목록 조회."""
+        if not hasattr(company, "liveFilings"):
+            return "liveFilings() 인터페이스가 없습니다."
+        if _is_kr_company(company):
+            from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+
+            if not hasDartApiKey():
+                return _missing_dart_key_help("실시간 공시 목록 조회")
+        try:
+            formList = [item.strip() for item in forms.split(",") if item.strip()] or None
+            result = company.liveFilings(
+                days=days,
+                limit=limit,
+                keyword=keyword or None,
+                forms=formList,
+                finalOnly=final_only,
+            )
+            if result is None or (isinstance(result, pl.DataFrame) and result.is_empty()):
+                return "실시간 공시가 없습니다."
+            if isinstance(result, pl.DataFrame):
+                return "실시간 공시목록\n\n" + df_to_md(result, max_rows=limit)
+            return str(result)[:3000]
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as e:
+            if _is_kr_company(company) and _looks_like_missing_dart_key(str(e)):
+                return _missing_dart_key_help("실시간 공시 목록 조회")
+            return f"실시간 공시 목록 조회 실패: {e}"
+
+    register_tool(
+        "list_live_filings",
+        list_live_filings,
+        "기업의 실시간 공시 목록을 조회합니다. "
+        "OpenDART 또는 EDGAR public source 기준으로 최신 filing 메타데이터를 반환합니다. "
+        "사용 시점: '최근 공시 뭐 있었어?', '최근 30일 10-Q', '이번 달 공시 목록' 질문. "
+        "사용하지 말 것: 이미 저장된 로컬 docs 목록만 보면 되면 list_filings를 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "최근 며칠 범위를 볼지 (기본 30일)",
+                    "default": 30,
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "최대 반환 건수 (기본 20)",
+                    "default": 20,
+                },
+                "keyword": {
+                    "type": "string",
+                    "description": "제목/설명 keyword 필터",
+                    "default": "",
+                },
+                "forms": {
+                    "type": "string",
+                    "description": "EDGAR form 필터. 쉼표 구분 예: '10-K,10-Q'",
+                    "default": "",
+                },
+                "final_only": {
+                    "type": "boolean",
+                    "description": "DART에서 최종보고서만 볼지 여부",
+                    "default": False,
+                },
+            },
+        },
+        category="company",
+        questionTypes=("공시", "사업", "종합"),
+        priority=64,
+    )
+
+    def read_filing(doc_id: str = "", doc_url: str = "", max_chars: int = 4000) -> str:
+        """filling row/doc id/url로 본문 회수."""
+        if not hasattr(company, "readFiling"):
+            return "readFiling() 인터페이스가 없습니다."
+        if not doc_id and not doc_url:
+            return "doc_id 또는 doc_url 중 하나는 필요합니다."
+        if _is_kr_company(company):
+            from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+
+            if not hasDartApiKey():
+                return _missing_dart_key_help("공시 원문 조회")
+        payload: str | dict[str, str]
+        if doc_id and doc_url:
+            payload = {"docId": doc_id, "docUrl": doc_url}
+        else:
+            payload = doc_url or doc_id
+        try:
+            result = company.readFiling(payload, maxChars=max_chars)
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as e:
+            if _is_kr_company(company) and _looks_like_missing_dart_key(str(e)):
+                return _missing_dart_key_help("공시 원문 조회")
+            return f"공시 본문 조회 실패: {e}"
+        return format_tool_value(result, max_rows=10, max_chars=max_chars + 1000)
+
+    register_tool(
+        "read_filing",
+        read_filing,
+        "특정 공시의 원문 본문을 조회합니다. "
+        "DART는 rceptNo, EDGAR는 filing URL 또는 accession 메타를 받아 본문을 회수합니다. "
+        "사용 시점: 목록에서 고른 공시를 실제로 읽고 요약할 때. "
+        "사용하지 말 것: 어떤 공시가 있는지 모르면 먼저 list_live_filings를 사용하세요.",
+        {
+            "type": "object",
+            "properties": {
+                "doc_id": {
+                    "type": "string",
+                    "description": "DART rceptNo 또는 EDGAR accessionNo",
+                    "default": "",
+                },
+                "doc_url": {
+                    "type": "string",
+                    "description": "EDGAR filing URL 또는 DART viewer URL",
+                    "default": "",
+                },
+                "max_chars": {
+                    "type": "integer",
+                    "description": "본문 최대 길이",
+                    "default": 4000,
+                },
+            },
+        },
+        category="company",
+        questionTypes=("공시", "사업", "리스크", "종합"),
+        priority=66,
+        dependsOn=("list_live_filings",),
     )
 
     # ── 중복 등록: search / download / data_status (company-bound) ──

@@ -67,6 +67,10 @@ from dartlab.engines.company.dart._utils import (  # noqa: F401
     _shapeString,
 )
 from dartlab.engines.company.dart.docs.notes import Notes
+from dartlab.engines.company.filingHelpers import filingRecord
+from dartlab.engines.company.filingHelpers import filterFilingsByKeyword
+from dartlab.engines.company.filingHelpers import resolveDateWindow
+from dartlab.engines.company.filingHelpers import truncateText
 from dartlab.engines.gather.listing import (
     codeToName,
     getKindList,
@@ -225,6 +229,8 @@ _TOPIC_LABELS: dict[str, str] = {
     "segments": "부문정보",
 }
 
+_RCEPT_NO_PATTERN = re.compile(r"[?&]rcpNo=(\d{14})")
+
 
 def listExportModules() -> list[tuple[str, str]]:
     """Excel/export용 DART 공개 모듈 목록."""
@@ -285,11 +291,14 @@ class Company:
         self._hasFinanceParquet = _ensureData(self.stockCode, "finance")
         self._hasReport = _ensureData(self.stockCode, "report")
 
-        if self._hasDocs:
+        corpName = codeToName(self.stockCode)
+        if corpName:
+            self.corpName = corpName
+        elif self._hasDocs:
             df = loadData(self.stockCode, category="docs", columns=["corp_name"])
             self.corpName = extractCorpName(df)
         else:
-            self.corpName = codeToName(self.stockCode)
+            self.corpName = self.stockCode
 
         # finance는 lazy — 첫 접근 시 _ensureFinanceLoaded()에서 검증
         self._financeChecked = False
@@ -428,6 +437,405 @@ class Company:
     def filings(self) -> pl.DataFrame | None:
         """공시 문서 목록 + DART 뷰어 링크."""
         return self._filings()
+
+    @staticmethod
+    def _emptyTopicManifest() -> pl.DataFrame:
+        return pl.DataFrame(
+            schema={
+                "order": pl.Int64,
+                "chapter": pl.Utf8,
+                "topic": pl.Utf8,
+                "source": pl.Utf8,
+                "blocks": pl.Int64,
+                "periods": pl.Int64,
+                "latestPeriod": pl.Utf8,
+            }
+        )
+
+    @staticmethod
+    def _emptyTopicOutline() -> pl.DataFrame:
+        return pl.DataFrame(
+            schema={
+                "period": pl.Utf8,
+                "sectionOrder": pl.Int64,
+                "block": pl.Int64,
+                "type": pl.Utf8,
+                "title": pl.Utf8,
+                "preview": pl.Utf8,
+            }
+        )
+
+    @staticmethod
+    def _previewText(value: Any, limit: int = 160) -> str:
+        text = str(value or "").replace("\r", " ").replace("\n", " ").strip()
+        if len(text) <= limit:
+            return text
+        return text[: max(limit - 3, 0)].rstrip() + "..."
+
+    def _docsTopicManifest(self) -> pl.DataFrame:
+        cacheKey = "_docsTopicManifest"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        empty = self._emptyTopicManifest()
+        if not self._hasDocs:
+            self._cache[cacheKey] = empty
+            return empty
+
+        raw = loadData(
+            self.stockCode,
+            category="docs",
+            sinceYear=2016,
+            columns=["year", "report_type", "rcept_date", "section_order", "section_title"],
+        )
+        requiredCols = {"year", "report_type", "section_order", "section_title"}
+        if raw is None or raw.is_empty() or not requiredCols.issubset(set(raw.columns)):
+            self._cache[cacheKey] = empty
+            return empty
+
+        from dartlab.core.reportSelector import selectReport
+        from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS, periodOrderValue
+        from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
+        from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
+        from dartlab.engines.company.dart.docs.sections.runtime import chapterFromMajorNum
+
+        years = sorted({str(year) for year in raw["year"].drop_nulls().to_list()}, reverse=True)
+        catalog: dict[str, dict[str, Any]] = {}
+
+        for year in years:
+            for reportKind, suffix in REPORT_KINDS:
+                report = selectReport(raw, year, reportKind=reportKind)
+                if report is None or report.is_empty():
+                    continue
+
+                periodKey = f"{year}{suffix}"
+                scoped = (
+                    report.select(["section_order", "section_title"])
+                    .filter(pl.col("section_title").is_not_null())
+                    .sort("section_order")
+                )
+                if scoped.is_empty():
+                    continue
+
+                currentChapter: str | None = None
+                periodCounts: dict[str, int] = {}
+                periodOrders: dict[str, int] = {}
+                periodChapters: dict[str, str] = {}
+
+                for row in scoped.iter_rows(named=True):
+                    rawTitle = str(row.get("section_title") or "").strip()
+                    if not rawTitle:
+                        continue
+                    majorNum = parseMajorNum(rawTitle)
+                    if majorNum is not None:
+                        currentChapter = chapterFromMajorNum(majorNum)
+                    topic = mapSectionTitle(rawTitle)
+                    if not topic:
+                        continue
+                    sectionOrder = int(row.get("section_order") or 0)
+                    periodCounts[topic] = periodCounts.get(topic, 0) + 1
+                    periodOrders.setdefault(topic, sectionOrder)
+                    if currentChapter and topic not in periodChapters:
+                        periodChapters[topic] = currentChapter
+
+                for topic, blockCount in periodCounts.items():
+                    chapter = periodChapters.get(topic) or "XII"
+                    sectionOrder = periodOrders.get(topic, 0)
+                    latestKey = periodOrderValue(periodKey)
+                    entry = catalog.get(topic)
+                    if entry is None:
+                        catalog[topic] = {
+                            "order": sectionOrder,
+                            "chapter": chapter,
+                            "topic": topic,
+                            "source": "docs",
+                            "blocks": blockCount,
+                            "periods": 1,
+                            "latestPeriod": periodKey,
+                            "_periods": {periodKey},
+                            "_latestKey": latestKey,
+                        }
+                        continue
+
+                    entry["order"] = min(int(entry["order"]), sectionOrder)
+                    if chapter != "XII" and entry.get("chapter") == "XII":
+                        entry["chapter"] = chapter
+                    entry["blocks"] = max(int(entry["blocks"]), blockCount)
+                    if periodKey not in entry["_periods"]:
+                        entry["_periods"].add(periodKey)
+                        entry["periods"] = len(entry["_periods"])
+                    if latestKey > int(entry["_latestKey"]):
+                        entry["latestPeriod"] = periodKey
+                        entry["_latestKey"] = latestKey
+
+        rows = [
+            {
+                "order": int(entry["order"]),
+                "chapter": str(entry["chapter"]),
+                "topic": str(entry["topic"]),
+                "source": str(entry["source"]),
+                "blocks": int(entry["blocks"]),
+                "periods": int(entry["periods"]),
+                "latestPeriod": str(entry["latestPeriod"]),
+            }
+            for entry in catalog.values()
+        ]
+        if not rows:
+            self._cache[cacheKey] = empty
+            return empty
+
+        result = (
+            pl.DataFrame(rows, strict=False)
+            .with_columns(pl.col("chapter").replace(_CHAPTER_ORDER).cast(pl.Int64).alias("_chapterOrder"))
+            .sort(["_chapterOrder", "order", "topic"])
+            .drop("_chapterOrder")
+        )
+        self._cache[cacheKey] = result
+        return result
+
+    def _docsSectionTopics(self) -> list[str]:
+        manifest = self._docsTopicManifest()
+        if manifest.is_empty() or "topic" not in manifest.columns:
+            return []
+        return [topic for topic in manifest["topic"].to_list() if isinstance(topic, str) and topic]
+
+    def _docsTopicOutline(self, topic: str | None = None) -> pl.DataFrame:
+        if topic is None:
+            return self._docsTopicManifest()
+
+        normalizedTopic = str(topic).strip()
+        cacheKey = f"_docsTopicOutline:{normalizedTopic}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        empty = self._emptyTopicOutline()
+        if not normalizedTopic or not self._hasDocs:
+            self._cache[cacheKey] = empty
+            return empty
+
+        raw = loadData(
+            self.stockCode,
+            category="docs",
+            sinceYear=2016,
+            columns=["year", "report_type", "rcept_date", "section_order", "section_title", "section_content", "content"],
+        )
+        requiredCols = {"year", "report_type", "section_order", "section_title"}
+        if raw is None or raw.is_empty() or not requiredCols.issubset(set(raw.columns)):
+            self._cache[cacheKey] = empty
+            return empty
+
+        from dartlab.core.reportSelector import selectReport
+        from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS, detectContentCol, periodOrderValue
+        from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
+        from dartlab.engines.company.dart.docs.sections.views import splitMarkdownBlocks
+
+        contentCol = detectContentCol(raw)
+        years = sorted({str(year) for year in raw["year"].drop_nulls().to_list()}, reverse=True)
+        rows: list[dict[str, Any]] = []
+
+        for year in years:
+            for reportKind, suffix in REPORT_KINDS:
+                report = selectReport(raw, year, reportKind=reportKind)
+                if report is None or report.is_empty() or contentCol not in report.columns:
+                    continue
+
+                periodKey = f"{year}{suffix}"
+                blockIndex = 0
+                scoped = (
+                    report.select(["section_order", "section_title", contentCol])
+                    .filter(pl.col("section_title").is_not_null())
+                    .sort("section_order")
+                )
+                for row in scoped.iter_rows(named=True):
+                    rawTitle = str(row.get("section_title") or "").strip()
+                    if not rawTitle or mapSectionTitle(rawTitle) != normalizedTopic:
+                        continue
+
+                    content = str(row.get(contentCol) or "").strip()
+                    sectionOrder = int(row.get("section_order") or 0)
+                    blocks = splitMarkdownBlocks(content) if content else []
+                    if not blocks:
+                        rows.append(
+                            {
+                                "period": periodKey,
+                                "sectionOrder": sectionOrder,
+                                "block": blockIndex,
+                                "type": "text",
+                                "title": rawTitle,
+                                "preview": "",
+                                "_periodOrder": periodOrderValue(periodKey),
+                            }
+                        )
+                        blockIndex += 1
+                        continue
+
+                    for block in blocks:
+                        label = str(block.get("blockLabel") or "").strip()
+                        previewSource = block.get("blockText") or ""
+                        rows.append(
+                            {
+                                "period": periodKey,
+                                "sectionOrder": sectionOrder,
+                                "block": blockIndex,
+                                "type": str(block.get("blockType") or "text"),
+                                "title": label if label and label != "(root)" else rawTitle,
+                                "preview": self._previewText(previewSource),
+                                "_periodOrder": periodOrderValue(periodKey),
+                            }
+                        )
+                        blockIndex += 1
+
+        if not rows:
+            self._cache[cacheKey] = empty
+            return empty
+
+        result = (
+            pl.DataFrame(rows, strict=False)
+            .sort(["_periodOrder", "sectionOrder", "block"], descending=[True, False, False])
+            .drop("_periodOrder")
+        )
+        self._cache[cacheKey] = result
+        return result
+
+    def liveFilings(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int | None = None,
+        limit: int = 20,
+        keyword: str | None = None,
+        forms: list[str] | tuple[str, ...] | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame:
+        """OpenDART 기준 실시간 공시 목록."""
+        del forms  # DART는 forms 개념이 없다.
+
+        startDate, endDate = resolveDateWindow(start, end, days=days)
+        cacheKey = f"liveFilings:{startDate}:{endDate}:{limit}:{keyword}:{finalOnly}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        from dartlab.core.guidance import progress
+
+        from dartlab.engines.company.dart.openapi.dart import OpenDart
+
+        progress(f"{self.corpName} 최신 공시 목록 조회 중... (OpenDART, {startDate}~{endDate})")
+        df = OpenDart().filings(
+            self.stockCode,
+            startDate,
+            endDate,
+            final=finalOnly,
+        )
+        if df is None or df.is_empty():
+            result = pl.DataFrame(
+                schema={
+                    "docId": pl.Utf8,
+                    "filedAt": pl.Utf8,
+                    "title": pl.Utf8,
+                    "formType": pl.Utf8,
+                    "docUrl": pl.Utf8,
+                    "indexUrl": pl.Utf8,
+                    "market": pl.Utf8,
+                    "corpName": pl.Utf8,
+                    "stockCode": pl.Utf8,
+                    "rceptNo": pl.Utf8,
+                    "reportNm": pl.Utf8,
+                    "viewerUrl": pl.Utf8,
+                    "corpCls": pl.Utf8,
+                }
+            )
+            self._cache[cacheKey] = result
+            return result
+
+        normalized = (
+            filterFilingsByKeyword(df, keyword=keyword, columns=["report_nm", "corp_name", "flr_nm"])
+            .with_columns(
+                [
+                    pl.col("rcept_no").cast(pl.Utf8).alias("docId"),
+                    pl.col("rcept_dt").cast(pl.Utf8).alias("filedAt"),
+                    pl.col("report_nm").cast(pl.Utf8).alias("title"),
+                    pl.col("report_nm").cast(pl.Utf8).alias("formType"),
+                    pl.lit(DART_VIEWER).add(pl.col("rcept_no").cast(pl.Utf8)).alias("docUrl"),
+                    pl.lit(DART_VIEWER).add(pl.col("rcept_no").cast(pl.Utf8)).alias("indexUrl"),
+                    pl.lit("KR").alias("market"),
+                    pl.col("corp_name").cast(pl.Utf8).alias("corpName"),
+                    pl.col("stock_code").cast(pl.Utf8).alias("stockCode"),
+                    pl.col("rcept_no").cast(pl.Utf8).alias("rceptNo"),
+                    pl.col("report_nm").cast(pl.Utf8).alias("reportNm"),
+                    pl.lit(DART_VIEWER).add(pl.col("rcept_no").cast(pl.Utf8)).alias("viewerUrl"),
+                    pl.col("corp_cls").cast(pl.Utf8).alias("corpCls"),
+                ]
+            )
+            .select(
+                [
+                    "docId",
+                    "filedAt",
+                    "title",
+                    "formType",
+                    "docUrl",
+                    "indexUrl",
+                    "market",
+                    "corpName",
+                    "stockCode",
+                    "rceptNo",
+                    "reportNm",
+                    "viewerUrl",
+                    "corpCls",
+                ]
+            )
+        )
+        result = normalized.head(limit) if limit > 0 else normalized
+        self._cache[cacheKey] = result
+        return result
+
+    def readFiling(
+        self,
+        filing: Any,
+        *,
+        maxChars: int | None = None,
+    ) -> dict[str, Any]:
+        """접수번호 또는 live filings row로 원문을 읽는다."""
+        record = filingRecord(filing) or {}
+
+        if isinstance(filing, str):
+            text = filing.strip()
+            if text.isdigit():
+                rceptNo = text
+                viewerUrl = f"{DART_VIEWER}{text}"
+            else:
+                match = _RCEPT_NO_PATTERN.search(text)
+                rceptNo = match.group(1) if match else ""
+                viewerUrl = text
+        else:
+            viewerUrl = str(record.get("viewerUrl") or record.get("docUrl") or "")
+            rceptNo = str(record.get("rceptNo") or record.get("docId") or "")
+            if not rceptNo and viewerUrl:
+                match = _RCEPT_NO_PATTERN.search(viewerUrl)
+                if match:
+                    rceptNo = match.group(1)
+
+        if not rceptNo:
+            raise ValueError("DART filing 읽기에는 rceptNo 또는 rcpNo가 포함된 viewer URL이 필요합니다.")
+
+        from dartlab.core.guidance import progress
+
+        from dartlab.engines.company.dart.openapi.dart import OpenDart
+
+        progress(f"{self.corpName} 공시 원문 다운로드 중... ({rceptNo})")
+        rawText = OpenDart().documentText(rceptNo)
+        progress(f"{self.corpName} 공시 원문 정리 중... ({rceptNo})")
+        rawPreview, truncated = truncateText(rawText, maxChars=maxChars)
+        return {
+            "docId": rceptNo,
+            "market": "KR",
+            "title": record.get("title") or record.get("reportNm") or "",
+            "docUrl": viewerUrl or f"{DART_VIEWER}{rceptNo}",
+            "viewerUrl": viewerUrl or f"{DART_VIEWER}{rceptNo}",
+            "raw": rawPreview,
+            "text": rawPreview,
+            "truncated": truncated,
+        }
 
     # ── 원본 데이터 (property) ──
 
@@ -1184,26 +1592,15 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        ordered: list[str] = []
-        seen: set[str] = set()
+        ordered = self._docsSectionTopics()
+        seen = set(ordered)
 
-        sections = self.docs.sections
-        if sections is not None and "topic" in sections.columns:
-            for topic in sections["topic"].to_list():
-                if not isinstance(topic, str) or not topic or topic in seen:
+        if self._hasFinanceParquet:
+            for ft in ("BS", "IS", "CIS", "CF", "SCE", "ratios"):
+                if ft in seen:
                     continue
-                ordered.append(topic)
-                seen.add(topic)
-
-        # finance topics 추가 (sections는 docs 산출물, finance는 별도)
-        if self._hasFinance:
-            for ft in ("BS", "IS", "CIS", "CF", "SCE"):
-                if ft not in seen:
-                    ordered.append(ft)
-                    seen.add(ft)
-            if self._ratioSeries() is not None and "ratios" not in seen:
-                ordered.append("ratios")
-                seen.add("ratios")
+                ordered.append(ft)
+                seen.add(ft)
 
         self._cache[cacheKey] = ordered
         return ordered
@@ -1243,6 +1640,68 @@ class Company:
         if df is None:
             return None
         return self._applyPeriodFilter(df, period)
+
+    def _traceFinanceTopic(self, topic: str, *, period: str | None = None) -> dict[str, Any] | None:
+        """finance authoritative topic provenance를 facts 빌드 없이 직접 계산."""
+        from dartlab.engines.company.dart.docs.sections import rawPeriod
+
+        requestedPeriod = rawPeriod(period) if isinstance(period, str) else period
+        rows: list[tuple[str, str]] = []
+
+        def collect(series: dict[str, list[Any]] | None, years: list[Any], payloadTopic: str) -> None:
+            if not series:
+                return
+            for item, values in series.items():
+                for idx, year in enumerate(years):
+                    if requestedPeriod is not None and str(year) != requestedPeriod:
+                        continue
+                    value = values[idx] if idx < len(values) else None
+                    if value is None:
+                        continue
+                    rows.append((f"finance:{payloadTopic}:{item}", f"{item}={value}"))
+
+        if topic in {"BS", "IS", "CF"}:
+            annual = self.finance.annual
+            if annual is None:
+                return None
+            series, years = annual
+            collect(series.get(topic), years, topic)
+        elif topic == "CIS":
+            annual = self._financeCisAnnual()
+            if annual is None:
+                return None
+            series, years = annual
+            collect(series.get("CIS"), years, "CIS")
+        elif topic == "SCE":
+            annual = self._sceSeriesAnnual()
+            if annual is None:
+                return None
+            series, years = annual
+            collect(series.get("SCE"), years, "SCE")
+        else:
+            return None
+
+        if not rows:
+            return None
+
+        payloadRef, summary = rows[0]
+        return {
+            "topic": topic,
+            "period": requestedPeriod,
+            "primarySource": "finance",
+            "fallbackSources": [],
+            "selectedPayloadRef": payloadRef,
+            "availableSources": [
+                {
+                    "source": "finance",
+                    "rows": len(rows),
+                    "payloadRef": payloadRef,
+                    "summary": summary,
+                    "priority": 300,
+                }
+            ],
+            "whySelected": "finance authoritative priority",
+        }
 
     def _showReportTopic(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
         """report source topic의 실제 데이터 반환."""
@@ -1397,6 +1856,18 @@ class Company:
                 return None
             return self._transposeToVertical(wide, period)
 
+        if topic in {"BS", "IS", "CF", "CIS", "SCE", "ratios"}:
+            if block not in (None, 0):
+                return None
+            result = self._showFinanceTopic(topic, period=period)
+            if (
+                topic in {"IS", "BS", "CIS", "CF", "SCE"}
+                and isinstance(result, pl.DataFrame)
+                and result.width > 0
+            ):
+                result = self._cleanFinanceDataFrame(result, topic)
+            return result if isinstance(result, pl.DataFrame) else None
+
         sec = self.sections
         if sec is None:
             return None
@@ -1537,6 +2008,10 @@ class Company:
                 "yearCount": yearCount,
                 "coverage": coverage,
             }
+        if topic in {"BS", "IS", "CF", "CIS", "SCE"}:
+            result = self._traceFinanceTopic(topic, period=period)
+            if result is not None:
+                return result
         return self._profileAccessor.trace(topic, period=period)
 
     def diff(
@@ -1690,41 +2165,49 @@ class Company:
 
     @property
     def topics(self) -> pl.DataFrame:
-        """topic별 요약 DataFrame (topic, source, blocks, periods)."""
+        """topic별 요약 DataFrame (order, chapter, topic, source, blocks, periods, latestPeriod)."""
         cacheKey = "_topicsDataFrame"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        sec = self.sections
-        topicOrder = self._boardTopics()
+        docsManifest = self._docsTopicManifest()
+        rows = docsManifest.to_dicts() if not docsManifest.is_empty() else []
+        seen = {str(row["topic"]) for row in rows if isinstance(row.get("topic"), str)}
 
-        rows: list[dict] = []
-        if sec is not None and "topic" in sec.columns:
-            for topic in topicOrder:
-                topicRows = sec.filter(pl.col("topic") == topic)
-                if topicRows.is_empty():
+        financeRows: list[dict[str, Any]] = []
+        if self._hasFinanceParquet:
+            raw = loadData(self.stockCode, category="finance", columns=["bsns_year"])
+            years = (
+                sorted({str(year) for year in raw["bsns_year"].drop_nulls().to_list() if str(year) != "2015"})
+                if raw is not None and not raw.is_empty() and "bsns_year" in raw.columns
+                else []
+            )
+            latestPeriod = years[-1] if years else None
+            for idx, topic in enumerate(("BS", "IS", "CIS", "CF", "SCE", "ratios")):
+                if topic in seen:
                     continue
-
-                # source 종류
-                sources = sorted(topicRows["source"].unique().to_list()) if "source" in topicRows.columns else ["docs"]
-
-                # block 수
-                blocks = topicRows["blockOrder"].n_unique() if "blockOrder" in topicRows.columns else topicRows.height
-
-                # period 수
-                periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
-                periods = len(periodCols)
-
-                rows.append(
+                financeRows.append(
                     {
+                        "order": 3000 + idx,
+                        "chapter": "III",
                         "topic": topic,
-                        "source": ",".join(sources),
-                        "blocks": blocks,
-                        "periods": periods,
+                        "source": "finance",
+                        "blocks": 1,
+                        "periods": len(years),
+                        "latestPeriod": latestPeriod,
                     }
                 )
 
-        result = pl.DataFrame(rows) if rows else pl.DataFrame({"topic": [], "source": [], "blocks": [], "periods": []})
+        combined = rows + financeRows
+        if not combined:
+            result = self._emptyTopicManifest()
+        else:
+            result = (
+                pl.DataFrame(combined, strict=False)
+                .with_columns(pl.col("chapter").replace(_CHAPTER_ORDER).cast(pl.Int64).alias("_chapterOrder"))
+                .sort(["_chapterOrder", "order", "topic"])
+                .drop("_chapterOrder")
+            )
         self._cache[cacheKey] = result
         return result
 
@@ -1999,11 +2482,26 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        from dartlab.engines.company.dart.finance.pivot import buildAnnual, buildCumulative, buildTimeseries
+        from dartlab.engines.company.dart.finance.pivot import (
+            _aggregateAnnual,
+            _aggregateCumulative,
+            buildTimeseries,
+        )
 
-        builders = {"q": buildTimeseries, "y": buildAnnual, "cum": buildCumulative}
-        builder = builders.get(period, buildTimeseries)
-        result = builder(self.stockCode, fsDivPref=fsDivPref)
+        if period == "q":
+            result = buildTimeseries(self.stockCode, fsDivPref=fsDivPref)
+        else:
+            qResult = self._getFinanceBuild("q", fsDivPref=fsDivPref)
+            if qResult is None:
+                result = None
+            else:
+                series, periods = qResult
+                if period == "y":
+                    result = _aggregateAnnual(series, periods)
+                elif period == "cum":
+                    result = _aggregateCumulative(series, periods)
+                else:
+                    result = qResult
         self._cache[cacheKey] = result
         return result
 
@@ -2289,7 +2787,12 @@ class Company:
             return self._cache[cacheKey]
         from dartlab.engines.analysis.insight import analyze
 
-        result = analyze(self.stockCode, company=self)
+        result = analyze(
+            self.stockCode,
+            company=self,
+            qSeriesPair=self.timeseries,
+            aSeriesPair=self.annual,
+        )
         self._cache[cacheKey] = result
         return result
 

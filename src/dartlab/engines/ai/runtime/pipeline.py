@@ -48,9 +48,13 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
     """
     q_type = classify_question(question)
 
-    runners = _PIPELINE_MAP.get(q_type, [])
     sections: list[str] = []
-    for runner in runners:
+    from dartlab.engines.ai.tools.recipes import getRecipe
+
+    for runnerName in getRecipe(q_type):
+        runner = _RECIPE_RUNNERS.get(runnerName)
+        if runner is None:
+            continue
         try:
             result = runner(company, included_tables)
             if result:
@@ -98,6 +102,32 @@ def _df_to_simple_md(df: pl.DataFrame, max_rows: int = 10) -> str:
         rows.append("| " + " | ".join(cells) + " |")
 
     return "\n".join([header, sep] + rows)
+
+
+def _formatAutoSection(title: str, result: Any, *, max_chars: int = 3000) -> str | None:
+    """자동 레시피 결과를 간단한 마크다운 섹션으로 변환한다."""
+    if result is None:
+        return None
+    if isinstance(result, pl.DataFrame):
+        if result.is_empty():
+            return None
+        return f"### {title}\n" + _df_to_simple_md(result, max_rows=15)
+    if isinstance(result, dict):
+        parts = [f"### {title}"]
+        for key, value in result.items():
+            if value is None:
+                continue
+            if isinstance(value, (int, float)):
+                parts.append(f"- **{key}**: {value:,.0f}")
+            else:
+                parts.append(f"- **{key}**: {value}")
+        return "\n".join(parts) if len(parts) > 1 else None
+
+    text = result if isinstance(result, str) else repr(result)
+    text = text[:max_chars].strip()
+    if not text:
+        return None
+    return f"### {title}\n{text}"
 
 
 def _run_health_analysis(company: Any, tables: list[str]) -> str | None:
@@ -631,28 +661,84 @@ def _run_red_flags(company: Any, tables: list[str]) -> str | None:
     return "### ⚠️ 적색 신호 탐지\n" + "\n".join(flags)
 
 
-_PIPELINE_MAP: dict[str, list] = {
-    "건전성": [_run_health_analysis, _run_quality_of_earnings, _run_composite_scoring, _run_red_flags],
-    "수익성": [_run_profitability_analysis, _run_quality_of_earnings, _run_dupont_analysis],
-    "성장성": [_run_growth_analysis, _run_investment_analysis],
-    "배당": [_run_dividend_analysis, _run_quality_of_earnings],
-    "리스크": [_run_risk_analysis, _run_composite_scoring, _run_red_flags],
-    "투자": [_run_investment_analysis, _run_growth_analysis],
-    "지배구조": [_run_governance_analysis],
-    "종합": [
-        _run_health_analysis,
-        _run_profitability_analysis,
-        _run_growth_analysis,
-        _run_quality_of_earnings,
-        _run_dupont_analysis,
-        _run_composite_scoring,
-        _run_red_flags,
-    ],
-    "공시": [_run_red_flags],
-    "사업": [_run_business_analysis],
-    "관계사": [_run_governance_analysis, _run_red_flags],
-    "자본": [_run_health_analysis, _run_dividend_analysis],
-    "인력": [_run_business_analysis, _run_governance_analysis],
+def _run_audit(company: Any, tables: list[str]) -> str | None:
+    """감사 Red Flag 분석."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return None
+    try:
+        import dartlab as _dl
+
+        result = _dl.audit(stockCode)
+        if result is None:
+            return None
+        if isinstance(result, pl.DataFrame) and not result.is_empty():
+            return "### 감사 Red Flag\n" + _df_to_simple_md(result, max_rows=15)
+        text = str(result)[:3000]
+        return f"### 감사 Red Flag\n{text}" if text.strip() else None
+    except _PIPELINE_ERRORS:
+        return None
+
+
+def _run_forecast(company: Any, tables: list[str]) -> str | None:
+    """매출 예측."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return None
+    try:
+        import dartlab as _dl
+
+        result = _dl.forecast(stockCode)
+        return _formatAutoSection("매출 예측 (자동)", result)
+    except _PIPELINE_ERRORS:
+        return None
+
+
+def _run_valuation(company: Any, tables: list[str]) -> str | None:
+    """적정 주가 산출."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return None
+    try:
+        import dartlab as _dl
+
+        result = _dl.valuation(stockCode)
+        return _formatAutoSection("밸류에이션 (자동)", result, max_chars=2000)
+    except _PIPELINE_ERRORS:
+        return None
+
+
+def _run_simulation(company: Any, tables: list[str]) -> str | None:
+    """매크로 시나리오 시뮬레이션."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return None
+    try:
+        import dartlab as _dl
+
+        result = _dl.simulation(stockCode)
+        return _formatAutoSection("시나리오 시뮬레이션 (자동)", result, max_chars=2400)
+    except _PIPELINE_ERRORS:
+        return None
+
+
+_RECIPE_RUNNERS: dict[str, Any] = {
+    "health": _run_health_analysis,
+    "profitability": _run_profitability_analysis,
+    "growth": _run_growth_analysis,
+    "dividend": _run_dividend_analysis,
+    "risk": _run_risk_analysis,
+    "quality": _run_quality_of_earnings,
+    "investment": _run_investment_analysis,
+    "dupont": _run_dupont_analysis,
+    "composite": _run_composite_scoring,
+    "governance": _run_governance_analysis,
+    "business": _run_business_analysis,
+    "redFlags": _run_red_flags,
+    "audit": _run_audit,
+    "forecast": _run_forecast,
+    "valuation": _run_valuation,
+    "simulation": _run_simulation,
 }
 
 

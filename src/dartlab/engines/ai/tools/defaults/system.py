@@ -346,31 +346,9 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
 
     def checkDataReady(stockCode: str) -> str:
         """종목의 데이터 준비 상태를 확인한다."""
-        from datetime import datetime
+        from dartlab.engines.ai.conversation.data_ready import formatDataReadyStatus
 
-        from dartlab.core.dataLoader import _dataDir
-
-        categories = ["docs", "finance", "report"]
-        lines = [f"## {stockCode} 데이터 상태", ""]
-        allReady = True
-        for cat in categories:
-            d = _dataDir(cat)
-            fp = d / f"{stockCode}.parquet"
-            if fp.exists():
-                mtime = datetime.fromtimestamp(fp.stat().st_mtime)
-                lines.append(f"- **{cat}**: ✅ 있음 (최종 갱신: {mtime:%Y-%m-%d %H:%M})")
-            else:
-                lines.append(f"- **{cat}**: ❌ 없음")
-                allReady = False
-
-        if allReady:
-            lines.append("\n모든 데이터가 준비되어 있습니다. 바로 분석을 진행할 수 있습니다.")
-        else:
-            lines.append(
-                "\n일부 데이터가 없습니다. `download_data` 도구로 다운로드하거나, "
-                "사용자에게 다운로드 여부를 물어보세요."
-            )
-        return "\n".join(lines)
+        return formatDataReadyStatus(stockCode, detailed=True)
 
     register_tool(
         "checkDataReady",
@@ -388,6 +366,51 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         },
         category="global",
         priority=75,
+    )
+
+    def suggest_questions(stockCode: str = "") -> str:
+        """현재 회사 또는 종목코드 기준 추천 질문을 생성한다."""
+        targetCompany = company
+        targetCode = stockCode.strip()
+
+        if targetCompany is None:
+            if not targetCode:
+                return "현재 선택된 회사가 없습니다. stockCode를 넣어 다시 호출하세요."
+            from dartlab import Company
+
+            targetCompany = Company(targetCode)
+
+        from dartlab.engines.ai.conversation.suggestions import suggestQuestions
+
+        questions = suggestQuestions(targetCompany)
+        if not questions:
+            return "추천 질문을 만들 수 있는 데이터가 부족합니다."
+
+        corpName = getattr(targetCompany, "corpName", None) or targetCode or "선택 기업"
+        lines = [f"## {corpName} 추천 질문", ""]
+        for index, question in enumerate(questions, start=1):
+            lines.append(f"{index}. {question}")
+        return "\n".join(lines)
+
+    register_tool(
+        "suggest_questions",
+        suggest_questions,
+        "현재 기업의 데이터 상태에 맞는 추천 질문 5~8개를 생성합니다. "
+        "사용자가 '무엇을 물어보면 돼?', '추천 질문 보여줘'라고 할 때 사용하세요. "
+        "현재 company가 없으면 stockCode를 넣어 호출할 수 있습니다.",
+        {
+            "type": "object",
+            "properties": {
+                "stockCode": {
+                    "type": "string",
+                    "description": "현재 회사가 없을 때 사용할 종목코드",
+                    "default": "",
+                },
+            },
+        },
+        kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=58,
     )
 
     def estimateTime(operation: str, stockCode: str = "") -> str:

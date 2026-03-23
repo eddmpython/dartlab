@@ -57,6 +57,7 @@ c.show("overview")              # topic 하나 열기
 c.BS                            # 재무상태표
 c.ratios                        # 재무비율 시계열
 c.insights                      # 7영역 등급 (A~F)
+c.filings()                     # 공시 문서 목록
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
 us.sections
@@ -223,14 +224,17 @@ c.BS                    # 재무상태표 (계정 × period, 최신 먼저)
 c.IS                    # 손익계산서
 c.CF                    # 현금흐름표
 c.ratios                # 재무비율 시계열 DataFrame (6개 카테고리 × period)
-c.finance.ratios        # 최신 단일 시점 RatioResult
 c.finance.ratioSeries   # 비율 시계열 across years
 c.finance.timeseries    # 원본 계정 시계열
+c.annual                # 연간 시계열
+c.filings()             # 공시 문서 목록 (Tier 1 Stable)
 ```
 
 모든 계정은 4단계 표준화 파이프라인을 거친다 — 삼성전자의 `revenue`와 LG의 `revenue`는 같은 `snakeId`다. 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
-### 인사이트
+### 인사이트 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ```python
 c.insights                      # 7영역 분석
@@ -238,6 +242,47 @@ c.insights.grades()             # → {"performance": "A", "profitability": "B",
 c.insights.performance.grade    # → "A"
 c.insights.performance.details  # → ["매출 고성장 +8.3%", …]
 c.insights.anomalies            # → 이상치, 위험 신호
+
+# 부도·부정 예측 스코어카드 — 6개 모델
+c.insights.distress             # Altman Z-Score, Beneish M-Score, Ohlson O-Score,
+                                # Merton Distance-to-Default, Piotroski F-Score, Sloan Ratio
+```
+
+### 밸류에이션, 예측 & 시뮬레이션
+
+```python
+dartlab.valuation("005930")           # DCF + DDM + 상대가치 밸류에이션
+dartlab.forecast("005930")            # 매출 예측 (4소스 앙상블)
+dartlab.simulation("005930")          # 시나리오 시뮬레이션 (매크로 프리셋)
+
+# Company 메서드로도 사용 가능
+c.valuation()
+c.forecast(horizon=3)
+c.simulation(scenarios=["adverse", "rate_hike"])
+```
+
+통화 자동 감지 — DART 기업은 KRW, EDGAR 기업은 USD.
+
+### 감사 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+
+```python
+dartlab.audit("005930")               # 11개 감사 Red Flag 탐지기
+
+# Benford's Law (숫자 분포), 감사인 교체 (PCAOB AS 3101),
+# 계속기업 (ISA 570), 내부통제 (SOX 302/404),
+# 수익의 질 (Dechow & Dichev), Merton 부도확률, ...
+```
+
+### 시장 인텔리전스 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+
+```python
+dartlab.digest()                      # 시장 전체 공시 변화 다이제스트
+dartlab.digest(sector="반도체")        # 섹터 필터
+dartlab.groupHealth()                 # 그룹 건전성: 네트워크 × 재무비율
 ```
 
 ### 모듈
@@ -256,7 +301,9 @@ c.topics    # 이 회사에서 사용 가능한 전체 topic 목록
 
 카테고리: `finance` (재무제표, 비율), `report` (배당, 지배구조, 감사), `notes` (K-IFRS 주석), `disclosure` (서술형 텍스트), `analysis` (인사이트, 순위), `raw` (원본 parquet).
 
-### 차트 & 시각화
+### 차트 & 시각화 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ```python
 c = dartlab.Company("005930")
@@ -288,7 +335,9 @@ dartlab.text.sentiment_indicators(narrative)                     # 긍정/부정
 
 차트 의존성 설치: `uv add "dartlab[charts]"`
 
-### 관계 네트워크
+### 관계 네트워크 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ```python
 c = dartlab.Company("005930")
@@ -306,7 +355,9 @@ c.network("cycles")      # 순환출자 경로
 dartlab.network().show()
 ```
 
-### 시장 전수 스캔
+### 시장 전수 스캔 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ```python
 c = dartlab.Company("005930")
@@ -324,6 +375,25 @@ dartlab.screen()         # 멀티팩터 스크리닝
 dartlab.benchmark()      # 동종업체 비교
 dartlab.signal()         # 공시 변화 감지 시그널
 ```
+
+### 내보내기 (experimental)
+
+> **Experimental** — 호환성 깨지는 변경 가능. 프로덕션 사용 비권장.
+
+```bash
+dartlab excel "005930" -o samsung.xlsx
+```
+
+설치: `uv add "dartlab[ai]"` (Excel 내보내기는 AI extras에 포함).
+
+### 플러그인
+
+```python
+dartlab.plugins()               # 로드된 플러그인 목록
+dartlab.reload_plugins()        # 플러그인 재스캔
+```
+
+플러그인으로 커스텀 데이터 소스, 도구, 분석 엔진을 확장할 수 있다. `dartlab plugin create --help`로 스캐폴딩.
 
 ## EDGAR (미국)
 
@@ -359,6 +429,26 @@ c.diff("businessOverview")              c.diff("10-K::item7Mdna")
 c.insights.grades()                     c.insights.grades()
 ```
 
+### DART vs EDGAR 네임스페이스 차이
+
+|               | DART           | EDGAR          |
+|---------------|:--------------:|:--------------:|
+| `docs`        | ✓              | ✓              |
+| `finance`     | ✓              | ✓              |
+| `report`      | ✓ (28개 API 타입) | ✗ (해당 없음) |
+| `profile`     | ✓              | ✓              |
+
+DART는 28개 정형 공시 API가 있는 `report` 네임스페이스가 있다 (배당, 지배구조, 임원 보상 등). SEC는 공시 구조가 다르므로 EDGAR에는 해당 없음.
+
+**EDGAR topic 네이밍**: `{formType}::{itemId}` 형식. 단축 별칭도 사용 가능:
+
+```python
+us.show("10-K::item1Business")     # 전체 형식
+us.show("business")                # 단축 별칭
+us.show("risk")                    # → 10-K::item1ARiskFactors
+us.show("mdna")                    # → 10-K::item7Mdna
+```
+
 ## AI 분석
 
 > **Tip:** 코드를 모르거나 자연어를 선호한다면 `dartlab.ask()`를 사용하세요. AI 비서가 데이터 다운로드부터 분석까지 모든 것을 처리합니다.
@@ -380,6 +470,8 @@ $ dartlab ask "삼성전자 재무건전성 분석해줘"
 ▸ 부채비율 31.8% — 업종 평균(45.2%) 대비 양호
 ▸ 유동비율 258.6% — 200% 안전 기준 상회
 ▸ 이자보상배수 22.1배 — 이자 부담 매우 낮음
+
+`최근 7일 수주공시 알려줘`, `이번 주 삼성전자 공시 뭐 있었어` 같은 실시간 공시목록 질문은 `OpenDART API 키`를 사용한다. UI Settings에서 프로젝트 `.env` 기준으로 저장/검증/삭제할 수 있다.
 ▸ ROE 회복세: 1.6% → 10.2% (4분기 연속 개선)
 
 [데이터 출처: 2024Q4 사업보고서, dartlab insights 엔진]
@@ -431,6 +523,30 @@ dartlab report "삼성전자" -o report.md
 # 웹 UI
 dartlab                    # 브라우저 UI 실행
 ```
+
+<details>
+<summary>전체 CLI 명령어 (16개)</summary>
+
+| 분류 | 명령어 | 설명 |
+|------|--------|------|
+| 데이터 | `show` | topic 열기 |
+| 데이터 | `search` | 종목 검색 |
+| 데이터 | `statement` | BS / IS / CF / SCE 출력 |
+| 데이터 | `sections` | 원본 docs sections |
+| 데이터 | `profile` | 회사 인덱스, facts |
+| 데이터 | `modules` | 사용 가능 모듈 목록 |
+| AI | `ask` | 자연어 질문 |
+| AI | `report` | 분석 보고서 자동 생성 |
+| 내보내기 | `excel` | Excel 내보내기 (experimental) |
+| 수집 | `collect` | 데이터 다운로드 / 갱신 |
+| 서버 | `ai` | 웹 UI 실행 (localhost:8400) |
+| 서버 | `share` | 터널 공유 (ngrok / cloudflared) |
+| 서버 | `status` | Provider 연결 상태 |
+| 서버 | `setup` | Provider 설정 마법사 |
+| MCP | `mcp` | MCP stdio 서버 실행 |
+| 플러그인 | `plugin` | 플러그인 생성 / 관리 |
+
+</details>
 
 ### Provider
 
@@ -531,6 +647,7 @@ dartlab mcp --config cursor
 
 > **참고:** `Company`는 API 키가 **필요 없다** — 사전 구축 데이터셋으로 동작한다.
 > `OpenDart`는 DART 원본 API를 직접 사용하므로 [opendart.fss.or.kr](https://opendart.fss.or.kr) 에서 API 키가 필요하다 (무료).
+> 전체 시장 최근 공시목록을 AI가 직접 찾는 기능도 이 키를 사용하며, UI Settings에서 `OpenDART API 키`를 관리할 수 있다.
 
 ```python
 from dartlab import OpenDart
@@ -568,17 +685,7 @@ e.companyFactsJson("AAPL")
 | EDGAR finance | 주문형 | 자동 수집 | SEC XBRL API |
 | EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
 
-DART docs는 320+ 기업이 GitHub Releases에 미리 빌드되어 있다. 릴리즈에 없는 기업은 DART에서 개별 섹션을 하나씩 받아오기 때문에 **매우 느리다**. 특정 DART 종목의 데이터(docs + finance + report)를 릴리즈에서 미리 받아두려면:
-
-```python
-from dartlab.core.dataLoader import download
-
-download("005930")  # 삼성전자 — GitHub Releases에서 다운로드
-```
-
-EDGAR 데이터는 첫 Company 생성 시 SEC API에서 실시간으로 가져온다. API 속도 제한 때문에 대기가 있을 수 있다.
-
-자세한 내용은 [설치 가이드 — 데이터](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data)를 참고한다.
+DART docs는 320+ 기업이 GitHub Releases에 미리 빌드되어 있다. 릴리즈에 없는 기업은 DART에서 개별 섹션을 하나씩 받아오기 때문에 **매우 느리다**. EDGAR 데이터는 첫 Company 생성 시 SEC API에서 실시간으로 가져온다. API 속도 제한 때문에 대기가 있을 수 있다. 미리 다운로드 옵션은 [설치 가이드 — 데이터](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data)를 참고한다.
 
 ## 바로 시작하기
 
@@ -620,9 +727,9 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 
 | Tier | 범위 |
 |------|------|
-| **Stable** | DART Company, EDGAR Company core (sections, show, trace, diff, BS/IS/CF, ratios), valuation, forecast, simulation |
-| **Beta** | EDGAR 파워유저 (SCE, explore, listTags, notes, cadence, coverage), insights, OpenDart, OpenEdgar, Server API, MCP 서버 |
-| **Experimental** | AI 도구, export, 차트, 네트워크 그래프 |
+| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, CIS, index, filings, profile), EDGAR Company core, valuation, forecast, simulation |
+| **Beta** | EDGAR 파워유저 (SCE, notes, cadence, coverage), insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text 도구, ask/chat, OpenDart, OpenEdgar, Server API, MCP, CLI 서브커맨드 |
+| **Experimental** | AI 도구 호출, export |
 | **Alpha** | Desktop App (Windows .exe) — 동작하지만 불완전, Sections Viewer — 수평화된 공시 뷰어, 아직 체계 미완성 |
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.

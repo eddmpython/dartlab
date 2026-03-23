@@ -9,14 +9,19 @@ import {
 	fetchModels,
 	fetchStatus,
 	subscribeAiProfileEvents,
+	deleteDartKey,
 	updateAiProfile,
 	updateAiSecret,
+	saveDartKey,
 	validateProvider as validateProviderApi,
+	validateDartKey as validateDartKeyApi,
 	codexLogout,
 	oauthAuthorize,
 	oauthLogout,
 	oauthStatus,
 	pullOllamaModel,
+	startChannelConnection,
+	stopChannelConnection,
 } from "$lib/api/ai.js";
 import {
 	applyProfileSnapshot,
@@ -73,7 +78,9 @@ export function createUiStore() {
 
 	// ── Modals ──
 	let settingsOpen = $state(false);
+	let settingsSection = $state("providers");
 	let deleteConfirmId = $state(null);
+	let deleteConfirmMode = $state("single");
 
 	// ── Provider / Model ──
 	let providers = $state({});
@@ -85,17 +92,31 @@ export function createUiStore() {
 	let modelsLoading = $state({});
 	let statusLoading = $state(true);
 	let appVersion = $state("");
+	let openDart = $state({});
+	let channels = $state({});
 
 	// API key
 	let apiKeyInput = $state("");
 	let apiKeyVerifying = $state(false);
 	let apiKeyResult = $state(null);
 
+	// OpenDART key
+	let dartKeyInput = $state("");
+	let dartKeyValidating = $state(false);
+	let dartKeySaving = $state(false);
+	let dartKeyResult = $state(null);
+
 	// Ollama detail
 	let ollamaDetail = $state({});
 	let codexDetail = $state({});
 	let oauthCodexDetail = $state({});
 	let oauthLoginPending = $state(false);
+	let channelBusy = $state({});
+	let channelInputs = $state({
+		telegram: { token: "" },
+		slack: { botToken: "", appToken: "" },
+		discord: { token: "" },
+	});
 
 	// Ollama pull
 	let pullModelName = $state("");
@@ -138,6 +159,8 @@ export function createUiStore() {
 		if (data.ollama) ollamaDetail = mergeProviderDetail(ollamaDetail, data.ollama, { preserveChecked: true });
 		if (data.codex) codexDetail = mergeProviderDetail(codexDetail, data.codex);
 		if (data.oauthCodex) oauthCodexDetail = mergeProviderDetail(oauthCodexDetail, data.oauthCodex, { preserveChecked: true });
+		if (data.openDart) openDart = { ...openDart, ...data.openDart };
+		if (data.channels) channels = data.channels;
 		if (data.version) appVersion = data.version;
 		return data;
 	}
@@ -447,9 +470,12 @@ export function createUiStore() {
 	}
 
 	// ── Settings open ──
-	function openSettings() {
+	function openSettings(section = "providers") {
 		apiKeyInput = "";
 		apiKeyResult = null;
+		dartKeyInput = "";
+		dartKeyResult = null;
+		settingsSection = section || "providers";
 		if (activeProvider) {
 			expandedProvider = activeProvider;
 		} else {
@@ -458,6 +484,96 @@ export function createUiStore() {
 		}
 		settingsOpen = true;
 		if (expandedProvider) loadModelsFor(expandedProvider);
+	}
+
+	function setChannelInput(platform, key, value) {
+		channelInputs = {
+			...channelInputs,
+			[platform]: {
+				...(channelInputs[platform] || {}),
+				[key]: value,
+			},
+		};
+	}
+
+	async function startChannel(platform) {
+		const payload = channelInputs[platform] || {};
+		channelBusy = { ...channelBusy, [platform]: true };
+		try {
+			const result = await startChannelConnection(platform, payload);
+			await refreshProviderStatus(null, false);
+			if (result?.error) {
+				showToast(result.error);
+			} else {
+				showToast(`${channels[platform]?.label || platform} 채널 연결 완료`, "success");
+			}
+		} catch (e) {
+			showToast(e?.message || `${platform} 채널 연결 실패`);
+		}
+		channelBusy = { ...channelBusy, [platform]: false };
+	}
+
+	async function stopChannel(platform) {
+		channelBusy = { ...channelBusy, [platform]: true };
+		try {
+			await stopChannelConnection(platform);
+			await refreshProviderStatus(null, false);
+			showToast(`${channels[platform]?.label || platform} 채널 종료`, "success");
+		} catch (e) {
+			showToast(e?.message || `${platform} 채널 종료 실패`);
+		}
+		channelBusy = { ...channelBusy, [platform]: false };
+	}
+
+	async function validateDartKey() {
+		const key = dartKeyInput.trim();
+		if (!key) return;
+		dartKeyValidating = true;
+		dartKeyResult = null;
+		try {
+			const result = await validateDartKeyApi(key);
+			if (result.openDart) openDart = { ...openDart, ...result.openDart };
+			dartKeyResult = "valid";
+			showToast("OpenDART 키 검증 성공", "success");
+		} catch (e) {
+			dartKeyResult = "error";
+			showToast(e?.message || "OpenDART 키 검증 실패");
+		}
+		dartKeyValidating = false;
+	}
+
+	async function submitDartKey() {
+		const key = dartKeyInput.trim();
+		if (!key) return;
+		dartKeySaving = true;
+		dartKeyResult = null;
+		try {
+			const result = await saveDartKey(key);
+			if (result.openDart) openDart = { ...openDart, ...result.openDart };
+			dartKeyInput = "";
+			dartKeyResult = "saved";
+			showToast("OpenDART 키 저장 완료", "success");
+		} catch (e) {
+			dartKeyResult = "error";
+			showToast(e?.message || "OpenDART 키 저장 실패");
+		}
+		dartKeySaving = false;
+	}
+
+	async function removeDartKey() {
+		dartKeySaving = true;
+		dartKeyResult = null;
+		try {
+			const result = await deleteDartKey();
+			if (result.openDart) openDart = { ...openDart, ...result.openDart };
+			dartKeyInput = "";
+			dartKeyResult = "deleted";
+			showToast("프로젝트 .env의 OpenDART 키를 제거했습니다", "success");
+		} catch (e) {
+			dartKeyResult = "error";
+			showToast(e?.message || "OpenDART 키 삭제 실패");
+		}
+		dartKeySaving = false;
 	}
 
 	// ── AI action entry point ──
@@ -474,6 +590,10 @@ export function createUiStore() {
 			}
 		} else if (name === "toast") {
 			showToast(action.message || action.text || "", action.level || "info");
+		} else if (name === "update" && action.target === "settings") {
+			if (action.message) showToast(action.message, "info", 4500);
+			openSettings(action.section || "providers");
+			if (action.open === false) settingsOpen = false;
 		}
 	}
 
@@ -499,8 +619,11 @@ export function createUiStore() {
 		// modals
 		get settingsOpen() { return settingsOpen; },
 		set settingsOpen(v) { settingsOpen = v; },
+		get settingsSection() { return settingsSection; },
 		get deleteConfirmId() { return deleteConfirmId; },
 		set deleteConfirmId(v) { deleteConfirmId = v; },
+		get deleteConfirmMode() { return deleteConfirmMode; },
+		set deleteConfirmMode(v) { deleteConfirmMode = v; },
 		openSettings,
 
 		// provider
@@ -513,12 +636,23 @@ export function createUiStore() {
 		get modelsLoading() { return modelsLoading; },
 		get statusLoading() { return statusLoading; },
 		get appVersion() { return appVersion; },
+		get openDart() { return openDart; },
+		get channels() { return channels; },
+		get channelBusy() { return channelBusy; },
+		get channelInputs() { return channelInputs; },
 
 		// api key
 		get apiKeyInput() { return apiKeyInput; },
 		set apiKeyInput(v) { apiKeyInput = v; },
 		get apiKeyVerifying() { return apiKeyVerifying; },
 		get apiKeyResult() { return apiKeyResult; },
+
+		// OpenDART key
+		get dartKeyInput() { return dartKeyInput; },
+		set dartKeyInput(v) { dartKeyInput = v; },
+		get dartKeyValidating() { return dartKeyValidating; },
+		get dartKeySaving() { return dartKeySaving; },
+		get dartKeyResult() { return dartKeyResult; },
 
 		// detail
 		get ollamaDetail() { return ollamaDetail; },
@@ -538,6 +672,12 @@ export function createUiStore() {
 		selectModel,
 		toggleExpandProvider,
 		submitApiKey,
+		validateDartKey,
+		submitDartKey,
+		removeDartKey,
+		setChannelInput,
+		startChannel,
+		stopChannel,
 		handleCodexLogout,
 		handleOauthCodexLogin,
 		handleOauthCodexLogout,

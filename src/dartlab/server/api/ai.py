@@ -21,7 +21,9 @@ from ..chat import OLLAMA_MODEL_GUIDE
 from ..models import (
     AiProfileUpdateRequest,
     AiSecretUpdateRequest,
+    ChannelConnectRequest,
     ConfigureRequest,
+    DartKeyUpdateRequest,
 )
 from ..services.ai_profile import (
     build_oauth_codex_detail,
@@ -47,6 +49,28 @@ UI_PROVIDERS = public_provider_ids()
 STATIC_MODELS: dict[str, list[str]] = {}
 
 _oauth_state: dict[str, Any] = {}
+
+
+def _build_open_dart_status() -> dict[str, Any]:
+    from dartlab.engines.company.dart.openapi.dartKey import getDartKeyStatus
+
+    return getDartKeyStatus().toDict()
+
+
+def _resolve_credential_source(meta: dict[str, Any], profile_provider: dict[str, Any]) -> str:
+    auth_kind = meta.get("authKind", "none")
+    if auth_kind == "api_key":
+        if profile_provider.get("secretConfigured"):
+            return "secret_store"
+        env_key = meta.get("envKey")
+        if env_key and os.environ.get(env_key):
+            return "env"
+        return "none"
+    if auth_kind == "oauth":
+        return "oauth" if profile_provider.get("secretConfigured") else "none"
+    if auth_kind == "cli":
+        return "cli"
+    return "none"
 
 
 @router.get("/api/status")
@@ -76,6 +100,7 @@ def api_status(
             "desc": meta.get("description", ""),
             "auth": meta.get("authKind", "none"),
             "secretConfigured": bool(profile_provider.get("secretConfigured")),
+            "credentialSource": _resolve_credential_source(meta, profile_provider),
             "selected": profile_snapshot.get("defaultProvider") == prov,
             "selectedRoles": [
                 role_name
@@ -142,12 +167,41 @@ def api_status(
         "ollama": ollama_detail,
         "codex": codex_detail,
         "oauthCodex": oauth_codex_detail,
+        "openDart": _build_open_dart_status(),
         "profile": profile_snapshot,
         "version": version,
     }
     if room_info is not None:
         resp["room"] = room_info
+    try:
+        from ..services.channel_runtime import channel_runtime
+
+        resp["channels"] = channel_runtime.status()
+    except ImportError:
+        resp["channels"] = {}
     return resp
+
+
+@router.get("/api/suggest")
+def api_suggest(stockCode: str = Query(..., description="추천 질문을 생성할 종목코드")):
+    """회사 데이터 상태에 맞는 추천 질문 목록을 반환한다."""
+    try:
+        from dartlab.engines.ai.conversation.data_ready import getDataReadyStatus
+        from dartlab.engines.ai.conversation.suggestions import suggestQuestions
+
+        from ..services.company_api import get_company
+
+        company = get_company(stockCode)
+        return {
+            "stockCode": getattr(company, "stockCode", stockCode),
+            "company": getattr(company, "corpName", stockCode),
+            "suggestions": suggestQuestions(company),
+            "dataReady": getDataReadyStatus(getattr(company, "stockCode", stockCode)),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
 
 
 @router.post("/api/provider/validate")
@@ -204,6 +258,77 @@ def api_ai_profile_secret(req: AiSecretUpdateRequest):
     else:
         profile = manager.save_api_key(provider, req.api_key, updated_by="ui")
     return manager.serialize() | {"revision": profile.revision}
+
+
+@router.post("/api/openapi/dart-key/validate")
+def api_validate_dart_key(req: DartKeyUpdateRequest):
+    """OpenDART API 키 유효성만 검증한다."""
+    from dartlab.engines.company.dart.openapi.dartKey import validateDartApiKey
+
+    api_key = (req.api_key or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=400, detail="DART API 키를 입력하세요.")
+    try:
+        result = validateDartApiKey(api_key)
+        return result | {"openDart": _build_open_dart_status()}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+
+
+@router.put("/api/openapi/dart-key")
+def api_save_dart_key(req: DartKeyUpdateRequest):
+    """프로젝트 .env에 OpenDART API 키를 저장한다."""
+    from dartlab.engines.company.dart.openapi.dartKey import saveDartKeyToDotenv
+
+    api_key = (req.api_key or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=400, detail="DART API 키를 입력하세요.")
+    try:
+        env_path = saveDartKeyToDotenv(api_key)
+        return {"ok": True, "envPath": str(env_path), "openDart": _build_open_dart_status()}
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+
+
+@router.delete("/api/openapi/dart-key")
+def api_delete_dart_key():
+    """프로젝트 .env의 OpenDART API 키를 제거한다."""
+    from dartlab.engines.company.dart.openapi.dartKey import clearDartKeyFromDotenv
+
+    try:
+        env_path = clearDartKeyFromDotenv()
+        return {"ok": True, "envPath": str(env_path), "openDart": _build_open_dart_status()}
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+
+
+@router.post("/api/channels/{platform}/start")
+def api_channel_start(platform: str, req: ChannelConnectRequest):
+    """외부 채널 어댑터 시작."""
+    try:
+        from ..services.channel_runtime import channel_runtime
+
+        payload = req.model_dump(exclude_none=True)
+        return channel_runtime.start(platform, **payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+
+
+@router.post("/api/channels/{platform}/stop")
+def api_channel_stop(platform: str):
+    """외부 채널 어댑터 정지."""
+    try:
+        from ..services.channel_runtime import channel_runtime
+
+        return channel_runtime.stop(platform)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+    except _HANDLED_API_ERRORS as e:
+        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
 
 
 @router.get("/api/ai/profile/events")

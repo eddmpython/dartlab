@@ -8,12 +8,14 @@
 
 from __future__ import annotations
 
-import os
 import time
 from typing import Any
 
 import polars as pl
 import requests
+
+from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+from dartlab.engines.company.dart.openapi.dartKey import resolveDartKeys
 
 BASE_URL = "https://opendart.fss.or.kr/api"
 
@@ -27,43 +29,6 @@ _ERROR_MESSAGES: dict[str, str] = {
     "800": "시스템 점검 중",
     "900": "정의되지 않은 오류",
 }
-
-
-def _loadDotenvKeys() -> list[str]:
-    """프로젝트 루트의 .env에서 DART_API_KEY(S) 읽기. 없으면 빈 리스트."""
-    from pathlib import Path
-
-    for d in [Path.cwd(), *Path.cwd().parents]:
-        envFile = d / ".env"
-        if envFile.is_file():
-            try:
-                text = envFile.read_text(encoding="utf-8")
-            except OSError:
-                continue
-            for line in text.splitlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" not in line:
-                    continue
-                key, _, val = line.partition("=")
-                key = key.strip()
-                val = val.strip().strip("'\"")
-                if key == "DART_API_KEYS" and val:
-                    return [k.strip() for k in val.split(",") if k.strip()]
-                if key == "DART_API_KEY" and val:
-                    return [val]
-            break  # .env 찾았으면 상위 탐색 중단
-    return []
-
-
-def hasDartApiKey() -> bool:
-    """DART API 키가 설정되어 있는지 확인 (DartClient 생성 없이).
-
-    환경변수, .env 파일을 모두 탐색하되 DartClient를 인스턴스화하지 않으므로
-    키가 없어도 ValueError를 던지지 않는다.
-    """
-    return bool(DartClient._resolveKeys(None, None))
 
 
 class DartApiError(Exception):
@@ -118,21 +83,7 @@ class DartClient:
     @staticmethod
     def _resolveKeys(apiKey: str | None, apiKeys: list[str] | None) -> list[str]:
         """키 탐색 우선순위: 파라미터 → 환경변수 → .env 파일."""
-        if apiKeys:
-            return [k.strip() for k in apiKeys if k.strip()]
-        if apiKey:
-            return [apiKey.strip()]
-        envKeys = os.environ.get("DART_API_KEYS", "")
-        if envKeys:
-            return [k.strip() for k in envKeys.split(",") if k.strip()]
-        envKey = os.environ.get("DART_API_KEY", "")
-        if envKey:
-            return [envKey.strip()]
-        # .env 파일 fallback (cwd → parents → 프로젝트 루트)
-        dotenvKeys = _loadDotenvKeys()
-        if dotenvKeys:
-            return dotenvKeys
-        return []
+        return resolveDartKeys(apiKey=apiKey, apiKeys=apiKeys)
 
     @property
     def currentKey(self) -> str:

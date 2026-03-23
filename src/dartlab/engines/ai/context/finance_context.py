@@ -22,15 +22,9 @@ from dartlab.core.registry import buildQuestionModules
 # registry에 없는 모듈(sections topic 전용 등)은 override로 추가
 _QUESTION_MODULES_OVERRIDE: dict[str, list[str]] = {
     "공시": [],
-    "건전성": ["guaranteeBalance"],
-    "수익성": ["operationalAsset"],
-    "투자": ["operationalAsset"],
     "배당": ["treasuryStock"],
     "자본": ["treasuryStock"],
-    "지배구조": ["affiliateStatus"],
-    "리스크": ["riskFactor", "lawsuit"],
     "사업": ["businessOverview"],
-    "관계사": ["affiliateStatus"],
 }
 
 _QUESTION_MODULES: dict[str, list[str]] = {}
@@ -53,12 +47,65 @@ def _resolve_context_budget(tier: str = "focused") -> int:
     }.get(tier, 6000)
 
 
+def _topic_name_set(company: Any) -> set[str]:
+    """Company.topics에서 실제 topic 이름만 안전하게 추출."""
+    try:
+        topics = getattr(company, "topics", None)
+    except _CONTEXT_ERRORS:
+        return set()
+
+    if topics is None:
+        return set()
+
+    if isinstance(topics, pl.DataFrame):
+        if "topic" not in topics.columns:
+            return set()
+        return {t for t in topics["topic"].drop_nulls().to_list() if isinstance(t, str) and t}
+
+    if isinstance(topics, pl.Series):
+        return {t for t in topics.drop_nulls().to_list() if isinstance(t, str) and t}
+
+    try:
+        return {str(t) for t in topics if isinstance(t, str) and t}
+    except TypeError:
+        return set()
+
+
+def _resolve_module_data(company: Any, module_name: str) -> Any:
+    """AI context용 모듈 해석.
+
+    1. Company property/direct attr
+    2. registry 기반 lazy parser (_get_primary)
+    3. 실제 존재하는 topic에 한해 show()
+    """
+    data = getattr(company, module_name, None)
+    if data is not None:
+        return data
+
+    get_primary = getattr(company, "_get_primary", None)
+    if callable(get_primary):
+        try:
+            data = get_primary(module_name)
+        except _CONTEXT_ERRORS:
+            data = None
+        except (FileNotFoundError, ImportError, IndexError):
+            data = None
+        if data is not None:
+            return data
+
+    if hasattr(company, "show") and module_name in _topic_name_set(company):
+        try:
+            return company.show(module_name)
+        except _CONTEXT_ERRORS:
+            return None
+
+    return None
+
+
 def _extract_module_context(company: Any, module_name: str, max_rows: int = 10) -> str | None:
     """registry 모듈 → 마크다운 요약. DataFrame/dict/list/text 모두 처리."""
     try:
-        data = getattr(company, module_name, None)
-        if data is None:
-            data = company.show(module_name) if hasattr(company, "show") else None
+        data = _resolve_module_data(company, module_name)
         if data is None:
             return None
 
@@ -111,14 +158,16 @@ def _build_report_sections(
     compact: bool = False,
     q_types: list[str] | None = None,
     tier: str = "focused",
+    report_names: list[str] | None = None,
 ) -> dict[str, str]:
     """reportEngine pivot 결과 + 질문 유형별 모듈 자동 주입 → LLM context 섹션 dict."""
     report = getattr(company, "report", None)
     sections: dict[str, str] = {}
     budget = _resolve_context_budget(tier)
+    requested_reports = set(report_names or ["dividend", "employee", "majorHolder", "executive", "audit"])
 
     # 질문 유형별 추가 모듈 주입
-    extra_modules: set[str] = set(_ALWAYS_INCLUDE_MODULES)
+    extra_modules: set[str] = set() if report_names is not None else set(_ALWAYS_INCLUDE_MODULES)
     if q_types:
         for qt in q_types:
             for mod in _QUESTION_MODULES.get(qt, []):
@@ -126,6 +175,10 @@ def _build_report_sections(
 
     # 하드코딩된 기존 report 모듈들의 이름 (중복 방지용)
     _HARDCODED_REPORT = {"dividend", "employee", "majorHolder", "executive", "audit"}
+    if report_names:
+        for mod in report_names:
+            if mod not in _HARDCODED_REPORT:
+                extra_modules.add(mod)
 
     # 동적 모듈 주입 (하드코딩에 없는 것만)
     budget_used = 0
@@ -140,10 +193,9 @@ def _build_report_sections(
     if report is None:
         return sections
 
-    sections: dict[str, str] = {}
     max_years = 3 if compact else 99
 
-    div = getattr(report, "dividend", None)
+    div = getattr(report, "dividend", None) if "dividend" in requested_reports else None
     if div is not None and div.years:
         display_years = div.years[-max_years:]
         offset = len(div.years) - len(display_years)
@@ -164,7 +216,7 @@ def _build_report_sections(
         )
         sections["report_dividend"] = "\n".join(lines)
 
-    emp = getattr(report, "employee", None)
+    emp = getattr(report, "employee", None) if "employee" in requested_reports else None
     if emp is not None and emp.years:
         display_years = emp.years[-max_years:]
         offset = len(emp.years) - len(display_years)
@@ -184,7 +236,7 @@ def _build_report_sections(
         lines.append("| 평균월급(천원) | " + " | ".join(_fmtSalary(emp.avgMonthlySalary[offset:])) + " |")
         sections["report_employee"] = "\n".join(lines)
 
-    mh = getattr(report, "majorHolder", None)
+    mh = getattr(report, "majorHolder", None) if "majorHolder" in requested_reports else None
     if mh is not None and mh.years:
         lines = ["## 최대주주 (정기보고서)"]
         if compact:
@@ -213,7 +265,7 @@ def _build_report_sections(
                 lines.append(f"- {h['name']}{relate}: {ratio}")
         sections["report_majorHolder"] = "\n".join(lines)
 
-    exe = getattr(report, "executive", None)
+    exe = getattr(report, "executive", None) if "executive" in requested_reports else None
     if exe is not None and exe.totalCount > 0:
         lines = [
             "## 임원현황 (정기보고서)",
@@ -223,7 +275,7 @@ def _build_report_sections(
         ]
         sections["report_executive"] = "\n".join(lines)
 
-    aud = getattr(report, "audit", None)
+    aud = getattr(report, "audit", None) if "audit" in requested_reports else None
     if aud is not None and aud.years:
         lines = ["## 감사의견 (정기보고서)"]
         display_aud = list(zip(aud.years, aud.opinions, aud.auditors))

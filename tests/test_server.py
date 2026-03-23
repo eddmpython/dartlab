@@ -41,12 +41,14 @@ class TestStatus:
         data = resp.json()
         assert "providers" in data
         assert "version" in data
+        assert "openDart" in data
         assert isinstance(data["providers"], dict)
         assert "claude" not in data["providers"]
         assert "claude-code" not in data["providers"]
         assert "chatgpt" not in data["providers"]
         for prov_info in data["providers"].values():
             assert "available" in prov_info
+            assert "credentialSource" in prov_info
 
     def test_status_ollama_detail(self, client):
         """GET /api/status — ollama 상세 정보 포함."""
@@ -164,6 +166,36 @@ class TestStatus:
         configure_global(provider="ollama", model="qwen3", role="summary")
         assert _should_preload_ollama() is True
 
+    def test_suggest_endpoint_returns_questions_and_data_ready(self, client, monkeypatch):
+        """GET /api/suggest — 추천 질문과 데이터 준비 상태를 함께 반환한다."""
+        company = MagicMock()
+        company.stockCode = "005930"
+        company.corpName = "삼성전자"
+
+        monkeypatch.setattr("dartlab.server.services.company_api.get_company", lambda code: company)
+        monkeypatch.setattr(
+            "dartlab.engines.ai.conversation.suggestions.suggestQuestions",
+            lambda _: ["이 회사의 핵심 투자 포인트를 한눈에 정리해주세요"],
+        )
+        monkeypatch.setattr(
+            "dartlab.engines.ai.conversation.data_ready.getDataReadyStatus",
+            lambda code: {
+                "stockCode": code,
+                "allReady": False,
+                "available": ["docs"],
+                "missing": ["finance", "report"],
+                "categories": {},
+            },
+        )
+
+        resp = client.get("/api/suggest", params={"stockCode": "005930"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["stockCode"] == "005930"
+        assert data["company"] == "삼성전자"
+        assert data["suggestions"] == ["이 회사의 핵심 투자 포인트를 한눈에 정리해주세요"]
+        assert data["dataReady"]["missing"] == ["finance", "report"]
+
 
 class TestConfigure:
     def test_validate_provider_ollama(self, client):
@@ -258,6 +290,79 @@ class TestAiProfile:
         assert data["providers"]["openai"]["secretConfigured"] is True
         config = get_config("openai")
         assert config.api_key == "sk-test"
+
+
+class TestOpenDartKey:
+    def test_status_includes_open_dart_block(self, client):
+        resp = client.get("/api/status", params={"probe": 0})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "configured" in data["openDart"]
+        assert "source" in data["openDart"]
+        assert "envPath" in data["openDart"]
+
+    def test_validate_dart_key_endpoint(self, client, monkeypatch):
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.validateDartApiKey",
+            lambda key: {"ok": True, "validatedKey": key[-4:]},
+        )
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            lambda startPath=None: type(
+                "Status",
+                (),
+                {"toDict": lambda self: {"configured": False, "source": "none", "keyCount": 0, "envPath": ".env", "writable": True}},
+            )(),
+        )
+
+        resp = client.post("/api/openapi/dart-key/validate", json={"api_key": "test-dart-key"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["validatedKey"] == "-key"
+        assert "openDart" in data
+
+    def test_save_dart_key_endpoint(self, client, monkeypatch):
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.saveDartKeyToDotenv",
+            lambda key: "C:/tmp/.env",
+        )
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            lambda startPath=None: type(
+                "Status",
+                (),
+                {"toDict": lambda self: {"configured": True, "source": "dotenv", "keyCount": 1, "envPath": ".env", "writable": True}},
+            )(),
+        )
+
+        resp = client.put("/api/openapi/dart-key", json={"api_key": "test-dart-key"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["envPath"] == "C:/tmp/.env"
+        assert data["openDart"]["configured"] is True
+
+    def test_delete_dart_key_endpoint(self, client, monkeypatch):
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.clearDartKeyFromDotenv",
+            lambda: "C:/tmp/.env",
+        )
+        monkeypatch.setattr(
+            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            lambda startPath=None: type(
+                "Status",
+                (),
+                {"toDict": lambda self: {"configured": False, "source": "none", "keyCount": 0, "envPath": ".env", "writable": True}},
+            )(),
+        )
+
+        resp = client.delete("/api/openapi/dart-key")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["envPath"] == "C:/tmp/.env"
+        assert data["openDart"]["configured"] is False
 
 
 class TestModels:
@@ -654,7 +759,7 @@ class TestAsk:
         assert captured["question"] == "안녕하세요"
         assert captured["kwargs"]["provider"] == "openai"
         assert captured["kwargs"]["model"] == "gpt-5.4"
-        assert captured["kwargs"]["use_tools"] is False
+        assert captured["kwargs"]["use_tools"] is True
 
     def test_topic_summary_uses_core_stream_path(self, client, monkeypatch):
         class DummyCompany:

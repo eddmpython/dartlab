@@ -11,6 +11,7 @@ def getTTM(
     snakeId: str,
     *,
     strict: bool = True,
+    annualize: bool = False,
 ) -> Optional[float]:
     """최근 4개 non-null 값의 합 (IS/CF용 TTM).
 
@@ -18,7 +19,9 @@ def getTTM(
         series: buildTimeseries() 결과.
         sjDiv: "IS" 또는 "CF".
         snakeId: 계정 snakeId.
-        strict: True면 4/4 분기 모두 필요. False면 3/4로 연환산 (×4/3).
+        strict: True면 4/4 분기 모두 필요 (annualize=False일 때).
+        annualize: True면 분기 부족 시 연환산 (2~3분기 → ×4/N).
+                   strict보다 우선. FY 직후 TTM 공백 방지용.
 
     Returns:
         TTM 합계 또는 None.
@@ -35,6 +38,8 @@ def getTTM(
     last4 = [v for v in trimmed[-4:] if v is not None]
     if len(last4) == 4:
         return sum(last4)
+    if annualize and len(last4) >= 2:
+        return sum(last4) * 4 / len(last4)
     if not strict and len(last4) == 3:
         return sum(last4) * 4 / 3
     return None

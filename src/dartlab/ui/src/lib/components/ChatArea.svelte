@@ -1,5 +1,6 @@
 <script>
 	import { Download, Sparkles } from "lucide-svelte";
+	import { summarizeDataReady } from "$lib/ai/dataReady.js";
 	import MessageBubble from "./MessageBubble.svelte";
 	import AutocompleteInput from "./AutocompleteInput.svelte";
 
@@ -27,12 +28,24 @@
 		onEditResend,
 		onCompanySelect,
 		selectedCompany = null,
+		suggestions = [],
+		dataReady = null,
+		suggestionLoading = false,
 		viewerContext = null,   // B2: {topic, topicLabel, period} from viewer
 		pendingBlockLabel = null,  // 뷰어에서 첨부된 블록 라벨
 		onClearBlock = null,       // 블록 첨부 해제 콜백
 		providerLabel = null,
 		modelLabel = null,
 	} = $props();
+
+	const DEFAULT_COMPANY_PROMPTS = [
+		"이 회사의 핵심 투자 포인트를 한눈에 정리해주세요",
+		"최근 공시에서 꼭 읽어야 할 문서를 우선순위로 골라주세요",
+		"재무건전성과 현금흐름을 함께 점검해주세요",
+	];
+
+	let dataReadyInfo = $derived(summarizeDataReady(dataReady));
+	let promptChips = $derived(suggestions?.length > 0 ? suggestions : DEFAULT_COMPANY_PROMPTS);
 
 	function bridgeEvidence(msg) {
 		return (type, idx) => {
@@ -209,6 +222,46 @@
 							마크다운
 						</button>
 					{/if}
+				</div>
+			{/if}
+			{#if !isLoading && selectedCompany?.stockCode}
+				<div class="mb-3 rounded-2xl border border-dl-border/40 bg-dl-bg-card/30 px-3 py-3">
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="rounded-full border border-dl-accent/20 bg-dl-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-dl-accent-light">
+							{selectedCompany.corpName || selectedCompany.company || selectedCompany.stockCode}
+						</span>
+						<span class="rounded-full border border-dl-border/50 bg-dl-bg-card/60 px-2.5 py-0.5 text-[10px] text-dl-text-dim">
+							{selectedCompany.stockCode}
+						</span>
+						{#if dataReadyInfo}
+							<span class="rounded-full border px-2.5 py-0.5 text-[10px] {dataReadyInfo.allReady ? 'border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400' : 'border-amber-500/20 bg-amber-500/[0.08] text-amber-300'}">
+								{dataReadyInfo.label}
+							</span>
+						{/if}
+					</div>
+					{#if dataReadyInfo}
+						<div class="mt-2 text-[11px] leading-relaxed text-dl-text-dim">
+							{dataReadyInfo.summary}
+						</div>
+					{/if}
+					<div class="mt-3 flex flex-wrap items-center gap-2">
+						<div class="text-[10px] uppercase tracking-[0.16em] text-dl-text-dim">
+							추천 질문
+						</div>
+						{#if suggestionLoading}
+							<span class="text-[11px] text-dl-text-dim">준비 중...</span>
+						{/if}
+					</div>
+					<div class="mt-2 flex flex-wrap gap-2">
+						{#each promptChips as suggestion}
+							<button
+								class="rounded-full border border-dl-border/40 bg-dl-bg-card/70 px-3 py-1.5 text-left text-[11px] text-dl-text transition-colors hover:border-dl-primary/35 hover:text-dl-primary-light"
+								onclick={() => onSend?.(suggestion)}
+							>
+								{suggestion}
+							</button>
+						{/each}
+					</div>
 				</div>
 			{/if}
 			<!-- B2: Viewer context badge -->

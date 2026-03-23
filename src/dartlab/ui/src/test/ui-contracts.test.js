@@ -39,6 +39,15 @@ describe("UI contracts", () => {
 		expect(messageSource).toContain('onOpenEvidence("input")');
 	});
 
+	it("keeps chat-first company selection separate from viewer navigation", () => {
+		const appSource = read("src/App.svelte");
+
+		expect(appSource).toContain("function handleCompanySelectForChat(company)");
+		expect(appSource).toContain('workspace.switchView("chat")');
+		expect(appSource).toContain("function handleCompanySelectForViewer(company)");
+		expect(appSource).toContain("workspace.openViewer(company)");
+	});
+
 	it("keeps the workspace evidence panel readable and drill-down capable", () => {
 		const evidenceTab = read("src/lib/components/workspace/EvidenceTab.svelte");
 
@@ -63,6 +72,9 @@ describe("UI contracts", () => {
 		expect(source).toContain("40개 모듈");
 		expect(source).toContain("원문 근거");
 		expect(source).toContain("Evidence First");
+		expect(source).toContain("summarizeDataReady");
+		expect(source).toContain("dataReadyInfo.label");
+		expect(source).toContain("추천 질문");
 	});
 
 	it("preserves the stable streaming affordance in chat", () => {
@@ -72,6 +84,8 @@ describe("UI contracts", () => {
 		expect(source).toContain("showJumpToLatest");
 		expect(source).toContain("streamAnchor.scrollIntoView");
 		expect(source).toContain("최신 응답으로 이동");
+		expect(source).toContain("dataReady");
+		expect(source).toContain("추천 질문");
 	});
 
 	it("renders disclosure text as a block-first report instead of raw text block listing", () => {

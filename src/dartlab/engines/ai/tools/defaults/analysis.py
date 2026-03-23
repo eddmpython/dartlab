@@ -64,6 +64,40 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         priority=85,
     )
 
+    # ── run_audit ──
+
+    def run_audit() -> str:
+        """감사 Red Flag 분석."""
+        stockCode = getattr(company, "stockCode", None)
+        if not stockCode:
+            return "종목코드가 없어 감사 분석을 실행할 수 없습니다."
+        try:
+            import dartlab as _dl
+
+            result = _dl.audit(stockCode)
+            if result is None:
+                return "감사 분석 데이터가 부족합니다."
+            if hasattr(result, "height"):  # DataFrame
+                from .helpers import df_to_md
+
+                return df_to_md(result, max_rows=30)
+            return str(result)[:4000]
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
+            return f"감사 분석 실패: {e}"
+
+    register_tool(
+        "run_audit",
+        run_audit,
+        "감사 Red Flag 분석을 실행합니다. "
+        "감사의견, 내부통제, 계속기업 가정, 우발채무, 관련 당사자 거래 등을 종합 점검합니다. "
+        "사용 시점: '감사 이슈', '리스크 총점검', '내부통제 문제', '부실 징후' 질문. "
+        "사용하지 말 것: 일반적인 재무비율 분석에는 compute_ratios가 적절합니다.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("리스크", "종합"),
+        priority=75,
+    )
+
     # ── get_sector_info ──
 
     def get_sector_info() -> str:

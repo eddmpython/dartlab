@@ -64,6 +64,14 @@ export function createWorkspaceStore() {
 		activeView = view;
 	}
 
+	function clearSelectedCompany() {
+		selectedCompany = null;
+		viewerTopic = null;
+		viewerTopicLabel = null;
+		viewerPeriod = null;
+		persist();
+	}
+
 	// Open disclosure viewer for a company
 	function openViewer(company) {
 		if (company) {
@@ -85,6 +93,16 @@ export function createWorkspaceStore() {
 
 	function closePanel() {
 		panelOpen = false;
+	}
+
+	function resetChatContext() {
+		activeView = "chat";
+		panelOpen = false;
+		panelMode = null;
+		panelData = null;
+		activeTab = "explore";
+		clearEvidenceSelection();
+		clearSelectedCompany();
 	}
 
 	function selectCompany(company) {
@@ -210,7 +228,9 @@ export function createWorkspaceStore() {
 		navigateArtifact,
 		openEvidence,
 		closePanel,
+		resetChatContext,
 		selectCompany,
+		clearSelectedCompany,
 		setViewerTopic,
 		clearEvidenceSelection,
 		setTab,

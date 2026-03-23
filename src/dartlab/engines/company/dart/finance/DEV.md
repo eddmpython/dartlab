@@ -1,9 +1,10 @@
 # DART Finance Development Guide
 
 본체 위치:
-- `src/dartlab/engines/dart/finance/`
+- `src/dartlab/engines/company/dart/finance/`
 - 공통 비율 계산:
   - `src/dartlab/engines/common/finance/ratios.py`
+- 공통 재무 분석 아키텍처 상세: `src/dartlab/engines/common/finance/DEV.md`
 
 ## authoritative surface
 
@@ -38,8 +39,8 @@
 - `ratioSeries`
 
 매핑 source of truth:
-- `src/dartlab/engines/dart/finance/mapper.py`
-- `src/dartlab/engines/dart/finance/mapperData/accountMappings.json`
+- `src/dartlab/engines/company/dart/finance/mapper.py`
+- `src/dartlab/engines/company/dart/finance/mapperData/accountMappings.json`
 
 ## 현재 정확성 기준
 

@@ -77,6 +77,7 @@ class TestTokenManager:
 class TestWhitelist:
     def test_allowed_endpoints(self):
         assert _is_whitelisted("/api/status")
+        assert _is_whitelisted("/api/suggest")
         assert _is_whitelisted("/api/search")
         assert _is_whitelisted("/api/spec")
         assert _is_whitelisted("/api/ask")

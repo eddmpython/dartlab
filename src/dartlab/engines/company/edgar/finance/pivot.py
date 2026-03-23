@@ -58,26 +58,13 @@ def buildTimeseries(
     if df is None or df.height == 0:
         return None
 
-    stmtTags = EdgarMapper.classifyTagsByStmt()
+    return _buildTimeseriesFromFacts(df)
 
-    allTags = df.select("tag").unique().to_series().to_list()
-    tagToStmts: dict[str, set[str]] = {}
-    for stmt, tags in stmtTags.items():
-        for tag in tags:
-            tagToStmts.setdefault(tag, set()).add(stmt)
 
-    for tag in allTags:
-        if tag not in tagToStmts:
-            tagToStmts[tag] = {_guessStmt(tag)}
-
-    stmtDfs: dict[str, pl.DataFrame] = {}
-    for stmt in ["IS", "BS", "CF", "CI"]:
-        stmtTagList = [t for t, stmts in tagToStmts.items() if stmt in stmts]
-        if not stmtTagList:
-            continue
-        stmtDf = df.filter(pl.col("tag").is_in(stmtTagList))
-        if stmtDf.height > 0:
-            stmtDfs[stmt] = stmtDf
+def _buildTimeseriesFromFacts(
+    df: pl.DataFrame,
+) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+    stmtDfs = _splitStmtFacts(df)
 
     series: dict[str, dict[str, dict[str, float]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
     sidSource: dict[str, dict[str, dict[str, str]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
@@ -107,17 +94,7 @@ def buildTimeseries(
                 val = row.get(p)
                 if val is not None:
                     allPeriods.add(p)
-                    if dartSid not in series[stmt]:
-                        series[stmt][dartSid] = {}
-                        sidSource[stmt][dartSid] = {}
-
-                    prevSource = sidSource[stmt].get(dartSid, {}).get(p)
-                    if prevSource is None:
-                        series[stmt][dartSid][p] = val
-                        sidSource[stmt].setdefault(dartSid, {})[p] = "common" if isCommon else "learned"
-                    elif prevSource == "learned" and isCommon:
-                        series[stmt][dartSid][p] = val
-                        sidSource[stmt][dartSid][p] = "common"
+                    _storeMappedValue(series[stmt], sidSource[stmt], dartSid, p, val, isCommon)
 
     periods = _sortPeriods(allPeriods)
     nPeriods = len(periods)
@@ -147,7 +124,8 @@ def buildAnnual(
 ) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
     """EDGAR companyfacts → 연도별 시계열.
 
-    IS/CF: 해당 연도 분기별 standalone 합산.
+    IS/CF: 해당 연도 분기별 standalone 합산 (4분기 필수).
+           4분기 미만이면 FY 직접값 폴백.
     BS: 해당 연도 마지막 분기 시점잔액.
 
     Args:
@@ -157,16 +135,26 @@ def buildAnnual(
     Returns:
         (series, years) 또는 None.
     """
-    qResult = buildTimeseries(cik, edgarDir=edgarDir)
-    if qResult is None:
+    if edgarDir is None:
+        edgarDir = _getEdgarDir()
+    df = _loadFacts(edgarDir, cik)
+    if df is None or df.height == 0:
         return None
 
+    qResult = _buildTimeseriesFromFacts(df)
     qSeries, qPeriods = qResult
+
+    # FY 직접값 맵 구축 (분기 합산 실패 시 폴백)
+    fyMap = _buildFyMap(df)
 
     yearSet: dict[str, list[int]] = {}
     for i, p in enumerate(qPeriods):
         year = extractYear(p)
         yearSet.setdefault(year, []).append(i)
+    for stmtMap in fyMap.values():
+        for yearMap in stmtMap.values():
+            for year in yearMap:
+                yearSet.setdefault(year, [])
 
     years = sorted(yearSet.keys())
     nYears = len(years)
@@ -174,26 +162,110 @@ def buildAnnual(
 
     result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
 
-    for sjDiv in qSeries:
-        for snakeId, vals in qSeries[sjDiv].items():
+    for sjDiv in result:
+        snakeIds = set(qSeries.get(sjDiv, {}).keys())
+        snakeIds.update(fyMap.get(sjDiv, {}).keys())
+
+        for snakeId in snakeIds:
+            vals = qSeries.get(sjDiv, {}).get(snakeId, [])
             annual: list[Optional[float]] = [None] * nYears
 
             for year, qIndices in yearSet.items():
                 yIdx = yearIdx[year]
 
                 if sjDiv == "BS":
-                    lastIdx = max(qIndices)
-                    annual[yIdx] = vals[lastIdx] if lastIdx < len(vals) else None
+                    if qIndices:
+                        lastIdx = max(qIndices)
+                        annual[yIdx] = vals[lastIdx] if lastIdx < len(vals) else None
                 else:
                     qVals = [vals[qi] for qi in qIndices if qi < len(vals) and vals[qi] is not None]
-                    if len(qVals) < 4:
-                        annual[yIdx] = None
-                    else:
+                    if len(qVals) >= 4:
                         annual[yIdx] = sum(qVals)
+                    else:
+                        # FY 직접값 폴백
+                        fyVal = fyMap.get(sjDiv, {}).get(snakeId, {}).get(year)
+                        annual[yIdx] = fyVal
 
             result[sjDiv][snakeId] = annual
 
     return result, years
+
+
+def _buildFyMap(
+    df: pl.DataFrame,
+) -> dict[str, dict[str, dict[str, float]]]:
+    """raw companyfacts에서 FY 직접값을 annual 폴백 맵으로 구축."""
+    stmtDfs = _splitStmtFacts(df)
+    fyMap: dict[str, dict[str, dict[str, float]]] = {"IS": {}, "CF": {}, "CI": {}}
+    sidSource: dict[str, dict[str, dict[str, str]]] = {"IS": {}, "CF": {}, "CI": {}}
+
+    for stmt in ["IS", "CF", "CI"]:
+        stmtDf = stmtDfs.get(stmt)
+        if stmtDf is None or stmtDf.height == 0:
+            continue
+
+        selected = _selectStandalone(stmtDf, stmt)
+        if selected.height == 0:
+            continue
+        annualRows = selected.filter(pl.col("period").str.ends_with("-FY"))
+        if annualRows.height == 0:
+            continue
+
+        for row in annualRows.iter_rows(named=True):
+            tag = row["tag"]
+            dartSid = EdgarMapper.mapToDart(tag, stmt)
+            if dartSid is None:
+                continue
+            period = row["period"]
+            year = extractYear(period)
+            val = row["val"]
+            if val is None:
+                continue
+            _storeMappedValue(fyMap[stmt], sidSource[stmt], dartSid, year, val, EdgarMapper.isCommonTag(tag))
+
+    return fyMap
+
+
+def _splitStmtFacts(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
+    stmtTags = EdgarMapper.classifyTagsByStmt()
+
+    allTags = df.select("tag").unique().to_series().to_list()
+    tagToStmts: dict[str, set[str]] = {}
+    for stmt, tags in stmtTags.items():
+        for tag in tags:
+            tagToStmts.setdefault(tag, set()).add(stmt)
+
+    for tag in allTags:
+        if tag not in tagToStmts:
+            tagToStmts[tag] = {_guessStmt(tag)}
+
+    stmtDfs: dict[str, pl.DataFrame] = {}
+    for stmt in ["IS", "BS", "CF", "CI"]:
+        stmtTagList = [t for t, stmts in tagToStmts.items() if stmt in stmts]
+        if not stmtTagList:
+            continue
+        stmtDf = df.filter(pl.col("tag").is_in(stmtTagList))
+        if stmtDf.height > 0:
+            stmtDfs[stmt] = stmtDf
+    return stmtDfs
+
+
+def _storeMappedValue(
+    stmtValues: dict[str, dict[str, float]],
+    stmtSources: dict[str, dict[str, str]],
+    dartSid: str,
+    period: str,
+    value: float,
+    isCommon: bool,
+) -> None:
+    if dartSid not in stmtValues:
+        stmtValues[dartSid] = {}
+        stmtSources[dartSid] = {}
+
+    prevSource = stmtSources.get(dartSid, {}).get(period)
+    if prevSource is None or (prevSource == "learned" and isCommon):
+        stmtValues[dartSid][period] = value
+        stmtSources.setdefault(dartSid, {})[period] = "common" if isCommon else "learned"
 
 
 def _loadFacts(edgarDir: Path, cik: str) -> Optional[pl.DataFrame]:
@@ -298,10 +370,9 @@ def _selectStandalone(df: pl.DataFrame, stmtType: str) -> pl.DataFrame:
 def _selectBS(tagDf: pl.DataFrame) -> pl.DataFrame:
     """BS 시점잔액 선택.
 
-    각 (tag, period)에서 가장 최근 end date의 값을 선택한다.
-    SEC filing에서 Q1~Q3은 당기 시점잔액(frame 있음)과
-    비교재무제표(frame 없음, 전년도 FY end)가 공존하는데,
-    최대 end date가 당기 시점잔액이다.
+    각 (tag, period)에서 해당 fiscal period에 맞는 end date 값을 선택.
+    multiEnd 혼합 방지: 같은 (tag, fy, fp)에 end가 여러 개면
+    fp의 기대 월(Q1→3월, Q2→6월, Q3→9월, FY→12월)에 가장 가까운 end를 선택.
     """
     if tagDf.height == 0:
         return pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
@@ -309,6 +380,29 @@ def _selectBS(tagDf: pl.DataFrame) -> pl.DataFrame:
     hasEnd = tagDf.filter(pl.col("end").is_not_null())
     if hasEnd.height == 0:
         return _selectByLatestPeriod(tagDf)
+
+    # frame이 있으면 우선 (정확한 기간 데이터)
+    hasFrame = hasEnd.filter(pl.col("frame").is_not_null())
+    noFrame = hasEnd.filter(pl.col("frame").is_null())
+
+    if hasFrame.height > 0:
+        # frame 있는 것 우선, 없으면 frame 없는 것으로 보충
+        frameResult = (
+            hasFrame.sort(["end", "filed"], descending=[True, True])
+            .group_by(["tag", "period"])
+            .agg(pl.col("val").first().alias("val"))
+        )
+        if noFrame.height > 0:
+            noFrameResult = (
+                noFrame.sort(["end", "filed"], descending=[True, True])
+                .group_by(["tag", "period"])
+                .agg(pl.col("val").first().alias("val"))
+            )
+            # frame 결과에 없는 (tag, period)만 보충
+            supplement = noFrameResult.join(frameResult, on=["tag", "period"], how="anti")
+            if supplement.height > 0:
+                return pl.concat([frameResult, supplement])
+        return frameResult
 
     return (
         hasEnd.sort(["end", "filed"], descending=[True, True])
@@ -415,15 +509,22 @@ def _deaccumulateCF(
         key = (row["tag"], str(row["fy"]), row["fp"])
         ytdMap[key] = row["ytd_val"]
 
+    revTags = EdgarMapper.getTagsForSnakeIds(["sales", "revenue"])
     for (tag, fy, fp), ytdVal in ytdMap.items():
         if fp == "Q2":
             q1Val = q1Map.get((tag, fy))
             if q1Val is not None and ytdVal is not None:
-                rows.append({"tag": tag, "period": formatPeriod(fy, 2), "val": ytdVal - q1Val})
+                standalone = ytdVal - q1Val
+                if standalone < 0 and tag in revTags:
+                    continue
+                rows.append({"tag": tag, "period": formatPeriod(fy, 2), "val": standalone})
         elif fp == "Q3":
             q2YtdVal = ytdMap.get((tag, fy, "Q2"))
             if q2YtdVal is not None and ytdVal is not None:
-                rows.append({"tag": tag, "period": formatPeriod(fy, 3), "val": ytdVal - q2YtdVal})
+                standalone = ytdVal - q2YtdVal
+                if standalone < 0 and tag in revTags:
+                    continue
+                rows.append({"tag": tag, "period": formatPeriod(fy, 3), "val": standalone})
 
     if not rows:
         return pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
@@ -442,6 +543,7 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
 
     ytdRows = tagDf.filter(pl.col("duration_days").is_not_null() & (pl.col("duration_days") > 100))
 
+    revTags = EdgarMapper.getTagsForSnakeIds(["sales", "revenue"])
     rows = []
     for mpRow in missingPeriods.iter_rows(named=True):
         tag, period = mpRow["tag"], mpRow["period"]
@@ -464,7 +566,10 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
             if q1Rows.height > 0:
                 q1Val = q1Rows.row(0, named=True)["val"]
                 if q1Val is not None and ytdVal is not None:
-                    rows.append({"tag": tag, "period": period, "val": ytdVal - q1Val})
+                    standalone = ytdVal - q1Val
+                    if standalone < 0 and tag in revTags:
+                        continue
+                    rows.append({"tag": tag, "period": period, "val": standalone})
 
         elif fp == "Q3":
             q2YtdRows = ytdRows.filter(
@@ -473,7 +578,10 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
             if q2YtdRows.height > 0:
                 q2YtdVal = q2YtdRows.row(0, named=True)["val"]
                 if q2YtdVal is not None and ytdVal is not None:
-                    rows.append({"tag": tag, "period": period, "val": ytdVal - q2YtdVal})
+                    standalone = ytdVal - q2YtdVal
+                    if standalone < 0 and tag in revTags:
+                        continue
+                    rows.append({"tag": tag, "period": period, "val": standalone})
 
     if not rows:
         return pl.DataFrame(schema={"tag": pl.Utf8, "period": pl.Utf8, "val": pl.Float64})
@@ -506,6 +614,7 @@ def _pivotTimeseries(selected: pl.DataFrame) -> pl.DataFrame:
 
 
 def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
+    """Q4 = FY - Q1 - Q2 - Q3 역산. BS는 FY 복사."""
     periodCols = [c for c in pivoted.columns if c != "tag"]
     years = sorted({extractYear(c) for c in periodCols if "-" in c})
 
@@ -522,13 +631,17 @@ def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
             q2Col = formatPeriod(year, 2)
             q3Col = formatPeriod(year, 3)
             if all(c in pivoted.columns for c in [fyCol, q1Col, q2Col, q3Col]):
-                newCols[q4Col] = pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
+                q4Raw = pivoted[fyCol] - pivoted[q1Col] - pivoted[q2Col] - pivoted[q3Col]
+                newCols[q4Col] = q4Raw
 
     if not newCols:
         return pivoted
 
     for colName, colData in newCols.items():
         pivoted = pivoted.with_columns(colData.alias(colName))
+
+    # Q4 sanity check: revenue/sales 태그에서 음수 Q4 → None 처리
+    pivoted = _sanitizeQ4(pivoted, years)
 
     allCols = [c for c in pivoted.columns if c != "tag"]
 
@@ -542,6 +655,64 @@ def _computeQ4(pivoted: pl.DataFrame, stmtType: str) -> pl.DataFrame:
 
     sortedCols = sorted(allCols, key=sortKey)
     return pivoted.select(["tag"] + sortedCols)
+
+
+def _sanitizeQ4(pivoted: pl.DataFrame, years: list[str]) -> pl.DataFrame:
+    """역산된 Q4 sanity check — 같은 연도 Q1~Q3 합 대비 비정상 Q4 제거.
+
+    조건: Q4 < 0이고 |Q4| > Q1~Q3 평균의 2배 → Q4=None (YTD 오염 가능성).
+    revenue 계열 태그가 음수면 무조건 None.
+    """
+    _REVENUE_TAGS = EdgarMapper.getTagsForSnakeIds(["sales", "revenue"])
+
+    tags = pivoted["tag"].to_list()
+
+    for year in years:
+        q4Col = formatPeriod(year, 4)
+        if q4Col not in pivoted.columns:
+            continue
+        q1Col = formatPeriod(year, 1)
+        q2Col = formatPeriod(year, 2)
+        q3Col = formatPeriod(year, 3)
+
+        q4Vals = pivoted[q4Col].to_list()
+        hasQ1 = q1Col in pivoted.columns
+        hasQ2 = q2Col in pivoted.columns
+        hasQ3 = q3Col in pivoted.columns
+
+        nullMask = []
+        for i, (tag, q4) in enumerate(zip(tags, q4Vals)):
+            shouldNull = False
+            if q4 is not None and q4 < 0:
+                # revenue 계열은 음수 Q4 무조건 제거
+                if tag in _REVENUE_TAGS:
+                    shouldNull = True
+                else:
+                    # 다른 태그: Q1~Q3 평균 대비 비정상 검사
+                    qVals = []
+                    if hasQ1:
+                        v = pivoted[q1Col][i]
+                        if v is not None:
+                            qVals.append(abs(v))
+                    if hasQ2:
+                        v = pivoted[q2Col][i]
+                        if v is not None:
+                            qVals.append(abs(v))
+                    if hasQ3:
+                        v = pivoted[q3Col][i]
+                        if v is not None:
+                            qVals.append(abs(v))
+                    if qVals:
+                        avgQ = sum(qVals) / len(qVals)
+                        if avgQ > 0 and abs(q4) > avgQ * 2:
+                            shouldNull = True
+            nullMask.append(shouldNull)
+
+        if any(nullMask):
+            newVals = [None if nullMask[i] else q4Vals[i] for i in range(len(q4Vals))]
+            pivoted = pivoted.with_columns(pl.Series(q4Col, newVals))
+
+    return pivoted
 
 
 def _sortPeriods(periods: set[str]) -> list[str]:
@@ -587,6 +758,8 @@ def _computeEquity(
             if eqNci[i] is not None and redeemNci[i] is not None:
                 merged = eqNci[i] + redeemNci[i]
                 if assets and assets[i] is not None and merged > assets[i]:
+                    continue
+                if eqNci[i] != 0 and abs(merged) > abs(eqNci[i]) * 2:
                     continue
                 eqNci[i] = merged
 

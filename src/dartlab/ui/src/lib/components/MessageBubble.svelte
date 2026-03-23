@@ -18,6 +18,7 @@
 -->
 <script>
 	import { cn } from "$lib/utils.js";
+	import { summarizeDataReady } from "$lib/ai/dataReady.js";
 	import {
 		Database, Eye, Wrench, Loader2, Brain, FileText,
 		RefreshCw, CheckCircle2, Clock,
@@ -36,18 +37,52 @@
 	let openModal = $state(null);
 	let modalType = $state("context");
 
+	const TOOL_PHASE_LABELS = {
+		list_live_filings: "실시간 공시 목록 조회 중",
+		read_filing: "공시 원문 다운로드 중",
+		list_filings: "저장된 공시 목록 확인 중",
+		show_topic: "공시 topic 확인 중",
+		get_data: "재무 데이터 조회 중",
+	};
+
+	function getToolStringArg(call, key) {
+		const value = call?.arguments?.[key];
+		return typeof value === "string" ? value.trim() : "";
+	}
+
+	function getActiveToolPhase(call) {
+		if (!call) return "";
+		const base = TOOL_PHASE_LABELS[call.name] || `도구 실행 중 — ${call.name}`;
+		if (call.name === "list_live_filings") {
+			const days = call?.arguments?.days;
+			const keyword = getToolStringArg(call, "keyword");
+			const forms = getToolStringArg(call, "forms");
+			const details = [
+				typeof days === "number" && days > 0 ? `${days}일 범위` : "",
+				keyword ? `제목 필터: ${keyword}` : "",
+				forms ? `form: ${forms}` : "",
+			].filter(Boolean);
+			return details.length > 0 ? `${base} · ${details.join(" · ")}` : base;
+		}
+		if (call.name === "read_filing") {
+			const docId = getToolStringArg(call, "doc_id");
+			return docId ? `${base} · ${docId}` : base;
+		}
+		const detail = getToolStringArg(call, "module") || getToolStringArg(call, "keyword");
+		return detail ? `${base} · ${detail}` : base;
+	}
+
 	// 사용자 메시지 인라인 편집
 	let isEditing = $state(false);
 	let editText = $state("");
+	let activeToolCall = $derived.by(() =>
+		[...(message.toolEvents || [])].reverse().find(e => e.type === "call") || null
+	);
 
 	let loadingPhase = $derived.by(() => {
 		if (!message.loading) return "";
 		if (message.text) return "응답 작성 중";
-		if (message.toolEvents?.length > 0) {
-			const lastCall = [...message.toolEvents].reverse().find(e => e.type === "call");
-			const detail = lastCall?.arguments?.module || lastCall?.arguments?.keyword || "";
-			return `도구 실행 중 — ${lastCall?.name || ""}${detail ? ` (${detail})` : ""}`;
-		}
+		if (activeToolCall) return getActiveToolPhase(activeToolCall);
 		if (message.contexts?.length > 0) {
 			const last = message.contexts[message.contexts.length - 1];
 			return `데이터 분석 중 — ${last?.label || last?.module || ""}`;
@@ -66,6 +101,7 @@
 	let dialogueModeLabel = $derived(
 		message.meta?.dialogueMode ? DIALOGUE_MODE_LABELS[message.meta.dialogueMode] || message.meta.dialogueMode : null
 	);
+	let dataReadyInfo = $derived(summarizeDataReady(message.meta?.dataReady || message.dataReady));
 
 	let hasTransparencyData = $derived(
 		message.systemPrompt || message.userContent ||
@@ -173,6 +209,33 @@
 		return () => { if (elapsedTimer) clearInterval(elapsedTimer); };
 	});
 
+	let progressPercent = $derived.by(() => {
+		if (!message.loading) return 0;
+		if (message.text) return 92;
+		if (activeToolCall?.name === "read_filing") return Math.min(88, 28 + elapsed * 5);
+		if (activeToolCall?.name === "list_live_filings") return Math.min(82, 20 + elapsed * 6);
+		if (message.contexts?.length > 0) return 72;
+		if (message.snapshot) return 52;
+		if (message.meta?.company) return 35;
+		return Math.min(24, 8 + elapsed * 3);
+	});
+
+	let progressHint = $derived.by(() => {
+		if (!message.loading || message.text) return "";
+		if (activeToolCall?.name === "list_live_filings") {
+			if (elapsed >= 6) return "OpenDART/SEC 응답 상태에 따라 보통 5~15초 정도 걸릴 수 있습니다.";
+			return "최근 공시 목록을 모으고 있습니다.";
+		}
+		if (activeToolCall?.name === "read_filing") {
+			if (elapsed >= 8) {
+				return "원문 XML/HTML을 내려받아 텍스트로 정리 중입니다. 큰 보고서는 10~30초 정도 걸릴 수 있습니다.";
+			}
+			return "공시 원문을 내려받아 읽기 좋은 텍스트로 정리하고 있습니다.";
+		}
+		if (message.contexts?.length > 0) return "선별한 데이터와 공시 근거를 조합해 답변에 넣고 있습니다.";
+		return "";
+	});
+
 	let loadingSteps = $derived.by(() => {
 		if (!message.loading) return [];
 		const steps = [];
@@ -246,6 +309,7 @@
 				{companyName}
 				{dataYearRange}
 				{dialogueModeLabel}
+				dataReadyInfo={dataReadyInfo}
 				{activityBadges}
 				onOpenContextModal={openContextModal}
 				onOpenSnapshotModal={openSnapshotModal}
@@ -257,7 +321,7 @@
 
 			<!-- ── 로딩: 진행 단계 표시 ── -->
 			{#if message.loading && !message.text}
-				<div class="animate-fadeIn">
+			<div class="animate-fadeIn">
 					<div class="space-y-1 mb-3">
 						{#each loadingSteps as step}
 							<div class="flex items-center gap-2 text-[11px]">
@@ -274,6 +338,19 @@
 						{/each}
 						{#if elapsed > 0}
 							<div class="text-[10px] text-dl-text-dim/60 mt-1 font-mono">{elapsed}초 경과</div>
+						{/if}
+					</div>
+					<div class="mb-3">
+						<div class="h-1.5 w-full overflow-hidden rounded-full bg-dl-border/30">
+							<div
+								class="h-full rounded-full bg-gradient-to-r from-dl-accent/70 to-dl-primary/80 transition-all duration-500"
+								style={`width: ${Math.max(progressPercent, 8)}%`}
+							></div>
+						</div>
+						{#if progressHint}
+							<div class="mt-2 rounded-lg border border-dl-border/40 bg-dl-bg-darker/70 px-3 py-2 text-[10px] leading-relaxed text-dl-text-dim">
+								{progressHint}
+							</div>
 						{/if}
 					</div>
 					<div class="space-y-2.5">

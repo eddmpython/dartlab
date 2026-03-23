@@ -132,6 +132,7 @@ def build_runtime_capabilities_markdown(company: Any | None = None) -> str:
     """UI 대화에서 설명해야 하는 실제 기능 범위를 registry/tool 기준으로 요약."""
     from dartlab.core.registry import getCategories, getEntries
     from dartlab.engines.ai.providers.support.codex_cli import inspect_codex_cli
+    from dartlab.engines.company.dart.openapi.dartKey import getDartKeyStatus
 
     from .coding import get_default_coding_runtime
 
@@ -148,6 +149,7 @@ def build_runtime_capabilities_markdown(company: Any | None = None) -> str:
         schema.get("function", {}).get("name", "") for schema in get_default_tool_runtime().get_tool_schemas()
     ]
     codex_info = inspect_codex_cli()
+    open_dart = getDartKeyStatus()
     coding_runtime = get_default_coding_runtime()
     coding_backends = coding_runtime.inspect_backends()
     coding_backend_labels = ", ".join(f"`{item['name']}`" for item in coding_backends) or "(없음)"
@@ -183,6 +185,7 @@ def build_runtime_capabilities_markdown(company: Any | None = None) -> str:
         "- 재무표 조회, 재무비율, YoY, CAGR, 이상치, 요약 통계 계산",
         "- insight/sector/rank 분석 엔진 호출",
         "- OpenDart/OpenEdgar 공개 API를 대화 도구로 직접 호출",
+        "- OpenDART 최근 공시목록, 수주공시, 계약공시, 단일판매공급계약 목록을 질문 기반으로 검색",
         "- Excel 내보내기, 템플릿 생성/조회/재사용",
         "- 로컬 데이터 현황 확인, 데이터 다운로드 트리거",
         "- 로컬 안전 정책이 허용되면 coding runtime을 통해 실제 코드 작업, 수정, 리뷰 요청 전달",
@@ -197,6 +200,7 @@ def build_runtime_capabilities_markdown(company: Any | None = None) -> str:
         "",
         "## OpenAPI 범위",
         "- DART: 기업 검색, 공시 목록, 정기보고서/재무 API, 저장용 saver",
+        f"- DART key 상태: {'설정됨' if open_dart.configured else '미설정'} / source={open_dart.source} / keyCount={open_dart.keyCount}",
         "- EDGAR: issuer resolve/search, submissions, filings DataFrame, companyfacts/companyconcept/frames, docs/finance saver",
         "",
         "## GPT / Codex 연결 범위",

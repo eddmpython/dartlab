@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
+from dartlab.core.dataLoader import loadData
 from dartlab.core.memory import BoundedCache
 
 if TYPE_CHECKING:
@@ -248,7 +249,7 @@ class _ReportAccessor:
         func = funcs.get(name)
         if func is None:
             return None
-        result = func(self._company.stockCode)
+        result = func(self._company.stockCode, base_df=self._company.rawReport)
         self._cache[name] = result
         return result
 
@@ -260,7 +261,7 @@ class _ReportAccessor:
         from dartlab.engines.company.dart.report import extractClean
 
         try:
-            result = extractClean(self._company.stockCode, apiType)
+            result = extractClean(self._company.stockCode, apiType, base_df=self._company.rawReport)
         except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
@@ -274,7 +275,7 @@ class _ReportAccessor:
         from dartlab.engines.company.dart.report import extractAnnual as _extractAnnual
 
         try:
-            result = _extractAnnual(self._company.stockCode, apiType, quarterNum)
+            result = _extractAnnual(self._company.stockCode, apiType, quarterNum, base_df=self._company.rawReport)
         except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
@@ -294,7 +295,7 @@ class _ReportAccessor:
         from dartlab.engines.company.dart.report import extractResult
 
         try:
-            result = extractResult(self._company.stockCode, apiType, quarterNum)
+            result = extractResult(self._company.stockCode, apiType, quarterNum, base_df=self._company.rawReport)
         except (KeyError, ValueError, TypeError, FileNotFoundError):
             result = None
         self._cache[cacheKey] = result
@@ -392,7 +393,16 @@ class _ReportAccessor:
             return self._cache[cacheKey]
         from dartlab.engines.company.dart.report.types import API_TYPES
 
-        result = [name for name in API_TYPES if self.extract(name) is not None]
+        try:
+            raw = loadData(self._company.stockCode, category="report", columns=["apiType"])
+        except (FileNotFoundError, RuntimeError, ValueError, TypeError):
+            raw = None
+
+        if raw is None or raw.is_empty() or "apiType" not in raw.columns:
+            result: list[str] = []
+        else:
+            available = set(raw["apiType"].drop_nulls().cast(pl.Utf8).unique().to_list())
+            result = [name for name in API_TYPES if name in available]
         self._cache[cacheKey] = result
         return result
 

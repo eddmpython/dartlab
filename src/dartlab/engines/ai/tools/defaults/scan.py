@@ -200,6 +200,49 @@ def register_scan_tools(company: Any, register_tool) -> None:
         priority=55,
     )
 
+    # ── get_digest ──
+
+    def get_digest(sector: str = "", top_n: int = 20) -> str:
+        """시장 공시 변화 다이제스트."""
+        try:
+            import dartlab as _dl
+
+            result = _dl.digest(sector=sector or None, top_n=top_n)
+            if result is None:
+                return "다이제스트 데이터가 없습니다."
+            return format_tool_value(result, max_rows=20)
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
+            return f"다이제스트 조회 실패: {e}"
+
+    register_tool(
+        "get_digest",
+        get_digest,
+        "시장 전체 공시 변화 다이제스트를 조회합니다. "
+        "최근 공시에서 가장 큰 텍스트 변화를 보인 기업/토픽을 요약합니다. "
+        "사용 시점: '시장 동향', '이번 주 주요 공시', '어디서 변화가 컸어?' 질문. "
+        "사용하지 말 것: 특정 기업 분석에는 diff_topic이 적절합니다.",
+        {
+            "type": "object",
+            "properties": {
+                "sector": {
+                    "type": "string",
+                    "description": "섹터 필터 (예: 'IT', '금융'). 비워두면 전체 시장.",
+                    "default": "",
+                },
+                "top_n": {
+                    "type": "integer",
+                    "description": "상위 N개 변화 항목 (기본 20)",
+                    "default": 20,
+                },
+            },
+        },
+        kind=CapabilityKind.ANALYSIS,
+        requires_company=False,
+        category="analysis",
+        questionTypes=("종합",),
+        priority=60,
+    )
+
     # ── create_chart ──
 
     def create_chart(chart_type: str = "auto") -> str:

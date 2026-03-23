@@ -15,7 +15,7 @@
 -->
 <script>
 	import "./app.css";
-	import { askStream } from "$lib/api.js";
+	import { askStream, fetchAiSuggestions } from "$lib/api.js";
 	import {
 		buildConversationHistory,
 		createAskStreamCallbacks,
@@ -59,10 +59,15 @@
 	let isLoading = $state(false);
 	let currentStream = $state(null);
 	let pendingBlockData = $state(null);
+	let suggestedQuestions = $state([]);
+	let onboardingDataReady = $state(null);
+	let suggestionLoading = $state(false);
 	// scrollTrigger removed — ChatArea uses isLoading-driven rAF loop
 	let showSearchModal = $state(false);
 	let showRoomChat = $state(false);
 	let showRoomJoin = $state(false);
+	let suggestRequestId = 0;
+	const suggestionCache = new Map();
 
 	// ── 리사이저블 패널 ──
 	let sidebarWidth = $state(260);
@@ -118,7 +123,7 @@
 		const nav = room.navState;
 		if (!nav || !room.joined || room.isNavFromRemote === false) return;
 		if (nav.stockCode) {
-			handleCompanySelect({ stockCode: nav.stockCode, corpName: nav.stockCode });
+			handleCompanySelectForViewer({ stockCode: nav.stockCode, corpName: nav.stockCode });
 		}
 		if (nav.topic) {
 			workspace.setViewerTopic(nav.topic, nav.topicLabel || nav.topic);
@@ -140,6 +145,47 @@
 		return () => window.removeEventListener("resize", onResize);
 	});
 
+	$effect(() => {
+		const stockCode = workspace.selectedCompany?.stockCode || "";
+		if (!stockCode) {
+			suggestedQuestions = [];
+			onboardingDataReady = null;
+			suggestionLoading = false;
+			return;
+		}
+
+		const cached = suggestionCache.get(stockCode);
+		if (cached) {
+			suggestedQuestions = cached.suggestions;
+			onboardingDataReady = cached.dataReady;
+			suggestionLoading = false;
+			return;
+		}
+
+		const requestId = ++suggestRequestId;
+		suggestedQuestions = [];
+		onboardingDataReady = null;
+		suggestionLoading = true;
+		fetchAiSuggestions(stockCode)
+			.then((payload) => {
+				if (requestId !== suggestRequestId) return;
+				const next = {
+					suggestions: payload?.suggestions || [],
+					dataReady: payload?.dataReady || null,
+				};
+				suggestionCache.set(stockCode, next);
+				suggestedQuestions = next.suggestions;
+				onboardingDataReady = next.dataReady;
+				suggestionLoading = false;
+			})
+			.catch(() => {
+				if (requestId !== suggestRequestId) return;
+				suggestedQuestions = [];
+				onboardingDataReady = null;
+				suggestionLoading = false;
+			});
+	});
+
 	// ── Helpers ──
 	function appendRenderViews(views) {
 		if (!views?.length) return;
@@ -151,7 +197,10 @@
 	}
 
 	function syncSelectedCompanyFromConversation(conv) {
-		if (!conv) return;
+		if (!conv) {
+			workspace.clearSelectedCompany();
+			return;
+		}
 		for (let i = conv.messages.length - 1; i >= 0; i--) {
 			const msg = conv.messages[i];
 			if (msg.role === "assistant" && (msg.meta?.stockCode || msg.meta?.company || msg.company)) {
@@ -162,6 +211,7 @@
 				return;
 			}
 		}
+		workspace.clearSelectedCompany();
 	}
 
 	// ── Chat actions ──
@@ -173,6 +223,7 @@
 
 	function handleNewChat() {
 		store.createConversation();
+		workspace.resetChatContext();
 		inputText = "";
 		isLoading = false;
 		if (currentStream) { currentStream.abort(); currentStream = null; }
@@ -186,12 +237,32 @@
 		if (currentStream) { currentStream.abort(); currentStream = null; }
 	}
 
-	function handleDeleteConversation(id) { ui.deleteConfirmId = id; }
+	function handleDeleteConversation(id) {
+		ui.deleteConfirmMode = "single";
+		ui.deleteConfirmId = id;
+	}
+	function handleDeleteAllConversations() {
+		ui.deleteConfirmMode = "all";
+		ui.deleteConfirmId = "__all__";
+	}
 
 	function confirmDelete() {
 		if (ui.deleteConfirmId) {
+			if (ui.deleteConfirmMode === "all") {
+				store.clearAll();
+				workspace.resetChatContext();
+				inputText = "";
+				isLoading = false;
+				if (currentStream) { currentStream.abort(); currentStream = null; }
+				ui.deleteConfirmId = null;
+				ui.deleteConfirmMode = "single";
+				return;
+			}
 			store.deleteConversation(ui.deleteConfirmId);
+			if (store.active) syncSelectedCompanyFromConversation(store.active);
+			else workspace.resetChatContext();
 			ui.deleteConfirmId = null;
+			ui.deleteConfirmMode = "single";
 		}
 	}
 
@@ -240,7 +311,7 @@
 			appendRenderViews,
 			onStreamSettled: handleStreamSettled,
 			bumpScroll: null,  // scroll handled by ChatArea rAF loop
-			onCompanySelect: handleCompanySelect,
+			onCompanySelect: handleCompanySelectForViewer,
 		});
 
 		const stream = askStream(companyHint, question, requestOptions, callbacks, history);
@@ -296,7 +367,14 @@
 	}
 
 	// ── Navigation ──
-	function handleCompanySelect(company) {
+	function handleCompanySelectForChat(company) {
+		workspace.selectCompany(company);
+		workspace.switchView("chat");
+		pendingBlockData = null;
+		if (room.joined) room.navigate({ stockCode: company.stockCode });
+	}
+
+	function handleCompanySelectForViewer(company) {
 		workspace.openViewer(company);
 		if (room.joined) room.navigate({ stockCode: company.stockCode });
 	}
@@ -388,7 +466,7 @@
 										{workspace.selectedCompany?.stockCode === company.stockCode
 											? 'bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20'
 											: 'text-dl-text-muted hover:bg-white/5 hover:text-dl-text'}"
-									onclick={() => { handleCompanySelect(company); if (ui.isMobile) ui.sidebarOpen = false; }}
+									onclick={() => { handleCompanySelectForViewer(company); if (ui.isMobile) ui.sidebarOpen = false; }}
 								>
 									<div class="font-medium">{company.name}</div>
 									<div class="text-[10px] text-dl-text-dim">{company.stockCode}</div>
@@ -421,7 +499,8 @@
 				onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
 				onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
 				onDelete={handleDeleteConversation}
-				onRename={(id, title) => { if (title) convStore.updateTitle(id, title); }}
+				onDeleteAll={handleDeleteAllConversations}
+				onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
 				onOpenSearch={() => { showSearchModal = true; }}
 			/>
 		{/if}
@@ -552,7 +631,7 @@
 							viewer={viewerStore}
 							company={workspace.selectedCompany}
 							recentCompanies={workspace.recentCompanies}
-							onCompanySelect={handleCompanySelect}
+							onCompanySelect={handleCompanySelectForViewer}
 							onAskAI={handleAskFromViewer}
 							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
 						/>
@@ -566,6 +645,9 @@
 							{isLoading}
 							bind:inputText
 							selectedCompany={workspace.selectedCompany}
+							suggestions={suggestedQuestions}
+							dataReady={onboardingDataReady}
+							suggestionLoading={suggestionLoading}
 							viewerContext={workspace.viewerTopic ? { topic: workspace.viewerTopic, topicLabel: workspace.viewerTopicLabel, period: workspace.viewerPeriod } : null}
 							pendingBlockLabel={pendingBlockData ? (pendingBlockData.topicLabel || pendingBlockData.topic || "블록") : null}
 							onClearBlock={() => { pendingBlockData = null; }}
@@ -579,13 +661,18 @@
 							onOpenEvidence={handleOpenEvidence}
 							onOpenArtifact={(view) => workspace.openArtifact(view)}
 							onEditResend={handleEditResend}
-							onCompanySelect={handleCompanySelect}
+							onCompanySelect={handleCompanySelectForChat}
 						/>
 					{:else}
 						<EmptyState
 							bind:inputText
+							selectedCompany={workspace.selectedCompany}
+							suggestions={suggestedQuestions}
+							dataReady={onboardingDataReady}
+							suggestionLoading={suggestionLoading}
 							onSend={sendMessage}
-							onCompanySelect={handleCompanySelect}
+							onCompanySelect={handleCompanySelectForChat}
+							onOpenViewer={handleCompanySelectForViewer}
 						/>
 					{/if}
 				</div>
@@ -685,7 +772,7 @@
 <SearchModal
 	bind:open={showSearchModal}
 	recentCompanies={workspace.recentCompanies}
-	onSelect={handleCompanySelect}
+	onSelect={handleCompanySelectForViewer}
 	onAction={(id) => {
 		if (id === "newChat") handleNewChat();
 		else if (id === "viewChat") workspace.switchView("chat");

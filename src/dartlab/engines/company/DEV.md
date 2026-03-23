@@ -26,10 +26,17 @@ company/
 ## 원칙
 
 - 각 엔진은 `CompanyProtocol`을 구현 (common/protocols.py)
-- 공통 인터페이스: `show()`, `trace()`, `diff()`, `filings()`, `ask()`, `chat()`
+- 공통 인터페이스: `show()`, `trace()`, `diff()`, `filings()`, `liveFilings()`, `readFiling()`, `ask()`, `chat()`
 - 3-namespace: `docs` (서술형), `finance` (정량), `report` (정형, DART만)
 - 하위 엔진은 루트 facade (`dartlab.company`)를 import하지 않는다
 - L2 분석 엔진(analysis/)은 lazy import로만 부착
+
+### filings 계열 계약
+
+- `c.filings()` = 로컬 docs/parquet 기준 문서 목록
+- `c.liveFilings()` = source-native public source 기준 최신 공시 목록
+- `c.readFiling()` = `liveFilings()` row 또는 문서 식별자로 본문 회수
+- AI의 회사 바운드 공시 질문은 `show_topic`보다 먼저 `liveFilings/readFiling`을 쓸 수 있다.
 
 ## 상세
 

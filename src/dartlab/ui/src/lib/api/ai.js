@@ -10,6 +10,15 @@ export async function fetchStatus(provider = null, probe = true) {
 	return res.json();
 }
 
+export async function fetchAiSuggestions(stockCode) {
+	const res = await fetch(`${BASE}/api/suggest?stockCode=${encodeURIComponent(stockCode)}`);
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "추천 질문 조회 실패");
+	}
+	return res.json();
+}
+
 export async function validateProvider(provider, model = null, apiKey = null) {
 	const body = { provider };
 	if (model) body.model = model;
@@ -50,6 +59,41 @@ export async function updateAiSecret(provider, apiKey = null, clear = false) {
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({}));
 		throw new Error(err.detail || "AI secret 저장 실패");
+	}
+	return res.json();
+}
+
+export async function validateDartKey(apiKey) {
+	const res = await fetch(`${BASE}/api/openapi/dart-key/validate`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ api_key: apiKey }),
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "OpenDART 키 검증 실패");
+	}
+	return res.json();
+}
+
+export async function saveDartKey(apiKey) {
+	const res = await fetch(`${BASE}/api/openapi/dart-key`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ api_key: apiKey }),
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "OpenDART 키 저장 실패");
+	}
+	return res.json();
+}
+
+export async function deleteDartKey() {
+	const res = await fetch(`${BASE}/api/openapi/dart-key`, { method: "DELETE" });
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || "OpenDART 키 삭제 실패");
 	}
 	return res.json();
 }
@@ -139,5 +183,29 @@ export async function oauthStatus() {
 export async function oauthLogout() {
 	const res = await fetch(`${BASE}/api/oauth/logout`, { method: "POST" });
 	if (!res.ok) throw new Error("OAuth 로그아웃 실패");
+	return res.json();
+}
+
+export async function startChannelConnection(platform, payload = {}) {
+	const res = await fetch(`${BASE}/api/channels/${encodeURIComponent(platform)}/start`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || `${platform} 채널 시작 실패`);
+	}
+	return res.json();
+}
+
+export async function stopChannelConnection(platform) {
+	const res = await fetch(`${BASE}/api/channels/${encodeURIComponent(platform)}/stop`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.detail || `${platform} 채널 종료 실패`);
+	}
 	return res.json();
 }

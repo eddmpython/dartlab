@@ -32,6 +32,12 @@ class _SectionsSource:
     def frame(self) -> pl.DataFrame | None:
         return self.raw
 
+    def topics(self) -> list[str]:
+        return self._company._docsSectionTopics()
+
+    def outline(self, topic: str | None = None) -> pl.DataFrame | None:
+        return self._company._docsTopicOutline(topic=topic)
+
     def periods(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> list[str]:
         frame = self.raw
         if frame is None:
@@ -193,6 +199,6 @@ class _SectionsSource:
         return (
             "SectionsSource("
             "shape="
-            f"{frame.shape}, methods=[raw, periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents(), structureSummary(), structureChanges()]"
+            f"{frame.shape}, methods=[raw, topics(), outline(), periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents(), structureSummary(), structureChanges()]"
             ")"
         )

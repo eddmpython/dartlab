@@ -18,6 +18,8 @@ from dartlab.engines.company.dart.report.types import (
 def extractRaw(
     stockCode: str,
     apiType: str,
+    *,
+    base_df: pl.DataFrame | None = None,
 ) -> pl.DataFrame | None:
     """report parquet에서 apiType으로 필터 → null 컬럼 제거 → 정렬.
 
@@ -30,7 +32,7 @@ def extractRaw(
     """
     from dartlab.core.dataLoader import loadData
 
-    df = loadData(stockCode, category="report")
+    df = base_df if base_df is not None else loadData(stockCode, category="report")
     if df is None or df.is_empty():
         return None
 
@@ -63,9 +65,11 @@ def extractRaw(
 def extractClean(
     stockCode: str,
     apiType: str,
+    *,
+    base_df: pl.DataFrame | None = None,
 ) -> pl.DataFrame | None:
     """extractRaw + 숫자 변환 적용."""
-    df = extractRaw(stockCode, apiType)
+    df = extractRaw(stockCode, apiType, base_df=base_df)
     if df is None:
         return None
 
@@ -77,6 +81,8 @@ def extractAnnual(
     stockCode: str,
     apiType: str,
     quarterNum: int | None = None,
+    *,
+    base_df: pl.DataFrame | None = None,
 ) -> pl.DataFrame | None:
     """연도별 데이터 추출 (특정 분기 기준).
 
@@ -88,7 +94,7 @@ def extractAnnual(
     Returns:
         연간 DataFrame 또는 None.
     """
-    df = extractClean(stockCode, apiType)
+    df = extractClean(stockCode, apiType, base_df=base_df)
     if df is None:
         return None
 
@@ -112,9 +118,11 @@ def extractResult(
     stockCode: str,
     apiType: str,
     quarterNum: int | None = None,
+    *,
+    base_df: pl.DataFrame | None = None,
 ) -> ReportResult | None:
     """apiType별 ReportResult 반환."""
-    df = extractAnnual(stockCode, apiType, quarterNum)
+    df = extractAnnual(stockCode, apiType, quarterNum, base_df=base_df)
     if df is None:
         return None
 

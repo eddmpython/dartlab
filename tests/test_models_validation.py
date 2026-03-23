@@ -10,6 +10,7 @@ from dartlab.server.models import (
     AiSecretUpdateRequest,
     AskRequest,
     ConfigureRequest,
+    DartKeyUpdateRequest,
     HistoryMessage,
     HistoryMeta,
     TocChapter,
@@ -122,6 +123,12 @@ class TestAiSecretUpdateRequest:
     def test_clear(self):
         req = AiSecretUpdateRequest(provider="openai", clear=True)
         assert req.clear is True
+
+
+class TestDartKeyUpdateRequest:
+    def test_basic(self):
+        req = DartKeyUpdateRequest(api_key="dart-test-key")
+        assert req.api_key == "dart-test-key"
 
 
 class TestTocModels:

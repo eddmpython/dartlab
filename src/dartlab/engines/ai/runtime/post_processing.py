@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.core.capabilities import UiAction
 from dartlab.engines.ai.runtime.events import AnalysisEvent, EventKind
 
 
@@ -30,6 +31,71 @@ def _detect_navigate_action(company: Any, question: str) -> AnalysisEvent | None
         nav_payload["company"] = corp_name
 
     return AnalysisEvent(EventKind.UI_ACTION, nav_payload)
+
+
+def autoInjectArtifacts(
+    company: Any,
+    questionType: str | None,
+    toolCallNames: list[str],
+) -> list[AnalysisEvent]:
+    """분석 완료 후 차트/테이블을 자동 주입한다.
+
+    LLM이 차트 도구를 호출하지 않았지만 데이터 도구를 사용한 경우,
+    질문 유형에 맞는 차트를 자동 생성하여 ui_action 이벤트로 반환한다.
+    """
+    if company is None:
+        return []
+
+    chartTools = {"show_chart", "create_chart", "render_dashboard"}
+    dataTools = {"get_data", "compute_ratios", "get_ratio_series", "detect_anomalies", "compute_growth"}
+
+    hasChart = bool(chartTools & set(toolCallNames))
+    hasData = bool(dataTools & set(toolCallNames))
+
+    if hasChart or not hasData:
+        return []
+
+    # 질문 유형 → 차트 타입 매핑
+    typeToChart: dict[str | None, list[str]] = {
+        "수익성": ["profitability"],
+        "건전성": ["balance_sheet"],
+        "성장성": ["revenue_trend"],
+        "배당": ["dividend"],
+        "종합": ["insight_radar", "revenue_trend"],
+        "투자": ["revenue_trend"],
+        "리스크": ["balance_sheet"],
+    }
+
+    chartTypes = typeToChart.get(questionType, ["revenue_trend"])[:2]
+
+    events: list[AnalysisEvent] = []
+    try:
+        from dartlab.tools.chart import _SPEC_GENERATORS
+
+        for ct in chartTypes:
+            gen = _SPEC_GENERATORS.get(ct)
+            if gen is None:
+                continue
+            spec = gen(company)
+            if spec is not None:
+                action = UiAction.render_widget(
+                    "chart",
+                    {"spec": spec},
+                    title="자동 생성 차트",
+                    source={"tool": "autoInjectArtifacts", "chartType": ct, "questionType": questionType or ""},
+                )
+                events.append(
+                    AnalysisEvent(
+                        EventKind.UI_ACTION,
+                        action.to_payload(),
+                    )
+                )
+            if len(events) >= 2:
+                break
+    except (ImportError, AttributeError, TypeError, ValueError, OSError):
+        pass
+
+    return events
 
 
 def _run_validation(company: Any, full_response_parts: list[str]) -> AnalysisEvent | None:

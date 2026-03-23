@@ -64,6 +64,41 @@ class MockCompany:
     def show(self, topic: str, **kwargs):
         return getattr(self, topic, None)
 
+    def liveFilings(
+        self,
+        start=None,
+        end=None,
+        *,
+        days=None,
+        limit=20,
+        keyword=None,
+        forms=None,
+        finalOnly=False,
+    ):
+        del start, end, days, keyword, forms, finalOnly
+        return pl.DataFrame(
+            {
+                "docId": ["20240312000736"],
+                "filedAt": ["2024-03-12"],
+                "title": ["단일판매공급계약체결"],
+                "formType": ["단일판매공급계약체결"],
+                "docUrl": ["https://example.com/viewer?rcpNo=20240312000736"],
+                "market": ["KR"],
+            }
+        ).head(limit)
+
+    def readFiling(self, filing, *, maxChars=None):
+        del maxChars
+        return {
+            "docId": "20240312000736",
+            "docUrl": filing if isinstance(filing, str) else filing.get("docUrl", ""),
+            "text": "공시 본문 테스트",
+        }
+
+
+class MockDartCompany(MockCompany):
+    market = "KR"
+
 
 # ══════════════════════════════════════
 # register_tool / execute_tool
@@ -150,6 +185,8 @@ class TestRegisterDefaults:
         assert "get_coding_runtime_status" in names
         assert "get_openapi_capabilities" in names
         assert "call_dart_openapi" in names
+        assert "search_dart_filings" in names
+        assert "get_dart_filing_text" in names
         assert "call_edgar_openapi" in names
         assert "openapi_save" in names
         assert "run_coding_task" in names
@@ -300,6 +337,68 @@ class TestRegisterDefaults:
         result = execute_tool("call_dart_openapi", {"action": "search", "query": "삼성", "listed": True})
         assert "005930" in result
 
+    def test_call_dart_openapi_document_text(self, monkeypatch):
+        import dartlab
+
+        class FakeOpenDart:
+            @staticmethod
+            def reportTypes():
+                return ["배당"]
+
+            @staticmethod
+            def filingTypes():
+                return {"A": "정기공시"}
+
+            @staticmethod
+            def markets():
+                return {"Y": "유가증권"}
+
+            def documentText(self, rcept_no):
+                assert rcept_no == "20240312000736"
+                return "<html><body>단일판매공급계약 본문</body></html>"
+
+        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
+        monkeypatch.setattr("dartlab.engines.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
+        register_defaults(None)
+        result = execute_tool(
+            "call_dart_openapi",
+            {"action": "document_text", "rcept_no": "20240312000736", "max_chars": 200},
+        )
+        assert "단일판매공급계약 본문" in result
+
+    def test_search_dart_filings_tool(self, monkeypatch):
+        import dartlab
+
+        class FakeOpenDart:
+            def filings(self, corp=None, start=None, end=None, type=None, final=False, market=None):
+                assert start == "20240301"
+                assert end == "20240307"
+                return pl.DataFrame(
+                    {
+                        "rcept_dt": ["20240307"],
+                        "corp_name": ["테스트기업"],
+                        "stock_code": ["000000"],
+                        "corp_cls": ["K"],
+                        "report_nm": ["단일판매공급계약체결"],
+                        "rcept_no": ["20240307000001"],
+                    }
+                )
+
+        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
+        monkeypatch.setattr("dartlab.engines.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
+        register_defaults(None)
+        result = execute_tool(
+            "search_dart_filings",
+            {
+                "start": "20240301",
+                "end": "20240307",
+                "keywords": "단일판매공급계약,공급계약",
+                "limit": 10,
+            },
+        )
+        assert "OpenDART 공시목록 검색 결과" in result
+        assert "단일판매공급계약체결" in result
+
     def test_call_edgar_openapi_company(self, monkeypatch):
         import dartlab
 
@@ -364,6 +463,8 @@ class TestRegisterDefaults:
         assert "yoy_analysis" in names
         assert "get_summary" in names
         assert "get_company_info" in names
+        assert "list_live_filings" in names
+        assert "read_filing" in names
 
     def test_get_data(self):
         company = MockCompany()
@@ -396,6 +497,36 @@ class TestRegisterDefaults:
         result = execute_tool("get_company_info", {})
         assert "테스트기업" in result
         assert "000000" in result
+
+    def test_list_live_filings(self):
+        company = MockCompany()
+        register_defaults(company)
+        result = execute_tool("list_live_filings", {"days": 7, "limit": 5})
+        assert "실시간 공시목록" in result
+        assert "단일판매공급계약체결" in result
+
+    def test_read_filing(self):
+        company = MockCompany()
+        register_defaults(company)
+        result = execute_tool("read_filing", {"doc_id": "20240312000736", "max_chars": 200})
+        assert "공시 본문 테스트" in result
+
+    def test_list_live_filings_guides_missing_dart_key(self, monkeypatch):
+        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dartKey.hasDartApiKey", lambda: False)
+        company = MockDartCompany()
+        register_defaults(company)
+        result = execute_tool("list_live_filings", {"days": 7, "limit": 5})
+        assert "OpenDART API 키가 필요합니다" in result
+        assert "우상단 설정" in result
+        assert "DART_API_KEY" in result
+
+    def test_read_filing_guides_missing_dart_key(self, monkeypatch):
+        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dartKey.hasDartApiKey", lambda: False)
+        company = MockDartCompany()
+        register_defaults(company)
+        result = execute_tool("read_filing", {"doc_id": "20240312000736", "max_chars": 200})
+        assert "OpenDART API 키가 필요합니다" in result
+        assert "공시 원문 조회" in result
 
     def test_yoy_analysis(self):
         company = MockCompany()

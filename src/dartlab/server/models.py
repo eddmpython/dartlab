@@ -81,6 +81,16 @@ class AiSecretUpdateRequest(BaseModel):
     clear: bool = False
 
 
+class DartKeyUpdateRequest(BaseModel):
+    api_key: str | None = Field(None, max_length=500)
+
+
+class ChannelConnectRequest(BaseModel):
+    token: str | None = Field(None, max_length=500)
+    botToken: str | None = Field(None, max_length=500)
+    appToken: str | None = Field(None, max_length=500)
+
+
 # --- Viewer 응답 스키마 ---
 
 

@@ -31,7 +31,7 @@ class _DocsAccessor:
 
     @property
     def sections(self) -> "_SectionsSource | None":
-        return self._sectionsAccessor if self._sectionsAccessor.raw is not None else None
+        return self._sectionsAccessor if self._company._hasDocs else None
 
     def sectionsOrdered(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> pl.DataFrame | None:
         sections = self.sections

@@ -58,6 +58,25 @@ class CompanyProtocol(Protocol):
 
     def filings(self) -> pl.DataFrame | None: ...
 
+    def liveFilings(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int | None = None,
+        limit: int = 20,
+        keyword: str | None = None,
+        forms: list[str] | tuple[str, ...] | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame: ...
+
+    def readFiling(
+        self,
+        filing: Any,
+        *,
+        maxChars: int | None = None,
+    ) -> dict[str, Any]: ...
+
     def view(self, *, port: int = 8400) -> None: ...
 
     def ask(

@@ -22,18 +22,17 @@ from __future__ import annotations
 from typing import Any, Generator
 
 from dartlab.engines.ai.runtime.events import AnalysisEvent
-from dartlab.engines.ai.runtime.post_processing import _detect_navigate_action, _run_validation
+from dartlab.engines.ai.runtime.post_processing import (
+    _detect_navigate_action,
+    _run_validation,
+    autoInjectArtifacts,
+)
 from dartlab.engines.ai.runtime.run_modes import (
     _run_agent,
     _run_guided_json,
     _run_light_mode,
     _run_stream,
 )
-
-# ── 상수 ──────────────────────────────────────────────────
-
-_COMPACT_PROVIDERS = frozenset({"ollama", "codex"})
-
 
 # ── 질문 복잡도 → 동적 max_turns ─────────────────────────
 
@@ -73,14 +72,11 @@ def _extract_data_date(company: Any) -> str | None:
 
 def _resolve_context_tier(provider: str, use_tools: bool) -> str:
     """standalone의 이진 선택과 server의 3단 선택을 통합."""
-    compact = provider in _COMPACT_PROVIDERS
     tool_capable = provider in {"openai", "ollama", "custom"}
 
-    if use_tools and tool_capable and not (compact and provider != "ollama"):
+    if use_tools and tool_capable:
         return "skeleton"
-    if compact:
-        return "focused"
-    return "full"
+    return "focused"
 
 
 # ── 에러 분류 ─────────────────────────────────────────────
@@ -277,6 +273,14 @@ def analyze(
         if val_event:
             yield val_event
 
+    # ── 후처리: auto-artifact injection ──
+    if company is not None:
+        _q_type = done_payload.get("_q_type")
+        _tc_names = done_payload.pop("_tool_call_names", [])
+        done_payload.pop("_q_type", None)
+        for art_event in autoInjectArtifacts(company, _q_type, _tc_names):
+            yield art_event
+
     # ── 후처리: plugin hints ──
     if question:
         from dartlab.core.plugins import get_loaded_plugins
@@ -336,6 +340,10 @@ def _analyze_inner(
     """analyze() 본체 — 에러 핸들링은 외부에서."""
     from dartlab.engines.ai import get_config
     from dartlab.engines.ai.providers import create_provider
+    from dartlab.engines.ai.context.dartOpenapi import (
+        buildDartFilingPrefetch,
+        buildMissingDartKeyUiAction,
+    )
 
     # ── report_mode 강제 설정 ──
     if report_mode:
@@ -366,6 +374,7 @@ def _analyze_inner(
 
     corp_name = getattr(company, "corpName", "Unknown") if company else None
     stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
+    dataReadySummary = ""
 
     # ── 2. 대화 상태 자동 빌드 ──
     state = None
@@ -426,7 +435,7 @@ def _analyze_inner(
 
         focus_context = build_focus_context(company, state)
 
-    if diff_context is None and auto_diff and company is not None:
+    if diff_context is None and auto_diff and company is not None and context_tier == "full":
         from dartlab.engines.ai.conversation.focus import build_diff_context
 
         diff_context = build_diff_context(company)
@@ -435,6 +444,7 @@ def _analyze_inner(
     from dartlab.engines.ai.conversation.intent import has_analysis_intent
 
     is_light = company is not None and not has_analysis_intent(state.question if state else question)
+    dart_filing_prefetch = buildDartFilingPrefetch(question, company=company)
 
     # ── 7. Meta 이벤트 (데이터 신선도 포함) ──
     meta = conversation_meta or {}
@@ -446,11 +456,34 @@ def _analyze_inner(
         _dataDate = _extract_data_date(company)
         if _dataDate:
             meta.setdefault("dataDate", _dataDate)
+        if stock_id:
+            try:
+                from dartlab.engines.ai.conversation.data_ready import formatDataReadyStatus
+
+                dataReadySummary = formatDataReadyStatus(stock_id, detailed=False)
+                _done_payload["dataReady"] = dataReadySummary
+            except (AttributeError, ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+                dataReadySummary = ""
     yield AnalysisEvent("meta", meta)
 
     # ── 8. Snapshot 이벤트 ──
     if snapshot is not None:
         yield AnalysisEvent("snapshot", snapshot)
+
+    if dart_filing_prefetch.matched and dart_filing_prefetch.needsKey:
+        ui_action = dart_filing_prefetch.uiAction or buildMissingDartKeyUiAction()
+        yield AnalysisEvent("ui_action", ui_action)
+        yield AnalysisEvent(
+            "context",
+            {
+                "module": "_dart_openapi_filings",
+                "label": "OpenDART 키 설정 안내",
+                "text": dart_filing_prefetch.message,
+            },
+        )
+        _full_response_parts.append(dart_filing_prefetch.message)
+        yield AnalysisEvent("chunk", {"text": dart_filing_prefetch.message})
+        return
 
     # ── 9. Light mode 경로 ──
     if is_light:
@@ -503,9 +536,20 @@ def _analyze_inner(
         context_parts.extend(modules_dict[name] for name in included_tables_local if name in modules_dict)
         context_text = "\n\n".join(context_parts)
 
+    if dart_filing_prefetch.matched and dart_filing_prefetch.contextText:
+        context_text = f"{context_text}\n\n{dart_filing_prefetch.contextText}" if context_text else dart_filing_prefetch.contextText
+        yield AnalysisEvent(
+            "context",
+            {
+                "module": "_dart_openapi_filings",
+                "label": "OpenDART 공시목록",
+                "text": dart_filing_prefetch.contextText,
+            },
+        )
+
     # focus/diff context 합류
     if focus_context and company is None:
-        context_text = focus_context
+        context_text = f"{context_text}\n\n{focus_context}" if context_text else focus_context
     if diff_context:
         context_text = f"{context_text}\n\n{diff_context}" if context_text else diff_context
         yield AnalysisEvent(
@@ -544,6 +588,8 @@ def _analyze_inner(
         sector = _get_sector(company)
 
     q_type = _classify_question(question)
+    _done_payload["_q_type"] = q_type
+    _done_payload["_tool_call_names"] = []
     company_market = getattr(company, "market", "KR") if company else "KR"
     static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
@@ -555,6 +601,10 @@ def _analyze_inner(
         report_mode=report_mode,
         market=company_market,
     )
+
+    if dataReadySummary:
+        dataReadyBlock = f"데이터 가용성\n{dataReadySummary}"
+        dynamic_part = f"{dynamic_part}\n\n{dataReadyBlock}" if dynamic_part else dataReadyBlock
 
     if dialogue_policy:
         dynamic_part = dynamic_part + "\n\n" + dialogue_policy if dynamic_part else dialogue_policy
@@ -607,7 +657,6 @@ def _analyze_inner(
     tool_capable = (
         not use_guided
         and use_tools
-        and company is not None
         and getattr(llm, "supports_native_tools", False)
         and hasattr(llm, "complete_with_tools")
     )
@@ -618,7 +667,7 @@ def _analyze_inner(
         if max_tools is None and resolved_provider == "ollama":
             max_tools = 10
         effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))
-        yield from _run_agent(
+        for _ev in _run_agent(
             llm,
             messages,
             company,
@@ -627,7 +676,10 @@ def _analyze_inner(
             max_tools=max_tools,
             q_type=q_type,
             _full_response_parts=_full_response_parts,
-        )
+        ):
+            if _ev.kind == "tool_call" and isinstance(_ev.data, dict):
+                _done_payload["_tool_call_names"].append(_ev.data.get("name", ""))
+            yield _ev
     else:
         yield from _run_stream(llm, messages, _full_response_parts)
 
