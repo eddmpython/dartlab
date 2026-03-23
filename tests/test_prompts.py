@@ -149,6 +149,7 @@ class TestBuildSystemPrompt:
         result = build_system_prompt(allow_tools=False)
         assert "## 현재 실행 제약" in result
         assert "이번 답변에서는 도구 호출을 사용할 수 없습니다" in result
+        assert "손익계산서/재무상태표/현금흐름표/재무비율" in result
         assert "## 공시 데이터 접근법 (도구 사용)" not in result
         assert "## 공시 도구" not in result
 

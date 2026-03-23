@@ -134,6 +134,10 @@
 - 다음 회차 replay는 같은 persona 파일을 이어서 보고, `효과적이었는지`와 `이번 개선으로 줄여야 할 failure type`을 같이 적는다.
 - 개선 루프는 항상 `질문 세트 추가 → replay → failure taxonomy 확인 → AI fix vs DartLab core fix 분리 → 회귀 재실행` 순서로 간다.
 - "장기 학습"은 모델 학습이 아니라 이 replay/backlog 루프를 뜻한다.
+- replay에서 반복 실패한 질문 묶음은 generic ambiguity로 남기지 말고 강제 규칙으로 승격한다.
+  - `부실 징후`류 질문 → `finance` route 고정
+  - `영업이익률 + 비용 구조 + 사업 변화` → `IS + costByNature + businessOverview/productService` 강제 hybrid, clarification 금지
+  - `최근 공시 + 사업 구조 변화` → `disclosureChanges`에 `businessOverview/productService`를 같이 회수
 
 ## User Language 원칙
 
@@ -144,6 +148,10 @@
 - tool 이름도 UI에서는 사용자 행동 기준 문구로 보여준다.
   - 예: `list_live_filings` → `실시간 공시 목록 조회`
   - 예: `get_data` → `재무·공시 데이터 조회`
+- ask 본문도 기본적으로 사용자 언어를 쓴다.
+  - `IS/BS/CF/ratios/TTM` → `손익계산서/재무상태표/현금흐름표/재무비율/최근 4분기 합산`
+  - `costByNature/businessOverview/productService` → `성격별 비용 분류/사업의 개요/제품·서비스`
+  - `topic/period/source` → `항목/시점/출처`
 
 ## Sections First Retrieval
 

@@ -228,6 +228,8 @@ def build_system_prompt_parts(
         "## 현재 실행 제약\n"
         "- 이번 답변에서는 도구 호출을 사용할 수 없습니다.\n"
         "- `show_topic()`, `list_topics()`, `get_evidence()` 같은 호출 계획을 문장으로 출력하지 마세요.\n"
+        "- `IS/BS/CF/ratios/TTM/costByNature/businessOverview` 같은 내부 약어나 모듈명을 그대로 쓰지 말고 "
+        "`손익계산서/재무상태표/현금흐름표/재무비율/최근 4분기 합산/성격별 비용 분류/사업의 개요`처럼 사용자 언어로 바꾸세요.\n"
         "- 이미 제공된 컨텍스트만 사용해 바로 답변하고, 확인 질문이 필요하면 한 문장만 하세요."
     )
 

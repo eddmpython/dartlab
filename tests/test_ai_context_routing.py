@@ -7,6 +7,7 @@ import pytest
 
 from dartlab.core.memory import BoundedCache
 from dartlab.engines.ai.context import build_compact_context, build_context_by_module
+from dartlab.engines.ai.context.builder import _resolve_context_route
 from dartlab.engines.ai.runtime.core import (
     _resolve_context_tier,
     _resolve_snapshot_policy,
@@ -537,6 +538,152 @@ def test_ambiguous_cost_question_emits_single_clarification_without_loading_summ
     assert included == []
     assert "_clarify" in modules
     assert "한 문장만" in modules["_clarify"]
+
+
+def test_distress_question_forces_finance_route():
+    route = _resolve_context_route("삼성SDI의 부실 징후를 지금 시점에서 점검해줘", include=None, q_types=[])
+    assert route == "finance"
+
+
+def test_margin_driver_question_forces_hybrid_without_clarification():
+    class MarginSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10, 20],
+                        "chapter": ["II", "II"],
+                        "topic": ["businessOverview", "productService"],
+                        "source": ["docs", "docs"],
+                        "blocks": [1, 1],
+                        "periods": [2, 2],
+                        "latestPeriod": ["2024", "2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024", "2023"],
+                    "sectionOrder": [10, 10],
+                    "block": [0, 0],
+                    "type": ["text", "text"],
+                    "title": ["사업 개요", "사업 개요"],
+                    "preview": ["반도체 비중 확대", "메모리 중심"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview", "productService"]
+
+    class MarginDriverCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        docs = SimpleNamespace(sections=MarginSectionsAccessor())
+        sector = SimpleNamespace(sector=None)
+
+        @property
+        def annual(self):
+            series = {
+                "IS": {
+                    "sales": [1000.0, 1200.0],
+                    "cost_of_sales": [700.0, 820.0],
+                    "gross_profit": [300.0, 380.0],
+                    "selling_and_administrative_expenses": [120.0, 150.0],
+                    "operating_profit": [180.0, 230.0],
+                    "net_profit": [150.0, 190.0],
+                }
+            }
+            return series, ["2023", "2024"]
+
+        @property
+        def timeseries(self):
+            return ({}, ["2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4"])
+
+        def getRatios(self):
+            return _FakeRatioResult()
+
+        def _get_primary(self, name: str):
+            if name == "costByNature":
+                return pl.DataFrame({"account": ["급여", "감가상각비"], "2024": [100.0, 80.0]})
+            return None
+
+        def _topicLabel(self, topic: str) -> str:
+            return {"businessOverview": "사업의 개요", "productService": "제품·서비스"}.get(topic, topic)
+
+    modules, included, _ = build_context_by_module(
+        MarginDriverCompany(),
+        "삼성전자 영업이익률 변동을 비용 구조와 사업 변화까지 묶어서 설명해줘",
+        compact=True,
+    )
+
+    assert "IS" in included
+    assert "costByNature" in included
+    assert "businessOverview" in included
+    assert "_clarify" not in modules
+    assert "손익계산서/재무상태표/현금흐름표/재무비율" in modules["_response_contract"]
+
+
+def test_recent_disclosure_business_change_adds_business_overview_context():
+    class RecentSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10, 20, 30],
+                        "chapter": ["II", "III", "III"],
+                        "topic": ["businessOverview", "disclosureChanges", "productService"],
+                        "source": ["docs", "docs", "docs"],
+                        "blocks": [1, 1, 1],
+                        "periods": [2, 2, 2],
+                        "latestPeriod": ["2024", "2024", "2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024", "2023"],
+                    "sectionOrder": [10, 10],
+                    "block": [0, 0],
+                    "type": ["text", "text"],
+                    "title": ["변화 요약", "변화 요약"],
+                    "preview": ["사업 구조 일부 조정", "전년 구조 유지"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview", "disclosureChanges", "productService"]
+
+    class RecentBusinessChangeCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        docs = SimpleNamespace(sections=RecentSectionsAccessor())
+
+        @property
+        def annual(self):
+            raise AssertionError("recent disclosure structure question should not access annual finance")
+
+        @property
+        def report(self):
+            raise AssertionError("recent disclosure structure question should not access report")
+
+        def getRatios(self):
+            raise AssertionError("recent disclosure structure question should not access ratios")
+
+        def _topicLabel(self, topic: str) -> str:
+            return {
+                "businessOverview": "사업의 개요",
+                "disclosureChanges": "공시 변화",
+                "productService": "제품·서비스",
+            }.get(topic, topic)
+
+    modules, included, _ = build_context_by_module(
+        RecentBusinessChangeCompany(),
+        "최근 공시 기준으로 삼성전자 사업 구조가 바뀐 부분이 있나",
+        compact=True,
+    )
+
+    assert included[:2] == ["disclosureChanges", "businessOverview"]
+    assert "_clarify" not in modules
 
 
 def test_resolve_context_tier_defaults_to_focused_for_default_ask():

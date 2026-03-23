@@ -107,6 +107,21 @@ _ROUTE_REPORT_FINANCE_HINTS = frozenset(
         "가능한지",
     }
 )
+_ROUTE_DISTRESS_KEYWORDS = frozenset(
+    {
+        "부실",
+        "부실 징후",
+        "위기 징후",
+        "재무 위기",
+        "유동성 위기",
+        "자금 압박",
+        "상환 부담",
+        "이자보상",
+        "존속 가능",
+        "going concern",
+        "distress",
+    }
+)
 _SUMMARY_REQUEST_KEYWORDS = frozenset({"종합", "전반", "전체", "요약", "개괄", "한눈에"})
 _SECTIONS_TYPE_DEFAULTS: dict[str, list[str]] = {
     "사업": ["businessOverview", "productService", "salesOrder"],
@@ -166,6 +181,10 @@ _CANDIDATE_ALIASES = {
     "segment": "segments",
     "operationalAsset": "tangibleAsset",
 }
+_MARGIN_DRIVER_MARGIN_HINTS = frozenset({"영업이익률", "마진", "이익률", "margin"})
+_MARGIN_DRIVER_COST_HINTS = frozenset({"비용 구조", "원가 구조", "비용", "원가", "판관비", "매출원가"})
+_MARGIN_DRIVER_BUSINESS_HINTS = frozenset({"사업 변화", "사업변화", "사업 구조", "사업구조"})
+_RECENT_DISCLOSURE_BUSINESS_HINTS = frozenset({"사업 변화", "사업변화", "사업 구조", "사업구조"})
 
 
 def _section_key_to_module_name(key: str) -> str:
@@ -232,6 +251,15 @@ def _resolve_context_route(
     if include:
         return "hybrid"
 
+    if _has_margin_driver_pattern(question):
+        return "hybrid"
+
+    if _has_distress_pattern(question):
+        return "finance"
+
+    if _has_recent_disclosure_business_pattern(question):
+        return "sections"
+
     question_lower = question.lower()
     q_set = set(q_types)
     has_report = any(keyword in question for keyword in _ROUTE_REPORT_KEYWORDS)
@@ -285,6 +313,23 @@ def _question_has_any(question: str, keywords: set[str] | frozenset[str]) -> boo
     return any(keyword.lower() in lowered for keyword in keywords)
 
 
+def _has_distress_pattern(question: str) -> bool:
+    return _question_has_any(question, _ROUTE_DISTRESS_KEYWORDS)
+
+
+def _has_margin_driver_pattern(question: str) -> bool:
+    return (
+        _question_has_any(question, _MARGIN_DRIVER_MARGIN_HINTS)
+        and _question_has_any(question, _MARGIN_DRIVER_COST_HINTS)
+        and _question_has_any(question, _MARGIN_DRIVER_BUSINESS_HINTS)
+    )
+
+
+def _has_recent_disclosure_business_pattern(question: str) -> bool:
+    lowered = question.lower()
+    return "최근 공시" in lowered and _question_has_any(question, _RECENT_DISCLOSURE_BUSINESS_HINTS)
+
+
 def _resolve_direct_hint_modules(question: str) -> list[str]:
     selected: list[str] = []
     lowered = question.lower()
@@ -293,6 +338,20 @@ def _resolve_direct_hint_modules(question: str) -> list[str]:
             for module_name in modules:
                 _append_unique(selected, _normalize_candidate_module(module_name))
     return selected
+
+
+def _apply_question_specific_boosts(question: str, selected: list[str]) -> None:
+    if _has_distress_pattern(question):
+        for module_name in ("BS", "IS", "CF", "ratios"):
+            _append_unique(selected, module_name)
+
+    if _has_margin_driver_pattern(question):
+        for module_name in ("IS", "costByNature", "businessOverview", "productService"):
+            _append_unique(selected, module_name)
+
+    if _has_recent_disclosure_business_pattern(question):
+        for module_name in ("businessOverview", "productService"):
+            _append_unique(selected, module_name)
 
 
 def _resolve_candidate_modules(
@@ -312,6 +371,8 @@ def _resolve_candidate_modules(
 
         for name in _resolve_tables(question, None, exclude):
             _append_unique(selected, _normalize_candidate_module(name))
+
+    _apply_question_specific_boosts(question, selected)
 
     if exclude:
         excluded = {_normalize_candidate_module(name) for name in exclude}
@@ -384,6 +445,9 @@ def _resolve_candidate_plan(
     report_set = _available_report_modules(company) if route in {"report", "hybrid"} else set()
     notes_set = _available_notes_modules(company) if route == "hybrid" else set()
     explicit_direct = set(_resolve_direct_hint_modules(question))
+    boosted_direct: list[str] = []
+    _apply_question_specific_boosts(question, boosted_direct)
+    explicit_direct.update(name for name in boosted_direct if name not in _FINANCE_CONTEXT_MODULES)
     if include:
         explicit_direct.update(_normalize_candidate_module(name) for name in include)
 
@@ -438,6 +502,9 @@ def _resolve_finance_modules_for_question(
 ) -> list[str]:
     selected: list[str] = []
     finance_candidates = [name for name in candidate_plan.get("finance", []) if name in _FINANCE_STATEMENT_MODULES]
+
+    if _has_margin_driver_pattern(question):
+        _append_unique(selected, "IS")
 
     if route == "finance":
         if _question_has_any(question, _INCOME_STATEMENT_HINTS):
@@ -512,6 +579,14 @@ def _build_response_contract(
     lines.append(
         "- `show_topic()` 같은 도구 호출 계획이나 내부 절차 설명을 답변 본문에 쓰지 말고 바로 분석 결과를 말하세요."
     )
+    lines.append(
+        "- 답변 본문에서는 `IS/BS/CF/ratios/TTM/topic/period/source` 같은 내부 약어나 필드명을 그대로 쓰지 말고 "
+        "`손익계산서/재무상태표/현금흐름표/재무비율/최근 4분기 합산/항목/시점/출처`처럼 사용자 언어로 바꾸세요."
+    )
+    lines.append(
+        "- `costByNature`, `businessOverview`, `productService` 같은 내부 모듈명도 각각 "
+        "`성격별 비용 분류`, `사업의 개요`, `제품·서비스`처럼 바꿔 쓰세요."
+    )
 
     module_set = set(included_modules)
     if "costByNature" in module_set:
@@ -523,11 +598,14 @@ def _build_response_contract(
         )
     if {"dividend", "IS", "CF"} <= module_set or {"dividend", "CF"} <= module_set:
         lines.append("- `dividend`와 `IS/CF`가 같이 있으면 배당의 이익/현금흐름 커버 여부를 한 줄로 명시하세요.")
+    if _has_distress_pattern(question):
+        lines.append("- `부실 징후` 질문이면 건전성 결론을 먼저 말하고, 수익성·현금흐름·차입 부담 순으로 짧게 정리하세요.")
     if route == "sections" or any(keyword in question for keyword in ("근거", "왜", "최근 공시 기준", "출처")):
         lines.append("- 근거 질문이면 `topic`, `period`, `source`를 최소 2개 명시하세요.")
         lines.append(
             "- `period`와 `source`는 outline 표에 나온 실제 값을 쓰세요. '최근 공시 기준' 같은 포괄 표현으로 뭉개지 마세요."
         )
+        lines.append("- 본문에서는 `topic/period/source` 대신 `항목/시점/출처`처럼 자연어를 쓰세요.")
     return "\n".join(lines)
 
 
@@ -537,6 +615,9 @@ def _build_clarification_context(
     *,
     candidate_plan: dict[str, list[str]],
 ) -> str | None:
+    if _has_margin_driver_pattern(question):
+        return None
+
     lowered = question.lower()
     module_set = set(candidate_plan.get("verified", []))
     has_cost_by_nature = "costByNature" in module_set
@@ -628,6 +709,10 @@ def _resolve_sections_topics(
     if include:
         for name in include:
             append(name)
+
+    if _has_recent_disclosure_business_pattern(question):
+        append("disclosureChanges")
+        append("businessOverview")
 
     candidate_source = _resolve_tables(question, None, exclude) if candidates is None else candidates
     for name in candidate_source:
