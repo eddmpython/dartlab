@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.asyncio]
+pytestmark = pytest.mark.unit
 
 from dartlab.server.room import (
     HEARTBEAT_TIMEOUT,
