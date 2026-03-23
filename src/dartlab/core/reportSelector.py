@@ -15,7 +15,8 @@ def selectReport(df: pl.DataFrame, year: str, reportKind: str = "annual") -> pl.
     if kindFilter is None:
         return None
 
-    reports = df.filter((pl.col("year") == year) & (pl.col("report_type").str.contains(kindFilter)))
+    useLiteral = reportKind in {"annual", "semi"}
+    reports = df.filter((pl.col("year") == year) & (pl.col("report_type").str.contains(kindFilter, literal=useLiteral)))
     if reports.height == 0:
         return None
 

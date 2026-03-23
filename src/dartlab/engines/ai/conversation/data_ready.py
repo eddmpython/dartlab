@@ -66,7 +66,6 @@ def formatDataReadyStatus(stockCode: str, *, detailed: bool = False) -> str:
         lines.append("\n모든 데이터가 준비되어 있습니다. 바로 분석을 진행할 수 있습니다.")
     else:
         lines.append(
-            "\n일부 데이터가 없습니다. `download_data` 도구로 다운로드하거나, "
-            "사용자에게 다운로드 여부를 물어보세요."
+            "\n일부 데이터가 없습니다. `download_data` 도구로 다운로드하거나, 사용자에게 다운로드 여부를 물어보세요."
         )
     return "\n".join(lines)

@@ -218,7 +218,10 @@ def _resolve_report_modules_for_question(
 
     if include:
         for name in include:
-            if name in {"dividend", "employee", "majorHolder", "executive", "audit", "treasuryStock"} and name not in modules:
+            if (
+                name in {"dividend", "employee", "majorHolder", "executive", "audit", "treasuryStock"}
+                and name not in modules
+            ):
                 modules.append(name)
 
     if exclude:
@@ -245,7 +248,9 @@ def _resolve_sections_topics(
     available = (
         manifest["topic"].drop_nulls().to_list()
         if isinstance(manifest, pl.DataFrame) and "topic" in manifest.columns
-        else sections.topics() if hasattr(sections, "topics") else []
+        else sections.topics()
+        if hasattr(sections, "topics")
+        else []
     )
     availableTopics = [topic for topic in available if isinstance(topic, str) and topic]
     availableSet = set(availableTopics)
@@ -304,6 +309,19 @@ def _build_sections_context(
         lines = [f"\n## {label}"]
         lines.append(df_to_markdown(outline.head(6 if compact else 10), max_rows=6 if compact else 10, compact=True))
 
+        if compact:
+            if "preview" in outline.columns:
+                previews = [
+                    text.strip()
+                    for text in outline["preview"].drop_nulls().to_list()
+                    if isinstance(text, str) and text.strip()
+                ]
+                if previews:
+                    lines.append("\n### 핵심 preview")
+                    lines.extend(f"- {preview}" for preview in previews[:2])
+            result[f"section_{topic}"] = "\n".join(lines)
+            continue
+
         try:
             raw_sections = sections.raw if hasattr(sections, "raw") else None
         except _CONTEXT_ERRORS:
@@ -316,14 +334,26 @@ def _build_sections_context(
         )
 
         block_builder = getattr(company, "_buildBlockIndex", None)
-        block_index = block_builder(topic_rows) if callable(block_builder) and isinstance(topic_rows, pl.DataFrame) else None
+        block_index = (
+            block_builder(topic_rows) if callable(block_builder) and isinstance(topic_rows, pl.DataFrame) else None
+        )
 
         if isinstance(block_index, pl.DataFrame) and not block_index.is_empty():
             lines.append("\n### block index")
-            lines.append(df_to_markdown(block_index.head(4 if compact else 6), max_rows=4 if compact else 6, compact=True))
+            lines.append(
+                df_to_markdown(block_index.head(4 if compact else 6), max_rows=4 if compact else 6, compact=True)
+            )
 
-            block_col = "block" if "block" in block_index.columns else "blockOrder" if "blockOrder" in block_index.columns else None
-            type_col = "type" if "type" in block_index.columns else "blockType" if "blockType" in block_index.columns else None
+            block_col = (
+                "block"
+                if "block" in block_index.columns
+                else "blockOrder"
+                if "blockOrder" in block_index.columns
+                else None
+            )
+            type_col = (
+                "type" if "type" in block_index.columns else "blockType" if "blockType" in block_index.columns else None
+            )
             sample_block = None
             if block_col:
                 for row in block_index.iter_rows(named=True):
@@ -434,7 +464,9 @@ def _build_compact_context_modules_inner(
                 partial = [y for y in years[-n_years:] if quarter_counts.get(y, 4) < 4]
                 if partial:
                     notes = ", ".join(f"{y}년=Q1~Q{quarter_counts[y]}" for y in partial)
-                    header += f"⚠️ **부분 연도 주의**: {notes} (해당 연도는 분기 누적이므로 전년 연간과 직접 비교 불가)\n"
+                    header += (
+                        f"⚠️ **부분 연도 주의**: {notes} (해당 연도는 분기 누적이므로 전년 연간과 직접 비교 불가)\n"
+                    )
 
                 header_parts.append(header)
 

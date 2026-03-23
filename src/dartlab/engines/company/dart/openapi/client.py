@@ -14,7 +14,6 @@ from typing import Any
 import polars as pl
 import requests
 
-from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
 from dartlab.engines.company.dart.openapi.dartKey import resolveDartKeys
 
 BASE_URL = "https://opendart.fss.or.kr/api"

@@ -17,6 +17,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.engines.ai.conversation.prompts import _classify_question
+from dartlab.engines.ai.tools.recipes import RECIPES, getRecipe
 
 _log = logging.getLogger(__name__)
 _PIPELINE_ERRORS = (
@@ -28,6 +29,9 @@ _PIPELINE_ERRORS = (
     ValueError,
     pl.exceptions.PolarsError,
 )
+
+# legacy tests / coverage helpers still import this name directly.
+_PIPELINE_MAP = dict(RECIPES)
 
 
 def classify_question(question: str) -> str:
@@ -49,7 +53,6 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
     q_type = classify_question(question)
 
     sections: list[str] = []
-    from dartlab.engines.ai.tools.recipes import getRecipe
 
     for runnerName in getRecipe(q_type):
         runner = _RECIPE_RUNNERS.get(runnerName)

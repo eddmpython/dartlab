@@ -19,6 +19,16 @@ _ADAPTER_ERRORS = (
 )
 
 
+class _RatioProxy:
+    """누락 속성은 None으로 흡수하는 lightweight ratio adapter."""
+
+    def __init__(self, inner: Any):
+        self._inner = inner
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name, None)
+
+
 def get_headline_ratios(company: Any) -> Any | None:
     """Return RatioResult-like object regardless of facade surface."""
     # 내부용 _getRatiosInternal 우선 (deprecation warning 없음)
@@ -28,7 +38,7 @@ def get_headline_ratios(company: Any) -> Any | None:
         try:
             result = getter()
             if result is not None and hasattr(result, "roe"):
-                return result
+                return _RatioProxy(result)
         except _ADAPTER_ERRORS:
             pass
 
@@ -38,7 +48,7 @@ def get_headline_ratios(company: Any) -> Any | None:
         try:
             result = finance_getter()
             if result is not None and hasattr(result, "roe"):
-                return result
+                return _RatioProxy(result)
         except _ADAPTER_ERRORS:
             pass
 
@@ -47,7 +57,7 @@ def get_headline_ratios(company: Any) -> Any | None:
         getattr(finance, "ratios", None),
     ):
         if candidate is not None and hasattr(candidate, "roe"):
-            return candidate
+            return _RatioProxy(candidate)
 
     return None
 

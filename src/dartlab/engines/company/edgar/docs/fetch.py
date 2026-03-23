@@ -658,7 +658,7 @@ def _downloadHtml(url: str, *, maxRetries: int = 3) -> str:
     """HTML 다운로드 (재시도 포함)."""
     lastErr: Exception | None = None
     for attempt in range(maxRetries):
-        time.sleep(REQUEST_INTERVAL if attempt == 0 else REQUEST_INTERVAL * (2 ** attempt))
+        time.sleep(REQUEST_INTERVAL if attempt == 0 else REQUEST_INTERVAL * (2**attempt))
         try:
             resp = requests.get(url, headers=HEADERS, timeout=60)
             resp.raise_for_status()

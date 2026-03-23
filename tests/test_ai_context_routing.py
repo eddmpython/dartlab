@@ -7,7 +7,7 @@ import pytest
 
 from dartlab.core.memory import BoundedCache
 from dartlab.engines.ai.context import build_context_by_module
-from dartlab.engines.ai.runtime.core import _resolve_context_tier
+from dartlab.engines.ai.runtime.core import _resolve_context_tier, _resolve_snapshot_policy, _should_run_validation
 from dartlab.engines.company.dart._docs_accessor import _DocsAccessor
 from dartlab.engines.company.dart.company import Company
 
@@ -124,7 +124,9 @@ def test_company_topics_combines_docs_manifest_and_finance_summary_without_secti
         raise AssertionError(f"unexpected category: {category}")
 
     monkeypatch.setattr("dartlab.engines.company.dart.company.loadData", fake_load_data)
-    monkeypatch.setattr("dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview")
+    monkeypatch.setattr(
+        "dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview"
+    )
 
     company = _bare_company(has_docs=True, has_finance=True)
 
@@ -297,7 +299,87 @@ def test_sections_question_avoids_finance_and_report_paths():
     assert "section_businessOverview" in modules
 
 
+def test_sections_question_compact_mode_uses_outline_preview_without_raw():
+    class FakeSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10],
+                        "chapter": ["II"],
+                        "topic": ["businessOverview"],
+                        "source": ["docs"],
+                        "blocks": [1],
+                        "periods": [2],
+                        "latestPeriod": ["2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024", "2023"],
+                    "sectionOrder": [10, 10],
+                    "block": [0, 0],
+                    "type": ["text", "text"],
+                    "title": ["사업 개요", "사업 개요"],
+                    "preview": ["반도체와 배터리", "메모리와 소재"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview"]
+
+        @property
+        def raw(self):
+            raise AssertionError("compact sections route should not access raw sections")
+
+    class SectionsOnlyCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        docs = SimpleNamespace(sections=FakeSectionsAccessor())
+
+        @property
+        def annual(self):
+            raise AssertionError("sections route should not access annual finance")
+
+        def getRatios(self):
+            raise AssertionError("sections route should not access ratios")
+
+        def _topicLabel(self, topic: str) -> str:
+            return {"businessOverview": "사업의 개요"}.get(topic, topic)
+
+    modules, included, _ = build_context_by_module(SectionsOnlyCompany(), "무슨 사업 하는 회사냐", compact=True)
+
+    assert "businessOverview" in included
+    assert "핵심 preview" in modules["section_businessOverview"]
+
+
 def test_resolve_context_tier_defaults_to_focused_for_default_ask():
     assert _resolve_context_tier("oauth-codex", use_tools=False) == "focused"
     assert _resolve_context_tier("openai", use_tools=False) == "focused"
     assert _resolve_context_tier("openai", use_tools=True) == "skeleton"
+
+
+def test_resolve_snapshot_policy_skips_sections_and_report_routes():
+    finance_policy = _resolve_snapshot_policy("영업이익률 추세를 분석해줘", (), False)
+    sections_policy = _resolve_snapshot_policy("무슨 사업 하는 회사냐", (), False)
+    report_policy = _resolve_snapshot_policy("배당 추세 알려줘", (), False)
+
+    assert finance_policy["route"] == "finance"
+    assert finance_policy["enabled"] is True
+    assert finance_policy["includeInsights"] is False
+    assert finance_policy["includeDataDate"] is False
+
+    assert sections_policy["route"] == "sections"
+    assert sections_policy["enabled"] is False
+    assert sections_policy["includeDataDate"] is False
+
+    assert report_policy["route"] == "report"
+    assert report_policy["enabled"] is False
+    assert report_policy["includeDataDate"] is False
+
+
+def test_should_run_validation_only_for_finance_modules():
+    assert _should_run_validation(["IS", "ratios"]) is True
+    assert _should_run_validation(["section_businessOverview", "businessOverview"]) is False
+    assert _should_run_validation(["dividend"]) is False

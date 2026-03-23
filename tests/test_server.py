@@ -311,7 +311,15 @@ class TestOpenDartKey:
             lambda startPath=None: type(
                 "Status",
                 (),
-                {"toDict": lambda self: {"configured": False, "source": "none", "keyCount": 0, "envPath": ".env", "writable": True}},
+                {
+                    "toDict": lambda self: {
+                        "configured": False,
+                        "source": "none",
+                        "keyCount": 0,
+                        "envPath": ".env",
+                        "writable": True,
+                    }
+                },
             )(),
         )
 
@@ -332,7 +340,15 @@ class TestOpenDartKey:
             lambda startPath=None: type(
                 "Status",
                 (),
-                {"toDict": lambda self: {"configured": True, "source": "dotenv", "keyCount": 1, "envPath": ".env", "writable": True}},
+                {
+                    "toDict": lambda self: {
+                        "configured": True,
+                        "source": "dotenv",
+                        "keyCount": 1,
+                        "envPath": ".env",
+                        "writable": True,
+                    }
+                },
             )(),
         )
 
@@ -353,7 +369,15 @@ class TestOpenDartKey:
             lambda startPath=None: type(
                 "Status",
                 (),
-                {"toDict": lambda self: {"configured": False, "source": "none", "keyCount": 0, "envPath": ".env", "writable": True}},
+                {
+                    "toDict": lambda self: {
+                        "configured": False,
+                        "source": "none",
+                        "keyCount": 0,
+                        "envPath": ".env",
+                        "writable": True,
+                    }
+                },
             )(),
         )
 

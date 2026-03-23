@@ -50,7 +50,7 @@ def _judge_pct_inv(val: float | None, good: float, caution: float) -> str | None
     return "danger"
 
 
-def build_snapshot(company: Any) -> dict | None:
+def build_snapshot(company: Any, *, includeInsights: bool = True) -> dict | None:
     """ratios + 핵심 시계열에서 즉시 표시할 스냅샷 데이터 추출."""
     ratios = get_headline_ratios(company)
     if ratios is None:
@@ -184,15 +184,15 @@ def build_snapshot(company: Any) -> dict | None:
     if ratios.warnings:
         snapshot["warnings"] = ratios.warnings[:3]
 
-    # insight grades 통합
-    try:
-        from dartlab.engines.analysis.insight.pipeline import analyze as insight_analyze
+    if includeInsights:
+        try:
+            from dartlab.engines.analysis.insight.pipeline import analyze as insight_analyze
 
-        insight_result = insight_analyze(company.stockCode, company=company)
-        if insight_result is not None:
-            snapshot["grades"] = insight_result.grades()
-            snapshot["anomalyCount"] = len(insight_result.anomalies)
-    except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
-        pass
+            insight_result = insight_analyze(company.stockCode, company=company)
+            if insight_result is not None:
+                snapshot["grades"] = insight_result.grades()
+                snapshot["anomalyCount"] = len(insight_result.anomalies)
+        except (ImportError, AttributeError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+            pass
 
     return snapshot

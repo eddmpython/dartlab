@@ -37,6 +37,7 @@ from dartlab.engines.ai.runtime.run_modes import (
 # ── 질문 복잡도 → 동적 max_turns ─────────────────────────
 
 _MULTI_KEYWORDS = frozenset({"비교", "vs", "종합", "전체", "전반", "왜", "구체적", "상세", "분석해"})
+_VALIDATION_MODULES = frozenset({"BS", "IS", "CF", "ratios", "fsSummary"})
 
 
 def _estimate_max_turns(question: str, q_type: str) -> int:
@@ -49,6 +50,11 @@ def _estimate_max_turns(question: str, q_type: str) -> int:
     if q_type == "종합":
         turns += 3
     return min(turns, 10)
+
+
+def _should_run_validation(included_tables: list[str]) -> bool:
+    """재무 컨텍스트가 실제로 포함된 경우에만 검증을 수행한다."""
+    return bool(_VALIDATION_MODULES & set(included_tables))
 
 
 # ── 데이터 신선도 추출 ────────────────────────────────────
@@ -77,6 +83,32 @@ def _resolve_context_tier(provider: str, use_tools: bool) -> str:
     if use_tools and tool_capable:
         return "skeleton"
     return "focused"
+
+
+def _resolve_runtime_route(question: str, question_types: tuple[str, ...], report_mode: bool) -> str:
+    """질문별 cheap-first 런타임 경로를 결정한다."""
+    if report_mode:
+        return "hybrid"
+
+    try:
+        from dartlab.engines.ai.context.builder import _resolve_context_route
+
+        q_types = list(question_types) if question_types else []
+        return _resolve_context_route(question, include=None, q_types=q_types)
+    except (AttributeError, ImportError, RuntimeError, TypeError, ValueError):
+        return "hybrid"
+
+
+def _resolve_snapshot_policy(question: str, question_types: tuple[str, ...], report_mode: bool) -> dict[str, Any]:
+    """질문별 snapshot 비용 정책."""
+    route = _resolve_runtime_route(question, question_types, report_mode)
+    enabled = route not in {"sections", "report"}
+    return {
+        "route": route,
+        "enabled": enabled,
+        "includeInsights": False,
+        "includeDataDate": route == "hybrid",
+    }
 
 
 # ── 에러 분류 ─────────────────────────────────────────────
@@ -268,7 +300,7 @@ def analyze(
             yield nav_event
 
     # ── 후처리: validation ──
-    if validate and company is not None and full_response_parts:
+    if validate and company is not None and full_response_parts and _should_run_validation(included_tables):
         val_event = _run_validation(company, full_response_parts)
         if val_event:
             yield val_event
@@ -339,11 +371,11 @@ def _analyze_inner(
 ) -> Generator[AnalysisEvent, None, None]:
     """analyze() 본체 — 에러 핸들링은 외부에서."""
     from dartlab.engines.ai import get_config
-    from dartlab.engines.ai.providers import create_provider
     from dartlab.engines.ai.context.dartOpenapi import (
         buildDartFilingPrefetch,
         buildMissingDartKeyUiAction,
     )
+    from dartlab.engines.ai.providers import create_provider
 
     # ── report_mode 강제 설정 ──
     if report_mode:
@@ -423,11 +455,13 @@ def _analyze_inner(
         compressed = compress_history(light_history)
         history_messages = build_history_messages(compressed)
 
+    snapshotPolicy = _resolve_snapshot_policy(question, question_types, report_mode)
+
     # ── 4. Auto-snapshot ──
-    if snapshot is None and auto_snapshot and company is not None:
+    if snapshot is None and auto_snapshot and company is not None and snapshotPolicy["enabled"]:
         from dartlab.engines.ai.context.snapshot import build_snapshot
 
-        snapshot = build_snapshot(company)
+        snapshot = build_snapshot(company, includeInsights=snapshotPolicy["includeInsights"])
 
     # ── 5. Auto focus/diff context ──
     if focus_context is None and state is not None and company is not None and state.topic:
@@ -453,9 +487,10 @@ def _analyze_inner(
     if stock_id:
         meta.setdefault("stockCode", stock_id)
     if company is not None:
-        _dataDate = _extract_data_date(company)
-        if _dataDate:
-            meta.setdefault("dataDate", _dataDate)
+        if snapshotPolicy["includeDataDate"]:
+            _dataDate = _extract_data_date(company)
+            if _dataDate:
+                meta.setdefault("dataDate", _dataDate)
         if stock_id:
             try:
                 from dartlab.engines.ai.conversation.data_ready import formatDataReadyStatus
@@ -537,7 +572,11 @@ def _analyze_inner(
         context_text = "\n\n".join(context_parts)
 
     if dart_filing_prefetch.matched and dart_filing_prefetch.contextText:
-        context_text = f"{context_text}\n\n{dart_filing_prefetch.contextText}" if context_text else dart_filing_prefetch.contextText
+        context_text = (
+            f"{context_text}\n\n{dart_filing_prefetch.contextText}"
+            if context_text
+            else dart_filing_prefetch.contextText
+        )
         yield AnalysisEvent(
             "context",
             {

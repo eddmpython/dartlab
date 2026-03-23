@@ -28,14 +28,11 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.engines.company.filingHelpers import filingRecord
-from dartlab.engines.company.filingHelpers import filterFilingsByKeyword
-from dartlab.engines.company.filingHelpers import resolveDateWindow
-from dartlab.engines.company.filingHelpers import truncateText
 from dartlab.engines.company.edgar._docs_accessor import _DocsAccessor
 from dartlab.engines.company.edgar._finance_accessor import _FinanceAccessor
 from dartlab.engines.company.edgar._profile_accessor import _ProfileAccessor
 from dartlab.engines.company.edgar.openapi.submissions import SUPPORTED_REGULAR_FORMS
+from dartlab.engines.company.filingHelpers import filingRecord, filterFilingsByKeyword, resolveDateWindow, truncateText
 
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -531,7 +528,6 @@ class Company:
             return self._cache[cacheKey]
 
         from dartlab.core.guidance import progress
-
         from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
 
         progress(
@@ -649,9 +645,7 @@ class Company:
             raise ValueError("EDGAR filing 읽기에는 filing URL 또는 accessionNo가 필요합니다.")
 
         from dartlab.core.guidance import progress
-
-        from dartlab.engines.company.edgar.docs.fetch import _downloadFilingSource
-        from dartlab.engines.company.edgar.docs.fetch import _htmlToText
+        from dartlab.engines.company.edgar.docs.fetch import _downloadFilingSource, _htmlToText
 
         progress(f"{self.corpName} 공시 원문 다운로드 중... ({accessionNo or Path(docUrl).name})")
         filingPayload = {

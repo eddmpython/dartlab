@@ -67,10 +67,7 @@ from dartlab.engines.company.dart._utils import (  # noqa: F401
     _shapeString,
 )
 from dartlab.engines.company.dart.docs.notes import Notes
-from dartlab.engines.company.filingHelpers import filingRecord
-from dartlab.engines.company.filingHelpers import filterFilingsByKeyword
-from dartlab.engines.company.filingHelpers import resolveDateWindow
-from dartlab.engines.company.filingHelpers import truncateText
+from dartlab.engines.company.filingHelpers import filingRecord, filterFilingsByKeyword, resolveDateWindow, truncateText
 from dartlab.engines.gather.listing import (
     codeToName,
     getKindList,
@@ -617,7 +614,15 @@ class Company:
             self.stockCode,
             category="docs",
             sinceYear=2016,
-            columns=["year", "report_type", "rcept_date", "section_order", "section_title", "section_content", "content"],
+            columns=[
+                "year",
+                "report_type",
+                "rcept_date",
+                "section_order",
+                "section_title",
+                "section_content",
+                "content",
+            ],
         )
         requiredCols = {"year", "report_type", "section_order", "section_title"}
         if raw is None or raw.is_empty() or not requiredCols.issubset(set(raw.columns)):
@@ -717,7 +722,6 @@ class Company:
             return self._cache[cacheKey]
 
         from dartlab.core.guidance import progress
-
         from dartlab.engines.company.dart.openapi.dart import OpenDart
 
         progress(f"{self.corpName} 최신 공시 목록 조회 중... (OpenDART, {startDate}~{endDate})")
@@ -819,7 +823,6 @@ class Company:
             raise ValueError("DART filing 읽기에는 rceptNo 또는 rcpNo가 포함된 viewer URL이 필요합니다.")
 
         from dartlab.core.guidance import progress
-
         from dartlab.engines.company.dart.openapi.dart import OpenDart
 
         progress(f"{self.corpName} 공시 원문 다운로드 중... ({rceptNo})")
@@ -1860,11 +1863,7 @@ class Company:
             if block not in (None, 0):
                 return None
             result = self._showFinanceTopic(topic, period=period)
-            if (
-                topic in {"IS", "BS", "CIS", "CF", "SCE"}
-                and isinstance(result, pl.DataFrame)
-                and result.width > 0
-            ):
+            if topic in {"IS", "BS", "CIS", "CF", "SCE"} and isinstance(result, pl.DataFrame) and result.width > 0:
                 result = self._cleanFinanceDataFrame(result, topic)
             return result if isinstance(result, pl.DataFrame) else None
 

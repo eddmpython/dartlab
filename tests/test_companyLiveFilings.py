@@ -118,8 +118,12 @@ class TestEdgarCompanyLiveFilings:
                         "accession_no": ["0000320193-24-000123"],
                         "primary_document": ["aapl-20240330x10q.htm"],
                         "primary_doc_description": ["Quarterly report"],
-                        "filing_url": ["https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240330x10q.htm"],
-                        "filing_index_url": ["https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/index.json"],
+                        "filing_url": [
+                            "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240330x10q.htm"
+                        ],
+                        "filing_index_url": [
+                            "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/index.json"
+                        ],
                         "year": ["2024"],
                     }
                 )

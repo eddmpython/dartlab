@@ -342,13 +342,14 @@ def _build_display_df(df: pl.DataFrame) -> pl.DataFrame:
     display = df
     if "rcept_dt" in display.columns:
         display = display.with_columns(
-            pl.col("rcept_dt")
-            .cast(pl.Utf8)
-            .map_elements(_format_date, return_dtype=pl.Utf8)
-            .alias("rcept_dt")
+            pl.col("rcept_dt").cast(pl.Utf8).map_elements(_format_date, return_dtype=pl.Utf8).alias("rcept_dt")
         )
 
-    preferred_cols = [col for col in ("rcept_dt", "corp_name", "stock_code", "corp_cls", "report_nm", "rcept_no") if col in display.columns]
+    preferred_cols = [
+        col
+        for col in ("rcept_dt", "corp_name", "stock_code", "corp_cls", "report_nm", "rcept_no")
+        if col in display.columns
+    ]
     if preferred_cols:
         display = display.select(preferred_cols)
 

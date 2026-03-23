@@ -106,6 +106,23 @@ def test_ratio_adapter_prefers_get_ratios_over_dataframe_surface():
     assert "ratios" in included
 
 
+def test_build_snapshot_can_skip_insights(monkeypatch):
+    company = FakeCompany()
+    insight_calls = {"count": 0}
+
+    def fake_analyze(*args, **kwargs):
+        insight_calls["count"] += 1
+        return None
+
+    monkeypatch.setattr("dartlab.engines.analysis.insight.pipeline.analyze", fake_analyze)
+
+    snapshot = build_snapshot(company, includeInsights=False)
+
+    assert snapshot is not None
+    assert insight_calls["count"] == 0
+    assert "grades" not in snapshot
+
+
 def test_event_kind_exposes_canonical_ui_action_only():
     assert EventKind.UI_ACTION == "ui_action"
 
