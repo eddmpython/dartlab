@@ -62,7 +62,7 @@
 	let suggestedQuestions = $state([]);
 	let onboardingDataReady = $state(null);
 	let suggestionLoading = $state(false);
-	// scrollTrigger removed — ChatArea uses isLoading-driven rAF loop
+	// scrollTrigger removed — ChatArea schedules anchored auto-follow from stream updates
 	let showSearchModal = $state(false);
 	let showRoomChat = $state(false);
 	let showRoomJoin = $state(false);
@@ -310,7 +310,7 @@
 			showToast: (msg, type) => ui.showToast(msg, type),
 			appendRenderViews,
 			onStreamSettled: handleStreamSettled,
-			bumpScroll: null,  // scroll handled by ChatArea rAF loop
+			bumpScroll: null,  // scroll handled by ChatArea auto-follow scheduling
 			onCompanySelect: handleCompanySelectForViewer,
 		});
 

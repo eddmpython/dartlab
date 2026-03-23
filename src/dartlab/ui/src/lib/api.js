@@ -2,6 +2,7 @@
  * DartLab API 클라이언트
  */
 import { BASE, fetchPack } from "./api/http.js";
+import { createStreamSmoother } from "./chat/streamSmoother.js";
 
 export {
 	codexLogout,
@@ -342,24 +343,8 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 	if (history && history.length > 0) body.history = history;
 
 	const controller = new AbortController();
-
-	// SSE chunk 배칭: rAF 단위로 모아서 한번에 DOM 업데이트 (스트리밍 끊김 방지)
-	let chunkBuffer = "";
-	let rafId = null;
-	const batchedChunk = onChunk ? (text) => {
-		chunkBuffer += text;
-		if (!rafId) {
-			rafId = requestAnimationFrame(() => {
-				onChunk(chunkBuffer);
-				chunkBuffer = "";
-				rafId = null;
-			});
-		}
-	} : null;
-	const flushChunkBuffer = () => {
-		if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-		if (chunkBuffer && onChunk) { onChunk(chunkBuffer); chunkBuffer = ""; }
-	};
+	const chunkSmoother = onChunk ? createStreamSmoother(onChunk) : null;
+	const flushChunkBuffer = () => chunkSmoother?.flush();
 
 	fetch(`${BASE}/api/ask`, {
 		method: "POST",
@@ -401,7 +386,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "system_prompt") onSystemPrompt?.(parsed);
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
-							else if (currentEvent === "chunk") batchedChunk?.(parsed.text);
+							else if (currentEvent === "chunk") chunkSmoother?.push(parsed.text);
 							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "ui_action") onUiAction?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
@@ -423,5 +408,10 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 			}
 		});
 
-	return { abort: () => { flushChunkBuffer(); controller.abort(); } };
+	return {
+		abort: () => {
+			flushChunkBuffer();
+			controller.abort();
+		},
+	};
 }

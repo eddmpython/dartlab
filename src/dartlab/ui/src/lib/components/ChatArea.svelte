@@ -68,6 +68,8 @@
 	let followStream = $state(true);
 	let showJumpToLatest = $state(false);
 	let isNearBottom = $state(true);
+	let autoScrollRafId = $state(null);
+	let autoScrollLockUntil = $state(0);
 
 	// 스태거 애니메이션: 초기 로드 시에만 적용
 	let staggerReady = $state(true);
@@ -123,8 +125,33 @@
 		return () => obs.disconnect();
 	});
 
+	function nowMs() {
+		return typeof performance !== "undefined" && typeof performance.now === "function"
+			? performance.now()
+			: Date.now();
+	}
+
+	function clearAutoScrollFrame() {
+		if (autoScrollRafId) {
+			cancelAnimationFrame(autoScrollRafId);
+			autoScrollRafId = null;
+		}
+	}
+
+	function scheduleAutoScroll(behavior = "auto") {
+		if (!streamAnchor) return;
+		clearAutoScrollFrame();
+		autoScrollRafId = requestAnimationFrame(() => {
+			autoScrollLockUntil = nowMs() + 120;
+			streamAnchor.scrollIntoView({ block: "end", behavior });
+			showJumpToLatest = false;
+			autoScrollRafId = null;
+		});
+	}
+
 	function onScroll() {
 		if (!chatContainer) return;
+		if (nowMs() < autoScrollLockUntil) return;
 		const { scrollTop, scrollHeight, clientHeight } = chatContainer;
 		isNearBottom = scrollHeight - scrollTop - clientHeight < 96;
 		if (isNearBottom) {
@@ -138,34 +165,43 @@
 
 	function scrollToLatest(behavior = "smooth") {
 		if (!streamAnchor) return;
-		streamAnchor.scrollIntoView({ block: "end", behavior });
+		scheduleAutoScroll(behavior);
 		followStream = true;
 		showJumpToLatest = false;
 	}
 
-	// 스트리밍 중 rAF 루프로 부드럽게 스크롤 — scrollTrigger 과호출 제거
-	let scrollRafId = null;
-	function scrollLoop() {
-		if (!streamAnchor) return;
-		if (followStream || isNearBottom) {
-			streamAnchor.scrollIntoView({ block: "end", behavior: "auto" });
-			showJumpToLatest = false;
-		}
-		scrollRafId = requestAnimationFrame(scrollLoop);
-	}
+	let streamSignature = $derived.by(() => {
+		const lastMessage = messages[messages.length - 1];
+		return [
+			messages.length,
+			lastMessage?.role || "",
+			lastMessage?.text?.length || 0,
+			lastMessage?.loading ? 1 : 0,
+		].join(":");
+	});
 
 	$effect(() => {
-		if (isLoading) {
-			if (!scrollRafId) scrollRafId = requestAnimationFrame(scrollLoop);
-		} else {
-			if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; }
-			// 완료 시 한 번 smooth 스크롤
-			if (streamAnchor && (followStream || isNearBottom)) {
-				streamAnchor.scrollIntoView({ block: "end", behavior: "smooth" });
-				showJumpToLatest = false;
-			}
+		streamSignature;
+		if (!isLoading) return;
+		if (followStream || isNearBottom) {
+			scheduleAutoScroll("auto");
 		}
-		return () => { if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; } };
+	});
+
+	let wasLoading = $state(false);
+	$effect(() => {
+		if (isLoading) {
+			wasLoading = true;
+			return;
+		}
+		if (wasLoading && streamAnchor && (followStream || isNearBottom)) {
+			scheduleAutoScroll("smooth");
+		}
+		wasLoading = false;
+	});
+
+	$effect(() => {
+		return () => clearAutoScrollFrame();
 	});
 
 </script>
@@ -194,7 +230,7 @@
 						onEditResend={msg.role === "user" ? onEditResend : undefined}
 					/>
 				{/each}
-				<div bind:this={streamAnchor} class="h-px w-full"></div>
+				<div bind:this={streamAnchor} class="stream-anchor h-px w-full"></div>
 			</div>
 		</div>
 
