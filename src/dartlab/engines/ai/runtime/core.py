@@ -57,6 +57,21 @@ def _should_run_validation(included_tables: list[str]) -> bool:
     return bool(_VALIDATION_MODULES & set(included_tables))
 
 
+def _should_use_light_mode(company: Any | None, question: str, state: Any, report_mode: bool) -> bool:
+    """가벼운 대화/메타 질문에만 light mode를 허용한다."""
+    if company is None or report_mode:
+        return False
+
+    from dartlab.engines.ai.conversation.intent import has_analysis_intent, is_meta_question, is_pure_conversation
+
+    effective_question = state.question if state is not None and getattr(state, "question", None) else question
+    if is_pure_conversation(effective_question):
+        return True
+    if is_meta_question(effective_question) and not has_analysis_intent(effective_question):
+        return True
+    return False
+
+
 # ── 데이터 신선도 추출 ────────────────────────────────────
 
 
@@ -475,9 +490,7 @@ def _analyze_inner(
         diff_context = build_diff_context(company)
 
     # ── 6. Intent 분류 → light mode 감지 ──
-    from dartlab.engines.ai.conversation.intent import has_analysis_intent
-
-    is_light = company is not None and not has_analysis_intent(state.question if state else question)
+    is_light = _should_use_light_mode(company, question, state, report_mode)
     dart_filing_prefetch = buildDartFilingPrefetch(question, company=company)
 
     # ── 7. Meta 이벤트 (데이터 신선도 포함) ──

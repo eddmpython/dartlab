@@ -168,7 +168,7 @@ def _build_report_sections(
 
     # 질문 유형별 추가 모듈 주입
     extra_modules: set[str] = set() if report_names is not None else set(_ALWAYS_INCLUDE_MODULES)
-    if q_types:
+    if q_types and report_names is None:
         for qt in q_types:
             for mod in _QUESTION_MODULES.get(qt, []):
                 extra_modules.add(mod)

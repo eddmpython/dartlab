@@ -20,15 +20,15 @@
 5. baseline과 payload digest, cold/warm 시간, RSS, bytes를 비교한다
 
 결과 (실험 후 작성):
-- `safe2` 기준 exact match는 `0/12`였다
-- `_sections=False`를 전 case에서 유지했고, `toc` cold는 `1.344~1.471s`, peak RSS는 `315~364MB`로 baseline 대비 약 `60%` 절감됐다
-- docs topic cold는 `companyOverview 0.994~1.276s`, `businessOverview 1.739~2.212s`로 baseline 대비 `3.9~9.3x` 빨라졌다
-- report topic은 특히 강했다: `dividend cold 0.543~0.587s`, `majorHolder cold 0.664~0.670s`, peak save는 대체로 `73~75%`
-- `periodSwitch:businessOverview` cold는 `1.904~2.470s`, warm median은 `94.1~248.1ms`, selected period는 두 종목 모두 `2024Q3`
+- 최신 parity patch 후 `safe2` 재실행 기준 exact match는 여전히 `0/12`였다
+- `_sections=False`를 전 case에서 유지했고, `toc` cold는 `1.322~1.584s`, peak RSS는 `308~355MB`로 baseline 대비 `42~47%` 절감됐다
+- docs topic cold는 `companyOverview 1.091~1.361s`, `businessOverview 2.027~2.495s`로 baseline 대비 `3.8~7.7x` 빨라졌다
+- report topic cold는 `dividend 0.826~0.960s`, `majorHolder 0.907~1.184s`였고 peak save는 대체로 `52~58%`였다
+- `periodSwitch:businessOverview` cold는 `2.197~2.827s`, warm median은 `113.0~299.2ms`였고 selected period는 두 종목 모두 baseline과 같은 `2024Q4`로 맞췄다
 
 결론:
 - 현재 090 후보 중 1차 winner다. exact hash는 못 맞췄지만, `viewer 저장물 없이 sections 미물질화`라는 제약 아래 cold latency와 RSS를 가장 잘 줄였다
-- 다음 승부처는 parity다. 특히 docs topic의 raw table fallback, text path metadata, period 선택 로직 때문에 baseline hash와 달라진다
+- 다음 승부처는 parity다. 특히 docs topic의 raw table fallback, text path metadata, chapter/topic count 정합성 때문에 baseline hash와 달라진다
 
 실험일: 2026-03-23
 """

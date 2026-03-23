@@ -12,15 +12,23 @@ def _detect_navigate_action(company: Any, question: str) -> AnalysisEvent | None
     """질문에서 viewer 이동 의도를 감지해 navigate ui_action을 만든다."""
     from dartlab.engines.ai.conversation.dialogue import detect_viewer_intent
 
-    company_topics = None
-    try:
-        company_topics = list(getattr(company, "topics", None) or [])
-    except (AttributeError, TypeError):
-        pass
-
-    viewer_intent = detect_viewer_intent(question, topics=company_topics)
+    viewer_intent = detect_viewer_intent(question)
     if viewer_intent is None:
         return None
+    if not viewer_intent.get("topic"):
+        company_topics = None
+        try:
+            docs = getattr(company, "docs", None)
+            sections = getattr(docs, "sections", None)
+            if sections is not None and hasattr(sections, "topics"):
+                company_topics = sections.topics()
+            elif hasattr(company, "topics"):
+                company_topics = list(getattr(company, "topics", None) or [])
+        except (AttributeError, TypeError, ValueError):
+            company_topics = None
+
+        if company_topics:
+            viewer_intent = detect_viewer_intent(question, topics=company_topics) or viewer_intent
 
     nav_payload: dict[str, Any] = {"action": "navigate", "topic": viewer_intent.get("topic", "")}
     stock_id = getattr(company, "stockCode", getattr(company, "ticker", None))

@@ -19,10 +19,15 @@
 5. safe2 샘플에서 cold/warm/RSS/bytes/exact hash를 baseline과 비교한다
 
 결과 (실험 후 작성):
-- 실행 후 본문 업데이트
+- `safe2` 기준 exact match는 `0/12`였다
+- `_sections=False`는 유지했지만 `toc` cold가 `4.752~5.540s`, peak RSS가 `510~666MB`까지 올라가 baseline 절감 폭이 크게 줄었다
+- docs topic cold는 `companyOverview 5.520~5.644s`, `businessOverview 6.164~7.148s`로 002보다 훨씬 느렸고 baseline과도 근접했다
+- `dividend`, `majorHolder`도 docs sections 직경로를 타면서 `4.469~5.385s`까지 느려져 002의 report/docs 혼합 경로보다 크게 열세였다
+- `periodSwitch:businessOverview` selected period는 두 종목 모두 `2024Q3`로 baseline `2024Q4`를 다시 놓쳤다
 
 결론:
-- 실행 후 본문 업데이트
+- reject. `sections(stockCode)` direct frame은 docs topic parity를 실질적으로 끌어올리지 못했고, cold/RSS를 baseline 쪽으로 다시 끌어올렸다
+- 즉 `viewer용 별도 저장물 없이 sections를 직접 읽는다`는 아이디어 자체는 가능하지만, hot path 최적화 관점에서는 현재 090의 winner가 될 수 없다
 
 실험일: 2026-03-23
 """

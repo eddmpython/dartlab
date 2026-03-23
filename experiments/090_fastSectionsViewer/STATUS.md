@@ -9,6 +9,7 @@
 - `002_polarsViewerRoute.py` — raw docs/report + Polars lazy scan 후보
 - `003_pyarrowViewerRoute.py` — PyArrow Dataset scanner 후보
 - `004_duckdbViewerRoute.py` — DuckDB parquet 후보
+- `005_sectionsHybridRoute.py` — direct `sections(stockCode)` hybrid 경로 후보
 
 ## 실행 원칙
 - 기본 샘플은 `safe2` (`005930`, `000660`)
@@ -25,10 +26,11 @@
   - `_sections=True` 전 case
 - Polars 후보:
   - exact match `0/12`
-  - `toc` cold `1.344~1.471s`, peak `315~364MB`
-  - `companyOverview` cold `0.994~1.276s`
-  - `businessOverview` cold `1.739~2.212s`
-  - report topic cold `0.543~0.670s`
+  - 최신 parity patch 후 `toc` cold `1.322~1.584s`, peak `308~355MB`
+  - `companyOverview` cold `1.091~1.361s`
+  - `businessOverview` cold `2.027~2.495s`
+  - report topic cold `0.826~1.184s`
+  - `periodSwitch:businessOverview` selected period `2024Q4`
   - `_sections=False` 전 case
 - PyArrow 후보:
   - exact match `0/12`
@@ -39,14 +41,23 @@
   - 초기 `pyarrow` 의존 오류 수정 후 재실행
   - `toc` cold `2.268~2.944s`, peak `563~852MB`
   - docs topic RSS와 warm latency가 나빠 reject
+- Sections hybrid 후보:
+  - exact match `0/12`
+  - `toc` cold `4.752~5.540s`, peak `510~666MB`
+  - `companyOverview` cold `5.520~5.644s`
+  - `businessOverview` cold `6.164~7.148s`
+  - `dividend`, `majorHolder`도 `4.469~5.385s`로 002보다 크게 느림
+  - `periodSwitch:businessOverview` selected period `2024Q3`
+  - `_sections=False`는 지켰지만 hot path 후보로는 reject
 
 ## 현재 판단
 - 1차 winner는 `002_polarsViewerRoute.py`
 - 이유:
   - `viewer 전용 저장물` 없이 `_sections=False` 유지
-  - cold latency와 RSS 모두 가장 크게 절감
-  - report topic은 baseline 대비 매우 큰 속도 이득
+  - 최신 재실행 후에도 cold latency와 RSS 모두 가장 크게 절감
+  - period switch comparable period를 baseline의 `2024Q4`로 맞췄다
+  - `005` direct sections hybrid보다 훨씬 낫다
 - 남은 과제:
   - docs topic payload parity
-  - period switch comparable period를 baseline의 `2024Q4`와 맞추는 로직 보정
   - raw table fallback과 text path metadata 정합성 향상
+  - TOC chapter/topic count 정합성 향상

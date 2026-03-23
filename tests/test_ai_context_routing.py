@@ -7,7 +7,12 @@ import pytest
 
 from dartlab.core.memory import BoundedCache
 from dartlab.engines.ai.context import build_context_by_module
-from dartlab.engines.ai.runtime.core import _resolve_context_tier, _resolve_snapshot_policy, _should_run_validation
+from dartlab.engines.ai.runtime.core import (
+    _resolve_context_tier,
+    _resolve_snapshot_policy,
+    _should_run_validation,
+    _should_use_light_mode,
+)
 from dartlab.engines.company.dart._docs_accessor import _DocsAccessor
 from dartlab.engines.company.dart.company import Company
 
@@ -383,3 +388,10 @@ def test_should_run_validation_only_for_finance_modules():
     assert _should_run_validation(["IS", "ratios"]) is True
     assert _should_run_validation(["section_businessOverview", "businessOverview"]) is False
     assert _should_run_validation(["dividend"]) is False
+
+
+def test_should_use_light_mode_only_for_pure_conversation_or_meta():
+    assert _should_use_light_mode(object(), "ㅋㅋ", None, False) is True
+    assert _should_use_light_mode(object(), "이 회사 어떤 데이터가 있어?", None, False) is True
+    assert _should_use_light_mode(object(), "배당이 실적과 현금흐름으로 지속 가능한지 판단해줘", None, False) is False
+    assert _should_use_light_mode(object(), "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘", None, False) is False
