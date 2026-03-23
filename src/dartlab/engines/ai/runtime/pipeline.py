@@ -12,12 +12,13 @@ Tier 1 아키텍처:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import Any
 
 import polars as pl
 
 from dartlab.engines.ai.conversation.prompts import _classify_question
-from dartlab.engines.ai.tools.recipes import RECIPES, getRecipe
+from dartlab.engines.ai.tools.recipes import RECIPES
 
 _log = logging.getLogger(__name__)
 _PIPELINE_ERRORS = (
@@ -54,8 +55,12 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
 
     sections: list[str] = []
 
-    for runnerName in getRecipe(q_type):
-        runner = _RECIPE_RUNNERS.get(runnerName)
+    for runnerSpec in _PIPELINE_MAP.get(q_type, ()):
+        runner: Callable[[Any, list[str]], str | None] | None
+        if callable(runnerSpec):
+            runner = runnerSpec
+        else:
+            runner = _RECIPE_RUNNERS.get(runnerSpec)
         if runner is None:
             continue
         try:

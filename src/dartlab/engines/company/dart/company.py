@@ -674,7 +674,11 @@ class Company:
                         blockIndex += 1
                         continue
 
-                    for block in blocks:
+                    visibleBlocks = [block for block in blocks if str(block.get("blockType") or "text") != "heading"]
+                    if not visibleBlocks:
+                        visibleBlocks = blocks
+
+                    for block in visibleBlocks:
                         label = str(block.get("blockLabel") or "").strip()
                         previewSource = block.get("blockText") or ""
                         rows.append(
