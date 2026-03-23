@@ -346,9 +346,7 @@ def _selectFlowDirect(tagDf: pl.DataFrame) -> pl.DataFrame:
 
     # FY: 연간(300d+)만 선택 — 10-K 비교재무제표에 포함된 90일 standalone 제외
     fyRows = tagDf.filter(
-        (pl.col("fp") == "FY")
-        & pl.col("duration_days").is_not_null()
-        & (pl.col("duration_days") > 300)
+        (pl.col("fp") == "FY") & pl.col("duration_days").is_not_null() & (pl.col("duration_days") > 300)
     )
     fyResult = _selectByLatestPeriod(fyRows)
 
@@ -377,12 +375,14 @@ def _selectFlowYTD(tagDf: pl.DataFrame) -> pl.DataFrame:
 
     # FY: 연간(300d+)만, Q1: duration 무관 (항상 ~90d)
     fyRows = tagDf.filter(
-        (pl.col("fp") == "FY")
-        & pl.col("duration_days").is_not_null()
-        & (pl.col("duration_days") > 300)
+        (pl.col("fp") == "FY") & pl.col("duration_days").is_not_null() & (pl.col("duration_days") > 300)
     )
     q1Rows = tagDf.filter(pl.col("fp") == "Q1")
-    fyQ1 = pl.concat([fyRows, q1Rows]) if fyRows.height > 0 or q1Rows.height > 0 else tagDf.filter(pl.col("fp").is_in(["FY", "Q1"]))
+    fyQ1 = (
+        pl.concat([fyRows, q1Rows])
+        if fyRows.height > 0 or q1Rows.height > 0
+        else tagDf.filter(pl.col("fp").is_in(["FY", "Q1"]))
+    )
     fyQ1Result = _selectByLatestPeriod(fyQ1)
 
     q2q3Ytd = tagDf.filter(
@@ -766,10 +766,7 @@ def getSharesOutstanding(cik: str, *, edgarDir: Path | None = None) -> Optional[
     if not path.exists():
         return None
     df = pl.read_parquet(path)
-    dei = df.filter(
-        (pl.col("namespace") == "dei")
-        & (pl.col("tag") == "EntityCommonStockSharesOutstanding")
-    )
+    dei = df.filter((pl.col("namespace") == "dei") & (pl.col("tag") == "EntityCommonStockSharesOutstanding"))
     if dei.height == 0:
         return None
     latest = dei.sort("end", descending=True).row(0, named=True)

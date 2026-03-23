@@ -334,6 +334,7 @@ us.cik                       # "0000320193"
 | `marketCap` | `Optional` | None |
 | `sharesOutstanding` | `Optional` | None |
 | `ebitdaEstimated` | `bool` | True |
+| `currency` | `str` | KRW |
 | `warnings` | `list` | [] |
 
 ### InsightResult

@@ -734,9 +734,7 @@ def _buildQuestionTypeMap() -> dict[str, list[str]]:
         for spec in get_capability_specs():
             for qt in spec.questionTypes:
                 if spec.ai_hint:
-                    autoKeywords.setdefault(qt, set()).update(
-                        w.strip() for w in spec.ai_hint.split(",") if w.strip()
-                    )
+                    autoKeywords.setdefault(qt, set()).update(w.strip() for w in spec.ai_hint.split(",") if w.strip())
         merged: dict[str, list[str]] = {}
         for qt, coreKws in _CORE_QUESTION_KEYWORDS.items():
             merged[qt] = list(set(coreKws) | autoKeywords.get(qt, set()))

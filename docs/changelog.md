@@ -9,26 +9,45 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.6] - 2026-03-23
 
 ### Added
 
+- **`dartlab.simulation()` 루트 함수**: 경제 시나리오 시뮬레이션. Company 메서드 `c.simulation()` 동시 추가
+- **`__all__` 보완**: `governance`, `workforce`, `capital`, `debt`, `simulation` 5개 함수 추가
 - **EDGAR Company Tier 1 승격**: EDGAR core (sections, show, trace, diff, BS/IS/CF, ratios, profile) Stable로 격상
-- **analyst 모듈 USD 자동 감지**: `dartlab.valuation()`, `dartlab.forecast()`, `dartlab.simulation()` 루트 함수가 `company.currency` 기반 KRW/USD 자동 포맷
 - **EDGAR Company.valuation() / forecast()**: 2-Tier 원칙에 따라 EDGAR Company 메서드 추가
+- **analyst 모듈 USD 자동 감지**: `dartlab.valuation()`, `dartlab.forecast()`, `dartlab.simulation()` 루트 함수가 `company.currency` 기반 KRW/USD 자동 포맷
 - **US 매크로 시나리오**: `PRESET_SCENARIOS_US` (baseline, adverse, rate_hike, rate_cut, tech_downturn) + US 섹터 탄력성 12개
 - **`fmt.py` 통화 포맷 헬퍼**: `fmtBig()` (억/M), `fmtPrice()` (원/$), `fmtUnit()` — analyst 모듈 공통 사용
+- **AI 비서 도구 2개**: `checkDataReady` (종목별 데이터 준비 상태 확인), `estimateTime` (작업 예상 시간 안내)
+- **AI 시스템 프롬프트 데이터 관리 원칙**: 분석 전 데이터 확인, 시간 안내, 단계별 가이드 규칙 추가
+- **AI 분석 데이터 신선도 헤더**: meta 이벤트에 `dataDate` 필드 자동 삽입 (Company filings 최신일 기반)
+- **AI 도구 자동 탐색 모듈**: `tools/discovery.py` — 도구 카탈로그 동적 생성
+- **AI 도구 선택기**: `tools/selector.py` — 질문 유형별 도구 우선순위 선택
+- **AI 7개 도메인 도구 확장**: company/finance/analysis/scan/system/openapi/ui 도구 세트 강화
+- **AI skeleton 가이드 기반 분석**: 구조화된 분석 흐름 + 동적 턴 확장
+- **capabilities 런타임 선언**: `core/capabilities.py` 도구 기능 메타데이터 모듈
 - **USD 테스트 7개**: DCF/valuation/forecast/simulation USD repr + fmt helper 테스트
+- **README AI 비서 권장 Tip**: AI Analysis 섹션에 `dartlab.ask()` 적극 권장 문구 (영문/한국어)
+- **README Market Scan 확장**: `screen()`, `benchmark()`, `signal()` 함수 문서화
 
 ### Fixed
 
+- **IS 계정 정렬**: `selling_and_administrative_expenses` sortOrder 1050→1300 수정. 판관비가 매출원가 위에 표시되던 문제 해결. `loss_before_tax` sortOrder 1350→1905로 위치 교정
+- **CFS/OFS 시트 단위 분리**: `_applyCfsPriority()` 행 단위 혼합 → 시트(연도×분기×재무제표) 단위 선택으로 변경. 동일 시트에 연결/별도 숫자가 섞이던 문제 해결. CFS 존재 시 CFS만, 없으면 OFS 전체 폴백
+- **`forecast()`/`valuation()` timeseries None 가드**: `c.finance.timeseries`가 None일 때 크래시 대신 None 반환
+- **`hasattr` 이중 체크 제거**: `getattr(c, "sectorKey", None) if hasattr(...)` → `getattr(c, "sectorKey", None)` 단순화
+- **`revenueForecast.py` 도달불가 조건**: `len(recent) > 8` → `len(valid) > 8` (recent = valid\[-4:\]이므로 항상 False였음)
+- **`revenueForecast.py` dict key 통일**: `reinvestment_rate` → `reinvestmentRate`, `delta_nwc` → `deltaNwc`, `invested_capital` → `investedCapital`, `fundamental_growth` → `fundamentalGrowth`, `sign_changes` → `signChanges`, `data_points` → `dataPoints` — 프로젝트 네이밍 규칙과 불일치하던 6개 키 수정
 - **timeseries 튜플 언래핑**: `finance.timeseries`가 `(dict, list)` 튜플 반환 시 `dict`만 추출 — DART/EDGAR 양쪽 analyst 함수 에러 수정
-- **`revenueForecast.py` 속성명 버그**: `tsResult.r_squared` → `tsResult.rSquared` (3곳) — camelCase 위반 수정
+- **`revenueForecast.py` 속성명 버그**: `tsResult.r_squared` → `tsResult.rSquared` — 실제 속성명과 불일치하여 AttributeError 발생하던 3곳 수정
 
 ### Changed
 
 - **stability.md Tier 재편**: EDGAR core Tier 2 → Tier 1, valuation/forecast/simulation Tier 3 → Tier 1
 - **README 양쪽 Stability 테이블 갱신**: EDGAR core Stable, analyst 함수 Stable 반영
+- **AI runtime agent 경량화**: 292줄 → 구조화된 모듈로 분리
 
 ## [0.7.5] - 2026-03-22
 
