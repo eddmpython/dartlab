@@ -62,7 +62,6 @@
 	let suggestedQuestions = $state([]);
 	let onboardingDataReady = $state(null);
 	let suggestionLoading = $state(false);
-	// scrollTrigger removed — ChatArea schedules anchored auto-follow from stream updates
 	let showSearchModal = $state(false);
 	let showRoomChat = $state(false);
 	let showRoomJoin = $state(false);
@@ -287,7 +286,6 @@
 
 		store.addMessage("assistant", "");
 		store.updateLastMessage({ loading: true, startedAt: Date.now() });
-		// scrollTrigger removed — rAF loop auto-follows
 
 		const conv = store.active;
 		const { history, lastAnalyzedCode } = buildConversationHistory(conv);
@@ -310,7 +308,7 @@
 			showToast: (msg, type) => ui.showToast(msg, type),
 			appendRenderViews,
 			onStreamSettled: handleStreamSettled,
-			bumpScroll: null,  // scroll handled by ChatArea auto-follow scheduling
+			bumpScroll: null,
 			onCompanySelect: handleCompanySelectForViewer,
 		});
 

@@ -228,12 +228,10 @@ button, a, input, textarea {
 
 .chat-stream-shell {
 	position: relative;
-	overflow-anchor: none;
 }
 
 .message-shell {
 	position: relative;
-	overflow-anchor: none;
 }
 
 .message-section-slot {
@@ -247,38 +245,11 @@ button, a, input, textarea {
 .message-body {
 	position: relative;
 	padding: 2px 0 0;
-	overflow-anchor: none;
 }
 
 .message-committed {
 	min-height: 1.25rem;
 	overflow-anchor: auto;
-}
-
-.stream-anchor {
-	display: block;
-	overflow-anchor: auto;
-}
-
-.message-live-inline {
-	margin-top: 0.28rem;
-	white-space: pre-wrap;
-	word-break: break-word;
-	font-size: 15px;
-	line-height: 1.78;
-	color: var(--color-dl-text-muted);
-}
-
-.message-live-caret {
-	display: inline-block;
-	width: 0.45rem;
-	height: 1em;
-	margin-left: 2px;
-	border-radius: 999px;
-	background: rgba(251, 146, 60, 0.72);
-	box-shadow: 0 0 8px rgba(251, 146, 60, 0.35);
-	vertical-align: text-bottom;
-	animation: typing 1.2s ease-in-out infinite;
 }
 
 .message-live-tail {

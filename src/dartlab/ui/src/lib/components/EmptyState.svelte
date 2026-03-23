@@ -82,6 +82,7 @@
 			<AutocompleteInput
 				bind:inputText
 				large={true}
+				enableCompanyAutocomplete={!selectedCompany?.stockCode}
 				placeholder={selectedCompany?.stockCode ? "예: 최근 공시에서 중요한 변화만 요약해줘" : "삼성전자 재무 건전성을 분석해줘..."}
 				{onSend}
 				{onCompanySelect}

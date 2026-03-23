@@ -185,9 +185,6 @@
 	const splitter = createStreamSplitter();
 	const incRenderer = createIncrementalRenderer();
 	let streamingContent = $derived.by(() => splitter.split(message.text || "", message.loading));
-	let hasStructuredDraft = $derived(
-		streamingContent.draftType === "table" || streamingContent.draftType === "code"
-	);
 	let activityBadges = $derived.by(() => {
 		const badges = [];
 		if (message.meta?.includedModules?.length > 0) badges.push({ label: `모듈 ${message.meta.includedModules.length}개`, icon: Database });
@@ -382,23 +379,16 @@
 						</div>
 					{/if}
 					{#if streamingContent.draft}
-						{#if hasStructuredDraft}
-							<div class={cn(
-								"message-live-tail",
-								streamingContent.draftType === "table" && "message-draft-table",
-								streamingContent.draftType === "code" && "message-draft-code"
-							)}>
-								<div class="message-live-label">
-									{streamingContent.draftType === "table" ? "표 구성 중" : "코드 블록 생성 중"}
-								</div>
-								<pre>{streamingContent.draft}</pre>
+						<div class={cn(
+							"message-live-tail",
+							streamingContent.draftType === "table" && "message-draft-table",
+							streamingContent.draftType === "code" && "message-draft-code"
+						)}>
+							<div class="message-live-label">
+								{streamingContent.draftType === "table" ? "표 구성 중" : streamingContent.draftType === "code" ? "코드 블록 생성 중" : "응답 작성 중"}
 							</div>
-						{:else}
-							<div class="message-live-inline" aria-live="off">
-								<span>{streamingContent.draft}</span>
-								<span class="message-live-caret" aria-hidden="true"></span>
-							</div>
-						{/if}
+							<pre>{streamingContent.draft}</pre>
+						</div>
 					{/if}
 				</div>
 

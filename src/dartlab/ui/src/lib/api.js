@@ -2,7 +2,6 @@
  * DartLab API 클라이언트
  */
 import { BASE, fetchPack } from "./api/http.js";
-import { createStreamSmoother } from "./chat/streamSmoother.js";
 
 export {
 	codexLogout,
@@ -343,8 +342,6 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 	if (history && history.length > 0) body.history = history;
 
 	const controller = new AbortController();
-	const chunkSmoother = onChunk ? createStreamSmoother(onChunk) : null;
-	const flushChunkBuffer = () => chunkSmoother?.flush();
 
 	fetch(`${BASE}/api/ask`, {
 		method: "POST",
@@ -386,11 +383,11 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "system_prompt") onSystemPrompt?.(parsed);
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
-							else if (currentEvent === "chunk") chunkSmoother?.push(parsed.text);
+							else if (currentEvent === "chunk") onChunk?.(parsed.text);
 							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "ui_action") onUiAction?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
-							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(parsed); } }
+							else if (currentEvent === "done") { if (!doneFired) { doneFired = true; onDone?.(parsed); } }
 						} catch (e) {
 							console.warn("SSE JSON parse:", e);
 						}
@@ -399,19 +396,13 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 				}
 			}
 
-			if (!doneFired) { doneFired = true; flushChunkBuffer(); onDone?.(); }
+			if (!doneFired) { doneFired = true; onDone?.(); }
 		})
 		.catch((err) => {
 			if (err.name !== "AbortError") {
-				flushChunkBuffer();
 				onError?.(err.message);
 			}
 		});
 
-	return {
-		abort: () => {
-			flushChunkBuffer();
-			controller.abort();
-		},
-	};
+	return { abort: () => controller.abort() };
 }

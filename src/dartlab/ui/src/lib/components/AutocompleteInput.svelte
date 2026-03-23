@@ -8,6 +8,7 @@
 		isLoading = false,
 		large = false,
 		placeholder = "메시지를 입력하세요...",
+		enableCompanyAutocomplete = true,
 		providerLabel = null,
 		modelLabel = null,
 		onSend,
@@ -20,6 +21,16 @@
 	let selectedIdx = $state(-1);
 	let debounceTimer = null;
 	let textareaEl = $state();
+
+	function shouldAutocompleteCompany(value) {
+		if (!enableCompanyAutocomplete) return false;
+		const trimmed = value.trim();
+		if (trimmed.length < 2) return false;
+		if (trimmed.length > 15) return false;
+		if (/\s/.test(trimmed)) return false;
+		if (/[?!.,/\\()[\]{}:;'"`~@#$%^&*_+=]/.test(trimmed)) return false;
+		return true;
+	}
 
 	function handleKeydown(e) {
 		if (showSuggestions && suggestions.length > 0) {
@@ -63,7 +74,7 @@
 
 		if (debounceTimer) clearTimeout(debounceTimer);
 
-		if (val.length >= 2 && !/\s/.test(val.slice(-1))) {
+		if (shouldAutocompleteCompany(val) && !/\s/.test(val.slice(-1))) {
 			debounceTimer = setTimeout(async () => {
 				try {
 					const data = await searchCompany(val.trim());
@@ -72,14 +83,20 @@
 						showSuggestions = true;
 						selectedIdx = -1;
 					} else {
+						suggestions = [];
 						showSuggestions = false;
+						selectedIdx = -1;
 					}
 				} catch {
+					suggestions = [];
 					showSuggestions = false;
+					selectedIdx = -1;
 				}
 			}, 300);
 		} else {
+			suggestions = [];
 			showSuggestions = false;
+			selectedIdx = -1;
 		}
 	}
 

@@ -69,7 +69,6 @@
 	let showJumpToLatest = $state(false);
 	let isNearBottom = $state(true);
 	let autoScrollRafId = $state(null);
-	let autoScrollLockUntil = $state(0);
 
 	// 스태거 애니메이션: 초기 로드 시에만 적용
 	let staggerReady = $state(true);
@@ -125,33 +124,8 @@
 		return () => obs.disconnect();
 	});
 
-	function nowMs() {
-		return typeof performance !== "undefined" && typeof performance.now === "function"
-			? performance.now()
-			: Date.now();
-	}
-
-	function clearAutoScrollFrame() {
-		if (autoScrollRafId) {
-			cancelAnimationFrame(autoScrollRafId);
-			autoScrollRafId = null;
-		}
-	}
-
-	function scheduleAutoScroll(behavior = "auto") {
-		if (!streamAnchor) return;
-		clearAutoScrollFrame();
-		autoScrollRafId = requestAnimationFrame(() => {
-			autoScrollLockUntil = nowMs() + 120;
-			streamAnchor.scrollIntoView({ block: "end", behavior });
-			showJumpToLatest = false;
-			autoScrollRafId = null;
-		});
-	}
-
 	function onScroll() {
 		if (!chatContainer) return;
-		if (nowMs() < autoScrollLockUntil) return;
 		const { scrollTop, scrollHeight, clientHeight } = chatContainer;
 		isNearBottom = scrollHeight - scrollTop - clientHeight < 96;
 		if (isNearBottom) {
@@ -165,43 +139,55 @@
 
 	function scrollToLatest(behavior = "smooth") {
 		if (!streamAnchor) return;
-		scheduleAutoScroll(behavior);
+		streamAnchor.scrollIntoView({ block: "end", behavior });
 		followStream = true;
 		showJumpToLatest = false;
 	}
 
-	let streamSignature = $derived.by(() => {
-		const lastMessage = messages[messages.length - 1];
-		return [
-			messages.length,
-			lastMessage?.role || "",
-			lastMessage?.text?.length || 0,
-			lastMessage?.loading ? 1 : 0,
-		].join(":");
-	});
-
-	$effect(() => {
-		streamSignature;
-		if (!isLoading) return;
-		if (followStream || isNearBottom) {
-			scheduleAutoScroll("auto");
+	function stopAutoScroll() {
+		if (autoScrollRafId) {
+			cancelAnimationFrame(autoScrollRafId);
+			autoScrollRafId = null;
 		}
-	});
+	}
 
-	let wasLoading = $state(false);
-	$effect(() => {
-		if (isLoading) {
-			wasLoading = true;
+	function autoScrollLoop() {
+		if (!isLoading || !followStream || !streamAnchor) {
+			autoScrollRafId = null;
 			return;
 		}
-		if (wasLoading && streamAnchor && (followStream || isNearBottom)) {
-			scheduleAutoScroll("smooth");
+		streamAnchor.scrollIntoView({ block: "end" });
+		showJumpToLatest = false;
+		autoScrollRafId = requestAnimationFrame(autoScrollLoop);
+	}
+
+	function startAutoScroll() {
+		if (!streamAnchor || autoScrollRafId) return;
+		autoScrollRafId = requestAnimationFrame(() => {
+			autoScrollRafId = null;
+			autoScrollLoop();
+		});
+	}
+
+	$effect(() => {
+		if (isLoading && followStream) {
+			startAutoScroll();
+		} else {
+			stopAutoScroll();
 		}
-		wasLoading = false;
 	});
 
 	$effect(() => {
-		return () => clearAutoScrollFrame();
+		if (!isLoading && streamAnchor && (followStream || isNearBottom)) {
+			requestAnimationFrame(() => {
+				streamAnchor?.scrollIntoView({ block: "end" });
+				showJumpToLatest = false;
+			});
+		}
+	});
+
+	$effect(() => {
+		return () => stopAutoScroll();
 	});
 
 </script>
@@ -230,7 +216,7 @@
 						onEditResend={msg.role === "user" ? onEditResend : undefined}
 					/>
 				{/each}
-				<div bind:this={streamAnchor} class="stream-anchor h-px w-full"></div>
+				<div bind:this={streamAnchor} class="h-px w-full"></div>
 			</div>
 		</div>
 
@@ -329,6 +315,7 @@
 			<AutocompleteInput
 				bind:inputText
 				{isLoading}
+				enableCompanyAutocomplete={false}
 				{providerLabel}
 				{modelLabel}
 				placeholder="메시지를 입력하세요..."
