@@ -710,6 +710,7 @@ def calcRatios(
         _flow = getLatest
         ttmMaxTrailingNones = None
     else:
+
         def _flowTtm(
             targetSeries: dict[str, dict[str, list[Optional[float]]]],
             targetSjDiv: str,
