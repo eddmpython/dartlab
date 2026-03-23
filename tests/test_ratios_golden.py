@@ -71,6 +71,60 @@ def _calc(**kwargs):
     return calcRatios(_SERIES_ANNUAL, annual=True, **kwargs)
 
 
+def test_getTTM_rejects_stale_series_when_max_trailing_nones_zero():
+    """오래된 non-null만 남은 시계열은 최신 TTM으로 취급하지 않는다."""
+    from dartlab.engines.common.finance.extract import getTTM
+
+    series = {"CF": {"net_profit": [10, 20, 30, 40, None, None, None, None]}}
+    assert getTTM(series, "CF", "net_profit") == 100
+    assert getTTM(series, "CF", "net_profit", maxTrailingNones=0) is None
+
+
+def test_calcRatios_skips_stale_cf_net_profit_cross_check():
+    """CF 순이익이 오래된 값이면 IS-CF 불일치 경고를 띄우지 않는다."""
+    from dartlab.engines.common.finance.ratios import calcRatios
+
+    series = {
+        "IS": {
+            "sales": [1000, 1100, 1200, 1300],
+            "operating_profit": [100, 120, 130, 140],
+            "net_profit": [80, 90, 100, 110],
+            "profit_before_tax": [90, 100, 110, 120],
+            "income_tax_expense": [10, 10, 10, 10],
+        },
+        "BS": {
+            "total_assets": [2000, 2100, 2200, 2300],
+            "owners_of_parent_equity": [1000, 1050, 1100, 1150],
+            "total_liabilities": [1000, 1050, 1100, 1150],
+            "current_assets": [500, 520, 540, 560],
+            "current_liabilities": [300, 310, 320, 330],
+            "cash_and_cash_equivalents": [100, 100, 100, 100],
+            "shortterm_borrowings": [50, 50, 50, 50],
+            "longterm_borrowings": [100, 100, 100, 100],
+            "debentures": [0, 0, 0, 0],
+            "inventories": [100, 100, 100, 100],
+            "trade_and_other_receivables": [120, 120, 120, 120],
+            "trade_and_other_payables": [90, 90, 90, 90],
+            "tangible_assets": [700, 710, 720, 730],
+            "intangible_assets": [50, 50, 50, 50],
+            "retained_earnings": [400, 430, 460, 490],
+            "noncurrent_assets": [1500, 1580, 1660, 1740],
+            "noncurrent_liabilities": [700, 740, 780, 820],
+        },
+        "CF": {
+            "operating_cashflow": [90, 100, 110, 120],
+            "purchase_of_property_plant_and_equipment": [-20, -20, -20, -20],
+            "dividends_paid": [-5, -5, -5, -5],
+            "depreciation_and_amortization": [15, 15, 15, 15],
+            "net_profit": [70, 80, 90, 100, None, None, None, None],
+        },
+    }
+
+    r = calcRatios(series)
+    assert r.netIncomeTTM == 380
+    assert not any("IS-CF 순이익 불일치" in w for w in r.warnings)
+
+
 # ══════════════════════════════════════
 # 수익성 (8개)
 # ══════════════════════════════════════

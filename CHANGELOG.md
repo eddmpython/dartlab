@@ -5,6 +5,15 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - 2026-03-24
+
+### Fixed
+
+- **stale TTM 차단**: `getTTM()`에 trailing `None` 최신성 가드를 추가하여 오래된 분기 값만 남은 시계열을 최신 TTM으로 잘못 해석하지 않도록 수정
+- **`finance.ratios` 최신성 검증 강화**: `calcRatios()`가 분기 TTM 계산 시 stale CF/IS 항목을 최신값처럼 섞지 않도록 변경
+- **IS-CF 순이익 교차검증 오탐 수정**: SK하이닉스처럼 CF `net_profit`이 2018년 값에서 끊긴 경우 최신 IS TTM과 비교해 경고를 띄우던 버그 해결
+- **회귀 테스트 2건 추가**: stale TTM utility 케이스와 stale CF 순이익 cross-check 오탐 케이스를 unit test로 고정
+
 ## [0.7.6] - 2026-03-23
 
 ### Added
@@ -230,7 +239,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.7...HEAD
+[0.7.7]: https://github.com/eddmpython/dartlab/compare/v0.7.6...v0.7.7
+[0.7.6]: https://github.com/eddmpython/dartlab/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/eddmpython/dartlab/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/eddmpython/dartlab/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/eddmpython/dartlab/compare/v0.7.2...v0.7.3

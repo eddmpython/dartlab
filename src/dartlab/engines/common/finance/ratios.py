@@ -645,9 +645,16 @@ def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> No
 
 
 def _pick_first(
-    series: dict[str, dict[str, list[Optional[float]]]], sjDiv: str, snakeIds: list[str], annual: bool = False
+    series: dict[str, dict[str, list[Optional[float]]]],
+    sjDiv: str,
+    snakeIds: list[str],
+    annual: bool = False,
+    maxTrailingNones: int | None = None,
 ) -> Optional[float]:
-    getter = getLatest if annual else getTTM
+    if annual:
+        getter = getLatest
+    else:
+        getter = lambda s, d, i: getTTM(s, d, i, maxTrailingNones=maxTrailingNones)
     for snakeId in snakeIds:
         val = getter(series, sjDiv, snakeId)
         if val is not None:
@@ -692,11 +699,28 @@ def calcRatios(
     r.currency = currency
     archetype = archetypeOverride or _detectArchetype(series)
 
-    _flow = getLatest if annual else getTTM
+    if annual:
+        _flow = getLatest
+        ttmMaxTrailingNones = None
+    else:
+        _flow = lambda s, d, i: getTTM(s, d, i, maxTrailingNones=0)
+        ttmMaxTrailingNones = 0
 
-    r.revenueTTM = _pick_first(series, "IS", ["sales", "revenue"], annual=annual)
-    r.operatingIncomeTTM = _pick_first(series, "IS", ["operating_profit", "operating_income"], annual=annual)
-    r.netIncomeTTM = _pick_first(series, "IS", ["net_profit", "net_income"], annual=annual)
+    r.revenueTTM = _pick_first(series, "IS", ["sales", "revenue"], annual=annual, maxTrailingNones=ttmMaxTrailingNones)
+    r.operatingIncomeTTM = _pick_first(
+        series,
+        "IS",
+        ["operating_profit", "operating_income"],
+        annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
+    )
+    r.netIncomeTTM = _pick_first(
+        series,
+        "IS",
+        ["net_profit", "net_income"],
+        annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
+    )
     r.operatingCashflowTTM = _flow(series, "CF", "operating_cashflow")
     r.investingCashflowTTM = _flow(series, "CF", "investing_cashflow")
 
@@ -704,7 +728,13 @@ def calcRatios(
     r.costOfSales = _flow(series, "IS", "cost_of_sales")
     r.sga = _flow(series, "IS", "selling_and_administrative_expenses")
     r.financeIncome = _flow(series, "IS", "finance_income")
-    r.financeCosts = _pick_first(series, "IS", ["finance_costs", "interest_expense"], annual=annual)
+    r.financeCosts = _pick_first(
+        series,
+        "IS",
+        ["finance_costs", "interest_expense"],
+        annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
+    )
 
     r.capex = _flow(series, "CF", "purchase_of_property_plant_and_equipment")
     r.dividendsPaid = _flow(series, "CF", "dividends_paid")
@@ -713,6 +743,7 @@ def calcRatios(
         "CF",
         ["depreciation_and_amortization", "depreciation_cf", "depreciation"],
         annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
     )
     # CF에 없으면 IS의 D&A 시도 (EDGAR는 IS에 별도 기재하는 경우 있음)
     if r.depreciationExpense is None:
@@ -721,6 +752,7 @@ def calcRatios(
             "IS",
             ["depreciation_amortization", "depreciation_and_amortization"],
             annual=annual,
+            maxTrailingNones=ttmMaxTrailingNones,
         )
 
     r.totalAssets = getLatest(series, "BS", "total_assets")
@@ -744,8 +776,20 @@ def calcRatios(
     r.noncurrentAssets = getLatest(series, "BS", "noncurrent_assets")
     r.noncurrentLiabilities = getLatest(series, "BS", "noncurrent_liabilities")
 
-    r.profitBeforeTax = _pick_first(series, "IS", ["profit_before_tax", "income_before_tax"], annual=annual)
-    r.incomeTaxExpense = _pick_first(series, "IS", ["income_tax_expense", "income_taxes"], annual=annual)
+    r.profitBeforeTax = _pick_first(
+        series,
+        "IS",
+        ["profit_before_tax", "income_before_tax"],
+        annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
+    )
+    r.incomeTaxExpense = _pick_first(
+        series,
+        "IS",
+        ["income_tax_expense", "income_taxes"],
+        annual=annual,
+        maxTrailingNones=ttmMaxTrailingNones,
+    )
 
     if marketCap and marketCap > 0:
         r.marketCap = marketCap
@@ -754,7 +798,7 @@ def calcRatios(
     _calcStability(r)
     _calcEfficiency(r)
     _calcCashflow(r, series)
-    _calcComposite(r, series, annual=annual)
+    _calcComposite(r, series, annual=annual, maxTrailingNones=ttmMaxTrailingNones)
 
     if shares and shares > 0:
         r.sharesOutstanding = shares
@@ -913,13 +957,19 @@ def _calcComposite(
     r: RatioResult,
     series: dict[str, dict[str, list[Optional[float]]]],
     annual: bool = False,
+    maxTrailingNones: int | None = None,
 ) -> None:
     """복합 지표 (11개): ROIC, DuPont, Debt/EBITDA, CCC, Piotroski, Altman."""
     # ── ROIC: NOPAT / Invested Capital ──
     # 유효세율 동적 계산. 불가능하면 22% 기본값.
     effective_tax = 0.22
-    pbt = getTTM(series, "IS", "profit_before_tax")
-    tax_exp = getTTM(series, "IS", "income_tax_expense") or getTTM(series, "IS", "income_taxes")
+    pbt = getTTM(series, "IS", "profit_before_tax", maxTrailingNones=maxTrailingNones)
+    tax_exp = getTTM(series, "IS", "income_tax_expense", maxTrailingNones=maxTrailingNones) or getTTM(
+        series,
+        "IS",
+        "income_taxes",
+        maxTrailingNones=maxTrailingNones,
+    )
     if pbt and pbt > 0 and tax_exp is not None:
         _et = tax_exp / pbt
         if 0 <= _et <= 0.5:

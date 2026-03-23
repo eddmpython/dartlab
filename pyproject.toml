@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.7.6"
+version = "0.7.7"
 description = "공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR"
 readme = "README.md"
 license = {file = "LICENSE"}

@@ -12,6 +12,7 @@ def getTTM(
     *,
     strict: bool = True,
     annualize: bool = False,
+    maxTrailingNones: int | None = None,
 ) -> Optional[float]:
     """최근 4개 non-null 값의 합 (IS/CF용 TTM).
 
@@ -22,6 +23,9 @@ def getTTM(
         strict: True면 4/4 분기 모두 필요 (annualize=False일 때).
         annualize: True면 분기 부족 시 연환산 (2~3분기 → ×4/N).
                    strict보다 우선. FY 직후 TTM 공백 방지용.
+        maxTrailingNones: 허용할 trailing None 개수.
+                   None이면 제한 없이 끝의 None을 제거한다.
+                   0이면 최신 period가 비어 있는 stale 시계열을 TTM으로 쓰지 않는다.
 
     Returns:
         TTM 합계 또는 None.
@@ -31,8 +35,12 @@ def getTTM(
         return None
     # 끝에서 trailing None 제거 후 최근 4개 선택 (미공시 기간 대응)
     trimmed = vals
+    trailingNones = 0
     while trimmed and trimmed[-1] is None:
         trimmed = trimmed[:-1]
+        trailingNones += 1
+    if maxTrailingNones is not None and trailingNones > maxTrailingNones:
+        return None
     if not trimmed:
         return None
     last4 = [v for v in trimmed[-4:] if v is not None]
