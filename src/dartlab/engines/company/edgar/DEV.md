@@ -1,5 +1,18 @@
 # EDGAR Engine Development Guide
 
+## 안정성 Tier
+
+| 기능 | Tier | 비고 |
+|------|------|------|
+| Company facade, sections, show, trace, diff | **Tier 1 (Stable)** | DART와 동등 |
+| docs (retrievalBlocks, contextSlices) | **Tier 1 (Stable)** | |
+| finance (BS/IS/CF, ratios, timeseries) | **Tier 1 (Stable)** | |
+| profile (merge layer) | **Tier 1 (Stable)** | |
+| valuation(), forecast() | **Tier 1 (Stable)** | USD 자동 감지 |
+| simulation() | **Tier 1 (Stable)** | US 매크로 프리셋 |
+| SCE, explore(), listTags() | Tier 2 (Beta) | 파워유저 기능 |
+| notes(), cadence(), coverage() | Tier 2 (Beta) | 파워유저 기능 |
+
 ## 핵심 사상 (EDGAR 적용)
 
 **1. sections 수평화 = 10-K/10-Q/20-F 수평화 + blockType 분리**

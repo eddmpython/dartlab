@@ -75,6 +75,9 @@ def register_scan_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="analysis",
+        questionTypes=("지배구조", "건전성", "종합"),
+        priority=70,
     )
 
     # ── screen_market ──
@@ -115,6 +118,9 @@ def register_scan_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="analysis",
+        questionTypes=("투자",),
+        priority=60,
     )
 
     # ── benchmark_sector ──
@@ -135,6 +141,8 @@ def register_scan_tools(company: Any, register_tool) -> None:
         "섹터별 핵심 비율 벤치마크 (P10, median, P90). "
         "사용자가 '업종 평균', '섹터 비교', '벤치마크' 같은 요청을 할 때 사용하세요.",
         {"type": "object", "properties": {}},
+        category="analysis",
+        priority=55,
     )
 
     # ── scan_signal ──
@@ -165,6 +173,8 @@ def register_scan_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="analysis",
+        priority=50,
     )
 
     # ── group_health ──
@@ -185,6 +195,9 @@ def register_scan_tools(company: Any, register_tool) -> None:
         "한국 주요 기업집단(삼성/현대/SK/LG 등)의 건전성을 종합 평가합니다. "
         "사용자가 '삼성그룹 건전성', '기업집단 비교', '그룹사 현황' 같은 요청을 할 때 사용하세요.",
         {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("건전성",),
+        priority=55,
     )
 
     # ── create_chart ──
@@ -249,6 +262,8 @@ def register_scan_tools(company: Any, register_tool) -> None:
         requires_company=True,
         result_kind="chart",
         ai_hint="ChartSpec JSON 생성",
+        category="analysis",
+        priority=50,
     )
 
     # ── network_graph ──
@@ -297,4 +312,7 @@ def register_scan_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="analysis",
+        questionTypes=("지배구조",),
+        priority=65,
     )

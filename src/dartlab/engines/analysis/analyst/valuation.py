@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.analyst.fmt import fmtBig, fmtPrice
 from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
@@ -32,20 +33,22 @@ class DCFResult:
     marginOfSafety: Optional[float]
     assumptions: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = [
             "[DCF 밸류에이션]",
             f"  할인율: {self.discountRate:.1f}%",
             f"  초기 성장률: {self.growthRateInitial:.1f}%",
             f"  영구 성장률: {self.terminalGrowth:.1f}%",
-            f"  기업가치: {self.enterpriseValue / 1e8:,.0f}억",
-            f"  주주가치: {self.equityValue / 1e8:,.0f}억",
+            f"  기업가치: {fmtBig(self.enterpriseValue, c)}",
+            f"  주주가치: {fmtBig(self.equityValue, c)}",
         ]
         if self.perShareValue is not None:
-            lines.append(f"  주당 내재가치: {self.perShareValue:,.0f}원")
+            lines.append(f"  주당 내재가치: {fmtPrice(self.perShareValue, c)}")
         if self.marginOfSafety is not None:
             lines.append(f"  안전마진: {self.marginOfSafety:.1f}%")
         if self.warnings:
@@ -67,22 +70,24 @@ class DDMResult:
     modelUsed: str
     discountRate: float
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
         if self.modelUsed == "N/A":
             return "[DDM 밸류에이션]\n  적용 불가 (무배당 또는 데이터 부족)"
+        c = self.currency
         lines = [
             f"[DDM 밸류에이션 — {self.modelUsed}]",
             f"  할인율: {self.discountRate:.1f}%",
         ]
         if self.dividendPerShare is not None:
-            lines.append(f"  주당배당금: {self.dividendPerShare:,.0f}원")
+            lines.append(f"  주당배당금: {fmtPrice(self.dividendPerShare, c)}")
         if self.dividendGrowth is not None:
             lines.append(f"  배당성장률: {self.dividendGrowth:.1f}%")
         if self.intrinsicValue is not None:
-            lines.append(f"  주당 내재가치: {self.intrinsicValue:,.0f}원")
+            lines.append(f"  주당 내재가치: {fmtPrice(self.intrinsicValue, c)}")
         if self.payoutRatio is not None:
             lines.append(f"  배당성향: {self.payoutRatio:.1f}%")
         if self.warnings:
@@ -102,6 +107,7 @@ class RelativeValuationResult:
     premiumDiscount: dict[str, Optional[float]]
     consensusValue: Optional[float]
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
@@ -115,11 +121,11 @@ class RelativeValuationResult:
             pd = self.premiumDiscount.get(key)
             smS = f"{sm:.1f}" if sm is not None else "-"
             cmS = f"{cm:.1f}" if cm is not None else "-"
-            ivS = f"{iv:,.0f}" if iv is not None else "-"
+            ivS = fmtPrice(iv, self.currency) if iv is not None else "-"
             pdS = f"{pd:+.1f}%" if pd is not None else "-"
             lines.append(f"  {key:<10s} {smS:>8s}  {cmS:>8s}  {ivS:>10s}  {pdS:>10s}")
         if self.consensusValue is not None:
-            lines.append(f"  종합 적정가치: {self.consensusValue:,.0f}원")
+            lines.append(f"  종합 적정가치: {fmtPrice(self.consensusValue, self.currency)}")
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
@@ -137,16 +143,18 @@ class ValuationSummary:
     fairValueRange: Optional[tuple[float, float]]
     currentPrice: Optional[float]
     verdict: str
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = ["[종합 밸류에이션]"]
         if self.fairValueRange:
             lo, hi = self.fairValueRange
-            lines.append(f"  적정가치 범위: {lo:,.0f} ~ {hi:,.0f}원")
+            lines.append(f"  적정가치 범위: {fmtPrice(lo, c)} ~ {fmtPrice(hi, c)}")
         if self.currentPrice is not None:
-            lines.append(f"  현재가: {self.currentPrice:,.0f}원")
+            lines.append(f"  현재가: {fmtPrice(self.currentPrice, c)}")
         lines.append(f"  판단: {self.verdict}")
         lines.append(f"  ※ {self.DISCLAIMER}")
         return "\n".join(lines)
@@ -215,6 +223,7 @@ def dcfValuation(
     discountRate: Optional[float] = None,
     terminalGrowth: Optional[float] = None,
     projectionYears: int = 5,
+    currency: str = "KRW",
 ) -> DCFResult:
     """2-Stage DCF 밸류에이션."""
     warnings: list[str] = []
@@ -248,6 +257,7 @@ def dcfValuation(
                 terminalGrowth=tg,
                 marginOfSafety=None,
                 warnings=["FCF 및 영업CF 데이터 부족으로 DCF 적용 불가"],
+                currency=currency,
             )
 
     revCagr = getRevenueGrowth3Y(series)
@@ -289,8 +299,8 @@ def dcfValuation(
         "초기성장률": f"{initialGrowth:.1f}%",
         "영구성장률": f"{tg:.1f}%",
         "예측기간": f"{projectionYears}년",
-        "순차입금": f"{netDebt / 1e8:,.0f}억",
-        "기준FCF": f"{fcfCurrent / 1e8:,.0f}억",
+        "순차입금": fmtBig(netDebt, currency),
+        "기준FCF": fmtBig(fcfCurrent, currency),
     }
 
     return DCFResult(
@@ -306,6 +316,7 @@ def dcfValuation(
         marginOfSafety=mos,
         assumptions=assumptions,
         warnings=warnings,
+        currency=currency,
     )
 
 
@@ -488,13 +499,16 @@ def fullValuation(
     sectorParams: Optional[SectorParams] = None,
     marketCap: Optional[float] = None,
     currentPrice: Optional[float] = None,
+    currency: str = "KRW",
 ) -> ValuationSummary:
     """DCF + DDM + 상대가치 종합 밸류에이션."""
-    dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
+    dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice, currency=currency)
     ddm = ddmValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
+    ddm.currency = currency
     rel = relativeValuation(
         series, sectorParams=sectorParams, marketCap=marketCap, shares=shares, currentPrice=currentPrice
     )
+    rel.currency = currency
 
     estimates: list[float] = []
     if dcf.perShareValue is not None and dcf.perShareValue > 0:
@@ -529,4 +543,5 @@ def fullValuation(
         fairValueRange=fairRange,
         currentPrice=currentPrice,
         verdict=verdict,
+        currency=currency,
     )

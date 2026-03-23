@@ -48,6 +48,10 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["topic"],
         },
+        category="company",
+        questionTypes=("건전성", "수익성", "성장성", "배당", "리스크", "지배구조", "투자", "공시", "사업", "종합"),
+        priority=95,
+        dependsOn=("list_topics",),
     )
 
     def list_topics() -> str:
@@ -70,6 +74,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         "사용 시점: show_topic에 넣을 topic을 모를 때, '어떤 공시가 있어?' 질문에 답할 때. "
         "사용하지 말 것: 이미 topic을 알고 있으면 바로 show_topic을 호출하세요.",
         {"type": "object", "properties": {}},
+        category="company",
+        questionTypes=("건전성", "수익성", "성장성", "배당", "리스크", "지배구조", "투자", "공시", "사업", "종합"),
+        priority=85,
     )
 
     def trace_topic(topic: str) -> str:
@@ -98,6 +105,9 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["topic"],
         },
+        category="company",
+        questionTypes=("리스크", "공시", "지배구조"),
+        priority=60,
     )
 
     def diff_topic(topic: str = "") -> str:
@@ -127,6 +137,9 @@ def register_company_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="company",
+        questionTypes=("리스크", "성장성", "공시", "사업", "배당", "종합"),
+        priority=70,
     )
 
     def get_sections() -> str:
@@ -152,6 +165,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         "어떤 topic이 어떤 장(chapter)에 있는지, source(docs/finance/report)가 무엇인지 확인. "
         "show(topic, block)으로 접근하기 전에 먼저 이 도구로 전체 구조를 파악하세요.",
         {"type": "object", "properties": {}},
+        category="company",
+        questionTypes=("공시", "사업"),
+        priority=55,
     )
 
     def show_block(topic: str, block: int | None = None) -> str:
@@ -186,6 +202,10 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["topic"],
         },
+        category="company",
+        questionTypes=("공시",),
+        priority=45,
+        dependsOn=("get_sections",),
     )
 
     def get_company_info() -> str:
@@ -209,6 +229,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         {"type": "object", "properties": {}},
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="company",
+        questionTypes=("종합",),
+        priority=75,
     )
 
     # ── 중복 등록: search / download / data_status (company-bound) ──
@@ -237,6 +260,8 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["keyword"],
         },
+        category="meta",
+        priority=70,
     )
 
     def download_data(stock_code: str = "", category: str = "docs") -> str:
@@ -273,6 +298,8 @@ def register_company_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="global",
+        priority=30,
     )
 
     def data_status() -> str:
@@ -291,6 +318,8 @@ def register_company_tools(company: Any, register_tool) -> None:
         "로컬에 저장된 데이터 현황(카테고리별 파일 수)을 조회합니다. "
         "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
         {"type": "object", "properties": {}},
+        category="global",
+        priority=25,
     )
 
     # ── batch_query ──
@@ -338,6 +367,9 @@ def register_company_tools(company: Any, register_tool) -> None:
             },
             "required": ["codes"],
         },
+        category="company",
+        questionTypes=("종합",),
+        priority=40,
     )
 
     # ── get_evidence ──
@@ -387,6 +419,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="company",
+        questionTypes=("리스크", "공시", "사업"),
+        priority=55,
     )
 
     # ── get_topic_coverage ──
@@ -430,6 +465,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="company",
+        questionTypes=("공시",),
+        priority=35,
     )
 
     # ── get_notes ──
@@ -467,4 +505,7 @@ def register_company_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="company",
+        questionTypes=("리스크", "공시", "종합"),
+        priority=50,
     )

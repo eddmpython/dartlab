@@ -69,6 +69,8 @@ def register_openapi_tools(register_tool) -> None:
                 }
             },
         },
+        category="global",
+        priority=50,
     )
 
     def call_dart_openapi(
@@ -206,6 +208,8 @@ def register_openapi_tools(register_tool) -> None:
             },
             "required": ["action"],
         },
+        category="global",
+        priority=45,
     )
 
     def call_edgar_openapi(
@@ -292,6 +296,8 @@ def register_openapi_tools(register_tool) -> None:
             },
             "required": ["action"],
         },
+        category="global",
+        priority=40,
     )
 
     def openapi_save(
@@ -364,4 +370,6 @@ def register_openapi_tools(register_tool) -> None:
             },
             "required": ["market", "identifier", "dataset"],
         },
+        category="global",
+        priority=35,
     )

@@ -500,13 +500,16 @@ def forecast(codeOrName: str, *, horizon: int = 3):
     c = Company(codeOrName)
     from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
 
-    series = c.finance.timeseries
+    ts = c.finance.timeseries
+    series = ts[0] if isinstance(ts, tuple) else ts
+    currency = getattr(c, "currency", "KRW")
     return forecastRevenue(
         series,
         stockCode=getattr(c, "stockCode", None),
         sectorKey=getattr(c, "sectorKey", None) if hasattr(c, "sectorKey") else None,
         market=getattr(c, "market", "KR"),
         horizon=horizon,
+        currency=currency,
     )
 
 
@@ -521,14 +524,16 @@ def valuation(codeOrName: str, *, shares: int | None = None):
     c = Company(codeOrName)
     from dartlab.engines.analysis.analyst.valuation import fullValuation
 
-    series = c.finance.timeseries
+    ts = c.finance.timeseries
+    series = ts[0] if isinstance(ts, tuple) else ts
+    currency = getattr(c, "currency", "KRW")
     if shares is None:
         profile = getattr(c, "profile", None)
         if profile:
             shares = getattr(profile, "sharesOutstanding", None)
             if shares:
                 shares = int(shares)
-    return fullValuation(series, shares=shares)
+    return fullValuation(series, shares=shares, currency=currency)
 
 
 def insights(codeOrName: str):

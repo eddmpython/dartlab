@@ -333,6 +333,12 @@ us.show("10-K::item1ARiskFactors")  # risk factors
 us.BS                               # SEC XBRL balance sheet
 us.ratios                           # same 47 ratios
 us.diff("10-K::item7Mdna")          # MD&A text changes
+us.insights                         # 7-area grades (A~F)
+
+# analyst functions — auto-detect USD
+dartlab.valuation("AAPL")           # DCF + DDM + relative (USD)
+dartlab.forecast("AAPL")            # revenue forecast (USD)
+dartlab.simulation("AAPL")          # scenario simulation (US macro presets)
 ```
 
 The interface is identical — same methods, same structure:
@@ -555,6 +561,18 @@ e.companyFactsJson("AAPL")
 | EDGAR finance | On-demand | Auto-fetched | SEC XBRL API |
 | EDINET (Japan) | Researching | In development | EDINET API |
 
+DART docs are pre-built on GitHub Releases for 320+ companies. If a company is not in the release, dartlab fetches individual disclosure sections from DART — this can be **very slow**. To pre-download a DART company's data (docs + finance + report) from the release:
+
+```python
+from dartlab.core.dataLoader import download
+
+download("005930")  # Samsung — pulls from GitHub Releases
+```
+
+EDGAR data is fetched in real-time from the SEC API on first `Company` creation. This may take a moment due to API rate limits.
+
+See [Installation — Data](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data) for details.
+
 ## Try It Now
 
 ### Marimo Notebooks
@@ -615,9 +633,9 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 
 | Tier | Scope |
 |------|-------|
-| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
-| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP server |
-| **Experimental** | AI tools, export, audit, forecast, valuation |
+| **Stable** | DART Company, EDGAR Company core (sections, show, trace, diff, BS/IS/CF, ratios), valuation, forecast, simulation |
+| **Beta** | EDGAR power-user (SCE, explore, listTags, notes, cadence, coverage), insights, OpenDart, OpenEdgar, Server API, MCP server |
+| **Experimental** | AI tools, export, charts, network graph |
 | **Alpha** | Desktop App (Windows .exe) — functional but incomplete, Sections Viewer — horizontalized disclosure viewer, not yet fully structured |
 
 See [docs/stability.md](docs/stability.md).

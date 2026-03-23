@@ -93,6 +93,19 @@ class _ProfileAccessor:
         self._company._cache[cacheKey] = merged
         return merged
 
+    @property
+    def sharesOutstanding(self) -> int | None:
+        """최신 발행주식수 (SEC DEI)."""
+        cacheKey = "_sharesOutstanding"
+        if cacheKey in self._company._cache:
+            return self._company._cache[cacheKey]
+
+        from dartlab.engines.company.edgar.finance.pivot import getSharesOutstanding
+
+        val = getSharesOutstanding(self._company.cik)
+        self._company._cache[cacheKey] = val
+        return val
+
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         """source provenance — 해당 topic이 어디서 왔는지."""
         return self._company.trace(topic, period=period)

@@ -132,11 +132,11 @@ A browser opens at `http://localhost:8400`. You'll need Ollama — install from 
 
 ## Data
 
-DartLab uses Parquet files parsed from DART disclosure originals. Over 320 listed companies are available on [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs).
+DartLab uses Parquet files parsed from DART disclosure originals.
 
 You don't need to download data manually. When you call `dartlab.Company("005930")`, missing files are **downloaded automatically**.
 
-### Auto Download Behavior
+### DART — Auto Download
 
 ```python
 import dartlab
@@ -144,27 +144,31 @@ import dartlab
 c = dartlab.Company("005930")   # auto-downloads if not local
 ```
 
-1. Checks local `data/docsData/` directory
-2. If missing, downloads the Parquet file from GitHub Releases
-3. Loads automatically after download
+1. Checks local data directory
+2. If available on [GitHub Releases](https://github.com/eddmpython/dartlab/releases), downloads the pre-built Parquet (fast)
+3. If **not** on the release, fetches individual disclosure sections from DART — this is **very slow** (dozens of API calls per company)
 
-### Manual Download
+### DART — Pre-download a Specific Company
 
-To download a single company:
-
-```bash
-mkdir -p data/docsData
-curl -L -o data/docsData/005930.parquet \
-  "https://github.com/eddmpython/dartlab/releases/download/data-docs/005930.parquet"
-```
-
-To bulk download all 260+ companies:
+If you need a company that's on the release and want to download all data (docs + finance + report) upfront:
 
 ```python
-from dartlab.core import downloadAll
+from dartlab.core.dataLoader import download
 
-downloadAll()
+download("005930")  # Samsung — pulls docs + finance + report from GitHub Releases
 ```
+
+This is useful when preparing for offline analysis or batch work.
+
+### EDGAR — Real-time Fetch
+
+EDGAR data is fetched from the SEC API when you first create a US company:
+
+```python
+c = dartlab.Company("AAPL")   # fetches from SEC API (may take a moment)
+```
+
+The SEC API has rate limits, so the first load may take a moment. Subsequent loads use the local cache.
 
 ---
 
@@ -202,7 +206,7 @@ Make sure you're running with `uv run python`, not just `python`. `uv run python
 
 ### Slow data download
 
-Data is downloaded from GitHub Releases, so speed depends on your network. Use `downloadAll()` to pre-download everything for faster subsequent use.
+Data is downloaded from GitHub Releases, so speed depends on your network connection.
 
 ---
 

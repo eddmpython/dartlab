@@ -233,6 +233,11 @@ class CapabilitySpec:
     ai_hint: str = ""
     tags: tuple[str, ...] = ()
     source: str = "tool_runtime"
+    # ── 동적 도구 선택용 메타데이터 ──
+    questionTypes: tuple[str, ...] = ()
+    category: str = "general"
+    priority: int = 50
+    dependsOn: tuple[str, ...] = ()
 
     def to_dict(self, *, detail: bool = False) -> dict[str, Any]:
         data = asdict(self)
@@ -295,6 +300,10 @@ def register_tool_capability(
     ai_hint: str = "",
     tags: tuple[str, ...] = (),
     source: str = "tool_runtime",
+    questionTypes: tuple[str, ...] = (),
+    category: str = "general",
+    priority: int = 50,
+    dependsOn: tuple[str, ...] = (),
 ) -> CapabilitySpec:
     spec = CapabilitySpec(
         id=capability_id,
@@ -309,6 +318,10 @@ def register_tool_capability(
         ai_hint=ai_hint,
         tags=tags,
         source=source,
+        questionTypes=questionTypes,
+        category=category,
+        priority=priority,
+        dependsOn=dependsOn,
     )
     _DEFAULT_REGISTRY.register(spec)
     return spec
@@ -318,12 +331,15 @@ def get_capability_specs(
     *,
     channel: str | None = None,
     kind: str | None = None,
+    category: str | None = None,
 ) -> list[CapabilitySpec]:
     specs = _DEFAULT_REGISTRY.list()
     if channel is not None:
         specs = [spec for spec in specs if channel in spec.channels]
     if kind is not None:
         specs = [spec for spec in specs if spec.kind == kind]
+    if category is not None:
+        specs = [spec for spec in specs if spec.category == category]
     return specs
 
 

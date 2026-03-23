@@ -28,6 +28,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         "사용자가 '어떤 데이터가 있어?', '무슨 분석이 가능해?' 같은 메타 질문을 할 때 사용하세요.",
         {"type": "object", "properties": {}},
         kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=70,
     )
 
     def get_engine_spec(engine: str) -> str:
@@ -60,6 +62,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             "required": ["engine"],
         },
         kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=60,
     )
 
     def get_runtime_capabilities() -> str:
@@ -72,6 +76,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         "EDGAR에서 더 받을 수 있는 데이터, OpenAPI 범위, GPT/Codex 연결 시 가능한 코딩 범위를 물을 때 우선 사용하세요.",
         {"type": "object", "properties": {}},
         kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=55,
     )
 
     def get_tool_catalog(include_parameters: bool = False) -> str:
@@ -92,6 +98,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             },
         },
         kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=65,
     )
 
     def get_coding_runtime_status() -> str:
@@ -103,6 +111,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         "현재 등록된 coding backend와 가용 상태를 조회합니다. 아직 provider와 분리된 코드 작업 런타임의 상태를 확인할 때 사용하세요.",
         {"type": "object", "properties": {}},
         kind=CapabilityKind.SYSTEM,
+        category="meta",
+        priority=30,
     )
 
     coding_runtime_enabled, _ = get_coding_runtime_policy()
@@ -178,6 +188,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             kind=CapabilityKind.CODING,
             channels=(CapabilityChannel.CHAT, CapabilityChannel.MCP),
             result_kind="coding_result",
+            category="coding",
+            priority=40,
         )
 
         def run_codex_task(
@@ -229,6 +241,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             kind=CapabilityKind.CODING,
             channels=(CapabilityChannel.CHAT, CapabilityChannel.MCP),
             result_kind="coding_result",
+            category="coding",
+            priority=45,
         )
 
     # ── discover_features ──
@@ -254,6 +268,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
                 },
             },
         },
+        category="meta",
+        priority=60,
     )
 
     # ── global search / download / data_status ──
@@ -286,6 +302,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             },
             "required": ["keyword"],
         },
+        category="global",
+        priority=70,
     )
 
     def download_data(stock_code: str = "", category: str = "docs") -> str:
@@ -322,6 +340,8 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
                 },
             },
         },
+        category="global",
+        priority=30,
     )
 
     def data_status() -> str:
@@ -340,4 +360,6 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
         "로컬에 저장된 데이터 현황(카테고리별 파일 수)을 조회합니다. "
         "'데이터 몇 개 있어?', '어떤 데이터가 있지?' 같은 질문에 사용하세요.",
         {"type": "object", "properties": {}},
+        category="global",
+        priority=25,
     )

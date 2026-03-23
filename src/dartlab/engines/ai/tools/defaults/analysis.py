@@ -59,6 +59,9 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         "사용 시점: 종합 분석, '이 회사 어때?', 투자 판단 근거가 필요할 때. "
         "사용하지 말 것: 특정 재무 수치만 필요하면 get_data/compute_ratios가 빠릅니다.",
         {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("건전성", "수익성", "리스크", "종합"),
+        priority=85,
     )
 
     # ── get_sector_info ──
@@ -99,6 +102,9 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         "사용 시점: 업종 비교, 밸류에이션 판단, '동종업계 대비 어때?' 질문. "
         "사용하지 말 것: 기업 자체 재무비율은 compute_ratios를 사용하세요.",
         {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("투자", "종합"),
+        priority=70,
     )
 
     # ── get_rank ──
@@ -136,6 +142,9 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         "사용 시점: 시장 내 위치 파악, '이 회사 규모가 어느 정도야?' 질문. "
         "사용하지 말 것: 재무 수치 자체가 필요하면 get_data를 사용하세요.",
         {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("종합",),
+        priority=60,
     )
 
     # ── Excel export ──
@@ -170,6 +179,8 @@ def register_analysis_tools(company: Any, register_tool) -> None:
                 },
             },
         },
+        category="export",
+        priority=40,
     )
 
     def create_template(name: str, sheets_json: str) -> str:
@@ -207,6 +218,8 @@ def register_analysis_tools(company: Any, register_tool) -> None:
             },
             "required": ["name", "sheets_json"],
         },
+        category="export",
+        priority=30,
     )
 
     def export_with_template(template_id: str) -> str:
@@ -245,6 +258,9 @@ def register_analysis_tools(company: Any, register_tool) -> None:
             },
             "required": ["template_id"],
         },
+        category="export",
+        priority=35,
+        dependsOn=("list_templates",),
     )
 
     def list_templates() -> str:
@@ -264,4 +280,6 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         list_templates,
         "저장된 Excel 내보내기 템플릿 목록을 조회합니다. 프리셋과 사용자 커스텀 템플릿을 모두 포함합니다.",
         {"type": "object", "properties": {}},
+        category="export",
+        priority=30,
     )

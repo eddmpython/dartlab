@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.analyst.fmt import fmtBig, fmtPrice
 from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import getAnnualValues
 
@@ -117,10 +118,12 @@ class ForecastResult:
     growthRate: float
     assumptions: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = [
             f"[{self.metricLabel} 예측 — {self.method}]",
             f"  신뢰도: {self.confidence}  (R²={self.rSquared:.2f})",
@@ -128,10 +131,10 @@ class ForecastResult:
         ]
         validHist = [v for v in self.historical if v is not None]
         if validHist:
-            lines.append(f"  최근 실적: {validHist[-1] / 1e8:,.0f}억")
+            lines.append(f"  최근 실적: {fmtBig(validHist[-1], c)}")
         if self.projected:
             for i, p in enumerate(self.projected, 1):
-                lines.append(f"  +{i}년 예측: {p / 1e8:,.0f}억")
+                lines.append(f"  +{i}년 예측: {fmtBig(p, c)}")
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
@@ -150,10 +153,12 @@ class ScenarioResult:
     weightedValue: Optional[float]
     currentPrice: Optional[float]
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = ["[시나리오 분석]"]
         for label, scenario, prob in [
             ("Bull", self.bull, self.probability.get("bull", 25)),
@@ -162,11 +167,11 @@ class ScenarioResult:
         ]:
             growth = scenario.get("growth", 0)
             value = scenario.get("perShareValue", 0)
-            lines.append(f"  {label} ({prob:.0f}%): 성장 {growth:+.1f}%, 적정가 {value:,.0f}원")
+            lines.append(f"  {label} ({prob:.0f}%): 성장 {growth:+.1f}%, 적정가 {fmtPrice(value, c)}")
         if self.weightedValue is not None:
-            lines.append(f"  확률가중 적정가: {self.weightedValue:,.0f}원")
+            lines.append(f"  확률가중 적정가: {fmtPrice(self.weightedValue, c)}")
         if self.currentPrice:
-            lines.append(f"  현재가: {self.currentPrice:,.0f}원")
+            lines.append(f"  현재가: {fmtPrice(self.currentPrice, c)}")
         lines.append(f"  ※ {self.DISCLAIMER}")
         return "\n".join(lines)
 

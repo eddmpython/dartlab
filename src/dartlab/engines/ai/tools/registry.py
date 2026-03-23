@@ -45,6 +45,10 @@ def register_tool(
     result_kind: str = "text",
     stability: str = "experimental",
     ai_hint: str = "",
+    questionTypes: tuple[str, ...] = (),
+    category: str = "general",
+    priority: int = 50,
+    dependsOn: tuple[str, ...] = (),
 ) -> None:
     """도구 등록."""
     get_default_tool_runtime().register_tool(name, func, description, parameters)
@@ -59,6 +63,10 @@ def register_tool(
         result_kind=result_kind,
         stability=stability,
         ai_hint=ai_hint,
+        questionTypes=questionTypes,
+        category=category,
+        priority=priority,
+        dependsOn=dependsOn,
     )
 
 
@@ -109,5 +117,13 @@ def register_defaults(company: Any | None = None, *, runtime: ToolRuntime | None
     from .defaults import register_all_defaults
 
     register_all_defaults(company, register_tool)
+
+    # CapabilitySpec 메타데이터에서 QUESTION_TYPE_MAP 자동 갱신
+    try:
+        from dartlab.engines.ai.conversation.templates.analysis_rules import refreshQuestionTypeMap
+
+        refreshQuestionTypeMap()
+    except ImportError:
+        pass
 
     return get_default_tool_runtime()

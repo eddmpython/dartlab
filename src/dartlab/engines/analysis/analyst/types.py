@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from dartlab.engines.analysis.analyst.fmt import fmtPrice
+
 
 @dataclass
 class ValuationMethod:
@@ -14,9 +16,10 @@ class ValuationMethod:
     weight: float = 0.0  # 가중치 (0~1)
     confidence: float = 0.0  # 신뢰도 (0~1)
     reasoning: str = ""  # 산출 근거
+    currency: str = "KRW"
 
     def __repr__(self) -> str:
-        return f"{self.name}: {self.value:,.0f}원 (가중치={self.weight:.0%}, 신뢰도={self.confidence:.0%})"
+        return f"{self.name}: {fmtPrice(self.value, self.currency)} (가중치={self.weight:.0%}, 신뢰도={self.confidence:.0%})"
 
 
 # 투자 의견 매핑
@@ -64,13 +67,14 @@ class AnalystReport:
     reasoning: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     generated_at: str = ""
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
         lines = [f"[애널리스트 리포트 — {self.company_name or self.stock_code}]"]
-        lines.append(f"  종합 목표가: {self.target_price:,.0f}원")
-        lines.append(f"  현재가: {self.current_price:,.0f}원")
+        lines.append(f"  종합 목표가: {fmtPrice(self.target_price, self.currency)}")
+        lines.append(f"  현재가: {fmtPrice(self.current_price, self.currency)}")
         lines.append(f"  업사이드: {self.upside:+.1%}")
         lines.append(f"  투자의견: {self.opinion}")
         lines.append(f"  신뢰도: {self.confidence:.0%}")

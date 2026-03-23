@@ -26,7 +26,13 @@ def getTTM(
     vals = series.get(sjDiv, {}).get(snakeId)
     if not vals:
         return None
-    last4 = [v for v in vals[-4:] if v is not None]
+    # 끝에서 trailing None 제거 후 최근 4개 선택 (미공시 기간 대응)
+    trimmed = vals
+    while trimmed and trimmed[-1] is None:
+        trimmed = trimmed[:-1]
+    if not trimmed:
+        return None
+    last4 = [v for v in trimmed[-4:] if v is not None]
     if len(last4) == 4:
         return sum(last4)
     if not strict and len(last4) == 3:

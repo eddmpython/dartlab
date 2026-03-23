@@ -99,6 +99,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         result_kind="ui_action",
         ai_hint="공시 뷰어 이동을 트리거하는 UI action",
+        category="ui",
+        priority=60,
     )
 
     # ── show_chart ──
@@ -153,6 +155,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         requires_company=True,
         result_kind="ui_action",
         ai_hint="ChartRenderer가 바로 렌더 가능한 spec을 포함한 UI action",
+        category="ui",
+        priority=55,
     )
 
     # ── show_comparison ──
@@ -198,6 +202,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         requires_company=True,
         result_kind="ui_action",
+        category="ui",
+        priority=50,
     )
 
     # ── highlight_section ──
@@ -235,6 +241,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         kind=CapabilityKind.UI_ACTION,
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         result_kind="ui_action",
+        category="ui",
+        priority=40,
     )
 
     # ── render_dashboard ──
@@ -306,6 +314,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         requires_company=True,
         result_kind="ui_action",
         ai_hint="여러 위젯을 grid 레이아웃으로 조합한 대시보드 UI action",
+        category="ui",
+        priority=45,
     )
 
     # ── pin_insight ──
@@ -350,6 +360,8 @@ def register_ui_tools(company: Any, register_tool) -> None:
         kind=CapabilityKind.UI_ACTION,
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         result_kind="ui_action",
+        category="ui",
+        priority=35,
     )
 
     # ── open_comparison_view ──
@@ -395,4 +407,6 @@ def register_ui_tools(company: Any, register_tool) -> None:
         channels=(CapabilityChannel.CHAT, CapabilityChannel.UI),
         result_kind="ui_action",
         ai_hint="두 종목의 데이터를 나란히 비교하는 dual comparison UI action",
+        category="ui",
+        priority=50,
     )

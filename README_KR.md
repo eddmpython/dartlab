@@ -333,6 +333,12 @@ us.show("10-K::item1ARiskFactors")  # 리스크 요인
 us.BS                               # SEC XBRL 재무상태표
 us.ratios                           # 동일한 47개 비율
 us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
+us.insights                         # 7영역 등급 (A~F)
+
+# analyst 함수 — USD 자동 감지
+dartlab.valuation("AAPL")           # DCF + DDM + 상대 밸류에이션 (USD)
+dartlab.forecast("AAPL")            # 매출 예측 (USD)
+dartlab.simulation("AAPL")          # 시나리오 시뮬레이션 (US 매크로 프리셋)
 ```
 
 인터페이스가 동일하다 — 같은 메서드, 같은 구조:
@@ -555,6 +561,18 @@ e.companyFactsJson("AAPL")
 | EDGAR finance | 주문형 | 자동 수집 | SEC XBRL API |
 | EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
 
+DART docs는 320+ 기업이 GitHub Releases에 미리 빌드되어 있다. 릴리즈에 없는 기업은 DART에서 개별 섹션을 하나씩 받아오기 때문에 **매우 느리다**. 특정 DART 종목의 데이터(docs + finance + report)를 릴리즈에서 미리 받아두려면:
+
+```python
+from dartlab.core.dataLoader import download
+
+download("005930")  # 삼성전자 — GitHub Releases에서 다운로드
+```
+
+EDGAR 데이터는 첫 Company 생성 시 SEC API에서 실시간으로 가져온다. API 속도 제한 때문에 대기가 있을 수 있다.
+
+자세한 내용은 [설치 가이드 — 데이터](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data)를 참고한다.
+
 ## 바로 시작하기
 
 ### Marimo 노트북
@@ -595,9 +613,9 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 
 | Tier | 범위 |
 |------|------|
-| **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, ratios, insights) |
-| **Beta** | EDGAR Company, OpenDart, OpenEdgar, Server API, MCP 서버 |
-| **Experimental** | AI 도구, export, audit, forecast, valuation |
+| **Stable** | DART Company, EDGAR Company core (sections, show, trace, diff, BS/IS/CF, ratios), valuation, forecast, simulation |
+| **Beta** | EDGAR 파워유저 (SCE, explore, listTags, notes, cadence, coverage), insights, OpenDart, OpenEdgar, Server API, MCP 서버 |
+| **Experimental** | AI 도구, export, 차트, 네트워크 그래프 |
 | **Alpha** | Desktop App (Windows .exe) — 동작하지만 불완전, Sections Viewer — 수평화된 공시 뷰어, 아직 체계 미완성 |
 
 자세한 기준은 [docs/stability.md](docs/stability.md)를 본다.

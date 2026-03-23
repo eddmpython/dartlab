@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     import polars as pl
 
+from dartlab.engines.analysis.analyst.fmt import fmtBig
 from dartlab.engines.analysis.analyst.forecast import (
     forecastMetric,
 )
@@ -166,10 +167,12 @@ class RevenueForecastResult:
     backlogSignal: BacklogSignal | None = None
     aiOverlay: RevenueForecastAIOverlay | None = None
     forwardTestKey: str | None = None
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
+        cur = self.currency
         lines = [f"[매출 예측 — {self.method}]"]
         lines.append(f"  신뢰도: {self.confidence}")
         lc = self.aiContext.get("lifecycle", "")
@@ -184,12 +187,12 @@ class RevenueForecastResult:
                 if self.growthRates and self.growthRates[0] != -100
                 else validHist[-1]
             )
-            lines.append(f"  기준 매출: {base / 1e8:,.0f}억")
+            lines.append(f"  기준 매출: {fmtBig(base, cur)}")
         elif validHist:
-            lines.append(f"  최근 실적: {validHist[-1] / 1e8:,.0f}억")
+            lines.append(f"  최근 실적: {fmtBig(validHist[-1], cur)}")
 
         for i, (proj, gr) in enumerate(zip(self.projected, self.growthRates), 1):
-            lines.append(f"  +{i}년: {proj / 1e8:,.0f}억 ({gr:+.1f}%)")
+            lines.append(f"  +{i}년: {fmtBig(proj, cur)} ({gr:+.1f}%)")
 
         # v3: 시나리오
         if self.scenarios:
@@ -200,9 +203,9 @@ class RevenueForecastResult:
                 prob = probs.get(label, 0)
                 if sc:
                     lines.append(
-                        f"  {label.title()}({prob:.0f}%): {sc[0] / 1e8:,.0f}억 ({sg[0]:+.1f}%)"
+                        f"  {label.title()}({prob:.0f}%): {fmtBig(sc[0], cur)} ({sg[0]:+.1f}%)"
                         if sg
-                        else f"  {label.title()}: {sc[0] / 1e8:,.0f}억"
+                        else f"  {label.title()}: {fmtBig(sc[0], cur)}"
                     )
 
         # v3: 세그먼트
@@ -211,9 +214,9 @@ class RevenueForecastResult:
             for sf in self.segmentForecasts[:3]:  # 상위 3개만 표시
                 if sf.projected:
                     lines.append(
-                        f"    {sf.name}({sf.shareOfRevenue:.0f}%): {sf.projected[0] / 1e8:,.0f}억 ({sf.growthRates[0]:+.1f}%)"
+                        f"    {sf.name}({sf.shareOfRevenue:.0f}%): {fmtBig(sf.projected[0], cur)} ({sf.growthRates[0]:+.1f}%)"
                         if sf.growthRates
-                        else f"    {sf.name}: {sf.projected[0] / 1e8:,.0f}억"
+                        else f"    {sf.name}: {fmtBig(sf.projected[0], cur)}"
                     )
 
         # v3: 수주잔고
@@ -900,6 +903,7 @@ def forecastRevenue(
     market: str = "KR",
     horizon: int = 3,
     companyData: CompanyDataBundle | None = None,
+    currency: str = "KRW",
 ) -> RevenueForecastResult:
     """매출액 앙상블 예측."""
     warnings: list[str] = []
@@ -1035,7 +1039,7 @@ def forecastRevenue(
             if prev and prev > 0 and p > 0:
                 tsGrowthRates.append((p / prev - 1) * 100)
             else:
-                tsGrowthRates.append(tsResult.growth_rate)
+                tsGrowthRates.append(tsResult.growthRate)
             prev = p
 
     # 컨센서스 성장률 계산
@@ -1148,7 +1152,7 @@ def forecastRevenue(
     method = "ensemble" if len(activeSources) > 1 else f"{activeSources[0]}_only"
 
     # 신뢰도: 소스 수 + 시계열 R² + 컨센서스 유무 + 라이프사이클
-    if len(activeSources) >= 3 and tsResult.r_squared > 0.5:
+    if len(activeSources) >= 3 and tsResult.rSquared > 0.5:
         confidence = "high"
     elif len(activeSources) >= 2 and (tsAvailable or consensusProj):
         confidence = "medium" if lifecycle != "transition" else "low"
@@ -1186,7 +1190,7 @@ def forecastRevenue(
     for src, w in finalWeights.items():
         if w > 0:
             if src == "timeseries":
-                assumptions.append(f"시계열({w:.0%}): {tsResult.method}, R²={tsResult.r_squared:.2f}")
+                assumptions.append(f"시계열({w:.0%}): {tsResult.method}, R²={tsResult.rSquared:.2f}")
             elif src == "consensus":
                 nEst = len(consensusProj)
                 assumptions.append(f"컨센서스({w:.0%}): 네이버 금융 {nEst}개년 추정치")
@@ -1215,7 +1219,7 @@ def forecastRevenue(
         "market": market,
         "sources_used": list(finalWeights.keys()),
         "ts_method": tsResult.method,
-        "ts_r_squared": tsResult.r_squared,
+        "ts_r_squared": tsResult.rSquared,
         "roic_growth": round(roicGrowthRate, 2) if roicGrowthRate is not None else None,
         "roic_detail": roicDetail if roicDetail else None,
         "roic_ts_gap": round(roicTsGap, 2) if roicTsGap is not None else None,
@@ -1285,6 +1289,7 @@ def forecastRevenue(
         segmentForecasts=segmentForecasts,
         backlogSignal=backlogSignal,
         forwardTestKey=ftKey,
+        currency=currency,
     )
 
 
@@ -1396,4 +1401,5 @@ def applyAiOverlay(
         backlogSignal=result.backlogSignal,
         aiOverlay=appliedOverlay,
         forwardTestKey=result.forwardTestKey,
+        currency=result.currency,
     )

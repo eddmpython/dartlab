@@ -535,7 +535,7 @@ FEW_SHOT_COMPACT: dict[str, str] = {
 # 질문 분류 키워드 매핑
 # ══════════════════════════════════════
 
-QUESTION_TYPE_MAP: dict[str, list[str]] = {
+_CORE_QUESTION_KEYWORDS: dict[str, list[str]] = {
     "건전성": [
         "건전",
         "안전",
@@ -723,6 +723,38 @@ QUESTION_TYPE_MAP: dict[str, list[str]] = {
         "이사보수",
     ],
 }
+
+
+def _buildQuestionTypeMap() -> dict[str, list[str]]:
+    """core keywords + CapabilitySpec.questionTypes/ai_hint에서 자동 수집한 키워드 병합."""
+    try:
+        from dartlab.core.capabilities import get_capability_specs
+
+        autoKeywords: dict[str, set[str]] = {}
+        for spec in get_capability_specs():
+            for qt in spec.questionTypes:
+                if spec.ai_hint:
+                    autoKeywords.setdefault(qt, set()).update(
+                        w.strip() for w in spec.ai_hint.split(",") if w.strip()
+                    )
+        merged: dict[str, list[str]] = {}
+        for qt, coreKws in _CORE_QUESTION_KEYWORDS.items():
+            merged[qt] = list(set(coreKws) | autoKeywords.get(qt, set()))
+        for qt, kws in autoKeywords.items():
+            if qt not in merged:
+                merged[qt] = list(kws)
+        return merged
+    except ImportError:
+        return dict(_CORE_QUESTION_KEYWORDS)
+
+
+QUESTION_TYPE_MAP: dict[str, list[str]] = _CORE_QUESTION_KEYWORDS
+
+
+def refreshQuestionTypeMap() -> None:
+    """도구 등록 후 호출하여 QUESTION_TYPE_MAP을 갱신한다."""
+    global QUESTION_TYPE_MAP
+    QUESTION_TYPE_MAP = _buildQuestionTypeMap()
 
 
 # ══════════════════════════════════════

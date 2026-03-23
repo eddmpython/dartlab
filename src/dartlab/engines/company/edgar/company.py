@@ -982,6 +982,34 @@ class Company:
             self._supply_cache = analyze_supply_chain(self)
         return self._supply_cache
 
+    # ── analyst ──
+
+    def forecast(self, *, horizon: int = 3):
+        """매출 앙상블 예측."""
+        from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
+
+        ts = self.finance.timeseries
+        series = ts[0] if isinstance(ts, tuple) else ts
+        return forecastRevenue(
+            series,
+            stockCode=self.ticker,
+            market="US",
+            horizon=horizon,
+            currency="USD",
+        )
+
+    def valuation(self, *, shares: int | None = None):
+        """종합 밸류에이션 (DCF + DDM + 상대가치)."""
+        from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+        ts = self.finance.timeseries
+        series = ts[0] if isinstance(ts, tuple) else ts
+        if shares is None:
+            shares = getattr(self.profile, "sharesOutstanding", None)
+            if shares:
+                shares = int(shares)
+        return fullValuation(series, shares=shares, currency="USD")
+
     # ── AI 분석 ──
 
     def ask(

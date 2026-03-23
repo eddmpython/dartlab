@@ -2303,25 +2303,28 @@ class Company:
         """매출 앙상블 예측."""
         from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
 
-        series = self.finance.timeseries
+        ts = self.finance.timeseries
+        series = ts[0] if isinstance(ts, tuple) else ts
         return forecastRevenue(
             series,
             stockCode=self.stockCode,
             sectorKey=getattr(self, "sectorKey", None),
             market="KR",
             horizon=horizon,
+            currency="KRW",
         )
 
     def valuation(self, *, shares: int | None = None):
         """종합 밸류에이션 (DCF + DDM + 상대가치)."""
         from dartlab.engines.analysis.analyst.valuation import fullValuation
 
-        series = self.finance.timeseries
+        ts = self.finance.timeseries
+        series = ts[0] if isinstance(ts, tuple) else ts
         if shares is None:
             shares = getattr(self.profile, "sharesOutstanding", None)
             if shares:
                 shares = int(shares)
-        return fullValuation(series, shares=shares)
+        return fullValuation(series, shares=shares, currency="KRW")
 
     @property
     def market(self) -> str:

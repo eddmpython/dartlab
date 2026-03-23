@@ -417,3 +417,92 @@ class TestPerShareMetrics:
         assert result.eps is None
         assert result.bps is None
         assert result.dps is None
+
+
+# ══════════════════════════════════════
+# USD 통화 포맷 테스트
+# ══════════════════════════════════════
+
+
+# US 기업 스케일 시계열 (달러 기준)
+US_SERIES = _make_series(
+    revenue=[50e9, 55e9, 60e9, 65e9, 70e9],
+    operating_profit=[10e9, 12e9, 14e9, 16e9, 18e9],
+    net_profit=[8e9, 9e9, 10e9, 12e9, 14e9],
+    operating_cashflow=[12e9, 14e9, 16e9, 18e9, 20e9],
+    capex=[-3e9, -4e9, -5e9, -6e9, -7e9],
+    dividends_paid=[-2e9, -2.2e9, -2.4e9, -2.6e9, -2.8e9],
+    total_assets=[200e9, 220e9, 250e9, 280e9, 310e9],
+    total_equity=[120e9, 135e9, 150e9, 170e9, 190e9],
+    owners_equity=[110e9, 125e9, 140e9, 160e9, 180e9],
+    total_liabilities=[80e9, 85e9, 100e9, 110e9, 120e9],
+    cash=[30e9, 35e9, 40e9, 45e9, 50e9],
+    stb=[10e9, 10e9, 12e9, 12e9, 15e9],
+    ltb=[20e9, 20e9, 25e9, 25e9, 30e9],
+    debentures=[5e9, 5e9, 5e9, 5e9, 5e9],
+)
+
+
+@pytest.mark.unit
+class TestUSDCurrency:
+    def test_dcf_usd_repr(self, sector_params):
+        from dartlab.engines.analysis.analyst.valuation import dcfValuation
+
+        result = dcfValuation(US_SERIES, shares=1_000_000_000, sectorParams=sector_params)
+        result.currency = "USD"
+        text = repr(result)
+        assert "$" in text
+        assert "M" in text
+        assert "억" not in text
+
+    def test_full_valuation_usd(self, sector_params):
+        from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+        result = fullValuation(US_SERIES, shares=1_000_000_000, sectorParams=sector_params, currency="USD")
+        assert result.currency == "USD"
+        assert result.dcf.currency == "USD"
+        assert result.ddm.currency == "USD"
+        assert result.relative.currency == "USD"
+        text = repr(result)
+        assert "$" in text
+        assert "억" not in text
+
+    def test_forecast_usd_repr(self, sector_params):
+        from dartlab.engines.analysis.analyst.forecast import forecastMetric
+
+        result = forecastMetric(US_SERIES, metric="revenue", horizon=3, sectorParams=sector_params)
+        result.currency = "USD"
+        text = repr(result)
+        assert "$" in text
+        assert "억" not in text
+
+    def test_revenue_forecast_usd(self):
+        from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
+
+        result = forecastRevenue(US_SERIES, market="US", currency="USD")
+        assert result.currency == "USD"
+        text = repr(result)
+        assert "$" in text
+
+    def test_krw_default(self, sector_params):
+        from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+        result = fullValuation(HEALTHY_SERIES, shares=1_000_000, sectorParams=sector_params)
+        assert result.currency == "KRW"
+        text = repr(result)
+        assert "원" in text
+
+
+@pytest.mark.unit
+class TestFmtHelpers:
+    def test_fmtBig(self):
+        from dartlab.engines.analysis.analyst.fmt import fmtBig
+
+        assert fmtBig(100e8, "KRW") == "100억"
+        assert fmtBig(50e6, "USD") == "$50M"
+
+    def test_fmtPrice(self):
+        from dartlab.engines.analysis.analyst.fmt import fmtPrice
+
+        assert fmtPrice(50000, "KRW") == "50,000원"
+        assert fmtPrice(150.5, "USD") == "$150.50"

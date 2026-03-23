@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **EDGAR Company Tier 1 승격**: EDGAR core (sections, show, trace, diff, BS/IS/CF, ratios, profile) Stable로 격상
+- **analyst 모듈 USD 자동 감지**: `dartlab.valuation()`, `dartlab.forecast()`, `dartlab.simulation()` 루트 함수가 `company.currency` 기반 KRW/USD 자동 포맷
+- **EDGAR Company.valuation() / forecast()**: 2-Tier 원칙에 따라 EDGAR Company 메서드 추가
+- **US 매크로 시나리오**: `PRESET_SCENARIOS_US` (baseline, adverse, rate_hike, rate_cut, tech_downturn) + US 섹터 탄력성 12개
+- **`fmt.py` 통화 포맷 헬퍼**: `fmtBig()` (억/M), `fmtPrice()` (원/$), `fmtUnit()` — analyst 모듈 공통 사용
+- **USD 테스트 7개**: DCF/valuation/forecast/simulation USD repr + fmt helper 테스트
+
+### Fixed
+
+- **timeseries 튜플 언래핑**: `finance.timeseries`가 `(dict, list)` 튜플 반환 시 `dict`만 추출 — DART/EDGAR 양쪽 analyst 함수 에러 수정
+- **`revenueForecast.py` 속성명 버그**: `tsResult.r_squared` → `tsResult.rSquared` (3곳) — camelCase 위반 수정
+
+### Changed
+
+- **stability.md Tier 재편**: EDGAR core Tier 2 → Tier 1, valuation/forecast/simulation Tier 3 → Tier 1
+- **README 양쪽 Stability 테이블 갱신**: EDGAR core Stable, analyst 함수 Stable 반영
+
 ## [0.7.5] - 2026-03-22
 
 ### Added

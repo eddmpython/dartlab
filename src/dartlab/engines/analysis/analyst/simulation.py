@@ -15,6 +15,7 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dartlab.engines.analysis.analyst.fmt import fmtBig, fmtPrice
 from dartlab.engines.analysis.sector.types import SectorParams
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
@@ -49,11 +50,12 @@ class MacroScenario:
         return "\n".join(lines)
 
 
-# 한국 기준 사전 정의 시나리오
+# ── 한국 기준 사전 정의 시나리오 ──
+
 BASELINE_RATE = 2.5  # 현재 BOK 기준금리
 BASELINE_FX = 1470  # 현재 KRW/USD
 
-PRESET_SCENARIOS: dict[str, MacroScenario] = {
+PRESET_SCENARIOS_KR: dict[str, MacroScenario] = {
     "baseline": MacroScenario(
         "baseline",
         "기준 시나리오",
@@ -101,6 +103,66 @@ PRESET_SCENARIOS: dict[str, MacroScenario] = {
     ),
 }
 
+# ── US 기준 사전 정의 시나리오 ──
+
+PRESET_SCENARIOS_US: dict[str, MacroScenario] = {
+    "baseline": MacroScenario(
+        "baseline",
+        "Baseline",
+        gdpGrowth=[2.0, 2.2, 2.3],
+        interestRate=[5.0, 4.5, 4.0],
+        krwUsd=[1.0, 1.0, 1.0],  # USD/USD = 1 (placeholder)
+        cpi=[2.5, 2.3, 2.0],
+        description="Current trend maintained",
+    ),
+    "adverse": MacroScenario(
+        "adverse",
+        "Recession",
+        gdpGrowth=[-2.5, -0.5, 1.0],
+        interestRate=[3.0, 2.5, 3.0],
+        krwUsd=[1.0, 1.0, 1.0],
+        cpi=[1.0, 1.5, 2.0],
+        description="CCAR-style severe recession",
+    ),
+    "rate_hike": MacroScenario(
+        "rate_hike",
+        "Fed Tightening",
+        gdpGrowth=[1.0, 1.5, 2.0],
+        interestRate=[6.0, 6.5, 6.0],
+        krwUsd=[1.0, 1.0, 1.0],
+        cpi=[3.5, 3.0, 2.5],
+        description="Persistent inflation → aggressive Fed tightening",
+    ),
+    "rate_cut": MacroScenario(
+        "rate_cut",
+        "Fed Easing",
+        gdpGrowth=[2.5, 3.0, 2.8],
+        interestRate=[4.0, 3.5, 3.0],
+        krwUsd=[1.0, 1.0, 1.0],
+        cpi=[2.0, 2.0, 2.0],
+        description="Soft landing → aggressive rate cuts",
+    ),
+    "tech_downturn": MacroScenario(
+        "tech_downturn",
+        "Tech Downturn",
+        gdpGrowth=[-1.0, 0.5, 2.0],
+        interestRate=[4.5, 4.0, 4.0],
+        krwUsd=[1.0, 1.0, 1.0],
+        cpi=[2.0, 2.0, 2.0],
+        description="Tech sector correction + AI capex pullback",
+    ),
+}
+
+# 시장별 시나리오 선택
+PRESET_SCENARIOS = PRESET_SCENARIOS_KR  # 기본값 (하위호환)
+
+
+def getPresetScenarios(market: str = "KR") -> dict[str, MacroScenario]:
+    """시장별 사전 정의 시나리오 반환."""
+    if market == "US":
+        return PRESET_SCENARIOS_US
+    return PRESET_SCENARIOS_KR
+
 
 # ══════════════════════════════════════
 # Layer 2: 업종별 거시경제 감응도
@@ -122,6 +184,7 @@ class SectorElasticity:
 
 
 SECTOR_ELASTICITY: dict[str, SectorElasticity] = {
+    # 한국 (WICS 분류)
     "반도체": SectorElasticity(1.8, 0.8, 50, 0, "high"),
     "자동차": SectorElasticity(1.3, 0.6, 30, 0, "high"),
     "화학": SectorElasticity(1.2, 0.4, 25, 0, "high"),
@@ -137,6 +200,19 @@ SECTOR_ELASTICITY: dict[str, SectorElasticity] = {
     "제약/바이오": SectorElasticity(0.5, 0.2, 10, 0, "low"),
     "전력/에너지": SectorElasticity(0.3, 0.15, 10, 0, "defensive"),
     "섬유/의류": SectorElasticity(0.9, 0.3, 20, 0, "moderate"),
+    # US (GICS-like 분류)
+    "Technology": SectorElasticity(1.5, 0.3, 40, 0, "high"),
+    "Semiconductors": SectorElasticity(1.8, 0.5, 50, 0, "high"),
+    "Healthcare": SectorElasticity(0.4, 0.1, 10, 0, "defensive"),
+    "Financials": SectorElasticity(1.2, 0.1, 25, 12, "moderate"),
+    "Consumer Discretionary": SectorElasticity(1.3, 0.2, 30, 0, "high"),
+    "Consumer Staples": SectorElasticity(0.3, 0.05, 5, 0, "defensive"),
+    "Energy": SectorElasticity(1.0, 0.3, 25, 0, "high"),
+    "Industrials": SectorElasticity(1.2, 0.2, 25, 0, "moderate"),
+    "Materials": SectorElasticity(1.3, 0.3, 30, 0, "high"),
+    "Utilities": SectorElasticity(0.2, 0.05, 5, 0, "defensive"),
+    "Communication Services": SectorElasticity(0.8, 0.1, 20, 0, "moderate"),
+    "Real Estate": SectorElasticity(1.0, 0.1, 20, 10, "moderate"),
 }
 
 DEFAULT_ELASTICITY = SectorElasticity(0.8, 0.2, 15, 0, "moderate")
@@ -174,10 +250,12 @@ class SimulationResult:
     elasticityUsed: SectorElasticity
     assumptions: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 시뮬레이션은 참고용이며 실제 경제 상황과 다를 수 있습니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = [f"[{self.scenarioLabel} 시뮬레이션]"]
         lines.append(f"  경기감응도: {self.elasticityUsed}")
         for i, (rev, oi, mg) in enumerate(
@@ -187,11 +265,11 @@ class SimulationResult:
                 self.marginPath,
             )
         ):
-            lines.append(f"  +{i + 1}년: 매출 {rev / 1e8:,.0f}억, 영업이익 {oi / 1e8:,.0f}억, 마진 {mg:.1f}%")
+            lines.append(f"  +{i + 1}년: 매출 {fmtBig(rev, c)}, 영업이익 {fmtBig(oi, c)}, 마진 {mg:.1f}%")
         lines.append(f"  매출 변화: {self.revenueChangePct:+.1f}%")
         lines.append(f"  마진 변화: {self.marginChangeBps:+.0f}bps")
         if self.perShareValue is not None:
-            lines.append(f"  주당 가치: {self.perShareValue:,.0f}원")
+            lines.append(f"  주당 가치: {fmtPrice(self.perShareValue, c)}")
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
@@ -211,18 +289,20 @@ class MonteCarloResult:
     var95: float
     upsideProbability: float  # 현재 대비 상승 확률 (%)
     warnings: list[str] = field(default_factory=list)
+    currency: str = "KRW"
 
     DISCLAIMER: str = "본 시뮬레이션은 참고용이며 실제 경제 상황과 다를 수 있습니다."
 
     def __repr__(self) -> str:
+        c = self.currency
         lines = [f"[Monte Carlo — {self.scenarioName} ({self.iterations:,}회)]"]
         for metric, pcts in self.percentiles.items():
             p5 = pcts.get("p5", 0)
             p50 = pcts.get("p50", 0)
             p95 = pcts.get("p95", 0)
-            lines.append(f"  {metric}: P5={p5 / 1e8:,.0f}억  P50={p50 / 1e8:,.0f}억  P95={p95 / 1e8:,.0f}억")
-        lines.append(f"  기대값: {self.expectedValue / 1e8:,.0f}억")
-        lines.append(f"  VaR(95%): {self.var95 / 1e8:,.0f}억")
+            lines.append(f"  {metric}: P5={fmtBig(p5, c)}  P50={fmtBig(p50, c)}  P95={fmtBig(p95, c)}")
+        lines.append(f"  기대값: {fmtBig(self.expectedValue, c)}")
+        lines.append(f"  VaR(95%): {fmtBig(self.var95, c)}")
         lines.append(f"  상승 확률: {self.upsideProbability:.0f}%")
         if self.warnings:
             for w in self.warnings:

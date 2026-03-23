@@ -7,12 +7,15 @@ from dartlab.engines.ai.runtime.agent import (  # noqa: F401
     AGENT_SYSTEM_ADDITION,
     PLANNING_PROMPT,
     _reflect_on_answer,
-    _select_tools,
     agent_loop,
     agent_loop_planning,
     agent_loop_stream,
     build_agent_system_addition,
 )
+from dartlab.engines.ai.tools.selector import selectTools  # noqa: F401
+
+# 하위호환: _select_tools → selectTools 래퍼
+_select_tools = selectTools
 
 __all__ = [
     "AGENT_SYSTEM_ADDITION",
@@ -23,4 +26,5 @@ __all__ = [
     "agent_loop_planning",
     "agent_loop_stream",
     "build_agent_system_addition",
+    "selectTools",
 ]

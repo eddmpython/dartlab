@@ -32,6 +32,15 @@ Changes include a deprecation period with a migration guide.
 | `Company.filings()` | Filing document list |
 | `Company.profile` | Merged canonical company namespace |
 | `dartlab` CLI entrypoint | Public CLI command entry point |
+| `dartlab.Company("AAPL")` | EDGAR Company facade (US stocks) |
+| `engines.edgar.docs` | EDGAR 10-K/10-Q/20-F sections horizontalization |
+| `engines.edgar.docs.retrievalBlocks` | EDGAR block-level retrieval for LLM |
+| `engines.edgar.docs.contextSlices` | EDGAR context slicing for LLM windows |
+| `engines.edgar.finance` | SEC XBRL financial statements (BS/IS/CF) |
+| `engines.edgar.profile` | EDGAR docs + finance merge layer |
+| `dartlab.valuation()` | Multi-method valuation (DCF, DDM, relative) — KRW/USD auto-detect |
+| `dartlab.forecast()` | Revenue forecast (time-series, consensus, macro, ROIC) — KRW/USD auto-detect |
+| `dartlab.simulation()` | Scenario simulation with US/KR macro presets |
 
 ### Tier 2: Beta
 
@@ -39,18 +48,12 @@ May change after a warning. Recorded in CHANGELOG.
 
 | API | Description |
 |-----|-------------|
-| `dartlab.Company("AAPL")` | EDGAR Company facade (US stocks) |
-| `engines.edgar.docs` | EDGAR 10-K/10-Q/20-F sections horizontalization |
-| `engines.edgar.docs.retrievalBlocks` | EDGAR block-level retrieval for LLM |
-| `engines.edgar.docs.contextSlices` | EDGAR context slicing for LLM windows |
-| `engines.edgar.finance` | SEC XBRL financial statements |
 | `engines.edgar.finance.SCE` | Statement of Changes in Equity (BS delta + CF) |
 | `engines.edgar.finance.explore()` | XBRL Fact Explorer (tag-level history) |
 | `engines.edgar.finance.listTags()` | XBRL tag inventory |
 | `engines.edgar.docs.notes()` | XBRL TextBlock note extraction |
 | `engines.edgar.docs.cadence()` | Topic × period distribution matrix |
 | `engines.edgar.docs.coverage()` | Topic coverage summary |
-| `engines.edgar.profile` | EDGAR docs + finance merge layer |
 | `Company.insights` | Insight grading (7 areas) |
 | `Company.insights.distress` | Distress prediction scorecard (4-axis, credit grade, cash runway) |
 | `Company.rank` | Market size ranking |

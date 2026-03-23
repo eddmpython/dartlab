@@ -95,6 +95,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
         "사용하지 말 것: 공시 원문(sections) 목록이 필요하면 list_topics를 사용하세요. "
         "list_modules는 재무/정형 데이터, list_topics는 공시 문서 목록입니다.",
         {"type": "object", "properties": {}},
+        category="finance",
+        priority=75,
     )
 
     # 1. get_data
@@ -143,6 +145,10 @@ def register_finance_tools(company: Any, register_tool) -> None:
         kind=CapabilityKind.DATA,
         requires_company=True,
         ai_hint="회사 바인딩 데이터 모듈 조회",
+        category="finance",
+        questionTypes=("건전성", "수익성", "성장성", "배당", "리스크", "종합"),
+        priority=90,
+        dependsOn=("list_modules",),
     )
 
     # 1b. search_data
@@ -197,6 +203,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
             },
             "required": ["keyword"],
         },
+        category="finance",
+        priority=65,
     )
 
     # 2. compute_ratios
@@ -220,6 +228,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         {"type": "object", "properties": {}},
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="finance",
+        questionTypes=("건전성", "수익성", "종합"),
+        priority=80,
     )
 
     # 3. find_anomalies
@@ -258,6 +269,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
             },
             "required": ["module_name"],
         },
+        category="finance",
+        questionTypes=("리스크",),
+        priority=70,
     )
 
     # 4. compute_growth
@@ -289,6 +303,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
             },
             "required": ["module_name"],
         },
+        category="finance",
+        questionTypes=("성장성",),
+        priority=70,
     )
 
     # 5. yoy_analysis
@@ -321,6 +338,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
             },
             "required": ["module_name"],
         },
+        category="finance",
+        questionTypes=("성장성",),
+        priority=65,
     )
 
     # 6. get_summary
@@ -351,6 +371,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
             },
             "required": ["module_name"],
         },
+        category="finance",
+        priority=55,
     )
 
     # 7b. get_report_data
@@ -386,6 +408,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="finance",
+        questionTypes=("배당", "지배구조", "공시"),
+        priority=75,
     )
 
     # ── compare_companies ──
@@ -442,6 +467,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
             "required": ["codes"],
         },
         kind=CapabilityKind.ANALYSIS,
+        category="finance",
+        questionTypes=("종합",),
+        priority=60,
     )
 
     # ── custom_ratio ──
@@ -488,6 +516,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="finance",
+        questionTypes=("건전성", "수익성"),
+        priority=55,
     )
 
     # ── timeseries_filter ──
@@ -537,6 +568,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="finance",
+        priority=60,
     )
 
     # ── get_ratio_series ──
@@ -573,6 +606,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="finance",
+        questionTypes=("건전성", "수익성", "성장성"),
+        priority=65,
     )
 
     # ── get_timeseries ──
@@ -612,6 +648,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.DATA,
         requires_company=True,
+        category="finance",
+        priority=60,
     )
 
     # ── 밸류에이션 / 예측 도구 ──────────────────────────────
@@ -684,6 +722,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자",),
+        priority=85,
     )
 
     def forecast(metric: str = "revenue", horizon: str = "3") -> str:
@@ -725,6 +766,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자", "성장성"),
+        priority=70,
     )
 
     def scenario(current_price: str = "") -> str:
@@ -761,6 +805,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자",),
+        priority=75,
     )
 
     def sensitivity(wacc_range: str = "2", growth_range: str = "1") -> str:
@@ -807,6 +854,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자",),
+        priority=60,
     )
 
     # ── 경제 시나리오 시뮬레이션 도구 ──────────────────────────
@@ -874,6 +924,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("리스크", "투자"),
+        priority=65,
     )
 
     def monte_carlo(scenario: str = "baseline", iterations: str = "10000") -> str:
@@ -923,6 +976,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("리스크", "투자"),
+        priority=55,
     )
 
     def stress_test_tool(scenario: str = "adverse") -> str:
@@ -964,6 +1020,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("리스크",),
+        priority=60,
     )
 
     # ── Pro-Forma 재무제표 예측 ──
@@ -1018,6 +1077,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자", "성장성"),
+        priority=65,
     )
 
     # ── 매출 앙상블 예측 (7-소스 v3) ──
@@ -1112,6 +1174,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자", "성장성"),
+        priority=80,
     )
 
     # ── 확률 가중 주가 목표가 ──
@@ -1195,4 +1260,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
         },
         kind=CapabilityKind.ANALYSIS,
         requires_company=True,
+        category="valuation",
+        questionTypes=("투자",),
+        priority=85,
     )
