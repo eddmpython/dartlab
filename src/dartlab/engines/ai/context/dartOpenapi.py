@@ -55,6 +55,27 @@ _DETAIL_TERMS = (
     "무슨 내용",
     "꼭",
 )
+_READ_TERMS = (
+    "읽어",
+    "본문",
+    "원문",
+    "전문",
+    "자세히 보여",
+    "내용 보여",
+)
+_ANALYSIS_ONLY_TERMS = (
+    "근거",
+    "왜",
+    "지속 가능",
+    "지속가능",
+    "판단",
+    "평가",
+    "해석",
+    "사업구조",
+    "구조",
+    "영향",
+    "변화",
+)
 _ORDER_KEYWORDS = (
     "단일판매공급계약",
     "판매공급계약",
@@ -142,7 +163,17 @@ def isDartFilingQuestion(question: str) -> bool:
     has_filing_term = any(term in q for term in _FILING_TERMS)
     has_request_term = any(term in q for term in _REQUEST_TERMS)
     has_time_term = any(term in q for term in ("최근", "오늘", "어제", "이번 주", "지난 주", "이번 달", "며칠", "몇일"))
-    return has_filing_term and (has_request_term or has_time_term or "?" not in q)
+    has_read_term = any(term in q for term in _READ_TERMS)
+    has_analysis_only_term = any(term in q for term in _ANALYSIS_ONLY_TERMS)
+
+    if (
+        has_analysis_only_term
+        and not has_read_term
+        and not any(term in q for term in ("목록", "리스트", "뭐 있었", "무슨 공시"))
+    ):
+        return False
+
+    return has_filing_term and (has_request_term or has_time_term or has_read_term or "?" not in q)
 
 
 def detectDartFilingIntent(question: str, company: Any | None = None) -> DartFilingIntent:
@@ -152,7 +183,7 @@ def detectDartFilingIntent(question: str, company: Any | None = None) -> DartFil
     today = date.today()
     start_date, end_date = _resolve_date_window(question, today)
     title_keywords = _resolve_title_keywords(question)
-    include_text = any(term in question for term in _DETAIL_TERMS)
+    include_text = any(term in question for term in _DETAIL_TERMS) or any(term in question for term in _READ_TERMS)
     limit = _resolve_limit(question)
     corp = None
     if company is not None:

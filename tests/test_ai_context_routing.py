@@ -394,4 +394,6 @@ def test_should_use_light_mode_only_for_pure_conversation_or_meta():
     assert _should_use_light_mode(object(), "ㅋㅋ", None, False) is True
     assert _should_use_light_mode(object(), "이 회사 어떤 데이터가 있어?", None, False) is True
     assert _should_use_light_mode(object(), "배당이 실적과 현금흐름으로 지속 가능한지 판단해줘", None, False) is False
-    assert _should_use_light_mode(object(), "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘", None, False) is False
+    assert (
+        _should_use_light_mode(object(), "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘", None, False) is False
+    )

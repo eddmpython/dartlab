@@ -471,6 +471,7 @@ def _analyze_inner(
         history_messages = build_history_messages(compressed)
 
     snapshotPolicy = _resolve_snapshot_policy(question, question_types, report_mode)
+    _done_payload["route"] = snapshotPolicy["route"]
 
     # ── 4. Auto-snapshot ──
     if snapshot is None and auto_snapshot and company is not None and snapshotPolicy["enabled"]:
@@ -582,6 +583,11 @@ def _analyze_inner(
         if focus_context:
             context_parts.append(focus_context)
         context_parts.extend(modules_dict[name] for name in included_tables_local if name in modules_dict)
+        for special_name in ("_response_contract", "_clarify"):
+            if special_name in modules_dict:
+                context_parts.append(modules_dict[special_name])
+        if "_clarify" in modules_dict:
+            _done_payload["clarificationNeeded"] = True
         context_text = "\n\n".join(context_parts)
 
     if dart_filing_prefetch.matched and dart_filing_prefetch.contextText:

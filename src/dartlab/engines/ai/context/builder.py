@@ -91,6 +91,22 @@ _ROUTE_FINANCE_KEYWORDS = frozenset(
         "asset",
     }
 )
+_ROUTE_REPORT_FINANCE_HINTS = frozenset(
+    {
+        "지속 가능",
+        "지속가능",
+        "지속성",
+        "현금흐름",
+        "현금",
+        "실적",
+        "영업이익",
+        "순이익",
+        "커버",
+        "판단",
+        "평가",
+        "가능한지",
+    }
+)
 _SECTIONS_TYPE_DEFAULTS: dict[str, list[str]] = {
     "사업": ["businessOverview", "productService", "salesOrder"],
     "리스크": ["riskDerivative", "contingentLiability", "internalControl"],
@@ -117,6 +133,33 @@ _SECTIONS_ROUTE_EXCLUDE_TOPICS = {
     "employee",
     "majorHolder",
     "audit",
+}
+_FINANCE_STATEMENT_MODULES = frozenset({"BS", "IS", "CF", "CIS", "SCE"})
+_FINANCE_CONTEXT_MODULES = _FINANCE_STATEMENT_MODULES | {"ratios"}
+_BALANCE_SHEET_HINTS = frozenset({"부채", "자산", "유동", "차입", "자본", "레버리지", "건전성", "안전"})
+_CASHFLOW_HINTS = frozenset({"현금흐름", "현금", "fcf", "자금", "커버", "배당지급", "지속 가능", "지속가능"})
+_INCOME_STATEMENT_HINTS = frozenset(
+    {"매출", "영업이익", "순이익", "수익", "마진", "이익률", "실적", "원가", "비용", "판관비"}
+)
+_RATIO_HINTS = frozenset({"비율", "마진", "이익률", "수익성", "건전성", "성장성", "안정성", "지속 가능", "지속가능"})
+_DIRECT_HINT_MAP: dict[str, list[str]] = {
+    "성격별 비용": ["costByNature"],
+    "비용의 성격": ["costByNature"],
+    "인건비": ["costByNature"],
+    "감가상각": ["costByNature"],
+    "광고선전비": ["costByNature"],
+    "판매촉진비": ["costByNature"],
+    "지급수수료": ["costByNature"],
+    "운반비": ["costByNature"],
+    "물류비": ["costByNature"],
+    "연구개발": ["rnd"],
+    "r&d": ["rnd"],
+    "세그먼트": ["segments"],
+    "부문정보": ["segments"],
+}
+_CANDIDATE_ALIASES = {
+    "segment": "segments",
+    "operationalAsset": "tangibleAsset",
 }
 
 
@@ -175,21 +218,31 @@ def _resolve_context_route(
     if include:
         return "hybrid"
 
+    question_lower = question.lower()
     q_set = set(q_types)
+    has_report = any(keyword in question for keyword in _ROUTE_REPORT_KEYWORDS)
+    has_sections = any(keyword in question for keyword in _ROUTE_SECTIONS_KEYWORDS) or bool(
+        q_set & _ROUTE_SECTIONS_TYPES
+    )
+    has_finance = any(keyword in question_lower for keyword in _ROUTE_FINANCE_KEYWORDS) or bool(
+        q_set & _ROUTE_FINANCE_TYPES
+    )
+    has_report_finance_hint = any(keyword in question for keyword in _ROUTE_REPORT_FINANCE_HINTS)
+
+    if has_report and (has_finance or has_sections or has_report_finance_hint or len(q_set) > 1):
+        return "hybrid"
+
     for keyword in _ROUTE_REPORT_KEYWORDS:
         if keyword in question:
             return "report"
 
-    if any(keyword in question for keyword in _ROUTE_SECTIONS_KEYWORDS):
-        return "sections"
-
-    if q_set & _ROUTE_SECTIONS_TYPES:
+    if has_sections:
         return "sections"
 
     if q_set and q_set.issubset(_ROUTE_FINANCE_TYPES):
         return "finance"
 
-    if any(keyword in question for keyword in _ROUTE_FINANCE_KEYWORDS):
+    if has_finance:
         return "finance"
 
     if q_set and len(q_set) > 1:
@@ -202,6 +255,264 @@ def _resolve_context_route(
         return "hybrid"
 
     return "finance" if q_set else "hybrid"
+
+
+def _append_unique(items: list[str], value: str | None) -> None:
+    if value and value not in items:
+        items.append(value)
+
+
+def _normalize_candidate_module(name: str) -> str:
+    return _CANDIDATE_ALIASES.get(name, name)
+
+
+def _question_has_any(question: str, keywords: set[str] | frozenset[str]) -> bool:
+    lowered = question.lower()
+    return any(keyword.lower() in lowered for keyword in keywords)
+
+
+def _resolve_candidate_modules(
+    question: str,
+    *,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> list[str]:
+    selected: list[str] = []
+
+    if include:
+        for name in include:
+            _append_unique(selected, _normalize_candidate_module(name))
+    else:
+        for keyword, modules in _DIRECT_HINT_MAP.items():
+            if keyword.lower() in question.lower():
+                for module_name in modules:
+                    _append_unique(selected, _normalize_candidate_module(module_name))
+
+        for name in _resolve_tables(question, None, exclude):
+            _append_unique(selected, _normalize_candidate_module(name))
+
+    if exclude:
+        excluded = {_normalize_candidate_module(name) for name in exclude}
+        selected = [name for name in selected if name not in excluded]
+
+    return selected
+
+
+def _available_sections_topics(company: Any) -> set[str]:
+    docs = getattr(company, "docs", None)
+    sections = getattr(docs, "sections", None)
+    if sections is None:
+        return set()
+
+    manifest = sections.outline() if hasattr(sections, "outline") else None
+    if isinstance(manifest, pl.DataFrame) and "topic" in manifest.columns:
+        return {topic for topic in manifest["topic"].drop_nulls().to_list() if isinstance(topic, str) and topic}
+
+    if hasattr(sections, "topics"):
+        try:
+            return {topic for topic in sections.topics() if isinstance(topic, str) and topic}
+        except _CONTEXT_ERRORS:
+            return set()
+    return set()
+
+
+def _available_report_modules(company: Any) -> set[str]:
+    report = getattr(company, "report", None)
+    if report is None:
+        return set()
+
+    for attr_name in ("availableApiTypes", "apiTypes"):
+        try:
+            values = getattr(report, attr_name, None)
+        except _CONTEXT_ERRORS:
+            values = None
+        if isinstance(values, list):
+            return {str(value) for value in values if isinstance(value, str) and value}
+    return set()
+
+
+def _available_notes_modules(company: Any) -> set[str]:
+    notes = getattr(company, "notes", None)
+    if notes is None:
+        docs = getattr(company, "docs", None)
+        notes = getattr(docs, "notes", None) if docs is not None else None
+    if notes is None or not hasattr(notes, "keys"):
+        return set()
+
+    try:
+        return {str(value) for value in notes.keys() if isinstance(value, str) and value}
+    except _CONTEXT_ERRORS:
+        return set()
+
+
+def _resolve_candidate_plan(
+    company: Any,
+    question: str,
+    *,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> dict[str, list[str]]:
+    requested = _resolve_candidate_modules(question, include=include, exclude=exclude)
+    sections_set = _available_sections_topics(company)
+    report_set = _available_report_modules(company)
+    notes_set = _available_notes_modules(company)
+
+    sections: list[str] = []
+    report: list[str] = []
+    finance: list[str] = []
+    direct: list[str] = []
+    verified: list[str] = []
+
+    for name in requested:
+        normalized = _normalize_candidate_module(name)
+        if normalized in _FINANCE_CONTEXT_MODULES:
+            _append_unique(finance, normalized)
+            _append_unique(verified, normalized)
+            continue
+        if normalized in sections_set and normalized not in _SECTIONS_ROUTE_EXCLUDE_TOPICS:
+            _append_unique(sections, normalized)
+            _append_unique(verified, normalized)
+            continue
+        if normalized in report_set:
+            _append_unique(report, normalized)
+            _append_unique(verified, normalized)
+            continue
+        if normalized in notes_set:
+            _append_unique(direct, normalized)
+            _append_unique(verified, normalized)
+            continue
+
+        data = _resolve_module_data(company, normalized)
+        if data is not None:
+            _append_unique(direct, normalized)
+            _append_unique(verified, normalized)
+
+    return {
+        "requested": requested,
+        "sections": sections,
+        "report": report,
+        "finance": finance,
+        "direct": direct,
+        "verified": verified,
+    }
+
+
+def _resolve_finance_modules_for_question(
+    question: str,
+    *,
+    q_types: list[str],
+    route: str,
+    candidate_plan: dict[str, list[str]],
+) -> list[str]:
+    selected: list[str] = []
+    finance_candidates = [name for name in candidate_plan.get("finance", []) if name in _FINANCE_STATEMENT_MODULES]
+
+    if route == "finance":
+        if _question_has_any(question, _INCOME_STATEMENT_HINTS):
+            _append_unique(selected, "IS")
+        if _question_has_any(question, _BALANCE_SHEET_HINTS):
+            _append_unique(selected, "BS")
+        if _question_has_any(question, _CASHFLOW_HINTS):
+            _append_unique(selected, "CF")
+        if not selected:
+            selected.extend(["IS", "BS", "CF"])
+    elif route == "hybrid":
+        has_finance_signal = bool(finance_candidates) and (
+            _question_has_any(question, _BALANCE_SHEET_HINTS | _CASHFLOW_HINTS | _RATIO_HINTS)
+            or bool(set(q_types) & _ROUTE_FINANCE_TYPES)
+            or any(name in candidate_plan.get("report", []) for name in ("dividend", "shareCapital"))
+        )
+        if not has_finance_signal:
+            return []
+
+        for module_name in finance_candidates:
+            _append_unique(selected, module_name)
+
+        if not selected:
+            if _question_has_any(question, _CASHFLOW_HINTS):
+                selected.extend(["IS", "CF"])
+            elif _question_has_any(question, _BALANCE_SHEET_HINTS):
+                selected.extend(["IS", "BS"])
+            else:
+                selected.append("IS")
+
+    if (
+        route == "finance"
+        or _question_has_any(question, _RATIO_HINTS)
+        or bool(set(q_types) & _ROUTE_FINANCE_TYPES)
+        or {"dividend", "shareCapital"} & set(candidate_plan.get("report", []))
+    ):
+        _append_unique(selected, "ratios")
+
+    return selected
+
+
+def _build_direct_module_context(
+    company: Any,
+    modules: list[str],
+    *,
+    compact: bool,
+) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for name in modules:
+        try:
+            data = _resolve_module_data(company, name)
+        except _CONTEXT_ERRORS:
+            data = None
+        if data is None:
+            continue
+        section = _build_module_section(name, data, compact=compact)
+        if section:
+            result[name] = section
+    return result
+
+
+def _build_response_contract(
+    question: str,
+    *,
+    included_modules: list[str],
+    route: str,
+) -> str | None:
+    lines = ["## 응답 계약", "- 아래 모듈은 이미 로컬 dartlab 데이터에서 확인되어 포함되었습니다."]
+    lines.append(f"- 포함 모듈: {', '.join(included_modules)}")
+    lines.append("- 포함된 모듈을 보고도 '데이터가 없다'고 말하지 마세요.")
+    lines.append("- 핵심 결론 1~2문장을 먼저 제시하고, 바로 근거 표나 근거 bullet을 붙이세요.")
+
+    module_set = set(included_modules)
+    if "costByNature" in module_set:
+        lines.append("- `costByNature`가 있으면 상위 비용 항목 3~5개와 최근 기간 변화 방향을 먼저 요약하세요.")
+    if "dividend" in module_set:
+        lines.append("- `dividend`가 있으면 DPS·배당수익률·배당성향을 먼저 요약하세요.")
+    if {"dividend", "IS", "CF"} <= module_set or {"dividend", "CF"} <= module_set:
+        lines.append("- `dividend`와 `IS/CF`가 같이 있으면 배당의 이익/현금흐름 커버 여부를 한 줄로 명시하세요.")
+    if route == "sections" or any(keyword in question for keyword in ("근거", "왜", "최근 공시 기준", "출처")):
+        lines.append("- 근거 질문이면 `topic`, `period`, `source`를 최소 2개 명시하세요.")
+    if len(lines) == 4:
+        return None
+    return "\n".join(lines)
+
+
+def _build_clarification_context(
+    question: str,
+    *,
+    candidate_plan: dict[str, list[str]],
+) -> str | None:
+    lowered = question.lower()
+    module_set = set(candidate_plan.get("verified", []))
+    if "costByNature" not in module_set or "IS" not in module_set:
+        return None
+    if "비용" not in lowered:
+        return None
+    if any(keyword in lowered for keyword in ("성격", "인건비", "감가상각", "광고선전", "판관", "매출원가")):
+        return None
+
+    return (
+        "## Clarification Needed\n"
+        "- 현재 로컬에서 두 해석이 모두 가능합니다.\n"
+        "- `costByNature`: 인건비·감가상각비 같은 성격별 비용 분류\n"
+        "- `IS`: 매출원가·판관비 같은 기능별 비용 총액\n"
+        "- 사용자의 의도가 둘 중 어느 쪽인지 결론을 바꾸므로, 먼저 한 문장으로 어느 관점을 원하는지 확인하세요."
+    )
 
 
 def _resolve_report_modules_for_question(
@@ -235,6 +546,7 @@ def _resolve_sections_topics(
     question: str,
     *,
     q_types: list[str],
+    candidates: list[str] | None = None,
     include: list[str] | None = None,
     exclude: list[str] | None = None,
     limit: int = 2,
@@ -269,7 +581,8 @@ def _resolve_sections_topics(
         for name in include:
             append(name)
 
-    for name in _resolve_tables(question, None, exclude):
+    candidate_source = _resolve_tables(question, None, exclude) if candidates is None else candidates
+    for name in candidate_source:
         append(name)
 
     for q_type in q_types:
@@ -281,7 +594,7 @@ def _resolve_sections_topics(
             for topic in topics:
                 append(topic)
 
-    if not selected and availableTopics:
+    if candidates is None and not selected and availableTopics:
         selected.append(availableTopics[0])
 
     return selected[:limit]
@@ -444,6 +757,13 @@ def _build_compact_context_modules_inner(
     q_types = _classify_question_multi(question, max_types=2)
     route = _resolve_context_route(question, include=include, q_types=q_types)
     report_modules = _resolve_report_modules_for_question(question, include=include, exclude=exclude)
+    candidate_plan = _resolve_candidate_plan(company, question, include=include, exclude=exclude)
+    selected_finance_modules = _resolve_finance_modules_for_question(
+        question,
+        q_types=q_types,
+        route=route,
+        candidate_plan=candidate_plan,
+    )
 
     acct_filters: dict[str, set[str]] = {}
     if compact:
@@ -451,7 +771,7 @@ def _build_compact_context_modules_inner(
             for sj, ids in _QUESTION_ACCOUNT_FILTER.get(qt, {}).items():
                 acct_filters.setdefault(sj, set()).update(ids)
 
-    if route in {"finance", "hybrid"}:
+    if selected_finance_modules:
         annual = getattr(company, "annual", None)
         if annual is not None:
             series, years = annual
@@ -470,8 +790,8 @@ def _build_compact_context_modules_inner(
 
                 header_parts.append(header)
 
-                for sj in ("IS", "BS", "CF"):
-                    af = acct_filters.get(sj) if acct_filters else None
+                for sj in [name for name in selected_finance_modules if name in _FINANCE_STATEMENT_MODULES]:
+                    af = acct_filters.get(sj) if acct_filters and sj in {"IS", "BS", "CF"} else None
                     section = _build_finance_engine_section(
                         series,
                         years,
@@ -484,14 +804,36 @@ def _build_compact_context_modules_inner(
                         modules_dict[sj] = section
                         included.append(sj)
 
-        ratios_section = _build_ratios_section(company, compact=compact, q_types=q_types or None)
-        if ratios_section:
-            modules_dict["ratios"] = ratios_section
-            if "ratios" not in included:
-                included.append("ratios")
+        if "ratios" in selected_finance_modules:
+            ratios_section = _build_ratios_section(company, compact=compact, q_types=q_types or None)
+            if ratios_section:
+                modules_dict["ratios"] = ratios_section
+                if "ratios" not in included:
+                    included.append("ratios")
 
+    requested_report_modules = report_modules or candidate_plan.get("report", [])
     if route == "report":
-        requested_report_modules = report_modules or ["dividend", "employee", "majorHolder", "executive", "audit"]
+        requested_report_modules = requested_report_modules or [
+            "dividend",
+            "employee",
+            "majorHolder",
+            "executive",
+            "audit",
+        ]
+        report_sections = _build_report_sections(
+            company,
+            compact=compact,
+            q_types=q_types,
+            tier="focused" if compact else "full",
+            report_names=requested_report_modules,
+        )
+        for key, section in report_sections.items():
+            modules_dict[key] = section
+            included_name = _section_key_to_module_name(key)
+            if included_name not in included:
+                included.append(included_name)
+
+    if route == "hybrid" and requested_report_modules:
         report_sections = _build_report_sections(
             company,
             compact=compact,
@@ -510,6 +852,7 @@ def _build_compact_context_modules_inner(
             company,
             question,
             q_types=q_types,
+            candidates=candidate_plan.get("sections"),
             include=include,
             exclude=exclude,
             limit=1 if route == "hybrid" else 2,
@@ -521,42 +864,19 @@ def _build_compact_context_modules_inner(
             if included_name not in included:
                 included.append(included_name)
 
-    has_docs = getattr(company, "_hasDocs", False)
+    direct_sections = _build_direct_module_context(company, candidate_plan.get("direct", []), compact=compact)
+    for key, section in direct_sections.items():
+        modules_dict[key] = section
+        if key not in included:
+            included.append(key)
 
-    if has_docs and include:
-        tables_requested = _resolve_tables(question, include, exclude)
-        qualitative_tables = [t for t in tables_requested if t not in _FINANCIAL_ONLY]
+    response_contract = _build_response_contract(question, included_modules=included, route=route)
+    if response_contract:
+        modules_dict["_response_contract"] = response_contract
 
-        if exclude:
-            qualitative_tables = [t for t in qualitative_tables if t not in exclude]
-
-        for name in qualitative_tables:
-            try:
-                data = _resolve_module_data(company, name)
-                if data is None:
-                    continue
-
-                if callable(data) and not isinstance(data, type):
-                    try:
-                        result = data()
-                        if hasattr(result, "FS") and isinstance(getattr(result, "FS", None), pl.DataFrame):
-                            data = result.FS
-                        elif isinstance(result, pl.DataFrame):
-                            data = result
-                        else:
-                            data = result
-                    except _CONTEXT_ERRORS:
-                        continue
-
-                section = _build_module_section(name, data, compact=compact)
-                if not section:
-                    continue
-                modules_dict[name] = section
-                if name not in included:
-                    included.append(name)
-
-            except _CONTEXT_ERRORS:
-                continue
+    clarification_context = _build_clarification_context(question, candidate_plan=candidate_plan)
+    if clarification_context:
+        modules_dict["_clarify"] = clarification_context
 
     if not modules_dict:
         text, inc = build_context(company, question, include, exclude, compact=True)

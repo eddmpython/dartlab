@@ -1714,6 +1714,37 @@ class Company:
         """report source topic의 실제 데이터 반환."""
         return self._applyPeriodFilter(self._reportFrame(topic, raw=raw), period)
 
+    def _showDirectTopic(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
+        """sections 외 경로에서 직접 회수 가능한 topic fallback."""
+        if self._hasReport:
+            try:
+                report_api_types = set(getattr(self.report, "apiTypes", []) or [])
+            except (AttributeError, TypeError, ValueError):
+                report_api_types = set()
+            if topic in report_api_types:
+                result = self._showReportTopic(topic, period=period, raw=raw)
+                if isinstance(result, pl.DataFrame):
+                    return result
+
+        notes = self.notes
+        if notes is not None and hasattr(notes, "keys"):
+            try:
+                note_keys = set(notes.keys())
+            except (AttributeError, TypeError, ValueError):
+                note_keys = set()
+            if topic in note_keys:
+                try:
+                    result = getattr(notes, topic)
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                    result = None
+                if isinstance(result, pl.DataFrame):
+                    return self._applyPeriodFilter(result, period)
+
+        primary = self._safePrimary(topic)
+        if isinstance(primary, pl.DataFrame):
+            return self._applyPeriodFilter(primary, period)
+        return None
+
     def _showSectionBlock(
         self,
         topicFrame: pl.DataFrame,
@@ -1873,10 +1904,14 @@ class Company:
 
         sec = self.sections
         if sec is None:
-            return None
+            return self._showDirectTopic(topic, period=period, raw=raw) if block in (None, 0) else None
 
         topicRows = sec.filter(pl.col("topic") == topic)
         if topicRows.is_empty():
+            if block in (None, 0):
+                direct = self._showDirectTopic(topic, period=period, raw=raw)
+                if isinstance(direct, pl.DataFrame):
+                    return direct
             import difflib
 
             all_topics = sec["topic"].unique().sort().to_list() if "topic" in sec.columns else []
