@@ -78,6 +78,133 @@ def test_auto_score():
     assert card.overall > 0.0
 
 
+def test_load_persona_question_set():
+    from dartlab.engines.ai.eval import loadPersonaCases, loadPersonaQuestionSet
+
+    dataset = loadPersonaQuestionSet()
+    assert dataset["version"]
+    assert dataset["source"] == "curated_persona_regression"
+
+    cases = loadPersonaCases()
+    assert len(cases) >= 12
+    personas = {case.persona for case in cases}
+    assert {
+        "assistant",
+        "data_manager",
+        "operator",
+        "installer",
+        "research_gather",
+        "accountant",
+        "business_owner",
+        "investor",
+        "analyst",
+    }.issubset(personas)
+
+
+def test_auto_score_extended_dimensions():
+    from dartlab.engines.ai.eval import auto_score
+
+    answer = "배당과 현금흐름을 함께 보면 추가 확인이 필요합니다. 다음으로 투자자가 확인할 질문도 던질 수 있습니다."
+    card = auto_score(
+        answer,
+        expected_topics=["배당", "현금흐름"],
+        included_modules=["dividend", "CF"],
+        expected_modules=["dividend", "IS", "CF"],
+        must_not_say=["데이터가 없습니다"],
+        must_include=["배당", "현금흐름"],
+        forbidden_terms=["costByNature", "module_"],
+        clarification_allowed=False,
+        expected_followups=["추가", "질문"],
+        expected_route="hybrid",
+        actual_route="hybrid",
+    )
+
+    assert card.module_utilization == pytest.approx(2 / 3)
+    assert card.false_unavailable == 1.0
+    assert card.grounding_quality == 1.0
+    assert card.ui_language_compliance == 1.0
+    assert "retrieval_failure" in card.failure_types
+
+
+def test_evaluate_replay_uses_structural_and_answer_checks():
+    from dartlab.engines.ai.eval import PersonaEvalCase, evaluateReplay
+    from dartlab.engines.ai.runtime.events import AnalysisEvent
+
+    case = PersonaEvalCase(
+        id="investor.dividend",
+        persona="investor",
+        personaLabel="투자자",
+        stockCode="005930",
+        question="배당 지속 가능성",
+        userIntent="dividend_sustainability",
+        expectedRoute="hybrid",
+        expectedModules=["dividend", "IS", "CF"],
+        mustNotSay=["데이터가 없습니다"],
+        mustInclude=["배당", "현금흐름"],
+        expectedUserFacingTerms=["배당", "현금흐름"],
+        expectedFollowups=["추가", "확인"],
+    )
+    events = [
+        AnalysisEvent("meta", {"company": "삼성전자", "includedModules": ["dividend", "CF"]}),
+        AnalysisEvent("context", {"module": "report_dividend", "label": "배당 데이터", "text": "..." }),
+        AnalysisEvent("chunk", {"text": "배당과 현금흐름을 같이 보면 추가 확인이 필요합니다."}),
+        AnalysisEvent("done", {"route": "hybrid", "includedModules": ["dividend", "CF"]}),
+    ]
+
+    result = evaluateReplay(case, events, provider="oauth-codex")
+
+    assert result.answer.startswith("배당과 현금흐름")
+    assert result.structural.routeMatch == 1.0
+    assert result.structural.moduleUtilization == pytest.approx(2 / 3)
+    assert result.score.false_unavailable == 1.0
+    assert "retrieval_failure" in result.score.failure_types
+
+
+def test_runtime_evidence_labels_include_user_facing_names():
+    from dartlab.engines.ai.runtime.core import _build_included_evidence
+
+    evidence = _build_included_evidence(["IS", "report_dividend", "section_businessOverview"])
+    assert evidence == [
+        {"name": "IS", "label": "손익계산서"},
+        {"name": "report_dividend", "label": "배당"},
+        {"name": "section_businessOverview", "label": "사업의 개요"},
+    ]
+
+
+def test_append_and_load_review_log(tmp_path, monkeypatch):
+    import dartlab.engines.ai.eval.replayRunner as replayRunner
+    from dartlab.engines.ai.eval import PersonaEvalCase, ReplayResult, ScoreCard, StructuralEval, appendReviewEntry, loadReviewLog
+
+    monkeypatch.setattr(replayRunner, "_REVIEW_LOG_DIR", tmp_path / "reviewLog")
+
+    result = ReplayResult(
+        case=PersonaEvalCase(
+            id="case-1",
+            persona="investor",
+            personaLabel="투자자",
+            question="배당은?",
+            userIntent="dividend",
+        ),
+        answer="배당 데이터를 기준으로 보면 추가 확인이 필요합니다.",
+        provider="oauth-codex",
+        score=ScoreCard(failure_types=["retrieval_failure"]),
+        structural=StructuralEval(failureTypes=["retrieval_failure"]),
+    )
+    entry = appendReviewEntry(
+        result,
+        effectiveness="partial",
+        improvementActions=["배당 질문은 DPS와 현금흐름 커버를 먼저 요약"],
+        notes="초기 응답은 결론이 약함",
+        reviewedAt="2026-03-23T12:00:00",
+    )
+
+    loaded = loadReviewLog(persona="investor", caseId="case-1")
+    assert entry.effectiveness == "partial"
+    assert loaded[0].reviewedAt == "2026-03-23T12:00:00"
+    assert loaded[0].improvementActions == ["배당 질문은 DPS와 현금흐름 커버를 먼저 요약"]
+    assert (tmp_path / "reviewLog" / "investor.jsonl").exists()
+
+
 def test_validate_structured():
     from dartlab.engines.ai.runtime.validation import validate_structured
 

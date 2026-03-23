@@ -3,6 +3,7 @@
 -->
 <script>
 	import { cn } from "$lib/utils.js";
+	import { formatEvidenceLabel, formatToolLabel } from "$lib/ai/evidenceLabels.js";
 	import { X, Database, Brain, FileText, Code } from "lucide-svelte";
 	import { renderMarkdown } from "$lib/markdown.js";
 
@@ -23,8 +24,8 @@
 		isSnapshot ? "핵심 수치 (원본 데이터)" :
 		isSystemPrompt ? "시스템 프롬프트" :
 		isUserContent ? "LLM에 전달된 입력" :
-		isTool ? (toolEvent?.type === "call" ? `${toolEvent?.name} 호출` : `${toolEvent?.name} 결과`) :
-		(ctx?.label || ctx?.module || "")
+		isTool ? (toolEvent?.type === "call" ? `${formatToolLabel(toolEvent?.name)} 호출` : `${formatToolLabel(toolEvent?.name)} 결과`) :
+		formatEvidenceLabel(ctx?.label || ctx?.module, ctx?.label || "")
 	);
 
 	let modalText = $derived(
@@ -38,11 +39,13 @@
 	function summarizeToolEvent(ev) {
 		if (!ev) return "";
 		if (ev.type === "call") {
-			return ev.arguments?.module || ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || "";
+			if (ev.arguments?.module) return formatEvidenceLabel(ev.arguments.module, "관련 데이터");
+			return ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || "";
 		}
 		if (typeof ev.result === "string") return ev.result.slice(0, 120);
 		if (ev.result && typeof ev.result === "object") {
-			return ev.result.module || ev.result.status || ev.result.name || "";
+			if (ev.result.module) return formatEvidenceLabel(ev.result.module, "관련 데이터");
+			return ev.result.status || ev.result.name || "";
 		}
 		return "";
 	}
@@ -126,7 +129,7 @@
 									)}
 									onclick={() => { openModal = idx; }}
 								>
-									{message.contexts[idx].label || message.contexts[idx].module}
+									{formatEvidenceLabel(message.contexts[idx].label || message.contexts[idx].module, message.contexts[idx].label || "컨텍스트")}
 								</button>
 							{/each}
 						</div>

@@ -57,6 +57,87 @@ def _should_run_validation(included_tables: list[str]) -> bool:
     return bool(_VALIDATION_MODULES & set(included_tables))
 
 
+def _build_included_evidence(included_tables: list[str]) -> list[dict[str, str]]:
+    """내부 모듈명을 사용자용 evidence label로 함께 정리한다."""
+    if not included_tables:
+        return []
+
+    from dartlab.engines.ai.context.builder import _section_key_to_module_name
+    from dartlab.engines.ai.metadata import get_meta
+
+    special_labels = {
+        "BS": "재무상태표",
+        "IS": "손익계산서",
+        "CF": "현금흐름표",
+        "CIS": "포괄손익계산서",
+        "SCE": "자본변동표",
+        "ratios": "핵심 재무비율",
+        "dividend": "배당 데이터",
+        "shareCapital": "자본 변동 데이터",
+        "audit": "감사 관련 데이터",
+        "businessOverview": "사업의 개요",
+        "productService": "제품·서비스",
+        "disclosureChanges": "공시 변화",
+        "riskDerivative": "리스크·파생상품",
+        "costByNature": "성격별 비용 분류",
+        "segments": "사업부문 데이터",
+        "_dart_openapi_filings": "최근 공시 목록",
+        "_diff": "공시 변화 비교",
+        "_response_contract": "응답 계약",
+        "_clarify": "확인 질문",
+    }
+    evidence: list[dict[str, str]] = []
+    for raw_name in included_tables:
+        normalized = _section_key_to_module_name(raw_name)
+        meta = get_meta(normalized)
+        if meta and meta.label and meta.label != normalized and meta.label != raw_name:
+            label = meta.label
+        else:
+            label = special_labels.get(raw_name, special_labels.get(normalized, normalized))
+        evidence.append({"name": raw_name, "label": label})
+    return evidence
+
+
+def _context_label(module_name: str, explicit_label: str | None = None) -> str | None:
+    """context 이벤트용 사용자 표시 라벨."""
+    if explicit_label:
+        return explicit_label
+
+    from dartlab.engines.ai.context.builder import _section_key_to_module_name
+    from dartlab.engines.ai.metadata import get_meta
+
+    normalized = _section_key_to_module_name(module_name)
+    meta = get_meta(normalized)
+    if meta and meta.label and meta.label != normalized and meta.label != module_name:
+        return meta.label
+    return next(
+        (
+            label
+            for key, label in {
+                "BS": "재무상태표",
+                "IS": "손익계산서",
+                "CF": "현금흐름표",
+                "CIS": "포괄손익계산서",
+                "SCE": "자본변동표",
+                "ratios": "핵심 재무비율",
+                "dividend": "배당 데이터",
+                "shareCapital": "자본 변동 데이터",
+                "audit": "감사 관련 데이터",
+                "businessOverview": "사업의 개요",
+                "productService": "제품·서비스",
+                "disclosureChanges": "공시 변화",
+                "riskDerivative": "리스크·파생상품",
+                "costByNature": "성격별 비용 분류",
+                "segments": "사업부문 데이터",
+                "_dart_openapi_filings": "최근 공시 목록",
+                "_diff": "공시 변화 비교",
+            }.items()
+            if normalized == key or module_name == key
+        ),
+        normalized,
+    )
+
+
 def _should_use_light_mode(company: Any | None, question: str, state: Any, report_mode: bool) -> bool:
     """가벼운 대화/메타 질문에만 light mode를 허용한다."""
     if company is None or report_mode:
@@ -556,6 +637,7 @@ def _analyze_inner(
     if company is not None:
         from dartlab.engines.ai.context.builder import (
             _get_sector,
+            _module_name_to_section_keys,
             build_context_tiered,
         )
 
@@ -574,6 +656,7 @@ def _analyze_inner(
                 "context",
                 {
                     "module": module_name,
+                    "label": _context_label(module_name),
                     "text": module_text,
                 },
             )
@@ -582,7 +665,11 @@ def _analyze_inner(
         context_parts = [header_text] if header_text else []
         if focus_context:
             context_parts.append(focus_context)
-        context_parts.extend(modules_dict[name] for name in included_tables_local if name in modules_dict)
+        for module_name in included_tables_local:
+            for key in _module_name_to_section_keys(module_name):
+                if key in modules_dict:
+                    context_parts.append(modules_dict[key])
+                    break
         for special_name in ("_response_contract", "_clarify"):
             if special_name in modules_dict:
                 context_parts.append(modules_dict[special_name])
@@ -649,6 +736,7 @@ def _analyze_inner(
     _done_payload["_q_type"] = q_type
     _done_payload["_tool_call_names"] = []
     company_market = getattr(company, "market", "KR") if company else "KR"
+    allow_tool_guidance = use_tools and resolved_provider in {"openai", "ollama", "custom"}
     static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
         included_modules=_included_tables,
@@ -658,6 +746,7 @@ def _analyze_inner(
         compact=is_compact,
         report_mode=report_mode,
         market=company_market,
+        allow_tools=allow_tool_guidance,
     )
 
     if dataReadySummary:
@@ -752,7 +841,13 @@ def _analyze_inner(
 
     # ── 15. Meta 업데이트 (includedModules, yearRange) ──
     if _included_tables:
-        meta_update: dict[str, Any] = {"includedModules": _included_tables}
+        includedEvidence = _build_included_evidence(_included_tables)
+        meta_update: dict[str, Any] = {
+            "includedModules": _included_tables,
+            "includedModuleLabels": [item["label"] for item in includedEvidence],
+            "includedEvidence": includedEvidence,
+        }
+        _done_payload["includedEvidence"] = includedEvidence
         if not is_compact and company is not None:
             from dartlab.engines.ai.context.builder import detect_year_range
 

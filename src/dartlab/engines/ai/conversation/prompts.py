@@ -137,6 +137,7 @@ def build_system_prompt(
     compact: bool = False,
     report_mode: bool = False,
     market: str = "KR",
+    allow_tools: bool = True,
 ) -> str:
     """시스템 프롬프트 조립 (단일 문자열 반환).
 
@@ -161,6 +162,7 @@ def build_system_prompt(
         compact=compact,
         report_mode=report_mode,
         market=market,
+        allow_tools=allow_tools,
     )
     if dynamic:
         return static + "\n" + dynamic
@@ -177,6 +179,7 @@ def build_system_prompt_parts(
     compact: bool = False,
     report_mode: bool = False,
     market: str = "KR",
+    allow_tools: bool = True,
 ) -> tuple[str, str]:
     """시스템 프롬프트를 (정적, 동적) 2파트로 분리 반환.
 
@@ -191,8 +194,45 @@ def build_system_prompt_parts(
 
     q_types = question_types or ([question_type] if question_type else [])
 
+    def _strip_tool_guidance(text: str) -> str:
+        stripped = text
+        if "## 공시 데이터 접근법 (도구 사용)" in stripped:
+            stripped = _re.sub(
+                r"\n## 공시 데이터 접근법 \(도구 사용\).*?(?=\n## 밸류에이션 분석 프레임워크|\Z)",
+                "\n",
+                stripped,
+                flags=_re.DOTALL,
+            )
+            stripped = _re.sub(
+                r"\n## 분석 시작 프로토콜.*?(?=\n## 데이터 관리 원칙|\Z)",
+                "\n",
+                stripped,
+                flags=_re.DOTALL,
+            )
+        if "## 공시 도구" in stripped:
+            stripped = _re.sub(
+                r"\n## 공시 도구.*?(?=\n## 전문가 분석 필수|\Z)",
+                "\n",
+                stripped,
+                flags=_re.DOTALL,
+            )
+            stripped = _re.sub(
+                r"\n## 분석 시작 프로토콜.*?(?=\Z)",
+                "\n",
+                stripped,
+                flags=_re.DOTALL,
+            )
+        return stripped
+
+    no_tools_note = (
+        "## 현재 실행 제약\n"
+        "- 이번 답변에서는 도구 호출을 사용할 수 없습니다.\n"
+        "- `show_topic()`, `list_topics()`, `get_evidence()` 같은 호출 계획을 문장으로 출력하지 마세요.\n"
+        "- 이미 제공된 컨텍스트만 사용해 바로 답변하고, 확인 질문이 필요하면 한 문장만 하세요."
+    )
+
     if compact:
-        base = SYSTEM_PROMPT_COMPACT
+        base = _strip_tool_guidance(SYSTEM_PROMPT_COMPACT) if not allow_tools else SYSTEM_PROMPT_COMPACT
         static_parts: list[str] = []
         dynamic_parts: list[str] = []
 
@@ -221,6 +261,9 @@ def build_system_prompt_parts(
         if report_mode:
             dynamic_parts.append(_REPORT_PROMPT_COMPACT)
 
+        if not allow_tools:
+            dynamic_parts.append(no_tools_note)
+
         dynamic_parts.append(
             "\n플러그인: 사용자가 '플러그인 만들어줘'하면 create_plugin 도구 사용. "
             "플러그인 추천 힌트가 있으면 답변 끝에 안내."
@@ -233,7 +276,12 @@ def build_system_prompt_parts(
         dynamic = "\n".join(dynamic_parts)
         return static, dynamic
 
-    base = SYSTEM_PROMPT_KR if lang == "ko" else SYSTEM_PROMPT_EN
+    if lang == "ko":
+        base = SYSTEM_PROMPT_KR
+    else:
+        base = SYSTEM_PROMPT_EN
+    if not allow_tools:
+        base = _strip_tool_guidance(base)
     static_parts = []
     dynamic_parts = []
 
@@ -267,6 +315,9 @@ def build_system_prompt_parts(
     # 동적: report_mode + 플러그인
     if report_mode:
         dynamic_parts.append(_REPORT_PROMPT)
+
+    if not allow_tools:
+        dynamic_parts.append(no_tools_note)
 
     dynamic_parts.append(_PLUGIN_SYSTEM_PROMPT)
 

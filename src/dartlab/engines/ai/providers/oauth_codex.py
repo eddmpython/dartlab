@@ -250,6 +250,7 @@ class OAuthCodexProvider(BaseProvider):
         resp = self._request_with_retry(token, body, stream=True)
 
         has_content = False
+        yielded_final_message = False
         event_types_seen: set[str] = set()
 
         for raw_line in resp.iter_lines(decode_unicode=True):
@@ -286,13 +287,16 @@ class OAuthCodexProvider(BaseProvider):
                     yield text
 
             elif event_type == "response.output_item.done":
+                if has_content:
+                    continue
                 item = event.get("item", {})
                 if item.get("type") == "message":
                     for content in item.get("content", []):
                         if content.get("type") == "output_text":
                             text = content.get("text", "")
-                            if text:
+                            if text and not yielded_final_message:
                                 has_content = True
+                                yielded_final_message = True
                                 yield text
 
         if not has_content and event_types_seen:

@@ -1,5 +1,6 @@
 <script>
 	import { cn } from "$lib/utils.js";
+	import { formatEvidenceLabel, formatToolLabel, getIncludedEvidenceLabels } from "$lib/ai/evidenceLabels.js";
 	import { Database, Wrench, Brain, Eye, CheckCircle2 } from "lucide-svelte";
 
 	let {
@@ -54,9 +55,9 @@
 								: `${evidenceMessage.meta.dataYearRange.min_year}~${evidenceMessage.meta.dataYearRange.max_year}년`}
 						</span>
 					{/if}
-					{#each evidenceMessage.meta?.includedModules || [] as moduleName}
+					{#each getIncludedEvidenceLabels(evidenceMessage.meta) as moduleLabel}
 						<span class="rounded-full bg-dl-bg-card px-2 py-1 text-[10px] text-dl-text-muted">
-							{moduleName}
+							{moduleLabel}
 						</span>
 					{/each}
 				</div>
@@ -97,10 +98,10 @@
 					{#each evidenceContexts as ctx}
 						<button
 							class="w-full rounded-xl bg-dl-bg-card/50 p-3 text-left transition-colors hover:bg-dl-bg-card/70"
-							onclick={() => onOpenDetailModal?.("context", ctx, ctx.label || ctx.module || "컨텍스트")}
+							onclick={() => onOpenDetailModal?.("context", ctx, formatEvidenceLabel(ctx.label || ctx.module, ctx.label || "컨텍스트"))}
 						>
 							<div class="flex items-center justify-between gap-2">
-								<div class="text-[11px] font-medium text-dl-text">{ctx.label || ctx.module}</div>
+								<div class="text-[11px] font-medium text-dl-text">{formatEvidenceLabel(ctx.label || ctx.module, ctx.label || "컨텍스트")}</div>
 								<span class="inline-flex items-center gap-1 text-[10px] text-dl-primary-light">
 									<Eye size={11} />
 									상세
@@ -125,11 +126,11 @@
 					{#each evidenceTools as tool}
 						<button
 							class="flex w-full items-center justify-between gap-3 rounded-xl bg-dl-bg-card/50 px-3 py-2 text-left text-[10px] text-dl-text-muted transition-colors hover:bg-dl-bg-card/70"
-							onclick={() => onOpenDetailModal?.("tool-call", tool, `${tool.name} 호출`)}
+							onclick={() => onOpenDetailModal?.("tool-call", tool, `${formatToolLabel(tool.name)} 호출`)}
 						>
 							<span>
-								{tool.name}
-								{#if tool.arguments?.module} · {tool.arguments.module}{/if}
+								{formatToolLabel(tool.name)}
+								{#if tool.arguments?.module} · {formatEvidenceLabel(tool.arguments.module, "관련 데이터")}{/if}
 								{#if tool.arguments?.keyword} · {tool.arguments.keyword}{/if}
 							</span>
 							<span class="inline-flex items-center gap-1 text-dl-primary-light">
@@ -157,10 +158,10 @@
 					{#each evidenceToolResults as tool}
 						<button
 							class="flex w-full items-center justify-between gap-3 rounded-xl bg-dl-bg-card/50 px-3 py-2 text-left text-[10px] text-dl-text-muted transition-colors hover:bg-dl-bg-card/70"
-							onclick={() => onOpenDetailModal?.("tool-result", tool, `${tool.name} 결과`)}
+							onclick={() => onOpenDetailModal?.("tool-result", tool, `${formatToolLabel(tool.name)} 결과`)}
 						>
 							<span class="min-w-0 flex-1 truncate">
-								{tool.name}
+								{formatToolLabel(tool.name)}
 								{#if typeof tool.result === "string"} · {tool.result.slice(0, 80)}{/if}
 							</span>
 							<span class="inline-flex items-center gap-1 text-dl-success">

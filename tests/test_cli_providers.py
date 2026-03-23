@@ -175,6 +175,30 @@ class TestProviderRegistry:
             create_provider(LLMConfig(provider="chatgpt"))  # type: ignore[arg-type]
 
 
+class TestOAuthCodexProvider:
+    def test_stream_does_not_duplicate_final_message_after_deltas(self, monkeypatch):
+        from dartlab.engines.ai.providers.oauth_codex import OAuthCodexProvider
+
+        class DummyResponse:
+            def iter_lines(self, decode_unicode: bool = True):
+                yield 'data: {"type":"response.output_text.delta","delta":"안녕"}'
+                yield 'data: {"type":"response.output_text.delta","delta":"하세요"}'
+                yield (
+                    'data: {"type":"response.output_item.done","item":{"type":"message","content":['
+                    '{"type":"output_text","text":"안녕하세요"}]}}'
+                )
+                yield "data: [DONE]"
+
+        provider = OAuthCodexProvider(LLMConfig(provider="oauth-codex"))
+        monkeypatch.setattr(provider, "_get_token_or_raise", lambda: "token")
+        monkeypatch.setattr(provider, "_build_body", lambda messages: {"messages": messages})
+        monkeypatch.setattr(provider, "_request_with_retry", lambda token, body, stream=False: DummyResponse())
+
+        chunks = list(provider.stream([{"role": "user", "content": "테스트"}]))
+
+        assert chunks == ["안녕", "하세요"]
+
+
 class TestSharedProfileRouting:
     def test_configure_role_binding_changes_resolved_config(self):
         from dartlab.engines.ai import configure, get_config

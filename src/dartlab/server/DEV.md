@@ -56,7 +56,7 @@ LRU 캐시 (최대 5종목)
 
 | 이벤트 | 설명 |
 |--------|------|
-| `meta` | 질문 분류, 선택 모듈 |
+| `meta` | 질문 분류, 선택 모듈, 사용자용 evidence label |
 | `snapshot` | 기업 요약 데이터 |
 | `context` | 분석 컨텍스트 |
 | `system_prompt` | LLM 시스템 프롬프트 |
@@ -65,3 +65,13 @@ LRU 캐시 (최대 5종목)
 | `ui_action` | UI 렌더링 지시 |
 | `done` | 완료 |
 | `error` | 에러 |
+
+### Meta / Done payload 원칙
+
+- server는 `core.analyze()`의 raw module 정보와 사용자용 evidence label을 둘 다 흘려보낸다.
+- raw 식별자:
+  - `includedModules`
+- 사용자용 식별자:
+  - `includedEvidence` = `[{name, label}]`
+  - `includedModuleLabels`
+- UI는 기본적으로 사용자용 식별자를 렌더링하고, raw module 이름은 디버그/내부 검증에만 쓴다.

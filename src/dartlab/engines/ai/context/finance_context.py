@@ -214,6 +214,21 @@ def _build_report_sections(
             + " | ".join([f"{v:.2f}" if v is not None else "-" for v in div.dividendYield[offset:]])
             + " |"
         )
+        latest_dps = div.dps[-1] if div.dps else None
+        latest_yield = div.dividendYield[-1] if div.dividendYield else None
+        if latest_dps is not None or latest_yield is not None:
+            lines.append("")
+            lines.append("### 배당 핵심 요약")
+            if latest_dps is not None:
+                lines.append(f"- 최근 연도 DPS: {int(round(latest_dps))}원")
+            if latest_yield is not None:
+                lines.append(f"- 최근 연도 배당수익률: {latest_yield:.2f}%")
+            if len(display_years) >= 3:
+                recent_dps = [
+                    f"{year}:{int(round(value)) if value is not None else '-'}원"
+                    for year, value in zip(display_years[-3:], div.dps[offset:][-3:], strict=False)
+                ]
+                lines.append("- 최근 3개년 DPS 추이: " + " → ".join(recent_dps))
         sections["report_dividend"] = "\n".join(lines)
 
     emp = getattr(report, "employee", None) if "employee" in requested_reports else None

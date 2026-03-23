@@ -91,6 +91,59 @@
 - tool-capable provider(`openai`, `ollama`, `custom`)만 `use_tools=True`일 때 `skeleton` tier를 사용한다.
 - `oauth-codex` 기본 ask는 더 이상 `full`로 떨어지지 않는다.
 - `auto diff`는 `full` tier에서만 자동 계산한다. 기본 ask에서는 `company.diff()`를 선행 호출하지 않는다.
+- 질문 해석은 route-first가 아니라 **candidate-module-first**다. 먼저 `sections / notes / report / finance` 후보를 동시에 모으고, 실제 존재하는 모듈만 컨텍스트에 싣는다.
+- `costByNature`, `rnd`, `segments`처럼 sections topic이 아니어도 direct/notes 경로로 존재하면 `ask`가 우선 회수한다.
+- 일반 `ask`에서 포함된 모듈이 있으면 `"데이터 없음"`이라고 답하면 실패로 본다. false-unavailable 방지가 기본 계약이다.
+- tool calling이 비활성화된 ask에서는 `show_topic()` 같은 호출 계획을 문장으로 출력하지 않는다. 이미 제공된 컨텍스트만으로 바로 답하고, 모호할 때만 한 문장 확인 질문을 한다.
+
+## 벤치마크 기반 플래닝
+
+- 사용자가 `벤치마크`, `유명한 레포`, `세상에 알려진 방식`, `검증된 기법`, `조사`를 언급하면 로컬 코드만 보고 설계하지 않는다.
+- 먼저 외부 공개 기준(레포, 논문, 공식 eval practice)을 조사하고, 그 패턴을 dartlab ask/runtime에 번역한 뒤 구현/평가한다.
+- ask 개선은 항상 `외부 기준 조사 → dartlab 구조 매핑 → 로컬 실측/회귀 검증` 순서를 따른다.
+
+## Persona Eval 루프
+
+- ask 장기 개선의 기본 단위는 **실사용 로그가 아니라 curated 질문 세트 replay**다.
+- source-of-truth는 `src/dartlab/engines/ai/eval/personaCases.json`이다.
+- 사람 검수 이력 source-of-truth는 `src/dartlab/engines/ai/eval/reviewLog/<persona>.jsonl`이다.
+- persona 축은 최소 `assistant`, `data_manager`, `operator`, `installer`, `research_gather`, `accountant`, `business_owner`, `investor`, `analyst`를 유지한다.
+- 각 case는 질문만 저장하지 않는다.
+  - `expectedRoute`
+  - `expectedModules`
+  - `mustInclude`
+  - `mustNotSay`
+  - `forbiddenUiTerms`
+  - `allowedClarification`
+  - `expectedFollowups`
+  - `groundTruthFacts`
+- 새 ask 실패는 바로 프롬프트 hotfix로 덮지 않고 먼저 아래로 분류한다.
+  - `routing_failure`
+  - `retrieval_failure`
+  - `false_unavailable`
+  - `generation_failure`
+  - `ui_wording_failure`
+  - `data_gap`
+  - `runtime_error`
+- replay runner source-of-truth는 `src/dartlab/engines/ai/eval/replayRunner.py`다.
+- 실제 replay를 검토할 때는 결과만 남기지 않고 반드시 `reviewedAt / effectiveness / improvementActions / notes`를 같이 남긴다.
+- review log는 persona별로 분리한다.
+  - `reviewLog/accountant.jsonl`
+  - `reviewLog/investor.jsonl`
+  - `reviewLog/analyst.jsonl`
+- 다음 회차 replay는 같은 persona 파일을 이어서 보고, `효과적이었는지`와 `이번 개선으로 줄여야 할 failure type`을 같이 적는다.
+- 개선 루프는 항상 `질문 세트 추가 → replay → failure taxonomy 확인 → AI fix vs DartLab core fix 분리 → 회귀 재실행` 순서로 간다.
+- "장기 학습"은 모델 학습이 아니라 이 replay/backlog 루프를 뜻한다.
+
+## User Language 원칙
+
+- UI 기본 surface에서는 internal module/method 이름을 직접 노출하지 않는다.
+- ask 내부 debug/meta와 eval/log에서는 raw module 이름을 유지해도 된다.
+- runtime `meta` / `done`에는 raw `includedModules`와 함께 사용자용 `includedEvidence` label을 같이 실어 보낸다.
+- UI evidence panel, transparency badges, modal title은 사용자용 evidence label을 우선 사용한다.
+- tool 이름도 UI에서는 사용자 행동 기준 문구로 보여준다.
+  - 예: `list_live_filings` → `실시간 공시 목록 조회`
+  - 예: `get_data` → `재무·공시 데이터 조회`
 
 ## Sections First Retrieval
 

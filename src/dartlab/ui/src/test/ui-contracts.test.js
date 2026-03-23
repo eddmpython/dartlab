@@ -50,6 +50,9 @@ describe("UI contracts", () => {
 
 	it("keeps the workspace evidence panel readable and drill-down capable", () => {
 		const evidenceTab = read("src/lib/components/workspace/EvidenceTab.svelte");
+		const evidenceModal = read("src/lib/components/EvidenceModal.svelte");
+		const transparency = read("src/lib/components/TransparencyBadges.svelte");
+		const evidenceLabels = read("src/lib/ai/evidenceLabels.js");
 
 		expect(evidenceTab).toContain('data-evidence-section="snapshot"');
 		expect(evidenceTab).toContain('data-evidence-section="contexts"');
@@ -58,6 +61,15 @@ describe("UI contracts", () => {
 		expect(evidenceTab).toContain("tool-result");
 		expect(evidenceTab).toContain("프롬프트 투명성");
 		expect(evidenceTab).toContain("도구 결과");
+		expect(evidenceTab).toContain("formatEvidenceLabel");
+		expect(evidenceTab).toContain("getIncludedEvidenceLabels");
+		expect(evidenceTab).toContain("formatToolLabel");
+		expect(evidenceModal).toContain("formatEvidenceLabel");
+		expect(evidenceModal).toContain("formatToolLabel");
+		expect(transparency).toContain("formatEvidenceLabel");
+		expect(transparency).toContain("formatToolLabel");
+		expect(evidenceLabels).toContain("성격별 비용 분류");
+		expect(evidenceLabels).toContain("실시간 공시 목록 조회");
 
 		// DataExplorer still orchestrates evidence section routing
 		const explorer = read("src/lib/components/DataExplorer.svelte");

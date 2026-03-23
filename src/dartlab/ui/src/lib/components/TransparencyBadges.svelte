@@ -4,6 +4,7 @@
 -->
 <script>
 	import { cn } from "$lib/utils.js";
+	import { formatEvidenceLabel, formatToolLabel } from "$lib/ai/evidenceLabels.js";
 	import { Badge } from "$lib/components/ui/badge/index.js";
 	import {
 		Database, Eye, Wrench, Brain, FileText,
@@ -28,11 +29,13 @@
 	function summarizeToolEvent(ev) {
 		if (!ev) return "";
 		if (ev.type === "call") {
-			return ev.arguments?.module || ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || "";
+			if (ev.arguments?.module) return formatEvidenceLabel(ev.arguments.module, "관련 데이터");
+			return ev.arguments?.keyword || ev.arguments?.engine || ev.arguments?.name || "";
 		}
 		if (typeof ev.result === "string") return ev.result.slice(0, 120);
 		if (ev.result && typeof ev.result === "object") {
-			return ev.result.module || ev.result.status || ev.result.name || "";
+			if (ev.result.module) return formatEvidenceLabel(ev.result.module, "관련 데이터");
+			return ev.result.status || ev.result.name || "";
 		}
 		return "";
 	}
@@ -77,7 +80,7 @@
 					onclick={() => onOpenContextModal?.(i)}
 				>
 					<Database size={10} class="flex-shrink-0" />
-					{ctx.label || ctx.module}
+					{formatEvidenceLabel(ctx.label || ctx.module, ctx.label || "관련 데이터")}
 				</button>
 			{/each}
 		{:else if message.meta?.includedModules?.length > 0}
@@ -176,7 +179,7 @@
 					{:else}
 						<CheckCircle2 size={11} />
 					{/if}
-					{ev.type === "call" ? ev.name : `${ev.name} 결과`}{detail ? `: ${detail}` : ""}
+					{ev.type === "call" ? formatToolLabel(ev.name) : `${formatToolLabel(ev.name)} 결과`}{detail ? `: ${detail}` : ""}
 				</button>
 			{/each}
 			</div>

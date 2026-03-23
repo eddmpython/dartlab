@@ -145,6 +145,13 @@ class TestBuildSystemPrompt:
         assert "분석 예시" in result
         assert "교차검증" in result
 
+    def test_no_tools_prompt_strips_tool_guidance(self):
+        result = build_system_prompt(allow_tools=False)
+        assert "## 현재 실행 제약" in result
+        assert "이번 답변에서는 도구 호출을 사용할 수 없습니다" in result
+        assert "## 공시 데이터 접근법 (도구 사용)" not in result
+        assert "## 공시 도구" not in result
+
 
 # ══════════════════════════════════════
 # _classify_question

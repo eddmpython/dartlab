@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 from dartlab.core.memory import BoundedCache
-from dartlab.engines.ai.context import build_context_by_module
+from dartlab.engines.ai.context import build_compact_context, build_context_by_module
 from dartlab.engines.ai.runtime.core import (
     _resolve_context_tier,
     _resolve_snapshot_policy,
@@ -357,6 +357,186 @@ def test_sections_question_compact_mode_uses_outline_preview_without_raw():
 
     assert "businessOverview" in included
     assert "핵심 preview" in modules["section_businessOverview"]
+
+
+def test_build_compact_context_includes_section_and_report_prefixed_modules():
+    class FakeSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10],
+                        "chapter": ["II"],
+                        "topic": ["businessOverview"],
+                        "source": ["docs"],
+                        "blocks": [1],
+                        "periods": [1],
+                        "latestPeriod": ["2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024"],
+                    "sectionOrder": [10],
+                    "block": [0],
+                    "type": ["text"],
+                    "title": ["사업 개요"],
+                    "preview": ["반도체와 배터리"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview"]
+
+    class FakeDividend:
+        years = [2023, 2024]
+        dps = [1444.0, 1446.0]
+        dividendYield = [1.9, 2.7]
+
+    class CompactContextCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        docs = SimpleNamespace(sections=FakeSectionsAccessor())
+        report = SimpleNamespace(dividend=FakeDividend())
+
+        @property
+        def annual(self):
+            raise AssertionError("compact section/report context should not access annual finance")
+
+        def _topicLabel(self, topic: str) -> str:
+            return "사업의 개요"
+
+    section_text, section_included = build_compact_context(CompactContextCompany(), "무슨 사업 하는 회사냐")
+    dividend_text, dividend_included = build_compact_context(CompactContextCompany(), "배당 추세 알려줘")
+
+    assert "businessOverview" in section_included
+    assert "반도체와 배터리" in section_text
+    assert "dividend" in dividend_included
+    assert "DPS(원)" in dividend_text
+
+
+def test_direct_cost_question_prefers_cost_by_nature_without_summary_module():
+    class DirectCostCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = False
+        sector = SimpleNamespace(sector=None)
+
+        @property
+        def annual(self):
+            raise AssertionError("direct cost question should not access annual finance")
+
+        @property
+        def report(self):
+            raise AssertionError("direct cost question should not access report")
+
+        def getRatios(self):
+            raise AssertionError("direct cost question should not access ratios")
+
+        def _get_primary(self, name: str):
+            if name == "costByNature":
+                return pl.DataFrame({"account": ["급여", "감가상각비"], "2024": [100.0, 80.0]})
+            if name == "fsSummary":
+                raise AssertionError("specific module question should not pull fsSummary by default")
+            return None
+
+    modules, included, _ = build_context_by_module(
+        DirectCostCompany(),
+        "성격별 비용 분류를 보여줘",
+        compact=True,
+    )
+
+    assert included == ["costByNature"]
+    assert "costByNature" in modules
+    assert "_response_contract" in modules
+
+
+def test_sections_evidence_contract_requires_exact_period_and_no_tool_narration():
+    class FakeSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10],
+                        "chapter": ["II"],
+                        "topic": ["businessOverview"],
+                        "source": ["docs"],
+                        "blocks": [1],
+                        "periods": [2],
+                        "latestPeriod": ["2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024", "2023"],
+                    "sectionOrder": [10, 10],
+                    "block": [0, 0],
+                    "type": ["text", "text"],
+                    "title": ["사업 개요", "사업 개요"],
+                    "preview": ["반도체와 배터리", "메모리와 소재"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview"]
+
+    class EvidenceCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        docs = SimpleNamespace(sections=FakeSectionsAccessor())
+
+        @property
+        def annual(self):
+            raise AssertionError("sections evidence question should not access annual finance")
+
+        def getRatios(self):
+            raise AssertionError("sections evidence question should not access ratios")
+
+        def _topicLabel(self, topic: str) -> str:
+            return "사업의 개요"
+
+    modules, included, _ = build_context_by_module(
+        EvidenceCompany(),
+        "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘",
+        compact=True,
+    )
+
+    assert included == ["businessOverview"]
+    assert "period: 2024" in modules["section_businessOverview"]
+    assert "_response_contract" in modules
+    assert "도구 호출 계획" in modules["_response_contract"]
+    assert "실제 값을 쓰세요" in modules["_response_contract"]
+
+
+def test_ambiguous_cost_question_emits_single_clarification_without_loading_summary():
+    class AmbiguousCostCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = False
+        sector = SimpleNamespace(sector=None)
+
+        @property
+        def annual(self):
+            raise AssertionError("ambiguous clarification should not access annual finance")
+
+        def _get_primary(self, name: str):
+            if name == "costByNature":
+                return pl.DataFrame({"account": ["급여"], "2024": [100.0]})
+            if name == "fsSummary":
+                raise AssertionError("ambiguous clarification should not pull fsSummary")
+            return None
+
+    modules, included, _ = build_context_by_module(
+        AmbiguousCostCompany(),
+        "비용 구조를 설명해줘",
+        compact=True,
+    )
+
+    assert included == []
+    assert "_clarify" in modules
+    assert "한 문장만" in modules["_clarify"]
 
 
 def test_resolve_context_tier_defaults_to_focused_for_default_ask():

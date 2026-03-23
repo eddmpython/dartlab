@@ -107,6 +107,7 @@ _ROUTE_REPORT_FINANCE_HINTS = frozenset(
         "가능한지",
     }
 )
+_SUMMARY_REQUEST_KEYWORDS = frozenset({"종합", "전반", "전체", "요약", "개괄", "한눈에"})
 _SECTIONS_TYPE_DEFAULTS: dict[str, list[str]] = {
     "사업": ["businessOverview", "productService", "salesOrder"],
     "리스크": ["riskDerivative", "contingentLiability", "internalControl"],
@@ -156,6 +157,10 @@ _DIRECT_HINT_MAP: dict[str, list[str]] = {
     "r&d": ["rnd"],
     "세그먼트": ["segments"],
     "부문정보": ["segments"],
+    "사업부문": ["segments"],
+    "부문별": ["segments"],
+    "제품별": ["productService"],
+    "서비스별": ["productService"],
 }
 _CANDIDATE_ALIASES = {
     "segment": "segments",
@@ -171,6 +176,15 @@ def _section_key_to_module_name(key: str) -> str:
     if key.startswith("section_"):
         return key.removeprefix("section_")
     return key
+
+
+def _module_name_to_section_keys(name: str) -> list[str]:
+    return [
+        name,
+        f"report_{name}",
+        f"module_{name}",
+        f"section_{name}",
+    ]
 
 
 def _build_module_section(name: str, data: Any, *, compact: bool, max_rows: int | None = None) -> str | None:
@@ -271,6 +285,16 @@ def _question_has_any(question: str, keywords: set[str] | frozenset[str]) -> boo
     return any(keyword.lower() in lowered for keyword in keywords)
 
 
+def _resolve_direct_hint_modules(question: str) -> list[str]:
+    selected: list[str] = []
+    lowered = question.lower()
+    for keyword, modules in _DIRECT_HINT_MAP.items():
+        if keyword.lower() in lowered:
+            for module_name in modules:
+                _append_unique(selected, _normalize_candidate_module(module_name))
+    return selected
+
+
 def _resolve_candidate_modules(
     question: str,
     *,
@@ -283,10 +307,8 @@ def _resolve_candidate_modules(
         for name in include:
             _append_unique(selected, _normalize_candidate_module(name))
     else:
-        for keyword, modules in _DIRECT_HINT_MAP.items():
-            if keyword.lower() in question.lower():
-                for module_name in modules:
-                    _append_unique(selected, _normalize_candidate_module(module_name))
+        for module_name in _resolve_direct_hint_modules(question):
+            _append_unique(selected, module_name)
 
         for name in _resolve_tables(question, None, exclude):
             _append_unique(selected, _normalize_candidate_module(name))
@@ -294,6 +316,10 @@ def _resolve_candidate_modules(
     if exclude:
         excluded = {_normalize_candidate_module(name) for name in exclude}
         selected = [name for name in selected if name not in excluded]
+
+    specific_modules = set(selected) - (_FINANCE_CONTEXT_MODULES | {"fsSummary"})
+    if specific_modules and not _question_has_any(question, _SUMMARY_REQUEST_KEYWORDS):
+        selected = [name for name in selected if name != "fsSummary"]
 
     return selected
 
@@ -349,13 +375,17 @@ def _resolve_candidate_plan(
     company: Any,
     question: str,
     *,
+    route: str,
     include: list[str] | None = None,
     exclude: list[str] | None = None,
 ) -> dict[str, list[str]]:
     requested = _resolve_candidate_modules(question, include=include, exclude=exclude)
-    sections_set = _available_sections_topics(company)
-    report_set = _available_report_modules(company)
-    notes_set = _available_notes_modules(company)
+    sections_set = _available_sections_topics(company) if route in {"sections", "hybrid"} else set()
+    report_set = _available_report_modules(company) if route in {"report", "hybrid"} else set()
+    notes_set = _available_notes_modules(company) if route == "hybrid" else set()
+    explicit_direct = set(_resolve_direct_hint_modules(question))
+    if include:
+        explicit_direct.update(_normalize_candidate_module(name) for name in include)
 
     sections: list[str] = []
     report: list[str] = []
@@ -366,8 +396,9 @@ def _resolve_candidate_plan(
     for name in requested:
         normalized = _normalize_candidate_module(name)
         if normalized in _FINANCE_CONTEXT_MODULES:
-            _append_unique(finance, normalized)
-            _append_unique(verified, normalized)
+            if route in {"finance", "hybrid"}:
+                _append_unique(finance, normalized)
+                _append_unique(verified, normalized)
             continue
         if normalized in sections_set and normalized not in _SECTIONS_ROUTE_EXCLUDE_TOPICS:
             _append_unique(sections, normalized)
@@ -377,15 +408,16 @@ def _resolve_candidate_plan(
             _append_unique(report, normalized)
             _append_unique(verified, normalized)
             continue
-        if normalized in notes_set:
+        if normalized in notes_set and normalized in explicit_direct:
             _append_unique(direct, normalized)
             _append_unique(verified, normalized)
             continue
 
-        data = _resolve_module_data(company, normalized)
-        if data is not None:
-            _append_unique(direct, normalized)
-            _append_unique(verified, normalized)
+        if route == "hybrid" and normalized in explicit_direct:
+            data = _resolve_module_data(company, normalized)
+            if data is not None:
+                _append_unique(direct, normalized)
+                _append_unique(verified, normalized)
 
     return {
         "requested": requested,
@@ -477,29 +509,44 @@ def _build_response_contract(
     lines.append(f"- 포함 모듈: {', '.join(included_modules)}")
     lines.append("- 포함된 모듈을 보고도 '데이터가 없다'고 말하지 마세요.")
     lines.append("- 핵심 결론 1~2문장을 먼저 제시하고, 바로 근거 표나 근거 bullet을 붙이세요.")
+    lines.append(
+        "- `show_topic()` 같은 도구 호출 계획이나 내부 절차 설명을 답변 본문에 쓰지 말고 바로 분석 결과를 말하세요."
+    )
 
     module_set = set(included_modules)
     if "costByNature" in module_set:
         lines.append("- `costByNature`가 있으면 상위 비용 항목 3~5개와 최근 기간 변화 방향을 먼저 요약하세요.")
     if "dividend" in module_set:
         lines.append("- `dividend`가 있으면 DPS·배당수익률·배당성향을 먼저 요약하세요.")
+        lines.append(
+            "- `dividend`가 있는데도 배당 데이터가 없다고 말하지 마세요. 첫 문장이나 첫 표에서 DPS와 배당수익률을 직접 인용하세요."
+        )
     if {"dividend", "IS", "CF"} <= module_set or {"dividend", "CF"} <= module_set:
         lines.append("- `dividend`와 `IS/CF`가 같이 있으면 배당의 이익/현금흐름 커버 여부를 한 줄로 명시하세요.")
     if route == "sections" or any(keyword in question for keyword in ("근거", "왜", "최근 공시 기준", "출처")):
         lines.append("- 근거 질문이면 `topic`, `period`, `source`를 최소 2개 명시하세요.")
-    if len(lines) == 4:
-        return None
+        lines.append(
+            "- `period`와 `source`는 outline 표에 나온 실제 값을 쓰세요. '최근 공시 기준' 같은 포괄 표현으로 뭉개지 마세요."
+        )
     return "\n".join(lines)
 
 
 def _build_clarification_context(
+    company: Any,
     question: str,
     *,
     candidate_plan: dict[str, list[str]],
 ) -> str | None:
     lowered = question.lower()
     module_set = set(candidate_plan.get("verified", []))
-    if "costByNature" not in module_set or "IS" not in module_set:
+    has_cost_by_nature = "costByNature" in module_set
+    if not has_cost_by_nature and "costByNature" in set(candidate_plan.get("requested", [])):
+        try:
+            has_cost_by_nature = _resolve_module_data(company, "costByNature") is not None
+        except _CONTEXT_ERRORS:
+            has_cost_by_nature = False
+    has_is = "IS" in module_set or "IS" in set(candidate_plan.get("requested", []))
+    if not has_cost_by_nature or not has_is:
         return None
     if "비용" not in lowered:
         return None
@@ -511,7 +558,8 @@ def _build_clarification_context(
         "- 현재 로컬에서 두 해석이 모두 가능합니다.\n"
         "- `costByNature`: 인건비·감가상각비 같은 성격별 비용 분류\n"
         "- `IS`: 매출원가·판관비 같은 기능별 비용 총액\n"
-        "- 사용자의 의도가 둘 중 어느 쪽인지 결론을 바꾸므로, 먼저 한 문장으로 어느 관점을 원하는지 확인하세요."
+        "- 사용자의 의도가 둘 중 어느 쪽인지 결론을 바꾸므로, 먼저 한 문장으로 어느 관점을 원하는지 확인하세요.\n"
+        "- 확인 질문은 한 문장만 하세요. 같은 문장을 반복하지 마세요."
     )
 
 
@@ -624,14 +672,19 @@ def _build_sections_context(
 
         if compact:
             if "preview" in outline.columns:
-                previews = [
-                    text.strip()
-                    for text in outline["preview"].drop_nulls().to_list()
-                    if isinstance(text, str) and text.strip()
-                ]
-                if previews:
+                preview_lines: list[str] = []
+                for row in outline.head(2).iter_rows(named=True):
+                    preview = row.get("preview")
+                    if not isinstance(preview, str) or not preview.strip():
+                        continue
+                    period = row.get("period", "-")
+                    title = row.get("title", "-")
+                    preview_lines.append(
+                        f"- period: {period} | source: docs | title: {title} | preview: {preview.strip()}"
+                    )
+                if preview_lines:
                     lines.append("\n### 핵심 preview")
-                    lines.extend(f"- {preview}" for preview in previews[:2])
+                    lines.extend(preview_lines)
             result[f"section_{topic}"] = "\n".join(lines)
             continue
 
@@ -757,7 +810,7 @@ def _build_compact_context_modules_inner(
     q_types = _classify_question_multi(question, max_types=2)
     route = _resolve_context_route(question, include=include, q_types=q_types)
     report_modules = _resolve_report_modules_for_question(question, include=include, exclude=exclude)
-    candidate_plan = _resolve_candidate_plan(company, question, include=include, exclude=exclude)
+    candidate_plan = _resolve_candidate_plan(company, question, route=route, include=include, exclude=exclude)
     selected_finance_modules = _resolve_finance_modules_for_question(
         question,
         q_types=q_types,
@@ -874,7 +927,7 @@ def _build_compact_context_modules_inner(
     if response_contract:
         modules_dict["_response_contract"] = response_contract
 
-    clarification_context = _build_clarification_context(question, candidate_plan=candidate_plan)
+    clarification_context = _build_clarification_context(company, question, candidate_plan=candidate_plan)
     if clarification_context:
         modules_dict["_clarify"] = clarification_context
 
@@ -912,8 +965,10 @@ def build_compact_context(
 
     parts = [header] if header else []
     for name in included:
-        if name in modules_dict:
-            parts.append(modules_dict[name])
+        for key in _module_name_to_section_keys(name):
+            if key in modules_dict:
+                parts.append(modules_dict[key])
+                break
     return "\n".join(parts), included
 
 
