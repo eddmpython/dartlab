@@ -31,12 +31,11 @@ def register_all_defaults(
     from .analysis import register_analysis_tools
     from .company import register_company_tools
     from .finance import register_finance_tools
+    from .market import register_market_tools
     from .openapi import register_openapi_tools
     from .scan import register_scan_tools
     from .system import register_system_tools
     from .ui import register_ui_tools
-
-    from .market import register_market_tools
 
     # Global tools (company 없어도 동작)
     register_system_tools(register_fn, company=company)

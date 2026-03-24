@@ -20,9 +20,9 @@ from dartlab.engines.ai.context.finance_context import (
     _QUESTION_ACCOUNT_FILTER,
     _QUESTION_MODULES,  # noqa: F401 — re-export for tests
     _build_finance_engine_section,
-    _buildQuarterlySection,
     _build_ratios_section,
     _build_report_sections,
+    _buildQuarterlySection,
     _detect_year_hint,
     _get_quarter_counts,
     _resolve_module_data,
@@ -164,6 +164,8 @@ def _detectGranularity(question: str) -> str:
     if any(k in question for k in _QUARTERLY_HINTS):
         return "quarterly"
     return "annual"
+
+
 _SECTIONS_TYPE_DEFAULTS: dict[str, list[str]] = {
     "사업": ["businessOverview", "productService", "salesOrder"],
     "리스크": ["riskDerivative", "contingentLiability", "internalControl"],
@@ -689,10 +691,10 @@ def _build_response_contract(
     hasQuarterly = any(m.endswith("_quarterly") for m in module_set)
     if hasQuarterly:
         lines.append("- **분기별 데이터가 포함되었습니다. '분기 데이터가 없다'고 절대 말하지 마세요.**")
+        lines.append("- 분기별 추이를 테이블로 정리하고, 전분기 대비(QoQ)와 전년동기 대비(YoY) 변화를 함께 보여주세요.")
         lines.append(
-            "- 분기별 추이를 테이블로 정리하고, 전분기 대비(QoQ)와 전년동기 대비(YoY) 변화를 함께 보여주세요."
+            "- `IS_quarterly`, `CF_quarterly` 같은 내부명 대신 `분기별 손익계산서`, `분기별 현금흐름표`로 쓰세요."
         )
-        lines.append("- `IS_quarterly`, `CF_quarterly` 같은 내부명 대신 `분기별 손익계산서`, `분기별 현금흐름표`로 쓰세요.")
     return "\n".join(lines)
 
 
@@ -1105,7 +1107,11 @@ def _build_compact_context_modules_inner(
                     if sj in {"IS", "CF"}:
                         af = acct_filters.get(sj) if acct_filters else None
                         qSection = _buildQuarterlySection(
-                            tsSeries, tsPeriods, sj, nQuarters=8, accountFilter=af,
+                            tsSeries,
+                            tsPeriods,
+                            sj,
+                            nQuarters=8,
+                            accountFilter=af,
                         )
                         if qSection:
                             qKey = f"{sj}_quarterly"
