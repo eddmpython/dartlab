@@ -123,6 +123,7 @@ def test_scan_spec_registered():
     assert "signal" in summary
 
 
+@requires_report
 def test_scan_tool_registered_with_company():
     """Company가 있을 때 get_scan_data tool이 등록되는지."""
     import dartlab

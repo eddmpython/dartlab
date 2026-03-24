@@ -1340,6 +1340,7 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 분기항목").height == 2
 
 
+@pytest.mark.requires_data
 def test_company_sections_preserve_structured_text_columns():
     c = Company(SAMSUNG)
     sec = c.sections
