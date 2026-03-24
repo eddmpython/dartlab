@@ -151,22 +151,27 @@
 		}
 	}
 
+	const SCROLL_INTERVAL_MS = 120;
+	let lastScrollTime = 0;
+
 	function autoScrollLoop() {
 		if (!isLoading || !followStream || !streamAnchor) {
 			autoScrollRafId = null;
 			return;
 		}
-		streamAnchor.scrollIntoView({ block: "end" });
-		showJumpToLatest = false;
+		const now = performance.now();
+		if (now - lastScrollTime >= SCROLL_INTERVAL_MS) {
+			streamAnchor.scrollIntoView({ block: "end" });
+			showJumpToLatest = false;
+			lastScrollTime = now;
+		}
 		autoScrollRafId = requestAnimationFrame(autoScrollLoop);
 	}
 
 	function startAutoScroll() {
 		if (!streamAnchor || autoScrollRafId) return;
-		autoScrollRafId = requestAnimationFrame(() => {
-			autoScrollRafId = null;
-			autoScrollLoop();
-		});
+		lastScrollTime = 0;
+		autoScrollRafId = requestAnimationFrame(autoScrollLoop);
 	}
 
 	$effect(() => {

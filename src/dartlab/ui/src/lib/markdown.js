@@ -25,32 +25,36 @@ export function createIncrementalRenderer() {
 	let prevText = "";
 	let cachedHtml = "";
 	let lastCompleteIdx = 0;
+	let prevTail = "";
+	let cachedTailHtml = "";
 
 	return {
 		/** 전체 텍스트(누적)를 받아서 HTML을 반환. 새 부분만 재파싱. */
 		render(fullText) {
 			if (!fullText) return "";
-			// 마지막 완결된 블록(빈 줄로 구분)까지 캐시
 			const lastDoubleNewline = fullText.lastIndexOf("\n\n");
 			if (lastDoubleNewline > lastCompleteIdx && lastDoubleNewline <= fullText.length - 2) {
-				// 완결 부분이 늘어남 → 캐시 갱신
 				const completeText = fullText.slice(0, lastDoubleNewline + 2);
 				if (completeText !== prevText) {
 					cachedHtml = renderMarkdown(completeText);
 					prevText = completeText;
 					lastCompleteIdx = lastDoubleNewline;
 				}
-				// 미완결 꼬리만 파싱
 				const tail = fullText.slice(lastDoubleNewline + 2);
-				return tail ? cachedHtml + renderMarkdown(tail) : cachedHtml;
+				if (!tail) return cachedHtml;
+				if (tail === prevTail) return cachedHtml + cachedTailHtml;
+				cachedTailHtml = renderMarkdown(tail);
+				prevTail = tail;
+				return cachedHtml + cachedTailHtml;
 			}
-			// 아직 완결 블록이 없으면 전체 파싱
 			return renderMarkdown(fullText);
 		},
 		reset() {
 			prevText = "";
 			cachedHtml = "";
 			lastCompleteIdx = 0;
+			prevTail = "";
+			cachedTailHtml = "";
 		},
 	};
 }

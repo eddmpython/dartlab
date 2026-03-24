@@ -125,6 +125,11 @@ button, a, input, textarea {
 	30% { opacity: 1; }
 }
 
+@keyframes fadeInDraft {
+	from { opacity: 0; transform: translateY(4px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes fadeIn {
 	from { opacity: 0; transform: translateY(8px); }
 	to { opacity: 1; transform: translateY(0); }
@@ -250,10 +255,14 @@ button, a, input, textarea {
 .message-committed {
 	min-height: 1.25rem;
 	overflow-anchor: auto;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 300px;
 }
 
 .message-live-tail {
 	contain: content;
+	will-change: transform;
+	animation: fadeInDraft 0.15s ease-out;
 	position: relative;
 	margin-top: 0.8rem;
 	padding: 0.9rem 1rem 1rem;
@@ -299,11 +308,12 @@ button, a, input, textarea {
 	border: none;
 }
 
-.message-draft-table,
-.message-draft-code {
-	min-height: 2rem;
+.message-draft-table {
+	min-height: 8rem;
 }
-
+.message-draft-code {
+	min-height: 6rem;
+}
 .message-draft-table pre,
 .message-draft-code pre {
 	font-family: var(--font-mono);

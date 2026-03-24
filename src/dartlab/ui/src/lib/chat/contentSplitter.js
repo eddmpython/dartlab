@@ -70,13 +70,59 @@ export function splitStreamingContent(text, loading) {
  */
 export function createStreamSplitter() {
 	let maxSafeIndex = 0;
+	let prevLineCount = 0;
+	let fenceCount = 0;
+	let lastFenceLine = -1;
+	let prevLastLineFence = false;
 
 	return {
 		split(text, loading) {
 			if (!text) return { committed: "", draft: "", draftType: "none" };
-			if (!loading) { maxSafeIndex = 0; return { committed: text, draft: "", draftType: "none" }; }
+			if (!loading) { this.reset(); return { committed: text, draft: "", draftType: "none" }; }
 
-			const { lines, safeIndex, draftType } = computeSplit(text);
+			const lines = text.split("\n");
+			let safeIndex = lines.length;
+			if (!text.endsWith("\n")) safeIndex = Math.min(safeIndex, lines.length - 1);
+
+			// 증분 코드펜스 카운트: 새로 추가된 라인만 검사
+			const scanStart = Math.max(0, prevLineCount - 1);
+			// 이전 마지막 라인이 펜스였으면 재검사 시 중복 방지
+			if (prevLastLineFence && scanStart < lines.length && scanStart === prevLineCount - 1) {
+				// 이전에 카운트한 마지막 라인을 빼고 재검사
+				fenceCount -= 1;
+				if (lastFenceLine === scanStart) lastFenceLine = -1;
+			}
+			let lastLineFence = false;
+			for (let i = scanStart; i < lines.length; i++) {
+				if (CODE_FENCE_RE.test(lines[i].trim())) {
+					fenceCount += 1;
+					lastFenceLine = i;
+					if (i === lines.length - 1) lastLineFence = true;
+				}
+			}
+			prevLineCount = lines.length;
+			prevLastLineFence = lastLineFence;
+
+			if (fenceCount % 2 === 1 && lastFenceLine >= 0) {
+				safeIndex = Math.min(safeIndex, lastFenceLine);
+			}
+
+			// trailing table 감지 (뒤에서만 역순 — O(trailing))
+			let trailingTableStart = -1;
+			for (let i = lines.length - 1; i >= 0; i--) {
+				const line = lines[i];
+				if (!line.trim()) break;
+				if (TABLE_LINE_RE.test(line)) trailingTableStart = i;
+				else { trailingTableStart = -1; break; }
+			}
+			if (trailingTableStart >= 0) {
+				safeIndex = Math.min(safeIndex, trailingTableStart);
+			}
+
+			let draftType = "text";
+			if (trailingTableStart >= 0 && trailingTableStart <= safeIndex) draftType = "table";
+			else if (fenceCount % 2 === 1) draftType = "code";
+
 			// monotonic: committed 영역은 줄어들지 않음
 			const effectiveIndex = Math.max(safeIndex, maxSafeIndex);
 			const clamped = Math.min(effectiveIndex, lines.length);
@@ -90,6 +136,12 @@ export function createStreamSplitter() {
 			const draft = lines.slice(clamped).join("\n");
 			return { committed, draft, draftType: draft ? draftType : "none" };
 		},
-		reset() { maxSafeIndex = 0; },
+		reset() {
+			maxSafeIndex = 0;
+			prevLineCount = 0;
+			fenceCount = 0;
+			lastFenceLine = -1;
+			prevLastLineFence = false;
+		},
 	};
 }

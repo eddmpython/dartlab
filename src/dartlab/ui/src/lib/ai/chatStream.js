@@ -87,6 +87,27 @@ export function createAskStreamCallbacks({
 		onCompanySelect,
 	};
 
+	// ── chunk 배치 처리: 토큰당 → 프레임당 1회 DOM 업데이트 ──
+	let chunkBuffer = "";
+	let chunkRafId = null;
+
+	function flushChunkBuffer() {
+		if (!chunkBuffer) return;
+		const batch = chunkBuffer;
+		chunkBuffer = "";
+		chunkRafId = null;
+		const last = getLastMessage(store);
+		store.updateLastMessage({ text: `${last?.text || ""}${batch}` });
+		bumpScroll?.();
+	}
+
+	function cancelChunkRaf() {
+		if (chunkRafId) {
+			cancelAnimationFrame(chunkRafId);
+			chunkRafId = null;
+		}
+	}
+
 	return {
 		onMeta(meta) {
 			if (isStale()) return;
@@ -150,12 +171,14 @@ export function createAskStreamCallbacks({
 		},
 		onChunk(text) {
 			if (isStale()) return;
-			const last = getLastMessage(store);
-			store.updateLastMessage({ text: `${last?.text || ""}${text}` });
-			bumpScroll?.();
+			chunkBuffer += text;
+			if (chunkRafId) return;
+			chunkRafId = requestAnimationFrame(flushChunkBuffer);
 		},
 		onDone(data) {
 			if (isStale()) return;
+			cancelChunkRaf();
+			flushChunkBuffer();
 			const last = getLastMessage(store);
 			const duration = last?.startedAt
 				? ((Date.now() - last.startedAt) / 1000).toFixed(1)
@@ -183,6 +206,8 @@ export function createAskStreamCallbacks({
 		},
 		onError(err, action) {
 			if (isStale()) return;
+			cancelChunkRaf();
+			chunkBuffer = "";
 			store.updateLastMessage({ text: `오류: ${err}`, loading: false, error: true });
 			store.flush();
 			if (action === "login") {
