@@ -131,8 +131,7 @@ def register_market_tools(register_tool) -> None:
     register_tool(
         "get_fund_flow",
         get_fund_flow,
-        "기관, 외국인, 개인의 매매 동향(순매수)을 조회합니다. "
-        "사용 시점: '수급', '외국인', '기관 동향', '순매수' 질문.",
+        "기관, 외국인, 개인의 매매 동향(순매수)을 조회합니다. 사용 시점: '수급', '외국인', '기관 동향', '순매수' 질문.",
         {
             "type": "object",
             "properties": {
