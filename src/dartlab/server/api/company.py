@@ -193,6 +193,42 @@ def api_company_viewer_topic(
         raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
 
 
+@router.get("/api/company/{code}/viewer2/{topic}")
+def apiViewerDoc(
+    code: str,
+    topic: str,
+    request: Request,
+    base: str | None = Query(None),
+    compare: str | None = Query(None),
+    response: Response = None,
+):
+    """sections 기반 신구대조 뷰어 — viewer() dict 반환."""
+    import re
+
+    try:
+        company = get_company(code)
+        sec = company.docs.sections.raw
+        if sec is None:
+            raise HTTPException(status_code=404, detail="sections 없음")
+
+        if not base:
+            periodRe = re.compile(r"^\d{4}(Q[1-4])?$")
+            periods = sorted(
+                [c for c in sec.columns if periodRe.fullmatch(c)], reverse=True,
+            )
+            base = periods[0] if periods else None
+
+        from dartlab.engines.common.docs.viewer import viewer
+
+        doc = viewer(sec, topic, base, compare)
+        doc["stockCode"] = company.stockCode
+        doc["corpName"] = company.corpName
+        doc["topicLabel"] = safe_topic_label(company, topic)
+        return etag_response(request, response, doc, max_age=120, swr=600)
+    except HANDLED_API_ERRORS as exc:
+        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+
+
 @router.post("/api/company/{code}/viewer/batch")
 async def api_company_viewer_batch(code: str, request: Request, response: Response):
     """여러 topic의 viewer 데이터를 한 번에 반환 — chapter 확장 시 N+1 제거."""

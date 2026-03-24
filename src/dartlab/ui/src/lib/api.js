@@ -212,6 +212,18 @@ export async function fetchCompanyViewerBatch(code, topics) {
 	return res.json();
 }
 
+/** 신구대조 뷰어 — viewer() dict 반환 */
+export async function fetchViewer(code, topic, base = null, compare = null) {
+	const params = new URLSearchParams();
+	if (base) params.set("base", base);
+	if (compare) params.set("compare", compare);
+	const qs = params.toString();
+	const url = `${BASE}/api/company/${encodeURIComponent(code)}/viewer2/${encodeURIComponent(topic)}${qs ? "?" + qs : ""}`;
+	const res = await fetch(url);
+	if (!res.ok) throw new Error("viewer 조회 실패");
+	return res.json();
+}
+
 /** diff 요약 — changeRate + added/removed 미리보기 */
 export async function fetchCompanyDiffSummary(code, topic) {
 	const res = await fetch(`${BASE}/api/company/${code}/diff/${encodeURIComponent(topic)}/summary`);

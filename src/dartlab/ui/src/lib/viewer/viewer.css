@@ -293,3 +293,289 @@
 .markdown-table :global(tr:nth-child(even)) {
 	background: rgba(255,255,255,0.012);
 }
+
+/* ════════════════════════════════════════════════════════
+   vw2 — 신구대조 뷰어 (viewer() dict 기반)
+   ════════════════════════════════════════════════════════ */
+
+/* Toolbar */
+.vw2-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 0;
+	margin-bottom: 16px;
+	border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.vw2-toolbar-left,
+.vw2-toolbar-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.vw2-period-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 5px 10px;
+	border-radius: 8px;
+	background: rgba(255,255,255,0.04);
+	color: rgba(226,232,240,0.85);
+	font-size: 12px;
+	font-weight: 500;
+}
+.vw2-period-vs {
+	color: rgba(148,163,184,0.45);
+	font-size: 10px;
+}
+.vw2-period-btn {
+	padding: 4px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	color: rgba(148,163,184,0.6);
+	background: transparent;
+	border: 1px solid rgba(148,163,184,0.15);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.vw2-period-btn:hover {
+	background: rgba(255,255,255,0.04);
+	color: rgba(226,232,240,0.85);
+}
+.vw2-period-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 4px;
+	padding: 4px;
+	background: rgb(15,18,25);
+	border: 1px solid rgba(148,163,184,0.15);
+	border-radius: 8px;
+	z-index: 50;
+	min-width: 100px;
+	box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.vw2-period-option {
+	display: block;
+	width: 100%;
+	padding: 6px 10px;
+	border-radius: 5px;
+	font-size: 12px;
+	color: rgba(226,232,240,0.7);
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.1s;
+}
+.vw2-period-option:hover {
+	background: rgba(255,255,255,0.06);
+}
+.vw2-period-option.is-active {
+	color: rgba(226,232,240,1);
+	font-weight: 600;
+}
+
+/* Summary badges */
+.vw2-summary-badge {
+	display: inline-flex;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 10px;
+	font-weight: 500;
+}
+.vw2-badge-modified {
+	background: rgba(251,191,36,0.12);
+	color: rgba(251,191,36,0.85);
+}
+.vw2-badge-added {
+	background: rgba(52,211,153,0.12);
+	color: rgba(52,211,153,0.85);
+}
+.vw2-badge-removed {
+	background: rgba(248,113,113,0.12);
+	color: rgba(248,113,113,0.85);
+}
+
+/* Mode toggle */
+.vw2-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px;
+	border-radius: 6px;
+	color: rgba(148,163,184,0.45);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.vw2-mode-btn:hover { color: rgba(226,232,240,0.7); background: rgba(255,255,255,0.04); }
+.vw2-mode-btn.is-active { color: rgba(251,191,36,0.85); background: rgba(251,191,36,0.08); }
+
+/* Blocks container */
+.vw2-blocks {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-width: 860px;
+}
+
+/* Heading */
+.vw2-heading {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 10px 0;
+	border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.vw2-heading-toggle {
+	flex-shrink: 0;
+	display: inline-flex;
+	padding: 2px;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background 0.1s;
+}
+.vw2-heading-toggle:hover { background: rgba(255,255,255,0.06); }
+.vw2-heading-text {
+	color: rgba(241,245,249,0.92);
+	line-height: 1.4;
+}
+
+/* Text block */
+.vw2-text {
+	padding: 6px 0;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 80px;
+}
+.vw2-text-path {
+	font-size: 10px;
+	color: rgba(148,163,184,0.35);
+	margin-bottom: 4px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.vw2-text-body {
+	font-size: 15px;
+	line-height: 1.92;
+	color: rgba(241,245,249,0.82);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+/* Diff inline */
+.vw2-diff-inline {
+	font-size: 15px;
+	line-height: 1.92;
+	color: rgba(241,245,249,0.82);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.vw2-diff-ins {
+	background: rgba(52,211,153,0.15);
+	color: rgba(52,211,153,0.95);
+	border-radius: 2px;
+	padding: 0 1px;
+}
+.vw2-diff-del {
+	background: rgba(248,113,113,0.1);
+	color: rgba(248,113,113,0.6);
+	text-decoration: line-through;
+	border-radius: 2px;
+	padding: 0 1px;
+}
+
+/* Status indicators */
+.vw2-status-added {
+	border-left: 3px solid rgba(52,211,153,0.5);
+	padding-left: 12px !important;
+}
+.vw2-status-removed {
+	border-left: 3px solid rgba(248,113,113,0.4);
+	padding-left: 12px !important;
+	opacity: 0.55;
+}
+.vw2-status-modified {
+	border-left: 3px solid rgba(251,191,36,0.4);
+	padding-left: 12px !important;
+}
+.vw2-text-removed {
+	text-decoration: line-through;
+	color: rgba(248,113,113,0.55);
+}
+
+/* Table */
+.vw2-table {
+	padding: 8px 0;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 200px;
+}
+.vw2-table-wrap {
+	border-radius: 10px;
+	border: 1px solid rgba(148,163,184,0.08);
+	background: rgba(8,11,18,0.5);
+	overflow: hidden;
+}
+.vw2-styled-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+.vw2-styled-table th {
+	padding: 8px 12px;
+	font-weight: 600;
+	font-size: 10.5px;
+	letter-spacing: 0.03em;
+	border-bottom: 1px solid rgba(148,163,184,0.12);
+	white-space: nowrap;
+	color: rgba(148,163,184,0.7);
+}
+.vw2-styled-table td {
+	padding: 6px 12px;
+	border-bottom: 1px solid rgba(255,255,255,0.025);
+	color: rgba(148,163,184,0.85);
+}
+.vw2-styled-table tr:hover td {
+	background: rgba(255,255,255,0.025);
+}
+.vw2-cell-changed {
+	background: rgba(251,191,36,0.1) !important;
+	position: relative;
+}
+.vw2-cell-changed::after {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: rgba(251,191,36,0.4);
+}
+.vw2-table-raw {
+	padding: 8px 12px;
+}
+
+/* Fold bar */
+.vw2-fold-bar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px;
+	margin: 4px 0;
+	border-radius: 8px;
+	border: 1px dashed rgba(148,163,184,0.12);
+	background: rgba(255,255,255,0.015);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.vw2-fold-bar:hover {
+	background: rgba(255,255,255,0.035);
+	border-color: rgba(148,163,184,0.2);
+}
+.vw2-fold-label {
+	font-size: 11px;
+	color: rgba(148,163,184,0.45);
+}
+.vw2-fold-expand {
+	font-size: 10px;
+	color: rgba(148,163,184,0.3);
+}
