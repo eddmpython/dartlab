@@ -256,7 +256,9 @@ def _runCheck(console, args) -> int:
             console.print("[green]모든 로컬 종목이 최신 상태입니다.[/]")
         else:
             for row in df.iter_rows(named=True):
-                console.print(f"  ⚠ {row['stockCode']} {row['corpName']} — 새 공시 {row['newCount']}건 ({row['latestReport']})")
+                console.print(
+                    f"  ⚠ {row['stockCode']} {row['corpName']} — 새 공시 {row['newCount']}건 ({row['latestReport']})"
+                )
     return 0
 
 

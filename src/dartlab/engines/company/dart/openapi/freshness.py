@@ -173,7 +173,9 @@ def scanMarketFreshness(
 
     if not hasDartApiKey():
         emit("freshness:noKey")
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     # 로컬 종목 목록
     if stockCodes is None:
@@ -184,7 +186,9 @@ def scanMarketFreshness(
             stockCodes = []
 
     if not stockCodes:
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     # 전체 시장 정기공시 조회 (기업 미지정, 날짜 범위)
     keys = resolveDartKeys()
@@ -197,11 +201,15 @@ def scanMarketFreshness(
     try:
         filings = listFilings(client, start=startStr, end=endStr, filingType="A", finalOnly=True)
     except (ValueError, RuntimeError, OSError):
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     if filings.is_empty():
         emit("freshness:scanDone", total=len(stockCodes), staleCount=0)
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     # 내 종목만 필터
     localSet = set(stockCodes)
@@ -209,7 +217,9 @@ def scanMarketFreshness(
 
     if filings.is_empty():
         emit("freshness:scanDone", total=len(stockCodes), staleCount=0)
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     # 종목별로 로컬 rcept_no와 비교
     rows: list[dict] = []
@@ -221,18 +231,26 @@ def scanMarketFreshness(
         remoteNos = set(subset["rcept_no"].drop_nulls().to_list())
         missing = remoteNos - localRceptNos
         if missing:
-            latestRow = subset.filter(pl.col("rcept_no").is_in(list(missing))).sort("rcept_dt", descending=True).row(0, named=True)
-            rows.append({
-                "stockCode": code,
-                "corpName": latestRow.get("corp_name", ""),
-                "newCount": len(missing),
-                "latestReport": latestRow.get("report_nm", ""),
-            })
+            latestRow = (
+                subset.filter(pl.col("rcept_no").is_in(list(missing)))
+                .sort("rcept_dt", descending=True)
+                .row(0, named=True)
+            )
+            rows.append(
+                {
+                    "stockCode": code,
+                    "corpName": latestRow.get("corp_name", ""),
+                    "newCount": len(missing),
+                    "latestReport": latestRow.get("report_nm", ""),
+                }
+            )
 
     emit("freshness:scanDone", total=len(stockCodes), staleCount=len(rows))
 
     if not rows:
-        return pl.DataFrame(schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8})
+        return pl.DataFrame(
+            schema={"stockCode": pl.Utf8, "corpName": pl.Utf8, "newCount": pl.Int64, "latestReport": pl.Utf8}
+        )
 
     return pl.DataFrame(rows).sort("newCount", descending=True)
 
@@ -276,8 +294,6 @@ def _collectMissingDocs(stockCode: str) -> int:
 
 def _collectMissingFinanceReport(stockCode: str, cats: list[str]) -> dict[str, int]:
     """finance/report 증분 수집 — batch 인프라 활용."""
-    import asyncio
-
     result: dict[str, int] = {}
 
     try:
