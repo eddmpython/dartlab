@@ -322,7 +322,7 @@ def _has_data() -> bool:
 
         dartlab.Company("005930")
         return True
-    except (FileNotFoundError, ImportError, RuntimeError):
+    except (FileNotFoundError, ImportError, RuntimeError, ValueError):
         return False
 
 
