@@ -173,7 +173,7 @@ def loadData(
         except (URLError, socket.timeout, OSError) as e:
             if path.exists():
                 path.unlink()
-            key = "error:download_failed" if category == "docs" else "error:download_failed"
+            key = "error:download_failed"
             raise RuntimeError(gfmt(key, stockCode=stockCode, label=label, error=str(e))) from e
         except ValueError:
             if path.exists():

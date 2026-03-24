@@ -106,6 +106,23 @@ def collectAll(
     )
 
 
+def checkFreshness(stockCode: str, *, forceCheck: bool = False):
+    """종목의 로컬 데이터가 최신인지 DART API로 확인.
+
+    Example::
+
+        import dartlab
+        result = dartlab.checkFreshness("005930")
+        result.isFresh       # True/False
+        result.missingCount  # 누락 공시 수
+    """
+    from dartlab.engines.company.dart.openapi.freshness import (
+        checkFreshness as _check,
+    )
+
+    return _check(stockCode, forceCheck=forceCheck)
+
+
 def network():
     """한국 상장사 전체 관계 지도.
 

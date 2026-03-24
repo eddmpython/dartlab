@@ -22,9 +22,7 @@
 </p>
 
 <p>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-320%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-finance-1"><img src="https://img.shields.io/badge/Finance-2,700%2B_Companies-818cf8?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Finance Data"></a>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-report-1"><img src="https://img.shields.io/badge/Report-2,700%2B_Companies-34d399?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Report Data"></a>
+<a href="https://huggingface.co/datasets/eddmpython/dartlab-data"><img src="https://img.shields.io/badge/Data-HuggingFace-ffd21e?style=for-the-badge&labelColor=050811&logo=huggingface&logoColor=white" alt="HuggingFace Data"></a>
 </p>
 
 </div>
@@ -44,7 +42,7 @@ cd dartlab && uv pip install -e .
 
 PyPI 배포는 코어가 안정적일 때만 한다. 최신 기능(감사, 예측, 밸류에이션 등 실험적 기능 포함)을 바로 쓰고 싶다면 git clone을 권장하지만, 간헐적 breaking change에 주의해야 한다.
 
-**설정 불필요.** `Company`를 생성하면 필요한 데이터를 자동으로 다운로드한다. DART 데이터는 GitHub Releases에서, EDGAR 데이터는 SEC API에서 가져온다. 두 번째 실행부터는 로컬 캐시로 즉시 로드된다.
+**설정 불필요.** `Company`를 생성하면 필요한 데이터를 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동으로 다운로드한다. EDGAR 데이터는 SEC API에서 가져온다. 두 번째 실행부터는 로컬 캐시로 즉시 로드된다.
 
 ## 빠른 시작
 
@@ -538,7 +536,9 @@ dartlab                    # 브라우저 UI 실행
 | AI | `ask` | 자연어 질문 |
 | AI | `report` | 분석 보고서 자동 생성 |
 | 내보내기 | `excel` | Excel 내보내기 (experimental) |
-| 수집 | `collect` | 데이터 다운로드 / 갱신 |
+| 수집 | `collect` | 데이터 다운로드 / 갱신 / 배치 수집 |
+| 수집 | `collect --check` | 새 공시 감지 (freshness 체크) |
+| 수집 | `collect --incremental` | 누락 공시만 증분 수집 |
 | 서버 | `ai` | 웹 UI 실행 (localhost:8400) |
 | 서버 | `share` | 터널 공유 (ngrok / cloudflared) |
 | 서버 | `status` | Provider 연결 상태 |
@@ -674,22 +674,77 @@ e.companyFactsJson("AAPL")
 
 ## 데이터
 
-**설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다. DART 데이터는 [GitHub Releases](https://github.com/eddmpython/dartlab/releases)에서, EDGAR 데이터는 SEC API에서 가져온다.
+**설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다.
 
-| 데이터셋 | 규모 | 상태 | 출처 |
-|----------|------|------|------|
-| DART docs | 320+ 기업 | 적극 수집 중 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
-| DART finance | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shard) |
-| DART report | 2,700+ 기업 | 수집 완료 | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shard) |
-| EDGAR docs | 주문형 | 자동 수집 | SEC 10-K/10-Q API |
-| EDGAR finance | 주문형 | 자동 수집 | SEC XBRL API |
-| EDINET (일본) | 연구 중 | 개발 중 | EDINET API |
+| 데이터셋 | 규모 | 출처 |
+|----------|------|------|
+| DART docs | 320+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
+| DART finance | 2,700+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
+| DART report | 2,700+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
+| EDGAR | 주문형 | SEC API (자동 수집) |
 
-DART docs는 320+ 기업이 GitHub Releases에 미리 빌드되어 있다. 릴리즈에 없는 기업은 DART에서 개별 섹션을 하나씩 받아오기 때문에 **매우 느리다**. EDGAR 데이터는 첫 Company 생성 시 SEC API에서 실시간으로 가져온다. API 속도 제한 때문에 대기가 있을 수 있다. 미리 다운로드 옵션은 [설치 가이드 — 데이터](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data)를 참고한다.
+### 3단계 데이터 파이프라인
+
+```
+dartlab.Company("005930")
+  │
+  ├─ 1. 로컬 캐시 ────── 이미 있으면 즉시 반환 (instant)
+  │
+  ├─ 2. HuggingFace ──── 자동 다운로드 (수 초, 키 불필요)
+  │
+  └─ 3. DART API ──────── API 키로 직접 수집 (키 필요)
+```
+
+HuggingFace에 없는 기업은 DART에서 직접 수집한다 — API 키가 필요하다:
+
+```bash
+dartlab setup dart-key
+```
+
+### Freshness — 자동 업데이트 감지
+
+3-Layer freshness 시스템으로 로컬 데이터를 최신 상태로 유지한다:
+
+| Layer | 방식 | 비용 |
+|-------|------|------|
+| L1 | HTTP HEAD → HuggingFace ETag 비교 | ~0.5초, 수백 바이트 |
+| L2 | 로컬 파일 나이 (90일 TTL 폴백) | 즉시 (로컬) |
+| L3 | DART API → `rcept_no` diff (API 키 필요) | API 1회, ~1초 |
+
+`Company`를 열면 새 공시가 있는지 자동으로 확인한다:
+
+```python
+c = dartlab.Company("005930")
+# [dartlab] ⚠ 005930 — 새 공시 2건 발견 (사업보고서 (2024.12))
+#   • 증분 수집: dartlab collect --incremental 005930
+#   • 또는 Python: c.update()
+
+c.update()  # 누락된 공시만 증분 수집
+```
+
+```bash
+# CLI freshness 체크
+dartlab collect --check 005930         # 단일 종목
+dartlab collect --check                # 전체 로컬 종목 스캔 (7일)
+
+# 증분 수집 — 누락된 공시만
+dartlab collect --incremental 005930   # 단일 종목
+dartlab collect --incremental          # 새 공시 있는 전체 종목
+```
+
+### 배치 수집 (DART API)
+
+```bash
+dartlab collect --batch                    # 전체 상장, 미수집만
+dartlab collect --batch -c finance 005930  # 특정 카테고리 + 종목
+dartlab collect --batch --mode all         # 전체 재수집
+```
 
 ## 바로 시작하기
 
 ### Marimo 노트북
+
+> 데이터는 첫 사용 시 자동 다운로드된다. DART에서 직접 수집하지 않는 한 별도 설정 불필요.
 
 ```bash
 uv add dartlab marimo

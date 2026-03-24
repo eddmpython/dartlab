@@ -250,6 +250,9 @@ def _existingFinancePeriods(path: Path) -> set[tuple[str, str]]:
     if not path.exists():
         return set()
     try:
+        schema = pl.read_parquet_schema(path)
+        if "bsns_year" not in schema or "reprt_code" not in schema:
+            return set()
         df = (
             pl.scan_parquet(path)
             .select("bsns_year", "reprt_code")
@@ -258,7 +261,7 @@ def _existingFinancePeriods(path: Path) -> set[tuple[str, str]]:
             .collect()
         )
         return set(zip(df["bsns_year"].cast(pl.Utf8).to_list(), df["reprt_code"].cast(pl.Utf8).to_list()))
-    except (pl.exceptions.ComputeError, OSError):
+    except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError):
         return set()
 
 
@@ -267,6 +270,10 @@ def _existingReportPeriods(path: Path) -> set[tuple[str, str, str]]:
     if not path.exists():
         return set()
     try:
+        schema = pl.read_parquet_schema(path)
+        required = {"year", "quarter", "apiType"}
+        if not required.issubset(schema):
+            return set()
         df = (
             pl.scan_parquet(path)
             .select("year", "quarter", "apiType")
@@ -281,7 +288,7 @@ def _existingReportPeriods(path: Path) -> set[tuple[str, str, str]]:
                 df["apiType"].cast(pl.Utf8).to_list(),
             )
         )
-    except (pl.exceptions.ComputeError, OSError, pl.exceptions.ColumnNotFoundError):
+    except (pl.exceptions.ComputeError, pl.exceptions.SchemaError, OSError, pl.exceptions.ColumnNotFoundError):
         return set()
 
 

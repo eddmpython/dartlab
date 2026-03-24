@@ -9,6 +9,25 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.8] - 2026-03-25
+
+### Added
+
+- **3-Layer Freshness 감지**: HF ETag(L1) → TTL 폴백(L2) → DART API `rcept_no` diff(L3) 3계층 모델로 로컬 데이터 최신 여부를 자동 판단
+- **`freshness.py` 모듈 신규**: `checkFreshness(stockCode)` 종목 단위 감지, `scanMarketFreshness(days=7)` 시장 전체 스캔, `collectMissing(stockCode)` 누락 공시 증분 수집
+- **`dartlab.checkFreshness()` 루트 함수**: `import dartlab` 하나로 freshness 체크 가능
+- **`Company.update()` 메서드**: 누락된 최신 공시를 명시적 증분 수집 (`c.update()`, `c.update(categories=["finance"])`)
+- **ETag 기반 HuggingFace freshness**: HTTP HEAD 요청(~0.5초)으로 원격 데이터 갱신 여부 판단. `.parquet.etag` 사이드카 파일로 ETag 비교
+- **CLI `--check` / `--incremental` 옵션**: `dartlab collect --check 005930` (freshness 체크만), `dartlab collect --incremental` (누락 공시만 증분 수집)
+- **guidance 메시지 5종**: `freshness:checking/fresh/stale/noKey/scanDone` + `hint:newFilingsAvailable` 구조화 메시지
+- **README Data 섹션 전면 개편**: 3-Step Pipeline, Freshness 3-Layer 테이블, 감지/수집 예시 (Python + CLI), 배치 수집 (영문/한국어 동시)
+
+### Fixed
+
+- **배치 수집 v1 스키마 크래시**: 구형 HuggingFace parquet에 `reprt_code`/`apiType` 컬럼이 없을 때 `SchemaError` 대신 빈 set 반환 (미수집 취급 → 재수집)
+- **`dataLoader.py` 중복 분기**: `"error:download_failed" if category == "docs" else "error:download_failed"` 양쪽 동일한 삼항연산 정리
+- **docs 데이터 출처 표기**: installation.md "GitHub Releases" → "HuggingFace Datasets"로 현행화, quickstart.md 자동 다운로드 메시지 동기화
+
 ## [0.7.7] - 2026-03-24
 
 ### Fixed

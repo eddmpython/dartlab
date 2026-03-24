@@ -6,7 +6,7 @@ Public API::
 
     from dartlab.core.guidance import emit, progress, format as fmt
 
-    emit("download:start", stockCode="005930", label="DART 공시 문서 데이터")
+    emit("download:start", stockCode="005930", label="DART 공시 문서 데이터")  # HF 우선 → GH fallback
     emit("error:no_data", stockCode="005930", raise_as=ValueError)
     progress("KRX KIND 상장법인 목록 다운로드 중...")
     msg = fmt("hint:stale", stockCode="005930", ageStr="120일")
@@ -22,13 +22,14 @@ _PREFIX = "[dartlab]"
 
 _SIMPLE: dict[str, str] = {
     # download (loadData / _ensureData / download)
-    "download:start": "{stockCode} ({label}) → 첫 사용: GitHub에서 자동 다운로드 중...",
+    "download:start": "{stockCode} ({label}) → 첫 사용: 자동 다운로드 중...",
     "download:done": "✓ {label} 다운로드 완료 ({sizeStr})",
     "download:done_short": "✓ 다운로드 완료 ({sizeStr})",
     "download:exists": "✓ {stockCode} ({label}) 이미 존재",
     "download:progress": "{stockCode} ({label}) 다운로드 중...",
     "download:failed_single": "✗ {stockCode} ({label}) 다운로드 실패: {error}",
     "download:failed_item": "✗ {name} 실패: {error}",
+    "download:refreshed": "✓ {stockCode} 데이터 갱신 완료",
     # downloadAll
     "download_all:query": "{label} — GitHub Release 에셋 목록 조회 중... ({tagCount}개 태그)",
     "download_all:tag_count": "  {tag}: {count}개",
@@ -45,7 +46,7 @@ _SIMPLE: dict[str, str] = {
     "collect:batch_done": "✓ {stockCode} 수집 완료 ({summary})",
     "collect:exhausted": "⚠ DART API 일일 한도 도달. 내일 다시 시도하거나 추가 키를 등록하세요.",
     # EDGAR
-    "edgar:fallback": "GitHub에 없음 → SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)",
+    "edgar:fallback": "사전 수집 데이터에 없음 → SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)",
     "edgar:sec_download": "{cik} (SEC EDGAR 재무 데이터) 로컬에 없음 → SEC API에서 다운로드 중...",
     "edgar:empty": "{cik} SEC API 응답이 비어있음 (데이터 없음)",
     "edgar:save_done": "저장 완료: {path}",
@@ -60,6 +61,12 @@ _SIMPLE: dict[str, str] = {
     "edgar:incremental_start": "{ticker} EDGAR docs 증분 업데이트 ({newCount}건 신규 filing)",
     "edgar:incremental_done": "✓ {ticker} EDGAR docs 증분 완료 ({newRows}행 추가)",
     "edgar:no_new": "✓ {ticker} EDGAR docs 최신 상태",
+    # freshness (L3: DART API 직접 조회)
+    "freshness:checking": "{stockCode} 최신 공시 확인 중...",
+    "freshness:fresh": "✓ {stockCode} 최신 상태",
+    "freshness:stale": "⚠ {stockCode} 새 공시 {count}건 발견 ({latestReport})",
+    "freshness:noKey": "DART API 키 없음 → 사전 수집 데이터 기준으로만 확인",
+    "freshness:scanDone": "✓ {total}종목 스캔: {staleCount}종목에 새 공시",
     # listing
     "listing:download": "KRX KIND 상장법인 목록 다운로드 중...",
     "listing:done": "{count}개 종목 로드 완료",
@@ -95,7 +102,7 @@ class _StructuredMsg:
 
 _STRUCTURED: dict[str, _StructuredMsg] = {
     "hint:missing_docs": _StructuredMsg(
-        template="{stockCode} ({label}) → GitHub Release에 없습니다.",
+        template="{stockCode} ({label}) → 사전 수집 데이터에 없습니다.",
         actions_with_key=[
             "DART API 키가 설정되어 있으므로 직접 수집이 가능합니다:\n    dartlab collect {stockCode}",
         ],
@@ -104,13 +111,23 @@ _STRUCTURED: dict[str, _StructuredMsg] = {
         ],
     ),
     "hint:missing_other": _StructuredMsg(
-        template="{stockCode} ({label}) → GitHub Release에 없습니다.",
+        template="{stockCode} ({label}) → 사전 수집 데이터에 없습니다.",
         actions=["해당 종목이 dartlab 데이터셋에 포함되어 있는지 확인하세요."],
         actions_with_key=[
             "DART API 키가 설정되어 있으므로 직접 수집이 가능합니다:\n    dartlab collect {stockCode}\n    dartlab collect --batch {stockCode}  (전 카테고리 병렬)",
         ],
         actions_without_key=[
             "DART API 키를 설정하면 직접 수집할 수 있습니다:\n    dartlab setup dart-key",
+        ],
+    ),
+    "hint:newFilingsAvailable": _StructuredMsg(
+        template="{stockCode} — 새 공시 {count}건 발견 ({latestReport})",
+        actions_with_key=[
+            "증분 수집: dartlab collect --incremental {stockCode}",
+            "또는 Python: c.update()",
+        ],
+        actions_without_key=[
+            "DART API 키를 설정하면 자동 수집 가능:\n    dartlab setup dart-key",
         ],
     ),
     "hint:stale": _StructuredMsg(

@@ -91,6 +91,16 @@ def configure_parser(subparsers) -> None:
         default="new",
         help="new=미수집만 / all=전체 (기본: new)",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="freshness 체크만 (수집 안 함). 종목 지정 시 해당 종목, 미지정 시 전체 스캔",
+    )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="누락 공시만 증분 수집. 종목 지정 시 해당 종목, 미지정 시 전체 스캔 후 수집",
+    )
     parser.set_defaults(handler=run)
 
 
@@ -98,6 +108,12 @@ def run(args) -> int:
     from dartlab.cli.services.output import get_console
 
     console = get_console()
+
+    if getattr(args, "check", False):
+        return _runCheck(console, args)
+
+    if getattr(args, "incremental", False):
+        return _runIncremental(console, args)
 
     if args.stats:
         return _runStats(console)
@@ -117,6 +133,12 @@ def run(args) -> int:
         console.print("  dartlab collect --auto              미수집 docs 자동 수집")
         console.print("  dartlab collect --stats             수집 현황")
         console.print("  dartlab collect --uncollected       미수집 목록")
+        console.print()
+        console.print("  [bold]freshness 체크 / 증분 수집[/]:")
+        console.print("  dartlab collect --check 005930      종목 freshness 체크")
+        console.print("  dartlab collect --check             전체 종목 스캔 (7일)")
+        console.print("  dartlab collect --incremental 005930 누락 공시만 증분 수집")
+        console.print("  dartlab collect --incremental       전체 종목 증분 수집")
         console.print()
         console.print("  [bold]배치 모드[/] (finance/report/docs, 멀티키 병렬):")
         console.print("  dartlab collect --batch                          전체 상장, 미수집")
@@ -150,10 +172,8 @@ def _runUncollected(console, limit: int) -> int:
 
 
 def _runAuto(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.collector import (
-        collectMultiple,
-        listUncollectedKind,
-    )
+    from dartlab.engines.company.dart.openapi.batch import batchCollect
+    from dartlab.engines.company.dart.openapi.collector import listUncollectedKind
 
     stocks = listUncollectedKind(limit=args.limit)
 
@@ -162,27 +182,19 @@ def _runAuto(console, args) -> int:
         return 0
 
     codes = [code for code, _name in stocks]
-    includeQ = not args.annual_only
 
-    console.print(f"[bold]자동 수집 시작[/]: {len(codes)}개 종목, 최근 {args.quarters}분기")
-    console.print(f"딜레이: {args.min_delay}~{args.max_delay}초 | 분기보고서: {'포함' if includeQ else '제외'}\n")
+    console.print(f"[bold]자동 수집 시작[/]: {len(codes)}개 종목 docs\n")
 
     for i, (code, name) in enumerate(stocks[:10]):
         console.print(f"  {i + 1:>3}. {name} ({code})")
     if len(stocks) > 10:
         console.print(f"  ... 외 {len(stocks) - 10}개")
 
-    results = collectMultiple(
-        codes,
-        quarters=args.quarters,
-        includeQuarterly=includeQ,
-        minDelay=args.min_delay,
-        maxDelay=args.max_delay,
-    )
+    results = batchCollect(codes, categories=["docs"])
 
-    success = sum(1 for v in results.values() if v > 0)
-    failed = sum(1 for v in results.values() if v < 0)
-    console.print(f"\n[bold green]완료[/]: 성공 {success} / 실패 {failed} / 총 {len(codes)}")
+    total = len(results)
+    success = sum(1 for v in results.values() if v.get("docs", 0) > 0)
+    console.print(f"\n[bold green]완료[/]: 성공 {success} / 총 {total}")
     return 0
 
 
@@ -217,35 +229,101 @@ def _runBatch(console, args) -> int:
     return 0
 
 
-def _runCollect(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.collector import DocsCollector, collectMultiple
+def _runCheck(console, args) -> int:
+    from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+    from dartlab.engines.company.dart.openapi.freshness import (
+        checkFreshness,
+        scanMarketFreshness,
+    )
 
+    if not hasDartApiKey():
+        console.print("[red]DART API 키가 필요합니다: dartlab setup dart-key[/]")
+        return 1
+
+    if args.codes:
+        for code in args.codes:
+            result = checkFreshness(code, forceCheck=True)
+            if result.isFresh:
+                console.print(f"  ✓ {code} — 최신 상태 ({result.source})")
+            else:
+                console.print(f"  ⚠ {code} — 새 공시 {result.missingCount}건")
+                for f in result.missingFilings[:5]:
+                    console.print(f"    {f['rcept_dt']} {f['report_nm']}")
+    else:
+        console.print("[bold]전체 종목 freshness 스캔[/] (최근 7일)\n")
+        df = scanMarketFreshness(days=7)
+        if df.is_empty():
+            console.print("[green]모든 로컬 종목이 최신 상태입니다.[/]")
+        else:
+            for row in df.iter_rows(named=True):
+                console.print(f"  ⚠ {row['stockCode']} {row['corpName']} — 새 공시 {row['newCount']}건 ({row['latestReport']})")
+    return 0
+
+
+def _runIncremental(console, args) -> int:
+    from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+    from dartlab.engines.company.dart.openapi.freshness import (
+        checkFreshness,
+        collectMissing,
+        scanMarketFreshness,
+    )
+
+    if not hasDartApiKey():
+        console.print("[red]DART API 키가 필요합니다: dartlab setup dart-key[/]")
+        return 1
+
+    cats = [c.strip() for c in args.categories.split(",")] if args.categories else None
+
+    if args.codes:
+        for code in args.codes:
+            result = checkFreshness(code, forceCheck=True)
+            if result.isFresh:
+                console.print(f"  ✓ {code} — 최신 상태")
+            else:
+                console.print(f"  ⚠ {code} — 새 공시 {result.missingCount}건, 수집 중...")
+                counts = collectMissing(code, categories=cats)
+                summary = ", ".join(f"{k}:{v}" for k, v in counts.items() if v > 0)
+                console.print(f"  ✓ {code} 수집 완료 ({summary or '변경 없음'})")
+    else:
+        console.print("[bold]전체 종목 증분 수집[/] (최근 7일)\n")
+        df = scanMarketFreshness(days=7)
+        if df.is_empty():
+            console.print("[green]모든 로컬 종목이 최신 상태입니다.[/]")
+            return 0
+
+        for row in df.iter_rows(named=True):
+            code = row["stockCode"]
+            console.print(f"  {code} {row['corpName']} — {row['newCount']}건 수집 중...")
+            counts = collectMissing(code, categories=cats)
+            summary = ", ".join(f"{k}:{v}" for k, v in counts.items() if v > 0)
+            console.print(f"  ✓ {code} ({summary or '변경 없음'})")
+
+        console.print(f"\n[bold green]완료[/]: {df.height}종목 증분 수집")
+    return 0
+
+
+def _runCollect(console, args) -> int:
     codes = args.codes
-    includeQ = not args.annual_only
 
     if len(codes) == 1:
+        from dartlab.engines.company.dart.openapi.zipCollector import ZipDocsCollector
+
         try:
-            collector = DocsCollector(codes[0])
+            collector = ZipDocsCollector(codes[0])
             count = collector.collect(
-                quarters=args.quarters,
-                includeQuarterly=includeQ,
-                minDelay=args.min_delay,
-                maxDelay=args.max_delay,
+                includeQuarterly=not args.annual_only,
+                showProgress=True,
             )
             console.print(f"\n[bold green]완료[/]: {count}개 섹션 저장")
         except ValueError as e:
             console.print(f"[red]{e}[/]")
             return 1
     else:
-        results = collectMultiple(
-            codes,
-            quarters=args.quarters,
-            includeQuarterly=includeQ,
-            minDelay=args.min_delay,
-            maxDelay=args.max_delay,
-        )
-        success = sum(1 for v in results.values() if v > 0)
-        failed = sum(1 for v in results.values() if v < 0)
-        console.print(f"\n[bold green]완료[/]: 성공 {success} / 실패 {failed}")
+        from dartlab.engines.company.dart.openapi.batch import batchCollect
+
+        results = batchCollect(codes, categories=["docs"])
+        total = len(results)
+        success = sum(1 for v in results.values() if v.get("docs", 0) > 0)
+        console.print(f"\n[bold green]완료[/]: 성공 {success} / 총 {total}")
 
     return 0

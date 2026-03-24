@@ -286,8 +286,9 @@ class Company:
 
         _dataStatus = _ensureAllData(self.stockCode)
         self._hasDocs = _dataStatus.get("docs", False)
+        self._freshnessResult = None
         if self._hasDocs:
-            _checkDartDocsFreshness(self.stockCode, "docs")
+            self._freshnessResult = _checkDartDocsFreshness(self.stockCode, "docs")
         self._hasFinanceParquet = _dataStatus.get("finance", False)
         self._hasReport = _dataStatus.get("report", False)
 
@@ -437,6 +438,12 @@ class Company:
     def filings(self) -> pl.DataFrame | None:
         """공시 문서 목록 + DART 뷰어 링크."""
         return self._filings()
+
+    def update(self, *, categories: list[str] | None = None) -> dict[str, int]:
+        """누락된 최신 공시를 증분 수집."""
+        from dartlab.engines.company.dart.openapi.freshness import collectMissing
+
+        return collectMissing(self.stockCode, categories=categories)
 
     @staticmethod
     def _emptyTopicManifest() -> pl.DataFrame:

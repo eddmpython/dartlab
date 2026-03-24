@@ -22,9 +22,7 @@
 </p>
 
 <p>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-docs"><img src="https://img.shields.io/badge/Docs-320%2B_Companies-f87171?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Docs Data"></a>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-finance-1"><img src="https://img.shields.io/badge/Finance-2,700%2B_Companies-818cf8?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Finance Data"></a>
-<a href="https://github.com/eddmpython/dartlab/releases/tag/data-report-1"><img src="https://img.shields.io/badge/Report-2,700%2B_Companies-34d399?style=for-the-badge&labelColor=050811&logo=databricks&logoColor=white" alt="Report Data"></a>
+<a href="https://huggingface.co/datasets/eddmpython/dartlab-data"><img src="https://img.shields.io/badge/Data-HuggingFace-ffd21e?style=for-the-badge&labelColor=050811&logo=huggingface&logoColor=white" alt="HuggingFace Data"></a>
 </p>
 
 </div>
@@ -44,7 +42,7 @@ cd dartlab && uv pip install -e .
 
 PyPI releases are published only when the core is stable. If you want the latest features (including experimental ones like audit, forecast, valuation), clone the repo directly — but expect occasional breaking changes.
 
-**No data setup required.** When you create a `Company`, dartlab automatically downloads the required data from GitHub Releases (DART) or SEC API (EDGAR). The second run loads instantly from local cache.
+**No data setup required.** When you create a `Company`, dartlab automatically downloads the required data from [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data) (DART) or SEC API (EDGAR). The second run loads instantly from local cache.
 
 ## Quick Start
 
@@ -538,7 +536,9 @@ dartlab                    # open browser UI
 | AI | `ask` | Natural language question |
 | AI | `report` | Auto-generate analysis report |
 | Export | `excel` | Export to Excel (experimental) |
-| Collect | `collect` | Download / refresh data |
+| Collect | `collect` | Download / refresh / batch collect |
+| Collect | `collect --check` | Check freshness (new filings) |
+| Collect | `collect --incremental` | Incremental collect (missing only) |
 | Server | `ai` | Launch web UI (localhost:8400) |
 | Server | `share` | Tunnel sharing (ngrok / cloudflared) |
 | Server | `status` | Provider connection status |
@@ -674,22 +674,77 @@ e.companyFactsJson("AAPL")
 
 ## Data
 
-**No manual setup required.** When you create a `Company`, dartlab automatically downloads the required data. DART data comes from [GitHub Releases](https://github.com/eddmpython/dartlab/releases), EDGAR data from the SEC API.
+**No manual setup required.** When you create a `Company`, dartlab automatically downloads the required data.
 
-| Dataset | Coverage | Status | Source |
-|---------|----------|--------|--------|
-| DART docs | 320+ companies | Actively collecting | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-docs) |
-| DART finance | 2,700+ companies | Complete | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-finance-1) (4 shards) |
-| DART report | 2,700+ companies | Complete | [GitHub Releases](https://github.com/eddmpython/dartlab/releases/tag/data-report-1) (4 shards) |
-| EDGAR docs | On-demand | Auto-fetched | SEC 10-K/10-Q API |
-| EDGAR finance | On-demand | Auto-fetched | SEC XBRL API |
-| EDINET (Japan) | Researching | In development | EDINET API |
+| Dataset | Coverage | Source |
+|---------|----------|--------|
+| DART docs | 320+ companies | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
+| DART finance | 2,700+ companies | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
+| DART report | 2,700+ companies | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
+| EDGAR | On-demand | SEC API (auto-fetched) |
 
-DART docs are pre-built on GitHub Releases for 320+ companies. If a company is not in the release, dartlab fetches individual disclosure sections from DART — this can be **very slow**. EDGAR data is fetched in real-time from the SEC API on first `Company` creation, which may take a moment due to rate limits. See [Installation — Data](https://eddmpython.github.io/dartlab/docs/getting-started/installation#data) for pre-download options.
+### 3-Step Data Pipeline
+
+```
+dartlab.Company("005930")
+  │
+  ├─ 1. Local cache ──── already have it? done (instant)
+  │
+  ├─ 2. HuggingFace ──── auto-download (~seconds, no key needed)
+  │
+  └─ 3. DART API ──────── collect with your API key (needs key)
+```
+
+If a company is not in HuggingFace, dartlab collects data directly from DART — this requires an API key:
+
+```bash
+dartlab setup dart-key
+```
+
+### Freshness — Automatic Update Detection
+
+DartLab uses a 3-layer freshness system to keep your local data current:
+
+| Layer | Method | Cost |
+|-------|--------|------|
+| L1 | HTTP HEAD → ETag comparison with HuggingFace | ~0.5s, few hundred bytes |
+| L2 | Local file age (90-day TTL fallback) | instant (local) |
+| L3 | DART API → `rcept_no` diff (requires API key) | 1 API call, ~1s |
+
+When you open a `Company`, dartlab checks if newer data exists. If a new disclosure was filed:
+
+```python
+c = dartlab.Company("005930")
+# [dartlab] ⚠ 005930 — 새 공시 2건 발견 (사업보고서 (2024.12))
+#   • 증분 수집: dartlab collect --incremental 005930
+#   • 또는 Python: c.update()
+
+c.update()  # incremental collect — only missing filings
+```
+
+```bash
+# CLI freshness check
+dartlab collect --check 005930         # single company
+dartlab collect --check                # scan all local companies (7 days)
+
+# incremental collect — only missing filings
+dartlab collect --incremental 005930   # single company
+dartlab collect --incremental          # all local companies with new filings
+```
+
+### Batch Collection (DART API)
+
+```bash
+dartlab collect --batch                    # all listed, missing only
+dartlab collect --batch -c finance 005930  # specific category + company
+dartlab collect --batch --mode all         # re-collect everything
+```
 
 ## Try It Now
 
 ### Marimo Notebooks
+
+> Data is automatically downloaded on first use. No setup required unless collecting new companies directly from DART.
 
 ```bash
 uv add dartlab marimo

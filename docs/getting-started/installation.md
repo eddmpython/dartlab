@@ -136,7 +136,7 @@ DartLab uses Parquet files parsed from DART disclosure originals.
 
 You don't need to download data manually. When you call `dartlab.Company("005930")`, missing files are **downloaded automatically**.
 
-### DART — Auto Download
+### DART — 3-Step Pipeline
 
 ```python
 import dartlab
@@ -144,21 +144,43 @@ import dartlab
 c = dartlab.Company("005930")   # auto-downloads if not local
 ```
 
-1. Checks local data directory
-2. If available on [GitHub Releases](https://github.com/eddmpython/dartlab/releases), downloads the pre-built Parquet (fast)
-3. If **not** on the release, fetches individual disclosure sections from DART — this is **very slow** (dozens of API calls per company)
+1. **Local cache** — instant if already downloaded
+2. **HuggingFace** — pre-built Parquet from [HuggingFace Datasets](https://huggingface.co/datasets/eddmpython/dartlab-data) (fast, covers 2,700+ listed companies)
+3. **DART API** — direct collection via OpenDart API (slow, requires API key)
 
-### DART — Pre-download a Specific Company
+### Freshness Detection
 
-If you need a company that's on the release and want to download all data (docs + finance + report) upfront:
+DartLab automatically checks whether local data is up-to-date using a 3-layer model:
+
+| Layer | Method | Speed | What it detects |
+|-------|--------|-------|-----------------|
+| L1 | HuggingFace ETag (HTTP HEAD) | ~0.5s | Pre-built data updated |
+| L2 | File age TTL (90 days) | instant | Stale local files |
+| L3 | DART API `rcept_no` diff | ~1s | New filings on DART |
+
+L1 + L2 work without any API key. L3 requires a DART API key (`dartlab setup dart-key`).
+
+When new filings are detected, DartLab shows a guidance message — it never auto-collects during `Company` creation.
 
 ```python
-from dartlab.core.dataLoader import download
+# check freshness explicitly
+result = dartlab.checkFreshness("005930")
+print(result.isFresh, result.missingCount)
 
-download("005930")  # Samsung — pulls docs + finance + report from GitHub Releases
+# collect missing filings
+c = dartlab.Company("005930")
+c.update()  # incremental collection
 ```
 
-This is useful when preparing for offline analysis or batch work.
+```bash
+# CLI freshness check
+dartlab collect --check 005930         # single company
+dartlab collect --check                # scan all local companies (7 days)
+
+# incremental collect — only missing filings
+dartlab collect --incremental 005930   # single company
+dartlab collect --incremental          # all local companies with new filings
+```
 
 ### EDGAR — Real-time Fetch
 

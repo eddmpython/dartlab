@@ -141,30 +141,49 @@ def _ensureAllData(stockCode: str) -> dict[str, bool]:
     return result
 
 
-def _checkDartDocsFreshness(stockCode: str, category: str = "docs") -> None:
-    """DART docs parquet의 최신성을 HTTP HEAD로 확인하고, stale이면 HF에서 갱신."""
+def _checkDartDocsFreshness(stockCode: str, category: str = "docs"):
+    """DART docs parquet 최신성 확인 — L1 HF ETag → L2 TTL → L3 DART API.
+
+    Returns: FreshnessResult | None (L3 체크 결과, API 키 없으면 None).
+    """
     from dartlab.core.dataLoader import _checkRemoteFreshness, _dataDir, _download
     from dartlab.core.guidance import emit
 
     path = _dataDir(category) / f"{stockCode}.parquet"
     if not path.exists():
-        return
+        return None
 
-    # HEAD 요청으로 원격 ETag vs 로컬 저장 ETag 비교
+    # L1: HF ETag 비교
     isStale = _checkRemoteFreshness(stockCode, path, category)
 
     if isStale is None:
-        # 네트워크 오류 → TTL 폴백 (90일 기준)
+        # 네트워크 오류 → L2 TTL 폴백 (90일 기준)
         ageDays = (time.time() - path.stat().st_mtime) / 86400
-        if ageDays < _DART_FRESHNESS_TTL_DAYS:
-            return
-    elif not isStale:
-        return
+        if ageDays >= _DART_FRESHNESS_TTL_DAYS:
+            try:
+                _download(stockCode, path, category)
+                emit("download:refreshed", stockCode=stockCode)
+            except (OSError, RuntimeError):
+                emit("hint:stale", stockCode=stockCode, ageStr=f"{ageDays:.0f}일")
+    elif isStale:
+        # HF에 새 데이터 → 다운로드
+        ageDays = (time.time() - path.stat().st_mtime) / 86400
+        try:
+            _download(stockCode, path, category)
+            emit("download:refreshed", stockCode=stockCode)
+        except (OSError, RuntimeError):
+            emit("hint:stale", stockCode=stockCode, ageStr=f"{ageDays:.0f}일")
 
-    # stale 확인됨 → HF에서 최신 다운로드 시도
-    ageDays = (time.time() - path.stat().st_mtime) / 86400
-    try:
-        _download(stockCode, path, category)
-        emit("download:refreshed", stockCode=stockCode)
-    except (OSError, RuntimeError):
-        emit("hint:stale", stockCode=stockCode, ageStr=f"{ageDays:.0f}일")
+    # L3: DART API 직접 조회 — 새 공시가 있는지 rcept_no 비교
+    from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
+
+    if not hasDartApiKey():
+        return None
+
+    from dartlab.engines.company.dart.openapi.freshness import checkFreshness
+
+    result = checkFreshness(stockCode)
+    if not result.isFresh:
+        latestReport = result.missingFilings[0]["report_nm"] if result.missingFilings else ""
+        emit("hint:newFilingsAvailable", stockCode=stockCode, count=result.missingCount, latestReport=latestReport)
+    return result
