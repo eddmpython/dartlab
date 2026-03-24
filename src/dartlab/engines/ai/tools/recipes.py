@@ -26,6 +26,10 @@ RECIPES: dict[str, tuple[str, ...]] = {
     "관계사": ("governance", "redFlags"),
     "자본": ("health", "dividend"),
     "인력": ("business", "governance"),
+    "ESG": ("governance", "business"),
+    "공급망": ("business",),
+    "변화": ("redFlags",),
+    "밸류에이션": ("valuation", "forecast", "simulation"),
 }
 
 

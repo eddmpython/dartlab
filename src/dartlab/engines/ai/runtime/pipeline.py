@@ -786,9 +786,36 @@ _Q_TYPES_NEED_SCAN = frozenset(
     }
 )
 
+_Q_TYPES_NEED_ESG = frozenset(
+    {
+        "ESG",
+        "지배구조",
+        "리스크",
+        "종합",
+    }
+)
+
+_Q_TYPES_NEED_SUPPLY = frozenset(
+    {
+        "공급망",
+        "사업",
+        "리스크",
+        "종합",
+    }
+)
+
+_Q_TYPES_NEED_WATCH = frozenset(
+    {
+        "변화",
+        "공시",
+        "리스크",
+        "종합",
+    }
+)
+
 
 def _run_l2_engines(company: Any, q_type: str) -> str | None:
-    """L2 엔진(sector, insight, rank, scan) 결과를 분석 패키지로 조립."""
+    """L2 엔진(sector, insight, rank, scan, esg, supply, watch) 결과를 분석 패키지로 조립."""
     stockCode = getattr(company, "stockCode", None)
     if not stockCode:
         return None
@@ -814,9 +841,89 @@ def _run_l2_engines(company: Any, q_type: str) -> str | None:
         if scan_md:
             parts.append(scan_md)
 
+    if q_type in _Q_TYPES_NEED_ESG:
+        esg_md = _run_esg(company)
+        if esg_md:
+            parts.append(esg_md)
+
+    if q_type in _Q_TYPES_NEED_SUPPLY:
+        supply_md = _run_supply(company)
+        if supply_md:
+            parts.append(supply_md)
+
+    if q_type in _Q_TYPES_NEED_WATCH:
+        watch_md = _run_watch(company)
+        if watch_md:
+            parts.append(watch_md)
+
     if not parts:
         return None
     return "\n\n".join(parts)
+
+
+def _run_esg(company: Any) -> str | None:
+    """ESG 3축 분석 (Tier 1 자동 주입)."""
+    try:
+        from dartlab.engines.analysis.esg.extractor import analyze_esg
+
+        result = analyze_esg(company)
+        if result is None:
+            return None
+        lines = [
+            "### ESG 분석 (자동)",
+            f"- **종합**: {result.totalGrade} ({result.totalScore:.0f}점)",
+        ]
+        for pillar in (result.environment, result.social, result.governance):
+            detail = pillar.details[0] if pillar.details else ""
+            lines.append(f"- **{pillar.label}**: {pillar.grade} ({pillar.score:.0f}점) {detail}")
+        return "\n".join(lines)
+    except (ImportError, AttributeError, TypeError, ValueError):
+        return None
+
+
+def _run_supply(company: Any) -> str | None:
+    """공급망 분석 (Tier 1 자동 주입)."""
+    try:
+        from dartlab.engines.analysis.supply.risk import analyze_supply_chain
+
+        result = analyze_supply_chain(company)
+        if result is None:
+            return None
+        lines = [
+            "### 공급망 분석 (자동)",
+            f"- **리스크 점수**: {result.riskScore:.0f} / **매출 집중도(HHI)**: {result.concentration:.2f}",
+        ]
+        if result.customers:
+            names = ", ".join(c.target for c in result.customers[:3])
+            lines.append(f"- **주요 고객**: {names}")
+        if result.suppliers:
+            names = ", ".join(s.target for s in result.suppliers[:3])
+            lines.append(f"- **주요 공급사**: {names}")
+        if result.riskFactors:
+            lines.append(f"- **리스크 요인**: {', '.join(result.riskFactors[:2])}")
+        return "\n".join(lines)
+    except (ImportError, AttributeError, TypeError, ValueError):
+        return None
+
+
+def _run_watch(company: Any) -> str | None:
+    """공시 변화 감지 (Tier 1 자동 주입, 상위 5개만)."""
+    try:
+        from dartlab.engines.analysis.watch.scanner import scan_company
+
+        result = scan_company(company)
+        if result is None or not result.scored:
+            return None
+        lines = [
+            "### 공시 변화 감지 (자동)",
+            "| 항목 | 중요도 | 변화율 |",
+            "| --- | --- | --- |",
+        ]
+        for sc in result.scored[:5]:
+            lines.append(f"| {sc.topic} | {sc.score:.0f}점 | {sc.changeRate:.0%} |")
+        return "\n".join(lines)
+    except (ImportError, AttributeError, TypeError, ValueError):
+        return None
 
 
 def _run_sector(company: Any) -> str | None:

@@ -36,9 +36,12 @@ def register_all_defaults(
     from .system import register_system_tools
     from .ui import register_ui_tools
 
+    from .market import register_market_tools
+
     # Global tools (company 없어도 동작)
     register_system_tools(register_fn, company=company)
     register_openapi_tools(register_fn)
+    register_market_tools(register_fn)
     _register_macro_if_available(register_fn)
 
     # Company-bound tools

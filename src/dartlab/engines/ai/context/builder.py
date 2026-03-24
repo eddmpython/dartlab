@@ -66,9 +66,20 @@ _ROUTE_SECTIONS_KEYWORDS = frozenset(
         "무슨 사업",
         "뭐하는",
         "어떤 회사",
+        "ESG",
+        "환경",
+        "사회적 책임",
+        "탄소",
+        "기후",
+        "공급망",
+        "공급사",
+        "고객 집중",
+        "변화 감지",
+        "무엇이 달라",
+        "공시 변경",
     }
 )
-_ROUTE_HYBRID_KEYWORDS = frozenset({"종합", "전반", "전체", "비교"})
+_ROUTE_HYBRID_KEYWORDS = frozenset({"종합", "전반", "전체", "비교", "밸류에이션", "적정 주가", "목표가", "DCF"})
 _ROUTE_FINANCE_KEYWORDS = frozenset(
     {
         "재무",
@@ -167,6 +178,11 @@ _SECTIONS_KEYWORD_TOPICS: dict[str, list[str]] = {
     "어떤 회사": ["businessOverview", "companyHistory"],
     "최근 공시": ["disclosureChanges", "subsequentEvents"],
     "변화": ["disclosureChanges", "businessStatus"],
+    "ESG": ["governanceOverview", "boardOfDirectors"],
+    "환경": ["businessOverview"],
+    "공급망": ["segments", "rawMaterial"],
+    "공급사": ["segments", "rawMaterial"],
+    "변화 감지": ["disclosureChanges", "businessStatus"],
 }
 _FINANCIAL_ONLY = {"BS", "IS", "CF", "fsSummary", "ratios"}
 _SECTIONS_ROUTE_EXCLUDE_TOPICS = {

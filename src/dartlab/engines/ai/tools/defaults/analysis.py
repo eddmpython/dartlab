@@ -181,6 +181,256 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         priority=60,
     )
 
+    # ── get_esg ──
+
+    def get_esg() -> str:
+        """ESG 3축 분석."""
+        try:
+            from dartlab.engines.analysis.esg.extractor import analyze_esg
+
+            result = analyze_esg(company)
+            if result is None:
+                return "ESG 분석에 필요한 공시 데이터가 부족합니다."
+            lines = [
+                f"종합: {result.totalGrade} ({result.totalScore:.0f}점)",
+                "",
+                "| 축 | 등급 | 점수 | 상세 |",
+                "| --- | --- | --- | --- |",
+            ]
+            for pillar in (result.environment, result.social, result.governance):
+                detail = pillar.details[0] if pillar.details else "-"
+                lines.append(f"| {pillar.label} | {pillar.grade} | {pillar.score:.0f} | {detail} |")
+            return "\n".join(lines)
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"ESG 분석 실패: {e}"
+
+    register_tool(
+        "get_esg",
+        get_esg,
+        "ESG(환경·사회·지배구조) 3축 종합 분석을 실행합니다. "
+        "각 축별 점수(0~100)와 등급(A~E), 가중평균 종합 등급을 반환합니다. "
+        "사용 시점: 'ESG 평가', '환경 리스크', '지배구조 어때?', '사회적 책임' 질문. "
+        "사용하지 말 것: 재무 건전성은 get_insight가 적절합니다.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("ESG", "리스크", "지배구조", "종합"),
+        priority=70,
+    )
+
+    # ── get_supply_chain ──
+
+    def get_supply_chain() -> str:
+        """공급망 분석."""
+        try:
+            from dartlab.engines.analysis.supply.risk import analyze_supply_chain
+
+            result = analyze_supply_chain(company)
+            if result is None:
+                return "공급망 분석에 필요한 공시 데이터가 부족합니다."
+            lines = [
+                f"공급망 리스크: {result.riskScore:.0f}점 / 매출 집중도(HHI): {result.concentration:.2f}",
+                "",
+            ]
+            if result.customers:
+                lines.append("**주요 고객:**")
+                for c in result.customers[:5]:
+                    lines.append(f"- {c.target} (신뢰도 {c.confidence:.0%})")
+            if result.suppliers:
+                lines.append("**주요 공급사:**")
+                for s in result.suppliers[:5]:
+                    lines.append(f"- {s.target} (신뢰도 {s.confidence:.0%})")
+            if result.riskFactors:
+                lines.append("**리스크 요인:**")
+                for rf in result.riskFactors[:3]:
+                    lines.append(f"- {rf}")
+            return "\n".join(lines)
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"공급망 분석 실패: {e}"
+
+    register_tool(
+        "get_supply_chain",
+        get_supply_chain,
+        "기업의 공급망 구조와 리스크를 분석합니다. "
+        "주요 고객/공급사 목록, 매출 집중도(HHI), 공급망 리스크 점수를 반환합니다. "
+        "사용 시점: '공급망 리스크', '고객 집중도', '주요 거래처', '공급사 의존' 질문. "
+        "사용하지 말 것: 매출 구성 자체는 get_data('segments')가 적절합니다.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("공급망", "사업", "리스크", "종합"),
+        priority=65,
+    )
+
+    # ── get_disclosure_changes ──
+
+    def get_disclosure_changes(topic: str = "") -> str:
+        """공시 변화 감지."""
+        try:
+            from dartlab.engines.analysis.watch.scanner import scan_company
+
+            result = scan_company(company, topic=topic or None)
+            if result is None:
+                return "공시 변화 감지에 필요한 sections 데이터가 부족합니다."
+            if not result.scored:
+                return "최근 공시에서 유의미한 변화가 감지되지 않았습니다."
+            lines = ["| 순위 | 항목 | 중요도 | 변화율 |", "| --- | --- | --- | --- |"]
+            for i, sc in enumerate(result.scored[:10], 1):
+                lines.append(f"| {i} | {sc.topic} | {sc.score:.0f}점 | {sc.changeRate:.0%} |")
+            return "\n".join(lines)
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"공시 변화 감지 실패: {e}"
+
+    register_tool(
+        "get_disclosure_changes",
+        get_disclosure_changes,
+        "최근 공시에서 무엇이 바뀌었는지 중요도 순으로 보여줍니다. "
+        "sections diff + 중요도 스코어링(0~100)으로 주목할 변화를 탐지합니다. "
+        "사용 시점: '뭐가 바뀌었어?', '최근 변화', '공시 변경 사항', '주목할 부분' 질문. "
+        "topic 파라미터로 특정 항목(예: 'riskManagement')만 필터 가능.",
+        {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "특정 topic 필터 (비워두면 전체 스캔)",
+                    "default": "",
+                },
+            },
+        },
+        category="analysis",
+        questionTypes=("변화", "공시", "리스크", "종합"),
+        priority=65,
+    )
+
+    # ── run_valuation ──
+
+    def run_valuation() -> str:
+        """종합 밸류에이션."""
+        stockCode = getattr(company, "stockCode", None)
+        if not stockCode:
+            return "종목코드가 없어 밸류에이션을 실행할 수 없습니다."
+        try:
+            from dartlab.engines.analysis.analyst.valuation import fullValuation
+
+            result = fullValuation(company)
+            if result is None:
+                return "밸류에이션에 필요한 재무 데이터가 부족합니다."
+            if isinstance(result, dict):
+                lines = []
+                if "targetPrice" in result:
+                    lines.append(f"목표 주가: {result['targetPrice']:,.0f}원")
+                if "methods" in result:
+                    lines.append("")
+                    for method in result["methods"]:
+                        name = method.get("name", "")
+                        value = method.get("value", 0)
+                        weight = method.get("weight", 0)
+                        lines.append(f"- {name}: {value:,.0f}원 (가중 {weight:.0%})")
+                return "\n".join(lines) if lines else str(result)[:3000]
+            return str(result)[:3000]
+        except (ImportError, AttributeError, TypeError, ValueError, ZeroDivisionError) as e:
+            return f"밸류에이션 실패: {e}"
+
+    register_tool(
+        "run_valuation",
+        run_valuation,
+        "DCF, DDM, 상대가치(PER/PBR) 등 다중 모델로 적정 주가를 산출합니다. "
+        "각 모델의 산출 근거와 가중평균 목표가를 반환합니다. "
+        "사용 시점: '적정 주가', '목표가', 'DCF', '밸류에이션', '저평가/고평가' 질문. "
+        "사용하지 말 것: 단순 PER/PBR 비율은 compute_ratios가 빠릅니다.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("밸류에이션", "투자", "종합"),
+        priority=75,
+    )
+
+    # ── run_forecast ──
+
+    def run_forecast_tool() -> str:
+        """실적 예측."""
+        try:
+            from dartlab.engines.analysis.analyst.forecast import forecastAll
+
+            result = forecastAll(company)
+            if result is None:
+                return "실적 예측에 필요한 데이터가 부족합니다."
+            if isinstance(result, dict):
+                lines = ["| 지표 | 예측값 | 성장률 |", "| --- | --- | --- |"]
+                for metric, data in result.items():
+                    if isinstance(data, dict):
+                        value = data.get("forecast", data.get("value", "-"))
+                        growth = data.get("growth", "-")
+                        if isinstance(value, (int, float)):
+                            value = f"{value:,.0f}"
+                        if isinstance(growth, float):
+                            growth = f"{growth:+.1%}"
+                        lines.append(f"| {metric} | {value} | {growth} |")
+                return "\n".join(lines) if len(lines) > 2 else str(result)[:3000]
+            return str(result)[:3000]
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"실적 예측 실패: {e}"
+
+    register_tool(
+        "run_forecast",
+        run_forecast_tool,
+        "매출, 영업이익, 순이익의 향후 실적을 예측합니다. "
+        "과거 추세와 성장률 기반으로 3년 예측치와 성장률을 반환합니다. "
+        "사용 시점: '향후 실적', '매출 전망', '이익 예측', '성장 가능성' 질문.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("밸류에이션", "성장성", "투자"),
+        priority=70,
+    )
+
+    # ── run_stress_test ──
+
+    def run_stress_test_tool() -> str:
+        """스트레스 테스트."""
+        try:
+            from dartlab.engines.analysis.analyst.simulation import stressTest
+
+            result = stressTest(company)
+            if result is None:
+                return "스트레스 테스트에 필요한 데이터가 부족합니다."
+            return str(result)[:3000]
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"스트레스 테스트 실패: {e}"
+
+    register_tool(
+        "run_stress_test",
+        run_stress_test_tool,
+        "경기침체, 금리 상승, 매출 급감 등 극단 시나리오에서의 재무 영향을 시뮬레이션합니다. "
+        "사용 시점: '위기 상황', '스트레스 테스트', '최악의 경우', '충격 시나리오' 질문.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("리스크", "투자"),
+        priority=55,
+    )
+
+    # ── run_monte_carlo ──
+
+    def run_monte_carlo_tool() -> str:
+        """몬테카를로 시뮬레이션."""
+        try:
+            from dartlab.engines.analysis.analyst.simulation import monteCarloForecast
+
+            result = monteCarloForecast(company)
+            if result is None:
+                return "몬테카를로 시뮬레이션에 필요한 데이터가 부족합니다."
+            return str(result)[:3000]
+        except (ImportError, AttributeError, TypeError, ValueError) as e:
+            return f"몬테카를로 시뮬레이션 실패: {e}"
+
+    register_tool(
+        "run_monte_carlo",
+        run_monte_carlo_tool,
+        "확률적 시뮬레이션으로 매출/이익의 분포와 신뢰구간을 추정합니다. "
+        "사용 시점: '확률 분석', '몬테카를로', '시뮬레이션', '불확실성' 질문.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("밸류에이션", "리스크"),
+        priority=50,
+    )
+
     # ── Excel export ──
 
     def export_to_excel(modules: str = "") -> str:

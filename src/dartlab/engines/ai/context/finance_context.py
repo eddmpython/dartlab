@@ -25,6 +25,10 @@ _QUESTION_MODULES_OVERRIDE: dict[str, list[str]] = {
     "배당": ["treasuryStock"],
     "자본": ["treasuryStock"],
     "사업": ["businessOverview"],
+    "ESG": ["governanceOverview", "boardOfDirectors"],
+    "공급망": ["segments", "rawMaterial"],
+    "변화": ["disclosureChanges", "businessStatus"],
+    "밸류에이션": ["IS", "BS"],
 }
 
 _QUESTION_MODULES: dict[str, list[str]] = {}
