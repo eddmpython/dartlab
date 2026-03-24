@@ -93,8 +93,7 @@ class TestPersonaCasesRouting:
     def test_route_match(self, case: PersonaEvalCase):
         actual = _resolve_context_route(case.question, include=None, q_types=[])
         assert actual == case.expectedRoute, (
-            f"[{case.id}] expected route={case.expectedRoute}, got={actual}\n"
-            f"  question: {case.question}"
+            f"[{case.id}] expected route={case.expectedRoute}, got={actual}\n  question: {case.question}"
         )
 
 
@@ -146,9 +145,7 @@ class TestPersonaCasesMeta:
         """forbiddenUiTerms가 질문에 포함되어 있으면 안 된다 (내부 명칭 노출 방지)."""
         for case in _ALL_CASES:
             for term in case.forbiddenUiTerms:
-                assert term not in case.question, (
-                    f"[{case.id}] forbiddenUiTerm '{term}' 이 question에 포함됨"
-                )
+                assert term not in case.question, f"[{case.id}] forbiddenUiTerm '{term}' 이 question에 포함됨"
 
     def test_must_include_terms_not_empty_for_high_severity(self):
         """high/critical severity 케이스는 mustInclude가 비어있으면 안 된다."""

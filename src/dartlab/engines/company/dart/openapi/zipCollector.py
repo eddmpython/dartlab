@@ -118,9 +118,7 @@ def _getFullContent(element) -> str:
     tag = element.tag
     xmlStr = re.sub(rf"^<{re.escape(tag)}[^>]*>", "", xmlStr, count=1)
     xmlStr = re.sub(rf"</{re.escape(tag)}>$", "", xmlStr)
-    xmlStr = re.sub(
-        r"<title[^>]*>.*?</title>", "", xmlStr, flags=re.DOTALL | re.IGNORECASE, count=1
-    )
+    xmlStr = re.sub(r"<title[^>]*>.*?</title>", "", xmlStr, flags=re.DOTALL | re.IGNORECASE, count=1)
     body = _xmlToText(xmlStr)
     if titleText and body:
         return f"{titleText}\n{body}"
@@ -133,9 +131,7 @@ def _getOwnContent(element) -> str:
     tag = element.tag
     xmlStr = re.sub(rf"^<{re.escape(tag)}[^>]*>", "", xmlStr, count=1)
     xmlStr = re.sub(rf"</{re.escape(tag)}>$", "", xmlStr)
-    xmlStr = re.sub(
-        r"<title[^>]*>.*?</title>", "", xmlStr, flags=re.DOTALL | re.IGNORECASE, count=1
-    )
+    xmlStr = re.sub(r"<title[^>]*>.*?</title>", "", xmlStr, flags=re.DOTALL | re.IGNORECASE, count=1)
     for d in range(1, 4):
         xmlStr = re.sub(
             rf"<section-{d}[^>]*>.*?</section-{d}>",
@@ -161,9 +157,7 @@ def _parseSections(xmlContent: str) -> list[dict]:
             if tag == "section-1":
                 titleEl = child.find(".//title")
                 if titleEl is not None:
-                    title = etree.tostring(
-                        titleEl, method="text", encoding="unicode"
-                    ).strip()
+                    title = etree.tostring(titleEl, method="text", encoding="unicode").strip()
                     title = re.sub(r"\s+", " ", title)
                 else:
                     title = f"({tag})"
@@ -174,9 +168,7 @@ def _parseSections(xmlContent: str) -> list[dict]:
             elif tag == "section-2":
                 titleEl = child.find(".//title")
                 if titleEl is not None:
-                    title = etree.tostring(
-                        titleEl, method="text", encoding="unicode"
-                    ).strip()
+                    title = etree.tostring(titleEl, method="text", encoding="unicode").strip()
                     title = re.sub(r"\s+", " ", title)
                 else:
                     title = f"({tag})"

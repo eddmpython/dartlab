@@ -10,9 +10,13 @@ from pathlib import Path
 import polars as pl
 import requests
 
+
 def _cacheFile() -> Path:
     from dartlab.core.dataLoader import _getDataRoot
+
     return _getDataRoot() / "kindList" / "corpList.parquet"
+
+
 CACHE_TTL = 86400
 
 KIND_URL = "https://kind.krx.co.kr/corpgeneral/corpList.do"

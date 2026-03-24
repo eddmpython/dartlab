@@ -28,56 +28,105 @@ BASE_URL = "https://opendart.fss.or.kr/api"
 # ── 상수 (dart.py와 동일) ──
 
 _QUARTER_TO_CODE: dict[str, str] = {
-    "Q1": "11013", "Q2": "11012", "Q3": "11014", "Q4": "11011",
+    "Q1": "11013",
+    "Q2": "11012",
+    "Q3": "11014",
+    "Q4": "11011",
 }
 
 _CODE_TO_QUARTER: dict[str, str] = {
-    "11013": "Q1", "11012": "Q2", "11014": "Q3", "11011": "Q4",
+    "11013": "Q1",
+    "11012": "Q2",
+    "11014": "Q3",
+    "11011": "Q4",
 }
 
 # parquet 저장 포맷 (saver.py _REPRT_NM과 일치)
 _CODE_TO_QUARTER_KR: dict[str, str] = {
-    "11013": "1분기", "11012": "2분기", "11014": "3분기", "11011": "4분기",
+    "11013": "1분기",
+    "11012": "2분기",
+    "11014": "3분기",
+    "11011": "4분기",
 }
 
 # 한글 카테고리 → enrichReport 후 영문 apiType (saver.py _KR_TO_API_TYPE과 일치)
 _KR_TO_ENG_API_TYPE: dict[str, str] = {
-    "증자감자": "capitalChange", "배당": "dividend", "자기주식": "treasuryStock",
-    "최대주주": "majorHolder", "최대주주변동": "majorHolderChange",
-    "소액주주": "minorityHolder", "임원": "executive", "직원": "employee",
-    "이사회임원개인보수": "executivePayIndividual", "이사회임원전체보수": "executivePayAllTotal",
-    "개인별보수": "topPay", "타법인출자": "investedCompany",
-    "미등기임원보수": "unregisteredExecutivePay", "주식총수": "stockTotal",
-    "회계감사인": "auditOpinion", "감사용역체결": "auditContract",
-    "감사비감사계약": "nonAuditContract", "사외이사변동": "outsideDirector",
-    "회사채미상환": "corporateBond", "단기사채미상환": "shortTermBond",
-    "공모자금용도": "publicOfferingUsage", "공모자금사용": "privateOfferingUsage",
-    "대주주지분변동": "majorShareholderChange", "기업어음미상환": "commercialPaper",
-    "채무증권발행실적": "debtSecurities", "조건부자본증권미상환": "contingentCapital",
+    "증자감자": "capitalChange",
+    "배당": "dividend",
+    "자기주식": "treasuryStock",
+    "최대주주": "majorHolder",
+    "최대주주변동": "majorHolderChange",
+    "소액주주": "minorityHolder",
+    "임원": "executive",
+    "직원": "employee",
+    "이사회임원개인보수": "executivePayIndividual",
+    "이사회임원전체보수": "executivePayAllTotal",
+    "개인별보수": "topPay",
+    "타법인출자": "investedCompany",
+    "미등기임원보수": "unregisteredExecutivePay",
+    "주식총수": "stockTotal",
+    "회계감사인": "auditOpinion",
+    "감사용역체결": "auditContract",
+    "감사비감사계약": "nonAuditContract",
+    "사외이사변동": "outsideDirector",
+    "회사채미상환": "corporateBond",
+    "단기사채미상환": "shortTermBond",
+    "공모자금용도": "publicOfferingUsage",
+    "공모자금사용": "privateOfferingUsage",
+    "대주주지분변동": "majorShareholderChange",
+    "기업어음미상환": "commercialPaper",
+    "채무증권발행실적": "debtSecurities",
+    "조건부자본증권미상환": "contingentCapital",
     "신종자본증권미상환": "hybridCapital",
     "이사감사보수총회인정": "executivePayApproval",
     "이사감사보수지급형태": "executivePayType",
 }
 
 _PERIODIC_REPORT_CATEGORIES: list[str] = [
-    "배당", "직원", "임원", "최대주주", "최대주주변동", "소액주주",
-    "자기주식", "증자감자", "이사회임원전체보수", "이사회임원개인보수",
-    "개인별보수", "타법인출자", "주식총수", "회계감사인", "감사용역체결",
-    "감사비감사계약", "사외이사변동", "미등기임원보수", "회사채미상환",
-    "단기사채미상환", "공모자금용도", "공모자금사용",
-    "대주주지분변동", "기업어음미상환", "채무증권발행실적",
-    "조건부자본증권미상환", "신종자본증권미상환",
-    "이사감사보수총회인정", "이사감사보수지급형태",
+    "배당",
+    "직원",
+    "임원",
+    "최대주주",
+    "최대주주변동",
+    "소액주주",
+    "자기주식",
+    "증자감자",
+    "이사회임원전체보수",
+    "이사회임원개인보수",
+    "개인별보수",
+    "타법인출자",
+    "주식총수",
+    "회계감사인",
+    "감사용역체결",
+    "감사비감사계약",
+    "사외이사변동",
+    "미등기임원보수",
+    "회사채미상환",
+    "단기사채미상환",
+    "공모자금용도",
+    "공모자금사용",
+    "대주주지분변동",
+    "기업어음미상환",
+    "채무증권발행실적",
+    "조건부자본증권미상환",
+    "신종자본증권미상환",
+    "이사감사보수총회인정",
+    "이사감사보수지급형태",
 ]
 
 _REPORT_ENDPOINTS: dict[str, str] = {
-    "증자감자": "irdsSttus", "배당": "alotMatter",
-    "자기주식": "tesstkAcqsDspsSttus", "최대주주": "hyslrSttus",
-    "최대주주변동": "hyslrChgSttus", "소액주주": "mrhlSttus",
-    "임원": "exctvSttus", "직원": "empSttus",
+    "증자감자": "irdsSttus",
+    "배당": "alotMatter",
+    "자기주식": "tesstkAcqsDspsSttus",
+    "최대주주": "hyslrSttus",
+    "최대주주변동": "hyslrChgSttus",
+    "소액주주": "mrhlSttus",
+    "임원": "exctvSttus",
+    "직원": "empSttus",
     "이사회임원개인보수": "hmvAuditIndvdlBySttus",
     "이사회임원전체보수": "hmvAuditAllSttus",
-    "개인별보수": "indvdlByPay", "타법인출자": "otrCprInvstmntSttus",
+    "개인별보수": "indvdlByPay",
+    "타법인출자": "otrCprInvstmntSttus",
     "대주주지분변동": "eleStockIstySttus",
     "미등기임원보수": "unrstExctvMendngSttus",
     "주식총수": "stockTotqySttus",
@@ -85,12 +134,14 @@ _REPORT_ENDPOINTS: dict[str, str] = {
     "감사용역체결": "adtServcCnclsSttus",
     "감사비감사계약": "accnutAdtorNonAdtServcCnclsSttus",
     "사외이사변동": "outcmpnyDrctrNdChangeSttus",
-    "회사채미상환": "cprndNrdmpBlce", "단기사채미상환": "srtpdPsndbtNrdmpBlce",
+    "회사채미상환": "cprndNrdmpBlce",
+    "단기사채미상환": "srtpdPsndbtNrdmpBlce",
     "기업어음미상환": "entrprsBilScritsNrdmpBlce",
     "채무증권발행실적": "detScritsIsuAcmslt",
     "조건부자본증권미상환": "cndlCaplScrtsNrdmpBlce",
     "신종자본증권미상환": "newCaplScrtsNrdmpBlce",
-    "공모자금용도": "prvsrpCptalUseDtls", "공모자금사용": "pssrpCptalUseDtls",
+    "공모자금용도": "prvsrpCptalUseDtls",
+    "공모자금사용": "pssrpCptalUseDtls",
     "이사감사보수총회인정": "drctrAdtAllMendngSttusGmtsckConfmAmount",
     "이사감사보수지급형태": "drctrAdtAllMendngSttusMendngPymntamtTyCl",
 }
@@ -120,7 +171,11 @@ class AsyncDartClient:
         self._lastRequest = asyncio.get_event_loop().time()
 
     async def getJson(
-        self, endpoint: str, params: dict[str, Any] | None = None, *, emptyOn013: bool = False,
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        *,
+        emptyOn013: bool = False,
     ) -> dict[str, Any] | None:
         """비동기 JSON 요청. 한도 초과 시 None + exhausted=True."""
         await self._throttle()
@@ -141,7 +196,10 @@ class AsyncDartClient:
         return {} if emptyOn013 else None
 
     async def getDf(
-        self, endpoint: str, params: dict[str, Any] | None = None, listKey: str = "list",
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        listKey: str = "list",
     ) -> pl.DataFrame | None:
         """비동기 JSON → DataFrame. 한도 초과 시 None."""
         data = await self.getJson(endpoint, params, emptyOn013=True)
@@ -157,7 +215,9 @@ class AsyncDartClient:
         if params:
             merged.update(params)
         resp = await self._client.get(
-            f"{BASE_URL}/{endpoint}", params=merged, timeout=60,
+            f"{BASE_URL}/{endpoint}",
+            params=merged,
+            timeout=60,
         )
         resp.raise_for_status()
         ct = resp.headers.get("Content-Type", "")
@@ -210,27 +270,25 @@ def _existingReportPeriods(path: Path) -> set[tuple[str, str, str]]:
         df = (
             pl.scan_parquet(path)
             .select("year", "quarter", "apiType")
-            .filter(
-                pl.col("year").is_not_null()
-                & pl.col("quarter").is_not_null()
-                & pl.col("apiType").is_not_null()
-            )
+            .filter(pl.col("year").is_not_null() & pl.col("quarter").is_not_null() & pl.col("apiType").is_not_null())
             .unique()
             .collect()
         )
-        return set(zip(
-            df["year"].cast(pl.Utf8).to_list(),
-            df["quarter"].cast(pl.Utf8).to_list(),
-            df["apiType"].cast(pl.Utf8).to_list(),
-        ))
+        return set(
+            zip(
+                df["year"].cast(pl.Utf8).to_list(),
+                df["quarter"].cast(pl.Utf8).to_list(),
+                df["apiType"].cast(pl.Utf8).to_list(),
+            )
+        )
     except (pl.exceptions.ComputeError, OSError, pl.exceptions.ColumnNotFoundError):
         return set()
 
 
 def _dataPath(category: str, stockCode: str) -> Path:
     """parquet 저장 경로."""
-    from dartlab.core.dataConfig import DATA_RELEASES
     from dartlab import config as _cfg
+    from dartlab.core.dataConfig import DATA_RELEASES
 
     subDir = DATA_RELEASES.get(category, {}).get("dir", f"dart/{category}")
     dest = Path(_cfg.dataDir) / subDir / f"{stockCode}.parquet"
@@ -242,8 +300,13 @@ def _dataPath(category: str, stockCode: str) -> Path:
 
 
 async def _collectFinance(
-    stockCode: str, corpCode: str, corpName: str, client: AsyncDartClient,
-    *, incremental: bool = True, onPeriod=None,
+    stockCode: str,
+    corpCode: str,
+    corpName: str,
+    client: AsyncDartClient,
+    *,
+    incremental: bool = True,
+    onPeriod=None,
 ) -> int:
     """finance 수집 (CFS+OFS). 반환: 저장된 행 수."""
     from dartlab.engines.company.dart.openapi.saver import enrichFinance, save
@@ -299,8 +362,13 @@ async def _collectFinance(
 
 
 async def _collectReport(
-    stockCode: str, corpCode: str, corpName: str, client: AsyncDartClient,
-    *, incremental: bool = True, onPeriod=None,
+    stockCode: str,
+    corpCode: str,
+    corpName: str,
+    client: AsyncDartClient,
+    *,
+    incremental: bool = True,
+    onPeriod=None,
 ) -> int:
     """report 수집. 반환: 저장된 행 수."""
     from dartlab.engines.company.dart.openapi.saver import enrichReport, save
@@ -359,6 +427,7 @@ def _getProcessPool():
     if _processPool is None:
         import concurrent.futures
         import os
+
         _processPool = concurrent.futures.ProcessPoolExecutor(
             max_workers=min(4, (os.cpu_count() or 4)),
         )
@@ -366,12 +435,17 @@ def _getProcessPool():
 
 
 async def _collectDocs(
-    stockCode: str, corpCode: str, corpName: str,
-    client: AsyncDartClient, *, onPeriod=None,
+    stockCode: str,
+    corpCode: str,
+    corpName: str,
+    client: AsyncDartClient,
+    *,
+    onPeriod=None,
 ) -> int:
     """docs 수집 (완전 비동기 ZIP 기반)."""
     from dartlab.engines.company.dart.openapi.zipCollector import (
-        _parseSections, _docsDataDir,
+        _docsDataDir,
+        _parseSections,
     )
 
     if onPeriod:
@@ -383,15 +457,19 @@ async def _collectDocs(
     while True:
         if client.exhausted:
             break
-        data = await client.getJson("list.json", {
-            "corp_code": corpCode,
-            "bgn_de": "20160101",
-            "pblntf_ty": "A",
-            "page_count": "100",
-            "page_no": str(page),
-            "sort": "date",
-            "sort_mth": "desc",
-        }, emptyOn013=True)
+        data = await client.getJson(
+            "list.json",
+            {
+                "corp_code": corpCode,
+                "bgn_de": "20160101",
+                "pblntf_ty": "A",
+                "page_count": "100",
+                "page_no": str(page),
+                "sort": "date",
+                "sort_mth": "desc",
+            },
+            emptyOn013=True,
+        )
         if data is None:
             break
         rows = data.get("list", [])
@@ -493,19 +571,21 @@ async def _collectDocs(
         sections = await loop.run_in_executor(_getProcessPool(), _parseSections, xmlContent)
 
         for s in sections:
-            allSections.append({
-                "corp_code": corpCode,
-                "corp_name": corpName,
-                "stock_code": stockCode,
-                "year": year,
-                "rcept_date": rceptDt,
-                "rcept_no": rceptNo,
-                "report_type": reportNm,
-                "section_order": s["order"],
-                "section_title": s["title"],
-                "section_url": "",
-                "section_content": s["content"],
-            })
+            allSections.append(
+                {
+                    "corp_code": corpCode,
+                    "corp_name": corpName,
+                    "stock_code": stockCode,
+                    "year": year,
+                    "rcept_date": rceptDt,
+                    "rcept_no": rceptNo,
+                    "report_type": reportNm,
+                    "section_order": s["order"],
+                    "section_title": s["title"],
+                    "section_url": "",
+                    "section_content": s["content"],
+                }
+            )
 
         doneCount[0] += 1
         if onPeriod:
@@ -564,8 +644,8 @@ def _runAsync(coro):
 
 def _resolveCorpCode(stockCode: str) -> tuple[str, str]:
     """종목코드 → (corpCode, corpName)."""
-    from dartlab.engines.company.dart.openapi.corpCode import loadCorpCodes, findCorpCode
     from dartlab.engines.company.dart.openapi.client import DartClient
+    from dartlab.engines.company.dart.openapi.corpCode import findCorpCode, loadCorpCodes
 
     client = DartClient()
     codes = loadCorpCodes(client)
@@ -614,15 +694,29 @@ async def _workerLoop(
             try:
                 if cat == "finance":
                     count = await _collectFinance(
-                        stockCode, corpCode, corpName, client, incremental=incremental, onPeriod=_periodCb,
+                        stockCode,
+                        corpCode,
+                        corpName,
+                        client,
+                        incremental=incremental,
+                        onPeriod=_periodCb,
                     )
                 elif cat == "report":
                     count = await _collectReport(
-                        stockCode, corpCode, corpName, client, incremental=incremental, onPeriod=_periodCb,
+                        stockCode,
+                        corpCode,
+                        corpName,
+                        client,
+                        incremental=incremental,
+                        onPeriod=_periodCb,
                     )
                 elif cat == "docs":
                     count = await _collectDocs(
-                        stockCode, corpCode, corpName, client, onPeriod=_periodCb,
+                        stockCode,
+                        corpCode,
+                        corpName,
+                        client,
+                        onPeriod=_periodCb,
                     )
                 else:
                     count = 0
@@ -643,8 +737,8 @@ async def _workerLoop(
 
 def _resolveCorpMap(stockCodes: list[str]) -> dict[str, tuple[str, str]]:
     """종목코드 목록 → {stockCode: (corpCode, corpName)} 맵."""
-    from dartlab.engines.company.dart.openapi.corpCode import loadCorpCodes
     from dartlab.engines.company.dart.openapi.client import DartClient
+    from dartlab.engines.company.dart.openapi.corpCode import loadCorpCodes
 
     client = DartClient()
     codes = loadCorpCodes(client)
@@ -705,6 +799,7 @@ def batchCollect(
         remaining = queue.qsize()
         if remaining > 0:
             from dartlab.core.guidance import emit
+
             emit("collect:exhausted")
 
         return results

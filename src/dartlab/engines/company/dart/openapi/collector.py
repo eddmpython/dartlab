@@ -578,7 +578,9 @@ def listUncollectedKind(
     from dartlab.engines.gather.listing import getKindList
 
     kindDf = getKindList()
-    kindDf = kindDf.filter(pl.col("종목코드").str.contains(r"^\d{6}$"))
+    # 코넥스 제외, 종목코드 6자리 (영문자 포함 코드도 허용: 0001A0 등)
+    kindDf = kindDf.filter(pl.col("시장구분") != "코넥스")
+    kindDf = kindDf.filter(pl.col("종목코드").str.len_chars() == 6)
 
     dataDir = _resolveDataDir()
     existing = {f.stem for f in dataDir.glob("*.parquet") if not f.name.startswith(".")}

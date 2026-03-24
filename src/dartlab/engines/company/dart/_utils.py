@@ -72,7 +72,7 @@ def _collectViaApi(stockCode: str, category: str, label: str) -> bool:
 
 
 def _ensureData(stockCode: str, category: str) -> bool:
-    """3단계 폴백: 로컬 → GitHub Release → DART API 자동 수집."""
+    """3단계 폴백: 로컬 → HuggingFace 다운로드 → DART API 자동 수집."""
     from dartlab.core.dataConfig import DATA_RELEASES
     from dartlab.core.dataLoader import _dataDir, _download
     from dartlab.core.guidance import emit
@@ -85,18 +85,18 @@ def _ensureData(stockCode: str, category: str) -> bool:
 
     label = DATA_RELEASES[category]["label"]
 
-    # 2단계: GitHub Release 다운로드 (임시 비활성)
-    # emit("download:start", stockCode=stockCode, label=label)
-    # try:
-    #     _download(stockCode, dest, category)
-    #     size = dest.stat().st_size
-    #     sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
-    #     emit("download:done", label=label, sizeStr=sizeStr)
-    #     return True
-    # except (OSError, RuntimeError):
-    #     pass
+    # 2단계: HuggingFace 다운로드 (GH Release fallback 포함)
+    emit("download:start", stockCode=stockCode, label=label)
+    try:
+        _download(stockCode, dest, category)
+        size = dest.stat().st_size
+        sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+        emit("download:done", label=label, sizeStr=sizeStr)
+        return True
+    except (OSError, RuntimeError):
+        pass
 
-    # 3단계(현재 2단계): DART API 키 있으면 직접 수집
+    # 3단계: DART API 키 있으면 직접 수집
     from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
 
     hasKey = hasDartApiKey()
@@ -104,11 +104,7 @@ def _ensureData(stockCode: str, category: str) -> bool:
         if _collectViaApi(stockCode, category, label):
             if dest.exists():
                 size = dest.stat().st_size
-                sizeStr = (
-                    f"{size / 1024:.0f}KB"
-                    if size < 1024 * 1024
-                    else f"{size / 1024 / 1024:.1f}MB"
-                )
+                sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
                 emit("collect:done", label=label, sizeStr=sizeStr)
                 return True
 
@@ -146,16 +142,29 @@ def _ensureAllData(stockCode: str) -> dict[str, bool]:
 
 
 def _checkDartDocsFreshness(stockCode: str, category: str = "docs") -> None:
-    """DART docs parquet의 최신성을 확인하고, stale이면 갱신 안내."""
-    from dartlab.core.dataLoader import _dataDir
+    """DART docs parquet의 최신성을 HTTP HEAD로 확인하고, stale이면 HF에서 갱신."""
+    from dartlab.core.dataLoader import _checkRemoteFreshness, _dataDir, _download
     from dartlab.core.guidance import emit
 
     path = _dataDir(category) / f"{stockCode}.parquet"
     if not path.exists():
         return
 
-    ageDays = (time.time() - path.stat().st_mtime) / 86400
-    if ageDays < _DART_FRESHNESS_TTL_DAYS:
+    # HEAD 요청으로 원격 ETag vs 로컬 저장 ETag 비교
+    isStale = _checkRemoteFreshness(stockCode, path, category)
+
+    if isStale is None:
+        # 네트워크 오류 → TTL 폴백 (90일 기준)
+        ageDays = (time.time() - path.stat().st_mtime) / 86400
+        if ageDays < _DART_FRESHNESS_TTL_DAYS:
+            return
+    elif not isStale:
         return
 
-    emit("hint:stale", stockCode=stockCode, ageStr=f"{ageDays:.0f}일")
+    # stale 확인됨 → HF에서 최신 다운로드 시도
+    ageDays = (time.time() - path.stat().st_mtime) / 86400
+    try:
+        _download(stockCode, path, category)
+        emit("download:refreshed", stockCode=stockCode)
+    except (OSError, RuntimeError):
+        emit("hint:stale", stockCode=stockCode, ageStr=f"{ageDays:.0f}일")

@@ -214,7 +214,8 @@ def apiViewerDoc(
         if not base:
             periodRe = re.compile(r"^\d{4}(Q[1-4])?$")
             periods = sorted(
-                [c for c in sec.columns if periodRe.fullmatch(c)], reverse=True,
+                [c for c in sec.columns if periodRe.fullmatch(c)],
+                reverse=True,
             )
             base = periods[0] if periods else None
 

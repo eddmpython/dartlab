@@ -84,6 +84,7 @@ def harvestTruth(
     """
     if company is None:
         from dartlab import Company
+
         company = Company(stockCode)
 
     facts: list[dict[str, Any]] = []
@@ -115,13 +116,15 @@ def harvestTruth(
                         latest = v
                         break
                 if latest is not None:
-                    facts.append({
-                        "metric": snakeId,
-                        "label": label,
-                        "value": latest,
-                        "statement": sj,
-                        "period": period or "latest",
-                    })
+                    facts.append(
+                        {
+                            "metric": snakeId,
+                            "label": label,
+                            "value": latest,
+                            "statement": sj,
+                            "period": period or "latest",
+                        }
+                    )
 
     # ── 분기별 시계열 (분기 질문용) ───────────────────────
     isQuarterly = any(k in question for k in ["분기", "quarterly", "QoQ", "전분기", "Q1", "Q2", "Q3", "Q4"])
@@ -148,13 +151,15 @@ def harvestTruth(
                                 latest = v
                                 break
                         if latest is not None:
-                            facts.append({
-                                "metric": f"{snakeId}_quarterly",
-                                "label": f"{label}(분기)",
-                                "value": latest,
-                                "statement": f"{sj}_quarterly",
-                                "period": latestQ,
-                            })
+                            facts.append(
+                                {
+                                    "metric": f"{snakeId}_quarterly",
+                                    "label": f"{label}(분기)",
+                                    "value": latest,
+                                    "statement": f"{sj}_quarterly",
+                                    "period": latestQ,
+                                }
+                            )
 
     # ── 비율 추출 ────────────────────────────────────────
     if "ratios" in statements:
@@ -162,6 +167,7 @@ def harvestTruth(
         if ratiosData is not None:
             try:
                 import polars as pl
+
                 if isinstance(ratiosData, pl.DataFrame):
                     # ratios DataFrame에서 최신 컬럼 추출
                     cols = [c for c in ratiosData.columns if c not in ("category", "metric", "label")]
@@ -173,13 +179,15 @@ def harvestTruth(
                                 if len(row) > 0:
                                     val = row[0, latestCol]
                                     if val is not None:
-                                        facts.append({
-                                            "metric": metricId,
-                                            "label": label,
-                                            "value": float(val),
-                                            "statement": "ratios",
-                                            "period": latestCol,
-                                        })
+                                        facts.append(
+                                            {
+                                                "metric": metricId,
+                                                "label": label,
+                                                "value": float(val),
+                                                "statement": "ratios",
+                                                "period": latestCol,
+                                            }
+                                        )
             except (ImportError, AttributeError, TypeError, ValueError):
                 pass
 
@@ -219,6 +227,7 @@ def harvestBatch(
                 del companyCache[oldest]
                 gc.collect()
             from dartlab import Company
+
             companyCache[stockCode] = Company(stockCode)
 
         company = companyCache[stockCode]

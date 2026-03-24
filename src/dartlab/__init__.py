@@ -99,8 +99,10 @@ def collectAll(
     from dartlab.engines.company.dart.openapi.batch import batchCollectAll
 
     return batchCollectAll(
-        categories=categories, mode=mode,
-        maxWorkers=maxWorkers, incremental=incremental,
+        categories=categories,
+        mode=mode,
+        maxWorkers=maxWorkers,
+        incremental=incremental,
     )
 
 

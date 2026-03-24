@@ -628,6 +628,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
             recentPeriods = periods[-20:]
             recentVals = vals[-20:]
             from dartlab.engines.ai.context.formatting import _format_won
+
             lines = [f"## {account} ({statement}) 분기별 시계열", "| 기간 | 값 |", "| --- | --- |"]
             for p, v in zip(recentPeriods, recentVals):
                 lines.append(f"| {p} | {_format_won(v) if v is not None else '-'} |")

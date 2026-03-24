@@ -69,11 +69,62 @@ def _downloadWithRetry(url: str, dest: Path) -> None:
     raise lastErr
 
 
+def _checkRemoteFreshness(stockCode: str, localPath: Path, category: str = "docs") -> bool | None:
+    """로컬 파일이 원격보다 오래됐는지 HTTP HEAD ETag로 확인.
+
+    HF는 Last-Modified 대신 ETag(content hash)를 제공한다.
+    로컬 .etag 사이드카 파일에 마지막 다운로드 시 ETag를 저장해두고 비교.
+
+    Returns: True=stale, False=fresh, None=판단불가(네트워크 오류 등).
+    """
+    hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
+    etagPath = localPath.with_suffix(".parquet.etag")
+    try:
+        req = Request(hfUrl, method="HEAD")
+        old_timeout = socket.getdefaulttimeout()
+        try:
+            socket.setdefaulttimeout(10)
+            resp = urlopen(req)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
+        remoteEtag = resp.headers.get("ETag", "").strip('" ')
+        if not remoteEtag:
+            return None
+        if etagPath.exists():
+            localEtag = etagPath.read_text(encoding="utf-8").strip()
+            return remoteEtag != localEtag
+        # etag 파일 없음 → 최초이므로 현재 ETag 저장 + fresh 취급
+        etagPath.write_text(remoteEtag, encoding="utf-8")
+        return False
+    except (URLError, socket.timeout, OSError, ValueError):
+        return None
+
+
+def _saveEtag(stockCode: str, dest: Path, category: str = "docs") -> None:
+    """다운로드 성공 후 HF ETag를 사이드카 파일에 저장."""
+    hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
+    etagPath = dest.with_suffix(".parquet.etag")
+    try:
+        req = Request(hfUrl, method="HEAD")
+        old_timeout = socket.getdefaulttimeout()
+        try:
+            socket.setdefaulttimeout(10)
+            resp = urlopen(req)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
+        etag = resp.headers.get("ETag", "").strip('" ')
+        if etag:
+            etagPath.write_text(etag, encoding="utf-8")
+    except (URLError, socket.timeout, OSError):
+        pass
+
+
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
     """HuggingFace 우선 → GitHub Releases fallback으로 다운로드."""
     hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
     try:
         _downloadWithRetry(hfUrl, dest)
+        _saveEtag(stockCode, dest, category)
         return
     except (URLError, socket.timeout, OSError):
         if dest.exists():
@@ -280,9 +331,10 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
     with alive_bar(len(toDownload), title=f"{label} 다운로드") as bar:
         for asset in toDownload:
             dest = dataDir / asset["name"]
+            stockCode = asset["name"].replace(".parquet", "")
             try:
-                _downloadWithRetry(asset["browser_download_url"], dest)
-            except (URLError, socket.timeout, OSError) as e:
+                _download(stockCode, dest, category)
+            except (URLError, socket.timeout, OSError, RuntimeError) as e:
                 print("\n", end="")
                 emit("download:failed_item", name=asset["name"], error=str(e))
                 if dest.exists():
@@ -557,6 +609,7 @@ def _incrementalUpdateEdgarDocs(
     sinceYear: int,
     latestRemote: dict[str, str],
 ) -> None:
+    from dartlab.core.guidance import emit
     from dartlab.engines.company.edgar.docs.fetch import (
         FILING_TIMEOUT_SECONDS,
         _collectFilingRows,
@@ -564,8 +617,6 @@ def _incrementalUpdateEdgarDocs(
         _getSubmissions,
         _resolveTickerMeta,
     )
-
-    from dartlab.core.guidance import emit
 
     currentDf = pl.read_parquet(path)
     existingAccessions = (

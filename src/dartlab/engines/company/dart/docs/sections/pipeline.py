@@ -157,9 +157,13 @@ def _periodSortKey(period: str) -> tuple[int, int]:
 
 
 _SECTIONS_REQUIRED_COLS = [
-    "year", "report_type", "rcept_date",
-    "section_order", "section_title",
-    "section_content", "content",
+    "year",
+    "report_type",
+    "rcept_date",
+    "section_order",
+    "section_title",
+    "section_content",
+    "content",
 ]
 
 

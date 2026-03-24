@@ -2541,9 +2541,13 @@ class Company:
                     },
                 )
                 orderInfo["firstRank"] = min(int(orderInfo["firstRank"]), sortOrder)
-                orderInfo["sourceBlockOrder"] = min(int(orderInfo["sourceBlockOrder"]), int(row.get("sourceBlockOrder") or 0))
+                orderInfo["sourceBlockOrder"] = min(
+                    int(orderInfo["sourceBlockOrder"]), int(row.get("sourceBlockOrder") or 0)
+                )
                 orderInfo["segmentOrder"] = min(int(orderInfo["segmentOrder"]), int(row.get("segmentOrder") or 0))
-                orderInfo["segmentOccurrence"] = min(int(orderInfo["segmentOccurrence"]), int(row.get("segmentOccurrence") or 1))
+                orderInfo["segmentOccurrence"] = min(
+                    int(orderInfo["segmentOccurrence"]), int(row.get("segmentOccurrence") or 1)
+                )
                 if periodKey == latestPeriod:
                     orderInfo["latestMissing"] = 0
                     orderInfo["latestRank"] = min(int(orderInfo["latestRank"]), sortOrder)
