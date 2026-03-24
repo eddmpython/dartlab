@@ -326,6 +326,7 @@ def _has_data() -> bool:
         return False
 
 
+@pytest.mark.requires_data
 @unittest.skipUnless(_has_data(), "실제 데이터 없음")
 class TestIntegrationReal(unittest.TestCase):
     """실제 데이터 기반 통합 테스트."""
