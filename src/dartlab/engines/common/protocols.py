@@ -58,6 +58,17 @@ class CompanyProtocol(Protocol):
 
     def filings(self) -> pl.DataFrame | None: ...
 
+    def disclosure(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int = 365,
+        type: str | None = None,
+        keyword: str | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame: ...
+
     def liveFilings(
         self,
         start: str | None = None,

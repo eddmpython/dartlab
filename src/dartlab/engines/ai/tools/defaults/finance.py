@@ -615,11 +615,25 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     def get_timeseries(account: str, statement: str = "IS") -> str:
         """특정 계정의 분기별/연도별 시계열 조회."""
-        ts_func = getattr(company, "timeseries", None)
-        if ts_func is None:
-            return "timeseries 인터페이스가 없습니다. get_data(IS/BS/CF)로 전체 재무제표를 조회하세요."
+        ts = getattr(company, "timeseries", None)
+        if ts is None:
+            return "timeseries 데이터가 없습니다. get_data(IS/BS/CF)로 전체 재무제표를 조회하세요."
+        if isinstance(ts, tuple):
+            series, periods = ts
+            sjData = series.get(statement, {})
+            vals = sjData.get(account)
+            if vals is None:
+                available = list(sjData.keys())[:15]
+                return f"'{statement}.{account}' 계정이 없습니다. 사용 가능: {available}"
+            recentPeriods = periods[-20:]
+            recentVals = vals[-20:]
+            from dartlab.engines.ai.context.formatting import _format_won
+            lines = [f"## {account} ({statement}) 분기별 시계열", "| 기간 | 값 |", "| --- | --- |"]
+            for p, v in zip(recentPeriods, recentVals):
+                lines.append(f"| {p} | {_format_won(v) if v is not None else '-'} |")
+            return "\n".join(lines)
         try:
-            result = ts_func(account, statement) if callable(ts_func) else ts_func
+            result = ts(account, statement) if callable(ts) else ts
         except (AttributeError, KeyError, TypeError, ValueError) as e:
             return f"timeseries('{account}', '{statement}') 실패: {e}"
         return format_tool_value(result, max_rows=20, max_chars=3000)

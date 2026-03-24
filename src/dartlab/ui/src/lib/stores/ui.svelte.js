@@ -620,6 +620,7 @@ export function createUiStore() {
 		get settingsOpen() { return settingsOpen; },
 		set settingsOpen(v) { settingsOpen = v; },
 		get settingsSection() { return settingsSection; },
+		set settingsSection(v) { settingsSection = v; },
 		get deleteConfirmId() { return deleteConfirmId; },
 		set deleteConfirmId(v) { deleteConfirmId = v; },
 		get deleteConfirmMode() { return deleteConfirmMode; },

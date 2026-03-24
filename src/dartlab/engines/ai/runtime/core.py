@@ -38,6 +38,19 @@ from dartlab.engines.ai.runtime.run_modes import (
 
 _MULTI_KEYWORDS = frozenset({"비교", "vs", "종합", "전체", "전반", "왜", "구체적", "상세", "분석해"})
 _VALIDATION_MODULES = frozenset({"BS", "IS", "CF", "ratios", "fsSummary"})
+_FOLLOW_UP_PERIOD_HINTS = frozenset(
+    {
+        "최근",
+        "올해",
+        "작년",
+        "전년",
+        "개년",
+        "년간",
+        "추세",
+        "현황",
+    }
+)
+_FOLLOW_UP_PREFIXES = ("그럼", "그러면", "이어", "계속", "더", "같은 기준", "같은 방식")
 
 
 def _estimate_max_turns(question: str, q_type: str) -> int:
@@ -81,6 +94,9 @@ def _build_included_evidence(included_tables: list[str]) -> list[dict[str, str]]
         "riskDerivative": "리스크·파생상품",
         "costByNature": "성격별 비용 분류",
         "segments": "사업부문 데이터",
+        "IS_quarterly": "분기별 손익계산서",
+        "CF_quarterly": "분기별 현금흐름표",
+        "BS_quarterly": "분기별 재무상태표",
         "_dart_openapi_filings": "최근 공시 목록",
         "_diff": "공시 변화 비교",
         "_response_contract": "응답 계약",
@@ -146,6 +162,8 @@ def _should_use_light_mode(company: Any | None, question: str, state: Any, repor
     from dartlab.engines.ai.conversation.intent import has_analysis_intent, is_meta_question, is_pure_conversation
 
     effective_question = state.question if state is not None and getattr(state, "question", None) else question
+    if _is_analysis_follow_up(effective_question, state):
+        return False
     if is_pure_conversation(effective_question):
         return True
     if is_meta_question(effective_question) and not has_analysis_intent(effective_question):
@@ -205,6 +223,30 @@ def _resolve_snapshot_policy(question: str, question_types: tuple[str, ...], rep
         "includeInsights": False,
         "includeDataDate": route == "hybrid",
     }
+
+
+def _resolve_follow_up_include(include: list[str] | None, question: str, state: Any | None) -> list[str] | None:
+    if include or state is None:
+        return include
+
+    history_modules = [name for name in getattr(state, "modules", ()) if isinstance(name, str) and name]
+    if not history_modules:
+        return include
+
+    if not _is_analysis_follow_up(question, state):
+        return include
+
+    return history_modules
+
+
+def _is_analysis_follow_up(question: str, state: Any | None) -> bool:
+    if state is None or getattr(state, "dialogue_mode", "") != "follow_up":
+        return False
+    if not getattr(state, "modules", ()):
+        return False
+
+    lowered = question.strip().lower()
+    return any(keyword in lowered for keyword in _FOLLOW_UP_PERIOD_HINTS) or lowered.startswith(_FOLLOW_UP_PREFIXES)
 
 
 # ── 에러 분류 ─────────────────────────────────────────────
@@ -551,6 +593,10 @@ def _analyze_inner(
         compressed = compress_history(light_history)
         history_messages = build_history_messages(compressed)
 
+    effective_include = _resolve_follow_up_include(include, question, state)
+    if effective_include and effective_include != include:
+        _done_payload["inheritedModules"] = list(effective_include)
+
     snapshotPolicy = _resolve_snapshot_policy(question, question_types, report_mode)
     _done_payload["route"] = snapshotPolicy["route"]
 
@@ -645,7 +691,7 @@ def _analyze_inner(
             company,
             question,
             context_tier,
-            include,
+            effective_include,
             exclude,
         )
         _included_tables.extend(included_tables_local)

@@ -106,11 +106,10 @@ def sections(stockCode: str, *, sinceYear: int | None = None) -> pl.DataFrame | 
     if "period_key" not in df.columns:
         return None
 
-    periods = sorted(
+    periods = sortPeriods(
         [period for period in df["period_key"].drop_nulls().unique().to_list() if period],
-        reverse=True,
+        descending=True,
     )
-    periods = sortPeriods(periods, descending=True)
     if not periods:
         return None
 

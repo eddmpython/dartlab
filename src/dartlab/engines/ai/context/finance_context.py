@@ -35,16 +35,16 @@ for _qt, _extra in _QUESTION_MODULES_OVERRIDE.items():
 
 _ALWAYS_INCLUDE_MODULES = {"employee"}
 
-_CONTEXT_MODULE_BUDGET = 6000  # 총 모듈 context 글자 수 상한 (focused tier 기본값)
+_CONTEXT_MODULE_BUDGET = 10000  # 총 모듈 context 글자 수 상한 (focused tier 기본값)
 
 
 def _resolve_context_budget(tier: str = "focused") -> int:
     """컨텍스트 tier별 모듈 예산."""
     return {
         "skeleton": 2000,  # tool-capable: 최소 맥락, 도구로 보충
-        "focused": 6000,  # 현재 기본값
-        "full": 12000,  # non-tool 모델: 최대한 포함
-    }.get(tier, 6000)
+        "focused": 10000,  # 분기 데이터 수용
+        "full": 16000,  # non-tool 모델: 최대한 포함
+    }.get(tier, 10000)
 
 
 def _topic_name_set(company: Any) -> set[str]:
@@ -328,6 +328,12 @@ _YEAR_HINT_KEYWORDS: dict[str, int] = {
 
 def _detect_year_hint(question: str) -> int:
     """질문에서 필요한 연도 범위 추출."""
+    range_match = re.search(r"(\d+)\s*(?:개년|년)", question)
+    if range_match:
+        value = int(range_match.group(1))
+        if 1 <= value <= 15:
+            return value
+
     year_match = re.search(r"(20\d{2})", question)
     if year_match:
         return 3
@@ -516,6 +522,62 @@ def _build_finance_engine_section(
         else:
             yoy_str = _calc_yoy(vals[0], vals[1] if len(vals) > 1 else None)
         lines.append(f"| {label} | " + " | ".join(cells) + f" | {yoy_str} |")
+
+    return "\n".join(lines)
+
+
+def _buildQuarterlySection(
+    series: dict,
+    periods: list[str],
+    sjDiv: str,
+    nQuarters: int = 8,
+    accountFilter: set[str] | None = None,
+) -> str | None:
+    """timeseries 분기별 standalone → compact 마크다운 테이블.
+
+    최근 nQuarters 분기만 표시. QoQ/YoY 컬럼 포함.
+    """
+    accounts = _FE_DISPLAY_ACCOUNTS.get(sjDiv, [])
+    if accountFilter:
+        accounts = [(sid, label) for sid, label in accounts if sid in accountFilter]
+    if not accounts:
+        return None
+
+    sjData = series.get(sjDiv, {})
+    if not sjData:
+        return None
+
+    displayPeriods = periods[-nQuarters:]
+    displayPeriodsReversed = list(reversed(displayPeriods))
+
+    rowsData = []
+    for snakeId, label in accounts:
+        vals = sjData.get(snakeId)
+        if not vals:
+            continue
+        offset = len(periods) - nQuarters
+        sliced = vals[offset:] if offset >= 0 else vals
+        hasData = any(v is not None for v in sliced)
+        if hasData:
+            rowsData.append((label, list(reversed(sliced))))
+
+    if not rowsData:
+        return None
+
+    sjLabels = {"BS": "재무상태표(분기)", "IS": "손익계산서(분기)", "CF": "현금흐름표(분기)"}
+    sjMeta = {"BS": "시점 잔액", "IS": "분기 standalone", "CF": "분기 standalone"}
+
+    header = "| 계정 | " + " | ".join(displayPeriodsReversed) + " | QoQ | YoY |"
+    sep = "| --- | " + " | ".join(["---"] * len(displayPeriodsReversed)) + " | --- | --- |"
+    metaLine = f"(단위: 억/조원 | {sjMeta.get(sjDiv, 'standalone')})"
+
+    lines = [f"## {sjLabels.get(sjDiv, sjDiv)}", metaLine, header, sep]
+    for label, vals in rowsData:
+        cells = [_format_won(v) if v is not None else "-" for v in vals]
+        qoq = _calc_yoy(vals[0], vals[1] if len(vals) > 1 else None)
+        yoyIdx = 4 if len(vals) > 4 else None
+        yoy = _calc_yoy(vals[0], vals[yoyIdx] if yoyIdx is not None else None)
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {qoq} | {yoy} |")
 
     return "\n".join(lines)
 

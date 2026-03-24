@@ -36,6 +36,14 @@ _SIMPLE: dict[str, str] = {
     "download_all:uptodate": "✓ 전체 {count}종목 이미 최신",
     "download_all:done": "✓ 전체 다운로드 완료 → {dataDir}",
     "download_all:done_with_errors": "✓ 완료 (실패: {failed}건)",
+    # collect (투채널 자동 수집)
+    "collect:start": "{stockCode} ({label}) → 로컬에 없음. DART API로 수집 중... ({keyCount}키 {mode})",
+    "collect:done": "✓ {label} 수집 완료 ({sizeStr})",
+    "collect:skip": "✓ {stockCode} ({label}) 이미 수집됨",
+    "collect:no_key": "DART API 키가 있으면 자동 수집 가능합니다: dartlab setup dart-key",
+    "collect:batch_start": "{stockCode} → 로컬에 없음. {categories} {keyCount}키 병렬 수집 시작...",
+    "collect:batch_done": "✓ {stockCode} 수집 완료 ({summary})",
+    "collect:exhausted": "⚠ DART API 일일 한도 도달. 내일 다시 시도하거나 추가 키를 등록하세요.",
     # EDGAR
     "edgar:fallback": "GitHub에 없음 → SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)",
     "edgar:sec_download": "{cik} (SEC EDGAR 재무 데이터) 로컬에 없음 → SEC API에서 다운로드 중...",
@@ -48,6 +56,10 @@ _SIMPLE: dict[str, str] = {
     "edgar:docs_save": "저장 완료: {path}",
     "edgar:batch_start": "EDGAR docs 배치 수집 시작 ({total} tickers, since {sinceYear})",
     "edgar:batch_progress": "{idx}건 처리 완료 → {cooldown:.1f}초 휴지",
+    "edgar:batch_done": "✓ EDGAR 배치 수집 완료 (성공 {success} / 실패 {failed} / 총 {total})",
+    "edgar:incremental_start": "{ticker} EDGAR docs 증분 업데이트 ({newCount}건 신규 filing)",
+    "edgar:incremental_done": "✓ {ticker} EDGAR docs 증분 완료 ({newRows}행 추가)",
+    "edgar:no_new": "✓ {ticker} EDGAR docs 최신 상태",
     # listing
     "listing:download": "KRX KIND 상장법인 목록 다운로드 중...",
     "listing:done": "{count}개 종목 로드 완료",
@@ -94,6 +106,12 @@ _STRUCTURED: dict[str, _StructuredMsg] = {
     "hint:missing_other": _StructuredMsg(
         template="{stockCode} ({label}) → GitHub Release에 없습니다.",
         actions=["해당 종목이 dartlab 데이터셋에 포함되어 있는지 확인하세요."],
+        actions_with_key=[
+            "DART API 키가 설정되어 있으므로 직접 수집이 가능합니다:\n    dartlab collect {stockCode}\n    dartlab collect --batch {stockCode}  (전 카테고리 병렬)",
+        ],
+        actions_without_key=[
+            "DART API 키를 설정하면 직접 수집할 수 있습니다:\n    dartlab setup dart-key",
+        ],
     ),
     "hint:stale": _StructuredMsg(
         template="{stockCode} docs 데이터가 {ageStr} 전 기준입니다.",
@@ -222,11 +240,12 @@ def emit(key: str, *, raise_as: type | None = None, **kwargs: Any) -> str:
     if raise_as is not None:
         raise raise_as(text)
 
-    # structured 메시지(hint/error)는 verbose 무관하게 항상 출력
-    if key in _STRUCTURED:
+    # structured 메시지(hint/error) + collect/download 안내는 항상 출력
+    _ALWAYS_SHOW = ("hint:", "error:", "collect:", "download:", "edgar:")
+    if key in _STRUCTURED or any(key.startswith(p) for p in _ALWAYS_SHOW):
         print(f"{_PREFIX} {text}")
     else:
-        # simple 메시지는 verbose일 때만 출력
+        # 그 외 simple 메시지는 verbose일 때만 출력
         if _ctx.verbose:
             print(f"{_PREFIX} {text}")
 

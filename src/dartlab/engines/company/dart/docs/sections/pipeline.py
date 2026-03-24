@@ -156,6 +156,13 @@ def _periodSortKey(period: str) -> tuple[int, int]:
     return (year, 4)
 
 
+_SECTIONS_REQUIRED_COLS = [
+    "year", "report_type", "rcept_date",
+    "section_order", "section_title",
+    "section_content", "content",
+]
+
+
 def iterPeriodSubsets(
     stockCode: str,
     *,
@@ -170,7 +177,7 @@ def iterPeriodSubsets(
     loadData를 1회만 호출하고, pipeline/views 양쪽이 공유한다.
     sinceYear 이전 기간은 건너뛴다 (finance 없는 기간 제외).
     """
-    df = loadData(stockCode, sinceYear=sinceYear)
+    df = loadData(stockCode, sinceYear=sinceYear, columns=_SECTIONS_REQUIRED_COLS)
     ccol = detectContentCol(df)
     years = sorted(df["year"].unique().to_list(), reverse=True)
 
@@ -339,9 +346,10 @@ def _reportRowsToTopicRows(
     return emitted
 
 
-def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    expanded: list[dict[str, object]] = []
+def _expandStructuredRows(rows: list[dict[str, object]]) -> Iterator[dict[str, object]]:
+    """rows를 text structure로 확장하여 yield한다. occurrence는 인라인 카운트."""
     headingStateByTopic: dict[str, list[dict[str, object]]] = {}
+    occurrenceCount: dict[tuple[str, str], int] = {}
 
     hasProjection = False
     for row in rows:
@@ -379,10 +387,14 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             baseRow["textSemanticPathKey"] = None
             baseRow["textSemanticParentPathKey"] = None
             baseRow["segmentOrder"] = 0
-            baseRow["segmentKeyBase"] = f"table|sb:{sourceBlockOrder}"
-            baseRow["segmentOccurrence"] = 1
+            segmentKeyBase = f"table|sb:{sourceBlockOrder}"
+            baseRow["segmentKeyBase"] = segmentKeyBase
             baseRow["sortOrder"] = orderSeq * 1000
-            expanded.append(baseRow)
+            occKey = (topic, segmentKeyBase)
+            occurrenceCount[occKey] = occurrenceCount.get(occKey, 0) + 1
+            baseRow["segmentOccurrence"] = occurrenceCount[occKey]
+            baseRow["segmentKey"] = f"{segmentKeyBase}|occ:{occurrenceCount[occKey]}"
+            yield baseRow
             continue
 
         text = str(row.get("text") or "").strip()
@@ -426,9 +438,12 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             baseRow["textSemanticParentPathKey"] = textSemanticParentPathKey
             baseRow["segmentOrder"] = 0
             baseRow["segmentKeyBase"] = segmentKeyBase
-            baseRow["segmentOccurrence"] = 1
             baseRow["sortOrder"] = orderSeq * 1000
-            expanded.append(baseRow)
+            occKey = (topic, segmentKeyBase)
+            occurrenceCount[occKey] = occurrenceCount.get(occKey, 0) + 1
+            baseRow["segmentOccurrence"] = occurrenceCount[occKey]
+            baseRow["segmentKey"] = f"{segmentKeyBase}|occ:{occurrenceCount[occKey]}"
+            yield baseRow
             continue
 
         for node in nodes:
@@ -443,22 +458,14 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> list[dict[str, objec
             nodeRow["textSemanticPathKey"] = node.get("textSemanticPathKey")
             nodeRow["textSemanticParentPathKey"] = node.get("textSemanticParentPathKey")
             nodeRow["segmentOrder"] = node["segmentOrder"]
-            nodeRow["segmentKeyBase"] = node["segmentKeyBase"]
-            nodeRow["segmentOccurrence"] = 1
+            segmentKeyBase = node["segmentKeyBase"]
+            nodeRow["segmentKeyBase"] = segmentKeyBase
             nodeRow["sortOrder"] = (orderSeq * 1000) + int(node["segmentOrder"])
-            expanded.append(nodeRow)
-
-    occurrenceCount: dict[tuple[str, str], int] = {}
-    for row in sorted(expanded, key=lambda r: (str(r.get("topic") or ""), int(r.get("sortOrder") or 0))):
-        topic = str(row.get("topic") or "")
-        baseKey = str(row.get("segmentKeyBase") or "")
-        occKey = (topic, baseKey)
-        occurrenceCount[occKey] = occurrenceCount.get(occKey, 0) + 1
-        occ = occurrenceCount[occKey]
-        row["segmentOccurrence"] = occ
-        row["segmentKey"] = f"{baseKey}|occ:{occ}"
-
-    return expanded
+            occKey = (topic, str(segmentKeyBase))
+            occurrenceCount[occKey] = occurrenceCount.get(occKey, 0) + 1
+            nodeRow["segmentOccurrence"] = occurrenceCount[occKey]
+            nodeRow["segmentKey"] = f"{segmentKeyBase}|occ:{occurrenceCount[occKey]}"
+            yield nodeRow
 
 
 def _periodCadence(period: str) -> str:
@@ -468,11 +475,13 @@ def _periodCadence(period: str) -> str:
         return "q2"
     if period.endswith("Q3"):
         return "q3"
+    if period.endswith("Q4"):
+        return "q4"
     return "annual"
 
 
 def _cadenceSortKey(cadence: str) -> int:
-    return {"annual": 0, "q1": 1, "q2": 2, "q3": 3}.get(cadence, 9)
+    return {"annual": 0, "q1": 1, "q2": 2, "q3": 3, "q4": 4}.get(cadence, 9)
 
 
 def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
@@ -482,7 +491,7 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
         if not isinstance(value, str) or not value.strip():
             continue
         suffix = period[-2:]
-        if suffix in ("Q1", "Q2", "Q3"):
+        if suffix in ("Q1", "Q2", "Q3", "Q4"):
             quarterlyPeriods.append(period)
         else:
             annualPeriods.append(period)
@@ -1559,12 +1568,12 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         )
 
     schema = {
-        "chapter": pl.Utf8,
+        "chapter": pl.Categorical,
         "topic": pl.Utf8,
-        "blockType": pl.Utf8,
+        "blockType": pl.Categorical,
         "blockOrder": pl.Int64,
         "sourceBlockOrder": pl.Int64,
-        "textNodeType": pl.Utf8,
+        "textNodeType": pl.Categorical,
         "textStructural": pl.Boolean,
         "textLevel": pl.Int64,
         "textPath": pl.Utf8,
@@ -1583,7 +1592,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         "segmentOrder": pl.Int64,
         "segmentOccurrence": pl.Int64,
         "cadenceKey": pl.Utf8,
-        "cadenceScope": pl.Utf8,
+        "cadenceScope": pl.Categorical,
         "annualPeriodCount": pl.Int64,
         "quarterlyPeriodCount": pl.Int64,
         "latestAnnualPeriod": pl.Utf8,
@@ -1671,15 +1680,23 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             dataColumns["sourceTopic"].append(
                 str(meta["sourceTopic"]) if isinstance(meta.get("sourceTopic"), str) else None
             )
-            periodMap = topicMap.get(key, {})
+            periodMap = topicMap.pop(key, None)
             if periodMap:
                 for period in validPeriods:
                     dataColumns[period].append(periodMap.get(period))
             else:
                 for period in validPeriods:
                     dataColumns[period].append(None)
+            # 소비한 중간 dict 항목 즉시 해제
+            rowMeta.pop(key, None)
+            rowOrder.pop(key, None)
+            pathVariantsByKey.pop(key, None)
+            parentPathVariantsByKey.pop(key, None)
+            semanticPathVariantsByKey.pop(key, None)
+            semanticParentPathVariantsByKey.pop(key, None)
+            cadenceMetaByKey.pop(key, None)
 
-    # 메모리 해제: DataFrame 생성 전 중간 dict 퇴출
+    # 메모리 해제: DataFrame 생성 전 잔여 dict 퇴출
     del topicMap, rowMeta, rowOrder
     del pathVariantsByKey, parentPathVariantsByKey
     del semanticPathVariantsByKey, semanticParentPathVariantsByKey

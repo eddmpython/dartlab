@@ -116,7 +116,8 @@ def _run_guided_json(
     _done_payload: dict[str, Any],
 ) -> Generator[AnalysisEvent, None, None]:
     """Compact provider용 guided JSON → markdown 변환."""
-    from dartlab.engines.ai.conversation.prompts import GUIDED_SCHEMA, guided_json_to_markdown
+    from dartlab.engines.ai.conversation.prompts import guided_json_to_markdown
+    from dartlab.engines.ai.conversation.templates.self_critique import GUIDED_SCHEMA
 
     resp = llm.complete_json(messages, GUIDED_SCHEMA)
     raw_json = resp.answer

@@ -1,13 +1,18 @@
-"""`dartlab collect` command — DART 공시문서 수집.
+"""`dartlab collect` command — DART 데이터 수집.
 
 사용 예시::
 
-    dartlab collect 005930                    # 단일 종목, 최근 8분기
-    dartlab collect 005930 000660 -q 12       # 여러 종목, 12분기
-    dartlab collect --auto                    # 미수집 전체, 8분기
-    dartlab collect --auto --limit 50 -q 50   # 미수집 50개, 50분기
+    dartlab collect 005930                    # 단일 종목 docs (기존)
+    dartlab collect --auto                    # 미수집 docs 전체 (기존)
     dartlab collect --stats                   # 수집 현황
     dartlab collect --uncollected             # 미수집 목록
+
+    # 배치 모드 (finance/report/docs 전체, 멀티키 병렬)
+    dartlab collect --batch                          # 전체 상장, 미수집만
+    dartlab collect --batch --mode all               # 전체 상장, 전부
+    dartlab collect --batch -c finance               # 전체 상장, 재무만
+    dartlab collect --batch 005930 000660            # 지정 종목
+    dartlab collect --batch 005930 -c finance,report # 지정 종목 + 카테고리
 """
 
 from __future__ import annotations
@@ -68,6 +73,24 @@ def configure_parser(subparsers) -> None:
         default=None,
         help="--auto / --uncollected 시 최대 종목 수",
     )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="배치 모드 (finance/report/docs 전체, 멀티키 병렬)",
+    )
+    parser.add_argument(
+        "--categories",
+        "-c",
+        type=str,
+        default=None,
+        help="수집 카테고리 (쉼표 구분: finance,report,docs)",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["new", "all"],
+        default="new",
+        help="new=미수집만 / all=전체 (기본: new)",
+    )
     parser.set_defaults(handler=run)
 
 
@@ -82,17 +105,24 @@ def run(args) -> int:
     if args.uncollected:
         return _runUncollected(console, args.limit or 20)
 
+    if args.batch:
+        return _runBatch(console, args)
+
     if args.auto:
         return _runAuto(console, args)
 
     if not args.codes:
-        console.print("[bold]dartlab collect[/] — DART 공시문서 수집\n")
-        console.print("  dartlab collect 005930              단일 종목")
-        console.print("  dartlab collect 005930 000660 -q 12 여러 종목, 12분기")
-        console.print("  dartlab collect --auto              미수집 자동 수집")
-        console.print("  dartlab collect --auto --limit 50   미수집 50개")
+        console.print("[bold]dartlab collect[/] — DART 데이터 수집\n")
+        console.print("  dartlab collect 005930              단일 종목 docs")
+        console.print("  dartlab collect --auto              미수집 docs 자동 수집")
         console.print("  dartlab collect --stats             수집 현황")
         console.print("  dartlab collect --uncollected       미수집 목록")
+        console.print()
+        console.print("  [bold]배치 모드[/] (finance/report/docs, 멀티키 병렬):")
+        console.print("  dartlab collect --batch                          전체 상장, 미수집")
+        console.print("  dartlab collect --batch -c finance               전체 상장, 재무만")
+        console.print("  dartlab collect --batch 005930 000660            지정 종목")
+        console.print("  dartlab collect --batch 005930 -c finance,report 지정 종목 + 카테고리")
         return 1
 
     return _runCollect(console, args)
@@ -153,6 +183,37 @@ def _runAuto(console, args) -> int:
     success = sum(1 for v in results.values() if v > 0)
     failed = sum(1 for v in results.values() if v < 0)
     console.print(f"\n[bold green]완료[/]: 성공 {success} / 실패 {failed} / 총 {len(codes)}")
+    return 0
+
+
+def _runBatch(console, args) -> int:
+    from dartlab.engines.company.dart.openapi.batch import batchCollect, batchCollectAll
+    from dartlab.engines.company.dart.openapi.dartKey import resolveDartKeys
+
+    keys = resolveDartKeys()
+    if not keys:
+        console.print("[red]DART API 키가 필요합니다. DART_API_KEY(S) 환경변수를 설정하세요.[/]")
+        return 1
+
+    cats = [c.strip() for c in args.categories.split(",")] if args.categories else None
+    catLabel = ", ".join(cats) if cats else "finance, report, docs"
+
+    if args.codes:
+        console.print(f"[bold]배치 수집[/]: {len(args.codes)}개 종목 | {catLabel} | {len(keys)}키 병렬\n")
+        for code in args.codes[:10]:
+            console.print(f"  {code}")
+        if len(args.codes) > 10:
+            console.print(f"  ... 외 {len(args.codes) - 10}개")
+        console.print()
+        results = batchCollect(args.codes, categories=cats, incremental=True)
+    else:
+        console.print(f"[bold]배치 수집[/]: 전체 상장 ({args.mode}) | {catLabel} | {len(keys)}키 병렬\n")
+        results = batchCollectAll(categories=cats, mode=args.mode)
+
+    total = len(results)
+    success = sum(1 for v in results.values() if any(cnt > 0 for cnt in v.values()))
+    skipped = sum(1 for v in results.values() if all(cnt == 0 for cnt in v.values()))
+    console.print(f"\n[bold green]완료[/]: 수집 {success} / 스킵 {skipped} / 총 {total}")
     return 0
 
 

@@ -21,14 +21,15 @@
 
 결과 (실험 후 작성):
 - 최신 parity patch 후 `safe2` 재실행 기준 exact match는 여전히 `0/12`였다
-- `_sections=False`를 전 case에서 유지했고, `toc` cold는 `1.322~1.584s`, peak RSS는 `308~355MB`로 baseline 대비 `42~47%` 절감됐다
-- docs topic cold는 `companyOverview 1.091~1.361s`, `businessOverview 2.027~2.495s`로 baseline 대비 `3.8~7.7x` 빨라졌다
-- report topic cold는 `dividend 0.826~0.960s`, `majorHolder 0.907~1.184s`였고 peak save는 대체로 `52~58%`였다
-- `periodSwitch:businessOverview` cold는 `2.197~2.827s`, warm median은 `113.0~299.2ms`였고 selected period는 두 종목 모두 baseline과 같은 `2024Q4`로 맞췄다
+- `_sections=False`를 전 case에서 유지했고, `toc` cold는 `1.733~2.004s`, peak RSS는 `376~490MB`로 baseline 대비 `28~30%` 절감됐다
+- docs topic cold는 `companyOverview 1.744~2.181s`, `businessOverview 2.562~3.700s`로 baseline 대비 `3.46~5.84x` 빨라졌다
+- docs/report mixed topic cold는 `dividend 1.596~1.684s`, `majorHolder 1.700~1.808s`였고 peak save는 대체로 `36~43%`였다
+- `periodSwitch:businessOverview` cold는 `2.857~3.755s`, warm median은 `114.4~286.6ms`였고 selected period는 두 종목 모두 baseline과 같은 `2024Q4`로 맞췄다
+- `toc` chapter list는 baseline과 같아졌지만, topic count와 block payload exact는 여전히 남았다
 
 결론:
 - 현재 090 후보 중 1차 winner다. exact hash는 못 맞췄지만, `viewer 저장물 없이 sections 미물질화`라는 제약 아래 cold latency와 RSS를 가장 잘 줄였다
-- 다음 승부처는 parity다. 특히 docs topic의 raw table fallback, text path metadata, chapter/topic count 정합성 때문에 baseline hash와 달라진다
+- 다음 승부처는 parity다. 특히 docs topic의 canonical block 수, raw table fallback, text path metadata, chapter/topic count 정합성 때문에 baseline hash와 달라진다
 
 실험일: 2026-03-23
 """
@@ -91,6 +92,7 @@ class PolarsViewerRuntime:
         self.viewerCache: dict[str, list[Any]] = {}
         self.tocCache: dict[str, Any] | None = None
         self.docsTopicSpecCache: dict[str, tuple[list[dict[str, Any]], list[str]]] = {}
+        self.docsTopicSpecsReady = False
 
     @property
     def hasSectionsCache(self) -> bool:
@@ -161,19 +163,21 @@ class PolarsViewerRuntime:
             return 4
         return None
 
-    def buildDocsTopicSpecs(self, topic: str) -> tuple[list[dict[str, Any]], list[str]]:
-        cached = self.docsTopicSpecCache.get(topic)
-        if cached is not None:
-            return cached
-        blockSpecs: dict[str, dict[str, Any]] = {}
-        allPeriods: set[str] = set()
+    def ensureDocsTopicSpecs(self) -> None:
+        if self.docsTopicSpecsReady:
+            return
+
+        blockSpecsByTopic: dict[str, dict[str, dict[str, Any]]] = {}
+        allPeriodsByTopic: dict[str, set[str]] = {}
         for periodKey, subset in self.iterPeriodSubsets():
-            allPeriods.add(periodKey)
-            sectionSeen: dict[str, int] = {}
+            sectionSeenByTopic: dict[str, dict[str, int]] = {}
             for record in subset.iter_rows(named=True):
                 rawTitle = normalizeTitle(str(record["section_title"] or ""))
-                if not rawTitle or mapSectionTitle(rawTitle) != topic:
+                topic = mapSectionTitle(rawTitle) if rawTitle else None
+                if not rawTitle or not topic:
                     continue
+                allPeriodsByTopic.setdefault(topic, set()).add(periodKey)
+                sectionSeen = sectionSeenByTopic.setdefault(topic, {})
                 sectionSeen[rawTitle] = sectionSeen.get(rawTitle, 0) + 1
                 sectionKey = f"{rawTitle}#{sectionSeen[rawTitle]}"
                 localSeen: dict[tuple[str, str], int] = {}
@@ -188,7 +192,8 @@ class PolarsViewerRuntime:
                     occurrence = localSeen[localKey]
                     blockKey = f"{sectionKey}|{blockType}|{labelKey}|{occurrence}"
                     orderHint = (sectionOrder * 1000) + int(block["blockIdx"])
-                    spec = blockSpecs.get(blockKey)
+                    topicSpecs = blockSpecsByTopic.setdefault(topic, {})
+                    spec = topicSpecs.get(blockKey)
                     if spec is None:
                         spec = {
                             "key": blockKey,
@@ -197,12 +202,18 @@ class PolarsViewerRuntime:
                             "orderHint": orderHint,
                             "periodMap": {},
                         }
-                        blockSpecs[blockKey] = spec
+                        topicSpecs[blockKey] = spec
                     spec["periodMap"][periodKey] = str(block["blockText"] or "")
-        orderedSpecs = sorted(blockSpecs.values(), key=lambda item: (int(item["orderHint"]), str(item["key"])))
-        result = (orderedSpecs, sortPeriods(list(allPeriods)))
-        self.docsTopicSpecCache[topic] = result
-        return result
+
+        for topic, blockSpecs in blockSpecsByTopic.items():
+            orderedSpecs = sorted(blockSpecs.values(), key=lambda item: (int(item["orderHint"]), str(item["key"])))
+            orderedPeriods = sortPeriods(list(allPeriodsByTopic.get(topic, set())), descending=True)
+            self.docsTopicSpecCache[topic] = (orderedSpecs, orderedPeriods)
+        self.docsTopicSpecsReady = True
+
+    def buildDocsTopicSpecs(self, topic: str) -> tuple[list[dict[str, Any]], list[str]]:
+        self.ensureDocsTopicSpecs()
+        return self.docsTopicSpecCache.get(topic, ([], []))
 
     def docsTopicExists(self, topic: str) -> bool:
         specs, _ = self.buildDocsTopicSpecs(topic)
@@ -284,9 +295,7 @@ class PolarsViewerRuntime:
             return self.tocCache
 
         docsTopicMeta: dict[str, dict[str, Any]] = {}
-        topicPeriodText: dict[str, dict[str, str]] = {}
         for periodKey, subset in self.iterPeriodSubsets():
-            latestSeenTopics: set[str] = set()
             for record in subset.iter_rows(named=True):
                 rawTitle = normalizeTitle(str(record["section_title"] or ""))
                 topic = mapSectionTitle(rawTitle) if rawTitle else None
@@ -296,27 +305,14 @@ class PolarsViewerRuntime:
                     topic,
                     {
                         "chapter": None,
-                        "textCount": 0,
-                        "tableCount": 0,
                         "periods": set(),
                     },
                 )
                 majorNum = parseMajorNum(str(record["section_title"] or "").strip())
                 chapter = chapterFromMajorNum(majorNum) if majorNum is not None else None
-                if meta["chapter"] is None and chapter is not None:
-                    meta["chapter"] = chapter
+                if meta["chapter"] is None:
+                    meta["chapter"] = chapter or self.company._chapterForTopic(topic)
                 meta["periods"].add(periodKey)
-                blocks = splitMarkdownBlocks(str(record["section_content"] or ""))
-                if topic not in latestSeenTopics:
-                    meta["textCount"] = sum(1 for block in blocks if str(block["blockType"]) in {"text", "heading"})
-                    meta["tableCount"] = sum(1 for block in blocks if str(block["blockType"]) == "table")
-                    latestSeenTopics.add(topic)
-                textOnly = "\n".join(
-                    str(block["blockText"]) for block in blocks if str(block["blockType"]) in {"text", "heading"}
-                ).strip()
-                topicPeriodText.setdefault(topic, {})
-                if periodKey not in topicPeriodText[topic] and textOnly:
-                    topicPeriodText[topic][periodKey] = textOnly
 
         chapterMap: dict[str, list[dict[str, Any]]] = {}
         chapterOrder: list[str] = []
@@ -350,21 +346,28 @@ class PolarsViewerRuntime:
 
         reportTopics = self.availableReportTopics()
         for topic, meta in docsTopicMeta.items():
-            orderedTopicPeriods = sortPeriods(list(meta["periods"]), descending=True)
+            specs, orderedTopicPeriods = self.buildDocsTopicSpecs(topic)
             latest = orderedTopicPeriods[0] if orderedTopicPeriods else None
-            prev = self.findPrevComparable(sortPeriods(list(meta["periods"])), latest) if latest else None
+            prev = self.findPrevComparable(orderedTopicPeriods, latest) if latest else None
+            textCount = sum(1 for spec in specs if str(spec["blockType"]) in {"text", "heading"})
+            tableCount = sum(1 for spec in specs if str(spec["blockType"]) == "table")
             hasChanges = False
             if latest and prev:
-                latestText = topicPeriodText.get(topic, {}).get(latest, "")
-                prevText = topicPeriodText.get(topic, {}).get(prev, "")
-                hasChanges = bool(latestText and prevText and latestText != prevText)
+                for spec in specs:
+                    if str(spec["blockType"]) not in {"text", "heading"}:
+                        continue
+                    latestText = str(spec["periodMap"].get(latest) or "").strip()
+                    prevText = str(spec["periodMap"].get(prev) or "").strip()
+                    if latestText and prevText and latestText != prevText:
+                        hasChanges = True
+                        break
             addTopic(
-                str(meta["chapter"] or "기타"),
+                str(meta["chapter"] or self.company._chapterForTopic(topic) or "기타"),
                 {
                     "topic": topic,
                     "label": self.topicLabel(topic),
-                    "textCount": int(meta["textCount"]),
-                    "tableCount": int(meta["tableCount"]),
+                    "textCount": int(textCount),
+                    "tableCount": int(tableCount),
                     "hasChanges": hasChanges,
                 },
             )

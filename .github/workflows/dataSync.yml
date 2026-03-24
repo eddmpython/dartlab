@@ -1,0 +1,75 @@
+name: Data Sync
+
+on:
+  schedule:
+    - cron: '0 17 * * 2,5'  # UTC 17:00 = KST 02:00, 화/금
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'finance, report, docs, all'
+        default: 'all'
+        type: choice
+        options: [all, finance, report, docs]
+      mode:
+        description: 'new (미수집만) / all (전체 갱신)'
+        default: 'new'
+        type: choice
+        options: [new, all]
+
+permissions:
+  contents: write
+
+jobs:
+  collect-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    strategy:
+      fail-fast: false
+      matrix:
+        category: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.category == 'all' && 'finance","report","docs' || inputs.category)) || fromJSON('["finance","report","docs"]') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      # 기존 데이터 캐시 (두 번째 실행부터 clone 생략)
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/${{ matrix.category }}
+          key: dartlab-data-${{ matrix.category }}
+
+      - name: Collect data
+        run: uv run python .github/scripts/syncData.py
+        env:
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          SYNC_CATEGORY: ${{ matrix.category }}
+          SYNC_MODE: ${{ github.event.inputs.mode || 'new' }}
+
+      # 수집 후 캐시 갱신 (다음 실행용)
+      - name: Save data cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/${{ matrix.category }}
+          key: dartlab-data-${{ matrix.category }}-${{ github.run_id }}
+
+      - name: Upload to HuggingFace
+        run: uv run python .github/scripts/uploadData.py --target hf
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: ${{ matrix.category }}
+
+      - name: Upload to GitHub Releases
+        run: uv run python .github/scripts/uploadData.py --target gh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_CATEGORY: ${{ matrix.category }}

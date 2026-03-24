@@ -10,8 +10,9 @@ from pathlib import Path
 import polars as pl
 import requests
 
-CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "kindList"
-CACHE_FILE = CACHE_DIR / "corpList.parquet"
+def _cacheFile() -> Path:
+    from dartlab.core.dataLoader import _getDataRoot
+    return _getDataRoot() / "kindList" / "corpList.parquet"
 CACHE_TTL = 86400
 
 KIND_URL = "https://kind.krx.co.kr/corpgeneral/corpList.do"
@@ -97,17 +98,19 @@ def _fetchKind() -> pl.DataFrame:
 
 
 def _loadCache() -> pl.DataFrame | None:
-    if not CACHE_FILE.exists():
+    path = _cacheFile()
+    if not path.exists():
         return None
-    age = time.time() - CACHE_FILE.stat().st_mtime
+    age = time.time() - path.stat().st_mtime
     if age > CACHE_TTL:
         return None
-    return pl.read_parquet(str(CACHE_FILE))
+    return pl.read_parquet(str(path))
 
 
 def _saveCache(df: pl.DataFrame) -> None:
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    df.write_parquet(str(CACHE_FILE))
+    path = _cacheFile()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(str(path))
 
 
 def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:

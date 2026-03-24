@@ -11,6 +11,8 @@ export const brand = {
 	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe',
 	author: 'eddmpython',
 
+	hfRepo: 'eddmpython/dartlab-data',
+
 	data: {
 		docs: { tag: 'data-docs', dir: 'dart/docs', label: 'DART 공시 문서 데이터' },
 		finance: {

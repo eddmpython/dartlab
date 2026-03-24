@@ -331,10 +331,13 @@ class DocsCollector:
 
         with alive_bar(
             len(rceptNos),
-            title=f"[1/2] 목차 수집 ({self.corpName})",
+            title=f"[1/2] 목차 수집 | {self.corpName}",
             bar="smooth",
+            spinner="dots_waves",
+            force_tty=True,
         ) as bar:
             for i, rcpNo in enumerate(rceptNos):
+                bar.title = f"[1/2] 목차 | {reportNames[i]}"
                 url = f"{_DART_MAIN_BASE}?rcpNo={rcpNo}"
                 try:
                     resp = session.get(url, timeout=_REQUEST_TIMEOUT)
@@ -345,10 +348,10 @@ class DocsCollector:
                         sd["report_type"] = reportNames[i]
                         sd["corp_name"] = corpNames[i]
                     allSubDocs.extend(subDocs)
-                    bar.text(f"{rcpNo} → {len(subDocs)}개")
+                    bar.title = f"[1/2] 목차 | {reportNames[i]} → {len(subDocs)}개"
                 except requests.RequestException:
                     failCount1 += 1
-                    bar.text(f"{rcpNo} 실패")
+                    bar.title = f"[1/2] 목차 | {reportNames[i]} 실패"
 
                 bar()
                 if i < len(rceptNos) - 1:
@@ -373,12 +376,22 @@ class DocsCollector:
         urlToHtml: dict[str, str] = {}
         failCount2 = 0
 
+        # url → 섹션 제목 매핑
+        urlToTitle: dict[str, str] = {}
+        for sd in allSubDocs:
+            if sd["url"] not in urlToTitle:
+                urlToTitle[sd["url"]] = sd["title"]
+
         with alive_bar(
             len(uniqueUrls),
-            title=f"[2/2] HTML 수집 ({uniqueReports}개 보고서, {len(uniqueUrls)}개 섹션)",
+            title=f"[2/2] HTML 수집 | {self.corpName} ({uniqueReports}건, {len(uniqueUrls)}섹션)",
             bar="smooth",
+            spinner="dots_waves",
+            force_tty=True,
         ) as bar:
             for i, url in enumerate(uniqueUrls):
+                title = urlToTitle.get(url, "")
+                bar.title = f"[2/2] HTML | {title[:40]}" if title else "[2/2] HTML"
                 try:
                     resp = session.get(url, timeout=_REQUEST_TIMEOUT)
                     resp.raise_for_status()

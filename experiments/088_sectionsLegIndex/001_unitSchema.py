@@ -1356,6 +1356,15 @@ def buildUnderstandingBundle(
     topK: int = 8,
 ) -> UnderstandingBundle:
     queryLegs, hits = searchLegIndex(indexData, queryText, topK=topK)
+    return buildUnderstandingBundleFromHits(unitDf, indexData, queryLegs, hits)
+
+
+def buildUnderstandingBundleFromHits(
+    unitDf: pl.DataFrame,
+    indexData: dict[str, Any],
+    queryLegs: QueryLegs,
+    hits: list[RetrievalHit],
+) -> UnderstandingBundle:
     breadcrumbs = [f"intent:{queryLegs.queryIntent}"]
     breadcrumbs.extend(f"topic:{token.split(':', 1)[1]}" for token in queryLegs.topicLeg if token.startswith("topic:"))
     breadcrumbs.extend(queryLegs.timeLeg[:2])
@@ -1620,6 +1629,175 @@ def runCoreBaselineBench(
     return results
 
 
+def contextualPrefixText(row: dict[str, Any]) -> str:
+    prefixParts = [
+        f"[company={row.get('stockCode') or ''}]",
+        f"[topic={row.get('topic') or ''}]",
+        f"[period={row.get('period') or ''}]",
+        f"[block={row.get('blockType') or ''}]",
+        f"[semantic={row.get('semanticTopic') or ''}]",
+        f"[detail={row.get('detailTopic') or ''}]",
+        f"[blockLabel={row.get('blockLabel') or ''}]",
+    ]
+    return "".join(prefixParts) + "\n" + str(row.get("sliceText") or "")
+
+
+def buildContextualPrefixCorpora(corpus: pl.DataFrame) -> list[str]:
+    return [contextualPrefixText(row) for row in corpus.to_dicts()]
+
+
+def runContextualPrefixExperiment(
+    *,
+    codes: list[str] | None = None,
+    lastN: int = 12,
+) -> dict[str, Any]:
+    selectedCodes = codes or ["005930", "000660"]
+    bench = loadBenchModule()
+    corpus = buildBenchmarkCorpusForCodes(selectedCodes, lastN=lastN)
+    cases = buildFilteredBenchmarkCases(bench, corpus, selectedCodes)
+    rows = corpus.to_dicts()
+    sliceIds = [str(row["sliceId"]) for row in rows]
+    baseCorpora = bench.build_retrieval_corpora(corpus)
+    candidateCorpora = {
+        "B2_contextual_bm25": baseCorpora["contextual"],
+        "B3_prefixed_contextual_bm25": buildContextualPrefixCorpora(corpus),
+    }
+
+    results: dict[str, Any] = {}
+    for name, texts in candidateCorpora.items():
+        start = time.perf_counter()
+        bm25 = bench.SimpleBM25(texts)
+        buildSec = time.perf_counter() - start
+        rankedLists: dict[str, list[str]] = {}
+        latencies: list[float] = []
+        for case in cases:
+            t0 = time.perf_counter()
+            scores = bm25.score(case.question)
+            order = bench.np.argsort(scores)[::-1][:10]
+            latencies.append((time.perf_counter() - t0) * 1000)
+            rankedLists[case.caseId] = [sliceIds[index] for index in order]
+        metric = bench.evaluate_ranked_lists(cases, rankedLists, latencies, buildSec)
+        metric.method = name
+        results[name] = asdict(metric)
+
+    summary = {
+        "codes": selectedCodes,
+        "caseCount": len(cases),
+        "currentContextual": results["B2_contextual_bm25"],
+        "prefixedContextual": results["B3_prefixed_contextual_bm25"],
+        "winner": max(
+            [results["B2_contextual_bm25"], results["B3_prefixed_contextual_bm25"]],
+            key=lambda row: (row["hit5"], row["mrr10"], row["goldRecall10"]),
+        )["method"],
+    }
+    saveJson(summary, OUTPUT_DIR / "contextualPrefix.summary.json")
+    return summary
+
+
+def buildLegRerankDocs(unitDf: pl.DataFrame, hitIds: list[str]) -> list[str]:
+    recordMap = unitRecordMap(unitDf)
+    docs: list[str] = []
+    for unitId in hitIds:
+        record = recordMap.get(unitId)
+        if not record:
+            docs.append("")
+            continue
+        metaParts = [
+            f"topic={record.get('topic') or ''}",
+            f"period={record.get('period') or ''}",
+            f"blockType={record.get('blockType') or ''}",
+            f"path={record.get('textComparablePathKey') or ''}",
+            f"semantic={record.get('semanticTopic') or ''}",
+            f"detail={record.get('detailTopic') or ''}",
+        ]
+        displayText = str(record.get("displayText") or "")
+        payloadText = str(record.get("payloadText") or "")
+        bodyParts = [displayText]
+        if payloadText and payloadText not in displayText:
+            bodyParts.append(payloadText)
+        docs.append(" | ".join(part for part in metaParts if part) + "\n" + "\n".join(part for part in bodyParts if part))
+    return docs
+
+
+def rerankLegHits(
+    queryText: str,
+    hitIds: list[str],
+    docs: list[str],
+    *,
+    reranker: Any,
+    topK: int,
+) -> list[str]:
+    if not hitIds or not docs:
+        return []
+    pairs = [(queryText, doc) for doc in docs]
+    scores = reranker.predict(pairs)
+    rankedPairs = sorted(zip(hitIds, scores, strict=False), key=lambda item: float(item[1]), reverse=True)
+    return [unitId for unitId, _score in rankedPairs[:topK]]
+
+
+def searchLegIndexWithRerank(
+    indexData: dict[str, Any],
+    unitDf: pl.DataFrame,
+    queryText: str,
+    *,
+    reranker: Any,
+    topK: int = 10,
+    rerankK: int = 30,
+) -> tuple[QueryLegs, list[RetrievalHit]]:
+    queryLegs, baseHits = searchLegIndex(indexData, queryText, topK=max(topK, rerankK))
+    if not baseHits:
+        return queryLegs, []
+    candidateHits = baseHits[: max(topK, rerankK)]
+    hitIds = [hit.unitId for hit in candidateHits]
+    docs = buildLegRerankDocs(unitDf, hitIds)
+    rerankedIds = rerankLegHits(queryText, hitIds, docs, reranker=reranker, topK=topK)
+    rankMap = {unitId: rank for rank, unitId in enumerate(rerankedIds, 1)}
+    hitMap = {hit.unitId: hit for hit in candidateHits}
+    rerankedHits: list[RetrievalHit] = []
+    for unitId in rerankedIds:
+        originalHit = hitMap[unitId]
+        rerankBoost = 0.5 * ((rerankK - rankMap[unitId]) / max(rerankK, 1))
+        scoreBreakdown = dict(originalHit.scoreBreakdown)
+        scoreBreakdown["rerankBoost"] = round(rerankBoost, 4)
+        rerankedHits.append(
+            RetrievalHit(
+                unitId=originalHit.unitId,
+                score=originalHit.score + rerankBoost,
+                scoreBreakdown=scoreBreakdown,
+                stockCode=originalHit.stockCode,
+                topic=originalHit.topic,
+                period=originalHit.period,
+                displayText=originalHit.displayText,
+            )
+        )
+    return queryLegs, rerankedHits
+
+
+def evaluateEvidenceCoverage(
+    cases: list[Any],
+    rankedLists: dict[str, list[str]],
+    recordMap: dict[str, dict[str, Any]],
+) -> dict[str, float]:
+    requiredScores: list[float] = []
+    citationScores: list[float] = []
+    for case in cases:
+        rankedIds = rankedLists.get(case.caseId, [])
+        evidenceText = " ".join(
+            str(recordMap.get(unitId, {}).get("displayText") or recordMap.get(unitId, {}).get("payloadText") or "")
+            for unitId in rankedIds[:3]
+        ).lower()
+        if case.requiredFacts:
+            matchedFacts = sum(1 for fact in case.requiredFacts if fact.lower() in evidenceText)
+            requiredScores.append(matchedFacts / len(case.requiredFacts))
+        else:
+            requiredScores.append(1.0)
+        citationScores.append(1.0 if rankedIds else 0.0)
+    return {
+        "requiredFactCoverage": sum(requiredScores) / max(len(requiredScores), 1),
+        "citationCoverage": sum(citationScores) / max(len(citationScores), 1),
+    }
+
+
 def evaluateUnitRankedLists(
     cases: list[Any],
     caseMap: dict[str, list[str]],
@@ -1880,6 +2058,90 @@ def runRetrievalExperiment(
         "mappedCaseCount": sum(1 for case in cases if caseMap.get(case.caseId)),
     }
     saveJson(summary, OUTPUT_DIR / "retrieval.summary.json")
+    return summary
+
+
+def runLegRerankExperiment(
+    *,
+    codes: list[str] | None = None,
+    lastN: int = 12,
+) -> dict[str, Any]:
+    selectedCodes = codes or ["005930", "000660"]
+    unitDf = loadSampleUnits(selectedCodes)
+    if unitDf is None:
+        runUnitSchemaExperiment()
+        unitDf = loadSampleUnits(selectedCodes)
+    assert unitDf is not None
+
+    bench, _corpus, cases, caseMap = benchmarkCasesForUnits(unitDf, codes=selectedCodes, lastN=lastN)
+    corpus = buildBenchmarkCorpusForCodes(selectedCodes, lastN=lastN)
+    baselineResults = runCoreBaselineBench(bench, corpus, cases, includeDense=False)
+    recordMap = unitRecordMap(unitDf)
+
+    indexStart = time.perf_counter()
+    indexData = buildLegIndex(unitDf)
+    indexSec = time.perf_counter() - indexStart
+
+    legRankedLists: dict[str, list[str]] = {}
+    legLatenciesMs: list[float] = []
+    for case in cases:
+        t0 = time.perf_counter()
+        _queryLegs, hits = searchLegIndex(indexData, case.question, topK=10)
+        legLatenciesMs.append((time.perf_counter() - t0) * 1000)
+        legRankedLists[case.caseId] = [hit.unitId for hit in hits]
+    legMetrics = evaluateUnitRankedLists(cases, caseMap, legRankedLists, legLatenciesMs, indexSec)
+    legMetrics.update(evaluateEvidenceCoverage(cases, legRankedLists, recordMap))
+
+    observedPeakMb = get_memory_mb()
+    rerankRankedLists: dict[str, list[str]] = {}
+    rerankLatenciesMs: list[float] = []
+    check_memory_and_gc("091:rerank:beforeLoad")
+    rerankerStart = time.perf_counter()
+    reranker = bench.load_reranker()
+    rerankerLoadSec = time.perf_counter() - rerankerStart
+    observedPeakMb = max(observedPeakMb, get_memory_mb())
+    try:
+        for case in cases:
+            t0 = time.perf_counter()
+            _queryLegs, hits = searchLegIndexWithRerank(
+                indexData,
+                unitDf,
+                case.question,
+                reranker=reranker,
+                topK=10,
+                rerankK=30,
+            )
+            rerankLatenciesMs.append((time.perf_counter() - t0) * 1000)
+            rerankRankedLists[case.caseId] = [hit.unitId for hit in hits]
+            observedPeakMb = max(observedPeakMb, get_memory_mb())
+    finally:
+        del reranker
+        gc.collect()
+        check_memory_and_gc("091:rerank:afterLoad")
+
+    rerankMetrics = evaluateUnitRankedLists(cases, caseMap, rerankRankedLists, rerankLatenciesMs, indexSec)
+    rerankMetrics.update(evaluateEvidenceCoverage(cases, rerankRankedLists, recordMap))
+
+    summary = {
+        "codes": selectedCodes,
+        "caseCount": len(cases),
+        "mappedCaseCount": sum(1 for case in cases if caseMap.get(case.caseId)),
+        "baselines": {
+            "rawBm25": asdict(baselineResults["B1_raw_bm25"]),
+            "contextualBm25": asdict(baselineResults["B2_contextual_bm25"]),
+        },
+        "legIndexOnly": legMetrics,
+        "legRerank": rerankMetrics,
+        "rerankerLoadSec": round(rerankerLoadSec, 4),
+        "peakMemoryMb": round(observedPeakMb, 2),
+        "accepted": bool(
+            rerankMetrics["hit5"] >= legMetrics["hit5"]
+            and (rerankMetrics["requiredFactCoverage"] - legMetrics["requiredFactCoverage"]) >= 0.05
+            and rerankMetrics["medianLatencyMs"] <= 150.0
+            and observedPeakMb < 1200.0
+        ),
+    }
+    saveJson(summary, OUTPUT_DIR / "legRerank.summary.json")
     return summary
 
 

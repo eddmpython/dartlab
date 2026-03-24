@@ -62,6 +62,48 @@ def listing(market: str | None = None):
     return _DartEngineCompany.listing()
 
 
+def collect(
+    *codes: str,
+    categories: list[str] | None = None,
+    incremental: bool = True,
+) -> dict[str, dict[str, int]]:
+    """지정 종목 DART 데이터 수집 (OpenAPI). 멀티키 시 병렬.
+
+    Example::
+
+        import dartlab
+        dartlab.collect("005930")                              # 삼성전자 전체
+        dartlab.collect("005930", "000660", categories=["finance"])  # 재무만
+    """
+    from dartlab.engines.company.dart.openapi.batch import batchCollect
+
+    return batchCollect(list(codes), categories=categories, incremental=incremental)
+
+
+def collectAll(
+    *,
+    categories: list[str] | None = None,
+    mode: str = "new",
+    maxWorkers: int | None = None,
+    incremental: bool = True,
+) -> dict[str, dict[str, int]]:
+    """전체 상장종목 DART 데이터 수집. DART_API_KEY(S) 필요. 멀티키 시 병렬.
+
+    Example::
+
+        import dartlab
+        dartlab.collectAll()                          # 전체 미수집 종목
+        dartlab.collectAll(categories=["finance"])    # 재무만
+        dartlab.collectAll(mode="all")                # 기수집 포함 전체
+    """
+    from dartlab.engines.company.dart.openapi.batch import batchCollectAll
+
+    return batchCollectAll(
+        categories=categories, mode=mode,
+        maxWorkers=maxWorkers, incremental=incremental,
+    )
+
+
 def network():
     """한국 상장사 전체 관계 지도.
 
@@ -682,6 +724,8 @@ __all__ = [
     "setup",
     "search",
     "listing",
+    "collect",
+    "collectAll",
     "network",
     "screen",
     "benchmark",

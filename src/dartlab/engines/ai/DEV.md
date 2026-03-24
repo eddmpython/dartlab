@@ -95,12 +95,13 @@
 - `costByNature`, `rnd`, `segments`처럼 sections topic이 아니어도 direct/notes 경로로 존재하면 `ask`가 우선 회수한다.
 - 일반 `ask`에서 포함된 모듈이 있으면 `"데이터 없음"`이라고 답하면 실패로 본다. false-unavailable 방지가 기본 계약이다.
 - tool calling이 비활성화된 ask에서는 `show_topic()` 같은 호출 계획을 문장으로 출력하지 않는다. 이미 제공된 컨텍스트만으로 바로 답하고, 모호할 때만 한 문장 확인 질문을 한다.
-
-## 벤치마크 기반 플래닝
-
-- 사용자가 `벤치마크`, `유명한 레포`, `세상에 알려진 방식`, `검증된 기법`, `조사`를 언급하면 로컬 코드만 보고 설계하지 않는다.
-- 먼저 외부 공개 기준(레포, 논문, 공식 eval practice)을 조사하고, 그 패턴을 dartlab ask/runtime에 번역한 뒤 구현/평가한다.
-- ask 개선은 항상 `외부 기준 조사 → dartlab 구조 매핑 → 로컬 실측/회귀 검증` 순서를 따른다.
+- **분기 질문 정책**: "분기", "분기별", "quarterly", "QoQ", "전분기" 등 분기 키워드가 감지되면:
+  - route를 `hybrid`로 전환하여 sections + finance 양쪽 모두 포함한다.
+  - `company.timeseries`에서 IS/CF 분기별 standalone 데이터를 최근 8분기만 추출하여 context에 주입한다.
+  - `fsSummary`를 sections exclude 목록에서 일시 해제하여 분기 요약도 포함한다.
+  - response_contract에 분기 데이터 활용 지시를 추가한다.
+- **finance route sections 보조 정책**: route=finance일 때도 `businessStatus`, `businessOverview` 중 존재하는 topic 1개를 경량 outline으로 주입한다. "왜 이익률이 변했는지" 같은 맥락을 LLM이 설명할 수 있게 한다.
+- **context budget**: focused=10000, full=16000. 분기 데이터 + sections 보조를 수용할 수 있는 크기.
 
 ## Persona Eval 루프
 
@@ -138,6 +139,19 @@
   - `부실 징후`류 질문 → `finance` route 고정
   - `영업이익률 + 비용 구조 + 사업 변화` → `IS + costByNature + businessOverview/productService` 강제 hybrid, clarification 금지
   - `최근 공시 + 사업 구조 변화` → `disclosureChanges`에 `businessOverview/productService`를 같이 회수
+- **groundTruthFacts는 수동 하드코딩이 아니라 `truthHarvester`로 자동 생성한다.**
+  - `scripts/harvestEvalTruth.py`로 배치 실행, `--severity critical,high`부터 우선 채움
+  - finance 엔진에서 IS/BS/CF 핵심 계정 + ratios를 자동 추출
+  - `truthAsOf` 날짜로 데이터 시점을 기록
+- **결정론적 검증(라우팅/모듈)은 LLM 호출 없이 CI에서 매 커밋 검증한다.**
+  - `tests/test_eval_deterministic.py` — personaCases.json의 expectedRoute/모듈/구조 무결성 검증
+  - personaCases에 케이스를 추가하면 자동으로 결정론적 테스트도 실행됨
+  - `@pytest.mark.unit` → `test-lock.sh` 1단계에서 실행
+- **배치 replay는 `scripts/runEvalBatch.py`로 자동화한다.**
+  - `--provider`, `--model`, `--severity`, `--persona`, `--compare latest` 필터
+  - 결과는 `eval/batchResults/` JSONL로 저장, 이전 배치와 회귀 비교 지원
+- **replaySuite()는 Company 캐시 3개 제한으로 OOM을 방지한다.**
+  - 4번째 Company 로드 시 가장 오래된 캐시 제거 + `gc.collect()`
 
 ## User Language 원칙
 
@@ -156,6 +170,15 @@
 ## Sections First Retrieval
 
 - `sections`는 기본적으로 “본문 덩어리”가 아니라 “retrieval index”로 쓴다.
-- sections 계열 질문은 `topics() -> outline(topic) -> raw docs sections block` 순서로 좁힌다.
+- sections 계열 질문은 `topics() -> outline(topic) -> contextSlices -> raw docs sections block` 순서로 좁힌다.
+- `contextSlices`가 ask의 기본 evidence layer다. `outline(topic)`는 인덱스/커버리지 확인용이고, 실제 근거 문장은 `contextSlices`에서 먼저 회수한다.
+- `retrievalBlocks/raw sections`는 `contextSlices`만으로 근거가 부족할 때만 추가로 연다.
 - 일반 재무 질문에서는 `sections`, `report`, `insights`, `change summary`를 자동으로 붙이지 않는다.
 - 배당/직원/최대주주/감사처럼 명시적인 report 질문에서만 report pivot/context를 올린다.
+
+## Follow-up Continuity
+
+- 후속 턴이 `최근 5개년`, `그럼`, `이어서`처럼 짧은 기간/연속 질문이면 직전 assistant `includedModules`를 이어받아 같은 분석 축을 유지한다.
+- 이 상속은 아무 질문에나 적용하지 않고 `follow_up` 모드 + 기간/연속 힌트가 있을 때만 적용한다.
+- 강한 direct intent 질문(`성격별 비용`, `인건비`, `감가상각`, `물류비`)은 clarification 없이 바로 `costByNature`를 회수한다.
+- `costByNature` 같은 다기간 direct module이 포함되면 기간이 비어 있어도 최신 시점과 최근 추세를 먼저 답한다. 연도 기준을 먼저 다시 묻지 않는다.

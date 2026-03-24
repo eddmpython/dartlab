@@ -48,6 +48,8 @@ def loadDotenvDartKeys(startPath: Path | None = None) -> list[str]:
     except OSError:
         return []
 
+    multiKeys: list[str] = []
+    singleKey = ""
     for rawLine in text.splitlines():
         line = rawLine.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -56,10 +58,11 @@ def loadDotenvDartKeys(startPath: Path | None = None) -> list[str]:
         normalizedKey = key.strip()
         normalizedValue = value.strip().strip("'\"")
         if normalizedKey == "DART_API_KEYS" and normalizedValue:
-            return [item.strip() for item in normalizedValue.split(",") if item.strip()]
-        if normalizedKey == "DART_API_KEY" and normalizedValue:
-            return [normalizedValue]
-    return []
+            multiKeys = [item.strip() for item in normalizedValue.split(",") if item.strip()]
+        elif normalizedKey == "DART_API_KEY" and normalizedValue and not singleKey:
+            singleKey = normalizedValue
+    # 복수키 우선
+    return multiKeys if multiKeys else ([singleKey] if singleKey else [])
 
 
 def resolveDartKeys(
@@ -74,15 +77,19 @@ def resolveDartKeys(
     if apiKey and apiKey.strip():
         return [apiKey.strip()]
 
+    # OS env + .env 모두 확인해서 키가 더 많은 쪽 채택
     envKeys = os.environ.get("DART_API_KEYS", "")
-    if envKeys:
-        return [item.strip() for item in envKeys.split(",") if item.strip()]
+    osKeysList = [item.strip() for item in envKeys.split(",") if item.strip()] if envKeys else []
 
     envKey = os.environ.get("DART_API_KEY", "")
-    if envKey:
-        return [envKey.strip()]
+    osSingleKey = [envKey.strip()] if envKey and envKey.strip() else []
 
-    return loadDotenvDartKeys(startPath)
+    dotenvKeys = loadDotenvDartKeys(startPath)
+
+    # 가장 많은 키를 가진 소스 반환
+    candidates = [osKeysList, dotenvKeys, osSingleKey]
+    best = max(candidates, key=len)
+    return best if best else []
 
 
 def hasDartApiKey(startPath: Path | None = None) -> bool:

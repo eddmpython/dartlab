@@ -26,11 +26,12 @@
   - `_sections=True` 전 case
 - Polars 후보:
   - exact match `0/12`
-  - 최신 parity patch 후 `toc` cold `1.322~1.584s`, peak `308~355MB`
-  - `companyOverview` cold `1.091~1.361s`
-  - `businessOverview` cold `2.027~2.495s`
-  - report topic cold `0.826~1.184s`
+  - 최신 parity patch 후 `toc` cold `1.733~2.004s`, peak `376~490MB`
+  - `companyOverview` cold `1.744~2.181s`
+  - `businessOverview` cold `2.562~3.700s`
+  - docs/report mixed topic cold `1.596~1.808s`
   - `periodSwitch:businessOverview` selected period `2024Q4`
+  - `toc` chapter list는 baseline과 같아졌지만 topic count와 payload exact는 미달
   - `_sections=False` 전 case
 - PyArrow 후보:
   - exact match `0/12`
@@ -60,4 +61,4 @@
 - 남은 과제:
   - docs topic payload parity
   - raw table fallback과 text path metadata 정합성 향상
-  - TOC chapter/topic count 정합성 향상
+  - TOC topic count와 canonical block count 정합성 향상

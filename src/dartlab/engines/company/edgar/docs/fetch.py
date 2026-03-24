@@ -179,7 +179,13 @@ def fetchEdgarDocs(
     rows: list[dict] = []
     skippedFilings: list[str] = []
     if showProgress:
-        with alive_bar(len(filings), title="EDGAR 원문 수집") as bar:
+        with alive_bar(
+            len(filings),
+            title=f"EDGAR 원문 수집 | {ticker}",
+            bar="smooth",
+            spinner="dots_waves",
+            force_tty=True,
+        ) as bar:
             _collectFilingRows(rows, filings, meta, ticker, bar, filingTimeout, skippedFilings)
     else:
         _collectFilingRows(rows, filings, meta, ticker, None, filingTimeout, skippedFilings)
@@ -289,6 +295,10 @@ def _collectFilingRows(
     skippedFilings: list[str],
 ) -> None:
     for filing in filings:
+        if bar is not None:
+            formType = filing.get("formType", "")
+            filingDate = filing.get("filingDate", "")
+            bar.title = f"EDGAR | {ticker} | {formType} {filingDate}"
         try:
             timer = _FilingTimeout(filingTimeout)
             with timer:
@@ -404,8 +414,17 @@ def downloadListedEdgarDocs(
     emit("edgar:batch_start", total=total, sinceYear=sinceYear)
 
     results: list[dict] = []
-    with alive_bar(total, title="EDGAR docs 배치 수집") as bar:
+    successCount = 0
+    failCount = 0
+    with alive_bar(
+        total,
+        title="EDGAR 배치 수집",
+        bar="smooth",
+        spinner="dots_waves",
+        force_tty=True,
+    ) as bar:
         for idx, ticker in enumerate(tickers, start=1):
+            bar.title = f"EDGAR 배치 | {ticker}"
             outPath = docsDir / f"{ticker}.parquet"
             if skipExisting and outPath.exists():
                 results.append({"ticker": ticker, "status": "skipped", "reason": "exists"})
@@ -415,8 +434,12 @@ def downloadListedEdgarDocs(
             try:
                 fetchEdgarDocs(ticker, outPath, sinceYear=sinceYear, showProgress=False)
                 results.append({"ticker": ticker, "status": "downloaded", "reason": None})
+                successCount += 1
+                bar.title = f"EDGAR 배치 | ✓ {ticker}"
             except (OSError, ValueError, requests.RequestException) as e:
                 results.append({"ticker": ticker, "status": "failed", "reason": str(e)})
+                failCount += 1
+                bar.title = f"EDGAR 배치 | ✗ {ticker}"
             finally:
                 bar()
 
@@ -425,6 +448,7 @@ def downloadListedEdgarDocs(
                 emit("edgar:batch_progress", idx=idx, cooldown=cooldownSeconds)
                 time.sleep(cooldownSeconds)
 
+    emit("edgar:batch_done", success=successCount, failed=failCount, total=total)
     return pl.DataFrame(results)
 
 

@@ -9,6 +9,9 @@ finance는 GitHub Release 1000에셋 제한 때문에 종목코드 범위별 다
 REPO = "eddmpython/dartlab"
 REPO_URL = f"https://github.com/{REPO}"
 
+HF_REPO = "eddmpython/dartlab-data"
+HF_BASE_URL = f"https://huggingface.co/datasets/{HF_REPO}/resolve/main"
+
 _SHARD_RANGES = [
     {"min": 0, "max": 49999},
     {"min": 50000, "max": 99999},
@@ -80,6 +83,12 @@ def shardAllTags(category: str) -> list[str]:
 def financeAllTags() -> list[str]:
     """finance 전체 shard 태그 목록 (하위 호환)."""
     return shardAllTags("finance")
+
+
+def hfBaseUrl(category: str = "docs") -> str:
+    """HuggingFace 데이터셋 base URL."""
+    dirPath = DATA_RELEASES[category]["dir"]
+    return f"{HF_BASE_URL}/{dirPath}"
 
 
 def releaseBaseUrl(category: str = "docs", stockCode: str | None = None) -> str:

@@ -166,6 +166,9 @@ c.diff("businessOverview", "2024", "2025") # 줄 단위 상세 diff
 
 - docs topic의 shape은 `N기간` 형태 (예: `66기간`)
 - finance/report는 `행x열` 형태 (예: `59x12`)
+- docs rows는 `docs.sections` 전체 DataFrame을 직접 만들지 않는다.
+- 대신 `sections`의 `topicChapter + topicFirstSeq + rowOrder + _topicRowSortKey` 의미만 복제한 metadata-only 경로로 exact를 만든다.
+- `c.index` 호출 후 `_sections`, `_profileFacts`, `retrievalBlocks`가 생기면 회귀로 본다.
 
 ### lightweight sections index
 
@@ -174,6 +177,9 @@ c.diff("businessOverview", "2024", "2025") # 줄 단위 상세 diff
   - 컬럼: `order`, `chapter`, `topic`, `source`, `blocks`, `periods`, `latestPeriod`
 - `c.docs.sections.outline("topic")`는 topic별 block outline을 반환한다.
   - 컬럼: `period`, `sectionOrder`, `block`, `type`, `title`, `preview`
+- `c.docs.contextSlices`는 ask의 1차 evidence layer다.
+  - 기본 ask는 `outline()`로 topic을 좁힌 뒤 `contextSlices`에서 실제 근거 문장/표 조각을 먼저 회수한다.
+  - `retrievalBlocks`와 raw `sections`는 `contextSlices` 근거가 부족할 때만 추가로 연다.
 - `c.topics`는 이제 merged `c.sections`를 다시 훑지 않고 위 lightweight manifest를 재사용한다.
 - 기본 ask / topic 탐색은 먼저 이 lightweight index를 보고, 실제 raw sections 빌드는 필요한 topic에서만 수행한다.
 

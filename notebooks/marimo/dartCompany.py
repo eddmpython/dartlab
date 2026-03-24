@@ -13,7 +13,6 @@ __generated_with = "0.21.1"
 app = marimo.App()
 
 
-# ── Company 생성 ────────────────────────────────────────────────
 @app.cell
 def _():
     import dartlab
@@ -23,7 +22,6 @@ def _():
     return (c,)
 
 
-# ── sections: 회사 전체 맵 ──────────────────────────────────────
 @app.cell
 def _(c):
     # topic × period 수평화 DataFrame — 회사의 전체 지도
@@ -38,7 +36,6 @@ def _(c):
     return
 
 
-# ── show: topic 열기 ────────────────────────────────────────────
 @app.cell
 def _(c):
     # 서술형 topic → 블록 목차
@@ -53,7 +50,6 @@ def _(c):
     return
 
 
-# ── 재무제표 ────────────────────────────────────────────────────
 @app.cell
 def _(c):
     # 재무제표 topic → finance source (숫자 authoritative)
@@ -86,19 +82,10 @@ def _(c):
     return
 
 
-# ── report 데이터 ──────────────────────────────────────────────
 @app.cell
 def _(c):
     # 배당 데이터
     c.show("dividend")
-    return
-
-
-# ── trace / diff ────────────────────────────────────────────────
-@app.cell
-def _(c):
-    # 어떤 source(docs/finance/report)가 채택됐는지
-    c.trace("stock")
     return
 
 
@@ -116,7 +103,6 @@ def _(c):
     return
 
 
-# ── K-IFRS 주석 (Notes) ────────────────────────────────────────
 @app.cell
 def _(c):
     # K-IFRS 주석 — 12가지 항목
@@ -131,18 +117,10 @@ def _(c):
     return
 
 
-# ── 분석 엔진 ──────────────────────────────────────────────────
 @app.cell
 def _(c):
     # 섹터 분류 (WICS 11대 업종)
     c.sector
-    return
-
-
-@app.cell
-def _(c):
-    # 인사이트 등급 (7영역 A~F)
-    c.insights
     return
 
 
@@ -153,14 +131,6 @@ def _(c):
     return
 
 
-# ── 네트워크 / 거버넌스 ────────────────────────────────────────
-@app.cell
-def _(c):
-    # 관계사 네트워크 — 계열사 목록
-    c.network("members")
-    return
-
-
 @app.cell
 def _(c):
     # 지배구조 분석
@@ -168,7 +138,6 @@ def _(c):
     return
 
 
-# ── 테이블 파싱 ─────────────────────────────────────────────────
 @app.cell
 def _(c):
     # 서술형 블록 내 표를 구조화된 DataFrame으로 파싱
@@ -176,18 +145,9 @@ def _(c):
     return
 
 
-# ── 보고서 목록 ─────────────────────────────────────────────────
 @app.cell
 def _(c):
     c.filings()
-    return
-
-
-# ── 차트 (plotly 필요) ──────────────────────────────────────────
-@app.cell
-def _(c, dartlab):
-    # 매출 차트 (plotly 필요: uv add "dartlab[charts]")
-    dartlab.chart.revenue(c).show()
     return
 
 

@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import gc
 import re
 from typing import Any
 
@@ -61,6 +62,7 @@ from dartlab.engines.company.dart._report_accessor import _ReportAccessor  # noq
 from dartlab.engines.company.dart._sections_source import _SectionsSource  # noqa: F401
 from dartlab.engines.company.dart._utils import (  # noqa: F401
     _checkDartDocsFreshness,
+    _ensureAllData,
     _ensureData,
     _import_and_call,
     _isPeriodColumn,
@@ -282,11 +284,12 @@ class Company:
 
         self._cache: BoundedCache = BoundedCache(max_entries=30)
 
-        self._hasDocs = _ensureData(self.stockCode, "docs")
+        _dataStatus = _ensureAllData(self.stockCode)
+        self._hasDocs = _dataStatus.get("docs", False)
         if self._hasDocs:
             _checkDartDocsFreshness(self.stockCode, "docs")
-        self._hasFinanceParquet = _ensureData(self.stockCode, "finance")
-        self._hasReport = _ensureData(self.stockCode, "report")
+        self._hasFinanceParquet = _dataStatus.get("finance", False)
+        self._hasReport = _dataStatus.get("report", False)
 
         corpName = codeToName(self.stockCode)
         if corpName:
@@ -706,6 +709,50 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
+    def disclosure(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int = 365,
+        type: str | None = None,
+        keyword: str | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame:
+        """모든 종류 공시 목록 조회 (OpenDART API).
+
+        Parameters
+        ----------
+        start, end : str | None
+            조회 기간 (YYYYMMDD 또는 YYYY-MM-DD). 둘 다 None이면 최근 ``days``일.
+        days : int
+            start/end 없을 때 최근 일수 (기본 365).
+        type : str | None
+            공시유형 필터 (A=정기, B=주요사항, C=발행, D=지분, E=기타, F=외부감사 등).
+            None이면 전체.
+        keyword : str | None
+            제목/회사명 키워드 필터.
+        finalOnly : bool
+            True면 최종보고서만 (정정 이전 제외).
+
+        Examples
+        --------
+        >>> c.disclosure()                  # 최근 1년 전체 공시
+        >>> c.disclosure(days=30)           # 최근 30일
+        >>> c.disclosure(type="A")          # 정기공시만
+        >>> c.disclosure(keyword="사업보고서")
+        """
+        from dartlab.engines.company.dart.openapi.dart import Dart
+
+        d = Dart()
+        s = d(self.stockCode)
+        df = s.filings(start, end, type=type, final=finalOnly)
+        if df.is_empty():
+            return df
+        if keyword:
+            df = filterFilingsByKeyword(df, keyword=keyword, columns=["report_nm", "corp_name", "flr_nm"])
+        return df
+
     def liveFilings(
         self,
         start: str | None = None,
@@ -802,8 +849,19 @@ class Company:
         filing: Any,
         *,
         maxChars: int | None = None,
+        sections: bool = False,
     ) -> dict[str, Any]:
-        """접수번호 또는 live filings row로 원문을 읽는다."""
+        """접수번호 또는 live filings row로 원문을 읽는다.
+
+        Parameters
+        ----------
+        filing : str | dict | row
+            접수번호(str) 또는 disclosure()/liveFilings() row.
+        maxChars : int | None
+            텍스트 최대 길이 (sections=False일 때만).
+        sections : bool
+            True면 ZIP 기반 구조화된 섹션 목록 반환.
+        """
         record = filingRecord(filing) or {}
 
         if isinstance(filing, str):
@@ -827,6 +885,23 @@ class Company:
             raise ValueError("DART filing 읽기에는 rceptNo 또는 rcpNo가 포함된 viewer URL이 필요합니다.")
 
         from dartlab.core.guidance import progress
+
+        if sections:
+            from dartlab.engines.company.dart.openapi.client import DartClient
+            from dartlab.engines.company.dart.openapi.zipCollector import _collectOneZip
+
+            progress(f"{self.corpName} 공시 ZIP 다운로드 중... ({rceptNo})")
+            client = DartClient()
+            parsed = _collectOneZip(client, rceptNo)
+            return {
+                "docId": rceptNo,
+                "market": "KR",
+                "title": record.get("title") or record.get("reportNm") or record.get("report_nm") or "",
+                "docUrl": viewerUrl or f"{DART_VIEWER}{rceptNo}",
+                "viewerUrl": viewerUrl or f"{DART_VIEWER}{rceptNo}",
+                "sections": parsed or [],
+            }
+
         from dartlab.engines.company.dart.openapi.dart import OpenDart
 
         progress(f"{self.corpName} 공시 원문 다운로드 중... ({rceptNo})")
@@ -2377,59 +2452,168 @@ class Company:
         return rows
 
     def _indexDocsRows(self) -> list[dict[str, Any]]:
-        rows: list[dict[str, Any]] = []
-        sec = self.docs.sections
-        if sec is None or "topic" not in sec.columns:
-            return rows
+        if not self._hasDocs:
+            return []
 
         from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+        from dartlab.engines.company.dart.docs.sections.pipeline import (
+            _expandStructuredRows,
+            _reportRowsToTopicRows,
+            _rowCadenceMeta,
+            applyProjections,
+            chapterTeacherTopics,
+            detailTopicForTopic,
+            iterPeriodSubsets,
+            projectionSuppressedTopics,
+        )
 
-        periodCols = sortPeriods([c for c in sec.columns if _isPeriodColumn(c)], descending=True)
-        periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
-        existingPeriods = [c for c in periodCols if c in sec.columns]
+        topicMap: dict[tuple[str, str], dict[str, str]] = {}
+        rowOrder: dict[tuple[str, str], dict[str, int | str | None]] = {}
+        periodRows: dict[str, list[dict[str, object]]] = {}
+        validPeriods: list[str] = []
+        latestAnnualRows: list[dict[str, object]] | None = None
+        suppressed = projectionSuppressedTopics()
 
-        # topic 순서: Polars unique (iter_rows 제거)
-        topicOrder = sec.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
+        for periodKey, reportKind, contentCol, subset in iterPeriodSubsets(self.stockCode):
+            validPeriods.append(periodKey)
+            topicRows = _reportRowsToTopicRows(subset, contentCol)
+            periodRows[periodKey] = topicRows
+            if reportKind == "annual" and latestAnnualRows is None:
+                latestAnnualRows = topicRows
 
-        # nonNull 계산: group_by + agg (벡터화) → to_list로 dict 구축
-        nonNullMap: dict[str, int] = {}
-        if existingPeriods:
-            nonNullExprs = [pl.col(c).is_not_null().any().cast(pl.Int8).alias(c) for c in existingPeriods]
-            nonNullDf = sec.group_by("topic", maintain_order=True).agg(nonNullExprs)
-            _nnTopics = nonNullDf["topic"].to_list()
-            _nnData = {c: nonNullDf[c].to_list() for c in existingPeriods}
-            for i, t in enumerate(_nnTopics):
-                nonNullMap[t] = sum(1 for c in existingPeriods if _nnData[c][i])
+        if not validPeriods:
+            return []
 
-        # preview: group_by first non-null (벡터화) → to_list로 dict 구축
-        previewMap: dict[str, str] = {}
-        if existingPeriods:
-            firstExprs = [pl.col(c).drop_nulls().first().alias(c) for c in existingPeriods]
-            previewDf = sec.group_by("topic", maintain_order=True).agg(firstExprs)
-            _pvTopics = previewDf["topic"].to_list()
-            _pvData = {c: previewDf[c].to_list() for c in existingPeriods}
-            for i, t in enumerate(_pvTopics):
-                for col in existingPeriods:
-                    val = _pvData[col][i]
-                    if val is not None:
-                        text = str(val).replace("\n", " ").strip()[:80]
-                        previewMap[t] = f"{displayPeriod(col, annualAsQ4=True)}: {text}"
-                        break
+        teacherTopics = chapterTeacherTopics(latestAnnualRows or [])
+        validPeriods = sortPeriods(validPeriods)
+        latestPeriod = validPeriods[-1]
 
-        # chapter: group_by first → to_list로 dict 구축
-        chapterMap: dict[str, str | None] = {}
-        if "chapter" in sec.columns:
-            chapterDf = sec.group_by("topic", maintain_order=True).agg(pl.col("chapter").first().alias("chapter"))
-            _chTopics = chapterDf["topic"].to_list()
-            _chVals = chapterDf["chapter"].to_list()
-            for i, t in enumerate(_chTopics):
-                chapterMap[t] = _chVals[i]
+        def representativePeriodRank(period: str | None) -> int:
+            if not isinstance(period, str):
+                return -1
+            year = int(period[:4])
+            quarter = {"Q1": 1, "Q2": 2, "Q3": 3}.get(period[4:], 4)
+            return (year * 10) + quarter
 
-        for rowIdx, topic in enumerate(topicOrder):
-            nonNull = nonNullMap.get(topic, 0)
-            preview = previewMap.get(topic, "-")
-            chapterVal = chapterMap.get(topic)
-            chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else self._chapterForTopic(topic)
+        topicChapter: dict[str, str] = {}
+        topicFirstSeq: dict[str, tuple[int, int]] = {}
+
+        # Clone sections ordering semantics without materializing the full sections DataFrame.
+        for periodIdx, periodKey in enumerate(validPeriods):
+            projected = applyProjections(periodRows.pop(periodKey, []), teacherTopics)
+            for row in _expandStructuredRows(projected):
+                chapter = row.get("chapter")
+                topic = row.get("topic")
+                text = row.get("text")
+                blockType = row.get("blockType", "text")
+                segmentKey = row.get("segmentKey")
+                if not isinstance(chapter, str) or not isinstance(topic, str) or not isinstance(text, str):
+                    continue
+                if topic not in topicChapter:
+                    topicChapter[topic] = chapter
+                if topic in suppressed.get(chapter, set()):
+                    continue
+                if detailTopicForTopic(topic) is not None:
+                    continue
+                if not isinstance(blockType, str):
+                    blockType = "text"
+                if not isinstance(segmentKey, str) or not segmentKey:
+                    continue
+
+                key = (topic, segmentKey)
+                topicMap.setdefault(key, {})[periodKey] = text
+
+                majorNum = int(row.get("majorNum", 99))
+                sortOrder = int(row.get("sortOrder", 999999))
+                if topic not in topicFirstSeq or (majorNum, sortOrder) < topicFirstSeq[topic]:
+                    topicFirstSeq[topic] = (majorNum, sortOrder)
+
+                orderInfo = rowOrder.setdefault(
+                    key,
+                    {
+                        "latestRank": 999999999,
+                        "latestMissing": 1,
+                        "firstRank": 999999999,
+                        "sourceBlockOrder": int(row.get("sourceBlockOrder") or 0),
+                        "segmentOrder": int(row.get("segmentOrder") or 0),
+                        "segmentOccurrence": int(row.get("segmentOccurrence") or 1),
+                        "_repPeriod": None,
+                    },
+                )
+                orderInfo["firstRank"] = min(int(orderInfo["firstRank"]), sortOrder)
+                orderInfo["sourceBlockOrder"] = min(int(orderInfo["sourceBlockOrder"]), int(row.get("sourceBlockOrder") or 0))
+                orderInfo["segmentOrder"] = min(int(orderInfo["segmentOrder"]), int(row.get("segmentOrder") or 0))
+                orderInfo["segmentOccurrence"] = min(int(orderInfo["segmentOccurrence"]), int(row.get("segmentOccurrence") or 1))
+                if periodKey == latestPeriod:
+                    orderInfo["latestMissing"] = 0
+                    orderInfo["latestRank"] = min(int(orderInfo["latestRank"]), sortOrder)
+
+                prevRank = representativePeriodRank(orderInfo.get("_repPeriod"))
+                currRank = representativePeriodRank(periodKey)
+                if currRank >= prevRank:
+                    orderInfo["_repPeriod"] = periodKey
+
+            if periodIdx % 4 == 3:
+                gc.collect()
+
+        if not topicMap:
+            return []
+
+        cadenceMetaByKey = {key: _rowCadenceMeta(periodMap) for key, periodMap in topicMap.items()}
+        topicKeysByTopic: dict[str, list[tuple[str, str]]] = {}
+        for key in topicMap:
+            topicKeysByTopic.setdefault(key[0], []).append(key)
+
+        topicIndex: dict[str, int] = {}
+        for topic, _seq in sorted(topicFirstSeq.items(), key=lambda item: item[1]):
+            topicIndex[topic] = len(topicIndex)
+
+        cadencePriority = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
+
+        def topicRowSortKey(key: tuple[str, str]) -> tuple[int, int, int, int, int, int, int, int, str]:
+            topic, segmentKey = key
+            majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
+            topicIdx = topicIndex.get(topic, 999999)
+            info = rowOrder.get(key, {})
+            cadenceMeta = cadenceMetaByKey.get(key, {})
+            return (
+                majorNum,
+                firstSeq,
+                topicIdx,
+                cadencePriority.get(str(cadenceMeta.get("cadenceScope") or "none"), 9),
+                int(info.get("latestMissing", 1)),
+                int(info.get("latestRank", 999999999)),
+                int(info.get("firstRank", 999999999)),
+                int(info.get("segmentOccurrence", 1)),
+                str(segmentKey),
+            )
+
+        descendingPeriods = sortPeriods(validPeriods, descending=True)
+        periodRange = formatPeriodRange(descendingPeriods, descending=True, annualAsQ4=True)
+        sortedTopics = [topic for topic, _seq in sorted(topicFirstSeq.items(), key=lambda item: item[1])]
+
+        rows: list[dict[str, Any]] = []
+        for rowIdx, topic in enumerate(sortedTopics):
+            topicKeys = sorted(topicKeysByTopic.get(topic, []), key=topicRowSortKey)
+            periodCount = 0
+            preview = "-"
+            for period in descendingPeriods:
+                firstText: str | None = None
+                anyNonNull = False
+                for key in topicKeys:
+                    value = topicMap.get(key, {}).get(period)
+                    if value is None:
+                        continue
+                    anyNonNull = True
+                    if firstText is None:
+                        firstText = str(value)
+                if anyNonNull:
+                    periodCount += 1
+                    if preview == "-" and firstText is not None:
+                        previewText = firstText.replace("\n", " ").strip()[:80]
+                        preview = f"{displayPeriod(period, annualAsQ4=True)}: {previewText}"
+
+            chapter = topicChapter.get(topic) or self._chapterForTopic(topic)
             chapterNum = _CHAPTER_ORDER.get(chapter, 12)
             rows.append(
                 {
@@ -2439,7 +2623,7 @@ class Company:
                     "kind": "docs",
                     "source": "docs",
                     "periods": periodRange,
-                    "shape": f"{nonNull}기간",
+                    "shape": f"{periodCount}기간",
                     "preview": preview,
                     "_sortKey": (chapterNum, 100 + rowIdx),
                 }

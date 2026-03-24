@@ -368,12 +368,6 @@ class Company:
         self.cik = tickerRow["cik"]
         self.corpName = tickerRow.get("title") or self.ticker
 
-        from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
-
-        ts = buildTimeseries(self.cik)
-        if ts is not None:
-            self._cache["_ts"] = ts
-
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
         self.profile = _ProfileAccessor(self)
@@ -439,7 +433,7 @@ class Company:
 
     @property
     def timeseries(self):
-        return self._cache.get("_ts")
+        return self.finance.timeseries
 
     @property
     def annual(self):
@@ -506,6 +500,19 @@ class Company:
 
     def filings(self) -> pl.DataFrame | None:
         return self.docs.filings()
+
+    def disclosure(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        days: int = 365,
+        type: str | None = None,
+        keyword: str | None = None,
+        finalOnly: bool = False,
+    ) -> pl.DataFrame:
+        """SEC EDGAR filing 목록 — liveFilings 위임."""
+        return self.liveFilings(start, end, days=days, keyword=keyword, forms=[type] if type else None)
 
     def liveFilings(
         self,

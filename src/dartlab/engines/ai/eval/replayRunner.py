@@ -285,19 +285,39 @@ def replaySuite(
     analyzeFn: Callable[..., Any] | None = None,
     **kwargs: Any,
 ) -> list[ReplayResult]:
-    """Replay a full curated suite."""
-    return [
-        replayCase(
-            case,
-            provider=provider,
-            model=model,
-            reportMode=reportMode,
-            useTools=useTools,
-            analyzeFn=analyzeFn,
-            **kwargs,
+    """Replay a full curated suite with Company caching."""
+    import gc
+
+    companyCache: dict[str, Any] = {}
+    results: list[ReplayResult] = []
+
+    for case in cases:
+        sc = case.stockCode
+        company = None
+        if sc:
+            if sc not in companyCache:
+                # 메모리 안전: 최대 3개 Company 유지
+                if len(companyCache) >= 3:
+                    oldest = next(iter(companyCache))
+                    del companyCache[oldest]
+                    gc.collect()
+                companyCache[sc] = _resolve_company(sc)
+            company = companyCache[sc]
+
+        results.append(
+            replayCase(
+                case,
+                provider=provider,
+                model=model,
+                reportMode=reportMode,
+                useTools=useTools,
+                analyzeFn=analyzeFn,
+                company=company,
+                **kwargs,
+            )
         )
-        for case in cases
-    ]
+
+    return results
 
 
 def summarizeReplayResults(results: list[ReplayResult]) -> dict[str, Any]:

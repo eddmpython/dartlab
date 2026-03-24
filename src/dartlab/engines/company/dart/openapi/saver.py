@@ -43,6 +43,13 @@ _KR_TO_API_TYPE: dict[str, str] = {
     "단기사채미상환": "shortTermBond",
     "공모자금용도": "publicOfferingUsage",
     "공모자금사용": "privateOfferingUsage",
+    "대주주지분변동": "majorShareholderChange",
+    "기업어음미상환": "commercialPaper",
+    "채무증권발행실적": "debtSecurities",
+    "조건부자본증권미상환": "contingentCapital",
+    "신종자본증권미상환": "hybridCapital",
+    "이사감사보수총회인정": "executivePayApproval",
+    "이사감사보수지급형태": "executivePayType",
 }
 
 _FS_NM_TO_DIV: dict[str, str] = {
@@ -251,8 +258,8 @@ def enrichReport(
     apiName = _API_NAMES.get(apiEndpoint, apiType)
     enriched = df
 
-    if "apiType" not in df.columns:
-        enriched = enriched.with_columns(pl.lit(engApiType).alias("apiType"))
+    # apiType은 항상 영문으로 덮어쓰기 (API 응답에 한글이 들어올 수 있음)
+    enriched = enriched.with_columns(pl.lit(engApiType).alias("apiType"))
     if "apiName" not in df.columns:
         enriched = enriched.with_columns(pl.lit(apiName).alias("apiName"))
     if "stockCode" not in df.columns:

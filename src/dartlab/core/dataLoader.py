@@ -14,6 +14,7 @@ import polars as pl
 
 from dartlab.core.dataConfig import (
     DATA_RELEASES,
+    hfBaseUrl,
     releaseApiUrl,
     releaseBaseUrl,
     shardAllTags,
@@ -69,8 +70,16 @@ def _downloadWithRetry(url: str, dest: Path) -> None:
 
 
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
-    url = f"{releaseBaseUrl(category, stockCode=stockCode)}/{stockCode}.parquet"
-    _downloadWithRetry(url, dest)
+    """HuggingFace 우선 → GitHub Releases fallback으로 다운로드."""
+    hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
+    try:
+        _downloadWithRetry(hfUrl, dest)
+        return
+    except (URLError, socket.timeout, OSError):
+        if dest.exists():
+            dest.unlink()
+    ghUrl = f"{releaseBaseUrl(category, stockCode=stockCode)}/{stockCode}.parquet"
+    _downloadWithRetry(ghUrl, dest)
 
 
 def loadData(
@@ -556,6 +565,8 @@ def _incrementalUpdateEdgarDocs(
         _resolveTickerMeta,
     )
 
+    from dartlab.core.guidance import emit
+
     currentDf = pl.read_parquet(path)
     existingAccessions = (
         set(currentDf["accession_no"].drop_nulls().to_list()) if "accession_no" in currentDf.columns else set()
@@ -564,16 +575,30 @@ def _incrementalUpdateEdgarDocs(
     filings = _findFilings(_getSubmissions(meta["cik"]), sinceYear)
     newFilings = [filing for filing in filings if filing["accessionNumber"] not in existingAccessions]
     if not newFilings:
+        emit("edgar:no_new", ticker=stockCode.upper())
         return
+
+    emit("edgar:incremental_start", ticker=stockCode.upper(), newCount=len(newFilings))
+
+    from alive_progress import alive_bar
 
     rows: list[dict] = []
     skipped: list[str] = []
-    _collectFilingRows(rows, newFilings, meta, stockCode.upper(), None, FILING_TIMEOUT_SECONDS, skipped)
+    with alive_bar(
+        len(newFilings),
+        title=f"EDGAR 증분 | {stockCode.upper()}",
+        bar="smooth",
+        spinner="dots_waves",
+        force_tty=True,
+    ) as bar:
+        _collectFilingRows(rows, newFilings, meta, stockCode.upper(), bar, FILING_TIMEOUT_SECONDS, skipped)
+
     if not rows:
         return
     newDf = pl.DataFrame(rows)
     merged = pl.concat([currentDf, newDf], how="vertical_relaxed")
     merged.write_parquet(path)
+    emit("edgar:incremental_done", ticker=stockCode.upper(), newRows=len(rows))
 
 
 # ── 메모리 최적화: Categorical + 다운캐스트 ──────────────

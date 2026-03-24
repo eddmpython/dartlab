@@ -37,6 +37,98 @@ def _topicBlocksFrame(topic: str, rows: list[dict[str, object]]) -> pl.DataFrame
     return pl.DataFrame(records, strict=False)
 
 
+def _legacyIndexDocsRows(company) -> list[dict[str, object]]:
+    sec = company.docs.sections
+    if sec is None or "topic" not in sec.columns:
+        return []
+
+    from dartlab.engines.company.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
+    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+
+    periodCols = sortPeriods([column for column in sec.columns if str(column).startswith("20")], descending=True)
+    periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
+    existingPeriods = [column for column in periodCols if column in sec.columns]
+
+    topicOrder = sec.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
+
+    nonNullMap: dict[str, int] = {}
+    if existingPeriods:
+        nonNullExprs = [pl.col(column).is_not_null().any().cast(pl.Int8).alias(column) for column in existingPeriods]
+        nonNullDf = sec.group_by("topic", maintain_order=True).agg(nonNullExprs)
+        nonNullTopics = nonNullDf["topic"].to_list()
+        nonNullData = {column: nonNullDf[column].to_list() for column in existingPeriods}
+        for idx, topic in enumerate(nonNullTopics):
+            nonNullMap[topic] = sum(1 for column in existingPeriods if nonNullData[column][idx])
+
+    previewMap: dict[str, str] = {}
+    if existingPeriods:
+        firstExprs = [pl.col(column).drop_nulls().first().alias(column) for column in existingPeriods]
+        previewDf = sec.group_by("topic", maintain_order=True).agg(firstExprs)
+        previewTopics = previewDf["topic"].to_list()
+        previewData = {column: previewDf[column].to_list() for column in existingPeriods}
+        for idx, topic in enumerate(previewTopics):
+            for column in existingPeriods:
+                value = previewData[column][idx]
+                if value is not None:
+                    text = str(value).replace("\n", " ").strip()[:80]
+                    previewMap[topic] = f"{displayPeriod(column, annualAsQ4=True)}: {text}"
+                    break
+
+    chapterMap: dict[str, str | None] = {}
+    if "chapter" in sec.columns:
+        chapterDf = sec.group_by("topic", maintain_order=True).agg(pl.col("chapter").first().alias("chapter"))
+        chapterTopics = chapterDf["topic"].to_list()
+        chapterVals = chapterDf["chapter"].to_list()
+        for idx, topic in enumerate(chapterTopics):
+            chapterMap[topic] = chapterVals[idx]
+
+    rows: list[dict[str, object]] = []
+    for rowIdx, topic in enumerate(topicOrder):
+        chapterVal = chapterMap.get(topic)
+        chapter = chapterVal if isinstance(chapterVal, str) and chapterVal else company._chapterForTopic(topic)
+        chapterNum = _CHAPTER_ORDER.get(chapter, 12)
+        rows.append(
+            {
+                "chapter": _CHAPTER_TITLES.get(chapter, chapter),
+                "topic": topic,
+                "label": company._topicLabel(topic),
+                "kind": "docs",
+                "source": "docs",
+                "periods": periodRange,
+                "shape": f"{nonNullMap.get(topic, 0)}기간",
+                "preview": previewMap.get(topic, "-"),
+                "_sortKey": (chapterNum, 100 + rowIdx),
+            }
+        )
+    return rows
+
+
+def _legacyIndexFrame(company) -> pl.DataFrame:
+    rows: list[dict[str, object]] = []
+    if not company._hasDocs:
+        rows.append(
+            {
+                "chapter": "안내",
+                "topic": "docsStatus",
+                "label": "사업보고서",
+                "kind": "notice",
+                "source": "docs",
+                "periods": "-",
+                "shape": "missing",
+                "preview": "현재 사업보고서 부재",
+                "_sortKey": (0, 0),
+            }
+        )
+
+    rows.extend(company._indexFinanceRows())
+    rows.extend(_legacyIndexDocsRows(company))
+    rows.extend(company._indexReportRows(existingTopics={str(row["topic"]) for row in rows if row.get("topic")}))
+    rows.sort(key=lambda row: row.get("_sortKey", (99, 999)))
+    for row in rows:
+        row.pop("_sortKey", None)
+    return pl.DataFrame(rows, strict=False)
+
+
 class TestProfileChangeLedgerHelpers:
     def test_change_point_collapses_repeated_periods(self):
         from dartlab.engines.company.dart.company import _buildTopicChangeLedger
@@ -502,6 +594,38 @@ class TestCompany:
             if topic in {"BS", "IS", "CF", "CIS", "SCE"}:
                 expected = baselineCompany._cleanFinanceDataFrame(expected, topic)
             assert result.equals(expected, null_equal=True)
+
+    def test_index_docs_fast_path_matches_legacy_sections_without_heavy_caches(self):
+        from dartlab.engines.company.dart.company import Company as DartCompany
+
+        fastCompany = DartCompany(SAMSUNG)
+        result = fastCompany._indexDocsRows()
+
+        cacheKeys = set(fastCompany._cache._store.keys())
+        assert "sections" not in cacheKeys
+        assert "_sections" not in cacheKeys
+        assert "_profileFacts" not in cacheKeys
+        assert "retrievalBlocks" not in cacheKeys
+
+        baselineCompany = DartCompany(SAMSUNG)
+        expected = _legacyIndexDocsRows(baselineCompany)
+        assert result == expected
+
+    def test_index_fast_path_matches_legacy_index_without_sections(self):
+        from dartlab.engines.company.dart.company import Company as DartCompany
+
+        fastCompany = DartCompany(SAMSUNG)
+        result = fastCompany.index
+
+        cacheKeys = set(fastCompany._cache._store.keys())
+        assert "sections" not in cacheKeys
+        assert "_sections" not in cacheKeys
+        assert "_profileFacts" not in cacheKeys
+        assert "retrievalBlocks" not in cacheKeys
+
+        baselineCompany = DartCompany(SAMSUNG)
+        expected = _legacyIndexFrame(baselineCompany)
+        assert result.equals(expected, null_equal=True)
 
     def test_open_and_topics_surface_company_payloads(self):
         c = self.c

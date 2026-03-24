@@ -230,9 +230,10 @@ def _fetchSeries(
         title=f"{title} | {corpName}",
         bar="smooth",
         spinner="dots_waves",
+        force_tty=True,
     ) as bar:
         for bsnsYear, reprtCode in periods:
-            bar.text = _periodLabel(bsnsYear, reprtCode)
+            bar.title = f"{title} | {corpName} | {_periodLabel(bsnsYear, reprtCode)}"
 
             params: dict[str, str] = {
                 "corp_code": corpCode,
@@ -953,11 +954,24 @@ class DartCompany:
         >>> s.saveFinance(2020)         # 2020~현재 전분기
         >>> s.saveFinance(2023, q=4)    # 2023 사업보고서만
         """
-        df = self.finance(start, end=end, q=q, full=full)
         stockCode = self._resolveStockCode()
         corpName = self._dart._resolveCorpName(self._corp)
-        enriched = enrichFinance(df, stockCode, corpName)
         path = _dataPath("finance", stockCode)
+
+        # CFS + OFS 양쪽 수집 (릴리즈 호환)
+        frames: list[pl.DataFrame] = []
+        for consolidated in (True, False):
+            df = self.finance(start, end=end, q=q, full=full, consolidated=consolidated)
+            if df.height > 0:
+                fsDiv = "CFS" if consolidated else "OFS"
+                if "fs_div" not in df.columns:
+                    df = df.with_columns(pl.lit(fsDiv).alias("fs_div"))
+                frames.append(df)
+
+        if not frames:
+            return path
+        combined = pl.concat(frames, how="diagonal_relaxed")
+        enriched = enrichFinance(combined, stockCode, corpName)
         return _saveFile(enriched, path)
 
     def _resolveStockCode(self) -> str:
@@ -1014,9 +1028,10 @@ class DartCompany:
             title=f"보고서 저장 | {corpName}",
             bar="smooth",
             spinner="dots_waves",
+            force_tty=True,
         ) as bar:
             for cat in targets:
-                bar.text = cat
+                bar.title = f"보고서 저장 | {corpName} | {cat}"
                 try:
                     df = self.report(cat, start, end=end, q=q)
                     if df.height > 0:

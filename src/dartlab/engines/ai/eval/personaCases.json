@@ -10,16 +10,38 @@
       "stockCode": null,
       "question": "dartlab으로 지금 바로 어떤 질문들을 할 수 있는지 사용자가 이해하기 쉽게 설명해줘",
       "userIntent": "capability_overview",
-      "expectedAnswerShape": ["기능요약", "예시질문", "사용자언어"],
-      "expectedEvidenceKinds": ["capability"],
-      "expectedUserFacingTerms": ["질문", "공시", "재무"],
-      "forbiddenUiTerms": ["company.show", "get_data", "show_topic()", "module_"],
+      "expectedAnswerShape": [
+        "기능요약",
+        "예시질문",
+        "사용자언어"
+      ],
+      "expectedEvidenceKinds": [
+        "capability"
+      ],
+      "expectedUserFacingTerms": [
+        "질문",
+        "공시",
+        "재무"
+      ],
+      "forbiddenUiTerms": [
+        "company.show",
+        "get_data",
+        "show_topic()",
+        "module_"
+      ],
       "expectedRoute": null,
       "expectedModules": [],
       "allowedClarification": false,
       "mustNotSay": [],
-      "mustInclude": ["공시", "재무", "질문"],
-      "expectedFollowups": ["예를 들어", "추가로"],
+      "mustInclude": [
+        "공시",
+        "재무",
+        "질문"
+      ],
+      "expectedFollowups": [
+        "예를 들어",
+        "추가로"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -30,16 +52,45 @@
       "stockCode": "005930",
       "question": "삼성전자 데이터가 지금 어디까지 준비돼 있는지 공시, 재무, 정형 데이터 기준으로 나눠서 설명해줘",
       "userIntent": "data_readiness",
-      "expectedAnswerShape": ["준비상태", "근거", "누락영역"],
-      "expectedEvidenceKinds": ["data_ready", "docs", "finance", "report"],
-      "expectedUserFacingTerms": ["공시", "재무", "정형 데이터"],
-      "forbiddenUiTerms": ["company.show", "module_"],
-      "expectedRoute": "hybrid",
-      "expectedModules": ["BS", "IS", "CF"],
+      "expectedAnswerShape": [
+        "준비상태",
+        "근거",
+        "누락영역"
+      ],
+      "expectedEvidenceKinds": [
+        "data_ready",
+        "docs",
+        "finance",
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "공시",
+        "재무",
+        "정형 데이터"
+      ],
+      "forbiddenUiTerms": [
+        "company.show",
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "BS",
+        "IS",
+        "CF"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["공시", "재무", "정형"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "공시",
+        "재무",
+        "정형"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -50,16 +101,36 @@
       "stockCode": null,
       "question": "AI 설정 상태와 외부 채널 연결 상태를 운영자 관점에서 같이 점검해줘",
       "userIntent": "ops_status",
-      "expectedAnswerShape": ["상태점검", "원인", "다음조치"],
-      "expectedEvidenceKinds": ["provider_status", "channel_status"],
-      "expectedUserFacingTerms": ["설정", "연결", "운영"],
-      "forbiddenUiTerms": ["show_topic()", "module_"],
+      "expectedAnswerShape": [
+        "상태점검",
+        "원인",
+        "다음조치"
+      ],
+      "expectedEvidenceKinds": [
+        "provider_status",
+        "channel_status"
+      ],
+      "expectedUserFacingTerms": [
+        "설정",
+        "연결",
+        "운영"
+      ],
+      "forbiddenUiTerms": [
+        "show_topic()",
+        "module_"
+      ],
       "expectedRoute": null,
       "expectedModules": [],
       "allowedClarification": false,
       "mustNotSay": [],
-      "mustInclude": ["설정", "연결"],
-      "expectedFollowups": ["다음", "점검"],
+      "mustInclude": [
+        "설정",
+        "연결"
+      ],
+      "expectedFollowups": [
+        "다음",
+        "점검"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -70,16 +141,35 @@
       "stockCode": null,
       "question": "OpenDART 키가 왜 필요하고 없으면 어떤 기능이 막히는지 설치자 입장에서 설명해줘",
       "userIntent": "setup_guidance",
-      "expectedAnswerShape": ["필요성", "영향범위", "설정가이드"],
-      "expectedEvidenceKinds": ["open_dart_status"],
-      "expectedUserFacingTerms": ["OpenDART", "설정", "공시"],
-      "forbiddenUiTerms": ["get_dart_filing_text", "search_dart_filings"],
+      "expectedAnswerShape": [
+        "필요성",
+        "영향범위",
+        "설정가이드"
+      ],
+      "expectedEvidenceKinds": [
+        "open_dart_status"
+      ],
+      "expectedUserFacingTerms": [
+        "OpenDART",
+        "설정",
+        "공시"
+      ],
+      "forbiddenUiTerms": [
+        "get_dart_filing_text",
+        "search_dart_filings"
+      ],
       "expectedRoute": null,
       "expectedModules": [],
       "allowedClarification": false,
       "mustNotSay": [],
-      "mustInclude": ["OpenDART", "설정"],
-      "expectedFollowups": ["설정", "다음"],
+      "mustInclude": [
+        "OpenDART",
+        "설정"
+      ],
+      "expectedFollowups": [
+        "설정",
+        "다음"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -90,16 +180,42 @@
       "stockCode": "005930",
       "question": "최근 공시 기준으로 삼성전자 사업 구조가 바뀐 부분이 있나",
       "userIntent": "recent_disclosure_change",
-      "expectedAnswerShape": ["변화요약", "근거", "시점"],
-      "expectedEvidenceKinds": ["sections", "disclosure"],
-      "expectedUserFacingTerms": ["최근 공시", "사업 구조", "근거"],
-      "forbiddenUiTerms": ["businessOverview", "disclosureChanges", "section_"],
+      "expectedAnswerShape": [
+        "변화요약",
+        "근거",
+        "시점"
+      ],
+      "expectedEvidenceKinds": [
+        "sections",
+        "disclosure"
+      ],
+      "expectedUserFacingTerms": [
+        "최근 공시",
+        "사업 구조",
+        "근거"
+      ],
+      "forbiddenUiTerms": [
+        "businessOverview",
+        "disclosureChanges",
+        "section_"
+      ],
       "expectedRoute": "sections",
-      "expectedModules": ["businessOverview", "disclosureChanges"],
+      "expectedModules": [
+        "businessOverview",
+        "disclosureChanges"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["최근 공시", "근거"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "최근 공시",
+        "근거"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -110,16 +226,41 @@
       "stockCode": "005930",
       "question": "삼성전자 성격별 비용 분류에서 최근 비용 부담이 어디에 몰려 있는지 요약해줘",
       "userIntent": "cost_nature_analysis",
-      "expectedAnswerShape": ["핵심결론", "상위비용", "변화"],
-      "expectedEvidenceKinds": ["notes", "cost_by_nature"],
-      "expectedUserFacingTerms": ["성격별 비용", "비용 부담", "최근"],
-      "forbiddenUiTerms": ["costByNature", "module_"],
+      "expectedAnswerShape": [
+        "핵심결론",
+        "상위비용",
+        "변화"
+      ],
+      "expectedEvidenceKinds": [
+        "notes",
+        "cost_by_nature"
+      ],
+      "expectedUserFacingTerms": [
+        "성격별 비용",
+        "비용 부담",
+        "최근"
+      ],
+      "forbiddenUiTerms": [
+        "costByNature",
+        "module_"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["costByNature"],
+      "expectedModules": [
+        "costByNature"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다", "미제공"],
-      "mustInclude": ["성격별 비용", "비용"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다",
+        "미제공"
+      ],
+      "mustInclude": [
+        "성격별 비용",
+        "비용"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -130,16 +271,40 @@
       "stockCode": "005930",
       "question": "삼성전자 감사 관련해서 최근 점검해야 할 red flag가 있나",
       "userIntent": "audit_red_flags",
-      "expectedAnswerShape": ["결론", "감사근거", "주의포인트"],
-      "expectedEvidenceKinds": ["report", "audit"],
-      "expectedUserFacingTerms": ["감사", "red flag", "주의"],
-      "forbiddenUiTerms": ["audit", "report_"],
+      "expectedAnswerShape": [
+        "결론",
+        "감사근거",
+        "주의포인트"
+      ],
+      "expectedEvidenceKinds": [
+        "report",
+        "audit"
+      ],
+      "expectedUserFacingTerms": [
+        "감사",
+        "red flag",
+        "주의"
+      ],
+      "forbiddenUiTerms": [
+        "audit",
+        "report_"
+      ],
       "expectedRoute": "report",
-      "expectedModules": ["audit"],
+      "expectedModules": [
+        "audit"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["감사", "주의"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "감사",
+        "주의"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -150,16 +315,42 @@
       "stockCode": "035420",
       "question": "네이버는 어떤 식으로 돈 버는 구조인지 사업모델 관점에서 설명해줘",
       "userIntent": "business_model",
-      "expectedAnswerShape": ["수익구조", "핵심사업", "경쟁력"],
-      "expectedEvidenceKinds": ["sections", "business"],
-      "expectedUserFacingTerms": ["돈 버는 구조", "사업모델", "핵심 사업"],
-      "forbiddenUiTerms": ["productService", "businessOverview", "section_"],
+      "expectedAnswerShape": [
+        "수익구조",
+        "핵심사업",
+        "경쟁력"
+      ],
+      "expectedEvidenceKinds": [
+        "sections",
+        "business"
+      ],
+      "expectedUserFacingTerms": [
+        "돈 버는 구조",
+        "사업모델",
+        "핵심 사업"
+      ],
+      "forbiddenUiTerms": [
+        "productService",
+        "businessOverview",
+        "section_"
+      ],
       "expectedRoute": "sections",
-      "expectedModules": ["businessOverview", "productService"],
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["사업", "구조"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "사업",
+        "구조"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -170,16 +361,45 @@
       "stockCode": "005930",
       "question": "삼성전자 자본배분 스타일을 보면 성장투자형인지 주주환원형인지 판단해줘",
       "userIntent": "capital_allocation",
-      "expectedAnswerShape": ["판단", "근거", "후속포인트"],
-      "expectedEvidenceKinds": ["finance", "report", "dividend"],
-      "expectedUserFacingTerms": ["자본배분", "성장투자", "주주환원"],
-      "forbiddenUiTerms": ["shareCapital", "dividend", "IS", "CF"],
+      "expectedAnswerShape": [
+        "판단",
+        "근거",
+        "후속포인트"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "report",
+        "dividend"
+      ],
+      "expectedUserFacingTerms": [
+        "자본배분",
+        "성장투자",
+        "주주환원"
+      ],
+      "forbiddenUiTerms": [
+        "shareCapital",
+        "dividend",
+        "IS",
+        "CF"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["dividend", "CF", "shareCapital"],
+      "expectedModules": [
+        "dividend",
+        "CF",
+        "shareCapital"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["자본배분", "판단"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "자본배분",
+        "판단"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -190,16 +410,46 @@
       "stockCode": "005930",
       "question": "삼성전자 배당이 실적과 현금흐름으로 지속 가능한지 판단해줘",
       "userIntent": "dividend_sustainability",
-      "expectedAnswerShape": ["결론", "배당", "현금흐름"],
-      "expectedEvidenceKinds": ["report", "finance"],
-      "expectedUserFacingTerms": ["배당", "실적", "현금흐름"],
-      "forbiddenUiTerms": ["dividend", "IS", "CF", "ratios"],
+      "expectedAnswerShape": [
+        "결론",
+        "배당",
+        "현금흐름"
+      ],
+      "expectedEvidenceKinds": [
+        "report",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "배당",
+        "실적",
+        "현금흐름"
+      ],
+      "forbiddenUiTerms": [
+        "dividend",
+        "IS",
+        "CF",
+        "ratios"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["dividend", "IS", "CF", "ratios"],
+      "expectedModules": [
+        "dividend",
+        "IS",
+        "CF",
+        "ratios"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["배당", "현금흐름", "실적"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "배당",
+        "현금흐름",
+        "실적"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -210,16 +460,41 @@
       "stockCode": "000660",
       "question": "SK하이닉스에서 지금 downside를 만드는 핵심 리스크 3가지만 말해줘",
       "userIntent": "downside_risk",
-      "expectedAnswerShape": ["리스크목록", "영향", "왜중요한지"],
-      "expectedEvidenceKinds": ["sections", "risk"],
-      "expectedUserFacingTerms": ["리스크", "downside", "핵심"],
-      "forbiddenUiTerms": ["riskDerivative", "section_"],
+      "expectedAnswerShape": [
+        "리스크목록",
+        "영향",
+        "왜중요한지"
+      ],
+      "expectedEvidenceKinds": [
+        "sections",
+        "risk"
+      ],
+      "expectedUserFacingTerms": [
+        "리스크",
+        "downside",
+        "핵심"
+      ],
+      "forbiddenUiTerms": [
+        "riskDerivative",
+        "section_"
+      ],
       "expectedRoute": "sections",
-      "expectedModules": ["riskDerivative", "disclosureChanges"],
+      "expectedModules": [
+        "riskDerivative",
+        "disclosureChanges"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["리스크", "핵심"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "리스크",
+        "핵심"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -230,16 +505,43 @@
       "stockCode": "006400",
       "question": "삼성SDI의 부실 징후를 지금 시점에서 점검해줘",
       "userIntent": "distress_check",
-      "expectedAnswerShape": ["건전성결론", "징후", "주의점"],
-      "expectedEvidenceKinds": ["finance", "distress"],
-      "expectedUserFacingTerms": ["부실 징후", "건전성", "주의"],
-      "forbiddenUiTerms": ["ratios", "fsSummary"],
+      "expectedAnswerShape": [
+        "건전성결론",
+        "징후",
+        "주의점"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "distress"
+      ],
+      "expectedUserFacingTerms": [
+        "부실 징후",
+        "건전성",
+        "주의"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "fsSummary"
+      ],
       "expectedRoute": "finance",
-      "expectedModules": ["BS", "IS", "CF", "ratios"],
+      "expectedModules": [
+        "BS",
+        "IS",
+        "CF",
+        "ratios"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["건전성", "주의"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "건전성",
+        "주의"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -250,16 +552,45 @@
       "stockCode": "005930",
       "question": "삼성전자 영업이익률 변동을 비용 구조와 사업 변화까지 묶어서 설명해줘",
       "userIntent": "margin_driver",
-      "expectedAnswerShape": ["결론", "비용구조", "사업변화"],
-      "expectedEvidenceKinds": ["finance", "notes", "sections"],
-      "expectedUserFacingTerms": ["영업이익률", "비용 구조", "사업 변화"],
-      "forbiddenUiTerms": ["costByNature", "businessOverview", "IS"],
+      "expectedAnswerShape": [
+        "결론",
+        "비용구조",
+        "사업변화"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "notes",
+        "sections"
+      ],
+      "expectedUserFacingTerms": [
+        "영업이익률",
+        "비용 구조",
+        "사업 변화"
+      ],
+      "forbiddenUiTerms": [
+        "costByNature",
+        "businessOverview",
+        "IS"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["IS", "costByNature", "businessOverview"],
+      "expectedModules": [
+        "IS",
+        "costByNature",
+        "businessOverview"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["영업이익률", "비용", "사업"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "영업이익률",
+        "비용",
+        "사업"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -270,16 +601,41 @@
       "stockCode": "051910",
       "question": "LG화학 사업부문별로 지금 어디가 핵심인지 정리해줘",
       "userIntent": "segment_mix",
-      "expectedAnswerShape": ["부문정리", "핵심축", "해석"],
-      "expectedEvidenceKinds": ["notes", "segments"],
-      "expectedUserFacingTerms": ["사업부문", "핵심", "정리"],
-      "forbiddenUiTerms": ["segments", "productService"],
-      "expectedRoute": "hybrid",
-      "expectedModules": ["segments", "productService"],
+      "expectedAnswerShape": [
+        "부문정리",
+        "핵심축",
+        "해석"
+      ],
+      "expectedEvidenceKinds": [
+        "notes",
+        "segments"
+      ],
+      "expectedUserFacingTerms": [
+        "사업부문",
+        "핵심",
+        "정리"
+      ],
+      "forbiddenUiTerms": [
+        "segments",
+        "productService"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "segments",
+        "productService"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["사업부문", "핵심"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "사업부문",
+        "핵심"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -290,16 +646,42 @@
       "stockCode": "005930",
       "question": "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘",
       "userIntent": "evidence_grounding",
-      "expectedAnswerShape": ["근거", "시점", "출처"],
-      "expectedEvidenceKinds": ["sections", "evidence"],
-      "expectedUserFacingTerms": ["근거", "출처", "최근 공시"],
-      "forbiddenUiTerms": ["businessOverview", "productService", "show_topic()"],
+      "expectedAnswerShape": [
+        "근거",
+        "시점",
+        "출처"
+      ],
+      "expectedEvidenceKinds": [
+        "sections",
+        "evidence"
+      ],
+      "expectedUserFacingTerms": [
+        "근거",
+        "출처",
+        "최근 공시"
+      ],
+      "forbiddenUiTerms": [
+        "businessOverview",
+        "productService",
+        "show_topic()"
+      ],
       "expectedRoute": "sections",
-      "expectedModules": ["businessOverview", "productService"],
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["근거", "출처"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "근거",
+        "출처"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "high"
     },
@@ -310,16 +692,40 @@
       "stockCode": "005930",
       "question": "지금 투자자가 삼성전자에서 다음으로 확인해야 할 질문 3개를 던져줘",
       "userIntent": "next_best_questions",
-      "expectedAnswerShape": ["질문목록", "이유", "우선순위"],
-      "expectedEvidenceKinds": ["finance", "sections"],
-      "expectedUserFacingTerms": ["다음", "확인", "질문"],
-      "forbiddenUiTerms": ["module_", "show_topic()"],
-      "expectedRoute": "finance",
-      "expectedModules": ["IS", "CF", "ratios"],
+      "expectedAnswerShape": [
+        "질문목록",
+        "이유",
+        "우선순위"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "sections"
+      ],
+      "expectedUserFacingTerms": [
+        "다음",
+        "확인",
+        "질문"
+      ],
+      "forbiddenUiTerms": [
+        "module_",
+        "show_topic()"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "IS",
+        "CF",
+        "ratios"
+      ],
       "allowedClarification": false,
       "mustNotSay": [],
-      "mustInclude": ["질문", "확인"],
-      "expectedFollowups": ["왜", "확인"],
+      "mustInclude": [
+        "질문",
+        "확인"
+      ],
+      "expectedFollowups": [
+        "왜",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -330,16 +736,43 @@
       "stockCode": "005930",
       "question": "삼성전자 답변 근거가 재무인지 공시인지 구분해서 설명해줘",
       "userIntent": "source_trace",
-      "expectedAnswerShape": ["근거구분", "재무", "공시"],
-      "expectedEvidenceKinds": ["trace", "finance", "docs"],
-      "expectedUserFacingTerms": ["근거", "재무", "공시"],
-      "forbiddenUiTerms": ["trace(", "company.show"],
-      "expectedRoute": "hybrid",
-      "expectedModules": ["IS", "businessOverview"],
+      "expectedAnswerShape": [
+        "근거구분",
+        "재무",
+        "공시"
+      ],
+      "expectedEvidenceKinds": [
+        "trace",
+        "finance",
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "근거",
+        "재무",
+        "공시"
+      ],
+      "forbiddenUiTerms": [
+        "trace(",
+        "company.show"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "IS",
+        "businessOverview"
+      ],
       "allowedClarification": false,
-      "mustNotSay": ["데이터가 없습니다"],
-      "mustInclude": ["근거", "재무", "공시"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustNotSay": [
+        "데이터가 없습니다"
+      ],
+      "mustInclude": [
+        "근거",
+        "재무",
+        "공시"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -350,16 +783,37 @@
       "stockCode": "005930",
       "question": "질문에 따라 왜 시간이 더 걸릴 수 있는지와 어떤 경우 데이터 로딩이 커지는지 설명해줘",
       "userIntent": "performance_explanation",
-      "expectedAnswerShape": ["원인", "조건", "주의점"],
-      "expectedEvidenceKinds": ["runtime_policy"],
-      "expectedUserFacingTerms": ["시간", "로딩", "질문에 따라"],
-      "forbiddenUiTerms": ["build_context_tiered", "_resolve_context_route"],
+      "expectedAnswerShape": [
+        "원인",
+        "조건",
+        "주의점"
+      ],
+      "expectedEvidenceKinds": [
+        "runtime_policy"
+      ],
+      "expectedUserFacingTerms": [
+        "시간",
+        "로딩",
+        "질문에 따라"
+      ],
+      "forbiddenUiTerms": [
+        "build_context_tiered",
+        "_resolve_context_route"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["IS"],
+      "expectedModules": [
+        "IS"
+      ],
       "allowedClarification": false,
       "mustNotSay": [],
-      "mustInclude": ["시간", "로딩"],
-      "expectedFollowups": ["추가", "확인"],
+      "mustInclude": [
+        "시간",
+        "로딩"
+      ],
+      "expectedFollowups": [
+        "추가",
+        "확인"
+      ],
       "groundTruthFacts": [],
       "severity": "medium"
     },
@@ -370,18 +824,316 @@
       "stockCode": "005930",
       "question": "삼성전자 비용 구조를 설명해줘",
       "userIntent": "ambiguous_cost_structure",
-      "expectedAnswerShape": ["clarification_or_best_guess"],
-      "expectedEvidenceKinds": ["finance", "notes"],
-      "expectedUserFacingTerms": ["성격별 비용", "기능별 비용"],
-      "forbiddenUiTerms": ["costByNature", "IS", "module_"],
+      "expectedAnswerShape": [
+        "clarification_or_best_guess"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "notes"
+      ],
+      "expectedUserFacingTerms": [
+        "성격별 비용",
+        "기능별 비용"
+      ],
+      "forbiddenUiTerms": [
+        "costByNature",
+        "IS",
+        "module_"
+      ],
       "expectedRoute": "hybrid",
-      "expectedModules": ["costByNature"],
+      "expectedModules": [
+        "costByNature"
+      ],
       "allowedClarification": true,
       "mustNotSay": [],
-      "mustInclude": ["성격별 비용", "기능별 비용"],
-      "expectedFollowups": ["보실 건가요"],
+      "mustInclude": [
+        "성격별 비용",
+        "기능별 비용"
+      ],
+      "expectedFollowups": [
+        "보실 건가요"
+      ],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.quarterly.operatingProfit",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "삼성전자 분기별 영업이익 추이 알려줘",
+      "userIntent": "quarterly_operating_profit",
+      "expectedAnswerShape": [
+        "분기별테이블",
+        "QoQ",
+        "YoY"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "영업이익",
+        "분기",
+        "전분기"
+      ],
+      "forbiddenUiTerms": [
+        "IS_quarterly",
+        "timeseries"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "IS",
+        "IS_quarterly"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없",
+        "분기별 데이터를 제공하지",
+        "확인할 수 없"
+      ],
+      "mustInclude": [
+        "영업이익",
+        "분기"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [
+        {
+          "metric": "sales",
+          "label": "매출액",
+          "value": 333605938000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "operating_profit",
+          "label": "영업이익",
+          "value": 43601051000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "net_profit",
+          "label": "당기순이익",
+          "value": 45206805000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "cost_of_sales",
+          "label": "매출원가",
+          "value": 202235513000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "sales_quarterly",
+          "label": "매출액(분기)",
+          "value": 93837371000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "operating_profit_quarterly",
+          "label": "영업이익(분기)",
+          "value": 20073660000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "net_profit_quarterly",
+          "label": "당기순이익(분기)",
+          "value": 19641745000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "cost_of_sales_quarterly",
+          "label": "매출원가(분기)",
+          "value": 49586396000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "operating_cashflow_quarterly",
+          "label": "영업활동CF(분기)",
+          "value": 28799652000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "investing_cashflow_quarterly",
+          "label": "투자활동CF(분기)",
+          "value": -30991028000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "financing_cashflow_quarterly",
+          "label": "재무활동CF(분기)",
+          "value": -1957717000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        }
+      ],
+      "severity": "critical"
+    },
+    {
+      "id": "analyst.quarterly.revenue",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "최근 4분기 매출 변화 분석해줘",
+      "userIntent": "quarterly_revenue_change",
+      "expectedAnswerShape": [
+        "분기별테이블",
+        "QoQ",
+        "추세"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "매출",
+        "분기",
+        "변화"
+      ],
+      "forbiddenUiTerms": [
+        "IS_quarterly"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "IS",
+        "IS_quarterly"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "매출"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [
+        {
+          "metric": "sales",
+          "label": "매출액",
+          "value": 333605938000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "operating_profit",
+          "label": "영업이익",
+          "value": 43601051000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "net_profit",
+          "label": "당기순이익",
+          "value": 45206805000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "cost_of_sales",
+          "label": "매출원가",
+          "value": 202235513000000.0,
+          "statement": "IS",
+          "period": "2025"
+        },
+        {
+          "metric": "sales_quarterly",
+          "label": "매출액(분기)",
+          "value": 93837371000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "operating_profit_quarterly",
+          "label": "영업이익(분기)",
+          "value": 20073660000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "net_profit_quarterly",
+          "label": "당기순이익(분기)",
+          "value": 19641745000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "cost_of_sales_quarterly",
+          "label": "매출원가(분기)",
+          "value": 49586396000000.0,
+          "statement": "IS_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "operating_cashflow_quarterly",
+          "label": "영업활동CF(분기)",
+          "value": 28799652000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "investing_cashflow_quarterly",
+          "label": "투자활동CF(분기)",
+          "value": -30991028000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        },
+        {
+          "metric": "financing_cashflow_quarterly",
+          "label": "재무활동CF(분기)",
+          "value": -1957717000000.0,
+          "statement": "CF_quarterly",
+          "period": "2025-Q4"
+        }
+      ],
+      "severity": "critical"
+    },
+    {
+      "id": "investor.profitMargin.context",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "005930",
+      "question": "삼성전자 영업이익률 분석해줘",
+      "userIntent": "profit_margin_analysis",
+      "expectedAnswerShape": [
+        "이익률수치",
+        "추세",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "sections"
+      ],
+      "expectedUserFacingTerms": [
+        "영업이익률",
+        "수익성"
+      ],
+      "forbiddenUiTerms": [
+        "IS",
+        "ratios"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "영업이익률"
+      ],
+      "expectedFollowups": [],
       "groundTruthFacts": [],
       "severity": "high"
     }
-  ]
+  ],
+  "truthAsOf": "2026-03-24"
 }

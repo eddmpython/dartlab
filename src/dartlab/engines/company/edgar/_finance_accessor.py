@@ -18,6 +18,10 @@ class _FinanceAccessor:
 
     @property
     def timeseries(self):
+        if "_ts" not in self._company._cache:
+            from dartlab.engines.company.edgar.finance.pivot import buildTimeseries
+
+            self._company._cache["_ts"] = buildTimeseries(self._company.cik)
         return self._company._cache.get("_ts")
 
     @property

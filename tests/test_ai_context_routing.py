@@ -8,8 +8,10 @@ import pytest
 from dartlab.core.memory import BoundedCache
 from dartlab.engines.ai.context import build_compact_context, build_context_by_module
 from dartlab.engines.ai.context.builder import _resolve_context_route
+from dartlab.engines.ai.context.finance_context import _detect_year_hint
 from dartlab.engines.ai.runtime.core import (
     _resolve_context_tier,
+    _resolve_follow_up_include,
     _resolve_snapshot_policy,
     _should_run_validation,
     _should_use_light_mode,
@@ -686,6 +688,124 @@ def test_recent_disclosure_business_change_adds_business_overview_context():
     assert "_clarify" not in modules
 
 
+def test_sections_context_uses_context_slices_as_primary_evidence():
+    class SliceSectionsAccessor:
+        def outline(self, topic: str | None = None):
+            if topic is None:
+                return pl.DataFrame(
+                    {
+                        "order": [10, 20],
+                        "chapter": ["II", "III"],
+                        "topic": ["businessOverview", "disclosureChanges"],
+                        "source": ["docs", "docs"],
+                        "blocks": [1, 1],
+                        "periods": [2, 2],
+                        "latestPeriod": ["2024", "2024"],
+                    }
+                )
+            return pl.DataFrame(
+                {
+                    "period": ["2024", "2023"],
+                    "sectionOrder": [10, 10],
+                    "block": [0, 0],
+                    "type": ["text", "text"],
+                    "title": ["사업 개요", "사업 개요"],
+                    "preview": ["preview fallback", "older preview"],
+                }
+            )
+
+        def topics(self):
+            return ["businessOverview", "disclosureChanges"]
+
+    class SliceEvidenceCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = True
+        sector = SimpleNamespace(sector=None)
+        docs = SimpleNamespace(
+            sections=SliceSectionsAccessor(),
+            contextSlices=pl.DataFrame(
+                {
+                    "topic": ["businessOverview", "disclosureChanges"],
+                    "sourceTopic": ["사업의 개요", "공시 변화"],
+                    "semanticTopic": [None, None],
+                    "detailTopic": [None, None],
+                    "period": ["2024", "2024"],
+                    "periodOrder": [2024, 2024],
+                    "blockType": ["text", "text"],
+                    "sliceIdx": [0, 0],
+                    "sliceText": ["낸드 사업부 재편과 AI 메모리 확대를 명시", "HBM 중심 투자 확대를 공시에서 언급"],
+                    "blockPriority": [5, 5],
+                    "isTable": [False, False],
+                }
+            ),
+        )
+
+        def _topicLabel(self, topic: str) -> str:
+            return {
+                "businessOverview": "사업의 개요",
+                "disclosureChanges": "공시 변화",
+            }.get(topic, topic)
+
+    modules, included, _ = build_context_by_module(
+        SliceEvidenceCompany(),
+        "최근 공시 기준으로 사업 구조 변화 근거를 보여줘",
+        compact=True,
+    )
+
+    assert included[:2] == ["disclosureChanges", "businessOverview"]
+    assert "HBM 중심 투자 확대" in modules["section_disclosureChanges"]
+    assert "낸드 사업부 재편" in modules["section_businessOverview"]
+    assert "시점: 2024" in modules["section_businessOverview"]
+
+
+def test_direct_module_context_limits_recent_periods_for_cost_by_nature():
+    class CostCompany:
+        corpName = "테스트기업"
+        stockCode = "000000"
+        _hasDocs = False
+        sector = SimpleNamespace(sector=None)
+
+        def _get_primary(self, name: str):
+            if name == "costByNature":
+                return pl.DataFrame(
+                    {
+                        "account": ["원재료사용", "종업원급여"],
+                        "2024": [10.0, 5.0],
+                        "2023": [9.0, 4.0],
+                        "2022": [8.0, 3.0],
+                        "2021": [7.0, 2.0],
+                        "2020": [6.0, 1.0],
+                        "2019": [5.0, 0.5],
+                    }
+                )
+            return None
+
+    modules, included, _ = build_context_by_module(
+        CostCompany(),
+        "하이닉스 비용의 성격별분류 현황좀줘",
+        compact=True,
+    )
+
+    assert included == ["costByNature"]
+    assert "2024" in modules["costByNature"]
+    assert "2020" in modules["costByNature"]
+    assert "2019" not in modules["costByNature"]
+    assert "연도 기준을 다시 묻지 마세요" in modules["_response_contract"]
+
+
+def test_follow_up_period_question_inherits_previous_modules():
+    state = SimpleNamespace(dialogue_mode="follow_up", modules=("costByNature",))
+
+    assert _resolve_follow_up_include(None, "최근 5개년", state) == ["costByNature"]
+    assert _resolve_follow_up_include(None, "애플은 어떤 회사야?", state) is None
+
+
+def test_detect_year_hint_prefers_explicit_range_over_recent_keyword():
+    assert _detect_year_hint("최근 5개년") == 5
+    assert _detect_year_hint("최근 10년 추세") == 10
+
+
 def test_resolve_context_tier_defaults_to_focused_for_default_ask():
     assert _resolve_context_tier("oauth-codex", use_tools=False) == "focused"
     assert _resolve_context_tier("openai", use_tools=False) == "focused"
@@ -724,3 +844,5 @@ def test_should_use_light_mode_only_for_pure_conversation_or_meta():
     assert (
         _should_use_light_mode(object(), "최근 공시 기준으로 사업구조 설명 근거를 2개만 짚어줘", None, False) is False
     )
+    follow_up_state = SimpleNamespace(question="최근 5개년", dialogue_mode="follow_up", modules=("costByNature",))
+    assert _should_use_light_mode(object(), "최근 5개년", follow_up_state, False) is False

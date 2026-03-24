@@ -23,6 +23,7 @@ from dartlab.engines.ai.eval.replayRunner import (
     summarizeReplayResults,
 )
 from dartlab.engines.ai.eval.scorer import ScoreCard, auto_score
+from dartlab.engines.ai.eval.truthHarvester import harvestBatch, harvestTruth
 
 _GOLDEN_PATH = Path(__file__).parent / "golden.json"
 
@@ -51,4 +52,6 @@ __all__ = [
     "replayCase",
     "replaySuite",
     "summarizeReplayResults",
+    "harvestTruth",
+    "harvestBatch",
 ]
