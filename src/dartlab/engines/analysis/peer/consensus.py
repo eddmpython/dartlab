@@ -9,8 +9,7 @@ dartlab finance 엔진의 mapper(34,175 매핑)를 통해 매출 커버리지 �
 from __future__ import annotations
 
 import logging
-
-import numpy as np
+import statistics
 
 from dartlab.engines.analysis.peer.types import ConsensusResult, PeerResult
 
@@ -114,7 +113,7 @@ def consensus(
             name=peerResult.name,
         )
 
-    predicted = float(np.median(list(peerGrowths.values())))
+    predicted = statistics.median(list(peerGrowths.values()))
 
     return ConsensusResult(
         stockCode=peerResult.stockCode,
