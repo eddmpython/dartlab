@@ -28,7 +28,6 @@ snakeId는 standardAccounts.json 기준 그대로 사용.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import polars as pl
 
@@ -60,7 +59,7 @@ def _preserveUnmapped(label: str, prefix: str) -> str:
 def _loadAndNormalize(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[pl.DataFrame, list[str]]]:
+) -> tuple[pl.DataFrame, list[str]] | None:
     """finance parquet → 정규화된 DataFrame + periods (내부용)."""
     from dartlab.core.dataLoader import loadData
 
@@ -100,7 +99,7 @@ def _loadAndNormalize(
 def buildTimeseries(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]] | None:
     """finance parquet → 분기별 standalone 시계열.
 
     Args:
@@ -125,7 +124,7 @@ def buildTimeseries(
 def buildAnnual(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]] | None:
     """finance parquet → 연도별 시계열.
 
     IS/CF: 해당 연도 분기별 standalone 합산.
@@ -151,7 +150,7 @@ def buildAnnual(
 def buildCumulative(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]] | None:
     """finance parquet → 분기별 누적 시계열.
 
     IS/CF: 해당 연도 시작부터 누적합 (Q1, Q1+Q2, Q1+Q2+Q3, Q1+Q2+Q3+Q4).
@@ -331,13 +330,13 @@ def _buildPeriods(df: pl.DataFrame) -> list[str]:
 def _pivotToSeries(
     df: pl.DataFrame,
     periods: list[str],
-) -> dict[str, dict[str, list[Optional[float]]]]:
+) -> dict[str, dict[str, list[float | None]]]:
     """DataFrame → {sjDiv: {snakeId: [값...]}} 피벗."""
     mapper = AccountMapper.get()
     periodIdx = {p: i for i, p in enumerate(periods)}
     nPeriods = len(periods)
 
-    result: dict[str, dict[str, list[Optional[float]]]] = {
+    result: dict[str, dict[str, list[float | None]]] = {
         "BS": {},
         "IS": {},
         "CF": {},
@@ -399,9 +398,9 @@ def _pivotToSeries(
 
 
 def _aggregateAnnual(
-    qSeries: dict[str, dict[str, list[Optional[float]]]],
+    qSeries: dict[str, dict[str, list[float | None]]],
     qPeriods: list[str],
-) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]]:
     """분기별 standalone → 연도별 집계."""
     yearSet: dict[str, list[int]] = {}
     for i, p in enumerate(qPeriods):
@@ -412,11 +411,11 @@ def _aggregateAnnual(
     nYears = len(years)
     yearIdx = {y: i for i, y in enumerate(years)}
 
-    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}}
+    result: dict[str, dict[str, list[float | None]]] = {"BS": {}, "IS": {}, "CF": {}}
 
     for sjDiv in qSeries:
         for snakeId, vals in qSeries[sjDiv].items():
-            annual: list[Optional[float]] = [None] * nYears
+            annual: list[float | None] = [None] * nYears
 
             for year, qIndices in yearSet.items():
                 yIdx = yearIdx[year]
@@ -434,9 +433,9 @@ def _aggregateAnnual(
 
 
 def _aggregateCumulative(
-    qSeries: dict[str, dict[str, list[Optional[float]]]],
+    qSeries: dict[str, dict[str, list[float | None]]],
     qPeriods: list[str],
-) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]]:
     """분기별 standalone → 분기별 누적."""
     yearStarts: dict[str, int] = {}
     for i, p in enumerate(qPeriods):
@@ -444,12 +443,12 @@ def _aggregateCumulative(
         if year not in yearStarts:
             yearStarts[year] = i
 
-    result: dict[str, dict[str, list[Optional[float]]]] = {"BS": {}, "IS": {}, "CF": {}}
+    result: dict[str, dict[str, list[float | None]]] = {"BS": {}, "IS": {}, "CF": {}}
     nPeriods = len(qPeriods)
 
     for sjDiv in qSeries:
         for snakeId, vals in qSeries[sjDiv].items():
-            cum: list[Optional[float]] = [None] * nPeriods
+            cum: list[float | None] = [None] * nPeriods
 
             if sjDiv == "BS":
                 cum = list(vals)
@@ -468,7 +467,7 @@ def _aggregateCumulative(
 def buildSceMatrix(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, dict[str, float | None]]], list[str]] | None:
     """SCE 원본 → 연도별 자본변동 매트릭스.
 
     각 연도에서 가장 높은 분기(maxQ)만 사용.
@@ -503,7 +502,7 @@ def buildSceMatrix(
 def _buildSceMatrixFromDf(
     df: pl.DataFrame,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, dict[str, float | None]]], list[str]] | None:
     """DataFrame에서 직접 SCE 매트릭스 피벗 (내부용)."""
     from dartlab.engines.company.dart.finance.sceMapper import normalizeCause, normalizeDetail
 
@@ -537,7 +536,7 @@ def _buildSceMatrixFromDf(
             yearMaxQ[year] = max(yearMaxQ.get(year, 0), qNum)
 
     yearSet: set[str] = set()
-    matrix: dict[str, dict[str, dict[str, Optional[float]]]] = {}
+    matrix: dict[str, dict[str, dict[str, float | None]]] = {}
 
     for row in sce.iter_rows(named=True):
         year = row.get("bsns_year", "")
@@ -580,7 +579,7 @@ def _buildSceMatrixFromDf(
 def buildSceAnnual(
     stockCode: str,
     fsDivPref: str = "CFS",
-) -> Optional[tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]] | None:
     """SCE → 연도별 시계열 (BS/IS/CF와 유사한 출력 형태).
 
     Args:
@@ -600,8 +599,8 @@ def buildSceAnnual(
 
 
 def _sceMatrixToSeries(
-    matrixResult: tuple[dict[str, dict[str, dict[str, Optional[float]]]], list[str]],
-) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+    matrixResult: tuple[dict[str, dict[str, dict[str, float | None]]], list[str]],
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]]:
     """매트릭스 → 연도별 시계열 변환 (내부용)."""
     matrix, years = matrixResult
     nYears = len(years)
@@ -613,10 +612,10 @@ def _sceMatrixToSeries(
             for detail in matrix[year][cause]:
                 allKeys.add((cause, detail))
 
-    series: dict[str, list[Optional[float]]] = {}
+    series: dict[str, list[float | None]] = {}
     for cause, detail in sorted(allKeys):
         key = f"{cause}__{detail}"
-        vals: list[Optional[float]] = [None] * nYears
+        vals: list[float | None] = [None] * nYears
         for year in matrix:
             idx = yearIdx[year]
             val = matrix[year].get(cause, {}).get(detail)

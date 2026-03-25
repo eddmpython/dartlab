@@ -28,6 +28,11 @@ from dartlab.engines.company.dart.openapi.client import DartClient
 from dartlab.engines.company.dart.openapi.corpCode import findCorpCode, loadCorpCodes
 from dartlab.engines.company.dart.openapi.disclosure import listFilings
 
+# ── 정규식 (모듈 레벨 컴파일) ──
+
+_RE_WHITESPACE = re.compile(r"\s+")
+_RE_MULTI_NEWLINE = re.compile(r"\n{3,}")
+
 # ── XML → 텍스트 변환 ──
 
 
@@ -39,7 +44,7 @@ def _tableToMarkdown(table) -> str:
         for cell in tr.find_all(["td", "th", "te"]):
             colspan = int(cell.get("colspan", 1))
             text = cell.get_text(strip=True)
-            text = re.sub(r"\s+", " ", text)
+            text = _RE_WHITESPACE.sub(" ", text)
             text = text.replace("|", "｜")
             cells.append(text)
             cells.extend("" for _ in range(colspan - 1))
@@ -102,7 +107,7 @@ def _xmlToText(xmlStr: str) -> str:
     text = soup.get_text()
     lines = [line.strip() for line in text.splitlines()]
     text = "\n".join(line for line in lines if line)
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = _RE_MULTI_NEWLINE.sub("\n\n", text)
     return text.strip()
 
 
@@ -112,7 +117,7 @@ def _getFullContent(element) -> str:
     titleText = ""
     if titleEl is not None:
         titleText = etree.tostring(titleEl, method="text", encoding="unicode").strip()
-        titleText = re.sub(r"\s+", " ", titleText)
+        titleText = _RE_WHITESPACE.sub(" ", titleText)
 
     xmlStr = etree.tostring(element, encoding="unicode")
     tag = element.tag
@@ -158,7 +163,7 @@ def _parseSections(xmlContent: str) -> list[dict]:
                 titleEl = child.find(".//title")
                 if titleEl is not None:
                     title = etree.tostring(titleEl, method="text", encoding="unicode").strip()
-                    title = re.sub(r"\s+", " ", title)
+                    title = _RE_WHITESPACE.sub(" ", title)
                 else:
                     title = f"({tag})"
                 content = _getFullContent(child)
@@ -169,7 +174,7 @@ def _parseSections(xmlContent: str) -> list[dict]:
                 titleEl = child.find(".//title")
                 if titleEl is not None:
                     title = etree.tostring(titleEl, method="text", encoding="unicode").strip()
-                    title = re.sub(r"\s+", " ", title)
+                    title = _RE_WHITESPACE.sub(" ", title)
                 else:
                     title = f"({tag})"
                 content = _getOwnContent(child)

@@ -846,17 +846,19 @@ def _analyze_inner(
     # ── 13. LLM 호출 ──
     llm = create_provider(config_)
 
-    use_guided = is_compact and company is not None and hasattr(llm, "complete_json")
     tool_capable = (
-        not use_guided
-        and use_tools
+        use_tools
         and getattr(llm, "supports_native_tools", False)
         and hasattr(llm, "complete_with_tools")
     )
+    use_guided = (
+        not tool_capable
+        and is_compact
+        and company is not None
+        and hasattr(llm, "complete_json")
+    )
 
-    if use_guided:
-        yield from _run_guided_json(llm, messages, _full_response_parts, _done_payload)
-    elif tool_capable:
+    if tool_capable:
         if max_tools is None and resolved_provider == "ollama":
             max_tools = 10
         effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))

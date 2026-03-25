@@ -9,7 +9,6 @@ finance 시계열의 완전성을 3가지 지표로 측정:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 # 재무제표별 핵심 계정 — 이 계정들이 있어야 "완전한" 재무제표
 _CORE_ACCOUNTS = {
@@ -39,7 +38,7 @@ _CORE_ACCOUNTS = {
 class DataQualityScore:
     """재무 데이터 품질 점수."""
 
-    mappingRate: Optional[float] = None
+    mappingRate: float | None = None
     periodCoverage: float = 0.0
     statementCompleteness: dict[str, float] = field(default_factory=dict)
     missingCore: dict[str, list[str]] = field(default_factory=dict)
@@ -73,10 +72,10 @@ class DataQualityScore:
 
 
 def computeQuality(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     periods: list[str],
     *,
-    mappingStats: Optional[tuple[int, int]] = None,
+    mappingStats: tuple[int, int] | None = None,
 ) -> DataQualityScore:
     """재무 시계열의 품질 점수를 계산.
 

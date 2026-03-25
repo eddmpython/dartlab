@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 
 def getTTM(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     sjDiv: str,
     snakeId: str,
     *,
     strict: bool = True,
     annualize: bool = False,
     maxTrailingNones: int | None = None,
-) -> Optional[float]:
+) -> float | None:
     """최근 4개 non-null 값의 합 (IS/CF용 TTM).
 
     Args:
@@ -54,10 +52,10 @@ def getTTM(
 
 
 def getLatest(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     sjDiv: str,
     snakeId: str,
-) -> Optional[float]:
+) -> float | None:
     """최신 non-null 값 (BS용).
 
     Args:
@@ -78,10 +76,10 @@ def getLatest(
 
 
 def getAnnualValues(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     sjDiv: str,
     snakeId: str,
-) -> list[Optional[float]]:
+) -> list[float | None]:
     """해당 계정의 전체 시계열 값 리스트.
 
     Returns:
@@ -91,8 +89,8 @@ def getAnnualValues(
 
 
 def getRevenueGrowth3Y(
-    series: dict[str, dict[str, list[Optional[float]]]],
-) -> Optional[float]:
+    series: dict[str, dict[str, list[float | None]]],
+) -> float | None:
     """매출 3년 CAGR (%).
 
     연간 데이터 기준: 끝에서 4번째 vs 마지막 non-null.

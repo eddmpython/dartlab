@@ -52,7 +52,10 @@ def extractRaw(
 
     sub = sub.drop(dropCols)
 
-    sub = sub.with_columns(pl.col("year").cast(pl.Int32))
+    sub = sub.with_columns(
+        pl.col("year").cast(pl.Utf8).str.extract(r"(\d{4})", 1).cast(pl.Int32, strict=False).alias("year")
+    )
+    sub = sub.filter(pl.col("year").is_not_null())
     sub = sub.with_columns(pl.col("quarter").replace(QUARTER_MAP).cast(pl.Int32).alias("quarterNum"))
 
     if "stlm_dt" in sub.columns:

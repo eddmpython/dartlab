@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from dartlab.engines.common.finance.extract import getLatest, getRevenueGrowth3Y, getTTM
 
@@ -29,124 +29,124 @@ from dartlab.engines.common.finance.extract import getLatest, getRevenueGrowth3Y
 class RatioResult:
     """비율 계산 결과 (최신 단일 시점)."""
 
-    revenueTTM: Optional[float] = None
-    operatingIncomeTTM: Optional[float] = None
-    netIncomeTTM: Optional[float] = None
-    operatingCashflowTTM: Optional[float] = None
-    investingCashflowTTM: Optional[float] = None
+    revenueTTM: float | None = None
+    operatingIncomeTTM: float | None = None
+    netIncomeTTM: float | None = None
+    operatingCashflowTTM: float | None = None
+    investingCashflowTTM: float | None = None
 
-    totalAssets: Optional[float] = None
-    totalEquity: Optional[float] = None
-    ownersEquity: Optional[float] = None
-    totalLiabilities: Optional[float] = None
-    currentAssets: Optional[float] = None
-    currentLiabilities: Optional[float] = None
-    cash: Optional[float] = None
-    shortTermBorrowings: Optional[float] = None
-    longTermBorrowings: Optional[float] = None
-    bonds: Optional[float] = None
+    totalAssets: float | None = None
+    totalEquity: float | None = None
+    ownersEquity: float | None = None
+    totalLiabilities: float | None = None
+    currentAssets: float | None = None
+    currentLiabilities: float | None = None
+    cash: float | None = None
+    shortTermBorrowings: float | None = None
+    longTermBorrowings: float | None = None
+    bonds: float | None = None
 
-    grossProfit: Optional[float] = None
-    costOfSales: Optional[float] = None
-    sga: Optional[float] = None
-    inventories: Optional[float] = None
-    receivables: Optional[float] = None
-    payables: Optional[float] = None
-    tangibleAssets: Optional[float] = None
-    intangibleAssets: Optional[float] = None
-    retainedEarnings: Optional[float] = None
-    profitBeforeTax: Optional[float] = None
-    incomeTaxExpense: Optional[float] = None
-    financeIncome: Optional[float] = None
-    financeCosts: Optional[float] = None
-    capex: Optional[float] = None
-    dividendsPaid: Optional[float] = None
-    depreciationExpense: Optional[float] = None
-    noncurrentAssets: Optional[float] = None
-    noncurrentLiabilities: Optional[float] = None
+    grossProfit: float | None = None
+    costOfSales: float | None = None
+    sga: float | None = None
+    inventories: float | None = None
+    receivables: float | None = None
+    payables: float | None = None
+    tangibleAssets: float | None = None
+    intangibleAssets: float | None = None
+    retainedEarnings: float | None = None
+    profitBeforeTax: float | None = None
+    incomeTaxExpense: float | None = None
+    financeIncome: float | None = None
+    financeCosts: float | None = None
+    capex: float | None = None
+    dividendsPaid: float | None = None
+    depreciationExpense: float | None = None
+    noncurrentAssets: float | None = None
+    noncurrentLiabilities: float | None = None
 
-    roe: Optional[float] = None
-    roa: Optional[float] = None
-    roce: Optional[float] = None
-    operatingMargin: Optional[float] = None
-    netMargin: Optional[float] = None
-    preTaxMargin: Optional[float] = None
-    grossMargin: Optional[float] = None
-    ebitdaMargin: Optional[float] = None
-    costOfSalesRatio: Optional[float] = None
-    sgaRatio: Optional[float] = None
-    effectiveTaxRate: Optional[float] = None
-    incomeQualityRatio: Optional[float] = None
+    roe: float | None = None
+    roa: float | None = None
+    roce: float | None = None
+    operatingMargin: float | None = None
+    netMargin: float | None = None
+    preTaxMargin: float | None = None
+    grossMargin: float | None = None
+    ebitdaMargin: float | None = None
+    costOfSalesRatio: float | None = None
+    sgaRatio: float | None = None
+    effectiveTaxRate: float | None = None
+    incomeQualityRatio: float | None = None
 
-    debtRatio: Optional[float] = None
-    currentRatio: Optional[float] = None
-    quickRatio: Optional[float] = None
-    cashRatio: Optional[float] = None
-    equityRatio: Optional[float] = None
-    interestCoverage: Optional[float] = None
-    netDebt: Optional[float] = None
-    netDebtRatio: Optional[float] = None
-    noncurrentRatio: Optional[float] = None
-    workingCapital: Optional[float] = None
+    debtRatio: float | None = None
+    currentRatio: float | None = None
+    quickRatio: float | None = None
+    cashRatio: float | None = None
+    equityRatio: float | None = None
+    interestCoverage: float | None = None
+    netDebt: float | None = None
+    netDebtRatio: float | None = None
+    noncurrentRatio: float | None = None
+    workingCapital: float | None = None
 
-    revenueGrowth: Optional[float] = None
-    operatingProfitGrowth: Optional[float] = None
-    netProfitGrowth: Optional[float] = None
-    assetGrowth: Optional[float] = None
-    equityGrowthRate: Optional[float] = None
-    revenueGrowth3Y: Optional[float] = None
+    revenueGrowth: float | None = None
+    operatingProfitGrowth: float | None = None
+    netProfitGrowth: float | None = None
+    assetGrowth: float | None = None
+    equityGrowthRate: float | None = None
+    revenueGrowth3Y: float | None = None
 
-    totalAssetTurnover: Optional[float] = None
-    fixedAssetTurnover: Optional[float] = None
-    inventoryTurnover: Optional[float] = None
-    receivablesTurnover: Optional[float] = None
-    payablesTurnover: Optional[float] = None
-    operatingCycle: Optional[float] = None
+    totalAssetTurnover: float | None = None
+    fixedAssetTurnover: float | None = None
+    inventoryTurnover: float | None = None
+    receivablesTurnover: float | None = None
+    payablesTurnover: float | None = None
+    operatingCycle: float | None = None
 
-    fcf: Optional[float] = None
-    operatingCfMargin: Optional[float] = None
-    operatingCfToNetIncome: Optional[float] = None
-    operatingCfToCurrentLiab: Optional[float] = None
-    capexRatio: Optional[float] = None
-    dividendPayoutRatio: Optional[float] = None
-    fcfToOcfRatio: Optional[float] = None
+    fcf: float | None = None
+    operatingCfMargin: float | None = None
+    operatingCfToNetIncome: float | None = None
+    operatingCfToCurrentLiab: float | None = None
+    capexRatio: float | None = None
+    dividendPayoutRatio: float | None = None
+    fcfToOcfRatio: float | None = None
 
     # 복합 지표
-    roic: Optional[float] = None
-    dupontMargin: Optional[float] = None
-    dupontTurnover: Optional[float] = None
-    dupontLeverage: Optional[float] = None
-    debtToEbitda: Optional[float] = None
-    ccc: Optional[float] = None
-    dso: Optional[float] = None
-    dio: Optional[float] = None
-    dpo: Optional[float] = None
-    piotroskiFScore: Optional[int] = None
+    roic: float | None = None
+    dupontMargin: float | None = None
+    dupontTurnover: float | None = None
+    dupontLeverage: float | None = None
+    debtToEbitda: float | None = None
+    ccc: float | None = None
+    dso: float | None = None
+    dio: float | None = None
+    dpo: float | None = None
+    piotroskiFScore: int | None = None
     piotroskiMaxScore: int = 9
-    altmanZScore: Optional[float] = None
+    altmanZScore: float | None = None
 
     # 이익 품질 지표
-    beneishMScore: Optional[float] = None
-    sloanAccrualRatio: Optional[float] = None
+    beneishMScore: float | None = None
+    sloanAccrualRatio: float | None = None
 
     # 부실 예측 모델
-    ohlsonOScore: Optional[float] = None
-    ohlsonProbability: Optional[float] = None
-    altmanZppScore: Optional[float] = None
-    springateSScore: Optional[float] = None
-    zmijewskiXScore: Optional[float] = None
+    ohlsonOScore: float | None = None
+    ohlsonProbability: float | None = None
+    altmanZppScore: float | None = None
+    springateSScore: float | None = None
+    zmijewskiXScore: float | None = None
 
     # 주당지표
-    eps: Optional[float] = None
-    bps: Optional[float] = None
-    dps: Optional[float] = None
+    eps: float | None = None
+    bps: float | None = None
+    dps: float | None = None
 
-    per: Optional[float] = None
-    pbr: Optional[float] = None
-    psr: Optional[float] = None
-    evEbitda: Optional[float] = None
-    marketCap: Optional[float] = None
-    sharesOutstanding: Optional[int] = None
+    per: float | None = None
+    pbr: float | None = None
+    psr: float | None = None
+    evEbitda: float | None = None
+    marketCap: float | None = None
+    sharesOutstanding: int | None = None
     ebitdaEstimated: bool = True
 
     currency: str = "KRW"
@@ -381,93 +381,93 @@ class RatioSeriesResult:
 
     years: list[str] = field(default_factory=list)
 
-    roe: list[Optional[float]] = field(default_factory=list)
-    roa: list[Optional[float]] = field(default_factory=list)
-    roce: list[Optional[float]] = field(default_factory=list)
-    operatingMargin: list[Optional[float]] = field(default_factory=list)
-    netMargin: list[Optional[float]] = field(default_factory=list)
-    preTaxMargin: list[Optional[float]] = field(default_factory=list)
-    grossMargin: list[Optional[float]] = field(default_factory=list)
-    ebitdaMargin: list[Optional[float]] = field(default_factory=list)
-    costOfSalesRatio: list[Optional[float]] = field(default_factory=list)
-    sgaRatio: list[Optional[float]] = field(default_factory=list)
-    effectiveTaxRate: list[Optional[float]] = field(default_factory=list)
-    incomeQualityRatio: list[Optional[float]] = field(default_factory=list)
+    roe: list[float | None] = field(default_factory=list)
+    roa: list[float | None] = field(default_factory=list)
+    roce: list[float | None] = field(default_factory=list)
+    operatingMargin: list[float | None] = field(default_factory=list)
+    netMargin: list[float | None] = field(default_factory=list)
+    preTaxMargin: list[float | None] = field(default_factory=list)
+    grossMargin: list[float | None] = field(default_factory=list)
+    ebitdaMargin: list[float | None] = field(default_factory=list)
+    costOfSalesRatio: list[float | None] = field(default_factory=list)
+    sgaRatio: list[float | None] = field(default_factory=list)
+    effectiveTaxRate: list[float | None] = field(default_factory=list)
+    incomeQualityRatio: list[float | None] = field(default_factory=list)
 
-    debtRatio: list[Optional[float]] = field(default_factory=list)
-    currentRatio: list[Optional[float]] = field(default_factory=list)
-    quickRatio: list[Optional[float]] = field(default_factory=list)
-    cashRatio: list[Optional[float]] = field(default_factory=list)
-    equityRatio: list[Optional[float]] = field(default_factory=list)
-    interestCoverage: list[Optional[float]] = field(default_factory=list)
-    netDebtRatio: list[Optional[float]] = field(default_factory=list)
-    noncurrentRatio: list[Optional[float]] = field(default_factory=list)
-    workingCapital: list[Optional[float]] = field(default_factory=list)
+    debtRatio: list[float | None] = field(default_factory=list)
+    currentRatio: list[float | None] = field(default_factory=list)
+    quickRatio: list[float | None] = field(default_factory=list)
+    cashRatio: list[float | None] = field(default_factory=list)
+    equityRatio: list[float | None] = field(default_factory=list)
+    interestCoverage: list[float | None] = field(default_factory=list)
+    netDebtRatio: list[float | None] = field(default_factory=list)
+    noncurrentRatio: list[float | None] = field(default_factory=list)
+    workingCapital: list[float | None] = field(default_factory=list)
 
-    revenueGrowth: list[Optional[float]] = field(default_factory=list)
-    operatingProfitGrowth: list[Optional[float]] = field(default_factory=list)
-    netProfitGrowth: list[Optional[float]] = field(default_factory=list)
-    assetGrowth: list[Optional[float]] = field(default_factory=list)
-    equityGrowthRate: list[Optional[float]] = field(default_factory=list)
+    revenueGrowth: list[float | None] = field(default_factory=list)
+    operatingProfitGrowth: list[float | None] = field(default_factory=list)
+    netProfitGrowth: list[float | None] = field(default_factory=list)
+    assetGrowth: list[float | None] = field(default_factory=list)
+    equityGrowthRate: list[float | None] = field(default_factory=list)
 
-    totalAssetTurnover: list[Optional[float]] = field(default_factory=list)
-    fixedAssetTurnover: list[Optional[float]] = field(default_factory=list)
-    inventoryTurnover: list[Optional[float]] = field(default_factory=list)
-    receivablesTurnover: list[Optional[float]] = field(default_factory=list)
-    payablesTurnover: list[Optional[float]] = field(default_factory=list)
-    operatingCycle: list[Optional[float]] = field(default_factory=list)
+    totalAssetTurnover: list[float | None] = field(default_factory=list)
+    fixedAssetTurnover: list[float | None] = field(default_factory=list)
+    inventoryTurnover: list[float | None] = field(default_factory=list)
+    receivablesTurnover: list[float | None] = field(default_factory=list)
+    payablesTurnover: list[float | None] = field(default_factory=list)
+    operatingCycle: list[float | None] = field(default_factory=list)
 
-    fcf: list[Optional[float]] = field(default_factory=list)
-    operatingCfMargin: list[Optional[float]] = field(default_factory=list)
-    operatingCfToNetIncome: list[Optional[float]] = field(default_factory=list)
-    operatingCfToCurrentLiab: list[Optional[float]] = field(default_factory=list)
-    capexRatio: list[Optional[float]] = field(default_factory=list)
-    dividendPayoutRatio: list[Optional[float]] = field(default_factory=list)
-    fcfToOcfRatio: list[Optional[float]] = field(default_factory=list)
+    fcf: list[float | None] = field(default_factory=list)
+    operatingCfMargin: list[float | None] = field(default_factory=list)
+    operatingCfToNetIncome: list[float | None] = field(default_factory=list)
+    operatingCfToCurrentLiab: list[float | None] = field(default_factory=list)
+    capexRatio: list[float | None] = field(default_factory=list)
+    dividendPayoutRatio: list[float | None] = field(default_factory=list)
+    fcfToOcfRatio: list[float | None] = field(default_factory=list)
 
     # 복합 지표
-    roic: list[Optional[float]] = field(default_factory=list)
-    dupontMargin: list[Optional[float]] = field(default_factory=list)
-    dupontTurnover: list[Optional[float]] = field(default_factory=list)
-    dupontLeverage: list[Optional[float]] = field(default_factory=list)
-    debtToEbitda: list[Optional[float]] = field(default_factory=list)
-    ccc: list[Optional[float]] = field(default_factory=list)
-    dso: list[Optional[float]] = field(default_factory=list)
-    dio: list[Optional[float]] = field(default_factory=list)
-    dpo: list[Optional[float]] = field(default_factory=list)
-    piotroskiFScore: list[Optional[int]] = field(default_factory=list)
-    altmanZScore: list[Optional[float]] = field(default_factory=list)
-    beneishMScore: list[Optional[float]] = field(default_factory=list)
-    sloanAccrualRatio: list[Optional[float]] = field(default_factory=list)
+    roic: list[float | None] = field(default_factory=list)
+    dupontMargin: list[float | None] = field(default_factory=list)
+    dupontTurnover: list[float | None] = field(default_factory=list)
+    dupontLeverage: list[float | None] = field(default_factory=list)
+    debtToEbitda: list[float | None] = field(default_factory=list)
+    ccc: list[float | None] = field(default_factory=list)
+    dso: list[float | None] = field(default_factory=list)
+    dio: list[float | None] = field(default_factory=list)
+    dpo: list[float | None] = field(default_factory=list)
+    piotroskiFScore: list[int | None] = field(default_factory=list)
+    altmanZScore: list[float | None] = field(default_factory=list)
+    beneishMScore: list[float | None] = field(default_factory=list)
+    sloanAccrualRatio: list[float | None] = field(default_factory=list)
 
-    revenue: list[Optional[float]] = field(default_factory=list)
-    operatingProfit: list[Optional[float]] = field(default_factory=list)
-    netProfit: list[Optional[float]] = field(default_factory=list)
-    totalAssets: list[Optional[float]] = field(default_factory=list)
-    totalEquity: list[Optional[float]] = field(default_factory=list)
-    operatingCashflow: list[Optional[float]] = field(default_factory=list)
+    revenue: list[float | None] = field(default_factory=list)
+    operatingProfit: list[float | None] = field(default_factory=list)
+    netProfit: list[float | None] = field(default_factory=list)
+    totalAssets: list[float | None] = field(default_factory=list)
+    totalEquity: list[float | None] = field(default_factory=list)
+    operatingCashflow: list[float | None] = field(default_factory=list)
 
 
-def _safeDiv(a: Optional[float], b: Optional[float]) -> Optional[float]:
+def _safeDiv(a: float | None, b: float | None) -> float | None:
     if a is None or b is None or b == 0:
         return None
     return a / b
 
 
-def _safePct(a: Optional[float], b: Optional[float]) -> Optional[float]:
+def _safePct(a: float | None, b: float | None) -> float | None:
     r = _safeDiv(a, b)
     if r is None:
         return None
     return round(r * 100, 2)
 
 
-def _safeRound(v: Optional[float], n: int = 2) -> Optional[float]:
+def _safeRound(v: float | None, n: int = 2) -> float | None:
     if v is None:
         return None
     return round(v, n)
 
 
-def yoy_pct(cur: Optional[float], prev: Optional[float]) -> Optional[float]:
+def yoy_pct(cur: float | None, prev: float | None) -> float | None:
     """전년 대비 증감률(%). 부호 전환 시 None 반환.
 
     - 양수→양수 또는 음수→음수: 정상 계산
@@ -483,17 +483,17 @@ def yoy_pct(cur: Optional[float], prev: Optional[float]) -> Optional[float]:
     return None
 
 
-def _yoy(vals: list[Optional[float]], i: int, lag: int = 1) -> Optional[float]:
+def _yoy(vals: list[float | None], i: int, lag: int = 1) -> float | None:
     if i < lag:
         return None
     return yoy_pct(vals[i], vals[i - lag])
 
 
-def _get(series: dict, sjDiv: str, snakeId: str) -> list[Optional[float]]:
+def _get(series: dict, sjDiv: str, snakeId: str) -> list[float | None]:
     return series.get(sjDiv, {}).get(snakeId, [])
 
 
-def _detectArchetype(series: dict[str, dict[str, list[Optional[float]]]]) -> str:
+def _detectArchetype(series: dict[str, dict[str, list[float | None]]]) -> str:
     """점수 기반 업종 분류. 하이브리드 기업도 정확히 분류.
 
     각 archetype의 시그니처 계정 존재 여부로 점수를 매기고,
@@ -645,17 +645,17 @@ def _applyArchetypePolicySeries(result: RatioSeriesResult, archetype: str) -> No
 
 
 def _pick_first(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     sjDiv: str,
     snakeIds: list[str],
     annual: bool = False,
     maxTrailingNones: int | None = None,
-) -> Optional[float]:
+) -> float | None:
     def _getTtmValue(
-        targetSeries: dict[str, dict[str, list[Optional[float]]]],
+        targetSeries: dict[str, dict[str, list[float | None]]],
         targetSjDiv: str,
         targetSnakeId: str,
-    ) -> Optional[float]:
+    ) -> float | None:
         return getTTM(targetSeries, targetSjDiv, targetSnakeId, maxTrailingNones=maxTrailingNones)
 
     if annual:
@@ -670,10 +670,10 @@ def _pick_first(
 
 
 def _pick_series(
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     sjDiv: str,
     snakeIds: list[str],
-) -> list[Optional[float]]:
+) -> list[float | None]:
     for snakeId in snakeIds:
         values = _get(series, sjDiv, snakeId)
         if any(v is not None for v in values):
@@ -682,11 +682,11 @@ def _pick_series(
 
 
 def calcRatios(
-    series: dict[str, dict[str, list[Optional[float]]]],
-    marketCap: Optional[float] = None,
+    series: dict[str, dict[str, list[float | None]]],
+    marketCap: float | None = None,
     annual: bool = False,
     archetypeOverride: str | None = None,
-    shares: Optional[int] = None,
+    shares: int | None = None,
     currency: str = "KRW",
 ) -> RatioResult:
     """시계열에서 재무비율 계산 (최신 단일 시점).
@@ -712,10 +712,10 @@ def calcRatios(
     else:
 
         def _flowTtm(
-            targetSeries: dict[str, dict[str, list[Optional[float]]]],
+            targetSeries: dict[str, dict[str, list[float | None]]],
             targetSjDiv: str,
             targetSnakeId: str,
-        ) -> Optional[float]:
+        ) -> float | None:
             return getTTM(targetSeries, targetSjDiv, targetSnakeId, maxTrailingNones=0)
 
         _flow = _flowTtm
@@ -942,7 +942,7 @@ def _calcEfficiency(r: RatioResult) -> None:
 
 def _calcCashflow(
     r: RatioResult,
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
 ) -> None:
     """현금흐름 비율 (7개)."""
     capexAmt = abs(r.capex) if r.capex else 0
@@ -970,7 +970,7 @@ def _calcCashflow(
 
 def _calcComposite(
     r: RatioResult,
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     annual: bool = False,
     maxTrailingNones: int | None = None,
 ) -> None:
@@ -1234,27 +1234,27 @@ def _calcComposite(
 
 def _calcBeneishForPeriod(
     *,
-    rev_t: Optional[float],
-    rev_p: Optional[float],
-    rec_t: Optional[float],
-    rec_p: Optional[float],
-    cogs_t: Optional[float],
-    cogs_p: Optional[float],
-    ta_t: Optional[float],
-    ta_p: Optional[float],
-    ca_t: Optional[float],
-    ca_p: Optional[float],
-    sga_t: Optional[float],
-    sga_p: Optional[float],
-    dep_t: Optional[float],
-    dep_p: Optional[float],
-    tan_t: Optional[float],
-    tan_p: Optional[float],
-    np_t: Optional[float],
-    ocf_t: Optional[float],
-    tl_t: Optional[float],
-    tl_p: Optional[float],
-) -> Optional[float]:
+    rev_t: float | None,
+    rev_p: float | None,
+    rec_t: float | None,
+    rec_p: float | None,
+    cogs_t: float | None,
+    cogs_p: float | None,
+    ta_t: float | None,
+    ta_p: float | None,
+    ca_t: float | None,
+    ca_p: float | None,
+    sga_t: float | None,
+    sga_p: float | None,
+    dep_t: float | None,
+    dep_p: float | None,
+    tan_t: float | None,
+    tan_p: float | None,
+    np_t: float | None,
+    ocf_t: float | None,
+    tl_t: float | None,
+    tl_p: float | None,
+) -> float | None:
     """Beneish M-Score 단일 기간 계산 (현재 t vs 전기 p)."""
     if rev_t is None or rev_p is None or rev_p == 0:
         return None
@@ -1341,7 +1341,7 @@ def _calcBeneishForPeriod(
 
 def _calcBeneish(
     r: RatioResult,
-    series: dict[str, dict[str, list[Optional[float]]]],
+    series: dict[str, dict[str, list[float | None]]],
     annual: bool = False,
 ) -> None:
     """Beneish M-Score 8변수 모델 — _calcBeneishForPeriod에 위임."""
@@ -1353,7 +1353,7 @@ def _calcBeneish(
 
     t, p = len(revSeries) - 1, len(revSeries) - 2
 
-    def _val(s: list, i: int) -> Optional[float]:
+    def _val(s: list, i: int) -> float | None:
         return s[i] if i < len(s) and s[i] is not None else None
 
     depSeries = _pick_series(series, "CF", ["depreciation_and_amortization", "depreciation_cf", "depreciation"])
@@ -1429,7 +1429,7 @@ def _calcValuation(r: RatioResult) -> None:
 
 
 def calcRatioSeries(
-    annualSeries: dict[str, dict[str, list[Optional[float]]]],
+    annualSeries: dict[str, dict[str, list[float | None]]],
     years: list[str],
     archetypeOverride: str | None = None,
     yoyLag: int = 1,
@@ -1489,7 +1489,7 @@ def calcRatioSeries(
     if not any(v is not None for v in depreciation):
         depreciation = _get(annualSeries, "CF", "depreciation")
 
-    def _v(lst: list, i: int) -> Optional[float]:
+    def _v(lst: list, i: int) -> float | None:
         if i < len(lst):
             return lst[i]
         return None
@@ -1929,13 +1929,13 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
 
 def toSeriesDict(
     rs: RatioSeriesResult,
-) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+) -> tuple[dict[str, dict[str, list[float | None]]], list[str]]:
     """RatioSeriesResult → IS/BS/CF와 동일한 시계열 dict 변환.
 
     Returns:
             ({"RATIO": {snakeId: [v1, v2, ...], ...}}, years)
     """
-    ratioDict: dict[str, list[Optional[float]]] = {}
+    ratioDict: dict[str, list[float | None]] = {}
     for _, fields in RATIO_CATEGORIES:
         for fieldName in fields:
             vals = getattr(rs, fieldName, [])

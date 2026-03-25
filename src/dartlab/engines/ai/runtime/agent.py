@@ -128,9 +128,14 @@ def agent_loop_stream(
 
         if not response.tool_calls:
             if _turn == 0:
+                # 첫 턴에서 tool 호출 없이 바로 답변 → stream으로 재생성
                 yield from provider.stream(messages)
                 return
-            messages.append({"role": "assistant", "content": response.answer or ""})
+            # tool 결과를 받은 후 최종 답변: complete_with_tools 결과를 직접 사용
+            if response.answer:
+                yield response.answer
+                return
+            # answer가 비어있으면 stream으로 재생성 시도
             yield from provider.stream(messages)
             return
 

@@ -5,6 +5,7 @@ import json
 import re
 import socket
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import URLError
@@ -43,6 +44,17 @@ PERIOD_KINDS = {
 _EXPLICIT_DOWNLOAD_ONLY_CATEGORIES = {"edgarDocs"}
 
 
+@contextmanager
+def _socketTimeout(seconds: int = _DOWNLOAD_TIMEOUT):
+    """소켓 글로벌 타임아웃을 임시 설정하고 복원."""
+    oldTimeout = socket.getdefaulttimeout()
+    try:
+        socket.setdefaulttimeout(seconds)
+        yield
+    finally:
+        socket.setdefaulttimeout(oldTimeout)
+
+
 def _dataDir(category: str = "docs") -> Path:
     return _getDataRoot() / DATA_RELEASES[category]["dir"]
 
@@ -52,10 +64,9 @@ def _downloadWithRetry(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     lastErr = None
     for attempt in range(_MAX_RETRIES):
-        old_timeout = socket.getdefaulttimeout()
         try:
-            socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
-            urlretrieve(url, dest)
+            with _socketTimeout():
+                urlretrieve(url, dest)
             return
         except (URLError, socket.timeout, OSError) as e:
             lastErr = e
@@ -64,8 +75,6 @@ def _downloadWithRetry(url: str, dest: Path) -> None:
             if attempt < _MAX_RETRIES - 1:
                 wait = 2 ** (attempt + 1)
                 time.sleep(wait)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
     raise lastErr
 
 
@@ -80,14 +89,7 @@ def _checkRemoteFreshness(stockCode: str, localPath: Path, category: str = "docs
     hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
     etagPath = localPath.with_suffix(".parquet.etag")
     try:
-        req = Request(hfUrl, method="HEAD")
-        old_timeout = socket.getdefaulttimeout()
-        try:
-            socket.setdefaulttimeout(10)
-            resp = urlopen(req)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
-        remoteEtag = resp.headers.get("ETag", "").strip('" ')
+        remoteEtag = _fetchRemoteEtag(hfUrl)
         if not remoteEtag:
             return None
         if etagPath.exists():
@@ -105,18 +107,19 @@ def _saveEtag(stockCode: str, dest: Path, category: str = "docs") -> None:
     hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
     etagPath = dest.with_suffix(".parquet.etag")
     try:
-        req = Request(hfUrl, method="HEAD")
-        old_timeout = socket.getdefaulttimeout()
-        try:
-            socket.setdefaulttimeout(10)
-            resp = urlopen(req)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
-        etag = resp.headers.get("ETag", "").strip('" ')
+        etag = _fetchRemoteEtag(hfUrl)
         if etag:
             etagPath.write_text(etag, encoding="utf-8")
     except (URLError, socket.timeout, OSError):
         pass
+
+
+def _fetchRemoteEtag(url: str) -> str:
+    """HTTP HEAD로 원격 ETag 조회. 없으면 빈 문자열."""
+    req = Request(url, method="HEAD")
+    with _socketTimeout(10):
+        resp = urlopen(req)
+    return resp.headers.get("ETag", "").strip('" ')
 
 
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
@@ -180,23 +183,23 @@ def loadData(
                 path.unlink()
             raise
     # lazy scan: sinceYear 필터 또는 컬럼 프로젝션이 있으면 scan_parquet 사용
-    _YEAR_COLS = {"year": "year", "bsns_year": "bsns_year"}
-    use_lazy = sinceYear is not None or columns is not None
-    if use_lazy:
+    yearColCandidates = ("year", "bsns_year")
+    useLazy = sinceYear is not None or columns is not None
+    if useLazy:
         lf = pl.scan_parquet(str(path))
-        schema_names = lf.collect_schema().names()
+        schemaNames = lf.collect_schema().names()
         # sinceYear 필터 (year 또는 bsns_year 컬럼)
         if sinceYear is not None:
-            for col_name in _YEAR_COLS:
-                if col_name in schema_names:
-                    year_col = pl.col(col_name)
-                    if str(lf.collect_schema()[col_name]) == "String":
-                        year_col = year_col.cast(pl.Int32, strict=False)
-                    lf = lf.filter(year_col >= sinceYear)
+            for colName in yearColCandidates:
+                if colName in schemaNames:
+                    yearCol = pl.col(colName)
+                    if str(lf.collect_schema()[colName]) == "String":
+                        yearCol = yearCol.cast(pl.Int32, strict=False)
+                    lf = lf.filter(yearCol >= sinceYear)
                     break
         # 컬럼 프로젝션
         if columns:
-            available = [c for c in columns if c in schema_names]
+            available = [c for c in columns if c in schemaNames]
             if available:
                 lf = lf.select(available)
         df = lf.collect()
@@ -256,13 +259,9 @@ def _ensureEdgarDocs(
 
 def _fetchAssets(tag: str) -> list[dict]:
     """릴리즈 태그에서 에셋 목록 + updated_at 조회."""
-    old_timeout = socket.getdefaulttimeout()
-    try:
-        socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
+    with _socketTimeout():
         with urlopen(releaseApiUrl(tag=tag)) as resp:
             data = json.loads(resp.read())
-    finally:
-        socket.setdefaulttimeout(old_timeout)
     return [a for a in data["assets"] if a["name"].endswith(".parquet")]
 
 
@@ -496,14 +495,10 @@ def _isLocalCacheExpired(path: Path, ttlHours: int) -> bool:
 
 
 def _fetchJson(url: str) -> dict:
-    old_timeout = socket.getdefaulttimeout()
-    try:
-        socket.setdefaulttimeout(_DOWNLOAD_TIMEOUT)
+    with _socketTimeout():
         request = Request(url, headers=_SEC_HEADERS)
         with urlopen(request) as resp:
             return json.loads(resp.read())
-    finally:
-        socket.setdefaulttimeout(old_timeout)
 
 
 def _isEdgarDocsCheckExpired(path: Path) -> bool:
@@ -678,8 +673,8 @@ _DOWNCAST_INT_COLS = frozenset(
 def _optimizeMemory(df: pl.DataFrame) -> pl.DataFrame:
     """Categorical 전환 + Int 다운캐스트로 메모리 절감."""
     exprs: list[pl.Expr] = []
-    for col in df.columns:
-        dtype = df[col].dtype
+    schema = df.schema
+    for col, dtype in schema.items():
         if col in _CATEGORICAL_COLS and dtype == pl.Utf8:
             exprs.append(pl.col(col).cast(pl.Categorical))
         elif col in _DOWNCAST_INT_COLS and dtype == pl.Int64:
@@ -698,19 +693,20 @@ def _normalizeLoadedFrame(df: pl.DataFrame, category: str) -> pl.DataFrame:
 
 
 def _normalizeDartDocs(df: pl.DataFrame) -> pl.DataFrame:
+    cols = set(df.columns)
     exprs: list[pl.Expr] = []
 
-    if "source" not in df.columns:
+    if "source" not in cols:
         exprs.append(pl.lit("dart").alias("source"))
-    if "entity_id" not in df.columns and "stock_code" in df.columns:
+    if "entity_id" not in cols and "stock_code" in cols:
         exprs.append(pl.col("stock_code").alias("entity_id"))
-    if "doc_id" not in df.columns and "rcept_no" in df.columns:
+    if "doc_id" not in cols and "rcept_no" in cols:
         exprs.append(pl.col("rcept_no").alias("doc_id"))
-    if "doc_date" not in df.columns and "rcept_date" in df.columns:
+    if "doc_date" not in cols and "rcept_date" in cols:
         exprs.append(pl.col("rcept_date").alias("doc_date"))
-    if "doc_url" not in df.columns and "section_url" in df.columns:
+    if "doc_url" not in cols and "section_url" in cols:
         exprs.append(pl.col("section_url").alias("doc_url"))
-    if "period_key" not in df.columns and "report_type" in df.columns:
+    if "period_key" not in cols and "report_type" in cols:
         from dartlab.core.reportSelector import parsePeriodKey
 
         exprs.append(pl.col("report_type").map_elements(parsePeriodKey, return_dtype=pl.Utf8).alias("period_key"))
@@ -721,24 +717,25 @@ def _normalizeDartDocs(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _normalizeEdgarDocs(df: pl.DataFrame) -> pl.DataFrame:
+    cols = set(df.columns)
     exprs: list[pl.Expr] = []
 
-    if "report_type" not in df.columns and "form_type" in df.columns:
+    if "report_type" not in cols and "form_type" in cols:
         exprs.append(
-            pl.struct([col for col in ("form_type", "period_end", "year") if col in df.columns])
+            pl.struct([col for col in ("form_type", "period_end", "year") if col in cols])
             .map_elements(_edgarReportTypeFromRow, return_dtype=pl.Utf8)
             .alias("report_type")
         )
 
-    if "source" not in df.columns:
+    if "source" not in cols:
         exprs.append(pl.lit("edgar").alias("source"))
-    if "entity_id" not in df.columns and "ticker" in df.columns:
+    if "entity_id" not in cols and "ticker" in cols:
         exprs.append(pl.col("ticker").alias("entity_id"))
-    if "doc_id" not in df.columns and "accession_no" in df.columns:
+    if "doc_id" not in cols and "accession_no" in cols:
         exprs.append(pl.col("accession_no").alias("doc_id"))
-    if "doc_date" not in df.columns and "filing_date" in df.columns:
+    if "doc_date" not in cols and "filing_date" in cols:
         exprs.append(pl.col("filing_date").alias("doc_date"))
-    if "doc_url" not in df.columns and "filing_url" in df.columns:
+    if "doc_url" not in cols and "filing_url" in cols:
         exprs.append(pl.col("filing_url").alias("doc_url"))
 
     result = df.with_columns(exprs) if exprs else df

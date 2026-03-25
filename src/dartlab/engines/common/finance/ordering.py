@@ -11,10 +11,8 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
-from typing import Optional
-
 _DATA_PATH = Path(__file__).parent / "sortOrder.json"
-_sortOrderData: Optional[dict[str, dict]] = None
+_sortOrderData: dict[str, dict] | None = None
 _sortOrderLock = threading.Lock()
 
 

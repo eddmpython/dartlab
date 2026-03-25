@@ -135,9 +135,14 @@ def _ensureAllData(stockCode: str) -> dict[str, bool]:
     if not missing:
         return result
 
-    # 2단계: 개별 카테고리 순차 수집 (단일 종목에는 batchCollect 불필요)
-    for cat in missing:
-        result[cat] = _ensureData(stockCode, cat)
+    # 2단계: 카테고리 병렬 수집 (I/O 바운드, 최대 2 워커)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    with ThreadPoolExecutor(max_workers=min(len(missing), 2)) as pool:
+        futures = {pool.submit(_ensureData, stockCode, cat): cat for cat in missing}
+        for future in as_completed(futures):
+            cat = futures[future]
+            result[cat] = future.result()
     return result
 
 

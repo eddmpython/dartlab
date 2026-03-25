@@ -55,20 +55,10 @@ from dartlab.engines.company.dart.openapi.saver import (
 
 # ── 내부 상수 ──────────────────────────────────────────────
 
-_QUARTER_TO_CODE: dict[str, str] = {
-    "Q1": "11013",
-    "Q2": "11012",
-    "Q3": "11014",
-    "Q4": "11011",
-    "annual": "11011",
-}
-
-_CODE_TO_LABEL: dict[str, str] = {
-    "11013": "Q1",
-    "11012": "Q2",
-    "11014": "Q3",
-    "11011": "annual",
-}
+from dartlab.engines.company.dart.openapi.constants import (
+    CODE_TO_LABEL as _CODE_TO_LABEL,
+    QUARTER_TO_CODE as _QUARTER_TO_CODE,
+)
 
 # 사업보고서 주요정보 29개 + 주요사항보고 27개 = 56개 카테고리
 _REPORT_ENDPOINTS: dict[str, str] = {

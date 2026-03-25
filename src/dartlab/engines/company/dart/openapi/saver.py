@@ -12,45 +12,10 @@ import polars as pl
 
 # ── 매핑 테이블 ────────────────────────────────────────────
 
-_REPRT_NM: dict[str, str] = {
-    "11013": "1분기",
-    "11012": "2분기",
-    "11014": "3분기",
-    "11011": "4분기",
-}
-
-# 한글 카테고리 → eddmpython 영문 apiType
-_KR_TO_API_TYPE: dict[str, str] = {
-    "증자감자": "capitalChange",
-    "배당": "dividend",
-    "자기주식": "treasuryStock",
-    "최대주주": "majorHolder",
-    "최대주주변동": "majorHolderChange",
-    "소액주주": "minorityHolder",
-    "임원": "executive",
-    "직원": "employee",
-    "이사회임원개인보수": "executivePayIndividual",
-    "이사회임원전체보수": "executivePayAllTotal",
-    "개인별보수": "topPay",
-    "타법인출자": "investedCompany",
-    "미등기임원보수": "unregisteredExecutivePay",
-    "주식총수": "stockTotal",
-    "회계감사인": "auditOpinion",
-    "감사용역체결": "auditContract",
-    "감사비감사계약": "nonAuditContract",
-    "사외이사변동": "outsideDirector",
-    "회사채미상환": "corporateBond",
-    "단기사채미상환": "shortTermBond",
-    "공모자금용도": "publicOfferingUsage",
-    "공모자금사용": "privateOfferingUsage",
-    "대주주지분변동": "majorShareholderChange",
-    "기업어음미상환": "commercialPaper",
-    "채무증권발행실적": "debtSecurities",
-    "조건부자본증권미상환": "contingentCapital",
-    "신종자본증권미상환": "hybridCapital",
-    "이사감사보수총회인정": "executivePayApproval",
-    "이사감사보수지급형태": "executivePayType",
-}
+from dartlab.engines.company.dart.openapi.constants import (
+    CODE_TO_QUARTER_KR as _REPRT_NM,
+    KR_TO_API_TYPE as _KR_TO_API_TYPE,
+)
 
 _FS_NM_TO_DIV: dict[str, str] = {
     "연결재무제표": "CFS",

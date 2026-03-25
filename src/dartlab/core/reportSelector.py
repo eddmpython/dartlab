@@ -2,6 +2,9 @@ import re
 
 import polars as pl
 
+_RE_YEAR_MONTH = re.compile(r"\((\d{4})\.(\d{2})\)")
+_RE_YEAR_ONLY = re.compile(r"\((\d{4})\.\d{2}\)")
+
 
 def selectReport(df: pl.DataFrame, year: str, reportKind: str = "annual") -> pl.DataFrame | None:
     """해당 연도+기간 보고서 선택. 원본 우선, 없으면 기재정정/첨부 중 가장 나중 접수.
@@ -35,7 +38,7 @@ def parsePeriodKey(reportType: str) -> str | None:
     Returns:
         "2024Q1", "2024Q2", "2024Q3", "2024" 등. 파싱 불가 시 None.
     """
-    m = re.search(r"\((\d{4})\.(\d{2})\)", reportType)
+    m = _RE_YEAR_MONTH.search(reportType)
     if not m:
         return None
 
@@ -56,7 +59,7 @@ def parsePeriodKey(reportType: str) -> str | None:
 
 def extractReportYear(reportType: str) -> int | None:
     """사업보고서 (2024.12) → 2024"""
-    m = re.search(r"\((\d{4})\.\d{2}\)", reportType)
+    m = _RE_YEAR_ONLY.search(reportType)
     if m:
         return int(m.group(1))
     return None
@@ -103,7 +106,7 @@ def parseEdgarPeriodKey(reportType: str) -> str | None:
         "10-Q (2024.06)" -> "2024Q2"
         "10-Q (2024.09)" -> "2024Q3"
     """
-    match = re.search(r"\((\d{4})\.(\d{2})\)", reportType)
+    match = _RE_YEAR_MONTH.search(reportType)
     if not match:
         return None
 
@@ -125,7 +128,7 @@ def parseEdgarPeriodKey(reportType: str) -> str | None:
 
 def extractEdgarReportYear(reportType: str) -> int | None:
     """10-K (2024.12) -> 2024"""
-    match = re.search(r"\((\d{4})\.\d{2}\)", reportType)
+    match = _RE_YEAR_ONLY.search(reportType)
     if match:
         return int(match.group(1))
     return None

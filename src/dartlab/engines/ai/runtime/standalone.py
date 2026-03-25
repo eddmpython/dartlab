@@ -94,7 +94,7 @@ def ask(
         exclude=exclude,
         provider=provider,
         model=model,
-        use_tools=False,
+        use_tools=True,
         reflect=reflect,
         report_mode=report_mode,
         history=history,
