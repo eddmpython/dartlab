@@ -332,17 +332,26 @@ def calcDuPont(
     aSeries: dict[str, dict[str, list[float | None]]],
     aYears: list[str],
 ) -> DuPontResult:
-    """DuPont 3-factor 분해: ROE = 순이익률 × 자산회전율 × 레버리지."""
+    """DuPont 5-factor 분해: ROE = 세금부담 × 이자부담 × OPM × 회전율 × 레버리지."""
     niList = aSeries.get("IS", {}).get("net_profit", [])
     salesList = aSeries.get("IS", {}).get("sales", [])
     taList = aSeries.get("BS", {}).get("total_assets", [])
     eqList = aSeries.get("BS", {}).get("total_stockholders_equity", []) or aSeries.get("BS", {}).get("total_equity", [])
+    opList = aSeries.get("IS", {}).get("operating_profit", [])
+    ebtList = aSeries.get("IS", {}).get("income_before_tax", []) or aSeries.get("IS", {}).get("profit_before_tax", [])
+    clList = aSeries.get("BS", {}).get("current_liabilities", [])
+    cashList = aSeries.get("BS", {}).get("cash_and_cash_equivalents", [])
 
     margins: list[float | None] = []
     turnovers: list[float | None] = []
     leverages: list[float | None] = []
     roes: list[float | None] = []
     periods: list[str] = []
+    # 5-factor 확장
+    taxBurdens: list[float | None] = []
+    interestBurdens: list[float | None] = []
+    opMargins: list[float | None] = []
+    roicList: list[float | None] = []
 
     n = min(len(niList), len(salesList), len(taList), len(eqList), len(aYears))
     start = max(0, n - 5)  # 최근 5년
@@ -351,19 +360,39 @@ def calcDuPont(
         s = salesList[i]
         ta = taList[i]
         eq = eqList[i]
+        op = opList[i] if i < len(opList) else None
+        ebt = ebtList[i] if i < len(ebtList) else None
+        cl = clList[i] if i < len(clList) else None
+        cash = cashList[i] if i < len(cashList) else None
 
         margin = ni / s if ni is not None and s and s > 0 else None
         turnover = s / ta if s is not None and ta and ta > 0 else None
         lever = ta / eq if ta is not None and eq and eq > 0 else None
         roe = ni / eq if ni is not None and eq and eq > 0 else None
 
+        # 5-factor: taxBurden = NI/EBT, interestBurden = EBT/EBIT(=OP)
+        tb = ni / ebt if ni is not None and ebt is not None and ebt != 0 else None
+        ib = ebt / op if ebt is not None and op is not None and op != 0 else None
+        opm = op / s if op is not None and s and s > 0 else None
+
+        # ROIC = NOPAT / IC, IC = TA - CL - Cash (근사)
+        roic = None
+        if op is not None and ta is not None:
+            ic = ta - (cl or 0) - (cash or 0)
+            if ic > 0:
+                nopat = op * (1 - 0.22)  # 법인세율 22% 근사
+                roic = nopat / ic
+
         margins.append(_round(margin))
         turnovers.append(_round(turnover))
         leverages.append(_round(lever))
         roes.append(_round(roe))
+        taxBurdens.append(_round(tb))
+        interestBurdens.append(_round(ib))
+        opMargins.append(_round(opm))
+        roicList.append(_round(roic))
         periods.append(aYears[i])
 
-    # 어떤 요소가 ROE를 주도하는지
     driver = _identifyDriver(margins, turnovers, leverages)
 
     return DuPontResult(
@@ -373,6 +402,10 @@ def calcDuPont(
         roe=roes,
         periods=periods,
         driver=driver,
+        taxBurden=taxBurdens,
+        interestBurden=interestBurdens,
+        operatingMargin=opMargins,
+        roic=roicList,
     )
 
 

@@ -183,6 +183,7 @@ def generateResearch(
                 company,
                 sectorBenchmark=sectorBench,
                 sectorParams=sectorPar,
+                ratios=ratios,
             )
         except (ImportError, OSError, ValueError, AttributeError, TypeError) as exc:
             _log.debug("narrative 실패: %s", exc)
@@ -447,21 +448,25 @@ def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> Fi
     # ── BS 요약 시계열 ──
     bsSummary: dict[str, list[float | None]] = {}
     bsKeys = {
-        "totalAssets": "total_assets",
-        "currentAssets": "current_assets",
-        "nonCurrentAssets": "non_current_assets",
-        "totalLiabilities": "total_liabilities",
-        "totalEquity": "total_equity",
-        "cashAndEquivalents": "cash_and_cash_equivalents",
-        "shortTermBorrowings": "short_term_borrowings",
-        "longTermBorrowings": "long_term_borrowings",
-        "retainedEarnings": "retained_earnings",
-        "inventories": "inventories",
-        "tradeReceivable": "trade_receivable",
+        "totalAssets": ["total_assets"],
+        "currentAssets": ["current_assets"],
+        "nonCurrentAssets": ["noncurrent_assets", "non_current_assets"],
+        "totalLiabilities": ["total_liabilities"],
+        "totalEquity": ["total_stockholders_equity", "total_equity", "owners_of_parent_equity"],
+        "cashAndEquivalents": ["cash_and_cash_equivalents"],
+        "shortTermBorrowings": ["shortterm_borrowings", "short_term_borrowings"],
+        "longTermBorrowings": ["longterm_borrowings", "long_term_borrowings"],
+        "retainedEarnings": ["retained_earnings"],
+        "inventories": ["inventories"],
+        "tradeReceivable": ["trade_and_other_receivables", "trade_receivable"],
     }
     bsData = aSeries.get("BS", {})
-    for outKey, srcKey in bsKeys.items():
-        raw = bsData.get(srcKey, [])
+    for outKey, srcCandidates in bsKeys.items():
+        raw: list = []
+        for candidate in srcCandidates:
+            raw = bsData.get(candidate, [])
+            if raw and any(v is not None for v in raw):
+                break
         vals: list[float | None] = []
         for i in range(start, n):
             vals.append(raw[i] if i < len(raw) else None)
@@ -484,20 +489,28 @@ def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> Fi
     # ── CF 요약 시계열 ──
     cfSummary: dict[str, list[float | None]] = {}
     cfKeys = {
-        "operatingCf": "operating_cf",
-        "investingCf": "investing_cf",
-        "financingCf": "financing_cf",
+        "operatingCf": ["operating_cashflow", "operating_cf", "cash_flows_from_business"],
+        "investingCf": ["investing_cashflow", "investing_cf"],
+        "financingCf": ["financing_cashflow", "financing_cf", "cash_flows_from_financing_activities"],
     }
     cfData = aSeries.get("CF", {})
-    for outKey, srcKey in cfKeys.items():
-        raw = cfData.get(srcKey, [])
+    for outKey, srcCandidates in cfKeys.items():
+        raw2: list = []
+        for candidate in srcCandidates:
+            raw2 = cfData.get(candidate, [])
+            if raw2 and any(v is not None for v in raw2):
+                break
         vals2: list[float | None] = []
         for i in range(start, n):
-            vals2.append(raw[i] if i < len(raw) else None)
+            vals2.append(raw2[i] if i < len(raw2) else None)
         cfSummary[outKey] = vals2
 
     # FCF = OCF - CAPEX (capex는 보통 음수로 저장)
-    capexRaw = cfData.get("capital_expenditures", []) or cfData.get("capex", [])
+    capexRaw = (
+        cfData.get("purchase_of_property_plant_and_equipment", [])
+        or cfData.get("capital_expenditures", [])
+        or cfData.get("capex", [])
+    )
     fcfList: list[float | None] = []
     capexList: list[float | None] = []
     for i in range(start, n):
@@ -526,7 +539,11 @@ def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> Fi
     crossMetrics["ocfToNetIncome"] = ocfToNi
 
     # capex / 감가상각
-    deprRaw = cfData.get("depreciation_amortization", []) or cfData.get("depreciation", [])
+    deprRaw = (
+        cfData.get("depreciation_amortization", [])
+        or cfData.get("depreciation", [])
+        or cfData.get("depreciation_and_amortization", [])
+    )
     capexToDepr: list[float | None] = []
     for i in range(start, n):
         cx = capexRaw[i] if i < len(capexRaw) else None
@@ -549,6 +566,57 @@ def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> Fi
             reGrowth.append(None)
     crossMetrics["retainedEarningsGrowth"] = reGrowth
 
+    # ── Common-Size IS (매출=100% 기준) ──
+    isCommonSize: dict[str, list[float | None]] = {}
+    isKeys = {
+        "costOfSales": "cost_of_sales",
+        "grossProfit": "gross_profit",
+        "operatingProfit": "operating_profit",
+        "netProfit": "net_profit",
+        "incomeTaxExpense": "income_tax_expense",
+    }
+    isData = aSeries.get("IS", {})
+    for outKey, srcKey in isKeys.items():
+        raw3 = isData.get(srcKey, [])
+        vals3: list[float | None] = []
+        for i in range(start, n):
+            s = salesList[i] if i < len(salesList) else None
+            v = raw3[i] if i < len(raw3) else None
+            if s and s > 0 and v is not None:
+                vals3.append(round(v / s * 100, 2))
+            else:
+                vals3.append(None)
+        isCommonSize[outKey] = vals3
+
+    # ── Common-Size BS (자산=100% 기준) ──
+    bsCommonSize: dict[str, list[float | None]] = {}
+    taRaw = bsData.get("total_assets", [])
+    bsCsKeys = {
+        "currentAssets": ["current_assets", "total_current_assets"],
+        "nonCurrentAssets": ["noncurrent_assets", "non_current_assets", "total_non_current_assets"],
+        "totalLiabilities": ["total_liabilities"],
+        "totalEquity": ["total_stockholders_equity", "total_equity", "owners_of_parent_equity"],
+        "inventories": ["inventories"],
+        "tradeReceivable": ["trade_and_other_receivables", "trade_receivable"],
+        "ppe": ["property_plant_and_equipment"],
+        "intangibleAssets": ["intangible_assets"],
+    }
+    for outKey, srcCandidates in bsCsKeys.items():
+        raw4: list = []
+        for candidate in srcCandidates:
+            raw4 = bsData.get(candidate, [])
+            if raw4 and any(v is not None for v in raw4):
+                break
+        vals4: list[float | None] = []
+        for i in range(start, n):
+            ta = taRaw[i] if i < len(taRaw) else None
+            v = raw4[i] if i < len(raw4) else None
+            if ta and ta > 0 and v is not None:
+                vals4.append(round(v / ta * 100, 2))
+            else:
+                vals4.append(None)
+        bsCommonSize[outKey] = vals4
+
     return FinancialAnalysis(
         dupont=dupont,
         marginTrends=trends,
@@ -556,6 +624,8 @@ def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> Fi
         bsSummary=bsSummary,
         cfSummary=cfSummary,
         crossStatementMetrics=crossMetrics,
+        isCommonSize=isCommonSize,
+        bsCommonSize=bsCommonSize,
     )
 
 

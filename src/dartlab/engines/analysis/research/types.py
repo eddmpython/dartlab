@@ -50,7 +50,7 @@ class LynchFairValue:
 
 @dataclass
 class DuPontResult:
-    """DuPont 3-factor 분해."""
+    """DuPont 5-factor 분해."""
 
     netMargin: list[float | None] = field(default_factory=list)
     assetTurnover: list[float | None] = field(default_factory=list)
@@ -58,6 +58,11 @@ class DuPontResult:
     roe: list[float | None] = field(default_factory=list)
     periods: list[str] = field(default_factory=list)
     driver: str = ""  # "margin" | "turnover" | "leverage" | "balanced"
+    # 5-factor 확장
+    taxBurden: list[float | None] = field(default_factory=list)  # NI/EBT
+    interestBurden: list[float | None] = field(default_factory=list)  # EBT/EBIT
+    operatingMargin: list[float | None] = field(default_factory=list)  # EBIT/Sales
+    roic: list[float | None] = field(default_factory=list)  # NOPAT/IC
 
 
 @dataclass
@@ -148,6 +153,22 @@ class SectorKpis:
 
 
 @dataclass
+class BeneishDetail:
+    """Beneish M-Score 8변수 개별."""
+
+    dsri: float | None = None  # 매출채권지수
+    gmi: float | None = None  # 매출총이익지수
+    aqi: float | None = None  # 자산품질지수
+    sgi: float | None = None  # 매출성장지수
+    depi: float | None = None  # 감가상각지수
+    sgai: float | None = None  # 판관비지수
+    lvgi: float | None = None  # 레버리지지수
+    tata: float | None = None  # 발생주의비율
+    mScore: float | None = None  # 종합 M-Score
+    flagged: list[str] = field(default_factory=list)  # 경고 변수명 리스트
+
+
+@dataclass
 class FinancialAnalysis:
     """재무 분석."""
 
@@ -160,6 +181,9 @@ class FinancialAnalysis:
     cfSummary: dict[str, list[float | None]] = field(default_factory=dict)
     # 3표 연결 지표 시계열
     crossStatementMetrics: dict[str, list[float | None]] = field(default_factory=dict)
+    # Common-Size 분석 (Lens 2)
+    isCommonSize: dict[str, list[float | None]] = field(default_factory=dict)  # IS항목/매출 %
+    bsCommonSize: dict[str, list[float | None]] = field(default_factory=dict)  # BS항목/자산 %
 
 
 @dataclass
@@ -898,6 +922,74 @@ class ResearchResult:
             ft.add_row("순이익", *[_fmtBig(v) for v in fa.marginTrends["netProfit"]])
 
         console.print(Panel(ft, title="[bold]Financial Analysis[/bold]", border_style="cyan"))
+
+        # ── 6) BS 요약 ──
+        if fa.bsSummary and fa.bsSummary.get("totalAssets"):
+            bt = Table(show_header=True, box=None, padding=(0, 2), title="재무상태표 요약")
+            bt.add_column("지표", style="dim")
+            for p in periods:
+                bt.add_column(p, justify="right")
+            bsLabels = {
+                "totalAssets": "자산총계",
+                "currentAssets": "유동자산",
+                "nonCurrentAssets": "비유동자산",
+                "totalLiabilities": "부채총계",
+                "totalEquity": "자본총계",
+                "cashAndEquivalents": "현금및현금성자산",
+                "retainedEarnings": "이익잉여금",
+                "debtRatio": "부채비율",
+                "currentRatio": "유동비율",
+            }
+            for key, label in bsLabels.items():
+                vals = fa.bsSummary.get(key)
+                if not vals:
+                    continue
+                if key in ("debtRatio", "currentRatio"):
+                    bt.add_row(label, *[_fmtNum(v, "%", precision=1) for v in vals])
+                else:
+                    bt.add_row(label, *[_fmtBig(v) for v in vals])
+            console.print(Panel(bt, title="[bold]Balance Sheet Summary[/bold]", border_style="cyan"))
+
+        # ── 7) CF 요약 ──
+        if fa.cfSummary and fa.cfSummary.get("operatingCf"):
+            ct = Table(show_header=True, box=None, padding=(0, 2), title="현금흐름표 요약")
+            ct.add_column("지표", style="dim")
+            for p in periods:
+                ct.add_column(p, justify="right")
+            cfLabels = {
+                "operatingCf": "영업CF",
+                "investingCf": "투자CF",
+                "financingCf": "재무CF",
+                "capex": "CAPEX",
+                "fcf": "FCF",
+            }
+            for key, label in cfLabels.items():
+                vals = fa.cfSummary.get(key)
+                if not vals:
+                    continue
+                ct.add_row(label, *[_fmtBig(v) for v in vals])
+            console.print(Panel(ct, title="[bold]Cash Flow Summary[/bold]", border_style="cyan"))
+
+        # ── 8) 3표 연결 지표 ──
+        if fa.crossStatementMetrics and fa.crossStatementMetrics.get("ocfToNetIncome"):
+            xt = Table(show_header=True, box=None, padding=(0, 2), title="3표 연결 지표")
+            xt.add_column("지표", style="dim")
+            for p in periods:
+                xt.add_column(p, justify="right")
+            xLabels = {
+                "ocfToNetIncome": "OCF/NI",
+                "capexToDepreciation": "CAPEX/감가상각",
+                "retainedEarningsGrowth": "이익잉여금 증가율",
+            }
+            for key, label in xLabels.items():
+                vals = fa.crossStatementMetrics.get(key)
+                if not vals:
+                    continue
+                if key == "retainedEarningsGrowth":
+                    xt.add_row(label, *[_fmtNum(v, "%", precision=1) for v in vals])
+                else:
+                    xt.add_row(label, *[_fmtNum(v, "배", precision=2) for v in vals])
+            console.print(Panel(xt, title="[bold]Cross-Statement Metrics[/bold]", border_style="cyan"))
 
     def _renderSectorKpis(self, console) -> None:
         """Sector KPIs 패널."""
