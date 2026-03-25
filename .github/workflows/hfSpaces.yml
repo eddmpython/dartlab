@@ -30,7 +30,7 @@ jobs:
           cat > hf-space/README.md << 'EOF'
           ---
           title: DartLab
-          emoji: 📊
+          emoji: 🗺️
           colorFrom: red
           colorTo: yellow
           sdk: docker
