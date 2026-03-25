@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Generator
 
@@ -206,10 +205,12 @@ def _splitSystemAndContents(messages: list[dict]) -> tuple[str | None, list]:
             contents.append({"role": "model", "parts": [{"text": content or ""}]})
         elif role == "tool":
             # tool result → user 메시지로 변환 (Gemini function response)
-            contents.append({
-                "role": "user",
-                "parts": [{"text": f"[Tool Result] {content}"}],
-            })
+            contents.append(
+                {
+                    "role": "user",
+                    "parts": [{"text": f"[Tool Result] {content}"}],
+                }
+            )
         else:
             contents.append({"role": "user", "parts": [{"text": content or ""}]})
 
