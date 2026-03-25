@@ -28,7 +28,11 @@ tags:
   - korea
   - financial-statements
   - corporate-filings
-pretty_name: DartLab Company Data
+  - 전자공시
+  - 재무제표
+  - 사업보고서
+  - 한국
+pretty_name: DartLab 전자공시 데이터
 size_categories:
   - 1K<n<10K
 ---
@@ -42,6 +46,7 @@ size_categories:
 <h3>DartLab Data</h3>
 
 <p><b>Structured company data from DART & EDGAR disclosure filings</b></p>
+<p>DART 전자공시 + EDGAR 공시 데이터 — 한국 2,700사 / 미국 970사</p>
 
 <p>
 <a href="https://github.com/eddmpython/dartlab"><img src="https://img.shields.io/badge/GitHub-dartlab-ea4647?style=for-the-badge&labelColor=050811&logo=github&logoColor=white" alt="GitHub"></a>
@@ -58,14 +63,16 @@ size_categories:
 
 Pre-collected [Parquet](https://parquet.apache.org/) files from [DartLab](https://github.com/eddmpython/dartlab) — a Python library that turns DART (Korea) and EDGAR (US) disclosure filings into one structured company map.
 
+한국 DART 전자공시 시스템과 미국 SEC EDGAR에서 수집한 기업 공시 데이터입니다.
+
 This dataset is the **data layer** behind DartLab. When you run `dartlab.Company("005930")`, the library automatically downloads the relevant parquet from this repo.
 
 ## Dataset Structure
 
 ```
 dart/
-├── docs/          6 companies      ~42 MB     disclosure text (sections, tables, markdown)
-├── finance/       2,735 companies  ~586 MB    financial statements (BS, IS, CF, XBRL)
+├── docs/          2,547 companies  ~8 GB      disclosure text (sections, tables, markdown)
+├── finance/       2,744 companies  ~586 MB    financial statements (BS, IS, CF, XBRL)
 └── report/        2,711 companies  ~319 MB    structured disclosure APIs (28 types)
 ```
 
@@ -174,7 +181,7 @@ All data is sourced from public government disclosure systems. Financial figures
 
 ## Update Schedule
 
-This dataset is updated automatically via GitHub Actions (twice weekly). New filings are collected incrementally.
+This dataset is updated automatically via GitHub Actions (daily). Recent filings (last 7 days) are checked and collected incrementally.
 
 ## License
 

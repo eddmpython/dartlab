@@ -1,0 +1,143 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # UTC 18:00 = KST 03:00, 매일
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: '조회 기간 (일)'
+        default: '7'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sync-recent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      # 카테고리별 캐시 복원
+      - name: Restore finance cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/finance
+          key: dartlab-data-finance
+
+      - name: Restore report cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/report
+          key: dartlab-data-report
+
+      - name: Restore docs cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/docs
+          key: dartlab-data-docs
+
+      # 경량 수집: 최근 공시 종목만
+      - name: Collect recent filings
+        run: uv run python .github/scripts/syncRecent.py
+        env:
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '7' }}
+
+      # 변경 파일만 업로드
+      - name: Upload to HuggingFace (finance)
+        if: hashFiles('dist/changed_finance.txt') != ''
+        run: |
+          if [ -s dist/changed_finance.txt ]; then
+            cp dist/changed_finance.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target hf
+          fi
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: finance
+
+      - name: Upload to HuggingFace (report)
+        if: hashFiles('dist/changed_report.txt') != ''
+        run: |
+          if [ -s dist/changed_report.txt ]; then
+            cp dist/changed_report.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target hf
+          fi
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: report
+
+      - name: Upload to HuggingFace (docs)
+        if: hashFiles('dist/changed_docs.txt') != ''
+        run: |
+          if [ -s dist/changed_docs.txt ]; then
+            cp dist/changed_docs.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target hf
+          fi
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: docs
+
+      - name: Upload to GitHub Releases (finance)
+        if: hashFiles('dist/changed_finance.txt') != ''
+        run: |
+          if [ -s dist/changed_finance.txt ]; then
+            cp dist/changed_finance.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target gh
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_CATEGORY: finance
+
+      - name: Upload to GitHub Releases (report)
+        if: hashFiles('dist/changed_report.txt') != ''
+        run: |
+          if [ -s dist/changed_report.txt ]; then
+            cp dist/changed_report.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target gh
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_CATEGORY: report
+
+      - name: Upload to GitHub Releases (docs)
+        if: hashFiles('dist/changed_docs.txt') != ''
+        run: |
+          if [ -s dist/changed_docs.txt ]; then
+            cp dist/changed_docs.txt dist/changed.txt
+            uv run python .github/scripts/uploadData.py --target gh
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_CATEGORY: docs
+
+      # 캐시 갱신
+      - name: Save finance cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/finance
+          key: dartlab-data-finance-${{ github.run_id }}
+
+      - name: Save report cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/report
+          key: dartlab-data-report-${{ github.run_id }}
+
+      - name: Save docs cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/docs
+          key: dartlab-data-docs-${{ github.run_id }}

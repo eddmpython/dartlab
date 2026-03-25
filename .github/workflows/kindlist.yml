@@ -21,7 +21,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install polars requests
+        run: pip install polars requests huggingface-hub
 
       - name: Download existing asset hash
         run: |
@@ -58,3 +58,21 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to HuggingFace
+        if: ${{ !hashFiles('dist/SKIP') }}
+        run: |
+          python -c "
+          from huggingface_hub import HfApi
+          api = HfApi(token='${{ secrets.HF_TOKEN }}')
+          api.upload_file(
+              repo_id='eddmpython/dartlab-data',
+              repo_type='dataset',
+              path_or_fileobj='dist/corpList.parquet',
+              path_in_repo='metadata/corpList.parquet',
+              commit_message='auto-update kindList',
+          )
+          print('HuggingFace 업로드 완료')
+          "
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}

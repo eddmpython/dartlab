@@ -2,7 +2,7 @@ name: Data Sync
 
 on:
   schedule:
-    - cron: '0 17 * * 2,5'  # UTC 17:00 = KST 02:00, 화/금
+    - cron: '0 17 * * *'  # UTC 17:00 = KST 02:00, 매일 (안전망)
   workflow_dispatch:
     inputs:
       category:
@@ -48,12 +48,12 @@ jobs:
           path: data/dart/${{ matrix.category }}
           key: dartlab-data-${{ matrix.category }}
 
-      - name: Collect data
+      - name: Collect data (incremental)
         run: uv run python .github/scripts/syncData.py
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
           SYNC_CATEGORY: ${{ matrix.category }}
-          SYNC_MODE: ${{ github.event.inputs.mode || 'new' }}
+          SYNC_MODE: ${{ github.event.inputs.mode || 'all' }}
 
       # 수집 후 캐시 갱신 (다음 실행용)
       - name: Save data cache
