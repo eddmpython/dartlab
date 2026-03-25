@@ -1,4 +1,4 @@
-"""전종목 단일 계정 연간 시계열 배치 추출.
+"""전종목 단일 계정/비율 연간 시계열 배치 추출.
 
 finance parquet 2,744개를 병렬 읽기하여
 특정 snakeId 하나의 전종목 × 연도 시계열 DataFrame을 생성한다.
@@ -202,7 +202,7 @@ def scanAccount(
     """전종목 단일 계정 연간 시계열 추출.
 
     Args:
-        snakeId: 표준 계정 식별자 ("sales", "operating_income", "total_assets" 등)
+        snakeId: 표준 계정 식별자 ("sales", "operating_profit", "total_assets" 등)
         sjDiv: 재무제표 구분 ("IS", "BS", "CF"). None이면 sortOrder.json에서 자동 결정.
         fsPref: 연결/별도 우선순위 ("CFS"=연결 우선, "OFS"=별도 우선)
 
@@ -253,3 +253,162 @@ def scanAccount(
     )
 
     return result
+
+
+# ── scanRatio ──────────────────────────────────────────────────
+
+
+_RATIO_DEFS: dict[str, dict] = {
+    # 수익성
+    "roe": {"numer": "net_income", "denom": "total_stockholders_equity", "pct": True, "label": "ROE"},
+    "roa": {"numer": "net_income", "denom": "total_assets", "pct": True, "label": "ROA"},
+    "operatingMargin": {
+        "numer": "operating_profit",
+        "denom": "sales",
+        "pct": True,
+        "label": "영업이익률",
+    },
+    "netMargin": {"numer": "net_income", "denom": "sales", "pct": True, "label": "순이익률"},
+    "grossMargin": {"numer": "gross_profit", "denom": "sales", "pct": True, "label": "매출총이익률"},
+    # 안정성
+    "debtRatio": {
+        "numer": "total_liabilities",
+        "denom": "total_stockholders_equity",
+        "pct": True,
+        "label": "부채비율",
+    },
+    "currentRatio": {
+        "numer": "current_assets",
+        "denom": "current_liabilities",
+        "pct": True,
+        "label": "유동비율",
+    },
+    "equityRatio": {
+        "numer": "total_stockholders_equity",
+        "denom": "total_assets",
+        "pct": True,
+        "label": "자기자본비율",
+    },
+    # 성장성 (YoY)
+    "revenueGrowth": {"base": "sales", "yoy": True, "pct": True, "label": "매출성장률"},
+    "operatingProfitGrowth": {
+        "base": "operating_profit",
+        "yoy": True,
+        "pct": True,
+        "label": "영업이익성장률",
+    },
+    "netProfitGrowth": {
+        "base": "net_income",
+        "yoy": True,
+        "pct": True,
+        "label": "순이익성장률",
+    },
+    # 효율성
+    "totalAssetTurnover": {
+        "numer": "sales",
+        "denom": "total_assets",
+        "pct": False,
+        "label": "총자산회전율",
+    },
+    # 현금흐름
+    "operatingCfMargin": {
+        "numer": "operating_cashflow",
+        "denom": "sales",
+        "pct": True,
+        "label": "영업CF마진",
+    },
+}
+
+
+def scanRatio(
+    ratioName: str,
+    *,
+    fsPref: str = "CFS",
+) -> pl.DataFrame:
+    """전종목 단일 재무비율 연간 시계열 추출.
+
+    Args:
+        ratioName: 비율 식별자. 지원 목록은 scanRatioList() 참조.
+        fsPref: 연결/별도 우선순위 ("CFS"=연결 우선, "OFS"=별도 우선)
+
+    Returns:
+        stockCode | 2016 | 2017 | ... | 2024
+        값은 퍼센트(%) 또는 배수. 데이터 없으면 null.
+    """
+    if ratioName not in _RATIO_DEFS:
+        available = ", ".join(sorted(_RATIO_DEFS))
+        msg = f"지원하지 않는 비율: '{ratioName}'. 사용 가능: {available}"
+        raise ValueError(msg)
+
+    defn = _RATIO_DEFS[ratioName]
+
+    if defn.get("yoy"):
+        return _calcYoyRatio(defn, fsPref)
+    return _calcSimpleRatio(defn, fsPref)
+
+
+def scanRatioList() -> list[dict[str, str]]:
+    """사용 가능한 비율 목록 반환."""
+    return [{"name": k, "label": v["label"]} for k, v in _RATIO_DEFS.items()]
+
+
+def _calcSimpleRatio(defn: dict, fsPref: str) -> pl.DataFrame:
+    """분자/분모 비율 계산."""
+    numer = scanAccount(defn["numer"], fsPref=fsPref)
+    denom = scanAccount(defn["denom"], fsPref=fsPref)
+
+    yearCols = sorted(c for c in numer.columns if c != "stockCode")
+    denomYears = sorted(c for c in denom.columns if c != "stockCode")
+    commonYears = sorted(set(yearCols) & set(denomYears))
+
+    if not commonYears:
+        return pl.DataFrame({"stockCode": []})
+
+    joined = numer.select(["stockCode"] + commonYears).join(
+        denom.select(["stockCode"] + commonYears),
+        on="stockCode",
+        suffix="_d",
+    )
+
+    isPct = defn.get("pct", False)
+    multiplier = 100.0 if isPct else 1.0
+
+    resultExprs = [pl.col("stockCode")]
+    for y in commonYears:
+        expr = (
+            pl.when((pl.col(f"{y}_d") != 0) & pl.col(f"{y}_d").is_not_null() & pl.col(y).is_not_null())
+            .then((pl.col(y) / pl.col(f"{y}_d") * multiplier).round(2))
+            .otherwise(pl.lit(None, dtype=pl.Float64))
+            .alias(y)
+        )
+        resultExprs.append(expr)
+
+    return joined.select(resultExprs)
+
+
+def _calcYoyRatio(defn: dict, fsPref: str) -> pl.DataFrame:
+    """YoY 성장률 계산."""
+    base = scanAccount(defn["base"], fsPref=fsPref)
+    yearCols = sorted(c for c in base.columns if c != "stockCode")
+
+    if len(yearCols) < 2:
+        return pl.DataFrame({"stockCode": []})
+
+    resultExprs = [pl.col("stockCode")]
+    for i in range(1, len(yearCols)):
+        cur = yearCols[i]
+        prev = yearCols[i - 1]
+        expr = (
+            pl.when(
+                (pl.col(prev) != 0)
+                & pl.col(prev).is_not_null()
+                & pl.col(cur).is_not_null()
+                & (pl.col(prev).abs() > 0)
+            )
+            .then(((pl.col(cur) - pl.col(prev)) / pl.col(prev).abs() * 100).round(2))
+            .otherwise(pl.lit(None, dtype=pl.Float64))
+            .alias(cur)
+        )
+        resultExprs.append(expr)
+
+    return base.select(resultExprs)

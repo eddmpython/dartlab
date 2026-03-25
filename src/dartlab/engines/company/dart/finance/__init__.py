@@ -14,7 +14,7 @@ from dartlab.engines.company.dart.finance.pivot import (
     buildTimeseries,
 )
 from dartlab.engines.company.dart.finance.ratios import calcRatios, calcRatioSeries, toSeriesDict
-from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+from dartlab.engines.company.dart.finance.scanAccount import scanAccount, scanRatio, scanRatioList
 
 __all__ = [
     "buildTimeseries",
@@ -31,4 +31,6 @@ __all__ = [
     "toSeriesDict",
     "AccountMapper",
     "scanAccount",
+    "scanRatio",
+    "scanRatioList",
 ]
