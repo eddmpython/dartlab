@@ -38,9 +38,12 @@ ChartSpec JSON 프로토콜::
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import polars as pl
+
+_PERIOD_COL_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 # ══════════════════════════════════════
 # DartLab 컬러 팔레트
@@ -269,7 +272,7 @@ def _extract_account_series(df: pl.DataFrame, keyword: str) -> dict[str, float |
     matched = df.filter(pl.col("계정명").str.contains(keyword))
     if matched.height == 0:
         return {}
-    year_cols = sorted([c for c in df.columns if c.isdigit() and len(c) == 4])
+    year_cols = sorted([c for c in df.columns if _PERIOD_COL_RE.match(c)])
     row = matched.row(0, named=True)
     return {yr: row.get(yr) for yr in year_cols if row.get(yr) is not None}
 

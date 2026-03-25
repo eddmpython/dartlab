@@ -16,8 +16,12 @@ LLM 의존성 없이 독립 동작. 보고서 생성·차트 데이터 준비에
 from __future__ import annotations
 
 import math
+import re
 
 import polars as pl
+
+# 기간 컬럼 매칭: "2024", "2024Q1" 등
+_PERIOD_COL_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 # ══════════════════════════════════════
 # YoY 변동 계산
@@ -93,7 +97,7 @@ def ratio_table(
             year | 부채비율 | 유동비율 | 영업이익률 | 순이익률 | ROE | ROA
     """
     year_cols = sorted(
-        [c for c in bs.columns if c.isdigit() and len(c) == 4],
+        [c for c in bs.columns if _PERIOD_COL_RE.match(c)],
         reverse=True,
     )
     if not year_cols:
@@ -101,7 +105,7 @@ def ratio_table(
 
     rows = []
     for yr in year_cols:
-        row: dict[str, float | int | None] = {"year": int(yr)}
+        row: dict[str, float | int | None] = {"year": yr}
 
         debt = _find_row_value(bs, "부채총계", yr)
         equity = _find_row_value(bs, "자본총계", yr)
@@ -219,7 +223,7 @@ def pivot_accounts(
         return df
 
     year_cols = sorted(
-        [c for c in df.columns if c.isdigit() and len(c) == 4],
+        [c for c in df.columns if _PERIOD_COL_RE.match(c)],
     )
     if not year_cols:
         return df
@@ -227,7 +231,7 @@ def pivot_accounts(
     accounts = df[account_col].to_list()
     rows = []
     for yr in year_cols:
-        row: dict[str, int | float | None] = {"year": int(yr)}
+        row: dict[str, str | float | None] = {"year": yr}
         for i, acct in enumerate(accounts):
             val = df.row(i, named=True).get(yr)
             row[acct] = val
