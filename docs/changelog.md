@@ -9,6 +9,36 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2026-03-26
+
+### Added
+
+- **Gemini OAuth 2.0 브라우저 로그인**: API key 없이 Google 계정 로그인으로 Gemini 사용 가능
+- **Gather 엔진 시계열 전면 개선**: `price()`, `flow()`, `macro()` Polars DataFrame 시계열 반환
+- **네이버 차트 API 전환**: 모바일 API(1000일) → 차트 API(6000일, 수정주가, 1회 요청)
+- **Gather 인프라 강화**: circuit breaker, stale-while-revalidate, Yahoo Direct consensus, FMP 확장
+- **AI 도구 아키텍처 재설계**: 101개 → 8개 Super Tool 통합
+- **Insight 10영역 확장**: predictability, uncertainty, coreEarnings 3영역 추가
+- **`scanAccount()` / `scanRatio()`**: 전종목 재무 배치 스크리닝 (2,700+ DART / 500+ EDGAR)
+- **sections Categorical 스키마**: RSS 427MB 절감 (83%)
+- **ECOS gather 엔진**: 한국은행 경제통계 22개 지표 수집
+- **Google Gemini provider**: `google-genai` SDK 기반
+- **Ollama 속도 최적화**: GPU 자동 감지, flash_attn, 스마트 preload
+- **HF Spaces Docker 웹 데모**: Gradio 기반 AI 분석 데모
+- **글로벌 피어 매핑**: WICS→GICS 섹터 기반 자동 매핑
+
+### Fixed
+
+- Gather 코드 감사: 전체 에러 경로 `log.warning` 전환
+- 차트/테이블 기간 컬럼 `2024Q1` 형식 지원
+- EDGAR docs 수집 안정화: filing 파싱 실패 시 개별 스킵
+
+### Changed
+
+- `macro()` 시그니처: `macro(market="KR", indicator=None)` 직관적 호출
+- DEV.md 전수 현행화 (analysis 10모듈, insight 10영역, gather 도메인 확장)
+- README EN/KR 동기화: Market Data, scanAccount/scanRatio 섹션
+
 ## [0.7.8] - 2026-03-25
 
 ### Added
@@ -262,7 +292,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.8...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.9...HEAD
+[0.7.9]: https://github.com/eddmpython/dartlab/compare/v0.7.8...v0.7.9
 [0.7.8]: https://github.com/eddmpython/dartlab/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/eddmpython/dartlab/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/eddmpython/dartlab/compare/v0.7.5...v0.7.6

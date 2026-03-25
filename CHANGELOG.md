@@ -5,6 +5,42 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2026-03-26
+
+### Added
+
+- **Gemini OAuth 2.0 브라우저 로그인**: API key 없이 Google 계정 로그인으로 Gemini 사용 가능. GPT OAuth와 동일한 GUI 플로우. `google-auth-oauthlib` 제거, 표준 라이브러리 + httpx만 사용
+- **Gather 엔진 시계열 전면 개선**: `price()`, `flow()`, `macro()` 모두 Polars DataFrame 시계열 반환. `macro("KR")`, `macro("US")`, `macro("CPI")` 직관적 호출 지원
+- **네이버 차트 API 전환 (FDR 방식)**: 모바일 페이징 API(1000일) → `fchart.stock.naver.com` 차트 API(6000일, 수정주가). 요청 20회 → 1회
+- **Gather 인프라 강화**: Yahoo Direct consensus, FMP consensus/sector PER, circuit breaker(3회→60초 차단), stale-while-revalidate 캐시, persistent event loop, Yahoo RPM 30→5 조정
+- **`scanAccount()` / `scanRatio()` README 문서화**: 시장 전수 재무 스크리닝 섹션 추가 (EN/KR 양쪽)
+- **AI 도구 아키텍처 전면 재설계**: 101개 세분화 도구 → 8개 Super Tool 통합. LLM 도구 선택 정확도 향상
+- **Insight 10영역 확장**: 기존 7영역에 predictability(예측 가능성), uncertainty(불확실성), coreEarnings(핵심이익 품질) 3영역 추가
+- **`scanAccount()` / `scanRatio()` 구현**: 전종목 단일 계정/비율 시계열 배치 추출 (2,700+ DART / 500+ EDGAR, ~3초)
+- **sections Categorical 스키마**: Polars Categorical 컬럼 적용으로 RSS 427MB 절감 (83%)
+- **ECOS gather 엔진**: 한국은행 경제통계 22개 지표 수집. 국고채 3/5/10년, 회사채 BBB- 5년, CD 91일 금리 확장
+- **Google Gemini provider**: `google-genai` SDK 기반 AI provider 추가
+- **Ollama 속도 최적화**: GPU 자동 감지, flash_attn, VRAM 기반 모델 추천, keep_alive 제어, 스마트 preload
+- **HF Spaces Docker 웹 데모**: Gradio 기반 AI 분석 데모 앱 + GitHub Actions 자동 배포
+- **글로벌 피어 매핑**: `peer/discover.py` — WICS→GICS 섹터 기반 글로벌 피어 자동 매핑
+- **공통 유틸리티**: `core/env.py`(환경 변수 중앙 관리), `common/audit.py`(감사의견 정규화 KR/EN/JP), `common/finance/currency.py`(FRED 기반 환율 변환)
+- **UI 리팩터**: ActivityBar/CompanyContextBar 제거, 사이드바 통합, SettingsPanel Gemini OAuth 설정
+
+### Fixed
+
+- **Gather 코드 감사**: 전체 에러 경로 `log.debug` → `log.warning` 전환 (조용한 실패 금지 원칙)
+- **차트/테이블 기간 컬럼 매칭**: 분기 컬럼 `2024Q1` 형식 지원
+- **sections Categorical 호환**: period `.str` 연산에 cast 적용
+- **EDGAR docs 수집 안정화**: filing 파싱 실패 시 개별 스킵 (전체 크래시 방지)
+- **peer consensus**: numpy 의존 제거 → `statistics.median` 사용 (CI 호환)
+
+### Changed
+
+- **Gather macro() 시그니처**: `macro(indicator, *, market)` → `macro(market="KR", indicator=None)` — 직관적 호출
+- **llm-gemini extras 제거**: `google-genai`를 `llm` extras에 통합
+- **DEV.md 전수 현행화**: analysis(8→10모듈), insight(7→10영역), gather(도메인 확장), CHANGELOG 링크, installation.md 데이터 소스 수정
+- **README EN/KR 동기화**: Market Data Collection 섹션 전면 갱신, scanAccount/scanRatio 섹션 추가, 10-area 반영
+
 ## [0.7.8] - 2026-03-25
 
 ### Added
@@ -258,7 +294,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.8...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.9...HEAD
+[0.7.9]: https://github.com/eddmpython/dartlab/compare/v0.7.8...v0.7.9
 [0.7.8]: https://github.com/eddmpython/dartlab/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/eddmpython/dartlab/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/eddmpython/dartlab/compare/v0.7.5...v0.7.6
