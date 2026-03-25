@@ -1,8 +1,20 @@
-"""Google Gemini provider."""
+"""Google Gemini provider.
+
+인증 우선순위:
+1. API key (GOOGLE_API_KEY / GEMINI_API_KEY 환경변수 또는 config)
+2. OAuth 2.0 (Google 계정 로그인 — API key 없이 무료 사용 가능)
+
+OAuth 사용 시:
+- 첫 실행: 브라우저 로그인 → 토큰 ~/.dartlab/gemini_oauth.json 저장
+- 이후: 저장된 토큰 자동 사용 (만료 시 자동 갱신)
+- client_secret.json: ~/.dartlab/gemini_client_secret.json 에 배치
+"""
 
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 from typing import Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
@@ -10,11 +22,87 @@ from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolRespo
 
 _log = logging.getLogger(__name__)
 
+_DARTLAB_DIR = Path.home() / ".dartlab"
+_OAUTH_TOKEN_FILE = _DARTLAB_DIR / "gemini_oauth.json"
+_CLIENT_SECRET_FILE = _DARTLAB_DIR / "gemini_client_secret.json"
+_OAUTH_SCOPES = ["https://www.googleapis.com/auth/generative-language"]
+
+
+def _loadOAuthCredentials():
+    """저장된 OAuth 토큰을 로드하고, 만료 시 자동 갱신."""
+    if not _OAUTH_TOKEN_FILE.exists():
+        return None
+
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+    except ImportError:
+        return None
+
+    try:
+        creds = Credentials.from_authorized_user_file(str(_OAUTH_TOKEN_FILE), _OAUTH_SCOPES)
+    except (json.JSONDecodeError, ValueError, KeyError):
+        _log.warning("gemini OAuth 토큰 파일 손상 — 삭제 후 재인증 필요")
+        _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
+        return None
+
+    if creds.valid:
+        return creds
+
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(Request())
+            _saveOAuthCredentials(creds)
+            return creds
+        except Exception as e:
+            _log.warning(f"gemini OAuth 토큰 갱신 실패: {e}")
+            _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
+            return None
+
+    return None
+
+
+def _runOAuthFlow():
+    """브라우저 기반 OAuth 로그인 → 토큰 저장."""
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+    except ImportError:
+        raise ImportError(
+            "Google OAuth 인증에 필요한 패키지가 없습니다.\n"
+            "  uv add google-auth-oauthlib"
+        )
+
+    if not _CLIENT_SECRET_FILE.exists():
+        raise FileNotFoundError(
+            f"Google OAuth client secret 파일이 필요합니다.\n"
+            f"  위치: {_CLIENT_SECRET_FILE}\n"
+            f"  생성: https://console.cloud.google.com/apis/credentials\n"
+            f"  → OAuth 2.0 Client ID → Desktop app → JSON 다운로드"
+        )
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(_CLIENT_SECRET_FILE), _OAUTH_SCOPES)
+    creds = flow.run_local_server(port=0)
+    _saveOAuthCredentials(creds)
+    _log.info("Gemini OAuth 인증 완료 — 토큰 저장됨")
+    return creds
+
+
+def _saveOAuthCredentials(creds) -> None:
+    """OAuth credential을 JSON으로 저장."""
+    _DARTLAB_DIR.mkdir(parents=True, exist_ok=True)
+    _OAUTH_TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
+
+
+def isOAuthAuthenticated() -> bool:
+    """Gemini OAuth 토큰이 유효한지 확인."""
+    return _loadOAuthCredentials() is not None
+
 
 class GeminiProvider(BaseProvider):
     """Google Gemini API provider.
 
     google-genai SDK 기반. API key 또는 OAuth 인증 지원.
+    API key 없으면 자동으로 OAuth 로그인 시도.
     """
 
     def __init__(self, config: LLMConfig):
@@ -29,16 +117,24 @@ class GeminiProvider(BaseProvider):
         except ImportError:
             raise ImportError("google-genai 패키지가 필요합니다.\n  uv add google-genai")
 
+        # 1) API key 우선
+        import os
+
         apiKey = self.config.api_key
         if not apiKey:
-            import os
-
             apiKey = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
-        if not apiKey:
-            raise ValueError("Google API key가 필요합니다. GOOGLE_API_KEY 환경변수 또는 api_key 설정.")
+        if apiKey:
+            self._client = genai.Client(api_key=apiKey)
+            return self._client
 
-        self._client = genai.Client(api_key=apiKey)
+        # 2) OAuth — 저장된 토큰 또는 새 로그인
+        creds = _loadOAuthCredentials()
+        if creds is None:
+            _log.info("Gemini API key 없음 — OAuth 로그인 시도")
+            creds = _runOAuthFlow()
+
+        self._client = genai.Client(credentials=creds)
         return self._client
 
     @property
