@@ -189,13 +189,31 @@ class GeminiProvider(BaseProvider):
             finish_reason=finishReason,
         )
 
+    def format_assistant_tool_calls(
+        self,
+        answer: str | None,
+        tool_calls: list,
+    ) -> dict:
+        """Gemini native: model → functionCall parts."""
+        from google.genai import types
+
+        parts = []
+        if answer:
+            parts.append(types.Part(text=answer))
+        for tc in tool_calls:
+            parts.append(types.Part(function_call=types.FunctionCall(name=tc.name, args=tc.arguments)))
+        return {"role": "model", "parts": parts, "_gemini_native": True}
+
     def format_tool_result(self, tool_call_id: str, result: str) -> dict:
-        """Gemini tool result → OpenAI 형식으로 변환."""
-        return {
-            "role": "tool",
-            "tool_call_id": tool_call_id,
-            "content": result,
-        }
+        """Gemini native: user → functionResponse parts."""
+        from google.genai import types
+
+        # tool_call_id에서 함수 이름 추출 (call_{name}_{idx} 형식)
+        name = tool_call_id
+        if name.startswith("call_") and "_" in name[5:]:
+            name = name[5:].rsplit("_", 1)[0]
+        parts = [types.Part(function_response=types.FunctionResponse(name=name, response={"result": result}))]
+        return {"role": "user", "parts": parts, "_gemini_native": True}
 
 
 def _splitSystemAndContents(messages: list[dict]) -> tuple[str | None, list]:
@@ -204,6 +222,12 @@ def _splitSystemAndContents(messages: list[dict]) -> tuple[str | None, list]:
     contents = []
 
     for msg in messages:
+        # Gemini native 형식 메시지는 그대로 전달
+        if msg.get("_gemini_native"):
+            role = msg.get("role", "user")
+            contents.append({"role": role, "parts": msg["parts"]})
+            continue
+
         role = msg.get("role", "user")
         content = msg.get("content", "")
 
@@ -212,6 +236,7 @@ def _splitSystemAndContents(messages: list[dict]) -> tuple[str | None, list]:
         elif role == "assistant":
             contents.append({"role": "model", "parts": [{"text": content or ""}]})
         elif role == "tool":
+            # fallback: OpenAI 형식 tool result → text로 변환
             contents.append(
                 {
                     "role": "user",

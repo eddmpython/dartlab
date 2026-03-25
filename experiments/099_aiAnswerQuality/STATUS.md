@@ -183,3 +183,48 @@
 2. action dispatch 패턴(explore → action → target)을 소형 모델이 이해 못함
 3. 도구 없이 답변 생성 → 100% hallucination (허위 수치)
 4. **다음 단계**: Plan-Execute 패턴(시스템이 질문 분류 → 도구 계획 생성 → 순차 실행) 또는 14b+ 모델 필수
+
+## 010-012 결과 — Gemini API 라이브 E2E + 도구 강제 유도 (채택)
+
+### 근본 원인 발견
+- `_resolve_context_tier()`에서 `"gemini"`가 tool_capable 목록에 없어 **focused tier**로 빠짐
+- focused tier = 전체 재무제표(IS/BS/CF/ratios) + 사업개요 → ~12,000 토큰 컨텍스트
+- LLM이 이미 데이터를 가지고 있어 도구를 호출할 필요 없음 → **도구 호출 0%**
+
+### 수정 내용
+1. `_resolve_context_tier()`: `"gemini"` → tool_capable set 추가 → skeleton tier
+2. `allow_tool_guidance`: `"gemini"` 추가 → 도구 안내 프롬프트 포함
+3. `agent_loop_stream`: tool 후 answer가 있으면 직접 yield (Gemini stream 호환성)
+4. `GeminiProvider`: native `functionCall`/`functionResponse` parts 형식 구현
+5. skeleton context에 "참고용 요약" 안내 추가
+6. selector.py 도구 선택 규칙 강화
+
+### 010 결과 (수정 전)
+| 질문 | 도구 | 답변 | 한국어 | 평가 |
+|------|------|------|--------|------|
+| 재무제표 요약 | 없음 | 4314자 | O | ❌ (context-only, hallucination 위험) |
+| 배당 현황 | 없음 | 889자 | O | ❌ |
+| 리스크 요인 | 없음 | 1709자 | O | ❌ |
+| 사업 개요 | explore(show,businessOverview) | 326자 | O | ✅ |
+| 기본 대화 | 없음 | 150자 | O | ✅ |
+| 종합 분석 | 없음 | 277자 | O | ❌ |
+
+- 도구 정확도: 33%, 한국어: 100%
+
+### 011 결과 (수정 후, 핵심 3개)
+| 질문 | 도구 | 답변 | 한국어 | 평가 |
+|------|------|------|--------|------|
+| 재무제표 요약 | finance(IS) + finance(BS) + finance(CF) | 2827자 | O | ✅ |
+| 배당 현황 | finance(report,dividend) | 1397자 | O | ✅ |
+| 리스크 요인 | explore(show,riskDerivative) | 1445자 | O | ✅ |
+
+- 도구 정확도: **100%** (0% → 100%), 한국어: 100%
+
+### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `engines/ai/runtime/core.py` | _resolve_context_tier + allow_tool_guidance에 gemini 추가 |
+| `engines/ai/runtime/agent.py` | tool 후 answer 직접 yield (stream fallback) |
+| `engines/ai/providers/gemini.py` | native functionCall/functionResponse 형식 구현 |
+| `engines/ai/context/builder.py` | skeleton context "참고용 요약" 안내 추가 |
+| `engines/ai/tools/selector.py` | 도구 선택 규칙 강화 (재무/공시 질문 도구 필수) |

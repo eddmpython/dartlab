@@ -131,12 +131,13 @@ def agent_loop_stream(
                 # 첫 턴에서 tool 호출 없이 바로 답변 → stream으로 재생성
                 yield from provider.stream(messages)
                 return
-            # tool 결과를 받은 후 최종 답변: complete_with_tools 결과를 직접 사용
-            if response.answer:
+            # tool 결과를 받은 후 최종 답변
+            if response.answer and response.answer.strip():
+                # complete_with_tools가 이미 답변을 생성했으면 직접 yield
                 yield response.answer
-                return
-            # answer가 비어있으면 stream으로 재생성 시도
-            yield from provider.stream(messages)
+            else:
+                # 답변이 비어있으면 stream으로 재생성 시도
+                yield from provider.stream(messages)
             return
 
         # assistant 메시지 추가 (provider 형식에 맞게)
@@ -153,7 +154,11 @@ def agent_loop_stream(
 
             messages.append(provider.format_tool_result(tc.id, result))
 
-    yield from provider.stream(messages)
+    # max_turns 도달 — 마지막 complete_with_tools의 answer 사용
+    if response.answer and response.answer.strip():
+        yield response.answer
+    else:
+        yield from provider.stream(messages)
 
 
 def build_agent_system_addition(runtime: ToolRuntime | None = None) -> str:

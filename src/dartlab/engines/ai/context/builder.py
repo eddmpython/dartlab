@@ -1789,6 +1789,7 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
     parts = [f"# {company.corpName} ({company.stockCode})"]
     if is_us:
         parts[0] += " | Market: US (SEC EDGAR) | Currency: USD"
+    parts.append("⚠️ 아래는 참고용 요약입니다. 질문에 답하려면 반드시 도구(explore/finance)로 상세 데이터를 조회하세요.")
     included = []
 
     # 핵심 계정 3개 (최근 3년)
