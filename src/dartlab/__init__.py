@@ -10,8 +10,12 @@ from dartlab.engines import ai as llm
 from dartlab.engines.company.dart.company import Company as _DartEngineCompany
 from dartlab.engines.company.dart.openapi.dart import Dart, OpenDart
 from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
+from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.engines.gather.fred import Fred
 from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
+
+# .env 자동 로드 — API 키 등 환경변수
+_loadEnv()
 
 try:
     __version__ = _pkg_version("dartlab")
@@ -260,6 +264,69 @@ def news(query: str, *, market: str = "KR", days: int = 30):
     from dartlab.engines.gather import getDefaultGather
 
     return getDefaultGather().news(query, market=market, days=days)
+
+
+def price(stockCode: str, *, market: str = "KR", start: str | None = None, end: str | None = None, snapshot: bool = False):
+    """주가 시계열 (기본 1년 OHLCV) 또는 스냅샷.
+
+    Example::
+
+        import dartlab
+        dartlab.price("005930")                              # 1년 OHLCV 시계열
+        dartlab.price("005930", start="2020-01-01")          # 기간 지정
+        dartlab.price("005930", snapshot=True)               # 현재가 스냅샷
+    """
+    from dartlab.engines.gather import getDefaultGather
+
+    return getDefaultGather().price(stockCode, market=market, start=start, end=end, snapshot=snapshot)
+
+
+def consensus(stockCode: str, *, market: str = "KR"):
+    """컨센서스 — 목표가, 투자의견.
+
+    Example::
+
+        import dartlab
+        dartlab.consensus("005930")
+        dartlab.consensus("AAPL", market="US")
+    """
+    from dartlab.engines.gather import getDefaultGather
+
+    return getDefaultGather().consensus(stockCode, market=market)
+
+
+def flow(stockCode: str, *, market: str = "KR"):
+    """수급 시계열 — 외국인/기관 매매 동향 (KR 전용).
+
+    Example::
+
+        import dartlab
+        dartlab.flow("005930")
+        # [{"date": "20260325", "foreignNet": -6165053, "institutionNet": 2908773, ...}, ...]
+    """
+    from dartlab.engines.gather import getDefaultGather
+
+    return getDefaultGather().flow(stockCode, market=market)
+
+
+def macro(market: str = "KR", indicator: str | None = None, *, start: str | None = None, end: str | None = None):
+    """거시 지표 시계열 — ECOS(KR) / FRED(US).
+
+    인자 없으면 카탈로그 전체 지표를 wide DataFrame으로 반환.
+
+    Example::
+
+        import dartlab
+        dartlab.macro()                    # KR 전체 지표 wide DF (22개)
+        dartlab.macro("US")                # US 전체 지표 wide DF (50개)
+        dartlab.macro("CPI")               # CPI (자동 KR 감지)
+        dartlab.macro("FEDFUNDS")          # 연방기금금리 (자동 US 감지)
+        dartlab.macro("KR", "CPI")         # 명시적 KR + CPI
+        dartlab.macro("US", "SP500")       # 명시적 US + S&P500
+    """
+    from dartlab.engines.gather import getDefaultGather
+
+    return getDefaultGather().macro(market, indicator, start=start, end=end)
 
 
 def crossBorderPeers(stockCode: str, *, topK: int = 5):
@@ -673,6 +740,20 @@ def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
     )
 
 
+def research(codeOrName: str, *, sections: list[str] | None = None, includeMarket: bool = True):
+    """종합 기업분석 리포트.
+
+    Example::
+
+        import dartlab
+        dartlab.research("005930")
+    """
+    c = Company(codeOrName)
+    from dartlab.engines.analysis.research import generateResearch
+
+    return generateResearch(c, sections=sections, includeMarket=includeMarket)
+
+
 def groupHealth():
     """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
 
@@ -877,6 +958,7 @@ __all__ = [
     "capital",
     "debt",
     "groupHealth",
+    "research",
     "digest",
     "scanAccount",
     "scanRatio",

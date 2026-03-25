@@ -1,4 +1,4 @@
-"""히스토리 fallback facade — yahoo_direct → fmp → yahoo 순서 (async)."""
+"""히스토리 fallback facade — naver(KR) → yahoo_direct → fmp → yahoo 순서 (async)."""
 
 from __future__ import annotations
 
@@ -29,10 +29,16 @@ async def fetch(
     Returns:
         [{"date": ..., "open": ..., "high": ..., "low": ..., "close": ..., "volume": ...}, ...]
     """
-    chain = list(HISTORY_FALLBACK)
-    # fmp도 히스토리 지원 — fallback에 추가 (중복 방지)
+    chain: list[str] = []
+    # KR → naver 최우선
+    if market == "KR":
+        chain.append("naver")
+    chain.extend(HISTORY_FALLBACK)
     if "fmp" not in chain:
         chain.append("fmp")
+    # 중복 제거 (순서 유지)
+    seen: set[str] = set()
+    chain = [s for s in chain if not (s in seen or seen.add(s))]  # type: ignore[func-returns-value]
 
     for source_name in chain:
         if circuit_breaker.is_open(source_name):
@@ -52,7 +58,6 @@ async def fetch(
                         market=market,
                     )
                     if result is not None and len(result) > 0:
-                        # pl.DataFrame → list[dict] 변환
                         if hasattr(result, "to_dicts"):
                             return result.to_dicts()
                         return result

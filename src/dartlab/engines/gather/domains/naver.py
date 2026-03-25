@@ -88,7 +88,10 @@ async def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
     if not consensus_info:
         return None
 
-    target = _clean_number(consensus_info.get("targetPrice"))
+    # 네이버 API v2: priceTargetMean / v1: targetPrice
+    target = _clean_number(
+        consensus_info.get("priceTargetMean") or consensus_info.get("targetPrice")
+    )
     if not target or target <= 0:
         return None
 
@@ -96,23 +99,27 @@ async def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
     if isinstance(analyst_count, str):
         analyst_count = int(_clean_number(analyst_count) or 0)
 
-    # 투자의견 비율
+    # 투자의견: recommMean (1~5 스케일, 4+ ≈ 매수) 또는 investmentOpinion 리스트
     buy_ratio = 0.0
-    total_opinions = 0
-    buy_count = 0
-    opinion_data = consensus_info.get("investmentOpinion")
-    if opinion_data and isinstance(opinion_data, list):
-        for item in opinion_data:
-            count = int(item.get("count", 0))
-            opinion = item.get("opinion", "")
-            total_opinions += count
-            if opinion in ("매수", "강력매수", "Buy", "StrongBuy"):
-                buy_count += count
-        if total_opinions > 0:
-            buy_ratio = buy_count / total_opinions
+    recomm_mean = _clean_number(consensus_info.get("recommMean"))
+    if recomm_mean is not None and recomm_mean > 0:
+        buy_ratio = min(recomm_mean / 5.0, 1.0)
+    else:
+        total_opinions = 0
+        buy_count = 0
+        opinion_data = consensus_info.get("investmentOpinion")
+        if opinion_data and isinstance(opinion_data, list):
+            for item in opinion_data:
+                count = int(item.get("count", 0))
+                opinion = item.get("opinion", "")
+                total_opinions += count
+                if opinion in ("매수", "강력매수", "Buy", "StrongBuy"):
+                    buy_count += count
+            if total_opinions > 0:
+                buy_ratio = buy_count / total_opinions
 
-    high = _clean_number(consensus_info.get("targetPriceHigh"))
-    low = _clean_number(consensus_info.get("targetPriceLow"))
+    high = _clean_number(consensus_info.get("targetPriceHigh") or consensus_info.get("priceTargetHigh"))
+    low = _clean_number(consensus_info.get("targetPriceLow") or consensus_info.get("priceTargetLow"))
 
     return ConsensusData(
         target_price=target,
@@ -124,8 +131,8 @@ async def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
     )
 
 
-async def fetch_flow(stock_code: str, client) -> FlowData | None:
-    """네이버 → 외국인/기관 순매수."""
+async def fetch_flow(stock_code: str, client) -> list[dict] | None:
+    """네이버 → 외국인/기관 수급 시계열."""
     url = f"{_API_BASE}/{stock_code}/integration"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
@@ -134,18 +141,40 @@ async def fetch_flow(stock_code: str, client) -> FlowData | None:
         log.warning("naver flow API 실패 (%s): %s", stock_code, exc)
         return None
 
+    # v2: dealTrendInfos 배열 전체 활용 (최신순)
+    deal_trends = data.get("dealTrendInfos") or []
+    if deal_trends and isinstance(deal_trends, list):
+        result = []
+        for item in deal_trends:
+            fn = _clean_number(item.get("foreignerPureBuyQuant"))
+            on = _clean_number(item.get("organPureBuyQuant"))
+            ind = _clean_number(item.get("individualPureBuyQuant"))
+            ratio_str = item.get("foreignerHoldRatio", "")
+            ratio = None
+            if ratio_str:
+                ratio = _clean_number(str(ratio_str).replace("%", ""))
+            row = {
+                "date": item.get("bizdate", ""),
+                "foreignNet": fn or 0.0,
+                "institutionNet": on or 0.0,
+                "individualNet": ind or 0.0,
+                "foreignHoldingRatio": ratio or 0.0,
+            }
+            result.append(row)
+        if result:
+            return result
+
+    # v1 fallback: foreignSummary + dealTrendByInvestor (스냅샷 1건)
     foreign_net = 0.0
     institution_net = 0.0
     foreign_holding_ratio = 0.0
 
-    # 외국인 보유 비율
     foreign_info = data.get("foreignSummary")
     if foreign_info:
         ratio = _clean_number(foreign_info.get("foreignOwnershipRatio"))
         if ratio is not None:
             foreign_holding_ratio = ratio
 
-    # 투자자별 매매동향
     investor_info = data.get("dealTrendByInvestor")
     if investor_info and isinstance(investor_info, list):
         for item in investor_info:
@@ -161,12 +190,7 @@ async def fetch_flow(stock_code: str, client) -> FlowData | None:
     if foreign_net == 0.0 and institution_net == 0.0 and foreign_holding_ratio == 0.0:
         return None
 
-    return FlowData(
-        foreign_net=foreign_net,
-        institution_net=institution_net,
-        foreign_holding_ratio=foreign_holding_ratio,
-        source="naver",
-    )
+    return [{"date": "", "foreignNet": foreign_net, "institutionNet": institution_net, "foreignHoldingRatio": foreign_holding_ratio}]
 
 
 async def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
@@ -261,8 +285,75 @@ async def fetch_all(stock_code: str, client) -> GatherResult:
     try:
         result.price = await fetch_price(stock_code, client)
         result.consensus = await fetch_consensus(stock_code, client)
-        result.flow = await fetch_flow(stock_code, client)
+        # flow: 시계열 → 스냅샷 변환 (GatherResult 호환)
+        flow_series = await fetch_flow(stock_code, client)
+        if flow_series:
+            latest = flow_series[0]
+            result.flow = FlowData(
+                foreign_net=latest.get("foreignNet") or 0.0,
+                institution_net=latest.get("institutionNet") or 0.0,
+                foreign_holding_ratio=latest.get("foreignHoldingRatio") or 0.0,
+                source="naver",
+            )
         result.sector_per = await fetch_sector_per(stock_code, client)
     except SourceUnavailableError as exc:
         result.error = str(exc)
     return result
+
+
+async def fetch_history(
+    stock_code: str,
+    client,
+    *,
+    start: str = "",
+    end: str = "",
+    market: str = "KR",
+) -> list[dict]:
+    """네이버 → 주가 OHLCV 시계열 (KR 전용, 페이징)."""
+    if market != "KR":
+        return []
+    url = f"{_API_BASE}/{stock_code}/price"
+    all_rows: list[dict] = []
+    page = 1
+    max_pages = 20  # 최대 1000일 (50 * 20)
+
+    while page <= max_pages:
+        try:
+            resp = await client.get(
+                url,
+                params={"pageSize": 50, "page": page},
+                headers={"Accept": "application/json"},
+            )
+            items = resp.json()
+        except (SourceUnavailableError, ValueError) as exc:
+            log.debug("naver history page %d 실패: %s", page, exc)
+            break
+        if not items or not isinstance(items, list):
+            break
+        for item in items:
+            dt = item.get("localTradedAt", "")
+            if start and dt < start:
+                all_rows.append({
+                    "date": dt,
+                    "open": _clean_number(item.get("openPrice")) or 0.0,
+                    "high": _clean_number(item.get("highPrice")) or 0.0,
+                    "low": _clean_number(item.get("lowPrice")) or 0.0,
+                    "close": _clean_number(item.get("closePrice")) or 0.0,
+                    "volume": item.get("accumulatedTradingVolume") or 0,
+                })
+                return list(reversed(all_rows))  # 날짜 오름차순
+            if end and dt > end:
+                continue
+            all_rows.append({
+                "date": dt,
+                "open": _clean_number(item.get("openPrice")) or 0.0,
+                "high": _clean_number(item.get("highPrice")) or 0.0,
+                "low": _clean_number(item.get("lowPrice")) or 0.0,
+                "close": _clean_number(item.get("closePrice")) or 0.0,
+                "volume": item.get("accumulatedTradingVolume") or 0,
+            })
+        if len(items) < 50:
+            break
+        page += 1
+
+    return list(reversed(all_rows))  # 날짜 오름차순
