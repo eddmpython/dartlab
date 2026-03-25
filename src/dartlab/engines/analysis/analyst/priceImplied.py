@@ -86,6 +86,12 @@ def reverseImpliedGrowth(
             warnings=warnings,
         )
 
+    # ±30% hard cap (P/S 고배율 기업에서 비현실적 역산 방지)
+    _CAP = 0.30
+    if abs(impliedG) > _CAP:
+        warnings.append(f"내재성장률 {impliedG*100:+.1f}%가 ±50% 범위 초과 — cap 적용")
+        impliedG = max(-_CAP, min(impliedG, _CAP))
+
     # implied revenue path
     impliedRevPath = []
     rev = revenue
@@ -201,8 +207,8 @@ def _dcfFromGrowth(
         fcf = rev * fcfMargin
         pvFcf += fcf / (1 + wacc) ** yr
 
-    # terminal value
-    terminalFcf = rev * (1 + growth) * fcfMargin
+    # terminal value (Gordon Growth: TV = FCF_n × (1+g_terminal) / (WACC - g_terminal))
+    terminalFcf = rev * fcfMargin
     tv = terminalFcf * (1 + terminalGrowth) / (wacc - terminalGrowth)
     pvTv = tv / (1 + wacc) ** horizon
 

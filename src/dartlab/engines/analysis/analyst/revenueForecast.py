@@ -567,10 +567,13 @@ _BACKLOG_WEIGHT = 0.15
 _BACKLOG_SECTORS = {"건설", "조선", "방산", "건설/토목", "조선/기계"}
 
 # 주가 내재 매출 역산 가중치 (시계열에서 할당)
-_PRICE_IMPLIED_WEIGHT = 0.10
+_PRICE_IMPLIED_WEIGHT = 0.08
 
 # 횡단면 회귀 가중치 (시계열에서 할당)
-_CROSS_SECTION_WEIGHT = 0.12
+_CROSS_SECTION_WEIGHT = 0.0  # Gather 실데이터 연동 전까지 비활성
+
+# 공시 정성 신호 가중치
+_DISCLOSURE_WEIGHT = 0.05
 
 
 def _extractSegmentForecasts(
@@ -916,6 +919,7 @@ def forecastRevenue(
     currency: str = "KRW",
     marketCap: float | None = None,
     crossSectionGrowth: float | None = None,
+    disclosureGrowthAdj: float | None = None,
 ) -> RevenueForecastResult:
     """매출액 앙상블 예측."""
     warnings: list[str] = []
@@ -998,16 +1002,50 @@ def forecastRevenue(
             weights["timeseries"] -= piShare
             assumptions.append(f"주가내재({piShare:.0%}): 시가총액 역산 내재성장률 {priceImpliedGrowth:.1f}%")
 
-    # ── Source 9: 횡단면 회귀 ──
+    # ── Source 9: 횡단면 회귀 (Gather 실데이터 연동 전까지 비활성) ──
     crossSectionG: float | None = crossSectionGrowth
-    if crossSectionG is not None and "timeseries" in weights:
+    if crossSectionG is not None and _CROSS_SECTION_WEIGHT > 0 and "timeseries" in weights:
         csShare = min(_CROSS_SECTION_WEIGHT, weights["timeseries"])
         weights["crossSection"] = csShare
         weights["timeseries"] -= csShare
         assumptions.append(f"횡단면회귀({csShare:.0%}): 전 상장사 cross-section 예측 {crossSectionG:.1f}%")
 
+    # ── Source 10: 공시 정성 신호 ──
+    disclosureAdj: float = 0.0
+    if disclosureGrowthAdj is not None and disclosureGrowthAdj != 0.0 and _DISCLOSURE_WEIGHT > 0 and "timeseries" in weights:
+        dsShare = min(_DISCLOSURE_WEIGHT, weights["timeseries"])
+        weights["disclosure"] = dsShare
+        weights["timeseries"] -= dsShare
+        disclosureAdj = disclosureGrowthAdj
+        assumptions.append(f"공시신호({dsShare:.0%}): tone 기반 조정 {disclosureAdj:+.2f}%p")
+
+    # 시계열 최소 보장: 과도 희석 방지 (최소 0.10)
+    _TS_FLOOR = 0.10
+    if "timeseries" in weights and weights["timeseries"] < _TS_FLOOR:
+        deficit = _TS_FLOOR - weights["timeseries"]
+        weights["timeseries"] = _TS_FLOOR
+        # 부족분을 다른 v3 소스에서 비례 차감
+        v3Keys = [k for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure") if k in weights and weights[k] > 0]
+        if v3Keys:
+            totalV3 = sum(weights[k] for k in v3Keys)
+            for k in v3Keys:
+                weights[k] -= deficit * (weights[k] / totalV3)
+                weights[k] = max(weights[k], 0.0)
+
     # 라이프사이클 기반 가중치 조정
     weights = _lifecycleWeightAdjustments(lifecycle, weights)
+
+    # 시계열 최소 보장 재확인 (라이프사이클 조정 후)
+    if "timeseries" in weights and weights["timeseries"] < _TS_FLOOR:
+        deficit = _TS_FLOOR - weights["timeseries"]
+        weights["timeseries"] = _TS_FLOOR
+        v3Keys2 = [k for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure") if k in weights and weights[k] > 0]
+        if v3Keys2:
+            totalV3_2 = sum(weights[k] for k in v3Keys2)
+            if totalV3_2 > 0:
+                for k in v3Keys2:
+                    weights[k] -= deficit * (weights[k] / totalV3_2)
+                    weights[k] = max(weights[k], 0.0)
 
     # ── Source 3: 매크로 조정 ──
     macroAdj = [0.0] * horizon
@@ -1160,6 +1198,10 @@ def forecastRevenue(
         # Source 9: 횡단면 회귀 성장률
         if crossSectionG is not None and "crossSection" in weights:
             blendedGrowth += crossSectionG * weights.get("crossSection", 0)
+
+        # Source 10: 공시 정성 신호 (성장률에 직접 조정)
+        if disclosureAdj != 0.0 and "disclosure" in weights:
+            blendedGrowth += disclosureAdj * weights.get("disclosure", 0)
 
         projVal = prevRevenue * (1 + blendedGrowth / 100)
         projected.append(projVal)

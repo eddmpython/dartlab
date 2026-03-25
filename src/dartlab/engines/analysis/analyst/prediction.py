@@ -25,6 +25,11 @@ class ContextSignals:
     sectorCyclicality: str = "moderate"
     # 성장률 백분위 (0~100, 시장 내 순위)
     growthRankPct: float = 50.0
+    # 공시 정성 신호 (Phase 2)
+    disclosureTone: float = 0.0  # -1.0 ~ +1.0
+    disclosureChangeIntensity: float = 0.0  # 0.0 ~ 1.0
+    disclosureGrowthAdj: float = 0.0  # %p
+    disclosureConfidence: str = "low"  # "high" | "medium" | "low"
     # 시나리오별 확률 조정치 (결과)
     adjustments: dict[str, float] = field(default_factory=dict)
     # 조정 근거 설명
@@ -40,6 +45,8 @@ class ContextSignals:
         lines.append(f"  기업 규모: {self.sizeClass}")
         lines.append(f"  업종 경기민감도: {self.sectorCyclicality}")
         lines.append(f"  성장 순위: 상위 {self.growthRankPct:.0f}%")
+        if self.disclosureTone != 0.0:
+            lines.append(f"  공시 tone: {self.disclosureTone:+.2f} (강도 {self.disclosureChangeIntensity:.2f}, 조정 {self.disclosureGrowthAdj:+.1f}%p, {self.disclosureConfidence})")
         if self.adjustments:
             lines.append(f"  확률 조정: {self.adjustments}")
         if self.reasoning:
@@ -136,6 +143,21 @@ def collectSignals(company) -> ContextSignals:
         if sectorKey:
             elasticity = get_elasticity(sectorKey)
             signals.sectorCyclicality = elasticity.cyclicality
+    except (ImportError, AttributeError, TypeError):
+        pass
+
+    # 5. 공시 정성 신호
+    try:
+        from dartlab.engines.analysis.analyst.disclosureSignal import extractSignal
+
+        sections = getattr(company, "sections", None)
+        if sections is not None:
+            ds = extractSignal(sections)
+            if ds:
+                signals.disclosureTone = ds.toneScore
+                signals.disclosureChangeIntensity = ds.changeIntensity
+                signals.disclosureGrowthAdj = ds.impliedGrowthAdj
+                signals.disclosureConfidence = ds.confidence
     except (ImportError, AttributeError, TypeError):
         pass
 
