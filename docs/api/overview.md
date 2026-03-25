@@ -117,6 +117,28 @@ c.diff("businessOverview", "2023", "2024")  # Line-by-line comparison
 
 Years with high change rates may indicate business structure changes, new business entries, or additional risk factors.
 
+## Market-wide Financial Screening
+
+Scan a single account or ratio across all listed companies.
+
+```python
+import dartlab
+
+# single account across all firms — wide DataFrame (rows=companies, columns=periods)
+dartlab.scanAccount("매출액")                         # quarterly standalone revenue
+dartlab.scanAccount("operating_profit", annual=True)  # annual basis
+dartlab.scanAccount("total_assets", market="edgar")   # US EDGAR
+
+# single ratio across all firms
+dartlab.scanRatio("roe")                              # quarterly ROE
+dartlab.scanRatio("debtRatio", annual=True)           # annual debt-to-equity
+
+# available ratios (13: profitability, stability, growth, efficiency, cashflow)
+dartlab.scanRatioList()
+```
+
+These are root-level functions only (not Company methods). Accepts both Korean names and English snakeIds. Reads 2,700+ parquet files in parallel via ThreadPool.
+
 ## Source Namespace
 
 When you need to go deeper, use the source namespace directly.

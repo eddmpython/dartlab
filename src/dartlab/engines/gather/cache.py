@@ -14,6 +14,10 @@ TTL_FLOW = 3600  # 1시간
 TTL_SECTOR = 24 * 3600  # 24시간
 TTL_HISTORY = 6 * 3600  # 6시간
 TTL_SNAPSHOT = 300  # 5분 (전체 수집 결과)
+TTL_NEWS = 1800  # 30분
+TTL_DIVIDENDS = 24 * 3600  # 24시간
+TTL_SPLITS = 24 * 3600  # 24시간
+TTL_MACRO = 6 * 3600  # 6시간
 TTL_DEFAULT = 3600  # 1시간
 
 # 데이터 유형 → TTL 매핑
@@ -24,6 +28,10 @@ _TTL_MAP: dict[str, int] = {
     "sector_per": TTL_SECTOR,
     "history": TTL_HISTORY,
     "snapshot": TTL_SNAPSHOT,
+    "news": TTL_NEWS,
+    "dividends": TTL_DIVIDENDS,
+    "splits": TTL_SPLITS,
+    "macro": TTL_MACRO,
 }
 
 

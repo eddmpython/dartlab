@@ -6,8 +6,9 @@ from ..market_config import get_market_config
 
 # 데이터 유형별 fallback 순서 (KR 기본값 — 하위호환)
 PRICE_FALLBACK = ["naver", "yahoo_direct", "yahoo"]
-CONSENSUS_FALLBACK = ["naver"]
+CONSENSUS_FALLBACK = ["naver", "yahoo_direct"]
 FLOW_FALLBACK = ["naver"]
+DIVIDENDS_FALLBACK = ["yahoo_direct", "fmp"]
 HISTORY_FALLBACK = ["yahoo_direct", "yahoo"]
 
 

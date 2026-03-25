@@ -27,6 +27,14 @@ _PROVIDERS: dict[str, ProviderSpec] = {
         setup_kind="oauth",
         probe_policy="selected_only",
     ),
+    "gemini": ProviderSpec(
+        id="gemini",
+        label="Google Gemini (구독/무료)",
+        description="Gemini 2.5 Pro/Flash, 브라우저 OAuth 로그인",
+        auth_kind="oauth",
+        setup_kind="oauth",
+        probe_policy="credentialed",
+    ),
     "codex": ProviderSpec(
         id="codex",
         label="Codex CLI (코딩용)",
@@ -59,14 +67,6 @@ _PROVIDERS: dict[str, ProviderSpec] = {
         description="OpenAI 호환 API 엔드포인트",
         auth_kind="api_key",
         setup_kind="api_key",
-        probe_policy="credentialed",
-    ),
-    "gemini": ProviderSpec(
-        id="gemini",
-        label="Google Gemini",
-        description="Gemini 2.5 Pro/Flash, OAuth 로그인 (무료)",
-        auth_kind="oauth",
-        setup_kind="oauth",
         probe_policy="credentialed",
     ),
 }

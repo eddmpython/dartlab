@@ -119,3 +119,74 @@ async def fetch_history(
         )
 
     return rows
+
+
+async def fetchDividends(
+    stock_code: str,
+    client,
+    *,
+    market: str = "US",
+) -> list[dict]:
+    """배당 이력 — FMP /historical-price-full/stock_dividend."""
+    key = _get_api_key()
+    if not key:
+        return []
+
+    ticker = resolve_ticker(stock_code, market, "fmp")
+    try:
+        resp = await client.get(
+            f"{_BASE}/historical-price-full/stock_dividend/{ticker}",
+            params={"apikey": key},
+        )
+    except GatherError:
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+
+    historical = data.get("historical", [])
+    rows = []
+    for h in historical:
+        date = h.get("date", "")
+        amount = h.get("dividend", 0.0) or h.get("adjDividend", 0.0)
+        if date and amount:
+            rows.append({"date": date, "amount": amount})
+    return sorted(rows, key=lambda x: x["date"])
+
+
+async def fetchSplits(
+    stock_code: str,
+    client,
+    *,
+    market: str = "US",
+) -> list[dict]:
+    """분할 이력 — FMP /historical-price-full/stock_split."""
+    key = _get_api_key()
+    if not key:
+        return []
+
+    ticker = resolve_ticker(stock_code, market, "fmp")
+    try:
+        resp = await client.get(
+            f"{_BASE}/historical-price-full/stock_split/{ticker}",
+            params={"apikey": key},
+        )
+    except GatherError:
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+
+    historical = data.get("historical", [])
+    rows = []
+    for h in historical:
+        date = h.get("date", "")
+        numerator = h.get("numerator", 1)
+        denominator = h.get("denominator", 1)
+        if date:
+            rows.append({"date": date, "numerator": numerator, "denominator": denominator})
+    return sorted(rows, key=lambda x: x["date"])

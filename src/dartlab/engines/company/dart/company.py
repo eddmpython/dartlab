@@ -2652,6 +2652,17 @@ class Company:
             scenarios=scenarios,
         )
 
+    def research(self, *, sections: list[str] | None = None, includeMarket: bool = True):
+        """종합 기업분석 리포트."""
+        cacheKey = "_research"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+        from dartlab.engines.analysis.research import generateResearch
+
+        result = generateResearch(self, sections=sections, includeMarket=includeMarket)
+        self._cache[cacheKey] = result
+        return result
+
     @property
     def market(self) -> str:
         """시장 코드."""

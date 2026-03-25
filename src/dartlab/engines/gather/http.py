@@ -30,9 +30,11 @@ DOMAIN_POLICY: dict[str, DomainConfig] = {
     "data-api.krx.co.kr": DomainConfig(rpm=30, concurrency=2, jitter_min=0.3, jitter_max=1.5),
     "ecos.bok.or.kr": DomainConfig(rpm=30, concurrency=2, jitter_min=0.3, jitter_max=1.5),
     # 해외 — 상대적 관대
-    "query1.finance.yahoo.com": DomainConfig(rpm=20, concurrency=2, jitter_min=0.2, jitter_max=1.0),
-    "query2.finance.yahoo.com": DomainConfig(rpm=20, concurrency=2, jitter_min=0.2, jitter_max=1.0),
+    "query1.finance.yahoo.com": DomainConfig(rpm=6, concurrency=1, jitter_min=1.0, jitter_max=3.0, min_interval=10.0),
+    "query2.finance.yahoo.com": DomainConfig(rpm=6, concurrency=1, jitter_min=1.0, jitter_max=3.0, min_interval=10.0),
     "financialmodelingprep.com": DomainConfig(rpm=4, concurrency=1, timeout=15.0, jitter_min=1.0, jitter_max=3.0),
+    # 뉴스
+    "news.google.com": DomainConfig(rpm=20, concurrency=2, jitter_min=0.3, jitter_max=1.5),
 }
 
 _DEFAULT_POLICY = DomainConfig(rpm=30, concurrency=2)
@@ -50,20 +52,37 @@ _USER_AGENTS = [
 # Event loop 안전 실행 헬퍼
 # ══════════════════════════════════════
 
+_thread_loop: asyncio.AbstractEventLoop | None = None
 _thread_pool = ThreadPoolExecutor(max_workers=1)
+
+
+def _get_thread_loop() -> asyncio.AbstractEventLoop:
+    """별도 스레드 전용 persistent event loop."""
+    global _thread_loop
+    if _thread_loop is None or _thread_loop.is_closed():
+        _thread_loop = asyncio.new_event_loop()
+    return _thread_loop
+
+
+def _run_in_thread_loop(coro):
+    """persistent loop에서 코루틴 실행 (loop 닫지 않음)."""
+    loop = _get_thread_loop()
+    return loop.run_until_complete(coro)
 
 
 def run_async(coro):
     """코루틴을 동기 컨텍스트에서 안전하게 실행.
 
-    이미 event loop가 실행 중이면(FastAPI/Slack 등) 별도 스레드에서 새 loop 생성.
+    이미 event loop가 실행 중이면(Marimo/FastAPI 등) 별도 스레드의
+    persistent loop에서 실행. httpx connection pool 재사용 가능.
     """
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(coro)
-    # 이미 loop 실행 중 → 별도 스레드
-    return _thread_pool.submit(asyncio.run, coro).result()
+        # loop 없음 — 직접 실행 (persistent loop 사용)
+        return _run_in_thread_loop(coro)
+    # 이미 loop 실행 중 → 별도 스레드의 persistent loop
+    return _thread_pool.submit(_run_in_thread_loop, coro).result()
 
 
 # ══════════════════════════════════════
@@ -72,13 +91,14 @@ def run_async(coro):
 
 
 class _AsyncRateLimiter:
-    """도메인별 sliding window rate limiter (async)."""
+    """도메인별 sliding window rate limiter + 최소 간격 (async)."""
 
-    __slots__ = ("_domain", "_rpm", "_window", "_timestamps", "_lock")
+    __slots__ = ("_domain", "_rpm", "_min_interval", "_window", "_timestamps", "_lock")
 
-    def __init__(self, domain: str, rpm: int = 30) -> None:
+    def __init__(self, domain: str, rpm: int = 30, min_interval: float = 0.0) -> None:
         self._domain = domain
         self._rpm = rpm
+        self._min_interval = min_interval
         self._window = 60.0
         self._timestamps: list[float] = []
         self._lock = asyncio.Lock()
@@ -88,15 +108,31 @@ class _AsyncRateLimiter:
         while True:
             async with self._lock:
                 now = time.monotonic()
-                cutoff = now - self._window
-                self._timestamps = [t for t in self._timestamps if t > cutoff]
-                if len(self._timestamps) < self._rpm:
-                    self._timestamps.append(now)
-                    return
-                wait = self._timestamps[0] + self._window - now
+                # 최소 간격 대기 — 마지막 요청 이후 min_interval 경과 필수
+                if self._min_interval > 0 and self._timestamps:
+                    elapsed = now - self._timestamps[-1]
+                    if elapsed < self._min_interval:
+                        wait_interval = self._min_interval - elapsed
+                        # lock 해제 후 대기
+                        break_for_interval = True
+                    else:
+                        break_for_interval = False
+                else:
+                    break_for_interval = False
+
+                if break_for_interval:
+                    pass  # lock 밖에서 대기
+                else:
+                    cutoff = now - self._window
+                    self._timestamps = [t for t in self._timestamps if t > cutoff]
+                    if len(self._timestamps) < self._rpm:
+                        self._timestamps.append(now)
+                        return
+                    wait_interval = self._timestamps[0] + self._window - now
+
             if time.monotonic() > deadline:
                 raise RateLimitExceededError(f"{self._domain} RPM={self._rpm} 초과")
-            await asyncio.sleep(min(wait + 0.05, 1.0))
+            await asyncio.sleep(min(wait_interval + 0.05, self._min_interval or 1.0))
 
 
 # ══════════════════════════════════════
@@ -133,7 +169,7 @@ class GatherHttpClient:
     def _get_limiter(self, domain: str) -> _AsyncRateLimiter:
         if domain not in self._limiters:
             policy = self._get_policy(domain)
-            self._limiters[domain] = _AsyncRateLimiter(domain, policy.rpm)
+            self._limiters[domain] = _AsyncRateLimiter(domain, policy.rpm, policy.min_interval)
         return self._limiters[domain]
 
     def _get_semaphore(self, domain: str) -> asyncio.Semaphore:
@@ -181,7 +217,8 @@ class GatherHttpClient:
                         timeout=req_timeout,
                     )
                     if resp.status_code == 429:
-                        wait = 2**attempt + random.uniform(0.1, 0.5)
+                        base = 5.0 if "yahoo" in domain else 2**attempt
+                        wait = base * (attempt + 1) + random.uniform(0.5, 2.0)
                         log.warning("%s 429 rate limited, %.1fs 대기", domain, wait)
                         await asyncio.sleep(wait)
                         continue

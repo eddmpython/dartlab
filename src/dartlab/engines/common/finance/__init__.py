@@ -28,6 +28,10 @@ from dartlab.engines.common.finance.proforma import (
     compute_company_wacc,
     extract_historical_ratios,
 )
+from dartlab.engines.common.finance.currency import (
+    convertValue,
+    getExchangeRate,
+)
 from dartlab.engines.common.finance.ratios import (
     RATIO_CATEGORIES,
     RatioResult,
@@ -65,4 +69,7 @@ __all__ = [
     "MertonResult",
     "calcEquityVolatility",
     "solveMerton",
+    # currency
+    "getExchangeRate",
+    "convertValue",
 ]

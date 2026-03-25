@@ -283,6 +283,30 @@ c.filings()             # disclosure document list (Tier 1 Stable)
 
 All accounts are normalized through the 4-step standardization pipeline — Samsung's `revenue` and LG's `revenue` are the same `snakeId`. Ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
+### Market-wide Financial Screening (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+
+Scan a single account or ratio across **all listed companies** in one call — 2,700+ DART firms or 500+ EDGAR firms. Returns a wide Polars DataFrame (rows = companies, columns = periods, newest first).
+
+```python
+import dartlab
+
+# scan a single account across all listed companies
+dartlab.scanAccount("매출액")                         # revenue, quarterly standalone
+dartlab.scanAccount("operating_profit", annual=True)  # annual basis
+dartlab.scanAccount("total_assets", market="edgar")   # US EDGAR
+
+# scan a ratio across all listed companies
+dartlab.scanRatio("roe")                              # quarterly ROE for all firms
+dartlab.scanRatio("debtRatio", annual=True)           # annual debt-to-equity
+
+# list available ratios (13 ratios: profitability, stability, growth, efficiency, cashflow)
+dartlab.scanRatioList()
+```
+
+Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance. Reads 2,700+ parquet files in parallel via ThreadPool, typically completes in ~3 seconds.
+
 ### Insights (beta)
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).

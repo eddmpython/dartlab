@@ -203,3 +203,48 @@ def discover(
         peers=peers,
         topicCoverage=topicCoverage,
     )
+
+
+# ── 국가간 피어 매핑 ──────────────────────────────────
+
+# WICS 대분류 → 대표 US ticker (GICS 대응)
+_WICS_TO_US_PEERS: dict[str, list[str]] = {
+    "에너지": ["XOM", "CVX", "COP", "SLB", "EOG"],
+    "소재": ["LIN", "APD", "ECL", "DD", "NEM"],
+    "산업재": ["HON", "UNP", "CAT", "DE", "GE"],
+    "경기관련소비재": ["AMZN", "TSLA", "HD", "MCD", "NKE"],
+    "필수소비재": ["PG", "KO", "PEP", "COST", "WMT"],
+    "건강관리": ["UNH", "JNJ", "LLY", "PFE", "ABT"],
+    "금융": ["BRK-B", "JPM", "V", "MA", "BAC"],
+    "IT": ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"],
+    "커뮤니케이션서비스": ["META", "GOOGL", "NFLX", "DIS", "CMCSA"],
+    "유틸리티": ["NEE", "DUK", "SO", "D", "AEP"],
+    "부동산": ["PLD", "AMT", "CCI", "EQIX", "SPG"],
+}
+
+
+def crossBorderPeers(
+    stockCode: str,
+    *,
+    topK: int = 5,
+) -> list[str]:
+    """한국 종목의 WICS 섹터 기반 글로벌 피어 추천.
+
+    Args:
+        stockCode: 한국 종목코드.
+        topK: 반환할 피어 수.
+
+    Returns:
+        US ticker 리스트.
+    """
+    try:
+        from dartlab.engines.analysis.sector import classify
+        sectorInfo = classify(stockCode)
+        sectorName = sectorInfo.sector.value if sectorInfo and sectorInfo.sector else None
+    except (ImportError, AttributeError, ValueError):
+        sectorName = None
+
+    if sectorName and sectorName in _WICS_TO_US_PEERS:
+        return _WICS_TO_US_PEERS[sectorName][:topK]
+
+    return _WICS_TO_US_PEERS.get("IT", [])[:topK]

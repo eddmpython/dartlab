@@ -622,16 +622,32 @@ def _start_oauth_callback_server(port: int):
 _gemini_oauth_state: dict[str, Any] = {}
 
 
+@router.post("/api/gemini/client-secret")
+def api_gemini_save_client_secret(req: dict):
+    """Gemini OAuth client_secret.json 저장."""
+    from dartlab.engines.ai.providers.gemini import saveClientSecret
+
+    raw = req.get("clientSecret", "")
+    if not raw:
+        raise HTTPException(400, detail="clientSecret가 비어 있습니다.")
+    try:
+        saveClientSecret(raw)
+    except (json.JSONDecodeError, ValueError) as e:
+        raise HTTPException(400, detail=str(e))
+    return {"ok": True}
+
+
 @router.get("/api/gemini/oauth/authorize")
 def api_gemini_oauth_authorize():
-    """Gemini OAuth 인증 시작 — 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
+    """Gemini OAuth 인증 시작 — GPT와 동일한 PKCE 플로우."""
     from dartlab.engines.ai.providers.gemini import OAUTH_REDIRECT_PORT, buildAuthUrl
 
     try:
-        auth_url, state = buildAuthUrl()
+        auth_url, verifier, state = buildAuthUrl()
     except FileNotFoundError as e:
         raise HTTPException(400, detail=str(e))
 
+    _gemini_oauth_state["verifier"] = verifier
     _gemini_oauth_state["state"] = state
     _gemini_oauth_state["done"] = False
     _gemini_oauth_state["error"] = None
@@ -701,7 +717,7 @@ def _start_gemini_oauth_callback_server(port: int):
             try:
                 from dartlab.engines.ai.providers.gemini import exchangeCode
 
-                exchangeCode(code, state)
+                exchangeCode(code, _gemini_oauth_state["verifier"])
                 get_profile_manager().update(provider="gemini", updated_by="ui")
                 _gemini_oauth_state["done"] = True
                 self._respond_html("Gemini 인증 성공", "DartLab Gemini 인증이 완료되었습니다. 이 창을 닫아주세요.")

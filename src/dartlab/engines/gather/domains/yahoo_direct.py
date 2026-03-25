@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timezone
 
 from ..market_config import resolve_ticker
-from ..types import GatherError, PriceSnapshot, RevenueConsensus
+from ..types import ConsensusData, GatherError, PriceSnapshot, RevenueConsensus
 
 log = logging.getLogger(__name__)
 
@@ -153,6 +153,53 @@ async def fetch_history(
 _SUMMARY_URL = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticker}"
 
 
+async def fetch_consensus(
+    stock_code: str,
+    client,
+    *,
+    market: str = "US",
+) -> ConsensusData | None:
+    """Yahoo quoteSummary → 컨센서스 (목표가, 애널리스트 수, 추천 점수)."""
+    ticker = resolve_ticker(stock_code, market, "yahoo_direct")
+    try:
+        resp = await client.get(
+            _SUMMARY_URL.format(ticker=ticker),
+            params={"modules": "financialData"},
+        )
+    except GatherError:
+        return None
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return None
+
+    quote_summary = data.get("quoteSummary", {}).get("result")
+    if not quote_summary:
+        return None
+
+    fin = quote_summary[0].get("financialData", {})
+    target = fin.get("targetMeanPrice", {}).get("raw", 0)
+    if not target or target <= 0:
+        return None
+
+    analyst_count = fin.get("numberOfAnalystOpinions", {}).get("raw", 0)
+    recomm = fin.get("recommendationMean", {}).get("raw", 0)
+    # Yahoo recommendationMean: 1=strong buy, 5=sell → buy_ratio 변환
+    buy_ratio = max(0.0, (5.0 - recomm) / 4.0) if recomm > 0 else 0.0
+    high = fin.get("targetHighPrice", {}).get("raw", 0)
+    low = fin.get("targetLowPrice", {}).get("raw", 0)
+
+    return ConsensusData(
+        target_price=target,
+        analyst_count=analyst_count,
+        buy_ratio=round(buy_ratio, 2),
+        high=high or target,
+        low=low or target,
+        source="yahoo_direct",
+    )
+
+
 async def fetch_revenue_consensus(
     stock_code: str,
     client,
@@ -246,3 +293,96 @@ async def fetch_revenue_consensus(
         )
 
     return items
+
+
+# ══════════════════════════════════════
+# 배당/분할 이벤트
+# ══════════════════════════════════════
+
+
+async def fetchDividends(
+    stock_code: str,
+    client,
+    *,
+    market: str = "KR",
+    years: int = 10,
+) -> list[dict]:
+    """배당 이력 — Yahoo v8 chart API (events=div)."""
+    ticker = resolve_ticker(stock_code, market, "yahoo_direct")
+    now = int(datetime.now(timezone.utc).timestamp())
+    period1 = now - years * 365 * 86400
+
+    try:
+        resp = await client.get(
+            _CHART_URL.format(ticker=ticker),
+            params={
+                "period1": str(period1),
+                "period2": str(now),
+                "interval": "1d",
+                "events": "div",
+            },
+        )
+    except GatherError:
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+
+    result = data.get("chart", {}).get("result")
+    if not result:
+        return []
+
+    events = result[0].get("events", {}).get("dividends", {})
+    rows = []
+    for ts, ev in sorted(events.items(), key=lambda x: int(x[0])):
+        dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+        rows.append({"date": dt.strftime("%Y-%m-%d"), "amount": ev.get("amount", 0.0)})
+    return rows
+
+
+async def fetchSplits(
+    stock_code: str,
+    client,
+    *,
+    market: str = "KR",
+    years: int = 20,
+) -> list[dict]:
+    """분할 이력 — Yahoo v8 chart API (events=split)."""
+    ticker = resolve_ticker(stock_code, market, "yahoo_direct")
+    now = int(datetime.now(timezone.utc).timestamp())
+    period1 = now - years * 365 * 86400
+
+    try:
+        resp = await client.get(
+            _CHART_URL.format(ticker=ticker),
+            params={
+                "period1": str(period1),
+                "period2": str(now),
+                "interval": "1d",
+                "events": "split",
+            },
+        )
+    except GatherError:
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+
+    result = data.get("chart", {}).get("result")
+    if not result:
+        return []
+
+    events = result[0].get("events", {}).get("splits", {})
+    rows = []
+    for ts, ev in sorted(events.items(), key=lambda x: int(x[0])):
+        dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+        rows.append({
+            "date": dt.strftime("%Y-%m-%d"),
+            "numerator": ev.get("numerator", 1),
+            "denominator": ev.get("denominator", 1),
+        })
+    return rows

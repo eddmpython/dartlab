@@ -18,6 +18,7 @@ from dartlab.engines.analysis.insight.grading import (
     analyzeProfitability,
     analyzeRiskSummary,
     analyzeUncertainty,
+    disclosureGapFlags,
 )
 from dartlab.engines.analysis.insight.summary import classifyProfile, generateSummary
 from dartlab.engines.analysis.insight.types import AnalysisResult, Anomaly, AuditDataForAnomaly, MarketDataForDistress
@@ -222,6 +223,15 @@ def analyze(
     insights["uncertainty"] = analyzeUncertainty(aSeries, aYears, isFinancial)
     insights["coreEarnings"] = analyzeCoreEarnings(aSeries, aYears, isFinancial)
     insights["risk"] = analyzeRiskSummary(insights)
+
+    # diff + 재무 교차 Red Flag (공시 텍스트 변화 vs 재무 지표 불일치)
+    healthGrade = insights.get("health")
+    healthGradeStr = healthGrade.grade if healthGrade else None
+    gapFlags = disclosureGapFlags(company, healthGrade=healthGradeStr)
+    if gapFlags and insights["risk"] is not None:
+        insights["risk"].risks.extend(gapFlags)
+        insights["risk"].details.extend(f.text for f in gapFlags)
+
     insights["opportunity"] = analyzeOpportunitySummary(insights)
 
     # 감사 데이터 추출 (Company가 있을 때만)

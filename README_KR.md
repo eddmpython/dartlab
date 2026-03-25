@@ -283,6 +283,30 @@ c.filings()             # 공시 문서 목록 (Tier 1 Stable)
 
 모든 계정은 4단계 표준화 파이프라인을 거친다 — 삼성전자의 `revenue`와 LG의 `revenue`는 같은 `snakeId`다. 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
+### 시장 전수 재무 스크리닝 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+
+단일 계정이나 비율을 **전체 상장사**에 대해 한 번에 스캔한다 — DART 2,700사 이상, EDGAR 500사 이상. wide Polars DataFrame 반환 (행 = 기업, 열 = 기간, 최신 먼저).
+
+```python
+import dartlab
+
+# 단일 계정을 전체 상장사에 대해 스캔
+dartlab.scanAccount("매출액")                         # 분기 standalone 매출
+dartlab.scanAccount("operating_profit", annual=True)  # 연간 기준
+dartlab.scanAccount("total_assets", market="edgar")   # 미국 EDGAR
+
+# 단일 비율을 전체 상장사에 대해 스캔
+dartlab.scanRatio("roe")                              # 분기 ROE 전수 스캔
+dartlab.scanRatio("debtRatio", annual=True)           # 연간 부채비율
+
+# 사용 가능한 비율 목록 (13개: 수익성, 안정성, 성장성, 효율성, 현금흐름)
+dartlab.scanRatioList()
+```
+
+한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화. ThreadPool로 2,700+ parquet 파일을 병렬 읽기, 약 3초 소요.
+
 ### 인사이트 (beta)
 
 > **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.

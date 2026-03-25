@@ -20,8 +20,9 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import dartlab
     import marimo as mo
+
+    import dartlab
 
     return dartlab, mo
 

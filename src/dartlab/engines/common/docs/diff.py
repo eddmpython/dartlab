@@ -477,3 +477,83 @@ def charDiff(fromText: str, toText: str) -> list[CharPart]:
 
     _OP_MAP = {0: "equal", 1: "insert", -1: "delete"}
     return [CharPart(kind=_OP_MAP[op], text=text) for op, text in diffs if text]
+
+
+# ── 키워드 빈도 시계열 ─────────────────────────────────
+
+_DEFAULT_KEYWORDS: dict[str, list[str]] | None = None
+
+
+def _defaultKeywords() -> dict[str, list[str]]:
+    """signal 모듈의 54개 내장 키워드 가져오기."""
+    global _DEFAULT_KEYWORDS
+    if _DEFAULT_KEYWORDS is None:
+        try:
+            from dartlab.engines.company.dart.scan.signal import KEYWORDS
+            _DEFAULT_KEYWORDS = KEYWORDS
+        except ImportError:
+            _DEFAULT_KEYWORDS = {
+                "트렌드": ["AI", "ESG", "반도체", "바이오", "전기차"],
+                "리스크": ["환율", "금리", "소송", "감사의견", "파산"],
+                "기회": ["수출", "M&A", "특허", "신약"],
+            }
+    return _DEFAULT_KEYWORDS
+
+
+def keywordFrequency(
+    sections: pl.DataFrame,
+    keywords: list[str] | None = None,
+) -> pl.DataFrame:
+    """sections에서 topic × period × keyword 빈도 집계.
+
+    Args:
+        sections: topic × period 수평화 DataFrame.
+        keywords: 추적할 키워드 리스트. None이면 signal 내장 54개 사용.
+
+    Returns:
+        (topic, period, keyword, category, count) DataFrame. count>0만 포함.
+    """
+    periods = _periodCols(sections)
+    if not periods:
+        return pl.DataFrame(schema={"topic": pl.Utf8, "period": pl.Utf8,
+                                     "keyword": pl.Utf8, "category": pl.Utf8,
+                                     "count": pl.UInt32})
+
+    # 키워드 → 카테고리 매핑
+    kwDict = _defaultKeywords()
+    if keywords is not None:
+        kwCat = {kw: "custom" for kw in keywords}
+    else:
+        kwCat = {}
+        for cat, kws in kwDict.items():
+            for kw in kws:
+                kwCat[kw] = cat
+
+    rows: list[dict] = []
+    topicCol = sections["topic"]
+    for rowIdx in range(len(sections)):
+        topic = topicCol[rowIdx]
+        for period in periods:
+            text = sections[rowIdx, period]
+            if text is None:
+                continue
+            text = str(text)
+            if not text:
+                continue
+            for kw, cat in kwCat.items():
+                cnt = text.count(kw)
+                if cnt > 0:
+                    rows.append({
+                        "topic": topic,
+                        "period": period,
+                        "keyword": kw,
+                        "category": cat,
+                        "count": cnt,
+                    })
+
+    if not rows:
+        return pl.DataFrame(schema={"topic": pl.Utf8, "period": pl.Utf8,
+                                     "keyword": pl.Utf8, "category": pl.Utf8,
+                                     "count": pl.UInt32})
+
+    return pl.DataFrame(rows).sort(["keyword", "period", "topic"])

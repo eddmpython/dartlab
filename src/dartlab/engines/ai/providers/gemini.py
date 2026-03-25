@@ -1,15 +1,17 @@
 """Google Gemini provider.
 
-인증: OAuth 2.0 (Google 계정 로그인)
-- 첫 실행: 브라우저 로그인 → 토큰 ~/.dartlab/gemini_oauth.json 저장
-- 이후: 저장된 토큰 자동 사용 (만료 시 자동 갱신)
-- client_secret.json: ~/.dartlab/gemini_client_secret.json 에 배치
+인증: OAuth 2.0 (Google 계정 브라우저 로그인)
+- GPT OAuth와 동일한 플로우: 버튼 클릭 → 브라우저 → 콜백 → 토큰 저장
+- 토큰: ~/.dartlab/gemini_oauth.json
+- client_secret: ~/.dartlab/gemini_client_secret.json (최초 1회 설정)
 
 외부 OAuth 라이브러리 없이 표준 라이브러리 + httpx만 사용.
 """
 
 from __future__ import annotations
 
+import hashlib
+import base64
 import json
 import logging
 import secrets
@@ -35,27 +37,63 @@ OAUTH_REDIRECT_PORT = 8098
 _REDIRECT_URI = f"http://localhost:{OAUTH_REDIRECT_PORT}/auth/gemini/callback"
 
 
-# ── client_secret.json 파싱 ──
+# ── PKCE (GPT OAuth와 동일) ──
+
+
+def _generatePkce() -> tuple[str, str]:
+    """PKCE code_verifier + code_challenge 생성."""
+    verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    return verifier, challenge
+
+
+# ── Client credentials ──
 
 
 def _loadClientSecret() -> dict[str, str]:
     """client_secret.json에서 client_id, client_secret 추출."""
     if not _CLIENT_SECRET_FILE.exists():
         raise FileNotFoundError(
-            f"Google OAuth client secret 파일이 필요합니다.\n"
-            f"  위치: {_CLIENT_SECRET_FILE}\n"
-            f"  생성: https://console.cloud.google.com/apis/credentials\n"
-            f"  → OAuth 2.0 Client ID → Desktop app → JSON 다운로드"
+            "Gemini OAuth 설정이 필요합니다.\n"
+            "설정 패널에서 Google OAuth Client ID를 등록하세요."
         )
     data = json.loads(_CLIENT_SECRET_FILE.read_text(encoding="utf-8"))
-    # Google 형식: {"installed": {...}} 또는 {"web": {...}}
     for key in ("installed", "web"):
         if key in data:
             return {
                 "client_id": data[key]["client_id"],
-                "client_secret": data[key]["client_secret"],
+                "client_secret": data[key].get("client_secret", ""),
             }
+    # 단순 형식: {"client_id": "...", "client_secret": "..."}
+    if "client_id" in data:
+        return {
+            "client_id": data["client_id"],
+            "client_secret": data.get("client_secret", ""),
+        }
     raise ValueError("client_secret.json 형식이 올바르지 않습니다.")
+
+
+def saveClientSecret(clientSecretJson: str) -> None:
+    """GUI에서 받은 client_secret JSON을 저장."""
+    data = json.loads(clientSecretJson)
+    # 형식 검증
+    clientId = None
+    for key in ("installed", "web"):
+        if key in data:
+            clientId = data[key].get("client_id")
+            break
+    if not clientId:
+        clientId = data.get("client_id")
+    if not clientId:
+        raise ValueError("client_id를 찾을 수 없습니다.")
+    _DARTLAB_DIR.mkdir(parents=True, exist_ok=True)
+    _CLIENT_SECRET_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def hasClientSecret() -> bool:
+    """client_secret.json 존재 여부."""
+    return _CLIENT_SECRET_FILE.exists()
 
 
 # ── 토큰 관리 ──
@@ -131,12 +169,13 @@ def _getValidToken() -> dict[str, Any] | None:
     return refreshed
 
 
-# ── OAuth 플로우 (서버/GUI용) ──
+# ── OAuth 플로우 (GPT와 동일한 패턴) ──
 
 
-def buildAuthUrl() -> tuple[str, str]:
-    """OAuth authorize URL + state 반환."""
+def buildAuthUrl() -> tuple[str, str, str]:
+    """OAuth authorize URL + PKCE verifier + state 반환."""
     clientCreds = _loadClientSecret()
+    verifier, challenge = _generatePkce()
     state = secrets.token_urlsafe(32)
     params = {
         "response_type": "code",
@@ -146,13 +185,15 @@ def buildAuthUrl() -> tuple[str, str]:
         "access_type": "offline",
         "prompt": "consent",
         "state": state,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
     }
     url = f"{_GOOGLE_AUTH_URL}?{urlencode(params)}"
-    return url, state
+    return url, verifier, state
 
 
-def exchangeCode(code: str, state: str) -> None:
-    """Authorization code → 토큰 교환 + 저장."""
+def exchangeCode(code: str, verifier: str) -> None:
+    """Authorization code → 토큰 교환 + 저장. (PKCE)"""
     clientCreds = _loadClientSecret()
 
     import httpx
@@ -165,7 +206,9 @@ def exchangeCode(code: str, state: str) -> None:
             "redirect_uri": _REDIRECT_URI,
             "client_id": clientCreds["client_id"],
             "client_secret": clientCreds["client_secret"],
+            "code_verifier": verifier,
         },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
         timeout=15,
     )
     if resp.status_code != 200:
@@ -221,7 +264,7 @@ class GeminiProvider(BaseProvider):
             self._auth_method = "api_key"
             return self._client
 
-        # 기본: OAuth 2.0 — 저장된 토큰 사용
+        # 기본: OAuth 2.0
         token = _getValidToken()
         if token is None:
             raise ValueError(
@@ -230,9 +273,6 @@ class GeminiProvider(BaseProvider):
                 "  CLI: dartlab setup gemini"
             )
 
-        # google-genai는 credentials 객체 또는 api_key만 받음
-        # OAuth access_token을 API key처럼 사용할 수 없으므로
-        # google.oauth2.credentials.Credentials 객체를 만들어야 함
         try:
             from google.oauth2.credentials import Credentials
 
@@ -246,8 +286,6 @@ class GeminiProvider(BaseProvider):
             )
             self._client = genai.Client(credentials=creds)
         except ImportError:
-            # google-auth 없으면 httpx 기반 직접 호출은 불가
-            # google-genai가 설치되어 있으면 google-auth도 있어야 함
             raise ImportError("google-auth 패키지가 필요합니다.\n  uv add google-auth")
 
         self._auth_method = "oauth"
@@ -362,7 +400,6 @@ class GeminiProvider(BaseProvider):
                 "total_tokens": response.usage_metadata.total_token_count or 0,
             }
 
-        # tool call 추출
         toolCalls: list[ToolCall] = []
         answer = ""
         finishReason = "stop"
@@ -395,7 +432,7 @@ class GeminiProvider(BaseProvider):
         )
 
     def format_tool_result(self, tool_call_id: str, result: str) -> dict:
-        """Gemini tool result → OpenAI 형식으로 변환 (agent loop 호환)."""
+        """Gemini tool result → OpenAI 형식으로 변환."""
         return {
             "role": "tool",
             "tool_call_id": tool_call_id,

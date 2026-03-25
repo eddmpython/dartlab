@@ -18,6 +18,7 @@ class DomainConfig:
     timeout: float = 10.0
     jitter_min: float = 0.3  # 요청 전 최소 랜덤 대기 (초)
     jitter_max: float = 1.5  # 요청 전 최대 랜덤 대기 (초)
+    min_interval: float = 0.0  # 요청 간 최소 간격 (초, 0=제한 없음)
 
 
 # ══════════════════════════════════════
@@ -123,6 +124,16 @@ class FlowData:
 
 
 @dataclass
+class NewsItem:
+    """뉴스 항목."""
+
+    date: str = ""  # ISO date (YYYY-MM-DD)
+    title: str = ""
+    source: str = ""
+    url: str = ""
+
+
+@dataclass
 class GatherResult:
     """도메인 1개의 수집 결과 — 병렬 수집 시 반환 단위."""
 
@@ -141,6 +152,7 @@ class GatherSnapshot:
     stock_code: str = ""
     results: dict[str, GatherResult] = field(default_factory=dict)
     collected_at: str = ""
+    _news: list[NewsItem] = field(default_factory=list)
 
     @property
     def price(self) -> PriceSnapshot | None:
@@ -163,6 +175,11 @@ class GatherSnapshot:
             if r.flow:
                 return r.flow
         return None
+
+    @property
+    def news(self) -> list[NewsItem]:
+        """수집된 뉴스 항목."""
+        return self._news
 
     @property
     def sources_available(self) -> list[str]:
