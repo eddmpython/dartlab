@@ -1,0 +1,67 @@
+name: EDGAR Data Sync
+
+on:
+  schedule:
+    - cron: '0 8 * * 0'  # 주 1회 일요일 UTC 08:00
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: 'ticker tier (sp500)'
+        default: 'sp500'
+        type: string
+      batch_offset:
+        description: '시작 오프셋 (이어서 수집)'
+        default: '0'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  collect-edgar-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    strategy:
+      fail-fast: false
+      matrix:
+        batch: [0, 1, 2, 3, 4]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      # 기존 데이터 캐시 (두 번째 실행부터 clone 생략)
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data/edgar/docs
+          key: dartlab-edgar-docs
+
+      - name: Collect EDGAR docs (batch ${{ matrix.batch }})
+        run: uv run python .github/scripts/syncEdgarDocs.py
+        env:
+          EDGAR_TIER: ${{ github.event.inputs.tier || 'sp500' }}
+          EDGAR_BATCH_OFFSET: ${{ matrix.batch * 100 + (github.event.inputs.batch_offset || 0) }}
+          EDGAR_BATCH_SIZE: '100'
+
+      # 수집 후 캐시 갱신
+      - name: Save data cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/edgar/docs
+          key: dartlab-edgar-docs-${{ github.run_id }}-${{ matrix.batch }}
+
+      - name: Upload to HuggingFace
+        run: uv run python .github/scripts/uploadData.py --target hf
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: edgarDocs

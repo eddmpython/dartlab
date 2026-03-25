@@ -1,18 +1,19 @@
-"""`dartlab collect` command — DART 데이터 수집.
+"""`dartlab collect` command — DART/EDGAR 데이터 수집.
 
 사용 예시::
 
-    dartlab collect 005930                    # 단일 종목 docs (기존)
-    dartlab collect --auto                    # 미수집 docs 전체 (기존)
-    dartlab collect --stats                   # 수집 현황
-    dartlab collect --uncollected             # 미수집 목록
+    # DART (기본)
+    dartlab collect 005930                    # 단일 종목 docs
+    dartlab collect --auto                    # 미수집 docs 전체
+    dartlab collect --batch                   # 전체 상장, 미수집만
+    dartlab collect --batch -c finance        # 전체 상장, 재무만
+    dartlab collect --check 005930            # freshness 체크
+    dartlab collect --incremental 005930      # 누락 공시 증분 수집
 
-    # 배치 모드 (finance/report/docs 전체, 멀티키 병렬)
-    dartlab collect --batch                          # 전체 상장, 미수집만
-    dartlab collect --batch --mode all               # 전체 상장, 전부
-    dartlab collect --batch -c finance               # 전체 상장, 재무만
-    dartlab collect --batch 005930 000660            # 지정 종목
-    dartlab collect --batch 005930 -c finance,report # 지정 종목 + 카테고리
+    # EDGAR
+    dartlab collect --source edgar AAPL MSFT  # 지정 ticker
+    dartlab collect --source edgar --tier sp500           # S&P 500 전체
+    dartlab collect --source edgar --tier sp500 --limit 10  # 10개만 테스트
 """
 
 from __future__ import annotations
@@ -21,13 +22,21 @@ from __future__ import annotations
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser(
         "collect",
-        help="DART 공시문서 수집 (HTML → parquet)",
+        help="DART/EDGAR 공시문서 수집 (HTML → parquet)",
     )
     parser.add_argument(
         "codes",
         nargs="*",
-        help="종목코드 (예: 005930 000660)",
+        help="종목코드/ticker (예: 005930, AAPL)",
     )
+    parser.add_argument(
+        "--source",
+        "-s",
+        choices=["dart", "edgar"],
+        default="dart",
+        help="데이터 소스 (기본: dart)",
+    )
+    # DART 전용
     parser.add_argument(
         "--quarters",
         "-q",
@@ -71,7 +80,7 @@ def configure_parser(subparsers) -> None:
         "--limit",
         type=int,
         default=None,
-        help="--auto / --uncollected 시 최대 종목 수",
+        help="최대 종목 수",
     )
     parser.add_argument(
         "--batch",
@@ -94,12 +103,19 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="freshness 체크만 (수집 안 함). 종목 지정 시 해당 종목, 미지정 시 전체 스캔",
+        help="freshness 체크만 (수집 안 함)",
     )
     parser.add_argument(
         "--incremental",
         action="store_true",
-        help="누락 공시만 증분 수집. 종목 지정 시 해당 종목, 미지정 시 전체 스캔 후 수집",
+        help="누락 공시만 증분 수집",
+    )
+    # EDGAR 전용
+    parser.add_argument(
+        "--tier",
+        type=str,
+        default=None,
+        help="EDGAR 배치 tier (sp500). --source edgar와 함께 사용",
     )
     parser.set_defaults(handler=run)
 
@@ -109,6 +125,12 @@ def run(args) -> int:
 
     console = get_console()
 
+    source = getattr(args, "source", "dart")
+
+    if source == "edgar":
+        return _runEdgar(console, args)
+
+    # --- DART ---
     if getattr(args, "check", False):
         return _runCheck(console, args)
 
@@ -128,26 +150,109 @@ def run(args) -> int:
         return _runAuto(console, args)
 
     if not args.codes:
-        console.print("[bold]dartlab collect[/] — DART 데이터 수집\n")
-        console.print("  dartlab collect 005930              단일 종목 docs")
-        console.print("  dartlab collect --auto              미수집 docs 자동 수집")
-        console.print("  dartlab collect --stats             수집 현황")
-        console.print("  dartlab collect --uncollected       미수집 목록")
-        console.print()
-        console.print("  [bold]freshness 체크 / 증분 수집[/]:")
-        console.print("  dartlab collect --check 005930      종목 freshness 체크")
-        console.print("  dartlab collect --check             전체 종목 스캔 (7일)")
-        console.print("  dartlab collect --incremental 005930 누락 공시만 증분 수집")
-        console.print("  dartlab collect --incremental       전체 종목 증분 수집")
-        console.print()
-        console.print("  [bold]배치 모드[/] (finance/report/docs, 멀티키 병렬):")
-        console.print("  dartlab collect --batch                          전체 상장, 미수집")
-        console.print("  dartlab collect --batch -c finance               전체 상장, 재무만")
-        console.print("  dartlab collect --batch 005930 000660            지정 종목")
-        console.print("  dartlab collect --batch 005930 -c finance,report 지정 종목 + 카테고리")
+        _printHelp(console)
         return 1
 
     return _runCollect(console, args)
+
+
+def _printHelp(console) -> None:
+    """통합 도움말."""
+    console.print("[bold]dartlab collect[/] — DART/EDGAR 데이터 수집\n")
+    console.print("  [bold]DART (기본)[/]:")
+    console.print("  dartlab collect 005930              단일 종목 docs")
+    console.print("  dartlab collect --auto              미수집 docs 자동 수집")
+    console.print("  dartlab collect --stats             수집 현황")
+    console.print("  dartlab collect --check 005930      freshness 체크")
+    console.print("  dartlab collect --incremental 005930 누락 공시 증분 수집")
+    console.print("  dartlab collect --batch             전체 상장 배치 수집")
+    console.print()
+    console.print("  [bold]EDGAR[/]:")
+    console.print("  dartlab collect -s edgar AAPL MSFT  지정 ticker 수집")
+    console.print("  dartlab collect -s edgar --tier sp500           S&P 500 전체")
+    console.print("  dartlab collect -s edgar --tier sp500 --limit 10  10개만 테스트")
+
+
+# ── EDGAR ─────────────────────────────────────────────
+
+
+def _runEdgar(console, args) -> int:
+    """EDGAR docs 수집."""
+    from dartlab.core.dataLoader import _dataDir
+    from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
+
+    outDir = _dataDir("edgarDocs")
+    outDir.mkdir(parents=True, exist_ok=True)
+
+    tickers: list[str] = []
+
+    if args.codes:
+        tickers = [c.upper() for c in args.codes]
+    elif args.tier:
+        tickers = _loadEdgarTickers(args.tier)
+        if tickers is None:
+            console.print(f"[red]tier '{args.tier}'에 해당하는 ticker 없음[/]")
+            return 1
+    else:
+        console.print("[bold]dartlab collect -s edgar[/] — EDGAR docs 수집\n")
+        console.print("  dartlab collect -s edgar AAPL MSFT       지정 ticker")
+        console.print("  dartlab collect -s edgar --tier sp500    S&P 500 전체")
+        console.print("  dartlab collect -s edgar --tier sp500 --limit 10  10개만")
+        return 1
+
+    if args.limit and len(tickers) > args.limit:
+        tickers = tickers[: args.limit]
+
+    # 이미 수집된 ticker 스킵
+    existing = {f.stem for f in outDir.glob("*.parquet")}
+    targets = [t for t in tickers if t not in existing]
+    skippedCount = len(tickers) - len(targets)
+
+    console.print(f"[bold]EDGAR docs 수집[/]: {len(targets)}개 ticker (스킵 {skippedCount}개)\n")
+
+    if not targets:
+        console.print("[green]모든 ticker가 이미 수집되었습니다.[/]")
+        return 0
+
+    succeeded = 0
+    failed = 0
+    failedTickers: list[str] = []
+
+    for i, ticker in enumerate(targets, 1):
+        outPath = outDir / f"{ticker}.parquet"
+        console.print(f"  [{i}/{len(targets)}] {ticker} ... ", end="")
+        try:
+            fetchEdgarDocs(ticker, outPath, showProgress=True)
+            succeeded += 1
+            console.print("[green]OK[/]")
+        except (ValueError, KeyError, RuntimeError, OSError, TimeoutError) as e:
+            failed += 1
+            failedTickers.append(ticker)
+            console.print(f"[red]실패: {e}[/]")
+
+    console.print(f"\n[bold green]완료[/]: 성공 {succeeded} / 실패 {failed} / 스킵 {skippedCount}")
+    if failedTickers:
+        console.print(f"실패 목록: {', '.join(failedTickers[:20])}")
+    return 0
+
+
+def _loadEdgarTickers(tier: str) -> list[str] | None:
+    """edgarTickers.json에서 tier별 ticker 목록."""
+    import json
+    from pathlib import Path
+
+    candidates = [
+        Path(__file__).resolve().parents[4] / ".github" / "data" / "edgarTickers.json",
+    ]
+    for fp in candidates:
+        if fp.exists():
+            data = json.loads(fp.read_text(encoding="utf-8"))
+            tickers = data.get(tier, [])
+            return tickers if tickers else None
+    return None
+
+
+# ── DART ──────────────────────────────────────────────
 
 
 def _runStats(console) -> int:

@@ -92,6 +92,7 @@ def test_sections_topics_and_outline_use_lightweight_manifest(monkeypatch):
         return title
 
     monkeypatch.setattr("dartlab.engines.company.dart.company.loadData", fake_load_data)
+    monkeypatch.setattr("dartlab.core.dataLoader.loadData", fake_load_data)
     monkeypatch.setattr("dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", fake_map_section_title)
 
     company = _bare_company(has_docs=True)
@@ -132,6 +133,7 @@ def test_company_topics_combines_docs_manifest_and_finance_summary_without_secti
         raise AssertionError(f"unexpected category: {category}")
 
     monkeypatch.setattr("dartlab.engines.company.dart.company.loadData", fake_load_data)
+    monkeypatch.setattr("dartlab.core.dataLoader.loadData", fake_load_data)
     monkeypatch.setattr(
         "dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview"
     )

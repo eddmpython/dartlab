@@ -319,6 +319,16 @@ class Company:
         return f"Company({self.stockCode}, {self.corpName})"
 
     @property
+    def _analyzer(self):
+        """sections 구조 분석기 (lazy)."""
+        cacheKey = "_sectionsAnalyzer"
+        if cacheKey not in self._cache:
+            from dartlab.engines.company.dart._sectionsAnalyzer import SectionsAnalyzer
+
+            self._cache[cacheKey] = SectionsAnalyzer(self)
+        return self._cache[cacheKey]
+
+    @property
     def _hasFinance(self) -> bool:
         """finance 사용 가능 여부 — lazy check 포함."""
         self._ensureFinanceLoaded()
@@ -445,276 +455,17 @@ class Company:
 
         return collectMissing(self.stockCode, categories=categories)
 
-    @staticmethod
-    def _emptyTopicManifest() -> pl.DataFrame:
-        return pl.DataFrame(
-            schema={
-                "order": pl.Int64,
-                "chapter": pl.Utf8,
-                "topic": pl.Utf8,
-                "source": pl.Utf8,
-                "blocks": pl.Int64,
-                "periods": pl.Int64,
-                "latestPeriod": pl.Utf8,
-            }
-        )
-
-    @staticmethod
-    def _emptyTopicOutline() -> pl.DataFrame:
-        return pl.DataFrame(
-            schema={
-                "period": pl.Utf8,
-                "sectionOrder": pl.Int64,
-                "block": pl.Int64,
-                "type": pl.Utf8,
-                "title": pl.Utf8,
-                "preview": pl.Utf8,
-            }
-        )
-
-    @staticmethod
-    def _previewText(value: Any, limit: int = 160) -> str:
-        text = str(value or "").replace("\r", " ").replace("\n", " ").strip()
-        if len(text) <= limit:
-            return text
-        return text[: max(limit - 3, 0)].rstrip() + "..."
-
     def _docsTopicManifest(self) -> pl.DataFrame:
-        cacheKey = "_docsTopicManifest"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        empty = self._emptyTopicManifest()
-        if not self._hasDocs:
-            self._cache[cacheKey] = empty
-            return empty
-
-        raw = loadData(
-            self.stockCode,
-            category="docs",
-            sinceYear=2016,
-            columns=["year", "report_type", "rcept_date", "section_order", "section_title"],
-        )
-        requiredCols = {"year", "report_type", "section_order", "section_title"}
-        if raw is None or raw.is_empty() or not requiredCols.issubset(set(raw.columns)):
-            self._cache[cacheKey] = empty
-            return empty
-
-        from dartlab.core.reportSelector import selectReport
-        from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS, periodOrderValue
-        from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
-        from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
-        from dartlab.engines.company.dart.docs.sections.runtime import chapterFromMajorNum
-
-        years = sorted({str(year) for year in raw["year"].drop_nulls().to_list()}, reverse=True)
-        catalog: dict[str, dict[str, Any]] = {}
-
-        for year in years:
-            for reportKind, suffix in REPORT_KINDS:
-                report = selectReport(raw, year, reportKind=reportKind)
-                if report is None or report.is_empty():
-                    continue
-
-                periodKey = f"{year}{suffix}"
-                scoped = (
-                    report.select(["section_order", "section_title"])
-                    .filter(pl.col("section_title").is_not_null())
-                    .sort("section_order")
-                )
-                if scoped.is_empty():
-                    continue
-
-                currentChapter: str | None = None
-                periodCounts: dict[str, int] = {}
-                periodOrders: dict[str, int] = {}
-                periodChapters: dict[str, str] = {}
-
-                for row in scoped.iter_rows(named=True):
-                    rawTitle = str(row.get("section_title") or "").strip()
-                    if not rawTitle:
-                        continue
-                    majorNum = parseMajorNum(rawTitle)
-                    if majorNum is not None:
-                        currentChapter = chapterFromMajorNum(majorNum)
-                    topic = mapSectionTitle(rawTitle)
-                    if not topic:
-                        continue
-                    sectionOrder = int(row.get("section_order") or 0)
-                    periodCounts[topic] = periodCounts.get(topic, 0) + 1
-                    periodOrders.setdefault(topic, sectionOrder)
-                    if currentChapter and topic not in periodChapters:
-                        periodChapters[topic] = currentChapter
-
-                for topic, blockCount in periodCounts.items():
-                    chapter = periodChapters.get(topic) or "XII"
-                    sectionOrder = periodOrders.get(topic, 0)
-                    latestKey = periodOrderValue(periodKey)
-                    entry = catalog.get(topic)
-                    if entry is None:
-                        catalog[topic] = {
-                            "order": sectionOrder,
-                            "chapter": chapter,
-                            "topic": topic,
-                            "source": "docs",
-                            "blocks": blockCount,
-                            "periods": 1,
-                            "latestPeriod": periodKey,
-                            "_periods": {periodKey},
-                            "_latestKey": latestKey,
-                        }
-                        continue
-
-                    entry["order"] = min(int(entry["order"]), sectionOrder)
-                    if chapter != "XII" and entry.get("chapter") == "XII":
-                        entry["chapter"] = chapter
-                    entry["blocks"] = max(int(entry["blocks"]), blockCount)
-                    if periodKey not in entry["_periods"]:
-                        entry["_periods"].add(periodKey)
-                        entry["periods"] = len(entry["_periods"])
-                    if latestKey > int(entry["_latestKey"]):
-                        entry["latestPeriod"] = periodKey
-                        entry["_latestKey"] = latestKey
-
-        rows = [
-            {
-                "order": int(entry["order"]),
-                "chapter": str(entry["chapter"]),
-                "topic": str(entry["topic"]),
-                "source": str(entry["source"]),
-                "blocks": int(entry["blocks"]),
-                "periods": int(entry["periods"]),
-                "latestPeriod": str(entry["latestPeriod"]),
-            }
-            for entry in catalog.values()
-        ]
-        if not rows:
-            self._cache[cacheKey] = empty
-            return empty
-
-        result = (
-            pl.DataFrame(rows, strict=False)
-            .with_columns(pl.col("chapter").replace(_CHAPTER_ORDER).cast(pl.Int64).alias("_chapterOrder"))
-            .sort(["_chapterOrder", "order", "topic"])
-            .drop("_chapterOrder")
-        )
-        self._cache[cacheKey] = result
-        return result
+        """→ SectionsAnalyzer.topicManifest()."""
+        return self._analyzer.topicManifest()
 
     def _docsSectionTopics(self) -> list[str]:
-        manifest = self._docsTopicManifest()
-        if manifest.is_empty() or "topic" not in manifest.columns:
-            return []
-        return [topic for topic in manifest["topic"].to_list() if isinstance(topic, str) and topic]
+        """→ SectionsAnalyzer.sectionTopics()."""
+        return self._analyzer.sectionTopics()
 
     def _docsTopicOutline(self, topic: str | None = None) -> pl.DataFrame:
-        if topic is None:
-            return self._docsTopicManifest()
-
-        normalizedTopic = str(topic).strip()
-        cacheKey = f"_docsTopicOutline:{normalizedTopic}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        empty = self._emptyTopicOutline()
-        if not normalizedTopic or not self._hasDocs:
-            self._cache[cacheKey] = empty
-            return empty
-
-        raw = loadData(
-            self.stockCode,
-            category="docs",
-            sinceYear=2016,
-            columns=[
-                "year",
-                "report_type",
-                "rcept_date",
-                "section_order",
-                "section_title",
-                "section_content",
-                "content",
-            ],
-        )
-        requiredCols = {"year", "report_type", "section_order", "section_title"}
-        if raw is None or raw.is_empty() or not requiredCols.issubset(set(raw.columns)):
-            self._cache[cacheKey] = empty
-            return empty
-
-        from dartlab.core.reportSelector import selectReport
-        from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS, detectContentCol, periodOrderValue
-        from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
-        from dartlab.engines.company.dart.docs.sections.views import splitMarkdownBlocks
-
-        contentCol = detectContentCol(raw)
-        years = sorted({str(year) for year in raw["year"].drop_nulls().to_list()}, reverse=True)
-        rows: list[dict[str, Any]] = []
-
-        for year in years:
-            for reportKind, suffix in REPORT_KINDS:
-                report = selectReport(raw, year, reportKind=reportKind)
-                if report is None or report.is_empty() or contentCol not in report.columns:
-                    continue
-
-                periodKey = f"{year}{suffix}"
-                blockIndex = 0
-                scoped = (
-                    report.select(["section_order", "section_title", contentCol])
-                    .filter(pl.col("section_title").is_not_null())
-                    .sort("section_order")
-                )
-                for row in scoped.iter_rows(named=True):
-                    rawTitle = str(row.get("section_title") or "").strip()
-                    if not rawTitle or mapSectionTitle(rawTitle) != normalizedTopic:
-                        continue
-
-                    content = str(row.get(contentCol) or "").strip()
-                    sectionOrder = int(row.get("section_order") or 0)
-                    blocks = splitMarkdownBlocks(content) if content else []
-                    if not blocks:
-                        rows.append(
-                            {
-                                "period": periodKey,
-                                "sectionOrder": sectionOrder,
-                                "block": blockIndex,
-                                "type": "text",
-                                "title": rawTitle,
-                                "preview": "",
-                                "_periodOrder": periodOrderValue(periodKey),
-                            }
-                        )
-                        blockIndex += 1
-                        continue
-
-                    visibleBlocks = [block for block in blocks if str(block.get("blockType") or "text") != "heading"]
-                    if not visibleBlocks:
-                        visibleBlocks = blocks
-
-                    for block in visibleBlocks:
-                        label = str(block.get("blockLabel") or "").strip()
-                        previewSource = block.get("blockText") or ""
-                        rows.append(
-                            {
-                                "period": periodKey,
-                                "sectionOrder": sectionOrder,
-                                "block": blockIndex,
-                                "type": str(block.get("blockType") or "text"),
-                                "title": label if label and label != "(root)" else rawTitle,
-                                "preview": self._previewText(previewSource),
-                                "_periodOrder": periodOrderValue(periodKey),
-                            }
-                        )
-                        blockIndex += 1
-
-        if not rows:
-            self._cache[cacheKey] = empty
-            return empty
-
-        result = (
-            pl.DataFrame(rows, strict=False)
-            .sort(["_periodOrder", "sectionOrder", "block"], descending=[True, False, False])
-            .drop("_periodOrder")
-        )
-        self._cache[cacheKey] = result
-        return result
+        """→ SectionsAnalyzer.topicOutline()."""
+        return self._analyzer.topicOutline(topic=topic)
 
     def disclosure(
         self,
@@ -970,108 +721,18 @@ class Company:
         return self._notesAccessor
 
     def _docsSectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        cacheKey = f"_docsSectionsCadence:{normalizedScope}:{int(includeMixed)}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-        from dartlab.engines.company.dart.docs.sections import projectCadenceRows
+        """→ SectionsAnalyzer.sectionsCadence()."""
+        return self._analyzer.sectionsCadence(cadenceScope, includeMixed=includeMixed)
 
-        result = projectCadenceRows(sectionsFrame, cadenceScope=normalizedScope, includeMixed=includeMixed)
-        self._cache[cacheKey] = result
-        return result
-
-    def _docsSectionsOrdered(
-        self,
-        *,
-        recentFirst: bool = True,
-        annualAsQ4: bool = True,
-    ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        cacheKey = f"_docsSectionsOrdered:{int(recentFirst)}:{int(annualAsQ4)}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import reorderPeriodColumns
-
-        result = reorderPeriodColumns(sectionsFrame.raw, descending=recentFirst, annualAsQ4=annualAsQ4)
-        self._cache[cacheKey] = result
-        return result
+    def _docsSectionsOrdered(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> pl.DataFrame | None:
+        """→ SectionsAnalyzer.sectionsOrdered()."""
+        return self._analyzer.sectionsOrdered(recentFirst=recentFirst, annualAsQ4=annualAsQ4)
 
     def _docsSectionsCoverage(
-        self,
-        *,
-        topic: str | None = None,
-        recentFirst: bool = True,
-        annualAsQ4: bool = True,
+        self, *, topic: str | None = None, recentFirst: bool = True, annualAsQ4: bool = True
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        topicKey = topic or "*"
-        cacheKey = f"_docsSectionsCoverage:{topicKey}:{int(recentFirst)}:{int(annualAsQ4)}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import displayPeriod, sortPeriods
-
-        rawFrame = sectionsFrame.raw
-        scoped = rawFrame if topic is None else rawFrame.filter(pl.col("topic") == topic)
-        if scoped.is_empty():
-            result = pl.DataFrame(
-                schema={
-                    "topic": pl.Utf8,
-                    "period": pl.Utf8,
-                    "rawPeriod": pl.Utf8,
-                    "rowCount": pl.Int64,
-                    "nonNullRows": pl.Int64,
-                    "nullRows": pl.Int64,
-                    "coverageRatio": pl.Float64,
-                }
-            )
-            self._cache[cacheKey] = result
-            return result
-
-        periodCols = sortPeriods([c for c in scoped.columns if _isPeriodColumn(c)], descending=recentFirst)
-        topics = scoped.get_column("topic").drop_nulls().unique(maintain_order=True).to_list()
-        records: list[dict[str, Any]] = []
-        for topicName in topics:
-            topicRows = scoped.filter(pl.col("topic") == topicName)
-            rowCount = topicRows.height
-            if rowCount == 0:
-                continue
-            for periodCol in periodCols:
-                nonNullRows = topicRows.get_column(periodCol).drop_nulls().len()
-                records.append(
-                    {
-                        "topic": str(topicName),
-                        "period": displayPeriod(periodCol, annualAsQ4=annualAsQ4),
-                        "rawPeriod": periodCol,
-                        "rowCount": rowCount,
-                        "nonNullRows": nonNullRows,
-                        "nullRows": rowCount - nonNullRows,
-                        "coverageRatio": (float(nonNullRows) / float(rowCount)) if rowCount else 0.0,
-                    }
-                )
-
-        result = pl.DataFrame(records, strict=False) if records else pl.DataFrame()
-        self._cache[cacheKey] = result
-        return result
+        """→ SectionsAnalyzer.sectionsCoverage()."""
+        return self._analyzer.sectionsCoverage(topic=topic, recentFirst=recentFirst, annualAsQ4=annualAsQ4)
 
     def _docsSectionsSemanticRegistry(
         self,
@@ -1081,39 +742,10 @@ class Company:
         includeMixed: bool = True,
         collisionsOnly: bool = False,
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        topicKey = topic or "*"
-        cacheKey = (
-            f"_docsSectionsSemanticRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}"
+        """→ SectionsAnalyzer.sectionsSemanticRegistry()."""
+        return self._analyzer.sectionsSemanticRegistry(
+            topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed, collisionsOnly=collisionsOnly
         )
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import semanticCollisions, semanticRegistry
-
-        if collisionsOnly:
-            result = semanticCollisions(
-                sectionsFrame,
-                topic=topic,
-                cadenceScope=normalizedScope,
-                includeMixed=includeMixed,
-            )
-        else:
-            result = semanticRegistry(
-                sectionsFrame,
-                topic=topic,
-                cadenceScope=normalizedScope,
-                includeMixed=includeMixed,
-            )
-        self._cache[cacheKey] = result
-        return result
 
     def _docsSectionsStructureRegistry(
         self,
@@ -1124,40 +756,14 @@ class Company:
         collisionsOnly: bool = False,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
-        topicKey = topic or "*"
-        cacheKey = f"_docsSectionsStructureRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}:{normalizedNodeType}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import structureCollisions, structureRegistry
-
-        if collisionsOnly:
-            result = structureCollisions(
-                sectionsFrame,
-                topic=topic,
-                cadenceScope=normalizedScope,
-                includeMixed=includeMixed,
-                nodeType=nodeType,
-            )
-        else:
-            result = structureRegistry(
-                sectionsFrame,
-                topic=topic,
-                cadenceScope=normalizedScope,
-                includeMixed=includeMixed,
-                nodeType=nodeType,
-            )
-        self._cache[cacheKey] = result
-        return result
+        """→ SectionsAnalyzer.sectionsStructureRegistry()."""
+        return self._analyzer.sectionsStructureRegistry(
+            topic=topic,
+            cadenceScope=cadenceScope,
+            includeMixed=includeMixed,
+            collisionsOnly=collisionsOnly,
+            nodeType=nodeType,
+        )
 
     def _docsSectionsStructureEvents(
         self,
@@ -1168,32 +774,14 @@ class Company:
         changedOnly: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
-        topicKey = topic or "*"
-        cacheKey = f"_docsSectionsStructureEvents:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(changedOnly)}:{normalizedNodeType}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import structureEvents
-
-        result = structureEvents(
-            sectionsFrame,
+        """→ SectionsAnalyzer.sectionsStructureEvents()."""
+        return self._analyzer.sectionsStructureEvents(
             topic=topic,
-            cadenceScope=normalizedScope,
+            cadenceScope=cadenceScope,
             includeMixed=includeMixed,
             changedOnly=changedOnly,
             nodeType=nodeType,
         )
-        self._cache[cacheKey] = result
-        return result
 
     def _docsSectionsStructureSummary(
         self,
@@ -1203,33 +791,10 @@ class Company:
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
-        topicKey = topic or "*"
-        cacheKey = (
-            f"_docsSectionsStructureSummary:{topicKey}:{normalizedScope}:{int(includeMixed)}:{normalizedNodeType}"
+        """→ SectionsAnalyzer.sectionsStructureSummary()."""
+        return self._analyzer.sectionsStructureSummary(
+            topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed, nodeType=nodeType
         )
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import structureSummary
-
-        result = structureSummary(
-            sectionsFrame,
-            topic=topic,
-            cadenceScope=normalizedScope,
-            includeMixed=includeMixed,
-            nodeType=nodeType,
-        )
-        self._cache[cacheKey] = result
-        return result
 
     def _docsSectionsStructureChanges(
         self,
@@ -1241,36 +806,15 @@ class Company:
         latestOnly: bool = True,
         changedOnly: bool = True,
     ) -> pl.DataFrame | None:
-        if not self._hasDocs:
-            return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
-        topicKey = topic or "*"
-        cacheKey = (
-            f"_docsSectionsStructureChanges:{topicKey}:{normalizedScope}:{int(includeMixed)}:{normalizedNodeType}:"
-            f"{int(latestOnly)}:{int(changedOnly)}"
-        )
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        sectionsFrame = self.docs.sections
-        if sectionsFrame is None:
-            self._cache[cacheKey] = None
-            return None
-
-        from dartlab.engines.company.dart.docs.sections import structureChanges
-
-        result = structureChanges(
-            sectionsFrame,
+        """→ SectionsAnalyzer.sectionsStructureChanges()."""
+        return self._analyzer.sectionsStructureChanges(
             topic=topic,
-            cadenceScope=normalizedScope,
+            cadenceScope=cadenceScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
             latestOnly=latestOnly,
             changedOnly=changedOnly,
         )
-        self._cache[cacheKey] = result
-        return result
 
     def _retrievalBlocks(self) -> pl.DataFrame | None:
         if not self._hasDocs:
@@ -1297,26 +841,16 @@ class Company:
         return result
 
     def _topicSubtables(self, topic: str):
-        cacheKey = f"_topicSubtables:{topic}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        blocks = self._retrievalBlocks()
-        if blocks is None or blocks.is_empty():
-            self._cache[cacheKey] = None
-            return None
-        from dartlab.engines.company.dart.docs.sections import topicSubtables
-
-        result = topicSubtables(blocks, topic)
-        self._cache[cacheKey] = result
-        return result
+        """→ SectionsAnalyzer.topicSubtables()."""
+        return self._analyzer.topicSubtables(topic)
 
     def _sectionsSubtopicWide(self, topic: str) -> pl.DataFrame | None:
-        result = self._topicSubtables(topic)
-        return None if result is None else result.wide
+        """→ SectionsAnalyzer.subtopicWide()."""
+        return self._analyzer.subtopicWide(topic)
 
     def _sectionsSubtopicLong(self, topic: str) -> pl.DataFrame | None:
-        result = self._topicSubtables(topic)
-        return None if result is None else result.long
+        """→ SectionsAnalyzer.subtopicLong()."""
+        return self._analyzer.subtopicLong(topic)
 
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
         try:
