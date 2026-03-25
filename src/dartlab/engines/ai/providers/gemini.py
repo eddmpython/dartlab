@@ -58,16 +58,19 @@ def _loadOAuthCredentials():
     return None
 
 
-def _runOAuthFlow():
-    """브라우저 기반 OAuth 로그인 → 토큰 저장."""
+def _ensureOAuthDeps():
+    """google_auth_oauthlib 설치 확인."""
     try:
-        from google_auth_oauthlib.flow import InstalledAppFlow
+        from google_auth_oauthlib.flow import InstalledAppFlow  # noqa: F401
     except ImportError:
         raise ImportError(
             "Google OAuth 인증에 필요한 패키지가 없습니다.\n"
             "  uv add google-auth-oauthlib"
         )
 
+
+def _ensureClientSecret():
+    """client_secret.json 존재 확인."""
     if not _CLIENT_SECRET_FILE.exists():
         raise FileNotFoundError(
             f"Google OAuth client secret 파일이 필요합니다.\n"
@@ -75,6 +78,53 @@ def _runOAuthFlow():
             f"  생성: https://console.cloud.google.com/apis/credentials\n"
             f"  → OAuth 2.0 Client ID → Desktop app → JSON 다운로드"
         )
+
+
+OAUTH_REDIRECT_PORT = 8098
+_REDIRECT_URI = f"http://localhost:{OAUTH_REDIRECT_PORT}/auth/gemini/callback"
+
+
+def buildAuthUrl() -> tuple[str, str]:
+    """OAuth authorize URL + state 반환. 서버/GUI에서 호출."""
+    _ensureOAuthDeps()
+    _ensureClientSecret()
+    from google_auth_oauthlib.flow import Flow
+
+    flow = Flow.from_client_secrets_file(
+        str(_CLIENT_SECRET_FILE),
+        scopes=_OAUTH_SCOPES,
+        redirect_uri=_REDIRECT_URI,
+    )
+    authUrl, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
+    return authUrl, state
+
+
+def exchangeCode(code: str, state: str) -> None:
+    """Authorization code → 토큰 교환 + 저장."""
+    _ensureOAuthDeps()
+    _ensureClientSecret()
+    from google_auth_oauthlib.flow import Flow
+
+    flow = Flow.from_client_secrets_file(
+        str(_CLIENT_SECRET_FILE),
+        scopes=_OAUTH_SCOPES,
+        redirect_uri=_REDIRECT_URI,
+        state=state,
+    )
+    flow.fetch_token(code=code)
+    _saveOAuthCredentials(flow.credentials)
+    _log.info("Gemini OAuth 인증 완료 — 토큰 저장됨")
+
+
+def _runOAuthFlow():
+    """CLI용: 브라우저 기반 OAuth 로그인 → 토큰 저장."""
+    _ensureOAuthDeps()
+    _ensureClientSecret()
+    from google_auth_oauthlib.flow import InstalledAppFlow
 
     flow = InstalledAppFlow.from_client_secrets_file(str(_CLIENT_SECRET_FILE), _OAUTH_SCOPES)
     creds = flow.run_local_server(port=0)
@@ -87,6 +137,11 @@ def _saveOAuthCredentials(creds) -> None:
     """OAuth credential을 JSON으로 저장."""
     _DARTLAB_DIR.mkdir(parents=True, exist_ok=True)
     _OAUTH_TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
+
+
+def revokeOAuth() -> None:
+    """저장된 OAuth 토큰 삭제."""
+    _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
 
 
 def isOAuthAuthenticated() -> bool:

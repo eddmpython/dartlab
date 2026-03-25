@@ -245,10 +245,18 @@
 												<div class="text-[10px] text-dl-text-dim mb-2.5">
 													Google 계정으로 로그인하면 Gemini를 무료로 사용할 수 있습니다.
 												</div>
-												<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-bg-darker text-dl-text-dim text-[11px]">
-													<Key size={12} />
-													<code>dartlab setup gemini</code> 실행 후 브라우저 로그인
-												</div>
+												<button
+													class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
+													onclick={() => ui.handleGeminiOauthLogin()}
+													disabled={ui.geminiLoginPending}
+												>
+													{#if ui.geminiLoginPending}
+														<Loader2 size={12} class="animate-spin" />
+													{:else}
+														<Key size={12} />
+													{/if}
+													Google 로그인
+												</button>
 												{#if !ui.geminiDetail.sdkInstalled}
 													<div class="text-[10px] text-amber-400 mt-2">google-genai 패키지가 설치되어 있지 않습니다: <code>pip install dartlab[llm-gemini]</code></div>
 												{/if}
@@ -261,6 +269,12 @@
 													<span class="text-[11px] text-dl-success">OAuth 인증됨</span>
 													<span class="text-[10px] text-dl-text-dim">— Google 계정</span>
 												</div>
+												<button
+													class="mt-2 text-[10px] text-dl-text-dim hover:text-dl-text transition-colors"
+													onclick={() => ui.handleGeminiOauthLogout()}
+												>
+													로그아웃
+												</button>
 											</div>
 										{/if}
 

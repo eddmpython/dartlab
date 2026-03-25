@@ -19,6 +19,9 @@ import {
 	oauthAuthorize,
 	oauthLogout,
 	oauthStatus,
+	geminiOauthAuthorize,
+	geminiOauthLogout,
+	geminiOauthStatus,
 	pullOllamaModel,
 	startChannelConnection,
 	stopChannelConnection,
@@ -112,6 +115,7 @@ export function createUiStore() {
 	let oauthCodexDetail = $state({});
 	let geminiDetail = $state({});
 	let oauthLoginPending = $state(false);
+	let geminiLoginPending = $state(false);
 	let channelBusy = $state({});
 	let channelInputs = $state({
 		telegram: { token: "" },
@@ -361,6 +365,46 @@ export function createUiStore() {
 			showToast("ChatGPT OAuth 로그아웃 완료", "success");
 		} catch {
 			showToast("OAuth 로그아웃 실패");
+		}
+	}
+
+	// ── Gemini OAuth ──
+	async function handleGeminiOauthLogin() {
+		if (geminiLoginPending) return;
+		geminiLoginPending = true;
+		try {
+			const { authUrl } = await geminiOauthAuthorize();
+			window.open(authUrl, "dartlab-gemini-oauth", "popup=yes,width=540,height=760");
+			const started = Date.now();
+			while (Date.now() - started < 120000) {
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+				const status = await geminiOauthStatus();
+				if (!status.done) continue;
+				if (status.error) throw new Error(status.error);
+				await refreshProviderStatus("gemini", true);
+				const profile = await fetchAiProfile();
+				await handleProfileChanged(profile);
+				showToast("Gemini OAuth 인증 완료", "success");
+				geminiLoginPending = false;
+				return;
+			}
+			throw new Error("oauth_timeout");
+		} catch (e) {
+			const message = e?.message === "oauth_timeout" ? "Gemini OAuth 인증 시간이 초과되었습니다" : `Gemini OAuth 인증 실패: ${e?.message || "unknown"}`;
+			showToast(message);
+		}
+		geminiLoginPending = false;
+	}
+
+	async function handleGeminiOauthLogout() {
+		try {
+			await geminiOauthLogout();
+			geminiDetail = { ...geminiDetail, authenticated: false, checked: true };
+			const profile = await fetchAiProfile();
+			await handleProfileChanged(profile);
+			showToast("Gemini OAuth 로그아웃 완료", "success");
+		} catch {
+			showToast("Gemini OAuth 로그아웃 실패");
 		}
 	}
 
@@ -685,6 +729,9 @@ export function createUiStore() {
 		handleCodexLogout,
 		handleOauthCodexLogin,
 		handleOauthCodexLogout,
+		handleGeminiOauthLogin,
+		handleGeminiOauthLogout,
+		get geminiLoginPending() { return geminiLoginPending; },
 		startPullModel,
 		cancelPull,
 		loadStatus,

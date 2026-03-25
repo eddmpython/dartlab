@@ -186,6 +186,24 @@ export async function oauthLogout() {
 	return res.json();
 }
 
+export async function geminiOauthAuthorize() {
+	const res = await fetch(`${BASE}/api/gemini/oauth/authorize`);
+	if (!res.ok) throw new Error("Gemini OAuth 로그인 시작 실패");
+	return res.json();
+}
+
+export async function geminiOauthStatus() {
+	const res = await fetch(`${BASE}/api/gemini/oauth/status`);
+	if (!res.ok) throw new Error("Gemini OAuth 상태 확인 실패");
+	return res.json();
+}
+
+export async function geminiOauthLogout() {
+	const res = await fetch(`${BASE}/api/gemini/oauth/logout`, { method: "POST" });
+	if (!res.ok) throw new Error("Gemini OAuth 로그아웃 실패");
+	return res.json();
+}
+
 export async function startChannelConnection(platform, payload = {}) {
 	const res = await fetch(`${BASE}/api/channels/${encodeURIComponent(platform)}/start`, {
 		method: "POST",
