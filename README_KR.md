@@ -47,16 +47,14 @@ pip install dartlab
 
 ```bash
 uv add "dartlab[ai]"              # 웹 UI, 서버, 스트리밍 (FastAPI + uvicorn)
-uv add "dartlab[llm]"             # LLM 분석 — OpenAI
-uv add "dartlab[llm-anthropic]"   # LLM 분석 — OpenAI + Anthropic
+uv add "dartlab[llm]"             # LLM 분석 (OpenAI)
 uv add "dartlab[charts]"          # Plotly 차트, 네트워크 그래프 (plotly + networkx + scipy)
 uv add "dartlab[event]"           # 이벤트 스터디, 주가 데이터 (yfinance)
 uv add "dartlab[mcp]"             # Claude Desktop / Code / Cursor용 MCP 서버
 uv add "dartlab[channel]"         # 웹 UI + cloudflared 터널 공유
 uv add "dartlab[channel-ngrok]"   # 웹 UI + ngrok 터널 공유
 uv add "dartlab[channel-full]"    # 전체 채널 + Telegram / Slack / Discord 봇
-uv add "dartlab[hf]"              # HuggingFace Hub (데이터 동기화 스크립트용)
-uv add "dartlab[all]"             # 위 전부 (channel 봇과 hf 제외)
+uv add "dartlab[all]"             # 위 전부 (channel 봇 제외)
 ```
 
 **자주 쓰는 조합:**

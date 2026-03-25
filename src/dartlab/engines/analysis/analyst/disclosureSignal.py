@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import polars as pl
 
-from dartlab.engines.common.docs.diff import sectionsDiff, topicDiff
+from dartlab.engines.common.docs.diff import sectionsDiff
 
 
 @dataclass
@@ -36,15 +36,50 @@ _TOPIC_WEIGHTS: dict[str, float] = {
 }
 
 _POSITIVE = [
-    "증가", "성장", "확대", "호조", "개선", "수요증가", "신규수주",
-    "수출증가", "진출", "확장", "신사업", "출시", "수주", "계약체결",
-    "증설", "흑자전환", "흑자", "호전", "상승", "신제품",
+    "증가",
+    "성장",
+    "확대",
+    "호조",
+    "개선",
+    "수요증가",
+    "신규수주",
+    "수출증가",
+    "진출",
+    "확장",
+    "신사업",
+    "출시",
+    "수주",
+    "계약체결",
+    "증설",
+    "흑자전환",
+    "흑자",
+    "호전",
+    "상승",
+    "신제품",
 ]
 
 _NEGATIVE = [
-    "감소", "축소", "부진", "하락", "둔화", "수요감소", "수출감소",
-    "철수", "중단", "손실", "구조조정", "폐쇄", "적자전환", "적자",
-    "악화", "소송", "제재", "과징금", "규제", "불확실", "위험증가",
+    "감소",
+    "축소",
+    "부진",
+    "하락",
+    "둔화",
+    "수요감소",
+    "수출감소",
+    "철수",
+    "중단",
+    "손실",
+    "구조조정",
+    "폐쇄",
+    "적자전환",
+    "적자",
+    "악화",
+    "소송",
+    "제재",
+    "과징금",
+    "규제",
+    "불확실",
+    "위험증가",
 ]
 
 
@@ -109,7 +144,9 @@ def extractSignal(sections: pl.DataFrame) -> DisclosureSignal | None:
         removedLines: list[str] = []
 
         for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-            None, prevLines, latestLines,
+            None,
+            prevLines,
+            latestLines,
         ).get_opcodes():
             if tag == "insert":
                 addedLines.extend(latestLines[j1:j2])
@@ -164,8 +201,11 @@ def extractSignal(sections: pl.DataFrame) -> DisclosureSignal | None:
         totalLines += tLines
         # 키워드 포함 줄만 카운트 (노이즈 줄 제외)
         import difflib
+
         for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-            None, prevText.splitlines(), latestText.splitlines(),
+            None,
+            prevText.splitlines(),
+            latestText.splitlines(),
         ).get_opcodes():
             if tag in ("insert", "delete", "replace"):
                 changedLines += max(i2 - i1, j2 - j1)
@@ -213,12 +253,14 @@ def _concatTopicText(sections: pl.DataFrame, topic: str, period: str) -> str:
 def _isAnnualPeriod(name: str) -> bool:
     """연간 기간 판별 (2024, 2023 등 — Q 없음)."""
     import re
+
     return bool(re.fullmatch(r"\d{4}", name))
 
 
 def _isPeriodLike(name: str) -> bool:
     """기간 컬럼명 판별 (2024, 2024Q3 등)."""
     import re
+
     return bool(re.fullmatch(r"\d{4}(Q[1-4])?", name))
 
 

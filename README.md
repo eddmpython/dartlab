@@ -47,16 +47,14 @@ Install only what you need:
 
 ```bash
 uv add "dartlab[ai]"              # web UI, server, streaming (FastAPI + uvicorn)
-uv add "dartlab[llm]"             # LLM analysis — OpenAI
-uv add "dartlab[llm-anthropic]"   # LLM analysis — OpenAI + Anthropic
+uv add "dartlab[llm]"             # LLM analysis (OpenAI)
 uv add "dartlab[charts]"          # Plotly charts, network graphs (plotly + networkx + scipy)
 uv add "dartlab[event]"           # event study, stock data (yfinance)
 uv add "dartlab[mcp]"             # MCP server for Claude Desktop / Code / Cursor
 uv add "dartlab[channel]"         # web UI + cloudflared tunnel sharing
 uv add "dartlab[channel-ngrok]"   # web UI + ngrok tunnel sharing
 uv add "dartlab[channel-full]"    # all channels + Telegram / Slack / Discord bots
-uv add "dartlab[hf]"              # HuggingFace Hub (for data sync scripts)
-uv add "dartlab[all]"             # everything above (except channel bots and hf)
+uv add "dartlab[all]"             # everything above (except channel bots)
 ```
 
 **Common combinations:**

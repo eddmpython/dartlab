@@ -1,6 +1,6 @@
-# dartlab API 스펙
+# dartlab API Reference (Skills용)
 
-이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다. 직접 수정하지 마세요.
+이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다.
 
 
 ---
