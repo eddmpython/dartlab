@@ -272,8 +272,8 @@ def test_sections_horizontalize_numbering_changes_into_same_row(monkeypatch):
     topic = df.filter(pl.col("topic") == "companyOverview")
     legal_heading = topic.filter(
         (pl.col("textNodeType") == "heading")
-        & pl.col("2024").str.contains("법적", literal=True)
-        & pl.col("2025").str.contains("법적", literal=True)
+        & pl.col("2024").cast(pl.Utf8).str.contains("법적", literal=True)
+        & pl.col("2025").cast(pl.Utf8).str.contains("법적", literal=True)
     )
     assert legal_heading.height == 1
     assert legal_heading.item(0, "2024") == "가. 회사의 법적ㆍ상업적 명칭"
@@ -281,8 +281,8 @@ def test_sections_horizontalize_numbering_changes_into_same_row(monkeypatch):
 
     legal_body = topic.filter(
         (pl.col("textNodeType") == "body")
-        & pl.col("2024").str.contains("삼성전자주식회사", literal=True)
-        & pl.col("2025").str.contains("삼성전자주식회사", literal=True)
+        & pl.col("2024").cast(pl.Utf8).str.contains("삼성전자주식회사", literal=True)
+        & pl.col("2025").cast(pl.Utf8).str.contains("삼성전자주식회사", literal=True)
     )
     assert legal_body.height == 1
     assert "삼성전자주식회사" in legal_body.item(0, "2024")
@@ -412,8 +412,8 @@ def test_sections_horizontalize_same_path_when_source_block_order_shifts(monkeyp
     topic = df.filter(pl.col("topic") == "companyOverview")
     location_body = topic.filter(
         (pl.col("textNodeType") == "body")
-        & pl.col("2024").str.contains("경기도 수원시", literal=True)
-        & pl.col("2025").str.contains("경기도 수원시", literal=True)
+        & pl.col("2024").cast(pl.Utf8).str.contains("경기도 수원시", literal=True)
+        & pl.col("2025").cast(pl.Utf8).str.contains("경기도 수원시", literal=True)
     )
     assert location_body.height == 1
     assert location_body.item(0, "segmentOccurrence") == 1

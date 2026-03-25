@@ -197,6 +197,7 @@ def iterPeriodSubsets(
                 continue
             subset = (
                 report.select(["section_order", "section_title", ccol])
+                .with_columns(pl.col("section_title").cast(pl.Utf8))
                 .filter(pl.col(ccol).is_not_null() & (pl.col(ccol).str.len_chars() > 0))
                 .sort("section_order")
             )
