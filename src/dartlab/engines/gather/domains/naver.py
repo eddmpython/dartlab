@@ -22,6 +22,8 @@ log = logging.getLogger(__name__)
 
 # NaverPay 증권 API (JSON)
 _API_BASE = "https://m.stock.naver.com/api/stock"
+# 네이버 차트 API (XML) — FDR 방식, 한번에 6000일
+_CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
 
 
 def _clean_number(text: str | None) -> float | None:
@@ -309,51 +311,51 @@ async def fetch_history(
     end: str = "",
     market: str = "KR",
 ) -> list[dict]:
-    """네이버 → 주가 OHLCV 시계열 (KR 전용, 페이징)."""
+    """네이버 차트 API — 한번에 6000일 수정주가 OHLCV (FDR 방식)."""
     if market != "KR":
         return []
-    url = f"{_API_BASE}/{stock_code}/price"
-    all_rows: list[dict] = []
-    page = 1
-    max_pages = 20  # 최대 1000일 (50 * 20)
+    import re
 
-    while page <= max_pages:
-        try:
-            resp = await client.get(
-                url,
-                params={"pageSize": 50, "page": page},
-                headers={"Accept": "application/json"},
-            )
-            items = resp.json()
-        except (SourceUnavailableError, ValueError) as exc:
-            log.debug("naver history page %d 실패: %s", page, exc)
-            break
-        if not items or not isinstance(items, list):
-            break
-        for item in items:
-            dt = item.get("localTradedAt", "")
-            if start and dt < start:
-                all_rows.append({
-                    "date": dt,
-                    "open": _clean_number(item.get("openPrice")) or 0.0,
-                    "high": _clean_number(item.get("highPrice")) or 0.0,
-                    "low": _clean_number(item.get("lowPrice")) or 0.0,
-                    "close": _clean_number(item.get("closePrice")) or 0.0,
-                    "volume": item.get("accumulatedTradingVolume") or 0,
-                })
-                return list(reversed(all_rows))  # 날짜 오름차순
-            if end and dt > end:
-                continue
-            all_rows.append({
-                "date": dt,
-                "open": _clean_number(item.get("openPrice")) or 0.0,
-                "high": _clean_number(item.get("highPrice")) or 0.0,
-                "low": _clean_number(item.get("lowPrice")) or 0.0,
-                "close": _clean_number(item.get("closePrice")) or 0.0,
-                "volume": item.get("accumulatedTradingVolume") or 0,
-            })
-        if len(items) < 50:
-            break
-        page += 1
+    try:
+        resp = await client.get(
+            _CHART_URL,
+            params={
+                "timeframe": "day",
+                "count": "6000",
+                "requestType": "0",
+                "symbol": stock_code,
+            },
+        )
+        text = resp.text
+    except (SourceUnavailableError, OSError) as exc:
+        log.debug("naver chart API 실패: %s", exc)
+        return []
 
-    return list(reversed(all_rows))  # 날짜 오름차순
+    items = re.findall(r'<item data="(.*?)" />', text)
+    if not items:
+        return []
+
+    rows: list[dict] = []
+    for item in items:
+        parts = item.split("|")
+        if len(parts) < 6:
+            continue
+        d = parts[0]
+        dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+        if start and dt < start:
+            continue
+        if end and dt > end:
+            continue
+        o = float(parts[1]) if parts[1] else 0.0
+        # 거래정지일 (open=0) 건너뛰기
+        if o == 0.0:
+            continue
+        rows.append({
+            "date": dt,
+            "open": o,
+            "high": float(parts[2]) if parts[2] else 0.0,
+            "low": float(parts[3]) if parts[3] else 0.0,
+            "close": float(parts[4]) if parts[4] else 0.0,
+            "volume": int(parts[5]) if parts[5] else 0,
+        })
+    return rows  # 날짜 오름차순 (수정주가)
