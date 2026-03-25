@@ -180,14 +180,18 @@ class AnalysisResult:
     risk: InsightResult
     opportunity: InsightResult
 
+    predictability: Optional[InsightResult] = None
+    uncertainty: Optional[InsightResult] = None
+    coreEarnings: Optional[InsightResult] = None
+
     anomalies: list[Anomaly] = field(default_factory=list)
     distress: Optional[DistressResult] = None
     summary: str = ""
     profile: str = ""
 
     def grades(self) -> dict[str, str]:
-        """7영역 등급 dict 반환."""
-        return {
+        """10영역 등급 dict 반환."""
+        result = {
             "performance": self.performance.grade,
             "profitability": self.profitability.grade,
             "health": self.health.grade,
@@ -196,6 +200,13 @@ class AnalysisResult:
             "risk": self.risk.grade,
             "opportunity": self.opportunity.grade,
         }
+        if self.predictability:
+            result["predictability"] = self.predictability.grade
+        if self.uncertainty:
+            result["uncertainty"] = self.uncertainty.grade
+        if self.coreEarnings:
+            result["coreEarnings"] = self.coreEarnings.grade
+        return result
 
     def __repr__(self):
         g = self.grades()

@@ -28,6 +28,21 @@ AREAS = {
         "description": "최대주주 지분율, 감사의견, 사외이사 비율, 자기주식",
         "metrics": ["major_holder_pct", "audit_opinion", "outside_director_ratio", "treasury_stock"],
     },
+    "predictability": {
+        "label": "예측가능성",
+        "description": "매출CV + 영업CV + 연속성장 + 무적자 → 0~10점 (GuruFocus Business Predictability)",
+        "metrics": ["revenue_cv", "operating_cv", "consecutive_growth", "profit_years"],
+    },
+    "uncertainty": {
+        "label": "불확실성",
+        "description": "매출CV + DOL + D/E + 영업CV → 5단계 등급 + Fair Value 밴드 (Morningstar Uncertainty Rating)",
+        "metrics": ["revenue_cv", "dol", "debt_equity", "operating_cv", "fair_value_band"],
+    },
+    "coreEarnings": {
+        "label": "핵심이익",
+        "description": "비경상 항목 분리, Core Earnings 안정성 (S&P Core Earnings)",
+        "metrics": ["core_cv", "reported_cv", "cv_improvement", "core_reported_gap"],
+    },
     "risk": {
         "label": "종합 리스크",
         "description": "전 영역 리스크 플래그 종합",
@@ -109,7 +124,7 @@ def buildSpec() -> dict:
     """insight 엔진 스펙 반환."""
     return {
         "name": "insight",
-        "description": "기업 분석 등급 (7영역 A~F) + 이상치 탐지 + 부실 예측 + 프로파일 분류",
+        "description": "기업 분석 등급 (10영역 A~F) + 이상치 탐지 + 부실 예측 + 프로파일 분류",
         "summary": {
             "areas": list(AREAS.keys()),
             "grading": "A~F (6단계, 점수 기반)",

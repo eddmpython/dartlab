@@ -1,6 +1,7 @@
-"""7영역 인사이트 등급 분석.
+"""10영역 인사이트 등급 분석.
 
-영역: performance, profitability, health, cashflow, governance, risk, opportunity
+영역: performance, profitability, health, cashflow, governance, risk, opportunity,
+      predictability, uncertainty, coreEarnings
 """
 
 from __future__ import annotations
@@ -751,8 +752,8 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
 def analyzeRiskSummary(insights: dict[str, InsightResult]) -> InsightResult:
     """리스크 종합 분석."""
     allRisks: list[Flag] = []
-    for key in ["performance", "profitability", "health", "cashflow", "governance"]:
-        if key in insights:
+    for key in ["performance", "profitability", "health", "cashflow", "governance", "predictability", "uncertainty", "coreEarnings"]:
+        if key in insights and insights[key] is not None:
             allRisks.extend(insights[key].risks)
 
     if not allRisks:
@@ -783,8 +784,8 @@ def analyzeRiskSummary(insights: dict[str, InsightResult]) -> InsightResult:
 def analyzeOpportunitySummary(insights: dict[str, InsightResult]) -> InsightResult:
     """기회 종합 분석."""
     allOpps: list[Flag] = []
-    for key in ["performance", "profitability", "health", "cashflow", "governance"]:
-        if key in insights:
+    for key in ["performance", "profitability", "health", "cashflow", "governance", "predictability", "uncertainty", "coreEarnings"]:
+        if key in insights and insights[key] is not None:
             allOpps.extend(insights[key].opportunities)
 
     if not allOpps:
@@ -811,3 +812,242 @@ def analyzeOpportunitySummary(insights: dict[str, InsightResult]) -> InsightResu
         summary = "투자 매력 없음"
 
     return InsightResult(grade, summary, [o.text for o in allOpps], opportunities=allOpps)
+
+
+def analyzePredictability(
+    aSeries: dict,
+    aYears: list[str],
+    isFinancial: bool = False,
+) -> InsightResult:
+    """사업 예측가능성 분석 (0~10점 → A~F)."""
+    import statistics
+
+    revVals = getAnnualValues(aSeries, "IS", "sales")
+    opVals = getAnnualValues(aSeries, "IS", "operating_profit")
+    niVals = getAnnualValues(aSeries, "IS", "net_profit")
+
+    if isFinancial:
+        revVals = opVals
+
+    validRev = [v for v in revVals if v is not None]
+    validOp = [v for v in opVals if v is not None]
+    validNi = [v for v in niVals if v is not None]
+
+    if len(validRev) < 3:
+        return InsightResult("N", "예측가능성 데이터 부족")
+
+    details: list[str] = []
+    score = 0.0
+
+    # 매출 CV (낮을수록 예측 가능)
+    revMean = statistics.mean(validRev)
+    revCv = statistics.stdev(validRev) / abs(revMean) if revMean != 0 else 1.0
+    revScore = max(0, 2.5 - revCv * 2.5)
+    score += revScore
+    details.append(f"매출 CV {revCv:.2f} ({revScore:.1f}/2.5)")
+
+    # 영업이익 CV
+    if len(validOp) >= 3:
+        opMean = statistics.mean(validOp)
+        opCv = statistics.stdev(validOp) / abs(opMean) if opMean != 0 else 1.0
+        opScore = max(0, 2.5 - opCv * 2.5)
+        score += opScore
+        details.append(f"영업이익 CV {opCv:.2f} ({opScore:.1f}/2.5)")
+
+    # 연속 성장 (매출 YoY > 0 횟수)
+    growthCount = sum(1 for i in range(1, len(validRev)) if validRev[i] > validRev[i - 1])
+    maxGrowth = max(1, len(validRev) - 1)
+    growthScore = (growthCount / maxGrowth) * 2.5
+    score += growthScore
+    details.append(f"연속성장 {growthCount}/{maxGrowth}년 ({growthScore:.1f}/2.5)")
+
+    # 무적자 (순이익 > 0 비율)
+    if len(validNi) >= 3:
+        profitCount = sum(1 for v in validNi if v > 0)
+        profitScore = (profitCount / len(validNi)) * 2.5
+        score += profitScore
+        details.append(f"흑자 {profitCount}/{len(validNi)}년 ({profitScore:.1f}/2.5)")
+
+    score = min(10, score)
+    grade = _predictabilityGrade(score)
+    summary = f"예측가능성 {score:.1f}/10 — " + (
+        "매우 높음" if score >= 7 else "높음" if score >= 5 else "보통" if score >= 3 else "낮음"
+    )
+    return InsightResult(grade, summary, details)
+
+
+def _predictabilityGrade(score: float) -> str:
+    """예측가능성 점수 → 등급."""
+    if score >= 8:
+        return "A"
+    if score >= 6:
+        return "B"
+    if score >= 4:
+        return "C"
+    if score >= 2:
+        return "D"
+    return "F"
+
+
+def analyzeUncertainty(
+    aSeries: dict,
+    aYears: list[str],
+    isFinancial: bool = False,
+) -> InsightResult:
+    """불확실성 등급 분석 (Morningstar 방식 5단계)."""
+    import statistics
+
+    revVals = getAnnualValues(aSeries, "IS", "sales")
+    opVals = getAnnualValues(aSeries, "IS", "operating_profit")
+
+    if isFinancial:
+        revVals = opVals
+
+    validRev = [v for v in revVals if v is not None]
+    validOp = [v for v in opVals if v is not None]
+
+    if len(validRev) < 5 or len(validOp) < 5:
+        return InsightResult("N", "불확실성 데이터 부족")
+
+    details: list[str] = []
+
+    # 매출 CV
+    revMean = statistics.mean(validRev)
+    revCv = statistics.stdev(validRev) / abs(revMean) if revMean != 0 else 1.0
+
+    # DOL (영업레버리지)
+    dolList = []
+    minLen = min(len(validRev), len(validOp))
+    for i in range(1, minLen):
+        if validRev[i - 1] != 0 and validOp[i - 1] != 0:
+            sChg = (validRev[i] - validRev[i - 1]) / abs(validRev[i - 1])
+            oChg = (validOp[i] - validOp[i - 1]) / abs(validOp[i - 1])
+            if abs(sChg) > 0.01:
+                dolList.append(abs(oChg / sChg))
+    dol = statistics.median(dolList) if dolList else 2.0
+
+    # D/E
+    tl = getLatest(aSeries, "BS", "total_liabilities")
+    eq = getLatest(aSeries, "BS", "total_stockholders_equity")
+    deRatio = tl / eq if tl is not None and eq and eq > 0 else 0.0
+
+    # 영업이익 CV
+    opMean = statistics.mean(validOp)
+    opCv = statistics.stdev(validOp) / abs(opMean) if opMean != 0 else 1.0
+
+    # 종합 점수 (각 최대 25점)
+    revScore = min(25, revCv / 0.5 * 25)
+    dolScore = min(25, (dol - 1) / 9 * 25)
+    deScore = min(25, deRatio / 3 * 25)
+    opScore = min(25, opCv / 1.0 * 25)
+    totalScore = revScore + dolScore + deScore + opScore
+
+    if totalScore < 20:
+        rating, margin = "Low", "±15%"
+    elif totalScore < 35:
+        rating, margin = "Medium", "±25%"
+    elif totalScore < 50:
+        rating, margin = "High", "±35%"
+    elif totalScore < 70:
+        rating, margin = "Very High", "±45%"
+    else:
+        rating, margin = "Extreme", "±55%"
+
+    details.append(f"매출CV {revCv:.2f}, DOL {dol:.1f}, D/E {deRatio:.1f}, 영업CV {opCv:.2f}")
+    details.append(f"종합 {totalScore:.1f}/100 → {rating} (Fair Value 밴드 {margin})")
+
+    grade = _uncertaintyGrade(rating)
+    summary = f"불확실성 {rating} — Fair Value 밴드 {margin}"
+    return InsightResult(grade, summary, details)
+
+
+def _uncertaintyGrade(rating: str) -> str:
+    """불확실성 등급 → insight 등급 (낮은 불확실성 = 좋은 등급)."""
+    return {"Low": "A", "Medium": "B", "High": "C", "Very High": "D", "Extreme": "F"}.get(rating, "C")
+
+
+def analyzeCoreEarnings(
+    aSeries: dict,
+    aYears: list[str],
+    isFinancial: bool = False,
+) -> InsightResult:
+    """핵심이익 품질 분석 (비경상 항목 분리)."""
+    import statistics
+
+    opVals = getAnnualValues(aSeries, "IS", "operating_profit")
+    niVals = getAnnualValues(aSeries, "IS", "net_profit")
+    taxVals = getAnnualValues(aSeries, "IS", "income_taxes")
+    pbtVals = getAnnualValues(aSeries, "IS", "profit_before_tax")
+
+    validOp = [v for v in opVals if v is not None]
+    validNi = [v for v in niVals if v is not None]
+    validTax = [v for v in taxVals if v is not None]
+    validPbt = [v for v in pbtVals if v is not None]
+
+    if len(validOp) < 3 or len(validNi) < 3:
+        return InsightResult("N", "핵심이익 데이터 부족")
+
+    details: list[str] = []
+    score = 0
+
+    # 실효세율 추정
+    if validTax and validPbt:
+        taxRates = []
+        for t, p in zip(validTax, validPbt):
+            if p > 0 and t is not None:
+                taxRates.append(t / p)
+        effectiveTax = statistics.mean(taxRates) if taxRates else 0.22
+    else:
+        effectiveTax = 0.22
+
+    # Core Earnings = 영업이익 × (1-세율)
+    coreVals = [v * (1 - effectiveTax) for v in validOp]
+
+    # CV 비교: Core vs Reported
+    coreMean = statistics.mean(coreVals) if coreVals else 0
+    reportedMean = statistics.mean(validNi) if validNi else 0
+    coreCv = statistics.stdev(coreVals) / abs(coreMean) if coreMean != 0 and len(coreVals) >= 2 else 999
+    reportedCv = statistics.stdev(validNi) / abs(reportedMean) if reportedMean != 0 and len(validNi) >= 2 else 999
+
+    details.append(f"Core CV {coreCv:.2f} vs Reported CV {reportedCv:.2f}")
+
+    # CV 개선 여부
+    if coreCv < reportedCv:
+        improvement = (1 - coreCv / reportedCv) * 100 if reportedCv > 0 else 0
+        details.append(f"핵심이익이 변동성 {improvement:.0f}% 개선")
+        score += 2
+    else:
+        details.append("비경상 항목 영향 미미")
+
+    # 핵심이익 안정성 (Core CV 절대 수준)
+    if coreCv < 0.2:
+        details.append("핵심이익 매우 안정")
+        score += 3
+    elif coreCv < 0.4:
+        details.append("핵심이익 안정")
+        score += 2
+    elif coreCv < 0.7:
+        details.append("핵심이익 보통")
+        score += 1
+    else:
+        details.append("핵심이익 변동 큼")
+
+    # 핵심이익 대비 보고이익 괴리 (최신연도)
+    if coreVals and validNi:
+        latestCore = coreVals[-1]
+        latestReported = validNi[-1]
+        if latestCore != 0:
+            gap = (latestReported - latestCore) / abs(latestCore) * 100
+            if abs(gap) > 30:
+                details.append(f"보고이익 vs 핵심이익 괴리 {gap:+.0f}%")
+                if gap < -30:
+                    score -= 1  # 비경상 손실
+            elif abs(gap) < 10:
+                details.append("보고이익 ≈ 핵심이익")
+                score += 1
+
+    grade = _scoreToGrade(score, 6)
+    summary = "이익 품질 " + (
+        "우수" if score >= 5 else "양호" if score >= 3 else "보통" if score >= 1 else "주의"
+    )
+    return InsightResult(grade, summary, details)

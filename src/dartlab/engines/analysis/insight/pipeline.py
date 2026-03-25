@@ -9,12 +9,15 @@ from dartlab.engines.analysis.insight.detector import detectFinancialSector
 from dartlab.engines.analysis.insight.distress import calcDistress
 from dartlab.engines.analysis.insight.grading import (
     analyzeCashflow,
+    analyzeCoreEarnings,
     analyzeGovernance,
     analyzeHealth,
     analyzeOpportunitySummary,
     analyzePerformance,
+    analyzePredictability,
     analyzeProfitability,
     analyzeRiskSummary,
+    analyzeUncertainty,
 )
 from dartlab.engines.analysis.insight.summary import classifyProfile, generateSummary
 from dartlab.engines.analysis.insight.types import AnalysisResult, Anomaly, AuditDataForAnomaly, MarketDataForDistress
@@ -215,6 +218,9 @@ def analyze(
     insights["health"] = analyzeHealth(ratios, isFinancial, currency=currency)
     insights["cashflow"] = analyzeCashflow(ratios, aSeries, isFinancial)
     insights["governance"] = analyzeGovernance(company) if company else analyzeGovernance(None)
+    insights["predictability"] = analyzePredictability(aSeries, aYears, isFinancial)
+    insights["uncertainty"] = analyzeUncertainty(aSeries, aYears, isFinancial)
+    insights["coreEarnings"] = analyzeCoreEarnings(aSeries, aYears, isFinancial)
     insights["risk"] = analyzeRiskSummary(insights)
     insights["opportunity"] = analyzeOpportunitySummary(insights)
 
@@ -257,6 +263,9 @@ def analyze(
         governance=insights["governance"],
         risk=insights["risk"],
         opportunity=insights["opportunity"],
+        predictability=insights.get("predictability"),
+        uncertainty=insights.get("uncertainty"),
+        coreEarnings=insights.get("coreEarnings"),
         anomalies=anomalies,
         distress=distress,
         summary=summaryText,

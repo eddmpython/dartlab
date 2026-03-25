@@ -91,8 +91,8 @@ def test_analyze_returns_result():
     assert result.stockCode == "999999"
 
 
-def test_analyze_has_7_grades():
-    """7영역 등급이 모두 존재."""
+def test_analyze_has_10_grades():
+    """10영역 등급이 모두 존재."""
     from dartlab.engines.analysis.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
@@ -104,9 +104,9 @@ def test_analyze_has_7_grades():
     )
     assert result is not None
     grades = result.grades()
-    assert len(grades) == 7
-    expected_keys = {"performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity"}
-    assert set(grades.keys()) == expected_keys
+    assert len(grades) == 10
+    expectedKeys = {"performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity", "predictability", "uncertainty", "coreEarnings"}
+    assert set(grades.keys()) == expectedKeys
     for grade in grades.values():
         assert grade in ("A", "B", "C", "D", "F", "N")  # N = 데이터 부족
 
