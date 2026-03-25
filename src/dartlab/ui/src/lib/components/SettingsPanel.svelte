@@ -214,7 +214,7 @@
 											</div>
 										{/if}
 
-										{#if needsOAuth && !info.available}
+										{#if needsOAuth && name !== "gemini" && !info.available}
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
 												<div class="text-[12px] text-dl-text mb-2.5">ChatGPT OAuth 로그인이 필요합니다</div>
 												<div class="text-[10px] text-dl-text-dim mb-2.5">
@@ -235,6 +235,32 @@
 												{#if ui.oauthCodexDetail.tokenStored && !ui.oauthCodexDetail.authenticated}
 													<div class="text-[10px] text-amber-400 mt-2">저장된 토큰이 있지만 현재는 유효하지 않습니다. 다시 로그인하세요.</div>
 												{/if}
+											</div>
+										{/if}
+
+										<!-- Gemini OAuth -->
+										{#if name === "gemini" && !info.available}
+											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
+												<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 로그인이 필요합니다</div>
+												<div class="text-[10px] text-dl-text-dim mb-2.5">
+													Google 계정으로 로그인하면 Gemini를 무료로 사용할 수 있습니다.
+												</div>
+												<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-bg-darker text-dl-text-dim text-[11px]">
+													<Key size={12} />
+													<code>dartlab setup gemini</code> 실행 후 브라우저 로그인
+												</div>
+												{#if !ui.geminiDetail.sdkInstalled}
+													<div class="text-[10px] text-amber-400 mt-2">google-genai 패키지가 설치되어 있지 않습니다: <code>pip install dartlab[llm-gemini]</code></div>
+												{/if}
+											</div>
+										{/if}
+										{#if name === "gemini" && info.available}
+											<div class="px-4 pb-2 border-t border-dl-border/50 pt-2.5">
+												<div class="flex items-center gap-2">
+													<CheckCircle2 size={13} class="text-dl-success" />
+													<span class="text-[11px] text-dl-success">OAuth 인증됨</span>
+													<span class="text-[10px] text-dl-text-dim">— Google 계정</span>
+												</div>
 											</div>
 										{/if}
 

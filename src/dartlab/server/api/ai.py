@@ -26,6 +26,7 @@ from ..models import (
     DartKeyUpdateRequest,
 )
 from ..services.ai_profile import (
+    build_gemini_detail,
     build_oauth_codex_detail,
     build_ollama_detail,
     probe_provider_availability,
@@ -122,6 +123,9 @@ def api_status(
     oauth_codex_detail = build_oauth_codex_detail(
         probe=probe and (target_provider is None or target_provider == "oauth-codex")
     )
+    gemini_detail = build_gemini_detail(
+        probe=probe and (target_provider is None or target_provider == "gemini")
+    )
 
     codex_detail = {"installed": False, "authenticated": False, "authMode": None, "loginStatus": None, "version": None}
     try:
@@ -166,6 +170,7 @@ def api_status(
         "providers": results,
         "ollama": ollama_detail,
         "codex": codex_detail,
+        "gemini": gemini_detail,
         "oauthCodex": oauth_codex_detail,
         "openDart": _build_open_dart_status(),
         "profile": profile_snapshot,

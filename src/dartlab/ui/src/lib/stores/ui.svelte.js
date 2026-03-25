@@ -110,6 +110,7 @@ export function createUiStore() {
 	let ollamaDetail = $state({});
 	let codexDetail = $state({});
 	let oauthCodexDetail = $state({});
+	let geminiDetail = $state({});
 	let oauthLoginPending = $state(false);
 	let channelBusy = $state({});
 	let channelInputs = $state({
@@ -159,6 +160,7 @@ export function createUiStore() {
 		if (data.ollama) ollamaDetail = mergeProviderDetail(ollamaDetail, data.ollama, { preserveChecked: true });
 		if (data.codex) codexDetail = mergeProviderDetail(codexDetail, data.codex);
 		if (data.oauthCodex) oauthCodexDetail = mergeProviderDetail(oauthCodexDetail, data.oauthCodex, { preserveChecked: true });
+		if (data.gemini) geminiDetail = mergeProviderDetail(geminiDetail, data.gemini, { preserveChecked: true });
 		if (data.openDart) openDart = { ...openDart, ...data.openDart };
 		if (data.channels) channels = data.channels;
 		if (data.version) appVersion = data.version;
@@ -659,6 +661,7 @@ export function createUiStore() {
 		get ollamaDetail() { return ollamaDetail; },
 		get codexDetail() { return codexDetail; },
 		get oauthCodexDetail() { return oauthCodexDetail; },
+		get geminiDetail() { return geminiDetail; },
 		get oauthLoginPending() { return oauthLoginPending; },
 
 		// pull

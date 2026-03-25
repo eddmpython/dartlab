@@ -1,10 +1,6 @@
 """Google Gemini provider.
 
-인증 우선순위:
-1. API key (GOOGLE_API_KEY / GEMINI_API_KEY 환경변수 또는 config)
-2. OAuth 2.0 (Google 계정 로그인 — API key 없이 무료 사용 가능)
-
-OAuth 사용 시:
+인증: OAuth 2.0 (Google 계정 로그인)
 - 첫 실행: 브라우저 로그인 → 토큰 ~/.dartlab/gemini_oauth.json 저장
 - 이후: 저장된 토큰 자동 사용 (만료 시 자동 갱신)
 - client_secret.json: ~/.dartlab/gemini_client_secret.json 에 배치
@@ -101,13 +97,13 @@ def isOAuthAuthenticated() -> bool:
 class GeminiProvider(BaseProvider):
     """Google Gemini API provider.
 
-    google-genai SDK 기반. API key 또는 OAuth 인증 지원.
-    API key 없으면 자동으로 OAuth 로그인 시도.
+    google-genai SDK 기반. OAuth 2.0 전용.
     """
 
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         self._client = None
+        self._auth_method: str = "none"  # "oauth" | "api_key" | "none"
 
     def _get_client(self):
         if self._client is not None:
@@ -117,24 +113,19 @@ class GeminiProvider(BaseProvider):
         except ImportError:
             raise ImportError("google-genai 패키지가 필요합니다.\n  uv add google-genai")
 
-        # 1) API key 우선
-        import os
-
-        apiKey = self.config.api_key
-        if not apiKey:
-            apiKey = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
-
-        if apiKey:
-            self._client = genai.Client(api_key=apiKey)
+        # API key는 config에 명시적으로 설정한 경우에만 사용
+        if self.config.api_key:
+            self._client = genai.Client(api_key=self.config.api_key)
+            self._auth_method = "api_key"
             return self._client
 
-        # 2) OAuth — 저장된 토큰 또는 새 로그인
+        # 기본: OAuth 2.0
         creds = _loadOAuthCredentials()
         if creds is None:
-            _log.info("Gemini API key 없음 — OAuth 로그인 시도")
             creds = _runOAuthFlow()
 
         self._client = genai.Client(credentials=creds)
+        self._auth_method = "oauth"
         return self._client
 
     @property
@@ -146,11 +137,12 @@ class GeminiProvider(BaseProvider):
         return True
 
     def check_available(self) -> bool:
+        """OAuth 토큰이 있고 SDK가 설치되어 있으면 True."""
         try:
-            self._get_client()
-            return True
-        except (ImportError, ValueError, OSError):
+            from google import genai  # noqa: F401
+        except ImportError:
             return False
+        return _loadOAuthCredentials() is not None
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
         client = self._get_client()

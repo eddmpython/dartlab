@@ -128,6 +128,24 @@ def build_oauth_codex_detail(*, probe: bool) -> dict[str, Any]:
         }
 
 
+def build_gemini_detail(*, probe: bool) -> dict[str, Any]:
+    """Gemini OAuth 인증 상태."""
+    try:
+        from dartlab.engines.ai.providers.gemini import isOAuthAuthenticated
+    except ImportError:
+        return {"authenticated": False, "sdkInstalled": False, "authMethod": "oauth", "checked": probe}
+
+    if not probe:
+        return {"authenticated": False, "sdkInstalled": True, "authMethod": "oauth", "checked": False}
+
+    return {
+        "authenticated": isOAuthAuthenticated(),
+        "sdkInstalled": True,
+        "authMethod": "oauth",
+        "checked": True,
+    }
+
+
 def validate_provider_connection(req: ConfigureRequest) -> dict[str, Any]:
     """LLM provider 연결 가능 여부만 검증한다."""
     from dartlab.engines.ai import get_config

@@ -64,10 +64,9 @@ _PROVIDERS: dict[str, ProviderSpec] = {
     "gemini": ProviderSpec(
         id="gemini",
         label="Google Gemini",
-        description="Gemini 2.5 Pro/Flash, 100만 토큰 컨텍스트",
-        auth_kind="api_key",
-        setup_kind="api_key",
-        env_key="GOOGLE_API_KEY",
+        description="Gemini 2.5 Pro/Flash, OAuth 로그인 (무료)",
+        auth_kind="oauth",
+        setup_kind="oauth",
         probe_policy="credentialed",
     ),
 }
