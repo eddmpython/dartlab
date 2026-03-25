@@ -29,7 +29,6 @@ from dartlab.engines.ai.runtime.post_processing import (
 )
 from dartlab.engines.ai.runtime.run_modes import (
     _run_agent,
-    _run_guided_json,
     _run_light_mode,
     _run_stream,
 )
@@ -846,17 +845,8 @@ def _analyze_inner(
     # ── 13. LLM 호출 ──
     llm = create_provider(config_)
 
-    tool_capable = (
-        use_tools
-        and getattr(llm, "supports_native_tools", False)
-        and hasattr(llm, "complete_with_tools")
-    )
-    use_guided = (
-        not tool_capable
-        and is_compact
-        and company is not None
-        and hasattr(llm, "complete_json")
-    )
+    tool_capable = use_tools and getattr(llm, "supports_native_tools", False) and hasattr(llm, "complete_with_tools")
+    use_guided = not tool_capable and is_compact and company is not None and hasattr(llm, "complete_json")
 
     if tool_capable:
         if max_tools is None and resolved_provider == "ollama":

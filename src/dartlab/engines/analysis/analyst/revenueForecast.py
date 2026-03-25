@@ -1012,7 +1012,12 @@ def forecastRevenue(
 
     # ── Source 10: 공시 정성 신호 ──
     disclosureAdj: float = 0.0
-    if disclosureGrowthAdj is not None and disclosureGrowthAdj != 0.0 and _DISCLOSURE_WEIGHT > 0 and "timeseries" in weights:
+    if (
+        disclosureGrowthAdj is not None
+        and disclosureGrowthAdj != 0.0
+        and _DISCLOSURE_WEIGHT > 0
+        and "timeseries" in weights
+    ):
         dsShare = min(_DISCLOSURE_WEIGHT, weights["timeseries"])
         weights["disclosure"] = dsShare
         weights["timeseries"] -= dsShare
@@ -1025,7 +1030,11 @@ def forecastRevenue(
         deficit = _TS_FLOOR - weights["timeseries"]
         weights["timeseries"] = _TS_FLOOR
         # 부족분을 다른 v3 소스에서 비례 차감
-        v3Keys = [k for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure") if k in weights and weights[k] > 0]
+        v3Keys = [
+            k
+            for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure")
+            if k in weights and weights[k] > 0
+        ]
         if v3Keys:
             totalV3 = sum(weights[k] for k in v3Keys)
             for k in v3Keys:
@@ -1039,7 +1048,11 @@ def forecastRevenue(
     if "timeseries" in weights and weights["timeseries"] < _TS_FLOOR:
         deficit = _TS_FLOOR - weights["timeseries"]
         weights["timeseries"] = _TS_FLOOR
-        v3Keys2 = [k for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure") if k in weights and weights[k] > 0]
+        v3Keys2 = [
+            k
+            for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure")
+            if k in weights and weights[k] > 0
+        ]
         if v3Keys2:
             totalV3_2 = sum(weights[k] for k in v3Keys2)
             if totalV3_2 > 0:

@@ -32,6 +32,14 @@ import polars as pl
 from dartlab import config as _dartlabConfig
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.engines.company.dart.openapi.client import DartClient
+
+# ── 내부 상수 ──────────────────────────────────────────────
+from dartlab.engines.company.dart.openapi.constants import (
+    CODE_TO_LABEL as _CODE_TO_LABEL,
+)
+from dartlab.engines.company.dart.openapi.constants import (
+    QUARTER_TO_CODE as _QUARTER_TO_CODE,
+)
 from dartlab.engines.company.dart.openapi.corpCode import (
     findCorpCode,
     loadCorpCodes,
@@ -51,13 +59,6 @@ from dartlab.engines.company.dart.openapi.saver import (
 )
 from dartlab.engines.company.dart.openapi.saver import (
     save as _saveFile,
-)
-
-# ── 내부 상수 ──────────────────────────────────────────────
-
-from dartlab.engines.company.dart.openapi.constants import (
-    CODE_TO_LABEL as _CODE_TO_LABEL,
-    QUARTER_TO_CODE as _QUARTER_TO_CODE,
 )
 
 # 사업보고서 주요정보 29개 + 주요사항보고 27개 = 56개 카테고리

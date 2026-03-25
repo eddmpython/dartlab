@@ -46,7 +46,9 @@ class ContextSignals:
         lines.append(f"  업종 경기민감도: {self.sectorCyclicality}")
         lines.append(f"  성장 순위: 상위 {self.growthRankPct:.0f}%")
         if self.disclosureTone != 0.0:
-            lines.append(f"  공시 tone: {self.disclosureTone:+.2f} (강도 {self.disclosureChangeIntensity:.2f}, 조정 {self.disclosureGrowthAdj:+.1f}%p, {self.disclosureConfidence})")
+            lines.append(
+                f"  공시 tone: {self.disclosureTone:+.2f} (강도 {self.disclosureChangeIntensity:.2f}, 조정 {self.disclosureGrowthAdj:+.1f}%p, {self.disclosureConfidence})"
+            )
         if self.adjustments:
             lines.append(f"  확률 조정: {self.adjustments}")
         if self.reasoning:

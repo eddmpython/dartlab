@@ -89,7 +89,7 @@ def reverseImpliedGrowth(
     # ±30% hard cap (P/S 고배율 기업에서 비현실적 역산 방지)
     _CAP = 0.30
     if abs(impliedG) > _CAP:
-        warnings.append(f"내재성장률 {impliedG*100:+.1f}%가 ±50% 범위 초과 — cap 적용")
+        warnings.append(f"내재성장률 {impliedG * 100:+.1f}%가 ±50% 범위 초과 — cap 적용")
         impliedG = max(-_CAP, min(impliedG, _CAP))
 
     # implied revenue path

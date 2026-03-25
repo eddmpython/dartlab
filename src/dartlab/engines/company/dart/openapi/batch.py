@@ -29,11 +29,14 @@ BASE_URL = "https://opendart.fss.or.kr/api"
 
 from dartlab.engines.company.dart.openapi.constants import (
     CODE_TO_QUARTER as _CODE_TO_QUARTER,
+)
+from dartlab.engines.company.dart.openapi.constants import (
     CODE_TO_QUARTER_KR as _CODE_TO_QUARTER_KR,
+)
+from dartlab.engines.company.dart.openapi.constants import KR_TO_API_TYPE as _KR_TO_ENG_API_TYPE
+from dartlab.engines.company.dart.openapi.constants import (
     QUARTER_TO_CODE as _QUARTER_TO_CODE,
 )
-
-from dartlab.engines.company.dart.openapi.constants import KR_TO_API_TYPE as _KR_TO_ENG_API_TYPE
 
 _PERIODIC_REPORT_CATEGORIES: list[str] = [
     "배당",
