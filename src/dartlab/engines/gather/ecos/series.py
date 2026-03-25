@@ -103,9 +103,7 @@ def fetchSeries(
     entry = _catalog.getEntry(indicatorId)
     if entry is None:
         available = ", ".join(_catalog.getAllIds()[:10]) + " ..."
-        raise SeriesNotFoundError(
-            f"지표 '{indicatorId}'을 찾을 수 없습니다. 사용 가능: {available}"
-        )
+        raise SeriesNotFoundError(f"지표 '{indicatorId}'을 찾을 수 없습니다. 사용 가능: {available}")
 
     startDate = start if start else _defaultStart(entry.frequency)
     endDate = end if end else _defaultEnd(entry.frequency)
