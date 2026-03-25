@@ -556,7 +556,7 @@ def _analyzeGovernanceFromSections(company: Company) -> InsightResult:
 
     # governance 관련 topic 검색 (EDGAR: director, compensation, ownership)
     gov_pattern = "(?i)governance|director|compensation|ownership|security.?owner|executive.?comp"
-    gov_topics = sec.filter(pl.col("topic").str.contains(gov_pattern))
+    gov_topics = sec.filter(pl.col("topic").cast(pl.Utf8).str.contains(gov_pattern))
 
     if gov_topics.is_empty():
         return InsightResult("N", "지배구조 데이터 없음")

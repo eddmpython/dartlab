@@ -16,11 +16,28 @@
 3. 전체 text 수, unique text 수, 중복 text가 차지하는 바이트 비율 산출
 4. sys.intern() 적용 전후 RSS 비교
 
-결과 (실험 후 작성):
+결과 (삼성전자 005930):
+
+| 지표 | 수치 |
+|------|------|
+| sections shape | 14,158 × 70 |
+| period 컬럼 수 | 40 |
+| 전체 text cell | 72,177 |
+| unique text | 18,872 (26.1%) |
+| 중복 text | 53,305 (73.9%) |
+| 전체 text 바이트 | 97.32MB |
+| 중복 바이트 | 49.23MB (50.6%) |
+| Categorical 인코딩 시 | 2.23MB (97.7% 절감) |
+| sys.intern RSS 변화 | +65.2MB (악화 — Python dict 오버헤드) |
 
 결론:
+- text 중복률 73.9% — 연도 간 사업보고서 복붙이 매우 많음
+- sys.intern은 역효과 (Python dict 자체가 메모리 소비)
+- **Polars Categorical이 결정적**: 97.32MB → 2.23MB (97.7% 절감)
+- Categorical은 Polars Rust 힙에서 동일 text를 한 번만 저장하므로 근본적 해결
+- 가설 채택: 중복률 30%+ → 실제 73.9%. Categorical 적용이 핵심 방향
 
-실험일: 2026-03-24
+실험일: 2026-03-25
 """
 
 import gc

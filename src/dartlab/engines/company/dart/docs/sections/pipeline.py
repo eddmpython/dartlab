@@ -1573,38 +1573,38 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     schema = {
         "chapter": pl.Categorical,
-        "topic": pl.Utf8,
+        "topic": pl.Categorical,
         "blockType": pl.Categorical,
         "blockOrder": pl.Int64,
         "sourceBlockOrder": pl.Int64,
         "textNodeType": pl.Categorical,
         "textStructural": pl.Boolean,
         "textLevel": pl.Int64,
-        "textPath": pl.Utf8,
-        "textPathKey": pl.Utf8,
-        "textParentPathKey": pl.Utf8,
+        "textPath": pl.Categorical,
+        "textPathKey": pl.Categorical,
+        "textParentPathKey": pl.Categorical,
         "textPathVariantCount": pl.Int64,
         "textPathVariants": pl.List(pl.Utf8),
         "textParentPathVariants": pl.List(pl.Utf8),
-        "textSemanticPathKey": pl.Utf8,
-        "textSemanticParentPathKey": pl.Utf8,
-        "textComparablePathKey": pl.Utf8,
-        "textComparableParentPathKey": pl.Utf8,
+        "textSemanticPathKey": pl.Categorical,
+        "textSemanticParentPathKey": pl.Categorical,
+        "textComparablePathKey": pl.Categorical,
+        "textComparableParentPathKey": pl.Categorical,
         "textSemanticPathVariants": pl.List(pl.Utf8),
         "textSemanticParentPathVariants": pl.List(pl.Utf8),
-        "segmentKey": pl.Utf8,
+        "segmentKey": pl.Categorical,
         "segmentOrder": pl.Int64,
         "segmentOccurrence": pl.Int64,
-        "cadenceKey": pl.Utf8,
+        "cadenceKey": pl.Categorical,
         "cadenceScope": pl.Categorical,
         "annualPeriodCount": pl.Int64,
         "quarterlyPeriodCount": pl.Int64,
-        "latestAnnualPeriod": pl.Utf8,
-        "latestQuarterlyPeriod": pl.Utf8,
-        "sourceTopic": pl.Utf8,
+        "latestAnnualPeriod": pl.Categorical,
+        "latestQuarterlyPeriod": pl.Categorical,
+        "sourceTopic": pl.Categorical,
     }
     for p in validPeriods:
-        schema[p] = pl.Utf8
+        schema[p] = pl.Categorical
 
     dataColumns: dict[str, list[object]] = {col: [] for col in schema}
     sortedTopics = [topic for topic, _ in sorted(topicFirstSeq.items(), key=lambda x: x[1])]

@@ -235,15 +235,35 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def get_company_info() -> str:
+        stockCode = getattr(company, "stockCode", getattr(company, "ticker", ""))
         info_parts = [
             f"기업명: {company.corpName}",
-            f"종목코드: {getattr(company, 'stockCode', getattr(company, 'ticker', ''))}",
+            f"종목코드: {stockCode}",
         ]
-        overview = company.show("companyOverview") if hasattr(company, "show") else None
-        if isinstance(overview, dict):
-            for key in ("ceo", "mainBusiness", "indutyName", "foundedDate"):
-                if overview.get(key):
-                    info_parts.append(f"{key}: {overview[key]}")
+        # listing 데이터에서 기본 정보 보충
+        try:
+            from dartlab.engines.gather.listing import getKindList
+            import polars as _pl
+
+            df = getKindList()
+            match = df.filter(_pl.col("종목코드") == stockCode)
+            if match.height > 0:
+                row = match.row(0, named=True)
+                _labels = {
+                    "업종": "업종",
+                    "주요제품": "주요제품",
+                    "대표자명": "대표자",
+                    "상장일": "상장일",
+                    "결산월": "결산월",
+                    "홈페이지": "홈페이지",
+                    "지역": "지역",
+                }
+                for col, label in _labels.items():
+                    val = row.get(col)
+                    if val:
+                        info_parts.append(f"{label}: {val}")
+        except (ImportError, FileNotFoundError):
+            pass
         return "\n".join(info_parts)
 
     register_tool(
@@ -638,7 +658,7 @@ def register_company_tools(company: Any, register_tool) -> None:
         if cov is None or (isinstance(cov, pl.DataFrame) and cov.is_empty()):
             return "커버리지 데이터 없음."
         if topic and isinstance(cov, pl.DataFrame):
-            cov = cov.filter(pl.col("topic").str.contains(topic))
+            cov = cov.filter(pl.col("topic").cast(pl.Utf8).str.contains(topic))
         if isinstance(cov, pl.DataFrame) and cov.is_empty():
             return f"'{topic}' 에 해당하는 커버리지 없음."
         return df_to_md(cov, max_rows=40)

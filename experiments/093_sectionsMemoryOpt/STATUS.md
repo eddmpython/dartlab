@@ -59,8 +59,32 @@ parquet (27MB) → Polars decompress (Rust heap ~150MB)
 Python 측에서 할 수 있는 것은 ~90MB(18%)뿐. Rust heap 350MB(72%)는 gc 불가.
 dict 구조 변경, Categorical, projection pushdown 모두 이 한계 안에서만 동작.
 
-## 향후 방향 (실험 범위 밖)
+## 004~006: Categorical 스키마 패치 실험 (2026-03-25)
+
+### 004: text 중복률 분석
+- period 컬럼 73.9% 중복 (연도 간 사업보고서 복붙)
+- Categorical 인코딩 시뮬레이션: 97.32MB → 2.23MB (97.7% 절감)
+- sys.intern은 역효과 (+65MB)
+
+### 005: 후처리 Categorical cast — 기각
+- estimated_size 112→17MB (85% 절감) BUT **RSS -59MB 악화**
+- 원인: 원본 DataFrame + Categorical DataFrame 동시 존재 → Rust 힙 미회수
+- 소비자 호환성: 전부 OK
+
+### 006: 생성 시점 Categorical 스키마 패치 — **채택**
+
+| 지표 | Baseline (Utf8) | Patched (Categorical) | 절감 |
+|------|-----------------|----------------------|------|
+| RSS 증가분 | +512MB | +86MB | **427MB (83%)** |
+| estimated_size | 112.0MB | 8.3MB | 103.7MB (92.6%) |
+
+- pipeline.sections()의 schema에서 period + 메타 컬럼을 pl.Categorical로 선언
+- DataFrame 생성 시점부터 Categorical → Rust 힙에서 동일 text 1회만 저장
+- 소비자 호환성 완전 유지 (filter, cast(Utf8), == 비교)
+- **pipeline.py 적용 권장**: schema dict의 period 컬럼 + 메타 12개 컬럼
+
+## 향후 방향
+- **[즉시]** 006 결과를 pipeline.py에 정식 적용
 - parquet 자체 크기 줄이기 (불필요 컬럼 제거, zstd 압축 레벨 조정)
 - Polars Rust 측 streaming (Polars 신규 streaming engine 활용)
 - text structure 분석을 Polars expression/Rust plugin으로 옮겨 Python str 복제 제거
-- 진짜 2-pass: Pass1에서 text 아예 안 읽기 (메타만 축적) + Pass2에서 rowIdx 기반 text 회수 — 단, _expandStructuredRows가 text 내용에 의존하므로 구조 재설계 필요
