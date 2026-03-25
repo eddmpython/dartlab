@@ -8,20 +8,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dartlab.engines.ai.eval.replayRunner import (
-    PersonaEvalCase,
-    ReplayResult,
-    ReviewEntry,
-    StructuralEval,
-    appendReviewEntry,
-    evaluateReplay,
-    loadPersonaCases,
-    loadPersonaQuestionSet,
-    loadReviewLog,
-    replayCase,
-    replaySuite,
-    summarizeReplayResults,
-)
 from dartlab.engines.ai.eval.diagnoser import (
     DiagnosisReport,
     diagnoseBatchResults,
@@ -35,6 +21,20 @@ from dartlab.engines.ai.eval.remediation import (
     RemediationPlan,
     extractFailureCounts,
     generateRemediations,
+)
+from dartlab.engines.ai.eval.replayRunner import (
+    PersonaEvalCase,
+    ReplayResult,
+    ReviewEntry,
+    StructuralEval,
+    appendReviewEntry,
+    evaluateReplay,
+    loadPersonaCases,
+    loadPersonaQuestionSet,
+    loadReviewLog,
+    replayCase,
+    replaySuite,
+    summarizeReplayResults,
 )
 from dartlab.engines.ai.eval.scorer import ScoreCard, auto_score
 from dartlab.engines.ai.eval.truthHarvester import harvestBatch, harvestTruth
