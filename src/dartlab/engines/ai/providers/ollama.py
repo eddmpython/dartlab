@@ -10,6 +10,25 @@ from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolRespo
 OLLAMA_DEFAULT_URL = "http://localhost:11434"
 
 
+def _buildInferenceOptions() -> dict:
+    """GPU VRAM 기반 Ollama 추론 옵션 자동 결정."""
+    from dartlab.engines.ai.providers.support.ollama_setup import _detect_gpu
+
+    gpu = _detect_gpu()
+    options: dict = {"num_gpu": 999 if gpu["available"] else 0}
+
+    vram = gpu.get("vram_mb") or 0
+    if vram >= 12000:
+        options["num_ctx"] = 8192
+    elif vram >= 6000:
+        options["num_ctx"] = 4096
+    else:
+        options["num_ctx"] = 2048
+
+    options["num_batch"] = 512
+    return options
+
+
 class OllamaProvider(BaseProvider):
     """Ollama 로컬 provider.
 
@@ -63,17 +82,25 @@ class OllamaProvider(BaseProvider):
             return []
 
     def preload(self) -> bool:
-        """모델을 메모리에 미리 로딩 (keep_alive=-1).
+        """모델을 메모리에 미리 로딩 + 최적 추론 옵션 적용.
 
         서버 시작 시 호출하면 첫 질문의 cold start 지연을 제거한다.
-        Ollama native API 사용 (OpenAI 호환 API는 keep_alive 미지원).
+        GPU VRAM 기반으로 num_gpu/num_ctx/num_batch를 자동 결정하여
+        모델 로드 시점에 고정한다 (이후 OpenAI SDK 요청에도 동일 적용).
         """
         import requests
 
+        options = _buildInferenceOptions()
         try:
             resp = requests.post(
                 f"{OLLAMA_DEFAULT_URL}/api/generate",
-                json={"model": self.resolved_model, "prompt": "", "keep_alive": -1, "stream": False},
+                json={
+                    "model": self.resolved_model,
+                    "prompt": "",
+                    "keep_alive": -1,
+                    "stream": False,
+                    "options": options,
+                },
                 timeout=60,
             )
             return resp.status_code == 200
