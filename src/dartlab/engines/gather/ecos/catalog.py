@@ -1,4 +1,4 @@
-"""ECOS 지표 카탈로그 — 한국은행 경제통계 21개 주요 지표."""
+"""ECOS 지표 카탈로그 — 한국은행 경제통계 주요 지표."""
 
 from __future__ import annotations
 
@@ -75,6 +75,33 @@ _INDICATORS: dict[str, dict] = {
         "unit": "%",
         "desc": "한국은행 기준금리",
     },
+    "TREASURY_3Y": {
+        "table": "721Y001",
+        "item": "010200000",
+        "label": "국고채(3년)",
+        "group": "금리",
+        "freq": "D",
+        "unit": "%",
+        "desc": "국고채 3년물 수익률",
+    },
+    "TREASURY_5Y": {
+        "table": "721Y001",
+        "item": "010200001",
+        "label": "국고채(5년)",
+        "group": "금리",
+        "freq": "D",
+        "unit": "%",
+        "desc": "국고채 5년물 수익률",
+    },
+    "TREASURY_10Y": {
+        "table": "721Y001",
+        "item": "010200002",
+        "label": "국고채(10년)",
+        "group": "금리",
+        "freq": "D",
+        "unit": "%",
+        "desc": "국고채 10년물 수익률",
+    },
     "CORP_BOND_3Y": {
         "table": "721Y001",
         "item": "010300000",
@@ -83,6 +110,24 @@ _INDICATORS: dict[str, dict] = {
         "freq": "D",
         "unit": "%",
         "desc": "회사채 AA- 등급 3년물 수익률",
+    },
+    "CORP_BOND_BBB_5Y": {
+        "table": "721Y001",
+        "item": "010400000",
+        "label": "회사채(5년,BBB-)",
+        "group": "금리",
+        "freq": "D",
+        "unit": "%",
+        "desc": "회사채 BBB- 등급 5년물 수익률",
+    },
+    "CD_91D": {
+        "table": "721Y001",
+        "item": "010100000",
+        "label": "CD(91일)",
+        "group": "금리",
+        "freq": "D",
+        "unit": "%",
+        "desc": "CD 91일물 수익률",
     },
     # 환율
     "USDKRW": {
