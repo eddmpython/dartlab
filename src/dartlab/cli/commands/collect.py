@@ -2,7 +2,7 @@
 
 사용 예시::
 
-    # DART (기본)
+    # DART (종목코드 = 숫자 → 자동 감지)
     dartlab collect 005930                    # 단일 종목 docs
     dartlab collect --auto                    # 미수집 docs 전체
     dartlab collect --batch                   # 전체 상장, 미수집만
@@ -10,31 +10,38 @@
     dartlab collect --check 005930            # freshness 체크
     dartlab collect --incremental 005930      # 누락 공시 증분 수집
 
-    # EDGAR
-    dartlab collect --source edgar AAPL MSFT  # 지정 ticker
-    dartlab collect --source edgar --tier sp500           # S&P 500 전체
-    dartlab collect --source edgar --tier sp500 --limit 10  # 10개만 테스트
+    # EDGAR (ticker = 영문 → 자동 감지)
+    dartlab collect AAPL MSFT GOOGL           # 지정 ticker
+    dartlab collect --tier sp500              # S&P 500 전체
+    dartlab collect --tier sp500 --limit 10   # 10개만 테스트
 """
 
 from __future__ import annotations
 
 
+def _isEdgarCode(code: str) -> bool:
+    """영문 ticker면 True, 숫자 종목코드면 False."""
+    return not code.isdigit()
+
+
+def _detectSource(args) -> str:
+    """인자로부터 dart/edgar 자동 감지."""
+    if getattr(args, "tier", None):
+        return "edgar"
+    if args.codes and all(_isEdgarCode(c) for c in args.codes):
+        return "edgar"
+    return "dart"
+
+
 def configure_parser(subparsers) -> None:
     parser = subparsers.add_parser(
         "collect",
-        help="DART/EDGAR 공시문서 수집 (HTML → parquet)",
+        help="DART/EDGAR 공시문서 수집 (종목코드=DART, ticker=EDGAR 자동 감지)",
     )
     parser.add_argument(
         "codes",
         nargs="*",
-        help="종목코드/ticker (예: 005930, AAPL)",
-    )
-    parser.add_argument(
-        "--source",
-        "-s",
-        choices=["dart", "edgar"],
-        default="dart",
-        help="데이터 소스 (기본: dart)",
+        help="종목코드/ticker (숫자=DART, 영문=EDGAR)",
     )
     # DART 전용
     parser.add_argument(
@@ -64,17 +71,17 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--auto",
         action="store_true",
-        help="미수집 종목 자동 수집",
+        help="미수집 종목 자동 수집 (DART)",
     )
     parser.add_argument(
         "--stats",
         action="store_true",
-        help="수집 현황 통계 출력",
+        help="수집 현황 통계 출력 (DART)",
     )
     parser.add_argument(
         "--uncollected",
         action="store_true",
-        help="미수집 종목 목록 출력",
+        help="미수집 종목 목록 출력 (DART)",
     )
     parser.add_argument(
         "--limit",
@@ -85,7 +92,7 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--batch",
         action="store_true",
-        help="배치 모드 (finance/report/docs 전체, 멀티키 병렬)",
+        help="배치 모드 (DART: finance/report/docs 전체, 멀티키 병렬)",
     )
     parser.add_argument(
         "--categories",
@@ -103,19 +110,19 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="freshness 체크만 (수집 안 함)",
+        help="freshness 체크만 (수집 안 함, DART)",
     )
     parser.add_argument(
         "--incremental",
         action="store_true",
-        help="누락 공시만 증분 수집",
+        help="누락 공시만 증분 수집 (DART)",
     )
     # EDGAR 전용
     parser.add_argument(
         "--tier",
         type=str,
         default=None,
-        help="EDGAR 배치 tier (sp500). --source edgar와 함께 사용",
+        help="EDGAR 배치 tier (sp500)",
     )
     parser.set_defaults(handler=run)
 
@@ -125,7 +132,7 @@ def run(args) -> int:
 
     console = get_console()
 
-    source = getattr(args, "source", "dart")
+    source = _detectSource(args)
 
     if source == "edgar":
         return _runEdgar(console, args)
@@ -159,7 +166,7 @@ def run(args) -> int:
 def _printHelp(console) -> None:
     """통합 도움말."""
     console.print("[bold]dartlab collect[/] — DART/EDGAR 데이터 수집\n")
-    console.print("  [bold]DART (기본)[/]:")
+    console.print("  [bold]DART[/] (종목코드 = 숫자 → 자동 감지):")
     console.print("  dartlab collect 005930              단일 종목 docs")
     console.print("  dartlab collect --auto              미수집 docs 자동 수집")
     console.print("  dartlab collect --stats             수집 현황")
@@ -167,10 +174,10 @@ def _printHelp(console) -> None:
     console.print("  dartlab collect --incremental 005930 누락 공시 증분 수집")
     console.print("  dartlab collect --batch             전체 상장 배치 수집")
     console.print()
-    console.print("  [bold]EDGAR[/]:")
-    console.print("  dartlab collect -s edgar AAPL MSFT  지정 ticker 수집")
-    console.print("  dartlab collect -s edgar --tier sp500           S&P 500 전체")
-    console.print("  dartlab collect -s edgar --tier sp500 --limit 10  10개만 테스트")
+    console.print("  [bold]EDGAR[/] (ticker = 영문 → 자동 감지):")
+    console.print("  dartlab collect AAPL MSFT           지정 ticker 수집")
+    console.print("  dartlab collect --tier sp500        S&P 500 전체 수집")
+    console.print("  dartlab collect --tier sp500 --limit 10  10개만 테스트")
 
 
 # ── EDGAR ─────────────────────────────────────────────
@@ -194,10 +201,10 @@ def _runEdgar(console, args) -> int:
             console.print(f"[red]tier '{args.tier}'에 해당하는 ticker 없음[/]")
             return 1
     else:
-        console.print("[bold]dartlab collect -s edgar[/] — EDGAR docs 수집\n")
-        console.print("  dartlab collect -s edgar AAPL MSFT       지정 ticker")
-        console.print("  dartlab collect -s edgar --tier sp500    S&P 500 전체")
-        console.print("  dartlab collect -s edgar --tier sp500 --limit 10  10개만")
+        console.print("[bold]dartlab collect[/] — EDGAR docs 수집\n")
+        console.print("  dartlab collect AAPL MSFT           지정 ticker")
+        console.print("  dartlab collect --tier sp500        S&P 500 전체")
+        console.print("  dartlab collect --tier sp500 --limit 10  10개만")
         return 1
 
     if args.limit and len(tickers) > args.limit:
