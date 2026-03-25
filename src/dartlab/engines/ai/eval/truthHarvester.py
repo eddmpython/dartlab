@@ -70,6 +70,117 @@ def _extractLatestPeriod(periods: list[str]) -> str | None:
     return match.group(1) if match else last
 
 
+_REPORT_HINTS: dict[str, list[str]] = {
+    "dividend": ["배당", "DPS", "주주환원"],
+    "employee": ["직원", "인력", "고용"],
+    "audit": ["감사", "회계"],
+    "majorHolder": ["주주", "지분", "대주주"],
+    "executive": ["임원", "보수"],
+    "treasuryStock": ["자기주식", "자사주"],
+}
+
+
+def _harvestReportFacts(company: Any, question: str) -> list[dict[str, Any]]:
+    """report API에서 배당/직원/감사 등 정형 데이터 추출."""
+    facts: list[dict[str, Any]] = []
+    q = question.lower()
+    report = getattr(company, "report", None)
+    if report is None:
+        return facts
+
+    for apiType, keywords in _REPORT_HINTS.items():
+        if not any(k.lower() in q for k in keywords):
+            continue
+        try:
+            data = report.get(apiType)
+            if data is None:
+                continue
+            import polars as pl
+
+            if isinstance(data, pl.DataFrame) and len(data) > 0:
+                facts.append(
+                    {
+                        "metric": f"report_{apiType}",
+                        "label": apiType,
+                        "value": len(data),
+                        "statement": "report",
+                        "period": "latest",
+                    }
+                )
+        except (AttributeError, TypeError, ValueError, OSError):
+            continue
+    return facts
+
+
+def _harvestSectionsFacts(company: Any, question: str) -> list[dict[str, Any]]:
+    """sections topic 존재 여부 + 기간 수."""
+    facts: list[dict[str, Any]] = []
+    docs = getattr(company, "docs", None)
+    if docs is None:
+        return facts
+    sections = getattr(docs, "sections", None)
+    if sections is None:
+        return facts
+    raw = getattr(sections, "raw", None)
+    if raw is None:
+        return facts
+
+    try:
+        import polars as pl
+
+        if not isinstance(raw, pl.DataFrame) or raw.is_empty():
+            return facts
+        topics = raw["topic"].unique().to_list() if "topic" in raw.columns else []
+        periods = raw["period"].unique().to_list() if "period" in raw.columns else []
+        facts.append(
+            {
+                "metric": "sections_topic_count",
+                "label": "sections topic 수",
+                "value": len(topics),
+                "statement": "sections",
+                "period": "all",
+            }
+        )
+        facts.append(
+            {
+                "metric": "sections_period_count",
+                "label": "sections 기간 수",
+                "value": len(periods),
+                "statement": "sections",
+                "period": "all",
+            }
+        )
+    except (ImportError, AttributeError, TypeError, ValueError):
+        pass
+    return facts
+
+
+def _harvestInsightFacts(company: Any) -> list[dict[str, Any]]:
+    """insight 7영역 등급 추출."""
+    facts: list[dict[str, Any]] = []
+    insights = getattr(company, "insights", None)
+    if insights is None:
+        return facts
+
+    try:
+        # insights는 dict 또는 object
+        if isinstance(insights, dict):
+            for area, grade in insights.items():
+                if isinstance(grade, (str, int, float)):
+                    facts.append(
+                        {
+                            "metric": f"insight_{area}",
+                            "label": f"인사이트 {area}",
+                            "value": str(grade),
+                            "statement": "insight",
+                            "period": "latest",
+                        }
+                    )
+    except (AttributeError, TypeError, ValueError):
+        pass
+    return facts
+
+
 def harvestTruth(
     stockCode: str,
     question: str,
@@ -190,6 +301,15 @@ def harvestTruth(
                                         )
             except (ImportError, AttributeError, TypeError, ValueError):
                 pass
+
+    # ── report 추출 (배당/직원/감사) ─────────────────────
+    facts.extend(_harvestReportFacts(company, question))
+
+    # ── sections 존재 여부 ─────────────────────────────
+    facts.extend(_harvestSectionsFacts(company, question))
+
+    # ── insight 등급 ───────────────────────────────────
+    facts.extend(_harvestInsightFacts(company))
 
     return facts
 

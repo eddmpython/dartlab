@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -26,6 +25,7 @@ def main() -> None:
     parser.add_argument("--severity", default=None, help="comma-separated: critical,high")
     parser.add_argument("--persona", default=None, help="single persona filter")
     parser.add_argument("--compare", default=None, help="'latest' 또는 JSONL 경로")
+    parser.add_argument("--diagnose", action="store_true", help="배치 후 자동 진단")
     parser.add_argument("--dry-run", action="store_true", help="케이스 목록만 출력")
     args = parser.parse_args()
 
@@ -125,6 +125,89 @@ def main() -> None:
     # 이전 배치와 비교
     if args.compare:
         _compareBatch(outPath, args.compare, BATCH_DIR)
+
+    # 자동 진단
+    if args.diagnose:
+        _runDiagnosis(outPath, BATCH_DIR)
+
+
+def _runDiagnosis(currentPath: Path, batchDir: Path) -> None:
+    """배치 후 자동 진단 실행."""
+    from dartlab.engines.ai.eval.diagnoser import (
+        DiagnosisReport,
+        findRegressions,
+        findWeakTypes,
+    )
+    from dartlab.engines.ai.eval.remediation import (
+        extractFailureCounts,
+        formatAsMarkdown,
+        generateRemediations,
+    )
+
+    results: list[dict] = []
+    with open(currentPath, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                results.append(json.loads(line))
+
+    if not results:
+        return
+
+    print(f"\n{'=' * 50}")
+    print("자동 진단")
+    print(f"{'=' * 50}")
+
+    # 약점 유형
+    weakTypes = findWeakTypes(results)
+    if weakTypes:
+        print("\n약점 유형 (하위 점수):")
+        for w in weakTypes:
+            failures = ", ".join(w.topFailures[:3]) or "-"
+            print(f"  {w.questionType}: avg={w.avgOverall:.2f} ({w.caseCount}건) [{failures}]")
+
+    # 회귀 탐지
+    candidates = sorted(batchDir.glob("batch_*.jsonl"))
+    candidates = [c for c in candidates if c != currentPath]
+    if candidates:
+        prevResults: list[dict] = []
+        with open(candidates[-1], encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    prevResults.append(json.loads(line))
+        regressions = findRegressions(results, prevResults)
+        if regressions:
+            print(f"\n회귀 감지: {len(regressions)}건")
+            for r in regressions:
+                print(f"  {r.caseId}: {r.prevOverall:.2f} → {r.currOverall:.2f} ({r.delta:+.2f})")
+
+    # 개선 계획
+    failureCounts = extractFailureCounts(results)
+    if failureCounts:
+        plans = generateRemediations(failureCounts)
+        if plans:
+            print(f"\n개선 계획: {len(plans)}건")
+            for p in plans:
+                print(f"  [P{p.priority}] {p.failureType} → {p.targetFile}")
+
+    # 리포트 저장
+    reportDir = batchDir.parent / "diagnosisReports"
+    reportDir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    reportPath = reportDir / f"diagnosis_batch_{ts}.md"
+
+    report = DiagnosisReport(
+        weakTypes=weakTypes,
+        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+    md = report.toMarkdown()
+    if failureCounts:
+        plans = generateRemediations(failureCounts)
+        md += "\n\n" + formatAsMarkdown(plans)
+
+    reportPath.write_text(md, encoding="utf-8")
+    print(f"\n진단 리포트: {reportPath}")
 
 
 def _compareBatch(currentPath: Path, compareTarget: str, batchDir: Path) -> None:

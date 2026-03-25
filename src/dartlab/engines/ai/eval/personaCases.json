@@ -1,6 +1,6 @@
 {
-  "version": "2026-03-23-v1",
-  "updated": "2026-03-23",
+  "version": "2026-03-24-v1",
+  "updated": "2026-03-24",
   "source": "curated_persona_regression",
   "cases": [
     {
@@ -1133,6 +1133,1308 @@
       "expectedFollowups": [],
       "groundTruthFacts": [],
       "severity": "high"
+    },
+    {
+      "id": "investor.growth.cashflowTrend",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "005930",
+      "question": "삼성전자 영업활동현금흐름 추이로 성장성 판단해줘",
+      "userIntent": "cashflow_growth",
+      "expectedAnswerShape": [
+        "CF추이",
+        "성장판단",
+        "근거"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "현금흐름",
+        "영업활동",
+        "성장"
+      ],
+      "forbiddenUiTerms": [
+        "CF",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "CF",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "현금흐름"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.growth.futurePlan",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "000660",
+      "question": "SK하이닉스 사업보고서에 나온 미래 투자 계획과 성장 전략 요약해줘",
+      "userIntent": "future_plan",
+      "expectedAnswerShape": [
+        "투자계획",
+        "성장전략",
+        "근거인용"
+      ],
+      "expectedEvidenceKinds": [
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "투자",
+        "계획",
+        "성장"
+      ],
+      "forbiddenUiTerms": [
+        "show_topic()",
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "투자"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.growth.revenueGrowth",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "051910",
+      "question": "LG화학 최근 3년 매출 성장률 분석해줘",
+      "userIntent": "revenue_growth_analysis",
+      "expectedAnswerShape": [
+        "성장률",
+        "추세",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "매출",
+        "성장률",
+        "추세"
+      ],
+      "forbiddenUiTerms": [
+        "IS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "매출"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.valuation.perComparison",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "삼성전자 PER, PBR 수준이 어떤지 분석해줘",
+      "userIntent": "valuation_per_pbr",
+      "expectedAnswerShape": [
+        "PER수치",
+        "PBR수치",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "PER",
+        "PBR",
+        "밸류에이션"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "module_"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "ratios",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "PER"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.valuation.intrinsicValue",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "000660",
+      "question": "SK하이닉스 적정 가치를 어떻게 판단하면 좋을지 재무 데이터 기반으로 설명해줘",
+      "userIntent": "intrinsic_value",
+      "expectedAnswerShape": [
+        "재무기반판단",
+        "비율근거",
+        "투자시사점"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "가치",
+        "적정",
+        "판단"
+      ],
+      "forbiddenUiTerms": [
+        "module_",
+        "ratios"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS",
+        "BS",
+        "CF",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "가치"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.valuation.roe",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "051910",
+      "question": "LG화학 ROE 추이와 자본 효율성 분석해줘",
+      "userIntent": "roe_analysis",
+      "expectedAnswerShape": [
+        "ROE수치",
+        "추이",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "ROE",
+        "자본",
+        "효율"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "module_"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "ratios",
+        "IS",
+        "BS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "ROE"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.report.majorHolder",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "005930",
+      "question": "삼성전자 최대주주와 주요 주주 현황 알려줘",
+      "userIntent": "major_holder",
+      "expectedAnswerShape": [
+        "최대주주",
+        "지분율",
+        "변동"
+      ],
+      "expectedEvidenceKinds": [
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "주주",
+        "지분",
+        "최대주주"
+      ],
+      "forbiddenUiTerms": [
+        "report.get",
+        "majorHolder"
+      ],
+      "expectedRoute": "report",
+      "expectedModules": [
+        "majorHolder"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "주주"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "accountant.report.executivePay",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "005930",
+      "question": "삼성전자 이사회 구성과 임원 보수 현황 요약해줘",
+      "userIntent": "executive_compensation",
+      "expectedAnswerShape": [
+        "이사회구성",
+        "보수현황",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "이사회",
+        "임원",
+        "보수"
+      ],
+      "forbiddenUiTerms": [
+        "report.get",
+        "executive"
+      ],
+      "expectedRoute": "report",
+      "expectedModules": [
+        "executive"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "임원"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.report.treasuryStock",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "005930",
+      "question": "삼성전자 자기주식 취득/처분 이력 알려줘",
+      "userIntent": "treasury_stock",
+      "expectedAnswerShape": [
+        "취득이력",
+        "처분이력",
+        "현황"
+      ],
+      "expectedEvidenceKinds": [
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "자기주식",
+        "자사주",
+        "취득"
+      ],
+      "forbiddenUiTerms": [
+        "report.get",
+        "treasuryStock"
+      ],
+      "expectedRoute": "report",
+      "expectedModules": [
+        "treasuryStock"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "자기주식"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "researchGather.report.employeeTrend",
+      "persona": "research_gather",
+      "personaLabel": "리서치 수집원",
+      "stockCode": "000660",
+      "question": "SK하이닉스 직원 수 변화 추이와 인당 매출 알려줘",
+      "userIntent": "employee_trend",
+      "expectedAnswerShape": [
+        "직원수추이",
+        "인당매출",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "report",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "직원",
+        "인력",
+        "매출"
+      ],
+      "forbiddenUiTerms": [
+        "report.get",
+        "employee"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "employee",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "직원"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "analyst.context.evidenceCitation",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "삼성전자 반도체 사업 전망에 대해 공시 원문 근거를 인용해서 설명해줘",
+      "userIntent": "evidence_citation",
+      "expectedAnswerShape": [
+        "원문인용",
+        "분석",
+        "근거"
+      ],
+      "expectedEvidenceKinds": [
+        "docs",
+        "context_slice"
+      ],
+      "expectedUserFacingTerms": [
+        "반도체",
+        "전망",
+        "원문"
+      ],
+      "forbiddenUiTerms": [
+        "contextSlices",
+        "show_topic()"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "반도체"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "businessOwner.context.riskFactors",
+      "persona": "business_owner",
+      "personaLabel": "사업가",
+      "stockCode": "051910",
+      "question": "LG화학 사업 리스크 요인을 공시 내용 기반으로 정리해줘",
+      "userIntent": "risk_factor_citation",
+      "expectedAnswerShape": [
+        "리스크목록",
+        "공시근거",
+        "영향도"
+      ],
+      "expectedEvidenceKinds": [
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "리스크",
+        "위험",
+        "공시"
+      ],
+      "forbiddenUiTerms": [
+        "riskDerivative",
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "riskDerivative",
+        "businessOverview"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "리스크"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.context.disclosureChange",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "000660",
+      "question": "SK하이닉스 최근 공시에서 전년 대비 달라진 주요 내용이 뭐야",
+      "userIntent": "disclosure_change_detection",
+      "expectedAnswerShape": [
+        "변경사항",
+        "비교",
+        "시사점"
+      ],
+      "expectedEvidenceKinds": [
+        "docs",
+        "diff"
+      ],
+      "expectedUserFacingTerms": [
+        "변경",
+        "달라진",
+        "전년"
+      ],
+      "forbiddenUiTerms": [
+        "disclosureChanges",
+        "diff()"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "disclosureChanges",
+        "businessOverview"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "변경"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.notes.rndExpense",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "삼성전자 연구개발비 규모와 매출 대비 비중 알려줘",
+      "userIntent": "rnd_analysis",
+      "expectedAnswerShape": [
+        "연구개발비",
+        "매출대비비중",
+        "추세"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "notes"
+      ],
+      "expectedUserFacingTerms": [
+        "연구개발",
+        "R&D",
+        "비중"
+      ],
+      "forbiddenUiTerms": [
+        "rnd",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "rnd",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "연구개발"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "accountant.notes.tangibleAsset",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "000660",
+      "question": "SK하이닉스 유형자산 규모와 감가상각 현황 분석해줘",
+      "userIntent": "tangible_asset",
+      "expectedAnswerShape": [
+        "유형자산규모",
+        "감가상각",
+        "투자판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "notes"
+      ],
+      "expectedUserFacingTerms": [
+        "유형자산",
+        "감가상각",
+        "투자"
+      ],
+      "forbiddenUiTerms": [
+        "tangibleAsset",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "tangibleAsset",
+        "BS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "유형자산"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.notes.segmentDetail",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "051910",
+      "question": "LG화학 사업부문별 매출과 영업이익 비중 분석해줘",
+      "userIntent": "segment_detail",
+      "expectedAnswerShape": [
+        "부문별매출",
+        "부문별이익",
+        "비중분석"
+      ],
+      "expectedEvidenceKinds": [
+        "docs",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "사업부문",
+        "매출",
+        "비중"
+      ],
+      "forbiddenUiTerms": [
+        "segments",
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "segments",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "부문"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "accountant.edge.financialCompany",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "105560",
+      "question": "KB금융지주 재무건전성 분석해줘",
+      "userIntent": "financial_soundness",
+      "expectedAnswerShape": [
+        "건전성지표",
+        "판단",
+        "근거"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "건전성",
+        "자본",
+        "부채"
+      ],
+      "forbiddenUiTerms": [
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "BS",
+        "IS",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "건전성"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.edge.holdingCompany",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "035420",
+      "question": "NAVER 사업 다각화 현황과 주요 매출원 분석해줘",
+      "userIntent": "business_diversification",
+      "expectedAnswerShape": [
+        "사업영역",
+        "매출원",
+        "분석"
+      ],
+      "expectedEvidenceKinds": [
+        "docs",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "사업",
+        "매출원",
+        "다각화"
+      ],
+      "forbiddenUiTerms": [
+        "module_",
+        "show_topic()"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview",
+        "segments",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "사업"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "businessOwner.edge.capitalAllocationNav",
+      "persona": "business_owner",
+      "personaLabel": "사업가",
+      "stockCode": "035420",
+      "question": "NAVER 최근 자본 배분 전략 분석해줘",
+      "userIntent": "capital_allocation",
+      "expectedAnswerShape": [
+        "배당정책",
+        "자사주",
+        "투자전략"
+      ],
+      "expectedEvidenceKinds": [
+        "report",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "배당",
+        "자사주",
+        "투자"
+      ],
+      "forbiddenUiTerms": [
+        "module_"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "dividend",
+        "CF",
+        "treasuryStock"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "배당"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "accountant.cost.rndRatio",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "000660",
+      "question": "SK하이닉스 연구개발비가 매출원가와 판관비 중 어디에 더 많이 반영되는지 분석해줘",
+      "userIntent": "rnd_cost_allocation",
+      "expectedAnswerShape": [
+        "배분구조",
+        "비중",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "notes"
+      ],
+      "expectedUserFacingTerms": [
+        "연구개발",
+        "매출원가",
+        "판관비"
+      ],
+      "forbiddenUiTerms": [
+        "costByNature",
+        "rnd",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "rnd",
+        "costByNature",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "연구개발"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.cost.opexBreakdown",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "005930",
+      "question": "삼성전자 매출원가와 판관비 추이 분석해줘",
+      "userIntent": "opex_breakdown",
+      "expectedAnswerShape": [
+        "원가추이",
+        "판관비추이",
+        "비중변화"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "매출원가",
+        "판관비",
+        "비용"
+      ],
+      "forbiddenUiTerms": [
+        "IS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "원가"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "businessOwner.cost.segments",
+      "persona": "business_owner",
+      "personaLabel": "사업가",
+      "stockCode": "051910",
+      "question": "LG화학 부문별 수익성이 어떻게 다른지 비교해줘",
+      "userIntent": "segment_profitability",
+      "expectedAnswerShape": [
+        "부문별비교",
+        "수익성",
+        "시사점"
+      ],
+      "expectedEvidenceKinds": [
+        "docs",
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "부문",
+        "수익성",
+        "비교"
+      ],
+      "forbiddenUiTerms": [
+        "segments",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "segments",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "부문"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "analyst.deep.comprehensiveHealth",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "000660",
+      "question": "SK하이닉스 종합 재무 건강 진단해줘",
+      "userIntent": "comprehensive_health",
+      "expectedAnswerShape": [
+        "수익성",
+        "안정성",
+        "성장성",
+        "종합판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "수익성",
+        "안정성",
+        "성장"
+      ],
+      "forbiddenUiTerms": [
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS",
+        "BS",
+        "CF",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "수익성"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "critical"
+    },
+    {
+      "id": "investor.deep.investmentThesis",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "051910",
+      "question": "LG화학 투자 매력도를 재무/공시/리스크 종합적으로 평가해줘",
+      "userIntent": "investment_thesis",
+      "expectedAnswerShape": [
+        "재무분석",
+        "공시기반리스크",
+        "투자판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "docs",
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "투자",
+        "매력도",
+        "리스크"
+      ],
+      "forbiddenUiTerms": [
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "IS",
+        "BS",
+        "CF",
+        "ratios",
+        "businessOverview"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "투자"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "critical"
+    },
+    {
+      "id": "researchGather.overview.navBusiness",
+      "persona": "research_gather",
+      "personaLabel": "리서치 수집원",
+      "stockCode": "035420",
+      "question": "NAVER 주요 사업 내용과 최근 변화 요약해줘",
+      "userIntent": "business_overview",
+      "expectedAnswerShape": [
+        "사업내용",
+        "최근변화",
+        "전망"
+      ],
+      "expectedEvidenceKinds": [
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "사업",
+        "변화",
+        "전망"
+      ],
+      "forbiddenUiTerms": [
+        "businessOverview",
+        "show_topic()"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "사업"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "businessOwner.overview.chemicalIndustry",
+      "persona": "business_owner",
+      "personaLabel": "사업가",
+      "stockCode": "051910",
+      "question": "LG화학이 어떤 사업을 하는 회사인지 공시 기준으로 설명해줘",
+      "userIntent": "business_description",
+      "expectedAnswerShape": [
+        "사업설명",
+        "주요제품",
+        "시장"
+      ],
+      "expectedEvidenceKinds": [
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "사업",
+        "제품",
+        "시장"
+      ],
+      "forbiddenUiTerms": [
+        "module_",
+        "show_topic()"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview",
+        "productService"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "사업"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "investor.followup.deeperDividend",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "005930",
+      "question": "삼성전자 배당이 지속 가능한지, 배당성향과 FCF 기준으로 판단해줘",
+      "userIntent": "dividend_sustainability_deep",
+      "expectedAnswerShape": [
+        "배당성향",
+        "FCF커버리지",
+        "지속가능성판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "report"
+      ],
+      "expectedUserFacingTerms": [
+        "배당",
+        "배당성향",
+        "FCF"
+      ],
+      "forbiddenUiTerms": [
+        "dividend",
+        "module_"
+      ],
+      "expectedRoute": "hybrid",
+      "expectedModules": [
+        "dividend",
+        "CF",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "배당"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "analyst.followup.whyMarginDrop",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "000660",
+      "question": "SK하이닉스 영업이익률이 하락한 원인을 비용 구조에서 찾아줘",
+      "userIntent": "margin_drop_cause",
+      "expectedAnswerShape": [
+        "이익률변화",
+        "비용분석",
+        "원인"
+      ],
+      "expectedEvidenceKinds": [
+        "finance",
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "영업이익률",
+        "비용",
+        "원인"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "IS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS",
+        "ratios",
+        "costByNature"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "영업이익률"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "accountant.stability.debtAnalysis",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "051910",
+      "question": "LG화학 부채비율과 유동비율로 재무 안정성 판단해줘",
+      "userIntent": "debt_stability",
+      "expectedAnswerShape": [
+        "부채비율",
+        "유동비율",
+        "안정성판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "부채비율",
+        "유동비율",
+        "안정성"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "BS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "BS",
+        "ratios"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [
+        "데이터가 없"
+      ],
+      "mustInclude": [
+        "부채비율"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "high"
+    },
+    {
+      "id": "investor.stability.interestCoverage",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "000660",
+      "question": "SK하이닉스 이자보상배율 분석해줘",
+      "userIntent": "interest_coverage",
+      "expectedAnswerShape": [
+        "이자보상배율",
+        "추이",
+        "판단"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "이자보상배율",
+        "이자",
+        "부담"
+      ],
+      "forbiddenUiTerms": [
+        "ratios",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "ratios",
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "이자"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "analyst.edgar.appleFinancials",
+      "persona": "analyst",
+      "personaLabel": "재무 분석가",
+      "stockCode": "AAPL",
+      "question": "Apple 최근 매출과 영업이익 추이 분석해줘",
+      "userIntent": "us_financials",
+      "expectedAnswerShape": [
+        "매출추이",
+        "이익추이",
+        "분석"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "매출",
+        "영업이익",
+        "추이"
+      ],
+      "forbiddenUiTerms": [
+        "IS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "IS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "매출"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "investor.edgar.appleBusiness",
+      "persona": "investor",
+      "personaLabel": "투자자",
+      "stockCode": "AAPL",
+      "question": "Apple 10-K에 나온 사업 개요 요약해줘",
+      "userIntent": "us_business_overview",
+      "expectedAnswerShape": [
+        "사업개요",
+        "주요제품",
+        "전략"
+      ],
+      "expectedEvidenceKinds": [
+        "docs"
+      ],
+      "expectedUserFacingTerms": [
+        "사업",
+        "제품",
+        "Apple"
+      ],
+      "forbiddenUiTerms": [
+        "businessOverview",
+        "module_"
+      ],
+      "expectedRoute": "sections",
+      "expectedModules": [
+        "businessOverview"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "사업"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
+    },
+    {
+      "id": "accountant.edgar.appleBalanceSheet",
+      "persona": "accountant",
+      "personaLabel": "회계사",
+      "stockCode": "AAPL",
+      "question": "Apple 자산/부채/자본 구조 분석해줘",
+      "userIntent": "us_balance_sheet",
+      "expectedAnswerShape": [
+        "자산구조",
+        "부채구조",
+        "자본구조"
+      ],
+      "expectedEvidenceKinds": [
+        "finance"
+      ],
+      "expectedUserFacingTerms": [
+        "자산",
+        "부채",
+        "자본"
+      ],
+      "forbiddenUiTerms": [
+        "BS",
+        "module_"
+      ],
+      "expectedRoute": "finance",
+      "expectedModules": [
+        "BS"
+      ],
+      "allowedClarification": false,
+      "mustNotSay": [],
+      "mustInclude": [
+        "자산"
+      ],
+      "expectedFollowups": [],
+      "groundTruthFacts": [],
+      "severity": "medium"
     }
   ],
   "truthAsOf": "2026-03-24"

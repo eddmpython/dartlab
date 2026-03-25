@@ -1,0 +1,76 @@
+name: Eval Nightly
+
+on:
+  schedule:
+    - cron: "0 15 * * *"  # KST 00:00
+  workflow_dispatch:
+
+jobs:
+  eval-deterministic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -e .[ai]
+
+      - name: Run eval deterministic tests
+        run: pytest tests/test_eval_deterministic.py -v --tb=short
+
+  eval-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[ai]
+
+      - name: Run coverage gap check
+        run: python -X utf8 scripts/evalDiagnose.py --mode coverage --save
+
+      - name: Upload diagnosis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-coverage-report
+          path: src/dartlab/engines/ai/eval/diagnosisReports/
+
+  eval-impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[ai]
+
+      - name: Run code impact analysis
+        run: python -X utf8 scripts/evalDiagnose.py --mode impact --save
+
+      - name: Upload impact report
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-impact-report
+          path: src/dartlab/engines/ai/eval/diagnosisReports/

@@ -22,6 +22,20 @@ from dartlab.engines.ai.eval.replayRunner import (
     replaySuite,
     summarizeReplayResults,
 )
+from dartlab.engines.ai.eval.diagnoser import (
+    DiagnosisReport,
+    diagnoseBatchResults,
+    diagnoseFull,
+    findCoverageGaps,
+    findRegressions,
+    findWeakTypes,
+    mapCodeImpact,
+)
+from dartlab.engines.ai.eval.remediation import (
+    RemediationPlan,
+    extractFailureCounts,
+    generateRemediations,
+)
 from dartlab.engines.ai.eval.scorer import ScoreCard, auto_score
 from dartlab.engines.ai.eval.truthHarvester import harvestBatch, harvestTruth
 
@@ -54,4 +68,14 @@ __all__ = [
     "summarizeReplayResults",
     "harvestTruth",
     "harvestBatch",
+    "DiagnosisReport",
+    "diagnoseBatchResults",
+    "diagnoseFull",
+    "findCoverageGaps",
+    "findRegressions",
+    "findWeakTypes",
+    "mapCodeImpact",
+    "RemediationPlan",
+    "extractFailureCounts",
+    "generateRemediations",
 ]

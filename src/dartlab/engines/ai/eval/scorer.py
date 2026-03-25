@@ -15,6 +15,11 @@
     10. clarification_quality — clarification 정책 준수
     11. ui_language_compliance — 내부 명칭 노출 억제
     12. followup_usefulness — 후속 질문/행동 제안 유용성
+
+데이터 심도 차원:
+    13. context_depth — context 레이어가 answer에 실제 반영된 비율
+    14. source_citation_precision — (연도+출처+수치) triple 정밀도
+    15. data_coverage — 기대 모듈 대비 실제 데이터 활용 증거
 """
 
 from __future__ import annotations
@@ -39,6 +44,9 @@ class ScoreCard:
     clarification_quality: float = 1.0  # 0~1
     ui_language_compliance: float = 1.0  # 0~1
     followup_usefulness: float = 0.0  # 0~1
+    context_depth: float = 0.0  # 0~1
+    source_citation_precision: float = 0.0  # 0~1
+    data_coverage: float = 0.0  # 0~1
     failure_types: list[str] = field(default_factory=list)
     details: dict = field(default_factory=dict)
 
@@ -58,6 +66,9 @@ class ScoreCard:
             + self.clarification_quality * 0.5
             + self.ui_language_compliance * 0.5
             + self.followup_usefulness * 0.5
+            + self.context_depth * 1.0
+            + self.source_citation_precision * 0.5
+            + self.data_coverage * 1.0
         )
 
 
@@ -292,6 +303,82 @@ def score_followup_usefulness(answer: str, expected_followups: list[str] | None 
     return matched / len(followups)
 
 
+def score_context_depth(answer: str, contexts: list[dict] | None = None) -> float:
+    """context 레이어에서 제공된 정보가 answer에 반영된 비율."""
+    if not contexts:
+        return 1.0
+    answer_lower = answer.lower()
+    matched = 0
+    for ctx in contexts:
+        # context에서 핵심 키워드 추출
+        content = str(ctx.get("content", ctx.get("text", "")))
+        if not content:
+            continue
+        # 숫자/핵심 단어 3개 추출해서 answer에 포함 여부 확인
+        keywords = re.findall(r"[\d,]+(?:\.\d+)?(?:조|억|만)?|[가-힣]{2,6}", content[:500])
+        if not keywords:
+            continue
+        sample = keywords[:10]
+        hits = sum(1 for kw in sample if kw.lower() in answer_lower)
+        if hits >= max(len(sample) * 0.2, 1):
+            matched += 1
+    return matched / len(contexts) if contexts else 1.0
+
+
+def score_source_citation_precision(answer: str) -> float:
+    """(연도 + 출처 + 수치)가 함께 나타나는 정밀 인용 측정."""
+    # 연도(2020~2029) 근처 50자 내에 수치와 출처명이 함께 있는지
+    year_positions = [m.start() for m in re.finditer(r"20[2-9]\d", answer)]
+    if not year_positions:
+        return 0.0
+    source_patterns = re.compile(r"(?:BS|IS|CF|손익|재무|대차|현금|자산|부채|매출|영업이익|자본)")
+    number_pattern = re.compile(r"[\d,]+(?:\.\d+)?(?:조|억|만|%)?")
+    triples = 0
+    for pos in year_positions:
+        window = answer[max(0, pos - 30) : pos + 60]
+        has_source = bool(source_patterns.search(window))
+        has_number = bool(number_pattern.search(window))
+        if has_source and has_number:
+            triples += 1
+    return min(triples / max(len(year_positions), 1), 1.0)
+
+
+def score_data_coverage(
+    answer: str,
+    included_modules: list[str] | None = None,
+    expected_modules: list[str] | None = None,
+) -> float:
+    """기대 모듈 대비 실제 데이터가 answer에 활용된 증거 비율."""
+    expected = list(expected_modules or [])
+    if not expected:
+        return 1.0
+    # 모듈별 키워드 매핑
+    _MODULE_EVIDENCE: dict[str, list[str]] = {
+        "IS": ["매출", "영업이익", "순이익", "원가", "판관비"],
+        "BS": ["자산", "부채", "자본", "유동"],
+        "CF": ["현금흐름", "영업활동", "투자활동", "재무활동"],
+        "ratios": ["비율", "ROE", "ROA", "이익률", "부채비율"],
+        "costByNature": ["성격별 비용", "급여", "감가상각", "원재료"],
+        "segments": ["부문", "세그먼트", "사업부"],
+        "businessOverview": ["사업", "시장", "경쟁", "전략"],
+        "governanceOverview": ["지배구조", "이사회", "감사"],
+        "riskDerivative": ["리스크", "파생", "위험"],
+        "productService": ["제품", "서비스", "매출구성"],
+    }
+    answer_lower = answer.lower()
+    evidenced = 0
+    for mod in expected:
+        keywords = _MODULE_EVIDENCE.get(mod, [])
+        if not keywords:
+            # 모듈명 자체가 answer에 있으면 evidence로 인정
+            if mod.lower() in answer_lower:
+                evidenced += 1
+            continue
+        if any(kw.lower() in answer_lower for kw in keywords):
+            evidenced += 1
+    return evidenced / len(expected)
+
+
 def classify_failure_types(
     card: ScoreCard,
     *,
@@ -335,6 +422,7 @@ def auto_score(
     expected_followups: list[str] | None = None,
     expected_route: str | None = None,
     actual_route: str | None = None,
+    contexts: list[dict] | None = None,
 ) -> ScoreCard:
     """답변 자동 채점."""
     facts = expected_facts or []
@@ -357,6 +445,9 @@ def auto_score(
         clarification_quality=score_clarification_quality(answer, clarification_allowed),
         ui_language_compliance=score_ui_language_compliance(answer, forbidden_terms),
         followup_usefulness=score_followup_usefulness(answer, expected_followups),
+        context_depth=score_context_depth(answer, contexts),
+        source_citation_precision=score_source_citation_precision(answer),
+        data_coverage=score_data_coverage(answer, included_modules, expected_modules),
         details={
             "includedModules": list(included_modules or []),
             "expectedModules": list(expected_modules or []),
