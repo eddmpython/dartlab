@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: DartLab
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - name: eddmpython
+    website: https://github.com/eddmpython
+repository-code: https://github.com/eddmpython/dartlab
+url: https://eddmpython.github.io/dartlab/
+repository-artifact: https://pypi.org/project/dartlab/
+abstract: >-
+  Turn DART & EDGAR filings into one structured company map.
+  Financial statements, narrative text, and structured reports
+  aligned across every period. Covers 2,700+ Korean and 970+ US companies.
+keywords:
+  - DART
+  - EDGAR
+  - financial-statements
+  - disclosure-analysis
+  - python
+  - sections
+  - company-map
+  - xbrl
+license: MIT
+version: 0.7.8

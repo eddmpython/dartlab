@@ -19,7 +19,7 @@
 	import Install from '$lib/components/sections/Install.svelte';
 	import CTA from '$lib/components/sections/CTA.svelte';
 	import Footer from '$lib/components/sections/Footer.svelte';
-	import { buildOrganizationJsonLd, buildSoftwareApplicationJsonLd, buildWebsiteJsonLd, buildFaqJsonLd } from '$lib/seo';
+	import { buildOrganizationJsonLd, buildSoftwareApplicationJsonLd, buildSourceCodeJsonLd, buildWebsiteJsonLd, buildFaqJsonLd } from '$lib/seo';
 	import type { FaqItem } from '$lib/seo';
 
 	const homepageFaq: FaqItem[] = [
@@ -61,6 +61,7 @@
 		buildOrganizationJsonLd(),
 		buildWebsiteJsonLd(),
 		buildSoftwareApplicationJsonLd(),
+		buildSourceCodeJsonLd(),
 		buildFaqJsonLd(homepageFaq)
 	]);
 </script>

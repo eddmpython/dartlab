@@ -109,6 +109,33 @@ export function buildSoftwareApplicationJsonLd(): SeoThing {
 	};
 }
 
+export function buildSourceCodeJsonLd(): SeoThing {
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareSourceCode',
+		name: 'DartLab',
+		description:
+			'Python library that turns DART and EDGAR filings into one structured company map — financials, text, reports aligned across every period.',
+		codeRepository: brand.repo,
+		codeSampleType: 'full solution',
+		programmingLanguage: {
+			'@type': 'ComputerLanguage',
+			name: 'Python',
+			url: 'https://www.python.org/'
+		},
+		runtimePlatform: 'Python 3.12+',
+		targetProduct: {
+			'@type': 'SoftwareApplication',
+			name: 'DartLab',
+			operatingSystem: 'Windows, macOS, Linux'
+		},
+		license: 'https://opensource.org/licenses/MIT',
+		version: brand.version,
+		author: { '@id': `${brand.url}#author` },
+		publisher: { '@id': organizationId }
+	};
+}
+
 export function buildArticleJsonLd(options: ArticleOptions): SeoThing {
 	const keywords = (options.keywords ?? []).filter(Boolean);
 
