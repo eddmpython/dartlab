@@ -242,6 +242,7 @@ for (const p of blogPosts) {
 sitemap += `</urlset>\n`;
 
 writeFileSync(resolve(buildDir, 'sitemap.xml'), sitemap, 'utf-8');
+writeFileSync(resolve(__dirname, '..', 'static', 'sitemap.xml'), sitemap, 'utf-8');
 console.log(`  -> sitemap.xml generated (${docUrls.length} docs + ${blogPosts.length} blog posts)`);
 
 // RSS feed (Atom)
