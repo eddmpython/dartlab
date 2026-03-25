@@ -307,6 +307,14 @@ dartlab.scanRatioList()
 
 한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화. ThreadPool로 2,700+ parquet 파일을 병렬 읽기, 약 3초 소요.
 
+> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scanAccount`, `screen`, `digest` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
+> ```python
+> pip install dartlab[hf]
+> dartlab.downloadAll("finance")   # ~600 MB, 2,700+ 종목
+> dartlab.downloadAll("report")    # ~320 MB (거버넌스/인력/자본/부채)
+> dartlab.downloadAll("docs")      # ~8 GB (공시 변화 감지/시그널 — 대용량)
+> ```
+
 ### 인사이트 (beta)
 
 > **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
@@ -626,12 +634,12 @@ $ dartlab ask "삼성전자 재무건전성 분석해줘"
 ▸ 부채비율 31.8% — 업종 평균(45.2%) 대비 양호
 ▸ 유동비율 258.6% — 200% 안전 기준 상회
 ▸ 이자보상배수 22.1배 — 이자 부담 매우 낮음
-
-`최근 7일 수주공시 알려줘`, `이번 주 삼성전자 공시 뭐 있었어` 같은 실시간 공시목록 질문은 `OpenDART API 키`를 사용한다. UI Settings에서 프로젝트 `.env` 기준으로 저장/검증/삭제할 수 있다.
 ▸ ROE 회복세: 1.6% → 10.2% (4분기 연속 개선)
 
 [데이터 출처: 2024Q4 사업보고서, dartlab insights 엔진]
 ```
+
+`최근 7일 수주공시 알려줘` 같은 실시간 공시목록 질문은 `OpenDART API 키`를 사용한다. 프로젝트 `.env`에 저장하거나 UI Settings에서 관리할 수 있다.
 
 2-Tier 아키텍처로 기본 분석은 어떤 provider에서든 동작하고, tool-calling provider(OpenAI, Claude)는 대화 중 추가 데이터를 요청해 더 깊이 분석할 수 있다.
 
@@ -835,12 +843,12 @@ e.companyFactsJson("AAPL")
 
 **설정 불필요.** `Company`를 생성하면 해당 종목의 데이터를 자동으로 다운로드한다.
 
-| 데이터셋 | 규모 | 출처 |
-|----------|------|------|
-| DART docs | 320+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
-| DART finance | 2,700+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
-| DART report | 2,700+ 기업 | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
-| EDGAR | 주문형 | SEC API (자동 수집) |
+| 데이터셋 | 규모 | 용량 | 출처 |
+|----------|------|------|------|
+| DART docs | 2,500+ 기업 | ~8 GB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
+| DART finance | 2,700+ 기업 | ~600 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
+| DART report | 2,700+ 기업 | ~320 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
+| EDGAR | 주문형 | — | SEC API (자동 수집) |
 
 ### 3단계 데이터 파이프라인
 

@@ -6,7 +6,6 @@ import re
 import socket
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen, urlretrieve
@@ -15,10 +14,8 @@ import polars as pl
 
 from dartlab.core.dataConfig import (
     DATA_RELEASES,
+    HF_REPO,
     hfBaseUrl,
-    releaseApiUrl,
-    releaseBaseUrl,
-    shardAllTags,
 )
 
 
@@ -123,17 +120,10 @@ def _fetchRemoteEtag(url: str) -> str:
 
 
 def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
-    """HuggingFace 우선 → GitHub Releases fallback으로 다운로드."""
+    """HuggingFace 데이터셋에서 단건 다운로드."""
     hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
-    try:
-        _downloadWithRetry(hfUrl, dest)
-        _saveEtag(stockCode, dest, category)
-        return
-    except (URLError, socket.timeout, OSError):
-        if dest.exists():
-            dest.unlink()
-    ghUrl = f"{releaseBaseUrl(category, stockCode=stockCode)}/{stockCode}.parquet"
-    _downloadWithRetry(ghUrl, dest)
+    _downloadWithRetry(hfUrl, dest)
+    _saveEtag(stockCode, dest, category)
 
 
 def loadData(
@@ -257,94 +247,81 @@ def _ensureEdgarDocs(
     _incrementalUpdateEdgarDocs(stockCode, path, sinceYear=sinceYear, latestRemote=latestRemote)
 
 
-def _fetchAssets(tag: str) -> list[dict]:
-    """릴리즈 태그에서 에셋 목록 + updated_at 조회."""
-    with _socketTimeout():
-        with urlopen(releaseApiUrl(tag=tag)) as resp:
-            data = json.loads(resp.read())
-    return [a for a in data["assets"] if a["name"].endswith(".parquet")]
-
-
-def _isOutdated(localPath: Path, remoteUpdatedAt: str) -> bool:
-    """로컬 파일이 원격보다 오래됐는지 확인."""
-    if not localPath.exists():
-        return True
-    localMtime = datetime.fromtimestamp(localPath.stat().st_mtime, tz=timezone.utc)
-    remoteTime = datetime.fromisoformat(remoteUpdatedAt.replace("Z", "+00:00"))
-    return localMtime < remoteTime
+_HF_MAX_RETRIES = 3
 
 
 def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
-    """GitHub Release의 전체 parquet을 한번에 다운로드.
+    """HuggingFace 데이터셋에서 카테고리 전체 parquet을 다운로드.
+
+    huggingface_hub의 snapshot_download를 사용하여 resume/병렬 다운로드를 지원한다.
+    중간에 끊겨도 이어받기가 가능하며, 이미 받은 파일은 자동 skip.
 
     Args:
-        category: "docs", "finance", "report".
-        forceUpdate: True면 로컬 파일이 있어도 원격 업데이트 일자가 더 최신이면 재다운로드.
+        category: "docs", "finance", "report" 등.
+        forceUpdate: True면 로컬 캐시 무시하고 원격 최신 파일로 갱신.
+
+    Examples::
+
+        import dartlab
+        dartlab.downloadAll("finance")              # 재무 전체 (~600MB)
+        dartlab.downloadAll("docs")                 # 공시 전체 (~8GB)
+        dartlab.downloadAll("finance", forceUpdate=True)  # 강제 갱신
     """
     if category in _EXPLICIT_DOWNLOAD_ONLY_CATEGORIES:
         raise ValueError(
-            f"{category}는 전체 다운로드를 지원하지 않음. "
-            f"용량이 크므로 개별 종목 loadData(..., category='{category}') 또는 전용 샘플만 사용하세요."
+            f"{category}는 전체 다운로드를 지원하지 않음. 개별 종목 loadData(..., category='{category}')를 사용하세요."
         )
 
-    from alive_progress import alive_bar
+    try:
+        from huggingface_hub import snapshot_download
+    except ImportError as exc:
+        raise ImportError(
+            "downloadAll()은 huggingface_hub가 필요합니다.\n"
+            "  pip install dartlab[hf]\n"
+            "또는 개별 종목은 dartlab.Company('005930')으로 자동 다운로드됩니다."
+        ) from exc
+
+    import os
 
     dataDir = _dataDir(category)
     dataDir.mkdir(parents=True, exist_ok=True)
     label = DATA_RELEASES[category]["label"]
-
-    conf = DATA_RELEASES[category]
-    if "shards" in conf:
-        tags = shardAllTags(category)
-    else:
-        tags = [conf["tag"]]
+    hfDir = DATA_RELEASES[category]["dir"]
 
     from dartlab.core.guidance import emit
 
-    allAssets: list[dict] = []
-    emit("download_all:query", label=label, tagCount=len(tags))
-    for tag in tags:
-        assets = _fetchAssets(tag)
-        allAssets.extend(assets)
-        emit("download_all:tag_count", tag=tag, count=len(assets))
+    emit("download_all:hf_start", label=label, repo=HF_REPO, dir=hfDir)
 
-    toDownload = []
-    skipped = 0
-    for asset in allAssets:
-        dest = dataDir / asset["name"]
-        if forceUpdate and _isOutdated(dest, asset["updated_at"]):
-            toDownload.append(asset)
-        elif not dest.exists():
-            toDownload.append(asset)
-        else:
-            skipped += 1
+    # rate limit 방지: 동시 다운로드 workers를 보수적으로 설정
+    if "HF_HUB_DOWNLOAD_WORKERS" not in os.environ:
+        os.environ["HF_HUB_DOWNLOAD_WORKERS"] = "4"
 
-    if not toDownload:
-        emit("download_all:uptodate", count=len(allAssets))
-        return
-
-    action = "신규 + 업데이트" if forceUpdate else "신규"
-    emit("download_all:start", action=action, count=len(toDownload), skipped=skipped)
-
-    failed = 0
-    with alive_bar(len(toDownload), title=f"{label} 다운로드") as bar:
-        for asset in toDownload:
-            dest = dataDir / asset["name"]
-            stockCode = asset["name"].replace(".parquet", "")
-            try:
-                _download(stockCode, dest, category)
-            except (URLError, socket.timeout, OSError, RuntimeError) as e:
-                print("\n", end="")
-                emit("download:failed_item", name=asset["name"], error=str(e))
-                if dest.exists():
-                    dest.unlink()
-                failed += 1
-            bar()
-
-    if failed:
-        emit("download_all:done_with_errors", failed=failed)
+    localDir = _getDataRoot()
+    lastErr = None
+    for attempt in range(_HF_MAX_RETRIES):
+        try:
+            snapshot_download(
+                repo_id=HF_REPO,
+                repo_type="dataset",
+                local_dir=str(localDir),
+                allow_patterns=f"{hfDir}/*.parquet",
+                force_download=forceUpdate if attempt == 0 else False,
+            )
+            break
+        except (OSError, ConnectionError, TimeoutError) as exc:
+            lastErr = exc
+            emit("download_all:hf_retry", attempt=attempt + 1, error=str(exc))
+            if attempt < _HF_MAX_RETRIES - 1:
+                time.sleep(2 ** (attempt + 1))
     else:
-        emit("download_all:done", dataDir=str(dataDir))
+        raise RuntimeError(
+            f"{label} 다운로드 실패 ({_HF_MAX_RETRIES}회 재시도 후). "
+            f"네트워크를 확인하거나 HF 토큰을 설정하세요: huggingface-cli login\n"
+            f"마지막 에러: {lastErr}"
+        )
+
+    count = len(list(dataDir.glob("*.parquet")))
+    emit("download_all:hf_done", label=label, count=count, dataDir=str(dataDir))
 
 
 def download(stockCode: str) -> None:
@@ -353,8 +330,6 @@ def download(stockCode: str) -> None:
 
     for category in DATA_RELEASES:
         if category in _EXPLICIT_DOWNLOAD_ONLY_CATEGORIES:
-            continue
-        if "tag" not in DATA_RELEASES[category] and "shards" not in DATA_RELEASES[category]:
             continue
         dataDir = _dataDir(category)
         dest = dataDir / f"{stockCode}.parquet"

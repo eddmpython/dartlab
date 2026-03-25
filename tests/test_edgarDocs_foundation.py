@@ -128,7 +128,7 @@ def test_data_releases_has_edgarDocs():
 
     assert "edgarDocs" in DATA_RELEASES
     assert DATA_RELEASES["edgarDocs"]["dir"] == "edgar/docs"
-    assert DATA_RELEASES["edgarDocs"]["tag"] == "data-edgar-docs"
+    assert DATA_RELEASES["edgarDocs"]["label"]  # label 존재 확인
 
 
 def test_downloadAll_blocks_edgarDocs_bulk_download():

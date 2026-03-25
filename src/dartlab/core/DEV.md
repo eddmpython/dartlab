@@ -8,7 +8,7 @@ core/
 ├── _entries.py        # 44개 모듈 정의
 ├── capabilities.py    # AI capability 레지스트리
 ├── constants.py       # 상수
-├── dataConfig.py      # GitHub Releases 태그/URL 중앙 설정
+├── dataConfig.py      # HuggingFace 데이터셋 URL 중앙 설정
 ├── dataLoader.py      # parquet 다운로드 + 캐싱
 ├── memory.py          # 메모리 모니터링 (Polars용)
 ├── plugins.py         # 플러그인 시스템
@@ -52,9 +52,10 @@ core/registry.py (DataEntry)
 
 ## 데이터 릴리즈 Config
 
-- `DATA_RELEASES` dict가 GitHub Releases 태그/디렉토리/라벨 중앙 관리
-- `financeTag(stockCode)` → 종목코드 범위 → shard 태그 매핑
-- 태그 변경 시 `dataConfig.py` + `landing/src/lib/brand.ts` 2곳만 수정
+- `DATA_RELEASES` dict가 HuggingFace 데이터셋 디렉토리/라벨 중앙 관리
+- 단건: `_download(stockCode)` → HF에서 개별 parquet (ETag 캐시)
+- 전체: `downloadAll(category)` → `huggingface_hub` `snapshot_download` (resume/병렬)
+- 변경 시 `dataConfig.py` + `landing/src/lib/brand.ts` 2곳만 수정
 
 ## 메모리 안전
 

@@ -61,7 +61,7 @@
 			<div class="text-xs font-mono text-dl-primary mb-3">Auto Download</div>
 			<p class="text-sm text-dl-text-muted leading-relaxed mb-4">
 				No separate data preparation needed. Pass a stock code and missing data is
-				<span class="text-dl-text">automatically downloaded from GitHub Releases</span>.
+				<span class="text-dl-text">automatically downloaded from HuggingFace</span>.
 			</p>
 			<div class="font-mono text-sm leading-7">
 				<div>

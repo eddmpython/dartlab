@@ -14,7 +14,7 @@
 			icon: Code2,
 			step: '02',
 			title: 'Create Company',
-			desc: 'Start from the public entrypoint. Missing data is auto-downloaded from GitHub Releases.',
+			desc: 'Start from the public entrypoint. Missing data is auto-downloaded from HuggingFace.',
 			code: 'c = dartlab.Company("005930")',
 			color: 'text-dl-accent bg-dl-accent/10 border-dl-accent/20'
 		},

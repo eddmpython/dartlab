@@ -85,7 +85,7 @@ def _ensureData(stockCode: str, category: str) -> bool:
 
     label = DATA_RELEASES[category]["label"]
 
-    # 2단계: HuggingFace 다운로드 (GH Release fallback 포함)
+    # 2단계: HuggingFace 다운로드
     emit("download:start", stockCode=stockCode, label=label)
     try:
         _download(stockCode, dest, category)

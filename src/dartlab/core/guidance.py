@@ -30,13 +30,10 @@ _SIMPLE: dict[str, str] = {
     "download:failed_single": "✗ {stockCode} ({label}) 다운로드 실패: {error}",
     "download:failed_item": "✗ {name} 실패: {error}",
     "download:refreshed": "✓ {stockCode} 데이터 갱신 완료",
-    # downloadAll
-    "download_all:query": "{label} — GitHub Release 에셋 목록 조회 중... ({tagCount}개 태그)",
-    "download_all:tag_count": "  {tag}: {count}개",
-    "download_all:start": "{action} {count}종목 다운로드 시작 (이미 존재: {skipped})",
-    "download_all:uptodate": "✓ 전체 {count}종목 이미 최신",
-    "download_all:done": "✓ 전체 다운로드 완료 → {dataDir}",
-    "download_all:done_with_errors": "✓ 완료 (실패: {failed}건)",
+    # downloadAll (HuggingFace snapshot_download)
+    "download_all:hf_start": "{label} — HuggingFace ({repo}/{dir}) 전체 다운로드 시작...",
+    "download_all:hf_retry": "⚠ 다운로드 재시도 ({attempt}/{maxRetries})... {error}",
+    "download_all:hf_done": "✓ {label} 전체 다운로드 완료 — {count}종목 → {dataDir}",
     # collect (투채널 자동 수집)
     "collect:start": "{stockCode} ({label}) → 로컬에 없음. DART API로 수집 중... ({keyCount}키 {mode})",
     "collect:done": "✓ {label} 수집 완료 ({sizeStr})",
@@ -73,6 +70,11 @@ _SIMPLE: dict[str, str] = {
     # scan
     "scan:signal_start": "서술형 시그널 스캔: {count}사",
     "scan:network_health": "그룹 건전성 분석 중...",
+    # 전사 분석 데이터 필요 안내
+    "hint:market_data_needed": (
+        "⚠ {category} 데이터가 로컬에 없습니다. {fn}은 전체 시장 데이터가 필요합니다.\n"
+        "  dartlab.downloadAll('{category}')  # pip install dartlab[hf] 필요"
+    ),
     # edgar universe
     "edgar:universe_update": "SEC listed universe 갱신 중...",
     "edgar:universe_save": "저장 완료: {path}",

@@ -28,4 +28,4 @@ Running on Colab requires no additional installation. To run locally, install fi
 uv add dartlab
 ```
 
-Data is automatically downloaded from GitHub Releases when you enter a stock code.
+Data is automatically downloaded from HuggingFace when you enter a stock code.

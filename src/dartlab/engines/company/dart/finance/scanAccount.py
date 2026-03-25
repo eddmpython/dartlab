@@ -302,7 +302,9 @@ def scanAccount(
     parquetFiles = sorted(financeDir.glob("*.parquet"))
 
     if not parquetFiles:
-        _log.warning("finance parquet 없음: %s", financeDir)
+        from dartlab.core.guidance import emit
+
+        emit("hint:market_data_needed", category="finance", fn="scanAccount")
         return pl.DataFrame({"stockCode": []})
 
     fastKeys = _buildFastKeys(snakeId)

@@ -43,7 +43,7 @@
 	const techSpecs = [
 		{ label: 'Runtime', value: 'Polars (not Pandas)' },
 		{ label: 'Data format', value: 'Parquet (columnar)' },
-		{ label: 'Auto download', value: 'GitHub Releases CDN' },
+		{ label: 'Auto download', value: 'HuggingFace Datasets' },
 		{ label: 'Incremental', value: 'mtime-based delta sync' },
 		{ label: 'Cache', value: 'Company object reuse' },
 		{ label: 'Python', value: '3.12+ required' }

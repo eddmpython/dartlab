@@ -72,7 +72,7 @@
 
 - `brand.ts`가 landing 전역 설정의 source of truth
 - `description` (영문), `descriptionKo` (한국어) 이중 관리
-- `data` 블록: GitHub Release 태그/디렉토리 정의 (`dataConfig.py`와 동기)
+- `data` 블록: HuggingFace 데이터셋 디렉토리/라벨 정의 (`dataConfig.py`와 동기)
 - `color` 블록: Tailwind `dl-*` 테마 색상 원본
 - 버전 변경 시 `syncBrand.js`가 CSS 변수로 전파
 

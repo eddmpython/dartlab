@@ -18,6 +18,12 @@ def scan_parquets(api_type: str, keep_cols: list[str]) -> pl.DataFrame:
     report_dir = Path(_dataDir("report"))
     parquet_files = sorted(report_dir.glob("*.parquet"))
 
+    if not parquet_files:
+        from dartlab.core.guidance import emit
+
+        emit("hint:market_data_needed", category="report", fn=api_type)
+        return pl.DataFrame()
+
     frames: list[pl.LazyFrame] = []
     for pf in parquet_files:
         try:

@@ -110,6 +110,28 @@ def collectAll(
     )
 
 
+def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None:
+    """HuggingFace에서 전체 시장 데이터를 다운로드. pip install dartlab[hf] 필요.
+
+    scanAccount, screen, digest 등 전사(全社) 분석 기능은 로컬에 전체 데이터가 있어야 동작합니다.
+    이 함수로 카테고리별 전체 데이터를 사전 다운로드하세요.
+
+    Args:
+        category: "finance" (재무 ~600MB), "docs" (공시 ~8GB), "report" (보고서 ~320MB).
+        forceUpdate: True면 이미 있는 파일도 최신으로 갱신.
+
+    Examples::
+
+        import dartlab
+        dartlab.downloadAll("finance")   # 재무 전체 — scanAccount/screen/benchmark 등에 필요
+        dartlab.downloadAll("report")    # 보고서 전체 — governance/workforce/capital/debt에 필요
+        dartlab.downloadAll("docs")      # 공시 전체 — digest/signal에 필요 (대용량 ~8GB)
+    """
+    from dartlab.core.dataLoader import downloadAll as _downloadAll
+
+    _downloadAll(category, forceUpdate=forceUpdate)
+
+
 def checkFreshness(stockCode: str, *, forceCheck: bool = False):
     """종목의 로컬 데이터가 최신인지 DART API로 확인.
 
@@ -944,6 +966,7 @@ __all__ = [
     "listing",
     "collect",
     "collectAll",
+    "downloadAll",
     "network",
     "screen",
     "benchmark",

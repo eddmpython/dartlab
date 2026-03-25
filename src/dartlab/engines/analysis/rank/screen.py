@@ -206,7 +206,16 @@ def buildMarketRatios(*, verbose: bool = True) -> pl.DataFrame:
         elapsed = time.time() - t0
         logger.info("[screen] %d종목 완료 (%ds)", len(rows), elapsed)
 
-    return pl.DataFrame(rows)
+    df = pl.DataFrame(rows)
+
+    # finance 데이터가 하나도 없으면 안내
+    ratioFilled = sum(1 for r in rows if r.get("roe") is not None)
+    if ratioFilled == 0 and rows:
+        from dartlab.core.guidance import emit
+
+        emit("hint:market_data_needed", category="finance", fn="screen")
+
+    return df
 
 
 # ── 캐시 ──
