@@ -66,13 +66,12 @@ dependencies = [
 [project.optional-dependencies]
 llm = [
     "openai>=1.0.0,<3",
+    "google-genai>=1.0.0,<2",
 ]
 llm-anthropic = [
     "openai>=1.0.0,<3",
-    "anthropic>=0.30.0,<2",
-]
-llm-gemini = [
     "google-genai>=1.0.0,<2",
+    "anthropic>=0.30.0,<2",
 ]
 charts = [
     "networkx>=3.6.1,<4",

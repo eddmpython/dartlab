@@ -243,7 +243,7 @@
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
 												{#if !ui.geminiDetail.sdkInstalled}
 													<div class="text-[12px] text-dl-text mb-2.5">google-genai 패키지가 필요합니다</div>
-													<div class="text-[10px] text-dl-text-dim"><code class="px-1 py-0.5 rounded bg-dl-bg-darker">pip install dartlab[llm-gemini]</code></div>
+													<div class="text-[10px] text-dl-text-dim"><code class="px-1 py-0.5 rounded bg-dl-bg-darker">pip install dartlab[llm]</code></div>
 												{:else if !ui.geminiDetail.clientSecretExists}
 													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 설정 (최초 1회)</div>
 													<div class="text-[10px] text-dl-text-dim mb-2">
