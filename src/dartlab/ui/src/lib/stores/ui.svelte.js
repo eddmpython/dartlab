@@ -19,6 +19,7 @@ import {
 	oauthAuthorize,
 	oauthLogout,
 	oauthStatus,
+	geminiSaveClientSecret,
 	geminiOauthAuthorize,
 	geminiOauthLogout,
 	geminiOauthStatus,
@@ -114,6 +115,7 @@ export function createUiStore() {
 	let codexDetail = $state({});
 	let oauthCodexDetail = $state({});
 	let geminiDetail = $state({});
+	let geminiClientSecretInput = $state("");
 	let oauthLoginPending = $state(false);
 	let geminiLoginPending = $state(false);
 	let channelBusy = $state({});
@@ -405,6 +407,20 @@ export function createUiStore() {
 			showToast("Gemini OAuth 로그아웃 완료", "success");
 		} catch {
 			showToast("Gemini OAuth 로그아웃 실패");
+		}
+	}
+
+	async function handleGeminiSaveClientSecret() {
+		const raw = geminiClientSecretInput.trim();
+		if (!raw) return;
+		try {
+			await geminiSaveClientSecret(raw);
+			geminiDetail = { ...geminiDetail, clientSecretExists: true };
+			geminiClientSecretInput = "";
+			showToast("Google OAuth 설정 완료 — 이제 로그인할 수 있습니다", "success");
+			await refreshProviderStatus("gemini", true);
+		} catch (e) {
+			showToast(`설정 실패: ${e?.message || "unknown"}`);
 		}
 	}
 
@@ -731,7 +747,10 @@ export function createUiStore() {
 		handleOauthCodexLogout,
 		handleGeminiOauthLogin,
 		handleGeminiOauthLogout,
+		handleGeminiSaveClientSecret,
 		get geminiLoginPending() { return geminiLoginPending; },
+		get geminiClientSecretInput() { return geminiClientSecretInput; },
+		set geminiClientSecretInput(v) { geminiClientSecretInput = v; },
 		startPullModel,
 		cancelPull,
 		loadStatus,

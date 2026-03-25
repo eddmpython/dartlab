@@ -245,13 +245,25 @@
 													<div class="text-[12px] text-dl-text mb-2.5">google-genai 패키지가 필요합니다</div>
 													<div class="text-[10px] text-dl-text-dim"><code class="px-1 py-0.5 rounded bg-dl-bg-darker">pip install dartlab[llm-gemini]</code></div>
 												{:else if !ui.geminiDetail.clientSecretExists}
-													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 설정이 필요합니다</div>
+													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 설정 (최초 1회)</div>
 													<div class="text-[10px] text-dl-text-dim mb-2">
-														<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline">Google Cloud Console</a>에서 OAuth 2.0 Client ID (Desktop app)를 생성하고 JSON을 다운로드하세요.
+														<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline">Google Cloud Console</a> → OAuth 2.0 Client ID (Desktop app) → JSON 다운로드 후 아래에 붙여넣기
 													</div>
-													<div class="text-[10px] text-dl-text-dim">
-														파일 위치: <code class="px-1 py-0.5 rounded bg-dl-bg-darker">~/.dartlab/gemini_client_secret.json</code>
-													</div>
+													<textarea
+														bind:value={ui.geminiClientSecretInput}
+														placeholder="Google Cloud Console에서 다운로드한 JSON 내용을 붙여넣기"
+														rows="3"
+														class="w-full bg-dl-bg-darker border border-dl-border rounded-lg px-3 py-2 text-[10px] text-dl-text placeholder:text-dl-text-dim/40 outline-none focus:border-dl-primary/50 transition-colors font-mono resize-none mt-1"
+													></textarea>
+													{#if ui.geminiClientSecretInput.trim()}
+														<button
+															class="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[11px] font-medium hover:bg-dl-primary/30 transition-colors"
+															onclick={() => ui.handleGeminiSaveClientSecret()}
+														>
+															<Key size={12} />
+															설정 저장
+														</button>
+													{/if}
 												{:else}
 													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 로그인이 필요합니다</div>
 													<div class="text-[10px] text-dl-text-dim mb-2.5">
