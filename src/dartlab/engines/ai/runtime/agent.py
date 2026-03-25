@@ -114,6 +114,7 @@ def agent_loop_stream(
     on_tool_call: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str], None] | None = None,
     question_type: str | None = None,
+    force_tool_first_turn: bool = True,
 ) -> Generator[str, None, None]:
     """스트리밍 에이전트 루프: tool 실행 후 최종 답변을 청크로 yield.
 
@@ -123,8 +124,20 @@ def agent_loop_stream(
     tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
     tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools, hasCompany=company is not None)
 
+    # 대화형 질문은 첫 턴 도구 강제 안 함
+    _isConversation = question_type in ("대화", "메타")
+
     for _turn in range(max_turns):
-        response = provider.complete_with_tools(messages, tools)
+        # 첫 턴에서 회사 분석 질문이면 도구 호출 강제 (provider 지원 시)
+        kwargs: dict = {}
+        if _turn == 0 and force_tool_first_turn and not _isConversation and company is not None:
+            kwargs["tool_choice"] = "any"
+
+        try:
+            response = provider.complete_with_tools(messages, tools, **kwargs)
+        except TypeError:
+            # provider가 tool_choice를 지원하지 않으면 kwargs 없이 재시도
+            response = provider.complete_with_tools(messages, tools)
 
         if not response.tool_calls:
             if _turn == 0:

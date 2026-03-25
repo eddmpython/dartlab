@@ -61,10 +61,14 @@ def registerChartTool(company: Any, registerTool) -> None:
     registerTool(
         "chart",
         chart,
-        "UI 제어/차트 생성.\n"
+        "UI 차트/뷰어 제어 — 차트 생성, 뷰어 이동.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: '차트로 보여줘', 사업개요 뷰어로 이동\n"
+        "✗ 이 도구를 쓰지 않는 경우: 데이터 조회 → explore/finance, 분석 → analyze\n"
+        "\n"
         "action별 동작:\n"
-        "- navigate: 뷰어 특정 위치로 이동 (target 필수)\n"
-        "- chart: 차트 생성 (chartType, module 필수)",
+        "- navigate: 뷰어 특정 위치로 이동 (target 필수). 예: chart(action='navigate', target='businessOverview')\n"
+        "- chart: 차트 생성 (chartType, module 선택). 예: chart(action='chart', chartType='auto')",
         {
             "type": "object",
             "properties": {

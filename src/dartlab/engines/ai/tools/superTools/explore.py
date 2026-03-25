@@ -192,15 +192,19 @@ def registerExploreTool(company: Any, registerTool) -> None:
     registerTool(
         "explore",
         explore,
-        "기업 공시 데이터 탐색. 사업보고서, 재무요약, 리스크, 배당 등 모든 공시 원문에 접근.\n"
+        "기업 공시 데이터 탐색 — 사업보고서, 리스크, 배당, 주석 등 공시 원문 조회.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: 사업개요, 리스크, 원재료, 부문정보, 경영진분석, 주석 등 서술형/공시 질문\n"
+        "✗ 이 도구를 쓰지 않는 경우: 매출·영업이익·ROE 등 재무 숫자 → finance 사용\n"
+        "\n"
         "action별 동작:\n"
-        "- show: topic 데이터 조회 (target 필수, block 선택)\n"
-        "- topics: 사용 가능한 전체 topic 목록\n"
+        "- show: topic 데이터 조회 (target 필수). 예: explore(action='show', target='businessOverview')\n"
+        "- topics: 사용 가능한 전체 topic 목록. topic을 모를 때 먼저 호출\n"
         "- trace: topic 출처 추적 (target 필수)\n"
-        "- diff: 기간간 변화 분석 (target 선택)\n"
-        "- info: 기업 기본 정보\n"
+        "- diff: 기간간 변화 분석 (target 선택). 예: explore(action='diff', target='riskFactor')\n"
+        "- info: 기업 기본 정보 (업종, 대표자, 상장일)\n"
         "- filings: 공시 문서 목록\n"
-        "- search: sections 내 키워드 검색 (keyword 필수)",
+        "- search: 키워드로 topic 검색 (keyword 필수). 예: explore(action='search', keyword='비용의 성격별분류')",
         {
             "type": "object",
             "properties": {

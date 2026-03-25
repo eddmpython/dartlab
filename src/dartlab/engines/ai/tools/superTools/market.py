@@ -74,9 +74,13 @@ def registerMarketTool(registerTool: Callable) -> None:
     registerTool(
         "market",
         market,
-        "시장 데이터 조회. 현재가, 컨센서스, 주가이력, 스크리닝.\n"
+        "시장/주가 데이터 조회 — 현재가, 컨센서스, 주가이력.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: '현재 주가?', '애널리스트 목표가?', '최근 1년 주가 추이?'\n"
+        "✗ 이 도구를 쓰지 않는 경우: 재무제표 숫자 → finance, 공시 원문 → explore\n"
+        "\n"
         "action별 동작:\n"
-        "- price: 현재 주가 (code 필수)\n"
+        "- price: 현재 주가 (code 필수). 예: market(action='price', code='005930')\n"
         "- consensus: 애널리스트 컨센서스 (code 필수)\n"
         "- history: 주가 이력 (code 필수, days 선택)\n"
         "- screen: 시장 스크리닝 (criteria 필수)",

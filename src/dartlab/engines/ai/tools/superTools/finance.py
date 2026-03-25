@@ -206,15 +206,20 @@ def registerFinanceTool(company: Any, registerTool) -> None:
     registerTool(
         "finance",
         finance,
-        "재무 데이터 조회/분석. 재무제표, 비율, 성장률, 이상치, 정형 보고서 데이터 접근.\n"
+        "재무 숫자 데이터 조회/분석 — 재무제표(IS/BS/CF), 재무비율, 성장률, 배당, 임원보수 등.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: 매출, 영업이익, ROE, 부채비율 등 숫자 기반 재무 질문\n"
+        "✓ 배당·최대주주·임원보수 → finance(action='report', apiType='dividend/majorHolder/executive')\n"
+        "✗ 이 도구를 쓰지 않는 경우: 사업개요, 리스크, 경영진분석 등 서술형 질문 → explore 사용\n"
+        "\n"
         "action별 동작:\n"
-        "- data: 모듈 데이터 조회 (module 필수)\n"
-        "- modules: 사용 가능한 모듈 목록\n"
-        "- ratios: 재무비율 자동 계산\n"
+        "- data: 재무제표 조회 (module 필수). 예: finance(action='data', module='IS')\n"
+        "- modules: 사용 가능한 모듈 목록. 어떤 module이 있는지 모를 때 호출\n"
+        "- ratios: 재무비율 자동 계산 (ROE, 부채비율 등)\n"
         "- growth: CAGR 성장률 (module 필수)\n"
-        "- yoy: 전년대비 변동률 (module 필수)\n"
+        "- yoy: 전년대비 변동률 (module 필수). 예: finance(action='yoy', module='IS')\n"
         "- anomalies: 이상치 탐지 (module 필수)\n"
-        "- report: 정기보고서 정형 데이터 (apiType 필수)\n"
+        "- report: 정기보고서 정형 데이터 (apiType 필수). 예: finance(action='report', apiType='dividend')\n"
         "- search: 키워드로 데이터 검색 (keyword 필수)",
         {
             "type": "object",

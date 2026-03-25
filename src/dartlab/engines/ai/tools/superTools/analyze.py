@@ -115,15 +115,19 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
     registerTool(
         "analyze",
         analyze,
-        "기업 심층 분석. 인사이트, 섹터, 순위, ESG, 밸류에이션, 공시변화, 감사.\n"
+        "기업 심층 분석 — 인사이트 등급, 섹터, 밸류에이션, ESG 등 파생 분석 결과 조회.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: '투자등급이 뭐야?', '적정주가?', 'ESG?', '업종 대비 위치?' 등 종합 판단 질문\n"
+        "✗ 이 도구를 쓰지 않는 경우: 원본 재무 숫자 → finance, 공시 원문 → explore 사용\n"
+        "\n"
         "action별 동작:\n"
         "- insight: 7영역 인사이트 등급 (수익성, 안정성, 성장성, 효율성, 배당, 밸류에이션, 거버넌스)\n"
         "- sector: WICS 섹터 정보 + 업종 비교\n"
         "- rank: 시가총액 순위\n"
         "- esg: ESG 공시 분석\n"
-        "- valuation: DCF/상대가치 밸류에이션\n"
+        "- valuation: DCF/상대가치 밸류에이션. 예: analyze(action='valuation')\n"
         "- changes: 공시 텍스트 변화 감지\n"
-        "- audit: 재무 감사 분석",
+        "- audit: 재무 감사 이상치 분석",
         {
             "type": "object",
             "properties": {

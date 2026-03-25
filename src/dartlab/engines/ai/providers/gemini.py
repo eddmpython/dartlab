@@ -128,6 +128,8 @@ class GeminiProvider(BaseProvider):
         self,
         messages: list[dict],
         tools: list[dict],
+        *,
+        tool_choice: str | None = None,
     ) -> ToolResponse:
         client = self._get_client()
         from google.genai import types
@@ -136,11 +138,24 @@ class GeminiProvider(BaseProvider):
 
         geminiTools = _convertToolsToGemini(tools)
 
+        # tool_choice: "any" → 반드시 도구 호출, "auto" → LLM 판단, "none" → 도구 금지
+        toolConfig = None
+        if tool_choice == "any":
+            toolConfig = types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="ANY"),
+            )
+        elif tool_choice == "none":
+            toolConfig = types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="NONE"),
+            )
+
         config = types.GenerateContentConfig(
             temperature=self.config.temperature,
             max_output_tokens=self.config.max_tokens,
             tools=geminiTools,
         )
+        if toolConfig is not None:
+            config.tool_config = toolConfig
         if systemInstruction:
             config.system_instruction = systemInstruction
 

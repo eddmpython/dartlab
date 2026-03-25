@@ -60,7 +60,11 @@ def registerOpenapiTool(registerTool: Callable) -> None:
     registerTool(
         "openapi",
         openapi,
-        "DART/EDGAR OpenAPI 직접 호출.\n"
+        "DART/EDGAR OpenAPI 직접 호출 — 실시간 공시 검색, 원본 API 접근.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: '최근 공시 검색', 'DART API로 직접 조회'\n"
+        "✗ 이 도구를 쓰지 않는 경우: 이미 로드된 공시 데이터 → explore, 재무 숫자 → finance\n"
+        "\n"
         "action별 동작:\n"
         "- dartCall: DART API 엔드포인트 호출 (endpoint, params 필수)\n"
         "- searchFilings: DART 공시 키워드 검색 (keyword 필수)\n"

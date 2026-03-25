@@ -91,11 +91,15 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
     registerTool(
         "system",
         system,
-        "시스템 정보/메타 도구. 스펙, 기능목록, 종목검색, 데이터상태.\n"
+        "시스템 메타 정보 — 기능 목록, 종목 검색, 데이터 상태 조회.\n"
+        "\n"
+        "✓ 이 도구를 쓰는 경우: '뭘 할 수 있어?', '삼성전자 종목코드?', '데이터 다운로드됐어?'\n"
+        "✗ 이 도구를 쓰지 않는 경우: 회사 분석 질문은 explore/finance/analyze 사용\n"
+        "\n"
         "action별 동작:\n"
         "- spec: 시스템 스펙 조회\n"
         "- features: 사용 가능한 기능 목록\n"
-        "- searchCompany: 종목 검색 (keyword 필수)\n"
+        "- searchCompany: 종목 검색 (keyword 필수). 예: system(action='searchCompany', keyword='삼성')\n"
         "- dataStatus: 데이터 다운로드 상태\n"
         "- suggest: 질문 추천",
         {
