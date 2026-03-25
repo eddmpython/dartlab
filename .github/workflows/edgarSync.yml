@@ -47,10 +47,12 @@ jobs:
           key: dartlab-edgar-docs
 
       - name: Collect EDGAR docs (batch ${{ matrix.batch }})
-        run: uv run python .github/scripts/syncEdgarDocs.py
+        run: |
+          OFFSET=$(( ${{ matrix.batch }} * 100 + ${BASE_OFFSET:-0} ))
+          EDGAR_BATCH_OFFSET=$OFFSET uv run python .github/scripts/syncEdgarDocs.py
         env:
           EDGAR_TIER: ${{ github.event.inputs.tier || 'sp500' }}
-          EDGAR_BATCH_OFFSET: ${{ matrix.batch * 100 + (github.event.inputs.batch_offset || 0) }}
+          BASE_OFFSET: ${{ github.event.inputs.batch_offset || '0' }}
           EDGAR_BATCH_SIZE: '100'
 
       # 수집 후 캐시 갱신
