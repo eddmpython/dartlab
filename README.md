@@ -82,6 +82,19 @@ pip install -e ".[all]"
 
 PyPI releases are published only when the core is stable. If you want the latest features (including experimental ones like audit, forecast, valuation), clone the repo directly — but expect occasional breaking changes.
 
+### Desktop App (Alpha)
+
+Skip all installation steps — download the standalone Windows launcher:
+
+- **[Download DartLab.exe](https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe)** from [dartlab-desktop](https://github.com/eddmpython/dartlab-desktop)
+- Also available from the [DartLab landing page](https://eddmpython.github.io/dartlab/)
+
+One-click launch — no Python, no terminal, no package manager required. The desktop app bundles the web UI with a built-in Python runtime.
+
+> **Alpha** — functional but incomplete. The desktop app is a Windows-only `.exe` launcher. macOS/Linux are not yet supported.
+
+---
+
 **No data setup required.** When you create a `Company`, dartlab automatically downloads the required data from [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data) (DART) or SEC API (EDGAR). The second run loads instantly from local cache.
 
 ## Quick Start

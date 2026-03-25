@@ -82,6 +82,19 @@ pip install -e ".[all]"
 
 PyPI 배포는 코어가 안정적일 때만 한다. 최신 기능(감사, 예측, 밸류에이션 등 실험적 기능 포함)을 바로 쓰고 싶다면 git clone을 권장하지만, 간헐적 breaking change에 주의해야 한다.
 
+### 데스크톱 앱 (Alpha)
+
+설치 과정 없이 바로 실행할 수 있는 Windows 런처:
+
+- **[DartLab.exe 다운로드](https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe)** — [dartlab-desktop](https://github.com/eddmpython/dartlab-desktop) 릴리즈
+- [DartLab 랜딩 페이지](https://eddmpython.github.io/dartlab/)에서도 다운로드 가능
+
+원클릭 실행 — Python, 터미널, 패키지 관리자 모두 불필요. 웹 UI와 내장 Python 런타임이 번들되어 있다.
+
+> **Alpha** — 동작하지만 불완전. Windows 전용 `.exe` 런처. macOS/Linux는 아직 미지원.
+
+---
+
 **설정 불필요.** `Company`를 생성하면 필요한 데이터를 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동으로 다운로드한다. EDGAR 데이터는 SEC API에서 가져온다. 두 번째 실행부터는 로컬 캐시로 즉시 로드된다.
 
 ## 빠른 시작
