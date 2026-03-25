@@ -723,7 +723,7 @@
 															<span class="text-dl-primary-light font-semibold flex-shrink-0">3</span>
 															<div>
 																완료되면 BotFather가 긴 문자열을 하나 보내줍니다.<br />
-																<code class="px-1.5 py-0.5 rounded bg-dl-bg-darker text-dl-text-muted font-mono text-[10px]">110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw</code><br />
+																<code class="px-1.5 py-0.5 rounded bg-dl-bg-darker text-dl-text-muted font-mono text-[10px]">123456789:ABCdefGHIjklMNOpqrsTUVwxyz</code><br />
 																이게 토큰입니다. 복사해서 아래에 붙여넣고 <strong class="text-dl-text">연결</strong>을 누르세요.
 															</div>
 														</div>
