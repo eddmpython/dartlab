@@ -6,7 +6,7 @@
 
 <h3>DartLab</h3>
 
-<p><b>One company map from disclosure filings — DART + EDGAR</b></p>
+<p><b>One company map from electronic disclosure filings — DART + EDGAR</b></p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>

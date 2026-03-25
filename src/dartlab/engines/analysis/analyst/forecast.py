@@ -39,6 +39,156 @@ def _ols(x: list[float], y: list[float]) -> tuple[float, float, float]:
     return slope, intercept, max(0.0, r_squared)
 
 
+# ── 다변량 OLS (순수 Python — 외부 의존성 없음) ──────────
+
+
+@dataclass
+class MultiOlsResult:
+    """다변량 OLS 결과."""
+
+    coefficients: list[float]  # [intercept, β1, β2, ...]
+    rSquared: float
+    adjRSquared: float
+    residuals: list[float]
+    standardErrors: list[float]  # 계수별 표준오차
+    tStats: list[float]  # 계수별 t-통계량
+    nObs: int
+    nFeatures: int
+
+
+def _olsMulti(
+    X: list[list[float]],
+    y: list[float],
+    *,
+    addIntercept: bool = True,
+) -> MultiOlsResult | None:
+    """다변량 OLS — 순수 Python, (X'X)^-1 X'y.
+
+    Parameters
+    ----------
+    X : 행 = 관측치, 열 = 독립변수
+    y : 종속변수
+    addIntercept : True이면 절편 열(1) 자동 추가
+
+    Returns
+    -------
+    MultiOlsResult | None — 데이터 부족/특이행렬이면 None
+    """
+    n = len(y)
+    if n < 2 or len(X) != n:
+        return None
+
+    k0 = len(X[0]) if X else 0
+    if k0 == 0:
+        return None
+
+    # 절편 열 추가
+    if addIntercept:
+        Xa = [[1.0] + row for row in X]
+    else:
+        Xa = [list(row) for row in X]
+
+    k = len(Xa[0])  # 총 변수 수 (절편 포함)
+    if n <= k:
+        return None
+
+    # X'X 계산
+    xtx = [[0.0] * k for _ in range(k)]
+    for row in Xa:
+        for i in range(k):
+            for j in range(i, k):
+                v = row[i] * row[j]
+                xtx[i][j] += v
+                if i != j:
+                    xtx[j][i] += v
+
+    # X'y 계산
+    xty = [0.0] * k
+    for idx in range(n):
+        for j in range(k):
+            xty[j] += Xa[idx][j] * y[idx]
+
+    # (X'X)^-1 via Gauss-Jordan
+    inv = _invertMatrix(xtx)
+    if inv is None:
+        return None
+
+    # β = (X'X)^-1 X'y
+    coeffs = [0.0] * k
+    for i in range(k):
+        for j in range(k):
+            coeffs[i] += inv[i][j] * xty[j]
+
+    # 잔차, R²
+    meanY = sum(y) / n
+    ssTot = sum((yi - meanY) ** 2 for yi in y)
+    residuals = []
+    ssRes = 0.0
+    for idx in range(n):
+        pred = sum(coeffs[j] * Xa[idx][j] for j in range(k))
+        r = y[idx] - pred
+        residuals.append(r)
+        ssRes += r * r
+
+    rSq = 1 - ssRes / ssTot if ssTot > 1e-15 else 0.0
+    rSq = max(0.0, rSq)
+    adjRSq = 1 - (1 - rSq) * (n - 1) / (n - k) if n > k else 0.0
+
+    # 표준오차, t-통계량
+    mse = ssRes / (n - k) if n > k else 0.0
+    se = []
+    tStats = []
+    for i in range(k):
+        vari = inv[i][i] * mse
+        sei = math.sqrt(max(vari, 0.0))
+        se.append(sei)
+        tStats.append(coeffs[i] / sei if sei > 1e-15 else 0.0)
+
+    return MultiOlsResult(
+        coefficients=coeffs,
+        rSquared=rSq,
+        adjRSquared=adjRSq,
+        residuals=residuals,
+        standardErrors=se,
+        tStats=tStats,
+        nObs=n,
+        nFeatures=k0,
+    )
+
+
+def _invertMatrix(m: list[list[float]]) -> list[list[float]] | None:
+    """Gauss-Jordan 역행렬 (순수 Python)."""
+    n = len(m)
+    # augmented [M | I]
+    aug = [row[:] + [1.0 if i == j else 0.0 for j in range(n)] for i, row in enumerate(m)]
+
+    for col in range(n):
+        # 피벗 선택 (부분 피벗)
+        maxVal = abs(aug[col][col])
+        maxRow = col
+        for row in range(col + 1, n):
+            if abs(aug[row][col]) > maxVal:
+                maxVal = abs(aug[row][col])
+                maxRow = row
+        if maxVal < 1e-12:
+            return None  # 특이행렬
+        if maxRow != col:
+            aug[col], aug[maxRow] = aug[maxRow], aug[col]
+
+        pivot = aug[col][col]
+        for j in range(2 * n):
+            aug[col][j] /= pivot
+
+        for row in range(n):
+            if row == col:
+                continue
+            factor = aug[row][col]
+            for j in range(2 * n):
+                aug[row][j] -= factor * aug[col][j]
+
+    return [row[n:] for row in aug]
+
+
 def _detectStructuralBreak(vals: list[float], minSegment: int = 4) -> int | None:
     """Chow Test 기반 구조적 변화점 감지."""
     n = len(vals)

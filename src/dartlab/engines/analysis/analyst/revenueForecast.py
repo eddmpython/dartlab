@@ -169,6 +169,10 @@ class RevenueForecastResult:
     forwardTestKey: str | None = None
     currency: str = "KRW"
 
+    # Phase 1: 회귀분석 확장 필드
+    marketImpliedGap: float | None = None  # 엔진예측 - 시장내재 (%, 양수=시장이 보수적)
+    investmentSignal: str | None = None  # "underpriced" | "overpriced" | "fair"
+
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
@@ -562,6 +566,12 @@ _SEGMENT_WEIGHT = 0.25
 _BACKLOG_WEIGHT = 0.15
 _BACKLOG_SECTORS = {"건설", "조선", "방산", "건설/토목", "조선/기계"}
 
+# 주가 내재 매출 역산 가중치 (시계열에서 할당)
+_PRICE_IMPLIED_WEIGHT = 0.10
+
+# 횡단면 회귀 가중치 (시계열에서 할당)
+_CROSS_SECTION_WEIGHT = 0.12
+
 
 def _extractSegmentForecasts(
     segmentRevenue: object,  # pl.DataFrame | None (TYPE_CHECKING 회피)
@@ -904,6 +914,8 @@ def forecastRevenue(
     horizon: int = 3,
     companyData: CompanyDataBundle | None = None,
     currency: str = "KRW",
+    marketCap: float | None = None,
+    crossSectionGrowth: float | None = None,
 ) -> RevenueForecastResult:
     """매출액 앙상블 예측."""
     warnings: list[str] = []
@@ -971,6 +983,28 @@ def forecastRevenue(
         blShare = min(_BACKLOG_WEIGHT, weights["timeseries"])
         weights["backlog"] = blShare
         weights["timeseries"] -= blShare
+
+    # ── Source 8: 주가 내재 매출 역산 ──
+    priceImpliedGrowth: float | None = None
+    priceImpliedResult = None
+    if marketCap and marketCap > 0 and "timeseries" in weights:
+        from dartlab.engines.analysis.analyst.priceImplied import reverseImpliedGrowth
+
+        priceImpliedResult = reverseImpliedGrowth(series, marketCap, horizon=horizon)
+        if priceImpliedResult and priceImpliedResult.impliedGrowthRate != 0.0:
+            priceImpliedGrowth = priceImpliedResult.impliedGrowthRate
+            piShare = min(_PRICE_IMPLIED_WEIGHT, weights["timeseries"])
+            weights["priceImplied"] = piShare
+            weights["timeseries"] -= piShare
+            assumptions.append(f"주가내재({piShare:.0%}): 시가총액 역산 내재성장률 {priceImpliedGrowth:.1f}%")
+
+    # ── Source 9: 횡단면 회귀 ──
+    crossSectionG: float | None = crossSectionGrowth
+    if crossSectionG is not None and "timeseries" in weights:
+        csShare = min(_CROSS_SECTION_WEIGHT, weights["timeseries"])
+        weights["crossSection"] = csShare
+        weights["timeseries"] -= csShare
+        assumptions.append(f"횡단면회귀({csShare:.0%}): 전 상장사 cross-section 예측 {crossSectionG:.1f}%")
 
     # 라이프사이클 기반 가중치 조정
     weights = _lifecycleWeightAdjustments(lifecycle, weights)
@@ -1119,6 +1153,14 @@ def forecastRevenue(
             decay = max(0.5, 1.0 - (yrOffset - 1) * 0.2)
             blendedGrowth += backlogSignal.impliedRevenueGrowth * decay * weights.get("backlog", 0)
 
+        # Source 8: 주가 내재 성장률
+        if priceImpliedGrowth is not None and "priceImplied" in weights:
+            blendedGrowth += priceImpliedGrowth * weights.get("priceImplied", 0)
+
+        # Source 9: 횡단면 회귀 성장률
+        if crossSectionG is not None and "crossSection" in weights:
+            blendedGrowth += crossSectionG * weights.get("crossSection", 0)
+
         projVal = prevRevenue * (1 + blendedGrowth / 100)
         projected.append(projVal)
         prevRevenue = projVal
@@ -1263,6 +1305,21 @@ def forecastRevenue(
             "applicable": backlogSignal.sectorsApplicable,
         }
 
+    # ── 주가 내재 갭 + 투자 신호 ──
+    marketImpliedGap: float | None = None
+    investmentSignal: str | None = None
+    if priceImpliedResult and priceImpliedGrowth is not None and growthRates:
+        from dartlab.engines.analysis.analyst.priceImplied import computeGap
+
+        avgForecastG = sum(growthRates) / len(growthRates)
+        computeGap(priceImpliedResult, avgForecastG)
+        marketImpliedGap = priceImpliedResult.gapVsForecast
+        investmentSignal = priceImpliedResult.signal
+
+        if marketImpliedGap is not None:
+            aiContext["market_implied_gap"] = marketImpliedGap
+            aiContext["investment_signal"] = investmentSignal
+
     # Forward test 키 생성 (저장은 opt-in)
     ftKey = None
     if stockCode:
@@ -1290,6 +1347,8 @@ def forecastRevenue(
         backlogSignal=backlogSignal,
         forwardTestKey=ftKey,
         currency=currency,
+        marketImpliedGap=marketImpliedGap,
+        investmentSignal=investmentSignal,
     )
 
 

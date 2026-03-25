@@ -1,7 +1,7 @@
 [project]
 name = "dartlab"
 version = "0.7.8"
-description = "공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR"
+description = "DART 전자공시 + EDGAR 공시를 하나의 회사 맵으로 — Python 재무 분석 라이브러리"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.12"
@@ -23,6 +23,11 @@ keywords = [
     "annual-report",
     "10-k",
     "xbrl",
+    "전자공시",
+    "재무제표",
+    "사업보고서",
+    "공시분석",
+    "다트",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",

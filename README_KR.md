@@ -6,7 +6,7 @@
 
 <h3>DartLab</h3>
 
-<p><b>공시 문서에서 하나의 회사 맵을 만든다 — DART + EDGAR</b></p>
+<p><b>DART 전자공시 + EDGAR에서 하나의 회사 맵을 만든다</b></p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>

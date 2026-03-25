@@ -121,13 +121,18 @@ const sections = [
 	}
 ];
 
-let llmsTxt = `# DartLab
+let llmsTxt = `# DartLab — DART 전자공시 분석 Python 라이브러리
 
-> One company map from disclosure filings — DART + EDGAR.
+> One company map from electronic disclosure filings — DART (Korea) + EDGAR (US).
+> DART 전자공시와 EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리.
 
-DartLab은 한국 DART와 미국 SEC EDGAR 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
+DartLab은 한국 DART 전자공시와 미국 SEC EDGAR 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
 sections(topic × period 수평화)가 뼈대이고, 그 위에 재무제표(BS/IS/CF), 47개 재무비율, 7영역 인사이트 등급이 올라간다.
+2,700개 이상의 한국 상장기업과 970개 이상의 미국 기업을 종목코드 하나로 분석할 수 있다.
 AI 크롤러와 답변 엔진을 위해 각 페이지의 markdown mirror도 함께 제공한다.
+
+## Keywords
+전자공시, DART, EDGAR, 사업보고서, 재무제표, 공시분석, financial statements, annual report, 10-K, XBRL, Python, dartlab
 
 `;
 
