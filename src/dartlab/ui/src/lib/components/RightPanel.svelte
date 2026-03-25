@@ -27,7 +27,7 @@
 
 <div class="flex flex-col h-full min-h-0 bg-dl-bg-dark">
 	<!-- Panel header -->
-	<div class="flex items-center justify-between h-10 px-4 border-b border-dl-border/40 flex-shrink-0">
+	<div class="relative z-30 flex items-center justify-between h-10 px-4 border-b border-dl-border/40 flex-shrink-0">
 		<div class="flex items-center gap-2 min-w-0">
 			{#if mode === "artifact"}
 				<div class="flex items-center gap-1.5">

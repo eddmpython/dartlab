@@ -188,8 +188,9 @@ export function createAskStreamCallbacks({
 				updates.meta = { ...(last?.meta || {}), dataReady: data.dataReady };
 			}
 			if (!last?.text?.trim()) {
-				updates.text = "분석 중 응답을 생성하지 못했습니다. 다시 시도해 주세요.";
+				updates.text = "응답을 받지 못했습니다. AI 서버가 일시적으로 응답하지 않았을 수 있습니다.";
 				updates.error = true;
+				updates.retryable = true;
 			}
 			if (data?.pluginHints?.length) {
 				updates.pluginHints = data.pluginHints;
@@ -208,15 +209,9 @@ export function createAskStreamCallbacks({
 			if (isStale()) return;
 			cancelChunkRaf();
 			chunkBuffer = "";
-			store.updateLastMessage({ text: `오류: ${err}`, loading: false, error: true });
+			const retryable = ["retry", "rate_limit"].includes(action);
+			store.updateLastMessage({ text: err, loading: false, error: true, errorAction: action || "", retryable });
 			store.flush();
-			if (action === "login") {
-				showToast?.(`${err} — 설정에서 Codex 로그인을 확인하세요`);
-			} else if (action === "install") {
-				showToast?.(`${err} — 설정에서 Codex 설치 안내를 확인하세요`);
-			} else {
-				showToast?.(err);
-			}
 			onStreamSettled?.();
 		},
 	};

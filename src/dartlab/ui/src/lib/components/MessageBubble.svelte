@@ -392,6 +392,16 @@
 					{/if}
 				</div>
 
+				{#if message.error && message.retryable && onRegenerate}
+					<button
+						class="flex items-center gap-2 mt-3 px-4 py-2 rounded-lg bg-dl-primary/15 text-dl-primary-light text-[13px] font-medium hover:bg-dl-primary/25 transition-colors"
+						onclick={() => onRegenerate?.()}
+					>
+						<RefreshCw size={14} />
+						다시 시도
+					</button>
+				{/if}
+
 				{#if message.contexts?.length > 0 && !message.loading}
 					<CitationPopover contexts={message.contexts} {contentEl} />
 				{/if}

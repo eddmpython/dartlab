@@ -704,7 +704,7 @@
 				{#if !ui.isMobile && workspace.panelOpen}
 					<PanelResizer onResize={handleRightPanelResize} />
 					<div
-						class="flex-shrink-0 transition-all duration-300"
+						class="relative z-30 flex-shrink-0 transition-all duration-300"
 						style="width: {panelWidth}; min-width: 360px; max-width: 85vw;"
 					>
 						<RightPanel
