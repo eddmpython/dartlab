@@ -223,4 +223,4 @@ for rf in d.riskFactors:
 ## 다음 단계
 
 - [4. Financial Ratios](./ratios) — 복합지표 (O-Score, Z''-Score 등) 계산 상세
-- [Insight Grades API](../api/insight) — 7영역 등급 + 이상치 탐지 API 레퍼런스
+- [Insight Grades API](../api/insight) — 10영역 등급 + 이상치 탐지 API 레퍼런스

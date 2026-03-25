@@ -107,7 +107,7 @@ c.sections                      # 전체 회사 맵 (topic × period)
 c.show("overview")              # topic 하나 열기
 c.BS                            # 재무상태표
 c.ratios                        # 재무비율 시계열
-c.insights                      # 7영역 등급 (A~F)
+c.insights                      # 10영역 등급 (A~F)
 c.filings()                     # 공시 문서 목록
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -312,7 +312,7 @@ dartlab.scanRatioList()
 > **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ```python
-c.insights                      # 7영역 분석
+c.insights                      # 10영역 분석
 c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
 c.insights.performance.grade    # → "A"
 c.insights.performance.details  # → ["매출 고성장 +8.3%", …]
@@ -564,7 +564,7 @@ us.show("10-K::item1ARiskFactors")  # 리스크 요인
 us.BS                               # SEC XBRL 재무상태표
 us.ratios                           # 동일한 47개 비율
 us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
-us.insights                         # 7영역 등급 (A~F)
+us.insights                         # 10영역 등급 (A~F)
 
 # analyst 함수 — USD 자동 감지
 dartlab.valuation("AAPL")           # DCF + DDM + 상대 밸류에이션 (USD)

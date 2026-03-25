@@ -14,13 +14,15 @@ engines/
 ├── gather/      # L2: 외부 수집 (naver/yahoo/fred/listing)
 ├── analysis/    # L2: 분석 모듈 통합
 │   ├── sector/  # WICS 섹터 분류
-│   ├── insight/ # 7영역 등급
+│   ├── insight/ # 10영역 등급
 │   ├── rank/    # 시장 순위
 │   ├── esg/     # ESG 분석
 │   ├── supply/  # 공급망
 │   ├── event/   # 이벤트 스터디
 │   ├── watch/   # 공시 변화 감지
-│   └── analyst/ # 밸류에이션 합성
+│   ├── analyst/ # 밸류에이션 합성
+│   ├── peer/    # 글로벌 피어 매핑 + 컨센서스
+│   └── research/# 교차분석 서술 엔진
 └── ai/          # L3: LLM 분석 (5 providers)
 ```
 

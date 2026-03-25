@@ -6,7 +6,7 @@ title: "8. Cross-Company Comparison"
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/08_cross_company.ipynb)
 
-Use DartLab's analysis engines to classify companies by sector, assign 7-area insight grades, and check market rankings.
+Use DartLab's analysis engines to classify companies by sector, assign 10-area insight grades, and check market rankings.
 
 - Sector classification (WICS 11 sectors)
 - Sector-specific benchmark parameters
@@ -189,5 +189,5 @@ print(df)
 
 - [Account Standardization and Timeseries](../api/timeseries) — 7-step mapping, snakeId list, normalization details
 - [Sector Classification](../api/sector) — Classification criteria and benchmark parameters
-- [Insight Grades](../api/insight) — 7-area grading criteria and anomaly detection
+- [Insight Grades](../api/insight) — 10-area grading criteria and anomaly detection
 - [Market Ranking](../api/rank) — Overall and within-sector ranking calculation

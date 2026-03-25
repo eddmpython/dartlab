@@ -9,14 +9,17 @@ analyze(stockCode)
   ├─ calcRatios(aSeries)                  ← 재무비율 + 복합지표 (O-Score, Z'', M-Score 등)
   ├─ detectFinancialSector(aSeries)       ← 금융업 자동 탐지
   │
-  ├─ 7영역 등급 산정 ─┐
+  ├─ 10영역 등급 산정 ─┐
   │   analyzePerformance                  │  각 영역 → InsightResult(grade, summary, risks, opportunities)
   │   analyzeProfitability                │
   │   analyzeHealth                       │
   │   analyzeCashflow                     │
   │   analyzeGovernance                   │
-  │   analyzeRiskSummary                  │  ← 다른 5영역 risk 종합
-  │   analyzeOpportunitySummary           │  ← 다른 5영역 opportunity 종합
+  │   analyzePredictability               │  ← 매출/이익 예측 가능성
+  │   analyzeUncertainty                  │  ← 불확실성 (변동성, 편차)
+  │   analyzeCoreEarnings                 │  ← 핵심이익 품질 (비경상 제거)
+  │   analyzeRiskSummary                  │  ← 다른 영역 risk 종합
+  │   analyzeOpportunitySummary           │  ← 다른 영역 opportunity 종합
   │                                       │
   ├─ runAnomalyDetection(8개 탐지기)      │
   ├─ calcDistress(ratios, anomalies)      │  ← 4축 스코어카드 + 신용등급 + 유동성
@@ -31,7 +34,7 @@ analyze(stockCode)
 | 파일 | 역할 |
 |------|------|
 | `pipeline.py` | 진입점. analyze() 오케스트레이션 |
-| `grading.py` | 7영역 등급 산정 (A~F). AREAS dict가 메타데이터+로직 공존 |
+| `grading.py` | 10영역 등급 산정 (A~F). AREAS dict가 메타데이터+로직 공존 |
 | `anomaly.py` | 8개 룰 기반 이상치 탐지기 |
 | `distress.py` | 4축 부실 예측 스코어카드. 모델별 해석 + 신용등급 + 유동성 |
 | `detector.py` | 금융업 자동 탐지 (6개 시그널) |

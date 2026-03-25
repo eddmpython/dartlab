@@ -107,7 +107,7 @@ c.sections                      # full company map (topic × period)
 c.show("overview")              # open one topic
 c.BS                            # balance sheet
 c.ratios                        # financial ratio time series
-c.insights                      # 7-area grades (A~F)
+c.insights                      # 10-area grades (A~F)
 c.filings()                     # disclosure document list
 
 us = dartlab.Company("AAPL")    # Apple (EDGAR)
@@ -312,7 +312,7 @@ Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
 ```python
-c.insights                      # 7-area analysis
+c.insights                      # 10-area analysis
 c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
 c.insights.performance.grade    # → "A"
 c.insights.performance.details  # → ["Revenue growth +8.3%", …]
@@ -564,7 +564,7 @@ us.show("10-K::item1ARiskFactors")  # risk factors
 us.BS                               # SEC XBRL balance sheet
 us.ratios                           # same 47 ratios
 us.diff("10-K::item7Mdna")          # MD&A text changes
-us.insights                         # 7-area grades (A~F)
+us.insights                         # 10-area grades (A~F)
 
 # analyst functions — auto-detect USD
 dartlab.valuation("AAPL")           # DCF + DDM + relative (USD)
@@ -923,7 +923,7 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI analysis examples
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/03_kr_us_compare.ipynb) | **Korea vs US** — Samsung vs Apple side-by-side |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/04_risk_diff.ipynb) | **Risk Diff** — track disclosure changes (Bloomberg can't) |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/05_sector_screening.ipynb) | **Sector Screening** — 8 presets, sector benchmarks |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/06_insight_anomaly.ipynb) | **Insight & Anomaly** — 7-area grading, 6 anomaly rules |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/06_insight_anomaly.ipynb) | **Insight & Anomaly** — 10-area grading, 6 anomaly rules |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/07_network_governance.ipynb) | **Network & Governance** — corporate relationship graph |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/08_signal_trend.ipynb) | **Signal Trends** — 48-keyword disclosure monitoring |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/09_ai_analysis.ipynb) | **AI Analysis** — `dartlab.ask()` with 7 LLM providers |

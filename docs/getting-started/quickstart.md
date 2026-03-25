@@ -104,7 +104,7 @@ c.finance.ratioSeries   # ratio time-series (raw)
 Grading across 7 areas (performance, profitability, stability, cash flow, governance, risk, opportunity):
 
 ```python
-c.insights                      # 7-area analysis
+c.insights                      # 10-area analysis
 c.insights.grades()             # → {"performance": "A", "profitability": "B", …}
 c.insights.performance.grade    # → "A"
 c.insights.performance.details  # → ["Revenue high growth +8.3%", …]

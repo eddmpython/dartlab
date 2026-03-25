@@ -228,7 +228,7 @@ Make sure you're running with `uv run python`, not just `python`. `uv run python
 
 ### Slow data download
 
-Data is downloaded from GitHub Releases, so speed depends on your network connection.
+Data is downloaded from HuggingFace, so speed depends on your network connection.
 
 ---
 

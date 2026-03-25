@@ -25,7 +25,7 @@ notebooks/
     ├── 03_kr_us_compare.ipynb        # Samsung vs Apple side-by-side
     ├── 04_risk_diff.ipynb            # Risk disclosure change tracking
     ├── 05_sector_screening.ipynb     # Screen by financial criteria
-    ├── 06_insight_anomaly.ipynb      # 7-area grading + anomaly detection
+    ├── 06_insight_anomaly.ipynb      # 10-area grading + anomaly detection
     ├── 07_network_governance.ipynb   # Corporate network & governance
     ├── 08_signal_trend.ipynb         # 48-keyword disclosure trends
     ├── 09_ai_analysis.ipynb          # AI-powered analysis (dartlab.ask)

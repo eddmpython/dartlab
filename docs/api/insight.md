@@ -13,7 +13,7 @@ from dartlab.engines.insight import analyze
 
 result = analyze("005930")
 
-# 7-area grades
+# 10-area grades
 result.grades()
 # {
 #   "performance": "A",

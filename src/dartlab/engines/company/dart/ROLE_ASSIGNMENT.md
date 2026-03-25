@@ -147,7 +147,7 @@ finance/report로 대체 불가능한 docs 고유 데이터:
 | `c.sector` | sector | WICS 섹터 분류 |
 | `c.sectorParams` | sector | 섹터별 파라미터 |
 | `c.rank` | rank | 시장/섹터 순위 |
-| `c.insights` | insight | 7영역 등급 분석 |
+| `c.insights` | insight | 10영역 등급 분석 |
 
 ## 구현 계획
 

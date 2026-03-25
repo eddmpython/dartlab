@@ -19,7 +19,7 @@ engines/common/finance/
 
 ```
 Layer 1: Adaptive Ratio Engine            Layer 2: Context Signal Fusion
-  과거 N년 → 최근 가중 + 트렌드     →      insight 등급 (7영역 A~F)
+  과거 N년 → 최근 가중 + 트렌드     →      insight 등급 (10영역 A~F)
   IQR 이상치 제거                            diff 변화율 (공시 텍스트)
   비율 경로 (연도별 점진 변화)               rank 순위 (sizeClass)
                                              → 시나리오 확률 동적 재가중
@@ -107,7 +107,7 @@ ebitda = op + dep           # EBITDA는 항상 OP + D&A
 **`ContextSignals` 데이터**:
 | 신호 | 소스 | 기본값 |
 |------|------|--------|
-| insight_grades | insight 엔진 7영역 | {} |
+| insight_grades | insight 엔진 10영역 | {} |
 | diff_change_rate | docs.diff() | 0.0 |
 | risk_change_rate | 리스크 topic 변화율 | 0.0 |
 | size_class | rank 엔진 | "Mid" |

@@ -5,13 +5,15 @@
 ```
 analysis/
 ├── sector/    # WICS 투자 섹터 분류 (11섹터, 23산업군)
-├── insight/   # 7영역 종합 등급 (성과/수익성/안정성/현금흐름/지배구조/리스크/기회)
+├── insight/   # 10영역 종합 등급 (성과/수익성/안정성/현금흐름/지배구조/리스크/기회/예측성/불확실성/핵심이익)
 ├── rank/      # 시장 규모 순위 (매출/자산/성장률, ~2700종목)
 ├── esg/       # ESG 공시 분석 (E/S/G 3축, 36토픽)
 ├── supply/    # 공급망 관계 + 리스크 스코어링
 ├── event/     # 공시 이벤트 스터디 (CAR/BHAR, t-test)
 ├── watch/     # 공시 변화 감지 (중요도 스코어링)
-└── analyst/   # 멀티소스 밸류에이션 합성 (DCF + consensus + peer)
+├── analyst/   # 멀티소스 밸류에이션 합성 (DCF + consensus + peer)
+├── peer/      # 글로벌 피어 매핑 (WICS→GICS) + 멀티소스 컨센서스
+└── research/  # 교차분석 서술 엔진 (narrative + thesis + sectorKpi)
 ```
 
 ## 의존 방향
@@ -24,6 +26,8 @@ rank ← gather.listing, common.finance, sector
 watch ← common.docs, sector
 esg, supply, event ← self-contained (duck-typed Company)
 analyst ← gather (절대 import)
+peer ← gather.consensus, gather.listing, sector
+research ← insight, peer, company (오케스트레이션)
 ```
 
 ## Company 부착
@@ -38,12 +42,14 @@ analyst ← gather (절대 import)
 | event | `c.eventStudy()` | method |
 | watch | `c.watch()` | method |
 | analyst | 별도 `Analyst()` 클래스 | standalone |
+| peer | `c.peers`, `c.peerConsensus` | property |
+| research | 별도 `research()` 함수 | standalone |
 
 모든 부착은 lazy import — Company 초기화 시 로드되지 않음.
 
 ## spec 체계
 
-- 7/8 모듈에 `spec.py` 존재 (analyst 미구현)
+- 9/10 모듈에 `spec.py` 존재 (analyst 미구현)
 - `engines/ai/spec.py`가 전체 수집
 - `test_spec_integrity.py`로 spec-코드 일치 검증
 
@@ -68,10 +74,12 @@ analysis/{module}/
 ## 모듈별 상세
 
 - `sector/DEV.md` — WICS 3단계 분류
-- `insight/DEV.md` — 7영역 등급 + 부실 모델
+- `insight/DEV.md` — 10영역 등급 + 부실 모델
 - `rank/DEV.md` — 시장 규모 순위
 - `esg/DEV.md` — ESG 3축 분석
 - `supply/DEV.md` — 공급망 리스크
 - `event/DEV.md` — 이벤트 스터디
 - `watch/DEV.md` — 공시 변화 감지
 - `analyst/DEV.md` — 밸류에이션 합성
+- `peer/` — 글로벌 피어 매핑 + 컨센서스
+- `research/` — 교차분석 서술 엔진 (experimental)

@@ -258,7 +258,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.7...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.8...HEAD
+[0.7.8]: https://github.com/eddmpython/dartlab/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/eddmpython/dartlab/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/eddmpython/dartlab/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/eddmpython/dartlab/compare/v0.7.4...v0.7.5
