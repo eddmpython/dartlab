@@ -410,7 +410,12 @@ class Company:
         return Path(config.dataDir) / "edgar" / "tickers.parquet"
 
     def __repr__(self):
-        return f"Company('{self.ticker}', {self.corpName})"
+        try:
+            from dartlab.display.richCompany import renderCompany
+
+            return renderCompany(self)
+        except ImportError:
+            return f"Company('{self.ticker}', {self.corpName})"
 
     @property
     def stockCode(self) -> str:
@@ -1086,6 +1091,43 @@ class Company:
         if topic is not None:
             return topicHistoryDataFrame(diffResult, topic)
         return diffSummaryDataFrame(diffResult)
+
+    def keywordTrend(
+        self,
+        keyword: str | None = None,
+        keywords: list[str] | None = None,
+    ) -> pl.DataFrame | None:
+        """공시 텍스트 키워드 빈도 추이 (topic × period × keyword).
+
+        사용법::
+
+            c.keywordTrend("AI")              # AI 키워드 topic별 연도 추이
+            c.keywordTrend(keywords=["AI", "supply chain"])
+            c.keywordTrend()                  # 내장 키워드 전체
+        """
+        from dartlab.engines.common.docs.diff import keywordFrequency
+
+        docsSections = self.docs.sections
+        if docsSections is None:
+            return None
+        kws = None
+        if keyword:
+            kws = [keyword]
+        elif keywords:
+            kws = keywords
+        return keywordFrequency(docsSections, keywords=kws)
+
+    def news(self, *, days: int = 30) -> pl.DataFrame:
+        """최근 뉴스 수집.
+
+        사용법::
+
+            c.news()           # 최근 30일 뉴스
+            c.news(days=7)     # 최근 7일
+        """
+        from dartlab.engines.gather import getDefaultGather
+
+        return getDefaultGather().news(self.ticker, market="US", days=days)
 
     def watch(
         self,

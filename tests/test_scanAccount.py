@@ -107,8 +107,8 @@ class TestScanAccountReal:
             if i < len(salesVals) and salesVals[i] is not None:
                 expected[str(y)] = salesVals[i]
 
-        # scanAccount 결과
-        df = scanAccount("sales")
+        # scanAccount 결과 (연간 모드로 비교)
+        df = scanAccount("sales", annual=True)
         row = df.filter(pl.col("stockCode") == "005930")
         assert row.height == 1, "삼성전자가 결과에 없음"
 

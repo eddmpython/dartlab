@@ -243,13 +243,28 @@
 		URL.revokeObjectURL(url);
 	}
 
-	// ── 변화율 계산 (finance 테이블: 인접 기간 열 비교) ──
+	// ── 변화율 계산 (finance 테이블: 최신→과거 역순이므로 오른쪽이 이전 기간) ──
 	function changeRate(row, columns, ci) {
-		if (ci < 2) return null; // 첫 열(계정명)과 마지막 기간 열은 비교 불가
+		if (ci < 1 || ci >= columns.length - 1) return null;
 		const cur = toNum(row[columns[ci]]);
-		const prev = toNum(row[columns[ci - 1]]);
+		const prev = toNum(row[columns[ci + 1]]);
 		if (isNaN(cur) || isNaN(prev) || prev === 0) return null;
 		return ((cur - prev) / Math.abs(prev)) * 100;
+	}
+
+	// ── 미니 스파크바 데이터 (핵심 행 전용, 3기간+) ──
+	function sparkData(row, columns) {
+		const vals = [];
+		for (let i = 1; i < columns.length; i++) {
+			const v = toNum(row[columns[i]]);
+			if (!isNaN(v)) vals.push(v);
+		}
+		if (vals.length < 3) return null;
+		// 역순(최신 먼저) → 시간순으로
+		vals.reverse();
+		const max = Math.max(...vals.map(Math.abs));
+		if (max === 0) return null;
+		return vals.map(v => v / max);
 	}
 </script>
 
@@ -347,15 +362,41 @@
 				<tbody>
 					{#each displayRows as row}
 						{@const isKey = isFinanceBlock(block) && isKeyRow(row, block.data.columns)}
+						{@const spark = isKey ? sparkData(row, block.data.columns) : null}
 						<tr class={isKey ? "row-key" : ""}>
 							{#each block.data.columns as col, ci}
 								{@const val = row[col]}
 								{@const isNum = ci > 0 && isNumeric(val)}
 								{@const rate = isFinanceBlock(block) && isNum ? changeRate(row, block.data.columns, ci) : null}
-								<td class="{ci === 0 && !isFinanceBlock(block) ? 'col-sticky' : ''} {isNum ? (isNegative(val) ? 'val-neg' : 'val-pos') : ''}">
-									{isNum ? formatNumber(val) : (val ?? "")}
+								<td
+									class="{ci === 0 && !isFinanceBlock(block) ? 'col-sticky' : ''} {isNum ? (isNegative(val) ? 'val-neg' : 'val-pos') : ''} {rate != null ? (rate > 0 ? 'yoy-up' : rate < 0 ? 'yoy-down' : '') : ''}"
+									title={rate != null ? `YoY ${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%` : undefined}
+								>
+									{#if ci === 0 && isFinanceBlock(block)}
+										<span class="inline-flex items-center gap-1.5">
+											<span>{val ?? ""}</span>
+											{#if spark}
+												<svg viewBox="0 0 {spark.length * 8} 14" class="spark-svg">
+													{#each spark as v, si}
+														{@const h = Math.abs(v) * 11}
+														<rect
+															x={si * 8}
+															y={13 - h}
+															width="6"
+															height={Math.max(h, 1)}
+															rx="1"
+															fill={v >= 0 ? "var(--color-dl-success)" : "var(--color-dl-primary)"}
+															opacity="0.5"
+														/>
+													{/each}
+												</svg>
+											{/if}
+										</span>
+									{:else}
+										{isNum ? formatNumber(val) : (val ?? "")}
+									{/if}
 									{#if rate != null}
-										<span class="text-[9px] ml-1 {rate >= 0 ? 'text-dl-success/70' : 'text-dl-primary/70'}">
+										<span class="yoy-badge {rate >= 0 ? 'yoy-badge-up' : 'yoy-badge-down'}">
 											{rate >= 0 ? "▲" : "▼"}{Math.abs(rate).toFixed(1)}%
 										</span>
 									{/if}

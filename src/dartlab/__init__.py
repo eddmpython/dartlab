@@ -243,6 +243,42 @@ def signal(keyword: str | None = None):
     return scan_signal(keyword)
 
 
+def news(query: str, *, market: str = "KR", days: int = 30):
+    """기업 뉴스 수집.
+
+    Args:
+        query: 기업명 또는 티커.
+        market: "KR" 또는 "US".
+        days: 최근 N일.
+
+    Example::
+
+        import dartlab
+        dartlab.news("삼성전자")
+        dartlab.news("AAPL", market="US")
+    """
+    from dartlab.engines.gather import getDefaultGather
+
+    return getDefaultGather().news(query, market=market, days=days)
+
+
+def crossBorderPeers(stockCode: str, *, topK: int = 5):
+    """한국 종목의 글로벌 피어 추천 (WICS→GICS 매핑).
+
+    Args:
+        stockCode: 한국 종목코드.
+        topK: 반환할 피어 수.
+
+    Example::
+
+        import dartlab
+        dartlab.crossBorderPeers("005930")  # → ["AAPL", "MSFT", ...]
+    """
+    from dartlab.engines.analysis.peer.discover import crossBorderPeers as _cb
+
+    return _cb(stockCode, topK=topK)
+
+
 def setup(provider: str | None = None):
     """AI provider 설정 안내 + 인터랙티브 설정.
 
@@ -653,6 +689,86 @@ def groupHealth():
     return _groupHealth()
 
 
+def scanAccount(
+    snakeId: str,
+    *,
+    market: str = "dart",
+    sjDiv: str | None = None,
+    fsPref: str = "CFS",
+    annual: bool = False,
+):
+    """전종목 단일 계정 시계열.
+
+    Args:
+        snakeId: 계정 식별자. 영문("sales") 또는 한글("매출액") 모두 가능.
+        market: "dart" (한국, 기본) 또는 "edgar" (미국).
+        sjDiv: 재무제표 구분 ("IS", "BS", "CF"). None이면 자동 결정. (dart만)
+        fsPref: 연결/별도 우선순위 ("CFS"=연결 우선, "OFS"=별도 우선). (dart만)
+        annual: True면 연간 (기본 False=분기별 standalone).
+
+    Example::
+
+        import dartlab
+        dartlab.scanAccount("매출액")                          # DART 분기별
+        dartlab.scanAccount("매출액", annual=True)              # DART 연간
+        dartlab.scanAccount("sales", market="edgar")            # EDGAR 분기별
+        dartlab.scanAccount("total_assets", market="edgar", annual=True)
+    """
+    if market == "edgar":
+        from dartlab.engines.company.edgar.finance.scanAccount import scanAccount as _edgarScan
+
+        return _edgarScan(snakeId, annual=annual)
+
+    from dartlab.engines.company.dart.finance.scanAccount import scanAccount as _scan
+
+    return _scan(snakeId, sjDiv=sjDiv, fsPref=fsPref, annual=annual)
+
+
+def scanRatio(
+    ratioName: str,
+    *,
+    market: str = "dart",
+    fsPref: str = "CFS",
+    annual: bool = False,
+):
+    """전종목 단일 재무비율 시계열.
+
+    Args:
+        ratioName: 비율 식별자 ("roe", "operatingMargin", "debtRatio" 등).
+        market: "dart" (한국, 기본) 또는 "edgar" (미국).
+        fsPref: 연결/별도 우선순위. (dart만)
+        annual: True면 연간 (기본 False=분기별).
+
+    Example::
+
+        import dartlab
+        dartlab.scanRatio("roe")                              # DART 분기별
+        dartlab.scanRatio("operatingMargin", annual=True)      # DART 연간
+        dartlab.scanRatio("roe", market="edgar", annual=True)  # EDGAR 연간
+    """
+    if market == "edgar":
+        from dartlab.engines.company.edgar.finance.scanAccount import scanRatio as _edgarRatio
+
+        return _edgarRatio(ratioName, annual=annual)
+
+    from dartlab.engines.company.dart.finance.scanAccount import scanRatio as _ratio
+
+    return _ratio(ratioName, fsPref=fsPref, annual=annual)
+
+
+def scanRatioList():
+    """사용 가능한 비율 목록.
+
+    Example::
+
+        import dartlab
+        dartlab.scanRatioList()
+    """
+    from dartlab.engines.company.dart.finance.scanAccount import scanRatioList as _list
+
+    return _list()
+
+
 def digest(
     *,
     sector: str | None = None,
@@ -749,6 +865,8 @@ __all__ = [
     "screen",
     "benchmark",
     "signal",
+    "news",
+    "crossBorderPeers",
     "audit",
     "forecast",
     "valuation",
@@ -760,6 +878,9 @@ __all__ = [
     "debt",
     "groupHealth",
     "digest",
+    "scanAccount",
+    "scanRatio",
+    "scanRatioList",
     "plugins",
     "reload_plugins",
     "verbose",

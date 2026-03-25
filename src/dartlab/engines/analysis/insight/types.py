@@ -163,6 +163,15 @@ class DistressResult:
         lines.append(f"모델 {self.modelCount}개 사용, 데이터 품질: {self.dataQuality}")
         return "\n".join(lines)
 
+    def _repr_html_(self) -> str:
+        """Jupyter/Marimo용 HTML."""
+        try:
+            from dartlab.display.notebook import htmlDistress
+
+            return htmlDistress(self)
+        except ImportError:
+            return f"<pre>{repr(self)}</pre>"
+
 
 @dataclass
 class AnalysisResult:
@@ -209,7 +218,21 @@ class AnalysisResult:
         return result
 
     def __repr__(self):
-        g = self.grades()
-        gradeStr = " ".join(f"{k[:4]}={v}" for k, v in g.items())
-        anomalyStr = f" anomalies={len(self.anomalies)}" if self.anomalies else ""
-        return f"AnalysisResult({self.corpName}, {gradeStr}{anomalyStr})"
+        try:
+            from dartlab.display.richInsight import renderInsight
+
+            return renderInsight(self)
+        except ImportError:
+            g = self.grades()
+            gradeStr = " ".join(f"{k[:4]}={v}" for k, v in g.items())
+            anomalyStr = f" anomalies={len(self.anomalies)}" if self.anomalies else ""
+            return f"AnalysisResult({self.corpName}, {gradeStr}{anomalyStr})"
+
+    def _repr_html_(self) -> str:
+        """Jupyter/Marimo용 HTML."""
+        try:
+            from dartlab.display.notebook import htmlInsight
+
+            return htmlInsight(self)
+        except ImportError:
+            return repr(self)

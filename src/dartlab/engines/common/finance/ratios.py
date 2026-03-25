@@ -317,6 +317,16 @@ class RatioResult:
     }
 
     def __repr__(self) -> str:
+        try:
+            from rich.console import Console
+
+            from dartlab.display.richRatio import renderRatio
+
+            console = Console(record=True, width=70)
+            console.print(renderRatio(self))
+            return console.export_text()
+        except ImportError:
+            pass
         lines: list[str] = []
         for group, fields in self._DISPLAY_GROUPS:
             rows = []

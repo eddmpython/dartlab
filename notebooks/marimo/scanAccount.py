@@ -12,62 +12,83 @@ import marimo
 __generated_with = "0.21.1"
 app = marimo.App()
 
+with app.setup:
+    import polars as pl
+
+    from dartlab import scanAccount
+
 
 @app.cell
 def _():
-    from dartlab.engines.company.dart.finance import scanAccount
-
-    # 전종목 매출(sales) 연간 시계열
-    df = scanAccount("sales")
+    # 전종목 매출 분기별 시계열 (기본=분기, 최신 먼저)
+    df = scanAccount("매출액")
     df
-    return (df, scanAccount)
+    return (df,)
 
 
 @app.cell
 def _(df):
-    import polars as pl
-
     # 삼성전자 매출 확인
-    df.filter(pl.col("stockCode") == "005930")
+    df.filter(pl.col("corpName").str.contains("삼성전자"))
     return
 
 
 @app.cell
-def _(scanAccount):
-    # BS 계정: 총자산
-    scanAccount("total_assets", sjDiv="BS")
+def _():
+    # 연간 매출 시계열
+    scanAccount("매출액", annual=True)
     return
 
 
 @app.cell
-def _(scanAccount):
-    # 별도재무제표(OFS) 우선으로 매출 추출
-    scanAccount("sales", fsPref="OFS")
+def _():
+    # 영업이익 분기별
+    scanAccount("영업이익")
+    return
+
+
+@app.cell
+def _():
+    # 자산총계 (BS 계정)
+    scanAccount("자산총계")
+    return
+
+
+@app.cell
+def _():
+    # 영문 snakeId도 사용 가능
+    scanAccount("operating_profit", annual=True)
+    return
+
+
+@app.cell
+def _():
+    # 별도재무제표(OFS) 우선
+    scanAccount("매출액", fsPref="OFS", annual=True)
     return
 
 
 @app.cell
 def _(df):
-    import polars as pl
-
-    # 2024년 매출 상위 10개 종목
-    df.filter(pl.col("2024").is_not_null()).sort("2024", descending=True).head(10)
+    # 최근 분기 매출 상위 10개
+    latest = [c for c in df.columns if c not in ("stockCode", "corpName")][0]
+    df.filter(pl.col(latest).is_not_null()).sort(latest, descending=True).head(10)
     return
 
 
 @app.cell
 def _(df):
-    import polars as pl
-
-    # YoY 매출 성장률 계산 (2023→2024)
+    # 직전 분기 대비 매출 성장률
+    cols = [c for c in df.columns if c not in ("stockCode", "corpName")]
+    cur, prev = cols[0], cols[1]
     growth = df.filter(
-        pl.col("2023").is_not_null() & pl.col("2024").is_not_null()
+        pl.col(cur).is_not_null() & pl.col(prev).is_not_null()
     ).with_columns(
-        ((pl.col("2024") - pl.col("2023")) / pl.col("2023").abs() * 100)
+        ((pl.col(cur) - pl.col(prev)) / pl.col(prev).abs() * 100)
         .round(2)
         .alias("growth_pct")
     )
-    growth.select("stockCode", "2023", "2024", "growth_pct").sort(
+    growth.select("stockCode", "corpName", prev, cur, "growth_pct").sort(
         "growth_pct", descending=True
     ).head(10)
     return
