@@ -12,6 +12,7 @@ ProviderName = Literal[
     "custom",
     "codex",
     "oauth-codex",
+    "gemini",
 ]
 
 

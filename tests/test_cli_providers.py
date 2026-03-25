@@ -154,7 +154,7 @@ class TestProviderRegistry:
     def test_available_providers(self):
         from dartlab.engines.ai.providers import available_providers
 
-        assert set(available_providers()) == {"openai", "ollama", "custom", "codex", "oauth-codex"}
+        assert set(available_providers()) == {"openai", "ollama", "custom", "codex", "oauth-codex", "gemini"}
 
     def test_create_codex_provider(self):
         from dartlab.engines.ai.providers import create_provider

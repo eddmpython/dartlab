@@ -71,6 +71,9 @@ llm-anthropic = [
     "openai>=1.0.0,<3",
     "anthropic>=0.30.0,<2",
 ]
+llm-gemini = [
+    "google-genai>=1.0.0,<2",
+]
 charts = [
     "networkx>=3.6.1,<4",
     "plotly>=5.0.0,<6",
@@ -88,6 +91,13 @@ event = [
 ]
 mcp = [
     "mcp[cli]>=1.0,<2",
+]
+display = [
+    "great-tables>=0.15.0,<1",
+    "itables>=2.0.0,<3",
+]
+altair = [
+    "altair>=5.0.0,<6",
 ]
 hf = [
     "huggingface-hub>=0.20.0,<1",
