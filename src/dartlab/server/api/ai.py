@@ -26,7 +26,6 @@ from ..models import (
     DartKeyUpdateRequest,
 )
 from ..services.ai_profile import (
-    build_gemini_detail,
     build_oauth_codex_detail,
     build_ollama_detail,
     probe_provider_availability,
@@ -123,10 +122,6 @@ def api_status(
     oauth_codex_detail = build_oauth_codex_detail(
         probe=probe and (target_provider is None or target_provider == "oauth-codex")
     )
-    gemini_detail = build_gemini_detail(
-        probe=probe and (target_provider is None or target_provider == "gemini")
-    )
-
     codex_detail = {"installed": False, "authenticated": False, "authMode": None, "loginStatus": None, "version": None}
     try:
         from dartlab.engines.ai.providers.support.cli_setup import detect_codex
@@ -170,7 +165,6 @@ def api_status(
         "providers": results,
         "ollama": ollama_detail,
         "codex": codex_detail,
-        "gemini": gemini_detail,
         "oauthCodex": oauth_codex_detail,
         "openDart": _build_open_dart_status(),
         "profile": profile_snapshot,
@@ -611,148 +605,6 @@ def _start_oauth_callback_server(port: int):
 
     def _run_server():
         server = HTTPServer(("127.0.0.1", port), CallbackHandler)
-        server.timeout = 120
-        server.handle_request()
-        server.server_close()
-
-    thread = threading.Thread(target=_run_server, daemon=True)
-    thread.start()
-
-
-_gemini_oauth_state: dict[str, Any] = {}
-
-
-@router.post("/api/gemini/client-secret")
-def api_gemini_save_client_secret(req: dict):
-    """Gemini OAuth client_secret.json 저장."""
-    from dartlab.engines.ai.providers.gemini import saveClientSecret
-
-    raw = req.get("clientSecret", "")
-    if not raw:
-        raise HTTPException(400, detail="clientSecret가 비어 있습니다.")
-    try:
-        saveClientSecret(raw)
-    except (json.JSONDecodeError, ValueError) as e:
-        raise HTTPException(400, detail=str(e))
-    return {"ok": True}
-
-
-@router.get("/api/gemini/oauth/authorize")
-def api_gemini_oauth_authorize():
-    """Gemini OAuth 인증 시작 — GPT와 동일한 PKCE 플로우."""
-    from dartlab.engines.ai.providers.gemini import OAUTH_REDIRECT_PORT, buildAuthUrl
-
-    try:
-        auth_url, verifier, state = buildAuthUrl()
-    except FileNotFoundError as e:
-        raise HTTPException(400, detail=str(e))
-
-    _gemini_oauth_state["verifier"] = verifier
-    _gemini_oauth_state["state"] = state
-    _gemini_oauth_state["done"] = False
-    _gemini_oauth_state["error"] = None
-
-    _start_gemini_oauth_callback_server(OAUTH_REDIRECT_PORT)
-
-    return {"authUrl": auth_url, "state": state}
-
-
-@router.get("/api/gemini/oauth/status")
-def api_gemini_oauth_status():
-    """Gemini OAuth 인증 완료 여부 폴링."""
-    if _gemini_oauth_state.get("error"):
-        return {"done": True, "error": _gemini_oauth_state["error"]}
-    if _gemini_oauth_state.get("done"):
-        return {"done": True, "error": None}
-    return {"done": False}
-
-
-@router.post("/api/gemini/oauth/logout")
-def api_gemini_oauth_logout():
-    """Gemini OAuth 토큰 제거."""
-    from dartlab.engines.ai.providers.gemini import revokeOAuth
-
-    revokeOAuth()
-    get_profile_manager().update(provider="gemini", updated_by="ui")
-    return {"ok": True}
-
-
-def _start_gemini_oauth_callback_server(port: int):
-    """Gemini OAuth 콜백을 받을 임시 HTTP 서버."""
-    import threading
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    from urllib.parse import parse_qs, urlparse
-
-    class GeminiCallbackHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            parsed = urlparse(self.path)
-            if parsed.path != "/auth/gemini/callback":
-                self.send_response(404)
-                self.end_headers()
-                return
-
-            params = parse_qs(parsed.query)
-            code = params.get("code", [None])[0]
-            state = params.get("state", [None])[0]
-            error = params.get("error", [None])[0]
-
-            if error:
-                _gemini_oauth_state["error"] = error
-                _gemini_oauth_state["done"] = True
-                self._respond_html("인증 실패", f"오류: {error}")
-                return
-
-            if state != _gemini_oauth_state.get("state"):
-                _gemini_oauth_state["error"] = "state_mismatch"
-                _gemini_oauth_state["done"] = True
-                self._respond_html("인증 실패", "보안 검증 실패 (state mismatch)")
-                return
-
-            if not code:
-                _gemini_oauth_state["error"] = "no_code"
-                _gemini_oauth_state["done"] = True
-                self._respond_html("인증 실패", "인증 코드를 받지 못했습니다")
-                return
-
-            try:
-                from dartlab.engines.ai.providers.gemini import exchangeCode
-
-                exchangeCode(code, _gemini_oauth_state["verifier"])
-                get_profile_manager().update(provider="gemini", updated_by="ui")
-                _gemini_oauth_state["done"] = True
-                self._respond_html("Gemini 인증 성공", "DartLab Gemini 인증이 완료되었습니다. 이 창을 닫아주세요.")
-            except _HANDLED_API_ERRORS as exc:
-                _gemini_oauth_state["error"] = str(exc)
-                _gemini_oauth_state["done"] = True
-                self._respond_html("인증 실패", f"토큰 교환 실패: {exc}")
-
-        def _respond_html(self, title: str, message: str):
-            import html as _html
-
-            safe_title = _html.escape(title)
-            safe_message = _html.escape(message)
-            markup = (
-                "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                f"<title>{safe_title}</title>"
-                "<style>body{font-family:system-ui;display:flex;align-items:center;"
-                "justify-content:center;min-height:100vh;margin:0;background:#050811;color:#e5e5e5}"
-                "div{text-align:center;padding:2rem}"
-                "h1{font-size:1.5rem;margin-bottom:1rem}"
-                "</style></head><body>"
-                f"<div><h1>{safe_title}</h1><p>{safe_message}</p></div>"
-                "<script>setTimeout(()=>window.close(),3000)</script>"
-                "</body></html>"
-            )
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(markup.encode("utf-8"))
-
-        def log_message(self, fmt, *args):
-            pass
-
-    def _run_server():
-        server = HTTPServer(("127.0.0.1", port), GeminiCallbackHandler)
         server.timeout = 120
         server.handle_request()
         server.server_close()

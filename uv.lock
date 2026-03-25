@@ -734,14 +734,13 @@ hf = [
     { name = "huggingface-hub" },
 ]
 llm = [
+    { name = "google-genai" },
     { name = "openai" },
 ]
 llm-anthropic = [
     { name = "anthropic" },
-    { name = "openai" },
-]
-llm-gemini = [
     { name = "google-genai" },
+    { name = "openai" },
 ]
 mcp = [
     { name = "mcp", extra = ["cli"] },
@@ -782,7 +781,8 @@ requires-dist = [
     { name = "discord-py", marker = "extra == 'channel-full'", specifier = ">=2.4,<3" },
     { name = "fastapi", marker = "extra == 'ai'", specifier = ">=0.135.1,<1" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.135.1,<1" },
-    { name = "google-genai", marker = "extra == 'llm-gemini'", specifier = ">=1.0.0,<2" },
+    { name = "google-genai", marker = "extra == 'llm'", specifier = ">=1.0.0,<2" },
+    { name = "google-genai", marker = "extra == 'llm-anthropic'", specifier = ">=1.0.0,<2" },
     { name = "great-tables", marker = "extra == 'display'", specifier = ">=0.15.0,<1" },
     { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "httpx", marker = "extra == 'ai'", specifier = ">=0.28.1,<1" },
@@ -820,7 +820,7 @@ requires-dist = [
     { name = "yfinance", marker = "extra == 'all'", specifier = ">=0.2.30,<1" },
     { name = "yfinance", marker = "extra == 'event'", specifier = ">=0.2.30,<1" },
 ]
-provides-extras = ["llm", "llm-anthropic", "llm-gemini", "charts", "ai", "event", "mcp", "display", "altair", "hf", "ui", "channel", "channel-ngrok", "channel-full", "all"]
+provides-extras = ["llm", "llm-anthropic", "charts", "ai", "event", "mcp", "display", "altair", "hf", "ui", "channel", "channel-ngrok", "channel-full", "all"]
 
 [package.metadata.requires-dev]
 dev = [

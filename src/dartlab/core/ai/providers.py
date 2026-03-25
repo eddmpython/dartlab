@@ -29,10 +29,11 @@ _PROVIDERS: dict[str, ProviderSpec] = {
     ),
     "gemini": ProviderSpec(
         id="gemini",
-        label="Google Gemini (구독/무료)",
-        description="Gemini 2.5 Pro/Flash, 브라우저 OAuth 로그인",
-        auth_kind="oauth",
-        setup_kind="oauth",
+        label="Google Gemini (무료)",
+        description="Gemini 2.5 Pro/Flash, AI Studio 무료 API key",
+        auth_kind="api_key",
+        setup_kind="api_key",
+        env_key="GEMINI_API_KEY",
         probe_policy="credentialed",
     ),
     "codex": ProviderSpec(

@@ -214,7 +214,7 @@
 											</div>
 										{/if}
 
-										{#if needsOAuth && name !== "gemini" && !info.available}
+										{#if needsOAuth && !info.available}
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
 												<div class="text-[12px] text-dl-text mb-2.5">ChatGPT OAuth 로그인이 필요합니다</div>
 												<div class="text-[10px] text-dl-text-dim mb-2.5">
@@ -235,68 +235,6 @@
 												{#if ui.oauthCodexDetail.tokenStored && !ui.oauthCodexDetail.authenticated}
 													<div class="text-[10px] text-amber-400 mt-2">저장된 토큰이 있지만 현재는 유효하지 않습니다. 다시 로그인하세요.</div>
 												{/if}
-											</div>
-										{/if}
-
-										<!-- Gemini OAuth -->
-										{#if name === "gemini" && !info.available}
-											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
-												{#if !ui.geminiDetail.sdkInstalled}
-													<div class="text-[12px] text-dl-text mb-2.5">google-genai 패키지가 필요합니다</div>
-													<div class="text-[10px] text-dl-text-dim"><code class="px-1 py-0.5 rounded bg-dl-bg-darker">pip install dartlab[llm]</code></div>
-												{:else if !ui.geminiDetail.clientSecretExists}
-													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 설정 (최초 1회)</div>
-													<div class="text-[10px] text-dl-text-dim mb-2">
-														<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline">Google Cloud Console</a> → OAuth 2.0 Client ID (Desktop app) → JSON 다운로드 후 아래에 붙여넣기
-													</div>
-													<textarea
-														bind:value={ui.geminiClientSecretInput}
-														placeholder="Google Cloud Console에서 다운로드한 JSON 내용을 붙여넣기"
-														rows="3"
-														class="w-full bg-dl-bg-darker border border-dl-border rounded-lg px-3 py-2 text-[10px] text-dl-text placeholder:text-dl-text-dim/40 outline-none focus:border-dl-primary/50 transition-colors font-mono resize-none mt-1"
-													></textarea>
-													{#if ui.geminiClientSecretInput.trim()}
-														<button
-															class="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[11px] font-medium hover:bg-dl-primary/30 transition-colors"
-															onclick={() => ui.handleGeminiSaveClientSecret()}
-														>
-															<Key size={12} />
-															설정 저장
-														</button>
-													{/if}
-												{:else}
-													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 로그인이 필요합니다</div>
-													<div class="text-[10px] text-dl-text-dim mb-2.5">
-														Google 계정으로 로그인하면 Gemini를 무료로 사용할 수 있습니다.
-													</div>
-													<button
-														class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
-														onclick={() => ui.handleGeminiOauthLogin()}
-														disabled={ui.geminiLoginPending}
-													>
-														{#if ui.geminiLoginPending}
-															<Loader2 size={12} class="animate-spin" />
-														{:else}
-															<Key size={12} />
-														{/if}
-														Google 로그인
-													</button>
-												{/if}
-											</div>
-										{/if}
-										{#if name === "gemini" && info.available}
-											<div class="px-4 pb-2 border-t border-dl-border/50 pt-2.5">
-												<div class="flex items-center gap-2">
-													<CheckCircle2 size={13} class="text-dl-success" />
-													<span class="text-[11px] text-dl-success">OAuth 인증됨</span>
-													<span class="text-[10px] text-dl-text-dim">— Google 계정</span>
-												</div>
-												<button
-													class="mt-2 text-[10px] text-dl-text-dim hover:text-dl-text transition-colors"
-													onclick={() => ui.handleGeminiOauthLogout()}
-												>
-													로그아웃
-												</button>
 											</div>
 										{/if}
 

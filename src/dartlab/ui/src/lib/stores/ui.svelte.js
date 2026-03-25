@@ -19,10 +19,6 @@ import {
 	oauthAuthorize,
 	oauthLogout,
 	oauthStatus,
-	geminiSaveClientSecret,
-	geminiOauthAuthorize,
-	geminiOauthLogout,
-	geminiOauthStatus,
 	pullOllamaModel,
 	startChannelConnection,
 	stopChannelConnection,
@@ -114,10 +110,7 @@ export function createUiStore() {
 	let ollamaDetail = $state({});
 	let codexDetail = $state({});
 	let oauthCodexDetail = $state({});
-	let geminiDetail = $state({});
-	let geminiClientSecretInput = $state("");
 	let oauthLoginPending = $state(false);
-	let geminiLoginPending = $state(false);
 	let channelBusy = $state({});
 	let channelInputs = $state({
 		telegram: { token: "" },
@@ -166,7 +159,6 @@ export function createUiStore() {
 		if (data.ollama) ollamaDetail = mergeProviderDetail(ollamaDetail, data.ollama, { preserveChecked: true });
 		if (data.codex) codexDetail = mergeProviderDetail(codexDetail, data.codex);
 		if (data.oauthCodex) oauthCodexDetail = mergeProviderDetail(oauthCodexDetail, data.oauthCodex, { preserveChecked: true });
-		if (data.gemini) geminiDetail = mergeProviderDetail(geminiDetail, data.gemini, { preserveChecked: true });
 		if (data.openDart) openDart = { ...openDart, ...data.openDart };
 		if (data.channels) channels = data.channels;
 		if (data.version) appVersion = data.version;
@@ -367,60 +359,6 @@ export function createUiStore() {
 			showToast("ChatGPT OAuth 로그아웃 완료", "success");
 		} catch {
 			showToast("OAuth 로그아웃 실패");
-		}
-	}
-
-	// ── Gemini OAuth ──
-	async function handleGeminiOauthLogin() {
-		if (geminiLoginPending) return;
-		geminiLoginPending = true;
-		try {
-			const { authUrl } = await geminiOauthAuthorize();
-			window.open(authUrl, "dartlab-gemini-oauth", "popup=yes,width=540,height=760");
-			const started = Date.now();
-			while (Date.now() - started < 120000) {
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-				const status = await geminiOauthStatus();
-				if (!status.done) continue;
-				if (status.error) throw new Error(status.error);
-				await refreshProviderStatus("gemini", true);
-				const profile = await fetchAiProfile();
-				await handleProfileChanged(profile);
-				showToast("Gemini OAuth 인증 완료", "success");
-				geminiLoginPending = false;
-				return;
-			}
-			throw new Error("oauth_timeout");
-		} catch (e) {
-			const message = e?.message === "oauth_timeout" ? "Gemini OAuth 인증 시간이 초과되었습니다" : `Gemini OAuth 인증 실패: ${e?.message || "unknown"}`;
-			showToast(message);
-		}
-		geminiLoginPending = false;
-	}
-
-	async function handleGeminiOauthLogout() {
-		try {
-			await geminiOauthLogout();
-			geminiDetail = { ...geminiDetail, authenticated: false, checked: true };
-			const profile = await fetchAiProfile();
-			await handleProfileChanged(profile);
-			showToast("Gemini OAuth 로그아웃 완료", "success");
-		} catch {
-			showToast("Gemini OAuth 로그아웃 실패");
-		}
-	}
-
-	async function handleGeminiSaveClientSecret() {
-		const raw = geminiClientSecretInput.trim();
-		if (!raw) return;
-		try {
-			await geminiSaveClientSecret(raw);
-			geminiDetail = { ...geminiDetail, clientSecretExists: true };
-			geminiClientSecretInput = "";
-			showToast("Google OAuth 설정 완료 — 이제 로그인할 수 있습니다", "success");
-			await refreshProviderStatus("gemini", true);
-		} catch (e) {
-			showToast(`설정 실패: ${e?.message || "unknown"}`);
 		}
 	}
 
@@ -721,7 +659,6 @@ export function createUiStore() {
 		get ollamaDetail() { return ollamaDetail; },
 		get codexDetail() { return codexDetail; },
 		get oauthCodexDetail() { return oauthCodexDetail; },
-		get geminiDetail() { return geminiDetail; },
 		get oauthLoginPending() { return oauthLoginPending; },
 
 		// pull
@@ -745,12 +682,6 @@ export function createUiStore() {
 		handleCodexLogout,
 		handleOauthCodexLogin,
 		handleOauthCodexLogout,
-		handleGeminiOauthLogin,
-		handleGeminiOauthLogout,
-		handleGeminiSaveClientSecret,
-		get geminiLoginPending() { return geminiLoginPending; },
-		get geminiClientSecretInput() { return geminiClientSecretInput; },
-		set geminiClientSecretInput(v) { geminiClientSecretInput = v; },
 		startPullModel,
 		cancelPull,
 		loadStatus,

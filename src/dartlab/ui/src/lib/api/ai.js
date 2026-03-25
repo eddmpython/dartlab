@@ -186,40 +186,6 @@ export async function oauthLogout() {
 	return res.json();
 }
 
-export async function geminiSaveClientSecret(clientSecret) {
-	const res = await fetch(`${BASE}/api/gemini/client-secret`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ clientSecret }),
-	});
-	if (!res.ok) {
-		const data = await res.json().catch(() => ({}));
-		throw new Error(data.detail || "client_secret 저장 실패");
-	}
-	return res.json();
-}
-
-export async function geminiOauthAuthorize() {
-	const res = await fetch(`${BASE}/api/gemini/oauth/authorize`);
-	if (!res.ok) {
-		const data = await res.json().catch(() => ({}));
-		throw new Error(data.detail || "Gemini OAuth 로그인 시작 실패");
-	}
-	return res.json();
-}
-
-export async function geminiOauthStatus() {
-	const res = await fetch(`${BASE}/api/gemini/oauth/status`);
-	if (!res.ok) throw new Error("Gemini OAuth 상태 확인 실패");
-	return res.json();
-}
-
-export async function geminiOauthLogout() {
-	const res = await fetch(`${BASE}/api/gemini/oauth/logout`, { method: "POST" });
-	if (!res.ok) throw new Error("Gemini OAuth 로그아웃 실패");
-	return res.json();
-}
-
 export async function startChannelConnection(platform, payload = {}) {
 	const res = await fetch(`${BASE}/api/channels/${encodeURIComponent(platform)}/start`, {
 		method: "POST",

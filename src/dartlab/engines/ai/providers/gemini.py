@@ -1,254 +1,30 @@
 """Google Gemini provider.
 
-인증: OAuth 2.0 (Google 계정 브라우저 로그인)
-- GPT OAuth와 동일한 플로우: 버튼 클릭 → 브라우저 → 콜백 → 토큰 저장
-- 토큰: ~/.dartlab/gemini_oauth.json
-- client_secret: ~/.dartlab/gemini_client_secret.json (최초 1회 설정)
-
-외부 OAuth 라이브러리 없이 표준 라이브러리 + httpx만 사용.
+인증: API key (AI Studio에서 무료 발급)
+- https://aistudio.google.com/apikey 에서 발급
+- GEMINI_API_KEY 또는 GOOGLE_API_KEY 환경변수, 또는 설정 패널에서 입력
 """
 
 from __future__ import annotations
 
-import hashlib
-import base64
-import json
 import logging
-import secrets
-import time
-from pathlib import Path
-from typing import Any, Generator
-from urllib.parse import urlencode
+from typing import Generator
 
 from dartlab.engines.ai.providers.base import BaseProvider
 from dartlab.engines.ai.types import LLMConfig, LLMResponse, ToolCall, ToolResponse
 
 _log = logging.getLogger(__name__)
 
-_DARTLAB_DIR = Path.home() / ".dartlab"
-_OAUTH_TOKEN_FILE = _DARTLAB_DIR / "gemini_oauth.json"
-_CLIENT_SECRET_FILE = _DARTLAB_DIR / "gemini_client_secret.json"
-
-_GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-_GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-_OAUTH_SCOPES = "https://www.googleapis.com/auth/generative-language"
-
-OAUTH_REDIRECT_PORT = 8098
-_REDIRECT_URI = f"http://localhost:{OAUTH_REDIRECT_PORT}/auth/gemini/callback"
-
-
-# ── PKCE (GPT OAuth와 동일) ──
-
-
-def _generatePkce() -> tuple[str, str]:
-    """PKCE code_verifier + code_challenge 생성."""
-    verifier = secrets.token_urlsafe(64)
-    digest = hashlib.sha256(verifier.encode("ascii")).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-    return verifier, challenge
-
-
-# ── Client credentials ──
-
-
-def _loadClientSecret() -> dict[str, str]:
-    """client_secret.json에서 client_id, client_secret 추출."""
-    if not _CLIENT_SECRET_FILE.exists():
-        raise FileNotFoundError(
-            "Gemini OAuth 설정이 필요합니다.\n"
-            "설정 패널에서 Google OAuth Client ID를 등록하세요."
-        )
-    data = json.loads(_CLIENT_SECRET_FILE.read_text(encoding="utf-8"))
-    for key in ("installed", "web"):
-        if key in data:
-            return {
-                "client_id": data[key]["client_id"],
-                "client_secret": data[key].get("client_secret", ""),
-            }
-    # 단순 형식: {"client_id": "...", "client_secret": "..."}
-    if "client_id" in data:
-        return {
-            "client_id": data["client_id"],
-            "client_secret": data.get("client_secret", ""),
-        }
-    raise ValueError("client_secret.json 형식이 올바르지 않습니다.")
-
-
-def saveClientSecret(clientSecretJson: str) -> None:
-    """GUI에서 받은 client_secret JSON을 저장."""
-    data = json.loads(clientSecretJson)
-    # 형식 검증
-    clientId = None
-    for key in ("installed", "web"):
-        if key in data:
-            clientId = data[key].get("client_id")
-            break
-    if not clientId:
-        clientId = data.get("client_id")
-    if not clientId:
-        raise ValueError("client_id를 찾을 수 없습니다.")
-    _DARTLAB_DIR.mkdir(parents=True, exist_ok=True)
-    _CLIENT_SECRET_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def hasClientSecret() -> bool:
-    """client_secret.json 존재 여부."""
-    return _CLIENT_SECRET_FILE.exists()
-
-
-# ── 토큰 관리 ──
-
-
-def _loadToken() -> dict[str, Any] | None:
-    """저장된 OAuth 토큰 JSON 로드."""
-    if not _OAUTH_TOKEN_FILE.exists():
-        return None
-    try:
-        return json.loads(_OAUTH_TOKEN_FILE.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, ValueError):
-        _log.warning("gemini OAuth 토큰 파일 손상 — 삭제")
-        _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
-        return None
-
-
-def _saveToken(token: dict[str, Any]) -> None:
-    """토큰 JSON 저장."""
-    _DARTLAB_DIR.mkdir(parents=True, exist_ok=True)
-    _OAUTH_TOKEN_FILE.write_text(json.dumps(token, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _refreshAccessToken(token: dict[str, Any]) -> dict[str, Any] | None:
-    """refresh_token으로 access_token 갱신."""
-    refreshToken = token.get("refresh_token")
-    if not refreshToken:
-        return None
-    try:
-        clientCreds = _loadClientSecret()
-    except (FileNotFoundError, ValueError):
-        return None
-
-    import httpx
-
-    resp = httpx.post(
-        _GOOGLE_TOKEN_URL,
-        data={
-            "grant_type": "refresh_token",
-            "refresh_token": refreshToken,
-            "client_id": clientCreds["client_id"],
-            "client_secret": clientCreds["client_secret"],
-        },
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        _log.warning(f"gemini OAuth 토큰 갱신 실패: {resp.status_code}")
-        return None
-
-    data = resp.json()
-    token["access_token"] = data["access_token"]
-    token["expires_at"] = time.time() + data.get("expires_in", 3600)
-    if "refresh_token" in data:
-        token["refresh_token"] = data["refresh_token"]
-    _saveToken(token)
-    return token
-
-
-def _getValidToken() -> dict[str, Any] | None:
-    """유효한 access_token이 있는 토큰 반환. 만료 시 자동 갱신."""
-    token = _loadToken()
-    if token is None:
-        return None
-
-    expiresAt = token.get("expires_at", 0)
-    if time.time() < expiresAt - 60:
-        return token
-
-    refreshed = _refreshAccessToken(token)
-    if refreshed is None:
-        _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
-        return None
-    return refreshed
-
-
-# ── OAuth 플로우 (GPT와 동일한 패턴) ──
-
-
-def buildAuthUrl() -> tuple[str, str, str]:
-    """OAuth authorize URL + PKCE verifier + state 반환."""
-    clientCreds = _loadClientSecret()
-    verifier, challenge = _generatePkce()
-    state = secrets.token_urlsafe(32)
-    params = {
-        "response_type": "code",
-        "client_id": clientCreds["client_id"],
-        "redirect_uri": _REDIRECT_URI,
-        "scope": _OAUTH_SCOPES,
-        "access_type": "offline",
-        "prompt": "consent",
-        "state": state,
-        "code_challenge": challenge,
-        "code_challenge_method": "S256",
-    }
-    url = f"{_GOOGLE_AUTH_URL}?{urlencode(params)}"
-    return url, verifier, state
-
-
-def exchangeCode(code: str, verifier: str) -> None:
-    """Authorization code → 토큰 교환 + 저장. (PKCE)"""
-    clientCreds = _loadClientSecret()
-
-    import httpx
-
-    resp = httpx.post(
-        _GOOGLE_TOKEN_URL,
-        data={
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": _REDIRECT_URI,
-            "client_id": clientCreds["client_id"],
-            "client_secret": clientCreds["client_secret"],
-            "code_verifier": verifier,
-        },
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        raise ValueError(f"토큰 교환 실패: {resp.status_code} {resp.text}")
-
-    data = resp.json()
-    token = {
-        "access_token": data["access_token"],
-        "refresh_token": data.get("refresh_token", ""),
-        "expires_at": time.time() + data.get("expires_in", 3600),
-        "token_type": data.get("token_type", "Bearer"),
-        "scope": data.get("scope", _OAUTH_SCOPES),
-    }
-    _saveToken(token)
-    _log.info("Gemini OAuth 인증 완료 — 토큰 저장됨")
-
-
-def revokeOAuth() -> None:
-    """저장된 OAuth 토큰 삭제."""
-    _OAUTH_TOKEN_FILE.unlink(missing_ok=True)
-
-
-def isOAuthAuthenticated() -> bool:
-    """Gemini OAuth 토큰이 유효한지 확인."""
-    return _getValidToken() is not None
-
-
-# ── Provider 클래스 ──
-
 
 class GeminiProvider(BaseProvider):
     """Google Gemini API provider.
 
-    google-genai SDK 기반. OAuth 2.0 전용.
+    google-genai SDK 기반. API key 인증.
     """
 
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         self._client = None
-        self._auth_method: str = "none"
 
     def _get_client(self):
         if self._client is not None:
@@ -256,39 +32,22 @@ class GeminiProvider(BaseProvider):
         try:
             from google import genai
         except ImportError:
-            raise ImportError("google-genai 패키지가 필요합니다.\n  uv add google-genai")
+            raise ImportError("google-genai 패키지가 필요합니다.\n  pip install dartlab[llm]")
 
-        # API key는 config에 명시적으로 설정한 경우에만 사용
-        if self.config.api_key:
-            self._client = genai.Client(api_key=self.config.api_key)
-            self._auth_method = "api_key"
-            return self._client
+        import os
 
-        # 기본: OAuth 2.0
-        token = _getValidToken()
-        if token is None:
+        apiKey = self.config.api_key
+        if not apiKey:
+            apiKey = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
+        if not apiKey:
             raise ValueError(
-                "Gemini OAuth 인증이 필요합니다.\n"
-                "  서버: 설정 패널에서 Google 로그인\n"
-                "  CLI: dartlab setup gemini"
+                "Gemini API key가 필요합니다.\n"
+                "  발급: https://aistudio.google.com/apikey (무료)\n"
+                "  설정: GEMINI_API_KEY 환경변수 또는 설정 패널에서 입력"
             )
 
-        try:
-            from google.oauth2.credentials import Credentials
-
-            creds = Credentials(
-                token=token["access_token"],
-                refresh_token=token.get("refresh_token"),
-                token_uri=_GOOGLE_TOKEN_URL,
-                client_id=_loadClientSecret()["client_id"],
-                client_secret=_loadClientSecret()["client_secret"],
-                scopes=[_OAUTH_SCOPES],
-            )
-            self._client = genai.Client(credentials=creds)
-        except ImportError:
-            raise ImportError("google-auth 패키지가 필요합니다.\n  uv add google-auth")
-
-        self._auth_method = "oauth"
+        self._client = genai.Client(api_key=apiKey)
         return self._client
 
     @property
@@ -300,12 +59,11 @@ class GeminiProvider(BaseProvider):
         return True
 
     def check_available(self) -> bool:
-        """OAuth 토큰이 있고 SDK가 설치되어 있으면 True."""
         try:
-            from google import genai  # noqa: F401
-        except ImportError:
+            self._get_client()
+            return True
+        except (ImportError, ValueError, OSError):
             return False
-        return _getValidToken() is not None
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
         client = self._get_client()
