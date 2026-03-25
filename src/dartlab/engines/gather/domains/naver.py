@@ -91,9 +91,7 @@ async def fetch_consensus(stock_code: str, client) -> ConsensusData | None:
         return None
 
     # 네이버 API v2: priceTargetMean / v1: targetPrice
-    target = _clean_number(
-        consensus_info.get("priceTargetMean") or consensus_info.get("targetPrice")
-    )
+    target = _clean_number(consensus_info.get("priceTargetMean") or consensus_info.get("targetPrice"))
     if not target or target <= 0:
         return None
 
@@ -192,7 +190,14 @@ async def fetch_flow(stock_code: str, client) -> list[dict] | None:
     if foreign_net == 0.0 and institution_net == 0.0 and foreign_holding_ratio == 0.0:
         return None
 
-    return [{"date": "", "foreignNet": foreign_net, "institutionNet": institution_net, "foreignHoldingRatio": foreign_holding_ratio}]
+    return [
+        {
+            "date": "",
+            "foreignNet": foreign_net,
+            "institutionNet": institution_net,
+            "foreignHoldingRatio": foreign_holding_ratio,
+        }
+    ]
 
 
 async def fetch_revenue_consensus(stock_code: str, client) -> list[RevenueConsensus]:
@@ -350,12 +355,14 @@ async def fetch_history(
         # 거래정지일 (open=0) 건너뛰기
         if o == 0.0:
             continue
-        rows.append({
-            "date": dt,
-            "open": o,
-            "high": float(parts[2]) if parts[2] else 0.0,
-            "low": float(parts[3]) if parts[3] else 0.0,
-            "close": float(parts[4]) if parts[4] else 0.0,
-            "volume": int(parts[5]) if parts[5] else 0,
-        })
+        rows.append(
+            {
+                "date": dt,
+                "open": o,
+                "high": float(parts[2]) if parts[2] else 0.0,
+                "low": float(parts[3]) if parts[3] else 0.0,
+                "close": float(parts[4]) if parts[4] else 0.0,
+                "volume": int(parts[5]) if parts[5] else 0,
+            }
+        )
     return rows  # 날짜 오름차순 (수정주가)

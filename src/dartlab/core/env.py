@@ -81,7 +81,7 @@ def promptAndSave(envKey: str, *, label: str, guide: str) -> str | None:
 
     print(f"\n  {label}")
     print(f"  {guide}")
-    print(f"  입력하면 프로젝트 .env 파일에 안전하게 저장됩니다. (공유되지 않음)\n")
+    print("  입력하면 프로젝트 .env 파일에 안전하게 저장됩니다. (공유되지 않음)\n")
 
     try:
         key = input(f"  {envKey}: ").strip()

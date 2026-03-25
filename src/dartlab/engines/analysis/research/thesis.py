@@ -305,12 +305,16 @@ def _mergeNarrative(
     bear: list[str],
     catalysts: list[str],
 ) -> None:
-    """narrative 교차분석 결과를 bull/bear/catalysts에 병합."""
+    """narrative 교차분석 결과를 bull/bear/catalysts에 병합 (요약만)."""
     for p in na.paragraphs:
+        # Deep Analysis 패널에 full body가 이미 표시되므로 짧은 title만 삽입
+        label = p.title or _firstSentence(p.body)
+        if not label:
+            continue
         if p.severity == "positive":
-            bull.insert(0, p.body)
+            bull.append(label)
         elif p.severity in ("negative", "warning"):
-            bear.insert(0, p.body)
+            bear.append(label)
     for fi in na.forwardImplications:
         catalysts.append(fi)
 

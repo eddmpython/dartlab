@@ -50,12 +50,14 @@ def _parseRss(data: str, *, days: int = 30) -> list[NewsItem]:
         source = item.findtext("source", "")
         dt = _parseDate(pubDate)
         if dt and dt.replace(tzinfo=None) >= cutoff:
-            items.append(NewsItem(
-                date=str(dt.date()),
-                title=unescape(title),
-                source=source,
-                url=link,
-            ))
+            items.append(
+                NewsItem(
+                    date=str(dt.date()),
+                    title=unescape(title),
+                    source=source,
+                    url=link,
+                )
+            )
     return items
 
 
@@ -81,6 +83,7 @@ async def _fetchAsync(
             data = resp.text
         else:
             import httpx
+
             async with httpx.AsyncClient(follow_redirects=True) as ac:
                 resp = await ac.get(url, timeout=10.0)
                 resp.raise_for_status()

@@ -37,13 +37,11 @@ def _joinCorpName(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("회사명").alias("corpName"),
         )
         yearCols = [c for c in df.columns if c != "stockCode"]
-        return (
-            df.join(kindDf, on="stockCode", how="left")
-            .select(["stockCode", "corpName"] + yearCols)
-        )
+        return df.join(kindDf, on="stockCode", how="left").select(["stockCode", "corpName"] + yearCols)
     except (ImportError, OSError, pl.exceptions.PolarsError):
         _log.debug("kindList 매핑 실패 — corpName 없이 반환")
         return df
+
 
 _SCAN_COLS = [
     "sj_div",
@@ -183,9 +181,9 @@ class _FileProcessor:
 
     def _parseAnnual(self, matched: pl.DataFrame, stockCode: str) -> pl.DataFrame | None:
         """연간: thstrm_amount (4분기 사업보고서)."""
-        parsed = matched.with_columns(
-            _parseAmountCol("thstrm_amount").alias("amount")
-        ).filter(pl.col("amount").is_not_null())
+        parsed = matched.with_columns(_parseAmountCol("thstrm_amount").alias("amount")).filter(
+            pl.col("amount").is_not_null()
+        )
 
         if parsed.is_empty():
             return None
@@ -309,8 +307,11 @@ def scanAccount(
 
     fastKeys = _buildFastKeys(snakeId)
     processor = _FileProcessor(
-        filterDivs, fsPref, fastKeys,
-        quarterly=not annual, sjDiv=sjDiv,
+        filterDivs,
+        fsPref,
+        fastKeys,
+        quarterly=not annual,
+        sjDiv=sjDiv,
     )
 
     _log.info("scanAccount('%s', annual=%s): %d 파일 스캔 시작", snakeId, annual, len(parquetFiles))

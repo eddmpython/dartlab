@@ -24,6 +24,7 @@ def _fetchRate(fromCurrency: str) -> pl.DataFrame | None:
         return None
     try:
         from dartlab.engines.gather.fred import Fred
+
         f = Fred()
         return f.series(seriesId)
     except (ImportError, ValueError, RuntimeError):

@@ -1099,28 +1099,36 @@ def disclosureGapFlags(
         return []
 
     # 리스크 관련 topic 식별
-    riskTopics = {"riskManagement", "riskFactor", "goingConcern", "audit",
-                  "contingentLiability", "litigation", "internalControl"}
-    riskChanges = [
-        e for e in diffResult.entries
-        if e.topic in riskTopics and e.status == "changed"
-    ]
+    riskTopics = {
+        "riskManagement",
+        "riskFactor",
+        "goingConcern",
+        "audit",
+        "contingentLiability",
+        "litigation",
+        "internalControl",
+    }
+    riskChanges = [e for e in diffResult.entries if e.topic in riskTopics and e.status == "changed"]
 
     flags: list[Flag] = []
 
     if riskChanges and healthGrade in ("A", "B"):
         topics = ", ".join(sorted({e.topic for e in riskChanges}))
-        flags.append(Flag(
-            level="warning",
-            category="disclosure_gap",
-            text=f"리스크 서술 변화({topics}) vs 재무 안정({healthGrade}) — 불일치 확인 필요",
-        ))
+        flags.append(
+            Flag(
+                level="warning",
+                category="disclosure_gap",
+                text=f"리스크 서술 변화({topics}) vs 재무 안정({healthGrade}) — 불일치 확인 필요",
+            )
+        )
 
     if not riskChanges and healthGrade in ("D", "F"):
-        flags.append(Flag(
-            level="warning",
-            category="disclosure_gap",
-            text=f"재무 악화({healthGrade}) vs 리스크 서술 무변동 — 공시 충실도 점검 필요",
-        ))
+        flags.append(
+            Flag(
+                level="warning",
+                category="disclosure_gap",
+                text=f"재무 악화({healthGrade}) vs 리스크 서술 무변동 — 공시 충실도 점검 필요",
+            )
+        )
 
     return flags

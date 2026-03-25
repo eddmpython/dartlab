@@ -380,9 +380,11 @@ async def fetchSplits(
     rows = []
     for ts, ev in sorted(events.items(), key=lambda x: int(x[0])):
         dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
-        rows.append({
-            "date": dt.strftime("%Y-%m-%d"),
-            "numerator": ev.get("numerator", 1),
-            "denominator": ev.get("denominator", 1),
-        })
+        rows.append(
+            {
+                "date": dt.strftime("%Y-%m-%d"),
+                "numerator": ev.get("numerator", 1),
+                "denominator": ev.get("denominator", 1),
+            }
+        )
     return rows

@@ -239,6 +239,7 @@ def crossBorderPeers(
     """
     try:
         from dartlab.engines.analysis.sector import classify
+
         sectorInfo = classify(stockCode)
         sectorName = sectorInfo.sector.value if sectorInfo and sectorInfo.sector else None
     except (ImportError, AttributeError, ValueError):

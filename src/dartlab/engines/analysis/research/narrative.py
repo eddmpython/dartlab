@@ -1,4 +1,4 @@
-"""교차분석 서술 엔진 — 7개 차원에서 raw 재무 데이터를 해석적 서술문으로 변환."""
+"""교차분석 서술 엔진 — 15개 차원에서 IS/BS/CF 3표를 교차분석하여 해석적 서술문으로 변환."""
 
 from __future__ import annotations
 
@@ -648,6 +648,560 @@ def _analyzeSectorRelative(inp: _Input) -> NarrativeParagraph | None:
 
 
 # ══════════════════════════════════════
+# BS/CF 심층 + 3표 연결 (Stage 1 v4)
+# ══════════════════════════════════════
+
+
+def _analyzeBalanceSheetStructure(inp: _Input) -> NarrativeParagraph | None:
+    """자산구성 분석 — 유동/비유동 비중, 유형 vs 무형, 추세."""
+    totalAssets = _getVals(inp.aSeries, "BS", "total_assets")
+    currentAssets = _getVals(inp.aSeries, "BS", "total_current_assets")
+    nonCurrentAssets = _getVals(inp.aSeries, "BS", "total_non_current_assets")
+    tangible = _getVals(inp.aSeries, "BS", "property_plant_and_equipment")
+    intangible = _getVals(inp.aSeries, "BS", "intangible_assets")
+    if not totalAssets or len(totalAssets) < 2:
+        return None
+
+    ta = [v for v in totalAssets if v is not None]
+    if len(ta) < 2 or ta[-1] == 0:
+        return None
+
+    parts: list[str] = []
+
+    # 자산 규모 변동
+    taGr = (ta[-1] - ta[-2]) / abs(ta[-2]) * 100
+    parts.append(f"총자산 {ta[-1] / 1e8:,.0f}억(전년 대비 {taGr:+.1f}%)")
+
+    # 유동/비유동 비중
+    ca = _lastN(currentAssets, 1)
+    nca = _lastN(nonCurrentAssets, 1)
+    if ca and nca and ta[-1] > 0:
+        caRatio = ca[-1] / ta[-1] * 100
+        ncaRatio = nca[-1] / ta[-1] * 100
+        parts.append(f"유동 {caRatio:.0f}% / 비유동 {ncaRatio:.0f}%")
+
+    # 유형 vs 무형
+    tanClean = _lastN(tangible, 1)
+    intClean = _lastN(intangible, 1)
+    if tanClean and ta[-1] > 0:
+        tanRatio = tanClean[-1] / ta[-1] * 100
+        intRatio = intClean[-1] / ta[-1] * 100 if intClean else 0
+        if tanRatio > 30:
+            parts.append(f"유형자산 비중 {tanRatio:.0f}% — 자본집약적 구조")
+        if intRatio > 15:
+            parts.append(f"무형자산 비중 {intRatio:.0f}% — 지식자산 기반")
+
+    # 자산 성장 vs 매출 성장 교차
+    sales = _getVals(inp.aSeries, "IS", "sales")
+    salesClean = [v for v in sales if v is not None] if sales else []
+    if len(salesClean) >= 2 and salesClean[-2] != 0:
+        salesGr = (salesClean[-1] - salesClean[-2]) / abs(salesClean[-2]) * 100
+        if taGr > salesGr + 10:
+            parts.append("자산증가율이 매출증가율 상회 — 자산효율 하락 주의")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "neutral"
+    if taGr > 20:
+        severity = "warning"
+    elif taGr < -10:
+        severity = "negative"
+    return NarrativeParagraph(
+        dimension="bsStructure",
+        title="자산구성 분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeDebtStructure(inp: _Input) -> NarrativeParagraph | None:
+    """부채구조 분석 — 부채비율, 차입금 의존도, 이자보상배율."""
+    totalLiab = _getVals(inp.aSeries, "BS", "total_liabilities")
+    totalEquity = _getVals(inp.aSeries, "BS", "total_equity")
+    shortBorrow = _getVals(inp.aSeries, "BS", "short_term_borrowings")
+    longBorrow = _getVals(inp.aSeries, "BS", "long_term_borrowings")
+    totalAssets = _getVals(inp.aSeries, "BS", "total_assets")
+    op = _getVals(inp.aSeries, "IS", "operating_profit")
+    interest = _getVals(inp.aSeries, "IS", "interest_expense")
+    if not interest:
+        interest = _getVals(inp.aSeries, "IS", "finance_costs")
+
+    if not totalLiab or len(totalLiab) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # 부채비율 추세
+    debtRatioList = []
+    for tl, te in zip(totalLiab, totalEquity):
+        debtRatioList.append(tl / te * 100 if tl is not None and te is not None and te != 0 else None)
+    cleanDr = [v for v in debtRatioList if v is not None]
+    if len(cleanDr) >= 2:
+        drDiff = cleanDr[-1] - cleanDr[-2]
+        direction, count = _consecutiveDirection(debtRatioList)
+        if count >= 3:
+            label = "상승" if direction == "up" else "하락"
+            parts.append(f"부채비율 {count}년 연속 {label}({cleanDr[-1]:.0f}%)")
+        else:
+            parts.append(f"부채비율 {cleanDr[-1]:.0f}%(전년 {cleanDr[-2]:.0f}%, {_pp(drDiff)})")
+
+    # 차입금 의존도
+    if shortBorrow and longBorrow and totalAssets:
+        latestShort = _lastN(shortBorrow, 1)
+        latestLong = _lastN(longBorrow, 1)
+        latestTa = _lastN(totalAssets, 1)
+        if latestShort and latestLong and latestTa and latestTa[-1] > 0:
+            borrowTotal = (latestShort[-1] or 0) + (latestLong[-1] or 0)
+            borrowDep = borrowTotal / latestTa[-1] * 100
+            parts.append(f"차입금 의존도 {borrowDep:.1f}%")
+            if borrowDep > 30:
+                parts.append("차입금 의존도 과다 — 금리 변동 리스크")
+
+    # 이자보상배율
+    if interest and op:
+        pairs = [(o, i) for o, i in zip(op, interest) if o is not None and i is not None and i != 0]
+        if pairs:
+            latestOp, latestInt = pairs[-1]
+            icr = latestOp / abs(latestInt)
+            parts.append(f"이자보상배율 {icr:.1f}배")
+            if icr < 1.5:
+                parts.append("이자보상배율 위험 수준 — 이자비용 충당 불안")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "neutral"
+    if cleanDr and cleanDr[-1] > 200:
+        severity = "negative"
+    elif cleanDr and cleanDr[-1] < 50:
+        severity = "positive"
+    return NarrativeParagraph(
+        dimension="debtStructure",
+        title="부채구조 분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeLiquidity(inp: _Input) -> NarrativeParagraph | None:
+    """유동성 분석 — 유동비율, 당좌비율, 현금 대비 단기차입금."""
+    currentAssets = _getVals(inp.aSeries, "BS", "total_current_assets")
+    currentLiab = _getVals(inp.aSeries, "BS", "total_current_liabilities")
+    inventories = _getVals(inp.aSeries, "BS", "inventories")
+    cash = _getVals(inp.aSeries, "BS", "cash_and_cash_equivalents")
+    shortBorrow = _getVals(inp.aSeries, "BS", "short_term_borrowings")
+
+    if not currentAssets or not currentLiab or len(currentAssets) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # 유동비율 추세
+    crList = []
+    for ca, cl in zip(currentAssets, currentLiab):
+        crList.append(ca / cl * 100 if ca is not None and cl is not None and cl != 0 else None)
+    cleanCr = [v for v in crList if v is not None]
+    if len(cleanCr) >= 2:
+        crDiff = cleanCr[-1] - cleanCr[-2]
+        parts.append(f"유동비율 {cleanCr[-1]:.0f}%(전년 {cleanCr[-2]:.0f}%, {_pp(crDiff)})")
+
+    # 당좌비율
+    if inventories:
+        qrList = []
+        for ca, cl, inv in zip(currentAssets, currentLiab, inventories):
+            if all(v is not None for v in (ca, cl, inv)) and cl != 0:
+                qrList.append((ca - inv) / cl * 100)
+            else:
+                qrList.append(None)
+        cleanQr = [v for v in qrList if v is not None]
+        if cleanQr:
+            parts.append(f"당좌비율 {cleanQr[-1]:.0f}%")
+
+    # 현금 대비 단기차입금
+    if cash and shortBorrow:
+        cashClean = _lastN(cash, 1)
+        sbClean = _lastN(shortBorrow, 1)
+        if cashClean and sbClean and sbClean[-1] > 0:
+            cashCover = cashClean[-1] / sbClean[-1]
+            parts.append(f"현금/단기차입금 {cashCover:.1f}배")
+            if cashCover < 0.5:
+                parts.append("단기차입금 대비 현금 부족 — 유동성 리스크")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "neutral"
+    if cleanCr and cleanCr[-1] < 100:
+        severity = "negative"
+    elif cleanCr and cleanCr[-1] > 200:
+        severity = "positive"
+    return NarrativeParagraph(
+        dimension="liquidity",
+        title="유동성 분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeCapitalChange(inp: _Input) -> NarrativeParagraph | None:
+    """자본변동 분석 — 이익잉여금 축적, 자사주/배당, 유상증자."""
+    totalEquity = _getVals(inp.aSeries, "BS", "total_equity")
+    retainedEarnings = _getVals(inp.aSeries, "BS", "retained_earnings")
+    shareCapital = _getVals(inp.aSeries, "BS", "share_capital")
+    if not shareCapital:
+        shareCapital = _getVals(inp.aSeries, "BS", "capital_stock")
+    treasuryStock = _getVals(inp.aSeries, "BS", "treasury_stock")
+    if not treasuryStock:
+        treasuryStock = _getVals(inp.aSeries, "BS", "treasury_shares")
+
+    if not totalEquity or len(totalEquity) < 2:
+        return None
+
+    teClean = [v for v in totalEquity if v is not None]
+    if len(teClean) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # 자본 증감
+    teGr = (teClean[-1] - teClean[-2]) / abs(teClean[-2]) * 100
+    parts.append(f"자기자본 {teClean[-1] / 1e8:,.0f}억(전년 대비 {teGr:+.1f}%)")
+
+    # 이익잉여금 추세
+    reClean = [v for v in retainedEarnings if v is not None] if retainedEarnings else []
+    if len(reClean) >= 2:
+        reGr = (reClean[-1] - reClean[-2]) / abs(reClean[-2]) * 100 if reClean[-2] != 0 else 0
+        parts.append(f"이익잉여금 {reGr:+.1f}% 변동")
+        if reGr < -5:
+            parts.append("이익잉여금 감소 — 배당/자사주 또는 결손 영향")
+
+    # 유상증자 감지
+    scClean = [v for v in shareCapital if v is not None] if shareCapital else []
+    if len(scClean) >= 2 and scClean[-2] != 0:
+        scGr = (scClean[-1] - scClean[-2]) / abs(scClean[-2]) * 100
+        if scGr > 5:
+            parts.append(f"자본금 {scGr:+.1f}% 증가 — 유상증자 가능성")
+
+    # 자사주 변동
+    tsClean = [v for v in treasuryStock if v is not None] if treasuryStock else []
+    if len(tsClean) >= 2:
+        tsDiff = tsClean[-1] - tsClean[-2]
+        if tsDiff < -1e9:  # 10억 이상 증가 (자사주는 음수이므로 감소 = 매입)
+            parts.append("자사주 매입 확대 — 주주환원 강화 시그널")
+        elif tsDiff > 1e9:
+            parts.append("자사주 처분 — 희석 가능성")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "positive" if teGr > 10 else "neutral" if teGr > 0 else "negative"
+    return NarrativeParagraph(
+        dimension="capitalChange",
+        title="자본변동 분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeCashflowDeep(inp: _Input) -> NarrativeParagraph | None:
+    """현금흐름 심층 — 투자CF/재무CF 분해, FCF 추세, 배당 여력."""
+    ocf = _getVals(inp.aSeries, "CF", "operating_cashflow")
+    icf = _getVals(inp.aSeries, "CF", "investing_cashflow")
+    if not icf:
+        icf = _getVals(inp.aSeries, "CF", "investing_activities")
+    fcf_cf = _getVals(inp.aSeries, "CF", "financing_cashflow")
+    if not fcf_cf:
+        fcf_cf = _getVals(inp.aSeries, "CF", "financing_activities")
+    capex = _getVals(inp.aSeries, "CF", "capital_expenditure")
+    if not capex:
+        capex = _getVals(inp.aSeries, "CF", "acquisition_of_property_plant_and_equipment")
+    dividend = _getVals(inp.aSeries, "CF", "dividends_paid")
+    ni = _getVals(inp.aSeries, "IS", "net_profit")
+
+    if not ocf or len(ocf) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # OCF/NI 비율 (기존 cashflowQuality 기능 포함)
+    eq = inp.earningsQuality
+    if eq and eq.cfToNi is not None:
+        ratio = eq.cfToNi
+        if ratio > 1.2:
+            parts.append(f"OCF/순이익 {ratio:.1f}배 — 현금 뒷받침 우수")
+        elif ratio > 0.8:
+            parts.append(f"OCF/순이익 {ratio:.1f}배 — 보통 수준")
+        elif ratio > 0:
+            parts.append(f"OCF/순이익 {ratio:.1f}배 — 현금 뒷받침 미흡")
+        else:
+            parts.append(f"OCF/순이익 {ratio:.1f}배 — 영업현금흐름 적자")
+
+    # OCF 추세
+    ocfClean = [v for v in ocf if v is not None]
+    if len(ocfClean) >= 2:
+        trendDir = _trend(ocf)
+        if trendDir == "improving":
+            parts.append("영업CF 지속 개선 추세")
+        elif trendDir == "deteriorating":
+            parts.append("영업CF 지속 악화 추세 — 현금창출 능력 점검 필요")
+
+    # FCF 추세 (OCF - CAPEX)
+    if capex:
+        fcfList = []
+        for o, c in zip(ocf, capex):
+            if o is not None and c is not None:
+                fcfList.append(o - abs(c))
+            else:
+                fcfList.append(None)
+        fcfClean = [v for v in fcfList if v is not None]
+        if len(fcfClean) >= 2:
+            parts.append(f"FCF {fcfClean[-1] / 1e8:,.0f}억(전년 {fcfClean[-2] / 1e8:,.0f}억)")
+            if fcfClean[-1] < 0:
+                parts.append("FCF 적자 — 투자 부담 과다")
+            fcfTrend = _trend(fcfList)
+            if fcfTrend == "deteriorating" and fcfClean[-1] > 0:
+                parts.append("FCF 감소 추세 주의")
+
+    # 배당 여력 (FCF / 배당)
+    if capex and dividend:
+        pairs = [(o, c, d) for o, c, d in zip(ocf, capex, dividend) if all(v is not None for v in (o, c, d))]
+        if pairs:
+            latestOcf, latestCapex, latestDiv = pairs[-1]
+            fcf = latestOcf - abs(latestCapex)
+            if latestDiv != 0:
+                divCover = fcf / abs(latestDiv)
+                parts.append(f"배당 커버리지(FCF/배당) {divCover:.1f}배")
+                if divCover < 1:
+                    parts.append("FCF로 배당 충당 불가 — 배당 지속성 의문")
+
+    # 투자CF vs 재무CF 패턴
+    if icf and fcf_cf:
+        latestIcf = _lastN(icf, 1)
+        latestFcf = _lastN(fcf_cf, 1)
+        if latestIcf and latestFcf:
+            if latestIcf[-1] is not None and latestIcf[-1] < 0 and latestFcf[-1] is not None and latestFcf[-1] > 0:
+                parts.append("투자확대 + 외부조달 패턴 — 성장투자기")
+            elif latestIcf[-1] is not None and latestIcf[-1] < 0 and latestFcf[-1] is not None and latestFcf[-1] < 0:
+                parts.append("투자확대 + 부채상환/주주환원 — 현금흐름 여유")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    cfSev = "positive"
+    if eq and eq.cfToNi is not None:
+        if eq.cfToNi < 0.5:
+            cfSev = "negative"
+        elif eq.cfToNi < 0.8:
+            cfSev = "warning"
+        elif eq.cfToNi < 1.2:
+            cfSev = "neutral"
+    return NarrativeParagraph(
+        dimension="cashflowDeep",
+        title="현금흐름 심층분석",
+        body=body,
+        severity=cfSev,
+    )
+
+
+def _analyzeIsToCs(inp: _Input) -> NarrativeParagraph | None:
+    """3표 연결 — IS 순이익 vs CF OCF 괴리 분석."""
+    ni = _getVals(inp.aSeries, "IS", "net_profit")
+    ocf = _getVals(inp.aSeries, "CF", "operating_cashflow")
+    depreciation = _getVals(inp.aSeries, "CF", "depreciation_and_amortization")
+    if not depreciation:
+        depreciation = _getVals(inp.aSeries, "IS", "depreciation")
+
+    if not ni or not ocf or len(ni) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # OCF - NI 갭 추세
+    gapList = []
+    for n, o in zip(ni, ocf):
+        if n is not None and o is not None:
+            gapList.append(o - n)
+        else:
+            gapList.append(None)
+
+    gapClean = [v for v in gapList if v is not None]
+    if len(gapClean) >= 2:
+        latestGap = gapClean[-1]
+        if abs(latestGap) > 1e9:  # 10억 이상 차이
+            direction = "초과" if latestGap > 0 else "부족"
+            parts.append(f"영업CF가 순이익 대비 {abs(latestGap) / 1e8:,.0f}억 {direction}")
+
+    # OCF/NI 비율 추세 (시계열)
+    ratioList = []
+    for n, o in zip(ni, ocf):
+        ratioList.append(o / n if n is not None and o is not None and n != 0 else None)
+    ratioClean = [v for v in ratioList if v is not None]
+    if len(ratioClean) >= 3:
+        rTrend = _trend(ratioList)
+        if rTrend == "deteriorating":
+            parts.append("OCF/순이익 비율 추세적 하락 — 이익의 질 저하 경고")
+        elif rTrend == "improving":
+            parts.append("OCF/순이익 비율 추세적 개선 — 이익의 질 향상")
+
+    # 감가상각 기여
+    if depreciation:
+        depClean = _lastN(depreciation, 2)
+        niClean = _lastN(ni, 2)
+        if len(depClean) >= 1 and len(niClean) >= 1 and niClean[-1] is not None and niClean[-1] != 0:
+            depToNi = abs(depClean[-1]) / abs(niClean[-1])
+            if depToNi > 0.5:
+                parts.append(f"감가상각이 순이익의 {depToNi:.0%} — 비현금비용 기여 큼(OCF 양호 원인)")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "neutral"
+    if ratioClean and ratioClean[-1] < 0.5:
+        severity = "warning"
+    elif ratioClean and ratioClean[-1] > 1.5:
+        severity = "positive"
+    return NarrativeParagraph(
+        dimension="isToCs",
+        title="손익↔현금흐름 연결분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeCfToBs(inp: _Input) -> NarrativeParagraph | None:
+    """3표 연결 — CF 투자활동 → BS 유형자산, CF 재무활동 → BS 차입금."""
+    capex = _getVals(inp.aSeries, "CF", "capital_expenditure")
+    if not capex:
+        capex = _getVals(inp.aSeries, "CF", "acquisition_of_property_plant_and_equipment")
+    depreciation = _getVals(inp.aSeries, "CF", "depreciation_and_amortization")
+    if not depreciation:
+        depreciation = _getVals(inp.aSeries, "IS", "depreciation")
+    tangible = _getVals(inp.aSeries, "BS", "property_plant_and_equipment")
+    shortBorrow = _getVals(inp.aSeries, "BS", "short_term_borrowings")
+    longBorrow = _getVals(inp.aSeries, "BS", "long_term_borrowings")
+
+    parts: list[str] = []
+
+    # CAPEX vs 감가상각 (유지보수 투자 수준)
+    if capex and depreciation:
+        pairs = [(c, d) for c, d in zip(capex, depreciation) if c is not None and d is not None and d != 0]
+        if pairs:
+            latestCapex, latestDep = pairs[-1]
+            capexToDep = abs(latestCapex) / abs(latestDep)
+            parts.append(f"CAPEX/감가상각 {capexToDep:.1f}배")
+            if capexToDep > 2.0:
+                parts.append("감가상각의 2배 이상 투자 — 적극적 확장투자")
+            elif capexToDep < 0.8:
+                parts.append("감가상각 미만 투자 — 설비 노후화 리스크")
+
+    # BS 유형자산 변동 vs CAPEX 규모
+    if tangible and capex:
+        tanClean = [v for v in tangible if v is not None]
+        capexClean = [v for v in capex if v is not None]
+        if len(tanClean) >= 2 and capexClean:
+            tanChange = tanClean[-1] - tanClean[-2]
+            latestCapex = abs(capexClean[-1])
+            if latestCapex > 0:
+                retentionRate = tanChange / latestCapex
+                if retentionRate < 0:
+                    parts.append("CAPEX 투입에도 유형자산 순감소 — 처분 또는 감가상각 과대")
+
+    # BS 차입금 변동
+    if shortBorrow and longBorrow:
+        totalBorrowList = []
+        for s, l in zip(shortBorrow, longBorrow):
+            if s is not None and l is not None:
+                totalBorrowList.append(s + l)
+            else:
+                totalBorrowList.append(None)
+        bClean = [v for v in totalBorrowList if v is not None]
+        if len(bClean) >= 2:
+            bGr = (bClean[-1] - bClean[-2]) / abs(bClean[-2]) * 100 if bClean[-2] != 0 else 0
+            if abs(bGr) > 15:
+                direction = "증가" if bGr > 0 else "감소"
+                parts.append(f"총차입금 {bGr:+.1f}% {direction}")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    severity = "neutral"
+    return NarrativeParagraph(
+        dimension="cfToBs",
+        title="현금흐름↔재무상태 연결분석",
+        body=body,
+        severity=severity,
+    )
+
+
+def _analyzeIsToBs(inp: _Input) -> NarrativeParagraph | None:
+    """3표 연결 — IS 순이익 → BS 이익잉여금, 매출 → 매출채권/재고 비례."""
+    ni = _getVals(inp.aSeries, "IS", "net_profit")
+    retainedEarnings = _getVals(inp.aSeries, "BS", "retained_earnings")
+    sales = _getVals(inp.aSeries, "IS", "sales")
+    receivables = _getVals(inp.aSeries, "BS", "trade_receivable")
+    if not receivables:
+        receivables = _getVals(inp.aSeries, "BS", "trade_and_other_receivables")
+    inventories = _getVals(inp.aSeries, "BS", "inventories")
+
+    if not ni or not sales or len(ni) < 2:
+        return None
+
+    parts: list[str] = []
+
+    # 순이익 → 이익잉여금 축적률
+    if retainedEarnings:
+        reClean = [v for v in retainedEarnings if v is not None]
+        niClean = [v for v in ni if v is not None]
+        if len(reClean) >= 2 and len(niClean) >= 1 and niClean[-1] != 0:
+            reChange = reClean[-1] - reClean[-2]
+            retentionRate = reChange / niClean[-1] * 100 if niClean[-1] != 0 else 0
+            if retentionRate > 0:
+                parts.append(f"순이익 중 {retentionRate:.0f}%가 잉여금으로 축적(배당성향 {100 - retentionRate:.0f}%)")
+            elif retentionRate < -20:
+                parts.append("이익잉여금 감소 — 순이익 대비 과도한 유출")
+
+    # 매출 증가 vs 매출채권 증가 비례 여부
+    salesClean = [v for v in sales if v is not None]
+    arClean = [v for v in receivables if v is not None] if receivables else []
+    if len(salesClean) >= 2 and len(arClean) >= 2:
+        salesGr = (salesClean[-1] - salesClean[-2]) / abs(salesClean[-2]) * 100 if salesClean[-2] != 0 else 0
+        arGr = (arClean[-1] - arClean[-2]) / abs(arClean[-2]) * 100 if arClean[-2] != 0 else 0
+        gap = arGr - salesGr
+        if gap > 20:
+            parts.append(
+                f"매출채권 증가율({arGr:+.1f}%)이 매출 증가율({salesGr:+.1f}%)을 크게 상회 — 수금 악화 또는 채널 스터핑 주의"
+            )
+        elif gap < -20 and arGr < 0:
+            parts.append("매출채권 감소율이 매출 대비 과도 — 공격적 회수 또는 매출 구조 변화")
+
+    # 매출 증가 vs 재고 증가 비례 여부
+    invClean = [v for v in inventories if v is not None] if inventories else []
+    if len(salesClean) >= 2 and len(invClean) >= 2:
+        salesGr = (salesClean[-1] - salesClean[-2]) / abs(salesClean[-2]) * 100 if salesClean[-2] != 0 else 0
+        invGr = (invClean[-1] - invClean[-2]) / abs(invClean[-2]) * 100 if invClean[-2] != 0 else 0
+        gap = invGr - salesGr
+        if gap > 15:
+            parts.append(f"재고 증가율({invGr:+.1f}%)이 매출 증가율({salesGr:+.1f}%)을 상회 — 재고 리스크 주의")
+
+    if not parts:
+        return None
+    body = ". ".join(parts) + "."
+    # severity 판단
+    severity = "neutral"
+    for p in parts:
+        if "주의" in p or "과도" in p or "악화" in p:
+            severity = "warning"
+            break
+    return NarrativeParagraph(
+        dimension="isToBs",
+        title="손익↔재무상태 연결분석",
+        body=body,
+        severity=severity,
+    )
+
+
+# ══════════════════════════════════════
 # 교차참조 + 전망
 # ══════════════════════════════════════
 
@@ -660,36 +1214,52 @@ def _detectCrossReferences(paragraphs: list[NarrativeParagraph]) -> list[str]:
     margin = dimMap.get("margin")
     eff = dimMap.get("efficiency")
     growth = dimMap.get("growth")
-    cf = dimMap.get("cashflow")
+    cf = dimMap.get("cashflowDeep") or dimMap.get("cashflow")
     dp = dimMap.get("dupont")
     sector = dimMap.get("sectorRelative")
     segment = dimMap.get("segment")
+    bs = dimMap.get("bsStructure")
+    debt = dimMap.get("debtStructure")
+    liq = dimMap.get("liquidity")
+    isToCs = dimMap.get("isToCs")
+    isToBs = dimMap.get("isToBs")
 
-    # 마진 개선 + 운전자본 악화
+    # ── 기존 교차 패턴 ──
     if margin and eff and margin.severity == "positive" and eff.severity == "warning":
         refs.append("마진 개선에도 운전자본 효율 악화 — 실질 현금 수익성 점검 필요")
 
-    # 성장 + 현금흐름 약화
     if growth and cf and growth.severity == "positive" and cf.severity in ("negative", "warning"):
         refs.append("매출 성장 대비 현금창출 부족 — 성장의 지속가능성 의문")
 
-    # 레버리지 주도 + 밸류에이션 할인
     if dp and sector and "레버리지 주도" in dp.body and sector.severity == "positive":
         refs.append("레버리지 의존 수익구조가 밸류에이션 할인의 원인일 수 있음")
 
-    # 단일 부문 의존 + 성장 집중
     if segment and growth and segment.severity == "warning" and growth.severity == "positive":
         refs.append("성장이 단일 부문에 집중 — 해당 부문 둔화 시 전체 실적 급락 리스크")
 
-    # 운전자본 + 현금흐름 동반 악화
     if eff and cf and eff.severity == "warning" and cf.severity in ("negative", "warning"):
         refs.append("운전자본 비효율과 현금흐름 부진 동반 — 유동성 관리 강화 필요")
 
-    # 마진 악화 + 성장 둔화
     if margin and growth and margin.severity == "negative" and growth.severity == "negative":
         refs.append("마진과 성장 동시 악화 — 구조적 수익성 하락 우려")
 
-    return refs[:5]
+    # ── v4 3표 연결 교차 패턴 ──
+    if bs and growth and bs.severity == "warning" and growth.severity in ("negative", "neutral"):
+        refs.append("자산 증가에도 매출 정체 — 투자 효율성 점검 필요")
+
+    if cf and debt and cf.severity in ("negative", "warning") and debt.body and "증가" in debt.body:
+        refs.append("영업현금 부진 + 차입금 증가 — 적자 보전 차입 가능성")
+
+    if isToCs and isToCs.severity == "warning" and growth and growth.severity == "positive":
+        refs.append("이익 증가에도 현금흐름 악화 — 이익의 질 의문")
+
+    if liq and liq.severity == "negative" and cf and cf.severity in ("negative", "warning"):
+        refs.append("유동성 악화 + 현금흐름 부진 — 단기 자금 경색 리스크")
+
+    if margin and isToBs and margin.severity == "positive" and isToBs.severity == "warning":
+        refs.append("마진 개선에도 매출채권/재고 과잉 — 채널 스터핑 의심")
+
+    return refs[:7]
 
 
 def _buildForwardImplications(paragraphs: list[NarrativeParagraph], inp: _Input) -> list[str]:
@@ -709,14 +1279,22 @@ def _buildForwardImplications(paragraphs: list[NarrativeParagraph], inp: _Input)
             implications.append("업종 대비 저평가 구간 — 촉매 발생 시 재평가 여지")
         elif best.dimension == "margin":
             implications.append("마진 개선 추세 지속 시 이익 레버리지 확대 기대")
-        elif best.dimension == "cashflow":
+        elif best.dimension in ("cashflow", "cashflowDeep"):
             implications.append("양호한 현금창출력 기반 주주환원 또는 재투자 여력 충분")
+        elif best.dimension == "bsStructure":
+            implications.append("자산 구성 효율성 유지 시 자본수익률 개선 기대")
+        elif best.dimension == "liquidity":
+            implications.append("풍부한 유동성 — 경기 둔화에도 안정적 운영 가능")
+        elif best.dimension == "capitalChange":
+            implications.append("자본 축적 추세 지속 시 재무 안전판 강화")
+        elif best.dimension == "isToCs":
+            implications.append("현금주의 이익 양호 — 높은 이익의 질 유지 전망")
 
     if negative:
         worst = negative[0]
         if worst.dimension == "efficiency":
             implications.append("운전자본 효율 악화 방치 시 유동성 리스크 확대 가능")
-        elif worst.dimension == "cashflow":
+        elif worst.dimension in ("cashflow", "cashflowDeep"):
             implications.append("현금흐름 부진 지속 시 재무 안정성 악화 우려")
         elif worst.dimension == "growth":
             implications.append("성장 둔화 추세 반전 없으면 밸류에이션 디레이팅 가능")
@@ -724,6 +1302,16 @@ def _buildForwardImplications(paragraphs: list[NarrativeParagraph], inp: _Input)
             implications.append("마진 하락 추세 지속 시 구조적 수익성 문제 대두 가능")
         elif worst.dimension == "sectorRelative":
             implications.append("업종 대비 프리미엄 지속 시 하방 리스크 존재")
+        elif worst.dimension == "debtStructure":
+            implications.append("부채구조 악화 추세 지속 시 신용 리스크 상승 가능")
+        elif worst.dimension == "liquidity":
+            implications.append("유동성 부족 심화 시 차입 의존도 확대 불가피")
+        elif worst.dimension == "isToCs":
+            implications.append("이익-현금흐름 괴리 지속 시 이익의 질 의문 심화")
+        elif worst.dimension == "isToBs":
+            implications.append("매출채권/재고 과잉 축적 시 대손·평가손실 리스크")
+        elif worst.dimension == "cfToBs":
+            implications.append("투자-자산 불일치 지속 시 자산 효율성 저하 우려")
 
     return implications[:3]
 
@@ -743,7 +1331,7 @@ def buildNarrative(
     sectorBenchmark: object | None = None,
     sectorParams: object | None = None,
 ) -> NarrativeAnalysis | None:
-    """7차원 교차분석 서술 생성."""
+    """15차원 교차분석 서술 생성 (IS/BS/CF 3표 연결)."""
     # segments, costByNature 수집
     segDf = None
     costDf = None
@@ -783,18 +1371,25 @@ def buildNarrative(
         isFinancial=isFinancial,
     )
 
-    # 7개 분석 차원 실행
+    # 15개 분석 차원 실행 (v4)
     analyzers = [
         _analyzeDupont,
         _analyzeGrowthQuality,
-        _analyzeCashflowQuality,
+        _analyzeCashflowDeep,
+        _analyzeIsToCs,
+        _analyzeCfToBs,
+        _analyzeIsToBs,
         _analyzeSectorRelative,
         _analyzeSegments,
     ]
-    # 금융업은 margin/efficiency skip
+    # 금융업은 margin/efficiency/liquidity skip (BS/CF 구조 다름)
     if not isFinancial:
         analyzers.insert(1, _analyzeMarginTrend)
-        analyzers.insert(5, _analyzeEfficiency)
+        analyzers.insert(2, _analyzeBalanceSheetStructure)
+        analyzers.insert(3, _analyzeDebtStructure)
+        analyzers.insert(4, _analyzeLiquidity)
+        analyzers.insert(5, _analyzeCapitalChange)
+        analyzers.insert(8, _analyzeEfficiency)
 
     paragraphs: list[NarrativeParagraph] = []
     for fn in analyzers:

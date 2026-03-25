@@ -50,9 +50,7 @@ def _joinCorpName(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("title").alias("corpName"),
         )
         periodCols = [c for c in df.columns if c != "stockCode"]
-        return df.join(tickers, on="stockCode", how="left").select(
-            ["stockCode", "corpName"] + periodCols
-        )
+        return df.join(tickers, on="stockCode", how="left").select(["stockCode", "corpName"] + periodCols)
     except (ImportError, OSError, pl.exceptions.PolarsError):
         return df
 
@@ -108,11 +106,13 @@ class _EdgarFileProcessor:
         rows = []
         for row in agg.iter_rows(named=True):
             if row["val"] is not None:
-                rows.append({
-                    "stockCode": ticker,
-                    "period": str(row["fy"]),
-                    "amount": float(row["val"]),
-                })
+                rows.append(
+                    {
+                        "stockCode": ticker,
+                        "period": str(row["fy"]),
+                        "amount": float(row["val"]),
+                    }
+                )
         return pl.DataFrame(rows) if rows else None
 
     def _parseQuarterly(self, df: pl.DataFrame, ticker: str) -> pl.DataFrame | None:
@@ -182,10 +182,12 @@ def scanAccount(
         from dartlab.engines.company.edgar.openapi.identity import loadTickers
 
         tickerDf = loadTickers()
-        cikToTicker = dict(zip(
-            tickerDf["cik"].to_list(),
-            tickerDf["ticker"].to_list(),
-        ))
+        cikToTicker = dict(
+            zip(
+                tickerDf["cik"].to_list(),
+                tickerDf["ticker"].to_list(),
+            )
+        )
     except (ImportError, OSError):
         cikToTicker = {}
 
@@ -297,9 +299,7 @@ def _calcYoyRatio(defn: dict, *, annual: bool = False) -> pl.DataFrame:
         cur = periodCols[i]
         prev = periodCols[i - 1]
         expr = (
-            pl.when(
-                (pl.col(prev) != 0) & pl.col(prev).is_not_null() & pl.col(cur).is_not_null()
-            )
+            pl.when((pl.col(prev) != 0) & pl.col(prev).is_not_null() & pl.col(cur).is_not_null())
             .then(((pl.col(cur) - pl.col(prev)) / pl.col(prev).abs() * 100).round(2))
             .otherwise(pl.lit(None, dtype=pl.Float64))
             .alias(cur)

@@ -490,6 +490,7 @@ def _defaultKeywords() -> dict[str, list[str]]:
     if _DEFAULT_KEYWORDS is None:
         try:
             from dartlab.engines.company.dart.scan.signal import KEYWORDS
+
             _DEFAULT_KEYWORDS = KEYWORDS
         except ImportError:
             _DEFAULT_KEYWORDS = {
@@ -515,9 +516,9 @@ def keywordFrequency(
     """
     periods = _periodCols(sections)
     if not periods:
-        return pl.DataFrame(schema={"topic": pl.Utf8, "period": pl.Utf8,
-                                     "keyword": pl.Utf8, "category": pl.Utf8,
-                                     "count": pl.UInt32})
+        return pl.DataFrame(
+            schema={"topic": pl.Utf8, "period": pl.Utf8, "keyword": pl.Utf8, "category": pl.Utf8, "count": pl.UInt32}
+        )
 
     # 키워드 → 카테고리 매핑
     kwDict = _defaultKeywords()
@@ -543,17 +544,19 @@ def keywordFrequency(
             for kw, cat in kwCat.items():
                 cnt = text.count(kw)
                 if cnt > 0:
-                    rows.append({
-                        "topic": topic,
-                        "period": period,
-                        "keyword": kw,
-                        "category": cat,
-                        "count": cnt,
-                    })
+                    rows.append(
+                        {
+                            "topic": topic,
+                            "period": period,
+                            "keyword": kw,
+                            "category": cat,
+                            "count": cnt,
+                        }
+                    )
 
     if not rows:
-        return pl.DataFrame(schema={"topic": pl.Utf8, "period": pl.Utf8,
-                                     "keyword": pl.Utf8, "category": pl.Utf8,
-                                     "count": pl.UInt32})
+        return pl.DataFrame(
+            schema={"topic": pl.Utf8, "period": pl.Utf8, "keyword": pl.Utf8, "category": pl.Utf8, "count": pl.UInt32}
+        )
 
     return pl.DataFrame(rows).sort(["keyword", "period", "topic"])

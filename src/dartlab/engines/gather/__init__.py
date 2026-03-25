@@ -21,6 +21,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import polars as pl
 
 from . import consensus as _consensus
 from . import flow as _flow
@@ -207,8 +211,6 @@ class Gather:
 
     def news(self, query: str, *, market: str = "KR", days: int = 30) -> "pl.DataFrame":
         """뉴스 — Google News RSS, 캐시/circuit breaker 적용."""
-        import polars as pl
-
         cache_key = f"{query}:{market}:news"
         cached = self._cache.get_typed(cache_key, "news")
         if cached is not None:
@@ -279,17 +281,47 @@ class Gather:
 
     # eddmpython PRIORITY_INDICATORS (12개)
     _MACRO_KR = [
-        "CPI", "BASE_RATE", "USDKRW", "M2", "CLI", "CCI", "CSI",
-        "IPI", "MANUFACTURING", "TRADE", "HOUSE_PRICE", "APT_PRICE",
+        "CPI",
+        "BASE_RATE",
+        "USDKRW",
+        "M2",
+        "CLI",
+        "CCI",
+        "CSI",
+        "IPI",
+        "MANUFACTURING",
+        "TRADE",
+        "HOUSE_PRICE",
+        "APT_PRICE",
     ]
 
     # eddmpython fred/config.py INDICATORS (24개)
     _MACRO_US = [
-        "GDP", "CPIAUCSL", "CPILFESL", "PCEPI", "PCEPILFE", "UNRATE",
-        "FEDFUNDS", "DGS10", "M2SL", "TB3MS", "SP500", "VIXCLS", "AAA",
-        "HOUST", "CSUSHPISA", "INDPRO", "PAYEMS", "RSAFS",
-        "CES0500000003", "ICSA", "USSLIND", "UMCSENT",
-        "DRTSCILM", "DTWEXBGS", "DCOILWTICO",
+        "GDP",
+        "CPIAUCSL",
+        "CPILFESL",
+        "PCEPI",
+        "PCEPILFE",
+        "UNRATE",
+        "FEDFUNDS",
+        "DGS10",
+        "M2SL",
+        "TB3MS",
+        "SP500",
+        "VIXCLS",
+        "AAA",
+        "HOUST",
+        "CSUSHPISA",
+        "INDPRO",
+        "PAYEMS",
+        "RSAFS",
+        "CES0500000003",
+        "ICSA",
+        "USSLIND",
+        "UMCSENT",
+        "DRTSCILM",
+        "DTWEXBGS",
+        "DCOILWTICO",
     ]
 
     def macro(
@@ -326,6 +358,7 @@ class Gather:
         """지표 코드로 market 자동 감지."""
         try:
             from dartlab.engines.gather.ecos.catalog import getEntry
+
             if getEntry(indicator):
                 return "KR"
         except ImportError:

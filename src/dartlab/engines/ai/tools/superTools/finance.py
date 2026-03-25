@@ -11,7 +11,7 @@ from typing import Any
 
 import polars as pl
 
-from ..defaults.helpers import df_to_md, format_tool_value
+from ..defaults.helpers import df_to_md
 
 
 def registerFinanceTool(company: Any, registerTool) -> None:
@@ -126,7 +126,9 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         anomalies = detect_anomalies(data, use_llm=False, threshold_pct=50.0)
         if not anomalies:
             return f"'{module}'에서 이상치가 발견되지 않았습니다."
-        return "\n".join(f"- [{a.severity}] {a.column} {a.year}: {a.description} (변동 {a.change_pct:+.1f}%)" for a in anomalies)
+        return "\n".join(
+            f"- [{a.severity}] {a.column} {a.year}: {a.description} (변동 {a.change_pct:+.1f}%)" for a in anomalies
+        )
 
     def _report(apiType: str = "", **_kw) -> str:
         """정기보고서 정형 데이터."""
@@ -194,7 +196,9 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
     apiTypeSchema: dict[str, Any] = {
         "type": "string",
-        "description": f"보고서 API 타입. {reportApiDesc}" if reportApiDesc else "보고서 API 타입 (예: dividend, employee)",
+        "description": f"보고서 API 타입. {reportApiDesc}"
+        if reportApiDesc
+        else "보고서 API 타입 (예: dividend, employee)",
     }
     if reportApiEnum:
         apiTypeSchema["enum"] = reportApiEnum

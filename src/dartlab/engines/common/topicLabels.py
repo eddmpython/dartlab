@@ -18,13 +18,19 @@ TOPIC_LABELS: dict[str, dict[str, str | list[str]]] = {
     "productService": {"label": "사업 내용", "aliases": ["제품", "서비스", "주요제품"]},
     "rawMaterial": {"label": "원재료", "aliases": ["원재료", "원자재", "소재"]},
     "salesOrder": {"label": "매출/수주", "aliases": ["수주", "매출현황", "수주잔고"]},
-    "riskDerivative": {"label": "위험관리/파생", "aliases": ["파생상품", "헤지", "환위험", "리스크", "위험요인", "리스크요인"]},
+    "riskDerivative": {
+        "label": "위험관리/파생",
+        "aliases": ["파생상품", "헤지", "환위험", "리스크", "위험요인", "리스크요인"],
+    },
     "majorContractsAndRnd": {"label": "주요 계약/R&D", "aliases": ["연구개발", "R&D", "특허"]},
     "otherReferences": {"label": "기타 참고사항", "aliases": []},
     # ── III. 재무에 관한 사항 ──
     "fsSummary": {"label": "재무제표 요약", "aliases": ["재무요약", "비용성격별", "부문정보"]},
     "consolidatedStatements": {"label": "연결 재무제표", "aliases": ["연결재무제표"]},
-    "consolidatedNotes": {"label": "연결 주석", "aliases": ["주석", "비용성격별분류", "리스", "우발채무주석", "공정가치"]},
+    "consolidatedNotes": {
+        "label": "연결 주석",
+        "aliases": ["주석", "비용성격별분류", "리스", "우발채무주석", "공정가치"],
+    },
     "financialStatements": {"label": "개별 재무제표", "aliases": ["개별재무제표", "별도재무제표"]},
     "financialNotes": {"label": "개별 주석", "aliases": ["개별주석"]},
     "fundraising": {"label": "자금조달", "aliases": ["자금조달", "차입금", "사채"]},

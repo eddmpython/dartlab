@@ -326,33 +326,236 @@ def _buildEarningsQuality(aSeries: dict, ratios: object) -> EarningsQuality:
 
 
 def _buildFinancial(aSeries: dict, aYears: list[str], quantScores: object) -> FinancialAnalysis:
-    """재무 분석 조립."""
+    """재무 분석 조립 — 수익성/원가구조/효율성/성장/규모."""
     dupont = getattr(quantScores, "dupont", None) if quantScores else None
 
     salesList = aSeries.get("IS", {}).get("sales", [])
+    cogsList = aSeries.get("IS", {}).get("cost_of_sales", [])
     opList = aSeries.get("IS", {}).get("operating_profit", [])
     niList = aSeries.get("IS", {}).get("net_profit", [])
+    recvList = aSeries.get("BS", {}).get("trade_receivable", []) or aSeries.get("BS", {}).get(
+        "trade_and_other_receivables", []
+    )
+    invList = aSeries.get("BS", {}).get("inventories", [])
+    payList = aSeries.get("BS", {}).get("trade_payable", []) or aSeries.get("BS", {}).get(
+        "trade_and_other_payables", []
+    )
 
-    n = min(len(salesList), len(opList), len(niList), len(aYears))
+    n = min(len(salesList), len(aYears))
     start = max(0, n - 5)
-    opMargins: list[float | None] = []
-    netMargins: list[float | None] = []
+    trends: dict[str, list[float | None]] = {}
     periods: list[str] = []
 
+    opMargins: list[float | None] = []
+    netMargins: list[float | None] = []
+    grossMargins: list[float | None] = []
+    cogsRatios: list[float | None] = []
+    sgaRatios: list[float | None] = []
+    dsoList: list[float | None] = []
+    dioList: list[float | None] = []
+    dpoList: list[float | None] = []
+    cccList: list[float | None] = []
+    salesGr: list[float | None] = []
+    opGr: list[float | None] = []
+    salesAbs: list[float | None] = []
+    opAbs: list[float | None] = []
+    niAbs: list[float | None] = []
+
     for i in range(start, n):
-        s = salesList[i]
+        s = salesList[i] if i < len(salesList) else None
+        cogs = cogsList[i] if i < len(cogsList) else None
+        op = opList[i] if i < len(opList) else None
+        ni = niList[i] if i < len(niList) else None
+        recv = recvList[i] if i < len(recvList) else None
+        inv = invList[i] if i < len(invList) else None
+        pay = payList[i] if i < len(payList) else None
         periods.append(aYears[i])
+
+        # 절대 규모
+        salesAbs.append(s)
+        opAbs.append(op)
+        niAbs.append(ni)
+
+        # 수익성
         if s and s > 0:
-            opMargins.append(round(opList[i] / s * 100, 2) if opList[i] is not None else None)
-            netMargins.append(round(niList[i] / s * 100, 2) if niList[i] is not None else None)
+            opMargins.append(round(op / s * 100, 2) if op is not None else None)
+            netMargins.append(round(ni / s * 100, 2) if ni is not None else None)
+            if cogs is not None:
+                gm = round((s - cogs) / s * 100, 2)
+                grossMargins.append(gm)
+                cogsRatios.append(round(cogs / s * 100, 2))
+                if op is not None:
+                    sga = s - cogs - op
+                    sgaRatios.append(round(sga / s * 100, 2))
+                else:
+                    sgaRatios.append(None)
+            else:
+                grossMargins.append(None)
+                cogsRatios.append(None)
+                sgaRatios.append(None)
         else:
             opMargins.append(None)
             netMargins.append(None)
+            grossMargins.append(None)
+            cogsRatios.append(None)
+            sgaRatios.append(None)
+
+        # 효율성 (DSO/DIO/DPO/CCC)
+        dso = recv / (s / 365) if recv is not None and s and s > 0 else None
+        dio = inv / (cogs / 365) if inv is not None and cogs and cogs > 0 else None
+        dpo = pay / (cogs / 365) if pay is not None and cogs and cogs > 0 else None
+        dsoList.append(round(dso, 1) if dso is not None else None)
+        dioList.append(round(dio, 1) if dio is not None else None)
+        dpoList.append(round(dpo, 1) if dpo is not None else None)
+        if dso is not None and dio is not None and dpo is not None:
+            cccList.append(round(dso + dio - dpo, 1))
+        else:
+            cccList.append(None)
+
+        # 성장률
+        prevIdx = i - 1
+        if prevIdx >= 0 and prevIdx < len(salesList):
+            ps = salesList[prevIdx]
+            if ps and ps != 0 and s is not None:
+                salesGr.append(round((s - ps) / abs(ps) * 100, 1))
+            else:
+                salesGr.append(None)
+            po = opList[prevIdx] if prevIdx < len(opList) else None
+            if po and po != 0 and op is not None:
+                opGr.append(round((op - po) / abs(po) * 100, 1))
+            else:
+                opGr.append(None)
+        else:
+            salesGr.append(None)
+            opGr.append(None)
+
+    trends["operatingMargin"] = opMargins
+    trends["netMargin"] = netMargins
+    trends["grossMargin"] = grossMargins
+    trends["costOfSalesRatio"] = cogsRatios
+    trends["sgaRatio"] = sgaRatios
+    trends["dso"] = dsoList
+    trends["dio"] = dioList
+    trends["dpo"] = dpoList
+    trends["ccc"] = cccList
+    trends["salesGrowth"] = salesGr
+    trends["opGrowth"] = opGr
+    trends["sales"] = salesAbs
+    trends["operatingProfit"] = opAbs
+    trends["netProfit"] = niAbs
+
+    # ── BS 요약 시계열 ──
+    bsSummary: dict[str, list[float | None]] = {}
+    bsKeys = {
+        "totalAssets": "total_assets",
+        "currentAssets": "current_assets",
+        "nonCurrentAssets": "non_current_assets",
+        "totalLiabilities": "total_liabilities",
+        "totalEquity": "total_equity",
+        "cashAndEquivalents": "cash_and_cash_equivalents",
+        "shortTermBorrowings": "short_term_borrowings",
+        "longTermBorrowings": "long_term_borrowings",
+        "retainedEarnings": "retained_earnings",
+        "inventories": "inventories",
+        "tradeReceivable": "trade_receivable",
+    }
+    bsData = aSeries.get("BS", {})
+    for outKey, srcKey in bsKeys.items():
+        raw = bsData.get(srcKey, [])
+        vals: list[float | None] = []
+        for i in range(start, n):
+            vals.append(raw[i] if i < len(raw) else None)
+        bsSummary[outKey] = vals
+
+    # 파생: 부채비율, 유동비율
+    debtRatios: list[float | None] = []
+    currentRatios: list[float | None] = []
+    clList = bsData.get("current_liabilities", [])
+    for i in range(start, n):
+        tl = bsSummary["totalLiabilities"][i - start] if (i - start) < len(bsSummary["totalLiabilities"]) else None
+        te = bsSummary["totalEquity"][i - start] if (i - start) < len(bsSummary["totalEquity"]) else None
+        ca = bsSummary["currentAssets"][i - start] if (i - start) < len(bsSummary["currentAssets"]) else None
+        cl = clList[i] if i < len(clList) else None
+        debtRatios.append(round(tl / te * 100, 1) if tl and te and te != 0 else None)
+        currentRatios.append(round(ca / cl * 100, 1) if ca and cl and cl != 0 else None)
+    bsSummary["debtRatio"] = debtRatios
+    bsSummary["currentRatio"] = currentRatios
+
+    # ── CF 요약 시계열 ──
+    cfSummary: dict[str, list[float | None]] = {}
+    cfKeys = {
+        "operatingCf": "operating_cf",
+        "investingCf": "investing_cf",
+        "financingCf": "financing_cf",
+    }
+    cfData = aSeries.get("CF", {})
+    for outKey, srcKey in cfKeys.items():
+        raw = cfData.get(srcKey, [])
+        vals2: list[float | None] = []
+        for i in range(start, n):
+            vals2.append(raw[i] if i < len(raw) else None)
+        cfSummary[outKey] = vals2
+
+    # FCF = OCF - CAPEX (capex는 보통 음수로 저장)
+    capexRaw = cfData.get("capital_expenditures", []) or cfData.get("capex", [])
+    fcfList: list[float | None] = []
+    capexList: list[float | None] = []
+    for i in range(start, n):
+        ocf = cfSummary["operatingCf"][i - start] if (i - start) < len(cfSummary["operatingCf"]) else None
+        cx = capexRaw[i] if i < len(capexRaw) else None
+        capexList.append(cx)
+        if ocf is not None and cx is not None:
+            fcfList.append(round(ocf - abs(cx), 1))
+        elif ocf is not None:
+            fcfList.append(ocf)
+        else:
+            fcfList.append(None)
+    cfSummary["capex"] = capexList
+    cfSummary["fcf"] = fcfList
+
+    # ── 3표 연결 지표 ──
+    crossMetrics: dict[str, list[float | None]] = {}
+    ocfToNi: list[float | None] = []
+    for idx in range(len(periods)):
+        ocf = cfSummary["operatingCf"][idx] if idx < len(cfSummary["operatingCf"]) else None
+        ni = niAbs[idx] if idx < len(niAbs) else None
+        if ocf is not None and ni is not None and ni != 0:
+            ocfToNi.append(round(ocf / ni, 2))
+        else:
+            ocfToNi.append(None)
+    crossMetrics["ocfToNetIncome"] = ocfToNi
+
+    # capex / 감가상각
+    deprRaw = cfData.get("depreciation_amortization", []) or cfData.get("depreciation", [])
+    capexToDepr: list[float | None] = []
+    for i in range(start, n):
+        cx = capexRaw[i] if i < len(capexRaw) else None
+        dp = deprRaw[i] if i < len(deprRaw) else None
+        if cx is not None and dp is not None and dp != 0:
+            capexToDepr.append(round(abs(cx) / abs(dp), 2))
+        else:
+            capexToDepr.append(None)
+    crossMetrics["capexToDepreciation"] = capexToDepr
+
+    # 이익잉여금 증가율
+    reRaw = bsData.get("retained_earnings", [])
+    reGrowth: list[float | None] = []
+    for i in range(start, n):
+        cur = reRaw[i] if i < len(reRaw) else None
+        prev = reRaw[i - 1] if (i - 1) >= 0 and (i - 1) < len(reRaw) else None
+        if cur is not None and prev is not None and prev != 0:
+            reGrowth.append(round((cur - prev) / abs(prev) * 100, 1))
+        else:
+            reGrowth.append(None)
+    crossMetrics["retainedEarningsGrowth"] = reGrowth
 
     return FinancialAnalysis(
         dupont=dupont,
-        marginTrends={"operatingMargin": opMargins, "netMargin": netMargins},
+        marginTrends=trends,
         periods=periods,
+        bsSummary=bsSummary,
+        cfSummary=cfSummary,
+        crossStatementMetrics=crossMetrics,
     )
 
 

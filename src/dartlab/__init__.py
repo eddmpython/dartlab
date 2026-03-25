@@ -6,11 +6,11 @@ from importlib.metadata import version as _pkg_version
 
 from dartlab import config, core, engines
 from dartlab.company import Company
+from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.engines import ai as llm
 from dartlab.engines.company.dart.company import Company as _DartEngineCompany
 from dartlab.engines.company.dart.openapi.dart import Dart, OpenDart
 from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
-from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.engines.gather.fred import Fred
 from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 
@@ -266,7 +266,9 @@ def news(query: str, *, market: str = "KR", days: int = 30):
     return getDefaultGather().news(query, market=market, days=days)
 
 
-def price(stockCode: str, *, market: str = "KR", start: str | None = None, end: str | None = None, snapshot: bool = False):
+def price(
+    stockCode: str, *, market: str = "KR", start: str | None = None, end: str | None = None, snapshot: bool = False
+):
     """주가 시계열 (기본 1년 OHLCV) 또는 스냅샷.
 
     Example::

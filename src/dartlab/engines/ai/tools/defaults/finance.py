@@ -146,8 +146,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
     register_tool(
         "get_data",
         get_data,
-        "기업의 재무/공시 데이터를 조회합니다. "
-        "모듈명을 모르면 먼저 `list_modules`를 호출하세요.",
+        "기업의 재무/공시 데이터를 조회합니다. 모듈명을 모르면 먼저 `list_modules`를 호출하세요.",
         {
             "type": "object",
             "properties": {
@@ -419,7 +418,9 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     reportApiParamSchema: dict[str, Any] = {
         "type": "string",
-        "description": f"조회할 API 타입. {reportApiDesc}" if reportApiDesc else "조회할 API 타입 (예: dividend, employee, majorHolder)",
+        "description": f"조회할 API 타입. {reportApiDesc}"
+        if reportApiDesc
+        else "조회할 API 타입 (예: dividend, employee, majorHolder)",
     }
     if reportApiEnum:
         reportApiParamSchema["enum"] = reportApiEnum

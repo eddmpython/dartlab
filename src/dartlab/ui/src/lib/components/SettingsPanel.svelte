@@ -181,6 +181,11 @@
 										<!-- API Key input (not available) -->
 										{#if needsKey && !info.available}
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
+												{#if name === "gemini"}
+													<div class="text-[11px] text-dl-text mb-2">
+														<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline font-medium">Google AI Studio</a>에서 무료 API key를 발급받으세요 (Google 로그인 → Create API key)
+													</div>
+												{/if}
 												<div class="text-[11px] text-dl-text-muted mb-2">
 													{info.envKey ? `환경변수 ${info.envKey}로도 설정 가능합니다` : "API 키를 입력하세요"}
 												</div>

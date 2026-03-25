@@ -25,11 +25,7 @@ def renderCompany(company: Any) -> str:
     hasDocs = getattr(company, "_hasDocs", False)
     hasFin = getattr(company, "_hasFinanceParquet", False)
     hasRpt = getattr(company, "_hasReport", False)
-    lines.append(
-        f"  데이터: docs {_checkMark(hasDocs)}  "
-        f"finance {_checkMark(hasFin)}  "
-        f"report {_checkMark(hasRpt)}"
-    )
+    lines.append(f"  데이터: docs {_checkMark(hasDocs)}  finance {_checkMark(hasFin)}  report {_checkMark(hasRpt)}")
 
     # 기간 범위 (sections 캐시된 경우에만)
     cache = getattr(company, "_cache", {})

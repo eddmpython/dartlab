@@ -4,6 +4,10 @@
 DART, EDGAR 등 어떤 L1 소스의 결과든 동일한 dict 구조면 동작.
 """
 
+from dartlab.engines.common.finance.currency import (
+    convertValue,
+    getExchangeRate,
+)
 from dartlab.engines.common.finance.extract import (
     getAnnualValues,
     getLatest,
@@ -27,10 +31,6 @@ from dartlab.engines.common.finance.proforma import (
     build_proforma,
     compute_company_wacc,
     extract_historical_ratios,
-)
-from dartlab.engines.common.finance.currency import (
-    convertValue,
-    getExchangeRate,
 )
 from dartlab.engines.common.finance.ratios import (
     RATIO_CATEGORIES,

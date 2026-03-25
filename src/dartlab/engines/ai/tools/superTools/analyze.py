@@ -9,9 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import polars as pl
-
-from ..defaults.helpers import df_to_md, format_tool_value
+from ..defaults.helpers import format_tool_value
 
 
 def registerAnalyzeTool(company: Any, registerTool) -> None:

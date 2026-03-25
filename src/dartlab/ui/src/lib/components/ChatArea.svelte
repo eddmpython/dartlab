@@ -57,7 +57,9 @@
 			else if (type === "input") data = { label: "LLM 입력", module: "input", text: msg.userContent };
 			else if (type === "tool-calls" || type === "tool-results") {
 				const ev = msg.toolEvents?.[idx];
-				data = { label: `${ev?.name || "도구"} ${ev?.type === "call" ? "호출" : "결과"}`, module: "tool", text: JSON.stringify(ev, null, 2) };
+				const isResult = ev?.type === "result";
+				const displayText = isResult && ev?.result ? ev.result : JSON.stringify(ev, null, 2);
+				data = { label: `${ev?.name || "도구"} ${isResult ? "결과" : "호출"}`, module: "tool", text: displayText };
 			}
 			if (data) onOpenData?.(data);
 		};
@@ -200,7 +202,7 @@
 <!-- shared contract marker: onOpenEvidence={onOpenEvidence} -->
 <div class="relative flex flex-col h-full min-h-0">
 	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll} role="log" aria-live="polite" aria-label="대화 내용">
-		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-5 pb-10 space-y-8">
+		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-12 pb-10 space-y-8">
 				{#if hasMore}
 					<div bind:this={loadMoreSentinel} class="flex justify-center py-3">
 						<button

@@ -154,6 +154,12 @@ class FinancialAnalysis:
     dupont: DuPontResult | None = None
     marginTrends: dict[str, list[float | None]] = field(default_factory=dict)
     periods: list[str] = field(default_factory=list)
+    # BS 요약 시계열
+    bsSummary: dict[str, list[float | None]] = field(default_factory=dict)
+    # CF 요약 시계열
+    cfSummary: dict[str, list[float | None]] = field(default_factory=dict)
+    # 3표 연결 지표 시계열
+    crossStatementMetrics: dict[str, list[float | None]] = field(default_factory=dict)
 
 
 @dataclass
@@ -570,6 +576,13 @@ class ResearchResult:
         va = self.valuationAnalysis
         if va is None:
             return
+        if (
+            va.dcfPerShare is None
+            and va.ddmPerShare is None
+            and va.relativePerShare is None
+            and va.fairValueRange is None
+        ):
+            return
         from rich.panel import Panel
         from rich.table import Table
 
@@ -697,7 +710,7 @@ class ResearchResult:
             for item in a.items[:4]:
                 sev = item.get("severity", "")
                 color = "red" if sev in ("critical", "danger") else "yellow"
-                riskText.append(f"  [{color}]● {item.get('text', '')}[/{color}]\n")
+                riskText.append(f"  ● {item.get('text', '')}\n", style=color)
         if ra.riskNarrative:
             riskText.append(f"\n{ra.riskNarrative}", style="italic")
         console.print(Panel(riskText, title="[bold]Risk Analysis[/bold]", border_style="red"))
@@ -720,8 +733,8 @@ class ResearchResult:
             op = rc.get("operatingProfitEst")
             ft.add_row(
                 str(rc.get("fiscalYear", "?")),
-                _fmtBig(rev * 1e6 if rev else None),
-                _fmtBig(op * 1e6 if op else None),
+                _fmtBig(rev * 1e8 if rev else None),
+                _fmtBig(op * 1e8 if op else None),
                 _fmtNum(rc.get("epsEst"), "원", precision=0) if rc.get("epsEst") else "-",
             )
         if fc.selfForecast:
@@ -749,6 +762,9 @@ class ResearchResult:
         """Peer Comparison 패널."""
         pa = self.peerAnalysis
         if pa is None:
+            return
+        hasCompanyData = any(v is not None for v in pa.companyMultiples.values())
+        if not hasCompanyData and not pa.sectorMultiples:
             return
         from rich.panel import Panel
         from rich.table import Table
@@ -779,6 +795,9 @@ class ResearchResult:
         md = self.marketData
         if md is None:
             return
+        hasData = (md.marketCap and md.marketCap > 0) or md.per is not None or md.pbr is not None
+        if not hasData:
+            return
         from rich.panel import Panel
         from rich.table import Table
 
@@ -804,24 +823,81 @@ class ResearchResult:
         console.print(Panel(mt, title="[bold]Market Data[/bold]", border_style="blue"))
 
     def _renderFinancial(self, console) -> None:
-        """Financial Trends 패널."""
+        """Financial Trends — 수익성·DuPont·효율성 종합 테이블."""
         if not self.financial or not self.financial.periods:
             return
         from rich.panel import Panel
         from rich.table import Table
 
         fa = self.financial
-        ft = Table(show_header=True, box=None, padding=(0, 2))
-        ft.add_column("지표")
-        for p in fa.periods:
+        periods = fa.periods
+
+        # ── 1) 수익성 추이 ──
+        ft = Table(show_header=True, box=None, padding=(0, 2), title="수익성 추이")
+        ft.add_column("지표", style="dim")
+        for p in periods:
             ft.add_column(p, justify="right")
+        if fa.marginTrends.get("grossMargin"):
+            ft.add_row("매출총이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["grossMargin"]])
         if fa.marginTrends.get("operatingMargin"):
             ft.add_row("영업이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["operatingMargin"]])
         if fa.marginTrends.get("netMargin"):
             ft.add_row("순이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["netMargin"]])
+        if fa.marginTrends.get("costOfSalesRatio"):
+            ft.add_row("원가율", *[_fmtNum(v, "%") for v in fa.marginTrends["costOfSalesRatio"]])
+        if fa.marginTrends.get("sgaRatio"):
+            ft.add_row("판관비율", *[_fmtNum(v, "%") for v in fa.marginTrends["sgaRatio"]])
+
+        # ── 2) DuPont 분해 ──
         if fa.dupont and fa.dupont.roe:
-            ft.add_row("ROE", *[_fmtNum(v * 100 if v else None, "%") for v in fa.dupont.roe])
-        console.print(Panel(ft, title="[bold]Financial Trends[/bold]", border_style="dim"))
+            dp = fa.dupont
+            ft.add_row("")  # separator
+            ft.add_row(
+                "[bold]ROE[/bold]",
+                *[_fmtNum(v * 100 if v else None, "%") for v in dp.roe],
+            )
+            ft.add_row(
+                "  순이익률",
+                *[_fmtNum(v * 100 if v else None, "%") for v in dp.netMargin],
+            )
+            ft.add_row(
+                "  자산회전율",
+                *[_fmtNum(v, "배", precision=2) for v in dp.assetTurnover],
+            )
+            ft.add_row(
+                "  레버리지",
+                *[_fmtNum(v, "배") for v in dp.equityMultiplier],
+            )
+
+        # ── 3) 효율성 추이 ──
+        if fa.marginTrends.get("dso") or fa.marginTrends.get("ccc"):
+            ft.add_row("")  # separator
+            if fa.marginTrends.get("dso"):
+                ft.add_row("매출채권회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dso"]])
+            if fa.marginTrends.get("dio"):
+                ft.add_row("재고자산회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dio"]])
+            if fa.marginTrends.get("dpo"):
+                ft.add_row("매입채무회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dpo"]])
+            if fa.marginTrends.get("ccc"):
+                ft.add_row("[bold]CCC[/bold]", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["ccc"]])
+
+        # ── 4) 성장률 ──
+        if fa.marginTrends.get("salesGrowth"):
+            ft.add_row("")
+            ft.add_row("매출 성장률", *[_fmtNum(v, "%") for v in fa.marginTrends["salesGrowth"]])
+        if fa.marginTrends.get("opGrowth"):
+            ft.add_row("영업이익 성장률", *[_fmtNum(v, "%") for v in fa.marginTrends["opGrowth"]])
+
+        # ── 5) 규모 (억 단위) ──
+        if fa.marginTrends.get("sales"):
+            ft.add_row("")
+            ft.add_row("매출", *[_fmtBig(v) for v in fa.marginTrends["sales"]])
+        if fa.marginTrends.get("operatingProfit"):
+            ft.add_row("영업이익", *[_fmtBig(v) for v in fa.marginTrends["operatingProfit"]])
+        if fa.marginTrends.get("netProfit"):
+            ft.add_row("순이익", *[_fmtBig(v) for v in fa.marginTrends["netProfit"]])
+
+        console.print(Panel(ft, title="[bold]Financial Analysis[/bold]", border_style="cyan"))
 
     def _renderSectorKpis(self, console) -> None:
         """Sector KPIs 패널."""

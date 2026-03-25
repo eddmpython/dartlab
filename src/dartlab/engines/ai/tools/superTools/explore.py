@@ -91,7 +91,15 @@ def registerExploreTool(company: Any, registerTool) -> None:
             match = df.filter(pl.col("종목코드") == stockCode)
             if match.height > 0:
                 row = match.row(0, named=True)
-                labels = {"업종": "업종", "주요제품": "주요제품", "대표자명": "대표자", "상장일": "상장일", "결산월": "결산월", "홈페이지": "홈페이지", "지역": "지역"}
+                labels = {
+                    "업종": "업종",
+                    "주요제품": "주요제품",
+                    "대표자명": "대표자",
+                    "상장일": "상장일",
+                    "결산월": "결산월",
+                    "홈페이지": "홈페이지",
+                    "지역": "지역",
+                }
                 for col, label in labels.items():
                     val = row.get(col)
                     if val:
