@@ -207,7 +207,7 @@ def test_sections_horizontalize_numbering_changes_into_same_row(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -301,7 +301,7 @@ def test_sections_preserve_pending_chapter_content_when_subitems_exist(monkeypat
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -354,7 +354,7 @@ def test_sections_horizontalize_same_path_when_source_block_order_shifts(monkeyp
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -427,7 +427,7 @@ def test_sections_horizontalize_semantic_alias_headings_into_same_row(monkeypatc
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -501,7 +501,7 @@ def test_sections_semantic_registry_tracks_raw_path_variants(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -568,7 +568,7 @@ def test_sections_horizontalize_root_alias_children_into_same_row(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -629,7 +629,7 @@ def test_sections_do_not_merge_distinct_business_unit_segments(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -921,7 +921,7 @@ def test_structure_events_capture_reassigned_transition(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (
@@ -1239,7 +1239,7 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
         assert sinceYear == 2016
         schema = {
             "section_order": pl.Int64,
-            "section_title": pl.Utf8,
+            "section_title": pl.Categorical,
             "section_content": pl.Utf8,
         }
         yield (

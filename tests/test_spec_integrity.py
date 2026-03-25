@@ -54,7 +54,18 @@ def test_insight_areas_match_code():
     """insight spec의 areas가 실제 grading.py 분석 함수와 일치하는지."""
     from dartlab.engines.analysis.insight.spec import AREAS
 
-    expected = {"performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity"}
+    expected = {
+        "performance",
+        "profitability",
+        "health",
+        "cashflow",
+        "governance",
+        "risk",
+        "opportunity",
+        "predictability",
+        "uncertainty",
+        "coreEarnings",
+    }
     assert set(AREAS.keys()) == expected
 
 
