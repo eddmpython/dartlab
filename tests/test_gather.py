@@ -388,6 +388,7 @@ class TestGatherFacade:
         async def _mock_domain(self_inner, domain_name, stock_code, market):
             if domain_name == "naver":
                 from dartlab.engines.gather.domains import naver
+
                 return await naver.fetch_all(stock_code, self_inner._client)
             return GatherResult(domain=domain_name)
 
@@ -433,6 +434,7 @@ class TestGatherFacade:
         async def _mock_domain(self_inner, domain_name, stock_code, market):
             if domain_name == "naver":
                 from dartlab.engines.gather.domains import naver
+
                 return await naver.fetch_all(stock_code, self_inner._client)
             return GatherResult(domain=domain_name)
 
