@@ -19,6 +19,10 @@
 | 003 | adaptiveContextTier.py | 질문 복잡도 기반 tier | Adaptive RAG (Jeong 2024) | ✅ 완료 (부분 채택) |
 | 004 | routeHintExpanded.py | Route Hint 15건 확장 검증 | 002 확장 A/B | ✅ 완료 (가설 채택) |
 | 005 | e2eToolSelection.py | E2E tool 선택 + 답변 품질 종합 검증 | selectTools hasCompany + 한국어 강제 | ✅ 완료 (채택) |
+| 006 | serverResolveE2E.py | 서버 resolve 경로 E2E 종목 해석 | strip_particles + COMMON_ALIASES | ✅ 완료 (채택) |
+| 007 | enumBaseline.py | Enum + Super Tool 스키마 정합성 | topicLabels + dynamic enum | ✅ 완료 (채택) |
+| 008 | superToolE2E.py | Super Tool E2E 비교 (96개→8개) | 7 Super Tool dispatcher | ✅ 완료 (채택) |
+| 009 | superToolLiveE2E.py | 라이브 AI 답변 품질 E2E | ollama qwen3:4b/8b 실제 답변 | ✅ 완료 (가설 기각) |
 
 ## 001 결과 — Few-Shot (기각)
 
@@ -108,3 +112,74 @@
 - **`src/dartlab/engines/ai/conversation/templates/system_base.py`**: 한국어 답변 강제 — "[필수] 한국어 질문에는 반드시 한국어로만 답변"
 - **`src/dartlab/engines/ai/types.py`**: LLMConfig.merge()에서 provider 변경 시 model 리셋
 - **`src/dartlab/engines/ai/providers/oauth_codex.py`**: Plus/Pro 자동 감지, rate limit 리셋 시간 표시
+
+## 006 결과 — 서버 Resolve E2E (채택)
+
+- 조사 제거(`strip_particles`) + `COMMON_ALIASES` 확장
+- resolve 정확도: 12/12 (100%) — "하이닉스의", "삼전의", "엔솔은", "카뱅을" 등 모두 정확 매칭
+- 서버 `try_resolve_company`와 코어 `resolve_from_text` 양쪽 모두 동일 동작
+
+## 007-008 결과 — AI 도구 아키텍처 전면 재설계 (채택)
+
+### Phase 1: Enum + 한국어 라벨
+- `topicLabels.py`: 70개 topic × 한국어 라벨 + aliases
+- `show_topic`: 동적 topic enum (삼성전자 기준 53개)
+- `get_data`: 동적 module enum (9개)
+- `get_report_data`: 동적 apiType enum (24개)
+
+### Phase 2: Super Tool 통합
+- **96개 → 8개** (7 super tool + 1 plugin)
+- `explore`: 공시 탐색 (show/topics/trace/diff/info/filings/search)
+- `finance`: 재무 데이터 (data/modules/ratios/growth/yoy/anomalies/report/search)
+- `analyze`: 심층 분석 (insight/sector/rank/esg/valuation/changes/audit)
+- `market`: 시장 데이터 (price/consensus/history/screen)
+- `openapi`: DART/EDGAR API (dartCall/searchFilings/capabilities)
+- `system`: 메타 정보 (spec/features/searchCompany/dataStatus/suggest)
+- `chart`: UI/차트 (navigate/chart)
+
+### Phase 3: Route Hint → enum 흡수
+- ollama(Super Tool 모드)에서 Route Hint 비활성화 — enum description이 대체
+- `buildToolPrompt`에 Super Tool 전용 분석 절차 생성
+
+### Phase 4: 동적 topic 검색
+- `explore(action='search', keyword='비용')` → fsSummary, consolidatedNotes 정확 반환
+- topicLabels aliases + sections 본문 양쪽 검색
+
+### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `engines/common/topicLabels.py` | **신규** — 70개 topic 한국어 라벨 + aliases |
+| `engines/ai/tools/defaults/company.py` | show_topic 동적 enum |
+| `engines/ai/tools/defaults/finance.py` | get_data/get_report_data 동적 enum |
+| `engines/ai/tools/superTools/` | **신규** — 7개 Super Tool dispatcher |
+| `engines/ai/tools/registry.py` | useSuperTools 플래그 |
+| `engines/ai/tools/selector.py` | Super Tool 전용 분석 절차 |
+| `engines/ai/runtime/core.py` | ollama → Super Tool 자동 활성화, Route Hint 조건부 비활성화 |
+| `engines/ai/runtime/run_modes.py` | _run_agent에 useSuperTools 전달 |
+
+## 009 결과 — Super Tool 라이브 E2E (가설 기각)
+
+### qwen3:4b
+| 질문 | 기대 | 실제 | 평가 |
+|------|------|------|------|
+| 재무제표 요약 | finance(data,IS/BS) | system×5 → hallucination | ❌ |
+| 배당 현황 | finance(report,dividend) | finance(report,dividend) ✅ → chart 에러 | △ |
+| 리스크 요인 | explore(show,riskDerivative) | system(dataStatus)×2 → 영어 답변 | ❌ |
+| 안녕하세요 | 도구없음 | (없음) ✅ | ✅ |
+
+- tool 정확도: 33%, 한국어: 75%
+
+### qwen3:8b (latest)
+| 질문 | 기대 | 실제 | 평가 |
+|------|------|------|------|
+| 재무제표 요약 | finance(data,IS) | finance(data,sections) — wrong module | △ |
+| 리스크 요인 | explore(show,riskDerivative) | (없음) → hallucination | ❌ |
+| 배당 현황 | finance(report,dividend) | explore(topic='dividend') — action 누락 | ❌ |
+
+- tool 정확도: 0%, 한국어: 100%
+
+### 핵심 발견
+1. Super Tool enum/라벨만으로는 소형 모델(4b/8b)의 tool calling 품질 개선 불가
+2. action dispatch 패턴(explore → action → target)을 소형 모델이 이해 못함
+3. 도구 없이 답변 생성 → 100% hallucination (허위 수치)
+4. **다음 단계**: Plan-Execute 패턴(시스템이 질문 분류 → 도구 계획 생성 → 순차 실행) 또는 14b+ 모델 필수

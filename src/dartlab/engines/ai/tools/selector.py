@@ -157,31 +157,69 @@ def buildToolPrompt(runtime: ToolRuntime | None = None) -> str:
                 shortDesc = shortDesc.rsplit(" ", 1)[0] + "…"
             lines.append(f"- `{spec.id}`: {shortDesc}")
 
-    # 분석 절차 + 전문가 플로우 (도메인 전문 지식 — 하드코딩 유지)
+    # Super Tool 모드 여부 판단 (도구가 10개 이하면 Super Tool)
+    _isSuperToolMode = len(specs) <= 10
+
+    if _isSuperToolMode:
+        lines.extend(
+            [
+                "",
+                "### [필수] 도구 선택 규칙:",
+                "- **회사 데이터가 필요한 질문은 반드시 explore 또는 finance를 먼저 호출한다.**",
+                "- system은 메타 질문('뭘 할 수 있어?', '데이터 상태')에만 사용한다.",
+                "- 회사 분석 질문에 system을 호출하면 안 된다.",
+                "- 데이터를 조회하지 않고 답변을 지어내면 안 된다. 반드시 도구 결과를 근거로 답변한다.",
+                "",
+                "### 분석 절차 (Super Tool):",
+                "1. 질문이 회사/재무/공시에 관한 것이면 → explore 또는 finance 호출",
+                "2. 질문이 시스템 기능에 관한 것이면 → system 호출",
+                "3. 일반 대화(인사, 잡담)이면 → 도구 없이 직접 답변",
+                "",
+                "### 도구 매핑:",
+                "- 사업/제품/리스크/경영진/주석/원재료 → explore(action='show', target=topic)",
+                "- 재무제표/매출/이익/비율 → finance(action='data', module='IS/BS/CF/ratios')",
+                "- 배당/임원보수/최대주주 → finance(action='report', apiType='dividend/executive/majorHolder')",
+                "- topic을 모르겠으면 → explore(action='topics') 또는 explore(action='search', keyword='키워드')",
+                "- 인사이트/ESG/밸류에이션 → analyze(action='insight/esg/valuation')",
+                "",
+                "### 전문가 플로우:",
+                "- **사업 구조**: explore(show, businessOverview) → explore(show, productService)",
+                "- **재무 심층**: finance(data, IS) → finance(data, BS) → finance(ratios)",
+                "- **리스크**: explore(show, riskDerivative) → explore(diff, riskDerivative)",
+                "- **배당**: finance(report, dividend) → finance(data, CF)",
+                "- **키워드 검색**: explore(search, '비용의 성격별분류') → explore(show, 찾은topic)",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "",
+                "### 분석 절차:",
+                "1. 질문을 이해하고 `기능 탐색`인지 `회사 분석`인지 먼저 구분",
+                "2. 기능 탐색 질문이면 meta 도구 (`get_runtime_capabilities`, `get_system_spec`, `get_tool_catalog`) 먼저 호출",
+                "3. 회사 분석이면 `list_topics`로 공시 topic을 먼저 확인",
+                "4. 최근 공시/filing 목록은 `list_live_filings`, 공시 본문은 `read_filing`",
+                "5. 공시 topic 원문이 필요하면 `show_topic`, 변화가 궁금하면 `diff_topic`",
+                "6. 재무 수치가 필요하면 `get_data`(BS/IS/CF), 정기보고서는 `get_report_data`",
+                "7. 코드 작업 요청이면 coding 도구 사용 검토",
+                "8. 필요 시 분석 엔진 도구로 심층 분석",
+                "9. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
+                "10. 모든 수치에 출처(테이블명, 연도)를 반드시 인용",
+                "",
+                "### 전문가 분석 도구 플로우:",
+                "- **사업 구조**: list_topics → show_topic('businessOverview') → show_topic('segments') → show_topic('productService')",
+                "- **최근 공시 읽기**: list_live_filings() → read_filing(doc_id/doc_url)",
+                "- **재무 심층**: get_data('IS') → get_data('BS') → compute_ratios() → get_insight()",
+                "- **이익의 질**: get_data('IS') → get_data('CF') → compute_ratios() → detect_anomalies()",
+                "- **리스크 종합**: show_topic('riskFactor') → show_topic('contingentLiability') → diff_topic('riskFactor')",
+                "- **배당 지속가능성**: get_report_data('dividend') → get_data('CF') → compute_ratios()",
+                "- **경영진 품질**: show_topic('executive') → show_topic('executivePay') → show_topic('boardOfDirectors')",
+                "- **종합 평가**: get_insight() → compute_ratios() → list_topics() → show_topic('riskFactor') → get_data('CF')",
+            ]
+        )
+
     lines.extend(
         [
-            "",
-            "### 분석 절차:",
-            "1. 질문을 이해하고 `기능 탐색`인지 `회사 분석`인지 먼저 구분",
-            "2. 기능 탐색 질문이면 meta 도구 (`get_runtime_capabilities`, `get_system_spec`, `get_tool_catalog`) 먼저 호출",
-            "3. 회사 분석이면 `list_topics`로 공시 topic을 먼저 확인",
-            "4. 최근 공시/filing 목록은 `list_live_filings`, 공시 본문은 `read_filing`",
-            "5. 공시 topic 원문이 필요하면 `show_topic`, 변화가 궁금하면 `diff_topic`",
-            "6. 재무 수치가 필요하면 `get_data`(BS/IS/CF), 정기보고서는 `get_report_data`",
-            "7. 코드 작업 요청이면 coding 도구 사용 검토",
-            "8. 필요 시 분석 엔진 도구로 심층 분석",
-            "9. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
-            "10. 모든 수치에 출처(테이블명, 연도)를 반드시 인용",
-            "",
-            "### 전문가 분석 도구 플로우:",
-            "- **사업 구조**: list_topics → show_topic('businessOverview') → show_topic('segments') → show_topic('productService')",
-            "- **최근 공시 읽기**: list_live_filings() → read_filing(doc_id/doc_url)",
-            "- **재무 심층**: get_data('IS') → get_data('BS') → compute_ratios() → get_insight()",
-            "- **이익의 질**: get_data('IS') → get_data('CF') → compute_ratios() → detect_anomalies()",
-            "- **리스크 종합**: show_topic('riskFactor') → show_topic('contingentLiability') → diff_topic('riskFactor')",
-            "- **배당 지속가능성**: get_report_data('dividend') → get_data('CF') → compute_ratios()",
-            "- **경영진 품질**: show_topic('executive') → show_topic('executivePay') → show_topic('boardOfDirectors')",
-            "- **종합 평가**: get_insight() → compute_ratios() → list_topics() → show_topic('riskFactor') → get_data('CF')",
             "",
             "### 답변 방식:",
             "- 범위를 물으면 가능한 것 / 바로 할 수 있는 것 / 아직 안 되는 것을 짧게 정리한 뒤 다음 액션을 제안",

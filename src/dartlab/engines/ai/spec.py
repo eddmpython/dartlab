@@ -18,6 +18,7 @@ _ENGINE_SPECS = [
     "dartlab.engines.analysis.insight.spec",
     "dartlab.engines.analysis.rank.spec",
     "dartlab.engines.gather.fred.spec",
+    "dartlab.engines.analysis.research.spec",
 ]
 
 

@@ -822,15 +822,8 @@ def _analyze_inner(
 
     user_content = f"{context_text}\n\n---\n\n질문: {question}" if context_text else question
 
-    # Tool Route Hint 주입 — 모든 provider에서 키워드 기반 추천 도구 힌트
-    # tool calling 가능 provider: LLM이 힌트대로 도구 호출
-    # tool calling 불가 provider: LLM이 힌트를 참고하여 답변 구조화
-    if company is not None and question:
-        from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
-
-        _route_hint = buildToolRouteHint(question)
-        if _route_hint:
-            user_content = f"{_route_hint}\n\n---\n\n{user_content}"
+    # Route Hint 비활성화 — Super Tool enum description이 대체
+    # routeHint.py는 deprecated. 향후 제거 예정.
 
     # 플러그인 힌트를 LLM context에 주입 (AI가 자연스럽게 안내)
     if question:
@@ -859,8 +852,8 @@ def _analyze_inner(
     use_guided = not tool_capable and is_compact and company is not None and hasattr(llm, "complete_json")
 
     if tool_capable:
-        if max_tools is None and resolved_provider == "ollama":
-            max_tools = 10
+        # 모든 provider에서 Super Tool 모드 기본 활성화 — 8개 도구로 통합
+        _useSuperTools = True
         effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))
         for _ev in _run_agent(
             llm,
@@ -870,6 +863,7 @@ def _analyze_inner(
             max_turns=effective_turns,
             max_tools=max_tools,
             q_type=q_type,
+            useSuperTools=_useSuperTools,
             _full_response_parts=_full_response_parts,
         ):
             if _ev.kind == "tool_call" and isinstance(_ev.data, dict):

@@ -80,6 +80,41 @@ ROUTE_HINTS: dict[str, list[dict]] = {
     "제품": [
         {"tool": "show_topic", "args": {"topic": "productService"}, "reason": "주요 제품/서비스"},
     ],
+    "비용": [
+        {"tool": "show_topic", "args": {"topic": "fsSummary"}, "reason": "비용의 성격별분류 포함"},
+    ],
+    "성격별": [
+        {"tool": "show_topic", "args": {"topic": "fsSummary"}, "reason": "비용의 성격별분류"},
+    ],
+    "재무 요약": [
+        {"tool": "show_topic", "args": {"topic": "fsSummary"}, "reason": "재무제표 요약"},
+        {"tool": "get_data", "args": {"module_name": "IS"}, "reason": "손익계산서"},
+    ],
+    "사업": [
+        {"tool": "show_topic", "args": {"topic": "businessOverview"}, "reason": "사업의 내용"},
+    ],
+    "건전성": [
+        {"tool": "get_data", "args": {"module_name": "ratios"}, "reason": "재무비율"},
+        {"tool": "get_data", "args": {"module_name": "BS"}, "reason": "재무상태표"},
+    ],
+    "부문": [
+        {"tool": "show_topic", "args": {"topic": "fsSummary"}, "reason": "부문별 정보"},
+    ],
+    "자회사": [
+        {"tool": "show_topic", "args": {"topic": "affiliateGroup"}, "reason": "계열사/자회사 현황"},
+    ],
+    "관계사": [
+        {"tool": "show_topic", "args": {"topic": "relatedPartyTx"}, "reason": "관계사 거래"},
+    ],
+    "수주": [
+        {"tool": "show_topic", "args": {"topic": "salesOrder"}, "reason": "수주 현황"},
+    ],
+    "영업이익": [
+        {"tool": "get_data", "args": {"module_name": "IS"}, "reason": "손익계산서 시계열"},
+    ],
+    "매출": [
+        {"tool": "get_data", "args": {"module_name": "IS"}, "reason": "손익계산서 시계열"},
+    ],
 }
 
 

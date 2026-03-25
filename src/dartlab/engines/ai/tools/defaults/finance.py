@@ -125,20 +125,33 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     from dartlab.core.registry import buildModuleDescription
 
+    # get_data 동적 enum: company에서 사용 가능한 모듈 목록 추출
+    moduleEnum: list[str] = []
+    try:
+        from dartlab.engines.ai.context.builder import scan_available_modules as _scanMods
+
+        _mods = _scanMods(company)
+        if _mods:
+            moduleEnum = [m["name"] for m in _mods]
+    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
+        pass
+    moduleDesc = buildModuleDescription()
+    moduleParamSchema: dict[str, Any] = {
+        "type": "string",
+        "description": f"조회할 모듈명. {moduleDesc}" if moduleDesc else "조회할 모듈명",
+    }
+    if moduleEnum:
+        moduleParamSchema["enum"] = moduleEnum
+
     register_tool(
         "get_data",
         get_data,
         "기업의 재무/공시 데이터를 조회합니다. "
-        "주요 module_name: "
-        f"{buildModuleDescription()}. "
         "모듈명을 모르면 먼저 `list_modules`를 호출하세요.",
         {
             "type": "object",
             "properties": {
-                "module_name": {
-                    "type": "string",
-                    "description": "조회할 모듈명 (예: BS, IS, CF, dividend, audit, fsSummary)",
-                },
+                "module_name": moduleParamSchema,
             },
             "required": ["module_name"],
         },
@@ -388,21 +401,39 @@ def register_finance_tools(company: Any, register_tool) -> None:
             return f"'{api_type}' 데이터가 없습니다. 사용 가능한 타입 예시: {available}"
         return df_to_md(df)
 
+    # get_report_data 동적 enum: company.report에서 사용 가능한 API 타입 추출
+    reportApiEnum: list[str] = []
+    reportApiDesc = ""
+    try:
+        _report = getattr(company, "report", None)
+        if _report is not None:
+            _available = getattr(_report, "availableApiTypes", None)
+            if _available:
+                reportApiEnum = list(_available) if not isinstance(_available, list) else _available
+        if reportApiEnum:
+            from dartlab.engines.company.dart.report.types import API_TYPE_LABELS as _apiLabels
+
+            reportApiDesc = ", ".join(f"{k}={_apiLabels.get(k, k)}" for k in reportApiEnum[:15])
+    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
+        pass
+
+    reportApiParamSchema: dict[str, Any] = {
+        "type": "string",
+        "description": f"조회할 API 타입. {reportApiDesc}" if reportApiDesc else "조회할 API 타입 (예: dividend, employee, majorHolder)",
+    }
+    if reportApiEnum:
+        reportApiParamSchema["enum"] = reportApiEnum
+
     register_tool(
         "get_report_data",
         get_report_data,
         "DART 정기보고서 API의 표준화된 정형 데이터를 조회합니다. "
-        "api_type: dividend(배당), employee(직원), executive(임원), majorHolder(최대주주), "
-        "auditOpinion(감사의견), capitalChange(증자감자), stockTotal(주식총수), treasuryStock(자기주식). "
         "사용 시점: 배당·직원·임원·주주 등 정형화된 수치가 필요할 때. get_data(BS/IS)와는 다른 소스. "
         "사용하지 말 것: 공시 원문 텍스트가 필요하면 show_topic을 사용하세요.",
         {
             "type": "object",
             "properties": {
-                "api_type": {
-                    "type": "string",
-                    "description": "조회할 API 타입 (예: dividend, employee, majorHolder)",
-                },
+                "api_type": reportApiParamSchema,
             },
             "required": ["api_type"],
         },

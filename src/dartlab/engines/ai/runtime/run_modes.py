@@ -174,13 +174,14 @@ def _run_agent(
     max_turns: int = 5,
     max_tools: int | None = None,
     q_type: str | None = None,
+    useSuperTools: bool = False,
     _full_response_parts: list[str],
 ) -> Generator[AnalysisEvent, None, None]:
     """에이전트 모드 — 도구 호출 + 스트리밍 응답."""
     from dartlab.engines.ai.runtime.agent import agent_loop_stream, build_agent_system_addition
     from dartlab.engines.ai.tools.registry import build_tool_runtime
 
-    runtime = build_tool_runtime(company, name="core-agent")
+    runtime = build_tool_runtime(company, name="core-agent", useSuperTools=useSuperTools)
 
     system_addition = build_agent_system_addition(runtime)
     messages[0]["content"] += system_addition

@@ -6,6 +6,8 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.engines.common.topicLabels import buildTopicEnumDescription
+
 from .helpers import df_to_md, format_tool_value, maybe_int
 
 
@@ -49,6 +51,26 @@ def register_company_tools(company: Any, register_tool) -> None:
             return f"show('{topic}') 실패: {e}"
         return format_tool_value(result, max_rows=50, max_chars=8000)
 
+    # company의 실제 topic 목록 + enum + 한국어 라벨 동적 생성
+    topicEnum: list[str] = []
+    try:
+        topicsDf = getattr(company, "topics", None)
+        if topicsDf is not None:
+            if isinstance(topicsDf, pl.DataFrame):
+                topicEnum = topicsDf["topic"].to_list()
+            else:
+                topicEnum = list(topicsDf)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        pass
+
+    topicEnumDesc = buildTopicEnumDescription(topicEnum) if topicEnum else ""
+    topicParamSchema: dict[str, Any] = {
+        "type": "string",
+        "description": f"조회할 topic. {topicEnumDesc}" if topicEnumDesc else "조회할 topic",
+    }
+    if topicEnum:
+        topicParamSchema["enum"] = topicEnum
+
     register_tool(
         "show_topic",
         show_topic,
@@ -56,16 +78,13 @@ def register_company_tools(company: Any, register_tool) -> None:
         "block 없이 호출 → 블록 목차(block번호, type, source, period, preview). "
         "block=N → 해당 블록의 실제 데이터(원문 텍스트 또는 수치 테이블). "
         "**여러 기간의 블록이 존재하므로, 기간간 비교가 필요하면 각 기간의 block을 순서대로 조회하세요.** "
-        "사용 시점: 사업 내용, 리스크, 배당 정책, 부문별 매출, 원재료 등 공시 원문이 필요할 때. "
+        "사용 시점: 사업 내용, 리스크, 배당 정책, 부문별 매출, 원재료, 비용의 성격별분류 등 공시 원문이 필요할 때. "
         "사용하지 말 것: 단순 재무 수치만 필요하면 get_data(BS/IS/CF)가 더 빠릅니다. "
         "topic을 모르면 먼저 list_topics를 호출하세요.",
         {
             "type": "object",
             "properties": {
-                "topic": {
-                    "type": "string",
-                    "description": "조회할 topic (예: businessOverview, riskFactor, BS, IS, CF, dividend)",
-                },
+                "topic": topicParamSchema,
                 "block": {
                     "type": "string",
                     "description": "블록 인덱스. 비워두면 블록 목차, 숫자면 해당 블록 데이터",
@@ -726,4 +745,106 @@ def register_company_tools(company: Any, register_tool) -> None:
         category="company",
         questionTypes=("리스크", "공시", "종합"),
         priority=50,
+    )
+
+    def analyze_disclosure_change(keyword: str = "") -> str:
+        """공시 변화 종합 분석 — diff + 키워드 빈도 결합."""
+        parts: list[str] = []
+
+        # 1) diff 요약
+        try:
+            diffResult = company.diff()
+            parts.append(format_tool_value(diffResult, max_rows=15, max_chars=2000))
+        except (AttributeError, TypeError, ValueError):
+            parts.append("diff 데이터 없음")
+
+        # 2) 키워드 빈도
+        try:
+            from dartlab.engines.common.docs.diff import keywordFrequency
+
+            sections = company.docs.sections
+            if sections is not None and not sections.is_empty():
+                kws = [keyword] if keyword else None
+                freq = keywordFrequency(sections, keywords=kws)
+                if freq is not None and not freq.is_empty():
+                    parts.append("\n## 키워드 빈도 추이\n")
+                    parts.append(df_to_md(freq.head(30)))
+        except (AttributeError, ImportError, TypeError, ValueError):
+            pass
+
+        return "\n".join(parts) if parts else "공시 변화 데이터 없음"
+
+    register_tool(
+        "analyze_disclosure_change",
+        analyze_disclosure_change,
+        "공시 텍스트 변화를 종합 분석합니다: diff 요약 + 키워드 빈도 추이. "
+        "keyword를 지정하면 해당 키워드의 topic별 연도 빈도를 추가로 보여줍니다. "
+        "사용 시점: '공시 변화 분석', '키워드 트렌드', 'AI 언급이 늘었나', '리스크 변화 추이'. "
+        "diff_topic보다 넓은 시야 — 전체 변화 요약 + 키워드 기반 인사이트.",
+        {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "추적할 키워드 (예: 'AI', '공급망', '소송'). 비워두면 54개 내장 키워드 전체 분석",
+                    "default": "",
+                },
+            },
+        },
+        category="company",
+        questionTypes=("리스크", "성장성", "공시", "종합"),
+        priority=65,
+    )
+
+    def analyze_supply_risk() -> str:
+        """공급망 리스크 종합 평가 — 공급사/고객사 집중도 + 재무 건전성."""
+        parts: list[str] = []
+
+        # 1) 공급망 분석
+        try:
+            from dartlab.engines.analysis.supply import analyzeSupplyChain
+
+            supplyResult = analyzeSupplyChain(company)
+            if supplyResult is not None:
+                parts.append("## 공급망 분석\n")
+                parts.append(format_tool_value(supplyResult, max_rows=20, max_chars=2000))
+        except (ImportError, AttributeError, TypeError, ValueError):
+            parts.append("공급망 분석 미지원 또는 데이터 없음")
+
+        # 2) insight 건전성
+        try:
+            insights = getattr(company, "insights", None)
+            if insights and hasattr(insights, "get"):
+                health = insights.get("health")
+                if health:
+                    parts.append(f"\n## 재무 건전성: {getattr(health, 'grade', '?')}")
+                    details = getattr(health, "details", [])
+                    if details:
+                        parts.append("\n".join(f"- {d}" for d in details[:5]))
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+        # 3) 관련 공시 텍스트
+        try:
+            for topic in ("rawMaterial", "riskSupplyChain", "riskFactor"):
+                val = company.show(topic)
+                if val is not None:
+                    preview = format_tool_value(val, max_rows=5, max_chars=800)
+                    parts.append(f"\n## {topic}\n{preview}")
+                    break
+        except (AttributeError, KeyError, TypeError, ValueError):
+            pass
+
+        return "\n".join(parts) if parts else "공급망 리스크 데이터 없음"
+
+    register_tool(
+        "analyze_supply_risk",
+        analyze_supply_risk,
+        "공급망 리스크를 종합 평가합니다: 공급사/고객사 집중도, 재무 건전성, 원재료 관련 공시. "
+        "사용 시점: '공급망 위험', '거래처 집중도', '원재료 리스크', '고객 의존도' 관련 질문. "
+        "supply chain 분석 + insight 건전성 + 원재료/리스크 공시 텍스트를 결합합니다.",
+        {"type": "object", "properties": {}},
+        category="analysis",
+        questionTypes=("리스크", "종합"),
+        priority=55,
     )

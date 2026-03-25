@@ -32,16 +32,56 @@
   - `company_adapter.py`: facade mismatch adapter
   - `dartOpenapi.py`: OpenDART filing intent 파싱 + recent filing context
 - `tools/`
-  - `registry.py`: tool/capability binding
+  - `registry.py`: tool/capability binding (`useSuperTools` 플래그로 모드 전환)
   - `runtime.py`: tool execution runtime
+  - `selector.py`: capability 기반 도구 선택 + Super Tool 전용 prompt 분기
   - `plugin.py`: external tool plugin bridge
   - `coding.py`: coding runtime bridge
   - `recipes.py`: 질문 유형별 선행 분석 레시피
+  - `routeHint.py`: 키워드→도구 매핑 (Super Tool 모드에서 deprecated)
+  - `superTools/`: **7개 Super Tool dispatcher** (explore/finance/analyze/market/openapi/system/chart)
+  - `defaults/`: 기존 101개 도구 등록 (레거시 모드에서 사용)
 - `providers/support/`
   - `codex_cli.py`, `cli_setup.py`, `ollama_setup.py`, `oauth_token.py`
   - provider 구현이 직접 쓰는 CLI/OAuth 보조 계층
 
 루트 shim 모듈(`core.py`, `tools_registry.py`, `dialogue.py` 등)은 제거되었다. 새 코드는 반드시 하위 패키지 경로(`runtime/`, `conversation/`, `context/`, `tools/`, `providers/support/`)를 직접 import한다.
+
+## Super Tool 아키텍처 (2026-03-25)
+
+101개 도구를 7개 Super Tool dispatcher로 통합. ollama(소형 모델)에서 자동 활성화.
+
+### 모델 요구사항
+- **최소**: tool calling 지원 + 14B 파라미터 이상 (예: qwen3:14b, llama3.1:8b-instruct)
+- **권장**: GPT-4o, Claude Sonnet 이상 — tool calling + 한국어 + 복합 파라미터 동시 처리
+- **부적합**: 8B 이하 소형 모델 (qwen3:4b/8b) — action dispatch 패턴을 이해하지 못함, hallucination 다발
+- 실험 009 검증 결과: qwen3:4b tool 정확도 33%, qwen3:8b 0%. 소형 모델은 tool calling AI 분석에 사용 불가.
+
+### 활성화 조건
+- **모든 provider에서 Super Tool 기본 활성화** (`_useSuperTools = True`)
+- `build_tool_runtime(company, useSuperTools=False)`로 레거시 모드 수동 전환 가능
+- Route Hint(`routeHint.py`)는 deprecated — Super Tool enum description이 대체
+
+### 7개 Super Tool
+| Tool | 통합 대상 | action enum |
+|------|----------|-------------|
+| `explore` | show_topic, list_topics, trace, diff, info, filings, search | 7 |
+| `finance` | get_data, list_modules, ratios, growth, yoy, anomalies, report, search | 8 |
+| `analyze` | insight, sector, rank, esg, valuation, changes, audit | 7 |
+| `market` | price, consensus, history, screen | 4 |
+| `openapi` | dartCall, searchFilings, capabilities | 3 |
+| `system` | spec, features, searchCompany, dataStatus, suggest | 5 |
+| `chart` | navigate, chart | 2 |
+
+### 동적 enum
+- `explore.target`: company.topics에서 추출 (삼성전자 기준 53개) + 한국어 라벨
+- `finance.module`: scan_available_modules에서 추출 (9개) + 한국어 라벨
+- `finance.apiType`: company.report.availableApiTypes에서 추출 (24개) + 한국어 라벨
+- enum description에 `topicLabels.py`의 한국어 라벨과 aliases 포함
+
+### 한국어 라벨 source of truth
+- `engines/common/topicLabels.py`: 70개 topic × 한국어 라벨 + 검색 aliases
+- UI의 `topicLabels.js`와 동일 매핑 + AI용 aliases 추가
 
 ## UI Action 계약
 
