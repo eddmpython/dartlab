@@ -321,19 +321,24 @@ class TestNaverSource:
 
         mock_client = _make_async_client(
             {
-                "foreignSummary": {"foreignOwnershipRatio": "55.30"},
-                "dealTrendByInvestor": [
-                    {"investorType": "외국인", "accumulatedNetBuyVolume": "-2,500,000"},
-                    {"investorType": "기관", "accumulatedNetBuyVolume": "1,200,000"},
+                "dealTrendInfos": [
+                    {
+                        "bizdate": "20260326",
+                        "foreignerPureBuyQuant": "-2,500,000",
+                        "organPureBuyQuant": "1,200,000",
+                        "individualPureBuyQuant": "300,000",
+                        "foreignerHoldRatio": "55.30",
+                    },
                 ],
             }
         )
 
         result = asyncio.run(fetch_flow("005930", mock_client))
         assert result is not None
-        assert result.foreign_holding_ratio == 55.3
-        assert result.foreign_net == -2500000
-        assert result.institution_net == 1200000
+        assert isinstance(result, list)
+        assert result[0]["foreignHoldingRatio"] == 55.3
+        assert result[0]["foreignNet"] == -2500000.0
+        assert result[0]["institutionNet"] == 1200000.0
 
     def test_clean_number_edge_cases(self):
         from dartlab.engines.gather.domains.naver import _clean_number
@@ -378,7 +383,17 @@ class TestGatherFacade:
         )
 
         g = Gather(client=mock_client)
-        snapshot = g.collect("005930")
+
+        # naver fetch_all만 mock — yahoo 등 실제 네트워크 차단
+        async def _mock_domain(self_inner, domain_name, stock_code, market):
+            if domain_name == "naver":
+                from dartlab.engines.gather.domains import naver
+                return await naver.fetch_all(stock_code, self_inner._client)
+            return GatherResult(domain=domain_name)
+
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(Gather, "_fetch_domain_async", _mock_domain)
+            snapshot = g.collect("005930")
 
         assert snapshot.stock_code == "005930"
         assert len(snapshot.sources_available) > 0
@@ -413,16 +428,26 @@ class TestGatherFacade:
         mock_client.close = AsyncMock()
 
         g = Gather(client=mock_client)
-        snapshot = g.collect("005930")
+
+        # naver fetch_all만 mock — yahoo 등 실제 네트워크 차단
+        async def _mock_domain(self_inner, domain_name, stock_code, market):
+            if domain_name == "naver":
+                from dartlab.engines.gather.domains import naver
+                return await naver.fetch_all(stock_code, self_inner._client)
+            return GatherResult(domain=domain_name)
+
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(Gather, "_fetch_domain_async", _mock_domain)
+            snapshot = g.collect("005930")
 
         assert snapshot.stock_code == "005930"
-        # price는 성공, consensus는 None
+        # price는 성공 (naver basic URL), consensus는 실패 (mock_get이 에러)
         assert snapshot.price is not None
         assert snapshot.price.current == 200000
         assert snapshot.consensus is None
 
     def test_price_fallback(self):
-        """price() — 개별 조회."""
+        """price(snapshot=True) — 스냅샷 개별 조회."""
         from dartlab.engines.gather import Gather
 
         mock_client = _make_facade_client(
@@ -433,7 +458,7 @@ class TestGatherFacade:
         )
 
         g = Gather(client=mock_client)
-        price = g.price("005930")
+        price = g.price("005930", snapshot=True)
 
         assert price is not None
         assert price.current == 200000
