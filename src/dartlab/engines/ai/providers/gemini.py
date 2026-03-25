@@ -136,7 +136,6 @@ def _getValidToken() -> dict[str, Any] | None:
 
 def buildAuthUrl() -> tuple[str, str]:
     """OAuth authorize URL + state 반환."""
-    _loadClientSecret()  # 존재 확인
     clientCreds = _loadClientSecret()
     state = secrets.token_urlsafe(32)
     params = {

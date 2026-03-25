@@ -241,24 +241,34 @@
 										<!-- Gemini OAuth -->
 										{#if name === "gemini" && !info.available}
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
-												<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 로그인이 필요합니다</div>
-												<div class="text-[10px] text-dl-text-dim mb-2.5">
-													Google 계정으로 로그인하면 Gemini를 무료로 사용할 수 있습니다.
-												</div>
-												<button
-													class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
-													onclick={() => ui.handleGeminiOauthLogin()}
-													disabled={ui.geminiLoginPending}
-												>
-													{#if ui.geminiLoginPending}
-														<Loader2 size={12} class="animate-spin" />
-													{:else}
-														<Key size={12} />
-													{/if}
-													Google 로그인
-												</button>
 												{#if !ui.geminiDetail.sdkInstalled}
-													<div class="text-[10px] text-amber-400 mt-2">google-genai 패키지가 설치되어 있지 않습니다: <code>pip install dartlab[llm-gemini]</code></div>
+													<div class="text-[12px] text-dl-text mb-2.5">google-genai 패키지가 필요합니다</div>
+													<div class="text-[10px] text-dl-text-dim"><code class="px-1 py-0.5 rounded bg-dl-bg-darker">pip install dartlab[llm-gemini]</code></div>
+												{:else if !ui.geminiDetail.clientSecretExists}
+													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 설정이 필요합니다</div>
+													<div class="text-[10px] text-dl-text-dim mb-2">
+														<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline">Google Cloud Console</a>에서 OAuth 2.0 Client ID (Desktop app)를 생성하고 JSON을 다운로드하세요.
+													</div>
+													<div class="text-[10px] text-dl-text-dim">
+														파일 위치: <code class="px-1 py-0.5 rounded bg-dl-bg-darker">~/.dartlab/gemini_client_secret.json</code>
+													</div>
+												{:else}
+													<div class="text-[12px] text-dl-text mb-2.5">Google OAuth 로그인이 필요합니다</div>
+													<div class="text-[10px] text-dl-text-dim mb-2.5">
+														Google 계정으로 로그인하면 Gemini를 무료로 사용할 수 있습니다.
+													</div>
+													<button
+														class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dl-primary/20 text-dl-primary-light text-[12px] font-medium hover:bg-dl-primary/30 transition-colors disabled:opacity-40"
+														onclick={() => ui.handleGeminiOauthLogin()}
+														disabled={ui.geminiLoginPending}
+													>
+														{#if ui.geminiLoginPending}
+															<Loader2 size={12} class="animate-spin" />
+														{:else}
+															<Key size={12} />
+														{/if}
+														Google 로그인
+													</button>
 												{/if}
 											</div>
 										{/if}

@@ -131,16 +131,19 @@ def build_oauth_codex_detail(*, probe: bool) -> dict[str, Any]:
 def build_gemini_detail(*, probe: bool) -> dict[str, Any]:
     """Gemini OAuth 인증 상태."""
     try:
-        from dartlab.engines.ai.providers.gemini import isOAuthAuthenticated
+        from dartlab.engines.ai.providers.gemini import _CLIENT_SECRET_FILE, isOAuthAuthenticated
     except ImportError:
-        return {"authenticated": False, "sdkInstalled": False, "authMethod": "oauth", "checked": probe}
+        return {"authenticated": False, "sdkInstalled": False, "clientSecretExists": False, "authMethod": "oauth", "checked": probe}
+
+    clientSecretExists = _CLIENT_SECRET_FILE.exists()
 
     if not probe:
-        return {"authenticated": False, "sdkInstalled": True, "authMethod": "oauth", "checked": False}
+        return {"authenticated": False, "sdkInstalled": True, "clientSecretExists": clientSecretExists, "authMethod": "oauth", "checked": False}
 
     return {
         "authenticated": isOAuthAuthenticated(),
         "sdkInstalled": True,
+        "clientSecretExists": clientSecretExists,
         "authMethod": "oauth",
         "checked": True,
     }

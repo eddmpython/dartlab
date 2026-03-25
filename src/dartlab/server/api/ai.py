@@ -627,7 +627,10 @@ def api_gemini_oauth_authorize():
     """Gemini OAuth 인증 시작 — 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
     from dartlab.engines.ai.providers.gemini import OAUTH_REDIRECT_PORT, buildAuthUrl
 
-    auth_url, state = buildAuthUrl()
+    try:
+        auth_url, state = buildAuthUrl()
+    except FileNotFoundError as e:
+        raise HTTPException(400, detail=str(e))
 
     _gemini_oauth_state["state"] = state
     _gemini_oauth_state["done"] = False
