@@ -310,7 +310,7 @@ def _collectFilingRows(
                     items = _split40FSections(filing, text)
                 else:
                     items = _splitItems(text, filing["formType"])
-        except (requests.RequestException, TimeoutError, ValueError):
+        except (requests.RequestException, TimeoutError, ValueError, AttributeError, KeyError, TypeError):
             skippedFilings.append(str(filing["accessionNumber"]))
             if bar is not None:
                 bar()

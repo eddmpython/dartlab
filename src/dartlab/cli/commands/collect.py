@@ -232,7 +232,7 @@ def _runEdgar(console, args) -> int:
             fetchEdgarDocs(ticker, outPath, showProgress=True)
             succeeded += 1
             console.print("[green]OK[/]")
-        except (ValueError, KeyError, RuntimeError, OSError, TimeoutError) as e:
+        except (ValueError, KeyError, RuntimeError, OSError, TimeoutError, AttributeError) as e:
             failed += 1
             failedTickers.append(ticker)
             console.print(f"[red]실패: {e}[/]")
