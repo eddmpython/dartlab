@@ -17,7 +17,7 @@ import dataclasses
 import sys
 import textwrap
 from pathlib import Path
-from typing import Optional, get_type_hints
+from typing import get_type_hints
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
@@ -256,28 +256,58 @@ def generateApiSpec() -> str:
 def generateLlmsTxt() -> str:
     """llms.txt 생성 — AI 크롤러용."""
     lines = [
-        "# dartlab",
+        "# DartLab — DART + EDGAR Disclosure Analysis Python Library",
         "",
-        "> DART 전자공시 데이터를 활용한 한국 상장기업 재무 분석 Python 라이브러리.",
+        "> Turn Korean DART and US SEC EDGAR filings into one structured company map.",
+        "> 한국 DART 전자공시와 미국 SEC EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리.",
         "",
-        "## 설치",
+        "DartLab parses corporate disclosure filings — annual reports, 10-K, 10-Q — into structured,",
+        "comparable data. Financial statements (BS/IS/CF), 47 financial ratios, 7-area insight grades,",
+        "narrative text, and structured reports are all accessible with a single stock code.",
+        "Covers 2,700+ Korean listed companies and 970+ US companies.",
         "",
-        "```",
+        "## Install",
+        "",
+        "```bash",
         "pip install dartlab",
+        "# or",
+        "uv add dartlab",
         "```",
         "",
-        "## 빠른 시작",
+        "## Quick Start",
         "",
         "```python",
         "import dartlab",
         "",
-        'c = dartlab.Company("005930")',
-        "c.index                # 회사 구조 인덱스",
-        'c.show("BS")           # topic payload 보기',
-        'c.trace("dividend")    # source 추적',
+        "# Korean company (DART)",
+        'c = dartlab.Company("005930")       # Samsung Electronics',
+        "c.index                              # company structure index",
+        'c.show("BS")                         # balance sheet',
+        'c.show("executiveCompensation")      # topic payload',
+        'c.trace("dividend")                  # source provenance',
+        "c.ratios                             # 47 financial ratios",
+        "c.insights                           # 7-area A~F grades",
+        "",
+        "# US company (EDGAR)",
+        'us = dartlab.Company("AAPL")         # Apple Inc.',
+        "us.BS                                # balance sheet",
+        "us.ratios                            # financial ratios",
+        "us.sections                          # 10-K sections map",
         "```",
         "",
-        "## 주요 기능",
+        "## Key Features",
+        "",
+        "- **Sections-first architecture**: Every company becomes a topic × period DataFrame",
+        "- **Dual market**: DART (Korea) + EDGAR (US) with identical interface",
+        "- **One stock code**: `dartlab.Company('005930')` or `dartlab.Company('AAPL')`",
+        "- **Financial statements**: BS, IS, CF, CIS, SCE — XBRL-normalized, quarterly standalone",
+        "- **47 financial ratios**: ROE, ROA, operating margin, debt ratio, PER, PBR, FCF, etc.",
+        "- **7-area insight grades**: Performance, profitability, stability, cash flow, governance, risk, opportunity",
+        "- **AI analysis**: `dartlab ask '삼성전자 분석해줘'` — natural language company analysis",
+        "- **MCP server**: Expose company data as MCP tools for Claude Desktop, ChatGPT, Cursor",
+        "- **329 topics per company**: From dividend policy to segment breakdown",
+        "",
+        "## Data Modules",
         "",
     ]
 
@@ -291,18 +321,22 @@ def generateLlmsTxt() -> str:
 
     lines.extend(
         [
-            "## 분석 엔진",
+            "## Analysis Engines",
             "",
-            "- **섹터 분류**: WICS 11섹터 자동 분류 (오버라이드 → 키워드 → KSIC 3단계)",
-            "- **인사이트 등급**: 7영역 A~F 등급 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회)",
-            "- **시장 순위**: 매출/자산/성장률 전체+섹터내 순위",
-            "- **재무비율**: ROE, ROA, 영업이익률, 부채비율, PER, PBR, FCF 등 자동 계산",
+            "- **Sector classification**: WICS 11 sectors (override → keyword → KSIC 3-stage)",
+            "- **Insight grades**: 7-area A~F grades (performance, profitability, stability, cash flow, governance, risk, opportunity)",
+            "- **Market rank**: Revenue/assets/growth ranking — overall + within sector",
+            "- **Financial ratios**: ROE, ROA, operating margin, debt ratio, PER, PBR, FCF — auto-calculated",
+            "- **Supply chain**: Disclosed supplier/customer relationship mapping",
+            "- **ESG**: ESG disclosure extraction and scoring",
+            "- **Event study**: Abnormal return around disclosure dates",
             "",
-            "## 링크",
+            "## Links",
             "",
-            "- 문서: https://eddmpython.github.io/dartlab/docs/",
+            "- Documentation: https://eddmpython.github.io/dartlab/docs/",
             "- GitHub: https://github.com/eddmpython/dartlab",
             "- PyPI: https://pypi.org/project/dartlab/",
+            "- Demo: https://huggingface.co/spaces/eddmpython/dartlab",
             "",
         ]
     )

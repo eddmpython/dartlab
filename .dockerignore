@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+.venv-wsl
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+experiments
+notebooks
+tests
+docs
+blog
+landing
+data
+.claude
+*.egg-info

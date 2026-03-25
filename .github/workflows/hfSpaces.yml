@@ -1,0 +1,48 @@
+name: Deploy to HuggingFace Spaces
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push to HuggingFace Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git clone --depth 1 https://user:${HF_TOKEN}@huggingface.co/spaces/eddmpython/dartlab hf-space
+
+          # Dockerfile + 필요 파일만 복사
+          cp Dockerfile hf-space/
+          cp .dockerignore hf-space/
+          mkdir -p hf-space/scripts
+          cp scripts/hfPreload.py hf-space/scripts/
+
+          # HF Spaces README (앱 설정)
+          cat > hf-space/README.md << 'EOF'
+          ---
+          title: DartLab
+          emoji: 📊
+          colorFrom: red
+          colorTo: orange
+          sdk: docker
+          app_port: 7860
+          pinned: true
+          license: mit
+          short_description: "DART + EDGAR disclosure analysis — try without install"
+          ---
+          EOF
+
+          cd hf-space
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || (git commit -m "sync from $(git -C .. describe --tags --always 2>/dev/null || echo 'latest')" && git push)

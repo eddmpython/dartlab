@@ -124,9 +124,12 @@ dartlab = "dartlab.cli.main:main"
 [project.entry-points."dartlab.plugins"]
 
 [project.urls]
-Homepage = "https://github.com/eddmpython/dartlab"
+Homepage = "https://eddmpython.github.io/dartlab/"
 Repository = "https://github.com/eddmpython/dartlab"
+Documentation = "https://eddmpython.github.io/dartlab/docs/"
 Issues = "https://github.com/eddmpython/dartlab/issues"
+Changelog = "https://eddmpython.github.io/dartlab/docs/changelog"
+Demo = "https://huggingface.co/spaces/eddmpython/dartlab"
 
 [build-system]
 requires = ["hatchling"]

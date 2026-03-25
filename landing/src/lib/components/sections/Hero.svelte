@@ -3,7 +3,7 @@
 	import { brand } from '$lib/brand';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Download } from 'lucide-svelte';
+	import { Download, Globe } from 'lucide-svelte';
 </script>
 
 <section class="relative pt-32 pb-20 px-6 overflow-hidden">
@@ -45,13 +45,16 @@
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">
-			<Button href={brand.desktop}>
+			<Button href={brand.spaces}>
+				<Globe class="w-4 h-4" />
+				Try Online
+			</Button>
+			<Button variant="secondary" href={brand.desktop}>
 				<Download class="w-4 h-4" />
 				Windows Download
 			</Button>
 			<Button variant="secondary" href="#install">pip / uv Install</Button>
 			<Button variant="secondary" href="{base}/docs/">Docs</Button>
-			<Button variant="secondary" href="{base}/docs/getting-started/quickstart">Quick Start</Button>
 		</div>
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
