@@ -427,6 +427,87 @@ dartlab.benchmark()      # peer comparison
 dartlab.signal()         # change detection signals
 ```
 
+### Market Data Collection (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+
+The Gather engine collects external market data as **Polars DataFrames** — timeseries by default. Every request goes through automatic fallback chains, circuit breaker isolation, and TTL caching. All methods are synchronous — async parallel execution is handled internally.
+
+```python
+import dartlab
+
+# OHLCV timeseries — adjusted prices, 6000+ trading days in a single request
+dartlab.price("005930")                         # KR: 1-year default, Polars DataFrame
+dartlab.price("005930", start="2015-01-01")     # custom range
+dartlab.price("AAPL", market="US")              # US via Yahoo Finance chart API
+dartlab.price("005930", snapshot=True)          # opt-in: current price snapshot
+
+# supply/demand flow timeseries (KR only)
+dartlab.flow("005930")                          # DataFrame (date, foreignNet, institutionNet, ...)
+
+# macro indicators — full wide DataFrame
+dartlab.macro()                                 # KR 12 indicators (CPI, rates, FX, production, ...)
+dartlab.macro("US")                             # US 25 indicators (GDP, CPI, Fed Funds, S&P500, ...)
+dartlab.macro("CPI")                            # single indicator (auto-detects KR)
+dartlab.macro("FEDFUNDS")                       # single indicator (auto-detects US)
+
+# consensus, news
+dartlab.consensus("005930")                     # target price & analyst opinion
+dartlab.news("삼성전자")                         # Google News RSS → DataFrame
+```
+
+**How data is collected — don't worry, it's safe:**
+
+| Source | Data | Method |
+|--------|------|--------|
+| Naver Chart API | KR OHLCV (adjusted prices) | `fchart.stock.naver.com` — 1 request per stock, max 6000 days |
+| Yahoo Finance v8 | US/Global OHLCV | `query2.finance.yahoo.com/v8/finance/chart` — public chart API |
+| ECOS (Bank of Korea) | KR macro indicators | Official API with user's own key |
+| FRED (St. Louis Fed) | US macro indicators | Official API with user's own key |
+| Naver Mobile API | Consensus, flow, sector PER | `m.stock.naver.com/api` — JSON endpoints |
+| FMP | Fallback for US history | Financial Modeling Prep API (optional) |
+
+**Safety infrastructure:**
+
+- **Rate limiting** — per-domain RPM caps (Naver 30, ECOS 30, FRED 120) with async queue
+- **Circuit breaker** — 3 consecutive failures → source disabled for 60s, half-open retry
+- **Fallback chains** — KR: naver → yahoo_direct → yahoo / US: yahoo_direct → fmp → yahoo
+- **Stale-while-revalidate** — returns cached data on failure, warns via `log.warning`
+- **User-Agent rotation** — randomized per request to avoid fingerprinting
+- **No silent failures** — all API errors logged at warning level, never swallowed
+- **No scraping** — all sources are public APIs or official data endpoints
+
+### Cross-Border Analysis (beta)
+
+> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+
+```python
+c = dartlab.Company("005930")
+
+# keyword frequency across disclosure periods
+c.keywordTrend(keyword="AI")          # topic × period × keyword count
+c.keywordTrend()                      # all 54 built-in keywords
+
+# news headlines
+c.news()                              # recent 30 days
+dartlab.news("AAPL", market="US")     # US company news
+
+# global peer mapping (WICS → GICS sector)
+dartlab.crossBorderPeers("005930")    # → ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"]
+
+# currency conversion (FRED-based)
+from dartlab.engines.common.finance import getExchangeRate, convertValue
+getExchangeRate("KRW")                # KRW/USD rate
+convertValue(1_000_000, "KRW", "USD") # → ~730.0
+
+# audit opinion normalization (KR/EN/JP → canonical code)
+from dartlab.engines.common.audit import normalizeAuditOpinion
+normalizeAuditOpinion("적정")          # → "unqualified"
+normalizeAuditOpinion("Qualified")     # → "qualified"
+```
+
+Disclosure gap detection runs automatically inside `c.insights` — flags mismatches between text changes and financial health (e.g. risk text surges while financials are stable).
+
 ### Export (experimental)
 
 > **Experimental** — Breaking changes possible. Not for production.

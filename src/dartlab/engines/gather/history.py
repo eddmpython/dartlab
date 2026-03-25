@@ -72,7 +72,7 @@ async def fetch(
                 if result:
                     return result
 
-        except (GatherError, ImportError, OSError) as exc:
+        except (GatherError, ImportError, OSError, ValueError, AttributeError) as exc:
             log.debug("history fallback %s 실패: %s", source_name, exc)
             continue
 

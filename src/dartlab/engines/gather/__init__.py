@@ -165,7 +165,7 @@ class Gather:
                     )
                 )
         except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
-            log.debug("revenue_consensus 실패 (%s, %s): %s", stock_code, market, exc)
+            log.warning("revenue_consensus 실패 (%s, %s): %s", stock_code, market, exc)
             result = []
         if result:
             self._cache.put_typed(cache_key, "revenue_consensus", result)
@@ -242,7 +242,7 @@ class Gather:
                     return result
             except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
                 _cb.record_failure(source)
-                log.debug("dividends %s 실패 (%s): %s", source, stock_code, exc)
+                log.warning("dividends %s 실패 (%s): %s", source, stock_code, exc)
                 continue
         return []
 
@@ -269,7 +269,7 @@ class Gather:
                     return result
             except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
                 _cb.record_failure(source)
-                log.debug("splits %s 실패 (%s): %s", source, stock_code, exc)
+                log.warning("splits %s 실패 (%s): %s", source, stock_code, exc)
                 continue
         return []
 

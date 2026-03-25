@@ -427,6 +427,87 @@ dartlab.benchmark()      # 동종업체 비교
 dartlab.signal()         # 공시 변화 감지 시그널
 ```
 
+### 시장 데이터 수집 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+
+Gather 엔진은 모든 시장 데이터를 **Polars DataFrame 시계열**로 반환한다. 모든 요청은 자동 fallback 체인, circuit breaker 격리, TTL 캐시를 거친다. 동기 시그니처 — 내부적으로 async 병렬 실행.
+
+```python
+import dartlab
+
+# OHLCV 시계열 — 수정주가, 1회 요청으로 6000거래일+
+dartlab.price("005930")                         # KR: 기본 1년, Polars DataFrame
+dartlab.price("005930", start="2015-01-01")     # 기간 지정
+dartlab.price("AAPL", market="US")              # US: Yahoo Finance chart API
+dartlab.price("005930", snapshot=True)          # opt-in: 현재가 스냅샷
+
+# 수급 시계열 (KR 전용)
+dartlab.flow("005930")                          # DataFrame (date, foreignNet, institutionNet, ...)
+
+# 거시 지표 — 전체 wide DataFrame
+dartlab.macro()                                 # KR 12개 지표 (CPI, 금리, 환율, 생산, ...)
+dartlab.macro("US")                             # US 25개 지표 (GDP, CPI, 연방기금, S&P500, ...)
+dartlab.macro("CPI")                            # 단일 지표 (자동 KR 감지)
+dartlab.macro("FEDFUNDS")                       # 단일 지표 (자동 US 감지)
+
+# 컨센서스, 뉴스
+dartlab.consensus("005930")                     # 목표가 + 투자의견
+dartlab.news("삼성전자")                         # Google News RSS → DataFrame
+```
+
+**데이터 수집 방식 — 걱정하지 마라, 안전하다:**
+
+| 소스 | 데이터 | 방식 |
+|------|--------|------|
+| 네이버 차트 API | KR OHLCV (수정주가) | `fchart.stock.naver.com` — 종목당 1회 요청, 최대 6000일 |
+| Yahoo Finance v8 | US/글로벌 OHLCV | `query2.finance.yahoo.com/v8/finance/chart` — 공개 차트 API |
+| ECOS (한국은행) | KR 거시 지표 | 공식 API, 사용자 본인의 키 사용 |
+| FRED (세인트루이스 연방준비) | US 거시 지표 | 공식 API, 사용자 본인의 키 사용 |
+| 네이버 모바일 API | 컨센서스, 수급, 업종 PER | `m.stock.naver.com/api` — JSON 엔드포인트 |
+| FMP | US 히스토리 fallback | Financial Modeling Prep API (선택) |
+
+**안전 인프라:**
+
+- **Rate limiting** — 도메인별 RPM 제한 (네이버 30, ECOS 30, FRED 120) + async 큐
+- **Circuit breaker** — 연속 3회 실패 → 해당 소스 60초 비활성화, half-open 재시도
+- **Fallback 체인** — KR: naver → yahoo_direct → yahoo / US: yahoo_direct → fmp → yahoo
+- **Stale-while-revalidate** — 실패 시 캐시된 데이터 반환, `log.warning`으로 경고
+- **User-Agent 로테이션** — 요청마다 랜덤화
+- **조용한 실패 없음** — 모든 API 에러는 warning 레벨로 기록, 절대 삼키지 않음
+- **스크래핑 없음** — 모든 소스가 공개 API 또는 공식 데이터 엔드포인트
+
+### 국가간 비교 분석 (beta)
+
+> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+
+```python
+c = dartlab.Company("005930")
+
+# 공시 키워드 빈도 추이
+c.keywordTrend(keyword="AI")          # topic × period × keyword 빈도
+c.keywordTrend()                      # 54개 내장 키워드 전체
+
+# 뉴스 수집
+c.news()                              # 최근 30일
+dartlab.news("AAPL", market="US")     # 미국 기업 뉴스
+
+# 글로벌 피어 매핑 (WICS → GICS 섹터)
+dartlab.crossBorderPeers("005930")    # → ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"]
+
+# 환율 변환 (FRED 기반)
+from dartlab.engines.common.finance import getExchangeRate, convertValue
+getExchangeRate("KRW")                # KRW/USD 환율
+convertValue(1_000_000, "KRW", "USD") # → ~730.0
+
+# 감사의견 다국가 정규화 (한/영/일 → 통일 코드)
+from dartlab.engines.common.audit import normalizeAuditOpinion
+normalizeAuditOpinion("적정")          # → "unqualified"
+normalizeAuditOpinion("Qualified")     # → "qualified"
+```
+
+공시 불일치 탐지는 `c.insights` 안에서 자동 실행된다 — 텍스트 변화와 재무 건전성 간 불일치를 감지한다 (예: 리스크 서술 급증인데 재무는 안정적).
+
 ### 내보내기 (experimental)
 
 > **Experimental** — 호환성 깨지는 변경 가능. 프로덕션 사용 비권장.
