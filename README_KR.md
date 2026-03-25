@@ -31,13 +31,55 @@
 
 ## 설치
 
+**Python 3.12+** 필요.
+
 ```bash
-# 안정 릴리즈 (PyPI)
+# 코어 — 재무제표, sections, Company
 uv add dartlab
 
-# 최신 기능 — 빠르지만 breaking change 가능
+# pip으로 설치
+pip install dartlab
+```
+
+### 선택적 확장
+
+필요한 것만 설치한다:
+
+```bash
+uv add "dartlab[ai]"              # 웹 UI, 서버, 스트리밍 (FastAPI + uvicorn)
+uv add "dartlab[llm]"             # LLM 분석 — OpenAI
+uv add "dartlab[llm-anthropic]"   # LLM 분석 — OpenAI + Anthropic
+uv add "dartlab[charts]"          # Plotly 차트, 네트워크 그래프 (plotly + networkx + scipy)
+uv add "dartlab[event]"           # 이벤트 스터디, 주가 데이터 (yfinance)
+uv add "dartlab[mcp]"             # Claude Desktop / Code / Cursor용 MCP 서버
+uv add "dartlab[channel]"         # 웹 UI + cloudflared 터널 공유
+uv add "dartlab[channel-ngrok]"   # 웹 UI + ngrok 터널 공유
+uv add "dartlab[channel-full]"    # 전체 채널 + Telegram / Slack / Discord 봇
+uv add "dartlab[hf]"              # HuggingFace Hub (데이터 동기화 스크립트용)
+uv add "dartlab[all]"             # 위 전부 (channel 봇과 hf 제외)
+```
+
+**자주 쓰는 조합:**
+
+```bash
+# 재무 분석 + AI 채팅
+uv add "dartlab[ai,llm]"
+
+# 전체 분석 — 차트, AI, LLM
+uv add "dartlab[ai,llm,charts]"
+
+# 팀과 분석 공유 (터널)
+uv add "dartlab[channel]"
+```
+
+### 소스에서 설치
+
+```bash
 git clone https://github.com/eddmpython/dartlab.git
-cd dartlab && uv pip install -e .
+cd dartlab && uv pip install -e ".[all]"
+
+# pip으로 설치
+pip install -e ".[all]"
 ```
 
 PyPI 배포는 코어가 안정적일 때만 한다. 최신 기능(감사, 예측, 밸류에이션 등 실험적 기능 포함)을 바로 쓰고 싶다면 git clone을 권장하지만, 간헐적 breaking change에 주의해야 한다.
@@ -520,6 +562,7 @@ dartlab report "삼성전자" -o report.md
 
 # 웹 UI
 dartlab                    # 브라우저 UI 실행
+dartlab --help             # 전체 명령어 확인
 ```
 
 <details>
@@ -791,7 +834,11 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 
 ## 기여
 
-이 프로젝트는 엔진 변경 전에 실험으로 먼저 검증하는 방식을 선호한다. parser나 mapping을 바꾸고 싶다면 먼저 실험으로 확인한 뒤 엔진에 반영하는 흐름이 맞다.
+이 프로젝트는 **엔진 변경 전에 실험으로 먼저 검증**하는 방식을 선호한다.
+
+- **실험 폴더**: `experiments/XXX_camelCaseName/` — 각 파일은 독립 실행 가능해야 하고, docstring에 실제 결과가 포함되어야 한다
+- **데이터 기여** (`accountMappings.json`, `sectionMappings.json` 등): 실험 증거가 있을 때만 수용 — 수작업 일괄 수정 불가
+- 한국어/영어 이슈와 PR 모두 환영
 
 ## 라이선스
 

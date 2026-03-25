@@ -31,13 +31,55 @@
 
 ## Install
 
+Requires **Python 3.12+**.
+
 ```bash
-# Stable release (PyPI)
+# Core — financial statements, sections, Company
 uv add dartlab
 
-# Bleeding edge — latest features, but breaking changes possible
+# or with pip
+pip install dartlab
+```
+
+### Optional Extras
+
+Install only what you need:
+
+```bash
+uv add "dartlab[ai]"              # web UI, server, streaming (FastAPI + uvicorn)
+uv add "dartlab[llm]"             # LLM analysis — OpenAI
+uv add "dartlab[llm-anthropic]"   # LLM analysis — OpenAI + Anthropic
+uv add "dartlab[charts]"          # Plotly charts, network graphs (plotly + networkx + scipy)
+uv add "dartlab[event]"           # event study, stock data (yfinance)
+uv add "dartlab[mcp]"             # MCP server for Claude Desktop / Code / Cursor
+uv add "dartlab[channel]"         # web UI + cloudflared tunnel sharing
+uv add "dartlab[channel-ngrok]"   # web UI + ngrok tunnel sharing
+uv add "dartlab[channel-full]"    # all channels + Telegram / Slack / Discord bots
+uv add "dartlab[hf]"              # HuggingFace Hub (for data sync scripts)
+uv add "dartlab[all]"             # everything above (except channel bots and hf)
+```
+
+**Common combinations:**
+
+```bash
+# financial analysis + AI chat
+uv add "dartlab[ai,llm]"
+
+# full analysis suite — charts, AI, LLM
+uv add "dartlab[ai,llm,charts]"
+
+# share analysis with team via tunnel
+uv add "dartlab[channel]"
+```
+
+### From Source
+
+```bash
 git clone https://github.com/eddmpython/dartlab.git
-cd dartlab && uv pip install -e .
+cd dartlab && uv pip install -e ".[all]"
+
+# or with pip
+pip install -e ".[all]"
 ```
 
 PyPI releases are published only when the core is stable. If you want the latest features (including experimental ones like audit, forecast, valuation), clone the repo directly — but expect occasional breaking changes.
@@ -520,6 +562,7 @@ dartlab report "삼성전자" -o report.md
 
 # web UI
 dartlab                    # open browser UI
+dartlab --help             # show all commands
 ```
 
 <details>
@@ -811,7 +854,11 @@ See [docs/stability.md](docs/stability.md).
 
 ## Contributing
 
-The project prefers experiments before engine changes. If you want to propose a parser or mapping change, validate it first and then bring the result back into the engine.
+The project prefers **experiments before engine changes**. If you want to propose a parser or mapping change, validate it in `experiments/` first and bring the verified result back into the engine.
+
+- **Experiment folder**: `experiments/XXX_camelCaseName/` — each file must be independently runnable with actual results in its docstring
+- **Data contributions** (e.g. `accountMappings.json`, `sectionMappings.json`): only accepted when backed by experiment evidence — no manual bulk edits
+- Issues and PRs in Korean or English are both welcome
 
 ## License
 
