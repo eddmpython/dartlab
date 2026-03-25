@@ -22,7 +22,7 @@ export function createWorkspaceStore() {
 	const stored = loadState();
 
 	// Main view state
-	let activeView = $state("chat"); // "chat" | "viewer"
+	let activeView = $state("chat"); // "chat" | "viewer" | "dashboard"
 
 	// Panel state
 	let panelOpen = $state(false);
@@ -63,6 +63,8 @@ export function createWorkspaceStore() {
 	function switchView(view) {
 		activeView = view;
 	}
+	// alias
+	const switchActivity = switchView;
 
 	function clearSelectedCompany() {
 		selectedCompany = null;
@@ -181,7 +183,7 @@ export function createWorkspaceStore() {
 	// Context for AI — what the user is currently viewing
 	function getViewContext() {
 		// Viewer 탭에서 보고 있는 topic도 AI 컨텍스트로 전달
-		if (activeView === "viewer" && selectedCompany && viewerTopic) {
+		if ((activeView === "viewer" || activeView === "dashboard") && selectedCompany && viewerTopic) {
 			return {
 				type: "viewer",
 				company: selectedCompany,
@@ -222,6 +224,7 @@ export function createWorkspaceStore() {
 		get artifactHistory() { return artifactHistory; },
 		get artifactIndex() { return artifactIndex; },
 		switchView,
+		switchActivity,
 		openViewer,
 		openData,
 		openArtifact,

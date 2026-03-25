@@ -704,6 +704,22 @@ button, a, input, textarea {
 	.mobile-workspace-sheet {
 		top: max(10vh, env(safe-area-inset-top, 0px) + 32px);
 	}
+	/* Activity Bar: 모바일에서 숨김 (하단 탭 바 사용) */
+	.activity-bar { display: none; }
+	/* Context Bar: 모바일 간소 버전 */
+	.context-bar { display: none; }
+	.context-bar-mobile {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 32px;
+		padding: 0 12px;
+		border-bottom: 1px solid color-mix(in srgb, var(--color-dl-border) 20%, transparent);
+		background: var(--color-dl-bg-darker);
+	}
+	/* Dashboard: 탭 간격 축소 */
+	.dashboard-tab-bar { padding: 0 8px; }
+	.dashboard-tab { padding: 6px 10px; font-size: 11px; }
 }
 
 /* ── Light theme component overrides ── */
@@ -792,6 +808,241 @@ html, body,
 .dl-focus-ring:focus-visible {
 	outline: 2px solid var(--color-dl-ring, var(--color-dl-accent));
 	outline-offset: 2px;
+}
+
+/* ── Activity Bar ── */
+.activity-bar {
+	display: flex;
+	flex-direction: column;
+	width: 48px;
+	height: 100%;
+	flex-shrink: 0;
+	background: var(--color-dl-bg-darker, #0a0a0f);
+	border-right: 1px solid color-mix(in srgb, var(--color-dl-border) 30%, transparent);
+	z-index: 30;
+}
+.activity-bar-top {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 0;
+	flex: 1;
+}
+.activity-bar-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 0;
+	border-top: 1px solid color-mix(in srgb, var(--color-dl-border) 15%, transparent);
+}
+.activity-bar-logo {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	margin-bottom: 8px;
+	opacity: 0.7;
+	transition: opacity 0.15s;
+}
+.activity-bar-logo:hover { opacity: 1; }
+.activity-bar-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	width: 40px;
+	padding: 6px 0;
+	border-radius: 8px;
+	color: color-mix(in srgb, var(--color-dl-text) 40%, transparent);
+	transition: all 0.15s;
+	cursor: pointer;
+	border: none;
+	background: none;
+	position: relative;
+}
+.activity-bar-btn:hover {
+	color: color-mix(in srgb, var(--color-dl-text) 70%, transparent);
+	background: color-mix(in srgb, white 5%, transparent);
+}
+.activity-bar-btn.active {
+	color: var(--color-dl-text);
+	background: color-mix(in srgb, white 8%, transparent);
+}
+.activity-bar-btn.active::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 25%;
+	bottom: 25%;
+	width: 2px;
+	background: var(--color-dl-accent);
+	border-radius: 0 2px 2px 0;
+}
+.activity-bar-btn.active-accent {
+	color: var(--color-dl-accent);
+}
+.activity-bar-label {
+	font-size: 9px;
+	font-weight: 500;
+	line-height: 1;
+}
+.activity-bar-badge {
+	position: absolute;
+	top: -2px;
+	right: -4px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--color-dl-primary);
+	color: white;
+	font-size: 8px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.activity-bar-dot {
+	position: absolute;
+	top: 4px;
+	right: 6px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+}
+.activity-bar-dot.ok { background: var(--color-dl-success); }
+.activity-bar-dot.warning { background: var(--color-dl-primary); }
+.activity-bar-dot.loading { background: color-mix(in srgb, var(--color-dl-text) 30%, transparent); }
+
+/* ── Company Context Bar ── */
+.context-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 36px;
+	padding: 0 12px;
+	border-bottom: 1px solid color-mix(in srgb, var(--color-dl-border) 20%, transparent);
+	flex-shrink: 0;
+	background: color-mix(in srgb, var(--color-dl-bg-card) 50%, transparent);
+}
+.context-bar-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+.context-bar-right {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+.context-bar-company {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px;
+	border-radius: 6px;
+	border: 1px solid color-mix(in srgb, var(--color-dl-border) 25%, transparent);
+	background: color-mix(in srgb, var(--color-dl-bg-darker) 60%, transparent);
+	color: var(--color-dl-text);
+	font-size: 12px;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.context-bar-company:hover {
+	border-color: color-mix(in srgb, var(--color-dl-border) 40%, transparent);
+	background: color-mix(in srgb, var(--color-dl-bg-darker) 80%, transparent);
+}
+.context-bar-code {
+	font-family: var(--font-mono, monospace);
+	font-size: 10px;
+	color: color-mix(in srgb, var(--color-dl-text) 50%, transparent);
+}
+.context-bar-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 4px;
+	min-width: 200px;
+	background: var(--color-dl-bg-card);
+	border: 1px solid color-mix(in srgb, var(--color-dl-border) 30%, transparent);
+	border-radius: 8px;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+	overflow: hidden;
+	z-index: 50;
+}
+.context-bar-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 8px 12px;
+	font-size: 12px;
+	color: color-mix(in srgb, var(--color-dl-text) 70%, transparent);
+	border: none;
+	background: none;
+	cursor: pointer;
+	transition: all 0.1s;
+	text-align: left;
+}
+.context-bar-dropdown-item:hover {
+	background: color-mix(in srgb, white 5%, transparent);
+	color: var(--color-dl-text);
+}
+.context-bar-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 5px;
+	border-radius: 6px;
+	color: color-mix(in srgb, var(--color-dl-text) 40%, transparent);
+	transition: all 0.15s;
+	text-decoration: none;
+	border: none;
+	background: none;
+	cursor: pointer;
+}
+.context-bar-icon:hover {
+	color: color-mix(in srgb, var(--color-dl-text) 70%, transparent);
+	background: color-mix(in srgb, white 5%, transparent);
+}
+.context-bar-icon.coffee {
+	color: color-mix(in srgb, #ffdd00 60%, transparent);
+}
+.context-bar-icon.coffee:hover {
+	color: #ffdd00;
+}
+
+/* ── Dashboard Tab Bar ── */
+.dashboard-tab-bar {
+	display: flex;
+	align-items: center;
+	gap: 1px;
+	padding: 6px 16px;
+	border-bottom: 1px solid color-mix(in srgb, var(--color-dl-border) 20%, transparent);
+	flex-shrink: 0;
+}
+.dashboard-tab {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: color-mix(in srgb, var(--color-dl-text) 50%, transparent);
+	border: none;
+	background: none;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.dashboard-tab:hover {
+	color: color-mix(in srgb, var(--color-dl-text) 70%, transparent);
+	background: color-mix(in srgb, white 3%, transparent);
+}
+.dashboard-tab.active {
+	color: var(--color-dl-text);
+	background: color-mix(in srgb, white 6%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

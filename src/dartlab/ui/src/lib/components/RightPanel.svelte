@@ -1,42 +1,22 @@
 <!--
-	RightPanel — 오른쪽 디스플레이 영역
+	RightPanel — 오른쪽 컨텍스트 패널
 
-	보여줄 게 있으면 열리고, 닫으면 사라진다.
-	내용: 공시 뷰어 / 뱃지 데이터 / 종목 데이터
+	AI 생성물(artifact)과 데이터(data) 2모드.
 -->
 <script>
-	import { X, Download, Loader2, Maximize2, Minimize2, ChevronLeft, ChevronRight } from "lucide-svelte";
-	import { downloadExcel } from "$lib/api.js";
+	import { X, ChevronLeft, ChevronRight } from "lucide-svelte";
 	import { renderMarkdown } from "$lib/markdown.js";
-	import SectionsViewer from "./SectionsViewer.svelte";
 	import ViewSpecRenderer from "$lib/ai/ViewSpecRenderer.svelte";
 
 	let {
-		mode = null,       // "viewer" | "data" | "artifact"
-		company = null,    // selected company
+		mode = null,       // "data" | "artifact"
 		data = null,       // data for "data"/"artifact" mode
 		onClose,
-		onTopicChange = null,
-		onFullscreen = null,  // 전체화면 토글 콜백
-		isFullscreen = false,
 		// Artifact navigation
 		artifactHistory = [],
 		artifactIndex = -1,
 		onNavigateArtifact = null,
 	} = $props();
-
-	let downloading = $state(false);
-
-	async function handleDownload() {
-		if (!company?.stockCode || downloading) return;
-		downloading = true;
-		try {
-			await downloadExcel(company.stockCode);
-		} catch (e) {
-			console.error("Excel download error:", e);
-		}
-		downloading = false;
-	}
 
 	/** 텍스트에 마크다운 테이블이 포함되어 있는지 */
 	function hasMarkdownContent(text) {
@@ -46,13 +26,10 @@
 </script>
 
 <div class="flex flex-col h-full min-h-0 bg-dl-bg-dark">
-	<!-- Panel header — pt-8로 우상단 fixed 컨트롤과 겹침 방지 -->
-	<div class="flex items-center justify-between h-10 mt-8 px-4 border-b border-dl-border/40 flex-shrink-0">
+	<!-- Panel header -->
+	<div class="flex items-center justify-between h-10 px-4 border-b border-dl-border/40 flex-shrink-0">
 		<div class="flex items-center gap-2 min-w-0">
-			{#if mode === "viewer" && company}
-				<span class="text-[12px] font-semibold text-dl-text truncate">{company.corpName || company.company}</span>
-				<span class="text-[10px] font-mono text-dl-text-dim">{company.stockCode}</span>
-			{:else if mode === "artifact"}
+			{#if mode === "artifact"}
 				<div class="flex items-center gap-1.5">
 					{#if artifactHistory.length > 1}
 						<button
@@ -79,49 +56,17 @@
 				<span class="text-[12px] font-semibold text-dl-text">데이터</span>
 			{/if}
 		</div>
-		<div class="flex items-center gap-1">
-			{#if mode === "viewer" && company?.stockCode}
-				<button
-					class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
-					onclick={handleDownload}
-					disabled={downloading}
-					title="Excel 다운로드"
-				>
-					{#if downloading}
-						<Loader2 size={14} class="animate-spin" />
-					{:else}
-						<Download size={14} />
-					{/if}
-				</button>
-				<button
-					class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
-					onclick={() => onFullscreen?.()}
-					title={isFullscreen ? "패널 모드로" : "전체 화면"}
-				>
-					{#if isFullscreen}
-						<Minimize2 size={14} />
-					{:else}
-						<Maximize2 size={14} />
-					{/if}
-				</button>
-			{/if}
-			<button
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
-				onclick={() => onClose?.()}
-			>
-				<X size={15} />
-			</button>
-		</div>
+		<button
+			class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
+			onclick={() => onClose?.()}
+		>
+			<X size={15} />
+		</button>
 	</div>
 
 	<!-- Panel content -->
 	<div class="flex-1 overflow-auto min-h-0">
-		{#if mode === "viewer" && company}
-			<SectionsViewer
-				stockCode={company.stockCode}
-				onTopicChange={onTopicChange}
-			/>
-		{:else if mode === "artifact" && data}
+		{#if mode === "artifact" && data}
 			<div class="p-4">
 				<ViewSpecRenderer view={data} />
 			</div>

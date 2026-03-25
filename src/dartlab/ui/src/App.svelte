@@ -32,8 +32,10 @@
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
 	import RightPanel from "$lib/components/RightPanel.svelte";
+	import ActivityBar from "$lib/components/ActivityBar.svelte";
+	import CompanyContextBar from "$lib/components/CompanyContextBar.svelte";
 	// 동적 import — 코드 스플리팅
-	// DisclosureViewer와 SettingsPanel은 사용자가 탭 전환/설정 열기 시 로드
+	// DisclosureViewer, DashboardView, SettingsPanel은 사용자가 탭 전환/설정 열기 시 로드
 	import SearchModal from "$lib/components/SearchModal.svelte";
 	import DeleteDialog from "$lib/components/DeleteDialog.svelte";
 	import ToastNotification from "$lib/components/ToastNotification.svelte";
@@ -41,7 +43,7 @@
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Loader2, Settings, AlertCircle,
-		MessageSquare, BookOpen, Users
+		MessageSquare, BookOpen, BarChart3, Users
 	} from "lucide-svelte";
 	import RoomBar from "$lib/components/room/RoomBar.svelte";
 	import RoomChat from "$lib/components/room/RoomChat.svelte";
@@ -78,7 +80,7 @@
 
 	function handleRightPanelResize(delta) {
 		const total = window.innerWidth;
-		const currentPct = rightPanelPct ?? (workspace.panelMode === "viewer" ? 65 : 50);
+		const currentPct = rightPanelPct ?? 50;
 		// delta가 음수면 패널 커짐 (왼쪽으로 드래그)
 		const newPct = Math.max(25, Math.min(85, currentPct - (delta / total) * 100));
 		rightPanelPct = newPct;
@@ -97,9 +99,7 @@
 
 	// ── Derived ──
 	let panelWidth = $derived(
-		ui.viewerFullscreen ? "100%" :
-		rightPanelPct != null ? `${rightPanelPct}%` :
-		workspace.panelMode === "viewer" ? "65%" : "50%"
+		rightPanelPct != null ? `${rightPanelPct}%` : "50%"
 	);
 	let activeMessages = $derived(store.active?.messages || []);
 	let hasConversation = $derived(store.active && store.active.messages.length > 0);
@@ -430,6 +430,7 @@
 		if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
 			if (e.key === '1') { workspace.switchView('chat'); return; }
 			if (e.key === '2') { workspace.switchView('viewer'); return; }
+			if (e.key === '3') { workspace.switchView('dashboard'); return; }
 		}
 	}
 </script>
@@ -437,57 +438,30 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <div class="flex h-screen bg-dl-bg-dark overflow-hidden">
-	<!-- Sidebar -->
+	<!-- Activity Bar (데스크톱: 좌측 48px) -->
+	<ActivityBar
+		activeView={workspace.activeView}
+		onSwitch={(v) => workspace.switchView(v)}
+		onOpenSettings={() => ui.openSettings()}
+		isMobile={ui.isMobile}
+		roomAvailable={room.roomAvailable}
+		roomJoined={room.joined}
+		roomUnread={room.unreadCount}
+		onRoomClick={() => {
+			if (!room.joined) showRoomJoin = true;
+			else { showRoomChat = !showRoomChat; if (showRoomChat) room.markRoomViewed(); }
+		}}
+		providerLabel={ui.providers[ui.activeProvider]?.label || ui.activeProvider || null}
+		providerAvailable={!noProviderAvailable}
+		statusLoading={ui.statusLoading}
+	/>
+
+	<!-- Sidebar Drawer (Chat: 대화목록 / Viewer: 최근종목) -->
 	{#if ui.isMobile && ui.sidebarOpen}
 		<button class="sidebar-overlay" onclick={() => { ui.sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
 	{/if}
 	<div class={ui.isMobile ? (ui.sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
-		{#if workspace.activeView === "viewer"}
-			<!-- Viewer sidebar: 최근 종목 -->
-			<aside class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden" style="{ui.sidebarOpen ? `width: ${sidebarWidth}px` : 'width: 52px'}">
-				{#if ui.sidebarOpen}
-					<div class="flex flex-col h-full" style="min-width: {sidebarWidth}px">
-						<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
-							<div class="flex items-center gap-2.5">
-								<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
-								<div>
-									<div class="text-sm font-semibold text-dl-text">공시뷰어</div>
-									<div class="text-[10px] text-dl-text-dim">Disclosure Viewer</div>
-								</div>
-							</div>
-						</div>
-						<div class="flex-1 overflow-y-auto px-2 py-2">
-							<div class="text-[10px] text-dl-text-dim uppercase tracking-widest font-semibold px-2 mb-2">최근 종목</div>
-							{#each workspace.recentCompanies || [] as company}
-								<button
-									class="w-full text-left px-3 py-2 rounded-lg text-[12px] transition-colors mb-0.5
-										{workspace.selectedCompany?.stockCode === company.stockCode
-											? 'bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20'
-											: 'text-dl-text-muted hover:bg-white/5 hover:text-dl-text'}"
-									onclick={() => { handleCompanySelectForViewer(company); if (ui.isMobile) ui.sidebarOpen = false; }}
-								>
-									<div class="font-medium">{company.name}</div>
-									<div class="text-[10px] text-dl-text-dim">{company.stockCode}</div>
-								</button>
-							{:else}
-								<div class="px-3 py-4 text-[11px] text-dl-text-dim text-center">
-									아직 조회한 종목이 없습니다
-								</div>
-							{/each}
-						</div>
-						{#if ui.appVersion}
-							<div class="border-t border-dl-border/30 px-4 py-2 text-[10px] text-dl-text-dim/50">
-								v{ui.appVersion}
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<div class="flex flex-col items-center py-4 gap-2">
-						<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full opacity-60" />
-					</div>
-				{/if}
-			</aside>
-		{:else}
+		{#if workspace.activeView === "chat"}
 			<Sidebar
 				conversations={store.conversations}
 				activeId={store.activeId}
@@ -501,99 +475,44 @@
 				onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
 				onOpenSearch={() => { showSearchModal = true; }}
 			/>
-		{/if}
-		{#if !ui.isMobile && ui.sidebarOpen}
-			<PanelResizer onResize={handleSidebarResize} />
+			{#if !ui.isMobile && ui.sidebarOpen}
+				<PanelResizer onResize={handleSidebarResize} />
+			{/if}
 		{/if}
 	</div>
 
-	<!-- Main -->
+	<!-- Main area -->
 	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
-		<!-- Top-left: sidebar toggle + view tabs -->
-		<div class="absolute top-2 left-3 z-20 pointer-events-auto flex items-center gap-1">
+		<!-- Company Context Bar (상단 고정) -->
+		<CompanyContextBar
+			selectedCompany={workspace.selectedCompany}
+			recentCompanies={workspace.recentCompanies}
+			onCompanySelect={handleCompanySelectForViewer}
+			onOpenSearch={() => { showSearchModal = true; }}
+			onOpenSettings={() => ui.openSettings()}
+			providerLabel={ui.providers[ui.activeProvider]?.label || ui.activeProvider || null}
+			activeModel={ui.activeModel}
+			providerAvailable={!noProviderAvailable}
+			statusLoading={ui.statusLoading}
+			noProvider={noProviderAvailable}
+			version={ui.appVersion}
+			isMobile={ui.isMobile}
+		/>
+
+		<!-- Sidebar toggle (데스크톱, Chat에서만) -->
+		{#if !ui.isMobile && workspace.activeView === "chat"}
 			<button
-				class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
+				class="absolute top-11 left-3 z-20 p-1 rounded-md text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors"
 				onclick={() => ui.toggleSidebar()}
+				title={ui.sidebarOpen ? "사이드바 접기 (Ctrl+Shift+S)" : "사이드바 열기"}
 			>
 				{#if ui.sidebarOpen}
-					<PanelLeftClose size={18} />
+					<PanelLeftClose size={16} />
 				{:else}
-					<Menu size={18} />
+					<Menu size={16} />
 				{/if}
 			</button>
-
-			<!-- View tabs (모바일은 하단 탭 바 사용) -->
-			<div class="items-center ml-2 rounded-lg bg-dl-bg-card/60 border border-dl-border/20 p-0.5 {ui.isMobile ? 'hidden' : 'flex'}">
-				<button
-					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'chat'
-						? 'text-dl-text bg-dl-surface-active font-medium'
-						: 'text-dl-text-dim hover:text-dl-text-muted'}"
-					onclick={() => workspace.switchView('chat')}
-				>
-					<MessageSquare size={12} />
-					<span>Chat</span>
-				</button>
-				<button
-					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'viewer'
-						? 'text-dl-text bg-dl-surface-active font-medium'
-						: 'text-dl-text-dim hover:text-dl-text-muted'}"
-					onclick={() => workspace.switchView('viewer')}
-				>
-					<BookOpen size={12} />
-					<span>Viewer</span>
-				</button>
-			</div>
-		</div>
-
-		<!-- Top-right fixed controls -->
-		<div class="absolute top-2 right-3 z-20 flex items-center gap-1 pointer-events-auto">
-			<button
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors"
-				onclick={() => { showSearchModal = true; }}
-				title="종목 검색 (Ctrl+K)"
-			>
-				<Search size={14} />
-			</button>
-			<a href="https://eddmpython.github.io/dartlab/" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="Documentation">
-				<FileText size={14} />
-			</a>
-			<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="GitHub">
-				<Github size={14} />
-			</a>
-			<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-[#ffdd00]/60 hover:text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
-				<Coffee size={14} />
-			</a>
-			<button
-				class={cn(
-					"flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] transition-colors",
-					ui.statusLoading
-						? "text-dl-text-dim"
-						: noProviderAvailable
-							? "text-dl-primary-light bg-dl-primary/10 hover:bg-dl-primary/15"
-							: "text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5"
-				)}
-				onclick={() => ui.openSettings()}
-			>
-				{#if ui.statusLoading}
-					<Loader2 size={12} class="animate-spin" />
-					<span>확인 중...</span>
-				{:else if noProviderAvailable}
-					<AlertCircle size={12} />
-					<span>설정 필요</span>
-				{:else}
-					<span class="w-1.5 h-1.5 rounded-full bg-dl-success"></span>
-					<span>{ui.providers[ui.activeProvider]?.label || ui.activeProvider}</span>
-					{#if ui.activeModel}
-						<span class="text-dl-text-dim">/</span>
-						<span class="max-w-[80px] truncate">{ui.activeModel}</span>
-					{/if}
-				{/if}
-				<Settings size={12} />
-			</button>
-		</div>
+		{/if}
 
 		<!-- Room 참여 안내 (데스크톱, 미참여 시) -->
 		{#if !ui.isMobile && room.roomAvailable && !room.joined}
@@ -618,12 +537,11 @@
 		<!-- Content -->
 		<div class="flex flex-1 min-h-0">
 			{#if workspace.activeView === "room" && room.joined}
-				<!-- 모바일 Room 전체 화면 -->
-				<div class="min-w-0 flex-1 pt-10">
+				<div class="min-w-0 flex-1">
 					<RoomChat {room} showMembers={true} />
 				</div>
 			{:else if workspace.activeView === "viewer"}
-				<div class="min-w-0 flex-1 pt-10">
+				<div class="min-w-0 flex-1">
 					{#await import("$lib/components/DisclosureViewer.svelte") then { default: DisclosureViewer }}
 						<DisclosureViewer
 							viewer={viewerStore}
@@ -635,7 +553,26 @@
 						/>
 					{/await}
 				</div>
+			{:else if workspace.activeView === "dashboard"}
+				<div class="min-w-0 flex-1">
+					{#await import("$lib/components/DashboardView.svelte") then { default: DashboardView }}
+						<DashboardView
+							company={workspace.selectedCompany}
+							recentCompanies={workspace.recentCompanies}
+							toc={viewerStore?.toc}
+							onCompanySelect={handleCompanySelectForViewer}
+							onNavigateTopic={(topic) => handleViewerNavigate({ topic })}
+							onAskAboutModule={(mod) => {
+								workspace.switchView("chat");
+								inputText = `${mod} 모듈에 대해 설명해줘`;
+							}}
+							onNotify={(msg, type) => ui.showToast(msg, type)}
+						onOpenSearch={() => { showSearchModal = true; }}
+						/>
+					{/await}
+				</div>
 			{:else}
+				<!-- Chat -->
 				<div class="min-w-0 flex-1 flex flex-col">
 					{#if hasConversation}
 						<ChatArea
@@ -676,21 +613,15 @@
 				</div>
 
 				{#if !ui.isMobile && workspace.panelOpen}
-					{#if !ui.viewerFullscreen}
-						<PanelResizer onResize={handleRightPanelResize} />
-					{/if}
+					<PanelResizer onResize={handleRightPanelResize} />
 					<div
 						class="flex-shrink-0 transition-all duration-300"
-						style="width: {panelWidth}; min-width: 360px; {ui.viewerFullscreen ? '' : 'max-width: 85vw;'}"
+						style="width: {panelWidth}; min-width: 360px; max-width: 85vw;"
 					>
 						<RightPanel
 							mode={workspace.panelMode}
-							company={workspace.selectedCompany}
 							data={workspace.panelData}
-							onClose={() => { ui.viewerFullscreen = false; workspace.closePanel(); }}
-							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
-							onFullscreen={() => { ui.viewerFullscreen = !ui.viewerFullscreen; }}
-							isFullscreen={ui.viewerFullscreen}
+							onClose={() => workspace.closePanel()}
 							artifactHistory={workspace.artifactHistory}
 							artifactIndex={workspace.artifactIndex}
 							onNavigateArtifact={(idx) => workspace.navigateArtifact(idx)}
@@ -726,11 +657,11 @@
 				<span class="text-[9px] font-medium">Viewer</span>
 			</button>
 			<button
-				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
-				onclick={() => { showSearchModal = true; }}
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'dashboard' ? 'text-dl-accent' : 'text-dl-text-dim'}"
+				onclick={() => workspace.switchView('dashboard')}
 			>
-				<Search size={18} />
-				<span class="text-[9px] font-medium">검색</span>
+				<BarChart3 size={18} />
+				<span class="text-[9px] font-medium">분석</span>
 			</button>
 			{#if room.roomAvailable || room.joined}
 				<button
@@ -775,6 +706,7 @@
 		if (id === "newChat") handleNewChat();
 		else if (id === "viewChat") workspace.switchView("chat");
 		else if (id === "viewViewer") workspace.switchView("viewer");
+		else if (id === "viewDashboard") workspace.switchView("dashboard");
 		else if (id === "openSettings") ui.openSettings();
 		else if (id === "exportChat") handleExport();
 	}}
