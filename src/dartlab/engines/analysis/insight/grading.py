@@ -752,7 +752,16 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
 def analyzeRiskSummary(insights: dict[str, InsightResult]) -> InsightResult:
     """리스크 종합 분석."""
     allRisks: list[Flag] = []
-    for key in ["performance", "profitability", "health", "cashflow", "governance", "predictability", "uncertainty", "coreEarnings"]:
+    for key in [
+        "performance",
+        "profitability",
+        "health",
+        "cashflow",
+        "governance",
+        "predictability",
+        "uncertainty",
+        "coreEarnings",
+    ]:
         if key in insights and insights[key] is not None:
             allRisks.extend(insights[key].risks)
 
@@ -784,7 +793,16 @@ def analyzeRiskSummary(insights: dict[str, InsightResult]) -> InsightResult:
 def analyzeOpportunitySummary(insights: dict[str, InsightResult]) -> InsightResult:
     """기회 종합 분석."""
     allOpps: list[Flag] = []
-    for key in ["performance", "profitability", "health", "cashflow", "governance", "predictability", "uncertainty", "coreEarnings"]:
+    for key in [
+        "performance",
+        "profitability",
+        "health",
+        "cashflow",
+        "governance",
+        "predictability",
+        "uncertainty",
+        "coreEarnings",
+    ]:
         if key in insights and insights[key] is not None:
             allOpps.extend(insights[key].opportunities)
 
@@ -1047,7 +1065,5 @@ def analyzeCoreEarnings(
                 score += 1
 
     grade = _scoreToGrade(score, 6)
-    summary = "이익 품질 " + (
-        "우수" if score >= 5 else "양호" if score >= 3 else "보통" if score >= 1 else "주의"
-    )
+    summary = "이익 품질 " + ("우수" if score >= 5 else "양호" if score >= 3 else "보통" if score >= 1 else "주의")
     return InsightResult(grade, summary, details)

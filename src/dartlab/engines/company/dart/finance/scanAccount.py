@@ -117,10 +117,7 @@ class _FileProcessor:
             df = (
                 pl.scan_parquet(str(pf))
                 .select(_SCAN_COLS)
-                .filter(
-                    pl.col("sj_div").is_in(self.filterDivs)
-                    & (pl.col("reprt_nm") == "4분기")
-                )
+                .filter(pl.col("sj_div").is_in(self.filterDivs) & (pl.col("reprt_nm") == "4분기"))
                 .collect()
             )
         except (pl.exceptions.PolarsError, OSError):
@@ -157,10 +154,7 @@ class _FileProcessor:
                 aid = row["account_id"] or ""
                 anm = row["account_nm"] or ""
                 if self.mapper.map(aid, anm) == self.snakeId:
-                    matched = df.filter(
-                        (pl.col("account_id") == aid)
-                        & (pl.col("account_nm") == anm)
-                    )
+                    matched = df.filter((pl.col("account_id") == aid) & (pl.col("account_nm") == anm))
                     break
 
         if matched is None or matched.is_empty():
@@ -172,13 +166,7 @@ class _FileProcessor:
             .cast(pl.Utf8)
             .str.replace_all(",", "")
             .str.strip_chars()
-            .pipe(
-                lambda s: pl.when(s == "")
-                .then(None)
-                .when(s == "-")
-                .then(None)
-                .otherwise(s)
-            )
+            .pipe(lambda s: pl.when(s == "").then(None).when(s == "-").then(None).otherwise(s))
             .cast(pl.Float64, strict=False)
             .alias("amount")
         ).filter(pl.col("amount").is_not_null())
@@ -400,10 +388,7 @@ def _calcYoyRatio(defn: dict, fsPref: str) -> pl.DataFrame:
         prev = yearCols[i - 1]
         expr = (
             pl.when(
-                (pl.col(prev) != 0)
-                & pl.col(prev).is_not_null()
-                & pl.col(cur).is_not_null()
-                & (pl.col(prev).abs() > 0)
+                (pl.col(prev) != 0) & pl.col(prev).is_not_null() & pl.col(cur).is_not_null() & (pl.col(prev).abs() > 0)
             )
             .then(((pl.col(cur) - pl.col(prev)) / pl.col(prev).abs() * 100).round(2))
             .otherwise(pl.lit(None, dtype=pl.Float64))

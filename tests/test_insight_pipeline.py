@@ -105,7 +105,18 @@ def test_analyze_has_10_grades():
     assert result is not None
     grades = result.grades()
     assert len(grades) == 10
-    expectedKeys = {"performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity", "predictability", "uncertainty", "coreEarnings"}
+    expectedKeys = {
+        "performance",
+        "profitability",
+        "health",
+        "cashflow",
+        "governance",
+        "risk",
+        "opportunity",
+        "predictability",
+        "uncertainty",
+        "coreEarnings",
+    }
     assert set(grades.keys()) == expectedKeys
     for grade in grades.values():
         assert grade in ("A", "B", "C", "D", "F", "N")  # N = 데이터 부족

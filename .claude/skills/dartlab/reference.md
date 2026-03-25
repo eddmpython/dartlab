@@ -386,6 +386,9 @@ us.cik                       # "0000320193"
 | `governance` | `InsightResult` |  |
 | `risk` | `InsightResult` |  |
 | `opportunity` | `InsightResult` |  |
+| `predictability` | `Optional` | None |
+| `uncertainty` | `Optional` | None |
+| `coreEarnings` | `Optional` | None |
 | `anomalies` | `list` | [] |
 | `distress` | `Optional` | None |
 | `summary` | `str` |  |

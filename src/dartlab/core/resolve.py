@@ -55,12 +55,29 @@ COMMON_ALIASES: dict[str, str] = {
     "엔솔": "LG에너지솔루션",
     "카뱅": "카카오뱅크",
     "카페": "카카오",
+    "하이닉스": "SK하이닉스",
 }
 
 
+_KR_PARTICLES = re.compile(
+    r"(의|은|는|이|가|을|를|에|에서|와|과|로|으로|도|만|까지|부터|에게|한테|처럼|보다|라고|이라고)$"
+)
+
+
+def strip_particles(text: str) -> str:
+    """한국어 조사를 제거한다. 예: '하이닉스의' → '하이닉스'."""
+    return _KR_PARTICLES.sub("", text)
+
+
 def resolve_alias(text: str) -> str | None:
-    """COMMON_ALIASES에서 매칭되는 정식 종목명 반환. 없으면 None."""
-    return COMMON_ALIASES.get(text)
+    """COMMON_ALIASES에서 매칭되는 정식 종목명 반환. 조사 제거 후 재시도. 없으면 None."""
+    result = COMMON_ALIASES.get(text)
+    if result:
+        return result
+    stripped = strip_particles(text)
+    if stripped != text:
+        return COMMON_ALIASES.get(stripped)
+    return None
 
 
 def collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
@@ -95,7 +112,7 @@ def collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
                 exact.append(entry)
             elif name.startswith(query) or query.startswith(name):
                 prefix.append(entry)
-            elif not strict and len(query) >= 3 and query in name:
+            elif len(query) >= 3 and query in name:
                 contains.append(entry)
 
     result = exact + prefix + contains
@@ -204,17 +221,24 @@ def resolve_from_text(text: str) -> tuple[Company | None, str]:
             remaining_parts = words[:i] + words[i + length :]
             remaining = " ".join(remaining_parts).strip()
 
-            # 약칭 매칭
-            alias = COMMON_ALIASES.get(candidate)
-            if alias:
-                try:
-                    company = Company(alias)
-                    return company, remaining if remaining else candidate
-                except _RESOLVE_ERRORS:
-                    pass
+            # 조사 제거 버전 우선 시도 ("하이닉스의" → "하이닉스")
+            stripped = strip_particles(candidate)
+            for term in dict.fromkeys([stripped, candidate]):
+                alias = COMMON_ALIASES.get(term)
+                if alias:
+                    try:
+                        company = Company(alias)
+                        return company, remaining if remaining else candidate
+                    except _RESOLVE_ERRORS:
+                        pass
 
             # 직접 매칭 시도
-            candidates = collect_candidates(candidate, strict=True)
+            for term in dict.fromkeys([stripped, candidate]):
+                candidates = collect_candidates(term, strict=True)
+                if candidates:
+                    break
+            else:
+                candidates = []
             if len(candidates) == 1:
                 try:
                     company = Company(candidates[0]["stockCode"])

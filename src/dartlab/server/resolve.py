@@ -18,6 +18,9 @@ from dartlab.core.resolve import (
 from dartlab.core.resolve import (
     search_suggestions as _search_suggestions,
 )
+from dartlab.core.resolve import (
+    strip_particles as _strip_particles,
+)
 
 # ── 의도 분류: engines/ai/intent.py에서 re-export ──
 from dartlab.engines.ai.conversation.intent import (
@@ -158,15 +161,21 @@ def try_resolve_company(req: AskRequest) -> ResolveResult:
         for i in range(len(words) - length + 1):
             candidate = " ".join(words[i : i + length])
 
-            alias = _resolve_alias(candidate)
-            if alias:
-                try:
-                    return ResolveResult(company=Company(alias))
-                except (ValueError, OSError):
-                    pass
+            # 조사 제거 버전 우선 시도 ("하이닉스의" → "하이닉스")
+            stripped = _strip_particles(candidate)
+            for term in dict.fromkeys([stripped, candidate]):
+                alias = _resolve_alias(term)
+                if alias:
+                    try:
+                        return ResolveResult(company=Company(alias))
+                    except (ValueError, OSError):
+                        pass
 
-            candidates = _collect_candidates(candidate, strict=not intent)
-            if not candidates:
+            for term in dict.fromkeys([stripped, candidate]):
+                candidates = _collect_candidates(term, strict=not intent)
+                if candidates:
+                    break
+            else:
                 continue
 
             if len(candidates) == 1:

@@ -5,7 +5,6 @@ from __future__ import annotations
 from dartlab.core.capabilities import CapabilityChannel, get_capability_specs
 from dartlab.engines.ai.tools.runtime import ToolRuntime
 
-
 _COMPANY_BOUND_CATEGORIES = {"company", "finance", "analysis", "valuation"}
 
 

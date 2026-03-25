@@ -242,8 +242,9 @@ def register_company_tools(company: Any, register_tool) -> None:
         ]
         # listing 데이터에서 기본 정보 보충
         try:
-            from dartlab.engines.gather.listing import getKindList
             import polars as _pl
+
+            from dartlab.engines.gather.listing import getKindList
 
             df = getKindList()
             match = df.filter(_pl.col("종목코드") == stockCode)

@@ -86,7 +86,7 @@ class TestRatioTable:
         result = ratio_table(bs, is_)
         assert result.height == 2
 
-        r2023 = result.filter(pl.col("year") == 2023).row(0, named=True)
+        r2023 = result.filter(pl.col("year") == "2023").row(0, named=True)
         assert r2023["부채비율"] == 50.0  # 5000/10000*100
         assert r2023["유동비율"] == 200.0  # 8000/4000*100
         assert r2023["영업이익률"] == 15.0  # 3000/20000*100

@@ -118,9 +118,7 @@ class TestScanAccountReal:
             if year in row.columns:
                 actual = row[year][0]
                 if actual is not None and expectedVal is not None:
-                    assert abs(actual - expectedVal) < 1.0, (
-                        f"{year}: expected={expectedVal}, actual={actual}"
-                    )
+                    assert abs(actual - expectedVal) < 1.0, f"{year}: expected={expectedVal}, actual={actual}"
                     matched += 1
 
         assert matched >= 3, f"매칭된 연도가 {matched}개뿐 (최소 3개 필요)"

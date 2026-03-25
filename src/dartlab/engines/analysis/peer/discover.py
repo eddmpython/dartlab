@@ -46,9 +46,7 @@ _EXCLUDE_INDUSTRIES = {"기타 금융업", "신탁업", "집합투자업"}
 _EXCLUDE_NAME_PATTERNS = ("지주", "홀딩스", "Holdings")
 _MIN_TEXT_LEN = 100
 
-_NUM_PATTERN = re.compile(
-    r"\d[\d,\.]*\s*(원|억|조|만|천|백|%|백만|십억|달러|USD|KRW|Won)"
-)
+_NUM_PATTERN = re.compile(r"\d[\d,\.]*\s*(원|억|조|만|천|백|%|백만|십억|달러|USD|KRW|Won)")
 _DIGITS_PATTERN = re.compile(r"\b\d[\d,\.]*\b")
 _TABLE_PATTERN = re.compile(r"[│├└┌─┐┘┤┬┴┼━┃╋\(\)\[\]\{\}]+")
 _SPACES_PATTERN = re.compile(r"\s+")
@@ -76,9 +74,7 @@ def _extractTopicTexts(df: pl.DataFrame) -> dict[str, str]:
     for topicKey, cfg in TOPIC_CONFIG.items():
         filtered = bizDf.filter(pl.col("section_title").is_in(cfg["titles"]))
         if filtered.height == 0 and cfg["fallback"]:
-            filtered = bizDf.filter(
-                pl.col("section_title").str.contains(cfg["fallback"])
-            )
+            filtered = bizDf.filter(pl.col("section_title").str.contains(cfg["fallback"]))
         if filtered.height == 0:
             continue
         texts = filtered["section_content"].drop_nulls().to_list()
@@ -191,11 +187,13 @@ def discover(
             break
         peerCode = codes[idx]
         peerName = kindMap.get(peerCode, (peerCode,))[0]
-        peers.append(PeerMatch(
-            stockCode=peerCode,
-            name=peerName,
-            similarity=round(sim, 4),
-        ))
+        peers.append(
+            PeerMatch(
+                stockCode=peerCode,
+                name=peerName,
+                similarity=round(sim, 4),
+            )
+        )
 
     topicCoverage = {k: k in targetTexts for k in TOPIC_CONFIG}
 
