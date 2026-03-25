@@ -6,17 +6,22 @@ from dartlab.core.capabilities import CapabilityChannel, get_capability_specs
 from dartlab.engines.ai.tools.runtime import ToolRuntime
 
 
+_COMPANY_BOUND_CATEGORIES = {"company", "finance", "analysis", "valuation"}
+
+
 def selectTools(
     runtime: ToolRuntime,
     *,
     questionType: str | None = None,
     question: str = "",
     maxTools: int | None = None,
+    hasCompany: bool = False,
 ) -> list[dict]:
     """CapabilitySpec 메타데이터 기반 동적 도구 선택.
 
     스코어 계산:
-    - category="meta": 항상 포함 (기존 _COMMON_TOOLS 역할)
+    - hasCompany=True: company/finance/analysis 카테고리 +30, meta 보너스 제거
+    - hasCompany=False: meta 카테고리 +30 (기존 동작)
     - questionType 매칭: +40점
     - priority 필드: 0-100 → 0-30점 스케일링
     - question 텍스트 내 description 키워드 매칭: +10점
@@ -42,9 +47,16 @@ def selectTools(
             scored.append((score, schema))
             continue
 
-        # meta 카테고리는 항상 높은 기본 점수
-        if spec.category == "meta":
-            score += 30.0
+        if hasCompany:
+            # company가 있으면 데이터 도구 우선, meta 하향
+            if spec.category in _COMPANY_BOUND_CATEGORIES:
+                score += 30.0
+            elif spec.category == "meta":
+                score += 5.0
+        else:
+            # company 없으면 meta 우선 (기존 동작)
+            if spec.category == "meta":
+                score += 30.0
 
         # questionType 매칭
         if questionType and questionType in spec.questionTypes:
@@ -57,7 +69,6 @@ def selectTools(
         if question:
             questionLower = question.lower()
             desc = spec.description[:200].lower()
-            # description에서 핵심 단어 추출하여 매칭
             descWords = set(desc.split())
             questionWords = set(questionLower.split())
             overlap = descWords & questionWords

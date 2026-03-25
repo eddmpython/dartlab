@@ -50,7 +50,7 @@ def agent_loop(
             LLM의 최종 답변 텍스트
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-loop")
-    tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools)
+    tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools, hasCompany=company is not None)
 
     last_answer = ""
 
@@ -121,7 +121,7 @@ def agent_loop_stream(
     최종 답변은 llm.stream()으로 실시간 청크 전달.
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
-    tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools)
+    tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools, hasCompany=company is not None)
 
     for _turn in range(max_turns):
         response = provider.complete_with_tools(messages, tools)
@@ -205,7 +205,7 @@ def agent_loop_planning(
     소형 모델(Ollama qwen3 등)에서 복합 질문을 다단계로 분해하여 처리.
     """
     tool_runtime = runtime or build_tool_runtime(company, name="plan-execute")
-    tools = selectTools(tool_runtime, maxTools=max_tools)
+    tools = selectTools(tool_runtime, maxTools=max_tools, hasCompany=company is not None)
     tool_names = [t.get("function", {}).get("name", "") for t in tools]
 
     # 1단계: 계획 생성 (JSON 구조)

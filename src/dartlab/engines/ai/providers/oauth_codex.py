@@ -81,9 +81,18 @@ def _raise_http_error(status: int, body: str) -> None:
             detail=f"HTTP 404: {body[:200]}",
         )
     if status == 429:
+        reset_msg = ""
+        try:
+            err = json.loads(body)
+            secs = err.get("error", {}).get("resets_in_seconds")
+            if secs:
+                hours = secs / 3600
+                reset_msg = f" (약 {hours:.1f}시간 후 리셋)"
+        except (json.JSONDecodeError, ValueError, TypeError):
+            pass
         raise ChatGPTOAuthError(
             "rate_limit",
-            "ChatGPT API 요청 한도를 초과했습니다. 잠시 후 다시 시도하세요.",
+            f"ChatGPT API 요청 한도를 초과했습니다.{reset_msg} 잠시 후 다시 시도하세요.",
             detail=f"HTTP 429: {body[:200]}",
         )
     raise ChatGPTOAuthError(
@@ -93,12 +102,39 @@ def _raise_http_error(status: int, body: str) -> None:
     )
 
 
+def _detect_plan_type() -> str:
+    """JWT에서 ChatGPT plan_type 추출. 실패 시 'plus' 반환."""
+    import base64
+
+    token_data = oauthToken.load_token()
+    if not token_data:
+        return "plus"
+    access = token_data.get("access_token", "")
+    parts = access.split(".")
+    if len(parts) != 3:
+        return "plus"
+    payload_b64 = parts[1]
+    padding = 4 - len(payload_b64) % 4
+    if padding != 4:
+        payload_b64 += "=" * padding
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode("utf-8"))
+    except (json.JSONDecodeError, ValueError):
+        return "plus"
+    auth_claim = payload.get("https://api.openai.com/auth", {})
+    return auth_claim.get("chatgpt_plan_type", "plus") if isinstance(auth_claim, dict) else "plus"
+
+
 class OAuthCodexProvider(BaseProvider):
     """ChatGPT OAuth 기반 Codex provider."""
 
     @property
     def default_model(self) -> str:
-        return "gpt-5.4"
+        """Plus → gpt-5.3-codex, Pro → gpt-5.4."""
+        plan = _detect_plan_type()
+        if plan == "pro":
+            return "gpt-5.4"
+        return "gpt-5.3-codex"
 
     def check_available(self) -> bool:
         try:

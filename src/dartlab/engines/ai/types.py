@@ -36,9 +36,19 @@ class LLMConfig:
                 self.base_url = env_url
 
     def merge(self, overrides: dict[str, Any]) -> LLMConfig:
-        """per-call override 적용한 새 Config 반환."""
+        """per-call override 적용한 새 Config 반환.
+
+        provider가 변경되면서 model을 명시하지 않은 경우,
+        이전 provider의 model을 리셋하여 새 provider의 기본 모델을 사용한다.
+        """
         vals = dataclasses.asdict(self)
-        vals.update({k: v for k, v in overrides.items() if v is not None})
+        filtered = {k: v for k, v in overrides.items() if v is not None}
+
+        # provider가 바뀌면서 model override가 없으면 model 리셋
+        if "provider" in filtered and filtered["provider"] != self.provider and "model" not in filtered:
+            vals["model"] = None
+
+        vals.update(filtered)
         return LLMConfig(**vals)
 
 

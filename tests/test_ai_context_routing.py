@@ -848,3 +848,38 @@ def test_should_use_light_mode_only_for_pure_conversation_or_meta():
     )
     follow_up_state = SimpleNamespace(question="최근 5개년", dialogue_mode="follow_up", modules=("costByNature",))
     assert _should_use_light_mode(object(), "최근 5개년", follow_up_state, False) is False
+
+
+# ── Route Hint 테스트 ──────────────────────────────────────
+
+
+def test_route_hint_matches_keywords():
+    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+
+    hint = buildToolRouteHint("삼성전자 경영진 분석 의견에서 올해 핵심 이슈가 뭔지 정리해줘")
+    assert "show_topic" in hint
+    assert "mdnaOverview" in hint
+
+
+def test_route_hint_empty_for_no_match():
+    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+
+    hint = buildToolRouteHint("안녕하세요")
+    assert hint == ""
+
+
+def test_route_hint_multiple_keywords():
+    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+
+    hint = buildToolRouteHint("삼성전자 재무제표와 배당 현황 알려줘")
+    assert "get_data" in hint
+    assert "get_report_data" in hint
+    assert "IS" in hint
+    assert "dividend" in hint
+
+
+def test_route_hint_deduplicates():
+    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+
+    hint = buildToolRouteHint("임원 보수 현황 알려줘")
+    assert hint.count("executive") == 1
