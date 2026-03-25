@@ -27,19 +27,19 @@ jobs:
           cp scripts/hfPreload.py hf-space/scripts/
 
           # HF Spaces README (앱 설정)
-          cat > hf-space/README.md << 'EOF'
-          ---
-          title: DartLab
-          emoji: 🗺️
-          colorFrom: red
-          colorTo: yellow
-          sdk: docker
-          app_port: 7860
-          pinned: true
-          license: mit
-          short_description: "DART + EDGAR disclosure analysis — try without install"
-          ---
-          EOF
+          cat > hf-space/README.md << 'HFEOF'
+---
+title: DartLab
+emoji: 🗺️
+colorFrom: red
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: true
+license: mit
+short_description: DART + EDGAR disclosure analysis — try without install
+---
+HFEOF
 
           cd hf-space
           git config user.name "github-actions[bot]"
