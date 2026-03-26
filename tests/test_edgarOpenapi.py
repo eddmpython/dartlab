@@ -86,9 +86,7 @@ def test_root_exports_openapi_names():
 def test_resolveIssuer_supports_ticker_lower_and_cik(monkeypatch):
     from dartlab.providers.edgar.openapi.identity import resolveIssuer
 
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
 
     byTicker = resolveIssuer("AAPL")
     byLower = resolveIssuer("aapl")
@@ -105,9 +103,7 @@ def test_resolveIssuer_supports_ticker_lower_and_cik(monkeypatch):
 def test_openedgar_raw_wrappers_and_filings(monkeypatch):
     from dartlab import OpenEdgar
 
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
 
     def fakeGetJson(self, url: str):
         if url.endswith("/submissions/CIK0000320193.json"):
@@ -142,9 +138,7 @@ def test_openedgar_company_proxy(monkeypatch):
     from dartlab import OpenEdgar
     from dartlab.providers.edgar.openapi.edgar import OpenEdgarCompany
 
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.providers.edgar.openapi.client.EdgarClient.getJson",
         lambda self, url: _submissions_payload()
@@ -164,9 +158,7 @@ def test_saveDocs_writes_sections_compatible_parquet(monkeypatch, tmp_path):
     from dartlab.providers.edgar.docs.sections.pipeline import sections
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.providers.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
     )
@@ -213,9 +205,7 @@ def test_saveFinance_writes_companyfacts_parquet_compatible_with_pivot(monkeypat
     from dartlab.providers.edgar.finance.pivot import buildTimeseries
 
     monkeypatch.setattr(config, "dataDir", str(tmp_path / "data"))
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.providers.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
     )
@@ -297,9 +287,7 @@ def test_saveDocs_schema_mismatch_preserves_existing_file(monkeypatch, tmp_path)
     original.write_parquet(existingPath)
 
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.providers.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
     )
@@ -365,9 +353,7 @@ def test_saveFinance_smoke_failure_preserves_existing_file(monkeypatch, tmp_path
     original.write_parquet(existingPath)
 
     monkeypatch.setattr(config, "dataDir", str(dataRoot))
-    monkeypatch.setattr(
-        "dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df()
-    )
+    monkeypatch.setattr("dartlab.providers.edgar.openapi.identity.loadTickers", lambda *args, **kwargs: _ticker_df())
     monkeypatch.setattr(
         "dartlab.providers.edgar.openapi.saver.loadEdgarListedUniverse", lambda *args, **kwargs: _ticker_df()
     )

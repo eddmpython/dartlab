@@ -128,7 +128,7 @@ def main():
     # 3단계: 증분 수집
     start = time.time()
 
-    from dartlab.engines.company.dart.openapi.batch import batchCollectAll
+    from dartlab.providers.dart.openapi.batch import batchCollectAll
 
     results = batchCollectAll(
         categories=[category],

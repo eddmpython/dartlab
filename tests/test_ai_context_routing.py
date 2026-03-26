@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 
-from dartlab.core.memory import BoundedCache
 from dartlab.ai.context import build_compact_context, build_context_by_module
 from dartlab.ai.context.builder import _resolve_context_route
 from dartlab.ai.context.finance_context import _detect_year_hint
@@ -16,6 +15,7 @@ from dartlab.ai.runtime.core import (
     _should_run_validation,
     _should_use_light_mode,
 )
+from dartlab.core.memory import BoundedCache
 from dartlab.providers.dart._docs_accessor import _DocsAccessor
 from dartlab.providers.dart.company import Company
 
@@ -134,9 +134,7 @@ def test_company_topics_combines_docs_manifest_and_finance_summary_without_secti
 
     monkeypatch.setattr("dartlab.providers.dart.company.loadData", fake_load_data)
     monkeypatch.setattr("dartlab.core.dataLoader.loadData", fake_load_data)
-    monkeypatch.setattr(
-        "dartlab.providers.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview"
-    )
+    monkeypatch.setattr("dartlab.providers.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview")
 
     company = _bare_company(has_docs=True, has_finance=True)
 

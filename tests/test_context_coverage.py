@@ -111,8 +111,8 @@ class TestRegistryCentralization:
 
     def test_registry_question_types_valid(self):
         """registry aiQuestionTypes 값이 모두 유효한 질문 유형."""
-        from dartlab.core.registry import buildQuestionModules
         from dartlab.ai.conversation.templates.analysis_rules import QUESTION_TYPE_MAP
+        from dartlab.core.registry import buildQuestionModules
 
         valid = set(QUESTION_TYPE_MAP.keys())
         for qt in buildQuestionModules():
@@ -133,8 +133,8 @@ class TestRegistryCentralization:
 
     def test_topic_map_covers_all_registry_keywords(self):
         """_TOPIC_MAP이 registry aiKeywords를 모두 포함."""
-        from dartlab.core.registry import buildKeywordMap
         from dartlab.ai.context.builder import _TOPIC_MAP
+        from dartlab.core.registry import buildKeywordMap
 
         for kw in buildKeywordMap():
             assert kw in _TOPIC_MAP, f"키워드 '{kw}'가 _TOPIC_MAP에 없음"

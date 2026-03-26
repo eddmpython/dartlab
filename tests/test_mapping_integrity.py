@@ -12,13 +12,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 _MAPPER_DATA = (
-    Path(__file__).resolve().parent.parent
-    / "src"
-    / "dartlab"
-    / "providers"
-    / "dart"
-    / "finance"
-    / "mapperData"
+    Path(__file__).resolve().parent.parent / "src" / "dartlab" / "providers" / "dart" / "finance" / "mapperData"
 )
 _MAPPINGS_PATH = _MAPPER_DATA / "accountMappings.json"
 

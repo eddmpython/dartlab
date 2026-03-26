@@ -194,8 +194,8 @@ class TestPluginContext:
             reset_for_testing()
 
     def test_add_tool(self):
-        from dartlab.core.plugins import PluginContext, PluginMeta, reset_for_testing
         from dartlab.ai.tools.plugin import get_plugin_registry
+        from dartlab.core.plugins import PluginContext, PluginMeta, reset_for_testing
 
         meta = PluginMeta(
             name="test-tool-plugin",

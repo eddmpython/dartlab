@@ -8,13 +8,13 @@ from types import SimpleNamespace
 
 import polars as pl
 
-from dartlab.core.capabilities import CapabilityKind, UiAction, get_capability_specs
 from dartlab.ai.context import build_context_skeleton
 from dartlab.ai.context.company_adapter import get_headline_ratios, get_ratio_series
 from dartlab.ai.context.snapshot import build_snapshot
 from dartlab.ai.runtime.events import EventKind
 from dartlab.ai.spec import buildSpec
 from dartlab.ai.tools.registry import build_tool_runtime
+from dartlab.core.capabilities import CapabilityKind, UiAction, get_capability_specs
 
 
 class FakeRatioResult:

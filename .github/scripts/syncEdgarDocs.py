@@ -146,7 +146,7 @@ def main():
     beforeHashes = _snapshotHashes(localDir)
 
     # 3단계: ticker별 수집
-    from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
+    from dartlab.providers.edgar.docs.fetch import fetchEdgarDocs
 
     start = time.time()
     succeeded = 0

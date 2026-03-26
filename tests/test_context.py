@@ -6,7 +6,6 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-from dartlab.core.registry import ColumnMeta, DataEntry
 from dartlab.ai.context import (
     _build_ratios_section,
     _compute_derived_metrics,
@@ -16,6 +15,7 @@ from dartlab.ai.context import (
 )
 from dartlab.ai.metadata import ModuleMeta
 from dartlab.analysis.comparative.sector.types import IndustryGroup, Sector, SectorInfo
+from dartlab.core.registry import ColumnMeta, DataEntry
 
 # ══════════════════════════════════════
 # df_to_markdown

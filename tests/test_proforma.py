@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.analysis.forecast.simulation import SectorElasticity
 from dartlab.analysis.forecast.proforma import (
     ProFormaResult,
     _extract_base_year,
@@ -19,6 +18,7 @@ from dartlab.analysis.forecast.proforma import (
     compute_company_wacc,
     extract_historical_ratios,
 )
+from dartlab.analysis.forecast.simulation import SectorElasticity
 
 # ── Mock 시계열 ──────────────────────────────────────────
 

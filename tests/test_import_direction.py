@@ -145,6 +145,4 @@ def test_noReverseImports():
 
     if violations:
         lines = [f"  {src} (L{sl}) → {imp} (L{il})" for src, imp, sl, il in violations]
-        pytest.fail(
-            f"역방향 import {len(violations)}건 발견:\n" + "\n".join(lines)
-        )
+        pytest.fail(f"역방향 import {len(violations)}건 발견:\n" + "\n".join(lines))

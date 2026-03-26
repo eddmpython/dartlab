@@ -4,6 +4,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
+from dartlab.analysis.comparative.rank.rank import RankInfo
+from dartlab.analysis.comparative.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import (
     _yoyChange,
     detectBalanceSheetShift,
@@ -39,8 +41,6 @@ from dartlab.analysis.financial.insight.types import (
     Flag,
     InsightResult,
 )
-from dartlab.analysis.comparative.rank.rank import RankInfo
-from dartlab.analysis.comparative.sector.types import Sector
 from dartlab.core.finance.ratios import RatioResult
 
 

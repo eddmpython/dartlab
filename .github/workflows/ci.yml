@@ -138,9 +138,9 @@ jobs:
           import dartlab
           from dartlab import Company
           from dartlab.core.registry import getEntries
-          from dartlab.engines.common.finance.ratios import calcRatios
-          from dartlab.engines.analysis.insight.grading import analyzePerformance
-          from dartlab.engines.company.dart.finance.mapper import AccountMapper
+          from dartlab.core.finance.ratios import calcRatios
+          from dartlab.analysis.financial.insight.grading import analyzePerformance
+          from dartlab.providers.dart.finance.mapper import AccountMapper
           entries = getEntries()
           print(f'dartlab imported OK, {len(entries)} registry entries')
           "

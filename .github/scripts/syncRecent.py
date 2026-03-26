@@ -72,8 +72,8 @@ def _cloneCategory(category: str, dataDir: str, targetCodes: set[str]) -> int:
 
 def _findRecentFilings(keys: str, lookbackDays: int) -> set[str]:
     """최근 N일 정기공시에서 대상 종목코드 추출."""
-    from dartlab.engines.company.dart.openapi.client import DartClient
-    from dartlab.engines.company.dart.openapi.disclosure import listFilings
+    from dartlab.providers.dart.openapi.client import DartClient
+    from dartlab.providers.dart.openapi.disclosure import listFilings
 
     import polars as pl
 
@@ -164,7 +164,7 @@ def main():
     # 4단계: 대상 종목만 증분 수집
     start = time.time()
 
-    from dartlab.engines.company.dart.openapi.batch import batchCollect
+    from dartlab.providers.dart.openapi.batch import batchCollect
 
     results = batchCollect(
         list(targetCodes),

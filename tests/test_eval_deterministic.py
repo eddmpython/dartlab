@@ -11,9 +11,9 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 
-from dartlab.core.memory import BoundedCache
 from dartlab.ai.context.builder import _resolve_context_route
 from dartlab.ai.eval.replayRunner import PersonaEvalCase, loadPersonaCases
+from dartlab.core.memory import BoundedCache
 from dartlab.providers.dart._docs_accessor import _DocsAccessor
 from dartlab.providers.dart.company import Company
 
