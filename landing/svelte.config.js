@@ -20,7 +20,7 @@ function rehypeBaseUrl() {
 
 const highlighter = await createHighlighter({
 	themes: ['github-dark'],
-	langs: ['python', 'bash', 'json', 'yaml', 'toml', 'javascript', 'typescript', 'svelte', 'markdown', 'text']
+	langs: ['python', 'bash', 'powershell', 'json', 'yaml', 'toml', 'javascript', 'typescript', 'svelte', 'markdown', 'text']
 });
 
 /** @type {import('@sveltejs/kit').Config} */
