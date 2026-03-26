@@ -5,6 +5,30 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.10] - 2026-03-27
+
+### Added
+
+- **review 패키지**: 구조화된 기업 분석 보고서 시스템
+  - `c.review("수익구조")` / `c.review("자금조달")` — 템플릿 기반 분석 보고서
+  - `blocks(company)` — 16개 분석 블록 사전 (수익구조 8 + 자금조달 8)
+  - `Review([...])` — 블록 자유 조립, SelectResult/DataFrame 혼합 지원
+  - `c.reviewer()` — LLM 종합의견 레이어 (guide 파라미터로 분석 관점 지정)
+  - 4개 렌더링 형식: rich (터미널), html, markdown, json
+  - `dartlab review 005930` CLI 명령
+- **analysis/strategy calc-only 패턴**: revenue/capital 분석 함수가 dict/숫자만 반환, 블록 생성과 분리
+  - `calcSegmentComposition`, `calcSegmentTrend`, `calcBreakdown`, `calcRevenueGrowth` 등 15개 calc 함수
+  - import 방향 엄격 적용: analysis → review 단방향 (역방향 금지)
+- **README Review 섹션**: 템플릿, 블록 자유 조립, 리뷰어, 무료 프로바이더 안내 (EN/KR)
+- **sampleReview 노트북**: 블록 조립, reviewer 사용 예제 (marimo)
+- **블로그 124호**: 수익구조 읽는 법
+
+### Changed
+
+- **sections pipeline 개선**: 텍스트 구조 복원, segment matcher 정비
+- **DART Company**: review/reviewer 메서드 추가, select() 지원
+- **EDGAR Company**: review 메서드 추가
+
 ## [0.7.9] - 2026-03-26
 
 ### Added

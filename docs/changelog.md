@@ -9,6 +9,23 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.10] - 2026-03-27
+
+### Added
+
+- **review 패키지**: 구조화된 기업 분석 보고서 시스템
+  - `c.review("수익구조")` / `c.review("자금조달")` — 템플릿 기반 분석
+  - `blocks(company)` — 16개 블록 사전, `Review([...])` 자유 조립
+  - `c.reviewer()` — LLM 종합의견 + guide 파라미터
+  - rich/html/markdown/json 4가지 렌더링
+- **analysis/strategy calc-only 패턴**: 15개 calc 함수, import 방향 분리
+- **README Review 섹션** (EN/KR)
+- **sampleReview 노트북**, 블로그 124호
+
+### Changed
+
+- sections pipeline, DART/EDGAR Company review 메서드
+
 ## [0.7.9] - 2026-03-26
 
 ### Added
