@@ -122,45 +122,15 @@ dartlab.ask("Analyze Samsung Electronics financial health")
 
 ## What DartLab Is
 
-DartLab analyzes corporate disclosure filings — both the **numbers** (financial statements) and the **text** (business descriptions, risk factors, audit reports). It covers Korea (DART), the United States (EDGAR), and is researching Japan (EDINET).
+Every company files differently. The same "revenue" can appear as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations. Section titles change by company, year, and industry. Comparing two companies — or even the same company across years — means hours of manual realignment.
 
-Every company files differently. The same "revenue" can appear as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations. Section titles change by company, year, and industry. Comparing two companies manually means hours of realignment.
+DartLab solves this. Two standardization engines turn raw filings into a single, comparable company map:
 
-DartLab solves this with two standardization engines that turn raw filings into a single, comparable company map.
+### Philosophy — Two Comparabilities
 
-### Account Standardization
+**1. Compare any period within a company.**
 
-Financial statements use XBRL, but account IDs vary wildly across companies. DartLab normalizes them through a 4-step pipeline:
-
-```
-Raw XBRL account_id
-  → Step 1: Strip prefixes (ifrs-full_, dart_, ifrs_, ifrs-smes_)
-  → Step 2: English ID synonyms (59 rules)
-            e.g. NetIncome, Profit, NetProfit → ProfitLoss
-  → Step 3: Korean name synonyms (104 rules)
-            e.g. 매출, 수익, 영업수익, 매출액합계 → 매출액
-  → Step 4: Learned mapping table (34,249 entries)
-            AccountMapper resolves to a standardized snakeId
-  → Result: revenue, operatingIncome, totalAssets, …
-```
-
-Here's what this looks like in practice — the same "revenue" account from three companies:
-
-```
-Before (raw XBRL):                          After (standardized):
-Company     account_id          account_nm   →  snakeId    label
-Samsung     ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
-SK Hynix    dart_Revenue        매출액       →  revenue    매출액
-LG Energy   Revenue             매출         →  revenue    매출액
-```
-
-Every account across every company resolves to the same `snakeId`. Cross-company comparison requires zero manual work.
-
-The mapping table covers ~97% of all listed companies. The remaining edge cases (novel XBRL taxonomies, non-standard filings) fall through gracefully with the original ID preserved.
-
-### Sections Horizontalization
-
-Annual reports have structured sections (business overview, risk factors, dividend policy, etc.), but section titles differ by company, year, and industry. DartLab normalizes every section into a **topic × period** grid:
+Sections horizontalization normalizes every disclosure section into a **topic × period** grid. Different titles across years and industries all resolve to the same canonical topic:
 
 ```
                     2025Q4    2024Q4    2024Q3    2023Q4    …
@@ -174,8 +144,6 @@ audit                 ✓         ✓         ✓         ✓
 …                    (98 canonical topics)
 ```
 
-The same section content appears under different titles across companies:
-
 ```
 Before (raw section titles):              After (canonical topic):
 Samsung    "II. 사업의 내용"               → businessOverview
@@ -183,13 +151,42 @@ Hyundai    "II. 사업의 내용 [자동차부문]"   → businessOverview
 Kakao      "2. 사업의 내용"               → businessOverview
 ```
 
-The mapping pipeline: **text normalization** (strip industry prefixes, numbering, punctuation) → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic assignment. This achieves ~95%+ mapping rate across all listed companies.
+The mapping pipeline: **text normalization** → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic. ~95%+ mapping rate across all listed companies. Each cell keeps the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
 
-Each cell in the grid contains the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
+**2. Compare any company against any other.**
+
+Account standardization normalizes every XBRL account through a 4-step pipeline:
+
+```
+Raw XBRL account_id
+  → Strip prefixes (ifrs-full_, dart_, ifrs_, ifrs-smes_)
+  → English ID synonyms (59 rules)
+  → Korean name synonyms (104 rules)
+  → Learned mapping table (34,249 entries)
+  → Result: revenue, operatingIncome, totalAssets, …
+```
+
+```
+Before (raw XBRL):                          After (standardized):
+Company     account_id          account_nm   →  snakeId    label
+Samsung     ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
+SK Hynix    dart_Revenue        매출액       →  revenue    매출액
+LG Energy   Revenue             매출         →  revenue    매출액
+```
+
+~97% mapping rate. Cross-company comparison requires zero manual work. Combined with `scanAccount` / `scanRatio`, you can compare a single metric across **2,700+ companies** in one call.
+
+### Principles — Accessibility and Reliability
+
+These two principles govern every public API:
+
+**Accessibility** — One stock code is all you need. `import dartlab` provides access to every feature. No internal DTOs, no extra imports, no data setup. `Company("005930")` auto-downloads from [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data).
+
+**Reliability** — Numbers are raw originals from DART/EDGAR. Missing data returns `None`, never a guess. `trace(topic)` shows which source was chosen and why. Errors are never swallowed.
 
 ### Company — The Merged Map
 
-`Company` is where everything comes together. It uses `sections` (the text structure from docs) as the spine, then overlays stronger data sources on top:
+`Company` uses `sections` as the spine, then overlays stronger data sources:
 
 ```
 Layer         What it provides                   Priority
@@ -201,12 +198,6 @@ report        28 structured APIs (DART only)      Fills structured topics
 profile       Merged view (default for users)     Highest
 ```
 
-- **`docs`** owns narrative text — business descriptions, risk factors, audit opinions
-- **`finance`** replaces docs where numbers are stronger — BS, IS, CF become authoritative financial DataFrames
-- **`report`** fills in DART-specific structured data — dividend policy, executive compensation, governance details
-
-Four namespaces expose different views:
-
 ```python
 c.docs.sections     # pure text source (sections spine)
 c.finance.BS        # authoritative financial statements
@@ -216,14 +207,7 @@ c.profile.sections  # merged view — what users see by default
 
 `c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
 
-### Core Principles
-
-1. **Sections First** — A company is one horizontalized map, not a loose set of parser outputs
-2. **Source-Aware** — When `finance` or `report` is more authoritative, it overrides automatically. `trace()` tells you which source was chosen
-3. **Text + Numbers** — Both narrative text (heading/body with metadata) and financial numbers (standardized accounts) live in the same structure
-4. **Raw Access** — Go deeper when needed: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
-
-## Features
+## Core Features
 
 ### Show, Trace, Diff
 
@@ -283,9 +267,7 @@ c.filings()             # disclosure document list (Tier 1 Stable)
 
 All accounts are normalized through the 4-step standardization pipeline — Samsung's `revenue` and LG's `revenue` are the same `snakeId`. Ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
 
-### Market-wide Financial Screening (beta)
-
-> **Beta** — API may change after a warning. See [stability](docs/stability.md).
+### Market-wide Financial Screening
 
 Scan a single account or ratio across **all listed companies** in one call — 2,700+ DART firms or 500+ EDGAR firms. Returns a wide Polars DataFrame (rows = companies, columns = periods, newest first).
 
@@ -314,6 +296,10 @@ Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 
 > dartlab.downloadAll("report")    # ~320 MB (governance/workforce/capital/debt)
 > dartlab.downloadAll("docs")      # ~8 GB (digest/signal — large)
 > ```
+
+## Additional Features
+
+> Features below are **beta** or **experimental** — APIs may change. See [stability](docs/stability.md).
 
 ### Insights (beta)
 

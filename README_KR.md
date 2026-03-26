@@ -122,45 +122,15 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 
 ## DartLab은 무엇인가
 
-DartLab은 사업보고서의 **숫자**(재무제표)와 **텍스트**(사업 개요, 리스크, 감사보고서)를 모두 분석하는 Python 라이브러리다. 한국(DART), 미국(EDGAR)을 지원하고, 일본(EDINET)은 연구 중이다.
+모든 회사는 다른 방식으로 공시한다. 같은 "매출액"이 `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`로 표기되고, 섹션 제목도 회사·연도·업종마다 다르다. 두 회사를 비교하는 것은 물론, 같은 회사의 작년과 올해를 비교하는 것조차 수작업 재정렬이 필요하다.
 
-모든 회사는 다른 방식으로 공시한다. 같은 "매출액"이 `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`로 표기되고, 한글명도 "매출", "수익", "영업수익", "매출액합계" 등 수십 가지 변형이 있다. 섹션 제목도 회사, 연도, 업종마다 다르다. 두 회사를 수작업으로 비교하려면 몇 시간의 재정렬이 필요하다.
+DartLab은 이 문제를 해결한다. 두 가지 표준화 엔진으로 원본 공시를 하나의 비교 가능한 회사 맵으로 바꾼다:
 
-DartLab은 두 가지 표준화 엔진으로 이 문제를 해결한다.
+### 철학 — 두 가지 비교 가능성
 
-### 계정 표준화
+**1. 한 기업의 모든 기간을 비교할 수 있다.**
 
-재무제표는 XBRL을 쓰지만, 계정 ID는 회사마다 다르다. DartLab은 4단계 파이프라인으로 이를 정규화한다:
-
-```
-원본 XBRL account_id
-  → 1단계: 접두사 제거 (ifrs-full_, dart_, ifrs_, ifrs-smes_)
-  → 2단계: 영문 ID 동의어 (59개 규칙)
-           예) NetIncome, Profit, NetProfit → ProfitLoss
-  → 3단계: 한글명 동의어 (104개 규칙)
-           예) 매출, 수익, 영업수익, 매출액합계 → 매출액
-  → 4단계: 학습된 매핑 테이블 (34,249개 엔트리)
-           AccountMapper가 표준 snakeId로 변환
-  → 결과: revenue, operatingIncome, totalAssets, …
-```
-
-실제로 세 회사의 같은 "매출액" 계정이 원본에서 어떻게 다른지:
-
-```
-Before (원본 XBRL):                        After (표준화):
-회사        account_id          account_nm   →  snakeId    label
-삼성전자    ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
-SK하이닉스  dart_Revenue        매출액       →  revenue    매출액
-LG에너지    Revenue             매출         →  revenue    매출액
-```
-
-모든 회사의 모든 계정이 동일한 `snakeId`로 수렴한다. 회사 간 비교가 수작업 없이 가능하다.
-
-매핑 테이블은 전체 상장사의 ~97%를 커버한다. 나머지 예외(신규 XBRL 분류체계, 비표준 공시)는 원본 ID를 보존한 채 그대로 통과한다.
-
-### 섹션 수평화
-
-사업보고서에는 구조화된 섹션(사업 개요, 리스크, 배당 정책 등)이 있지만, 섹션 제목이 회사·연도·업종마다 다르다. DartLab은 모든 섹션을 **topic × period** 격자로 정규화한다:
+섹션 수평화는 모든 공시 섹션을 **topic × period** 격자로 정규화한다. 회사·연도·업종별로 다른 제목이 모두 같은 canonical topic으로 수렴한다:
 
 ```
                     2025Q4    2024Q4    2024Q3    2023Q4    …
@@ -174,8 +144,6 @@ audit                 ✓         ✓         ✓         ✓
 …                    (98개 canonical topics)
 ```
 
-같은 내용의 섹션이 회사마다 다른 제목으로 등장한다:
-
 ```
 Before (원본 섹션 제목):                     After (canonical topic):
 삼성전자    "II. 사업의 내용"                → businessOverview
@@ -183,13 +151,42 @@ Before (원본 섹션 제목):                     After (canonical topic):
 카카오      "2. 사업의 내용"                 → businessOverview
 ```
 
-매핑 파이프라인: **텍스트 정규화**(업종 접두사, 번호, 구두점 제거) → **545개 하드코딩 매핑** → **73개 regex 패턴** → canonical topic 할당. 전체 상장사 대비 ~95%+ 매핑률을 달성한다.
+매핑 파이프라인: **텍스트 정규화** → **545개 하드코딩 매핑** → **73개 regex 패턴** → canonical topic. 전체 상장사 ~95%+ 매핑률. 각 셀에는 heading/body로 분리된 원문, 테이블, 증거가 보존된다. "작년 대비 올해 리스크 기술이 어떻게 바뀌었는지"를 `diff()` 한 줄로 비교할 수 있다.
 
-격자의 각 셀에는 heading/body로 분리된 원문, 테이블, 증거가 들어 있다. "작년 대비 올해 리스크 기술이 어떻게 바뀌었는지"를 `diff()` 한 줄로 비교할 수 있다.
+**2. 어떤 기업이든 서로 비교할 수 있다.**
+
+계정 표준화는 모든 XBRL 계정을 4단계 파이프라인으로 정규화한다:
+
+```
+원본 XBRL account_id
+  → 접두사 제거 (ifrs-full_, dart_, ifrs_, ifrs-smes_)
+  → 영문 ID 동의어 (59개 규칙)
+  → 한글명 동의어 (104개 규칙)
+  → 학습된 매핑 테이블 (34,249개 엔트리)
+  → 결과: revenue, operatingIncome, totalAssets, …
+```
+
+```
+Before (원본 XBRL):                        After (표준화):
+회사        account_id          account_nm   →  snakeId    label
+삼성전자    ifrs-full_Revenue   수익(매출액)  →  revenue    매출액
+SK하이닉스  dart_Revenue        매출액       →  revenue    매출액
+LG에너지    Revenue             매출         →  revenue    매출액
+```
+
+~97% 매핑률. 회사 간 비교가 수작업 없이 가능하다. `scanAccount` / `scanRatio`와 결합하면 **2,700+ 기업**의 동일 지표를 한 번에 비교할 수 있다.
+
+### 원칙 — 접근성과 신뢰성
+
+이 두 원칙이 모든 공개 API를 지배한다:
+
+**접근성** — 종목코드 하나면 끝. `import dartlab` 하나로 모든 기능 접근. 내부 DTO도 추가 import도 데이터 설정도 필요 없다. `Company("005930")` 하나면 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동 다운로드.
+
+**신뢰성** — 숫자는 DART/EDGAR 원본 그대로. 데이터가 없으면 추정하지 않고 `None`을 반환한다. `trace(topic)`으로 어떤 소스가 왜 채택됐는지 항상 확인 가능. 에러를 삼키지 않는다.
 
 ### Company — 통합된 회사 맵
 
-`Company`는 모든 것이 합쳐지는 지점이다. `sections`(docs에서 온 텍스트 구조)를 spine으로 두고, 그 위에 더 강한 데이터 소스를 올린다:
+`Company`는 `sections`를 spine으로 두고, 그 위에 더 강한 데이터 소스를 올린다:
 
 ```
 레이어        제공하는 것                       우선순위
@@ -201,12 +198,6 @@ report        28개 정형 API (DART 전용)          정형 topic 채움
 profile       통합 뷰 (사용자 기본값)             최상위
 ```
 
-- **`docs`**는 서술 텍스트를 담당한다 — 사업 개요, 리스크, 감사 의견
-- **`finance`**는 숫자가 더 강한 곳을 대체한다 — BS, IS, CF가 authoritative DataFrame이 된다
-- **`report`**는 DART 전용 정형 데이터를 채운다 — 배당 정책, 임원 보수, 지배구조 상세
-
-네 가지 namespace로 다른 관점을 제공한다:
-
 ```python
 c.docs.sections     # 순수 텍스트 소스 (sections spine)
 c.finance.BS        # authoritative 재무제표
@@ -216,14 +207,7 @@ c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
 
 `c.sections`는 통합 뷰다. `c.trace("BS")`로 어떤 소스가 왜 채택됐는지 확인한다.
 
-### 핵심 원칙
-
-1. **Sections First** — 회사는 여러 parser 결과의 모음이 아니라, 기간축 위에 정렬된 하나의 공시 맵이다
-2. **Source-Aware** — `finance`나 `report`가 더 authoritative하면 자동으로 대체한다. `trace()`로 어떤 source가 채택됐는지 확인
-3. **텍스트 + 숫자** — 서술 텍스트(heading/body + 메타데이터)와 재무 숫자(표준화된 계정)가 같은 구조에 공존한다
-4. **Raw Access** — 더 깊게: `c.docs.sections`, `c.finance.BS`, `c.report.extract("배당")`
-
-## 기능
+## 핵심 기능
 
 ### Show, Trace, Diff
 
@@ -283,9 +267,7 @@ c.filings()             # 공시 문서 목록 (Tier 1 Stable)
 
 모든 계정은 4단계 표준화 파이프라인을 거친다 — 삼성전자의 `revenue`와 LG의 `revenue`는 같은 `snakeId`다. 재무비율은 6개 카테고리를 포괄한다: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션.
 
-### 시장 전수 재무 스크리닝 (beta)
-
-> **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
+### 시장 전수 재무 스크리닝
 
 단일 계정이나 비율을 **전체 상장사**에 대해 한 번에 스캔한다 — DART 2,700사 이상, EDGAR 500사 이상. wide Polars DataFrame 반환 (행 = 기업, 열 = 기간, 최신 먼저).
 
@@ -314,6 +296,10 @@ dartlab.scanRatioList()
 > dartlab.downloadAll("report")    # ~320 MB (거버넌스/인력/자본/부채)
 > dartlab.downloadAll("docs")      # ~8 GB (공시 변화 감지/시그널 — 대용량)
 > ```
+
+## 부가 기능
+
+> 아래 기능은 **beta** 또는 **experimental**이다 — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ### 인사이트 (beta)
 
