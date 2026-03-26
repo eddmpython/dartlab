@@ -70,7 +70,11 @@ ROUTE_HINTS: dict[str, list[dict]] = {
         {"tool": "explore", "args": {"action": "show", "topic": "internalControl"}, "reason": "내부통제 현황"},
     ],
     "유동성": [
-        {"tool": "explore", "args": {"action": "show", "topic": "liquidityAndCapitalResources"}, "reason": "유동성/자본 조달"},
+        {
+            "tool": "explore",
+            "args": {"action": "show", "topic": "liquidityAndCapitalResources"},
+            "reason": "유동성/자본 조달",
+        },
         {"tool": "finance", "args": {"action": "data", "module": "BS"}, "reason": "유동자산/부채 수치"},
     ],
     "주석": [

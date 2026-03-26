@@ -57,12 +57,25 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 # ── 옛 도구명 패턴 ──
 OLD_TOOL_NAMES = [
-    "show_topic", "get_data", "list_topics", "get_evidence",
-    "diff_topic", "trace_topic", "compute_ratios", "get_insight",
-    "get_report_data", "get_topic_coverage", "list_live_filings",
-    "read_filing", "detect_anomalies", "get_runtime_capabilities",
-    "get_system_spec", "get_tool_catalog", "show_chart",
-    "create_chart", "render_dashboard",
+    "show_topic",
+    "get_data",
+    "list_topics",
+    "get_evidence",
+    "diff_topic",
+    "trace_topic",
+    "compute_ratios",
+    "get_insight",
+    "get_report_data",
+    "get_topic_coverage",
+    "list_live_filings",
+    "read_filing",
+    "detect_anomalies",
+    "get_runtime_capabilities",
+    "get_system_spec",
+    "get_tool_catalog",
+    "show_chart",
+    "create_chart",
+    "render_dashboard",
 ]
 
 
@@ -213,9 +226,7 @@ def test5_error_standardization():
     print("검증 5: 에러 메시지 표준화 검사")
     print("=" * 60)
 
-    superToolDir = os.path.join(
-        os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "tools", "superTools"
-    )
+    superToolDir = os.path.join(os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "tools", "superTools")
 
     issues = []
     total_errors = 0
@@ -236,12 +247,12 @@ def test5_error_standardization():
             if stripped.startswith("except "):
                 inExcept = True
                 continue
-            if inExcept and "return " in stripped and "f\"" in stripped:
+            if inExcept and "return " in stripped and 'f"' in stripped:
                 total_errors += 1
                 if "[오류]" in stripped or "[데이터 없음]" in stripped:
                     standardized += 1
                 else:
-                    issues.append(f"  {fname}:{i+1} — 비표준 에러: {stripped[:80]}")
+                    issues.append(f"  {fname}:{i + 1} — 비표준 에러: {stripped[:80]}")
                 inExcept = False
             elif inExcept and not stripped.startswith("#") and stripped and not stripped.startswith("return"):
                 if "return" not in stripped:
@@ -303,7 +314,7 @@ def test7_parallel_tool_calls():
     with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
-    if 'parallel_tool_calls' in content:
+    if "parallel_tool_calls" in content:
         # False로 설정되어 있는지 확인
         if "parallel_tool_calls" in content and "False" in content:
             print("  ✅ parallel_tool_calls = False 설정 확인")
@@ -323,9 +334,7 @@ def test8_self_verification():
     print("=" * 60)
 
     # core.py에 buildCorrectionPrompt 호출이 있는지
-    corePath = os.path.join(
-        os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "core.py"
-    )
+    corePath = os.path.join(os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "core.py")
     with open(corePath, encoding="utf-8") as f:
         coreContent = f.read()
 
@@ -337,9 +346,7 @@ def test8_self_verification():
         ppContent = f.read()
 
     # events.py에 CORRECTION 이벤트가 있는지
-    evPath = os.path.join(
-        os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "events.py"
-    )
+    evPath = os.path.join(os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "events.py")
     with open(evPath, encoding="utf-8") as f:
         evContent = f.read()
 
@@ -376,9 +383,7 @@ def test9_context_builder():
 
     issues = []
     for label, *parts in files:
-        filepath = os.path.join(
-            os.path.dirname(__file__), "..", "..", "src", "dartlab", *parts
-        )
+        filepath = os.path.join(os.path.dirname(__file__), "..", "..", "src", "dartlab", *parts)
         if not os.path.exists(filepath):
             continue
         with open(filepath, encoding="utf-8") as f:
@@ -426,14 +431,12 @@ def test10_post_processing_tool_names():
         issues.append("chartTools에 옛 이름 잔존")
 
     if '"finance"' in content and '"get_data"' not in content:
-        print('  ✅ dataTools에 Super Tool 이름 사용')
+        print("  ✅ dataTools에 Super Tool 이름 사용")
     else:
         issues.append("dataTools에 옛 이름 잔존")
 
     # run_modes.py의 chart 이름도 확인
-    rmPath = os.path.join(
-        os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "run_modes.py"
-    )
+    rmPath = os.path.join(os.path.dirname(__file__), "..", "..", "src", "dartlab", "ai", "runtime", "run_modes.py")
     with open(rmPath, encoding="utf-8") as f:
         rmContent = f.read()
 

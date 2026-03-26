@@ -172,18 +172,20 @@ def main():
             print(f"    미리보기: {result['answerPreview'][:200]}...")
         except Exception as e:
             print(f"    [EXCEPTION] {type(e).__name__}: {e}")
-            results.append({
-                "label": label,
-                "question": question,
-                "toolCalls": [],
-                "toolNames": [],
-                "toolResultCount": 0,
-                "answerLen": 0,
-                "answerPreview": "",
-                "isKorean": False,
-                "elapsed": 0,
-                "errors": [str(e)],
-            })
+            results.append(
+                {
+                    "label": label,
+                    "question": question,
+                    "toolCalls": [],
+                    "toolNames": [],
+                    "toolResultCount": 0,
+                    "answerLen": 0,
+                    "answerPreview": "",
+                    "isKorean": False,
+                    "elapsed": 0,
+                    "errors": [str(e)],
+                }
+            )
         print()
 
     # ── 평가 ──
@@ -214,9 +216,9 @@ def main():
             if evaluateChaining(toolNames):
                 chainingCount += 1
 
-    print(f"\n  도구 정확도: {toolCorrect}/{total} ({toolCorrect/total*100:.0f}%)")
-    print(f"  연쇄 호출 비율: {chainingCount}/{nonGreeting} ({chainingCount/nonGreeting*100:.0f}%)")
-    print(f"  한국어 비율: {koreanCount}/{total} ({koreanCount/total*100:.0f}%)")
+    print(f"\n  도구 정확도: {toolCorrect}/{total} ({toolCorrect / total * 100:.0f}%)")
+    print(f"  연쇄 호출 비율: {chainingCount}/{nonGreeting} ({chainingCount / nonGreeting * 100:.0f}%)")
+    print(f"  한국어 비율: {koreanCount}/{total} ({koreanCount / total * 100:.0f}%)")
     print(f"  에러: {errorCount}/{total}")
 
     # 가설 판정
@@ -249,7 +251,9 @@ def main():
         correct = "O" if evaluateToolAccuracy(label, calls, toolNames) else "X"
         chained = "O" if evaluateChaining(toolNames) else "-"
         korean = "O" if r.get("isKorean") else "X"
-        print(f"{label:<15} {correct:>8} {chained:>4} {korean:>6} {r.get('answerLen', 0):>8} {r.get('elapsed', 0):>5.1f}s")
+        print(
+            f"{label:<15} {correct:>8} {chained:>4} {korean:>6} {r.get('answerLen', 0):>8} {r.get('elapsed', 0):>5.1f}s"
+        )
 
 
 if __name__ == "__main__":

@@ -23,7 +23,11 @@ BENCHMARK_DATA: dict[str, dict] = {
         "회계함정": [
             "감가상각비 비중 높아 EBITDA와 영업이익 괴리 큼. EBITDA 기준 분석 병행 필수",
         ],
-        "topic확인": ["explore(action='show', topic='segments')", "explore(action='show', topic='tangibleAsset')", "explore(action='show', topic='rnd')"],
+        "topic확인": [
+            "explore(action='show', topic='segments')",
+            "explore(action='show', topic='tangibleAsset')",
+            "explore(action='show', topic='rnd')",
+        ],
     },
     "제약/바이오": {
         "_meta": {"updated": "2026-03", "source": "업종 평균 기반"},
@@ -39,7 +43,11 @@ BENCHMARK_DATA: dict[str, dict] = {
         "회계함정": [
             "임상실패 시 자본화된 개발비 일시 상각 → 대규모 손실. 무형자산 중 개발비 비중 확인",
         ],
-        "topic확인": ["explore(action='show', topic='rnd')", "explore(action='show', topic='productService')", "explore(action='search', keyword='개발비')"],
+        "topic확인": [
+            "explore(action='show', topic='rnd')",
+            "explore(action='show', topic='productService')",
+            "explore(action='search', keyword='개발비')",
+        ],
     },
     "금융/은행": {
         "_meta": {"updated": "2026-03", "source": "업종 평균 기반"},
@@ -57,7 +65,11 @@ BENCHMARK_DATA: dict[str, dict] = {
         "회계함정": [
             "대손충당금 적립률 조정으로 이익 관리 가능. 충당금/부실채권 비율 확인",
         ],
-        "topic확인": ["explore(action='show', topic='riskFactor')", "explore(action='search', keyword='대출')", "explore(action='search', keyword='충당금')"],
+        "topic확인": [
+            "explore(action='show', topic='riskFactor')",
+            "explore(action='search', keyword='대출')",
+            "explore(action='search', keyword='충당금')",
+        ],
     },
     "금융/보험": {
         "_meta": {"updated": "2026-03", "source": "업종 평균 기반"},
@@ -104,7 +116,11 @@ BENCHMARK_DATA: dict[str, dict] = {
             "**인센티브**: 판매 보조금 증가는 수요 약화 신호. 믹스(고급차 비중) 변화 추적",
         ],
         "회계함정": [],
-        "topic확인": ["explore(action='show', topic='segments')", "explore(action='show', topic='productService')", "explore(action='show', topic='rawMaterial')"],
+        "topic확인": [
+            "explore(action='show', topic='segments')",
+            "explore(action='show', topic='productService')",
+            "explore(action='show', topic='rawMaterial')",
+        ],
     },
     "화학": {
         "_meta": {"updated": "2026-03", "source": "업종 평균 기반"},
@@ -151,7 +167,11 @@ BENCHMARK_DATA: dict[str, dict] = {
         "회계함정": [
             "공사손실충당부채 미인식 → 향후 손실 폭탄. 진행률 산정 기준 변경 주의",
         ],
-        "topic확인": ["explore(action='show', topic='contingentLiability')", "explore(action='show', topic='salesOrder')", "explore(action='search', keyword='공사')"],
+        "topic확인": [
+            "explore(action='show', topic='contingentLiability')",
+            "explore(action='show', topic='salesOrder')",
+            "explore(action='search', keyword='공사')",
+        ],
     },
     "유통": {
         "_meta": {"updated": "2026-03", "source": "업종 평균 기반"},

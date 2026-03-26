@@ -150,7 +150,10 @@ def _extract_module_context(company: Any, module_name: str, max_rows: int = 10) 
 
         text = str(data)
         if len(text) > 300:
-            text = text[:300] + f"... (전체 {len(str(data))}자, explore(action='show', topic='{module_name}')으로 전문 확인)"
+            text = (
+                text[:300]
+                + f"... (전체 {len(str(data))}자, explore(action='show', topic='{module_name}')으로 전문 확인)"
+            )
         return f"## {label}\n{text}" if text.strip() else None
 
     except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):

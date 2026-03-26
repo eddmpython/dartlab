@@ -108,7 +108,11 @@ def test_failure_recovery_examples() -> None:
     from dartlab.ai.conversation.templates.system_base import SYSTEM_PROMPT_KR
 
     # 실패 복구 예시는 "→" 연쇄 패턴으로 카운트 (데이터 없음 + 대안 경로)
-    recovery_lines = [line for line in SYSTEM_PROMPT_KR.split("\n") if "→" in line and ("데이터 없음" in line or "복구" in line or "보강" in line)]
+    recovery_lines = [
+        line
+        for line in SYSTEM_PROMPT_KR.split("\n")
+        if "→" in line and ("데이터 없음" in line or "복구" in line or "보강" in line)
+    ]
     check(f"실패 복구 예시 ≥3개 (발견: {len(recovery_lines)})", len(recovery_lines) >= 3)
 
     check("복합 분석 예시 존재", "복합 분석 예시" in SYSTEM_PROMPT_KR)
@@ -179,7 +183,7 @@ if __name__ == "__main__":
     test_builder_tool_hints()
     test_en_response_contract()
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"결과: {PASS} PASS / {FAIL} FAIL / {PASS + FAIL} TOTAL")
     if FAIL > 0:
         print("❌ 일부 검증 실패")
