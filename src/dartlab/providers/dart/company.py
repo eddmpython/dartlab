@@ -147,6 +147,7 @@ _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CH
 _REPORT_TOPIC_TO_API_TYPE: dict[str, str] = {
     "audit": "auditOpinion",
 }
+_API_TYPE_TO_TOPIC: dict[str, str] = {v: k for k, v in _REPORT_TOPIC_TO_API_TYPE.items()}
 # ── topic 단축 alias ────────────────────────────────────────────
 # show("board") → show("boardOfDirectors") 등 짧은 이름으로 접근 가능
 _TOPIC_ALIASES: dict[str, str] = {
@@ -359,7 +360,7 @@ class Company:
         """모듈 호출 + 캐싱. Notes에서도 사용."""
         if not self._hasDocs:
             return None
-        cacheKey = f"{name}:{kwargs}" if kwargs else name
+        cacheKey = f"{name}:{sorted(kwargs.items())}" if kwargs else name
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         idx = _get_module_index()[name]
@@ -388,7 +389,7 @@ class Company:
         """모듈 호출 후 primary DataFrame 추출."""
         from dartlab import config
 
-        cacheKey = f"{name}:{kwargs}" if kwargs else name
+        cacheKey = f"{name}:{sorted(kwargs.items())}" if kwargs else name
         idx = _get_module_index()[name]
         entry = _get_module_registry()[idx]
         label = entry[2]
@@ -1072,17 +1073,17 @@ class Company:
             try:
                 for apiType in self.report.availableApiTypes:
                     topic = apiType
-                    if topic in _REPORT_TOPIC_TO_API_TYPE.values():
-                        for k, v in _REPORT_TOPIC_TO_API_TYPE.items():
-                            if v == topic:
-                                topic = k
-                                break
+                    if topic in _API_TYPE_TO_TOPIC:
+                        topic = _API_TYPE_TO_TOPIC[topic]
                     chapter = chapterMap.get(topic, "X")
                     topicExtras.setdefault(topic, []).append(
                         _baseExtraRow(chapter=chapter, topic=topic, source="report")
                     )
-            except (ValueError, KeyError, AttributeError):
-                pass
+            except (ValueError, KeyError, AttributeError) as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "sections report merge failed for %s: %s", self.stockCode, e
+                )
 
         if not topicExtras:
             self._cache[cacheKey] = docsSec
@@ -1620,6 +1621,13 @@ class Company:
         df = df.filter(notAllNull)
         # 공통: 같은 계정명 중복행 병합 (coalesce — 먼저 나온 행 우선)
         if df["계정명"].n_unique() < df.height:
+            import logging
+            dupes = df.group_by("계정명").len().filter(pl.col("len") > 1)
+            logging.getLogger(__name__).warning(
+                "%s %s: 중복 계정명 %d건 (먼저 나온 값 사용): %s",
+                self.stockCode, sjDiv, dupes.height,
+                dupes["계정명"].to_list()[:5],
+            )
             merged = df.group_by("계정명", maintain_order=True).agg(
                 [pl.col(c).drop_nulls().first().alias(c) for c in periodCols]
             )

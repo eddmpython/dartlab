@@ -505,7 +505,7 @@ class Company:
             ts = self.timeseries
             annual = self.annual
             if ts is None or annual is None:
-                self._cache["_insights"] = None
+                return None  # 캐시하지 않음 — 다음 호출에서 재시도
             else:
                 self._cache["_insights"] = analyze(
                     self.cik,

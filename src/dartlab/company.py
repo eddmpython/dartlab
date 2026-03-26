@@ -46,18 +46,28 @@ def Company(codeOrName: str) -> CompanyProtocol:
         raise ValueError("종목코드 또는 회사명을 입력해 주세요.")
 
     # canHandle 체인: priority 순으로 시도
+    firstError: Exception | None = None
     for cls in _PROVIDERS:
         if hasattr(cls, "canHandle") and cls.canHandle(normalized):
             try:
                 return cls(normalized)
-            except (ValueError, FileNotFoundError, OSError):
-                continue  # 이 provider가 실패하면 다음 시도
+            except (ValueError, FileNotFoundError) as e:
+                firstError = firstError or e
+                continue
+            except OSError as e:
+                firstError = firstError or e
+                continue
 
     # fallback: DART (한글도 아니고 ticker도 아닌 회사명 검색 시도)
     for cls in _PROVIDERS:
         try:
             return cls(normalized)
-        except (ValueError, FileNotFoundError, OSError):
+        except (ValueError, FileNotFoundError) as e:
+            firstError = firstError or e
+            continue
+        except OSError as e:
+            firstError = firstError or e
             continue
 
-    raise ValueError(f"'{codeOrName}'을(를) 찾을 수 없습니다. dartlab.search('{codeOrName}')로 검색해 보세요.")
+    cause = f" (원인: {firstError})" if firstError else ""
+    raise ValueError(f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}. dartlab.search('{codeOrName}')로 검색해 보세요.")
