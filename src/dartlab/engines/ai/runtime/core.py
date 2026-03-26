@@ -26,6 +26,7 @@ from dartlab.engines.ai.runtime.post_processing import (
     _detect_navigate_action,
     _run_validation,
     autoInjectArtifacts,
+    buildCorrectionPrompt,
 )
 from dartlab.engines.ai.runtime.run_modes import (
     _run_agent,
@@ -275,7 +276,11 @@ def _classify_error(e: Exception) -> dict[str, str]:
         return {"error": "AI 설정이 필요합니다. API 키를 확인하거나 다른 provider를 선택해주세요.", "action": "config"}
 
     # Google Gemini 에러
-    if err_type in ("ServerError", "ClientError", "APIError") or "google" in err_type.lower() or "genai" in err_type.lower():
+    if (
+        err_type in ("ServerError", "ClientError", "APIError")
+        or "google" in err_type.lower()
+        or "genai" in err_type.lower()
+    ):
         if "503" in err_str or "unavailable" in err_low or "high demand" in err_low:
             return {"error": "Gemini 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.", "action": "retry"}
         if "429" in err_str or "rate" in err_low or "quota" in err_low or "resource_exhausted" in err_low:
@@ -292,7 +297,10 @@ def _classify_error(e: Exception) -> dict[str, str]:
 
     # 일반 네트워크/서버 에러
     if isinstance(e, (ConnectionError, TimeoutError)):
-        return {"error": "AI 서버에 연결할 수 없습니다. 네트워크를 확인하거나 잠시 후 다시 시도해주세요.", "action": "retry"}
+        return {
+            "error": "AI 서버에 연결할 수 없습니다. 네트워크를 확인하거나 잠시 후 다시 시도해주세요.",
+            "action": "retry",
+        }
 
     return {"error": err_str, "action": ""}
 
@@ -883,6 +891,27 @@ def _analyze_inner(
             yield _ev
     else:
         yield from _run_stream(llm, messages, _full_response_parts)
+
+    # ── 13.5. Self-Verification (Reflexion) — 수치 불일치 시 correction 턴 ──
+    if validate and company is not None and _full_response_parts and _should_run_validation(_included_tables):
+        correction_prompt = buildCorrectionPrompt(company, _full_response_parts)
+        if correction_prompt:
+            _done_payload["selfVerification"] = True
+            yield AnalysisEvent("correction", {"message": correction_prompt})
+
+            # LLM에 correction prompt 전달 → 수정된 답변 스트리밍
+            correction_messages = [
+                *messages,
+                {"role": "assistant", "content": "".join(_full_response_parts)},
+                {"role": "user", "content": correction_prompt},
+            ]
+            # 기존 답변 클리어 후 수정 답변으로 교체
+            _full_response_parts.clear()
+            yield AnalysisEvent("chunk", {"text": "\n\n---\n*[수치 검증 후 수정된 답변]*\n\n"})
+            _full_response_parts.append("\n\n---\n*[수치 검증 후 수정된 답변]*\n\n")
+            for chunk in llm.stream(correction_messages):
+                _full_response_parts.append(chunk)
+                yield AnalysisEvent("chunk", {"text": chunk})
 
     # ── 14. Response meta 추출 ──
     if company and _full_response_parts and "responseMeta" not in _done_payload:

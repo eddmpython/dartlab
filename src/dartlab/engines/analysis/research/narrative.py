@@ -1586,7 +1586,9 @@ def _analyzeEarningsManipulation(inp: _Input) -> NarrativeParagraph | None:
         return None
     body = ". ".join(parts) + "."
     severity = "warning" if flagged else "positive" if mScore < -2.22 else "neutral"
-    return NarrativeParagraph(dimension="earningsManipulation", title="이익조작 감지(Beneish)", body=body, severity=severity)
+    return NarrativeParagraph(
+        dimension="earningsManipulation", title="이익조작 감지(Beneish)", body=body, severity=severity
+    )
 
 
 def _analyzeDistressModels(inp: _Input) -> NarrativeParagraph | None:
@@ -1660,14 +1662,24 @@ def _analyzeDistressModels(inp: _Input) -> NarrativeParagraph | None:
         elif dangerCount == total:
             parts.append(f"부실모델 {total}개 전원 위험 판정 — 심각한 부실 신호")
         elif dangerCount > 0 and safeCount > 0:
-            parts.append(f"모델 간 disagreement(안전 {safeCount} vs 위험 {dangerCount}/{total}) — 불확실성 구간, 심층 분석 필요")
+            parts.append(
+                f"모델 간 disagreement(안전 {safeCount} vs 위험 {dangerCount}/{total}) — 불확실성 구간, 심층 분석 필요"
+            )
         elif dangerCount > 0:
             parts.append(f"부실 위험 모델 {dangerCount}개 경고 — 재무 안정성 점검 필요")
 
     if not parts:
         return None
     body = ". ".join(parts) + "."
-    severity = "negative" if dangerCount >= 2 else "warning" if dangerCount >= 1 else "positive" if safeCount == total else "neutral"
+    severity = (
+        "negative"
+        if dangerCount >= 2
+        else "warning"
+        if dangerCount >= 1
+        else "positive"
+        if safeCount == total
+        else "neutral"
+    )
     return NarrativeParagraph(dimension="distressModels", title="부실예측 다중모델", body=body, severity=severity)
 
 
@@ -1709,7 +1721,11 @@ def _analyzeCostStructure(inp: _Input) -> NarrativeParagraph | None:
                 # 매출 대비 비중 계산
                 if salesClean and len(salesClean) >= len(cleanVals):
                     latestRatio = cleanVals[-1] / salesClean[-1] * 100 if salesClean[-1] > 0 else None
-                    prevRatio = cleanVals[-2] / salesClean[-(len(cleanVals))] * 100 if len(salesClean) >= 2 and salesClean[-2] > 0 else None
+                    prevRatio = (
+                        cleanVals[-2] / salesClean[-(len(cleanVals))] * 100
+                        if len(salesClean) >= 2 and salesClean[-2] > 0
+                        else None
+                    )
                     if latestRatio is not None:
                         if prevRatio is not None:
                             diff = latestRatio - prevRatio
@@ -1797,7 +1813,9 @@ def _analyzeSalesOrder(inp: _Input) -> NarrativeParagraph | None:
     if not parts:
         return None
     body = ". ".join(parts) + "."
-    severity = "positive" if any("풍부" in p for p in parts) else "warning" if any("부족" in p for p in parts) else "neutral"
+    severity = (
+        "positive" if any("풍부" in p for p in parts) else "warning" if any("부족" in p for p in parts) else "neutral"
+    )
     return NarrativeParagraph(dimension="salesOrder", title="수주잔고 분석", body=body, severity=severity)
 
 
@@ -2002,7 +2020,13 @@ def _analyzeBusinessStrategy(inp: _Input) -> NarrativeParagraph | None:
             pass
 
     body = ". ".join(parts) + "."
-    severity = "positive" if "고성장·고마진" in strategy or "개선형" in strategy else "warning" if "저성장·저마진" in strategy else "neutral"
+    severity = (
+        "positive"
+        if "고성장·고마진" in strategy or "개선형" in strategy
+        else "warning"
+        if "저성장·저마진" in strategy
+        else "neutral"
+    )
     return NarrativeParagraph(dimension="businessStrategy", title="사업전략 분류", body=body, severity=severity)
 
 
@@ -2255,7 +2279,9 @@ def _analyzeIndexTrend(inp: _Input) -> NarrativeParagraph | None:
     if len(arIdxClean) >= 3 and len(salesIdxClean) >= 3:
         arGap = arIdxClean[-1] - salesIdxClean[-1]
         if arGap > 30:
-            parts.append(f"매출채권지수({arIdxClean[-1]:.0f})가 매출지수({salesIdxClean[-1]:.0f}) 대비 {arGap:.0f}p 초과 팽창 — 수금 악화 또는 매출 인식 공격성")
+            parts.append(
+                f"매출채권지수({arIdxClean[-1]:.0f})가 매출지수({salesIdxClean[-1]:.0f}) 대비 {arGap:.0f}p 초과 팽창 — 수금 악화 또는 매출 인식 공격성"
+            )
         elif arGap < -30:
             parts.append(f"매출채권지수가 매출 대비 {abs(arGap):.0f}p 축소 — 회수 효율 개선")
 
@@ -2264,7 +2290,9 @@ def _analyzeIndexTrend(inp: _Input) -> NarrativeParagraph | None:
     if len(invIdxClean) >= 3 and len(salesIdxClean) >= 3:
         invGap = invIdxClean[-1] - salesIdxClean[-1]
         if invGap > 30:
-            parts.append(f"재고지수({invIdxClean[-1]:.0f})가 매출지수 대비 {invGap:.0f}p 초과 팽창 — 재고 과잉 축적 경고")
+            parts.append(
+                f"재고지수({invIdxClean[-1]:.0f})가 매출지수 대비 {invGap:.0f}p 초과 팽창 — 재고 과잉 축적 경고"
+            )
 
     # 영업이익지수 vs 매출지수 (마진 변화 시각화)
     opIdxClean = [v for v in opIdx if v is not None]
@@ -2365,7 +2393,13 @@ def _detectCrossReferences(paragraphs: list[NarrativeParagraph]) -> list[str]:
     strategy = dimMap.get("businessStrategy")
 
     # segment + margin: 고마진 부문 비중 하락
-    if segment and margin and segment.body and "비중 하락" in segment.body and margin.severity in ("negative", "warning"):
+    if (
+        segment
+        and margin
+        and segment.body
+        and "비중 하락" in segment.body
+        and margin.severity in ("negative", "warning")
+    ):
         refs.append("고마진 부문 비중 하락 → 전체 이익률 압박")
 
     # costStructure + margin: 원재료비 비중 상승 + 마진 축소
