@@ -855,7 +855,7 @@ def test_route_hint_matches_keywords():
     from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("삼성전자 경영진 분석 의견에서 올해 핵심 이슈가 뭔지 정리해줘")
-    assert "show_topic" in hint
+    assert "explore" in hint
     assert "mdnaOverview" in hint
 
 
@@ -870,8 +870,8 @@ def test_route_hint_multiple_keywords():
     from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("삼성전자 재무제표와 배당 현황 알려줘")
-    assert "get_data" in hint
-    assert "get_report_data" in hint
+    assert "finance" in hint
+    assert "explore" in hint
     assert "IS" in hint
     assert "dividend" in hint
 

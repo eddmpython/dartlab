@@ -23,7 +23,9 @@ def registerOpenapiTool(registerTool: Callable) -> None:
             result = callEndpoint(endpoint, params)
             return format_tool_value(result, max_rows=30, max_chars=5000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"DART API 호출 실패: {e}"
+            return (
+                f"[오류] DART API 호출 실패: {e}. 대안: openapi(action='capabilities')로 사용 가능한 API를 확인하세요."
+            )
 
     def _searchFilings(keyword: str = "", **_kw) -> str:
         if not keyword:
@@ -34,7 +36,7 @@ def registerOpenapiTool(registerTool: Callable) -> None:
             result = searchFilings(keyword)
             return format_tool_value(result, max_rows=20, max_chars=3000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"공시 검색 실패: {e}"
+            return f"[오류] 공시 검색 실패: {e}. 대안: explore(action='search')로 이미 로드된 공시를 검색하세요."
 
     def _capabilities(**_kw) -> str:
         try:
@@ -42,7 +44,7 @@ def registerOpenapiTool(registerTool: Callable) -> None:
 
             return getCapabilities()
         except (ImportError, AttributeError) as e:
-            return f"API 스펙 조회 실패: {e}"
+            return f"[오류] API 스펙 조회 실패: {e}"
 
     _ACTIONS = {
         "dartCall": _dartCall,
@@ -68,7 +70,11 @@ def registerOpenapiTool(registerTool: Callable) -> None:
         "action별 동작:\n"
         "- dartCall: DART API 엔드포인트 호출 (endpoint, params 필수)\n"
         "- searchFilings: DART 공시 키워드 검색 (keyword 필수)\n"
-        "- capabilities: 사용 가능한 API 목록 조회",
+        "- capabilities: 사용 가능한 API 목록 조회\n"
+        "\n"
+        "기본 도구로 부족할 때 DART API를 직접 호출합니다. 대부분의 경우 explore/finance로 충분합니다.\n"
+        "\n"
+        "반환: 마크다운 텍스트 (API 응답 데이터, 공시 목록). 실패 시 '[오류]' 메시지.",
         {
             "type": "object",
             "properties": {

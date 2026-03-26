@@ -96,6 +96,8 @@ class OpenAICompatProvider(BaseProvider):
         self,
         messages: list[dict],
         tools: list[dict],
+        *,
+        tool_choice: str | None = None,
     ) -> ToolResponse:
         """OpenAI tool calling 지원."""
         client = self._get_client()
@@ -107,7 +109,11 @@ class OpenAICompatProvider(BaseProvider):
         }
         if tools:
             kwargs["tools"] = tools
-            kwargs["parallel_tool_calls"] = True
+            kwargs["parallel_tool_calls"] = False
+            if tool_choice == "any":
+                kwargs["tool_choice"] = "required"
+            elif tool_choice == "none":
+                kwargs["tool_choice"] = "none"
 
         response = client.chat.completions.create(**kwargs)
         choice = response.choices[0]

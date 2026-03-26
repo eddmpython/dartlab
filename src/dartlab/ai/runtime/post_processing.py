@@ -54,8 +54,8 @@ def autoInjectArtifacts(
     if company is None:
         return []
 
-    chartTools = {"show_chart", "create_chart", "render_dashboard"}
-    dataTools = {"get_data", "compute_ratios", "get_ratio_series", "detect_anomalies", "compute_growth"}
+    chartTools = {"chart"}
+    dataTools = {"finance", "analyze"}
 
     hasChart = bool(chartTools & set(toolCallNames))
     hasData = bool(dataTools & set(toolCallNames))

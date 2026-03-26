@@ -196,8 +196,8 @@ def _run_agent(
 
     def _on_tool_result(name: str, result: str) -> None:
         tool_results_log.append({"name": name, "result": result})
-        # create_chart 도구 결과에서 ChartSpec 추출
-        if name == "create_chart":
+        # chart 도구 결과에서 ChartSpec 추출
+        if name == "chart":
             try:
                 parsed = json.loads(result)
                 charts = parsed.get("charts")

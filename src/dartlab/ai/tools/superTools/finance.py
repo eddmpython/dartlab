@@ -54,7 +54,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
             return "module을 지정하세요."
         data = getattr(company, module, None) if hasattr(company, module) else company.show(module)
         if data is None:
-            return f"'{module}' 데이터가 없습니다. action=modules로 사용 가능한 목록을 확인하세요."
+            return f"[데이터 없음] '{module}' 데이터가 없습니다. 대안: finance(action='modules')로 사용 가능한 목록을 확인하세요."
         if isinstance(data, pl.DataFrame):
             return df_to_md(data)
         if isinstance(data, dict):
@@ -93,7 +93,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
         data = getattr(company, module, None)
         if not isinstance(data, pl.DataFrame):
-            return f"'{module}' DataFrame 데이터가 없습니다. action=modules로 사용 가능한 목록을 확인하세요."
+            return f"[데이터 없음] '{module}' DataFrame 데이터가 없습니다. 대안: finance(action='modules')로 사용 가능한 목록을 확인하세요."
         pivoted = pivot_accounts(data)
         if "year" not in pivoted.columns:
             return "연도 데이터가 부족합니다. 대안: finance(action='data', module='IS')로 원본 데이터를 확인하세요."
@@ -107,7 +107,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
         data = getattr(company, module, None)
         if not isinstance(data, pl.DataFrame):
-            return f"'{module}' DataFrame 데이터가 없습니다. action=modules로 사용 가능한 목록을 확인하세요."
+            return f"[데이터 없음] '{module}' DataFrame 데이터가 없습니다. 대안: finance(action='modules')로 사용 가능한 목록을 확인하세요."
         if "계정명" in data.columns:
             data = pivot_accounts(data)
         if "year" not in data.columns:
@@ -122,7 +122,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
         data = getattr(company, module, None)
         if not isinstance(data, pl.DataFrame):
-            return f"'{module}' DataFrame 데이터가 없습니다."
+            return f"[데이터 없음] '{module}' DataFrame 데이터가 없습니다. 대안: finance(action='modules')로 사용 가능한 목록을 확인하세요."
         anomalies = detect_anomalies(data, use_llm=False, threshold_pct=50.0)
         if not anomalies:
             return f"'{module}'에서 이상치가 발견되지 않았습니다."
@@ -149,7 +149,6 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         from dartlab.ai.metadata import MODULE_META
 
         results: list[str] = []
-        keywordLower = keyword.lower()
         for name, meta in MODULE_META.items():
             try:
                 data = getattr(company, name, None)
@@ -164,7 +163,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 continue
         if not results:
-            return f"'{keyword}'와 관련된 데이터를 찾지 못했습니다."
+            return f"[데이터 없음] '{keyword}'와 관련된 재무 데이터가 없습니다. 대안: explore(action='search', keyword='{keyword}')로 공시 원문을 검색하세요."
         return "\n\n".join(results)
 
     # ── dispatch ──
@@ -220,7 +219,13 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         "- yoy: 전년대비 변동률 (module 필수). 예: finance(action='yoy', module='IS')\n"
         "- anomalies: 이상치 탐지 (module 필수)\n"
         "- report: 정기보고서 정형 데이터 (apiType 필수). 예: finance(action='report', apiType='dividend')\n"
-        "- search: 키워드로 데이터 검색 (keyword 필수)",
+        "- search: 키워드로 데이터 검색 (keyword 필수)\n"
+        "\n"
+        "연쇄 사용: 숫자 확인 후 explore(action='search')로 공시 원문에서 변화 원인을 찾으세요.\n"
+        "data 결과의 모든 금액은 백만원 단위(DART 원본 그대로, 보정 없음).\n"
+        "module이 뭔지 모르면 먼저 finance(action='modules')로 확인하세요.\n"
+        "\n"
+        "반환: 마크다운 테이블 (숫자 데이터). 데이터 없으면 '[데이터 없음]' 메시지.",
         {
             "type": "object",
             "properties": {

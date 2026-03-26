@@ -18,7 +18,7 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
 
             return getSystemSpec()
         except (ImportError, AttributeError) as e:
-            return f"시스템 스펙 조회 실패: {e}"
+            return f"[오류] 시스템 스펙 조회 실패: {e}"
 
     def _features(**_kw) -> str:
         try:
@@ -26,7 +26,7 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
 
             return buildFeatureDescription("all")
         except (ImportError, AttributeError) as e:
-            return f"기능 목록 조회 실패: {e}"
+            return f"[오류] 기능 목록 조회 실패: {e}"
 
     def _searchCompany(keyword: str = "", **_kw) -> str:
         if not keyword:
@@ -41,7 +41,7 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
 
             return df_to_md(df.head(10), max_rows=10)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"종목 검색 실패: {e}"
+            return f"[오류] 종목 검색 실패: {e}. 대안: keyword를 다르게 입력하거나, system(action='features')로 사용 가능한 기능을 확인하세요."
 
     def _dataStatus(**_kw) -> str:
         try:
@@ -54,7 +54,7 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
                 lines.append(f"| {cat} | {conf['label']} | {count} |")
             return "\n".join(lines)
         except (ImportError, AttributeError, OSError) as e:
-            return f"데이터 상태 조회 실패: {e}"
+            return f"[오류] 데이터 상태 조회 실패: {e}"
 
     def _suggest(**_kw) -> str:
         if company is None:
@@ -71,7 +71,7 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
                 lines.append(f"{i}. {q}")
             return "\n".join(lines)
         except (ImportError, AttributeError) as e:
-            return f"질문 추천 실패: {e}"
+            return f"[오류] 질문 추천 실패: {e}"
 
     _ACTIONS = {
         "spec": _spec,
@@ -101,7 +101,11 @@ def registerSystemTool(registerTool: Callable, *, company: Any | None = None) ->
         "- features: 사용 가능한 기능 목록\n"
         "- searchCompany: 종목 검색 (keyword 필수). 예: system(action='searchCompany', keyword='삼성')\n"
         "- dataStatus: 데이터 다운로드 상태\n"
-        "- suggest: 질문 추천",
+        "- suggest: 질문 추천\n"
+        "\n"
+        "분석 질문이 아닌 시스템 메타 질문에만 사용하세요. 회사 분석에는 explore/finance를 쓰세요.\n"
+        "\n"
+        "반환: 마크다운 텍스트 (스펙, 기능 목록, 종목 테이블). 실패 시 '[오류]' 메시지.",
         {
             "type": "object",
             "properties": {

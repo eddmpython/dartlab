@@ -44,7 +44,7 @@ def registerExploreTool(company: Any, registerTool) -> None:
         try:
             result = company.show(target) if blockIdx is None else company.show(target, blockIdx)
         except (AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"show('{target}') 실패: {e}"
+            return f"[오류] show('{target}') 실패: {e}. 대안: explore(action='topics')로 사용 가능한 topic 확인"
         return format_tool_value(result, max_rows=50, max_chars=8000)
 
     def _topics(**_kw) -> str:
@@ -67,7 +67,7 @@ def registerExploreTool(company: Any, registerTool) -> None:
         try:
             result = company.trace(target)
         except (AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"trace('{target}') 실패: {e}"
+            return f"[오류] trace('{target}') 실패: {e}. 대안: explore(action='show', target='{target}')로 데이터 먼저 확인"
         return format_tool_value(result, max_rows=20, max_chars=3000)
 
     def _diff(target: str = "", **_kw) -> str:
@@ -77,7 +77,7 @@ def registerExploreTool(company: Any, registerTool) -> None:
         try:
             result = company.diff(target) if target else company.diff()
         except (AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"diff('{target}') 실패: {e}"
+            return f"[오류] diff 실패: {e}. 대안: explore(action='show', target='{target}')로 현재 데이터 확인"
         return format_tool_value(result, max_rows=20, max_chars=4000)
 
     def _info(**_kw) -> str:
@@ -120,7 +120,7 @@ def registerExploreTool(company: Any, registerTool) -> None:
                 return df_to_md(result.head(20), max_rows=20)
             return str(result)[:3000]
         except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as e:
-            return f"공시 목록 조회 실패: {e}"
+            return f"[오류] 공시 목록 조회 실패: {e}. 대안: explore(action='info')로 기업 기본 정보 확인"
 
     def _search(keyword: str = "", **_kw) -> str:
         """sections + topicLabels aliases 기반 키워드 검색 — topic 찾기."""
@@ -204,7 +204,12 @@ def registerExploreTool(company: Any, registerTool) -> None:
         "- diff: 기간간 변화 분석 (target 선택). 예: explore(action='diff', target='riskFactor')\n"
         "- info: 기업 기본 정보 (업종, 대표자, 상장일)\n"
         "- filings: 공시 문서 목록\n"
-        "- search: 키워드로 topic 검색 (keyword 필수). 예: explore(action='search', keyword='비용의 성격별분류')",
+        "- search: 키워드로 topic 검색 (keyword 필수). 예: explore(action='search', keyword='비용의 성격별분류')\n"
+        "\n"
+        "연쇄 사용: finance로 숫자를 먼저 확인한 후, 이 도구로 공시 원문에서 맥락과 근거를 보강하세요.\n"
+        "show 결과가 비면 search로 키워드 검색을 시도하세요.\n"
+        "\n"
+        "반환: 마크다운 텍스트 (테이블 포함). 데이터 없으면 '[데이터 없음]' 메시지.",
         {
             "type": "object",
             "properties": {

@@ -23,7 +23,7 @@ def registerChartTool(company: Any, registerTool) -> None:
             )
             return ui_action_json(action)
         except (ImportError, AttributeError, TypeError, ValueError) as e:
-            return f"뷰어 네비게이션 실패: {e}"
+            return f"[오류] 뷰어 네비게이션 실패: {e}"
 
     def _showChart(chartType: str = "", module: str = "", **_kw) -> str:
         try:
@@ -44,7 +44,7 @@ def registerChartTool(company: Any, registerTool) -> None:
                 return "차트 생성에 필요한 재무 데이터가 없습니다."
             return json.dumps({"charts": specs}, ensure_ascii=False)
         except (ImportError, AttributeError, TypeError, ValueError) as e:
-            return f"차트 생성 실패: {e}"
+            return f"[오류] 차트 생성 실패: {e}"
 
     _ACTIONS = {
         "navigate": _navigate,
@@ -68,7 +68,11 @@ def registerChartTool(company: Any, registerTool) -> None:
         "\n"
         "action별 동작:\n"
         "- navigate: 뷰어 특정 위치로 이동 (target 필수). 예: chart(action='navigate', target='businessOverview')\n"
-        "- chart: 차트 생성 (chartType, module 선택). 예: chart(action='chart', chartType='auto')",
+        "- chart: 차트 생성 (chartType, module 선택). 예: chart(action='chart', chartType='auto')\n"
+        "\n"
+        "데이터 조회(finance/explore) 후 시각화가 필요할 때 사용하세요.\n"
+        "\n"
+        "반환: JSON (차트 스펙 또는 네비게이션 액션). 실패 시 '[오류]' 메시지.",
         {
             "type": "object",
             "properties": {

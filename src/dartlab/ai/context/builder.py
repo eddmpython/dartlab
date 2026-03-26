@@ -656,7 +656,7 @@ def _build_response_contract(
     lines.append("- 포함된 모듈을 보고도 '데이터가 없다'고 말하지 마세요.")
     lines.append("- 핵심 결론 1~2문장을 먼저 제시하고, 바로 근거 표나 근거 bullet을 붙이세요.")
     lines.append(
-        "- `show_topic()` 같은 도구 호출 계획이나 내부 절차 설명을 답변 본문에 쓰지 말고 바로 분석 결과를 말하세요."
+        "- `explore()` 같은 도구 호출 계획이나 내부 절차 설명을 답변 본문에 쓰지 말고 바로 분석 결과를 말하세요."
     )
     lines.append(
         "- 답변 본문에서는 `IS/BS/CF/ratios/TTM/topic/period/source` 같은 내부 약어나 필드명을 그대로 쓰지 말고 "
@@ -694,6 +694,19 @@ def _build_response_contract(
         lines.append("- 분기별 추이를 테이블로 정리하고, 전분기 대비(QoQ)와 전년동기 대비(YoY) 변화를 함께 보여주세요.")
         lines.append(
             "- `IS_quarterly`, `CF_quarterly` 같은 내부명 대신 `분기별 손익계산서`, `분기별 현금흐름표`로 쓰세요."
+        )
+
+    # ── 도구 추천 힌트 ──
+    hasFinancial = {"IS", "BS"} <= module_set or {"IS", "CF"} <= module_set
+    if hasFinancial:
+        lines.append(
+            "- **추가 분석 추천**: `finance(action='ratios')`로 재무비율 확인, "
+            "`explore(action='search', keyword='...')`로 변화 원인 파악."
+        )
+    elif not module_set & {"IS", "BS", "CF", "ratios"}:
+        lines.append(
+            "- **재무 데이터 미포함**: `finance(action='modules')`로 사용 가능 모듈 확인, "
+            "`explore(action='topics')`로 topic 목록 확인 추천."
         )
     return "\n".join(lines)
 
@@ -1555,7 +1568,7 @@ def build_context(
             if available_list:
                 sections.append(
                     "\n---\n### 추가 조회 가능한 데이터\n"
-                    "아래 데이터는 현재 포함되지 않았지만 `get_data` 도구로 조회할 수 있습니다:\n"
+                    "아래 데이터는 현재 포함되지 않았지만 `finance(action='data', module=...)` 도구로 조회할 수 있습니다:\n"
                     + ", ".join(available_list[:15])
                 )
 
@@ -1643,7 +1656,9 @@ def _build_change_summary(company: Any, max_topics: int = 5) -> str | None:
         lines.append(f"| `{row['topic']}` | {rate_pct}% | {periods} |")
 
     lines.append("")
-    lines.append("깊이 분석이 필요하면 `show_topic(topic)`으로 원문을, `diff_topic(topic)`으로 상세 변화를 확인하세요.")
+    lines.append(
+        "깊이 분석이 필요하면 `explore(action='show', topic=topic)`으로 원문을, `explore(action='diff', topic=topic)`으로 상세 변화를 확인하세요."
+    )
     return "\n".join(lines)
 
 
@@ -1679,12 +1694,12 @@ def _build_topics_section(company: Any, compact: bool = False) -> str | None:
         return (
             f"\n## 공시 topic ({len(topic_list)}개)\n"
             f"주요: {', '.join(top10)}\n"
-            f"전체 목록은 `list_topics` 도구로 조회하세요."
+            f"전체 목록은 `explore(action='topics')` 도구로 조회하세요."
         )
 
     lines = [
         "\n## 조회 가능한 공시 topic 목록",
-        "`show_topic` 도구에 아래 topic을 넣으면 상세 데이터를 조회할 수 있습니다.",
+        "`explore(action='show', topic=...)` 도구에 아래 topic을 넣으면 상세 데이터를 조회할 수 있습니다.",
         "",
     ]
 
@@ -1874,11 +1889,11 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                 "",
                 "## DartLab Analysis Guide",
                 "All filing data is structured as **sections** (topic × period horizontalization).",
-                "- `list_topics()` → full topic list | `show_topic(topic)` → block index → `show_topic(topic, N)` → data",
-                "- `get_evidence(topic)` → original filing text for citations",
-                "- `diff_topic(topic)` → period-over-period changes | `trace_topic(topic)` → source provenance",
-                "- `get_data(BS/IS/CF)` → financials | `compute_ratios()` → ratios",
-                "- `get_insight()` → 7-area grades | `get_topic_coverage()` → data availability",
+                "- `explore(action='topics')` → full topic list | `explore(action='show', topic=...)` → block index → data",
+                "- `explore(action='search', keyword=...)` → original filing text for citations",
+                "- `explore(action='diff', topic=...)` → period-over-period changes | `explore(action='trace', topic=...)` → source provenance",
+                "- `finance(action='data', module='BS/IS/CF')` → financials | `finance(action='ratios')` → ratios",
+                "- `analyze(action='insight')` → 7-area grades | `explore(action='coverage')` → data availability",
                 "",
                 "**Note**: This is a US company (SEC EDGAR). No `report` namespace — all narrative data via sections.",
                 "**Procedure**: Understand question → explore topics → retrieve data → cross-verify → synthesize answer",
@@ -1890,12 +1905,12 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                 "",
                 "## DartLab 분석 가이드",
                 "이 기업의 모든 공시 데이터는 **sections** (topic × 기간 수평화)으로 구조화되어 있습니다.",
-                "- `list_topics()` → 전체 topic 목록 (평균 120+개)",
-                "- `show_topic(topic)` → 블록 목차 → `show_topic(topic, N)` → 실제 데이터",
-                "- `get_evidence(topic)` → 원문 증거 검색 (인용용)",
-                "- `diff_topic(topic)` → 기간간 변화 | `trace_topic(topic)` → 출처 추적",
-                "- `get_data(BS/IS/CF)` → 재무제표 | `compute_ratios()` → 재무비율",
-                "- `get_insight()` → 7영역 종합 등급 | `get_report_data(apiType)` → 정기보고서",
+                "- `explore(action='topics')` → 전체 topic 목록 (평균 120+개)",
+                "- `explore(action='show', topic=...)` → 블록 목차 → 실제 데이터",
+                "- `explore(action='search', keyword=...)` → 원문 증거 검색 (인용용)",
+                "- `explore(action='diff', topic=...)` → 기간간 변화 | `explore(action='trace', topic=...)` → 출처 추적",
+                "- `finance(action='data', module='BS/IS/CF')` → 재무제표 | `finance(action='ratios')` → 재무비율",
+                "- `analyze(action='insight')` → 7영역 종합 등급 | `explore(action='report', apiType=...)` → 정기보고서",
                 "",
                 "**분석 절차**: 질문 이해 → 관련 topic 탐색 → 원문 데이터 조회 → 교차 검증 → 종합 답변",
                 "**핵심**: '데이터 없음'으로 답하기 전에 반드시 도구로 확인. sections에 거의 모든 공시 데이터가 있습니다.",

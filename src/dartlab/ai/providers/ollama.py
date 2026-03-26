@@ -246,6 +246,8 @@ class OllamaProvider(BaseProvider):
         self,
         messages: list[dict],
         tools: list[dict],
+        *,
+        tool_choice: str | None = None,
     ) -> ToolResponse:
         """Ollama tool calling 지원 (v0.3.0+)."""
         import json

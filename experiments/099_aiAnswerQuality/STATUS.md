@@ -23,6 +23,17 @@
 | 007 | enumBaseline.py | Enum + Super Tool 스키마 정합성 | topicLabels + dynamic enum | ✅ 완료 (채택) |
 | 008 | superToolE2E.py | Super Tool E2E 비교 (96개→8개) | 7 Super Tool dispatcher | ✅ 완료 (채택) |
 | 009 | superToolLiveE2E.py | 라이브 AI 답변 품질 E2E | ollama qwen3:4b/8b 실제 답변 | ✅ 완료 (가설 기각) |
+| 010 | geminiLiveE2E.py | Gemini 라이브 E2E | Gemini API 실제 답변 | ✅ 완료 |
+| 011 | geminiToolForce.py | Gemini tool_choice 강제 | tool_choice=ANY 검증 | ✅ 완료 |
+| 012 | contextDiag.py | 컨텍스트 진단 | 토큰 크기/구성 분석 | ✅ 완료 |
+| 013 | toolDescriptionQuality.py | ACI description 강화 | ✓/✗ 경계 + 예시 | ✅ 완료 (채택) |
+| 014 | responseContractToolForce.py | Response Contract + tool_choice | hallucination 방지 | ✅ 완료 (채택) |
+| 015 | selfVerification.py | Self-Verification | correction 턴 | ✅ 완료 (safety net) |
+| 016 | toolResultQuality.py | 도구 결과 에러 투명성 | [오류] + 대안 패턴 | ✅ 완료 (채택) |
+| 017 | deterministicToolEval.py | 결정론적 도구 호출 평가 | strict 매칭 | ✅ 완료 |
+| 018 | postRefactorAudit.py | 구조 리팩토링 후 기능 감사 | 10항목 결정론적 검증 | ✅ 완료 (10/10 통과) |
+| 019 | agentRulesAudit.py | Agent 3대 규칙 + 신뢰도 계층 검증 | 38항목 결정론적 검증 | ✅ 완료 (38/38 통과) |
+| 020 | qualityCheck.py | 3대 규칙 라이브 품질 체크 | Gemini 8개 질문 E2E | ✅ 완료 (도구 100%, 연쇄 14%) |
 
 ## 001 결과 — Few-Shot (기각)
 
@@ -313,3 +324,162 @@
 2. "데이터 상태" → light mode 빠짐
 3. "현재 주가" → market 대신 system 선택
 → 이들은 tool description이 아닌 **core.py 질문 분류 로직** 문제
+
+## 구조 리팩토링 후 품질 점검 (2026-03-26)
+
+`src/dartlab/engines/ai/` → `src/dartlab/ai/` 대대적 구조 변경 후 품질 재점검.
+
+### 점검 영역 A: AI 도구 품질 (신뢰성)
+
+| 항목 | 상태 | 변경 내용 |
+|------|------|---------|
+| OpenAI `tool_choice` | ✅ 추가 | `openai_compat.py`: `tool_choice` 파라미터 수용 + `parallel_tool_calls: false` |
+| Ollama `tool_choice` | ✅ 추가 | `ollama.py`: `tool_choice` 파라미터 수용 |
+| Super Tool 반환 형식 | ✅ 추가 | 7개 Super Tool description에 반환 형식 1줄 추가 |
+| 에러 메시지 표준화 | ✅ 완료 | 7개 Super Tool: `[오류]` prefix + 대안 제안 통일 |
+| Self-Verification | ✅ 이미 활성 | `core.py` 13.5단계 correction 턴 + `buildCorrectionPrompt()` |
+| `parallel_tool_calls` | ✅ false 변경 | OpenAI best practice 적용 — 안정성 우선 |
+
+### 점검 영역 B: Provider 검증 (편의성)
+
+| 항목 | 상태 | 결과 |
+|------|------|------|
+| OAuth GPT | ✅ 정상 | PKCE 인증 (`auth.openai.com`), 토큰 유효, `chatgpt.com/backend-api/codex/responses` 작동 |
+| Gemini API | ✅ 정상 | `get_config('gemini')` → secret store에서 API 키 자동 로드 |
+| ChatGPT Plugin 폐기 영향 | ✅ 없음 | Plugin/Actions(2024.04 폐기)와 OAuth Codex 경로는 독립 |
+
+### 점검 영역 C: 채널/SSE (편의성·신뢰성)
+
+| 항목 | 상태 | 결과 |
+|------|------|------|
+| 채널 어댑터 | ✅ 3개 완성 | Telegram(polling), Slack(Socket Mode), Discord(Gateway) |
+| 채널 UI | ✅ 완성 | 토큰 입력 + 연결/종료 + 상태 표시 + 가이드 |
+| SSE 스트리밍 | ✅ 안정 | 12종 이벤트, error에 action 힌트, done에 responseMeta |
+| 추천 질문 | ✅ 데이터 반영 | IS/BS/CF/dividend 존재 여부에 따라 질문 동적 생성 |
+
+### unit 테스트
+- **1031 passed**, 3 skipped, 0 failed (211s)
+
+### 세계적 기술 갭 분석 (조사 기반)
+
+| 기법 | 출처 | dartlab 적용 |
+|------|------|-------------|
+| `tool_choice: "required"` | OpenAI API | ✅ 적용 (OpenAI/Gemini/Ollama) |
+| `parallel_tool_calls: false` | OpenAI best practice | ✅ 적용 |
+| ACI description (✓/✗/예시) | Anthropic | ✅ Phase 1에서 적용 |
+| Return schema in description | Paragon Research | ✅ 이번에 추가 |
+| 에러 시 대안 유도 | 포카요케 | ✅ Phase 4 + 이번에 표준화 |
+| Self-Verification (Reflexion) | arXiv 2512.20845 | ✅ safety net 설치됨 |
+| 동적 도구 서브셋 | 2026 Tool Use Survey | ✅ selectTools questionType 기반 |
+| `strict: true` (Structured Outputs) | OpenAI | ⏸ 미적용 (enum으로 대체) |
+| MCP Server | 업계 표준화 | ⏸ 향후 계획 |
+
+## 018 결과 — 구조 리팩토링 후 기능 감사 (10/10 통과)
+
+`engines/ai/` → `ai/` 구조 변경 후 AI 파이프라인 전체 결정론적 검증.
+
+### 검증 항목 및 결과
+
+| # | 검증 항목 | 결과 |
+|---|----------|------|
+| 1 | 시스템 프롬프트 옛 도구명 | ✅ 0건 |
+| 2 | 분석 규칙 프롬프트 옛 도구명 | ✅ 0건 |
+| 3 | 벤치마크 데이터 옛 도구명 | ✅ 0건 |
+| 4 | Super Tool 7개 등록 + 반환 형식 | ✅ 정상 |
+| 5 | 에러 표준화 ([오류]/[데이터 없음]) | ✅ 27/27건 |
+| 6 | Provider tool_choice 지원 | ✅ OpenAI/Gemini/Ollama 3사 |
+| 7 | parallel_tool_calls=False | ✅ 설정됨 |
+| 8 | Self-Verification correction 경로 | ✅ 3요소 연결 |
+| 9 | Context Builder 옛 도구명 | ✅ 0건 |
+| 10 | post_processing/run_modes 도구명 | ✅ Super Tool 이름 매칭 |
+
+### 감사 과정에서 발견·수정된 런타임 버그 3건
+
+| 파일 | 버그 | 영향 |
+|------|------|------|
+| `post_processing.py` | `chartTools={"show_chart","create_chart"}` → 매칭 불발 | 자동 차트 주입 불작동 |
+| `run_modes.py` | `name == "create_chart"` → 매칭 불발 | 차트 스펙 추출 불작동 |
+| `finance.py` | 비표준 에러 메시지 1건 | LLM 대안 행동 유도 불가 |
+
+### 프롬프트 수정 총량
+
+- system_base.py: 42건
+- analysis_rules.py: 16건
+- benchmarkData.py: 8건
+- prompts.py: 1건
+- builder.py: 7건
+- selector.py: 8건
+- routeHint.py: 25건 (deprecated)
+- finance_context.py: 1건
+- **총 108건 옛 도구명 → Super Tool 구문 교체**
+
+## 019 결과 — Agent 3대 규칙 + 데이터 신뢰도 계층 (38/38 통과)
+
+GPT-4.1/Anthropic ACI/Bloomberg 기법 기반 시스템 프롬프트 대폭 강화.
+
+### 적용 내용 (7개 변경)
+
+| # | 변경 | 대상 파일 | 핵심 |
+|---|------|----------|------|
+| 1 | 3대 규칙 (Planning/Persistence/Tool Chaining) | system_base.py KR/EN/Compact | 질문 유형별 도구 순서 테이블, 실패 복구 경로 |
+| 2 | 데이터 신뢰도 계층 | system_base.py KR/EN | finance > report > explore > analyze > market |
+| 3 | Super Tool 연쇄 안내 | 7개 superTools/*.py | 도구 간 관계 + 대안 경로 |
+| 4 | 실패 복구 + 복합 분석 예시 | system_base.py KR | 3개 복구 + 1개 복합 |
+| 5 | EN/Compact 동기화 | system_base.py | 3대 규칙 영문 번역 + Compact 압축 |
+| 6 | 안티패턴 예시 | analysis_rules.py | 도구 미호출 + 한 번 실패 포기 + 올바른 복구 |
+| 7 | 도구 추천 힌트 | builder.py | 포함 모듈 기반 추가 조회 추천 |
+
+### 검증 결과 (38항목)
+
+| 카테고리 | 항목 수 | 결과 |
+|----------|---------|------|
+| 시스템 프롬프트 3대 규칙 (KR/EN/Compact) | 13 | ✅ 전체 통과 |
+| 데이터 신뢰도 계층 (KR/EN) | 6 | ✅ 전체 통과 |
+| 실패 복구 예시 | 2 | ✅ 전체 통과 |
+| Super Tool 연쇄 안내 (7개) | 7 | ✅ 전체 통과 |
+| 안티패턴 예시 | 4 | ✅ 전체 통과 |
+| builder 도구 추천 힌트 | 3 | ✅ 전체 통과 |
+| EN Response Contract | 3 | ✅ 전체 통과 |
+
+### 세계 기법 출처
+
+| 기법 | 출처 | dartlab 적용 |
+|------|------|-------------|
+| Planning 규칙 | GPT-4.1 Prompting Guide | 도구 호출 전 질문 분석 필수 |
+| Persistence 규칙 | GPT-4.1 3대 규칙 | 한 번 실패 → 대안 경로 시도 |
+| Tool-Calling Strategy | Anthropic ACI | 질문 유형별 도구 순서 테이블 |
+| 데이터 신뢰도 명시 | Bloomberg/CFA 교훈 | 5단계 신뢰도 계층 |
+| ✓/✗ 경계 명시 | Anthropic ACI 5요소 | Super Tool description |
+| 안티패턴 예시 | OpenAI 내부 테스트 | Few-shot에 나쁜 예 포함 |
+
+## 020 결과 — 3대 규칙 라이브 품질 체크 (Gemini 2.5 Flash)
+
+### 도구 선택 정확도 (010 → 020 비교)
+
+| 질문 | 010 결과 | 020 결과 | 호출 도구 |
+|------|---------|---------|----------|
+| 재무제표 요약 | △ (에러) | ✅ | finance(IS)+finance(BS)+finance(CF) |
+| 배당 현황 | ✅ | ✅ | finance(report,dividend) |
+| 리스크 요인 | ✅ | ✅ | explore(riskDerivative) |
+| 사업 개요 | ✅ | ✅ | explore(businessOverview) + block |
+| 기본 대화 | ✅ | ✅ | 없음 (정확) |
+| 종합 분석 | ✅ | ✅ | analyze(insight)+finance(ratios/IS/BS/CF) 5개 |
+| 부문별 매출 | — | ✅ | explore(productService) |
+| 수익성 심화 | — | ✅ | finance(IS)+finance(ratios) |
+
+### 종합 지표
+
+| 지표 | 010 | 020 | 변화 |
+|------|-----|-----|------|
+| 도구 정확도 | 83% (5/6) | **100% (8/8)** | +17%p |
+| 한국어 비율 | 83% (5/6) | **100% (8/8)** | +17%p |
+| 연쇄 호출 | 미측정 | 14% (1/7) | 종합만 연쇄 |
+| 에러 | 1건 | **0건** | 개선 |
+
+### 연쇄 호출 기각 분석
+
+연쇄 호출 14% (가설 기각) 원인:
+- Tier 1 context가 충분하면 LLM이 추가 도구를 안 부름
+- "수익성 심화"에서 finance(IS/ratios)만 쓰고 explore(search)로 원인 보강 안 함
+- 이는 **의도된 동작일 수 있음** — context가 충분하면 불필요한 도구 호출은 토큰 낭비
+- 연쇄 호출이 필요한 상황: context가 부족하거나 복합 질문일 때만

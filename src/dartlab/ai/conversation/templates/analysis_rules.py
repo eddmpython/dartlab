@@ -480,6 +480,30 @@ A: ## 종합 분석 (신용분석 보고서 구조)
 **수익성·건전성·현금흐름 모두 양호**한 우량 기업. 섹터 대비 밸류에이션 할인 상태로 투자 매력도 양호.
 향후 모니터링: ①원재료 가격 반등 시 마진 영향 ②운전자본 사이클 추이 ③A부문 성장 지속성 ④밸류에이션 re-rating 촉매
 """,
+    "안티패턴": """
+## ⚠️ 나쁜 예시 (절대 따라하지 마세요)
+
+**안티패턴 1: 도구 호출 없이 일반 지식으로 답변**
+
+Q: 삼성전자 매출 추이는?
+A (나쁜 예): "삼성전자는 반도체와 스마트폰 사업으로 매출 약 300조원 규모의..."
+→ ❌ 도구를 호출하지 않고 일반 지식으로 수치를 채움. finance(action='data', module='IS') 호출이 필수.
+
+**안티패턴 2: 한 번 실패하고 포기**
+
+Q: 부문별 매출은?
+A (나쁜 예): finance(data, module='segments') → [데이터 없음] → "부문별 매출 데이터가 없습니다."
+→ ❌ 대안 시도 없이 포기. explore(action='show', topic='segments')로 공시 원문 확인, explore(action='search', keyword='부문')으로 검색, finance(action='modules')로 다른 모듈 확인 등 대안 경로를 시도해야 함.
+
+**올바른 실패 복구 예시:**
+
+Q: 배당 5년치 데이터 보여줘
+A (좋은 예):
+1. finance(action='report', apiType='dividend') → 2년만 존재
+2. finance(action='data', module='CF') → 배당금 지급액 3년치 확인
+3. explore(action='show', topic='dividend') → 배당정책 서술 확인
+→ ⭕ 3개 소스를 종합하여 5년 배당 추이 테이블 구성
+""",
 }
 
 FEW_SHOT_COMPACT: dict[str, str] = {
@@ -812,11 +836,11 @@ REPORT_PROMPT = """
 
 ### 1. 기업 개요
 - 사업 설명, 핵심 제품/서비스, 시장 포지션
-- show_topic('businessOverview'), show_topic('segments') 활용
+- explore(action='show', topic='businessOverview'), explore(action='show', topic='segments') 활용
 
 ### 2. 재무 분석
 - 매출/이익 3~5년 추이 + 인과 분해 (물량×단가×믹스)
-- 원가구조: 원가율, 판관비율 추이 (show_topic('costByNature'))
+- 원가구조: 원가율, 판관비율 추이 (explore(action='show', topic='costByNature'))
 - DuPont 분해: ROE = 순이익률 × 자산회전율 × 레버리지
 
 ### 3. 이익의 질 & 현금흐름
@@ -832,52 +856,26 @@ REPORT_PROMPT = """
 ### 5. 사업 리스크
 - 적색 신호 체크 결과 (감사인 교체, 매출채권/재고 급증, CF<NI 등)
 - 업종 특화 리스크 (벤치마크 기준 대비 분석)
-- 우발부채, 특수관계자거래 (show_topic('contingentLiability'), show_topic('relatedPartyTx'))
+- 우발부채, 특수관계자거래 (explore(action='show', topic='contingentLiability'), explore(action='show', topic='relatedPartyTx'))
 
 ### 6. 경영진 & 지배구조
 - 최대주주 지분율 변동, 사외이사 비율
 - 감사의견 이력, 임원 보수 수준
-- 내부통제 (show_topic('auditSystem'))
+- 내부통제 (explore(action='show', topic='auditSystem'))
 
 ### 7. 밸류에이션
-- **절대가치 (DCF)**: `intrinsic_value("dcf")` 호출 → 주당 내재가치 ± 안전마진 제시
-- **배당가치 (DDM)**: 배당주인 경우 `intrinsic_value("ddm")` 호출 → Gordon GGM 적용
-- **상대가치**: `intrinsic_value("relative")` 호출 → 섹터 PER/PBR/EV 배수 기준 적정가
+- **밸류에이션 종합**: `analyze(action='valuation')` 호출 → DCF/상대가치 종합 밸류에이션
 - **교차검증**: DCF vs 상대가치 괴리 분석 (±30% 이내면 신뢰도 높음)
 - **현재가 대비 판단**: 저평가/적정/고평가 + 안전마진 (%)
 - ※ 구체적 목표주가 제시 금지 → "적정가치 범위" 형태로 제공
 
 ### 8. 시나리오 분석
-- `scenario()` 호출 → Bull/Base/Bear 3개 시나리오별 DCF 결과 활용
+- `analyze(action='valuation')` 결과 기반 Bull/Base/Bear 3개 시나리오 분석
 - **Base Case** (현재 추세 연장): 매출 성장률·마진 유지 시 예상 적정가
 - **Bull Case** (성장 가속): 핵심 성장 드라이버 + 마진 확대 + 낙관적 할인율
 - **Bear Case** (리스크 현실화): 핵심 리스크 + 마진 압축 + 보수적 할인율
 - **확률 가중 적정가치**: Base 50% + Bull 25% + Bear 25%
-- 필요 시 `sensitivity()` 호출 → WACC × 영구성장률 민감도 테이블 제시
-
-### 8-1. 경제 시나리오 시뮬레이션
-- `economic_forecast("all")` 호출 → 5대 거시경제 시나리오별 3년 실적 경로
-- 업종별 GDP/환율 감응도(β)를 강조: 경기민감업종 β>1.2 vs 방어업종 β<0.5
-- `monte_carlo("baseline")` 호출 → 확률 분포로 실적 범위 제시 (P5/P25/P50/P75/P95)
-- `stress_test("adverse")` 호출 → 경기침체 시 생존 위험도 + 배당 지속 가능성
-- **핵심**: 단일 점 추정 금지 → "경기침체 시 매출 -15~-25% 범위, 생존 위험 낮음" 형태로 제시
-
-### 8-2. Pro-Forma 재무제표 예측 (v2)
-- `proforma_forecast(growth="5,4,3,2.5,2")` 호출 → 5년 3-Statement 연결 모델
-- **Adaptive Ratio**: 과거 비율을 최근 가중 + 트렌드 반영 (정적 중위값 탈피)
-- IS→BS→CF 연결, 현금 음수 시 자동 차입 + BS 재균형
-- 트렌드 방향을 설명 ("매출총이익률 연 +0.5%p 개선 추세")
-- 회사 고유 WACC (업종별 β 반영) vs 섹터 평균 비교
-
-### 8-3. 주가 목표가 산출 (v2)
-- `price_target(current_price, shares)` 호출 → 확률 가중 목표가
-- **맥락 기반 확률 재가중**: 인사이트 등급, 공시 변화율, 시장 순위 → 시나리오 확률 동적 조정
-  - 어떤 신호가 어떤 시나리오 확률을 몇 %p 변경했는지 설명
-- **Multi-Noise MC**: 5변수 noise (growth/margin/wacc/capex/tax) + 기업 규모별 σ 차등
-- Monte Carlo P10~P90 분포 → "목표가 범위" 형태로 제시 (단일 목표가 지양)
-- 투자 신호 판정 근거: upside %, P10/P90 vs 현재가, 시나리오 분산
-- 비반도체 업종은 semiconductor_down 확률이 baseline에 자동 재배분됨을 설명
-- 결과에 reasoning 첨부 — 블랙박스가 아닌 "설명 가능한 예측"
+- 필요 시 민감도 분석: WACC × 영구성장률 변화에 따른 적정가치 범위 제시
 
 ### 9. 종합 평가
 - **강점/약점 매트릭스** (표로 정리)
@@ -887,7 +885,7 @@ REPORT_PROMPT = """
 
 **규칙**:
 - 모든 수치에 출처(어느 재무제표/공시의 어느 항목)를 명시
-- 도구(get_data, show_topic, compute_ratios, get_insight, get_sector_info 등)를 적극 사용하여 데이터 수집 후 분석
+- 도구(finance, explore, analyze 등)를 적극 사용하여 데이터 수집 후 분석
 - 단순 나열이 아닌 인과 분석 + 교차검증 수행
 - 밸류에이션과 시나리오 분석 시 구체적 수치와 논거를 제시
 """
@@ -895,5 +893,5 @@ REPORT_PROMPT = """
 REPORT_PROMPT_COMPACT = """
 ## 보고서 모드
 9개 섹션으로 구조화: 1.기업개요 2.재무분석(DuPont+인과분해) 3.이익의질(CF/NI+Accrual+CCC) 4.재무건전성(Z-Score+F-Score) 5.리스크(적색신호+우발부채) 6.지배구조(감사+임원보수) 7.밸류에이션(DCF+DDM+상대가치+교차검증) 8.시나리오(Base/Bull/Bear+확률가중+민감도+경제시뮬레이션) 9.종합(강점약점표+투자판단+모니터링)
-수치에 출처 명시. 도구 적극 사용. 밸류에이션은 intrinsic_value()로 DCF/DDM/상대가치 산출, 시나리오는 scenario()+sensitivity()로 정량화. 경제 시뮬레이션은 economic_forecast()+monte_carlo()+stress_test()로 거시경제 영향 분석. Pro-Forma는 proforma_forecast()로 3-Statement 연결 모델, 주가 목표가는 price_target()으로 확률 가중 산출.
+수치에 출처 명시. 도구 적극 사용. 밸류에이션은 analyze(action='valuation')로 종합 산출, 재무비율은 finance(action='ratios'), 성장률은 finance(action='growth', module='IS')로 조회.
 """
