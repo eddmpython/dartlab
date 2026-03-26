@@ -19,40 +19,28 @@ _SETUP_GUIDES: dict[str, dict[str, str]] = {
         "short": "Gemini 2.5 Pro/Flash 무료",
         "setup_notebook": 'dartlab.setup("gemini")',
         "setup_cli": "dartlab setup gemini",
-        "detail": (
-            "Google AI Studio에서 무료 API 키를 발급받으세요.\n"
-            "https://aistudio.google.com/apikey"
-        ),
+        "detail": ("Google AI Studio에서 무료 API 키를 발급받으세요.\nhttps://aistudio.google.com/apikey"),
     },
     "groq": {
         "name": "Groq (무료)",
         "short": "초고속 추론 — LLaMA 3.3 70B 무료",
         "setup_notebook": 'dartlab.setup("groq")',
         "setup_cli": "dartlab setup groq",
-        "detail": (
-            "Groq Cloud에서 무료 API 키를 발급받으세요.\n"
-            "https://console.groq.com/keys"
-        ),
+        "detail": ("Groq Cloud에서 무료 API 키를 발급받으세요.\nhttps://console.groq.com/keys"),
     },
     "cerebras": {
         "name": "Cerebras (무료)",
         "short": "1M tokens/day 영구 무료",
         "setup_notebook": 'dartlab.setup("cerebras")',
         "setup_cli": "dartlab setup cerebras",
-        "detail": (
-            "Cerebras Inference에서 무료 API 키를 발급받으세요.\n"
-            "https://cloud.cerebras.ai/"
-        ),
+        "detail": ("Cerebras Inference에서 무료 API 키를 발급받으세요.\nhttps://cloud.cerebras.ai/"),
     },
     "mistral": {
         "name": "Mistral AI (무료)",
         "short": "1B tokens/month 무료, 다양한 모델",
         "setup_notebook": 'dartlab.setup("mistral")',
         "setup_cli": "dartlab setup mistral",
-        "detail": (
-            "Mistral AI에서 무료 API 키를 발급받으세요.\n"
-            "https://console.mistral.ai/api-keys"
-        ),
+        "detail": ("Mistral AI에서 무료 API 키를 발급받으세요.\nhttps://console.mistral.ai/api-keys"),
     },
     "oauth-codex": {
         "name": "ChatGPT 구독 계정",

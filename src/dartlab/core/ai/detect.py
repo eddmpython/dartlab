@@ -8,9 +8,14 @@ from __future__ import annotations
 
 # 감지 우선순위: 프리미엄(이미 인증) → 무료(env key) → 로컬/CLI
 _DETECT_ORDER = (
-    "oauth-codex", "openai",
-    "gemini", "groq", "cerebras", "mistral",
-    "ollama", "codex",
+    "oauth-codex",
+    "openai",
+    "gemini",
+    "groq",
+    "cerebras",
+    "mistral",
+    "ollama",
+    "codex",
 )
 
 
