@@ -221,28 +221,11 @@ L0  core/        Protocols, finance utils, docs utils, registry
 L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
     market/      Market-wide scanning (2,700+ companies)
-L2  analysis/    8 analytical domains (see below)
+L2  analysis/    Analytical engines (valuation, risk, insights, event study)
 L3  ai/          LLM-powered analysis (9 providers)
 ```
 
 Import direction is enforced by CI — no reverse dependencies allowed.
-
-### Analysis — Eight Domains of Corporate Analysis
-
-DartLab's analysis engine is structured around eight academic domains, adapted from Palepu-Healy's framework and cross-referenced with CFA, McKinsey, and S&P methodologies:
-
-| # | Domain | What it covers |
-|---|--------|---------------|
-| 1 | **Strategy** | Business model, competitive advantage, ESG, governance |
-| 2 | **Accounting** | Earnings quality, disclosure analysis, red flags |
-| 3 | **Financial** | Ratios, DuPont, trend, cash flow, distress prediction |
-| 4 | **Forecast** | Financial projections, scenarios, Monte Carlo |
-| 5 | **Valuation** | DCF, multiples, analyst synthesis |
-| 6 | **Risk** | Financial / business / market risk, credit assessment |
-| 7 | **Comparative** | Peer, sector, ranking, event study |
-| 8 | **Macro** | Macroeconomic cycles, industry analysis |
-
-Each domain maps to a package under `analysis/` and can be consumed independently or through the AI layer.
 
 ### Extensibility — Zero Core Modification
 
