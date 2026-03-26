@@ -127,7 +127,7 @@ def _generateSectionOpinion(
     if guide:
         guideParts.append(guide)
     if guideParts:
-        baseSystem += f"\n\n[분석 관점]\n" + "\n".join(guideParts)
+        baseSystem += "\n\n[분석 관점]\n" + "\n".join(guideParts)
 
     prompt = f"[{corpName}] {section.title}\n\n{serialized}\n\n위 데이터의 분석:"
 

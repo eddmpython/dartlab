@@ -22,7 +22,7 @@ def renderReview(console, review) -> None:
     console.print()
     console.print(f"  [bold white]{review.corpName}[/]  [dim]{review.stockCode}[/]")
     console.print(f"[dim]{'─' * ly.separatorWidth}[/]")
-    console.print(f"[dim]  dartlab review[/]")
+    console.print("[dim]  dartlab review[/]")
 
     for section in review.sections:
         _renderSection(console, section, ly)

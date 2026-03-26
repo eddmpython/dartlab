@@ -15,8 +15,7 @@ from dartlab.review.blocks import (
     TableBlock,
     TextBlock,
 )
-from dartlab.review.utils import fmtAmt, unifyTableScale
-
+from dartlab.review.utils import unifyTableScale
 
 # ── 수익구조 (revenue) 빌더 ──
 

@@ -37,7 +37,6 @@ def _runReview(args) -> int:
         raise CLIError(str(exc)) from exc
 
     from dartlab.review.registry import buildReview
-    from dartlab.cli.services.output import get_console
 
     report = buildReview(company, section=args.section)
     return _printReport(report, args)
@@ -53,7 +52,6 @@ def _runReviewer(args) -> int:
         raise CLIError(str(exc)) from exc
 
     from dartlab.ai.reviewer import buildReviewWithAI
-    from dartlab.cli.services.output import get_console
 
     report = buildReviewWithAI(company, section=args.section)
     return _printReport(report, args)
@@ -61,8 +59,8 @@ def _runReviewer(args) -> int:
 
 def _printReport(report, args) -> int:
     """보고서 렌더링 공통."""
-    from dartlab.review.renderer import renderReview
     from dartlab.cli.services.output import get_console
+    from dartlab.review.renderer import renderReview
 
     if not report.sections:
         console = get_console()
