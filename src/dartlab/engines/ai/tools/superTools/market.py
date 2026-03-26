@@ -23,7 +23,7 @@ def registerMarketTool(registerTool: Callable) -> None:
             result = getCurrentPrice(code)
             return format_tool_value(result, max_rows=5, max_chars=1000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"현재가 조회 실패: {e}"
+            return f"현재가 조회 실패: {e}. 네트워크 연결을 확인하세요."
 
     def _consensus(code: str = "", **_kw) -> str:
         if not code:
@@ -34,7 +34,7 @@ def registerMarketTool(registerTool: Callable) -> None:
             result = getConsensus(code)
             return format_tool_value(result, max_rows=10, max_chars=2000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"컨센서스 조회 실패: {e}"
+            return f"컨센서스 조회 실패: {e}. 대안: analyze(action='valuation')으로 자체 밸류에이션을 확인하세요."
 
     def _history(code: str = "", days: str = "365", **_kw) -> str:
         if not code:
@@ -45,7 +45,7 @@ def registerMarketTool(registerTool: Callable) -> None:
             result = getPriceHistory(code, days=int(days))
             return format_tool_value(result, max_rows=30, max_chars=3000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"주가 이력 조회 실패: {e}"
+            return f"주가 이력 조회 실패: {e}. 네트워크 연결을 확인하세요."
 
     def _screen(criteria: str = "", **_kw) -> str:
         if not criteria:

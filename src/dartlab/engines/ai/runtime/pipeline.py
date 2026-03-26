@@ -54,9 +54,11 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
     q_type = classify_question(question)
 
     sections: list[str] = []
+    warnings: list[str] = []
 
     for runnerSpec in _PIPELINE_MAP.get(q_type, ()):
         runner: Callable[[Any, list[str]], str | None] | None
+        runnerName = runnerSpec if isinstance(runnerSpec, str) else getattr(runnerSpec, "__name__", "unknown")
         if callable(runnerSpec):
             runner = runnerSpec
         else:
@@ -67,15 +69,22 @@ def run_pipeline(company: Any, question: str, included_tables: list[str]) -> str
             result = runner(company, included_tables)
             if result:
                 sections.append(result)
-        except _PIPELINE_ERRORS:
+        except _PIPELINE_ERRORS as e:
+            _log.debug("pipeline runner %s failed: %s", runnerName, e)
+            warnings.append(f"{runnerName} 분석 실패")
             continue
 
     try:
         l2 = _run_l2_engines(company, q_type)
-    except _PIPELINE_ERRORS:
+    except _PIPELINE_ERRORS as e:
+        _log.debug("L2 engines failed: %s", e)
         l2 = None
     if l2:
         sections.append(l2)
+
+    if warnings:
+        warningText = "[참고] 일부 분석이 실패했습니다: " + ", ".join(warnings) + ". 도구를 직접 호출하여 보충하세요."
+        sections.insert(0, warningText)
 
     if not sections:
         return ""

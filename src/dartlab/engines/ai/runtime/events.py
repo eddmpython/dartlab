@@ -29,6 +29,7 @@ class EventKind:
     ERROR = "error"
     SYSTEM_PROMPT = "system_prompt"
     VALIDATION = "validation"
+    CORRECTION = "correction"
 
     # ── UI 제어 이벤트 (신규) ──
     UI_ACTION = "ui_action"

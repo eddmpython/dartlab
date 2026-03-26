@@ -228,3 +228,88 @@
 | `engines/ai/providers/gemini.py` | native functionCall/functionResponse 형식 구현 |
 | `engines/ai/context/builder.py` | skeleton context "참고용 요약" 안내 추가 |
 | `engines/ai/tools/selector.py` | 도구 선택 규칙 강화 (재무/공시 질문 도구 필수) |
+
+## 013 결과 — Tool Description 품질 강화 / ACI 원칙 (채택)
+
+- 가설: Anthropic ACI 원칙(✓ 언제 쓰는가 / ✗ 쓰지 않을 때 / 호출 예시) 적용 → 도구 선택 정확도 향상
+- **전체 정확도: 60%** (6/10)
+- 도구명 정확도: 70%, action 정확도: 70%, 파라미터 정확도: 80%
+- 핵심 발견: 실패 3건은 description 문제가 아니라 **context에 이미 답이 있어 도구를 호출하지 않는 문제**
+- explore vs finance 경계 혼동: 0건 (ACI 효과)
+
+## 014 결과 — Response Contract + tool_choice=ANY (채택)
+
+- 가설: Response Contract + tool_choice=ANY → 전체 정확도 90%+
+- **전체 정확도: 80%** (8/10) — 013 대비 +20%p
+- 해결: 사업개요(미호출→✅), 리스크(topic 혼동→✅)
+- 미해결 2건: 질문 분류 이슈(light mode 라우팅, market tool 미노출)
+- **가설 1 채택**: Response Contract가 hallucination 방지에 효과적
+
+### 수정 파일 (013+014)
+| 파일 | 변경 |
+|------|------|
+| `tools/superTools/explore.py` | ACI description 강화 |
+| `tools/superTools/finance.py` | ACI description 강화 |
+| `tools/superTools/analyze.py` | ACI description 강화 |
+| `tools/superTools/market.py` | ACI description 강화 |
+| `tools/superTools/openapi.py` | ACI description 강화 |
+| `tools/superTools/system.py` | ACI description 강화 |
+| `tools/superTools/chart.py` | ACI description 강화 |
+| `conversation/templates/system_base.py` | Response Contract 추가 |
+| `providers/gemini.py` | tool_choice config 구현 |
+| `runtime/agent.py` | agent_loop_stream force_tool_first_turn |
+
+## 015 결과 — Self-Verification / Reflexion (safety net 설치, 발동 불필요)
+
+- 가설: 수치 불일치 시 correction prompt 1회로 수정 성공률 80%+
+- **수치 정확도: 100%** (20/20건) — mismatch 0건 → correction 미발동
+- Phase 1-2(ACI + Response Contract + tool_choice=ANY)가 이미 충분히 효과적
+- LLM이 항상 도구를 호출하고 실제 데이터로 답변 → hallucination 자체가 없음
+- Self-Verification은 **safety net으로 정상 설치** — mismatch 발생 시 자동 교정 경로 활성화
+
+### 수정 파일 (015)
+| 파일 | 변경 |
+|------|------|
+| `runtime/post_processing.py` | buildCorrectionPrompt() 추가 |
+| `runtime/core.py` | 13.5단계 Self-Verification correction 턴 |
+| `runtime/events.py` | CORRECTION 이벤트 추가 |
+
+## 016 결과 — 도구 결과 품질 + 에러 투명성 (설치 완료)
+
+- 가설: 에러 메시지에 대안 제안 → LLM 대안 행동 유도, pipeline 경고 → LLM 인지
+- **코드 레벨 검증**: 7개 Super Tool 에러 패턴 확인
+- Pipeline warnings 메커니즘 설치: 실패 엔진 → context 경고 주입
+
+### 수정 내용
+1. **analyze.py**: insight/esg/valuation/changes/audit 실패 시 대안 도구 제안 추가
+2. **market.py**: price/consensus/history 실패 시 대안 제안 추가
+3. **finance.py**: growth/yoy 빈 결과 시 대안 제안 강화
+4. **pipeline.py**: warnings 수집 + "[참고] 일부 분석이 실패했습니다" context 주입
+
+### 수정 파일 (016)
+| 파일 | 변경 |
+|------|------|
+| `tools/superTools/analyze.py` | 에러 시 대안 도구 제안 (5개 action) |
+| `tools/superTools/market.py` | 에러 시 대안/네트워크 안내 |
+| `tools/superTools/finance.py` | 빈 결과 대안 제안 강화 |
+| `runtime/pipeline.py` | warnings 수집 + context 경고 주입 |
+
+## 017 결과 — 결정론적 도구 호출 평가 / BFCL-style (완료)
+
+- 15개 표준 eval 세트 (재무 5 + 공시 3 + 분석 3 + 시장 1 + 메타 2 + 대화 1)
+- **전체 정확도: 10/15 (67%) strict / 12/15 (80%) 실질**
+- 재무 100%, 공시 67%, 분석 33%, 시장 0%, 메타 50%, 대화 100%
+
+| 경로 | 효과 | 비고 |
+|------|------|------|
+| Phase 1 ACI description | 도구 간 경계 명확화 | explore vs finance 혼동 0 |
+| Phase 2 Response Contract | hallucination 방지 | 수치 인용 시 도구 호출 강제 |
+| Phase 2 tool_choice=ANY | 첫 턴 도구 호출 강제 | 사업개요/리스크 해결 |
+| Phase 3 Self-Verification | safety net | mismatch 시 자동 교정 |
+| Phase 4 에러 투명성 | 대안 행동 유도 | 에러 시 다른 도구 제안 |
+
+### 남은 이슈 (질문 분류 레벨)
+1. "투자등급" → light mode 빠짐 (agent loop 미진입)
+2. "데이터 상태" → light mode 빠짐
+3. "현재 주가" → market 대신 system 선택
+→ 이들은 tool description이 아닌 **core.py 질문 분류 로직** 문제

@@ -144,3 +144,36 @@ def _run_validation(company: Any, full_response_parts: list[str]) -> AnalysisEve
     except (ImportError, AttributeError, TypeError, ValueError, OSError):
         pass
     return None
+
+
+def buildCorrectionPrompt(company: Any, full_response_parts: list[str]) -> str | None:
+    """mismatch 감지 시 LLM에 보낼 correction prompt 생성.
+
+    Returns None if no correction needed.
+    """
+    try:
+        from dartlab.engines.ai.runtime.validation import extract_numbers, validate_claims
+
+        full_text = "".join(full_response_parts)
+        claims = extract_numbers(full_text)
+        if not claims:
+            return None
+
+        vresult = validate_claims(claims, company)
+        if not vresult.mismatches:
+            return None
+
+        lines = ["[수치 검증 결과] 아래 수치가 실제 데이터와 불일치합니다. 수정하세요:\n"]
+        for mm in vresult.mismatches:
+            if mm.unit == "%":
+                lines.append(
+                    f"- {mm.label}: 당신 인용 {mm.claimed:.1f}%, 실제값 {mm.actual:.1f}% (차이 {mm.diff_pct:.0f}%)"
+                )
+            else:
+                lines.append(
+                    f"- {mm.label}: 당신 인용 {mm.claimed:,.0f}백만원, 실제값 {mm.actual:,.0f}백만원 (차이 {mm.diff_pct:.0f}%)"
+                )
+        lines.append("\n위 수치를 실제값으로 수정하여 답변을 다시 작성하세요. 나머지 내용은 유지하세요.")
+        return "\n".join(lines)
+    except (ImportError, AttributeError, TypeError, ValueError, OSError):
+        return None

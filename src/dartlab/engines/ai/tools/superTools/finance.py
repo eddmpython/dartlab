@@ -93,10 +93,10 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
         data = getattr(company, module, None)
         if not isinstance(data, pl.DataFrame):
-            return f"'{module}' DataFrame 데이터가 없습니다."
+            return f"'{module}' DataFrame 데이터가 없습니다. action=modules로 사용 가능한 목록을 확인하세요."
         pivoted = pivot_accounts(data)
         if "year" not in pivoted.columns:
-            return "연도 데이터가 부족합니다."
+            return "연도 데이터가 부족합니다. 대안: finance(action='data', module='IS')로 원본 데이터를 확인하세요."
         return df_to_md(growth_matrix(pivoted))
 
     def _yoy(module: str = "", **_kw) -> str:
@@ -107,7 +107,7 @@ def registerFinanceTool(company: Any, registerTool) -> None:
 
         data = getattr(company, module, None)
         if not isinstance(data, pl.DataFrame):
-            return f"'{module}' DataFrame 데이터가 없습니다."
+            return f"'{module}' DataFrame 데이터가 없습니다. action=modules로 사용 가능한 목록을 확인하세요."
         if "계정명" in data.columns:
             data = pivot_accounts(data)
         if "year" not in data.columns:

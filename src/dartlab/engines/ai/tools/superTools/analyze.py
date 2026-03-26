@@ -23,10 +23,12 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
             stockCode = getattr(company, "stockCode", getattr(company, "ticker", ""))
             result = insightAnalyze(stockCode, company=company)
             if result is None:
-                return "인사이트 데이터를 생성할 수 없습니다."
+                return (
+                    "인사이트 데이터를 생성할 수 없습니다. 대안: finance(action='ratios')로 개별 재무비율을 확인하세요."
+                )
             return format_tool_value(result, max_rows=30, max_chars=5000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"인사이트 분석 실패: {e}"
+            return f"인사이트 분석 실패: {e}. 대안: finance(action='ratios')로 재무비율을 직접 조회하세요."
 
     def _sector(**_kw) -> str:
         """WICS 섹터 정보."""
@@ -58,7 +60,7 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
             result = analyze_esg(company)
             return format_tool_value(result, max_rows=20, max_chars=3000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"ESG 분석 실패: {e}"
+            return f"ESG 분석 실패: {e}. 대안: explore(action='search', keyword='ESG')로 공시 원문을 검색하세요."
 
     def _valuation(**_kw) -> str:
         """밸류에이션 분석."""
@@ -68,7 +70,7 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
             result = fullValuation(company)
             return format_tool_value(result, max_rows=20, max_chars=4000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"밸류에이션 실패: {e}"
+            return f"밸류에이션 실패: {e}. 대안: finance(action='ratios')로 PER/PBR을 직접 확인하세요."
 
     def _changes(**_kw) -> str:
         """공시 변화 감지."""
@@ -78,7 +80,7 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
             result = scan_company(company)
             return format_tool_value(result, max_rows=20, max_chars=3000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"변화 감지 실패: {e}"
+            return f"변화 감지 실패: {e}. 대안: explore(action='diff')로 공시 텍스트 변화를 직접 확인하세요."
 
     def _audit(**_kw) -> str:
         """재무 감사 분석."""
@@ -93,7 +95,7 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
                 lines.append(f"- [{a.severity}] {a.column} {a.year}: {a.description}")
             return "\n".join(lines)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"감사 분석 실패: {e}"
+            return f"감사 분석 실패: {e}. 대안: finance(action='anomalies', module='IS')로 이상치를 탐지하세요."
 
     _ACTIONS = {
         "insight": _insight,
