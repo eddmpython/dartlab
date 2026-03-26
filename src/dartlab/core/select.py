@@ -21,8 +21,14 @@ import polars as pl
 _PERIOD_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _COLORS = [
-    "#ea4647", "#fb923c", "#3b82f6", "#22c55e",
-    "#8b5cf6", "#06b6d4", "#f59e0b", "#ec4899",
+    "#ea4647",
+    "#fb923c",
+    "#3b82f6",
+    "#22c55e",
+    "#8b5cf6",
+    "#06b6d4",
+    "#f59e0b",
+    "#ec4899",
 ]
 
 
@@ -328,12 +334,14 @@ class ChartResult:
             chartType = "bar" if i == 0 else "line"
             if self._kind != "auto":
                 chartType = self._kind
-            series.append({
-                "name": name,
-                "data": data,
-                "color": _COLORS[i % len(_COLORS)],
-                "type": chartType,
-            })
+            series.append(
+                {
+                    "name": name,
+                    "data": data,
+                    "color": _COLORS[i % len(_COLORS)],
+                    "type": chartType,
+                }
+            )
 
         meta = self._select.meta.copy()
         title = meta.get("corpName", "")
@@ -393,21 +401,25 @@ class ChartResult:
         for sr in s.get("series", []):
             traceType = sr.get("type", "bar")
             if traceType == "bar":
-                fig.add_trace(go.Bar(
-                    x=s["categories"],
-                    y=sr["data"],
-                    name=sr["name"],
-                    marker_color=sr.get("color"),
-                ))
+                fig.add_trace(
+                    go.Bar(
+                        x=s["categories"],
+                        y=sr["data"],
+                        name=sr["name"],
+                        marker_color=sr.get("color"),
+                    )
+                )
             else:
-                fig.add_trace(go.Scatter(
-                    x=s["categories"],
-                    y=sr["data"],
-                    mode="lines+markers",
-                    name=sr["name"],
-                    line=dict(color=sr.get("color"), width=2),
-                    marker=dict(size=6),
-                ))
+                fig.add_trace(
+                    go.Scatter(
+                        x=s["categories"],
+                        y=sr["data"],
+                        mode="lines+markers",
+                        name=sr["name"],
+                        line=dict(color=sr.get("color"), width=2),
+                        marker=dict(size=6),
+                    )
+                )
 
         fig.update_layout(
             title=s.get("title", ""),

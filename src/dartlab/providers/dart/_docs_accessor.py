@@ -223,7 +223,9 @@ class _DocsAccessor:
     def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
 
-    def search(self, query: str, *, topK: int = 5, year: int | None = None, withText: bool = True) -> pl.DataFrame | None:
+    def search(
+        self, query: str, *, topK: int = 5, year: int | None = None, withText: bool = True
+    ) -> pl.DataFrame | None:
         """docs semantic search."""
         from dartlab.core.docs.search import searchDocs
 

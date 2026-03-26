@@ -1673,9 +1673,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             dataColumns["annualPeriodCount"].append(int(freqMeta.get("annualPeriodCount") or 0))
             dataColumns["quarterlyPeriodCount"].append(int(freqMeta.get("quarterlyPeriodCount") or 0))
             dataColumns["latestAnnualPeriod"].append(
-                str(freqMeta["latestAnnualPeriod"])
-                if isinstance(freqMeta.get("latestAnnualPeriod"), str)
-                else None
+                str(freqMeta["latestAnnualPeriod"]) if isinstance(freqMeta.get("latestAnnualPeriod"), str) else None
             )
             dataColumns["latestQuarterlyPeriod"].append(
                 str(freqMeta["latestQuarterlyPeriod"])

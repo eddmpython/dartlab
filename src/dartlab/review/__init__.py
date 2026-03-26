@@ -97,12 +97,18 @@ class Review:
             self.stockCode = stockCode
             self.corpName = corpName
             flat = _flattenItems(itemsOrStockCode)
-            self.sections = [Section(
-                key="custom",
-                partId="",
-                title="",
-                blocks=flat,
-            )] if flat else []
+            self.sections = (
+                [
+                    Section(
+                        key="custom",
+                        partId="",
+                        title="",
+                        blocks=flat,
+                    )
+                ]
+                if flat
+                else []
+            )
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
         elif isinstance(itemsOrStockCode, str):
@@ -126,12 +132,15 @@ class Review:
             return self._renderRich()
         if fmt == "html":
             from dartlab.review.formats import renderHtml
+
             return renderHtml(self)
         if fmt == "markdown":
             from dartlab.review.formats import renderMarkdown
+
             return renderMarkdown(self)
         if fmt == "json":
             from dartlab.review.formats import renderJson
+
             return renderJson(self)
         raise ValueError(f"지원하지 않는 렌더링 형식: {fmt}")
 

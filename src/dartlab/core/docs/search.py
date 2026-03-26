@@ -49,10 +49,7 @@ def _recoverChunkText(
         secOrder = row["sectionOrder"]
         chunkTitle = row.get("chunkTitle", "")
 
-        docRow = docsDf.filter(
-            (pl.col("rcept_no") == rceptNo)
-            & (pl.col("section_order") == secOrder)
-        )
+        docRow = docsDf.filter((pl.col("rcept_no") == rceptNo) & (pl.col("section_order") == secOrder))
         if docRow.is_empty():
             texts.append("")
             continue
@@ -120,9 +117,7 @@ def _keywordSearch(
             )
         matched = df.filter(expr).head(topK)
 
-    return matched.select(
-        ["chunkId", "rceptNo", "year", "sectionOrder", "sectionTitle", "chunkTitle"]
-    ).with_columns(
+    return matched.select(["chunkId", "rceptNo", "year", "sectionOrder", "sectionTitle", "chunkTitle"]).with_columns(
         pl.lit(0.0).alias("score"),
         pl.lit("keyword").alias("method"),
     )
@@ -172,11 +167,13 @@ def searchDocs(
 
         topIdx = np.argsort(scores)[::-1][:topK]
 
-        hits = embDf[topIdx.tolist()].select(
-            ["chunkId", "rceptNo", "year", "sectionOrder", "sectionTitle", "chunkTitle"]
-        ).with_columns(
-            pl.Series("score", [float(scores[i]) for i in topIdx]),
-            pl.lit("vector").alias("method"),
+        hits = (
+            embDf[topIdx.tolist()]
+            .select(["chunkId", "rceptNo", "year", "sectionOrder", "sectionTitle", "chunkTitle"])
+            .with_columns(
+                pl.Series("score", [float(scores[i]) for i in topIdx]),
+                pl.lit("vector").alias("method"),
+            )
         )
 
     if hits.is_empty():

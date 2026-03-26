@@ -875,11 +875,15 @@ class Company:
         filtered = selectFromShow(df, indList, colList)
         if filtered is None:
             return None
-        return SelectResult(filtered, topic, {
-            "stockCode": getattr(self, "stockCode", self.ticker),
-            "corpName": self.corpName,
-            "currency": self.currency,
-        })
+        return SelectResult(
+            filtered,
+            topic,
+            {
+                "stockCode": getattr(self, "stockCode", self.ticker),
+                "corpName": self.corpName,
+                "currency": self.currency,
+            },
+        )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         topic = _TOPIC_ALIASES.get(topic, topic)

@@ -1033,9 +1033,7 @@ def test_structure_helpers_respect_requested_freq_lane_on_mixed_rows():
         }
     )
 
-    quarterlySummary = pipeline.structureSummary(
-        df, topic="businessOverview", freqScope="quarterly", nodeType="body"
-    )
+    quarterlySummary = pipeline.structureSummary(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
     assert quarterlySummary.height == 1
     quarterlyRow = quarterlySummary.row(0, named=True)
     assert quarterlyRow["latestPeriod"] == "2024Q1"

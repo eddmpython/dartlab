@@ -48,6 +48,7 @@ def buildReviewWithAI(
         ctx = Live(spinner, console=console, transient=True)
     else:
         from contextlib import nullcontext
+
         ctx = nullcontext()
 
     with ctx as live:
@@ -91,7 +92,11 @@ def _cacheKey(section, company, guide: str | None) -> str:
 
 
 def _generateSectionOpinion(
-    section, company, llm, *, guide: str | None = None,
+    section,
+    company,
+    llm,
+    *,
+    guide: str | None = None,
 ) -> str | None:
     """한 섹션의 데이터를 직렬화 → AI에게 핵심 판단 요청."""
     serialized = _serializeSection(section)
@@ -124,11 +129,7 @@ def _generateSectionOpinion(
     if guideParts:
         baseSystem += f"\n\n[분석 관점]\n" + "\n".join(guideParts)
 
-    prompt = (
-        f"[{corpName}] {section.title}\n\n"
-        f"{serialized}\n\n"
-        f"위 데이터의 분석:"
-    )
+    prompt = f"[{corpName}] {section.title}\n\n{serialized}\n\n위 데이터의 분석:"
 
     messages = [
         {"role": "system", "content": baseSystem},
@@ -193,6 +194,7 @@ def _serializeSection(section) -> str:
             # SelectResult / ChartResult — DataFrame 직렬화
             try:
                 import polars as pl
+
                 df = block.df
                 if isinstance(df, pl.DataFrame) and not df.is_empty():
                     label = getattr(block, "label", "")

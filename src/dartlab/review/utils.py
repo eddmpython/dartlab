@@ -132,6 +132,7 @@ def isTerminal() -> bool:
         return False
     try:
         from IPython import get_ipython
+
         if get_ipython() is not None:
             return False
     except ImportError:

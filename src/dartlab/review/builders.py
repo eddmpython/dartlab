@@ -65,10 +65,13 @@ def segmentCompositionBlock(data: dict) -> list:
 
     unified = unifyTableScale(rows, "부문", valueCols, unit="millions")
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "부문별 매출 구성", level=2,
-        helper="매출 비중 + 이익률로 수익 구조 편중을 본다",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "부문별 매출 구성",
+            level=2,
+            helper="매출 비중 + 이익률로 수익 구조 편중을 본다",
+        )
+    )
     blocks.append(TableBlock("", pl.DataFrame(unified)))
     return blocks
 
@@ -95,10 +98,13 @@ def segmentTrendBlock(data: dict) -> list:
 
     unified = unifyTableScale(rows, "부문", yearCols, unit="millions")
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "부문별 매출 추이", level=2,
-        helper="부문별 성장/정체를 연도 비교로 식별",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "부문별 매출 추이",
+            level=2,
+            helper="부문별 성장/정체를 연도 비교로 식별",
+        )
+    )
     blocks.append(TableBlock("", pl.DataFrame(unified)))
     return blocks
 
@@ -116,11 +122,13 @@ def breakdownBlock(data: dict, sub: str) -> list:
 
     rows = []
     for item in items:
-        rows.append({
-            "구분": item["name"],
-            "매출": item["value"],
-            "비중": f"{item['pct']:.0f}%",
-        })
+        rows.append(
+            {
+                "구분": item["name"],
+                "매출": item["value"],
+                "비중": f"{item['pct']:.0f}%",
+            }
+        )
 
     unified = unifyTableScale(rows, "구분", ["매출"], unit="millions")
     blocks: list = []
@@ -150,10 +158,13 @@ def revenueGrowthBlock(data: dict) -> list:
     if not metrics and qTable is None:
         return []
 
-    blocks.append(HeadingBlock(
-        "매출 성장", level=2,
-        helper="YoY vs 3Y CAGR 방향이 다르면 추세 전환 의심",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "매출 성장",
+            level=2,
+            helper="YoY vs 3Y CAGR 방향이 다르면 추세 전환 의심",
+        )
+    )
     if metrics:
         blocks.append(MetricBlock(metrics))
     if qTable is not None:
@@ -210,10 +221,13 @@ def concentrationBlock(data: dict) -> list:
         metrics.append(("내수 비중", f"{data['domesticPct']:.0f}%"))
 
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "매출 집중도", level=2,
-        helper="HHI > 5000 고집중, > 2500 중간 집중",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "매출 집중도",
+            level=2,
+            helper="HHI > 5000 고집중, > 2500 중간 집중",
+        )
+    )
     blocks.append(MetricBlock(metrics))
     return blocks
 
@@ -243,10 +257,13 @@ def capitalOverviewBlock(data: dict) -> list:
     if not metrics:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "자본 개요", level=2,
-        helper="부채비율 100% 이하 안정, 순현금이면 재무 여유",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "자본 개요",
+            level=2,
+            helper="부채비율 100% 이하 안정, 순현금이면 재무 여유",
+        )
+    )
     blocks.append(MetricBlock(metrics))
     return blocks
 
@@ -256,10 +273,13 @@ def capitalTimelineBlock(data: dict) -> list:
     if not data:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "자본구조", level=2,
-        helper="이익잉여금 = 사업으로 번 돈, 자본금+잉여금 = 외부 조달",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "자본구조",
+            level=2,
+            helper="이익잉여금 = 사업으로 번 돈, 자본금+잉여금 = 외부 조달",
+        )
+    )
     for label, tableRows, cols in data.get("tables", []):
         if tableRows and cols:
             unified = unifyTableScale(tableRows, "", cols, unit="won")
@@ -274,10 +294,13 @@ def debtTimelineBlock(data: dict) -> list:
     if not data:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "부채구조", level=2,
-        helper="영업부채 = 자연 발생, 금융부채 = 이자 붙는 차입",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "부채구조",
+            level=2,
+            helper="영업부채 = 자연 발생, 금융부채 = 이자 붙는 차입",
+        )
+    )
     for label, tableRows, cols in data.get("tables", []):
         if tableRows and cols:
             unified = unifyTableScale(tableRows, "", cols, unit="won")
@@ -295,10 +318,13 @@ def interestBurdenBlock(data: dict) -> list:
     if not metrics:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "이자 부담", level=2,
-        helper="이자보상배율 3배 이상 안정, 1.5배 이하 주의",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "이자 부담",
+            level=2,
+            helper="이자보상배율 3배 이상 안정, 1.5배 이하 주의",
+        )
+    )
     blocks.append(MetricBlock(metrics))
     return blocks
 
@@ -311,10 +337,13 @@ def liquidityBlock(data: dict) -> list:
     if not metrics:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "유동성", level=2,
-        helper="유동비율 100% 이하 → 단기 지급 리스크",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "유동성",
+            level=2,
+            helper="유동비율 100% 이하 → 단기 지급 리스크",
+        )
+    )
     blocks.append(MetricBlock(metrics))
     return blocks
 
@@ -324,10 +353,13 @@ def cashFlowBlock(data: dict) -> list:
     if not data:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "현금 흐름 구조", level=2,
-        helper="영업CF(+)/투자CF(-)/재무CF(-) → 건전한 패턴",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "현금 흐름 구조",
+            level=2,
+            helper="영업CF(+)/투자CF(-)/재무CF(-) → 건전한 패턴",
+        )
+    )
     tableRows = data.get("tableRows")
     cols = data.get("cols")
     if tableRows and cols:
@@ -352,10 +384,13 @@ def distressBlock(data: dict) -> list:
     if not metrics:
         return []
     blocks: list = []
-    blocks.append(HeadingBlock(
-        "부실 예측 지표", level=2,
-        helper="Altman Z > 2.99 안전, Piotroski F ≥ 7 건전",
-    ))
+    blocks.append(
+        HeadingBlock(
+            "부실 예측 지표",
+            level=2,
+            helper="Altman Z > 2.99 안전, Piotroski F ≥ 7 건전",
+        )
+    )
     blocks.append(MetricBlock(metrics))
     return blocks
 

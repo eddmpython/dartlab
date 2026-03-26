@@ -50,13 +50,23 @@ def buildBlocks(company) -> dict:
     def _safe(fn):
         try:
             import polars as pl
+
             _polarsErr = pl.exceptions.PolarsError
         except ImportError:
             _polarsErr = RuntimeError
         try:
             return fn()
-        except (KeyError, ValueError, TypeError, AttributeError, ArithmeticError,
-                ImportError, RuntimeError, IndexError, _polarsErr):
+        except (
+            KeyError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            ArithmeticError,
+            ImportError,
+            RuntimeError,
+            IndexError,
+            _polarsErr,
+        ):
             return []
 
     b: dict = {}
@@ -112,11 +122,13 @@ def buildReview(
         ctx = Live(spinner, console=console, transient=True)
     else:
         from contextlib import nullcontext
+
         ctx = nullcontext()
 
     with ctx as live:
         if live is not None:
             from rich.spinner import Spinner
+
             live.update(Spinner("dots", text="블록 사전 생성 중..."))
 
         b = buildBlocks(company)
@@ -133,6 +145,7 @@ def buildReview(
             tmpl = TEMPLATES[tmplKey]
             if live is not None:
                 from rich.spinner import Spinner
+
                 live.update(Spinner("dots", text=f"{tmplKey} 조립 중..."))
 
             sectionBlocks = []

@@ -18,8 +18,7 @@ def renderHtml(review) -> str:
 
     parts: list[str] = []
     parts.append(
-        f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>"
-        f"{review.corpName} ({review.stockCode})</h2>"
+        f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>{review.corpName} ({review.stockCode})</h2>"
     )
 
     for section in review.sections:
@@ -30,10 +29,7 @@ def renderHtml(review) -> str:
             elif isinstance(block, TextBlock):
                 parts.append(f"<p>{block.text}</p>")
             elif isinstance(block, MetricBlock):
-                rows = "".join(
-                    f"<tr><td>{label}</td><td>{value}</td></tr>"
-                    for label, value in block.metrics
-                )
+                rows = "".join(f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in block.metrics)
                 parts.append(f"<table>{rows}</table>")
             elif isinstance(block, TableBlock):
                 if hasattr(block.df, "_repr_html_"):
@@ -45,11 +41,7 @@ def renderHtml(review) -> str:
             elif hasattr(block, "render"):
                 parts.append(block.render("html"))
 
-    return (
-        "<div style='display:flex;flex-direction:column;gap:16px'>"
-        + "".join(parts)
-        + "</div>"
-    )
+    return "<div style='display:flex;flex-direction:column;gap:16px'>" + "".join(parts) + "</div>"
 
 
 def renderMarkdown(review) -> str:
@@ -110,10 +102,12 @@ def renderJson(review) -> str:
             elif isinstance(block, TextBlock):
                 items.append({"type": "text", "text": block.text})
             elif isinstance(block, MetricBlock):
-                items.append({
-                    "type": "metrics",
-                    "metrics": [{"label": l, "value": v} for l, v in block.metrics],
-                })
+                items.append(
+                    {
+                        "type": "metrics",
+                        "metrics": [{"label": l, "value": v} for l, v in block.metrics],
+                    }
+                )
             elif isinstance(block, TableBlock):
                 if hasattr(block.df, "to_dicts"):
                     items.append({"type": "table", "label": block.label, "data": block.df.to_dicts()})
@@ -128,11 +122,13 @@ def renderJson(review) -> str:
                         items.append({"text": raw})
                 else:
                     items.append(raw)
-        sections.append({
-            "key": section.key,
-            "title": section.title,
-            "blocks": items,
-        })
+        sections.append(
+            {
+                "key": section.key,
+                "title": section.title,
+                "blocks": items,
+            }
+        )
 
     return json.dumps(
         {"stockCode": review.stockCode, "corpName": review.corpName, "sections": sections},

@@ -138,7 +138,7 @@ def calcSegmentComposition(company) -> dict | None:
     segments.sort(key=lambda x: x["revenue"], reverse=True)
     if len(segments) > _MAX_SEGMENTS:
         top = segments[: _MAX_SEGMENTS - 1]
-        others = segments[_MAX_SEGMENTS - 1:]
+        others = segments[_MAX_SEGMENTS - 1 :]
         othersRev = sum(s["revenue"] for s in others)
         opVals = [s["opIncome"] for s in others if s["opIncome"] is not None]
         othersOp = sum(opVals) if opVals else None
@@ -371,15 +371,19 @@ def calcFlags(company) -> list[tuple[str, str]]:
                 flags.append((f"매출 역성장 YoY {rg:.0f}%", "warning"))
         if rg is not None and cagr is not None:
             if rg > 10 and cagr < 0:
-                flags.append((
-                    f"YoY +{rg:.0f}%이나 3Y CAGR {cagr:.0f}%: 반짝 회복 가능성",
-                    "warning",
-                ))
+                flags.append(
+                    (
+                        f"YoY +{rg:.0f}%이나 3Y CAGR {cagr:.0f}%: 반짝 회복 가능성",
+                        "warning",
+                    )
+                )
             elif rg < -5 and cagr > 5:
-                flags.append((
-                    f"YoY {rg:.0f}%이나 3Y CAGR +{cagr:.0f}%: 일시적 둔화 가능성",
-                    "opportunity",
-                ))
+                flags.append(
+                    (
+                        f"YoY {rg:.0f}%이나 3Y CAGR +{cagr:.0f}%: 일시적 둔화 가능성",
+                        "opportunity",
+                    )
+                )
 
     mismatch = _checkRevenueIncomeRankMismatch(company)
     if mismatch:
@@ -495,9 +499,6 @@ def _checkRevenueIncomeRankMismatch(company) -> str | None:
         totalOp = sum(o for _, _, o in segments)
         revPct = revTop[1] / totalRev * 100 if totalRev else 0
         opPct = opTop[2] / totalOp * 100 if totalOp else 0
-        return (
-            f"매출 1위 {revTop[0]}({revPct:.0f}%) ≠ "
-            f"이익 1위 {opTop[0]}({opPct:.0f}%): 수익 구조 편중"
-        )
+        return f"매출 1위 {revTop[0]}({revPct:.0f}%) ≠ 이익 1위 {opTop[0]}({opPct:.0f}%): 수익 구조 편중"
 
     return None

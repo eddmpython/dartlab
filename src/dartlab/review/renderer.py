@@ -56,10 +56,12 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
             console.print(f"{h2}[bold cyan]AI 분석 요약[/]")
             for aiLine in section.aiOpinion.split("\n"):
                 if aiLine.strip():
-                    console.print(Padding(
-                        Text(aiLine.strip(), style="cyan"),
-                        (0, 0, 0, ly.indentH2),
-                    ))
+                    console.print(
+                        Padding(
+                            Text(aiLine.strip(), style="cyan"),
+                            (0, 0, 0, ly.indentH2),
+                        )
+                    )
         if section.helper:
             console.print()
             for line in section.helper.split("\n"):
@@ -79,10 +81,12 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
                     console.print(f"{h2}[bold cyan]AI 분석 요약[/]")
                     for aiLine in section.aiOpinion.split("\n"):
                         if aiLine.strip():
-                            console.print(Padding(
-                                Text(aiLine.strip(), style="cyan"),
-                                (0, 0, 0, ly.indentH2),
-                            ))
+                            console.print(
+                                Padding(
+                                    Text(aiLine.strip(), style="cyan"),
+                                    (0, 0, 0, ly.indentH2),
+                                )
+                            )
                 # 헬퍼 텍스트: H2 들여쓰기, 위아래 빈줄
                 if section.helper and not helperRendered:
                     console.print()
@@ -105,10 +109,12 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
         elif isinstance(block, TextBlock):
             style = block.style or ""
             ind = ly.indentH2 if block.indent == "h2" else ly.indentBody
-            console.print(Padding(
-                Text(block.text, style=style),
-                (0, 0, 0, ind),
-            ))
+            console.print(
+                Padding(
+                    Text(block.text, style=style),
+                    (0, 0, 0, ind),
+                )
+            )
 
         elif isinstance(block, MetricBlock):
             for label, value in block.metrics:
