@@ -207,6 +207,53 @@ c.profile.sections  # merged view — what users see by default
 
 `c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
 
+### Architecture — Layered by Responsibility
+
+DartLab follows a strict layered architecture where each layer only depends on layers below it:
+
+```
+L0  core/        Protocols, finance utils, docs utils, registry
+L1  providers/   Country-specific data (DART, EDGAR, EDINET)
+    gather/      External market data (Naver, Yahoo, FRED)
+    market/      Market-wide scanning (2,700+ companies)
+L2  analysis/    8 analytical domains (see below)
+L3  ai/          LLM-powered analysis (5 providers)
+```
+
+Import direction is enforced by CI — no reverse dependencies allowed.
+
+### Analysis — Eight Domains of Corporate Analysis
+
+DartLab's analysis engine is structured around eight academic domains, adapted from Palepu-Healy's framework and cross-referenced with CFA, McKinsey, and S&P methodologies:
+
+| # | Domain | What it covers |
+|---|--------|---------------|
+| 1 | **Strategy** | Business model, competitive advantage, ESG, governance |
+| 2 | **Accounting** | Earnings quality, disclosure analysis, red flags |
+| 3 | **Financial** | Ratios, DuPont, trend, cash flow, distress prediction |
+| 4 | **Forecast** | Financial projections, scenarios, Monte Carlo |
+| 5 | **Valuation** | DCF, multiples, analyst synthesis |
+| 6 | **Risk** | Financial / business / market risk, credit assessment |
+| 7 | **Comparative** | Peer, sector, ranking, event study |
+| 8 | **Macro** | Macroeconomic cycles, industry analysis |
+
+Each domain maps to a package under `analysis/` and can be consumed independently or through the AI layer.
+
+### Extensibility — Zero Core Modification
+
+Adding a new country requires zero changes to core code:
+
+1. Create a provider package under `providers/`
+2. Implement `canHandle(code) -> bool` and `priority() -> int`
+3. Register via `entry_points` in `pyproject.toml`
+
+```python
+dartlab.Company("005930")  # → DART provider (priority 10)
+dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
+```
+
+The facade iterates providers by priority — first match wins. This follows the same pattern as OpenBB's provider system and scikit-learn's estimator registration.
+
 ## Core Features
 
 ### Show, Trace, Diff

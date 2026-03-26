@@ -1,12 +1,14 @@
-# Analyst — 멀티소스 밸류에이션 합성
+# Valuation — 멀티소스 밸류에이션 합성
 
 ## 구조
 
 ```
-analyst/
-├── __init__.py      # Analyst 클래스 (public API)
+valuation/
+├── analyst.py       # Analyst 클래스 (public API) + forecast/simulation/valuation re-export
 ├── synthesizer.py   # DCF + consensus + peer → 목표가 + 투자의견
 ├── calibrator.py    # 모델 보정 (과거 예측 정확도 기반)
+├── valuation.py     # DCF, DDM, 상대가치, 종합 밸류에이션
+├── pricetarget.py   # 목표주가 합성 (core/finance에서 이전)
 └── types.py         # AnalystReport, ValuationMethod
 ```
 
@@ -18,16 +20,15 @@ analyst/
 
 ## 의존성
 
-- `gather` — 시장 데이터 (주가, 컨센서스)
-- `common.finance` — DCF, 밸류에이션 모델
-- **절대 import 사용**: `from dartlab.engines_legacy.gather import ...` (상대 import 아님)
+- `dartlab.gather` — 시장 데이터 (주가, 컨센서스)
+- `dartlab.core.finance` — 재무 유틸 (비율, 추출)
+- **절대 import 사용**: `from dartlab.gather import ...`
 
 ## Company 부착
 
 - 별도 `Analyst()` 클래스로 사용 (Company property 아님)
-- `Analyst(company, gather)` → `.report()` → AnalystReport
+- `Analyst()` → `.report(company)` → AnalystReport
 
 ## 안정성
 
 - Tier 2 (Beta): gather 데이터 가용성에 의존
-- spec.py 미구현 (8개 모듈 중 유일)

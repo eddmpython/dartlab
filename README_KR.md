@@ -207,6 +207,53 @@ c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
 
 `c.sections`는 통합 뷰다. `c.trace("BS")`로 어떤 소스가 왜 채택됐는지 확인한다.
 
+### 아키텍처 — 책임 기반 레이어
+
+DartLab은 엄격한 레이어 아키텍처를 따른다. 각 레이어는 자기보다 아래 레이어만 의존한다:
+
+```
+L0  core/        프로토콜, 재무 유틸, docs 유틸, 레지스트리
+L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
+    gather/      외부 시장 데이터 (Naver, Yahoo, FRED)
+    market/      시장 전체 스캔 (2,700+ 종목)
+L2  analysis/    8대 분석 영역 (아래 참조)
+L3  ai/          LLM 기반 분석 (5개 provider)
+```
+
+import 방향은 CI에서 강제한다 — 역방향 의존 불허.
+
+### 분석 — 기업분석 8대 영역
+
+DartLab의 분석 엔진은 Palepu-Healy 프레임워크를 기본 골격으로, CFA·McKinsey·S&P 방법론을 교차 적용한 8대 학술 영역으로 구성된다:
+
+| # | 영역 | 범위 |
+|---|------|------|
+| 1 | **전략** | 사업모델, 경쟁우위, ESG, 지배구조 |
+| 2 | **회계** | 이익의 질, 공시 분석, 적기경보(Red Flags) |
+| 3 | **재무** | 비율, DuPont, 추세, 현금흐름, 부실예측 |
+| 4 | **전망** | 재무제표 추정, 시나리오, 몬테카를로 |
+| 5 | **가치평가** | DCF, 멀티플, 애널리스트 종합 |
+| 6 | **리스크** | 재무/사업/시장 리스크, 신용평가 |
+| 7 | **비교** | 피어, 섹터, 순위, 이벤트 스터디 |
+| 8 | **거시** | 거시경제 사이클, 산업 분석 |
+
+각 영역은 `analysis/` 하위 패키지에 매핑되며, 독립 사용하거나 AI 레이어를 통해 소비할 수 있다.
+
+### 확장성 — Core 수정 0줄
+
+새 국가를 추가할 때 core 코드를 수정할 필요가 없다:
+
+1. `providers/` 아래에 provider 패키지 생성
+2. `canHandle(code) -> bool`과 `priority() -> int` 구현
+3. `pyproject.toml`의 `entry_points`에 등록
+
+```python
+dartlab.Company("005930")  # → DART provider (priority 10)
+dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
+```
+
+facade가 priority 순으로 provider를 순회하여 첫 번째 매칭을 사용한다. OpenBB의 provider 시스템, scikit-learn의 estimator 등록과 같은 패턴이다.
+
 ## 핵심 기능
 
 ### Show, Trace, Diff
