@@ -334,6 +334,8 @@ Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 
 
 ## Review — Structured Company Analysis
 
+> **Experimental** — the review system is under active development. Templates, blocks, and output formats may change between versions.
+
 DartLab's review system assembles financial data into structured, readable reports.
 
 ### Templates
@@ -703,6 +705,8 @@ us.show("mdna")                    # → 10-K::item7Mdna
 ```
 
 ## AI Analysis
+
+> **Experimental** — the AI analysis layer and `analysis/` engines are under active development. APIs, output formats, and available tools may change between versions.
 
 > **Tip:** New to financial analysis or prefer natural language? Use `dartlab.ask()` — the AI assistant handles everything from data download to analysis. No coding knowledge required.
 
