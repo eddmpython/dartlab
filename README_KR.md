@@ -223,7 +223,7 @@ L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
     gather/      외부 시장 데이터 (Naver, Yahoo, FRED)
     market/      시장 전체 스캔 (2,700+ 종목)
 L2  analysis/    8대 분석 영역 (아래 참조)
-L3  ai/          LLM 기반 분석 (5개 provider)
+L3  ai/          LLM 기반 분석 (9개 provider)
 ```
 
 import 방향은 CI에서 강제한다 — 역방향 의존 불허.
@@ -706,10 +706,10 @@ answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 
 ### CLI
 
 ```bash
-# provider 설정
+# provider 설정 — 무료 provider 우선
 dartlab setup              # 전체 provider 목록
-dartlab setup ollama       # 로컬 LLM (무료)
-dartlab setup openai       # OpenAI API
+dartlab setup gemini       # Google Gemini (무료)
+dartlab setup groq         # Groq (무료)
 
 # 상태 확인
 dartlab status             # 전체 provider (테이블 뷰)
@@ -756,13 +756,30 @@ dartlab --help             # 전체 명령어 확인
 
 ### Provider
 
+**무료 API 키 provider** — 가입하고 키만 넣으면 바로 분석:
+
+| Provider | 무료 한도 | 모델 | 설정 |
+|----------|-----------|------|------|
+| `gemini` | Gemini 2.5 Pro/Flash 무료 | Gemini 2.5 | `dartlab setup gemini` |
+| `groq` | 6K–30K TPM 무료 | LLaMA 3.3 70B | `dartlab setup groq` |
+| `cerebras` | 1M tokens/day 영구 무료 | LLaMA 3.3 70B | `dartlab setup cerebras` |
+| `mistral` | 1B tokens/month 무료 | Mistral Small | `dartlab setup mistral` |
+
+**기타 provider:**
+
 | Provider | 인증 | 비용 | Tool Calling |
 |----------|------|------|:---:|
 | `oauth-codex` | ChatGPT 구독 (Plus/Team/Enterprise) | 구독에 포함 | Yes |
-| `codex` | Codex CLI 로컬 설치 | 무료 (Codex 세션 사용) | Yes |
-| `ollama` | 로컬 설치, 계정 불필요 | 무료 | 모델에 따라 다름 |
 | `openai` | API 키 (`OPENAI_API_KEY`) | 토큰당 과금 | Yes |
+| `ollama` | 로컬 설치, 계정 불필요 | 무료 | 모델에 따라 다름 |
+| `codex` | Codex CLI 로컬 설치 | 무료 (Codex 세션 사용) | Yes |
 | `custom` | OpenAI 호환 엔드포인트 | 다양 | 다양 |
+
+**자동 전환:** 여러 무료 API 키를 등록하면 하나가 한도를 초과할 때 자동으로 다음 provider로 전환한다. `provider="free"`로 fallback 체인 활성화:
+
+```python
+dartlab.ask("삼성전자 분석", provider="free")
+```
 
 **Claude provider가 없는 이유:** Anthropic은 OAuth 기반 접근을 제공하지 않는다. OAuth 없이는 사용자가 기존 구독으로 인증할 방법이 없어서 API 키를 직접 입력하게 해야 하는데, 이는 DartLab의 마찰 없는 설계에 맞지 않는다. Anthropic이 향후 OAuth를 지원하면 Claude provider를 추가할 예정이다. 현재 Claude는 **MCP**로 사용 가능 — Claude Desktop, Claude Code, Cursor에서 DartLab의 60개 도구를 직접 호출할 수 있다.
 

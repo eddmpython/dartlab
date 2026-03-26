@@ -1,13 +1,17 @@
 """스마트 AI provider auto-detection.
 
-우선순위: oauth-codex → openai → ollama → codex
+우선순위: 프리미엄 → 무료 API → 로컬/CLI
 각 provider별 가벼운 체크로 사용 가능한 첫 번째를 반환.
 """
 
 from __future__ import annotations
 
-# 감지 우선순위 (가장 범용적 → 특수)
-_DETECT_ORDER = ("oauth-codex", "openai", "ollama", "codex")
+# 감지 우선순위: 프리미엄(이미 인증) → 무료(env key) → 로컬/CLI
+_DETECT_ORDER = (
+    "oauth-codex", "openai",
+    "gemini", "groq", "cerebras", "mistral",
+    "ollama", "codex",
+)
 
 
 def _quick_check(provider_id: str) -> bool:

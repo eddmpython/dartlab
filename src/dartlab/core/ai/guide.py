@@ -10,9 +10,50 @@ from dartlab.core.ai.providers import _PROVIDERS
 _PROVIDER_ALIAS: dict[str, str] = {
     "chatgpt": "oauth-codex",
     "gpt": "oauth-codex",
+    "google": "gemini",
 }
 
 _SETUP_GUIDES: dict[str, dict[str, str]] = {
+    "gemini": {
+        "name": "Google Gemini (무료)",
+        "short": "Gemini 2.5 Pro/Flash 무료",
+        "setup_notebook": 'dartlab.setup("gemini")',
+        "setup_cli": "dartlab setup gemini",
+        "detail": (
+            "Google AI Studio에서 무료 API 키를 발급받으세요.\n"
+            "https://aistudio.google.com/apikey"
+        ),
+    },
+    "groq": {
+        "name": "Groq (무료)",
+        "short": "초고속 추론 — LLaMA 3.3 70B 무료",
+        "setup_notebook": 'dartlab.setup("groq")',
+        "setup_cli": "dartlab setup groq",
+        "detail": (
+            "Groq Cloud에서 무료 API 키를 발급받으세요.\n"
+            "https://console.groq.com/keys"
+        ),
+    },
+    "cerebras": {
+        "name": "Cerebras (무료)",
+        "short": "1M tokens/day 영구 무료",
+        "setup_notebook": 'dartlab.setup("cerebras")',
+        "setup_cli": "dartlab setup cerebras",
+        "detail": (
+            "Cerebras Inference에서 무료 API 키를 발급받으세요.\n"
+            "https://cloud.cerebras.ai/"
+        ),
+    },
+    "mistral": {
+        "name": "Mistral AI (무료)",
+        "short": "1B tokens/month 무료, 다양한 모델",
+        "setup_notebook": 'dartlab.setup("mistral")',
+        "setup_cli": "dartlab setup mistral",
+        "detail": (
+            "Mistral AI에서 무료 API 키를 발급받으세요.\n"
+            "https://console.mistral.ai/api-keys"
+        ),
+    },
     "oauth-codex": {
         "name": "ChatGPT 구독 계정",
         "short": "브라우저 로그인 (ChatGPT Plus/Pro)",
@@ -49,8 +90,8 @@ _SETUP_GUIDES: dict[str, dict[str, str]] = {
     },
 }
 
-# provider 표시 순서 (사용자 권장 순)
-_DISPLAY_ORDER = ("oauth-codex", "openai", "ollama", "codex")
+# provider 표시 순서 (무료 우선 → 프리미엄 → 로컬)
+_DISPLAY_ORDER = ("gemini", "groq", "cerebras", "mistral", "oauth-codex", "openai", "ollama", "codex")
 
 
 def resolve_alias(provider: str) -> str:
@@ -122,11 +163,17 @@ def no_provider_message() -> str:
         "",
         "  AI provider가 설정되지 않았습니다.",
         "",
-        "  아래 중 하나를 설정하세요:",
+        "  무료 API 키 하나면 바로 시작할 수 있습니다:",
         "",
-        '  1. ChatGPT (권장)  — dartlab.setup("chatgpt")',
-        '  2. OpenAI API      — dartlab.llm.configure(provider="openai", api_key="sk-...")',
-        '  3. 로컬 LLM (무료) — dartlab.setup("ollama")',
+        '  1. Gemini (권장)   — dartlab.setup("gemini")    https://aistudio.google.com/apikey',
+        '  2. Groq            — dartlab.setup("groq")      https://console.groq.com/keys',
+        '  3. Cerebras        — dartlab.setup("cerebras")  https://cloud.cerebras.ai/',
+        '  4. Mistral         — dartlab.setup("mistral")   https://console.mistral.ai/api-keys',
+        "",
+        "  기타:",
+        '  5. ChatGPT (구독)  — dartlab.setup("chatgpt")',
+        '  6. OpenAI API      — dartlab.setup("openai")',
+        '  7. 로컬 LLM        — dartlab.setup("ollama")',
         "",
         '  설정 후: dartlab.ask("삼성전자 재무건전성 분석해줘")',
         "",

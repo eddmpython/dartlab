@@ -16,6 +16,9 @@ _PROVIDER_MAP: dict[str, str] = {
     "codex": "dartlab.ai.providers.codex.CodexProvider",
     "oauth-codex": "dartlab.ai.providers.oauth_codex.OAuthCodexProvider",
     "gemini": "dartlab.ai.providers.gemini.GeminiProvider",
+    "groq": "dartlab.ai.providers.openai_compat.OpenAICompatProvider",
+    "cerebras": "dartlab.ai.providers.openai_compat.OpenAICompatProvider",
+    "mistral": "dartlab.ai.providers.openai_compat.OpenAICompatProvider",
 }
 
 

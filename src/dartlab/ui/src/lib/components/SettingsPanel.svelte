@@ -150,6 +150,9 @@
 												{#if isActive}
 													<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-dl-primary/20 text-dl-primary-light">사용 중</span>
 												{/if}
+												{#if info.freeTierHint}
+													<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/20 text-emerald-400">무료</span>
+												{/if}
 											</div>
 											<div class="text-[11px] text-dl-text-dim mt-0.5">{info.desc || ""}</div>
 											{#if info.credentialSource && info.auth !== "none"}
@@ -181,9 +184,9 @@
 										<!-- API Key input (not available) -->
 										{#if needsKey && !info.available}
 											<div class="px-4 pb-4 border-t border-dl-border/50 pt-3">
-												{#if name === "gemini"}
+												{#if info.signupUrl}
 													<div class="text-[11px] text-dl-text mb-2">
-														<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-dl-primary-light hover:underline font-medium">Google AI Studio</a>에서 무료 API key를 발급받으세요 (Google 로그인 → Create API key)
+														<a href={info.signupUrl} target="_blank" rel="noopener" class="text-dl-primary-light hover:underline font-medium">{info.label || name}</a>에서 {info.freeTierHint ? `${info.freeTierHint} — ` : ""}API key를 발급받으세요
 													</div>
 												{/if}
 												<div class="text-[11px] text-dl-text-muted mb-2">

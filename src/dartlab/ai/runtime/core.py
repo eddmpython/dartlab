@@ -542,6 +542,16 @@ def _analyze_inner(
         context_tier_override = None
 
     # ── 1. Config 해석 ──
+    # "free" 모드: API 키가 있는 무료 프로바이더 중 첫 번째를 자동 선택
+    if provider == "free":
+        from dartlab.ai.providers.fallback import buildFreeChain
+
+        free_chain = buildFreeChain()
+        if free_chain:
+            provider = free_chain[0]
+        else:
+            provider = None  # 기본 provider fallback
+
     config_ = get_config(role=role)
     overrides = {
         k: v

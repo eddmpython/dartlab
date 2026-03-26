@@ -16,6 +16,8 @@ class ProviderSpec:
     env_key: str | None = None
     probe_policy: str = "on_demand"
     supported_roles: tuple[str, ...] = AI_ROLES
+    signupUrl: str | None = None
+    freeTierHint: str | None = None
 
 
 _PROVIDERS: dict[str, ProviderSpec] = {
@@ -35,6 +37,8 @@ _PROVIDERS: dict[str, ProviderSpec] = {
         setup_kind="api_key",
         env_key="GEMINI_API_KEY",
         probe_policy="credentialed",
+        signupUrl="https://aistudio.google.com/apikey",
+        freeTierHint="무료 — Gemini 2.5 Pro/Flash",
     ),
     "codex": ProviderSpec(
         id="codex",
@@ -61,6 +65,7 @@ _PROVIDERS: dict[str, ProviderSpec] = {
         setup_kind="api_key",
         env_key="OPENAI_API_KEY",
         probe_policy="credentialed",
+        signupUrl="https://platform.openai.com/api-keys",
     ),
     "custom": ProviderSpec(
         id="custom",
@@ -69,6 +74,39 @@ _PROVIDERS: dict[str, ProviderSpec] = {
         auth_kind="api_key",
         setup_kind="api_key",
         probe_policy="credentialed",
+    ),
+    "groq": ProviderSpec(
+        id="groq",
+        label="Groq (무료)",
+        description="Groq Cloud — 초고속 추론, LLaMA 3.3 70B 무료",
+        auth_kind="api_key",
+        setup_kind="api_key",
+        env_key="GROQ_API_KEY",
+        probe_policy="credentialed",
+        signupUrl="https://console.groq.com/keys",
+        freeTierHint="무료 — 초고속 추론, LLaMA 3.3 70B",
+    ),
+    "cerebras": ProviderSpec(
+        id="cerebras",
+        label="Cerebras (무료)",
+        description="Cerebras Inference — 1M tokens/day 무료, 함수호출 벤치마크 1위",
+        auth_kind="api_key",
+        setup_kind="api_key",
+        env_key="CEREBRAS_API_KEY",
+        probe_policy="credentialed",
+        signupUrl="https://cloud.cerebras.ai/",
+        freeTierHint="무료 — 1M tokens/day 영구",
+    ),
+    "mistral": ProviderSpec(
+        id="mistral",
+        label="Mistral AI (무료)",
+        description="Mistral AI — 1B tokens/month 무료, 다양한 모델",
+        auth_kind="api_key",
+        setup_kind="api_key",
+        env_key="MISTRAL_API_KEY",
+        probe_policy="credentialed",
+        signupUrl="https://console.mistral.ai/api-keys",
+        freeTierHint="무료 — 1B tokens/month",
     ),
 }
 
@@ -115,6 +153,10 @@ def build_provider_catalog(*, include_hidden: bool = False) -> list[dict[str, st
         }
         if spec.env_key:
             item["envKey"] = spec.env_key
+        if spec.signupUrl:
+            item["signupUrl"] = spec.signupUrl
+        if spec.freeTierHint:
+            item["freeTierHint"] = spec.freeTierHint
         items.append(item)
     return items
 

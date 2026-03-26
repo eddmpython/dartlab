@@ -223,7 +223,7 @@ L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
     market/      Market-wide scanning (2,700+ companies)
 L2  analysis/    8 analytical domains (see below)
-L3  ai/          LLM-powered analysis (5 providers)
+L3  ai/          LLM-powered analysis (9 providers)
 ```
 
 Import direction is enforced by CI — no reverse dependencies allowed.
@@ -706,10 +706,10 @@ answer = dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 
 ### CLI
 
 ```bash
-# provider setup
+# provider setup — free providers first
 dartlab setup              # list all providers
-dartlab setup ollama       # local LLM (free)
-dartlab setup openai       # OpenAI API
+dartlab setup gemini       # Google Gemini (free)
+dartlab setup groq         # Groq (free)
 
 # status
 dartlab status             # all providers (table view)
@@ -756,13 +756,30 @@ dartlab --help             # show all commands
 
 ### Providers
 
+**Free API key providers** — sign up, paste the key, start analyzing:
+
+| Provider | Free Tier | Model | Setup |
+|----------|-----------|-------|-------|
+| `gemini` | Gemini 2.5 Pro/Flash free | Gemini 2.5 | `dartlab setup gemini` |
+| `groq` | 6K–30K TPM free | LLaMA 3.3 70B | `dartlab setup groq` |
+| `cerebras` | 1M tokens/day permanent | LLaMA 3.3 70B | `dartlab setup cerebras` |
+| `mistral` | 1B tokens/month free | Mistral Small | `dartlab setup mistral` |
+
+**Other providers:**
+
 | Provider | Auth | Cost | Tool Calling |
 |----------|------|------|:---:|
 | `oauth-codex` | ChatGPT subscription (Plus/Team/Enterprise) | Included in subscription | Yes |
-| `codex` | Codex CLI installed locally | Free (uses your Codex session) | Yes |
-| `ollama` | Local install, no account needed | Free | Depends on model |
 | `openai` | API key (`OPENAI_API_KEY`) | Pay-per-token | Yes |
+| `ollama` | Local install, no account needed | Free | Depends on model |
+| `codex` | Codex CLI installed locally | Free (uses your Codex session) | Yes |
 | `custom` | Any OpenAI-compatible endpoint | Varies | Varies |
+
+**Auto-fallback:** Set multiple free API keys and DartLab automatically switches to the next provider when one hits its rate limit. Use `provider="free"` to enable the fallback chain:
+
+```python
+dartlab.ask("삼성전자 분석", provider="free")
+```
 
 **Why no Claude provider?** Anthropic does not offer OAuth-based access. Without OAuth, there is no way to let users authenticate with their existing subscription — we would have to ask users to paste API keys, which goes against DartLab's frictionless design. If Anthropic adds OAuth support in the future, we will add a Claude provider. For now, Claude works through **MCP** (see below) — Claude Desktop, Claude Code, and Cursor can call DartLab's 60 tools directly.
 
@@ -973,7 +990,7 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI analysis examples
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/06_insight_anomaly.ipynb) | **Insight & Anomaly** — 10-area grading, 6 anomaly rules |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/07_network_governance.ipynb) | **Network & Governance** — corporate relationship graph |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/08_signal_trend.ipynb) | **Signal Trends** — 48-keyword disclosure monitoring |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/09_ai_analysis.ipynb) | **AI Analysis** — `dartlab.ask()` with 7 LLM providers |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/09_ai_analysis.ipynb) | **AI Analysis** — `dartlab.ask()` with 9 LLM providers |
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/10_disclosure_deep_dive.ipynb) | **Disclosure Deep Dive** — sections architecture |
 
 <details>

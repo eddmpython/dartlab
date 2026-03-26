@@ -26,11 +26,16 @@ def run(args) -> int:
     if args.provider is None:
         print("\n[ 데이터 수집 ]\n")
         print("  dartlab setup dart-key     DART OpenAPI 키 설정 (공시 데이터 직접 수집)\n")
-        print("[ AI 분석 ]\n")
-        print("  dartlab setup oauth-codex  ChatGPT 구독 계정 — 브라우저 OAuth (권장)")
-        print("  dartlab setup codex        Codex CLI — 코딩 에이전트용")
-        print("  dartlab setup ollama       로컬 LLM (무료, 오프라인)")
+        print("[ AI 분석 — 무료 API 키 ]\n")
+        print("  dartlab setup gemini       Google Gemini — 무료, Gemini 2.5 Pro/Flash")
+        print("  dartlab setup groq         Groq — 무료, 초고속 LLaMA 3.3 70B")
+        print("  dartlab setup cerebras     Cerebras — 무료, 1M tokens/day 영구")
+        print("  dartlab setup mistral      Mistral AI — 무료, 1B tokens/month\n")
+        print("[ AI 분석 — 기타 ]\n")
+        print("  dartlab setup oauth-codex  ChatGPT 구독 계정 — 브라우저 OAuth")
         print("  dartlab setup openai       OpenAI API — GPT-4o 등 (API 키 필요)")
+        print("  dartlab setup ollama       로컬 LLM (무료, 오프라인)")
+        print("  dartlab setup codex        Codex CLI — 코딩 에이전트용")
         print("  dartlab setup custom       OpenAI 호환 API — vLLM, Together 등\n")
         return 0
 
@@ -46,12 +51,54 @@ def run(args) -> int:
             "ollama": _setup_ollama,
             "openai": _setup_openai,
             "custom": _setup_custom,
+            "gemini": lambda: _setupApiKeyProvider("gemini"),
+            "groq": lambda: _setupApiKeyProvider("groq"),
+            "cerebras": lambda: _setupApiKeyProvider("cerebras"),
+            "mistral": lambda: _setupApiKeyProvider("mistral"),
         }.get(args.provider)
     if handler:
         handler()
     else:
         print(f"\n  알 수 없는 provider: {args.provider}\n")
     return 0
+
+
+def _setupApiKeyProvider(providerId: str) -> None:
+    """ProviderSpec 기반 범용 API 키 설정 안내."""
+    from dartlab.core.ai.providers import get_provider_spec
+
+    spec = get_provider_spec(providerId)
+    if spec is None:
+        print(f"\n  알 수 없는 provider: {providerId}\n")
+        return
+
+    print(f"\n[ {spec.label} 설정 ]\n")
+    if spec.freeTierHint:
+        print(f"  {spec.freeTierHint}\n")
+
+    print("  1. API 키 발급")
+    if spec.signupUrl:
+        print(f"     {spec.signupUrl}\n")
+    else:
+        print("     provider 공식 사이트에서 발급\n")
+
+    print("  2. 환경변수 설정")
+    if spec.env_key:
+        print(f"     export {spec.env_key}=your-key-here\n")
+        print("     PowerShell:")
+        print(f"     $env:{spec.env_key} = 'your-key-here'\n")
+    else:
+        print("     API 키를 환경변수로 설정하세요\n")
+
+    print("     또는 Python에서:")
+    print(f'     dartlab.llm.configure(provider="{providerId}", api_key="your-key-here")\n')
+
+    print("  3. 확인")
+    print(f"     dartlab status -p {providerId}\n")
+
+    print("  4. 사용")
+    print(f'     dartlab ask 005930 "재무 건전성 분석" -p {providerId}')
+    print()
 
 
 def _setup_oauth_codex() -> None:

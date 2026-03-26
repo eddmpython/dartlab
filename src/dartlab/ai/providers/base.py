@@ -8,6 +8,15 @@ from typing import Generator
 from dartlab.ai.types import LLMConfig, LLMResponse, ToolResponse
 
 
+class RateLimitError(Exception):
+    """429 rate limit 에러. fallback 체인에서 다음 프로바이더로 전환 트리거."""
+
+    def __init__(self, provider: str, message: str = "", retryAfter: float | None = None):
+        self.provider = provider
+        self.retryAfter = retryAfter
+        super().__init__(message or f"{provider}: rate limit 초과")
+
+
 class BaseProvider(ABC):
     """모든 LLM provider의 추상 기반."""
 

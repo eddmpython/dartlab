@@ -110,6 +110,10 @@ def api_status(
         }
         if meta.get("envKey"):
             info["envKey"] = meta["envKey"]
+        if meta.get("signupUrl"):
+            info["signupUrl"] = meta["signupUrl"]
+        if meta.get("freeTierHint"):
+            info["freeTierHint"] = meta["freeTierHint"]
         should_probe = probe and (target_provider is None or prov == target_provider)
         if should_probe:
             available, model, checked = probe_provider_availability(prov)

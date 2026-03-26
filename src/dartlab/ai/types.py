@@ -13,6 +13,9 @@ ProviderName = Literal[
     "codex",
     "oauth-codex",
     "gemini",
+    "groq",
+    "cerebras",
+    "mistral",
 ]
 
 
