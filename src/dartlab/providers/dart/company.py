@@ -1081,9 +1081,8 @@ class Company:
                     )
             except (ValueError, KeyError, AttributeError) as e:
                 import logging
-                logging.getLogger(__name__).warning(
-                    "sections report merge failed for %s: %s", self.stockCode, e
-                )
+
+                logging.getLogger(__name__).warning("sections report merge failed for %s: %s", self.stockCode, e)
 
         if not topicExtras:
             self._cache[cacheKey] = docsSec
@@ -1622,10 +1621,12 @@ class Company:
         # 공통: 같은 계정명 중복행 병합 (coalesce — 먼저 나온 행 우선)
         if df["계정명"].n_unique() < df.height:
             import logging
+
             dupes = df.group_by("계정명").len().filter(pl.col("len") > 1)
             logging.getLogger(__name__).warning(
-                "%s %s: 중복 계정명 %d건 (먼저 나온 값 사용): %s",
-                self.stockCode, sjDiv, dupes.height,
+                "%s: 중복 계정명 %d건 (먼저 나온 값 사용): %s",
+                sjDiv,
+                dupes.height,
                 dupes["계정명"].to_list()[:5],
             )
             merged = df.group_by("계정명", maintain_order=True).agg(
