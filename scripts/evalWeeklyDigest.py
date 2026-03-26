@@ -119,7 +119,7 @@ def generateDigest(days: int = 7) -> str:
 
     # 우선 개선 대상
     if failureCounts:
-        from dartlab.engines.ai.eval.remediation import (
+        from dartlab.ai.eval.remediation import (
             generateRemediations,
         )
 

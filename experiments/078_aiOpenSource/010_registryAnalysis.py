@@ -48,7 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 def analyze_registry():
     """현재 도구 레지스트리 분석."""
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.ai.tools_registry import build_tool_runtime
 
     # MockCompany로 전체 도구 등록
     class MockCompany:

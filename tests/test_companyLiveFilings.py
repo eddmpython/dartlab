@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 
 class TestDartCompanyLiveFilings:
     def test_live_filings_normalizes_open_dart_rows(self, monkeypatch):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         class FakeOpenDart:
             def filings(self, corp, start, end, *, final=False):
@@ -30,7 +30,7 @@ class TestDartCompanyLiveFilings:
                     }
                 )
 
-        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dart.OpenDart", FakeOpenDart)
+        monkeypatch.setattr("dartlab.providers.dart.openapi.dart.OpenDart", FakeOpenDart)
 
         company = DartCompany.__new__(DartCompany)
         company.stockCode = "005930"
@@ -51,14 +51,14 @@ class TestDartCompanyLiveFilings:
         assert "rcpNo=20240307000002" in result.item(0, "viewerUrl")
 
     def test_read_filing_accepts_viewer_url(self, monkeypatch):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         class FakeOpenDart:
             def documentText(self, rceptNo):
                 assert rceptNo == "20240312000736"
                 return "<html><body>단일판매공급계약 본문</body></html>"
 
-        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dart.OpenDart", FakeOpenDart)
+        monkeypatch.setattr("dartlab.providers.dart.openapi.dart.OpenDart", FakeOpenDart)
 
         company = DartCompany.__new__(DartCompany)
         company.stockCode = "005930"
@@ -77,7 +77,7 @@ class TestDartCompanyLiveFilings:
 
 class TestEdgarCompanyLiveFilings:
     def test_html_to_text_removes_hidden_inline_xbrl_noise(self):
-        from dartlab.engines.company.edgar.docs.fetch import _htmlToText
+        from dartlab.providers.edgar.docs.fetch import _htmlToText
 
         html = """
         <html>
@@ -100,7 +100,7 @@ class TestEdgarCompanyLiveFilings:
         assert "| Item | Value |" in text
 
     def test_live_filings_normalizes_edgar_rows(self, monkeypatch):
-        from dartlab.engines.company.edgar.company import Company as EdgarCompany
+        from dartlab.providers.edgar.company import Company as EdgarCompany
 
         class FakeOpenEdgarCompany:
             def filings(self, *, forms=None, since=None, until=None):
@@ -133,7 +133,7 @@ class TestEdgarCompanyLiveFilings:
                 assert ticker == "AAPL"
                 return FakeOpenEdgarCompany()
 
-        monkeypatch.setattr("dartlab.engines.company.edgar.openapi.edgar.OpenEdgar", FakeOpenEdgar)
+        monkeypatch.setattr("dartlab.providers.edgar.openapi.edgar.OpenEdgar", FakeOpenEdgar)
 
         company = EdgarCompany.__new__(EdgarCompany)
         company.ticker = "AAPL"
@@ -155,14 +155,14 @@ class TestEdgarCompanyLiveFilings:
         assert result.item(0, "docUrl").endswith(".htm")
 
     def test_read_filing_uses_url_and_text_fallback(self, monkeypatch):
-        from dartlab.engines.company.edgar.company import Company as EdgarCompany
+        from dartlab.providers.edgar.company import Company as EdgarCompany
 
         monkeypatch.setattr(
-            "dartlab.engines.company.edgar.docs.fetch._downloadFilingSource",
+            "dartlab.providers.edgar.docs.fetch._downloadFilingSource",
             lambda filing: "<html><body>Quarterly filing body</body></html>",
         )
         monkeypatch.setattr(
-            "dartlab.engines.company.edgar.docs.fetch._htmlToText",
+            "dartlab.providers.edgar.docs.fetch._htmlToText",
             lambda raw: "Quarterly filing body",
         )
 

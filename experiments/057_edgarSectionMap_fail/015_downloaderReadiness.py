@@ -17,7 +17,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.company.edgar.docs.fetch import summarizeEdgarDocsParquet
+from dartlab.providers.edgar.docs.fetch import summarizeEdgarDocsParquet
 
 
 def _loadProgress(progressPath: Path) -> pl.DataFrame:

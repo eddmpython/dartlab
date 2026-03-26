@@ -11,10 +11,10 @@ from typing import Any
 import polars as pl
 
 from dartlab import Company
-from dartlab.engines.ai.context.snapshot import build_snapshot
-from dartlab.engines.ai.conversation.focus import build_diff_context, build_focus_context
-from dartlab.engines.ai.conversation.history import build_history_messages
-from dartlab.engines.ai.conversation.prompts import build_dynamic_chat_prompt
+from dartlab.ai.context.snapshot import build_snapshot
+from dartlab.ai.conversation.focus import build_diff_context, build_focus_context
+from dartlab.ai.conversation.history import build_history_messages
+from dartlab.ai.conversation.prompts import build_dynamic_chat_prompt
 
 from .models import HistoryMessage
 
@@ -64,7 +64,7 @@ def build_topic_summary_prompt(
         (messages, context_text) 또는 None.
         caller가 LLM.stream(messages)으로 요약을 생성한다.
     """
-    from dartlab.engines.ai.conversation.focus import _build_topic_diff_snippet, _stringify_focus_value
+    from dartlab.ai.conversation.focus import _build_topic_diff_snippet, _stringify_focus_value
 
     if not hasattr(company, "show"):
         return None

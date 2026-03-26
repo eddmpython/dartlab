@@ -193,7 +193,7 @@ def run():
     print("  098-004: 멀티토픽 결합 TF-IDF peer")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     for row in kindDf.iter_rows(named=True):

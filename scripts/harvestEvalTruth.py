@@ -51,7 +51,7 @@ def main() -> None:
         print(f"  [{c.get('severity', '?')}] {c['id']} — {c['question'][:40]}")
 
     # lazy import — Company 로드는 여기서부터
-    from dartlab.engines.ai.eval.truthHarvester import harvestBatch
+    from dartlab.ai.eval.truthHarvester import harvestBatch
 
     results = harvestBatch(targetCases)
 

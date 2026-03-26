@@ -11,8 +11,8 @@ router = APIRouter()
 
 def _get_fred():
     """Fred 인스턴스 생성 — API 키 없으면 503."""
-    from dartlab.engines.gather.fred import Fred
-    from dartlab.engines.gather.fred.types import AuthenticationError
+    from dartlab.gather.fred import Fred
+    from dartlab.gather.fred.types import AuthenticationError
 
     try:
         return Fred()
@@ -40,7 +40,7 @@ async def api_fred_series(
     window: int = Query(12),
 ):
     """FRED 시계열 조회 + 변환."""
-    from dartlab.engines.gather.fred.types import FredError
+    from dartlab.gather.fred.types import FredError
 
     f = _get_fred()
     try:
@@ -76,7 +76,7 @@ async def api_fred_search(
     limit: int = Query(20),
 ):
     """FRED 시리즈 검색."""
-    from dartlab.engines.gather.fred.types import FredError
+    from dartlab.gather.fred.types import FredError
 
     f = _get_fred()
     try:
@@ -98,8 +98,8 @@ async def api_fred_compare(
     normalize_to: str | None = Query(None),
 ):
     """복수 시계열 비교."""
-    from dartlab.engines.gather.fred import transform as _transform
-    from dartlab.engines.gather.fred.types import FredError
+    from dartlab.gather.fred import transform as _transform
+    from dartlab.gather.fred.types import FredError
 
     series_ids = [s.strip() for s in ids.split(",") if s.strip()]
     if len(series_ids) < 2:
@@ -125,7 +125,7 @@ async def api_fred_catalog(
     group: str | None = Query(None),
 ):
     """주요 경제지표 카탈로그."""
-    from dartlab.engines.gather.fred.catalog import get_groups, to_dataframe
+    from dartlab.gather.fred.catalog import get_groups, to_dataframe
 
     if group and group not in get_groups():
         raise HTTPException(status_code=400, detail=f"그룹 없음. 사용 가능: {', '.join(get_groups())}")
@@ -146,7 +146,7 @@ async def api_fred_correlation(
     lead_lag: str | None = Query(None, description="선행/후행 분석 쌍 (콤마 구분 2개)"),
 ):
     """시계열 상관분석 + 선행/후행."""
-    from dartlab.engines.gather.fred.types import FredError
+    from dartlab.gather.fred.types import FredError
 
     series_ids = [s.strip() for s in ids.split(",") if s.strip()]
     if len(series_ids) < 2:

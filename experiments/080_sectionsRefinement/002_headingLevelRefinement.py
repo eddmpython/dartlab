@@ -43,9 +43,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
-from dartlab.engines.company.dart.docs.sections.pipeline import iterPeriodSubsets
-from dartlab.engines.company.dart.docs.sections.textStructure import (
+from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.providers.dart.docs.sections.pipeline import iterPeriodSubsets
+from dartlab.providers.dart.docs.sections.textStructure import (
     _RE_BRACKET,
     _RE_CIRCLED,
     _RE_HEADING_NOISE,
@@ -334,7 +334,7 @@ def run_experiment():
     print("\n@topic: 감지 테스트:")
     topic_pass = True
     for text, topic, desc in topic_tests:
-        from dartlab.engines.company.dart.docs.sections.textStructure import mapSectionTitle
+        from dartlab.providers.dart.docs.sections.textStructure import mapSectionTitle
         # monkeypatch 대신 직접 테스트 — mapSectionTitle이 topic으로 매핑하는지 확인
         nodes = parse_6level(text, topic=topic)
         first_heading = nodes[0] if nodes else {}

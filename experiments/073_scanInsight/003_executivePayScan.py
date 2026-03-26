@@ -328,7 +328,7 @@ def compute_pay_ratio(exec_df: pl.DataFrame, emp_df: pl.DataFrame) -> pl.DataFra
 
 def analyze_by_market(merged: pl.DataFrame) -> None:
     """시장별/업종별 pay ratio 분석."""
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
 
     _, _, _, listing_meta = load_listing()
 

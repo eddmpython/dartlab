@@ -50,8 +50,8 @@ sys.path.insert(0, "src")
 
 
 def main():
-    from dartlab.engines.ai.tools.registry import build_tool_runtime
-    from dartlab.engines.common.topicLabels import (
+    from dartlab.ai.tools.registry import build_tool_runtime
+    from dartlab.core.topicLabels import (
         TOPIC_LABELS,
         buildTopicEnumDescription,
     )

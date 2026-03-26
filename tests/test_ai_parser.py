@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-from dartlab.engines.ai.aiParser import (
+from dartlab.ai.aiParser import (
     Anomaly,
     _statistical_prescreen,
     classify_text,
@@ -176,7 +176,7 @@ class TestDetectAnomalies:
         def raise_runtime_error(*args, **kwargs):
             raise RuntimeError("llm unavailable")
 
-        monkeypatch.setattr("dartlab.engines.ai.aiParser._llm_call", raise_runtime_error)
+        monkeypatch.setattr("dartlab.ai.aiParser._llm_call", raise_runtime_error)
 
         anomalies = detect_anomalies(df, use_llm=True, threshold_pct=50.0)
 

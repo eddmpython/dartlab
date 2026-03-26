@@ -34,7 +34,7 @@ import sys
 
 sys.path.insert(0, "src")
 
-from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+from dartlab.core.finance.ratios import RATIO_CATEGORIES
 
 
 def ratioSeriesToSparklines(company):

@@ -6,11 +6,11 @@ import importlib
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.views import contextSlices
+from dartlab.providers.dart.docs.sections.views import contextSlices
 
 
 def test_sections_pipeline_preserves_markdown_tables_and_period_order(monkeypatch):
-    pipeline = importlib.import_module("dartlab.engines.company.dart.docs.sections.pipeline")
+    pipeline = importlib.import_module("dartlab.providers.dart.docs.sections.pipeline")
 
     df = pl.DataFrame(
         {
@@ -58,7 +58,7 @@ def test_sections_pipeline_preserves_markdown_tables_and_period_order(monkeypatc
 
 
 def test_sections_pipeline_preserves_multiple_blocks_within_same_topic(monkeypatch):
-    pipeline = importlib.import_module("dartlab.engines.company.dart.docs.sections.pipeline")
+    pipeline = importlib.import_module("dartlab.providers.dart.docs.sections.pipeline")
 
     df = pl.DataFrame(
         {
@@ -105,7 +105,7 @@ def test_sections_pipeline_preserves_multiple_blocks_within_same_topic(monkeypat
 
 
 def test_sections_pipeline_hides_detail_topics_from_core_view(monkeypatch):
-    pipeline = importlib.import_module("dartlab.engines.company.dart.docs.sections.pipeline")
+    pipeline = importlib.import_module("dartlab.providers.dart.docs.sections.pipeline")
 
     df = pl.DataFrame(
         {
@@ -143,7 +143,7 @@ def test_sections_pipeline_hides_detail_topics_from_core_view(monkeypatch):
 
 
 def test_context_slices_skip_placeholder_blocks(monkeypatch):
-    views = importlib.import_module("dartlab.engines.company.dart.docs.sections.views")
+    views = importlib.import_module("dartlab.providers.dart.docs.sections.views")
     fake = pl.DataFrame(
         {
             "stockCode": ["TEST", "TEST"],

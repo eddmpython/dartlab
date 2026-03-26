@@ -33,7 +33,7 @@ import re
 import zipfile
 from collections import Counter
 
-from dartlab.engines.company.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.client import DartClient
 
 
 def main():

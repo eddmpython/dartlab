@@ -45,7 +45,7 @@ import sys
 
 import psutil
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.pipeline import sections
 
 
 def main(stockCode: str = "005930") -> None:

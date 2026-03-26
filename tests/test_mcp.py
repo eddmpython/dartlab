@@ -96,7 +96,7 @@ def test_company_cache_reuses(monkeypatch):
 
 def test_full_tools_exposed():
     """dummy company로 전체 도구가 노출되는지 확인."""
-    from dartlab.engines.ai.tools.registry import build_tool_runtime
+    from dartlab.ai.tools.registry import build_tool_runtime
     from dartlab.mcp.bridge import build_mcp_tools
 
     rt_none = build_tool_runtime(None, name="test-none")
@@ -111,7 +111,7 @@ def test_full_tools_exposed():
 
 def test_company_tools_have_stock_code_in_schema():
     """company 필요 도구의 inputSchema에 stock_code가 주입되는지 확인."""
-    from dartlab.engines.ai.tools.registry import build_tool_runtime
+    from dartlab.ai.tools.registry import build_tool_runtime
     from dartlab.mcp.bridge import build_mcp_tools
 
     rt_none = build_tool_runtime(None, name="base")

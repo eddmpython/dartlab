@@ -37,7 +37,7 @@ def main():
     import functools
 
     import dartlab
-    from dartlab.engines.company.dart.docs.sections import pipeline
+    from dartlab.providers.dart.docs.sections import pipeline
 
     # 원본 함수 참조 저장
     original_fn = pipeline._comparablePathInfo

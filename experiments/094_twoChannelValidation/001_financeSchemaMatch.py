@@ -90,7 +90,7 @@ def main():
     print("2. API 직접 수집 (saveFinance)")
     print("=" * 80)
 
-    from dartlab.engines.company.dart.openapi.dart import Dart
+    from dartlab.providers.dart.openapi.dart import Dart
 
     d = Dart()
     s = d("005930")
@@ -101,7 +101,7 @@ def main():
     print(f"  API 원본 컬럼: {apiDf.columns}")
 
     # enrichFinance 적용
-    from dartlab.engines.company.dart.openapi.saver import enrichFinance
+    from dartlab.providers.dart.openapi.saver import enrichFinance
 
     enriched = enrichFinance(apiDf, "005930", "삼성전자")
     print(f"\n  enriched: {enriched.shape}")
@@ -216,7 +216,7 @@ def main():
     print("=" * 80)
 
     tmpPath = TEMP_DIR / "finance_api_test.parquet"
-    from dartlab.engines.company.dart.openapi.saver import save as saveFile
+    from dartlab.providers.dart.openapi.saver import save as saveFile
 
     # 기존 파일 없이 저장
     if tmpPath.exists():

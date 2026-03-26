@@ -181,7 +181,7 @@ def cross_validate():
         print(f"  {n}축: {cnt}개 ({cnt/len(all_codes)*100:.1f}%)")
 
     # listing 조인으로 시장별
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
     _, _, _, listing_meta = load_listing()
 
     for market in ["유가", "코스닥", "코넥스"]:

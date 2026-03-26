@@ -4,16 +4,16 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections._common import (
+from dartlab.providers.dart.docs.sections._common import (
     periodOrderValue,
     periodSortKey,
     sortPeriods,
 )
-from dartlab.engines.company.dart.docs.sections.artifacts import (
+from dartlab.providers.dart.docs.sections.artifacts import (
     loadProjectionRules,
     loadSectionProfileTable,
 )
-from dartlab.engines.company.dart.docs.sections.runtime import (
+from dartlab.providers.dart.docs.sections.runtime import (
     applyProjections,
     chapterTeacherTopics,
     detailTopicForBlock,
@@ -22,7 +22,7 @@ from dartlab.engines.company.dart.docs.sections.runtime import (
     semanticTopicForBlock,
     semanticTopicForLabel,
 )
-from dartlab.engines.company.dart.docs.sections.views import (
+from dartlab.providers.dart.docs.sections.views import (
     blockPriority,
     isBoilerplateTopic,
     isPlaceholderBlock,

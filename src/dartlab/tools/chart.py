@@ -829,7 +829,7 @@ def spec_ratio_sparklines(company: Any) -> dict | None:
 
     실험 005 ratioSparklines 흡수.
     """
-    from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+    from dartlab.core.finance.ratios import RATIO_CATEGORIES
 
     rs = getattr(company, "ratioSeries", None)
     if rs is None:

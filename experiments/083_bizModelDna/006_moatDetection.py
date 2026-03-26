@@ -190,8 +190,8 @@ def _extractMoatScores(stockCode: str) -> dict:
 
 def runMoatDetection(*, verbose: bool = True) -> pl.DataFrame:
     """해자 탐지 실행."""
-    from dartlab.engines.common.finance.ratios import calcRatios
-    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+    from dartlab.core.finance.ratios import calcRatios
+    from dartlab.providers.dart.finance.pivot import buildTimeseries
 
     rows = []
     for stockCode, corpName, sector in ALL_COMPANIES:

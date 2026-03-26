@@ -8,7 +8,7 @@ from dartlab.core.dataLoader import (
 from dartlab.core.notesExtractor import extractNotesContent, findNumberedSection
 from dartlab.core.reportSelector import extractReportYear, selectReport
 from dartlab.core.tableParser import detectUnit, extractAccounts, extractTables, parseAmount
-from dartlab.engines.gather.listing import (
+from dartlab.gather.listing import (
     codeToName,
     fuzzySearch,
     getKindList,

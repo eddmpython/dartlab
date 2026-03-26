@@ -118,7 +118,7 @@ def reportShowHybrid(company, stockCode: str, topic: str) -> Any:
 
 
 def buildDocsSource(stockCode: str, topic: str) -> dict[str, Any] | None:
-    from dartlab.engines.company.dart.docs.sections import retrievalBlocks
+    from dartlab.providers.dart.docs.sections import retrievalBlocks
 
     blocks = retrievalBlocks(stockCode)
     if blocks is None or blocks.is_empty():

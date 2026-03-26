@@ -29,7 +29,7 @@ import traceback
 from pathlib import Path
 
 from dartlab import config
-from dartlab.engines.company.edgar.docs.sections.pipeline import sections
+from dartlab.providers.edgar.docs.sections.pipeline import sections
 
 
 def main() -> None:

@@ -73,7 +73,7 @@ def run(args) -> int:
         console.print("[/]")
     console.print()
 
-    from dartlab.engines.ai.runtime.standalone import ask as _ask
+    from dartlab.ai.runtime.standalone import ask as _ask
 
     # 대화 연속 모드
     session_id = None

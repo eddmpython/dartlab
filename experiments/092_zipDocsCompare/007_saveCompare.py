@@ -36,7 +36,7 @@ import polars as pl
 from bs4 import BeautifulSoup
 from lxml import etree
 
-from dartlab.engines.company.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.client import DartClient
 
 
 TEMP_DIR = Path(__file__).parent / "temp"

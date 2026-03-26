@@ -48,9 +48,9 @@
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.disclosureSignal import extractSignal
-from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
-from dartlab.engines.common.finance.extract import getTTM
+from dartlab.analysis.accounting.disclosureSignal import extractSignal
+from dartlab.analysis.forecast.revenueForecast import forecastRevenue
+from dartlab.core.finance.extract import getTTM
 
 STOCKS = [
     ("005930", "삼성전자", 1170e12),

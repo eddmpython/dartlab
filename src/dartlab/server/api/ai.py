@@ -52,7 +52,7 @@ _oauth_state: dict[str, Any] = {}
 
 
 def _build_open_dart_status() -> dict[str, Any]:
-    from dartlab.engines.company.dart.openapi.dartKey import getDartKeyStatus
+    from dartlab.providers.dart.openapi.dartKey import getDartKeyStatus
 
     return getDartKeyStatus().toDict()
 
@@ -124,7 +124,7 @@ def api_status(
     )
     codex_detail = {"installed": False, "authenticated": False, "authMode": None, "loginStatus": None, "version": None}
     try:
-        from dartlab.engines.ai.providers.support.cli_setup import detect_codex
+        from dartlab.ai.providers.support.cli_setup import detect_codex
 
         codex_detail = detect_codex()
     except (
@@ -185,8 +185,8 @@ def api_status(
 def api_suggest(stockCode: str = Query(..., description="추천 질문을 생성할 종목코드")):
     """회사 데이터 상태에 맞는 추천 질문 목록을 반환한다."""
     try:
-        from dartlab.engines.ai.conversation.data_ready import getDataReadyStatus
-        from dartlab.engines.ai.conversation.suggestions import suggestQuestions
+        from dartlab.ai.conversation.data_ready import getDataReadyStatus
+        from dartlab.ai.conversation.suggestions import suggestQuestions
 
         from ..services.company_api import get_company
 
@@ -262,7 +262,7 @@ def api_ai_profile_secret(req: AiSecretUpdateRequest):
 @router.post("/api/openapi/dart-key/validate")
 def api_validate_dart_key(req: DartKeyUpdateRequest):
     """OpenDART API 키 유효성만 검증한다."""
-    from dartlab.engines.company.dart.openapi.dartKey import validateDartApiKey
+    from dartlab.providers.dart.openapi.dartKey import validateDartApiKey
 
     api_key = (req.api_key or "").strip()
     if not api_key:
@@ -279,7 +279,7 @@ def api_validate_dart_key(req: DartKeyUpdateRequest):
 @router.put("/api/openapi/dart-key")
 def api_save_dart_key(req: DartKeyUpdateRequest):
     """프로젝트 .env에 OpenDART API 키를 저장한다."""
-    from dartlab.engines.company.dart.openapi.dartKey import saveDartKeyToDotenv
+    from dartlab.providers.dart.openapi.dartKey import saveDartKeyToDotenv
 
     api_key = (req.api_key or "").strip()
     if not api_key:
@@ -294,7 +294,7 @@ def api_save_dart_key(req: DartKeyUpdateRequest):
 @router.delete("/api/openapi/dart-key")
 def api_delete_dart_key():
     """프로젝트 .env의 OpenDART API 키를 제거한다."""
-    from dartlab.engines.company.dart.openapi.dartKey import clearDartKeyFromDotenv
+    from dartlab.providers.dart.openapi.dartKey import clearDartKeyFromDotenv
 
     try:
         env_path = clearDartKeyFromDotenv()
@@ -356,18 +356,18 @@ async def api_ai_profile_events(request: Request):
 @router.get("/api/models/{provider}")
 def api_models(provider: str):
     """Provider별 사용 가능한 모델 목록 — SDK/API 자동 조회, 실패시 fallback."""
-    from dartlab.engines.ai.providers import create_provider
-    from dartlab.engines.ai.types import LLMConfig
+    from dartlab.ai.providers import create_provider
+    from dartlab.ai.types import LLMConfig
 
     provider = _normalize_provider_name(provider) or provider
 
     if provider == "codex":
-        from dartlab.engines.ai.providers.support.codex_cli import get_codex_model_catalog
+        from dartlab.ai.providers.support.codex_cli import get_codex_model_catalog
 
         return {"models": get_codex_model_catalog()}
 
     if provider == "oauth-codex":
-        from dartlab.engines.ai.providers.oauth_codex import AVAILABLE_MODELS
+        from dartlab.ai.providers.oauth_codex import AVAILABLE_MODELS
 
         return {"models": AVAILABLE_MODELS}
 
@@ -405,7 +405,7 @@ def api_models(provider: str):
 
 def _get_api_key(provider: str) -> str | None:
     """글로벌 config 또는 환경변수에서 API 키를 가져온다."""
-    from dartlab.engines.ai import get_config
+    from dartlab.ai import get_config
 
     config = get_config(provider)
     if config.api_key:
@@ -481,7 +481,7 @@ def _fetch_openai_models() -> list[str]:
 @router.post("/api/codex/logout")
 def api_codex_logout():
     """Codex CLI에 저장된 계정 인증을 제거한다."""
-    from dartlab.engines.ai.providers.support.codex_cli import logout_codex_cli
+    from dartlab.ai.providers.support.codex_cli import logout_codex_cli
 
     try:
         logout_codex_cli()
@@ -495,7 +495,7 @@ def api_codex_logout():
 @router.get("/api/oauth/authorize")
 def api_oauth_authorize():
     """ChatGPT OAuth 인증 시작 — 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
-    from dartlab.engines.ai.providers.support.oauth_token import OAUTH_REDIRECT_PORT, build_auth_url
+    from dartlab.ai.providers.support.oauth_token import OAUTH_REDIRECT_PORT, build_auth_url
 
     auth_url, verifier, state = build_auth_url()
 
@@ -522,7 +522,7 @@ def api_oauth_status():
 @router.post("/api/oauth/logout")
 def api_oauth_logout():
     """OAuth 토큰 제거."""
-    from dartlab.engines.ai.providers.support.oauth_token import revoke_token
+    from dartlab.ai.providers.support.oauth_token import revoke_token
 
     revoke_token()
     get_profile_manager().update(provider="oauth-codex", updated_by="ui")
@@ -567,7 +567,7 @@ def _start_oauth_callback_server(port: int):
                 return
 
             try:
-                from dartlab.engines.ai.providers.support.oauth_token import exchange_code
+                from dartlab.ai.providers.support.oauth_token import exchange_code
 
                 exchange_code(code, _oauth_state["verifier"])
                 get_profile_manager().update(provider="oauth-codex", updated_by="ui")

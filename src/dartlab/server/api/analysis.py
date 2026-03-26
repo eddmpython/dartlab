@@ -48,7 +48,7 @@ def api_company_diff_matrix(
     except HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=sanitize_error(e))
 
-    from dartlab.engines.common.docs.diff import build_diff_matrix, build_heatmap_spec
+    from dartlab.core.docs.diff import build_diff_matrix, build_heatmap_spec
 
     try:
         sections = c.docs.sections.raw
@@ -94,7 +94,7 @@ def api_company_diff_topic(
 
         diff_chunks: list[dict] = []
         if result is not None:
-            from dartlab.engines.common.docs.diff import charDiff
+            from dartlab.core.docs.diff import charDiff
 
             rows = result.to_dicts()
             i = 0
@@ -160,7 +160,7 @@ def api_company_bridge(
 
     import polars as pl
 
-    from dartlab.engines.common.docs.bridge import (
+    from dartlab.core.docs.bridge import (
         extract_amounts_from_text,
         get_finance_amounts,
         match_amounts,
@@ -217,7 +217,7 @@ def api_company_topics_graph(
     except HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=sanitize_error(e))
 
-    from dartlab.engines.common.docs.topicGraph import (
+    from dartlab.core.docs.topicGraph import (
         analyze_graph,
         build_mention_matrix,
     )
@@ -364,7 +364,7 @@ def api_company_search_index(code: str, request: Request, response: Response):
 def api_company_modules(code: str):
     """기업의 사용 가능한 데이터 모듈 목록."""
     try:
-        from dartlab.engines.ai.context.builder import scan_available_modules
+        from dartlab.ai.context.builder import scan_available_modules
 
         c = get_company(code)
         modules = scan_available_modules(c)

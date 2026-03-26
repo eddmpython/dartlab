@@ -11,7 +11,7 @@ pytestmark = pytest.mark.integration
 @requires_samsung
 class TestTangibleAsset:
     def test_basic(self):
-        from dartlab.engines.company.dart.docs.finance.tangibleAsset import tangibleAsset
+        from dartlab.providers.dart.docs.finance.tangibleAsset import tangibleAsset
 
         r = tangibleAsset(SAMSUNG)
         assert r is not None
@@ -19,14 +19,14 @@ class TestTangibleAsset:
         assert r.nYears >= 1
 
     def test_reliability(self):
-        from dartlab.engines.company.dart.docs.finance.tangibleAsset import tangibleAsset
+        from dartlab.providers.dart.docs.finance.tangibleAsset import tangibleAsset
 
         r = tangibleAsset(SAMSUNG)
         assert r is not None
         assert r.reliability in ("high", "low")
 
     def test_movements(self):
-        from dartlab.engines.company.dart.docs.finance.tangibleAsset import tangibleAsset
+        from dartlab.providers.dart.docs.finance.tangibleAsset import tangibleAsset
 
         r = tangibleAsset(SAMSUNG)
         assert r is not None
@@ -39,7 +39,7 @@ class TestTangibleAsset:
                 assert len(mv.rows) >= 1
 
     def test_movement_df(self):
-        from dartlab.engines.company.dart.docs.finance.tangibleAsset import tangibleAsset
+        from dartlab.providers.dart.docs.finance.tangibleAsset import tangibleAsset
 
         r = tangibleAsset(SAMSUNG)
         assert r is not None

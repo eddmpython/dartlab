@@ -55,7 +55,7 @@ def make_profiles():
 
 
 def test_all():
-    from dartlab.engines.analysis.insight.anomaly import detectRevenueQuality
+    from dartlab.analysis.financial.insight.anomaly import detectRevenueQuality
 
     profiles = make_profiles()
 

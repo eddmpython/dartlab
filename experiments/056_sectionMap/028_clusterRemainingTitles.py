@@ -34,7 +34,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
+from dartlab.providers.dart.docs.sections.mapper import loadSectionMappings, normalizeSectionTitle
 
 CHAPTER_RE = re.compile(r"^\s*([IVX]{1,5})\.\s*(.*)$")
 

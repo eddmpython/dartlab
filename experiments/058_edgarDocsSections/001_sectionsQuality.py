@@ -25,7 +25,7 @@
 
 from __future__ import annotations
 
-from dartlab.engines.company.edgar.docs.sections.pipeline import sections
+from dartlab.providers.edgar.docs.sections.pipeline import sections
 
 SAMPLE_TICKERS = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",

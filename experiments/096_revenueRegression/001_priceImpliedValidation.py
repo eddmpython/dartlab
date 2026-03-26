@@ -40,9 +40,9 @@ import sys
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.priceImplied import reverseImpliedGrowth, computeGap
-from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
-from dartlab.engines.common.finance.extract import getTTM
+from dartlab.analysis.valuation.priceImplied import reverseImpliedGrowth, computeGap
+from dartlab.analysis.forecast.revenueForecast import forecastRevenue
+from dartlab.core.finance.extract import getTTM
 
 # 테스트 종목
 # (코드, 이름, 섹터, 시가총액_조원_수동)

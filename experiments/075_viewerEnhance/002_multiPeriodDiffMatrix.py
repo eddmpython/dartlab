@@ -47,7 +47,7 @@
 import polars as pl
 
 import dartlab
-from dartlab.engines.common.docs.diff import sectionsDiff
+from dartlab.core.docs.diff import sectionsDiff
 
 
 def build_diff_matrix(sections_df: pl.DataFrame) -> dict:

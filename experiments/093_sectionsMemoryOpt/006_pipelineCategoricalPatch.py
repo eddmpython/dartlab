@@ -77,7 +77,7 @@ def main(stockCode: str = "005930") -> None:
     print(f"시작 RSS: {baseRss:.0f}MB\n")
 
     # --- Baseline ---
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
+    from dartlab.providers.dart.docs.sections.pipeline import sections
 
     dfOrig = sections(stockCode)
     gc.collect()
@@ -94,7 +94,7 @@ def main(stockCode: str = "005930") -> None:
     print(f"  del 후 RSS: {afterDelRss:.0f}MB (회수: {origRss - afterDelRss:.0f}MB)\n")
 
     # --- Patched: monkey-patch sections의 schema ---
-    import dartlab.engines.company.dart.docs.sections.pipeline as pipeline
+    import dartlab.providers.dart.docs.sections.pipeline as pipeline
 
     origFn = pipeline.sections
 

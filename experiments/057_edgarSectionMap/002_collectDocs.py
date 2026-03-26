@@ -108,7 +108,7 @@ def _buildTickerList(limit: int | None = None) -> list[str]:
 
 
 def _collectSingleTicker(ticker: str) -> None:
-    from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
+    from dartlab.providers.edgar.docs.fetch import fetchEdgarDocs
 
     docsDir = _docsDir()
     outPath = docsDir / f"{ticker}.parquet"

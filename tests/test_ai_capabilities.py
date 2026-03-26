@@ -9,12 +9,12 @@ from types import SimpleNamespace
 import polars as pl
 
 from dartlab.core.capabilities import CapabilityKind, UiAction, get_capability_specs
-from dartlab.engines.ai.context import build_context_skeleton
-from dartlab.engines.ai.context.company_adapter import get_headline_ratios, get_ratio_series
-from dartlab.engines.ai.context.snapshot import build_snapshot
-from dartlab.engines.ai.runtime.events import EventKind
-from dartlab.engines.ai.spec import buildSpec
-from dartlab.engines.ai.tools.registry import build_tool_runtime
+from dartlab.ai.context import build_context_skeleton
+from dartlab.ai.context.company_adapter import get_headline_ratios, get_ratio_series
+from dartlab.ai.context.snapshot import build_snapshot
+from dartlab.ai.runtime.events import EventKind
+from dartlab.ai.spec import buildSpec
+from dartlab.ai.tools.registry import build_tool_runtime
 
 
 class FakeRatioResult:
@@ -114,7 +114,7 @@ def test_build_snapshot_can_skip_insights(monkeypatch):
         insight_calls["count"] += 1
         return None
 
-    monkeypatch.setattr("dartlab.engines.analysis.insight.pipeline.analyze", fake_analyze)
+    monkeypatch.setattr("dartlab.analysis.financial.insight.pipeline.analyze", fake_analyze)
 
     snapshot = build_snapshot(company, includeInsights=False)
 

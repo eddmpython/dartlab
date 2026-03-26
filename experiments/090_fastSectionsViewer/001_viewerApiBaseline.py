@@ -409,7 +409,7 @@ def printComparisonSummary(title: str, rows: list[dict[str, Any]]) -> None:
 class BaselineViewerRuntime:
     def __init__(self, stockCode: str):
         import dartlab
-        from dartlab.engines.company.dart.docs.viewer import (
+        from dartlab.providers.dart.docs.viewer import (
             serializeViewerBlock,
             serializeViewerTextDocument,
             viewerBlocks,

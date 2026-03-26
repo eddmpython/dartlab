@@ -289,7 +289,7 @@ def compute_debt_mix() -> pl.DataFrame:
 
 
 def analyze_by_market(df: pl.DataFrame) -> None:
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
     _, _, _, listing_meta = load_listing()
 
     rows = []

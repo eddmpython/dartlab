@@ -9,7 +9,7 @@ pytestmark = pytest.mark.integration
 
 def test_all_benchmarks_have_meta():
     """모든 벤치마크에 _meta (updated, source) 존재 확인."""
-    from dartlab.engines.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
+    from dartlab.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
 
     for key, data in BENCHMARK_DATA.items():
         meta = data.get("_meta")
@@ -20,7 +20,7 @@ def test_all_benchmarks_have_meta():
 
 def test_all_benchmarks_have_metrics():
     """모든 벤치마크에 지표가 1개 이상 존재 확인."""
-    from dartlab.engines.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
+    from dartlab.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
 
     for key, data in BENCHMARK_DATA.items():
         metrics = data.get("지표", {})
@@ -34,8 +34,8 @@ def test_all_benchmarks_have_metrics():
 
 def test_benchmark_render_all():
     """모든 벤치마크가 렌더링 가능 확인."""
-    from dartlab.engines.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
-    from dartlab.engines.ai.conversation.templates.benchmarks import render_benchmark
+    from dartlab.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
+    from dartlab.ai.conversation.templates.benchmarks import render_benchmark
 
     for key in BENCHMARK_DATA:
         result = render_benchmark(key)
@@ -46,15 +46,15 @@ def test_benchmark_render_all():
 
 def test_render_nonexistent_returns_empty():
     """존재하지 않는 키는 빈 문자열 반환."""
-    from dartlab.engines.ai.conversation.templates.benchmarks import render_benchmark
+    from dartlab.ai.conversation.templates.benchmarks import render_benchmark
 
     assert render_benchmark("존재하지않는업종") == ""
 
 
 def test_sector_map_covers_all_benchmarks():
     """SECTOR_MAP의 모든 값이 BENCHMARK_DATA에 존재."""
-    from dartlab.engines.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
-    from dartlab.engines.ai.conversation.templates.benchmarks import _SECTOR_MAP
+    from dartlab.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
+    from dartlab.ai.conversation.templates.benchmarks import _SECTOR_MAP
 
     benchmark_keys = set(BENCHMARK_DATA.keys())
     for sector, mapped_key in _SECTOR_MAP.items():
@@ -63,7 +63,7 @@ def test_sector_map_covers_all_benchmarks():
 
 def test_industry_benchmarks_cache_matches_render():
     """_INDUSTRY_BENCHMARKS 캐시가 render_benchmark와 동일한 결과."""
-    from dartlab.engines.ai.conversation.templates.benchmarks import (
+    from dartlab.ai.conversation.templates.benchmarks import (
         _INDUSTRY_BENCHMARKS,
         render_benchmark,
     )
@@ -75,6 +75,6 @@ def test_industry_benchmarks_cache_matches_render():
 
 def test_benchmark_data_count():
     """벤치마크 데이터 16개 (15 업종 + 일반) 확인."""
-    from dartlab.engines.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
+    from dartlab.ai.conversation.templates.benchmarkData import BENCHMARK_DATA
 
     assert len(BENCHMARK_DATA) == 16, f"벤치마크 {len(BENCHMARK_DATA)}개 (기대: 16)"

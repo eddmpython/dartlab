@@ -4,7 +4,7 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.viewer import (
+from dartlab.providers.dart.docs.viewer import (
     BlockMeta,
     ChangeSummary,
     ViewerBlock,

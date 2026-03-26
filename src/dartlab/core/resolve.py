@@ -119,7 +119,7 @@ def collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
 
     # fuzzy fallback: substring 매칭이 없으면 초성/Levenshtein 시도
     if not result and not strict:
-        from dartlab.engines.gather.listing import fuzzySearch
+        from dartlab.gather.listing import fuzzySearch
 
         try:
             fuzzy_df = fuzzySearch(query, maxResults=5)

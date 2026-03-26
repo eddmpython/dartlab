@@ -45,9 +45,9 @@ def _period_cols(df: pl.DataFrame) -> list[str]:
 def _load_sections(code: str, market: str) -> pl.DataFrame | None:
     try:
         if market == "DART":
-            from dartlab.engines.company.dart.docs.sections.pipeline import sections
+            from dartlab.providers.dart.docs.sections.pipeline import sections
         else:
-            from dartlab.engines.company.edgar.docs.sections.pipeline import sections
+            from dartlab.providers.edgar.docs.sections.pipeline import sections
         return sections(code)
     except Exception:
         return None

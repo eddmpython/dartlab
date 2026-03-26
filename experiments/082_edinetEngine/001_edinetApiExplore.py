@@ -54,7 +54,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def explore():
-    from dartlab.engines.company.edinet.openapi.client import EdinetClient
+    from dartlab.providers.edinet.openapi.client import EdinetClient
 
     client = EdinetClient(apiKey=API_KEY)
 

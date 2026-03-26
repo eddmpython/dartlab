@@ -250,7 +250,7 @@ def scan_employee() -> pl.DataFrame:
 
 def analyze_by_industry(df: pl.DataFrame) -> None:
     """업종별 급여/인력 분석."""
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
 
     _, _, _, listing_meta = load_listing()
 

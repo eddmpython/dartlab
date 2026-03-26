@@ -68,8 +68,8 @@ QUESTIONS = [
 
 def runQuestion(company, question: str, label: str) -> dict:
     """단일 질문 실행 — 수치 추출 + 검증."""
-    from dartlab.engines.ai.runtime.core import analyze
-    from dartlab.engines.ai.runtime.validation import extract_numbers, validate_claims
+    from dartlab.ai.runtime.core import analyze
+    from dartlab.ai.runtime.validation import extract_numbers, validate_claims
 
     chunks = []
     toolCalls = []
@@ -147,7 +147,7 @@ def main():
     # baseline: finance 실제값 확인
     print("\n[2] Finance 실제값 baseline")
     try:
-        from dartlab.engines.ai.context.company_adapter import get_headline_ratios
+        from dartlab.ai.context.company_adapter import get_headline_ratios
 
         ratios = get_headline_ratios(c)
         if ratios:

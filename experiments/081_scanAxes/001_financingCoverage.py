@@ -52,8 +52,8 @@ import polars as pl
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from dartlab.engines.company.dart.scan._helpers import load_listing, parse_date_year, parse_num, scan_parquets
-from dartlab.engines.company.dart.scan.capital.scanner import scan_capital_change
+from dartlab.market._helpers import load_listing, parse_date_year, parse_num, scan_parquets
+from dartlab.market.capital.scanner import scan_capital_change
 
 SUM_LABEL = "합계"
 COMMON_LABEL = "보통주"

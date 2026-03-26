@@ -15,8 +15,7 @@ _MAPPER_DATA = (
     Path(__file__).resolve().parent.parent
     / "src"
     / "dartlab"
-    / "engines"
-    / "company"
+    / "providers"
     / "dart"
     / "finance"
     / "mapperData"
@@ -123,7 +122,7 @@ class TestSynonyms:
 
     def test_id_synonyms_no_circular(self):
         """ID_SYNONYMS에 순환 참조 없음 (A→B, B→A 금지)."""
-        from dartlab.engines.company.dart.finance.mapper import ID_SYNONYMS
+        from dartlab.providers.dart.finance.mapper import ID_SYNONYMS
 
         for key, val in ID_SYNONYMS.items():
             if val in ID_SYNONYMS:
@@ -132,7 +131,7 @@ class TestSynonyms:
 
     def test_account_name_synonyms_no_circular(self):
         """ACCOUNT_NAME_SYNONYMS에 순환 참조 없음."""
-        from dartlab.engines.company.dart.finance.mapper import ACCOUNT_NAME_SYNONYMS
+        from dartlab.providers.dart.finance.mapper import ACCOUNT_NAME_SYNONYMS
 
         for key, val in ACCOUNT_NAME_SYNONYMS.items():
             if val in ACCOUNT_NAME_SYNONYMS:
@@ -141,7 +140,7 @@ class TestSynonyms:
 
     def test_id_synonyms_values_exist(self):
         """ID_SYNONYMS의 값이 빈 문자열이 아님."""
-        from dartlab.engines.company.dart.finance.mapper import ID_SYNONYMS
+        from dartlab.providers.dart.finance.mapper import ID_SYNONYMS
 
         empty = [k for k, v in ID_SYNONYMS.items() if not v.strip()]
         assert len(empty) == 0, f"빈 값 동의어: {empty[:5]}"
@@ -157,7 +156,7 @@ class TestMapperBasic:
 
     def test_revenue_maps(self):
         """'매출액'이 'sales'로 매핑."""
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         m = AccountMapper.get()
         result = m.map("", "매출액")
@@ -165,7 +164,7 @@ class TestMapperBasic:
 
     def test_total_assets_maps(self):
         """'자산총계'가 'total_assets'로 매핑."""
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         m = AccountMapper.get()
         result = m.map("", "자산총계")
@@ -173,7 +172,7 @@ class TestMapperBasic:
 
     def test_ifrs_prefix_stripped(self):
         """IFRS prefix가 제거되고 올바르게 매핑."""
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         m = AccountMapper.get()
         result = m.map("ifrs-full_Revenue", "")
@@ -182,7 +181,7 @@ class TestMapperBasic:
 
     def test_unmapped_returns_none(self):
         """존재하지 않는 계정은 None."""
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         m = AccountMapper.get()
         result = m.map("", "이상한계정명_절대없을거야_abc123")

@@ -11,7 +11,7 @@ pytestmark = pytest.mark.integration
 @requires_samsung
 class TestNotesDetail:
     def test_inventory(self):
-        from dartlab.engines.company.dart.docs.finance.notesDetail import notesDetail
+        from dartlab.providers.dart.docs.finance.notesDetail import notesDetail
 
         r = notesDetail(SAMSUNG, "재고자산")
         assert r is not None
@@ -20,7 +20,7 @@ class TestNotesDetail:
         assert r.nYears >= 1
 
     def test_table_df(self):
-        from dartlab.engines.company.dart.docs.finance.notesDetail import notesDetail
+        from dartlab.providers.dart.docs.finance.notesDetail import notesDetail
 
         r = notesDetail(SAMSUNG, "재고자산")
         assert r is not None
@@ -41,7 +41,7 @@ class TestNotesDetail:
         ],
     )
     def test_keywords(self, keyword):
-        from dartlab.engines.company.dart.docs.finance.notesDetail import notesDetail
+        from dartlab.providers.dart.docs.finance.notesDetail import notesDetail
 
         r = notesDetail(SAMSUNG, keyword)
         assert r is not None
@@ -49,13 +49,13 @@ class TestNotesDetail:
         assert r.nYears >= 1
 
     def test_invalid_keyword_returns_none(self):
-        from dartlab.engines.company.dart.docs.finance.notesDetail import notesDetail
+        from dartlab.providers.dart.docs.finance.notesDetail import notesDetail
 
         r = notesDetail(SAMSUNG, "존재하지않는키워드")
         assert r is None
 
     def test_notes_keywords_dict(self):
-        from dartlab.engines.company.dart.docs.finance.notesDetail import NOTES_KEYWORDS
+        from dartlab.providers.dart.docs.finance.notesDetail import NOTES_KEYWORDS
 
         assert len(NOTES_KEYWORDS) == 23
         assert "재고자산" in NOTES_KEYWORDS

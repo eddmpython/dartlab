@@ -24,7 +24,7 @@ import polars as pl
 from alive_progress import alive_bar
 
 from dartlab import config
-from dartlab.engines.company.edgar.docs.fetch import (
+from dartlab.providers.edgar.docs.fetch import (
     _downloadFilingSource,
     _FilingTimeout,
     _findFilings,

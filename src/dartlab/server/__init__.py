@@ -34,8 +34,8 @@ async def _preload_ollama_once() -> None:
     await asyncio.sleep(2)
 
     try:
-        from dartlab.engines.ai import get_config
-        from dartlab.engines.ai.providers import create_provider
+        from dartlab.ai import get_config
+        from dartlab.ai.providers import create_provider
 
         config = get_config("ollama")
         provider = create_provider(config)

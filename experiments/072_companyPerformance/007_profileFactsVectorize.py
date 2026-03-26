@@ -92,7 +92,7 @@ def main():
     t0 = time.perf_counter()
     frames_report = []
     if c.report is not None:
-        from dartlab.engines.company.dart.report.types import API_TYPES
+        from dartlab.providers.dart.report.types import API_TYPES
         for apiType in API_TYPES:
             df = c.report.extractAnnual(apiType)
             if df is None or df.is_empty():

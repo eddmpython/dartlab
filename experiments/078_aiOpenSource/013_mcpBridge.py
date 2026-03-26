@@ -107,7 +107,7 @@ def generate_mcp_server_skeleton() -> str:
 
 from mcp.server import Server
 from mcp.types import Tool, TextContent
-from dartlab.engines.ai.tools_registry import build_tool_runtime
+from dartlab.ai.tools_registry import build_tool_runtime
 
 app = Server("dartlab")
 _sessions: dict[str, Any] = {}  # stock_code → Company 캐시
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # 1. ToolRuntime → MCP Tool 변환
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.ai.tools_registry import build_tool_runtime
 
     class MinimalCompany:
         corpName = "MCP테스트"

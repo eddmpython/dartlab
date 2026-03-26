@@ -42,7 +42,7 @@ def main():
     import polars as pl
 
     import dartlab
-    from dartlab.engines.common.docs.diff import DiffEntry, DiffResult, DiffSummary, sectionsDiff
+    from dartlab.core.docs.diff import DiffEntry, DiffResult, DiffSummary, sectionsDiff
 
     c = dartlab.Company("005930")
     sec = c.docs.sections

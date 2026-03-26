@@ -91,7 +91,7 @@ def financeShowFast(company, topic: str) -> pl.DataFrame | None:
 
 
 def financeTraceFast(company, topic: str, period: str | None = None) -> dict[str, Any] | None:
-    from dartlab.engines.company.dart.docs.sections import rawPeriod
+    from dartlab.providers.dart.docs.sections import rawPeriod
 
     requestedPeriod = rawPeriod(period) if isinstance(period, str) else period
     rows: list[tuple[str, str]] = []

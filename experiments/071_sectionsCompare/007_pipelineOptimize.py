@@ -61,14 +61,14 @@ import polars as pl
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.company.dart.docs.sections._common import (
+from dartlab.providers.dart.docs.sections._common import (
     REPORT_KINDS,
     detectContentCol,
     sortPeriods,
 )
-from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
-from dartlab.engines.company.dart.docs.sections.pipeline import (
+from dartlab.providers.dart.docs.sections.chunker import parseMajorNum
+from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle, stripSectionPrefix
+from dartlab.providers.dart.docs.sections.pipeline import (
     _expandStructuredRows,
     _periodCadence,
     _reportRowsToTopicRows,
@@ -76,12 +76,12 @@ from dartlab.engines.company.dart.docs.sections.pipeline import (
     _splitContentBlocks,
     sections,
 )
-from dartlab.engines.company.dart.docs.sections.runtime import (
+from dartlab.providers.dart.docs.sections.runtime import (
     applyProjections,
     chapterTeacherTopics,
     projectionSuppressedTopics,
 )
-from dartlab.engines.company.dart.docs.sections.textStructure import parseTextStructureWithState
+from dartlab.providers.dart.docs.sections.textStructure import parseTextStructureWithState
 
 
 # ===== 최적화 1: _rowCadenceMeta 벡터화 =====

@@ -146,8 +146,8 @@ def calcBeta(stockHistory: list[dict], marketHistory: list[dict]) -> float | Non
 def getRiskFreeRate() -> float | None:
     """ECOS에서 국고채 10년 최신 금리 가져오기."""
     try:
-        from dartlab.engines.gather.ecos.client import EcosClient
-        from dartlab.engines.gather.ecos.series import fetchSeries
+        from dartlab.gather.ecos.client import EcosClient
+        from dartlab.gather.ecos.series import fetchSeries
 
         client = EcosClient()
         df = fetchSeries(client, "TREASURY_10Y")
@@ -187,7 +187,7 @@ def getMarketHistory(start: str, end: str) -> list[dict]:
 def calcWacc(stockCode: str, name: str, beta: float | None, rf: float | None) -> WaccResult:
     """Company의 재무 데이터로 WACC 산출."""
     import dartlab
-    from dartlab.engines.common.finance.extract import getTTM, getLatest
+    from dartlab.core.finance.extract import getTTM, getLatest
     try:
         c = dartlab.Company(stockCode)
         ts = c.finance.timeseries

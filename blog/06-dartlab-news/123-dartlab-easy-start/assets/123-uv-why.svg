@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>uv를 쓰는 이유 — pip과 비교</title>
+  <desc>pip의 문제점과 uv가 해결하는 것을 비교</desc>
+
+  <defs>
+    <linearGradient id="bg123b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg123b)" rx="16"/>
+
+  <text x="600" y="55" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="26" font-weight="700">왜 pip 대신 uv인가</text>
+  <text x="600" y="82" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">같은 일을 더 빠르고, 더 안전하게</text>
+
+  <!-- pip column -->
+  <rect x="60" y="110" width="500" height="560" rx="16" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" opacity="0.8"/>
+  <text x="310" y="150" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="22" font-weight="700">pip 방식</text>
+  <text x="310" y="175" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">익숙하지만 초보자에게 함정이 많다</text>
+
+  <!-- pip problems -->
+  <rect x="85" y="200" width="450" height="56" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="105" y="222" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">1. Python 먼저 설치해야 한다</text>
+  <text x="105" y="244" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">python.org에서 다운로드 → PATH 설정 → 버전 확인</text>
+
+  <rect x="85" y="270" width="450" height="56" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="105" y="292" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">2. 가상환경을 직접 만들어야 한다</text>
+  <text x="105" y="314" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">python -m venv .venv → .venv\Scripts\activate → 잊으면 시스템 오염</text>
+
+  <rect x="85" y="340" width="450" height="56" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="105" y="362" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">3. 설치가 느리다</text>
+  <text x="105" y="384" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">pip install dartlab → 의존성 해결에 30초~1분</text>
+
+  <rect x="85" y="410" width="450" height="56" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="105" y="432" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">4. 의존성 충돌 위험</text>
+  <text x="105" y="454" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">다른 프로젝트와 패키지 버전이 꼬이면 디버깅 지옥</text>
+
+  <rect x="85" y="480" width="450" height="56" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="105" y="502" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">5. 재현 불가</text>
+  <text x="105" y="524" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">requirements.txt 관리를 잊으면 다른 PC에서 안 돌아간다</text>
+
+  <text x="310" y="590" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="15" font-weight="600">총 5단계 + 여러 함정</text>
+  <rect x="180" y="610" width="260" height="36" rx="8" fill="#0f172a" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="310" y="633" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="11">python.org → PATH → venv → activate → pip</text>
+
+  <!-- uv column -->
+  <rect x="640" y="110" width="500" height="560" rx="16" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="890" y="150" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="22" font-weight="700">uv 방식</text>
+  <text x="890" y="175" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">모든 걸 한 도구가 해결한다</text>
+
+  <!-- uv solutions -->
+  <rect x="665" y="200" width="450" height="56" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="685" y="222" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="600">1. Python 설치 = uv가 알아서</text>
+  <text x="685" y="244" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">uv python install 3.12 한 줄이면 끝 (또는 자동 감지)</text>
+
+  <rect x="665" y="270" width="450" height="56" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="685" y="292" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="600">2. 가상환경 = uv init이 자동 생성</text>
+  <text x="685" y="314" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">activate 필요 없음 — uv run이 알아서 .venv 안에서 실행</text>
+
+  <rect x="665" y="340" width="450" height="56" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="685" y="362" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="600">3. 설치 속도 50배</text>
+  <text x="685" y="384" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">Rust로 만들어져서 의존성 해결 + 설치가 1~2초</text>
+
+  <rect x="665" y="410" width="450" height="56" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="685" y="432" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="600">4. 프로젝트별 완전 격리</text>
+  <text x="685" y="454" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">각 프로젝트마다 독립 환경 — 다른 프로젝트에 영향 없음</text>
+
+  <rect x="665" y="480" width="450" height="56" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="685" y="502" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="600">5. 자동 잠금 파일</text>
+  <text x="685" y="524" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">uv.lock이 자동 생성 — 어디서든 같은 환경 재현</text>
+
+  <text x="890" y="590" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="15" font-weight="600">총 2단계, 함정 없음</text>
+  <rect x="760" y="610" width="260" height="36" rx="8" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+  <text x="890" y="633" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">uv 설치 → uv add dartlab → 끝</text>
+</svg>

@@ -69,19 +69,19 @@ BASELINE = _loadModule(Path(__file__).with_name("001_baselineHarness.py"), "exp0
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.common.show import buildBlockIndex
-from dartlab.engines.company.dart._report_accessor import reportFrameInner
-from dartlab.engines.company.dart._utils import _shapeString
-from dartlab.engines.company.dart.company import (
+from dartlab.core.show import buildBlockIndex
+from dartlab.providers.dart._report_accessor import reportFrameInner
+from dartlab.providers.dart._utils import _shapeString
+from dartlab.providers.dart.company import (
     _CHAPTER_ORDER,
     _CHAPTER_TITLES,
     _REPORT_TOPIC_TO_API_TYPE,
 )
-from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
-from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS
-from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
-from dartlab.engines.company.dart.docs.sections.views import normalizeTitle, splitMarkdownBlocks
+from dartlab.providers.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+from dartlab.providers.dart.docs.sections._common import REPORT_KINDS
+from dartlab.providers.dart.docs.sections.chunker import parseMajorNum
+from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle
+from dartlab.providers.dart.docs.sections.views import normalizeTitle, splitMarkdownBlocks
 
 
 def _chapterFromMajor(majorNum: int | None) -> str | None:
@@ -91,7 +91,7 @@ def _chapterFromMajor(majorNum: int | None) -> str | None:
 
 
 def fastAvailableApiTypes(stockCode: str) -> list[str]:
-    from dartlab.engines.company.dart.report.types import API_TYPES
+    from dartlab.providers.dart.report.types import API_TYPES
 
     df = loadData(stockCode, category="report", columns=["apiType"])
     if df is None or df.is_empty() or "apiType" not in df.columns:
@@ -269,7 +269,7 @@ def buildIndexDocsRowsFast(company) -> list[dict[str, Any]]:
 
 
 def buildIndexReportRowsFast(company, existingTopics: set[str]) -> list[dict[str, Any]]:
-    from dartlab.engines.company.dart.report.types import API_TYPE_LABELS
+    from dartlab.providers.dart.report.types import API_TYPE_LABELS
 
     rows: list[dict[str, Any]] = []
     for rIdx, apiType in enumerate(fastAvailableApiTypes(company.stockCode)):

@@ -37,7 +37,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 
 from dartlab.core.dataLoader import loadData
-from dartlab.engines.company.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.client import DartClient
 
 
 def _tableToMarkdown(table) -> str:

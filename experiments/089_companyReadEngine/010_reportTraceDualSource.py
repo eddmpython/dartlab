@@ -70,7 +70,7 @@ AUTH = loadModule(Path(__file__).with_name("006_authoritativeFollowUp.py"), "exp
 
 
 def buildDocsSource(stockCode: str, topic: str) -> dict[str, Any] | None:
-    from dartlab.engines.company.dart.docs.sections import retrievalBlocks
+    from dartlab.providers.dart.docs.sections import retrievalBlocks
 
     blocks = retrievalBlocks(stockCode).filter(pl.col("topic") == topic)
     if blocks.is_empty():

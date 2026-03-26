@@ -38,7 +38,7 @@ DART 공시문서를 직접 크롤링하여 parquet로 저장. 기존 eddmpython
 
 ### 핵심 구조
 
-- **collector 본체**: `engines/dart/openapi/collector.py` (DartClient 재사용)
+- **collector 본체**: `providers/dart/openapi/collector.py` (DartClient 재사용)
 - **CLI 래퍼**: `commands/collect.py`
 
 ### 명령어 매핑 (eddmpython → dartlab)

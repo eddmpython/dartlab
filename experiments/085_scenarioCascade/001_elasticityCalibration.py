@@ -116,7 +116,7 @@ CURRENT_BETA = {
 
 def _extractRevenueTimeseries(stockCode: str) -> dict[int, float]:
     """buildTimeseries로 연도별 revenue 추출."""
-    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+    from dartlab.providers.dart.finance.pivot import buildTimeseries
 
     try:
         result = buildTimeseries(stockCode)

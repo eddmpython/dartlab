@@ -202,7 +202,7 @@ def scan_top_pay() -> pl.DataFrame:
 
 
 def analyze_by_market(df: pl.DataFrame) -> None:
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
     _, _, _, listing_meta = load_listing()
 
     total_listed = len(listing_meta)

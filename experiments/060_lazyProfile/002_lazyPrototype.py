@@ -54,7 +54,7 @@ def lazyIndex(c):
 
     rs = c.finance.ratioSeries
     if rs is not None:
-        from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+        from dartlab.core.finance.ratios import RATIO_CATEGORIES
         series, years = rs
         ratioData = series.get("RATIO", {})
         metricCount = sum(1 for _, fields in RATIO_CATEGORIES for f in fields if ratioData.get(f) and any(v is not None for v in ratioData[f]))
@@ -94,7 +94,7 @@ def lazyIndex(c):
             })
 
     if c._hasReport:
-        from dartlab.engines.company.dart.report.types import API_TYPE_LABELS, API_TYPES
+        from dartlab.providers.dart.report.types import API_TYPE_LABELS, API_TYPES
         for apiType in API_TYPES:
             df = c.report.extract(apiType)
             if df is not None and not df.is_empty():
@@ -114,7 +114,7 @@ def lazyIndex(c):
 
 
 def main():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     c = Company("005930")
 

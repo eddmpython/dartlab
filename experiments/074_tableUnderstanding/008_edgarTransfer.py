@@ -42,14 +42,14 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,
     _isJunk,
     splitSubtables,
 )
-from dartlab.engines.company.edgar.docs.sections.pipeline import sections as edgar_sections
+from dartlab.providers.edgar.docs.sections.pipeline import sections as edgar_sections
 
 ROOT = Path(__file__).resolve().parent
 EDGAR_SAMPLE = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA"]

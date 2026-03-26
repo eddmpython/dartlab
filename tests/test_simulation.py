@@ -88,7 +88,7 @@ HEALTHY_SERIES = _make_series(
 
 @pytest.fixture
 def sector_params():
-    from dartlab.engines.analysis.sector.types import SectorParams
+    from dartlab.analysis.comparative.sector.types import SectorParams
 
     return SectorParams(
         discountRate=10.0,
@@ -108,7 +108,7 @@ def sector_params():
 @pytest.mark.unit
 class TestMacroScenario:
     def test_preset_scenarios_exist(self):
-        from dartlab.engines.analysis.analyst.simulation import PRESET_SCENARIOS
+        from dartlab.analysis.forecast.simulation import PRESET_SCENARIOS
 
         assert len(PRESET_SCENARIOS) == 5
         assert "baseline" in PRESET_SCENARIOS
@@ -118,7 +118,7 @@ class TestMacroScenario:
         assert "semiconductor_down" in PRESET_SCENARIOS
 
     def test_scenario_structure(self):
-        from dartlab.engines.analysis.analyst.simulation import PRESET_SCENARIOS
+        from dartlab.analysis.forecast.simulation import PRESET_SCENARIOS
 
         for name, sc in PRESET_SCENARIOS.items():
             assert len(sc.gdpGrowth) == 3
@@ -129,7 +129,7 @@ class TestMacroScenario:
             assert sc.label  # 비어있지 않음
 
     def test_scenario_repr(self):
-        from dartlab.engines.analysis.analyst.simulation import PRESET_SCENARIOS
+        from dartlab.analysis.forecast.simulation import PRESET_SCENARIOS
 
         text = repr(PRESET_SCENARIOS["adverse"])
         assert "경기침체" in text
@@ -144,17 +144,17 @@ class TestMacroScenario:
 @pytest.mark.unit
 class TestSectorElasticity:
     def test_get_elasticity_known(self):
-        from dartlab.engines.analysis.analyst.simulation import getElasticity as get_elasticity
+        from dartlab.analysis.forecast.simulation import getElasticity as get_elasticity
 
         e = get_elasticity("반도체")
         assert e.revenueToGdp == 1.8
         assert e.cyclicality == "high"
 
     def test_get_elasticity_unknown(self):
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             DEFAULT_ELASTICITY,
         )
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             getElasticity as get_elasticity,
         )
 
@@ -162,10 +162,10 @@ class TestSectorElasticity:
         assert e == DEFAULT_ELASTICITY
 
     def test_get_elasticity_none(self):
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             DEFAULT_ELASTICITY,
         )
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             getElasticity as get_elasticity,
         )
 
@@ -173,7 +173,7 @@ class TestSectorElasticity:
         assert e == DEFAULT_ELASTICITY
 
     def test_defensive_vs_cyclical(self):
-        from dartlab.engines.analysis.analyst.simulation import getElasticity as get_elasticity
+        from dartlab.analysis.forecast.simulation import getElasticity as get_elasticity
 
         semi = get_elasticity("반도체")
         food = get_elasticity("식품")
@@ -189,7 +189,7 @@ class TestSectorElasticity:
 @pytest.mark.unit
 class TestSimulateScenario:
     def test_baseline(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         result = simulate_scenario(
             HEALTHY_SERIES,
@@ -207,7 +207,7 @@ class TestSimulateScenario:
         assert result.dcfValue > 0
 
     def test_adverse(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         result = simulate_scenario(
             HEALTHY_SERIES,
@@ -219,7 +219,7 @@ class TestSimulateScenario:
         assert result.revenueChangePct < 0
 
     def test_adverse_vs_baseline_revenue(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         baseline = simulate_scenario(
             HEALTHY_SERIES,
@@ -237,7 +237,7 @@ class TestSimulateScenario:
         assert adverse.revenuePath[-1] < baseline.revenuePath[-1]
 
     def test_defensive_sector_less_impact(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         semi = simulate_scenario(
             HEALTHY_SERIES,
@@ -255,7 +255,7 @@ class TestSimulateScenario:
         assert abs(food.revenueChangePct) < abs(semi.revenueChangePct)
 
     def test_no_shares(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         result = simulate_scenario(
             HEALTHY_SERIES,
@@ -266,10 +266,10 @@ class TestSimulateScenario:
         assert result.dcfValue > 0
 
     def test_scenario_str_or_object(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             PRESET_SCENARIOS,
         )
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             simulateScenario as simulate_scenario,
         )
 
@@ -283,7 +283,7 @@ class TestSimulateScenario:
         assert r1.revenuePath == r2.revenuePath
 
     def test_repr(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         result = simulate_scenario(
             HEALTHY_SERIES,
@@ -305,7 +305,7 @@ class TestSimulateScenario:
 @pytest.mark.unit
 class TestSimulateAll:
     def test_all_scenarios(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios as simulate_all_scenarios
+        from dartlab.analysis.forecast.simulation import simulateAllScenarios as simulate_all_scenarios
 
         results = simulate_all_scenarios(
             HEALTHY_SERIES,
@@ -319,7 +319,7 @@ class TestSimulateAll:
             assert len(r.revenuePath) == 3
 
     def test_selective_scenarios(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios as simulate_all_scenarios
+        from dartlab.analysis.forecast.simulation import simulateAllScenarios as simulate_all_scenarios
 
         results = simulate_all_scenarios(
             HEALTHY_SERIES,
@@ -337,7 +337,7 @@ class TestSimulateAll:
 @pytest.mark.unit
 class TestMonteCarlo:
     def test_basic(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import monteCarloForecast as monte_carlo_forecast
+        from dartlab.analysis.forecast.simulation import monteCarloForecast as monte_carlo_forecast
 
         result = monte_carlo_forecast(
             HEALTHY_SERIES,
@@ -354,7 +354,7 @@ class TestMonteCarlo:
         assert result.stdDev > 0
 
     def test_percentile_ordering(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import monteCarloForecast as monte_carlo_forecast
+        from dartlab.analysis.forecast.simulation import monteCarloForecast as monte_carlo_forecast
 
         result = monte_carlo_forecast(
             HEALTHY_SERIES,
@@ -365,7 +365,7 @@ class TestMonteCarlo:
             assert pcts["p5"] <= pcts["p25"] <= pcts["p50"] <= pcts["p75"] <= pcts["p95"]
 
     def test_adverse_lower_than_baseline(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import monteCarloForecast as monte_carlo_forecast
+        from dartlab.analysis.forecast.simulation import monteCarloForecast as monte_carlo_forecast
 
         base = monte_carlo_forecast(
             HEALTHY_SERIES,
@@ -385,7 +385,7 @@ class TestMonteCarlo:
         assert adv.expectedValue < base.expectedValue
 
     def test_repr(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import monteCarloForecast as monte_carlo_forecast
+        from dartlab.analysis.forecast.simulation import monteCarloForecast as monte_carlo_forecast
 
         result = monte_carlo_forecast(
             HEALTHY_SERIES,
@@ -407,7 +407,7 @@ class TestMonteCarlo:
 @pytest.mark.unit
 class TestStressTest:
     def test_basic(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import stressTest as stress_test
+        from dartlab.analysis.forecast.simulation import stressTest as stress_test
 
         result = stress_test(
             HEALTHY_SERIES,
@@ -420,7 +420,7 @@ class TestStressTest:
         assert isinstance(result.dividendSustainable, bool)
 
     def test_healthy_company_low_risk(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import stressTest as stress_test
+        from dartlab.analysis.forecast.simulation import stressTest as stress_test
 
         result = stress_test(
             HEALTHY_SERIES,
@@ -431,7 +431,7 @@ class TestStressTest:
         assert result.survivalRisk in ("low", "medium")
 
     def test_debt_ratio_computed(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import stressTest as stress_test
+        from dartlab.analysis.forecast.simulation import stressTest as stress_test
 
         result = stress_test(
             HEALTHY_SERIES,
@@ -441,7 +441,7 @@ class TestStressTest:
         assert result.year3DebtRatio > 0
 
     def test_repr(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import stressTest as stress_test
+        from dartlab.analysis.forecast.simulation import stressTest as stress_test
 
         result = stress_test(
             HEALTHY_SERIES,
@@ -454,7 +454,7 @@ class TestStressTest:
         assert "참고용" in text
 
     def test_custom_scenario(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import stressTest as stress_test
+        from dartlab.analysis.forecast.simulation import stressTest as stress_test
 
         result = stress_test(
             HEALTHY_SERIES,
@@ -472,7 +472,7 @@ class TestStressTest:
 @pytest.mark.unit
 class TestInternalUtils:
     def test_extract_base_metrics(self):
-        from dartlab.engines.analysis.analyst.simulation import _extractBaseMetrics as _extract_base_metrics
+        from dartlab.analysis.forecast.simulation import _extractBaseMetrics as _extract_base_metrics
 
         metrics = _extract_base_metrics(HEALTHY_SERIES)
         assert metrics["revenue"] is not None
@@ -482,7 +482,7 @@ class TestInternalUtils:
         assert 0 < metrics["margin"] < 100
 
     def test_extract_volatility(self):
-        from dartlab.engines.analysis.analyst.simulation import _extractVolatility as _extract_volatility
+        from dartlab.analysis.forecast.simulation import _extractVolatility as _extract_volatility
 
         vol = _extract_volatility(HEALTHY_SERIES)
         assert "revenueCv" in vol
@@ -491,13 +491,13 @@ class TestInternalUtils:
         assert vol["marginStd"] > 0
 
     def test_apply_macro_shock(self):
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             PRESET_SCENARIOS,
         )
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             _applyMacroShock as _apply_macro_shock,
         )
-        from dartlab.engines.analysis.analyst.simulation import (
+        from dartlab.analysis.forecast.simulation import (
             getElasticity as get_elasticity,
         )
 
@@ -519,7 +519,7 @@ class TestInternalUtils:
         assert wacc < 10.0
 
     def test_empty_series(self, sector_params):
-        from dartlab.engines.analysis.analyst.simulation import simulateScenario as simulate_scenario
+        from dartlab.analysis.forecast.simulation import simulateScenario as simulate_scenario
 
         result = simulate_scenario(
             {"IS": {}, "BS": {}, "CF": {}},

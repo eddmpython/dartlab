@@ -53,7 +53,7 @@ import sys
 import polars as pl
 import psutil
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.pipeline import sections
 
 
 def mb():

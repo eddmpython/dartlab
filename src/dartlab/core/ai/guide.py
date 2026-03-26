@@ -80,8 +80,8 @@ def provider_guide(provider: str) -> str:
 def _check_provider_available(provider_id: str) -> bool:
     """provider 사용 가능 여부를 빠르게 체크 (네트워크 최소화)."""
     try:
-        from dartlab.engines.ai.providers import create_provider
-        from dartlab.engines.ai.types import LLMConfig
+        from dartlab.ai.providers import create_provider
+        from dartlab.ai.types import LLMConfig
 
         config = LLMConfig(provider=provider_id)
         prov = create_provider(config)

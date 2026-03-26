@@ -185,7 +185,7 @@ def build_toc(company: Company) -> dict[str, Any]:
 
 
 def build_viewer(company: Company, topic: str) -> dict[str, Any]:
-    from dartlab.engines.company.dart.docs.viewer import (
+    from dartlab.providers.dart.docs.viewer import (
         serializeViewerBlock,
         serializeViewerTextDocument,
         viewerBlocks,
@@ -213,7 +213,7 @@ def build_viewer(company: Company, topic: str) -> dict[str, Any]:
 
 def build_diff_summary(company: Company, topic: str) -> dict[str, Any] | None:
     try:
-        from dartlab.engines.common.docs.diff import sectionsDiff
+        from dartlab.core.docs.diff import sectionsDiff
 
         sec = company.docs.sections
         if sec is None:

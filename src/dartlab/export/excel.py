@@ -29,8 +29,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 if TYPE_CHECKING:
-    from dartlab.engines.company.dart.company import Company
     from dartlab.export.template import ExcelTemplate
+    from dartlab.providers.dart.company import Company
 
 
 _HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
@@ -103,7 +103,7 @@ _CATEGORY_LABELS: dict[str, str] = {
 def _buildAccountLabels() -> dict[str, str]:
     """mapper.labelMap() 기반 + override 합성."""
     try:
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         labels = dict(AccountMapper.get().labelMap())
     except (ImportError, FileNotFoundError):
@@ -193,7 +193,7 @@ def _writeFinanceSheet(
 
 
 def _writeRatiosSheet(wb: Workbook, c: Company, *, label: str = "") -> None:
-    from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES, calcRatioSeries, toSeriesDict
+    from dartlab.core.finance.ratios import RATIO_CATEGORIES, calcRatioSeries, toSeriesDict
 
     annualResult = c.annual
     if annualResult is None:
@@ -288,7 +288,7 @@ def _writeDataFrameSheet(
 
 
 def _getAvailableModules(c: Company) -> list[tuple[str, str]]:
-    from dartlab.engines.company.dart.company import listExportModules
+    from dartlab.providers.dart.company import listExportModules
 
     available = []
     for name, label in listExportModules():
@@ -341,7 +341,7 @@ def exportToExcel(
 
     financeModules = [m for m in targetModules if m in _FINANCE_SHEETS]
     if financeModules and c._hasFinance:
-        from dartlab.engines.company.dart.finance.pivot import buildAnnual
+        from dartlab.providers.dart.finance.pivot import buildAnnual
 
         result = buildAnnual(c.stockCode)
         if result:
@@ -403,7 +403,7 @@ def exportWithTemplate(
             if not c._hasFinance:
                 continue
             if annualCache is None:
-                from dartlab.engines.company.dart.finance.pivot import buildAnnual
+                from dartlab.providers.dart.finance.pivot import buildAnnual
 
                 result = buildAnnual(c.stockCode)
                 if result is None:

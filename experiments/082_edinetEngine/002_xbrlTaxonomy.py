@@ -108,7 +108,7 @@ def analyze():
     print(f"   EDGAR 전용: {len(edgar_snakeIds - dart_snakeIds)}개")
 
     # ── 4. EDINET CORE_MAP 커버리지 ──
-    from dartlab.engines.company.edinet.finance.mapper import CORE_MAP
+    from dartlab.providers.edinet.finance.mapper import CORE_MAP
 
     edinet_snakeIds = set(CORE_MAP.values())
     covered_by_dart = edinet_snakeIds & dart_snakeIds

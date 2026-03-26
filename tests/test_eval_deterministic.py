@@ -12,10 +12,10 @@ import polars as pl
 import pytest
 
 from dartlab.core.memory import BoundedCache
-from dartlab.engines.ai.context.builder import _resolve_context_route
-from dartlab.engines.ai.eval.replayRunner import PersonaEvalCase, loadPersonaCases
-from dartlab.engines.company.dart._docs_accessor import _DocsAccessor
-from dartlab.engines.company.dart.company import Company
+from dartlab.ai.context.builder import _resolve_context_route
+from dartlab.ai.eval.replayRunner import PersonaEvalCase, loadPersonaCases
+from dartlab.providers.dart._docs_accessor import _DocsAccessor
+from dartlab.providers.dart.company import Company
 
 pytestmark = pytest.mark.unit
 

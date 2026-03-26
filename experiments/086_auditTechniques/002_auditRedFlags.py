@@ -31,7 +31,7 @@ from __future__ import annotations
 
 def make_profiles() -> dict:
     """5개 합성 감사 프로필."""
-    from dartlab.engines.analysis.insight.types import AuditDataForAnomaly
+    from dartlab.analysis.financial.insight.types import AuditDataForAnomaly
 
     return {
         "정상 기업": AuditDataForAnomaly(
@@ -79,7 +79,7 @@ def make_profiles() -> dict:
 
 def test_all_profiles():
     """모든 프로필 탐지 결과 검증."""
-    from dartlab.engines.analysis.insight.anomaly import detectAuditRedFlags
+    from dartlab.analysis.financial.insight.anomaly import detectAuditRedFlags
 
     profiles = make_profiles()
 
@@ -145,7 +145,7 @@ def verify_expectations(results: dict):
 
 def test_none_input():
     """auditData=None → 0건."""
-    from dartlab.engines.analysis.insight.anomaly import detectAuditRedFlags
+    from dartlab.analysis.financial.insight.anomaly import detectAuditRedFlags
 
     result = detectAuditRedFlags(None)
     ok = len(result) == 0

@@ -16,7 +16,7 @@ pytestmark = pytest.mark.unit
 
 class TestTypes:
     def test_series_meta_frozen(self):
-        from dartlab.engines.gather.fred.types import SeriesMeta
+        from dartlab.gather.fred.types import SeriesMeta
 
         meta = SeriesMeta(
             id="GDP",
@@ -34,13 +34,13 @@ class TestTypes:
             meta.id = "GDPC1"
 
     def test_catalog_entry_frozen(self):
-        from dartlab.engines.gather.fred.types import CatalogEntry
+        from dartlab.gather.fred.types import CatalogEntry
 
         e = CatalogEntry("GDP", "GDP (명목)", "growth", "Quarterly", "Billions of Dollars", "미국 명목 GDP")
         assert e.group == "growth"
 
     def test_error_hierarchy(self):
-        from dartlab.engines.gather.fred.types import (
+        from dartlab.gather.fred.types import (
             AuthenticationError,
             FredError,
             RateLimitError,
@@ -57,8 +57,8 @@ class TestTypes:
 
 class TestClient:
     def test_no_api_key_raises(self):
-        from dartlab.engines.gather.fred.client import FredClient
-        from dartlab.engines.gather.fred.types import AuthenticationError
+        from dartlab.gather.fred.client import FredClient
+        from dartlab.gather.fred.types import AuthenticationError
 
         with patch.dict("os.environ", {}, clear=True):
             # 환경변수도 없고 인자도 없으면 에러
@@ -66,7 +66,7 @@ class TestClient:
                 FredClient(api_key="")
 
     def test_multi_key_parsing(self):
-        from dartlab.engines.gather.fred.client import FredClient
+        from dartlab.gather.fred.client import FredClient
 
         client = FredClient(api_key="key1,key2,key3")
         assert len(client._keys) == 3
@@ -75,7 +75,7 @@ class TestClient:
         assert client._resolve_key() == "key2"
 
     def test_rate_limit_tracking(self):
-        from dartlab.engines.gather.fred.client import FredClient
+        from dartlab.gather.fred.client import FredClient
 
         client = FredClient(api_key="test_key")
         # 타임스탬프 추적이 동작하는지 확인
@@ -88,7 +88,7 @@ class TestClient:
 
 class TestCatalog:
     def test_groups_exist(self):
-        from dartlab.engines.gather.fred.catalog import get_groups
+        from dartlab.gather.fred.catalog import get_groups
 
         groups = get_groups()
         assert "growth" in groups
@@ -101,20 +101,20 @@ class TestCatalog:
         assert len(groups) == 7
 
     def test_all_ids_nonempty(self):
-        from dartlab.engines.gather.fred.catalog import get_all_ids
+        from dartlab.gather.fred.catalog import get_all_ids
 
         ids = get_all_ids()
         assert len(ids) >= 40
 
     def test_group_ids(self):
-        from dartlab.engines.gather.fred.catalog import get_group_ids
+        from dartlab.gather.fred.catalog import get_group_ids
 
         growth = get_group_ids("growth")
         assert "GDP" in growth
         assert "GDPC1" in growth
 
     def test_find_entry(self):
-        from dartlab.engines.gather.fred.catalog import find_entry
+        from dartlab.gather.fred.catalog import find_entry
 
         e = find_entry("UNRATE")
         assert e is not None
@@ -122,7 +122,7 @@ class TestCatalog:
         assert find_entry("NONEXISTENT") is None
 
     def test_to_dataframe(self):
-        from dartlab.engines.gather.fred.catalog import to_dataframe
+        from dartlab.gather.fred.catalog import to_dataframe
 
         df = to_dataframe()
         assert isinstance(df, pl.DataFrame)
@@ -131,14 +131,14 @@ class TestCatalog:
         assert df.height >= 40
 
     def test_to_dataframe_group(self):
-        from dartlab.engines.gather.fred.catalog import to_dataframe
+        from dartlab.gather.fred.catalog import to_dataframe
 
         df = to_dataframe("rates")
         assert df.height >= 5
         assert all(row == "rates" for row in df["group"].to_list())
 
     def test_no_duplicate_ids(self):
-        from dartlab.engines.gather.fred.catalog import get_all_ids
+        from dartlab.gather.fred.catalog import get_all_ids
 
         ids = get_all_ids()
         assert len(ids) == len(set(ids)), f"중복 시리즈 ID: {[x for x in ids if ids.count(x) > 1]}"
@@ -154,7 +154,7 @@ class TestSeriesMock:
         return client
 
     def test_fetch_series_basic(self):
-        from dartlab.engines.gather.fred.series import fetch_series
+        from dartlab.gather.fred.series import fetch_series
 
         obs = [
             {"date": "2024-01-01", "value": "100.5"},
@@ -171,7 +171,7 @@ class TestSeriesMock:
         assert df["value"][2] is None
 
     def test_fetch_multi(self):
-        from dartlab.engines.gather.fred.series import fetch_multi
+        from dartlab.gather.fred.series import fetch_multi
 
         call_count = [0]
 
@@ -194,7 +194,7 @@ class TestSeriesMock:
         assert df.height == 2
 
     def test_search_series(self):
-        from dartlab.engines.gather.fred.series import search_series
+        from dartlab.gather.fred.series import search_series
 
         client = MagicMock()
         client.get.return_value = {
@@ -215,7 +215,7 @@ class TestSeriesMock:
         assert df["id"][0] == "GDP"
 
     def test_fetch_meta(self):
-        from dartlab.engines.gather.fred.series import fetch_meta
+        from dartlab.gather.fred.series import fetch_meta
 
         client = MagicMock()
         client.get.return_value = {
@@ -251,7 +251,7 @@ class TestTransform:
         return pl.DataFrame({"date": dates, "value": values}).with_columns(pl.col("date").cast(pl.Date))
 
     def test_yoy(self):
-        from dartlab.engines.gather.fred.transform import yoy
+        from dartlab.gather.fred.transform import yoy
 
         df = self._sample_df()
         result = yoy(df)
@@ -260,7 +260,7 @@ class TestTransform:
         assert result["value_yoy"][0] is None
 
     def test_mom(self):
-        from dartlab.engines.gather.fred.transform import mom
+        from dartlab.gather.fred.transform import mom
 
         df = self._sample_df()
         result = mom(df)
@@ -269,7 +269,7 @@ class TestTransform:
         assert result["value_mom"][1] is not None
 
     def test_diff(self):
-        from dartlab.engines.gather.fred.transform import diff
+        from dartlab.gather.fred.transform import diff
 
         df = self._sample_df()
         result = diff(df)
@@ -277,14 +277,14 @@ class TestTransform:
         assert result["value_diff1"][1] == pytest.approx(2.5)
 
     def test_moving_average(self):
-        from dartlab.engines.gather.fred.transform import moving_average
+        from dartlab.gather.fred.transform import moving_average
 
         df = self._sample_df()
         result = moving_average(df, window=3)
         assert "value_ma3" in result.columns
 
     def test_normalize(self):
-        from dartlab.engines.gather.fred.transform import normalize
+        from dartlab.gather.fred.transform import normalize
 
         df = self._sample_df()
         result = normalize(df)
@@ -292,7 +292,7 @@ class TestTransform:
         assert result["value_norm"][0] == pytest.approx(100.0)
 
     def test_correlation(self):
-        from dartlab.engines.gather.fred.transform import correlation
+        from dartlab.gather.fred.transform import correlation
 
         df = pl.DataFrame(
             {
@@ -307,7 +307,7 @@ class TestTransform:
         assert result.filter(pl.col("column") == "A")["B"][0] == pytest.approx(1.0)
 
     def test_lead_lag(self):
-        from dartlab.engines.gather.fred.transform import lead_lag
+        from dartlab.gather.fred.transform import lead_lag
 
         df = pl.DataFrame(
             {
@@ -326,7 +326,7 @@ class TestTransform:
 
 class TestCache:
     def test_put_get(self):
-        from dartlab.engines.gather.fred import cache
+        from dartlab.gather.fred import cache
 
         cache.clear()
         df = pl.DataFrame({"date": [date(2024, 1, 1)], "value": [100.0]})
@@ -336,7 +336,7 @@ class TestCache:
         assert result.height == 1
 
     def test_cache_miss(self):
-        from dartlab.engines.gather.fred import cache
+        from dartlab.gather.fred import cache
 
         cache.clear()
         result = cache.get("MISS", None, None, None, None)
@@ -348,7 +348,7 @@ class TestCache:
 
 class TestSpec:
     def test_build_spec(self):
-        from dartlab.engines.gather.fred.spec import buildSpec
+        from dartlab.gather.fred.spec import buildSpec
 
         spec = buildSpec()
         assert spec["name"] == "fred"
@@ -363,8 +363,8 @@ class TestSpec:
 class TestFredFacade:
     def test_repr(self):
         """Fred repr에 카탈로그 수와 그룹이 포함."""
-        with patch("dartlab.engines.gather.fred.client.FredClient.__init__", return_value=None):
-            from dartlab.engines.gather.fred import Fred
+        with patch("dartlab.gather.fred.client.FredClient.__init__", return_value=None):
+            from dartlab.gather.fred import Fred
 
             f = Fred.__new__(Fred)
             f._client = MagicMock()

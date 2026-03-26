@@ -45,8 +45,8 @@
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
-from dartlab.engines.common.finance.extract import getTTM
+from dartlab.analysis.forecast.revenueForecast import forecastRevenue
+from dartlab.core.finance.extract import getTTM
 
 
 def run():

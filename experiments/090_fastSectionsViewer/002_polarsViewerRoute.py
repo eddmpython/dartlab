@@ -63,11 +63,11 @@ BASE = loadModule(Path(__file__).with_name("001_viewerApiBaseline.py"), "exp090B
 
 from dartlab.core.dataLoader import loadData
 from dartlab.core.reportSelector import selectReport
-from dartlab.engines.company.dart.docs.sections._common import REPORT_KINDS, periodOrderValue, sortPeriods
-from dartlab.engines.company.dart.docs.sections.chunker import parseMajorNum
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
-from dartlab.engines.company.dart.docs.sections.runtime import chapterFromMajorNum
-from dartlab.engines.company.dart.docs.sections.views import normalizeTitle, splitMarkdownBlocks
+from dartlab.providers.dart.docs.sections._common import REPORT_KINDS, periodOrderValue, sortPeriods
+from dartlab.providers.dart.docs.sections.chunker import parseMajorNum
+from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle
+from dartlab.providers.dart.docs.sections.runtime import chapterFromMajorNum
+from dartlab.providers.dart.docs.sections.views import normalizeTitle, splitMarkdownBlocks
 
 HEADING_MAJOR_RE = re.compile(r"^[가-힣]\.\s")
 HEADING_NUM_RE = re.compile(r"^\d+\.\s")
@@ -78,7 +78,7 @@ HEADING_CIRCLED_RE = re.compile(r"^[①②③④⑤⑥⑦⑧⑨⑩]\s")
 class PolarsViewerRuntime:
     def __init__(self, stockCode: str):
         import dartlab
-        from dartlab.engines.company.dart.docs import viewer as viewerModule
+        from dartlab.providers.dart.docs import viewer as viewerModule
         from dartlab.server.services.company_api import _find_prev_comparable, filter_blocks_by_period
 
         self.company = dartlab.Company(stockCode)

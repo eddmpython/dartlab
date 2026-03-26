@@ -291,7 +291,7 @@ if __name__ == "__main__":
 
     # 4. 기존 ToolRuntime과 호환성 테스트
     print("\n=== ToolRuntime 호환성 ===")
-    from dartlab.engines.ai.tool_runtime import ToolRuntime
+    from dartlab.ai.tool_runtime import ToolRuntime
 
     runtime = ToolRuntime()
 
@@ -308,7 +308,7 @@ if __name__ == "__main__":
 
     # 5. 스키마 호환성 (기존 도구와 동일 형식?)
     print("\n=== 스키마 호환성 ===")
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.ai.tools_registry import build_tool_runtime
 
     class MinimalCompany:
         corpName = "최소"

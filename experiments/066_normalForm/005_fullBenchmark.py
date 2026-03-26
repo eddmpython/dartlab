@@ -29,7 +29,7 @@ sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 # 004에서 핵심 함수만 인라인 (import 불가한 구조이므로)
 # ── 시작: 004_analysis.py에서 복사 ──
 
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.tableParser import (
     _dataRows,
     _headerCells,
     _isJunk,

@@ -4,7 +4,7 @@ import inspect
 
 import pytest
 
-from dartlab.engines.common.protocols import CompanyProtocol, DocsProtocol, FinanceProtocol
+from dartlab.core.protocols import CompanyProtocol, DocsProtocol, FinanceProtocol
 from tests.conftest import SAMSUNG, requires_samsung
 
 pytestmark = pytest.mark.integration
@@ -31,7 +31,7 @@ def _class_has_all_members(cls, members: set[str]) -> list[str]:
 
 
 def test_dart_company_class_has_all_protocol_members():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     members = _get_protocol_required_members(CompanyProtocol)
     missing = _class_has_all_members(Company, members)
@@ -39,7 +39,7 @@ def test_dart_company_class_has_all_protocol_members():
 
 
 def test_edgar_company_class_has_all_protocol_members():
-    from dartlab.engines.company.edgar.company import Company
+    from dartlab.providers.edgar.company import Company
 
     members = _get_protocol_required_members(CompanyProtocol)
     missing = _class_has_all_members(Company, members)
@@ -47,7 +47,7 @@ def test_edgar_company_class_has_all_protocol_members():
 
 
 def test_dart_docs_class_has_all_protocol_members():
-    from dartlab.engines.company.dart.company import _DocsAccessor
+    from dartlab.providers.dart.company import _DocsAccessor
 
     members = _get_protocol_required_members(DocsProtocol)
     missing = _class_has_all_members(_DocsAccessor, members)
@@ -55,7 +55,7 @@ def test_dart_docs_class_has_all_protocol_members():
 
 
 def test_edgar_docs_class_has_all_protocol_members():
-    from dartlab.engines.company.edgar.company import _DocsAccessor
+    from dartlab.providers.edgar.company import _DocsAccessor
 
     members = _get_protocol_required_members(DocsProtocol)
     missing = _class_has_all_members(_DocsAccessor, members)
@@ -63,7 +63,7 @@ def test_edgar_docs_class_has_all_protocol_members():
 
 
 def test_dart_finance_class_has_all_protocol_members():
-    from dartlab.engines.company.dart.company import _FinanceAccessor
+    from dartlab.providers.dart.company import _FinanceAccessor
 
     members = _get_protocol_required_members(FinanceProtocol)
     missing = _class_has_all_members(_FinanceAccessor, members)
@@ -71,7 +71,7 @@ def test_dart_finance_class_has_all_protocol_members():
 
 
 def test_edgar_finance_class_has_all_protocol_members():
-    from dartlab.engines.company.edgar.company import _FinanceAccessor
+    from dartlab.providers.edgar.company import _FinanceAccessor
 
     members = _get_protocol_required_members(FinanceProtocol)
     missing = _class_has_all_members(_FinanceAccessor, members)
@@ -83,7 +83,7 @@ def test_edgar_finance_class_has_all_protocol_members():
 
 @requires_samsung
 def test_dart_company_isinstance_protocol():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     c = Company(SAMSUNG)
     assert isinstance(c, CompanyProtocol)
@@ -91,7 +91,7 @@ def test_dart_company_isinstance_protocol():
 
 @requires_samsung
 def test_dart_docs_isinstance_protocol():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     c = Company(SAMSUNG)
     assert isinstance(c.docs, DocsProtocol)
@@ -99,7 +99,7 @@ def test_dart_docs_isinstance_protocol():
 
 @requires_samsung
 def test_dart_finance_isinstance_protocol():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     c = Company(SAMSUNG)
     assert isinstance(c.finance, FinanceProtocol)
@@ -113,7 +113,7 @@ def test_dart_finance_isinstance_protocol():
     reason="EDGAR parquet 데이터 없음",
 )
 def test_edgar_company_isinstance_protocol():
-    from dartlab.engines.company.edgar.company import Company
+    from dartlab.providers.edgar.company import Company
 
     c = Company("AAPL")
     assert isinstance(c, CompanyProtocol)

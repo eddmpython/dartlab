@@ -93,9 +93,9 @@ def measurePhase(action: Callable[[], Any]) -> tuple[Any, dict[str, Any]]:
 
 
 def buildDocsRowsClone(company) -> list[dict[str, Any]]:
-    from dartlab.engines.company.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
-    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
-    from dartlab.engines.company.dart.docs.sections.pipeline import (
+    from dartlab.providers.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
+    from dartlab.providers.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+    from dartlab.providers.dart.docs.sections.pipeline import (
         _expandStructuredRows,
         _reportRowsToTopicRows,
         _rowCadenceMeta,

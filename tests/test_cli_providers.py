@@ -10,17 +10,17 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.engines.ai.types import LLMConfig
+from dartlab.ai.types import LLMConfig
 
 
 class TestCodexProvider:
     def _make_provider(self, model=None):
-        from dartlab.engines.ai.providers.codex import CodexProvider
+        from dartlab.ai.providers.codex import CodexProvider
 
         return CodexProvider(LLMConfig(provider="codex", model=model))
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": False, "authenticated": False},
     )
     def test_check_available_not_installed(self, _mock_inspect):
@@ -28,7 +28,7 @@ class TestCodexProvider:
         assert provider.check_available() is False
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True},
     )
     def test_check_available_authenticated(self, _mock_inspect):
@@ -36,7 +36,7 @@ class TestCodexProvider:
         assert provider.check_available() is True
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
@@ -60,7 +60,7 @@ class TestCodexProvider:
         assert result.usage["total_tokens"] == 150
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
@@ -78,7 +78,7 @@ class TestCodexProvider:
         assert cmd[idx + 1] == "gpt-5.4"
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
@@ -95,7 +95,7 @@ class TestCodexProvider:
         assert cmd[idx + 1] == "workspace-write"
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
@@ -118,7 +118,7 @@ class TestCodexProvider:
             provider.complete([{"role": "user", "content": "test"}])
 
     @patch(
-        "dartlab.engines.ai.providers.support.codex_cli.inspect_codex_cli",
+        "dartlab.ai.providers.support.codex_cli.inspect_codex_cli",
         return_value={"installed": True, "authenticated": True, "sandboxModes": ["read-only", "workspace-write"]},
     )
     @patch("subprocess.run")
@@ -132,7 +132,7 @@ class TestCodexProvider:
 
 class TestCliDetection:
     def test_detect_codex_structure(self):
-        from dartlab.engines.ai.providers.support.cli_setup import detect_codex
+        from dartlab.ai.providers.support.cli_setup import detect_codex
 
         result = detect_codex()
         assert "installed" in result
@@ -142,7 +142,7 @@ class TestCliDetection:
         assert "supportsWorkspaceWrite" in result
 
     def test_codex_install_guide(self):
-        from dartlab.engines.ai.providers.support.cli_setup import get_codex_install_guide
+        from dartlab.ai.providers.support.cli_setup import get_codex_install_guide
 
         guide = get_codex_install_guide()
         assert isinstance(guide, str)
@@ -152,24 +152,24 @@ class TestCliDetection:
 
 class TestProviderRegistry:
     def test_available_providers(self):
-        from dartlab.engines.ai.providers import available_providers
+        from dartlab.ai.providers import available_providers
 
         assert set(available_providers()) == {"openai", "ollama", "custom", "codex", "oauth-codex", "gemini"}
 
     def test_create_codex_provider(self):
-        from dartlab.engines.ai.providers import create_provider
+        from dartlab.ai.providers import create_provider
 
         provider = create_provider(LLMConfig(provider="codex"))
         assert provider.__class__.__name__ == "CodexProvider"
 
     def test_create_oauth_codex_provider(self):
-        from dartlab.engines.ai.providers import create_provider
+        from dartlab.ai.providers import create_provider
 
         provider = create_provider(LLMConfig(provider="oauth-codex"))
         assert provider.__class__.__name__ == "OAuthCodexProvider"
 
     def test_unknown_provider_rejected(self):
-        from dartlab.engines.ai.providers import create_provider
+        from dartlab.ai.providers import create_provider
 
         with pytest.raises(ValueError, match="지원하지 않는 provider"):
             create_provider(LLMConfig(provider="chatgpt"))  # type: ignore[arg-type]
@@ -177,7 +177,7 @@ class TestProviderRegistry:
 
 class TestOAuthCodexProvider:
     def test_stream_does_not_duplicate_final_message_after_deltas(self, monkeypatch):
-        from dartlab.engines.ai.providers.oauth_codex import OAuthCodexProvider
+        from dartlab.ai.providers.oauth_codex import OAuthCodexProvider
 
         class DummyResponse:
             def iter_lines(self, decode_unicode: bool = True):
@@ -201,7 +201,7 @@ class TestOAuthCodexProvider:
 
 class TestSharedProfileRouting:
     def test_configure_role_binding_changes_resolved_config(self):
-        from dartlab.engines.ai import configure, get_config
+        from dartlab.ai import configure, get_config
 
         configure(provider="openai", model="gpt-5.4")
         configure(provider="ollama", model="qwen3", role="summary")
@@ -216,7 +216,7 @@ class TestSharedProfileRouting:
 
     def test_status_uses_requested_provider_without_mutating_default(self, monkeypatch):
         import dartlab
-        from dartlab.engines.ai import configure, get_config
+        from dartlab.ai import configure, get_config
 
         class DummyProvider:
             def __init__(self, config):
@@ -225,7 +225,7 @@ class TestSharedProfileRouting:
             def check_available(self):
                 return True
 
-        monkeypatch.setattr("dartlab.engines.ai.providers.create_provider", lambda config: DummyProvider(config))
+        monkeypatch.setattr("dartlab.ai.providers.create_provider", lambda config: DummyProvider(config))
 
         configure(provider="openai", model="gpt-5.4")
         before = get_config()

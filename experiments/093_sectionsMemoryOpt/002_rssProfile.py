@@ -64,7 +64,7 @@ def measure(stockCode: str) -> None:
 
     t0 = time.perf_counter()
 
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
+    from dartlab.providers.dart.docs.sections.pipeline import sections
 
     rssImport = getRssMb()
     print(f"[import 후] RSS: {rssImport:.1f}MB (+{rssImport - rssStart:.1f}MB)")

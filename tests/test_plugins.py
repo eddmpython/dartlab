@@ -195,7 +195,7 @@ class TestPluginContext:
 
     def test_add_tool(self):
         from dartlab.core.plugins import PluginContext, PluginMeta, reset_for_testing
-        from dartlab.engines.ai.tools.plugin import get_plugin_registry
+        from dartlab.ai.tools.plugin import get_plugin_registry
 
         meta = PluginMeta(
             name="test-tool-plugin",
@@ -304,7 +304,7 @@ class TestModuleRegistryRebuild:
     """dart/company.py의 lazy 모듈 레지스트리 재구축 검증."""
 
     def test_rebuild_invalidates_cache(self):
-        from dartlab.engines.company.dart.company import (
+        from dartlab.providers.dart.company import (
             _get_module_registry,
             rebuild_module_registry,
         )
@@ -321,7 +321,7 @@ class TestModuleRegistryRebuild:
         assert len(reg2) == len(reg1)  # 플러그인 미추가 시 동일 크기
 
     def test_get_module_index_consistent(self):
-        from dartlab.engines.company.dart.company import (
+        from dartlab.providers.dart.company import (
             _get_module_index,
             _get_module_registry,
         )

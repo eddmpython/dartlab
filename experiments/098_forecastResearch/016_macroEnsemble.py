@@ -233,7 +233,7 @@ def run():
     print("  098-016: 거시 2변수(GDP+환율) 앙상블 기여도")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     industryMap = {}

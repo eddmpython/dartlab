@@ -157,7 +157,7 @@ def inventory():
             total = sum(1 for f in vars(ratios) if not f.startswith("_"))
             print(f"  ratios: {filled}/{total}개 필드 유효")
 
-            from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+            from dartlab.core.finance.ratios import RATIO_CATEGORIES
 
             for cat, fields in RATIO_CATEGORIES:
                 available = sum(1 for f in fields if getattr(ratios, f, None) is not None)

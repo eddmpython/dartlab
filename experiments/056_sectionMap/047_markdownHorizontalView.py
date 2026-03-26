@@ -10,7 +10,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.views import (
+from dartlab.providers.dart.docs.sections.views import (
     buildMarkdownBlocks,
     buildMarkdownWide,
     saveView,

@@ -57,7 +57,7 @@ import polars as pl
 from lxml import etree
 
 from dartlab.core.dataLoader import loadData
-from dartlab.engines.company.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.client import DartClient
 
 
 def _extractSectionTitles(xmlContent: str) -> list[str]:

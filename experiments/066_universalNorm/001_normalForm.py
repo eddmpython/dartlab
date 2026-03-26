@@ -22,8 +22,8 @@ import sys
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2] / "src"))
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _dataRows,
     _headerCells,
     _isJunk,

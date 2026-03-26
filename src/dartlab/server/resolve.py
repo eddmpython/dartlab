@@ -3,6 +3,15 @@
 from __future__ import annotations
 
 from dartlab import Company
+
+# ── 의도 분류: engines/ai/intent.py에서 re-export ──
+from dartlab.ai.conversation.intent import (
+    has_analysis_intent,
+    is_meta_question,
+)
+from dartlab.ai.conversation.intent import (
+    is_pure_conversation as _is_pure_conversation,
+)
 from dartlab.core.resolve import (
     _RESOLVE_ERRORS,
 )
@@ -20,15 +29,6 @@ from dartlab.core.resolve import (
 )
 from dartlab.core.resolve import (
     strip_particles as _strip_particles,
-)
-
-# ── 의도 분류: engines/ai/intent.py에서 re-export ──
-from dartlab.engines.ai.conversation.intent import (
-    has_analysis_intent,
-    is_meta_question,
-)
-from dartlab.engines.ai.conversation.intent import (
-    is_pure_conversation as _is_pure_conversation,
 )
 
 from .models import AskRequest, HistoryMessage
@@ -242,8 +242,8 @@ def verify_match_with_llm(
             None: 매칭 정상 (YES 또는 UNSURE)
             str: LLM이 제안한 올바른 종목명 (NO:종목명에서 추출)
     """
-    from dartlab.engines.ai import get_config
-    from dartlab.engines.ai.providers import create_provider
+    from dartlab.ai import get_config
+    from dartlab.ai.providers import create_provider
 
     config = get_config()
     llm = create_provider(config)

@@ -48,7 +48,7 @@ sys.path.insert(0, "src")
 
 
 def run():
-    from dartlab.engines.common.finance.merton import calcEquityVolatility, solveMerton
+    from dartlab.core.finance.merton import calcEquityVolatility, solveMerton
 
     # 1. yahoo 히스토리 수집
     print("=" * 70)
@@ -56,7 +56,7 @@ def run():
     print("-" * 70)
 
     try:
-        from dartlab.engines.gather.domains.yahoo import fetch_history
+        from dartlab.gather.domains.yahoo import fetch_history
         df = fetch_history("005930", start="2025-03-01", end="2026-03-01")
         print(f"  행 수: {df.height}")
         print(f"  컬럼: {df.columns}")
@@ -82,7 +82,7 @@ def run():
         print("\n2. gather.price.fetch 수집")
         print("-" * 70)
         try:
-            from dartlab.engines.gather.price import fetch as fetch_price
+            from dartlab.gather.price import fetch as fetch_price
             price = fetch_price("005930")
             if price:
                 market_cap = price.market_cap
@@ -101,8 +101,8 @@ def run():
         print("\n3. DART ratios 수집")
         print("-" * 70)
         try:
-            from dartlab.engines.company.dart.finance.pivot import buildAnnual
-            from dartlab.engines.common.finance.ratios import calcRatios
+            from dartlab.providers.dart.finance.pivot import buildAnnual
+            from dartlab.core.finance.ratios import calcRatios
 
             aResult = buildAnnual("005930")
             if aResult:

@@ -67,7 +67,7 @@ def main():
     print(f"  topics ({len(topics)}): {topics[:8]}...")
 
     # 3. viewer() 호출
-    from dartlab.engines.common.docs.viewer import viewer
+    from dartlab.core.docs.viewer import viewer
 
     if len(periodCols) < 2:
         print("\n기간이 2개 미만 — 비교 불가")

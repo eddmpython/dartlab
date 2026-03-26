@@ -82,7 +82,7 @@ class PluginContext:
 
         기존 @tool 데코레이터와 동일한 효과.
         """
-        from dartlab.engines.ai.tools.plugin import tool as tool_decorator
+        from dartlab.ai.tools.plugin import tool as tool_decorator
 
         decorator = tool_decorator(
             name=name or func.__name__,
@@ -166,7 +166,7 @@ def discover() -> list[PluginMeta]:
     # DART Company 모듈 레지스트리 캐시 무효화
     if _loaded_plugins:
         try:
-            from dartlab.engines.company.dart.company import rebuild_module_registry
+            from dartlab.providers.dart.company import rebuild_module_registry
 
             rebuild_module_registry()
         except ImportError:

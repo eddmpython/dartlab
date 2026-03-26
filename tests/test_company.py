@@ -42,8 +42,8 @@ def _legacyIndexDocsRows(company) -> list[dict[str, object]]:
     if sec is None or "topic" not in sec.columns:
         return []
 
-    from dartlab.engines.company.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
-    from dartlab.engines.company.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
+    from dartlab.providers.dart.company import _CHAPTER_ORDER, _CHAPTER_TITLES
+    from dartlab.providers.dart.docs.sections import displayPeriod, formatPeriodRange, sortPeriods
 
     periodCols = sortPeriods([column for column in sec.columns if str(column).startswith("20")], descending=True)
     periodRange = formatPeriodRange(periodCols, descending=True, annualAsQ4=True)
@@ -131,7 +131,7 @@ def _legacyIndexFrame(company) -> pl.DataFrame:
 
 class TestProfileChangeLedgerHelpers:
     def test_change_point_collapses_repeated_periods(self):
-        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -148,7 +148,7 @@ class TestProfileChangeLedgerHelpers:
         assert set(ledger["period"].to_list()) == {"2024Q1", "2024Q3"}
 
     def test_restated_text_is_separated_from_edited_text(self):
-        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -165,7 +165,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "restated"
 
     def test_table_structure_change_is_not_treated_as_value_edit(self):
-        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "salesOrder",
@@ -195,7 +195,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "added"
 
     def test_placeholder_is_tracked_with_own_change_type(self):
-        from dartlab.engines.company.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart.company import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -253,7 +253,7 @@ class TestCompany:
 
     def test_alphanumeric_dart_codes_are_routed_and_resolved(self):
         from dartlab import Company
-        from dartlab.engines.company.dart.company import Company as DartEngineCompany
+        from dartlab.providers.dart.company import Company as DartEngineCompany
 
         c = Company("0009K0")
         assert isinstance(c, DartEngineCompany)
@@ -263,7 +263,7 @@ class TestCompany:
         assert payload is None or isinstance(payload, pl.DataFrame)
 
     def test_source_namespaces(self):
-        from dartlab.engines.company.dart.report.types import PREFERRED_QUARTER
+        from dartlab.providers.dart.report.types import PREFERRED_QUARTER
 
         c = self.c
         assert c.docs is not None
@@ -537,8 +537,8 @@ class TestCompany:
         assert traced_docs["primarySource"] == "docs"
 
     def test_report_available_api_types_matches_extract_without_extract_caches(self):
-        from dartlab.engines.company.dart.company import Company as DartCompany
-        from dartlab.engines.company.dart.report.types import API_TYPES
+        from dartlab.providers.dart.company import Company as DartCompany
+        from dartlab.providers.dart.report.types import API_TYPES
 
         fastCompany = DartCompany(SAMSUNG)
         available = fastCompany.report.availableApiTypes
@@ -552,7 +552,7 @@ class TestCompany:
         assert available == expected
 
     def test_finance_trace_fast_path_matches_profile_trace_without_heavy_caches(self):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         for topic in ("BS", "IS", "CF", "CIS", "SCE"):
             fastCompany = DartCompany(SAMSUNG)
@@ -570,7 +570,7 @@ class TestCompany:
             assert traced == baselineCompany.profile.trace(topic, period="2024")
 
     def test_show_finance_fast_path_avoids_sections(self):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         for topic in ("BS", "IS", "CF", "CIS", "SCE", "ratios"):
             fastCompany = DartCompany(SAMSUNG)
@@ -596,7 +596,7 @@ class TestCompany:
             assert result.equals(expected, null_equal=True)
 
     def test_index_docs_fast_path_matches_legacy_sections_without_heavy_caches(self):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         fastCompany = DartCompany(SAMSUNG)
         result = fastCompany._indexDocsRows()
@@ -612,7 +612,7 @@ class TestCompany:
         assert result == expected
 
     def test_index_fast_path_matches_legacy_index_without_sections(self):
-        from dartlab.engines.company.dart.company import Company as DartCompany
+        from dartlab.providers.dart.company import Company as DartCompany
 
         fastCompany = DartCompany(SAMSUNG)
         result = fastCompany.index
@@ -660,7 +660,7 @@ class TestCompany:
         assert bs is None or isinstance(bs, pl.DataFrame)
 
     def test_report_result_surface_is_unified(self):
-        from dartlab.engines.company.dart.report.types import ReportResult
+        from dartlab.providers.dart.report.types import ReportResult
 
         c = self.c
         dividend = c.report.result("dividend")

@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.engines.ai.conversation.prompts import (
+from dartlab.ai.conversation.prompts import (
     _classify_question,
     _match_sector,
     build_system_prompt,

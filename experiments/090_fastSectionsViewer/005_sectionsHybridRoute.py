@@ -60,7 +60,7 @@ def loadModule(path: Path, moduleName: str):
 BASE = loadModule(Path(__file__).with_name("001_viewerApiBaseline.py"), "exp090Base005")
 POLARS = loadModule(Path(__file__).with_name("002_polarsViewerRoute.py"), "exp090Polars005")
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.providers.dart.docs.sections.pipeline import sections as buildSections
 
 PERIOD_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 

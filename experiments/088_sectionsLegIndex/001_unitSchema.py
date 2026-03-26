@@ -62,8 +62,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections  # noqa: E402
-from dartlab.engines.company.dart.docs.sections.views import (  # noqa: E402
+from dartlab.providers.dart.docs.sections.pipeline import sections as buildSections  # noqa: E402
+from dartlab.providers.dart.docs.sections.views import (  # noqa: E402
     retrievalBlocks,
     splitContextText,
     splitMarkdownTable,

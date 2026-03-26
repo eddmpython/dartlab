@@ -186,7 +186,7 @@ def _printHelp(console) -> None:
 def _runEdgar(console, args) -> int:
     """EDGAR docs 수집."""
     from dartlab.core.dataLoader import _dataDir
-    from dartlab.engines.company.edgar.docs.fetch import fetchEdgarDocs
+    from dartlab.providers.edgar.docs.fetch import fetchEdgarDocs
 
     outDir = _dataDir("edgarDocs")
     outDir.mkdir(parents=True, exist_ok=True)
@@ -263,7 +263,7 @@ def _loadEdgarTickers(tier: str) -> list[str] | None:
 
 
 def _runStats(console) -> int:
-    from dartlab.engines.company.dart.openapi.collector import collectionStats
+    from dartlab.providers.dart.openapi.collector import collectionStats
 
     stats = collectionStats()
     console.print(f"전체 상장: {stats['totalListed']}")
@@ -273,7 +273,7 @@ def _runStats(console) -> int:
 
 
 def _runUncollected(console, limit: int) -> int:
-    from dartlab.engines.company.dart.openapi.collector import listUncollectedKind
+    from dartlab.providers.dart.openapi.collector import listUncollectedKind
 
     stocks = listUncollectedKind()
     showing = min(limit, len(stocks))
@@ -284,8 +284,8 @@ def _runUncollected(console, limit: int) -> int:
 
 
 def _runAuto(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.batch import batchCollect
-    from dartlab.engines.company.dart.openapi.collector import listUncollectedKind
+    from dartlab.providers.dart.openapi.batch import batchCollect
+    from dartlab.providers.dart.openapi.collector import listUncollectedKind
 
     stocks = listUncollectedKind(limit=args.limit)
 
@@ -311,8 +311,8 @@ def _runAuto(console, args) -> int:
 
 
 def _runBatch(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.batch import batchCollect, batchCollectAll
-    from dartlab.engines.company.dart.openapi.dartKey import resolveDartKeys
+    from dartlab.providers.dart.openapi.batch import batchCollect, batchCollectAll
+    from dartlab.providers.dart.openapi.dartKey import resolveDartKeys
 
     keys = resolveDartKeys()
     if not keys:
@@ -342,8 +342,8 @@ def _runBatch(console, args) -> int:
 
 
 def _runCheck(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
-    from dartlab.engines.company.dart.openapi.freshness import (
+    from dartlab.providers.dart.openapi.dartKey import hasDartApiKey
+    from dartlab.providers.dart.openapi.freshness import (
         checkFreshness,
         scanMarketFreshness,
     )
@@ -375,8 +375,8 @@ def _runCheck(console, args) -> int:
 
 
 def _runIncremental(console, args) -> int:
-    from dartlab.engines.company.dart.openapi.dartKey import hasDartApiKey
-    from dartlab.engines.company.dart.openapi.freshness import (
+    from dartlab.providers.dart.openapi.dartKey import hasDartApiKey
+    from dartlab.providers.dart.openapi.freshness import (
         checkFreshness,
         collectMissing,
         scanMarketFreshness,
@@ -420,7 +420,7 @@ def _runCollect(console, args) -> int:
     codes = args.codes
 
     if len(codes) == 1:
-        from dartlab.engines.company.dart.openapi.zipCollector import ZipDocsCollector
+        from dartlab.providers.dart.openapi.zipCollector import ZipDocsCollector
 
         try:
             collector = ZipDocsCollector(codes[0])
@@ -433,7 +433,7 @@ def _runCollect(console, args) -> int:
             console.print(f"[red]{e}[/]")
             return 1
     else:
-        from dartlab.engines.company.dart.openapi.batch import batchCollect
+        from dartlab.providers.dart.openapi.batch import batchCollect
 
         results = batchCollect(codes, categories=["docs"])
         total = len(results)

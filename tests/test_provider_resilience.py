@@ -6,9 +6,9 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import MagicMock, patch
 
-from dartlab.engines.ai.providers.ollama import OllamaProvider
-from dartlab.engines.ai.providers.openai_compat import OpenAICompatProvider
-from dartlab.engines.ai.types import LLMConfig
+from dartlab.ai.providers.ollama import OllamaProvider
+from dartlab.ai.providers.openai_compat import OpenAICompatProvider
+from dartlab.ai.types import LLMConfig
 
 
 class TestOpenAICompatProvider:

@@ -67,8 +67,8 @@ sys.path.insert(0, "src")
 
 def main():
     import dartlab
-    from dartlab.engines.ai.tools.registry import build_tool_runtime
-    from dartlab.engines.ai.tools.selector import buildToolPrompt
+    from dartlab.ai.tools.registry import build_tool_runtime
+    from dartlab.ai.tools.selector import buildToolPrompt
 
     print("=" * 60)
     print("Phase 1: Company 없이 도구 수 비교")

@@ -6,18 +6,18 @@ import polars as pl
 import pytest
 
 from dartlab.core.memory import BoundedCache
-from dartlab.engines.ai.context import build_compact_context, build_context_by_module
-from dartlab.engines.ai.context.builder import _resolve_context_route
-from dartlab.engines.ai.context.finance_context import _detect_year_hint
-from dartlab.engines.ai.runtime.core import (
+from dartlab.ai.context import build_compact_context, build_context_by_module
+from dartlab.ai.context.builder import _resolve_context_route
+from dartlab.ai.context.finance_context import _detect_year_hint
+from dartlab.ai.runtime.core import (
     _resolve_context_tier,
     _resolve_follow_up_include,
     _resolve_snapshot_policy,
     _should_run_validation,
     _should_use_light_mode,
 )
-from dartlab.engines.company.dart._docs_accessor import _DocsAccessor
-from dartlab.engines.company.dart.company import Company
+from dartlab.providers.dart._docs_accessor import _DocsAccessor
+from dartlab.providers.dart.company import Company
 
 pytestmark = pytest.mark.unit
 
@@ -91,9 +91,9 @@ def test_sections_topics_and_outline_use_lightweight_manifest(monkeypatch):
             return "riskDerivative"
         return title
 
-    monkeypatch.setattr("dartlab.engines.company.dart.company.loadData", fake_load_data)
+    monkeypatch.setattr("dartlab.providers.dart.company.loadData", fake_load_data)
     monkeypatch.setattr("dartlab.core.dataLoader.loadData", fake_load_data)
-    monkeypatch.setattr("dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", fake_map_section_title)
+    monkeypatch.setattr("dartlab.providers.dart.docs.sections.mapper.mapSectionTitle", fake_map_section_title)
 
     company = _bare_company(has_docs=True)
 
@@ -132,10 +132,10 @@ def test_company_topics_combines_docs_manifest_and_finance_summary_without_secti
             return _project(finance_df, kwargs.get("columns"))
         raise AssertionError(f"unexpected category: {category}")
 
-    monkeypatch.setattr("dartlab.engines.company.dart.company.loadData", fake_load_data)
+    monkeypatch.setattr("dartlab.providers.dart.company.loadData", fake_load_data)
     monkeypatch.setattr("dartlab.core.dataLoader.loadData", fake_load_data)
     monkeypatch.setattr(
-        "dartlab.engines.company.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview"
+        "dartlab.providers.dart.docs.sections.mapper.mapSectionTitle", lambda title: "businessOverview"
     )
 
     company = _bare_company(has_docs=True, has_finance=True)
@@ -167,9 +167,9 @@ def test_get_finance_build_reuses_quarter_series(monkeypatch):
         calls["cum"] += 1
         return (series, periods)
 
-    monkeypatch.setattr("dartlab.engines.company.dart.finance.pivot.buildTimeseries", fake_build_timeseries)
-    monkeypatch.setattr("dartlab.engines.company.dart.finance.pivot._aggregateAnnual", fake_aggregate_annual)
-    monkeypatch.setattr("dartlab.engines.company.dart.finance.pivot._aggregateCumulative", fake_aggregate_cumulative)
+    monkeypatch.setattr("dartlab.providers.dart.finance.pivot.buildTimeseries", fake_build_timeseries)
+    monkeypatch.setattr("dartlab.providers.dart.finance.pivot._aggregateAnnual", fake_aggregate_annual)
+    monkeypatch.setattr("dartlab.providers.dart.finance.pivot._aggregateCumulative", fake_aggregate_cumulative)
 
     company = _bare_company(has_docs=False, has_finance=True)
 
@@ -189,7 +189,7 @@ def test_insights_uses_prebuilt_finance_series(monkeypatch):
         captured.update(kwargs)
         return "analysis-ok"
 
-    monkeypatch.setattr("dartlab.engines.analysis.insight.analyze", fake_analyze)
+    monkeypatch.setattr("dartlab.analysis.financial.insight.analyze", fake_analyze)
 
     company = _bare_company(has_docs=False, has_finance=True)
     company.finance = SimpleNamespace(timeseries=q_pair, annual=a_pair)
@@ -854,7 +854,7 @@ def test_should_use_light_mode_only_for_pure_conversation_or_meta():
 
 
 def test_route_hint_matches_keywords():
-    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+    from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("삼성전자 경영진 분석 의견에서 올해 핵심 이슈가 뭔지 정리해줘")
     assert "show_topic" in hint
@@ -862,14 +862,14 @@ def test_route_hint_matches_keywords():
 
 
 def test_route_hint_empty_for_no_match():
-    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+    from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("안녕하세요")
     assert hint == ""
 
 
 def test_route_hint_multiple_keywords():
-    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+    from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("삼성전자 재무제표와 배당 현황 알려줘")
     assert "get_data" in hint
@@ -879,7 +879,7 @@ def test_route_hint_multiple_keywords():
 
 
 def test_route_hint_deduplicates():
-    from dartlab.engines.ai.tools.routeHint import buildToolRouteHint
+    from dartlab.ai.tools.routeHint import buildToolRouteHint
 
     hint = buildToolRouteHint("임원 보수 현황 알려줘")
     assert hint.count("executive") == 1

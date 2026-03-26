@@ -23,8 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _MULTI_YEAR_KW,
     _classifyStructure,
     _extractUnit,
@@ -274,8 +274,8 @@ if __name__ == "__main__":
     ]
     topics = ["dividend", "audit", "companyOverview", "employee", "salesOrder"]
 
-    from dartlab.engines.company.dart.docs.sections.tableParser import _dataRows as _drOld
-    from dartlab.engines.company.dart.docs.sections.tableParser import _headerCells as _hcOld
+    from dartlab.providers.dart.docs.sections.tableParser import _dataRows as _drOld
+    from dartlab.providers.dart.docs.sections.tableParser import _headerCells as _hcOld
 
     for code, name in stocks:
         try:

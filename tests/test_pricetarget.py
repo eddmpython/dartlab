@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.engines.analysis.analyst.prediction import ContextSignals
-from dartlab.engines.analysis.analyst.simulation import (
+from dartlab.analysis.forecast.prediction import ContextSignals
+from dartlab.analysis.forecast.simulation import (
     DEFAULT_ELASTICITY,
     PRESET_SCENARIOS,
     SectorElasticity,
 )
-from dartlab.engines.common.finance.pricetarget import (
+from dartlab.analysis.valuation.pricetarget import (
     PriceTargetResult,
     _classify_signal,
     _dcf_from_proforma,
@@ -22,7 +22,7 @@ from dartlab.engines.common.finance.pricetarget import (
     _monte_carlo_price_distribution,
     compute_price_target,
 )
-from dartlab.engines.common.finance.proforma import build_proforma
+from dartlab.analysis.forecast.proforma import build_proforma
 
 # ── Mock 시계열 (test_proforma와 동일) ──────────────────
 
@@ -415,7 +415,7 @@ class TestContextSignalsIntegration:
     @pytest.mark.unit
     def test_size_class_passed_to_mc(self):
         """Small sizeClass → MC σ가 달라짐 (간접 검증)."""
-        from dartlab.engines.analysis.analyst.prediction import getNoiseSigma as get_noise_sigma
+        from dartlab.analysis.forecast.prediction import getNoiseSigma as get_noise_sigma
 
         # MC를 직접 실행하지 않고, σ 설정이 size_class에 따라 다른지 확인
         sigma_s = get_noise_sigma("growth", "Small")

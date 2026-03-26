@@ -192,7 +192,7 @@ def run():
     print("  098-009: Peer consensus 매출 예측")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     industryMap = {}

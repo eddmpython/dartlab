@@ -50,7 +50,7 @@ OLLAMA_BASE = "http://localhost:11434"
 
 def ollama_complete_with_tools(self, messages, tools):
     """OllamaProvider용 complete_with_tools 구현 (monkeypatch용)."""
-    from dartlab.engines.ai.types import ToolCall, ToolResponse
+    from dartlab.ai.types import ToolCall, ToolResponse
 
     # OpenAI 호환 API 사용
     payload = {
@@ -113,10 +113,10 @@ def ollama_complete_with_tools(self, messages, tools):
 def run_agent_test():
     """실제 agent_loop 종단 테스트."""
     import dartlab
-    from dartlab.engines.ai.agent import agent_loop
-    from dartlab.engines.ai.providers.ollama import OllamaProvider
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
-    from dartlab.engines.ai.types import LLMConfig
+    from dartlab.ai.agent import agent_loop
+    from dartlab.ai.providers.ollama import OllamaProvider
+    from dartlab.ai.tools_registry import build_tool_runtime
+    from dartlab.ai.types import LLMConfig
 
     # Ollama 가용성 확인
     try:

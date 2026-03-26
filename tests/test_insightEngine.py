@@ -4,44 +4,44 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.engines.analysis.insight.anomaly import (
+from dartlab.analysis.financial.insight.anomaly import (
     _yoyChange,
     detectBalanceSheetShift,
     detectCashBurn,
     detectEarningsQuality,
     runAnomalyDetection,
 )
-from dartlab.engines.analysis.insight.benchmark import (
+from dartlab.analysis.financial.insight.benchmark import (
     BENCHMARKS,
     DEFAULT_BENCHMARK,
     getBenchmark,
     sectorAdjustment,
 )
-from dartlab.engines.analysis.insight.detector import (
+from dartlab.analysis.financial.insight.detector import (
     detectIncompleteYear,
 )
-from dartlab.engines.analysis.insight.grading import (
+from dartlab.analysis.financial.insight.grading import (
     _getGrowthYoY,
     _scoreToGrade,
     analyzeOpportunitySummary,
     analyzeProfitability,
     analyzeRiskSummary,
 )
-from dartlab.engines.analysis.insight.summary import (
+from dartlab.analysis.financial.insight.summary import (
     _eunNeun,
     _iGa,
     classifyProfile,
     generateSummary,
 )
-from dartlab.engines.analysis.insight.types import (
+from dartlab.analysis.financial.insight.types import (
     AnalysisResult,
     Anomaly,
     Flag,
     InsightResult,
 )
-from dartlab.engines.analysis.rank.rank import RankInfo
-from dartlab.engines.analysis.sector.types import Sector
-from dartlab.engines.common.finance.ratios import RatioResult
+from dartlab.analysis.comparative.rank.rank import RankInfo
+from dartlab.analysis.comparative.sector.types import Sector
+from dartlab.core.finance.ratios import RatioResult
 
 
 class TestTypes:

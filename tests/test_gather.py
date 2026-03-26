@@ -8,9 +8,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from dartlab.engines.gather.cache import GatherCache
-from dartlab.engines.gather.http import GatherHttpClient, _AsyncRateLimiter
-from dartlab.engines.gather.types import (
+from dartlab.gather.cache import GatherCache
+from dartlab.gather.http import GatherHttpClient, _AsyncRateLimiter
+from dartlab.gather.types import (
     ConsensusData,
     FlowData,
     GatherResult,
@@ -121,7 +121,7 @@ class TestGatherHttpClient:
     """GatherHttpClient 기본 동작."""
 
     def test_close(self):
-        from dartlab.engines.gather.http import run_async
+        from dartlab.gather.http import run_async
 
         client = GatherHttpClient()
         run_async(client.close())  # 에러 없이 종료
@@ -261,7 +261,7 @@ class TestNaverSource:
     """네이버 소스 — mock HTTP 응답 (async)."""
 
     def test_fetch_price_success(self):
-        from dartlab.engines.gather.domains.naver import fetch_price
+        from dartlab.gather.domains.naver import fetch_price
 
         mock_client = _make_async_client(
             {
@@ -283,7 +283,7 @@ class TestNaverSource:
         assert result.high_52w == 250000
 
     def test_fetch_consensus_success(self):
-        from dartlab.engines.gather.domains.naver import fetch_consensus
+        from dartlab.gather.domains.naver import fetch_consensus
 
         mock_client = _make_async_client(
             {
@@ -310,14 +310,14 @@ class TestNaverSource:
         assert result.low == 250000
 
     def test_fetch_consensus_no_data(self):
-        from dartlab.engines.gather.domains.naver import fetch_consensus
+        from dartlab.gather.domains.naver import fetch_consensus
 
         mock_client = _make_async_client({})
         result = asyncio.run(fetch_consensus("005930", mock_client))
         assert result is None
 
     def test_fetch_flow_success(self):
-        from dartlab.engines.gather.domains.naver import fetch_flow
+        from dartlab.gather.domains.naver import fetch_flow
 
         mock_client = _make_async_client(
             {
@@ -341,7 +341,7 @@ class TestNaverSource:
         assert result[0]["institutionNet"] == 1200000.0
 
     def test_clean_number_edge_cases(self):
-        from dartlab.engines.gather.domains.naver import _clean_number
+        from dartlab.gather.domains.naver import _clean_number
 
         assert _clean_number("1,234,567") == 1234567
         assert _clean_number("+500") == 500
@@ -370,7 +370,7 @@ class TestGatherFacade:
     """Gather facade — mock 기반 통합."""
 
     def test_collect_builds_snapshot(self):
-        from dartlab.engines.gather import Gather
+        from dartlab.gather import Gather
 
         mock_client = _make_facade_client(
             {
@@ -387,7 +387,7 @@ class TestGatherFacade:
         # naver fetch_all만 mock — yahoo 등 실제 네트워크 차단
         async def _mock_domain(self_inner, domain_name, stock_code, market):
             if domain_name == "naver":
-                from dartlab.engines.gather.domains import naver
+                from dartlab.gather.domains import naver
 
                 return await naver.fetch_all(stock_code, self_inner._client)
             return GatherResult(domain=domain_name)
@@ -401,7 +401,7 @@ class TestGatherFacade:
         assert snapshot.collected_at != ""
 
     def test_collect_caches_result(self):
-        from dartlab.engines.gather import Gather
+        from dartlab.gather import Gather
 
         mock_client = _make_facade_client({"closePrice": "100000"})
 
@@ -414,8 +414,8 @@ class TestGatherFacade:
 
     def test_collect_graceful_degradation(self):
         """소스 실패 시 → 빈 결과지만 스냅샷은 정상 생성."""
-        from dartlab.engines.gather import Gather
-        from dartlab.engines.gather.types import SourceUnavailableError
+        from dartlab.gather import Gather
+        from dartlab.gather.types import SourceUnavailableError
 
         async def mock_get(url, **kwargs):
             if "basic" in url:
@@ -433,7 +433,7 @@ class TestGatherFacade:
         # naver fetch_all만 mock — yahoo 등 실제 네트워크 차단
         async def _mock_domain(self_inner, domain_name, stock_code, market):
             if domain_name == "naver":
-                from dartlab.engines.gather.domains import naver
+                from dartlab.gather.domains import naver
 
                 return await naver.fetch_all(stock_code, self_inner._client)
             return GatherResult(domain=domain_name)
@@ -450,7 +450,7 @@ class TestGatherFacade:
 
     def test_price_fallback(self):
         """price(snapshot=True) — 스냅샷 개별 조회."""
-        from dartlab.engines.gather import Gather
+        from dartlab.gather import Gather
 
         mock_client = _make_facade_client(
             {
@@ -466,7 +466,7 @@ class TestGatherFacade:
         assert price.current == 200000
 
     def test_invalidate(self):
-        from dartlab.engines.gather import Gather
+        from dartlab.gather import Gather
 
         mock_client = _make_facade_client({"closePrice": "100000"})
 

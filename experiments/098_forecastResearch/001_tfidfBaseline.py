@@ -102,7 +102,7 @@ def run():
     print("=" * 70)
 
     # 1. KIND listing 로드
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
 
     kindDf = getKindList()
     kindMap = {}  # stockCode -> (companyName, industry)

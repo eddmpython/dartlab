@@ -6,8 +6,8 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-import dartlab.engines.ai.runtime.pipeline as pipeline_module
-from dartlab.engines.ai.runtime.pipeline import (
+import dartlab.ai.runtime.pipeline as pipeline_module
+from dartlab.ai.runtime.pipeline import (
     _df_to_simple_md,
     _run_dividend_analysis,
     _run_growth_analysis,

@@ -37,8 +37,8 @@ def should_preload_ollama() -> bool:
 
 
 def probe_provider_availability(prov: str) -> tuple[bool | None, str | None, bool]:
-    from dartlab.engines.ai import get_config
-    from dartlab.engines.ai.providers import create_provider
+    from dartlab.ai import get_config
+    from dartlab.ai.providers import create_provider
 
     try:
         config = get_config(prov)
@@ -61,7 +61,7 @@ def probe_provider_availability(prov: str) -> tuple[bool | None, str | None, boo
 def build_ollama_detail(*, probe: bool) -> dict[str, Any]:
     if probe:
         try:
-            from dartlab.engines.ai.providers.support.ollama_setup import detect_ollama, get_install_guide
+            from dartlab.ai.providers.support.ollama_setup import detect_ollama, get_install_guide
 
             ollama_info = detect_ollama()
             detail = {
@@ -86,7 +86,7 @@ def build_ollama_detail(*, probe: bool) -> dict[str, Any]:
 
 def build_oauth_codex_detail(*, probe: bool) -> dict[str, Any]:
     try:
-        from dartlab.engines.ai.providers.support import oauth_token as oauthToken
+        from dartlab.ai.providers.support import oauth_token as oauthToken
     except (ImportError, OSError, RuntimeError):
         return {"authenticated": False, "tokenStored": False, "accountId": None, "checked": probe}
 
@@ -130,9 +130,9 @@ def build_oauth_codex_detail(*, probe: bool) -> dict[str, Any]:
 
 def validate_provider_connection(req: ConfigureRequest) -> dict[str, Any]:
     """LLM provider 연결 가능 여부만 검증한다."""
-    from dartlab.engines.ai import get_config
-    from dartlab.engines.ai.providers import create_provider
-    from dartlab.engines.ai.types import LLMConfig
+    from dartlab.ai import get_config
+    from dartlab.ai.providers import create_provider
+    from dartlab.ai.types import LLMConfig
 
     effective_provider = normalize_provider(req.provider) or req.provider
     current = get_config(effective_provider, role=normalize_role(req.role) or DEFAULT_ROLE)

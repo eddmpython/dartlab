@@ -15,7 +15,7 @@ pytestmark = pytest.mark.integration
 
 
 def test_available_scans():
-    from dartlab.engines.company.dart.scan import available_scans
+    from dartlab.market import available_scans
 
     scans = available_scans()
     assert isinstance(scans, list)
@@ -23,8 +23,8 @@ def test_available_scans():
 
 
 def test_governance_imports():
-    from dartlab.engines.company.dart.scan.governance import scan_governance
-    from dartlab.engines.company.dart.scan.governance.scorer import grade, score_ownership
+    from dartlab.market.governance import scan_governance
+    from dartlab.market.governance.scorer import grade, score_ownership
 
     assert callable(scan_governance)
     assert grade(90) == "A"
@@ -36,8 +36,8 @@ def test_governance_imports():
 
 
 def test_capital_imports():
-    from dartlab.engines.company.dart.scan.capital import scan_capital
-    from dartlab.engines.company.dart.scan.capital.classifier import classify_return
+    from dartlab.market.capital import scan_capital
+    from dartlab.market.capital.classifier import classify_return
 
     assert callable(scan_capital)
     cat, contra = classify_return(True, True, False)
@@ -49,14 +49,14 @@ def test_capital_imports():
 
 
 def test_workforce_imports():
-    from dartlab.engines.company.dart.scan.workforce import scan_workforce
+    from dartlab.market.workforce import scan_workforce
 
     assert callable(scan_workforce)
 
 
 def test_debt_imports():
-    from dartlab.engines.company.dart.scan.debt import scan_debt
-    from dartlab.engines.company.dart.scan.debt.risk import classify_risk
+    from dartlab.market.debt import scan_debt
+    from dartlab.market.debt.risk import classify_risk
 
     assert callable(scan_debt)
     assert classify_risk(0.5, 60) == "고위험"
@@ -69,7 +69,7 @@ def test_debt_imports():
 
 
 def test_signal_imports():
-    from dartlab.engines.company.dart.scan.signal import keywords, scan_signal
+    from dartlab.market.signal import keywords, scan_signal
 
     assert callable(scan_signal)
     kws = keywords()
@@ -78,7 +78,7 @@ def test_signal_imports():
 
 
 def test_helpers_parse_num():
-    from dartlab.engines.company.dart.scan._helpers import parse_num
+    from dartlab.market._helpers import parse_num
 
     assert parse_num("1,234") == 1234.0
     assert parse_num("-") is None
@@ -111,7 +111,7 @@ class TestWithData:
 
 def test_scan_spec_registered():
     """scan spec이 AI 엔진 총괄에 등록되어 있는지."""
-    from dartlab.engines.ai.spec import buildSpec
+    from dartlab.ai.spec import buildSpec
 
     spec = buildSpec()
     assert "dart.scan" in spec["engines"]
@@ -127,7 +127,7 @@ def test_scan_spec_registered():
 def test_scan_tool_registered_with_company():
     """Company가 있을 때 get_scan_data tool이 등록되는지."""
     import dartlab
-    from dartlab.engines.ai.tools.registry import register_defaults
+    from dartlab.ai.tools.registry import register_defaults
 
     c = dartlab.Company("005930")
     rt = register_defaults(c)
@@ -137,7 +137,7 @@ def test_scan_tool_registered_with_company():
 
 def test_scan_tool_not_registered_without_company():
     """Company가 없을 때 get_scan_data tool이 없는지."""
-    from dartlab.engines.ai.tools.registry import register_defaults
+    from dartlab.ai.tools.registry import register_defaults
 
     rt = register_defaults(None)
     names = [s["function"]["name"] for s in rt.get_tool_schemas()]
@@ -146,7 +146,7 @@ def test_scan_tool_not_registered_without_company():
 
 def test_pipeline_classify_governance():
     """거버넌스 질문이 '지배구조'로 분류되는지."""
-    from dartlab.engines.ai.runtime.pipeline import classify_question
+    from dartlab.ai.runtime.pipeline import classify_question
 
     assert classify_question("이 회사의 거버넌스는 어때?") == "지배구조"
     assert classify_question("지배구조 현황을 알려줘") == "지배구조"
@@ -154,7 +154,7 @@ def test_pipeline_classify_governance():
 
 def test_pipeline_scan_axes_mapping():
     """질문 유형별 scan 축 매핑이 정의되어 있는지."""
-    from dartlab.engines.ai.runtime.pipeline import _SCAN_AXES_BY_QTYPE
+    from dartlab.ai.runtime.pipeline import _SCAN_AXES_BY_QTYPE
 
     assert "지배구조" in _SCAN_AXES_BY_QTYPE
     assert "governance" in _SCAN_AXES_BY_QTYPE["지배구조"]
@@ -164,7 +164,7 @@ def test_pipeline_scan_axes_mapping():
 
 def test_signal_empty_result(tmp_path, monkeypatch):
     import dartlab
-    from dartlab.engines.company.dart.scan.signal import scan_signal
+    from dartlab.market.signal import scan_signal
 
     docs_dir = tmp_path / "dart" / "docs"
     docs_dir.mkdir(parents=True)
@@ -178,7 +178,7 @@ def test_signal_empty_result(tmp_path, monkeypatch):
 
 def test_signal_keyword_filter_with_temp_docs(tmp_path, monkeypatch):
     import dartlab
-    from dartlab.engines.company.dart.scan.signal import scan_signal
+    from dartlab.market.signal import scan_signal
 
     docs_dir = tmp_path / "dart" / "docs"
     docs_dir.mkdir(parents=True)
@@ -226,7 +226,7 @@ def test_signal_keyword_filter_with_temp_docs(tmp_path, monkeypatch):
 
 
 def test_signal_invalid_keyword_raises():
-    from dartlab.engines.company.dart.scan.signal import scan_signal
+    from dartlab.market.signal import scan_signal
 
     with pytest.raises(ValueError, match="알 수 없는 키워드"):
         scan_signal("NOT_A_KEYWORD", verbose=False)
@@ -237,7 +237,7 @@ def test_signal_invalid_keyword_raises():
     reason="local docs corpus 없음",
 )
 def test_signal_local_docs_ordering():
-    from dartlab.engines.company.dart.scan.signal import scan_signal
+    from dartlab.market.signal import scan_signal
 
     result = scan_signal("AI", verbose=False)
 
@@ -259,7 +259,7 @@ class TestScanIntegration:
 
     def test_scan_tool_execution(self):
         """get_scan_data tool이 실제로 결과를 반환하는지."""
-        from dartlab.engines.ai.tools.registry import register_defaults
+        from dartlab.ai.tools.registry import register_defaults
 
         rt = register_defaults(self.c)
         result = rt.execute_tool("get_scan_data", {"axis": "governance"})
@@ -268,7 +268,7 @@ class TestScanIntegration:
 
     def test_pipeline_scan_injection(self):
         """pipeline이 지배구조 질문에 scan context를 주입하는지."""
-        from dartlab.engines.ai.runtime.pipeline import _run_scan
+        from dartlab.ai.runtime.pipeline import _run_scan
 
         result = _run_scan(self.c, "지배구조")
         assert result is not None
@@ -276,7 +276,7 @@ class TestScanIntegration:
 
     def test_scan_all_axes(self):
         """get_scan_data(axis='all')이 4축 모두 반환하는지."""
-        from dartlab.engines.ai.tools.registry import register_defaults
+        from dartlab.ai.tools.registry import register_defaults
 
         rt = register_defaults(self.c)
         result = rt.execute_tool("get_scan_data", {"axis": "all"})

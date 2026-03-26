@@ -94,16 +94,16 @@ def main():
     print("2. API 직접 수집 (saveReport)")
     print("=" * 80)
 
-    from dartlab.engines.company.dart.openapi.dart import Dart, _PERIODIC_REPORT_CATEGORIES
-    from dartlab.engines.company.dart.openapi.disclosure import _resolveCorpCode
-    from dartlab.engines.company.dart.openapi.saver import enrichReport
+    from dartlab.providers.dart.openapi.dart import Dart, _PERIODIC_REPORT_CATEGORIES
+    from dartlab.providers.dart.openapi.disclosure import _resolveCorpCode
+    from dartlab.providers.dart.openapi.saver import enrichReport
 
     d = Dart()
     s = d("005930")
 
     # 전체 apiType을 2023~2024로 수집
     frames = []
-    from dartlab.engines.company.dart.openapi.dart import _REPORT_ENDPOINTS
+    from dartlab.providers.dart.openapi.dart import _REPORT_ENDPOINTS
     for cat in _PERIODIC_REPORT_CATEGORIES:
         try:
             df = s.report(cat, 2023, end=2024, q=0)

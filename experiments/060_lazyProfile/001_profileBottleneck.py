@@ -34,7 +34,7 @@ sys.path.insert(0, "src")
 
 
 def measure():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     t0 = time.perf_counter()
     c = Company("005930")

@@ -31,7 +31,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.company.edgar.docs.fetch import _downloadHtml, _htmlToText, _splitItems
+from dartlab.providers.edgar.docs.fetch import _downloadHtml, _htmlToText, _splitItems
 
 
 def main() -> None:

@@ -52,7 +52,7 @@ def _estimate_tokens(text: str) -> int:
 
 def build_contexts_by_tier(company, question: str) -> dict[str, str]:
     """한 질문에 대해 3개 tier context 생성."""
-    from dartlab.engines.ai.context import (
+    from dartlab.ai.context import (
         build_context_by_module,
         build_context_focused,
         build_context_skeleton,
@@ -82,9 +82,9 @@ def build_contexts_by_tier(company, question: str) -> dict[str, str]:
 def run_ablation(qa_subset: list[dict], provider_name: str = "claude") -> list[dict]:
     """tier별 LLM 호출 + 채점."""
     import dartlab
-    from dartlab.engines.ai.prompts import SYSTEM_PROMPT_KR
-    from dartlab.engines.ai.providers import create_provider
-    from dartlab.engines.ai.types import LLMConfig
+    from dartlab.ai.prompts import SYSTEM_PROMPT_KR
+    from dartlab.ai.providers import create_provider
+    from dartlab.ai.types import LLMConfig
 
     auto_score = _load_scorer()
 

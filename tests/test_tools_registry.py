@@ -8,7 +8,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.ai.tools.registry import (
+from dartlab.ai.tools.registry import (
     build_tool_runtime,
     clear_registry,
     execute_tool,
@@ -228,7 +228,7 @@ class TestRegisterDefaults:
         assert "timeout_seconds" in result
 
     def test_get_coding_runtime_status(self, monkeypatch):
-        from dartlab.engines.ai.providers.support import codex_cli
+        from dartlab.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,
@@ -249,7 +249,7 @@ class TestRegisterDefaults:
         assert "workspace-write" in result
 
     def test_run_coding_task(self, monkeypatch):
-        from dartlab.engines.ai.providers.support import codex_cli
+        from dartlab.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,
@@ -285,7 +285,7 @@ class TestRegisterDefaults:
         assert "done: foo.py를 수정해줘" in result
 
     def test_run_codex_task(self, monkeypatch):
-        from dartlab.engines.ai.providers.support import codex_cli
+        from dartlab.ai.providers.support import codex_cli
 
         monkeypatch.setattr(
             codex_cli,
@@ -358,7 +358,7 @@ class TestRegisterDefaults:
                 return "<html><body>단일판매공급계약 본문</body></html>"
 
         monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
-        monkeypatch.setattr("dartlab.engines.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
+        monkeypatch.setattr("dartlab.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
         register_defaults(None)
         result = execute_tool(
             "call_dart_openapi",
@@ -385,7 +385,7 @@ class TestRegisterDefaults:
                 )
 
         monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
-        monkeypatch.setattr("dartlab.engines.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
+        monkeypatch.setattr("dartlab.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
         register_defaults(None)
         result = execute_tool(
             "search_dart_filings",
@@ -512,7 +512,7 @@ class TestRegisterDefaults:
         assert "공시 본문 테스트" in result
 
     def test_list_live_filings_guides_missing_dart_key(self, monkeypatch):
-        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dartKey.hasDartApiKey", lambda: False)
+        monkeypatch.setattr("dartlab.providers.dart.openapi.dartKey.hasDartApiKey", lambda: False)
         company = MockDartCompany()
         register_defaults(company)
         result = execute_tool("list_live_filings", {"days": 7, "limit": 5})
@@ -521,7 +521,7 @@ class TestRegisterDefaults:
         assert "DART_API_KEY" in result
 
     def test_read_filing_guides_missing_dart_key(self, monkeypatch):
-        monkeypatch.setattr("dartlab.engines.company.dart.openapi.dartKey.hasDartApiKey", lambda: False)
+        monkeypatch.setattr("dartlab.providers.dart.openapi.dartKey.hasDartApiKey", lambda: False)
         company = MockDartCompany()
         register_defaults(company)
         result = execute_tool("read_filing", {"doc_id": "20240312000736", "max_chars": 200})

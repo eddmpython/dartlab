@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>dartlab 설치 3단계 — uv 설치부터 첫 실행까지</title>
+  <desc>uv 설치, dartlab 설치, 첫 코드 실행까지 3단계 흐름도</desc>
+
+  <defs>
+    <linearGradient id="bg123" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <filter id="glow123">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg123)" rx="16"/>
+
+  <!-- Title -->
+  <text x="600" y="60" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="28" font-weight="700">dartlab 설치 — 3단계면 끝</text>
+  <text x="600" y="90" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16">Python 경험 없어도 따라할 수 있다</text>
+
+  <!-- Step 1: uv -->
+  <rect x="40" y="130" width="340" height="440" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="80" cy="170" r="22" fill="#ea4647" opacity="0.9"/>
+  <text x="80" y="177" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="18" font-weight="700">1</text>
+  <text x="115" y="177" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="20" font-weight="700">uv 설치</text>
+  <text x="60" y="210" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">Python 패키지 관리자 — pip보다 50배 빠르다</text>
+
+  <!-- Windows -->
+  <rect x="60" y="240" width="300" height="44" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="254" fill="#38bdf8" font-family="monospace" font-size="11">Windows (PowerShell)</text>
+  <text x="72" y="272" fill="#e2e8f0" font-family="monospace" font-size="12">powershell -c "irm astral.sh/uv | iex"</text>
+
+  <!-- macOS / Linux -->
+  <rect x="60" y="298" width="300" height="44" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="312" fill="#a78bfa" font-family="monospace" font-size="11">macOS / Linux</text>
+  <text x="72" y="330" fill="#e2e8f0" font-family="monospace" font-size="12">curl -LsSf astral.sh/uv | sh</text>
+
+  <!-- Verify -->
+  <rect x="60" y="356" width="300" height="36" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="379" fill="#4ade80" font-family="monospace" font-size="12">uv --version  → uv 0.7.x</text>
+
+  <text x="60" y="420" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600">✦ Python도 자동 설치됩니다</text>
+  <text x="60" y="442" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">uv가 Python 3.12를 자동으로 다운로드합니다.</text>
+  <text x="60" y="460" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">python.org에서 따로 설치할 필요 없습니다.</text>
+
+  <rect x="60" y="480" width="300" height="36" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="503" fill="#e2e8f0" font-family="monospace" font-size="12">uv python install 3.12</text>
+
+  <text x="60" y="540" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">이미 Python이 있으면 이 줄은 생략해도 됩니다</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="390" y1="350" x2="420" y2="350" stroke="#ea4647" stroke-width="2.5" marker-end="url(#arrow123)"/>
+  <defs>
+    <marker id="arrow123" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8" fill="#ea4647"/>
+    </marker>
+  </defs>
+
+  <!-- Step 2: dartlab -->
+  <rect x="430" y="130" width="340" height="440" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="470" cy="170" r="22" fill="#38bdf8" opacity="0.9"/>
+  <text x="470" y="177" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="18" font-weight="700">2</text>
+  <text x="505" y="177" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="20" font-weight="700">dartlab 설치</text>
+  <text x="450" y="210" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">가상환경 만들고 dartlab 패키지 설치</text>
+
+  <!-- Create project -->
+  <rect x="450" y="240" width="300" height="64" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="462" y="258" fill="#38bdf8" font-family="monospace" font-size="11">프로젝트 폴더 만들기</text>
+  <text x="462" y="276" fill="#e2e8f0" font-family="monospace" font-size="12">mkdir my-analysis</text>
+  <text x="462" y="294" fill="#e2e8f0" font-family="monospace" font-size="12">cd my-analysis</text>
+
+  <!-- Init + add -->
+  <rect x="450" y="318" width="300" height="64" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="462" y="336" fill="#a78bfa" font-family="monospace" font-size="11">가상환경 + 설치 (한 줄)</text>
+  <text x="462" y="354" fill="#e2e8f0" font-family="monospace" font-size="12">uv init</text>
+  <text x="462" y="372" fill="#e2e8f0" font-family="monospace" font-size="12">uv add dartlab</text>
+
+  <text x="450" y="410" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600">✦ 가상환경이 자동으로 만들어집니다</text>
+  <text x="450" y="432" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">uv init이 .venv를 자동 생성합니다.</text>
+  <text x="450" y="450" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">activate 같은 명령을 따로 칠 필요 없습니다.</text>
+
+  <!-- AI optional -->
+  <rect x="450" y="474" width="300" height="44" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="462" y="490" fill="#4ade80" font-family="monospace" font-size="11">AI 분석도 쓰고 싶다면</text>
+  <text x="462" y="508" fill="#e2e8f0" font-family="monospace" font-size="12">uv add "dartlab[ai,llm]"</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="780" y1="350" x2="810" y2="350" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow123b)"/>
+  <defs>
+    <marker id="arrow123b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <!-- Step 3: Run -->
+  <rect x="820" y="130" width="340" height="440" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="860" cy="170" r="22" fill="#4ade80" opacity="0.9"/>
+  <text x="860" y="177" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="18" font-weight="700">3</text>
+  <text x="895" y="177" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="20" font-weight="700">첫 실행</text>
+  <text x="840" y="210" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">종목코드 하나면 모든 분석이 시작된다</text>
+
+  <!-- Code block -->
+  <rect x="840" y="240" width="300" height="160" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="852" y="258" fill="#38bdf8" font-family="monospace" font-size="11">main.py</text>
+  <text x="852" y="282" fill="#c084fc" font-family="monospace" font-size="12">import</text>
+  <text x="904" y="282" fill="#e2e8f0" font-family="monospace" font-size="12"> dartlab</text>
+  <text x="852" y="304" fill="#e2e8f0" font-family="monospace" font-size="12">c = dartlab.Company(</text>
+  <text x="852" y="322" fill="#4ade80" font-family="monospace" font-size="12">    "005930"</text>
+  <text x="852" y="340" fill="#e2e8f0" font-family="monospace" font-size="12">)</text>
+  <text x="852" y="366" fill="#fbbf24" font-family="monospace" font-size="12">print(c.sections)</text>
+  <text x="852" y="388" fill="#fbbf24" font-family="monospace" font-size="12">print(c.finance.IS)</text>
+
+  <!-- Run -->
+  <rect x="840" y="416" width="300" height="36" rx="8" fill="#0f172a" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="852" y="439" fill="#4ade80" font-family="monospace" font-size="13" font-weight="600">uv run python main.py</text>
+
+  <text x="840" y="480" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600">✦ 데이터는 자동 다운로드</text>
+  <text x="840" y="502" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">첫 실행 시 HuggingFace에서 해당 종목</text>
+  <text x="840" y="520" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">데이터를 자동으로 가져옵니다.</text>
+  <text x="840" y="540" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">두 번째부터는 캐시에서 즉시 로드.</text>
+
+  <!-- Bottom summary -->
+  <rect x="40" y="600" width="1120" height="90" rx="12" fill="#1a1f2e" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="635" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="18" font-weight="600">전체 소요 시간: 약 3분</text>
+  <text x="240" y="665" text-anchor="middle" fill="#ea4647" font-family="system-ui, sans-serif" font-size="14">uv 설치 30초</text>
+  <text x="600" y="665" text-anchor="middle" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="14">dartlab 설치 1분</text>
+  <text x="960" y="665" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">첫 실행 1분 (데이터 다운로드 포함)</text>
+</svg>

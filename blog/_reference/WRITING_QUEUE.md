@@ -10,7 +10,11 @@
 - 공식 문서 확인, 시리즈 연결, 내부 링크 계획까지 끝나야 작성 시작 상태로 본다.
 - 상세 집필 메모와 공식 출처 팩은 `028-031-writing-pack.md`를 기준으로 본다.
 
-## 최근 완료 (2026-03-22)
+## 최근 완료 (2026-03-26)
+
+- 123: 정말 쉬운 dartlab 사용법 — uv 설치부터 첫 분석까지 (dartlab-news #1, SVG 5개)
+
+## 이전 완료 (2026-03-22)
 
 - 116: dartlab ask — GPT 하나로 전자공시 AI 분석하는 법 (data-automation #12, SVG 5개)
 - 117: dartlab MCP — Claude Desktop에서 전자공시 바로 조회하는 법 (data-automation #13, SVG 5개)

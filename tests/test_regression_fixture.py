@@ -46,7 +46,7 @@ def _getAnnualValue(series, periods, stmt, snakeId, year):
 
 @pytest.fixture(scope="module")
 def samsungAnnual():
-    from dartlab.engines.company.dart.finance.pivot import buildAnnual
+    from dartlab.providers.dart.finance.pivot import buildAnnual
 
     df = pl.read_parquet(FIXTURE_FINANCE)
     with patch("dartlab.core.dataLoader.loadData", return_value=df):
@@ -101,7 +101,7 @@ class TestRegressionFixture:
         assert val > 0, f"CF.operating_cashflow 2023 = {val:,.0f} (expected positive)"
 
     def test_ratiosFromAnnual(self, samsungAnnual):
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         series, _ = samsungAnnual
         ratios = calcRatios(series, annual=True)

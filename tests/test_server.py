@@ -116,7 +116,7 @@ class TestStatus:
 
     def test_status_without_provider_probes_only_selected_provider(self, client, monkeypatch):
         """GET /api/status — 명시하지 않으면 shared profile의 선택 provider만 probe."""
-        from dartlab.engines.ai import configure as configure_global
+        from dartlab.ai import configure as configure_global
 
         configure_global(provider="openai", model="gpt-5.4")
 
@@ -144,7 +144,7 @@ class TestStatus:
 
     def test_should_preload_ollama_requires_selected_provider(self, monkeypatch):
         """Ollama preload는 명시적 활성화 + 선택 provider가 ollama일 때만."""
-        from dartlab.engines.ai import configure as configure_global
+        from dartlab.ai import configure as configure_global
         from dartlab.server import _should_preload_ollama
 
         monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
@@ -157,7 +157,7 @@ class TestStatus:
 
     def test_should_preload_ollama_when_any_role_uses_ollama(self, monkeypatch):
         """role binding 중 하나가 ollama면 preload 대상이다."""
-        from dartlab.engines.ai import configure as configure_global
+        from dartlab.ai import configure as configure_global
         from dartlab.server import _should_preload_ollama
 
         monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
@@ -174,11 +174,11 @@ class TestStatus:
 
         monkeypatch.setattr("dartlab.server.services.company_api.get_company", lambda code: company)
         monkeypatch.setattr(
-            "dartlab.engines.ai.conversation.suggestions.suggestQuestions",
+            "dartlab.ai.conversation.suggestions.suggestQuestions",
             lambda _: ["이 회사의 핵심 투자 포인트를 한눈에 정리해주세요"],
         )
         monkeypatch.setattr(
-            "dartlab.engines.ai.conversation.data_ready.getDataReadyStatus",
+            "dartlab.ai.conversation.data_ready.getDataReadyStatus",
             lambda code: {
                 "stockCode": code,
                 "allReady": False,
@@ -220,8 +220,8 @@ class TestConfigure:
         assert resp.json()["ok"] is True
 
     def test_validate_provider_does_not_mutate_global_config(self, client, monkeypatch):
-        from dartlab.engines.ai import configure as configure_global
-        from dartlab.engines.ai import get_config
+        from dartlab.ai import configure as configure_global
+        from dartlab.ai import get_config
 
         class DummyProvider:
             def __init__(self, config):
@@ -230,7 +230,7 @@ class TestConfigure:
             def check_available(self):
                 return True
 
-        monkeypatch.setattr("dartlab.engines.ai.providers.create_provider", lambda config: DummyProvider(config))
+        monkeypatch.setattr("dartlab.ai.providers.create_provider", lambda config: DummyProvider(config))
         configure_global(provider="ollama", model="qwen3")
         before = get_config()
 
@@ -267,7 +267,7 @@ class TestAiProfile:
         assert "codex" in data["providers"]
 
     def test_put_ai_profile_updates_shared_config(self, client):
-        from dartlab.engines.ai import get_config
+        from dartlab.ai import get_config
 
         resp = client.put(
             "/api/ai/profile",
@@ -279,7 +279,7 @@ class TestAiProfile:
         assert config.model == "gpt-5.4"
 
     def test_post_ai_profile_secret_updates_shared_secret(self, client):
-        from dartlab.engines.ai import get_config
+        from dartlab.ai import get_config
 
         resp = client.post(
             "/api/ai/profile/secrets",
@@ -303,11 +303,11 @@ class TestOpenDartKey:
 
     def test_validate_dart_key_endpoint(self, client, monkeypatch):
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.validateDartApiKey",
+            "dartlab.providers.dart.openapi.dartKey.validateDartApiKey",
             lambda key: {"ok": True, "validatedKey": key[-4:]},
         )
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            "dartlab.providers.dart.openapi.dartKey.getDartKeyStatus",
             lambda startPath=None: type(
                 "Status",
                 (),
@@ -332,11 +332,11 @@ class TestOpenDartKey:
 
     def test_save_dart_key_endpoint(self, client, monkeypatch):
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.saveDartKeyToDotenv",
+            "dartlab.providers.dart.openapi.dartKey.saveDartKeyToDotenv",
             lambda key: "C:/tmp/.env",
         )
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            "dartlab.providers.dart.openapi.dartKey.getDartKeyStatus",
             lambda startPath=None: type(
                 "Status",
                 (),
@@ -361,11 +361,11 @@ class TestOpenDartKey:
 
     def test_delete_dart_key_endpoint(self, client, monkeypatch):
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.clearDartKeyFromDotenv",
+            "dartlab.providers.dart.openapi.dartKey.clearDartKeyFromDotenv",
             lambda: "C:/tmp/.env",
         )
         monkeypatch.setattr(
-            "dartlab.engines.company.dart.openapi.dartKey.getDartKeyStatus",
+            "dartlab.providers.dart.openapi.dartKey.getDartKeyStatus",
             lambda startPath=None: type(
                 "Status",
                 (),
@@ -546,7 +546,7 @@ class TestOAuth:
 class TestCodexAuth:
     def test_codex_logout(self, client, monkeypatch):
         """POST /api/codex/logout — Codex CLI 인증 제거."""
-        monkeypatch.setattr("dartlab.engines.ai.providers.support.codex_cli.logout_codex_cli", lambda: None)
+        monkeypatch.setattr("dartlab.ai.providers.support.codex_cli.logout_codex_cli", lambda: None)
         resp = client.post("/api/codex/logout")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
@@ -1050,7 +1050,7 @@ class TestChatUtils:
         assert "primarySource" in text
 
     def test_build_snapshot_relaxes_financial_thresholds(self):
-        from dartlab.engines.analysis.sector.types import IndustryGroup, Sector, SectorInfo
+        from dartlab.analysis.comparative.sector.types import IndustryGroup, Sector, SectorInfo
         from dartlab.server.chat import build_snapshot
 
         class DummyRatios:

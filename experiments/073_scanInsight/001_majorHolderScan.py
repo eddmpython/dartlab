@@ -197,7 +197,7 @@ def scan_major_holder() -> pl.DataFrame:
 
 def analyze_by_industry(holder_top: pl.DataFrame) -> None:
     """업종별 최대주주 지분율 분석."""
-    from dartlab.engines.company.dart.scan.network.scanner import load_listing
+    from dartlab.market.network.scanner import load_listing
 
     _, code_to_name, listing_codes, listing_meta = load_listing()
 

@@ -61,8 +61,8 @@ def loadSnapshot() -> pl.DataFrame:
 
 def buildGroupHealth():
     """그룹 네트워크 × 재무 비율 결합."""
-    from dartlab.engines.company.dart.scan.network import build_graph
-    from dartlab.engines.company.dart.scan.network.export import export_full
+    from dartlab.market.network import build_graph
+    from dartlab.market.network.export import export_full
 
     # 1. 네트워크 구축
     print("네트워크 구축 중...")

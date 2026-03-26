@@ -9,22 +9,22 @@ class TestResolveSjDiv:
     """snakeId → sjDiv 자동 결정."""
 
     def test_sales(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _resolveSjDiv
+        from dartlab.providers.dart.finance.scanAccount import _resolveSjDiv
 
         assert _resolveSjDiv("sales") == "IS"
 
     def test_totalAssets(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _resolveSjDiv
+        from dartlab.providers.dart.finance.scanAccount import _resolveSjDiv
 
         assert _resolveSjDiv("total_assets") == "BS"
 
     def test_operatingCashFlow(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _resolveSjDiv
+        from dartlab.providers.dart.finance.scanAccount import _resolveSjDiv
 
         assert _resolveSjDiv("cash_flows_from_operating_activities") == "CF"
 
     def test_unknownRaises(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _resolveSjDiv
+        from dartlab.providers.dart.finance.scanAccount import _resolveSjDiv
 
         with pytest.raises(ValueError, match="sortOrder.json"):
             _resolveSjDiv("totally_fake_account_xyz")
@@ -34,27 +34,27 @@ class TestParseAmount:
     """금액 파싱."""
 
     def test_normal(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _parseAmount
+        from dartlab.providers.dart.finance.scanAccount import _parseAmount
 
         assert _parseAmount("1,234,567") == 1234567.0
 
     def test_negative(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _parseAmount
+        from dartlab.providers.dart.finance.scanAccount import _parseAmount
 
         assert _parseAmount("-500") == -500.0
 
     def test_none(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _parseAmount
+        from dartlab.providers.dart.finance.scanAccount import _parseAmount
 
         assert _parseAmount(None) is None
 
     def test_dash(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _parseAmount
+        from dartlab.providers.dart.finance.scanAccount import _parseAmount
 
         assert _parseAmount("-") is None
 
     def test_empty(self):
-        from dartlab.engines.company.dart.finance.scanAccount import _parseAmount
+        from dartlab.providers.dart.finance.scanAccount import _parseAmount
 
         assert _parseAmount("") is None
 
@@ -63,12 +63,12 @@ class TestScanAccountImport:
     """import 및 시그니처."""
 
     def test_importable(self):
-        from dartlab.engines.company.dart.finance import scanAccount
+        from dartlab.providers.dart.finance import scanAccount
 
         assert callable(scanAccount)
 
     def test_fromInit(self):
-        from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
 
         assert callable(scanAccount)
 
@@ -80,7 +80,7 @@ class TestScanAccountReal:
 
     def test_salesDataFrame(self):
         """sales 스캔이 DataFrame을 반환하고 stockCode 컬럼이 있는지."""
-        from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
 
         df = scanAccount("sales")
         assert "stockCode" in df.columns
@@ -90,8 +90,8 @@ class TestScanAccountReal:
         """삼성전자 매출이 buildAnnual 결과와 일치하는지."""
         import polars as pl
 
-        from dartlab.engines.company.dart.finance.pivot import buildAnnual
-        from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+        from dartlab.providers.dart.finance.pivot import buildAnnual
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
 
         # buildAnnual 기준값
         annualResult = buildAnnual("005930")
@@ -125,7 +125,7 @@ class TestScanAccountReal:
 
     def test_bsAccount(self):
         """BS 계정(total_assets) 스캔."""
-        from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
 
         df = scanAccount("total_assets", sjDiv="BS")
         assert "stockCode" in df.columns
@@ -135,7 +135,7 @@ class TestScanAccountReal:
         """전종목 스캔 30초 이내."""
         import time
 
-        from dartlab.engines.company.dart.finance.scanAccount import scanAccount
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
 
         t0 = time.time()
         df = scanAccount("sales")

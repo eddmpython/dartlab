@@ -54,7 +54,7 @@ def _list_plugins() -> int:
 
 
 def _create_plugin(args) -> int:
-    from dartlab.engines.ai.tools.plugin_creator import create_plugin
+    from dartlab.ai.tools.plugin_creator import create_plugin
 
     result = create_plugin(
         name=args.name,

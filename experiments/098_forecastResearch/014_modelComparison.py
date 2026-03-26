@@ -177,7 +177,7 @@ def run():
     print("  098-014: 최종 모델 비교")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     industryMap = {}

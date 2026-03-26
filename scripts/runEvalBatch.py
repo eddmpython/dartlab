@@ -33,7 +33,7 @@ def main() -> None:
 
     # lazy import
     import dartlab
-    from dartlab.engines.ai.eval import (
+    from dartlab.ai.eval import (
         loadPersonaCases,
         replaySuite,
         summarizeReplayResults,
@@ -133,12 +133,12 @@ def main() -> None:
 
 def _runDiagnosis(currentPath: Path, batchDir: Path) -> None:
     """배치 후 자동 진단 실행."""
-    from dartlab.engines.ai.eval.diagnoser import (
+    from dartlab.ai.eval.diagnoser import (
         DiagnosisReport,
         findRegressions,
         findWeakTypes,
     )
-    from dartlab.engines.ai.eval.remediation import (
+    from dartlab.ai.eval.remediation import (
         extractFailureCounts,
         formatAsMarkdown,
         generateRemediations,

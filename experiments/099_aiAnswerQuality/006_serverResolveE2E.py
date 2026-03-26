@@ -70,7 +70,7 @@ def runResolve(question: str) -> dict:
 
 def runE2E(question: str, *, provider: str = "ollama", model: str = "qwen3:4b") -> dict:
     """서버 ask와 동일한 경로: resolve → analyze."""
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
     from dartlab.server.models import AskRequest
     from dartlab.server.resolve import try_resolve_company
 

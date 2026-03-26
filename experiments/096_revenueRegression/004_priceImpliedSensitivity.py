@@ -41,8 +41,8 @@
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.priceImplied import reverseImpliedGrowth
-from dartlab.engines.common.finance.extract import getTTM
+from dartlab.analysis.valuation.priceImplied import reverseImpliedGrowth
+from dartlab.core.finance.extract import getTTM
 
 STOCKS = [
     ("005930", "삼성전자", 1170e12),   # 시가총액 수동 (장 마감 후 null 대비)

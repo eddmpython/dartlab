@@ -34,7 +34,7 @@ def api_search(q: str = Query(..., min_length=1)):
         fuzzy_used = False
 
         if not rows:
-            from dartlab.engines.gather.listing import fuzzySearch
+            from dartlab.gather.listing import fuzzySearch
 
             df = fuzzySearch(q, maxResults=20)
             rows = df.to_dicts() if len(df) > 0 else []
@@ -161,7 +161,7 @@ def api_company_viewer_topic(
         company = get_company(code)
 
         if period is not None:
-            from dartlab.engines.company.dart.docs.viewer import (
+            from dartlab.providers.dart.docs.viewer import (
                 serializeViewerBlock,
                 serializeViewerTextDocument,
                 viewerBlocks,
@@ -219,7 +219,7 @@ def apiViewerDoc(
             )
             base = periods[0] if periods else None
 
-        from dartlab.engines.common.docs.viewer import viewer
+        from dartlab.core.docs.viewer import viewer
 
         doc = viewer(sec, topic, base, compare)
         doc["stockCode"] = company.stockCode
@@ -257,7 +257,7 @@ async def api_company_viewer_batch(code: str, request: Request, response: Respon
 @router.get("/api/company/{code}/show/{topic}/all")
 def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
     try:
-        from dartlab.engines.company.dart.docs.viewer import (
+        from dartlab.providers.dart.docs.viewer import (
             serializeViewerBlock,
             serializeViewerTextDocument,
             viewerBlocks,
@@ -280,8 +280,8 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
 @router.post("/api/company/{code}/show/{topic}/{block_idx}/parse")
 async def api_parse_raw_table(code: str, topic: str, block_idx: int):
     try:
-        from dartlab.engines.company.dart.docs.tableAI import parseRawMarkdownBlock
-        from dartlab.engines.company.dart.docs.viewer import viewerBlocks
+        from dartlab.providers.dart.docs.tableAI import parseRawMarkdownBlock
+        from dartlab.providers.dart.docs.viewer import viewerBlocks
 
         company = get_company(code)
         blocks = viewerBlocks(company, topic)
@@ -375,7 +375,7 @@ def api_company_insights(code: str):
     except HANDLED_API_ERRORS as exc:
         raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
 
-    from dartlab.engines.analysis.insight.pipeline import analyze as insight_analyze
+    from dartlab.analysis.financial.insight.pipeline import analyze as insight_analyze
 
     try:
         result = insight_analyze(company.stockCode, company=company)
@@ -440,7 +440,7 @@ def api_company_network(code: str, hops: int = 1):
             return {"stockCode": company.stockCode, "corpName": company.corpName, "available": False}
         data, full = result
 
-        from dartlab.engines.company.dart.scan.network.export import export_ego
+        from dartlab.market.network.export import export_ego
 
         ego = export_ego(data, full, company.stockCode, hops=hops)
         return {
@@ -505,7 +505,7 @@ def api_company_scan(code: str, axis: str):
 
 @router.get("/api/company/{code}/scan/position")
 def api_company_scan_position(code: str):
-    from dartlab.engines.company.dart.scan.snapshot import getScanPosition
+    from dartlab.market.snapshot import getScanPosition
 
     position = getScanPosition(code)
     if position is None:
@@ -525,7 +525,7 @@ def api_company_insights_unified(code: str):
     except HANDLED_API_ERRORS as exc:
         raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
 
-    from dartlab.engines.company.dart.scan.payload import build_unified_payload
+    from dartlab.market.payload import build_unified_payload
 
     try:
         unified = build_unified_payload(company)

@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import polars as pl
 
-from dartlab.engines.ai.context.finance_context import _QUESTION_MODULES, _extract_module_context
+from dartlab.ai.context.finance_context import _QUESTION_MODULES, _extract_module_context
 
 
 class _PrimaryOnlyCompany:

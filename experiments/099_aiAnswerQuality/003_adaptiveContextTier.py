@@ -99,7 +99,7 @@ MODULE_KEYWORDS = {
 
 def scoreComplexity(question: str) -> dict:
     """질문 복잡도 점수를 산출한다."""
-    from dartlab.engines.ai.conversation.prompts import _classify_question_multi
+    from dartlab.ai.conversation.prompts import _classify_question_multi
 
     qTypes = _classify_question_multi(question)
     moduleMatches = [kw for kw in MODULE_KEYWORDS if kw in question]
@@ -137,8 +137,8 @@ QUESTIONS = [
 def runAdaptiveTest(questions: list[dict], useTierOverride: str | None, stockCode: str = "005930") -> list[dict]:
     """질문 실행 → tool 호출 + 답변 길이 수집."""
     import dartlab
-    from dartlab.engines.ai.runtime import core as coreModule
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime import core as coreModule
+    from dartlab.ai.runtime.core import analyze
 
     dartlab.llm.configure(provider="ollama", model="qwen3:latest")
     c = dartlab.Company(stockCode)

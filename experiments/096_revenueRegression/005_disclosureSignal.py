@@ -41,7 +41,7 @@
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.disclosureSignal import extractSignal
+from dartlab.analysis.accounting.disclosureSignal import extractSignal
 
 STOCKS = [
     ("005930", "삼성전자"),

@@ -81,9 +81,9 @@ def collectMarketSnapshot(*, maxCompanies: int | None = None, verbose: bool = Tr
     finance parquet를 직접 로드하여 Company 생성 오버헤드(docs 다운로드)를 회피.
     """
     import dartlab
-    from dartlab.engines.analysis.sector.classifier import classify
-    from dartlab.engines.common.finance.ratios import calcRatios
-    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+    from dartlab.analysis.comparative.sector.classifier import classify
+    from dartlab.core.finance.ratios import calcRatios
+    from dartlab.providers.dart.finance.pivot import buildTimeseries
 
     kindDf = dartlab.listing()
     codes = kindDf["종목코드"].to_list()

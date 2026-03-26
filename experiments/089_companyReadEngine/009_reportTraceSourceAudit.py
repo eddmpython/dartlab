@@ -65,7 +65,7 @@ AUTH = loadModule(Path(__file__).with_name("006_authoritativeFollowUp.py"), "exp
 
 def childRun(stockCode: str) -> dict[str, Any]:
     import dartlab
-    from dartlab.engines.company.dart.docs.sections import retrievalBlocks
+    from dartlab.providers.dart.docs.sections import retrievalBlocks
 
     topic = BASELINE.chooseReportTopic(stockCode)
     if topic is None:

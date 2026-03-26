@@ -97,23 +97,23 @@ def _dataclassesSection() -> str:
     """주요 dataclass 스키마."""
     lines = ["## 주요 데이터 타입\n"]
 
-    from dartlab.engines.common.finance.ratios import RatioResult
+    from dartlab.core.finance.ratios import RatioResult
 
     lines.append(_dataclassTable(RatioResult, "RatioResult"))
 
-    from dartlab.engines.analysis.insight.types import AnalysisResult, Anomaly, Flag, InsightResult
+    from dartlab.analysis.financial.insight.types import AnalysisResult, Anomaly, Flag, InsightResult
 
     lines.append(_dataclassTable(InsightResult, "InsightResult"))
     lines.append(_dataclassTable(Anomaly, "Anomaly"))
     lines.append(_dataclassTable(Flag, "Flag"))
     lines.append(_dataclassTable(AnalysisResult, "AnalysisResult"))
 
-    from dartlab.engines.analysis.sector.types import SectorInfo, SectorParams
+    from dartlab.analysis.comparative.sector.types import SectorInfo, SectorParams
 
     lines.append(_dataclassTable(SectorInfo, "SectorInfo"))
     lines.append(_dataclassTable(SectorParams, "SectorParams"))
 
-    from dartlab.engines.analysis.rank.rank import RankInfo
+    from dartlab.analysis.comparative.rank.rank import RankInfo
 
     lines.append(_dataclassTable(RankInfo, "RankInfo"))
 
@@ -166,10 +166,10 @@ def _companySection() -> str:
 
     | 메서드 | 반환 | 설명 |
     |--------|------|------|
-    | `dartlab.engines.company.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
-    | `dartlab.engines.company.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
-    | `dartlab.engines.company.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
-    | `dartlab.engines.company.dart.Company.resolve(codeOrName)` | str \\| None | 종목코드/회사명 → 종목코드 |
+    | `dartlab.providers.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
+    | `dartlab.providers.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
+    | `dartlab.providers.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
+    | `dartlab.providers.dart.Company.resolve(codeOrName)` | str \\| None | 종목코드/회사명 → 종목코드 |
 
     ### 핵심 property
 

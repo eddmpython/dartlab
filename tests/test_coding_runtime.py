@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.engines.ai.tools.coding import CodexCodingBackend, create_coding_runtime
+from dartlab.ai.tools.coding import CodexCodingBackend, create_coding_runtime
 
 
 def test_create_coding_runtime_registers_codex_backend():
@@ -14,7 +14,7 @@ def test_create_coding_runtime_registers_codex_backend():
 
 
 def test_codex_backend_inspect(monkeypatch):
-    from dartlab.engines.ai.providers.support import codex_cli
+    from dartlab.ai.providers.support import codex_cli
 
     monkeypatch.setattr(
         codex_cli,
@@ -35,7 +35,7 @@ def test_codex_backend_inspect(monkeypatch):
 
 
 def test_codex_backend_run_task_falls_back_to_supported_sandbox(monkeypatch):
-    from dartlab.engines.ai.providers.support import codex_cli
+    from dartlab.ai.providers.support import codex_cli
 
     monkeypatch.setattr(
         codex_cli,

@@ -52,8 +52,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,
@@ -79,7 +79,7 @@ def _isPeriodColumn(c: str) -> bool:
 
 def analyzeFailures(maxCompanies: int = 0):
     """전종목 table 블록에서 no_data_rows 패턴 분석."""
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
 
     kindList = getKindList()
     codes = kindList["종목코드"].to_list()

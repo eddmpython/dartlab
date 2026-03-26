@@ -59,7 +59,7 @@ def main():
     print(f"periods: {periodCols[:6]}")
 
     # 3. viewer() — 자동 기간 선택 테스트
-    from dartlab.engines.common.docs.viewer import viewer
+    from dartlab.core.docs.viewer import viewer
 
     basePeriod = periodCols[0]
 
@@ -71,7 +71,7 @@ def main():
     print(f"  처리 시간: {elapsedAuto*1000:.1f}ms")
 
     # 성능 프로파일: diff 시간 측정
-    from dartlab.engines.common.docs.viewer import _charDiffOps
+    from dartlab.core.docs.viewer import _charDiffOps
     modBlocks = [b for b in docAuto["blocks"] if b.get("status") == "modified" and b["kind"] != "table"]
     tblModBlocks = [b for b in docAuto["blocks"] if b.get("status") == "modified" and b["kind"] == "table"]
     print(f"\n--- 성능 프로파일 ---")
@@ -84,7 +84,7 @@ def main():
     tDiffEnd = time.perf_counter()
     print(f"  텍스트 diff 총 시간: {(tDiffEnd - tDiff)*1000:.1f}ms")
     # 테이블 파싱/비교 시간
-    from dartlab.engines.common.docs.viewer import _parseTable, _tableCellDiffs
+    from dartlab.core.docs.viewer import _parseTable, _tableCellDiffs
     tTbl = time.perf_counter()
     for b in tblModBlocks:
         base = b.get("base")

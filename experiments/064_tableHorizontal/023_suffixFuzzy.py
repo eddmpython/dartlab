@@ -34,7 +34,7 @@ import polars as pl
 from rapidfuzz import fuzz
 
 from dartlab.core.dataLoader import _dataDir
-from dartlab.engines.company.dart.company import Company
+from dartlab.providers.dart.company import Company
 
 
 def _splitCompound(item: str) -> tuple[str, str]:

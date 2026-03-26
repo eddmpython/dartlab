@@ -127,7 +127,7 @@ def executiveToWide(result) -> pl.DataFrame | None:
 
 
 def main():
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     c = Company("005930")
 
@@ -162,7 +162,7 @@ def main():
     print("Phase 2: 나머지 apiType extractAnnual 확인")
     print("=" * 80)
 
-    from dartlab.engines.company.dart.report.types import API_TYPES
+    from dartlab.providers.dart.report.types import API_TYPES
     pivotNames = {"dividend", "employee", "majorHolder", "executive", "audit"}
     remaining = [t for t in API_TYPES if t not in pivotNames]
 

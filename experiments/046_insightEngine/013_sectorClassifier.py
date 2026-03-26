@@ -37,7 +37,7 @@ sys.path.insert(0, "src")
 
 import polars as pl
 
-from dartlab.engines.gather.listing import getKindList
+from dartlab.gather.listing import getKindList
 
 TEST_STOCKS = {
     "005930": ("삼성전자", "IT", "반도체"),

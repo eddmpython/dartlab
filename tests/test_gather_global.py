@@ -6,14 +6,14 @@ import time
 
 import pytest
 
-from dartlab.engines.gather.cache import GatherCache
-from dartlab.engines.gather.market_config import (
+from dartlab.gather.cache import GatherCache
+from dartlab.gather.market_config import (
     MARKETS,
     get_market_config,
     resolve_ticker,
 )
-from dartlab.engines.gather.resilience import CircuitBreaker, SourceHealthTracker
-from dartlab.engines.gather.types import CircuitOpenError, PriceSnapshot
+from dartlab.gather.resilience import CircuitBreaker, SourceHealthTracker
+from dartlab.gather.types import CircuitOpenError, PriceSnapshot
 
 pytestmark = pytest.mark.unit
 
@@ -236,7 +236,7 @@ class TestStaleCache:
 
 class TestCircuitOpenError:
     def test_is_source_unavailable_subclass(self):
-        from dartlab.engines.gather.types import SourceUnavailableError
+        from dartlab.gather.types import SourceUnavailableError
 
         err = CircuitOpenError("test")
         assert isinstance(err, SourceUnavailableError)
@@ -254,7 +254,7 @@ class TestPriceFallback:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock
 
-        from dartlab.engines.gather import price
+        from dartlab.gather import price
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -270,14 +270,14 @@ class TestPriceFallback:
 
     def test_domains_registry_loads_all(self):
         """모든 도메인이 load_domain으로 로드 가능."""
-        from dartlab.engines.gather.domains import load_domain
+        from dartlab.gather.domains import load_domain
 
         for name in ("naver", "yahoo", "yahoo_direct", "fmp"):
             module = load_domain(name)
             assert hasattr(module, "fetch_price")
 
     def test_domains_registry_invalid_raises(self):
-        from dartlab.engines.gather.domains import load_domain
+        from dartlab.gather.domains import load_domain
 
         with pytest.raises(ValueError, match="알 수 없는 도메인"):
             load_domain("nonexistent")

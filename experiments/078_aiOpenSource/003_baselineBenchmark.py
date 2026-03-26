@@ -51,10 +51,10 @@ def run_benchmark(qa_subset: list[dict], provider_name: str, *, timeout: int = 6
     import importlib.util
 
     import dartlab
-    from dartlab.engines.ai.pipeline import run_pipeline
-    from dartlab.engines.ai.prompts import SYSTEM_PROMPT_KR
-    from dartlab.engines.ai.providers import create_provider
-    from dartlab.engines.ai.types import LLMConfig
+    from dartlab.ai.pipeline import run_pipeline
+    from dartlab.ai.prompts import SYSTEM_PROMPT_KR
+    from dartlab.ai.providers import create_provider
+    from dartlab.ai.types import LLMConfig
 
     _spec = importlib.util.spec_from_file_location(
         "_scoring", Path(__file__).parent / "002_scoringRubric.py"

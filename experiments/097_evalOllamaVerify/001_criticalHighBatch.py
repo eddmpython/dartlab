@@ -81,7 +81,7 @@ def runGroupSubprocess(stockCode: str, caseIds: list[str], provider: str, model:
         ROOT = Path(r"{ROOT}")
         sys.path.insert(0, str(ROOT / "src"))
         import dartlab
-        from dartlab.engines.ai.eval import loadPersonaCases, replayCase
+        from dartlab.ai.eval import loadPersonaCases, replayCase
         dartlab.llm.configure(provider="{provider}", model="{model}")
         allCases = loadPersonaCases()
         caseIds = {caseIds!r}

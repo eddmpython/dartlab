@@ -132,7 +132,7 @@ def _extractTopicLengthsByYear(stockCode: str) -> dict[str, dict[int, int]]:
 
 def _extractRevenueGrowth(stockCode: str) -> dict[int, float]:
     """연도별 매출 성장률."""
-    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+    from dartlab.providers.dart.finance.pivot import buildTimeseries
 
     try:
         result = buildTimeseries(stockCode)

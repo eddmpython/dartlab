@@ -172,7 +172,7 @@ def run():
     print("=" * 70)
 
     # 1. KIND listing
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
 
     kindDf = getKindList()
     kindMap = {}

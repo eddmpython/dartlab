@@ -52,9 +52,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.company.dart.docs.finance.audit.pipeline import audit
-from dartlab.engines.company.dart.docs.finance.contingentLiability.pipeline import contingentLiability
-from dartlab.engines.company.dart.docs.finance.internalControl.pipeline import internalControl
+from dartlab.providers.dart.docs.finance.audit.pipeline import audit
+from dartlab.providers.dart.docs.finance.contingentLiability.pipeline import contingentLiability
+from dartlab.providers.dart.docs.finance.internalControl.pipeline import internalControl
 
 TEST_STOCKS = [
     ("005930", "삼성전자"), ("000660", "SK하이닉스"), ("035420", "NAVER"),

@@ -35,7 +35,7 @@ import re
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.pipeline import sections
 
 # 002에서 만든 parseCellSubtables 재사용
 sys.path.insert(0, str(Path(__file__).parent))

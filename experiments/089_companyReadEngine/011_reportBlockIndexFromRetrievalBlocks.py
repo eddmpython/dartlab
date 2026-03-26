@@ -71,7 +71,7 @@ def hasReportTopic(stockCode: str, topic: str) -> bool:
 
 
 def buildCandidate(stockCode: str, topic: str) -> pl.DataFrame | None:
-    from dartlab.engines.company.dart.docs.sections import retrievalBlocks
+    from dartlab.providers.dart.docs.sections import retrievalBlocks
 
     blocks = retrievalBlocks(stockCode).filter(pl.col("topic") == topic)
     if blocks.is_empty() and not hasReportTopic(stockCode, topic):

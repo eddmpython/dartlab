@@ -23,8 +23,8 @@ import polars as pl
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
 from dartlab.core.dataLoader import _dataDir
-from dartlab.engines.company.dart.docs.sections.pipeline import sections as buildSections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections as buildSections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _dataRows,
     _headerCells,
     _isJunk,

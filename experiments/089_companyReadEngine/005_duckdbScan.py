@@ -92,7 +92,7 @@ def readDocsFrameDuckdb(stockCode: str) -> pl.DataFrame:
 
 
 def fastAvailableApiTypesDuckdb(stockCode: str) -> list[str]:
-    from dartlab.engines.company.dart.report.types import API_TYPES
+    from dartlab.providers.dart.report.types import API_TYPES
 
     df = readReportApiFrameDuckdb(stockCode)
     available = {str(value) for value in df["apiType"].drop_nulls().unique().to_list()}

@@ -47,7 +47,7 @@ QUESTIONS = [
 
 def runSingleQuestion(company, question: str, label: str) -> dict:
     """단일 질문 실행."""
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     toolCalls = []
     toolResults = []

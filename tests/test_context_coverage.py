@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 
 
 # 질문 유형별 주입 모듈 매핑 (builder.py)
-from dartlab.engines.ai.context.builder import _QUESTION_MODULES
+from dartlab.ai.context.builder import _QUESTION_MODULES
 
 # Pipeline runner + L2 엔진에서 자동 주입되는 모듈 (코드 분석 기반)
 _PIPELINE_AUTO_MODULES = {
@@ -87,7 +87,7 @@ class TestPipelineCoverage:
 
     def test_no_empty_pipeline_except_gongsi(self):
         """공시를 제외한 모든 질문 유형에 runner가 존재."""
-        from dartlab.engines.ai.runtime.pipeline import _PIPELINE_MAP
+        from dartlab.ai.runtime.pipeline import _PIPELINE_MAP
 
         for q_type, runners in _PIPELINE_MAP.items():
             if q_type == "공시":
@@ -96,7 +96,7 @@ class TestPipelineCoverage:
 
     def test_pipeline_map_keys_match_question_modules(self):
         """pipeline과 builder의 질문 유형 키가 일치."""
-        from dartlab.engines.ai.runtime.pipeline import _PIPELINE_MAP
+        from dartlab.ai.runtime.pipeline import _PIPELINE_MAP
 
         pipeline_keys = set(_PIPELINE_MAP.keys())
         builder_keys = set(_QUESTION_MODULES.keys())
@@ -112,7 +112,7 @@ class TestRegistryCentralization:
     def test_registry_question_types_valid(self):
         """registry aiQuestionTypes 값이 모두 유효한 질문 유형."""
         from dartlab.core.registry import buildQuestionModules
-        from dartlab.engines.ai.conversation.templates.analysis_rules import QUESTION_TYPE_MAP
+        from dartlab.ai.conversation.templates.analysis_rules import QUESTION_TYPE_MAP
 
         valid = set(QUESTION_TYPE_MAP.keys())
         for qt in buildQuestionModules():
@@ -134,7 +134,7 @@ class TestRegistryCentralization:
     def test_topic_map_covers_all_registry_keywords(self):
         """_TOPIC_MAP이 registry aiKeywords를 모두 포함."""
         from dartlab.core.registry import buildKeywordMap
-        from dartlab.engines.ai.context.builder import _TOPIC_MAP
+        from dartlab.ai.context.builder import _TOPIC_MAP
 
         for kw in buildKeywordMap():
             assert kw in _TOPIC_MAP, f"키워드 '{kw}'가 _TOPIC_MAP에 없음"
@@ -156,7 +156,7 @@ class TestValidationCoverage:
 
     def test_label_patterns_cover_core_accounts(self):
         """핵심 금액 계정이 validation 매핑에 포함."""
-        from dartlab.engines.ai.runtime.validation import _LABEL_PATTERNS
+        from dartlab.ai.runtime.validation import _LABEL_PATTERNS
 
         required = {"매출액", "영업이익", "당기순이익", "자산총계", "부채총계"}
         covered = set(_LABEL_PATTERNS.keys())
@@ -165,7 +165,7 @@ class TestValidationCoverage:
 
     def test_ratio_patterns_cover_core_ratios(self):
         """핵심 비율이 validation 매핑에 포함."""
-        from dartlab.engines.ai.runtime.validation import _RATIO_PATTERNS
+        from dartlab.ai.runtime.validation import _RATIO_PATTERNS
 
         required = {"ROE", "ROA", "영업이익률", "부채비율", "유동비율"}
         covered = set(_RATIO_PATTERNS.keys())

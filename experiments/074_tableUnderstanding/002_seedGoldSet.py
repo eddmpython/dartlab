@@ -42,8 +42,8 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,

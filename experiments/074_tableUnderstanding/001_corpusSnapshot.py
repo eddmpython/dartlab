@@ -41,8 +41,8 @@ from time import perf_counter
 import polars as pl
 
 from dartlab import config
-from dartlab.engines.company.dart.docs.sections.pipeline import sections as dart_sections
-from dartlab.engines.company.edgar.docs.sections.pipeline import sections as edgar_sections
+from dartlab.providers.dart.docs.sections.pipeline import sections as dart_sections
+from dartlab.providers.edgar.docs.sections.pipeline import sections as edgar_sections
 
 DART_PREFERRED = [
     "005930",

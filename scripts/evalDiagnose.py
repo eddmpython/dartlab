@@ -70,7 +70,7 @@ def _saveReport(report: str, mode: str) -> Path:
 
 def runCoverage() -> str:
     """커버리지 갭 분석."""
-    from dartlab.engines.ai.eval.diagnoser import DiagnosisReport, findCoverageGaps
+    from dartlab.ai.eval.diagnoser import DiagnosisReport, findCoverageGaps
 
     cases = _loadCases()
     if not cases:
@@ -86,7 +86,7 @@ def runCoverage() -> str:
 
 def runRegression() -> str:
     """회귀 탐지."""
-    from dartlab.engines.ai.eval.diagnoser import (
+    from dartlab.ai.eval.diagnoser import (
         DiagnosisReport,
         findRegressions,
         findWeakTypes,
@@ -123,7 +123,7 @@ def runRegression() -> str:
 
 def runImpact() -> str:
     """git diff → 영향 케이스 매핑."""
-    from dartlab.engines.ai.eval.diagnoser import mapCodeImpact
+    from dartlab.ai.eval.diagnoser import mapCodeImpact
 
     changedFiles = _gitChangedFiles()
     if not changedFiles:
@@ -155,7 +155,7 @@ def runImpact() -> str:
 
 def runFull() -> str:
     """전체 진단."""
-    from dartlab.engines.ai.eval.diagnoser import diagnoseFull
+    from dartlab.ai.eval.diagnoser import diagnoseFull
 
     latest = _latestBatch()
     prev = _previousBatch(latest) if latest else None
@@ -169,7 +169,7 @@ def runFull() -> str:
     # 코드 영향 추가
     changedFiles = _gitChangedFiles()
     if changedFiles:
-        from dartlab.engines.ai.eval.diagnoser import mapCodeImpact
+        from dartlab.ai.eval.diagnoser import mapCodeImpact
 
         cases = _loadCases()
         impacted = mapCodeImpact(changedFiles, cases)

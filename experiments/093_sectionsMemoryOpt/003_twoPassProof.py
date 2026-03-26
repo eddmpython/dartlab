@@ -67,21 +67,21 @@ def getRssMb() -> float:
 def sectionsOptimized(stockCode: str):
     """period별 즉시 column화 방식 — topicMap에 text 축적 안 함."""
     import polars as pl
-    from dartlab.engines.company.dart.docs.sections.pipeline import (
+    from dartlab.providers.dart.docs.sections.pipeline import (
         _comparablePathInfo,
         _expandStructuredRows,
         _reportRowsToTopicRows,
         _rowCadenceMeta,
         iterPeriodSubsets,
     )
-    from dartlab.engines.company.dart.docs.sections.runtime import (
+    from dartlab.providers.dart.docs.sections.runtime import (
         applyProjections,
         chapterFromMajorNum,
         chapterTeacherTopics,
         detailTopicForTopic,
         projectionSuppressedTopics,
     )
-    from dartlab.engines.company.dart.docs.sections._common import sortPeriods
+    from dartlab.providers.dart.docs.sections._common import sortPeriods
 
     # --- Pass 1: 구조 분석 + period별 text 즉시 column 구성 ---
     # key = (topic, segmentKey)
@@ -362,7 +362,7 @@ def measure(stockCode: str):
     gc.collect()
     rssBeforeOrig = getRssMb()
 
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
+    from dartlab.providers.dart.docs.sections.pipeline import sections
     t1 = time.perf_counter()
     origDf = sections(stockCode)
     elapsedOrig = time.perf_counter() - t1

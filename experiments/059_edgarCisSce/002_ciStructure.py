@@ -124,7 +124,7 @@ def main():
 
     print(f"\n=== EQ 태그 ({len(eqTags)}개) ===")
 
-    from dartlab.engines.company.edgar.finance.mapper import EdgarMapper
+    from dartlab.providers.edgar.finance.mapper import EdgarMapper
 
     bsSnakeIds = set()
     isSnakeIds = set()

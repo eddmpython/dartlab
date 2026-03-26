@@ -11,7 +11,7 @@ from dartlab.export.excel import exportToExcel, listAvailableModules
 
 pytestmark = pytest.mark.integration
 
-PATCH_TARGET = "dartlab.engines.company.dart.finance.pivot.buildAnnual"
+PATCH_TARGET = "dartlab.providers.dart.finance.pivot.buildAnnual"
 
 
 class _ShowableMock(MagicMock):

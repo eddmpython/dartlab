@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import re
 
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.tableParser import (
     _STOCK_TYPES,
     _classifyStructure,
     _dataRows,
@@ -241,7 +241,7 @@ def parseCellSubtablesV2(md: str, periodYear: int) -> list[ParsedSubtable]:
 if __name__ == "__main__":
     import polars as pl
 
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
+    from dartlab.providers.dart.docs.sections.pipeline import sections
 
     # ── 과제1 검증: dividend 당기 추출 개선 ──
     print("=" * 70)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     md = topicFrame["2024"][0]
 
     # 기존
-    from dartlab.engines.company.dart.docs.sections.tableParser import _parseMultiYear
+    from dartlab.providers.dart.docs.sections.tableParser import _parseMultiYear
     subs_old = splitSubtables(str(md))
     for sub in subs_old:
         hc = _headerCells(sub)

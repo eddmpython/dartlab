@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820">
+  <title>dartlab으로 할 수 있는 것들</title>
+  <desc>설치 후 바로 해볼 수 있는 dartlab 주요 기능 6가지</desc>
+
+  <defs>
+    <linearGradient id="bg123d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="820" fill="url(#bg123d)" rx="16"/>
+
+  <text x="600" y="50" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="26" font-weight="700">설치 끝 — 이제 뭘 할 수 있나</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">종목코드 하나로 시작하는 6가지 분석</text>
+
+  <!-- Card 1 -->
+  <rect x="40" y="110" width="360" height="210" rx="14" fill="#1e293b" stroke="#ea4647" stroke-width="1.5"/>
+  <text x="60" y="145" fill="#ea4647" font-family="system-ui, sans-serif" font-size="18" font-weight="700">sections</text>
+  <text x="60" y="170" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">사업보고서 전체를 topic × period 지도로 펼친다.</text>
+  <text x="60" y="192" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">"사업의 내용"이 3년간 어떻게 바뀌었는지 한눈에.</text>
+  <rect x="60" y="210" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="233" fill="#e2e8f0" font-family="monospace" font-size="12">c.sections</text>
+  <rect x="60" y="256" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="279" fill="#e2e8f0" font-family="monospace" font-size="12">c.show("사업의내용")</text>
+
+  <!-- Card 2 -->
+  <rect x="420" y="110" width="360" height="210" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="440" y="145" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="18" font-weight="700">finance</text>
+  <text x="440" y="170" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">재무제표 + 50개 비율을 한 줄로 꺼낸다.</text>
+  <text x="440" y="192" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">손익계산서, 재무상태표, 현금흐름표, 비율 분석.</text>
+  <rect x="440" y="210" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="452" y="233" fill="#e2e8f0" font-family="monospace" font-size="12">c.finance.IS  # 손익계산서</text>
+  <rect x="440" y="256" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="452" y="279" fill="#e2e8f0" font-family="monospace" font-size="12">c.finance.ratios  # 50개 비율</text>
+
+  <!-- Card 3 -->
+  <rect x="800" y="110" width="360" height="210" rx="14" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="820" y="145" fill="#4ade80" font-family="system-ui, sans-serif" font-size="18" font-weight="700">insights</text>
+  <text x="820" y="170" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">수익성, 안정성, 성장성 등 7영역 자동 등급.</text>
+  <text x="820" y="192" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">A~F 등급으로 기업 건강 상태를 한눈에 파악.</text>
+  <rect x="820" y="210" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="832" y="233" fill="#e2e8f0" font-family="monospace" font-size="12">c.insights</text>
+  <rect x="820" y="256" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="832" y="279" fill="#e2e8f0" font-family="monospace" font-size="12">c.insights.profitability  # 수익성</text>
+
+  <!-- Card 4 -->
+  <rect x="40" y="345" width="360" height="210" rx="14" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="60" y="380" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">diff</text>
+  <text x="60" y="405" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">기간 간 공시 텍스트 변화를 자동 감지한다.</text>
+  <text x="60" y="427" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">"지난 분기 대비 뭐가 바뀌었지?"에 바로 답.</text>
+  <rect x="60" y="445" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">c.diff()</text>
+  <rect x="60" y="491" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">c.diff("사업의내용")</text>
+
+  <!-- Card 5 -->
+  <rect x="420" y="345" width="360" height="210" rx="14" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="440" y="380" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18" font-weight="700">AI ask</text>
+  <text x="440" y="405" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">자연어로 질문하면 AI가 종합 분석.</text>
+  <text x="440" y="427" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">"이 회사 투자해도 될까?" 같은 질문에 근거 기반 답변.</text>
+  <rect x="440" y="445" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="452" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">dartlab ask "삼성전자 분석해줘"</text>
+  <rect x="440" y="491" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="452" y="514" fill="#94a3b8" font-family="monospace" font-size="11">dartlab[ai,llm] 설치 필요</text>
+
+  <!-- Card 6 -->
+  <rect x="800" y="345" width="360" height="210" rx="14" fill="#1e293b" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="820" y="380" fill="#fb923c" font-family="system-ui, sans-serif" font-size="18" font-weight="700">market</text>
+  <text x="820" y="405" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">2,700개 종목 스크리닝 + 섹터 비교.</text>
+  <text x="820" y="427" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">시가총액 상위, PER 저평가, 고배당 등 8가지 프리셋.</text>
+  <rect x="820" y="445" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="832" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">c.market</text>
+  <rect x="820" y="491" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="832" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">dartlab.screen("highDividend")</text>
+
+  <!-- Bottom summary -->
+  <rect x="40" y="590" width="1120" height="200" rx="14" fill="#1a1f2e" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="630" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="20" font-weight="600">전부 종목코드 하나에서 시작한다</text>
+
+  <rect x="80" y="660" width="480" height="50" rx="8" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="100" y="690" fill="#e2e8f0" font-family="monospace" font-size="15">c = dartlab.Company("005930")</text>
+
+  <text x="600" y="690" fill="#64748b" font-family="system-ui, sans-serif" font-size="20">→</text>
+
+  <rect x="640" y="660" width="480" height="50" rx="8" fill="#0f172a" stroke="#4ade80" stroke-width="1"/>
+  <text x="660" y="690" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">sections, finance, insights, diff, market 전부 접근 가능</text>
+
+  <text x="600" y="760" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">DART 2,700개 종목 + EDGAR 미국 기업까지 같은 방식으로 분석</text>
+</svg>

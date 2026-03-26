@@ -50,7 +50,7 @@ def test():
     print("=" * 90)
 
     from dartlab import Company
-    from dartlab.engines.ai.tools_registry import build_tool_runtime
+    from dartlab.ai.tools_registry import build_tool_runtime
 
     c = Company("005930")
 

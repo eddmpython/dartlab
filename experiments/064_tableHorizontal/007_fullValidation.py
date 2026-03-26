@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import polars as pl
 from _006_integrated import _isPeriodCol, showIntegrated
 
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.pipeline import sections
 
 
 def validateStock(code: str) -> dict:

@@ -13,8 +13,8 @@ _DETECT_ORDER = ("oauth-codex", "openai", "ollama", "codex")
 def _quick_check(provider_id: str) -> bool:
     """provider 사용 가능 여부를 빠르게 체크."""
     try:
-        from dartlab.engines.ai.providers import create_provider
-        from dartlab.engines.ai.types import LLMConfig
+        from dartlab.ai.providers import create_provider
+        from dartlab.ai.types import LLMConfig
 
         config = LLMConfig(provider=provider_id)
         prov = create_provider(config)

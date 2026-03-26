@@ -66,14 +66,14 @@ _SERIES_ANNUAL = {
 
 def _calc(**kwargs):
     """calcRatios 호출 래퍼."""
-    from dartlab.engines.common.finance.ratios import calcRatios
+    from dartlab.core.finance.ratios import calcRatios
 
     return calcRatios(_SERIES_ANNUAL, annual=True, **kwargs)
 
 
 def test_getTTM_rejects_stale_series_when_max_trailing_nones_zero():
     """오래된 non-null만 남은 시계열은 최신 TTM으로 취급하지 않는다."""
-    from dartlab.engines.common.finance.extract import getTTM
+    from dartlab.core.finance.extract import getTTM
 
     series = {"CF": {"net_profit": [10, 20, 30, 40, None, None, None, None]}}
     assert getTTM(series, "CF", "net_profit") == 100
@@ -82,7 +82,7 @@ def test_getTTM_rejects_stale_series_when_max_trailing_nones_zero():
 
 def test_calcRatios_skips_stale_cf_net_profit_cross_check():
     """CF 순이익이 오래된 값이면 IS-CF 불일치 경고를 띄우지 않는다."""
-    from dartlab.engines.common.finance.ratios import calcRatios
+    from dartlab.core.finance.ratios import calcRatios
 
     series = {
         "IS": {
@@ -314,7 +314,7 @@ class TestComposite:
         투하자본 = 120000 + 20000 = 140000
         ROIC = 15000/140000 × 100 ≈ 10.71%
         """
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         series_4q = {
             "IS": {
@@ -411,13 +411,13 @@ class TestComposite:
         assert r.altmanZScore == pytest.approx(3.62, abs=0.1)
 
     def test_ratio_series_uses_z_prime_coefficients(self):
-        from dartlab.engines.common.finance.ratios import calcRatioSeries
+        from dartlab.core.finance.ratios import calcRatioSeries
 
         rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"])
         assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
 
     def test_beneish_returns_none_when_prior_gross_margin_is_nonpositive(self):
-        from dartlab.engines.common.finance.ratios import _calcBeneishForPeriod
+        from dartlab.core.finance.ratios import _calcBeneishForPeriod
 
         score = _calcBeneishForPeriod(
             rev_t=100.0,
@@ -460,7 +460,7 @@ class TestBSIdentity:
 
     def test_bs_mismatch_triggers_warning(self):
         """항등식 불일치 시 경고 발생."""
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         bad_series = {
             "IS": _SERIES_ANNUAL["IS"],
@@ -486,41 +486,41 @@ class TestYoyPct:
     """yoy_pct() 부호 전환, 경계값 검증."""
 
     def test_positive_to_positive(self):
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(120, 100) == pytest.approx(20.0)
 
     def test_negative_to_negative_improving(self):
         """적자 축소: -50 ← -100 → +50% (손실 축소는 양수)."""
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(-50, -100) == pytest.approx(50.0)
 
     def test_negative_to_negative_worsening(self):
         """적자 확대: -150 ← -100 → -50% (손실 확대는 음수)."""
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(-150, -100) == pytest.approx(-50.0)
 
     def test_sign_change_profit_to_loss(self):
         """흑자→적자: None (비교 불가)."""
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(-50, 100) is None
 
     def test_sign_change_loss_to_profit(self):
         """적자→흑자: None (비교 불가)."""
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(50, -100) is None
 
     def test_zero_denominator(self):
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(100, 0) is None
 
     def test_none_inputs(self):
-        from dartlab.engines.common.finance.ratios import yoy_pct
+        from dartlab.core.finance.ratios import yoy_pct
 
         assert yoy_pct(None, 100) is None
         assert yoy_pct(100, None) is None

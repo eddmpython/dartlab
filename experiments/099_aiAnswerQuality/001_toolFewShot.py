@@ -124,14 +124,14 @@ FEW_SHOT_SUPPLEMENT = """
 def runTest(questions: list[dict], useFewShot: bool, stockCode: str = "005930") -> list[dict]:
     """질문 실행 → tool 호출 로그 수집."""
     import dartlab
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     dartlab.llm.configure(provider="ollama", model="qwen3:latest")
     c = dartlab.Company(stockCode)
 
     if useFewShot:
         # monkey-patch: system_base에 few-shot 추가
-        from dartlab.engines.ai.conversation.templates import system_base
+        from dartlab.ai.conversation.templates import system_base
 
         original = system_base.SYSTEM_PROMPT_KR
         system_base.SYSTEM_PROMPT_KR = original + FEW_SHOT_SUPPLEMENT
@@ -165,7 +165,7 @@ def runTest(questions: list[dict], useFewShot: bool, stockCode: str = "005930") 
 
     if useFewShot:
         # restore
-        from dartlab.engines.ai.conversation.templates import system_base
+        from dartlab.ai.conversation.templates import system_base
 
         system_base.SYSTEM_PROMPT_KR = original  # noqa: F821
 

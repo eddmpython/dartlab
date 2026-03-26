@@ -95,7 +95,7 @@ SCENARIOS = [
 
 def runOne(question: str, company):
     """하나의 질문을 Super Tool 모드로 실행."""
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     toolCalls = []
     answerParts = []

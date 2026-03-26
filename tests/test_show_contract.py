@@ -86,14 +86,14 @@ class TestPerformanceRegression:
     """성능 회귀 테스트."""
 
     def test_company_init_under_3s(self):
-        from dartlab.engines.company.dart.company import Company
+        from dartlab.providers.dart.company import Company
 
         start = time.perf_counter()
         Company(SAMSUNG)
         assert time.perf_counter() - start < 3.0
 
     def test_show_bs_under_5s(self):
-        from dartlab.engines.company.dart.company import Company
+        from dartlab.providers.dart.company import Company
 
         c = Company(SAMSUNG)
         start = time.perf_counter()

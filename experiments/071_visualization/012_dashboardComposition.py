@@ -40,7 +40,7 @@ sys.path.insert(0, "src")
 
 
 # 004~008 변환 함수를 인라인으로 재정의 (실험간 독립 실행 보장)
-from dartlab.engines.common.finance.ratios import RATIO_CATEGORIES
+from dartlab.core.finance.ratios import RATIO_CATEGORIES
 
 COLORS = ["#ea4647", "#fb923c", "#3b82f6", "#22c55e", "#8b5cf6", "#06b6d4", "#f59e0b", "#ec4899"]
 AREA_NAMES = ["performance", "profitability", "health", "cashflow", "governance", "risk", "opportunity"]

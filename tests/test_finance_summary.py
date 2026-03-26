@@ -11,7 +11,7 @@ pytestmark = pytest.mark.integration
 @requires_samsung
 class TestAnalyze:
     def test_basic(self):
-        from dartlab.engines.company.dart.docs.finance.summary import fsSummary
+        from dartlab.providers.dart.docs.finance.summary import fsSummary
 
         r = fsSummary(SAMSUNG)
         assert r is not None
@@ -20,7 +20,7 @@ class TestAnalyze:
         assert len(r.FS) > 0
 
     def test_bs_is(self):
-        from dartlab.engines.company.dart.docs.finance.summary import fsSummary
+        from dartlab.providers.dart.docs.finance.summary import fsSummary
 
         r = fsSummary(SAMSUNG)
         assert r.BS is not None
@@ -29,7 +29,7 @@ class TestAnalyze:
         assert len(r.IS) > 0
 
     def test_matching_rate(self):
-        from dartlab.engines.company.dart.docs.finance.summary import fsSummary
+        from dartlab.providers.dart.docs.finance.summary import fsSummary
 
         r = fsSummary(SAMSUNG)
         assert r.allRate >= 0.8

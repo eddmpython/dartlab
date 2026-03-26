@@ -9,10 +9,10 @@ import polars as pl
 
 class TestKindListSearch:
     def test_search_name_treats_keyword_as_literal(self, monkeypatch):
-        from dartlab.engines.gather.listing import searchName
+        from dartlab.gather.listing import searchName
 
         monkeypatch.setattr(
-            "dartlab.engines.gather.listing.getKindList",
+            "dartlab.gather.listing.getKindList",
             lambda: pl.DataFrame(
                 {
                     "회사명": ["삼성전자", "카카오뱅크"],
@@ -25,10 +25,10 @@ class TestKindListSearch:
         assert result.height == 0
 
     def test_search_name_blank_keyword_returns_empty(self, monkeypatch):
-        from dartlab.engines.gather.listing import searchName
+        from dartlab.gather.listing import searchName
 
         monkeypatch.setattr(
-            "dartlab.engines.gather.listing.getKindList",
+            "dartlab.gather.listing.getKindList",
             lambda: pl.DataFrame(
                 {
                     "회사명": ["삼성전자"],

@@ -18,8 +18,8 @@ from pathlib import Path
 
 import polars as pl
 
-import dartlab.engines.company.dart.company as dart_company
-from dartlab.engines.company.dart.company import Company
+import dartlab.providers.dart.company as dart_company
+from dartlab.providers.dart.company import Company
 
 DOCS_DIR = Path("data/dart/docs")
 OUTPUT_DIR = Path("data/dart/docs/sectionsViews")

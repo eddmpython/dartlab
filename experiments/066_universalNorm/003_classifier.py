@@ -57,8 +57,8 @@ sys.path.insert(0, str(ROOT / "src"))
 import polars as pl
 
 from dartlab.core.dataLoader import _dataDir
-from dartlab.engines.company.dart.docs.sections.pipeline import sections
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import sections
+from dartlab.providers.dart.docs.sections.tableParser import (
     _classifyStructure,
     _dataRows,
     _headerCells,
@@ -231,7 +231,7 @@ def _ruleBasedPredict(feat: dict[str, float]) -> int:
 
 def _collectSamples(stockCodes: list[str]) -> tuple[list[dict], list[int]]:
     """종목별로 모든 table 블록의 특성과 레이블(성공=1, 실패=0) 수집."""
-    from dartlab.engines.company.dart.company import Company
+    from dartlab.providers.dart.company import Company
 
     allFeatures: list[dict] = []
     allLabels: list[int] = []

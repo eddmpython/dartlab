@@ -42,12 +42,12 @@ import math
 import time
 
 import dartlab
-from dartlab.engines.analysis.analyst.crossRegression import (
+from dartlab.analysis.valuation.crossRegression import (
     CompanyFeatures,
     fitCrossSection,
     fitPanel,
 )
-from dartlab.engines.common.finance.extract import getAnnualValues, getTTM
+from dartlab.core.finance.extract import getAnnualValues, getTTM
 
 # 대형주 20개 (메모리 안전: 순차 로드 + 즉시 해제)
 STOCKS = [
@@ -185,7 +185,7 @@ if __name__ == "__main__":
             print(f"  적합 시간: {tFit*1000:.0f}ms")
 
             # 계수 출력
-            from dartlab.engines.analysis.analyst.crossRegression import FEATURES
+            from dartlab.analysis.valuation.crossRegression import FEATURES
             names = ["intercept"] + FEATURES + csModel.sectorNames
             for i, (name, coef) in enumerate(zip(names, csModel.coefficients)):
                 print(f"    {name:30s}: {coef:+.4f}")

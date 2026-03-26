@@ -76,7 +76,7 @@ def _make_series() -> tuple[dict, list[str], dict, list[str]]:
 
 def test_analyze_returns_result():
     """mock 데이터로 analyze() 호출 시 AnalysisResult 반환."""
-    from dartlab.engines.analysis.insight import AnalysisResult, analyze
+    from dartlab.analysis.financial.insight import AnalysisResult, analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -93,7 +93,7 @@ def test_analyze_returns_result():
 
 def test_analyze_has_10_grades():
     """10영역 등급이 모두 존재."""
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -124,7 +124,7 @@ def test_analyze_has_10_grades():
 
 def test_analyze_has_profile():
     """profile 문자열 존재."""
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -140,7 +140,7 @@ def test_analyze_has_profile():
 
 def test_analyze_has_summary():
     """summary 텍스트 존재."""
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -156,7 +156,7 @@ def test_analyze_has_summary():
 
 def test_analyze_anomalies_list():
     """anomalies가 리스트 타입."""
-    from dartlab.engines.analysis.insight import Anomaly, analyze
+    from dartlab.analysis.financial.insight import Anomaly, analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -173,7 +173,7 @@ def test_analyze_anomalies_list():
 
 def test_analyze_repr():
     """AnalysisResult repr 정상 동작."""
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -192,7 +192,7 @@ def test_analyze_repr():
 
 def test_grading_score_to_grade():
     """_scoreToGrade 경계값 테스트."""
-    from dartlab.engines.analysis.insight.grading import _scoreToGrade
+    from dartlab.analysis.financial.insight.grading import _scoreToGrade
 
     assert _scoreToGrade(8, 10) == "A"
     assert _scoreToGrade(5, 10) == "B"
@@ -206,7 +206,7 @@ def test_grading_score_to_grade():
 
 def test_anomaly_detection_clean_data():
     """정상 데이터에서 이상치 탐지 실행."""
-    from dartlab.engines.analysis.insight.anomaly import runAnomalyDetection
+    from dartlab.analysis.financial.insight.anomaly import runAnomalyDetection
 
     _, _, aSeries, _ = _make_series()
     anomalies = runAnomalyDetection(aSeries, isFinancial=False)
@@ -217,7 +217,7 @@ def test_anomaly_detection_clean_data():
 
 
 def test_insight_result_dataclass():
-    from dartlab.engines.analysis.insight.types import InsightResult
+    from dartlab.analysis.financial.insight.types import InsightResult
 
     ir = InsightResult(grade="A", summary="좋음", details=["상세1"], risks=[], opportunities=[])
     assert ir.grade == "A"
@@ -225,14 +225,14 @@ def test_insight_result_dataclass():
 
 
 def test_flag_dataclass():
-    from dartlab.engines.analysis.insight.types import Flag
+    from dartlab.analysis.financial.insight.types import Flag
 
     f = Flag(level="warning", category="debt", text="부채비율 높음")
     assert f.level == "warning"
 
 
 def test_anomaly_dataclass():
-    from dartlab.engines.analysis.insight.types import Anomaly
+    from dartlab.analysis.financial.insight.types import Anomaly
 
     a = Anomaly(severity="danger", category="earningsQuality", text="이익 품질 의심", value=50.0)
     assert a.value == 50.0
@@ -243,7 +243,7 @@ def test_anomaly_dataclass():
 
 def test_analyze_distress_exists():
     """distress 필드가 DistressResult이고 4축(기본)인지 확인."""
-    from dartlab.engines.analysis.insight import DistressResult, analyze
+    from dartlab.analysis.financial.insight import DistressResult, analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
     result = analyze(
@@ -268,7 +268,7 @@ def test_analyze_with_market_data_5axis():
     pytest.importorskip("scipy")
     import random
 
-    from dartlab.engines.analysis.insight import MarketDataForDistress, analyze
+    from dartlab.analysis.financial.insight import MarketDataForDistress, analyze
 
     random.seed(42)
     daily_returns = [random.gauss(0, 0.02) for _ in range(200)]
@@ -298,7 +298,7 @@ def test_analyze_with_market_data_5axis():
 
 def test_analyze_market_data_none_backward_compat():
     """marketData=None → 기존 4축과 동일한 점수."""
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     qSeries, qPeriods, aSeries, aYears = _make_series()
 
@@ -323,7 +323,7 @@ def test_analyze_market_data_none_backward_compat():
 def test_merton_solver_basic():
     """solveMerton 수렴 + D2D 범위 검증."""
     pytest.importorskip("scipy")
-    from dartlab.engines.common.finance.merton import solveMerton
+    from dartlab.core.finance.merton import solveMerton
 
     # 건전 기업: E >> D
     result = solveMerton(equityValue=400e12, debtFaceValue=100e12, equityVolatility=0.30)
@@ -347,7 +347,7 @@ def test_equity_volatility_basic():
     import math
     import random
 
-    from dartlab.engines.common.finance.merton import calcEquityVolatility
+    from dartlab.core.finance.merton import calcEquityVolatility
 
     random.seed(123)
     daily_sigma = 0.02

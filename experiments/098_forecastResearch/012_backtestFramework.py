@@ -166,7 +166,7 @@ def run():
     print("  098-012: 체계적 Backtesting (3개년)")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     industryMap = {}

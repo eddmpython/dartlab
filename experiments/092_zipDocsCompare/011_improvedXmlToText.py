@@ -56,7 +56,7 @@ import polars as pl
 from bs4 import BeautifulSoup
 from lxml import etree
 
-from dartlab.engines.company.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.client import DartClient
 
 TEMP_DIR = Path(__file__).parent / "temp"
 
@@ -285,7 +285,7 @@ def _collectOneZipV2(client: DartClient, rceptNo: str) -> list[dict] | None:
 def main():
     from dartlab import config
     from dartlab.core.dataConfig import DATA_RELEASES
-    from dartlab.engines.company.dart.docs.sections.pipeline import _splitContentBlocks
+    from dartlab.providers.dart.docs.sections.pipeline import _splitContentBlocks
 
     client = DartClient()
     TEMP_DIR.mkdir(exist_ok=True)
@@ -425,7 +425,7 @@ def main():
         config.dataDir = str(tmpDir)
 
         try:
-            from dartlab.engines.company.dart.docs.sections.pipeline import sections
+            from dartlab.providers.dart.docs.sections.pipeline import sections
             return sections("005930")
         finally:
             config.dataDir = origDataDir

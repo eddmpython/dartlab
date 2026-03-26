@@ -679,7 +679,7 @@ def _open_html(html: str, name: str = "network"):
 
 def network_view(code: str | None = None, hops: int = 1):
     """네트워크 뷰 — code 없으면 전체, 있으면 ego."""
-    from dartlab.engines.company.dart.affiliate import build_graph, export_ego, export_full
+    from dartlab.providers.dart.affiliate import build_graph, export_ego, export_full
 
     t0 = time.time()
     data = build_graph(verbose=False)

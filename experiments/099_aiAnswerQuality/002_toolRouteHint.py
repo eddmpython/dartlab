@@ -153,7 +153,7 @@ def buildToolRouteHint(question: str) -> str:
 def runWithHint(questions: list[dict], useHint: bool, stockCode: str = "005930") -> list[dict]:
     """질문 실행 → tool 호출 로그 수집."""
     import dartlab
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     dartlab.llm.configure(provider="ollama", model="qwen3:latest")
     c = dartlab.Company(stockCode)

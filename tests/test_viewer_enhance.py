@@ -33,7 +33,7 @@ class TestDiffMatrix(unittest.TestCase):
         )
 
     def test_basic(self):
-        from dartlab.engines.common.docs.diff import build_diff_matrix
+        from dartlab.core.docs.diff import build_diff_matrix
 
         sections = self._make_sections()
         result = build_diff_matrix(sections)
@@ -48,7 +48,7 @@ class TestDiffMatrix(unittest.TestCase):
         self.assertIn("changeRate", row)
 
     def test_text_only(self):
-        from dartlab.engines.common.docs.diff import build_diff_matrix
+        from dartlab.core.docs.diff import build_diff_matrix
 
         sections = self._make_sections()
         full = build_diff_matrix(sections)
@@ -58,7 +58,7 @@ class TestDiffMatrix(unittest.TestCase):
         self.assertLessEqual(text["topic_count"], full["topic_count"])
 
     def test_heatmap_spec_shape(self):
-        from dartlab.engines.common.docs.diff import build_diff_matrix, build_heatmap_spec
+        from dartlab.core.docs.diff import build_diff_matrix, build_heatmap_spec
 
         sections = self._make_sections()
         matrix_data = build_diff_matrix(sections)
@@ -82,7 +82,7 @@ class TestBridge(unittest.TestCase):
     """003 bridge — extract_amounts / match_amounts."""
 
     def test_extract_amounts_patterns(self):
-        from dartlab.engines.common.docs.bridge import extract_amounts_from_text
+        from dartlab.core.docs.bridge import extract_amounts_from_text
 
         # 조+억
         r = extract_amounts_from_text("매출액 86조 1,229억원")
@@ -113,7 +113,7 @@ class TestBridge(unittest.TestCase):
         self.assertEqual(extract_amounts_from_text(None), [])
 
     def test_match_amounts_tolerance(self):
-        from dartlab.engines.common.docs.bridge import match_amounts
+        from dartlab.core.docs.bridge import match_amounts
 
         text_amounts = [
             {"value_억": 1000, "raw": "1,000억", "unit": "억"},
@@ -134,7 +134,7 @@ class TestBridge(unittest.TestCase):
         self.assertEqual(len(matches_strict), 0)
 
     def test_zero_values_skipped(self):
-        from dartlab.engines.common.docs.bridge import match_amounts
+        from dartlab.core.docs.bridge import match_amounts
 
         text_amounts = [{"value_억": 0, "raw": "0", "unit": "억"}]
         finance_amounts = {"매출액": 1000.0}
@@ -164,7 +164,7 @@ class TestTopicGraph(unittest.TestCase):
         )
 
     def test_mention_matrix_structure(self):
-        from dartlab.engines.common.docs.topicGraph import build_mention_matrix
+        from dartlab.core.docs.topicGraph import build_mention_matrix
 
         sections = self._make_sections()
         result = build_mention_matrix(sections)
@@ -176,7 +176,7 @@ class TestTopicGraph(unittest.TestCase):
         self.assertGreater(len(result["adjacency"]), 0)
 
     def test_analyze_graph_threshold(self):
-        from dartlab.engines.common.docs.topicGraph import analyze_graph
+        from dartlab.core.docs.topicGraph import analyze_graph
 
         adjacency = {
             ("a", "b"): 5,
@@ -194,7 +194,7 @@ class TestTopicGraph(unittest.TestCase):
         self.assertEqual(result_all["edges"], 3)
 
     def test_empty_adjacency(self):
-        from dartlab.engines.common.docs.topicGraph import analyze_graph
+        from dartlab.core.docs.topicGraph import analyze_graph
 
         result = analyze_graph({}, threshold=1)
         self.assertEqual(result["edges"], 0)
@@ -208,7 +208,7 @@ class TestScanPayload(unittest.TestCase):
     """001 scan payload — converter 함수."""
 
     def test_governance_converter(self):
-        from dartlab.engines.company.dart.scan.payload import governance_to_insight
+        from dartlab.market.payload import governance_to_insight
 
         row = {"등급": "B", "총점": 65, "지분율": 55.0, "사외이사비율": 42.0, "pay_ratio": 3.0, "감사의견": "적정의견"}
         result = governance_to_insight(row)
@@ -222,7 +222,7 @@ class TestScanPayload(unittest.TestCase):
         self.assertTrue(any("사외이사" in o["text"] for o in result["opportunities"]))
 
     def test_governance_audit_partial_match(self):
-        from dartlab.engines.company.dart.scan.payload import governance_to_insight
+        from dartlab.market.payload import governance_to_insight
 
         # "적정" 부분 매칭 — "적정의견" 포함이면 비적정 아님
         row = {"등급": "A", "총점": 80, "감사의견": "적정의견(한정제외)"}
@@ -231,7 +231,7 @@ class TestScanPayload(unittest.TestCase):
         self.assertFalse(any("비적정" in r["text"] for r in result["risks"]))
 
     def test_workforce_grades(self):
-        from dartlab.engines.company.dart.scan.payload import workforce_to_insight
+        from dartlab.market.payload import workforce_to_insight
 
         # A등급: rev_per >= 5
         result = workforce_to_insight({"직원수": 1000, "직원당매출_억": 6.0})
@@ -242,21 +242,21 @@ class TestScanPayload(unittest.TestCase):
         self.assertEqual(result["grade"], "F")
 
     def test_capital_grades(self):
-        from dartlab.engines.company.dart.scan.payload import capital_to_insight
+        from dartlab.market.payload import capital_to_insight
 
         result = capital_to_insight({"분류": "환원형", "배당여부": True, "DPS": 1000, "배당수익률": 3.5})
         self.assertEqual(result["grade"], "A")
         self.assertTrue(any("배당수익률" in o["text"] for o in result["opportunities"]))
 
     def test_debt_grades(self):
-        from dartlab.engines.company.dart.scan.payload import debt_to_insight
+        from dartlab.market.payload import debt_to_insight
 
         result = debt_to_insight({"위험등급": "안전", "부채비율": 50.0, "ICR": 8.0})
         self.assertEqual(result["grade"], "A")
         self.assertTrue(any("ICR 양호" in o["text"] for o in result["opportunities"]))
 
     def test_none_on_missing_key(self):
-        from dartlab.engines.company.dart.scan.payload import (
+        from dartlab.market.payload import (
             capital_to_insight,
             debt_to_insight,
             governance_to_insight,
@@ -270,7 +270,7 @@ class TestScanPayload(unittest.TestCase):
 
     def test_unified_payload_keys(self):
         """build_unified_payload가 올바른 키 구조를 반환하는지 (mock)."""
-        from dartlab.engines.company.dart.scan.payload import build_scan_payload
+        from dartlab.market.payload import build_scan_payload
 
         # Mock company
         class MockCompany:
@@ -300,7 +300,7 @@ class TestScanSnapshot(unittest.TestCase):
     """004 scan snapshot — percentile 조회."""
 
     def test_percentile_basic(self):
-        from dartlab.engines.company.dart.scan.snapshot import _percentile
+        from dartlab.market.snapshot import _percentile
 
         arr = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         self.assertAlmostEqual(_percentile(arr, 50), 50.0, places=0)
@@ -308,7 +308,7 @@ class TestScanSnapshot(unittest.TestCase):
         self.assertAlmostEqual(_percentile(arr, 10), 10.0, places=0)
 
     def test_percentile_empty(self):
-        from dartlab.engines.company.dart.scan.snapshot import _percentile
+        from dartlab.market.snapshot import _percentile
 
         self.assertEqual(_percentile([], 50), 0.0)
 
@@ -338,7 +338,7 @@ class TestIntegrationReal(unittest.TestCase):
         cls.c = dartlab.Company("005930")
 
     def test_diff_matrix_real(self):
-        from dartlab.engines.common.docs.diff import build_diff_matrix
+        from dartlab.core.docs.diff import build_diff_matrix
 
         sections = self.c.docs.sections.raw
         result = build_diff_matrix(sections, textOnly=True)
@@ -348,7 +348,7 @@ class TestIntegrationReal(unittest.TestCase):
     def test_bridge_real(self):
         import re
 
-        from dartlab.engines.common.docs.bridge import (
+        from dartlab.core.docs.bridge import (
             extract_amounts_from_text,
             get_finance_amounts,
             match_amounts,
@@ -378,7 +378,7 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreater(len(matched), 0)
 
     def test_topic_graph_real(self):
-        from dartlab.engines.common.docs.topicGraph import (
+        from dartlab.core.docs.topicGraph import (
             analyze_graph,
             build_mention_matrix,
             get_related_topics,
@@ -396,7 +396,7 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreater(len(related), 0)
 
     def test_scan_payload_real(self):
-        from dartlab.engines.company.dart.scan.payload import build_unified_payload
+        from dartlab.market.payload import build_unified_payload
 
         unified = build_unified_payload(self.c)
         # 삼성전자는 최소 5개 이상 영역 유효
@@ -404,7 +404,7 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreaterEqual(valid, 5)
 
     def test_scan_position_real(self):
-        from dartlab.engines.company.dart.scan.snapshot import getScanPosition
+        from dartlab.market.snapshot import getScanPosition
 
         pos = getScanPosition("005930")
         if pos is None:

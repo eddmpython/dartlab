@@ -160,7 +160,7 @@ def test_uniform_violation():
 
 def test_detector_integration():
     """detectBenfordAnomaly 탐지기 통합 테스트."""
-    from dartlab.engines.analysis.insight.anomaly import detectBenfordAnomaly
+    from dartlab.analysis.financial.insight.anomaly import detectBenfordAnomaly
 
     random.seed(42)
     # 충분한 수의 대수정규 값 → Benford 준수 기대

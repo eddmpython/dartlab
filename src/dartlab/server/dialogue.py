@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 # 하위호환 re-export
-from dartlab.engines.ai.conversation.dialogue import (  # noqa: F401
+from dartlab.ai.conversation.dialogue import (  # noqa: F401
     ConversationState,
     build_conversation_state,
     build_dialogue_policy,

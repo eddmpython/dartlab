@@ -184,7 +184,7 @@ def api_data_stats():
 @router.get("/api/spec")
 def api_spec(engine: str | None = None, section: str | None = None):
     """시스템 스펙 조회 — LLM/MCP/외부 클라이언트용."""
-    from dartlab.engines.ai.spec import buildSpec, getEngineSpec
+    from dartlab.ai.spec import buildSpec, getEngineSpec
 
     if engine:
         result = getEngineSpec(engine, section)
@@ -355,7 +355,7 @@ def _resolve_module_data(c: Company, entry) -> Any:
         if not stmt_data or not periods:
             return None
 
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         order = AccountMapper.get().sortOrder(stmt)
 
@@ -411,7 +411,7 @@ def _build_finance_meta(moduleName: str) -> dict[str, Any]:
         return {}
 
     _, stmt = moduleName.split(".", 1)
-    from dartlab.engines.company.dart.finance.mapper import AccountMapper
+    from dartlab.providers.dart.finance.mapper import AccountMapper
 
     mapper = AccountMapper.get()
     labels = mapper.labelMap()

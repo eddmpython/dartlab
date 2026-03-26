@@ -71,7 +71,7 @@ sys.path.insert(0, "src")
 
 def runE2E(stockCode: str, question: str, *, provider: str = "ollama", model: str = "qwen3:4b") -> dict:
     """단일 질문 end-to-end 실행. company=None이면 순수 대화."""
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     company = None
     if stockCode:

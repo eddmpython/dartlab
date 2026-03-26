@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.engines.analysis.analyst.simulation import SectorElasticity
-from dartlab.engines.common.finance.proforma import (
+from dartlab.analysis.forecast.simulation import SectorElasticity
+from dartlab.analysis.forecast.proforma import (
     ProFormaResult,
     _extract_base_year,
     _median,

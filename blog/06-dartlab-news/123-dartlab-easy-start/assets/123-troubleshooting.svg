@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
+  <title>dartlab 설치 문제 해결 — 자주 만나는 에러 4가지</title>
+  <desc>초보자가 자주 만나는 설치 에러와 해결 방법</desc>
+
+  <defs>
+    <linearGradient id="bg123e" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1080" height="720" fill="url(#bg123e)" rx="16"/>
+
+  <text x="540" y="50" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">막히면 여기를 본다</text>
+  <text x="540" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">설치 중 자주 만나는 에러 4가지와 해결법</text>
+
+  <!-- Error 1 -->
+  <rect x="40" y="110" width="480" height="260" rx="14" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <rect x="40" y="110" width="480" height="46" rx="14" fill="#7f1d1d"/>
+  <rect x="40" y="140" width="480" height="16" fill="#7f1d1d"/>
+  <text x="60" y="140" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="15" font-weight="700">❶ "uv 명령을 찾을 수 없습니다"</text>
+
+  <text x="60" y="185" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">원인</text>
+  <text x="60" y="205" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">uv 설치 후 터미널을 다시 열지 않았다.</text>
+
+  <text x="60" y="235" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">해결</text>
+  <rect x="60" y="248" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="268" fill="#e2e8f0" font-family="monospace" font-size="12">터미널(PowerShell/Terminal)을 닫고 다시 연다</text>
+
+  <text x="60" y="305" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">그래도 안 되면 PC를 재시작한다. PATH 반영에 재시작이 필요한 경우가 있다.</text>
+  <rect x="60" y="318" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="338" fill="#fbbf24" font-family="monospace" font-size="12">uv --version  ← 이게 나오면 성공</text>
+
+  <!-- Error 2 -->
+  <rect x="560" y="110" width="480" height="260" rx="14" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+  <rect x="560" y="110" width="480" height="46" rx="14" fill="#7c2d12"/>
+  <rect x="560" y="140" width="480" height="16" fill="#7c2d12"/>
+  <text x="580" y="140" fill="#fdba74" font-family="system-ui, sans-serif" font-size="15" font-weight="700">❷ "Python 3.12 이상이 필요합니다"</text>
+
+  <text x="580" y="185" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">원인</text>
+  <text x="580" y="205" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">시스템에 Python이 없거나, 3.11 이하 버전이 있다.</text>
+
+  <text x="580" y="235" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">해결</text>
+  <rect x="580" y="248" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="592" y="268" fill="#e2e8f0" font-family="monospace" font-size="12">uv python install 3.12</text>
+
+  <text x="580" y="305" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">uv가 Python 3.12를 자동으로 다운로드하고 설치한다.</text>
+  <text x="580" y="325" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">기존 Python에 영향 없이 uv 전용으로 관리된다.</text>
+  <rect x="580" y="338" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="592" y="358" fill="#fbbf24" font-family="monospace" font-size="12">uv python list  ← 설치된 버전 확인</text>
+
+  <!-- Error 3 -->
+  <rect x="40" y="395" width="480" height="280" rx="14" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5"/>
+  <rect x="40" y="395" width="480" height="46" rx="14" fill="#3b0764"/>
+  <rect x="40" y="425" width="480" height="16" fill="#3b0764"/>
+  <text x="60" y="425" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="15" font-weight="700">❸ "Permission denied" (Windows)</text>
+
+  <text x="60" y="468" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">원인</text>
+  <text x="60" y="488" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">PowerShell 실행 정책이 스크립트 실행을 막고 있다.</text>
+
+  <text x="60" y="518" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">해결</text>
+  <text x="60" y="538" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">PowerShell을 관리자 권한으로 열고:</text>
+  <rect x="60" y="548" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="568" fill="#e2e8f0" font-family="monospace" font-size="12">Set-ExecutionPolicy RemoteSigned -Scope CurrentUser</text>
+
+  <text x="60" y="600" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">이후 uv 설치 명령을 다시 실행한다.</text>
+  <rect x="60" y="615" width="440" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="72" y="635" fill="#e2e8f0" font-family="monospace" font-size="12">powershell -c "irm astral.sh/uv | iex"</text>
+  <text x="60" y="660" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">macOS/Linux에서는 이 문제가 발생하지 않는다.</text>
+
+  <!-- Error 4 -->
+  <rect x="560" y="395" width="480" height="280" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+  <rect x="560" y="395" width="480" height="46" rx="14" fill="#0c4a6e"/>
+  <rect x="560" y="425" width="480" height="16" fill="#0c4a6e"/>
+  <text x="580" y="425" fill="#7dd3fc" font-family="system-ui, sans-serif" font-size="15" font-weight="700">❹ 첫 실행이 느리다 (30초 이상)</text>
+
+  <text x="580" y="468" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">원인</text>
+  <text x="580" y="488" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">첫 실행 시 HuggingFace에서 데이터를 다운로드한다.</text>
+  <text x="580" y="508" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">종목당 수 MB — 인터넷 속도에 따라 차이가 있다.</text>
+
+  <text x="580" y="540" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">해결</text>
+  <text x="580" y="560" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">정상이다. 두 번째 실행부터는 캐시에서 즉시 로드된다.</text>
+
+  <rect x="580" y="578" width="440" height="54" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="592" y="598" fill="#94a3b8" font-family="monospace" font-size="11">첫 실행:  Company("005930")  → ~15초 (다운로드)</text>
+  <text x="592" y="618" fill="#4ade80" font-family="monospace" font-size="11">두 번째: Company("005930")  → ~2초 (캐시)</text>
+
+  <text x="580" y="660" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">Wi-Fi가 느리면 유선 연결을 추천한다.</text>
+</svg>

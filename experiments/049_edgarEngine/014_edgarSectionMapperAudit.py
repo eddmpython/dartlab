@@ -45,7 +45,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.edgar.docs.sections.mapper import (
+from dartlab.providers.edgar.docs.sections.mapper import (
     mapSectionTitle,
     normalizeSectionTitle,
 )

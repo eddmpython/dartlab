@@ -92,7 +92,7 @@ EVAL_CASES = [
 
 def runSingleCase(company, question: str) -> dict:
     """단일 질문 실행 — 첫 tool_call 수집."""
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     toolCalls = []
     chunks = []

@@ -191,7 +191,7 @@ def run():
     print("  098-013: Ablation study — 예측 소스 기여도")
     print("=" * 70)
 
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
     kindDf = getKindList()
     kindMap = {}
     industryMap = {}

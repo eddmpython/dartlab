@@ -48,7 +48,7 @@ def measureSections(stockCode: str) -> None:
 
     t0 = time.perf_counter()
 
-    from dartlab.engines.company.dart.docs.sections.pipeline import sections
+    from dartlab.providers.dart.docs.sections.pipeline import sections
 
     df = sections(stockCode)
     elapsed = time.perf_counter() - t0

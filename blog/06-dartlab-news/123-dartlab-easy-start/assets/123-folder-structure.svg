@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640">
+  <title>uv init 후 프로젝트 폴더 구조</title>
+  <desc>uv init과 uv add dartlab 후에 만들어지는 파일들 설명</desc>
+
+  <defs>
+    <linearGradient id="bg123c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="640" fill="url(#bg123c)" rx="16"/>
+
+  <text x="480" y="50" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">uv init 후에 만들어지는 것들</text>
+  <text x="480" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">모든 파일은 uv가 자동으로 만든다 — 직접 건드릴 필요 없다</text>
+
+  <!-- Folder tree -->
+  <rect x="60" y="110" width="400" height="480" rx="14" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <text x="80" y="145" fill="#fbbf24" font-family="monospace" font-size="16" font-weight="700">my-analysis/</text>
+
+  <text x="100" y="185" fill="#38bdf8" font-family="monospace" font-size="14">├── .venv/</text>
+  <text x="100" y="215" fill="#a78bfa" font-family="monospace" font-size="14">├── .python-version</text>
+  <text x="100" y="245" fill="#4ade80" font-family="monospace" font-size="14">├── pyproject.toml</text>
+  <text x="100" y="275" fill="#f87171" font-family="monospace" font-size="14">├── uv.lock</text>
+  <text x="100" y="305" fill="#94a3b8" font-family="monospace" font-size="14">├── hello.py</text>
+  <text x="100" y="345" fill="#fbbf24" font-family="monospace" font-size="14">└── main.py</text>
+  <text x="140" y="370" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">↑ 이 파일만 직접 만든다</text>
+
+  <!-- Explanation cards -->
+  <rect x="500" y="110" width="420" height="80" rx="10" fill="#0a1a20" stroke="#38bdf8" stroke-width="1"/>
+  <text x="520" y="137" fill="#38bdf8" font-family="monospace" font-size="14" font-weight="600">.venv/</text>
+  <text x="520" y="158" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">가상환경 폴더. Python과 설치된 패키지가 여기 들어간다.</text>
+  <text x="520" y="178" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">절대 직접 건드리지 않는다. uv가 관리한다.</text>
+
+  <rect x="500" y="204" width="420" height="60" rx="10" fill="#0f0a1a" stroke="#a78bfa" stroke-width="1"/>
+  <text x="520" y="229" fill="#a78bfa" font-family="monospace" font-size="14" font-weight="600">.python-version</text>
+  <text x="520" y="251" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">이 프로젝트가 쓰는 Python 버전 (예: 3.12)</text>
+
+  <rect x="500" y="278" width="420" height="80" rx="10" fill="#0a1a10" stroke="#4ade80" stroke-width="1"/>
+  <text x="520" y="305" fill="#4ade80" font-family="monospace" font-size="14" font-weight="600">pyproject.toml</text>
+  <text x="520" y="326" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">프로젝트 설정 파일. 어떤 패키지를 설치했는지 기록.</text>
+  <text x="520" y="346" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">uv add dartlab 하면 여기에 자동으로 추가된다.</text>
+
+  <rect x="500" y="372" width="420" height="80" rx="10" fill="#1a0a0a" stroke="#f87171" stroke-width="1"/>
+  <text x="520" y="399" fill="#f87171" font-family="monospace" font-size="14" font-weight="600">uv.lock</text>
+  <text x="520" y="420" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">정확한 패키지 버전이 기록된 잠금 파일.</text>
+  <text x="520" y="440" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">다른 컴퓨터에서도 똑같은 환경을 재현해준다.</text>
+
+  <rect x="500" y="466" width="420" height="80" rx="10" fill="#1a1508" stroke="#fbbf24" stroke-width="1"/>
+  <text x="520" y="493" fill="#fbbf24" font-family="monospace" font-size="14" font-weight="600">main.py ← 내가 만드는 유일한 파일</text>
+  <text x="520" y="514" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">분석 코드를 여기에 작성한다.</text>
+  <text x="520" y="534" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">uv run python main.py로 실행.</text>
+
+  <!-- Bottom note -->
+  <rect x="60" y="600" width="860" height="30" rx="6" fill="transparent"/>
+  <text x="480" y="622" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">핵심: main.py 하나만 만들면 된다. 나머지는 전부 uv가 알아서 한다.</text>
+</svg>

@@ -28,7 +28,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.mapper import loadSectionMappings
+from dartlab.providers.dart.docs.sections.mapper import loadSectionMappings
 
 KEYWORDS = {
     "kwProduct": "제품|서비스",

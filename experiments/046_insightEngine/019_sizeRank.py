@@ -51,7 +51,7 @@ from pathlib import Path
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.engines.financeEngine.pivot import buildAnnual
 from dartlab.engines.financeEngine.ratios import calcRatios
-from dartlab.engines.gather.listing import getKindList
+from dartlab.gather.listing import getKindList
 from dartlab.engines.sectorEngine import classify
 
 

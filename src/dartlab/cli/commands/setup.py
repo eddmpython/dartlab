@@ -19,7 +19,7 @@ def configure_parser(subparsers) -> None:
 
 def run(args) -> int:
     try:
-        from dartlab.engines.ai.providers.support.cli_setup import detect_codex
+        from dartlab.ai.providers.support.cli_setup import detect_codex
     except (ImportError, ModuleNotFoundError) as exc:
         raise CLIError(f"setup 정보를 불러오지 못했습니다: {exc}") from exc
 
@@ -60,7 +60,7 @@ def _setup_oauth_codex() -> None:
 
     # 이미 인증됐는지 확인
     try:
-        from dartlab.engines.ai.providers.support.oauth_token import is_authenticated
+        from dartlab.ai.providers.support.oauth_token import is_authenticated
 
         if is_authenticated():
             print("  ✓ 이미 인증되어 있습니다.\n")
@@ -83,7 +83,7 @@ def _do_oauth_login() -> None:
     from urllib.parse import parse_qs, urlparse
 
     try:
-        from dartlab.engines.ai.providers.support.oauth_token import (
+        from dartlab.ai.providers.support.oauth_token import (
             OAUTH_REDIRECT_PORT,
             build_auth_url,
             exchange_code,
@@ -275,7 +275,7 @@ def _setup_custom() -> None:
 
 def _setup_dart_key() -> int:
     """DART OpenAPI 키 설정 — 대화형 입력 → .env 저장."""
-    from dartlab.engines.company.dart.openapi.client import hasDartApiKey
+    from dartlab.providers.dart.openapi.client import hasDartApiKey
 
     print("\n[ DART OpenAPI 키 설정 ]\n")
     print("  DART 전자공시 데이터를 직접 수집하려면 OpenAPI 키가 필요합니다.")
@@ -315,6 +315,6 @@ def _setup_dart_key() -> int:
 
 def _save_dart_key_to_dotenv(key: str) -> None:
     """프로젝트 루트의 .env에 DART_API_KEY 추가/갱신."""
-    from dartlab.engines.company.dart.openapi.dartKey import saveDartKeyToDotenv
+    from dartlab.providers.dart.openapi.dartKey import saveDartKeyToDotenv
 
     saveDartKeyToDotenv(key)

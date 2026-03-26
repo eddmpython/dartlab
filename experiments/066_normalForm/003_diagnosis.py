@@ -14,7 +14,7 @@ import polars as pl
 
 sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
 
-from dartlab.engines.company.dart.docs.sections.tableParser import splitSubtables
+from dartlab.providers.dart.docs.sections.tableParser import splitSubtables
 
 # ── 002에서 복사한 핵심 함수들 (import 문제 회피) ──
 

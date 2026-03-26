@@ -30,8 +30,8 @@ import polars as pl
 
 from dartlab import config
 from dartlab.core.dataLoader import loadData
-from dartlab.engines.company.edgar.docs.sections.pipeline import sections as buildSections
-from dartlab.engines.company.edgar.finance.pivot import buildAnnual, buildTimeseries
+from dartlab.providers.edgar.docs.sections.pipeline import sections as buildSections
+from dartlab.providers.edgar.finance.pivot import buildAnnual, buildTimeseries
 
 
 class _DocsAccessor:
@@ -135,7 +135,7 @@ class _FinanceAccessor:
     @property
     def ratios(self):
         if "_ratios" not in self._company._cache:
-            from dartlab.engines.common.finance.ratios import calcRatios
+            from dartlab.core.finance.ratios import calcRatios
             annual = self.annual
             if annual is None:
                 self._company._cache["_ratios"] = None
@@ -152,7 +152,7 @@ class _FinanceAccessor:
                 self._company._cache["_ratioSeries"] = None
             else:
                 aSeries, years = annual
-                from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
+                from dartlab.core.finance.ratios import calcRatioSeries, toSeriesDict
                 rs = calcRatioSeries(aSeries, years)
                 self._company._cache["_ratioSeries"] = toSeriesDict(rs)
         return self._company._cache["_ratioSeries"]
@@ -213,7 +213,7 @@ class _CompanyProto:
     @property
     def insights(self):
         if "_insights" not in self._cache:
-            from dartlab.engines.analysis.insight.pipeline import analyze
+            from dartlab.analysis.financial.insight.pipeline import analyze
             ts = self.finance.timeseries
             annual = self.finance.annual
             if ts is None or annual is None:

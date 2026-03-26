@@ -105,7 +105,7 @@ def measurePhase(action: Callable[[], Any]) -> tuple[Any, dict[str, Any]]:
 
 
 def buildTopicScopedSections(stockCode: str, targetTopic: str) -> pl.DataFrame | None:
-    from dartlab.engines.company.dart.docs.sections.pipeline import (
+    from dartlab.providers.dart.docs.sections.pipeline import (
         _expandStructuredRows,
         _reportRowsToTopicRows,
         _rowCadenceMeta,
@@ -239,8 +239,8 @@ def buildTopicScopedSections(stockCode: str, targetTopic: str) -> pl.DataFrame |
 
 
 def buildCandidate(stockCode: str, topic: str) -> pl.DataFrame | None:
-    from dartlab.engines.common.show import buildBlockIndex
-    from dartlab.engines.company.dart.docs.sections import reorderPeriodColumns
+    from dartlab.core.show import buildBlockIndex
+    from dartlab.providers.dart.docs.sections import reorderPeriodColumns
 
     docsSec = buildTopicScopedSections(stockCode, topic)
     if docsSec is None:

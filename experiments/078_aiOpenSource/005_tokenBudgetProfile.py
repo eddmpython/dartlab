@@ -74,8 +74,8 @@ TEST_QUESTION = "이 기업에 대해 종합적으로 분석해주세요."
 
 def profile_full_context(company, question: str) -> dict:
     """full context의 모듈별 토큰 분포."""
-    from dartlab.engines.ai.context import build_context_by_module
-    from dartlab.engines.ai.pipeline import run_pipeline
+    from dartlab.ai.context import build_context_by_module
+    from dartlab.ai.pipeline import run_pipeline
 
     modules, included, header = build_context_by_module(
         company, question, compact=False
@@ -105,7 +105,7 @@ def profile_full_context(company, question: str) -> dict:
 
 def profile_skeleton_context(company) -> dict:
     """skeleton context 토큰."""
-    from dartlab.engines.ai.context import build_context_skeleton
+    from dartlab.ai.context import build_context_skeleton
 
     text, included = build_context_skeleton(company)
     return {
@@ -117,7 +117,7 @@ def profile_skeleton_context(company) -> dict:
 
 def profile_focused_context(company, question: str) -> dict:
     """focused context의 모듈별 토큰 분포."""
-    from dartlab.engines.ai.context import build_context_focused
+    from dartlab.ai.context import build_context_focused
 
     modules, included, header = build_context_focused(company, question)
 

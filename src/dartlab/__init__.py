@@ -4,15 +4,15 @@ import sys
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
-from dartlab import config, core, engines
+from dartlab import ai as llm
+from dartlab import config, core
 from dartlab.company import Company
 from dartlab.core.env import loadEnv as _loadEnv
-from dartlab.engines import ai as llm
-from dartlab.engines.company.dart.company import Company as _DartEngineCompany
-from dartlab.engines.company.dart.openapi.dart import Dart, OpenDart
-from dartlab.engines.company.edgar.openapi.edgar import OpenEdgar
-from dartlab.engines.gather.fred import Fred
-from dartlab.engines.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
+from dartlab.gather.fred import Fred
+from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
+from dartlab.providers.dart.company import Company as _DartEngineCompany
+from dartlab.providers.dart.openapi.dart import Dart, OpenDart
+from dartlab.providers.edgar.openapi.edgar import OpenEdgar
 
 # .env 자동 로드 — API 키 등 환경변수
 _loadEnv()
@@ -36,7 +36,7 @@ def search(keyword: str):
         return _DartEngineCompany.search(keyword)
     if keyword.isascii() and keyword.isalpha():
         try:
-            from dartlab.engines.company.edgar.company import Company as _US
+            from dartlab.providers.edgar.company import Company as _US
 
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
@@ -58,7 +58,7 @@ def listing(market: str | None = None):
     """
     if market and market.upper() == "US":
         try:
-            from dartlab.engines.company.edgar.company import Company as _US
+            from dartlab.providers.edgar.company import Company as _US
 
             return _US.listing()
         except (ImportError, AttributeError, NotImplementedError):
@@ -79,7 +79,7 @@ def collect(
         dartlab.collect("005930")                              # 삼성전자 전체
         dartlab.collect("005930", "000660", categories=["finance"])  # 재무만
     """
-    from dartlab.engines.company.dart.openapi.batch import batchCollect
+    from dartlab.providers.dart.openapi.batch import batchCollect
 
     return batchCollect(list(codes), categories=categories, incremental=incremental)
 
@@ -100,7 +100,7 @@ def collectAll(
         dartlab.collectAll(categories=["finance"])    # 재무만
         dartlab.collectAll(mode="all")                # 기수집 포함 전체
     """
-    from dartlab.engines.company.dart.openapi.batch import batchCollectAll
+    from dartlab.providers.dart.openapi.batch import batchCollectAll
 
     return batchCollectAll(
         categories=categories,
@@ -142,7 +142,7 @@ def checkFreshness(stockCode: str, *, forceCheck: bool = False):
         result.isFresh       # True/False
         result.missingCount  # 누락 공시 수
     """
-    from dartlab.engines.company.dart.openapi.freshness import (
+    from dartlab.providers.dart.openapi.freshness import (
         checkFreshness as _check,
     )
 
@@ -157,7 +157,7 @@ def network():
         import dartlab
         dartlab.network().show()  # 브라우저에서 전체 네트워크
     """
-    from dartlab.engines.company.dart.scan.network import build_graph, export_full
+    from dartlab.market.network import build_graph, export_full
     from dartlab.tools.network import render_network
 
     data = build_graph()
@@ -177,7 +177,7 @@ def governance():
         import dartlab
         df = dartlab.governance()
     """
-    from dartlab.engines.company.dart.scan.governance import scan_governance
+    from dartlab.market.governance import scan_governance
 
     return scan_governance()
 
@@ -190,7 +190,7 @@ def workforce():
         import dartlab
         df = dartlab.workforce()
     """
-    from dartlab.engines.company.dart.scan.workforce import scan_workforce
+    from dartlab.market.workforce import scan_workforce
 
     return scan_workforce()
 
@@ -203,7 +203,7 @@ def capital():
         import dartlab
         df = dartlab.capital()
     """
-    from dartlab.engines.company.dart.scan.capital import scan_capital
+    from dartlab.market.capital import scan_capital
 
     return scan_capital()
 
@@ -216,7 +216,7 @@ def debt():
         import dartlab
         df = dartlab.debt()
     """
-    from dartlab.engines.company.dart.scan.debt import scan_debt
+    from dartlab.market.debt import scan_debt
 
     return scan_debt()
 
@@ -234,7 +234,7 @@ def screen(preset: str = "가치주"):
         df = dartlab.screen("가치주")    # ROE≥10, 부채≤100 등
         df = dartlab.screen("고위험")    # 부채≥200, ICR<3
     """
-    from dartlab.engines.analysis.rank.screen import screen as _screen
+    from dartlab.analysis.comparative.rank.screen import screen as _screen
 
     return _screen(preset)
 
@@ -247,7 +247,7 @@ def benchmark():
         import dartlab
         bm = dartlab.benchmark()   # 섹터 × 비율 정상 범위
     """
-    from dartlab.engines.analysis.rank.screen import benchmark as _benchmark
+    from dartlab.analysis.comparative.rank.screen import benchmark as _benchmark
 
     return _benchmark()
 
@@ -264,7 +264,7 @@ def signal(keyword: str | None = None):
         df = dartlab.signal()        # 전체 키워드 트렌드
         df = dartlab.signal("AI")    # AI 키워드 연도별 추이
     """
-    from dartlab.engines.company.dart.scan.signal import scan_signal
+    from dartlab.market.signal import scan_signal
 
     return scan_signal(keyword)
 
@@ -283,7 +283,7 @@ def news(query: str, *, market: str = "KR", days: int = 30):
         dartlab.news("삼성전자")
         dartlab.news("AAPL", market="US")
     """
-    from dartlab.engines.gather import getDefaultGather
+    from dartlab.gather import getDefaultGather
 
     return getDefaultGather().news(query, market=market, days=days)
 
@@ -300,7 +300,7 @@ def price(
         dartlab.price("005930", start="2020-01-01")          # 기간 지정
         dartlab.price("005930", snapshot=True)               # 현재가 스냅샷
     """
-    from dartlab.engines.gather import getDefaultGather
+    from dartlab.gather import getDefaultGather
 
     return getDefaultGather().price(stockCode, market=market, start=start, end=end, snapshot=snapshot)
 
@@ -314,7 +314,7 @@ def consensus(stockCode: str, *, market: str = "KR"):
         dartlab.consensus("005930")
         dartlab.consensus("AAPL", market="US")
     """
-    from dartlab.engines.gather import getDefaultGather
+    from dartlab.gather import getDefaultGather
 
     return getDefaultGather().consensus(stockCode, market=market)
 
@@ -328,7 +328,7 @@ def flow(stockCode: str, *, market: str = "KR"):
         dartlab.flow("005930")
         # [{"date": "20260325", "foreignNet": -6165053, "institutionNet": 2908773, ...}, ...]
     """
-    from dartlab.engines.gather import getDefaultGather
+    from dartlab.gather import getDefaultGather
 
     return getDefaultGather().flow(stockCode, market=market)
 
@@ -348,7 +348,7 @@ def macro(market: str = "KR", indicator: str | None = None, *, start: str | None
         dartlab.macro("KR", "CPI")         # 명시적 KR + CPI
         dartlab.macro("US", "SP500")       # 명시적 US + S&P500
     """
-    from dartlab.engines.gather import getDefaultGather
+    from dartlab.gather import getDefaultGather
 
     return getDefaultGather().macro(market, indicator, start=start, end=end)
 
@@ -365,7 +365,7 @@ def crossBorderPeers(stockCode: str, *, topK: int = 5):
         import dartlab
         dartlab.crossBorderPeers("005930")  # → ["AAPL", "MSFT", ...]
     """
-    from dartlab.engines.analysis.peer.discover import crossBorderPeers as _cb
+    from dartlab.analysis.comparative.peer.discover import crossBorderPeers as _cb
 
     return _cb(stockCode, topK=topK)
 
@@ -407,7 +407,7 @@ def setup(provider: str | None = None):
 def _setup_oauth_interactive():
     """노트북/CLI에서 ChatGPT OAuth 브라우저 로그인."""
     try:
-        from dartlab.engines.ai.providers.support.oauth_token import is_authenticated
+        from dartlab.ai.providers.support.oauth_token import is_authenticated
 
         if is_authenticated():
             print("\n  ✓ ChatGPT OAuth 이미 인증되어 있습니다.")
@@ -514,7 +514,7 @@ def ask(
         for chunk in dartlab.ask("삼성전자 분석", raw=True):
             custom_process(chunk)
     """
-    from dartlab.engines.ai.runtime.standalone import ask as _ask
+    from dartlab.ai.runtime.standalone import ask as _ask
 
     # provider 미지정 시 auto-detect
     if provider is None:
@@ -615,7 +615,7 @@ def chat(
         import dartlab
         dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
     """
-    from dartlab.engines.ai.runtime.standalone import chat as _chat
+    from dartlab.ai.runtime.standalone import chat as _chat
 
     company = Company(codeOrName)
     return _chat(
@@ -672,7 +672,7 @@ def audit(codeOrName: str):
         dartlab.audit("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.insight.pipeline import analyzeAudit
+    from dartlab.analysis.financial.insight.pipeline import analyzeAudit
 
     return analyzeAudit(c)
 
@@ -686,7 +686,7 @@ def forecast(codeOrName: str, *, horizon: int = 3):
         dartlab.forecast("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.analyst.revenueForecast import forecastRevenue
+    from dartlab.analysis.forecast.revenueForecast import forecastRevenue
 
     ts = c.finance.timeseries
     if ts is None:
@@ -712,7 +712,7 @@ def valuation(codeOrName: str, *, shares: int | None = None):
         dartlab.valuation("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.analyst.valuation import fullValuation
+    from dartlab.analysis.valuation.valuation import fullValuation
 
     ts = c.finance.timeseries
     if ts is None:
@@ -737,7 +737,7 @@ def insights(codeOrName: str):
         dartlab.insights("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.insight import analyze
+    from dartlab.analysis.financial.insight import analyze
 
     return analyze(c.stockCode, company=c)
 
@@ -751,7 +751,7 @@ def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
         dartlab.simulation("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.analyst.simulation import simulateAllScenarios
+    from dartlab.analysis.forecast.simulation import simulateAllScenarios
 
     ts = c.finance.timeseries
     if ts is None:
@@ -773,7 +773,7 @@ def research(codeOrName: str, *, sections: list[str] | None = None, includeMarke
         dartlab.research("005930")
     """
     c = Company(codeOrName)
-    from dartlab.engines.analysis.research import generateResearch
+    from dartlab.analysis.financial.research import generateResearch
 
     return generateResearch(c, sections=sections, includeMarket=includeMarket)
 
@@ -789,7 +789,7 @@ def groupHealth():
         import dartlab
         summary, weakLinks = dartlab.groupHealth()
     """
-    from dartlab.engines.company.dart.scan.network.health import groupHealth as _groupHealth
+    from dartlab.market.network.health import groupHealth as _groupHealth
 
     return _groupHealth()
 
@@ -820,11 +820,11 @@ def scanAccount(
         dartlab.scanAccount("total_assets", market="edgar", annual=True)
     """
     if market == "edgar":
-        from dartlab.engines.company.edgar.finance.scanAccount import scanAccount as _edgarScan
+        from dartlab.providers.edgar.finance.scanAccount import scanAccount as _edgarScan
 
         return _edgarScan(snakeId, annual=annual)
 
-    from dartlab.engines.company.dart.finance.scanAccount import scanAccount as _scan
+    from dartlab.providers.dart.finance.scanAccount import scanAccount as _scan
 
     return _scan(snakeId, sjDiv=sjDiv, fsPref=fsPref, annual=annual)
 
@@ -852,11 +852,11 @@ def scanRatio(
         dartlab.scanRatio("roe", market="edgar", annual=True)  # EDGAR 연간
     """
     if market == "edgar":
-        from dartlab.engines.company.edgar.finance.scanAccount import scanRatio as _edgarRatio
+        from dartlab.providers.edgar.finance.scanAccount import scanRatio as _edgarRatio
 
         return _edgarRatio(ratioName, annual=annual)
 
-    from dartlab.engines.company.dart.finance.scanAccount import scanRatio as _ratio
+    from dartlab.providers.dart.finance.scanAccount import scanRatio as _ratio
 
     return _ratio(ratioName, fsPref=fsPref, annual=annual)
 
@@ -869,7 +869,7 @@ def scanRatioList():
         import dartlab
         dartlab.scanRatioList()
     """
-    from dartlab.engines.company.dart.finance.scanAccount import scanRatioList as _list
+    from dartlab.providers.dart.finance.scanAccount import scanRatioList as _list
 
     return _list()
 
@@ -900,8 +900,8 @@ def digest(
         dartlab.digest(sector="반도체")             # 섹터별
         dartlab.digest(format="markdown")          # 마크다운 출력
     """
-    from dartlab.engines.analysis.watch.digest import build_digest
-    from dartlab.engines.analysis.watch.scanner import scan_market
+    from dartlab.analysis.accounting.watch.digest import build_digest
+    from dartlab.analysis.accounting.watch.scanner import scan_market
 
     scan_df = scan_market(
         sector=sector,

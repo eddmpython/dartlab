@@ -366,7 +366,7 @@ def test_combined_strategy():
     ]
 
     sys.path.insert(0, "C:/Users/MSI/OneDrive/Desktop/sideProject/dartlab/src")
-    from dartlab.engines.company.dart.docs.sections.tableParser import _normalizeHeader
+    from dartlab.providers.dart.docs.sections.tableParser import _normalizeHeader
 
     print("\n  결합 판별 규칙:")
     print("    헤더 매칭 AND 핑거프린트 ≥ 0.5 → 같은 구조")

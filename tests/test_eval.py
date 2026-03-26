@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_load_golden_dataset():
-    from dartlab.engines.ai.eval import load_golden_dataset
+    from dartlab.ai.eval import load_golden_dataset
 
     data = load_golden_dataset()
     assert isinstance(data, list)
@@ -19,7 +19,7 @@ def test_load_golden_dataset():
 
 
 def test_score_factual_accuracy():
-    from dartlab.engines.ai.eval.scorer import score_factual_accuracy
+    from dartlab.ai.eval.scorer import score_factual_accuracy
 
     # 정확한 수치 포함
     answer = "삼성전자의 매출액은 약 302조원입니다."
@@ -33,7 +33,7 @@ def test_score_factual_accuracy():
 
 
 def test_score_completeness():
-    from dartlab.engines.ai.eval.scorer import score_completeness
+    from dartlab.ai.eval.scorer import score_completeness
 
     answer = "삼성전자의 매출과 영업이익은 성장 추세입니다."
     topics = ["매출", "영업이익", "순이익"]
@@ -42,7 +42,7 @@ def test_score_completeness():
 
 
 def test_score_source_citation():
-    from dartlab.engines.ai.eval.scorer import score_source_citation
+    from dartlab.ai.eval.scorer import score_source_citation
 
     answer = "2023년 IS 기준으로 매출 302조, 2024년 BS에서 자산 총계는..."
     score = score_source_citation(answer)
@@ -53,7 +53,7 @@ def test_score_source_citation():
 
 
 def test_score_actionability():
-    from dartlab.engines.ai.eval.scorer import score_actionability
+    from dartlab.ai.eval.scorer import score_actionability
 
     answer = "종합적으로 판단하면, 이 기업의 수익성은 양호하며 건전성도 안정적입니다."
     score = score_actionability(answer)
@@ -64,7 +64,7 @@ def test_score_actionability():
 
 
 def test_auto_score():
-    from dartlab.engines.ai.eval import auto_score
+    from dartlab.ai.eval import auto_score
 
     answer = (
         "2024년 기준 삼성전자의 매출은 약 302조원이며, 영업이익률은 양호합니다. 종합 판단으로 건전성은 안정적입니다."
@@ -79,7 +79,7 @@ def test_auto_score():
 
 
 def test_load_persona_question_set():
-    from dartlab.engines.ai.eval import loadPersonaCases, loadPersonaQuestionSet
+    from dartlab.ai.eval import loadPersonaCases, loadPersonaQuestionSet
 
     dataset = loadPersonaQuestionSet()
     assert dataset["version"]
@@ -102,7 +102,7 @@ def test_load_persona_question_set():
 
 
 def test_auto_score_extended_dimensions():
-    from dartlab.engines.ai.eval import auto_score
+    from dartlab.ai.eval import auto_score
 
     answer = "배당과 현금흐름을 함께 보면 추가 확인이 필요합니다. 다음으로 투자자가 확인할 질문도 던질 수 있습니다."
     card = auto_score(
@@ -127,8 +127,8 @@ def test_auto_score_extended_dimensions():
 
 
 def test_evaluate_replay_uses_structural_and_answer_checks():
-    from dartlab.engines.ai.eval import PersonaEvalCase, evaluateReplay
-    from dartlab.engines.ai.runtime.events import AnalysisEvent
+    from dartlab.ai.eval import PersonaEvalCase, evaluateReplay
+    from dartlab.ai.runtime.events import AnalysisEvent
 
     case = PersonaEvalCase(
         id="investor.dividend",
@@ -161,7 +161,7 @@ def test_evaluate_replay_uses_structural_and_answer_checks():
 
 
 def test_runtime_evidence_labels_include_user_facing_names():
-    from dartlab.engines.ai.runtime.core import _build_included_evidence
+    from dartlab.ai.runtime.core import _build_included_evidence
 
     evidence = _build_included_evidence(["IS", "report_dividend", "section_businessOverview"])
     assert evidence == [
@@ -172,8 +172,8 @@ def test_runtime_evidence_labels_include_user_facing_names():
 
 
 def test_append_and_load_review_log(tmp_path, monkeypatch):
-    import dartlab.engines.ai.eval.replayRunner as replayRunner
-    from dartlab.engines.ai.eval import (
+    import dartlab.ai.eval.replayRunner as replayRunner
+    from dartlab.ai.eval import (
         PersonaEvalCase,
         ReplayResult,
         ScoreCard,
@@ -213,7 +213,7 @@ def test_append_and_load_review_log(tmp_path, monkeypatch):
 
 
 def test_validate_structured():
-    from dartlab.engines.ai.runtime.validation import validate_structured
+    from dartlab.ai.runtime.validation import validate_structured
 
     structured = {
         "metrics": [

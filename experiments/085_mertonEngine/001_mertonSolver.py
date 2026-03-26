@@ -43,7 +43,7 @@
 import sys
 sys.path.insert(0, "src")
 
-from dartlab.engines.common.finance.merton import (
+from dartlab.core.finance.merton import (
     MertonResult,
     calcEquityVolatility,
     solveMerton,

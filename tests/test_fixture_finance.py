@@ -23,7 +23,7 @@ def financeDf():
 
 class TestMapperWithFixture:
     def _mapper(self):
-        from dartlab.engines.company.dart.finance.mapper import AccountMapper
+        from dartlab.providers.dart.finance.mapper import AccountMapper
 
         return AccountMapper.get()
 
@@ -60,7 +60,7 @@ class TestMapperWithFixture:
 
 class TestPivotWithFixture:
     def test_buildTimeseriesFromDf(self, financeDf):
-        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+        from dartlab.providers.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildTimeseries("005930")
@@ -73,7 +73,7 @@ class TestPivotWithFixture:
         assert len(periods) > 0
 
     def test_timeseriesHasRevenue(self, financeDf):
-        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+        from dartlab.providers.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             series, periods = buildTimeseries("005930")
@@ -84,7 +84,7 @@ class TestPivotWithFixture:
         assert len(nonNull) > 0
 
     def test_timeseriesHasAssets(self, financeDf):
-        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+        from dartlab.providers.dart.finance.pivot import buildTimeseries
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             series, periods = buildTimeseries("005930")
@@ -92,7 +92,7 @@ class TestPivotWithFixture:
         assert "total_assets" in series["BS"]
 
     def test_buildAnnualFromDf(self, financeDf):
-        from dartlab.engines.company.dart.finance.pivot import buildAnnual
+        from dartlab.providers.dart.finance.pivot import buildAnnual
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildAnnual("005930")
@@ -103,8 +103,8 @@ class TestPivotWithFixture:
         assert "IS" in aSeries
 
     def test_ratiosFromFixture(self, financeDf):
-        from dartlab.engines.common.finance.ratios import calcRatios
-        from dartlab.engines.company.dart.finance.pivot import buildAnnual
+        from dartlab.core.finance.ratios import calcRatios
+        from dartlab.providers.dart.finance.pivot import buildAnnual
 
         with patch("dartlab.core.dataLoader.loadData", return_value=financeDf):
             result = buildAnnual("005930")
@@ -116,7 +116,7 @@ class TestPivotWithFixture:
         assert ratios.roe is not None or ratios.operatingMargin is not None
 
     def test_q1_cf_stays_standalone(self):
-        from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+        from dartlab.providers.dart.finance.pivot import buildTimeseries
 
         df = pl.DataFrame(
             {
@@ -145,43 +145,43 @@ class TestPivotWithFixture:
 
 class TestExtractUtils:
     def test_getTTM(self):
-        from dartlab.engines.common.finance.extract import getTTM
+        from dartlab.core.finance.extract import getTTM
 
         series = {"IS": {"sales": [100, 200, 300, 400, 500]}}
         assert getTTM(series, "IS", "sales") == 200 + 300 + 400 + 500
 
     def test_getTTM_insufficientData(self):
-        from dartlab.engines.common.finance.extract import getTTM
+        from dartlab.core.finance.extract import getTTM
 
         series = {"IS": {"sales": [100, None, 300]}}
         assert getTTM(series, "IS", "sales") is None
 
     def test_getLatest(self):
-        from dartlab.engines.common.finance.extract import getLatest
+        from dartlab.core.finance.extract import getLatest
 
         series = {"BS": {"total_assets": [100, 200, None, 400]}}
         assert getLatest(series, "BS", "total_assets") == 400
 
     def test_getLatest_allNone(self):
-        from dartlab.engines.common.finance.extract import getLatest
+        from dartlab.core.finance.extract import getLatest
 
         series = {"BS": {"total_assets": [None, None]}}
         assert getLatest(series, "BS", "total_assets") is None
 
     def test_getAnnualValues(self):
-        from dartlab.engines.common.finance.extract import getAnnualValues
+        from dartlab.core.finance.extract import getAnnualValues
 
         series = {"IS": {"sales": [1, 2, 3]}}
         assert getAnnualValues(series, "IS", "sales") == [1, 2, 3]
 
     def test_getAnnualValues_missing(self):
-        from dartlab.engines.common.finance.extract import getAnnualValues
+        from dartlab.core.finance.extract import getAnnualValues
 
         series = {"IS": {}}
         assert getAnnualValues(series, "IS", "sales") == []
 
     def test_revenueGrowth3Y(self):
-        from dartlab.engines.common.finance.extract import getRevenueGrowth3Y
+        from dartlab.core.finance.extract import getRevenueGrowth3Y
 
         series = {"IS": {"sales": [100, 110, 120, 130]}}
         growth = getRevenueGrowth3Y(series)
@@ -189,7 +189,7 @@ class TestExtractUtils:
         assert 8 < growth < 12
 
     def test_revenueGrowth3Y_insufficient(self):
-        from dartlab.engines.common.finance.extract import getRevenueGrowth3Y
+        from dartlab.core.finance.extract import getRevenueGrowth3Y
 
         series = {"IS": {"sales": [100, 200]}}
         assert getRevenueGrowth3Y(series) is None
@@ -199,7 +199,7 @@ class TestRatioQuality:
     def test_ratio_result_has_headline_signal(self):
         from types import SimpleNamespace
 
-        from dartlab.engines.company.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
+        from dartlab.providers.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
 
         assert _ratioResultHasHeadlineSignal(None) is False
         assert (
@@ -270,8 +270,8 @@ class TestRatioQuality:
         )
 
     def test_ratio_template_fields_by_financial_industry(self):
-        from dartlab.engines.analysis.sector.types import IndustryGroup
-        from dartlab.engines.company.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
+        from dartlab.analysis.comparative.sector.types import IndustryGroup
+        from dartlab.providers.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
 
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.BANK) == "bank"
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.INSURANCE) == "insurance"
@@ -283,7 +283,7 @@ class TestRatioQuality:
         assert "roe" in _RATIO_TEMPLATE_FIELDS["insurance"]
 
     def test_ratio_series_to_dataframe_can_apply_field_template(self):
-        from dartlab.engines.company.dart.company import _ratioSeriesToDataFrame
+        from dartlab.providers.dart.company import _ratioSeriesToDataFrame
 
         series = {
             "RATIO": {
@@ -302,7 +302,7 @@ class TestRatioQuality:
         assert df["항목"].to_list() == ["ROE (%)", "ROA (%)"]
 
     def test_yoy_sign_change_returns_none(self):
-        from dartlab.engines.common.finance.ratios import _yoy
+        from dartlab.core.finance.ratios import _yoy
 
         assert _yoy([100, -50], 1) is None
         assert _yoy([-50, 100], 1) is None
@@ -310,7 +310,7 @@ class TestRatioQuality:
         assert _yoy([-50, -100], 1) == -100.0
 
     def test_total_equity_uses_consolidated_and_roe_uses_owners(self):
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         series = {
             "IS": {"sales": [1000], "operating_profit": [100], "net_profit": [80]},
@@ -331,7 +331,7 @@ class TestRatioQuality:
         assert ratios.debtRatio == 100.0
 
     def test_ebitda_prefers_cf_depreciation(self):
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         series = {
             "IS": {"sales": [1000], "operating_profit": [100], "net_profit": [80]},
@@ -352,7 +352,7 @@ class TestRatioQuality:
         assert ratios.ebitdaMargin == 12.0
 
     def test_financial_alias_accounts_are_used_for_ratio_calculation(self):
-        from dartlab.engines.common.finance.ratios import calcRatios, calcRatioSeries
+        from dartlab.core.finance.ratios import calcRatios, calcRatioSeries
 
         series = {
             "IS": {
@@ -381,7 +381,7 @@ class TestRatioQuality:
         assert ratioSeries.netMargin[-1] == 8.0
 
     def test_bank_like_series_nulls_misleading_liquidity_ratios(self):
-        from dartlab.engines.common.finance.ratios import calcRatios, calcRatioSeries
+        from dartlab.core.finance.ratios import calcRatios, calcRatioSeries
 
         series = {
             "IS": {
@@ -422,7 +422,7 @@ class TestRatioQuality:
         assert all(v is None for v in ratioSeries.operatingMargin)
 
     def test_archetype_override_can_force_bank_policy(self):
-        from dartlab.engines.common.finance.ratios import calcRatios, calcRatioSeries
+        from dartlab.core.finance.ratios import calcRatios, calcRatioSeries
 
         series = {
             "IS": {
@@ -456,7 +456,7 @@ class TestRatioQuality:
         assert all(v is None for v in ratioSeries.operatingMargin)
 
     def test_securities_like_series_keeps_margins_but_drops_debt_metrics(self):
-        from dartlab.engines.common.finance.ratios import calcRatios
+        from dartlab.core.finance.ratios import calcRatios
 
         series = {
             "IS": {

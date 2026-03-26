@@ -33,8 +33,8 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.engines.company.dart.docs.sections.mapper import mapSectionTitle
-from dartlab.engines.company.dart.docs.sections.pipeline import _splitContentBlocks
+from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle
+from dartlab.providers.dart.docs.sections.pipeline import _splitContentBlocks
 
 TEMP_DIR = Path(__file__).parent / "temp"
 

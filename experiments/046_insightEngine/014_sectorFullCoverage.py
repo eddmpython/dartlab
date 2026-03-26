@@ -43,7 +43,7 @@ sys.path.insert(0, "src")
 
 import polars as pl
 
-from dartlab.engines.gather.listing import getKindList
+from dartlab.gather.listing import getKindList
 
 MANUAL_OVERRIDES = {
     "SK하이닉스": ("IT", "반도체와반도체장비"),

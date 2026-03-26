@@ -126,27 +126,6 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 시장 규모 순위
-    c.rank
-    return
-
-
-@app.cell
-def _(c):
-    # 지배구조 분석
-    c.governance()
-    return
-
-
-@app.cell
-def _(c):
-    # 서술형 블록 내 표를 구조화된 DataFrame으로 파싱
-    c.table("employee")
-    return
-
-
-@app.cell
-def _(c):
     c.filings()
     return
 

@@ -109,8 +109,8 @@ REVENUE_RATIO_FIELDS = [
 
 def collectRevenueRatios(*, verbose: bool = True) -> pl.DataFrame:
     """50사 finance 비율 수집 (경량 접근)."""
-    from dartlab.engines.common.finance.ratios import calcRatios
-    from dartlab.engines.company.dart.finance.pivot import buildTimeseries
+    from dartlab.core.finance.ratios import calcRatios
+    from dartlab.providers.dart.finance.pivot import buildTimeseries
 
     rows = []
     for sector, companies in SECTOR_COMPANIES.items():

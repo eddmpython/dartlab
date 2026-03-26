@@ -34,8 +34,8 @@ import zipfile
 
 import polars as pl
 
-from dartlab.engines.company.dart.openapi.client import DartClient
-from dartlab.engines.company.dart.openapi.disclosure import listFilings
+from dartlab.providers.dart.openapi.client import DartClient
+from dartlab.providers.dart.openapi.disclosure import listFilings
 
 
 def main():

@@ -46,6 +46,18 @@ export const categoryDefinitions = [
 			'DartLab 데이터 자동화 카테고리. OpenDART, EDGAR, XBRL, corp_code, 원문 공시를 실제 수집 파이프라인으로 연결하는 글을 모았습니다.',
 		brandMessage:
 			'DartLab은 공시를 손으로만 읽지 않습니다. OpenDART와 EDGAR 데이터를 파이프라인으로 묶어 반복 가능한 분석 구조를 만듭니다.'
+	},
+	{
+		id: 'dartlab-news',
+		slug: 'dartlab-news',
+		folder: '06-dartlab-news',
+		label: 'DartLab 소식',
+		description: 'dartlab 설치, 업데이트, 사용 팁, 새 기능 소개를 다룹니다.',
+		seoTitle: 'DartLab 소식 | 설치, 업데이트, 사용 팁',
+		seoDescription:
+			'DartLab 소식 카테고리. dartlab 설치 방법, 새 기능 소개, 업데이트 내역, 초보자 가이드를 모았습니다.',
+		brandMessage:
+			'DartLab은 누구나 전자공시 분석을 시작할 수 있도록, 설치부터 활용까지 쉽게 안내합니다.'
 	}
 ] as const;
 
@@ -149,6 +161,14 @@ export const seriesDefinitions = {
 		seoTitle: '한미 공시 비교 실전 | DART vs EDGAR 같은 산업 다른 숫자',
 		seoDescription: 'DartLab 한미 공시 비교 실전 시리즈. 삼성전자 vs TSMC, 현대차 vs Toyota, 셀트리온 vs Amgen처럼 같은 산업의 한국·미국 기업을 DART와 EDGAR 공시로 나란히 비교합니다.',
 		brandMessage: 'DartLab은 DART와 EDGAR를 따로 읽는 것을 넘어, 같은 산업의 한국·미국 기업을 나란히 놓고 회계 기준, 공시 구조, 숫자의 의미 차이까지 직접 비교합니다.'
+	},
+	'dartlab-news': {
+		id: 'dartlab-news',
+		label: 'DartLab 소식',
+		description: 'dartlab 설치, 업데이트, 사용 팁, 새 기능 소개를 다루는 시리즈입니다.',
+		seoTitle: 'DartLab 소식 | 설치부터 활용까지',
+		seoDescription: 'DartLab 소식 시리즈. dartlab 설치 방법, 초보자 가이드, 새 기능 소개, 업데이트 내역을 다룹니다.',
+		brandMessage: 'DartLab은 전자공시 분석을 누구나 시작할 수 있도록, 설치부터 실전 활용까지 쉽게 안내합니다.'
 	}
 } as const;
 

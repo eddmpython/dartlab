@@ -42,7 +42,7 @@ def main():
 
     c = dartlab.Company("005930")
 
-    from dartlab.engines.ai.runtime.core import analyze
+    from dartlab.ai.runtime.core import analyze
 
     systemPrompt = ""
     userContent = ""

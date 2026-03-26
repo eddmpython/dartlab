@@ -39,8 +39,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from dartlab.engines.company.dart.docs.sections.pipeline import iterPeriodSubsets
-from dartlab.engines.company.dart.docs.sections.tableParser import (
+from dartlab.providers.dart.docs.sections.pipeline import iterPeriodSubsets
+from dartlab.providers.dart.docs.sections.tableParser import (
     _STOCK_TYPES,
     _classifyStructure,
     _dataRows,

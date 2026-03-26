@@ -79,7 +79,7 @@ def strategy_report_oneliner(company) -> str:
 
 def strategy_dynamic_filter(company, question: str) -> dict:
     """전략 3: 질문 키워드 기반 동적 모듈 선택."""
-    from dartlab.engines.ai.context import build_context_by_module
+    from dartlab.ai.context import build_context_by_module
 
     # 질문에서 관련 모듈만 포함
     keywords = question.lower()
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     c = dartlab.Company("005930")
 
     # 기준: full context
-    from dartlab.engines.ai.context import build_context_by_module
+    from dartlab.ai.context import build_context_by_module
     question = "삼성전자의 재무건전성을 분석해주세요."
     full_mods, full_inc, full_hdr = build_context_by_module(c, question, compact=False)
     full_text = full_hdr + "\n\n" + "\n\n".join(full_mods.values())

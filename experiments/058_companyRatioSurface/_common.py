@@ -28,7 +28,7 @@ def isFinancialIndustry(industry: str | None) -> bool:
 
 
 def kindMeta() -> dict[str, dict[str, Any]]:
-    from dartlab.engines.gather.listing import getKindList
+    from dartlab.gather.listing import getKindList
 
     kind = getKindList()
     codeCol, nameCol, marketCol, industryCol, listedCol = (
@@ -58,9 +58,9 @@ def localFinanceCodes(limit: int | None = None) -> list[str]:
 
 
 def ratioSurfaceFrame(code: str) -> tuple[pl.DataFrame | None, int | None]:
-    from dartlab.engines.common.finance.ratios import calcRatioSeries, toSeriesDict
-    from dartlab.engines.company.dart.company import _ratioSeriesToDataFrame
-    from dartlab.engines.company.dart.finance.pivot import buildAnnual
+    from dartlab.core.finance.ratios import calcRatioSeries, toSeriesDict
+    from dartlab.providers.dart.company import _ratioSeriesToDataFrame
+    from dartlab.providers.dart.finance.pivot import buildAnnual
 
     annual = buildAnnual(code)
     if annual is None:

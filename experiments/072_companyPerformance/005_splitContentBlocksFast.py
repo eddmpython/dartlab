@@ -38,7 +38,7 @@ sys.path.insert(0, "src")
 
 def main():
     import dartlab
-    from dartlab.engines.company.dart.docs.sections import pipeline
+    from dartlab.providers.dart.docs.sections import pipeline
 
     original_fn = pipeline._splitContentBlocks
 

@@ -7,17 +7,17 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.engines.analysis.analyst.prediction import (
+from dartlab.analysis.forecast.prediction import (
     NOISE_CONFIG,
     ContextSignals,
 )
-from dartlab.engines.analysis.analyst.prediction import (
+from dartlab.analysis.forecast.prediction import (
     adjustProbabilities as adjust_probabilities,
 )
-from dartlab.engines.analysis.analyst.prediction import (
+from dartlab.analysis.forecast.prediction import (
     getNoiseSigma as get_noise_sigma,
 )
-from dartlab.engines.common.finance.pricetarget import SCENARIO_PROBABILITIES
+from dartlab.analysis.valuation.pricetarget import SCENARIO_PROBABILITIES
 
 # ── ContextSignals 기본 ─────────────────────────────────
 
@@ -151,7 +151,7 @@ class TestAdjustProbabilities:
         signals = ContextSignals(insightGrades={"profitability": "D"})
         # _compute_adjustments는 ContextSignals 생성 시 직접 호출 안 됨
         # adjust_probabilities는 signals.adjustments를 사용
-        from dartlab.engines.analysis.analyst.prediction import _computeAdjustments as _compute_adjustments
+        from dartlab.analysis.forecast.prediction import _computeAdjustments as _compute_adjustments
 
         adj, reasons = _compute_adjustments(signals)
         assert len(reasons) > 0
@@ -162,7 +162,7 @@ class TestAdjustProbabilities:
         """현금흐름 D → adverse +3%p."""
         base = dict(SCENARIO_PROBABILITIES)
         signals = ContextSignals(insightGrades={"cashflow": "D"})
-        from dartlab.engines.analysis.analyst.prediction import _computeAdjustments as _compute_adjustments
+        from dartlab.analysis.forecast.prediction import _computeAdjustments as _compute_adjustments
 
         adj, _ = _compute_adjustments(signals)
         assert adj.get("adverse", 0) > 0

@@ -52,7 +52,7 @@ def _buildSections(parquetPath: Path, label: str) -> pl.DataFrame:
     config.dataDir = str(tmpDir)
 
     try:
-        from dartlab.engines.company.dart.docs.sections.pipeline import sections
+        from dartlab.providers.dart.docs.sections.pipeline import sections
         result = sections("005930")
         return result
     finally:

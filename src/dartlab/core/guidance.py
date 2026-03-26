@@ -185,7 +185,7 @@ class _Context:
     def has_dart_key(self) -> bool:
         if self._dart_key is None:
             try:
-                from dartlab.engines.company.dart.openapi.client import hasDartApiKey
+                from dartlab.providers.dart.openapi.client import hasDartApiKey
 
                 self._dart_key = hasDartApiKey()
             except ImportError:
