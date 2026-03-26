@@ -1,7 +1,7 @@
 """sections source-of-truth accessor.
 
 company.py에서 분리된 accessor 클래스.
-raw DataFrame를 감싸되, 같은 경로에서 cadence/semantic 파생표를 바로 꺼낼 수 있게 한다.
+raw DataFrame를 감싸되, 같은 경로에서 freq/semantic 파생표를 바로 꺼낼 수 있게 한다.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class _SectionsSource:
     """sections source-of-truth accessor.
 
-    raw DataFrame를 감싸되, 같은 경로에서 cadence/semantic 파생표를 바로 꺼낼 수 있게 한다.
+    raw DataFrame를 감싸되, 같은 경로에서 freq/semantic 파생표를 바로 꺼낼 수 있게 한다.
     일반 DataFrame 연산은 내부 raw DataFrame으로 위임한다.
     """
 
@@ -62,19 +62,19 @@ class _SectionsSource:
             annualAsQ4=annualAsQ4,
         )
 
-    def cadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
-        return self._company._docsSectionsCadence(cadenceScope, includeMixed=includeMixed)
+    def freq(self, freqScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        return self._company._docsSectionsFreq(freqScope, includeMixed=includeMixed)
 
     def semanticRegistry(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsSemanticRegistry(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             collisionsOnly=False,
         )
@@ -83,12 +83,12 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsSemanticRegistry(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             collisionsOnly=True,
         )
@@ -97,13 +97,13 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsStructureRegistry(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             collisionsOnly=False,
             nodeType=nodeType,
@@ -113,13 +113,13 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsStructureRegistry(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             collisionsOnly=True,
             nodeType=nodeType,
@@ -129,14 +129,14 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         changedOnly: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsStructureEvents(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             changedOnly=changedOnly,
             nodeType=nodeType,
@@ -146,13 +146,13 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsStructureSummary(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
         )
@@ -161,7 +161,7 @@ class _SectionsSource:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
         latestOnly: bool = True,
@@ -169,7 +169,7 @@ class _SectionsSource:
     ) -> pl.DataFrame | None:
         return self._company._docsSectionsStructureChanges(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
             latestOnly=latestOnly,
@@ -199,6 +199,6 @@ class _SectionsSource:
         return (
             "SectionsSource("
             "shape="
-            f"{frame.shape}, methods=[raw, topics(), outline(), periods(), ordered(), coverage(), cadence(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents(), structureSummary(), structureChanges()]"
+            f"{frame.shape}, methods=[raw, topics(), outline(), periods(), ordered(), coverage(), freq(), semanticRegistry(), semanticCollisions(), structureRegistry(), structureCollisions(), structureEvents(), structureSummary(), structureChanges()]"
             ")"
         )

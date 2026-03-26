@@ -308,7 +308,7 @@ class TestCompany:
         c = self.c
         ordered = c.docs.sectionsOrdered()
         coverage = c.docs.sectionsCoverage(topic="businessOverview")
-        annual = c.docs.sectionsCadence("annual")
+        annual = c.docs.sectionsFreq("annual")
         registry = c.docs.sectionsSemanticRegistry(topic="mdna")
         collisions = c.docs.sectionsSemanticCollisions(topic="mdna")
         structureRegistry = c.docs.sectionsStructureRegistry(topic="businessOverview")
@@ -323,7 +323,7 @@ class TestCompany:
         accessorPeriods = c.docs.sections.periods()
         accessorOrdered = c.docs.sections.ordered()
         accessorCoverage = c.docs.sections.coverage(topic="businessOverview")
-        accessorAnnual = c.docs.sections.cadence("annual")
+        accessorAnnual = c.docs.sections.freq("annual")
         accessorRegistry = c.docs.sections.semanticRegistry(topic="mdna")
         accessorCollisions = c.docs.sections.semanticCollisions(topic="mdna")
         accessorStructureRegistry = c.docs.sections.structureRegistry(topic="businessOverview")

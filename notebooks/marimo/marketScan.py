@@ -15,12 +15,7 @@ __generated_with = "0.21.1"
 app = marimo.App()
 
 with app.setup:
-    import polars as pl
-
     import dartlab
-
-
-# ── scanAccount: 단일 계정 전종목 시계열 ──
 
 
 @app.cell
@@ -32,7 +27,7 @@ def _():
 
 
 @app.cell
-def _(df):
+def _(df, pl):
     # 삼성전자 매출 확인
     df.filter(pl.col("corpName").str.contains("삼성전자"))
     return
@@ -43,9 +38,6 @@ def _():
     # 연간 영업이익
     dartlab.scanAccount("영업이익", annual=True)
     return
-
-
-# ── scanRatio: 재무비율 전종목 시계열 ──
 
 
 @app.cell
@@ -64,7 +56,7 @@ def _():
 
 
 @app.cell
-def _(roe):
+def _(pl, roe):
     # 최근 분기 ROE 상위 20개
     latest = [c for c in roe.columns if c not in ("stockCode", "corpName")][0]
     roe.filter(pl.col(latest).is_not_null()).sort(latest, descending=True).head(20)

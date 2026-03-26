@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" fill="none">
+  <title>수익 구조 경고 신호 카드</title>
+  <desc>HHI 고집중, 이익 품질 취약, 매출 역성장, FCF 적자 지속 등 수익 구조에서 주의해야 할 신호</desc>
+
+  <rect width="1080" height="720" rx="16" fill="#0f172a"/>
+
+  <text x="540" y="45" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">수익 구조 — 경고 신호 체크리스트</text>
+  <text x="540" y="70" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">아래 신호가 2개 이상 겹치면 수익 구조 자체에 문제가 있을 가능성이 높다</text>
+
+  <!-- Card 1 -->
+  <rect x="60" y="100" width="460" height="130" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="95" cy="135" r="20" fill="#ef4444" fill-opacity="0.15"/>
+  <text x="95" y="141" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="18">!</text>
+  <text x="130" y="135" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="16" font-weight="700">HHI &gt; 5,000 — 매출 고집중</text>
+  <text x="130" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">한 부문에 매출의 70% 이상이 집중</text>
+  <text x="130" y="180" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">해당 부문의 업황 변동이 곧 회사 전체 실적</text>
+  <text x="130" y="200" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: 해당 산업 사이클 위치, 경쟁사 점유율 변화</text>
+
+  <!-- Card 2 -->
+  <rect x="560" y="100" width="460" height="130" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="595" cy="135" r="20" fill="#ef4444" fill-opacity="0.15"/>
+  <text x="595" y="141" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="18">!</text>
+  <text x="630" y="135" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="16" font-weight="700">이익 품질 취약 (OCF/NI &lt; 0.5)</text>
+  <text x="630" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">회계 이익은 있지만 현금 유입이 절반 이하</text>
+  <text x="630" y="180" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">매출채권 급증, 재고 적체, 선급금 증가 가능</text>
+  <text x="630" y="200" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: 운전자본 변동, 매출채권 회전일수 추이</text>
+
+  <!-- Card 3 -->
+  <rect x="60" y="260" width="460" height="130" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="95" cy="295" r="20" fill="#f59e0b" fill-opacity="0.15"/>
+  <text x="95" y="301" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18">!</text>
+  <text x="130" y="295" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="16" font-weight="700">매출 역성장 (YoY &lt; -10%)</text>
+  <text x="130" y="320" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">업황 악화, 점유율 하락, 또는 구조적 수요 감소</text>
+  <text x="130" y="340" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">고정비가 있으면 이익 하락폭이 매출보다 클 수 있음</text>
+  <text x="130" y="360" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: 부문별 매출 추이에서 어느 부문이 줄었는지 특정</text>
+
+  <!-- Card 4 -->
+  <rect x="560" y="260" width="460" height="130" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="595" cy="295" r="20" fill="#f59e0b" fill-opacity="0.15"/>
+  <text x="595" y="301" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18">!</text>
+  <text x="630" y="295" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="16" font-weight="700">원가율 3분기 연속 상승</text>
+  <text x="630" y="320" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">원재료 비용 전가 실패 또는 제품 믹스 악화</text>
+  <text x="630" y="340" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">매출총이익률 하락이 선행 → 영업이익률 하락 후행</text>
+  <text x="630" y="360" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: 부문별 원가율 변동, 원재료 가격 추이</text>
+
+  <!-- Card 5 -->
+  <rect x="60" y="420" width="460" height="130" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="95" cy="455" r="20" fill="#ef4444" fill-opacity="0.15"/>
+  <text x="95" y="461" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="18">!</text>
+  <text x="130" y="455" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="16" font-weight="700">FCF 3년 연속 음수</text>
+  <text x="130" y="480" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">사업 유지에 필요한 투자 후 남는 돈이 없음</text>
+  <text x="130" y="500" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">배당·부채상환 재원이 차입 또는 증자에 의존</text>
+  <text x="130" y="520" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: CAPEX가 성장 투자인지 유지 투자인지 구분</text>
+
+  <!-- Card 6 (opportunity) -->
+  <rect x="560" y="420" width="460" height="130" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5" stroke-opacity="0.5"/>
+  <circle cx="595" cy="455" r="20" fill="#22c55e" fill-opacity="0.15"/>
+  <text x="595" y="461" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="18">+</text>
+  <text x="630" y="455" fill="#86efac" font-family="system-ui, sans-serif" font-size="16" font-weight="700">부문 재편 감지</text>
+  <text x="630" y="480" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">전년 대비 부문 이름이 바뀌거나 합쳐짐</text>
+  <text x="630" y="500" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">적자 사업 분리·합병일 수 있고, 전략 전환일 수 있음</text>
+  <text x="630" y="520" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">확인: 사업보고서 "사업의 내용"에서 재편 사유 확인</text>
+
+  <!-- 하단 판단 기준 -->
+  <rect x="60" y="580" width="960" height="110" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="100" y="615" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">판단 기준</text>
+  <text x="100" y="640" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">경고 신호 0개 → 수익 구조 견실. 다음 분석(자금 구조)으로 이동</text>
+  <text x="100" y="660" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12">경고 신호 1~2개 → 해당 영역 심화 확인 후 판단</text>
+  <text x="100" y="680" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12">경고 신호 3개+ → 수익 구조 자체가 취약. 자금조달 리스크(다음 글)를 먼저 확인</text>
+</svg>

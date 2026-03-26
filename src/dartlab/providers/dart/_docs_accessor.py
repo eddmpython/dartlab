@@ -49,43 +49,43 @@ class _DocsAccessor:
             None if sections is None else sections.coverage(topic=topic, recentFirst=recentFirst, annualAsQ4=annualAsQ4)
         )
 
-    def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+    def sectionsFreq(self, freqScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
         sections = self.sections
-        return None if sections is None else sections.cadence(cadenceScope, includeMixed=includeMixed)
+        return None if sections is None else sections.freq(freqScope, includeMixed=includeMixed)
 
     def sectionsSemanticRegistry(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
     ) -> pl.DataFrame | None:
         sections = self.sections
         return (
             None
             if sections is None
-            else sections.semanticRegistry(topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+            else sections.semanticRegistry(topic=topic, freqScope=freqScope, includeMixed=includeMixed)
         )
 
     def sectionsSemanticCollisions(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
     ) -> pl.DataFrame | None:
         sections = self.sections
         return (
             None
             if sections is None
-            else sections.semanticCollisions(topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+            else sections.semanticCollisions(topic=topic, freqScope=freqScope, includeMixed=includeMixed)
         )
 
     def sectionsStructureRegistry(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
@@ -95,7 +95,7 @@ class _DocsAccessor:
             if sections is None
             else sections.structureRegistry(
                 topic=topic,
-                cadenceScope=cadenceScope,
+                freqScope=freqScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
             )
@@ -105,7 +105,7 @@ class _DocsAccessor:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
@@ -115,7 +115,7 @@ class _DocsAccessor:
             if sections is None
             else sections.structureCollisions(
                 topic=topic,
-                cadenceScope=cadenceScope,
+                freqScope=freqScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
             )
@@ -125,7 +125,7 @@ class _DocsAccessor:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         changedOnly: bool = True,
         nodeType: str | None = None,
@@ -136,7 +136,7 @@ class _DocsAccessor:
             if sections is None
             else sections.structureEvents(
                 topic=topic,
-                cadenceScope=cadenceScope,
+                freqScope=freqScope,
                 includeMixed=includeMixed,
                 changedOnly=changedOnly,
                 nodeType=nodeType,
@@ -147,7 +147,7 @@ class _DocsAccessor:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
@@ -157,7 +157,7 @@ class _DocsAccessor:
             if sections is None
             else sections.structureSummary(
                 topic=topic,
-                cadenceScope=cadenceScope,
+                freqScope=freqScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
             )
@@ -167,7 +167,7 @@ class _DocsAccessor:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
         latestOnly: bool = True,
@@ -179,7 +179,7 @@ class _DocsAccessor:
             if sections is None
             else sections.structureChanges(
                 topic=topic,
-                cadenceScope=cadenceScope,
+                freqScope=freqScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
                 latestOnly=latestOnly,
@@ -222,3 +222,9 @@ class _DocsAccessor:
 
     def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
+
+    def search(self, query: str, *, topK: int = 5, year: int | None = None, withText: bool = True) -> pl.DataFrame | None:
+        """docs semantic search."""
+        from dartlab.core.docs.search import searchDocs
+
+        return searchDocs(self._company._stockCode, query, topK=topK, year=year, withText=withText)

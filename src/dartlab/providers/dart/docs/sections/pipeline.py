@@ -473,7 +473,7 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> Iterator[dict[str, o
             yield nodeRow
 
 
-def _periodCadence(period: str) -> str:
+def _periodFreq(period: str) -> str:
     if period.endswith("Q1"):
         return "q1"
     if period.endswith("Q2"):
@@ -485,11 +485,11 @@ def _periodCadence(period: str) -> str:
     return "annual"
 
 
-def _cadenceSortKey(cadence: str) -> int:
-    return {"annual": 0, "q1": 1, "q2": 2, "q3": 3, "q4": 4}.get(cadence, 9)
+def _freqSortKey(freq: str) -> int:
+    return {"annual": 0, "q1": 1, "q2": 2, "q3": 3, "q4": 4}.get(freq, 9)
 
 
-def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
+def _rowFreqMeta(periodMap: dict[str, str]) -> dict[str, object]:
     annualPeriods: list[str] = []
     quarterlyPeriods: list[str] = []
     for period, value in periodMap.items():
@@ -506,8 +506,8 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
 
     if annualCount == 0 and quarterlyCount == 0:
         return {
-            "cadenceKey": "none",
-            "cadenceScope": "none",
+            "freqKey": "none",
+            "freqScope": "none",
             "annualPeriodCount": 0,
             "quarterlyPeriodCount": 0,
             "latestAnnualPeriod": None,
@@ -515,29 +515,29 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
         }
 
     if annualCount > 0 and quarterlyCount > 0:
-        cadenceScope = "mixed"
+        freqScope = "mixed"
     elif annualCount > 0:
-        cadenceScope = "annual"
+        freqScope = "annual"
     else:
-        cadenceScope = "quarterly"
+        freqScope = "quarterly"
 
-    cadenceKeys: list[str] = []
+    freqKeys: list[str] = []
     if annualCount > 0:
-        cadenceKeys.append("annual")
-    cadenceSet = set()
+        freqKeys.append("annual")
+    freqSet = set()
     for p in quarterlyPeriods:
-        c = _periodCadence(p)
-        if c not in cadenceSet:
-            cadenceSet.add(c)
-            cadenceKeys.append(c)
-    cadenceKeys.sort(key=_cadenceSortKey)
+        c = _periodFreq(p)
+        if c not in freqSet:
+            freqSet.add(c)
+            freqKeys.append(c)
+    freqKeys.sort(key=_freqSortKey)
 
     latestAnnual = max(annualPeriods) if annualPeriods else None
     latestQuarterly = max(quarterlyPeriods) if quarterlyPeriods else None
 
     return {
-        "cadenceKey": ",".join(cadenceKeys),
-        "cadenceScope": cadenceScope,
+        "freqKey": ",".join(freqKeys),
+        "freqScope": freqScope,
         "annualPeriodCount": annualCount,
         "quarterlyPeriodCount": quarterlyCount,
         "latestAnnualPeriod": latestAnnual,
@@ -545,27 +545,27 @@ def _rowCadenceMeta(periodMap: dict[str, str]) -> dict[str, object]:
     }
 
 
-def projectCadenceRows(
+def projectFreqRows(
     df: pl.DataFrame,
     *,
-    cadenceScope: str,
+    freqScope: str,
     includeMixed: bool = True,
 ) -> pl.DataFrame:
-    """sections DataFrame를 cadence 기준으로 투영한다."""
-    if df.is_empty() or "cadenceScope" not in df.columns:
+    """sections DataFrame를 freq 기준으로 투영한다."""
+    if df.is_empty() or "freqScope" not in df.columns:
         return df
 
-    scope = str(cadenceScope).strip().lower()
+    scope = str(freqScope).strip().lower()
     if scope == "all":
         return df
     if scope not in {"annual", "quarterly", "mixed"}:
-        raise ValueError(f"unsupported cadenceScope: {cadenceScope}")
+        raise ValueError(f"unsupported freqScope: {freqScope}")
 
     allowed = {scope}
     if includeMixed and scope in {"annual", "quarterly"}:
         allowed.add("mixed")
 
-    return df.filter(pl.col("cadenceScope").is_in(sorted(allowed)))
+    return df.filter(pl.col("freqScope").is_in(sorted(allowed)))
 
 
 def _emptySemanticRegistryFrame() -> pl.DataFrame:
@@ -574,7 +574,7 @@ def _emptySemanticRegistryFrame() -> pl.DataFrame:
             "topic": pl.Utf8,
             "textNodeType": pl.Utf8,
             "textLevel": pl.Int64,
-            "cadenceScope": pl.Utf8,
+            "freqScope": pl.Utf8,
             "textSemanticPathKey": pl.Utf8,
             "textSemanticParentPathKey": pl.Utf8,
             "rowCount": pl.Int64,
@@ -598,7 +598,7 @@ def _emptyStructureRegistryFrame() -> pl.DataFrame:
             "topic": pl.Utf8,
             "textNodeType": pl.Utf8,
             "textLevel": pl.Int64,
-            "cadenceScope": pl.Utf8,
+            "freqScope": pl.Utf8,
             "textComparablePathKey": pl.Utf8,
             "textComparableParentPathKey": pl.Utf8,
             "rowCount": pl.Int64,
@@ -631,7 +631,7 @@ def _emptyStructureEventsFrame() -> pl.DataFrame:
             "topic": pl.Utf8,
             "textNodeType": pl.Utf8,
             "textLevel": pl.Int64,
-            "cadenceScope": pl.Utf8,
+            "freqScope": pl.Utf8,
             "textComparablePathKey": pl.Utf8,
             "textComparableParentPathKey": pl.Utf8,
             "periodLane": pl.Utf8,
@@ -654,7 +654,7 @@ def _emptyStructureSummaryFrame() -> pl.DataFrame:
             "topic": pl.Utf8,
             "textNodeType": pl.Utf8,
             "textLevel": pl.Int64,
-            "cadenceScope": pl.Utf8,
+            "freqScope": pl.Utf8,
             "textComparablePathKey": pl.Utf8,
             "textComparableParentPathKey": pl.Utf8,
             "structurePattern": pl.Utf8,
@@ -680,7 +680,7 @@ def _emptyStructureChangesFrame() -> pl.DataFrame:
             "topic": pl.Utf8,
             "textNodeType": pl.Utf8,
             "textLevel": pl.Int64,
-            "cadenceScope": pl.Utf8,
+            "freqScope": pl.Utf8,
             "textComparablePathKey": pl.Utf8,
             "textComparableParentPathKey": pl.Utf8,
             "structurePattern": pl.Utf8,
@@ -709,7 +709,7 @@ def _structureGroupColumns() -> list[str]:
         "topic",
         "textNodeType",
         "textLevel",
-        "cadenceScope",
+        "freqScope",
         "textComparablePathKey",
         "textComparableParentPathKey",
     ]
@@ -717,7 +717,7 @@ def _structureGroupColumns() -> list[str]:
 
 def _normalizeStructureGroupDtypes(frame: pl.DataFrame) -> pl.DataFrame:
     casts: list[pl.Expr] = []
-    stringCols = ["topic", "textNodeType", "cadenceScope", "textComparablePathKey", "textComparableParentPathKey"]
+    stringCols = ["topic", "textNodeType", "freqScope", "textComparablePathKey", "textComparableParentPathKey"]
     for colName in stringCols:
         if colName in frame.columns:
             casts.append(pl.col(colName).cast(pl.Utf8).alias(colName))
@@ -738,8 +738,8 @@ def _periodLane(period: str | None) -> str | None:
     return "annual"
 
 
-def _allowedStructurePeriodLanes(cadenceScope: str | None) -> set[str] | None:
-    scope = str(cadenceScope).strip().lower() if isinstance(cadenceScope, str) else "all"
+def _allowedStructurePeriodLanes(freqScope: str | None) -> set[str] | None:
+    scope = str(freqScope).strip().lower() if isinstance(freqScope, str) else "all"
     if scope == "annual":
         return {"annual"}
     if scope == "quarterly":
@@ -893,10 +893,10 @@ def _structurePattern(payload: object) -> str:
     return "variant"
 
 
-def _structurePeriodActivity(textScoped: pl.DataFrame, *, cadenceScope: str = "all") -> pl.DataFrame | None:
+def _structurePeriodActivity(textScoped: pl.DataFrame, *, freqScope: str = "all") -> pl.DataFrame | None:
     groupCols = _structureGroupColumns()
     periodCols = sortPeriods([str(col) for col in textScoped.columns if re.fullmatch(r"^\d{4}(Q[1-4])?$", str(col))])
-    allowedLanes = _allowedStructurePeriodLanes(cadenceScope)
+    allowedLanes = _allowedStructurePeriodLanes(freqScope)
     if allowedLanes is not None:
         periodCols = [period for period in periodCols if _periodLane(period) in allowedLanes]
     if not periodCols:
@@ -924,7 +924,7 @@ def semanticRegistry(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
 ) -> pl.DataFrame:
     """textSemanticPathKey 기준 semantic registry를 만든다."""
@@ -936,8 +936,8 @@ def semanticRegistry(
         return _emptySemanticRegistryFrame()
 
     scoped = df
-    if cadenceScope != "all":
-        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if freqScope != "all":
+        scoped = projectFreqRows(scoped, freqScope=freqScope, includeMixed=includeMixed)
     if topic is not None:
         scoped = scoped.filter(pl.col("topic") == topic)
     if scoped.is_empty():
@@ -974,7 +974,7 @@ def semanticRegistry(
                 "topic",
                 "textNodeType",
                 "textLevel",
-                "cadenceScope",
+                "freqScope",
                 "textSemanticPathKey",
                 "textSemanticParentPathKey",
             ],
@@ -999,7 +999,7 @@ def semanticRegistry(
             ]
         )
         .with_columns((pl.col("rawPathCount") > 1).alias("hasCollision"))
-        .sort(["topic", "textSemanticPathKey", "textNodeType", "textLevel", "cadenceScope"])
+        .sort(["topic", "textSemanticPathKey", "textNodeType", "textLevel", "freqScope"])
     )
     return registry
 
@@ -1008,7 +1008,7 @@ def structureRegistry(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
@@ -1021,8 +1021,8 @@ def structureRegistry(
         return _emptyStructureRegistryFrame()
 
     scoped = df
-    if cadenceScope != "all":
-        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if freqScope != "all":
+        scoped = projectFreqRows(scoped, freqScope=freqScope, includeMixed=includeMixed)
     if topic is not None:
         scoped = scoped.filter(pl.col("topic") == topic)
     if scoped.is_empty():
@@ -1043,7 +1043,7 @@ def structureRegistry(
         return _emptyStructureRegistryFrame()
 
     groupCols = _structureGroupColumns()
-    periodActivity = _structurePeriodActivity(textScoped, cadenceScope=cadenceScope)
+    periodActivity = _structurePeriodActivity(textScoped, freqScope=freqScope)
     periodActivitySummary: pl.DataFrame | None = None
     if periodActivity is not None:
         periodActivitySummary = periodActivity.group_by(groupCols, maintain_order=True).agg(
@@ -1105,7 +1105,7 @@ def structureRegistry(
             ]
         )
         .with_columns((pl.col("rawSemanticPathCount") > 1).alias("hasCollision"))
-        .sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "cadenceScope"])
+        .sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "freqScope"])
     )
     return _normalizeStructureGroupDtypes(registry)
 
@@ -1114,14 +1114,14 @@ def structureCollisions(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
     registry = structureRegistry(
         df,
         topic=topic,
-        cadenceScope=cadenceScope,
+        freqScope=freqScope,
         includeMixed=includeMixed,
         nodeType=nodeType,
     )
@@ -1134,7 +1134,7 @@ def structureEvents(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
     changedOnly: bool = True,
     nodeType: str | None = None,
@@ -1147,8 +1147,8 @@ def structureEvents(
         return _emptyStructureEventsFrame()
 
     scoped = df
-    if cadenceScope != "all":
-        scoped = projectCadenceRows(scoped, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    if freqScope != "all":
+        scoped = projectFreqRows(scoped, freqScope=freqScope, includeMixed=includeMixed)
     if topic is not None:
         scoped = scoped.filter(pl.col("topic") == topic)
     if scoped.is_empty():
@@ -1168,7 +1168,7 @@ def structureEvents(
     if textScoped.is_empty():
         return _emptyStructureEventsFrame()
 
-    periodActivity = _structurePeriodActivity(textScoped, cadenceScope=cadenceScope)
+    periodActivity = _structurePeriodActivity(textScoped, freqScope=freqScope)
     if periodActivity is None:
         return _emptyStructureEventsFrame()
 
@@ -1215,7 +1215,7 @@ def structureEvents(
                         "topic": entry.get("topic"),
                         "textNodeType": entry.get("textNodeType"),
                         "textLevel": entry.get("textLevel"),
-                        "cadenceScope": entry.get("cadenceScope"),
+                        "freqScope": entry.get("freqScope"),
                         "textComparablePathKey": entry.get("textComparablePathKey"),
                         "textComparableParentPathKey": entry.get("textComparableParentPathKey"),
                         "periodLane": lane,
@@ -1242,14 +1242,14 @@ def structureSummary(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
     registry = structureRegistry(
         df,
         topic=topic,
-        cadenceScope=cadenceScope,
+        freqScope=freqScope,
         includeMixed=includeMixed,
         nodeType=nodeType,
     )
@@ -1281,7 +1281,7 @@ def structureSummary(
     events = structureEvents(
         df,
         topic=topic,
-        cadenceScope=cadenceScope,
+        freqScope=freqScope,
         includeMixed=includeMixed,
         changedOnly=True,
         nodeType=nodeType,
@@ -1323,14 +1323,14 @@ def structureSummary(
         if colName not in summary.columns:
             summary = summary.with_columns(pl.lit(None, dtype=pl.Utf8).alias(colName))
 
-    return summary.sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "cadenceScope"])
+    return summary.sort(["topic", "textComparablePathKey", "textNodeType", "textLevel", "freqScope"])
 
 
 def structureChanges(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
     nodeType: str | None = None,
     latestOnly: bool = True,
@@ -1339,14 +1339,14 @@ def structureChanges(
     summary = structureSummary(
         df,
         topic=topic,
-        cadenceScope=cadenceScope,
+        freqScope=freqScope,
         includeMixed=includeMixed,
         nodeType=nodeType,
     )
     if summary.is_empty():
         return _emptyStructureChangesFrame()
 
-    allowedAnchorLanes = _allowedStructurePeriodLanes(cadenceScope)
+    allowedAnchorLanes = _allowedStructurePeriodLanes(freqScope)
     latestPeriods = [
         period
         for period in summary["latestPeriod"].to_list()
@@ -1388,11 +1388,11 @@ def semanticCollisions(
     df: pl.DataFrame | None,
     *,
     topic: str | None = None,
-    cadenceScope: str = "all",
+    freqScope: str = "all",
     includeMixed: bool = True,
 ) -> pl.DataFrame:
     """semantic registry에서 raw path 충돌 그룹만 반환한다."""
-    registry = semanticRegistry(df, topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed)
+    registry = semanticRegistry(df, topic=topic, freqScope=freqScope, includeMixed=includeMixed)
     if registry.is_empty():
         return registry
     return registry.filter(pl.col("hasCollision"))
@@ -1543,7 +1543,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     if not validPeriods or not topicMap:
         return None
 
-    cadenceMetaByKey = {key: _rowCadenceMeta(periodMap) for key, periodMap in topicMap.items()}
+    freqMetaByKey = {key: _rowFreqMeta(periodMap) for key, periodMap in topicMap.items()}
     topicKeysByTopic: dict[str, list[tuple[str, str]]] = {}
     for key in topicMap.keys():
         topicKeysByTopic.setdefault(key[0], []).append(key)
@@ -1552,19 +1552,19 @@ def sections(stockCode: str) -> pl.DataFrame | None:
     for topic_seq in sorted(topicFirstSeq.items(), key=lambda x: x[1]):
         topicIndex[topic_seq[0]] = len(topicIndex)
 
-    _CADENCE_SCOPE_PRIORITY = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
+    _FREQ_SCOPE_PRIORITY = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
 
     def _topicRowSortKey(k: tuple[str, str]) -> tuple[int, int, int, int, int, int, int, int, str]:
         topic, _segmentKey = k
         majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
         tIdx = topicIndex.get(topic, 999999)
         info = rowOrder.get(k, {})  # noqa: F821 — closure variable
-        cadenceMeta = cadenceMetaByKey.get(k, {})  # noqa: F821 — closure variable
+        freqMeta = freqMetaByKey.get(k, {})  # noqa: F821 — closure variable
         return (
             majorNum,
             firstSeq,
             tIdx,
-            _CADENCE_SCOPE_PRIORITY.get(str(cadenceMeta.get("cadenceScope") or "none"), 9),
+            _FREQ_SCOPE_PRIORITY.get(str(freqMeta.get("freqScope") or "none"), 9),
             int(info.get("latestMissing", 1)),
             int(info.get("latestRank", 999999999)),
             int(info.get("firstRank", 999999999)),
@@ -1596,8 +1596,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         "segmentKey": pl.Categorical,
         "segmentOrder": pl.Int64,
         "segmentOccurrence": pl.Int64,
-        "cadenceKey": pl.Categorical,
-        "cadenceScope": pl.Categorical,
+        "freqKey": pl.Categorical,
+        "freqScope": pl.Categorical,
         "annualPeriodCount": pl.Int64,
         "quarterlyPeriodCount": pl.Int64,
         "latestAnnualPeriod": pl.Categorical,
@@ -1615,7 +1615,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
         for blockOrder, key in enumerate(topicKeys):
             meta = rowMeta.get(key, {})
             orderInfo = rowOrder.get(key, {})
-            cadenceMeta = cadenceMetaByKey.get(key, {})
+            freqMeta = freqMetaByKey.get(key, {})
             pathVariants = sorted(pathVariantsByKey.get(key, set()))
             parentPathVariants = sorted(parentPathVariantsByKey.get(key, set()))
             semanticPathVariants = sorted(semanticPathVariantsByKey.get(key, set()))
@@ -1668,18 +1668,18 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             dataColumns["segmentOccurrence"].append(
                 int(orderInfo.get("segmentOccurrence") or meta.get("segmentOccurrence") or 1)
             )
-            dataColumns["cadenceKey"].append(str(cadenceMeta.get("cadenceKey") or "none"))
-            dataColumns["cadenceScope"].append(str(cadenceMeta.get("cadenceScope") or "none"))
-            dataColumns["annualPeriodCount"].append(int(cadenceMeta.get("annualPeriodCount") or 0))
-            dataColumns["quarterlyPeriodCount"].append(int(cadenceMeta.get("quarterlyPeriodCount") or 0))
+            dataColumns["freqKey"].append(str(freqMeta.get("freqKey") or "none"))
+            dataColumns["freqScope"].append(str(freqMeta.get("freqScope") or "none"))
+            dataColumns["annualPeriodCount"].append(int(freqMeta.get("annualPeriodCount") or 0))
+            dataColumns["quarterlyPeriodCount"].append(int(freqMeta.get("quarterlyPeriodCount") or 0))
             dataColumns["latestAnnualPeriod"].append(
-                str(cadenceMeta["latestAnnualPeriod"])
-                if isinstance(cadenceMeta.get("latestAnnualPeriod"), str)
+                str(freqMeta["latestAnnualPeriod"])
+                if isinstance(freqMeta.get("latestAnnualPeriod"), str)
                 else None
             )
             dataColumns["latestQuarterlyPeriod"].append(
-                str(cadenceMeta["latestQuarterlyPeriod"])
-                if isinstance(cadenceMeta.get("latestQuarterlyPeriod"), str)
+                str(freqMeta["latestQuarterlyPeriod"])
+                if isinstance(freqMeta.get("latestQuarterlyPeriod"), str)
                 else None
             )
             dataColumns["sourceTopic"].append(
@@ -1699,13 +1699,13 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             parentPathVariantsByKey.pop(key, None)
             semanticPathVariantsByKey.pop(key, None)
             semanticParentPathVariantsByKey.pop(key, None)
-            cadenceMetaByKey.pop(key, None)
+            freqMetaByKey.pop(key, None)
 
     # 메모리 해제: DataFrame 생성 전 잔여 dict 퇴출
     del topicMap, rowMeta, rowOrder
     del pathVariantsByKey, parentPathVariantsByKey
     del semanticPathVariantsByKey, semanticParentPathVariantsByKey
-    del cadenceMetaByKey
+    del freqMetaByKey
 
     gc.collect()
 

@@ -740,9 +740,9 @@ class Company:
         """K-IFRS notes accessor (compat)."""
         return self._notesAccessor
 
-    def _docsSectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
-        """→ SectionsAnalyzer.sectionsCadence()."""
-        return self._analyzer.sectionsCadence(cadenceScope, includeMixed=includeMixed)
+    def _docsSectionsFreq(self, freqScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        """→ SectionsAnalyzer.sectionsFreq()."""
+        return self._analyzer.sectionsFreq(freqScope, includeMixed=includeMixed)
 
     def _docsSectionsOrdered(self, *, recentFirst: bool = True, annualAsQ4: bool = True) -> pl.DataFrame | None:
         """→ SectionsAnalyzer.sectionsOrdered()."""
@@ -758,20 +758,20 @@ class Company:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         collisionsOnly: bool = False,
     ) -> pl.DataFrame | None:
         """→ SectionsAnalyzer.sectionsSemanticRegistry()."""
         return self._analyzer.sectionsSemanticRegistry(
-            topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed, collisionsOnly=collisionsOnly
+            topic=topic, freqScope=freqScope, includeMixed=includeMixed, collisionsOnly=collisionsOnly
         )
 
     def _docsSectionsStructureRegistry(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         collisionsOnly: bool = False,
         nodeType: str | None = None,
@@ -779,7 +779,7 @@ class Company:
         """→ SectionsAnalyzer.sectionsStructureRegistry()."""
         return self._analyzer.sectionsStructureRegistry(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             collisionsOnly=collisionsOnly,
             nodeType=nodeType,
@@ -789,7 +789,7 @@ class Company:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         changedOnly: bool = True,
         nodeType: str | None = None,
@@ -797,7 +797,7 @@ class Company:
         """→ SectionsAnalyzer.sectionsStructureEvents()."""
         return self._analyzer.sectionsStructureEvents(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             changedOnly=changedOnly,
             nodeType=nodeType,
@@ -807,20 +807,20 @@ class Company:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         """→ SectionsAnalyzer.sectionsStructureSummary()."""
         return self._analyzer.sectionsStructureSummary(
-            topic=topic, cadenceScope=cadenceScope, includeMixed=includeMixed, nodeType=nodeType
+            topic=topic, freqScope=freqScope, includeMixed=includeMixed, nodeType=nodeType
         )
 
     def _docsSectionsStructureChanges(
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
         latestOnly: bool = True,
@@ -829,7 +829,7 @@ class Company:
         """→ SectionsAnalyzer.sectionsStructureChanges()."""
         return self._analyzer.sectionsStructureChanges(
             topic=topic,
-            cadenceScope=cadenceScope,
+            freqScope=freqScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
             latestOnly=latestOnly,
@@ -1349,6 +1349,20 @@ class Company:
         """report source topic의 실제 데이터 반환."""
         return self._applyPeriodFilter(self._reportFrame(topic, raw=raw), period)
 
+    def _showSegmentsSub(self, sub: str) -> pl.DataFrame | None:
+        """segments 하위 topic → DataFrame."""
+        segResult = self._call_module("segments")
+        if segResult is None:
+            return None
+        typeMap = {"region": "region", "product": "product", "composition": "segment"}
+        tableType = typeMap.get(sub)
+        if tableType is None:
+            return None
+        table = segResult.latestTable(tableType)
+        if table is None:
+            return None
+        return table.toDataFrame()
+
     def _showDirectTopic(self, topic: str, *, period: str | None = None, raw: bool = False) -> pl.DataFrame | None:
         """sections 외 경로에서 직접 회수 가능한 topic fallback."""
         if self._hasReport:
@@ -1529,6 +1543,10 @@ class Company:
                 return None
             return self._transposeToVertical(wide, period)
 
+        # segments 하위 topic (segments:region, segments:product, segments:composition)
+        if topic.startswith("segments:"):
+            return self._showSegmentsSub(topic.split(":", 1)[1])
+
         if topic in {"BS", "IS", "CF", "CIS", "SCE", "ratios"}:
             if block not in (None, 0):
                 return None
@@ -1629,11 +1647,59 @@ class Company:
                 dupes.height,
                 dupes["계정명"].to_list()[:5],
             )
-            merged = df.group_by("계정명", maintain_order=True).agg(
-                [pl.col(c).drop_nulls().first().alias(c) for c in periodCols]
+            groupCols = ["계정명"]
+            if "snakeId" in df.columns:
+                groupCols = ["snakeId", "계정명"]
+            aggCols = [c for c in periodCols if c not in groupCols]
+            merged = df.group_by(groupCols, maintain_order=True).agg(
+                [pl.col(c).drop_nulls().first().alias(c) for c in aggCols]
             )
             df = merged
         return df
+
+    _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS", "SCE"})
+
+    def select(
+        self,
+        topic: str,
+        indList: str | list[str] | None = None,
+        colList: str | list[str] | None = None,
+    ):
+        """show() 결과에서 행(indList) + 열(colList) 필터.
+
+        사용법::
+
+            c.select("IS", ["매출액", "영업이익"])
+            c.select("IS", ["매출액"]).chart()
+            c.select("BS", ["자본총계"], ["2024", "2023"])
+            c.select("businessOverview")
+
+        Args:
+            topic: IS, BS, CF, CIS, SCE 또는 docs topic.
+            indList: 행 필터. 한글 계정명/snakeId/항목명. 단일 str도 가능.
+            colList: 열(기간) 필터. 단일 str도 가능.
+
+        Returns:
+            SelectResult (DataFrame 위임 + .chart() 체이닝) 또는 None.
+        """
+        from dartlab.core.select import SelectResult
+        from dartlab.core.show import selectFromShow
+
+        df = self.show(topic)
+        if df is None or not isinstance(df, pl.DataFrame):
+            return None
+        if isinstance(indList, str):
+            indList = [indList]
+        if isinstance(colList, str):
+            colList = [colList]
+        filtered = selectFromShow(df, indList, colList)
+        if filtered is None:
+            return None
+        return SelectResult(filtered, topic, {
+            "stockCode": self.stockCode,
+            "corpName": self.corpName,
+            "currency": self.currency,
+        })
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         topic = _TOPIC_ALIASES.get(topic, topic)
@@ -1805,6 +1871,39 @@ class Company:
         if result is None:
             return None
         return impacts_to_dataframe(result.impacts)
+
+    def review(self, section: str | None = None, layout=None, helper: bool | None = None):
+        """분석 검토서 — 데이터만 나열하는 순수 보고서.
+
+        사용법::
+
+            c.review()                        # 전체 검토서
+            c.review("수익구조")                # 특정 항목만
+            c.review(helper=False)            # 헬퍼 텍스트 끄기
+
+            from dartlab.review import ReviewLayout
+            ly = ReviewLayout(indentBody=8, gapAfterH2=2)
+            c.review(layout=ly)               # 레이아웃 커스텀
+        """
+        from dartlab.review.registry import buildReview
+
+        return buildReview(self, section=section, layout=layout, helper=helper)
+
+    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None):
+        """AI 분석 보고서 — 데이터 + 섹션별 AI 종합의견.
+
+        review()로 데이터 검토서를 만든 뒤, AI가 각 섹션을 해석해
+        섹션 시작에 종합의견을 붙인다.
+
+        사용법::
+
+            c.reviewer()                      # AI 종합의견 포함 전체
+            c.reviewer("수익구조")              # 특정 항목만
+            c.reviewer(guide="반도체 사이클 관점에서 평가해줘")
+        """
+        from dartlab.ai.reviewer import buildReviewWithAI
+
+        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide)
 
     @property
     def esg(self):
@@ -2065,7 +2164,7 @@ class Company:
         from dartlab.providers.dart.docs.sections.pipeline import (
             _expandStructuredRows,
             _reportRowsToTopicRows,
-            _rowCadenceMeta,
+            _rowFreqMeta,
             applyProjections,
             chapterTeacherTopics,
             detailTopicForTopic,
@@ -2169,7 +2268,7 @@ class Company:
         if not topicMap:
             return []
 
-        cadenceMetaByKey = {key: _rowCadenceMeta(periodMap) for key, periodMap in topicMap.items()}
+        freqMetaByKey = {key: _rowFreqMeta(periodMap) for key, periodMap in topicMap.items()}
         topicKeysByTopic: dict[str, list[tuple[str, str]]] = {}
         for key in topicMap:
             topicKeysByTopic.setdefault(key[0], []).append(key)
@@ -2178,19 +2277,19 @@ class Company:
         for topic, _seq in sorted(topicFirstSeq.items(), key=lambda item: item[1]):
             topicIndex[topic] = len(topicIndex)
 
-        cadencePriority = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
+        freqPriority = {"mixed": 0, "annual": 1, "quarterly": 2, "none": 3}
 
         def topicRowSortKey(key: tuple[str, str]) -> tuple[int, int, int, int, int, int, int, int, str]:
             topic, segmentKey = key
             majorNum, firstSeq = topicFirstSeq.get(topic, (99, 999999))
             topicIdx = topicIndex.get(topic, 999999)
             info = rowOrder.get(key, {})
-            cadenceMeta = cadenceMetaByKey.get(key, {})
+            freqMeta = freqMetaByKey.get(key, {})
             return (
                 majorNum,
                 firstSeq,
                 topicIdx,
-                cadencePriority.get(str(cadenceMeta.get("cadenceScope") or "none"), 9),
+                freqPriority.get(str(freqMeta.get("freqScope") or "none"), 9),
                 int(info.get("latestMissing", 1)),
                 int(info.get("latestRank", 999999999)),
                 int(info.get("firstRank", 999999999)),

@@ -52,7 +52,7 @@ May change after a warning. Recorded in CHANGELOG.
 | `engines.edgar.finance.explore()` | XBRL Fact Explorer (tag-level history) |
 | `engines.edgar.finance.listTags()` | XBRL tag inventory |
 | `engines.edgar.docs.notes()` | XBRL TextBlock note extraction |
-| `engines.edgar.docs.cadence()` | Topic × period distribution matrix |
+| `engines.edgar.docs.freq()` | Topic × period distribution matrix |
 | `engines.edgar.docs.coverage()` | Topic coverage summary |
 | `Company.insights` | Insight grading (7 areas) |
 | `Company.insights.distress` | Distress prediction scorecard (4-axis, credit grade, cash runway) |
@@ -163,7 +163,7 @@ Short aliases also work: `business`, `risk`, `mdna`, `governance`
 > support — matching the DART architecture for core functionality.
 >
 > DART `docs` namespace includes additional sections analysis methods
-> (coverage, cadence, semanticRegistry, structureRegistry, etc.)
+> (coverage, freq, semanticRegistry, structureRegistry, etc.)
 > not yet available for EDGAR. These are Tier 2 (Beta).
 >
 > DART has a `report` namespace (28 structured disclosure API types)

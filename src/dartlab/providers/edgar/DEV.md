@@ -11,7 +11,7 @@
 | valuation(), forecast() | **Tier 1 (Stable)** | USD 자동 감지 |
 | simulation() | **Tier 1 (Stable)** | US 매크로 프리셋 |
 | SCE, explore(), listTags() | Tier 2 (Beta) | 파워유저 기능 |
-| notes(), cadence(), coverage() | Tier 2 (Beta) | 파워유저 기능 |
+| notes(), freq(), coverage() | Tier 2 (Beta) | 파워유저 기능 |
 
 ## 핵심 사상 (EDGAR 적용)
 
@@ -88,7 +88,7 @@ c.docs.sections              # (topic, blockType) × period DataFrame (pure sour
 c.docs.retrievalBlocks       # block × period unpivot (LLM 검색용)
 c.docs.contextSlices         # 슬라이스 (LLM 컨텍스트 창 크기 대응)
 c.docs.notes()               # XBRL TextBlock 주석 (AccountingPolicies 등)
-c.docs.cadence()             # topic × period 분포 매트릭스
+c.docs.freq()             # topic × period 분포 매트릭스
 c.docs.coverage()            # topic별 커버리지 요약
 c.docs.filings()             # filings 목록
 c.finance.BS / IS / CF / CIS # 연도별 재무제표
@@ -197,7 +197,7 @@ for t, c in unmapped.most_common(20): print(f'  {c}x  {t}')
 ```
 providers/edgar/
 ├── company.py               # Company 본체 (~1,050줄)
-├── _docs_accessor.py        # docs namespace (sections, retrievalBlocks, contextSlices, notes, cadence, coverage, filings)
+├── _docs_accessor.py        # docs namespace (sections, retrievalBlocks, contextSlices, notes, freq, coverage, filings)
 ├── _finance_accessor.py     # finance namespace (BS/IS/CF/CIS/SCE/ratios/ratioSeries/explore/listTags)
 ├── _profile_accessor.py     # profile namespace (docs+finance merge)
 ├── docs/
@@ -205,7 +205,7 @@ providers/edgar/
 │   └── sections/
 │       ├── pipeline.py      # sections() 메인 함수
 │       ├── mapper.py        # section title → topic 매핑
-│       ├── views.py         # sortPeriods, retrievalBlocks, contextSlices, cadence, coverage
+│       ├── views.py         # sortPeriods, retrievalBlocks, contextSlices, freq, coverage
 │       ├── textStructure.py # 영문 heading/body 파서
 │       └── mapperData/      # sectionMappings.json (182개)
 ├── finance/
@@ -226,7 +226,7 @@ providers/edgar/
 - **index**: 8컬럼 DART 동일 구조 (chapter, topic, label, kind, source, periods, shape, preview)
 - **테스트**: 48개 통과 (기존 30 + 신규 18)
 - **accessor 분리**: company.py 1,243→1,050줄, 3개 accessor 파일 분리
-- **retrievalBlocks/contextSlices**: views.py 40→420줄, LLM 증거층 + cadence/coverage
+- **retrievalBlocks/contextSlices**: views.py 40→420줄, LLM 증거층 + freq/coverage
 - **서버 API**: resolve.py US ticker 인식 추가, stockCode 호환 property
 - **SCE**: BS equity 컴포넌트 delta + CF equity 거래 + IS net income + CI OCI
 - **XBRL Fact Explorer**: 태그 단위 전 기간 값 탐색, 태그 목록

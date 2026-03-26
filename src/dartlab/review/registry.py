@@ -1,0 +1,156 @@
+"""review 레지스트리 — 템플릿 기반 Review 생성."""
+
+from __future__ import annotations
+
+from dartlab.review.layout import DEFAULT_LAYOUT, ReviewLayout
+from dartlab.review.section import Section
+from dartlab.review.templates import TEMPLATE_ORDER, TEMPLATES
+from dartlab.review.utils import isTerminal
+
+
+def buildBlocks(company) -> dict:
+    """블록 사전 — analysis calc* 결과를 블록으로 변환."""
+    from dartlab.analysis.strategy.capital import (
+        calcCapitalFlags,
+        calcCapitalOverview,
+        calcCapitalTimeline,
+        calcCashFlowStructure,
+        calcDebtTimeline,
+        calcDistressIndicators,
+        calcInterestBurden,
+        calcLiquidity,
+    )
+    from dartlab.analysis.strategy.revenue import (
+        calcBreakdown,
+        calcCompanyProfile,
+        calcConcentration,
+        calcFlags,
+        calcRevenueGrowth,
+        calcSegmentComposition,
+        calcSegmentTrend,
+    )
+    from dartlab.review.builders import (
+        breakdownBlock,
+        capitalFlagsBlock,
+        capitalOverviewBlock,
+        capitalTimelineBlock,
+        cashFlowBlock,
+        concentrationBlock,
+        debtTimelineBlock,
+        distressBlock,
+        interestBurdenBlock,
+        liquidityBlock,
+        profileBlock,
+        revenueFlagsBlock,
+        revenueGrowthBlock,
+        segmentCompositionBlock,
+        segmentTrendBlock,
+    )
+
+    def _safe(fn):
+        try:
+            import polars as pl
+            _polarsErr = pl.exceptions.PolarsError
+        except ImportError:
+            _polarsErr = RuntimeError
+        try:
+            return fn()
+        except (KeyError, ValueError, TypeError, AttributeError, ArithmeticError,
+                ImportError, RuntimeError, IndexError, _polarsErr):
+            return []
+
+    b: dict = {}
+
+    # ── 수익구조 ──
+    b["profile"] = _safe(lambda: profileBlock(calcCompanyProfile(company)))
+    b["segmentComposition"] = _safe(lambda: segmentCompositionBlock(calcSegmentComposition(company)))
+    b["segmentTrend"] = _safe(lambda: segmentTrendBlock(calcSegmentTrend(company)))
+    b["region"] = _safe(lambda: breakdownBlock(calcBreakdown(company, "region"), "region"))
+    b["product"] = _safe(lambda: breakdownBlock(calcBreakdown(company, "product"), "product"))
+    b["growth"] = _safe(lambda: revenueGrowthBlock(calcRevenueGrowth(company)))
+    b["concentration"] = _safe(lambda: concentrationBlock(calcConcentration(company)))
+    b["revenueFlags"] = _safe(lambda: revenueFlagsBlock(calcFlags(company)))
+
+    # ── 자금구조 ──
+    b["capitalOverview"] = _safe(lambda: capitalOverviewBlock(calcCapitalOverview(company)))
+    b["capitalTimeline"] = _safe(lambda: capitalTimelineBlock(calcCapitalTimeline(company)))
+    b["debtTimeline"] = _safe(lambda: debtTimelineBlock(calcDebtTimeline(company)))
+    b["interestBurden"] = _safe(lambda: interestBurdenBlock(calcInterestBurden(company)))
+    b["liquidity"] = _safe(lambda: liquidityBlock(calcLiquidity(company)))
+    b["cashFlowStructure"] = _safe(lambda: cashFlowBlock(calcCashFlowStructure(company)))
+    b["distressIndicators"] = _safe(lambda: distressBlock(calcDistressIndicators(company)))
+    b["capitalFlags"] = _safe(lambda: capitalFlagsBlock(calcCapitalFlags(company)))
+
+    return b
+
+
+def buildReview(
+    company,
+    section: str | None = None,
+    layout: ReviewLayout | None = None,
+    helper: bool | None = None,
+):
+    """Company에서 Review를 생성."""
+    from dartlab.review import Review
+
+    ly = layout or DEFAULT_LAYOUT
+    showHelper = helper if helper is not None else ly.helper
+
+    corpName = getattr(company, "corpName", "")
+    stockCode = getattr(company, "stockCode", "")
+
+    review = Review(stockCode=stockCode, corpName=corpName, layout=ly)
+
+    useSpinner = isTerminal()
+    if useSpinner:
+        from rich.console import Console
+        from rich.live import Live
+        from rich.spinner import Spinner
+
+        console = Console(stderr=True)
+        spinner = Spinner("dots", text="분석 준비 중...")
+        ctx = Live(spinner, console=console, transient=True)
+    else:
+        from contextlib import nullcontext
+        ctx = nullcontext()
+
+    with ctx as live:
+        if live is not None:
+            from rich.spinner import Spinner
+            live.update(Spinner("dots", text="블록 사전 생성 중..."))
+
+        b = buildBlocks(company)
+
+        # 템플릿 순서 결정
+        if section is not None:
+            templateKeys = [section] if section in TEMPLATES else []
+        elif ly.sectionOrder is not None:
+            templateKeys = [k for k in ly.sectionOrder if k in TEMPLATES]
+        else:
+            templateKeys = list(TEMPLATE_ORDER)
+
+        for tmplKey in templateKeys:
+            tmpl = TEMPLATES[tmplKey]
+            if live is not None:
+                from rich.spinner import Spinner
+                live.update(Spinner("dots", text=f"{tmplKey} 조립 중..."))
+
+            sectionBlocks = []
+            for blockKey in tmpl["keys"]:
+                blockList = b.get(blockKey)
+                if blockList:
+                    sectionBlocks.extend(blockList)
+
+            if sectionBlocks:
+                review.sections.append(
+                    Section(
+                        key=tmplKey,
+                        partId=tmpl.get("partId", ""),
+                        title=tmpl["title"],
+                        blocks=sectionBlocks,
+                        helper=tmpl.get("helper", "") if showHelper else "",
+                        aiGuide=tmpl.get("aiGuide", ""),
+                    )
+                )
+
+    return review

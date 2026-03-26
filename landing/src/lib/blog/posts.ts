@@ -162,6 +162,14 @@ export const seriesDefinitions = {
 		seoDescription: 'DartLab 한미 공시 비교 실전 시리즈. 삼성전자 vs TSMC, 현대차 vs Toyota, 셀트리온 vs Amgen처럼 같은 산업의 한국·미국 기업을 DART와 EDGAR 공시로 나란히 비교합니다.',
 		brandMessage: 'DartLab은 DART와 EDGAR를 따로 읽는 것을 넘어, 같은 산업의 한국·미국 기업을 나란히 놓고 회계 기준, 공시 구조, 숫자의 의미 차이까지 직접 비교합니다.'
 	},
+	'corporate-analysis': {
+		id: 'corporate-analysis',
+		label: '기업 분석 실전',
+		description: '수익 구조, 자금 구조, 자산 구조, 투자 효율까지 기업 전체를 읽는 분석 프레임워크 시리즈입니다.',
+		seoTitle: '기업 분석 실전 | 수익 구조부터 투자 효율까지 읽는 법',
+		seoDescription: 'DartLab 기업 분석 실전 시리즈. 수익 구조, 비용 구조, 현금흐름, 부문별 이익률, HHI 집중도, 이익의 질을 실제 기업 데이터로 분석하는 프레임워크를 정리합니다.',
+		brandMessage: 'DartLab은 재무제표 숫자를 나열하는 것이 아니라, 이 회사가 무엇으로 돈을 벌고, 그 구조가 얼마나 튼튼한지를 판단하는 분석 흐름을 만듭니다.'
+	},
 	'dartlab-news': {
 		id: 'dartlab-news',
 		label: 'DartLab 소식',

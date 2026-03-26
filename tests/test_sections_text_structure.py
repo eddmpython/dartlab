@@ -705,7 +705,7 @@ def test_structure_registry_distinguishes_variant_split_merge_and_parallel():
             "textStructural": [True] * 8,
             "textNodeType": ["body"] * 8,
             "textLevel": [1] * 8,
-            "cadenceScope": ["annual"] * 8,
+            "freqScope": ["annual"] * 8,
             "textComparablePathKey": [
                 "매출",
                 "매출",
@@ -797,7 +797,7 @@ def test_structure_registry_marks_same_leaf_multi_parent_concurrency_as_parallel
             "textStructural": [True, True],
             "textNodeType": ["body", "body"],
             "textLevel": [2, 2],
-            "cadenceScope": ["annual", "annual"],
+            "freqScope": ["annual", "annual"],
             "textComparablePathKey": ["사업부문현황 > 산업의특성", "사업부문현황 > 산업의특성"],
             "textComparableParentPathKey": ["사업부문현황", "사업부문현황"],
             "textSemanticPathKey": [
@@ -833,7 +833,7 @@ def test_structure_events_capture_transition_types():
             "textStructural": [True] * 8,
             "textNodeType": ["body"] * 8,
             "textLevel": [1] * 8,
-            "cadenceScope": ["annual"] * 8,
+            "freqScope": ["annual"] * 8,
             "textComparablePathKey": [
                 "매출",
                 "매출",
@@ -983,7 +983,7 @@ def test_structure_events_capture_reassigned_transition(monkeypatch):
     assert bodyOnly.item(0, "eventType") == "reassigned"
 
 
-def test_structure_events_do_not_compare_cross_cadence_transitions():
+def test_structure_events_do_not_compare_cross_freq_transitions():
     df = pl.DataFrame(
         {
             "topic": ["businessOverview", "businessOverview"],
@@ -991,7 +991,7 @@ def test_structure_events_do_not_compare_cross_cadence_transitions():
             "textStructural": [True, True],
             "textNodeType": ["body", "body"],
             "textLevel": [1, 1],
-            "cadenceScope": ["mixed", "mixed"],
+            "freqScope": ["mixed", "mixed"],
             "textComparablePathKey": ["매출", "매출"],
             "textComparableParentPathKey": [None, None],
             "textSemanticPathKey": ["매출", "매출및수주상황"],
@@ -1009,7 +1009,7 @@ def test_structure_events_do_not_compare_cross_cadence_transitions():
     assert events.height == 0
 
 
-def test_structure_helpers_respect_requested_cadence_lane_on_mixed_rows():
+def test_structure_helpers_respect_requested_freq_lane_on_mixed_rows():
     df = pl.DataFrame(
         {
             "topic": ["businessOverview", "businessOverview"],
@@ -1017,7 +1017,7 @@ def test_structure_helpers_respect_requested_cadence_lane_on_mixed_rows():
             "textStructural": [True, True],
             "textNodeType": ["body", "body"],
             "textLevel": [1, 1],
-            "cadenceScope": ["mixed", "mixed"],
+            "freqScope": ["mixed", "mixed"],
             "textComparablePathKey": ["매출", "매출"],
             "textComparableParentPathKey": [None, None],
             "textSemanticPathKey": ["매출", "매출및수주상황"],
@@ -1034,7 +1034,7 @@ def test_structure_helpers_respect_requested_cadence_lane_on_mixed_rows():
     )
 
     quarterlySummary = pipeline.structureSummary(
-        df, topic="businessOverview", cadenceScope="quarterly", nodeType="body"
+        df, topic="businessOverview", freqScope="quarterly", nodeType="body"
     )
     assert quarterlySummary.height == 1
     quarterlyRow = quarterlySummary.row(0, named=True)
@@ -1044,13 +1044,13 @@ def test_structure_helpers_respect_requested_cadence_lane_on_mixed_rows():
     assert quarterlyRow["latestEventType"] == "variant"
     assert quarterlyRow["latestEventLane"] == "q1"
 
-    quarterlyEvents = pipeline.structureEvents(df, topic="businessOverview", cadenceScope="quarterly", nodeType="body")
+    quarterlyEvents = pipeline.structureEvents(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
     assert quarterlyEvents.height == 1
     assert quarterlyEvents.item(0, "periodLane") == "q1"
     assert quarterlyEvents.item(0, "fromPeriod") == "2023Q1"
     assert quarterlyEvents.item(0, "toPeriod") == "2024Q1"
 
-    annualSummary = pipeline.structureSummary(df, topic="businessOverview", cadenceScope="annual", nodeType="body")
+    annualSummary = pipeline.structureSummary(df, topic="businessOverview", freqScope="annual", nodeType="body")
     assert annualSummary.height == 1
     annualRow = annualSummary.row(0, named=True)
     assert annualRow["latestPeriod"] == "2024"
@@ -1066,7 +1066,7 @@ def test_structure_summary_combines_registry_and_latest_event():
             "textStructural": [True] * 8,
             "textNodeType": ["body"] * 8,
             "textLevel": [1] * 8,
-            "cadenceScope": ["annual"] * 8,
+            "freqScope": ["annual"] * 8,
             "textComparablePathKey": [
                 "매출",
                 "매출",
@@ -1151,7 +1151,7 @@ def test_structure_changes_focuses_latest_changed_rows():
             "textStructural": [True] * 10,
             "textNodeType": ["body"] * 10,
             "textLevel": [1] * 10,
-            "cadenceScope": ["annual"] * 10,
+            "freqScope": ["annual"] * 10,
             "textComparablePathKey": [
                 "매출",
                 "매출",
@@ -1231,7 +1231,7 @@ def test_structure_changes_focuses_latest_changed_rows():
     ]
 
 
-def test_sections_adds_cadence_scope_metadata(monkeypatch):
+def test_sections_adds_freq_scope_metadata(monkeypatch):
     def fake_map_section_title(_title: str) -> str:
         return "businessOverview"
 
@@ -1287,8 +1287,8 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
 
     assert df is not None
     assert {
-        "cadenceKey",
-        "cadenceScope",
+        "freqKey",
+        "freqScope",
         "annualPeriodCount",
         "quarterlyPeriodCount",
         "latestAnnualPeriod",
@@ -1301,8 +1301,8 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
         & (pl.col("textPathKey") == "@topic:businessOverview > 공통항목")
     )
     assert common_body.height == 1
-    assert common_body.item(0, "cadenceScope") == "mixed"
-    assert common_body.item(0, "cadenceKey") == "annual,q1"
+    assert common_body.item(0, "freqScope") == "mixed"
+    assert common_body.item(0, "freqKey") == "annual,q1"
     assert common_body.item(0, "annualPeriodCount") == 1
     assert common_body.item(0, "quarterlyPeriodCount") == 1
     assert common_body.item(0, "latestAnnualPeriod") == "2024"
@@ -1314,7 +1314,7 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
         & (pl.col("textPathKey") == "@topic:businessOverview > 연간항목")
     )
     assert annual_body.height == 1
-    assert annual_body.item(0, "cadenceScope") == "annual"
+    assert annual_body.item(0, "freqScope") == "annual"
     assert annual_body.item(0, "latestAnnualPeriod") == "2024"
     assert annual_body.item(0, "latestQuarterlyPeriod") is None
 
@@ -1324,17 +1324,17 @@ def test_sections_adds_cadence_scope_metadata(monkeypatch):
         & (pl.col("textPathKey") == "@topic:businessOverview > 분기항목")
     )
     assert quarter_body.height == 1
-    assert quarter_body.item(0, "cadenceScope") == "quarterly"
-    assert quarter_body.item(0, "cadenceKey") == "q1"
+    assert quarter_body.item(0, "freqScope") == "quarterly"
+    assert quarter_body.item(0, "freqKey") == "q1"
     assert quarter_body.item(0, "latestAnnualPeriod") is None
     assert quarter_body.item(0, "latestQuarterlyPeriod") == "2024Q1"
 
-    annualView = pipeline.projectCadenceRows(df, cadenceScope="annual")
+    annualView = pipeline.projectFreqRows(df, freqScope="annual")
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 공통항목").height == 2
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 연간항목").height == 2
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 분기항목").height == 0
 
-    quarterlyView = pipeline.projectCadenceRows(df, cadenceScope="quarterly")
+    quarterlyView = pipeline.projectFreqRows(df, freqScope="quarterly")
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 공통항목").height == 2
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 연간항목").height == 0
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 분기항목").height == 2
@@ -1365,8 +1365,8 @@ def test_company_sections_preserve_structured_text_columns():
         "textSemanticParentPathVariants",
         "segmentKey",
         "segmentOccurrence",
-        "cadenceKey",
-        "cadenceScope",
+        "freqKey",
+        "freqScope",
         "annualPeriodCount",
         "quarterlyPeriodCount",
         "latestAnnualPeriod",

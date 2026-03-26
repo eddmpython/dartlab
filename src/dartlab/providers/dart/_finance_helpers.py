@@ -147,7 +147,7 @@ def _financeToDataFrame(
         label = labels.get(snakeId, snakeId)
         level = levels.get(snakeId, 2)
         sortKey = order.get(snakeId, 9999)
-        row = {"계정명": label, "_snakeId": snakeId, "_level": level, "_sort": sortKey}
+        row = {"snakeId": snakeId, "계정명": label, "_level": level, "_sort": sortKey}
         for i, y in enumerate(years):
             row[y] = values[i] if i < len(values) else None
         rows.append(row)
@@ -157,10 +157,10 @@ def _financeToDataFrame(
 
     rows.sort(key=lambda r: r["_sort"])
     df = pl.DataFrame(rows)
-    df = df.drop(["_snakeId", "_level", "_sort"])
+    df = df.drop(["_level", "_sort"])
     # 기간 컬럼을 최신 먼저 역순으로 정렬
-    periodCols = [c for c in df.columns if c != "계정명"]
-    df = df.select(["계정명"] + periodCols[::-1])
+    periodCols = [c for c in df.columns if c not in ("snakeId", "계정명")]
+    df = df.select(["snakeId", "계정명"] + periodCols[::-1])
     return df
 
 

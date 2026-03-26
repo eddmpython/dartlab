@@ -22,7 +22,7 @@
   <rect x="60" y="210" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
   <text x="72" y="233" fill="#e2e8f0" font-family="monospace" font-size="12">c.sections</text>
   <rect x="60" y="256" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
-  <text x="72" y="279" fill="#e2e8f0" font-family="monospace" font-size="12">c.show("사업의내용")</text>
+  <text x="72" y="279" fill="#e2e8f0" font-family="monospace" font-size="12">c.show("businessOverview")</text>
 
   <!-- Card 2 -->
   <rect x="420" y="110" width="360" height="210" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
@@ -52,7 +52,7 @@
   <rect x="60" y="445" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
   <text x="72" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">c.diff()</text>
   <rect x="60" y="491" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
-  <text x="72" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">c.diff("사업의내용")</text>
+  <text x="72" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">c.diff("businessOverview")</text>
 
   <!-- Card 5 -->
   <rect x="420" y="345" width="360" height="210" rx="14" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
@@ -66,13 +66,13 @@
 
   <!-- Card 6 -->
   <rect x="800" y="345" width="360" height="210" rx="14" fill="#1e293b" stroke="#fb923c" stroke-width="1.5"/>
-  <text x="820" y="380" fill="#fb923c" font-family="system-ui, sans-serif" font-size="18" font-weight="700">market</text>
+  <text x="820" y="380" fill="#fb923c" font-family="system-ui, sans-serif" font-size="18" font-weight="700">screen</text>
   <text x="820" y="405" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">2,700개 종목 스크리닝 + 섹터 비교.</text>
-  <text x="820" y="427" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">시가총액 상위, PER 저평가, 고배당 등 8가지 프리셋.</text>
+  <text x="820" y="427" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="13">가치주, 성장주, 고위험 등 8가지 프리셋.</text>
   <rect x="820" y="445" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
-  <text x="832" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">c.market</text>
+  <text x="832" y="468" fill="#e2e8f0" font-family="monospace" font-size="12">dartlab.screen("가치주")</text>
   <rect x="820" y="491" width="320" height="36" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
-  <text x="832" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">dartlab.screen("highDividend")</text>
+  <text x="832" y="514" fill="#e2e8f0" font-family="monospace" font-size="12">dartlab.screen("성장주")</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="590" width="1120" height="200" rx="14" fill="#1a1f2e" stroke="#334155" stroke-width="1"/>
@@ -84,7 +84,7 @@
   <text x="600" y="690" fill="#64748b" font-family="system-ui, sans-serif" font-size="20">→</text>
 
   <rect x="640" y="660" width="480" height="50" rx="8" fill="#0f172a" stroke="#4ade80" stroke-width="1"/>
-  <text x="660" y="690" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">sections, finance, insights, diff, market 전부 접근 가능</text>
+  <text x="660" y="690" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">sections, finance, insights, diff, screen 전부 접근 가능</text>
 
   <text x="600" y="760" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">DART 2,700개 종목 + EDGAR 미국 기업까지 같은 방식으로 분석</text>
 </svg>

@@ -48,12 +48,12 @@ class _DocsAccessor:
 
         return notes(self._company.cik, query)
 
-    def cadence(self) -> pl.DataFrame | None:
-        key = "_docs_cadence"
+    def freq(self) -> pl.DataFrame | None:
+        key = "_docs_freq"
         if key not in self._company._cache:
-            from dartlab.providers.edgar.docs.sections.views import cadence
+            from dartlab.providers.edgar.docs.sections.views import freq
 
-            self._company._cache[key] = cadence(self._company.ticker)
+            self._company._cache[key] = freq(self._company.ticker)
         return self._company._cache[key]
 
     def coverage(self) -> pl.DataFrame | None:

@@ -349,6 +349,74 @@ dartlab.scanRatioList()
 > dartlab.downloadAll("docs")      # ~8 GB (공시 변화 감지/시그널 — 대용량)
 > ```
 
+## 리뷰 — 구조화된 기업 분석
+
+DartLab의 리뷰 시스템은 재무 데이터를 구조화된 보고서로 조립한다.
+
+### 템플릿
+
+미리 정의된 블록 조합으로 핵심 분석 영역을 커버한다:
+
+```python
+c = dartlab.Company("005930")
+
+c.review("수익구조")    # 부문별 매출, 성장성, 집중도
+c.review("자금조달")    # 부채구조, 유동성, 이자 부담
+c.review()             # 전체 템플릿
+```
+
+### 블록 자유 조립
+
+모든 리뷰는 재사용 가능한 블록으로 구성된다. 블록 사전을 가져와 직접 조합한다:
+
+```python
+from dartlab.review import blocks, Review
+
+b = blocks(c)          # 16개 블록 사전
+list(b.keys())         # → ["profile", "segmentComposition", "growth", ...]
+
+# 필요한 것만 골라 조립
+Review([
+    b["segmentComposition"],
+    b["growth"],
+    c.select("IS", ["매출액"]),   # 원시 데이터와 혼합
+])
+```
+
+### 리뷰어 — AI 레이어
+
+데이터 블록 위에 AI 종합의견을 추가한다. 모든 LLM 프로바이더와 호환:
+
+```python
+c.reviewer()                                    # 전체 섹션 + AI 의견
+c.reviewer("수익구조")                           # 단일 섹션 + AI
+c.reviewer(guide="반도체 사이클 관점에서 평가해줘")  # 사용자 분석 관점 지정
+```
+
+**무료 AI 프로바이더** — 유료 API 키 없이 사용 가능:
+
+| 프로바이더 | 설정 |
+|-----------|------|
+| Gemini | `dartlab setup gemini` |
+| Groq | `dartlab setup groq` |
+| Cerebras | `dartlab setup cerebras` |
+| Mistral | `dartlab setup mistral` |
+
+또는 OpenAI 호환 엔드포인트 사용:
+```bash
+dartlab setup custom --base-url http://localhost:11434/v1   # Ollama 로컬
+```
+
+### 커스터마이징
+
+- **템플릿**: 미리 정의된 블록 조합 (`수익구조`, `자금조달`)
+- **자유 조립**: 블록 + 원시 DataFrame을 `Review([...])`로 혼합
+- **가이드**: `c.reviewer(guide="...")`로 도메인 특화 AI 분석
+- **레이아웃**: `ReviewLayout(indentH1=2, gapAfterH1=1, ...)`로 출력 제어
+- **렌더링 형식**: `review.render("rich" | "html" | "markdown" | "json")`
+
+인터랙티브 예제는 [notebooks/marimo/sampleReview.py](notebooks/marimo/sampleReview.py) 참고.
+
 ## 부가 기능
 
 > 아래 기능은 **beta** 또는 **experimental**이다 — API가 변경될 수 있다. [stability](docs/stability.md) 참고.

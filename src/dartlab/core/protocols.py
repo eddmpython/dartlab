@@ -47,6 +47,13 @@ class CompanyProtocol(Protocol):
         period: str | list[str] | None = None,
     ) -> pl.DataFrame | None: ...
 
+    def select(
+        self,
+        topic: str,
+        indList: str | list[str] | None = None,
+        colList: str | list[str] | None = None,
+    ) -> Any: ...  # SelectResult | None
+
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None: ...
 
     def diff(

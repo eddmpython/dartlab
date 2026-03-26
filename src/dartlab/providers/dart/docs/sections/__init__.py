@@ -15,7 +15,7 @@ from dartlab.providers.dart.docs.sections.extractors import (
     topicSubtables,
 )
 from dartlab.providers.dart.docs.sections.pipeline import (
-    projectCadenceRows,
+    projectFreqRows,
     sections,
     semanticCollisions,
     semanticRegistry,
@@ -39,7 +39,7 @@ from dartlab.providers.dart.docs.sections.views import (
 
 __all__ = [
     "sections",
-    "projectCadenceRows",
+    "projectFreqRows",
     "structureRegistry",
     "structureCollisions",
     "structureEvents",

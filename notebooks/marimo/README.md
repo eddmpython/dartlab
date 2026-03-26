@@ -7,6 +7,7 @@ Interactive [Marimo](https://marimo.io/) notebooks for exploring DartLab's core 
 | Notebook | What it shows |
 |----------|--------------|
 | **dartCompany.py** | DART Company — sections, show, diff, finance, insights |
+| **dartReview.py** | Analysis report — c.review() rich text + DataFrame |
 | **edgarCompany.py** | EDGAR Company — US 10-K/10-Q, XBRL financials |
 | **marketScan.py** | Market-wide scan — scanAccount, scanRatio (2,700+ companies) |
 | **aiAnalysis.py** | AI analysis — ask, patterns, streaming |
@@ -22,6 +23,13 @@ Full DART company exploration — sections, financial statements, analysis engin
 - `c.BS`, `c.CF`, `c.ratios` — financial data shortcuts
 - `c.trace("stock")` — data source provenance
 - `c.diff()` — text change detection
+
+### dartReview.py
+
+Corporate analysis report — rich text + DataFrame interleaved output.
+
+- `c.review()` — full analysis report (all sections)
+- `c.review("수익구조")` — single section only
 
 ### edgarCompany.py
 

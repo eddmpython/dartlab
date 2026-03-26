@@ -28,7 +28,7 @@ def _periodCols(df: pl.DataFrame) -> list[str]:
 
 
 def _autoComparePeriod(availablePeriods: list[str], basePeriod: str) -> str | None:
-    """같은 cadence 직전 기간 자동 선택."""
+    """같은 freq 직전 기간 자동 선택."""
     if not availablePeriods or not basePeriod:
         return None
 
@@ -195,7 +195,7 @@ def viewer(
     periods = _periodCols(filtered)
     availablePeriods = [p for p in periods if filtered.select(pl.col(p).is_not_null().any()).item()]
 
-    # comparePeriod 자동 선택: None → 같은 cadence 직전 기간, "" → 단독 뷰
+    # comparePeriod 자동 선택: None → 같은 freq 직전 기간, "" → 단독 뷰
     if comparePeriod is None:
         comparePeriod = _autoComparePeriod(availablePeriods, basePeriod)
     elif comparePeriod == "":

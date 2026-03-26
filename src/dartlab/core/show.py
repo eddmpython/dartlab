@@ -24,8 +24,8 @@ def transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame 
     Returns:
         필터된 DataFrame 또는 None (매칭 기간 없을 때).
     """
-    labelCol = wide.columns[0]
     periodCols = [c for c in wide.columns if isPeriodColumn(c)]
+    metaCols = [c for c in wide.columns if not isPeriodColumn(c)]
     matched: list[str] = []
     for p in periods:
         if p in periodCols:
@@ -34,7 +34,48 @@ def transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame 
             matched.append(f"{p}Q4")
     if not matched:
         return None
-    return wide.select([labelCol] + matched)
+    return wide.select(metaCols + matched)
+
+
+def selectFromShow(
+    df: pl.DataFrame,
+    indList: list[str] | None = None,
+    colList: list[str] | None = None,
+) -> pl.DataFrame | None:
+    """show() 결과에서 indList(행) + colList(열) 필터."""
+    if df.is_empty():
+        return None
+
+    result = df
+
+    # 행 필터 — indList
+    if indList is not None:
+        metaCols = [c for c in result.columns if not isPeriodColumn(c)]
+        matchCol = None
+        for mc in metaCols:
+            hits = result.filter(pl.col(mc).is_in(indList))
+            if not hits.is_empty():
+                matchCol = mc
+                result = hits
+                break
+        if matchCol is None:
+            return None
+
+    # 열 필터 — colList
+    if colList is not None:
+        periodCols = [c for c in result.columns if isPeriodColumn(c)]
+        metaCols = [c for c in result.columns if not isPeriodColumn(c)]
+        matched: list[str] = []
+        for p in colList:
+            if p in periodCols:
+                matched.append(p)
+            elif "Q" not in p and f"{p}Q4" in periodCols:
+                matched.append(f"{p}Q4")
+        if not matched:
+            return None
+        result = result.select(metaCols + matched)
+
+    return result if not result.is_empty() else None
 
 
 def buildBlockIndex(topicRows: pl.DataFrame) -> pl.DataFrame:

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>수익 구조 분석 순서: 프로필부터 종합 판단까지</title>
+  <desc>c.review("수익구조")가 출력하는 9단계 분석 순서를 시각화</desc>
+
+  <rect width="1200" height="720" rx="16" fill="#0f172a"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">수익 구조 분석 순서</text>
+  <text x="600" y="70" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">c.review("수익구조") 실행 시 자동 생성되는 분석 흐름</text>
+
+  <!-- 단계별 카드 — 2열 배치 -->
+  <!-- Row 1 -->
+  <rect x="60" y="100" width="240" height="90" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="90" cy="125" r="14" fill="#3b82f6" fill-opacity="0.2" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="90" y="130" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="12" font-weight="700">0</text>
+  <text x="115" y="130" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">업종·주요제품</text>
+  <text x="90" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">WICS 섹터, listing 주요제품</text>
+  <text x="90" y="172" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">이 회사가 뭘 하는 회사인지 맥락</text>
+
+  <line x1="300" y1="145" x2="350" y2="145" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="350" y="100" width="240" height="90" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="380" cy="125" r="14" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="380" y="130" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="700">1</text>
+  <text x="405" y="130" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">부문별 매출·이익</text>
+  <text x="380" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">매출 비중, 이익 기여도, 이익률</text>
+  <text x="380" y="172" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">HHI 집중도 자동 계산</text>
+
+  <line x1="590" y1="145" x2="640" y2="145" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="640" y="100" width="240" height="90" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="670" cy="125" r="14" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="670" y="130" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="700">2</text>
+  <text x="695" y="130" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">부문별 매출 추이</text>
+  <text x="670" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">최대 4년 + YoY 성장률</text>
+  <text x="670" y="172" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">성장 부문 vs 정체 부문 식별</text>
+
+  <line x1="880" y1="145" x2="930" y2="145" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="930" y="100" width="220" height="90" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="960" cy="125" r="14" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="960" y="130" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="700">3</text>
+  <text x="985" y="130" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">지역별 매출</text>
+  <text x="960" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">내수/수출 비중</text>
+  <text x="960" y="172" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">지역 의존도 확인</text>
+
+  <!-- Row 2 -->
+  <line x1="1040" y1="190" x2="1040" y2="230" stroke="#475569" stroke-width="1.5"/>
+  <line x1="1040" y1="230" x2="170" y2="230" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="170" y1="230" x2="170" y2="260" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="60" y="260" width="240" height="90" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="90" cy="285" r="14" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="90" y="290" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="700">4</text>
+  <text x="115" y="290" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">제품별 매출</text>
+  <text x="90" y="315" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">제품 다각화 수준</text>
+  <text x="90" y="332" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">단일 제품 의존 리스크</text>
+
+  <line x1="300" y1="305" x2="350" y2="305" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="350" y="260" width="240" height="90" rx="10" fill="#8b5cf6" fill-opacity="0.08" stroke="#8b5cf6" stroke-width="1"/>
+  <circle cx="380" cy="285" r="14" fill="#8b5cf6" fill-opacity="0.2" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="380" y="290" text-anchor="middle" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="12" font-weight="700">5</text>
+  <text x="405" y="290" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">손익 추이</text>
+  <text x="380" y="315" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">매출/영업이익/순이익/이익률</text>
+  <text x="380" y="332" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">분기별 추이 + 매출 YoY</text>
+
+  <line x1="590" y1="305" x2="640" y2="305" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="640" y="260" width="240" height="90" rx="10" fill="#8b5cf6" fill-opacity="0.08" stroke="#8b5cf6" stroke-width="1"/>
+  <circle cx="670" cy="285" r="14" fill="#8b5cf6" fill-opacity="0.2" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="670" y="290" text-anchor="middle" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="12" font-weight="700">6</text>
+  <text x="695" y="290" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">비용 구조</text>
+  <text x="670" y="315" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">원가율/판관비율/매출총이익률</text>
+  <text x="670" y="332" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">비용 압력 방향 확인</text>
+
+  <line x1="880" y1="305" x2="930" y2="305" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="930" y="260" width="220" height="90" rx="10" fill="#22c55e" fill-opacity="0.08" stroke="#22c55e" stroke-width="1"/>
+  <circle cx="960" cy="285" r="14" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="960" y="290" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="700">7</text>
+  <text x="985" y="290" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">현금 흐름</text>
+  <text x="960" y="315" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">영업CF/투자CF/CAPEX/FCF</text>
+  <text x="960" y="332" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">이익의 현금 뒷받침 확인</text>
+
+  <!-- Row 3 -->
+  <line x1="1040" y1="350" x2="1040" y2="400" stroke="#475569" stroke-width="1.5"/>
+  <line x1="1040" y1="400" x2="460" y2="400" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="460" y1="400" x2="460" y2="430" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="350" y="430" width="240" height="90" rx="10" fill="#f59e0b" fill-opacity="0.08" stroke="#f59e0b" stroke-width="1"/>
+  <circle cx="380" cy="455" r="14" fill="#f59e0b" fill-opacity="0.2" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="380" y="460" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="700">8</text>
+  <text x="405" y="460" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">수익 품질</text>
+  <text x="380" y="485" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">OCF/NI, Sloan, ROE, ROIC, CAGR</text>
+  <text x="380" y="502" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">정량 지표로 이익의 질 정리</text>
+
+  <line x1="590" y1="475" x2="640" y2="475" stroke="#475569" stroke-width="1.5"/>
+
+  <rect x="640" y="430" width="240" height="90" rx="10" fill="#ef4444" fill-opacity="0.08" stroke="#ef4444" stroke-width="1"/>
+  <circle cx="670" cy="455" r="14" fill="#ef4444" fill-opacity="0.2" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="670" y="460" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12" font-weight="700">9</text>
+  <text x="695" y="460" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">종합 판단 (flags)</text>
+  <text x="670" y="485" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">경고: HHI 고집중, 역성장, 품질 취약</text>
+  <text x="670" y="502" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">기회: 고성장, 고마진</text>
+
+  <!-- 하단 범례 -->
+  <rect x="60" y="570" width="1080" height="130" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="100" y="600" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">데이터가 없으면 해당 단계는 자동 생략</text>
+  <text x="100" y="625" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">segments 없음 → 0,5,6,7,8,9만 출력 (부문 관련 1,2,3,4 생략)</text>
+  <text x="100" y="647" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">매출원가/판관비 없음 → 6(비용 구조) 생략</text>
+  <text x="100" y="669" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">영업CF 없음 → 7(현금 흐름) 생략</text>
+  <text x="100" y="691" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">금융업: 매출액 없음 → 5,6 모두 생략, 현금흐름과 품질 위주 보고서</text>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+</svg>

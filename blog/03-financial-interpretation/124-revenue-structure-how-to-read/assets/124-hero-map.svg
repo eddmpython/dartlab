@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <title>수익 구조 분석의 세 축: 부문 구성, 비용 구조, 현금흐름 검증</title>
+  <desc>이 회사는 무엇으로 돈을 버는가를 세 가지 축으로 분해하는 도식</desc>
+
+  <rect width="1200" height="720" rx="16" fill="#0f172a"/>
+
+  <!-- 중앙 질문 -->
+  <rect x="360" y="40" width="480" height="72" rx="36" fill="#3b82f6" fill-opacity="0.15" stroke="#3b82f6" stroke-width="2"/>
+  <text x="600" y="84" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="22" font-weight="700">이 회사는 무엇으로 돈을 버는가?</text>
+
+  <!-- 화살표 아래 -->
+  <line x1="600" y1="112" x2="600" y2="160" stroke="#475569" stroke-width="2"/>
+  <polygon points="594,155 606,155 600,168" fill="#475569"/>
+
+  <!-- 세 축 카드 -->
+  <!-- 1. 부문 구성 -->
+  <rect x="60" y="180" width="340" height="490" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="60" y="180" width="340" height="56" rx="12" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="230" y="215" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">1. 부문 구성</text>
+  <text x="230" y="238" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">어디서 벌고, 얼마나 몰려 있는가</text>
+
+  <text x="90" y="280" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">매출 비중 vs 이익 기여도</text>
+  <text x="90" y="305" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">매출 60% 부문이 이익 30%만 기여하면</text>
+  <text x="90" y="323" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">규모만 크고 수익성은 낮은 구조</text>
+
+  <text x="90" y="365" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">HHI 집중도</text>
+  <rect x="90" y="380" width="280" height="28" rx="4" fill="#1a2332"/>
+  <rect x="90" y="380" width="90" height="28" rx="4" fill="#22c55e" fill-opacity="0.2"/>
+  <text x="135" y="399" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">&lt;1500 분산</text>
+  <rect x="180" y="380" width="100" height="28" rx="4" fill="#eab308" fill-opacity="0.2"/>
+  <text x="230" y="399" text-anchor="middle" fill="#fde047" font-family="system-ui, sans-serif" font-size="11">1500~5000</text>
+  <rect x="280" y="380" width="90" height="28" rx="4" fill="#ef4444" fill-opacity="0.2"/>
+  <text x="325" y="399" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11">&gt;5000 고집중</text>
+
+  <text x="90" y="440" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">없는 경우</text>
+  <text x="90" y="462" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">금융업: 부문 대신 이자/수수료 수익</text>
+  <text x="90" y="480" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">중소형: 단일 부문 → 손익으로 바로 이동</text>
+
+  <text x="90" y="520" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">부문 재편 감지</text>
+  <text x="90" y="542" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">전년 대비 부문 이름이 바뀌면</text>
+  <text x="90" y="560" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">적자 사업 합병/분리 가능성 확인</text>
+
+  <!-- 2. 비용 구조 -->
+  <rect x="430" y="180" width="340" height="490" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="430" y="180" width="340" height="56" rx="12" fill="#8b5cf6" fill-opacity="0.12"/>
+  <text x="600" y="215" text-anchor="middle" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">2. 비용 구조</text>
+  <text x="600" y="238" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">얼마를 써서 벌고, 비용 압력은 어디서 오는가</text>
+
+  <text x="460" y="280" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">매출원가율</text>
+  <text x="460" y="305" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">원재료, 인건비, 에너지 비용 반영</text>
+  <text x="460" y="323" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">3분기 연속 상승 = 가격 전가 약화 신호</text>
+
+  <text x="460" y="365" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">판관비율</text>
+  <text x="460" y="390" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">고정비 성격 → 매출 증가 시 비율 하락</text>
+  <text x="460" y="408" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">= 영업 레버리지 작동</text>
+
+  <text x="460" y="448" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">매출총이익률</text>
+  <text x="460" y="473" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">= 1 - 매출원가율</text>
+  <text x="460" y="491" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">이 추세가 꺾이면 영업이익도 따라 꺾임</text>
+
+  <text x="460" y="530" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">IT/서비스업 예외</text>
+  <text x="460" y="555" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">카카오, 네이버: 원가/판관비 미구분</text>
+  <text x="460" y="573" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">영업비용 통합 → 영업이익률 추세만 확인</text>
+
+  <!-- 3. 현금흐름 검증 -->
+  <rect x="800" y="180" width="340" height="490" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="800" y="180" width="340" height="56" rx="12" fill="#22c55e" fill-opacity="0.12"/>
+  <text x="970" y="215" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="18" font-weight="700">3. 현금흐름 검증</text>
+  <text x="970" y="238" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">이익이 진짜 현금으로 들어오는가</text>
+
+  <text x="830" y="280" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">OCF / 순이익</text>
+  <rect x="830" y="295" width="280" height="32" rx="4" fill="#1a2332"/>
+  <rect x="830" y="295" width="180" height="32" rx="4" fill="#22c55e" fill-opacity="0.15"/>
+  <text x="920" y="316" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">≥ 1.0 양호</text>
+  <rect x="1010" y="295" width="100" height="32" rx="4" fill="#ef4444" fill-opacity="0.15"/>
+  <text x="1060" y="316" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12">&lt; 0.5 취약</text>
+
+  <text x="830" y="365" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">FCF (영업CF - CAPEX)</text>
+  <text x="830" y="390" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">사업 유지 후 진짜 남는 돈</text>
+  <text x="830" y="408" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">3년 연속 음수 = 외부 자금 의존 구조</text>
+
+  <text x="830" y="448" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Sloan 발생액 비율</text>
+  <text x="830" y="473" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">(순이익 - OCF) / 총자산</text>
+  <text x="830" y="491" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">|10%| 이내 = 보수적 회계</text>
+
+  <text x="830" y="530" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">검증 판단</text>
+  <text x="830" y="555" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">OCF &gt; NI + FCF 양수 + Sloan &lt;10%</text>
+  <text x="830" y="573" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">→ 현금 기반의 견실한 이익 구조</text>
+  <text x="830" y="600" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12">OCF &lt; NI + FCF 음수 + Sloan &gt;10%</text>
+  <text x="830" y="618" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12">→ 회계 이익은 있지만 현금이 부족한 구조</text>
+</svg>

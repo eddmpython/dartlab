@@ -1,6 +1,6 @@
 """sections 구조 분석 — Company에서 분리.
 
-docs parquet 기반 topic manifest, outline, cadence, coverage,
+docs parquet 기반 topic manifest, outline, freq, coverage,
 semantic/structure registry 등 sections 파생표 생성을 담당한다.
 Company는 이 클래스를 lazy 초기화하여 위임한다.
 """
@@ -285,23 +285,23 @@ class SectionsAnalyzer:
         self._cache[cacheKey] = result
         return result
 
-    # ── cadence / ordered / coverage ──
+    # ── freq / ordered / coverage ──
 
-    def sectionsCadence(self, cadenceScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
-        """cadence 범위별 sections 투영."""
+    def sectionsFreq(self, freqScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
+        """freq 범위별 sections 투영."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
-        cacheKey = f"_docsSectionsCadence:{normalizedScope}:{int(includeMixed)}"
+        normalizedScope = str(freqScope).strip().lower()
+        cacheKey = f"_docsSectionsFreq:{normalizedScope}:{int(includeMixed)}"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         sectionsFrame = self._company.docs.sections
         if sectionsFrame is None:
             self._cache[cacheKey] = None
             return None
-        from dartlab.providers.dart.docs.sections import projectCadenceRows
+        from dartlab.providers.dart.docs.sections import projectFreqRows
 
-        result = projectCadenceRows(sectionsFrame, cadenceScope=normalizedScope, includeMixed=includeMixed)
+        result = projectFreqRows(sectionsFrame, freqScope=normalizedScope, includeMixed=includeMixed)
         self._cache[cacheKey] = result
         return result
 
@@ -401,14 +401,14 @@ class SectionsAnalyzer:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         collisionsOnly: bool = False,
     ) -> pl.DataFrame | None:
         """semantic registry / collisions."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedScope = str(freqScope).strip().lower()
         topicKey = topic or "*"
         cacheKey = (
             f"_docsSectionsSemanticRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}"
@@ -427,14 +427,14 @@ class SectionsAnalyzer:
             result = semanticCollisions(
                 sectionsFrame,
                 topic=topic,
-                cadenceScope=normalizedScope,
+                freqScope=normalizedScope,
                 includeMixed=includeMixed,
             )
         else:
             result = semanticRegistry(
                 sectionsFrame,
                 topic=topic,
-                cadenceScope=normalizedScope,
+                freqScope=normalizedScope,
                 includeMixed=includeMixed,
             )
         self._cache[cacheKey] = result
@@ -446,7 +446,7 @@ class SectionsAnalyzer:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         collisionsOnly: bool = False,
         nodeType: str | None = None,
@@ -454,7 +454,7 @@ class SectionsAnalyzer:
         """structure registry / collisions."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedScope = str(freqScope).strip().lower()
         normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
         topicKey = topic or "*"
         cacheKey = f"_docsSectionsStructureRegistry:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(collisionsOnly)}:{normalizedNodeType}"
@@ -472,7 +472,7 @@ class SectionsAnalyzer:
             result = structureCollisions(
                 sectionsFrame,
                 topic=topic,
-                cadenceScope=normalizedScope,
+                freqScope=normalizedScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
             )
@@ -480,7 +480,7 @@ class SectionsAnalyzer:
             result = structureRegistry(
                 sectionsFrame,
                 topic=topic,
-                cadenceScope=normalizedScope,
+                freqScope=normalizedScope,
                 includeMixed=includeMixed,
                 nodeType=nodeType,
             )
@@ -493,7 +493,7 @@ class SectionsAnalyzer:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         changedOnly: bool = True,
         nodeType: str | None = None,
@@ -501,7 +501,7 @@ class SectionsAnalyzer:
         """structure events."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedScope = str(freqScope).strip().lower()
         normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
         topicKey = topic or "*"
         cacheKey = f"_docsSectionsStructureEvents:{topicKey}:{normalizedScope}:{int(includeMixed)}:{int(changedOnly)}:{normalizedNodeType}"
@@ -518,7 +518,7 @@ class SectionsAnalyzer:
         result = structureEvents(
             sectionsFrame,
             topic=topic,
-            cadenceScope=normalizedScope,
+            freqScope=normalizedScope,
             includeMixed=includeMixed,
             changedOnly=changedOnly,
             nodeType=nodeType,
@@ -530,14 +530,14 @@ class SectionsAnalyzer:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
     ) -> pl.DataFrame | None:
         """structure summary."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedScope = str(freqScope).strip().lower()
         normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
         topicKey = topic or "*"
         cacheKey = (
@@ -556,7 +556,7 @@ class SectionsAnalyzer:
         result = structureSummary(
             sectionsFrame,
             topic=topic,
-            cadenceScope=normalizedScope,
+            freqScope=normalizedScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
         )
@@ -567,7 +567,7 @@ class SectionsAnalyzer:
         self,
         *,
         topic: str | None = None,
-        cadenceScope: str = "all",
+        freqScope: str = "all",
         includeMixed: bool = True,
         nodeType: str | None = None,
         latestOnly: bool = True,
@@ -576,7 +576,7 @@ class SectionsAnalyzer:
         """structure changes."""
         if not self._hasDocs:
             return None
-        normalizedScope = str(cadenceScope).strip().lower()
+        normalizedScope = str(freqScope).strip().lower()
         normalizedNodeType = str(nodeType).strip().lower() if isinstance(nodeType, str) and nodeType.strip() else "*"
         topicKey = topic or "*"
         cacheKey = (
@@ -596,7 +596,7 @@ class SectionsAnalyzer:
         result = structureChanges(
             sectionsFrame,
             topic=topic,
-            cadenceScope=normalizedScope,
+            freqScope=normalizedScope,
             includeMixed=includeMixed,
             nodeType=nodeType,
             latestOnly=latestOnly,

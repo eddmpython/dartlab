@@ -317,10 +317,10 @@ def contextSlices(ticker: str, *, maxChars: int = 1800) -> pl.DataFrame | None:
     return df
 
 
-# ── cadence / coverage ───────────────────────────────────────────
+# ── freq / coverage ───────────────────────────────────────────
 
 
-def cadence(ticker: str) -> pl.DataFrame | None:
+def freq(ticker: str) -> pl.DataFrame | None:
     """topic별 기간 분포 매트릭스.
 
     반환 컬럼: topic, {period columns...}

@@ -855,6 +855,32 @@ class Company:
 
         return buildBlockIndex(topicRows)
 
+    def select(
+        self,
+        topic: str,
+        indList: str | list[str] | None = None,
+        colList: str | list[str] | None = None,
+    ):
+        """show() 결과에서 행(indList) + 열(colList) 필터."""
+        from dartlab.core.select import SelectResult
+        from dartlab.core.show import selectFromShow
+
+        df = self.show(topic)
+        if df is None or not isinstance(df, pl.DataFrame):
+            return None
+        if isinstance(indList, str):
+            indList = [indList]
+        if isinstance(colList, str):
+            colList = [colList]
+        filtered = selectFromShow(df, indList, colList)
+        if filtered is None:
+            return None
+        return SelectResult(filtered, topic, {
+            "stockCode": getattr(self, "stockCode", self.ticker),
+            "corpName": self.corpName,
+            "currency": self.currency,
+        })
+
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic in _FINANCE_TOPICS:

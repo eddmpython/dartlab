@@ -62,7 +62,7 @@
   - `textSemanticPathKey`, `textSemanticParentPathKey`
   - `textSemanticPathVariants`, `textSemanticParentPathVariants`
   - `segmentKey`, `segmentOrder`, `segmentOccurrence`, `sourceBlockOrder`
-  - `cadenceKey`, `cadenceScope`, `annualPeriodCount`, `quarterlyPeriodCount`
+  - `freqKey`, `freqScope`, `annualPeriodCount`, `quarterlyPeriodCount`
   - `latestAnnualPeriod`, `latestQuarterlyPeriod`
 
 원칙:
@@ -84,12 +84,12 @@
   - 이후 소항목이 같은 semantic row를 채우면 그 셀만 overwrite된다.
   - 장 제목에만 남아 있던 segment는 sparse row가 아니라 실제 최신 row로 살아남는다.
 - `[2021년 12월]` 같은 시점 마커와 중복 topic alias heading은 row로는 보존하되 `textStructural=false`로 내려 구조 stack에는 넣지 않는다.
-- row별 period 분포는 `cadenceScope`로 요약한다.
+- row별 period 분포는 `freqScope`로 요약한다.
   - `annual`: 연간에만 존재
   - `quarterly`: Q1/Q2/Q3에만 존재
   - `mixed`: 연간과 분기에 모두 존재
-  - `cadenceKey`: `annual,q1,q2,q3` 같은 finer set
-- `projectCadenceRows(df, cadenceScope=..., includeMixed=...)`로 `sections` 내부에서 annual/quarterly/mixed row projection을 바로 만들 수 있다.
+  - `freqKey`: `annual,q1,q2,q3` 같은 finer set
+- `projectFreqRows(df, freqScope=..., includeMixed=...)`로 `sections` 내부에서 annual/quarterly/mixed row projection을 바로 만들 수 있다.
 - `semanticRegistry(df, ...)` / `semanticCollisions(df, ...)`로 semantic spine 기준 raw wording drift와 collision을 바로 진단할 수 있다.
 - `structureRegistry(df, ...)` / `structureCollisions(df, ...)`로 comparable spine 기준 구조 이벤트를 바로 진단할 수 있다.
 - `nodeType='body'`를 주면 heading anchor를 제외하고 본문 충돌만 본다.
@@ -112,7 +112,7 @@
   - `periodLane` 기준으로 같은 report-kind끼리만 비교한다.
   - `annual`, `q1`, `q2`, `q3` lane 내부 전이만 event row로 만든다.
   - 교차 주기(`Q3 -> annual`, `annual -> Q1`)는 구조 event로 간주하지 않는다.
-  - `cadenceScope='annual'/'quarterly'` 조회 시 `mixed` row는 유지하되 해당 lane period만 activity에 반영한다.
+  - `freqScope='annual'/'quarterly'` 조회 시 `mixed` row는 유지하되 해당 lane period만 activity에 반영한다.
     - 예: `quarterly` 조회 결과에 `periodLane='annual'` event가 나오면 버그다.
   - 주요 컬럼:
     - `fromPeriod`, `toPeriod`
@@ -135,7 +135,7 @@
     - `latestEventType`
     - `latestEventFromPeriod`
     - `latestEventToPeriod`
-  - `cadenceScope`를 주면 `latestPeriod`와 `latestEventLane`도 그 lane 내부 값만 써야 한다.
+  - `freqScope`를 주면 `latestPeriod`와 `latestEventLane`도 그 lane 내부 값만 써야 한다.
 - `structureChanges(df, ...)`는 comparable spine 기준 최신 변화 row만 압축해서 반환한다.
   - 기본은 `latestOnly=True`, `changedOnly=True`다.
   - `changedOnly=True`는 `eventCount > 0`인 recent event row만 남긴다.
@@ -147,9 +147,9 @@
     - `isStale`
 - `c.docs.sections`는 raw DataFrame을 감싼 source accessor다.
   - `c.docs.sections.filter(...)`처럼 DataFrame 연산을 그대로 쓸 수 있다.
-  - 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.cadence(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`, `c.docs.sections.structureRegistry(...)`, `c.docs.sections.structureCollisions(...)`, `c.docs.sections.structureEvents(...)`, `c.docs.sections.structureSummary(...)`, `c.docs.sections.structureChanges(...)`를 쓴다.
+  - 같은 경로에서 `c.docs.sections.raw`, `c.docs.sections.periods()`, `c.docs.sections.ordered()`, `c.docs.sections.coverage()`, `c.docs.sections.freq(...)`, `c.docs.sections.semanticRegistry(...)`, `c.docs.sections.semanticCollisions(...)`, `c.docs.sections.structureRegistry(...)`, `c.docs.sections.structureCollisions(...)`, `c.docs.sections.structureEvents(...)`, `c.docs.sections.structureSummary(...)`, `c.docs.sections.structureChanges(...)`를 쓴다.
   - `periods()/ordered()/coverage()`는 최신우선 + 연간 `Q4` alias projection이다.
-  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsCadence()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()` / `c.docs.sectionsStructureSummary()` / `c.docs.sectionsStructureChanges()`는 호환용 wrapper다.
+  - `c.docs.sectionsOrdered()` / `c.docs.sectionsCoverage()` / `c.docs.sectionsFreq()` / `c.docs.sectionsSemanticRegistry()` / `c.docs.sectionsSemanticCollisions()` / `c.docs.sectionsStructureRegistry()` / `c.docs.sectionsStructureCollisions()` / `c.docs.sectionsStructureEvents()` / `c.docs.sectionsStructureSummary()` / `c.docs.sectionsStructureChanges()`는 호환용 wrapper다.
 - `show()`, `diff()`, viewer, AI가 같은 text structure를 공유해야 한다.
 
 ## 2026-03-18 현재 기준
@@ -162,15 +162,15 @@
   - `textSemanticPathKey`는 안전한 wording drift만 흡수하는 병렬 의미 구조선이다.
   - `textStructural=false` row는 marker/alias 보존용이며 outline tree를 구성하지 않는다.
 - 현재 row 메타 해석:
-  - `cadenceScope=annual`: 연간 row
-  - `cadenceScope=quarterly`: 분기 전용 row
-  - `cadenceScope=mixed`: 연간/분기 공용 row
-  - `latestAnnualPeriod`, `latestQuarterlyPeriod`: 각 cadence에서 마지막 실존 period
+  - `freqScope=annual`: 연간 row
+  - `freqScope=quarterly`: 분기 전용 row
+  - `freqScope=mixed`: 연간/분기 공용 row
+  - `latestAnnualPeriod`, `latestQuarterlyPeriod`: 각 freq에서 마지막 실존 period
 - 현재 공식 period projection helper:
   - `src/dartlab/engines/dart/docs/sections/_common.py:displayPeriod`
   - `src/dartlab/engines/dart/docs/sections/_common.py:reorderPeriodColumns`
-- 현재 공식 cadence projection helper:
-  - `src/dartlab/engines/dart/docs/sections/pipeline.py:projectCadenceRows`
+- 현재 공식 freq projection helper:
+  - `src/dartlab/engines/dart/docs/sections/pipeline.py:projectFreqRows`
 - 현재 공식 semantic registry helper:
   - `src/dartlab/engines/dart/docs/sections/pipeline.py:semanticRegistry`
   - `src/dartlab/engines/dart/docs/sections/pipeline.py:semanticCollisions`
@@ -213,10 +213,10 @@
 
 ## 다음 품질/성능 우선순위
 
-1. `topic + cadenceScope` 기준 `semantic registry`를 올린다.
+1. `topic + freqScope` 기준 `semantic registry`를 올린다.
 2. parent guard가 있는 alias만 추가한다.
 3. `businessOverview`는 alias dict보다 `same/moved/split/merge`를 판정하는 구조 matcher를 먼저 올린다.
-4. `show()`/viewer가 `projectCadenceRows()`조차 직접 부르지 않도록 `sections` materialized projection/cache를 추가한다.
+4. `show()`/viewer가 `projectFreqRows()`조차 직접 부르지 않도록 `sections` materialized projection/cache를 추가한다.
 5. 다종목 all-topic collision 리포트를 정기적으로 돌려 unsafe merge를 감시한다.
 
 ## production 정책

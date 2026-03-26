@@ -81,7 +81,7 @@ def test_viewer_text_document_marks_stale_latest_sections():
     assert document.sections[1].latest.period.label == "2021"
 
 
-def test_viewer_text_document_uses_same_cadence_for_previous_period():
+def test_viewer_text_document_uses_same_freq_for_previous_period():
     blocks = [
         _text_block(
             0,
