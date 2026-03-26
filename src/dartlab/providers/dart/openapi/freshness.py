@@ -29,6 +29,9 @@ class FreshnessResult:
     missingCount: int = 0
     missingFilings: list[dict] = field(default_factory=list)
     source: str = "unknown"
+    # finance/report freshness
+    financeMissing: list[str] = field(default_factory=list)
+    reportMissing: list[str] = field(default_factory=list)
 
 
 def _freshnessPath(stockCode: str, category: str = "docs") -> Path:
@@ -78,11 +81,77 @@ def _loadLocalRceptNos(stockCode: str) -> tuple[set[str], str | None]:
     return rceptNos, latestDt
 
 
+def _checkFinanceReportFreshness(stockCode: str) -> tuple[list[str], list[str]]:
+    """finance/report parquet에서 최근 기간 누락 여부 체크.
+
+    Returns (financeMissing, reportMissing) — 누락된 기간 라벨 리스트.
+    예: ["2025Q4", "2025Q3"]
+    """
+    from dartlab.providers.dart.openapi.batch import (
+        _buildAllPeriods,
+        _dataPath,
+        _existingFinancePeriods,
+        _existingReportPeriods,
+    )
+    from dartlab.providers.dart.openapi.constants import CODE_TO_QUARTER
+
+    now = datetime.now()
+    currentYear = now.year
+    currentMonth = now.month
+    # 최근 2년치 기간만 체크 (너무 먼 과거는 무시)
+    # 미래 기간 제외: 분기 공시는 해당 분기 종료 후 ~45일 뒤 제출
+    # Q1(3월말) → 5월, Q2(6월말) → 8월, Q3(9월말) → 11월, Q4(12월말) → 다음해 3월
+    quarterCutoff = {
+        "11001": 5,  # Q1 → 5월 이후에야 가능
+        "11012": 8,  # Q2 → 8월 이후
+        "11013": 11,  # Q3 → 11월 이후
+        "11014": 3,  # Q4 → 다음해 3월 이후
+    }
+    allRecent = _buildAllPeriods(currentYear - 1)
+    recentPeriods = []
+    for y, c in allRecent:
+        yr = int(y)
+        cutMonth = quarterCutoff.get(c, 12)
+        if c == "11014":  # Q4는 다음해
+            if yr + 1 > currentYear or (yr + 1 == currentYear and currentMonth < cutMonth):
+                continue
+        else:
+            if yr > currentYear or (yr == currentYear and currentMonth < cutMonth):
+                continue
+        recentPeriods.append((y, c))
+
+    # finance
+    financePath = _dataPath("finance", stockCode)
+    existingFin = _existingFinancePeriods(financePath)
+    financeMissing = []
+    for y, c in recentPeriods:
+        if (y, c) not in existingFin:
+            q = CODE_TO_QUARTER.get(c, "Q4")
+            financeMissing.append(f"{y}{q}")
+
+    # report
+    from dartlab.providers.dart.openapi.constants import CODE_TO_QUARTER_KR
+
+    reportPath = _dataPath("report", stockCode)
+    existingRep = _existingReportPeriods(reportPath)
+    reportMissing = []
+    # report는 (year, quarterKr, apiType)이므로 기간만 체크 (apiType 무관)
+    existingRepPeriods = {(y, q) for y, q, _t in existingRep}
+    for y, c in recentPeriods:
+        qKr = CODE_TO_QUARTER_KR.get(c, "4분기")
+        if (y, qKr) not in existingRepPeriods:
+            q = CODE_TO_QUARTER.get(c, "Q4")
+            reportMissing.append(f"{y}{q}")
+
+    return financeMissing, reportMissing
+
+
 def checkFreshness(
     stockCode: str,
     *,
     ttlHours: int = _FRESHNESS_TTL_HOURS,
     forceCheck: bool = False,
+    includeFinanceReport: bool = True,
 ) -> FreshnessResult:
     """종목의 로컬 데이터가 최신인지 DART API로 확인."""
     from dartlab.core.guidance import emit
@@ -132,9 +201,27 @@ def checkFreshness(
     remoteRceptNos = set(filings["rcept_no"].drop_nulls().to_list())
     missing = remoteRceptNos - localRceptNos
 
+    # finance/report 기간 체크
+    finMissing: list[str] = []
+    repMissing: list[str] = []
+    if includeFinanceReport:
+        try:
+            finMissing, repMissing = _checkFinanceReportFreshness(stockCode)
+        except (ValueError, OSError, ImportError):
+            pass
+
     if not missing:
-        result = FreshnessResult(stockCode=stockCode, isFresh=True, localLatest=localLatest, source="dart_api")
-        emit("freshness:fresh", stockCode=stockCode)
+        allFresh = not finMissing and not repMissing
+        result = FreshnessResult(
+            stockCode=stockCode,
+            isFresh=allFresh,
+            localLatest=localLatest,
+            source="dart_api",
+            financeMissing=finMissing,
+            reportMissing=repMissing,
+        )
+        if allFresh:
+            emit("freshness:fresh", stockCode=stockCode)
         _saveFreshnessResult(result)
         return result
 
@@ -153,6 +240,8 @@ def checkFreshness(
         missingCount=len(missing),
         missingFilings=missingFilings,
         source="dart_api",
+        financeMissing=finMissing,
+        reportMissing=repMissing,
     )
     emit("freshness:stale", stockCode=stockCode, count=len(missing), latestReport=latestReport)
     _saveFreshnessResult(result)

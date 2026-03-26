@@ -3,12 +3,14 @@
 사용 예시::
 
     # DART (종목코드 = 숫자 → 자동 감지)
-    dartlab collect 005930                    # 단일 종목 docs
+    dartlab collect 005930                    # 단일 종목 (finance+report+docs 증분)
+    dartlab collect 005930 -c finance         # finance만 증분 수집
+    dartlab collect 005930 -c finance,report  # finance+report만
+    dartlab collect --check 005930            # freshness 체크 (docs+finance+report)
+    dartlab collect --incremental 005930      # 누락 공시 증분 수집
     dartlab collect --auto                    # 미수집 docs 전체
     dartlab collect --batch                   # 전체 상장, 미수집만
     dartlab collect --batch -c finance        # 전체 상장, 재무만
-    dartlab collect --check 005930            # freshness 체크
-    dartlab collect --incremental 005930      # 누락 공시 증분 수집
 
     # EDGAR (ticker = 영문 → 자동 감지)
     dartlab collect AAPL MSFT GOOGL           # 지정 ticker
@@ -104,8 +106,8 @@ def configure_parser(subparsers) -> None:
     parser.add_argument(
         "--mode",
         choices=["new", "all"],
-        default="new",
-        help="new=미수집만 / all=전체 (기본: new)",
+        default="all",
+        help="all=전체 종목 증분 / new=미수집 종목만 (기본: all)",
     )
     parser.add_argument(
         "--check",
@@ -167,12 +169,14 @@ def _printHelp(console) -> None:
     """통합 도움말."""
     console.print("[bold]dartlab collect[/] — DART/EDGAR 데이터 수집\n")
     console.print("  [bold]DART[/] (종목코드 = 숫자 → 자동 감지):")
-    console.print("  dartlab collect 005930              단일 종목 docs")
+    console.print("  dartlab collect 005930              단일 종목 (finance+report+docs)")
+    console.print("  dartlab collect 005930 -c finance   finance만 증분 수집")
+    console.print("  dartlab collect 005930 -c docs      docs만 수집")
+    console.print("  dartlab collect --check 005930      freshness 체크 (docs+finance+report)")
+    console.print("  dartlab collect --incremental 005930 누락 증분 수집")
     console.print("  dartlab collect --auto              미수집 docs 자동 수집")
-    console.print("  dartlab collect --stats             수집 현황")
-    console.print("  dartlab collect --check 005930      freshness 체크")
-    console.print("  dartlab collect --incremental 005930 누락 공시 증분 수집")
     console.print("  dartlab collect --batch             전체 상장 배치 수집")
+    console.print("  dartlab collect --stats             수집 현황")
     console.print()
     console.print("  [bold]EDGAR[/] (ticker = 영문 → 자동 감지):")
     console.print("  dartlab collect AAPL MSFT           지정 ticker 수집")
@@ -355,12 +359,29 @@ def _runCheck(console, args) -> int:
     if args.codes:
         for code in args.codes:
             result = checkFreshness(code, forceCheck=True)
-            if result.isFresh:
-                console.print(f"  ✓ {code} — 최신 상태 ({result.source})")
-            else:
-                console.print(f"  ⚠ {code} — 새 공시 {result.missingCount}건")
+            # docs freshness
+            if result.missingCount > 0:
+                console.print(f"  ⚠ {code} docs — 새 공시 {result.missingCount}건")
                 for f in result.missingFilings[:5]:
                     console.print(f"    {f['rcept_dt']} {f['report_nm']}")
+            else:
+                console.print(f"  ✓ {code} docs — 최신 상태")
+
+            # finance freshness
+            if result.financeMissing:
+                console.print(
+                    f"  ⚠ {code} finance — 미수집 {len(result.financeMissing)}기간: {', '.join(result.financeMissing[:6])}"
+                )
+            else:
+                console.print(f"  ✓ {code} finance — 최신 상태")
+
+            # report freshness
+            if result.reportMissing:
+                console.print(
+                    f"  ⚠ {code} report — 미수집 {len(result.reportMissing)}기간: {', '.join(result.reportMissing[:6])}"
+                )
+            else:
+                console.print(f"  ✓ {code} report — 최신 상태")
     else:
         console.print("[bold]전체 종목 freshness 스캔[/] (최근 7일)\n")
         df = scanMarketFreshness(days=7)
@@ -418,26 +439,46 @@ def _runIncremental(console, args) -> int:
 
 def _runCollect(console, args) -> int:
     codes = args.codes
+    cats = [c.strip() for c in args.categories.split(",")] if args.categories else ["finance", "report", "docs"]
 
     if len(codes) == 1:
-        from dartlab.providers.dart.openapi.zipCollector import ZipDocsCollector
+        code = codes[0]
+        result: dict[str, int] = {}
 
-        try:
-            collector = ZipDocsCollector(codes[0])
-            count = collector.collect(
-                includeQuarterly=not args.annual_only,
-                showProgress=True,
-            )
-            console.print(f"\n[bold green]완료[/]: {count}개 섹션 저장")
-        except ValueError as e:
-            console.print(f"[red]{e}[/]")
-            return 1
+        # docs 수집
+        if "docs" in cats:
+            from dartlab.providers.dart.openapi.zipCollector import ZipDocsCollector
+
+            try:
+                collector = ZipDocsCollector(code)
+                count = collector.collect(
+                    includeQuarterly=not args.annual_only,
+                    showProgress=True,
+                )
+                result["docs"] = count
+            except ValueError as e:
+                console.print(f"[red]docs: {e}[/]")
+                result["docs"] = 0
+
+        # finance/report 증분 수집
+        frCats = [c for c in cats if c in ("finance", "report")]
+        if frCats:
+            from dartlab.providers.dart.openapi.batch import batchCollect
+
+            console.print(f"\n[bold]{', '.join(frCats)}[/] 증분 수집 중...")
+            counts = batchCollect([code], categories=frCats, incremental=True)
+            codeResult = counts.get(code, {})
+            for cat in frCats:
+                result[cat] = codeResult.get(cat, 0) if isinstance(codeResult, dict) else 0
+
+        summary = " / ".join(f"{k}: {v}" for k, v in result.items())
+        console.print(f"\n[bold green]완료[/]: {summary}")
     else:
         from dartlab.providers.dart.openapi.batch import batchCollect
 
-        results = batchCollect(codes, categories=["docs"])
+        results = batchCollect(codes, categories=cats)
         total = len(results)
-        success = sum(1 for v in results.values() if v.get("docs", 0) > 0)
+        success = sum(1 for v in results.values() if any(cnt > 0 for cnt in v.values()))
         console.print(f"\n[bold green]완료[/]: 성공 {success} / 총 {total}")
 
     return 0
