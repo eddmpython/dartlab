@@ -1,11 +1,11 @@
 <script lang="ts">
 	const stats = [
-		{ value: '2,700+', label: 'Korean companies', sub: 'financials + reports ready' },
-		{ value: '970+', label: 'US companies', sub: 'EDGAR 10-K/10-Q' },
-		{ value: '34,249', label: 'account mappings', sub: 'XBRL → unified snakeId' },
-		{ value: '545+', label: 'section mappings', sub: 'title → canonical topic' },
-		{ value: '97%', label: 'mapping rate', sub: 'across all listed companies' },
-		{ value: '47', label: 'financial ratios', sub: 'auto-calculated' }
+		{ value: '2,700+', label: 'Korean companies', sub: 'every filing structured' },
+		{ value: '970+', label: 'US companies', sub: 'same interface, different country' },
+		{ value: '34,249', label: 'account names resolved', sub: 'one revenue, not 47 variations' },
+		{ value: '545+', label: 'section variations', sub: 'all mapped to canonical topics' },
+		{ value: '97%', label: 'of raw data', sub: 'automatically structured' },
+		{ value: '47', label: 'ratios calculated', sub: 'before you even ask' }
 	];
 </script>
 

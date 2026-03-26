@@ -26,9 +26,9 @@
 						/>
 					</picture>
 				</div>
-				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">See the Complete Picture</h2>
+				<h2 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">Start Reading Companies, Not PDFs</h2>
 				<p class="text-dl-text-muted mb-3 text-lg">
-					Every filing, every section, every period — structured and ready.
+					One stock code. Every filing structured. Every period comparable.
 				</p>
 				<p class="text-sm text-dl-text-dim mb-8">One line of Python gives you what used to take days of PDF reading.</p>
 

@@ -6,7 +6,8 @@
 
 <h3>DartLab</h3>
 
-<p><b>One company map from electronic disclosure filings — DART + EDGAR</b></p>
+<p><b>One stock code. The whole story.</b></p>
+<p>DART + EDGAR filings, structured and comparable — in one line of Python.</p>
 
 <p>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>
@@ -99,21 +100,22 @@ One-click launch — no Python, no terminal, no package manager required. The de
 
 ## Quick Start
 
+Pick any company. Get the whole picture.
+
 ```python
 import dartlab
 
-c = dartlab.Company("005930")   # Samsung Electronics (DART)
-c.sections                      # full company map (topic × period)
-c.show("overview")              # open one topic
-c.BS                            # balance sheet
-c.ratios                        # financial ratio time series
-c.insights                      # 10-area grades (A~F)
-c.filings()                     # disclosure document list
+# Samsung Electronics — from raw filings to structured data
+c = dartlab.Company("005930")
+c.sections                      # every topic, every period, side by side
+c.show("businessOverview")      # what this company actually does
+c.diff("businessOverview")      # what changed since last year
+c.BS                            # standardized balance sheet
+c.ratios                        # 47 financial ratios, already calculated
 
-us = dartlab.Company("AAPL")    # Apple (EDGAR)
-us.sections
+# Apple — same interface, different country
+us = dartlab.Company("AAPL")
 us.show("business")
-us.BS
 us.ratios
 
 # No code needed — ask in natural language
@@ -122,13 +124,17 @@ dartlab.ask("Analyze Samsung Electronics financial health")
 
 ## What DartLab Is
 
-Every company files differently. The same "revenue" can appear as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations. Section titles change by company, year, and industry. Comparing two companies — or even the same company across years — means hours of manual realignment.
+A public company files hundreds of pages every quarter. Inside those pages is everything — revenue trends, risk warnings, management strategy, competitive position. The complete truth about a company, written by the company itself.
 
-DartLab solves this. Two standardization engines turn raw filings into a single, comparable company map:
+Nobody reads it.
 
-### Philosophy — Two Comparabilities
+Not because they don't want to. Because the same information is named differently by every company, structured differently every year, and scattered across formats designed for regulators, not readers. The same "revenue" appears as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations.
 
-**1. Compare any period within a company.**
+DartLab changes who can access this information. Two engines turn raw filings into one comparable map:
+
+### The Two Problems DartLab Solves
+
+**1. The same company says different things differently every year.**
 
 Sections horizontalization normalizes every disclosure section into a **topic × period** grid. Different titles across years and industries all resolve to the same canonical topic:
 
@@ -153,7 +159,7 @@ Kakao      "2. 사업의 내용"               → businessOverview
 
 The mapping pipeline: **text normalization** → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic. ~95%+ mapping rate across all listed companies. Each cell keeps the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
 
-**2. Compare any company against any other.**
+**2. Every company names the same number differently.**
 
 Account standardization normalizes every XBRL account through a 4-step pipeline:
 
@@ -1003,7 +1009,7 @@ The [DartLab Blog](https://eddmpython.github.io/dartlab/blog/) covers practical 
 | Tier | Scope |
 |------|-------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, CIS, index, filings, profile), EDGAR Company core, valuation, forecast, simulation |
-| **Beta** | EDGAR power-user (SCE, notes, cadence, coverage), insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text tools, ask/chat, OpenDart, OpenEdgar, Server API, MCP, CLI subcommands |
+| **Beta** | EDGAR power-user (SCE, notes, freq, coverage), insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text tools, ask/chat, OpenDart, OpenEdgar, Server API, MCP, CLI subcommands |
 | **Experimental** | AI tool calling, export |
 | **Alpha** | Desktop App (Windows .exe) — functional but incomplete, Sections Viewer — not yet fully structured |
 

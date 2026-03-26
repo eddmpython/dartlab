@@ -68,13 +68,13 @@
 
 <svelte:head>
 	<title>DartLab — {brand.description}</title>
-	<meta name="description" content="Stop reading 200-page PDFs. DartLab turns Korean DART and US EDGAR filings into structured, comparable data — financials, text, and reports in one Python object. 2,700+ Korean and 970+ US companies ready to analyze." />
+	<meta name="description" content="Every company tells its story in filings. DartLab makes it readable. One stock code turns Korean DART and US EDGAR filings into structured, comparable data — 2,700+ Korean and 970+ US companies, one line of Python." />
 	<meta name="keywords" content="DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab, sections, company analysis, financial data, 전자공시, 사업보고서, 재무제표, 공시분석, 다트, DART전자공시, 한국주식분석" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/" />
 
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="DartLab — {brand.description}" />
-	<meta property="og:description" content="DART 전자공시와 EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리. 종목코드 하나면 2,700개 한국 기업과 970개 미국 기업의 재무제표, 사업보고서, 공시 텍스트를 구조화된 데이터로 분석합니다." />
+	<meta property="og:description" content="기업의 모든 진실은 공시에 있다. DartLab은 DART 전자공시와 EDGAR 공시를 읽을 수 있게 만든다. 종목코드 하나면 2,700+ 한국 기업과 970+ 미국 기업의 재무제표, 사업보고서를 구조화된 데이터로." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
@@ -84,7 +84,7 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="DartLab — {brand.description}" />
-	<meta name="twitter:description" content="DART 전자공시와 EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리. 종목코드 하나면 2,700개 한국 기업과 970개 미국 기업의 재무제표, 사업보고서를 구조화된 데이터로 분석합니다." />
+	<meta name="twitter:description" content="기업의 모든 진실은 공시에 있다. DartLab은 DART 전자공시와 EDGAR 공시를 읽을 수 있게 만든다. 종목코드 하나면 2,700+ 한국 기업과 970+ 미국 기업의 재무제표, 사업보고서를 구조화된 데이터로." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 
 	{@html `<script type="application/ld+json">${homepageJsonLd}</script>`}

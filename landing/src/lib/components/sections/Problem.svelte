@@ -6,8 +6,8 @@
 <section class="py-24 px-6">
 	<div class="mx-auto max-w-4xl">
 		<div class="text-center mb-16">
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">You Shouldn't Need a Week to Read One Company</h2>
-			<p class="text-dl-text-muted text-lg max-w-2xl mx-auto">Annual reports are 200+ pages. Quarterly filings pile up. The data you need is buried across documents, formats, and years.</p>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">The Truth About Every Company Is Already Public</h2>
+			<p class="text-dl-text-muted text-lg max-w-2xl mx-auto">It's just unreadable. Annual reports are 200+ pages, quarterly filings pile up, and the data you need is buried across documents, formats, and years.</p>
 		</div>
 
 		<div class="grid md:grid-cols-2 gap-5">

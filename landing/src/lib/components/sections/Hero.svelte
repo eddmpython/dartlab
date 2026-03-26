@@ -32,16 +32,16 @@
 		</Badge>
 
 		<h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-			<span class="text-dl-text">The Complete Picture</span><br />
-			<span class="text-dl-text">of Any </span><span
+			<span class="text-dl-text">Every Company Tells Its Story</span><br />
+			<span class="text-dl-text">in Filings. </span><span
 				class="bg-gradient-to-r from-dl-primary via-dl-primary-light to-dl-primary bg-clip-text text-transparent"
-				>Company</span
+				>We Make It Readable</span
 			>
 		</h1>
 
 		<p class="text-lg md:text-xl text-dl-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-			Stop digging through PDFs. DartLab turns DART and EDGAR filings into<br />
-			one structured map — text, financials, and reports aligned across every period.
+			Hundreds of pages per quarter. Thousands of inconsistent formats.<br />
+			One stock code turns it all into structured, comparable data.
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 mb-16">
@@ -59,10 +59,10 @@
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
 			{#each [
-				{ value: '2,700+', unit: '', label: 'Korean companies ready' },
-				{ value: '970+', unit: '', label: 'US companies (EDGAR)' },
-				{ value: '329', unit: '', label: 'topics per company' },
-				{ value: '1 line', unit: '', label: 'of Python to start' }
+				{ value: '2,700+', unit: '', label: 'Korean companies structured' },
+				{ value: '970+', unit: '', label: 'US companies (SEC EDGAR)' },
+				{ value: '329', unit: '', label: 'topics mapped per company' },
+				{ value: '1 line', unit: '', label: "of Python. That's it." }
 			] as stat}
 				<div
 					class="px-4 py-3 rounded-lg bg-dl-bg-card/50 border border-dl-border/50 hover:border-dl-primary/20 transition-colors"
