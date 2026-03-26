@@ -151,10 +151,16 @@ _PATTERN_MAPPINGS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^환경및안전관련허가/?신고사항(?:\(상세\))?$"), "environmentRegulation"),
     (re.compile(r"^\d+-\d+\.?사업의내용과관련된사항$"), "businessOverview"),
     # 지재권 넓은 캐치: 특허, 상표, 디자인, 실용신안 변형
-    (re.compile(r"^(?:.*)?특허권?(?:등록현황|보유(?:세부)?현황|세부내역|등)(?:_.+)?(?:\(상세\)|\[상세\])?$"), "intellectualProperty"),
+    (
+        re.compile(r"^(?:.*)?특허권?(?:등록현황|보유(?:세부)?현황|세부내역|등)(?:_.+)?(?:\(상세\)|\[상세\])?$"),
+        "intellectualProperty",
+    ),
     (re.compile(r"^(?:.*)?상표(?:권|등록)(?:현황|세부내역|의주요내용)(?:\(상세\))?$"), "intellectualProperty"),
     (re.compile(r"^(?:.*)?디자인(?:개발)?등록현황(?:\(상세\))?$"), "intellectualProperty"),
-    (re.compile(r"^지(?:적|식)재(?:산|선)권(?:보유(?:현황|내역)|소유내역|세부목록|등|상세)(?:\[상세\]|\(상세\))?$"), "intellectualProperty"),
+    (
+        re.compile(r"^지(?:적|식)재(?:산|선)권(?:보유(?:현황|내역)|소유내역|세부목록|등|상세)(?:\[상세\]|\(상세\))?$"),
+        "intellectualProperty",
+    ),
     (re.compile(r"^(?:보유기술)?특허현황(?:\(상세\))?$"), "intellectualProperty"),
     (re.compile(r"^사업과관련된.+지(?:적|식)재(?:산|선)권.+$"), "intellectualProperty"),
     (re.compile(r"^특허.+지(?:적|식)재(?:산|선)권현황\(.+\)$"), "intellectualProperty"),
@@ -191,7 +197,12 @@ _PATTERN_MAPPINGS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^지역냉난방사업자별.+$"), "productService"),
     # --- 055 4차: 넓은 캐치 패턴 (1사 회사특화 상세표 커버) ---
     # 지재권 최종 캐치: 특허/상표/디자인/저작권/실용신안 키워드 포함
-    (re.compile(r"^(?:.*)?(?:특허|상표|디자인|저작권|실용신안)(?:권)?(?:.*)?(?:현황|내역|목록|리스트|보유|등록|출원|명칭)(?:.*)?$"), "intellectualProperty"),
+    (
+        re.compile(
+            r"^(?:.*)?(?:특허|상표|디자인|저작권|실용신안)(?:권)?(?:.*)?(?:현황|내역|목록|리스트|보유|등록|출원|명칭)(?:.*)?$"
+        ),
+        "intellectualProperty",
+    ),
     (re.compile(r"^지(?:적|식)재(?:산|선)권(?:.*)?$"), "intellectualProperty"),
     (re.compile(r"^상세표-\d+\.?지(?:적|식)재(?:산|선)권$"), "intellectualProperty"),
     (re.compile(r"^(?:.*)?보유특허현황$"), "intellectualProperty"),
