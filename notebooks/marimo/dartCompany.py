@@ -126,6 +126,12 @@ def _(c):
 
 @app.cell
 def _(c):
+    c.insights
+    return
+
+
+@app.cell
+def _(c):
     c.filings()
     return
 

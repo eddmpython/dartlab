@@ -13,7 +13,6 @@ __generated_with = "0.21.1"
 app = marimo.App(width="medium")
 
 
-# ── Company 생성 ──────────────────────────────────────────────
 @app.cell
 def _():
     import dartlab
@@ -23,7 +22,6 @@ def _():
     return (c,)
 
 
-# ── sections: 회사 전체 맵 ────────────────────────────────────
 @app.cell
 def _(c):
     # topic × period 수평화 DataFrame
@@ -38,7 +36,6 @@ def _(c):
     return
 
 
-# ── show: topic 열기 ──────────────────────────────────────────
 @app.cell
 def _(c):
     # 10-K riskFactors → 서술형 블록
@@ -53,7 +50,6 @@ def _(c):
     return
 
 
-# ── 재무제표 ──────────────────────────────────────────────────
 @app.cell
 def _(c):
     c.BS  # Balance Sheet
@@ -85,7 +81,6 @@ def _(c):
     return
 
 
-# ── trace / diff ──────────────────────────────────────────────
 @app.cell
 def _(c):
     c.trace("riskFactors")
@@ -99,14 +94,6 @@ def _(c):
     return
 
 
-# ── 분석 엔진 ─────────────────────────────────────────────────
-@app.cell
-def _(c):
-    # 섹터 분류
-    c.sector
-    return
-
-
 @app.cell
 def _(c):
     # 인사이트 등급 (7영역)
@@ -114,7 +101,6 @@ def _(c):
     return
 
 
-# ── 보고서 목록 ───────────────────────────────────────────────
 @app.cell
 def _(c):
     c.filings()

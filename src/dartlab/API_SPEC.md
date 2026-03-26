@@ -48,10 +48,10 @@ us.market                    # "US"
 
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
-| `dartlab.engines.company.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
-| `dartlab.engines.company.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
-| `dartlab.engines.company.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
-| `dartlab.engines.company.dart.Company.resolve(codeOrName)` | str \| None | 종목코드/회사명 → 종목코드 |
+| `dartlab.providers.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
+| `dartlab.providers.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
+| `dartlab.providers.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
+| `dartlab.providers.dart.Company.resolve(codeOrName)` | str \| None | 종목코드/회사명 → 종목코드 |
 
 ### 핵심 property
 

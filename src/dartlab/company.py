@@ -25,6 +25,7 @@ def _discover() -> None:
 
     # entry_points 기반 외부 플러그인 (향후)
     from dartlab.core.plugins import discover as _pluginDiscover
+
     _pluginDiscover()
 
     # priority 순 정렬 (낮을수록 먼저)
@@ -59,6 +60,4 @@ def Company(codeOrName: str) -> CompanyProtocol:
         except (ValueError, FileNotFoundError, OSError):
             continue
 
-    raise ValueError(
-        f"'{codeOrName}'을(를) 찾을 수 없습니다. dartlab.search('{codeOrName}')로 검색해 보세요."
-    )
+    raise ValueError(f"'{codeOrName}'을(를) 찾을 수 없습니다. dartlab.search('{codeOrName}')로 검색해 보세요.")
