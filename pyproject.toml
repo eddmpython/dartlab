@@ -60,6 +60,7 @@ dependencies = [
     "polars>=1.0.0,<2",
     "requests>=2.32.5,<3",
     "rich>=14.3.3,<15",
+    "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",
 ]
 
@@ -75,7 +76,6 @@ llm-anthropic = [
 ]
 charts = [
     "networkx>=3.6.1,<4",
-    "plotly>=5.0.0,<6",
     "scipy>=1.17.1,<2",
 ]
 ai = [
@@ -84,9 +84,6 @@ ai = [
     "msgpack>=1.1.0,<2",
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
-]
-event = [
-    "yfinance>=0.2.30,<1",
 ]
 mcp = [
     "mcp[cli]>=1.0,<2",
@@ -122,14 +119,12 @@ all = [
     "openai>=1.0.0,<3",
     "anthropic>=0.30.0,<2",
     "networkx>=3.6.1,<4",
-    "plotly>=5.0.0,<6",
     "scipy>=1.17.1,<2",
     "fastapi>=0.135.1,<1",
     "httpx>=0.28.1,<1",
     "msgpack>=1.1.0,<2",
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
-    "yfinance>=0.2.30,<1",
 ]
 
 [project.scripts]

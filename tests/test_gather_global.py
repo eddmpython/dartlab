@@ -272,7 +272,7 @@ class TestPriceFallback:
         """모든 도메인이 load_domain으로 로드 가능."""
         from dartlab.gather.domains import load_domain
 
-        for name in ("naver", "yahoo", "yahoo_direct", "fmp"):
+        for name in ("naver", "yahoo_direct", "fmp"):
             module = load_domain(name)
             assert hasattr(module, "fetch_price")
 

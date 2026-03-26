@@ -1,38 +1,60 @@
-"""주가 데이터 통합.
+"""주가 데이터 통합 — gather 인프라 기반.
 
-yfinance를 통해 KR/US 주가를 가져온다. 선택적 의존성.
+gather/history + gather/domains/yahoo_direct를 활용하여
+KR/US 주가 히스토리 + 시장 벤치마크 수익률을 가져온다.
 
 사용법::
 
     from dartlab.analysis.comparative.event.price import get_prices
 
-    # 한국 — 005930.KS 형식으로 변환
+    # 한국
     df = get_prices("005930", start="2023-01-01", end="2024-12-31")
 
     # 미국
-    df = get_prices("AAPL", start="2023-01-01", end="2024-12-31")
+    df = get_prices("AAPL", start="2023-01-01", end="2024-12-31", market="US")
 """
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 import polars as pl
 
-
-def _yf_ticker(stock_code: str, market: str = "KR") -> str:
-    """종목코드를 yfinance ticker로 변환."""
-    if market == "KR":
-        return f"{stock_code}.KS"
-    return stock_code
+log = logging.getLogger(__name__)
 
 
-def _ensure_yfinance():
-    """yfinance 설치 확인."""
+def _rows_to_df(rows: list[dict]) -> pl.DataFrame:
+    """gather 히스토리 rows → date/close/returns DataFrame."""
+    empty = {"date": pl.Date, "close": pl.Float64, "returns": pl.Float64}
+    if not rows:
+        return pl.DataFrame(schema=empty)
+
+    df = pl.DataFrame(rows)
+    df = df.select(
+        pl.col("date").cast(pl.Date),
+        pl.col("close").cast(pl.Float64),
+    ).sort("date")
+
+    df = df.with_columns(
+        (pl.col("close") / pl.col("close").shift(1) - 1.0).alias("returns"),
+    )
+    return df
+
+
+def _run_async(coro):
+    """동기 컨텍스트에서 async 함수 실행."""
     try:
-        import yfinance  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "주가 데이터에는 yfinance가 필요합니다.\n설치: pip install yfinance\n또는: pip install dartlab[event]"
-        )
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(lambda: asyncio.run(coro)).result()
+    return asyncio.run(coro)
 
 
 def get_prices(
@@ -53,35 +75,10 @@ def get_prices(
     Returns:
         date, close, returns 컬럼의 DataFrame.
     """
-    _ensure_yfinance()
-    import yfinance as yf
+    from dartlab.gather.history import fetch
 
-    ticker = _yf_ticker(stock_code, market)
-    data = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
-
-    if data.empty:
-        return pl.DataFrame(schema={"date": pl.Date, "close": pl.Float64, "returns": pl.Float64})
-
-    # pandas → polars 변환
-    data = data.reset_index()
-
-    # yfinance가 MultiIndex 컬럼을 반환하는 경우 처리
-    if hasattr(data.columns, "levels"):
-        data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
-
-    df = pl.from_pandas(data[["Date", "Close"]].rename(columns={"Date": "date", "Close": "close"}))
-    df = df.with_columns(
-        pl.col("date").cast(pl.Date),
-        pl.col("close").cast(pl.Float64),
-    )
-    df = df.sort("date")
-
-    # 일별 수익률 계산
-    df = df.with_columns(
-        (pl.col("close") / pl.col("close").shift(1) - 1.0).alias("returns"),
-    )
-
-    return df
+    rows = _run_async(fetch(stock_code, start=start, end=end, market=market))
+    return _rows_to_df(rows)
 
 
 def get_market_returns(
@@ -90,7 +87,7 @@ def get_market_returns(
     end: str,
     market: str = "KR",
 ) -> pl.DataFrame:
-    """시장 벤치마크 수익률.
+    """시장 벤치마크 수익률 (KOSPI / S&P 500).
 
     Args:
         start: 시작일.
@@ -100,27 +97,20 @@ def get_market_returns(
     Returns:
         date, close, returns 컬럼의 DataFrame.
     """
-    _ensure_yfinance()
-    import yfinance as yf
+    from dartlab.gather.domains import yahoo_direct
+    from dartlab.gather.http import GatherHttpClient
 
     ticker = "^KS11" if market == "KR" else "^GSPC"
-    data = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
 
-    if data.empty:
-        return pl.DataFrame(schema={"date": pl.Date, "close": pl.Float64, "returns": pl.Float64})
+    async def _fetch():
+        client = GatherHttpClient()
+        try:
+            return await yahoo_direct.fetch_history(ticker, client, start=start, end=end, market="US")
+        finally:
+            try:
+                await client.aclose()
+            except AttributeError:
+                client.close()
 
-    data = data.reset_index()
-    if hasattr(data.columns, "levels"):
-        data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
-
-    df = pl.from_pandas(data[["Date", "Close"]].rename(columns={"Date": "date", "Close": "close"}))
-    df = df.with_columns(
-        pl.col("date").cast(pl.Date),
-        pl.col("close").cast(pl.Float64),
-    )
-    df = df.sort("date")
-    df = df.with_columns(
-        (pl.col("close") / pl.col("close").shift(1) - 1.0).alias("returns"),
-    )
-
-    return df
+    rows = _run_async(_fetch())
+    return _rows_to_df(rows)

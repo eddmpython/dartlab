@@ -5,11 +5,11 @@ from __future__ import annotations
 from ..market_config import get_market_config
 
 # 데이터 유형별 fallback 순서 (KR 기본값 — 하위호환)
-PRICE_FALLBACK = ["naver", "yahoo_direct", "yahoo"]
+PRICE_FALLBACK = ["naver", "yahoo_direct"]
 CONSENSUS_FALLBACK = ["naver", "yahoo_direct"]
 FLOW_FALLBACK = ["naver"]
 DIVIDENDS_FALLBACK = ["yahoo_direct", "fmp"]
-HISTORY_FALLBACK = ["yahoo_direct", "yahoo"]
+HISTORY_FALLBACK = ["yahoo_direct"]
 
 
 def get_price_fallback(market: str = "KR") -> list[str]:
@@ -24,10 +24,6 @@ def load_domain(name: str):
         from . import naver
 
         return naver
-    if name == "yahoo":
-        from . import yahoo
-
-        return yahoo
     if name == "yahoo_direct":
         from . import yahoo_direct
 

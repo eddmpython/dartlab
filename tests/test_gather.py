@@ -200,7 +200,6 @@ class TestDataTypes:
                     flow=FlowData(foreign_net=-1000, source="naver"),
                     sector_per=15.0,
                 ),
-                "yahoo": GatherResult(domain="yahoo", error="yfinance 미설치"),
             },
         )
         assert snap.price is not None
@@ -209,7 +208,6 @@ class TestDataTypes:
         assert snap.consensus.target_price == 300000
         assert snap.flow is not None
         assert snap.sources_available == ["naver"]
-        assert snap.sources_failed == ["yahoo"]
 
     def test_gather_snapshot_to_market_snapshot(self):
         snap = GatherSnapshot(

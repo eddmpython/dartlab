@@ -12,9 +12,7 @@
     c.eventStudy(event_type="사업보고서")          # 유형별 필터
     c.eventStudy(window=EventWindow(pre=5, post=10))  # 커스텀 윈도우
 
-의존성::
-
-    pip install dartlab[event]   # yfinance 포함
+gather 인프라(naver chart API + yahoo v8 chart REST)를 통해 주가 데이터를 수집한다.
 """
 
 from dartlab.analysis.comparative.event.study import analyze_events, impacts_to_dataframe

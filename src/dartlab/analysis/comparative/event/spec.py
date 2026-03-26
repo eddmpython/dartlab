@@ -12,12 +12,12 @@ def buildSpec() -> dict:
             "models": ["Market Adjusted"],
             "metrics": ["CAR", "BHAR", "t-stat", "p-value"],
             "defaultWindow": "(-10, +20)",
-            "dependency": "yfinance (optional)",
+            "dependency": "gather (naver + yahoo_direct)",
         },
         "detail": {
             "analysisSteps": [
                 "filings() → 공시 발표일 목록",
-                "yfinance → 종목 + 시장 일별 수익률",
+                "gather 히스토리 → 종목 + 시장 일별 수익률",
                 "Market Adjusted AR = R_stock - R_market",
                 "CAR = 누적 비정상 수익률",
                 "BHAR = 매수-보유 비정상 수익률",

@@ -5,7 +5,7 @@
 ```
 event/
 ├── study.py    # CAR/BHAR 계산, t-test 검정
-├── price.py    # yfinance 기반 가격 데이터 수집
+├── price.py    # gather 인프라 기반 가격 데이터 수집
 ├── types.py    # EventStudyResult, EventImpact
 └── spec.py     # 메타데이터
 ```
@@ -18,9 +18,11 @@ event/
 - **t-test**: 통계적 유의성 검정 (p-value)
 - **이벤트 윈도우**: 발표일 기준 [-5, +5] 거래일 (기본값)
 
-## 의존성
+## 주가 데이터 소스
 
-- self-contained: duck-typed Company + yfinance (주가 데이터)
+- 개별종목 히스토리: `gather/history.py` fallback 체인 (naver → yahoo_direct → fmp)
+- 시장 벤치마크: `gather/domains/yahoo_direct.py` v8 chart API (KOSPI ^KS11, S&P ^GSPC)
+- yfinance 의존성 없음
 
 ## Company 부착
 
@@ -28,4 +30,4 @@ event/
 
 ## 안정성
 
-- Tier 3 (Experimental): yfinance 의존으로 외부 API 가용성에 영향받음
+- Tier 3 (Experimental)

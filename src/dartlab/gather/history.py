@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from .domains import HISTORY_FALLBACK, load_domain
@@ -47,21 +46,7 @@ async def fetch(
         try:
             module = load_domain(source_name)
 
-            if source_name == "yahoo":
-                # yfinance 기반 — 동기, client 인자 없음, pl.DataFrame 반환
-                if hasattr(module, "fetch_history"):
-                    result = await asyncio.to_thread(
-                        module.fetch_history,
-                        stock_code,
-                        start=start,
-                        end=end,
-                        market=market,
-                    )
-                    if result is not None and len(result) > 0:
-                        if hasattr(result, "to_dicts"):
-                            return result.to_dicts()
-                        return result
-            elif hasattr(module, "fetch_history"):
+            if hasattr(module, "fetch_history"):
                 result = await module.fetch_history(
                     stock_code,
                     client,
