@@ -21,6 +21,8 @@ COMMAND_SPECS = (
     CommandSpec("ask", "dartlab.cli.commands.ask"),
     CommandSpec("report", "dartlab.cli.commands.report"),
     CommandSpec("excel", "dartlab.cli.commands.excel"),
+    # 분석
+    CommandSpec("review", "dartlab.cli.commands.review"),
     # 수집
     CommandSpec("collect", "dartlab.cli.commands.collect"),
     # 서버 / 설정
