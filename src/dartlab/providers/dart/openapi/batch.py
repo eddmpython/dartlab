@@ -860,6 +860,7 @@ def batchCollectAll(
     mode: str = "new",
     maxWorkers: int | None = None,
     incremental: bool = True,
+    showProgress: bool = True,
 ) -> dict[str, dict[str, int]]:
     """전체 상장종목 배치 수집.
 
@@ -895,4 +896,5 @@ def batchCollectAll(
         categories=categories,
         maxWorkers=maxWorkers,
         incremental=incremental,
+        showProgress=showProgress,
     )
