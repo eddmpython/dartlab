@@ -163,7 +163,8 @@ def no_provider_message() -> str:
         '  6. OpenAI API      — dartlab.setup("openai")',
         '  7. 로컬 LLM        — dartlab.setup("ollama")',
         "",
-        '  설정 후: dartlab.ask("삼성전자 재무건전성 분석해줘")',
+        "  설정 후 다시 실행하세요:",
+        '     dartlab.ask("삼성전자 재무건전성 분석해줘")',
         "",
     ]
     return "\n".join(lines)

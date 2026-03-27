@@ -181,7 +181,11 @@ def governance():
     """
     from dartlab.market.governance import scan_governance
 
-    return scan_governance()
+    result = scan_governance()
+    if result is not None and hasattr(result, "is_empty") and result.is_empty():
+        print("\n  거버넌스 스캔 결과가 없습니다.")
+        print("  전체 시장 데이터가 필요합니다: dartlab.downloadAll('report')\n")
+    return result
 
 
 def workforce():
@@ -194,7 +198,11 @@ def workforce():
     """
     from dartlab.market.workforce import scan_workforce
 
-    return scan_workforce()
+    result = scan_workforce()
+    if result is not None and hasattr(result, "is_empty") and result.is_empty():
+        print("\n  인력 스캔 결과가 없습니다.")
+        print("  전체 시장 데이터가 필요합니다: dartlab.downloadAll('report')\n")
+    return result
 
 
 def capital():
@@ -207,7 +215,11 @@ def capital():
     """
     from dartlab.market.capital import scan_capital
 
-    return scan_capital()
+    result = scan_capital()
+    if result is not None and hasattr(result, "is_empty") and result.is_empty():
+        print("\n  주주환원 스캔 결과가 없습니다.")
+        print("  전체 시장 데이터가 필요합니다: dartlab.downloadAll('report')\n")
+    return result
 
 
 def debt():
@@ -220,7 +232,11 @@ def debt():
     """
     from dartlab.market.debt import scan_debt
 
-    return scan_debt()
+    result = scan_debt()
+    if result is not None and hasattr(result, "is_empty") and result.is_empty():
+        print("\n  부채 스캔 결과가 없습니다.")
+        print("  전체 시장 데이터가 필요합니다: dartlab.downloadAll('report')\n")
+    return result
 
 
 def screen(preset: str = "가치주"):
@@ -493,7 +509,7 @@ def ask(
         reflect: True면 답변 자체 검증 (1회 reflection).
 
     Returns:
-        str: 전체 답변 텍스트. (raw=True일 때만 Generator[str])
+        str | None: 전체 답변 텍스트. 설정 오류 시 None. (raw=True일 때만 Generator[str])
 
     Example::
 
@@ -526,9 +542,8 @@ def ask(
         if detected is None:
             from dartlab.core.ai.guide import no_provider_message
 
-            msg = no_provider_message()
-            print(msg)
-            raise RuntimeError("AI provider가 설정되지 않았습니다. dartlab.setup()을 실행하세요.")
+            print(no_provider_message())
+            return None
         provider = detected
 
     if len(args) == 2:
@@ -539,15 +554,21 @@ def ask(
 
         company, question = resolve_from_text(args[0])
         if company is None:
-            raise ValueError(
-                f"종목을 찾을 수 없습니다: '{args[0]}'\n"
-                "종목명 또는 종목코드를 포함해 주세요.\n"
-                "예: dartlab.ask('삼성전자 재무건전성 분석해줘')"
-            )
+            print(f"\n  종목을 찾을 수 없습니다: '{args[0]}'")
+            print("  종목명 또는 종목코드를 포함해 주세요.")
+            print("  예: dartlab.ask('삼성전자 재무건전성 분석해줘')")
+            print(f"  검색: dartlab.search('{args[0]}')\n")
+            return None
     elif len(args) == 0:
-        raise TypeError("질문을 입력해 주세요. 예: dartlab.ask('삼성전자 분석해줘')")
+        print("\n  질문을 입력해 주세요.")
+        print("  예: dartlab.ask('삼성전자 재무건전성 분석해줘')")
+        print("  예: dartlab.ask('005930', '영업이익률 추세는?')\n")
+        return None
     else:
-        raise TypeError(f"인자는 1~2개만 허용됩니다 (받은 수: {len(args)})")
+        print(f"\n  인자는 1~2개만 허용됩니다 (받은 수: {len(args)})")
+        print("  예: dartlab.ask('삼성전자 분석해줘')")
+        print("  예: dartlab.ask('005930', '영업이익률 추세는?')\n")
+        return None
 
     if raw:
         return _ask(

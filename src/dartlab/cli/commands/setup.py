@@ -212,7 +212,12 @@ def _do_oauth_login() -> None:
 
     print("  브라우저에서 ChatGPT 로그인 페이지를 엽니다...")
     print("  (120초 안에 로그인을 완료하세요)\n")
-    webbrowser.open(auth_url)
+    print("  브라우저가 자동으로 열리지 않으면 아래 URL을 직접 여세요:")
+    print(f"  {auth_url}\n")
+    try:
+        webbrowser.open(auth_url)
+    except Exception:
+        pass
 
     # 완료 대기
     for _ in range(120):
@@ -233,7 +238,9 @@ def _do_oauth_login() -> None:
         print('     dartlab ask 005930 "재무 건전성 분석"\n')
     else:
         print("\n  ✗ 시간 초과 — 120초 안에 로그인하지 못했습니다.\n")
-        print("  다시 시도: dartlab setup oauth-codex\n")
+        print("  아래 URL을 브라우저에 직접 붙여넣어 보세요:")
+        print(f"  {auth_url}\n")
+        print("  또는 다시 시도: dartlab.setup('chatgpt')\n")
 
 
 def _setup_codex(info: dict) -> None:

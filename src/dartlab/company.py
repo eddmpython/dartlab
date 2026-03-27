@@ -43,7 +43,11 @@ def Company(codeOrName: str) -> CompanyProtocol:
 
     normalized = codeOrName.strip()
     if not normalized:
-        raise ValueError("종목코드 또는 회사명을 입력해 주세요.")
+        raise ValueError(
+            "종목코드 또는 회사명을 입력해 주세요.\n"
+            "  예: Company('삼성전자') 또는 Company('005930')\n"
+            "  검색: dartlab.search('삼성')"
+        )
 
     # canHandle 체인: priority 순으로 시도
     firstError: Exception | None = None
@@ -70,4 +74,8 @@ def Company(codeOrName: str) -> CompanyProtocol:
             continue
 
     cause = f" (원인: {firstError})" if firstError else ""
-    raise ValueError(f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}. dartlab.search('{codeOrName}')로 검색해 보세요.")
+    raise ValueError(
+        f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}.\n"
+        f"  검색: dartlab.search('{codeOrName}')\n"
+        "  전체 목록: dartlab.listing()"
+    )
