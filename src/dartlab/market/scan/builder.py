@@ -2,10 +2,12 @@
 
 docs → changes, finance → 합산, report → apiType별 분리.
 실험 014/015에서 검증된 로직을 프로덕션화.
+배치를 중간 파일로 쓰고 마지막에 합산하여 segfault 방지.
 """
 
 from __future__ import annotations
 
+import shutil
 import time
 from pathlib import Path
 
@@ -24,6 +26,8 @@ SCAN_API_TYPES = [
     "capitalChange",
     "corporateBond",
 ]
+
+_BATCH = 200
 
 
 def _scanDir() -> Path:
@@ -53,6 +57,20 @@ def _reportDir() -> Path:
 
 def _log(msg: str) -> None:
     print(msg)
+
+
+def _mergeBatchFiles(batchDir: Path, outputPath: Path, *, how: str = "vertical") -> int:
+    """배치 파일들을 읽어서 1개로 합산. 반환: 총 행수."""
+    batchFiles = sorted(batchDir.glob("batch_*.parquet"))
+    if not batchFiles:
+        return 0
+
+    parts = [pl.read_parquet(str(f)) for f in batchFiles]
+    merged = pl.concat(parts, how=how)
+    merged.write_parquet(str(outputPath), compression="zstd")
+    totalRows = merged.height
+    del merged, parts
+    return totalRows
 
 
 # ── changes ──────────────────────────────────────────────────────────
@@ -146,6 +164,8 @@ def buildChanges(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
     outDir = _scanDir()
     outDir.mkdir(parents=True, exist_ok=True)
     outputPath = outDir / "changes.parquet"
+    batchDir = outDir / "_tmp_changes"
+    batchDir.mkdir(parents=True, exist_ok=True)
 
     allFiles = sorted(docsDir.glob("*.parquet"))
     if not allFiles:
@@ -158,11 +178,10 @@ def buildChanges(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
 
     t0 = time.perf_counter()
     batchChunks: list[pl.DataFrame] = []
-    batchParts: list[pl.DataFrame] = []
     success = 0
     failed = 0
     totalRows = 0
-    BATCH = 200
+    batchIdx = 0
 
     for i, pf in enumerate(allFiles):
         result = _buildRawChanges(pf, pf.stem, sinceYear)
@@ -173,24 +192,28 @@ def buildChanges(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
         else:
             failed += 1
 
-        if len(batchChunks) >= BATCH or i == len(allFiles) - 1:
+        if len(batchChunks) >= _BATCH or i == len(allFiles) - 1:
             if batchChunks:
-                batchParts.append(pl.concat(batchChunks))
+                batch = pl.concat(batchChunks)
+                batch.write_parquet(str(batchDir / f"batch_{batchIdx:03d}.parquet"), compression="zstd")
+                del batch
                 batchChunks = []
+                batchIdx += 1
 
         if verbose and (i + 1) % 500 == 0:
             _log(f"  [{i+1}/{len(allFiles)}] {success}ok {failed}fail {totalRows:,}rows {time.perf_counter()-t0:.0f}s")
 
-    if not batchParts:
+    if batchIdx == 0:
         if verbose:
             _log("  changes 결과 없음")
+        shutil.rmtree(batchDir, ignore_errors=True)
         return None
 
-    merged = pl.concat(batchParts)
-    merged.write_parquet(str(outputPath), compression="zstd")
+    _mergeBatchFiles(batchDir, outputPath)
+    shutil.rmtree(batchDir, ignore_errors=True)
+
     elapsed = time.perf_counter() - t0
     diskMb = outputPath.stat().st_size / 1024 / 1024
-
     if verbose:
         _log(f"  완료: {success}종목, {totalRows:,}행, {diskMb:.1f}MB, {elapsed:.0f}초")
 
@@ -206,6 +229,8 @@ def buildFinance(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
     outDir = _scanDir()
     outDir.mkdir(parents=True, exist_ok=True)
     outputPath = outDir / "finance.parquet"
+    batchDir = outDir / "_tmp_finance"
+    batchDir.mkdir(parents=True, exist_ok=True)
 
     allFiles = sorted(finDir.glob("*.parquet"))
     if not allFiles:
@@ -218,10 +243,9 @@ def buildFinance(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
 
     t0 = time.perf_counter()
     batchChunks: list[pl.DataFrame] = []
-    batchParts: list[pl.DataFrame] = []
     success = 0
     totalRows = 0
-    BATCH = 200
+    batchIdx = 0
 
     for i, pf in enumerate(allFiles):
         try:
@@ -246,24 +270,28 @@ def buildFinance(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
         totalRows += df.height
         success += 1
 
-        if len(batchChunks) >= BATCH or i == len(allFiles) - 1:
+        if len(batchChunks) >= _BATCH or i == len(allFiles) - 1:
             if batchChunks:
-                batchParts.append(pl.concat(batchChunks, how="diagonal_relaxed"))
+                batch = pl.concat(batchChunks, how="diagonal_relaxed")
+                batch.write_parquet(str(batchDir / f"batch_{batchIdx:03d}.parquet"), compression="zstd")
+                del batch
                 batchChunks = []
+                batchIdx += 1
 
         if verbose and (i + 1) % 500 == 0:
             _log(f"  [{i+1}/{len(allFiles)}] {success}ok {totalRows:,}rows {time.perf_counter()-t0:.0f}s")
 
-    if not batchParts:
+    if batchIdx == 0:
         if verbose:
             _log("  finance 결과 없음")
+        shutil.rmtree(batchDir, ignore_errors=True)
         return None
 
-    merged = pl.concat(batchParts, how="diagonal_relaxed")
-    merged.write_parquet(str(outputPath), compression="zstd")
+    _mergeBatchFiles(batchDir, outputPath, how="diagonal_relaxed")
+    shutil.rmtree(batchDir, ignore_errors=True)
+
     elapsed = time.perf_counter() - t0
     diskMb = outputPath.stat().st_size / 1024 / 1024
-
     if verbose:
         _log(f"  완료: {success}종목, {totalRows:,}행, {diskMb:.1f}MB, {elapsed:.0f}초")
 
@@ -290,9 +318,19 @@ def buildReport(*, sinceYear: int = 2021, verbose: bool = True) -> list[Path]:
 
     t0 = time.perf_counter()
 
-    # apiType별로 청크 모음
-    apiChunks: dict[str, list[pl.DataFrame]] = {at: [] for at in SCAN_API_TYPES}
-    apiRows: dict[str, int] = {at: 0 for at in SCAN_API_TYPES}
+    # apiType별 배치 디렉토리
+    apiBatchDirs: dict[str, Path] = {}
+    apiBatchIdx: dict[str, int] = {}
+    apiChunks: dict[str, list[pl.DataFrame]] = {}
+    apiRows: dict[str, int] = {}
+    for at in SCAN_API_TYPES:
+        bd = outDir / f"_tmp_{at}"
+        bd.mkdir(parents=True, exist_ok=True)
+        apiBatchDirs[at] = bd
+        apiBatchIdx[at] = 0
+        apiChunks[at] = []
+        apiRows[at] = 0
+
     processed = 0
 
     for i, pf in enumerate(allFiles):
@@ -307,7 +345,6 @@ def buildReport(*, sinceYear: int = 2021, verbose: bool = True) -> list[Path]:
         if "stockCode" not in df.columns and "stock_code" not in df.columns:
             df = df.with_columns(pl.lit(pf.stem).alias("stockCode"))
 
-        # year 필터 (정수 변환 가능한 것만)
         if "year" in df.columns:
             df = df.with_columns(
                 pl.col("year").cast(pl.Utf8).str.to_integer(strict=False).alias("_yearInt")
@@ -324,22 +361,44 @@ def buildReport(*, sinceYear: int = 2021, verbose: bool = True) -> list[Path]:
                 apiChunks[apiType].append(sub)
                 apiRows[apiType] += sub.height
 
+                if len(apiChunks[apiType]) >= _BATCH:
+                    batch = pl.concat(apiChunks[apiType], how="diagonal_relaxed")
+                    idx = apiBatchIdx[apiType]
+                    batch.write_parquet(
+                        str(apiBatchDirs[apiType] / f"batch_{idx:03d}.parquet"),
+                        compression="zstd",
+                    )
+                    del batch
+                    apiChunks[apiType] = []
+                    apiBatchIdx[apiType] = idx + 1
+
         if verbose and (i + 1) % 500 == 0:
             _log(f"  [{i+1}/{len(allFiles)}] {processed}ok {time.perf_counter()-t0:.0f}s")
 
-    # apiType별 저장
+    # 남은 청크 flush + 합산
     outputs: list[Path] = []
     for apiType in SCAN_API_TYPES:
-        chunks = apiChunks[apiType]
-        if not chunks:
+        # 남은 청크 쓰기
+        if apiChunks[apiType]:
+            batch = pl.concat(apiChunks[apiType], how="diagonal_relaxed")
+            idx = apiBatchIdx[apiType]
+            batch.write_parquet(
+                str(apiBatchDirs[apiType] / f"batch_{idx:03d}.parquet"),
+                compression="zstd",
+            )
+            del batch
+            apiBatchIdx[apiType] = idx + 1
+
+        if apiBatchIdx[apiType] == 0:
+            shutil.rmtree(apiBatchDirs[apiType], ignore_errors=True)
             continue
 
-        merged = pl.concat(chunks, how="diagonal_relaxed")
         outPath = outDir / f"{apiType}.parquet"
-        merged.write_parquet(str(outPath), compression="zstd")
+        _mergeBatchFiles(apiBatchDirs[apiType], outPath, how="diagonal_relaxed")
+        shutil.rmtree(apiBatchDirs[apiType], ignore_errors=True)
+
         diskMb = outPath.stat().st_size / 1024 / 1024
         outputs.append(outPath)
-
         if verbose:
             _log(f"  {apiType}: {apiRows[apiType]:,}행, {diskMb:.1f}MB")
 

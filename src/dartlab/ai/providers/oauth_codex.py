@@ -29,21 +29,67 @@ log = logging.getLogger(__name__)
 CODEX_API_BASE = "https://chatgpt.com/backend-api"
 CODEX_RESPONSES_PATH = "/codex/responses"
 
-AVAILABLE_MODELS = [
+_BUNDLED_MODELS = [
     "gpt-5.4",
-    "gpt-5.3",
     "gpt-5.3-codex",
-    "gpt-5.2",
     "gpt-5.2-codex",
-    "gpt-5.1",
-    "gpt-5.1-codex",
-    "gpt-5.1-codex-mini",
-    "o3",
-    "o4-mini",
-    "gpt-4.1",
-    "gpt-4.1-mini",
-    "gpt-4.1-nano",
+    "gpt-5.1-codex-max",
 ]
+
+_MODELS_CACHE: list[str] | None = None
+_MODELS_CACHE_TS: float = 0.0
+_MODELS_CACHE_TTL = 300.0  # 5분
+
+
+def _fetchRemoteModels(token: str) -> list[str] | None:
+    """원격 /models API에서 사용 가능한 모델 목록 조회 (Codex CLI 동일 방식)."""
+    url = f"{CODEX_API_BASE}/codex/models"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "originator": "codex_cli_rs",
+    }
+    accountId = oauthToken.get_account_id()
+    if accountId:
+        headers["chatgpt-account-id"] = accountId
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        models = []
+        for item in data if isinstance(data, list) else data.get("models", data.get("data", [])):
+            modelId = item.get("id") or item.get("model") if isinstance(item, dict) else str(item)
+            if modelId:
+                models.append(modelId)
+        return models if models else None
+    except (requests.RequestException, json.JSONDecodeError, ValueError):
+        return None
+
+
+def availableModels() -> list[str]:
+    """사용 가능한 모델 목록 — 원격 조회 + 캐시 + 번들 fallback."""
+    import time
+
+    global _MODELS_CACHE, _MODELS_CACHE_TS
+    now = time.time()
+    if _MODELS_CACHE and (now - _MODELS_CACHE_TS) < _MODELS_CACHE_TTL:
+        return _MODELS_CACHE
+
+    try:
+        token = oauthToken.get_valid_token()
+    except (TokenRefreshError, OSError):
+        token = None
+
+    if token:
+        remote = _fetchRemoteModels(token)
+        if remote:
+            _MODELS_CACHE = remote
+            _MODELS_CACHE_TS = now
+            return remote
+
+    _MODELS_CACHE = list(_BUNDLED_MODELS)
+    _MODELS_CACHE_TS = now
+    return _MODELS_CACHE
 
 
 class ChatGPTOAuthError(Exception):
