@@ -396,21 +396,18 @@ def fundingSourcesBlock(data: dict) -> list:
         )
     blocks.append(MetricBlock(metrics))
 
-    # 시계열 테이블
+    # 시계열 테이블 (행=항목, 열=기간)
     history = data.get("history", [])
     if len(history) >= 2:
-        histRows = []
+        cols = {"": ["내부유보", "주주자본", "금융차입", "영업조달"]}
         for h in history:
-            histRows.append(
-                {
-                    "기간": h["period"],
-                    "내부유보": f"{h['retainedPct']:.0f}%",
-                    "주주자본": f"{h['paidInPct']:.0f}%",
-                    "금융차입": f"{h['finDebtPct']:.0f}%",
-                    "영업조달": f"{h['opFundingPct']:.0f}%",
-                }
-            )
-        blocks.append(TableBlock("조달원 비중 추이", pl.DataFrame(histRows)))
+            cols[h["period"]] = [
+                f"{h['retainedPct']:.0f}%",
+                f"{h['paidInPct']:.0f}%",
+                f"{h['finDebtPct']:.0f}%",
+                f"{h['opFundingPct']:.0f}%",
+            ]
+        blocks.append(TableBlock("조달원 비중 추이", pl.DataFrame(cols)))
 
     # 보충 지표 (순차입금/EBITDA, 암묵적 차입금리)
     suppMetrics = []
