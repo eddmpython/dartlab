@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" fill="none">
+  <rect width="800" height="360" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">4가지 조달원 비중 추이 (2021→2025)</text>
+
+  <!-- Y axis labels -->
+  <text x="45" y="75" fill="#64748b" font-size="10" font-family="system-ui">100%</text>
+  <text x="45" y="145" fill="#64748b" font-size="10" font-family="system-ui">75%</text>
+  <text x="45" y="215" fill="#64748b" font-size="10" font-family="system-ui">50%</text>
+  <text x="45" y="285" fill="#64748b" font-size="10" font-family="system-ui">25%</text>
+
+  <!-- Grid lines -->
+  <line x1="70" y1="70" x2="760" y2="70" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="140" x2="760" y2="140" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="210" x2="760" y2="210" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="280" x2="760" y2="280" stroke="#1e293b" stroke-width="0.5"/>
+
+  <!-- Stacked bars: 2021, 2022, 2023, 2024, 2025 -->
+  <!-- 2021: 유보33 주주21 차입18 기타28 -->
+  <rect x="100" y="79" width="90" height="59" rx="2" fill="#3b82f6" opacity="0.8"/>
+  <rect x="100" y="138" width="90" height="38" rx="2" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="100" y="176" width="90" height="32" rx="2" fill="#ef4444" opacity="0.8"/>
+  <rect x="100" y="208" width="90" height="51" rx="2" fill="#334155"/>
+  <text x="145" y="113" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">33%</text>
+  <text x="145" y="161" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">21%</text>
+  <text x="145" y="196" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">18%</text>
+  <text x="145" y="290" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+
+  <!-- 2022: 유보35 주주18 차입17 기타30 -->
+  <rect x="230" y="76" width="90" height="63" rx="2" fill="#3b82f6" opacity="0.8"/>
+  <rect x="230" y="139" width="90" height="32" rx="2" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="230" y="171" width="90" height="31" rx="2" fill="#ef4444" opacity="0.8"/>
+  <rect x="230" y="202" width="90" height="55" rx="2" fill="#334155"/>
+  <text x="275" y="113" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">35%</text>
+  <text x="275" y="159" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">18%</text>
+  <text x="275" y="190" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">17%</text>
+  <text x="275" y="290" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+
+  <!-- 2023: 유보36 주주16 차입17 기타31 -->
+  <rect x="360" y="74" width="90" height="65" rx="2" fill="#3b82f6" opacity="0.8"/>
+  <rect x="360" y="139" width="90" height="29" rx="2" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="360" y="168" width="90" height="31" rx="2" fill="#ef4444" opacity="0.8"/>
+  <rect x="360" y="199" width="90" height="57" rx="2" fill="#334155"/>
+  <text x="405" y="113" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">36%</text>
+  <text x="405" y="157" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">16%</text>
+  <text x="405" y="188" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">17%</text>
+  <text x="405" y="290" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+
+  <!-- 2024: 유보31 주주13 차입29 기타27 -->
+  <rect x="490" y="85" width="90" height="56" rx="2" fill="#3b82f6" opacity="0.8"/>
+  <rect x="490" y="141" width="90" height="23" rx="2" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="490" y="164" width="90" height="52" rx="2" fill="#ef4444" opacity="0.8"/>
+  <rect x="490" y="216" width="90" height="42" rx="2" fill="#334155"/>
+  <text x="535" y="117" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">31%</text>
+  <text x="535" y="157" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">13%</text>
+  <text x="535" y="194" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">29%</text>
+  <text x="535" y="290" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+
+  <!-- 2025: 유보29 주주17 차입26 기타28 -->
+  <rect x="620" y="90" width="90" height="52" rx="2" fill="#3b82f6" opacity="0.8"/>
+  <rect x="620" y="142" width="90" height="31" rx="2" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="620" y="173" width="90" height="47" rx="2" fill="#ef4444" opacity="0.8"/>
+  <rect x="620" y="220" width="90" height="39" rx="2" fill="#334155"/>
+  <text x="665" y="121" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">29%</text>
+  <text x="665" y="162" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">17%</text>
+  <text x="665" y="200" text-anchor="middle" fill="#fff" font-size="10" font-family="system-ui">26%</text>
+  <text x="665" y="290" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
+
+  <!-- Legend -->
+  <rect x="160" y="320" width="14" height="14" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="180" y="332" fill="#94a3b8" font-size="11" font-family="system-ui">내부유보</text>
+  <rect x="280" y="320" width="14" height="14" rx="3" fill="#8b5cf6" opacity="0.8"/>
+  <text x="300" y="332" fill="#94a3b8" font-size="11" font-family="system-ui">주주자본</text>
+  <rect x="400" y="320" width="14" height="14" rx="3" fill="#ef4444" opacity="0.8"/>
+  <text x="420" y="332" fill="#94a3b8" font-size="11" font-family="system-ui">금융차입</text>
+  <rect x="520" y="320" width="14" height="14" rx="3" fill="#334155"/>
+  <text x="540" y="332" fill="#94a3b8" font-size="11" font-family="system-ui">기타부채</text>
+</svg>

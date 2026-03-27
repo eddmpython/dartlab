@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" fill="none">
+  <rect width="800" height="300" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">금융차입 비중 vs 내부유보 비중 — 역전 궤적</text>
+
+  <!-- Axes -->
+  <line x1="80" y1="250" x2="740" y2="250" stroke="#334155" stroke-width="1"/>
+  <line x1="80" y1="60" x2="80" y2="250" stroke="#334155" stroke-width="1"/>
+
+  <!-- Y labels -->
+  <text x="70" y="65" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">40%</text>
+  <text x="70" y="112" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">30%</text>
+  <text x="70" y="159" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">20%</text>
+  <text x="70" y="206" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">10%</text>
+
+  <!-- X labels -->
+  <text x="145" y="270" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <text x="310" y="270" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <text x="475" y="270" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+  <text x="640" y="270" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+  <text x="725" y="270" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
+
+  <!-- 내부유보 line: 33, 35, 36, 31, 29 → y: 127, 117, 112, 136, 145 -->
+  <polyline points="145,127 310,117 475,112 640,136 725,145" stroke="#3b82f6" stroke-width="2.5" fill="none"/>
+  <circle cx="145" cy="127" r="4" fill="#3b82f6"/>
+  <circle cx="310" cy="117" r="4" fill="#3b82f6"/>
+  <circle cx="475" cy="112" r="4" fill="#3b82f6"/>
+  <circle cx="640" cy="136" r="4" fill="#3b82f6"/>
+  <circle cx="725" cy="145" r="4" fill="#3b82f6"/>
+  <text x="145" y="119" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="system-ui">33%</text>
+  <text x="475" y="104" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="system-ui">36%</text>
+  <text x="725" y="137" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui">29%</text>
+
+  <!-- 금융차입 line: 18, 17, 17, 29, 26 → y: 164, 168, 168, 112, 126 -->
+  <polyline points="145,164 310,168 475,168 640,112 725,126" stroke="#ef4444" stroke-width="2.5" fill="none"/>
+  <circle cx="145" cy="164" r="4" fill="#ef4444"/>
+  <circle cx="310" cy="168" r="4" fill="#ef4444"/>
+  <circle cx="475" cy="168" r="4" fill="#ef4444"/>
+  <circle cx="640" cy="112" r="4" fill="#ef4444"/>
+  <circle cx="725" cy="126" r="4" fill="#ef4444"/>
+  <text x="145" y="180" text-anchor="middle" fill="#f87171" font-size="10" font-family="system-ui">18%</text>
+  <text x="640" y="104" text-anchor="middle" fill="#f87171" font-size="10" font-family="system-ui">29%</text>
+  <text x="725" y="118" text-anchor="middle" fill="#f87171" font-size="10" font-weight="bold" font-family="system-ui">26%</text>
+
+  <!-- 2024 cross marker -->
+  <line x1="640" y1="60" x2="640" y2="250" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+  <text x="640" y="55" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="system-ui">차입이 유보를 역전</text>
+
+  <!-- Legend -->
+  <line x1="230" y1="290" x2="250" y2="290" stroke="#3b82f6" stroke-width="2.5"/>
+  <text x="258" y="294" fill="#94a3b8" font-size="11" font-family="system-ui">내부유보</text>
+  <line x1="380" y1="290" x2="400" y2="290" stroke="#ef4444" stroke-width="2.5"/>
+  <text x="408" y="294" fill="#94a3b8" font-size="11" font-family="system-ui">금융차입</text>
+</svg>

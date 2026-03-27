@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <rect width="800" height="420" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">삼성SDI 자금 조달 구조 한눈에</text>
+
+  <!-- 4 source boxes -->
+  <rect x="40" y="60" width="170" height="130" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="125" y="88" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">내부유보</text>
+  <text x="125" y="118" text-anchor="middle" fill="#e2e8f0" font-size="28" font-weight="bold" font-family="system-ui">29%</text>
+  <text x="125" y="142" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">12.1조</text>
+  <text x="125" y="162" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">이익잉여금</text>
+
+  <rect x="225" y="60" width="170" height="130" rx="12" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="310" y="88" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="bold" font-family="system-ui">주주자본</text>
+  <text x="310" y="118" text-anchor="middle" fill="#e2e8f0" font-size="28" font-weight="bold" font-family="system-ui">17%</text>
+  <text x="310" y="142" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">7.0조</text>
+  <text x="310" y="162" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">자본금+자본잉여금</text>
+
+  <rect x="410" y="60" width="170" height="130" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="495" y="88" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold" font-family="system-ui">금융차입</text>
+  <text x="495" y="118" text-anchor="middle" fill="#e2e8f0" font-size="28" font-weight="bold" font-family="system-ui">26%</text>
+  <text x="495" y="142" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">10.9조</text>
+  <text x="495" y="162" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">차입금+사채</text>
+
+  <rect x="595" y="60" width="170" height="130" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="680" y="88" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="system-ui">영업조달</text>
+  <text x="680" y="118" text-anchor="middle" fill="#e2e8f0" font-size="28" font-weight="bold" font-family="system-ui">1%</text>
+  <text x="680" y="142" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">6,203억</text>
+  <text x="680" y="162" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">매입채무·선수금</text>
+
+  <!-- Trend arrow -->
+  <rect x="40" y="210" width="725" height="80" rx="10" fill="#1e293b"/>
+  <text x="60" y="238" fill="#94a3b8" font-size="12" font-family="system-ui">금융차입 비중 변화 (5년)</text>
+  <!-- bar chart inline -->
+  <rect x="60" y="255" width="108" height="16" rx="3" fill="#ef4444" opacity="0.4"/>
+  <text x="175" y="268" fill="#94a3b8" font-size="10" font-family="system-ui">2021 — 18%</text>
+  <rect x="280" y="255" width="108" height="16" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="395" y="268" fill="#94a3b8" font-size="10" font-family="system-ui">2023 — 17%</text>
+  <rect x="500" y="255" width="156" height="16" rx="3" fill="#ef4444" opacity="0.9"/>
+  <text x="663" y="268" fill="#f87171" font-size="10" font-weight="bold" font-family="system-ui">2025 — 26%</text>
+
+  <!-- Bottom flags -->
+  <rect x="40" y="310" width="230" height="90" rx="10" fill="#1e293b"/>
+  <text x="155" y="338" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">이자보상배율 -1.6배</text>
+  <text x="155" y="358" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">영업이익 적자 → 이자 감당 불가</text>
+  <text x="155" y="378" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">3배 이상이 안정 기준</text>
+
+  <rect x="285" y="310" width="230" height="90" rx="10" fill="#1e293b"/>
+  <text x="400" y="338" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">유동비율 89%</text>
+  <text x="400" y="358" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">100% 미만 — 단기 지급 주의</text>
+  <text x="400" y="378" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">150% 이상이 안정 기준</text>
+
+  <rect x="530" y="310" width="235" height="90" rx="10" fill="#1e293b"/>
+  <text x="648" y="338" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">Altman Z-Score 0.94</text>
+  <text x="648" y="358" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">1.81 미만 — 부실 경계 구간</text>
+  <text x="648" y="378" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">3.0 이상이 안전 구간</text>
+</svg>
