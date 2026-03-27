@@ -1836,8 +1836,40 @@ def _build_insights_section(company: Any) -> str | None:
 # Tiered Context Pipeline
 # ══════════════════════════════════════
 
-# skeleton tier에서 사용할 핵심 ratios 키
+# skeleton tier에서 사용할 핵심 ratios 키 (기본 6개)
 _SKELETON_RATIO_KEYS = ("roe", "debtRatio", "currentRatio", "operatingMargin", "fcf", "revenueGrowth3Y")
+
+# 질문 키워드 → 추가 비율 매핑 (skeleton 동적 확장)
+_SKELETON_EXTRA_RATIOS: dict[str, tuple[str, ...]] = {
+    "마진": ("grossMargin", "netMargin"),
+    "이익률": ("grossMargin", "netMargin"),
+    "수익성": ("grossMargin", "netMargin", "roa"),
+    "부채": ("interestCoverage", "debtEquityRatio"),
+    "건전성": ("interestCoverage", "quickRatio"),
+    "유동": ("quickRatio",),
+    "성장": ("operatingProfitGrowth", "netIncomeGrowth"),
+    "배당": ("dividendPayout", "dividendYield"),
+    "margin": ("grossMargin", "netMargin"),
+    "debt": ("interestCoverage", "debtEquityRatio"),
+    "growth": ("operatingProfitGrowth", "netIncomeGrowth"),
+    "dividend": ("dividendPayout", "dividendYield"),
+    "profitab": ("grossMargin", "netMargin", "roa"),
+}
+
+
+def _selectSkeletonRatioKeys(question: str | None = None) -> tuple[str, ...]:
+    """질문에 맞는 skeleton 비율 키를 선택. 기본 6개 + 질문 관련 최대 3개."""
+    if not question:
+        return _SKELETON_RATIO_KEYS
+    extras: list[str] = []
+    questionLower = question.lower()
+    for keyword, keys in _SKELETON_EXTRA_RATIOS.items():
+        if keyword in questionLower:
+            for k in keys:
+                if k not in _SKELETON_RATIO_KEYS and k not in extras:
+                    extras.append(k)
+    return _SKELETON_RATIO_KEYS + tuple(extras[:3])
+
 
 # skeleton tier에서 사용할 핵심 계정 (매출/영업이익/총자산)
 _SKELETON_ACCOUNTS_KR: dict[str, list[tuple[str, str]]] = {
@@ -1850,10 +1882,10 @@ _SKELETON_ACCOUNTS_EN: dict[str, list[tuple[str, str]]] = {
 }
 
 
-def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
+def build_context_skeleton(company: Any, question: str | None = None) -> tuple[str, list[str]]:
     """skeleton tier: ~500 토큰. tool calling provider용 최소 컨텍스트.
 
-    핵심 비율 6개 + 매출/영업이익/총자산 3계정 + insight 등급 1줄.
+    핵심 비율 6개 + 질문 관련 추가 비율 최대 3개 + 매출/영업이익/총자산 3계정 + insight 등급 1줄.
     상세 데이터는 도구로 조회하도록 안내.
     EDGAR(US) / DART(KR) 자동 감지.
     """
@@ -1910,33 +1942,56 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
                 parts.extend(["", f"## {section_title}{partial_note}", header, sep, *rows])
                 included.extend(["IS", "BS"])
 
-    # 핵심 비율 6개
+    # 핵심 비율 (기본 6개 + 질문 관련 최대 3개)
+    selectedRatioKeys = _selectSkeletonRatioKeys(question)
     ratios = get_headline_ratios(company)
     if ratios is not None and hasattr(ratios, "roe"):
         ratio_lines = []
-        for key in _SKELETON_RATIO_KEYS:
+        for key in selectedRatioKeys:
             val = getattr(ratios, key, None)
             if val is None:
                 continue
             label_map_kr = {
                 "roe": "ROE",
+                "roa": "ROA",
                 "debtRatio": "부채비율",
+                "debtEquityRatio": "부채/자본비율",
                 "currentRatio": "유동비율",
+                "quickRatio": "당좌비율",
                 "operatingMargin": "영업이익률",
+                "grossMargin": "매출총이익률",
+                "netMargin": "순이익률",
                 "fcf": "FCF",
                 "revenueGrowth3Y": "매출3Y CAGR",
+                "operatingProfitGrowth": "영업이익 성장률",
+                "netIncomeGrowth": "순이익 성장률",
+                "interestCoverage": "이자보상배율",
+                "dividendPayout": "배당성향",
+                "dividendYield": "배당수익률",
             }
             label_map_en = {
                 "roe": "ROE",
+                "roa": "ROA",
                 "debtRatio": "Debt Ratio",
+                "debtEquityRatio": "D/E Ratio",
                 "currentRatio": "Current Ratio",
+                "quickRatio": "Quick Ratio",
                 "operatingMargin": "Op. Margin",
+                "grossMargin": "Gross Margin",
+                "netMargin": "Net Margin",
                 "fcf": "FCF",
                 "revenueGrowth3Y": "Rev. 3Y CAGR",
+                "operatingProfitGrowth": "Op. Profit Growth",
+                "netIncomeGrowth": "Net Income Growth",
+                "interestCoverage": "Interest Coverage",
+                "dividendPayout": "Payout Ratio",
+                "dividendYield": "Div. Yield",
             }
             label = (label_map_en if is_us else label_map_kr).get(key, key)
             if key == "fcf":
                 ratio_lines.append(f"- {label}: {fmt_val(val)}")
+            elif key == "interestCoverage":
+                ratio_lines.append(f"- {label}: {val:.1f}x")
             else:
                 ratio_lines.append(f"- {label}: {val:.1f}%")
         if ratio_lines:
@@ -2020,7 +2075,7 @@ def build_context_tiered(
         (modules_dict, included_list, header_text)
     """
     if tier == "skeleton":
-        text, included = build_context_skeleton(company)
+        text, included = build_context_skeleton(company, question=question)
         return {"_skeleton": text}, included, ""
     elif tier == "focused":
         return build_context_focused(company, question, include, exclude)

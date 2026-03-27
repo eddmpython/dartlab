@@ -75,8 +75,8 @@ class NgrokTunnel(TunnelProvider):
 
             ngrok.disconnect(self._public_url)
             ngrok.kill()
-        except Exception:  # noqa: BLE001 — 종료 시 에러 무시
-            pass
+        except (ImportError, OSError) as e:
+            logger.debug("ngrok cleanup: %s", e)
 
 
 class CloudflareTunnel(TunnelProvider):

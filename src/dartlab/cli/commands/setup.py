@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from dartlab.cli.context import CLI_PROVIDERS
 from dartlab.cli.services.errors import CLIError
+
+log = logging.getLogger(__name__)
 
 _SETUP_CHOICES = [*CLI_PROVIDERS, "dart-key"]
 
@@ -152,9 +156,9 @@ def _do_oauth_login() -> None:
                 return
 
             params = parse_qs(parsed.query)
-            code = params.get("code", [None])[0]
-            cb_state = params.get("state", [None])[0]
-            error = params.get("error", [None])[0]
+            code = (params.get("code") or [None])[0]
+            cb_state = (params.get("state") or [None])[0]
+            error = (params.get("error") or [None])[0]
 
             if error:
                 result["error"] = error
@@ -216,8 +220,8 @@ def _do_oauth_login() -> None:
     print(f"  {auth_url}\n")
     try:
         webbrowser.open(auth_url)
-    except Exception:
-        pass
+    except OSError as e:
+        log.debug("browser open: %s", e)
 
     # 완료 대기
     for _ in range(120):

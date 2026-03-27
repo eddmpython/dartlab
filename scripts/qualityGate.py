@@ -4,6 +4,7 @@
     python scripts/qualityGate.py                    # 전체 검사
     python scripts/qualityGate.py --changed-only     # git 변경 파일만 (pre-commit용)
     python scripts/qualityGate.py --baseline-update  # 현재 수치를 baseline으로 저장
+    python scripts/qualityGate.py --record           # 히스토리에 현재 수치 기록
 
 규칙:
     1. 신규/변경 함수: 복잡도 D(25) 초과 금지
@@ -16,10 +17,12 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
 _BASELINE_PATH = _ROOT / "scripts" / "qualityBaseline.json"
+_HISTORY_PATH = _ROOT / "scripts" / "qualityHistory.jsonl"
 _SRC = str(_ROOT / "src" / "dartlab")
 
 # ── baseline ────────────────────────────────────────────────────
@@ -40,6 +43,60 @@ def _loadBaseline() -> dict:
 def _saveBaseline(data: dict) -> None:
     _BASELINE_PATH.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(f"baseline 저장: {_BASELINE_PATH}")
+
+
+# ── 히스토리 ────────────────────────────────────────────────────
+
+def _getGitCommit() -> str:
+    """현재 git commit hash (short)."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, cwd=str(_ROOT),
+        )
+        return result.stdout.strip() or "unknown"
+    except FileNotFoundError:
+        return "unknown"
+
+
+def _recordHistory(efCount: int, cdefCount: int, vultureCount: int,
+                   totalFiles: int = 0, totalFunctions: int = 0, totalLines: int = 0) -> None:
+    """qualityHistory.jsonl에 한 줄 추가."""
+    record = {
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "commit": _getGitCommit(),
+        "ef": efCount,
+        "cdef": cdefCount,
+        "vulture": vultureCount,
+        "files": totalFiles,
+        "functions": totalFunctions,
+        "lines": totalLines,
+    }
+    with open(_HISTORY_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+    print(f"히스토리 기록: {record['date']} commit={record['commit']} "
+          f"E/F={efCount} C+={cdefCount} vulture={vultureCount}")
+
+
+def _showHistory() -> None:
+    """히스토리 출력."""
+    if not _HISTORY_PATH.exists():
+        print("히스토리 없음")
+        return
+    records = []
+    for line in _HISTORY_PATH.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            records.append(json.loads(line))
+    if not records:
+        print("히스토리 없음")
+        return
+
+    print(f"\n{'날짜':>12} {'커밋':>8} {'E/F':>5} {'C+':>5} {'죽은코드':>8} {'파일':>6} {'함수':>6} {'줄':>8}")
+    print("-" * 70)
+    for r in records[-20:]:  # 최근 20건
+        print(f"{r['date']:>12} {r['commit']:>8} {r['ef']:>5} {r['cdef']:>5} "
+              f"{r['vulture']:>8} {r.get('files', '-'):>6} {r.get('functions', '-'):>6} "
+              f"{r.get('lines', '-'):>8}")
 
 
 # ── radon 복잡도 ────────────────────────────────────────────────
@@ -151,10 +208,39 @@ def _getChangedPythonFiles() -> list[str]:
 
 # ── main ────────────────────────────────────────────────────────
 
+def _countSource() -> dict:
+    """소스 파일/함수/줄 수 카운트."""
+    import ast as _ast
+    srcPath = Path(_SRC)
+    files = 0
+    functions = 0
+    lines = 0
+    for f in srcPath.rglob("*.py"):
+        rel = str(f.relative_to(srcPath))
+        if "_reference" in rel or "__pycache__" in rel:
+            continue
+        files += 1
+        try:
+            source = f.read_text(encoding="utf-8", errors="replace")
+            lines += len(source.splitlines())
+            tree = _ast.parse(source)
+            functions += sum(1 for n in _ast.walk(tree)
+                            if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef)))
+        except (SyntaxError, UnicodeDecodeError):
+            pass
+    return {"files": files, "functions": functions, "lines": lines}
+
+
 def main() -> int:
     args = sys.argv[1:]
     changedOnly = "--changed-only" in args
     baselineUpdate = "--baseline-update" in args
+    record = "--record" in args
+    showHist = "--history" in args
+
+    if showHist:
+        _showHistory()
+        return 0
 
     if baselineUpdate:
         items = _runRadon([_SRC])
@@ -167,6 +253,16 @@ def main() -> int:
             "vulture_count": vultureCount,
         })
         print(f"E/F: {efCount}, C+: {cdefCount}, vulture: {vultureCount}")
+        return 0
+
+    if record:
+        items = _runRadon([_SRC])
+        efCount = sum(1 for i in items if i["rank"] in ("E", "F"))
+        cdefCount = sum(1 for i in items if i["rank"] in ("C", "D", "E", "F"))
+        vultureCount = len(_runVulture([_SRC]))
+        counts = _countSource()
+        _recordHistory(efCount, cdefCount, vultureCount,
+                      counts["files"], counts["functions"], counts["lines"])
         return 0
 
     if changedOnly:

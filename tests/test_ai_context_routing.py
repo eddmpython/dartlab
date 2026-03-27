@@ -810,6 +810,7 @@ def test_resolve_context_tier_defaults_to_focused_for_default_ask():
     assert _resolve_context_tier("oauth-codex", use_tools=False) == "focused"
     assert _resolve_context_tier("openai", use_tools=False) == "focused"
     assert _resolve_context_tier("openai", use_tools=True) == "skeleton"
+    assert _resolve_context_tier("oauth-codex", use_tools=True) == "skeleton"
 
 
 def test_resolve_snapshot_policy_skips_sections_and_report_routes():

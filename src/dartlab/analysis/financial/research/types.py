@@ -703,8 +703,6 @@ class ResearchResult:
             panels.append(Panel(et, title="[bold]이익의 질[/bold]", border_style="magenta"))
 
         if panels:
-            from rich.columns import Columns
-
             console.print(Columns(panels, equal=True, expand=True))
 
     def _renderRisk(self, console) -> None:

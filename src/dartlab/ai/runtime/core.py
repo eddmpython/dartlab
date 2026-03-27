@@ -19,6 +19,7 @@ dartlab.ask(), server UI, CLI가 모두 이 코어를 소비한다.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from typing import Any, Generator
 
@@ -35,6 +36,54 @@ from dartlab.ai.runtime.run_modes import (
     _run_light_mode,
     _run_stream,
 )
+
+# ── company=None 사전 종목 검색 ───────────────────────────
+
+_COMPARE_SPLIT_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)", re.IGNORECASE)
+
+
+def _prefetch_company_codes(question: str) -> str:
+    """질문에서 종목명을 추출하고 dartlab.search()로 종목코드를 사전 확인."""
+    # "삼성전자랑 하이닉스 비교해줘" → ["삼성전자", "하이닉스"]
+    parts = _COMPARE_SPLIT_RE.split(question)
+    candidates: list[str] = []
+    for p in parts:
+        p = p.strip()
+        # 비교 접속사 자체는 건너뜀
+        if not p or _COMPARE_SPLIT_RE.fullmatch(p):
+            continue
+        # "비교해줘", "분석해줘" 등 동사 제거
+        cleaned = re.sub(r"\s*(비교|분석|알려|설명|해줘|해주세요|해봐|좀).*$", "", p).strip()
+        if cleaned and len(cleaned) >= 2:
+            candidates.append(cleaned)
+
+    if not candidates:
+        return ""
+
+    results: list[str] = []
+    try:
+        import dartlab
+
+        for name in candidates[:4]:  # 최대 4개
+            try:
+                df = dartlab.search(name)
+                if df is not None and len(df) > 0:
+                    row = df.row(0, named=True)
+                    corpName = row.get("corp_name", row.get("회사명", name))
+                    stockCode = row.get("stock_code", row.get("종목코드", ""))
+                    if stockCode:
+                        results.append(f"- {corpName}: 종목코드 **{stockCode}**")
+            except (FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+                continue
+    except ImportError:
+        return ""
+
+    if not results:
+        return ""
+
+    header = "## 사전 종목코드 확인 결과\n아래 종목코드가 확인되었습니다. 도구 호출 시 이 코드를 사용하세요:\n"
+    return header + "\n".join(results)
+
 
 # ── 질문 복잡도 → 동적 max_turns ─────────────────────────
 
@@ -196,7 +245,7 @@ def _extract_data_date(company: Any) -> str | None:
 
 def _resolve_context_tier(provider: str, use_tools: bool) -> str:
     """standalone의 이진 선택과 server의 3단 선택을 통합."""
-    tool_capable = provider in {"openai", "ollama", "custom", "gemini"}
+    tool_capable = provider in {"openai", "ollama", "custom", "gemini", "oauth-codex"}
 
     if use_tools and tool_capable:
         return "skeleton"
@@ -713,6 +762,13 @@ def _analyze_inner(
 
     # Context 빌드
     context_text = ""
+
+    # company=None + tool capable이면 종목명 사전 검색으로 종목코드 제공
+    if company is None and use_tools:
+        _prefetch = _prefetch_company_codes(question)
+        if _prefetch:
+            context_text = _prefetch
+
     if company is not None:
         from dartlab.ai.context.builder import (
             _get_sector,
@@ -815,7 +871,7 @@ def _analyze_inner(
     _done_payload["_q_type"] = q_type
     _done_payload["_tool_call_names"] = []
     company_market = getattr(company, "market", "KR") if company else "KR"
-    allow_tool_guidance = use_tools and resolved_provider in {"openai", "ollama", "custom", "gemini"}
+    allow_tool_guidance = use_tools and resolved_provider in {"openai", "ollama", "custom", "gemini", "oauth-codex"}
     static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
         included_modules=_included_tables,

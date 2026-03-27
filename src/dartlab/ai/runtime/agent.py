@@ -7,7 +7,10 @@ OpenAI function calling 프로토콜을 사용.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any, Callable, Generator
+
+log = logging.getLogger(__name__)
 
 from dartlab.ai.providers.base import BaseProvider
 from dartlab.ai.runtime.scratchpad import Scratchpad
@@ -68,10 +71,10 @@ def agent_loop(
 
         # 도구 실행 + 결과 추가
         for tc in response.tool_calls:
-            # 중복 호출 방지
-            warning = pad.getDuplicateWarning(tc.name)
-            if warning:
-                messages.append(provider.format_tool_result(tc.id, warning))
+            # 중복/캐시/차단 3단계 검사
+            status, msg = pad.checkDuplicate(tc.name, tc.arguments)
+            if status in ("cached", "blocked"):
+                messages.append(provider.format_tool_result(tc.id, msg))
                 continue
 
             if on_tool_call:
@@ -111,8 +114,8 @@ def _buildReflectionPrompt(questionType: str | None = None) -> str:
         if skill and skill.checkpoints:
             checks = "\n".join(f"- {c}" for c in skill.checkpoints)
             return base + f"\n\n**추가 검증 기준 ({skill.name}):**\n{checks}"
-    except Exception:
-        pass
+    except (ImportError, KeyError, ValueError) as e:
+        log.debug("skill match: %s", e)
     return base
 
 
@@ -152,10 +155,13 @@ def agent_loop_stream(
     # 대화형 질문은 첫 턴 도구 강제 안 함
     _isConversation = question_type in ("대화", "메타")
 
+    # company=None이면 LLM이 searchCompany+데이터 조회까지 최소 2턴 필요
+    _forceToolTurns = 2 if company is None and not _isConversation else 1
+
     for _turn in range(max_turns):
-        # 첫 턴에서 회사 분석 질문이면 도구 호출 강제 (provider 지원 시)
+        # 분석 질문이면 초기 턴에서 도구 호출 강제 (provider 지원 시)
         kwargs: dict = {}
-        if _turn == 0 and force_tool_first_turn and not _isConversation and company is not None:
+        if _turn < _forceToolTurns and force_tool_first_turn and not _isConversation:
             kwargs["tool_choice"] = "any"
 
         try:
@@ -182,10 +188,10 @@ def agent_loop_stream(
         messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
 
         for tc in response.tool_calls:
-            # 중복 호출 방지
-            warning = pad.getDuplicateWarning(tc.name)
-            if warning:
-                messages.append(provider.format_tool_result(tc.id, warning))
+            # 중복/캐시/차단 3단계 검사
+            status, msg = pad.checkDuplicate(tc.name, tc.arguments)
+            if status in ("cached", "blocked"):
+                messages.append(provider.format_tool_result(tc.id, msg))
                 continue
 
             if on_tool_call:
@@ -198,6 +204,11 @@ def agent_loop_stream(
                 on_tool_result(tc.name, result)
 
             messages.append(provider.format_tool_result(tc.id, result))
+
+        # 3턴 이후부터 충분성 힌트 (autonomous뿐 아니라 일반 agent에도)
+        if _turn >= 2:
+            usageSummary = pad.getUsageSummary()
+            messages.append({"role": "user", "content": usageSummary + _SUFFICIENCY_HINT})
 
     # max_turns 도달 — 마지막 complete_with_tools의 answer 사용
     if response.answer and response.answer.strip():
@@ -355,10 +366,11 @@ def agentLoopAutonomous(
     pad = Scratchpad(tokenBudget=12000)
 
     _isConversation = questionType in ("대화", "메타")
+    _forceToolTurns = 2 if company is None and not _isConversation else 1
 
     for _turn in range(maxTurns):
         kwargs: dict = {}
-        if _turn == 0 and forceToolFirstTurn and not _isConversation and company is not None:
+        if _turn < _forceToolTurns and forceToolFirstTurn and not _isConversation:
             kwargs["tool_choice"] = "any"
 
         try:
@@ -379,9 +391,10 @@ def agentLoopAutonomous(
         messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
 
         for tc in response.tool_calls:
-            warning = pad.getDuplicateWarning(tc.name)
-            if warning:
-                messages.append(provider.format_tool_result(tc.id, warning))
+            # 중복/캐시/차단 3단계 검사
+            status, msg = pad.checkDuplicate(tc.name, tc.arguments)
+            if status in ("cached", "blocked"):
+                messages.append(provider.format_tool_result(tc.id, msg))
                 continue
 
             if onToolCall:

@@ -548,9 +548,9 @@ def _start_oauth_callback_server(port: int):
                 return
 
             params = parse_qs(parsed.query)
-            code = params.get("code", [None])[0]
-            state = params.get("state", [None])[0]
-            error = params.get("error", [None])[0]
+            code = (params.get("code") or [None])[0]
+            state = (params.get("state") or [None])[0]
+            error = (params.get("error") or [None])[0]
 
             if error:
                 _oauth_state["error"] = error

@@ -281,31 +281,37 @@ class OAuthCodexProvider(BaseProvider):
         input_items = []
 
         for m in messages:
-            if m["role"] == "system":
-                content = m["content"]
-                if isinstance(content, list):
-                    system_parts.extend(block.get("text", "") for block in content if isinstance(block, dict))
-                else:
-                    system_parts.append(content)
-            elif m["role"] == "assistant":
+            role = m["role"]
+            raw_content = m.get("content", "")
+
+            # content가 list(Claude cache_control 등)이면 텍스트만 결합
+            if isinstance(raw_content, list):
+                text_content = "\n\n".join(
+                    block.get("text", "") for block in raw_content if isinstance(block, dict) and block.get("text")
+                )
+            else:
+                text_content = raw_content or ""
+
+            if role == "system":
+                system_parts.append(text_content)
+            elif role == "assistant":
                 # tool_calls가 포함된 assistant 메시지
                 if "_oauth_tool_calls" in m:
                     for tc in m["_oauth_tool_calls"]:
                         input_items.append(
                             {
                                 "type": "function_call",
-                                "id": tc["id"],
                                 "call_id": tc["id"],
                                 "name": tc["name"],
                                 "arguments": tc["arguments"],
                             }
                         )
-                    if m.get("content"):
+                    if text_content:
                         input_items.append(
                             {
                                 "type": "message",
                                 "role": "assistant",
-                                "content": [{"type": "output_text", "text": m["content"]}],
+                                "content": [{"type": "output_text", "text": text_content}],
                             }
                         )
                 else:
@@ -313,16 +319,16 @@ class OAuthCodexProvider(BaseProvider):
                         {
                             "type": "message",
                             "role": "assistant",
-                            "content": [{"type": "output_text", "text": m.get("content", "")}],
+                            "content": [{"type": "output_text", "text": text_content}],
                         }
                     )
-            elif m["role"] == "tool":
+            elif role == "tool":
                 # tool result → function_call_output
                 input_items.append(
                     {
                         "type": "function_call_output",
                         "call_id": m.get("tool_call_id", ""),
-                        "output": m.get("content", ""),
+                        "output": text_content,
                     }
                 )
             else:
@@ -330,7 +336,7 @@ class OAuthCodexProvider(BaseProvider):
                     {
                         "type": "message",
                         "role": "user",
-                        "content": [{"type": "input_text", "text": m.get("content", "")}],
+                        "content": [{"type": "input_text", "text": text_content}],
                     }
                 )
 
@@ -361,6 +367,13 @@ class OAuthCodexProvider(BaseProvider):
                 )
             if responsesTools:
                 body["tools"] = responsesTools
+
+            # Responses API tool_choice: "auto"(기본), "required"(=any), "none"
+            if tool_choice and tool_choice != "auto":
+                if tool_choice == "any":
+                    body["tool_choice"] = "required"
+                else:
+                    body["tool_choice"] = tool_choice
 
         return body
 
@@ -490,7 +503,8 @@ class OAuthCodexProvider(BaseProvider):
         body = self._build_body(messages, tools=tools, tool_choice=tool_choice)
         resp = self._request_with_retry(token, body)
 
-        answer = ""
+        deltaAnswer = ""
+        completedAnswer = ""
         toolCalls: list[ToolCall] = []
 
         for line in resp.text.split("\n"):
@@ -519,9 +533,12 @@ class OAuthCodexProvider(BaseProvider):
                     elif output.get("type") == "message":
                         for content in output.get("content", []):
                             if content.get("type") == "output_text":
-                                answer += content.get("text", "")
+                                completedAnswer += content.get("text", "")
             elif event.get("type") == "response.output_text.delta":
-                answer += event.get("delta", "")
+                deltaAnswer += event.get("delta", "")
+
+        # completed가 더 완전하므로 우선 사용, 없으면 delta 누적본 사용
+        answer = completedAnswer or deltaAnswer
 
         finishReason = "tool_calls" if toolCalls else "stop"
         return ToolResponse(
