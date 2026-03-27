@@ -303,7 +303,7 @@ def _extractCode(message: str) -> str | None:
             try:
                 results = dartlab.search(token)
                 if results is not None and len(results) > 0:
-                    return str(results[0, "stockCode"])
+                    return str(results[0, "종목코드"])
             except Exception:
                 continue
     return None
