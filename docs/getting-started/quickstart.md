@@ -6,6 +6,10 @@ title: Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)
 
+> **프로그래밍이 처음이라면?** Python 설치부터 안내하는 [초보자 가이드 (블로그)](https://eddmpython.github.io/dartlab/blog/dartlab-easy-start/)를 먼저 보세요. 5분이면 첫 분석까지 끝납니다.
+>
+> **설치 없이 바로 해보고 싶다면?** [HF Spaces 데모](https://huggingface.co/spaces/eddmpython/dartlab)에서 브라우저만으로 체험하거나, 위 Colab 배지를 클릭하세요.
+
 Everything in DartLab starts with `c.sections`. The rest (`show`, `trace`, `diff`, `BS`, `ratios`) are all views on top of sections.
 
 ## Installation
@@ -149,7 +153,9 @@ Or open the [Colab quickstart notebook](https://colab.research.google.com/github
 
 ## Next Steps
 
+- [Tutorials](../tutorials/) — 11 step-by-step tutorials, each runnable on Colab
 - [Sections Guide](./sections) — sections structure, columns, filtering
 - [API Overview](../api/overview) — full API reference
 - [Disclosure Text Tutorial](../tutorials/06_disclosure) — working with text/table blocks
 - [Stability Policy](../stability)
+- [Beginner install guide (블로그)](https://eddmpython.github.io/dartlab/blog/dartlab-easy-start/) — from zero to first analysis, 5 minutes

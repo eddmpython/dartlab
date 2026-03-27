@@ -19,7 +19,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="notebooks/marimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">Live Demo</a> · <a href="notebooks/marimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -1019,6 +1019,14 @@ dartlab collect --batch --mode all         # re-collect everything
 
 ## Try It Now
 
+### Live Demo (No Install)
+
+Try DartLab instantly — no Python, no terminal, no setup:
+
+**[→ Open Live Demo](https://huggingface.co/spaces/eddmpython/dartlab)** — enter a stock code, see financials immediately
+
+Or open a [Colab notebook](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb) in your browser.
+
 ### Marimo Notebooks
 
 > Data is automatically downloaded on first use. No setup required unless collecting new companies directly from DART.
@@ -1066,6 +1074,7 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI analysis examples
 - Sections guide: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - Quick start: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API overview: https://eddmpython.github.io/dartlab/docs/api/overview
+- Beginner guide (Korean): https://eddmpython.github.io/dartlab/blog/dartlab-easy-start/
 
 ### Blog
 

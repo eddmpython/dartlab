@@ -1,2 +1,2 @@
 dartlab>=0.7.8
-gradio>=5.0,<6
+gradio>=6.0,<7

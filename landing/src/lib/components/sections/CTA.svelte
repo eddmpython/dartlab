@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
+	import { brand } from '$lib/brand';
 	import { Button } from '$lib/components/ui/button';
 </script>
 
@@ -35,6 +36,7 @@
 				<div class="flex flex-wrap items-center justify-center gap-4">
 					<Button href="#install">Install</Button>
 					<Button variant="secondary" href="{base}/docs/">Documentation →</Button>
+					<Button variant="secondary" href={brand.spaces}>Live Demo →</Button>
 				</div>
 			</div>
 		</div>

@@ -280,6 +280,24 @@ uv run python main.py
 
 ---
 
+## 더 깊이 배우기
+
+### 공식 문서
+
+설치가 끝났다면, 공식 문서에서 dartlab의 전체 기능을 체계적으로 배울 수 있다.
+
+- [Quick Start](https://eddmpython.github.io/dartlab/docs/getting-started/quickstart) — sections, show, trace, diff 전체 흐름
+- [11개 튜토리얼](https://eddmpython.github.io/dartlab/docs/tutorials/) — 기초부터 심화까지, Colab에서 바로 실행 가능
+
+### 설치 없이 브라우저에서 바로
+
+컴퓨터에 아무것도 설치하지 않고 dartlab을 체험할 수도 있다.
+
+- [HF Spaces 데모](https://huggingface.co/spaces/eddmpython/dartlab) — 종목코드 입력하면 바로 결과
+- [Colab 노트북](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb) — Google 계정만 있으면 실행
+
+---
+
 ## 다음 단계
 
 dartlab이 설치됐다면 아래 글에서 각 기능을 더 깊이 파볼 수 있다.

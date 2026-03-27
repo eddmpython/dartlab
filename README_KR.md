@@ -19,7 +19,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="notebooks/marimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
+<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">라이브 데모</a> · <a href="notebooks/marimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
 </p>
 
 <p>
@@ -1019,6 +1019,14 @@ dartlab collect --batch --mode all         # 전체 재수집
 
 ## 바로 시작하기
 
+### 라이브 데모 (설치 불필요)
+
+Python, 터미널, 설정 모두 필요 없다. 브라우저에서 바로:
+
+**[→ 라이브 데모 열기](https://huggingface.co/spaces/eddmpython/dartlab)** — 종목코드 입력하면 재무제표 바로 출력
+
+또는 [Colab 노트북](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)을 브라우저에서 열 수 있다.
+
 ### Marimo 노트북
 
 > 데이터는 첫 사용 시 자동 다운로드된다. DART에서 직접 수집하지 않는 한 별도 설정 불필요.
@@ -1046,6 +1054,7 @@ marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
 - Sections 가이드: https://eddmpython.github.io/dartlab/docs/getting-started/sections
 - 빠른 시작: https://eddmpython.github.io/dartlab/docs/getting-started/quickstart
 - API 개요: https://eddmpython.github.io/dartlab/docs/api/overview
+- 초보자 가이드: https://eddmpython.github.io/dartlab/blog/dartlab-easy-start/
 
 ### 블로그
 

@@ -10,6 +10,7 @@ export const brand = {
 	coffee: 'https://buymeacoffee.com/eddmpython',
 	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe',
 	spaces: 'https://huggingface.co/spaces/eddmpython/dartlab',
+	colab: 'https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb',
 	author: 'eddmpython',
 
 	hfRepo: 'eddmpython/dartlab-data',
