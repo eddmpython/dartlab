@@ -59,6 +59,203 @@ def _fmtAmt(value) -> str:
 # ── 계산 함수들 ──
 
 
+def calcFundingSources(company) -> dict | None:
+    """조달원 분해 — 돈을 어디서 가져왔는가.
+
+    4가지 원천: 내부유보, 외부(주주), 금융차입, 영업조달.
+    시계열로 비중 변화를 추적한다.
+
+    반환::
+
+        {
+            "latest": {
+                "totalAssets": float,
+                "retained": float, "retainedPct": float,
+                "paidIn": float, "paidInPct": float,
+                "finDebt": float, "finDebtPct": float,
+                "opFunding": float, "opFundingPct": float,
+                "otherLiab": float, "otherLiabPct": float,
+                "otherEquity": float, "otherEquityPct": float,
+            },
+            "history": [
+                {"period": str, "retainedPct": float, "paidInPct": float,
+                 "finDebtPct": float, "opFundingPct": float}, ...
+            ],
+            "diagnosis": str,
+        }
+    """
+    accounts = [
+        "자산총계",
+        "자본총계",
+        "이익잉여금",
+        "자본금",
+        "자본잉여금",
+        "부채총계",
+        "단기차입금",
+        "장기차입금",
+        "사채",
+        "매입채무",
+        "선수금",
+        "계약부채",
+        "선수수익",
+    ]
+    result = company.select("BS", accounts)
+    parsed = _toDict(result)
+    if parsed is None:
+        return None
+
+    data, allPeriods = parsed
+    taRow = data.get("자산총계")
+    if taRow is None:
+        return None
+
+    reRow = data.get("이익잉여금", {})
+    pcRow = data.get("자본금", {})
+    csRow = data.get("자본잉여금", {})
+    eqRow = data.get("자본총계", {})
+    liabRow = data.get("부채총계", {})
+    stbRow = data.get("단기차입금", {})
+    ltbRow = data.get("장기차입금", {})
+    bondRow = data.get("사채", {})
+    apRow = data.get("매입채무", {})
+    advRow = data.get("선수금", {})
+    clRow = data.get("계약부채", {})
+    diRow = data.get("선수수익", {})
+
+    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    if not yCols:
+        yCols = _quarterlyCols(allPeriods, _MAX_YEARS)
+    if not yCols:
+        return None
+
+    history = []
+    latest = None
+
+    for col in yCols:
+        ta = taRow.get(col)
+        if ta is None or ta <= 0:
+            continue
+
+        retained = reRow.get(col) or 0
+        paidIn = (pcRow.get(col) or 0) + (csRow.get(col) or 0)
+        finDebt = (stbRow.get(col) or 0) + (ltbRow.get(col) or 0) + (bondRow.get(col) or 0)
+        opFunding = (apRow.get(col) or 0) + (advRow.get(col) or 0) + (clRow.get(col) or 0) + (diRow.get(col) or 0)
+
+        equity = eqRow.get(col) or 0
+        otherEquity = max(0, equity - retained - paidIn)
+        liab = liabRow.get(col) or 0
+        otherLiab = max(0, liab - finDebt - opFunding)
+
+        entry = {
+            "period": col,
+            "retainedPct": retained / ta * 100,
+            "paidInPct": paidIn / ta * 100,
+            "finDebtPct": finDebt / ta * 100,
+            "opFundingPct": opFunding / ta * 100,
+            "otherLiabPct": otherLiab / ta * 100,
+            "otherEquityPct": otherEquity / ta * 100,
+        }
+        history.append(entry)
+
+        if latest is None:
+            latest = {
+                "totalAssets": ta,
+                "retained": retained,
+                "retainedPct": entry["retainedPct"],
+                "paidIn": paidIn,
+                "paidInPct": entry["paidInPct"],
+                "finDebt": finDebt,
+                "finDebtPct": entry["finDebtPct"],
+                "opFunding": opFunding,
+                "opFundingPct": entry["opFundingPct"],
+                "otherLiab": otherLiab,
+                "otherLiabPct": entry["otherLiabPct"],
+                "otherEquity": otherEquity,
+                "otherEquityPct": entry["otherEquityPct"],
+            }
+
+    if latest is None:
+        return None
+
+    # 진단: 내부유보 vs 금융차입 비중으로 자금조달 성격 판단
+    rPct = latest["retainedPct"]
+    fPct = latest["finDebtPct"]
+    if rPct >= 50:
+        diagnosis = "자기 힘으로 성장 — 이익잉여금이 자산의 절반 이상"
+    elif rPct >= 30 and fPct < 30:
+        diagnosis = "내부유보 중심 — 차입 의존도 낮음"
+    elif fPct >= 40:
+        diagnosis = "차입 의존 — 금융부채가 자산의 40% 이상"
+    elif fPct >= rPct:
+        diagnosis = "외부 조달 우위 — 금융차입이 내부유보를 초과"
+    else:
+        diagnosis = "균형 조달 — 내부유보와 외부 조달이 혼합"
+
+    # 보충 지표: 순차입금/EBITDA, 암묵적 차입금리
+    netDebtEbitda = _calcNetDebtEbitda(company, latest["finDebt"])
+    impliedRate = _calcImpliedBorrowingRate(company, latest["finDebt"])
+
+    result = {"latest": latest, "history": history, "diagnosis": diagnosis}
+    if netDebtEbitda is not None:
+        result["netDebtEbitda"] = netDebtEbitda
+    if impliedRate is not None:
+        result["impliedBorrowingRate"] = impliedRate
+
+    # 비중 변화 방향 (금융차입 비중이 늘고 있는가)
+    if len(history) >= 2:
+        newest = history[0]["finDebtPct"]
+        oldest = history[-1]["finDebtPct"]
+        diff = newest - oldest
+        if diff > 5:
+            result["leverageTrend"] = (
+                f"금융차입 비중 +{diff:.0f}pp 증가 ({history[-1]['period']}→{history[0]['period']})"
+            )
+        elif diff < -5:
+            result["leverageTrend"] = (
+                f"금융차입 비중 {diff:.0f}pp 감소 ({history[-1]['period']}→{history[0]['period']})"
+            )
+
+    return result
+
+
+def _latestAnnualVal(company, stmt: str, accountName: str) -> float | None:
+    """select(stmt, [accountName])에서 최신 연도 값을 꺼낸다."""
+    result = company.select(stmt, [accountName])
+    parsed = _toDict(result)
+    if parsed is None:
+        return None
+    data, allPeriods = parsed
+    row = data.get(accountName)
+    if row is None:
+        return None
+    yCols = _annualCols(allPeriods, 1)
+    if not yCols:
+        return None
+    return row.get(yCols[0])
+
+
+def _calcNetDebtEbitda(company, finDebt: float) -> float | None:
+    """순차입금/EBITDA — 차입 감당 능력."""
+    cash = _latestAnnualVal(company, "BS", "현금및현금성자산") or 0
+    netDebt = finDebt - cash
+    if netDebt <= 0:
+        return 0.0  # 순현금
+    opIncome = _latestAnnualVal(company, "IS", "영업이익")
+    if opIncome is not None and opIncome > 0:
+        return netDebt / opIncome  # EBITDA 대신 영업이익 기반 (보수적)
+    return None
+
+
+def _calcImpliedBorrowingRate(company, finDebt: float) -> float | None:
+    """암묵적 차입금리(%) — 금융비용/금융부채."""
+    if finDebt <= 0:
+        return None
+    ie = _latestAnnualVal(company, "IS", "이자비용") or _latestAnnualVal(company, "IS", "금융비용")
+    if ie is None or ie <= 0:
+        return None
+    return ie / finDebt * 100
+
+
 def calcCapitalOverview(company) -> dict | None:
     """총자산/총부채/자기자본/순차입금 스냅샷.
 

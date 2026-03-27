@@ -366,6 +366,89 @@ def revenueFlagsBlock(flags: list[tuple[str, str]]) -> list:
 # ── 자금구조 (capital) 빌더 ──
 
 
+def fundingSourcesBlock(data: dict) -> list:
+    """calcFundingSources 결과 → 조달원 비중 테이블 + 시계열."""
+    if not data:
+        return []
+
+    latest = data.get("latest")
+    if not latest:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "자금 조달원",
+            level=2,
+            helper="내부유보 = 사업으로 번 돈, 금융차입 = 이자 붙는 빚, 영업조달 = 자연 발생 자금",
+        )
+    )
+
+    # 최신 비중 메트릭
+    fmtAmt = _fmtAmtShort(latest["totalAssets"])
+    metrics = [("총자산", fmtAmt)]
+    metrics.append(("내부유보 (이익잉여금)", f"{_fmtAmtShort(latest['retained'])} ({latest['retainedPct']:.0f}%)"))
+    metrics.append(("외부-주주 (자본금+잉여금)", f"{_fmtAmtShort(latest['paidIn'])} ({latest['paidInPct']:.0f}%)"))
+    metrics.append(("외부-금융차입", f"{_fmtAmtShort(latest['finDebt'])} ({latest['finDebtPct']:.0f}%)"))
+    if latest["opFundingPct"] > 0.5:
+        metrics.append(
+            ("영업조달 (매입채무·선수금 등)", f"{_fmtAmtShort(latest['opFunding'])} ({latest['opFundingPct']:.0f}%)")
+        )
+    blocks.append(MetricBlock(metrics))
+
+    # 시계열 테이블
+    history = data.get("history", [])
+    if len(history) >= 2:
+        histRows = []
+        for h in history:
+            histRows.append(
+                {
+                    "기간": h["period"],
+                    "내부유보": f"{h['retainedPct']:.0f}%",
+                    "주주자본": f"{h['paidInPct']:.0f}%",
+                    "금융차입": f"{h['finDebtPct']:.0f}%",
+                    "영업조달": f"{h['opFundingPct']:.0f}%",
+                }
+            )
+        blocks.append(TableBlock("조달원 비중 추이", pl.DataFrame(histRows)))
+
+    # 보충 지표 (순차입금/EBITDA, 암묵적 차입금리)
+    suppMetrics = []
+    ndEbitda = data.get("netDebtEbitda")
+    if ndEbitda is not None:
+        if ndEbitda == 0:
+            suppMetrics.append(("순차입금/EBITDA", "순현금 (차입 없음)"))
+        else:
+            suppMetrics.append(("순차입금/EBITDA", f"{ndEbitda:.1f}배"))
+    impliedRate = data.get("impliedBorrowingRate")
+    if impliedRate is not None:
+        suppMetrics.append(("암묵적 차입금리", f"{impliedRate:.1f}%"))
+    if suppMetrics:
+        blocks.append(MetricBlock(suppMetrics))
+
+    # 진단 + 비중 변화 방향
+    diagnosis = data.get("diagnosis", "")
+    leverageTrend = data.get("leverageTrend")
+    diagParts = [p for p in [diagnosis, leverageTrend] if p]
+    if diagParts:
+        blocks.append(TextBlock(" | ".join(diagParts), style="dim", indent="h2"))
+
+    return blocks
+
+
+def _fmtAmtShort(value) -> str:
+    """금액 간략 포맷."""
+    if value is None or value == 0:
+        return "-"
+    absVal = abs(value)
+    sign = "-" if value < 0 else ""
+    if absVal >= 1_0000_0000_0000:
+        return f"{sign}{absVal / 1_0000_0000_0000:.1f}조"
+    if absVal >= 1_0000_0000:
+        return f"{sign}{absVal / 1_0000_0000:.0f}억"
+    return f"{sign}{absVal:,.0f}"
+
+
 def capitalOverviewBlock(data: dict) -> list:
     """calcCapitalOverview 결과 → MetricBlock."""
     if not data:

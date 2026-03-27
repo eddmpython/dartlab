@@ -17,6 +17,7 @@ def buildBlocks(company) -> dict:
         calcCashFlowStructure,
         calcDebtTimeline,
         calcDistressIndicators,
+        calcFundingSources,
         calcInterestBurden,
         calcLiquidity,
     )
@@ -40,6 +41,7 @@ def buildBlocks(company) -> dict:
         concentrationBlock,
         debtTimelineBlock,
         distressBlock,
+        fundingSourcesBlock,
         growthContributionBlock,
         interestBurdenBlock,
         liquidityBlock,
@@ -88,6 +90,7 @@ def buildBlocks(company) -> dict:
     b["revenueFlags"] = _safe(lambda: revenueFlagsBlock(calcFlags(company)))
 
     # ── 자금구조 ──
+    b["fundingSources"] = _safe(lambda: fundingSourcesBlock(calcFundingSources(company)))
     b["capitalOverview"] = _safe(lambda: capitalOverviewBlock(calcCapitalOverview(company)))
     b["capitalTimeline"] = _safe(lambda: capitalTimelineBlock(calcCapitalTimeline(company)))
     b["debtTimeline"] = _safe(lambda: debtTimelineBlock(calcDebtTimeline(company)))
