@@ -1,2 +1,3 @@
 dartlab>=0.7.8
 streamlit>=1.45,<2
+openpyxl>=3.1

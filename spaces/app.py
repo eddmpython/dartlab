@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+import io
 import os
 import re
 from collections import OrderedDict
@@ -194,35 +195,47 @@ def _resolveCode(query: str) -> tuple[str | None, str | None]:
         return None, f"검색 실패: {e}"
 
 
-def _buildColumnConfig(df: pd.DataFrame) -> dict:
-    """숫자 컬럼에 천단위 구분자 포맷 적용."""
-    config = {}
+def _formatDf(df: pd.DataFrame) -> pd.DataFrame:
+    """숫자 컬럼을 천단위 콤마 문자열로 변환 (소수점 제거)."""
     if df is None or df.empty:
-        return config
-    for col in df.columns:
-        if pd.api.types.is_integer_dtype(df[col]):
-            config[col] = st.column_config.NumberColumn(
-                col, format="%d",
+        return df
+    result = df.copy()
+    for col in result.columns:
+        if pd.api.types.is_numeric_dtype(result[col]):
+            result[col] = result[col].apply(
+                lambda x: f"{int(x):,}" if pd.notna(x) and x == x else ""
             )
-        elif pd.api.types.is_float_dtype(df[col]):
-            config[col] = st.column_config.NumberColumn(
-                col, format="%.2f",
-            )
-    return config
+    return result
 
 
-def _showDataFrame(df: pd.DataFrame, key: str = ""):
-    """DataFrame을 포맷팅해서 표시."""
+def _toExcel(df: pd.DataFrame) -> bytes:
+    """DataFrame → Excel bytes."""
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False, engine="openpyxl")
+    return buf.getvalue()
+
+
+def _showDataFrame(df: pd.DataFrame, key: str = "", downloadName: str = ""):
+    """DataFrame 표시 + 엑셀 다운로드 버튼."""
     if df is None or df.empty:
         st.markdown('<p class="dl-empty">데이터 없음</p>', unsafe_allow_html=True)
         return
+    # 포맷팅된 버전으로 표시
     st.dataframe(
-        df,
-        column_config=_buildColumnConfig(df),
+        _formatDf(df),
         use_container_width=True,
         hide_index=True,
         key=key or None,
     )
+    # 엑셀 다운로드 (원본 숫자 유지)
+    if downloadName:
+        st.download_button(
+            label="📥 Excel 다운로드",
+            data=_toExcel(df),
+            file_name=f"{downloadName}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key=f"dl_{key}" if key else None,
+        )
 
 
 # ── 프리로드 ──────────────────────────────────────────
@@ -328,7 +341,7 @@ if code:
     except Exception:
         pass
 
-    _showDataFrame(finDf, key="finance")
+    _showDataFrame(finDf, key="finance", downloadName=f"{code}_{sheetTab}")
 
     # ── Sections ──
     topics = []
@@ -361,7 +374,7 @@ if code:
                 secText = f"조회 실패: {e}"
 
             if secDf is not None:
-                _showDataFrame(secDf, key="section")
+                _showDataFrame(secDf, key="section", downloadName=f"{code}_{selectedTopic}")
             elif secText:
                 st.markdown(secText)
 
