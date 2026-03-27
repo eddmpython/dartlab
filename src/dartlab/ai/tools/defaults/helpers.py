@@ -21,8 +21,11 @@ def df_to_md(df: pl.DataFrame, max_rows: int = 15, max_chars: int = 0, market: s
 
 
 def json_to_text(value: Any, max_chars: int = 4000) -> str:
-    """dict/list/json 직렬화."""
-    text = json.dumps(value, ensure_ascii=False, indent=2, default=str)
+    """dict/list/json 직렬화 (pruning 후)."""
+    from dartlab.ai.context.pruning import _STRIP_FIELDS, _pruneValue
+
+    pruned = _pruneValue(value, _STRIP_FIELDS, depth=0)
+    text = json.dumps(pruned, ensure_ascii=False, indent=2, default=str)
     if len(text) <= max_chars:
         return text
     return text[:max_chars] + "\n... (truncated)"

@@ -231,8 +231,7 @@ _CANDIDATE_ALIASES = {
 }
 _MARGIN_DRIVER_MARGIN_HINTS = frozenset({"영업이익률", "마진", "이익률", "margin"})
 _MARGIN_DRIVER_COST_HINTS = frozenset({"비용 구조", "원가 구조", "비용", "원가", "판관비", "매출원가"})
-_MARGIN_DRIVER_BUSINESS_HINTS = frozenset({"사업 변화", "사업변화", "사업 구조", "사업구조"})
-_RECENT_DISCLOSURE_BUSINESS_HINTS = frozenset({"사업 변화", "사업변화", "사업 구조", "사업구조"})
+_BUSINESS_CHANGE_HINTS = frozenset({"사업 변화", "사업변화", "사업 구조", "사업구조"})
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(?:Q[1-4])?$")
 
 
@@ -372,13 +371,13 @@ def _has_margin_driver_pattern(question: str) -> bool:
     return (
         _question_has_any(question, _MARGIN_DRIVER_MARGIN_HINTS)
         and _question_has_any(question, _MARGIN_DRIVER_COST_HINTS)
-        and _question_has_any(question, _MARGIN_DRIVER_BUSINESS_HINTS)
+        and _question_has_any(question, _BUSINESS_CHANGE_HINTS)
     )
 
 
 def _has_recent_disclosure_business_pattern(question: str) -> bool:
     lowered = question.lower()
-    return "최근 공시" in lowered and _question_has_any(question, _RECENT_DISCLOSURE_BUSINESS_HINTS)
+    return "최근 공시" in lowered and _question_has_any(question, _BUSINESS_CHANGE_HINTS)
 
 
 def _resolve_direct_hint_modules(question: str) -> list[str]:
@@ -957,6 +956,61 @@ def _build_sections_context(
     return result
 
 
+def _build_changes_context(company: Any, *, compact: bool = True) -> str:
+    """sections 변화 요약을 LLM 컨텍스트용 마크다운으로 변환.
+
+    전체 sections(97MB) 대신 변화분(23%)만 요약하여 제공.
+    LLM이 추가 도구 호출 없이 "무엇이 바뀌었는지" 즉시 파악 가능.
+    """
+    docs = getattr(company, "docs", None)
+    sections = getattr(docs, "sections", None)
+    if sections is None or not hasattr(sections, "changeSummary"):
+        return ""
+
+    try:
+        summary = sections.changeSummary(topN=8 if compact else 15)
+    except (AttributeError, TypeError, ValueError, pl.exceptions.PolarsError):
+        return ""
+
+    if summary is None or summary.is_empty():
+        return ""
+
+    lines = ["\n## 공시 변화 요약"]
+    lines.append("| topic | 변화유형 | 건수 | 평균크기변화 |")
+    lines.append("|-------|---------|------|------------|")
+    for row in summary.iter_rows(named=True):
+        topic = row.get("topic", "")
+        changeType = row.get("changeType", "")
+        count = row.get("count", 0)
+        avgDelta = row.get("avgDelta", 0)
+        sign = "+" if avgDelta and avgDelta > 0 else ""
+        lines.append(f"| {topic} | {changeType} | {count} | {sign}{avgDelta} |")
+
+    # 최근 기간 주요 변화 미리보기
+    try:
+        changes = sections.changes()
+    except (AttributeError, TypeError, ValueError, pl.exceptions.PolarsError):
+        changes = None
+
+    if changes is not None and not changes.is_empty():
+        # 가장 최근 기간 전환에서 structural/appeared 변화만 발췌
+        latestPeriod = changes.get_column("toPeriod").max()
+        recent = changes.filter(
+            (pl.col("toPeriod") == latestPeriod) & pl.col("changeType").is_in(["structural", "appeared"])
+        )
+        if not recent.is_empty():
+            lines.append(f"\n### 최근 주요 변화 ({latestPeriod})")
+            for row in recent.head(5 if compact else 10).iter_rows(named=True):
+                topic = row.get("topic", "")
+                ct = row.get("changeType", "")
+                preview = row.get("preview", "")
+                if preview:
+                    preview = preview[:120] + "..." if len(preview) > 120 else preview
+                lines.append(f"- **{topic}** [{ct}]: {preview}")
+
+    return "\n".join(lines)
+
+
 def _select_section_slices(context_slices: Any, topic: str) -> pl.DataFrame | None:
     if not isinstance(context_slices, pl.DataFrame) or context_slices.is_empty():
         return None
@@ -1202,6 +1256,14 @@ def _build_compact_context_modules_inner(
                 included_name = _section_key_to_module_name(key)
                 if included_name not in included:
                     included.append(included_name)
+
+    # 변화 컨텍스트 — sections 변화분만 LLM에 전달 (roundtrip 감소)
+    if route in {"sections", "hybrid"}:
+        changes_context = _build_changes_context(company, compact=compact)
+        if changes_context:
+            modules_dict["_changes"] = changes_context
+            if "_changes" not in included:
+                included.append("_changes")
 
     direct_sections = _build_direct_module_context(
         company,

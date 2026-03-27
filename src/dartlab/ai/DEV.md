@@ -1,5 +1,77 @@
 # AI Engine Development Guide
 
+## 설계 사상
+
+### dartlab AI는 무엇인가
+
+dartlab의 핵심 자산은 데이터 엔진이다. 전자공시 원본을 정규화하여 **전기간 비교가능 + 기업간 비교가능**한 구조로 만든 것이 dartlab의 존재 이유다. AI는 이 데이터 위에서 동작하는 **소비자**이지, 데이터를 대체하지 않는다.
+
+**LLM은 해석자이지 분석가가 아니다.**
+- 계산은 엔진이 한다 (ratios, timeseries, insights, valuation)
+- 판단은 엔진이 한다 (anomaly detection, scoring, red flags)
+- LLM은 엔진 결과를 받아서 **"왜"를 설명하고, 인과 관계를 서술하고, 사용자 질문에 답한다**
+
+이것이 dexter와의 근본적 차이다:
+- dexter: 데이터 없음. LLM이 외부 API를 호출해서 데이터를 수집하고 분석. LLM이 전부.
+- dartlab: 데이터 엔진이 전부. LLM은 정규화된 데이터를 읽고 해석하는 마지막 계층.
+
+### 2-Tier 아키텍처
+
+- **Tier 1 (시스템 주도)**: 질문 분류 → 엔진 계산 → 결과를 컨텍스트로 조립 → LLM에 한 번 전달. 모든 provider에서 동작. tool calling 불필요.
+- **Tier 2 (LLM 주도)**: Tier 1 결과를 보고 LLM이 "부족하다" 판단 → 도구 호출로 추가 탐색. tool calling 가능한 provider에서만 동작.
+
+Tier 1이 충분하면 LLM roundtrip은 1회다. 이것이 속도의 핵심이다.
+
+### 속도 원칙
+
+**LLM roundtrip을 줄이는 것이 속도다.**
+- 더 많은 데이터를 미리 조립해서 1회에 끝내는 것이 빠르다 (Tier 1 강화)
+- 도구 호출을 병렬화하는 것보다, 애초에 호출이 필요 없게 만드는 것이 빠르다
+- changes(공시 변화분 23%)를 컨텍스트에 미리 넣으면 "뭐가 바뀌었지?" 탐색 호출이 사라진다
+
+### dexter에서 흡수한 것
+
+| 패턴 | dexter 원본 | dartlab 적용 |
+|------|------------|-------------|
+| Scratchpad | 도구 결과 누적/토큰 관리 | `runtime/scratchpad.py` — 중복 호출 방지, 토큰 예산 |
+| SOUL.md | 분석 철학 주입 | `templates/analysisPhilosophy.py` — Palepu-Healy + CFA 사고 프레임 |
+| stripFieldsDeep | 도구 결과 필드 제거 | `context/pruning.py` — XBRL 메타데이터 재귀 제거 |
+| SKILL.md | 워크플로우 가이드 | `skills/catalog.py` — 8개 분석 스킬 (도구 비의존) |
+| 자율 에이전트 | 충분할 때까지 탐색 | `agentLoopAutonomous()` — report_mode Tier 2 |
+| 세션 메모리 | SQLite + 시간 감쇠 | `memory/store.py` — 분석 기록 영속 |
+
+### 흡수하지 않은 것
+
+- **데이터 소유 구조**: dexter는 외부 API로 데이터 수집. dartlab은 이미 데이터 엔진을 소유.
+- **단일 모델 의존**: dexter는 모든 판단을 LLM에 위임. dartlab은 엔진이 계산/판단하고 LLM은 해석만.
+- **meta-tool 패턴**: 도구 안에 도구를 넣는 구조. dartlab은 Super Tool 7개로 이미 해결.
+
+### 사용자 원칙
+
+- **접근성**: 종목코드 하나면 끝. `dartlab ask "005930" "영업이익률 추세는?"` 또는 `dartlab chat`으로 인터랙티브.
+- **신뢰성**: 숫자는 엔진이 계산한 원본. LLM이 숫자를 만들어내면 검증 레이어가 잡는다.
+- **투명성**: 어떤 데이터를 봤는지(includedEvidence), 어떤 도구를 썼는지(tool_call) 항상 노출.
+
+### 품질 검증 기준선 (2026-03-27)
+
+ollama qwen3:4b 기준 critical+high 35건 배치 결과:
+
+| 지표 | 값 | 비고 |
+|------|-----|------|
+| avgOverall | 7.33 | gemini fallback 수정 후 재측정 (수정 전 5.98) |
+| routeMatch | 1.00 | intent 분류 + 라우팅 완벽 |
+| moduleUtilization | 0.75 | 일부 eval 케이스 정합성 문제 포함 |
+| falseUnavailable | 0/35 | "데이터 없다" 거짓 응답 없음 |
+
+production 모델(openai/gemini) 측정은 API 키 확보 후 진행 예정. factual accuracy는 production 모델에서만 유의미.
+
+주요 failure taxonomy:
+- **runtime_error**: provider 설정 정합성 (해결됨)
+- **retrieval_failure**: eval 케이스 expectedModules와 실제 컨텍스트 빌더 매핑 간극
+- **generation_failure**: 소형 모델 한계 (production 모델에서 재측정 필요)
+
+---
+
 ## Source Of Truth
 
 - 데이터 source-of-truth: `src/dartlab/core/registry.py`

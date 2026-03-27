@@ -19,6 +19,7 @@ dartlab.ask(), server UI, CLI가 모두 이 코어를 소비한다.
 
 from __future__ import annotations
 
+import sqlite3
 from typing import Any, Generator
 
 from dartlab.ai.runtime.events import AnalysisEvent
@@ -30,6 +31,7 @@ from dartlab.ai.runtime.post_processing import (
 )
 from dartlab.ai.runtime.run_modes import (
     _run_agent,
+    _run_agent_autonomous,
     _run_light_mode,
     _run_stream,
 )
@@ -99,6 +101,7 @@ def _build_included_evidence(included_tables: list[str]) -> list[dict[str, str]]
         "BS_quarterly": "분기별 재무상태표",
         "_dart_openapi_filings": "최근 공시 목록",
         "_diff": "공시 변화 비교",
+        "_changes": "공시 변화 요약",
         "_response_contract": "응답 계약",
         "_clarify": "확인 질문",
     }
@@ -147,6 +150,7 @@ def _context_label(module_name: str, explicit_label: str | None = None) -> str |
                 "segments": "사업부문 데이터",
                 "_dart_openapi_filings": "최근 공시 목록",
                 "_diff": "공시 변화 비교",
+                "_changes": "공시 변화 요약",
             }.items()
             if normalized == key or module_name == key
         ),
@@ -828,6 +832,17 @@ def _analyze_inner(
         dataReadyBlock = f"데이터 가용성\n{dataReadySummary}"
         dynamic_part = f"{dynamic_part}\n\n{dataReadyBlock}" if dynamic_part else dataReadyBlock
 
+    # 이전 분석 기록 주입 (세션 간 메모리)
+    if stock_id:
+        try:
+            from dartlab.ai.memory.store import getMemory
+
+            memoryContext = getMemory().toPromptContext(stock_id)
+            if memoryContext:
+                dynamic_part = f"{dynamic_part}\n\n{memoryContext}" if dynamic_part else memoryContext
+        except (ImportError, OSError, sqlite3.Error):
+            pass
+
     if dialogue_policy:
         dynamic_part = dynamic_part + "\n\n" + dialogue_policy if dynamic_part else dialogue_policy
 
@@ -885,12 +900,17 @@ def _analyze_inner(
         # 모든 provider에서 Super Tool 모드 기본 활성화 — 8개 도구로 통합
         _useSuperTools = True
         effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))
-        for _ev in _run_agent(
+
+        # report_mode → 자율 탐색 에이전트 (Tier 2)
+        _agent_fn = _run_agent_autonomous if report_mode else _run_agent
+        _effective_max = max(effective_turns, 15) if report_mode else effective_turns
+
+        for _ev in _agent_fn(
             llm,
             messages,
             company,
             question,
-            max_turns=effective_turns,
+            max_turns=_effective_max,
             max_tools=max_tools,
             q_type=q_type,
             useSuperTools=_useSuperTools,
@@ -931,6 +951,24 @@ def _analyze_inner(
         response_meta = extract_response_meta(full_text)
         if response_meta.get("grade") or response_meta.get("has_conclusion"):
             _done_payload["responseMeta"] = response_meta
+
+    # ── 14.5. 분석 메모리 저장 ──
+    if stock_id and _full_response_parts:
+        try:
+            from dartlab.ai.memory.store import getMemory
+            from dartlab.ai.memory.summarizer import extractGrade, summarizeResponse
+
+            _fullText = "".join(_full_response_parts)
+            _mem = getMemory()
+            _mem.saveAnalysis(
+                stockCode=stock_id,
+                question=question[:200],
+                questionType=q_type or "",
+                resultSummary=summarizeResponse(_fullText),
+                grade=extractGrade(_fullText),
+            )
+        except (ImportError, OSError, sqlite3.Error):
+            pass
 
     # ── 15. Meta 업데이트 (includedModules, yearRange) ──
     if _included_tables:

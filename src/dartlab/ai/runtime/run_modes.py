@@ -1,6 +1,6 @@
-"""AI 분석 실행 모드 — light / guided_json / stream / agent.
+"""AI 분석 실행 모드 — light / guided_json / stream / agent / autonomous.
 
-core.py의 _analyze_inner()에서 디스패치하는 4가지 실행 경로.
+core.py의 _analyze_inner()에서 디스패치하는 5가지 실행 경로.
 """
 
 from __future__ import annotations
@@ -241,6 +241,91 @@ def _run_agent(
         yield AnalysisEvent("chunk", {"text": chunk})
 
     # 남은 이벤트 flush
+    while tool_calls_log:
+        yield AnalysisEvent("tool_call", tool_calls_log.pop(0))
+    while tool_results_log:
+        yield AnalysisEvent("tool_result", tool_results_log.pop(0))
+    while chart_events:
+        yield AnalysisEvent("chart", chart_events.pop(0))
+    while ui_events:
+        yield ui_events.pop(0)
+
+
+# ── Autonomous agent mode (Tier 2) ──────────────────────
+
+
+def _run_agent_autonomous(
+    llm,
+    messages: list[dict],
+    company: Any,
+    question: str,
+    *,
+    max_turns: int = 15,
+    max_tools: int | None = None,
+    q_type: str | None = None,
+    useSuperTools: bool = True,
+    _full_response_parts: list[str],
+) -> Generator[AnalysisEvent, None, None]:
+    """자율 탐색 에이전트 — report_mode에서 깊이 분석."""
+    from dartlab.ai.runtime.agent import agentLoopAutonomous, build_agent_system_addition
+    from dartlab.ai.tools.registry import build_tool_runtime
+
+    runtime = build_tool_runtime(company, name="core-autonomous", useSuperTools=useSuperTools)
+
+    system_addition = build_agent_system_addition(runtime)
+    messages[0]["content"] += system_addition
+
+    tool_calls_log: list[dict] = []
+    tool_results_log: list[dict] = []
+    chart_events: list[dict] = []
+    ui_events: list[AnalysisEvent] = []
+
+    def _on_tool_call(name: str, arguments: dict) -> None:
+        tool_calls_log.append({"name": name, "arguments": arguments})
+
+    def _on_tool_result(name: str, result: str) -> None:
+        tool_results_log.append({"name": name, "result": result})
+        if name == "chart":
+            try:
+                parsed = json.loads(result)
+                charts = parsed.get("charts")
+                if charts:
+                    chart_events.append({"charts": charts})
+            except (json.JSONDecodeError, TypeError, KeyError):
+                pass
+        try:
+            parsed = json.loads(result)
+            if isinstance(parsed, dict) and parsed.get("action"):
+                ui_events.append(AnalysisEvent(EventKind.UI_ACTION, parsed))
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    for chunk in agentLoopAutonomous(
+        llm,
+        messages,
+        company,
+        maxTurns=max_turns,
+        maxTools=max_tools,
+        runtime=runtime,
+        onToolCall=_on_tool_call,
+        onToolResult=_on_tool_result,
+        questionType=q_type,
+    ):
+        while tool_calls_log:
+            tc = tool_calls_log.pop(0)
+            yield AnalysisEvent("tool_call", tc)
+        while tool_results_log:
+            tr = tool_results_log.pop(0)
+            yield AnalysisEvent("tool_result", tr)
+        while chart_events:
+            ce = chart_events.pop(0)
+            yield AnalysisEvent("chart", ce)
+        while ui_events:
+            yield ui_events.pop(0)
+
+        _full_response_parts.append(chunk)
+        yield AnalysisEvent("chunk", {"text": chunk})
+
     while tool_calls_log:
         yield AnalysisEvent("tool_call", tool_calls_log.pop(0))
     while tool_results_log:

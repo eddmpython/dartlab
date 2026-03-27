@@ -10,6 +10,7 @@ import json
 from typing import Any, Callable, Generator
 
 from dartlab.ai.providers.base import BaseProvider
+from dartlab.ai.runtime.scratchpad import Scratchpad
 from dartlab.ai.tools.registry import (
     build_tool_runtime,
 )
@@ -51,6 +52,7 @@ def agent_loop(
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-loop")
     tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools, hasCompany=company is not None)
+    pad = Scratchpad()
 
     last_answer = ""
 
@@ -66,10 +68,17 @@ def agent_loop(
 
         # 도구 실행 + 결과 추가
         for tc in response.tool_calls:
+            # 중복 호출 방지
+            warning = pad.getDuplicateWarning(tc.name)
+            if warning:
+                messages.append(provider.format_tool_result(tc.id, warning))
+                continue
+
             if on_tool_call:
                 on_tool_call(tc.name, tc.arguments)
 
             result = tool_runtime.execute_tool(tc.name, tc.arguments)
+            pad.addEntry(tc.name, tc.arguments, result)
 
             if on_tool_result:
                 on_tool_result(tc.name, result)
@@ -90,6 +99,21 @@ _REFLECTION_PROMPT = (
     "3. **근거 없는 주장**: 제공된 데이터로 뒷받침할 수 없는 주장이 있는가?\n\n"
     "문제가 있으면 수정된 답변을 작성하세요. 문제가 없으면 원본 답변을 그대로 반환하세요."
 )
+
+
+def _buildReflectionPrompt(questionType: str | None = None) -> str:
+    """스킬 checkpoints가 있으면 reflection 프롬프트에 추가."""
+    base = _REFLECTION_PROMPT
+    try:
+        from dartlab.ai.skills.registry import matchSkill
+
+        skill = matchSkill("", questionType=questionType)
+        if skill and skill.checkpoints:
+            checks = "\n".join(f"- {c}" for c in skill.checkpoints)
+            return base + f"\n\n**추가 검증 기준 ({skill.name}):**\n{checks}"
+    except Exception:
+        pass
+    return base
 
 
 def _reflect_on_answer(provider: BaseProvider, messages: list[dict], answer: str) -> str:
@@ -123,6 +147,7 @@ def agent_loop_stream(
     """
     tool_runtime = runtime or build_tool_runtime(company, name="agent-stream")
     tools = selectTools(tool_runtime, questionType=question_type, maxTools=max_tools, hasCompany=company is not None)
+    pad = Scratchpad()
 
     # 대화형 질문은 첫 턴 도구 강제 안 함
     _isConversation = question_type in ("대화", "메타")
@@ -157,10 +182,17 @@ def agent_loop_stream(
         messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
 
         for tc in response.tool_calls:
+            # 중복 호출 방지
+            warning = pad.getDuplicateWarning(tc.name)
+            if warning:
+                messages.append(provider.format_tool_result(tc.id, warning))
+                continue
+
             if on_tool_call:
                 on_tool_call(tc.name, tc.arguments)
 
             result = tool_runtime.execute_tool(tc.name, tc.arguments)
+            pad.addEntry(tc.name, tc.arguments, result)
 
             if on_tool_result:
                 on_tool_result(tc.name, result)
@@ -259,7 +291,7 @@ def agent_loop_planning(
     steps = plan.get("steps", [])[:max_steps]
 
     # 2단계: 계획 순차 실행
-    results: list[dict[str, str]] = []
+    pad = Scratchpad()
     for step in steps:
         tool_name = step.get("tool", "")
         args = step.get("args", {})
@@ -268,17 +300,13 @@ def agent_loop_planning(
             on_tool_call(tool_name, args)
 
         result = tool_runtime.execute_tool(tool_name, args)
+        pad.addEntry(tool_name, args, result)
 
         if on_tool_result:
             on_tool_result(tool_name, result)
 
-        results.append({"tool": tool_name, "result": result[:3000]})
-
     # 3단계: 종합 답변 생성
-    synthesis_parts = [f"질문: {question}", "", "## 수집된 데이터:"]
-    for r in results:
-        synthesis_parts.append(f"\n### {r['tool']}")
-        synthesis_parts.append(r["result"])
+    synthesis_parts = [f"질문: {question}", "", "## 수집된 데이터:", pad.toContext()]
     synthesis_parts.append("\n## 지시사항:")
     synthesis_parts.append(
         "위 데이터를 종합하여 사용자 질문에 대한 구조화된 답변을 작성하세요. "
@@ -291,3 +319,92 @@ def agent_loop_planning(
     ]
     final_resp = provider.complete(synth_messages)
     return final_resp.answer
+
+
+# ══════════════════════════════════════
+# 자율 탐색 에이전트 (Tier 2 — 완전 분석)
+# ══════════════════════════════════════
+
+_SUFFICIENCY_HINT = (
+    "\n\n---\n"
+    "**안내**: 충분한 데이터를 수집했다면 도구를 더 호출하지 말고 최종 답변을 작성하세요. "
+    "아직 부족하면 추가 도구를 호출하세요."
+)
+
+
+def agentLoopAutonomous(
+    provider: BaseProvider,
+    messages: list[dict],
+    company: Any,
+    *,
+    maxTurns: int = 15,
+    maxTools: int | None = None,
+    runtime: ToolRuntime | None = None,
+    onToolCall: Callable[[str, dict], None] | None = None,
+    onToolResult: Callable[[str, str], None] | None = None,
+    questionType: str | None = None,
+    forceToolFirstTurn: bool = True,
+) -> Generator[str, None, None]:
+    """자율 탐색 에이전트: LLM이 충분하다고 판단할 때까지 도구 호출.
+
+    Phase 1 Scratchpad + Phase 4 Skill을 활용하여
+    report_mode에서 깊이 있는 분석을 수행한다.
+    """
+    tool_runtime = runtime or build_tool_runtime(company, name="agent-autonomous")
+    tools = selectTools(tool_runtime, questionType=questionType, maxTools=maxTools, hasCompany=company is not None)
+    pad = Scratchpad(tokenBudget=12000)
+
+    _isConversation = questionType in ("대화", "메타")
+
+    for _turn in range(maxTurns):
+        kwargs: dict = {}
+        if _turn == 0 and forceToolFirstTurn and not _isConversation and company is not None:
+            kwargs["tool_choice"] = "any"
+
+        try:
+            response = provider.complete_with_tools(messages, tools, **kwargs)
+        except TypeError:
+            response = provider.complete_with_tools(messages, tools)
+
+        if not response.tool_calls:
+            if _turn == 0:
+                yield from provider.stream(messages)
+                return
+            if response.answer and response.answer.strip():
+                yield response.answer
+            else:
+                yield from provider.stream(messages)
+            return
+
+        messages.append(provider.format_assistant_tool_calls(response.answer, response.tool_calls))
+
+        for tc in response.tool_calls:
+            warning = pad.getDuplicateWarning(tc.name)
+            if warning:
+                messages.append(provider.format_tool_result(tc.id, warning))
+                continue
+
+            if onToolCall:
+                onToolCall(tc.name, tc.arguments)
+
+            result = tool_runtime.execute_tool(tc.name, tc.arguments)
+            pad.addEntry(tc.name, tc.arguments, result)
+
+            if onToolResult:
+                onToolResult(tc.name, result)
+
+            messages.append(provider.format_tool_result(tc.id, result))
+
+        # 3턴 이후부터 충분성 힌트 + 사용 현황을 user 메시지로 추가
+        if _turn >= 2:
+            usageSummary = pad.getUsageSummary()
+            messages.append({"role": "user", "content": usageSummary + _SUFFICIENCY_HINT})
+
+    # maxTurns 도달 — 최종 종합 요청
+    synthPrompt = (
+        f"도구 호출이 최대 {maxTurns}턴에 도달했습니다. "
+        "지금까지 수집한 데이터를 기반으로 최종 종합 답변을 작성하세요.\n\n"
+        f"{pad.getUsageSummary()}"
+    )
+    messages.append({"role": "user", "content": synthPrompt})
+    yield from provider.stream(messages)

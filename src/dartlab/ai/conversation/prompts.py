@@ -36,6 +36,14 @@ from .templates.analysis_rules import (
 from .templates.analysis_rules import (
     TOPIC_PROMPTS as _TOPIC_PROMPTS,
 )
+
+# ── 템플릿 데이터 임포트 ──────────────────────────────────
+from .templates.analysisPhilosophy import (
+    ANALYSIS_PHILOSOPHY_COMPACT as _PHILOSOPHY_COMPACT,
+)
+from .templates.analysisPhilosophy import (
+    ANALYSIS_PHILOSOPHY_KR as _PHILOSOPHY_KR,
+)
 from .templates.benchmarks import _INDUSTRY_BENCHMARKS, _SECTOR_MAP
 from .templates.self_critique import (
     SELF_CRITIQUE_PROMPT,
@@ -43,8 +51,6 @@ from .templates.self_critique import (
 from .templates.self_critique import (
     SIGNAL_KEYWORDS as _SIGNAL_KEYWORDS,
 )
-
-# ── 템플릿 데이터 임포트 ──────────────────────────────────
 from .templates.system_base import (
     EDGAR_SUPPLEMENT_EN,
     EDGAR_SUPPLEMENT_KR,
@@ -62,6 +68,19 @@ _PLUGIN_SYSTEM_PROMPT = """
 - `create_plugin`은 즉시 사용 가능한 완전한 패키지 구조(pyproject.toml + register 함수 + 로직 파일)를 자동 생성합니다.
 - 분석 중 플러그인 추천 힌트가 제공되면, 답변 끝에 자연스럽게 안내하세요.
 """
+
+# ── 스킬 매칭 헬퍼 ──────────────────────────────────
+
+
+def _matchSkillSafe(questionType: str | None, qTypes: list[str]) -> Any:
+    """스킬 매칭 (import 실패 시 None)."""
+    try:
+        from dartlab.ai.skills.registry import matchSkill
+
+        return matchSkill("", questionType=questionType or (qTypes[0] if qTypes else None))
+    except Exception:
+        return None
+
 
 # ══════════════════════════════════════
 # 질문 분류
@@ -235,7 +254,7 @@ def build_system_prompt_parts(
 
     if compact:
         base = _strip_tool_guidance(SYSTEM_PROMPT_COMPACT) if not allow_tools else SYSTEM_PROMPT_COMPACT
-        static_parts: list[str] = []
+        static_parts: list[str] = [_PHILOSOPHY_COMPACT]
         dynamic_parts: list[str] = []
 
         benchmark_key = _match_sector(sector) if sector else None
@@ -259,7 +278,11 @@ def build_system_prompt_parts(
             if qt in _FEW_SHOT_COMPACT:
                 static_parts.append(_FEW_SHOT_COMPACT[qt])
 
-        # 동적: report_mode + 플러그인
+        # 동적: skill + report_mode + 플러그인
+        _skill = _matchSkillSafe(question_type, q_types)
+        if _skill:
+            dynamic_parts.append(_skill.toPrompt())
+
         if report_mode:
             dynamic_parts.append(_REPORT_PROMPT_COMPACT)
 
@@ -284,10 +307,10 @@ def build_system_prompt_parts(
         base = SYSTEM_PROMPT_EN
     if not allow_tools:
         base = _strip_tool_guidance(base)
-    static_parts = []
+    static_parts = [_PHILOSOPHY_KR]
     dynamic_parts = []
 
-    # 정적: 벤치마크 + 토픽 + 교차검증 + Few-shot
+    # 정적: 철학 + 벤치마크 + 토픽 + 교차검증 + Few-shot
     benchmark_key = _match_sector(sector) if sector else None
     if benchmark_key and benchmark_key in _INDUSTRY_BENCHMARKS:
         static_parts.append(_INDUSTRY_BENCHMARKS[benchmark_key])
@@ -314,7 +337,11 @@ def build_system_prompt_parts(
         edgar_supp = EDGAR_SUPPLEMENT_EN if lang == "en" else EDGAR_SUPPLEMENT_KR
         static_parts.append(edgar_supp)
 
-    # 동적: report_mode + 플러그인
+    # 동적: skill + report_mode + 플러그인
+    _skill = _matchSkillSafe(question_type, q_types)
+    if _skill:
+        dynamic_parts.append(_skill.toPrompt())
+
     if report_mode:
         dynamic_parts.append(_REPORT_PROMPT)
 
