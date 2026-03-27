@@ -297,7 +297,7 @@ class LocalPythonBackend(CodingBackend):
         if violations:
             return CodingTaskResult(
                 backend=self.name,
-                answer=f"[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
+                answer="[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
                 sandbox=sandbox,
                 model="local",
             )
