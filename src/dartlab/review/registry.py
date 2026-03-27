@@ -25,7 +25,9 @@ def buildBlocks(company) -> dict:
         calcCompanyProfile,
         calcConcentration,
         calcFlags,
+        calcGrowthContribution,
         calcRevenueGrowth,
+        calcRevenueQuality,
         calcSegmentComposition,
         calcSegmentTrend,
     )
@@ -38,11 +40,13 @@ def buildBlocks(company) -> dict:
         concentrationBlock,
         debtTimelineBlock,
         distressBlock,
+        growthContributionBlock,
         interestBurdenBlock,
         liquidityBlock,
         profileBlock,
         revenueFlagsBlock,
         revenueGrowthBlock,
+        revenueQualityBlock,
         segmentCompositionBlock,
         segmentTrendBlock,
     )
@@ -79,6 +83,8 @@ def buildBlocks(company) -> dict:
     b["product"] = _safe(lambda: breakdownBlock(calcBreakdown(company, "product"), "product"))
     b["growth"] = _safe(lambda: revenueGrowthBlock(calcRevenueGrowth(company)))
     b["concentration"] = _safe(lambda: concentrationBlock(calcConcentration(company)))
+    b["revenueQuality"] = _safe(lambda: revenueQualityBlock(calcRevenueQuality(company)))
+    b["growthContribution"] = _safe(lambda: growthContributionBlock(calcGrowthContribution(company)))
     b["revenueFlags"] = _safe(lambda: revenueFlagsBlock(calcFlags(company)))
 
     # ── 자금구조 ──

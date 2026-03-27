@@ -72,6 +72,25 @@ def segmentCompositionBlock(data: dict) -> list:
         )
     )
     blocks.append(TableBlock("", pl.DataFrame(unified)))
+
+    # 다년간 비중 변화 테이블
+    history = data.get("compositionHistory")
+    if history and len(history) >= 2:
+        # {year, shares: {seg: pct}} → 부문×연도 테이블
+        allSegs = []
+        for h in history:
+            for s in h["shares"]:
+                if s not in allSegs:
+                    allSegs.append(s)
+        histYears = [h["year"] for h in history]
+        histRows = []
+        for seg in allSegs:
+            row: dict = {"부문": seg}
+            for h in history:
+                row[h["year"]] = f"{h['shares'].get(seg, 0):.1f}%"
+            histRows.append(row)
+        blocks.append(TableBlock("비중 변화", pl.DataFrame(histRows)))
+
     return blocks
 
 
@@ -133,6 +152,23 @@ def breakdownBlock(data: dict, sub: str) -> list:
     blocks: list = []
     blocks.append(HeadingBlock(title, level=2))
     blocks.append(TableBlock("", pl.DataFrame(unified)))
+
+    # 다년간 비중 변화
+    history = data.get("breakdownHistory")
+    if history and len(history) >= 2:
+        allNames: list[str] = []
+        for h in history:
+            for n in h["shares"]:
+                if n not in allNames:
+                    allNames.append(n)
+        histRows = []
+        for name in allNames:
+            row: dict = {"구분": name}
+            for h in history:
+                row[h["year"]] = f"{h['shares'].get(name, 0):.1f}%"
+            histRows.append(row)
+        blocks.append(TableBlock("비중 변화", pl.DataFrame(histRows)))
+
     return blocks
 
 
@@ -228,6 +264,88 @@ def concentrationBlock(data: dict) -> list:
         )
     )
     blocks.append(MetricBlock(metrics))
+
+    # HHI 시계열
+    hhiHistory = data.get("hhiHistory")
+    hhiDir = data.get("hhiDirection")
+    if hhiHistory and len(hhiHistory) >= 2:
+        hhiRows = [{"연도": h["year"], "HHI": f"{h['hhi']:,.0f}"} for h in hhiHistory]
+        blocks.append(TableBlock("HHI 추이", pl.DataFrame(hhiRows)))
+        if hhiDir:
+            blocks.append(TextBlock(f"방향: {hhiDir}", style="dim", indent="h2"))
+
+    return blocks
+
+
+def revenueQualityBlock(data: dict) -> list:
+    """calcRevenueQuality 결과 → MetricBlock."""
+    if not data:
+        return []
+
+    metrics = []
+    cc = data.get("cashConversion")
+    if cc is not None:
+        metrics.append(("영업CF/순이익", f"{cc:.0f}% ({data['cashConversionLabel']})"))
+    gm = data.get("grossMargin")
+    if gm is not None:
+        metrics.append(("매출총이익률", f"{gm:.1f}%"))
+
+    gmTrend = data.get("grossMarginTrend", [])
+    gmDir = data.get("grossMarginDirection", "안정")
+    if gmTrend:
+        trendStr = " → ".join(f"{v:.1f}%" for v in gmTrend)
+        metrics.append(("총이익률 추세", f"{trendStr} ({gmDir})"))
+
+    if not metrics:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "수익 품질",
+            level=2,
+            helper="영업CF/순이익 80%+ 양호, 총이익률 하락 추세 주의",
+        )
+    )
+    blocks.append(MetricBlock(metrics))
+    return blocks
+
+
+def growthContributionBlock(data: dict) -> list:
+    """calcGrowthContribution 결과 → MetricBlock + TextBlock."""
+    if not data:
+        return []
+
+    totalPct = data.get("totalGrowthPct")
+    contributions = data.get("contributions", [])
+    driver = data.get("driver", "")
+
+    if not contributions:
+        return []
+
+    period = data.get("period", "")
+
+    blocks: list = []
+    periodSuffix = f" ({period})" if period else ""
+    blocks.append(
+        HeadingBlock(
+            f"성장 기여 분해{periodSuffix}",
+            level=2,
+            helper="어느 부문이 전체 성장을 이끌었는가",
+        )
+    )
+
+    metrics = []
+    if totalPct is not None:
+        metrics.append(("전체 매출 변화", f"{totalPct:+.1f}%"))
+    for c in contributions[:5]:
+        sign = "+" if c["amount"] > 0 else ""
+        metrics.append((c["name"], f"기여 {sign}{c['pct']:.0f}%"))
+    blocks.append(MetricBlock(metrics))
+
+    if driver:
+        blocks.append(TextBlock(driver, style="dim", indent="h2"))
+
     return blocks
 
 

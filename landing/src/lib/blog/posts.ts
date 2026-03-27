@@ -58,6 +58,18 @@ export const categoryDefinitions = [
 			'DartLab 소식 카테고리. dartlab 설치 방법, 새 기능 소개, 업데이트 내역, 초보자 가이드를 모았습니다.',
 		brandMessage:
 			'DartLab은 누구나 전자공시 분석을 시작할 수 있도록, 설치부터 활용까지 쉽게 안내합니다.'
+	},
+	{
+		id: 'corporate-analysis',
+		slug: 'corporate-analysis',
+		folder: '07-corporate-analysis',
+		label: '실전기업분석',
+		description: '수익 구조, 자금 구조, 투자 효율까지 기업 전체를 읽는 분석 프레임워크입니다.',
+		seoTitle: '실전기업분석 | 수익 구조부터 투자 효율까지',
+		seoDescription:
+			'DartLab 실전기업분석 카테고리. 수익 구조, 비용 구조, 현금흐름, 부문별 이익률, 집중도 분석을 실제 기업 데이터로 정리합니다.',
+		brandMessage:
+			'DartLab은 재무제표 숫자 나열이 아니라, 이 회사가 무엇으로 돈을 벌고 구조가 얼마나 튼튼한지 판단하는 분석 흐름을 만듭니다.'
 	}
 ] as const;
 
@@ -164,7 +176,7 @@ export const seriesDefinitions = {
 	},
 	'corporate-analysis': {
 		id: 'corporate-analysis',
-		label: '기업 분석 실전',
+		label: '실전기업분석',
 		description: '수익 구조, 자금 구조, 자산 구조, 투자 효율까지 기업 전체를 읽는 분석 프레임워크 시리즈입니다.',
 		seoTitle: '기업 분석 실전 | 수익 구조부터 투자 효율까지 읽는 법',
 		seoDescription: 'DartLab 기업 분석 실전 시리즈. 수익 구조, 비용 구조, 현금흐름, 부문별 이익률, HHI 집중도, 이익의 질을 실제 기업 데이터로 분석하는 프레임워크를 정리합니다.',

@@ -40,7 +40,19 @@ def _selectSegments(company, sub: str | None = None):
     topic = f"segments:{sub}" if sub else "segments"
     try:
         return company.select(topic)
-    except (ValueError, KeyError, AttributeError):
+    except (ValueError, KeyError, AttributeError, TypeError):
+        return None
+    except Exception:  # noqa: BLE001 — Polars ShapeError 등 예측 불가 에러
+        return None
+
+
+def _getSegmentsResult(company):
+    """SegmentsResult 객체 안전 반환 (tables 딕셔너리 접근용)."""
+    try:
+        return company._call_module("segments")
+    except (ValueError, KeyError, AttributeError, TypeError):
+        return None
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -160,12 +172,16 @@ def calcSegmentComposition(company) -> dict | None:
         seg2Pct = seg2["revenue"] / totalRev * 100
         summary += f", {seg2['name']} {seg2Pct:.0f}%"
 
+    # 다년간 구성 비중 변화 (segments wide DF 활용)
+    compositionHistory = _calcCompositionHistory(company)
+
     return {
         "segments": segments,
         "totalRevenue": totalRev,
         "totalOpIncome": totalOp,
         "hasOpIncome": hasOp,
         "summary": summary,
+        "compositionHistory": compositionHistory,
     }
 
 
@@ -188,8 +204,7 @@ def calcSegmentTrend(company) -> dict | None:
         return None
 
     yearCols = [c for c in df.columns if c != "부문"]
-    maxYears = min(_MAX_YEARS, 4) if len(yearCols) >= 2 else _MAX_YEARS
-    yearCols = yearCols[:maxYears]
+    yearCols = yearCols[:_MAX_YEARS]
     if not yearCols:
         return None
 
@@ -220,14 +235,75 @@ def calcSegmentTrend(company) -> dict | None:
     return {"yearCols": yearCols, "rows": rows[:_MAX_SEGMENTS]}
 
 
+def _extractRevRow(df, nameCol: str, segCols: list[str]) -> dict | None:
+    """SegmentTable DataFrame에서 매출 행을 찾아 {col: value} 반환."""
+    revRowName = None
+    for row in df.iter_rows(named=True):
+        name = str(row.get(nameCol, "")).strip()
+        if ("매출" in name or "영업수익" in name) and "내부" not in name:
+            revRowName = name
+            break
+    if revRowName is None:
+        return None
+    for row in df.iter_rows(named=True):
+        if str(row.get(nameCol, "")) == revRowName:
+            return row
+    return None
+
+
+def _calcBreakdownHistory(company, sub: str) -> list[dict] | None:
+    """다년간 지역/제품 비중 변화. [{year, shares: {name: pct}}, ...]."""
+    segResult = _getSegmentsResult(company)
+    if segResult is None or segResult.tables is None:
+        return None
+
+    typeMap = {"region": "region", "product": "product"}
+    tableType = typeMap.get(sub)
+    if tableType is None:
+        return None
+
+    history = []
+    for year in sorted(segResult.tables.keys(), reverse=True)[:_MAX_YEARS]:
+        for t in segResult.tables[year]:
+            if t.tableType != tableType or t.period != "당기" or not t.aligned:
+                continue
+            try:
+                df = t.toDataFrame()
+            except Exception:  # noqa: BLE001 — ShapeError 등
+                continue
+            if df.is_empty():
+                continue
+            nameCol = df.columns[0]
+            segCols = [c for c in df.columns if c != nameCol]
+            if not segCols:
+                continue
+            revRow = _extractRevRow(df, nameCol, segCols)
+            if revRow is None:
+                continue
+            vals = {}
+            for col in segCols:
+                v = revRow.get(col)
+                if v is not None and v > 0:
+                    vals[col] = v
+            total = sum(vals.values())
+            if total <= 0:
+                continue
+            shares = {k: v / total * 100 for k, v in vals.items()}
+            history.append({"year": year, "shares": shares})
+            break  # 같은 연도 중복 방지
+
+    return history if len(history) >= 2 else None
+
+
 def calcBreakdown(company, sub: str) -> dict | None:
-    """지역별/제품별 매출 비중.
+    """지역별/제품별 매출 비중 + 다년간 비중 변화.
 
     반환::
 
         {
             "items": [{"name": str, "value": float, "pct": float}, ...],
             "total": float,
+            "breakdownHistory": [{"year": str, "shares": {name: pct}}, ...] | None,
         }
     """
     selectResult = _selectSegments(company, sub)
@@ -243,22 +319,7 @@ def calcBreakdown(company, sub: str) -> dict | None:
     if not segCols:
         return None
 
-    revRowName = None
-    for row in df.iter_rows(named=True):
-        name = str(row.get(nameCol, "")).strip()
-        if ("매출" in name or "영업수익" in name) and "내부" not in name:
-            revRowName = name
-            break
-
-    if revRowName is None:
-        return None
-
-    revRow = None
-    for row in df.iter_rows(named=True):
-        if str(row.get(nameCol, "")) == revRowName:
-            revRow = row
-            break
-
+    revRow = _extractRevRow(df, nameCol, segCols)
     if revRow is None:
         return None
 
@@ -279,7 +340,14 @@ def calcBreakdown(company, sub: str) -> dict | None:
     for i in items:
         i["pct"] = i["value"] / total * 100
 
-    return {"items": items[:_MAX_SEGMENTS], "total": total}
+    result = {"items": items[:_MAX_SEGMENTS], "total": total}
+
+    # 다년간 비중 변화
+    history = _calcBreakdownHistory(company, sub)
+    if history:
+        result["breakdownHistory"] = history
+
+    return result
 
 
 def calcRevenueGrowth(company) -> dict | None:
@@ -339,11 +407,158 @@ def calcConcentration(company) -> dict | None:
     topPct = max(revVals) / total * 100
     domesticPct = _calcDomesticExportRatio(company)
 
+    # HHI 시계열 (5년)
+    hhiResult = _calcHhiHistory(company)
+    hhiHistory = None
+    hhiDirection = "안정"
+    if hhiResult is not None:
+        hhiHistory, hhiDirection = hhiResult
+
     return {
         "hhi": hhi,
         "hhiLabel": hhiLabel,
         "topPct": topPct,
         "domesticPct": domesticPct,
+        "hhiHistory": hhiHistory,
+        "hhiDirection": hhiDirection,
+    }
+
+
+def calcRevenueQuality(company) -> dict | None:
+    """매출 품질 — 현금 뒷받침과 마진 추세.
+
+    반환::
+
+        {
+            "cashConversion": float|None,       # 영업CF/순이익 (%)
+            "cashConversionLabel": str,          # "양호" / "주의" / "위험"
+            "grossMargin": float|None,           # 최근 매출총이익률 (%)
+            "grossMarginTrend": [float, ...],    # 최근 4분기 매출총이익률
+            "grossMarginDirection": str,         # "개선" / "악화" / "안정"
+        }
+    """
+    ratios = _getRatios(company)
+    if ratios is None:
+        return None
+
+    cc = getattr(ratios, "operatingCfToNetIncome", None)
+    gm = getattr(ratios, "grossMargin", None)
+
+    if cc is None and gm is None:
+        return None
+
+    ccLabel = "양호"
+    if cc is not None:
+        if cc >= 80:
+            ccLabel = "양호"
+        elif cc >= 40:
+            ccLabel = "주의"
+        else:
+            ccLabel = "위험"
+
+    gmTrend: list[float] = []
+    try:
+        seriesResult = company.finance.ratioSeries
+        if seriesResult is not None:
+            data, _years = seriesResult
+            gmSeries = data.get("RATIO", {}).get("grossMargin", [])
+            if gmSeries:
+                gmTrend = [v for v in gmSeries[-4:] if v is not None]
+    except (ValueError, KeyError, AttributeError):
+        pass
+
+    gmDirection = "안정"
+    if len(gmTrend) >= 2:
+        first = gmTrend[0]
+        last = gmTrend[-1]
+        if first is not None and last is not None:
+            diff = last - first
+            if diff > 2:
+                gmDirection = "개선"
+            elif diff < -2:
+                gmDirection = "악화"
+
+    return {
+        "cashConversion": cc,
+        "cashConversionLabel": ccLabel,
+        "grossMargin": gm,
+        "grossMarginTrend": gmTrend,
+        "grossMarginDirection": gmDirection,
+    }
+
+
+def calcGrowthContribution(company) -> dict | None:
+    """부문별 성장 기여 분해 — 성장이 어디에서 왔는가.
+
+    반환::
+
+        {
+            "totalGrowthPct": float,
+            "contributions": [{"name": str, "amount": float, "pct": float}, ...],
+            "driver": str,
+        }
+    """
+    segResult = _selectSegments(company)
+    if segResult is None:
+        return None
+
+    df = segResult.df
+    if df.is_empty():
+        return None
+
+    yearCols = [c for c in df.columns if c != "부문"]
+    if len(yearCols) < 2:
+        return None
+
+    curYear = yearCols[0]
+    # 3년 전 비교 (가용 범위 내에서 최대한)
+    baseIdx = min(3, len(yearCols) - 1)
+    baseYear = yearCols[baseIdx]
+
+    contributions = []
+    totalCur = 0.0
+    totalBase = 0.0
+
+    for row in df.iter_rows(named=True):
+        name = row["부문"]
+        if any(kw in name for kw in _SKIP_KEYWORDS):
+            continue
+
+        cur = row.get(curYear)
+        base = row.get(baseYear)
+        if cur is None or base is None:
+            continue
+
+        totalCur += cur
+        totalBase += base
+        contributions.append({"name": name, "amount": cur - base})
+
+    if not contributions or totalBase == 0:
+        return None
+
+    totalChange = totalCur - totalBase
+    totalGrowthPct = totalChange / totalBase * 100
+
+    if totalChange == 0:
+        for c in contributions:
+            c["pct"] = 0.0
+    else:
+        for c in contributions:
+            c["pct"] = c["amount"] / abs(totalChange) * 100
+
+    contributions.sort(key=lambda x: abs(x["amount"]), reverse=True)
+    contributions = contributions[:_MAX_SEGMENTS]
+
+    top = contributions[0]
+    topPct = abs(top["pct"])
+    direction = "성장" if top["amount"] > 0 else "감소"
+    driver = f"{top['name']}이(가) 전체 {direction}의 {topPct:.0f}% 기여"
+
+    return {
+        "totalGrowthPct": totalGrowthPct,
+        "contributions": contributions,
+        "driver": driver,
+        "period": f"{baseYear}→{curYear}",
     }
 
 
@@ -393,6 +608,82 @@ def calcFlags(company) -> list[tuple[str, str]]:
 
 
 # ── 내부 헬퍼 ──
+
+_SKIP_KEYWORDS = {"합계", "조정", "내부", "소계"}
+
+
+def _getSegmentWideData(company) -> tuple[list[str], list[str], dict[str, dict[str, float]]] | None:
+    """segments wide DF에서 (yearCols, segNames, {seg: {year: revenue}}) 추출."""
+    segResult = _selectSegments(company)
+    if segResult is None:
+        return None
+    df = segResult.df
+    if df.is_empty():
+        return None
+    yearCols = [c for c in df.columns if c != "부문"][:_MAX_YEARS]
+    if not yearCols:
+        return None
+    segData: dict[str, dict[str, float]] = {}
+    for row in df.iter_rows(named=True):
+        name = row["부문"]
+        if any(kw in name for kw in _SKIP_KEYWORDS):
+            continue
+        vals = {}
+        for yc in yearCols:
+            v = row.get(yc)
+            if v is not None and v > 0:
+                vals[yc] = v
+        if vals:
+            segData[name] = vals
+    if not segData:
+        return None
+    segNames = sorted(segData, key=lambda s: segData[s].get(yearCols[0], 0), reverse=True)
+    return yearCols, segNames, segData
+
+
+def _calcCompositionHistory(company) -> list[dict] | None:
+    """연도별 부문 비중 변화. [{year, shares: {seg: pct}}, ...]."""
+    result = _getSegmentWideData(company)
+    if result is None:
+        return None
+    yearCols, segNames, segData = result
+    history = []
+    for yc in yearCols:
+        yearVals = {s: segData[s].get(yc, 0) for s in segNames}
+        total = sum(yearVals.values())
+        if total <= 0:
+            continue
+        shares = {s: v / total * 100 for s, v in yearVals.items() if v > 0}
+        history.append({"year": yc, "shares": shares})
+    return history if len(history) >= 2 else None
+
+
+def _calcHhiHistory(company) -> tuple[list[dict], str] | None:
+    """연도별 HHI 시계열 + 방향. ([{year, hhi}], direction)."""
+    result = _getSegmentWideData(company)
+    if result is None:
+        return None
+    yearCols, segNames, segData = result
+    hhiList = []
+    for yc in yearCols:
+        yearVals = [segData[s].get(yc, 0) for s in segNames]
+        total = sum(yearVals)
+        if total <= 0:
+            continue
+        hhi = sum((v / total * 100) ** 2 for v in yearVals if v > 0)
+        hhiList.append({"year": yc, "hhi": hhi})
+    if not hhiList:
+        return None
+    direction = "안정"
+    if len(hhiList) >= 2:
+        newest = hhiList[0]["hhi"]
+        oldest = hhiList[-1]["hhi"]
+        diff = newest - oldest
+        if diff < -300:
+            direction = "다각화 진행"
+        elif diff > 300:
+            direction = "집중 심화"
+    return hhiList, direction
 
 
 def _getSegmentRevenueVals(company) -> list[float]:

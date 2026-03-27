@@ -202,33 +202,27 @@ sections 경로에 의존하지 않는다.
 
 ## 5. 구현 계획
 
-### Phase 1 — 현재 revenue.py 재작성
+### Phase 1 — revenue.py calc 함수 (구현 완료)
 
-기존 "테이블 그대로 던지기"를 실제 분석으로 교체:
+9개 calc 함수로 "이 회사는 무엇으로 돈을 버는가" 질문에 답한다:
 
-1. **부문별 구조 분석** (`c.segments()` 활용)
-   - 최근 연도 부문별 매출/비중/영업이익률 테이블
-   - 부문이 없는 회사는 이 섹션 생략
+1. **calcCompanyProfile** — 업종/주요제품 맥락
+2. **calcSegmentComposition** — 부문별 매출/비중/영업이익률
+3. **calcSegmentTrend** — 다년간 부문별 매출 추이 + YoY
+4. **calcBreakdown(sub)** — 지역별/제품별 매출 분해
+5. **calcRevenueGrowth** — 매출 YoY, 3Y CAGR, 분기 매출 시계열
+6. **calcGrowthContribution** — 부문별 성장 기여 분해 (어디에서 성장이 왔는가)
+7. **calcConcentration** — HHI, 1위 부문 비중, 내수 비중
+8. **calcRevenueQuality** — 영업CF/순이익, 매출총이익률 추세
+9. **calcFlags** — 경고/기회 플래그 (고집중, 역성장, 매출≠이익 1위 괴리)
 
-2. **집중도 계산**
-   - HHI (현재 구현됨, 계산 검증 필요)
-   - CR2 (상위 2개 부문 비중)
-   - 해석 텍스트: "고집중/중간/분산"
-
-3. **손익 추이** (`c.show("IS")` 활용)
-   - 최근 4~8분기 매출/영업이익/영업이익률
-   - YoY 성장률
-   - 금액 조/억 단위 변환
-
-4. **수익 품질** (`c.ratios` 활용)
-   - Cash Conversion Ratio
-   - 매출총이익률 추이
-   - Accruals Ratio (가능 시)
-
-5. **서술 판단**
-   - 핵심 부문 식별 + 성장/하락 방향
-   - 집중도 리스크 서술
-   - 구조 변화 감지 (부문 재편 여부)
+데이터 접근 (DEV.md §11 준수):
+- `company.select("segments")` — 원본 (기본 경로)
+- `company.select("IS", [...])` — 원본 (기본 경로)
+- `company.finance.ratios` — 파생 편의
+- `company.finance.ratioSeries` — 파생 편의 (시계열)
+- `company.sector` — 메타
+- gather import 없음 ✅
 
 ### Phase 2 — 향후 확장
 

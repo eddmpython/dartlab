@@ -17,6 +17,7 @@
 - `04-data-automation`: 파이썬, 데이터 수집, 자동화 파이프라인
 - `05-global-comparison`: 같은 산업 한국/미국 기업 공시 비교
 - `06-dartlab-news`: dartlab 설치, 업데이트, 사용 팁, 새 기능 소개
+- `07-corporate-analysis`: 실전기업분석 — 수익 구조, 자금 구조, 투자 효율까지 기업 전체를 읽는 분석
 
 카테고리 번호는 고정한다. 중간에 새 카테고리가 필요하면 기존 번호를 바꾸지 말고 새 번호를 추가한다.
 
@@ -50,7 +51,7 @@ blog/
 title: 글 제목
 date: YYYY-MM-DD
 description: 1문장 설명
-category: disclosure-systems | report-reading | financial-interpretation | data-automation | global-comparison
+category: disclosure-systems | report-reading | financial-interpretation | data-automation | global-comparison | corporate-analysis
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
@@ -201,7 +202,7 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 | `industry-reading` | 업종별 공시 읽기 | 업종마다 다른 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
 | `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 희석, 자금조달, 지배력 변화를 읽게 만든다 |
 | `global-comparison` | 한미 공시 비교 실전 | 같은 산업의 한국·미국 기업을 DART/EDGAR 공시로 나란히 비교한다 |
-| `corporate-analysis` | 기업 분석 실전 | 수익 구조부터 투자 효율까지 기업 전체를 읽는 분석 프레임워크를 정리한다 |
+| `corporate-analysis` | 실전기업분석 | 수익 구조부터 투자 효율까지 기업 전체를 읽는 분석 프레임워크를 정리한다 |
 | `dartlab-news` | DartLab 소식 | dartlab 설치, 업데이트, 사용 팁, 새 기능을 안내한다 |
 
 새 시리즈를 만들 때는 먼저 이 문서와 `landing/src/lib/blog/posts.ts`를 같이 갱신한다.

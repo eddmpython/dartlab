@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" font-family="Pretendard, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="320" rx="16" fill="url(#bg3)"/>
+  <text x="40" y="40" fill="#e2e8f0" font-size="15" font-weight="700">부문 비중 변화 (3년)</text>
+  <text x="40" y="60" fill="#64748b" font-size="11">2022년 파서 잡음 제거 — 2023~2025 기준</text>
+
+  <!-- 2023 -->
+  <text x="160" y="100" fill="#94a3b8" font-size="13" font-weight="600" text-anchor="middle">2023</text>
+  <rect x="60" y="115" width="180" height="140" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="72" y="130" width="156" height="24" rx="4" fill="#3b82f6" opacity="0.8"/>
+  <text x="150" y="147" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">에너지솔루션 90%</text>
+  <rect x="72" y="162" width="17" height="24" rx="4" fill="#10b981" opacity="0.8"/>
+  <text x="95" y="179" fill="#6ee7b7" font-size="11">전자재료 10%</text>
+  <text x="150" y="232" fill="#64748b" font-size="11" text-anchor="middle">매출 22.7조</text>
+
+  <!-- 화살표 -->
+  <text x="310" y="185" fill="#64748b" font-size="24">→</text>
+
+  <!-- 2024 -->
+  <text x="430" y="100" fill="#94a3b8" font-size="13" font-weight="600" text-anchor="middle">2024</text>
+  <rect x="330" y="115" width="180" height="140" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="342" y="130" width="156" height="24" rx="4" fill="#3b82f6" opacity="0.9"/>
+  <text x="420" y="147" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">에너지솔루션 95%</text>
+  <rect x="342" y="162" width="9" height="24" rx="4" fill="#10b981" opacity="0.8"/>
+  <text x="358" y="179" fill="#6ee7b7" font-size="11">전자재료 5%</text>
+  <text x="420" y="232" fill="#64748b" font-size="11" text-anchor="middle">매출 16.6조</text>
+
+  <!-- 화살표 -->
+  <text x="570" y="185" fill="#64748b" font-size="24">→</text>
+
+  <!-- 2025 -->
+  <text x="690" y="100" fill="#f59e0b" font-size="13" font-weight="700" text-anchor="middle">2025</text>
+  <rect x="590" y="115" width="180" height="140" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+  <rect x="602" y="130" width="156" height="24" rx="4" fill="#3b82f6"/>
+  <text x="680" y="147" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">에너지솔루션 93%</text>
+  <rect x="602" y="162" width="11" height="24" rx="4" fill="#10b981" opacity="0.8"/>
+  <text x="620" y="179" fill="#6ee7b7" font-size="11">전자재료 7%</text>
+  <text x="680" y="232" fill="#fbbf24" font-size="11" text-anchor="middle" font-weight="600">매출 13.3조 ▼</text>
+
+  <!-- 해석 -->
+  <rect x="40" y="270" width="720" height="36" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1" opacity="0.6"/>
+  <text x="60" y="293" fill="#e2e8f0" font-size="12">에너지솔루션 90→93% — 비중은 유지되면서 절대 매출이 감소. 전자재료도 10→7%로 위축. 매출 자체가 줄었다.</text>
+</svg>
