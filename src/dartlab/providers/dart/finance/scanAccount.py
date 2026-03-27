@@ -306,21 +306,12 @@ def _scanAccountFromMerged(
 
     # CFS/OFS 우선: 종목별로 연결재무제표가 있으면 연결만
     cfsLabel = "연결" if fsPref == "CFS" else "재무제표"
-    hasCfs = (
-        df.filter(pl.col("fs_nm").str.contains(cfsLabel))
-        .select(scCol)
-        .unique()
-        .to_series()
-        .to_list()
-    )
+    hasCfs = df.filter(pl.col("fs_nm").str.contains(cfsLabel)).select(scCol).unique().to_series().to_list()
     hasCfsSet = set(hasCfs)
 
     # 연결 있는 종목은 연결만, 없는 종목은 전체
     if hasCfsSet:
-        cfsPart = df.filter(
-            pl.col(scCol).is_in(list(hasCfsSet))
-            & pl.col("fs_nm").str.contains(cfsLabel)
-        )
+        cfsPart = df.filter(pl.col(scCol).is_in(list(hasCfsSet)) & pl.col("fs_nm").str.contains(cfsLabel))
         ofsPart = df.filter(~pl.col(scCol).is_in(list(hasCfsSet)))
         df = pl.concat([cfsPart, ofsPart]) if not ofsPart.is_empty() else cfsPart
 
@@ -356,9 +347,7 @@ def _scanAccountFromMerged(
         # period 컬럼 생성
         qMap = pl.DataFrame({"reprt_nm": list(_REPRT_TO_Q.keys()), "_qLabel": list(_REPRT_TO_Q.values())})
         df = df.join(qMap, on="reprt_nm", how="inner")
-        df = df.with_columns(
-            (pl.col("bsns_year").cast(pl.Utf8) + pl.col("_qLabel")).alias("period")
-        )
+        df = df.with_columns((pl.col("bsns_year").cast(pl.Utf8) + pl.col("_qLabel")).alias("period"))
 
         if isBs:
             # BS: 잔액 그대로
@@ -370,12 +359,16 @@ def _scanAccountFromMerged(
         else:
             # IS/CF: 1~3분기 thstrm = standalone, 4분기 = thstrm - Q3 addAmount
             notQ4 = df.filter(pl.col("reprt_nm") != "4분기").select(
-                pl.col(scCol).alias("stockCode"), pl.col("period"), pl.col("amount"),
+                pl.col(scCol).alias("stockCode"),
+                pl.col("period"),
+                pl.col("amount"),
             )
 
             q4 = df.filter(pl.col("reprt_nm") == "4분기")
             q3Add = df.filter(pl.col("reprt_nm") == "3분기").select(
-                pl.col(scCol).alias("_sc"), pl.col("bsns_year").alias("_by"), pl.col("_addAmount").alias("_q3add"),
+                pl.col(scCol).alias("_sc"),
+                pl.col("bsns_year").alias("_by"),
+                pl.col("_addAmount").alias("_q3add"),
             )
             q4j = q4.join(q3Add, left_on=[scCol, "bsns_year"], right_on=["_sc", "_by"], how="left")
             q4j = q4j.with_columns(
@@ -384,7 +377,9 @@ def _scanAccountFromMerged(
                 .otherwise(pl.col("amount"))
                 .alias("amount")
             ).select(
-                pl.col(scCol).alias("stockCode"), pl.col("period"), pl.col("amount"),
+                pl.col(scCol).alias("stockCode"),
+                pl.col("period"),
+                pl.col("amount"),
             )
             result = pl.concat([notQ4, q4j])
 
@@ -429,7 +424,13 @@ def scanAccount(
 
     if scanPath.exists():
         allDf = _scanAccountFromMerged(
-            scanPath, snakeId, sjDiv, filterDivs, fsPref, fastKeys, annual=annual,
+            scanPath,
+            snakeId,
+            sjDiv,
+            filterDivs,
+            fsPref,
+            fastKeys,
+            annual=annual,
         )
         if allDf is not None:
             _log.info("scanAccount('%s'): scan/finance.parquet 가속 경로 사용", snakeId)

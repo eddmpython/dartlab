@@ -94,18 +94,22 @@ def _buildRawChanges(parquetPath: Path, stockCode: str, sinceYear: int = 2021) -
     work = raw.select(["year", "section_order", "section_title", "section_content"])
     work = work.sort(["section_order", "section_title", "year"])
 
-    work = work.with_columns([
-        pl.col("year").shift(1).over(["section_order", "section_title"]).alias("_prevYear"),
-        pl.col("section_content").shift(1).over(["section_order", "section_title"]).alias("_prevContent"),
-    ])
+    work = work.with_columns(
+        [
+            pl.col("year").shift(1).over(["section_order", "section_title"]).alias("_prevYear"),
+            pl.col("section_content").shift(1).over(["section_order", "section_title"]).alias("_prevContent"),
+        ]
+    )
 
-    work = work.with_columns([
-        pl.col("section_content").hash().alias("_hash"),
-        pl.col("_prevContent").hash().alias("_prevHash"),
-        pl.col("section_content").str.len_chars().alias("sizeB"),
-        pl.col("_prevContent").str.len_chars().alias("sizeA"),
-        pl.col("section_content").str.slice(0, 200).alias("preview"),
-    ])
+    work = work.with_columns(
+        [
+            pl.col("section_content").hash().alias("_hash"),
+            pl.col("_prevContent").hash().alias("_prevHash"),
+            pl.col("section_content").str.len_chars().alias("sizeB"),
+            pl.col("_prevContent").str.len_chars().alias("sizeA"),
+            pl.col("section_content").str.slice(0, 200).alias("preview"),
+        ]
+    )
 
     changes = work.filter(
         pl.col("_prevYear").is_not_null()
@@ -121,10 +125,12 @@ def _buildRawChanges(parquetPath: Path, stockCode: str, sinceYear: int = 2021) -
         return None
 
     numPattern = r"[\d,.]+"
-    changes = changes.with_columns([
-        pl.col("section_content").str.replace_all(numPattern, "N").alias("_stripped"),
-        pl.col("_prevContent").str.replace_all(numPattern, "N").alias("_prevStripped"),
-    ])
+    changes = changes.with_columns(
+        [
+            pl.col("section_content").str.replace_all(numPattern, "N").alias("_stripped"),
+            pl.col("_prevContent").str.replace_all(numPattern, "N").alias("_prevStripped"),
+        ]
+    )
 
     changes = changes.with_columns(
         pl.when(pl.col("_prevContent").is_null())
@@ -135,8 +141,11 @@ def _buildRawChanges(parquetPath: Path, stockCode: str, sinceYear: int = 2021) -
         .then(pl.lit("numeric"))
         .when(
             (pl.col("sizeA") > 0)
-            & ((pl.col("sizeB").cast(pl.Int64) - pl.col("sizeA").cast(pl.Int64)).abs().cast(pl.Float64)
-               / pl.col("sizeA").cast(pl.Float64) > 0.5)
+            & (
+                (pl.col("sizeB").cast(pl.Int64) - pl.col("sizeA").cast(pl.Int64)).abs().cast(pl.Float64)
+                / pl.col("sizeA").cast(pl.Float64)
+                > 0.5
+            )
         )
         .then(pl.lit("structural"))
         .otherwise(pl.lit("wording"))
@@ -145,17 +154,19 @@ def _buildRawChanges(parquetPath: Path, stockCode: str, sinceYear: int = 2021) -
 
     changes = changes.filter(pl.col("year").cast(pl.Utf8).str.to_integer(strict=False) >= sinceYear)
 
-    return changes.select([
-        pl.col("_prevYear").alias("fromPeriod"),
-        pl.col("year").alias("toPeriod"),
-        pl.col("section_title").alias("sectionTitle"),
-        pl.col("changeType"),
-        pl.col("sizeA"),
-        pl.col("sizeB"),
-        (pl.col("sizeB").cast(pl.Int64) - pl.col("sizeA").cast(pl.Int64)).alias("sizeDelta"),
-        pl.col("preview"),
-        pl.lit(stockCode).alias("stockCode"),
-    ])
+    return changes.select(
+        [
+            pl.col("_prevYear").alias("fromPeriod"),
+            pl.col("year").alias("toPeriod"),
+            pl.col("section_title").alias("sectionTitle"),
+            pl.col("changeType"),
+            pl.col("sizeA"),
+            pl.col("sizeB"),
+            (pl.col("sizeB").cast(pl.Int64) - pl.col("sizeA").cast(pl.Int64)).alias("sizeDelta"),
+            pl.col("preview"),
+            pl.lit(stockCode).alias("stockCode"),
+        ]
+    )
 
 
 def buildChanges(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
@@ -201,7 +212,9 @@ def buildChanges(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
                 batchIdx += 1
 
         if verbose and (i + 1) % 500 == 0:
-            _log(f"  [{i+1}/{len(allFiles)}] {success}ok {failed}fail {totalRows:,}rows {time.perf_counter()-t0:.0f}s")
+            _log(
+                f"  [{i + 1}/{len(allFiles)}] {success}ok {failed}fail {totalRows:,}rows {time.perf_counter() - t0:.0f}s"
+            )
 
     if batchIdx == 0:
         if verbose:
@@ -259,9 +272,7 @@ def buildFinance(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
             df = df.rename({"stock_code": "stockCode"})
 
         if "bsns_year" in df.columns:
-            df = df.filter(
-                pl.col("bsns_year").cast(pl.Utf8).str.to_integer(strict=False) >= sinceYear
-            )
+            df = df.filter(pl.col("bsns_year").cast(pl.Utf8).str.to_integer(strict=False) >= sinceYear)
 
         if df.height == 0:
             continue
@@ -279,7 +290,7 @@ def buildFinance(*, sinceYear: int = 2021, verbose: bool = True) -> Path | None:
                 batchIdx += 1
 
         if verbose and (i + 1) % 500 == 0:
-            _log(f"  [{i+1}/{len(allFiles)}] {success}ok {totalRows:,}rows {time.perf_counter()-t0:.0f}s")
+            _log(f"  [{i + 1}/{len(allFiles)}] {success}ok {totalRows:,}rows {time.perf_counter() - t0:.0f}s")
 
     if batchIdx == 0:
         if verbose:
@@ -346,12 +357,8 @@ def buildReport(*, sinceYear: int = 2021, verbose: bool = True) -> list[Path]:
             df = df.with_columns(pl.lit(pf.stem).alias("stockCode"))
 
         if "year" in df.columns:
-            df = df.with_columns(
-                pl.col("year").cast(pl.Utf8).str.to_integer(strict=False).alias("_yearInt")
-            )
-            df = df.filter(
-                pl.col("_yearInt").is_null() | (pl.col("_yearInt") >= sinceYear)
-            ).drop("_yearInt")
+            df = df.with_columns(pl.col("year").cast(pl.Utf8).str.to_integer(strict=False).alias("_yearInt"))
+            df = df.filter(pl.col("_yearInt").is_null() | (pl.col("_yearInt") >= sinceYear)).drop("_yearInt")
 
         processed += 1
 
@@ -373,7 +380,7 @@ def buildReport(*, sinceYear: int = 2021, verbose: bool = True) -> list[Path]:
                     apiBatchIdx[apiType] = idx + 1
 
         if verbose and (i + 1) % 500 == 0:
-            _log(f"  [{i+1}/{len(allFiles)}] {processed}ok {time.perf_counter()-t0:.0f}s")
+            _log(f"  [{i + 1}/{len(allFiles)}] {processed}ok {time.perf_counter() - t0:.0f}s")
 
     # 남은 청크 flush + 합산
     outputs: list[Path] = []
@@ -428,9 +435,7 @@ def buildScan(*, sinceYear: int = 2021, verbose: bool = True) -> dict[str, Path 
         _log("=" * 60)
         scanDir = _scanDir()
         if scanDir.exists():
-            totalMb = sum(
-                f.stat().st_size for f in scanDir.rglob("*.parquet")
-            ) / 1024 / 1024
+            totalMb = sum(f.stat().st_size for f in scanDir.rglob("*.parquet")) / 1024 / 1024
             _log(f"scan 전체: {totalMb:.1f}MB")
 
     return results

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import polars as pl
 
-
 _scanDownloaded = False
 
 
@@ -191,16 +190,11 @@ def _scanFinanceFromMerged(
     target = cfs if not cfs.is_empty() else target
 
     # 종목별 최신 연도만
-    latestYear = (
-        target.group_by(scCol)
-        .agg(pl.col("bsns_year").max().alias("_maxYear"))
-    )
+    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
     target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
 
     # 계정 매칭
-    matched = target.filter(
-        pl.col("account_id").is_in(list(accountIds)) | pl.col("account_nm").is_in(list(accountNms))
-    )
+    matched = target.filter(pl.col("account_id").is_in(list(accountIds)) | pl.col("account_nm").is_in(list(accountNms)))
 
     result: dict[str, float] = {}
     for row in matched.iter_rows(named=True):

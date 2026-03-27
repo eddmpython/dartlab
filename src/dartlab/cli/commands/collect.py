@@ -213,7 +213,7 @@ def _printHelp(console) -> None:
 
 def _runScan(console, args) -> int:
     """전종목 scan 프리빌드 실행."""
-    from dartlab.market.scan.builder import buildScan, buildChanges, buildFinance, buildReport
+    from dartlab.market.scan.builder import buildChanges, buildFinance, buildReport, buildScan
 
     target = getattr(args, "scan", "all")
     sinceYear = getattr(args, "since_year", 2021)

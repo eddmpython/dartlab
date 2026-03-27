@@ -143,9 +143,7 @@ def _revenueFromMerged(scanPath: Path, revIds: set[str], revNms: set[str]) -> di
     latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
     target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
 
-    matched = target.filter(
-        pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms))
-    )
+    matched = target.filter(pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms)))
 
     rev_map: dict[str, float] = {}
     for row in matched.iter_rows(named=True):
@@ -160,8 +158,7 @@ def _revenueFromMerged(scanPath: Path, revIds: set[str], revNms: set[str]) -> di
     missingCodes = allCodes - matchedCodes
     if missingCodes:
         fallbackRows = target.filter(
-            pl.col(scCol).is_in(list(missingCodes))
-            & pl.col("account_nm").str.contains("매출")
+            pl.col(scCol).is_in(list(missingCodes)) & pl.col("account_nm").str.contains("매출")
         )
         for row in fallbackRows.iter_rows(named=True):
             code = row.get(scCol, "")
@@ -198,9 +195,7 @@ def _revenueFallback(revIds: set[str], revNms: set[str]) -> dict[str, float]:
         cfs = is_df.filter(pl.col("fs_nm").str.contains("연결"))
         target = cfs if not cfs.is_empty() else is_df
 
-        rev_rows = target.filter(
-            pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms))
-        )
+        rev_rows = target.filter(pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms)))
         if rev_rows.is_empty():
             rev_rows = target.filter(pl.col("account_nm").str.contains("매출"))
         if rev_rows.is_empty():

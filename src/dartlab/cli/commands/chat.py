@@ -59,19 +59,19 @@ _TOOL_LABELS = {
 # ---------------------------------------------------------------------------
 
 _COMMANDS: list[tuple[str, tuple[str, ...], str]] = [
-    ("/help",     (),              "Show available commands"),
-    ("/company",  ("/c",),         "Switch or show current company"),
-    ("/model",    ("/m",),         "Switch model"),
-    ("/provider", ("/p",),         "Switch LLM provider"),
-    ("/clear",    (),              "Clear conversation history"),
-    ("/suggest",  ("/s",),         "Suggested questions"),
-    ("/status",   (),              "Session status and config"),
-    ("/cost",     (),              "Token usage and cost"),
-    ("/export",   (),              "Export conversation to markdown"),
-    ("/history",  ("/h",),         "Show recent conversation turns"),
-    ("/compact",  (),              "Compact conversation history"),
-    ("/report",   ("/r",),         "Deep analysis (report mode)"),
-    ("/quit",     ("/exit", "/q"), "Exit"),
+    ("/help", (), "Show available commands"),
+    ("/company", ("/c",), "Switch or show current company"),
+    ("/model", ("/m",), "Switch model"),
+    ("/provider", ("/p",), "Switch LLM provider"),
+    ("/clear", (), "Clear conversation history"),
+    ("/suggest", ("/s",), "Suggested questions"),
+    ("/status", (), "Session status and config"),
+    ("/cost", (), "Token usage and cost"),
+    ("/export", (), "Export conversation to markdown"),
+    ("/history", ("/h",), "Show recent conversation turns"),
+    ("/compact", (), "Compact conversation history"),
+    ("/report", ("/r",), "Deep analysis (report mode)"),
+    ("/quit", ("/exit", "/q"), "Exit"),
 ]
 
 _SLASH_WORDS: list[str] = []
@@ -96,6 +96,7 @@ def configure_parser(subparsers) -> None:
 # State
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _ChatState:
     """REPL session state."""
@@ -117,6 +118,7 @@ class _ChatState:
 # ---------------------------------------------------------------------------
 # Entry
 # ---------------------------------------------------------------------------
+
 
 def run(args) -> int:
     """Entry point for `dartlab chat`."""
@@ -148,6 +150,7 @@ def run(args) -> int:
 # ---------------------------------------------------------------------------
 # REPL loop
 # ---------------------------------------------------------------------------
+
 
 def _replLoop(state: _ChatState, console) -> None:
     """Main REPL loop."""
@@ -233,6 +236,7 @@ def _buildPromptPlain(state: _ChatState) -> str:
 # ---------------------------------------------------------------------------
 # Query execution
 # ---------------------------------------------------------------------------
+
 
 def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool = False) -> None:
     """Execute a query against the AI engine and stream the response."""
@@ -362,6 +366,7 @@ def _toolLabel(toolName: str) -> str:
 # Company management
 # ---------------------------------------------------------------------------
 
+
 def _loadCompany(state: _ChatState, identifier: str, console, *, quiet: bool = False) -> bool:
     """Load a company by stock code or name."""
     import dartlab
@@ -404,6 +409,7 @@ def _tryAutoDetect(userInput: str, state: _ChatState, console) -> None:
 # ---------------------------------------------------------------------------
 # Slash commands — dispatcher
 # ---------------------------------------------------------------------------
+
 
 def _handleSlash(userInput: str, state: _ChatState, console) -> bool:
     """Dispatch slash command. Returns True if session should exit."""
@@ -450,6 +456,7 @@ def _handleSlash(userInput: str, state: _ChatState, console) -> bool:
 # ---------------------------------------------------------------------------
 # Slash command handlers
 # ---------------------------------------------------------------------------
+
 
 def _cmdHelp(_arg: str, _state: _ChatState, console) -> None:
     console.print()
@@ -567,7 +574,7 @@ def _cmdExport(arg: str, state: _ChatState, console) -> None:
 
     path = arg or f"dartlab_chat_{datetime.now():%Y%m%d_%H%M%S}.md"
 
-    lines = [f"# DartLab Chat Export", f"Date: {datetime.now():%Y-%m-%d %H:%M}", ""]
+    lines = ["# DartLab Chat Export", f"Date: {datetime.now():%Y-%m-%d %H:%M}", ""]
     if state.company:
         lines.append(f"Company: {state.company.corpName} ({state.stockCode})")
         lines.append("")
@@ -590,7 +597,7 @@ def _cmdExport(arg: str, state: _ChatState, console) -> None:
 
 def _cmdHistory(arg: str, state: _ChatState, console) -> None:
     n = int(arg) if arg and arg.isdigit() else 5
-    recent = state.history[-(n * 2):]
+    recent = state.history[-(n * 2) :]
     if not recent:
         console.print(f"  [{_CLR_MUTED}]No conversation history.[/]")
         return
@@ -630,6 +637,7 @@ def _cmdReport(arg: str, state: _ChatState, console) -> None:
 # Session summary
 # ---------------------------------------------------------------------------
 
+
 def _printSessionSummary(state: _ChatState, console) -> None:
     """Print session statistics on exit."""
     from rich.rule import Rule
@@ -659,6 +667,7 @@ def _printSessionSummary(state: _ChatState, console) -> None:
 # ---------------------------------------------------------------------------
 # Session persistence
 # ---------------------------------------------------------------------------
+
 
 def _saveMessage(state: _ChatState, role: str, content: str) -> None:
     """Persist a message to the SQLite history database."""
@@ -706,6 +715,7 @@ def _printWelcome(state: _ChatState, console) -> None:
 
     try:
         from importlib.metadata import version as pkgVersion
+
         ver = pkgVersion("dartlab")
     except Exception:
         ver = "dev"
@@ -723,10 +733,12 @@ def _printWelcome(state: _ChatState, console) -> None:
     console.print()
 
     if state.company:
-        console.print(Rule(
-            f"[bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]",
-            style=_CLR,
-        ))
+        console.print(
+            Rule(
+                f"[bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]",
+                style=_CLR,
+            )
+        )
         console.print()
         for q in _SUGGESTIONS[:3]:
             console.print(f"  [{_CLR_MUTED}]>[/] [{_CLR_MUTED}]{q}[/]")

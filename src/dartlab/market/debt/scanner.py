@@ -163,9 +163,7 @@ def _debtMixFromMerged(scanPath: Path) -> dict[str, dict]:
     liabRows = target.filter(
         pl.col("account_id").is_in(list(LIABILITIES_IDS)) | pl.col("account_nm").is_in(list(LIABILITIES_NMS))
     )
-    eqRows = target.filter(
-        pl.col("account_id").is_in(list(EQUITY_IDS)) | pl.col("account_nm").is_in(list(EQUITY_NMS))
-    )
+    eqRows = target.filter(pl.col("account_id").is_in(list(EQUITY_IDS)) | pl.col("account_nm").is_in(list(EQUITY_NMS)))
 
     liabMap: dict[str, float] = {}
     for row in liabRows.iter_rows(named=True):
