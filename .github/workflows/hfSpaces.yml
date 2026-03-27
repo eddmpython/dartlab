@@ -18,9 +18,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # xet 지원 클론
           git clone --depth 1 https://user:${HF_TOKEN}@huggingface.co/spaces/eddmpython/dartlab hf-space
 
-          # 기존 파일 정리
+          # 기존 파일 정리 (.git 제외)
           find hf-space -mindepth 1 -not -path 'hf-space/.git*' -delete 2>/dev/null || true
 
           # Docker SDK 메타데이터
@@ -29,12 +30,20 @@ jobs:
           # Dockerfile
           cp Dockerfile.spaces hf-space/Dockerfile
 
-          # 소스 복사
+          # 소스 복사 (바이너리 제외)
           cp -r src/ hf-space/src/
           cp pyproject.toml hf-space/
           cp README.md hf-space/README_PROJECT.md
 
+          # 바이너리 파일 제거 (HF xet 정책)
+          find hf-space/src -name '*.png' -o -name '*.jpg' -o -name '*.ico' -o -name '*.woff*' -o -name '*.ttf' | xargs rm -f 2>/dev/null || true
+
           cd hf-space
+
+          # Git LFS 설정
+          git lfs install --local 2>/dev/null || true
+          git lfs track "*.png" "*.jpg" "*.ico" "*.woff" "*.woff2" "*.ttf" 2>/dev/null || true
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
