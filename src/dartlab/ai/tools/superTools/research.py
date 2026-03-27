@@ -41,10 +41,7 @@ def registerResearchTool(registerTool: Callable, *, company=None) -> None:
 
             avail = searchAvailable()
             if not avail["any"]:
-                return (
-                    "[안내] 검색 패키지가 설치되지 않았습니다.\n"
-                    "`pip install dartlab[search]`로 설치하세요."
-                )
+                return "[안내] 검색 패키지가 설치되지 않았습니다.\n`pip install dartlab[search]`로 설치하세요."
             daysInt = int(days) if days else 7
             results = newsSearch(query, maxResults=int(maxResults), days=daysInt)
             if not results:

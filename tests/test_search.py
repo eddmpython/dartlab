@@ -151,6 +151,7 @@ def test_readUrl_fallback_to_bs4(monkeypatch):
     reader._cache.clear()
     # circuit breaker 리셋
     from dartlab.gather.resilience import circuit_breaker
+
     circuit_breaker.record_success("jina")
     circuit_breaker.record_success("bs4_reader")
 

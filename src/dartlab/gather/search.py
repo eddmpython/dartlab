@@ -14,7 +14,7 @@ import os
 import time
 from dataclasses import dataclass
 
-from .cache import GatherCache, TTL_DEFAULT
+from .cache import GatherCache
 from .resilience import circuit_breaker as _cb
 from .resilience import health_tracker as _ht
 

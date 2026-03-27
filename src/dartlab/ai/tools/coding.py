@@ -126,26 +126,74 @@ class CodexCodingBackend(CodingBackend):
 # ══════════════════════════════════════
 
 # AST 기반 안전 검증 -- 금지 패턴
-_FORBIDDEN_IMPORTS = frozenset({
-    "subprocess", "os", "sys", "shutil", "signal", "ctypes",
-    "socket", "http", "urllib", "requests", "httpx", "aiohttp",
-    "multiprocessing", "threading", "asyncio",
-    "pickle", "shelve", "marshal",
-    "importlib", "runpy", "code", "codeop",
-})
+_FORBIDDEN_IMPORTS = frozenset(
+    {
+        "subprocess",
+        "os",
+        "sys",
+        "shutil",
+        "signal",
+        "ctypes",
+        "socket",
+        "http",
+        "urllib",
+        "requests",
+        "httpx",
+        "aiohttp",
+        "multiprocessing",
+        "threading",
+        "asyncio",
+        "pickle",
+        "shelve",
+        "marshal",
+        "importlib",
+        "runpy",
+        "code",
+        "codeop",
+    }
+)
 
-_FORBIDDEN_CALLS = frozenset({
-    "exec", "eval", "compile", "__import__", "globals", "locals",
-    "getattr", "setattr", "delattr", "breakpoint", "exit", "quit",
-    "open",  # 파일 쓰기 방지 (읽기도 차단 -- 데이터는 data 변수로 주입)
-})
+_FORBIDDEN_CALLS = frozenset(
+    {
+        "exec",
+        "eval",
+        "compile",
+        "__import__",
+        "globals",
+        "locals",
+        "getattr",
+        "setattr",
+        "delattr",
+        "breakpoint",
+        "exit",
+        "quit",
+        "open",  # 파일 쓰기 방지 (읽기도 차단 -- 데이터는 data 변수로 주입)
+    }
+)
 
-_ALLOWED_IMPORTS = frozenset({
-    "math", "statistics", "json", "datetime", "collections",
-    "itertools", "functools", "operator", "decimal", "fractions",
-    "re", "textwrap", "string", "copy", "dataclasses", "time",
-    "polars", "numpy", "pandas",
-})
+_ALLOWED_IMPORTS = frozenset(
+    {
+        "math",
+        "statistics",
+        "json",
+        "datetime",
+        "collections",
+        "itertools",
+        "functools",
+        "operator",
+        "decimal",
+        "fractions",
+        "re",
+        "textwrap",
+        "string",
+        "copy",
+        "dataclasses",
+        "time",
+        "polars",
+        "numpy",
+        "pandas",
+    }
+)
 
 
 class _SafetyVisitor(ast.NodeVisitor):
