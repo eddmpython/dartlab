@@ -19,7 +19,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">Live Demo</a> · <a href="notebooks/marimo/">Marimo Notebooks</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb">Open in Colab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">Live Demo</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb">Open in Colab</a> · <a href="https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py">Open in Molab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -1020,52 +1020,27 @@ dartlab collect --batch --mode all         # re-collect everything
 
 ## Try It Now
 
-### Live Demo (No Install)
+### Live Demo
 
-Try DartLab instantly — no Python, no terminal, no setup:
+**[Open Live Demo](https://huggingface.co/spaces/eddmpython/dartlab)** -- no install, no Python
 
-**[→ Open Live Demo](https://huggingface.co/spaces/eddmpython/dartlab)** — enter a stock code, see financials immediately
+### Notebooks
 
-Or open a [Colab notebook](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb) in your browser.
+| Feature | Description | Colab | Molab |
+|---------|-------------|-------|-------|
+| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py) |
+| **Scan** | `scanAccount()` / `scanRatio()` -- cross-market ratio scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/02_scan.py) |
+| **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/03_ask.py) |
 
-### Marimo Notebooks
-
-> Data is automatically downloaded on first use. No setup required unless collecting new companies directly from DART.
+<details>
+<summary>Run locally with Marimo</summary>
 
 ```bash
 uv add dartlab marimo
-marimo edit notebooks/marimo/dartCompany.py    # Korean company (DART)
-marimo edit notebooks/marimo/edgarCompany.py   # US company (EDGAR)
-marimo edit notebooks/marimo/aiAnalysis.py     # AI analysis examples
+marimo edit notebooks/marimo/01_company.py
+marimo edit notebooks/marimo/02_scan.py
+marimo edit notebooks/marimo/03_ask.py
 ```
-
-### Colab Notebooks
-
-**Showcase** (English — global audience):
-
-| Notebook | Topic |
-|---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/01_quickstart.ipynb) | **Quick Start** — analyze any company in 3 lines |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/02_financial_analysis.ipynb) | **Financial Analysis** — statements, time series, ratios |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/03_kr_us_compare.ipynb) | **Korea vs US** — Samsung vs Apple side-by-side |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/04_risk_diff.ipynb) | **Risk Diff** — track disclosure changes (Bloomberg can't) |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/05_sector_screening.ipynb) | **Sector Screening** — 8 presets, sector benchmarks |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/06_insight_anomaly.ipynb) | **Insight & Anomaly** — 10-area grading, 6 anomaly rules |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/07_network_governance.ipynb) | **Network & Governance** — corporate relationship graph |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/08_signal_trend.ipynb) | **Signal Trends** — 48-keyword disclosure monitoring |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/09_ai_analysis.ipynb) | **AI Analysis** — `dartlab.ask()` with 9 LLM providers |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/showcase/10_disclosure_deep_dive.ipynb) | **Disclosure Deep Dive** — sections architecture |
-
-<details>
-<summary>한국어 Tutorials</summary>
-
-| Notebook | Topic |
-|---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **빠른 시작** — sections, show, trace, diff |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **재무제표** — BS, IS, CF |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **재무비율** — 47개 비율 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **공시 텍스트** — sections 파싱 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — 미국 SEC |
 
 </details>
 

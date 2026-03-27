@@ -19,7 +19,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">라이브 데모</a> · <a href="notebooks/marimo/">Marimo 노트북</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb">Colab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
+<a href="https://eddmpython.github.io/dartlab/">문서</a> · <a href="https://eddmpython.github.io/dartlab/blog/">블로그</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">라이브 데모</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb">Colab에서 열기</a> · <a href="https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py">Molab에서 열기</a> · <a href="README.md">English</a> · <a href="https://buymeacoffee.com/eddmpython">후원</a>
 </p>
 
 <p>
@@ -1020,34 +1020,29 @@ dartlab collect --batch --mode all         # 전체 재수집
 
 ## 바로 시작하기
 
-### 라이브 데모 (설치 불필요)
+### 라이브 데모
 
-Python, 터미널, 설정 모두 필요 없다. 브라우저에서 바로:
+**[라이브 데모 열기](https://huggingface.co/spaces/eddmpython/dartlab)** -- 설치 없이 브라우저에서 바로
 
-**[→ 라이브 데모 열기](https://huggingface.co/spaces/eddmpython/dartlab)** — 종목코드 입력하면 재무제표 바로 출력
+### 노트북
 
-또는 [Colab 노트북](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)을 브라우저에서 열 수 있다.
+| 기능 | 설명 | Colab | Molab |
+|------|------|-------|-------|
+| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py) |
+| **Scan** | `scanAccount()` / `scanRatio()` -- 2,700+ 전종목 횡단 스캔 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/02_scan.py) |
+| **Ask** | `ask()` -- AI 분석, 스트리밍, 9개 LLM 프로바이더 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/03_ask.py) |
 
-### Marimo 노트북
-
-> 데이터는 첫 사용 시 자동 다운로드된다. DART에서 직접 수집하지 않는 한 별도 설정 불필요.
+<details>
+<summary>로컬에서 Marimo로 실행</summary>
 
 ```bash
 uv add dartlab marimo
-marimo edit notebooks/marimo/dartCompany.py    # 한국 기업 (DART)
-marimo edit notebooks/marimo/edgarCompany.py   # 미국 기업 (EDGAR)
-marimo edit notebooks/marimo/aiAnalysis.py     # AI 분석 예시
+marimo edit notebooks/marimo/01_company.py
+marimo edit notebooks/marimo/02_scan.py
+marimo edit notebooks/marimo/03_ask.py
 ```
 
-### Colab 튜토리얼
-
-| 노트북 | 주제 |
-|---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb) | **빠른 시작** — sections, show, trace, diff |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) | **재무제표** — BS, IS, CF |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) | **재무비율** — 47개 비율 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) | **공시 텍스트** — sections, 텍스트 파싱 |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) | **EDGAR** — 미국 SEC 공시 |
+</details>
 
 ## 문서
 

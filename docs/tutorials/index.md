@@ -1,35 +1,24 @@
 ---
-title: Tutorials
+title: Notebooks
 ---
 
-# Tutorials
+# Notebooks
 
-Learn DartLab's core features step by step. The central flow across all tutorials is `Company -> sections -> show -> trace`. Each tutorial can be run instantly on Google Colab with no installation required.
+DartLab does three things. One notebook each, in two formats.
 
-## Core — Company & Financial Data
+| Feature | What it covers | Colab | Molab |
+|---------|---------------|-------|-------|
+| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py) |
+| **Scan** | `scanAccount()` / `scanRatio()` -- 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/02_scan.py) |
+| **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/03_ask.py) |
 
-| # | Tutorial | Description | |
-|---|----------|-------------|-|
-| 01 | Quickstart | Company creation, sections, show, trace | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/01_quickstart.ipynb) |
-| 02 | Financial Statements | Balance sheet, income statement, cash flow statement in detail | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/02_financial_statements.ipynb) |
-| 03 | Timeseries | Account standardization, standalone quarterly timeseries, TTM | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/03_timeseries.ipynb) |
-| 04 | Ratios | Financial ratios — ROE, debt ratio, FCF, company comparison | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/04_ratios.ipynb) |
-| 09 | EDGAR (US) | US company analysis — 10-K/10-Q sections, XBRL financials | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/09_edgar.ipynb) |
+**Colab** runs in browser (Google account). **Molab** runs in browser (marimo cloud, free).
 
-## Advanced — Disclosure & Analysis
-
-| # | Tutorial | Description | |
-|---|----------|-------------|-|
-| 05 | Report Data | Dividends, employees, largest shareholder, audit opinion | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/05_report_data.ipynb) |
-| 06 | Disclosure Text | Business description, MD&A, company overview | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/06_disclosure.ipynb) |
-| 08 | Cross-Company | Sector classification, insight grades, market ranking | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/tutorials/08_cross_company.ipynb) |
-
-## Before You Start
-
-Running on Colab requires no additional installation. To run locally, install first:
+## Run locally with Marimo
 
 ```bash
-uv add dartlab
+uv add dartlab marimo
+marimo edit notebooks/marimo/01_company.py
+marimo edit notebooks/marimo/02_scan.py
+marimo edit notebooks/marimo/03_ask.py
 ```
-
-Data is automatically downloaded from HuggingFace when you enter a stock code.

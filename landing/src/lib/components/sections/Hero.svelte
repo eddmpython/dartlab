@@ -53,6 +53,7 @@
 			<Button variant="secondary" href="{base}/docs/">Docs</Button>
 			<Button variant="secondary" href={brand.spaces}>Live Demo</Button>
 			<Button variant="secondary" href={brand.colab}>Open in Colab</Button>
+			<Button variant="secondary" href={brand.molab}>Open in Molab</Button>
 		</div>
 
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">

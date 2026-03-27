@@ -32,8 +32,19 @@ def main(argv: list[str] | None = None) -> int:
 
     handler = getattr(args, "handler", None)
     if handler is None:
-        parser.print_help()
-        return EXIT_OK
+        if sys.stdin.isatty():
+            from dartlab.cli.commands.chat import run as chatRun
+
+            args.company = None
+            args.provider = None
+            args.model = None
+            args.base_url = None
+            args.api_key = None
+            args.cont = False
+            handler = chatRun
+        else:
+            parser.print_help()
+            return EXIT_OK
 
     try:
         return int(handler(args) or EXIT_OK)

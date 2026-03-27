@@ -74,10 +74,38 @@ _COMMANDS: list[tuple[str, tuple[str, ...], str]] = [
     ("/quit", ("/exit", "/q"), "Exit"),
 ]
 
+# ---------------------------------------------------------------------------
+# Skill commands (analysis domain shortcuts)
+# ---------------------------------------------------------------------------
+
+_SKILL_COMMANDS: list[tuple[str, str, str]] = [
+    ("/profitability", "profitability", "Profitability analysis (DuPont, margins, earnings quality)"),
+    ("/health", "health", "Financial health (leverage, liquidity, coverage)"),
+    ("/valuation", "valuation", "Valuation (multiples, DCF, fair value range)"),
+    ("/risk", "risk", "Risk assessment (financial, business, accounting)"),
+    ("/strategy", "strategy", "Business strategy (segments, moat, growth)"),
+    ("/accounting", "accounting", "Accounting quality (accruals, audit, changes)"),
+    ("/dividend", "dividend", "Dividend analysis (sustainability, payout, yield)"),
+    ("/comprehensive", "comprehensive", "Comprehensive investment analysis"),
+]
+
+_SKILL_DEFAULT_QUESTIONS: dict[str, str] = {
+    "profitability": "Analyze profitability trends: DuPont decomposition, margin structure, and earnings quality",
+    "health": "Evaluate financial health: leverage structure, liquidity layers, and debt coverage",
+    "valuation": "Assess valuation: key multiples vs peers, DCF fair value range, and safety margin",
+    "risk": "Identify risks: financial distress signals, business risks, and accounting red flags",
+    "strategy": "Analyze business strategy: segment structure, competitive moat, and growth direction",
+    "accounting": "Evaluate accounting quality: accrual ratio, audit history, and policy changes",
+    "dividend": "Analyze dividends: payout history, FCF sustainability, and shareholder return policy",
+    "comprehensive": "Provide a comprehensive investment analysis covering financials, valuation, risks, and thesis",
+}
+
 _SLASH_WORDS: list[str] = []
 for _name, _aliases, _ in _COMMANDS:
     _SLASH_WORDS.append(_name)
     _SLASH_WORDS.extend(_aliases)
+for _skillCmd, _, _ in _SKILL_COMMANDS:
+    _SLASH_WORDS.append(_skillCmd)
 
 
 def configure_parser(subparsers) -> None:
@@ -113,6 +141,7 @@ class _ChatState:
     queryCount: int = 0
     toolCallCount: int = 0
     companiesUsed: list[str] = field(default_factory=list)
+    cachedSnapshot: dict | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +207,17 @@ def _replLoop(state: _ChatState, console) -> None:
         if not userInput:
             continue
 
+        # bare "exit" / "quit" without slash
+        if userInput.lower() in ("exit", "quit", "q"):
+            console.print(f"  [{_CLR_MUTED}]Exiting chat.[/]")
+            _printSessionSummary(state, console)
+            break
+
+        # "/" alone → show commands (Claude Code pattern)
+        if userInput == "/":
+            _cmdHelp("", state, console)
+            continue
+
         if userInput.startswith("/"):
             shouldExit = _handleSlash(userInput, state, console)
             if shouldExit:
@@ -216,9 +256,11 @@ def _makePromptFn(state: _ChatState):
 
         def _prompt():
             if state.company:
-                msg = HTML(f'\n<style fg="{_CLR}"><b>{state.company.corpName}</b></style> &gt; ')
+                msg = HTML(
+                    f'\n<style fg="{_CLR}"><b>{state.company.corpName}</b></style><style fg="{_CLR_MUTED}"> &gt; </style>'
+                )
             else:
-                msg = HTML(f'\n<style fg="{_CLR_MUTED}">dartlab</style> &gt; ')
+                msg = HTML(f'\n<style fg="{_CLR}"><b>dartlab</b></style><style fg="{_CLR_MUTED}"> &gt; </style>')
             return session.prompt(msg)
 
         return _prompt
@@ -238,26 +280,44 @@ def _buildPromptPlain(state: _ChatState) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool = False) -> None:
+def _executeQuery(
+    question: str,
+    state: _ChatState,
+    console,
+    *,
+    reportMode: bool = False,
+    skillId: str | None = None,
+) -> None:
     """Execute a query against the AI engine and stream the response."""
+    from rich.console import Group
     from rich.live import Live
     from rich.markdown import Markdown
+    from rich.spinner import Spinner
     from rich.text import Text
 
     from dartlab.ai.runtime.core import analyze
 
-    events = analyze(
-        state.company,
-        question,
-        provider=state.provider,
-        model=state.model,
-        base_url=state.baseUrl,
-        api_key=state.apiKey,
-        use_tools=True,
-        report_mode=reportMode,
-        max_turns=15 if reportMode else 5,
-        history=state.history if state.history else None,
-    )
+    # auto-compact long history
+    if len(state.history) > 20:
+        state.history = state.history[-12:]
+
+    analyzeKwargs: dict[str, Any] = {
+        "provider": state.provider,
+        "model": state.model,
+        "base_url": state.baseUrl,
+        "api_key": state.apiKey,
+        "use_tools": True,
+        "report_mode": reportMode,
+        "max_turns": 15 if reportMode else (8 if skillId else 5),
+        "history": state.history if state.history else None,
+        "validate": reportMode,
+    }
+    if skillId:
+        analyzeKwargs["question_types"] = (skillId,)
+    if state.cachedSnapshot:
+        analyzeKwargs["snapshot"] = state.cachedSnapshot
+
+    events = analyze(state.company, question, **analyzeKwargs)
 
     buffer = ""
     toolStartTime: float | None = None
@@ -265,22 +325,32 @@ def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool
     toolPanels: list[str] = []
     queryStart = time.monotonic()
     queryToolCount = 0
+    thinkingPhase = True
 
     try:
-        with Live(console=console, refresh_per_second=8, vertical_overflow="visible") as live:
+        with Live(console=console, refresh_per_second=10, vertical_overflow="visible", transient=True) as live:
+            spinner = Spinner("dots", text=f"[{_CLR_MUTED}]Thinking...[/]", style=_CLR_MUTED)
+            live.update(spinner)
+
             for ev in events:
                 if ev.kind == "chunk":
+                    thinkingPhase = False
                     buffer += ev.data["text"]
                     live.update(Markdown(buffer))
 
                 elif ev.kind == "tool_call":
+                    thinkingPhase = False
                     toolName = ev.data.get("name", "")
                     label = _toolLabel(toolName)
                     toolStartTime = time.monotonic()
                     state.toolCallCount += 1
                     queryToolCount += 1
-                    statusBlock = "\n".join(toolLines + [f"> {label} ... fetching"])
-                    live.update(Markdown(statusBlock + "\n\n" + buffer if buffer else statusBlock))
+                    toolSpinner = Spinner("dots", text=f"[{_CLR_MUTED}]{label}...[/]", style=_CLR_MUTED)
+                    statusBlock = "\n".join(toolLines)
+                    if statusBlock:
+                        live.update(Group(Markdown(statusBlock), toolSpinner))
+                    else:
+                        live.update(toolSpinner)
 
                 elif ev.kind == "tool_result":
                     toolName = ev.data.get("name", "")
@@ -298,7 +368,7 @@ def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool
                         toolPanels.append(resultText)
                     toolLines.append(line)
                     statusBlock = "\n".join(toolLines)
-                    live.update(Markdown(statusBlock + "\n\n" + buffer if buffer else statusBlock))
+                    live.update(Markdown(statusBlock))
 
                 elif ev.kind == "error":
                     errorMsg = ev.data.get("error", "Unknown error")
@@ -307,10 +377,20 @@ def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool
     except KeyboardInterrupt:
         console.print(f"\n  [{_CLR_MUTED}]Response interrupted[/]")
 
+    # tool status log (compact)
+    if toolLines:
+        for tl in toolLines:
+            console.print(f"  [{_CLR_MUTED}]{tl}[/]")
+
+    # tool data tables
     if toolPanels:
-        console.print()
         for panel in toolPanels:
             _renderToolData(panel, console)
+
+    # final LLM response
+    if buffer:
+        console.print()
+        console.print(Markdown(buffer))
 
     console.print()
 
@@ -326,6 +406,14 @@ def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool
         state.queryCount += 1
         _saveMessage(state, "user", question)
         _saveMessage(state, "assistant", buffer)
+
+        # follow-up suggestions
+        if state.company and state.queryCount >= 1:
+            followUps = _generateFollowUps(buffer, skillId)
+            if followUps:
+                console.print()
+                for fq in followUps:
+                    console.print(f"  [{_CLR_MUTED}]> {fq}[/]")
 
 
 def _toolResultPreview(resultText: str) -> str:
@@ -343,7 +431,13 @@ def _toolResultPreview(resultText: str) -> str:
 
 
 def _renderToolData(resultText: str, console) -> None:
-    """Render tool result data (markdown tables) in a panel."""
+    """Render tool result data — Rich Table for tables, Markdown panel fallback."""
+    from dartlab.cli.rendering import renderToolResult
+
+    if renderToolResult(resultText, console):
+        return
+
+    # fallback: markdown panel for non-table content
     from rich.markdown import Markdown
     from rich.panel import Panel
 
@@ -386,10 +480,12 @@ def _loadCompany(state: _ChatState, identifier: str, console, *, quiet: bool = F
 
     state.company = company
     state.stockCode = company.stockCode
+    state.cachedSnapshot = None
     if company.corpName not in state.companiesUsed:
         state.companiesUsed.append(company.corpName)
     if not quiet:
         console.print(f"  [bold]{company.corpName}[/] ({company.stockCode}) loaded")
+    _displaySnapshot(company, state, console)
     return True
 
 
@@ -401,9 +497,29 @@ def _tryAutoDetect(userInput: str, state: _ChatState, console) -> None:
     if company is not None:
         state.company = company
         state.stockCode = company.stockCode
+        state.cachedSnapshot = None
         if company.corpName not in state.companiesUsed:
             state.companiesUsed.append(company.corpName)
         console.print(f"  [{_CLR_MUTED}]{company.corpName} ({company.stockCode}) auto-detected[/]")
+
+
+def _displaySnapshot(company: Any, state: _ChatState, console) -> None:
+    """Show key metrics snapshot when a company loads."""
+    try:
+        from dartlab.ai.context.snapshot import build_snapshot
+
+        snap = build_snapshot(company, includeInsights=False)
+        if snap is None:
+            return
+        items = snap.get("items", [])
+        if not items:
+            return
+        state.cachedSnapshot = snap
+        from dartlab.cli.rendering import renderSnapshot
+
+        renderSnapshot(items, console)
+    except (ImportError, AttributeError, KeyError, OSError):
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -447,8 +563,15 @@ def _handleSlash(userInput: str, state: _ChatState, console) -> bool:
     handler = handlers.get(resolved)  # type: ignore[arg-type]
     if handler:
         handler(arg, state, console)
-    else:
-        console.print(f"  [{_CLR_WARN}]Unknown command: {cmd}[/]  /help for available commands")
+        return False
+
+    # check skill commands
+    for skillCmd, skillId, _ in _SKILL_COMMANDS:
+        if cmd == skillCmd:
+            _cmdSkill(skillId, arg, state, console)
+            return False
+
+    console.print(f"  [{_CLR_WARN}]Unknown command: {cmd}[/]  /help for available commands")
 
     return False
 
@@ -459,14 +582,37 @@ def _handleSlash(userInput: str, state: _ChatState, console) -> bool:
 
 
 def _cmdHelp(_arg: str, _state: _ChatState, console) -> None:
+    from rich.text import Text
+
     console.print()
     console.print(f"  [bold {_CLR}]Commands[/]")
     for name, aliases, desc in _COMMANDS:
-        aliasStr = ", ".join(aliases)
-        label = f"{name}"
-        if aliasStr:
-            label += f", {aliasStr}"
-        console.print(f"    {label:<22s} {desc}")
+        label = Text()
+        label.append(f"  {name}", style=f"bold {_CLR}")
+        if aliases:
+            label.append(f"  {', '.join(aliases)}", style="dim")
+        pad = 24 - len(name) - (len(", ".join(aliases)) + 2 if aliases else 0)
+        label.append(" " * max(pad, 1))
+        label.append(desc, style="dim")
+        console.print(label)
+
+    console.print()
+    console.print(f"  [bold {_CLR}]Skills[/] [{_CLR_MUTED}](load a company first)[/]")
+    for cmdName, _, desc in _SKILL_COMMANDS:
+        label = Text()
+        label.append(f"  {cmdName}", style=f"bold {_CLR}")
+        pad = 24 - len(cmdName)
+        label.append(" " * max(pad, 1))
+        label.append(desc, style="dim")
+        console.print(label)
+
+    console.print()
+    tipLine = Text()
+    tipLine.append("  /", style=_CLR_MUTED)
+    tipLine.append("  show this menu  ", style="dim")
+    tipLine.append("exit", style=_CLR_MUTED)
+    tipLine.append("  quit without slash", style="dim")
+    console.print(tipLine)
     console.print()
 
 
@@ -481,6 +627,7 @@ def _cmdCompany(arg: str, state: _ChatState, console) -> None:
     if arg.lower() in ("none", "clear"):
         state.company = None
         state.stockCode = None
+        state.cachedSnapshot = None
         state.history.clear()
         state.sessionId = None
         console.print(f"  [{_CLR_MUTED}]Company cleared. Switched to general mode.[/]")
@@ -623,6 +770,17 @@ def _cmdCompact(_arg: str, state: _ChatState, console) -> None:
     console.print(f"  [{_CLR_MUTED}]Compacted: dropped {dropped} messages, kept {len(state.history)}[/]")
 
 
+def _cmdSkill(skillId: str, arg: str, state: _ChatState, console) -> None:
+    """Run an analysis skill command."""
+    if state.company is None:
+        console.print(f"  [{_CLR_MUTED}]Load a company first with /company <name>[/]")
+        return
+
+    question = arg or _SKILL_DEFAULT_QUESTIONS.get(skillId, "Analyze this company")
+    console.print(f"  [{_CLR_ACCENT}]Running {skillId} analysis...[/]")
+    _executeQuery(question, state, console, skillId=skillId)
+
+
 def _cmdReport(arg: str, state: _ChatState, console) -> None:
     if state.company is None:
         console.print(f"  [{_CLR_MUTED}]Load a company first with /company[/]")
@@ -631,6 +789,44 @@ def _cmdReport(arg: str, state: _ChatState, console) -> None:
     question = arg or "Provide a comprehensive investment analysis report"
     console.print(f"  [{_CLR_ACCENT}]Running deep analysis (report mode)...[/]")
     _executeQuery(question, state, console, reportMode=True)
+
+
+# ---------------------------------------------------------------------------
+# Follow-up suggestions (rule-based, no LLM call)
+# ---------------------------------------------------------------------------
+
+_FOLLOWUP_MAP: dict[str, list[str]] = {
+    "profitability": ["/health -- Check financial health", "/valuation -- Assess valuation"],
+    "health": ["/risk -- Identify risk factors", "/valuation -- Evaluate fair value"],
+    "valuation": ["/profitability -- Analyze earnings quality", "/risk -- Check risks"],
+    "risk": ["/health -- Verify financial resilience", "/strategy -- Review business model"],
+    "strategy": ["/profitability -- Check profitability", "/comprehensive -- Full analysis"],
+    "accounting": ["/risk -- Check related risks", "/profitability -- Earnings quality"],
+    "dividend": ["/health -- Dividend sustainability", "/valuation -- Fair value range"],
+    "comprehensive": [],
+}
+
+_KEYWORD_FOLLOWUPS: list[tuple[str, str]] = [
+    ("margin", "/profitability -- Deep dive into margins"),
+    ("debt", "/health -- Financial health analysis"),
+    ("valuation", "/valuation -- Detailed valuation"),
+    ("risk", "/risk -- Risk assessment"),
+    ("dividend", "/dividend -- Dividend sustainability"),
+    ("growth", "/strategy -- Growth strategy analysis"),
+]
+
+
+def _generateFollowUps(response: str, skillId: str | None) -> list[str]:
+    """Generate 2-3 follow-up suggestions based on response content."""
+    if skillId and skillId in _FOLLOWUP_MAP:
+        return _FOLLOWUP_MAP[skillId][:2]
+
+    responseLower = response.lower()
+    suggestions: list[str] = []
+    for keyword, suggestion in _KEYWORD_FOLLOWUPS:
+        if keyword in responseLower and len(suggestions) < 2:
+            suggestions.append(suggestion)
+    return suggestions
 
 
 # ---------------------------------------------------------------------------
@@ -700,18 +896,19 @@ def _resumeSession(state: _ChatState, console) -> None:
 # Welcome
 # ---------------------------------------------------------------------------
 
-_LOGO = r"""
-     _            _   _       _
-  __| | __ _ _ __| |_| | __ _| |__
- / _` |/ _` | '__| __| |/ _` | '_ \
-| (_| | (_| | |  | |_| | (_| | |_) |
- \__,_|\__,_|_|   \__|_|\__,_|_.__/
-"""
+_LOGO = """
+  ██████╗  █████╗ ██████╗ ████████╗██╗      █████╗ ██████╗
+  ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔══██╗
+  ██║  ██║███████║██████╔╝   ██║   ██║     ███████║██████╔╝
+  ██║  ██║██╔══██║██╔══██╗   ██║   ██║     ██╔══██║██╔══██╗
+  ██████╔╝██║  ██║██║  ██║   ██║   ███████╗██║  ██║██████╔╝
+  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝"""
 
 
 def _printWelcome(state: _ChatState, console) -> None:
     """Print the branded welcome screen."""
     from rich.rule import Rule
+    from rich.text import Text
 
     try:
         from importlib.metadata import version as pkgVersion
@@ -720,34 +917,37 @@ def _printWelcome(state: _ChatState, console) -> None:
     except Exception:
         ver = "dev"
 
-    # logo in brand red
     console.print(f"[{_CLR} bold]{_LOGO}[/]", highlight=False)
-
-    # provider + model + version line
-    modelDisplay = state.model or "default"
-    console.print(
-        f"  [bold]{state.provider}[/] [{_CLR_MUTED}]({modelDisplay})[/]"
-        f"    [{_CLR_MUTED}]v{ver}[/]"
-        f"    [{_CLR_MUTED}]/help for commands[/]"
-    )
     console.print()
 
-    if state.company:
-        console.print(
-            Rule(
-                f"[bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]",
-                style=_CLR,
-            )
-        )
-        console.print()
-        for q in _SUGGESTIONS[:3]:
-            console.print(f"  [{_CLR_MUTED}]>[/] [{_CLR_MUTED}]{q}[/]")
-        console.print()
-    else:
-        console.print(Rule(style="dim"))
-        console.print()
-        console.print(f"  [{_CLR_MUTED}]Type a question with a company name, or /company <name>[/]")
-        console.print()
+    # compact info line
+    modelDisplay = state.model or "default"
+    infoLine = Text()
+    infoLine.append(f"  v{ver}", style="dim")
+    infoLine.append("  |  ", style="dim")
+    infoLine.append(state.provider or "none", style="bold")
+    infoLine.append(f" ({modelDisplay})", style="dim")
+    console.print(infoLine)
 
-    console.print(f"  [{_CLR_MUTED}]Ctrl+C to cancel  |  /quit to exit[/]")
+    console.print()
+    console.print(Rule(style="dim"))
+
+    if state.company:
+        console.print()
+        console.print(f"  [bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]")
+        console.print()
+        console.print(f"  [{_CLR_MUTED}]Try:[/]  /comprehensive  /profitability  /health  /valuation")
+    else:
+        console.print()
+        console.print(f"  [{_CLR_MUTED}]Type a question, or /company <name> to load a company[/]")
+
+    console.print()
+    tipLine = Text()
+    tipLine.append("  /help", style=_CLR_MUTED)
+    tipLine.append("  commands  ", style="dim")
+    tipLine.append("Ctrl+C", style=_CLR_MUTED)
+    tipLine.append(" x2  exit  ", style="dim")
+    tipLine.append("/quit", style=_CLR_MUTED)
+    tipLine.append("  exit", style="dim")
+    console.print(tipLine)
     console.print()

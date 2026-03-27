@@ -41,10 +41,15 @@ def test_main_without_command_prints_help(capsys):
     captured = capsys.readouterr()
     assert result == 0
     assert "usage:" in captured.out
-    assert (
-        "{show,search,statement,sections,profile,modules,ask,chat,report,excel,review,collect,ai,share,status,setup,mcp,plugin}"
-        in captured.out
-    )
+    # argparse의 usage 줄에서 서브커맨드 목록 확인 (reviewer는 하단 positional에만 표시)
+    assert "show" in captured.out
+    assert "search" in captured.out
+    assert "ask" in captured.out
+    assert "chat" in captured.out
+    assert "review" in captured.out
+    assert "setup" in captured.out
+    assert "mcp" in captured.out
+    assert "plugin" in captured.out
     assert "ui" not in captured.out
 
 

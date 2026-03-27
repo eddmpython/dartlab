@@ -29,20 +29,8 @@ export const navigation: NavItem[] = [
 		]
 	},
 	{
-		title: 'Tutorials',
-		href: '/docs/tutorials',
-		items: [
-			{ title: '1. Quickstart', href: '/docs/tutorials/quickstart' },
-			{ title: '2. Financial Statements', href: '/docs/tutorials/financial-statements' },
-			{ title: '3. Timeseries', href: '/docs/tutorials/timeseries' },
-			{ title: '4. Ratios', href: '/docs/tutorials/ratios' },
-			{ title: '5. Report Data', href: '/docs/tutorials/report-data' },
-			{ title: '6. Disclosure Text', href: '/docs/tutorials/disclosure' },
-			{ title: '7. Advanced', href: '/docs/tutorials/advanced' },
-			{ title: '8. Cross-Company', href: '/docs/tutorials/cross-company' },
-			{ title: '9. US Stocks (EDGAR)', href: '/docs/tutorials/edgar' },
-			{ title: '10. Network Analysis', href: '/docs/tutorials/network' }
-		]
+		title: 'Notebooks',
+		href: '/docs/tutorials'
 	},
 	{
 		title: 'About',
