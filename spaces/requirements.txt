@@ -1,2 +1,2 @@
 dartlab>=0.7.8
-gradio>=6.0,<7
+streamlit>=1.45,<2
