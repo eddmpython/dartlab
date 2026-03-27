@@ -12,7 +12,7 @@ from dartlab.core.select import ChartResult, SelectResult
 from dartlab.gather.fred import Fred
 from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
 from dartlab.providers.dart.company import Company as _DartEngineCompany
-from dartlab.providers.dart.openapi.dart import Dart, OpenDart
+from dartlab.providers.dart.openapi.dart import OpenDart
 from dartlab.providers.edgar.openapi.edgar import OpenEdgar
 from dartlab.review import Review
 
@@ -953,7 +953,6 @@ sys.modules[__name__].__class__ = _Module
 
 __all__ = [
     "Company",
-    "Dart",
     "Fred",
     "OpenDart",
     "OpenEdgar",
