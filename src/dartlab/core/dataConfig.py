@@ -22,6 +22,10 @@ DATA_RELEASES: dict[str, dict] = {
         "dir": "dart/report",
         "label": "정기보고서 데이터",
     },
+    "scan": {
+        "dir": "dart/scan",
+        "label": "전종목 횡단분석 프리빌드 데이터",
+    },
     "edgarDocs": {
         "dir": "edgar/docs",
         "label": "SEC EDGAR 공시 문서 데이터",

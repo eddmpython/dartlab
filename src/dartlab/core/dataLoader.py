@@ -300,11 +300,13 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
     lastErr = None
     for attempt in range(_HF_MAX_RETRIES):
         try:
+            # scan은 하위 폴더(report/)도 포함하므로 ** 패턴 사용
+            pattern = f"{hfDir}/**/*.parquet" if category == "scan" else f"{hfDir}/*.parquet"
             snapshot_download(
                 repo_id=HF_REPO,
                 repo_type="dataset",
                 local_dir=str(localDir),
-                allow_patterns=f"{hfDir}/*.parquet",
+                allow_patterns=pattern,
                 force_download=forceUpdate if attempt == 0 else False,
             )
             break
@@ -320,7 +322,8 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
             f"마지막 에러: {lastErr}"
         )
 
-    count = len(list(dataDir.glob("*.parquet")))
+    globPattern = "**/*.parquet" if category == "scan" else "*.parquet"
+    count = len(list(dataDir.glob(globPattern)))
     emit("download_all:hf_done", label=label, count=count, dataDir=str(dataDir))
 
 

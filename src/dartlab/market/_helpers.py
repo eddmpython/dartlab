@@ -10,11 +10,25 @@ import polars as pl
 def scan_parquets(api_type: str, keep_cols: list[str]) -> pl.DataFrame:
     """report parquet에서 특정 apiType만 LazyFrame 스캔.
 
-    keep_cols 중 실제 존재하는 컬럼만 선택하며, 핵심 컬럼(meta 제외)이
-    하나도 없는 parquet는 건너뛴다.  파일 간 스키마가 다르면 null 패딩으로 통합.
+    scan/report/{apiType}.parquet 프리빌드가 있으면 단일 파일에서 즉시 로드.
+    없으면 종목별 parquet 순회 (fallback).
     """
     from dartlab.core.dataLoader import _dataDir
 
+    # 1순위: 프리빌드 scan parquet
+    scan_path = Path(_dataDir("scan")) / "report" / f"{api_type}.parquet"
+    if scan_path.exists():
+        try:
+            lf = pl.scan_parquet(str(scan_path))
+            schema_names = lf.collect_schema().names()
+            available = [c for c in keep_cols if c in schema_names]
+            non_meta = [c for c in available if c not in ("stockCode", "year", "quarter")]
+            if non_meta:
+                return lf.select(available).collect()
+        except (pl.exceptions.PolarsError, OSError):
+            pass  # fallback to per-file scan
+
+    # 2순위: 종목별 순회 (fallback)
     report_dir = Path(_dataDir("report"))
     parquet_files = sorted(report_dir.glob("*.parquet"))
 
@@ -121,6 +135,55 @@ def parse_date_year(s) -> int | None:
     return None
 
 
+def _scanFinanceFromMerged(
+    scanPath: Path,
+    sjDivs: list[str],
+    accountIds: set[str],
+    accountNms: set[str],
+    amountCol: str,
+) -> dict[str, float]:
+    """합산 finance parquet에서 종목별 최신 연도 값 추출."""
+    scCol = "stockCode" if "stockCode" in pl.scan_parquet(str(scanPath)).collect_schema().names() else "stock_code"
+
+    target = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
+            pl.col("sj_div").is_in(sjDivs)
+            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+        )
+        .collect()
+    )
+
+    if target.is_empty() or "account_id" not in target.columns:
+        return {}
+
+    # 연결 우선
+    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
+    target = cfs if not cfs.is_empty() else target
+
+    # 종목별 최신 연도만
+    latestYear = (
+        target.group_by(scCol)
+        .agg(pl.col("bsns_year").max().alias("_maxYear"))
+    )
+    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
+
+    # 계정 매칭
+    matched = target.filter(
+        pl.col("account_id").is_in(list(accountIds)) | pl.col("account_nm").is_in(list(accountNms))
+    )
+
+    result: dict[str, float] = {}
+    for row in matched.iter_rows(named=True):
+        code = row.get(scCol, "")
+        if code and code not in result:
+            val = parse_num(row.get(amountCol))
+            if val is not None:
+                result[code] = val
+
+    return result
+
+
 def scan_finance_parquets(
     statement: str,
     account_ids: set[str],
@@ -130,16 +193,26 @@ def scan_finance_parquets(
 ) -> dict[str, float]:
     """finance parquet 전수 스캔 → {종목코드: 값}.
 
-    statement: "BS", "IS", "CIS" 등
-    account_ids/account_nms: 매칭 대상
+    scan/finance.parquet 프리빌드가 있으면 단일 파일에서 즉시 필터.
+    없으면 종목별 parquet 순회 (fallback).
     """
     from dartlab.core.dataLoader import _dataDir
 
+    sj_divs = [statement] if statement != "IS" else ["IS", "CIS"]
+
+    # 1순위: 프리빌드 scan parquet
+    scan_path = Path(_dataDir("scan")) / "finance.parquet"
+    if scan_path.exists():
+        try:
+            return _scanFinanceFromMerged(scan_path, sj_divs, account_ids, account_nms, amount_col)
+        except (pl.exceptions.PolarsError, OSError):
+            pass  # fallback
+
+    # 2순위: 종목별 순회 (fallback)
     finance_dir = Path(_dataDir("finance"))
     parquet_files = sorted(finance_dir.glob("*.parquet"))
 
     result: dict[str, float] = {}
-    sj_divs = [statement] if statement != "IS" else ["IS", "CIS"]
     for pf in parquet_files:
         code = pf.stem
         try:
