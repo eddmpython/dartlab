@@ -36,6 +36,8 @@ _BUNDLED_MODELS = [
     "gpt-5.1-codex-max",
 ]
 
+AVAILABLE_MODELS = list(_BUNDLED_MODELS)
+
 _MODELS_CACHE: list[str] | None = None
 _MODELS_CACHE_TS: float = 0.0
 _MODELS_CACHE_TTL = 300.0  # 5분

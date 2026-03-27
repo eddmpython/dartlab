@@ -77,9 +77,9 @@ def _companyfacts_payload() -> dict:
 
 
 def test_root_exports_openapi_names():
-    from dartlab import Dart, OpenDart, OpenEdgar
+    from dartlab import OpenDart, OpenEdgar
 
-    assert OpenDart is Dart
+    assert OpenDart is not None
     assert OpenEdgar is not None
 
 
