@@ -34,49 +34,170 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* 다크 브랜딩 */
-[data-testid="stAppViewContainer"] {
-    background: #0a0d16;
+/* ══════════════════════════════════════════════════
+   dartlab 다크 테마 — 라이트 모드 강제 오버라이드
+   랜딩 페이지 색상 체계: #050811 / #0f1219 / #ea4647
+   ══════════════════════════════════════════════════ */
+
+/* 전역 배경 강제 */
+html, body, [data-testid="stAppViewContainer"],
+[data-testid="stApp"], .main, .block-container {
+    background-color: #050811 !important;
+    color: #f1f5f9 !important;
 }
 [data-testid="stHeader"] {
-    background: #0a0d16;
+    background: #050811 !important;
 }
 [data-testid="stSidebar"] {
-    background: #0f1219;
+    background: #0f1219 !important;
 }
+
+/* 입력 필드 — 다크 강제 */
+input, textarea, [data-testid="stTextInput"] input,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea {
+    background-color: #0f1219 !important;
+    color: #f1f5f9 !important;
+    border-color: #1e2433 !important;
+    caret-color: #ea4647 !important;
+}
+[data-baseweb="input"],
+[data-baseweb="base-input"] {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+}
+
+/* 셀렉트박스/드롭다운 */
+[data-baseweb="select"] > div {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+    color: #f1f5f9 !important;
+}
+[data-baseweb="popover"] {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+}
+[data-baseweb="menu"] {
+    background-color: #0f1219 !important;
+}
+[data-baseweb="menu"] li {
+    color: #f1f5f9 !important;
+}
+[data-baseweb="menu"] li:hover {
+    background-color: #1a1f2b !important;
+}
+
+/* 라디오 버튼 */
+[data-testid="stRadio"] label {
+    color: #f1f5f9 !important;
+}
+[data-testid="stRadio"] [data-baseweb="radio"] {
+    background-color: transparent !important;
+}
+
+/* DataFrame 다크 강제 */
+[data-testid="stDataFrame"] {
+    font-variant-numeric: tabular-nums;
+}
+[data-testid="stDataFrame"] [data-testid="glideDataEditor"],
+[data-testid="stDataFrame"] canvas {
+    background-color: #0f1219 !important;
+}
+
+/* 버튼 */
+[data-testid="stBaseButton-primary"] {
+    background-color: #ea4647 !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background-color: #c83232 !important;
+}
+[data-testid="stBaseButton-secondary"],
+[data-testid="stDownloadButton"] button {
+    background-color: #0f1219 !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #1e2433 !important;
+}
+[data-testid="stDownloadButton"] button:hover {
+    border-color: #ea4647 !important;
+    color: #ea4647 !important;
+}
+
+/* Expander */
+[data-testid="stExpander"] {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+}
+[data-testid="stExpander"] summary {
+    color: #f1f5f9 !important;
+}
+[data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
+    color: #f1f5f9 !important;
+}
+
+/* Chat */
+[data-testid="stChatMessage"] {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+}
+[data-testid="stChatInput"] {
+    background-color: #0f1219 !important;
+    border-color: #1e2433 !important;
+}
+[data-testid="stChatInput"] textarea {
+    background-color: #0f1219 !important;
+    color: #f1f5f9 !important;
+}
+
+/* 기본 텍스트 */
+p, span, label, h1, h2, h3, h4, h5, h6,
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] p {
+    color: #f1f5f9 !important;
+}
+[data-testid="stCaption"], .stCaption {
+    color: #64748b !important;
+}
+
+/* ── 커스텀 컴포넌트 ── */
 
 /* 헤더 */
 .dl-header {
     text-align: center;
-    padding: 1.5rem 0 1rem;
+    padding: 2rem 0 1.2rem;
 }
 .dl-header img {
     border-radius: 50%;
-    box-shadow: 0 0 40px rgba(234,70,71,0.3);
+    box-shadow: 0 0 48px rgba(234,70,71,0.25);
 }
 .dl-header h1 {
-    color: #ea4647;
-    font-size: 2.4rem;
-    font-weight: 800;
-    margin: 0.5rem 0 0.15rem;
-    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ea4647, #f87171, #ea4647);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2.6rem !important;
+    font-weight: 800 !important;
+    margin: 0.6rem 0 0.15rem !important;
+    letter-spacing: -0.03em;
 }
 .dl-header .tagline {
-    color: #94a3b8;
-    font-size: 1.05rem;
+    color: #94a3b8 !important;
+    font-size: 1.08rem;
     margin: 0;
 }
 .dl-header .sub {
-    color: #64748b;
+    color: #64748b !important;
     font-size: 0.85rem;
     margin: 0.2rem 0 0;
 }
 
 /* 섹션 제목 */
 .dl-section {
-    color: #ea4647;
-    font-weight: 700;
-    font-size: 1.15rem;
+    color: #ea4647 !important;
+    font-weight: 700 !important;
+    font-size: 1.15rem !important;
     border-bottom: 2px solid #ea4647;
     padding-bottom: 0.35rem;
     margin: 1.5rem 0 0.8rem;
@@ -84,49 +205,57 @@ st.markdown("""
 
 /* 기업카드 */
 .dl-card {
-    background: #0f1219;
+    background: linear-gradient(135deg, #0f1219 0%, #0a0d16 100%);
     border: 1px solid #1e2433;
-    border-radius: 10px;
-    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    padding: 1.4rem 1.8rem;
     margin: 1rem 0;
+    position: relative;
+    overflow: hidden;
+}
+.dl-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ea4647, #f87171, #fb923c);
 }
 .dl-card h2 {
-    color: #f1f5f9;
-    font-size: 1.4rem;
-    margin: 0 0 0.8rem;
+    color: #f1f5f9 !important;
+    font-size: 1.5rem !important;
+    margin: 0 0 1rem !important;
+    font-weight: 700;
 }
 .dl-card .meta {
     display: flex;
-    gap: 2rem;
+    gap: 2.5rem;
     flex-wrap: wrap;
 }
 .dl-card .meta-item {
     display: flex;
     flex-direction: column;
+    gap: 0.15rem;
 }
 .dl-card .meta-label {
-    color: #64748b;
-    font-size: 0.75rem;
+    color: #64748b !important;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    font-weight: 500;
 }
 .dl-card .meta-value {
-    color: #e2e8f0;
-    font-size: 1.1rem;
+    color: #e2e8f0 !important;
+    font-size: 1.15rem;
     font-weight: 600;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 /* 안내 텍스트 */
 .dl-guide {
-    color: #64748b;
+    color: #64748b !important;
     font-size: 0.88rem;
     text-align: center;
     margin: 0.2rem 0 0.8rem;
-}
-
-/* 데이터 테이블 — column_config로 처리하므로 최소한만 */
-[data-testid="stDataFrame"] {
-    font-variant-numeric: tabular-nums;
 }
 
 /* 푸터 */
@@ -134,25 +263,38 @@ st.markdown("""
     text-align: center;
     padding: 2rem 0 1rem;
     border-top: 1px solid #1e2433;
-    margin-top: 2rem;
-    color: #475569;
+    margin-top: 2.5rem;
+    color: #475569 !important;
     font-size: 0.85rem;
 }
 .dl-footer a {
-    color: #94a3b8;
+    color: #94a3b8 !important;
     text-decoration: none;
-    margin: 0 0.5rem;
+    margin: 0 0.6rem;
+    transition: color 0.2s;
 }
 .dl-footer a:hover {
-    color: #ea4647;
+    color: #ea4647 !important;
 }
 
-/* 빈 상태 안내 */
+/* 빈 상태 */
 .dl-empty {
     text-align: center;
-    color: #475569;
-    padding: 2rem;
+    color: #475569 !important;
+    padding: 3rem 1rem;
     font-size: 1rem;
+}
+
+/* 히어로 그라디언트 배경 효과 (랜딩 느낌) */
+.dl-hero-glow {
+    position: fixed;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse at top, rgba(234,70,71,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -339,6 +481,7 @@ _warmup()
 # ── 헤더 ──────────────────────────────────────────────
 
 st.markdown(f"""
+<div class="dl-hero-glow"></div>
 <div class="dl-header">
     <img src="{_LOGO_URL}" width="88" height="88" alt="DartLab">
     <h1>DartLab</h1>

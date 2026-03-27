@@ -20,12 +20,14 @@ jobs:
         run: |
           git clone --depth 1 https://user:${HF_TOKEN}@huggingface.co/spaces/eddmpython/dartlab hf-space
 
-          # Gradio SDK 파일 복사
+          # Streamlit SDK 파일 복사
           cp spaces/app.py hf-space/
           cp spaces/requirements.txt hf-space/
           cp spaces/README.md hf-space/README.md
+          mkdir -p hf-space/.streamlit
+          cp spaces/.streamlit/config.toml hf-space/.streamlit/config.toml
 
-          # Docker 잔재 제거
+          # 잔재 제거
           rm -f hf-space/Dockerfile hf-space/.dockerignore
           rm -rf hf-space/scripts
 
