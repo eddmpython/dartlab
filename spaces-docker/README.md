@@ -1,6 +1,6 @@
 ---
 title: DartLab
-emoji: D
+emoji: 📊
 colorFrom: red
 colorTo: yellow
 sdk: docker

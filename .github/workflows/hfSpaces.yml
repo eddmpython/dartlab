@@ -35,14 +35,10 @@ jobs:
           cp pyproject.toml hf-space/
           cp README.md hf-space/README_PROJECT.md
 
-          # 바이너리 파일 제거 (HF xet 정책)
-          find hf-space/src -name '*.png' -o -name '*.jpg' -o -name '*.ico' -o -name '*.woff*' -o -name '*.ttf' | xargs rm -f 2>/dev/null || true
+          # 바이너리 파일 제거 (HF는 xet 없이 바이너리 push 거부)
+          find hf-space/src -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.ico' -o -name '*.woff' -o -name '*.woff2' -o -name '*.ttf' \) -delete 2>/dev/null || true
 
           cd hf-space
-
-          # Git LFS 설정
-          git lfs install --local 2>/dev/null || true
-          git lfs track "*.png" "*.jpg" "*.ico" "*.woff" "*.woff2" "*.ttf" 2>/dev/null || true
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
