@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">CF 패턴 5년 변화 (2021 → 2025)</text>
+
+  <!-- Timeline line -->
+  <line x1="80" y1="100" x2="720" y2="100" stroke="#334155" stroke-width="2"/>
+
+  <!-- 2021 -->
+  <circle cx="130" cy="100" r="8" fill="#3b82f6"/>
+  <text x="130" y="85" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <rect x="70" y="120" width="120" height="90" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+  <text x="130" y="142" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">확장형</text>
+  <text x="130" y="160" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(+)</text>
+  <text x="130" y="178" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">FCF -88억</text>
+  <text x="130" y="196" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">CAPEX 5,892억</text>
+
+  <!-- 2022 -->
+  <circle cx="270" cy="100" r="8" fill="#3b82f6"/>
+  <text x="270" y="85" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <rect x="210" y="120" width="120" height="90" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+  <text x="270" y="142" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">확장형</text>
+  <text x="270" y="160" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(+)</text>
+  <text x="270" y="178" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">FCF -1,540억</text>
+  <text x="270" y="196" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">CAPEX 8,175억</text>
+
+  <!-- 2023 -->
+  <circle cx="410" cy="100" r="8" fill="#3b82f6"/>
+  <text x="410" y="85" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+  <rect x="350" y="120" width="120" height="90" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+  <text x="410" y="142" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">확장형</text>
+  <text x="410" y="160" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(+)</text>
+  <text x="410" y="178" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">FCF -1.2조</text>
+  <text x="410" y="196" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">CAPEX 1.6조</text>
+
+  <!-- 2024 -->
+  <circle cx="550" cy="100" r="8" fill="#3b82f6"/>
+  <text x="550" y="85" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+  <rect x="490" y="120" width="120" height="90" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+  <text x="550" y="142" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">확장형</text>
+  <text x="550" y="160" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(+)</text>
+  <text x="550" y="178" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">FCF -1.9조</text>
+  <text x="550" y="196" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">CAPEX 2.3조</text>
+
+  <!-- 2025 — different color -->
+  <circle cx="690" cy="100" r="8" fill="#ef4444"/>
+  <text x="690" y="85" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
+  <rect x="630" y="120" width="120" height="90" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="690" y="142" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">구조조정형</text>
+  <text x="690" y="160" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui">영업(+) 투자(+) 재무(-)</text>
+  <text x="690" y="178" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">FCF -3,372억</text>
+  <text x="690" y="196" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">CAPEX 6,694억</text>
+
+  <!-- Bottom: 6 patterns reference -->
+  <rect x="40" y="240" width="720" height="140" rx="10" fill="#1e293b"/>
+  <text x="400" y="265" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="bold" font-family="system-ui">CF 패턴 6가지 유형</text>
+
+  <text x="80" y="290" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui">성숙형</text>
+  <text x="80" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(-)</text>
+  <text x="80" y="320" fill="#64748b" font-size="9" font-family="system-ui">자체 현금으로 투자+상환</text>
+
+  <text x="210" y="290" fill="#3b82f6" font-size="10" font-weight="bold" font-family="system-ui">확장형</text>
+  <text x="210" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(+) 투자(-) 재무(+)</text>
+  <text x="210" y="320" fill="#64748b" font-size="9" font-family="system-ui">외부 자금으로 공격 투자</text>
+
+  <text x="340" y="290" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">구조조정형</text>
+  <text x="340" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(+) 투자(+) 재무(-)</text>
+  <text x="340" y="320" fill="#64748b" font-size="9" font-family="system-ui">자산 매각으로 부채 축소</text>
+
+  <text x="480" y="290" fill="#f97316" font-size="10" font-weight="bold" font-family="system-ui">축소형</text>
+  <text x="480" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(-) 투자(+) 재무(-)</text>
+  <text x="480" y="320" fill="#64748b" font-size="9" font-family="system-ui">사업 정리 단계</text>
+
+  <text x="600" y="290" fill="#ef4444" font-size="10" font-weight="bold" font-family="system-ui">위기형</text>
+  <text x="600" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(-) 투자(-) 재무(+)</text>
+  <text x="600" y="320" fill="#64748b" font-size="9" font-family="system-ui">적자인데 빚으로 투자</text>
+
+  <text x="710" y="290" fill="#a855f7" font-size="10" font-weight="bold" font-family="system-ui">긴급형</text>
+  <text x="710" y="305" fill="#64748b" font-size="9" font-family="system-ui">영업(-) 투자(+) 재무(+)</text>
+  <text x="710" y="320" fill="#64748b" font-size="9" font-family="system-ui">자산 팔고 빚도 늘림</text>
+
+  <!-- Arrow: 삼성SDI 위치 표시 -->
+  <polygon points="255,340 265,352 245,352" fill="#3b82f6"/>
+  <text x="255" y="370" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">2021-2024</text>
+  <polygon points="385,340 395,352 375,352" fill="#ef4444"/>
+  <text x="385" y="370" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">2025</text>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">영업CF / 순이익 비율 추이 (이익의 현금 뒷받침)</text>
+
+  <!-- Y axis -->
+  <text x="55" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">200%</text>
+  <text x="55" y="130" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">100%</text>
+  <text x="55" y="180" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0%</text>
+  <text x="55" y="230" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-100%</text>
+  <text x="55" y="280" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-200%</text>
+
+  <!-- Grid -->
+  <line x1="70" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="125" x2="750" y2="125" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="175" x2="750" y2="175" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="70" y1="225" x2="750" y2="225" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="275" x2="750" y2="275" stroke="#1e293b" stroke-width="0.5"/>
+
+  <!-- 100% reference line -->
+  <line x1="70" y1="125" x2="750" y2="125" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="6,3"/>
+  <text x="755" y="130" fill="#4ade80" font-size="9" font-family="system-ui">100%</text>
+
+  <!-- Data points and line -->
+  <!-- 2021: 148% → y = 125 - 48*0.5 = 101 -->
+  <!-- 2022: 105% → y = 125 - 5*0.5 = 122.5 -->
+  <!-- 2023: 86% → y = 125 + 14*0.5 = 132 -->
+  <!-- 2024: -155% → y = 125 + 255*0.5 = 252.5 -->
+  <!-- 2025: -160% → y = 125 + 260*0.5 = 255 -->
+  <polyline points="150,101 290,122 430,132 570,252 710,255" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+
+  <!-- Points -->
+  <circle cx="150" cy="101" r="6" fill="#3b82f6"/>
+  <circle cx="290" cy="122" r="6" fill="#3b82f6"/>
+  <circle cx="430" cy="132" r="6" fill="#fbbf24"/>
+  <circle cx="570" cy="252" r="6" fill="#ef4444"/>
+  <circle cx="710" cy="255" r="6" fill="#ef4444"/>
+
+  <!-- Labels -->
+  <text x="150" y="90" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">148%</text>
+  <text x="150" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+
+  <text x="290" y="112" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">105%</text>
+  <text x="290" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+
+  <text x="430" y="150" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">86%</text>
+  <text x="430" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+
+  <text x="570" y="270" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">-155%</text>
+  <text x="570" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+
+  <text x="710" y="273" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">-160%</text>
+  <text x="710" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
+
+  <!-- Annotation boxes -->
+  <rect x="80" y="340" width="300" height="40" rx="6" fill="#1e293b"/>
+  <text x="230" y="358" text-anchor="middle" fill="#4ade80" font-size="10" font-family="system-ui">100% 이상: 이익이 현금으로 뒷받침됨</text>
+  <text x="230" y="373" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">2021-2022 양호</text>
+
+  <rect x="420" y="340" width="340" height="40" rx="6" fill="#1e293b"/>
+  <text x="590" y="358" text-anchor="middle" fill="#f87171" font-size="10" font-family="system-ui">음수: 순이익 적자인데 영업CF는 양수</text>
+  <text x="590" y="373" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">2024-2025 감가상각비가 현금 보존</text>
+</svg>

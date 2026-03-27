@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">FCF (영업CF - CAPEX) 5년 추이</text>
+
+  <!-- Y axis -->
+  <text x="55" y="85" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">1조</text>
+  <text x="55" y="140" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0</text>
+  <text x="55" y="195" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-1조</text>
+  <text x="55" y="250" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-2조</text>
+
+  <!-- Grid lines -->
+  <line x1="70" y1="80" x2="750" y2="80" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="135" x2="750" y2="135" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="70" y1="190" x2="750" y2="190" stroke="#1e293b" stroke-width="0.5"/>
+  <line x1="70" y1="245" x2="750" y2="245" stroke="#1e293b" stroke-width="0.5"/>
+
+  <!-- Zero line label -->
+  <text x="755" y="140" fill="#64748b" font-size="9" font-family="system-ui">0</text>
+
+  <!-- Bars: 영업CF (blue, above) and CAPEX (red, above) side by side -->
+  <!-- 2021: 영업CF 5804, CAPEX 5892, FCF -88 -->
+  <rect x="100" y="103" width="40" height="32" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="120" y="98" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">5,804</text>
+  <rect x="145" y="103" width="40" height="33" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="165" y="98" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">5,892</text>
+  <!-- FCF marker -->
+  <rect x="100" y="136" width="85" height="3" rx="1" fill="#fbbf24"/>
+  <text x="142" y="152" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">-88</text>
+  <text x="142" y="280" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+
+  <!-- 2022: 영업CF 6636, CAPEX 8175, FCF -1540 -->
+  <rect x="230" y="99" width="40" height="36" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="250" y="94" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">6,636</text>
+  <rect x="275" y="90" width="40" height="45" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="295" y="85" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">8,175</text>
+  <rect x="230" y="143" width="85" height="3" rx="1" fill="#fbbf24"/>
+  <text x="272" y="160" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">-1,540</text>
+  <text x="272" y="280" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+
+  <!-- 2023: 영업CF 4257, CAPEX 16000, FCF -12000 -->
+  <rect x="360" y="112" width="40" height="23" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="380" y="107" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">4,257</text>
+  <rect x="405" y="47" width="40" height="88" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="425" y="42" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">1.6조</text>
+  <rect x="360" y="150" width="85" height="3" rx="1" fill="#fbbf24"/>
+  <text x="402" y="167" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">-1.2조</text>
+  <text x="402" y="280" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+
+  <!-- 2024: 영업CF 3757, CAPEX 23000, FCF -19000 -->
+  <rect x="490" y="114" width="40" height="21" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="510" y="109" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">3,757</text>
+  <rect x="535" y="10" width="40" height="125" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="555" y="7" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">2.3조</text>
+  <rect x="490" y="156" width="85" height="3" rx="1" fill="#fbbf24"/>
+  <text x="532" y="173" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">-1.9조</text>
+  <text x="532" y="280" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+
+  <!-- 2025: 영업CF 3322, CAPEX 6694, FCF -3372 -->
+  <rect x="620" y="117" width="40" height="18" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="640" y="112" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="system-ui">3,322</text>
+  <rect x="665" y="98" width="40" height="37" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="685" y="93" text-anchor="middle" fill="#f87171" font-size="9" font-family="system-ui">6,694</text>
+  <rect x="620" y="153" width="85" height="3" rx="1" fill="#fbbf24"/>
+  <text x="662" y="170" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="system-ui">-3,372</text>
+  <text x="662" y="280" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
+
+  <!-- Legend -->
+  <rect x="200" y="310" width="14" height="14" rx="3" fill="#3b82f6" opacity="0.8"/>
+  <text x="220" y="322" fill="#94a3b8" font-size="11" font-family="system-ui">영업CF (억원)</text>
+  <rect x="340" y="310" width="14" height="14" rx="3" fill="#ef4444" opacity="0.6"/>
+  <text x="360" y="322" fill="#94a3b8" font-size="11" font-family="system-ui">CAPEX (억원)</text>
+  <rect x="480" y="310" width="14" height="5" rx="2" fill="#fbbf24"/>
+  <text x="500" y="322" fill="#fbbf24" font-size="11" font-family="system-ui">FCF = 영업CF - CAPEX</text>
+
+  <!-- Annotation -->
+  <text x="400" y="360" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">5년 연속 FCF 적자 — CAPEX가 항상 영업CF를 초과</text>
+  <text x="400" y="380" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">배터리 공장 투자가 현금 창출 능력을 지속적으로 압도</text>
+</svg>

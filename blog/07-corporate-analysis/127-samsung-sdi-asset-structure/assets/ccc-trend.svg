@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">현금전환주기(CCC) 추이 — 273일에서 315일</text>
+
+  <!-- Y axis -->
+  <text x="50" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">350일</text>
+  <text x="50" y="140" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">300일</text>
+  <text x="50" y="200" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">250일</text>
+  <text x="50" y="260" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">200일</text>
+  <text x="50" y="320" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">150일</text>
+
+  <!-- Grid lines -->
+  <line x1="60" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="135" x2="750" y2="135" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="195" x2="750" y2="195" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="255" x2="750" y2="255" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="315" x2="750" y2="315" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Data points: 273, 192, 221, 295, 315 -->
+  <!-- Y scale: 150=315, 350=75 => 1 day = (315-75)/(350-150) = 1.2px -->
+  <!-- 350 days = y75, 300 = y135, 250 = y195, 200 = y255, 150 = y315 -->
+  <!-- 273 => 75 + (350-273)*1.2 = 75 + 92.4 = 167 -->
+  <!-- 192 => 75 + (350-192)*1.2 = 75 + 189.6 = 265 -->
+  <!-- 221 => 75 + (350-221)*1.2 = 75 + 154.8 = 230 -->
+  <!-- 295 => 75 + (350-295)*1.2 = 75 + 66 = 141 -->
+  <!-- 315 => 75 + (350-315)*1.2 = 75 + 42 = 117 -->
+
+  <!-- Line path -->
+  <polyline points="130,167 270,265 410,230 550,141 690,117" stroke="#fbbf24" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- Data dots and labels -->
+  <circle cx="130" cy="167" r="6" fill="#fbbf24" opacity="0.7"/>
+  <text x="130" y="155" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">273</text>
+  <text x="130" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+
+  <circle cx="270" cy="265" r="6" fill="#4ade80"/>
+  <text x="270" y="253" text-anchor="middle" fill="#4ade80" font-size="12" font-weight="bold" font-family="system-ui">192</text>
+  <text x="270" y="282" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">매출 호조기</text>
+  <text x="270" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+
+  <circle cx="410" cy="230" r="6" fill="#fbbf24" opacity="0.7"/>
+  <text x="410" y="218" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">221</text>
+  <text x="410" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+
+  <circle cx="550" cy="141" r="6" fill="#fbbf24" opacity="0.9"/>
+  <text x="550" y="129" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">295</text>
+  <text x="550" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+
+  <circle cx="690" cy="117" r="6" fill="#f87171"/>
+  <text x="690" y="105" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold" font-family="system-ui">315</text>
+  <text x="690" y="350" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
+
+  <!-- Warning zone -->
+  <rect x="60" y="75" width="690" height="60" rx="0" fill="#f87171" opacity="0.05"/>
+  <text x="750" y="100" text-anchor="end" fill="#f87171" font-size="9" font-family="system-ui" opacity="0.6">300일 이상 주의</text>
+
+  <!-- Breakdown annotation -->
+  <rect x="500" y="355" width="250" height="30" rx="8" fill="#1e293b"/>
+  <text x="625" y="375" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="system-ui">재고 352일 + 채권 3일 - 채무 40일</text>
+</svg>

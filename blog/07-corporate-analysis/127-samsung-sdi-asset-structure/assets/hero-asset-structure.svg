@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <rect width="800" height="420" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">삼성SDI 자산 구조 한눈에 — Penman Reformulated BS</text>
+
+  <!-- 영업자산 box -->
+  <rect x="40" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="150" y="88" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">영업자산</text>
+  <text x="150" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">56%</text>
+  <text x="150" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">유형자산 19.2조 + 재고 2.9조</text>
+  <text x="150" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">사업에 직접 투입된 자산</text>
+
+  <!-- 비영업자산 box -->
+  <rect x="290" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="400" y="88" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="bold" font-family="system-ui">비영업자산</text>
+  <text x="400" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">31%</text>
+  <text x="400" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">투자자산 11.4조 + 현금 1.8조</text>
+  <text x="400" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">사업 외 금융/투자 자산</text>
+
+  <!-- NOA box -->
+  <rect x="540" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="650" y="88" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="system-ui">NOA (순영업자산)</text>
+  <text x="650" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">22.3조</text>
+  <text x="650" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">영업자산 - 영업부채</text>
+  <text x="650" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">ROIC의 분모</text>
+
+  <!-- 5년 변화 arrow bar -->
+  <rect x="40" y="210" width="720" height="70" rx="10" fill="#1e293b"/>
+  <text x="60" y="235" fill="#94a3b8" font-size="12" font-family="system-ui">영업자산 비중 변화 (5년)</text>
+  <rect x="60" y="250" width="132" height="14" rx="3" fill="#3b82f6" opacity="0.5"/>
+  <text x="200" y="262" fill="#94a3b8" font-size="10" font-family="system-ui">2021 — 44%</text>
+  <rect x="300" y="250" width="147" height="14" rx="3" fill="#3b82f6" opacity="0.7"/>
+  <text x="455" y="262" fill="#94a3b8" font-size="10" font-family="system-ui">2023 — 49%</text>
+  <rect x="540" y="250" width="168" height="14" rx="3" fill="#3b82f6" opacity="1"/>
+  <text x="716" y="262" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui">2025 — 56%</text>
+
+  <!-- Bottom 3 flags -->
+  <rect x="40" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="155" y="328" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">유형자산 19.2조</text>
+  <text x="155" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">5년간 2.5배 성장</text>
+  <text x="155" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">배터리 공장 집중 투자</text>
+
+  <rect x="285" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="400" y="328" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">CCC 315일</text>
+  <text x="400" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">현금 회수에 1년 가까이 소요</text>
+  <text x="400" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">재고 352일이 병목</text>
+
+  <rect x="530" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="645" y="328" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">회전율 0.09</text>
+  <text x="645" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022년 대비 -55% 하락</text>
+  <text x="645" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">자산 투입 대비 매출 부진</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
+  <rect width="800" height="420" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">삼성SDI 현금흐름 3구간 한눈에</text>
+
+  <!-- 3 CF boxes -->
+  <rect x="40" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="150" y="88" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">영업활동 현금흐름</text>
+  <text x="150" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">3,322억</text>
+  <text x="150" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 양수 유지</text>
+  <text x="150" y="170" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="system-ui">3년 연속 감소</text>
+
+  <rect x="290" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="400" y="88" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="system-ui">투자활동 현금흐름</text>
+  <text x="400" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">+828억</text>
+  <text x="400" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 투자 회수 전환</text>
+  <text x="400" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">전년 -2.3조에서 반전</text>
+
+  <rect x="540" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="650" y="88" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold" font-family="system-ui">재무활동 현금흐름</text>
+  <text x="650" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">-8,009억</text>
+  <text x="650" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 부채 상환</text>
+  <text x="650" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">전년 +2.1조 차입에서 반전</text>
+
+  <!-- CF pattern label -->
+  <rect x="40" y="220" width="720" height="60" rx="10" fill="#1e293b"/>
+  <text x="400" y="248" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="bold" font-family="system-ui">CF 패턴: 4년 확장형 → 2025 구조조정형 전환</text>
+  <text x="400" y="268" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">영업(+) 투자(+) 재무(-) = 투자 줄이고 빚 갚는 구조</text>
+
+  <!-- Bottom flags -->
+  <rect x="40" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="155" y="328" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">FCF -3,372억</text>
+  <text x="155" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">5년 연속 적자</text>
+  <text x="155" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">CAPEX > 영업CF</text>
+
+  <rect x="285" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="400" y="328" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">영업CF/순이익 -160%</text>
+  <text x="400" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">순이익 적자인데 영업CF 양수</text>
+  <text x="400" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">감가상각비가 현금 보존</text>
+
+  <rect x="530" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
+  <text x="645" y="328" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="bold" font-family="system-ui">영업CF 마진 8.6%</text>
+  <text x="645" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">매출 100원당 현금 8.6원</text>
+  <text x="645" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">2021년 15.2%에서 하락</text>
+</svg>

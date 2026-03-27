@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
+  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">자산회전율 하락 추이 (2021-2025)</text>
+
+  <!-- Y axis -->
+  <text x="50" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.70</text>
+  <text x="50" y="140" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.55</text>
+  <text x="50" y="200" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.40</text>
+  <text x="50" y="260" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.25</text>
+  <text x="50" y="320" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.10</text>
+
+  <!-- Grid lines -->
+  <line x1="60" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="135" x2="750" y2="135" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="195" x2="750" y2="195" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="255" x2="750" y2="255" stroke="#1e293b" stroke-width="1"/>
+  <line x1="60" y1="315" x2="750" y2="315" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Scale: 0.70=75, 0.10=315 => 1unit of 0.01 = (315-75)/(0.70-0.10)*0.01 = 4px -->
+  <!-- 0.70=75, 0.55=135, 0.40=195, 0.25=255, 0.10=315 -->
+  <!-- Total asset turnover: 0.15, 0.20, 0.16, 0.09, 0.09 -->
+  <!-- 0.15 => 315 - (0.15-0.10)*240/0.60 = 315 - 20 = 295 -->
+  <!-- 0.20 => 315 - (0.20-0.10)*240/0.60 = 315 - 40 = 275 -->
+  <!-- 0.16 => 315 - (0.16-0.10)*240/0.60 = 315 - 24 = 291 -->
+  <!-- 0.09 => 315 - (-0.01)*400 = 315 + 4 = 319 => clamp to 319 -->
+  <!-- PPE turnover: 0.50, 0.67, 0.47, 0.21, 0.20 -->
+  <!-- 0.50 => 315 - (0.50-0.10)*400 = 315 - 160 = 155 -->
+  <!-- 0.67 => 315 - (0.67-0.10)*400 = 315 - 228 = 87 -->
+  <!-- 0.47 => 315 - (0.47-0.10)*400 = 315 - 148 = 167 -->
+  <!-- 0.21 => 315 - (0.21-0.10)*400 = 315 - 44 = 271 -->
+  <!-- 0.20 => 315 - (0.20-0.10)*400 = 315 - 40 = 275 -->
+
+  <!-- PPE turnover line (blue) -->
+  <polyline points="130,155 270,87 410,167 550,271 690,275" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- Total asset turnover line (orange) -->
+  <polyline points="130,295 270,275 410,291 550,319 690,319" stroke="#f97316" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- PPE dots and labels -->
+  <circle cx="130" cy="155" r="5" fill="#3b82f6"/>
+  <text x="130" y="145" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.50</text>
+
+  <circle cx="270" cy="87" r="5" fill="#3b82f6"/>
+  <text x="270" y="77" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.67</text>
+
+  <circle cx="410" cy="167" r="5" fill="#3b82f6"/>
+  <text x="410" y="157" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.47</text>
+
+  <circle cx="550" cy="271" r="5" fill="#3b82f6"/>
+  <text x="550" y="261" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.21</text>
+
+  <circle cx="690" cy="275" r="5" fill="#3b82f6"/>
+  <text x="690" y="265" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.20</text>
+
+  <!-- Total asset dots and labels -->
+  <circle cx="130" cy="295" r="5" fill="#f97316"/>
+  <text x="130" y="312" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.15</text>
+
+  <circle cx="270" cy="275" r="5" fill="#f97316"/>
+  <text x="270" y="292" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.20</text>
+
+  <circle cx="410" cy="291" r="5" fill="#f97316"/>
+  <text x="410" y="308" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.16</text>
+
+  <circle cx="550" cy="319" r="5" fill="#f97316"/>
+  <text x="550" y="336" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.09</text>
+
+  <circle cx="690" cy="319" r="5" fill="#f97316"/>
+  <text x="690" y="336" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">0.09</text>
+
+  <!-- X axis labels -->
+  <text x="130" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <text x="270" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <text x="410" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+  <text x="550" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+  <text x="690" y="355" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
+
+  <!-- Legend -->
+  <rect x="280" y="370" width="12" height="12" rx="2" fill="#3b82f6"/>
+  <text x="298" y="381" fill="#60a5fa" font-size="11" font-family="system-ui">유형자산회전율</text>
+  <rect x="430" y="370" width="12" height="12" rx="2" fill="#f97316"/>
+  <text x="448" y="381" fill="#fb923c" font-size="11" font-family="system-ui">총자산회전율</text>
+</svg>
