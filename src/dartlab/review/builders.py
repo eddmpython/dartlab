@@ -803,3 +803,87 @@ def assetFlagsBlock(flags: list[str]) -> list:
     if not flags:
         return []
     return [FlagBlock(flags, kind="warning")]
+
+
+# ── 1-4 현금흐름 빌더 ──
+
+
+def cashFlowOverviewBlock(data: dict) -> list:
+    """calcCashFlowOverview 결과 → CF 3구간 + FCF 시계열 테이블."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "현금흐름 3구간",
+            level=2,
+            helper="영업CF(+)/투자CF(-)/재무CF(-) = 건전한 패턴",
+        )
+    )
+
+    rows = ["영업CF", "투자CF", "재무CF", "CAPEX", "FCF"]
+    cols = {"": rows}
+    for h in history:
+        cols[h["period"]] = [
+            _fmtAmtShort(h["ocf"]),
+            _fmtAmtShort(h["icf"]),
+            _fmtAmtShort(h["fcfFinancing"]),
+            _fmtAmtShort(h["capex"]),
+            _fmtAmtShort(h["fcf"]),
+        ]
+    blocks.append(TableBlock("현금흐름 추이", pl.DataFrame(cols)))
+
+    # CF 패턴 시계열
+    patternRows = ["CF 패턴"]
+    patternCols = {"": patternRows}
+    for h in history:
+        pat = h.get("pattern")
+        label = pat.split(" — ")[0] if pat else "-"
+        patternCols[h["period"]] = [label]
+    blocks.append(TableBlock("CF 패턴 추이", pl.DataFrame(patternCols)))
+
+    return blocks
+
+
+def cashQualityBlock(data: dict) -> list:
+    """calcCashQuality 결과 → 영업CF/순이익, 영업CF 마진 시계열."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "이익의 현금 뒷받침",
+            level=2,
+            helper="영업CF/순이익 > 100%이면 이익이 현금으로 회수됨",
+        )
+    )
+
+    rows = ["영업CF", "당기순이익", "영업CF/순이익", "영업CF 마진"]
+    cols = {"": rows}
+    for h in history:
+        ratio = h.get("ocfToNi")
+        margin = h.get("ocfMargin")
+        cols[h["period"]] = [
+            _fmtAmtShort(h["ocf"]),
+            _fmtAmtShort(h["netIncome"]),
+            f"{ratio:.0f}%" if ratio is not None else "-",
+            f"{margin:.1f}%" if margin is not None else "-",
+        ]
+    blocks.append(TableBlock("현금 품질 추이", pl.DataFrame(cols)))
+
+    return blocks
+
+
+def cashFlowFlagsBlock(flags: list[str]) -> list:
+    """calcCashFlowFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]

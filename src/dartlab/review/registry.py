@@ -28,6 +28,11 @@ def buildBlocks(company) -> dict:
         calcInterestBurden,
         calcLiquidity,
     )
+    from dartlab.analysis.strategy.cashflow import (
+        calcCashFlowFlags,
+        calcCashFlowOverview,
+        calcCashQuality,
+    )
     from dartlab.analysis.strategy.revenue import (
         calcBreakdown,
         calcCompanyProfile,
@@ -49,6 +54,9 @@ def buildBlocks(company) -> dict:
         capitalOverviewBlock,
         capitalTimelineBlock,
         cashFlowBlock,
+        cashFlowFlagsBlock,
+        cashFlowOverviewBlock,
+        cashQualityBlock,
         concentrationBlock,
         debtTimelineBlock,
         distressBlock,
@@ -118,6 +126,11 @@ def buildBlocks(company) -> dict:
     b["capexPattern"] = _safe(lambda: capexBlock(calcCapexPattern(company)))
     b["assetEfficiency"] = _safe(lambda: assetEfficiencyBlock(calcAssetEfficiency(company)))
     b["assetFlags"] = _safe(lambda: assetFlagsBlock(calcAssetFlags(company)))
+
+    # ── 현금흐름 ──
+    b["cashFlowOverview"] = _safe(lambda: cashFlowOverviewBlock(calcCashFlowOverview(company)))
+    b["cashQuality"] = _safe(lambda: cashQualityBlock(calcCashQuality(company)))
+    b["cashFlowFlags"] = _safe(lambda: cashFlowFlagsBlock(calcCashFlowFlags(company)))
 
     return b
 
