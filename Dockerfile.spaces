@@ -8,15 +8,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# 핵심 의존성만 먼저 설치 (wheel 우선, 빌드 실패 방지)
+RUN pip install --no-cache-dir \
+    polars \
+    beautifulsoup4 lxml \
+    httpx requests orjson \
+    openpyxl rich plotly \
+    prompt-toolkit \
+    alive-progress \
+    diff-match-patch \
+    fastapi uvicorn[standard] sse-starlette msgpack
+
 COPY pyproject.toml ./
 COPY src/ src/
-
-# pyproject.toml이 README.md를 참조하므로 빈 파일 생성
 RUN touch README.md
 
-RUN pip install --no-cache-dir -e ".[ai]"
+# --no-deps: 위에서 이미 설치한 의존성 재설치 방지, marimo/mcp 건너뜀
+RUN pip install --no-cache-dir --no-deps -e .
 
-# HF Spaces 사용자는 root가 아닌 user로 실행됨
+# HF Spaces user
 RUN useradd -m -u 1000 user
 USER user
 
