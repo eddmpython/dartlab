@@ -270,6 +270,127 @@ def _resolveSnakeId(nameOrId: str) -> str:
     return nameOrId
 
 
+def _scanAccountFromMerged(
+    scanPath: Path,
+    snakeId: str,
+    sjDiv: str,
+    filterDivs: list[str],
+    fsPref: str,
+    fastKeys: set[str],
+    *,
+    annual: bool = False,
+) -> pl.DataFrame | None:
+    """scan/finance.parquet에서 단일 계정 시계열 추출 (가속 경로).
+
+    기존 _FileProcessor 로직을 단일 DataFrame에서 재현한다.
+    실패 시 None을 반환하여 fallback으로 넘긴다.
+    """
+    try:
+        schema = pl.scan_parquet(str(scanPath)).collect_schema()
+        scCol = "stockCode" if "stockCode" in schema.names() else "stock_code"
+
+        lz = pl.scan_parquet(str(scanPath)).filter(
+            pl.col("sj_div").is_in(filterDivs)
+            & (pl.col("account_nm").is_in(list(fastKeys)) | pl.col("account_id").is_in(list(fastKeys)))
+        )
+
+        if annual:
+            lz = lz.filter(pl.col("reprt_nm") == "4분기")
+
+        df = lz.collect()
+    except (pl.exceptions.PolarsError, OSError, FileNotFoundError):
+        return None
+
+    if df.is_empty():
+        return None
+
+    # CFS/OFS 우선: 종목별로 연결재무제표가 있으면 연결만
+    cfsLabel = "연결" if fsPref == "CFS" else "재무제표"
+    hasCfs = (
+        df.filter(pl.col("fs_nm").str.contains(cfsLabel))
+        .select(scCol)
+        .unique()
+        .to_series()
+        .to_list()
+    )
+    hasCfsSet = set(hasCfs)
+
+    # 연결 있는 종목은 연결만, 없는 종목은 전체
+    if hasCfsSet:
+        cfsPart = df.filter(
+            pl.col(scCol).is_in(list(hasCfsSet))
+            & pl.col("fs_nm").str.contains(cfsLabel)
+        )
+        ofsPart = df.filter(~pl.col(scCol).is_in(list(hasCfsSet)))
+        df = pl.concat([cfsPart, ofsPart]) if not ofsPart.is_empty() else cfsPart
+
+    if df.is_empty():
+        return None
+
+    # 금액 파싱
+    df = df.with_columns(_parseAmountCol("thstrm_amount").alias("amount"))
+
+    if annual:
+        # 연간: thstrm_amount (4분기 사업보고서) 그대로
+        parsed = df.filter(pl.col("amount").is_not_null())
+        if parsed.is_empty():
+            return None
+        result = (
+            parsed.select(
+                pl.col(scCol).alias("stockCode"),
+                pl.col("bsns_year").cast(pl.Utf8).alias("period"),
+                pl.col("amount"),
+            )
+            .group_by(["stockCode", "period"])
+            .agg(pl.col("amount").first())
+        )
+    else:
+        # 분기별 standalone 계산 — Polars 벡터 연산
+        df = df.with_columns(_parseAmountCol("thstrm_add_amount").alias("_addAmount"))
+        df = df.filter(pl.col("amount").is_not_null())
+        if df.is_empty():
+            return None
+
+        isBs = sjDiv == "BS"
+
+        # period 컬럼 생성
+        qMap = pl.DataFrame({"reprt_nm": list(_REPRT_TO_Q.keys()), "_qLabel": list(_REPRT_TO_Q.values())})
+        df = df.join(qMap, on="reprt_nm", how="inner")
+        df = df.with_columns(
+            (pl.col("bsns_year").cast(pl.Utf8) + pl.col("_qLabel")).alias("period")
+        )
+
+        if isBs:
+            # BS: 잔액 그대로
+            result = df.select(
+                pl.col(scCol).alias("stockCode"),
+                pl.col("period"),
+                pl.col("amount"),
+            )
+        else:
+            # IS/CF: 1~3분기 thstrm = standalone, 4분기 = thstrm - Q3 addAmount
+            notQ4 = df.filter(pl.col("reprt_nm") != "4분기").select(
+                pl.col(scCol).alias("stockCode"), pl.col("period"), pl.col("amount"),
+            )
+
+            q4 = df.filter(pl.col("reprt_nm") == "4분기")
+            q3Add = df.filter(pl.col("reprt_nm") == "3분기").select(
+                pl.col(scCol).alias("_sc"), pl.col("bsns_year").alias("_by"), pl.col("_addAmount").alias("_q3add"),
+            )
+            q4j = q4.join(q3Add, left_on=[scCol, "bsns_year"], right_on=["_sc", "_by"], how="left")
+            q4j = q4j.with_columns(
+                pl.when(pl.col("_q3add").is_not_null())
+                .then(pl.col("amount") - pl.col("_q3add"))
+                .otherwise(pl.col("amount"))
+                .alias("amount")
+            ).select(
+                pl.col(scCol).alias("stockCode"), pl.col("period"), pl.col("amount"),
+            )
+            result = pl.concat([notQ4, q4j])
+
+    return result
+
+
 def scanAccount(
     snakeId: str,
     *,
@@ -297,34 +418,50 @@ def scanAccount(
         sjDiv = _resolveSjDiv(snakeId)
 
     filterDivs = ["IS", "CIS"] if sjDiv in ("IS", "CIS") else [sjDiv]
-
-    financeDir = Path(_dataDir("finance"))
-    parquetFiles = sorted(financeDir.glob("*.parquet"))
-
-    if not parquetFiles:
-        from dartlab.core.guidance import emit
-
-        emit("hint:market_data_needed", category="finance", fn="scanAccount")
-        return pl.DataFrame({"stockCode": []})
-
     fastKeys = _buildFastKeys(snakeId)
-    processor = _FileProcessor(
-        filterDivs,
-        fsPref,
-        fastKeys,
-        quarterly=not annual,
-        sjDiv=sjDiv,
-    )
 
-    _log.info("scanAccount('%s', annual=%s): %d 파일 스캔 시작", snakeId, annual, len(parquetFiles))
+    # ── scan/finance.parquet 가속 경로 ──
+    from dartlab.market._helpers import _ensureScanData
 
-    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
-        chunks = [r for r in pool.map(processor, parquetFiles) if r is not None]
+    scanDir = _ensureScanData()
+    scanPath = scanDir / "finance.parquet"
+    allDf = None
 
-    if not chunks:
-        return pl.DataFrame({"stockCode": []})
+    if scanPath.exists():
+        allDf = _scanAccountFromMerged(
+            scanPath, snakeId, sjDiv, filterDivs, fsPref, fastKeys, annual=annual,
+        )
+        if allDf is not None:
+            _log.info("scanAccount('%s'): scan/finance.parquet 가속 경로 사용", snakeId)
 
-    allDf = pl.concat(chunks)
+    # ── fallback: 종목별 파일 순회 ──
+    if allDf is None:
+        financeDir = Path(_dataDir("finance"))
+        parquetFiles = sorted(financeDir.glob("*.parquet"))
+
+        if not parquetFiles:
+            from dartlab.core.guidance import emit
+
+            emit("hint:market_data_needed", category="finance", fn="scanAccount")
+            return pl.DataFrame({"stockCode": []})
+
+        processor = _FileProcessor(
+            filterDivs,
+            fsPref,
+            fastKeys,
+            quarterly=not annual,
+            sjDiv=sjDiv,
+        )
+
+        _log.info("scanAccount('%s', annual=%s): %d 파일 스캔 시작 (fallback)", snakeId, annual, len(parquetFiles))
+
+        with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
+            chunks = [r for r in pool.map(processor, parquetFiles) if r is not None]
+
+        if not chunks:
+            return pl.DataFrame({"stockCode": []})
+
+        allDf = pl.concat(chunks)
 
     # 기간당 첫 값 + pivot
     allDf = allDf.group_by(["stockCode", "period"]).agg(pl.col("amount").first())

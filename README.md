@@ -958,6 +958,7 @@ e.companyFactsJson("AAPL")
 | DART docs | 2,500+ companies | ~8 GB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
 | DART finance | 2,700+ companies | ~600 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
 | DART report | 2,700+ companies | ~320 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
+| DART scan | Pre-built cross-company | ~271 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/scan) |
 | EDGAR | On-demand | — | SEC API (auto-fetched) |
 
 ### 3-Step Data Pipeline

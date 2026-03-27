@@ -69,8 +69,21 @@ EQUITY_NMS = {"자본총계", "자본 총계"}
 def scan_debt_mix() -> dict[str, dict]:
     """finance BS → {종목코드: {총부채, 부채비율}}.
 
-    부채비율 = 총부채 / 자본총계 × 100.
+    부채비율 = 총부채 / 자본총계 x 100.
+    scan/finance.parquet 프리빌드가 있으면 단일 파일에서 즉시 필터.
     """
+    from dartlab.market._helpers import _ensureScanData
+
+    scanDir = _ensureScanData()
+    scanPath = scanDir / "finance.parquet"
+
+    if scanPath.exists():
+        try:
+            return _debtMixFromMerged(scanPath)
+        except (pl.exceptions.PolarsError, OSError):
+            pass
+
+    # fallback: 종목별 순회
     from dartlab.core.dataLoader import _dataDir
 
     finance_dir = Path(_dataDir("finance"))
@@ -91,8 +104,6 @@ def scan_debt_mix() -> dict[str, dict]:
         except (pl.exceptions.PolarsError, OSError):
             continue
         if bs.is_empty() or "account_id" not in bs.columns:
-            continue
-        if bs.is_empty():
             continue
         cfs = bs.filter(pl.col("fs_nm").str.contains("연결"))
         target = cfs if not cfs.is_empty() else bs
@@ -116,6 +127,64 @@ def scan_debt_mix() -> dict[str, dict]:
                     equity = val
 
         if liab and liab > 0:
+            debt_ratio = (liab / equity * 100) if equity and equity > 0 else None
+            result[code] = {
+                "총부채": liab,
+                "부채비율": round(debt_ratio, 1) if debt_ratio else None,
+            }
+    return result
+
+
+def _debtMixFromMerged(scanPath: Path) -> dict[str, dict]:
+    """합산 finance parquet에서 부채/자본 추출."""
+    scCol = "stockCode" if "stockCode" in pl.scan_parquet(str(scanPath)).collect_schema().names() else "stock_code"
+
+    bs = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
+            (pl.col("sj_div") == "BS")
+            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+        )
+        .collect()
+    )
+    if bs.is_empty() or "account_id" not in bs.columns:
+        return {}
+
+    cfs = bs.filter(pl.col("fs_nm").str.contains("연결"))
+    target = cfs if not cfs.is_empty() else bs
+
+    # 종목별 최신 연도
+    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
+    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
+
+    allLiabIds = LIABILITIES_IDS | LIABILITIES_NMS
+    allEquityIds = EQUITY_IDS | EQUITY_NMS
+
+    liabRows = target.filter(
+        pl.col("account_id").is_in(list(LIABILITIES_IDS)) | pl.col("account_nm").is_in(list(LIABILITIES_NMS))
+    )
+    eqRows = target.filter(
+        pl.col("account_id").is_in(list(EQUITY_IDS)) | pl.col("account_nm").is_in(list(EQUITY_NMS))
+    )
+
+    liabMap: dict[str, float] = {}
+    for row in liabRows.iter_rows(named=True):
+        code = row.get(scCol, "")
+        val = parse_num(row.get("thstrm_amount"))
+        if code and val and (code not in liabMap or val > liabMap[code]):
+            liabMap[code] = val
+
+    eqMap: dict[str, float] = {}
+    for row in eqRows.iter_rows(named=True):
+        code = row.get(scCol, "")
+        val = parse_num(row.get("thstrm_amount"))
+        if code and val and (code not in eqMap or val > eqMap[code]):
+            eqMap[code] = val
+
+    result: dict[str, dict] = {}
+    for code, liab in liabMap.items():
+        if liab > 0:
+            equity = eqMap.get(code)
             debt_ratio = (liab / equity * 100) if equity and equity > 0 else None
             result[code] = {
                 "총부채": liab,

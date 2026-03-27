@@ -176,11 +176,8 @@ class OAuthCodexProvider(BaseProvider):
 
     @property
     def default_model(self) -> str:
-        """Plus → gpt-5.3-codex, Pro → gpt-5.4."""
-        plan = _detect_plan_type()
-        if plan == "pro":
-            return "gpt-5.4"
-        return "gpt-5.3-codex"
+        """기본 모델 — gpt-5.4 (Codex CLI 동일)."""
+        return "gpt-5.4"
 
     def check_available(self) -> bool:
         try:
@@ -260,7 +257,6 @@ class OAuthCodexProvider(BaseProvider):
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "originator": "codex_cli_rs",
-            "OpenAI-Beta": "responses=experimental",
             "accept": "text/event-stream",
         }
         account_id = oauthToken.get_account_id()

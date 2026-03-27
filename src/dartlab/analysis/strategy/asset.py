@@ -152,7 +152,6 @@ def calcAssetStructure(company) -> dict | None:
 
     history = []
     latest = None
-    composition = None
 
     for col in yCols:
         ta = _get(taRow, col)
@@ -191,14 +190,38 @@ def calcAssetStructure(company) -> dict | None:
         finDebt = _get(data.get("부채총계", {}), col) - opLiab
         netFinDebt = max(0, finDebt - cash - stFin)
 
+        # 세부 구성 (매 연도)
+        recVal = _getFirst(data, _WC_REC_KEYS, col)
+        invVal = _get(data.get("재고자산", {}), col)
+        ppeVal = _get(data.get("유형자산", {}), col)
+        intVal = _get(data.get("무형자산", {}), col)
+        gwVal = _get(data.get("영업권", {}), col)
+        rouVal = _get(data.get("사용권자산", {}), col)
+        cipVal = _get(data.get("건설중인자산", {}), col)
+        invstVal = _get(data.get("관계기업등지분관련투자자산", {}), col) + _get(data.get("장기금융자산", {}), col)
+
         entry = {
             "period": col,
+            "totalAssets": ta,
+            "opAssets": opAssets,
             "opAssetsPct": _pct(opAssets, ta),
+            "nonOpAssets": nonOpAssets,
             "nonOpAssetsPct": _pct(nonOpAssets, ta),
             "otherAssetsPct": _pct(otherAssets, ta),
             "noa": noa,
             "wc": wc,
             "fixedOp": fixedOp,
+            # 세부 항목
+            "receivables": recVal,
+            "inventory": invVal,
+            "ppe": ppeVal,
+            "intangibles": intVal,
+            "goodwill": gwVal,
+            "rou": rouVal,
+            "cip": cipVal,
+            "cash": cash,
+            "stFinancial": stFin,
+            "investments": invstVal,
         }
         history.append(entry)
 
@@ -209,26 +232,12 @@ def calcAssetStructure(company) -> dict | None:
                 "opAssetsPct": _pct(opAssets, ta),
                 "nonOpAssets": nonOpAssets,
                 "nonOpAssetsPct": _pct(nonOpAssets, ta),
-                "otherAssets": otherAssets,
-                "otherAssetsPct": _pct(otherAssets, ta),
+                "otherAssets": ta - opAssets - nonOpAssets,
+                "otherAssetsPct": _pct(ta - opAssets - nonOpAssets, ta),
                 "workingCapital": wc,
                 "fixedOpAssets": fixedOp,
                 "noa": noa,
                 "netFinDebt": netFinDebt,
-            }
-            composition = {
-                "receivables": _getFirst(data, _WC_REC_KEYS, col),
-                "inventory": _get(data.get("재고자산", {}), col),
-                "ppe": _get(data.get("유형자산", {}), col),
-                "intangibles": _get(data.get("무형자산", {}), col),
-                "goodwill": _get(data.get("영업권", {}), col),
-                "rou": _get(data.get("사용권자산", {}), col),
-                "cip": _get(data.get("건설중인자산", {}), col),
-                "cash": cash,
-                "stFinancial": stFin,
-                "investments": (
-                    _get(data.get("관계기업등지분관련투자자산", {}), col) + _get(data.get("장기금융자산", {}), col)
-                ),
             }
 
     if latest is None:
@@ -248,7 +257,6 @@ def calcAssetStructure(company) -> dict | None:
 
     return {
         "latest": latest,
-        "composition": composition,
         "history": history,
         "diagnosis": diagnosis,
     }
@@ -504,13 +512,13 @@ def calcAssetFlags(company) -> list[str]:
         lat = structure["latest"]
         if lat["nonOpAssetsPct"] >= 40:
             flags.append(f"비영업자산 {lat['nonOpAssetsPct']:.0f}% — 지주/투자 성격")
-        comp = structure.get("composition", {})
-        if comp:
+        hist0 = structure["history"][0] if structure["history"] else {}
+        if hist0:
             ta = lat["totalAssets"]
-            cipPct = _pct(comp.get("cip", 0), ta)
+            cipPct = _pct(hist0.get("cip", 0), ta)
             if cipPct >= 10:
                 flags.append(f"건설중인자산 {cipPct:.0f}% — 대규모 투자 진행 중")
-            invPct = _pct(comp.get("inventory", 0), ta)
+            invPct = _pct(hist0.get("inventory", 0), ta)
             if invPct >= 20:
                 flags.append(f"재고자산 {invPct:.0f}% — 재고 비대화 주의")
 

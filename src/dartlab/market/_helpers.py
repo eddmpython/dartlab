@@ -7,16 +7,43 @@ from pathlib import Path
 import polars as pl
 
 
+_scanDownloaded = False
+
+
+def _ensureScanData() -> Path:
+    """scan 프리빌드 디렉토리 확인. 없으면 HF에서 자동 다운로드."""
+    from dartlab.core.dataLoader import _dataDir
+
+    scanDir = Path(_dataDir("scan"))
+
+    global _scanDownloaded
+    if _scanDownloaded:
+        return scanDir
+
+    if scanDir.exists() and any(scanDir.rglob("*.parquet")):
+        _scanDownloaded = True
+        return scanDir
+
+    try:
+        from dartlab.core.dataLoader import downloadAll
+
+        downloadAll("scan")
+        _scanDownloaded = True
+    except (ImportError, RuntimeError, ValueError):
+        pass
+
+    return scanDir
+
+
 def scan_parquets(api_type: str, keep_cols: list[str]) -> pl.DataFrame:
     """report parquet에서 특정 apiType만 LazyFrame 스캔.
 
     scan/report/{apiType}.parquet 프리빌드가 있으면 단일 파일에서 즉시 로드.
     없으면 종목별 parquet 순회 (fallback).
     """
-    from dartlab.core.dataLoader import _dataDir
-
-    # 1순위: 프리빌드 scan parquet
-    scan_path = Path(_dataDir("scan")) / "report" / f"{api_type}.parquet"
+    # 1순위: 프리빌드 scan parquet (없으면 자동 다운로드 시도)
+    scanDir = _ensureScanData()
+    scan_path = scanDir / "report" / f"{api_type}.parquet"
     if scan_path.exists():
         try:
             lf = pl.scan_parquet(str(scan_path))
@@ -29,6 +56,8 @@ def scan_parquets(api_type: str, keep_cols: list[str]) -> pl.DataFrame:
             pass  # fallback to per-file scan
 
     # 2순위: 종목별 순회 (fallback)
+    from dartlab.core.dataLoader import _dataDir
+
     report_dir = Path(_dataDir("report"))
     parquet_files = sorted(report_dir.glob("*.parquet"))
 
@@ -196,12 +225,11 @@ def scan_finance_parquets(
     scan/finance.parquet 프리빌드가 있으면 단일 파일에서 즉시 필터.
     없으면 종목별 parquet 순회 (fallback).
     """
-    from dartlab.core.dataLoader import _dataDir
-
     sj_divs = [statement] if statement != "IS" else ["IS", "CIS"]
 
-    # 1순위: 프리빌드 scan parquet
-    scan_path = Path(_dataDir("scan")) / "finance.parquet"
+    # 1순위: 프리빌드 scan parquet (없으면 자동 다운로드 시도)
+    scanDir = _ensureScanData()
+    scan_path = scanDir / "finance.parquet"
     if scan_path.exists():
         try:
             return _scanFinanceFromMerged(scan_path, sj_divs, account_ids, account_nms, amount_col)
@@ -209,6 +237,8 @@ def scan_finance_parquets(
             pass  # fallback
 
     # 2순위: 종목별 순회 (fallback)
+    from dartlab.core.dataLoader import _dataDir
+
     finance_dir = Path(_dataDir("finance"))
     parquet_files = sorted(finance_dir.glob("*.parquet"))
 

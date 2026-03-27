@@ -958,6 +958,7 @@ e.companyFactsJson("AAPL")
 | DART docs | 2,500+ 기업 | ~8 GB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/docs) |
 | DART finance | 2,700+ 기업 | ~600 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/finance) |
 | DART report | 2,700+ 기업 | ~320 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/report) |
+| DART scan | 전종목 횡단분석 프리빌드 | ~271 MB | [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/scan) |
 | EDGAR | 주문형 | — | SEC API (자동 수집) |
 
 ### 3단계 데이터 파이프라인

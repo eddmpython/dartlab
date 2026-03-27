@@ -193,12 +193,52 @@
 | 012: AI 컨텍스트 | changes 밀도 2배, 횡단 66ms |
 | 013: 50종목 횡단 | 7종 질의 전부 66ms |
 | **014: 전 종목** | **5분, 47MB, 157ms** |
-| 015: finance/report | finance-5Y 197MB, report 분리 필요 |
+| 015: finance/report | finance-5Y 197MB, report apiType별 분리 |
+
+## scan 프리빌드 프로덕션화 완료
+
+### 구현 내용 (015 실험 후 즉시 적용)
+
+```
+data/dart/scan/                    ← 횡단 scan 전용 프리빌드
+├── changes.parquet                docs changes 5Y (47.2MB, 1.9M행)
+├── finance.parquet                finance 5Y (196.6MB, 11.7M행)
+└── report/                        apiType별 분리 (10개, 합계 27.1MB)
+    ├── majorHolder.parquet        4.2MB
+    ├── executive.parquet          9.8MB
+    ├── employee.parquet           2.6MB
+    ├── dividend.parquet           3.0MB
+    ├── treasuryStock.parquet      1.7MB
+    ├── capitalChange.parquet      2.3MB
+    ├── corporateBond.parquet      0.8MB
+    ├── auditOpinion.parquet       1.6MB
+    ├── executivePayAllTotal.parquet  0.7MB
+    └── executivePayIndividual.parquet  0.4MB
+```
+
+- **scan 전체: 270.7MB** (원본 ~9GB 대비 3%)
+- 빌드 시간: changes 4분 + finance 25초 + report 2분 = **~7분**
+- 가속 효과: report scan 21ms, finance scan 494ms (기존 수분)
+
+### 변경 파일
+
+- `src/dartlab/core/dataConfig.py` — scan 카테고리 추가
+- `src/dartlab/market/scan/builder.py` — 빌더 모듈 (배치 파일 방식)
+- `src/dartlab/market/_helpers.py` — scan 파일 존재 시 자동 가속 (fallback 유지)
+- `src/dartlab/cli/commands/collect.py` — `dartlab collect --scan` 명령어
+- `src/dartlab/core/dataLoader.py` — `downloadAll("scan")` 하위 폴더 지원
+- `landing/src/lib/brand.ts` — data 블록 동기화
+
+### 사용자 경로
+
+- 배포자: `dartlab collect --scan` → HF push
+- 사용자: `downloadAll("scan")` (~270MB) → 즉시 횡단 분석 (전종목 원본 불필요)
 
 ## 다음 단계
 
 - [ ] `c.changes` 실제 구현 (Level 2 벡터화 빌더 + lazy 캐시)
 - [ ] AI context builder에 changes 경로 추가
-- [ ] scan에 changes 축 추가 (`market/changes/`)
-- [ ] 전 종목 프리빌드 CLI (`dartlab collect changes`)
-- [ ] HuggingFace 배포 (changes category 추가)
+- [x] ~~scan에 changes 축 추가~~ → `market/scan/` 모듈로 구현 완료
+- [x] ~~전 종목 프리빌드 CLI~~ → `dartlab collect --scan` 완료
+- [ ] HuggingFace 배포 (`data/dart/scan/` 업로드)
+- [ ] buildScanSnapshot에 scan 가속 적용 (현재 _helpers만 적용)

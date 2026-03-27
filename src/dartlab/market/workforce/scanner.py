@@ -82,12 +82,11 @@ def scan_employee() -> dict[str, dict]:
 
 
 def scan_revenue_per_employee() -> dict[str, float]:
-    """employee + finance IS → {종목코드: 직원당 매출(억)}."""
-    # 직원수
-    emp_map = scan_employee()
+    """employee + finance IS → {종목코드: 직원당 매출(억)}.
 
-    # 매출 (finance IS)
-    from dartlab.core.dataLoader import _dataDir
+    scan/finance.parquet 프리빌드가 있으면 단일 파일에서 매출 추출.
+    """
+    emp_map = scan_employee()
 
     REVENUE_IDS = {
         "Revenue",
@@ -99,6 +98,83 @@ def scan_revenue_per_employee() -> dict[str, float]:
         "RevenueFromContractsWithCustomers",
     }
     REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
+
+    from dartlab.market._helpers import _ensureScanData
+
+    scanDir = _ensureScanData()
+    scanPath = scanDir / "finance.parquet"
+
+    if scanPath.exists():
+        try:
+            rev_map = _revenueFromMerged(scanPath, REVENUE_IDS, REVENUE_NMS)
+        except (pl.exceptions.PolarsError, OSError):
+            rev_map = _revenueFallback(REVENUE_IDS, REVENUE_NMS)
+    else:
+        rev_map = _revenueFallback(REVENUE_IDS, REVENUE_NMS)
+
+    result: dict[str, float] = {}
+    for code in emp_map:
+        if code in rev_map:
+            emp_count = emp_map[code]["직원수"]
+            if emp_count > 0:
+                result[code] = round(rev_map[code] / emp_count / 1e8, 1)
+    return result
+
+
+def _revenueFromMerged(scanPath: Path, revIds: set[str], revNms: set[str]) -> dict[str, float]:
+    """합산 finance parquet에서 매출 추출."""
+    scCol = "stockCode" if "stockCode" in pl.scan_parquet(str(scanPath)).collect_schema().names() else "stock_code"
+
+    target = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
+            pl.col("sj_div").is_in(["IS", "CIS"])
+            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+        )
+        .collect()
+    )
+    if target.is_empty() or "account_id" not in target.columns:
+        return {}
+
+    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
+    target = cfs if not cfs.is_empty() else target
+
+    # 종목별 최신 연도
+    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
+    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
+
+    matched = target.filter(
+        pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms))
+    )
+
+    rev_map: dict[str, float] = {}
+    for row in matched.iter_rows(named=True):
+        code = row.get(scCol, "")
+        val = parse_num(row.get("thstrm_amount"))
+        if code and val and val > 0 and code not in rev_map:
+            rev_map[code] = val
+
+    # 1차 매칭 실패 종목은 "매출" 포함 fallback
+    matchedCodes = set(rev_map.keys())
+    allCodes = set(target[scCol].unique().to_list())
+    missingCodes = allCodes - matchedCodes
+    if missingCodes:
+        fallbackRows = target.filter(
+            pl.col(scCol).is_in(list(missingCodes))
+            & pl.col("account_nm").str.contains("매출")
+        )
+        for row in fallbackRows.iter_rows(named=True):
+            code = row.get(scCol, "")
+            val = parse_num(row.get("thstrm_amount"))
+            if code and val and val > 0 and code not in rev_map:
+                rev_map[code] = val
+
+    return rev_map
+
+
+def _revenueFallback(revIds: set[str], revNms: set[str]) -> dict[str, float]:
+    """종목별 finance parquet 순회 (fallback)."""
+    from dartlab.core.dataLoader import _dataDir
 
     finance_dir = Path(_dataDir("finance"))
     parquet_files = sorted(finance_dir.glob("*.parquet"))
@@ -119,13 +195,11 @@ def scan_revenue_per_employee() -> dict[str, float]:
             continue
         if is_df.is_empty() or "account_id" not in is_df.columns:
             continue
-        if is_df.is_empty():
-            continue
         cfs = is_df.filter(pl.col("fs_nm").str.contains("연결"))
         target = cfs if not cfs.is_empty() else is_df
 
         rev_rows = target.filter(
-            pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS))
+            pl.col("account_id").is_in(list(revIds)) | pl.col("account_nm").is_in(list(revNms))
         )
         if rev_rows.is_empty():
             rev_rows = target.filter(pl.col("account_nm").str.contains("매출"))
@@ -141,15 +215,7 @@ def scan_revenue_per_employee() -> dict[str, float]:
             if val and val > 0:
                 rev_map[code] = val
                 break
-
-    # 결합
-    result: dict[str, float] = {}
-    for code in emp_map:
-        if code in rev_map:
-            emp_count = emp_map[code]["직원수"]
-            if emp_count > 0:
-                result[code] = round(rev_map[code] / emp_count / 1e8, 1)  # 억 단위
-    return result
+    return rev_map
 
 
 def scan_top_pay() -> dict[str, dict]:

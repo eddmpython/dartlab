@@ -35,12 +35,78 @@ providers/dart/scan/
     └── risk.py              # ICR 계산 + 위험등급 분류
 ```
 
+## scan 프리빌드 (dart/scan/)
+
+종목별 parquet 2700+개를 순차 스캔하면 수분 걸린다.
+`dart/scan/`에 프리빌드 합산 parquet을 두면 **17초**로 단축된다.
+
+### 구조
+
+```
+data/dart/scan/
+├── changes.parquet              docs 변화 전종목 5Y (47MB, 1.9M행)
+├── finance.parquet              finance 전종목 5Y (197MB, 11.7M행)
+└── report/                      apiType별 분리 (10개, 합계 27MB)
+    ├── majorHolder.parquet
+    ├── executive.parquet
+    ├── employee.parquet
+    ├── dividend.parquet
+    ├── treasuryStock.parquet
+    ├── capitalChange.parquet
+    ├── corporateBond.parquet
+    ├── auditOpinion.parquet
+    ├── executivePayAllTotal.parquet
+    └── executivePayIndividual.parquet
+```
+
+### 빌드/배포 흐름
+
+```
+배포자: dartlab collect --scan → data/dart/scan/ 생성 → HF push
+사용자: downloadAll("scan") (271MB) → 즉시 횡단 분석 가능
+        (전종목 원본 8GB+ 불필요)
+```
+
+scan 파일이 없으면 `_helpers._ensureScanData()`가 HF에서 자동 다운로드를 시도한다.
+다운로드 실패 시 기존 종목별 순회로 fallback.
+
+### 가속 경로
+
+`_helpers.py`의 두 함수가 scan 파일을 자동 감지:
+- `scan_parquets(apiType)` → `scan/report/{apiType}.parquet` 우선
+- `scan_finance_parquets()` → `scan/finance.parquet` 우선
+
+`debt/scanner.py`의 `scan_debt_mix()`와 `workforce/scanner.py`의 `scan_revenue_per_employee()`도
+합산 finance parquet을 우선 사용한다.
+
+### 속도 실측
+
+| 구간 | scan 프리빌드 전 | scan 프리빌드 후 |
+|------|-----------------|-----------------|
+| buildScanSnapshot 전체 | 4분+ | **17초** |
+| scan_parquets(majorHolder) | 수십 초 | **21ms** |
+| scan_finance_parquets(IS) | 수분 | **494ms** |
+| scan_debt_mix | 11초 | **0.5초** |
+| scan_revenue_per_employee | 12초 | **0.5초** |
+
 ## 데이터 흐름
 
 ```
+[프리빌드 경로 — scan 파일 존재 시]
+data/dart/scan/report/{apiType}.parquet
+  ↓ _helpers.scan_parquets() — 단일 파일 즉시 로드
+apiType별 DataFrame
+
+data/dart/scan/finance.parquet
+  ↓ _helpers.scan_finance_parquets() — 단일 파일 필터
+종목별 dict
+
+[기존 경로 — fallback]
 DART report parquet (employee, dividend, majorHolder, ...)
   ↓ _helpers.scan_parquets(apiType, keep_cols)
 apiType별 DataFrame (전 종목)
+
+공통:
   ↓ scanner.py: scan_*() 함수
 종목별 dict (핵심 지표)
   ↓ scorer.py / classifier.py / risk.py

@@ -1,9 +1,10 @@
-"""`dartlab chat` command -- 인터랙티브 터미널 REPL."""
+"""`dartlab chat` -- interactive AI analysis REPL."""
 
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,15 +13,82 @@ from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.providers import detect_provider
 from dartlab.cli.services.runtime import configure_dartlab
 
+# ---------------------------------------------------------------------------
+# Brand colors (synced with landing/src/lib/brand.ts)
+# ---------------------------------------------------------------------------
+
+_CLR = "#ea4647"
+_CLR_DIM = "#c83232"
+_CLR_ACCENT = "#fb923c"
+_CLR_MUTED = "#94a3b8"
+_CLR_SUCCESS = "#34d399"
+_CLR_WARN = "#fbbf24"
+
+# ---------------------------------------------------------------------------
+# Suggestions (English defaults)
+# ---------------------------------------------------------------------------
+
+_SUGGESTIONS = [
+    "Analyze profitability trends and earnings quality",
+    "Evaluate financial health and cash flow sustainability",
+    "Assess debt structure and liquidity risks",
+    "Compare dividend sustainability and shareholder returns",
+    "Summarize the key investment thesis for this company",
+]
+
+# ---------------------------------------------------------------------------
+# Tool labels
+# ---------------------------------------------------------------------------
+
+_TOOL_LABELS = {
+    "explore": "Disclosure",
+    "finance": "Financial Data",
+    "analyze": "Analysis Engine",
+    "market": "Market Data",
+    "openapi": "OpenDART API",
+    "system": "System Info",
+    "chart": "Chart",
+    "macro": "Macro",
+    "scan": "Scan",
+    "company": "Company",
+    "ui": "UI",
+}
+
+# ---------------------------------------------------------------------------
+# Slash command registry
+# ---------------------------------------------------------------------------
+
+_COMMANDS: list[tuple[str, tuple[str, ...], str]] = [
+    ("/help",     (),              "Show available commands"),
+    ("/company",  ("/c",),         "Switch or show current company"),
+    ("/model",    ("/m",),         "Switch model"),
+    ("/provider", ("/p",),         "Switch LLM provider"),
+    ("/clear",    (),              "Clear conversation history"),
+    ("/suggest",  ("/s",),         "Suggested questions"),
+    ("/status",   (),              "Session status and config"),
+    ("/cost",     (),              "Token usage and cost"),
+    ("/export",   (),              "Export conversation to markdown"),
+    ("/history",  ("/h",),         "Show recent conversation turns"),
+    ("/compact",  (),              "Compact conversation history"),
+    ("/report",   ("/r",),         "Deep analysis (report mode)"),
+    ("/quit",     ("/exit", "/q"), "Exit"),
+]
+
+_SLASH_WORDS: list[str] = []
+for _name, _aliases, _ in _COMMANDS:
+    _SLASH_WORDS.append(_name)
+    _SLASH_WORDS.extend(_aliases)
+
 
 def configure_parser(subparsers) -> None:
-    parser = subparsers.add_parser("chat", help="대화형 AI 분석 (인터랙티브 REPL)")
-    parser.add_argument("company", nargs="?", default=None, help="종목코드 또는 회사명 (생략 가능)")
+    """Register the chat subcommand."""
+    parser = subparsers.add_parser("chat", help="Interactive AI analysis REPL")
+    parser.add_argument("company", nargs="?", default=None, help="Stock code or company name (optional)")
     parser.add_argument("--provider", "-p", default=None, choices=PROVIDERS, help="LLM provider")
-    parser.add_argument("--model", "-m", default=None, help="모델명")
-    parser.add_argument("--base-url", default=None, help="커스텀 API URL")
-    parser.add_argument("--api-key", default=None, help="API 키")
-    parser.add_argument("--continue", dest="cont", action="store_true", help="이전 대화 이어가기")
+    parser.add_argument("--model", "-m", default=None, help="Model name")
+    parser.add_argument("--base-url", default=None, help="Custom API URL")
+    parser.add_argument("--api-key", default=None, help="API key")
+    parser.add_argument("--continue", dest="cont", action="store_true", help="Resume previous conversation")
     parser.set_defaults(handler=run)
 
 
@@ -30,7 +98,7 @@ def configure_parser(subparsers) -> None:
 
 @dataclass
 class _ChatState:
-    """REPL 세션 상태."""
+    """REPL session state."""
 
     company: Any | None = None
     stockCode: str | None = None
@@ -40,6 +108,10 @@ class _ChatState:
     apiKey: str | None = None
     sessionId: int | None = None
     history: list[dict[str, str]] = field(default_factory=list)
+    startTime: float = field(default_factory=time.monotonic)
+    queryCount: int = 0
+    toolCallCount: int = 0
+    companiesUsed: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +119,7 @@ class _ChatState:
 # ---------------------------------------------------------------------------
 
 def run(args) -> int:
+    """Entry point for `dartlab chat`."""
     from rich.console import Console
 
     configure_dartlab()
@@ -61,13 +134,13 @@ def run(args) -> int:
     )
 
     if args.company:
-        if not _loadCompany(state, args.company, console):
-            raise CLIError(f"종목을 찾을 수 없습니다: {args.company}")
+        if not _loadCompany(state, args.company, console, quiet=True):
+            raise CLIError(f"Company not found: {args.company}")
+
+    _printWelcome(state, console)
 
     if args.cont and state.stockCode:
         _resumeSession(state, console)
-
-    _printWelcome(state, console)
     _replLoop(state, console)
     return 0
 
@@ -76,20 +149,26 @@ def run(args) -> int:
 # REPL loop
 # ---------------------------------------------------------------------------
 
-_SLASH_WORDS = ["/help", "/company", "/model", "/clear", "/suggest", "/status", "/quit", "/exit", "/q"]
-
-
 def _replLoop(state: _ChatState, console) -> None:
-    promptFn = _makePromptFn()
+    """Main REPL loop."""
+    promptFn = _makePromptFn(state)
+    lastInterrupt = 0.0
 
     while True:
-        prompt = _buildPrompt(state)
         try:
-            userInput = promptFn(prompt)
+            userInput = promptFn()
         except KeyboardInterrupt:
+            now = time.monotonic()
+            if now - lastInterrupt < 1.5:
+                console.print()
+                _printSessionSummary(state, console)
+                break
+            lastInterrupt = now
+            console.print(f"\n  [{_CLR_MUTED}]Press Ctrl+C again to exit[/]")
             continue
         except EOFError:
-            console.print("\n[dim]채팅을 종료합니다.[/]")
+            console.print()
+            _printSessionSummary(state, console)
             break
 
         userInput = userInput.strip()
@@ -99,26 +178,27 @@ def _replLoop(state: _ChatState, console) -> None:
         if userInput.startswith("/"):
             shouldExit = _handleSlash(userInput, state, console)
             if shouldExit:
+                _printSessionSummary(state, console)
                 break
             continue
 
-        # 종목 없으면 텍스트에서 자동 감지 시도
         if state.company is None:
             _tryAutoDetect(userInput, state, console)
 
         _executeQuery(userInput, state, console)
 
 
-def _makePromptFn():
-    """prompt_toolkit PromptSession을 반환. 터미널이 아니면 input() fallback."""
+def _makePromptFn(state: _ChatState):
+    """Return a callable that reads user input with prompt_toolkit or plain input()."""
     try:
         import sys
 
         if not sys.stdin.isatty():
-            return input
+            return lambda: input(_buildPromptPlain(state))
 
         from prompt_toolkit import PromptSession
         from prompt_toolkit.completion import WordCompleter
+        from prompt_toolkit.formatted_text import HTML
         from prompt_toolkit.history import FileHistory
 
         historyDir = Path.home() / ".dartlab"
@@ -130,14 +210,23 @@ def _makePromptFn():
             history=FileHistory(str(historyFile)),
             completer=completer,
         )
-        return session.prompt
+
+        def _prompt():
+            if state.company:
+                msg = HTML(f'\n<style fg="{_CLR}"><b>{state.company.corpName}</b></style> &gt; ')
+            else:
+                msg = HTML(f'\n<style fg="{_CLR_MUTED}">dartlab</style> &gt; ')
+            return session.prompt(msg)
+
+        return _prompt
     except (ImportError, RuntimeError, OSError):
-        return input
+        return lambda: input(_buildPromptPlain(state))
 
 
-def _buildPrompt(state: _ChatState) -> str:
+def _buildPromptPlain(state: _ChatState) -> str:
+    """Fallback plain-text prompt."""
     if state.company:
-        return f"\ndartlab {state.company.corpName} > "
+        return f"\n{state.company.corpName} > "
     return "\ndartlab > "
 
 
@@ -145,7 +234,8 @@ def _buildPrompt(state: _ChatState) -> str:
 # Query execution
 # ---------------------------------------------------------------------------
 
-def _executeQuery(question: str, state: _ChatState, console) -> None:
+def _executeQuery(question: str, state: _ChatState, console, *, reportMode: bool = False) -> None:
+    """Execute a query against the AI engine and stream the response."""
     from rich.live import Live
     from rich.markdown import Markdown
     from rich.text import Text
@@ -160,13 +250,17 @@ def _executeQuery(question: str, state: _ChatState, console) -> None:
         base_url=state.baseUrl,
         api_key=state.apiKey,
         use_tools=True,
+        report_mode=reportMode,
+        max_turns=15 if reportMode else 5,
         history=state.history if state.history else None,
     )
 
     buffer = ""
     toolStartTime: float | None = None
-    toolPanels: list[str] = []  # tool 결과 데이터 누적 (LLM 응답 전 표시)
+    toolLines: list[str] = []
+    toolPanels: list[str] = []
     queryStart = time.monotonic()
+    queryToolCount = 0
 
     try:
         with Live(console=console, refresh_per_second=8, vertical_overflow="visible") as live:
@@ -174,11 +268,16 @@ def _executeQuery(question: str, state: _ChatState, console) -> None:
                 if ev.kind == "chunk":
                     buffer += ev.data["text"]
                     live.update(Markdown(buffer))
+
                 elif ev.kind == "tool_call":
                     toolName = ev.data.get("name", "")
                     label = _toolLabel(toolName)
                     toolStartTime = time.monotonic()
-                    live.update(Markdown(buffer + f"\n\n> {label} 조회 중..."))
+                    state.toolCallCount += 1
+                    queryToolCount += 1
+                    statusBlock = "\n".join(toolLines + [f"> {label} ... fetching"])
+                    live.update(Markdown(statusBlock + "\n\n" + buffer if buffer else statusBlock))
+
                 elif ev.kind == "tool_result":
                     toolName = ev.data.get("name", "")
                     label = _toolLabel(toolName)
@@ -187,22 +286,23 @@ def _executeQuery(question: str, state: _ChatState, console) -> None:
                         dt = time.monotonic() - toolStartTime
                         elapsed = f" ({dt:.1f}s)"
                         toolStartTime = None
-                    # tool 결과 데이터 수집
                     resultText = ev.data.get("result", "")
                     preview = _toolResultPreview(resultText)
-                    statusLine = f"> {label} 완료{elapsed}"
+                    line = f"> {label} done{elapsed}"
                     if preview:
-                        statusLine += f" -- {preview}"
+                        line += f" -- {preview}"
                         toolPanels.append(resultText)
-                    live.update(Markdown(buffer + f"\n\n{statusLine}"))
+                    toolLines.append(line)
+                    statusBlock = "\n".join(toolLines)
+                    live.update(Markdown(statusBlock + "\n\n" + buffer if buffer else statusBlock))
+
                 elif ev.kind == "error":
-                    errorMsg = ev.data.get("error", "알 수 없는 오류")
+                    errorMsg = ev.data.get("error", "Unknown error")
                     console.print(f"\n  [red]{errorMsg}[/]")
                     return
     except KeyboardInterrupt:
-        console.print("\n  [dim]응답 중단[/]")
+        console.print(f"\n  [{_CLR_MUTED}]Response interrupted[/]")
 
-    # tool 결과 데이터 인라인 표시 (LLM 응답 전에 나온 테이블)
     if toolPanels:
         console.print()
         for panel in toolPanels:
@@ -210,27 +310,28 @@ def _executeQuery(question: str, state: _ChatState, console) -> None:
 
     console.print()
 
-    # done 요약 (소요 시간)
     totalElapsed = time.monotonic() - queryStart
-    console.print(Text(f"  {totalElapsed:.1f}s", style="dim"))
+    footerParts = [f"{totalElapsed:.1f}s"]
+    if queryToolCount > 0:
+        footerParts.append(f"{queryToolCount} tool call{'s' if queryToolCount != 1 else ''}")
+    console.print(Text("  " + "  |  ".join(footerParts), style="dim"))
 
     if buffer:
         state.history.append({"role": "user", "content": question})
         state.history.append({"role": "assistant", "content": buffer})
+        state.queryCount += 1
         _saveMessage(state, "user", question)
         _saveMessage(state, "assistant", buffer)
 
 
 def _toolResultPreview(resultText: str) -> str:
-    """tool 결과 텍스트에서 한 줄 요약을 추출한다."""
-    if not resultText or resultText.startswith("[오류]"):
+    """Extract a one-line preview from tool result text."""
+    if not resultText or resultText.startswith("[Error]") or resultText.startswith("["):
         return ""
     lines = resultText.strip().splitlines()
-    # markdown 테이블이 있으면 행 수 표시
     tableRows = [ln for ln in lines if ln.startswith("|") and "---" not in ln]
     if len(tableRows) > 1:
-        return f"{len(tableRows) - 1}행"  # 헤더 제외
-    # 일반 텍스트면 첫 줄 앞부분
+        return f"{len(tableRows) - 1} rows"
     firstLine = lines[0].strip().lstrip("#").strip() if lines else ""
     if len(firstLine) > 60:
         firstLine = firstLine[:57] + "..."
@@ -238,34 +339,22 @@ def _toolResultPreview(resultText: str) -> str:
 
 
 def _renderToolData(resultText: str, console) -> None:
-    """tool 결과를 Rich로 렌더링한다 (markdown 테이블 포함)."""
+    """Render tool result data (markdown tables) in a panel."""
     from rich.markdown import Markdown
     from rich.panel import Panel
 
-    # markdown 테이블이 포함된 경우 패널로 감싸서 표시
     lines = resultText.strip().splitlines()
     hasTable = any(ln.startswith("|") for ln in lines)
     if hasTable:
-        # 너무 길면 앞부분만 (최대 30줄)
         if len(lines) > 30:
-            truncated = "\n".join(lines[:30]) + f"\n\n... (+{len(lines) - 30}줄)"
+            truncated = "\n".join(lines[:30]) + f"\n\n... (+{len(lines) - 30} lines)"
         else:
             truncated = resultText.strip()
         console.print(Panel(Markdown(truncated), border_style="dim", padding=(0, 1)))
 
 
-_TOOL_LABELS = {
-    "explore": "공시 탐색",
-    "finance": "재무 데이터",
-    "analyze": "분석 엔진",
-    "market": "시장 데이터",
-    "openapi": "OpenDART API",
-    "system": "시스템 정보",
-    "chart": "차트 생성",
-}
-
-
 def _toolLabel(toolName: str) -> str:
+    """Resolve tool name to display label."""
     return _TOOL_LABELS.get(toolName, toolName)
 
 
@@ -273,10 +362,11 @@ def _toolLabel(toolName: str) -> str:
 # Company management
 # ---------------------------------------------------------------------------
 
-def _loadCompany(state: _ChatState, identifier: str, console) -> bool:
+def _loadCompany(state: _ChatState, identifier: str, console, *, quiet: bool = False) -> bool:
+    """Load a company by stock code or name."""
     import dartlab
 
-    state.company = None  # GC 유도
+    state.company = None
 
     try:
         company = dartlab.Company(identifier)
@@ -286,75 +376,107 @@ def _loadCompany(state: _ChatState, identifier: str, console) -> bool:
         company, _ = resolve_from_text(identifier)
 
     if company is None:
-        console.print(f"  [red]종목을 찾을 수 없습니다: {identifier}[/]")
+        console.print(f"  [red]Company not found: {identifier}[/]")
         return False
 
     state.company = company
     state.stockCode = company.stockCode
-    console.print(f"  [bold]{company.corpName}[/] ({company.stockCode}) 로드 완료")
+    if company.corpName not in state.companiesUsed:
+        state.companiesUsed.append(company.corpName)
+    if not quiet:
+        console.print(f"  [bold]{company.corpName}[/] ({company.stockCode}) loaded")
     return True
 
 
 def _tryAutoDetect(userInput: str, state: _ChatState, console) -> None:
+    """Try to auto-detect a company from user input text."""
     from dartlab.core.resolve import resolve_from_text
 
     company, _ = resolve_from_text(userInput)
     if company is not None:
         state.company = company
         state.stockCode = company.stockCode
-        console.print(f"  [dim]{company.corpName} ({company.stockCode}) 자동 감지[/]")
+        if company.corpName not in state.companiesUsed:
+            state.companiesUsed.append(company.corpName)
+        console.print(f"  [{_CLR_MUTED}]{company.corpName} ({company.stockCode}) auto-detected[/]")
 
 
 # ---------------------------------------------------------------------------
-# Slash commands
+# Slash commands — dispatcher
 # ---------------------------------------------------------------------------
 
 def _handleSlash(userInput: str, state: _ChatState, console) -> bool:
+    """Dispatch slash command. Returns True if session should exit."""
     parts = userInput.split(maxsplit=1)
     cmd = parts[0].lower()
     arg = parts[1].strip() if len(parts) > 1 else ""
 
-    if cmd in ("/quit", "/exit", "/q"):
-        console.print("[dim]채팅을 종료합니다.[/]")
+    # resolve aliases
+    aliasMap: dict[str, str] = {}
+    for name, aliases, _ in _COMMANDS:
+        aliasMap[name] = name
+        for alias in aliases:
+            aliasMap[alias] = name
+    resolved = aliasMap.get(cmd)
+
+    if resolved == "/quit":
+        console.print(f"  [{_CLR_MUTED}]Exiting chat.[/]")
         return True
 
     handlers = {
         "/help": _cmdHelp,
         "/company": _cmdCompany,
         "/model": _cmdModel,
+        "/provider": _cmdProvider,
         "/clear": _cmdClear,
         "/suggest": _cmdSuggest,
         "/status": _cmdStatus,
+        "/cost": _cmdCost,
+        "/export": _cmdExport,
+        "/history": _cmdHistory,
+        "/compact": _cmdCompact,
+        "/report": _cmdReport,
     }
 
-    handler = handlers.get(cmd)
+    handler = handlers.get(resolved)  # type: ignore[arg-type]
     if handler:
         handler(arg, state, console)
     else:
-        console.print(f"  [yellow]알 수 없는 명령: {cmd}[/]  /help 로 사용법 확인")
+        console.print(f"  [{_CLR_WARN}]Unknown command: {cmd}[/]  /help for available commands")
 
     return False
 
 
+# ---------------------------------------------------------------------------
+# Slash command handlers
+# ---------------------------------------------------------------------------
+
 def _cmdHelp(_arg: str, _state: _ChatState, console) -> None:
-    console.print("""
-  [bold]명령어[/]
-    /help                이 도움말
-    /company <이름/코드>   종목 변경
-    /model <이름>         모델/provider 변경
-    /clear               대화 기록 초기화
-    /suggest             추천 질문
-    /status              현재 설정
-    /quit                종료
-""")
+    console.print()
+    console.print(f"  [bold {_CLR}]Commands[/]")
+    for name, aliases, desc in _COMMANDS:
+        aliasStr = ", ".join(aliases)
+        label = f"{name}"
+        if aliasStr:
+            label += f", {aliasStr}"
+        console.print(f"    {label:<22s} {desc}")
+    console.print()
 
 
 def _cmdCompany(arg: str, state: _ChatState, console) -> None:
     if not arg:
         if state.company:
-            console.print(f"  현재: [bold]{state.company.corpName}[/] ({state.stockCode})")
+            console.print(f"  current: [bold]{state.company.corpName}[/] ({state.stockCode})")
         else:
-            console.print("  [dim]로드된 종목이 없습니다. /company 삼성전자[/]")
+            console.print(f"  [{_CLR_MUTED}]No company loaded. Use /company <name or code>[/]")
+        return
+
+    if arg.lower() in ("none", "clear"):
+        state.company = None
+        state.stockCode = None
+        state.history.clear()
+        state.sessionId = None
+        console.print(f"  [{_CLR_MUTED}]Company cleared. Switched to general mode.[/]")
         return
 
     hadCompany = state.company is not None
@@ -362,13 +484,22 @@ def _cmdCompany(arg: str, state: _ChatState, console) -> None:
         if hadCompany:
             state.history.clear()
             state.sessionId = None
-            console.print("  [dim]종목 변경으로 대화 기록이 초기화되었습니다.[/]")
+            console.print(f"  [{_CLR_MUTED}]Conversation cleared due to company change.[/]")
 
 
 def _cmdModel(arg: str, state: _ChatState, console) -> None:
     if not arg:
+        console.print(f"  model: {state.model or '(default)'}")
+        return
+
+    state.model = arg
+    console.print(f"  model -> [bold]{arg}[/]")
+
+
+def _cmdProvider(arg: str, state: _ChatState, console) -> None:
+    if not arg:
         console.print(f"  provider: [bold]{state.provider}[/]")
-        console.print(f"  model: {state.model or '(기본값)'}")
+        console.print(f"  available: {', '.join(PROVIDERS)}")
         return
 
     if arg in PROVIDERS:
@@ -376,36 +507,153 @@ def _cmdModel(arg: str, state: _ChatState, console) -> None:
         state.model = None
         console.print(f"  provider -> [bold]{arg}[/]")
     else:
-        state.model = arg
-        console.print(f"  model -> [bold]{arg}[/]")
+        console.print(f"  [{_CLR_WARN}]Unknown provider: {arg}[/]")
+        console.print(f"  available: {', '.join(PROVIDERS)}")
 
 
 def _cmdClear(_arg: str, state: _ChatState, console) -> None:
     state.history.clear()
     state.sessionId = None
-    console.print("  [dim]대화 기록이 초기화되었습니다.[/]")
+    console.print(f"  [{_CLR_MUTED}]Conversation cleared.[/]")
 
 
 def _cmdSuggest(_arg: str, state: _ChatState, console) -> None:
-    if state.company is None:
-        console.print("  [dim]종목을 먼저 로드하세요. /company 삼성전자[/]")
-        return
+    questions = _SUGGESTIONS
+    if state.company:
+        try:
+            from dartlab.ai.conversation.suggestions import suggestQuestions
 
-    from dartlab.ai.conversation.suggestions import suggestQuestions
+            engineQuestions = suggestQuestions(state.company)
+            if engineQuestions:
+                questions = engineQuestions
+        except (ImportError, AttributeError):
+            pass
 
-    questions = suggestQuestions(state.company)
+    console.print()
     for i, q in enumerate(questions, 1):
-        console.print(f"  [cyan]{i}.[/] {q}")
+        console.print(f"  [{_CLR_MUTED}]{i}.[/] {q}")
+    console.print()
 
 
 def _cmdStatus(_arg: str, state: _ChatState, console) -> None:
+    mode = "general (no company)" if state.company is None else f"analysis ({state.company.corpName})"
+    console.print(f"  mode:     {mode}")
     console.print(f"  provider: [bold]{state.provider}[/]")
-    console.print(f"  model: {state.model or '(기본값)'}")
+    console.print(f"  model:    {state.model or '(default)'}")
+    console.print(f"  history:  {len(state.history)} messages")
+    console.print(f"  queries:  {state.queryCount}")
+    console.print(f"  tools:    {state.toolCallCount} calls")
+
+
+def _cmdCost(_arg: str, _state: _ChatState, console) -> None:
+    try:
+        from dartlab.cli.services.history import get_total_usage
+
+        usage = get_total_usage()
+        console.print(f"  total requests:  {usage.get('total_requests', 0)}")
+        console.print(f"  input tokens:    {usage.get('input_tokens', 0):,}")
+        console.print(f"  output tokens:   {usage.get('output_tokens', 0):,}")
+        costUsd = usage.get("cost_usd", 0)
+        if costUsd > 0:
+            console.print(f"  estimated cost:  ${costUsd:.4f}")
+    except (ImportError, OSError):
+        console.print(f"  [{_CLR_MUTED}]Usage data not available.[/]")
+
+
+def _cmdExport(arg: str, state: _ChatState, console) -> None:
+    if not state.history:
+        console.print(f"  [{_CLR_MUTED}]No conversation to export.[/]")
+        return
+
+    path = arg or f"dartlab_chat_{datetime.now():%Y%m%d_%H%M%S}.md"
+
+    lines = [f"# DartLab Chat Export", f"Date: {datetime.now():%Y-%m-%d %H:%M}", ""]
     if state.company:
-        console.print(f"  company: [bold]{state.company.corpName}[/] ({state.stockCode})")
-    else:
-        console.print("  company: (없음)")
-    console.print(f"  history: {len(state.history)}개 메시지")
+        lines.append(f"Company: {state.company.corpName} ({state.stockCode})")
+        lines.append("")
+    lines.append(f"Provider: {state.provider} | Model: {state.model or 'default'}")
+    lines.append(f"Queries: {state.queryCount} | Tool calls: {state.toolCallCount}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    for msg in state.history:
+        role = "You" if msg["role"] == "user" else "DartLab"
+        lines.append(f"## {role}")
+        lines.append("")
+        lines.append(msg["content"])
+        lines.append("")
+
+    Path(path).write_text("\n".join(lines), encoding="utf-8")
+    console.print(f"  Exported to [bold]{path}[/]")
+
+
+def _cmdHistory(arg: str, state: _ChatState, console) -> None:
+    n = int(arg) if arg and arg.isdigit() else 5
+    recent = state.history[-(n * 2):]
+    if not recent:
+        console.print(f"  [{_CLR_MUTED}]No conversation history.[/]")
+        return
+
+    console.print()
+    for msg in recent:
+        role = "You" if msg["role"] == "user" else "DartLab"
+        style = f"bold {_CLR}" if msg["role"] == "user" else _CLR_MUTED
+        content = msg["content"]
+        if len(content) > 120:
+            content = content[:117] + "..."
+        console.print(f"  [{style}]{role}:[/] {content}")
+    console.print()
+
+
+def _cmdCompact(_arg: str, state: _ChatState, console) -> None:
+    if len(state.history) <= 6:
+        console.print(f"  [{_CLR_MUTED}]History too short to compact.[/]")
+        return
+
+    dropped = len(state.history) - 6
+    state.history = state.history[-6:]
+    console.print(f"  [{_CLR_MUTED}]Compacted: dropped {dropped} messages, kept {len(state.history)}[/]")
+
+
+def _cmdReport(arg: str, state: _ChatState, console) -> None:
+    if state.company is None:
+        console.print(f"  [{_CLR_MUTED}]Load a company first with /company[/]")
+        return
+
+    question = arg or "Provide a comprehensive investment analysis report"
+    console.print(f"  [{_CLR_ACCENT}]Running deep analysis (report mode)...[/]")
+    _executeQuery(question, state, console, reportMode=True)
+
+
+# ---------------------------------------------------------------------------
+# Session summary
+# ---------------------------------------------------------------------------
+
+def _printSessionSummary(state: _ChatState, console) -> None:
+    """Print session statistics on exit."""
+    from rich.rule import Rule
+
+    elapsed = time.monotonic() - state.startTime
+    minutes = int(elapsed // 60)
+    seconds = int(elapsed % 60)
+
+    console.print()
+    console.print(Rule(style="dim"))
+
+    timeStr = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+
+    parts = [f"[dim]{timeStr}[/]"]
+    if state.queryCount > 0:
+        parts.append(f"[dim]{state.queryCount} {'queries' if state.queryCount != 1 else 'query'}[/]")
+    if state.toolCallCount > 0:
+        parts.append(f"[dim]{state.toolCallCount} tool calls[/]")
+    if state.companiesUsed:
+        names = ", ".join(state.companiesUsed)
+        parts.append(f"[dim]{names}[/]")
+
+    console.print("  " + "  |  ".join(parts))
+    console.print()
 
 
 # ---------------------------------------------------------------------------
@@ -413,6 +661,7 @@ def _cmdStatus(_arg: str, state: _ChatState, console) -> None:
 # ---------------------------------------------------------------------------
 
 def _saveMessage(state: _ChatState, role: str, content: str) -> None:
+    """Persist a message to the SQLite history database."""
     try:
         from dartlab.cli.services.history import add_message, create_session
 
@@ -425,6 +674,7 @@ def _saveMessage(state: _ChatState, role: str, content: str) -> None:
 
 
 def _resumeSession(state: _ChatState, console) -> None:
+    """Resume the latest session for the current company."""
     try:
         from dartlab.cli.services.history import get_latest_session, get_messages
 
@@ -432,7 +682,7 @@ def _resumeSession(state: _ChatState, console) -> None:
         if sessionId:
             state.sessionId = sessionId
             state.history = get_messages(sessionId)
-            console.print(f"  [dim]이전 대화 이어가기 (메시지 {len(state.history)}개)[/]")
+            console.print(f"  [{_CLR_MUTED}]Resuming previous session ({len(state.history)} messages)[/]")
     except (OSError, ImportError):
         pass
 
@@ -441,32 +691,51 @@ def _resumeSession(state: _ChatState, console) -> None:
 # Welcome
 # ---------------------------------------------------------------------------
 
+_LOGO = r"""
+     _            _   _       _
+  __| | __ _ _ __| |_| | __ _| |__
+ / _` |/ _` | '__| __| |/ _` | '_ \
+| (_| | (_| | |  | |_| | (_| | |_) |
+ \__,_|\__,_|_|   \__|_|\__,_|_.__/
+"""
+
+
 def _printWelcome(state: _ChatState, console) -> None:
-    console.print()
-    console.print("  [bold cyan]DartLab Chat[/]  --  대화형 AI 기업 분석")
-    providerLine = f"  [dim]provider: {state.provider}"
-    if state.model:
-        providerLine += f" / {state.model}"
-    providerLine += "[/]"
-    console.print(providerLine)
+    """Print the branded welcome screen."""
+    from rich.rule import Rule
+
+    try:
+        from importlib.metadata import version as pkgVersion
+        ver = pkgVersion("dartlab")
+    except Exception:
+        ver = "dev"
+
+    # logo in brand red
+    console.print(f"[{_CLR} bold]{_LOGO}[/]", highlight=False)
+
+    # provider + model + version line
+    modelDisplay = state.model or "default"
+    console.print(
+        f"  [bold]{state.provider}[/] [{_CLR_MUTED}]({modelDisplay})[/]"
+        f"    [{_CLR_MUTED}]v{ver}[/]"
+        f"    [{_CLR_MUTED}]/help for commands[/]"
+    )
     console.print()
 
     if state.company:
-        console.print(f"  [bold]{state.company.corpName}[/] ({state.stockCode})")
-        try:
-            from dartlab.ai.conversation.suggestions import suggestQuestions
-
-            questions = suggestQuestions(state.company)
-            if questions:
-                console.print()
-                console.print("  [dim]추천 질문:[/]")
-                for q in questions[:4]:
-                    console.print(f"    [dim]-[/] {q}")
-        except (ImportError, AttributeError):
-            pass
+        console.print(Rule(
+            f"[bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]",
+            style=_CLR,
+        ))
+        console.print()
+        for q in _SUGGESTIONS[:3]:
+            console.print(f"  [{_CLR_MUTED}]>[/] [{_CLR_MUTED}]{q}[/]")
+        console.print()
     else:
-        console.print("  [dim]종목 없이 시작합니다. 질문에 종목명을 포함하거나 /company 명령을 사용하세요.[/]")
+        console.print(Rule(style="dim"))
+        console.print()
+        console.print(f"  [{_CLR_MUTED}]Type a question with a company name, or /company <name>[/]")
+        console.print()
 
-    console.print()
-    console.print("  [dim]/help 사용법  |  /quit 종료  |  Ctrl+C 입력 취소[/]")
+    console.print(f"  [{_CLR_MUTED}]Ctrl+C to cancel  |  /quit to exit[/]")
     console.print()

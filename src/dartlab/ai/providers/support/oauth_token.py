@@ -22,7 +22,7 @@ from dartlab.core.ai.secrets import get_secret_store
 CHATGPT_AUTH_URL = "https://auth.openai.com/oauth/authorize"
 CHATGPT_TOKEN_URL = "https://auth.openai.com/oauth/token"
 CHATGPT_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
-CHATGPT_SCOPE = "openid profile email offline_access"
+CHATGPT_SCOPE = "openid profile email offline_access api.connectors.read api.connectors.invoke"
 
 OAUTH_REDIRECT_PORT = 1455
 OAUTH_REDIRECT_URI = f"http://localhost:{OAUTH_REDIRECT_PORT}/auth/callback"
