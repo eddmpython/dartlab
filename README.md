@@ -19,7 +19,7 @@
 </p>
 
 <p>
-<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">Live Demo</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb">Open in Colab</a> · <a href="https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py">Open in Molab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
+<a href="https://eddmpython.github.io/dartlab/">Docs</a> · <a href="https://eddmpython.github.io/dartlab/blog/">Blog</a> · <a href="https://huggingface.co/spaces/eddmpython/dartlab">Live Demo</a> · <a href="https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb">Open in Colab</a> · <a href="https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py">Open in Molab</a> · <a href="README_KR.md">한국어</a> · <a href="https://buymeacoffee.com/eddmpython">Sponsor</a>
 </p>
 
 <p>
@@ -99,7 +99,24 @@ One-click launch — no Python, no terminal, no package manager required. The de
 
 ## Quick Start
 
-Pick any company. Get the whole picture.
+### Terminal — just type `dartlab`
+
+```bash
+dartlab                          # start the AI analysis REPL
+dartlab chat 005930              # jump straight into Samsung Electronics
+```
+
+Inside the REPL, type questions in natural language or use skill commands:
+
+```
+삼성전자 > Analyze profitability trends and earnings quality
+
+삼성전자 > /comprehensive        # full investment analysis
+삼성전자 > /health               # financial health check
+삼성전자 > /company SK하이닉스    # switch company
+```
+
+### Python — one stock code, the whole picture
 
 ```python
 import dartlab
@@ -118,7 +135,7 @@ us.show("business")
 us.ratios
 
 # No code needed — ask in natural language
-dartlab.ask("Analyze Samsung Electronics financial health")
+dartlab.ask("Analyze Samsung Electronics financial health", stream=True)
 ```
 
 ## What DartLab Is
@@ -1028,9 +1045,9 @@ dartlab collect --batch --mode all         # re-collect everything
 
 | Feature | Description | Colab | Molab |
 |---------|-------------|-------|-------|
-| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py) |
-| **Scan** | `scanAccount()` / `scanRatio()` -- cross-market ratio scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/02_scan.py) |
-| **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/03_ask.py) |
+| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
+| **Scan** | `scanAccount()` / `scanRatio()` -- cross-market ratio scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
+| **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py) |
 
 <details>
 <summary>Run locally with Marimo</summary>

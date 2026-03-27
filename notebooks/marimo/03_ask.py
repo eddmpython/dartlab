@@ -23,18 +23,21 @@ def _():
 
 @app.cell
 def _(dartlab):
+    # check which AI providers are configured
     dartlab.setup()
     return
 
 
 @app.cell
 def _(dartlab):
+    # ask without a stock code -- auto-detects the company from the question
     dartlab.ask("Analyze Samsung Electronics financial health")
     return
 
 
 @app.cell
 def _(dartlab):
+    # ask with a stock code -- targeted question about a specific company
     dartlab.ask("005930", "What are the key risks?")
     return
 
@@ -47,6 +50,7 @@ def _(dartlab):
 
 @app.cell
 def _(dartlab):
+    # works with EDGAR tickers too
     dartlab.ask("AAPL", "Compare Apple's margins to industry average")
     return
 

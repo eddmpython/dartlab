@@ -11,7 +11,7 @@ export const brand = {
 	desktop: 'https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe',
 	spaces: 'https://huggingface.co/spaces/eddmpython/dartlab',
 	colab: 'https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb',
-	molab: 'https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py',
+	molab: 'https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py',
 	author: 'eddmpython',
 
 	hfRepo: 'eddmpython/dartlab-data',

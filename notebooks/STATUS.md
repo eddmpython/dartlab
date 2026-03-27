@@ -21,4 +21,4 @@ notebooks/
 ## Links
 
 - Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{file}`
-- Molab: `https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/{file}`
+- Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{file}`

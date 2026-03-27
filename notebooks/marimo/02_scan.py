@@ -22,30 +22,35 @@ def _():
 
 @app.cell
 def _(dartlab):
+    # find a company by name -- returns matching stock codes
     dartlab.search("삼성전자")
     return
 
 
 @app.cell
 def _(dartlab):
+    # full listing of all available companies
     dartlab.listing()
     return
 
 
 @app.cell
 def _(dartlab):
+    # available pre-computed ratio scans
     dartlab.scanRatioList()
     return
 
 
 @app.cell
 def _(dartlab):
+    # rank all 2,700+ companies by ROE
     dartlab.scanRatio("roe")
     return
 
 
 @app.cell
 def _(dartlab):
+    # scan a raw account across every company
     dartlab.scanAccount("매출액")
     return
 

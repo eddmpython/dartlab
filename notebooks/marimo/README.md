@@ -21,9 +21,9 @@ marimo edit notebooks/marimo/03_ask.py
 
 ## Open in Molab (browser)
 
-- [01_company.py](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/01_company.py)
-- [02_scan.py](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/02_scan.py)
-- [03_ask.py](https://marimo.app/gh/eddmpython/dartlab/master/notebooks/marimo/03_ask.py)
+- [01_company.py](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py)
+- [02_scan.py](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py)
+- [03_ask.py](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py)
 
 ## Samples
 

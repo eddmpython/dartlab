@@ -51,7 +51,6 @@
 			</Button>
 			<Button variant="secondary" href="#install">pip / uv Install</Button>
 			<Button variant="secondary" href="{base}/docs/">Docs</Button>
-			<Button variant="secondary" href={brand.spaces}>Live Demo</Button>
 			<Button variant="secondary" href={brand.colab}>Open in Colab</Button>
 			<Button variant="secondary" href={brand.molab}>Open in Molab</Button>
 		</div>
