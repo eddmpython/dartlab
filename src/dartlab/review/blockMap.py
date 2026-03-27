@@ -79,9 +79,7 @@ class BlockMap:
             return self._data[name]
         from dartlab.review.catalog import _suggest
 
-        raise AttributeError(
-            f"'{name}' 블록을 찾을 수 없습니다{_suggest(name)}"
-        )
+        raise AttributeError(f"'{name}' 블록을 찾을 수 없습니다{_suggest(name)}")
 
     def __dir__(self):
         return list(self._data.keys()) + list(super().__dir__())
@@ -96,7 +94,6 @@ class BlockMap:
         from dartlab.review.catalog import getBlockMeta, listSections
 
         lines = []
-        sectionKeys = {s.key for s in listSections()}
         bySection: dict[str, list[str]] = {}
         for key in self._data:
             meta = getBlockMeta(key)
@@ -107,16 +104,16 @@ class BlockMap:
             blockKeys = bySection.get(sec.key, [])
             if not blockKeys:
                 continue
-            lines.append(f"\n  [{sec.key}] {sec.title}")
+            lines.append(f"\n  [{sec.key}] {sec.title}\n")
             for key in blockKeys:
                 meta = getBlockMeta(key)
                 label = meta.label if meta else key
                 hasData = bool(self._data.get(key))
                 marker = "  " if hasData else "x "
-                lines.append(f"    {marker}{key:25s} {label}")
+                lines.append(f"    {marker}{key:25s} {label}\n")
 
-        header = f"BlockMap ({len(self._data)} blocks)"
-        return header + "".join(lines) + "\n"
+        header = f"BlockMap ({len(self._data)} blocks)\n"
+        return header + "".join(lines)
 
     def _repr_html_(self) -> str:
         """Jupyter HTML 렌더링."""
@@ -125,8 +122,7 @@ class BlockMap:
         rows = []
         for sec in listSections():
             rows.append(
-                f'<tr><td colspan="3" style="font-weight:bold;'
-                f'padding-top:8px">{sec.key} -- {sec.title}</td></tr>'
+                f'<tr><td colspan="3" style="font-weight:bold;padding-top:8px">{sec.key} -- {sec.title}</td></tr>'
             )
             for key in self._data:
                 meta = getBlockMeta(key)

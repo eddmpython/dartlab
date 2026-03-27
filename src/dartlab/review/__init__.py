@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from dartlab.review.blockMap import BlockMap
 from dartlab.review.blocks import (
     Block,
     FlagBlock,
@@ -34,7 +35,6 @@ from dartlab.review.blocks import (
     TableBlock,
     TextBlock,
 )
-from dartlab.review.blockMap import BlockMap
 from dartlab.review.catalog import (
     BlockMeta,
     SectionMeta,
@@ -202,9 +202,11 @@ __all__ = [
     "TableBlock",
     "FlagBlock",
     "MetricBlock",
+    "BlockMap",
     "blocks",
     "listBlocks",
     "getBlockMeta",
+    "resolveKey",
     "BlockMeta",
     "SectionMeta",
     "listSections",
