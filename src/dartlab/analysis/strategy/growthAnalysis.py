@@ -2,30 +2,11 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
-
-
-def _getRatioSeries(company) -> tuple[dict, list[str]] | None:
-    """ratioSeries를 안전하게 가져온다."""
-    try:
-        result = company.finance.ratioSeries
-        if result is None:
-            return None
-        return result
-    except (ValueError, KeyError, AttributeError):
-        return None
-
-
-def _buildTimeline(data: dict, field: str, years: list[str]) -> list[dict]:
-    """시계열 데이터를 [{period, value}, ...] 형태로 변환."""
-    vals = data.get("RATIO", {}).get(field, [])
-    n = min(len(vals), len(years), _MAX_YEARS)
-    if n == 0:
-        return []
-    return [
-        {"period": years[i], "value": vals[i]}
-        for i in range(len(years) - n, len(years))
-    ]
+from dartlab.analysis.strategy._helpers import (
+    MAX_RATIO_YEARS,
+    buildTimeline,
+    getRatioSeries,
+)
 
 
 def _cagr(values: list[float | None], periods: int) -> float | None:
@@ -41,15 +22,15 @@ def _cagr(values: list[float | None], periods: int) -> float | None:
 
 def calcGrowthTrend(company) -> dict | None:
     """매출/영업이익/순이익/자산 YoY 성장률 시계열."""
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return None
 
     data, years = result
-    revenue = _buildTimeline(data, "revenueGrowth", years)
-    opProfit = _buildTimeline(data, "operatingProfitGrowth", years)
-    netProfit = _buildTimeline(data, "netProfitGrowth", years)
-    asset = _buildTimeline(data, "assetGrowth", years)
+    revenue = buildTimeline(data, "revenueGrowth", years)
+    opProfit = buildTimeline(data, "operatingProfitGrowth", years)
+    netProfit = buildTimeline(data, "netProfitGrowth", years)
+    asset = buildTimeline(data, "assetGrowth", years)
 
     if not any([revenue, opProfit, netProfit]):
         return None
@@ -64,7 +45,7 @@ def calcGrowthTrend(company) -> dict | None:
 
 def calcGrowthQuality(company) -> dict | None:
     """성장 품질 -- 외형 vs 내실, CAGR."""
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return None
 
@@ -77,9 +58,9 @@ def calcGrowthQuality(company) -> dict | None:
     if n < 2:
         return None
 
-    revCagr = _cagr(revVals[-_MAX_YEARS:], min(n - 1, _MAX_YEARS - 1))
-    opCagr = _cagr(opVals[-_MAX_YEARS:], min(n - 1, _MAX_YEARS - 1))
-    npCagr = _cagr(npVals[-_MAX_YEARS:], min(n - 1, _MAX_YEARS - 1))
+    revCagr = _cagr(revVals[-MAX_RATIO_YEARS:], min(n - 1, MAX_RATIO_YEARS - 1))
+    opCagr = _cagr(opVals[-MAX_RATIO_YEARS:], min(n - 1, MAX_RATIO_YEARS - 1))
+    npCagr = _cagr(npVals[-MAX_RATIO_YEARS:], min(n - 1, MAX_RATIO_YEARS - 1))
 
     # 외형 vs 내실 판별
     quality = "균형"
@@ -94,14 +75,14 @@ def calcGrowthQuality(company) -> dict | None:
         "operatingProfitCagr": opCagr,
         "netProfitCagr": npCagr,
         "quality": quality,
-        "periods": min(n - 1, _MAX_YEARS - 1),
+        "periods": min(n - 1, MAX_RATIO_YEARS - 1),
     }
 
 
 def calcGrowthFlags(company) -> list[str]:
     """성장성 경고/기회 플래그."""
     flags: list[str] = []
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return flags
 

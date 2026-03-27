@@ -892,6 +892,37 @@ def cashFlowFlagsBlock(flags: list[str]) -> list:
 
 # ── 2부: 재무비율 분석 빌더 ──
 
+
+def _timelineTable(
+    specs: list[tuple[list[dict], str]],
+    rowLabels: list[str],
+) -> dict[str, list[str]] | None:
+    """[{period, value}, ...] 시계열 → 행=지표, 열=기간 dict.
+
+    specs: [(series, fmt), ...] -- series는 buildTimeline 결과, fmt는 f-string 포맷.
+    rowLabels: 각 행 라벨 (specs와 동일 순서).
+    반환: polars DataFrame으로 변환 가능한 dict. 기간 데이터 없으면 None.
+    """
+    cols: dict[str, list[str]] = {"": rowLabels}
+    for idx, (series, fmt) in enumerate(specs):
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rowLabels)
+            v = item["value"]
+            cols[period][idx] = fmt.format(v) if v is not None else "-"
+    if len(cols) <= 1:
+        return None
+    return cols
+
+
+def _flagsBlock(flags: list[str]) -> list:
+    """플래그 리스트 → FlagBlock. 공통 래퍼."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]
+
+
 # ── 2-1 수익성 ──
 
 
@@ -900,35 +931,25 @@ def marginTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("grossMargin", []), "{:.1f}%"),
+            (data.get("operatingMargin", []), "{:.1f}%"),
+            (data.get("netMargin", []), "{:.1f}%"),
+        ],
+        ["매출총이익률", "영업이익률", "순이익률"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("marginTrend").label,
             level=2,
             helper="매출총이익률 안정 + 영업이익률 상승 = 원가 통제 + 판관비 효율",
-        )
-    )
-
-    years = data.get("years", [])
-    rows = ["매출총이익률", "영업이익률", "순이익률"]
-    cols = {"": rows}
-    for series, label in [
-        (data.get("grossMargin", []), "매출총이익률"),
-        (data.get("operatingMargin", []), "영업이익률"),
-        (data.get("netMargin", []), "순이익률"),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            idx = rows.index(label)
-            v = item["value"]
-            cols[period][idx] = f"{v:.1f}%" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("마진 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("마진 추이", pl.DataFrame(cols)),
+    ]
 
 
 def returnTrendBlock(data: dict) -> list:
@@ -936,36 +957,25 @@ def returnTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("roe", []), "{:.1f}%"),
+            (data.get("roa", []), "{:.1f}%"),
+            (data.get("leverage", []), "{:.2f}배"),
+        ],
+        ["ROE", "ROA", "레버리지(ROE/ROA)"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("returnTrend").label,
             level=2,
             helper="ROE/ROA > 2 → 레버리지로 수익률 확대",
-        )
-    )
-
-    rows = ["ROE", "ROA", "레버리지(ROE/ROA)"]
-    cols = {"": rows}
-    for series, idx in [
-        (data.get("roe", []), 0),
-        (data.get("roa", []), 1),
-        (data.get("leverage", []), 2),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            if idx < 2:
-                cols[period][idx] = f"{v:.1f}%" if v is not None else "-"
-            else:
-                cols[period][idx] = f"{v:.2f}배" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("수익률 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("수익률 추이", pl.DataFrame(cols)),
+    ]
 
 
 def dupontBlock(data: dict) -> list:
@@ -973,40 +983,30 @@ def dupontBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("margin", []), "{:.1f}%"),
+            (data.get("turnover", []), "{:.2f}"),
+            (data.get("leverage", []), "{:.2f}"),
+        ],
+        ["순이익률(%)", "자산회전율(회)", "재무레버리지(배)"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("dupont").label,
             level=2,
             helper="ROE = 순이익률 x 자산회전율 x 재무레버리지",
-        )
-    )
-
-    rows = ["순이익률(%)", "자산회전율(회)", "재무레버리지(배)"]
-    cols = {"": rows}
-    for series, idx, fmt in [
-        (data.get("margin", []), 0, "{:.1f}%"),
-        (data.get("turnover", []), 1, "{:.2f}"),
-        (data.get("leverage", []), 2, "{:.2f}"),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            cols[period][idx] = fmt.format(v) if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("듀퐁 분해", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("듀퐁 분해", pl.DataFrame(cols)),
+    ]
 
 
 def profitabilityFlagsBlock(flags: list[str]) -> list:
     """calcProfitabilityFlags 결과 → FlagBlock."""
-    if not flags:
-        return []
-    return [FlagBlock(flags, kind="warning")]
+    return _flagsBlock(flags)
 
 
 # ── 2-2 성장성 ──
@@ -1017,34 +1017,26 @@ def growthTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("revenueGrowth", []), "{:+.1f}%"),
+            (data.get("operatingProfitGrowth", []), "{:+.1f}%"),
+            (data.get("netProfitGrowth", []), "{:+.1f}%"),
+            (data.get("assetGrowth", []), "{:+.1f}%"),
+        ],
+        ["매출 성장률", "영업이익 성장률", "순이익 성장률", "자산 성장률"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("growthTrend").label,
             level=2,
             helper="매출 성장 > 이익 성장이면 수익성 희석 가능",
-        )
-    )
-
-    rows = ["매출 성장률", "영업이익 성장률", "순이익 성장률", "자산 성장률"]
-    cols = {"": rows}
-    for series, idx in [
-        (data.get("revenueGrowth", []), 0),
-        (data.get("operatingProfitGrowth", []), 1),
-        (data.get("netProfitGrowth", []), 2),
-        (data.get("assetGrowth", []), 3),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            cols[period][idx] = f"{v:+.1f}%" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("성장률 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("성장률 추이", pl.DataFrame(cols)),
+    ]
 
 
 def growthQualityBlock(data: dict) -> list:
@@ -1085,9 +1077,7 @@ def growthQualityBlock(data: dict) -> list:
 
 def growthFlagsBlock(flags: list[str]) -> list:
     """calcGrowthFlags 결과 → FlagBlock."""
-    if not flags:
-        return []
-    return [FlagBlock(flags, kind="warning")]
+    return _flagsBlock(flags)
 
 
 # ── 2-3 안정성 ──
@@ -1098,33 +1088,25 @@ def leverageTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("debtRatio", []), "{:.0f}%"),
+            (data.get("netDebtRatio", []), "{:.0f}%"),
+            (data.get("equityRatio", []), "{:.0f}%"),
+        ],
+        ["부채비율", "순부채비율", "자기자본비율"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("leverageTrend").label,
             level=2,
             helper="부채비율 200% 이상 위험, 50% 이하 매우 안정",
-        )
-    )
-
-    rows = ["부채비율", "순부채비율", "자기자본비율"]
-    cols = {"": rows}
-    for series, idx in [
-        (data.get("debtRatio", []), 0),
-        (data.get("netDebtRatio", []), 1),
-        (data.get("equityRatio", []), 2),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            cols[period][idx] = f"{v:.0f}%" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("레버리지 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("레버리지 추이", pl.DataFrame(cols)),
+    ]
 
 
 def coverageTrendBlock(data: dict) -> list:
@@ -1132,26 +1114,21 @@ def coverageTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [(data.get("interestCoverage", []), "{:.1f}배")],
+        ["이자보상배율"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("coverageTrend").label,
             level=2,
             helper="이자보상배율 3배 이상 안정, 1배 미만 이자 지급 불능",
-        )
-    )
-
-    rows = ["이자보상배율"]
-    cols = {"": rows}
-    for item in data.get("interestCoverage", []):
-        period = item["period"]
-        v = item["value"]
-        cols[period] = [f"{v:.1f}배" if v is not None else "-"]
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("이자보상 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("이자보상 추이", pl.DataFrame(cols)),
+    ]
 
 
 def distressScoreBlock(data: dict) -> list:
@@ -1178,14 +1155,11 @@ def distressScoreBlock(data: dict) -> list:
     if metrics:
         blocks.append(MetricBlock(metrics))
 
-    rows = ["Altman Z-Score"]
-    cols = {"": rows}
-    for item in data.get("altmanZScore", []):
-        period = item["period"]
-        v = item["value"]
-        cols[period] = [f"{v:.2f}" if v is not None else "-"]
-
-    if len(cols) > 1:
+    cols = _timelineTable(
+        [(data.get("altmanZScore", []), "{:.2f}")],
+        ["Altman Z-Score"],
+    )
+    if cols is not None:
         blocks.append(TableBlock("Z-Score 추이", pl.DataFrame(cols)))
 
     return blocks
@@ -1193,9 +1167,7 @@ def distressScoreBlock(data: dict) -> list:
 
 def stabilityFlagsBlock(flags: list[str]) -> list:
     """calcStabilityFlags 결과 → FlagBlock."""
-    if not flags:
-        return []
-    return [FlagBlock(flags, kind="warning")]
+    return _flagsBlock(flags)
 
 
 # ── 2-4 효율성 ──
@@ -1206,33 +1178,25 @@ def turnoverTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("totalAssetTurnover", []), "{:.2f}회"),
+            (data.get("receivablesTurnover", []), "{:.2f}회"),
+            (data.get("inventoryTurnover", []), "{:.2f}회"),
+        ],
+        ["총자산회전율", "매출채권회전율", "재고회전율"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("turnoverTrend").label,
             level=2,
             helper="회전율 상승 = 같은 자산으로 매출을 더 뽑는다",
-        )
-    )
-
-    rows = ["총자산회전율", "매출채권회전율", "재고회전율"]
-    cols = {"": rows}
-    for series, idx in [
-        (data.get("totalAssetTurnover", []), 0),
-        (data.get("receivablesTurnover", []), 1),
-        (data.get("inventoryTurnover", []), 2),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            cols[period][idx] = f"{v:.2f}회" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("회전율 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("회전율 추이", pl.DataFrame(cols)),
+    ]
 
 
 def cccTrendBlock(data: dict) -> list:
@@ -1240,41 +1204,31 @@ def cccTrendBlock(data: dict) -> list:
     if not data:
         return []
 
-    blocks: list = []
-    blocks.append(
+    cols = _timelineTable(
+        [
+            (data.get("dso", []), "{:.0f}일"),
+            (data.get("dio", []), "{:.0f}일"),
+            (data.get("dpo", []), "{:.0f}일"),
+            (data.get("ccc", []), "{:.0f}일"),
+        ],
+        ["DSO(매출채권일)", "DIO(재고일)", "DPO(매입채무일)", "CCC"],
+    )
+    if cols is None:
+        return []
+
+    return [
         HeadingBlock(
             _meta("cccTrend").label,
             level=2,
             helper="CCC = DSO + DIO - DPO, 마이너스면 운전자본 유리",
-        )
-    )
-
-    rows = ["DSO(매출채권일)", "DIO(재고일)", "DPO(매입채무일)", "CCC"]
-    cols = {"": rows}
-    for series, idx in [
-        (data.get("dso", []), 0),
-        (data.get("dio", []), 1),
-        (data.get("dpo", []), 2),
-        (data.get("ccc", []), 3),
-    ]:
-        for item in series:
-            period = item["period"]
-            if period not in cols:
-                cols[period] = ["-"] * len(rows)
-            v = item["value"]
-            cols[period][idx] = f"{v:.0f}일" if v is not None else "-"
-
-    if len(cols) <= 1:
-        return []
-    blocks.append(TableBlock("CCC 추이", pl.DataFrame(cols)))
-    return blocks
+        ),
+        TableBlock("CCC 추이", pl.DataFrame(cols)),
+    ]
 
 
 def efficiencyFlagsBlock(flags: list[str]) -> list:
     """calcEfficiencyFlags 결과 → FlagBlock."""
-    if not flags:
-        return []
-    return [FlagBlock(flags, kind="warning")]
+    return _flagsBlock(flags)
 
 
 # ── 2-5 종합 평가 ──

@@ -2,42 +2,19 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
-
-
-def _getRatioSeries(company) -> tuple[dict, list[str]] | None:
-    """ratioSeries를 안전하게 가져온다."""
-    try:
-        result = company.finance.ratioSeries
-        if result is None:
-            return None
-        return result
-    except (ValueError, KeyError, AttributeError):
-        return None
-
-
-def _buildTimeline(data: dict, field: str, years: list[str]) -> list[dict]:
-    """시계열 데이터를 [{period, value}, ...] 형태로 변환."""
-    vals = data.get("RATIO", {}).get(field, [])
-    n = min(len(vals), len(years), _MAX_YEARS)
-    if n == 0:
-        return []
-    return [
-        {"period": years[i], "value": vals[i]}
-        for i in range(len(years) - n, len(years))
-    ]
+from dartlab.analysis.strategy._helpers import buildTimeline, getRatioSeries
 
 
 def calcLeverageTrend(company) -> dict | None:
     """부채비율, 차입금의존도 시계열."""
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return None
 
     data, years = result
-    debtRatio = _buildTimeline(data, "debtRatio", years)
-    netDebtRatio = _buildTimeline(data, "netDebtRatio", years)
-    equityRatio = _buildTimeline(data, "equityRatio", years)
+    debtRatio = buildTimeline(data, "debtRatio", years)
+    netDebtRatio = buildTimeline(data, "netDebtRatio", years)
+    equityRatio = buildTimeline(data, "equityRatio", years)
 
     if not debtRatio:
         return None
@@ -51,12 +28,12 @@ def calcLeverageTrend(company) -> dict | None:
 
 def calcCoverageTrend(company) -> dict | None:
     """이자보상배율 시계열."""
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return None
 
     data, years = result
-    coverage = _buildTimeline(data, "interestCoverage", years)
+    coverage = buildTimeline(data, "interestCoverage", years)
 
     if not coverage:
         return None
@@ -66,17 +43,16 @@ def calcCoverageTrend(company) -> dict | None:
 
 def calcDistressScore(company) -> dict | None:
     """Altman Z-Score 시계열 + 종합 등급."""
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return None
 
     data, years = result
-    zScore = _buildTimeline(data, "altmanZScore", years)
+    zScore = buildTimeline(data, "altmanZScore", years)
 
     if not zScore:
         return None
 
-    # 최신 Z-Score 기반 등급
     latest = next((v["value"] for v in reversed(zScore) if v["value"] is not None), None)
     if latest is None:
         zone = "판별 불가"
@@ -93,7 +69,7 @@ def calcDistressScore(company) -> dict | None:
 def calcStabilityFlags(company) -> list[str]:
     """안정성 경고/기회 플래그."""
     flags: list[str] = []
-    result = _getRatioSeries(company)
+    result = getRatioSeries(company)
     if result is None:
         return flags
 

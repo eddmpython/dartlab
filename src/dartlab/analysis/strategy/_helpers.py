@@ -27,6 +27,29 @@ def quarterlyCols(df: pl.DataFrame, maxQuarters: int = 5) -> list[str]:
     return [c for c in cols if "Q" in c][:maxQuarters]
 
 
+MAX_RATIO_YEARS = 5
+
+
+def getRatioSeries(company) -> tuple[dict, list[str]] | None:
+    """ratioSeries를 안전하게 가져온다."""
+    try:
+        result = company.finance.ratioSeries
+        if result is None:
+            return None
+        return result
+    except (ValueError, KeyError, AttributeError):
+        return None
+
+
+def buildTimeline(data: dict, field: str, years: list[str]) -> list[dict]:
+    """시계열 데이터를 [{period, value}, ...] 형태로 변환."""
+    vals = data.get("RATIO", {}).get(field, [])
+    n = min(len(vals), len(years), MAX_RATIO_YEARS)
+    if n == 0:
+        return []
+    return [{"period": years[i], "value": vals[i]} for i in range(len(years) - n, len(years))]
+
+
 def getRatios(company):
     """ratios 객체를 안전하게 가져온다."""
     try:
