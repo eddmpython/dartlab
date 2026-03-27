@@ -1,27 +1,22 @@
-"""review 템플릿 — 미리 정의된 블록 조합.
+"""review 템플릿 -- 섹션별 블록 조합 + helper/aiGuide.
 
-c.review("수익구조") → 수익구조 템플릿의 keys 블록만 조립.
-c.review()           → 전체 템플릿 순서대로 조립.
+블록 메타(key, label, 순서)와 섹션 메타(title, partId)는 catalog.py가 source of truth.
+이 파일은 각 섹션에서 **실제로 보여줄 블록 서브셋**과 helper/aiGuide만 관리한다.
+
+c.review("수익구조") -> 수익구조 템플릿의 visibleKeys 블록만 조립.
+c.review()           -> 전체 템플릿 순서대로 조립.
 """
 
 from __future__ import annotations
 
-TEMPLATES: dict[str, dict] = {
+from dartlab.review.catalog import SECTIONS, keysForSection
+
+# ── 섹션별 설정 (helper, aiGuide, visibleKeys) ──
+# visibleKeys: 이 섹션에서 실제로 보여줄 블록. None이면 섹션 전체 블록.
+
+_SECTION_CONFIG: dict[str, dict] = {
     "수익구조": {
-        "title": "수익 구조 — 이 회사는 무엇으로 돈을 버는가",
-        "partId": "1-1",
-        "keys": [
-            "profile",
-            "segmentComposition",
-            "segmentTrend",
-            "region",
-            "product",
-            "growth",
-            "growthContribution",
-            "concentration",
-            "revenueQuality",
-            "revenueFlags",
-        ],
+        "visibleKeys": None,  # 전체 표시
         "helper": (
             "① 매출 집중도(HHI)와 부문별 이익률 차이로 수익 구조 편중을 본다\n"
             "② 부문별 매출 추이와 YoY로 성장 부문을 식별한다\n"
@@ -39,9 +34,7 @@ TEMPLATES: dict[str, dict] = {
         ),
     },
     "자금조달": {
-        "title": "자금 조달 — 돈을 어디서 조달하는가",
-        "partId": "1-2",
-        "keys": [
+        "visibleKeys": [
             "fundingSources",
             "capitalTimeline",
             "debtTimeline",
@@ -64,15 +57,7 @@ TEMPLATES: dict[str, dict] = {
         ),
     },
     "자산구조": {
-        "title": "자산 구조 — 조달한 돈으로 뭘 준비했는가",
-        "partId": "1-3",
-        "keys": [
-            "assetStructure",
-            "workingCapital",
-            "capexPattern",
-            "assetEfficiency",
-            "assetFlags",
-        ],
+        "visibleKeys": None,  # 전체 표시
         "helper": (
             "① BS를 영업/비영업으로 재분류해 자산의 실질 성격을 본다\n"
             "② 순영업자산(NOA)이 투자 대비 수익의 분모다\n"
@@ -89,13 +74,7 @@ TEMPLATES: dict[str, dict] = {
         ),
     },
     "현금흐름": {
-        "title": "현금흐름 — 실제로 현금은 어떻게 흘렀는가",
-        "partId": "1-4",
-        "keys": [
-            "cashFlowOverview",
-            "cashQuality",
-            "cashFlowFlags",
-        ],
+        "visibleKeys": None,  # 전체 표시
         "helper": (
             "① 영업CF/투자CF/재무CF 부호 조합으로 CF 패턴을 본다\n"
             "② FCF(=영업CF-CAPEX)가 양수면 자유현금 창출 능력 있음\n"
@@ -113,4 +92,26 @@ TEMPLATES: dict[str, dict] = {
     },
 }
 
-TEMPLATE_ORDER = ["수익구조", "자금조달", "자산구조", "현금흐름"]
+
+def _buildTemplates() -> dict[str, dict]:
+    """catalog SECTIONS 순서로 TEMPLATES dict 생성."""
+    templates: dict[str, dict] = {}
+    for sec in SECTIONS:
+        cfg = _SECTION_CONFIG.get(sec.key, {})
+        visible = cfg.get("visibleKeys")
+        if visible is None:
+            keys = keysForSection(sec.key)
+        else:
+            keys = list(visible)
+        templates[sec.key] = {
+            "title": sec.title,
+            "partId": sec.partId,
+            "keys": keys,
+            "helper": cfg.get("helper", ""),
+            "aiGuide": cfg.get("aiGuide", ""),
+        }
+    return templates
+
+
+TEMPLATES = _buildTemplates()
+TEMPLATE_ORDER = [s.key for s in SECTIONS]

@@ -31,6 +31,14 @@ from dartlab.review.blocks import (
     TableBlock,
     TextBlock,
 )
+from dartlab.review.catalog import (
+    BlockMeta,
+    SectionMeta,
+    getBlockMeta,
+    getSectionMeta,
+    listBlocks,
+    listSections,
+)
 from dartlab.review.layout import DEFAULT_LAYOUT, ReviewLayout
 from dartlab.review.registry import buildBlocks, buildReview
 from dartlab.review.renderer import renderReview
@@ -192,6 +200,12 @@ __all__ = [
     "FlagBlock",
     "MetricBlock",
     "blocks",
+    "listBlocks",
+    "getBlockMeta",
+    "BlockMeta",
+    "SectionMeta",
+    "listSections",
+    "getSectionMeta",
     "buildBlocks",
     "buildReview",
     "renderReview",
