@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import ast
+import logging
+import subprocess
+import sys
+import tempfile
+import textwrap
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -112,6 +121,208 @@ class CodexCodingBackend(CodingBackend):
         )
 
 
+# ══════════════════════════════════════
+# LocalPythonBackend -- subprocess 기반 안전 실행
+# ══════════════════════════════════════
+
+# AST 기반 안전 검증 -- 금지 패턴
+_FORBIDDEN_IMPORTS = frozenset({
+    "subprocess", "os", "sys", "shutil", "signal", "ctypes",
+    "socket", "http", "urllib", "requests", "httpx", "aiohttp",
+    "multiprocessing", "threading", "asyncio",
+    "pickle", "shelve", "marshal",
+    "importlib", "runpy", "code", "codeop",
+})
+
+_FORBIDDEN_CALLS = frozenset({
+    "exec", "eval", "compile", "__import__", "globals", "locals",
+    "getattr", "setattr", "delattr", "breakpoint", "exit", "quit",
+    "open",  # 파일 쓰기 방지 (읽기도 차단 -- 데이터는 data 변수로 주입)
+})
+
+_ALLOWED_IMPORTS = frozenset({
+    "math", "statistics", "json", "datetime", "collections",
+    "itertools", "functools", "operator", "decimal", "fractions",
+    "re", "textwrap", "string", "copy", "dataclasses", "time",
+    "polars", "numpy", "pandas",
+})
+
+
+class _SafetyVisitor(ast.NodeVisitor):
+    """AST 방문자 -- 금지 패턴 탐지."""
+
+    def __init__(self) -> None:
+        self.violations: list[str] = []
+
+    def visit_Import(self, node: ast.Import) -> None:
+        for alias in node.names:
+            modName = alias.name.split(".")[0]
+            if modName in _FORBIDDEN_IMPORTS:
+                self.violations.append(f"금지된 import: {alias.name}")
+            elif modName not in _ALLOWED_IMPORTS:
+                self.violations.append(f"허용되지 않은 모듈: {alias.name}")
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module:
+            modName = node.module.split(".")[0]
+            if modName in _FORBIDDEN_IMPORTS:
+                self.violations.append(f"금지된 import: {node.module}")
+            elif modName not in _ALLOWED_IMPORTS:
+                self.violations.append(f"허용되지 않은 모듈: {node.module}")
+        self.generic_visit(node)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        funcName = ""
+        if isinstance(node.func, ast.Name):
+            funcName = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            funcName = node.func.attr
+        if funcName in _FORBIDDEN_CALLS:
+            self.violations.append(f"금지된 호출: {funcName}()")
+        self.generic_visit(node)
+
+
+def _validateCode(code: str) -> list[str]:
+    """코드 안전성 검증. 위반사항 리스트 반환 (빈 리스트 = 안전)."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        return [f"구문 오류: {e}"]
+    visitor = _SafetyVisitor()
+    visitor.visit(tree)
+    return visitor.violations
+
+
+class LocalPythonBackend(CodingBackend):
+    """로컬 subprocess 기반 Python 코드 실행 -- AST 검증 + 격리."""
+
+    name = "local_python"
+    label = "Local Python"
+    description = "로컬 subprocess에서 Python 코드를 안전하게 실행합니다."
+
+    def __init__(self, *, defaultTimeout: int = 30, maxTimeout: int = 120) -> None:
+        self._defaultTimeout = defaultTimeout
+        self._maxTimeout = maxTimeout
+
+    def inspect(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "label": self.label,
+            "description": self.description,
+            "available": True,
+            "python": sys.version,
+            "defaultTimeout": self._defaultTimeout,
+            "maxTimeout": self._maxTimeout,
+            "allowedModules": sorted(_ALLOWED_IMPORTS),
+            "forbiddenImports": sorted(_FORBIDDEN_IMPORTS),
+        }
+
+    def run_task(
+        self,
+        prompt: str,
+        *,
+        sandbox: str = "isolated",
+        model: str | None = None,
+        timeout_seconds: int = 30,
+        code: str | None = None,
+        dataJson: str | None = None,
+    ) -> CodingTaskResult:
+        """Python 코드 실행.
+
+        Args:
+            prompt: LLM에게 보낼 프롬프트 (code가 없을 때 사용)
+            code: 직접 실행할 Python 코드
+            dataJson: 코드에 `data` 변수로 주입할 JSON 문자열
+            timeout_seconds: 실행 시간 제한 (초)
+        """
+        if not code:
+            return CodingTaskResult(
+                backend=self.name,
+                answer="[오류] 실행할 코드가 없습니다. code 파라미터를 전달하세요.",
+                sandbox=sandbox,
+                model="local",
+            )
+
+        # 1. AST 안전성 검증
+        violations = _validateCode(code)
+        if violations:
+            return CodingTaskResult(
+                backend=self.name,
+                answer=f"[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
+                sandbox=sandbox,
+                model="local",
+            )
+
+        # 2. 실행 시간 제한 clamp
+        timeout = min(max(timeout_seconds, 5), self._maxTimeout)
+
+        # 3. 임시 디렉토리에서 실행
+        with tempfile.TemporaryDirectory(prefix="dartlab_code_") as tmpDir:
+            scriptPath = Path(tmpDir) / "run.py"
+
+            # 데이터 주입 프리앰블
+            preamble = ""
+            if dataJson:
+                dataPath = Path(tmpDir) / "data.json"
+                dataPath.write_text(dataJson, encoding="utf-8")
+                preamble = textwrap.dedent(f"""\
+                    import json as _json
+                    with open({str(dataPath)!r}, encoding="utf-8") as _f:
+                        data = _json.load(_f)
+                """)
+
+            fullCode = preamble + code
+            scriptPath.write_text(fullCode, encoding="utf-8")
+
+            try:
+                result = subprocess.run(
+                    [sys.executable, "-X", "utf8", str(scriptPath)],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    cwd=tmpDir,
+                    env={
+                        "PATH": "",  # 최소 환경
+                        "PYTHONPATH": "",
+                        "PYTHONDONTWRITEBYTECODE": "1",
+                    },
+                )
+
+                stdout = result.stdout[:8000] if result.stdout else ""
+                stderr = result.stderr[:2000] if result.stderr else ""
+
+                if result.returncode == 0:
+                    answer = stdout if stdout else "(실행 완료, 출력 없음)"
+                else:
+                    answer = f"[실행 오류] (exit code {result.returncode})\n"
+                    if stderr:
+                        answer += f"```\n{stderr}\n```\n"
+                    if stdout:
+                        answer += f"\n출력:\n{stdout}"
+
+                return CodingTaskResult(
+                    backend=self.name,
+                    answer=answer,
+                    sandbox="isolated",
+                    model="local",
+                    metadata={
+                        "returncode": result.returncode,
+                        "timeout": timeout,
+                        "codeLength": len(code),
+                    },
+                )
+
+            except subprocess.TimeoutExpired:
+                return CodingTaskResult(
+                    backend=self.name,
+                    answer=f"[시간 초과] {timeout}초 내에 실행이 완료되지 않았습니다.",
+                    sandbox="isolated",
+                    model="local",
+                    metadata={"timeout": timeout},
+                )
+
+
 class CodingRuntime:
     """Registry/executor for coding backends."""
 
@@ -160,6 +371,7 @@ def create_coding_runtime(name: str = "runtime", *, include_defaults: bool = Tru
     runtime = CodingRuntime(name=name)
     if include_defaults:
         runtime.register_backend(CodexCodingBackend(), default=True)
+        runtime.register_backend(LocalPythonBackend())
     return runtime
 
 

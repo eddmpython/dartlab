@@ -14,15 +14,17 @@ from .explore import registerExploreTool
 from .finance import registerFinanceTool
 from .market import registerMarketTool
 from .openapi import registerOpenapiTool
+from .research import registerResearchTool
 from .system import registerSystemTool
 
 
 def registerSuperTools(company: Any | None, registerTool: Callable) -> None:
-    """7개 Super Tool을 등록한다."""
+    """8개 Super Tool을 등록한다."""
     # Global tools (company 없어도 동작)
     registerSystemTool(registerTool, company=company)
     registerMarketTool(registerTool)
     registerOpenapiTool(registerTool)
+    registerResearchTool(registerTool, company=company)
 
     # Company-bound tools
     if company is not None:

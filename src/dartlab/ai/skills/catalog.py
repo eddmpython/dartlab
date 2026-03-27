@@ -25,6 +25,11 @@ SKILLS: tuple[Skill, ...] = (
             "CF/NI 비율을 인용했는가?",
             "비용 구조 변화의 원인을 설명했는가?",
         ),
+        recommendedTools=(
+            "finance(action='decompose')",
+            "finance(action='quality')",
+            "finance(action='ratios')",
+        ),
     ),
     Skill(
         id="health",
@@ -41,6 +46,11 @@ SKILLS: tuple[Skill, ...] = (
             "유동비율과 부채비율 수치를 인용했는가?",
             "이자보상배율을 확인했는가?",
             "단기 유동성 위험을 평가했는가?",
+        ),
+        recommendedTools=(
+            "analyze(action='distress')",
+            "finance(action='quality')",
+            "finance(action='ratios')",
         ),
     ),
     Skill(
@@ -59,6 +69,12 @@ SKILLS: tuple[Skill, ...] = (
             "성장률 근거를 제시했는가?",
             "적정가치 범위를 제시했는가? (단일 목표가 아닌 범위)",
         ),
+        recommendedTools=(
+            "analyze(action='valuation')",
+            "market(action='price', code=stockCode)",
+            "analyze(action='peer')",
+            "finance(action='ratios')",
+        ),
     ),
     Skill(
         id="risk",
@@ -69,11 +85,18 @@ SKILLS: tuple[Skill, ...] = (
             "사업 리스크: 매출처 집중, 공급망 의존, 규제 변화",
             "회계 리스크: 감사의견 변화, 특수관계자 거래, 회계정책 변경",
             "공시에서 경영진이 직접 언급한 리스크 요인 확인",
+            "필요시 research 도구로 최신 산업 규제/뉴스를 검색하여 외부 리스크 보강",
         ),
         synthesisGuide="재무 리스크 → 사업 리스크 → 회계 리스크 → 종합 위험도 판단",
         checkpoints=(
             "적색 신호 체크리스트를 적용했는가?",
             "공시 원문에서 리스크 관련 서술을 인용했는가?",
+        ),
+        recommendedTools=(
+            "analyze(action='distress')",
+            "analyze(action='audit')",
+            "finance(action='quality')",
+            "explore(action='diff')",
         ),
     ),
     Skill(
@@ -85,11 +108,17 @@ SKILLS: tuple[Skill, ...] = (
             "경쟁 우위: R&D 투자 강도, 마진 프리미엄, 고객 집중도",
             "성장 전략: 유기적 성장 vs 인수, CAPEX 방향",
             "공시 원문에서 경영진의 전략 서술 확인",
+            "필요시 research 도구로 산업 동향/경쟁사 뉴스를 검색하여 맥락 보강",
         ),
         synthesisGuide="사업 구조 분해 → 경쟁 우위 식별 → 성장 전략 평가 → 지속가능성 판단",
         checkpoints=(
             "부문별 매출/이익 비중을 분해했는가?",
             "R&D/CAPEX 투자 방향을 확인했는가?",
+        ),
+        recommendedTools=(
+            "analyze(action='peer')",
+            "analyze(action='sector')",
+            "explore(action='diff')",
         ),
     ),
     Skill(
@@ -107,6 +136,11 @@ SKILLS: tuple[Skill, ...] = (
             "CF/NI 비율 또는 Accrual Ratio를 계산했는가?",
             "감사의견을 확인했는가?",
         ),
+        recommendedTools=(
+            "finance(action='quality')",
+            "analyze(action='audit')",
+            "explore(action='diff')",
+        ),
     ),
     Skill(
         id="dividend",
@@ -123,6 +157,10 @@ SKILLS: tuple[Skill, ...] = (
             "배당성향과 배당수익률 수치를 인용했는가?",
             "FCF 대비 배당 커버리지를 확인했는가?",
         ),
+        recommendedTools=(
+            "finance(action='ratios')",
+            "finance(action='data', module='CF')",
+        ),
     ),
     Skill(
         id="comprehensive",
@@ -134,12 +172,21 @@ SKILLS: tuple[Skill, ...] = (
             "이익의 질과 현금흐름 프로파일",
             "적색 신호 체크 및 리스크 요인 식별",
             "강점/약점 정리와 Bull/Bear 논거",
+            "필요시 research 도구로 최신 뉴스/산업 동향을 검색하여 분석에 반영",
         ),
         synthesisGuide="사업 구조 → 재무 추세 → 이익의 질 → 리스크 → 강점/약점 → 종합 판단",
         checkpoints=(
             "최소 3개 이상의 재무 비율을 인용했는가?",
             "강점과 약점을 균형 있게 제시했는가?",
             "Bull/Bear 논거를 제시했는가?",
+        ),
+        recommendedTools=(
+            "analyze(action='insight')",
+            "finance(action='quality')",
+            "finance(action='decompose')",
+            "analyze(action='peer')",
+            "analyze(action='distress')",
+            "explore(action='diff')",
         ),
     ),
 )

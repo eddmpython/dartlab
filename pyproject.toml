@@ -99,6 +99,10 @@ altair = [
 hf = [
     "huggingface-hub>=0.20.0,<1",
 ]
+search = [
+    "tavily-python>=0.5.0,<1",
+    "duckduckgo-search>=7.0.0,<8",
+]
 ui = [
     "dartlab[ai]",
 ]

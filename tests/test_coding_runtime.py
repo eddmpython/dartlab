@@ -7,10 +7,12 @@ pytestmark = pytest.mark.unit
 from dartlab.ai.tools.coding import CodexCodingBackend, create_coding_runtime
 
 
-def test_create_coding_runtime_registers_codex_backend():
+def test_create_coding_runtime_registers_default_backends():
     runtime = create_coding_runtime(name="test-runtime")
     assert runtime.name == "test-runtime"
-    assert runtime.list_backend_names() == ["codex"]
+    names = runtime.list_backend_names()
+    assert "codex" in names
+    assert "local_python" in names
 
 
 def test_codex_backend_inspect(monkeypatch):
