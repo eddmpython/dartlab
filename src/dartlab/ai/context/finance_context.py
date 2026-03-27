@@ -809,6 +809,36 @@ def _build_ratios_section(
                 comp_lines.append("\n### 복합 재무 지표")
             comp_lines.append(f"- **Altman Z-Score**: {az:.2f} ({az_label}) — >2.99 안전, 1.81-2.99 회색, <1.81 부실")
 
+        # 부실 예측 모델
+        oScore = getattr(ratios, "ohlsonProbability", None)
+        if oScore is not None:
+            oLabel = "안전" if oScore < 5 else ("주의" if oScore < 30 else "위험")
+            comp_lines.append(f"- **Ohlson O-Score**: P(부도)={oScore:.1f}% ({oLabel})")
+        zpp = getattr(ratios, "altmanZppScore", None)
+        if zpp is not None:
+            zppLabel = "안전" if zpp > 2.6 else ("회색" if zpp >= 1.1 else "부실위험")
+            comp_lines.append(f"- **Altman Z''**: {zpp:.2f} ({zppLabel})")
+        springate = getattr(ratios, "springateSScore", None)
+        if springate is not None:
+            sLabel = "안전" if springate > 0.862 else "부실위험"
+            comp_lines.append(f"- **Springate S**: {springate:.2f} ({sLabel})")
+        zmij = getattr(ratios, "zmijewskiXScore", None)
+        if zmij is not None:
+            zmLabel = "안전" if zmij < 0 else "부실위험"
+            comp_lines.append(f"- **Zmijewski X**: {zmij:.2f} ({zmLabel})")
+
+        # Beneish M-Score (이익조작 감지)
+        beneish = getattr(ratios, "beneishMScore", None)
+        if beneish is not None:
+            bLabel = "정상" if beneish < -1.78 else "조작의심"
+            comp_lines.append(f"- **Beneish M-Score**: {beneish:.2f} ({bLabel}) — <-1.78 정상")
+
+        # Sloan Accrual Ratio
+        accrual = getattr(ratios, "sloanAccrualRatio", None)
+        if accrual is not None:
+            aLabel = "양호" if abs(accrual) < 5 else ("주의" if abs(accrual) < 10 else "위험")
+            comp_lines.append(f"- **Accrual Ratio**: {accrual:.1f}% ({aLabel}) — |값|<5% 양호, >10% 위험")
+
         # ROIC
         if ratios.roic is not None:
             roic_label = "우수" if ratios.roic >= 15 else ("적정" if ratios.roic >= 8 else "미흡")

@@ -343,7 +343,6 @@ Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 
 
 > **Requires pre-downloaded data.** Market-wide functions (`scanAccount`, `screen`, `digest`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. Download all data first:
 > ```python
-> pip install dartlab[hf]
 > dartlab.downloadAll("finance")   # ~600 MB, 2,700+ firms
 > dartlab.downloadAll("report")    # ~320 MB (governance/workforce/capital/debt)
 > dartlab.downloadAll("docs")      # ~8 GB (digest/signal — large)

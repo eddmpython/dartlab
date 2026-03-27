@@ -34,8 +34,9 @@
 
 최근 추가:
 
-- 128: 삼성SDI 현금흐름 분석 — 이익이 나도 현금이 안 남는 구조 — corporate-analysis 시리즈 5번째
-- 125: 삼성SDI 수익 구조 분석 — 배터리 올인의 명과 암 — corporate-analysis 시리즈 1번째 (실전)
+- 128: 현금흐름 분석 — 손익계산서 이익과 현금흐름표 현금은 왜 다른가 — corporate-analysis 시리즈 5번째 (프레임워크)
+- 127: 자산 구조 분석 — BS를 영업/비영업으로 재분류하면 보이는 것들 — corporate-analysis 시리즈 4번째 (프레임워크)
+- 125: 삼성SDI 수익 구조 분석 — 배터리 올인의 명과 암 — corporate-analysis 시리즈 2번째 (실전)
 - 124: 이 회사는 무엇으로 돈을 버는가 — 수익 구조 읽기 — corporate-analysis 시리즈 1번째 (프레임워크)
 - 123: 정말 쉬운 dartlab 사용법 — uv 설치부터 첫 분석까지 — dartlab-news 시리즈 1번째
 - 122: dartlab network — 상장사 전체 관계망 시각화 — data-automation 시리즈 18번째

@@ -53,24 +53,30 @@ def run(args) -> int:
             raise CLIError(str(exc)) from exc
         question = full_query
     else:
-        # 자연어에서 종목 자동 추출
-        from dartlab.core.resolve import resolve_from_text
+        # 비교 패턴 감지: 여러 종목이 포함되면 company=None으로 LLM에 위임
+        import re
 
-        company, question = resolve_from_text(full_query)
-        if company is None:
-            raise CLIError(
-                f"종목을 찾을 수 없습니다: '{full_query}'\n"
-                "종목명 또는 종목코드를 포함해 주세요.\n"
-                "예: dartlab ask 삼성전자 재무건전성 분석해줘\n"
-                "    dartlab ask --company 005930 영업이익률 추세"
-            )
+        _COMPARE_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)\s", re.IGNORECASE)
+        if _COMPARE_RE.search(full_query):
+            company = None
+            question = full_query
+        else:
+            # 자연어에서 종목 자동 추출 — 실패해도 company=None으로 진행
+            from dartlab.core.resolve import resolve_from_text
 
-    console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})")
-    console.print(f"  [dim]provider: {provider}", end="")
-    if args.model:
-        console.print(f" / {args.model}[/]")
+            company, question = resolve_from_text(full_query)
+            if company is None:
+                question = full_query  # 원본 질문 보존
+
+    if company is not None:
+        console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})")
     else:
-        console.print("[/]")
+        console.print("\n  [bold]Free analysis[/] [dim](LLM will search for companies)[/]")
+    providerLine = f"  [dim]provider: {provider}"
+    if args.model:
+        providerLine += f" / {args.model}"
+    providerLine += "[/]"
+    console.print(providerLine)
     console.print()
 
     from dartlab.ai.runtime.standalone import ask as _ask
@@ -78,7 +84,7 @@ def run(args) -> int:
     # 대화 연속 모드
     session_id = None
     history = None
-    if args.cont:
+    if args.cont and company is not None:
         from dartlab.cli.services.history import get_latest_session, get_messages
 
         session_id = get_latest_session(company.stockCode)
@@ -113,14 +119,15 @@ def run(args) -> int:
         console.print(Markdown(answer))
 
     # 히스토리 저장
-    try:
-        from dartlab.cli.services.history import add_message, create_session
+    if company is not None:
+        try:
+            from dartlab.cli.services.history import add_message, create_session
 
-        if session_id is None:
-            session_id = create_session(company.stockCode)
-        add_message(session_id, "user", question)
-        add_message(session_id, "assistant", buffer)
-    except (OSError, ImportError):
-        pass
+            if session_id is None:
+                session_id = create_session(company.stockCode)
+            add_message(session_id, "user", question)
+            add_message(session_id, "assistant", buffer)
+        except (OSError, ImportError):
+            pass
 
     return 0

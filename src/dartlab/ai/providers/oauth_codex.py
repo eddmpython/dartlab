@@ -22,7 +22,7 @@ import requests
 from dartlab.ai.providers.base import BaseProvider
 from dartlab.ai.providers.support import oauth_token as oauthToken
 from dartlab.ai.providers.support.oauth_token import TokenRefreshError
-from dartlab.ai.types import LLMResponse
+from dartlab.ai.types import LLMResponse, ToolCall, ToolResponse
 
 log = logging.getLogger(__name__)
 
@@ -181,6 +181,10 @@ class OAuthCodexProvider(BaseProvider):
         """기본 모델 — gpt-5.4 (Codex CLI 동일)."""
         return "gpt-5.4"
 
+    @property
+    def supports_native_tools(self) -> bool:
+        return True
+
     def check_available(self) -> bool:
         try:
             return oauthToken.is_authenticated()
@@ -266,19 +270,59 @@ class OAuthCodexProvider(BaseProvider):
             headers["chatgpt-account-id"] = account_id
         return headers
 
-    def _build_body(self, messages: list[dict[str, str]]) -> dict:
+    def _build_body(
+        self,
+        messages: list[dict],
+        *,
+        tools: list[dict] | None = None,
+        tool_choice: str | None = None,
+    ) -> dict:
         system_parts = []
         input_items = []
 
         for m in messages:
             if m["role"] == "system":
-                system_parts.append(m["content"])
+                content = m["content"]
+                if isinstance(content, list):
+                    system_parts.extend(block.get("text", "") for block in content if isinstance(block, dict))
+                else:
+                    system_parts.append(content)
             elif m["role"] == "assistant":
+                # tool_calls가 포함된 assistant 메시지
+                if "_oauth_tool_calls" in m:
+                    for tc in m["_oauth_tool_calls"]:
+                        input_items.append(
+                            {
+                                "type": "function_call",
+                                "id": tc["id"],
+                                "call_id": tc["id"],
+                                "name": tc["name"],
+                                "arguments": tc["arguments"],
+                            }
+                        )
+                    if m.get("content"):
+                        input_items.append(
+                            {
+                                "type": "message",
+                                "role": "assistant",
+                                "content": [{"type": "output_text", "text": m["content"]}],
+                            }
+                        )
+                else:
+                    input_items.append(
+                        {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": m.get("content", "")}],
+                        }
+                    )
+            elif m["role"] == "tool":
+                # tool result → function_call_output
                 input_items.append(
                     {
-                        "type": "message",
-                        "role": "assistant",
-                        "content": [{"type": "output_text", "text": m["content"]}],
+                        "type": "function_call_output",
+                        "call_id": m.get("tool_call_id", ""),
+                        "output": m.get("content", ""),
                     }
                 )
             else:
@@ -286,7 +330,7 @@ class OAuthCodexProvider(BaseProvider):
                     {
                         "type": "message",
                         "role": "user",
-                        "content": [{"type": "input_text", "text": m["content"]}],
+                        "content": [{"type": "input_text", "text": m.get("content", "")}],
                     }
                 )
 
@@ -300,6 +344,23 @@ class OAuthCodexProvider(BaseProvider):
 
         if system_parts:
             body["instructions"] = "\n\n".join(system_parts)
+
+        if tools:
+            responsesTools = []
+            for t in tools:
+                if t.get("type") != "function":
+                    continue
+                func = t["function"]
+                responsesTools.append(
+                    {
+                        "type": "function",
+                        "name": func["name"],
+                        "description": func.get("description", ""),
+                        "parameters": func.get("parameters", {}),
+                    }
+                )
+            if responsesTools:
+                body["tools"] = responsesTools
 
         return body
 
@@ -416,3 +477,69 @@ class OAuthCodexProvider(BaseProvider):
                 answer += event.get("delta", "")
 
         return answer
+
+    def complete_with_tools(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        *,
+        tool_choice: str | None = None,
+    ) -> ToolResponse:
+        """Responses API tool calling."""
+        token = self._get_token_or_raise()
+        body = self._build_body(messages, tools=tools, tool_choice=tool_choice)
+        resp = self._request_with_retry(token, body)
+
+        answer = ""
+        toolCalls: list[ToolCall] = []
+
+        for line in resp.text.split("\n"):
+            if not line.startswith("data: "):
+                continue
+            data_str = line[6:]
+            if data_str == "[DONE]":
+                break
+            try:
+                event = json.loads(data_str)
+            except json.JSONDecodeError:
+                continue
+
+            if event.get("type") == "response.completed":
+                resp_obj = event.get("response", {})
+                for output in resp_obj.get("output", []):
+                    if output.get("type") == "function_call":
+                        callId = output.get("call_id") or output.get("id", f"call_{len(toolCalls)}")
+                        name = output.get("name", "")
+                        rawArgs = output.get("arguments", "{}")
+                        try:
+                            args = json.loads(rawArgs) if isinstance(rawArgs, str) else rawArgs
+                        except json.JSONDecodeError:
+                            args = {}
+                        toolCalls.append(ToolCall(id=callId, name=name, arguments=args))
+                    elif output.get("type") == "message":
+                        for content in output.get("content", []):
+                            if content.get("type") == "output_text":
+                                answer += content.get("text", "")
+            elif event.get("type") == "response.output_text.delta":
+                answer += event.get("delta", "")
+
+        finishReason = "tool_calls" if toolCalls else "stop"
+        return ToolResponse(
+            answer=answer,
+            provider="oauth-codex",
+            model=self.resolved_model,
+            tool_calls=toolCalls,
+            finish_reason=finishReason,
+        )
+
+    def format_assistant_tool_calls(self, answer: str | None, tool_calls: list) -> dict:
+        """assistant 메시지에 tool_calls 정보 포함."""
+        serialized = []
+        for tc in tool_calls:
+            rawArgs = json.dumps(tc.arguments, ensure_ascii=False) if isinstance(tc.arguments, dict) else tc.arguments
+            serialized.append({"id": tc.id, "name": tc.name, "arguments": rawArgs})
+        return {"role": "assistant", "content": answer or "", "_oauth_tool_calls": serialized}
+
+    def format_tool_result(self, tool_call_id: str, result: str) -> dict:
+        """tool result -> Responses API function_call_output."""
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": result}

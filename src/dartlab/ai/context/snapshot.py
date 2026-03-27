@@ -163,6 +163,32 @@ def build_snapshot(company: Any, *, includeInsights: bool = True) -> dict | None
             }
         )
 
+    # -- 이익 품질 지표 --
+    accrual = getattr(ratios, "sloanAccrualRatio", None)
+    if accrual is not None:
+        items.append(
+            {
+                "label": "Accrual Ratio",
+                "value": _pct(accrual),
+                "status": "good" if abs(accrual) < 5 else ("caution" if abs(accrual) < 10 else "danger"),
+            }
+        )
+    ocfNi = getattr(ratios, "operatingCfToNetIncome", None)
+    if ocfNi is not None:
+        items.append(
+            {
+                "label": "OCF/NI",
+                "value": f"{ocfNi:.2f}x",
+                "status": "good" if ocfNi >= 1.0 else ("caution" if ocfNi >= 0.5 else "danger"),
+            }
+        )
+    ccc = getattr(ratios, "ccc", None)
+    if ccc is not None:
+        items.append({"label": "CCC", "value": f"{ccc:.0f}일", "status": _judge_pct_inv(ccc, 60, 120)})
+
+    # -- 시장 순위 (경량 조회) --
+    _appendMarketRank(company, items)
+
     annual = getattr(company, "annual", None)
     trend = None
     if annual is not None:
@@ -196,3 +222,20 @@ def build_snapshot(company: Any, *, includeInsights: bool = True) -> dict | None
             pass
 
     return snapshot
+
+
+def _appendMarketRank(company: Any, items: list[dict[str, Any]]) -> None:
+    """시총 순위 경량 조회."""
+    stockCode = getattr(company, "stockCode", None)
+    if not stockCode:
+        return
+    try:
+        from dartlab.analysis.comparative.rank import getRank
+
+        rankInfo = getRank(stockCode)
+        if rankInfo is not None:
+            pctile = getattr(rankInfo, "percentile", None)
+            if pctile is not None:
+                items.append({"label": "시총순위", "value": f"상위 {pctile:.0f}%", "status": None})
+    except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError):
+        pass

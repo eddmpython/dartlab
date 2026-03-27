@@ -1,51 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
-  <rect width="800" height="420" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">삼성SDI 자산 구조 한눈에 — Penman Reformulated BS</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" font-family="Pretendard, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="hbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" rx="16" fill="url(#hbg)"/>
 
-  <!-- 영업자산 box -->
-  <rect x="40" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="150" y="88" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">영업자산</text>
-  <text x="150" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">56%</text>
-  <text x="150" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">유형자산 19.2조 + 재고 2.9조</text>
-  <text x="150" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">사업에 직접 투입된 자산</text>
+  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="700">자산 구조 분석 프레임워크</text>
+  <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-size="13">조달한 돈이 어디에 묶여 있는가 -- 네 가지 축으로 읽는다</text>
 
-  <!-- 비영업자산 box -->
-  <rect x="290" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
-  <text x="400" y="88" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="bold" font-family="system-ui">비영업자산</text>
-  <text x="400" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">31%</text>
-  <text x="400" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">투자자산 11.4조 + 현금 1.8조</text>
-  <text x="400" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">사업 외 금융/투자 자산</text>
+  <!-- 4 pillars -->
+  <g transform="translate(55,95)">
+    <rect width="155" height="140" rx="10" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="78" y="28" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">1. 재분류</text>
+    <text x="78" y="52" text-anchor="middle" fill="#e2e8f0" font-size="11">유동/비유동</text>
+    <text x="78" y="68" text-anchor="middle" fill="#64748b" font-size="18">--></text>
+    <text x="78" y="88" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600">영업/비영업</text>
+    <text x="78" y="108" text-anchor="middle" fill="#94a3b8" font-size="10">사업에 쓰이는 자산 vs</text>
+    <text x="78" y="122" text-anchor="middle" fill="#94a3b8" font-size="10">사업 밖 자산 분리</text>
+  </g>
 
-  <!-- NOA box -->
-  <rect x="540" y="60" width="220" height="130" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
-  <text x="650" y="88" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="system-ui">NOA (순영업자산)</text>
-  <text x="650" y="120" text-anchor="middle" fill="#e2e8f0" font-size="30" font-weight="bold" font-family="system-ui">22.3조</text>
-  <text x="650" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">영업자산 - 영업부채</text>
-  <text x="650" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">ROIC의 분모</text>
+  <g transform="translate(230,95)">
+    <rect width="155" height="140" rx="10" fill="#1e3a5f" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="78" y="28" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="700">2. 운전자본</text>
+    <text x="78" y="52" text-anchor="middle" fill="#e2e8f0" font-size="11">CCC (현금전환주기)</text>
+    <line x1="20" y1="64" x2="136" y2="64" stroke="#334155" stroke-width="1"/>
+    <text x="78" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">재고회전일수</text>
+    <text x="78" y="96" text-anchor="middle" fill="#94a3b8" font-size="10">+ 매출채권회전일수</text>
+    <text x="78" y="110" text-anchor="middle" fill="#94a3b8" font-size="10">- 매입채무회전일수</text>
+    <text x="78" y="130" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="600">현금 순환 속도 측정</text>
+  </g>
 
-  <!-- 5년 변화 arrow bar -->
-  <rect x="40" y="210" width="720" height="70" rx="10" fill="#1e293b"/>
-  <text x="60" y="235" fill="#94a3b8" font-size="12" font-family="system-ui">영업자산 비중 변화 (5년)</text>
-  <rect x="60" y="250" width="132" height="14" rx="3" fill="#3b82f6" opacity="0.5"/>
-  <text x="200" y="262" fill="#94a3b8" font-size="10" font-family="system-ui">2021 — 44%</text>
-  <rect x="300" y="250" width="147" height="14" rx="3" fill="#3b82f6" opacity="0.7"/>
-  <text x="455" y="262" fill="#94a3b8" font-size="10" font-family="system-ui">2023 — 49%</text>
-  <rect x="540" y="250" width="168" height="14" rx="3" fill="#3b82f6" opacity="1"/>
-  <text x="716" y="262" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui">2025 — 56%</text>
+  <g transform="translate(405,95)">
+    <rect width="155" height="140" rx="10" fill="#1e3a5f" stroke="#34d399" stroke-width="1.5"/>
+    <text x="78" y="28" text-anchor="middle" fill="#34d399" font-size="13" font-weight="700">3. CAPEX</text>
+    <text x="78" y="52" text-anchor="middle" fill="#e2e8f0" font-size="11">투자 패턴 판단</text>
+    <line x1="20" y1="64" x2="136" y2="64" stroke="#334155" stroke-width="1"/>
+    <text x="78" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">CAPEX / 감가상각비</text>
+    <text x="78" y="100" text-anchor="middle" fill="#34d399" font-size="10">> 1.5 성장투자</text>
+    <text x="78" y="114" text-anchor="middle" fill="#fbbf24" font-size="10">1.0~1.5 적정</text>
+    <text x="78" y="128" text-anchor="middle" fill="#f87171" font-size="10">< 1.0 유지투자</text>
+  </g>
 
-  <!-- Bottom 3 flags -->
-  <rect x="40" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="155" y="328" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">유형자산 19.2조</text>
-  <text x="155" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">5년간 2.5배 성장</text>
-  <text x="155" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">배터리 공장 집중 투자</text>
+  <g transform="translate(580,95)">
+    <rect width="155" height="140" rx="10" fill="#1e3a5f" stroke="#fb923c" stroke-width="1.5"/>
+    <text x="78" y="28" text-anchor="middle" fill="#fb923c" font-size="13" font-weight="700">4. 자산회전율</text>
+    <text x="78" y="52" text-anchor="middle" fill="#e2e8f0" font-size="11">투자 효율 측정</text>
+    <line x1="20" y1="64" x2="136" y2="64" stroke="#334155" stroke-width="1"/>
+    <text x="78" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">매출 / 총자산</text>
+    <text x="78" y="100" text-anchor="middle" fill="#94a3b8" font-size="10">하락 = 자산 팽창 or</text>
+    <text x="78" y="114" text-anchor="middle" fill="#94a3b8" font-size="10">매출 둔화</text>
+    <text x="78" y="130" text-anchor="middle" fill="#fb923c" font-size="10" font-weight="600">CAPEX 추이와 교차 확인</text>
+  </g>
 
-  <rect x="285" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="400" y="328" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">CCC 315일</text>
-  <text x="400" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">현금 회수에 1년 가까이 소요</text>
-  <text x="400" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">재고 352일이 병목</text>
+  <!-- Bottom: key output -->
+  <rect x="55" y="260" width="690" height="80" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="285" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="700">NOA (순영업자산) = 영업자산 - 영업부채</text>
+  <text x="400" y="308" text-anchor="middle" fill="#94a3b8" font-size="12">사업을 돌리기 위해 실제로 묶어둔 순자산 -- ROIC의 분모</text>
+  <text x="400" y="326" text-anchor="middle" fill="#64748b" font-size="11">NOA 대비 매출/이익이 투자 효율의 핵심 지표</text>
 
-  <rect x="530" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="645" y="328" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">회전율 0.09</text>
-  <text x="645" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022년 대비 -55% 하락</text>
-  <text x="645" y="372" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">자산 투입 대비 매출 부진</text>
+  <!-- Arrows connecting to NOA -->
+  <line x1="132" y1="235" x2="200" y2="260" stroke="#38bdf8" stroke-width="1" opacity="0.5"/>
+  <line x1="307" y1="235" x2="300" y2="260" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+  <line x1="482" y1="235" x2="500" y2="260" stroke="#34d399" stroke-width="1" opacity="0.5"/>
+  <line x1="657" y1="235" x2="600" y2="260" stroke="#fb923c" stroke-width="1" opacity="0.5"/>
+
+  <!-- Warning signals -->
+  <text x="400" y="375" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="600">경고 신호</text>
+  <text x="160" y="400" text-anchor="middle" fill="#94a3b8" font-size="10">영업자산 급증 + 매출 정체</text>
+  <text x="370" y="400" text-anchor="middle" fill="#94a3b8" font-size="10">CCC 급등 (재고 병목)</text>
+  <text x="560" y="400" text-anchor="middle" fill="#94a3b8" font-size="10">회전율 2년 연속 하락</text>
+  <text x="160" y="420" text-anchor="middle" fill="#94a3b8" font-size="10">NOA 급증 + 이익 정체</text>
+  <text x="370" y="420" text-anchor="middle" fill="#94a3b8" font-size="10">CAPEX/감가 1.0 미만 지속</text>
+  <text x="560" y="420" text-anchor="middle" fill="#94a3b8" font-size="10">비영업자산 급감 (현금 소진)</text>
+
+  <text x="400" y="445" text-anchor="middle" fill="#475569" font-size="9">Penman Reformulated BS + CCC + CAPEX + Turnover -- dartlab c.review("자산구조")</text>
 </svg>

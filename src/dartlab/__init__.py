@@ -113,7 +113,7 @@ def collectAll(
 
 
 def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None:
-    """HuggingFace에서 전체 시장 데이터를 다운로드. pip install dartlab[hf] 필요.
+    """HuggingFace에서 전체 시장 데이터를 다운로드.
 
     scanAccount, screen, digest 등 전사(全社) 분석 기능은 로컬에 전체 데이터가 있어야 동작합니다.
     이 함수로 카테고리별 전체 데이터를 사전 다운로드하세요.

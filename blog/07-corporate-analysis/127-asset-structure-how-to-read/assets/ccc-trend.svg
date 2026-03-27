@@ -1,60 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">현금전환주기(CCC) 추이 — 273일에서 315일</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="420" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis -->
-  <text x="50" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">350일</text>
-  <text x="50" y="140" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">300일</text>
-  <text x="50" y="200" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">250일</text>
-  <text x="50" y="260" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">200일</text>
-  <text x="50" y="320" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">150일</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">CCC (현금전환주기) 구성과 해석</text>
 
-  <!-- Grid lines -->
-  <line x1="60" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="135" x2="750" y2="135" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="195" x2="750" y2="195" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="255" x2="750" y2="255" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="315" x2="750" y2="315" stroke="#1e293b" stroke-width="1"/>
+  <!-- Formula -->
+  <rect x="100" y="55" width="600" height="45" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="82" text-anchor="middle" fill="#e2e8f0" font-size="13">
+    CCC = <tspan fill="#38bdf8">재고회전일수</tspan> + <tspan fill="#a78bfa">매출채권회전일수</tspan> - <tspan fill="#fb923c">매입채무회전일수</tspan>
+  </text>
 
-  <!-- Data points: 273, 192, 221, 295, 315 -->
-  <!-- Y scale: 150=315, 350=75 => 1 day = (315-75)/(350-150) = 1.2px -->
-  <!-- 350 days = y75, 300 = y135, 250 = y195, 200 = y255, 150 = y315 -->
-  <!-- 273 => 75 + (350-273)*1.2 = 75 + 92.4 = 167 -->
-  <!-- 192 => 75 + (350-192)*1.2 = 75 + 189.6 = 265 -->
-  <!-- 221 => 75 + (350-221)*1.2 = 75 + 154.8 = 230 -->
-  <!-- 295 => 75 + (350-295)*1.2 = 75 + 66 = 141 -->
-  <!-- 315 => 75 + (350-315)*1.2 = 75 + 42 = 117 -->
+  <!-- Three components -->
+  <g transform="translate(55,120)">
+    <rect width="210" height="130" rx="10" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1"/>
+    <text x="105" y="25" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700">재고회전일수</text>
+    <text x="105" y="45" text-anchor="middle" fill="#94a3b8" font-size="10">재고 / (매출원가/365)</text>
+    <line x1="20" y1="55" x2="190" y2="55" stroke="#334155" stroke-width="1"/>
+    <text x="105" y="72" text-anchor="middle" fill="#e2e8f0" font-size="10">재고가 팔리기까지 걸리는 시간</text>
+    <text x="105" y="90" text-anchor="middle" fill="#94a3b8" font-size="9">길어지면: 수요 둔화, 과잉 생산</text>
+    <text x="105" y="104" text-anchor="middle" fill="#94a3b8" font-size="9">짧아지면: 재고 관리 개선, 수요 호조</text>
+    <text x="105" y="122" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="600">보통 CCC의 가장 큰 구성 요소</text>
+  </g>
 
-  <!-- Line path -->
-  <polyline points="130,167 270,265 410,230 550,141 690,117" stroke="#fbbf24" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  <g transform="translate(295,120)">
+    <rect width="210" height="130" rx="10" fill="#1e3a5f" stroke="#a78bfa" stroke-width="1"/>
+    <text x="105" y="25" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">매출채권회전일수</text>
+    <text x="105" y="45" text-anchor="middle" fill="#94a3b8" font-size="10">매출채권 / (매출/365)</text>
+    <line x1="20" y1="55" x2="190" y2="55" stroke="#334155" stroke-width="1"/>
+    <text x="105" y="72" text-anchor="middle" fill="#e2e8f0" font-size="10">외상 매출을 회수하는 데 걸리는 시간</text>
+    <text x="105" y="90" text-anchor="middle" fill="#94a3b8" font-size="9">길어지면: 결제 조건 느슨 or 회수 지연</text>
+    <text x="105" y="104" text-anchor="middle" fill="#94a3b8" font-size="9">짧으면: 강한 교섭력, 선금 구조</text>
+    <text x="105" y="122" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="600">B2B vs B2C에서 크게 다름</text>
+  </g>
 
-  <!-- Data dots and labels -->
-  <circle cx="130" cy="167" r="6" fill="#fbbf24" opacity="0.7"/>
-  <text x="130" y="155" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">273</text>
-  <text x="130" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <g transform="translate(535,120)">
+    <rect width="210" height="130" rx="10" fill="#1e3a5f" stroke="#fb923c" stroke-width="1"/>
+    <text x="105" y="25" text-anchor="middle" fill="#fb923c" font-size="12" font-weight="700">매입채무회전일수</text>
+    <text x="105" y="45" text-anchor="middle" fill="#94a3b8" font-size="10">매입채무 / (매출원가/365)</text>
+    <line x1="20" y1="55" x2="190" y2="55" stroke="#334155" stroke-width="1"/>
+    <text x="105" y="72" text-anchor="middle" fill="#e2e8f0" font-size="10">공급자에게 돈을 주기까지 걸리는 시간</text>
+    <text x="105" y="90" text-anchor="middle" fill="#94a3b8" font-size="9">길면: 회사의 교섭력이 강하다</text>
+    <text x="105" y="104" text-anchor="middle" fill="#94a3b8" font-size="9">짧으면: 공급자 우위 or 선지급 필요</text>
+    <text x="105" y="122" text-anchor="middle" fill="#fb923c" font-size="10" font-weight="600">CCC에서 빼는 항목 (유리한 쪽)</text>
+  </g>
 
-  <circle cx="270" cy="265" r="6" fill="#4ade80"/>
-  <text x="270" y="253" text-anchor="middle" fill="#4ade80" font-size="12" font-weight="bold" font-family="system-ui">192</text>
-  <text x="270" y="282" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">매출 호조기</text>
-  <text x="270" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <!-- CCC interpretation -->
+  <g transform="translate(55,275)">
+    <rect width="330" height="55" rx="8" fill="#14532d" stroke="#34d399" stroke-width="1"/>
+    <text x="165" y="22" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">CCC 음수 (유리한 구조)</text>
+    <text x="165" y="40" text-anchor="middle" fill="#94a3b8" font-size="10">먼저 돈을 받고 나중에 지불 -- 유통, 플랫폼</text>
+  </g>
 
-  <circle cx="410" cy="230" r="6" fill="#fbbf24" opacity="0.7"/>
-  <text x="410" y="218" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">221</text>
-  <text x="410" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+  <g transform="translate(415,275)">
+    <rect width="330" height="55" rx="8" fill="#451a03" stroke="#fb923c" stroke-width="1"/>
+    <text x="165" y="22" text-anchor="middle" fill="#fb923c" font-size="12" font-weight="700">CCC 양수 + 길어지는 추세</text>
+    <text x="165" y="40" text-anchor="middle" fill="#94a3b8" font-size="10">현금 묶임 심화 -- 영업 효율 악화 신호</text>
+  </g>
 
-  <circle cx="550" cy="141" r="6" fill="#fbbf24" opacity="0.9"/>
-  <text x="550" y="129" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="bold" font-family="system-ui">295</text>
-  <text x="550" y="350" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
-
-  <circle cx="690" cy="117" r="6" fill="#f87171"/>
-  <text x="690" y="105" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold" font-family="system-ui">315</text>
-  <text x="690" y="350" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
-
-  <!-- Warning zone -->
-  <rect x="60" y="75" width="690" height="60" rx="0" fill="#f87171" opacity="0.05"/>
-  <text x="750" y="100" text-anchor="end" fill="#f87171" font-size="9" font-family="system-ui" opacity="0.6">300일 이상 주의</text>
-
-  <!-- Breakdown annotation -->
-  <rect x="500" y="355" width="250" height="30" rx="8" fill="#1e293b"/>
-  <text x="625" y="375" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="system-ui">재고 352일 + 채권 3일 - 채무 40일</text>
+  <!-- Key insight -->
+  <rect x="55" y="350" width="690" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="372" text-anchor="middle" fill="#e2e8f0" font-size="11">CCC의 구성 요소를 분리하면 병목이 어디인지 특정할 수 있다</text>
+  <text x="400" y="390" text-anchor="middle" fill="#94a3b8" font-size="10">재고 급증+매출 정체 = 수요 둔화 | 매출채권 급증 = 결제 느슨 | 매입채무 감소 = 교섭력 약화</text>
 </svg>

@@ -24,3 +24,12 @@ repos:
       - id: bandit
         args: [-r, src/dartlab/, -c, pyproject.toml]
         exclude: ^(experiments/|tests/)
+
+  - repo: local
+    hooks:
+      - id: quality-gate
+        name: quality-gate (complexity + dead code)
+        entry: python scripts/qualityGate.py --changed-only
+        language: system
+        types: [python]
+        pass_filenames: false

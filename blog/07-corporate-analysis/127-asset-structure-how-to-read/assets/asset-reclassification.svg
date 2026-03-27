@@ -1,62 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">영업자산 vs 비영업자산 비중 추이 (2021-2025)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="400" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis labels -->
-  <text x="45" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">100%</text>
-  <text x="45" y="155" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">75%</text>
-  <text x="45" y="230" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">50%</text>
-  <text x="45" y="305" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">25%</text>
-  <text x="45" y="365" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0%</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">영업/비영업 비중 변화 -- 세 가지 패턴</text>
+  <text x="400" y="55" text-anchor="middle" fill="#94a3b8" font-size="11">5년간 비중 방향이 회사의 전략을 말해준다</text>
 
-  <!-- Grid lines -->
-  <line x1="55" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="1"/>
-  <line x1="55" y1="150" x2="750" y2="150" stroke="#1e293b" stroke-width="1"/>
-  <line x1="55" y1="225" x2="750" y2="225" stroke="#1e293b" stroke-width="1"/>
-  <line x1="55" y1="300" x2="750" y2="300" stroke="#1e293b" stroke-width="1"/>
+  <!-- Pattern 1: 확장형 -->
+  <g transform="translate(40,80)">
+    <text x="110" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">확장형</text>
+    <text x="110" y="32" text-anchor="middle" fill="#94a3b8" font-size="10">영업자산 비중 상승</text>
 
-  <!-- 2021 stacked bar -->
-  <rect x="85" y="75" width="80" height="46" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <text x="125" y="103" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="system-ui">기타 16%</text>
-  <rect x="85" y="121" width="80" height="116" rx="0" fill="#a78bfa" opacity="0.5"/>
-  <text x="125" y="183" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">비영업 40%</text>
-  <rect x="85" y="237" width="80" height="128" rx="0" fill="#3b82f6" opacity="0.7"/>
-  <text x="125" y="305" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">영업 44%</text>
-  <text x="125" y="380" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+    <g transform="translate(10,45)">
+      <text x="10" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y1</text>
+      <rect x="0" y="0" width="30" height="55" rx="2" fill="#1e3a5f"/>
+      <rect x="0" y="55" width="30" height="50" rx="2" fill="#38bdf8" opacity="0.7"/>
+      <rect x="0" y="105" width="30" height="15" rx="2" fill="#334155"/>
 
-  <!-- 2022 stacked bar -->
-  <rect x="220" y="75" width="80" height="49" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <text x="260" y="105" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="system-ui">기타 17%</text>
-  <rect x="220" y="124" width="80" height="110" rx="0" fill="#a78bfa" opacity="0.5"/>
-  <text x="260" y="183" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">비영업 38%</text>
-  <rect x="220" y="234" width="80" height="131" rx="0" fill="#3b82f6" opacity="0.7"/>
-  <text x="260" y="305" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">영업 45%</text>
-  <text x="260" y="380" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+      <text x="55" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y3</text>
+      <rect x="40" y="0" width="30" height="42" rx="2" fill="#1e3a5f"/>
+      <rect x="40" y="42" width="30" height="63" rx="2" fill="#38bdf8" opacity="0.7"/>
+      <rect x="40" y="105" width="30" height="15" rx="2" fill="#334155"/>
 
-  <!-- 2023 stacked bar -->
-  <rect x="355" y="75" width="80" height="49" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <text x="395" y="105" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="system-ui">기타 17%</text>
-  <rect x="355" y="124" width="80" height="99" rx="0" fill="#a78bfa" opacity="0.5"/>
-  <text x="395" y="178" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">비영업 34%</text>
-  <rect x="355" y="223" width="80" height="142" rx="0" fill="#3b82f6" opacity="0.8"/>
-  <text x="395" y="300" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">영업 49%</text>
-  <text x="395" y="380" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+      <text x="100" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y5</text>
+      <rect x="85" y="0" width="30" height="30" rx="2" fill="#1e3a5f"/>
+      <rect x="85" y="30" width="30" height="75" rx="2" fill="#38bdf8" opacity="0.7"/>
+      <rect x="85" y="105" width="30" height="15" rx="2" fill="#334155"/>
 
-  <!-- 2024 stacked bar -->
-  <rect x="490" y="75" width="80" height="46" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <text x="530" y="103" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="system-ui">기타 16%</text>
-  <rect x="490" y="121" width="80" height="87" rx="0" fill="#a78bfa" opacity="0.5"/>
-  <text x="530" y="168" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">비영업 30%</text>
-  <rect x="490" y="208" width="80" height="157" rx="0" fill="#3b82f6" opacity="0.9"/>
-  <text x="530" y="292" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">영업 54%</text>
-  <text x="530" y="380" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+      <text x="165" y="55" fill="#38bdf8" font-size="9">+12pp</text>
+    </g>
 
-  <!-- 2025 stacked bar -->
-  <rect x="625" y="75" width="80" height="38" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <text x="665" y="99" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="system-ui">기타 13%</text>
-  <rect x="625" y="113" width="80" height="90" rx="0" fill="#a78bfa" opacity="0.5"/>
-  <text x="665" y="162" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">비영업 31%</text>
-  <rect x="625" y="203" width="80" height="162" rx="0" fill="#3b82f6"/>
-  <text x="665" y="290" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold" font-family="system-ui">영업 56%</text>
-  <text x="665" y="380" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
+    <text x="110" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">배터리, 반도체</text>
+    <text x="110" y="208" text-anchor="middle" fill="#94a3b8" font-size="9">대규모 설비 투자기</text>
+  </g>
+
+  <!-- Pattern 2: 안정형 -->
+  <g transform="translate(290,80)">
+    <text x="110" y="15" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="700">안정형</text>
+    <text x="110" y="32" text-anchor="middle" fill="#94a3b8" font-size="10">비중 변동 미미</text>
+
+    <g transform="translate(10,45)">
+      <text x="10" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y1</text>
+      <rect x="0" y="0" width="30" height="40" rx="2" fill="#1e3a5f"/>
+      <rect x="0" y="40" width="30" height="60" rx="2" fill="#a78bfa" opacity="0.7"/>
+      <rect x="0" y="100" width="30" height="20" rx="2" fill="#334155"/>
+
+      <text x="55" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y3</text>
+      <rect x="40" y="0" width="30" height="38" rx="2" fill="#1e3a5f"/>
+      <rect x="40" y="38" width="30" height="62" rx="2" fill="#a78bfa" opacity="0.7"/>
+      <rect x="40" y="100" width="30" height="20" rx="2" fill="#334155"/>
+
+      <text x="100" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y5</text>
+      <rect x="85" y="0" width="30" height="39" rx="2" fill="#1e3a5f"/>
+      <rect x="85" y="39" width="30" height="61" rx="2" fill="#a78bfa" opacity="0.7"/>
+      <rect x="85" y="100" width="30" height="20" rx="2" fill="#334155"/>
+
+      <text x="165" y="70" fill="#a78bfa" font-size="9">+/-2pp</text>
+    </g>
+
+    <text x="110" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">성숙기 기업</text>
+    <text x="110" y="208" text-anchor="middle" fill="#94a3b8" font-size="9">투자=감가상각 균형</text>
+  </g>
+
+  <!-- Pattern 3: 축소형 -->
+  <g transform="translate(540,80)">
+    <text x="110" y="15" text-anchor="middle" fill="#fb923c" font-size="13" font-weight="700">축소/전환형</text>
+    <text x="110" y="32" text-anchor="middle" fill="#94a3b8" font-size="10">영업자산 비중 하락</text>
+
+    <g transform="translate(10,45)">
+      <text x="10" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y1</text>
+      <rect x="0" y="0" width="30" height="25" rx="2" fill="#1e3a5f"/>
+      <rect x="0" y="25" width="30" height="80" rx="2" fill="#fb923c" opacity="0.7"/>
+      <rect x="0" y="105" width="30" height="15" rx="2" fill="#334155"/>
+
+      <text x="55" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y3</text>
+      <rect x="40" y="0" width="30" height="40" rx="2" fill="#1e3a5f"/>
+      <rect x="40" y="40" width="30" height="65" rx="2" fill="#fb923c" opacity="0.7"/>
+      <rect x="40" y="105" width="30" height="15" rx="2" fill="#334155"/>
+
+      <text x="100" y="130" text-anchor="middle" fill="#64748b" font-size="9">Y5</text>
+      <rect x="85" y="0" width="30" height="55" rx="2" fill="#1e3a5f"/>
+      <rect x="85" y="55" width="30" height="50" rx="2" fill="#fb923c" opacity="0.7"/>
+      <rect x="85" y="105" width="30" height="15" rx="2" fill="#334155"/>
+
+      <text x="165" y="75" fill="#fb923c" font-size="9">-15pp</text>
+    </g>
+
+    <text x="110" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">사업 축소, 자산 매각</text>
+    <text x="110" y="208" text-anchor="middle" fill="#94a3b8" font-size="9">지주사 전환</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(250,320)">
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#38bdf8" opacity="0.7"/>
+    <text x="18" y="11" fill="#94a3b8" font-size="10">영업자산</text>
+    <rect x="85" y="0" width="12" height="12" rx="2" fill="#1e3a5f"/>
+    <text x="103" y="11" fill="#94a3b8" font-size="10">비영업자산</text>
+    <rect x="185" y="0" width="12" height="12" rx="2" fill="#334155"/>
+    <text x="203" y="11" fill="#94a3b8" font-size="10">기타</text>
+  </g>
+
+  <text x="400" y="365" text-anchor="middle" fill="#64748b" font-size="10">비중 변화의 속도가 중요하다 -- 5년간 10pp 이상 변동이면 전략 전환 신호</text>
+  <text x="400" y="385" text-anchor="middle" fill="#475569" font-size="9">영업자산 증가 시 매출이 따라오는지, NOA 대비 이익이 유지되는지 반드시 교차 확인</text>
 </svg>

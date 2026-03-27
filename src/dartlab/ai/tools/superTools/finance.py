@@ -166,6 +166,74 @@ def registerFinanceTool(company: Any, registerTool) -> None:
             return f"[데이터 없음] '{keyword}'와 관련된 재무 데이터가 없습니다. 대안: explore(action='search', keyword='{keyword}')로 공시 원문을 검색하세요."
         return "\n\n".join(results)
 
+    def _quality(**_kw) -> str:
+        """이익의 질 종합 분석."""
+        from dartlab.ai.context.company_adapter import get_headline_ratios
+
+        r = get_headline_ratios(company)
+        if r is None:
+            return "[데이터 없음] 재무비율 계산 불가."
+        lines = ["## 이익의 질 (Earnings Quality)"]
+        accrual = getattr(r, "sloanAccrualRatio", None)
+        if accrual is not None:
+            lbl = "양호" if abs(accrual) < 5 else ("주의" if abs(accrual) < 10 else "위험")
+            lines.append(f"- **Accrual Ratio**: {accrual:.1f}% ({lbl}) -- |값|<5% 양호, >10% 이익 과대 의심")
+        ocfNi = getattr(r, "operatingCfToNetIncome", None)
+        if ocfNi is not None:
+            lbl = "양호" if ocfNi >= 100 else ("보통" if ocfNi >= 50 else "주의")
+            lines.append(f"- **영업CF/순이익**: {ocfNi:.0f}% ({lbl}) -- >=100% 양호")
+        beneish = getattr(r, "beneishMScore", None)
+        if beneish is not None:
+            lbl = "정상" if beneish < -1.78 else "조작의심"
+            lines.append(f"- **Beneish M-Score**: {beneish:.2f} ({lbl}) -- <-1.78 정상")
+        ccc = getattr(r, "ccc", None)
+        dso = getattr(r, "dso", None)
+        dio = getattr(r, "dio", None)
+        dpo = getattr(r, "dpo", None)
+        if ccc is not None:
+            parts = []
+            if dso is not None:
+                parts.append(f"DSO:{dso:.0f}")
+            if dio is not None:
+                parts.append(f"DIO:{dio:.0f}")
+            if dpo is not None:
+                parts.append(f"DPO:{dpo:.0f}")
+            detail = f" ({' + '.join(parts)})" if parts else ""
+            lines.append(f"- **CCC**: {ccc:.0f}일{detail}")
+        wc = getattr(r, "workingCapital", None)
+        if wc is not None:
+            from dartlab.ai.context.formatting import _format_won
+
+            lines.append(f"- **운전자본**: {_format_won(wc)}")
+        if len(lines) == 1:
+            return "[데이터 없음] 이익의 질 지표 계산 불가."
+        return "\n".join(lines)
+
+    def _decompose(**_kw) -> str:
+        """DuPont 3요소 분해 시계열."""
+        from dartlab.ai.context.company_adapter import get_ratio_series
+
+        rs = get_ratio_series(company)
+        if rs is None:
+            return "[데이터 없음] 비율 시계열 없음."
+        periods = getattr(rs, "periods", None)
+        roe_s = getattr(rs, "roe", None)
+        dm_s = getattr(rs, "dupontMargin", None)
+        dt_s = getattr(rs, "dupontTurnover", None)
+        dl_s = getattr(rs, "dupontLeverage", None)
+        if not roe_s or not dm_s or not dt_s or not dl_s:
+            return "[데이터 없음] DuPont 분해 시계열이 부족합니다."
+        lines = ["## DuPont 분해 시계열", "| 기간 | ROE | 순이익률 | 자산회전율 | 레버리지 |", "| --- | --- | --- | --- | --- |"]
+        n = min(len(roe_s), len(dm_s), len(dt_s), len(dl_s))
+        for i in range(n):
+            period = periods[i] if periods and i < len(periods) else f"T{i}"
+            r_val = f"{roe_s[i]:.1f}%" if roe_s[i] is not None else "-"
+            m_val = f"{dm_s[i]:.1f}%" if dm_s[i] is not None else "-"
+            t_val = f"{dt_s[i]:.2f}x" if dt_s[i] is not None else "-"
+            l_val = f"{dl_s[i]:.2f}x" if dl_s[i] is not None else "-"
+            lines.append(f"| {period} | {r_val} | {m_val} | {t_val} | {l_val} |")
+        return "\n".join(lines)
+
     # ── dispatch ──
     _ACTIONS = {
         "data": _data,
@@ -176,6 +244,8 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         "anomalies": _anomalies,
         "report": _report,
         "search": _search,
+        "quality": _quality,
+        "decompose": _decompose,
     }
 
     def finance(action: str, module: str = "", apiType: str = "", keyword: str = "") -> str:
@@ -220,6 +290,8 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         "- anomalies: 이상치 탐지 (module 필수)\n"
         "- report: 정기보고서 정형 데이터 (apiType 필수). 예: finance(action='report', apiType='dividend')\n"
         "- search: 키워드로 데이터 검색 (keyword 필수)\n"
+        "- quality: 이익의 질 종합 (Accrual Ratio, Beneish M-Score, OCF/NI, CCC)\n"
+        "- decompose: DuPont 3요소 분해 시계열 (ROE = 순이익률 x 자산회전율 x 레버리지)\n"
         "\n"
         "연쇄 사용: 숫자 확인 후 explore(action='search')로 공시 원문에서 변화 원인을 찾으세요.\n"
         "data 결과의 모든 금액은 백만원 단위(DART 원본 그대로, 보정 없음).\n"
@@ -231,8 +303,11 @@ def registerFinanceTool(company: Any, registerTool) -> None:
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["data", "modules", "ratios", "growth", "yoy", "anomalies", "report", "search"],
-                    "description": "data=데이터조회, modules=목록, ratios=재무비율, growth=성장률, yoy=전년대비, anomalies=이상치, report=정형보고서, search=검색",
+                    "enum": [
+                        "data", "modules", "ratios", "growth", "yoy", "anomalies",
+                        "report", "search", "quality", "decompose",
+                    ],
+                    "description": "data=데이터, modules=목록, ratios=비율, growth=성장률, yoy=전년대비, anomalies=이상치, report=보고서, search=검색, quality=이익의질, decompose=DuPont분해",
                 },
                 "module": moduleSchema,
                 "apiType": apiTypeSchema,

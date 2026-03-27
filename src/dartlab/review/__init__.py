@@ -8,11 +8,14 @@ AI reviewer는 이 위에 올라간다.
     # 1. 블록 사전
     from dartlab.review import blocks
     b = blocks(company)
-    b["segmentComposition"]           # 바로 렌더링
+    b["매출 성장률"]                    # 한글 label로 접근
+    b["growth"]                       # 영문 key로 접근
+    b.growth                          # tab-complete 지원
+    b                                 # 카탈로그 테이블 출력
 
     # 2. 자유 조립
     from dartlab.review import Review
-    Review([b["segmentComposition"], b["growth"], c.select("IS", ["매출액"])])
+    Review([b["부문별 매출 구성"], b["매출 성장률"]])
 
     # 3. 템플릿
     c.review()                        # 전체
@@ -31,6 +34,7 @@ from dartlab.review.blocks import (
     TableBlock,
     TextBlock,
 )
+from dartlab.review.blockMap import BlockMap
 from dartlab.review.catalog import (
     BlockMeta,
     SectionMeta,
@@ -38,6 +42,7 @@ from dartlab.review.catalog import (
     getSectionMeta,
     listBlocks,
     listSections,
+    resolveKey,
 )
 from dartlab.review.layout import DEFAULT_LAYOUT, ReviewLayout
 from dartlab.review.registry import buildBlocks, buildReview
@@ -46,18 +51,16 @@ from dartlab.review.section import Section
 from dartlab.review.utils import fmtAmt, fmtAmtScale, isTerminal, unifyTableScale
 
 
-def blocks(company) -> dict:
-    """블록 사전 — analysis 계산 결과를 블록으로 변환해서 사전에 담는다.
+def blocks(company):
+    """블록 사전 -- 한글 label, 영문 key, tab-complete 모두 지원.
 
     사용법::
 
-        import dartlab
-        from dartlab.review import blocks
-
-        c = dartlab.Company("005930")
         b = blocks(c)
-        print(list(b.keys()))
-        print(b["segmentComposition"])
+        b["매출 성장률"]          # 한글 label
+        b["growth"]              # 영문 key
+        b.growth                 # attribute (tab-complete)
+        b                        # 카탈로그 테이블
     """
     return buildBlocks(company)
 

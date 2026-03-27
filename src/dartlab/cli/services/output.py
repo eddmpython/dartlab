@@ -21,7 +21,9 @@ def get_console() -> Console:
 
 
 def print_error(message: str) -> None:
-    _err_console.print(f"[bold red]오류:[/] {message}")
+    from rich.markup import escape
+
+    _err_console.print(f"[bold red]오류:[/] {escape(message)}")
 
 
 def print_info(message: str = "") -> None:

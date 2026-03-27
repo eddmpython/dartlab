@@ -88,6 +88,31 @@ for _b in _BLOCKS:
 
 _SECTION_INDEX: dict[str, SectionMeta] = {s.key: s for s in SECTIONS}
 
+# ── 한글 label → key 역인덱스 ──
+
+_LABEL_TO_KEY: dict[str, str] = {b.label: b.key for b in _BLOCKS}
+
+
+def _suggest(query: str) -> str:
+    """오타 시 유사 key/label 제안 메시지."""
+    from difflib import get_close_matches
+
+    candidates = list(_INDEX.keys()) + list(_LABEL_TO_KEY.keys())
+    matches = get_close_matches(query, candidates, n=3, cutoff=0.4)
+    if matches:
+        return f" -- 혹시: {', '.join(matches)}?"
+    return ""
+
+
+def resolveKey(keyOrLabel: str) -> str | None:
+    """영문 key 또는 한글 label → key 반환. 못 찾으면 None."""
+    if keyOrLabel in _INDEX:
+        return keyOrLabel
+    mapped = _LABEL_TO_KEY.get(keyOrLabel)
+    if mapped:
+        return mapped
+    return None
+
 
 # ── 공개 API ──
 

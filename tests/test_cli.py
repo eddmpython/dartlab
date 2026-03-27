@@ -61,14 +61,17 @@ def test_main_invalid_command_returns_usage_code(capsys):
     assert "error:" in captured.err
 
 
-def test_ask_returns_non_zero_on_company_error(capsys):
-    # resolve_from_text가 종목을 못 찾으면 CLIError → exit code 1
-    with patch("dartlab.core.resolve.resolve_from_text", return_value=(None, "bad question")):
+def test_ask_proceeds_without_company(capsys):
+    # resolve_from_text가 종목을 못 찾아도 company=None으로 진행
+    with (
+        patch("dartlab.core.resolve.resolve_from_text", return_value=(None, "bad question")),
+        patch("dartlab.ai.runtime.standalone.ask", return_value=iter(["test answer"])),
+    ):
         result = main(["ask", "bad", "question"])
 
     captured = capsys.readouterr()
-    assert result == 1
-    assert "종목을 찾을 수 없습니다" in captured.err
+    assert result == 0
+    assert "Free analysis" in captured.out
 
 
 def test_excel_returns_non_zero_on_company_error(capsys):

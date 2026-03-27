@@ -1,50 +1,69 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">유형자산 성장 추이 — 7.6조에서 19.2조 (2.5배)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="380" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis -->
-  <text x="50" y="85" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">20조</text>
-  <text x="50" y="145" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">15조</text>
-  <text x="50" y="205" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">10조</text>
-  <text x="50" y="265" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">5조</text>
-  <text x="50" y="325" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">CAPEX 패턴 해석 -- 투자의 성격을 읽는다</text>
 
-  <!-- Grid lines -->
-  <line x1="60" y1="80" x2="750" y2="80" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="140" x2="750" y2="140" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="200" x2="750" y2="200" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="260" x2="750" y2="260" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="320" x2="750" y2="320" stroke="#1e293b" stroke-width="1"/>
+  <!-- Three phases -->
+  <g transform="translate(55,65)">
+    <rect width="220" height="200" rx="10" fill="#14532d" stroke="#34d399" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#34d399" font-size="14" font-weight="700">성장 투자</text>
+    <text x="110" y="48" text-anchor="middle" fill="#94a3b8" font-size="11">CAPEX/감가상각 > 1.5</text>
+    <line x1="20" y1="60" x2="200" y2="60" stroke="#1e3a5f" stroke-width="1"/>
 
-  <!-- Bar: 2021 = 7.6조 -->
-  <rect x="100" y="229" width="80" height="91" rx="6" fill="#3b82f6" opacity="0.5"/>
-  <text x="140" y="222" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">7.6조</text>
-  <text x="140" y="340" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+    <rect x="30" y="80" width="25" height="40" rx="3" fill="#334155"/>
+    <text x="42" y="130" text-anchor="middle" fill="#64748b" font-size="8">감가</text>
+    <rect x="70" y="50" width="25" height="70" rx="3" fill="#34d399" opacity="0.7"/>
+    <text x="82" y="130" text-anchor="middle" fill="#64748b" font-size="8">CAPEX</text>
 
-  <!-- Bar: 2022 = 9.8조 (estimate) -->
-  <rect x="230" y="203" width="80" height="117" rx="6" fill="#3b82f6" opacity="0.6"/>
-  <text x="270" y="196" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">9.8조</text>
-  <text x="270" y="340" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+    <text x="130" y="80" fill="#e2e8f0" font-size="10">기존 자산보다 빠르게</text>
+    <text x="130" y="95" fill="#e2e8f0" font-size="10">새 자산 투입 중</text>
 
-  <!-- Bar: 2023 = 12.5조 (estimate) -->
-  <rect x="360" y="170" width="80" height="150" rx="6" fill="#3b82f6" opacity="0.7"/>
-  <text x="400" y="163" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">12.5조</text>
-  <text x="400" y="340" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+    <text x="110" y="150" text-anchor="middle" fill="#94a3b8" font-size="9">유형자산/건설중인자산 급증</text>
+    <text x="110" y="165" text-anchor="middle" fill="#94a3b8" font-size="9">현금/투자자산 감소</text>
+    <text x="110" y="185" text-anchor="middle" fill="#34d399" font-size="10" font-weight="600">대규모 증설기 기업에서 관찰</text>
+  </g>
 
-  <!-- Bar: 2024 = 16.8조 (estimate) -->
-  <rect x="490" y="119" width="80" height="201" rx="6" fill="#3b82f6" opacity="0.85"/>
-  <text x="530" y="112" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">16.8조</text>
-  <text x="530" y="340" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+  <g transform="translate(290,65)">
+    <rect width="220" height="200" rx="10" fill="#1e3a5f" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#a78bfa" font-size="14" font-weight="700">적정 투자</text>
+    <text x="110" y="48" text-anchor="middle" fill="#94a3b8" font-size="11">CAPEX/감가상각 1.0~1.5</text>
+    <line x1="20" y1="60" x2="200" y2="60" stroke="#334155" stroke-width="1"/>
 
-  <!-- Bar: 2025 = 19.2조 -->
-  <rect x="620" y="90" width="80" height="230" rx="6" fill="#3b82f6"/>
-  <text x="660" y="83" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">19.2조</text>
-  <text x="660" y="340" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
+    <rect x="30" y="75" width="25" height="45" rx="3" fill="#334155"/>
+    <text x="42" y="130" text-anchor="middle" fill="#64748b" font-size="8">감가</text>
+    <rect x="70" y="68" width="25" height="52" rx="3" fill="#a78bfa" opacity="0.7"/>
+    <text x="82" y="130" text-anchor="middle" fill="#64748b" font-size="8">CAPEX</text>
 
-  <!-- Growth annotation -->
-  <line x1="140" y1="229" x2="660" y2="90" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+    <text x="130" y="80" fill="#e2e8f0" font-size="10">기존 자산 유지 +</text>
+    <text x="130" y="95" fill="#e2e8f0" font-size="10">점진적 확장</text>
 
-  <!-- x2.5 badge -->
-  <rect x="340" y="355" width="120" height="30" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
-  <text x="400" y="375" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">5년간 2.5배</text>
+    <text x="110" y="150" text-anchor="middle" fill="#94a3b8" font-size="9">자산 규모 안정적 성장</text>
+    <text x="110" y="165" text-anchor="middle" fill="#94a3b8" font-size="9">감가상각 = 재투자 균형</text>
+    <text x="110" y="185" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="600">성숙기 기업의 정상 상태</text>
+  </g>
+
+  <g transform="translate(525,65)">
+    <rect width="220" height="200" rx="10" fill="#451a03" stroke="#f87171" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#f87171" font-size="14" font-weight="700">유지/축소 투자</text>
+    <text x="110" y="48" text-anchor="middle" fill="#94a3b8" font-size="11">CAPEX/감가상각 < 1.0</text>
+    <line x1="20" y1="60" x2="200" y2="60" stroke="#334155" stroke-width="1"/>
+
+    <rect x="30" y="68" width="25" height="52" rx="3" fill="#334155"/>
+    <text x="42" y="130" text-anchor="middle" fill="#64748b" font-size="8">감가</text>
+    <rect x="70" y="90" width="25" height="30" rx="3" fill="#f87171" opacity="0.7"/>
+    <text x="82" y="130" text-anchor="middle" fill="#64748b" font-size="8">CAPEX</text>
+
+    <text x="130" y="80" fill="#e2e8f0" font-size="10">자산 노후화 속도를</text>
+    <text x="130" y="95" fill="#e2e8f0" font-size="10">투자가 따라가지 못함</text>
+
+    <text x="110" y="150" text-anchor="middle" fill="#94a3b8" font-size="9">설비 노후화 진행</text>
+    <text x="110" y="165" text-anchor="middle" fill="#94a3b8" font-size="9">장기 지속 시 경쟁력 하락</text>
+    <text x="110" y="185" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">투자 여력 부족 또는 사업 축소</text>
+  </g>
+
+  <!-- Bottom note -->
+  <rect x="55" y="285" width="690" height="75" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="308" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">CAPEX 추이를 시계열로 보면 투자 사이클이 드러난다</text>
+  <text x="400" y="328" text-anchor="middle" fill="#94a3b8" font-size="10">급증 후 급감 = 대형 프로젝트 완료 or 투자 여력 소진</text>
+  <text x="400" y="345" text-anchor="middle" fill="#94a3b8" font-size="10">건설중인자산(CIP)과 교차 확인 -- CIP 감소 + CAPEX 감소 = 프로젝트 일단락</text>
 </svg>

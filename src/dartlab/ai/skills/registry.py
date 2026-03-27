@@ -20,6 +20,7 @@ class Skill:
     analysisGoals: tuple[str, ...]
     synthesisGuide: str
     checkpoints: tuple[str, ...] = field(default_factory=tuple)
+    recommendedTools: tuple[str, ...] = field(default_factory=tuple)
 
     def toPrompt(self) -> str:
         """시스템 프롬프트에 주입할 자연어 가이드."""
@@ -27,7 +28,10 @@ class Skill:
         checks = ""
         if self.checkpoints:
             checks = "\n**자체 검증:**\n" + "\n".join(f"  - {c}" for c in self.checkpoints)
-        return f"## 분석 스킬: {self.name}\n\n**분석 목표:**\n{goals}\n\n**종합 프레임:** {self.synthesisGuide}{checks}"
+        tools = ""
+        if self.recommendedTools:
+            tools = "\n**우선 도구:**\n" + "\n".join(f"  - `{t}`" for t in self.recommendedTools)
+        return f"## 분석 스킬: {self.name}\n\n**분석 목표:**\n{goals}\n\n**종합 프레임:** {self.synthesisGuide}{checks}{tools}"
 
 
 def matchSkill(

@@ -645,7 +645,7 @@ def _analyze_inner(
 
         focus_context = build_focus_context(company, state)
 
-    if diff_context is None and auto_diff and company is not None and context_tier == "full":
+    if diff_context is None and auto_diff and company is not None:
         from dartlab.ai.conversation.focus import build_diff_context
 
         diff_context = build_diff_context(company)

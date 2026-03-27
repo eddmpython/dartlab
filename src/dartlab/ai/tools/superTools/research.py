@@ -22,7 +22,7 @@ def registerResearchTool(registerTool: Callable, *, company=None) -> None:
             if not avail["any"]:
                 return (
                     "[안내] 검색 패키지가 설치되지 않았습니다.\n"
-                    "`pip install dartlab[search]` 또는 `uv add dartlab[search]`로 설치하세요.\n"
+                    "tavily-python 또는 duckduckgo-search 패키지를 확인하세요.\n"
                     "Tavily(TAVILY_API_KEY 필요) 또는 DuckDuckGo를 사용합니다."
                 )
             daysInt = int(days) if days else None
@@ -41,7 +41,7 @@ def registerResearchTool(registerTool: Callable, *, company=None) -> None:
 
             avail = searchAvailable()
             if not avail["any"]:
-                return "[안내] 검색 패키지가 설치되지 않았습니다.\n`pip install dartlab[search]`로 설치하세요."
+                return "[안내] 검색 패키지가 설치되지 않았습니다.\ntavily-python 또는 duckduckgo-search 패키지를 확인하세요."
             daysInt = int(days) if days else 7
             results = newsSearch(query, maxResults=int(maxResults), days=daysInt)
             if not results:
@@ -69,7 +69,7 @@ def registerResearchTool(registerTool: Callable, *, company=None) -> None:
 
             avail = searchAvailable()
             if not avail["any"]:
-                return "[안내] 검색 패키지가 설치되지 않았습니다. `pip install dartlab[search]`"
+                return "[안내] 검색 패키지가 설치되지 않았습니다. 검색 패키지를 확인하세요."
 
             # 지역별 검색어 보강
             suffix = ""

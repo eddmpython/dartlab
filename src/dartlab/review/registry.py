@@ -8,8 +8,8 @@ from dartlab.review.templates import TEMPLATE_ORDER, TEMPLATES
 from dartlab.review.utils import isTerminal
 
 
-def buildBlocks(company) -> dict:
-    """블록 사전 — analysis calc* 결과를 블록으로 변환."""
+def buildBlocks(company):
+    """블록 사전 -- analysis calc* 결과를 블록으로 변환."""
     from dartlab.analysis.strategy.asset import (
         calcAssetEfficiency,
         calcAssetFlags,
@@ -132,7 +132,9 @@ def buildBlocks(company) -> dict:
     b["cashQuality"] = _safe(lambda: cashQualityBlock(calcCashQuality(company)))
     b["cashFlowFlags"] = _safe(lambda: cashFlowFlagsBlock(calcCashFlowFlags(company)))
 
-    return b
+    from dartlab.review.blockMap import BlockMap
+
+    return BlockMap(b)
 
 
 def buildReview(

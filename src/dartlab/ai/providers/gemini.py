@@ -32,7 +32,7 @@ class GeminiProvider(BaseProvider):
         try:
             from google import genai
         except ImportError:
-            raise ImportError("google-genai 패키지가 필요합니다.\n  pip install dartlab[llm]")
+            raise ImportError("google-genai 패키지가 필요합니다.\n  pip install google-genai")
 
         import os
 

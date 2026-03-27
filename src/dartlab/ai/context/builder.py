@@ -1944,6 +1944,12 @@ def build_context_skeleton(company: Any) -> tuple[str, list[str]]:
             parts.extend(["", f"## {section_title}", *ratio_lines])
             included.append("ratios")
 
+    # 주요 공시 변화 (경량 — 상위 3개 topic)
+    change_summary = _build_change_summary(company, max_topics=3)
+    if change_summary:
+        parts.append(change_summary)
+        included.append("diff")
+
     # 분석 가이드
     if is_us:
         parts.extend(

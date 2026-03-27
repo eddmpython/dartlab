@@ -1,52 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">영업CF 마진 추이 (매출 대비 현금 창출력)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="380" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis -->
-  <text x="55" y="90" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">20%</text>
-  <text x="55" y="145" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">15%</text>
-  <text x="55" y="200" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">10%</text>
-  <text x="55" y="255" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">5%</text>
-  <text x="55" y="310" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0%</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">영업CF 마진 -- 매출 대비 현금 창출력</text>
 
-  <!-- Grid -->
-  <line x1="70" y1="85" x2="750" y2="85" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="140" x2="750" y2="140" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="195" x2="750" y2="195" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="250" x2="750" y2="250" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="305" x2="750" y2="305" stroke="#334155" stroke-width="1"/>
+  <!-- Formula -->
+  <rect x="200" y="55" width="400" height="35" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="78" text-anchor="middle" fill="#e2e8f0" font-size="12">영업CF 마진 = 영업CF / 매출 x 100</text>
 
-  <!-- 10% reference -->
-  <line x1="70" y1="195" x2="750" y2="195" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="6,3"/>
-  <text x="755" y="200" fill="#4ade80" font-size="9" font-family="system-ui">10%</text>
+  <!-- Key insight box -->
+  <rect x="55" y="105" width="690" height="50" rx="8" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1"/>
+  <text x="400" y="128" text-anchor="middle" fill="#e2e8f0" font-size="11">영업이익률과 영업CF 마진의 <tspan fill="#fbbf24" font-weight="600">괴리</tspan>가 크면</text>
+  <text x="400" y="146" text-anchor="middle" fill="#94a3b8" font-size="10">이익의 상당 부분이 현금 미전환 -- 운전자본(매출채권, 재고, 선급금)에 묶임</text>
 
-  <!-- Bars -->
-  <!-- 2021: 15.2% → height = 15.2 * 11 = 167.2, y = 305 - 167.2 = 137.8 -->
-  <rect x="110" y="138" width="80" height="167" rx="4" fill="#3b82f6" opacity="0.8"/>
-  <text x="150" y="128" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">15.2%</text>
-  <text x="150" y="330" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <!-- Industry benchmarks -->
+  <text x="400" y="185" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="600">업종별 영업CF 마진 기준</text>
 
-  <!-- 2022: 11.1% → height = 11.1 * 11 = 122.1, y = 305 - 122.1 = 182.9 -->
-  <rect x="240" y="183" width="80" height="122" rx="4" fill="#3b82f6" opacity="0.7"/>
-  <text x="280" y="173" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">11.1%</text>
-  <text x="280" y="330" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <g transform="translate(55,200)">
+    <!-- IT/Software -->
+    <rect width="155" height="80" rx="8" fill="#14532d" stroke="#34d399" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">IT/소프트웨어</text>
+    <text x="78" y="45" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="700">20~30%</text>
+    <text x="78" y="65" text-anchor="middle" fill="#94a3b8" font-size="9">자본 적게 드는 구조</text>
+  </g>
 
-  <!-- 2023: 7.6% → height = 7.6 * 11 = 83.6, y = 305 - 83.6 = 221.4 -->
-  <rect x="370" y="221" width="80" height="84" rx="4" fill="#fbbf24" opacity="0.7"/>
-  <text x="410" y="215" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="bold" font-family="system-ui">7.6%</text>
-  <text x="410" y="330" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
+  <g transform="translate(225,200)">
+    <!-- Manufacturing -->
+    <rect width="155" height="80" rx="8" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700">일반 제조업</text>
+    <text x="78" y="45" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="700">10~15%</text>
+    <text x="78" y="65" text-anchor="middle" fill="#94a3b8" font-size="9">설비+운전자본 부담</text>
+  </g>
 
-  <!-- 2024: 10.0% → height = 10.0 * 11 = 110, y = 305 - 110 = 195 -->
-  <rect x="500" y="195" width="80" height="110" rx="4" fill="#3b82f6" opacity="0.6"/>
-  <text x="540" y="188" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">10.0%</text>
-  <text x="540" y="330" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
+  <g transform="translate(395,200)">
+    <!-- Heavy industry -->
+    <rect width="155" height="80" rx="8" fill="#1e3a5f" stroke="#fb923c" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#fb923c" font-size="12" font-weight="700">중공업/건설</text>
+    <text x="78" y="45" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="700">5~10%</text>
+    <text x="78" y="65" text-anchor="middle" fill="#94a3b8" font-size="9">장기 프로젝트, 긴 CCC</text>
+  </g>
 
-  <!-- 2025: 8.6% → height = 8.6 * 11 = 94.6, y = 305 - 94.6 = 210.4 -->
-  <rect x="630" y="210" width="80" height="95" rx="4" fill="#fbbf24" opacity="0.7"/>
-  <text x="670" y="204" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="bold" font-family="system-ui">8.6%</text>
-  <text x="670" y="330" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
+  <g transform="translate(565,200)">
+    <!-- Warning zone -->
+    <rect width="175" height="80" rx="8" fill="#451a03" stroke="#f87171" stroke-width="1"/>
+    <text x="88" y="22" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700">10% 미만 경고</text>
+    <text x="88" y="45" text-anchor="middle" fill="#f87171" font-size="18" font-weight="700">< 10%</text>
+    <text x="88" y="65" text-anchor="middle" fill="#94a3b8" font-size="9">현금 창출력 약화</text>
+  </g>
 
-  <!-- Annotation -->
-  <rect x="120" y="355" width="560" height="30" rx="6" fill="#1e293b"/>
-  <text x="400" y="375" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">매출 100원당 현금 창출: 15.2원(2021) → 8.6원(2025) — 5년간 거의 반감</text>
+  <!-- What to check -->
+  <rect x="55" y="300" width="690" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="320" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">영업CF 마진이 하락할 때 확인할 것</text>
+  <text x="200" y="345" text-anchor="middle" fill="#94a3b8" font-size="10">매출채권 회전 느려짐?</text>
+  <text x="400" y="345" text-anchor="middle" fill="#94a3b8" font-size="10">재고 급증?</text>
+  <text x="600" y="345" text-anchor="middle" fill="#94a3b8" font-size="10">선수금/계약부채 감소?</text>
+
+  <text x="400" y="375" text-anchor="middle" fill="#475569" font-size="9">같은 업종 내에서 경쟁사 대비 추세를 비교하는 것이 핵심 -- 절대 수치보다 방향</text>
 </svg>

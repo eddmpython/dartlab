@@ -1,44 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" fill="none">
-  <rect width="800" height="420" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">삼성SDI 현금흐름 3구간 한눈에</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" font-family="Pretendard, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="hcbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" rx="16" fill="url(#hcbg)"/>
 
-  <!-- 3 CF boxes -->
-  <rect x="40" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="150" y="88" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold" font-family="system-ui">영업활동 현금흐름</text>
-  <text x="150" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">3,322억</text>
-  <text x="150" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 양수 유지</text>
-  <text x="150" y="170" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="system-ui">3년 연속 감소</text>
+  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="700">현금흐름 분석 프레임워크</text>
+  <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-size="13">IS 이익과 CF 현금은 왜 다른가 -- 세 가지 축으로 읽는다</text>
 
-  <rect x="290" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
-  <text x="400" y="88" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="system-ui">투자활동 현금흐름</text>
-  <text x="400" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">+828억</text>
-  <text x="400" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 투자 회수 전환</text>
-  <text x="400" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">전년 -2.3조에서 반전</text>
+  <!-- Core question -->
+  <rect x="200" y="85" width="400" height="40" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="1"/>
+  <text x="400" y="110" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="600">발생주의(IS) vs 현금주의(CF) -- 이 차이가 모든 것을 만든다</text>
 
-  <rect x="540" y="60" width="220" height="140" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
-  <text x="650" y="88" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold" font-family="system-ui">재무활동 현금흐름</text>
-  <text x="650" y="122" text-anchor="middle" fill="#e2e8f0" font-size="26" font-weight="bold" font-family="system-ui">-8,009억</text>
-  <text x="650" y="148" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025 | 부채 상환</text>
-  <text x="650" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">전년 +2.1조 차입에서 반전</text>
+  <!-- Three pillars -->
+  <g transform="translate(55,145)">
+    <rect width="220" height="170" rx="10" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="700">1. CF 3구간 + 패턴</text>
+    <line x1="20" y1="40" x2="200" y2="40" stroke="#334155" stroke-width="1"/>
+    <text x="110" y="60" text-anchor="middle" fill="#e2e8f0" font-size="11">영업CF / 투자CF / 재무CF</text>
+    <text x="110" y="80" text-anchor="middle" fill="#94a3b8" font-size="10">부호 조합 = 6가지 패턴</text>
+    <text x="110" y="100" text-anchor="middle" fill="#34d399" font-size="10">성숙형 (+/-/-)</text>
+    <text x="110" y="114" text-anchor="middle" fill="#38bdf8" font-size="10">확장형 (+/-/+)</text>
+    <text x="110" y="128" text-anchor="middle" fill="#fb923c" font-size="10">구조조정형 (+/+/-)</text>
+    <text x="110" y="142" text-anchor="middle" fill="#f87171" font-size="10">위기형 (-/-/+)</text>
+    <text x="110" y="162" text-anchor="middle" fill="#94a3b8" font-size="9" font-style="italic">패턴 자체보다 변화가 중요</text>
+  </g>
 
-  <!-- CF pattern label -->
-  <rect x="40" y="220" width="720" height="60" rx="10" fill="#1e293b"/>
-  <text x="400" y="248" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="bold" font-family="system-ui">CF 패턴: 4년 확장형 → 2025 구조조정형 전환</text>
-  <text x="400" y="268" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">영업(+) 투자(+) 재무(-) = 투자 줄이고 빚 갚는 구조</text>
+  <g transform="translate(290,145)">
+    <rect width="220" height="170" rx="10" fill="#1e3a5f" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#a78bfa" font-size="14" font-weight="700">2. FCF (자유현금흐름)</text>
+    <line x1="20" y1="40" x2="200" y2="40" stroke="#334155" stroke-width="1"/>
+    <text x="110" y="60" text-anchor="middle" fill="#e2e8f0" font-size="11">= 영업CF - CAPEX</text>
+    <text x="110" y="82" text-anchor="middle" fill="#94a3b8" font-size="10">투자까지 감당하고 남는 진짜 여유 현금</text>
+    <text x="110" y="105" text-anchor="middle" fill="#34d399" font-size="10">양수: 배당/상환/재투자 가능</text>
+    <text x="110" y="122" text-anchor="middle" fill="#f87171" font-size="10">음수: 외부 자금으로 메워야</text>
+    <text x="110" y="145" text-anchor="middle" fill="#94a3b8" font-size="9">음수 자체보다 기간과 추세가 핵심</text>
+    <text x="110" y="162" text-anchor="middle" fill="#94a3b8" font-size="9" font-style="italic">영업CF가 줄면 CAPEX 줄여도 적자</text>
+  </g>
 
-  <!-- Bottom flags -->
-  <rect x="40" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="155" y="328" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">FCF -3,372억</text>
-  <text x="155" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">5년 연속 적자</text>
-  <text x="155" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">CAPEX > 영업CF</text>
+  <g transform="translate(525,145)">
+    <rect width="220" height="170" rx="10" fill="#1e3a5f" stroke="#fb923c" stroke-width="1.5"/>
+    <text x="110" y="28" text-anchor="middle" fill="#fb923c" font-size="14" font-weight="700">3. 이익의 현금 뒷받침</text>
+    <line x1="20" y1="40" x2="200" y2="40" stroke="#334155" stroke-width="1"/>
+    <text x="110" y="60" text-anchor="middle" fill="#e2e8f0" font-size="11">영업CF / 순이익</text>
+    <text x="110" y="80" text-anchor="middle" fill="#94a3b8" font-size="10">IS 이익이 CF 현금으로 전환되는 비율</text>
+    <text x="110" y="105" text-anchor="middle" fill="#34d399" font-size="10">100%+: 이익 이상의 현금 유입</text>
+    <text x="110" y="122" text-anchor="middle" fill="#fbbf24" font-size="10">40~100%: 부분 전환, 원인 확인</text>
+    <text x="110" y="139" text-anchor="middle" fill="#f87171" font-size="10">40% 미만: 이익의 질 의문</text>
+    <text x="110" y="162" text-anchor="middle" fill="#94a3b8" font-size="9" font-style="italic">감가상각비가 핵심 변수</text>
+  </g>
 
-  <rect x="285" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="400" y="328" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">영업CF/순이익 -160%</text>
-  <text x="400" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">순이익 적자인데 영업CF 양수</text>
-  <text x="400" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">감가상각비가 현금 보존</text>
+  <!-- Bottom: CF margin -->
+  <rect x="55" y="335" width="690" height="50" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="358" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="700">영업CF 마진 = 영업CF / 매출 -- 매출 대비 현금 창출력의 직접 지표</text>
+  <text x="400" y="376" text-anchor="middle" fill="#94a3b8" font-size="10">영업이익률과 영업CF 마진의 괴리가 크면 운전자본에 현금이 묶이고 있다</text>
 
-  <rect x="530" y="300" width="230" height="100" rx="10" fill="#1e293b"/>
-  <text x="645" y="328" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="bold" font-family="system-ui">영업CF 마진 8.6%</text>
-  <text x="645" y="348" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">매출 100원당 현금 8.6원</text>
-  <text x="645" y="368" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui">2021년 15.2%에서 하락</text>
+  <!-- Warning signals -->
+  <text x="400" y="410" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">경고 신호</text>
+  <text x="200" y="430" text-anchor="middle" fill="#94a3b8" font-size="9">영업CF 적자</text>
+  <text x="350" y="430" text-anchor="middle" fill="#94a3b8" font-size="9">FCF 3년+ 적자</text>
+  <text x="500" y="430" text-anchor="middle" fill="#94a3b8" font-size="9">위기형 CF 패턴</text>
+  <text x="650" y="430" text-anchor="middle" fill="#94a3b8" font-size="9">OCF/NI 40% 미만</text>
+
+  <text x="400" y="448" text-anchor="middle" fill="#475569" font-size="9">Subramanyam CF 패턴 + FCF + Cash Quality -- dartlab c.review("현금흐름")</text>
 </svg>

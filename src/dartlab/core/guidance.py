@@ -73,7 +73,7 @@ _SIMPLE: dict[str, str] = {
     # 전사 분석 데이터 필요 안내
     "hint:market_data_needed": (
         "⚠ {category} 데이터가 로컬에 없습니다. {fn}은 전체 시장 데이터가 필요합니다.\n"
-        "  dartlab.downloadAll('{category}')  # pip install dartlab[hf] 필요"
+        "  dartlab.downloadAll('{category}')"
     ),
     # edgar universe
     "edgar:universe_update": "SEC listed universe 갱신 중...",

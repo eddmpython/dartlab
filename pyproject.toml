@@ -63,55 +63,45 @@ dependencies = [
     "rich>=14.3.3,<15",
     "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",
-]
-
-[project.optional-dependencies]
-llm = [
-    "openai>=1.0.0,<3",
-    "google-genai>=1.0.0,<2",
-]
-llm-anthropic = [
+    "huggingface-hub>=0.20.0,<1",
+    # LLM providers
     "openai>=1.0.0,<3",
     "google-genai>=1.0.0,<2",
     "anthropic>=0.30.0,<2",
-]
-charts = [
+    # charts
     "networkx>=3.6.1,<4",
     "scipy>=1.17.1,<2",
-]
-ai = [
+    # ai server
     "fastapi>=0.135.1,<1",
-    "httpx>=0.28.1,<1",
     "msgpack>=1.1.0,<2",
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
-]
-mcp = [
-    "mcp[cli]>=1.0,<2",
-]
-display = [
+    # display
     "great-tables>=0.15.0,<1",
     "itables>=2.0.0,<3",
-]
-altair = [
-    "altair>=5.0.0,<6",
-]
-hf = [
-    "huggingface-hub>=0.20.0,<1",
-]
-search = [
+    # search
     "tavily-python>=0.5.0,<1",
     "duckduckgo-search>=7.0.0,<8",
 ]
-ui = [
-    "dartlab[ai]",
+
+[project.optional-dependencies]
+# 하위호환 alias — 이제 모두 기본 의존성
+llm = ["dartlab"]
+llm-anthropic = ["dartlab"]
+charts = ["dartlab"]
+ai = ["dartlab"]
+mcp = ["dartlab"]
+display = ["dartlab"]
+hf = ["dartlab"]
+search = ["dartlab"]
+ui = ["dartlab"]
+altair = [
+    "altair>=5.0.0,<6",
 ]
 channel = [
-    "dartlab[ai]",
     "pycloudflared>=0.3",
 ]
 channel-ngrok = [
-    "dartlab[ai]",
     "pyngrok>=7.0,<8",
 ]
 channel-full = [
@@ -120,17 +110,7 @@ channel-full = [
     "slack-bolt>=1.18,<2",
     "discord.py>=2.4,<3",
 ]
-all = [
-    "openai>=1.0.0,<3",
-    "anthropic>=0.30.0,<2",
-    "networkx>=3.6.1,<4",
-    "scipy>=1.17.1,<2",
-    "fastapi>=0.135.1,<1",
-    "httpx>=0.28.1,<1",
-    "msgpack>=1.1.0,<2",
-    "uvicorn[standard]>=0.30.0,<1",
-    "sse-starlette>=2.0.0,<3",
-]
+all = ["dartlab[channel-full,altair]"]
 
 [project.scripts]
 dartlab = "dartlab.cli.main:main"
@@ -242,4 +222,6 @@ dev = [
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
+    "radon>=6.0.0",
+    "vulture>=2.0",
 ]

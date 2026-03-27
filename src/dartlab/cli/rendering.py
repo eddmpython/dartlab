@@ -13,11 +13,11 @@ from typing import Any
 # Brand colors (synced with chat.py / landing brand.ts)
 # ---------------------------------------------------------------------------
 
-_CLR = "#ea4647"
-_CLR_SUCCESS = "#34d399"
-_CLR_WARN = "#fbbf24"
-_CLR_DANGER = "#ea4647"
-_CLR_MUTED = "#94a3b8"
+_CLR = "#ea4647"  # primary (brand.ts primary — 로고/강조)
+_CLR_SUCCESS = "#34d399"  # success (brand.ts success)
+_CLR_WARN = "#fbbf24"  # warning (brand.ts warning)
+_CLR_DANGER = "#ea4647"  # primary (brand.ts primary — 위험/음수)
+_CLR_MUTED = "#94a3b8"  # textMuted (brand.ts textMuted)
 
 _STATUS_COLORS = {
     "good": _CLR_SUCCESS,
@@ -82,16 +82,64 @@ def isNumericColumn(values: list[str]) -> bool:
     return numCount > len(values) * 0.5
 
 
-def colorizeNumber(text: str) -> str:
-    """Positive → green, negative → red in Rich markup."""
+def colorizeNumber(text: str, *, humanize: bool = True) -> str:
+    """Positive → green, negative → red in Rich markup. Optionally convert to 조/억."""
     stripped = text.strip()
     if not stripped:
         return text
+    display = formatKoreanUnit(text) if humanize else text
     if _NEGATIVE_RE.match(stripped):
-        return f"[{_CLR_DANGER}]{text}[/]"
+        return f"[{_CLR_DANGER}]{display}[/]"
     if _NUM_RE.match(stripped):
-        return f"[{_CLR_SUCCESS}]{text}[/]"
+        return f"[{_CLR_SUCCESS}]{display}[/]"
     return text
+
+
+# ---------------------------------------------------------------------------
+# Korean unit formatting (조/억)
+# ---------------------------------------------------------------------------
+
+_BARE_NUM_RE = re.compile(r"^-?[\d,]+\.?\d*$")
+
+
+def formatKoreanUnit(text: str) -> str:
+    """Convert large numbers to 조/억 notation for readability."""
+    stripped = text.strip().replace(",", "")
+    if not _BARE_NUM_RE.match(stripped):
+        return text
+    try:
+        val = float(stripped)
+    except ValueError:
+        return text
+    absVal = abs(val)
+    sign = "-" if val < 0 else ""
+    if absVal >= 1_000_000_000_000:
+        return f"{sign}{absVal / 1_000_000_000_000:.1f}조"
+    if absVal >= 100_000_000:
+        return f"{sign}{absVal / 100_000_000:.0f}억"
+    return text
+
+
+# ---------------------------------------------------------------------------
+# Sparkline (ASCII mini chart)
+# ---------------------------------------------------------------------------
+
+_SPARK_CHARS = "▁▂▃▄▅▆▇█"
+
+
+def sparkline(values: list[float]) -> str:
+    """Return ASCII sparkline string for a list of numeric values."""
+    if not values or len(values) < 2:
+        return ""
+    lo, hi = min(values), max(values)
+    span = hi - lo
+    if span == 0:
+        return _SPARK_CHARS[4] * len(values)
+    result = []
+    for v in values:
+        idx = int((v - lo) / span * (len(_SPARK_CHARS) - 1))
+        result.append(_SPARK_CHARS[idx])
+    return "".join(result)
 
 
 # ---------------------------------------------------------------------------

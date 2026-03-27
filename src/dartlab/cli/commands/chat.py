@@ -17,12 +17,12 @@ from dartlab.cli.services.runtime import configure_dartlab
 # Brand colors (synced with landing/src/lib/brand.ts)
 # ---------------------------------------------------------------------------
 
-_CLR = "#ea4647"
-_CLR_DIM = "#c83232"
-_CLR_ACCENT = "#fb923c"
-_CLR_MUTED = "#94a3b8"
-_CLR_SUCCESS = "#34d399"
-_CLR_WARN = "#fbbf24"
+_CLR = "#ea4647"  # primary (brand.ts primary — 로고/강조)
+_CLR_DIM = "#c83232"  # primaryDark (brand.ts primaryDark — 보조 강조)
+_CLR_ACCENT = "#fb923c"  # accent (brand.ts accent)
+_CLR_MUTED = "#94a3b8"  # textMuted (brand.ts textMuted)
+_CLR_SUCCESS = "#34d399"  # success (brand.ts success)
+_CLR_WARN = "#fbbf24"  # warning (brand.ts warning)
 
 # ---------------------------------------------------------------------------
 # Suggestions (English defaults)
@@ -100,12 +100,8 @@ _SKILL_DEFAULT_QUESTIONS: dict[str, str] = {
     "comprehensive": "Provide a comprehensive investment analysis covering financials, valuation, risks, and thesis",
 }
 
-_SLASH_WORDS: list[str] = []
-for _name, _aliases, _ in _COMMANDS:
-    _SLASH_WORDS.append(_name)
-    _SLASH_WORDS.extend(_aliases)
-for _skillCmd, _, _ in _SKILL_COMMANDS:
-    _SLASH_WORDS.append(_skillCmd)
+_SLASH_WORDS: list[str] = [_name for _name, _, _ in _COMMANDS]
+_SLASH_WORDS.extend(_skillCmd for _skillCmd, _, _ in _SKILL_COMMANDS)
 
 
 def configure_parser(subparsers) -> None:
@@ -142,6 +138,7 @@ class _ChatState:
     toolCallCount: int = 0
     companiesUsed: list[str] = field(default_factory=list)
     cachedSnapshot: dict | None = None
+    lastFollowUps: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +166,9 @@ def run(args) -> int:
             raise CLIError(f"Company not found: {args.company}")
 
     _printWelcome(state, console)
+
+    if not provider:
+        _printSetupGuide(console)
 
     if args.cont and state.stockCode:
         _resumeSession(state, console)
@@ -213,6 +213,25 @@ def _replLoop(state: _ChatState, console) -> None:
             _printSessionSummary(state, console)
             break
 
+        # follow-up selection by number (1, 2)
+        if userInput in ("1", "2", "3") and state.lastFollowUps:
+            idx = int(userInput) - 1
+            if idx < len(state.lastFollowUps):
+                selected = state.lastFollowUps[idx]
+                state.lastFollowUps = []
+                # follow-up is a slash command (e.g. "/health -- Check...")
+                cmdPart = selected.split(" -- ")[0].strip()
+                if cmdPart.startswith("/"):
+                    shouldExit = _handleSlash(cmdPart, state, console)
+                    if shouldExit:
+                        _printSessionSummary(state, console)
+                        break
+                else:
+                    _executeQuery(cmdPart, state, console)
+                continue
+
+        state.lastFollowUps = []
+
         # "/" alone → show commands (Claude Code pattern)
         if userInput == "/":
             _cmdHelp("", state, console)
@@ -252,6 +271,7 @@ def _makePromptFn(state: _ChatState):
         session = PromptSession(
             history=FileHistory(str(historyFile)),
             completer=completer,
+            complete_while_typing=False,
         )
 
         def _prompt():
@@ -345,7 +365,9 @@ def _executeQuery(
                     toolStartTime = time.monotonic()
                     state.toolCallCount += 1
                     queryToolCount += 1
-                    toolSpinner = Spinner("dots", text=f"[{_CLR_MUTED}]{label}...[/]", style=_CLR_MUTED)
+                    toolSpinner = Spinner(
+                        "dots", text=f"[{_CLR_MUTED}][{queryToolCount}] {label}...[/]", style=_CLR_MUTED
+                    )
                     statusBlock = "\n".join(toolLines)
                     if statusBlock:
                         live.update(Group(Markdown(statusBlock), toolSpinner))
@@ -407,13 +429,15 @@ def _executeQuery(
         _saveMessage(state, "user", question)
         _saveMessage(state, "assistant", buffer)
 
-        # follow-up suggestions
+        # follow-up suggestions (selectable by number)
+        state.lastFollowUps = []
         if state.company and state.queryCount >= 1:
             followUps = _generateFollowUps(buffer, skillId)
             if followUps:
+                state.lastFollowUps = followUps
                 console.print()
-                for fq in followUps:
-                    console.print(f"  [{_CLR_MUTED}]> {fq}[/]")
+                for i, fq in enumerate(followUps, 1):
+                    console.print(f"  [{_CLR_MUTED}]{i}. {fq}[/]")
 
 
 def _toolResultPreview(resultText: str) -> str:
@@ -585,33 +609,37 @@ def _cmdHelp(_arg: str, _state: _ChatState, console) -> None:
     from rich.text import Text
 
     console.print()
-    console.print(f"  [bold {_CLR}]Commands[/]")
+    console.print("  [bold]Commands[/]")
+    console.print(f"  [{_CLR_MUTED}]{'─' * 44}[/]")
     for name, aliases, desc in _COMMANDS:
         label = Text()
-        label.append(f"  {name}", style=f"bold {_CLR}")
+        label.append(f"  {name}", style="bold")
+        aliasStr = ""
         if aliases:
-            label.append(f"  {', '.join(aliases)}", style="dim")
-        pad = 24 - len(name) - (len(", ".join(aliases)) + 2 if aliases else 0)
+            aliasStr = f"  {', '.join(aliases)}"
+            label.append(aliasStr, style="dim")
+        pad = 22 - len(name) - len(aliasStr)
         label.append(" " * max(pad, 1))
         label.append(desc, style="dim")
         console.print(label)
 
     console.print()
-    console.print(f"  [bold {_CLR}]Skills[/] [{_CLR_MUTED}](load a company first)[/]")
+    console.print(f"  [bold]Skills[/] [{_CLR_MUTED}]load a company first[/]")
+    console.print(f"  [{_CLR_MUTED}]{'─' * 44}[/]")
     for cmdName, _, desc in _SKILL_COMMANDS:
         label = Text()
-        label.append(f"  {cmdName}", style=f"bold {_CLR}")
-        pad = 24 - len(cmdName)
+        label.append(f"  {cmdName}", style="bold")
+        pad = 22 - len(cmdName)
         label.append(" " * max(pad, 1))
         label.append(desc, style="dim")
         console.print(label)
 
     console.print()
     tipLine = Text()
-    tipLine.append("  /", style=_CLR_MUTED)
-    tipLine.append("  show this menu  ", style="dim")
-    tipLine.append("exit", style=_CLR_MUTED)
-    tipLine.append("  quit without slash", style="dim")
+    tipLine.append("  /", style=f"bold {_CLR_MUTED}")
+    tipLine.append(" this menu", style="dim")
+    tipLine.append("    exit", style=_CLR_MUTED)
+    tipLine.append(" quit without slash", style="dim")
     console.print(tipLine)
     console.print()
 
@@ -639,30 +667,178 @@ def _cmdCompany(arg: str, state: _ChatState, console) -> None:
             state.history.clear()
             state.sessionId = None
             console.print(f"  [{_CLR_MUTED}]Conversation cleared due to company change.[/]")
+    else:
+        # show search candidates
+        _showCompanyCandidates(arg, state, console)
+
+
+def _showCompanyCandidates(keyword: str, state: _ChatState, console) -> None:
+    """Show search results when exact match fails."""
+    try:
+        from dartlab.gather.listing import searchName
+
+        results = searchName(keyword)
+        if results is None or len(results) == 0:
+            return
+
+        maxShow = min(len(results), 8)
+        console.print()
+        console.print(f'  [bold {_CLR}]"{keyword}"[/] [{_CLR_MUTED}]search results[/]')
+        console.print()
+
+        candidates = []
+        for i in range(maxShow):
+            row = results.row(i, named=True)
+            name = row.get("회사명", "")
+            code = row.get("종목코드", "")
+            industry = row.get("업종명", "")
+            if industry and len(industry) > 16:
+                industry = industry[:14] + ".."
+            candidates.append((code, name))
+            console.print(f"    {i + 1}. [bold]{name:<16s}[/] [{_CLR_MUTED}]{code}[/]    [{_CLR_MUTED}]{industry}[/]")
+
+        if len(results) > maxShow:
+            console.print(f"    [{_CLR_MUTED}](+{len(results) - maxShow} more)[/]")
+
+        console.print()
+        console.print(f"  [{_CLR_MUTED}]Type number to select:[/]")
+
+        try:
+            choice = input("  > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return
+        if not choice:
+            return
+
+        if choice.isdigit() and 1 <= int(choice) <= len(candidates):
+            code, _ = candidates[int(choice) - 1]
+            hadCompany = state.company is not None
+            if _loadCompany(state, code, console):
+                if hadCompany:
+                    state.history.clear()
+                    state.sessionId = None
+                    console.print(f"  [{_CLR_MUTED}]Conversation cleared due to company change.[/]")
+    except (ImportError, OSError):
+        pass
 
 
 def _cmdModel(arg: str, state: _ChatState, console) -> None:
-    if not arg:
-        console.print(f"  model: {state.model or '(default)'}")
+    if arg:
+        state.model = arg
+        console.print(f"  model -> [bold]{arg}[/]")
         return
 
-    state.model = arg
-    console.print(f"  model -> [bold]{arg}[/]")
+    # interactive model selection
+    models = _getRecommendedModels(state.provider)
+    if not models:
+        console.print(f"  model: {state.model or '(default)'}")
+        console.print(f"  [{_CLR_MUTED}]Type /model <name> to change[/]")
+        return
+
+    console.print()
+    console.print(f"  [bold {_CLR}]{state.provider}[/] models")
+    console.print()
+    for i, (name, desc) in enumerate(models, 1):
+        marker = f"[{_CLR}]*[/]" if name == (state.model or models[0][0]) else " "
+        console.print(f"  {marker} {i}. [bold]{name:<24s}[/] [{_CLR_MUTED}]{desc}[/]")
+    console.print()
+    console.print(f"  [{_CLR_MUTED}]Type number or model name (current: {state.model or 'default'}):[/]")
+
+    try:
+        choice = input("  > ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return
+    if not choice:
+        return
+    if choice.isdigit() and 1 <= int(choice) <= len(models):
+        state.model = models[int(choice) - 1][0]
+    else:
+        state.model = choice
+    console.print(f"  model -> [bold]{state.model}[/]")
+
+
+def _getRecommendedModels(providerId: str | None) -> list[tuple[str, str]]:
+    """Return recommended (model_name, description) pairs for a provider."""
+    _MODEL_MAP: dict[str, list[tuple[str, str]]] = {
+        "openai": [
+            ("gpt-4o", "Fast + tool use (recommended)"),
+            ("gpt-4o-mini", "Budget-friendly"),
+            ("o1", "Deep reasoning"),
+            ("o3-mini", "Reasoning + budget"),
+        ],
+        "gemini": [
+            ("gemini-2.5-pro", "Best quality (free)"),
+            ("gemini-2.5-flash", "Fast (free)"),
+        ],
+        "groq": [
+            ("llama-3.3-70b-versatile", "Fast inference (free)"),
+            ("llama-3.1-8b-instant", "Ultra-fast (free)"),
+        ],
+        "cerebras": [
+            ("llama-3.3-70b", "Fast inference (free)"),
+        ],
+        "mistral": [
+            ("mistral-small-latest", "Balanced (free)"),
+            ("mistral-large-latest", "Best quality"),
+        ],
+        "oauth-codex": [
+            ("gpt-5.4", "Latest (ChatGPT Plus)"),
+            ("gpt-5.3-codex", "Codex optimized"),
+        ],
+    }
+    return _MODEL_MAP.get(providerId or "", [])
 
 
 def _cmdProvider(arg: str, state: _ChatState, console) -> None:
-    if not arg:
-        console.print(f"  provider: [bold]{state.provider}[/]")
-        console.print(f"  available: {', '.join(PROVIDERS)}")
+    if arg:
+        if arg in PROVIDERS:
+            state.provider = arg
+            state.model = None
+            console.print(f"  provider -> [bold]{arg}[/]")
+        else:
+            console.print(f"  [{_CLR_WARN}]Unknown provider: {arg}[/]")
+            console.print(f"  [{_CLR_MUTED}]available: {', '.join(PROVIDERS)}[/]")
         return
 
-    if arg in PROVIDERS:
-        state.provider = arg
+    # interactive provider selection
+    from dartlab.core.ai.providers import get_provider_spec
+
+    console.print()
+    console.print(f"  [bold {_CLR}]Provider[/]")
+    console.print()
+
+    providerList = list(PROVIDERS)
+    for i, pid in enumerate(providerList, 1):
+        spec = get_provider_spec(pid)
+        label = spec.label if spec else pid
+        hint = ""
+        if spec and spec.freeTierHint:
+            hint = f"[{_CLR_SUCCESS}]{spec.freeTierHint}[/]"
+        marker = f"[{_CLR}]*[/]" if pid == state.provider else " "
+        console.print(f"  {marker} {i}. [bold]{pid:<16s}[/] [{_CLR_MUTED}]{label}[/]  {hint}")
+
+    console.print()
+    console.print(f"  [{_CLR_MUTED}]Type number or name (current: {state.provider}):[/]")
+
+    try:
+        choice = input("  > ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return
+    if not choice:
+        return
+
+    selected = None
+    if choice.isdigit() and 1 <= int(choice) <= len(providerList):
+        selected = providerList[int(choice) - 1]
+    elif choice in PROVIDERS:
+        selected = choice
+
+    if selected:
+        state.provider = selected
         state.model = None
-        console.print(f"  provider -> [bold]{arg}[/]")
+        console.print(f"  provider -> [bold]{selected}[/]")
     else:
-        console.print(f"  [{_CLR_WARN}]Unknown provider: {arg}[/]")
-        console.print(f"  available: {', '.join(PROVIDERS)}")
+        console.print(f"  [{_CLR_WARN}]Unknown provider: {choice}[/]")
 
 
 def _cmdClear(_arg: str, state: _ChatState, console) -> None:
@@ -772,21 +948,17 @@ def _cmdCompact(_arg: str, state: _ChatState, console) -> None:
 
 def _cmdSkill(skillId: str, arg: str, state: _ChatState, console) -> None:
     """Run an analysis skill command."""
-    if state.company is None:
-        console.print(f"  [{_CLR_MUTED}]Load a company first with /company <name>[/]")
-        return
-
     question = arg or _SKILL_DEFAULT_QUESTIONS.get(skillId, "Analyze this company")
+    if state.company is None:
+        console.print(f"  [{_CLR_MUTED}]No company loaded — LLM will search via tools[/]")
     console.print(f"  [{_CLR_ACCENT}]Running {skillId} analysis...[/]")
     _executeQuery(question, state, console, skillId=skillId)
 
 
 def _cmdReport(arg: str, state: _ChatState, console) -> None:
-    if state.company is None:
-        console.print(f"  [{_CLR_MUTED}]Load a company first with /company[/]")
-        return
-
     question = arg or "Provide a comprehensive investment analysis report"
+    if state.company is None:
+        console.print(f"  [{_CLR_MUTED}]No company loaded — LLM will search via tools[/]")
     console.print(f"  [{_CLR_ACCENT}]Running deep analysis (report mode)...[/]")
     _executeQuery(question, state, console, reportMode=True)
 
@@ -896,18 +1068,11 @@ def _resumeSession(state: _ChatState, console) -> None:
 # Welcome
 # ---------------------------------------------------------------------------
 
-_LOGO = """
-  ██████╗  █████╗ ██████╗ ████████╗██╗      █████╗ ██████╗
-  ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔══██╗
-  ██║  ██║███████║██████╔╝   ██║   ██║     ███████║██████╔╝
-  ██║  ██║██╔══██║██╔══██╗   ██║   ██║     ██╔══██║██╔══██╗
-  ██████╔╝██║  ██║██║  ██║   ██║   ███████╗██║  ██║██████╔╝
-  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝"""
-
 
 def _printWelcome(state: _ChatState, console) -> None:
     """Print the branded welcome screen."""
-    from rich.rule import Rule
+    from rich import box
+    from rich.panel import Panel
     from rich.text import Text
 
     try:
@@ -917,37 +1082,60 @@ def _printWelcome(state: _ChatState, console) -> None:
     except Exception:
         ver = "dev"
 
-    console.print(f"[{_CLR} bold]{_LOGO}[/]", highlight=False)
-    console.print()
-
-    # compact info line
+    # -- header panel --
     modelDisplay = state.model or "default"
-    infoLine = Text()
-    infoLine.append(f"  v{ver}", style="dim")
-    infoLine.append("  |  ", style="dim")
-    infoLine.append(state.provider or "none", style="bold")
-    infoLine.append(f" ({modelDisplay})", style="dim")
-    console.print(infoLine)
+    providerDisplay = state.provider or "none"
+
+    header = Text()
+    header.append("DartLab", style=f"bold {_CLR}")
+    header.append("\n")
+    header.append("Every company tells its story in filings.", style=_CLR_MUTED)
+    header.append("\n")
+    header.append("We make it readable.", style=_CLR_MUTED)
+    header.append("\n")
+    header.append(f"\n{providerDisplay}", style="bold")
+    header.append(f"  {modelDisplay}", style="dim")
+    header.append(f"        v{ver}", style="dim")
 
     console.print()
-    console.print(Rule(style="dim"))
+    console.print(Panel(header, box=box.ROUNDED, border_style="dim", padding=(1, 3), expand=False))
 
     if state.company:
-        console.print()
         console.print(f"  [bold]{state.company.corpName}[/] [{_CLR_MUTED}]{state.stockCode}[/]")
         console.print()
-        console.print(f"  [{_CLR_MUTED}]Try:[/]  /comprehensive  /profitability  /health  /valuation")
+        hints = Text()
+        hints.append("  Try: ", style="dim")
+        for i, cmd in enumerate(("/comprehensive", "/profitability", "/health", "/valuation")):
+            if i > 0:
+                hints.append("  ", style="dim")
+            hints.append(cmd, style=_CLR_MUTED)
+        console.print(hints)
     else:
-        console.print()
-        console.print(f"  [{_CLR_MUTED}]Type a question, or /company <name> to load a company[/]")
+        console.print(
+            f"  [{_CLR_MUTED}]Type a question, or[/] [bold]/company[/] [{_CLR_MUTED}]<name> to load a company[/]"
+        )
 
     console.print()
     tipLine = Text()
-    tipLine.append("  /help", style=_CLR_MUTED)
-    tipLine.append("  commands  ", style="dim")
-    tipLine.append("Ctrl+C", style=_CLR_MUTED)
-    tipLine.append(" x2  exit  ", style="dim")
-    tipLine.append("/quit", style=_CLR_MUTED)
-    tipLine.append("  exit", style="dim")
+    tipLine.append("  /", style=f"bold {_CLR_MUTED}")
+    tipLine.append(" commands", style="dim")
+    tipLine.append("    Ctrl+C", style=_CLR_MUTED)
+    tipLine.append(" x2 exit", style="dim")
     console.print(tipLine)
+    console.print()
+
+
+def _printSetupGuide(console) -> None:
+    """Show provider setup guide when no provider is detected."""
+    console.print(f"  [{_CLR_WARN}]No LLM provider detected.[/]")
+    console.print()
+    console.print(f"  [{_CLR_MUTED}]Free options:[/]")
+    console.print(f"    [bold]dartlab setup gemini[/]     [{_CLR_MUTED}]Google AI Studio (free, Gemini 2.5)[/]")
+    console.print(f"    [bold]dartlab setup groq[/]       [{_CLR_MUTED}]Groq (free, ultra-fast)[/]")
+    console.print()
+    console.print(f"  [{_CLR_MUTED}]Premium:[/]")
+    console.print(f"    [bold]dartlab setup openai[/]     [{_CLR_MUTED}]OpenAI API key[/]")
+    console.print(f"    [bold]dartlab setup ollama[/]     [{_CLR_MUTED}]Local models (offline)[/]")
+    console.print()
+    console.print(f"  [{_CLR_MUTED}]Or type /provider in chat to switch[/]")
     console.print()

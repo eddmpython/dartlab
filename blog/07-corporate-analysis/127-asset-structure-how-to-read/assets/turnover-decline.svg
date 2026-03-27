@@ -1,83 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="system-ui">자산회전율 하락 추이 (2021-2025)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="380" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis -->
-  <text x="50" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.70</text>
-  <text x="50" y="140" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.55</text>
-  <text x="50" y="200" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.40</text>
-  <text x="50" y="260" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.25</text>
-  <text x="50" y="320" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0.10</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">자산회전율 하락 -- 두 가지 원인 구분법</text>
+  <text x="400" y="55" text-anchor="middle" fill="#94a3b8" font-size="11">총자산회전율 = 매출 / 총자산 -- 같은 하락이라도 원인에 따라 해석이 다르다</text>
 
-  <!-- Grid lines -->
-  <line x1="60" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="135" x2="750" y2="135" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="195" x2="750" y2="195" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="255" x2="750" y2="255" stroke="#1e293b" stroke-width="1"/>
-  <line x1="60" y1="315" x2="750" y2="315" stroke="#1e293b" stroke-width="1"/>
+  <!-- Cause 1: Asset expansion -->
+  <g transform="translate(55,80)">
+    <rect width="330" height="230" rx="10" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="165" y="28" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="700">원인 1: 자산 팽창 (투자 확대기)</text>
+    <line x1="20" y1="40" x2="310" y2="40" stroke="#334155" stroke-width="1"/>
 
-  <!-- Scale: 0.70=75, 0.10=315 => 1unit of 0.01 = (315-75)/(0.70-0.10)*0.01 = 4px -->
-  <!-- 0.70=75, 0.55=135, 0.40=195, 0.25=255, 0.10=315 -->
-  <!-- Total asset turnover: 0.15, 0.20, 0.16, 0.09, 0.09 -->
-  <!-- 0.15 => 315 - (0.15-0.10)*240/0.60 = 315 - 20 = 295 -->
-  <!-- 0.20 => 315 - (0.20-0.10)*240/0.60 = 315 - 40 = 275 -->
-  <!-- 0.16 => 315 - (0.16-0.10)*240/0.60 = 315 - 24 = 291 -->
-  <!-- 0.09 => 315 - (-0.01)*400 = 315 + 4 = 319 => clamp to 319 -->
-  <!-- PPE turnover: 0.50, 0.67, 0.47, 0.21, 0.20 -->
-  <!-- 0.50 => 315 - (0.50-0.10)*400 = 315 - 160 = 155 -->
-  <!-- 0.67 => 315 - (0.67-0.10)*400 = 315 - 228 = 87 -->
-  <!-- 0.47 => 315 - (0.47-0.10)*400 = 315 - 148 = 167 -->
-  <!-- 0.21 => 315 - (0.21-0.10)*400 = 315 - 44 = 271 -->
-  <!-- 0.20 => 315 - (0.20-0.10)*400 = 315 - 40 = 275 -->
+    <text x="60" y="65" text-anchor="middle" fill="#94a3b8" font-size="10">자산</text>
+    <rect x="80" y="55" width="40" height="30" rx="3" fill="#38bdf8" opacity="0.4"/>
+    <rect x="130" y="45" width="40" height="40" rx="3" fill="#38bdf8" opacity="0.6"/>
+    <rect x="180" y="30" width="40" height="55" rx="3" fill="#38bdf8" opacity="0.8"/>
+    <text x="245" y="60" fill="#38bdf8" font-size="11" font-weight="700">UP</text>
 
-  <!-- PPE turnover line (blue) -->
-  <polyline points="130,155 270,87 410,167 550,271 690,275" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    <text x="60" y="110" text-anchor="middle" fill="#94a3b8" font-size="10">매출</text>
+    <rect x="80" y="100" width="40" height="25" rx="3" fill="#64748b"/>
+    <rect x="130" y="100" width="40" height="25" rx="3" fill="#64748b"/>
+    <rect x="180" y="100" width="40" height="27" rx="3" fill="#64748b"/>
+    <text x="245" y="115" fill="#64748b" font-size="11">--</text>
 
-  <!-- Total asset turnover line (orange) -->
-  <polyline points="130,295 270,275 410,291 550,319 690,319" stroke="#f97316" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    <text x="165" y="150" text-anchor="middle" fill="#e2e8f0" font-size="11">CAPEX 급증으로 분모(자산)만 커졌다</text>
+    <text x="165" y="170" text-anchor="middle" fill="#94a3b8" font-size="10">신규 공장 양산 전 자연스러운 현상</text>
+    <text x="165" y="188" text-anchor="middle" fill="#94a3b8" font-size="10">1~2년 뒤 회전율 회복 추적 필요</text>
 
-  <!-- PPE dots and labels -->
-  <circle cx="130" cy="155" r="5" fill="#3b82f6"/>
-  <text x="130" y="145" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.50</text>
+    <rect x="40" y="200" width="250" height="22" rx="4" fill="#14532d"/>
+    <text x="165" y="215" text-anchor="middle" fill="#34d399" font-size="10" font-weight="600">확인: 최근 CAPEX 급증 + CIP 비중 높음</text>
+  </g>
 
-  <circle cx="270" cy="87" r="5" fill="#3b82f6"/>
-  <text x="270" y="77" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.67</text>
+  <!-- Cause 2: Revenue decline -->
+  <g transform="translate(415,80)">
+    <rect width="330" height="230" rx="10" fill="#1e3a5f" stroke="#f87171" stroke-width="1.5"/>
+    <text x="165" y="28" text-anchor="middle" fill="#f87171" font-size="14" font-weight="700">원인 2: 매출 둔화 (효율 악화)</text>
+    <line x1="20" y1="40" x2="310" y2="40" stroke="#334155" stroke-width="1"/>
 
-  <circle cx="410" cy="167" r="5" fill="#3b82f6"/>
-  <text x="410" y="157" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.47</text>
+    <text x="60" y="65" text-anchor="middle" fill="#94a3b8" font-size="10">자산</text>
+    <rect x="80" y="45" width="40" height="40" rx="3" fill="#64748b"/>
+    <rect x="130" y="45" width="40" height="40" rx="3" fill="#64748b"/>
+    <rect x="180" y="45" width="40" height="40" rx="3" fill="#64748b"/>
+    <text x="245" y="70" fill="#64748b" font-size="11">--</text>
 
-  <circle cx="550" cy="271" r="5" fill="#3b82f6"/>
-  <text x="550" y="261" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.21</text>
+    <text x="60" y="110" text-anchor="middle" fill="#94a3b8" font-size="10">매출</text>
+    <rect x="80" y="100" width="40" height="30" rx="3" fill="#f87171" opacity="0.8"/>
+    <rect x="130" y="105" width="40" height="25" rx="3" fill="#f87171" opacity="0.6"/>
+    <rect x="180" y="112" width="40" height="18" rx="3" fill="#f87171" opacity="0.4"/>
+    <text x="245" y="120" fill="#f87171" font-size="11" font-weight="700">DOWN</text>
 
-  <circle cx="690" cy="275" r="5" fill="#3b82f6"/>
-  <text x="690" y="265" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold" font-family="system-ui">0.20</text>
+    <text x="165" y="150" text-anchor="middle" fill="#e2e8f0" font-size="11">기존 자산의 가동률이 떨어졌다</text>
+    <text x="165" y="170" text-anchor="middle" fill="#94a3b8" font-size="10">수요 감소, 경쟁 심화, 시장 축소</text>
+    <text x="165" y="188" text-anchor="middle" fill="#94a3b8" font-size="10">구조적 문제 가능성 -- 더 위험한 신호</text>
 
-  <!-- Total asset dots and labels -->
-  <circle cx="130" cy="295" r="5" fill="#f97316"/>
-  <text x="130" y="312" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.15</text>
+    <rect x="40" y="200" width="250" height="22" rx="4" fill="#451a03"/>
+    <text x="165" y="215" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">확인: CAPEX 안정적 + 매출 YoY 하락</text>
+  </g>
 
-  <circle cx="270" cy="275" r="5" fill="#f97316"/>
-  <text x="270" y="292" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.20</text>
-
-  <circle cx="410" cy="291" r="5" fill="#f97316"/>
-  <text x="410" y="308" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.16</text>
-
-  <circle cx="550" cy="319" r="5" fill="#f97316"/>
-  <text x="550" y="336" text-anchor="middle" fill="#fb923c" font-size="11" font-weight="bold" font-family="system-ui">0.09</text>
-
-  <circle cx="690" cy="319" r="5" fill="#f97316"/>
-  <text x="690" y="336" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">0.09</text>
-
-  <!-- X axis labels -->
-  <text x="130" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
-  <text x="270" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
-  <text x="410" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
-  <text x="550" y="355" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
-  <text x="690" y="355" text-anchor="middle" fill="#f87171" font-size="11" font-weight="bold" font-family="system-ui">2025</text>
-
-  <!-- Legend -->
-  <rect x="280" y="370" width="12" height="12" rx="2" fill="#3b82f6"/>
-  <text x="298" y="381" fill="#60a5fa" font-size="11" font-family="system-ui">유형자산회전율</text>
-  <rect x="430" y="370" width="12" height="12" rx="2" fill="#f97316"/>
-  <text x="448" y="381" fill="#fb923c" font-size="11" font-family="system-ui">총자산회전율</text>
+  <!-- Bottom -->
+  <rect x="55" y="325" width="690" height="40" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="345" text-anchor="middle" fill="#e2e8f0" font-size="11">구분 핵심: <tspan fill="#38bdf8">CAPEX 추이</tspan>와 <tspan fill="#fbbf24">매출 YoY</tspan>를 함께 보면 원인이 특정된다</text>
+  <text x="400" y="362" text-anchor="middle" fill="#94a3b8" font-size="9">업종별 기준: IT 서비스 2~3회 | 유통 1~2회 | 제조 0.5~1.0회 | 반도체/배터리 0.3~0.8회</text>
 </svg>

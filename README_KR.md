@@ -343,7 +343,6 @@ dartlab.scanRatioList()
 
 > **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scanAccount`, `screen`, `digest` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
 > ```python
-> pip install dartlab[hf]
 > dartlab.downloadAll("finance")   # ~600 MB, 2,700+ 종목
 > dartlab.downloadAll("report")    # ~320 MB (거버넌스/인력/자본/부채)
 > dartlab.downloadAll("docs")      # ~8 GB (공시 변화 감지/시그널 — 대용량)

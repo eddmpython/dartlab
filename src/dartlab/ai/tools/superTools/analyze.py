@@ -97,6 +97,43 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
             return f"[오류] 감사 분석 실패: {e}. 대안: finance(action='anomalies', module='IS')로 이상치를 탐지하세요."
 
+    def _peer(**_kw) -> str:
+        """TF-IDF 기반 진짜 경쟁사 발견."""
+        try:
+            from dartlab.analysis.comparative.peer.discover import discover
+
+            stockCode = getattr(company, "stockCode", getattr(company, "ticker", ""))
+            result = discover(stockCode, topK=5)
+            return format_tool_value(result, max_rows=10, max_chars=3000)
+        except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
+            return f"[오류] 피어 발견 실패: {e}. 대안: analyze(action='sector')로 업종 정보를 확인하세요."
+
+    def _research(**_kw) -> str:
+        """기관급 리서치 리포트 생성."""
+        try:
+            from dartlab.analysis.financial.research.orchestrator import generateResearch
+
+            result = generateResearch(company)
+            return format_tool_value(result, max_rows=50, max_chars=8000)
+        except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
+            return f"[오류] 리서치 리포트 생성 실패: {e}. 대안: analyze(action='insight')로 인사이트 등급을 확인하세요."
+
+    def _distress(**_kw) -> str:
+        """부도 예측 모델 4종 종합 스코어카드."""
+        try:
+            from dartlab.ai.context.company_adapter import get_headline_ratios
+            from dartlab.analysis.financial.insight.distress import calcDistress
+            from dartlab.analysis.financial.insight.pipeline import analyzeAudit
+
+            ratios = get_headline_ratios(company)
+            if ratios is None:
+                return "[데이터 없음] 재무비율 계산 불가."
+            anomalies = analyzeAudit(company) or []
+            result = calcDistress(ratios._inner, anomalies)
+            return format_tool_value(result, max_rows=30, max_chars=5000)
+        except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
+            return f"[오류] 부실 예측 실패: {e}. 대안: finance(action='ratios')에서 Altman Z-Score를 확인하세요."
+
     _ACTIONS = {
         "insight": _insight,
         "sector": _sector,
@@ -105,6 +142,9 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
         "valuation": _valuation,
         "changes": _changes,
         "audit": _audit,
+        "peer": _peer,
+        "research": _research,
+        "distress": _distress,
     }
 
     def analyze(action: str) -> str:
@@ -117,9 +157,9 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
     registerTool(
         "analyze",
         analyze,
-        "기업 심층 분석 — 인사이트 등급, 섹터, 밸류에이션, ESG 등 파생 분석 결과 조회.\n"
+        "기업 심층 분석 — 인사이트 등급, 섹터, 밸류에이션, 피어, 리서치 등 파생 분석 결과 조회.\n"
         "\n"
-        "✓ 이 도구를 쓰는 경우: '투자등급이 뭐야?', '적정주가?', 'ESG?', '업종 대비 위치?' 등 종합 판단 질문\n"
+        "✓ 이 도구를 쓰는 경우: '투자등급이 뭐야?', '적정주가?', '경쟁사?', '부도 위험?', '종합 리서치?' 등\n"
         "✗ 이 도구를 쓰지 않는 경우: 원본 재무 숫자 → finance, 공시 원문 → explore 사용\n"
         "\n"
         "action별 동작:\n"
@@ -127,9 +167,12 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
         "- sector: WICS 섹터 정보 + 업종 비교\n"
         "- rank: 시가총액 순위\n"
         "- esg: ESG 공시 분석\n"
-        "- valuation: DCF/상대가치 밸류에이션. 예: analyze(action='valuation')\n"
+        "- valuation: DCF/상대가치 밸류에이션\n"
         "- changes: 공시 텍스트 변화 감지\n"
         "- audit: 재무 감사 이상치 분석\n"
+        "- peer: TF-IDF 사업유사도 기반 진짜 경쟁사 발견 (업종 분류와 다름)\n"
+        "- research: 기관급 종합 리서치 리포트 (DuPont, 밸류에이션, 리스크, 피어, 논거)\n"
+        "- distress: 부도 예측 4모델 종합 (O-Score, Z'', Springate, Zmijewski)\n"
         "\n"
         "연쇄 사용: 이 도구는 finance+explore 위에서 동작하는 파생 분석입니다.\n"
         "결과가 불충분하면 finance(action='ratios')로 원본 수치를 직접 확인하세요.\n"
@@ -140,8 +183,11 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["insight", "sector", "rank", "esg", "valuation", "changes", "audit"],
-                    "description": "insight=인사이트등급, sector=섹터정보, rank=순위, esg=ESG, valuation=밸류에이션, changes=변화감지, audit=감사분석",
+                    "enum": [
+                        "insight", "sector", "rank", "esg", "valuation",
+                        "changes", "audit", "peer", "research", "distress",
+                    ],
+                    "description": "insight=등급, sector=섹터, rank=순위, esg=ESG, valuation=밸류에이션, changes=변화, audit=감사, peer=경쟁사발견, research=종합리서치, distress=부도예측",
                 },
             },
             "required": ["action"],

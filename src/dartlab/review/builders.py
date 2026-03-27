@@ -15,6 +15,7 @@ from dartlab.review.blocks import (
     TableBlock,
     TextBlock,
 )
+from dartlab.review.catalog import getBlockMeta as _meta
 from dartlab.review.utils import unifyTableScale
 
 # ── 수익구조 (revenue) 빌더 ──
@@ -66,7 +67,7 @@ def segmentCompositionBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "부문별 매출 구성",
+            _meta("segmentComposition").label,
             level=2,
             helper="매출 비중 + 이익률로 수익 구조 편중을 본다",
         )
@@ -118,7 +119,7 @@ def segmentTrendBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "부문별 매출 추이",
+            _meta("segmentTrend").label,
             level=2,
             helper="부문별 성장/정체를 연도 비교로 식별",
         )
@@ -135,8 +136,8 @@ def breakdownBlock(data: dict, sub: str) -> list:
     if not items:
         return []
 
-    titleMap = {"region": "지역별 매출", "product": "제품별 매출"}
-    title = titleMap.get(sub, f"{sub}별 매출")
+    meta = _meta(sub)
+    title = meta.label if meta else f"{sub}별 매출"
 
     rows = []
     for item in items:
@@ -195,7 +196,7 @@ def revenueGrowthBlock(data: dict) -> list:
 
     blocks.append(
         HeadingBlock(
-            "매출 성장",
+            _meta("growth").label,
             level=2,
             helper="YoY vs 3Y CAGR 방향이 다르면 추세 전환 의심",
         )
@@ -258,7 +259,7 @@ def concentrationBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "매출 집중도",
+            _meta("concentration").label,
             level=2,
             helper="HHI > 5000 고집중, > 2500 중간 집중",
         )
@@ -302,7 +303,7 @@ def revenueQualityBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "수익 품질",
+            _meta("revenueQuality").label,
             level=2,
             helper="영업CF/순이익 80%+ 양호, 총이익률 하락 추세 주의",
         )
@@ -329,7 +330,7 @@ def growthContributionBlock(data: dict) -> list:
     periodSuffix = f" ({period})" if period else ""
     blocks.append(
         HeadingBlock(
-            f"성장 기여 분해{periodSuffix}",
+            f"{_meta('growthContribution').label}{periodSuffix}",
             level=2,
             helper="어느 부문이 전체 성장을 이끌었는가",
         )
@@ -378,7 +379,7 @@ def fundingSourcesBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "자금 조달원",
+            _meta("fundingSources").label,
             level=2,
             helper="내부유보 = 사업으로 번 돈, 금융차입 = 이자 붙는 빚, 영업조달 = 자연 발생 자금",
         )
@@ -456,7 +457,7 @@ def capitalOverviewBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "자본 개요",
+            _meta("capitalOverview").label,
             level=2,
             helper="부채비율 100% 이하 안정, 순현금이면 재무 여유",
         )
@@ -472,7 +473,7 @@ def capitalTimelineBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "자본구조",
+            _meta("capitalTimeline").label,
             level=2,
             helper="이익잉여금 = 사업으로 번 돈, 자본금+잉여금 = 외부 조달",
         )
@@ -493,7 +494,7 @@ def debtTimelineBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "부채구조",
+            _meta("debtTimeline").label,
             level=2,
             helper="영업부채 = 자연 발생, 금융부채 = 이자 붙는 차입",
         )
@@ -517,7 +518,7 @@ def interestBurdenBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "이자 부담",
+            _meta("interestBurden").label,
             level=2,
             helper="이자보상배율 3배 이상 안정, 1.5배 이하 주의",
         )
@@ -536,7 +537,7 @@ def liquidityBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "유동성",
+            _meta("liquidity").label,
             level=2,
             helper="유동비율 100% 이하 → 단기 지급 리스크",
         )
@@ -552,7 +553,7 @@ def cashFlowBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "현금 흐름 구조",
+            _meta("cashFlowStructure").label,
             level=2,
             helper="영업CF(+)/투자CF(-)/재무CF(-) → 건전한 패턴",
         )
@@ -583,7 +584,7 @@ def distressBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "부실 예측 지표",
+            _meta("distressIndicators").label,
             level=2,
             helper="Altman Z > 2.99 안전, Piotroski F ≥ 7 건전",
         )
@@ -621,7 +622,7 @@ def assetStructureBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "자산 재분류 — 영업 vs 비영업",
+            _meta("assetStructure").label,
             level=2,
             helper="영업자산 = 사업에 투입된 자산, 비영업 = 현금/투자/금융자산",
         )
@@ -678,7 +679,7 @@ def workingCapitalBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "운전자본 순환 (CCC)",
+            _meta("workingCapital").label,
             level=2,
             helper="CCC = 재고회전일 + 매출채권회전일 - 매입채무회전일",
         )
@@ -728,7 +729,7 @@ def capexBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "CAPEX 패턴",
+            _meta("capexPattern").label,
             level=2,
             helper="CAPEX/감가상각 > 1 → 성장 투자, < 1 → 유지/수확",
         )
@@ -779,7 +780,7 @@ def assetEfficiencyBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "자산 효율",
+            _meta("assetEfficiency").label,
             level=2,
             helper="회전율이 높을수록 같은 자산으로 매출을 더 뽑는다",
         )
@@ -819,7 +820,7 @@ def cashFlowOverviewBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "현금흐름 3구간",
+            _meta("cashFlowOverview").label,
             level=2,
             helper="영업CF(+)/투자CF(-)/재무CF(-) = 건전한 패턴",
         )
@@ -860,7 +861,7 @@ def cashQualityBlock(data: dict) -> list:
     blocks: list = []
     blocks.append(
         HeadingBlock(
-            "이익의 현금 뒷받침",
+            _meta("cashQuality").label,
             level=2,
             helper="영업CF/순이익 > 100%이면 이익이 현금으로 회수됨",
         )

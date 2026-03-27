@@ -277,7 +277,6 @@ def downloadAll(category: str = "docs", *, forceUpdate: bool = False) -> None:
     except ImportError as exc:
         raise ImportError(
             "downloadAll()은 huggingface_hub가 필요합니다.\n"
-            "  pip install dartlab[hf]\n"
             "또는 개별 종목은 dartlab.Company('005930')으로 자동 다운로드됩니다."
         ) from exc
 

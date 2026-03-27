@@ -12,6 +12,8 @@
 
 ## 최근 완료 (2026-03-27)
 
+- 128: 현금흐름 분석 — 손익계산서 이익과 현금흐름표 현금은 왜 다른가 (corporate-analysis #5 프레임워크, SVG 5개)
+- 127: 자산 구조 분석 — BS를 영업/비영업으로 재분류하면 보이는 것들 (corporate-analysis #4 프레임워크, SVG 5개)
 - 126: 삼성SDI 자금 구조 분석 — 차입 급증의 의미를 읽는다 (corporate-analysis #3, SVG 5개)
 - 125: 삼성SDI 수익 구조 분석 — 배터리 올인의 명과 암 (corporate-analysis #2, SVG 5개)
 - 124: 이 회사는 무엇으로 돈을 버는가 — 수익 구조 읽기 (corporate-analysis #1, SVG 5개)

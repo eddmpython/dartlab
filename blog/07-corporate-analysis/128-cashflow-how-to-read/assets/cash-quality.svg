@@ -1,62 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
-  <rect width="800" height="400" rx="18" fill="#0a0e1a"/>
-  <text x="400" y="35" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold" font-family="system-ui">영업CF / 순이익 비율 추이 (이익의 현금 뒷받침)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="Pretendard, -apple-system, sans-serif">
+  <rect width="800" height="400" rx="12" fill="#0f172a"/>
 
-  <!-- Y axis -->
-  <text x="55" y="80" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">200%</text>
-  <text x="55" y="130" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">100%</text>
-  <text x="55" y="180" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">0%</text>
-  <text x="55" y="230" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-100%</text>
-  <text x="55" y="280" text-anchor="end" fill="#64748b" font-size="10" font-family="system-ui">-200%</text>
+  <text x="400" y="35" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">영업CF / 순이익 -- 이익이 현금으로 뒷받침되는가</text>
 
-  <!-- Grid -->
-  <line x1="70" y1="75" x2="750" y2="75" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="125" x2="750" y2="125" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="175" x2="750" y2="175" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
-  <line x1="70" y1="225" x2="750" y2="225" stroke="#1e293b" stroke-width="0.5"/>
-  <line x1="70" y1="275" x2="750" y2="275" stroke="#1e293b" stroke-width="0.5"/>
+  <!-- Formula -->
+  <rect x="200" y="55" width="400" height="35" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="78" text-anchor="middle" fill="#e2e8f0" font-size="12">영업CF / 순이익 x 100 = 이익의 현금 전환율</text>
 
-  <!-- 100% reference line -->
-  <line x1="70" y1="125" x2="750" y2="125" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="6,3"/>
-  <text x="755" y="130" fill="#4ade80" font-size="9" font-family="system-ui">100%</text>
+  <!-- 5 zones -->
+  <g transform="translate(55,110)">
+    <!-- Zone: 100%+ -->
+    <rect width="155" height="110" rx="8" fill="#14532d" stroke="#34d399" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">100% 이상</text>
+    <line x1="15" y1="32" x2="140" y2="32" stroke="#1e3a5f" stroke-width="1"/>
+    <text x="78" y="50" text-anchor="middle" fill="#e2e8f0" font-size="10">이익 이상의</text>
+    <text x="78" y="65" text-anchor="middle" fill="#e2e8f0" font-size="10">현금 유입</text>
+    <text x="78" y="85" text-anchor="middle" fill="#34d399" font-size="10" font-weight="600">양호</text>
+    <text x="78" y="102" text-anchor="middle" fill="#94a3b8" font-size="9">감가상각비 효과 포함</text>
+  </g>
 
-  <!-- Data points and line -->
-  <!-- 2021: 148% → y = 125 - 48*0.5 = 101 -->
-  <!-- 2022: 105% → y = 125 - 5*0.5 = 122.5 -->
-  <!-- 2023: 86% → y = 125 + 14*0.5 = 132 -->
-  <!-- 2024: -155% → y = 125 + 255*0.5 = 252.5 -->
-  <!-- 2025: -160% → y = 125 + 260*0.5 = 255 -->
-  <polyline points="150,101 290,122 430,132 570,252 710,255" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+  <g transform="translate(225,110)">
+    <rect width="155" height="110" rx="8" fill="#1e3a5f" stroke="#fbbf24" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700">40~100%</text>
+    <line x1="15" y1="32" x2="140" y2="32" stroke="#334155" stroke-width="1"/>
+    <text x="78" y="50" text-anchor="middle" fill="#e2e8f0" font-size="10">일부 이익이 현금</text>
+    <text x="78" y="65" text-anchor="middle" fill="#e2e8f0" font-size="10">미전환</text>
+    <text x="78" y="85" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">주의</text>
+    <text x="78" y="102" text-anchor="middle" fill="#94a3b8" font-size="9">운전자본 변동 확인</text>
+  </g>
 
-  <!-- Points -->
-  <circle cx="150" cy="101" r="6" fill="#3b82f6"/>
-  <circle cx="290" cy="122" r="6" fill="#3b82f6"/>
-  <circle cx="430" cy="132" r="6" fill="#fbbf24"/>
-  <circle cx="570" cy="252" r="6" fill="#ef4444"/>
-  <circle cx="710" cy="255" r="6" fill="#ef4444"/>
+  <g transform="translate(395,110)">
+    <rect width="155" height="110" rx="8" fill="#451a03" stroke="#f87171" stroke-width="1"/>
+    <text x="78" y="22" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700">40% 미만</text>
+    <line x1="15" y1="32" x2="140" y2="32" stroke="#334155" stroke-width="1"/>
+    <text x="78" y="50" text-anchor="middle" fill="#e2e8f0" font-size="10">이익의 현금</text>
+    <text x="78" y="65" text-anchor="middle" fill="#e2e8f0" font-size="10">뒷받침 심각 부족</text>
+    <text x="78" y="85" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">경고</text>
+    <text x="78" y="102" text-anchor="middle" fill="#94a3b8" font-size="9">이익의 질 의문</text>
+  </g>
 
-  <!-- Labels -->
-  <text x="150" y="90" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">148%</text>
-  <text x="150" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2021</text>
+  <g transform="translate(565,110)">
+    <rect width="175" height="110" rx="8" fill="#1e293b" stroke="#a78bfa" stroke-width="1"/>
+    <text x="88" y="22" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">음수 (특수)</text>
+    <line x1="15" y1="32" x2="160" y2="32" stroke="#334155" stroke-width="1"/>
+    <text x="88" y="50" text-anchor="middle" fill="#e2e8f0" font-size="10">OCF+, NI- 또는</text>
+    <text x="88" y="65" text-anchor="middle" fill="#e2e8f0" font-size="10">OCF-, NI+</text>
+    <text x="88" y="85" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="600">상황별 해석 필요</text>
+    <text x="88" y="102" text-anchor="middle" fill="#94a3b8" font-size="9">감가상각비 vs 운전자본</text>
+  </g>
 
-  <text x="290" y="112" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="bold" font-family="system-ui">105%</text>
-  <text x="290" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2022</text>
+  <!-- Key variable: depreciation -->
+  <rect x="55" y="240" width="690" height="70" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="262" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700">핵심 변수: 감가상각비</text>
+  <text x="400" y="282" text-anchor="middle" fill="#e2e8f0" font-size="11">IS에서 비용이지만 CF에서는 현금 유출 아님 -- 이것이 IS 이익과 CF 현금의 차이를 만든다</text>
+  <text x="400" y="300" text-anchor="middle" fill="#94a3b8" font-size="10">대규모 설비 기업: 순이익 적자여도 영업CF 양수 가능 (감가상각비가 현금을 보존)</text>
 
-  <text x="430" y="150" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="system-ui">86%</text>
-  <text x="430" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2023</text>
-
-  <text x="570" y="270" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">-155%</text>
-  <text x="570" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2024</text>
-
-  <text x="710" y="273" text-anchor="middle" fill="#f87171" font-size="12" font-weight="bold" font-family="system-ui">-160%</text>
-  <text x="710" y="315" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui">2025</text>
-
-  <!-- Annotation boxes -->
-  <rect x="80" y="340" width="300" height="40" rx="6" fill="#1e293b"/>
-  <text x="230" y="358" text-anchor="middle" fill="#4ade80" font-size="10" font-family="system-ui">100% 이상: 이익이 현금으로 뒷받침됨</text>
-  <text x="230" y="373" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">2021-2022 양호</text>
-
-  <rect x="420" y="340" width="340" height="40" rx="6" fill="#1e293b"/>
-  <text x="590" y="358" text-anchor="middle" fill="#f87171" font-size="10" font-family="system-ui">음수: 순이익 적자인데 영업CF는 양수</text>
-  <text x="590" y="373" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">2024-2025 감가상각비가 현금 보존</text>
+  <!-- Time series note -->
+  <rect x="55" y="325" width="690" height="55" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="400" y="348" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">반드시 시계열로 본다</text>
+  <text x="400" y="368" text-anchor="middle" fill="#94a3b8" font-size="10">3년 전 120% -> 올해 50% = 이익의 현금 전환 악화 추세 -- 매출채권/재고 증가 확인</text>
 </svg>
