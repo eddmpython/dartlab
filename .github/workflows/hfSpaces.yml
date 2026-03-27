@@ -23,22 +23,7 @@ jobs:
           # Gradio SDK 파일 복사
           cp spaces/app.py hf-space/
           cp spaces/requirements.txt hf-space/
-
-          # HF Spaces README (Gradio SDK 설정)
-          cat > hf-space/README.md << 'HFEOF'
----
-title: DartLab
-emoji: 📊
-colorFrom: red
-colorTo: yellow
-sdk: gradio
-sdk_version: "6.10.0"
-app_file: app.py
-pinned: true
-license: mit
-short_description: DART + EDGAR disclosure analysis — try without install
----
-HFEOF
+          cp spaces/README.md hf-space/README.md
 
           # Docker 잔재 제거
           rm -f hf-space/Dockerfile hf-space/.dockerignore
