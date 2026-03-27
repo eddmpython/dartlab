@@ -241,14 +241,13 @@ def _showDataFrame(df: pd.DataFrame, key: str = "", downloadName: str = ""):
 # ── AI ────────────────────────────────────────────────
 
 _HAS_OPENAI = bool(os.environ.get("OPENAI_API_KEY"))
-_HAS_HF = bool(os.environ.get("HF_TOKEN"))
 
 if _HAS_OPENAI:
     dartlab.llm.configure(provider="openai", api_key=os.environ["OPENAI_API_KEY"])
 
 
 def _askAi(stockCode: str, question: str) -> str:
-    """AI 질문 처리. OpenAI 우선, 없으면 HF Inference API fallback."""
+    """AI 질문 처리. OpenAI 우선, 없으면 HF 무료 Inference API."""
     # OpenAI가 설정되어 있으면 dartlab.ask 사용
     if _HAS_OPENAI:
         try:
@@ -258,36 +257,33 @@ def _askAi(stockCode: str, question: str) -> str:
         except Exception as e:
             return f"분석 실패: {e}"
 
-    # HF Inference API fallback (무료)
-    if _HAS_HF:
-        try:
-            from huggingface_hub import InferenceClient
-            client = InferenceClient(
-                model="meta-llama/Llama-3.1-8B-Instruct",
-                token=os.environ["HF_TOKEN"],
-            )
+    # HF Inference API (토큰 없이도 무료 호출 가능)
+    try:
+        from huggingface_hub import InferenceClient
+        token = os.environ.get("HF_TOKEN")  # 있으면 rate limit 높아짐
+        client = InferenceClient(
+            model="meta-llama/Llama-3.1-8B-Instruct",
+            token=token if token else None,
+        )
 
-            # 기업 컨텍스트 구성
-            context = _buildAiContext(stockCode)
-            systemMsg = (
-                "당신은 한국 기업 재무 분석 전문가입니다. "
-                "아래 재무 데이터를 바탕으로 사용자의 질문에 한국어로 답변하세요. "
-                "숫자는 천단위 콤마를 사용하고, 근거를 명확히 제시하세요.\n\n"
-                f"{context}"
-            )
+        context = _buildAiContext(stockCode)
+        systemMsg = (
+            "당신은 한국 기업 재무 분석 전문가입니다. "
+            "아래 재무 데이터를 바탕으로 사용자의 질문에 한국어로 답변하세요. "
+            "숫자는 천단위 콤마를 사용하고, 근거를 명확히 제시하세요.\n\n"
+            f"{context}"
+        )
 
-            response = client.chat_completion(
-                messages=[
-                    {"role": "system", "content": systemMsg},
-                    {"role": "user", "content": question},
-                ],
-                max_tokens=1024,
-            )
-            return response.choices[0].message.content or "응답 없음"
-        except Exception as e:
-            return f"AI 분석 실패: {e}"
-
-    return "API 키가 설정되지 않았습니다."
+        response = client.chat_completion(
+            messages=[
+                {"role": "system", "content": systemMsg},
+                {"role": "user", "content": question},
+            ],
+            max_tokens=1024,
+        )
+        return response.choices[0].message.content or "응답 없음"
+    except Exception as e:
+        return f"AI 분석 실패: {e}"
 
 
 def _buildAiContext(stockCode: str) -> str:
@@ -467,14 +463,9 @@ if code:
                 st.markdown(secText)
 
     # ── AI Chat ──
-    _hasOpenai = bool(os.environ.get("OPENAI_API_KEY"))
-    _hasHf = bool(os.environ.get("HF_TOKEN"))
-    _aiLabel = "🤖 AI 분석" + (" (무료)" if _hasHf and not _hasOpenai else "")
-
-    with st.expander(_aiLabel, expanded=False):
-        if not _hasOpenai and not _hasHf:
-            st.info("AI 분석을 사용하려면 HuggingFace Spaces Settings → Variables and secrets에서 `HF_TOKEN` 또는 `OPENAI_API_KEY`를 설정하세요.")
-        else:
+    with st.expander("🤖 AI 분석 (무료)", expanded=False):
+        st.caption("Llama 3.1 8B 기반 무료 AI 분석 · 복잡한 질문은 OpenAI API 설정 시 더 정확합니다")
+        if True:
             if "messages" not in st.session_state:
                 st.session_state.messages = []
 
