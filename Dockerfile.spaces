@@ -4,14 +4,24 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    libxml2-dev \
+    libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml ./
 COPY src/ src/
+
+# pyproject.toml이 README.md를 참조하므로 빈 파일 생성
+RUN touch README.md
 
 RUN pip install --no-cache-dir -e ".[ai]"
 
+# HF Spaces 사용자는 root가 아닌 user로 실행됨
+RUN useradd -m -u 1000 user
+USER user
+
 ENV SPACE_ID=1
+ENV HOME=/home/user
 
 EXPOSE 7860
 
