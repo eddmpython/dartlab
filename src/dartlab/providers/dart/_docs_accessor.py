@@ -222,4 +222,3 @@ class _DocsAccessor:
 
     def subtables(self, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
         return self._company._sectionsSubtopicLong(topic) if raw else self._company._sectionsSubtopicWide(topic)
-
