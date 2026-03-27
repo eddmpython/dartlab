@@ -19,6 +19,7 @@ COMMAND_SPECS = (
     CommandSpec("modules", "dartlab.cli.commands.modules"),
     # AI / 내보내기
     CommandSpec("ask", "dartlab.cli.commands.ask"),
+    CommandSpec("chat", "dartlab.cli.commands.chat"),
     CommandSpec("report", "dartlab.cli.commands.report"),
     CommandSpec("excel", "dartlab.cli.commands.excel"),
     # 분석

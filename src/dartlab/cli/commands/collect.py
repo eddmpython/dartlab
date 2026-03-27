@@ -119,6 +119,20 @@ def configure_parser(subparsers) -> None:
         action="store_true",
         help="누락 공시만 증분 수집 (DART)",
     )
+    # scan 프리빌드
+    parser.add_argument(
+        "--scan",
+        nargs="?",
+        const="all",
+        default=None,
+        help="전종목 scan 프리빌드 (all/changes/finance/report)",
+    )
+    parser.add_argument(
+        "--since-year",
+        type=int,
+        default=2021,
+        help="scan 프리빌드 시작 연도 (기본 2021)",
+    )
     # EDGAR 전용
     parser.add_argument(
         "--tier",
@@ -138,6 +152,10 @@ def run(args) -> int:
 
     if source == "edgar":
         return _runEdgar(console, args)
+
+    # --- scan 프리빌드 ---
+    if getattr(args, "scan", None):
+        return _runScan(console, args)
 
     # --- DART ---
     if getattr(args, "check", False):
@@ -178,10 +196,43 @@ def _printHelp(console) -> None:
     console.print("  dartlab collect --batch             전체 상장 배치 수집")
     console.print("  dartlab collect --stats             수집 현황")
     console.print()
+    console.print("  [bold]scan 프리빌드[/]:")
+    console.print("  dartlab collect --scan              전종목 횡단분석 프리빌드 (changes+finance+report)")
+    console.print("  dartlab collect --scan changes      changes만 프리빌드")
+    console.print("  dartlab collect --scan finance      finance만 프리빌드")
+    console.print("  dartlab collect --scan report       report만 프리빌드")
+    console.print()
     console.print("  [bold]EDGAR[/] (ticker = 영문 → 자동 감지):")
     console.print("  dartlab collect AAPL MSFT           지정 ticker 수집")
     console.print("  dartlab collect --tier sp500        S&P 500 전체 수집")
     console.print("  dartlab collect --tier sp500 --limit 10  10개만 테스트")
+
+
+# ── scan 프리빌드 ──────────────────────────────────────
+
+
+def _runScan(console, args) -> int:
+    """전종목 scan 프리빌드 실행."""
+    from dartlab.market.scan.builder import buildScan, buildChanges, buildFinance, buildReport
+
+    target = getattr(args, "scan", "all")
+    sinceYear = getattr(args, "since_year", 2021)
+
+    console.print(f"[bold]scan 프리빌드[/] target={target}, sinceYear={sinceYear}")
+
+    if target == "all":
+        buildScan(sinceYear=sinceYear, verbose=True)
+    elif target == "changes":
+        buildChanges(sinceYear=sinceYear, verbose=True)
+    elif target == "finance":
+        buildFinance(sinceYear=sinceYear, verbose=True)
+    elif target == "report":
+        buildReport(sinceYear=sinceYear, verbose=True)
+    else:
+        console.print(f"[red]알 수 없는 scan 타겟: {target}[/]")
+        return 1
+
+    return 0
 
 
 # ── EDGAR ─────────────────────────────────────────────
