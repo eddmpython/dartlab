@@ -1,4 +1,4 @@
-name: Deploy to HuggingFace Spaces (Docker)
+name: Deploy to HuggingFace Spaces
 
 on:
   release:
@@ -18,27 +18,19 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # xet 지원 클론
           git clone --depth 1 https://user:${HF_TOKEN}@huggingface.co/spaces/eddmpython/dartlab hf-space
 
           # 기존 파일 정리 (.git 제외)
           find hf-space -mindepth 1 -not -path 'hf-space/.git*' -delete 2>/dev/null || true
 
-          # Docker SDK 메타데이터
-          cp spaces-docker/README.md hf-space/README.md
-
-          # Dockerfile
-          cp Dockerfile.spaces hf-space/Dockerfile
-
-          # 소스 복사
-          cp -r src/ hf-space/src/
-          cp pyproject.toml hf-space/
-
-          # 바이너리 파일 제거 (HF는 xet 없이 바이너리 push 거부)
-          find hf-space/src -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.ico' -o -name '*.woff' -o -name '*.woff2' -o -name '*.ttf' \) -delete 2>/dev/null || true
+          # Streamlit SDK 파일 복사
+          cp spaces/app.py hf-space/
+          cp spaces/requirements.txt hf-space/
+          cp spaces/README.md hf-space/README.md
+          mkdir -p hf-space/.streamlit
+          cp spaces/.streamlit/config.toml hf-space/.streamlit/config.toml
 
           cd hf-space
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
