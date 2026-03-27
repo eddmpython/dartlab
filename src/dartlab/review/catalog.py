@@ -36,10 +36,17 @@ class SectionMeta:
 # ── 섹션 정의 (리스트 순서 = 렌더링 순서) ──
 
 SECTIONS: list[SectionMeta] = [
+    # ── 1부: 사업구조 분석 ──
     SectionMeta("수익구조", "1-1", "수익 구조 -- 이 회사는 무엇으로 돈을 버는가"),
     SectionMeta("자금조달", "1-2", "자금 조달 -- 돈을 어디서 조달하는가"),
     SectionMeta("자산구조", "1-3", "자산 구조 -- 조달한 돈으로 뭘 준비했는가"),
     SectionMeta("현금흐름", "1-4", "현금흐름 -- 실제로 현금은 어떻게 흘렀는가"),
+    # ── 2부: 재무비율 분석 ──
+    SectionMeta("수익성", "2-1", "수익성 -- 이 회사는 얼마나 잘 벌고 있는가"),
+    SectionMeta("성장성", "2-2", "성장성 -- 이 회사는 얼마나 빨리 성장하는가"),
+    SectionMeta("안정성", "2-3", "안정성 -- 이 회사는 망하지 않는가"),
+    SectionMeta("효율성", "2-4", "효율성 -- 이 회사는 자산을 잘 굴리는가"),
+    SectionMeta("종합평가", "2-5", "종합 평가 -- 재무 상태를 한마디로"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -76,6 +83,28 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("cashFlowOverview", "현금흐름 종합", "현금흐름", "영업/투자/재무CF 패턴과 FCF"),
     BlockMeta("cashQuality", "이익의 현금 전환", "현금흐름", "영업CF/순이익, 영업CF 마진"),
     BlockMeta("cashFlowFlags", "현금흐름 플래그", "현금흐름", "현금 관련 경고/기회 신호"),
+    # ── 수익성 ──
+    BlockMeta("marginTrend", "마진 추이", "수익성", "매출총이익률, 영업이익률, 순이익률 시계열"),
+    BlockMeta("returnTrend", "수익률 추이", "수익성", "ROE, ROA 시계열과 레버리지 분해"),
+    BlockMeta("dupont", "듀퐁 분해", "수익성", "순이익률 x 자산회전율 x 재무레버리지"),
+    BlockMeta("profitabilityFlags", "수익성 플래그", "수익성", "수익성 관련 경고/기회 신호"),
+    # ── 성장성 ──
+    BlockMeta("growthTrend", "성장률 추이", "성장성", "매출/영업이익/순이익 YoY 시계열"),
+    BlockMeta("growthQuality", "성장 품질", "성장성", "외형 성장 vs 내실 성장 괴리, CAGR"),
+    BlockMeta("growthFlags", "성장성 플래그", "성장성", "성장성 관련 경고/기회 신호"),
+    # ── 안정성 ──
+    BlockMeta("leverageTrend", "레버리지 추이", "안정성", "부채비율, 차입금의존도 시계열"),
+    BlockMeta("coverageTrend", "이자보상 추이", "안정성", "이자보상배율 시계열"),
+    BlockMeta("distressScore", "부실 판별", "안정성", "Altman Z-Score 시계열과 종합 등급"),
+    BlockMeta("stabilityFlags", "안정성 플래그", "안정성", "안정성 관련 경고/기회 신호"),
+    # ── 효율성 ──
+    BlockMeta("turnoverTrend", "회전율 추이", "효율성", "총자산/매출채권/재고 회전율 시계열"),
+    BlockMeta("cccTrend", "CCC 추이", "효율성", "현금전환주기 구성요소 시계열"),
+    BlockMeta("efficiencyFlags", "효율성 플래그", "효율성", "효율성 관련 경고/기회 신호"),
+    # ── 종합평가 ──
+    BlockMeta("scorecard", "재무 스코어카드", "종합평가", "5영역 등급(A-F) 요약"),
+    BlockMeta("piotroski", "Piotroski F-Score", "종합평가", "9점 만점 재무 건전성 상세"),
+    BlockMeta("summaryFlags", "종합 플래그", "종합평가", "전체 경고/기회 요약"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

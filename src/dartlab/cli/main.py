@@ -18,12 +18,28 @@ def _ensure_utf8() -> None:
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
+def _looksLikeCompany(token: str) -> bool:
+    """종목코드(6자리 숫자) 또는 한글 회사명처럼 보이는지."""
+    if token.isdigit() and len(token) == 6:
+        return True
+    if any("\uac00" <= ch <= "\ud7a3" for ch in token):
+        return True
+    return False
+
+
 def main(argv: list[str] | None = None) -> int:
     _ensure_utf8()
 
+    raw = argv if argv is not None else sys.argv[1:]
+
+    # dartlab 005930 → dartlab review 005930
+    # dartlab 005930 자산구조 → dartlab review 005930 자산구조
+    if raw and _looksLikeCompany(raw[0]):
+        raw = ["review"] + raw
+
     parser = build_parser()
     try:
-        args = parser.parse_args(argv)
+        args = parser.parse_args(raw)
     except SystemExit as exc:
         if exc.code in (0, None):
             raise

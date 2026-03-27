@@ -888,3 +888,464 @@ def cashFlowFlagsBlock(flags: list[str]) -> list:
     if not flags:
         return []
     return [FlagBlock(flags, kind="warning")]
+
+
+# ── 2부: 재무비율 분석 빌더 ──
+
+# ── 2-1 수익성 ──
+
+
+def marginTrendBlock(data: dict) -> list:
+    """calcMarginTrend 결과 → 마진 시계열 테이블."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("marginTrend").label,
+            level=2,
+            helper="매출총이익률 안정 + 영업이익률 상승 = 원가 통제 + 판관비 효율",
+        )
+    )
+
+    years = data.get("years", [])
+    rows = ["매출총이익률", "영업이익률", "순이익률"]
+    cols = {"": rows}
+    for series, label in [
+        (data.get("grossMargin", []), "매출총이익률"),
+        (data.get("operatingMargin", []), "영업이익률"),
+        (data.get("netMargin", []), "순이익률"),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            idx = rows.index(label)
+            v = item["value"]
+            cols[period][idx] = f"{v:.1f}%" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("마진 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def returnTrendBlock(data: dict) -> list:
+    """calcReturnTrend 결과 → ROE/ROA 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("returnTrend").label,
+            level=2,
+            helper="ROE/ROA > 2 → 레버리지로 수익률 확대",
+        )
+    )
+
+    rows = ["ROE", "ROA", "레버리지(ROE/ROA)"]
+    cols = {"": rows}
+    for series, idx in [
+        (data.get("roe", []), 0),
+        (data.get("roa", []), 1),
+        (data.get("leverage", []), 2),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            if idx < 2:
+                cols[period][idx] = f"{v:.1f}%" if v is not None else "-"
+            else:
+                cols[period][idx] = f"{v:.2f}배" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("수익률 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def dupontBlock(data: dict) -> list:
+    """calcDupont 결과 → 듀퐁 분해 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("dupont").label,
+            level=2,
+            helper="ROE = 순이익률 x 자산회전율 x 재무레버리지",
+        )
+    )
+
+    rows = ["순이익률(%)", "자산회전율(회)", "재무레버리지(배)"]
+    cols = {"": rows}
+    for series, idx, fmt in [
+        (data.get("margin", []), 0, "{:.1f}%"),
+        (data.get("turnover", []), 1, "{:.2f}"),
+        (data.get("leverage", []), 2, "{:.2f}"),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            cols[period][idx] = fmt.format(v) if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("듀퐁 분해", pl.DataFrame(cols)))
+    return blocks
+
+
+def profitabilityFlagsBlock(flags: list[str]) -> list:
+    """calcProfitabilityFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]
+
+
+# ── 2-2 성장성 ──
+
+
+def growthTrendBlock(data: dict) -> list:
+    """calcGrowthTrend 결과 → 성장률 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("growthTrend").label,
+            level=2,
+            helper="매출 성장 > 이익 성장이면 수익성 희석 가능",
+        )
+    )
+
+    rows = ["매출 성장률", "영업이익 성장률", "순이익 성장률", "자산 성장률"]
+    cols = {"": rows}
+    for series, idx in [
+        (data.get("revenueGrowth", []), 0),
+        (data.get("operatingProfitGrowth", []), 1),
+        (data.get("netProfitGrowth", []), 2),
+        (data.get("assetGrowth", []), 3),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            cols[period][idx] = f"{v:+.1f}%" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("성장률 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def growthQualityBlock(data: dict) -> list:
+    """calcGrowthQuality 결과 → CAGR + 성장 품질."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("growthQuality").label,
+            level=2,
+            helper="CAGR로 단기 변동 너머의 중기 추세를 본다",
+        )
+    )
+
+    periods = data.get("periods", 0)
+    metrics = []
+    revCagr = data.get("revenueCagr")
+    opCagr = data.get("operatingProfitCagr")
+    npCagr = data.get("netProfitCagr")
+    quality = data.get("quality", "")
+
+    if revCagr is not None:
+        metrics.append((f"매출 CAGR ({periods}Y)", f"{revCagr:+.1f}%"))
+    if opCagr is not None:
+        metrics.append((f"영업이익 CAGR ({periods}Y)", f"{opCagr:+.1f}%"))
+    if npCagr is not None:
+        metrics.append((f"순이익 CAGR ({periods}Y)", f"{npCagr:+.1f}%"))
+    if quality:
+        metrics.append(("성장 품질", quality))
+
+    if not metrics:
+        return []
+    blocks.append(MetricBlock(metrics))
+    return blocks
+
+
+def growthFlagsBlock(flags: list[str]) -> list:
+    """calcGrowthFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]
+
+
+# ── 2-3 안정성 ──
+
+
+def leverageTrendBlock(data: dict) -> list:
+    """calcLeverageTrend 결과 → 레버리지 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("leverageTrend").label,
+            level=2,
+            helper="부채비율 200% 이상 위험, 50% 이하 매우 안정",
+        )
+    )
+
+    rows = ["부채비율", "순부채비율", "자기자본비율"]
+    cols = {"": rows}
+    for series, idx in [
+        (data.get("debtRatio", []), 0),
+        (data.get("netDebtRatio", []), 1),
+        (data.get("equityRatio", []), 2),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            cols[period][idx] = f"{v:.0f}%" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("레버리지 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def coverageTrendBlock(data: dict) -> list:
+    """calcCoverageTrend 결과 → 이자보상배율 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("coverageTrend").label,
+            level=2,
+            helper="이자보상배율 3배 이상 안정, 1배 미만 이자 지급 불능",
+        )
+    )
+
+    rows = ["이자보상배율"]
+    cols = {"": rows}
+    for item in data.get("interestCoverage", []):
+        period = item["period"]
+        v = item["value"]
+        cols[period] = [f"{v:.1f}배" if v is not None else "-"]
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("이자보상 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def distressScoreBlock(data: dict) -> list:
+    """calcDistressScore 결과 → Z-Score 시계열 + 등급."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("distressScore").label,
+            level=2,
+            helper="Z > 2.99 안전, 1.81~2.99 회색, < 1.81 위험",
+        )
+    )
+
+    metrics = []
+    latest = data.get("latestScore")
+    zone = data.get("zone", "")
+    if latest is not None:
+        metrics.append(("최신 Z-Score", f"{latest:.2f}"))
+    if zone:
+        metrics.append(("판정", zone))
+    if metrics:
+        blocks.append(MetricBlock(metrics))
+
+    rows = ["Altman Z-Score"]
+    cols = {"": rows}
+    for item in data.get("altmanZScore", []):
+        period = item["period"]
+        v = item["value"]
+        cols[period] = [f"{v:.2f}" if v is not None else "-"]
+
+    if len(cols) > 1:
+        blocks.append(TableBlock("Z-Score 추이", pl.DataFrame(cols)))
+
+    return blocks
+
+
+def stabilityFlagsBlock(flags: list[str]) -> list:
+    """calcStabilityFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]
+
+
+# ── 2-4 효율성 ──
+
+
+def turnoverTrendBlock(data: dict) -> list:
+    """calcTurnoverTrend 결과 → 회전율 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("turnoverTrend").label,
+            level=2,
+            helper="회전율 상승 = 같은 자산으로 매출을 더 뽑는다",
+        )
+    )
+
+    rows = ["총자산회전율", "매출채권회전율", "재고회전율"]
+    cols = {"": rows}
+    for series, idx in [
+        (data.get("totalAssetTurnover", []), 0),
+        (data.get("receivablesTurnover", []), 1),
+        (data.get("inventoryTurnover", []), 2),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            cols[period][idx] = f"{v:.2f}회" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("회전율 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def cccTrendBlock(data: dict) -> list:
+    """calcCccTrend 결과 → CCC 구성요소 시계열."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("cccTrend").label,
+            level=2,
+            helper="CCC = DSO + DIO - DPO, 마이너스면 운전자본 유리",
+        )
+    )
+
+    rows = ["DSO(매출채권일)", "DIO(재고일)", "DPO(매입채무일)", "CCC"]
+    cols = {"": rows}
+    for series, idx in [
+        (data.get("dso", []), 0),
+        (data.get("dio", []), 1),
+        (data.get("dpo", []), 2),
+        (data.get("ccc", []), 3),
+    ]:
+        for item in series:
+            period = item["period"]
+            if period not in cols:
+                cols[period] = ["-"] * len(rows)
+            v = item["value"]
+            cols[period][idx] = f"{v:.0f}일" if v is not None else "-"
+
+    if len(cols) <= 1:
+        return []
+    blocks.append(TableBlock("CCC 추이", pl.DataFrame(cols)))
+    return blocks
+
+
+def efficiencyFlagsBlock(flags: list[str]) -> list:
+    """calcEfficiencyFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]
+
+
+# ── 2-5 종합 평가 ──
+
+
+def scorecardBlock(data: dict) -> list:
+    """calcScorecard 결과 → 5영역 등급 테이블."""
+    if not data:
+        return []
+
+    items = data.get("items", [])
+    if not items:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("scorecard").label,
+            level=2,
+            helper="F 등급 영역을 최우선으로 개선 검토",
+        )
+    )
+
+    rows = []
+    for item in items:
+        rows.append({"영역": item["area"], "등급": item["grade"]})
+    blocks.append(TableBlock("", pl.DataFrame(rows)))
+
+    profile = data.get("profile", "")
+    if profile:
+        blocks.append(TextBlock(f"재무 프로필: {profile}", style="dim", indent="h2"))
+
+    return blocks
+
+
+def piotroskiBlock(data: dict) -> list:
+    """calcPiotroskiDetail 결과 → 9개 항목 상세."""
+    if not data:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("piotroski").label,
+            level=2,
+            helper="9점 만점, 7+ 건전, 3- 심각",
+        )
+    )
+
+    total = data.get("total", 0)
+    interp = data.get("interpretation", "")
+    interpKor = {"strong": "건전", "moderate": "보통", "weak": "취약"}.get(interp, interp)
+    blocks.append(MetricBlock([("F-Score", f"{total}/9 ({interpKor})")]))
+
+    items = data.get("items", [])
+    if items:
+        rows = []
+        for item in items:
+            rows.append(
+                {
+                    "항목": item["signal"],
+                    "충족": "O" if item["pass"] else "X",
+                }
+            )
+        blocks.append(TableBlock("", pl.DataFrame(rows)))
+
+    return blocks
+
+
+def summaryFlagsBlock(flags: list[str]) -> list:
+    """calcSummaryFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]

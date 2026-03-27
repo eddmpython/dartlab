@@ -107,6 +107,30 @@ dict 프로토콜 완전 호환: `keys()`, `values()`, `items()`, `get()`, `in`,
 1. **catalog.py**: `_BLOCKS` 리스트에서 해당 BlockMeta의 위치만 이동
 2. 끝. templates/registry 전부 자동 반영.
 
+## 섹션 구성
+
+### 1부: 사업구조 분석
+
+| 섹션 | partId | 블록 수 |
+|------|--------|---------|
+| 수익구조 | 1-1 | 10 |
+| 자금조달 | 1-2 | 9 |
+| 자산구조 | 1-3 | 5 |
+| 현금흐름 | 1-4 | 3 |
+
+### 2부: 재무비율 분석
+
+| 섹션 | partId | 블록 수 | calc 파일 |
+|------|--------|---------|-----------|
+| 수익성 | 2-1 | 4 | analysis/strategy/profitability.py |
+| 성장성 | 2-2 | 3 | analysis/strategy/growthAnalysis.py |
+| 안정성 | 2-3 | 4 | analysis/strategy/stability.py |
+| 효율성 | 2-4 | 3 | analysis/strategy/efficiency.py |
+| 종합평가 | 2-5 | 3 | analysis/strategy/scorecard.py |
+
+2부 calc 함수는 모두 `company.finance.ratioSeries` → `(data, years)` 패턴을 사용한다.
+종합평가만 예외: `company.insights`(grading.py)와 `company.annual`(scoring.py)도 소비.
+
 ## 검증 명령
 
 ```bash

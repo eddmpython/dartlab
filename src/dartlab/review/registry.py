@@ -57,19 +57,36 @@ def buildBlocks(company):
         cashFlowFlagsBlock,
         cashFlowOverviewBlock,
         cashQualityBlock,
+        cccTrendBlock,
         concentrationBlock,
+        coverageTrendBlock,
         debtTimelineBlock,
         distressBlock,
+        distressScoreBlock,
+        dupontBlock,
+        efficiencyFlagsBlock,
         fundingSourcesBlock,
         growthContributionBlock,
+        growthFlagsBlock,
+        growthQualityBlock,
+        growthTrendBlock,
         interestBurdenBlock,
+        leverageTrendBlock,
         liquidityBlock,
+        marginTrendBlock,
+        piotroskiBlock,
         profileBlock,
+        profitabilityFlagsBlock,
+        returnTrendBlock,
         revenueFlagsBlock,
         revenueGrowthBlock,
         revenueQualityBlock,
+        scorecardBlock,
         segmentCompositionBlock,
         segmentTrendBlock,
+        stabilityFlagsBlock,
+        summaryFlagsBlock,
+        turnoverTrendBlock,
         workingCapitalBlock,
     )
 
@@ -131,6 +148,62 @@ def buildBlocks(company):
     b["cashFlowOverview"] = _safe(lambda: cashFlowOverviewBlock(calcCashFlowOverview(company)))
     b["cashQuality"] = _safe(lambda: cashQualityBlock(calcCashQuality(company)))
     b["cashFlowFlags"] = _safe(lambda: cashFlowFlagsBlock(calcCashFlowFlags(company)))
+
+    # ── 2부: 재무비율 분석 ──
+    from dartlab.analysis.strategy.efficiency import (
+        calcCccTrend,
+        calcEfficiencyFlags,
+        calcTurnoverTrend,
+    )
+    from dartlab.analysis.strategy.growthAnalysis import (
+        calcGrowthFlags,
+        calcGrowthQuality,
+        calcGrowthTrend,
+    )
+    from dartlab.analysis.strategy.profitability import (
+        calcDupont,
+        calcMarginTrend,
+        calcProfitabilityFlags,
+        calcReturnTrend,
+    )
+    from dartlab.analysis.strategy.scorecard import (
+        calcPiotroskiDetail,
+        calcScorecard,
+        calcSummaryFlags,
+    )
+    from dartlab.analysis.strategy.stability import (
+        calcCoverageTrend,
+        calcDistressScore,
+        calcLeverageTrend,
+        calcStabilityFlags,
+    )
+
+    # ── 수익성 ──
+    b["marginTrend"] = _safe(lambda: marginTrendBlock(calcMarginTrend(company)))
+    b["returnTrend"] = _safe(lambda: returnTrendBlock(calcReturnTrend(company)))
+    b["dupont"] = _safe(lambda: dupontBlock(calcDupont(company)))
+    b["profitabilityFlags"] = _safe(lambda: profitabilityFlagsBlock(calcProfitabilityFlags(company)))
+
+    # ── 성장성 ──
+    b["growthTrend"] = _safe(lambda: growthTrendBlock(calcGrowthTrend(company)))
+    b["growthQuality"] = _safe(lambda: growthQualityBlock(calcGrowthQuality(company)))
+    b["growthFlags"] = _safe(lambda: growthFlagsBlock(calcGrowthFlags(company)))
+
+    # ── 안정성 ──
+    b["leverageTrend"] = _safe(lambda: leverageTrendBlock(calcLeverageTrend(company)))
+    b["coverageTrend"] = _safe(lambda: coverageTrendBlock(calcCoverageTrend(company)))
+    b["distressScore"] = _safe(lambda: distressScoreBlock(calcDistressScore(company)))
+    b["stabilityFlags"] = _safe(lambda: stabilityFlagsBlock(calcStabilityFlags(company)))
+
+    # ── 효율성 ──
+    b["turnoverTrend"] = _safe(lambda: turnoverTrendBlock(calcTurnoverTrend(company)))
+    b["cccTrend"] = _safe(lambda: cccTrendBlock(calcCccTrend(company)))
+    b["efficiencyFlags"] = _safe(lambda: efficiencyFlagsBlock(calcEfficiencyFlags(company)))
+
+    # ── 종합 평가 ──
+    b["scorecard"] = _safe(lambda: scorecardBlock(calcScorecard(company)))
+    b["piotroski"] = _safe(lambda: piotroskiBlock(calcPiotroskiDetail(company)))
+    b["summaryFlags"] = _safe(lambda: summaryFlagsBlock(calcSummaryFlags(company)))
 
     from dartlab.review.blockMap import BlockMap
 
