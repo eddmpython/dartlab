@@ -604,3 +604,217 @@ def capitalFlagsBlock(flags: list[tuple[str, str]]) -> list:
     if opportunities:
         blocks.append(FlagBlock(opportunities, kind="opportunity"))
     return blocks
+
+
+# ── 자산구조 (asset) 빌더 ──
+
+
+def assetStructureBlock(data: dict) -> list:
+    """calcAssetStructure 결과 → 영업/비영업 비중 + 구성 + 시계열."""
+    if not data:
+        return []
+
+    latest = data.get("latest")
+    if not latest:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "자산 재분류 — 영업 vs 비영업",
+            level=2,
+            helper="영업자산 = 사업에 투입된 자산, 비영업 = 현금/투자/금융자산",
+        )
+    )
+
+    # 최신 비중
+    metrics = [
+        ("총자산", _fmtAmtShort(latest["totalAssets"])),
+        ("영업자산", f"{_fmtAmtShort(latest['opAssets'])} ({latest['opAssetsPct']:.0f}%)"),
+        ("비영업자산", f"{_fmtAmtShort(latest['nonOpAssets'])} ({latest['nonOpAssetsPct']:.0f}%)"),
+        ("순영업자산(NOA)", _fmtAmtShort(latest["noa"])),
+        ("순운전자본", _fmtAmtShort(latest["workingCapital"])),
+        ("고정영업자산", _fmtAmtShort(latest["fixedOpAssets"])),
+    ]
+    blocks.append(MetricBlock(metrics))
+
+    # 영업자산 구성 상세
+    comp = data.get("composition")
+    if comp:
+        compMetrics = []
+        for label, key in [
+            ("매출채권", "receivables"),
+            ("재고자산", "inventory"),
+            ("유형자산", "ppe"),
+            ("무형자산+영업권", None),
+            ("사용권자산", "rou"),
+            ("건설중인자산", "cip"),
+            ("현금성자산", "cash"),
+            ("투자자산", "investments"),
+        ]:
+            if key is None:
+                val = comp.get("intangibles", 0) + comp.get("goodwill", 0)
+            else:
+                val = comp.get(key, 0)
+            if val > 0:
+                compMetrics.append((label, _fmtAmtShort(val)))
+        if compMetrics:
+            blocks.append(MetricBlock(compMetrics))
+
+    # 시계열 테이블 (행=항목, 열=기간)
+    history = data.get("history", [])
+    if len(history) >= 2:
+        cols = {"": ["영업자산", "비영업자산", "NOA"]}
+        for h in history:
+            cols[h["period"]] = [
+                f"{h['opAssetsPct']:.0f}%",
+                f"{h['nonOpAssetsPct']:.0f}%",
+                _fmtAmtShort(h["noa"]),
+            ]
+        blocks.append(TableBlock("자산 구성 추이", pl.DataFrame(cols)))
+
+    # 진단
+    diagnosis = data.get("diagnosis")
+    if diagnosis:
+        blocks.append(TextBlock(diagnosis, style="dim", indent="h2"))
+
+    return blocks
+
+
+def workingCapitalBlock(data: dict) -> list:
+    """calcWorkingCapital 결과 → 운전자본 + CCC."""
+    if not data:
+        return []
+
+    latest = data.get("latest")
+    if not latest:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "운전자본 순환 (CCC)",
+            level=2,
+            helper="CCC = 재고회전일 + 매출채권회전일 - 매입채무회전일",
+        )
+    )
+
+    metrics = [
+        ("순운전자본", _fmtAmtShort(latest["wc"])),
+    ]
+    for label, key, suffix in [
+        ("매출채권 회전일", "receivableDays", "일"),
+        ("재고 회전일", "inventoryDays", "일"),
+        ("매입채무 회전일", "payableDays", "일"),
+        ("CCC", "ccc", "일"),
+    ]:
+        val = latest.get(key)
+        if val is not None:
+            metrics.append((label, f"{val:.0f}{suffix}"))
+    blocks.append(MetricBlock(metrics))
+
+    # CCC 시계열 (행=항목, 열=기간)
+    history = data.get("history", [])
+    if len(history) >= 2:
+        hasData = any(h.get("ccc") is not None for h in history)
+        if hasData:
+            cols = {"": ["매출채권일", "재고일", "매입채무일", "CCC"]}
+            for h in history:
+                cols[h["period"]] = [
+                    f"{h['receivableDays']:.0f}" if h.get("receivableDays") is not None else "-",
+                    f"{h['inventoryDays']:.0f}" if h.get("inventoryDays") is not None else "-",
+                    f"{h['payableDays']:.0f}" if h.get("payableDays") is not None else "-",
+                    f"{h['ccc']:.0f}" if h.get("ccc") is not None else "-",
+                ]
+            blocks.append(TableBlock("CCC 추이", pl.DataFrame(cols)))
+
+    return blocks
+
+
+def capexBlock(data: dict) -> list:
+    """calcCapexPattern 결과 → CAPEX/감가상각 + 건설중인자산."""
+    if not data:
+        return []
+
+    latest = data.get("latest")
+    if not latest:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "CAPEX 패턴",
+            level=2,
+            helper="CAPEX/감가상각 > 1 → 성장 투자, < 1 → 유지/수확",
+        )
+    )
+
+    metrics = [
+        ("CAPEX", _fmtAmtShort(latest["capex"])),
+        ("감가상각", _fmtAmtShort(latest["depreciation"])),
+    ]
+    ratio = latest.get("capexToDepRatio")
+    if ratio is not None:
+        metrics.append(("CAPEX/감가상각", f"{ratio:.1f}배"))
+    cip = latest.get("cip", 0)
+    if cip > 0:
+        metrics.append(("건설중인자산", f"{_fmtAmtShort(cip)} ({latest['cipPct']:.0f}%)"))
+    blocks.append(MetricBlock(metrics))
+
+    investType = latest.get("investmentType")
+    if investType:
+        blocks.append(TextBlock(investType, style="dim", indent="h2"))
+
+    # 시계열 (행=항목, 열=기간)
+    history = data.get("history", [])
+    if len(history) >= 2:
+        cols = {"": ["CAPEX", "감가상각", "CAPEX/감가상각", "건설중인자산"]}
+        for h in history:
+            r = h.get("capexToDepRatio")
+            cols[h["period"]] = [
+                _fmtAmtShort(h["capex"]),
+                _fmtAmtShort(h["depreciation"]),
+                f"{r:.1f}배" if r is not None else "-",
+                _fmtAmtShort(h["cip"]),
+            ]
+        blocks.append(TableBlock("CAPEX 추이", pl.DataFrame(cols)))
+
+    return blocks
+
+
+def assetEfficiencyBlock(data: dict) -> list:
+    """calcAssetEfficiency 결과 → 회전율 시계열."""
+    if not data:
+        return []
+
+    history = data.get("history", [])
+    if len(history) < 2:
+        return []
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            "자산 효율",
+            level=2,
+            helper="회전율이 높을수록 같은 자산으로 매출을 더 뽑는다",
+        )
+    )
+
+    cols = {"": ["총자산회전율", "유형자산회전율"]}
+    for h in history:
+        ta = h.get("totalAssetTurnover")
+        ppe = h.get("ppeTurnover")
+        cols[h["period"]] = [
+            f"{ta:.2f}회" if ta is not None else "-",
+            f"{ppe:.2f}회" if ppe is not None else "-",
+        ]
+    blocks.append(TableBlock("회전율 추이", pl.DataFrame(cols)))
+
+    return blocks
+
+
+def assetFlagsBlock(flags: list[str]) -> list:
+    """calcAssetFlags 결과 → FlagBlock."""
+    if not flags:
+        return []
+    return [FlagBlock(flags, kind="warning")]

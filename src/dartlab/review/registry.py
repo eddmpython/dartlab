@@ -10,6 +10,13 @@ from dartlab.review.utils import isTerminal
 
 def buildBlocks(company) -> dict:
     """블록 사전 — analysis calc* 결과를 블록으로 변환."""
+    from dartlab.analysis.strategy.asset import (
+        calcAssetEfficiency,
+        calcAssetFlags,
+        calcAssetStructure,
+        calcCapexPattern,
+        calcWorkingCapital,
+    )
     from dartlab.analysis.strategy.capital import (
         calcCapitalFlags,
         calcCapitalOverview,
@@ -33,7 +40,11 @@ def buildBlocks(company) -> dict:
         calcSegmentTrend,
     )
     from dartlab.review.builders import (
+        assetEfficiencyBlock,
+        assetFlagsBlock,
+        assetStructureBlock,
         breakdownBlock,
+        capexBlock,
         capitalFlagsBlock,
         capitalOverviewBlock,
         capitalTimelineBlock,
@@ -51,6 +62,7 @@ def buildBlocks(company) -> dict:
         revenueQualityBlock,
         segmentCompositionBlock,
         segmentTrendBlock,
+        workingCapitalBlock,
     )
 
     def _safe(fn):
@@ -99,6 +111,13 @@ def buildBlocks(company) -> dict:
     b["cashFlowStructure"] = _safe(lambda: cashFlowBlock(calcCashFlowStructure(company)))
     b["distressIndicators"] = _safe(lambda: distressBlock(calcDistressIndicators(company)))
     b["capitalFlags"] = _safe(lambda: capitalFlagsBlock(calcCapitalFlags(company)))
+
+    # ── 자산구조 ──
+    b["assetStructure"] = _safe(lambda: assetStructureBlock(calcAssetStructure(company)))
+    b["workingCapital"] = _safe(lambda: workingCapitalBlock(calcWorkingCapital(company)))
+    b["capexPattern"] = _safe(lambda: capexBlock(calcCapexPattern(company)))
+    b["assetEfficiency"] = _safe(lambda: assetEfficiencyBlock(calcAssetEfficiency(company)))
+    b["assetFlags"] = _safe(lambda: assetFlagsBlock(calcAssetFlags(company)))
 
     return b
 
