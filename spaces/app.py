@@ -360,7 +360,7 @@ with gr.Blocks(
                 "**AI 분석을 사용하려면** HuggingFace Spaces Settings → "
                 "Variables and secrets에서 `OPENAI_API_KEY`를 설정하세요."
             )
-        chatbot = gr.Chatbot(label="AI 분석", type="messages", height=400)
+        chatbot = gr.Chatbot(label="AI 분석", height=400)
         with gr.Row():
             chatInput = gr.Textbox(
                 label="질문",
