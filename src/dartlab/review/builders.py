@@ -610,12 +610,12 @@ def capitalFlagsBlock(flags: list[tuple[str, str]]) -> list:
 
 
 def assetStructureBlock(data: dict) -> list:
-    """calcAssetStructure 결과 → 영업/비영업 비중 + 구성 + 시계열."""
+    """calcAssetStructure 결과 → 영업/비영업 재분류 시계열."""
     if not data:
         return []
 
-    latest = data.get("latest")
-    if not latest:
+    history = data.get("history", [])
+    if not history:
         return []
 
     blocks: list = []
@@ -627,51 +627,36 @@ def assetStructureBlock(data: dict) -> list:
         )
     )
 
-    # 최신 비중
-    metrics = [
-        ("총자산", _fmtAmtShort(latest["totalAssets"])),
-        ("영업자산", f"{_fmtAmtShort(latest['opAssets'])} ({latest['opAssetsPct']:.0f}%)"),
-        ("비영업자산", f"{_fmtAmtShort(latest['nonOpAssets'])} ({latest['nonOpAssetsPct']:.0f}%)"),
-        ("순영업자산(NOA)", _fmtAmtShort(latest["noa"])),
-        ("순운전자본", _fmtAmtShort(latest["workingCapital"])),
-        ("고정영업자산", _fmtAmtShort(latest["fixedOpAssets"])),
-    ]
-    blocks.append(MetricBlock(metrics))
+    # 비중 시계열 테이블
+    rows = ["총자산", "영업자산", "비영업자산", "순영업자산(NOA)", "순운전자본", "고정영업자산"]
+    cols = {"": rows}
+    for h in history:
+        ta = h.get("totalAssets", 0)
+        cols[h["period"]] = [
+            _fmtAmtShort(ta),
+            f"{_fmtAmtShort(h['opAssets'])} ({h['opAssetsPct']:.0f}%)",
+            f"{_fmtAmtShort(h['nonOpAssets'])} ({h['nonOpAssetsPct']:.0f}%)",
+            _fmtAmtShort(h["noa"]),
+            _fmtAmtShort(h["wc"]),
+            _fmtAmtShort(h["fixedOp"]),
+        ]
+    blocks.append(TableBlock("자산 재분류 추이", pl.DataFrame(cols)))
 
-    # 영업자산 구성 상세
-    comp = data.get("composition")
-    if comp:
-        compMetrics = []
-        for label, key in [
-            ("매출채권", "receivables"),
-            ("재고자산", "inventory"),
-            ("유형자산", "ppe"),
-            ("무형자산+영업권", None),
-            ("사용권자산", "rou"),
-            ("건설중인자산", "cip"),
-            ("현금성자산", "cash"),
-            ("투자자산", "investments"),
-        ]:
-            if key is None:
-                val = comp.get("intangibles", 0) + comp.get("goodwill", 0)
-            else:
-                val = comp.get(key, 0)
-            if val > 0:
-                compMetrics.append((label, _fmtAmtShort(val)))
-        if compMetrics:
-            blocks.append(MetricBlock(compMetrics))
-
-    # 시계열 테이블 (행=항목, 열=기간)
-    history = data.get("history", [])
-    if len(history) >= 2:
-        cols = {"": ["영업자산", "비영업자산", "NOA"]}
-        for h in history:
-            cols[h["period"]] = [
-                f"{h['opAssetsPct']:.0f}%",
-                f"{h['nonOpAssetsPct']:.0f}%",
-                _fmtAmtShort(h["noa"]),
-            ]
-        blocks.append(TableBlock("자산 구성 추이", pl.DataFrame(cols)))
+    # 세부 구성 시계열 (영업+비영업 주요 항목)
+    detailRows = ["매출채권", "재고자산", "유형자산", "무형자산+영업권", "건설중인자산", "현금성자산", "투자자산"]
+    detailCols = {"": detailRows}
+    for h in history:
+        intGw = h.get("intangibles", 0) + h.get("goodwill", 0)
+        detailCols[h["period"]] = [
+            _fmtAmtShort(h.get("receivables", 0)),
+            _fmtAmtShort(h.get("inventory", 0)),
+            _fmtAmtShort(h.get("ppe", 0)),
+            _fmtAmtShort(intGw),
+            _fmtAmtShort(h.get("cip", 0)),
+            _fmtAmtShort(h.get("cash", 0)),
+            _fmtAmtShort(h.get("investments", 0)),
+        ]
+    blocks.append(TableBlock("자산 구성 상세 추이", pl.DataFrame(detailCols)))
 
     # 진단
     diagnosis = data.get("diagnosis")
