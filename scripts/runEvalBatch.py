@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-BATCH_DIR = ROOT / "src" / "dartlab" / "engines" / "ai" / "eval" / "batchResults"
+BATCH_DIR = ROOT / "src" / "dartlab" / "ai" / "eval" / "batchResults"
 
 
 def main() -> None:

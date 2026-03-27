@@ -59,6 +59,7 @@ dependencies = [
     "orjson>=3.10.0,<4",
     "polars>=1.0.0,<2",
     "requests>=2.32.5,<3",
+    "prompt-toolkit>=3.0,<4",
     "rich>=14.3.3,<15",
     "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",

@@ -19,6 +19,7 @@ export const brand = {
 		docs: { dir: 'dart/docs', label: 'DART 공시 문서 데이터' },
 		finance: { dir: 'dart/finance', label: '재무 숫자 데이터' },
 		report: { dir: 'dart/report', label: '정기보고서 데이터' },
+		scan: { dir: 'dart/scan', label: '전종목 횡단분석 프리빌드 데이터' },
 		edgarDocs: { dir: 'edgar/docs', label: 'SEC EDGAR 공시 문서 데이터' },
 		edgar: { dir: 'edgar/finance', label: 'SEC EDGAR 재무 데이터' },
 	},

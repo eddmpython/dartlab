@@ -16,7 +16,7 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CASES_PATH = ROOT / "src" / "dartlab" / "engines" / "ai" / "eval" / "personaCases.json"
+CASES_PATH = ROOT / "src" / "dartlab" / "ai" / "eval" / "personaCases.json"
 
 
 def main() -> None:

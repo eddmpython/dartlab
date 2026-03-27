@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EVAL_DIR = ROOT / "src" / "dartlab" / "engines" / "ai" / "eval"
+EVAL_DIR = ROOT / "src" / "dartlab" / "ai" / "eval"
 BATCH_DIR = EVAL_DIR / "batchResults"
 REPORT_DIR = EVAL_DIR / "diagnosisReports"
 

@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EVAL_DIR = ROOT / "src" / "dartlab" / "engines" / "ai" / "eval"
+EVAL_DIR = ROOT / "src" / "dartlab" / "ai" / "eval"
 BATCH_DIR = EVAL_DIR / "batchResults"
 CASES_PATH = EVAL_DIR / "personaCases.json"
 REPORT_DIR = EVAL_DIR / "diagnosisReports"

@@ -710,7 +710,7 @@ us.show("mdna")                    # → 10-K::item7Mdna
 
 > **Tip:** New to financial analysis or prefer natural language? Use `dartlab.ask()` — the AI assistant handles everything from data download to analysis. No coding knowledge required.
 
-DartLab includes a built-in AI analysis layer that feeds structured company data to LLMs. **No code required** — you can ask questions in plain language and DartLab handles everything: data selection, context assembly, and streaming the answer.
+DartLab's AI interprets period-comparable, cross-company data that the engine already computed — the LLM explains *why*, not *what*. **No code required** — ask questions in plain language and DartLab handles everything: data selection, context assembly, and streaming the answer.
 
 ```bash
 # terminal one-liner — no Python needed
