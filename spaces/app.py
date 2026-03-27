@@ -238,6 +238,94 @@ def _showDataFrame(df: pd.DataFrame, key: str = "", downloadName: str = ""):
         )
 
 
+# ── AI ────────────────────────────────────────────────
+
+_HAS_OPENAI = bool(os.environ.get("OPENAI_API_KEY"))
+_HAS_HF = bool(os.environ.get("HF_TOKEN"))
+
+if _HAS_OPENAI:
+    dartlab.llm.configure(provider="openai", api_key=os.environ["OPENAI_API_KEY"])
+
+
+def _askAi(stockCode: str, question: str) -> str:
+    """AI 질문 처리. OpenAI 우선, 없으면 HF Inference API fallback."""
+    # OpenAI가 설정되어 있으면 dartlab.ask 사용
+    if _HAS_OPENAI:
+        try:
+            q = f"{stockCode} {question}" if stockCode else question
+            answer = dartlab.ask(q, stream=False, raw=False)
+            return answer or "응답 없음"
+        except Exception as e:
+            return f"분석 실패: {e}"
+
+    # HF Inference API fallback (무료)
+    if _HAS_HF:
+        try:
+            from huggingface_hub import InferenceClient
+            client = InferenceClient(
+                model="meta-llama/Llama-3.1-8B-Instruct",
+                token=os.environ["HF_TOKEN"],
+            )
+
+            # 기업 컨텍스트 구성
+            context = _buildAiContext(stockCode)
+            systemMsg = (
+                "당신은 한국 기업 재무 분석 전문가입니다. "
+                "아래 재무 데이터를 바탕으로 사용자의 질문에 한국어로 답변하세요. "
+                "숫자는 천단위 콤마를 사용하고, 근거를 명확히 제시하세요.\n\n"
+                f"{context}"
+            )
+
+            response = client.chat_completion(
+                messages=[
+                    {"role": "system", "content": systemMsg},
+                    {"role": "user", "content": question},
+                ],
+                max_tokens=1024,
+            )
+            return response.choices[0].message.content or "응답 없음"
+        except Exception as e:
+            return f"AI 분석 실패: {e}"
+
+    return "API 키가 설정되지 않았습니다."
+
+
+def _buildAiContext(stockCode: str) -> str:
+    """AI에 전달할 기업 재무 컨텍스트 구성."""
+    try:
+        c = _getCompany(stockCode)
+    except Exception:
+        return f"종목코드: {stockCode}"
+
+    parts = [f"기업: {c.corpName} ({c.stockCode}), 시장: {c.market}"]
+
+    # IS 요약
+    try:
+        isDf = _toPandas(c.IS)
+        if isDf is not None and not isDf.empty:
+            parts.append(f"\n[손익계산서 요약]\n{isDf.head(15).to_string()}")
+    except Exception:
+        pass
+
+    # BS 요약
+    try:
+        bsDf = _toPandas(c.BS)
+        if bsDf is not None and not bsDf.empty:
+            parts.append(f"\n[재무상태표 요약]\n{bsDf.head(15).to_string()}")
+    except Exception:
+        pass
+
+    # ratios 요약
+    try:
+        ratDf = _toPandas(c.ratios)
+        if ratDf is not None and not ratDf.empty:
+            parts.append(f"\n[재무비율]\n{ratDf.head(15).to_string()}")
+    except Exception:
+        pass
+
+    return "\n".join(parts)
+
+
 # ── 프리로드 ──────────────────────────────────────────
 
 @st.cache_resource
@@ -379,11 +467,13 @@ if code:
                 st.markdown(secText)
 
     # ── AI Chat ──
-    with st.expander("🤖 AI 분석 (OpenAI API 필요)", expanded=False):
-        hasAi = bool(os.environ.get("OPENAI_API_KEY"))
+    _hasOpenai = bool(os.environ.get("OPENAI_API_KEY"))
+    _hasHf = bool(os.environ.get("HF_TOKEN"))
+    _aiLabel = "🤖 AI 분석" + (" (무료)" if _hasHf and not _hasOpenai else "")
 
-        if not hasAi:
-            st.info("AI 분석을 사용하려면 HuggingFace Spaces Settings → Variables and secrets에서 `OPENAI_API_KEY`를 설정하세요.")
+    with st.expander(_aiLabel, expanded=False):
+        if not _hasOpenai and not _hasHf:
+            st.info("AI 분석을 사용하려면 HuggingFace Spaces Settings → Variables and secrets에서 `HF_TOKEN` 또는 `OPENAI_API_KEY`를 설정하세요.")
         else:
             if "messages" not in st.session_state:
                 st.session_state.messages = []
@@ -398,15 +488,10 @@ if code:
                     st.markdown(prompt)
 
                 with st.chat_message("assistant"):
-                    try:
-                        q = f"{code} {prompt}"
-                        answer = dartlab.ask(q, stream=False, raw=False)
-                        st.markdown(answer or "응답 없음")
-                        st.session_state.messages.append({"role": "assistant", "content": answer or "응답 없음"})
-                    except Exception as e:
-                        errMsg = f"분석 실패: {e}"
-                        st.markdown(errMsg)
-                        st.session_state.messages.append({"role": "assistant", "content": errMsg})
+                    with st.spinner("분석 중..."):
+                        answer = _askAi(code, prompt)
+                    st.markdown(answer)
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
 
 else:
     # 미입력 상태
