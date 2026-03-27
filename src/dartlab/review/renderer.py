@@ -107,6 +107,8 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
                     console.print()
 
         elif isinstance(block, TextBlock):
+            if prevBlockType is not None and prevBlockType is not HeadingBlock:
+                console.print()
             style = block.style or ""
             ind = ly.indentH2 if block.indent == "h2" else ly.indentBody
             console.print(
@@ -117,13 +119,14 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
             )
 
         elif isinstance(block, MetricBlock):
+            if prevBlockType is MetricBlock:
+                console.print()
             for label, value in block.metrics:
                 padded = padLabel(label, 22)
                 console.print(f"{body}[dim]{padded}[/] {value}")
 
         elif isinstance(block, TableBlock):
-            if prevBlockType is TableBlock:
-                console.print()
+            console.print()
             _renderDataFrame(console, block, indent=ly.indentBody)
 
         elif isinstance(block, FlagBlock):
