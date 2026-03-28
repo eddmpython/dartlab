@@ -70,7 +70,7 @@
 위치: `providers/dart/finance/scanAccount.py`
 
 전종목 × 기간 시계열을 한 번에 뽑는 배치 함수.
-`dartlab.scanAccount("매출액")`, `dartlab.scanRatio("roe")` 등으로 사용.
+`dartlab.scan("account", "매출액")`, `dartlab.scan("ratio", "roe")` 등으로 사용.
 
 ### 2-Tier 가속 구조
 

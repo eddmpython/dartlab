@@ -28,6 +28,7 @@
 | `collectAll` | function | 전체 상장종목 DART 데이터 수집. DART_API_KEY(S) 필요. 멀티키 시 병렬. |
 | `downloadAll` | function | HuggingFace에서 전체 시장 데이터를 다운로드. |
 | `scan` | function | 시장 전체 횡단분석 통합 엔트리포인트. |
+| `analysis` | function | 재무제표 완전 분석 통합 진입점. |
 | `network` | function | 한국 상장사 전체 관계 지도. |
 | `news` | function | 기업 뉴스 수집. |
 | `audit` | function | 감사 Red Flag 분석. |
@@ -43,7 +44,6 @@
 | `digest` | function | 시장 전체 공시 변화 다이제스트. |
 | `scanAccount` | function | 전종목 단일 계정 시계열. |
 | `scanRatio` | function | 전종목 단일 재무비율 시계열. |
-| `scanRatioList` | function | 사용 가능한 비율 목록. |
 | `plugins` | function | 로드된 플러그인 목록 반환. |
 | `reload_plugins` | function | 플러그인 재스캔 — pip install 후 재시작 없이 즉시 인식. |
 | `verbose` | module | bool(x) -> bool |

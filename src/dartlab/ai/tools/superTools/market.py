@@ -2,7 +2,7 @@
 
 3갈래 중 '전종목 비교' 축 담당:
 - 주가/컨센서스 (외부)
-- scanAccount/scanRatio (전종목 재무)
+- scan("account")/scan("ratio") (전종목 재무)
 - governance/workforce/capital/debt (전종목 스캔)
 """
 

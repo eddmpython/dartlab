@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["dartlab", "marimo"]
 # ///
-"""시장 전체 스캔 — scanAccount + scanRatio + 11축 scan.
+"""시장 전체 스캔 — scan() 11축 통합 인터페이스.
 
 2,700+ 종목의 계정·비율·거버넌스·현금흐름·감사·내부자를 한 번에 조회한다.
 
@@ -22,7 +22,7 @@ with app.setup:
 @app.cell
 def _():
     # 전종목 매출 분기별 시계열
-    df = dartlab.scanAccount("매출액")
+    df = dartlab.scan("account", "매출액")
     df
     return (df,)
 
@@ -37,7 +37,7 @@ def _(df):
 @app.cell
 def _():
     # 연간 영업이익
-    dartlab.scanAccount("영업이익", annual=True)
+    dartlab.scan("account", "영업이익", annual=True)
     return
 
 
@@ -51,7 +51,7 @@ def _():
 @app.cell
 def _():
     # 전종목 ROE 분기별
-    roe = dartlab.scanRatio("roe")
+    roe = dartlab.scan("ratio", "roe")
     roe
     return (roe,)
 
@@ -66,8 +66,8 @@ def _(roe):
 
 @app.cell
 def _():
-    # 통합 scan 인터페이스 — 가용 축 목록
-    dartlab.scan.topics()
+    # 통합 scan 인터페이스 — 가이드 (축 목록 + 사용법)
+    dartlab.scan()
     return
 
 

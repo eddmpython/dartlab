@@ -756,10 +756,10 @@ def scanAccount(
     Example::
 
         import dartlab
-        dartlab.scanAccount("매출액")                          # DART 분기별
-        dartlab.scanAccount("매출액", annual=True)              # DART 연간
-        dartlab.scanAccount("sales", market="edgar")            # EDGAR 분기별
-        dartlab.scanAccount("total_assets", market="edgar", annual=True)
+        dartlab.scan("account", "매출액")                      # DART 분기별
+        dartlab.scan("account", "매출액", annual=True)          # DART 연간
+        dartlab.scan("account", "sales", market="edgar")        # EDGAR 분기별
+        dartlab.scan("account", "total_assets", market="edgar", annual=True)
     """
     if market == "edgar":
         from dartlab.providers.edgar.finance.scanAccount import scanAccount as _edgarScan
@@ -789,9 +789,9 @@ def scanRatio(
     Example::
 
         import dartlab
-        dartlab.scanRatio("roe")                              # DART 분기별
-        dartlab.scanRatio("operatingMargin", annual=True)      # DART 연간
-        dartlab.scanRatio("roe", market="edgar", annual=True)  # EDGAR 연간
+        dartlab.scan("ratio", "roe")                           # DART 분기별
+        dartlab.scan("ratio", "operatingMargin", annual=True)  # DART 연간
+        dartlab.scan("ratio", "roe", market="edgar", annual=True)  # EDGAR 연간
     """
     if market == "edgar":
         from dartlab.providers.edgar.finance.scanAccount import scanRatio as _edgarRatio

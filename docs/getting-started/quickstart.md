@@ -63,9 +63,9 @@ apple.show("10-K::item1ARiskFactors")
 ## 7. Scan the market
 
 ```python
-dartlab.search("삼성전자")          # find companies
-dartlab.scanRatio("roe")           # ROE across 2,700+ companies
-dartlab.scanAccount("매출액")       # revenue across all companies
+dartlab.search("삼성전자")              # find companies
+dartlab.scan("ratio", "roe")           # ROE across 2,700+ companies
+dartlab.scan("account", "매출액")       # revenue across all companies
 ```
 
 ## 8. Ask AI

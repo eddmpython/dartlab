@@ -4,7 +4,7 @@
 # ///
 """DartLab -- Scan.
 
-search, listing, scanAccount, scanRatio, and 11-axis market scan across 2,700+ companies.
+search, listing, and 11-axis market scan across 2,700+ companies.
 """
 
 import marimo
@@ -44,21 +44,21 @@ def _(dartlab):
 @app.cell
 def _(dartlab):
     # rank all 2,700+ companies by ROE
-    dartlab.scanRatio("roe")
+    dartlab.scan("ratio", "roe")
     return
 
 
 @app.cell
 def _(dartlab):
     # scan a raw account across every company
-    dartlab.scanAccount("매출액")
+    dartlab.scan("account", "매출액")
     return
 
 
 @app.cell
 def _(dartlab):
-    # unified scan interface -- list available axes
-    dartlab.scan.topics()
+    # unified scan interface -- guide (all axes + usage)
+    dartlab.scan()
     return
 
 

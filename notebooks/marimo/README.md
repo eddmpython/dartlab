@@ -7,7 +7,7 @@ Interactive [Marimo](https://marimo.io/) notebooks. Run locally or open in [Mola
 | Notebook | What it covers |
 |----------|---------------|
 | **01_company.py** | Company -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR |
-| **02_scan.py** | Scan -- screen, scanAccount, scanRatio, benchmark, insights, rank |
+| **02_scan.py** | Scan -- scan() 11-axis market scan, 2,700+ companies |
 | **03_ask.py** | Ask -- AI analysis, streaming, chat, setup |
 
 ## Run locally

@@ -125,19 +125,19 @@ Scan a single account or ratio across all listed companies.
 import dartlab
 
 # single account across all firms — wide DataFrame (rows=companies, columns=periods)
-dartlab.scanAccount("매출액")                         # quarterly standalone revenue
-dartlab.scanAccount("operating_profit", annual=True)  # annual basis
-dartlab.scanAccount("total_assets", market="edgar")   # US EDGAR
+dartlab.scan("account", "매출액")                         # quarterly standalone revenue
+dartlab.scan("account", "operating_profit", annual=True)  # annual basis
+dartlab.scan("account", "total_assets", market="edgar")   # US EDGAR
 
 # single ratio across all firms
-dartlab.scanRatio("roe")                              # quarterly ROE
-dartlab.scanRatio("debtRatio", annual=True)           # annual debt-to-equity
+dartlab.scan("ratio", "roe")                              # quarterly ROE
+dartlab.scan("ratio", "debtRatio", annual=True)           # annual debt-to-equity
 
-# available ratios (13: profitability, stability, growth, efficiency, cashflow)
-dartlab.scanRatioList()
+# available ratios
+dartlab.scan("ratio")
 ```
 
-These are root-level functions only (not Company methods). Accepts both Korean names and English snakeIds. Reads 2,700+ parquet files in parallel via ThreadPool.
+`scan()` is the single entry point for all market-wide analysis. Accepts both Korean names and English snakeIds.
 
 ## Source Namespace
 
