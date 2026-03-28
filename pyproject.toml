@@ -64,7 +64,7 @@ dependencies = [
     "textual>=2.0,<3",
     "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",
-    "huggingface-hub>=0.20.0,<1",
+    "huggingface-hub>=0.20.0,<2",
     # LLM providers
     "openai>=1.0.0,<3",
     "google-genai>=1.0.0,<2",
