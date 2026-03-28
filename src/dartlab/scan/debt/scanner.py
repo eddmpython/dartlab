@@ -66,6 +66,53 @@ EQUITY_IDS = {"Equity", "equity", "ifrs-full_Equity", "dart_Equity"}
 EQUITY_NMS = {"자본총계", "자본 총계"}
 
 
+def scan_short_debt() -> dict[str, dict]:
+    """shortTermBond + commercialPaper → {종목코드: {단기사채잔액, CP잔액, 단기채무합계}}.
+
+    회사채(corporateBond)와 별도로, 기업어음/단기사채의 실질 단기 부채 노출을 측정한다.
+    """
+    stb = scan_parquets(
+        "shortTermBond",
+        ["stockCode", "year", "quarter", "sm"],
+    )
+    cp = scan_parquets(
+        "commercialPaper",
+        ["stockCode", "year", "quarter", "sm"],
+    )
+
+    result: dict[str, dict] = {}
+
+    # 단기사채
+    if not stb.is_empty():
+        for code, group in stb.group_by("stockCode"):
+            codeVal = code[0]
+            best = 0
+            for row in group.iter_rows(named=True):
+                val = parse_num(row.get("sm"))
+                if val and val > best:
+                    best = val
+            if best > 0:
+                result.setdefault(codeVal, {})["단기사채잔액"] = best
+
+    # 기업어음
+    if not cp.is_empty():
+        for code, group in cp.group_by("stockCode"):
+            codeVal = code[0]
+            best = 0
+            for row in group.iter_rows(named=True):
+                val = parse_num(row.get("sm"))
+                if val and val > best:
+                    best = val
+            if best > 0:
+                result.setdefault(codeVal, {})["CP잔액"] = best
+
+    # 합산
+    for code, d in result.items():
+        d["단기채무합계"] = (d.get("단기사채잔액") or 0) + (d.get("CP잔액") or 0)
+
+    return result
+
+
 def scan_debt_mix() -> dict[str, dict]:
     """finance BS → {종목코드: {총부채, 부채비율}}.
 

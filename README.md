@@ -240,18 +240,19 @@ dartlab.scan("account", "매출액")     # revenue across all firms
 dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 ```
 
-12 axes, two patterns:
+13 axes, two patterns:
 
 | Axis | Label | What it does |
 |------|-------|--------------|
 | governance | Governance | Ownership, outside directors, pay ratio, audit opinion |
 | workforce | Workforce | Headcount, avg salary, growth rate, top earners |
 | capital | Shareholder Return | Dividends, buybacks, equity changes |
-| debt | Debt Structure | Bond maturity, debt ratio, ICR, risk grade |
+| debt | Debt Structure | Bond maturity, CP/short-term bonds, debt ratio, ICR, risk grade |
 | cashflow | Cash Flow | OCF/ICF/FCF + 8-type lifecycle pattern |
 | audit | Audit Risk | Opinion, auditor change, special matters |
 | insider | Insider Holdings | Major holder change, treasury stock, stability |
 | quality | Earnings Quality | Accrual ratio + CF/NI — is profit backed by cash? |
+| liquidity | Liquidity | Current ratio + quick ratio — can it pay tomorrow? |
 | digest | Digest | Market-wide disclosure change digest |
 | network | Network | Corporate relationship graph (investment/ownership) |
 | account | Account | Single account time-series (target required) |
@@ -322,7 +323,7 @@ c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 ### Four-Layer Relationship
 
 ```
-scan()       Market-wide cross-section (12 axes)  -- screening across firms
+scan()       Market-wide cross-section (13 axes)  -- screening across firms
 analysis()   Single-firm deep analysis (14 axes)  -- full financial analysis
 c.review()   analysis -> structured report         -- block-template pipeline
 c.reviewer() review + AI interpretation            -- per-section AI opinions
@@ -334,7 +335,7 @@ c.reviewer() review + AI interpretation            -- per-section AI opinions
 L0  core/        Protocols, finance utils, docs utils, registry
 L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
-    scan/        Market-wide cross-sectional analysis (12 axes)
+    scan/        Market-wide cross-sectional analysis (13 axes)
 L2  analysis/    8 analytical domains (strategy → macro)
     review/      Block-template report assembly
 L3  ai/          LLM-powered analysis (5 providers, 8 super tools)
@@ -590,7 +591,7 @@ dartlab.network().show()
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
-12-axis cross-market analysis. Everything goes through `dartlab.scan()` — one function to remember.
+13-axis cross-market analysis. Everything goes through `dartlab.scan()` — one function to remember.
 
 ```python
 dartlab.scan()                           # guide: all axes + usage
@@ -1084,7 +1085,7 @@ dartlab collect --batch --mode all         # re-collect everything
 |---------|-------------|-------|-------|
 | **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | **Scan** | `scan()` -- 11-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
-| **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py) |
+| **Review** | `c.review()` -- 14-section structured report + `c.reviewer()` AI interpretation | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
 
 <details>
 <summary>Run locally with Marimo</summary>

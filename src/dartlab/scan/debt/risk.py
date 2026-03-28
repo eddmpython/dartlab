@@ -144,20 +144,28 @@ def scan_icr() -> dict[str, float]:
     return _scanIcrPerFile()
 
 
-def classify_risk(icr: float | None, short_ratio: float | None) -> str:
-    """ICR × 단기비중 → 위험등급.
+def classify_risk(
+    icr: float | None,
+    short_ratio: float | None,
+    shortDebtTotal: float | None = None,
+) -> str:
+    """ICR x 단기비중 x 단기채무 → 위험등급.
 
-    - 고위험: 단기비중 ≥ 50% AND ICR < 1
-    - 주의:   단기비중 ≥ 50% OR ICR < 1
+    - 고위험: (단기비중 >= 50% AND ICR < 1) OR (ICR < 1 AND 단기채무 존재)
+    - 주의:   단기비중 >= 50% OR ICR < 1 OR 단기채무 존재
     - 관찰:   ICR < 3
     - 안전:   그 외
     """
     sr = short_ratio if short_ratio is not None else 0
+    hasShortDebt = shortDebtTotal is not None and shortDebtTotal > 0
+
     if icr is None:
-        return "주의" if sr >= 50 else "관찰"
-    if sr >= 50 and icr < 1:
+        if sr >= 50 or hasShortDebt:
+            return "주의"
+        return "관찰"
+    if (sr >= 50 and icr < 1) or (icr < 1 and hasShortDebt):
         return "고위험"
-    if sr >= 50 or icr < 1:
+    if sr >= 50 or icr < 1 or hasShortDebt:
         return "주의"
     if icr < 3:
         return "관찰"

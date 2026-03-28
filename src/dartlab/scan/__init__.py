@@ -137,6 +137,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="Accrual Ratio + CF/NI 비율 — 이익이 현금 뒷받침되는지",
         example='scan("quality")',
     ),
+    "liquidity": _AxisEntry(
+        module="dartlab.scan.liquidity",
+        fn="scanLiquidity",
+        label="유동성",
+        description="유동비율 + 당좌비율 — 단기 지급능력",
+        example='scan("liquidity")',
+    ),
 }
 
 
@@ -166,6 +173,8 @@ _ALIASES: dict[str, str] = {
     "이익의질": "quality",
     "이익품질": "quality",
     "어닝퀄리티": "quality",
+    "유동성": "liquidity",
+    "유동비율": "liquidity",
 }
 
 
