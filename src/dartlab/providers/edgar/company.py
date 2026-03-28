@@ -526,6 +526,15 @@ class Company:
                 )
         return self._cache["_insights"]
 
+    def analysis(self, axis: str | None = None, **kwargs):
+        """재무제표 분석 — analysis()에 self를 바인딩."""
+        from dartlab.analysis.strategy import Analysis
+
+        _analysis = Analysis()
+        if axis is None:
+            return _analysis()
+        return _analysis(axis, self, **kwargs)
+
     def filings(self) -> pl.DataFrame | None:
         """SEC 공시 문서 목록."""
         return self.docs.filings()

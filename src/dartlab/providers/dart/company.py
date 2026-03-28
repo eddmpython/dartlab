@@ -1910,6 +1910,21 @@ class Company:
 
         return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide)
 
+    def analysis(self, axis: str | None = None, **kwargs):
+        """재무제표 분석 — analysis()에 self를 바인딩.
+
+        사용법::
+
+            c.analysis()              # 14축 가이드
+            c.analysis("수익구조")     # 수익구조 분석
+        """
+        from dartlab.analysis.strategy import Analysis
+
+        _analysis = Analysis()
+        if axis is None:
+            return _analysis()
+        return _analysis(axis, self, **kwargs)
+
     def table(
         self,
         topic: str,

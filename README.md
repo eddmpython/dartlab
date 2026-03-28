@@ -449,35 +449,19 @@ Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 
 > dartlab.downloadAll("docs")      # ~8 GB (digest/signal — large)
 > ```
 
-## Review — Structured Company Analysis
+## Review — Detailed Usage
 
-> **Experimental** — the review system is under active development. Templates, blocks, and output formats may change between versions.
+> **Experimental** — the review system is under active development.
 
-DartLab's review system assembles financial data into structured, readable reports.
-
-### Templates
-
-Pre-built block combinations that cover key analysis areas:
-
-```python
-c = dartlab.Company("005930")
-
-c.review("수익구조")    # revenue structure — segments, growth, concentration
-c.review("자금조달")    # capital structure — debt, liquidity, interest burden
-c.review()             # all templates
-```
-
-### Block Assembly
-
-Every review is built from reusable blocks. Get the full block dictionary and assemble your own:
+Block assembly and customization details for the review/reviewer pipeline described above.
 
 ```python
 from dartlab.review import blocks, Review
 
 b = blocks(c)          # dict of 60+ pre-built blocks
-list(b.keys())         # → ["profile", "segmentComposition", "growth", ...]
+list(b.keys())         # -> ["profile", "segmentComposition", "growth", ...]
 
-# pick what you need
+# pick what you need -- free assembly
 Review([
     b["segmentComposition"],
     b["growth"],
@@ -485,17 +469,7 @@ Review([
 ])
 ```
 
-### Reviewer — AI Layer
-
-Add LLM-powered opinions on top of data blocks. Works with any provider:
-
-```python
-c.reviewer()                                    # all sections + AI opinion
-c.reviewer("수익구조")                           # single section + AI
-c.reviewer(guide="Evaluate from semiconductor cycle perspective")  # custom guide
-```
-
-**Free AI providers** — no paid API key required:
+**Free AI providers** for `c.reviewer()` -- no paid API key required:
 
 | Provider | Setup |
 |----------|-------|
@@ -504,20 +478,13 @@ c.reviewer(guide="Evaluate from semiconductor cycle perspective")  # custom guid
 | Cerebras | `dartlab setup cerebras` |
 | Mistral | `dartlab setup mistral` |
 
-Or use any OpenAI-compatible endpoint:
 ```bash
 dartlab setup custom --base-url http://localhost:11434/v1   # Ollama local
 ```
 
-### Customization
-
 - **Templates**: Pre-defined block combinations (`수익구조`, `자금조달`)
-- **Free assembly**: Mix any blocks + raw DataFrames in `Review([...])`
 - **Guide**: Pass `guide="..."` to `c.reviewer()` for domain-specific AI analysis
-- **Layout**: `ReviewLayout(indentH1=2, gapAfterH1=1, ...)` for rendering control
 - **Render formats**: `review.render("rich" | "html" | "markdown" | "json")`
-
-See [notebooks/marimo/sampleReview.py](notebooks/marimo/sampleReview.py) for interactive examples.
 
 ## Additional Features
 
