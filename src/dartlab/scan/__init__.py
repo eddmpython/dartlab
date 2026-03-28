@@ -152,6 +152,11 @@ def _resolveAxis(axis: str) -> str:
 # ── Scan Class ───────────────────────────────────────────
 
 
+def available_scans() -> list[str]:
+    """가용 scan 축 이름 목록."""
+    return sorted(_AXIS_REGISTRY.keys())
+
+
 class Scan:
     """시장 전체 횡단분석 통합 엔트리포인트."""
 

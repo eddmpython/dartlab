@@ -10,7 +10,7 @@ def test_all_engines_have_spec():
     from dartlab.ai.spec import buildSpec
 
     spec = buildSpec(depth="summary")
-    expected = ["dart.finance", "dart.report", "sector", "insight", "rank"]
+    expected = ["dart.finance", "dart.report", "dart.scan", "sector", "insight"]
 
     for name in expected:
         assert name in spec["engines"], f"{name} spec 누락"
