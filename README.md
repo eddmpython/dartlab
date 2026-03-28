@@ -197,7 +197,7 @@ SK Hynix    dart_Revenue        매출액       →  revenue    매출액
 LG Energy   Revenue             매출         →  revenue    매출액
 ```
 
-~97% mapping rate. Cross-company comparison requires zero manual work. Combined with `scanAccount` / `scanRatio`, you can compare a single metric across **2,700+ companies** in one call.
+~97% mapping rate. Cross-company comparison requires zero manual work. Combined with `scan("account", ...)` / `scan("ratio", ...)`, you can compare a single metric across **2,700+ companies** in one call.
 
 ### Principles — Accessibility and Reliability
 
@@ -262,52 +262,74 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 
 Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new axis means one entry in the registry and one module — no other code changes.
 
-### Analysis — From Data to Judgment
+### Analysis — Full Financial Statement Analysis
 
-`analysis/` houses 8 domains that transform raw Company data into structured assessments. Every analysis function follows the same pattern: **Company in, dict/list out**. No side effects, no rendering — pure calculation.
+`analysis()` provides access to 14 analytical axes. Same 3-step call pattern as scan.
+
+```python
+dartlab.analysis()                    # 14-axis guide
+dartlab.analysis("수익구조")           # list calc functions for revenue structure
+dartlab.analysis("수익구조", c)        # run revenue structure analysis -> dict
+
+c.analysis()                          # guide
+c.analysis("수익성")                   # profitability analysis
+```
+
+| Part | Axis | Description | Items |
+|------|------|-------------|-------|
+| 1-1 | 수익구조 | How does the company make money | 8 |
+| 1-2 | 자금조달 | Where does funding come from | 9 |
+| 1-3 | 자산구조 | What assets were acquired | 4 |
+| 1-4 | 현금흐름 | How did cash actually flow | 3 |
+| 2-1 | 수익성 | How well does it earn | 4 |
+| 2-2 | 성장성 | How fast is it growing | 3 |
+| 2-3 | 안정성 | Can it survive | 4 |
+| 2-4 | 효율성 | Does it use assets well | 3 |
+| 2-5 | 종합평가 | Financial health in one word | 3 |
+| 3-1 | 이익품질 | Are earnings real | 4 |
+| 3-2 | 비용구조 | How do costs behave | 4 |
+| 3-3 | 자본배분 | Where does earned cash go | 5 |
+| 3-4 | 투자효율 | Does investment create value | 4 |
+| 3-5 | 재무정합성 | Do statements reconcile | 5 |
+
+Each axis is a set of `calc*(company) -> dict` pure functions. No rendering, no side effects.
+
+### Review — analysis to Report
+
+Review consumes analysis() output and assembles structured reports:
 
 ```
-Part 1  strategy/      Business model, revenue structure, cost, capital allocation
-Part 2  accounting/    Earnings quality, red flags, disclosure signals
-Part 3  financial/     60+ ratios, 10-area A~F grading, 5 distress models
-Part 4  forecast/      7-source ensemble, Monte Carlo, pro forma statements
-Part 5  valuation/     DCF (FCFE/FCFF), DDM, relative value, cross-section OLS
-Part 6  risk/          Financial, business, market risk (in progress)
-Part 7  comparative/   Peer selection, sector benchmark, event study
-Part 8  macro/         Macro indicators, industry cycle (in progress)
+calc*(company) -> dict -> block builders -> BlockMap -> templates -> sections -> render
 ```
 
 ```python
-c.insights              # 10-area grading (A~F) — profitability through cross-statement
-c.rank                  # market-wide percentile ranking
-c.valuation             # DCF + DDM + relative value synthesis
-```
-
-The `calc*` pattern keeps computation separate from presentation — `calcRevenueGrowth(company)` returns a dict, never a table. Block builders turn those dicts into display-ready objects.
-
-### Review — One Command, Full Report
-
-`Review` assembles analysis results into structured, readable reports. It consumes the `analysis/` output through a block-template pipeline:
-
-```
-calc*(company) → dict/list → block builders → BlockMap → templates → sections → render
-```
-
-15 templates across 3 parts, 60+ reusable blocks:
-
-```python
-c.review()              # all 15 sections, full report
+c.review()              # all 14 sections, full report
 c.review("수익구조")     # single section
-c.reviewer()            # + AI opinion layer
 
-b = blocks(c)           # 60+ blocks as a dict
+b = blocks(c)           # 60+ blocks as a dict (Korean/English keys)
 b["growth"]             # English key
-b["매출 성장률"]         # Korean label — same block
-b.growth                # tab-complete
-Review([b["growth"], b["dupont"]])   # free assembly
+b["매출 성장률"]         # Korean label -- same block
 ```
 
-4 output formats: `rich` (terminal), `html`, `markdown`, `json`. Cross-section narrative threads (e.g., "revenue decline → margin pressure → cash deterioration") are auto-detected and injected.
+4 output formats: `rich` (terminal), `html`, `markdown`, `json`. Cross-section narrative threads (e.g., "revenue decline -> margin pressure -> cash deterioration") are auto-detected and injected.
+
+### Reviewer — review + AI Interpretation
+
+Adds AI opinions on top of review:
+
+```python
+c.reviewer()                                    # full + AI
+c.reviewer(guide="Evaluate from semiconductor cycle perspective")
+```
+
+### Four-Layer Relationship
+
+```
+scan()       Market-wide cross-section (11 axes)  -- screening across firms
+analysis()   Single-firm deep analysis (14 axes)  -- full financial analysis
+c.review()   analysis -> structured report         -- block-template pipeline
+c.reviewer() review + AI interpretation            -- per-section AI opinions
+```
 
 ### Architecture — Layered by Responsibility
 
@@ -407,12 +429,12 @@ import dartlab
 
 # scan a single account across all listed companies
 dartlab.scan("account", "매출액")                        # revenue, quarterly standalone
-dartlab.scanAccount("operating_profit", annual=True)     # annual basis
-dartlab.scanAccount("total_assets", market="edgar")      # US EDGAR
+dartlab.scan("account", "operating_profit", annual=True) # annual basis
+dartlab.scan("account", "total_assets", market="edgar")  # US EDGAR
 
 # scan a ratio across all listed companies
 dartlab.scan("ratio", "roe")                             # quarterly ROE for all firms
-dartlab.scanRatio("debtRatio", annual=True)              # annual debt-to-equity
+dartlab.scan("ratio", "debtRatio", annual=True)          # annual debt-to-equity
 
 # list available ratios
 dartlab.scan("ratio")
@@ -420,7 +442,7 @@ dartlab.scan("ratio")
 
 Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance.
 
-> **Requires pre-downloaded data.** Market-wide functions (`scanAccount`, `screen`, `digest`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. Download all data first:
+> **Requires pre-downloaded data.** Market-wide functions (`scan("account")`, `scan("digest")`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. Download all data first:
 > ```python
 > dartlab.downloadAll("finance")   # ~600 MB, 2,700+ firms
 > dartlab.downloadAll("report")    # ~320 MB (governance/workforce/capital/debt)
@@ -1121,7 +1143,7 @@ dartlab collect --batch --mode all         # re-collect everything
 | Feature | Description | Colab | Molab |
 |---------|-------------|-------|-------|
 | **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
-| **Scan** | `scanAccount()` / `scanRatio()` -- cross-market ratio scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
+| **Scan** | `scan()` -- 11-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Ask** | `ask()` -- AI analysis, streaming, 9 LLM providers | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py) |
 
 <details>

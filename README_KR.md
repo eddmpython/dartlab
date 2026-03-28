@@ -197,7 +197,7 @@ SK하이닉스  dart_Revenue        매출액       →  revenue    매출액
 LG에너지    Revenue             매출         →  revenue    매출액
 ```
 
-~97% 매핑률. 회사 간 비교가 수작업 없이 가능하다. `scanAccount` / `scanRatio`와 결합하면 **2,700+ 기업**의 동일 지표를 한 번에 비교할 수 있다.
+~97% 매핑률. 회사 간 비교가 수작업 없이 가능하다. `scan("account", ...)` / `scan("ratio", ...)`와 결합하면 **2,700+ 기업**의 동일 지표를 한 번에 비교할 수 있다.
 
 ### 원칙 — 접근성과 신뢰성
 
@@ -427,12 +427,12 @@ import dartlab
 
 # 단일 계정을 전체 상장사에 대해 스캔
 dartlab.scan("account", "매출액")                        # 분기 standalone 매출
-dartlab.scanAccount("operating_profit", annual=True)     # 연간 기준
-dartlab.scanAccount("total_assets", market="edgar")      # 미국 EDGAR
+dartlab.scan("account", "operating_profit", annual=True) # 연간 기준
+dartlab.scan("account", "total_assets", market="edgar")  # 미국 EDGAR
 
 # 단일 비율을 전체 상장사에 대해 스캔
 dartlab.scan("ratio", "roe")                             # 분기 ROE 전수 스캔
-dartlab.scanRatio("debtRatio", annual=True)              # 연간 부채비율
+dartlab.scan("ratio", "debtRatio", annual=True)          # 연간 부채비율
 
 # 사용 가능한 비율 목록
 dartlab.scan("ratio")
@@ -440,7 +440,7 @@ dartlab.scan("ratio")
 
 한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화.
 
-> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scanAccount`, `screen`, `digest` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
+> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scan("account")`, `scan("digest")` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
 > ```python
 > dartlab.downloadAll("finance")   # ~600 MB, 2,700+ 종목
 > dartlab.downloadAll("report")    # ~320 MB (거버넌스/인력/자본/부채)
@@ -1141,7 +1141,7 @@ dartlab collect --batch --mode all         # 전체 재수집
 | 기능 | 설명 | Colab | Molab |
 |------|------|-------|-------|
 | **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
-| **Scan** | `scanAccount()` / `scanRatio()` -- 2,700+ 전종목 횡단 스캔 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
+| **Scan** | `scan()` -- 11축 전종목 횡단 스캔, 2,700+ 기업 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Ask** | `ask()` -- AI 분석, 스트리밍, 9개 LLM 프로바이더 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py) |
 
 <details>
