@@ -47,6 +47,12 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("안정성", "2-3", "안정성 -- 이 회사는 망하지 않는가"),
     SectionMeta("효율성", "2-4", "효율성 -- 이 회사는 자산을 잘 굴리는가"),
     SectionMeta("종합평가", "2-5", "종합 평가 -- 재무 상태를 한마디로"),
+    # ── 3부: 심화 분석 ──
+    SectionMeta("이익품질", "3-1", "이익의 질 -- 이익이 진짜인가"),
+    SectionMeta("비용구조", "3-2", "비용 구조 -- 비용이 어떻게 움직이는가"),
+    SectionMeta("자본배분", "3-3", "자본 배분 -- 번 돈을 어디에 쓰는가"),
+    SectionMeta("투자효율", "3-4", "투자 효율 -- 투자가 가치를 만드는가"),
+    SectionMeta("재무정합성", "3-5", "재무 정합성 -- 재무제표가 서로 맞는가"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -105,6 +111,34 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("scorecard", "재무 스코어카드", "종합평가", "5영역 등급(A-F) 요약"),
     BlockMeta("piotroski", "Piotroski F-Score", "종합평가", "9점 만점 재무 건전성 상세"),
     BlockMeta("summaryFlags", "종합 플래그", "종합평가", "전체 경고/기회 요약"),
+    # ── 3-1 이익품질 ──
+    BlockMeta("accrualAnalysis", "발생액 분석", "이익품질", "Sloan 발생액비율, 영업CF/순이익 시계열"),
+    BlockMeta("earningsPersistence", "이익 지속성", "이익품질", "영업외손익 비중, 이익 변동성"),
+    BlockMeta("beneishMScore", "Beneish M-Score", "이익품질", "이익 조작 가능성 8변수 모델"),
+    BlockMeta("earningsQualityFlags", "이익품질 플래그", "이익품질", "이익 품질 경고 신호"),
+    # ── 3-2 비용구조 ──
+    BlockMeta("costBreakdown", "비용 비중 분해", "비용구조", "매출원가율, 판관비율 시계열"),
+    BlockMeta("operatingLeverage", "영업레버리지", "비용구조", "DOL — 매출 변동 대비 이익 민감도"),
+    BlockMeta("breakevenEstimate", "손익분기점", "비용구조", "BEP 매출, 안전마진 시계열"),
+    BlockMeta("costStructureFlags", "비용구조 플래그", "비용구조", "비용 구조 경고 신호"),
+    # ── 3-3 자본배분 ──
+    BlockMeta("dividendPolicy", "배당 정책", "자본배분", "배당성향, 연속배당, 배당성장 시계열"),
+    BlockMeta("shareholderReturn", "주주환원", "자본배분", "배당+자사주 vs FCF"),
+    BlockMeta("reinvestment", "재투자", "자본배분", "CAPEX/매출, 유보율 시계열"),
+    BlockMeta("fcfUsage", "FCF 사용처", "자본배분", "배당/부채상환/잔여 분해"),
+    BlockMeta("capitalAllocationFlags", "자본배분 플래그", "자본배분", "자본배분 경고 신호"),
+    # ── 3-4 투자효율 ──
+    BlockMeta("roicTimeline", "ROIC 시계열", "투자효율", "ROIC, WACC 추정, Spread"),
+    BlockMeta("investmentIntensity", "투자 강도", "투자효율", "CAPEX/매출, 유무형자산 비율"),
+    BlockMeta("evaTimeline", "EVA 시계열", "투자효율", "경제적 부가가치 — NOPAT vs 자본비용"),
+    BlockMeta("investmentFlags", "투자효율 플래그", "투자효율", "투자 분석 경고 신호"),
+    # ── 3-5 재무정합성 ──
+    BlockMeta("isCfDivergence", "IS-CF 괴리", "재무정합성", "순이익 vs 영업CF 괴리 시계열"),
+    BlockMeta("isBsDivergence", "IS-BS 괴리", "재무정합성", "매출 vs 매출채권/재고 성장 괴리"),
+    BlockMeta("anomalyScore", "이상 점수", "재무정합성", "교차검증 종합 이상 점수 0-100"),
+    BlockMeta("effectiveTaxRate", "유효세율", "재무정합성", "유효세율, 법정세율 대비 갭"),
+    BlockMeta("deferredTax", "이연법인세", "재무정합성", "이연법인세 자산/부채 추세"),
+    BlockMeta("crossStatementFlags", "재무정합성 플래그", "재무정합성", "교차검증+세금 경고 신호"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

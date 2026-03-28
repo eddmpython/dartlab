@@ -118,12 +118,14 @@ def calcRoicTimeline(company) -> dict | None:
         if roic is not None and waccEstimate is not None:
             spread = roic - waccEstimate
 
-        history.append({
-            "period": period,
-            "roic": roic,
-            "waccEstimate": waccEstimate,
-            "spread": spread,
-        })
+        history.append(
+            {
+                "period": period,
+                "roic": roic,
+                "waccEstimate": waccEstimate,
+                "spread": spread,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -149,7 +151,8 @@ def calcInvestmentIntensity(company) -> dict | None:
         }
     """
     cfResult = company.select(
-        "CF", ["purchase_of_property_plant_and_equipment", "purchase_of_intangible_assets"],
+        "CF",
+        ["purchase_of_property_plant_and_equipment", "purchase_of_intangible_assets"],
     )
     isResult = company.select("IS", ["매출액"])
     bsResult = company.select("BS", ["유형자산", "무형자산", "자산총계"])
@@ -183,12 +186,14 @@ def calcInvestmentIntensity(company) -> dict | None:
         intangible = _get(intRow, col)
         ta = _get(taRow, col)
 
-        history.append({
-            "period": col,
-            "capexToRevenue": _pct(capex, rev),
-            "tangibleRatio": _pct(ppe, ta),
-            "intangibleRatio": _pct(intangible, ta),
-        })
+        history.append(
+            {
+                "period": col,
+                "capexToRevenue": _pct(capex, rev),
+                "tangibleRatio": _pct(ppe, ta),
+                "intangibleRatio": _pct(intangible, ta),
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -259,13 +264,15 @@ def calcEvaTimeline(company) -> dict | None:
         if nopat is not None and waccEstimate is not None and investedCapital > 0:
             eva = nopat - (investedCapital * waccEstimate / 100)
 
-        history.append({
-            "period": col,
-            "nopat": nopat,
-            "investedCapital": investedCapital,
-            "waccEstimate": waccEstimate,
-            "eva": eva,
-        })
+        history.append(
+            {
+                "period": col,
+                "nopat": nopat,
+                "investedCapital": investedCapital,
+                "waccEstimate": waccEstimate,
+                "eva": eva,
+            }
+        )
 
     return {"history": history} if history else None
 

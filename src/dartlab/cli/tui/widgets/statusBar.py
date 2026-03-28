@@ -42,9 +42,7 @@ class StatusBar(Widget):
         if self.companies:
             leftParts.append(f"[bold #cdd6f4]{self.companies}[/]")
         leftParts.append(
-            "[#6c7086]/[/][#45475a] commands  [/]"
-            "[#6c7086]^C[/][#45475a] cancel  [/]"
-            "[#6c7086]^D[/][#45475a] exit[/]"
+            "[#6c7086]/[/][#45475a] commands  [/][#6c7086]^C[/][#45475a] cancel  [/][#6c7086]^D[/][#45475a] exit[/]"
         )
         left.update(" [#313244]|[/] ".join(leftParts))
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 from textual.containers import VerticalScroll
 from textual.css.query import NoMatches
 from textual.widgets import Static

@@ -79,10 +79,12 @@ class DartLabApp(App[None]):
 
         # Show welcome
         chatArea = self.query_one(ChatArea)
-        chatArea.mount(WelcomeScreen(
-            provider=self._state.provider or "",
-            model=self._state.model or "",
-        ))
+        chatArea.mount(
+            WelcomeScreen(
+                provider=self._state.provider or "",
+                model=self._state.model or "",
+            )
+        )
 
         # Focus input
         self.query_one(InputArea).focus()
@@ -94,6 +96,7 @@ class DartLabApp(App[None]):
         """Load company in background thread."""
         try:
             import dartlab
+
             company = dartlab.Company(identifier)
             self._state.company = company
             self._state.stockCode = company.stockCode
@@ -226,7 +229,7 @@ class DartLabApp(App[None]):
         s = self._state
         elapsed = time.monotonic() - s.startTime
         lines = [
-            f"[bold]Session status:[/]",
+            "[bold]Session status:[/]",
             f"  Provider: [#a6adc8]{s.provider or 'none'}[/]",
             f"  Model: [#a6adc8]{s.model or 'default'}[/]",
             f"  Company: [#a6adc8]{s.stockCode or 'none'}[/]",
@@ -253,9 +256,10 @@ class DartLabApp(App[None]):
         chatArea = self.query_one(ChatArea)
         try:
             from dartlab.cli.services.history import get_total_usage
+
             usage = get_total_usage()
             lines = [
-                f"[bold]Token usage:[/]",
+                "[bold]Token usage:[/]",
                 f"  Input: [#a6adc8]{usage.get('input_tokens', 0):,}[/]",
                 f"  Output: [#a6adc8]{usage.get('output_tokens', 0):,}[/]",
                 f"  Cost: [#a6adc8]${usage.get('cost_usd', 0):.4f}[/]",
@@ -456,6 +460,7 @@ class DartLabApp(App[None]):
 
             with self.suspend():
                 import os
+
                 editor = os.environ.get("EDITOR", "notepad" if os.name == "nt" else "vim")
                 subprocess.run([editor, tmpPath], check=False)
 

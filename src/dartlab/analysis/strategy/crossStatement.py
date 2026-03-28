@@ -93,13 +93,15 @@ def calcIsCfDivergence(company) -> dict | None:
             else:
                 direction = "일치"
 
-        history.append({
-            "period": col,
-            "netIncome": ni,
-            "ocf": ocf,
-            "divergence": divergence,
-            "direction": direction,
-        })
+        history.append(
+            {
+                "period": col,
+                "netIncome": ni,
+                "ocf": ocf,
+                "divergence": divergence,
+                "direction": direction,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -177,14 +179,16 @@ def calcIsBsDivergence(company) -> dict | None:
         if revenueGrowth is not None and inventoryGrowth is not None:
             revInvGap = inventoryGrowth - revenueGrowth
 
-        history.append({
-            "period": col,
-            "revenueGrowth": revenueGrowth,
-            "receivableGrowth": receivableGrowth,
-            "inventoryGrowth": inventoryGrowth,
-            "revRecGap": revRecGap,
-            "revInvGap": revInvGap,
-        })
+        history.append(
+            {
+                "period": col,
+                "revenueGrowth": revenueGrowth,
+                "receivableGrowth": receivableGrowth,
+                "inventoryGrowth": inventoryGrowth,
+                "revRecGap": revRecGap,
+                "revInvGap": revInvGap,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -275,11 +279,13 @@ def calcAnomalyScore(company) -> dict | None:
             score += mScoreNorm
             components["beneishMScore"] = mScoreNorm
 
-        history.append({
-            "period": period,
-            "score": min(100, score),
-            "components": components,
-        })
+        history.append(
+            {
+                "period": period,
+                "score": min(100, score),
+                "components": components,
+            }
+        )
 
     return {"history": history} if history else None
 

@@ -1303,3 +1303,516 @@ def summaryFlagsBlock(flags: list[str]) -> list:
     if not flags:
         return []
     return [FlagBlock(flags, kind="warning")]
+
+
+# ── 3부: 심화 분석 ──
+
+
+def _historyTable(
+    data: dict | None,
+    fields: list[tuple[str, str, str]],
+) -> dict[str, list[str]] | None:
+    """history 기반 시계열 → 행=지표, 열=기간 dict.
+
+    fields: [(key, rowLabel, fmt), ...] -- history item의 key, 행 라벨, 포맷.
+    """
+    if not data:
+        return None
+    history = data.get("history", [])
+    if not history:
+        return None
+
+    rowLabels = [f[1] for f in fields]
+    cols: dict[str, list[str]] = {"": rowLabels}
+    for h in history:
+        period = h["period"]
+        vals = []
+        for key, _, fmt in fields:
+            v = h.get(key)
+            if v is None:
+                vals.append("-")
+            elif fmt == "amt":
+                vals.append(_fmtAmtShort(v))
+            else:
+                vals.append(fmt.format(v))
+        cols[period] = vals
+    return cols if len(cols) > 1 else None
+
+
+# ── 3-1 이익품질 ──
+
+
+def accrualAnalysisBlock(data: dict) -> list:
+    """calcAccrualAnalysis 결과 → 발생액 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("sloanAccrualRatio", "Sloan 발생액비율", "{:.2f}"),
+            ("accrualToRevenue", "발생액/매출(%)", "{:.1f}%"),
+            ("ocfToNi", "영업CF/순이익(%)", "{:.0f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("accrualAnalysis").label,
+            level=2,
+            helper="발생액비율 0.10 이상 = 이익 현금화 부족",
+        ),
+        TableBlock("발생액 추이", pl.DataFrame(cols)),
+    ]
+
+
+def earningsPersistenceBlock(data: dict) -> list:
+    """calcEarningsPersistence 결과 → 이익 지속성."""
+    if not data:
+        return []
+
+    cols = _historyTable(
+        data,
+        [
+            ("operatingIncome", "영업이익", "amt"),
+            ("nonOperatingIncome", "영업외손익", "amt"),
+            ("nonOpRatio", "영업외비중(%)", "{:.1f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("earningsPersistence").label,
+            level=2,
+            helper="영업외비중 30%+ = 일회성 이익 의존",
+        ),
+        TableBlock("이익 구성 추이", pl.DataFrame(cols)),
+    ]
+
+    cv = data.get("earningsVolatility")
+    if cv is not None:
+        blocks.append(MetricBlock([("이익 변동계수(CV)", f"{cv:.2f}")]))
+
+    return blocks
+
+
+def beneishMScoreBlock(data: dict) -> list:
+    """calcBeneishTimeline 결과 → M-Score 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("mScore", "M-Score", "{:.2f}"),
+        ],
+    )
+    if cols is None:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("beneishMScore").label,
+            level=2,
+            helper="M-Score > -1.78 임계값 초과 = 이익 조작 가능성",
+        ),
+        TableBlock("M-Score 추이", pl.DataFrame(cols)),
+    ]
+
+    threshold = data.get("threshold")
+    if threshold is not None:
+        blocks.append(TextBlock(f"임계값: {threshold}", style="dim", indent="h2"))
+
+    return blocks
+
+
+def earningsQualityFlagsBlock(flags: list[str]) -> list:
+    """calcEarningsQualityFlags 결과 → FlagBlock."""
+    return _flagsBlock(flags)
+
+
+# ── 3-2 비용구조 ──
+
+
+def costBreakdownBlock(data: dict) -> list:
+    """calcCostBreakdown 결과 → 비용 비중 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("costOfSalesRatio", "매출원가율(%)", "{:.1f}%"),
+            ("sgaRatio", "판관비율(%)", "{:.1f}%"),
+            ("operatingCostRatio", "영업비용률(%)", "{:.1f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("costBreakdown").label,
+            level=2,
+            helper="원가율+판관비율 = 영업비용률, 100에서 빼면 영업이익률",
+        ),
+        TableBlock("비용 비중 추이", pl.DataFrame(cols)),
+    ]
+
+
+def operatingLeverageBlock(data: dict) -> list:
+    """calcOperatingLeverage 결과 → DOL 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("dol", "DOL", "{:.1f}"),
+            ("contributionProxy", "매출총이익/영업이익", "{:.1f}"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("operatingLeverage").label,
+            level=2,
+            helper="DOL > 3 = 매출 변동에 이익이 크게 반응",
+        ),
+        TableBlock("영업레버리지 추이", pl.DataFrame(cols)),
+    ]
+
+
+def breakevenEstimateBlock(data: dict) -> list:
+    """calcBreakevenEstimate 결과 → BEP 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("revenue", "실제 매출", "amt"),
+            ("bepRevenue", "BEP 매출", "amt"),
+            ("marginOfSafety", "안전마진(%)", "{:.1f}%"),
+            ("variableCostRatio", "변동비율", "{:.2f}"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("breakevenEstimate").label,
+            level=2,
+            helper="안전마진 10% 미만 = 손익분기점 근접",
+        ),
+        TableBlock("손익분기점 추이", pl.DataFrame(cols)),
+    ]
+
+
+def costStructureFlagsBlock(flags: list[str]) -> list:
+    """calcCostStructureFlags 결과 → FlagBlock."""
+    return _flagsBlock(flags)
+
+
+# ── 3-3 자본배분 ──
+
+
+def dividendPolicyBlock(data: dict) -> list:
+    """calcDividendPolicy 결과 → 배당 정책 시계열."""
+    if not data:
+        return []
+
+    cols = _historyTable(
+        data,
+        [
+            ("dividendsPaid", "배당금", "amt"),
+            ("payoutRatio", "배당성향(%)", "{:.1f}%"),
+            ("dividendGrowth", "배당성장률(%)", "{:+.1f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("dividendPolicy").label,
+            level=2,
+            helper="배당성향 100%+ = 이익 초과 배당",
+        ),
+        TableBlock("배당 추이", pl.DataFrame(cols)),
+    ]
+
+    consecutive = data.get("consecutiveYears", 0)
+    if consecutive > 0:
+        blocks.append(MetricBlock([("연속 배당", f"{consecutive}년")]))
+
+    return blocks
+
+
+def shareholderReturnBlock(data: dict) -> list:
+    """calcShareholderReturn 결과 → 주주환원 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("dividendsPaid", "배당금", "amt"),
+            ("treasuryStockPurchase", "자사주 매입", "amt"),
+            ("totalReturn", "총환원", "amt"),
+            ("fcf", "FCF", "amt"),
+            ("returnToFcf", "환원/FCF(%)", "{:.0f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("shareholderReturn").label,
+            level=2,
+            helper="환원/FCF 100%+ = FCF 초과 환원, 지속 불가",
+        ),
+        TableBlock("주주환원 추이", pl.DataFrame(cols)),
+    ]
+
+
+def reinvestmentBlock(data: dict) -> list:
+    """calcReinvestment 결과 → 재투자 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("capex", "CAPEX", "amt"),
+            ("capexToRevenue", "CAPEX/매출(%)", "{:.1f}%"),
+            ("retentionRate", "유보율(%)", "{:.1f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("reinvestment").label,
+            level=2,
+            helper="유보율 = 1 - 배당성향, 재투자 여력",
+        ),
+        TableBlock("재투자 추이", pl.DataFrame(cols)),
+    ]
+
+
+def fcfUsageBlock(data: dict) -> list:
+    """calcFcfUsage 결과 → FCF 사용처 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("fcf", "FCF", "amt"),
+            ("dividendsPaid", "배당", "amt"),
+            ("debtRepaid", "부채상환", "amt"),
+            ("residual", "잔여", "amt"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("fcfUsage").label,
+            level=2,
+            helper="잔여 = FCF - 배당 - 부채상환 (현금 축적 또는 투자)",
+        ),
+        TableBlock("FCF 사용처 추이", pl.DataFrame(cols)),
+    ]
+
+
+def capitalAllocationFlagsBlock(flags: list[str]) -> list:
+    """calcCapitalAllocationFlags 결과 → FlagBlock."""
+    return _flagsBlock(flags)
+
+
+# ── 3-4 투자효율 ──
+
+
+def roicTimelineBlock(data: dict) -> list:
+    """calcRoicTimeline 결과 → ROIC/WACC/Spread 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("roic", "ROIC(%)", "{:.1f}%"),
+            ("waccEstimate", "WACC 추정(%)", "{:.1f}%"),
+            ("spread", "Spread(%p)", "{:+.1f}%p"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("roicTimeline").label,
+            level=2,
+            helper="Spread > 0 = 가치 창출, < 0 = 가치 파괴",
+        ),
+        TableBlock("ROIC vs WACC 추이", pl.DataFrame(cols)),
+    ]
+
+
+def investmentIntensityBlock(data: dict) -> list:
+    """calcInvestmentIntensity 결과 → 투자 강도 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("capexToRevenue", "CAPEX/매출(%)", "{:.1f}%"),
+            ("tangibleRatio", "유형자산/총자산(%)", "{:.1f}%"),
+            ("intangibleRatio", "무형자산/총자산(%)", "{:.1f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("investmentIntensity").label,
+            level=2,
+            helper="무형자산비율 급등 = 대규모 인수 또는 영업권 증가",
+        ),
+        TableBlock("투자 강도 추이", pl.DataFrame(cols)),
+    ]
+
+
+def evaTimelineBlock(data: dict) -> list:
+    """calcEvaTimeline 결과 → EVA 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("nopat", "NOPAT", "amt"),
+            ("investedCapital", "투하자본", "amt"),
+            ("waccEstimate", "WACC(%)", "{:.1f}%"),
+            ("eva", "EVA", "amt"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("evaTimeline").label,
+            level=2,
+            helper="EVA > 0 = 자본비용 이상 수익 창출",
+        ),
+        TableBlock("EVA 추이", pl.DataFrame(cols)),
+    ]
+
+
+def investmentFlagsBlock(flags: list[str]) -> list:
+    """calcInvestmentFlags 결과 → FlagBlock."""
+    return _flagsBlock(flags)
+
+
+# ── 3-5 재무정합성 ──
+
+
+def isCfDivergenceBlock(data: dict) -> list:
+    """calcIsCfDivergence 결과 → IS-CF 괴리 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("netIncome", "순이익", "amt"),
+            ("ocf", "영업CF", "amt"),
+            ("divergence", "괴리율(%)", "{:+.0f}%"),
+            ("direction", "방향", "{}"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("isCfDivergence").label,
+            level=2,
+            helper="괴리 > 50% = 순이익 대비 현금흐름 극심한 차이",
+        ),
+        TableBlock("IS-CF 괴리 추이", pl.DataFrame(cols)),
+    ]
+
+
+def isBsDivergenceBlock(data: dict) -> list:
+    """calcIsBsDivergence 결과 → IS-BS 괴리 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("revenueGrowth", "매출성장(%)", "{:+.1f}%"),
+            ("receivableGrowth", "매출채권성장(%)", "{:+.1f}%"),
+            ("inventoryGrowth", "재고성장(%)", "{:+.1f}%"),
+            ("revRecGap", "채권-매출 갭(%p)", "{:+.1f}%p"),
+            ("revInvGap", "재고-매출 갭(%p)", "{:+.1f}%p"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("isBsDivergence").label,
+            level=2,
+            helper="채권/재고 성장이 매출보다 20%p+ 빠르면 의심",
+        ),
+        TableBlock("IS-BS 괴리 추이", pl.DataFrame(cols)),
+    ]
+
+
+def anomalyScoreBlock(data: dict) -> list:
+    """calcAnomalyScore 결과 → 이상 점수 시계열."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("anomalyScore").label,
+            level=2,
+            helper="70점 이상 = 재무제표 신뢰성 주의",
+        ),
+    ]
+
+    # 점수 시계열
+    cols: dict[str, list[str]] = {"": ["종합 점수"]}
+    for h in history:
+        cols[h["period"]] = [f"{h['score']:.0f}"]
+    blocks.append(TableBlock("이상 점수 추이", pl.DataFrame(cols)))
+
+    # 최신 구성요소
+    h0 = history[0]
+    components = h0.get("components", {})
+    if components:
+        metrics = [(k, f"{v:.1f}") for k, v in components.items()]
+        blocks.append(MetricBlock(metrics))
+
+    return blocks
+
+
+def effectiveTaxRateBlock(data: dict) -> list:
+    """calcEffectiveTaxRate 결과 → 유효세율 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("effectiveTaxRate", "유효세율(%)", "{:.1f}%"),
+            ("statutoryRate", "법정세율(%)", "{:.0f}%"),
+            ("taxGap", "세율갭(%p)", "{:+.1f}%p"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("effectiveTaxRate").label,
+            level=2,
+            helper="유효세율 < 10% 극저, > 35% 고세율",
+        ),
+        TableBlock("유효세율 추이", pl.DataFrame(cols)),
+    ]
+
+
+def deferredTaxBlock(data: dict) -> list:
+    """calcDeferredTax 결과 → 이연법인세 시계열."""
+    cols = _historyTable(
+        data,
+        [
+            ("deferredTaxAsset", "이연법인세자산", "amt"),
+            ("deferredTaxLiability", "이연법인세부채", "amt"),
+            ("netDeferredTax", "순이연법인세", "amt"),
+            ("dtaToTotalAssets", "DTA/총자산(%)", "{:.2f}%"),
+        ],
+    )
+    if cols is None:
+        return []
+    return [
+        HeadingBlock(
+            _meta("deferredTax").label,
+            level=2,
+            helper="이연법인세자산 급증 = 미래 과세소득 가정 검토",
+        ),
+        TableBlock("이연법인세 추이", pl.DataFrame(cols)),
+    ]
+
+
+def crossStatementFlagsBlock(flags: list[str]) -> list:
+    """교차검증+세금 플래그 통합 → FlagBlock."""
+    return _flagsBlock(flags)

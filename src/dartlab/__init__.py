@@ -323,7 +323,6 @@ def macro(market: str = "KR", indicator: str | None = None, *, start: str | None
     return getDefaultGather().macro(market, indicator, start=start, end=end)
 
 
-
 def setup(provider: str | None = None):
     """AI provider 설정 안내 + 인터랙티브 설정.
 

@@ -85,14 +85,16 @@ def calcEffectiveTaxRate(company) -> dict | None:
             effectiveTaxRate = abs(taxExpense) / ptIncome * 100
             taxGap = effectiveTaxRate - statutoryRate
 
-        history.append({
-            "period": col,
-            "preTaxIncome": ptIncome,
-            "taxExpense": taxExpense,
-            "effectiveTaxRate": effectiveTaxRate,
-            "statutoryRate": statutoryRate,
-            "taxGap": taxGap,
-        })
+        history.append(
+            {
+                "period": col,
+                "preTaxIncome": ptIncome,
+                "taxExpense": taxExpense,
+                "effectiveTaxRate": effectiveTaxRate,
+                "statutoryRate": statutoryRate,
+                "taxGap": taxGap,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -147,12 +149,14 @@ def calcTaxCashConversion(company) -> dict | None:
         if taxPaid is not None and taxExpense > 0:
             taxCashRatio = taxPaid / taxExpense * 100
 
-        history.append({
-            "period": col,
-            "taxExpense": taxExpense,
-            "taxPaid": taxPaid,
-            "taxCashRatio": taxCashRatio,
-        })
+        history.append(
+            {
+                "period": col,
+                "taxExpense": taxExpense,
+                "taxPaid": taxPaid,
+                "taxCashRatio": taxCashRatio,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -199,13 +203,15 @@ def calcDeferredTax(company) -> dict | None:
         ta = _get(taRow, col)
         netDt = dta - dtl
 
-        history.append({
-            "period": col,
-            "deferredTaxAsset": dta,
-            "deferredTaxLiability": dtl,
-            "netDeferredTax": netDt,
-            "dtaToTotalAssets": _pct(dta, ta),
-        })
+        history.append(
+            {
+                "period": col,
+                "deferredTaxAsset": dta,
+                "deferredTaxLiability": dtl,
+                "netDeferredTax": netDt,
+                "dtaToTotalAssets": _pct(dta, ta),
+            }
+        )
 
     return {"history": history} if history else None
 

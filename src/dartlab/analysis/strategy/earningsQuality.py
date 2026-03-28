@@ -91,15 +91,17 @@ def calcAccrualAnalysis(company) -> dict | None:
         rev = _get(revRow, col)
         accrual = ni - ocf
 
-        history.append({
-            "period": col,
-            "netIncome": ni,
-            "ocf": ocf,
-            "totalAssets": ta,
-            "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
-            "accrualToRevenue": _safe(accrual, rev) * 100 if rev > 0 and _safe(accrual, rev) is not None else None,
-            "ocfToNi": _safe(ocf, ni) * 100 if ni != 0 and _safe(ocf, ni) is not None else None,
-        })
+        history.append(
+            {
+                "period": col,
+                "netIncome": ni,
+                "ocf": ocf,
+                "totalAssets": ta,
+                "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
+                "accrualToRevenue": _safe(accrual, rev) * 100 if rev > 0 and _safe(accrual, rev) is not None else None,
+                "ocfToNi": _safe(ocf, ni) * 100 if ni != 0 and _safe(ocf, ni) is not None else None,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -152,13 +154,15 @@ def calcEarningsPersistence(company) -> dict | None:
         if ptIncome != 0:
             nonOpRatio = abs(nonOp) / abs(ptIncome) * 100
 
-        history.append({
-            "period": col,
-            "operatingIncome": opIncome,
-            "preTaxIncome": ptIncome,
-            "nonOperatingIncome": nonOp,
-            "nonOpRatio": nonOpRatio,
-        })
+        history.append(
+            {
+                "period": col,
+                "operatingIncome": opIncome,
+                "preTaxIncome": ptIncome,
+                "nonOperatingIncome": nonOp,
+                "nonOpRatio": nonOpRatio,
+            }
+        )
         if opIncome != 0:
             opValues.append(opIncome)
 
@@ -197,10 +201,12 @@ def calcBeneishTimeline(company) -> dict | None:
     from dartlab.analysis.strategy._helpers import toDictBySnakeId
 
     isResult = company.select(
-        "IS", ["매출액", "매출원가", "판매비와관리비", "당기순이익"],
+        "IS",
+        ["매출액", "매출원가", "판매비와관리비", "당기순이익"],
     )
     bsResult = company.select(
-        "BS", ["매출채권및기타채권", "유동자산", "유형자산", "자산총계", "유동부채", "부채총계"],
+        "BS",
+        ["매출채권및기타채권", "유동자산", "유형자산", "자산총계", "유동부채", "부채총계"],
     )
     cfResult = company.select("CF", ["operating_cashflow"])
 
@@ -232,7 +238,7 @@ def calcBeneishTimeline(company) -> dict | None:
 
     history = []
     for i in range(len(yCols) - 1):
-        col = yCols[i]        # 당기
+        col = yCols[i]  # 당기
         prevCol = yCols[i + 1]  # 전기
 
         rev = _get(revRow, col)

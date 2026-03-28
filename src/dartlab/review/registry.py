@@ -11,7 +11,6 @@ from dartlab.review.utils import isTerminal
 def buildBlocks(company):
     """블록 사전 -- analysis calc* 결과를 블록으로 변환."""
     from dartlab.analysis.strategy.asset import (
-        calcAssetEfficiency,
         calcAssetFlags,
         calcAssetStructure,
         calcCapexPattern,
@@ -45,11 +44,15 @@ def buildBlocks(company):
         calcSegmentTrend,
     )
     from dartlab.review.builders import (
-        assetEfficiencyBlock,
+        accrualAnalysisBlock,
+        anomalyScoreBlock,
         assetFlagsBlock,
         assetStructureBlock,
+        beneishMScoreBlock,
         breakdownBlock,
+        breakevenEstimateBlock,
         capexBlock,
+        capitalAllocationFlagsBlock,
         capitalFlagsBlock,
         capitalOverviewBlock,
         capitalTimelineBlock,
@@ -59,31 +62,49 @@ def buildBlocks(company):
         cashQualityBlock,
         cccTrendBlock,
         concentrationBlock,
+        costBreakdownBlock,
+        costStructureFlagsBlock,
         coverageTrendBlock,
+        crossStatementFlagsBlock,
         debtTimelineBlock,
+        deferredTaxBlock,
         distressBlock,
         distressScoreBlock,
+        dividendPolicyBlock,
         dupontBlock,
+        earningsPersistenceBlock,
+        earningsQualityFlagsBlock,
+        effectiveTaxRateBlock,
         efficiencyFlagsBlock,
+        evaTimelineBlock,
+        fcfUsageBlock,
         fundingSourcesBlock,
         growthContributionBlock,
         growthFlagsBlock,
         growthQualityBlock,
         growthTrendBlock,
         interestBurdenBlock,
+        investmentFlagsBlock,
+        investmentIntensityBlock,
+        isBsDivergenceBlock,
+        isCfDivergenceBlock,
         leverageTrendBlock,
         liquidityBlock,
         marginTrendBlock,
+        operatingLeverageBlock,
         piotroskiBlock,
         profileBlock,
         profitabilityFlagsBlock,
+        reinvestmentBlock,
         returnTrendBlock,
         revenueFlagsBlock,
         revenueGrowthBlock,
         revenueQualityBlock,
+        roicTimelineBlock,
         scorecardBlock,
         segmentCompositionBlock,
         segmentTrendBlock,
+        shareholderReturnBlock,
         stabilityFlagsBlock,
         summaryFlagsBlock,
         turnoverTrendBlock,
@@ -141,7 +162,6 @@ def buildBlocks(company):
     b["assetStructure"] = _safe(lambda: assetStructureBlock(calcAssetStructure(company)))
     b["workingCapital"] = _safe(lambda: workingCapitalBlock(calcWorkingCapital(company)))
     b["capexPattern"] = _safe(lambda: capexBlock(calcCapexPattern(company)))
-    b["assetEfficiency"] = _safe(lambda: assetEfficiencyBlock(calcAssetEfficiency(company)))
     b["assetFlags"] = _safe(lambda: assetFlagsBlock(calcAssetFlags(company)))
 
     # ── 현금흐름 ──
@@ -204,6 +224,79 @@ def buildBlocks(company):
     b["scorecard"] = _safe(lambda: scorecardBlock(calcScorecard(company)))
     b["piotroski"] = _safe(lambda: piotroskiBlock(calcPiotroskiDetail(company)))
     b["summaryFlags"] = _safe(lambda: summaryFlagsBlock(calcSummaryFlags(company)))
+
+    # ── 3부: 심화 분석 ──
+    from dartlab.analysis.strategy.capitalAllocation import (
+        calcCapitalAllocationFlags,
+        calcDividendPolicy,
+        calcFcfUsage,
+        calcReinvestment,
+        calcShareholderReturn,
+    )
+    from dartlab.analysis.strategy.costStructure import (
+        calcBreakevenEstimate,
+        calcCostBreakdown,
+        calcCostStructureFlags,
+        calcOperatingLeverage,
+    )
+    from dartlab.analysis.strategy.crossStatement import (
+        calcAnomalyScore,
+        calcCrossStatementFlags,
+        calcIsBsDivergence,
+        calcIsCfDivergence,
+    )
+    from dartlab.analysis.strategy.earningsQuality import (
+        calcAccrualAnalysis,
+        calcBeneishTimeline,
+        calcEarningsPersistence,
+        calcEarningsQualityFlags,
+    )
+    from dartlab.analysis.strategy.investmentAnalysis import (
+        calcEvaTimeline,
+        calcInvestmentFlags,
+        calcInvestmentIntensity,
+        calcRoicTimeline,
+    )
+    from dartlab.analysis.strategy.taxAnalysis import (
+        calcDeferredTax,
+        calcEffectiveTaxRate,
+        calcTaxFlags,
+    )
+
+    # ── 이익품질 ──
+    b["accrualAnalysis"] = _safe(lambda: accrualAnalysisBlock(calcAccrualAnalysis(company)))
+    b["earningsPersistence"] = _safe(lambda: earningsPersistenceBlock(calcEarningsPersistence(company)))
+    b["beneishMScore"] = _safe(lambda: beneishMScoreBlock(calcBeneishTimeline(company)))
+    b["earningsQualityFlags"] = _safe(lambda: earningsQualityFlagsBlock(calcEarningsQualityFlags(company)))
+
+    # ── 비용구조 ──
+    b["costBreakdown"] = _safe(lambda: costBreakdownBlock(calcCostBreakdown(company)))
+    b["operatingLeverage"] = _safe(lambda: operatingLeverageBlock(calcOperatingLeverage(company)))
+    b["breakevenEstimate"] = _safe(lambda: breakevenEstimateBlock(calcBreakevenEstimate(company)))
+    b["costStructureFlags"] = _safe(lambda: costStructureFlagsBlock(calcCostStructureFlags(company)))
+
+    # ── 자본배분 ──
+    b["dividendPolicy"] = _safe(lambda: dividendPolicyBlock(calcDividendPolicy(company)))
+    b["shareholderReturn"] = _safe(lambda: shareholderReturnBlock(calcShareholderReturn(company)))
+    b["reinvestment"] = _safe(lambda: reinvestmentBlock(calcReinvestment(company)))
+    b["fcfUsage"] = _safe(lambda: fcfUsageBlock(calcFcfUsage(company)))
+    b["capitalAllocationFlags"] = _safe(lambda: capitalAllocationFlagsBlock(calcCapitalAllocationFlags(company)))
+
+    # ── 투자효율 ──
+    b["roicTimeline"] = _safe(lambda: roicTimelineBlock(calcRoicTimeline(company)))
+    b["investmentIntensity"] = _safe(lambda: investmentIntensityBlock(calcInvestmentIntensity(company)))
+    b["evaTimeline"] = _safe(lambda: evaTimelineBlock(calcEvaTimeline(company)))
+    b["investmentFlags"] = _safe(lambda: investmentFlagsBlock(calcInvestmentFlags(company)))
+
+    # ── 재무정합성 ──
+    b["isCfDivergence"] = _safe(lambda: isCfDivergenceBlock(calcIsCfDivergence(company)))
+    b["isBsDivergence"] = _safe(lambda: isBsDivergenceBlock(calcIsBsDivergence(company)))
+    b["anomalyScore"] = _safe(lambda: anomalyScoreBlock(calcAnomalyScore(company)))
+    b["effectiveTaxRate"] = _safe(lambda: effectiveTaxRateBlock(calcEffectiveTaxRate(company)))
+    b["deferredTax"] = _safe(lambda: deferredTaxBlock(calcDeferredTax(company)))
+    b["crossStatementFlags"] = _safe(
+        lambda: crossStatementFlagsBlock(calcCrossStatementFlags(company) + calcTaxFlags(company))
+    )
 
     from dartlab.review.blockMap import BlockMap
 

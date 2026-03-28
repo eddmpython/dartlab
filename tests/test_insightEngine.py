@@ -4,7 +4,6 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.scan.rank import RankInfo
 from dartlab.analysis.comparative.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import (
     _yoyChange,
@@ -42,6 +41,7 @@ from dartlab.analysis.financial.insight.types import (
     InsightResult,
 )
 from dartlab.core.finance.ratios import RatioResult
+from dartlab.scan.rank import RankInfo
 
 
 class TestTypes:

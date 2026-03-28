@@ -79,15 +79,17 @@ def calcCostBreakdown(company) -> dict | None:
         cogs = _get(cogsRow, col)
         sga = _get(sgaRow, col)
 
-        history.append({
-            "period": col,
-            "revenue": rev,
-            "costOfSales": cogs,
-            "sga": sga,
-            "costOfSalesRatio": _pct(cogs, rev),
-            "sgaRatio": _pct(sga, rev),
-            "operatingCostRatio": _pct(cogs + sga, rev),
-        })
+        history.append(
+            {
+                "period": col,
+                "revenue": rev,
+                "costOfSales": cogs,
+                "sga": sga,
+                "costOfSalesRatio": _pct(cogs, rev),
+                "sgaRatio": _pct(sga, rev),
+                "operatingCostRatio": _pct(cogs + sga, rev),
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -155,14 +157,16 @@ def calcOperatingLeverage(company) -> dict | None:
         if opIncome > 0 and gp > 0:
             contributionProxy = gp / opIncome
 
-        history.append({
-            "period": col,
-            "revenue": rev,
-            "operatingIncome": opIncome,
-            "grossProfit": gp,
-            "dol": dol,
-            "contributionProxy": contributionProxy,
-        })
+        history.append(
+            {
+                "period": col,
+                "revenue": rev,
+                "operatingIncome": opIncome,
+                "grossProfit": gp,
+                "dol": dol,
+                "contributionProxy": contributionProxy,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -222,14 +226,16 @@ def calcBreakevenEstimate(company) -> dict | None:
             if rev > 0:
                 marginOfSafety = (rev - bepRevenue) / rev * 100
 
-        history.append({
-            "period": col,
-            "revenue": rev,
-            "fixedCostEstimate": fixedCost,
-            "variableCostRatio": variableCostRatio,
-            "bepRevenue": bepRevenue,
-            "marginOfSafety": marginOfSafety,
-        })
+        history.append(
+            {
+                "period": col,
+                "revenue": rev,
+                "fixedCostEstimate": fixedCost,
+                "variableCostRatio": variableCostRatio,
+                "bepRevenue": bepRevenue,
+                "marginOfSafety": marginOfSafety,
+            }
+        )
 
     return {"history": history} if history else None
 

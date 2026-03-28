@@ -93,13 +93,15 @@ def calcDividendPolicy(company) -> dict | None:
             if prevDiv > 0:
                 dividendGrowth = (divPaid - prevDiv) / prevDiv * 100
 
-        history.append({
-            "period": col,
-            "dividendsPaid": divPaid,
-            "netIncome": ni,
-            "payoutRatio": payoutRatio,
-            "dividendGrowth": dividendGrowth,
-        })
+        history.append(
+            {
+                "period": col,
+                "dividendsPaid": divPaid,
+                "netIncome": ni,
+                "payoutRatio": payoutRatio,
+                "dividendGrowth": dividendGrowth,
+            }
+        )
 
         # 연속 배당 연수
         if countingConsecutive:
@@ -172,14 +174,16 @@ def calcShareholderReturn(company) -> dict | None:
         totalReturn = divPaid + tsPurchase
         returnToFcf = _pct(totalReturn, fcf) if fcf > 0 else None
 
-        history.append({
-            "period": col,
-            "dividendsPaid": divPaid,
-            "treasuryStockPurchase": tsPurchase,
-            "totalReturn": totalReturn,
-            "fcf": fcf,
-            "returnToFcf": returnToFcf,
-        })
+        history.append(
+            {
+                "period": col,
+                "dividendsPaid": divPaid,
+                "treasuryStockPurchase": tsPurchase,
+                "totalReturn": totalReturn,
+                "fcf": fcf,
+                "returnToFcf": returnToFcf,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -245,14 +249,16 @@ def calcReinvestment(company) -> dict | None:
             payoutRatio = divPaid / ni
             retentionRate = (1 - payoutRatio) * 100
 
-        history.append({
-            "period": col,
-            "capex": capex,
-            "operatingIncome": opIncome,
-            "revenue": rev,
-            "capexToRevenue": _pct(capex, rev),
-            "retentionRate": retentionRate,
-        })
+        history.append(
+            {
+                "period": col,
+                "capex": capex,
+                "operatingIncome": opIncome,
+                "revenue": rev,
+                "capexToRevenue": _pct(capex, rev),
+                "retentionRate": retentionRate,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -316,13 +322,15 @@ def calcFcfUsage(company) -> dict | None:
         debtRepaid = abs(_get(repayRow1, col)) + abs(_get(repayRow2, col)) + abs(_get(repayRow3, col))
         residual = fcf - divPaid - debtRepaid
 
-        history.append({
-            "period": col,
-            "fcf": fcf,
-            "dividendsPaid": divPaid,
-            "debtRepaid": debtRepaid,
-            "residual": residual,
-        })
+        history.append(
+            {
+                "period": col,
+                "fcf": fcf,
+                "dividendsPaid": divPaid,
+                "debtRepaid": debtRepaid,
+                "residual": residual,
+            }
+        )
 
     return {"history": history} if history else None
 
