@@ -1506,7 +1506,7 @@ Excel 내보내기 템플릿을 생성합니다. 시트 구성을 JSON으로 정
 
 ---
 
-## Scan Axis (8개 축)
+## Scan Axis (11개 축)
 
 `dartlab.scan(axis, target)` 형태로 전종목 횡단분석.
 
@@ -1520,14 +1520,20 @@ Excel 내보내기 템플릿을 생성합니다. 시트 구성을 JSON으로 정
 | `ratio` | 비율 | 전종목 단일 재무비율 시계열 (ROE, 부채비율 등) | ratioName | O | DataFrame |
 | `digest` | 다이제스트 | 시장 전체 공시 변화 다이제스트 | stockCode 필터 | - | DataFrame |
 | `network` | 네트워크 | 상장사 관계 네트워크 (출자/지분/계열) | stockCode 필터 | - | dict |
+| `cashflow` | 현금흐름 | OCF/ICF/FCF + 현금흐름 패턴 분류 (8종) | stockCode 필터 | - | DataFrame |
+| `audit` | 감사리스크 | 감사의견, 감사인변경, 특기사항 종합 리스크 | stockCode 필터 | - | DataFrame |
+| `insider` | 내부자지분 | 최대주주 지분변동, 자기주식 현황, 경영권 안정성 | stockCode 필터 | - | DataFrame |
 
 **한글 별칭:**
 
 - `account`: 계정
+- `audit`: 감사, 감사리스크
 - `capital`: 주주환원, 배당
+- `cashflow`: 현금흐름, 현금
 - `debt`: 부채
 - `digest`: 다이제스트, 변화
 - `governance`: 거버넌스, 지배구조
+- `insider`: 내부자, 지분
 - `network`: 네트워크, 관계
 - `ratio`: 비율
 - `workforce`: 인력, 급여

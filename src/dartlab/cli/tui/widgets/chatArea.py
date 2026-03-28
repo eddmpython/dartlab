@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from textual.containers import VerticalScroll
+from textual.containers import Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.widgets import Static
 
@@ -20,6 +20,7 @@ class ChatArea(VerticalScroll):
         self._streamingBox: Chatbox | None = None
         self._currentToolId: str | None = None
         self._toolCount = 0
+        self._toolGroup: Vertical | None = None
 
     # ── auto-scroll (elia exact pattern) ──
 
@@ -44,6 +45,7 @@ class ChatArea(VerticalScroll):
 
     def beginAssistant(self) -> Chatbox:
         """Start a new streaming assistant message."""
+        self._toolGroup = None
         box = Chatbox("assistant", "")
         self._streamingBox = box
         self.mount(box)
@@ -64,16 +66,31 @@ class ChatArea(VerticalScroll):
             content = self._streamingBox.content
         self._streamingBox = None
         self._toolCount = 0
+        self._toolGroup = None
         return content
 
+    def markCancelled(self) -> None:
+        """Mark the streaming message as cancelled."""
+        if self._streamingBox is not None:
+            self._streamingBox.border_subtitle = "cancelled"
+            self._streamingBox.add_class("cancelled-message")
+
     # ── tool calls ──
+
+    def _ensureToolGroup(self) -> Vertical:
+        """Get or create tool call group container."""
+        if self._toolGroup is None:
+            self._toolGroup = Vertical(classes="tool-group")
+            self.mount(self._toolGroup)
+        return self._toolGroup
 
     def addToolCall(self, toolName: str, label: str) -> None:
         """Add a tool call indicator."""
         self._toolCount += 1
         toolId = f"tool-{self._toolCount}"
         self._currentToolId = toolId
-        self.mount(
+        group = self._ensureToolGroup()
+        group.mount(
             Static(
                 f"[#fab387]>[/] [#6c7086]{label}[/] [dim]...[/]",
                 id=toolId,
@@ -134,3 +151,4 @@ class ChatArea(VerticalScroll):
         self._streamingBox = None
         self._currentToolId = None
         self._toolCount = 0
+        self._toolGroup = None

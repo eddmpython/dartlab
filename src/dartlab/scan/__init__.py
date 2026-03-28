@@ -113,6 +113,33 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetRequired=False,
         returnType="dict",
     ),
+    "cashflow": _AxisEntry(
+        module="dartlab.scan.cashflow",
+        fn="scanCashflow",
+        label="현금흐름",
+        description="OCF/ICF/FCF + 현금흐름 패턴 분류 (8종)",
+        targetParam=None,
+        targetRequired=False,
+        returnType="DataFrame",
+    ),
+    "audit": _AxisEntry(
+        module="dartlab.scan.audit",
+        fn="scanAudit",
+        label="감사리스크",
+        description="감사의견, 감사인변경, 특기사항 종합 리스크",
+        targetParam=None,
+        targetRequired=False,
+        returnType="DataFrame",
+    ),
+    "insider": _AxisEntry(
+        module="dartlab.scan.insider",
+        fn="scanInsider",
+        label="내부자지분",
+        description="최대주주 지분변동, 자기주식 현황, 경영권 안정성",
+        targetParam=None,
+        targetRequired=False,
+        returnType="DataFrame",
+    ),
 }
 
 
@@ -133,6 +160,12 @@ _ALIASES: dict[str, str] = {
     "관계": "network",
     "다이제스트": "digest",
     "변화": "digest",
+    "현금흐름": "cashflow",
+    "현금": "cashflow",
+    "감사": "audit",
+    "감사리스크": "audit",
+    "내부자": "insider",
+    "지분": "insider",
 }
 
 

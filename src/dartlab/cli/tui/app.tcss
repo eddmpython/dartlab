@@ -208,6 +208,28 @@ WelcomeScreen #welcome-shortcuts {
     margin-top: 1;
 }
 
+WelcomeScreen #welcome-setup-hint {
+    text-align: center;
+    width: 100%;
+    color: #f38ba8;
+    margin-top: 1;
+}
+
+/* -- Cancelled response --------------------------------- */
+
+Chatbox.cancelled-message {
+    border: round #f38ba8 40%;
+}
+
+/* -- Tool call group ------------------------------------ */
+
+.tool-group {
+    height: auto;
+    margin: 0 0 0 2;
+    padding: 0 0 0 2;
+    border-left: tall #45475a;
+}
+
 /* -- TextArea (elia exact -- applies to InputArea) ------- */
 
 TextArea {

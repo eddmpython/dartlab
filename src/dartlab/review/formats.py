@@ -21,7 +21,23 @@ def renderHtml(review) -> str:
         f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>{review.corpName} ({review.stockCode})</h2>"
     )
 
+    if review.circulationSummary:
+        parts.append(
+            f"<div style='border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:4px'>"
+            f"<strong>재무 순환 서사</strong><br/>"
+            f"{'<br/>'.join(review.circulationSummary.split(chr(10)))}</div>"
+        )
+
     for section in review.sections:
+        if section.threads:
+            for t in section.threads:
+                colorMap = {"critical": "#d32f2f", "warning": "#f9a825", "positive": "#2e7d32", "neutral": "#757575"}
+                color = colorMap.get(t.severity, "#757575")
+                parts.append(
+                    f"<div style='border-left:3px solid {color};padding:4px 12px;margin:4px 0'>"
+                    f"<strong style='color:{color}'>{t.title}</strong><br/>"
+                    f"<span>{t.story}</span></div>"
+                )
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
                 tag = "h3" if block.level == 1 else "h4"
@@ -57,7 +73,14 @@ def renderMarkdown(review) -> str:
     parts: list[str] = []
     parts.append(f"## {review.corpName} ({review.stockCode})\n")
 
+    if review.circulationSummary:
+        parts.append(f"> **재무 순환 서사**\n> {review.circulationSummary.replace(chr(10), chr(10) + '> ')}")
+
     for section in review.sections:
+        if section.threads:
+            for t in section.threads:
+                icon = {"critical": "[!!]", "warning": "[!]", "positive": "[+]", "neutral": "[-]"}
+                parts.append(f"**{icon.get(t.severity, '')} {t.title}**\n{t.story}")
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
                 prefix = "###" if block.level == 1 else "####"
@@ -122,16 +145,37 @@ def renderJson(review) -> str:
                         items.append({"text": raw})
                 else:
                     items.append(raw)
-        sections.append(
-            {
-                "key": section.key,
-                "title": section.title,
-                "blocks": items,
-            }
-        )
+        threadDicts = []
+        for t in section.threads:
+            threadDicts.append(
+                {
+                    "threadId": t.threadId,
+                    "title": t.title,
+                    "story": t.story,
+                    "severity": t.severity,
+                    "involvedSections": t.involvedSections,
+                    "evidence": t.evidence,
+                }
+            )
+        sectionDict: dict[str, Any] = {
+            "key": section.key,
+            "title": section.title,
+            "blocks": items,
+        }
+        if threadDicts:
+            sectionDict["threads"] = threadDicts
+        sections.append(sectionDict)
+
+    result: dict[str, Any] = {
+        "stockCode": review.stockCode,
+        "corpName": review.corpName,
+        "sections": sections,
+    }
+    if review.circulationSummary:
+        result["circulationSummary"] = review.circulationSummary
 
     return json.dumps(
-        {"stockCode": review.stockCode, "corpName": review.corpName, "sections": sections},
+        result,
         ensure_ascii=False,
         default=str,
     )

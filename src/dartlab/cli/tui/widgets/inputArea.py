@@ -49,6 +49,7 @@ class InputArea(TextArea):
     @on(TextArea.Changed)
     def _onChanged(self, event: TextArea.Changed) -> None:
         """Dynamic border_subtitle hint (elia pattern)."""
+        self._historyIdx = -1
         if self.text.strip():
             self.border_subtitle = "Enter to send"
         else:
@@ -103,7 +104,7 @@ class InputArea(TextArea):
             return
 
         # Pass-through app-level shortcuts
-        _appKeys = {"ctrl+c", "ctrl+d", "ctrl+p", "ctrl+l", "ctrl+b", "ctrl+e"}
+        _appKeys = {"ctrl+c", "ctrl+d", "ctrl+p", "ctrl+l", "ctrl+e"}
         if key in _appKeys:
             return
 
@@ -126,5 +127,9 @@ class InputArea(TextArea):
             if self._historyIdx >= len(self._inputHistory):
                 self._historyIdx = -1
                 self.clear()
+                self.border_subtitle = "/ commands  ^C cancel  ^D exit"
                 return
         self.load_text(self._inputHistory[self._historyIdx])
+        pos = self._historyIdx + 1
+        total = len(self._inputHistory)
+        self.border_subtitle = f"history {pos}/{total}  ^Up/^Down navigate"

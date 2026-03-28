@@ -14,6 +14,7 @@ class HeaderBar(Widget):
 
     provider: reactive[str] = reactive("", layout=True)
     model: reactive[str] = reactive("", layout=True)
+    stockCode: reactive[str] = reactive("", layout=True)
 
     def compose(self) -> ComposeResult:
         """Build header (elia pattern: Label, not Static)."""
@@ -26,10 +27,15 @@ class HeaderBar(Widget):
     def watch_model(self) -> None:
         self._updateInfo()
 
+    def watch_stockCode(self) -> None:
+        self._updateInfo()
+
     def _updateInfo(self) -> None:
-        """Update model label (elia pattern: dim text)."""
+        """Update right-side info (elia pattern: dim text)."""
         info = self.query_one("#header-info", Label)
         parts = []
+        if self.stockCode:
+            parts.append(self.stockCode)
         if self.provider:
             parts.append(self.provider)
         if self.model:

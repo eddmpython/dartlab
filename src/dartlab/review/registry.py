@@ -375,4 +375,19 @@ def buildReview(
                     )
                 )
 
+        # ── 순환 서사 감지 + 주입 ──
+        if live is not None:
+            from rich.spinner import Spinner
+
+            live.update(Spinner("dots", text="순환 서사 감지 중..."))
+
+        from dartlab.review.narrative import buildCirculationSummary, detectThreads
+
+        threads = detectThreads(company, b)
+        for thread in threads:
+            for sec in review.sections:
+                if sec.key in thread.involvedSections:
+                    sec.threads.append(thread)
+        review.circulationSummary = buildCirculationSummary(threads) if threads else ""
+
     return review

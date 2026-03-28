@@ -129,6 +129,16 @@ def _generateSectionOpinion(
     if guideParts:
         baseSystem += "\n\n[분석 관점]\n" + "\n".join(guideParts)
 
+    # 순환 서사 컨텍스트 — 섹션 간 인과관계 인지
+    if section.threads:
+        threadContext = "\n".join(f"- {t.title}: {t.story}" for t in section.threads)
+        baseSystem += (
+            "\n\n[교차 분석 컨텍스트]\n"
+            "이 섹션은 다른 섹션과 다음과 같은 인과관계가 감지되었습니다:\n"
+            f"{threadContext}\n"
+            "이 맥락을 고려하여 독립 분석이 아닌 연결된 관점에서 분석하세요."
+        )
+
     prompt = f"[{corpName}] {section.title}\n\n{serialized}\n\n위 데이터의 분석:"
 
     messages = [

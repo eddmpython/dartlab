@@ -122,7 +122,7 @@ class TestCircuitBreaker:
         cb.record_failure("src")
         cb.record_failure("src")
         assert cb.is_open("src")
-        time.sleep(0.06)
+        time.sleep(0.1)
         assert not cb.is_open("src")  # timeout 경과 → 1회 시도 허용
         # 허용 직후 다시 open (동시 통과 방지)
         assert cb.is_open("src")
@@ -131,7 +131,7 @@ class TestCircuitBreaker:
         cb = CircuitBreaker(failure_threshold=2, recovery_timeout=0.05)
         cb.record_failure("src")
         cb.record_failure("src")
-        time.sleep(0.06)
+        time.sleep(0.1)
         cb.is_open("src")  # 1회 허용
         cb.record_success("src")
         assert cb.state("src") == "closed"
@@ -140,7 +140,7 @@ class TestCircuitBreaker:
         cb = CircuitBreaker(failure_threshold=2, recovery_timeout=0.05)
         cb.record_failure("src")
         cb.record_failure("src")
-        time.sleep(0.06)
+        time.sleep(0.1)
         cb.is_open("src")  # 1회 허용
         cb.record_failure("src")
         assert cb.state("src") == "open"

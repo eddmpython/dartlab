@@ -18,21 +18,26 @@ class CommandPalette(ModalScreen[str | None]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._allCommands: list[tuple[str, str]] = []
+        self._regularCmds: list[tuple[str, str, str]] = []
+        self._skillCmds: list[tuple[str, str]] = []
 
     def compose(self) -> ComposeResult:
         """Build palette UI."""
         from dartlab.cli.commands.chat import _COMMANDS, _SKILL_COMMANDS
 
-        for name, _aliases, desc in _COMMANDS:
-            self._allCommands.append((name, desc))
+        for name, aliases, desc in _COMMANDS:
+            aliasStr = f"  ({', '.join(aliases)})" if aliases else ""
+            self._regularCmds.append((name, aliasStr, desc))
         for name, _skillId, desc in _SKILL_COMMANDS:
-            self._allCommands.append((name, desc))
+            self._skillCmds.append((name, desc))
 
         with Vertical(id="palette-container"):
             yield Input(placeholder="Type a command...", id="palette-input")
             optionList = OptionList(id="palette-list")
-            for name, desc in self._allCommands:
+            for name, aliasStr, desc in self._regularCmds:
+                optionList.add_option(Option(f"{name}{aliasStr}  [dim]{desc}[/]", id=name))
+            optionList.add_option(None)  # separator
+            for name, desc in self._skillCmds:
                 optionList.add_option(Option(f"{name}  [dim]{desc}[/]", id=name))
             yield optionList
 
@@ -45,9 +50,25 @@ class CommandPalette(ModalScreen[str | None]):
         query = event.value.lower().strip()
         optionList = self.query_one("#palette-list", OptionList)
         optionList.clear_options()
-        for name, desc in self._allCommands:
+
+        regularMatches = []
+        for name, aliasStr, desc in self._regularCmds:
+            if not query or query in name.lower() or query in aliasStr.lower() or query in desc.lower():
+                regularMatches.append((name, aliasStr, desc))
+
+        skillMatches = []
+        for name, desc in self._skillCmds:
             if not query or query in name.lower() or query in desc.lower():
-                optionList.add_option(Option(f"{name}  [dim]{desc}[/]", id=name))
+                skillMatches.append((name, desc))
+
+        for name, aliasStr, desc in regularMatches:
+            optionList.add_option(Option(f"{name}{aliasStr}  [dim]{desc}[/]", id=name))
+
+        if regularMatches and skillMatches:
+            optionList.add_option(None)  # separator
+
+        for name, desc in skillMatches:
+            optionList.add_option(Option(f"{name}  [dim]{desc}[/]", id=name))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         """Select a command."""

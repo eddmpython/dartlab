@@ -24,15 +24,35 @@ def renderReview(console, review) -> None:
     console.print(f"[dim]{'─' * ly.separatorWidth}[/]")
     console.print("[dim]  dartlab review[/]")
 
+    # 순환 서사 요약
+    if review.circulationSummary:
+        _renderCirculationSummary(console, review.circulationSummary, ly)
+
     for section in review.sections:
         _renderSection(console, section, ly)
 
     # AI 미설정 안내
     if review.aiNote:
         console.print()
-        console.print(f"[dim]      💡 {review.aiNote}[/]")
+        console.print(f"[dim]      {review.aiNote}[/]")
 
     console.print()
+
+
+def _renderCirculationSummary(console, summary: str, ly) -> None:
+    """순환 서사 요약 박스."""
+    from rich.padding import Padding
+    from rich.panel import Panel
+    from rich.text import Text
+
+    console.print()
+    panel = Panel(
+        Text(summary),
+        title="[bold]재무 순환 서사[/]",
+        border_style="dim",
+        padding=(0, 2),
+    )
+    console.print(Padding(panel, (0, 0, 0, ly.indentH2)))
 
 
 def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
@@ -62,6 +82,9 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
                             (0, 0, 0, ly.indentH2),
                         )
                     )
+        # 순환 서사 threads
+        if section.threads:
+            _renderSectionThreads(console, section.threads, ly)
         if section.helper:
             console.print()
             for line in section.helper.split("\n"):
@@ -144,6 +167,38 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
                 console.print(Padding(Text.from_ansi(rendered), (0, 0, 0, ly.indentBody)))
 
         prevBlockType = type(block)
+
+
+def _renderSectionThreads(console, threads, ly) -> None:
+    """섹션에 연결된 인과 서사 렌더링."""
+    from rich.padding import Padding
+    from rich.text import Text
+
+    h2 = " " * ly.indentH2
+    body = " " * ly.indentBody
+
+    console.print()
+    for t in threads:
+        colorMap = {
+            "critical": "bold red",
+            "warning": "yellow",
+            "positive": "green",
+            "neutral": "dim",
+        }
+        color = colorMap.get(t.severity, "dim")
+        console.print(f"{h2}[{color}]>> {t.title}[/]")
+        for line in t.story.split("\n"):
+            if line.strip():
+                console.print(
+                    Padding(
+                        Text(line.strip(), style=color.replace("bold ", "")),
+                        (0, 0, 0, ly.indentBody),
+                    )
+                )
+        # 관련 섹션 표시
+        others = [s for s in t.involvedSections if s != ""]
+        if others:
+            console.print(f"{body}[dim]-> 관련: {', '.join(others)}[/]")
 
 
 def _renderDataFrame(console, block: TableBlock, indent: int = 6) -> None:

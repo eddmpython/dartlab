@@ -91,6 +91,7 @@ class Review:
     sections: list[Section] = field(default_factory=list)
     layout: ReviewLayout = field(default_factory=ReviewLayout)
     aiNote: str | None = None  # AI 미설정 시 안내 메시지
+    circulationSummary: str = ""  # 재무제표 순환 서사 요약
 
     def __init__(
         self,
@@ -101,6 +102,7 @@ class Review:
         sections: list[Section] | None = None,
         layout: ReviewLayout | None = None,
         aiNote: str | None = None,
+        circulationSummary: str = "",
     ):
         """리스트 전달 시 자유 조립, 아니면 일반 생성."""
         if isinstance(itemsOrStockCode, list):
@@ -122,6 +124,7 @@ class Review:
             )
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
+            self.circulationSummary = circulationSummary
         elif isinstance(itemsOrStockCode, str):
             # Review("005930", corpName=..., ...)
             self.stockCode = itemsOrStockCode
@@ -129,6 +132,7 @@ class Review:
             self.sections = sections or []
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
+            self.circulationSummary = circulationSummary
         else:
             # Review(stockCode=..., corpName=..., ...)
             self.stockCode = stockCode
@@ -136,6 +140,7 @@ class Review:
             self.sections = sections or []
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
+            self.circulationSummary = circulationSummary
 
     def render(self, fmt: str = "rich") -> str:
         """통합 렌더러."""

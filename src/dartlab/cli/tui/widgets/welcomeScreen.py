@@ -84,3 +84,9 @@ class WelcomeScreen(Widget):
                     "Type / for commands  |  Enter to send",
                     id="welcome-shortcuts",
                 )
+
+                if not self._provider:
+                    yield Static(
+                        "No AI provider detected -- run dartlab setup",
+                        id="welcome-setup-hint",
+                    )

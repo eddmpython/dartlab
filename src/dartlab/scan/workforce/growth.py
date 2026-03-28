@@ -82,21 +82,68 @@ REVENUE_IDS = {
 REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
 
 
-def scan_revenue_growth() -> dict[str, float]:
-    """finance IS 2개 완전연도 → {종목코드: 매출성장률(%)}.
+def _scanRevenueGrowthFromMerged(scanPath: Path) -> dict[str, float]:
+    """프리빌드 finance.parquet → 종목별 매출성장률."""
+    scCol = "stockCode" if "stockCode" in pl.scan_parquet(str(scanPath)).collect_schema().names() else "stock_code"
 
-    불완전 연도(2025+)는 제외.
-    """
-    from dartlab.core.dataLoader import _dataDir
+    target = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
+            pl.col("sj_div").is_in(["IS", "CIS"])
+            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+            & (pl.col("bsns_year") <= "2024")
+            & (pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS)))
+        )
+        .collect()
+    )
+    if target.is_empty():
+        return {}
 
-    finance_dir = Path(_dataDir("finance"))
-    parquet_files = sorted(finance_dir.glob("*.parquet"))
+    # 연결 우선
+    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
+    if not cfs.is_empty():
+        target = cfs
 
     result: dict[str, float] = {}
-    for pf in parquet_files:
+    for code in target[scCol].unique().to_list():
+        sub = target.filter(pl.col(scCol) == code)
+        years = sorted(sub["bsns_year"].unique().to_list(), reverse=True)
+        if len(years) < 2:
+            continue
+
+        newYear, oldYear = years[0], years[1]
+        newRev = None
+        for row in sub.filter(pl.col("bsns_year") == newYear).iter_rows(named=True):
+            val = parse_num(row.get("thstrm_amount"))
+            if val and val > 0:
+                if newRev is None or val > newRev:
+                    newRev = val
+
+        oldRev = None
+        for row in sub.filter(pl.col("bsns_year") == oldYear).iter_rows(named=True):
+            val = parse_num(row.get("thstrm_amount"))
+            if val and val > 0:
+                if oldRev is None or val > oldRev:
+                    oldRev = val
+
+        if newRev and oldRev and oldRev > 0:
+            result[code] = round((newRev - oldRev) / oldRev * 100, 1)
+
+    return result
+
+
+def _scanRevenueGrowthPerFile() -> dict[str, float]:
+    """종목별 finance parquet 순회 fallback."""
+    from dartlab.core.dataLoader import _dataDir
+
+    financeDir = Path(_dataDir("finance"))
+    parquetFiles = sorted(financeDir.glob("*.parquet"))
+
+    result: dict[str, float] = {}
+    for pf in parquetFiles:
         code = pf.stem
         try:
-            is_df = (
+            isDf = (
                 pl.scan_parquet(str(pf))
                 .filter(
                     pl.col("sj_div").is_in(["IS", "CIS"])
@@ -106,46 +153,58 @@ def scan_revenue_growth() -> dict[str, float]:
             )
         except (pl.exceptions.PolarsError, OSError):
             continue
-        if is_df.is_empty() or "account_id" not in is_df.columns:
+        if isDf.is_empty() or "account_id" not in isDf.columns:
             continue
-        if is_df.is_empty():
-            continue
-        cfs = is_df.filter(pl.col("fs_nm").str.contains("연결"))
-        target = cfs if not cfs.is_empty() else is_df
+        cfs = isDf.filter(pl.col("fs_nm").str.contains("연결"))
+        target = cfs if not cfs.is_empty() else isDf
 
-        rev_rows = target.filter(
+        revRows = target.filter(
             pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS))
         )
-        if rev_rows.is_empty():
-            rev_rows = target.filter(pl.col("account_nm").str.contains("매출"))
-            if rev_rows.is_empty():
+        if revRows.is_empty():
+            revRows = target.filter(pl.col("account_nm").str.contains("매출"))
+            if revRows.is_empty():
                 continue
 
-        complete_years = sorted(
-            [y for y in rev_rows["bsns_year"].unique().to_list() if y <= "2024"],
+        completeYears = sorted(
+            [y for y in revRows["bsns_year"].unique().to_list() if y <= "2024"],
             reverse=True,
         )
-        if len(complete_years) < 2:
+        if len(completeYears) < 2:
             continue
 
-        new_rev = None
-        for row in rev_rows.filter(pl.col("bsns_year") == complete_years[0]).iter_rows(named=True):
+        newRev = None
+        for row in revRows.filter(pl.col("bsns_year") == completeYears[0]).iter_rows(named=True):
             val = parse_num(row.get("thstrm_amount"))
             if val and val > 0:
-                if new_rev is None or val > new_rev:
-                    new_rev = val
+                if newRev is None or val > newRev:
+                    newRev = val
 
-        old_rev = None
-        for row in rev_rows.filter(pl.col("bsns_year") == complete_years[1]).iter_rows(named=True):
+        oldRev = None
+        for row in revRows.filter(pl.col("bsns_year") == completeYears[1]).iter_rows(named=True):
             val = parse_num(row.get("thstrm_amount"))
             if val and val > 0:
-                if old_rev is None or val > old_rev:
-                    old_rev = val
+                if oldRev is None or val > oldRev:
+                    oldRev = val
 
-        if new_rev and old_rev and old_rev > 0:
-            result[code] = round((new_rev - old_rev) / old_rev * 100, 1)
+        if newRev and oldRev and oldRev > 0:
+            result[code] = round((newRev - oldRev) / oldRev * 100, 1)
 
     return result
+
+
+def scan_revenue_growth() -> dict[str, float]:
+    """finance IS 2개 완전연도 → {종목코드: 매출성장률(%)}.
+
+    프리빌드 finance.parquet 우선, 없으면 per-file fallback.
+    """
+    from dartlab.scan._helpers import _ensureScanData
+
+    scanDir = _ensureScanData()
+    scanPath = scanDir / "finance.parquet"
+    if scanPath.exists():
+        return _scanRevenueGrowthFromMerged(scanPath)
+    return _scanRevenueGrowthPerFile()
 
 
 def compute_salary_vs_revenue(

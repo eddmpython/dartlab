@@ -173,6 +173,11 @@ class DartLabApp(App[None]):
             parts = text.split(maxsplit=1)
             question = parts[1].strip() if len(parts) > 1 else "Comprehensive analysis"
             self._executeQuery(question, reportMode=True)
+        elif cmd in ("/suggest", "/s"):
+            self._showSuggest()
+        elif cmd == "/export":
+            parts = text.split(maxsplit=1)
+            self._handleExport(parts[1].strip() if len(parts) > 1 else "")
         elif cmd == "/cost":
             self._showCost()
         elif cmd in ("/model", "/m"):
@@ -267,6 +272,60 @@ class DartLabApp(App[None]):
             chatArea.appendSystem("\n".join(lines))
         except (ImportError, OSError):
             chatArea.appendSystem("[dim]Usage data unavailable.[/]")
+
+    def _showSuggest(self) -> None:
+        """Show suggested questions."""
+        from dartlab.cli.commands.chat import _SUGGESTIONS
+
+        chatArea = self.query_one(ChatArea)
+        questions = list(_SUGGESTIONS)
+        if self._state and self._state.company:
+            try:
+                from dartlab.ai.conversation.suggestions import suggestQuestions
+
+                engineQuestions = suggestQuestions(self._state.company)
+                if engineQuestions:
+                    questions = engineQuestions
+            except (ImportError, AttributeError):
+                pass
+        lines = ["[bold]Suggested questions:[/]"]
+        for i, q in enumerate(questions, 1):
+            lines.append(f"  [#a6adc8]{i}.[/] {q}")
+        chatArea.appendSystem("\n".join(lines))
+
+    def _handleExport(self, arg: str) -> None:
+        """Export conversation to markdown."""
+        from datetime import datetime
+        from pathlib import Path
+
+        chatArea = self.query_one(ChatArea)
+        if not self._state or not self._state.history:
+            chatArea.appendSystem("[dim]No conversation to export.[/]")
+            return
+
+        path = arg or f"dartlab_chat_{datetime.now():%Y%m%d_%H%M%S}.md"
+        lines = ["# DartLab Chat Export", f"Date: {datetime.now():%Y-%m-%d %H:%M}", ""]
+        if self._state.company:
+            try:
+                lines.append(f"Company: {self._state.company.corpName} ({self._state.stockCode})")
+            except AttributeError:
+                lines.append(f"Company: {self._state.stockCode}")
+            lines.append("")
+        lines.append(f"Provider: {self._state.provider} | Model: {self._state.model or 'default'}")
+        lines.append(f"Queries: {self._state.queryCount} | Tool calls: {self._state.toolCallCount}")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+        for msg in self._state.history:
+            role = "You" if msg["role"] == "user" else "DartLab"
+            lines.append(f"## {role}")
+            lines.append("")
+            lines.append(msg["content"])
+            lines.append("")
+
+        Path(path).write_text("\n".join(lines), encoding="utf-8")
+        chatArea.appendSystem(f"[dim]Exported to {path}[/]")
 
     # ── Query execution (elia pattern: @work(thread=True) + call_from_thread) ──
 
@@ -387,7 +446,31 @@ class DartLabApp(App[None]):
             self._saveMessage("user", question)
             self._saveMessage("assistant", content)
 
+            # Follow-up hints
+            if state.company:
+                self._showFollowUpHints(chatArea, state)
+
         self.call_from_thread(self._finalize)
+
+    def _showFollowUpHints(self, chatArea: ChatArea, state) -> None:
+        """Show follow-up question hints after response."""
+        from dartlab.cli.commands.chat import _SUGGESTIONS
+
+        suggestions = _SUGGESTIONS[:3]
+        try:
+            from dartlab.ai.conversation.suggestions import suggestQuestions
+
+            engineSuggestions = suggestQuestions(state.company)
+            if engineSuggestions:
+                suggestions = engineSuggestions[:3]
+        except (ImportError, AttributeError):
+            pass
+        parts = []
+        for q in suggestions:
+            short = q[:50] + "..." if len(q) > 50 else q
+            parts.append(short)
+        hint = "  |  ".join(parts)
+        self.call_from_thread(chatArea.appendSystem, f"[dim]Try: {hint}[/]")
 
     def _finalize(self) -> None:
         """Clean up after query completion."""
@@ -405,6 +488,7 @@ class DartLabApp(App[None]):
         header = self.query_one(HeaderBar)
         header.provider = self._state.provider or ""
         header.model = self._state.model or ""
+        header.stockCode = self._state.stockCode or ""
 
     def _saveMessage(self, role: str, content: str) -> None:
         """Persist message to SQLite."""
@@ -425,6 +509,7 @@ class DartLabApp(App[None]):
         if self._running and self._cancelEvent:
             self._cancelEvent.set()
             chatArea = self.query_one(ChatArea)
+            chatArea.markCancelled()
             chatArea.appendSystem("[dim]Cancelled.[/]")
             self._finalize()
         else:

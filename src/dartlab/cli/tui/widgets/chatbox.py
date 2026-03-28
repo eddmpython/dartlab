@@ -56,10 +56,12 @@ class Chatbox(Widget, can_focus=True):
 
     def action_copy(self) -> None:
         """Copy message to clipboard."""
-        import pyperclip
-
         try:
+            import pyperclip
+
             pyperclip.copy(self._content)
             self.notify("Copied to clipboard")
-        except (ImportError, OSError):
-            pass
+        except ImportError:
+            self.notify("pyperclip not installed: pip install pyperclip", severity="error")
+        except OSError as exc:
+            self.notify(f"Clipboard error: {exc}", severity="error")
