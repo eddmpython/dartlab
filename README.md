@@ -207,6 +207,32 @@ These two principles govern every public API:
 
 **Reliability** — Numbers are raw originals from DART/EDGAR. Missing data returns `None`, never a guess. `trace(topic)` shows which source was chosen and why. Errors are never swallowed.
 
+### Data — Everything Is Ready
+
+All data is pre-built on [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data). When you create a `Company`, dartlab auto-downloads what it needs — **no setup, no API key, no manual download.**
+
+| Dataset | Coverage | Size |
+|---------|----------|------|
+| DART docs | 2,500+ companies | ~8 GB |
+| DART finance | 2,700+ companies | ~600 MB |
+| DART report | 2,700+ companies | ~320 MB |
+| DART scan | Pre-built cross-company | ~271 MB |
+| EDGAR | On-demand | SEC API (auto-fetched) |
+
+Want to collect directly from the source? Use the raw public APIs:
+
+```python
+from dartlab import OpenDart           # Korea DART (requires free API key)
+d = OpenDart()
+d.filings("삼성전자", "2024")
+
+from dartlab import OpenEdgar          # US SEC (no key required)
+e = OpenEdgar()
+e.filings("AAPL", forms=["10-K"])
+```
+
+See [Data](#data) for the full pipeline (cache, freshness, batch collection).
+
 ### Company — 7 Things to Remember
 
 `Company` merges docs/finance/report into one object. You only need 7 methods:
@@ -1083,8 +1109,8 @@ dartlab collect --batch --mode all         # re-collect everything
 
 | Feature | Description | Colab | Molab |
 |---------|-------------|-------|-------|
-| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
-| **Scan** | `scan()` -- 11-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
+| **Company** | `Company("005930")` -- index, show, select, trace, diff + finance shortcuts | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
+| **Scan** | `scan()` -- 13-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Review** | `c.review()` -- 14-section structured report + `c.reviewer()` AI interpretation | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
 
 <details>
@@ -1094,7 +1120,7 @@ dartlab collect --batch --mode all         # re-collect everything
 uv add dartlab marimo
 marimo edit notebooks/marimo/01_company.py
 marimo edit notebooks/marimo/02_scan.py
-marimo edit notebooks/marimo/03_ask.py
+marimo edit notebooks/marimo/03_review.py
 ```
 
 </details>

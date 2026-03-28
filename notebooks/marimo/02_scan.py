@@ -4,7 +4,8 @@
 # ///
 """DartLab -- Scan.
 
-search, listing, and 12-axis market scan across 2,700+ companies.
+scan() -- one function for all cross-market analysis.
+13 axes, 2,700+ companies.
 """
 
 import marimo
@@ -22,7 +23,7 @@ def _():
 
 @app.cell
 def _(dartlab):
-    # find a company by name -- returns matching stock codes
+    # find a company by name
     dartlab.search("삼성전자")
     return
 
@@ -36,14 +37,21 @@ def _(dartlab):
 
 @app.cell
 def _(dartlab):
-    # available pre-computed ratio scans
+    # step 1: guide -- all axes + usage
+    dartlab.scan()
+    return
+
+
+@app.cell
+def _(dartlab):
+    # step 2: item list for an axis
     dartlab.scan("ratio")
     return
 
 
 @app.cell
 def _(dartlab):
-    # rank all 2,700+ companies by ROE
+    # step 3: execute -- rank all companies by ROE
     dartlab.scan("ratio", "roe")
     return
 
@@ -57,8 +65,8 @@ def _(dartlab):
 
 @app.cell
 def _(dartlab):
-    # unified scan interface -- guide (all axes + usage)
-    dartlab.scan()
+    # governance scan -- full market
+    dartlab.scan("governance")
     return
 
 

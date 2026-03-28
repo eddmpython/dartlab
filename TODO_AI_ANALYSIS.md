@@ -31,7 +31,7 @@
 | 컨텍스트 빌더 | 질문 유형별 모듈 매핑 | 분석 깊이별 단계적 확장 (요약/상세/전문가) |
 | AI Reflection | 수치 근거 확인만 | 논리적 일관성 검증 + 모순 탐지 + 커버리지 체크 |
 | insight 10영역 | A~F 등급 산출 | 등급 변화 추세 + 드라이버 설명 |
-| scan 전종목 | 11축 (governance~insider) | 전종목 insight/distress 스냅샷 |
+| scan 전종목 | 13축 (governance~liquidity) | 전종목 insight/distress 스냅샷 |
 
 ### 핵심 GAP
 
