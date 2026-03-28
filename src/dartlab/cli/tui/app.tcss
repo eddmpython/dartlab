@@ -1,16 +1,6 @@
-/* DartLab TUI -- derived from elia.scss with exact variable patterns */
+/* DartLab TUI -- oterm layout + Toad design language */
 
-/* elia variable aliases */
-$main-lighten-2: $primary-lighten-2;
-$main-lighten-1: $primary-lighten-1;
-$main: $primary;
-$main-darken-1: $primary-darken-1;
-$main-darken-2: $primary-darken-2;
-$main-border-text-color: $accent;
-$main-border-color: $main-lighten-1 50%;
-$main-border-color-focus: $main-lighten-1 100%;
-
-/* -- Global (elia exact) -------------------------------- */
+/* -- Global ------------------------------------------------ */
 
 * {
     scrollbar-color: $accent 30%;
@@ -23,149 +13,111 @@ $main-border-color-focus: $main-lighten-1 100%;
 
 Screen {
     background: $background;
-    padding: 0 2 0 2;
 }
 
-/* -- Header (elia AppHeader exact) ---------------------- */
+/* -- Header ------------------------------------------------ */
 
 HeaderBar {
     dock: top;
     width: 1fr;
-    padding: 1 2;
     height: auto;
-    background: $background;
+    padding: 0 2;
+    background: black 7%;
 }
 
-HeaderBar #header-brand {
+HeaderBar #headerBrand {
     width: auto;
-    min-width: 16;
-    color: $accent;
+    min-width: 10;
+    color: #c0392b;
     text-style: bold;
 }
 
-HeaderBar #header-info {
+HeaderBar #headerInfo {
     width: 1fr;
     text-align: right;
-    text-style: dim;
-}
-
-/* -- Body ----------------------------------------------- */
-
-#body {
-    height: 1fr;
-}
-
-/* -- Chat area ------------------------------------------ */
-
-ChatArea {
-    height: 1fr;
-    padding: 0;
-}
-
-/* -- Chatbox (elia exact) ------------------------------- */
-
-Chatbox {
-    height: auto;
-    width: auto;
-    min-width: 12;
-    max-width: 1fr;
-    margin: 0 1;
-    padding: 0 2;
-}
-
-Chatbox.assistant-message {
-    width: 1fr;
-    border: round $accent 60%;
-}
-
-Chatbox.assistant-message:focus-within {
-    border: round $accent;
-    border-left: thick $accent 50%;
-}
-
-Chatbox.user-message {
-    border: round $main-border-color;
-}
-
-Chatbox.user-message:focus-within {
-    border: round $main-border-color-focus;
-    border-left: thick $main-border-color-focus;
-}
-
-Chatbox.system-message {
-    border: none;
-    padding: 0 2;
     color: $text-muted;
 }
 
-/* -- System messages ------------------------------------ */
+/* -- Chat container ---------------------------------------- */
 
-.system-message {
+ChatContainer {
+    height: 1fr;
+    padding: 0 1;
+}
+
+/* -- Chat items (Toad design: cursor bar + clean spacing) -- */
+
+ChatItem {
+    height: auto;
+    margin: 0 0 1 0;
+}
+
+ChatItem.userMessage {
+    height: auto;
+    padding: 0 2;
+    background: black 7%;
+    border-left: outer $secondary 40%;
+}
+
+ChatItem.assistantMessage {
+    height: auto;
+    padding: 0 2;
+    border-left: outer $accent;
+}
+
+ChatItem.cancelledMessage {
+    border-left: outer $error 60%;
+    opacity: 0.7;
+}
+
+ChatItem .messageText {
+    height: auto;
+    width: 1fr;
+}
+
+/* -- System messages --------------------------------------- */
+
+.systemMessage {
     height: auto;
     margin: 0 2;
     padding: 0;
     color: $text-muted;
 }
 
-/* -- Tool calls ----------------------------------------- */
+/* -- Tool calls (Toad pattern: grouped with border) -------- */
 
-.tool-status {
+.toolGroup {
     height: auto;
-    margin: 0 0 0 4;
+    margin: 0 0 0 3;
+    padding: 0 0 0 1;
+    border-left: tall $primary 30%;
+}
+
+.toolStatus {
+    height: auto;
+    margin: 0;
     padding: 0 1;
     color: $text-muted;
 }
 
-.tool-done {
+.toolDone {
     height: auto;
-    margin: 0 0 0 4;
+    margin: 0;
     padding: 0 1;
     color: $text;
     text-style: dim;
 }
 
-/* -- ResponseStatus (elia exact) ------------------------ */
+/* -- Thinking indicator ------------------------------------ */
 
-ResponseStatus {
-    dock: top;
-    align-horizontal: right;
-    display: none;
-    layer: overlay;
-    height: 2;
-    width: auto;
-    margin-top: 1;
-    margin-right: 2;
-}
-
-ResponseStatus Label {
-    width: auto;
-}
-
-ResponseStatus LoadingIndicator {
-    width: auto;
-    color: $primary;
+#thinkingIndicator {
     height: 1;
-    margin-top: 1;
-    dock: right;
-}
-
-ResponseStatus.-awaiting {
-    display: block;
-}
-
-ResponseStatus.-awaiting LoadingIndicator {
+    margin: 0 2;
     color: $primary;
+    background: transparent;
 }
 
-ResponseStatus.-responding {
-    display: block;
-}
-
-ResponseStatus.-responding LoadingIndicator {
-    color: $secondary;
-}
-
-/* -- Welcome -------------------------------------------- */
+/* -- Welcome screen ---------------------------------------- */
 
 WelcomeScreen {
     width: 100%;
@@ -173,133 +125,81 @@ WelcomeScreen {
     align: center middle;
 }
 
-WelcomeScreen #welcome-outer {
+WelcomeScreen #welcomeOuter {
     width: auto;
-    max-width: 80;
+    max-width: 72;
     height: auto;
     align: center middle;
     padding: 1 4;
 }
 
-WelcomeScreen #welcome-brand {
+WelcomeScreen #welcomeBrand {
     text-align: center;
     width: auto;
     height: auto;
     margin-bottom: 1;
 }
 
-WelcomeScreen #welcome-tagline {
+WelcomeScreen #welcomeTagline {
     text-align: center;
     width: 100%;
     color: $text-muted;
 }
 
-WelcomeScreen #welcome-provider-info {
+WelcomeScreen #welcomeProviderInfo {
     text-align: center;
     width: 100%;
     color: $text-disabled;
     margin-top: 1;
 }
 
-WelcomeScreen #welcome-shortcuts {
+WelcomeScreen #welcomeShortcuts {
     text-align: center;
     width: 100%;
     color: $text-disabled;
     margin-top: 1;
 }
 
-WelcomeScreen #welcome-setup-hint {
+WelcomeScreen #welcomeSetupHint {
     text-align: center;
     width: 100%;
-    color: #f38ba8;
+    color: $error;
     margin-top: 1;
 }
 
-/* -- Cancelled response --------------------------------- */
+/* -- Prompt (Toad pattern: focus-activated border) --------- */
 
-Chatbox.cancelled-message {
-    border: round #f38ba8 40%;
-}
-
-/* -- Tool call group ------------------------------------ */
-
-.tool-group {
-    height: auto;
-    margin: 0 0 0 2;
-    padding: 0 0 0 2;
-    border-left: tall #45475a;
-}
-
-/* -- TextArea (elia exact -- applies to InputArea) ------- */
-
-TextArea {
-    padding: 1 2;
-    border: round $main-border-color;
-    border-title-color: $main-border-text-color;
-    border-subtitle-color: $main-border-text-color;
-}
-
-TextArea:focus {
-    border: round $main-border-color-focus;
-    border-title-style: bold;
-}
-
-TextArea:focus .text-area--selection {
-    background: $main 60%;
-}
-
-TextArea .text-area--cursor-line {
-    background: $background 0%;
-}
-
-TextArea .text-area--cursor-gutter {
-    background: $background 0%;
-}
-
-TextArea:focus .text-area--cursor-gutter {
-    color: yellowgreen;
-    background: $background 0%;
-}
-
-TextArea .text-area--selection {
-    background: $main-lighten-2 25%;
-}
-
-/* -- InputArea (elia ChatPromptInput exact) -------------- */
-
-InputArea {
+Prompt {
     dock: bottom;
     height: auto;
     min-height: 3;
     max-height: 12;
-    padding: 0 1;
-    background: $background;
+    margin: 0 1;
+    padding: 1 2;
+    border: tall transparent;
+    border-title-color: $accent;
+    border-subtitle-color: $text-muted;
 }
 
-InputArea.-submit-blocked {
-    border: round $error 50%;
+Prompt:focus {
+    border: tall $secondary;
+    border-title-style: bold;
 }
 
-/* -- Status bar ----------------------------------------- */
-
-StatusBar {
-    dock: bottom;
-    height: 1;
-    background: transparent;
-    padding: 0 2;
-    layout: horizontal;
+Prompt.-blocked {
+    border: tall $error 40%;
+    opacity: 0.7;
 }
 
-StatusBar #status-companies {
-    width: 1fr;
+Prompt .text-area--cursor-line {
+    background: $background 0%;
 }
 
-StatusBar #status-right {
-    width: auto;
-    text-align: right;
+Prompt .text-area--cursor-gutter {
+    background: $background 0%;
 }
 
-/* -- Footer (elia exact) -------------------------------- */
+/* -- Footer (Toad pattern: minimal, transparent) ----------- */
 
 Footer {
     background: transparent;
@@ -314,43 +214,8 @@ Footer FooterKey {
     background: transparent;
 }
 
-/* -- Command palette ------------------------------------ */
+/* -- Markdown fence height limit (oterm) ------------------- */
 
-CommandPalette {
-    align: center middle;
-}
-
-#palette-container {
-    width: 64;
-    max-height: 24;
-    background: $background;
-    border: round $main-border-color;
-    border-title-color: $main-border-text-color;
-    padding: 1 2;
-}
-
-#palette-input {
-    margin-bottom: 1;
-}
-
-#palette-list {
-    height: 1fr;
-    background: $background 15%;
-}
-
-/* -- OptionList (elia exact) ---------------------------- */
-
-OptionList {
-    background: $background 15%;
-}
-
-OptionList > .option-list--option-highlighted {
-    background: $main 15%;
-    color: $text;
-    text-style: none;
-}
-
-OptionList:focus > .option-list--option-highlighted {
-    background: $main-darken-2 80%;
-    text-style: none;
+MarkdownFence {
+    max-height: 50;
 }

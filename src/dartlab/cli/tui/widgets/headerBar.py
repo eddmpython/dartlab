@@ -1,8 +1,7 @@
-"""Header bar -- elia AppHeader pattern."""
+"""Header bar -- provider/model/company display."""
 
 from __future__ import annotations
 
-from rich.text import Text
 from textual.app import ComposeResult
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -10,16 +9,15 @@ from textual.widgets import Label
 
 
 class HeaderBar(Widget):
-    """App header (elia pattern): title left, model right."""
+    """Minimal header: brand left, info right."""
 
     provider: reactive[str] = reactive("", layout=True)
     model: reactive[str] = reactive("", layout=True)
     stockCode: reactive[str] = reactive("", layout=True)
 
     def compose(self) -> ComposeResult:
-        """Build header (elia pattern: Label, not Static)."""
-        yield Label(Text("DartLab", style="bold"), id="header-brand")
-        yield Label("", id="header-info")
+        yield Label("DartLab", id="headerBrand")
+        yield Label("", id="headerInfo")
 
     def watch_provider(self) -> None:
         self._updateInfo()
@@ -31,8 +29,7 @@ class HeaderBar(Widget):
         self._updateInfo()
 
     def _updateInfo(self) -> None:
-        """Update right-side info (elia pattern: dim text)."""
-        info = self.query_one("#header-info", Label)
+        info = self.query_one("#headerInfo", Label)
         parts = []
         if self.stockCode:
             parts.append(self.stockCode)

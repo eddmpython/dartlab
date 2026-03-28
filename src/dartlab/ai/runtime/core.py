@@ -709,7 +709,11 @@ def _analyze_inner(
         )
         return
 
-    # ── 10. Full analysis 경로 — compact map 체제 ──
+    # ── 10. Full analysis 경로 — Engine-First briefing 체제 ──
+    #
+    # compact map(200토큰) → Analysis Briefing(2,000-8,000토큰)
+    # 엔진이 질문 유형에 맞는 분석을 사전 실행하여 LLM에 전달.
+    # 도구 호출은 보충용으로만 사용.
 
     context_text = ""
 
@@ -720,42 +724,36 @@ def _analyze_inner(
             context_text = _prefetch
 
     if company is not None:
-        from dartlab.ai.context.compactMap import buildCompactMap
+        from dartlab.ai.context.briefing import buildBriefing, buildBriefingMulti
 
-        # compact map만 제공 — 상세 데이터는 AI가 도구로 조회
-        compactMap = buildCompactMap(company)
-        if compactMap:
-            yield AnalysisEvent(
-                "context",
-                {
-                    "module": "_compactMap",
-                    "label": f"{corp_name} 프로필",
-                    "text": compactMap,
-                },
+        if companies and len(companies) > 1:
+            # 멀티컴퍼니: 주 기업 briefing + 추가 기업 compact map
+            briefingText, briefingEvents = buildBriefingMulti(
+                companies, company, question, reportMode=report_mode,
             )
+            for evtModule, evtLabel in briefingEvents:
+                yield AnalysisEvent(
+                    "context",
+                    {"module": evtModule, "label": evtLabel, "text": ""},
+                )
+        else:
+            # 단일 기업: 풍부한 briefing
+            briefingText = buildBriefing(
+                company, question, reportMode=report_mode,
+            )
+            if briefingText:
+                yield AnalysisEvent(
+                    "context",
+                    {
+                        "module": "_briefing",
+                        "label": f"{corp_name} 분석 브리핑",
+                        "text": briefingText,
+                    },
+                )
 
         context_parts = []
-        if compactMap:
-            context_parts.append(compactMap)
-
-        # 멀티컴퍼니: 각 추가 기업의 compact map
-        if companies:
-            _extraCompanies = [c for c in companies if c is not company]
-            for _extraComp in _extraCompanies:
-                try:
-                    _extraMap = buildCompactMap(_extraComp)
-                    if _extraMap:
-                        context_parts.append(_extraMap)
-                        yield AnalysisEvent(
-                            "context",
-                            {
-                                "module": f"{_extraComp.stockCode}_compactMap",
-                                "label": f"{_extraComp.corpName} 프로필",
-                                "text": _extraMap,
-                            },
-                        )
-                except (ValueError, FileNotFoundError, OSError, RuntimeError):
-                    pass
+        if briefingText:
+            context_parts.append(briefingText)
 
         # report_mode에서만 사전 전달된 focus/diff 컨텍스트 포함
         if report_mode:

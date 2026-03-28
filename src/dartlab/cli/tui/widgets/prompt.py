@@ -1,6 +1,8 @@
-"""Input area -- elia PromptInput pattern."""
+"""Prompt input -- oterm FlexibleInput pattern, simplified for dartlab."""
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from textual import events, on
 from textual.binding import Binding
@@ -9,26 +11,20 @@ from textual.reactive import reactive
 from textual.widgets import TextArea
 
 
-class InputSubmitted(Message):
-    """User submitted input."""
-
-    def __init__(self, value: str) -> None:
-        super().__init__()
-        self.value = value
-
-
-class SlashTriggered(Message):
-    """Slash typed on empty input -- open command palette."""
-
-
-class InputArea(TextArea):
-    """Chat input with Enter submit (elia PromptInput pattern)."""
+class Prompt(TextArea):
+    """Chat input (Enter to submit, Shift+Enter for newline)."""
 
     BINDINGS = [
         Binding("ctrl+shift+v", "paste", "Paste", show=False),
     ]
 
-    submitReady: reactive[bool] = reactive(True)
+    @dataclass
+    class Submitted(Message):
+        """User submitted input."""
+
+        value: str
+
+    disabled: reactive[bool] = reactive(False)
 
     def __init__(self, **kwargs) -> None:
         super().__init__(
@@ -42,45 +38,34 @@ class InputArea(TextArea):
         self._historyIdx: int = -1
 
     def on_mount(self) -> None:
-        """Set border title and subtitle (elia pattern)."""
         self.border_title = "Message"
-        self.border_subtitle = "/ commands  ^C cancel  ^D exit"
+        self.border_subtitle = "Enter send  |  Shift+Enter newline  |  / commands"
 
     @on(TextArea.Changed)
     def _onChanged(self, event: TextArea.Changed) -> None:
-        """Dynamic border_subtitle hint (elia pattern)."""
         self._historyIdx = -1
         if self.text.strip():
             self.border_subtitle = "Enter to send"
         else:
-            self.border_subtitle = "/ commands  ^C cancel  ^D exit"
+            self.border_subtitle = "Enter send  |  Shift+Enter newline  |  / commands"
 
-    def watch_submitReady(self, ready: bool) -> None:
-        """Visual feedback when input is blocked."""
-        self.set_class(not ready, "-submit-blocked")
+    def watch_disabled(self, value: bool) -> None:
+        self.set_class(value, "-blocked")
 
     async def _on_key(self, event: events.Key) -> None:
-        """Key handling."""
         key = event.key
-
-        # "/" on empty -> command palette
-        if key == "slash" and self.text.strip() == "":
-            event.stop()
-            event.prevent_default()
-            self.post_message(SlashTriggered())
-            return
 
         # Enter = submit
         if key == "enter":
             event.stop()
             event.prevent_default()
             text = self.text.strip()
-            if text and self.submitReady:
+            if text and not self.disabled:
                 self._inputHistory.append(text)
                 self._historyIdx = -1
                 self.clear()
-                self.post_message(InputSubmitted(text))
-            elif not self.submitReady:
+                self.post_message(Prompt.Submitted(value=text))
+            elif self.disabled:
                 self.app.bell()
             return
 
@@ -104,14 +89,12 @@ class InputArea(TextArea):
             return
 
         # Pass-through app-level shortcuts
-        _appKeys = {"ctrl+c", "ctrl+d", "ctrl+p", "ctrl+l", "ctrl+e"}
-        if key in _appKeys:
+        if key in {"ctrl+c", "ctrl+d", "ctrl+l"}:
             return
 
         await super()._on_key(event)
 
     def _navigateHistory(self, direction: int) -> None:
-        """Navigate input history."""
         if not self._inputHistory:
             return
         if self._historyIdx == -1:
@@ -127,9 +110,5 @@ class InputArea(TextArea):
             if self._historyIdx >= len(self._inputHistory):
                 self._historyIdx = -1
                 self.clear()
-                self.border_subtitle = "/ commands  ^C cancel  ^D exit"
                 return
         self.load_text(self._inputHistory[self._historyIdx])
-        pos = self._historyIdx + 1
-        total = len(self._inputHistory)
-        self.border_subtitle = f"history {pos}/{total}  ^Up/^Down navigate"

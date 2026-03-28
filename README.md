@@ -45,30 +45,10 @@ pip install dartlab
 
 ### Optional Extras
 
-Install only what you need:
+Core analysis, AI, charts, and LLM are all included in the base install. Optional extras add integrations:
 
 ```bash
-uv add "dartlab[ai]"              # web UI, server, streaming (FastAPI + uvicorn)
-uv add "dartlab[llm]"             # LLM analysis (OpenAI)
-uv add "dartlab[charts]"          # Plotly charts, network graphs (plotly + networkx + scipy)
 uv add "dartlab[mcp]"             # MCP server for Claude Desktop / Code / Cursor
-uv add "dartlab[channel]"         # web UI + cloudflared tunnel sharing
-uv add "dartlab[channel-ngrok]"   # web UI + ngrok tunnel sharing
-uv add "dartlab[channel-full]"    # all channels + Telegram / Slack / Discord bots
-uv add "dartlab[all]"             # everything above (except channel bots)
-```
-
-**Common combinations:**
-
-```bash
-# financial analysis + AI chat
-uv add "dartlab[ai,llm]"
-
-# full analysis suite — charts, AI, LLM
-uv add "dartlab[ai,llm,charts]"
-
-# share analysis with team via tunnel
-uv add "dartlab[channel]"
 ```
 
 ### From Source
@@ -346,9 +326,26 @@ c.reviewer()                                    # full + AI
 c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 ```
 
-### Four-Layer Relationship
+### Gather — External Market Data in One Call
+
+`gather()` collects external market data — price, flow, macro, news — all as **Polars DataFrames**.
+
+```python
+dartlab.gather()                              # guide -- 4 axes
+dartlab.gather("price", "005930")             # KR OHLCV timeseries (1-year default)
+dartlab.gather("price", "AAPL", market="US")  # US stock
+dartlab.gather("flow", "005930")              # foreign/institutional flow (KR)
+dartlab.gather("macro")                       # KR 12 macro indicators
+dartlab.gather("macro", "FEDFUNDS")           # single indicator (auto-detects US)
+dartlab.gather("news", "삼성전자")             # Google News RSS
+```
+
+Company-bound: `c.gather("price")` — no need to pass the stock code again.
+
+### Five-Layer Relationship
 
 ```
+gather()     External market data (4 axes)        -- price, flow, macro, news
 scan()       Market-wide cross-section (13 axes)  -- screening across firms
 analysis()   Single-firm deep analysis (14 axes)  -- full financial analysis
 c.review()   analysis -> structured report         -- block-template pipeline
@@ -591,8 +588,6 @@ dartlab.text.extract_keywords(narrative)                        # frequency-base
 dartlab.text.sentiment_indicators(narrative)                     # positive/negative/risk
 ```
 
-Install chart dependencies: `uv add "dartlab[charts]"`
-
 ### Network — Affiliate Map (beta)
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
@@ -635,29 +630,33 @@ dartlab.scan("insider")                  # largest shareholder changes, treasury
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
-The Gather engine collects external market data as **Polars DataFrames** — timeseries by default. Every request goes through automatic fallback chains, circuit breaker isolation, and TTL caching. All methods are synchronous — async parallel execution is handled internally.
+`gather()` collects all external market data as **Polars DataFrames**. Every request goes through automatic fallback chains, circuit breaker isolation, and TTL caching. All methods are synchronous — async parallel execution is handled internally.
 
 ```python
 import dartlab
 
+dartlab.gather()                                # guide -- 4 axes with descriptions
+
 # OHLCV timeseries — adjusted prices, 6000+ trading days in a single request
-dartlab.price("005930")                         # KR: 1-year default, Polars DataFrame
-dartlab.price("005930", start="2015-01-01")     # custom range
-dartlab.price("AAPL", market="US")              # US via Yahoo Finance chart API
-dartlab.price("005930", snapshot=True)          # opt-in: current price snapshot
+dartlab.gather("price", "005930")               # KR: 1-year default
+dartlab.gather("price", "005930", start="2015-01-01")  # custom range
+dartlab.gather("price", "AAPL", market="US")    # US via Yahoo Finance chart API
 
 # supply/demand flow timeseries (KR only)
-dartlab.flow("005930")                          # DataFrame (date, foreignNet, institutionNet, ...)
+dartlab.gather("flow", "005930")                # DataFrame (date, foreignNet, institutionNet, ...)
 
 # macro indicators — full wide DataFrame
-dartlab.macro()                                 # KR 12 indicators (CPI, rates, FX, production, ...)
-dartlab.macro("US")                             # US 25 indicators (GDP, CPI, Fed Funds, S&P500, ...)
-dartlab.macro("CPI")                            # single indicator (auto-detects KR)
-dartlab.macro("FEDFUNDS")                       # single indicator (auto-detects US)
+dartlab.gather("macro")                         # KR 12 indicators (CPI, rates, FX, production, ...)
+dartlab.gather("macro", market="US")            # US 25 indicators (GDP, CPI, Fed Funds, S&P500, ...)
+dartlab.gather("macro", "CPI")                  # single indicator (auto-detects KR)
+dartlab.gather("macro", "FEDFUNDS")             # single indicator (auto-detects US)
 
-# consensus, news
-dartlab.consensus("005930")                     # target price & analyst opinion
-dartlab.news("삼성전자")                         # Google News RSS → DataFrame
+# news
+dartlab.gather("news", "삼성전자")               # Google News RSS → DataFrame
+
+# company-bound -- no need to pass stock code
+c = dartlab.Company("005930")
+c.gather("price")                               # same as gather("price", "005930")
 ```
 
 **How data is collected — don't worry, it's safe:**
@@ -668,7 +667,7 @@ dartlab.news("삼성전자")                         # Google News RSS → DataF
 | Yahoo Finance v8 | US/Global OHLCV | `query2.finance.yahoo.com/v8/finance/chart` — public chart API |
 | ECOS (Bank of Korea) | KR macro indicators | Official API with user's own key |
 | FRED (St. Louis Fed) | US macro indicators | Official API with user's own key |
-| Naver Mobile API | Consensus, flow, sector PER | `m.stock.naver.com/api` — JSON endpoints |
+| Naver Mobile API | Flow, sector PER | `m.stock.naver.com/api` — JSON endpoints |
 | FMP | Fallback for US history | Financial Modeling Prep API (optional) |
 
 **Safety infrastructure:**
@@ -693,8 +692,8 @@ c.keywordTrend(keyword="AI")          # topic × period × keyword count
 c.keywordTrend()                      # all 54 built-in keywords
 
 # news headlines
-c.news()                              # recent 30 days
-dartlab.news("AAPL", market="US")     # US company news
+c.gather("news")                      # recent 30 days
+dartlab.gather("news", "AAPL", market="US")  # US company news
 
 # global peer mapping (WICS → GICS sector)
 dartlab.crossBorderPeers("005930")    # → ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"]
@@ -719,8 +718,6 @@ Disclosure gap detection runs automatically inside `c.insights` — flags mismat
 ```bash
 dartlab excel "005930" -o samsung.xlsx
 ```
-
-Install: `uv add "dartlab[ai]"` (Excel export is included in the AI extras).
 
 ### Plugins
 
@@ -921,8 +918,6 @@ dartlab.ask("삼성전자 분석", provider="free")
 **`oauth-codex`** is the recommended provider — if you have a ChatGPT subscription, it works out of the box with no API keys. Run `dartlab setup oauth-codex` to authenticate.
 
 **Web UI (`dartlab`)** launches a browser-based chat interface for interactive analysis. This feature is currently **experimental** — we are evaluating the right scope and UX for visualization and collaborative features.
-
-Install AI dependencies: `uv add "dartlab[ai]"`
 
 ### Project Settings (`.dartlab.yml`)
 

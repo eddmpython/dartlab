@@ -29,14 +29,19 @@ _TOOL_CATEGORY: dict[str, str] = {
     # data: 원본 데이터 조회
     "finance": "data",
     "explore": "data",
-    "market": "data",
+    "scan": "data",
+    "gather": "data",
     "openapi": "data",
     "research": "data",
     # analysis: 파생 계산
-    "analyze": "analysis",
+    "analysis": "analysis",
+    "review": "analysis",
     "chart": "analysis",
     # meta: 시스템/스펙 조회
     "system": "meta",
+    # legacy compatibility
+    "market": "data",
+    "analyze": "analysis",
 }
 
 _DEFAULT_MAX_CALLS = 3

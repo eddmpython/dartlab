@@ -266,11 +266,41 @@ def _resolveAxis(axis: str) -> str:
 
 
 class Analysis:
-    """재무제표 완전 분석 통합 진입점.
+    """재무제표 완전 분석 — 14축, 단일 종목 심층.
 
-    analysis()                      -> 14축 가이드
-    analysis("수익구조")             -> 수익구조 항목 목록
-    analysis("수익구조", c)          -> 삼성전자 수익구조 분석
+    Capabilities:
+        Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름
+        Part 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가
+        Part 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
+        - 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
+        - review()가 이 결과를 소비하여 구조화 보고서 생성
+
+    AIContext:
+        - reviewer()가 analysis 결과를 소비하여 AI 해석 생성
+        - ask()에서 재무분석 컨텍스트로 활용
+        - 70개 calc* 함수의 개별 결과를 LLM에 주입 가능
+
+    Args:
+        axis: 축 이름 ("수익구조", "수익성" 등). None이면 14축 가이드.
+        company: Company 객체. None이면 해당 축의 분석 항목 목록.
+        **kwargs: 축별 옵션.
+
+    Returns:
+        axis=None → pl.DataFrame (14축 가이드)
+        company=None → pl.DataFrame (해당 축 calc 목록)
+        둘 다 있으면 → dict (분석 결과)
+
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    Example::
+
+        import dartlab
+        dartlab.analysis()                      # 14축 가이드
+        dartlab.analysis("수익구조")              # 항목 목록
+        c = dartlab.Company("005930")
+        dartlab.analysis("수익구조", c)           # 삼성전자 수익구조
+        c.analysis("수익성")                     # Company 바인딩
     """
 
     def __call__(

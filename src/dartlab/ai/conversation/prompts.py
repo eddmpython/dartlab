@@ -74,8 +74,9 @@ try:
     from ._generatedCatalog import TOOL_CATALOG as _TOOL_CATALOG
 except ImportError:
     _TOOL_CATALOG = (
-        "## [필수] 도구 사용 규칙\n"
-        "- 모든 수치 답변은 반드시 도구를 호출해서 실제 데이터를 가져온 뒤 답변하세요.\n"
+        "## 보충 도구 사용 규칙\n"
+        "- 분석 브리핑에 이미 포함된 수치는 도구를 재호출하지 마세요.\n"
+        "- 브리핑에 없는 추가 정보(공시 원문, 실시간 주가, 웹 검색)만 도구로 조회하세요.\n"
         "- 도구 목록은 generateSpec.py 실행 후 자동 생성됩니다.\n"
     )
 
@@ -253,6 +254,15 @@ def build_system_prompt_parts(
             )
         return stripped
 
+    # Engine-First: 브리핑 데이터 우선 활용 안내
+    _briefing_first_note = (
+        "## [핵심] 분석 브리핑 우선 활용\n"
+        "- 사용자 질문 앞에 '분석 브리핑'이 제공됩니다. 이것은 dartlab 엔진이 사전 계산한 정확한 분석 결과입니다.\n"
+        "- **브리핑의 수치와 등급을 최우선 근거로 사용**하세요. 브리핑에 있는 데이터를 도구로 재조회하지 마세요.\n"
+        "- 도구는 브리핑에 없는 추가 정보가 필요할 때만 보충적으로 사용하세요 (예: 공시 원문 검색, 실시간 주가, 웹 검색).\n"
+        "- 답변 시 브리핑의 구체적 수치를 인용하고, 그 수치가 의미하는 바를 해석/설명하세요."
+    )
+
     no_tools_note = (
         "## 현재 실행 제약\n"
         "- 이번 답변에서는 도구 호출을 사용할 수 없습니다.\n"
@@ -299,7 +309,8 @@ def build_system_prompt_parts(
         if not allow_tools:
             dynamic_parts.append(no_tools_note)
 
-        # 도구 카탈로그 (compact map 체제 핵심)
+        # Engine-First: 브리핑 우선 안내 + 도구 카탈로그 (보충용)
+        static_parts.append(_briefing_first_note)
         if allow_tools:
             static_parts.append(_TOOL_CATALOG)
 

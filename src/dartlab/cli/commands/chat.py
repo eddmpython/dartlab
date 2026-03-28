@@ -48,15 +48,20 @@ _SUGGESTIONS = [
 _TOOL_LABELS = {
     "explore": "Disclosure",
     "finance": "Financial Data",
-    "analyze": "Analysis Engine",
-    "market": "Market Data",
+    "analysis": "Analysis Engine",
+    "scan": "Market Scan",
+    "gather": "Market Data",
+    "review": "Review Report",
     "openapi": "OpenDART API",
     "system": "System Info",
     "chart": "Chart",
+    "research": "Research",
     "macro": "Macro",
-    "scan": "Scan",
     "company": "Company",
     "ui": "UI",
+    # legacy
+    "analyze": "Analysis Engine",
+    "market": "Market Data",
 }
 
 # ---------------------------------------------------------------------------

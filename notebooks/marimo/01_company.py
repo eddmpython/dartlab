@@ -5,7 +5,7 @@
 """DartLab -- Company.
 
 One stock code. The whole story.
-sections, show, trace, diff, BS/IS/CF, ratios, EDGAR.
+7 things to remember: index, show, select, trace, diff, review, analysis.
 """
 
 import marimo
@@ -20,27 +20,19 @@ def _():
 
     # one stock code creates the entire company map
     c = dartlab.Company("005930")  # Samsung Electronics
-    c.corpName
     return c, dartlab
 
 
 @app.cell
 def _(c):
-    # topic x period matrix -- the full company map at a glance
-    c.sections
+    # 1. index -- what's available
+    c.index
     return
 
 
 @app.cell
 def _(c):
-    # all available topics for this company
-    c.topics
-    return
-
-
-@app.cell
-def _(c):
-    # drill into a specific topic -- narrative text with period comparison
+    # 2. show -- see the data
     c.show("businessOverview")
     return
 
@@ -53,7 +45,14 @@ def _(c):
 
 @app.cell
 def _(c):
-    # trace where data comes from -- docs, finance, or report
+    # 3. select -- extract specific rows/columns
+    c.select("IS", ["revenue", "operatingIncome"])
+    return
+
+
+@app.cell
+def _(c):
+    # 4. trace -- where did it come from
     c.trace("BS")
     return
 
@@ -66,21 +65,20 @@ def _(c):
 
 @app.cell
 def _(c):
-    # diff across periods -- what changed between filings
+    # 5. diff -- what changed between filings
     c.diff()
     return
 
 
 @app.cell
 def _(c):
-    # diff on a single topic
     c.diff("businessOverview")
     return
 
 
 @app.cell
 def _(c):
-    # income statement -- standalone quarterly, all periods
+    # finance shortcuts -- income statement
     c.IS
     return
 
@@ -110,7 +108,7 @@ def _(c):
 def _(dartlab):
     # same API works for US companies via SEC EDGAR
     apple = dartlab.Company("AAPL")
-    apple.sections
+    apple.index
     return (apple,)
 
 

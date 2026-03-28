@@ -55,7 +55,7 @@ def autoInjectArtifacts(
         return []
 
     chartTools = {"chart"}
-    dataTools = {"finance", "analyze"}
+    dataTools = {"finance", "analyze", "analysis"}
 
     hasChart = bool(chartTools & set(toolCallNames))
     hasData = bool(dataTools & set(toolCallNames))
