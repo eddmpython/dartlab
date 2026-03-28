@@ -76,7 +76,7 @@ dependencies = [
     "fastapi>=0.135.1,<1",
     "msgpack>=1.1.0,<2",
     "uvicorn[standard]>=0.30.0,<1",
-    "sse-starlette>=2.0.0,<3",
+    "sse-starlette>=2.0.0,<4",
     # display
     "great-tables>=0.15.0,<1",
     "itables>=2.0.0,<3",
