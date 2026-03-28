@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.analysis.comparative.rank.screen import PRESETS, presets
+from dartlab.scan.screen.screen import PRESETS, presets
 
 
 class TestPresets:

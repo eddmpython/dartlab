@@ -11,6 +11,8 @@ from typing import Any
 
 @dataclass(frozen=True)
 class DartKeyStatus:
+    """DART API 키 설정 상태를 담는 불변 데이터 클래스."""
+
     configured: bool
     source: str
     keyCount: int
@@ -18,6 +20,7 @@ class DartKeyStatus:
     writable: bool
 
     def toDict(self) -> dict[str, Any]:
+        """키 상태를 딕셔너리로 변환한다."""
         return {
             "configured": self.configured,
             "source": self.source,
@@ -93,10 +96,12 @@ def resolveDartKeys(
 
 
 def hasDartApiKey(startPath: Path | None = None) -> bool:
+    """DART API 키가 하나라도 설정되어 있는지 확인한다."""
     return bool(resolveDartKeys(startPath=startPath))
 
 
 def getDartKeyStatus(startPath: Path | None = None) -> DartKeyStatus:
+    """현재 DART API 키 설정 상태를 조회한다."""
     envPath = findProjectEnvPath(startPath)
     envKeys = os.environ.get("DART_API_KEYS", "")
     envKey = os.environ.get("DART_API_KEY", "")

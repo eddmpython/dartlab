@@ -183,12 +183,15 @@ class Review:
     # ── 편의 메서드 ──
 
     def toHtml(self) -> str:
+        """HTML 형식으로 렌더링한다."""
         return self.render("html")
 
     def toMarkdown(self) -> str:
+        """Markdown 형식으로 렌더링한다."""
         return self.render("markdown")
 
     def toJson(self) -> str:
+        """JSON 형식으로 렌더링한다."""
         return self.render("json")
 
 

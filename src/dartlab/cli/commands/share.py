@@ -37,6 +37,7 @@ _TX = "#f1f5f9"
 
 
 def configure_parser(subparsers) -> None:
+    """share 서브커맨드 등록 — 터널 기반 외부 공유."""
     parser = subparsers.add_parser(
         "share",
         help="로컬 서버를 외부에 안전하게 공개",
@@ -361,6 +362,7 @@ def _print_share_info(
 
 
 def run(args) -> int:
+    """터널을 통해 로컬 서버를 외부에 공유한다."""
     config = _load_config()
 
     # --reset: 설정 초기화

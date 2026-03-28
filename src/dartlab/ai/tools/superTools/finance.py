@@ -1,8 +1,7 @@
 """finance Super Tool — 재무 데이터 통합 dispatcher.
 
 통합 대상: get_data, list_modules, compute_ratios, compute_growth,
-yoy_analysis, get_summary, detect_anomalies, get_report_data,
-compare_companies, timeseries_filter, custom_ratio, search_data
+yoy_analysis, detect_anomalies, get_report_data, search_data, quality, decompose
 """
 
 from __future__ import annotations

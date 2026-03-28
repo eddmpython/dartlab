@@ -24,6 +24,7 @@ def packagedArtifactPath(name: str) -> Iterator[Path]:
 
 @lru_cache(maxsize=4)
 def loadProjectionRules(chapter: str) -> dict[str, list[str]]:
+    """장(chapter)별 섹션 투영 규칙 JSON을 로드한다."""
     filename = f"projectionRules.{chapter}.json"
     try:
         ref = files(_PROFILE_PACKAGE) / filename
@@ -33,6 +34,7 @@ def loadProjectionRules(chapter: str) -> dict[str, list[str]]:
 
 
 def loadSectionProfileTable() -> pl.DataFrame | None:
+    """패키지에 포함된 sectionProfileTable parquet을 DataFrame으로 로드한다."""
     try:
         with packagedArtifactPath("sectionProfileTable.parquet") as path:
             return pl.read_parquet(path)

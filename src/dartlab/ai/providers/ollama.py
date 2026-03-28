@@ -81,6 +81,7 @@ class OllamaProvider(BaseProvider):
 
     @property
     def default_model(self) -> str:
+        """기본 모델명."""
         # 설치된 모델 중 첫 번째 사용, 없으면 llama3.1 fallback
         models = self.get_installed_models()
         if models:
@@ -88,6 +89,7 @@ class OllamaProvider(BaseProvider):
         return "llama3.1"
 
     def check_available(self) -> bool:
+        """provider 사용 가능 여부 확인."""
         import requests
 
         try:
@@ -187,6 +189,7 @@ class OllamaProvider(BaseProvider):
         return self._client
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
+        """동기 완료 요청."""
         client = self._get_client()
         response = client.chat.completions.create(
             model=self.resolved_model,
@@ -200,6 +203,7 @@ class OllamaProvider(BaseProvider):
         )
 
     def stream(self, messages: list[dict[str, str]]) -> Generator[str, None, None]:
+        """스트리밍 응답 생성."""
         client = self._get_client()
         stream = client.chat.completions.create(
             model=self.resolved_model,

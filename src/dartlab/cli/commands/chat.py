@@ -1,4 +1,9 @@
-"""`dartlab chat` -- interactive AI analysis REPL."""
+"""`dartlab chat` -- interactive AI analysis REPL.
+
+This module delegates to `dartlab.cli.repl` (the new world-class REPL).
+The old monolithic implementation is preserved below for reference
+during migration, but the active entry point is repl.run().
+"""
 
 from __future__ import annotations
 
@@ -113,7 +118,10 @@ def configure_parser(subparsers) -> None:
     parser.add_argument("--base-url", default=None, help="Custom API URL")
     parser.add_argument("--api-key", default=None, help="API key")
     parser.add_argument("--continue", dest="cont", action="store_true", help="Resume previous conversation")
-    parser.set_defaults(handler=run)
+    # Route to Textual TUI
+    from dartlab.cli.tui import run as tuiRun
+
+    parser.set_defaults(handler=tuiRun)
 
 
 # ---------------------------------------------------------------------------
@@ -1076,10 +1084,11 @@ def _printWelcome(state: _ChatState, console) -> None:
     from rich.text import Text
 
     try:
+        from importlib.metadata import PackageNotFoundError
         from importlib.metadata import version as pkgVersion
 
         ver = pkgVersion("dartlab")
-    except Exception:
+    except PackageNotFoundError:
         ver = "dev"
 
     # -- header panel --

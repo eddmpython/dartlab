@@ -51,6 +51,7 @@ class CodingBackend(ABC):
         """Execute a coding task."""
 
     def check_available(self) -> bool:
+        """백엔드 사용 가능 여부를 반환한다."""
         info = self.inspect()
         return bool(info.get("available", False))
 
@@ -63,6 +64,7 @@ class CodexCodingBackend(CodingBackend):
     description = "OpenAI Codex CLI를 사용해 워크스페이스 코드 작업을 실행합니다."
 
     def inspect(self) -> dict[str, Any]:
+        """Codex CLI 설치/인증 상태와 지원 sandbox 모드를 조회한다."""
         from dartlab.ai.providers.support.codex_cli import inspect_codex_cli
 
         info = inspect_codex_cli()
@@ -89,6 +91,7 @@ class CodexCodingBackend(CodingBackend):
         model: str | None = None,
         timeout_seconds: int = 300,
     ) -> CodingTaskResult:
+        """Codex CLI로 코딩 작업을 실행한다."""
         from dartlab.ai.providers.support.codex_cli import run_codex_exec
 
         info = self.inspect()
@@ -203,6 +206,7 @@ class _SafetyVisitor(ast.NodeVisitor):
         self.violations: list[str] = []
 
     def visit_Import(self, node: ast.Import) -> None:
+        """import 문에서 금지된 모듈을 탐지한다."""
         for alias in node.names:
             modName = alias.name.split(".")[0]
             if modName in _FORBIDDEN_IMPORTS:
@@ -212,6 +216,7 @@ class _SafetyVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """from-import 문에서 금지된 모듈을 탐지한다."""
         if node.module:
             modName = node.module.split(".")[0]
             if modName in _FORBIDDEN_IMPORTS:
@@ -221,6 +226,7 @@ class _SafetyVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
+        """함수 호출에서 금지된 내장 함수를 탐지한다."""
         funcName = ""
         if isinstance(node.func, ast.Name):
             funcName = node.func.id
@@ -254,6 +260,7 @@ class LocalPythonBackend(CodingBackend):
         self._maxTimeout = maxTimeout
 
     def inspect(self) -> dict[str, Any]:
+        """로컬 Python 백엔드 상태와 허용/금지 모듈 목록을 반환한다."""
         return {
             "name": self.name,
             "label": self.label,
@@ -380,11 +387,13 @@ class CodingRuntime:
         self._default_backend: str | None = None
 
     def register_backend(self, backend: CodingBackend, *, default: bool = False) -> None:
+        """코딩 백엔드를 등록한다."""
         self._backends[backend.name] = backend
         if default or self._default_backend is None:
             self._default_backend = backend.name
 
     def get_backend(self, name: str | None = None) -> CodingBackend:
+        """이름으로 백엔드를 가져온다."""
         backend_name = name or self._default_backend
         if not backend_name or backend_name not in self._backends:
             available = ", ".join(f"`{key}`" for key in self._backends) or "(없음)"
@@ -392,9 +401,11 @@ class CodingRuntime:
         return self._backends[backend_name]
 
     def list_backend_names(self) -> list[str]:
+        """등록된 백엔드 이름 목록을 반환한다."""
         return list(self._backends.keys())
 
     def inspect_backends(self) -> list[dict[str, Any]]:
+        """모든 백엔드의 상태 메타데이터를 반환한다."""
         return [backend.inspect() for backend in self._backends.values()]
 
     def run_task(
@@ -406,6 +417,7 @@ class CodingRuntime:
         model: str | None = None,
         timeout_seconds: int = 300,
     ) -> CodingTaskResult:
+        """지정된 백엔드로 코딩 작업을 실행한다."""
         selected_backend = self.get_backend(backend)
         return selected_backend.run_task(
             prompt,
@@ -416,6 +428,7 @@ class CodingRuntime:
 
 
 def create_coding_runtime(name: str = "runtime", *, include_defaults: bool = True) -> CodingRuntime:
+    """기본 백엔드를 포함한 CodingRuntime 인스턴스를 생성한다."""
     runtime = CodingRuntime(name=name)
     if include_defaults:
         runtime.register_backend(CodexCodingBackend(), default=True)
@@ -427,9 +440,11 @@ _DEFAULT_CODING_RUNTIME = create_coding_runtime(name="default")
 
 
 def get_default_coding_runtime() -> CodingRuntime:
+    """전역 기본 CodingRuntime을 반환한다."""
     return _DEFAULT_CODING_RUNTIME
 
 
 def set_default_coding_runtime(runtime: CodingRuntime) -> None:
+    """전역 기본 CodingRuntime을 교체한다."""
     global _DEFAULT_CODING_RUNTIME
     _DEFAULT_CODING_RUNTIME = runtime

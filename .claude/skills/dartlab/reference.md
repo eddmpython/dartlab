@@ -5,124 +5,97 @@
 
 ---
 
-## Company (통합 facade)
+## Python API (52개)
 
-입력을 자동 판별하여 DART 또는 EDGAR 시장 전용 Company를 생성한다.
-현재 DART Company의 공개 진입점은 **index → show(topic) → trace(topic)** 이다.
-`profile`은 향후 terminal/notebook 문서형 보고서 뷰로 확장될 예정이다.
+`import dartlab` 후 사용 가능한 공개 API.
 
-```python
-import dartlab
-
-kr = dartlab.Company("005930")
-kr = dartlab.Company("삼성전자")
-us = dartlab.Company("AAPL")
-
-kr.market                    # "KR"
-us.market                    # "US"
-```
-
-### 판별 규칙
-
-| 입력 | 결과 | 예시 |
+| 이름 | 종류 | 설명 |
 |------|------|------|
-| 6자리 숫자 | DART Company | `Company("005930")` |
-| 한글 포함 | DART Company | `Company("삼성전자")` |
-| 영문 1~5자리 | EDGAR Company | `Company("AAPL")` |
-
-## DART Company
-
-### 현재 공개 진입점
-
-| surface | 설명 |
-|---------|------|
-| `index` | 회사 데이터 구조 인덱스 DataFrame |
-| `show(topic)` | topic의 실제 데이터 payload 조회 |
-| `trace(topic, period)` | docs / finance / report source provenance 조회 |
-| `docs` | pure docs source namespace |
-| `finance` | authoritative finance source namespace |
-| `report` | authoritative structured disclosure source namespace |
-| `profile` | 향후 보고서형 렌더용 예약 뷰 |
-
-### 정적 메서드
-
-| 메서드 | 반환 | 설명 |
-|--------|------|------|
-| `dartlab.providers.dart.Company.listing()` | DataFrame | KRX 전체 상장법인 목록 |
-| `dartlab.providers.dart.Company.search(keyword)` | DataFrame | 회사명 부분 검색 |
-| `dartlab.providers.dart.Company.status()` | DataFrame | 로컬 보유 전체 종목 인덱스 |
-| `dartlab.providers.dart.Company.resolve(codeOrName)` | str \| None | 종목코드/회사명 → 종목코드 |
-
-### 핵심 property
-
-| property | 반환 | 설명 |
-|----------|------|------|
-| `BS` | DataFrame | 재무상태표 |
-| `IS` | DataFrame | 손익계산서 |
-| `CIS` | DataFrame | 포괄손익계산서 |
-| `CF` | DataFrame | 현금흐름표 |
-| `SCE` | tuple \| DataFrame | 자본변동표 |
-| `sections` | DataFrame | merged topic x period company table |
-| `timeseries` | (series, periods) | 분기별 standalone 시계열 |
-| `annual` | (series, years) | 연도별 시계열 |
-| `ratios` | RatioResult | 재무비율 |
-| `index` | DataFrame | 회사 구조 인덱스 |
-| `docs` | Accessor | pure docs source |
-| `finance` | Accessor | authoritative finance source |
-| `report` | Accessor | authoritative report source |
-| `profile` | _BoardView | 향후 보고서형 뷰 예약 |
-| `sector` | SectorInfo | 섹터 분류 |
-| `insights` | AnalysisResult | 7영역 인사이트 등급 |
-| `rank` | RankInfo | 시장 순위 |
-| `notes` | Notes | K-IFRS 주석 접근 |
-| `market` | str | `"KR"` |
-
-### 메서드
-
-| 메서드 | 반환 | 설명 |
-|--------|------|------|
-| `get(name)` | Result | 모듈 전체 Result 객체 |
-| `all()` | dict | 전체 데이터 dict |
-| `show(topic, period=None, raw=False)` | Any | topic payload 조회 |
-| `trace(topic, period=None)` | dict \| None | 선택 source provenance 조회 |
-| `fsSummary(period)` | AnalysisResult | 요약재무정보 |
-| `getTimeseries(period, fsDivPref)` | (series, periods) | 커스텀 시계열 |
-| `getRatios(fsDivPref)` | RatioResult | 커스텀 비율 |
-
-`index`는 회사 전체 구조를 먼저 보여주고, `show(topic)`가 실제 데이터를 연다.
-`trace(topic)`는 같은 topic에서 docs / finance / report 중 어떤 source가 채택됐는지 설명한다.
-docs가 없는 회사는 `docsStatus` 안내 row와 `현재 사업보고서 부재` notice가 표시된다.
-
-report/disclosure property는 registry에서 자동 디스패치된다 (`_MODULE_REGISTRY`).
-등록된 모든 property는 아래 "데이터 레지스트리" 섹션 참조.
-
-## EDGAR Company
-
-```python
-import dartlab
-
-us = dartlab.Company("AAPL")
-us.ticker                    # "AAPL"
-us.cik                       # "0000320193"
-```
-
-### property
-
-| property | 반환 | 설명 |
-|----------|------|------|
-| `timeseries` | (series, periods) | 분기별 standalone 시계열 |
-| `annual` | (series, years) | 연도별 시계열 |
-| `ratios` | RatioResult | 재무비율 |
-| `insights` | AnalysisResult | 7영역 인사이트 등급 |
-| `market` | str | `"US"` |
+| `Company` | function | 종목코드/회사명/ticker → 적절한 Company 인스턴스 생성. |
+| `Fred` | class | FRED 경제지표 facade. |
+| `OpenDart` | class | OpenDART API 통합 클라이언트. |
+| `OpenEdgar` | class | SEC public API facade. |
+| `config` | module | dartlab 전역 설정. |
+| `core` | module | - |
+| `engines` | - | - |
+| `llm` | module | LLM 기반 기업분석 엔진. |
+| `ask` | function | LLM에게 기업에 대해 질문. |
+| `chat` | function | 에이전트 모드: LLM이 도구를 선택하여 심화 분석. |
+| `setup` | function | AI provider 설정 안내 + 인터랙티브 설정. |
+| `search` | function | 종목 검색 (KR + US 통합). |
+| `listing` | function | 전체 상장법인 목록. |
+| `collect` | function | 지정 종목 DART 데이터 수집 (OpenAPI). 멀티키 시 병렬. |
+| `collectAll` | function | 전체 상장종목 DART 데이터 수집. DART_API_KEY(S) 필요. 멀티키 시 병렬. |
+| `downloadAll` | function | HuggingFace에서 전체 시장 데이터를 다운로드. |
+| `network` | function | 한국 상장사 전체 관계 지도. |
+| `screen` | function | 시장 스크리닝 — 프리셋 기반 종목 필터. |
+| `benchmark` | function | 섹터별 핵심 비율 벤치마크 (P10, median, P90). |
+| `signal` | function | 서술형 공시 시장 시그널 — 키워드 트렌드 탐지. |
+| `news` | function | 기업 뉴스 수집. |
+| `crossBorderPeers` | function | 한국 종목의 글로벌 피어 추천 (WICS→GICS 매핑). |
+| `audit` | function | 감사 Red Flag 분석. |
+| `forecast` | function | 매출 앙상블 예측. |
+| `valuation` | function | 종합 밸류에이션 (DCF + DDM + 상대가치). |
+| `insights` | function | 7영역 등급 분석. |
+| `simulation` | function | 경제 시나리오 시뮬레이션. |
+| `governance` | function | 한국 상장사 전체 지배구조 스캔. |
+| `workforce` | function | 한국 상장사 전체 인력/급여 스캔. |
+| `capital` | function | 한국 상장사 전체 주주환원 스캔. |
+| `debt` | function | 한국 상장사 전체 부채 구조 스캔. |
+| `groupHealth` | function | 그룹사 건전성 분석 — 네트워크 × 재무비율 교차. |
+| `research` | function | 종합 기업분석 리포트. |
+| `digest` | function | 시장 전체 공시 변화 다이제스트. |
+| `scanAccount` | function | 전종목 단일 계정 시계열. |
+| `scanRatio` | function | 전종목 단일 재무비율 시계열. |
+| `scanRatioList` | function | 사용 가능한 비율 목록. |
+| `plugins` | function | 로드된 플러그인 목록 반환. |
+| `reload_plugins` | function | 플러그인 재스캔 — pip install 후 재시작 없이 즉시 인식. |
+| `verbose` | module | bool(x) -> bool |
+| `dataDir` | module | str(object='') -> str |
+| `getKindList` | function | KRX KIND 상장법인 전체 목록. |
+| `codeToName` | function | 종목코드 → 회사명. |
+| `nameToCode` | function | 회사명 → 종목코드. 정확히 일치하는 첫 번째 결과. |
+| `searchName` | function | 회사명 부분 검색. |
+| `fuzzySearch` | function | 한글 fuzzy 종목 검색 — 초성 매칭 + Levenshtein 거리. |
+| `chart` | module | Plotly 기반 재무 차트 도구. |
+| `table` | module | 재무 테이블 가공 도구. |
+| `text` | module | 텍스트 분석 도구. |
+| `Review` | class | 분석 리뷰 — AnalysisReport + core/Report 통합. |
+| `SelectResult` | class | select() 반환 객체 — DataFrame 위임 + 체이닝. |
+| `ChartResult` | class | chart() 반환 객체 — 시각화 + 렌더링. |
 
 ---
 
-## 데이터 레지스트리
+## CLI (18개 명령)
 
-`core/registry.py`에 등록된 전체 데이터 소스 목록.
+`dartlab <command>` 형태로 사용.
 
-모듈 추가 = registry에 DataEntry 한 줄 추가 → Company, Excel, LLM, Server, Skills 전부 자동 반영.
+| 명령 | 설명 |
+|------|------|
+| `show` | topic 기반 데이터 조회 |
+| `search` | 종목코드/회사명 검색 |
+| `statement` | 재무제표 출력 (BS/IS/CIS/CF/SCE) |
+| `sections` | docs 수평화 sections 출력 |
+| `profile` | Company index/facts 출력 |
+| `modules` | 사용 가능한 데이터 모듈 목록 |
+| `ask` | 자연어 원스톱 AI 분석 |
+| `chat` | 대화형 AI 분석 REPL |
+| `report` | Markdown 분석 보고서 생성 |
+| `excel` | 기업 데이터 Excel 내보내기 |
+| `review` | 기업 분석 검토서 (데이터/AI) |
+| `collect` | DART/EDGAR 데이터 수집 |
+| `ai` | AI 분석 웹 인터페이스 실행 |
+| `share` | 터널로 로컬 서버 외부 공유 |
+| `status` | LLM 연결 상태 확인 |
+| `setup` | LLM provider/API 키 설정 |
+| `mcp` | MCP 서버 실행 (stdio) |
+| `plugin` | 플러그인 관리 (list/create) |
+
+---
+
+## Data Modules (70개)
+
+`core/registry.py` DataEntry 기반. 모듈 추가 = 한 줄 → 7곳 자동 반영.
 
 ### 시계열 재무제표 (finance)
 
@@ -223,6 +196,54 @@ us.cik                       # "0000320193"
 | `keywordTrend` | 키워드 트렌드 | `dataframe` | 공시 텍스트 키워드 빈도 추이 (topic × period × keyword). 54개 내장 키워드 또는 사용자 지정. |
 | `news` | 뉴스 | `dataframe` | 최근 뉴스 수집 (KR: Google News 한국어, US: Google News 영어). 날짜/제목/출처/URL. |
 | `crossBorderPeers` | 글로벌 피어 | `custom` | WICS→GICS 섹터 매핑 기반 글로벌 피어 추천. 한국 종목의 미국 동종 기업 리스트. |
+
+---
+
+## Company (통합 facade)
+
+입력을 자동 판별하여 DART 또는 EDGAR 시장 전용 Company를 생성한다.
+현재 DART Company의 공개 진입점은 **index -> show(topic) -> trace(topic)** 이다.
+
+```python
+import dartlab
+
+kr = dartlab.Company("005930")
+kr = dartlab.Company("삼성전자")
+us = dartlab.Company("AAPL")
+
+kr.market                    # "KR"
+us.market                    # "US"
+```
+
+### 판별 규칙
+
+| 입력 | 결과 | 예시 |
+|------|------|------|
+| 6자리 숫자 | DART Company | `Company("005930")` |
+| 한글 포함 | DART Company | `Company("삼성전자")` |
+| 영문 1~5자리 | EDGAR Company | `Company("AAPL")` |
+
+### 핵심 property
+
+| property | 반환 | 설명 |
+|----------|------|------|
+| `BS` | DataFrame | 재무상태표 |
+| `IS` | DataFrame | 손익계산서 |
+| `CIS` | DataFrame | 포괄손익계산서 |
+| `CF` | DataFrame | 현금흐름표 |
+| `sections` | DataFrame | merged topic x period company table |
+| `ratios` | RatioResult | 재무비율 |
+| `index` | DataFrame | 회사 구조 인덱스 |
+| `insights` | AnalysisResult | 7영역 인사이트 등급 |
+
+### 핵심 메서드
+
+| 메서드 | 설명 |
+|--------|------|
+| `show(topic)` | topic payload 조회 |
+| `trace(topic)` | source provenance 조회 |
+| `diff()` | 기간간 변화 감지 |
+| `filings()` | 공시 문서 목록 |
 
 ---
 

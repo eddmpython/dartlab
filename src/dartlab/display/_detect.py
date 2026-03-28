@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 def hasGreatTables() -> bool:
+    """great_tables 설치 여부 확인."""
     try:
         import great_tables  # noqa: F401
 
@@ -13,6 +14,7 @@ def hasGreatTables() -> bool:
 
 
 def hasItables() -> bool:
+    """itables 설치 여부 확인."""
     try:
         import itables  # noqa: F401
 
@@ -22,6 +24,7 @@ def hasItables() -> bool:
 
 
 def hasAltair() -> bool:
+    """altair 설치 여부 확인."""
     try:
         import altair  # noqa: F401
 

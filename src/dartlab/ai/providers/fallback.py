@@ -53,10 +53,12 @@ class FallbackChain:
 
     @property
     def providers(self) -> list[str]:
+        """fallback 체인에 포함된 provider 이름 목록."""
         return list(self._chain)
 
     @property
     def empty(self) -> bool:
+        """사용 가능한 provider가 없는지 여부."""
         return len(self._chain) == 0
 
     def _resolve(self, providerName: str) -> "LLMConfig":

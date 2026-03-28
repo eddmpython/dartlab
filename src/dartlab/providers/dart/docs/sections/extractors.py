@@ -28,6 +28,8 @@ _TOPIC_SELECTORS: dict[str, _TopicSelector] = {
 
 @dataclass(frozen=True)
 class TopicSubtables:
+    """특정 topic의 테이블 블록을 long/wide/summary 세 가지 형태로 담는 컨테이너."""
+
     topic: str
     long: pl.DataFrame
     wide: pl.DataFrame
@@ -56,6 +58,7 @@ def _normalizeSubtopic(record: dict[str, object]) -> str:
 
 
 def topicSubtables(blocks: pl.DataFrame | None, topic: str) -> TopicSubtables | None:
+    """retrievalBlocks에서 해당 topic의 테이블을 추출하여 TopicSubtables로 반환한다."""
     if blocks is None or blocks.is_empty():
         return None
 

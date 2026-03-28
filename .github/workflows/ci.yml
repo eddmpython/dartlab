@@ -30,7 +30,15 @@ jobs:
         run: pip install -e .[ai]
 
       - name: Run unit tests (no data dependency)
-        run: pytest tests/ -v --tb=short -m "not requires_data and not heavy" --cov=dartlab --cov-report=term-missing --cov-report=html
+        run: pytest tests/ -v --tb=short -m "not requires_data and not heavy" --cov=dartlab --cov-report=term-missing --cov-report=html --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage report
         if: matrix.python-version == '3.12'
@@ -91,7 +99,7 @@ jobs:
 
       - name: Check spec is up to date
         run: |
-          if ! git diff --quiet src/dartlab/API_SPEC.md landing/static/llms.txt; then
+          if ! git diff --quiet CAPABILITIES.md landing/static/llms.txt; then
             echo "::error::Spec files out of sync. Run: uv run python scripts/generateSpec.py"
             git diff --stat
             exit 1

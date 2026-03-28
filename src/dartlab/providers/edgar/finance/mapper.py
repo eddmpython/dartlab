@@ -67,6 +67,8 @@ STMT_OVERRIDES: dict[tuple[str, str], str] = {
 
 
 class EdgarMapper:
+    """EDGAR XBRL 태그를 DART canonical snakeId로 변환하는 매퍼."""
+
     _tagMap: Optional[dict[str, str]] = None
     _stmtTagMap: Optional[dict[str, dict[str, str]]] = None
     _commonTags: Optional[set[str]] = None
@@ -115,11 +117,13 @@ class EdgarMapper:
 
     @classmethod
     def isCommonTag(cls, tag: str) -> bool:
+        """태그가 standardAccounts의 commonTags에 포함되는지 확인."""
         cls._ensureLoaded()
         return tag.lower() in cls._commonTags
 
     @classmethod
     def map(cls, tag: str, stmtType: str = "") -> Optional[str]:
+        """EDGAR 태그를 snakeId로 매핑하고, stmt 충돌 시 오버라이드 적용."""
         cls._ensureLoaded()
 
         overrideKey = (tag, stmtType)
@@ -137,6 +141,7 @@ class EdgarMapper:
 
     @classmethod
     def mapToDart(cls, tag: str, stmtType: str = "") -> Optional[str]:
+        """EDGAR 태그를 DART 호환 snakeId로 변환 (alias 적용 포함)."""
         sid = cls.map(tag, stmtType)
         if sid is None:
             return None
@@ -144,6 +149,7 @@ class EdgarMapper:
 
     @classmethod
     def classifyTagsByStmt(cls) -> dict[str, set[str]]:
+        """재무제표 유형(IS/BS/CF/CI)별로 commonTags를 분류하여 반환."""
         cls._ensureLoaded()
         stmtTags: dict[str, set[str]] = {"IS": set(), "BS": set(), "CF": set(), "CI": set()}
         for acct in cls._accounts:

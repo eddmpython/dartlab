@@ -10,6 +10,7 @@ import os
 
 
 def default_host() -> str:
+    """환경변수 또는 기본값에서 바인딩 호스트를 반환한다."""
     return os.environ.get("DARTLAB_HOST", "127.0.0.1")
 
 

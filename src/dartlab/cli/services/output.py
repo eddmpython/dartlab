@@ -21,16 +21,19 @@ def get_console() -> Console:
 
 
 def print_error(message: str) -> None:
+    """오류 메시지를 stderr에 출력."""
     from rich.markup import escape
 
     _err_console.print(f"[bold red]오류:[/] {escape(message)}")
 
 
 def print_info(message: str = "") -> None:
+    """일반 정보 메시지 출력."""
     _console.print(message)
 
 
 def print_warning(message: str) -> None:
+    """경고 메시지를 stderr에 출력."""
     _err_console.print(f"[bold yellow]경고:[/] {message}")
 
 

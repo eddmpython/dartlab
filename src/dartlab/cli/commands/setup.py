@@ -13,6 +13,7 @@ _SETUP_CHOICES = [*CLI_PROVIDERS, "dart-key"]
 
 
 def configure_parser(subparsers) -> None:
+    """setup 서브커맨드 등록 — LLM provider/API 키 설정."""
     parser = subparsers.add_parser("setup", help="LLM provider 및 API 키 설정 안내")
     parser.add_argument(
         "provider", nargs="?", default=None, choices=_SETUP_CHOICES, help="설정할 provider 또는 dart-key"
@@ -22,6 +23,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """provider별 설정 안내를 출력하고 인터랙티브 설정을 진행한다."""
     try:
         from dartlab.ai.providers.support.cli_setup import detect_codex
     except (ImportError, ModuleNotFoundError) as exc:

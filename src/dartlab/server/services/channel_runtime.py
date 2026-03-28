@@ -37,6 +37,8 @@ CHANNEL_SPECS: dict[str, dict[str, Any]] = {
 
 @dataclass
 class ChannelSession:
+    """개별 채널 어댑터의 실행 상태."""
+
     platform: str
     adapter: Any
     thread: threading.Thread
@@ -67,14 +69,17 @@ class ChannelRuntimeManager:
         }
 
     def status(self) -> dict[str, dict[str, Any]]:
+        """모든 채널의 현재 상태를 반환한다."""
         return {platform: self._base_payload(platform) for platform in CHANNEL_SPECS}
 
     def get(self, platform: str) -> dict[str, Any]:
+        """특정 채널의 상태를 반환한다."""
         if platform not in CHANNEL_SPECS:
             raise ValueError(f"지원하지 않는 채널: {platform}")
         return self._base_payload(platform)
 
     def start(self, platform: str, **kwargs) -> dict[str, Any]:
+        """채널 어댑터를 백그라운드 스레드로 시작한다."""
         if platform not in CHANNEL_SPECS:
             raise ValueError(f"지원하지 않는 채널: {platform}")
 
@@ -111,6 +116,7 @@ class ChannelRuntimeManager:
         return self.get(platform)
 
     def stop(self, platform: str) -> dict[str, Any]:
+        """채널 어댑터를 정지한다."""
         if platform not in CHANNEL_SPECS:
             raise ValueError(f"지원하지 않는 채널: {platform}")
 
@@ -141,6 +147,7 @@ class ChannelRuntimeManager:
         return self.get(platform)
 
     def shutdown_all(self) -> None:
+        """모든 채널 어댑터를 순차 종료한다."""
         for platform in list(CHANNEL_SPECS):
             try:
                 self.stop(platform)

@@ -18,6 +18,8 @@ def _periodOrderValue(period: str) -> int:
 
 
 def sortPeriods(periods: list[str], *, descending: bool = False) -> list[str]:
+    """기간 문자열 리스트를 연도/분기 순서로 정렬."""
+
     def key(period: str) -> tuple[int, int]:
         if "Q" not in period:
             return int(period), 4
@@ -27,6 +29,8 @@ def sortPeriods(periods: list[str], *, descending: bool = False) -> list[str]:
 
 
 def sortTopics(topics: list[str], topicOrder: dict[str, int]) -> list[str]:
+    """topic 리스트를 topicOrder 우선순위에 따라 정렬."""
+
     def key(topic: str) -> tuple[int, str, str]:
         match = _TOPIC_RE.match(topic)
         formType = match.group(1) if match else ""
@@ -36,6 +40,7 @@ def sortTopics(topics: list[str], topicOrder: dict[str, int]) -> list[str]:
 
 
 def buildMarkdownWide(df: pl.DataFrame | None) -> str:
+    """sections DataFrame을 마크다운 wide 테이블 문자열로 변환."""
     if df is None or df.is_empty():
         return ""
     periods = [col for col in df.columns if col != "topic"]

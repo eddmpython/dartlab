@@ -8,10 +8,22 @@ from __future__ import annotations
 
 from ..types import HistoryItem
 
-_MAX_HISTORY_TURNS = 10
+_MAX_HISTORY_TURNS_DEFAULT = 10
 _MAX_HISTORY_CHARS = 12000
 _MAX_HISTORY_MESSAGE_CHARS = 1800
 _COMPRESS_TURN_THRESHOLD = 5
+
+
+def _dynamicMaxTurns(historyItems: list[HistoryItem]) -> int:
+    """Dynamic history window based on average message length."""
+    if not historyItems:
+        return _MAX_HISTORY_TURNS_DEFAULT
+    avgLen = sum(len(h.text) for h in historyItems) / len(historyItems)
+    if avgLen < 200:
+        return 15  # short Q&A exchanges: keep more turns
+    if avgLen > 1000:
+        return 6  # long analysis responses: keep fewer turns
+    return _MAX_HISTORY_TURNS_DEFAULT
 
 
 def _compress_history_text(text: str) -> str:
@@ -27,7 +39,8 @@ def build_history_messages(history: list[HistoryItem] | None) -> list[dict[str, 
     """히스토리를 LLM messages 포맷으로 변환. 최근 N턴만 유지."""
     if not history:
         return []
-    trimmed = history[-(_MAX_HISTORY_TURNS * 2) :]
+    maxTurns = _dynamicMaxTurns(history)
+    trimmed = history[-(maxTurns * 2) :]
     prepared: list[dict[str, str]] = []
     for h in trimmed:
         role = h.role if h.role in ("user", "assistant") else "user"

@@ -90,13 +90,16 @@ class OpenAICompatProvider(BaseProvider):
 
     @property
     def default_model(self) -> str:
+        """기본 모델명."""
         return self._defaults.get("default_model", "gpt-4o")
 
     @property
     def supports_native_tools(self) -> bool:
+        """네이티브 tool calling 지원 여부."""
         return True
 
     def check_available(self) -> bool:
+        """provider 사용 가능 여부 확인."""
         try:
             self._get_client()
             return True
@@ -104,6 +107,7 @@ class OpenAICompatProvider(BaseProvider):
             return False
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
+        """동기 완료 요청."""
         client = self._get_client()
         try:
             response = client.chat.completions.create(
@@ -130,6 +134,7 @@ class OpenAICompatProvider(BaseProvider):
         )
 
     def stream(self, messages: list[dict[str, str]]) -> Generator[str, None, None]:
+        """스트리밍 응답 생성."""
         client = self._get_client()
         try:
             response = client.chat.completions.create(

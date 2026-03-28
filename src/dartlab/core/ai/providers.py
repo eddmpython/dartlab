@@ -7,6 +7,8 @@ from dartlab.core.ai.routing import AI_ROLES
 
 @dataclass(frozen=True)
 class ProviderSpec:
+    """AI provider 메타데이터 — 인증 방식, 프로빙 정책, 지원 역할."""
+
     id: str
     label: str
     description: str
@@ -112,6 +114,7 @@ _PROVIDERS: dict[str, ProviderSpec] = {
 
 
 def normalize_provider(provider: str | None) -> str | None:
+    """provider 문자열 정규화. 알려진 provider면 그대로, 아니면 원본 반환."""
     if provider is None:
         return None
     normalized = provider.strip()
@@ -119,6 +122,7 @@ def normalize_provider(provider: str | None) -> str | None:
 
 
 def get_provider_spec(provider: str) -> ProviderSpec | None:
+    """provider id로 ProviderSpec 조회. 미등록이면 None."""
     normalized = normalize_provider(provider)
     if normalized is None:
         return None
@@ -126,18 +130,22 @@ def get_provider_spec(provider: str) -> ProviderSpec | None:
 
 
 def public_provider_ids() -> tuple[str, ...]:
+    """공개(public=True) provider id 튜플."""
     return tuple(spec.id for spec in _PROVIDERS.values() if spec.public)
 
 
 def provider_choices(*, include_hidden: bool = False) -> list[str]:
+    """선택 가능한 provider id 목록."""
     return [spec.id for spec in _PROVIDERS.values() if include_hidden or spec.public]
 
 
 def cli_provider_choices() -> list[str]:
+    """CLI에서 사용 가능한 provider id 목록."""
     return provider_choices()
 
 
 def build_provider_catalog(*, include_hidden: bool = False) -> list[dict[str, str | list[str]]]:
+    """전체 provider 카탈로그를 JSON-safe list[dict]로 반환."""
     items: list[dict[str, str | list[str]]] = []
     for spec in _PROVIDERS.values():
         if not include_hidden and not spec.public:
@@ -162,10 +170,12 @@ def build_provider_catalog(*, include_hidden: bool = False) -> list[dict[str, st
 
 
 def api_key_secret_name(provider: str) -> str:
+    """provider의 API 키 SecretStore 키 이름."""
     normalized = normalize_provider(provider) or provider
     return f"provider:{normalized}:api_key"
 
 
 def oauth_secret_name(provider: str) -> str:
+    """provider의 OAuth 토큰 SecretStore 키 이름."""
     normalized = normalize_provider(provider) or provider
     return f"provider:{normalized}:oauth"

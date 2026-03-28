@@ -164,6 +164,7 @@ class GatherSnapshot:
 
     @property
     def consensus(self) -> ConsensusData | None:
+        """수집된 컨센서스 데이터 반환."""
         for r in self.results.values():
             if r.consensus:
                 return r.consensus
@@ -171,6 +172,7 @@ class GatherSnapshot:
 
     @property
     def flow(self) -> FlowData | None:
+        """수집된 수급 데이터 반환."""
         for r in self.results.values():
             if r.flow:
                 return r.flow
@@ -183,10 +185,12 @@ class GatherSnapshot:
 
     @property
     def sources_available(self) -> list[str]:
+        """정상 응답한 소스 목록."""
         return [d for d, r in self.results.items() if r.error is None]
 
     @property
     def sources_failed(self) -> list[str]:
+        """오류가 발생한 소스 목록."""
         return [d for d, r in self.results.items() if r.error is not None]
 
     def to_market_snapshot(self) -> MarketSnapshot:

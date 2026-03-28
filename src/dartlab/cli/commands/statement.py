@@ -19,6 +19,7 @@ _LABELS = {
 
 
 def configure_parser(subparsers) -> None:
+    """statement 서브커맨드 등록 — 재무제표 출력."""
     parser = subparsers.add_parser("statement", help="재무제표/자본변동표 출력")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.add_argument("name", choices=_STATEMENTS, help="BS | IS | CIS | CF | SCE")
@@ -26,6 +27,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """지정 재무제표(BS/IS/CIS/CF/SCE)를 콘솔에 출력한다."""
     from dartlab.cli.services.output import get_console, print_dataframe
 
     dartlab = configure_dartlab()

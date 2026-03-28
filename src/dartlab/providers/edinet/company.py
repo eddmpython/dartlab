@@ -92,6 +92,7 @@ class _DocsNamespace:
 
     @property
     def sections(self) -> pl.DataFrame:
+        """docs 수평화 sections DataFrame."""
         if self._sections is None:
             self._sections = self._loadSections()
         return self._sections
@@ -123,20 +124,24 @@ class _FinanceNamespace:
 
     @property
     def timeseries(self) -> dict[str, pl.DataFrame]:
+        """재무제표별 시계열 dict."""
         if self._timeseries is None:
             self._timeseries = self._loadTimeseries()
         return self._timeseries
 
     @property
     def BS(self) -> pl.DataFrame | None:
+        """재무상태표."""
         return self.timeseries.get("BS")
 
     @property
     def IS(self) -> pl.DataFrame | None:
+        """손익계산서."""
         return self.timeseries.get("IS")
 
     @property
     def CF(self) -> pl.DataFrame | None:
+        """현금흐름표."""
         return self.timeseries.get("CF")
 
 
@@ -163,6 +168,7 @@ class Company:
 
     @property
     def corpName(self) -> str | None:
+        """회사명."""
         return self._corpName
 
     @property
@@ -253,12 +259,15 @@ class Company:
 
     @property
     def BS(self) -> pl.DataFrame | None:
+        """재무상태표."""
         return self.finance.BS
 
     @property
     def IS(self) -> pl.DataFrame | None:
+        """손익계산서."""
         return self.finance.IS
 
     @property
     def CF(self) -> pl.DataFrame | None:
+        """현금흐름표."""
         return self.finance.CF

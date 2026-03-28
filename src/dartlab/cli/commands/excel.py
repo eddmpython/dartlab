@@ -7,6 +7,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """excel 서브커맨드 등록 — 기업 데이터 Excel 내보내기."""
     parser = subparsers.add_parser("excel", help="Excel 파일로 내보내기")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.add_argument("-o", "--output", default=None, help="출력 경로 (기본: {종목코드}_{회사명}.xlsx)")
@@ -15,6 +16,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """Company 생성 후 지정 모듈을 Excel 파일로 내보낸다."""
     dartlab = configure_dartlab()
 
     try:

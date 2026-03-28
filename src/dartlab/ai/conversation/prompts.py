@@ -69,6 +69,59 @@ _PLUGIN_SYSTEM_PROMPT = """
 - 분석 중 플러그인 추천 힌트가 제공되면, 답변 끝에 자연스럽게 안내하세요.
 """
 
+# ── 도구 카탈로그 (compact map 체제) ──────────────────────
+_TOOL_CATALOG = """
+## [필수] 도구 사용 규칙
+- **모든 수치 답변은 반드시 도구를 호출해서 실제 데이터를 가져온 뒤 답변하세요.**
+- 도구 없이 기억이나 추측으로 수치를 생성하면 안 됩니다. 반드시 도구 호출 → 결과 확인 → 답변 순서를 지키세요.
+- 도구 파라미터는 아래 명시된 것만 사용하세요. 존재하지 않는 파라미터를 임의 생성하지 마세요.
+
+## 사용 가능한 도구
+
+### 단일 기업 (Company) — 현재 로드된 기업 대상
+- finance(action='data', module='IS') — 재무제표. module: IS/BS/CF/CIS/SCE. 파라미터는 action, module만 사용.
+- finance(action='ratios') — 재무비율 (70+ 지표). 파라미터는 action만.
+- finance(action='report', apiType='dividend') — 정기보고서. apiType 필수.
+- finance(action='quality') — 이익 품질 분석
+- finance(action='decompose') — DuPont 3요소 분해
+- explore(action='show', target='사업개요') — 공시 원문 검색
+- explore(action='diff') — 기간간 텍스트 변화
+- analyze(action='insight') — 7영역 등급
+- analyze(action='valuation') — DCF/상대가치 밸류에이션
+- analyze(action='watch') — 공시 변화 점수화
+- analyze(action='research') — 기관급 종합 리서치
+
+### 전종목 비교 (scan/ parquet, Company 불필요)
+- market(action='scanAccount', snakeId='sales', code='005930,000660') — 전종목 계정 시계열. code로 종목 필터링.
+- market(action='scanRatio', ratioName='roe', code='005930,000660') — 전종목 비율 시계열
+- market(action='scanRatioList') — 사용 가능한 비율 목록
+- market(action='governance') — 전종목 지배구조
+- market(action='workforce') — 전종목 인력/급여
+- market(action='capital') — 전종목 주주환원
+- market(action='debt') — 전종목 부채구조
+- market(action='benchmark') — 섹터별 벤치마크 통계
+- market(action='signal', keyword='AI') — 전종목 키워드 트렌드
+- analyze(action='digest') — 전종목 공시 변화 다이제스트
+- analyze(action='screen', preset='가치주') — 프리셋 스크리닝
+
+### 외부 데이터
+- research(action='search', query='...') — 웹 검색
+- research(action='news', query='...') — 뉴스
+- market(action='price', code='005930') — 실시간 주가
+- market(action='consensus', code='005930') — 애널리스트 컨센서스
+
+### 기업 비교 패턴
+두 기업의 매출/이익/비율을 비교하려면 scanAccount 또는 scanRatio를 사용하세요:
+1. market(action='scanAccount', snakeId='sales', code='005930,000660') — 두 기업 매출 시계열
+2. market(action='scanRatio', ratioName='operatingMargin', code='005930,000660') — 두 기업 영업이익률
+code에 종목코드를 쉼표로 나열하면 해당 종목만 필터링됩니다.
+
+### 섹터/업종 분석 패턴
+특정 섹터의 지표를 보려면:
+1. market(action='scanRatio', ratioName='roe') — 전종목 ROE (결과에서 섹터 필터링)
+2. market(action='benchmark') — 섹터별 통계 (P10/중위/P90)
+"""
+
 # ── 스킬 매칭 헬퍼 ──────────────────────────────────
 
 
@@ -78,7 +131,7 @@ def _matchSkillSafe(questionType: str | None, qTypes: list[str]) -> Any:
         from dartlab.ai.skills.registry import matchSkill
 
         return matchSkill("", questionType=questionType or (qTypes[0] if qTypes else None))
-    except Exception:
+    except (ImportError, OSError):
         return None
 
 
@@ -288,6 +341,10 @@ def build_system_prompt_parts(
 
         if not allow_tools:
             dynamic_parts.append(no_tools_note)
+
+        # 도구 카탈로그 (compact map 체제 핵심)
+        if allow_tools:
+            static_parts.append(_TOOL_CATALOG)
 
         dynamic_parts.append(
             "\n플러그인: 사용자가 '플러그인 만들어줘'하면 create_plugin 도구 사용. "

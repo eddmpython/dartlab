@@ -29,6 +29,7 @@ class SlackAdapter(ChannelAdapter):
         self._handler = None
 
     async def start(self) -> None:
+        """Slack 봇을 Socket Mode로 시작."""
         try:
             from slack_bolt import App
             from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -71,6 +72,7 @@ class SlackAdapter(ChannelAdapter):
         await asyncio.to_thread(handler.start)
 
     async def stop(self) -> None:
+        """Slack 봇 연결 종료."""
         if self._handler is None:
             return
         close = getattr(self._handler, "close", None)
@@ -86,6 +88,7 @@ class SlackAdapter(ChannelAdapter):
                 await result
 
     async def send_text(self, channel_id: str, text: str) -> None:
+        """Slack 채널에 텍스트 메시지 전송."""
         if self._client:
             self._client.chat_postMessage(channel=channel_id, text=text)
 

@@ -47,10 +47,12 @@ class SourceTree:
 
     @property
     def totalSources(self) -> int:
+        """전체 소스 항목 수."""
         return sum(len(items) for items in self.categories.values())
 
     @property
     def availableSources(self) -> int:
+        """사용 가능한 소스 항목 수."""
         return sum(1 for items in self.categories.values() for item in items if item.available)
 
     def flat(self) -> list[SourceItem]:

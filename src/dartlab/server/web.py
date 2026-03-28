@@ -12,6 +12,7 @@ _UI_DIR = Path(__file__).parent.parent / "ui" / "build"
 
 
 def register_spa(app: FastAPI) -> None:
+    """Svelte SPA 정적 파일 서빙과 fallback 라우트를 등록한다."""
     if _UI_DIR.exists():
         app.mount("/assets", StaticFiles(directory=str(_UI_DIR / "assets")), name="assets")
     app.add_api_route("/{path:path}", serve_spa, methods=["GET"])

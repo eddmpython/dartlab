@@ -1706,6 +1706,7 @@ class Company:
         )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        """topic 데이터의 출처(docs/finance/report)와 선택 근거 추적."""
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic == "docsStatus" and not self._hasDocs:
             return {
@@ -1847,7 +1848,7 @@ class Company:
             c.watch()                    # 전체 topic 중요도 순 요약
             c.watch("riskManagement")    # 특정 topic 상세
         """
-        from dartlab.analysis.accounting.watch.scanner import scan_company
+        from dartlab.scan.watch.scanner import scan_company
 
         result = scan_company(self, topic=topic)
         if result is None:
@@ -2035,6 +2036,7 @@ class Company:
 
     @property
     def sources(self) -> pl.DataFrame:
+        """docs/finance/report 3개 source의 가용 현황 요약."""
         rows = []
         for source, raw in (
             ("docs", self.rawDocs),
@@ -2692,7 +2694,7 @@ class Company:
         cacheKey = "_rank"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        from dartlab.analysis.comparative.rank.rank import getRank
+        from dartlab.scan.screen.rank import getRank
 
         result = getRank(self.stockCode)
         self._cache[cacheKey] = result
@@ -2804,7 +2806,7 @@ class Company:
     def _ensureNetwork(self) -> tuple[dict, dict] | None:
         """network 파이프라인 캐싱 → (data, full)."""
         if "_network_data" not in self._cache:
-            from dartlab.market.network import build_graph, export_full
+            from dartlab.scan.network import build_graph, export_full
 
             data = build_graph(verbose=False)
             self._cache["_network_data"] = data
@@ -2836,7 +2838,7 @@ class Company:
         group = data["code_to_group"].get(code, self.corpName or code)
 
         if view is None:
-            from dartlab.market.network import export_ego
+            from dartlab.scan.network import export_ego
             from dartlab.tools.network import render_network
 
             ego = export_ego(data, full, code, hops=hops)
@@ -2937,7 +2939,7 @@ class Company:
 
     def _networkPeers(self, data: dict, full: dict, code: str, *, hops: int = 1) -> pl.DataFrame:
         """이 회사 중심 서브그래프 (ego 뷰) → DataFrame."""
-        from dartlab.market.network import export_ego
+        from dartlab.scan.network import export_ego
 
         ego = export_ego(data, full, code, hops=hops)
         rows = []
@@ -2972,7 +2974,7 @@ class Company:
 
     def _ensureGovernance(self) -> pl.DataFrame | None:
         if "_governance" not in self._cache:
-            from dartlab.market.governance import scan_governance
+            from dartlab.scan.governance import scan_governance
 
             self._cache["_governance"] = scan_governance(verbose=False)
         return self._cache["_governance"]
@@ -2995,7 +2997,7 @@ class Company:
 
     def _ensureWorkforce(self) -> pl.DataFrame | None:
         if "_workforce" not in self._cache:
-            from dartlab.market.workforce import scan_workforce
+            from dartlab.scan.workforce import scan_workforce
 
             self._cache["_workforce"] = scan_workforce(verbose=False)
         return self._cache["_workforce"]
@@ -3018,7 +3020,7 @@ class Company:
 
     def _ensureCapital(self) -> pl.DataFrame | None:
         if "_capital" not in self._cache:
-            from dartlab.market.capital import scan_capital
+            from dartlab.scan.capital import scan_capital
 
             self._cache["_capital"] = scan_capital(verbose=False)
         return self._cache["_capital"]
@@ -3041,7 +3043,7 @@ class Company:
 
     def _ensureDebt(self) -> pl.DataFrame | None:
         if "_debt" not in self._cache:
-            from dartlab.market.debt import scan_debt
+            from dartlab.scan.debt import scan_debt
 
             self._cache["_debt"] = scan_debt(verbose=False)
         return self._cache["_debt"]
@@ -3077,7 +3079,7 @@ class Company:
 
     def _scanMarketSummary(self, df: pl.DataFrame) -> pl.DataFrame:
         """시장별 요약 통계."""
-        from dartlab.market._helpers import load_listing
+        from dartlab.scan._helpers import load_listing
 
         _, _, _, listing_meta = load_listing()
         code_to_market = {code: meta.get("market", "") for code, meta in listing_meta.items()}

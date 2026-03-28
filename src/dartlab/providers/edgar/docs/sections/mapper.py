@@ -181,6 +181,7 @@ def _normalizePartItem(text: str) -> str:
 
 
 def normalizeSectionTitle(title: str) -> str:
+    """SEC filing section title을 정규화 (오타 보정, Part-Item 통합, Regulation S-K 수렴)."""
     text = _MULTISPACE_RE.sub(" ", title.strip())
     text = text.replace("§", "section")
     text = _DASH_CHARS_RE.sub("-", text)
@@ -352,6 +353,7 @@ def normalizeSectionTitle(title: str) -> str:
 
 @lru_cache(maxsize=1)
 def loadSectionMappings() -> dict[str, str]:
+    """sectionMappings.json을 로드하여 정규화된 키-값 매핑 dict를 반환."""
     path = _mappingPath()
     if not path.exists():
         return {}
@@ -371,6 +373,7 @@ def _lowercaseMappings() -> dict[str, str]:
 
 
 def mapSectionTitle(formType: str, title: str) -> str:
+    """section title을 정규화하고 매핑을 적용하여 'formType::topic' 형태로 반환."""
     normalized = normalizeSectionTitle(title)
     mappings = loadSectionMappings()
     mapped = mappings.get(normalized)

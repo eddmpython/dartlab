@@ -127,6 +127,8 @@ _TOPIC_HINTS: dict[str, str] = {
 
 @dataclass(frozen=True)
 class ConversationState:
+    """현재 대화 턴의 상태 (모드, 회사, 토픽, 이력 등)."""
+
     question: str
     dialogue_mode: str
     user_goal: str
@@ -331,6 +333,7 @@ def build_conversation_state(
 
 
 def conversation_state_to_meta(state: ConversationState) -> dict[str, Any]:
+    """ConversationState를 응답 메타데이터 dict로 변환."""
     payload: dict[str, Any] = {
         "company": state.company,
         "stockCode": state.stock_code,
@@ -346,6 +349,7 @@ def conversation_state_to_meta(state: ConversationState) -> dict[str, Any]:
 
 
 def build_dialogue_policy(state: ConversationState) -> str:
+    """대화 상태 기반 시스템 프롬프트 정책 텍스트 생성."""
     from dartlab.ai.tools.registry import get_coding_runtime_policy
 
     coding_runtime_enabled, coding_runtime_reason = get_coding_runtime_policy()

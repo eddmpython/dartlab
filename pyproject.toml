@@ -61,6 +61,7 @@ dependencies = [
     "requests>=2.32.5,<3",
     "prompt-toolkit>=3.0,<4",
     "rich>=14.3.3,<15",
+    "textual>=2.0,<3",
     "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",
     "huggingface-hub>=0.20.0,<1",
@@ -192,6 +193,7 @@ exclude_lines = [
     "if __name__",
     "raise NotImplementedError",
 ]
+fail_under = 60
 
 [tool.pyright]
 pythonVersion = "3.12"

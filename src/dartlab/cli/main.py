@@ -28,6 +28,7 @@ def _looksLikeCompany(token: str) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI 메인 함수 -- 인자 파싱 후 서브커맨드 실행."""
     _ensure_utf8()
 
     raw = argv if argv is not None else sys.argv[1:]
@@ -49,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     handler = getattr(args, "handler", None)
     if handler is None:
         if sys.stdin.isatty():
-            from dartlab.cli.commands.chat import run as chatRun
+            from dartlab.cli.tui import run as tuiRun
 
             args.company = None
             args.provider = None
@@ -57,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
             args.base_url = None
             args.api_key = None
             args.cont = False
-            handler = chatRun
+            handler = tuiRun
         else:
             parser.print_help()
             return EXIT_OK

@@ -24,6 +24,7 @@ class DiscordAdapter(ChannelAdapter):
         self._bot = None
 
     async def start(self) -> None:
+        """Discord 봇을 시작하고 이벤트 리스너 등록."""
         try:
             import discord
             from discord import app_commands
@@ -80,10 +81,12 @@ class DiscordAdapter(ChannelAdapter):
         await bot.start(self._token)
 
     async def stop(self) -> None:
+        """Discord 봇 연결 종료."""
         if self._bot:
             await self._bot.close()
 
     async def send_text(self, channel_id: str, text: str) -> None:
+        """Discord 채널에 텍스트 메시지 전송."""
         # slash command의 경우 followup 사용
         interaction = getattr(self, "_interaction", None)
         if interaction is not None:

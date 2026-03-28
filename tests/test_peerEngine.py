@@ -6,7 +6,7 @@ numpy = pytest.importorskip("numpy", reason="numpy 미설치")
 
 pytestmark = pytest.mark.unit
 
-from dartlab.analysis.comparative.peer import (
+from dartlab.scan.peer import (
     ConsensusResult,
     PeerMatch,
     PeerResult,

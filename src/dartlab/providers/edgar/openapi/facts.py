@@ -29,6 +29,7 @@ EDGAR_COMPANYFACTS_SCHEMA = {
 
 
 def getCompanyFactsJson(cik: str, client: EdgarClient | None = None) -> dict[str, Any]:
+    """CIK로 SEC companyfacts API를 호출하여 전체 XBRL fact JSON을 반환."""
     api = client or EdgarClient()
     normalized = str(cik).zfill(10)
     return api.getJson(f"{DEFAULT_BASE_URL}/api/xbrl/companyfacts/CIK{normalized}.json")
@@ -40,6 +41,7 @@ def getCompanyConceptJson(
     tag: str,
     client: EdgarClient | None = None,
 ) -> dict[str, Any]:
+    """특정 회사의 taxonomy/tag 조합에 대한 concept JSON을 반환."""
     api = client or EdgarClient()
     normalized = str(cik).zfill(10)
     return api.getJson(f"{DEFAULT_BASE_URL}/api/xbrl/companyconcept/CIK{normalized}/{taxonomy}/{tag}.json")
@@ -52,11 +54,13 @@ def getFrameJson(
     period: str,
     client: EdgarClient | None = None,
 ) -> dict[str, Any]:
+    """특정 기간의 전체 기업 XBRL frame 데이터를 JSON으로 반환."""
     api = client or EdgarClient()
     return api.getJson(f"{DEFAULT_BASE_URL}/api/xbrl/frames/{taxonomy}/{tag}/{unit}/{period}.json")
 
 
 def companyFactsToRows(payload: dict[str, Any]) -> pl.DataFrame:
+    """companyfacts JSON을 flat한 행 단위 DataFrame으로 변환."""
     rows: list[dict[str, Any]] = []
     cik = str(payload.get("cik") or "").zfill(10)
     entityName = str(payload.get("entityName") or "")

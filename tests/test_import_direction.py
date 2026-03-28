@@ -15,7 +15,7 @@ LAYERS = {
     "dartlab.core": 0,
     "dartlab.providers": 1,
     "dartlab.gather": 1,
-    "dartlab.market": 1,
+    "dartlab.scan": 1,
     "dartlab.analysis": 2,
     "dartlab.ai": 3,
 }
@@ -76,7 +76,7 @@ _FACADE_PATTERNS = {
     # scan/network → rank/screen (벤치마크 데이터 참조)
     ("dartlab.providers.dart.scan", "dartlab.analysis"),
     # market → analysis (향후)
-    ("dartlab.market", "dartlab.analysis"),
+    ("dartlab.scan", "dartlab.analysis"),
 }
 
 # ── 알려진 인프라 역방향 의존 (리팩토링에서 순차 해소) ──
@@ -92,7 +92,7 @@ _KNOWN_VIOLATIONS = {
     ("dartlab.core.ai", "dartlab.ai"),
     # core/ → providers (L0→L1)
     ("dartlab.core.docs.diff", "dartlab.providers"),
-    ("dartlab.core.docs.diff", "dartlab.market"),
+    ("dartlab.core.docs.diff", "dartlab.scan"),
     ("dartlab.core.finance.currency", "dartlab.gather"),
 }
 

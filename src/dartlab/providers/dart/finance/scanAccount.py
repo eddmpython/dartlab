@@ -416,7 +416,7 @@ def scanAccount(
     fastKeys = _buildFastKeys(snakeId)
 
     # ── scan/finance.parquet 가속 경로 ──
-    from dartlab.market._helpers import _ensureScanData
+    from dartlab.scan._helpers import _ensureScanData
 
     scanDir = _ensureScanData()
     scanPath = scanDir / "finance.parquet"

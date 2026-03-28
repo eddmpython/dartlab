@@ -29,10 +29,12 @@ class _CacheEntry:
         self.ttl = BASE_TTL
 
     def touch(self) -> None:
+        """접근 횟수 증가 및 TTL 연장."""
         self.access_count += 1
         self.ttl = min(BASE_TTL + self.access_count * 300, MAX_TTL)
 
     def is_expired(self) -> bool:
+        """TTL 초과 여부를 반환한다."""
         return (time.monotonic() - self.created_at) > self.ttl
 
 
@@ -61,6 +63,7 @@ class CompanyCache:
             pass
 
     def get(self, stock_code: str) -> tuple[Company, dict | None] | None:
+        """캐시에서 Company와 snapshot을 조회한다."""
         entry = self._store.get(stock_code)
         if entry is None:
             return None
@@ -72,6 +75,7 @@ class CompanyCache:
         return entry.company, entry.snapshot
 
     def put(self, stock_code: str, company: Company, snapshot: dict | None) -> None:
+        """Company와 snapshot을 캐시에 저장한다."""
         self._check_memory_pressure()
         if stock_code in self._store:
             old = self._store[stock_code]
@@ -86,11 +90,13 @@ class CompanyCache:
                 self._store.popitem(last=False)
 
     def update_snapshot(self, stock_code: str, snapshot: dict | None) -> None:
+        """기존 캐시 항목의 snapshot만 갱신한다."""
         entry = self._store.get(stock_code)
         if entry:
             entry.snapshot = snapshot
 
     def clear(self) -> None:
+        """캐시 전체를 비우고 크기 제한을 초기화한다."""
         self._store.clear()
         self._max_size = MAX_SIZE
 

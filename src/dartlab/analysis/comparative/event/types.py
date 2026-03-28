@@ -14,6 +14,7 @@ class EventWindow:
 
     @property
     def total(self) -> int:
+        """이벤트 윈도우 전체 거래일 수."""
         return self.pre + self.post + 1
 
     @property

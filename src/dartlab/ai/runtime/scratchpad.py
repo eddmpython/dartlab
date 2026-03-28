@@ -79,8 +79,18 @@ class Scratchpad:
     tokenBudget: int = 8000
     # (toolName, argsHash) → result 캐시 (동일 인자 즉시 반환)
     _resultCache: dict[tuple[str, str], str] = field(default_factory=dict)
+    # 카테고리별 최대 호출 오버라이드 (비교 분석 등 확장 필요 시)
+    maxCallOverrides: dict[str, int] | None = None
 
     # ── 핵심 API ──────────────────────────────────────
+
+    def _maxCallsForTool(self, toolName: str) -> int:
+        """카테고리별 최대 호출 수 (인스턴스 오버라이드 우선)."""
+        if self.maxCallOverrides:
+            cat = _toolCategory(toolName)
+            if cat in self.maxCallOverrides:
+                return self.maxCallOverrides[cat]
+        return _maxCallsFor(toolName)
 
     def addEntry(self, toolName: str, args: dict[str, Any], result: str) -> None:
         """도구 결과 추가 (pruning 자동 적용)."""
@@ -111,7 +121,7 @@ class Scratchpad:
             return ("cached", f"[캐시] 동일한 호출({toolName})의 이전 결과를 재사용합니다:\n{cached}")
 
         # 2. 카테고리별 한도 초과 → hard block
-        maxCalls = _maxCallsFor(toolName)
+        maxCalls = self._maxCallsForTool(toolName)
         count = self.callCounts.get(toolName, 0)
         if count >= maxCalls:
             return (

@@ -918,7 +918,7 @@ def _run_supply(company: Any) -> str | None:
 def _run_watch(company: Any) -> str | None:
     """공시 변화 감지 (Tier 1 자동 주입, 상위 5개만)."""
     try:
-        from dartlab.analysis.accounting.watch.scanner import scan_company
+        from dartlab.scan.watch.scanner import scan_company
 
         result = scan_company(company)
         if result is None or not result.scored:
@@ -1029,7 +1029,7 @@ def _run_insight(stockCode: str, company: Any) -> str | None:
 def _run_rank(stockCode: str) -> str | None:
     """rank 엔진: 시장 내 규모 순위."""
     try:
-        from dartlab.analysis.comparative.rank import getRank
+        from dartlab.scan.screen import getRank
 
         rank = getRank(stockCode)
         if rank is None:

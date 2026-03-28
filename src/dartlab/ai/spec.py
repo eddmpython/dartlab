@@ -13,10 +13,10 @@ from dartlab.core.capabilities import build_capability_summary, get_capability_s
 _ENGINE_SPECS = [
     "dartlab.providers.dart.finance.spec",
     "dartlab.providers.dart.report.spec",
-    "dartlab.market.spec",
+    "dartlab.scan.spec",
     "dartlab.analysis.comparative.sector.spec",
     "dartlab.analysis.financial.insight.spec",
-    "dartlab.analysis.comparative.rank.spec",
+    "dartlab.scan.screen.spec",
     "dartlab.gather.fred.spec",
     "dartlab.analysis.financial.research.spec",
 ]

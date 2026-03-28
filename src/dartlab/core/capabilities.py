@@ -11,6 +11,8 @@ from typing import Any
 
 
 class CapabilityKind:
+    """AI capability 종류 상수."""
+
     DATA = "data"
     ANALYSIS = "analysis"
     WORKFLOW = "workflow"
@@ -20,6 +22,8 @@ class CapabilityKind:
 
 
 class CapabilityChannel:
+    """capability 노출 채널 상수."""
+
     CHAT = "chat"
     MCP = "mcp"
     CLI = "cli"
@@ -37,6 +41,7 @@ class WidgetSpec:
     description: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
+        """widget 정보를 직렬화 가능한 dict로 변환."""
         payload = {
             "widget": self.widget,
             "props": self.props,
@@ -52,7 +57,7 @@ class WidgetSpec:
 
 @dataclass(frozen=True)
 class ViewSpec:
-    """Canonical UI layout schema consumed by renderers/sinks."""
+    """canonical UI 레이아웃 스키마 — 렌더러/싱크가 소비."""
 
     layout: str = "stack"
     widgets: list[WidgetSpec] = field(default_factory=list)
@@ -61,6 +66,7 @@ class ViewSpec:
     source: dict[str, Any] = field(default_factory=dict)
 
     def to_payload(self) -> dict[str, Any]:
+        """뷰 레이아웃을 직렬화 가능한 dict로 변환."""
         payload: dict[str, Any] = {
             "layout": self.layout,
             "widgets": [widget.to_payload() for widget in self.widgets],
@@ -87,6 +93,7 @@ class ViewSpec:
         subtitle: str | None = None,
         source: dict[str, Any] | None = None,
     ) -> "ViewSpec":
+        """위젯 하나로 구성된 ViewSpec 생성."""
         return cls(
             layout=layout,
             widgets=[
@@ -112,6 +119,7 @@ class UiAction:
     payload: dict[str, Any] = field(default_factory=dict)
 
     def to_payload(self) -> dict[str, Any]:
+        """액션을 직렬화 가능한 dict로 변환."""
         return {"action": self.action, **self.payload}
 
     @classmethod
@@ -125,6 +133,7 @@ class UiAction:
         stock_code: str | None = None,
         company: str | None = None,
     ) -> "UiAction":
+        """뷰어/topic/기간으로 화면 이동."""
         payload: dict[str, Any] = {"view": view}
         if topic:
             payload["topic"] = topic
@@ -146,6 +155,7 @@ class UiAction:
         *,
         view: ViewSpec | dict[str, Any] | None = None,
     ) -> "UiAction":
+        """컴포넌트 또는 ViewSpec을 렌더링."""
         payload: dict[str, Any] = {}
         if component:
             payload["component"] = component
@@ -173,6 +183,7 @@ class UiAction:
         subtitle: str | None = None,
         source: dict[str, Any] | None = None,
     ) -> "UiAction":
+        """단일 위젯을 ViewSpec으로 감싸 렌더링."""
         return cls.render(
             view=ViewSpec.single_widget(
                 widget,
@@ -189,6 +200,7 @@ class UiAction:
 
     @classmethod
     def update(cls, target: str, payload: dict[str, Any] | None = None) -> "UiAction":
+        """대상 컴포넌트 상태 업데이트."""
         data = {"target": target}
         if payload:
             data.update(payload)
@@ -196,6 +208,7 @@ class UiAction:
 
     @classmethod
     def toast(cls, message: str, *, level: str = "info") -> "UiAction":
+        """토스트 알림 표시."""
         return cls(action="toast", payload={"message": message, "level": level})
 
     @classmethod
@@ -240,6 +253,7 @@ class CapabilitySpec:
     dependsOn: tuple[str, ...] = ()
 
     def to_dict(self, *, detail: bool = False) -> dict[str, Any]:
+        """capability 정보를 dict로 변환. detail=True이면 전체 필드 포함."""
         data = asdict(self)
         if detail:
             return data
@@ -255,23 +269,30 @@ class CapabilitySpec:
 
 
 class CapabilityRegistry:
+    """AI capability 등록소 — id 기반 CapabilitySpec 저장/조회."""
+
     def __init__(self) -> None:
         self._items: dict[str, CapabilitySpec] = {}
 
     def register(self, spec: CapabilitySpec) -> None:
+        """capability 등록. 동일 id는 덮어쓴다."""
         self._items[spec.id] = spec
 
     def clear(self) -> None:
+        """등록된 모든 capability 제거."""
         self._items.clear()
 
     def get(self, capability_id: str) -> CapabilitySpec | None:
+        """id로 CapabilitySpec 조회."""
         return self._items.get(capability_id)
 
     def list(self) -> list[CapabilitySpec]:
+        """등록된 전체 CapabilitySpec 목록."""
         return list(self._items.values())
 
     @property
     def size(self) -> int:
+        """등록된 capability 수."""
         return len(self._items)
 
 
@@ -279,10 +300,12 @@ _DEFAULT_REGISTRY = CapabilityRegistry()
 
 
 def get_default_capability_registry() -> CapabilityRegistry:
+    """전역 기본 CapabilityRegistry 반환."""
     return _DEFAULT_REGISTRY
 
 
 def clear_capability_registry() -> None:
+    """전역 registry 초기화."""
     _DEFAULT_REGISTRY.clear()
 
 
@@ -305,6 +328,7 @@ def register_tool_capability(
     priority: int = 50,
     dependsOn: tuple[str, ...] = (),
 ) -> CapabilitySpec:
+    """도구 capability를 전역 registry에 등록하고 CapabilitySpec을 반환."""
     spec = CapabilitySpec(
         id=capability_id,
         label=label or capability_id,
@@ -333,6 +357,7 @@ def get_capability_specs(
     kind: str | None = None,
     category: str | None = None,
 ) -> list[CapabilitySpec]:
+    """채널/종류/카테고리로 필터링한 capability 목록."""
     specs = _DEFAULT_REGISTRY.list()
     if channel is not None:
         specs = [spec for spec in specs if channel in spec.channels]
@@ -344,6 +369,7 @@ def get_capability_specs(
 
 
 def build_capability_summary(specs: list[CapabilitySpec] | None = None) -> dict[str, Any]:
+    """capability 통계 요약 — total/byKind/byChannel."""
     specs = specs if specs is not None else get_capability_specs()
     by_kind: dict[str, int] = {}
     by_channel: dict[str, int] = {}

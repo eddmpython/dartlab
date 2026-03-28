@@ -437,10 +437,12 @@ class Company:
 
     @property
     def market(self) -> str:
+        """거래소 시장 — US 고정."""
         return "US"
 
     @property
     def currency(self) -> str:
+        """통화 — USD 고정."""
         return "USD"
 
     def view(self, *, port: int = 8400) -> None:
@@ -451,30 +453,37 @@ class Company:
 
     @property
     def timeseries(self):
+        """분기별 재무 시계열."""
         return self.finance.timeseries
 
     @property
     def annual(self):
+        """연간 재무 시계열."""
         return self.finance.annual
 
     @property
     def BS(self) -> pl.DataFrame | None:
+        """재무상태표."""
         return self.finance.BS
 
     @property
     def IS(self) -> pl.DataFrame | None:
+        """손익계산서."""
         return self.finance.IS
 
     @property
     def CF(self) -> pl.DataFrame | None:
+        """현금흐름표."""
         return self.finance.CF
 
     @property
     def CIS(self) -> pl.DataFrame | None:
+        """포괄손익계산서."""
         return self.finance.CIS
 
     @property
     def SCE(self) -> pl.DataFrame | None:
+        """자본변동표."""
         return self.finance.SCE
 
     @property
@@ -499,6 +508,7 @@ class Company:
 
     @property
     def insights(self):
+        """재무 인사이트 분석 결과 (lazy 계산)."""
         if "_insights" not in self._cache:
             from dartlab.analysis.financial.insight.pipeline import analyze
 
@@ -517,6 +527,7 @@ class Company:
         return self._cache["_insights"]
 
     def filings(self) -> pl.DataFrame | None:
+        """SEC 공시 문서 목록."""
         return self.docs.filings()
 
     def disclosure(
@@ -886,6 +897,7 @@ class Company:
         )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        """topic 데이터의 출처(docs/finance)와 선택 근거 추적."""
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
@@ -967,6 +979,7 @@ class Company:
 
     @property
     def index(self) -> pl.DataFrame:
+        """topic별 메타데이터(chapter, source, periods 등) 인덱스."""
         cacheKey = "_index"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -1183,7 +1196,7 @@ class Company:
             c.watch()                              # 전체 topic 중요도 순 요약
             c.watch("10-K::item1ARiskFactors")     # 특정 topic 상세
         """
-        from dartlab.analysis.accounting.watch.scanner import scan_company
+        from dartlab.scan.watch.scanner import scan_company
 
         result = scan_company(self, topic=topic)
         if result is None:

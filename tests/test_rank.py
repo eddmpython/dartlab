@@ -18,7 +18,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_rankinfo_creation():
-    from dartlab.analysis.comparative.rank import RankInfo
+    from dartlab.scan.screen import RankInfo
 
     ri = RankInfo(
         stockCode="005930",
@@ -36,7 +36,7 @@ def test_rankinfo_creation():
 
 
 def test_rankinfo_repr():
-    from dartlab.analysis.comparative.rank import RankInfo
+    from dartlab.scan.screen import RankInfo
 
     ri = RankInfo(
         stockCode="005930",
@@ -55,7 +55,7 @@ def test_rankinfo_repr():
 
 
 def test_rankinfo_asdict():
-    from dartlab.analysis.comparative.rank import RankInfo
+    from dartlab.scan.screen import RankInfo
 
     ri = RankInfo(stockCode="X", corpName="Y", sector="Z", industryGroup="W")
     d = asdict(ri)
@@ -65,7 +65,7 @@ def test_rankinfo_asdict():
 
 def test_rankinfo_none_repr():
     """revenue가 None이면 repr에 N/A 표시."""
-    from dartlab.analysis.comparative.rank import RankInfo
+    from dartlab.scan.screen import RankInfo
 
     ri = RankInfo(stockCode="X", corpName="테스트", sector="IT", industryGroup="기타")
     assert "N/A" in repr(ri)
@@ -75,7 +75,7 @@ def test_rankinfo_none_repr():
 
 
 def test_presets_returns_dict():
-    from dartlab.analysis.comparative.rank import presets
+    from dartlab.scan.screen import presets
 
     result = presets()
     assert isinstance(result, dict)
@@ -86,7 +86,7 @@ def test_presets_returns_dict():
 
 
 def test_presets_descriptions_are_strings():
-    from dartlab.analysis.comparative.rank import presets
+    from dartlab.scan.screen import presets
 
     for name, desc in presets().items():
         assert isinstance(name, str)
@@ -142,7 +142,7 @@ def _get_screen_module():
     """screen 모듈 객체 반환 (__init__의 screen 함수와 이름 충돌 방지)."""
     import importlib
 
-    return importlib.import_module("dartlab.analysis.comparative.rank.screen")
+    return importlib.import_module("dartlab.scan.screen.screen")
 
 
 def test_screen_value_preset(monkeypatch):
@@ -166,7 +166,7 @@ def test_screen_value_preset(monkeypatch):
 
 def test_screen_invalid_preset():
     """존재하지 않는 프리셋은 ValueError."""
-    from dartlab.analysis.comparative.rank import screen
+    from dartlab.scan.screen import screen
 
     with pytest.raises(ValueError, match="알 수 없는 프리셋"):
         screen("존재하지않는프리셋")
@@ -196,10 +196,10 @@ def test_benchmark_structure(monkeypatch):
 
 def test_getRank_no_snapshot(monkeypatch):
     """스냅샷이 없으면 None 반환."""
-    import dartlab.analysis.comparative.rank.rank as mod
+    import dartlab.scan.screen.rank as mod
 
     monkeypatch.setattr(mod, "_SNAPSHOT", None)
     monkeypatch.setattr(mod, "_loadCache", lambda: None)
-    from dartlab.analysis.comparative.rank import getRank
+    from dartlab.scan.screen import getRank
 
     assert getRank("005930") is None

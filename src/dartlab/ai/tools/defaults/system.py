@@ -19,6 +19,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     from ..coding import get_default_coding_runtime
 
     def get_system_spec() -> str:
+        """DartLab 시스템 전체 스펙을 조회한다."""
         return build_system_spec_markdown()
 
     register_tool(
@@ -33,6 +34,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def get_engine_spec(engine: str) -> str:
+        """특정 엔진의 상세 스펙을 조회한다."""
         import json
 
         from dartlab.ai.spec import buildSpec, getEngineSpec
@@ -67,6 +69,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def get_runtime_capabilities() -> str:
+        """현재 런타임에서 가능한 기능 범위를 요약한다."""
         return build_runtime_capabilities_markdown(company)
 
     register_tool(
@@ -81,6 +84,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def get_tool_catalog(include_parameters: bool = False) -> str:
+        """등록된 도구 카탈로그를 조회한다."""
         return build_tool_catalog_markdown(include_parameters=include_parameters)
 
     register_tool(
@@ -103,6 +107,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def get_coding_runtime_status() -> str:
+        """코딩 백엔드 등록 및 가용 상태를 조회한다."""
         return build_coding_runtime_markdown()
 
     register_tool(
@@ -125,6 +130,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             model: str = "",
             timeout_seconds: int = 300,
         ) -> str:
+            """코딩 런타임으로 워크스페이스 코드 작업을 실행한다."""
             runtime = get_default_coding_runtime()
             try:
                 result = runtime.run_task(
@@ -198,6 +204,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
             model: str = "",
             timeout_seconds: int = 300,
         ) -> str:
+            """Codex CLI로 코드 작업을 위임한다."""
             result = run_coding_task(
                 prompt,
                 backend="codex",
@@ -248,6 +255,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     # ── discover_features ──
 
     def discover_features(category: str = "all") -> str:
+        """카테고리별 사용 가능한 기능을 안내한다."""
         from dartlab.core.registry import buildFeatureDescription
 
         return buildFeatureDescription(category)
@@ -275,6 +283,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     # ── global search / download / data_status ──
 
     def search_company(keyword: str) -> str:
+        """종목명 또는 종목코드로 기업을 검색한다."""
         import polars as pl
 
         from dartlab.gather.listing import searchName
@@ -307,6 +316,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def download_data(stock_code: str = "", category: str = "docs") -> str:
+        """HuggingFace에서 데이터를 다운로드한다."""
         from dartlab.core.dataLoader import downloadAll, loadData
 
         if category == "edgarDocs" and not stock_code:
@@ -462,6 +472,7 @@ def register_system_tools(register_tool, *, company: Any | None = None) -> None:
     )
 
     def data_status() -> str:
+        """로컬 데이터 현황을 카테고리별로 조회한다."""
         from dartlab.core.dataLoader import DATA_RELEASES, _dataDir
 
         lines = ["| 카테고리 | 라벨 | 파일 수 |", "| --- | --- | --- |"]

@@ -36,6 +36,7 @@ def _detectSource(args) -> str:
 
 
 def configure_parser(subparsers) -> None:
+    """collect 서브커맨드 등록 — DART/EDGAR 데이터 수집."""
     parser = subparsers.add_parser(
         "collect",
         help="DART/EDGAR 공시문서 수집 (종목코드=DART, ticker=EDGAR 자동 감지)",
@@ -144,6 +145,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """소스 자동 감지 후 DART/EDGAR 데이터를 수집한다."""
     from dartlab.cli.services.output import get_console
 
     console = get_console()
@@ -213,7 +215,7 @@ def _printHelp(console) -> None:
 
 def _runScan(console, args) -> int:
     """전종목 scan 프리빌드 실행."""
-    from dartlab.market.scan.builder import buildChanges, buildFinance, buildReport, buildScan
+    from dartlab.scan.builder import buildChanges, buildFinance, buildReport, buildScan
 
     target = getattr(args, "scan", "all")
     sinceYear = getattr(args, "since_year", 2021)

@@ -52,6 +52,7 @@ def _avatar_lines():
 
 
 def printRepr(corpName: str, stockCode: str, nProps: int, nNotes: int):
+    """Company repr 출력 (아바타 + 요약 정보)."""
     from rich.console import Console
     from rich.text import Text
 
@@ -110,6 +111,7 @@ def printRepr(corpName: str, stockCode: str, nProps: int, nNotes: int):
 
 
 def printGuide(corpName: str, stockCode: str, properties: list, noteKeys: list, noteKeysKr: list):
+    """Company index 가이드 출력."""
     from rich.console import Console
     from rich.text import Text
 

@@ -9,6 +9,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """profile 서브커맨드 등록 — Company index/facts 출력."""
     parser = subparsers.add_parser("profile", help="company index 및 facts 출력")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.add_argument(
@@ -20,6 +21,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """Company index 또는 facts 테이블을 콘솔에 출력한다."""
     from dartlab.cli.services.output import get_console, print_dataframe
 
     dartlab = configure_dartlab()

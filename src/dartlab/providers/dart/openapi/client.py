@@ -86,6 +86,7 @@ class DartClient:
 
     @property
     def currentKey(self) -> str:
+        """현재 사용 중인 DART API 키를 반환한다."""
         return self._keys[self._keyIndex]
 
     def _rotateKey(self) -> bool:

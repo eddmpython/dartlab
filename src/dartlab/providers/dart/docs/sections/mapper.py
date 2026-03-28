@@ -271,10 +271,12 @@ def _mappingPath() -> Path:
 
 
 def stripSectionPrefix(title: str) -> str:
+    """섹션 제목에서 번호/기호 접두사를 제거한다."""
     return _LEAF_PREFIX_RE.sub("", title.strip())
 
 
 def normalizeSectionTitle(title: str) -> str:
+    """섹션 제목을 접두사/업종명/특수문자 제거 후 정규화된 문자열로 변환한다."""
     text = stripSectionPrefix(title)
     text = _INDUSTRY_PREFIX_RE.sub("", text)
     text = stripSectionPrefix(text)
@@ -288,6 +290,7 @@ def normalizeSectionTitle(title: str) -> str:
 
 @lru_cache(maxsize=1)
 def loadSectionMappings() -> dict[str, str]:
+    """sectionMappings.json을 로드하여 정규화된 제목-topic 매핑 dict를 반환한다."""
     path = _mappingPath()
     if not path.exists():
         return {}
@@ -303,6 +306,7 @@ _COMPANY_SUFFIX_RE = re.compile(r"_.+$")
 
 
 def mapSectionTitle(title: str) -> str:
+    """섹션 제목을 canonical topic 이름으로 매핑한다."""
     normalized = normalizeSectionTitle(title)
     mapped = loadSectionMappings().get(normalized)
     if mapped:

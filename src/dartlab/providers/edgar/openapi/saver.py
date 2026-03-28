@@ -129,6 +129,7 @@ def _validateSavedFinanceParquet(path: Path, cik: str) -> None:
 
 
 def verifyOpenEdgarSaveCompatibility(ticker: str) -> dict[str, object]:
+    """저장된 EDGAR 데이터가 Company 파이프라인과 호환되는지 검증."""
     from dartlab.providers.edgar.company import Company
 
     company = Company(ticker)
@@ -166,6 +167,7 @@ def saveDocs(
     client: EdgarClient | None = None,
     sinceYear: int = 2009,
 ) -> Path:
+    """10-K/10-Q 문서를 SEC에서 수집하여 검증 후 parquet로 저장."""
     normalized = str(ticker).upper().strip()
     _ensureIdentityCaches(client)
     dest = _dataPath("edgarDocs", normalized)
@@ -183,6 +185,7 @@ def saveFinance(
     *,
     client: EdgarClient | None = None,
 ) -> Path:
+    """XBRL companyfacts를 SEC에서 수집하여 검증 후 parquet로 저장."""
     normalized = str(cik).zfill(10)
     _ensureIdentityCaches(client)
     payload = getCompanyFactsJson(normalized, client)

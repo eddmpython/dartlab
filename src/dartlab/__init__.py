@@ -159,7 +159,7 @@ def network():
         import dartlab
         dartlab.network().show()  # 브라우저에서 전체 네트워크
     """
-    from dartlab.market.network import build_graph, export_full
+    from dartlab.scan.network import build_graph, export_full
     from dartlab.tools.network import render_network
 
     data = build_graph()
@@ -179,7 +179,7 @@ def governance():
         import dartlab
         df = dartlab.governance()
     """
-    from dartlab.market.governance import scan_governance
+    from dartlab.scan.governance import scan_governance
 
     result = scan_governance()
     if result is not None and hasattr(result, "is_empty") and result.is_empty():
@@ -196,7 +196,7 @@ def workforce():
         import dartlab
         df = dartlab.workforce()
     """
-    from dartlab.market.workforce import scan_workforce
+    from dartlab.scan.workforce import scan_workforce
 
     result = scan_workforce()
     if result is not None and hasattr(result, "is_empty") and result.is_empty():
@@ -213,7 +213,7 @@ def capital():
         import dartlab
         df = dartlab.capital()
     """
-    from dartlab.market.capital import scan_capital
+    from dartlab.scan.capital import scan_capital
 
     result = scan_capital()
     if result is not None and hasattr(result, "is_empty") and result.is_empty():
@@ -230,7 +230,7 @@ def debt():
         import dartlab
         df = dartlab.debt()
     """
-    from dartlab.market.debt import scan_debt
+    from dartlab.scan.debt import scan_debt
 
     result = scan_debt()
     if result is not None and hasattr(result, "is_empty") and result.is_empty():
@@ -252,7 +252,7 @@ def screen(preset: str = "가치주"):
         df = dartlab.screen("가치주")    # ROE≥10, 부채≤100 등
         df = dartlab.screen("고위험")    # 부채≥200, ICR<3
     """
-    from dartlab.analysis.comparative.rank.screen import screen as _screen
+    from dartlab.scan.screen.screen import screen as _screen
 
     return _screen(preset)
 
@@ -265,7 +265,7 @@ def benchmark():
         import dartlab
         bm = dartlab.benchmark()   # 섹터 × 비율 정상 범위
     """
-    from dartlab.analysis.comparative.rank.screen import benchmark as _benchmark
+    from dartlab.scan.screen.screen import benchmark as _benchmark
 
     return _benchmark()
 
@@ -282,7 +282,7 @@ def signal(keyword: str | None = None):
         df = dartlab.signal()        # 전체 키워드 트렌드
         df = dartlab.signal("AI")    # AI 키워드 연도별 추이
     """
-    from dartlab.market.signal import scan_signal
+    from dartlab.scan.signal import scan_signal
 
     return scan_signal(keyword)
 
@@ -383,7 +383,7 @@ def crossBorderPeers(stockCode: str, *, topK: int = 5):
         import dartlab
         dartlab.crossBorderPeers("005930")  # → ["AAPL", "MSFT", ...]
     """
-    from dartlab.analysis.comparative.peer.discover import crossBorderPeers as _cb
+    from dartlab.scan.peer.discover import crossBorderPeers as _cb
 
     return _cb(stockCode, topK=topK)
 
@@ -812,7 +812,7 @@ def groupHealth():
         import dartlab
         summary, weakLinks = dartlab.groupHealth()
     """
-    from dartlab.market.network.health import groupHealth as _groupHealth
+    from dartlab.scan.network.health import groupHealth as _groupHealth
 
     return _groupHealth()
 
@@ -923,8 +923,8 @@ def digest(
         dartlab.digest(sector="반도체")             # 섹터별
         dartlab.digest(format="markdown")          # 마크다운 출력
     """
-    from dartlab.analysis.accounting.watch.digest import build_digest
-    from dartlab.analysis.accounting.watch.scanner import scan_market
+    from dartlab.scan.watch.digest import build_digest
+    from dartlab.scan.watch.scanner import scan_market
 
     scan_df = scan_market(
         sector=sector,
@@ -945,6 +945,7 @@ class _Module(sys.modules[__name__].__class__):
 
     @property
     def verbose(self):
+        """전역 verbose 설정 조회."""
         return config.verbose
 
     @verbose.setter
@@ -953,6 +954,7 @@ class _Module(sys.modules[__name__].__class__):
 
     @property
     def dataDir(self):
+        """데이터 저장 디렉토리 경로 조회."""
         return config.dataDir
 
     @dataDir.setter
@@ -960,6 +962,12 @@ class _Module(sys.modules[__name__].__class__):
         config.dataDir = str(value)
 
     def __getattr__(self, name):
+        if name == "scan":
+            from dartlab.scan import Scan
+
+            instance = Scan()
+            setattr(self, name, instance)
+            return instance
         if name in ("chart", "table", "text"):
             import importlib
 
@@ -989,6 +997,7 @@ __all__ = [
     "collect",
     "collectAll",
     "downloadAll",
+    "scan",
     "network",
     "screen",
     "benchmark",

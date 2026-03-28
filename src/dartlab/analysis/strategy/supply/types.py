@@ -33,4 +33,5 @@ class SupplyChainResult:
 
     @property
     def totalLinks(self) -> int:
+        """고객사+공급사+특수관계자 총 링크 수."""
         return len(self.customers) + len(self.suppliers) + len(self.relatedParties)

@@ -104,6 +104,7 @@ class _AsyncRateLimiter:
         self._lock = asyncio.Lock()
 
     async def acquire(self, timeout: float = 30.0) -> None:
+        """속도 제한 슬롯 획득 (윈도우 내 최대 요청 수 준수)."""
         deadline = time.monotonic() + timeout
         while True:
             async with self._lock:

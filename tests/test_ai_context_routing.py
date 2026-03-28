@@ -9,9 +9,7 @@ from dartlab.ai.context import build_compact_context, build_context_by_module
 from dartlab.ai.context.builder import _resolve_context_route
 from dartlab.ai.context.finance_context import _detect_year_hint
 from dartlab.ai.runtime.core import (
-    _resolve_context_tier,
     _resolve_follow_up_include,
-    _resolve_snapshot_policy,
     _should_run_validation,
     _should_use_light_mode,
 )
@@ -804,32 +802,6 @@ def test_follow_up_period_question_inherits_previous_modules():
 def test_detect_year_hint_prefers_explicit_range_over_recent_keyword():
     assert _detect_year_hint("최근 5개년") == 5
     assert _detect_year_hint("최근 10년 추세") == 10
-
-
-def test_resolve_context_tier_defaults_to_focused_for_default_ask():
-    assert _resolve_context_tier("oauth-codex", use_tools=False) == "focused"
-    assert _resolve_context_tier("openai", use_tools=False) == "focused"
-    assert _resolve_context_tier("openai", use_tools=True) == "skeleton"
-    assert _resolve_context_tier("oauth-codex", use_tools=True) == "skeleton"
-
-
-def test_resolve_snapshot_policy_skips_sections_and_report_routes():
-    finance_policy = _resolve_snapshot_policy("영업이익률 추세를 분석해줘", (), False)
-    sections_policy = _resolve_snapshot_policy("무슨 사업 하는 회사냐", (), False)
-    report_policy = _resolve_snapshot_policy("배당 추세 알려줘", (), False)
-
-    assert finance_policy["route"] == "finance"
-    assert finance_policy["enabled"] is True
-    assert finance_policy["includeInsights"] is False
-    assert finance_policy["includeDataDate"] is False
-
-    assert sections_policy["route"] == "sections"
-    assert sections_policy["enabled"] is False
-    assert sections_policy["includeDataDate"] is False
-
-    assert report_policy["route"] == "report"
-    assert report_policy["enabled"] is False
-    assert report_policy["includeDataDate"] is False
 
 
 def test_should_run_validation_only_for_finance_modules():

@@ -15,7 +15,7 @@ pytestmark = pytest.mark.integration
 
 
 def test_available_scans():
-    from dartlab.market import available_scans
+    from dartlab.scan import available_scans
 
     scans = available_scans()
     assert isinstance(scans, list)
@@ -23,8 +23,8 @@ def test_available_scans():
 
 
 def test_governance_imports():
-    from dartlab.market.governance import scan_governance
-    from dartlab.market.governance.scorer import grade, score_ownership
+    from dartlab.scan.governance import scan_governance
+    from dartlab.scan.governance.scorer import grade, score_ownership
 
     assert callable(scan_governance)
     assert grade(90) == "A"
@@ -36,8 +36,8 @@ def test_governance_imports():
 
 
 def test_capital_imports():
-    from dartlab.market.capital import scan_capital
-    from dartlab.market.capital.classifier import classify_return
+    from dartlab.scan.capital import scan_capital
+    from dartlab.scan.capital.classifier import classify_return
 
     assert callable(scan_capital)
     cat, contra = classify_return(True, True, False)
@@ -49,14 +49,14 @@ def test_capital_imports():
 
 
 def test_workforce_imports():
-    from dartlab.market.workforce import scan_workforce
+    from dartlab.scan.workforce import scan_workforce
 
     assert callable(scan_workforce)
 
 
 def test_debt_imports():
-    from dartlab.market.debt import scan_debt
-    from dartlab.market.debt.risk import classify_risk
+    from dartlab.scan.debt import scan_debt
+    from dartlab.scan.debt.risk import classify_risk
 
     assert callable(scan_debt)
     assert classify_risk(0.5, 60) == "고위험"
@@ -69,7 +69,7 @@ def test_debt_imports():
 
 
 def test_signal_imports():
-    from dartlab.market.signal import keywords, scan_signal
+    from dartlab.scan.signal import keywords, scan_signal
 
     assert callable(scan_signal)
     kws = keywords()
@@ -78,7 +78,7 @@ def test_signal_imports():
 
 
 def test_helpers_parse_num():
-    from dartlab.market._helpers import parse_num
+    from dartlab.scan._helpers import parse_num
 
     assert parse_num("1,234") == 1234.0
     assert parse_num("-") is None
@@ -164,7 +164,7 @@ def test_pipeline_scan_axes_mapping():
 
 def test_signal_empty_result(tmp_path, monkeypatch):
     import dartlab
-    from dartlab.market.signal import scan_signal
+    from dartlab.scan.signal import scan_signal
 
     docs_dir = tmp_path / "dart" / "docs"
     docs_dir.mkdir(parents=True)
@@ -178,7 +178,7 @@ def test_signal_empty_result(tmp_path, monkeypatch):
 
 def test_signal_keyword_filter_with_temp_docs(tmp_path, monkeypatch):
     import dartlab
-    from dartlab.market.signal import scan_signal
+    from dartlab.scan.signal import scan_signal
 
     docs_dir = tmp_path / "dart" / "docs"
     docs_dir.mkdir(parents=True)
@@ -226,7 +226,7 @@ def test_signal_keyword_filter_with_temp_docs(tmp_path, monkeypatch):
 
 
 def test_signal_invalid_keyword_raises():
-    from dartlab.market.signal import scan_signal
+    from dartlab.scan.signal import scan_signal
 
     with pytest.raises(ValueError, match="알 수 없는 키워드"):
         scan_signal("NOT_A_KEYWORD", verbose=False)
@@ -237,7 +237,7 @@ def test_signal_invalid_keyword_raises():
     reason="local docs corpus 없음",
 )
 def test_signal_local_docs_ordering():
-    from dartlab.market.signal import scan_signal
+    from dartlab.scan.signal import scan_signal
 
     result = scan_signal("AI", verbose=False)
 

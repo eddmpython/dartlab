@@ -15,6 +15,7 @@ def register_openapi_tools(register_tool) -> None:
     """OpenAPI 관련 도구를 등록한다."""
 
     def get_openapi_capabilities(market: str = "all") -> str:
+        """DART/EDGAR OpenAPI 기능 범위를 요약한다."""
         from dartlab import OpenDart
 
         sections: list[str] = []
@@ -101,6 +102,7 @@ def register_openapi_tools(register_tool) -> None:
         rcept_no: str = "",
         max_chars: int = 4000,
     ) -> str:
+        """DART OpenAPI를 action 기반으로 직접 호출한다."""
         from dartlab import OpenDart
 
         dart = OpenDart()
@@ -246,6 +248,7 @@ def register_openapi_tools(register_tool) -> None:
         keywords: str = "",
         limit: int = 20,
     ) -> str:
+        """OpenDART 전체 시장 공시목록을 검색한다."""
         keyword_list = csv_list(keywords) or None
         filings = searchDartFilings(
             corp=corp or None,
@@ -312,6 +315,7 @@ def register_openapi_tools(register_tool) -> None:
     )
 
     def get_dart_filing_text(rcept_no: str, max_chars: int = 4000) -> str:
+        """접수번호로 DART 공시 원문 텍스트를 조회한다."""
         return getDartFilingText(rcept_no, maxChars=max_chars)
 
     register_tool(
@@ -344,6 +348,7 @@ def register_openapi_tools(register_tool) -> None:
         unit: str = "",
         period: str = "",
     ) -> str:
+        """EDGAR OpenAPI를 action 기반으로 직접 호출한다."""
         from dartlab import OpenEdgar
 
         edgar = OpenEdgar()
@@ -431,6 +436,7 @@ def register_openapi_tools(register_tool) -> None:
         full: bool = True,
         categories: str = "",
     ) -> str:
+        """DART/EDGAR OpenAPI로 데이터를 수집해 로컬 parquet에 저장한다."""
         from dartlab import OpenDart, OpenEdgar
 
         market_key = (market or "").strip().lower()

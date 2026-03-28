@@ -42,6 +42,7 @@ class NgrokTunnel(TunnelProvider):
         self._public_url: str | None = None
 
     def start(self, port: int) -> str:
+        """ngrok 터널을 시작하고 공개 URL 반환."""
         try:
             from pyngrok import ngrok
         except ImportError as exc:
@@ -70,6 +71,7 @@ class NgrokTunnel(TunnelProvider):
         return self._public_url
 
     def stop(self) -> None:
+        """ngrok 터널 종료 및 프로세스 정리."""
         try:
             from pyngrok import ngrok
 
@@ -126,6 +128,7 @@ class CloudflareTunnel(TunnelProvider):
                 )
 
     def start(self, port: int) -> str:
+        """Cloudflare Quick Tunnel을 시작하고 공개 URL 반환."""
         self._ensure_pycloudflared()
 
         from pycloudflared import try_cloudflare
@@ -141,6 +144,7 @@ class CloudflareTunnel(TunnelProvider):
         return url
 
     def stop(self) -> None:
+        """Cloudflare 터널 종료 (pycloudflared가 자체 관리)."""
         pass  # pycloudflared가 프로세스 관리
 
 
@@ -157,6 +161,7 @@ class SshTunnel(TunnelProvider):
         self._process = None
 
     def start(self, port: int) -> str:
+        """SSH 터널(localhost.run)을 시작하고 공개 URL 반환."""
         try:
             self._process = subprocess.Popen(
                 [
@@ -189,6 +194,7 @@ class SshTunnel(TunnelProvider):
             raise RuntimeError("SSH 터널을 사용하려면 ssh 클라이언트가 필요합니다.") from exc
 
     def stop(self) -> None:
+        """SSH 터널 프로세스 종료."""
         if self._process:
             self._process.terminate()
             self._process = None

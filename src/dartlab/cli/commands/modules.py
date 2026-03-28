@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 def configure_parser(subparsers) -> None:
+    """modules 서브커맨드 등록 — DataEntry 기반 모듈 목록."""
     parser = subparsers.add_parser("modules", help="사용 가능한 모듈 목록 보기")
     parser.add_argument("--category", "-c", help="카테고리 필터 (finance, report, notes, disclosure, analysis, raw)")
     parser.add_argument("--search", "-s", help="모듈 이름/설명 검색")
@@ -11,6 +12,7 @@ def configure_parser(subparsers) -> None:
 
 
 def _run(args) -> None:
+    """카테고리/검색 필터를 적용해 등록된 모듈을 Rich 테이블로 출력."""
     from rich.console import Console
     from rich.table import Table
 

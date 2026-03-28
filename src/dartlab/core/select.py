@@ -96,18 +96,22 @@ class SelectResult:
 
     @property
     def df(self) -> pl.DataFrame:
+        """내부 DataFrame."""
         return self._df
 
     @property
     def topic(self) -> str:
+        """데이터 topic명."""
         return self._topic
 
     @property
     def meta(self) -> dict:
+        """corpName, currency 등 메타데이터."""
         return self._meta
 
     @property
     def isNumeric(self) -> bool:
+        """기간 컬럼에 숫자 타입이 있으면 True."""
         return _isNumericDf(self._df)
 
     # ── render(fmt) 통합 ──
@@ -305,6 +309,7 @@ class ChartResult:
 
     @property
     def select(self) -> SelectResult:
+        """원본 SelectResult."""
         return self._select
 
     @property

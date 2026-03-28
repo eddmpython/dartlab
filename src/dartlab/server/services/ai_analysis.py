@@ -13,6 +13,7 @@ from dartlab.server.streaming import AnalysisStreamError, collect_analysis_text,
 
 
 def build_topic_summary_view_context(company: Company, topic: str) -> dict:
+    """topic 요약용 뷰 컨텍스트를 구성한다."""
     return {
         "type": "viewer",
         "company": {
@@ -32,6 +33,7 @@ async def stream_topic_summary(
     provider: str | None = None,
     model: str | None = None,
 ):
+    """topic 요약을 SSE 스트리밍으로 생성한다."""
     try:
         async for event in stream_analysis(
             company,
@@ -58,6 +60,7 @@ async def stream_topic_summary(
 
 
 async def run_plain_chat(req: AskRequest) -> dict[str, str]:
+    """회사 컨텍스트 없이 일반 AI 채팅을 실행한다."""
     try:
         answer = await collect_analysis_text(
             None,

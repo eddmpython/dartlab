@@ -24,6 +24,7 @@ def loadTickers(
     *,
     refresh: bool = False,
 ) -> pl.DataFrame:
+    """SEC company_tickers를 다운로드하고 로컬 캐시된 DataFrame으로 반환."""
     path = _tickersPath()
     if path.exists() and not refresh:
         return pl.read_parquet(path)
@@ -63,6 +64,7 @@ def resolveIssuer(
     *,
     refresh: bool = False,
 ) -> dict[str, Any]:
+    """티커 또는 CIK를 기업 identity dict(ticker, cik, title 등)로 해석."""
     if not query or not str(query).strip():
         raise ValueError("tickerOrCik가 비어 있음")
 
@@ -101,6 +103,7 @@ def searchIssuers(
     *,
     refresh: bool = False,
 ) -> pl.DataFrame:
+    """티커/CIK/회사명으로 SEC 등록 기업을 검색하여 DataFrame으로 반환."""
     if not query or not str(query).strip():
         return pl.DataFrame(schema={"ticker": pl.Utf8, "cik": pl.Utf8, "title": pl.Utf8})
 

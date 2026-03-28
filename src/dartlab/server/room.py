@@ -37,6 +37,7 @@ class RoomMember:
     queue: asyncio.Queue = field(default_factory=lambda: asyncio.Queue(maxsize=QUEUE_MAX_SIZE))
 
     def info(self) -> dict:
+        """멤버 정보를 직렬화 가능한 dict로 반환한다."""
         return {"memberId": self.member_id, "name": self.name, "role": self.role}
 
 
@@ -50,6 +51,7 @@ class ChatMessage:
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict:
+        """채팅 메시지를 직렬화 가능한 dict로 반환한다."""
         return {
             "memberId": self.member_id,
             "name": self.name,
@@ -162,6 +164,7 @@ class Room:
         }
 
     def get_member(self, member_id: str) -> RoomMember | None:
+        """멤버 ID로 RoomMember를 조회한다."""
         return self.members.get(member_id)
 
 
@@ -173,15 +176,18 @@ class RoomManager:
         self._cleanup_task: asyncio.Task | None = None
 
     def create_room(self, host_name: str = "Host", host_access: str = "full") -> Room:
+        """새 협업 룸을 생성하고 호스트를 등록한다."""
         room_id = secrets.token_hex(6)
         self._room = Room(room_id, host_name, host_access)
         logger.info("[ROOM] 룸 생성: %s", room_id)
         return self._room
 
     def get_room(self) -> Room | None:
+        """현재 활성 룸을 반환한다."""
         return self._room
 
     def destroy_room(self) -> None:
+        """현재 룸을 파괴한다."""
         if self._room:
             logger.info("[ROOM] 룸 파괴: %s", self._room.room_id)
         self._room = None
@@ -195,9 +201,11 @@ class RoomManager:
                 await room.cleanup_stale()
 
     def start_background_cleanup(self) -> None:
+        """비활성 멤버 정리 백그라운드 태스크를 시작한다."""
         self._cleanup_task = asyncio.create_task(self.start_cleanup_loop())
 
     def stop_background_cleanup(self) -> None:
+        """백그라운드 정리 태스크를 취소한다."""
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
 

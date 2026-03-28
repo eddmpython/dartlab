@@ -12,6 +12,7 @@ from dartlab.cli.services.output import print_warning
 
 
 def configure_parser(subparsers) -> None:
+    """ai 서브커맨드 등록 — FastAPI + SPA 웹 인터페이스."""
     parser = subparsers.add_parser("ai", help="AI 분석 웹 인터페이스 실행")
     _add_shared_arguments(parser)
     parser.set_defaults(handler=run)
@@ -25,6 +26,7 @@ def _add_shared_arguments(parser) -> None:
 
 
 def run(args) -> int:
+    """FastAPI 서버 + SPA를 시작하고 브라우저를 연다."""
     port = args.port
     host = args.host
     url = f"http://localhost:{port}"

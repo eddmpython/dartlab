@@ -57,6 +57,7 @@ async def _preload_ollama_once() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    """앱 수명주기 관리 -- Ollama preload, 룸 생성/정리, 채널 종료."""
     preload_task = asyncio.create_task(_preload_ollama_once()) if _should_preload_ollama() else None
 
     # 터널 모드: 협업 룸 자동 생성 + 백그라운드 정리
@@ -102,6 +103,7 @@ def _cors_origins() -> list[str]:
 
 class _SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        """보안 헤더(X-Content-Type-Options 등)를 모든 응답에 추가한다."""
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")

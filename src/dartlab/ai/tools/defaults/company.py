@@ -42,6 +42,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     from dartlab.core.capabilities import CapabilityKind
 
     def show_topic(topic: str, block: str = "") -> str:
+        """공시 topic의 데이터를 조회한다."""
         if not hasattr(company, "show"):
             return "show() 인터페이스가 없습니다."
         block_idx = maybe_int(block)
@@ -100,6 +101,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def list_topics() -> str:
+        """사용 가능한 공시 topic 목록을 반환한다."""
         topics = getattr(company, "topics", None)
         if topics is None:
             return "topics 속성이 없습니다."
@@ -125,6 +127,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def trace_topic(topic: str) -> str:
+        """topic 데이터의 출처를 추적한다."""
         if not hasattr(company, "trace"):
             return "trace() 인터페이스가 없습니다."
         try:
@@ -156,6 +159,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def diff_topic(topic: str = "") -> str:
+        """공시 텍스트의 기간간 변화를 분석한다."""
         if not hasattr(company, "diff"):
             return "diff() 인터페이스가 없습니다."
         try:
@@ -188,6 +192,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def get_sections() -> str:
+        """기업의 전체 공시 지도를 조회한다."""
         sec = company.sections
         if sec is None:
             return "sections 데이터가 없습니다."
@@ -216,6 +221,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def show_block(topic: str, block: int | None = None) -> str:
+        """sections의 특정 topic/block 데이터를 조회한다."""
         if block is None:
             result = company.show(topic)
         else:
@@ -254,6 +260,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def get_company_info() -> str:
+        """기업의 기본 정보를 조회한다."""
         stockCode = getattr(company, "stockCode", getattr(company, "ticker", ""))
         info_parts = [
             f"기업명: {company.corpName}",
@@ -474,6 +481,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     # ── 중복 등록: search / download / data_status (company-bound) ──
 
     def search_company(keyword: str) -> str:
+        """종목명 또는 종목코드로 기업을 검색한다."""
         from dartlab.gather.listing import searchName
 
         results = searchName(keyword)
@@ -502,6 +510,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def download_data(stock_code: str = "", category: str = "docs") -> str:
+        """HuggingFace에서 데이터를 다운로드한다."""
         from dartlab.core.dataLoader import downloadAll, loadData
 
         if category == "edgarDocs" and not stock_code:
@@ -540,6 +549,7 @@ def register_company_tools(company: Any, register_tool) -> None:
     )
 
     def data_status() -> str:
+        """로컬 데이터 현황을 카테고리별로 조회한다."""
         from dartlab.core.dataLoader import DATA_RELEASES, _dataDir
 
         lines = ["| 카테고리 | 라벨 | 파일 수 |", "| --- | --- | --- |"]

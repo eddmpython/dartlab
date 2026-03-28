@@ -54,9 +54,11 @@ class ToolPluginRegistry:
         self._tools: dict[str, ToolDef] = {}
 
     def register(self, tool_def: ToolDef) -> None:
+        """도구 정의를 레지스트리에 등록한다."""
         self._tools[tool_def.name] = tool_def
 
     def unregister(self, name: str) -> None:
+        """이름으로 도구를 레지스트리에서 제거한다."""
         self._tools.pop(name, None)
 
     def get_schemas(self) -> list[dict]:
@@ -84,9 +86,11 @@ class ToolPluginRegistry:
 
     @property
     def size(self) -> int:
+        """등록된 도구 수를 반환한다."""
         return len(self._tools)
 
     def list_names(self) -> list[str]:
+        """등록된 도구 이름 목록을 반환한다."""
         return list(self._tools.keys())
 
 

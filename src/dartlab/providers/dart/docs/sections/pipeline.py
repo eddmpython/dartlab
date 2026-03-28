@@ -1118,6 +1118,7 @@ def structureCollisions(
     includeMixed: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
+    """structureRegistry에서 경로 충돌이 발생한 항목만 필터링하여 반환한다."""
     registry = structureRegistry(
         df,
         topic=topic,
@@ -1139,6 +1140,7 @@ def structureEvents(
     changedOnly: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
+    """기간 간 텍스트 구조 변화 이벤트(추가/삭제/변경)를 감지하여 반환한다."""
     if df is None or df.is_empty():
         return _emptyStructureEventsFrame()
 
@@ -1246,6 +1248,7 @@ def structureSummary(
     includeMixed: bool = True,
     nodeType: str | None = None,
 ) -> pl.DataFrame:
+    """구조 레지스트리와 이벤트를 결합한 경로별 요약 DataFrame을 반환한다."""
     registry = structureRegistry(
         df,
         topic=topic,
@@ -1336,6 +1339,7 @@ def structureChanges(
     latestOnly: bool = True,
     changedOnly: bool = True,
 ) -> pl.DataFrame:
+    """구조 변경이 감지된 경로를 최신 기간 기준으로 필터링하여 반환한다."""
     summary = structureSummary(
         df,
         topic=topic,

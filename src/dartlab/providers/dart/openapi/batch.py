@@ -185,6 +185,7 @@ class AsyncDartClient:
         return resp.content
 
     async def close(self) -> None:
+        """HTTP 클라이언트 연결을 닫는다."""
         await self._client.aclose()
 
 

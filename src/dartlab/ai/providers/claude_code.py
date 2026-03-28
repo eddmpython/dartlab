@@ -57,6 +57,7 @@ class ClaudeCodeProvider(BaseProvider):
 
     @property
     def default_model(self) -> str:
+        """기본 모델명."""
         return "sonnet"
 
     def _resolve_sdk_model(self) -> str:
@@ -82,6 +83,7 @@ class ClaudeCodeProvider(BaseProvider):
     # ── Availability ──
 
     def check_available(self) -> bool:
+        """provider 사용 가능 여부 확인."""
         if not shutil.which("claude"):
             return False
         # VSCode 중첩 세션에서는 SDK fallback 필요
@@ -311,6 +313,7 @@ class ClaudeCodeProvider(BaseProvider):
     # ── Public API ──
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
+        """동기 완료 요청."""
         self._ensure_available()
 
         # SDK fallback이 이미 결정된 경우
@@ -363,6 +366,7 @@ class ClaudeCodeProvider(BaseProvider):
         )
 
     def stream(self, messages: list[dict[str, str]]) -> Generator[str, None, None]:
+        """스트리밍 응답 생성."""
         self._ensure_available()
 
         # SDK fallback 모드

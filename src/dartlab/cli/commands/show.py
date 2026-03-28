@@ -9,6 +9,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """show 서브커맨드 등록 — topic 기반 데이터 조회."""
     parser = subparsers.add_parser(
         "show",
         help="topic 데이터 조회 (show(topic) 인터페이스)",
@@ -48,6 +49,7 @@ def _print_result(result, title: str | None = None, *, context: str = "") -> int
 
 
 def run(args) -> int:
+    """topic/trace 인자에 따라 show/trace/topic 목록을 출력한다."""
     dartlab = configure_dartlab()
 
     try:

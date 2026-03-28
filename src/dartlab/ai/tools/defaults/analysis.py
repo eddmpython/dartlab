@@ -13,6 +13,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     # ── get_insight ──
 
     def get_insight() -> str:
+        """7영역 인사이트 종합 분석을 실행한다."""
         stockCode = getattr(company, "stockCode", None)
         if not stockCode:
             return "종목코드가 없어 인사이트 분석을 실행할 수 없습니다."
@@ -101,6 +102,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     # ── get_sector_info ──
 
     def get_sector_info() -> str:
+        """WICS 섹터 분류와 섹터 기준 밸류에이션을 조회한다."""
         try:
             from dartlab.analysis.comparative.sector import classify, getParams
 
@@ -144,11 +146,12 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     # ── get_rank ──
 
     def get_rank_info() -> str:
+        """전체 시장 및 섹터 내 규모 순위를 조회한다."""
         stockCode = getattr(company, "stockCode", None)
         if not stockCode:
             return "종목코드가 없습니다."
         try:
-            from dartlab.analysis.comparative.rank import getRank
+            from dartlab.scan.screen import getRank
 
             rank = getRank(stockCode)
             if rank is None:
@@ -265,7 +268,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     def get_disclosure_changes(topic: str = "") -> str:
         """공시 변화 감지."""
         try:
-            from dartlab.analysis.accounting.watch.scanner import scan_company
+            from dartlab.scan.watch.scanner import scan_company
 
             result = scan_company(company, topic=topic or None)
             if result is None:
@@ -434,6 +437,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     # ── Excel export ──
 
     def export_to_excel(modules: str = "") -> str:
+        """기업 데이터를 Excel 파일로 내보낸다."""
         import tempfile
 
         from dartlab.export.excel import exportToExcel, listAvailableModules
@@ -468,6 +472,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     )
 
     def create_template(name: str, sheets_json: str) -> str:
+        """Excel 내보내기 템플릿을 생성한다."""
         from dartlab.export.store import TemplateStore
         from dartlab.export.template import ExcelTemplate, SheetSpec
 
@@ -507,6 +512,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     )
 
     def export_with_template(template_id: str) -> str:
+        """저장된 템플릿으로 Excel 파일을 생성한다."""
         import tempfile
 
         from dartlab.export.excel import exportWithTemplate
@@ -548,6 +554,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
     )
 
     def list_templates() -> str:
+        """저장된 Excel 내보내기 템플릿 목록을 조회한다."""
         from dartlab.export.store import TemplateStore
 
         store = TemplateStore()

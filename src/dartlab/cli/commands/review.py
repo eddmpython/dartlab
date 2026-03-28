@@ -14,6 +14,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """review/reviewer 서브커맨드 등록 — 기업 분석 검토서."""
     # review: 순수 데이터 검토서
     parser = subparsers.add_parser("review", help="기업 분석 검토서 (데이터만)")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")

@@ -9,12 +9,14 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """sections 서브커맨드 등록 — pure docs 수평화 sections 출력."""
     parser = subparsers.add_parser("sections", help="pure docs 수평화 sections 출력")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.set_defaults(handler=run)
 
 
 def run(args) -> int:
+    """docs.sections DataFrame을 콘솔에 출력한다."""
     from dartlab.cli.services.output import get_console, print_dataframe
 
     dartlab = configure_dartlab()

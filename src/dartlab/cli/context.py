@@ -18,5 +18,8 @@ DEPRECATED_ALIASES: dict[str, str] = {}
 
 @dataclass(frozen=True)
 class CommandSpec:
+    """CLI 서브커맨드 메타데이터."""
+
     name: str
     import_path: str
+    description: str = ""

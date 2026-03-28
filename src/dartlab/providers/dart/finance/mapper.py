@@ -213,6 +213,7 @@ class AccountMapper:
 
     @classmethod
     def get(cls) -> AccountMapper:
+        """싱글턴 AccountMapper 인스턴스를 반환한다."""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

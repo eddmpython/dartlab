@@ -25,6 +25,7 @@ def register_macro_tools(register_tool: Callable) -> None:
         transform: str = "raw",
         window: int = 12,
     ) -> str:
+        """FRED 경제지표 시계열을 조회한다."""
         from dartlab.gather.fred import Fred
         from dartlab.gather.fred.types import FredError
 
@@ -92,6 +93,7 @@ def register_macro_tools(register_tool: Callable) -> None:
     # ── fred_search ──
 
     def fred_search(query: str, limit: int = 10) -> str:
+        """키워드로 FRED 시리즈를 검색한다."""
         from dartlab.gather.fred import Fred
         from dartlab.gather.fred.types import FredError
 
@@ -136,6 +138,7 @@ def register_macro_tools(register_tool: Callable) -> None:
         end: str | None = None,
         normalize_to: str | None = None,
     ) -> str:
+        """복수 FRED 시계열을 나란히 비교한다."""
         from dartlab.gather.fred import Fred
         from dartlab.gather.fred import transform as _transform
         from dartlab.gather.fred.types import FredError
@@ -182,6 +185,7 @@ def register_macro_tools(register_tool: Callable) -> None:
     # ── fred_catalog ──
 
     def fred_catalog(group: str | None = None) -> str:
+        """FRED 주요 경제지표 카탈로그를 조회한다."""
         from dartlab.gather.fred import Fred
         from dartlab.gather.fred.types import FredError
 
@@ -227,6 +231,7 @@ def register_macro_tools(register_tool: Callable) -> None:
         lead_lag_pair: list[str] | None = None,
         max_lag: int = 12,
     ) -> str:
+        """FRED 시계열 간 상관분석과 선행/후행 관계를 분석한다."""
         from dartlab.gather.fred import Fred
         from dartlab.gather.fred.types import FredError
 

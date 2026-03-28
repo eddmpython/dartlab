@@ -129,6 +129,7 @@ class GatherCache:
 
     @property
     def size(self) -> int:
+        """캐시에 저장된 항목 수."""
         return len(self._store)
 
     def __repr__(self) -> str:

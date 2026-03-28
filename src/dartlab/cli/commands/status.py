@@ -15,6 +15,7 @@ _SETUP_HINTS = {
 
 
 def configure_parser(subparsers) -> None:
+    """status 서브커맨드 등록 — LLM 연결 상태 확인."""
     parser = subparsers.add_parser("status", help="LLM 연결 상태 확인")
     parser.add_argument("--provider", "-p", default=None, choices=PROVIDERS, help="확인할 provider")
     parser.add_argument("--cost", action="store_true", help="누적 토큰/비용 통계")
@@ -22,6 +23,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """LLM provider 연결 상태 또는 누적 비용 통계를 출력한다."""
     dartlab = configure_dartlab()
 
     if args.cost:

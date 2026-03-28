@@ -14,6 +14,7 @@ SUPPORTED_REGULAR_FORMS = ("10-K", "10-Q", "20-F", "40-F")
 
 
 def getSubmissionsJson(cik: str, client: EdgarClient | None = None) -> dict[str, Any]:
+    """CIK로 SEC submissions API를 호출하여 원본 JSON을 반환."""
     api = client or EdgarClient()
     normalized = str(cik).zfill(10)
     return api.getJson(f"{DEFAULT_BASE_URL}/submissions/CIK{normalized}.json")
@@ -25,6 +26,7 @@ def mergeSubmissionFilings(
     sinceYear: int = 2009,
     client: EdgarClient | None = None,
 ) -> dict[str, list[Any]]:
+    """recent filings와 추가 파일들을 병합하여 전체 filing 목록을 구성."""
     recent = submissions.get("filings", {}).get("recent", {})
     merged = {k: list(v) for k, v in recent.items()}
     api = client or EdgarClient()
@@ -70,6 +72,7 @@ def findRegularFilings(
     until: str | date | datetime | None = None,
     client: EdgarClient | None = None,
 ) -> list[dict[str, Any]]:
+    """병합된 submissions에서 정기보고서(10-K/10-Q/20-F/40-F)만 필터링하여 반환."""
     merged = mergeSubmissionFilings(submissions, sinceYear=sinceYear, client=client)
     reportDates = merged.get("reportDate", [""] * len(merged.get("form", [])))
     acceptanceDates = merged.get("acceptanceDateTime", [""] * len(merged.get("form", [])))
@@ -132,6 +135,7 @@ def filingsFrame(
     until: str | date | datetime | None = None,
     client: EdgarClient | None = None,
 ) -> pl.DataFrame:
+    """정기보고서 목록을 ticker/title 포함 Polars DataFrame으로 반환."""
     rows = findRegularFilings(
         submissions,
         sinceYear=sinceYear,

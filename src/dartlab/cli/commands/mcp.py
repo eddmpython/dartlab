@@ -7,6 +7,7 @@ import sys
 
 
 def configure_parser(subparsers) -> None:
+    """mcp 서브커맨드 등록 — MCP 서버 stdio 실행."""
     parser = subparsers.add_parser("mcp", help="MCP 서버 실행 (stdio)")
     parser.add_argument(
         "--config",
@@ -75,6 +76,7 @@ def _print_config(client: str) -> None:
 
 
 def _run(args) -> None:
+    """설정 출력 또는 MCP stdio 서버를 시작한다."""
     if args.config:
         _print_config(args.config)
         return

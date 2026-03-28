@@ -136,6 +136,7 @@ class TunnelKillSwitch:
         self.active = True
 
     def check(self) -> bool:
+        """TTL 내 활성 상태인지 확인한다."""
         if not self.active:
             return False
         if time.monotonic() - self.start_time > self.ttl:
@@ -145,11 +146,13 @@ class TunnelKillSwitch:
         return True
 
     def kill(self, reason: str = "manual") -> None:
+        """긴급 차단을 발동한다."""
         self.active = False
         logger.warning("[SECURITY] Kill Switch 발동 — 사유: %s", reason)
 
     @property
     def remaining(self) -> int:
+        """남은 TTL 시간(초)을 반환한다."""
         return max(0, int(self.ttl - (time.monotonic() - self.start_time)))
 
 
@@ -208,12 +211,14 @@ class SlidingWindowLimiter:
         return True
 
     def sse_acquire(self) -> bool:
+        """SSE 동시 연결 슬롯을 확보한다."""
         if self._sse_count >= self.MAX_CONCURRENT_SSE:
             return False
         self._sse_count += 1
         return True
 
     def sse_release(self) -> None:
+        """SSE 동시 연결 슬롯을 반환한다."""
         self._sse_count = max(0, self._sse_count - 1)
 
 
@@ -232,6 +237,7 @@ class AnomalyDetector:
         self._error_window: list[tuple[float, bool]] = []  # (time, is_error)
 
     def record(self, path: str, status: int) -> None:
+        """요청을 기록하고 burst/스크래핑/에러율 이상을 감지한다."""
         now = time.monotonic()
 
         # burst 감지: 10초 내 20+ 요청
@@ -316,10 +322,12 @@ _OLLAMA_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1):11434")
 
 
 def validate_stock_code(code: str) -> bool:
+    """종목코드 형식 검증 (영숫자 4~10자)."""
     return bool(_STOCK_CODE_RE.match(code))
 
 
 def validate_topic(topic: str) -> bool:
+    """topic 이름 형식 검증 (영문 시작, 영숫자+언더스코어 50자 이내)."""
     return bool(_TOPIC_RE.match(topic))
 
 
@@ -348,6 +356,7 @@ class TunnelSecurityMiddleware(BaseHTTPMiddleware):
         self.anomaly_detector = AnomalyDetector(kill_switch)
 
     async def dispatch(self, request: Request, call_next):
+        """인증, 화이트리스트, Rate Limit, 감사로그, 이상탐지를 통합 처리한다."""
         path = request.url.path
         method = request.method
 
@@ -437,6 +446,7 @@ class TunnelSecurityMiddleware(BaseHTTPMiddleware):
 
 
 def is_tunnel_mode() -> bool:
+    """터널 모드 활성화 여부를 환경변수에서 확인한다."""
     return os.environ.get("DARTLAB_TUNNEL") == "1"
 
 

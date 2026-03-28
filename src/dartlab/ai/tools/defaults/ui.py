@@ -59,6 +59,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── navigate_viewer ──
 
     def navigate_viewer(topic: str, period: str = "", chapter: str = "") -> str:
+        """공시 뷰어에서 특정 섹션으로 이동한다."""
         chapter_idx = maybe_int(chapter)
         action = UiAction.navigate(
             topic=topic,
@@ -106,6 +107,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── show_chart ──
 
     def show_chart(chart_type: str, data_module: str, metrics: str = "") -> str:
+        """차트를 생성하여 UI에 표시한다."""
         specs = _resolve_chart_specs(chart_type, data_module, metrics)
         if not specs:
             return ui_action_json(UiAction.toast("차트를 생성할 데이터가 없습니다.", level="warning"))
@@ -162,6 +164,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── show_comparison ──
 
     def show_comparison(topics: str, periods: str = "") -> str:
+        """기간간 비교 뷰를 표시한다."""
         topic_list = [t.strip() for t in topics.split(",") if t.strip()]
         if not topic_list:
             return ui_action_json(UiAction.toast("비교할 topic이 없습니다.", level="warning"))
@@ -209,6 +212,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── highlight_section ──
 
     def highlight_section(topic: str, keyword: str) -> str:
+        """특정 섹션에서 키워드를 하이라이트한다."""
         return ui_action_json(
             UiAction.update(
                 "viewer.highlight",
@@ -321,6 +325,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── pin_insight ──
 
     def pin_insight(insight: str, category: str = "general", priority: str = "normal") -> str:
+        """핵심 인사이트를 사이드바에 고정한다."""
         return ui_action_json(
             UiAction.update(
                 "sidebar.pin",
@@ -367,6 +372,7 @@ def register_ui_tools(company: Any, register_tool) -> None:
     # ── open_comparison_view ──
 
     def open_comparison_view(company_a: str, company_b: str, topics: str = "BS,IS") -> str:
+        """두 종목을 좌우 비교하는 뷰를 연다."""
         topic_list = [t.strip() for t in topics.split(",") if t.strip()]
         return ui_action_json(
             UiAction.render_widget(

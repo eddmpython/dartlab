@@ -19,25 +19,39 @@ class CompanyProtocol(Protocol):
     currency: str
 
     @property
-    def index(self) -> pl.DataFrame: ...
+    def index(self) -> pl.DataFrame:
+        """회사 데이터 구조 인덱스."""
+        ...
 
     @property
-    def topics(self) -> pl.DataFrame: ...
+    def topics(self) -> pl.DataFrame:
+        """사용 가능한 topic 목록."""
+        ...
 
     @property
-    def sections(self) -> pl.DataFrame | None: ...
+    def sections(self) -> pl.DataFrame | None:
+        """merged topic x period 수평화 테이블."""
+        ...
 
     @property
-    def BS(self) -> pl.DataFrame | None: ...
+    def BS(self) -> pl.DataFrame | None:
+        """재무상태표."""
+        ...
 
     @property
-    def IS(self) -> pl.DataFrame | None: ...
+    def IS(self) -> pl.DataFrame | None:
+        """손익계산서."""
+        ...
 
     @property
-    def CF(self) -> pl.DataFrame | None: ...
+    def CF(self) -> pl.DataFrame | None:
+        """현금흐름표."""
+        ...
 
     @property
-    def CIS(self) -> pl.DataFrame | None: ...
+    def CIS(self) -> pl.DataFrame | None:
+        """포괄손익계산서."""
+        ...
 
     def show(
         self,
@@ -45,25 +59,35 @@ class CompanyProtocol(Protocol):
         block: int | None = None,
         *,
         period: str | list[str] | None = None,
-    ) -> pl.DataFrame | None: ...
+    ) -> pl.DataFrame | None:
+        """topic payload 조회."""
+        ...
 
     def select(
         self,
         topic: str,
         indList: str | list[str] | None = None,
         colList: str | list[str] | None = None,
-    ) -> Any: ...  # SelectResult | None
+    ) -> Any:  # SelectResult | None
+        """topic 데이터에서 행/열을 선택."""
+        ...
 
-    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None: ...
+    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        """topic 출처 추적 (docs/finance/report)."""
+        ...
 
     def diff(
         self,
         topic: str | None = None,
         fromPeriod: str | None = None,
         toPeriod: str | None = None,
-    ) -> pl.DataFrame | None: ...
+    ) -> pl.DataFrame | None:
+        """기간간 텍스트 변화 감지."""
+        ...
 
-    def filings(self) -> pl.DataFrame | None: ...
+    def filings(self) -> pl.DataFrame | None:
+        """공시 문서 목록."""
+        ...
 
     def disclosure(
         self,
@@ -74,7 +98,9 @@ class CompanyProtocol(Protocol):
         type: str | None = None,
         keyword: str | None = None,
         finalOnly: bool = False,
-    ) -> pl.DataFrame: ...
+    ) -> pl.DataFrame:
+        """실시간 공시 검색."""
+        ...
 
     def liveFilings(
         self,
@@ -86,16 +112,22 @@ class CompanyProtocol(Protocol):
         keyword: str | None = None,
         forms: list[str] | tuple[str, ...] | None = None,
         finalOnly: bool = False,
-    ) -> pl.DataFrame: ...
+    ) -> pl.DataFrame:
+        """실시간 공시 목록 (OpenAPI)."""
+        ...
 
     def readFiling(
         self,
         filing: Any,
         *,
         maxChars: int | None = None,
-    ) -> dict[str, Any]: ...
+    ) -> dict[str, Any]:
+        """공시 원문 읽기."""
+        ...
 
-    def view(self, *, port: int = 8400) -> None: ...
+    def view(self, *, port: int = 8400) -> None:
+        """웹 뷰어 실행."""
+        ...
 
     def ask(
         self,
@@ -107,7 +139,9 @@ class CompanyProtocol(Protocol):
         model: str | None = None,
         stream: bool = False,
         **kwargs: Any,
-    ) -> str | Any: ...
+    ) -> str | Any:
+        """LLM에게 기업 분석 질문."""
+        ...
 
     def chat(
         self,
@@ -117,7 +151,9 @@ class CompanyProtocol(Protocol):
         model: str | None = None,
         max_turns: int = 5,
         **kwargs: Any,
-    ) -> str: ...
+    ) -> str:
+        """에이전트 모드 대화형 분석."""
+        ...
 
 
 @runtime_checkable
@@ -125,9 +161,13 @@ class DocsProtocol(Protocol):
     """docs namespace 공통 인터페이스."""
 
     @property
-    def sections(self) -> pl.DataFrame | None: ...
+    def sections(self) -> pl.DataFrame | None:
+        """pure docs 수평화 sections."""
+        ...
 
-    def filings(self) -> pl.DataFrame | None: ...
+    def filings(self) -> pl.DataFrame | None:
+        """공시 문서 목록."""
+        ...
 
 
 @runtime_checkable
@@ -135,19 +175,29 @@ class FinanceProtocol(Protocol):
     """finance namespace 공통 인터페이스."""
 
     @property
-    def BS(self) -> pl.DataFrame | None: ...
+    def BS(self) -> pl.DataFrame | None:
+        """재무상태표."""
+        ...
 
     @property
-    def IS(self) -> pl.DataFrame | None: ...
+    def IS(self) -> pl.DataFrame | None:
+        """손익계산서."""
+        ...
 
     @property
-    def CF(self) -> pl.DataFrame | None: ...
+    def CF(self) -> pl.DataFrame | None:
+        """현금흐름표."""
+        ...
 
     @property
-    def CIS(self) -> pl.DataFrame | None: ...
+    def CIS(self) -> pl.DataFrame | None:
+        """포괄손익계산서."""
+        ...
 
     @property
-    def ratios(self) -> Any: ...
+    def ratios(self) -> Any:
+        """재무비율."""
+        ...
 
 
 @runtime_checkable
@@ -155,6 +205,10 @@ class ProfileProtocol(Protocol):
     """profile namespace 공통 인터페이스."""
 
     @property
-    def sections(self) -> pl.DataFrame | None: ...
+    def sections(self) -> pl.DataFrame | None:
+        """merged canonical company table."""
+        ...
 
-    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None: ...
+    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+        """topic 출처 추적."""
+        ...

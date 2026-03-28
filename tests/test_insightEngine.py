@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.analysis.comparative.rank.rank import RankInfo
+from dartlab.scan.screen.rank import RankInfo
 from dartlab.analysis.comparative.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import (
     _yoyChange,

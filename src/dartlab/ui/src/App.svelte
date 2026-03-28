@@ -532,7 +532,8 @@
 					<MessageSquare size={12} />
 					<span>Chat</span>
 				</button>
-				<button
+				<!-- TODO: Viewer/Dashboard 탭 — 완성 후 복원 -->
+				<!-- <button
 					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'viewer'
 						? 'text-dl-text bg-dl-surface-active font-medium'
 						: 'text-dl-text-dim hover:text-dl-text-muted'}"
@@ -549,7 +550,7 @@
 				>
 					<BarChart3 size={12} />
 					<span>Dashboard</span>
-				</button>
+				</button> -->
 			</div>
 		</div>
 
@@ -738,7 +739,8 @@
 				<MessageSquare size={18} />
 				<span class="text-[9px] font-medium">Chat</span>
 			</button>
-			<button
+			<!-- TODO: Viewer/Dashboard 탭 — 완성 후 복원 -->
+			<!-- <button
 				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'viewer' ? 'text-dl-accent' : 'text-dl-text-dim'}"
 				onclick={() => workspace.switchView('viewer')}
 			>
@@ -751,7 +753,7 @@
 			>
 				<BarChart3 size={18} />
 				<span class="text-[9px] font-medium">분석</span>
-			</button>
+			</button> -->
 			{#if room.roomAvailable || room.joined}
 				<button
 					class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors relative

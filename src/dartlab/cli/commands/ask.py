@@ -9,6 +9,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """ask 서브커맨드 등록 — 자연어 원스톱 AI 분석."""
     parser = subparsers.add_parser(
         "ask",
         help="LLM에게 기업 분석 질문 (자연어 원스톱)",
@@ -34,6 +35,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """질문에서 종목을 추출하고 AI 분석 결과를 Rich 스트리밍으로 출력한다."""
     from rich.console import Console
     from rich.live import Live
     from rich.markdown import Markdown

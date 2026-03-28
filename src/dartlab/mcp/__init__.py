@@ -117,6 +117,7 @@ def create_server():
 
     @app.list_tools()
     async def list_tools() -> list[Tool]:
+        """등록된 MCP 도구 목록을 반환한다."""
         mcp_tools = build_mcp_tools(_runtime_full)
         result = []
         for t in mcp_tools:
@@ -143,6 +144,7 @@ def create_server():
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+        """MCP 도구를 실행하고 결과 텍스트를 반환한다."""
         args = dict(arguments)
         stock_code = args.pop("stock_code", None)
 
@@ -185,6 +187,7 @@ def create_server():
 
     @app.list_resources()
     async def list_resources() -> list[Resource]:
+        """MCP 리소스 목록(서버 정보 + 캐시된 기업별 리소스)을 반환한다."""
         resources = [
             Resource(
                 uri="dartlab://info",
@@ -223,6 +226,7 @@ def create_server():
 
     @app.read_resource()
     async def read_resource(uri: str) -> list[ReadResourceContents]:
+        """URI에 해당하는 MCP 리소스 내용을 읽어 반환한다."""
         uri_str = str(uri)
 
         def _json_content(data: Any) -> list[ReadResourceContents]:

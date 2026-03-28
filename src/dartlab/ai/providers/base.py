@@ -46,6 +46,7 @@ class BaseProvider(ABC):
 
     @property
     def resolved_model(self) -> str:
+        """사용자 설정 모델 또는 기본 모델명 반환."""
         return self.config.model or self.default_model
 
     @property

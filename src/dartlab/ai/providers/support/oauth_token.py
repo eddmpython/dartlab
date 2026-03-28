@@ -177,10 +177,12 @@ def get_valid_token() -> str | None:
 
 
 def is_authenticated() -> bool:
+    """유효한 OAuth 토큰이 존재하는지 확인."""
     return get_valid_token() is not None
 
 
 def load_token() -> dict[str, Any] | None:
+    """저장된 OAuth 토큰을 로드 (SecretStore 우선, 파일 fallback)."""
     store = get_secret_store()
     data = store.get_json(_TOKEN_SECRET_NAME)
     if isinstance(data, dict):
@@ -198,6 +200,7 @@ def load_token() -> dict[str, Any] | None:
 
 
 def revoke_token() -> None:
+    """저장된 OAuth 토큰을 삭제."""
     get_secret_store().delete(_TOKEN_SECRET_NAME)
     if _TOKEN_FILE.exists():
         _TOKEN_FILE.unlink()

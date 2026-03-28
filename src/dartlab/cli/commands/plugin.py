@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 def configure_parser(subparsers) -> None:
+    """plugin 서브커맨드 등록 — 플러그인 조회/생성."""
     parser = subparsers.add_parser("plugin", help="플러그인 관리 (list, create)")
     sub = parser.add_subparsers(dest="plugin_command")
 
@@ -20,6 +21,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """서브커맨드(list/create) 분기 후 실행."""
     subcmd = getattr(args, "plugin_command", None)
     if subcmd == "list":
         return _list_plugins()

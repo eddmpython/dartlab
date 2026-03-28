@@ -13,6 +13,7 @@ _VALID_CODE = _re.compile(r"^[A-Za-z0-9가-힣]{1,20}$")
 
 
 def get_company(code: str) -> Company:
+    """종목코드로 Company를 조회하거나 생성한다 (캐시 활용)."""
     if not _VALID_CODE.match(code):
         raise ValueError(f"유효하지 않은 종목코드: {code!r}")
     cached = company_cache.get(code)
@@ -24,6 +25,7 @@ def get_company(code: str) -> Company:
 
 
 def safe_topic_label(company, topic: str) -> str:
+    """topic의 한글 라벨을 안전하게 반환한다."""
     try:
         return company._topicLabel(topic)
     except AttributeError:
@@ -53,6 +55,7 @@ def _find_prev_comparable(periods: list[str], target: str) -> str | None:
 
 
 def filter_blocks_by_period(blocks: list, period: str) -> list:
+    """뷰어 블록을 지정 기간과 직전 비교 기간만 남기도록 필터링한다."""
     filtered = []
     for block in blocks:
         if block.data is None:
@@ -86,6 +89,7 @@ def filter_blocks_by_period(blocks: list, period: str) -> list:
 
 
 def build_toc(company: Company) -> dict[str, Any]:
+    """뷰어 목차(Table of Contents)를 구성한다."""
     sec = company.sections
     if sec is None:
         return TocResponse(stockCode=company.stockCode, corpName=company.corpName, chapters=[]).model_dump()
@@ -185,6 +189,7 @@ def build_toc(company: Company) -> dict[str, Any]:
 
 
 def build_viewer(company: Company, topic: str) -> dict[str, Any]:
+    """topic별 뷰어 블록과 텍스트 문서를 직렬화하여 반환한다."""
     from dartlab.providers.dart.docs.viewer import (
         serializeViewerBlock,
         serializeViewerTextDocument,
@@ -212,6 +217,7 @@ def build_viewer(company: Company, topic: str) -> dict[str, Any]:
 
 
 def build_diff_summary(company: Company, topic: str) -> dict[str, Any] | None:
+    """topic의 기간 간 변경 요약(변경률, 추가/삭제 발췌)을 생성한다."""
     try:
         from dartlab.core.docs.diff import sectionsDiff
 

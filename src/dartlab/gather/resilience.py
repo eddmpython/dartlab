@@ -74,12 +74,14 @@ class CircuitBreaker:
             return True
 
     def record_success(self, source: str) -> None:
+        """소스 성공 기록 및 서킷 닫기."""
         with self._lock:
             cs = self._get(source)
             cs.state = _State.CLOSED
             cs.failure_count = 0
 
     def record_failure(self, source: str) -> None:
+        """소스 실패 기록 및 임계치 초과 시 서킷 열기."""
         with self._lock:
             cs = self._get(source)
             cs.failure_count += 1
@@ -140,6 +142,7 @@ class SourceHealthTracker:
         self._lock = threading.Lock()
 
     def record(self, source: str, *, success: bool, latency: float = 0.0) -> None:
+        """소스 요청 결과(성공/실패, 지연시간) 기록."""
         with self._lock:
             if source not in self._sources:
                 self._sources[source] = _SourceHealth()
@@ -152,6 +155,7 @@ class SourceHealthTracker:
             )
 
     def score(self, source: str) -> float:
+        """소스의 현재 건강도 점수 반환 (0.0~1.0)."""
         with self._lock:
             if source not in self._sources:
                 return 0.5

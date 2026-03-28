@@ -11,30 +11,30 @@ from dartlab.cli.services.runtime import load_command_module
 
 COMMAND_SPECS = (
     # 데이터 조회
-    CommandSpec("show", "dartlab.cli.commands.show"),
-    CommandSpec("search", "dartlab.cli.commands.search"),
-    CommandSpec("statement", "dartlab.cli.commands.statement"),
-    CommandSpec("sections", "dartlab.cli.commands.sections"),
-    CommandSpec("profile", "dartlab.cli.commands.profile"),
-    CommandSpec("modules", "dartlab.cli.commands.modules"),
+    CommandSpec("show", "dartlab.cli.commands.show", "topic 기반 데이터 조회"),
+    CommandSpec("search", "dartlab.cli.commands.search", "종목코드/회사명 검색"),
+    CommandSpec("statement", "dartlab.cli.commands.statement", "재무제표 출력 (BS/IS/CIS/CF/SCE)"),
+    CommandSpec("sections", "dartlab.cli.commands.sections", "docs 수평화 sections 출력"),
+    CommandSpec("profile", "dartlab.cli.commands.profile", "Company index/facts 출력"),
+    CommandSpec("modules", "dartlab.cli.commands.modules", "사용 가능한 데이터 모듈 목록"),
     # AI / 내보내기
-    CommandSpec("ask", "dartlab.cli.commands.ask"),
-    CommandSpec("chat", "dartlab.cli.commands.chat"),
-    CommandSpec("report", "dartlab.cli.commands.report"),
-    CommandSpec("excel", "dartlab.cli.commands.excel"),
+    CommandSpec("ask", "dartlab.cli.commands.ask", "자연어 원스톱 AI 분석"),
+    CommandSpec("chat", "dartlab.cli.commands.chat", "대화형 AI 분석 REPL"),
+    CommandSpec("report", "dartlab.cli.commands.report", "Markdown 분석 보고서 생성"),
+    CommandSpec("excel", "dartlab.cli.commands.excel", "기업 데이터 Excel 내보내기"),
     # 분석
-    CommandSpec("review", "dartlab.cli.commands.review"),
+    CommandSpec("review", "dartlab.cli.commands.review", "기업 분석 검토서 (데이터/AI)"),
     # 수집
-    CommandSpec("collect", "dartlab.cli.commands.collect"),
+    CommandSpec("collect", "dartlab.cli.commands.collect", "DART/EDGAR 데이터 수집"),
     # 서버 / 설정
-    CommandSpec("ai", "dartlab.cli.commands.ai"),
-    CommandSpec("share", "dartlab.cli.commands.share"),
-    CommandSpec("status", "dartlab.cli.commands.status"),
-    CommandSpec("setup", "dartlab.cli.commands.setup"),
+    CommandSpec("ai", "dartlab.cli.commands.ai", "AI 분석 웹 인터페이스 실행"),
+    CommandSpec("share", "dartlab.cli.commands.share", "터널로 로컬 서버 외부 공유"),
+    CommandSpec("status", "dartlab.cli.commands.status", "LLM 연결 상태 확인"),
+    CommandSpec("setup", "dartlab.cli.commands.setup", "LLM provider/API 키 설정"),
     # MCP
-    CommandSpec("mcp", "dartlab.cli.commands.mcp"),
+    CommandSpec("mcp", "dartlab.cli.commands.mcp", "MCP 서버 실행 (stdio)"),
     # 플러그인
-    CommandSpec("plugin", "dartlab.cli.commands.plugin"),
+    CommandSpec("plugin", "dartlab.cli.commands.plugin", "플러그인 관리 (list/create)"),
 )
 
 
@@ -47,6 +47,7 @@ class DartLabArgumentParser(argparse.ArgumentParser):
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """CLI ArgumentParser 생성 및 서브커맨드 등록."""
     parser = DartLabArgumentParser(
         prog="dartlab",
         description="DartLab — DART 공시 데이터 + LLM 분석",

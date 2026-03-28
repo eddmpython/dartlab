@@ -57,6 +57,7 @@ def api_search(q: str = Query(..., min_length=1)):
 
 @router.get("/api/company/{code}")
 def api_company(code: str):
+    """종목 기본 정보 + 사용 가능 API surface 목록."""
     try:
         company = get_company(code)
         return {
@@ -78,6 +79,7 @@ def api_company(code: str):
 
 @router.get("/api/company/{code}/index")
 def api_company_index(code: str, request: Request, response: Response):
+    """회사 데이터 구조 인덱스 DataFrame."""
     try:
         company = get_company(code)
         data = {
@@ -92,6 +94,7 @@ def api_company_index(code: str, request: Request, response: Response):
 
 @router.get("/api/company/{code}/sections")
 def api_company_sections(code: str, request: Request, response: Response):
+    """merged topic x period 수평화 테이블."""
     try:
         company = get_company(code)
         data = {
@@ -106,6 +109,7 @@ def api_company_sections(code: str, request: Request, response: Response):
 
 @router.get("/api/company/{code}/init")
 def api_company_init(code: str, request: Request, response: Response):
+    """SPA 초기 로드용 번들 — toc + 첫 topic viewer + diff 요약."""
     try:
         company = get_company(code)
         toc_data = build_toc(company)
@@ -141,6 +145,7 @@ def api_company_init(code: str, request: Request, response: Response):
 
 @router.get("/api/company/{code}/toc")
 def api_company_toc(code: str, request: Request, response: Response):
+    """목차(TOC) — chapter/topic 트리 구조."""
     try:
         company = get_company(code)
         data = build_toc(company)
@@ -157,6 +162,7 @@ def api_company_viewer_topic(
     period: str | None = Query(None, description="특정 기간만 반환 (타임라인 클릭 최적화)"),
     response: Response = None,
 ):
+    """단일 topic의 viewer 데이터 — sections 블록 + 텍스트 문서."""
     try:
         company = get_company(code)
 
@@ -256,6 +262,7 @@ async def api_company_viewer_batch(code: str, request: Request, response: Respon
 
 @router.get("/api/company/{code}/show/{topic}/all")
 def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
+    """topic의 전 기간 viewer 블록 일괄 반환."""
     try:
         from dartlab.providers.dart.docs.viewer import (
             serializeViewerBlock,
@@ -279,6 +286,7 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
 
 @router.post("/api/company/{code}/show/{topic}/{block_idx}/parse")
 async def api_parse_raw_table(code: str, topic: str, block_idx: int):
+    """원문 테이블 블록을 구조화 DataFrame으로 파싱."""
     try:
         from dartlab.providers.dart.docs.tableAI import parseRawMarkdownBlock
         from dartlab.providers.dart.docs.viewer import viewerBlocks
@@ -308,6 +316,7 @@ async def api_parse_raw_table(code: str, topic: str, block_idx: int):
 
 @router.get("/api/company/{code}/show/{topic}")
 def api_company_show(code: str, topic: str, block: int | None = Query(None), raw: bool = Query(False)):
+    """topic payload 조회 — show(topic) API 대응."""
     try:
         company = get_company(code)
         if block is not None:
@@ -327,6 +336,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
 
 @router.get("/api/company/{code}/trace/{topic}")
 def api_company_trace(code: str, topic: str):
+    """source provenance 조회 — trace(topic) API 대응."""
     try:
         company = get_company(code)
         return {
@@ -346,6 +356,7 @@ async def api_company_topic_summary(
     provider: str | None = None,
     model: str | None = None,
 ):
+    """topic 데이터를 LLM으로 요약하여 SSE 스트리밍 반환."""
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
@@ -370,6 +381,7 @@ async def api_company_topic_summary(
 
 @router.get("/api/company/{code}/insights")
 def api_company_insights(code: str):
+    """7영역 인사이트 등급 (A~F) + 이상 징후."""
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
@@ -428,6 +440,7 @@ def api_company_insights(code: str):
 
 @router.get("/api/company/{code}/network")
 def api_company_network(code: str, hops: int = 1):
+    """관계사 네트워크 그래프 — ego 중심 N-hop."""
     hops = max(1, min(hops, 3))
     try:
         company = get_company(code)
@@ -440,7 +453,7 @@ def api_company_network(code: str, hops: int = 1):
             return {"stockCode": company.stockCode, "corpName": company.corpName, "available": False}
         data, full = result
 
-        from dartlab.market.network.export import export_ego
+        from dartlab.scan.network.export import export_ego
 
         ego = export_ego(data, full, company.stockCode, hops=hops)
         return {
@@ -455,6 +468,7 @@ def api_company_network(code: str, hops: int = 1):
 
 @router.get("/api/company/{code}/scan/{axis}")
 def api_company_scan(code: str, axis: str):
+    """6-Axis 스캔 단일 축 결과 + 시장 내 위치."""
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
@@ -505,7 +519,8 @@ def api_company_scan(code: str, axis: str):
 
 @router.get("/api/company/{code}/scan/position")
 def api_company_scan_position(code: str):
-    from dartlab.market.snapshot import getScanPosition
+    """6-Axis 전체 포지션 요약 — 사전 빌드 스냅샷 기반."""
+    from dartlab.scan.snapshot import getScanPosition
 
     position = getScanPosition(code)
     if position is None:
@@ -520,12 +535,13 @@ def api_company_scan_position(code: str):
 
 @router.get("/api/company/{code}/insights/unified")
 def api_company_insights_unified(code: str):
+    """통합 인사이트 — 등급 + 스캔 + 피어 결합."""
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
         raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
 
-    from dartlab.market.payload import build_unified_payload
+    from dartlab.scan.payload import build_unified_payload
 
     try:
         unified = build_unified_payload(company)

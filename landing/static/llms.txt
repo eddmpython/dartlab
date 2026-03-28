@@ -39,7 +39,7 @@ us.sections                          # 10-K sections map
 
 ## Key Features
 
-- **Sections-first architecture**: Every company becomes a topic × period DataFrame
+- **Sections-first architecture**: Every company becomes a topic x period DataFrame
 - **Dual market**: DART (Korea) + EDGAR (US) with identical interface
 - **One stock code**: `dartlab.Company('005930')` or `dartlab.Company('AAPL')`
 - **Financial statements**: BS, IS, CF, CIS, SCE — XBRL-normalized, quarterly standalone
@@ -141,7 +141,7 @@ us.sections                          # 10-K sections map
 
 ## Analysis Engines
 
-- **Sector classification**: WICS 11 sectors (override → keyword → KSIC 3-stage)
+- **Sector classification**: WICS 11 sectors (override -> keyword -> KSIC 3-stage)
 - **Insight grades**: 7-area A~F grades (performance, profitability, stability, cash flow, governance, risk, opportunity)
 - **Market rank**: Revenue/assets/growth ranking — overall + within sector
 - **Financial ratios**: ROE, ROA, operating margin, debt ratio, PER, PBR, FCF — auto-calculated

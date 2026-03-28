@@ -216,6 +216,7 @@ def parseTextStructureWithState(
     topic: str | None = None,
     initialHeadings: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, object]], list[dict[str, Any]]]:
+    """텍스트를 소제목 계층 구조로 파싱하고, 최종 heading stack도 함께 반환한다."""
     nodes: list[dict[str, object]] = []
     stack: list[dict[str, object]] = [dict(item) for item in (initialHeadings or [])]
     bodyLines: list[str] = []
@@ -337,6 +338,7 @@ def parseTextStructure(
     sourceBlockOrder: int,
     topic: str | None = None,
 ) -> list[dict[str, object]]:
+    """텍스트를 소제목 계층 구조로 파싱하여 노드 리스트를 반환한다."""
     nodes, _stack = parseTextStructureWithState(text, sourceBlockOrder=sourceBlockOrder, topic=topic)
     return nodes
 

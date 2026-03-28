@@ -42,21 +42,23 @@ from dartlab.ai.runtime.run_modes import (
 _COMPARE_SPLIT_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)", re.IGNORECASE)
 
 
-def _prefetch_company_codes(question: str) -> str:
-    """질문에서 종목명을 추출하고 dartlab.search()로 종목코드를 사전 확인."""
-    # "삼성전자랑 하이닉스 비교해줘" → ["삼성전자", "하이닉스"]
+def _detectCompanyNames(question: str) -> list[str]:
+    """질문에서 종목명/종목코드 후보를 추출."""
     parts = _COMPARE_SPLIT_RE.split(question)
     candidates: list[str] = []
     for p in parts:
         p = p.strip()
-        # 비교 접속사 자체는 건너뜀
         if not p or _COMPARE_SPLIT_RE.fullmatch(p):
             continue
-        # "비교해줘", "분석해줘" 등 동사 제거
         cleaned = re.sub(r"\s*(비교|분석|알려|설명|해줘|해주세요|해봐|좀).*$", "", p).strip()
         if cleaned and len(cleaned) >= 2:
             candidates.append(cleaned)
+    return candidates[:4]
 
+
+def _searchCompanyCodes(question: str) -> str:
+    """질문에서 종목명을 추출하고 dartlab.search()로 종목코드를 사전 확인."""
+    candidates = _detectCompanyNames(question)
     if not candidates:
         return ""
 
@@ -64,7 +66,7 @@ def _prefetch_company_codes(question: str) -> str:
     try:
         import dartlab
 
-        for name in candidates[:4]:  # 최대 4개
+        for name in candidates:
             try:
                 df = dartlab.search(name)
                 if df is not None and len(df) > 0:
@@ -240,42 +242,10 @@ def _extract_data_date(company: Any) -> str | None:
     return None
 
 
-# ── context tier 결정 ─────────────────────────────────────
+# ── context tier는 제거됨 — compact map 체제로 전환 ─────────
 
 
-def _resolve_context_tier(provider: str, use_tools: bool) -> str:
-    """standalone의 이진 선택과 server의 3단 선택을 통합."""
-    tool_capable = provider in {"openai", "ollama", "custom", "gemini", "oauth-codex"}
-
-    if use_tools and tool_capable:
-        return "skeleton"
-    return "focused"
-
-
-def _resolve_runtime_route(question: str, question_types: tuple[str, ...], report_mode: bool) -> str:
-    """질문별 cheap-first 런타임 경로를 결정한다."""
-    if report_mode:
-        return "hybrid"
-
-    try:
-        from dartlab.ai.context.builder import _resolve_context_route
-
-        q_types = list(question_types) if question_types else []
-        return _resolve_context_route(question, include=None, q_types=q_types)
-    except (AttributeError, ImportError, RuntimeError, TypeError, ValueError):
-        return "hybrid"
-
-
-def _resolve_snapshot_policy(question: str, question_types: tuple[str, ...], report_mode: bool) -> dict[str, Any]:
-    """질문별 snapshot 비용 정책."""
-    route = _resolve_runtime_route(question, question_types, report_mode)
-    enabled = route not in {"sections", "report"}
-    return {
-        "route": route,
-        "enabled": enabled,
-        "includeInsights": False,
-        "includeDataDate": route == "hybrid",
-    }
+# _resolve_runtime_route, _resolve_snapshot_policy 제거 — compact map 체제에서 불필요.
 
 
 def _resolve_follow_up_include(include: list[str] | None, question: str, state: Any | None) -> list[str] | None:
@@ -385,6 +355,8 @@ def analyze(
     base_url: str | None = None,
     include: list[str] | None = None,
     exclude: list[str] | None = None,
+    # 멀티컴퍼니 비교 지원
+    companies: list[Any] | None = None,
     # 모드
     use_tools: bool = True,
     max_turns: int = 5,
@@ -476,6 +448,7 @@ def analyze(
             base_url=base_url,
             include=include,
             exclude=exclude,
+            companies=companies,
             use_tools=use_tools,
             max_turns=max_turns,
             max_tools=max_tools,
@@ -555,6 +528,7 @@ def _analyze_inner(
     base_url: str | None,
     include: list[str] | None,
     exclude: list[str] | None,
+    companies: list[Any] | None,
     use_tools: bool,
     max_turns: int,
     max_tools: int | None,
@@ -589,10 +563,7 @@ def _analyze_inner(
 
     # ── report_mode 강제 설정 ──
     if report_mode:
-        context_tier_override = "full"
         max_turns = max(max_turns, 10)
-    else:
-        context_tier_override = None
 
     # ── 1. Config 해석 ──
     # "free" 모드: API 키가 있는 무료 프로바이더 중 첫 번째를 자동 선택
@@ -621,8 +592,6 @@ def _analyze_inner(
         config_ = config_.merge(overrides)
 
     resolved_provider = config_.provider
-    context_tier = context_tier_override or _resolve_context_tier(resolved_provider, use_tools)
-    is_compact = context_tier != "full"
 
     corp_name = getattr(company, "corpName", "Unknown") if company else None
     stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
@@ -679,25 +648,8 @@ def _analyze_inner(
     if effective_include and effective_include != include:
         _done_payload["inheritedModules"] = list(effective_include)
 
-    snapshotPolicy = _resolve_snapshot_policy(question, question_types, report_mode)
-    _done_payload["route"] = snapshotPolicy["route"]
-
-    # ── 4. Auto-snapshot ──
-    if snapshot is None and auto_snapshot and company is not None and snapshotPolicy["enabled"]:
-        from dartlab.ai.context.snapshot import build_snapshot
-
-        snapshot = build_snapshot(company, includeInsights=snapshotPolicy["includeInsights"])
-
-    # ── 5. Auto focus/diff context ──
-    if focus_context is None and state is not None and company is not None and state.topic:
-        from dartlab.ai.conversation.focus import build_focus_context
-
-        focus_context = build_focus_context(company, state)
-
-    if diff_context is None and auto_diff and company is not None:
-        from dartlab.ai.conversation.focus import build_diff_context
-
-        diff_context = build_diff_context(company)
+    # snapshot/focus/diff 자동계산 제거 — AI가 도구로 직접 조회.
+    # 사전 전달된 값은 하위 호환을 위해 유지.
 
     # ── 6. Intent 분류 → light mode 감지 ──
     is_light = _should_use_light_mode(company, question, state, report_mode)
@@ -710,10 +662,9 @@ def _analyze_inner(
     if stock_id:
         meta.setdefault("stockCode", stock_id)
     if company is not None:
-        if snapshotPolicy["includeDataDate"]:
-            _dataDate = _extract_data_date(company)
-            if _dataDate:
-                meta.setdefault("dataDate", _dataDate)
+        _dataDate = _extract_data_date(company)
+        if _dataDate:
+            meta.setdefault("dataDate", _dataDate)
         if stock_id:
             try:
                 from dartlab.ai.conversation.data_ready import formatDataReadyStatus
@@ -758,58 +709,61 @@ def _analyze_inner(
         )
         return
 
-    # ── 10. Full analysis 경로 ──
+    # ── 10. Full analysis 경로 — compact map 체제 ──
 
-    # Context 빌드
     context_text = ""
 
     # company=None + tool capable이면 종목명 사전 검색으로 종목코드 제공
     if company is None and use_tools:
-        _prefetch = _prefetch_company_codes(question)
+        _prefetch = _searchCompanyCodes(question)
         if _prefetch:
             context_text = _prefetch
 
     if company is not None:
-        from dartlab.ai.context.builder import (
-            _get_sector,
-            _module_name_to_section_keys,
-            build_context_tiered,
-        )
+        from dartlab.ai.context.compactMap import buildCompactMap
 
-        modules_dict, included_tables_local, header_text = build_context_tiered(
-            company,
-            question,
-            context_tier,
-            effective_include,
-            exclude,
-        )
-        _included_tables.extend(included_tables_local)
-
-        # 모듈별 context 이벤트 yield
-        for module_name, module_text in modules_dict.items():
+        # compact map만 제공 — 상세 데이터는 AI가 도구로 조회
+        compactMap = buildCompactMap(company)
+        if compactMap:
             yield AnalysisEvent(
                 "context",
                 {
-                    "module": module_name,
-                    "label": _context_label(module_name),
-                    "text": module_text,
+                    "module": "_compactMap",
+                    "label": f"{corp_name} 프로필",
+                    "text": compactMap,
                 },
             )
 
-        # context_text 조립
-        context_parts = [header_text] if header_text else []
-        if focus_context:
-            context_parts.append(focus_context)
-        for module_name in included_tables_local:
-            for key in _module_name_to_section_keys(module_name):
-                if key in modules_dict:
-                    context_parts.append(modules_dict[key])
-                    break
-        for special_name in ("_response_contract", "_clarify"):
-            if special_name in modules_dict:
-                context_parts.append(modules_dict[special_name])
-        if "_clarify" in modules_dict:
-            _done_payload["clarificationNeeded"] = True
+        context_parts = []
+        if compactMap:
+            context_parts.append(compactMap)
+
+        # 멀티컴퍼니: 각 추가 기업의 compact map
+        if companies:
+            _extraCompanies = [c for c in companies if c is not company]
+            for _extraComp in _extraCompanies:
+                try:
+                    _extraMap = buildCompactMap(_extraComp)
+                    if _extraMap:
+                        context_parts.append(_extraMap)
+                        yield AnalysisEvent(
+                            "context",
+                            {
+                                "module": f"{_extraComp.stockCode}_compactMap",
+                                "label": f"{_extraComp.corpName} 프로필",
+                                "text": _extraMap,
+                            },
+                        )
+                except (ValueError, FileNotFoundError, OSError, RuntimeError):
+                    pass
+
+        # report_mode에서만 사전 전달된 focus/diff 컨텍스트 포함
+        if report_mode:
+            if focus_context:
+                context_parts.append(focus_context)
+            if diff_context:
+                context_parts.append(diff_context)
+
         context_text = "\n\n".join(context_parts)
 
     if dart_filing_prefetch.matched and dart_filing_prefetch.contextText:
@@ -827,58 +781,26 @@ def _analyze_inner(
             },
         )
 
-    # focus/diff context 합류
-    if focus_context and company is None:
-        context_text = f"{context_text}\n\n{focus_context}" if context_text else focus_context
-    if diff_context:
-        context_text = f"{context_text}\n\n{diff_context}" if context_text else diff_context
-        yield AnalysisEvent(
-            "context",
-            {
-                "module": "_diff",
-                "label": "공시 텍스트 변화 핫스팟",
-                "text": diff_context,
-            },
-        )
-
-    # Pipeline (full tier만)
-    if context_tier == "full" and company is not None:
-        from dartlab.ai.runtime.pipeline import run_pipeline
-
-        try:
-            pipeline_result = run_pipeline(company, question, _included_tables)
-        except (ValueError, TypeError, AttributeError, KeyError, FileNotFoundError, OSError) as e:
-            import logging
-
-            logging.getLogger(__name__).debug("pipeline failed: %s", e)
-            pipeline_result = ""
-        if pipeline_result:
-            context_text = context_text + pipeline_result
-
     # ── 11. 프롬프트 조립 ──
     from dartlab.ai.conversation.prompts import (
         _classify_question,
         build_system_prompt_parts,
     )
 
-    sector = None
-    if company is not None:
-        from dartlab.ai.context.builder import _get_sector
-
-        sector = _get_sector(company)
-
     q_type = _classify_question(question)
     _done_payload["_q_type"] = q_type
     _done_payload["_tool_call_names"] = []
     company_market = getattr(company, "market", "KR") if company else "KR"
     allow_tool_guidance = use_tools and resolved_provider in {"openai", "ollama", "custom", "gemini", "oauth-codex"}
+
+    # compact map 체제: 항상 compact, sector/included_modules는 미전달
     static_part, dynamic_part = build_system_prompt_parts(
         config_.system_prompt,
-        included_modules=_included_tables,
-        sector=sector,
+        included_modules=[],
+        sector=None,
         question_type=q_type,
         question_types=list(question_types) if question_types else None,
-        compact=is_compact,
+        compact=True,
         report_mode=report_mode,
         market=company_market,
         allow_tools=allow_tool_guidance,
@@ -950,7 +872,7 @@ def _analyze_inner(
     llm = create_provider(config_)
 
     tool_capable = use_tools and getattr(llm, "supports_native_tools", False) and hasattr(llm, "complete_with_tools")
-    use_guided = not tool_capable and is_compact and company is not None and hasattr(llm, "complete_json")
+    use_guided = not tool_capable and company is not None and hasattr(llm, "complete_json")
 
     if tool_capable:
         # 모든 provider에서 Super Tool 모드 기본 활성화 — 8개 도구로 통합
@@ -1035,7 +957,7 @@ def _analyze_inner(
             "includedEvidence": includedEvidence,
         }
         _done_payload["includedEvidence"] = includedEvidence
-        if not is_compact and company is not None:
+        if company is not None and _included_tables:
             from dartlab.ai.context.builder import detect_year_range
 
             year_range = detect_year_range(company, _included_tables)

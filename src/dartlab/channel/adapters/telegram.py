@@ -26,6 +26,7 @@ class TelegramAdapter(ChannelAdapter):
         self._stop_event = None
 
     async def start(self) -> None:
+        """Telegram 봇을 polling 모드로 시작."""
         try:
             from telegram import Update
             from telegram.ext import (
@@ -83,6 +84,7 @@ class TelegramAdapter(ChannelAdapter):
             pass
 
     async def stop(self) -> None:
+        """Telegram 봇 종료 및 updater 정리."""
         if self._stop_event is not None and not self._stop_event.is_set():
             self._stop_event.set()
         if self._app:
@@ -92,6 +94,7 @@ class TelegramAdapter(ChannelAdapter):
             await self._app.shutdown()
 
     async def send_text(self, channel_id: str, text: str) -> None:
+        """Telegram 채팅방에 텍스트 메시지 전송."""
         if self._app:
             await self._app.bot.send_message(chat_id=channel_id, text=text)
 

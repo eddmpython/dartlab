@@ -9,6 +9,7 @@ from .runtime import default_host, ensure_port, run_server
 
 
 def main() -> None:
+    """CLI 인자를 파싱하고 웹 서버를 시작한다."""
     parser = argparse.ArgumentParser(description="DartLab web server")
     parser.add_argument("--host", default=None, help="bind host (default: 127.0.0.1, HF Spaces: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=None, help="bind port (default: 8400, HF Spaces: 7860)")

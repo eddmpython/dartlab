@@ -33,18 +33,24 @@ def _utc_now() -> str:
 
 @dataclass
 class ProviderProfile:
+    """AI provider별 설정 (모델, base URL)."""
+
     model: str | None = None
     base_url: str | None = None
 
 
 @dataclass
 class RoleBinding:
+    """역할별 provider/모델 바인딩."""
+
     provider: str | None = None
     model: str | None = None
 
 
 @dataclass
 class AiProfile:
+    """AI 설정 프로필 — provider/role/temperature/max_tokens 통합 관리."""
+
     version: int = 2
     revision: int = 0
     default_provider: str = "codex"
@@ -63,6 +69,8 @@ def _default_roles(provider: str, providers: dict[str, ProviderProfile]) -> dict
 
 
 class AiProfileManager:
+    """AI 프로필 로드/저장/업데이트 관리자."""
+
     def __init__(self, path: Path | None = None, secret_store: SecretStore | None = None) -> None:
         self.path = path or (_dartlab_home() / "ai_profile.json")
         self.secret_store = secret_store or get_secret_store()
@@ -76,6 +84,7 @@ class AiProfileManager:
         )
 
     def load(self) -> AiProfile:
+        """JSON 파일에서 프로필 로드. 없으면 기본값 반환."""
         if not self.path.exists():
             return self._bootstrap()
         raw = self.path.read_text(encoding="utf-8")
@@ -134,6 +143,7 @@ class AiProfileManager:
         )
 
     def save(self, profile: AiProfile) -> AiProfile:
+        """프로필을 JSON 파일로 원자적 저장."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "version": 2,
@@ -177,12 +187,14 @@ class AiProfileManager:
         return profile
 
     def ensure_provider(self, profile: AiProfile, provider: str) -> ProviderProfile:
+        """provider가 프로필에 없으면 기본 ProviderProfile로 생성."""
         normalized = normalize_provider(provider) or provider
         if normalized not in profile.providers:
             profile.providers[normalized] = ProviderProfile()
         return profile.providers[normalized]
 
     def ensure_role(self, profile: AiProfile, role: str) -> RoleBinding:
+        """role이 프로필에 없으면 기본 RoleBinding으로 생성."""
         normalized = normalize_role(role)
         if normalized is None:
             raise ValueError(f"지원하지 않는 role: {role}")
@@ -207,6 +219,7 @@ class AiProfileManager:
         system_prompt: str | None = None,
         updated_by: str = "code",
     ) -> AiProfile:
+        """프로필 부분 업데이트 후 저장. revision 자동 증가."""
         profile = self.load()
         normalized_role = normalize_role(role)
         if role is not None and normalized_role is None:
@@ -264,6 +277,7 @@ class AiProfileManager:
         return self.save(profile)
 
     def resolve(self, provider: str | None = None, *, role: str | None = None) -> dict[str, Any]:
+        """provider/role 기반으로 최종 설정(model, api_key 등) 해석."""
         profile = self.load()
         normalized_role = normalize_role(role)
         explicit_provider = normalize_provider(provider) if provider is not None else None
@@ -295,6 +309,7 @@ class AiProfileManager:
         }
 
     def save_api_key(self, provider: str, api_key: str, *, updated_by: str = "ui") -> AiProfile:
+        """provider API 키를 SecretStore에 저장하고 프로필 갱신."""
         normalized = normalize_provider(provider) or provider
         if get_provider_spec(normalized) is None:
             raise ValueError(f"지원하지 않는 provider: {normalized}")
@@ -302,6 +317,7 @@ class AiProfileManager:
         return self.update(provider=normalized, updated_by=updated_by)
 
     def clear_api_key(self, provider: str, *, updated_by: str = "ui") -> AiProfile:
+        """provider API 키를 SecretStore에서 삭제하고 프로필 갱신."""
         normalized = normalize_provider(provider) or provider
         if get_provider_spec(normalized) is None:
             raise ValueError(f"지원하지 않는 provider: {normalized}")
@@ -309,6 +325,7 @@ class AiProfileManager:
         return self.update(provider=normalized, updated_by=updated_by)
 
     def serialize(self) -> dict[str, Any]:
+        """프로필 + provider 카탈로그를 JSON-safe dict로 직렬화."""
         profile = self.load()
         provider_settings: dict[str, dict[str, Any]] = {}
         for provider_id in public_provider_ids():
@@ -344,6 +361,7 @@ class AiProfileManager:
         }
 
     def fingerprint(self) -> str:
+        """프로필 변경 감지용 fingerprint 문자열."""
         profile = self.load()
         role_fingerprint = ",".join(
             f"{role}:{binding.provider}:{binding.model or ''}" for role, binding in sorted(profile.roles.items())
@@ -352,4 +370,5 @@ class AiProfileManager:
 
 
 def get_profile_manager() -> AiProfileManager:
+    """기본 SecretStore를 사용하는 AiProfileManager 반환."""
     return AiProfileManager(secret_store=get_secret_store())

@@ -18,15 +18,19 @@ def _dartlab_home() -> Path:
 
 @dataclass(frozen=True)
 class SecretEntry:
+    """암호화된 비밀 값 엔트리 (backend + 인코딩된 value)."""
+
     backend: str
     value: str
 
 
 class SecretStoreError(RuntimeError):
-    pass
+    """SecretStore 조작 중 발생하는 오류."""
 
 
 class SecretStore:
+    """파일 기반 비밀 저장소 — Windows DPAPI 또는 plain base64."""
+
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or (_dartlab_home() / "secrets.json")
 
@@ -65,6 +69,7 @@ class SecretStore:
                 os.unlink(tmp_path)
 
     def get(self, name: str) -> str | None:
+        """이름으로 비밀 값 조회. 없으면 None."""
         data = self._load()
         entry = data.get(name)
         if not entry:
@@ -72,21 +77,25 @@ class SecretStore:
         return self._decode_entry(SecretEntry(**entry))
 
     def set(self, name: str, value: str) -> None:
+        """비밀 값 저장 (암호화 후 파일에 기록)."""
         data = self._load()
         entry = self._encode_entry(value)
         data[name] = {"backend": entry.backend, "value": entry.value}
         self._save(data)
 
     def delete(self, name: str) -> None:
+        """이름에 해당하는 비밀 값 삭제."""
         data = self._load()
         if name in data:
             data.pop(name, None)
             self._save(data)
 
     def has(self, name: str) -> bool:
+        """비밀 값 존재 여부."""
         return self.get(name) is not None
 
     def get_json(self, name: str) -> dict[str, Any] | None:
+        """JSON으로 저장된 비밀 값을 dict로 파싱하여 반환."""
         raw = self.get(name)
         if not raw:
             return None
@@ -97,6 +106,7 @@ class SecretStore:
         return data if isinstance(data, dict) else None
 
     def set_json(self, name: str, value: dict[str, Any]) -> None:
+        """dict를 JSON 직렬화하여 비밀 값으로 저장."""
         self.set(name, json.dumps(value, ensure_ascii=False))
 
     def _encode_entry(self, value: str) -> SecretEntry:
@@ -198,4 +208,5 @@ def _unprotect_windows(data: bytes) -> bytes:
 
 
 def get_secret_store() -> SecretStore:
+    """기본 경로의 SecretStore 인스턴스 반환."""
     return SecretStore()

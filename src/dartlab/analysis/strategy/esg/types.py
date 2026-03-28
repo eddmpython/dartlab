@@ -33,6 +33,7 @@ class EsgResult:
 
     @property
     def grades(self) -> dict[str, str]:
+        """E/S/G 개별 등급 딕셔너리 반환."""
         return {
             "E": self.environment.grade,
             "S": self.social.grade,

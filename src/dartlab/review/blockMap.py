@@ -53,12 +53,15 @@ class BlockMap:
         return iter(self._data)
 
     def keys(self):
+        """블록 영문 key 목록을 반환한다."""
         return self._data.keys()
 
     def values(self):
+        """블록 리스트 값들을 반환한다."""
         return self._data.values()
 
     def items(self):
+        """(key, blocks) 쌍을 반환한다."""
         return self._data.items()
 
     def get(self, keyOrLabel: str, default=None):

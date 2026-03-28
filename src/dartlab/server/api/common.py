@@ -33,16 +33,19 @@ _CREDENTIAL_PATTERN = _re.compile(
 
 
 def sanitize_error(exc: BaseException) -> str:
+    """에러 메시지에서 파일 경로와 인증 정보를 마스킹한다."""
     msg = _PATH_PATTERN.sub("<path>", str(exc))
     msg = _CREDENTIAL_PATTERN.sub(r"\1=***", msg)
     return msg
 
 
 def normalize_provider_name(provider: str | None) -> str | None:
+    """Provider 이름을 정규화한다."""
     return normalize_provider(provider)
 
 
 def serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
+    """DataFrame/dict/str 등 다양한 페이로드를 JSON 직렬화 가능한 dict로 변환한다."""
     import polars as pl
 
     if payload is None:
@@ -73,6 +76,7 @@ def serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
 
 
 def compute_etag(data: Any) -> str:
+    """데이터의 MD5 기반 ETag 해시를 계산한다."""
     raw = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
     return f'"{hashlib.md5(raw, usedforsecurity=False).hexdigest()[:16]}"'
 
@@ -85,6 +89,7 @@ def etag_response(
     max_age: int = 300,
     swr: int = 1800,
 ) -> dict[str, Any] | Response:
+    """ETag/Cache-Control 헤더를 설정하고 304 또는 msgpack 응답을 처리한다."""
     etag = compute_etag(data)
     cache_control = f"private, max-age={max_age}, stale-while-revalidate={swr}"
 

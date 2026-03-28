@@ -77,6 +77,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 0. list_modules
     def list_modules() -> str:
+        """사용 가능한 데이터 모듈 목록을 반환한다."""
         from dartlab.ai.context.builder import scan_available_modules
 
         modules = scan_available_modules(company)
@@ -101,6 +102,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 1. get_data
     def get_data(module_name: str) -> str:
+        """모듈명으로 재무/공시 데이터를 조회한다."""
         data = getattr(company, module_name, None) if hasattr(company, module_name) else company.show(module_name)
         if data is None:
             from dartlab.ai.metadata import MODULE_META
@@ -165,6 +167,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 1b. search_data
     def search_data(keyword: str) -> str:
+        """키워드로 모든 데이터 모듈을 검색한다."""
         from dartlab.ai.metadata import MODULE_META
 
         results = []
@@ -221,6 +224,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 2. compute_ratios
     def compute_ratios() -> str:
+        """BS/IS 기반 핵심 재무비율을 계산한다."""
         from dartlab.tools.table import ratio_table
 
         bs = getattr(company, "BS", None)
@@ -247,6 +251,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 3. find_anomalies
     def find_anomalies(module_name: str, threshold_pct: float = 50.0) -> str:
+        """재무 데이터에서 이상치를 탐지한다."""
         from dartlab.ai.aiParser import detect_anomalies
 
         data = getattr(company, module_name, None)
@@ -288,6 +293,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 4. compute_growth
     def compute_growth(module_name: str) -> str:
+        """다기간 CAGR 성장률 매트릭스를 계산한다."""
         from dartlab.tools.table import growth_matrix, pivot_accounts
 
         data = getattr(company, module_name, None)
@@ -322,6 +328,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 5. yoy_analysis
     def yoy_analysis(module_name: str) -> str:
+        """전년 대비 변동률을 계산한다."""
         from dartlab.tools.table import pivot_accounts, yoy_change
 
         data = getattr(company, module_name, None)
@@ -357,6 +364,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 6. get_summary
     def get_summary(module_name: str) -> str:
+        """데이터의 요약 통계를 계산한다."""
         from dartlab.tools.table import pivot_accounts, summary_stats
 
         data = getattr(company, module_name, None)
@@ -389,6 +397,7 @@ def register_finance_tools(company: Any, register_tool) -> None:
 
     # 7b. get_report_data
     def get_report_data(api_type: str) -> str:
+        """DART 정기보고서 API 정형 데이터를 조회한다."""
         report = getattr(company, "report", None)
         if report is None:
             return "정기보고서 데이터가 없습니다."
@@ -445,64 +454,8 @@ def register_finance_tools(company: Any, register_tool) -> None:
         priority=75,
     )
 
-    # ── compare_companies ──
-
-    def compare_companies(codes: str, metrics: str = "revenue,operating_income,net_income,total_assets,roe") -> str:
-        """복수 종목 핵심 지표 비교표를 생성합니다."""
-        from dartlab import Company as _Company
-
-        code_list = [c.strip() for c in codes.split(",") if c.strip()]
-        metric_list = [m.strip() for m in metrics.split(",") if m.strip()]
-        if len(code_list) < 2:
-            return "비교하려면 2개 이상의 종목코드를 쉼표로 구분해 주세요."
-
-        rows: list[dict] = []
-        for code in code_list[:5]:
-            try:
-                c = _Company(code)
-                row: dict = {"종목": f"{c.corpName} ({c.stockCode})"}
-                ratios = getattr(c, "ratios", None)
-                if ratios is not None and isinstance(ratios, pl.DataFrame):
-                    for m in metric_list:
-                        matched = ratios.filter(pl.col("항목") == m)
-                        if not matched.is_empty():
-                            cols = [c for c in matched.columns if c != "항목"]
-                            if cols:
-                                row[m] = str(matched[cols[-1]][0])
-                rows.append(row)
-            except (ValueError, FileNotFoundError, OSError):
-                rows.append({"종목": code, "error": "데이터 없음"})
-
-        if not rows:
-            return "비교 데이터를 찾을 수 없습니다."
-        result_df = pl.DataFrame(rows)
-        return df_to_md(result_df)
-
-    register_tool(
-        "compare_companies",
-        compare_companies,
-        "복수 종목의 핵심 재무 지표를 비교 테이블로 생성합니다. "
-        "사용자가 '삼성전자 vs SK하이닉스', '종목 비교', '어떤 회사가 나은지' 같은 요청을 할 때 사용하세요.",
-        {
-            "type": "object",
-            "properties": {
-                "codes": {
-                    "type": "string",
-                    "description": "비교할 종목코드/종목명을 쉼표로 구분 (예: 005930,000660,035420)",
-                },
-                "metrics": {
-                    "type": "string",
-                    "description": "비교할 지표를 쉼표로 구분. 기본: revenue,operating_income,net_income,total_assets,roe",
-                    "default": "revenue,operating_income,net_income,total_assets,roe",
-                },
-            },
-            "required": ["codes"],
-        },
-        kind=CapabilityKind.ANALYSIS,
-        category="finance",
-        questionTypes=("종합",),
-        priority=60,
-    )
+    # compare_companies 제거 — Company N개 생성은 메모리 폭탄.
+    # 기업간 비교는 market(action='scanAccount') / market(action='scanRatio')로 대체.
 
     # ── custom_ratio ──
 

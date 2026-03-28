@@ -7,6 +7,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
+    """report 서브커맨드 등록 — Markdown 보고서 자동 생성."""
     parser = subparsers.add_parser("report", help="기업 분석 보고서 자동 생성 (Markdown)")
     parser.add_argument("company", help="종목코드 (005930) 또는 회사명 (삼성전자)")
     parser.add_argument("-o", "--output", default=None, help="출력 파일 경로 (기본: stdout)")
@@ -20,6 +21,7 @@ def configure_parser(subparsers) -> None:
 
 
 def run(args) -> int:
+    """기업 분석 Markdown 보고서를 생성해 stdout 또는 파일로 출력한다."""
     dartlab = configure_dartlab()
 
     try:

@@ -107,6 +107,8 @@ _DEFAULT_DAYS = 7
 
 @dataclass(frozen=True)
 class DartFilingIntent:
+    """DART 공시 검색 의도 파싱 결과."""
+
     matched: bool = False
     corp: str | None = None
     start: str = ""
@@ -122,6 +124,8 @@ class DartFilingIntent:
 
 @dataclass(frozen=True)
 class DartFilingPrefetch:
+    """공시 검색 사전 실행 결과 (컨텍스트 + 메타데이터)."""
+
     matched: bool
     needsKey: bool = False
     message: str = ""
@@ -132,6 +136,7 @@ class DartFilingPrefetch:
 
 
 def buildMissingDartKeyMessage() -> str:
+    """OpenDART API 키 미설정 안내 메시지 생성."""
     return (
         "OpenDART API 키가 필요합니다.\n"
         "- 이 질문은 실시간 공시목록 조회가 필요합니다.\n"
@@ -141,6 +146,7 @@ def buildMissingDartKeyMessage() -> str:
 
 
 def buildMissingDartKeyUiAction() -> dict[str, Any]:
+    """API 키 설정 유도 UI 액션 페이로드 생성."""
     return UiAction.update(
         "settings",
         {
@@ -152,6 +158,7 @@ def buildMissingDartKeyUiAction() -> dict[str, Any]:
 
 
 def isDartFilingQuestion(question: str) -> bool:
+    """질문이 DART 공시목록 조회 의도인지 판별."""
     q = (question or "").strip()
     if not q:
         return False
@@ -173,10 +180,17 @@ def isDartFilingQuestion(question: str) -> bool:
     ):
         return False
 
+    # "공시에서 바뀌었는지", "공시 변화" — sections diff 의도, OpenDART 목록 아님
+    _CHANGE_TERMS = ("바뀌", "바꿨", "변경", "달라")
+    if has_filing_term and any(term in q for term in _CHANGE_TERMS):
+        if not any(term in q for term in ("목록", "리스트", "뭐 있었", "무슨 공시", "공시목록")):
+            return False
+
     return has_filing_term and (has_request_term or has_time_term or has_read_term or "?" not in q)
 
 
 def detectDartFilingIntent(question: str, company: Any | None = None) -> DartFilingIntent:
+    """질문에서 공시 검색 의도(기간, 유형, 키워드 등)를 파싱."""
     if not isDartFilingQuestion(question):
         return DartFilingIntent()
 
@@ -232,6 +246,7 @@ def searchDartFilings(
     titleKeywords: list[str] | tuple[str, ...] | None = None,
     limit: int = _DEFAULT_LIMIT,
 ) -> pl.DataFrame:
+    """OpenDART API로 공시목록을 검색하여 DataFrame 반환."""
     from dartlab import OpenDart
 
     if not hasDartApiKey():
@@ -269,6 +284,7 @@ def searchDartFilings(
 
 
 def getDartFilingText(rceptNo: str, maxChars: int = 4000) -> str:
+    """접수번호로 공시 원문을 가져와 정제된 텍스트 반환."""
     from dartlab import OpenDart
 
     if not rceptNo:
@@ -281,6 +297,7 @@ def getDartFilingText(rceptNo: str, maxChars: int = 4000) -> str:
 
 
 def buildDartFilingPrefetch(question: str, company: Any | None = None) -> DartFilingPrefetch:
+    """질문 기반 공시 검색을 사전 실행하여 컨텍스트를 준비."""
     intent = detectDartFilingIntent(question, company=company)
     if not intent.matched:
         return DartFilingPrefetch(matched=False)
@@ -330,6 +347,7 @@ def formatDartFilingContext(
     *,
     question: str = "",
 ) -> str:
+    """공시 검색 결과를 LLM 컨텍스트용 마크다운으로 포맷."""
     if intent.start or intent.end:
         window_label = f"{_format_date(intent.start or intent.end)} ~ {_format_date(intent.end or intent.start)}"
     else:
@@ -361,6 +379,7 @@ def formatDartFilingContext(
 
 
 def cleanDartFilingText(text: str, *, maxChars: int = 4000) -> str:
+    """HTML 태그 제거 및 길이 제한으로 공시 원문 정제."""
     normalized = unescape(text or "")
     normalized = re.sub(r"<[^>]+>", " ", normalized)
     normalized = re.sub(r"\s+", " ", normalized).strip()

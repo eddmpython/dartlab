@@ -37,6 +37,7 @@ def should_preload_ollama() -> bool:
 
 
 def probe_provider_availability(prov: str) -> tuple[bool | None, str | None, bool]:
+    """provider 사용 가능 여부와 모델을 실제로 점검한다."""
     from dartlab.ai import get_config
     from dartlab.ai.providers import create_provider
 
@@ -59,6 +60,7 @@ def probe_provider_availability(prov: str) -> tuple[bool | None, str | None, boo
 
 
 def build_ollama_detail(*, probe: bool) -> dict[str, Any]:
+    """Ollama 설치/실행/GPU 상태를 조회한다."""
     if probe:
         try:
             from dartlab.ai.providers.support.ollama_setup import detect_ollama, get_install_guide
@@ -85,6 +87,7 @@ def build_ollama_detail(*, probe: bool) -> dict[str, Any]:
 
 
 def build_oauth_codex_detail(*, probe: bool) -> dict[str, Any]:
+    """OAuth Codex 인증/토큰 상태를 조회한다."""
     try:
         from dartlab.ai.providers.support import oauth_token as oauthToken
     except (ImportError, OSError, RuntimeError):

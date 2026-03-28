@@ -54,6 +54,7 @@ class DiffSummary:
 
     @property
     def changeRate(self) -> float:
+        """전체 인접 기간 대비 변화 비율 (0.0~1.0)."""
         if self.totalPeriods <= 1:
             return 0.0
         return self.changedCount / (self.totalPeriods - 1)
@@ -68,9 +69,11 @@ class DiffResult:
 
     @property
     def totalChanges(self) -> int:
+        """전체 변화 지점 수."""
         return len(self.entries)
 
     def topChanged(self, n: int = 10) -> list[DiffSummary]:
+        """changeRate 상위 N개 topic 요약."""
         return sorted(
             self.summaries,
             key=lambda s: s.changeRate,
@@ -78,6 +81,7 @@ class DiffResult:
         )[:n]
 
     def stable(self) -> list[DiffSummary]:
+        """변화 없는 topic 목록."""
         return [s for s in self.summaries if s.changedCount == 0]
 
 
@@ -196,6 +200,7 @@ class LineDiff:
 
     @property
     def totalLines(self) -> int:
+        """전체 줄 수 (추가 + 삭제 + 유지)."""
         return len(self.added) + len(self.removed) + len(self.kept)
 
 
@@ -489,7 +494,7 @@ def _defaultKeywords() -> dict[str, list[str]]:
     global _DEFAULT_KEYWORDS
     if _DEFAULT_KEYWORDS is None:
         try:
-            from dartlab.market.signal import KEYWORDS
+            from dartlab.scan.signal import KEYWORDS
 
             _DEFAULT_KEYWORDS = KEYWORDS
         except ImportError:
