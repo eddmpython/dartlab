@@ -174,43 +174,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
             return f"[오류] scanRatio 실패: {e}"
 
-    def _scanRatioList(**_kw) -> str:
-        """사용 가능한 비율 목록 조회."""
-        try:
-            import importlib.util
-
-            if importlib.util.find_spec("dartlab.providers.dart.finance.scanAccount") is None:
-                return "[오류] scanAccount 모듈을 찾을 수 없습니다."
-
-            # roe로 한번 호출해서 컬럼 구조 확인하는 것보다 직접 목록 제공
-            ratios = [
-                "roe",
-                "roa",
-                "ros",
-                "operatingMargin",
-                "netMargin",
-                "debtRatio",
-                "currentRatio",
-                "quickRatio",
-                "interestCoverage",
-                "assetTurnover",
-                "inventoryTurnover",
-                "receivableTurnover",
-                "per",
-                "pbr",
-                "psr",
-                "pcr",
-                "evEbitda",
-                "dividendYield",
-                "payoutRatio",
-                "salesGrowth",
-                "operatingIncomeGrowth",
-                "netIncomeGrowth",
-            ]
-            return "## 사용 가능한 비율 목록\n" + "\n".join(f"- {r}" for r in ratios)
-        except (ImportError, AttributeError) as e:
-            return f"[오류] 비율 목록 조회 실패: {e}"
-
     def _governance(**_kw) -> str:
         """전종목 지배구조 스캔."""
         try:
@@ -270,7 +233,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         # 전종목 비교 액션 (scan/ parquet 기반)
         "scanAccount": _scanAccount,
         "scanRatio": _scanRatio,
-        "scanRatioList": _scanRatioList,
         "governance": _governance,
         "workforce": _workforce,
         "capital": _capital,
@@ -316,7 +278,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         "## 전종목 비교 (scan/ parquet, Company 객체 불필요)\n"
         "- scanAccount: 전종목 단일 계정 시계열. snakeId 필수 (예: sales, operatingIncome). code로 특정 종목 필터링 가능 (쉼표 구분)\n"
         "- scanRatio: 전종목 단일 비율 시계열. ratioName 필수 (예: roe, debtRatio). code로 필터링 가능\n"
-        "- scanRatioList: 사용 가능한 비율 목록\n"
         "- governance: 전종목 지배구조 스캔 (지분율, 사외이사, 보수, 감사의견)\n"
         "- workforce: 전종목 인력/급여 스캔 (직원수, 평균급여, 근속년수)\n"
         "- capital: 전종목 주주환원 스캔 (배당, 자사주, 증자)\n"
@@ -339,7 +300,7 @@ def registerMarketTool(registerTool: Callable) -> None:
                         "ratios",
                         "scanAccount",
                         "scanRatio",
-                        "scanRatioList",
+
                         "governance",
                         "workforce",
                         "capital",
@@ -348,7 +309,7 @@ def registerMarketTool(registerTool: Callable) -> None:
                     "description": (
                         "price=현재가, consensus=컨센서스, history=주가이력, "
                         "scan=포지셔닝, financials=재무제표, ratios=재무비율, "
-                        "scanAccount=전종목계정, scanRatio=전종목비율, scanRatioList=비율목록, "
+                        "scanAccount=전종목계정, scanRatio=전종목비율, "
                         "governance=지배구조, workforce=인력, capital=주주환원, debt=부채"
                     ),
                 },

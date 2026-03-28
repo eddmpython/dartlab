@@ -22,7 +22,7 @@
 | `downloadAll` | 함수 | HF 전체 데이터 다운로드 |
 | `scanAccount` | 함수 | 전종목 단일 계정 시계열 |
 | `scanRatio` | 함수 | 전종목 재무비율 시계열 |
-| `scanRatioList` | 함수 | 사용 가능 비율 목록 |
+| ~~`scanRatioList`~~ | 제거 | `scan("ratio")`로 대체 |
 | `config` | 모듈 | 전역 설정 |
 | `verbose` | 속성 | 출력 레벨 |
 | `dataDir` | 속성 | 데이터 디렉토리 |

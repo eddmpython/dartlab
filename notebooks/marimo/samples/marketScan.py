@@ -44,7 +44,7 @@ def _():
 @app.cell
 def _():
     # 사용 가능한 비율 목록
-    dartlab.scanRatioList()
+    dartlab.scan("ratio")
     return
 
 

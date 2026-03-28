@@ -232,72 +232,102 @@ c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
 
 ### Scan — 시장 전체를 한 번에
 
-`Scan`은 개별 기업 렌즈를 시장 전체로 돌린다. 한 회사의 시계열이 아니라 2,700+ 상장사를 하나의 축으로 관통한다:
+`scan()` 하나로 모든 시장 횡단분석에 접근한다. 기억할 것은 `scan` 하나뿐이다.
 
 ```python
+dartlab.scan()                        # 가이드: 축 목록 + 사용법
 dartlab.scan("governance")            # 전종목 지배구조
+dartlab.scan("governance", "005930")  # 삼성전자만 필터
+dartlab.scan("ratio")                 # 가용 비율 목록
 dartlab.scan("ratio", "roe")          # 전종목 ROE
+dartlab.scan("account", "매출액")     # 전종목 매출액 시계열
 dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
-dartlab.scan.topics()                 # 가용 11축 목록
 ```
 
-11축은 두 가지 패턴으로 나뉜다:
-
-```
-필터형 축 (stockCode로 필터):           타겟 필수 축:
-  governance   workforce   capital       account  → snakeId ("매출액")
-  debt         cashflow    audit         ratio    → ratioName ("roe")
-  insider      digest      network
-```
+| 축 | 라벨 | 설명 |
+|----|------|------|
+| governance | 거버넌스 | 지분율, 사외이사, 보수비율, 감사의견 |
+| workforce | 인력/급여 | 직원수, 평균급여, 성장률, 고액보수 |
+| capital | 주주환원 | 배당, 자사주, 증자/감자, 환원 분류 |
+| debt | 부채구조 | 사채만기, 부채비율, ICR, 위험등급 |
+| cashflow | 현금흐름 | OCF/ICF/FCF + 8종 라이프사이클 패턴 |
+| audit | 감사리스크 | 감사의견, 감사인변경, 특기사항 종합 리스크 |
+| insider | 내부자지분 | 최대주주 지분변동, 자기주식, 경영권 안정성 |
+| digest | 다이제스트 | 시장 전체 공시 변화 다이제스트 |
+| network | 네트워크 | 상장사 관계 네트워크 (출자/지분/계열) |
+| account | 계정 | 전종목 단일 계정 시계열 (target 필수) |
+| ratio | 비율 | 전종목 단일 재무비율 시계열 (target 필수) |
 
 각 축은 `_AXIS_REGISTRY`에 등록된 lazy-loaded 모듈이다. 새 축 추가 = 레지스트리 1줄 + 모듈 1개.
 
-### Analysis — 데이터에서 판단으로
+### Analysis — 재무제표 완전 분석
 
-`analysis/`는 원본 Company 데이터를 구조화된 평가로 변환하는 8개 영역이다. 모든 분석 함수는 같은 패턴을 따른다: **Company 입력, dict/list 출력**. 부수 효과 없음, 렌더링 없음 — 순수 계산.
+`analysis()` 하나로 14개 분석축에 접근한다. scan과 동일한 3단계 호출 패턴.
+
+```python
+dartlab.analysis()                    # 14축 가이드
+dartlab.analysis("수익구조")           # 수익구조 축의 분석 항목 목록
+dartlab.analysis("수익구조", c)        # 삼성전자 수익구조 분석 실행 -> dict
+
+c.analysis()                          # 가이드
+c.analysis("수익성")                   # 수익성 분석
+```
+
+| Part | 축 | 설명 | 항목 |
+|------|-----|------|------|
+| 1-1 | 수익구조 | 이 회사는 무엇으로 돈을 버는가 | 8 |
+| 1-2 | 자금조달 | 돈을 어디서 조달하는가 | 9 |
+| 1-3 | 자산구조 | 조달한 돈으로 뭘 준비했는가 | 4 |
+| 1-4 | 현금흐름 | 실제로 현금은 어떻게 흘렀는가 | 3 |
+| 2-1 | 수익성 | 이 회사는 얼마나 잘 벌고 있는가 | 4 |
+| 2-2 | 성장성 | 이 회사는 얼마나 빨리 성장하는가 | 3 |
+| 2-3 | 안정성 | 이 회사는 망하지 않는가 | 4 |
+| 2-4 | 효율성 | 이 회사는 자산을 잘 굴리는가 | 3 |
+| 2-5 | 종합평가 | 재무 상태를 한마디로 | 3 |
+| 3-1 | 이익품질 | 이익이 진짜인가 | 4 |
+| 3-2 | 비용구조 | 비용이 어떻게 움직이는가 | 4 |
+| 3-3 | 자본배분 | 번 돈을 어디에 쓰는가 | 5 |
+| 3-4 | 투자효율 | 투자가 가치를 만드는가 | 4 |
+| 3-5 | 재무정합성 | 재무제표가 서로 맞는가 | 5 |
+
+각 축은 `calc*(company) -> dict` 순수 함수 집합이다. 렌더링 없음, 부수 효과 없음.
+
+### Review — analysis를 보고서로
+
+analysis()의 출력을 소비하여 구조화된 보고서를 조립한다:
 
 ```
-Part 1  strategy/      사업모델, 수익구조, 비용구조, 자본배분
-Part 2  accounting/    이익의 질, Red Flags, 공시 신호
-Part 3  financial/     60+개 비율, 10영역 A~F 등급, 5개 부실 예측 모델
-Part 4  forecast/      7-소스 앙상블, 몬테카를로, Pro Forma 3표
-Part 5  valuation/     DCF(FCFE/FCFF), DDM, 상대가치, 횡단면 OLS
-Part 6  risk/          재무/사업/시장 리스크 (구현 중)
-Part 7  comparative/   피어 선정, 섹터 벤치마크, 이벤트 스터디
-Part 8  macro/         거시 지표, 산업 사이클 (구현 중)
+calc*(company) -> dict -> 블록 빌더 -> BlockMap -> 템플릿 -> 섹션 -> 렌더링
 ```
 
 ```python
-c.insights              # 10영역 등급 (A~F) — 수익성에서 재무정합성까지
-c.rank                  # 시장 전체 백분위 순위
-c.valuation             # DCF + DDM + 상대가치 종합
-```
-
-`calc*` 패턴이 계산과 표현을 분리한다 — `calcRevenueGrowth(company)`는 dict를 반환하고, 테이블은 만들지 않는다. 블록 빌더가 dict를 표시 가능한 객체로 변환한다.
-
-### Review — 한 줄이면 전체 보고서
-
-`Review`는 분석 결과를 구조화된 읽기 쉬운 보고서로 조립한다. `analysis/` 출력을 블록-템플릿 파이프라인으로 소비한다:
-
-```
-calc*(company) → dict/list → 블록 빌더 → BlockMap → 템플릿 → 섹션 → 렌더링
-```
-
-3개 Part, 15개 템플릿, 60+개 재사용 블록:
-
-```python
-c.review()              # 15개 섹션 전체 보고서
+c.review()              # 14개 섹션 전체 보고서
 c.review("수익구조")     # 단일 섹션
-c.reviewer()            # + AI 종합의견 레이어
 
-b = blocks(c)           # 60+개 블록 사전
+b = blocks(c)           # 60+개 블록 사전 (한글/영문 key)
 b["growth"]             # 영문 key
-b["매출 성장률"]         # 한글 label — 같은 블록
-b.growth                # tab-complete
-Review([b["growth"], b["dupont"]])   # 자유 조립
+b["매출 성장률"]         # 한글 label -- 같은 블록
 ```
 
-4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`. 섹션 간 순환 서사("매출 하락 → 마진 압박 → 현금 악화")를 자동 감지하여 주입한다.
+4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`. 섹션 간 순환 서사("매출 하락 -> 마진 압박 -> 현금 악화")를 자동 감지하여 주입한다.
+
+### Reviewer — review + AI 해석
+
+review 위에 AI 종합의견을 올린다:
+
+```python
+c.reviewer()                                    # 전체 + AI
+c.reviewer(guide="반도체 사이클 관점에서 평가해줘")  # 도메인 특화
+```
+
+### 4계층 관계
+
+```
+scan()       시장 전체 횡단 (11축)     -- 종목 간 비교/스크리닝
+analysis()   단일 종목 심층 (14축)     -- 재무제표 완전 분석
+c.review()   analysis -> 구조화 보고서  -- 블록-템플릿 파이프라인
+c.reviewer() review + AI 해석          -- 섹션별 종합의견
+```
 
 ### 아키텍처 — 책임 기반 레이어
 
@@ -396,19 +426,19 @@ c.filings()             # 공시 문서 목록 (Tier 1 Stable)
 import dartlab
 
 # 단일 계정을 전체 상장사에 대해 스캔
-dartlab.scanAccount("매출액")                         # 분기 standalone 매출
-dartlab.scanAccount("operating_profit", annual=True)  # 연간 기준
-dartlab.scanAccount("total_assets", market="edgar")   # 미국 EDGAR
+dartlab.scan("account", "매출액")                        # 분기 standalone 매출
+dartlab.scanAccount("operating_profit", annual=True)     # 연간 기준
+dartlab.scanAccount("total_assets", market="edgar")      # 미국 EDGAR
 
 # 단일 비율을 전체 상장사에 대해 스캔
-dartlab.scanRatio("roe")                              # 분기 ROE 전수 스캔
-dartlab.scanRatio("debtRatio", annual=True)           # 연간 부채비율
+dartlab.scan("ratio", "roe")                             # 분기 ROE 전수 스캔
+dartlab.scanRatio("debtRatio", annual=True)              # 연간 부채비율
 
-# 사용 가능한 비율 목록 (13개: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션)
-dartlab.scanRatioList()
+# 사용 가능한 비율 목록
+dartlab.scan("ratio")
 ```
 
-한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화. ThreadPool로 2,700+ parquet 파일을 병렬 읽기, 약 3초 소요.
+한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화.
 
 > **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scanAccount`, `screen`, `digest` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
 > ```python
@@ -618,30 +648,18 @@ dartlab.network().show()
 
 > **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
-통합 `dartlab.scan()` 인터페이스 또는 개별 편의 함수로 11축 시장 횡단분석.
+11축 시장 횡단분석. `dartlab.scan()` 하나로 전부 접근한다.
 
 ```python
-# 통합 scan 인터페이스 — 11축
+dartlab.scan()                           # 가이드: 축 목록 + 사용법
 dartlab.scan("governance")               # 전체 상장사 거버넌스
 dartlab.scan("governance", "005930")     # 삼성전자만 필터
+dartlab.scan("ratio")                    # 가용 비율 목록
 dartlab.scan("ratio", "roe")             # 전종목 ROE
-dartlab.scan.topics()                    # 가용 축 목록
-
-# 편의 단축 함수
-dartlab.governance()     # 지배구조
-dartlab.workforce()      # 인력/급여
-dartlab.capital()        # 배당/자사주
-dartlab.debt()           # 부채 만기/리스크
-
-# 신규 축 (v0.7.12)
+dartlab.scan("account", "매출액")        # 전종목 매출액
 dartlab.scan("cashflow")                 # OCF/ICF/FCF + 8유형 현금흐름 패턴 분류
 dartlab.scan("audit")                    # 감사의견, 감사인변경, 리스크 플래그
 dartlab.scan("insider")                  # 최대주주 지분변동, 자기주식 현황
-
-# 스크리닝 & 벤치마크
-dartlab.screen()         # 멀티팩터 스크리닝
-dartlab.benchmark()      # 동종업체 비교
-dartlab.signal()         # 공시 변화 감지 시그널
 ```
 
 ### 시장 데이터 수집 (beta)

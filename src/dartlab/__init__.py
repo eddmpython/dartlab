@@ -803,17 +803,7 @@ def scanRatio(
     return _ratio(ratioName, fsPref=fsPref, annual=annual)
 
 
-def scanRatioList():
-    """사용 가능한 비율 목록.
 
-    Example::
-
-        import dartlab
-        dartlab.scanRatioList()
-    """
-    from dartlab.providers.dart.finance.scanAccount import scanRatioList as _list
-
-    return _list()
 
 
 def digest(
@@ -887,6 +877,12 @@ class _Module(sys.modules[__name__].__class__):
             instance = Scan()
             setattr(self, name, instance)
             return instance
+        if name == "analysis":
+            from dartlab.analysis.strategy import Analysis
+
+            instance = Analysis()
+            setattr(self, name, instance)
+            return instance
         if name in ("chart", "table", "text"):
             import importlib
 
@@ -917,6 +913,7 @@ __all__ = [
     "collectAll",
     "downloadAll",
     "scan",
+    "analysis",
     "network",
     "news",
     "audit",
@@ -932,7 +929,6 @@ __all__ = [
     "digest",
     "scanAccount",
     "scanRatio",
-    "scanRatioList",
     "plugins",
     "reload_plugins",
     "verbose",

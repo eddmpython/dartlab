@@ -232,23 +232,33 @@ c.profile.sections  # merged view — what users see by default
 
 ### Scan — The Whole Market in One Call
 
-`Scan` turns the single-company lens outward. Instead of one company's timeline, it sweeps all 2,700+ listed companies on a single axis:
+`scan()` is the single entry point for all market-wide cross-sectional analysis. No extra methods to remember — just `scan()`.
 
 ```python
+dartlab.scan()                        # guide: list all axes + usage
 dartlab.scan("governance")            # governance structure across all firms
+dartlab.scan("governance", "005930")  # filter to one company
+dartlab.scan("ratio")                 # list available ratios
 dartlab.scan("ratio", "roe")          # ROE across all firms
+dartlab.scan("account", "매출액")     # revenue across all firms
 dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
-dartlab.scan.topics()                 # list all 11 axes
 ```
 
-The 11 axes fall into two patterns:
+11 axes, two patterns:
 
-```
-No-target axes (filter by stockCode):    Target-required axes:
-  governance   workforce   capital          account  → snakeId ("매출액")
-  debt         cashflow    audit            ratio    → ratioName ("roe")
-  insider      digest      network
-```
+| Axis | Label | What it does |
+|------|-------|--------------|
+| governance | Governance | Ownership, outside directors, pay ratio, audit opinion |
+| workforce | Workforce | Headcount, avg salary, growth rate, top earners |
+| capital | Shareholder Return | Dividends, buybacks, equity changes |
+| debt | Debt Structure | Bond maturity, debt ratio, ICR, risk grade |
+| cashflow | Cash Flow | OCF/ICF/FCF + 8-type lifecycle pattern |
+| audit | Audit Risk | Opinion, auditor change, special matters |
+| insider | Insider Holdings | Major holder change, treasury stock, stability |
+| digest | Digest | Market-wide disclosure change digest |
+| network | Network | Corporate relationship graph (investment/ownership) |
+| account | Account | Single account time-series (target required) |
+| ratio | Ratio | Single ratio time-series (target required) |
 
 Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new axis means one entry in the registry and one module — no other code changes.
 
@@ -396,19 +406,19 @@ Scan a single account or ratio across **all listed companies** in one call — 2
 import dartlab
 
 # scan a single account across all listed companies
-dartlab.scanAccount("매출액")                         # revenue, quarterly standalone
-dartlab.scanAccount("operating_profit", annual=True)  # annual basis
-dartlab.scanAccount("total_assets", market="edgar")   # US EDGAR
+dartlab.scan("account", "매출액")                        # revenue, quarterly standalone
+dartlab.scanAccount("operating_profit", annual=True)     # annual basis
+dartlab.scanAccount("total_assets", market="edgar")      # US EDGAR
 
 # scan a ratio across all listed companies
-dartlab.scanRatio("roe")                              # quarterly ROE for all firms
-dartlab.scanRatio("debtRatio", annual=True)           # annual debt-to-equity
+dartlab.scan("ratio", "roe")                             # quarterly ROE for all firms
+dartlab.scanRatio("debtRatio", annual=True)              # annual debt-to-equity
 
-# list available ratios (13 ratios: profitability, stability, growth, efficiency, cashflow, valuation)
-dartlab.scanRatioList()
+# list available ratios
+dartlab.scan("ratio")
 ```
 
-Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance. Reads 2,700+ parquet files in parallel via ThreadPool, typically completes in ~3 seconds.
+Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance.
 
 > **Requires pre-downloaded data.** Market-wide functions (`scanAccount`, `screen`, `digest`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. Download all data first:
 > ```python
@@ -618,30 +628,18 @@ dartlab.network().show()
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
-11-axis cross-market analysis via the unified `dartlab.scan()` interface or individual convenience functions.
+11-axis cross-market analysis. Everything goes through `dartlab.scan()` — one function to remember.
 
 ```python
-# unified scan interface — 11 axes
+dartlab.scan()                           # guide: all axes + usage
 dartlab.scan("governance")               # full market governance
 dartlab.scan("governance", "005930")     # single company filter
+dartlab.scan("ratio")                    # list available ratios
 dartlab.scan("ratio", "roe")             # market-wide ROE
-dartlab.scan.topics()                    # list available axes
-
-# convenience shortcuts
-dartlab.governance()     # governance structure
-dartlab.workforce()      # headcount & compensation
-dartlab.capital()        # dividends & buybacks
-dartlab.debt()           # debt maturity & risk
-
-# new axes (v0.7.12)
+dartlab.scan("account", "매출액")        # market-wide revenue
 dartlab.scan("cashflow")                 # OCF/ICF/FCF + 8-pattern classification
 dartlab.scan("audit")                    # audit opinion, auditor changes, risk flags
 dartlab.scan("insider")                  # largest shareholder changes, treasury stock
-
-# screening & benchmarking
-dartlab.screen()         # multi-factor screening
-dartlab.benchmark()      # peer comparison
-dartlab.signal()         # change detection signals
 ```
 
 ### Market Data Collection (beta)

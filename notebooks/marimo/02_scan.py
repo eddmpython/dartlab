@@ -37,7 +37,7 @@ def _(dartlab):
 @app.cell
 def _(dartlab):
     # available pre-computed ratio scans
-    dartlab.scanRatioList()
+    dartlab.scan("ratio")
     return
 
 
