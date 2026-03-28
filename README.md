@@ -336,7 +336,7 @@ dartlab.scanAccount("total_assets", market="edgar")   # US EDGAR
 dartlab.scanRatio("roe")                              # quarterly ROE for all firms
 dartlab.scanRatio("debtRatio", annual=True)           # annual debt-to-equity
 
-# list available ratios (13 ratios: profitability, stability, growth, efficiency, cashflow)
+# list available ratios (13 ratios: profitability, stability, growth, efficiency, cashflow, valuation)
 dartlab.scanRatioList()
 ```
 
@@ -374,7 +374,7 @@ Every review is built from reusable blocks. Get the full block dictionary and as
 ```python
 from dartlab.review import blocks, Review
 
-b = blocks(c)          # dict of 16 pre-built blocks
+b = blocks(c)          # dict of 60+ pre-built blocks
 list(b.keys())         # → ["profile", "segmentComposition", "growth", ...]
 
 # pick what you need
@@ -550,16 +550,25 @@ dartlab.network().show()
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
-```python
-c = dartlab.Company("005930")
+11-axis cross-market analysis via the unified `dartlab.scan()` interface or individual convenience functions.
 
-# one company → market-wide
-c.governance()           # single company
-c.governance("all")      # full market DataFrame
-dartlab.governance()     # module-level scan
-dartlab.workforce()
-dartlab.capital()
-dartlab.debt()
+```python
+# unified scan interface — 11 axes
+dartlab.scan("governance")               # full market governance
+dartlab.scan("governance", "005930")     # single company filter
+dartlab.scan("ratio", "roe")             # market-wide ROE
+dartlab.scan.topics()                    # list available axes
+
+# convenience shortcuts
+dartlab.governance()     # governance structure
+dartlab.workforce()      # headcount & compensation
+dartlab.capital()        # dividends & buybacks
+dartlab.debt()           # debt maturity & risk
+
+# new axes (v0.7.12)
+dartlab.scan("cashflow")                 # OCF/ICF/FCF + 8-pattern classification
+dartlab.scan("audit")                    # audit opinion, auditor changes, risk flags
+dartlab.scan("insider")                  # largest shareholder changes, treasury stock
 
 # screening & benchmarking
 dartlab.screen()         # multi-factor screening

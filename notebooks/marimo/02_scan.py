@@ -4,7 +4,7 @@
 # ///
 """DartLab -- Scan.
 
-search, listing, scanAccount, scanRatio across 2,700+ companies.
+search, listing, scanAccount, scanRatio, and 11-axis market scan across 2,700+ companies.
 """
 
 import marimo
@@ -52,6 +52,34 @@ def _(dartlab):
 def _(dartlab):
     # scan a raw account across every company
     dartlab.scanAccount("매출액")
+    return
+
+
+@app.cell
+def _(dartlab):
+    # unified scan interface -- list available axes
+    dartlab.scan.topics()
+    return
+
+
+@app.cell
+def _(dartlab):
+    # cashflow pattern classification (OCF/ICF/FCF + 8 patterns)
+    dartlab.scan("cashflow")
+    return
+
+
+@app.cell
+def _(dartlab):
+    # audit risk flags (opinion, auditor changes, risk score)
+    dartlab.scan("audit")
+    return
+
+
+@app.cell
+def _(dartlab):
+    # insider ownership changes (largest shareholder, treasury stock)
+    dartlab.scan("insider")
     return
 
 

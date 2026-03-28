@@ -336,7 +336,7 @@ dartlab.scanAccount("total_assets", market="edgar")   # 미국 EDGAR
 dartlab.scanRatio("roe")                              # 분기 ROE 전수 스캔
 dartlab.scanRatio("debtRatio", annual=True)           # 연간 부채비율
 
-# 사용 가능한 비율 목록 (13개: 수익성, 안정성, 성장성, 효율성, 현금흐름)
+# 사용 가능한 비율 목록 (13개: 수익성, 안정성, 성장성, 효율성, 현금흐름, 밸류에이션)
 dartlab.scanRatioList()
 ```
 
@@ -374,7 +374,7 @@ c.review()             # 전체 템플릿
 ```python
 from dartlab.review import blocks, Review
 
-b = blocks(c)          # 16개 블록 사전
+b = blocks(c)          # 60+개 블록 사전
 list(b.keys())         # → ["profile", "segmentComposition", "growth", ...]
 
 # 필요한 것만 골라 조립
@@ -550,16 +550,25 @@ dartlab.network().show()
 
 > **Beta** — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
-```python
-c = dartlab.Company("005930")
+통합 `dartlab.scan()` 인터페이스 또는 개별 편의 함수로 11축 시장 횡단분석.
 
-# 개별 회사 → 시장 전체
-c.governance()           # 개별 회사
-c.governance("all")      # 전체 상장사 DataFrame
-dartlab.governance()     # 모듈 레벨 스캔
-dartlab.workforce()
-dartlab.capital()
-dartlab.debt()
+```python
+# 통합 scan 인터페이스 — 11축
+dartlab.scan("governance")               # 전체 상장사 거버넌스
+dartlab.scan("governance", "005930")     # 삼성전자만 필터
+dartlab.scan("ratio", "roe")             # 전종목 ROE
+dartlab.scan.topics()                    # 가용 축 목록
+
+# 편의 단축 함수
+dartlab.governance()     # 지배구조
+dartlab.workforce()      # 인력/급여
+dartlab.capital()        # 배당/자사주
+dartlab.debt()           # 부채 만기/리스크
+
+# 신규 축 (v0.7.12)
+dartlab.scan("cashflow")                 # OCF/ICF/FCF + 8유형 현금흐름 패턴 분류
+dartlab.scan("audit")                    # 감사의견, 감사인변경, 리스크 플래그
+dartlab.scan("insider")                  # 최대주주 지분변동, 자기주식 현황
 
 # 스크리닝 & 벤치마크
 dartlab.screen()         # 멀티팩터 스크리닝

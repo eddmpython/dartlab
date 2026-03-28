@@ -9,6 +9,27 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12] - 2026-03-28
+
+### Added
+
+- **scan 3축 신규**: `cashflow` (OCF/ICF/FCF + 8유형 현금흐름 패턴 분류), `audit` (감사의견, 감사인변경, 종합 리스크 플래그), `insider` (최대주주 지분변동, 자기주식 현황, 경영권 안정성). 총 11축 시장 횡단분석
+- **통합 scan 인터페이스**: `dartlab.scan("cashflow")`, `dartlab.scan.topics()` — 11축을 하나의 callable class로 통합. 한글 alias 지원
+- **review narrative 자동생성**: 순환 서사 감지 + 섹션 간 스레드 연결
+- **review 블록 60+개**: 이전 16개에서 확장 (수익성/성장성/안정성/효율성/이익품질/비용구조/자본배분/투자효율/재무정합성)
+- **TUI 개선**: 커맨드 팔레트, 웰컴 스크린, 채팅 영역 고도화
+- **AI 분석 품질 향상 로드맵**: `TODO_AI_ANALYSIS.md`
+
+### Changed
+
+- **scan debt risk 고도화**: 위험등급 판정 세분화, 만기 집중도 분석 강화
+- **scan workforce growth 강화**: 성장률 계산 고도화
+- **README 갱신**: Market Scan 섹션에 통합 scan 인터페이스 + 신규 3축 반영
+
+### Fixed
+
+- **CircuitBreaker flaky 테스트**: 타이밍 여유 확보 (Windows 간헐 실패 해결)
+
 ## [0.7.11] - 2026-03-28
 
 ### Added

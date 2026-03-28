@@ -5,6 +5,28 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12] - 2026-03-28
+
+### Added
+
+- **scan 3축 신규**: `cashflow` (OCF/ICF/FCF + 8유형 현금흐름 패턴 분류), `audit` (감사의견, 감사인변경, 종합 리스크 플래그), `insider` (최대주주 지분변동, 자기주식 현황, 경영권 안정성). 총 11축 시장 횡단분석
+- **통합 scan 인터페이스**: `dartlab.scan("cashflow")`, `dartlab.scan.topics()` — 11축을 하나의 callable class로 통합. 한글 alias 지원 (현금흐름, 감사, 내부자 등)
+- **review narrative 자동생성**: `review/narrative.py` — 순환 서사 감지 + 섹션 간 스레드 연결. buildReview에 자동 주입
+- **review 렌더러/포맷 확장**: renderer 고도화 + formats 확장 + registry 블록 60+개 (이전 16개)
+- **TUI 개선**: 커맨드 팔레트, 웰컴 스크린, 채팅 영역 고도화
+- **AI 분석 품질 향상 로드맵**: `TODO_AI_ANALYSIS.md` — 7 Part 19개 TODO, P0~P1 우선순위
+
+### Changed
+
+- **scan debt risk 고도화**: 위험등급 판정 로직 세분화, 만기 집중도 분석 강화
+- **scan workforce growth 강화**: 성장률 계산 고도화, 인력 구조 분석 확장
+- **README 갱신**: Market Scan 섹션에 통합 scan 인터페이스 + 신규 3축 반영. review 블록 60+개로 정정. ratio 카테고리 valuation 추가
+- **노트북 갱신**: Colab/Marimo scan 노트북에 통합 scan 인터페이스 예제 추가, showcase insight 10영역으로 정정
+
+### Fixed
+
+- **CircuitBreaker flaky 테스트**: `test_half_open_after_timeout` 타이밍 여유 0.06s → 0.1s (Windows 간헐 실패 해결)
+
 ## [0.7.11] - 2026-03-28
 
 ### Added
@@ -32,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **review 패키지**: 구조화된 기업 분석 보고서 시스템
   - `c.review("수익구조")` / `c.review("자금조달")` — 템플릿 기반 분석 보고서
-  - `blocks(company)` — 16개 분석 블록 사전 (수익구조 8 + 자금조달 8)
+  - `blocks(company)` — 분석 블록 사전 (수익구조 + 자금조달 + 자산 + 현금흐름)
   - `Review([...])` — 블록 자유 조립, SelectResult/DataFrame 혼합 지원
   - `c.reviewer()` — LLM 종합의견 레이어 (guide 파라미터로 분석 관점 지정)
   - 4개 렌더링 형식: rich (터미널), html, markdown, json
