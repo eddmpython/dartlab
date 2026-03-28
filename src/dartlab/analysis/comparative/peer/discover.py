@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import re
-from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -108,13 +107,28 @@ def discover(
     from dartlab.gather.listing import getKindList
 
     kindDf = getKindList()
+
+    # 대상 종목의 업종 확인 → 같은 업종 + 인접 업종만 필터 (OOM 방지)
+    targetRow = kindDf.filter(pl.col("종목코드") == stockCode)
+    targetIndustry = ""
+    if targetRow.height > 0:
+        targetIndustry = str(targetRow["업종"][0] or "")
+
     kindMap: dict[str, tuple[str, str]] = {}
     for row in kindDf.iter_rows(named=True):
         code = row["종목코드"]
         name = row["회사명"]
         industry = row["업종"]
-        if not _isExcluded(name, industry):
+        if _isExcluded(name, industry):
+            continue
+        # 대상 종목 자신은 항상 포함
+        if code == stockCode:
             kindMap[code] = (name, industry)
+            continue
+        # 같은 업종만 로드 (2,700개 → ~50-200개로 축소)
+        if targetIndustry and industry != targetIndustry:
+            continue
+        kindMap[code] = (name, industry)
 
     if stockCode not in kindMap:
         targetName = stockCode
@@ -132,15 +146,18 @@ def discover(
     if "bizOverview" not in targetTexts:
         return PeerResult(stockCode=stockCode, name=targetName)
 
-    # 모든 종목 docs 로드 — 경량 배치
-    _log.info("peer discovery: %d 종목 텍스트 수집", len(kindMap))
+    # 같은 업종 docs 로드 (업종 필터로 대상 축소 완료)
+    _log.info("peer discovery: %d 종목 텍스트 수집 (업종: %s)", len(kindMap), targetIndustry or "전체")
     allTexts: dict[str, dict[str, str]] = {stockCode: targetTexts}
-    dataDir = Path(loadData.__module__).parent  # fallback
 
-    # loadData를 사용한 배치 로드
+    _MAX_PEER_CANDIDATES = 300  # OOM 방지 상한
+    loaded = 0
     for code in kindMap:
         if code == stockCode:
             continue
+        if loaded >= _MAX_PEER_CANDIDATES:
+            _log.warning("peer discovery: %d개 상한 도달, 나머지 생략", _MAX_PEER_CANDIDATES)
+            break
         try:
             df = loadData(code, category="docs", columns=_DOCS_COLS)
         except (FileNotFoundError, OSError):
@@ -148,11 +165,13 @@ def discover(
         if df is None or df.is_empty():
             continue
         texts = _extractTopicTexts(df)
+        del df  # 즉시 해제
         if "bizOverview" in texts:
             allTexts[code] = texts
+        loaded += 1
 
     codes = sorted(allTexts.keys())
-    if len(codes) < 10:
+    if len(codes) < 3:
         return PeerResult(stockCode=stockCode, name=targetName)
 
     # topic별 TF-IDF → 가중 결합
