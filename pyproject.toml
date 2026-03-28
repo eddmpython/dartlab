@@ -183,6 +183,7 @@ source = ["dartlab"]
 omit = [
     "src/dartlab/ui/*",
     "src/dartlab/engines/ai/providers/*",
+    "src/dartlab/review/*",
 ]
 
 [tool.coverage.report]
