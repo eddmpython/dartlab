@@ -184,8 +184,16 @@ def registerAnalyzeTool(company: Any, registerTool) -> None:
                 "action": {
                     "type": "string",
                     "enum": [
-                        "insight", "sector", "rank", "esg", "valuation",
-                        "changes", "audit", "peer", "research", "distress",
+                        "insight",
+                        "sector",
+                        "rank",
+                        "esg",
+                        "valuation",
+                        "changes",
+                        "audit",
+                        "peer",
+                        "research",
+                        "distress",
                     ],
                     "description": "insight=등급, sector=섹터, rank=순위, esg=ESG, valuation=밸류에이션, changes=변화, audit=감사, peer=경쟁사발견, research=종합리서치, distress=부도예측",
                 },

@@ -223,7 +223,11 @@ def registerFinanceTool(company: Any, registerTool) -> None:
         dl_s = getattr(rs, "dupontLeverage", None)
         if not roe_s or not dm_s or not dt_s or not dl_s:
             return "[데이터 없음] DuPont 분해 시계열이 부족합니다."
-        lines = ["## DuPont 분해 시계열", "| 기간 | ROE | 순이익률 | 자산회전율 | 레버리지 |", "| --- | --- | --- | --- | --- |"]
+        lines = [
+            "## DuPont 분해 시계열",
+            "| 기간 | ROE | 순이익률 | 자산회전율 | 레버리지 |",
+            "| --- | --- | --- | --- | --- |",
+        ]
         n = min(len(roe_s), len(dm_s), len(dt_s), len(dl_s))
         for i in range(n):
             period = periods[i] if periods and i < len(periods) else f"T{i}"
@@ -304,8 +308,16 @@ def registerFinanceTool(company: Any, registerTool) -> None:
                 "action": {
                     "type": "string",
                     "enum": [
-                        "data", "modules", "ratios", "growth", "yoy", "anomalies",
-                        "report", "search", "quality", "decompose",
+                        "data",
+                        "modules",
+                        "ratios",
+                        "growth",
+                        "yoy",
+                        "anomalies",
+                        "report",
+                        "search",
+                        "quality",
+                        "decompose",
                     ],
                     "description": "data=데이터, modules=목록, ratios=비율, growth=성장률, yoy=전년대비, anomalies=이상치, report=보고서, search=검색, quality=이익의질, decompose=DuPont분해",
                 },
