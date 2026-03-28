@@ -35,7 +35,6 @@ from dartlab.ai.context.formatting import (
     _filter_key_accounts,
     _format_usd,
     _format_won,
-    _get_sector,  # noqa: F401 — re-export for runtime/core.py
     df_to_markdown,
 )
 from dartlab.ai.metadata import MODULE_META
