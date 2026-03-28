@@ -107,7 +107,7 @@ channel-ngrok = [
 ]
 channel-full = [
     "dartlab[channel,channel-ngrok]",
-    "python-telegram-bot>=21.0,<22",
+    "python-telegram-bot>=21.0,<23",
     "slack-bolt>=1.18,<2",
     "discord.py>=2.4,<3",
 ]
