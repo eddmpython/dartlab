@@ -78,6 +78,11 @@ _SIMPLE: dict[str, str] = {
     # edgar universe
     "edgar:universe_update": "SEC listed universe 갱신 중...",
     "edgar:universe_save": "저장 완료: {path}",
+    # silent failure 안내 — property/메서드가 None 반환할 때
+    "hint:no_docs": "{stockCode} docs 데이터 없음 → {prop} 사용 불가. dartlab.Company('{stockCode}')로 자동 다운로드 또는 dartlab.collect('{stockCode}')",
+    "hint:no_finance": "{stockCode} finance 데이터 없음 → {prop} 사용 불가. dartlab.downloadAll('finance') 또는 dartlab.collect('{stockCode}')",
+    "hint:no_report": "{stockCode} report 데이터 없음 → {prop} 사용 불가. dartlab.downloadAll('report')",
+    "hint:no_ai": "AI provider 미설정 → {fn} 사용 불가. dartlab.setup()으로 설정하세요.",
 }
 
 
@@ -282,3 +287,51 @@ def progress(text: str) -> None:
     """verbose-aware 한 줄 진행 메시지. ``config.verbose=False``이면 무시."""
     if _ctx.verbose:
         print(f"{_PREFIX} {text}")
+
+
+# ── suggest() — CAPABILITIES 기반 함수 안내 ──────────────────────
+
+
+def suggest(funcName: str) -> str | None:
+    """함수/메서드의 Capabilities를 안내 문자열로 반환.
+
+    _generatedCapabilities.py의 CAPABILITIES dict를 소비하여,
+    "이 함수로 뭘 할 수 있는지 + 뭐가 필요한지"를 안내한다.
+
+    Args:
+        funcName: "valuation", "Company.BS", "scan.governance" 등.
+
+    Returns:
+        안내 문자열 또는 매칭 없으면 None.
+    """
+    try:
+        from dartlab.core._generatedCapabilities import CAPABILITIES
+    except ImportError:
+        return None
+
+    entry = CAPABILITIES.get(funcName)
+    if entry is None:
+        entry = CAPABILITIES.get(f"Company.{funcName}")
+    if entry is None:
+        for prefix in ("scan.", "gather."):
+            entry = CAPABILITIES.get(f"{prefix}{funcName}")
+            if entry:
+                break
+    if entry is None:
+        return None
+
+    lines = [f"[{funcName}] {entry.get('summary', '')}"]
+
+    capText = entry.get("capabilities")
+    if capText:
+        lines.append("")
+        for item in capText.split("\n"):
+            item = item.strip()
+            if item:
+                lines.append(f"  - {item}")
+
+    reqText = entry.get("requires")
+    if reqText:
+        lines.append(f"\n  필요: {reqText}")
+
+    return "\n".join(lines)

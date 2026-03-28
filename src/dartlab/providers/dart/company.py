@@ -324,6 +324,8 @@ class Company:
 
             emit("error:no_data", stockCode=self.stockCode, raise_as=ValueError)
 
+        self._hintedKeys: set[str] = set()  # 동일 안내 반복 방지
+
         self._notesAccessor = Notes(self) if self._hasDocs else None
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
@@ -337,6 +339,15 @@ class Company:
             return renderCompany(self)
         except ImportError:
             return f"Company({self.stockCode}, {self.corpName})"
+
+    def _hintOnce(self, key: str, prop: str, category: str = "docs") -> None:
+        """동일 안내를 세션 내 1회만 출력."""
+        if key in self._hintedKeys:
+            return
+        self._hintedKeys.add(key)
+        from dartlab.core.guidance import emit
+
+        emit(f"hint:no_{category}", stockCode=self.stockCode, prop=prop)
 
     @property
     def _analyzer(self):
@@ -409,17 +420,45 @@ class Company:
 
     @staticmethod
     def listing(*, forceRefresh: bool = False) -> pl.DataFrame:
-        """KRX 전체 상장법인 목록 (KIND 기준)."""
+        """KRX 전체 상장법인 목록 (KIND 기준).
+
+        Capabilities:
+            - KOSPI + KOSDAQ 전체 상장법인
+            - 종목코드, 종목명, 시장구분, 업종
+
+        Args:
+            forceRefresh: True면 캐시 무시, KIND에서 재다운로드.
+
+        Returns:
+            pl.DataFrame — code, name, market, sector 등.
+
+        Requires:
+            데이터: listing (자동 다운로드)
+        """
         return getKindList(forceRefresh=forceRefresh)
 
     @staticmethod
     def search(keyword: str) -> pl.DataFrame:
-        """회사명 부분 검색 (KIND 목록 기준)."""
+        """회사명 부분 검색 (KIND 목록 기준).
+
+        Args:
+            keyword: 검색어 (부분 일치).
+
+        Returns:
+            pl.DataFrame — 매칭 종목 목록.
+        """
         return searchName(keyword)
 
     @staticmethod
     def resolve(codeOrName: str) -> str | None:
-        """종목코드 또는 회사명 → 종목코드 변환."""
+        """종목코드 또는 회사명 → 종목코드 변환.
+
+        Args:
+            codeOrName: 종목코드 ("005930") 또는 종목명 ("삼성전자").
+
+        Returns:
+            str | None — 6자리 종목코드. 못 찾으면 None.
+        """
         normalized = codeOrName.strip()
         if re.match(r"^[0-9A-Za-z]{6}$", normalized):
             return normalized.upper()
@@ -427,12 +466,27 @@ class Company:
 
     @staticmethod
     def codeName(stockCode: str) -> str | None:
-        """종목코드 → 회사명 변환."""
+        """종목코드 → 회사명 변환.
+
+        Args:
+            stockCode: 6자리 종목코드.
+
+        Returns:
+            str | None — 회사명. 못 찾으면 None.
+        """
         return codeToName(stockCode)
 
     @staticmethod
     def status() -> pl.DataFrame:
-        """로컬에 보유한 전체 종목 인덱스."""
+        """로컬에 보유한 전체 종목 인덱스.
+
+        Capabilities:
+            - 로컬 데이터 현황 (종목별 docs/finance/report 보유 여부)
+            - 최종 업데이트 일시
+
+        Returns:
+            pl.DataFrame — 종목코드, 회사명, docs/finance/report 유무, 최종일시.
+        """
         return buildIndex()
 
     def _filings(self) -> pl.DataFrame:
@@ -466,11 +520,37 @@ class Company:
         return docs
 
     def filings(self) -> pl.DataFrame | None:
-        """공시 문서 목록 + DART 뷰어 링크."""
+        """공시 문서 목록 + DART 뷰어 링크.
+
+        Capabilities:
+            - 로컬에 보유한 공시 문서 목록
+            - 기간별, 문서유형별 정리
+            - DART 뷰어 링크 포함
+
+        Returns:
+            pl.DataFrame | None — year, rceptDate, rceptNo, reportNm, viewerUrl 등.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+        """
         return self._filings()
 
     def update(self, *, categories: list[str] | None = None) -> dict[str, int]:
-        """누락된 최신 공시를 증분 수집."""
+        """누락된 최신 공시를 증분 수집.
+
+        Capabilities:
+            - DART API로 최신 공시 확인 후 누락분만 수집
+            - 카테고리별 선택 수집
+
+        Args:
+            categories: ["finance", "docs", "report"]. None이면 전체.
+
+        Returns:
+            dict — {카테고리: 수집 건수}.
+
+        Requires:
+            API 키: DART_API_KEY
+        """
         from dartlab.providers.dart.openapi.freshness import collectMissing
 
         return collectMissing(self.stockCode, categories=categories)
@@ -497,28 +577,34 @@ class Company:
         keyword: str | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """모든 종류 공시 목록 조회 (OpenDART API).
+        """OpenDART 전체 공시 목록 조회.
 
-        Parameters
-        ----------
-        start, end : str | None
-            조회 기간 (YYYYMMDD 또는 YYYY-MM-DD). 둘 다 None이면 최근 ``days``일.
-        days : int
-            start/end 없을 때 최근 일수 (기본 365).
-        type : str | None
-            공시유형 필터 (A=정기, B=주요사항, C=발행, D=지분, E=기타, F=외부감사 등).
-            None이면 전체.
-        keyword : str | None
-            제목/회사명 키워드 필터.
-        finalOnly : bool
-            True면 최종보고서만 (정정 이전 제외).
+        Capabilities:
+            - 전체 공시유형 조회 (정기, 주요사항, 발행, 지분, 외부감사 등)
+            - 기간, 유형, 키워드 필터링
+            - 최종보고서만 필터 (정정 이전 제외)
 
-        Examples
-        --------
-        >>> c.disclosure()                  # 최근 1년 전체 공시
-        >>> c.disclosure(days=30)           # 최근 30일
-        >>> c.disclosure(type="A")          # 정기공시만
-        >>> c.disclosure(keyword="사업보고서")
+        Args:
+            start: 조회 시작일 (YYYYMMDD 또는 YYYY-MM-DD). None이면 최근 days일.
+            end: 조회 종료일. None이면 오늘.
+            days: start/end 없을 때 최근 일수. 기본 365.
+            type: 공시유형 필터 (A=정기, B=주요사항, C=발행, D=지분, E=기타, F=외부감사). None이면 전체.
+            keyword: 제목/회사명 키워드 필터.
+            finalOnly: True면 최종보고서만 (정정 이전 제외).
+
+        Returns:
+            pl.DataFrame -- docId, filedAt, title, formType 등 공시 목록.
+
+        Requires:
+            API 키: DART_API_KEY
+
+        Example::
+
+            c = Company("005930")
+            c.disclosure()                  # 최근 1년 전체 공시
+            c.disclosure(days=30)           # 최근 30일
+            c.disclosure(type="A")          # 정기공시만
+            c.disclosure(keyword="사업보고서")
         """
         from dartlab.providers.dart.openapi.dart import Dart
 
@@ -542,7 +628,35 @@ class Company:
         forms: list[str] | tuple[str, ...] | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """OpenDART 기준 실시간 공시 목록."""
+        """OpenDART 기준 실시간 공시 목록 조회.
+
+        Capabilities:
+            - OpenDART API 실시간 공시 조회
+            - 기간, 건수, 키워드 필터링
+            - 정규화된 컬럼 (docId, filedAt, title, formType 등)
+
+        Args:
+            start: 조회 시작일 (YYYYMMDD 또는 YYYY-MM-DD). None이면 최근 days일.
+            end: 조회 종료일. None이면 오늘.
+            days: start/end 없을 때 최근 일수. None이면 기본값 적용.
+            limit: 최대 반환 건수. 기본 20.
+            keyword: 제목/회사명 키워드 필터.
+            forms: 미사용 (DART는 forms 개념 없음).
+            finalOnly: True면 최종보고서만 (정정 이전 제외).
+
+        Returns:
+            pl.DataFrame -- docId, filedAt, title, formType, docUrl, viewerUrl 등 정규화된 공시 목록.
+
+        Requires:
+            API 키: DART_API_KEY
+
+        Example::
+
+            c = Company("005930")
+            c.liveFilings()                 # 최근 공시 20건
+            c.liveFilings(days=7)           # 최근 7일
+            c.liveFilings(keyword="배당")   # 키워드 필터
+        """
         del forms  # DART는 forms 개념이 없다.
 
         startDate, endDate = resolveDateWindow(start, end, days=days)
@@ -629,16 +743,29 @@ class Company:
         maxChars: int | None = None,
         sections: bool = False,
     ) -> dict[str, Any]:
-        """접수번호 또는 live filings row로 원문을 읽는다.
+        """접수번호 또는 liveFilings row로 공시 원문을 읽는다.
 
-        Parameters
-        ----------
-        filing : str | dict | row
-            접수번호(str) 또는 disclosure()/liveFilings() row.
-        maxChars : int | None
-            텍스트 최대 길이 (sections=False일 때만).
-        sections : bool
-            True면 ZIP 기반 구조화된 섹션 목록 반환.
+        Capabilities:
+            - 접수번호(str) 직접 지정 또는 DataFrame row 자동 파싱
+            - 전문 텍스트 또는 ZIP 기반 구조화 섹션 반환
+            - 텍스트 길이 제한 (truncation) 지원
+
+        Args:
+            filing: 접수번호(str) 또는 disclosure()/liveFilings() row.
+            maxChars: 텍스트 최대 길이 (sections=False일 때만 적용).
+            sections: True면 ZIP 기반 구조화된 섹션 목록 반환.
+
+        Returns:
+            dict -- rceptNo, viewerUrl, text/sections 등 원문 정보.
+
+        Requires:
+            API 키: DART_API_KEY
+
+        Example::
+
+            c = Company("005930")
+            result = c.readFiling("20240315000123")
+            result = c.readFiling("20240315000123", sections=True)
         """
         record = filingRecord(filing) or {}
 
@@ -701,8 +828,26 @@ class Company:
 
     @property
     def rawDocs(self) -> pl.DataFrame | None:
-        """공시 문서 원본 parquet 전체 (가공 전)."""
+        """공시 문서 원본 parquet 전체 (가공 전).
+
+        Capabilities:
+            - HuggingFace docs 카테고리 원본 데이터 직접 접근
+            - 가공/정규화 이전 상태 그대로 반환
+
+        Returns:
+            pl.DataFrame | None -- 원본 docs parquet. 데이터 없으면 None.
+
+        Requires:
+            데이터: HuggingFace docs parquet (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.rawDocs              # 삼성전자 공시 문서 원본
+            c.rawDocs.columns      # 컬럼 목록 확인
+        """
         if not self._hasDocs:
+            self._hintOnce("rawDocs", "rawDocs", "docs")
             return None
         cacheKey = "_rawDocs"
         if cacheKey in self._cache:
@@ -713,8 +858,26 @@ class Company:
 
     @property
     def rawFinance(self) -> pl.DataFrame | None:
-        """재무제표 원본 parquet 전체 (가공 전)."""
+        """재무제표 원본 parquet 전체 (가공 전).
+
+        Capabilities:
+            - HuggingFace finance 카테고리 원본 데이터 직접 접근
+            - XBRL 정규화 이전 상태 그대로 반환
+
+        Returns:
+            pl.DataFrame | None -- 원본 finance parquet. 데이터 없으면 None.
+
+        Requires:
+            데이터: HuggingFace finance parquet (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.rawFinance           # 삼성전자 재무제표 원본
+            c.rawFinance.columns   # 컬럼 목록 확인
+        """
         if not self._hasFinanceParquet:
+            self._hintOnce("rawFinance", "rawFinance", "finance")
             return None
         cacheKey = "_rawFinance"
         if cacheKey in self._cache:
@@ -725,8 +888,26 @@ class Company:
 
     @property
     def rawReport(self) -> pl.DataFrame | None:
-        """정기보고서 원본 parquet 전체 (가공 전)."""
+        """정기보고서 원본 parquet 전체 (가공 전).
+
+        Capabilities:
+            - HuggingFace report 카테고리 원본 데이터 직접 접근
+            - 정기보고서 API 데이터 가공 이전 상태 반환
+
+        Returns:
+            pl.DataFrame | None -- 원본 report parquet. 데이터 없으면 None.
+
+        Requires:
+            데이터: HuggingFace report parquet (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.rawReport            # 삼성전자 정기보고서 원본
+            c.rawReport.columns    # 컬럼 목록 확인
+        """
         if not self._hasReport:
+            self._hintOnce("rawReport", "rawReport", "report")
             return None
         cacheKey = "_rawReport"
         if cacheKey in self._cache:
@@ -737,7 +918,23 @@ class Company:
 
     @property
     def notes(self):
-        """K-IFRS notes accessor (compat)."""
+        """K-IFRS 주석사항 접근자.
+
+        Capabilities:
+            - K-IFRS 재무제표 주석(notes) 데이터 접근
+            - 주석 항목별 조회
+
+        Returns:
+            NotesAccessor -- 주석사항 조회 객체.
+
+        Requires:
+            데이터: HuggingFace finance parquet (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.notes                # 주석사항 접근자
+        """
         return self._notesAccessor
 
     def _docsSectionsFreq(self, freqScope: str, *, includeMixed: bool = True) -> pl.DataFrame | None:
@@ -995,23 +1192,115 @@ class Company:
 
     @property
     def BS(self) -> pl.DataFrame | None:
-        """재무상태표 DataFrame (finance XBRL 우선, docs fallback)."""
-        return self.finance.BS
+        """재무상태표 (Balance Sheet) — 계정명 × 기간 DataFrame.
+
+        Capabilities:
+            - XBRL 정규화 재무상태표 (finance 우선)
+            - docs 서술형 fallback
+            - 최대 10년 분기별 시계열
+
+        AIContext:
+            - ask()/chat()에서 자산/부채/자본 구조 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: finance 또는 docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.BS  # 재무상태표
+        """
+        result = self.finance.BS
+        if result is None:
+            self._hintOnce("BS", "BS", "finance")
+        return result
 
     @property
     def IS(self) -> pl.DataFrame | None:
-        """손익계산서 DataFrame (finance XBRL 우선, docs fallback)."""
-        return self.finance.IS
+        """손익계산서 (Income Statement) — 계정명 × 기간 DataFrame.
+
+        Capabilities:
+            - XBRL 정규화 손익계산서 (finance 우선)
+            - docs 서술형 fallback
+            - 최대 10년 분기별 시계열
+
+        AIContext:
+            - ask()/chat()에서 수익성/매출 구조 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: finance 또는 docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.IS  # 손익계산서
+        """
+        result = self.finance.IS
+        if result is None:
+            self._hintOnce("IS", "IS", "finance")
+        return result
 
     @property
     def CIS(self) -> pl.DataFrame | None:
-        """포괄손익계산서 DataFrame (finance raw CIS 우선, docs fallback)."""
-        return self.finance.CIS
+        """포괄손익계산서 (Comprehensive Income Statement) — 계정명 × 기간 DataFrame.
+
+        Capabilities:
+            - XBRL 정규화 포괄손익계산서 (finance 우선)
+            - docs 서술형 fallback
+            - 기타포괄손익 항목 포함
+
+        AIContext:
+            - ask()/chat()에서 기타포괄손익/총포괄이익 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: finance 또는 docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.CIS  # 포괄손익계산서
+        """
+        result = self.finance.CIS
+        if result is None:
+            self._hintOnce("CIS", "CIS", "finance")
+        return result
 
     @property
     def CF(self) -> pl.DataFrame | None:
-        """현금흐름표 DataFrame (finance XBRL 우선, docs fallback)."""
-        return self.finance.CF
+        """현금흐름표 (Cash Flow Statement) — 계정명 × 기간 DataFrame.
+
+        Capabilities:
+            - XBRL 정규화 현금흐름표 (finance 우선)
+            - docs 서술형 fallback
+            - 영업/투자/재무 활동 분류
+
+        AIContext:
+            - ask()/chat()에서 현금창출력/투자/재무활동 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: finance 또는 docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.CF  # 현금흐름표
+        """
+        result = self.finance.CF
+        if result is None:
+            self._hintOnce("CF", "CF", "finance")
+        return result
 
     @property
     def sections(self) -> pl.DataFrame | None:
@@ -1020,6 +1309,26 @@ class Company:
         docs 수평화 위에 finance/report를 같은 topic 안에 끼워넣는다.
         - docs에 있는 topic (dividend 등) → docs 블록 뒤에 report 행 append
         - docs에 없는 topic (BS, auditContract 등) → 해당 chapter에 독립 삽입
+
+        Capabilities:
+            - topic × period 수평화 통합 DataFrame
+            - docs/finance/report 3-source 병합
+            - show(topic)/trace(topic)/diff() 의 근간 데이터
+
+        AIContext:
+            - 회사 전체 지도 — 모든 분석의 출발점
+            - ask()/chat()에서 topic 탐색 컨텍스트
+
+        Returns:
+            pl.DataFrame — chapter | topic | period | source | ... 또는 None.
+
+        Requires:
+            데이터: docs (필수), finance/report (선택, 자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.sections  # 전체 sections 지도
         """
         cacheKey = "_sections"
         if cacheKey in self._cache:
@@ -1027,6 +1336,7 @@ class Company:
 
         sectionsSource = self.docs.sections
         if sectionsSource is None:
+            self._hintOnce("sections", "sections", "docs")
             self._cache[cacheKey] = None
             return None
 
@@ -1524,14 +1834,32 @@ class Company:
     ) -> pl.DataFrame | None:
         """topic의 데이터를 반환.
 
-        block=None → 블록 목차 DataFrame (block, type, source, preview)
-        block=N → 해당 blockOrder의 실제 데이터 DataFrame
+        Capabilities:
+            - 120+ topic 접근 (재무제표, 사업내용, 지배구조, 임원현황 등)
+            - 기간별 수평화 (topic × period 매트릭스)
+            - 블록 단위 drill-down (목차 → 상세)
+            - docs/finance/report 3개 소스 자동 통합
+            - 세로 뷰 (period 리스트 전달 시)
 
         Args:
-            topic: topic 이름 (BS, IS, dividend, companyOverview 등)
-            block: blockOrder 인덱스. None이면 블록 목차.
-            period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
-            raw: True면 원본 그대로
+            topic: topic 이름 (BS, IS, CF, dividend, companyOverview 등). c.topics로 전체 목록.
+            block: blockOrder 인덱스. None이면 블록 목차 (블록 1개면 바로 데이터).
+            period: 특정 기간 필터 ("2023", "2024Q2"). 리스트면 세로 뷰 (기간 × 항목).
+            raw: True면 원본 그대로 (정제 없이).
+
+        Returns:
+            pl.DataFrame | None — topic 데이터. 블록 목차 또는 실제 데이터.
+
+        Requires:
+            데이터: docs (자동 다운로드). finance topic은 finance 데이터도 필요.
+
+        Example::
+
+            c = dartlab.Company("005930")
+            c.show("BS")                   # 재무상태표
+            c.show("IS", period="2023")    # 2023년 손익계산서
+            c.show("dividend")             # 배당
+            c.show("IS", period=["2022", "2023"])  # 세로 비교
         """
         # alias 해석 (board → boardOfDirectors 등)
         topic = _TOPIC_ALIASES.get(topic, topic)
@@ -1667,12 +1995,11 @@ class Company:
     ):
         """show() 결과에서 행(indList) + 열(colList) 필터.
 
-        사용법::
-
-            c.select("IS", ["매출액", "영업이익"])
-            c.select("IS", ["매출액"]).chart()
-            c.select("BS", ["자본총계"], ["2024", "2023"])
-            c.select("businessOverview")
+        Capabilities:
+            - show() 결과에서 특정 계정/항목만 추출
+            - 기간 필터링 (특정 연도만)
+            - .chart() 체이닝으로 바로 시각화
+            - 한글/영문 계정명 모두 지원
 
         Args:
             topic: IS, BS, CF, CIS, SCE 또는 docs topic.
@@ -1680,7 +2007,16 @@ class Company:
             colList: 열(기간) 필터. 단일 str도 가능.
 
         Returns:
-            SelectResult (DataFrame 위임 + .chart() 체이닝) 또는 None.
+            SelectResult — DataFrame 위임 + .chart() 체이닝. 없으면 None.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+
+        Example::
+
+            c.select("IS", ["매출액", "영업이익"])
+            c.select("IS", ["매출액"]).chart()
+            c.select("BS", ["자본총계"], ["2024", "2023"])
         """
         from dartlab.core.select import SelectResult
         from dartlab.core.show import selectFromShow
@@ -1706,7 +2042,28 @@ class Company:
         )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
-        """topic 데이터의 출처(docs/finance/report)와 선택 근거 추적."""
+        """topic 데이터의 출처(docs/finance/report)와 선택 근거 추적.
+
+        Capabilities:
+            - topic별 데이터 출처 확인 (docs, finance, report)
+            - 출처 선택 이유 (우선순위, fallback 경로)
+            - 각 출처별 데이터 행 수, 기간 수, 커버리지
+
+        Args:
+            topic: topic 이름.
+            period: 특정 기간. None이면 전체.
+
+        Returns:
+            dict — primarySource, fallbackSources, whySelected, availableSources 등.
+
+        Requires:
+            데이터: docs + finance + report (보유한 것만 추적)
+
+        Example::
+
+            c.trace("BS")           # 재무상태표 출처
+            c.trace("dividend")     # 배당 데이터 출처
+        """
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic == "docsStatus" and not self._hasDocs:
             return {
@@ -1775,11 +2132,27 @@ class Company:
     ) -> pl.DataFrame | None:
         """기간간 텍스트 변경 비교.
 
-        사용법::
+        Capabilities:
+            - 전체 topic 변경 요약 (변경량 스코어링)
+            - 특정 topic 기간별 변경 이력
+            - 두 기간 줄 단위 diff (추가/삭제/변경)
 
-            c.diff()                          # 전체 topic 변경 요약
-            c.diff("businessOverview")        # 특정 topic 변경 이력
-            c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
+        Args:
+            topic: topic 이름. None이면 전체 변경 요약.
+            fromPeriod: 비교 시작 기간 ("2023").
+            toPeriod: 비교 끝 기간 ("2024").
+
+        Returns:
+            pl.DataFrame | None — 변경 요약, 히스토리, 또는 줄 단위 diff.
+
+        Requires:
+            데이터: docs (2개 이상 기간 필요)
+
+        Example::
+
+            c.diff()                                    # 전체 변경 요약
+            c.diff("businessOverview")                  # 사업개요 변경 이력
+            c.diff("businessOverview", "2023", "2024")  # 줄 단위 diff
         """
         if topic is not None:
             topic = _TOPIC_ALIASES.get(topic, topic)
@@ -1805,12 +2178,28 @@ class Company:
         keyword: str | None = None,
         keywords: list[str] | None = None,
     ) -> pl.DataFrame | None:
-        """공시 텍스트 키워드 빈도 추이 (topic × period × keyword).
+        """공시 텍스트 키워드 빈도 추이 (topic x period x keyword).
 
-        사용법::
+        Capabilities:
+            - 공시 텍스트에서 키워드 빈도 추이 분석
+            - 54개 내장 키워드 세트 (AI, ESG, 탄소중립 등)
+            - topic별 x 기간별 빈도 매트릭스
+            - 복수 키워드 동시 검색
 
-            c.keywordTrend("AI")              # AI 키워드 topic별 연도 추이
-            c.keywordTrend(keywords=["AI", "ESG"])  # 복수 키워드
+        Args:
+            keyword: 단일 키워드. None이면 내장 키워드 전체.
+            keywords: 복수 키워드 리스트.
+
+        Returns:
+            pl.DataFrame | None — topic x period x keyword 빈도.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+
+        Example::
+
+            c.keywordTrend("AI")
+            c.keywordTrend(keywords=["AI", "ESG"])
             c.keywordTrend()                  # 54개 내장 키워드 전체
         """
         from dartlab.core.docs.diff import keywordFrequency
@@ -1828,9 +2217,23 @@ class Company:
     def news(self, *, days: int = 30) -> pl.DataFrame:
         """최근 뉴스 수집.
 
-        사용법::
+        Capabilities:
+            - Google News RSS 기반 뉴스 수집
+            - 제목, 날짜, 소스, 링크
+            - 기간 조절 가능
 
-            c.news()           # 최근 30일 뉴스
+        Args:
+            days: 최근 N일. 기본 30.
+
+        Returns:
+            pl.DataFrame — title, date, source, link.
+
+        Requires:
+            없음 (공개 RSS)
+
+        Example::
+
+            c.news()           # 최근 30일
             c.news(days=7)     # 최근 7일
         """
         from dartlab.gather import getDefaultGather
@@ -1843,10 +2246,24 @@ class Company:
     ) -> pl.DataFrame | None:
         """공시 변화 감지 — 중요도 스코어링 기반 변화 요약.
 
-        사용법::
+        Capabilities:
+            - 전체 topic 변화 중요도 스코어링
+            - 텍스트 변화량 + 재무 영향 통합 평가
+            - 특정 topic 상세 변화 내역
 
-            c.watch()                    # 전체 topic 중요도 순 요약
-            c.watch("riskManagement")    # 특정 topic 상세
+        Args:
+            topic: topic 이름. None이면 전체 중요도 순 요약.
+
+        Returns:
+            pl.DataFrame | None — topic, score, changeType, details 등.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+
+        Example::
+
+            c.watch()                    # 전체 중요도 순
+            c.watch("riskManagement")    # 특정 topic
         """
         from dartlab.scan.watch.scanner import scan_company
 
@@ -1863,12 +2280,27 @@ class Company:
     ) -> pl.DataFrame | None:
         """공시 발표일 전후 주가 비정상 수익률(CAR) 분석.
 
-        사용법::
+        Capabilities:
+            - 공시 발표일 전후 주가 비정상 수익률 산출
+            - 이벤트 윈도우 커스텀 가능
+            - 공시 유형별 필터링
+            - 통계적 유의성 검정
 
-            c.eventStudy()                       # 전체 공시 → 주가 영향
+        Args:
+            event_type: 공시 유형 필터 ("사업보고서" 등). None이면 전체.
+            window: 이벤트 윈도우 설정.
+
+        Returns:
+            pl.DataFrame | None — 공시별 CAR, t-stat, significance.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+            추가 패키지: pip install dartlab[event]
+
+        Example::
+
+            c.eventStudy()                       # 전체 공시
             c.eventStudy("사업보고서")              # 유형별 필터
-
-        의존성: pip install dartlab[event]
         """
         from dartlab.analysis.comparative.event.study import analyze_events, impacts_to_dataframe
 
@@ -1878,32 +2310,69 @@ class Company:
         return impacts_to_dataframe(result.impacts)
 
     def review(self, section: str | None = None, layout=None, helper: bool | None = None):
-        """분석 검토서 — 데이터만 나열하는 순수 보고서.
+        """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
-        사용법::
+        Capabilities:
+            - 14개 섹션 전체 보고서 (수익구조~재무정합성)
+            - 단일 섹션 지정 가능
+            - 4개 출력 형식 (rich, html, markdown, json)
+            - 섹션간 순환 서사 자동 감지
+            - 레이아웃 커스텀
+
+        AIContext:
+            - reviewer()가 이 결과를 소비하여 AI 해석 생성
+            - ask()에서 재무분석 컨텍스트로 활용
+
+        Args:
+            section: 섹션명 ("수익구조" 등). None이면 전체.
+            layout: ReviewLayout 커스텀. None이면 기본.
+            helper: True면 해석 힌트 텍스트 포함. None이면 자동.
+
+        Returns:
+            Review — 14개 섹션 구조화 보고서.
+
+        Requires:
+            데이터: finance + report (자동 다운로드)
+
+        Example::
 
             c.review()                        # 전체 검토서
-            c.review("수익구조")                # 특정 항목만
-            c.review(helper=False)            # 헬퍼 텍스트 끄기
-
-            from dartlab.review import ReviewLayout
-            ly = ReviewLayout(indentBody=8, gapAfterH2=2)
-            c.review(layout=ly)               # 레이아웃 커스텀
+            c.review("수익구조")                # 특정 섹션
         """
         from dartlab.review.registry import buildReview
 
         return buildReview(self, section=section, layout=layout, helper=helper)
 
     def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None):
-        """AI 분석 보고서 — 데이터 + 섹션별 AI 종합의견.
+        """AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 
-        review()로 데이터 검토서를 만든 뒤, AI가 각 섹션을 해석해
-        섹션 시작에 종합의견을 붙인다.
+        Capabilities:
+            - review() 데이터 위에 AI 섹션별 종합의견 추가
+            - 도메인 특화 가이드로 분석 관점 지정 가능
+            - 각 섹션 시작에 AI 해석 삽입
 
-        사용법::
+        AIContext:
+            - review() 결과(재무비율, 추세, 동종업계 비교)를 LLM에 제공
+            - LLM이 각 섹션을 해석하여 종합의견 생성
+            - guide 파라미터로 분석 관점 커스텀
 
-            c.reviewer()                      # AI 종합의견 포함 전체
-            c.reviewer("수익구조")              # 특정 항목만
+        Args:
+            section: 섹션명. None이면 전체.
+            layout: ReviewLayout 커스텀.
+            helper: True면 해석 힌트 포함.
+            guide: AI에게 전달할 분석 관점 ("반도체 사이클 관점에서 평가해줘").
+
+        Returns:
+            Review — AI 의견이 포함된 보고서.
+
+        Requires:
+            AI: provider 설정 (dartlab.setup() 참조)
+            데이터: finance + report (자동 다운로드)
+
+        Example::
+
+            c.reviewer()
+            c.reviewer("수익구조")
             c.reviewer(guide="반도체 사이클 관점에서 평가해줘")
         """
         from dartlab.ai.reviewer import buildReviewWithAI
@@ -1911,10 +2380,30 @@ class Company:
         return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide)
 
     def analysis(self, axis: str | None = None, **kwargs):
-        """재무제표 분석 — analysis()에 self를 바인딩.
+        """재무제표 완전 분석 — 14축, 단일 종목 심층.
 
-        사용법::
+        Capabilities:
+            - 14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
+            - 축 없이 호출 시 14축 가이드 반환
+            - 개별 축 분석 시 Company 바인딩 (self 자동 전달)
 
+        AIContext:
+            - ask()/chat()에서 분석 결과를 컨텍스트로 주입
+            - review/reviewer가 내부적으로 analysis 결과를 소비
+
+        Args:
+            axis: 분석 축 이름. None이면 14축 가이드 반환.
+            **kwargs: 축별 추가 옵션.
+
+        Returns:
+            pl.DataFrame — 축별 분석 결과. axis=None이면 14축 가이드 DataFrame.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
             c.analysis()              # 14축 가이드
             c.analysis("수익구조")     # 수익구조 분석
         """
@@ -1924,6 +2413,45 @@ class Company:
         if axis is None:
             return _analysis()
         return _analysis(axis, self, **kwargs)
+
+    def gather(self, axis: str | None = None, **kwargs):
+        """외부 시장 데이터 수집 — 4축 (price/flow/macro/news).
+
+        Capabilities:
+            - price: OHLCV 주가 시계열 (KR Naver / US Yahoo)
+            - flow: 외국인/기관 수급 동향 (KR 전용)
+            - macro: ECOS(KR) / FRED(US) 거시지표 시계열
+            - news: Google News RSS 뉴스 수집
+            - 자동 fallback 체인, circuit breaker, TTL 캐시
+
+        AIContext:
+            - ask()/chat()에서 주가/수급/거시 데이터를 컨텍스트로 주입
+            - 기업 분석 시 시장 데이터 보충 자료로 활용
+
+        Args:
+            axis: 축 이름 ("price", "flow", "macro", "news"). None이면 가이드 반환.
+            **kwargs: market, start, end, days 등 축별 옵션.
+
+        Returns:
+            pl.DataFrame — 축별 시계열 데이터. axis=None이면 4축 가이드 DataFrame.
+
+        Requires:
+            price/flow/news: 없음 (공개 API)
+            macro: API 키 -- ECOS_API_KEY (KR) 또는 FRED_API_KEY (US)
+
+        Example::
+
+            c = Company("005930")
+            c.gather()                 # 4축 가이드
+            c.gather("price")          # 주가 시계열
+            c.gather("news")           # 뉴스
+        """
+        from dartlab.gather.entry import GatherEntry
+
+        _gather = GatherEntry()
+        if axis is None:
+            return _gather()
+        return _gather(axis, self.stockCode, **kwargs)
 
     def table(
         self,
@@ -1935,6 +2463,12 @@ class Company:
     ) -> Any:
         """subtopic wide 셀의 markdown table을 구조화 DataFrame으로 파싱.
 
+        Capabilities:
+            - docs 원문의 markdown table을 Polars DataFrame으로 변환
+            - subtopic 지정으로 특정 표만 추출
+            - numeric 모드로 금액 문자열을 float 변환
+            - period 필터로 특정 기간 컬럼만 선택
+
         Args:
             topic: docs topic 이름
             subtopic: 파싱할 subtopic 이름 (None이면 첫 번째 subtopic)
@@ -1942,7 +2476,10 @@ class Company:
             period: 기간 필터 (예: "2024")
 
         Returns:
-            ParsedSubtopicTable 또는 파싱 불가 시 None
+            ParsedSubtopicTable (df, subtopic, columns) 또는 파싱 불가 시 None
+
+        Requires:
+            데이터: docs (자동 다운로드)
 
         Example::
 
@@ -1970,7 +2507,29 @@ class Company:
 
     @property
     def topics(self) -> pl.DataFrame:
-        """topic별 요약 DataFrame (order, chapter, topic, source, blocks, periods, latestPeriod)."""
+        """topic별 요약 DataFrame -- 전체 데이터 지도.
+
+        Capabilities:
+            - docs/finance/report 모든 source의 topic을 하나의 DataFrame으로 통합
+            - chapter 순서대로 정렬, 각 topic의 블록 수/기간 수/최신 기간 표시
+            - 어떤 데이터가 있는지 한눈에 파악
+
+        AIContext:
+            - LLM이 가용 topic 목록을 파악하는 데 사용
+            - 분석 범위 결정 시 참조
+
+        Returns:
+            pl.DataFrame -- 컬럼: order, chapter, topic, source, blocks, periods, latestPeriod
+
+        Requires:
+            데이터: docs/finance/report 중 하나 이상 (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.topics                   # 전체 topic 요약
+            c.topics.filter(pl.col("source") == "finance")  # finance만
+        """
         cacheKey = "_topicsDataFrame"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -2018,7 +2577,24 @@ class Company:
 
     @property
     def sources(self) -> pl.DataFrame:
-        """docs/finance/report 3개 source의 가용 현황 요약."""
+        """docs/finance/report 3개 source의 가용 현황 요약.
+
+        Capabilities:
+            - 3개 데이터 source(docs, finance, report) 존재 여부/규모 한눈에 확인
+            - 각 source의 row/col 수와 shape 문자열 제공
+            - 데이터 로드 전 가용성 사전 점검
+
+        Returns:
+            pl.DataFrame -- 컬럼: source, available, rows, cols, shape
+
+        Requires:
+            없음 (메타데이터만 조회, 데이터 파싱 불필요)
+
+        Example::
+
+            c = Company("005930")
+            c.sources                  # 3행 DataFrame
+        """
         rows = []
         for source, raw in (
             ("docs", self.rawDocs),
@@ -2038,10 +2614,29 @@ class Company:
 
     @property
     def index(self) -> pl.DataFrame:
-        """현재 공개 Company 구조 인덱스 DataFrame.
+        """현재 공개 Company 구조 인덱스 DataFrame -- 전체 데이터 목차.
 
-        sections 메타데이터 + finance/report 존재 확인만으로 구성.
-        개별 파서를 호출하지 않아 빠르다 (lazy).
+        Capabilities:
+            - docs sections + finance + report 전체를 하나의 목차로 통합
+            - 각 항목의 chapter, topic, label, kind, source, periods, shape, preview 제공
+            - sections 메타데이터 + 존재 확인만으로 구성 (파서 미호출, lazy)
+            - viewer/렌더러가 소비하는 메타데이터 원천
+
+        AIContext:
+            - LLM이 Company 전체 구조를 파악하는 핵심 진입점
+            - ask()에서 어떤 데이터를 참조할지 결정하는 기초 정보
+
+        Returns:
+            pl.DataFrame -- 컬럼: chapter, topic, label, kind, source, periods, shape, preview
+
+        Requires:
+            데이터: docs/finance/report 중 하나 이상 (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.index                    # 전체 구조 목차
+            c.index.filter(pl.col("source") == "docs")  # docs 항목만
         """
         cacheKey = "_lazyIndex"
         if cacheKey in self._cache:
@@ -2360,17 +2955,81 @@ class Company:
 
     @property
     def profile(self) -> _ProfileAccessor:
-        """docs spine + finance/report merge layer."""
+        """docs spine + finance/report merge layer -- 통합 프로필 접근자.
+
+        Capabilities:
+            - docs sections를 spine으로, finance/report 데이터를 merge하여 통합 뷰 제공
+            - profile.sections로 source 우선순위(finance > report > docs) 적용된 sections 접근
+            - profile.show(topic)으로 merge된 결과 조회
+
+        AIContext:
+            - c.sections는 내부적으로 profile.sections를 반환
+            - 분석/리뷰에서 통합된 데이터를 소비하는 기본 경로
+
+        Returns:
+            _ProfileAccessor -- sections, show(), topics 메서드 제공
+
+        Requires:
+            데이터: docs (자동 다운로드). finance/report는 있으면 자동 merge.
+
+        Example::
+
+            c = Company("005930")
+            c.profile.sections         # 통합 sections
+            c.profile.show("BS")       # merge된 재무상태표
+        """
         return self._profileAccessor
 
     @property
     def retrievalBlocks(self) -> pl.DataFrame | None:
-        """원문 markdown 보존 retrieval block DataFrame."""
+        """원문 markdown 보존 retrieval block DataFrame.
+
+        Capabilities:
+            - docs 원문을 markdown 형태 그대로 보존한 검색용 블록
+            - 각 블록은 topic/subtopic/period 단위로 분할
+            - RAG, 벡터 검색, 원문 참조에 최적화된 포맷
+
+        AIContext:
+            - ask()/chat()에서 원문 기반 답변 생성 시 소스로 사용
+            - retrieval 기반 컨텍스트 주입의 원천 데이터
+
+        Returns:
+            pl.DataFrame | None -- 컬럼: topic, subtopic, period, content 등. docs 없으면 None.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.retrievalBlocks          # 전체 retrieval 블록
+        """
         return self.docs.retrievalBlocks
 
     @property
     def contextSlices(self) -> pl.DataFrame | None:
-        """LLM 투입용 context slice DataFrame."""
+        """LLM 투입용 context slice DataFrame.
+
+        Capabilities:
+            - retrievalBlocks를 LLM 컨텍스트 윈도우에 맞게 슬라이싱
+            - 토큰 예산 내에서 최대한 많은 관련 정보를 담는 압축 포맷
+            - topic/period 기준 우선순위 정렬
+
+        AIContext:
+            - ask()/chat()의 시스템 프롬프트에 직접 주입되는 데이터
+            - LLM이 소비하는 최종 형태의 컨텍스트
+
+        Returns:
+            pl.DataFrame | None -- 슬라이싱된 context 블록. docs 없으면 None.
+
+        Requires:
+            데이터: docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.contextSlices            # LLM용 context 슬라이스
+        """
         return self.docs.contextSlices
 
     # ── financeEngine (숫자 재무 데이터) ──
@@ -2480,6 +3139,17 @@ class Company:
     def ratios(self) -> pl.DataFrame | None:
         """재무비율 시계열 (분류/항목 × 기간 DataFrame).
 
+        Capabilities:
+            - 수익성/안정성/성장성/효율성/밸류에이션 5대 분류
+            - 분기별 시계열 비율 자동 계산
+            - finance XBRL 기반 정확한 비율
+
+        Returns:
+            pl.DataFrame — 분류 | 항목 | 2025Q3 | 2025Q2 | ... 또는 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
         Example::
 
             c = Company("005930")
@@ -2487,6 +3157,7 @@ class Company:
         """
         rs = self._ratioSeries()
         if rs is None:
+            self._hintOnce("ratios", "ratios", "finance")
             return None
         series, periods = rs
         df = _ratioSeriesToDataFrame(series, periods)
@@ -2502,10 +3173,18 @@ class Company:
     def timeseries(self):
         """분기별 standalone 시계열 (연결 기준).
 
+        Capabilities:
+            - BS/IS/CF 계정별 분기 standalone 시계열
+            - 최대 10년 분기별 데이터
+            - finance XBRL 정규화 기반
+
         Returns:
             (series, periods) 또는 None.
             series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
             periods = ["2016-Q1", "2016-Q2", ..., "2024-Q4"]
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
@@ -2513,14 +3192,25 @@ class Company:
             series, periods = c.timeseries
             series["IS"]["sales"]  # 분기별 매출 시계열
         """
-        return self.finance.timeseries
+        result = self.finance.timeseries
+        if result is None:
+            self._hintOnce("timeseries", "timeseries", "finance")
+        return result
 
     @property
     def annual(self):
         """연도별 시계열 (연결 기준).
 
+        Capabilities:
+            - BS/IS/CF 계정별 연도 시계열
+            - 분기 데이터를 연도 단위로 집계
+            - finance XBRL 정규화 기반
+
         Returns:
             (series, years) 또는 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
@@ -2528,30 +3218,52 @@ class Company:
             series, years = c.annual
             series["IS"]["sales"]  # 연도별 매출 시계열
         """
-        return self.finance.annual
+        result = self.finance.annual
+        if result is None:
+            self._hintOnce("annual", "annual", "finance")
+        return result
 
     @property
     def cumulative(self):
         """분기별 누적 시계열 (연결 기준).
 
+        Capabilities:
+            - IS/CF 계정별 분기 누적(YTD) 시계열
+            - Q1→Q2→Q3→Q4 누적 합산
+            - finance XBRL 정규화 기반
+
         Returns:
             (series, periods) 또는 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
             c = Company("005930")
             series, periods = c.cumulative
         """
-        return self.finance.cumulative
+        result = self.finance.cumulative
+        if result is None:
+            self._hintOnce("cumulative", "cumulative", "finance")
+        return result
 
     @property
     def sceMatrix(self):
         """자본변동표 연도별 매트릭스 (연결 기준).
 
+        Capabilities:
+            - 원인(cause) × 세부(detail) × 연도 3차원 매트릭스
+            - 자본 구성요소별 변동 원인 추적
+            - finance XBRL 정규화 기반
+
         Returns:
             (matrix, years) 또는 None.
             matrix[year][cause][detail] = 금액
             years = ["2016", ..., "2024"]
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
@@ -2559,7 +3271,10 @@ class Company:
             matrix, years = c.sceMatrix
             matrix["2024"]["net_income"]["retained_earnings"]
         """
-        return self.finance.sceMatrix
+        result = self.finance.sceMatrix
+        if result is None:
+            self._hintOnce("sceMatrix", "sceMatrix", "finance")
+        return result
 
     @property
     def sce(self):
@@ -2582,15 +3297,46 @@ class Company:
 
     @property
     def SCE(self):
-        """자본변동표 DataFrame (연결 기준)."""
-        return self.finance.SCE
+        """자본변동표 (Statement of Changes in Equity) — 계정명 × 연도 DataFrame.
+
+        Capabilities:
+            - XBRL 정규화 자본변동표
+            - 연결 기준 자본 구성요소별 변동
+            - 연도별 시계열
+
+        AIContext:
+            - ask()/chat()에서 자본 구조 변동 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024 | 2023 | ... 또는 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.SCE  # 자본변동표
+        """
+        result = self.finance.SCE
+        if result is None:
+            self._hintOnce("SCE", "SCE", "finance")
+        return result
 
     @property
     def ratioSeries(self):
         """재무비율 연도별 시계열 (IS/BS/CF와 동일한 dict 구조).
 
+        Capabilities:
+            - 수익성/안정성/성장성/효율성/밸류에이션 비율
+            - 연도별 dict 구조 (timeseries/annual과 동일 형태)
+            - finance XBRL 기반 정확한 비율
+
         Returns:
             ({"RATIO": {snakeId: [v1, v2, ...]}}, years) 또는 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
@@ -2598,7 +3344,10 @@ class Company:
             series, years = c.ratioSeries
             series["RATIO"]["roe"]  # [8.69, 13.20, 16.55, ...]
         """
-        return self.finance.ratioSeries
+        result = self.finance.ratioSeries
+        if result is None:
+            self._hintOnce("ratioSeries", "ratioSeries", "finance")
+        return result
 
     # ── 섹터 분류 ──
 
@@ -2606,8 +3355,16 @@ class Company:
     def sector(self):
         """WICS 투자 섹터 분류 (KIND 업종 + 키워드 기반).
 
+        Capabilities:
+            - WICS 11대 섹터 + 하위 산업그룹 자동 분류
+            - KIND 업종명 + 주요제품 키워드 기반 매칭
+            - override 테이블 우선 → 키워드 → 업종명 순 fallback
+
         Returns:
             SectorInfo (sector, industryGroup, confidence, source).
+
+        Requires:
+            데이터: KIND 상장사 목록 (자동 로드)
 
         Example::
 
@@ -2633,8 +3390,15 @@ class Company:
     def sectorParams(self):
         """현재 종목의 섹터별 밸류에이션 파라미터.
 
+        Capabilities:
+            - 섹터별 할인율, 성장률, PER 멀티플 제공
+            - 섹터 분류 결과에 연동된 파라미터 자동 선택
+
         Returns:
             SectorParams (discountRate, growthRate, perMultiple, ...).
+
+        Requires:
+            데이터: sector 분류 결과 (자동 연산)
 
         Example::
 
@@ -2659,8 +3423,16 @@ class Company:
 
         스냅샷이 없으면 None 반환. buildSnapshot()으로 사전 빌드 필요.
 
+        Capabilities:
+            - 전체 시장 내 매출/자산 순위
+            - 섹터 내 상대 순위
+            - 매출 성장률 기반 규모 분류 (large/mid/small)
+
         Returns:
             RankInfo 또는 스냅샷 미빌드 시 None.
+
+        Requires:
+            데이터: buildSnapshot() 사전 실행 필요
 
         Example::
 
@@ -2688,8 +3460,16 @@ class Company:
     def insights(self):
         """종합 인사이트 분석 (7영역 등급 + 이상치 + 요약).
 
+        Capabilities:
+            - 7영역 등급 평가 (실적, 수익성, 성장, 안정성, 현금흐름, 효율, 밸류에이션)
+            - 이상치 자동 탐지 (급변, 임계 초과)
+            - 텍스트 요약 + 투자 프로파일 분류
+
         Returns:
             AnalysisResult 또는 finance 데이터 없으면 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
 
         Example::
 
@@ -2700,6 +3480,7 @@ class Company:
             c.insights.profile        # "premium"
         """
         if not self._hasFinance:
+            self._hintOnce("insights", "insights", "finance")
             return None
         cacheKey = "_insights"
         if cacheKey in self._cache:
@@ -2716,13 +3497,56 @@ class Company:
         return result
 
     def audit(self):
-        """감사 Red Flag 분석."""
+        """감사 리스크 종합 분석.
+
+        Capabilities:
+            - 감사의견 추이 (적정/한정/부적정/의견거절)
+            - 감사인 변경 이력 + 사유
+            - 계속기업 불확실성 플래그
+            - 핵심감사사항 (KAM) 추출
+            - 내부회계관리제도 검토의견
+
+        Args:
+            없음 (self 바인딩).
+
+        Returns:
+            dict — opinion, auditorChanges, goingConcern, kam, internalControl.
+
+        Requires:
+            데이터: docs + report (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.audit()
+        """
         from dartlab.analysis.financial.insight.pipeline import analyzeAudit
 
         return analyzeAudit(self)
 
     def forecast(self, *, horizon: int = 3):
-        """매출 앙상블 예측."""
+        """매출 앙상블 예측 (다중 모델 가중 평균).
+
+        Capabilities:
+            - 선형회귀 + CAGR + 이동평균 앙상블
+            - 섹터별 성장률 보정
+            - 신뢰구간 (상한/하한) 제공
+
+        Args:
+            horizon: 예측 기간 (연 단위, 기본 3년).
+
+        Returns:
+            ForecastResult — predicted, upper, lower, models, weights.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.forecast()
+            c.forecast(horizon=5)
+        """
         from dartlab.analysis.forecast.revenueForecast import forecastRevenue
 
         ts = self.finance.timeseries
@@ -2737,7 +3561,29 @@ class Company:
         )
 
     def valuation(self, *, shares: int | None = None):
-        """종합 밸류에이션 (DCF + DDM + 상대가치)."""
+        """종합 밸류에이션 (DCF + DDM + 상대가치).
+
+        Capabilities:
+            - DCF (현금흐름 할인) 모델
+            - DDM (배당 할인) 모델
+            - 상대가치 (PER/PBR/EV-EBITDA) 비교
+            - 모델별 적정가 + 종합 가중 평균
+
+        Args:
+            shares: 발행주식수 (None이면 profile에서 자동 조회).
+
+        Returns:
+            ValuationResult — dcf, ddm, relative, composite.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.valuation()
+            c.valuation(shares=5_969_782_550)
+        """
         from dartlab.analysis.valuation.valuation import fullValuation
 
         ts = self.finance.timeseries
@@ -2749,7 +3595,28 @@ class Company:
         return fullValuation(series, shares=shares, currency="KRW")
 
     def simulation(self, *, scenarios: list[str] | None = None):
-        """경제 시나리오 시뮬레이션."""
+        """경제 시나리오 시뮬레이션 (거시경제 충격 → 재무 영향).
+
+        Capabilities:
+            - 기본 시나리오: 금리인상, 경기침체, 원화약세, 수요급감 등
+            - 시나리오별 매출/영업이익/현금흐름 영향 추정
+            - 섹터 민감도 반영
+
+        Args:
+            scenarios: 시뮬레이션할 시나리오 이름 리스트 (None이면 전체).
+
+        Returns:
+            dict — 시나리오별 영향 추정치. finance 없으면 None.
+
+        Requires:
+            데이터: finance (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.simulation()
+            c.simulation(scenarios=["금리인상", "경기침체"])
+        """
         from dartlab.analysis.forecast.simulation import simulateAllScenarios
 
         ts = self.finance.timeseries
@@ -2763,7 +3630,30 @@ class Company:
         )
 
     def research(self, *, sections: list[str] | None = None, includeMarket: bool = True):
-        """종합 기업분석 리포트."""
+        """종합 기업분석 리포트 (재무 + 시장 + 공시 통합).
+
+        Capabilities:
+            - 재무 분석 (수익성, 성장, 안정성, 현금흐름)
+            - 시장 포지션 + 섹터 비교
+            - 공시 기반 정성 분석 (사업모델, 리스크)
+            - 섹션별 선택적 생성
+
+        Args:
+            sections: 포함할 섹션 리스트 (None이면 전체).
+            includeMarket: 시장 데이터 포함 여부 (기본 True).
+
+        Returns:
+            ResearchReport — 섹션별 분석 결과 통합 객체.
+
+        Requires:
+            데이터: finance + docs (자동 다운로드)
+
+        Example::
+
+            c = Company("005930")
+            c.research()
+            c.research(sections=["financial", "risk"])
+        """
         cacheKey = "_research"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -2775,12 +3665,30 @@ class Company:
 
     @property
     def market(self) -> str:
-        """시장 코드."""
+        """시장 코드 (DART 제공자는 항상 KR).
+
+        Returns:
+            str — "KR".
+
+        Example::
+
+            c = Company("005930")
+            c.market  # "KR"
+        """
         return "KR"
 
     @property
     def currency(self) -> str:
-        """통화 코드."""
+        """통화 코드 (DART 제공자는 항상 KRW).
+
+        Returns:
+            str — "KRW".
+
+        Example::
+
+            c = Company("005930")
+            c.currency  # "KRW"
+        """
         return "KRW"
 
     # ── network (관계 지도) ──────────────────────────────────
@@ -2796,11 +3704,24 @@ class Company:
         return self._cache["_network_data"], self._cache["_network_full"]
 
     def network(self, view: str | None = None, *, hops: int = 1):
-        """관계 네트워크.
+        """관계 네트워크 (지분출자 + 그룹 계열사 지도).
+
+        Capabilities:
+            - 그룹 계열사 목록 (members)
+            - 출자/피출자 연결 + 지분율 (edges)
+            - 순환출자 경로 탐지 (cycles)
+            - ego 서브그래프 (peers)
+            - 인터랙티브 네트워크 시각화 (브라우저)
 
         Args:
-            view: None이면 시각화(NetworkView), "members"/"edges"/"cycles"/"peers"이면 DataFrame
-            hops: peers/시각화 뷰에서 홉 수
+            view: None이면 시각화(NetworkView), "members"/"edges"/"cycles"/"peers"이면 DataFrame.
+            hops: peers/시각화 뷰에서 홉 수.
+
+        Returns:
+            NetworkView (view=None) 또는 DataFrame (view 지정 시). 데이터 없으면 None.
+
+        Requires:
+            데이터: DART 대량보유/임원 공시 (자동 수집)
 
         Example::
 
@@ -2962,10 +3883,21 @@ class Company:
         return self._cache["_governance"]
 
     def governance(self, view: str | None = None) -> pl.DataFrame | None:
-        """지배구조 분석.
+        """지배구조 분석 (이사회, 감사위원, 최대주주).
+
+        Capabilities:
+            - 사외이사 비율 + 감사위원회 구성
+            - 최대주주 지분율 + 특수관계인
+            - 시장 전체 거버넌스 횡단 비교
 
         Args:
-            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약.
+
+        Returns:
+            DataFrame 또는 데이터 없으면 None.
+
+        Requires:
+            데이터: DART 정기보고서 (자동 수집)
 
         Example::
 
@@ -2985,10 +3917,22 @@ class Company:
         return self._cache["_workforce"]
 
     def workforce(self, view: str | None = None) -> pl.DataFrame | None:
-        """인력/급여 분석.
+        """인력/급여 분석 (직원수, 평균급여, 근속연수).
+
+        Capabilities:
+            - 직원수 + 정규직/비정규직 비율
+            - 평균 급여 + 1인당 매출
+            - 평균 근속연수
+            - 시장 전체 인력 횡단 비교
 
         Args:
-            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약.
+
+        Returns:
+            DataFrame 또는 데이터 없으면 None.
+
+        Requires:
+            데이터: DART 정기보고서 (자동 수집)
 
         Example::
 
@@ -3008,10 +3952,22 @@ class Company:
         return self._cache["_capital"]
 
     def capital(self, view: str | None = None) -> pl.DataFrame | None:
-        """주주환원 분석.
+        """주주환원 분석 (배당, 자사주, 총환원율).
+
+        Capabilities:
+            - 배당수익률 + 배당성향 추이
+            - 자사주 매입/소각 이력
+            - 총주주환원율 (배당 + 자사주)
+            - 시장 전체 주주환원 횡단 비교
 
         Args:
-            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약.
+
+        Returns:
+            DataFrame 또는 데이터 없으면 None.
+
+        Requires:
+            데이터: DART 정기보고서 (자동 수집)
 
         Example::
 
@@ -3031,10 +3987,22 @@ class Company:
         return self._cache["_debt"]
 
     def debt(self, view: str | None = None) -> pl.DataFrame | None:
-        """부채 구조 분석.
+        """부채 구조 분석 (차입금, 부채비율, 만기 구조).
+
+        Capabilities:
+            - 총차입금 + 순차입금 규모
+            - 부채비율 + 차입금의존도
+            - 단기/장기 차입금 비율
+            - 시장 전체 부채 구조 횡단 비교
 
         Args:
-            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약
+            view: None → 이 회사 행, "all" → 전체, "market" → 시장별 요약.
+
+        Returns:
+            DataFrame 또는 데이터 없으면 None.
+
+        Requires:
+            데이터: DART 정기보고서 (자동 수집)
 
         Example::
 
@@ -3084,6 +4052,19 @@ class Company:
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
 
+        Capabilities:
+            - 로컬 서버 기반 공시 뷰어 실행
+            - 브라우저에서 sections/index 탐색
+
+        Args:
+            port: 로컬 서버 포트. 기본 8400.
+
+        Returns:
+            None
+
+        Requires:
+            데이터: HuggingFace docs parquet (자동 다운로드)
+
         Example::
 
             c = Company("005930")
@@ -3106,6 +4087,32 @@ class Company:
         **kwargs,
     ) -> str:
         """LLM에게 이 기업에 대해 질문.
+
+        Capabilities:
+            - 엔진 계산 결과를 컨텍스트로 조립하여 LLM에 전달
+            - 질문 분류 기반 분석 패키지 자동 선택 (financial, valuation, risk 등)
+            - 멀티 provider 지원 (openai, ollama, codex 등)
+            - 스트리밍 응답 지원
+
+        AIContext:
+            Tier 1 시스템 주도 분석. 질문 분류 후 엔진이 계산한 결과를
+            컨텍스트로 조립하여 LLM이 해석/설명만 수행.
+
+        Args:
+            question: 질문 텍스트.
+            include: 포함할 분석 패키지 목록. None이면 자동 선택.
+            exclude: 제외할 분석 패키지 목록.
+            provider: LLM provider 이름 (openai, ollama, codex 등). None이면 기본값.
+            model: 모델명. None이면 provider 기본값.
+            stream: True면 스트리밍 제너레이터 반환.
+            reflect: True면 답변 후 자기 평가 수행.
+            **kwargs: provider별 추가 옵션.
+
+        Returns:
+            str -- LLM 응답 텍스트. stream=True면 Generator[str].
+
+        Requires:
+            API 키: LLM provider API 키 (OPENAI_API_KEY 등)
 
         Example::
 
@@ -3143,6 +4150,31 @@ class Company:
         **kwargs,
     ) -> str:
         """에이전트 모드: LLM이 도구를 선택하여 심화 분석.
+
+        Capabilities:
+            - Tier 2 LLM 주도 분석 (tool calling)
+            - LLM이 부족한 정보를 자율적으로 도구 호출하여 보충
+            - 원본 시계열, 공시 텍스트 검색, 복수 기업 비교 등 심화 탐색
+            - 멀티 턴 대화 지원
+
+        AIContext:
+            Tier 2 에이전트 모드. Tier 1 결과를 본 LLM이 부족하다고 판단하면
+            저수준 tool(시계열 조회, 공시 검색 등)을 직접 호출하여 심화 분석.
+
+        Args:
+            question: 질문 텍스트.
+            provider: LLM provider 이름. None이면 기본값.
+            model: 모델명. None이면 provider 기본값.
+            max_turns: 최대 tool calling 턴 수. 기본 5.
+            on_tool_call: tool 호출 시 콜백.
+            on_tool_result: tool 결과 수신 시 콜백.
+            **kwargs: provider별 추가 옵션.
+
+        Returns:
+            str -- LLM 최종 응답 텍스트.
+
+        Requires:
+            API 키: tool calling 지원 LLM provider API 키
 
         Example::
 

@@ -52,11 +52,33 @@ log = logging.getLogger(__name__)
 
 
 class Gather:
-    """통합 멀티소스 수집 엔진.
+    """통합 멀티소스 비동기 병렬 수집 엔진.
 
-    - 개별 조회: price(), consensus(), flow() — fallback 체인
-    - 전체 수집: collect() — 도메인별 asyncio.gather 병렬
-    - 캐시: TTL 기반 데이터 유형별 자동 만료
+    Capabilities:
+        - 개별 조회: price(), flow(), history(), news(), macro() 등 — fallback 체인
+        - 전체 수집: collect() — 도메인별 asyncio.gather 병렬
+        - 캐시: TTL 기반 데이터 유형별 자동 만료 (GatherCache)
+        - circuit breaker: 실패 도메인 자동 격리/복구
+        - 시장 지원: KR (Naver/ECOS), US (Yahoo/FRED/FMP)
+
+    Args:
+        client: GatherHttpClient 인스턴스. None이면 내부 생성.
+
+    Returns:
+        Gather 인스턴스.
+
+    Requires:
+        없음 (API 키는 macro() 호출 시 필요).
+
+    Example::
+
+        from dartlab.gather import Gather, getDefaultGather
+
+        g = getDefaultGather()           # 싱글턴 (권장)
+        g.price("005930")               # 삼성전자 1년 OHLCV
+        g.flow("005930")                # 수급 시계열
+        g.macro()                       # KR 거시지표 전체
+        snap = g.collect("005930")      # 전체 병렬 수집
     """
 
     def __init__(self, client: GatherHttpClient | None = None) -> None:
@@ -75,10 +97,36 @@ class Gather:
         end: str | None = None,
         snapshot: bool = False,
     ) -> "pl.DataFrame | PriceSnapshot | None":
-        """주가 시계열 (기본) 또는 스냅샷.
+        """OHLCV 주가 시계열 조회.
 
-        기본: 최근 1년 OHLCV DataFrame (date, open, high, low, close, volume).
-        snapshot=True: 현재가 스냅샷 (PriceSnapshot).
+        Capabilities:
+            - KR: Naver 금융 (기본 1년)
+            - US: Yahoo Finance (기본 1년)
+            - OHLCV + 거래량 DataFrame
+            - snapshot=True 시 현재가 PriceSnapshot 반환
+            - 자동 fallback 체인 (Naver -> Yahoo -> FMP)
+            - TTL 캐시 (5분)
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+            start: 시작일 (YYYY-MM-DD). None이면 1년 전.
+            end: 종료일. None이면 오늘.
+            snapshot: True면 PriceSnapshot (현재가) 반환.
+
+        Returns:
+            pl.DataFrame — date, open, high, low, close, volume 컬럼.
+            snapshot=True 시 PriceSnapshot | None.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.price("005930")                    # 삼성전자 1년
+            g.price("AAPL", market="US")         # Apple 1년
+            g.price("005930", snapshot=True)     # 현재가 스냅샷
         """
         if snapshot:
             return self._priceSnapshot(stock_code, market=market)
@@ -102,7 +150,30 @@ class Gather:
         return result
 
     def consensus(self, stock_code: str, *, market: str = "KR") -> ConsensusData | None:
-        """컨센서스 — KR: naver→yahoo, US: yahoo."""
+        """애널리스트 컨센서스 (목표가/투자의견) 조회.
+
+        Capabilities:
+            - KR: Naver -> Yahoo fallback
+            - US: Yahoo Finance
+            - 목표가, 투자의견, 애널리스트 수
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            ConsensusData | None — 목표가/투자의견 데이터.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.consensus("005930")              # 삼성전자 컨센서스
+            g.consensus("AAPL", market="US")   # Apple 컨센서스
+        """
         cache_key = f"{stock_code}:{market}"
         cached = self._cache.get_typed(cache_key, "consensus")
         if cached is not None:
@@ -113,7 +184,30 @@ class Gather:
         return result
 
     def flow(self, stock_code: str, *, market: str = "KR") -> "pl.DataFrame | None":
-        """수급 시계열 — KR 전용 (naver). DataFrame (date, foreignNet, institutionNet, individualNet, foreignHoldingRatio)."""
+        """투자자별 수급 시계열 조회 (KR 전용).
+
+        Capabilities:
+            - KR 전용 (Naver 금융)
+            - 외국인/기관/개인 순매수 + 외국인 보유비율
+            - 일별 시계열 DataFrame
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930").
+            market: "KR"만 지원. "US"이면 None 반환.
+
+        Returns:
+            pl.DataFrame | None — date, foreignNet, institutionNet,
+            individualNet, foreignHoldingRatio 컬럼. KR 외 None.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.flow("005930")   # 삼성전자 수급 시계열
+        """
         import polars as pl
 
         if market != "KR":
@@ -150,7 +244,30 @@ class Gather:
         *,
         market: str = "KR",
     ) -> list[RevenueConsensus]:
-        """매출/이익 컨센서스 — KR: 네이버, US: Yahoo quoteSummary."""
+        """매출/이익 컨센서스 (연간 추정치) 조회.
+
+        Capabilities:
+            - KR: 네이버 금융 (연간 매출/영업이익/순이익 추정)
+            - US: Yahoo Finance quoteSummary
+            - 연도별 RevenueConsensus 리스트
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            list[RevenueConsensus] — 연도별 매출/이익 추정치. 실패 시 빈 리스트.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.revenue_consensus("005930")              # 삼성전자
+            g.revenue_consensus("AAPL", market="US")   # Apple
+        """
         cache_key = f"{stock_code}_{market}"
         cached = self._cache.get_typed(cache_key, "revenue_consensus")
         if cached is not None:
@@ -183,7 +300,33 @@ class Gather:
         end: str,
         market: str = "KR",
     ) -> "pl.DataFrame":
-        """히스토리 OHLCV DataFrame — fallback 체인 (naver(KR) → yahoo_direct → fmp → yahoo)."""
+        """OHLCV 히스토리 DataFrame 조회 (기간 지정).
+
+        Capabilities:
+            - fallback 체인: Naver(KR) -> yahoo_direct -> FMP -> Yahoo
+            - date, open, high, low, close, volume 컬럼
+            - 자동 날짜 파싱 (문자열 -> pl.Date)
+            - TTL 캐시 (TTL_HISTORY)
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            start: 시작일 (YYYY-MM-DD). 필수.
+            end: 종료일 (YYYY-MM-DD). 필수.
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            pl.DataFrame — date, open, high, low, close, volume 컬럼.
+            데이터 없으면 빈 DataFrame.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.history("005930", start="2025-01-01", end="2025-12-31")
+            g.history("AAPL", start="2025-06-01", end="2025-12-31", market="US")
+        """
         import polars as pl
 
         cache_key = f"{stock_code}:history:{start}:{end}"
@@ -210,7 +353,34 @@ class Gather:
         return df
 
     def news(self, query: str, *, market: str = "KR", days: int = 30) -> "pl.DataFrame":
-        """뉴스 — Google News RSS, 캐시/circuit breaker 적용."""
+        """뉴스 검색 (Google News RSS).
+
+        Capabilities:
+            - Google News RSS 기반 뉴스 수집
+            - KR/US 시장별 검색
+            - 기간 제한 (기본 30일)
+            - circuit breaker + TTL 캐시
+            - DataFrame: title, link, published, source 컬럼
+
+        Args:
+            query: 검색어 (종목명, 키워드 등).
+            market: "KR" 또는 "US". 기본 "KR".
+            days: 최근 N일 뉴스. 기본 30.
+
+        Returns:
+            pl.DataFrame — title, link, published, source 컬럼.
+            결과 없으면 빈 DataFrame.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.news("삼성전자")                # KR 뉴스 30일
+            g.news("Apple", market="US")     # US 뉴스 30일
+            g.news("반도체", days=7)          # 최근 7일
+        """
         cache_key = f"{query}:{market}:news"
         cached = self._cache.get_typed(cache_key, "news")
         if cached is not None:
@@ -222,7 +392,30 @@ class Gather:
         return df
 
     def dividends(self, stock_code: str, *, market: str = "KR") -> list[dict]:
-        """배당 이력 — yahoo_direct → fmp fallback."""
+        """배당 이력 조회.
+
+        Capabilities:
+            - fallback 체인: yahoo_direct -> FMP
+            - 배당일, 배당금, 배당수익률 등
+            - circuit breaker 적용
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            list[dict] — 배당 이력 (date, dividend 등). 없으면 빈 리스트.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.dividends("005930")              # 삼성전자 배당 이력
+            g.dividends("AAPL", market="US")   # Apple 배당 이력
+        """
         cache_key = f"{stock_code}:{market}:dividends"
         cached = self._cache.get_typed(cache_key, "dividends")
         if cached is not None:
@@ -249,7 +442,30 @@ class Gather:
         return []
 
     def splits(self, stock_code: str, *, market: str = "KR") -> list[dict]:
-        """분할 이력 — yahoo_direct → fmp fallback."""
+        """액면분할/병합 이력 조회.
+
+        Capabilities:
+            - fallback 체인: yahoo_direct -> FMP
+            - 분할일, 분할비율 등
+            - circuit breaker 적용
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            list[dict] — 분할 이력 (date, ratio 등). 없으면 빈 리스트.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            g.splits("005930")              # 삼성전자 분할 이력
+            g.splits("AAPL", market="US")   # Apple 분할 이력
+        """
         cache_key = f"{stock_code}:{market}:splits"
         cached = self._cache.get_typed(cache_key, "splits")
         if cached is not None:
@@ -332,13 +548,31 @@ class Gather:
         start: str | None = None,
         end: str | None = None,
     ) -> "pl.DataFrame | None":
-        """거시 지표 시계열.
+        """거시경제 지표 시계열 조회.
 
-        인자 없으면 주요 지표 전체를 wide DataFrame으로 반환.
-        지표 지정 시 해당 지표만 (date, value) 반환.
+        Capabilities:
+            - KR: ECOS (한국은행) — CPI, 기준금리, 환율 등 12개 핵심 지표
+            - US: FRED — GDP, CPI, 실업률, 연방기금금리 등 24개 핵심 지표
+            - 스마트 라우팅: 지표 코드만으로 KR/US 자동 감지
+            - 전체 지표: wide DataFrame (date + 각 지표 컬럼)
+            - 단일 지표: (date, value) DataFrame
+
+        Args:
+            market: "KR" 또는 "US". 지표 코드 직접 전달도 가능 (자동 감지).
+            indicator: 지표 코드 ("CPI", "FEDFUNDS" 등). None이면 전체 지표.
+            start: 시작일 (YYYY-MM-DD). None이면 기본 기간.
+            end: 종료일. None이면 오늘.
+
+        Returns:
+            pl.DataFrame | None — wide DataFrame (전체) 또는 (date, value) (단일).
+
+        Requires:
+            KR: ECOS_API_KEY (한국은행 무료 발급).
+            US: FRED_API_KEY (FRED 무료 발급).
 
         Example::
 
+            g = getDefaultGather()
             g.macro()                 # KR 전체 지표 wide DF
             g.macro("US")             # US 전체 지표 wide DF
             g.macro("CPI")            # CPI (자동 KR 감지)
@@ -384,6 +618,7 @@ class Gather:
                 guide="무료 발급: https://ecos.bok.or.kr/api/#/",
             )
             if not key:
+                log.info("ECOS_API_KEY 미설정 — KR macro 조회 불가")
                 return None
             ecos = Ecos(apiKey=key)
         kwargs: dict = {}
@@ -418,6 +653,7 @@ class Gather:
                 guide="무료 발급: https://fred.stlouisfed.org/docs/api/api_key.html",
             )
             if not key:
+                log.info("FRED_API_KEY 미설정 — US macro 조회 불가")
                 return None
             fred = Fred(api_key=key)
         kwargs: dict = {}
@@ -436,10 +672,31 @@ class Gather:
     # ── 전체 병렬 수집 ──
 
     def collect(self, stock_code: str, *, market: str = "KR") -> GatherSnapshot:
-        """모든 도메인에서 병렬 수집 → GatherSnapshot.
+        """전체 도메인 병렬 수집 -> GatherSnapshot.
 
-        각 도메인(naver, yahoo, fmp 등)을 asyncio.gather()로 동시 호출.
-        개별 도메인 실패는 격리 — 나머지 결과로 스냅샷 생성.
+        Capabilities:
+            - asyncio.gather()로 모든 도메인(naver, yahoo, fmp 등) 동시 호출
+            - 뉴스도 병렬 수집 (최근 7일)
+            - 개별 도메인 실패 격리 — 나머지 결과로 스냅샷 생성
+            - 10초 타임아웃 (부분 결과 반환)
+            - TTL 캐시
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            GatherSnapshot — 도메인별 결과 + 뉴스 + 수집 시각.
+
+        Requires:
+            없음 (공개 API).
+
+        Example::
+
+            g = getDefaultGather()
+            snap = g.collect("005930")       # 삼성전자 전체 수집
+            snap.price                       # PriceSnapshot
+            snap.news                        # 뉴스 리스트
         """
         cached = self._cache.get_typed(stock_code, "snapshot")
         if cached is not None:
@@ -503,11 +760,20 @@ class Gather:
         return GatherResult(domain=domain_name, price=price)
 
     def invalidate(self, stock_code: str) -> None:
-        """특정 종목의 캐시 무효화."""
+        """특정 종목의 캐시 무효화.
+
+        Args:
+            stock_code: 캐시를 삭제할 종목코드.
+
+        Example::
+
+            g = getDefaultGather()
+            g.invalidate("005930")   # 삼성전자 캐시 제거
+        """
         self._cache.invalidate(stock_code)
 
     def close(self) -> None:
-        """리소스 정리."""
+        """HTTP 클라이언트 등 리소스 정리."""
         if self._owns_client:
             run_async(self._client.close())
 
@@ -521,7 +787,26 @@ _defaultGather: Gather | None = None
 
 
 def getDefaultGather() -> Gather:
-    """Gather 싱글턴 — 같은 세션 내 캐시/HTTP 클라이언트 재사용."""
+    """Gather 싱글턴 반환 — 같은 세션 내 캐시/HTTP 클라이언트 재사용.
+
+    Capabilities:
+        - 모듈 레벨 싱글턴으로 Gather 인스턴스 관리
+        - 캐시/HTTP 클라이언트 세션 간 재사용
+        - 첫 호출 시 자동 생성
+
+    Returns:
+        Gather — 싱글턴 인스턴스.
+
+    Requires:
+        없음.
+
+    Example::
+
+        from dartlab.gather import getDefaultGather
+
+        g = getDefaultGather()
+        g.price("005930")
+    """
     global _defaultGather
     if _defaultGather is None:
         _defaultGather = Gather()

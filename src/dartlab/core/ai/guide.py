@@ -83,12 +83,62 @@ _DISPLAY_ORDER = ("gemini", "groq", "cerebras", "mistral", "oauth-codex", "opena
 
 
 def resolve_alias(provider: str) -> str:
-    """사용자 편의 alias를 정식 provider id로 변환."""
+    """사용자 편의 alias를 정식 provider id로 변환.
+
+    Capabilities:
+        - "chatgpt"/"gpt" -> "oauth-codex" 변환
+        - "google" -> "gemini" 변환
+        - 알 수 없는 이름은 그대로 반환 (pass-through)
+
+    AIContext:
+        setup/ask 명령에서 사용자 입력을 정규화할 때 사용.
+
+    Args:
+        provider: 사용자가 입력한 provider 이름 (대소문자 무관).
+
+    Returns:
+        str — 정식 provider id.
+
+    Requires:
+        없음.
+
+    Example::
+
+        from dartlab.core.ai.guide import resolve_alias
+        resolve_alias("chatgpt")   # "oauth-codex"
+        resolve_alias("gemini")    # "gemini" (변환 없음)
+    """
     return _PROVIDER_ALIAS.get(provider.lower(), provider)
 
 
 def provider_guide(provider: str) -> str:
-    """특정 provider의 설정 안내 반환."""
+    """특정 provider의 설정 안내 문자열 반환.
+
+    Capabilities:
+        - provider별 이름, 발급 URL, 노트북/CLI 설정 명령 포함
+        - alias 자동 해석 ("chatgpt" -> oauth-codex 안내)
+        - 알 수 없는 provider는 에러 메시지 반환
+
+    AIContext:
+        setup 명령 실행 시 사용자에게 표시하는 안내 텍스트 생성.
+
+    Args:
+        provider: provider 이름 또는 alias.
+
+    Returns:
+        str — 포맷된 설정 안내 문자열 (여러 줄).
+
+    Requires:
+        없음.
+
+    Example::
+
+        from dartlab.core.ai.guide import provider_guide
+        print(provider_guide("gemini"))
+        # [ Google Gemini (무료) ]
+        # Google AI Studio에서 무료 API 키를 발급받으세요.
+        # ...
+    """
     provider = resolve_alias(provider)
     guide = _SETUP_GUIDES.get(provider)
     if guide is None:
@@ -120,7 +170,34 @@ def _check_provider_available(provider_id: str) -> bool:
 
 
 def providers_status() -> str:
-    """전체 provider 현황 테이블 반환."""
+    """전체 AI provider 현황을 테이블 문자열로 반환.
+
+    Capabilities:
+        - 등록된 전체 provider 목록 표시 (무료 우선 정렬)
+        - 각 provider 사용 가능 여부 실시간 체크 (check_available)
+        - 사용 가능 여부 아이콘 표시
+        - 하단에 설정 명령 안내 포함
+
+    AIContext:
+        dartlab status / dartlab.status() 에서 AI 현황 섹션에 사용.
+
+    Args:
+        없음.
+
+    Returns:
+        str — 포맷된 provider 현황 테이블 (여러 줄).
+
+    Requires:
+        없음 (각 provider 체크 시 네트워크 접근 가능).
+
+    Example::
+
+        from dartlab.core.ai.guide import providers_status
+        print(providers_status())
+        # AI Provider 현황
+        # ● gemini         Google Gemini (무료)   ✓ 사용 가능
+        # ○ groq           Groq (무료)            ✗ 설정 필요
+    """
     lines = ["", "  AI Provider 현황", ""]
 
     for pid in _DISPLAY_ORDER:
@@ -146,7 +223,33 @@ def providers_status() -> str:
 
 
 def no_provider_message() -> str:
-    """provider 미설정 시 안내 메시지."""
+    """AI provider 미설정 시 표시할 안내 메시지 반환.
+
+    Capabilities:
+        - 무료 provider 4개 우선 추천 (Gemini, Groq, Cerebras, Mistral)
+        - 각 provider별 setup 명령 + 발급 URL 포함
+        - 설정 후 재실행 예시 포함
+
+    AIContext:
+        ask/chat 호출 시 provider 없으면 이 메시지로 안내.
+
+    Args:
+        없음.
+
+    Returns:
+        str — 포맷된 안내 메시지 (여러 줄).
+
+    Requires:
+        없음.
+
+    Example::
+
+        from dartlab.core.ai.guide import no_provider_message
+        print(no_provider_message())
+        # AI provider가 설정되지 않았습니다.
+        # 무료 API 키 하나면 바로 시작할 수 있습니다:
+        # ...
+    """
     lines = [
         "",
         "  AI provider가 설정되지 않았습니다.",

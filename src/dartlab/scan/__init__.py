@@ -200,14 +200,48 @@ def available_scans() -> list[str]:
 
 
 class Scan:
-    """시장 전체 횡단분석 통합 엔트리포인트.
+    """시장 전체 횡단분석 — 13축, 전부 Polars DataFrame.
 
-    scan()                        → 가이드 (축 목록 + 사용법)
-    scan("governance")            → 전 상장사 거버넌스
-    scan("governance", "005930")  → 삼성전자만 필터
-    scan("ratio")                 → 가용 비율 목록
-    scan("ratio", "roe")          → 전종목 ROE
-    scan("account", "매출액")     → 전종목 매출액 시계열
+    Capabilities:
+        - governance: 최대주주 지분, 사외이사, 감사위원회
+        - workforce: 임직원 수, 평균급여, 근속연수
+        - capital: 배당수익률, 배당성향, 자사주
+        - debt: 부채비율, 차입금 의존도, 이자보상
+        - account: 전종목 단일 계정 시계열 (매출액, 영업이익 등)
+        - ratio: 전종목 단일 재무비율 시계열 (ROE, 영업이익률 등)
+        - screen: 재무 조건 스크리닝
+        - peer: 동종업계 피어 그룹
+        - audit: 감사의견, 감사인 변경
+        - insider: 최대주주 변동, 자기주식
+        - network: 기업 관계 네트워크
+        - watch: 공시 변화 모니터링
+        - digest: 시장 전체 변화 다이제스트
+
+    AIContext:
+        - ask()/chat()에서 시장 전체 데이터를 컨텍스트로 주입
+        - 종목간 비교 분석의 데이터 소스
+
+    Args:
+        axis: 축 이름. None이면 13축 가이드 반환.
+        target: 축별 대상 (종목코드, 계정명, 비율명 등).
+        **kwargs: 축별 옵션 (annual, fsPref, market 등).
+
+    Returns:
+        pl.DataFrame — 전종목 횡단 데이터. axis=None이면 13축 가이드 DataFrame.
+
+    Requires:
+        데이터: 축별로 다름 (dartlab.downloadAll() 참조)
+        - governance/workforce/capital/debt/audit/insider: report
+        - account/ratio/screen: finance
+        - network/watch/digest: docs
+
+    Example::
+
+        import dartlab
+        dartlab.scan()                           # 가이드
+        dartlab.scan("governance")               # 전종목 지배구조
+        dartlab.scan("account", "매출액")          # 전종목 매출액
+        dartlab.scan("ratio", "roe")             # 전종목 ROE
     """
 
     def __call__(

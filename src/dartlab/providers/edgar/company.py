@@ -345,7 +345,7 @@ class Company:
 
     @staticmethod
     def canHandle(code: str) -> bool:
-        """US ticker (영문 1~5자) 또는 CIK (숫자)."""
+        """US ticker (영문 1~5자) 또는 CIK (숫자) 판별."""
         s = code.strip()
         if s.isdigit() and len(s) <= 10:
             return True
@@ -353,7 +353,7 @@ class Company:
 
     @staticmethod
     def priority() -> int:
-        """낮을수록 먼저 시도. EDGAR=20."""
+        """provider 우선순위 — 낮을수록 먼저 시도. EDGAR=20."""
         return 20
 
     def __init__(self, ticker: str):
@@ -432,68 +432,307 @@ class Company:
 
     @property
     def stockCode(self) -> str:
-        """서버 API 호환용 — ticker를 stockCode로 노출."""
+        """서버 API 호환용 ticker 식별자.
+
+        Capabilities:
+            - DART Company와 동일한 stockCode 인터페이스 제공
+            - 서버 API, export, AI 컨텍스트에서 종목 식별에 사용
+
+        Returns:
+            str — ticker 심볼 (예: "AAPL").
+
+        Requires:
+            데이터: 없음 (인스턴스 속성)
+
+        Example::
+
+            c = Company("AAPL")
+            c.stockCode  # "AAPL"
+        """
         return self.ticker
 
     @property
     def market(self) -> str:
-        """거래소 시장 — US 고정."""
+        """거래소 시장 식별자.
+
+        Capabilities:
+            - 미국 시장 "US" 고정 반환
+            - 멀티마켓 분기 로직에서 시장 판별에 사용
+
+        Returns:
+            str — "US".
+
+        Requires:
+            데이터: 없음 (상수)
+
+        Example::
+
+            c = Company("AAPL")
+            c.market  # "US"
+        """
         return "US"
 
     @property
     def currency(self) -> str:
-        """통화 — USD 고정."""
+        """통화 식별자.
+
+        Capabilities:
+            - 미국 달러 "USD" 고정 반환
+            - 재무제표 금액 단위 표시, 밸류에이션 통화 기준에 사용
+
+        Returns:
+            str — "USD".
+
+        Requires:
+            데이터: 없음 (상수)
+
+        Example::
+
+            c = Company("AAPL")
+            c.currency  # "USD"
+        """
         return "USD"
 
     def view(self, *, port: int = 8400) -> None:
-        """브라우저에서 공시 뷰어를 엽니다."""
+        """브라우저에서 공시 뷰어를 열어 sections/index를 시각화.
+
+        Capabilities:
+            - 로컬 서버 기동 후 브라우저에서 sections 탐색
+            - topic별 텍스트/테이블, 기간 비교를 인터랙티브로 확인
+
+        Args:
+            port: 로컬 서버 포트 (기본 8400).
+
+        Returns:
+            None — 브라우저가 자동으로 열림.
+
+        Requires:
+            데이터: sections (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.view()             # localhost:8400 에서 뷰어 실행
+            c.view(port=9000)    # 포트 변경
+        """
         from dartlab.core.viewer import launchViewer
 
         launchViewer(self.ticker, port=port)
 
     @property
     def timeseries(self):
-        """분기별 재무 시계열."""
+        """분기별 재무 시계열 — (series dict, years list) 튜플.
+
+        Capabilities:
+            - SEC XBRL 분기별 재무 시계열 원본
+            - BS/IS/CF/CIS 전 제표 계정의 분기 수치
+
+        AIContext:
+            - ask()/chat()에서 추세 분석, 성장률 계산 컨텍스트
+
+        Returns:
+            tuple[dict, list[str]] — (계정별 시계열 dict, 기간 리스트) 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.timeseries  # 분기별 시계열 데이터
+        """
         return self.finance.timeseries
 
     @property
     def annual(self):
-        """연간 재무 시계열."""
+        """연간 재무 시계열 — (series dict, years list) 튜플.
+
+        Capabilities:
+            - SEC XBRL 연간 재무 시계열 원본
+            - 분기 집계가 아닌 10-K 기준 연간 수치
+
+        AIContext:
+            - ask()/chat()에서 연간 추세, YoY 비교 컨텍스트
+
+        Returns:
+            tuple[dict, list[str]] — (계정별 시계열 dict, 연도 리스트) 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.annual  # 연간 시계열 데이터
+        """
         return self.finance.annual
 
     @property
     def BS(self) -> pl.DataFrame | None:
-        """재무상태표."""
+        """재무상태표 (Balance Sheet) — 계정명 x 기간 DataFrame.
+
+        Capabilities:
+            - SEC XBRL 정규화 재무상태표
+            - 최대 10년 분기/연도 시계열
+
+        AIContext:
+            - ask()/chat()에서 자산/부채/자본 구조 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.BS  # Apple 재무상태표
+        """
         return self.finance.BS
 
     @property
     def IS(self) -> pl.DataFrame | None:
-        """손익계산서."""
+        """손익계산서 (Income Statement) — 계정명 x 기간 DataFrame.
+
+        Capabilities:
+            - SEC XBRL 정규화 손익계산서
+            - 매출, 영업이익, 순이익 등 수익성 계정 시계열
+
+        AIContext:
+            - ask()/chat()에서 수익성, 마진 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.IS  # Apple 손익계산서
+        """
         return self.finance.IS
 
     @property
     def CF(self) -> pl.DataFrame | None:
-        """현금흐름표."""
+        """현금흐름표 (Cash Flow) — 계정명 x 기간 DataFrame.
+
+        Capabilities:
+            - SEC XBRL 정규화 현금흐름표
+            - 영업/투자/재무 활동별 현금흐름 시계열
+
+        AIContext:
+            - ask()/chat()에서 현금 창출력, FCF 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.CF  # Apple 현금흐름표
+        """
         return self.finance.CF
 
     @property
     def CIS(self) -> pl.DataFrame | None:
-        """포괄손익계산서."""
+        """포괄손익계산서 (Comprehensive Income) — 계정명 x 기간 DataFrame.
+
+        Capabilities:
+            - SEC XBRL 정규화 포괄손익계산서
+            - 기타포괄손익 항목 시계열
+
+        AIContext:
+            - ask()/chat()에서 포괄손익 구성 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.CIS  # Apple 포괄손익계산서
+        """
         return self.finance.CIS
 
     @property
     def SCE(self) -> pl.DataFrame | None:
-        """자본변동표."""
+        """자본변동표 (Statement of Changes in Equity) — 계정명 x 기간 DataFrame.
+
+        Capabilities:
+            - SEC XBRL 정규화 자본변동표
+            - 자본금, 이익잉여금, 자기주식 등 자본 구성 변동 시계열
+
+        AIContext:
+            - ask()/chat()에서 자본 구조 변동, 자사주 매입 분석 컨텍스트
+
+        Returns:
+            pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.SCE  # Apple 자본변동표
+        """
         return self.finance.SCE
 
     @property
     def sections(self) -> pl.DataFrame | None:
-        """sections — profile.sections 위임 (docs + finance 통합 지도)."""
+        """sections — docs + finance 통합 지도 (topic x period 수평화).
+
+        Capabilities:
+            - 10-K/10-Q/20-F 문서 항목 + 재무제표를 단일 DataFrame으로 통합
+            - topic별 blockType(text/table), 기간별 셀 구조
+
+        AIContext:
+            - ask()/chat()에서 기업 전체 공시 구조 파악 컨텍스트
+
+        Returns:
+            pl.DataFrame — topic | blockType | blockOrder | 2024 | 2023 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.sections  # Apple 전체 sections 지도
+        """
         return self.profile.sections
 
     @property
     def ratios(self) -> pl.DataFrame | None:
-        """재무비율 시계열 DataFrame."""
+        """재무비율 시계열 — category x metric x 기간 DataFrame.
+
+        Capabilities:
+            - 수익성/안정성/성장성/효율성/현금흐름 5대 카테고리 30+ 지표
+            - 최대 10년 연도별 시계열
+
+        AIContext:
+            - ask()/chat()에서 재무 건전성, 추세 비교 컨텍스트
+
+        Returns:
+            pl.DataFrame — category | metric | 2024 | 2023 | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.ratios  # Apple 재무비율 시계열
+        """
         rs = self.finance.ratioSeries
         if rs is None:
             return None
@@ -508,7 +747,26 @@ class Company:
 
     @property
     def insights(self):
-        """재무 인사이트 분석 결과 (lazy 계산)."""
+        """재무 인사이트 분석 결과 — 자동 등급/해설 (lazy 계산).
+
+        Capabilities:
+            - 수익성/안정성/성장성/효율성/현금흐름 5대 영역 자동 등급
+            - 각 영역별 핵심 지표 해설 텍스트
+
+        AIContext:
+            - ask()/chat()에서 재무 건전성 요약 컨텍스트
+
+        Returns:
+            AnalysisResult — 영역별 등급/해설 객체 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.insights  # Apple 재무 인사이트
+        """
         if "_insights" not in self._cache:
             from dartlab.analysis.financial.insight.pipeline import analyze
 
@@ -527,7 +785,28 @@ class Company:
         return self._cache["_insights"]
 
     def analysis(self, axis: str | None = None, **kwargs):
-        """재무제표 분석 — analysis()에 self를 바인딩."""
+        """8대 분석 영역 실행 — analysis()에 self를 바인딩.
+
+        Capabilities:
+            - strategy/accounting/financial/forecast/valuation/risk/comparative/macro 8축
+            - axis 없이 호출하면 사용 가능한 축 목록 반환
+
+        Args:
+            axis: 분석 축 이름 (예: "financial", "valuation"). None이면 축 목록.
+            **kwargs: 축별 추가 파라미터.
+
+        Returns:
+            분석 결과 객체 또는 축 목록 dict.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.analysis()                  # 사용 가능한 축 목록
+            c.analysis("financial")       # 재무 분석 실행
+        """
         from dartlab.analysis.strategy import Analysis
 
         _analysis = Analysis()
@@ -535,8 +814,54 @@ class Company:
             return _analysis()
         return _analysis(axis, self, **kwargs)
 
+    def gather(self, axis: str | None = None, **kwargs):
+        """외부 시장 데이터 수집 — gather()에 self.ticker를 바인딩.
+
+        Capabilities:
+            - 주가, 뉴스, 매크로 등 외부 데이터 소스 수집
+            - axis 없이 호출하면 사용 가능한 축 목록 반환
+
+        Args:
+            axis: 수집 축 이름 (예: "price", "news"). None이면 축 목록.
+            **kwargs: 축별 추가 파라미터.
+
+        Returns:
+            수집 결과 DataFrame 또는 축 목록.
+
+        Requires:
+            데이터: 인터넷 연결 (외부 API 호출)
+
+        Example::
+
+            c = Company("AAPL")
+            c.gather()              # 사용 가능한 축 목록
+            c.gather("price")       # Apple 주가 수집
+        """
+        from dartlab.gather.entry import GatherEntry
+
+        _gather = GatherEntry()
+        if axis is None:
+            return _gather()
+        return _gather(axis, self.ticker, market="US", **kwargs)
+
     def filings(self) -> pl.DataFrame | None:
-        """SEC 공시 문서 목록."""
+        """SEC 공시 문서 목록 — 10-K/10-Q 등 정기보고서 목록.
+
+        Capabilities:
+            - 사전 수집된 filing 메타데이터 조회
+            - formType, filedAt, accessionNo 등 컬럼 포함
+
+        Returns:
+            pl.DataFrame — docId | filedAt | formType | ... 또는 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.filings()  # Apple SEC filing 목록
+        """
         return self.docs.filings()
 
     def disclosure(
@@ -549,7 +874,33 @@ class Company:
         keyword: str | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """SEC EDGAR filing 목록 — liveFilings 위임."""
+        """SEC EDGAR filing 검색 — liveFilings 위임.
+
+        Capabilities:
+            - 기간/유형/키워드 필터로 SEC filing 검색
+            - DART disclosure()와 동일한 인터페이스
+
+        Args:
+            start: 시작일 (YYYY-MM-DD). None이면 end 기준 days일 전.
+            end: 종료일 (YYYY-MM-DD). None이면 오늘.
+            days: 기간 일수 (기본 365).
+            type: form 유형 필터 (예: "10-K").
+            keyword: 제목 키워드 필터.
+            finalOnly: EDGAR에서는 미사용 (DART 호환 파라미터).
+
+        Returns:
+            pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
+
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR API)
+
+        Example::
+
+            c = Company("AAPL")
+            c.disclosure()                        # 최근 1년 전체
+            c.disclosure(type="10-K")             # 10-K만
+            c.disclosure(keyword="earnings")      # 키워드 필터
+        """
         return self.liveFilings(start, end, days=days, keyword=keyword, forms=[type] if type else None)
 
     def liveFilings(
@@ -563,7 +914,34 @@ class Company:
         forms: list[str] | tuple[str, ...] | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """SEC EDGAR 기준 실시간 filing 목록."""
+        """SEC EDGAR 실시간 filing 목록 — OpenEdgar API 직접 조회.
+
+        Capabilities:
+            - SEC EDGAR submissions API에서 최신 filing 실시간 조회
+            - form 유형, 기간, 키워드 복합 필터
+            - readFiling()과 연계하여 원문 읽기 가능
+
+        Args:
+            start: 시작일 (YYYY-MM-DD).
+            end: 종료일 (YYYY-MM-DD).
+            days: 기간 일수. start/end 미지정 시 사용.
+            limit: 최대 반환 건수 (기본 20).
+            keyword: 제목/설명 키워드 필터.
+            forms: form 유형 리스트 (예: ["10-K", "10-Q"]). None이면 전체.
+            finalOnly: EDGAR에서는 미사용.
+
+        Returns:
+            pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
+
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR API)
+
+        Example::
+
+            c = Company("AAPL")
+            c.liveFilings()                           # 최근 filing 20건
+            c.liveFilings(forms=["10-K"], limit=5)    # 10-K만 5건
+        """
         del finalOnly  # EDGAR regular filings에는 finalOnly 개념이 없다.
 
         startDate, endDate = resolveDateWindow(start, end, days=days)
@@ -659,7 +1037,29 @@ class Company:
         *,
         maxChars: int | None = None,
     ) -> dict[str, Any]:
-        """filing URL 또는 live filings row로 원문을 읽는다."""
+        """filing 원문 읽기 — URL/accessionNo/DataFrame row로 SEC 문서 다운로드.
+
+        Capabilities:
+            - filing URL, accessionNo 문자열, liveFilings() row 모두 지원
+            - HTML 자동 텍스트 변환, maxChars 기준 truncate
+
+        Args:
+            filing: filing URL(str), accessionNo(str), 또는 liveFilings() row.
+            maxChars: 최대 문자수. None이면 전체.
+
+        Returns:
+            dict — docId, market, title, docUrl, raw, text, truncated 키 포함.
+
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR 문서 다운로드)
+
+        Example::
+
+            c = Company("AAPL")
+            filings = c.liveFilings(forms=["10-K"], limit=1)
+            result = c.readFiling(filings[0])
+            print(result["text"][:500])
+        """
         record = filingRecord(filing) or {}
 
         if isinstance(filing, str):
@@ -715,7 +1115,23 @@ class Company:
 
     @property
     def topics(self) -> pl.DataFrame:
-        """topic별 요약 DataFrame (topic, source, blocks, periods)."""
+        """topic 목록 요약 — topic/source/blocks/periods DataFrame.
+
+        Capabilities:
+            - finance(BS/IS/CF/CIS/ratios) + docs(10-K/10-Q 항목) 전체 topic 열거
+            - 각 topic의 source, 블록 수, 기간 수 요약
+
+        Returns:
+            pl.DataFrame — topic | source | blocks | periods.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.topics  # Apple 전체 topic 목록
+        """
         cacheKey = "_topicsDataFrame"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -777,15 +1193,35 @@ class Company:
         period: str | list[str] | None = None,
         **_kw: Any,
     ) -> pl.DataFrame | None:
-        """topic의 데이터를 반환.
+        """topic 데이터 조회 — sections 사상의 핵심 소비 경로.
 
-        block=None → 블록 목차 DataFrame (block, type, source, preview)
-        block=N → 해당 blockOrder의 실제 데이터 DataFrame
+        Capabilities:
+            - finance topic(BS/IS/CF/CIS/ratios) + docs topic(10-K/10-Q 항목) 통합 조회
+            - block=None이면 블록 목차, block=N이면 해당 블록 실제 데이터
+            - period 리스트 전달 시 세로 뷰 (기간 x 항목) 변환
+            - 단축 alias 지원: "risk" → "item1ARiskFactors", "mdna" → "item7Mdna"
+
+        AIContext:
+            - ask()/chat()에서 특정 topic 원문/수치 조회 컨텍스트
 
         Args:
-            topic: topic 이름 (BS, IS, 10-K::item1Business 등)
+            topic: topic 이름 (BS, IS, 10-K::item1Business, risk, mdna 등).
             block: blockOrder 인덱스. None이면 블록 목차.
-            period: 특정 기간 필터. 리스트면 세로 뷰 (기간 × 항목).
+            period: 특정 기간 필터. 리스트면 세로 뷰 (기간 x 항목).
+
+        Returns:
+            pl.DataFrame — 블록 목차 또는 실제 데이터. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.show("BS")                          # 재무상태표
+            c.show("10-K::item1ARiskFactors")     # Risk Factors 텍스트
+            c.show("risk")                        # 위와 동일 (alias)
+            c.show("IS", period="2024")           # 2024년만 필터
         """
         # alias 해석 (riskFactors → item1ARiskFactors 등)
         topic = _TOPIC_ALIASES.get(topic, topic)
@@ -881,7 +1317,29 @@ class Company:
         indList: str | list[str] | None = None,
         colList: str | list[str] | None = None,
     ):
-        """show() 결과에서 행(indList) + 열(colList) 필터."""
+        """show() 결과에서 행/열 필터 — 특정 계정 x 특정 기간 추출.
+
+        Capabilities:
+            - show() 결과에서 행(계정명)과 열(기간) 동시 필터
+            - SelectResult 객체로 반환하여 체이닝/export 가능
+
+        Args:
+            topic: topic 이름 (BS, IS 등).
+            indList: 행 필터 — 계정명 문자열 또는 리스트.
+            colList: 열 필터 — 기간 문자열 또는 리스트.
+
+        Returns:
+            SelectResult — 필터된 DataFrame 래퍼. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.select("BS", "Total Assets", "2024")
+            c.select("IS", ["Revenue", "Net Income"], ["2024", "2023"])
+        """
         from dartlab.core.select import SelectResult
         from dartlab.core.show import selectFromShow
 
@@ -906,7 +1364,28 @@ class Company:
         )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
-        """topic 데이터의 출처(docs/finance)와 선택 근거 추적."""
+        """topic 데이터 출처 추적 — source provenance 확인.
+
+        Capabilities:
+            - topic 데이터가 docs/finance 중 어디서 왔는지 추적
+            - 선택 근거(whySelected), 우선순위, 커버리지 정보 포함
+
+        Args:
+            topic: topic 이름 (BS, IS, 10-K::item1ARiskFactors 등).
+            period: 특정 기간 필터 (선택).
+
+        Returns:
+            dict — topic, primarySource, whySelected, availableSources 등. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.trace("BS")                          # finance 출처 확인
+            c.trace("10-K::item1ARiskFactors")     # docs 출처 확인
+        """
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic in _FINANCE_TOPICS:
             df = getattr(self.finance, topic)
@@ -988,7 +1467,23 @@ class Company:
 
     @property
     def index(self) -> pl.DataFrame:
-        """topic별 메타데이터(chapter, source, periods 등) 인덱스."""
+        """topic별 메타데이터 인덱스 — chapter/label/kind/source/periods 보드.
+
+        Capabilities:
+            - 전체 topic의 chapter, label, kind(finance/docs), source, periods, shape 요약
+            - sections 수평화 보드의 메타 레이어
+
+        Returns:
+            pl.DataFrame — chapter | topic | label | kind | source | periods | shape | preview.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.index  # Apple 전체 topic 인덱스 보드
+        """
         cacheKey = "_index"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
@@ -1132,13 +1627,30 @@ class Company:
         fromPeriod: str | None = None,
         toPeriod: str | None = None,
     ) -> pl.DataFrame | None:
-        """기간간 텍스트 변경 비교.
+        """기간간 텍스트 변경 비교 — 공시 서술형 diff.
 
-        사용법::
+        Capabilities:
+            - 전체 topic 변경 요약 (topic 없이 호출)
+            - 특정 topic의 기간별 변경 이력
+            - 두 기간 지정 시 줄 단위 diff (추가/삭제/변경)
 
-            c.diff()                          # 전체 topic 변경 요약
-            c.diff("10-K::item1ARiskFactors") # 특정 topic 변경 이력
-            c.diff("10-K::item7Mdna", "2023", "2024")  # 줄 단위 diff
+        Args:
+            topic: topic 이름. None이면 전체 변경 요약.
+            fromPeriod: 비교 시작 기간 (예: "2023").
+            toPeriod: 비교 종료 기간 (예: "2024").
+
+        Returns:
+            pl.DataFrame — 변경 요약/이력/줄단위 diff. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.diff()                                          # 전체 변경 요약
+            c.diff("10-K::item1ARiskFactors")                 # Risk Factors 변경 이력
+            c.diff("10-K::item7Mdna", "2023", "2024")         # MD&A 줄 단위 diff
         """
         from dartlab.core.docs.diff import (
             diffSummaryDataFrame,
@@ -1162,13 +1674,29 @@ class Company:
         keyword: str | None = None,
         keywords: list[str] | None = None,
     ) -> pl.DataFrame | None:
-        """공시 텍스트 키워드 빈도 추이 (topic × period × keyword).
+        """공시 텍스트 키워드 빈도 추이 — topic x period x keyword 히트맵.
 
-        사용법::
+        Capabilities:
+            - 10-K/10-Q 서술형 텍스트에서 키워드 등장 빈도 추적
+            - 단일 키워드 또는 복수 키워드 동시 추적
+            - 키워드 미지정 시 내장 기본 키워드(AI, risk 등) 전체 분석
 
-            c.keywordTrend("AI")              # AI 키워드 topic별 연도 추이
-            c.keywordTrend(keywords=["AI", "supply chain"])
-            c.keywordTrend()                  # 내장 키워드 전체
+        Args:
+            keyword: 단일 키워드 문자열.
+            keywords: 복수 키워드 리스트. keyword와 동시 지정 시 keyword 우선.
+
+        Returns:
+            pl.DataFrame — topic | period | keyword | count. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.keywordTrend("AI")                              # AI 키워드 추이
+            c.keywordTrend(keywords=["AI", "supply chain"])   # 복수 키워드
+            c.keywordTrend()                                  # 내장 키워드 전체
         """
         from dartlab.core.docs.diff import keywordFrequency
 
@@ -1183,10 +1711,24 @@ class Company:
         return keywordFrequency(docsSections, keywords=kws)
 
     def news(self, *, days: int = 30) -> pl.DataFrame:
-        """최근 뉴스 수집.
+        """최근 뉴스 수집 — 종목 관련 뉴스 DataFrame.
 
-        사용법::
+        Capabilities:
+            - 종목명/ticker 기반 최근 뉴스 수집
+            - 기간 조절 가능 (기본 30일)
 
+        Args:
+            days: 수집 기간 일수 (기본 30).
+
+        Returns:
+            pl.DataFrame — 뉴스 제목, 날짜, URL 등 포함.
+
+        Requires:
+            데이터: 인터넷 연결 (뉴스 API)
+
+        Example::
+
+            c = Company("AAPL")
             c.news()           # 최근 30일 뉴스
             c.news(days=7)     # 최근 7일
         """
@@ -1200,10 +1742,25 @@ class Company:
     ) -> pl.DataFrame | None:
         """공시 변화 감지 — 중요도 스코어링 기반 변화 요약.
 
-        사용법::
+        Capabilities:
+            - 기간간 공시 텍스트 변화를 중요도 점수로 자동 스코어링
+            - topic 미지정 시 전체 topic 중요도 순 정렬
+            - 특정 topic 지정 시 해당 topic 상세 변화 분석
 
+        Args:
+            topic: topic 이름. None이면 전체 topic 요약.
+
+        Returns:
+            pl.DataFrame — topic | score | summary 등. 없으면 None.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
             c.watch()                              # 전체 topic 중요도 순 요약
-            c.watch("10-K::item1ARiskFactors")     # 특정 topic 상세
+            c.watch("10-K::item1ARiskFactors")     # Risk Factors 상세
         """
         from dartlab.scan.watch.scanner import scan_company
 
@@ -1220,12 +1777,26 @@ class Company:
     ) -> pl.DataFrame | None:
         """공시 발표일 전후 주가 비정상 수익률(CAR) 분석.
 
-        사용법::
+        Capabilities:
+            - 공시 발표일 기준 이벤트 윈도우 내 CAR(Cumulative Abnormal Return) 계산
+            - event_type으로 form 유형별 필터 가능
+            - window 파라미터로 이벤트 윈도우 커스터마이징
 
-            c.eventStudy()                       # 전체 공시 → 주가 영향
-            c.eventStudy("10-K")                 # 유형별 필터
+        Args:
+            event_type: form 유형 필터 (예: "10-K"). None이면 전체.
+            window: 이벤트 윈도우 설정 (선택).
 
-        의존성: pip install dartlab[event]
+        Returns:
+            pl.DataFrame — 이벤트별 CAR, 통계량 등. 없으면 None.
+
+        Requires:
+            데이터: pip install dartlab[event] + 인터넷 연결 (주가 데이터)
+
+        Example::
+
+            c = Company("AAPL")
+            c.eventStudy()           # 전체 공시 → 주가 영향
+            c.eventStudy("10-K")     # 10-K 발표 전후 주가 영향
         """
         from dartlab.analysis.comparative.event.study import analyze_events, impacts_to_dataframe
 
@@ -1237,7 +1808,27 @@ class Company:
     # ── analyst ──
 
     def forecast(self, *, horizon: int = 3):
-        """매출 앙상블 예측."""
+        """매출 앙상블 예측 — 다중 모델 기반 매출 전망.
+
+        Capabilities:
+            - 복수 통계 모델 앙상블로 향후 N년 매출 예측
+            - 신뢰구간 포함 시나리오 제공
+
+        Args:
+            horizon: 예측 기간 연수 (기본 3년).
+
+        Returns:
+            ForecastResult — 예측값, 신뢰구간, 모델별 결과.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.forecast()              # 3년 매출 예측
+            c.forecast(horizon=5)     # 5년 매출 예측
+        """
         from dartlab.analysis.forecast.revenueForecast import forecastRevenue
 
         ts = self.finance.timeseries
@@ -1251,7 +1842,27 @@ class Company:
         )
 
     def valuation(self, *, shares: int | None = None):
-        """종합 밸류에이션 (DCF + DDM + 상대가치)."""
+        """종합 밸류에이션 — DCF + DDM + 상대가치 통합.
+
+        Capabilities:
+            - DCF, DDM, 상대가치 3가지 밸류에이션 모델 동시 실행
+            - 주당 적정가치 산출 (shares 지정 시)
+
+        Args:
+            shares: 발행주식수. None이면 profile에서 자동 조회.
+
+        Returns:
+            ValuationResult — 모델별 적정가치, 요약.
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        Example::
+
+            c = Company("AAPL")
+            c.valuation()                      # 자동 shares 조회
+            c.valuation(shares=15_000_000_000)  # shares 직접 지정
+        """
         from dartlab.analysis.valuation.valuation import fullValuation
 
         ts = self.finance.timeseries
@@ -1276,7 +1887,27 @@ class Company:
         reflect: bool = False,
         **kwargs,
     ) -> str:
-        """LLM에게 이 기업에 대해 질문.
+        """LLM에게 이 기업에 대해 질문 — 엔진 계산 결과 기반 AI 해석.
+
+        Capabilities:
+            - 질문 분류 → 분석 패키지 선택 → 엔진 계산 → LLM 해석
+            - include/exclude로 컨텍스트 범위 조절
+            - 복수 LLM provider 지원 (openai, ollama 등)
+
+        Args:
+            question: 자연어 질문.
+            include: 포함할 컨텍스트 키 리스트.
+            exclude: 제외할 컨텍스트 키 리스트.
+            provider: LLM provider 이름 (예: "openai", "ollama").
+            model: 모델명 (예: "gpt-4o").
+            stream: 스트리밍 출력 여부.
+            reflect: 자기 반성 모드 (답변 품질 자가 검증).
+
+        Returns:
+            str — LLM 응답 텍스트.
+
+        Requires:
+            데이터: LLM API 키 설정 (dartlab ai 또는 환경변수)
 
         Example::
 
@@ -1309,12 +1940,32 @@ class Company:
         on_tool_result=None,
         **kwargs,
     ) -> str:
-        """Agent mode: LLM selects tools for in-depth analysis.
+        """Agent mode — LLM이 tool calling으로 심화 분석 수행.
+
+        Capabilities:
+            - ask() 결과 위에서 LLM이 부족한 부분을 tool 호출로 보충
+            - 최대 max_turns 반복으로 원본 탐색, 비교 분석, 메타 질문 처리
+            - tool_call/tool_result 콜백으로 진행 과정 모니터링
+
+        Args:
+            question: 자연어 질문.
+            provider: LLM provider 이름.
+            model: 모델명.
+            max_turns: 최대 tool calling 반복 횟수 (기본 5).
+            on_tool_call: tool 호출 시 콜백.
+            on_tool_result: tool 결과 수신 시 콜백.
+
+        Returns:
+            str — LLM 최종 응답 텍스트.
+
+        Requires:
+            데이터: LLM API 키 설정 (tool calling 지원 provider 필요)
 
         Example::
 
             c = Company("AAPL")
             c.chat("Analyze dividend trends and find anomalies")
+            c.chat("Compare margins with MSFT", provider="openai")
         """
         from dartlab.ai.runtime.standalone import chat as _chat
 

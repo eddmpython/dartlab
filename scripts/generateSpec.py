@@ -1,10 +1,11 @@
 """registry 기반 자동 문서 생성.
 
-6개 surface에서 코드를 수집하여 다음 파일을 자동 생성한다:
+7개 surface에서 코드를 수집하여 다음 파일을 자동 생성한다:
 - CAPABILITIES.md           — 루트 총괄 스펙맵
 - landing/static/llms.txt   — AI 크롤러용 구조화 문서
 - .claude/skills/dartlab/reference.md — Claude Code 스킬 레퍼런스
 - src/dartlab/ai/conversation/_generated_catalog.py — AI 시스템 프롬프트용 도구 카탈로그
+- src/dartlab/core/_generatedCapabilities.py — 런타임 capabilities 카탈로그
 
 실행:
     uv run python scripts/generateSpec.py
@@ -79,11 +80,50 @@ def _categoryLabel(cat: str) -> str:
     return labels.get(cat, cat)
 
 
+def _parseDocstringSections(doc: str | None) -> dict[str, str]:
+    """Google-style docstring에서 Capabilities/Requires/AIContext/Args/Returns 섹션 추출."""
+    if not doc:
+        return {}
+
+    result: dict[str, str] = {}
+    knownSections = {"capabilities", "requires", "aicontext", "args", "returns", "example"}
+    currentKey: str | None = None
+    currentLines: list[str] = []
+
+    for line in doc.split("\n"):
+        stripped = line.strip()
+        # "SectionName:" 패턴 (줄 전체가 "단어:" 또는 "단어::" 형태)
+        candidate = stripped.rstrip(":").lower()
+        if stripped.endswith(":") and candidate in knownSections:
+            # 이전 섹션 저장
+            if currentKey is not None:
+                result[currentKey] = "\n".join(currentLines).strip()
+            currentKey = candidate
+            currentLines = []
+            continue
+
+        if currentKey is not None:
+            # 들여쓰기 블록 안의 줄 수집 (leading whitespace 제거)
+            if stripped.startswith("- "):
+                currentLines.append(stripped[2:].strip())
+            elif stripped:
+                currentLines.append(stripped)
+            elif currentLines:
+                # 빈 줄 — 블록 종료가 아님 (다음 섹션이 나올 때까지)
+                currentLines.append("")
+
+    # 마지막 섹션 저장
+    if currentKey is not None:
+        result[currentKey] = "\n".join(currentLines).strip()
+
+    return result
+
+
 # ─── Surface 1: Python API (__init__.py __all__) ────────────────
 
 
 def _pythonApiSection() -> str:
-    """__init__.py __all__에서 callable의 docstring 첫 줄 수집."""
+    """__init__.py __all__에서 callable의 docstring 첫 줄 + Capabilities/Requires 수집."""
     import dartlab
 
     allNames = getattr(dartlab, "__all__", [])
@@ -91,6 +131,9 @@ def _pythonApiSection() -> str:
     lines.append("`import dartlab` 후 사용 가능한 공개 API.\n")
     lines.append("| 이름 | 종류 | 설명 |")
     lines.append("|------|------|------|")
+
+    # 상세 블록을 위해 수집
+    detailEntries: list[tuple[str, dict[str, str]]] = []
 
     for name in allNames:
         obj = getattr(dartlab, name, None)
@@ -102,7 +145,26 @@ def _pythonApiSection() -> str:
         desc = doc.split("\n")[0].strip() if doc else "-"
         lines.append(f"| `{name}` | {kind} | {desc} |")
 
+        # docstring 섹션 파싱
+        sections = _parseDocstringSections(doc)
+        if sections.get("capabilities") or sections.get("requires"):
+            detailEntries.append((name, sections))
+
     lines.append("")
+
+    # Capabilities/Requires 상세 블록
+    if detailEntries:
+        lines.append("### Python API 상세\n")
+        for name, sections in detailEntries:
+            lines.append(f"#### {name}")
+            if cap := sections.get("capabilities"):
+                lines.append(f"**Capabilities:** {cap}")
+            if req := sections.get("requires"):
+                lines.append(f"**Requires:** {req}")
+            if ctx := sections.get("aicontext"):
+                lines.append(f"**AIContext:** {ctx}")
+            lines.append("")
+
     return "\n".join(lines)
 
 
@@ -590,6 +652,109 @@ def _scanAxisSection() -> str:
     return "\n".join(lines)
 
 
+# ─── Surface 7: Gather Axis Registry ──────────────────────────
+
+
+def _gatherAxisSection() -> str:
+    """gather/_AXIS_REGISTRY에서 축 명세 추출 (scan과 동일 AST 패턴)."""
+    gatherEntry = SRC / "dartlab" / "gather" / "entry.py"
+    if not gatherEntry.exists():
+        return ""
+
+    try:
+        source = gatherEntry.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(gatherEntry))
+    except SyntaxError:
+        return ""
+
+    # _AXIS_REGISTRY dict 찾기
+    registryNode = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_AXIS_REGISTRY":
+                    registryNode = node.value
+                    break
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == "_AXIS_REGISTRY" and node.value:
+                registryNode = node.value
+
+    if registryNode is None or not isinstance(registryNode, ast.Dict):
+        return ""
+
+    axes: list[dict[str, str]] = []
+    for key, val in zip(registryNode.keys, registryNode.values):
+        if key is None or not isinstance(key, ast.Constant):
+            continue
+        axisName = str(key.value)
+        if not isinstance(val, ast.Call):
+            continue
+
+        entry: dict[str, str] = {"axis": axisName}
+        for kw in val.keywords:
+            if kw.arg and isinstance(kw.value, ast.Constant):
+                entry[kw.arg] = str(kw.value.value)
+            elif kw.arg == "targetRequired" and isinstance(kw.value, ast.Constant):
+                entry[kw.arg] = str(kw.value.value)
+        axes.append(entry)
+
+    if not axes:
+        return ""
+
+    # _ALIASES dict 추출
+    aliasNode = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_ALIASES":
+                    aliasNode = node.value
+                    break
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == "_ALIASES" and node.value:
+                aliasNode = node.value
+
+    aliases: dict[str, list[str]] = {}
+    if aliasNode and isinstance(aliasNode, ast.Dict):
+        for k, v in zip(aliasNode.keys, aliasNode.values):
+            if isinstance(k, ast.Constant) and isinstance(v, ast.Constant):
+                target = str(v.value)
+                aliases.setdefault(target, []).append(str(k.value))
+
+    lines = [f"## Gather Axis ({len(axes)}개 축)\n"]
+    lines.append("`dartlab.gather(axis, target)` 형태로 외부 시장 데이터 수집.\n")
+    lines.append("| 축 | 한글 | 설명 | target 필수 |")
+    lines.append("|----|------|------|------------|")
+
+    for e in axes:
+        axis = e.get("axis", "")
+        label = e.get("label", "")
+        desc = e.get("description", "")
+        required = "O" if e.get("targetRequired", "True") == "True" else "-"
+        lines.append(f"| `{axis}` | {label} | {desc} | {required} |")
+
+    lines.append("")
+
+    # 한글 별칭
+    if aliases:
+        lines.append("**한글 별칭:**\n")
+        for target, aliasList in sorted(aliases.items()):
+            lines.append(f"- `{target}`: {', '.join(aliasList)}")
+        lines.append("")
+
+    # 사용법 예시
+    lines.append("**사용법:**\n")
+    lines.append("```python")
+    lines.append("import dartlab")
+    lines.append("")
+    lines.append('dartlab.gather("price", "005930")   # 삼성전자 주가')
+    lines.append('dartlab.gather("flow", "005930")     # 수급 동향')
+    lines.append('dartlab.gather("macro")              # KR 거시지표 전체')
+    lines.append('dartlab.gather("news", "삼성전자")    # 뉴스')
+    lines.append("```\n")
+
+    return "\n".join(lines)
+
+
 # ─── 도구 연계 가이드 (자동 생성) ──────────────────────────────
 
 
@@ -637,12 +802,12 @@ def _toolChainSection() -> str:
     return "\n".join(lines)
 
 
-# ─── Company facade (기존 유지) ─────────────────────────────────
+# ─── Company facade (동적 추출) ─────────────────────────────────
 
 
 def _companySection() -> str:
-    """Company facade + 엔진 Company 사용법."""
-    return textwrap.dedent("""\
+    """Company facade 개요 (정적) + 메서드/프로퍼티 docstring 동적 추출."""
+    header = textwrap.dedent("""\
     ## Company (통합 facade)
 
     입력을 자동 판별하여 DART 또는 EDGAR 시장 전용 Company를 생성한다.
@@ -667,28 +832,71 @@ def _companySection() -> str:
     | 한글 포함 | DART Company | `Company("삼성전자")` |
     | 영문 1~5자리 | EDGAR Company | `Company("AAPL")` |
 
-    ### 핵심 property
-
-    | property | 반환 | 설명 |
-    |----------|------|------|
-    | `BS` | DataFrame | 재무상태표 |
-    | `IS` | DataFrame | 손익계산서 |
-    | `CIS` | DataFrame | 포괄손익계산서 |
-    | `CF` | DataFrame | 현금흐름표 |
-    | `sections` | DataFrame | merged topic x period company table |
-    | `ratios` | RatioResult | 재무비율 |
-    | `index` | DataFrame | 회사 구조 인덱스 |
-    | `insights` | AnalysisResult | 7영역 인사이트 등급 |
-
-    ### 핵심 메서드
-
-    | 메서드 | 설명 |
-    |--------|------|
-    | `show(topic)` | topic payload 조회 |
-    | `trace(topic)` | source provenance 조회 |
-    | `diff()` | 기간간 변화 감지 |
-    | `filings()` | 공시 문서 목록 |
     """)
+
+    # 동적 추출: DartCompany 공개 메서드/프로퍼티
+    lines = [header]
+    lines.append(_companyMethodsSection())
+    return "\n".join(lines)
+
+
+def _companyMethodsSection() -> str:
+    """DartCompany 공개 메서드/프로퍼티에서 docstring 동적 추출."""
+    from dartlab.providers.dart.company import Company as DartCompany
+
+    # 공개 멤버 수집
+    members: list[tuple[str, str, str, dict[str, str]]] = []
+    for name in sorted(dir(DartCompany)):
+        if name.startswith("_"):
+            continue
+        # 정적 메서드 (search, listing 등) 제외 — 이미 Python API 섹션에 있음
+        obj = getattr(DartCompany, name, None)
+        if obj is None:
+            continue
+        if isinstance(obj, staticmethod) or isinstance(obj, classmethod):
+            continue
+
+        kind = "property" if isinstance(inspect.getattr_static(DartCompany, name), property) else "method"
+        doc = None
+        if kind == "property":
+            prop = inspect.getattr_static(DartCompany, name)
+            if prop.fget:
+                doc = inspect.getdoc(prop.fget)
+        else:
+            doc = inspect.getdoc(obj)
+        if doc is None:
+            continue
+
+        desc = doc.split("\n")[0].strip()
+        sections = _parseDocstringSections(doc)
+        members.append((name, kind, desc, sections))
+
+    if not members:
+        return ""
+
+    lines = ["### Company 메서드/프로퍼티\n"]
+    lines.append(f"DartCompany에서 동적 추출 ({len(members)}개).\n")
+    lines.append("| 이름 | 종류 | 설명 |")
+    lines.append("|------|------|------|")
+    for name, kind, desc, _ in members:
+        lines.append(f"| `{name}` | {kind} | {desc} |")
+    lines.append("")
+
+    # 상세 블록 (Capabilities/Requires/AIContext가 있는 것만)
+    detailMembers = [(n, s) for n, _, _, s in members if s.get("capabilities") or s.get("requires")]
+    if detailMembers:
+        lines.append("### Company 메서드 상세\n")
+        for name, sections in detailMembers:
+            lines.append(f"#### Company.{name}")
+            if cap := sections.get("capabilities"):
+                lines.append(f"**Capabilities:** {cap}")
+            if req := sections.get("requires"):
+                lines.append(f"**Requires:** {req}")
+            if ctx := sections.get("aicontext"):
+                lines.append(f"**AIContext:** {ctx}")
+            lines.append("")
+
+    return "\n".join(lines)
 
 
 # ─── 주요 데이터 타입 ───────────────────────────────────────────
@@ -725,7 +933,7 @@ def _dataclassesSection() -> str:
 
 
 def generateCapabilities() -> str:
-    """루트 CAPABILITIES.md 생성 — 5 surface 통합."""
+    """루트 CAPABILITIES.md 생성 — 7 surface 통합."""
     import dartlab
 
     version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
@@ -742,6 +950,7 @@ def generateCapabilities() -> str:
         _dataModulesSection(),
         _aiToolsSection(),
         _scanAxisSection(),
+        _gatherAxisSection(),
         _toolChainSection(),
         _companySection(),
         _dataclassesSection(),
@@ -855,6 +1064,8 @@ def generateSkillRef() -> str:
         _pythonApiSection(),
         _cliSection(),
         _dataModulesSection(),
+        _scanAxisSection(),
+        _gatherAxisSection(),
         _companySection(),
         _dataclassesSection(),
     ]
@@ -964,6 +1175,128 @@ def _generateCatalog() -> str:
     )
 
 
+# ─── _generatedCapabilities.py 생성 ───────────────────────────
+
+
+def _generateCapabilitiesPy() -> str:
+    """런타임 capabilities 카탈로그 Python 파일 생성.
+
+    __all__ 함수 + Company 메서드 + Scan 축 + Gather 축을 하나의 dict로.
+    """
+    import dartlab
+    from dartlab.providers.dart.company import Company as DartCompany
+
+    entries: dict[str, dict[str, str]] = {}
+
+    # 1) __all__ 함수/클래스
+    allNames = getattr(dartlab, "__all__", [])
+    for name in allNames:
+        obj = getattr(dartlab, name, None)
+        if obj is None:
+            continue
+        kind = "class" if inspect.isclass(obj) else "function" if callable(obj) else "module"
+        doc = inspect.getdoc(obj)
+        summary = doc.split("\n")[0].strip() if doc else ""
+        sections = _parseDocstringSections(doc)
+        entry: dict[str, str] = {"summary": summary, "kind": kind}
+        if cap := sections.get("capabilities"):
+            entry["capabilities"] = cap
+        if req := sections.get("requires"):
+            entry["requires"] = req
+        if ctx := sections.get("aicontext"):
+            entry["aicontext"] = ctx
+        entries[name] = entry
+
+    # 2) Company 공개 메서드/프로퍼티
+    for memberName in sorted(dir(DartCompany)):
+        if memberName.startswith("_"):
+            continue
+        obj = getattr(DartCompany, memberName, None)
+        if obj is None:
+            continue
+        if isinstance(obj, (staticmethod, classmethod)):
+            continue
+
+        kind = "property" if isinstance(inspect.getattr_static(DartCompany, memberName), property) else "method"
+        doc = None
+        if kind == "property":
+            prop = inspect.getattr_static(DartCompany, memberName)
+            if prop.fget:
+                doc = inspect.getdoc(prop.fget)
+        else:
+            doc = inspect.getdoc(obj)
+        if doc is None:
+            continue
+
+        summary = doc.split("\n")[0].strip()
+        sections = _parseDocstringSections(doc)
+        entry = {"summary": summary, "kind": kind}
+        if cap := sections.get("capabilities"):
+            entry["capabilities"] = cap
+        if req := sections.get("requires"):
+            entry["requires"] = req
+        if ctx := sections.get("aicontext"):
+            entry["aicontext"] = ctx
+        entries[f"Company.{memberName}"] = entry
+
+    # 3) Scan 축 (AST)
+    scanInit = SRC / "dartlab" / "scan" / "__init__.py"
+    if scanInit.exists():
+        try:
+            tree = ast.parse(scanInit.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "_AXIS_REGISTRY":
+                            if isinstance(node.value, ast.Dict):
+                                for k, v in zip(node.value.keys, node.value.values):
+                                    if isinstance(k, ast.Constant) and isinstance(v, ast.Call):
+                                        axisName = str(k.value)
+                                        axisEntry: dict[str, str] = {"kind": "scan_axis"}
+                                        for kw in v.keywords:
+                                            if kw.arg == "label" and isinstance(kw.value, ast.Constant):
+                                                axisEntry["summary"] = str(kw.value.value)
+                                            elif kw.arg == "description" and isinstance(kw.value, ast.Constant):
+                                                axisEntry["capabilities"] = str(kw.value.value)
+                                        entries[f"scan.{axisName}"] = axisEntry
+        except SyntaxError:
+            pass
+
+    # 4) Gather 축 (AST)
+    gatherEntry = SRC / "dartlab" / "gather" / "entry.py"
+    if gatherEntry.exists():
+        try:
+            tree = ast.parse(gatherEntry.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "_AXIS_REGISTRY":
+                            if isinstance(node.value, ast.Dict):
+                                for k, v in zip(node.value.keys, node.value.values):
+                                    if isinstance(k, ast.Constant) and isinstance(v, ast.Call):
+                                        axisName = str(k.value)
+                                        axisEntry = {"kind": "gather_axis"}
+                                        for kw in v.keywords:
+                                            if kw.arg == "label" and isinstance(kw.value, ast.Constant):
+                                                axisEntry["summary"] = str(kw.value.value)
+                                            elif kw.arg == "description" and isinstance(kw.value, ast.Constant):
+                                                axisEntry["capabilities"] = str(kw.value.value)
+                                        entries[f"gather.{axisName}"] = axisEntry
+        except SyntaxError:
+            pass
+
+    dictRepr = json.dumps(entries, ensure_ascii=False, indent=4, sort_keys=True)
+
+    return (
+        '"""런타임 capabilities 카탈로그 (자동 생성).\n'
+        "\n"
+        "이 파일은 scripts/generateSpec.py가 자동 생성합니다. 직접 수정 금지.\n"
+        '"""\n'
+        "\n"
+        f"CAPABILITIES: dict[str, dict] = {dictRepr}\n"
+    )
+
+
 # ─── main ───────────────────────────────────────────────────────
 
 
@@ -972,6 +1305,7 @@ def main():
     llmsTxtPath = ROOT / "landing" / "static" / "llms.txt"
     skillRefPath = ROOT / ".claude" / "skills" / "dartlab" / "reference.md"
     catalogPath = SRC / "dartlab" / "ai" / "conversation" / "_generatedCatalog.py"
+    capabilitiesPyPath = SRC / "dartlab" / "core" / "_generatedCapabilities.py"
 
     skillRefPath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -990,6 +1324,10 @@ def main():
     catalog = _generateCatalog()
     catalogPath.write_text(catalog, encoding="utf-8")
     print(f"  _generatedCatalog.py ({len(catalog):,} chars) -> {catalogPath}")
+
+    capabilitiesPy = _generateCapabilitiesPy()
+    capabilitiesPyPath.write_text(capabilitiesPy, encoding="utf-8")
+    print(f"  _generatedCapabilities.py ({len(capabilitiesPy):,} chars) -> {capabilitiesPyPath}")
 
     print("\n  완료.")
 

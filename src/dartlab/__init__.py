@@ -28,6 +28,20 @@ except PackageNotFoundError:
 def search(keyword: str):
     """종목 검색 (KR + US 통합).
 
+    Capabilities:
+        - 한글 입력 시 DART 종목 검색 (종목명, 종목코드)
+        - 영문 입력 시 EDGAR 종목 검색 (ticker, 회사명)
+        - 부분 일치, 초성 검색 지원 (KR)
+
+    Args:
+        keyword: 종목명, 종목코드, 또는 ticker. 한글이면 KR, 영문이면 US 자동 감지.
+
+    Returns:
+        pl.DataFrame — 검색 결과 (code, name, market 등).
+
+    Requires:
+        데이터: listing (자동 다운로드)
+
     Example::
 
         import dartlab
@@ -49,8 +63,19 @@ def search(keyword: str):
 def listing(market: str | None = None):
     """전체 상장법인 목록.
 
+    Capabilities:
+        - KR 전체 상장법인 목록 (KOSPI + KOSDAQ)
+        - 종목코드, 종목명, 시장구분, 업종 포함
+        - US listing은 향후 지원 예정
+
     Args:
         market: "KR" 또는 "US". None이면 KR 기본.
+
+    Returns:
+        pl.DataFrame — 전체 상장법인 (code, name, market, sector 등).
+
+    Requires:
+        데이터: listing (자동 다운로드)
 
     Example::
 
@@ -73,7 +98,24 @@ def collect(
     categories: list[str] | None = None,
     incremental: bool = True,
 ) -> dict[str, dict[str, int]]:
-    """지정 종목 DART 데이터 수집 (OpenAPI). 멀티키 시 병렬.
+    """지정 종목 DART 데이터 수집 (OpenAPI).
+
+    Capabilities:
+        - 종목별 DART 공시 데이터 직접 수집 (finance, docs, report)
+        - 멀티키 병렬 수집 (DART_API_KEYS 쉼표 구분)
+        - 증분 수집 — 이미 있는 데이터는 건너뜀
+        - 카테고리별 선택 수집
+
+    Args:
+        *codes: 종목코드 1개 이상 ("005930", "000660").
+        categories: 수집 카테고리 ["finance", "docs", "report"]. None이면 전체.
+        incremental: True면 증분 수집 (기본). False면 전체 재수집.
+
+    Returns:
+        dict — {종목코드: {카테고리: 수집 건수}}.
+
+    Requires:
+        API 키: DART_API_KEY
 
     Example::
 
@@ -93,7 +135,25 @@ def collectAll(
     maxWorkers: int | None = None,
     incremental: bool = True,
 ) -> dict[str, dict[str, int]]:
-    """전체 상장종목 DART 데이터 수집. DART_API_KEY(S) 필요. 멀티키 시 병렬.
+    """전체 상장종목 DART 데이터 일괄 수집.
+
+    Capabilities:
+        - 전체 상장종목 DART 공시 데이터 일괄 수집
+        - 미수집 종목만 선별 수집 (mode="new") 또는 전체 재수집 (mode="all")
+        - 멀티키 병렬 수집 (DART_API_KEYS 쉼표 구분)
+        - 카테고리별 선택 (finance, docs, report)
+
+    Args:
+        categories: 수집 카테고리 ["finance", "docs", "report"]. None이면 전체.
+        mode: "new" (미수집만, 기본) 또는 "all" (전체 재수집).
+        maxWorkers: 병렬 워커 수. None이면 키 수에 따라 자동.
+        incremental: True면 증분 수집. False면 전체 재수집.
+
+    Returns:
+        dict — {종목코드: {카테고리: 수집 건수}}.
+
+    Requires:
+        API 키: DART_API_KEY
 
     Example::
 
@@ -113,16 +173,25 @@ def collectAll(
 
 
 def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None:
-    """HuggingFace에서 전체 시장 데이터를 다운로드.
+    """HuggingFace에서 전체 시장 데이터 다운로드.
 
-    scanAccount, screen, digest 등 전사(全社) 분석 기능은 로컬에 전체 데이터가 있어야 동작합니다.
-    이 함수로 카테고리별 전체 데이터를 사전 다운로드하세요.
+    Capabilities:
+        - HuggingFace 사전 구축 데이터 일괄 다운로드
+        - finance (~600MB, 2700+종목), docs (~8GB, 2500+종목), report (~320MB, 2700+종목)
+        - 이어받기/병렬 다운로드 지원 (huggingface_hub)
+        - 전사 분석(scanAccount, governance, digest 등)에 필요한 데이터 사전 준비
 
     Args:
         category: "finance" (재무 ~600MB), "docs" (공시 ~8GB), "report" (보고서 ~320MB).
         forceUpdate: True면 이미 있는 파일도 최신으로 갱신.
 
-    Examples::
+    Returns:
+        None.
+
+    Requires:
+        없음 (HuggingFace 공개 데이터셋)
+
+    Example::
 
         import dartlab
         dartlab.downloadAll("finance")   # 재무 전체 — scanAccount/scanRatio 등에 필요
@@ -136,6 +205,21 @@ def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None
 
 def checkFreshness(stockCode: str, *, forceCheck: bool = False):
     """종목의 로컬 데이터가 최신인지 DART API로 확인.
+
+    Capabilities:
+        - 로컬 데이터와 DART 서버의 최신 공시 비교
+        - 누락 공시 수 + 최신 여부 판정
+        - 캐시된 결과 재사용 (forceCheck=False)
+
+    Args:
+        stockCode: 종목코드 ("005930").
+        forceCheck: True면 캐시 무시, DART API 강제 조회.
+
+    Returns:
+        FreshnessResult — isFresh (bool), missingCount (int), lastLocalDate, lastRemoteDate.
+
+    Requires:
+        API 키: DART_API_KEY
 
     Example::
 
@@ -153,6 +237,17 @@ def checkFreshness(stockCode: str, *, forceCheck: bool = False):
 
 def network():
     """한국 상장사 전체 관계 지도.
+
+    Capabilities:
+        - 상장사 간 지분 관계 네트워크 시각화
+        - 브라우저에서 인터랙티브 그래프 표시
+        - 노드(기업) + 엣지(지분 관계) 구조
+
+    Returns:
+        NetworkResult — .show()로 브라우저 시각화, .nodes/.edges로 데이터 접근.
+
+    Requires:
+        데이터: docs (자동 다운로드)
 
     Example::
 
@@ -174,6 +269,17 @@ def network():
 def governance():
     """한국 상장사 전체 지배구조 스캔.
 
+    Capabilities:
+        - 전체 상장사 지배구조 횡단 비교
+        - 최대주주 지분율, 사외이사 비율, 감사위원회 설치 여부
+        - 지분 변동 추이, 특수관계인 거래
+
+    Returns:
+        pl.DataFrame — 전종목 지배구조 지표 (종목코드, 종목명, 최대주주지분율, ...).
+
+    Requires:
+        데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
     Example::
 
         import dartlab
@@ -190,6 +296,17 @@ def governance():
 
 def workforce():
     """한국 상장사 전체 인력/급여 스캔.
+
+    Capabilities:
+        - 전체 상장사 임직원 현황 횡단 비교
+        - 임직원 수, 평균 근속연수, 평균 급여, 성별 비율
+        - 업종별/규모별 비교
+
+    Returns:
+        pl.DataFrame — 전종목 인력 지표 (종목코드, 종목명, 직원수, 평균급여, ...).
+
+    Requires:
+        데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
 
     Example::
 
@@ -208,6 +325,17 @@ def workforce():
 def capital():
     """한국 상장사 전체 주주환원 스캔.
 
+    Capabilities:
+        - 전체 상장사 주주환원 정책 횡단 비교
+        - 배당수익률, 배당성향, 자사주 매입/소각 이력
+        - 유상증자/무상증자 이력
+
+    Returns:
+        pl.DataFrame — 전종목 주주환원 지표 (종목코드, 종목명, 배당수익률, ...).
+
+    Requires:
+        데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
     Example::
 
         import dartlab
@@ -225,6 +353,17 @@ def capital():
 def debt():
     """한국 상장사 전체 부채 구조 스캔.
 
+    Capabilities:
+        - 전체 상장사 부채 구조 횡단 비교
+        - 부채비율, 차입금 의존도, 이자보상배율
+        - 단기/장기 차입금 구성, 사채 발행 현황
+
+    Returns:
+        pl.DataFrame — 전종목 부채 지표 (종목코드, 종목명, 부채비율, ...).
+
+    Requires:
+        데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
     Example::
 
         import dartlab
@@ -239,95 +378,27 @@ def debt():
     return result
 
 
-def news(query: str, *, market: str = "KR", days: int = 30):
-    """기업 뉴스 수집.
-
-    Args:
-        query: 기업명 또는 티커.
-        market: "KR" 또는 "US".
-        days: 최근 N일.
-
-    Example::
-
-        import dartlab
-        dartlab.news("삼성전자")
-        dartlab.news("AAPL", market="US")
-    """
-    from dartlab.gather import getDefaultGather
-
-    return getDefaultGather().news(query, market=market, days=days)
-
-
-def price(
-    stockCode: str, *, market: str = "KR", start: str | None = None, end: str | None = None, snapshot: bool = False
-):
-    """주가 시계열 (기본 1년 OHLCV) 또는 스냅샷.
-
-    Example::
-
-        import dartlab
-        dartlab.price("005930")                              # 1년 OHLCV 시계열
-        dartlab.price("005930", start="2020-01-01")          # 기간 지정
-        dartlab.price("005930", snapshot=True)               # 현재가 스냅샷
-    """
-    from dartlab.gather import getDefaultGather
-
-    return getDefaultGather().price(stockCode, market=market, start=start, end=end, snapshot=snapshot)
-
-
-def consensus(stockCode: str, *, market: str = "KR"):
-    """컨센서스 — 목표가, 투자의견.
-
-    Example::
-
-        import dartlab
-        dartlab.consensus("005930")
-        dartlab.consensus("AAPL", market="US")
-    """
-    from dartlab.gather import getDefaultGather
-
-    return getDefaultGather().consensus(stockCode, market=market)
-
-
-def flow(stockCode: str, *, market: str = "KR"):
-    """수급 시계열 — 외국인/기관 매매 동향 (KR 전용).
-
-    Example::
-
-        import dartlab
-        dartlab.flow("005930")
-        # [{"date": "20260325", "foreignNet": -6165053, "institutionNet": 2908773, ...}, ...]
-    """
-    from dartlab.gather import getDefaultGather
-
-    return getDefaultGather().flow(stockCode, market=market)
-
-
-def macro(market: str = "KR", indicator: str | None = None, *, start: str | None = None, end: str | None = None):
-    """거시 지표 시계열 — ECOS(KR) / FRED(US).
-
-    인자 없으면 카탈로그 전체 지표를 wide DataFrame으로 반환.
-
-    Example::
-
-        import dartlab
-        dartlab.macro()                    # KR 전체 지표 wide DF (22개)
-        dartlab.macro("US")                # US 전체 지표 wide DF (50개)
-        dartlab.macro("CPI")               # CPI (자동 KR 감지)
-        dartlab.macro("FEDFUNDS")          # 연방기금금리 (자동 US 감지)
-        dartlab.macro("KR", "CPI")         # 명시적 KR + CPI
-        dartlab.macro("US", "SP500")       # 명시적 US + S&P500
-    """
-    from dartlab.gather import getDefaultGather
-
-    return getDefaultGather().macro(market, indicator, start=start, end=end)
-
 
 def setup(provider: str | None = None):
     """AI provider 설정 안내 + 인터랙티브 설정.
 
+    Capabilities:
+        - 전체 AI provider 설정 현황 테이블 표시
+        - provider별 대화형 설정 (키 입력 → .env 저장)
+        - ChatGPT OAuth 브라우저 로그인
+        - OpenAI/Gemini/Groq/Cerebras/Mistral API 키 설정
+        - Ollama 로컬 LLM 설치 안내
+
     Args:
-        provider: 특정 provider 설정. None이면 전체 현황.
+        provider: provider명 또는 alias. None이면 전체 현황 표시.
+            지원: "chatgpt", "openai", "gemini", "groq", "cerebras",
+            "mistral", "ollama", "codex", "custom".
+
+    Returns:
+        None (터미널/노트북에 안내 출력).
+
+    Requires:
+        없음
 
     Example::
 
@@ -432,6 +503,21 @@ def ask(
     **kwargs,
 ):
     """LLM에게 기업에 대해 질문.
+
+    Capabilities:
+        - 자연어로 기업 분석 질문 (종목 자동 감지)
+        - 스트리밍 출력 (기본) / 배치 반환 / Generator 직접 제어
+        - 엔진 자동 계산 → LLM 해석 (Engine-First)
+        - 데이터 모듈 include/exclude로 분석 범위 제어
+        - 자체 검증 (reflect=True)
+
+    AIContext:
+        - 재무비율, 추세, 동종업계 비교를 자동 계산하여 LLM에 제공
+        - sections 서술형 데이터 + finance 숫자 데이터 동시 주입
+        - tool calling provider에서는 LLM이 추가 데이터 자율 탐색
+
+    Requires:
+        AI: provider 설정 (dartlab.setup() 참조)
 
     Args:
         *args: 자연어 질문 (1개) 또는 (종목, 질문) 2개.
@@ -561,6 +647,19 @@ def chat(
 ) -> str:
     """에이전트 모드: LLM이 도구를 선택하여 심화 분석.
 
+    Capabilities:
+        - LLM이 dartlab 도구를 자율적으로 선택/실행
+        - 원본 공시 탐색, 계정 시계열 비교, 섹터 통계 등 심화 분석
+        - 최대 N회 도구 호출 반복 (multi-turn)
+        - 도구 호출/결과 콜백으로 UI 연동
+
+    AIContext:
+        - ask()와 동일한 기본 컨텍스트 + 저수준 도구 접근
+        - LLM이 부족하다 판단하면 추가 데이터 자율 수집
+
+    Requires:
+        AI: provider 설정 (tool calling 지원 provider 권장)
+
     Args:
         codeOrName: 종목코드, 회사명, 또는 US ticker.
         question: 질문 텍스트.
@@ -591,6 +690,16 @@ def chat(
 def plugins():
     """로드된 플러그인 목록 반환.
 
+    Capabilities:
+        - 설치된 dartlab 플러그인 자동 탐색
+        - 플러그인 메타데이터 (이름, 버전, 제공 topic) 조회
+
+    Returns:
+        list[PluginMeta] — 로드된 플러그인 목록.
+
+    Requires:
+        없음
+
     Example::
 
         import dartlab
@@ -604,6 +713,16 @@ def plugins():
 
 def reload_plugins():
     """플러그인 재스캔 — pip install 후 재시작 없이 즉시 인식.
+
+    Capabilities:
+        - 새로 설치한 플러그인 즉시 인식 (세션 재시작 불필요)
+        - entry_points 재스캔
+
+    Returns:
+        list[PluginMeta] — 재스캔 후 플러그인 목록.
+
+    Requires:
+        없음
 
     Example::
 
@@ -624,6 +743,22 @@ def reload_plugins():
 def audit(codeOrName: str):
     """감사 Red Flag 분석.
 
+    Capabilities:
+        - 감사의견 추이 (최근 5년, 적정/한정/부적정/의견거절)
+        - 감사인 변경 이력 + 변경 사유
+        - 계속기업 불확실성 플래그
+        - 핵심감사사항 (KAM) 추출
+        - 내부회계관리제도 검토의견
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명 ("삼성전자").
+
+    Returns:
+        dict — opinion, auditorChanges, goingConcern, kam, internalControl 등.
+
+    Requires:
+        데이터: docs + report (자동 다운로드)
+
     Example::
 
         import dartlab
@@ -638,10 +773,27 @@ def audit(codeOrName: str):
 def forecast(codeOrName: str, *, horizon: int = 3):
     """매출 앙상블 예측.
 
+    Capabilities:
+        - 매출 시계열 기반 앙상블 예측 (ARIMA + 선형 + 지��평활)
+        - 업종 성장률 가중 보정
+        - 신뢰구간 (80%, 95%) 제공
+        - 최대 N년 전망 (기본 3년)
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명.
+        horizon: 예측 기간 (��). 기본 3.
+
+    Returns:
+        ForecastResult — predicted, confidence80, confidence95, components.
+
+    Requires:
+        데이터: finance (자동 다운로드)
+
     Example::
 
         import dartlab
         dartlab.forecast("005930")
+        dartlab.forecast("005930", horizon=5)
     """
     c = Company(codeOrName)
     from dartlab.analysis.forecast.revenueForecast import forecastRevenue
@@ -663,6 +815,22 @@ def forecast(codeOrName: str, *, horizon: int = 3):
 
 def valuation(codeOrName: str, *, shares: int | None = None):
     """종합 밸류에이션 (DCF + DDM + 상대가치).
+
+    Capabilities:
+        - DCF (잉여현금흐름 할인 모형)
+        - DDM (배당할인 모형)
+        - 상대가치 (PER/PBR/EV-EBITDA 동종업계 비교)
+        - 적정주가 범위 산출
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명.
+        shares: 발행주식수. None이면 프로필에서 자동 조회.
+
+    Returns:
+        ValuationResult — dcf, ddm, relative, summary.
+
+    Requires:
+        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -689,6 +857,21 @@ def valuation(codeOrName: str, *, shares: int | None = None):
 def insights(codeOrName: str):
     """7영역 등급 분석.
 
+    Capabilities:
+        - 수익성, 성장성, 안정성, 효율성, 현금흐름, 밸류에이션, 배당 — 7영역
+        - 각 영역 A~F 등급 부여 + 근거 지표
+        - 종합 등급 + 강점/약점 요약
+        - 동종업계 백분위 위치
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명.
+
+    Returns:
+        InsightResult — grades (영역별 등급), summary, strengths, weaknesses.
+
+    Requires:
+        데이터: finance (자동 다운로드)
+
     Example::
 
         import dartlab
@@ -702,6 +885,22 @@ def insights(codeOrName: str):
 
 def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
     """경제 시나리오 시뮬레이션.
+
+    Capabilities:
+        - 거시경제 시나리오별 재무 영향 시뮬레이션
+        - 기본 시나리오: 금리 인상, 경기 침체, 원��재 급등, 환율 변동
+        - 매출/영업이익/순이익 변동 추정
+        - 업종별 민감도 차등 적용
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명.
+        scenarios: 시나리오명 목록. None이면 전체 기본 시나리오.
+
+    Returns:
+        SimulationResult — scenarios별 재무 영향 추정.
+
+    Requires:
+        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -725,6 +924,23 @@ def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
 def research(codeOrName: str, *, sections: list[str] | None = None, includeMarket: bool = True):
     """종합 기업분석 리포트.
 
+    Capabilities:
+        - 재무분석 + 시장분석 통합 리포트
+        - 섹션별 선택 생성 가능
+        - 재무비율 추세, 동종업계 비교, 시장 포지션
+        - 구조화된 마크다운 출력
+
+    Args:
+        codeOrName: 종목코드 ("005930") 또는 종목명.
+        sections: 포함할 섹션명 목록. None이면 전체.
+        includeMarket: True면 시장 분석 포함 (기본).
+
+    Returns:
+        ResearchResult — 구조화된 분석 리포트.
+
+    Requires:
+        데이터: finance + docs (자동 다운로드)
+
     Example::
 
         import dartlab
@@ -745,6 +961,18 @@ def scanAccount(
     annual: bool = False,
 ):
     """전종목 단일 계정 시계열.
+
+    Capabilities:
+        - 전체 상장종목의 특정 계정 시계열 횡단 비교
+        - 한글/영문 계정명 모두 지원 ("매출액" = "sales")
+        - DART(KR) + EDGAR(US) 양쪽 지원
+        - 분기별/연간 선택, 연결/별도 선택
+
+    Returns:
+        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
+
+    Requires:
+        데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
 
     Args:
         snakeId: 계정 식별자. 영문("sales") 또는 한글("매출액") 모두 가능.
@@ -779,6 +1007,18 @@ def scanRatio(
     annual: bool = False,
 ):
     """전종목 단일 재무비율 시계열.
+
+    Capabilities:
+        - 전체 상장종목의 특정 재무비율 시계열 횡단 비교
+        - ROE, 영업이익률, 부채비율 등 주요 비율 지원
+        - DART(KR) + EDGAR(US) 양쪽 지원
+        - 분기별/연간 선택
+
+    Returns:
+        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
+
+    Requires:
+        데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
 
     Args:
         ratioName: 비율 식별자 ("roe", "operatingMargin", "debtRatio" 등).
@@ -816,7 +1056,17 @@ def digest(
 ):
     """시장 전체 공시 변화 다이제스트.
 
-    로컬에 다운로드된 docs 데이터를 순회하며 중요도 높은 변화를 집계한다.
+    Capabilities:
+        - 전체 상장사 공시 변화 중요도 순위
+        - 섹터별 필터링
+        - 텍스트 변화량 + 재무 변화 통합 스코어링
+        - DataFrame/마크다운/JSON 출력
+
+    Returns:
+        pl.DataFrame | str — format에 따라 DataFrame 또는 마크다운/JSON 문자열.
+
+    Requires:
+        데이터: docs (dartlab.downloadAll("docs")로 사전 다운로드)
 
     Args:
         sector: 섹터 필터 (예: "반도체"). None이면 전체.
@@ -894,6 +1144,12 @@ class _Module(sys.modules[__name__].__class__):
 
 sys.modules[__name__].__class__ = _Module
 
+# gather 모듈을 GatherEntry callable로 덮어쓰기
+# (gather 서브모듈이 top-level import로 이미 로드되므로 __getattr__ lazy 불가)
+from dartlab.gather.entry import GatherEntry as _GatherEntry
+
+sys.modules[__name__].gather = _GatherEntry()
+
 
 __all__ = [
     "Company",
@@ -914,8 +1170,8 @@ __all__ = [
     "downloadAll",
     "scan",
     "analysis",
+    "gather",
     "network",
-    "news",
     "audit",
     "forecast",
     "valuation",
