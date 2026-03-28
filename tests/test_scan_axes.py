@@ -39,7 +39,7 @@ def test_capital_imports():
 
     assert callable(scan_capital)
     cat, contra = classify_return(True, True, False)
-    assert cat == "환원형"
+    assert cat == "적극환원"
     assert contra is False
     cat2, contra2 = classify_return(True, False, True)
     assert cat2 == "중립"

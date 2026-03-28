@@ -207,6 +207,32 @@ LG에너지    Revenue             매출         →  revenue    매출액
 
 **신뢰성** — 숫자는 DART/EDGAR 원본 그대로. 데이터가 없으면 추정하지 않고 `None`을 반환한다. `trace(topic)`으로 어떤 소스가 왜 채택됐는지 항상 확인 가능. 에러를 삼키지 않는다.
 
+### 데이터 — 모든 게 준비되어 있다
+
+모든 데이터는 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에 사전 구축되어 있다. `Company`를 만들면 필요한 데이터를 자동 다운로드한다 — **설정 없음, API 키 없음, 수동 다운로드 없음.**
+
+| 데이터셋 | 범위 | 크기 |
+|----------|------|------|
+| DART docs | 2,500+ 기업 | ~8 GB |
+| DART finance | 2,700+ 기업 | ~600 MB |
+| DART report | 2,700+ 기업 | ~320 MB |
+| DART scan | 전종목 사전 계산 | ~271 MB |
+| EDGAR | 온디맨드 | SEC API (자동 수집) |
+
+원본에서 직접 수집하고 싶다면 공공 API를 쓸 수 있다:
+
+```python
+from dartlab import OpenDart           # 한국 DART (무료 API 키 필요)
+d = OpenDart()
+d.filings("삼성전자", "2024")
+
+from dartlab import OpenEdgar          # 미국 SEC (키 불필요)
+e = OpenEdgar()
+e.filings("AAPL", forms=["10-K"])
+```
+
+전체 파이프라인(캐시, 최신화, 일괄 수집)은 [데이터](#데이터) 참조.
+
 ### Company — 기억할 것 7개
 
 `Company`는 docs/finance/report 3개 소스를 통합한 회사 객체다. 사용자가 알아야 할 메서드는 7개뿐이다.
@@ -244,10 +270,10 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
 |----|------|------|
 | governance | 거버넌스 | 지분율, 사외이사, 보수비율, 감사의견 |
 | workforce | 인력/급여 | 직원수, 평균급여, 성장률, 고액보수 |
-| capital | 주주환원 | 배당, 자사주, 증자/감자, 환원 분류 |
+| capital | 주주환원 | 배당, 자사주(취득/처분/소각), 증자/감자, 환원 분류 |
 | debt | 부채구조 | 사채만기, CP/단기사채, 부채비율, ICR, 위험등급 |
 | cashflow | 현금흐름 | OCF/ICF/FCF + 8종 라이프사이클 패턴 |
-| audit | 감사리스크 | 감사의견, 감사인변경, 특기사항 종합 리스크 |
+| audit | 감사리스크 | 감사의견, 감사인변경, 특기사항, 감사독립성비율 |
 | insider | 내부자지분 | 최대주주 지분변동, 자기주식, 경영권 안정성 |
 | quality | 이익의 질 | Accrual Ratio + CF/NI -- 이익이 현금 뒷받침되는지 |
 | liquidity | 유동성 | 유동비율 + 당좌비율 -- 단기 지급능력 |
@@ -1080,9 +1106,10 @@ dartlab collect --batch --mode all         # 전체 재수집
 
 | 기능 | 설명 | Colab | Molab |
 |------|------|-------|-------|
-| **Company** | `Company("005930")` -- sections, show, trace, diff, BS/IS/CF, ratios, EDGAR | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
+| **Company** | `Company("005930")` -- index, show, select, trace, diff + 재무 바로가기 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | **Scan** | `scan()` -- 13축 전종목 횡단 스캔, 2,700+ 기업 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
-| **Ask** | `ask()` -- AI 분석, 스트리밍, 9개 LLM 프로바이더 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_ask.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_ask.py) |
+| **Review** | `c.review()` -- 14개 섹션 구조화 보고서 + `c.reviewer()` AI 해석 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
+| **Gather** | `price()`, `macro()`, `consensus()` -- fallback 체인 시장 데이터 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
 
 <details>
 <summary>로컬에서 Marimo로 실행</summary>
@@ -1091,7 +1118,8 @@ dartlab collect --batch --mode all         # 전체 재수집
 uv add dartlab marimo
 marimo edit notebooks/marimo/01_company.py
 marimo edit notebooks/marimo/02_scan.py
-marimo edit notebooks/marimo/03_ask.py
+marimo edit notebooks/marimo/03_review.py
+marimo edit notebooks/marimo/04_gather.py
 ```
 
 </details>

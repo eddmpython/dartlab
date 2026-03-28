@@ -272,10 +272,10 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 |------|-------|--------------|
 | governance | Governance | Ownership, outside directors, pay ratio, audit opinion |
 | workforce | Workforce | Headcount, avg salary, growth rate, top earners |
-| capital | Shareholder Return | Dividends, buybacks, equity changes |
+| capital | Shareholder Return | Dividends, buybacks, cancellations, equity changes |
 | debt | Debt Structure | Bond maturity, CP/short-term bonds, debt ratio, ICR, risk grade |
 | cashflow | Cash Flow | OCF/ICF/FCF + 8-type lifecycle pattern |
-| audit | Audit Risk | Opinion, auditor change, special matters |
+| audit | Audit Risk | Opinion, auditor change, special matters, independence ratio |
 | insider | Insider Holdings | Major holder change, treasury stock, stability |
 | quality | Earnings Quality | Accrual ratio + CF/NI — is profit backed by cash? |
 | liquidity | Liquidity | Current ratio + quick ratio — can it pay tomorrow? |
@@ -1112,6 +1112,7 @@ dartlab collect --batch --mode all         # re-collect everything
 | **Company** | `Company("005930")` -- index, show, select, trace, diff + finance shortcuts | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | **Scan** | `scan()` -- 13-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Review** | `c.review()` -- 14-section structured report + `c.reviewer()` AI interpretation | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
+| **Gather** | `price()`, `macro()`, `consensus()` -- market data with fallback chains | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
 
 <details>
 <summary>Run locally with Marimo</summary>
@@ -1121,6 +1122,7 @@ uv add dartlab marimo
 marimo edit notebooks/marimo/01_company.py
 marimo edit notebooks/marimo/02_scan.py
 marimo edit notebooks/marimo/03_review.py
+marimo edit notebooks/marimo/04_gather.py
 ```
 
 </details>

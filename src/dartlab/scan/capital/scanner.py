@@ -86,10 +86,10 @@ def scan_dividend() -> dict[str, dict]:
 
 
 def scan_treasury_stock() -> dict[str, dict]:
-    """treasuryStock → {종목코드: {자사주보유, 당기취득}}."""
+    """treasuryStock → {종목코드: {자사주보유, 당기취득, 당기처분, 당기소각, 소각수량, 처분수량, 취득수량}}."""
     raw = scan_parquets(
         "treasuryStock",
-        ["stockCode", "year", "quarter", "trmend_qy", "change_qy_acqs"],
+        ["stockCode", "year", "quarter", "trmend_qy", "change_qy_acqs", "change_qy_dsps", "change_qy_incnr"],
     )
     if raw.is_empty():
         return {}
@@ -111,16 +111,29 @@ def scan_treasury_stock() -> dict[str, dict]:
         code_val = code[0]
         total_held = 0
         total_acqs = 0
+        total_dsps = 0
+        total_incnr = 0
         for row in group.iter_rows(named=True):
             held = parse_num(row.get("trmend_qy"))
             acqs = parse_num(row.get("change_qy_acqs"))
+            dsps = parse_num(row.get("change_qy_dsps"))
+            incnr = parse_num(row.get("change_qy_incnr"))
             if held and held > 0:
                 total_held += int(held)
             if acqs and acqs > 0:
                 total_acqs += int(acqs)
+            if dsps and dsps > 0:
+                total_dsps += int(dsps)
+            if incnr and incnr > 0:
+                total_incnr += int(incnr)
         result[code_val] = {
             "자사주보유": total_held > 0,
             "당기취득": total_acqs > 0,
+            "당기처분": total_dsps > 0,
+            "당기소각": total_incnr > 0,
+            "취득수량": total_acqs,
+            "처분수량": total_dsps,
+            "소각수량": total_incnr,
         }
     return result
 

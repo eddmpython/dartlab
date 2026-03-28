@@ -64,7 +64,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.scan.capital",
         fn="scan_capital",
         label="주주환원",
-        description="배당, 자사주, 증자/감자, 환원 분류",
+        description="배당, 자사주(취득/처분/소각), 증자/감자, 환원 분류",
         example='scan("capital")',
     ),
     "debt": _AxisEntry(
@@ -120,7 +120,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.scan.audit",
         fn="scanAudit",
         label="감사리스크",
-        description="감사의견, 감사인변경, 특기사항 종합 리스크",
+        description="감사의견, 감사인변경, 특기사항, 감사독립성비율",
         example='scan("audit")',
     ),
     "insider": _AxisEntry(

@@ -12,7 +12,7 @@ def classify_return(
 
     Returns:
         (분류, 모순형여부)
-        분류: "환원형" / "중립" / "희석형"
+        분류: "적극환원" / "환원형" / "중립" / "희석형"
         모순형: 배당하면서 최근 증자
     """
     return_score = 0
@@ -23,7 +23,9 @@ def classify_return(
     if recent_increase:
         return_score -= 1
 
-    if return_score >= 1:
+    if return_score >= 2:
+        category = "적극환원"
+    elif return_score >= 1:
         category = "환원형"
     elif return_score == 0:
         category = "중립"

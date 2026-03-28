@@ -20,6 +20,7 @@ def scan_capital(*, verbose: bool = True) -> pl.DataFrame:
     """전체 상장사 주주환원 스캔 → 순환원 분류 DataFrame.
 
     컬럼: 종목코드, 배당여부, DPS, 배당수익률, 자사주보유, 자사주취득,
+          자사주처분, 자사주소각, 취득수량, 처분수량, 소각수량,
           최근증자, 환원점수, 분류, 모순형
     """
 
@@ -50,15 +51,19 @@ def scan_capital(*, verbose: bool = True) -> pl.DataFrame:
         has_dividend = d.get("배당여부", False)
         has_buyback = t.get("당기취득", False)
         has_treasury = t.get("자사주보유", False)
+        has_disposal = t.get("당기처분", False)
+        has_cancel = t.get("당기소각", False)
         recent_increase = c.get("최근증자", False)
 
         category, contradiction = classify_return(has_dividend, has_buyback, recent_increase)
 
-        # 환원 점수 (참고용)
+        # 환원 점수 (참고용) — 소각은 가장 강한 환원 신호
         return_score = 0
         if has_dividend:
             return_score += 1
         if has_buyback:
+            return_score += 1
+        if has_cancel:
             return_score += 1
         if recent_increase:
             return_score -= 1
@@ -71,6 +76,11 @@ def scan_capital(*, verbose: bool = True) -> pl.DataFrame:
                 "배당수익률": d.get("배당수익률", 0.0),
                 "자사주보유": has_treasury,
                 "자사주취득": has_buyback,
+                "자사주처분": has_disposal,
+                "자사주소각": has_cancel,
+                "취득수량": t.get("취득수량", 0),
+                "처분수량": t.get("처분수량", 0),
+                "소각수량": t.get("소각수량", 0),
                 "최근증자": recent_increase,
                 "환원점수": return_score,
                 "분류": category,
