@@ -207,28 +207,24 @@ These two principles govern every public API:
 
 **Reliability** — Numbers are raw originals from DART/EDGAR. Missing data returns `None`, never a guess. `trace(topic)` shows which source was chosen and why. Errors are never swallowed.
 
-### Company — The Merged Map
+### Company — 7 Things to Remember
 
-`Company` uses `sections` as the spine, then overlays stronger data sources:
-
-```
-Layer         What it provides                   Priority
-─────────────────────────────────────────────────────────
-docs          Section text, tables, evidence      Base spine
-finance       BS, IS, CF, ratios, time series     Replaces numeric topics
-report        28 structured APIs (DART only)      Fills structured topics
-─────────────────────────────────────────────────────────
-profile       Merged view (default for users)     Highest
-```
+`Company` merges docs/finance/report into one object. You only need 7 methods:
 
 ```python
-c.docs.sections     # pure text source (sections spine)
-c.finance.BS        # authoritative financial statements
-c.report.extract()  # structured DART API data
-c.profile.sections  # merged view — what users see by default
+c = dartlab.Company("005930")
+
+c.index                         # what's available -- topic list + periods
+c.show("BS")                    # view data -- DataFrame per topic
+c.select("IS", ["매출액"])       # extract data -- for analysis
+c.trace("BS")                   # where it came from -- source provenance
+c.diff()                        # what changed -- text changes across periods
+
+c.analysis("수익성")             # analyze -- 14-axis financial analysis
+c.review()                      # report -- structured full report
 ```
 
-`c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
+BS/IS/CF/ratios are convenience shortcuts for `show`. Three namespaces (`c.docs`, `c.finance`, `c.report`) are for direct source access when needed.
 
 ### Scan — The Whole Market in One Call
 
@@ -362,63 +358,39 @@ The facade iterates providers by priority — first match wins.
 
 ## Core Features
 
-### Show, Trace, Diff
+### Show, Trace, Diff -- Detailed Examples
 
 ```python
 c = dartlab.Company("005930")
 
-# show — open any topic with source-aware priority
-c.show("BS")                # → finance DataFrame
-c.show("overview")          # → sections-based text + tables
-c.show("dividend")          # → report DataFrame (all quarters)
+# show -- open any topic with source-aware priority
+c.show("BS")                # finance DataFrame
+c.show("overview")          # sections-based text + tables
+c.show("dividend")          # report DataFrame (all quarters)
 c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
 
-# trace — why a topic came from docs, finance, or report
-c.trace("BS")               # → {"primarySource": "finance", ...}
+# trace -- why a topic came from docs, finance, or report
+c.trace("BS")               # {"primarySource": "finance", ...}
 
-# diff — text change detection (3 modes)
+# diff -- text change detection (3 modes)
 c.diff()                                    # full summary
 c.diff("businessOverview")                  # topic history
 c.diff("businessOverview", "2024", "2025")  # line-by-line diff
 ```
 
-What the output looks like:
+### Finance Shortcuts
 
-```
->>> c.show("businessOverview")
-shape: (12, 5)
-┌───────────┬──────────┬──────────────────────────────┬──────────────────────────────┐
-│ blockType │ nodeType │ 2024                         │ 2023                         │
-├───────────┼──────────┼──────────────────────────────┼──────────────────────────────┤
-│ text      │ heading  │ 1. 산업의 특성                │ 1. 산업의 특성                │
-│ text      │ body     │ 반도체 산업은 기술 집약적 …   │ 반도체 산업은 기술 집약적 …    │
-│ table     │ null     │ DataFrame(5×3)               │ DataFrame(5×3)               │
-└───────────┴──────────┴──────────────────────────────┴──────────────────────────────┘
-
->>> c.diff("businessOverview", "2023", "2024")
-┌──────────┬─────────────────────────────────────────────┐
-│ status   │ text                                        │
-├──────────┼─────────────────────────────────────────────┤
-│ added    │ AI 반도체 수요 급증에 따른 HBM 매출 확대 …   │
-│ modified │ 매출액 258.9조원 → 300.9조원                 │
-│ removed  │ 반도체 부문 수익성 악화 우려 …               │
-└──────────┴─────────────────────────────────────────────┘
-```
-
-### Finance
+Convenience shortcuts for `c.show("BS")` etc.:
 
 ```python
-c.BS                    # balance sheet (account × period, newest first)
+c.BS                    # balance sheet (account x period, newest first)
 c.IS                    # income statement
 c.CF                    # cash flow
-c.ratios                # ratio time series DataFrame (6 categories × period)
-c.finance.ratioSeries   # ratio time series across years
-c.finance.timeseries    # raw account time series
-c.annual                # annual time series
-c.filings()             # disclosure document list (Tier 1 Stable)
+c.ratios                # ratio time series (6 categories x period)
+c.filings()             # disclosure document list
 ```
 
-All accounts are normalized through the 4-step standardization pipeline — Samsung's `revenue` and LG's `revenue` are the same `snakeId`. Ratios cover 6 categories: profitability, stability, growth, efficiency, cashflow, and valuation.
+All accounts are normalized through the 4-step standardization pipeline -- Samsung's `revenue` and LG's `revenue` are the same `snakeId`.
 
 ### Market-wide Financial Screening
 
