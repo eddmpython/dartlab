@@ -230,20 +230,88 @@ c.profile.sections  # merged view — what users see by default
 
 `c.sections` is the merged view. `c.trace("BS")` tells you which source was chosen and why.
 
-### Architecture — Layered by Responsibility
+### Scan — The Whole Market in One Call
 
-DartLab follows a strict layered architecture where each layer only depends on layers below it:
+`Scan` turns the single-company lens outward. Instead of one company's timeline, it sweeps all 2,700+ listed companies on a single axis:
+
+```python
+dartlab.scan("governance")            # governance structure across all firms
+dartlab.scan("ratio", "roe")          # ROE across all firms
+dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
+dartlab.scan.topics()                 # list all 11 axes
+```
+
+The 11 axes fall into two patterns:
+
+```
+No-target axes (filter by stockCode):    Target-required axes:
+  governance   workforce   capital          account  → snakeId ("매출액")
+  debt         cashflow    audit            ratio    → ratioName ("roe")
+  insider      digest      network
+```
+
+Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new axis means one entry in the registry and one module — no other code changes.
+
+### Analysis — From Data to Judgment
+
+`analysis/` houses 8 domains that transform raw Company data into structured assessments. Every analysis function follows the same pattern: **Company in, dict/list out**. No side effects, no rendering — pure calculation.
+
+```
+Part 1  strategy/      Business model, revenue structure, cost, capital allocation
+Part 2  accounting/    Earnings quality, red flags, disclosure signals
+Part 3  financial/     60+ ratios, 10-area A~F grading, 5 distress models
+Part 4  forecast/      7-source ensemble, Monte Carlo, pro forma statements
+Part 5  valuation/     DCF (FCFE/FCFF), DDM, relative value, cross-section OLS
+Part 6  risk/          Financial, business, market risk (in progress)
+Part 7  comparative/   Peer selection, sector benchmark, event study
+Part 8  macro/         Macro indicators, industry cycle (in progress)
+```
+
+```python
+c.insights              # 10-area grading (A~F) — profitability through cross-statement
+c.rank                  # market-wide percentile ranking
+c.valuation             # DCF + DDM + relative value synthesis
+```
+
+The `calc*` pattern keeps computation separate from presentation — `calcRevenueGrowth(company)` returns a dict, never a table. Block builders turn those dicts into display-ready objects.
+
+### Review — One Command, Full Report
+
+`Review` assembles analysis results into structured, readable reports. It consumes the `analysis/` output through a block-template pipeline:
+
+```
+calc*(company) → dict/list → block builders → BlockMap → templates → sections → render
+```
+
+15 templates across 3 parts, 60+ reusable blocks:
+
+```python
+c.review()              # all 15 sections, full report
+c.review("수익구조")     # single section
+c.reviewer()            # + AI opinion layer
+
+b = blocks(c)           # 60+ blocks as a dict
+b["growth"]             # English key
+b["매출 성장률"]         # Korean label — same block
+b.growth                # tab-complete
+Review([b["growth"], b["dupont"]])   # free assembly
+```
+
+4 output formats: `rich` (terminal), `html`, `markdown`, `json`. Cross-section narrative threads (e.g., "revenue decline → margin pressure → cash deterioration") are auto-detected and injected.
+
+### Architecture — Layered by Responsibility
 
 ```
 L0  core/        Protocols, finance utils, docs utils, registry
 L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
-    market/      Market-wide scanning (2,700+ companies)
-L2  analysis/    Analytical engines (valuation, risk, insights, event study)
-L3  ai/          LLM-powered analysis (9 providers)
+    scan/        Market-wide cross-sectional analysis (11 axes)
+L2  analysis/    8 analytical domains (strategy → macro)
+    review/      Block-template report assembly
+L3  ai/          LLM-powered analysis (5 providers, 8 super tools)
 ```
 
-Import direction is enforced by CI — no reverse dependencies allowed.
+Import direction is enforced by CI — no reverse dependencies allowed. The four axes compose naturally: **Company** (one firm, deep) → **Analysis** (judgment) → **Review** (presentation) → **Scan** (all firms, wide).
 
 ### Extensibility — Zero Core Modification
 
@@ -258,7 +326,7 @@ dartlab.Company("005930")  # → DART provider (priority 10)
 dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 ```
 
-The facade iterates providers by priority — first match wins. This follows the same pattern as OpenBB's provider system and scikit-learn's estimator registration.
+The facade iterates providers by priority — first match wins.
 
 ## Core Features
 

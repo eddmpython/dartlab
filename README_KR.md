@@ -230,20 +230,88 @@ c.profile.sections  # 통합 뷰 — 사용자가 보는 기본값
 
 `c.sections`는 통합 뷰다. `c.trace("BS")`로 어떤 소스가 왜 채택됐는지 확인한다.
 
-### 아키텍처 — 책임 기반 레이어
+### Scan — 시장 전체를 한 번에
 
-DartLab은 엄격한 레이어 아키텍처를 따른다. 각 레이어는 자기보다 아래 레이어만 의존한다:
+`Scan`은 개별 기업 렌즈를 시장 전체로 돌린다. 한 회사의 시계열이 아니라 2,700+ 상장사를 하나의 축으로 관통한다:
+
+```python
+dartlab.scan("governance")            # 전종목 지배구조
+dartlab.scan("ratio", "roe")          # 전종목 ROE
+dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
+dartlab.scan.topics()                 # 가용 11축 목록
+```
+
+11축은 두 가지 패턴으로 나뉜다:
+
+```
+필터형 축 (stockCode로 필터):           타겟 필수 축:
+  governance   workforce   capital       account  → snakeId ("매출액")
+  debt         cashflow    audit         ratio    → ratioName ("roe")
+  insider      digest      network
+```
+
+각 축은 `_AXIS_REGISTRY`에 등록된 lazy-loaded 모듈이다. 새 축 추가 = 레지스트리 1줄 + 모듈 1개.
+
+### Analysis — 데이터에서 판단으로
+
+`analysis/`는 원본 Company 데이터를 구조화된 평가로 변환하는 8개 영역이다. 모든 분석 함수는 같은 패턴을 따른다: **Company 입력, dict/list 출력**. 부수 효과 없음, 렌더링 없음 — 순수 계산.
+
+```
+Part 1  strategy/      사업모델, 수익구조, 비용구조, 자본배분
+Part 2  accounting/    이익의 질, Red Flags, 공시 신호
+Part 3  financial/     60+개 비율, 10영역 A~F 등급, 5개 부실 예측 모델
+Part 4  forecast/      7-소스 앙상블, 몬테카를로, Pro Forma 3표
+Part 5  valuation/     DCF(FCFE/FCFF), DDM, 상대가치, 횡단면 OLS
+Part 6  risk/          재무/사업/시장 리스크 (구현 중)
+Part 7  comparative/   피어 선정, 섹터 벤치마크, 이벤트 스터디
+Part 8  macro/         거시 지표, 산업 사이클 (구현 중)
+```
+
+```python
+c.insights              # 10영역 등급 (A~F) — 수익성에서 재무정합성까지
+c.rank                  # 시장 전체 백분위 순위
+c.valuation             # DCF + DDM + 상대가치 종합
+```
+
+`calc*` 패턴이 계산과 표현을 분리한다 — `calcRevenueGrowth(company)`는 dict를 반환하고, 테이블은 만들지 않는다. 블록 빌더가 dict를 표시 가능한 객체로 변환한다.
+
+### Review — 한 줄이면 전체 보고서
+
+`Review`는 분석 결과를 구조화된 읽기 쉬운 보고서로 조립한다. `analysis/` 출력을 블록-템플릿 파이프라인으로 소비한다:
+
+```
+calc*(company) → dict/list → 블록 빌더 → BlockMap → 템플릿 → 섹션 → 렌더링
+```
+
+3개 Part, 15개 템플릿, 60+개 재사용 블록:
+
+```python
+c.review()              # 15개 섹션 전체 보고서
+c.review("수익구조")     # 단일 섹션
+c.reviewer()            # + AI 종합의견 레이어
+
+b = blocks(c)           # 60+개 블록 사전
+b["growth"]             # 영문 key
+b["매출 성장률"]         # 한글 label — 같은 블록
+b.growth                # tab-complete
+Review([b["growth"], b["dupont"]])   # 자유 조립
+```
+
+4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`. 섹션 간 순환 서사("매출 하락 → 마진 압박 → 현금 악화")를 자동 감지하여 주입한다.
+
+### 아키텍처 — 책임 기반 레이어
 
 ```
 L0  core/        프로토콜, 재무 유틸, docs 유틸, 레지스트리
 L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
     gather/      외부 시장 데이터 (Naver, Yahoo, FRED)
-    market/      시장 전체 스캔 (2,700+ 종목)
-L2  analysis/    분석 엔진 (가치평가, 리스크, 인사이트, 이벤트 스터디)
-L3  ai/          LLM 기반 분석 (9개 provider)
+    scan/        시장 횡단분석 (11축)
+L2  analysis/    8대 분석 영역 (strategy → macro)
+    review/      블록-템플릿 보고서 조립
+L3  ai/          LLM 기반 분석 (5개 provider, 8개 super tool)
 ```
 
-import 방향은 CI에서 강제한다 — 역방향 의존 불허.
+import 방향은 CI에서 강제한다 — 역방향 의존 불허. 4개 축이 자연스럽게 합성된다: **Company**(한 기업, 깊이) → **Analysis**(판단) → **Review**(표현) → **Scan**(전 기업, 폭).
 
 ### 확장성 — Core 수정 0줄
 
@@ -258,7 +326,7 @@ dartlab.Company("005930")  # → DART provider (priority 10)
 dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 ```
 
-facade가 priority 순으로 provider를 순회하여 첫 번째 매칭을 사용한다. OpenBB의 provider 시스템, scikit-learn의 estimator 등록과 같은 패턴이다.
+facade가 priority 순으로 provider를 순회하여 첫 번째 매칭을 사용한다.
 
 ## 핵심 기능
 
