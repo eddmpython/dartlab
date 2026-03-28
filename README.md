@@ -381,128 +381,6 @@ dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 
 The facade iterates providers by priority — first match wins.
 
-## Features
-
-### Show, Trace, Diff -- Detailed Examples
-
-```python
-c = dartlab.Company("005930")
-
-# show -- open any topic with source-aware priority
-c.show("BS")                # finance DataFrame
-c.show("overview")          # sections-based text + tables
-c.show("dividend")          # report DataFrame (all quarters)
-c.show("IS", period=["2024Q4", "2023Q4"])  # compare specific periods
-
-# trace -- why a topic came from docs, finance, or report
-c.trace("BS")               # {"primarySource": "finance", ...}
-
-# diff -- text change detection (3 modes)
-c.diff()                                    # full summary
-c.diff("businessOverview")                  # topic history
-c.diff("businessOverview", "2024", "2025")  # line-by-line diff
-```
-
-### Finance Shortcuts
-
-Convenience shortcuts for `c.show("BS")` etc.:
-
-```python
-c.BS                    # balance sheet (account x period, newest first)
-c.IS                    # income statement
-c.CF                    # cash flow
-c.ratios                # ratio time series (6 categories x period)
-c.filings()             # disclosure document list
-```
-
-All accounts are normalized through the 4-step standardization pipeline -- Samsung's `revenue` and LG's `revenue` are the same `snakeId`.
-
-### Market-wide Financial Screening
-
-Scan a single account or ratio across **all listed companies** in one call — 2,700+ DART firms or 500+ EDGAR firms. Returns a wide Polars DataFrame (rows = companies, columns = periods, newest first).
-
-```python
-import dartlab
-
-# scan a single account across all listed companies
-dartlab.scan("account", "매출액")                        # revenue, quarterly standalone
-dartlab.scan("account", "operating_profit", annual=True) # annual basis
-dartlab.scan("account", "total_assets", market="edgar")  # US EDGAR
-
-# scan a ratio across all listed companies
-dartlab.scan("ratio", "roe")                             # quarterly ROE for all firms
-dartlab.scan("ratio", "debtRatio", annual=True)          # annual debt-to-equity
-
-# list available ratios
-dartlab.scan("ratio")
-```
-
-Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance.
-
-> **Requires pre-downloaded data.** Market-wide functions (`scan("account")`, `scan("digest")`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. See the [Data](#data) section for batch collection.
-
-### Review — Detailed Usage
-
-> **Experimental** — the review system is under active development.
-
-Block assembly and customization details for the review/reviewer pipeline described above.
-
-```python
-from dartlab.review import blocks, Review
-
-b = blocks(c)          # dict of 60+ pre-built blocks
-list(b.keys())         # -> ["profile", "segmentComposition", "growth", ...]
-
-# pick what you need -- free assembly
-Review([
-    b["segmentComposition"],
-    b["growth"],
-    c.select("IS", ["매출액"]),   # mix with raw data
-])
-```
-
-**Free AI providers** for `c.reviewer()` -- no paid API key required:
-
-| Provider | Setup |
-|----------|-------|
-| Gemini | `dartlab setup gemini` |
-| Groq | `dartlab setup groq` |
-| Cerebras | `dartlab setup cerebras` |
-| Mistral | `dartlab setup mistral` |
-
-```bash
-dartlab setup custom --base-url http://localhost:11434/v1   # Ollama local
-```
-
-- **Templates**: Pre-defined block combinations (`수익구조`, `자금조달`)
-- **Guide**: Pass `guide="..."` to `c.reviewer()` for domain-specific AI analysis
-- **Render formats**: `review.render("rich" | "html" | "markdown" | "json")`
-
-### Modules
-
-DartLab exposes 100+ modules across 6 categories:
-
-```bash
-dartlab modules                      # list all modules
-dartlab modules --category finance   # filter by category
-dartlab modules --search dividend    # search by keyword
-```
-
-```python
-c.topics    # list all available topics for this company
-```
-
-Categories: `finance` (statements, ratios), `report` (dividend, governance, audit), `notes` (K-IFRS annotations), `disclosure` (narrative text), `analysis` (insights, rankings), `raw` (original parquets).
-
-### Plugins
-
-```python
-dartlab.plugins()               # list loaded plugins
-dartlab.reload_plugins()        # rescan after installing a plugin
-```
-
-Plugins can extend DartLab with custom data sources, tools, or analysis engines. See `dartlab plugin create --help` for scaffolding.
-
 ## EDGAR (US)
 
 Same `Company` interface, same account standardization pipeline, different data source. EDGAR data is auto-fetched from the SEC API — no pre-download needed:
@@ -516,12 +394,6 @@ us.show("10-K::item1ARiskFactors")  # risk factors
 us.BS                               # SEC XBRL balance sheet
 us.ratios                           # same 47 ratios
 us.diff("10-K::item7Mdna")          # MD&A text changes
-us.insights                         # 10-area grades (A~F)
-
-# analyst functions — auto-detect USD
-dartlab.valuation("AAPL")           # DCF + DDM + relative (USD)
-dartlab.forecast("AAPL")            # revenue forecast (USD)
-dartlab.simulation("AAPL")          # scenario simulation (US macro presets)
 ```
 
 The interface is identical — same methods, same structure:
@@ -534,7 +406,6 @@ c.show("businessOverview")              c.show("business")
 c.BS                                    c.BS
 c.ratios                                c.ratios
 c.diff("businessOverview")              c.diff("10-K::item7Mdna")
-c.insights.grades()                     c.insights.grades()
 ```
 
 ### DART vs EDGAR Namespaces

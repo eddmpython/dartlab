@@ -379,127 +379,6 @@ dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 
 facade가 priority 순으로 provider를 순회하여 첫 번째 매칭을 사용한다.
 
-## 기능
-
-### Show, Trace, Diff — 상세 예시
-
-```python
-c = dartlab.Company("005930")
-
-# show — source 우선순위에 따라 topic을 연다
-c.show("BS")                # finance DataFrame
-c.show("overview")          # sections 기반 텍스트 + 테이블
-c.show("dividend")          # report DataFrame (전 분기)
-c.show("IS", period=["2024Q4", "2023Q4"])  # 특정 기간 비교
-
-# trace — docs/finance/report 중 어떤 source가 채택됐는지
-c.trace("BS")               # {"primarySource": "finance", ...}
-
-# diff — 기간 간 텍스트 변화 감지 (3가지 모드)
-c.diff()                                    # 전체 요약
-c.diff("businessOverview")                  # topic 이력
-c.diff("businessOverview", "2024", "2025")  # 줄 단위 diff
-```
-
-### 재무 바로가기
-
-`c.show("BS")`의 편의 바로가기로 재무제표와 비율에 직접 접근할 수 있다:
-
-```python
-c.BS                    # 재무상태표 (계정 x period, 최신 먼저)
-c.IS                    # 손익계산서
-c.CF                    # 현금흐름표
-c.ratios                # 재무비율 시계열 (6개 카테고리 x period)
-c.filings()             # 공시 문서 목록
-```
-
-모든 계정은 4단계 표준화 파이프라인을 거친다 -- 삼성전자의 `revenue`와 LG의 `revenue`는 같은 `snakeId`다.
-
-### 시장 전수 재무 스크리닝
-
-단일 계정이나 비율을 **전체 상장사**에 대해 한 번에 스캔한다 — DART 2,700사 이상, EDGAR 500사 이상. wide Polars DataFrame 반환 (행 = 기업, 열 = 기간, 최신 먼저).
-
-```python
-import dartlab
-
-# 단일 계정을 전체 상장사에 대해 스캔
-dartlab.scan("account", "매출액")                        # 분기 standalone 매출
-dartlab.scan("account", "operating_profit", annual=True) # 연간 기준
-dartlab.scan("account", "total_assets", market="edgar")  # 미국 EDGAR
-
-# 단일 비율을 전체 상장사에 대해 스캔
-dartlab.scan("ratio", "roe")                             # 분기 ROE 전수 스캔
-dartlab.scan("ratio", "debtRatio", annual=True)          # 연간 부채비율
-
-# 사용 가능한 비율 목록
-dartlab.scan("ratio")
-```
-
-한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화.
-
-> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scan("account")`, `scan("digest")` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. [데이터](#데이터) 섹션의 배치 수집 참고.
-
-### 리뷰 — 상세 사용법
-
-> **실험적** -- 활발히 개발 중. 위의 [Review](#review--analysis를-보고서로) / [Reviewer](#reviewer--review--ai-해석) 섹션에서 개요를 확인한다.
-
-블록 자유 조립과 커스터마이징 상세:
-
-```python
-from dartlab.review import blocks, Review
-
-b = blocks(c)          # 60+개 블록 사전
-list(b.keys())         # -> ["profile", "segmentComposition", "growth", ...]
-
-# 필요한 것만 골라 조립
-Review([
-    b["segmentComposition"],
-    b["growth"],
-    c.select("IS", ["매출액"]),   # 원시 데이터와 혼합
-])
-```
-
-**무료 AI 프로바이더** -- `c.reviewer()`에 유료 API 키 없이 사용 가능:
-
-| 프로바이더 | 설정 |
-|-----------|------|
-| Gemini | `dartlab setup gemini` |
-| Groq | `dartlab setup groq` |
-| Cerebras | `dartlab setup cerebras` |
-| Mistral | `dartlab setup mistral` |
-
-```bash
-dartlab setup custom --base-url http://localhost:11434/v1   # Ollama 로컬
-```
-
-- **가이드**: `c.reviewer(guide="...")`로 도메인 특화 AI 분석
-- **렌더링 형식**: `review.render("rich" | "html" | "markdown" | "json")`
-
-### 모듈
-
-DartLab은 6개 카테고리에 걸쳐 100개 이상의 모듈을 제공한다:
-
-```bash
-dartlab modules                      # 전체 모듈 목록
-dartlab modules --category finance   # 카테고리 필터
-dartlab modules --search dividend    # 키워드 검색
-```
-
-```python
-c.topics    # 이 회사에서 사용 가능한 전체 topic 목록
-```
-
-카테고리: `finance` (재무제표, 비율), `report` (배당, 지배구조, 감사), `notes` (K-IFRS 주석), `disclosure` (서술형 텍스트), `analysis` (인사이트, 순위), `raw` (원본 parquet).
-
-### 플러그인
-
-```python
-dartlab.plugins()               # 로드된 플러그인 목록
-dartlab.reload_plugins()        # 플러그인 재스캔
-```
-
-플러그인으로 커스텀 데이터 소스, 도구, 분석 엔진을 확장할 수 있다. `dartlab plugin create --help`로 스캐폴딩.
-
 ## EDGAR (미국)
 
 동일한 `Company` 인터페이스, 동일한 계정 표준화 파이프라인, 다른 데이터 소스. EDGAR 데이터는 SEC API에서 자동 수집된다 — 사전 다운로드 불필요:
@@ -513,12 +392,6 @@ us.show("10-K::item1ARiskFactors")  # 리스크 요인
 us.BS                               # SEC XBRL 재무상태표
 us.ratios                           # 동일한 47개 비율
 us.diff("10-K::item7Mdna")          # MD&A 텍스트 변화
-us.insights                         # 10영역 등급 (A~F)
-
-# analyst 함수 — USD 자동 감지
-dartlab.valuation("AAPL")           # DCF + DDM + 상대 밸류에이션 (USD)
-dartlab.forecast("AAPL")            # 매출 예측 (USD)
-dartlab.simulation("AAPL")          # 시나리오 시뮬레이션 (US 매크로 프리셋)
 ```
 
 인터페이스가 동일하다 — 같은 메서드, 같은 구조:
@@ -531,7 +404,6 @@ c.show("businessOverview")              c.show("business")
 c.BS                                    c.BS
 c.ratios                                c.ratios
 c.diff("businessOverview")              c.diff("10-K::item7Mdna")
-c.insights.grades()                     c.insights.grades()
 ```
 
 ### DART vs EDGAR 네임스페이스 차이
