@@ -7,14 +7,13 @@ def buildSpec() -> dict:
     """scan 엔진 메타데이터."""
     return {
         "name": "dart.scan",
-        "description": "상장사 전수 스캔 엔진 — 6축 분석 (company 4축 + market network/signal)",
+        "description": "상장사 전수 스캔 엔진 — 5축 분석 (company 4축 + market network)",
         "summary": {
             "governance": "지배구조 (지분율, 사외이사비율, 임원보수비율, 감사의견) → A~E 등급",
             "workforce": "인력/급여 (직원수, 평균급여, 급여성장률, 인건비부담, 고액보수)",
             "capital": "주주환원 (배당, 자사주, 증자/감자) → 환원형/중립/희석형",
             "debt": "부채구조 (사채잔액, 부채비율, ICR) → 안전/관찰/주의/고위험",
             "network": "관계 네트워크 (출자/지분/계열 관계, 순환출자 탐지)",
-            "signal": "서술형 공시 키워드 트렌드 (year, keyword, category, companies, totalMentions)",
         },
         "detail": {
             "governance": {
@@ -43,10 +42,6 @@ def buildSpec() -> dict:
             },
             "network": {
                 "metrics": ["출자엣지", "지분엣지", "그룹분류", "순환출자"],
-            },
-            "signal": {
-                "metrics": ["year", "keyword", "category", "companies", "totalMentions"],
-                "scope": "market-level only; current local docs corpus coverage only",
             },
         },
     }

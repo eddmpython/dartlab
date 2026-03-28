@@ -1,0 +1,32 @@
+name: Stale Issues
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-message: >
+            This issue has been inactive for 90 days and is now marked as stale.
+            It will be closed in 30 days if there is no further activity.
+            -- 이 이슈는 90일간 활동이 없어 stale로 표시되었습니다. 30일 내 활동이 없으면 자동으로 닫힙니다.
+          stale-pr-message: >
+            This PR has been inactive for 90 days and is now marked as stale.
+            It will be closed in 30 days if there is no further activity.
+          close-issue-message: >
+            Closed due to inactivity. Feel free to reopen if still relevant.
+            -- 비활동으로 닫혔습니다. 여전히 유효하면 다시 열어 주세요.
+          days-before-stale: 90
+          days-before-close: 30
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          exempt-issue-labels: "pinned,security"
+          exempt-pr-labels: "pinned"

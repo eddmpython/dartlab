@@ -5,7 +5,7 @@
 
 ---
 
-## Python API (52개)
+## Python API (48개)
 
 `import dartlab` 후 사용 가능한 공개 API.
 
@@ -27,12 +27,9 @@
 | `collect` | function | 지정 종목 DART 데이터 수집 (OpenAPI). 멀티키 시 병렬. |
 | `collectAll` | function | 전체 상장종목 DART 데이터 수집. DART_API_KEY(S) 필요. 멀티키 시 병렬. |
 | `downloadAll` | function | HuggingFace에서 전체 시장 데이터를 다운로드. |
+| `scan` | function | 시장 전체 횡단분석 통합 엔트리포인트. |
 | `network` | function | 한국 상장사 전체 관계 지도. |
-| `screen` | function | 시장 스크리닝 — 프리셋 기반 종목 필터. |
-| `benchmark` | function | 섹터별 핵심 비율 벤치마크 (P10, median, P90). |
-| `signal` | function | 서술형 공시 시장 시그널 — 키워드 트렌드 탐지. |
 | `news` | function | 기업 뉴스 수집. |
-| `crossBorderPeers` | function | 한국 종목의 글로벌 피어 추천 (WICS→GICS 매핑). |
 | `audit` | function | 감사 Red Flag 분석. |
 | `forecast` | function | 매출 앙상블 예측. |
 | `valuation` | function | 종합 밸류에이션 (DCF + DDM + 상대가치). |
@@ -42,7 +39,6 @@
 | `workforce` | function | 한국 상장사 전체 인력/급여 스캔. |
 | `capital` | function | 한국 상장사 전체 주주환원 스캔. |
 | `debt` | function | 한국 상장사 전체 부채 구조 스캔. |
-| `groupHealth` | function | 그룹사 건전성 분석 — 네트워크 × 재무비율 교차. |
 | `research` | function | 종합 기업분석 리포트. |
 | `digest` | function | 시장 전체 공시 변화 다이제스트. |
 | `scanAccount` | function | 전종목 단일 계정 시계열. |
@@ -93,7 +89,7 @@
 
 ---
 
-## Data Modules (70개)
+## Data Modules (69개)
 
 `core/registry.py` DataEntry 기반. 모듈 추가 = 한 줄 → 7곳 자동 반영.
 
@@ -195,7 +191,6 @@
 | `rank` | 시장순위 | `custom` | 전체 시장 및 섹터 내 매출/자산/성장률 순위. |
 | `keywordTrend` | 키워드 트렌드 | `dataframe` | 공시 텍스트 키워드 빈도 추이 (topic × period × keyword). 54개 내장 키워드 또는 사용자 지정. |
 | `news` | 뉴스 | `dataframe` | 최근 뉴스 수집 (KR: Google News 한국어, US: Google News 영어). 날짜/제목/출처/URL. |
-| `crossBorderPeers` | 글로벌 피어 | `custom` | WICS→GICS 섹터 매핑 기반 글로벌 피어 추천. 한국 종목의 미국 동종 기업 리스트. |
 
 ---
 

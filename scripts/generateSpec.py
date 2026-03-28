@@ -1,9 +1,10 @@
 """registry 기반 자동 문서 생성.
 
-5개 surface에서 코드를 수집하여 다음 파일을 자동 생성한다:
-- CAPABILITIES.md           — 루트 총괄 스펙맵 (신규)
+6개 surface에서 코드를 수집하여 다음 파일을 자동 생성한다:
+- CAPABILITIES.md           — 루트 총괄 스펙맵
 - landing/static/llms.txt   — AI 크롤러용 구조화 문서
 - .claude/skills/dartlab/reference.md — Claude Code 스킬 레퍼런스
+- src/dartlab/ai/conversation/_generated_catalog.py — AI 시스템 프롬프트용 도구 카탈로그
 
 실행:
     uv run python scripts/generateSpec.py
@@ -16,10 +17,11 @@ from __future__ import annotations
 import ast
 import dataclasses
 import inspect
+import json
 import sys
 import textwrap
 from pathlib import Path
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -197,18 +199,129 @@ def _dataModulesSection() -> str:
 # ─── Surface 5: AI Tools (super tools AST 파싱) ────────────────
 
 
-def _parseRegisterToolCalls(filepath: Path) -> list[tuple[str, str]]:
-    """AST로 registerTool(name, func, description, ...) 호출에서 (name, description) 추출."""
+@dataclasses.dataclass
+class ToolSpec:
+    """registerTool() 호출에서 추출한 완전 도구 명세."""
+
+    name: str
+    description: str
+    schema: dict[str, Any]
+    category: str
+    questionTypes: tuple[str, ...]
+    priority: int
+
+
+def _astToValue(node: ast.expr) -> Any:
+    """AST 리터럴 노드를 Python 값으로 변환."""
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.List):
+        return [_astToValue(el) for el in node.elts]
+    if isinstance(node, ast.Tuple):
+        return tuple(_astToValue(el) for el in node.elts)
+    if isinstance(node, ast.Dict):
+        result = {}
+        for k, v in zip(node.keys, node.values):
+            if k is None:
+                continue
+            result[_astToValue(k)] = _astToValue(v)
+        return result
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        return -_astToValue(node.operand)
+    if isinstance(node, ast.Name):
+        if node.id in ("True", "true"):
+            return True
+        if node.id in ("False", "false"):
+            return False
+        if node.id in ("None",):
+            return None
+        return f"<var:{node.id}>"
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _astToValue(node.left)
+        right = _astToValue(node.right)
+        if isinstance(left, str) and isinstance(right, str):
+            return left + right
+        return left
+    if isinstance(node, ast.JoinedStr):
+        parts = []
+        for val in node.values:
+            if isinstance(val, ast.Constant):
+                parts.append(str(val.value))
+            else:
+                parts.append("{...}")
+        return "".join(parts)
+    return None
+
+
+def _extractStr(node: ast.expr) -> str:
+    """문자열 또는 문자열 연결 노드에서 전체 텍스트 추출."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.JoinedStr):
+        return _astToValue(node)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _extractStr(node.left)
+        right = _extractStr(node.right)
+        if left and right:
+            return left + right
+    return ""
+
+
+def _resolveSchemaDict(schemaNode: ast.expr, localVars: dict[str, ast.expr]) -> dict[str, Any]:
+    """schema dict 노드를 파싱. 변수 참조는 localVars에서 해결."""
+    if isinstance(schemaNode, ast.Dict):
+        result = {}
+        for k, v in zip(schemaNode.keys, schemaNode.values):
+            if k is None:
+                continue
+            key = _astToValue(k)
+            if isinstance(v, ast.Name) and v.id in localVars:
+                result[key] = _resolveSchemaDict(localVars[v.id], localVars)
+            elif isinstance(v, ast.Dict):
+                result[key] = _resolveSchemaDict(v, localVars)
+            else:
+                result[key] = _astToValue(v)
+        return result
+    return _astToValue(schemaNode) or {}
+
+
+def _collectLocalVarAssigns(funcBody: list[ast.stmt]) -> dict[str, ast.expr]:
+    """함수 본문에서 dict 변수 할당을 수집 (schema 변수 해결용)."""
+    result: dict[str, ast.expr] = {}
+    for stmt in funcBody:
+        if isinstance(stmt, ast.Assign):
+            for target in stmt.targets:
+                if isinstance(target, ast.Name):
+                    result[target.id] = stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name) and stmt.value:
+            result[stmt.target.id] = stmt.value
+    return result
+
+
+def _parseRegisterToolCalls(filepath: Path) -> list[ToolSpec]:
+    """AST로 registerTool() 호출에서 완전 ToolSpec 추출."""
     try:
-        tree = ast.parse(filepath.read_text(encoding="utf-8"), filename=str(filepath))
+        source = filepath.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(filepath))
     except SyntaxError:
         return []
 
-    tools: list[tuple[str, str]] = []
+    # 모듈 레벨 + 함수 내부의 변수 할당 수집
+    allLocalVars: dict[str, ast.expr] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            allLocalVars.update(_collectLocalVarAssigns(node.body))
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    allLocalVars[target.id] = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value:
+            allLocalVars[node.target.id] = node.value
+
+    tools: list[ToolSpec] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
-        # registerTool(...) 또는 register_tool(...)
         funcNode = node.func
         funcName = ""
         if isinstance(funcNode, ast.Name):
@@ -221,71 +334,306 @@ def _parseRegisterToolCalls(filepath: Path) -> list[tuple[str, str]]:
         if len(node.args) < 3:
             continue
 
-        # 첫 번째 인자: name (문자열)
+        # 1: name
         nameNode = node.args[0]
         if isinstance(nameNode, ast.Constant) and isinstance(nameNode.value, str):
             name = nameNode.value
         else:
             continue
 
-        # 세 번째 인자: description (문자열 또는 JoinedStr)
-        descNode = node.args[2]
-        if isinstance(descNode, ast.Constant) and isinstance(descNode.value, str):
-            desc = descNode.value.split("\n")[0].strip()
-        elif isinstance(descNode, ast.JoinedStr):
-            # f-string — 첫 Constant 조각만
-            parts = []
-            for val in descNode.values:
-                if isinstance(val, ast.Constant):
-                    parts.append(str(val.value))
-            desc = "".join(parts).split("\n")[0].strip()
-        else:
-            desc = "-"
+        # 3: description (전체)
+        description = _extractStr(node.args[2]) or "-"
 
-        tools.append((name, desc))
+        # 4: schema dict
+        schema: dict[str, Any] = {}
+        if len(node.args) >= 4:
+            schema = _resolveSchemaDict(node.args[3], allLocalVars)
+
+        # keyword args: category, questionTypes, priority
+        category = ""
+        questionTypes: tuple[str, ...] = ()
+        priority = 50
+        for kw in node.keywords:
+            if kw.arg == "category":
+                val = _astToValue(kw.value)
+                category = val if isinstance(val, str) else ""
+            elif kw.arg == "questionTypes":
+                val = _astToValue(kw.value)
+                if isinstance(val, (tuple, list)):
+                    questionTypes = tuple(str(v) for v in val)
+            elif kw.arg == "priority":
+                val = _astToValue(kw.value)
+                priority = val if isinstance(val, int) else 50
+
+        tools.append(ToolSpec(
+            name=name,
+            description=description,
+            schema=schema,
+            category=category,
+            questionTypes=questionTypes,
+            priority=priority,
+        ))
     return tools
 
 
-def _aiToolsSection() -> str:
-    """AI tool 등록에서 name + description 수집."""
+def _collectAllToolSpecs() -> list[ToolSpec]:
+    """모든 AI tool 파일에서 ToolSpec 수집."""
     toolsDir = SRC / "dartlab" / "ai" / "tools"
-    allTools: list[tuple[str, str]] = []
+    allTools: list[ToolSpec] = []
     seen: set[str] = set()
 
-    # super tools 우선
-    superDir = toolsDir / "superTools"
-    if superDir.exists():
-        for pyFile in sorted(superDir.glob("*.py")):
+    for subDir in ("superTools", "defaults"):
+        d = toolsDir / subDir
+        if not d.exists():
+            continue
+        for pyFile in sorted(d.glob("*.py")):
             if pyFile.name.startswith("_"):
                 continue
-            for name, desc in _parseRegisterToolCalls(pyFile):
-                if name not in seen:
-                    allTools.append((name, desc))
-                    seen.add(name)
+            for spec in _parseRegisterToolCalls(pyFile):
+                if spec.name not in seen:
+                    allTools.append(spec)
+                    seen.add(spec.name)
 
-    # defaults
-    defaultsDir = toolsDir / "defaults"
-    if defaultsDir.exists():
-        for pyFile in sorted(defaultsDir.glob("*.py")):
-            if pyFile.name.startswith("_"):
+    # priority 내림차순 정렬
+    allTools.sort(key=lambda s: -s.priority)
+    return allTools
+
+
+def _toolSpecToMd(spec: ToolSpec) -> str:
+    """단일 ToolSpec을 상세 마크다운으로."""
+    lines = [f"### {spec.name} (priority: {spec.priority}, category: {spec.category})\n"]
+
+    # description 첫 줄 = 요약, 나머지 = 상세
+    descLines = spec.description.strip().split("\n")
+    lines.append(descLines[0])
+    lines.append("")
+
+    # action enum 추출
+    props = spec.schema.get("properties", {})
+    actionProp = props.get("action", {})
+    actionEnum = actionProp.get("enum", [])
+
+    if actionEnum:
+        # description에서 action별 설명 추출
+        actionDescs: dict[str, str] = {}
+        for line in descLines:
+            stripped = line.strip()
+            if stripped.startswith("- ") and ":" in stripped:
+                parts = stripped[2:].split(":", 1)
+                key = parts[0].strip()
+                if key in actionEnum:
+                    actionDescs[key] = parts[1].strip()
+
+        lines.append("**Actions:**\n")
+        lines.append("| action | 설명 |")
+        lines.append("|--------|------|")
+        for act in actionEnum:
+            desc = actionDescs.get(act, "-")
+            # 80자 제한
+            if len(desc) > 80:
+                desc = desc[:77] + "..."
+            lines.append(f"| `{act}` | {desc} |")
+        lines.append("")
+
+    # parameters 테이블 (action 제외)
+    otherParams = {k: v for k, v in props.items() if k != "action"}
+    required = spec.schema.get("required", [])
+    if otherParams:
+        lines.append("**Parameters:**\n")
+        lines.append("| 파라미터 | 타입 | 필수 | 설명 |")
+        lines.append("|---------|------|------|------|")
+        for pName, pSchema in otherParams.items():
+            if not isinstance(pSchema, dict):
                 continue
-            for name, desc in _parseRegisterToolCalls(pyFile):
-                if name not in seen:
-                    allTools.append((name, desc))
-                    seen.add(name)
+            pType = pSchema.get("type", "string")
+            enumVals = pSchema.get("enum", [])
+            if enumVals and isinstance(enumVals, list):
+                # 동적 변수 참조 필터
+                cleanEnum = [str(v) for v in enumVals if not str(v).startswith("<var:")]
+                if cleanEnum:
+                    pType = f"enum({', '.join(cleanEnum[:8])}{'...' if len(cleanEnum) > 8 else ''})"
+            isRequired = "O" if pName in required else "-"
+            pDesc = pSchema.get("description", "-")
+            if pDesc is None or (isinstance(pDesc, str) and pDesc.startswith("{...")):
+                pDesc = f"{pName} 파라미터 (company별 동적 생성)"
+            if isinstance(pDesc, str) and len(pDesc) > 60:
+                pDesc = pDesc[:57] + "..."
+            lines.append(f"| `{pName}` | {pType} | {isRequired} | {pDesc} |")
+        lines.append("")
+
+    # 질문 유형
+    if spec.questionTypes:
+        lines.append(f"**질문 유형**: {', '.join(spec.questionTypes)}\n")
+
+    return "\n".join(lines)
+
+
+def _aiToolsSection() -> str:
+    """AI tool 등록에서 완전 명세 수집."""
+    allTools = _collectAllToolSpecs()
 
     lines = [f"## AI Tools ({len(allTools)}개)\n"]
-    lines.append("LLM 에이전트가 tool calling으로 사용하는 도구.\n")
-    lines.append("| 도구 | 설명 |")
-    lines.append("|------|------|")
+    lines.append("LLM 에이전트가 tool calling으로 사용하는 도구. priority 내림차순.\n")
 
-    for name, desc in allTools:
-        # 80자 제한
-        if len(desc) > 80:
-            desc = desc[:77] + "..."
-        lines.append(f"| `{name}` | {desc} |")
+    for spec in allTools:
+        lines.append(_toolSpecToMd(spec))
+
+    return "\n".join(lines)
+
+
+# ─── Surface 6: Scan Axis Registry ────────────────────────────
+
+
+def _scanAxisSection() -> str:
+    """scan/_AXIS_REGISTRY에서 축 명세 추출."""
+    scanInit = SRC / "dartlab" / "scan" / "__init__.py"
+    if not scanInit.exists():
+        return ""
+
+    try:
+        source = scanInit.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(scanInit))
+    except SyntaxError:
+        return ""
+
+    # _AXIS_REGISTRY dict 찾기 (Assign 또는 AnnAssign)
+    registryNode = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_AXIS_REGISTRY":
+                    registryNode = node.value
+                    break
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == "_AXIS_REGISTRY" and node.value:
+                registryNode = node.value
+
+    if registryNode is None or not isinstance(registryNode, ast.Dict):
+        return ""
+
+    axes: list[dict[str, str]] = []
+    for key, val in zip(registryNode.keys, registryNode.values):
+        if key is None or not isinstance(key, ast.Constant):
+            continue
+        axisName = str(key.value)
+        if not isinstance(val, ast.Call):
+            continue
+
+        # _AxisEntry(...) keyword args 추출
+        entry: dict[str, str] = {"axis": axisName}
+        for kw in val.keywords:
+            if kw.arg and isinstance(kw.value, ast.Constant):
+                entry[kw.arg] = str(kw.value.value)
+            elif kw.arg == "targetRequired" and isinstance(kw.value, ast.Constant):
+                entry[kw.arg] = str(kw.value.value)
+        axes.append(entry)
+
+    if not axes:
+        return ""
+
+    # _ALIASES dict 추출
+    aliasNode = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_ALIASES":
+                    aliasNode = node.value
+                    break
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == "_ALIASES" and node.value:
+                aliasNode = node.value
+
+    aliases: dict[str, list[str]] = {}
+    if aliasNode and isinstance(aliasNode, ast.Dict):
+        for k, v in zip(aliasNode.keys, aliasNode.values):
+            if isinstance(k, ast.Constant) and isinstance(v, ast.Constant):
+                target = str(v.value)
+                aliases.setdefault(target, []).append(str(k.value))
+
+    lines = [f"## Scan Axis ({len(axes)}개 축)\n"]
+    lines.append("`dartlab.scan(axis, target)` 형태로 전종목 횡단분석.\n")
+    lines.append("| 축 | 한글 | 설명 | target 파라미터 | 필수 | 반환타입 |")
+    lines.append("|----|------|------|----------------|------|---------|")
+
+    for e in axes:
+        axis = e.get("axis", "")
+        label = e.get("label", "")
+        desc = e.get("description", "")
+        tp = e.get("targetParam", "None")
+        if tp == "None":
+            tp = "stockCode 필터"
+        required = "O" if e.get("targetRequired", "False") == "True" else "-"
+        rt = e.get("returnType", "DataFrame")
+        lines.append(f"| `{axis}` | {label} | {desc} | {tp} | {required} | {rt} |")
 
     lines.append("")
+
+    # 한글 별칭
+    if aliases:
+        lines.append("**한글 별칭:**\n")
+        for target, aliasList in sorted(aliases.items()):
+            lines.append(f"- `{target}`: {', '.join(aliasList)}")
+        lines.append("")
+
+    # 사용법 예시
+    lines.append("**사용법:**\n")
+    lines.append("```python")
+    lines.append("import dartlab")
+    lines.append("")
+    lines.append('dartlab.scan("governance")              # 전 상장사 거버넌스')
+    lines.append('dartlab.scan("governance", "005930")    # 삼성전자만 필터')
+    lines.append('dartlab.scan("ratio", "roe")            # 전종목 ROE')
+    lines.append('dartlab.scan("account", "sales")        # 전종목 매출액 시계열')
+    lines.append("dartlab.scan.topics()                   # 가용 축 목록")
+    lines.append("```\n")
+
+    return "\n".join(lines)
+
+
+# ─── 도구 연계 가이드 (자동 생성) ──────────────────────────────
+
+
+def _toolChainSection() -> str:
+    """questionTypes + priority에서 질문 유형별 도구 매핑 자동 생성."""
+    allTools = _collectAllToolSpecs()
+    if not allTools:
+        return ""
+
+    # 질문 유형별 도구 수집
+    typeToTools: dict[str, list[tuple[str, int]]] = {}
+    for spec in allTools:
+        for qt in spec.questionTypes:
+            typeToTools.setdefault(qt, []).append((spec.name, spec.priority))
+
+    # priority 내림차순 정렬
+    for qt in typeToTools:
+        typeToTools[qt].sort(key=lambda x: -x[1])
+
+    lines = ["## 질문 유형별 도구 매핑\n"]
+    lines.append("registerTool()의 questionTypes + priority에서 자동 생성.\n")
+    lines.append("| 질문 유형 | 우선 도구 (priority 순) |")
+    lines.append("|----------|----------------------|")
+
+    for qt in sorted(typeToTools):
+        toolList = typeToTools[qt]
+        toolStr = " > ".join(f"{name}({pri})" for name, pri in toolList)
+        lines.append(f"| {qt} | {toolStr} |")
+
+    lines.append("")
+
+    # description에서 연쇄 사용 패턴 추출
+    chains: list[str] = []
+    for spec in allTools:
+        for line in spec.description.split("\n"):
+            stripped = line.strip()
+            if "연쇄 사용" in stripped or "연쇄사용" in stripped:
+                chains.append(f"- **{spec.name}**: {stripped}")
+
+    if chains:
+        lines.append("**도구 연쇄 패턴:**\n")
+        lines.extend(chains)
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -366,7 +714,7 @@ def _dataclassesSection() -> str:
     lines.append(_dataclassTable(SectorInfo, "SectorInfo"))
     lines.append(_dataclassTable(SectorParams, "SectorParams"))
 
-    from dartlab.analysis.comparative.rank.rank import RankInfo
+    from dartlab.scan.rank import RankInfo
 
     lines.append(_dataclassTable(RankInfo, "RankInfo"))
 
@@ -393,6 +741,8 @@ def generateCapabilities() -> str:
         _serverApiSection(),
         _dataModulesSection(),
         _aiToolsSection(),
+        _scanAxisSection(),
+        _toolChainSection(),
         _companySection(),
         _dataclassesSection(),
     ]
@@ -511,6 +861,109 @@ def generateSkillRef() -> str:
     return "\n---\n\n".join(parts)
 
 
+# ─── _generated_catalog.py 생성 ────────────────────────────────
+
+
+_SUPER_TOOL_NAMES = {"explore", "finance", "analyze", "market", "research", "openapi", "system", "chart"}
+
+
+def _generateCatalog() -> str:
+    """AI 시스템 프롬프트용 도구 카탈로그 Python 파일 생성.
+
+    Super Tool 8개만 포함 — LLM이 실제 tool calling으로 사용하는 도구만.
+    defaults 도구(99개)는 Super Tool 내부에서 dispatch되므로 여기 불필요.
+    """
+    allTools = _collectAllToolSpecs()
+    superTools = [s for s in allTools if s.name in _SUPER_TOOL_NAMES]
+
+    catalogLines = [
+        "## [필수] 도구 사용 규칙",
+        "- **모든 수치 답변은 반드시 도구를 호출해서 실제 데이터를 가져온 뒤 답변하세요.**",
+        "- 추측이나 일반 지식으로 숫자를 답하지 마세요. 반드시 도구로 확인 후 답변.",
+        "- 도구 호출 없이 재무 수치를 언급하면 오답 위험이 큽니다.",
+        "- 도구 파라미터는 아래 명시된 것만 사용하세요. 존재하지 않는 파라미터를 임의 생성하지 마세요.",
+        "",
+    ]
+
+    # Super Tool 8개 상세 설명
+    for spec in superTools:
+        descFirst = spec.description.strip().split("\n")[0]
+        props = spec.schema.get("properties", {})
+        actionProp = props.get("action", {})
+        actionEnum = actionProp.get("enum", [])
+
+        catalogLines.append(f"### {spec.name} (priority: {spec.priority}, category: {spec.category})")
+        catalogLines.append(descFirst)
+
+        if actionEnum:
+            actionDescs: dict[str, str] = {}
+            for line in spec.description.split("\n"):
+                stripped = line.strip()
+                if stripped.startswith("- ") and ":" in stripped:
+                    parts = stripped[2:].split(":", 1)
+                    key = parts[0].strip()
+                    if key in actionEnum:
+                        val = parts[1].strip()
+                        if len(val) > 70:
+                            val = val[:67] + "..."
+                        actionDescs[key] = val
+
+            for act in actionEnum:
+                desc = actionDescs.get(act, "")
+                if desc:
+                    catalogLines.append(f"  - {act}: {desc}")
+                else:
+                    catalogLines.append(f"  - {act}")
+
+        # 핵심 파라미터 (action 제외)
+        otherParams = {k: v for k, v in props.items() if k != "action" and isinstance(v, dict)}
+        if otherParams:
+            paramStrs = []
+            for pName, pSchema in otherParams.items():
+                pDesc = pSchema.get("description", "")
+                if isinstance(pDesc, str) and len(pDesc) > 50:
+                    pDesc = pDesc[:47] + "..."
+                paramStrs.append(f"  [{pName}] {pDesc}" if pDesc else f"  [{pName}]")
+            catalogLines.extend(paramStrs)
+
+        catalogLines.append("")
+
+    # 도구 연쇄 패턴
+    chains: list[str] = []
+    for spec in superTools:
+        for line in spec.description.split("\n"):
+            stripped = line.strip()
+            if "연쇄 사용" in stripped or "연쇄사용" in stripped:
+                chains.append(f"- {spec.name}: {stripped}")
+
+    if chains:
+        catalogLines.append("## 도구 연쇄 패턴")
+        catalogLines.extend(chains)
+        catalogLines.append("")
+
+    # 기업 비교 패턴
+    catalogLines.extend([
+        "## 기업 비교 패턴",
+        "두 기업의 매출/이익/비율을 비교하려면 market 도구를 사용:",
+        "1. market(action='scanAccount', snakeId='sales', code='005930,000660') -- 두 기업 매출 시계열",
+        "2. market(action='scanRatio', ratioName='operatingMargin', code='005930,000660') -- 두 기업 영업이익률",
+        "code에 종목코드를 쉼표로 나열하면 해당 종목만 필터링.",
+        "",
+    ])
+
+    catalogText = "\n".join(catalogLines)
+
+    return (
+        '"""AI 시스템 프롬프트용 도구 카탈로그 (자동 생성).\n'
+        "\n"
+        "이 파일은 scripts/generateSpec.py가 자동 생성합니다. 직접 수정 금지.\n"
+        "Super Tool 8개만 포함 -- LLM이 실제 tool calling으로 사용하는 도구.\n"
+        '"""\n'
+        "\n"
+        f"TOOL_CATALOG = {json.dumps(catalogText, ensure_ascii=False, indent=None)}\n"
+    )
+
+
 # ─── main ───────────────────────────────────────────────────────
 
 
@@ -518,6 +971,7 @@ def main():
     capabilitiesPath = ROOT / "CAPABILITIES.md"
     llmsTxtPath = ROOT / "landing" / "static" / "llms.txt"
     skillRefPath = ROOT / ".claude" / "skills" / "dartlab" / "reference.md"
+    catalogPath = SRC / "dartlab" / "ai" / "conversation" / "_generatedCatalog.py"
 
     skillRefPath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -532,6 +986,10 @@ def main():
     skillRef = generateSkillRef()
     skillRefPath.write_text(skillRef, encoding="utf-8")
     print(f"  reference.md    ({len(skillRef):,} chars) -> {skillRefPath}")
+
+    catalog = _generateCatalog()
+    catalogPath.write_text(catalog, encoding="utf-8")
+    print(f"  _generatedCatalog.py ({len(catalog):,} chars) -> {catalogPath}")
 
     print("\n  완료.")
 

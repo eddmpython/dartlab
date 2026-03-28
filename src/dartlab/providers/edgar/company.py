@@ -1225,37 +1225,6 @@ class Company:
             return None
         return impacts_to_dataframe(result.impacts)
 
-    @property
-    def esg(self):
-        """ESG 공시 분석 — 환경(E)/사회(S)/지배구조(G) 종합 등급.
-
-        사용법::
-
-            c.esg                   # EsgResult
-            c.esg.environment       # 환경 pillar 상세
-        """
-        if not hasattr(self, "_esg_cache"):
-            from dartlab.analysis.strategy.esg.extractor import analyze_esg
-
-            self._esg_cache = analyze_esg(self)
-        return self._esg_cache
-
-    @property
-    def supply(self):
-        """공급망 분석 — 고객/공급사 관계 + 리스크 스코어링.
-
-        사용법::
-
-            c.supply                # SupplyChainResult
-            c.supply.customers      # 주요 고객
-            c.supply.riskScore      # 리스크 점수
-        """
-        if not hasattr(self, "_supply_cache"):
-            from dartlab.analysis.strategy.supply.risk import analyze_supply_chain
-
-            self._supply_cache = analyze_supply_chain(self)
-        return self._supply_cache
-
     # ── analyst ──
 
     def forecast(self, *, horizon: int = 3):

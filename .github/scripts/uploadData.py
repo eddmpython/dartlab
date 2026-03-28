@@ -106,7 +106,7 @@ def _uploadHf(category: str) -> None:
 
 def _uploadGh(category: str) -> None:
     """GitHub Releases에 변경 파일만 업로드 (fallback: 전체)."""
-    from dartlab.core.dataConfig import DATA_RELEASES, shardTag
+    from dartlab.core.dataConfig import DATA_RELEASES
 
     conf = DATA_RELEASES[category]
 
@@ -134,20 +134,9 @@ def _uploadGh(category: str) -> None:
     label = "증분" if changed is not None else "전체"
     print(f"[uploadData] GitHub Releases {label} 업로드: {len(files)}개 파일")
 
-    if "shards" in conf:
-        shardFiles: dict[str, list[Path]] = {}
-        for f in files:
-            stockCode = f.stem
-            tag = shardTag(stockCode, category)
-            shardFiles.setdefault(tag, []).append(f)
-
-        for tag, tagFiles in shardFiles.items():
-            print(f"[uploadData] GitHub Release {tag}: {len(tagFiles)}개 파일")
-            _ghReleaseUpload(tag, tagFiles)
-    else:
-        tag = conf["tag"]
-        print(f"[uploadData] GitHub Release {tag}: {len(files)}개 파일")
-        _ghReleaseUpload(tag, files)
+    tag = conf.get("tag", f"data-{category}")
+    print(f"[uploadData] GitHub Release {tag}: {len(files)}개 파일")
+    _ghReleaseUpload(tag, files)
 
     print("[uploadData] GitHub Releases 업로드 완료")
 

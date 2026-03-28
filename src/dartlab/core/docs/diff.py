@@ -486,23 +486,15 @@ def charDiff(fromText: str, toText: str) -> list[CharPart]:
 
 # ── 키워드 빈도 시계열 ─────────────────────────────────
 
-_DEFAULT_KEYWORDS: dict[str, list[str]] | None = None
+_DEFAULT_KEYWORDS: dict[str, list[str]] = {
+    "트렌드": ["AI", "ESG", "반도체", "바이오", "전기차"],
+    "리스크": ["환율", "금리", "소송", "감사의견", "파산"],
+    "기회": ["수출", "M&A", "특허", "신약"],
+}
 
 
 def _defaultKeywords() -> dict[str, list[str]]:
-    """signal 모듈의 54개 내장 키워드 가져오기."""
-    global _DEFAULT_KEYWORDS
-    if _DEFAULT_KEYWORDS is None:
-        try:
-            from dartlab.scan.signal import KEYWORDS
-
-            _DEFAULT_KEYWORDS = KEYWORDS
-        except ImportError:
-            _DEFAULT_KEYWORDS = {
-                "트렌드": ["AI", "ESG", "반도체", "바이오", "전기차"],
-                "리스크": ["환율", "금리", "소송", "감사의견", "파산"],
-                "기회": ["수출", "M&A", "특허", "신약"],
-            }
+    """키워드 빈도 분석용 기본 키워드."""
     return _DEFAULT_KEYWORDS
 
 

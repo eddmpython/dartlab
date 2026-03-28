@@ -125,9 +125,9 @@ def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None
     Examples::
 
         import dartlab
-        dartlab.downloadAll("finance")   # 재무 전체 — scanAccount/screen/benchmark 등에 필요
+        dartlab.downloadAll("finance")   # 재무 전체 — scanAccount/scanRatio 등에 필요
         dartlab.downloadAll("report")    # 보고서 전체 — governance/workforce/capital/debt에 필요
-        dartlab.downloadAll("docs")      # 공시 전체 — digest/signal에 필요 (대용량 ~8GB)
+        dartlab.downloadAll("docs")      # 공시 전체 — digest에 필요 (대용량 ~8GB)
     """
     from dartlab.core.dataLoader import downloadAll as _downloadAll
 
@@ -239,54 +239,6 @@ def debt():
     return result
 
 
-def screen(preset: str = "가치주"):
-    """시장 스크리닝 — 프리셋 기반 종목 필터.
-
-    Args:
-        preset: 프리셋 이름 ("가치주", "성장주", "턴어라운드", "현금부자",
-                "고위험", "자본잠식", "소형고수익", "대형안정").
-
-    Example::
-
-        import dartlab
-        df = dartlab.screen("가치주")    # ROE≥10, 부채≤100 등
-        df = dartlab.screen("고위험")    # 부채≥200, ICR<3
-    """
-    from dartlab.scan.screen.screen import screen as _screen
-
-    return _screen(preset)
-
-
-def benchmark():
-    """섹터별 핵심 비율 벤치마크 (P10, median, P90).
-
-    Example::
-
-        import dartlab
-        bm = dartlab.benchmark()   # 섹터 × 비율 정상 범위
-    """
-    from dartlab.scan.screen.screen import benchmark as _benchmark
-
-    return _benchmark()
-
-
-def signal(keyword: str | None = None):
-    """서술형 공시 시장 시그널 — 키워드 트렌드 탐지.
-
-    Args:
-        keyword: 특정 키워드만 필터. None이면 전체 48개 키워드.
-
-    Example::
-
-        import dartlab
-        df = dartlab.signal()        # 전체 키워드 트렌드
-        df = dartlab.signal("AI")    # AI 키워드 연도별 추이
-    """
-    from dartlab.scan.signal import scan_signal
-
-    return scan_signal(keyword)
-
-
 def news(query: str, *, market: str = "KR", days: int = 30):
     """기업 뉴스 수집.
 
@@ -370,22 +322,6 @@ def macro(market: str = "KR", indicator: str | None = None, *, start: str | None
 
     return getDefaultGather().macro(market, indicator, start=start, end=end)
 
-
-def crossBorderPeers(stockCode: str, *, topK: int = 5):
-    """한국 종목의 글로벌 피어 추천 (WICS→GICS 매핑).
-
-    Args:
-        stockCode: 한국 종목코드.
-        topK: 반환할 피어 수.
-
-    Example::
-
-        import dartlab
-        dartlab.crossBorderPeers("005930")  # → ["AAPL", "MSFT", ...]
-    """
-    from dartlab.scan.peer.discover import crossBorderPeers as _cb
-
-    return _cb(stockCode, topK=topK)
 
 
 def setup(provider: str | None = None):
@@ -801,22 +737,6 @@ def research(codeOrName: str, *, sections: list[str] | None = None, includeMarke
     return generateResearch(c, sections=sections, includeMarket=includeMarket)
 
 
-def groupHealth():
-    """그룹사 건전성 분석 — 네트워크 × 재무비율 교차.
-
-    Returns:
-        (summary, weakLinks) 튜플.
-
-    Example::
-
-        import dartlab
-        summary, weakLinks = dartlab.groupHealth()
-    """
-    from dartlab.scan.network.health import groupHealth as _groupHealth
-
-    return _groupHealth()
-
-
 def scanAccount(
     snakeId: str,
     *,
@@ -999,11 +919,7 @@ __all__ = [
     "downloadAll",
     "scan",
     "network",
-    "screen",
-    "benchmark",
-    "signal",
     "news",
-    "crossBorderPeers",
     "audit",
     "forecast",
     "valuation",
@@ -1013,7 +929,6 @@ __all__ = [
     "workforce",
     "capital",
     "debt",
-    "groupHealth",
     "research",
     "digest",
     "scanAccount",

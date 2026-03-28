@@ -12,21 +12,12 @@ import polars as pl
 
 from dartlab.core.docs.diff import DiffEntry, DiffResult, DiffSummary
 
-# signal 키워드를 가져와서 가중 스코어링에 사용
-_SIGNAL_KEYWORDS: dict[str, list[str]] | None = None
-
-
-def _load_signal_keywords() -> dict[str, list[str]]:
-    global _SIGNAL_KEYWORDS
-    if _SIGNAL_KEYWORDS is not None:
-        return _SIGNAL_KEYWORDS
-    try:
-        from dartlab.scan.signal import KEYWORDS
-
-        _SIGNAL_KEYWORDS = KEYWORDS
-    except ImportError:
-        _SIGNAL_KEYWORDS = {}
-    return _SIGNAL_KEYWORDS
+# 변화 스코어링용 기본 키워드
+_SIGNAL_KEYWORDS: dict[str, list[str]] = {
+    "트렌드": ["AI", "ESG", "반도체", "바이오", "전기차"],
+    "리스크": ["환율", "금리", "소송", "감사의견", "파산"],
+    "기회": ["수출", "M&A", "특허", "신약"],
+}
 
 
 # 고가중 topic (경영 핵심)
@@ -103,7 +94,7 @@ def score_changes(
             latest_entry[entry.topic] = entry
 
     # 키워드 매칭 준비
-    keywords = _load_signal_keywords()
+    keywords = _SIGNAL_KEYWORDS
     all_keywords = []
     for kw_list in keywords.values():
         all_keywords.extend(kw_list)

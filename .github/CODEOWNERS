@@ -1,0 +1,23 @@
+# DartLab Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @eddmpython
+
+# Core library
+/src/dartlab/core/          @eddmpython
+/src/dartlab/company.py     @eddmpython
+
+# Providers
+/src/dartlab/providers/     @eddmpython
+
+# AI / LLM
+/src/dartlab/ai/            @eddmpython
+/src/dartlab/mcp/           @eddmpython
+
+# CI/CD
+/.github/workflows/         @eddmpython
+
+# Landing / Docs
+/landing/                   @eddmpython
+/docs/                      @eddmpython

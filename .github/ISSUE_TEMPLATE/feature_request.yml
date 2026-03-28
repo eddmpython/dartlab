@@ -1,0 +1,65 @@
+name: Feature Request
+description: Suggest a new feature or improvement / 기능 제안
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome feature suggestions! 기능 제안을 환영합니다.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - "Company / Core"
+        - "DART Provider"
+        - "EDGAR Provider"
+        - "Finance / Ratios"
+        - "Analysis / Grading"
+        - "Sections / Report"
+        - "AI / LLM"
+        - "MCP Server"
+        - "CLI"
+        - "Server API"
+        - "Charts"
+        - "New Provider"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: "What problem does this solve? (Korean OK)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: "How should it work? Include example code if possible."
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+    validations:
+      required: false
+
+  - type: dropdown
+    id: willingness
+    attributes:
+      label: Would you contribute this?
+      options:
+        - "Yes, I can submit a PR"
+        - "I can help with testing"
+        - "No, just suggesting"
+    validations:
+      required: false

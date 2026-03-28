@@ -445,61 +445,6 @@ def calcCapexPattern(company) -> dict | None:
     return {"latest": latest, "history": history}
 
 
-# ── 자산 효율 ──
-
-
-def calcAssetEfficiency(company) -> dict | None:
-    """자산회전율 시계열.
-
-    반환::
-
-        {
-            "history": [{period, totalAssetTurnover, ppeTurnover}, ...],
-        }
-    """
-    bsAccounts = ["자산총계", "유형자산"]
-    isAccounts = ["매출액"]
-
-    bsResult = company.select("BS", bsAccounts)
-    isResult = company.select("IS", isAccounts)
-    bsParsed = _toDict(bsResult)
-    isParsed = _toDict(isResult)
-    if bsParsed is None or isParsed is None:
-        return None
-
-    bsData, bsPeriods = bsParsed
-    isData, _ = isParsed
-
-    taRow = bsData.get("자산총계", {})
-    ppeRow = bsData.get("유형자산", {})
-    revRow = isData.get("매출액", {})
-
-    yCols = _annualCols(bsPeriods, _MAX_YEARS)
-    if not yCols:
-        return None
-
-    history = []
-    for col in yCols:
-        ta = _get(taRow, col)
-        ppe = _get(ppeRow, col)
-        rev = _get(revRow, col)
-
-        taTurnover = rev / ta if ta > 0 else None
-        ppeTurnover = rev / ppe if ppe > 0 else None
-
-        history.append(
-            {
-                "period": col,
-                "totalAssetTurnover": taTurnover,
-                "ppeTurnover": ppeTurnover,
-            }
-        )
-
-    if not history:
-        return None
-    return {"history": history}
-
-
 # ── 자산 플래그 ──
 
 
@@ -538,13 +483,17 @@ def calcAssetFlags(company) -> list[str]:
         elif ratio > 3.0:
             flags.append(f"CAPEX/감가상각 {ratio:.1f}배 — 공격적 투자")
 
-    efficiency = calcAssetEfficiency(company)
-    if efficiency and len(efficiency["history"]) >= 2:
-        newest = efficiency["history"][0].get("totalAssetTurnover")
-        oldest = efficiency["history"][-1].get("totalAssetTurnover")
-        if newest is not None and oldest is not None and oldest > 0:
-            change = (newest - oldest) / oldest * 100
-            if change < -20:
-                flags.append(f"총자산회전율 {change:.0f}% 하락 — 자산 효율 악화")
+    from dartlab.analysis.strategy.efficiency import calcTurnoverTrend
+
+    turnover = calcTurnoverTrend(company)
+    if turnover and turnover.get("totalAssetTurnover"):
+        tat = turnover["totalAssetTurnover"]
+        if len(tat) >= 2:
+            newest = tat[0].get("value")
+            oldest = tat[-1].get("value")
+            if newest is not None and oldest is not None and oldest > 0:
+                change = (newest - oldest) / oldest * 100
+                if change < -20:
+                    flags.append(f"총자산회전율 {change:.0f}% 하락 — 자산 효율 악화")
 
     return flags

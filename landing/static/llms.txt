@@ -137,7 +137,6 @@ us.sections                          # 10-K sections map
 - **rank** (시장순위): 전체 시장 및 섹터 내 매출/자산/성장률 순위.
 - **keywordTrend** (키워드 트렌드): 공시 텍스트 키워드 빈도 추이 (topic × period × keyword). 54개 내장 키워드 또는 사용자 지정.
 - **news** (뉴스): 최근 뉴스 수집 (KR: Google News 한국어, US: Google News 영어). 날짜/제목/출처/URL.
-- **crossBorderPeers** (글로벌 피어): WICS→GICS 섹터 매핑 기반 글로벌 피어 추천. 한국 종목의 미국 동종 기업 리스트.
 
 ## Analysis Engines
 

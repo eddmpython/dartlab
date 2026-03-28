@@ -1037,15 +1037,4 @@ _ENTRIES: list[DataEntry] = [
         aiQuestionTypes=("종합", "리스크"),
         aiKeywords=("뉴스", "기사", "news", "최근"),
     ),
-    DataEntry(
-        name="crossBorderPeers",
-        label="글로벌 피어",
-        category="analysis",
-        dataType="custom",
-        description="WICS→GICS 섹터 매핑 기반 글로벌 피어 추천. 한국 종목의 미국 동종 기업 리스트.",
-        aiCategory="analysis",
-        aiHint="한국 기업의 글로벌 경쟁사 매핑",
-        aiQuestionTypes=("종합",),
-        aiKeywords=("피어", "peer", "글로벌", "비교"),
-    ),
 ]

@@ -230,7 +230,7 @@ def _appendMarketRank(company: Any, items: list[dict[str, Any]]) -> None:
     if not stockCode:
         return
     try:
-        from dartlab.scan.screen import getRank
+        from dartlab.scan.rank import getRank
 
         rankInfo = getRank(stockCode)
         if rankInfo is not None:

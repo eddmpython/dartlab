@@ -795,23 +795,6 @@ _Q_TYPES_NEED_SCAN = frozenset(
     }
 )
 
-_Q_TYPES_NEED_ESG = frozenset(
-    {
-        "ESG",
-        "지배구조",
-        "리스크",
-        "종합",
-    }
-)
-
-_Q_TYPES_NEED_SUPPLY = frozenset(
-    {
-        "공급망",
-        "사업",
-        "리스크",
-        "종합",
-    }
-)
 
 _Q_TYPES_NEED_WATCH = frozenset(
     {
@@ -824,7 +807,7 @@ _Q_TYPES_NEED_WATCH = frozenset(
 
 
 def _run_l2_engines(company: Any, q_type: str) -> str | None:
-    """L2 엔진(sector, insight, rank, scan, esg, supply, watch) 결과를 분석 패키지로 조립."""
+    """L2 엔진(sector, insight, rank, scan, watch) 결과를 분석 패키지로 조립."""
     stockCode = getattr(company, "stockCode", None)
     if not stockCode:
         return None
@@ -850,16 +833,6 @@ def _run_l2_engines(company: Any, q_type: str) -> str | None:
         if scan_md:
             parts.append(scan_md)
 
-    if q_type in _Q_TYPES_NEED_ESG:
-        esg_md = _run_esg(company)
-        if esg_md:
-            parts.append(esg_md)
-
-    if q_type in _Q_TYPES_NEED_SUPPLY:
-        supply_md = _run_supply(company)
-        if supply_md:
-            parts.append(supply_md)
-
     if q_type in _Q_TYPES_NEED_WATCH:
         watch_md = _run_watch(company)
         if watch_md:
@@ -868,51 +841,6 @@ def _run_l2_engines(company: Any, q_type: str) -> str | None:
     if not parts:
         return None
     return "\n\n".join(parts)
-
-
-def _run_esg(company: Any) -> str | None:
-    """ESG 3축 분석 (Tier 1 자동 주입)."""
-    try:
-        from dartlab.analysis.strategy.esg.extractor import analyze_esg
-
-        result = analyze_esg(company)
-        if result is None:
-            return None
-        lines = [
-            "### ESG 분석 (자동)",
-            f"- **종합**: {result.totalGrade} ({result.totalScore:.0f}점)",
-        ]
-        for pillar in (result.environment, result.social, result.governance):
-            detail = pillar.details[0] if pillar.details else ""
-            lines.append(f"- **{pillar.label}**: {pillar.grade} ({pillar.score:.0f}점) {detail}")
-        return "\n".join(lines)
-    except (ImportError, AttributeError, TypeError, ValueError):
-        return None
-
-
-def _run_supply(company: Any) -> str | None:
-    """공급망 분석 (Tier 1 자동 주입)."""
-    try:
-        from dartlab.analysis.strategy.supply.risk import analyze_supply_chain
-
-        result = analyze_supply_chain(company)
-        if result is None:
-            return None
-        lines = [
-            "### 공급망 분석 (자동)",
-            f"- **리스크 점수**: {result.riskScore:.0f} / **매출 집중도(HHI)**: {result.concentration:.2f}",
-        ]
-        if result.customers:
-            names = ", ".join(c.target for c in result.customers[:3])
-            lines.append(f"- **주요 고객**: {names}")
-        if result.suppliers:
-            names = ", ".join(s.target for s in result.suppliers[:3])
-            lines.append(f"- **주요 공급사**: {names}")
-        if result.riskFactors:
-            lines.append(f"- **리스크 요인**: {', '.join(result.riskFactors[:2])}")
-        return "\n".join(lines)
-    except (ImportError, AttributeError, TypeError, ValueError):
-        return None
 
 
 def _run_watch(company: Any) -> str | None:
@@ -1029,7 +957,7 @@ def _run_insight(stockCode: str, company: Any) -> str | None:
 def _run_rank(stockCode: str) -> str | None:
     """rank 엔진: 시장 내 규모 순위."""
     try:
-        from dartlab.scan.screen import getRank
+        from dartlab.scan.rank import getRank
 
         rank = getRank(stockCode)
         if rank is None:

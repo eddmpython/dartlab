@@ -16,7 +16,6 @@ _ENGINE_SPECS = [
     "dartlab.scan.spec",
     "dartlab.analysis.comparative.sector.spec",
     "dartlab.analysis.financial.insight.spec",
-    "dartlab.scan.screen.spec",
     "dartlab.gather.fred.spec",
     "dartlab.analysis.financial.research.spec",
 ]

@@ -1,8 +1,6 @@
-"""scan 축 (company 4축 + market signal) import + 기본 구조 테스트."""
+"""scan 축 (company 4축 + market network) import + 기본 구조 테스트."""
 
 from __future__ import annotations
-
-from pathlib import Path
 
 import polars as pl
 import pytest
@@ -19,7 +17,7 @@ def test_available_scans():
 
     scans = available_scans()
     assert isinstance(scans, list)
-    assert set(scans) >= {"network", "governance", "workforce", "capital", "debt", "signal"}
+    assert set(scans) >= {"network", "governance", "workforce", "capital", "debt"}
 
 
 def test_governance_imports():
@@ -68,15 +66,6 @@ def test_debt_imports():
     assert classify_risk(None, 30) == "관찰"
 
 
-def test_signal_imports():
-    from dartlab.scan.signal import keywords, scan_signal
-
-    assert callable(scan_signal)
-    kws = keywords()
-    assert "트렌드" in kws
-    assert "AI" in kws["트렌드"]
-
-
 def test_helpers_parse_num():
     from dartlab.scan._helpers import parse_num
 
@@ -120,7 +109,6 @@ def test_scan_spec_registered():
     assert "workforce" in summary
     assert "capital" in summary
     assert "debt" in summary
-    assert "signal" in summary
 
 
 @requires_report
@@ -160,91 +148,6 @@ def test_pipeline_scan_axes_mapping():
     assert "governance" in _SCAN_AXES_BY_QTYPE["지배구조"]
     assert "리스크" in _SCAN_AXES_BY_QTYPE
     assert "debt" in _SCAN_AXES_BY_QTYPE["리스크"]
-
-
-def test_signal_empty_result(tmp_path, monkeypatch):
-    import dartlab
-    from dartlab.scan.signal import scan_signal
-
-    docs_dir = tmp_path / "dart" / "docs"
-    docs_dir.mkdir(parents=True)
-    monkeypatch.setattr(dartlab.config, "dataDir", str(tmp_path))
-
-    result = scan_signal(verbose=False)
-
-    assert result.columns == ["year", "keyword", "category", "companies", "totalMentions"]
-    assert result.is_empty()
-
-
-def test_signal_keyword_filter_with_temp_docs(tmp_path, monkeypatch):
-    import dartlab
-    from dartlab.scan.signal import scan_signal
-
-    docs_dir = tmp_path / "dart" / "docs"
-    docs_dir.mkdir(parents=True)
-
-    pl.DataFrame(
-        {
-            "year": ["2024", "2025"],
-            "section_content": ["AI AI ESG", "AI 반도체"],
-        }
-    ).write_parquet(docs_dir / "000001.parquet")
-
-    pl.DataFrame(
-        {
-            "year": ["2024", "2024"],
-            "content": ["ESG 환율", ""],
-        }
-    ).write_parquet(docs_dir / "000002.parquet")
-
-    monkeypatch.setattr(dartlab.config, "dataDir", str(tmp_path))
-
-    ai = scan_signal("AI", verbose=False)
-    assert ai.columns == ["year", "keyword", "category", "companies", "totalMentions"]
-    assert ai.to_dicts() == [
-        {
-            "year": "2024",
-            "keyword": "AI",
-            "category": "트렌드",
-            "companies": 1,
-            "totalMentions": 2,
-        },
-        {
-            "year": "2025",
-            "keyword": "AI",
-            "category": "트렌드",
-            "companies": 1,
-            "totalMentions": 1,
-        },
-    ]
-
-    full = scan_signal(verbose=False)
-    esg_2024 = full.filter((pl.col("keyword") == "ESG") & (pl.col("year") == "2024"))
-    assert esg_2024.shape == (1, 5)
-    assert esg_2024["companies"][0] == 2
-    assert esg_2024["totalMentions"][0] == 2
-
-
-def test_signal_invalid_keyword_raises():
-    from dartlab.scan.signal import scan_signal
-
-    with pytest.raises(ValueError, match="알 수 없는 키워드"):
-        scan_signal("NOT_A_KEYWORD", verbose=False)
-
-
-@pytest.mark.skipif(
-    not (Path("data") / "dart" / "docs").exists(),
-    reason="local docs corpus 없음",
-)
-def test_signal_local_docs_ordering():
-    from dartlab.scan.signal import scan_signal
-
-    result = scan_signal("AI", verbose=False)
-
-    if result.is_empty():
-        pytest.skip("AI signal rows 없음")
-
-    assert result.rows() == result.sort(["keyword", "year"]).rows()
 
 
 @requires_report

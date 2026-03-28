@@ -9,7 +9,6 @@ Company = 기업 하나. Scan = 기업 밖 전부.
     dartlab.scan("governance")              # 전 상장사 거버넌스
     dartlab.scan("governance", "005930")    # 삼성전자만 필터
     dartlab.scan("ratio", "roe")            # 전종목 ROE
-    dartlab.scan("screen", "가치주")         # 프리셋 스크리닝
     dartlab.scan.topics()                   # 가용 축 목록
 """
 
@@ -78,15 +77,6 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetRequired=False,
         returnType="DataFrame",
     ),
-    "signal": _AxisEntry(
-        module="dartlab.scan.signal",
-        fn="scan_signal",
-        label="시그널",
-        description="서술형 공시 키워드 트렌드 (48개 키워드)",
-        targetParam="keyword",
-        targetRequired=False,
-        returnType="DataFrame",
-    ),
     "account": _AxisEntry(
         module="dartlab.providers.dart.finance.scanAccount",
         fn="scanAccount",
@@ -103,24 +93,6 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="전종목 단일 재무비율 시계열 (ROE, 부채비율 등)",
         targetParam="ratioName",
         targetRequired=True,
-        returnType="DataFrame",
-    ),
-    "screen": _AxisEntry(
-        module="dartlab.scan.screen.screen",
-        fn="screen",
-        label="스크리닝",
-        description="프리셋 기반 전종목 스크리닝 (가치주, 성장주 등)",
-        targetParam="preset",
-        targetRequired=False,
-        returnType="DataFrame",
-    ),
-    "benchmark": _AxisEntry(
-        module="dartlab.scan.screen.screen",
-        fn="benchmark",
-        label="벤치마크",
-        description="섹터별 재무비율 벤치마크 (P10, median, P90)",
-        targetParam=None,
-        targetRequired=False,
         returnType="DataFrame",
     ),
     "digest": _AxisEntry(
@@ -141,24 +113,6 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetRequired=False,
         returnType="dict",
     ),
-    "groupHealth": _AxisEntry(
-        module="dartlab.scan.network.health",
-        fn="groupHealth",
-        label="그룹건전성",
-        description="그룹사 네트워크 x 재무비율 교차 분석",
-        targetParam=None,
-        targetRequired=False,
-        returnType="tuple",
-    ),
-    "peers": _AxisEntry(
-        module="dartlab.scan.peer.discover",
-        fn="crossBorderPeers",
-        label="피어",
-        description="글로벌 피어 추천 (WICS→GICS 매핑)",
-        targetParam="stockCode",
-        targetRequired=True,
-        returnType="list",
-    ),
 }
 
 
@@ -173,17 +127,10 @@ _ALIASES: dict[str, str] = {
     "주주환원": "capital",
     "배당": "capital",
     "부채": "debt",
-    "시그널": "signal",
-    "키워드": "signal",
     "계정": "account",
     "비율": "ratio",
-    "스크리닝": "screen",
-    "필터": "screen",
-    "벤치마크": "benchmark",
     "네트워크": "network",
     "관계": "network",
-    "건전성": "groupHealth",
-    "피어": "peers",
     "다이제스트": "digest",
     "변화": "digest",
 }
@@ -217,7 +164,7 @@ class Scan:
         """축(axis)별 전종목 횡단분석.
 
         Args:
-            axis: scan 축 이름 (governance, ratio, screen 등).
+            axis: scan 축 이름 (governance, ratio, account 등).
             target: 축별 주요 인자 (stockCode 필터, keyword, snakeId 등).
             **kwargs: 축별 추가 파라미터.
         """
@@ -264,12 +211,6 @@ class Scan:
         from dartlab.providers.dart.finance.scanAccount import scanRatioList
 
         return scanRatioList()
-
-    def presets(self) -> dict[str, str]:
-        """스크리닝 프리셋 목록."""
-        from dartlab.scan.screen.screen import presets
-
-        return presets()
 
     def position(self, stockCode: str) -> dict | None:
         """종목의 시장 내 위치 (percentile)."""

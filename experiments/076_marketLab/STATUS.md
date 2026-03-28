@@ -20,6 +20,7 @@
 | 011 | marketDashboard | 통합 대시보드 | ⏳ 대기 | 001~010 결과 합산 |
 | 012 | dartEdgarCross | 한미 비교 | ✅ 완료 | ROE 한국 3.5 vs 미국 15.7 |
 | 013 | signalRevalidation | signal 공식 승격 재검증 | ✅ 완료 | 319사 41키워드, AI/ESG/2차전지 변곡 재현 |
+| 014 | scanQualityAudit | scan 13축 품질 전수조사 | ✅ 완료 | signal P0(17분+오탐50%), 나머지 양호 |
 
 ## 핵심 발견
 
@@ -60,9 +61,20 @@
 ## 산출물
 - `data/market_ratios.parquet` — 2,661 × 43 시장 스냅샷
 
+### scan 13축 품질 전수조사 (014)
+- **signal P0**: 실행 17분(2,548개 docs 전수 스캔), AI 오탐률 50%(부분매칭)
+  - docs 커버리지 자체는 95.7% (양호). 성능+매칭 로직이 문제
+  - 프리빌드 필수 + 단어경계 매칭으로 개선 필요
+- **debt**: ICR null 1.4% (가설 40%+ 기각). 부채비율 null 15.5%. 위험등급 "주의" 50% 편중
+- **governance**: 2,711사 2.8s. 결측 양호 (지분율 7%, pay_ratio 9.8%)
+- **workforce**: 2,448사 24.1s. 근속 33.7% null, 최고보수 84.2% null (공개 의무 기업만)
+- **capital**: 2,714사 1.4s. 결측 거의 없음
+- **account/ratio**: 0.2~0.4s. 프리빌드 finance.parquet 활용. 2024년까지 유효
+- **peers crossBorderPeers**: IT fallback 100% (sector.classify 실패). EDGAR 배제로 우선순위 하락
+
 ## 다음 단계
+- **signal 프리빌드 + 오탐 수정** (P0, 즉시)
 - 005: 순환출자 시뮬레이션 (복잡도 높으면 별도 폴더)
 - 007: 섹터별 연도 추이 시계열 (섹터 로테이션)
 - 009: 텍스트 유사도 기반 기업 비교
 - 011: 전체 결과 통합 대시보드
-- EDGAR finance 매핑 개선 (ROE 커버리지 6% → 목표 50%+)

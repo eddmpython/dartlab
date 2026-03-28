@@ -151,7 +151,7 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         if not stockCode:
             return "종목코드가 없습니다."
         try:
-            from dartlab.scan.screen import getRank
+            from dartlab.scan.rank import getRank
 
             rank = getRank(stockCode)
             if rank is None:
@@ -182,85 +182,6 @@ def register_analysis_tools(company: Any, register_tool) -> None:
         category="analysis",
         questionTypes=("종합",),
         priority=60,
-    )
-
-    # ── get_esg ──
-
-    def get_esg() -> str:
-        """ESG 3축 분석."""
-        try:
-            from dartlab.analysis.strategy.esg.extractor import analyze_esg
-
-            result = analyze_esg(company)
-            if result is None:
-                return "ESG 분석에 필요한 공시 데이터가 부족합니다."
-            lines = [
-                f"종합: {result.totalGrade} ({result.totalScore:.0f}점)",
-                "",
-                "| 축 | 등급 | 점수 | 상세 |",
-                "| --- | --- | --- | --- |",
-            ]
-            for pillar in (result.environment, result.social, result.governance):
-                detail = pillar.details[0] if pillar.details else "-"
-                lines.append(f"| {pillar.label} | {pillar.grade} | {pillar.score:.0f} | {detail} |")
-            return "\n".join(lines)
-        except (ImportError, AttributeError, TypeError, ValueError) as e:
-            return f"ESG 분석 실패: {e}"
-
-    register_tool(
-        "get_esg",
-        get_esg,
-        "ESG(환경·사회·지배구조) 3축 종합 분석을 실행합니다. "
-        "각 축별 점수(0~100)와 등급(A~E), 가중평균 종합 등급을 반환합니다. "
-        "사용 시점: 'ESG 평가', '환경 리스크', '지배구조 어때?', '사회적 책임' 질문. "
-        "사용하지 말 것: 재무 건전성은 get_insight가 적절합니다.",
-        {"type": "object", "properties": {}},
-        category="analysis",
-        questionTypes=("ESG", "리스크", "지배구조", "종합"),
-        priority=70,
-    )
-
-    # ── get_supply_chain ──
-
-    def get_supply_chain() -> str:
-        """공급망 분석."""
-        try:
-            from dartlab.analysis.strategy.supply.risk import analyze_supply_chain
-
-            result = analyze_supply_chain(company)
-            if result is None:
-                return "공급망 분석에 필요한 공시 데이터가 부족합니다."
-            lines = [
-                f"공급망 리스크: {result.riskScore:.0f}점 / 매출 집중도(HHI): {result.concentration:.2f}",
-                "",
-            ]
-            if result.customers:
-                lines.append("**주요 고객:**")
-                for c in result.customers[:5]:
-                    lines.append(f"- {c.target} (신뢰도 {c.confidence:.0%})")
-            if result.suppliers:
-                lines.append("**주요 공급사:**")
-                for s in result.suppliers[:5]:
-                    lines.append(f"- {s.target} (신뢰도 {s.confidence:.0%})")
-            if result.riskFactors:
-                lines.append("**리스크 요인:**")
-                for rf in result.riskFactors[:3]:
-                    lines.append(f"- {rf}")
-            return "\n".join(lines)
-        except (ImportError, AttributeError, TypeError, ValueError) as e:
-            return f"공급망 분석 실패: {e}"
-
-    register_tool(
-        "get_supply_chain",
-        get_supply_chain,
-        "기업의 공급망 구조와 리스크를 분석합니다. "
-        "주요 고객/공급사 목록, 매출 집중도(HHI), 공급망 리스크 점수를 반환합니다. "
-        "사용 시점: '공급망 리스크', '고객 집중도', '주요 거래처', '공급사 의존' 질문. "
-        "사용하지 말 것: 매출 구성 자체는 get_data('segments')가 적절합니다.",
-        {"type": "object", "properties": {}},
-        category="analysis",
-        questionTypes=("공급망", "사업", "리스크", "종합"),
-        priority=65,
     )
 
     # ── get_disclosure_changes ──

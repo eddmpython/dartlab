@@ -5,6 +5,27 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.11] - 2026-03-28
+
+### Added
+
+- **AI 도구 카탈로그 자동 생성**: `generateSpec.py`가 registerTool() AST에서 전체 JSON Schema를 추출하여 `_generatedCatalog.py` 자동 생성. 수동 하드코딩 `_TOOL_CATALOG` 제거
+- **CAPABILITIES.md 완전 명세**: AI Tools 섹션에 Super Tool 8개의 actions, parameters, questionTypes 완전 포함. Scan Axis 8축 + 질문유형별 도구 매핑 + 도구 연쇄 패턴 자동 생성
+- **AI 품질 테스트 실험 103-002**: 토큰 효율 77% 절감 + 4/4 시나리오 PASS + 파라미터 정확도 95.8%
+
+### Changed
+
+- **시스템 프롬프트 토큰 77% 절감**: `_TOOL_CATALOG` 20,872자 → 4,697자. Super Tool 8개만 포함 (불필요한 defaults 99개 제거)
+- **scan 구조 정리**: `scan/screen/` 디렉토리 삭제, `RankInfo`/`getRank` → `scan/rank.py`로 이동. `scan/signal`, `scan/peer`, `scan/network/health` 제거
+- **analyze Super Tool 정리**: esg, peer, screen action 제거 (미구현 phantom action 정리). enum과 실제 handler 불일치 해소
+- **market Super Tool 정리**: signal, benchmark, groupHealth, peer, screen action 제거. 실제 동작하는 13개 action만 유지
+- **strategy 모듈 정리**: `analysis/strategy/esg/`, `analysis/strategy/supply/` 디렉토리 삭제 (미완성 모듈)
+
+### Fixed
+
+- **`_generatedCatalog.py` phantom action 문제**: LLM이 존재하지 않는 action을 호출하여 "[오류]" 응답을 받는 문제 해결. registerTool() schema enum과 정확히 일치하도록 자동 생성
+- **테스트 import 정리**: `scan.screen` → `scan.rank` 이동에 따른 테스트 파일 import 수정. 삭제된 모듈 테스트 제거
+
 ## [0.7.10] - 2026-03-27
 
 ### Added

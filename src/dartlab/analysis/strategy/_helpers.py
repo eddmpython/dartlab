@@ -82,3 +82,30 @@ def toDict(selectResult, maxPeriods: int = 0) -> tuple[dict[str, dict], list[str
         label = str(row.get(labelCol, ""))
         data[label] = {c: row.get(c) for c in periods}
     return (data, periods) if data else None
+
+
+def toDictBySnakeId(selectResult, maxPeriods: int = 0) -> tuple[dict[str, dict], list[str]] | None:
+    """SelectResult → ({snakeId: {period: val}}, periodCols).
+
+    toDict와 동일하되, 키를 snakeId 컬럼으로 사용한다.
+    snakeId로 select한 뒤 .get()도 snakeId로 접근할 때 사용.
+    """
+    if selectResult is None:
+        return None
+
+    df = selectResult.df
+    periods = sorted(periodCols(df), reverse=True)
+    if maxPeriods > 0:
+        periods = periods[:maxPeriods]
+    if not periods:
+        return None
+
+    idCol = "snakeId" if "snakeId" in df.columns else None
+    if idCol is None:
+        return toDict(selectResult, maxPeriods)
+
+    data: dict[str, dict] = {}
+    for row in df.iter_rows(named=True):
+        sid = str(row.get(idCol, ""))
+        data[sid] = {c: row.get(c) for c in periods}
+    return (data, periods) if data else None

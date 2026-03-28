@@ -1,0 +1,334 @@
+/* DartLab TUI -- derived from elia.scss with exact variable patterns */
+
+/* elia variable aliases */
+$main-lighten-2: $primary-lighten-2;
+$main-lighten-1: $primary-lighten-1;
+$main: $primary;
+$main-darken-1: $primary-darken-1;
+$main-darken-2: $primary-darken-2;
+$main-border-text-color: $accent;
+$main-border-color: $main-lighten-1 50%;
+$main-border-color-focus: $main-lighten-1 100%;
+
+/* -- Global (elia exact) -------------------------------- */
+
+* {
+    scrollbar-color: $accent 30%;
+    scrollbar-color-hover: $accent 50%;
+    scrollbar-color-active: $accent 80%;
+    scrollbar-size-vertical: 1;
+    link-style: none;
+    link-color-hover: $accent;
+}
+
+Screen {
+    background: $background;
+    padding: 0 2 0 2;
+}
+
+/* -- Header (elia AppHeader exact) ---------------------- */
+
+HeaderBar {
+    dock: top;
+    width: 1fr;
+    padding: 1 2;
+    height: auto;
+    background: $background;
+}
+
+HeaderBar #header-brand {
+    width: auto;
+    min-width: 16;
+    color: $accent;
+    text-style: bold;
+}
+
+HeaderBar #header-info {
+    width: 1fr;
+    text-align: right;
+    text-style: dim;
+}
+
+/* -- Body ----------------------------------------------- */
+
+#body {
+    height: 1fr;
+}
+
+/* -- Chat area ------------------------------------------ */
+
+ChatArea {
+    height: 1fr;
+    padding: 0;
+}
+
+/* -- Chatbox (elia exact) ------------------------------- */
+
+Chatbox {
+    height: auto;
+    width: auto;
+    min-width: 12;
+    max-width: 1fr;
+    margin: 0 1;
+    padding: 0 2;
+}
+
+Chatbox.assistant-message {
+    width: 1fr;
+    border: round $accent 60%;
+}
+
+Chatbox.assistant-message:focus-within {
+    border: round $accent;
+    border-left: thick $accent 50%;
+}
+
+Chatbox.user-message {
+    border: round $main-border-color;
+}
+
+Chatbox.user-message:focus-within {
+    border: round $main-border-color-focus;
+    border-left: thick $main-border-color-focus;
+}
+
+Chatbox.system-message {
+    border: none;
+    padding: 0 2;
+    color: $text-muted;
+}
+
+/* -- System messages ------------------------------------ */
+
+.system-message {
+    height: auto;
+    margin: 0 2;
+    padding: 0;
+    color: $text-muted;
+}
+
+/* -- Tool calls ----------------------------------------- */
+
+.tool-status {
+    height: auto;
+    margin: 0 0 0 4;
+    padding: 0 1;
+    color: $text-muted;
+}
+
+.tool-done {
+    height: auto;
+    margin: 0 0 0 4;
+    padding: 0 1;
+    color: $text;
+    text-style: dim;
+}
+
+/* -- ResponseStatus (elia exact) ------------------------ */
+
+ResponseStatus {
+    dock: top;
+    align-horizontal: right;
+    display: none;
+    layer: overlay;
+    height: 2;
+    width: auto;
+    margin-top: 1;
+    margin-right: 2;
+}
+
+ResponseStatus Label {
+    width: auto;
+}
+
+ResponseStatus LoadingIndicator {
+    width: auto;
+    color: $primary;
+    height: 1;
+    margin-top: 1;
+    dock: right;
+}
+
+ResponseStatus.-awaiting {
+    display: block;
+}
+
+ResponseStatus.-awaiting LoadingIndicator {
+    color: $primary;
+}
+
+ResponseStatus.-responding {
+    display: block;
+}
+
+ResponseStatus.-responding LoadingIndicator {
+    color: $secondary;
+}
+
+/* -- Welcome -------------------------------------------- */
+
+WelcomeScreen {
+    width: 100%;
+    height: 1fr;
+    align: center middle;
+}
+
+WelcomeScreen #welcome-outer {
+    width: auto;
+    max-width: 80;
+    height: auto;
+    align: center middle;
+    padding: 1 4;
+}
+
+WelcomeScreen #welcome-brand {
+    text-align: center;
+    width: auto;
+    height: auto;
+    margin-bottom: 1;
+}
+
+WelcomeScreen #welcome-tagline {
+    text-align: center;
+    width: 100%;
+    color: $text-muted;
+}
+
+WelcomeScreen #welcome-provider-info {
+    text-align: center;
+    width: 100%;
+    color: $text-disabled;
+    margin-top: 1;
+}
+
+WelcomeScreen #welcome-shortcuts {
+    text-align: center;
+    width: 100%;
+    color: $text-disabled;
+    margin-top: 1;
+}
+
+/* -- TextArea (elia exact -- applies to InputArea) ------- */
+
+TextArea {
+    padding: 1 2;
+    border: round $main-border-color;
+    border-title-color: $main-border-text-color;
+    border-subtitle-color: $main-border-text-color;
+}
+
+TextArea:focus {
+    border: round $main-border-color-focus;
+    border-title-style: bold;
+}
+
+TextArea:focus .text-area--selection {
+    background: $main 60%;
+}
+
+TextArea .text-area--cursor-line {
+    background: $background 0%;
+}
+
+TextArea .text-area--cursor-gutter {
+    background: $background 0%;
+}
+
+TextArea:focus .text-area--cursor-gutter {
+    color: yellowgreen;
+    background: $background 0%;
+}
+
+TextArea .text-area--selection {
+    background: $main-lighten-2 25%;
+}
+
+/* -- InputArea (elia ChatPromptInput exact) -------------- */
+
+InputArea {
+    dock: bottom;
+    height: auto;
+    min-height: 3;
+    max-height: 12;
+    padding: 0 1;
+    background: $background;
+}
+
+InputArea.-submit-blocked {
+    border: round $error 50%;
+}
+
+/* -- Status bar ----------------------------------------- */
+
+StatusBar {
+    dock: bottom;
+    height: 1;
+    background: transparent;
+    padding: 0 2;
+    layout: horizontal;
+}
+
+StatusBar #status-companies {
+    width: 1fr;
+}
+
+StatusBar #status-right {
+    width: auto;
+    text-align: right;
+}
+
+/* -- Footer (elia exact) -------------------------------- */
+
+Footer {
+    background: transparent;
+}
+
+Footer FooterKey {
+    background: transparent;
+}
+
+.footer-key--key {
+    color: $accent;
+    background: transparent;
+}
+
+/* -- Command palette ------------------------------------ */
+
+CommandPalette {
+    align: center middle;
+}
+
+#palette-container {
+    width: 64;
+    max-height: 24;
+    background: $background;
+    border: round $main-border-color;
+    border-title-color: $main-border-text-color;
+    padding: 1 2;
+}
+
+#palette-input {
+    margin-bottom: 1;
+}
+
+#palette-list {
+    height: 1fr;
+    background: $background 15%;
+}
+
+/* -- OptionList (elia exact) ---------------------------- */
+
+OptionList {
+    background: $background 15%;
+}
+
+OptionList > .option-list--option-highlighted {
+    background: $main 15%;
+    color: $text;
+    text-style: none;
+}
+
+OptionList:focus > .option-list--option-highlighted {
+    background: $main-darken-2 80%;
+    text-style: none;
+}

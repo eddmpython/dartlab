@@ -4,7 +4,6 @@
 - 주가/컨센서스 (외부)
 - scanAccount/scanRatio (전종목 재무)
 - governance/workforce/capital/debt (전종목 스캔)
-- signal/benchmark/screen (전종목 분석)
 """
 
 from __future__ import annotations
@@ -52,16 +51,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
             return f"[오류] 주가 이력 조회 실패: {e}. 네트워크 연결을 확인하세요."
 
-    def _screen(criteria: str = "", **_kw) -> str:
-        if not criteria:
-            return "criteria(조건)를 지정하세요."
-        try:
-            from dartlab.ai.tools.defaults.scan import _screen_market_impl
-
-            return _screen_market_impl(criteria)
-        except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
-            return f"[오류] 스크리닝 실패: {e}"
-
     def _scan(code: str = "", **_kw) -> str:
         """종목 시장 포지셔닝 조회 (ratio 기반 경량 판정)."""
         if not code:
@@ -79,7 +68,7 @@ def registerMarketTool(registerTool: Callable) -> None:
 
             # 시총 순위
             try:
-                from dartlab.scan.screen import getRank
+                from dartlab.scan.rank import getRank
 
                 rank = getRank(code)
                 if rank is not None:
@@ -110,18 +99,6 @@ def registerMarketTool(registerTool: Callable) -> None:
             return "\n".join(lines)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
             return f"[오류] 포지셔닝 조회 실패: {e}"
-
-    def _peer(code: str = "", **_kw) -> str:
-        """동종업 피어 비교."""
-        if not code:
-            return "code(종목코드)를 지정하세요."
-        try:
-            from dartlab.scan.peer.discover import discover
-
-            result = discover(code, topK=5)
-            return format_tool_value(result, max_rows=10, max_chars=3000)
-        except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
-            return f"[오류] 피어 발견 실패: {e}. 대안: analyze(action='sector')로 업종 정보를 확인하세요."
 
     def _financials(code: str = "", statement: str = "IS", **_kw) -> str:
         """code 기반 재무제표 조회 (company 없이 즉석 로드)."""
@@ -282,71 +259,12 @@ def registerMarketTool(registerTool: Callable) -> None:
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
             return f"[오류] 부채 스캔 실패: {e}"
 
-    def _signal(keyword: str = "", **_kw) -> str:
-        """전종목 키워드 트렌드 (공시 텍스트 기반)."""
-        try:
-            from dartlab.scan.signal import scan_signal
-
-            df = scan_signal(keyword=keyword or None, verbose=False)
-            if df is None or len(df) == 0:
-                msg = f"keyword='{keyword}'" if keyword else "전체"
-                return f"[데이터 없음] {msg} 시그널 데이터 없음."
-            return df_to_md(df, max_rows=30, max_chars=3000)
-        except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
-            return f"[오류] 시그널 조회 실패: {e}"
-
-    def _benchmark(code: str = "", **_kw) -> str:
-        """섹터별 비율 벤치마크 (P10/중위/P90)."""
-        try:
-            # benchmark = 전종목 주요 비율 통계
-            from dartlab.providers.dart.finance.scanAccount import scanRatio
-
-            df = scanRatio("roe")
-            if df is None or len(df) == 0:
-                return "[데이터 없음] 벤치마크 데이터 없음."
-            # 최신 기간 컬럼의 통계
-            periodCols = [c for c in df.columns if c not in ("stockCode", "corpName")]
-            if not periodCols:
-                return "[데이터 없음] 기간 데이터 없음."
-            latest = periodCols[-1]
-            import polars as pl
-
-            stats = df.select(
-                pl.lit("ROE").alias("지표"),
-                pl.col(latest).mean().alias("평균"),
-                pl.col(latest).median().alias("중위"),
-                pl.col(latest).quantile(0.1).alias("P10"),
-                pl.col(latest).quantile(0.9).alias("P90"),
-                pl.col(latest).count().alias("종목수"),
-            )
-            return f"## 전종목 ROE 벤치마크 ({latest})\n" + df_to_md(stats, max_rows=10, max_chars=2000)
-        except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
-            return f"[오류] 벤치마크 조회 실패: {e}"
-
-    def _groupHealth(**_kw) -> str:
-        """기업집단 재무건전성."""
-        try:
-            from dartlab.scan.governance import scan_governance
-
-            df = scan_governance(verbose=False)
-            if df is None or len(df) == 0:
-                return "[데이터 없음] 기업집단 데이터 없음."
-            # 지배구조 점수 기준 하위 종목 추출
-            if "총점" in df.columns:
-                bottom = df.sort("총점").head(20)
-                return "## 지배구조 취약 종목 (하위 20)\n" + df_to_md(bottom, max_rows=20, max_chars=3000)
-            return df_to_md(df.head(20), max_rows=20, max_chars=3000)
-        except (ImportError, AttributeError, KeyError, TypeError, ValueError, FileNotFoundError, OSError) as e:
-            return f"[오류] 기업집단 건전성 조회 실패: {e}"
-
     _ACTIONS = {
         # 기존 액션
         "price": _price,
         "consensus": _consensus,
         "history": _history,
-        "screen": _screen,
         "scan": _scan,
-        "peer": _peer,
         "financials": _financials,
         "ratios": _ratios,
         # 전종목 비교 액션 (scan/ parquet 기반)
@@ -357,20 +275,15 @@ def registerMarketTool(registerTool: Callable) -> None:
         "workforce": _workforce,
         "capital": _capital,
         "debt": _debt,
-        "signal": _signal,
-        "benchmark": _benchmark,
-        "groupHealth": _groupHealth,
     }
 
     def market(
         action: str,
         code: str = "",
         days: str = "365",
-        criteria: str = "",
         statement: str = "IS",
         snakeId: str = "",
         ratioName: str = "",
-        keyword: str = "",
     ) -> str:
         """시장 데이터 통합 도구."""
         handler = _ACTIONS.get(action)
@@ -379,11 +292,9 @@ def registerMarketTool(registerTool: Callable) -> None:
         return handler(
             code=code,
             days=days,
-            criteria=criteria,
             statement=statement,
             snakeId=snakeId,
             ratioName=ratioName,
-            keyword=keyword,
         )
 
     registerTool(
@@ -399,7 +310,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         "- consensus: 애널리스트 컨센서스 (code 필수)\n"
         "- history: 주가 이력 (code, days)\n"
         "- scan: 종목 포지셔닝 (시총순위, 핵심지표). code 필수\n"
-        "- peer: TF-IDF 사업유사도 경쟁사 발견. code 필수\n"
         "- financials: 재무제표 (code, statement=BS/IS/CF/CIS)\n"
         "- ratios: 재무비율 (code 필수)\n"
         "\n"
@@ -411,10 +321,6 @@ def registerMarketTool(registerTool: Callable) -> None:
         "- workforce: 전종목 인력/급여 스캔 (직원수, 평균급여, 근속년수)\n"
         "- capital: 전종목 주주환원 스캔 (배당, 자사주, 증자)\n"
         "- debt: 전종목 부채구조 스캔 (사채, 부채비율, ICR)\n"
-        "- signal: 전종목 키워드 트렌드 (keyword 선택)\n"
-        "- benchmark: 전종목 비율 통계 (P10/중위/P90)\n"
-        "- groupHealth: 지배구조 취약 종목 조회\n"
-        "- screen: 프리셋 스크리닝 (criteria 필수)\n"
         "\n"
         "기업 비교 패턴: scanAccount(snakeId='sales', code='005930,000660')으로 두 종목 매출 비교.\n"
         "\n"
@@ -428,9 +334,7 @@ def registerMarketTool(registerTool: Callable) -> None:
                         "price",
                         "consensus",
                         "history",
-                        "screen",
                         "scan",
-                        "peer",
                         "financials",
                         "ratios",
                         "scanAccount",
@@ -440,16 +344,12 @@ def registerMarketTool(registerTool: Callable) -> None:
                         "workforce",
                         "capital",
                         "debt",
-                        "signal",
-                        "benchmark",
-                        "groupHealth",
                     ],
                     "description": (
-                        "price=현재가, consensus=컨센서스, history=주가이력, screen=스크리닝, "
-                        "scan=포지셔닝, peer=경쟁사, financials=재무제표, ratios=재무비율, "
+                        "price=현재가, consensus=컨센서스, history=주가이력, "
+                        "scan=포지셔닝, financials=재무제표, ratios=재무비율, "
                         "scanAccount=전종목계정, scanRatio=전종목비율, scanRatioList=비율목록, "
-                        "governance=지배구조, workforce=인력, capital=주주환원, debt=부채, "
-                        "signal=키워드트렌드, benchmark=벤치마크, groupHealth=집단건전성"
+                        "governance=지배구조, workforce=인력, capital=주주환원, debt=부채"
                     ),
                 },
                 "code": {
@@ -467,20 +367,10 @@ def registerMarketTool(registerTool: Callable) -> None:
                     "description": "비율명 (action=scanRatio). 예: roe, debtRatio, operatingMargin, currentRatio, per, pbr",
                     "default": "",
                 },
-                "keyword": {
-                    "type": "string",
-                    "description": "키워드 (action=signal). 예: ESG, AI, 탄소중립",
-                    "default": "",
-                },
                 "days": {
                     "type": "string",
                     "description": "주가이력 기간(일). 기본 365",
                     "default": "365",
-                },
-                "criteria": {
-                    "type": "string",
-                    "description": "스크리닝 조건 (action=screen)",
-                    "default": "",
                 },
                 "statement": {
                     "type": "string",
