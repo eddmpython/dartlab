@@ -379,7 +379,7 @@ dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 
 facade가 priority 순으로 provider를 순회하여 첫 번째 매칭을 사용한다.
 
-## 핵심 기능
+## 기능
 
 ### Show, Trace, Diff — 상세 예시
 
@@ -437,14 +437,9 @@ dartlab.scan("ratio")
 
 한국어 계정명(`매출액`)과 영문 snakeId(`sales`) 모두 사용 가능 — Company finance와 동일한 4단계 정규화.
 
-> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scan("account")`, `scan("digest")` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. 먼저 전체 데이터를 받아야 한다:
-> ```python
-> dartlab.downloadAll("finance")   # ~600 MB, 2,700+ 종목
-> dartlab.downloadAll("report")    # ~320 MB (거버넌스/인력/자본/부채)
-> dartlab.downloadAll("docs")      # ~8 GB (공시 변화 감지/시그널 — 대용량)
-> ```
+> **전체 데이터 사전 다운로드 필요.** 시장 전체 함수(`scan("account")`, `scan("digest")` 등)는 로컬 데이터 기반 — 개별 `Company()` 호출은 1개 종목만 다운로드한다. [데이터](#데이터) 섹션의 배치 수집 참고.
 
-## 리뷰 — 상세 사용법
+### 리뷰 — 상세 사용법
 
 > **실험적** -- 활발히 개발 중. 위의 [Review](#review--analysis를-보고서로) / [Reviewer](#reviewer--review--ai-해석) 섹션에서 개요를 확인한다.
 
@@ -479,10 +474,6 @@ dartlab setup custom --base-url http://localhost:11434/v1   # Ollama 로컬
 
 - **가이드**: `c.reviewer(guide="...")`로 도메인 특화 AI 분석
 - **렌더링 형식**: `review.render("rich" | "html" | "markdown" | "json")`
-
-## 부가 기능
-
-> 아래 기능은 **beta** 또는 **experimental**이다 — API가 변경될 수 있다. [stability](docs/stability.md) 참고.
 
 ### 인사이트 (beta)
 
@@ -695,15 +686,7 @@ dartlab.gather("news", "AAPL", market="US")  # 미국 기업 뉴스
 # 글로벌 피어 매핑 (WICS → GICS 섹터)
 dartlab.crossBorderPeers("005930")    # → ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"]
 
-# 환율 변환 (FRED 기반)
-from dartlab.engines.common.finance import getExchangeRate, convertValue
-getExchangeRate("KRW")                # KRW/USD 환율
-convertValue(1_000_000, "KRW", "USD") # → ~730.0
-
-# 감사의견 다국가 정규화 (한/영/일 → 통일 코드)
-from dartlab.engines.common.audit import normalizeAuditOpinion
-normalizeAuditOpinion("적정")          # → "unqualified"
-normalizeAuditOpinion("Qualified")     # → "qualified"
+# 통화는 기업별 자동 감지 (DART → KRW, EDGAR → USD)
 ```
 
 공시 불일치 탐지는 `c.insights` 안에서 자동 실행된다 — 텍스트 변화와 재무 건전성 간 불일치를 감지한다 (예: 리스크 서술 급증인데 재무는 안정적).

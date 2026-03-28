@@ -11,7 +11,7 @@ One stock code. The whole story.
 import marimo
 
 __generated_with = "0.21.1"
-app = marimo.App()
+app = marimo.App(width="medium")
 
 
 @app.cell

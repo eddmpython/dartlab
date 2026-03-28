@@ -20,11 +20,11 @@ def _():
     import dartlab
 
     c = dartlab.Company("005930")  # Samsung Electronics
-    return c, dartlab
+    return (c,)
 
 
 @app.cell(hide_code=True)
-def _(c):
+def _():
     import marimo as mo
 
     mo.md("## Review -- structured report from analysis")
@@ -59,10 +59,12 @@ def _(c):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        "## Reviewer -- review + AI interpretation\n\n"
-        "Requires: `pip install dartlab[llm]` + `dartlab setup`"
-    )
+    mo.md("""
+    ## Reviewer -- review + AI interpretation
+
+    "
+        "Requires: `pip install dartlab[llm]` + `dartlab setup`
+    """)
     return
 
 
@@ -89,7 +91,9 @@ def _(c):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("## Custom layout")
+    mo.md("""
+    ## Custom layout
+    """)
     return
 
 

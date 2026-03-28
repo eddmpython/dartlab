@@ -11,7 +11,7 @@ scan() -- one function for all cross-market analysis.
 import marimo
 
 __generated_with = "0.21.1"
-app = marimo.App()
+app = marimo.App(width="medium")
 
 
 @app.cell

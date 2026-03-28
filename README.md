@@ -381,7 +381,7 @@ dartlab.Company("AAPL")    # → EDGAR provider (priority 20)
 
 The facade iterates providers by priority — first match wins.
 
-## Core Features
+## Features
 
 ### Show, Trace, Diff -- Detailed Examples
 
@@ -439,14 +439,9 @@ dartlab.scan("ratio")
 
 Accepts both Korean names (`매출액`) and English snakeIds (`sales`) — same 4-step normalization as Company finance.
 
-> **Requires pre-downloaded data.** Market-wide functions (`scan("account")`, `scan("digest")`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. Download all data first:
-> ```python
-> dartlab.downloadAll("finance")   # ~600 MB, 2,700+ firms
-> dartlab.downloadAll("report")    # ~320 MB (governance/workforce/capital/debt)
-> dartlab.downloadAll("docs")      # ~8 GB (digest/signal — large)
-> ```
+> **Requires pre-downloaded data.** Market-wide functions (`scan("account")`, `scan("digest")`, etc.) operate on local data — individual `Company()` calls only download one firm at a time. See the [Data](#data) section for batch collection.
 
-## Review — Detailed Usage
+### Review — Detailed Usage
 
 > **Experimental** — the review system is under active development.
 
@@ -482,10 +477,6 @@ dartlab setup custom --base-url http://localhost:11434/v1   # Ollama local
 - **Templates**: Pre-defined block combinations (`수익구조`, `자금조달`)
 - **Guide**: Pass `guide="..."` to `c.reviewer()` for domain-specific AI analysis
 - **Render formats**: `review.render("rich" | "html" | "markdown" | "json")`
-
-## Additional Features
-
-> Features below are **beta** or **experimental** — APIs may change. See [stability](docs/stability.md).
 
 ### Insights (beta)
 
@@ -698,15 +689,7 @@ dartlab.gather("news", "AAPL", market="US")  # US company news
 # global peer mapping (WICS → GICS sector)
 dartlab.crossBorderPeers("005930")    # → ["AAPL", "MSFT", "NVDA", "TSM", "AVGO"]
 
-# currency conversion (FRED-based)
-from dartlab.engines.common.finance import getExchangeRate, convertValue
-getExchangeRate("KRW")                # KRW/USD rate
-convertValue(1_000_000, "KRW", "USD") # → ~730.0
-
-# audit opinion normalization (KR/EN/JP → canonical code)
-from dartlab.engines.common.audit import normalizeAuditOpinion
-normalizeAuditOpinion("적정")          # → "unqualified"
-normalizeAuditOpinion("Qualified")     # → "qualified"
+# currency is auto-detected per company (KRW for DART, USD for EDGAR)
 ```
 
 Disclosure gap detection runs automatically inside `c.insights` — flags mismatches between text changes and financial health (e.g. risk text surges while financials are stable).

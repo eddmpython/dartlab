@@ -11,7 +11,7 @@ Price, flow, macro, news -- all as Polars DataFrames.
 import marimo
 
 __generated_with = "0.21.1"
-app = marimo.App()
+app = marimo.App(width="medium")
 
 
 @app.cell
