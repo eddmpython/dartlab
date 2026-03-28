@@ -240,7 +240,7 @@ dartlab.scan("account", "매출액")     # revenue across all firms
 dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 ```
 
-11 axes, two patterns:
+12 axes, two patterns:
 
 | Axis | Label | What it does |
 |------|-------|--------------|
@@ -251,6 +251,7 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 | cashflow | Cash Flow | OCF/ICF/FCF + 8-type lifecycle pattern |
 | audit | Audit Risk | Opinion, auditor change, special matters |
 | insider | Insider Holdings | Major holder change, treasury stock, stability |
+| quality | Earnings Quality | Accrual ratio + CF/NI — is profit backed by cash? |
 | digest | Digest | Market-wide disclosure change digest |
 | network | Network | Corporate relationship graph (investment/ownership) |
 | account | Account | Single account time-series (target required) |
@@ -321,7 +322,7 @@ c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 ### Four-Layer Relationship
 
 ```
-scan()       Market-wide cross-section (11 axes)  -- screening across firms
+scan()       Market-wide cross-section (12 axes)  -- screening across firms
 analysis()   Single-firm deep analysis (14 axes)  -- full financial analysis
 c.review()   analysis -> structured report         -- block-template pipeline
 c.reviewer() review + AI interpretation            -- per-section AI opinions
@@ -333,7 +334,7 @@ c.reviewer() review + AI interpretation            -- per-section AI opinions
 L0  core/        Protocols, finance utils, docs utils, registry
 L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
-    scan/        Market-wide cross-sectional analysis (11 axes)
+    scan/        Market-wide cross-sectional analysis (12 axes)
 L2  analysis/    8 analytical domains (strategy → macro)
     review/      Block-template report assembly
 L3  ai/          LLM-powered analysis (5 providers, 8 super tools)
@@ -589,7 +590,7 @@ dartlab.network().show()
 
 > **Beta** — API may change after a warning. See [stability](docs/stability.md).
 
-11-axis cross-market analysis. Everything goes through `dartlab.scan()` — one function to remember.
+12-axis cross-market analysis. Everything goes through `dartlab.scan()` — one function to remember.
 
 ```python
 dartlab.scan()                           # guide: all axes + usage

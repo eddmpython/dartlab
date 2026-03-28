@@ -130,6 +130,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="최대주주 지분변동, 자기주식 현황, 경영권 안정성",
         example='scan("insider")',
     ),
+    "quality": _AxisEntry(
+        module="dartlab.scan.quality",
+        fn="scanQuality",
+        label="이익의 질",
+        description="Accrual Ratio + CF/NI 비율 — 이익이 현금 뒷받침되는지",
+        example='scan("quality")',
+    ),
 }
 
 
@@ -156,6 +163,9 @@ _ALIASES: dict[str, str] = {
     "감사리스크": "audit",
     "내부자": "insider",
     "지분": "insider",
+    "이익의질": "quality",
+    "이익품질": "quality",
+    "어닝퀄리티": "quality",
 }
 
 

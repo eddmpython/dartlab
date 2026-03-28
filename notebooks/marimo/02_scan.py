@@ -4,7 +4,7 @@
 # ///
 """DartLab -- Scan.
 
-search, listing, and 11-axis market scan across 2,700+ companies.
+search, listing, and 12-axis market scan across 2,700+ companies.
 """
 
 import marimo

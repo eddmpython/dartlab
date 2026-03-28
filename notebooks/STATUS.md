@@ -6,7 +6,7 @@
 notebooks/
 ├── colab/                  # Core notebooks (Colab)
 │   ├── 01_company.ipynb    # Company -- sections, show, trace, diff, finance, EDGAR
-│   ├── 02_scan.ipynb       # Scan -- scan() 11-axis market scan
+│   ├── 02_scan.ipynb       # Scan -- scan() 12-axis market scan
 │   └── 03_ask.ipynb        # Ask -- AI analysis, streaming, chat
 ├── marimo/                 # Core notebooks (Marimo / Molab)
 │   ├── 01_company.py

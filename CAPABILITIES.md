@@ -1505,7 +1505,7 @@ Excel 내보내기 템플릿을 생성합니다. 시트 구성을 JSON으로 정
 
 ---
 
-## Scan Axis (11개 축)
+## Scan Axis (12개 축)
 
 `dartlab.scan(axis, target)` 형태로 전종목 횡단분석.
 
@@ -1522,6 +1522,7 @@ Excel 내보내기 템플릿을 생성합니다. 시트 구성을 JSON으로 정
 | `cashflow` | 현금흐름 | OCF/ICF/FCF + 현금흐름 패턴 분류 (8종) | stockCode 필터 | - | DataFrame |
 | `audit` | 감사리스크 | 감사의견, 감사인변경, 특기사항 종합 리스크 | stockCode 필터 | - | DataFrame |
 | `insider` | 내부자지분 | 최대주주 지분변동, 자기주식 현황, 경영권 안정성 | stockCode 필터 | - | DataFrame |
+| `quality` | 이익의 질 | Accrual Ratio + CF/NI 비율 — 이익이 현금 뒷받침되는지 | stockCode 필터 | - | DataFrame |
 
 **한글 별칭:**
 
@@ -1534,6 +1535,7 @@ Excel 내보내기 템플릿을 생성합니다. 시트 구성을 JSON으로 정
 - `governance`: 거버넌스, 지배구조
 - `insider`: 내부자, 지분
 - `network`: 네트워크, 관계
+- `quality`: 이익의질, 이익품질, 어닝퀄리티
 - `ratio`: 비율
 - `workforce`: 인력, 급여
 

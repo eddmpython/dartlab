@@ -20,7 +20,7 @@
 | `collect` | 함수 | 지정 종목 DART 데이터 수집 |
 | `collectAll` | 함수 | 전체 상장종목 수집 |
 | `downloadAll` | 함수 | HF 전체 데이터 다운로드 |
-| `scan` | 함수 | 11축 전종목 횡단분석 (`scan("account")`, `scan("ratio")` 등) |
+| `scan` | 함수 | 12축 전종목 횡단분석 (`scan("account")`, `scan("ratio")` 등) |
 | ~~`scanAccount`~~ | 제거 | `scan("account", snakeId)`로 대체 |
 | ~~`scanRatio`~~ | 제거 | `scan("ratio", ratioName)`로 대체 |
 | ~~`scanRatioList`~~ | 제거 | `scan("ratio")`로 대체 |
