@@ -729,7 +729,10 @@ def _analyze_inner(
         if companies and len(companies) > 1:
             # 멀티컴퍼니: 주 기업 briefing + 추가 기업 compact map
             briefingText, briefingEvents = buildBriefingMulti(
-                companies, company, question, reportMode=report_mode,
+                companies,
+                company,
+                question,
+                reportMode=report_mode,
             )
             for evtModule, evtLabel in briefingEvents:
                 yield AnalysisEvent(
@@ -739,7 +742,9 @@ def _analyze_inner(
         else:
             # 단일 기업: 풍부한 briefing
             briefingText = buildBriefing(
-                company, question, reportMode=report_mode,
+                company,
+                question,
+                reportMode=report_mode,
             )
             if briefingText:
                 yield AnalysisEvent(

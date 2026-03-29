@@ -38,7 +38,9 @@ def registerAnalysisTool(company: Any, registerTool) -> None:
             stockCode = getattr(company, "stockCode", getattr(company, "ticker", ""))
             result = insightAnalyze(stockCode, company=company)
             if result is None:
-                return "인사이트 데이터를 생성할 수 없습니다. 대안: finance(action='ratios')로 개별 재무비율을 확인하세요."
+                return (
+                    "인사이트 데이터를 생성할 수 없습니다. 대안: finance(action='ratios')로 개별 재무비율을 확인하세요."
+                )
             return format_tool_value(result, max_rows=30, max_chars=5000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError) as e:
             return f"[오류] 인사이트 분석 실패: {e}. 대안: finance(action='ratios')로 재무비율을 직접 조회하세요."
@@ -108,7 +110,9 @@ def registerAnalysisTool(company: Any, registerTool) -> None:
             result = generateResearch(company)
             return format_tool_value(result, max_rows=50, max_chars=8000)
         except (ImportError, AttributeError, KeyError, TypeError, ValueError, OSError) as e:
-            return f"[오류] 리서치 리포트 생성 실패: {e}. 대안: analysis(action='insight')로 인사이트 등급을 확인하세요."
+            return (
+                f"[오류] 리서치 리포트 생성 실패: {e}. 대안: analysis(action='insight')로 인사이트 등급을 확인하세요."
+            )
 
     def _distress(**_kw) -> str:
         """부도 예측 모델 4종 종합 스코어카드."""
@@ -150,9 +154,20 @@ def registerAnalysisTool(company: Any, registerTool) -> None:
     # ── 14축 이름 목록 ──
 
     _STRATEGY_AXES = [
-        "수익구조", "자금조달", "자산구조", "현금흐름",
-        "수익성", "성장성", "안정성", "효율성", "종합평가",
-        "이익품질", "비용구조", "자본배분", "투자효율", "재무정합성",
+        "수익구조",
+        "자금조달",
+        "자산구조",
+        "현금흐름",
+        "수익성",
+        "성장성",
+        "안정성",
+        "효율성",
+        "종합평가",
+        "이익품질",
+        "비용구조",
+        "자본배분",
+        "투자효율",
+        "재무정합성",
     ]
 
     # ── action dispatch ──
@@ -182,8 +197,15 @@ def registerAnalysisTool(company: Any, registerTool) -> None:
     # action enum
     strategyDesc = ", ".join(f"{a}=전략분석" for a in _STRATEGY_AXES[:3]) + ", ..."
     allActions = _STRATEGY_AXES + [
-        "insight", "sector", "rank", "valuation", "changes",
-        "audit", "research", "distress", "watch",
+        "insight",
+        "sector",
+        "rank",
+        "valuation",
+        "changes",
+        "audit",
+        "research",
+        "distress",
+        "watch",
     ]
 
     registerTool(

@@ -16,7 +16,6 @@ from typing import Any
 
 import polars as pl
 
-
 # ── Axis Registry ────────────────────────────────────────
 
 

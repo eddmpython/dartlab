@@ -122,10 +122,7 @@ class GatherEntry:
         entry = _AXIS_REGISTRY[resolved]
 
         if entry.targetRequired and target is None:
-            raise ValueError(
-                f"gather(\"{resolved}\")에는 대상이 필요합니다.\n"
-                f"  예: {entry.example}"
-            )
+            raise ValueError(f'gather("{resolved}")에는 대상이 필요합니다.\n  예: {entry.example}')
 
         return self._run(resolved, target, **kwargs)
 

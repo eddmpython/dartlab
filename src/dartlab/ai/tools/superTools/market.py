@@ -300,7 +300,6 @@ def registerMarketTool(registerTool: Callable) -> None:
                         "ratios",
                         "scanAccount",
                         "scanRatio",
-
                         "governance",
                         "workforce",
                         "capital",

@@ -169,7 +169,7 @@ def _calcInvestmentGrade(company) -> str | None:
         if spread > -3:
             return "D"
         return "F"
-    except (ImportError, AttributeError, TypeError, ValueError):
+    except (ImportError, AttributeError, TypeError, ValueError, KeyError):
         return None
 
 

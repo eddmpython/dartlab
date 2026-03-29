@@ -42,17 +42,18 @@ TA_NMS = {"자산총계"}
 
 # ── 등급 분류 ──
 
+
 def _gradeQuality(accrualRatio: float) -> str:
     """accrual ratio → 등급."""
     if accrualRatio <= -0.05:
-        return "우수"    # CF가 이익보다 훨씬 큼
+        return "우수"  # CF가 이익보다 훨씬 큼
     if accrualRatio <= 0.05:
-        return "양호"    # 이익과 CF가 비슷
+        return "양호"  # 이익과 CF가 비슷
     if accrualRatio <= 0.15:
-        return "보통"    # 약간의 accrual
+        return "보통"  # 약간의 accrual
     if accrualRatio <= 0.25:
-        return "주의"    # accrual 비중 높음
-    return "위험"        # 이익 대부분이 accrual
+        return "주의"  # accrual 비중 높음
+    return "위험"  # 이익 대부분이 accrual
 
 
 def _extractVal(sub: pl.DataFrame, ids: set, nms: set, amtCol: str = "thstrm_amount") -> float | None:
@@ -118,15 +119,17 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         accrualRatio = (ni - ocf) / abs(ta)
         cfToNi = ocf / ni if ni != 0 else None
 
-        rows.append({
-            "stockCode": code,
-            "netIncome": round(ni),
-            "operatingCf": round(ocf),
-            "totalAssets": round(ta),
-            "accrualRatio": round(accrualRatio, 4),
-            "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
-            "grade": _gradeQuality(accrualRatio),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "netIncome": round(ni),
+                "operatingCf": round(ocf),
+                "totalAssets": round(ta),
+                "accrualRatio": round(accrualRatio, 4),
+                "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
+                "grade": _gradeQuality(accrualRatio),
+            }
+        )
 
     return pl.DataFrame(rows) if rows else pl.DataFrame()
 
@@ -178,15 +181,17 @@ def _scanPerFile() -> pl.DataFrame:
         accrualRatio = (ni - ocf) / abs(ta)
         cfToNi = ocf / ni if ni != 0 else None
 
-        rows.append({
-            "stockCode": code,
-            "netIncome": round(ni),
-            "operatingCf": round(ocf),
-            "totalAssets": round(ta),
-            "accrualRatio": round(accrualRatio, 4),
-            "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
-            "grade": _gradeQuality(accrualRatio),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "netIncome": round(ni),
+                "operatingCf": round(ocf),
+                "totalAssets": round(ta),
+                "accrualRatio": round(accrualRatio, 4),
+                "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
+                "grade": _gradeQuality(accrualRatio),
+            }
+        )
 
     return pl.DataFrame(rows) if rows else pl.DataFrame()
 

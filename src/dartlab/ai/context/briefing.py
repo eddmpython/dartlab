@@ -71,7 +71,9 @@ def buildBriefingMulti(
 
     # 주 기업: 풍부한 briefing
     mainBriefing = buildBriefing(
-        primaryCompany, question, reportMode=reportMode,
+        primaryCompany,
+        question,
+        reportMode=reportMode,
     )
     if mainBriefing:
         parts.append(mainBriefing)

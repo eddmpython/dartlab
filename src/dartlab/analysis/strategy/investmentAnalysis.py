@@ -41,16 +41,97 @@ def _pct(part: float, total: float) -> float | None:
     return part / total * 100
 
 
-def _estimateWacc(equity: float, debt: float) -> float | None:
-    """부채/자본 비율로 WACC 추정."""
+def _fetchRiskFreeRate() -> float | None:
+    """무위험이자율 (국고채 10년) 조회. 실패 시 None."""
+    try:
+        from dartlab.gather import getDefaultGather
+
+        g = getDefaultGather()
+        result = g("ecos", "TREASURY_10Y")
+        if result is not None and hasattr(result, "df"):
+            df = result.df
+            valCols = [c for c in df.columns if c not in ("date", "indicator", "label")]
+            if valCols:
+                last = df.select(valCols[-1]).to_series().drop_nulls()
+                if len(last) > 0:
+                    return float(last[-1])
+    except (ImportError, AttributeError, TypeError, ValueError, KeyError):
+        pass
+    return None
+
+
+# 캐시: 세션 내 1회만 조회
+_riskFreeRateCache: dict[str, float | None] = {}
+
+
+def _getRiskFreeRate() -> float:
+    """무위험이자율. 캐시 + fallback 3.5%."""
+    if "rf" not in _riskFreeRateCache:
+        rf = _fetchRiskFreeRate()
+        _riskFreeRateCache["rf"] = rf
+    cached = _riskFreeRateCache["rf"]
+    return cached if cached is not None else 3.5
+
+
+def _estimateWacc(
+    equity: float,
+    debt: float,
+    interestExpense: float | None = None,
+    financeCosts: float | None = None,
+    effectiveTaxRate: float | None = None,
+) -> dict | None:
+    """동적 WACC 추정.
+
+    - CoD: interestExpense / totalBorrowing 우선, 없으면 financeCosts. fallback 5%.
+    - CoE: CAPM = Rf + 시장 프리미엄(5.5%). Beta 없이 간이 적용.
+    - Tax shield: 유효세율 적용. fallback 22%.
+    """
     if equity is None or debt is None or equity <= 0:
         return None
+
+    rf = _getRiskFreeRate()
+    erp = 5.5  # 한국 시장 리스크 프리미엄
+
+    # CoE = Rf + Beta * ERP (Beta 미제공 시 1.0 가정)
+    costOfEquity = rf + 1.0 * erp
+
+    # CoD: 이자비용(순수) 우선 → 금융비용(넓은) fallback → 고정 5%
+    costOfDebt = 5.0  # fallback
+    kdSource = "fallback"
+    # 순수 이자비용이 있으면 우선 사용 (금융비용은 환차손/파생손실 포함)
+    if interestExpense is not None and debt > 0:
+        impliedRate = abs(interestExpense) / debt * 100
+        if 0.5 < impliedRate < 15:
+            costOfDebt = round(impliedRate, 2)
+            kdSource = "interestExpense"
+    # 이자비용 없으면 금융비용으로 추정 (환차손/파생손실 포함 → 상한 6% clamp)
+    if kdSource == "fallback" and financeCosts is not None and debt > 0:
+        impliedRate = abs(financeCosts) / debt * 100
+        if 0.5 < impliedRate < 15:
+            # 금융비용은 이자 외 항목 포함 → 보수적 clamp
+            clamped = min(impliedRate, 6.0)
+            costOfDebt = round(clamped, 2)
+            kdSource = "financeCosts"
+
+    # 세율
+    taxRate = effectiveTaxRate if effectiveTaxRate is not None and 0 < effectiveTaxRate < 50 else 22.0
+
     debtRatio = debt / equity
     debtWeight = debtRatio / (1 + debtRatio) if debtRatio > 0 else 0
     equityWeight = 1 - debtWeight
-    costOfDebt = 5.0
-    costOfEquity = 8.0
-    return equityWeight * costOfEquity + debtWeight * costOfDebt * 0.75
+
+    wacc = equityWeight * costOfEquity + debtWeight * costOfDebt * (1 - taxRate / 100)
+
+    return {
+        "wacc": round(wacc, 2),
+        "costOfEquity": round(costOfEquity, 2),
+        "costOfDebt": round(costOfDebt, 2),
+        "kdSource": kdSource,
+        "riskFreeRate": round(rf, 2),
+        "taxRate": round(taxRate, 2),
+        "equityWeight": round(equityWeight * 100, 1),
+        "debtWeight": round(debtWeight * 100, 1),
+    }
 
 
 # ── ROIC + Spread ──
@@ -101,28 +182,83 @@ def calcRoicTimeline(company) -> dict | None:
     # 최신 _MAX_YEARS개
     annualPairs = annualPairs[-_MAX_YEARS:]
 
-    # WACC 추정에 필요한 부채/자본
-    bsResult = company.select("BS", ["자본총계", "부채총계"])
+    # WACC 추정에 필요한 부채/자본 + 금융비용 + 유효세율
+    bsResult = company.select(
+        "BS",
+        [
+            "자본총계",
+            "부채총계",
+            "단기차입금",
+            "장기차입금",
+            "사채",
+            "차입부채",
+            "발행사채",
+            "유동금융부채",
+            "장기금융부채",
+        ],
+    )
+    isResult = company.select("IS", ["이자비용", "금융비용", "법인세비용", "법인세차감전순이익"])
     bsParsed = _toDict(bsResult)
+    isParsed = _toDict(isResult)
     bsData = bsParsed[0] if bsParsed else {}
+    isData = isParsed[0] if isParsed else {}
+
     eqRow = bsData.get("자본총계", {})
     debtRow = bsData.get("부채총계", {})
+    # 차입금: 업종별 계정명 차이 대응
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondsRow = bsData.get("사채", {})
+    # 금융업: 차입부채/발행사채
+    borrowRow = bsData.get("차입부채", {})
+    issuedBondRow = bsData.get("발행사채", {})
+    # 바이오 등: 유동금융부채/장기금융부채
+    curFinRow = bsData.get("유동금융부채", {})
+    ltFinRow = bsData.get("장기금융부채", {})
+    ieRow = isData.get("이자비용", {})  # 순수 이자비용 (우선)
+    fcRow = isData.get("금융비용", {})  # 넓은 금융비용 (fallback)
+    taxRow = isData.get("법인세비용", {})
+    pbtRow = isData.get("법인세차감전순이익", {})
 
     history = []
     for period, roic in reversed(annualPairs):  # 최신 먼저
         equity = eqRow.get(period)
-        debt = debtRow.get(period)
-        waccEstimate = _estimateWacc(equity, debt)
+        totalDebt = debtRow.get(period)
+        # 차입금 합산: 업종별 계정 대응
+        tb = (stRow.get(period) or 0) + (ltRow.get(period) or 0) + (bondsRow.get(period) or 0)
+        if tb == 0:
+            tb = (borrowRow.get(period) or 0) + (issuedBondRow.get(period) or 0)
+        if tb == 0:
+            tb = (curFinRow.get(period) or 0) + (ltFinRow.get(period) or 0)
+        totalBorrowing = tb
+
+        ie = ieRow.get(period)  # 순수 이자비용
+        fc = fcRow.get(period)  # 넓은 금융비용
+        taxExp = taxRow.get(period)
+        pbtVal = pbtRow.get(period)
+
+        etr = None
+        if pbtVal and pbtVal > 0 and taxExp is not None:
+            etr = abs(taxExp) / pbtVal * 100
+
+        waccResult = _estimateWacc(
+            equity,
+            totalBorrowing or totalDebt or 0,
+            interestExpense=ie,
+            financeCosts=fc,
+            effectiveTaxRate=etr,
+        )
+        waccVal = waccResult["wacc"] if waccResult else None
 
         spread = None
-        if roic is not None and waccEstimate is not None:
-            spread = roic - waccEstimate
+        if roic is not None and waccVal is not None:
+            spread = round(roic - waccVal, 2)
 
         history.append(
             {
                 "period": period,
                 "roic": roic,
-                "waccEstimate": waccEstimate,
+                "wacc": waccResult,
                 "spread": spread,
             }
         )
@@ -219,8 +355,21 @@ def calcEvaTimeline(company) -> dict | None:
             ],
         }
     """
-    isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익"])
-    bsResult = company.select("BS", ["자본총계", "부채총계"])
+    isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익", "이자비용", "금융비용"])
+    bsResult = company.select(
+        "BS",
+        [
+            "자본총계",
+            "부채총계",
+            "단기차입금",
+            "장기차입금",
+            "사채",
+            "차입부채",
+            "발행사채",
+            "유동금융부채",
+            "장기금융부채",
+        ],
+    )
 
     isParsed = _toDict(isResult)
     bsParsed = _toDict(bsResult)
@@ -233,8 +382,17 @@ def calcEvaTimeline(company) -> dict | None:
     opRow = isData.get("영업이익", {})
     taxRow = isData.get("법인세비용", {})
     ptRow = isData.get("법인세차감전순이익", {})
+    ieRow = isData.get("이자비용", {})  # 순수 이자비용 (우선)
+    fcRow = isData.get("금융비용", {})  # 넓은 금융비용 (fallback)
     eqRow = bsData.get("자본총계", {})
     debtRow = bsData.get("부채총계", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondsRow = bsData.get("사채", {})
+    borrowRow = bsData.get("차입부채", {})
+    issuedBondRow = bsData.get("발행사채", {})
+    curFinRow = bsData.get("유동금융부채", {})
+    ltFinRow = bsData.get("장기금융부채", {})
 
     yCols = _annualCols(isPeriods, _MAX_YEARS)
     if not yCols:
@@ -255,21 +413,33 @@ def calcEvaTimeline(company) -> dict | None:
         # 투하자본 = 자본 + 부채
         equity = _get(eqRow, col)
         totalDebt = _get(debtRow, col)
+        tb = _get(stRow, col) + _get(ltRow, col) + _get(bondsRow, col)
+        if tb == 0:
+            tb = _get(borrowRow, col) + _get(issuedBondRow, col)
+        if tb == 0:
+            tb = _get(curFinRow, col) + _get(ltFinRow, col)
+        totalBorrowing = tb
         investedCapital = equity + totalDebt
 
-        # WACC 자체 계산 (ROIC 의존 제거)
-        waccEstimate = _estimateWacc(equity, totalDebt)
+        ie = ieRow.get(col)  # 순수 이자비용
+        fc = fcRow.get(col)  # 넓은 금융비용
+        etr = effectiveTaxRate * 100
+
+        waccResult = _estimateWacc(
+            equity, totalBorrowing or totalDebt, interestExpense=ie, financeCosts=fc, effectiveTaxRate=etr
+        )
+        waccVal = waccResult["wacc"] if waccResult else None
 
         eva = None
-        if nopat is not None and waccEstimate is not None and investedCapital > 0:
-            eva = nopat - (investedCapital * waccEstimate / 100)
+        if nopat is not None and waccVal is not None and investedCapital > 0:
+            eva = nopat - (investedCapital * waccVal / 100)
 
         history.append(
             {
                 "period": col,
                 "nopat": nopat,
                 "investedCapital": investedCapital,
-                "waccEstimate": waccEstimate,
+                "wacc": waccResult,
                 "eva": eva,
             }
         )

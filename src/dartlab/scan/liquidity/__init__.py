@@ -106,15 +106,17 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         quickAssets = ca - (inv or 0)
         quickRatio = quickAssets / cl * 100 if cl > 0 else None
 
-        rows.append({
-            "stockCode": code,
-            "currentAssets": round(ca),
-            "currentLiabilities": round(cl),
-            "inventories": round(inv) if inv is not None else None,
-            "currentRatio": round(currentRatio, 1),
-            "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
-            "grade": _gradeLiquidity(currentRatio),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "currentAssets": round(ca),
+                "currentLiabilities": round(cl),
+                "inventories": round(inv) if inv is not None else None,
+                "currentRatio": round(currentRatio, 1),
+                "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
+                "grade": _gradeLiquidity(currentRatio),
+            }
+        )
 
     return pl.DataFrame(rows) if rows else pl.DataFrame()
 
@@ -162,15 +164,17 @@ def _scanPerFile() -> pl.DataFrame:
         quickAssets = ca - (inv or 0)
         quickRatio = quickAssets / cl * 100 if cl > 0 else None
 
-        rows.append({
-            "stockCode": code,
-            "currentAssets": round(ca),
-            "currentLiabilities": round(cl),
-            "inventories": round(inv) if inv is not None else None,
-            "currentRatio": round(currentRatio, 1),
-            "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
-            "grade": _gradeLiquidity(currentRatio),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "currentAssets": round(ca),
+                "currentLiabilities": round(cl),
+                "inventories": round(inv) if inv is not None else None,
+                "currentRatio": round(currentRatio, 1),
+                "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
+                "grade": _gradeLiquidity(currentRatio),
+            }
+        )
 
     return pl.DataFrame(rows) if rows else pl.DataFrame()
 

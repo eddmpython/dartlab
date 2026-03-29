@@ -58,10 +58,14 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='analysis("수익구조", c)',
         calcs=(
             _CalcEntry("calcCompanyProfile", "dartlab.analysis.strategy.revenue", "profile", "기업 개요"),
-            _CalcEntry("calcSegmentComposition", "dartlab.analysis.strategy.revenue", "segmentComposition", "부문별 매출 구성"),
+            _CalcEntry(
+                "calcSegmentComposition", "dartlab.analysis.strategy.revenue", "segmentComposition", "부문별 매출 구성"
+            ),
             _CalcEntry("calcSegmentTrend", "dartlab.analysis.strategy.revenue", "segmentTrend", "부문별 매출 추이"),
             _CalcEntry("calcRevenueGrowth", "dartlab.analysis.strategy.revenue", "growth", "매출 성장률"),
-            _CalcEntry("calcGrowthContribution", "dartlab.analysis.strategy.revenue", "growthContribution", "성장 기여 분해"),
+            _CalcEntry(
+                "calcGrowthContribution", "dartlab.analysis.strategy.revenue", "growthContribution", "성장 기여 분해"
+            ),
             _CalcEntry("calcConcentration", "dartlab.analysis.strategy.revenue", "concentration", "매출 집중도"),
             _CalcEntry("calcRevenueQuality", "dartlab.analysis.strategy.revenue", "revenueQuality", "매출 품질"),
             _CalcEntry("calcFlags", "dartlab.analysis.strategy.revenue", "revenueFlags", "수익구조 플래그"),
@@ -79,8 +83,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             _CalcEntry("calcDebtTimeline", "dartlab.analysis.strategy.capital", "debtTimeline", "부채 추이"),
             _CalcEntry("calcInterestBurden", "dartlab.analysis.strategy.capital", "interestBurden", "이자 부담"),
             _CalcEntry("calcLiquidity", "dartlab.analysis.strategy.capital", "liquidity", "유동성"),
-            _CalcEntry("calcCashFlowStructure", "dartlab.analysis.strategy.capital", "cashFlowStructure", "자금흐름 구조"),
-            _CalcEntry("calcDistressIndicators", "dartlab.analysis.strategy.capital", "distressIndicators", "재무 위험 지표"),
+            _CalcEntry(
+                "calcCashFlowStructure", "dartlab.analysis.strategy.capital", "cashFlowStructure", "자금흐름 구조"
+            ),
+            _CalcEntry(
+                "calcDistressIndicators", "dartlab.analysis.strategy.capital", "distressIndicators", "재무 위험 지표"
+            ),
             _CalcEntry("calcCapitalFlags", "dartlab.analysis.strategy.capital", "capitalFlags", "자금조달 플래그"),
         ),
     ),
@@ -102,7 +110,9 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="실제로 현금은 어떻게 흘렀는가",
         example='analysis("현금흐름", c)',
         calcs=(
-            _CalcEntry("calcCashFlowOverview", "dartlab.analysis.strategy.cashflow", "cashFlowOverview", "현금흐름 종합"),
+            _CalcEntry(
+                "calcCashFlowOverview", "dartlab.analysis.strategy.cashflow", "cashFlowOverview", "현금흐름 종합"
+            ),
             _CalcEntry("calcCashQuality", "dartlab.analysis.strategy.cashflow", "cashQuality", "이익의 현금 전환"),
             _CalcEntry("calcCashFlowFlags", "dartlab.analysis.strategy.cashflow", "cashFlowFlags", "현금흐름 플래그"),
         ),
@@ -115,8 +125,16 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         calcs=(
             _CalcEntry("calcMarginTrend", "dartlab.analysis.strategy.profitability", "marginTrend", "마진 추이"),
             _CalcEntry("calcReturnTrend", "dartlab.analysis.strategy.profitability", "returnTrend", "수익률 추이"),
-            _CalcEntry("calcDupont", "dartlab.analysis.strategy.profitability", "dupont", "듀퐁 분해"),
-            _CalcEntry("calcProfitabilityFlags", "dartlab.analysis.strategy.profitability", "profitabilityFlags", "수익성 플래그"),
+            _CalcEntry("calcDupont", "dartlab.analysis.strategy.profitability", "dupont", "듀퐁 5요소 분해"),
+            _CalcEntry(
+                "calcMarginWaterfall", "dartlab.analysis.strategy.profitability", "marginWaterfall", "마진 워터폴"
+            ),
+            _CalcEntry(
+                "calcProfitabilityFlags",
+                "dartlab.analysis.strategy.profitability",
+                "profitabilityFlags",
+                "수익성 플래그",
+            ),
         ),
     ),
     "성장성": _AxisEntry(
@@ -127,6 +145,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         calcs=(
             _CalcEntry("calcGrowthTrend", "dartlab.analysis.strategy.growthAnalysis", "growthTrend", "성장률 추이"),
             _CalcEntry("calcGrowthQuality", "dartlab.analysis.strategy.growthAnalysis", "growthQuality", "성장 품질"),
+            _CalcEntry(
+                "calcSustainableGrowthRate",
+                "dartlab.analysis.strategy.growthAnalysis",
+                "sustainableGrowthRate",
+                "지속가능성장률",
+            ),
             _CalcEntry("calcGrowthFlags", "dartlab.analysis.strategy.growthAnalysis", "growthFlags", "성장성 플래그"),
         ),
     ),
@@ -139,6 +163,10 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             _CalcEntry("calcLeverageTrend", "dartlab.analysis.strategy.stability", "leverageTrend", "레버리지 추이"),
             _CalcEntry("calcCoverageTrend", "dartlab.analysis.strategy.stability", "coverageTrend", "이자보상 추이"),
             _CalcEntry("calcDistressScore", "dartlab.analysis.strategy.stability", "distressScore", "부실 판별"),
+            _CalcEntry(
+                "calcDistressEnsemble", "dartlab.analysis.strategy.stability", "distressEnsemble", "부실예측 앙상블"
+            ),
+            _CalcEntry("calcDebtMaturity", "dartlab.analysis.strategy.stability", "debtMaturity", "부채 만기 구조"),
             _CalcEntry("calcStabilityFlags", "dartlab.analysis.strategy.stability", "stabilityFlags", "안정성 플래그"),
         ),
     ),
@@ -150,7 +178,9 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         calcs=(
             _CalcEntry("calcTurnoverTrend", "dartlab.analysis.strategy.efficiency", "turnoverTrend", "회전율 추이"),
             _CalcEntry("calcCccTrend", "dartlab.analysis.strategy.efficiency", "cccTrend", "CCC 추이"),
-            _CalcEntry("calcEfficiencyFlags", "dartlab.analysis.strategy.efficiency", "efficiencyFlags", "효율성 플래그"),
+            _CalcEntry(
+                "calcEfficiencyFlags", "dartlab.analysis.strategy.efficiency", "efficiencyFlags", "효율성 플래그"
+            ),
         ),
     ),
     "종합평가": _AxisEntry(
@@ -170,10 +200,24 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="이익이 진짜인가",
         example='analysis("이익품질", c)',
         calcs=(
-            _CalcEntry("calcAccrualAnalysis", "dartlab.analysis.strategy.earningsQuality", "accrualAnalysis", "발생액 분석"),
-            _CalcEntry("calcEarningsPersistence", "dartlab.analysis.strategy.earningsQuality", "earningsPersistence", "이익 지속성"),
-            _CalcEntry("calcBeneishTimeline", "dartlab.analysis.strategy.earningsQuality", "beneishMScore", "Beneish M-Score"),
-            _CalcEntry("calcEarningsQualityFlags", "dartlab.analysis.strategy.earningsQuality", "earningsQualityFlags", "이익품질 플래그"),
+            _CalcEntry(
+                "calcAccrualAnalysis", "dartlab.analysis.strategy.earningsQuality", "accrualAnalysis", "발생액 분석"
+            ),
+            _CalcEntry(
+                "calcEarningsPersistence",
+                "dartlab.analysis.strategy.earningsQuality",
+                "earningsPersistence",
+                "이익 지속성",
+            ),
+            _CalcEntry(
+                "calcBeneishTimeline", "dartlab.analysis.strategy.earningsQuality", "beneishMScore", "Beneish M-Score"
+            ),
+            _CalcEntry(
+                "calcEarningsQualityFlags",
+                "dartlab.analysis.strategy.earningsQuality",
+                "earningsQualityFlags",
+                "이익품질 플래그",
+            ),
         ),
     ),
     "비용구조": _AxisEntry(
@@ -182,10 +226,21 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="비용이 어떻게 움직이는가",
         example='analysis("비용구조", c)',
         calcs=(
-            _CalcEntry("calcCostBreakdown", "dartlab.analysis.strategy.costStructure", "costBreakdown", "비용 비중 분해"),
-            _CalcEntry("calcOperatingLeverage", "dartlab.analysis.strategy.costStructure", "operatingLeverage", "영업레버리지"),
-            _CalcEntry("calcBreakevenEstimate", "dartlab.analysis.strategy.costStructure", "breakevenEstimate", "손익분기점"),
-            _CalcEntry("calcCostStructureFlags", "dartlab.analysis.strategy.costStructure", "costStructureFlags", "비용구조 플래그"),
+            _CalcEntry(
+                "calcCostBreakdown", "dartlab.analysis.strategy.costStructure", "costBreakdown", "비용 비중 분해"
+            ),
+            _CalcEntry(
+                "calcOperatingLeverage", "dartlab.analysis.strategy.costStructure", "operatingLeverage", "영업레버리지"
+            ),
+            _CalcEntry(
+                "calcBreakevenEstimate", "dartlab.analysis.strategy.costStructure", "breakevenEstimate", "손익분기점"
+            ),
+            _CalcEntry(
+                "calcCostStructureFlags",
+                "dartlab.analysis.strategy.costStructure",
+                "costStructureFlags",
+                "비용구조 플래그",
+            ),
         ),
     ),
     "자본배분": _AxisEntry(
@@ -194,11 +249,20 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="번 돈을 어디에 쓰는가",
         example='analysis("자본배분", c)',
         calcs=(
-            _CalcEntry("calcDividendPolicy", "dartlab.analysis.strategy.capitalAllocation", "dividendPolicy", "배당 정책"),
-            _CalcEntry("calcShareholderReturn", "dartlab.analysis.strategy.capitalAllocation", "shareholderReturn", "주주환원"),
+            _CalcEntry(
+                "calcDividendPolicy", "dartlab.analysis.strategy.capitalAllocation", "dividendPolicy", "배당 정책"
+            ),
+            _CalcEntry(
+                "calcShareholderReturn", "dartlab.analysis.strategy.capitalAllocation", "shareholderReturn", "주주환원"
+            ),
             _CalcEntry("calcReinvestment", "dartlab.analysis.strategy.capitalAllocation", "reinvestment", "재투자"),
             _CalcEntry("calcFcfUsage", "dartlab.analysis.strategy.capitalAllocation", "fcfUsage", "FCF 사용처"),
-            _CalcEntry("calcCapitalAllocationFlags", "dartlab.analysis.strategy.capitalAllocation", "capitalAllocationFlags", "자본배분 플래그"),
+            _CalcEntry(
+                "calcCapitalAllocationFlags",
+                "dartlab.analysis.strategy.capitalAllocation",
+                "capitalAllocationFlags",
+                "자본배분 플래그",
+            ),
         ),
     ),
     "투자효율": _AxisEntry(
@@ -207,10 +271,22 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="투자가 가치를 만드는가",
         example='analysis("투자효율", c)',
         calcs=(
-            _CalcEntry("calcRoicTimeline", "dartlab.analysis.strategy.investmentAnalysis", "roicTimeline", "ROIC 시계열"),
-            _CalcEntry("calcInvestmentIntensity", "dartlab.analysis.strategy.investmentAnalysis", "investmentIntensity", "투자 강도"),
+            _CalcEntry(
+                "calcRoicTimeline", "dartlab.analysis.strategy.investmentAnalysis", "roicTimeline", "ROIC 시계열"
+            ),
+            _CalcEntry(
+                "calcInvestmentIntensity",
+                "dartlab.analysis.strategy.investmentAnalysis",
+                "investmentIntensity",
+                "투자 강도",
+            ),
             _CalcEntry("calcEvaTimeline", "dartlab.analysis.strategy.investmentAnalysis", "evaTimeline", "EVA 시계열"),
-            _CalcEntry("calcInvestmentFlags", "dartlab.analysis.strategy.investmentAnalysis", "investmentFlags", "투자효율 플래그"),
+            _CalcEntry(
+                "calcInvestmentFlags",
+                "dartlab.analysis.strategy.investmentAnalysis",
+                "investmentFlags",
+                "투자효율 플래그",
+            ),
         ),
     ),
     "재무정합성": _AxisEntry(
@@ -219,8 +295,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="재무제표가 서로 맞는가",
         example='analysis("재무정합성", c)',
         calcs=(
-            _CalcEntry("calcIsCfDivergence", "dartlab.analysis.strategy.crossStatement", "isCfDivergence", "IS-CF 괴리"),
-            _CalcEntry("calcIsBsDivergence", "dartlab.analysis.strategy.crossStatement", "isBsDivergence", "IS-BS 괴리"),
+            _CalcEntry(
+                "calcIsCfDivergence", "dartlab.analysis.strategy.crossStatement", "isCfDivergence", "IS-CF 괴리"
+            ),
+            _CalcEntry(
+                "calcIsBsDivergence", "dartlab.analysis.strategy.crossStatement", "isBsDivergence", "IS-BS 괴리"
+            ),
             _CalcEntry("calcAnomalyScore", "dartlab.analysis.strategy.crossStatement", "anomalyScore", "이상 점수"),
             _CalcEntry("calcEffectiveTaxRate", "dartlab.analysis.strategy.taxAnalysis", "effectiveTaxRate", "유효세율"),
             _CalcEntry("calcDeferredTax", "dartlab.analysis.strategy.taxAnalysis", "deferredTax", "이연법인세"),
@@ -325,24 +405,28 @@ class Analysis:
         """14축 가이드."""
         rows = []
         for key, entry in _AXIS_REGISTRY.items():
-            rows.append({
-                "축": key,
-                "partId": entry.partId,
-                "설명": entry.description,
-                "항목수": len(entry.calcs),
-                "예시": entry.example,
-            })
+            rows.append(
+                {
+                    "축": key,
+                    "partId": entry.partId,
+                    "설명": entry.description,
+                    "항목수": len(entry.calcs),
+                    "예시": entry.example,
+                }
+            )
         return pl.DataFrame(rows)
 
     def _listCalcs(self, axis: str, entry: _AxisEntry) -> pl.DataFrame:
         """해당 축의 분석 항목 목록."""
         rows = []
         for calc in entry.calcs:
-            rows.append({
-                "blockKey": calc.blockKey,
-                "함수": calc.fn,
-                "label": calc.label,
-            })
+            rows.append(
+                {
+                    "blockKey": calc.blockKey,
+                    "함수": calc.fn,
+                    "label": calc.label,
+                }
+            )
         return pl.DataFrame(rows)
 
     def _run(self, company: Any, entry: _AxisEntry) -> dict:

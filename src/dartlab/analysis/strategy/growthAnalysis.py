@@ -79,6 +79,50 @@ def calcGrowthQuality(company) -> dict | None:
     }
 
 
+def calcSustainableGrowthRate(company) -> dict | None:
+    """지속가능성장률(SGR) 시계열.
+
+    SGR = ROE x (1 - 배당성향/100)
+    외부 자본 조달 없이 유지 가능한 최대 성장률.
+    """
+    result = getRatioSeries(company)
+    if result is None:
+        return None
+
+    data, years = result
+    roe = buildTimeline(data, "roe", years)
+    payout = buildTimeline(data, "dividendPayoutRatio", years)
+
+    if not roe:
+        return None
+
+    history = []
+    for i, r in enumerate(roe):
+        roeVal = r["value"]
+        payoutVal = payout[i]["value"] if i < len(payout) else None
+
+        sgr = None
+        retentionRatio = None
+        if roeVal is not None:
+            if payoutVal is not None and payoutVal >= 0:
+                retentionRatio = round(1 - payoutVal / 100, 4)
+            else:
+                retentionRatio = 1.0  # 배당 데이터 없으면 전액 유보 가정
+            sgr = round(roeVal * retentionRatio, 2)
+
+        history.append(
+            {
+                "period": r["period"],
+                "roe": roeVal,
+                "payoutRatio": payoutVal,
+                "retentionRatio": retentionRatio,
+                "sgr": sgr,
+            }
+        )
+
+    return {"history": history} if history else None
+
+
 def calcGrowthFlags(company) -> list[str]:
     """성장성 경고/기회 플래그."""
     flags: list[str] = []

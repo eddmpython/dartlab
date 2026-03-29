@@ -378,7 +378,6 @@ def debt():
     return result
 
 
-
 def setup(provider: str | None = None):
     """AI provider 설정 안내 + 인터랙티브 설정.
 
@@ -575,11 +574,8 @@ def ask(
 
         company, question = resolve_from_text(args[0])
         if company is None:
-            print(f"\n  종목을 찾을 수 없습니다: '{args[0]}'")
-            print("  종목명 또는 종목코드를 포함해 주세요.")
-            print("  예: dartlab.ask('삼성전자 재무건전성 분석해줘')")
-            print(f"  검색: dartlab.search('{args[0]}')\n")
-            return None
+            # 종목 없이 AI 진행 (범용 질문: scan, gather, 거시경제 등)
+            question = args[0]
     elif len(args) == 0:
         print("\n  질문을 입력해 주세요.")
         print("  예: dartlab.ask('삼성전자 재무건전성 분석해줘')")
@@ -1041,9 +1037,6 @@ def scanRatio(
     from dartlab.providers.dart.finance.scanAccount import scanRatio as _ratio
 
     return _ratio(ratioName, fsPref=fsPref, annual=annual)
-
-
-
 
 
 def digest(
