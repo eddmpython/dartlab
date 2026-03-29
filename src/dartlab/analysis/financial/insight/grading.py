@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from dartlab.analysis.comparative.sector.types import Sector
+from dartlab.core.sector.types import Sector
 from dartlab.analysis.financial.insight.benchmark import getBenchmark, sectorAdjustment
 from dartlab.analysis.financial.insight.detector import detectIncompleteYear
 from dartlab.analysis.financial.insight.types import Flag, InsightResult

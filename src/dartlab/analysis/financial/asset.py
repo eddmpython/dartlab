@@ -15,7 +15,7 @@ _MAX_QUARTERS = 5
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     """SelectResult → ({계정명: {period: val}}, periodCols)."""
-    from dartlab.analysis.strategy._helpers import toDict
+    from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
 
@@ -483,7 +483,7 @@ def calcAssetFlags(company) -> list[str]:
         elif ratio > 3.0:
             flags.append(f"CAPEX/감가상각 {ratio:.1f}배 — 공격적 투자")
 
-    from dartlab.analysis.strategy.efficiency import calcTurnoverTrend
+    from dartlab.analysis.financial.efficiency import calcTurnoverTrend
 
     turnover = calcTurnoverTrend(company)
     if turnover and turnover.get("totalAssetTurnover"):

@@ -14,7 +14,7 @@ _MAX_YEARS = 5
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     """SelectResult -> ({계정명: {period: val}}, periodCols)."""
-    from dartlab.analysis.strategy._helpers import toDict
+    from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
 

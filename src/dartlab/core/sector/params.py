@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.comparative.sector.types import (
+from dartlab.core.sector.types import (
     IndustryGroup,
     Sector,
     SectorInfo,

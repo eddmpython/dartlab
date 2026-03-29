@@ -43,10 +43,10 @@ def test_stock(code, name):
 
     # ── 기존 모듈 (기준선) ──
     print(f"\n--- 기존 모듈 (기준선) ---")
-    from dartlab.analysis.strategy.revenue import calcRevenueGrowth
-    from dartlab.analysis.strategy.capital import calcDebtTimeline
-    from dartlab.analysis.strategy.cashflow import calcCashFlowOverview
-    from dartlab.analysis.strategy.asset import calcWorkingCapital
+    from dartlab.analysis.financial.revenue import calcRevenueGrowth
+    from dartlab.analysis.financial.capital import calcDebtTimeline
+    from dartlab.analysis.financial.cashflow import calcCashFlowOverview
+    from dartlab.analysis.financial.asset import calcWorkingCapital
 
     for fn_name, fn in [
         ("revenue.calcRevenueGrowth", calcRevenueGrowth),
@@ -63,7 +63,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 1: earningsQuality ──
     print(f"\n--- earningsQuality ---")
-    from dartlab.analysis.strategy.earningsQuality import (
+    from dartlab.analysis.financial.earningsQuality import (
         calcAccrualAnalysis, calcEarningsPersistence, calcBeneishTimeline, calcEarningsQualityFlags
     )
     for fn_name, fn in [
@@ -89,7 +89,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 2: costStructure ──
     print(f"\n--- costStructure ---")
-    from dartlab.analysis.strategy.costStructure import (
+    from dartlab.analysis.financial.costStructure import (
         calcCostBreakdown, calcOperatingLeverage, calcBreakevenEstimate, calcCostStructureFlags
     )
     for fn_name, fn in [
@@ -115,7 +115,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 3: capitalAllocation ──
     print(f"\n--- capitalAllocation ---")
-    from dartlab.analysis.strategy.capitalAllocation import (
+    from dartlab.analysis.financial.capitalAllocation import (
         calcDividendPolicy, calcShareholderReturn, calcReinvestment, calcFcfUsage, calcCapitalAllocationFlags
     )
     for fn_name, fn in [
@@ -142,7 +142,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 4: investmentAnalysis ──
     print(f"\n--- investmentAnalysis ---")
-    from dartlab.analysis.strategy.investmentAnalysis import (
+    from dartlab.analysis.financial.investmentAnalysis import (
         calcRoicTimeline, calcInvestmentIntensity, calcEvaTimeline, calcInvestmentFlags
     )
     for fn_name, fn in [
@@ -168,7 +168,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 5: crossStatement ──
     print(f"\n--- crossStatement ---")
-    from dartlab.analysis.strategy.crossStatement import (
+    from dartlab.analysis.financial.crossStatement import (
         calcIsCfDivergence, calcIsBsDivergence, calcAnomalyScore, calcCrossStatementFlags
     )
     for fn_name, fn in [
@@ -194,7 +194,7 @@ def test_stock(code, name):
 
     # ── 신규 모듈 6: taxAnalysis ──
     print(f"\n--- taxAnalysis ---")
-    from dartlab.analysis.strategy.taxAnalysis import (
+    from dartlab.analysis.financial.taxAnalysis import (
         calcEffectiveTaxRate, calcTaxCashConversion, calcDeferredTax, calcTaxFlags
     )
     for fn_name, fn in [
@@ -220,7 +220,7 @@ def test_stock(code, name):
 
     # ── scorecard 확장 검증 ──
     print(f"\n--- scorecard (8영역) ---")
-    from dartlab.analysis.strategy.scorecard import calcScorecard, calcPiotroskiDetail, calcSummaryFlags
+    from dartlab.analysis.financial.scorecard import calcScorecard, calcPiotroskiDetail, calcSummaryFlags
 
     sc = calcScorecard(c)
     if sc:

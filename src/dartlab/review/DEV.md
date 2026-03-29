@@ -72,7 +72,7 @@ dict 프로토콜 완전 호환: `keys()`, `values()`, `items()`, `get()`, `in`,
 
 ### builders.py -- 블록 빌더 함수
 
-- 각 함수: `analysis.strategy.*.calc*()` 결과 dict -> Block 리스트 반환
+- 각 함수: `analysis.financial.*.calc*()` 결과 dict -> Block 리스트 반환
 - HeadingBlock title: 반드시 `_meta(key).label`로 catalog에서 가져옴
 - 하드코딩된 title 0개 (grep `HeadingBlock("` 결과 0건이어야 함)
 - builder 함수명과 catalog key 매핑은 registry.py에서 관리
@@ -122,11 +122,11 @@ dict 프로토콜 완전 호환: `keys()`, `values()`, `items()`, `get()`, `in`,
 
 | 섹션 | partId | 블록 수 | calc 파일 |
 |------|--------|---------|-----------|
-| 수익성 | 2-1 | 4 | analysis/strategy/profitability.py |
-| 성장성 | 2-2 | 3 | analysis/strategy/growthAnalysis.py |
-| 안정성 | 2-3 | 4 | analysis/strategy/stability.py |
-| 효율성 | 2-4 | 3 | analysis/strategy/efficiency.py |
-| 종합평가 | 2-5 | 3 | analysis/strategy/scorecard.py |
+| 수익성 | 2-1 | 4 | analysis/financial/profitability.py |
+| 성장성 | 2-2 | 3 | analysis/financial/growthAnalysis.py |
+| 안정성 | 2-3 | 4 | analysis/financial/stability.py |
+| 효율성 | 2-4 | 3 | analysis/financial/efficiency.py |
+| 종합평가 | 2-5 | 3 | analysis/financial/scorecard.py |
 
 2부 calc 함수는 모두 `company.finance.ratioSeries` → `(data, years)` 패턴을 사용한다.
 종합평가만 예외: `company.insights`(grading.py)와 `company.annual`(scoring.py)도 소비.

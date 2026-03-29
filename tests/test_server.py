@@ -1050,7 +1050,7 @@ class TestChatUtils:
         assert "primarySource" in text
 
     def test_build_snapshot_relaxes_financial_thresholds(self):
-        from dartlab.analysis.comparative.sector.types import IndustryGroup, Sector, SectorInfo
+        from dartlab.core.sector.types import IndustryGroup, Sector, SectorInfo
         from dartlab.server.chat import build_snapshot
 
         class DummyRatios:

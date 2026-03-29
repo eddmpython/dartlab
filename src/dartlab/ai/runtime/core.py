@@ -517,55 +517,17 @@ def analyze(
     yield AnalysisEvent("done", done_payload)
 
 
-def _analyze_inner(
-    company: Any | None,
-    question: str,
-    *,
+def _resolveAnalysisConfig(
     provider: str | None,
     role: str | None,
     model: str | None,
     api_key: str | None,
     base_url: str | None,
-    include: list[str] | None,
-    exclude: list[str] | None,
-    companies: list[Any] | None,
-    use_tools: bool,
-    max_turns: int,
-    max_tools: int | None,
-    reflect: bool,
-    report_mode: bool,
-    snapshot: dict | None,
-    auto_snapshot: bool,
-    focus_context: str | None,
-    diff_context: str | None,
-    auto_diff: bool,
-    history: list | None,
-    history_messages: list[dict] | None,
-    view_context: dict | None,
-    dialogue_policy: str | None,
-    conversation_meta: dict | None,
-    question_types: tuple[str, ...],
-    validate: bool,
-    detect_navigate: bool,
-    emit_system_prompt: bool,
-    _full_response_parts: list[str],
-    _done_payload: dict[str, Any],
-    _included_tables: list[str],
     **kwargs: Any,
-) -> Generator[AnalysisEvent, None, None]:
-    """analyze() 본체 — 에러 핸들링은 외부에서."""
+) -> Any:
+    """Config 해석 — free provider chain, get_config, merge overrides."""
     from dartlab.ai import get_config
-    from dartlab.ai.context.dartOpenapi import (
-        buildDartFilingPrefetch,
-        buildMissingDartKeyUiAction,
-    )
-    from dartlab.ai.providers import create_provider
 
-    # ── report_mode 강제 설정 ──
-    if report_mode:
-        max_turns = max(max_turns, 10)
-
-    # ── 1. Config 해석 ──
     # "free" 모드: API 키가 있는 무료 프로바이더 중 첫 번째를 자동 선택
     if provider == "free":
         from dartlab.ai.providers.fallback import buildFreeChain
@@ -591,13 +553,22 @@ def _analyze_inner(
     if overrides:
         config_ = config_.merge(overrides)
 
-    resolved_provider = config_.provider
+    return config_
 
-    corp_name = getattr(company, "corpName", "Unknown") if company else None
-    stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
-    dataReadySummary = ""
 
-    # ── 2. 대화 상태 자동 빌드 ──
+def _buildConversationState(
+    question: str,
+    company: Any | None,
+    history: list | None,
+    history_messages: list[dict] | None,
+    view_context: dict | None,
+    dialogue_policy: str | None,
+    conversation_meta: dict | None,
+    question_types: tuple[str, ...],
+    include: list[str] | None,
+    _done_payload: dict[str, Any],
+) -> tuple:
+    """대화 상태 자동 빌드 — state, history_messages, dialogue_policy 등 반환."""
     state = None
     if history is not None or view_context is not None:
         from dartlab.ai.conversation.dialogue import build_conversation_state
@@ -635,7 +606,7 @@ def _analyze_inner(
         if not question_types and state.question_types:
             question_types = state.question_types
 
-    # ── 3. 히스토리 messages 자동 빌드 ──
+    # ── 히스토리 messages 자동 빌드 ──
     if history_messages is None and history is not None:
         from dartlab.ai.conversation.history import build_history_messages, compress_history
         from dartlab.ai.types import history_from_dicts
@@ -648,73 +619,25 @@ def _analyze_inner(
     if effective_include and effective_include != include:
         _done_payload["inheritedModules"] = list(effective_include)
 
-    # snapshot/focus/diff 자동계산 제거 — AI가 도구로 직접 조회.
-    # 사전 전달된 값은 하위 호환을 위해 유지.
+    return (state, history_messages, dialogue_policy, conversation_meta, question_types, effective_include)
 
-    # ── 6. Intent 분류 → light mode 감지 ──
-    is_light = _should_use_light_mode(company, question, state, report_mode)
-    dart_filing_prefetch = buildDartFilingPrefetch(question, company=company)
 
-    # ── 7. Meta 이벤트 (데이터 신선도 포함) ──
-    meta = conversation_meta or {}
-    if corp_name:
-        meta.setdefault("company", corp_name)
-    if stock_id:
-        meta.setdefault("stockCode", stock_id)
-    if company is not None:
-        _dataDate = _extract_data_date(company)
-        if _dataDate:
-            meta.setdefault("dataDate", _dataDate)
-        if stock_id:
-            try:
-                from dartlab.ai.conversation.data_ready import formatDataReadyStatus
+def _buildAnalysisContext(
+    company: Any | None,
+    question: str,
+    companies: list[Any] | None,
+    corp_name: str | None,
+    use_tools: bool,
+    report_mode: bool,
+    focus_context: str | None,
+    diff_context: str | None,
+    dart_filing_prefetch: Any,
+) -> Generator[AnalysisEvent, None, str]:
+    """Engine-First briefing 체제 — context_text를 빌드하고 context 이벤트를 yield.
 
-                dataReadySummary = formatDataReadyStatus(stock_id, detailed=False)
-                _done_payload["dataReady"] = dataReadySummary
-            except (AttributeError, ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError):
-                dataReadySummary = ""
-    yield AnalysisEvent("meta", meta)
-
-    # ── 8. Snapshot 이벤트 ──
-    if snapshot is not None:
-        yield AnalysisEvent("snapshot", snapshot)
-
-    if dart_filing_prefetch.matched and dart_filing_prefetch.needsKey:
-        ui_action = dart_filing_prefetch.uiAction or buildMissingDartKeyUiAction()
-        yield AnalysisEvent("ui_action", ui_action)
-        yield AnalysisEvent(
-            "context",
-            {
-                "module": "_dart_openapi_filings",
-                "label": "OpenDART 키 설정 안내",
-                "text": dart_filing_prefetch.message,
-            },
-        )
-        _full_response_parts.append(dart_filing_prefetch.message)
-        yield AnalysisEvent("chunk", {"text": dart_filing_prefetch.message})
-        return
-
-    # ── 9. Light mode 경로 ──
-    if is_light:
-        yield from _run_light_mode(
-            company,
-            question,
-            config_,
-            state,
-            focus_context=focus_context,
-            history_messages=history_messages,
-            dialogue_policy=dialogue_policy,
-            emit_system_prompt=emit_system_prompt,
-            _full_response_parts=_full_response_parts,
-        )
-        return
-
-    # ── 10. Full analysis 경로 — Engine-First briefing 체제 ──
-    #
-    # compact map(200토큰) → Analysis Briefing(2,000-8,000토큰)
-    # 엔진이 질문 유형에 맞는 분석을 사전 실행하여 LLM에 전달.
-    # 도구 호출은 보충용으로만 사용.
-
+    Returns:
+        context_text via StopIteration.value.
+    """
     context_text = ""
 
     # company=None + tool capable이면 종목명 사전 검색으로 종목코드 제공
@@ -784,11 +707,36 @@ def _analyze_inner(
             },
         )
 
-    # ── 11. 프롬프트 조립 ──
+    return context_text
+
+
+def _buildPromptMessages(
+    config_: Any,
+    company: Any | None,
+    question: str,
+    context_text: str,
+    *,
+    use_tools: bool,
+    report_mode: bool,
+    question_types: tuple[str, ...],
+    history_messages: list[dict] | None,
+    dialogue_policy: str | None,
+    stock_id: str | None,
+    dataReadySummary: str,
+    emit_system_prompt: bool,
+    _done_payload: dict[str, Any],
+) -> Generator[AnalysisEvent, None, tuple[list[dict], str]]:
+    """프롬프트 조립 — messages 배열과 q_type을 빌드하고 system_prompt 이벤트를 yield.
+
+    Returns:
+        (messages, q_type) via StopIteration.value.
+    """
     from dartlab.ai.conversation.prompts import (
         _classify_question,
         build_system_prompt_parts,
     )
+
+    resolved_provider = config_.provider
 
     q_type = _classify_question(question)
     _done_payload["_q_type"] = q_type
@@ -833,7 +781,7 @@ def _analyze_inner(
     if emit_system_prompt:
         yield AnalysisEvent("system_prompt", {"text": system})
 
-    # ── 12. Messages 조립 (Claude prompt caching 적용) ──
+    # ── Messages 조립 (Claude prompt caching 적용) ──
     # Claude provider면 정적/동적 분리 → cache_control 블록으로 전달
     if resolved_provider == "claude" and dynamic_part:
         system_content: str | list[dict] = [
@@ -872,7 +820,29 @@ def _analyze_inner(
     if emit_system_prompt:
         yield AnalysisEvent("system_prompt", {"text": system, "userContent": user_content})
 
-    # ── 13. LLM 호출 ──
+    return (messages, q_type)
+
+
+def _executeLlmAndPostprocess(
+    config_: Any,
+    company: Any | None,
+    question: str,
+    messages: list[dict],
+    q_type: str,
+    *,
+    use_tools: bool,
+    max_turns: int,
+    max_tools: int | None,
+    report_mode: bool,
+    validate: bool,
+    stock_id: str | None,
+    _full_response_parts: list[str],
+    _done_payload: dict[str, Any],
+    _included_tables: list[str],
+) -> Generator[AnalysisEvent, None, None]:
+    """LLM 호출 + self-verification + response meta + memory 저장 + meta 업데이트."""
+    from dartlab.ai.providers import create_provider
+
     llm = create_provider(config_)
 
     tool_capable = use_tools and getattr(llm, "supports_native_tools", False) and hasattr(llm, "complete_with_tools")
@@ -904,7 +874,7 @@ def _analyze_inner(
     else:
         yield from _run_stream(llm, messages, _full_response_parts)
 
-    # ── 13.5. Self-Verification (Reflexion) — 수치 불일치 시 correction 턴 ──
+    # ── Self-Verification (Reflexion) — 수치 불일치 시 correction 턴 ──
     if validate and company is not None and _full_response_parts and _should_run_validation(_included_tables):
         correction_prompt = buildCorrectionPrompt(company, _full_response_parts)
         if correction_prompt:
@@ -925,7 +895,7 @@ def _analyze_inner(
                 _full_response_parts.append(chunk)
                 yield AnalysisEvent("chunk", {"text": chunk})
 
-    # ── 14. Response meta 추출 ──
+    # ── Response meta 추출 ──
     if company and _full_response_parts and "responseMeta" not in _done_payload:
         from dartlab.ai.conversation.prompts import extract_response_meta
 
@@ -934,7 +904,7 @@ def _analyze_inner(
         if response_meta.get("grade") or response_meta.get("has_conclusion"):
             _done_payload["responseMeta"] = response_meta
 
-    # ── 14.5. 분석 메모리 저장 ──
+    # ── 분석 메모리 저장 ──
     if stock_id and _full_response_parts:
         try:
             from dartlab.ai.memory.store import getMemory
@@ -952,7 +922,7 @@ def _analyze_inner(
         except (ImportError, OSError, sqlite3.Error):
             pass
 
-    # ── 15. Meta 업데이트 (includedModules, yearRange) ──
+    # ── Meta 업데이트 (includedModules, yearRange) ──
     if _included_tables:
         includedEvidence = _build_included_evidence(_included_tables)
         meta_update: dict[str, Any] = {
@@ -968,3 +938,199 @@ def _analyze_inner(
             if year_range:
                 meta_update["dataYearRange"] = year_range
         yield AnalysisEvent("meta", meta_update)
+
+
+def _analyze_inner(
+    company: Any | None,
+    question: str,
+    *,
+    provider: str | None,
+    role: str | None,
+    model: str | None,
+    api_key: str | None,
+    base_url: str | None,
+    include: list[str] | None,
+    exclude: list[str] | None,
+    companies: list[Any] | None,
+    use_tools: bool,
+    max_turns: int,
+    max_tools: int | None,
+    reflect: bool,
+    report_mode: bool,
+    snapshot: dict | None,
+    auto_snapshot: bool,
+    focus_context: str | None,
+    diff_context: str | None,
+    auto_diff: bool,
+    history: list | None,
+    history_messages: list[dict] | None,
+    view_context: dict | None,
+    dialogue_policy: str | None,
+    conversation_meta: dict | None,
+    question_types: tuple[str, ...],
+    validate: bool,
+    detect_navigate: bool,
+    emit_system_prompt: bool,
+    _full_response_parts: list[str],
+    _done_payload: dict[str, Any],
+    _included_tables: list[str],
+    **kwargs: Any,
+) -> Generator[AnalysisEvent, None, None]:
+    """analyze() 본체 — 에러 핸들링은 외부에서."""
+    from dartlab.ai.context.dartOpenapi import (
+        buildDartFilingPrefetch,
+        buildMissingDartKeyUiAction,
+    )
+
+    # ── report_mode 강제 설정 ──
+    if report_mode:
+        max_turns = max(max_turns, 10)
+
+    # ── 1. Config 해석 ──
+    config_ = _resolveAnalysisConfig(
+        provider, role, model, api_key, base_url, **kwargs,
+    )
+    resolved_provider = config_.provider
+
+    corp_name = getattr(company, "corpName", "Unknown") if company else None
+    stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
+    dataReadySummary = ""
+
+    # ── 2. 대화 상태 자동 빌드 ──
+    # snapshot/focus/diff 자동계산 제거 — AI가 도구로 직접 조회.
+    # 사전 전달된 값은 하위 호환을 위해 유지.
+    (
+        state,
+        history_messages,
+        dialogue_policy,
+        conversation_meta,
+        question_types,
+        effective_include,
+    ) = _buildConversationState(
+        question,
+        company,
+        history,
+        history_messages,
+        view_context,
+        dialogue_policy,
+        conversation_meta,
+        question_types,
+        include,
+        _done_payload,
+    )
+
+    # ── 3. Intent 분류 → light mode 감지 ──
+    is_light = _should_use_light_mode(company, question, state, report_mode)
+    dart_filing_prefetch = buildDartFilingPrefetch(question, company=company)
+
+    # ── 4. Meta 이벤트 (데이터 신선도 포함) ──
+    meta = conversation_meta or {}
+    if corp_name:
+        meta.setdefault("company", corp_name)
+    if stock_id:
+        meta.setdefault("stockCode", stock_id)
+    if company is not None:
+        _dataDate = _extract_data_date(company)
+        if _dataDate:
+            meta.setdefault("dataDate", _dataDate)
+        if stock_id:
+            try:
+                from dartlab.ai.conversation.data_ready import formatDataReadyStatus
+
+                dataReadySummary = formatDataReadyStatus(stock_id, detailed=False)
+                _done_payload["dataReady"] = dataReadySummary
+            except (AttributeError, ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+                dataReadySummary = ""
+    yield AnalysisEvent("meta", meta)
+
+    # ── 5. Snapshot 이벤트 ──
+    if snapshot is not None:
+        yield AnalysisEvent("snapshot", snapshot)
+
+    if dart_filing_prefetch.matched and dart_filing_prefetch.needsKey:
+        ui_action = dart_filing_prefetch.uiAction or buildMissingDartKeyUiAction()
+        yield AnalysisEvent("ui_action", ui_action)
+        yield AnalysisEvent(
+            "context",
+            {
+                "module": "_dart_openapi_filings",
+                "label": "OpenDART 키 설정 안내",
+                "text": dart_filing_prefetch.message,
+            },
+        )
+        _full_response_parts.append(dart_filing_prefetch.message)
+        yield AnalysisEvent("chunk", {"text": dart_filing_prefetch.message})
+        return
+
+    # ── 6. Light mode 경로 ──
+    if is_light:
+        yield from _run_light_mode(
+            company,
+            question,
+            config_,
+            state,
+            focus_context=focus_context,
+            history_messages=history_messages,
+            dialogue_policy=dialogue_policy,
+            emit_system_prompt=emit_system_prompt,
+            _full_response_parts=_full_response_parts,
+        )
+        return
+
+    # ── 7. Full analysis 경로 — context 빌드 ──
+    _ctx_gen = _buildAnalysisContext(
+        company,
+        question,
+        companies,
+        corp_name,
+        use_tools,
+        report_mode,
+        focus_context,
+        diff_context,
+        dart_filing_prefetch,
+    )
+    try:
+        while True:
+            yield next(_ctx_gen)
+    except StopIteration as _stop:
+        context_text: str = _stop.value
+
+    # ── 8. 프롬프트 조립 ──
+    _msg_gen = _buildPromptMessages(
+        config_,
+        company,
+        question,
+        context_text,
+        use_tools=use_tools,
+        report_mode=report_mode,
+        question_types=question_types,
+        history_messages=history_messages,
+        dialogue_policy=dialogue_policy,
+        stock_id=stock_id,
+        dataReadySummary=dataReadySummary,
+        emit_system_prompt=emit_system_prompt,
+        _done_payload=_done_payload,
+    )
+    try:
+        while True:
+            yield next(_msg_gen)
+    except StopIteration as _stop:
+        messages, q_type = _stop.value
+
+    # ── 9. LLM 호출 + 후처리 ──
+    yield from _executeLlmAndPostprocess(
+        config_,
+        company,
+        question,
+        messages,
+        q_type,
+        use_tools=use_tools,
+        max_turns=max_turns,
+        max_tools=max_tools,
+        report_mode=report_mode,
+        validate=validate,
+        stock_id=stock_id,
+        _full_response_parts=_full_response_parts,
+        _done_payload=_done_payload,
+        _included_tables=_included_tables,
+    )

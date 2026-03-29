@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dartlab.analysis.comparative.sector.types import Sector
+from dartlab.core.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import detectAuditRedFlags, runAnomalyDetection
 from dartlab.analysis.financial.insight.detector import detectFinancialSector
 from dartlab.analysis.financial.insight.distress import calcDistress
@@ -136,7 +136,7 @@ def _ratio_archetype_override(company: Company | None) -> str | None:
         return None
 
     try:
-        from dartlab.analysis.comparative.sector.types import IndustryGroup
+        from dartlab.core.sector.types import IndustryGroup
     except ImportError:
         return None
 

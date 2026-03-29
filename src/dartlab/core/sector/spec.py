@@ -5,7 +5,7 @@ from __future__ import annotations
 
 def buildSpec() -> dict:
     """sector 엔진 스펙 반환."""
-    from dartlab.analysis.comparative.sector.types import IndustryGroup, Sector
+    from dartlab.core.sector.types import IndustryGroup, Sector
 
     sectors = [s.value for s in Sector if s != Sector.UNKNOWN]
     groups = [g.value for g in IndustryGroup if g != IndustryGroup.UNKNOWN]

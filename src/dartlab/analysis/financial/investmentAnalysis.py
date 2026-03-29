@@ -6,13 +6,13 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.strategy._helpers import toDict
+from dartlab.analysis.financial._helpers import toDict
 
 _MAX_YEARS = 5
 
 
 def _toDictBySnakeId(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDictBySnakeId
+    from dartlab.analysis.financial._helpers import toDictBySnakeId
 
     return toDictBySnakeId(selectResult)
 

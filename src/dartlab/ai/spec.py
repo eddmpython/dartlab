@@ -14,7 +14,7 @@ _ENGINE_SPECS = [
     "dartlab.providers.dart.finance.spec",
     "dartlab.providers.dart.report.spec",
     "dartlab.scan.spec",
-    "dartlab.analysis.comparative.sector.spec",
+    "dartlab.core.sector.spec",
     "dartlab.analysis.financial.insight.spec",
     "dartlab.gather.fred.spec",
     "dartlab.analysis.financial.research.spec",

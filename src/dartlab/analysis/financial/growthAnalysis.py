@@ -6,7 +6,7 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.strategy._helpers import (
+from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
     toDict,
 )
@@ -189,7 +189,7 @@ def calcSustainableGrowthRate(company) -> dict | None:
     eq = bsData.get("자본총계", {})
 
     # 배당성향: CF 배당금지급 / 당기순이익
-    from dartlab.analysis.strategy._helpers import toDictBySnakeId
+    from dartlab.analysis.financial._helpers import toDictBySnakeId
 
     cfResult = company.select("CF", ["dividends_paid"])
     cfParsed = toDictBySnakeId(cfResult)

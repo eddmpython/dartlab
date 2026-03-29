@@ -1,6 +1,6 @@
 """review 블록 빌더 — calc* 결과(dict) → Block 리스트 변환.
 
-analysis.strategy 의 calc* 함수는 dict/숫자만 반환한다.
+analysis.financial 의 calc* 함수는 dict/숫자만 반환한다.
 여기서 그 dict를 Block으로 조립한다.
 """
 

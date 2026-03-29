@@ -866,7 +866,7 @@ def _run_watch(company: Any) -> str | None:
 def _run_sector(company: Any) -> str | None:
     """sector 엔진: 업종 분류 + 섹터 파라미터."""
     try:
-        from dartlab.analysis.comparative.sector import classify, getParams
+        from dartlab.core.sector import classify, getParams
 
         corpName = getattr(company, "corpName", "")
         overview = getattr(company, "companyOverview", None)

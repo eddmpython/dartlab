@@ -54,7 +54,7 @@ WATCH_RATIOS = ["roe", "debtRatio", "operatingMargin", "revenueTTM", "totalAsset
 def collectRatioTimeSeries(*, maxCompanies: int | None = None, verbose: bool = True) -> pl.DataFrame:
     """전체 종목의 연도별 핵심 비율 시계열 수집."""
     import dartlab
-    from dartlab.analysis.comparative.sector.classifier import classify
+    from dartlab.core.sector.classifier import classify
     from dartlab.core.finance.ratios import calcRatios
     from dartlab.providers.dart.finance.pivot import buildTimeseries
 

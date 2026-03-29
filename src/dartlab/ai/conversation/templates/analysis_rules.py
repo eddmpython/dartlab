@@ -44,194 +44,102 @@ CROSS_VALIDATION_COMPACT = (
 )
 
 # ══════════════════════════════════════
-# 매출 예측 AI 보정 규칙
-# ══════════════════════════════════════
-
-FORECAST_OVERLAY_RULES = """
-## 매출 예측 AI 보정 규칙 (v3)
-
-엔진이 계산한 매출 예측을 세계 지식으로 보정합니다.
-
-### 원칙
-- 엔진 숫자가 기본값. 근거 없이 변경하지 마세요.
-- 보정할 때는 반드시 구체적 근거를 제시하세요 (산업 리포트, 규제 변화, 경쟁사 동향 등).
-- "~할 수 있다" 같은 가능성만으로 숫자를 바꾸지 마세요. 확실한 트렌드만 반영.
-
-### 보정 출력 형식 (구조화 필수)
-보정 시 아래 형식의 JSON을 텍스트에 포함해 주세요:
-
-```json
-{
-  "growth_adjustment": [+2.0, +1.5, +0.5],
-  "direction": "up",
-  "magnitude": "moderate",
-  "scenario_shift": {"bull": +5, "bear": -5},
-  "reasoning": ["반도체 슈퍼사이클 진입 — DRAM ASP +25% 전망 (TrendForce 2026Q1)"]
-}
-```
-
-필드 설명:
-- **growth_adjustment**: 연도별 성장률 보정 (%p). 양수=상향, 음수=하향. 가드레일: 연간 ±10%p, 총 ±20%p.
-- **direction**: "up" | "down" | "neutral"
-- **magnitude**: "minor" (<2%p) | "moderate" (2-5%p) | "major" (>5%p)
-- **scenario_shift**: Bull/Bear 확률 이동 (%p). Base는 자동 조정. 생략 가능.
-- **reasoning**: 각 보정의 근거. 비어있으면 보정 거부됨.
-
-### 세그먼트 분석 (v3 신규)
-엔진이 세그먼트별 예측을 제공하면:
-- 각 세그먼트의 성장률이 합리적인지 평가
-- 세그먼트 간 시너지/카니발리제이션 가능성 언급
-- 특정 세그먼트가 구조적 변화(규제, 기술, 경쟁)에 노출되면 해당 세그먼트 기준으로 보정
-
-### 수주잔고 해석 (v3 신규)
-엔진이 수주잔고 시그널을 제공하면:
-- B/R ratio 추세의 의미 해석 (산업 맥락)
-- 수주잔고 품질 평가 (취소 위험, 가격 변동, 고객 집중도)
-
-### 금지
-- 엔진 결과를 무시하고 완전히 새로운 숫자 제시
-- 출처 없는 "시장에서는~" 표현
-- 과도한 정밀도 (소수점 이하 성장률 보정 등)
-"""
-
-FORECAST_OVERLAY_COMPACT = (
-    "\n## 매출 예측 보정 (v3)\n"
-    "- 엔진 숫자가 기본값, 근거 없이 변경 금지\n"
-    "- 보정 시 JSON 형식 필수: growth_adjustment, direction, magnitude, reasoning\n"
-    "- 연간 보정 ±10%p 캡, 총 ±20%p 캡, reasoning 없으면 거부\n"
-    "- 세그먼트별 분석: 부문별 성장률 평가, 시너지/카니발리제이션\n"
-    "- 수주잔고: B/R ratio 해석, 취소 위험, 고객 집중도\n"
-    "- 엔진 무시하고 새 숫자 금지, 출처 없는 표현 금지\n"
-)
-
-
-# ══════════════════════════════════════
 # 토픽별 추가 프롬프트
 # ══════════════════════════════════════
 
-TOPIC_PROMPTS: dict[str, tuple[set[str], str]] = {
+_TOPIC_MODULES: dict[str, set[str]] = {
+    "governance": {"majorHolder", "executive", "boardOfDirectors", "holderOverview", "auditSystem"},
+    "risk": {"contingentLiability", "sanction", "riskDerivative", "internalControl"},
+    "dividend": {"dividend", "shareCapital"},
+    "investment": {"rnd", "tangibleAsset", "subsidiary", "investmentInOther"},
+    "business": {"businessOverview", "segments", "productService", "salesOrder", "rawMaterial", "subsidiary"},
+    "profitability": {"IS", "segments", "costByNature", "productService"},
+    "growth": {"IS", "segments", "rnd", "tangibleAsset", "subsidiary", "productService"},
+    "comprehensive": {"IS", "BS", "CF", "segments", "riskFactor", "dividend", "audit"},
+    "disclosure": {"audit", "accountingPolicy", "relatedPartyTx", "contingentLiability"},
+}
+
+_TOPIC_FULL_TEXT: dict[str, str] = {
     "governance": (
-        {"majorHolder", "executive", "boardOfDirectors", "holderOverview", "auditSystem"},
         "\n## 지배구조 분석 참고\n"
         "- 사외이사 비율 1/3 이상은 상법상 요건 (자산총액 2조 이상)\n"
         "- 최대주주 지분율 30% 이상이면 경영권 안정\n"
         "- 감사위원회 전원 사외이사 여부 확인\n"
-        "- 이사회 출석률 80% 미만은 형식적 운영 우려\n",
+        "- 이사회 출석률 80% 미만은 형식적 운영 우려\n"
     ),
     "risk": (
-        {"contingentLiability", "sanction", "riskDerivative", "internalControl"},
         "\n## 리스크 분석 참고\n"
         "- 우발부채는 현재 인식되지 않은 잠재 부채\n"
         "- 채무보증 금액이 자기자본 대비 높으면 위험\n"
         "- 내부통제 취약점은 재무제표 신뢰성에 영향\n"
-        "- 반복 제재는 구조적 컴플라이언스 문제\n",
+        "- 반복 제재는 구조적 컴플라이언스 문제\n"
     ),
     "dividend": (
-        {"dividend", "shareCapital"},
         "\n## 배당 분석 참고\n"
         "- 배당성향 100% 초과 = 순이익 이상 배당 (지속 불가능)\n"
         "- DPS 연속 증가는 주주환원 의지의 지표\n"
-        "- 자기주식 소각은 추가적 주주환원 수단\n",
+        "- 자기주식 소각은 추가적 주주환원 수단\n"
     ),
     "investment": (
-        {"rnd", "tangibleAsset", "subsidiary", "investmentInOther"},
         "\n## 투자 분석 참고\n"
         "- R&D 비율이 매출 대비 높으면 기술 집약적 기업\n"
         "- CAPEX가 감가상각을 초과하면 성장 투자 중\n"
-        "- 자회사 투자 증가는 사업 다각화 또는 수직계열화\n",
+        "- 자회사 투자 증가는 사업 다각화 또는 수직계열화\n"
     ),
     "business": (
-        {"businessOverview", "segments", "productService", "salesOrder", "rawMaterial", "subsidiary"},
         "\n## 사업/전략 분석 프레임워크\n"
         "- **시장구조**: 상위 기업 집중도, 진입장벽, 규제 환경 (businessOverview에서 추론)\n"
         "- **경쟁 포지션**: 시장점유율 추이, 제품 믹스 변화 (segments/productService)\n"
         "- **가치사슬**: 원재료 의존도(rawMaterial), 고객 집중도(salesOrder 상위 매출처 비중)\n"
         "- **수직계열화**: 자회사 구조(subsidiary)와 부문간 시너지\n"
-        "- **전략적 리스크**: 단일 제품/고객 의존, 원재료 가격 변동, 환율 노출\n",
+        "- **전략적 리스크**: 단일 제품/고객 의존, 원재료 가격 변동, 환율 노출\n"
     ),
     "profitability": (
-        {"IS", "segments", "costByNature", "productService"},
         "\n## 수익성 심층 분석 가이드\n"
         "- **원가구조 분해**: 매출원가율, 판관비율 추이 (costByNature로 인건비/감가상각/외주비 세부 확인)\n"
         "- **영업레버리지**: 고정비(인건비, 감가상각) 비중 높으면 매출 증가 시 이익률 급등\n"
         "- **마진 지속성**: 일회성 이익(자산처분, 보험금) 제거 후 recurring margin 판단\n"
-        "- **부문별 수익성**: segments에서 고마진/저마진 부문 식별, 매출 믹스 효과 분석\n",
+        "- **부문별 수익성**: segments에서 고마진/저마진 부문 식별, 매출 믹스 효과 분석\n"
     ),
     "growth": (
-        {"IS", "segments", "rnd", "tangibleAsset", "subsidiary", "productService"},
         "\n## 성장성 분석 가이드\n"
         "- **유기적 vs 비유기적**: 기존 사업 성장 vs M&A/자회사 편입 효과 분리\n"
         "- **설비투자 사이클**: CAPEX/감가상각비 > 1.5x면 적극 확장기\n"
         "- **R&D 파이프라인**: R&D/매출 비율 추이 + 무형자산 자본화 비율 동시 확인\n"
-        "- **시장 침투율**: 업종 성장률 vs 자사 성장률 비교 → 점유율 변화 추론\n",
+        "- **시장 침투율**: 업종 성장률 vs 자사 성장률 비교 → 점유율 변화 추론\n"
     ),
     "comprehensive": (
-        {"IS", "BS", "CF", "segments", "riskFactor", "dividend", "audit"},
         "\n## 종합 분석 프레임워크 (신용분석 보고서 구조)\n"
         "1. **사업 개요**: 시장 위치, 경쟁 구도, 핵심 경쟁력\n"
         "2. **재무 분석**: 수익성(IS) → 건전성(BS) → 현금흐름(CF) 순서\n"
         "3. **DuPont 분해**: ROE = 순이익률 × 자산회전율 × 재무레버리지 → 주요 동인 식별\n"
         "4. **현금흐름 품질**: 영업CF/순이익, FCF 추이, 운전자본 사이클 변화\n"
         "5. **리스크**: 재무 리스크 + 사업 리스크 + 지배구조 리스크\n"
-        "6. **종합 판단**: 강점/약점 매트릭스 + 향후 모니터링 포인트\n",
+        "6. **종합 판단**: 강점/약점 매트릭스 + 향후 모니터링 포인트\n"
     ),
     "disclosure": (
-        {"audit", "accountingPolicy", "relatedPartyTx", "contingentLiability"},
         "\n## 공시/주석 분석 가이드\n"
         "- **회계정책 변경**: 수익인식, 감가상각, 재고평가 방법 변경은 이익 조정 신호일 수 있음\n"
         "- **특수관계자거래**: 거래 규모, 가격 적정성, 매출 중 비중 변화 추적\n"
         "- **우발부채**: 소송/보증/PF 규모가 자기자본 대비 10% 초과 시 주의\n"
-        "- **감사의견**: 계속기업 불확실성 강조, 한정의견, 감사인 교체 이력 확인\n",
+        "- **감사의견**: 계속기업 불확실성 강조, 한정의견, 감사인 교체 이력 확인\n"
     ),
 }
 
-TOPIC_COMPACT: dict[str, tuple[set[str], str]] = {
-    "governance": (
-        {"majorHolder", "executive", "boardOfDirectors", "holderOverview", "auditSystem"},
-        "\n## 지배구조 참고\n"
-        "- 사외이사 1/3↑ 상법 요건, 최대주주 30%↑ 경영권 안정\n"
-        "- 감사위원회 사외이사 전원 여부, 이사회 출석률 80%↓ 주의\n",
-    ),
-    "risk": (
-        {"contingentLiability", "sanction", "riskDerivative", "internalControl"},
-        "\n## 리스크 참고\n"
-        "- 우발부채 = 잠재 부채, 채무보증/자본 비율 확인\n"
-        "- 내부통제 취약 → 재무제표 신뢰성↓, 반복 제재 → 구조적 문제\n",
-    ),
-    "dividend": (
-        {"dividend", "shareCapital"},
-        "\n## 배당 참고\n- 배당성향 100%↑ 지속 불가, DPS 연속증가 = 주주환원 의지\n",
-    ),
-    "investment": (
-        {"rnd", "tangibleAsset", "subsidiary", "investmentInOther"},
-        "\n## 투자 참고\n- CAPEX > 감가상각 = 성장 투자, R&D/매출↑ = 기술 집약\n",
-    ),
-    "business": (
-        {"businessOverview", "segments", "productService", "salesOrder", "rawMaterial", "subsidiary"},
-        "\n## 사업 참고\n- 시장구조·경쟁포지션(segments), 고객집중도(salesOrder), 원재료 의존(rawMaterial)\n"
-        "- 단일 제품/고객 의존, 환율 노출 = 전략적 리스크\n",
-    ),
-    "profitability": (
-        {"IS", "segments", "costByNature", "productService"},
-        "\n## 수익성 참고\n- 원가구조 분해: 매출원가율+판관비율 추이. 일회성 제거 후 recurring margin\n"
-        "- 부문별 고마진/저마진 식별, 영업레버리지(고정비 비중) 확인\n",
-    ),
-    "growth": (
-        {"IS", "segments", "rnd", "tangibleAsset", "subsidiary", "productService"},
-        "\n## 성장성 참고\n- 유기적 vs M&A 성장 분리. CAPEX/감가상각 >1.5x = 확장기\n"
-        "- R&D/매출 + 무형자산 자본화 동시 확인\n",
-    ),
-    "comprehensive": (
-        {"IS", "BS", "CF", "segments", "riskFactor", "dividend", "audit"},
-        "\n## 종합 참고\n- 사업→수익성(IS)→건전성(BS)→CF→리스크 순서\n"
-        "- DuPont(ROE 동인), CF 품질, 강점/약점 매트릭스 제시\n",
-    ),
-    "disclosure": (
-        {"audit", "accountingPolicy", "relatedPartyTx", "contingentLiability"},
-        "\n## 공시 참고\n- 회계정책 변경=이익조정 가능, 특수관계자 비중↑ 주의\n"
-        "- 우발부채/자본 10%↑ 경고, 감사인 교체 이력 확인\n",
-    ),
+_TOPIC_COMPACT_TEXT: dict[str, str] = {
+    "governance": "\n## 지배구조 참고\n- 사외이사 1/3↑ 상법 요건, 최대주주 30%↑ 경영권 안정\n- 감사위원회 사외이사 전원 여부, 이사회 출석률 80%↓ 주의\n",
+    "risk": "\n## 리스크 참고\n- 우발부채 = 잠재 부채, 채무보증/자본 비율 확인\n- 내부통제 취약 → 재무제표 신뢰성↓, 반복 제재 → 구조적 문제\n",
+    "dividend": "\n## 배당 참고\n- 배당성향 100%↑ 지속 불가, DPS 연속증가 = 주주환원 의지\n",
+    "investment": "\n## 투자 참고\n- CAPEX > 감가상각 = 성장 투자, R&D/매출↑ = 기술 집약\n",
+    "business": "\n## 사업 참고\n- 시장구조·경쟁포지션(segments), 고객집중도(salesOrder), 원재료 의존(rawMaterial)\n- 단일 제품/고객 의존, 환율 노출 = 전략적 리스크\n",
+    "profitability": "\n## 수익성 참고\n- 원가구조 분해: 매출원가율+판관비율 추이. 일회성 제거 후 recurring margin\n- 부문별 고마진/저마진 식별, 영업레버리지(고정비 비중) 확인\n",
+    "growth": "\n## 성장성 참고\n- 유기적 vs M&A 성장 분리. CAPEX/감가상각 >1.5x = 확장기\n- R&D/매출 + 무형자산 자본화 동시 확인\n",
+    "comprehensive": "\n## 종합 참고\n- 사업→수익성(IS)→건전성(BS)→CF→리스크 순서\n- DuPont(ROE 동인), CF 품질, 강점/약점 매트릭스 제시\n",
+    "disclosure": "\n## 공시 참고\n- 회계정책 변경=이익조정 가능, 특수관계자 비중↑ 주의\n- 우발부채/자본 10%↑ 경고, 감사인 교체 이력 확인\n",
 }
+
+TOPIC_PROMPTS: dict[str, tuple[set[str], str]] = {k: (_TOPIC_MODULES[k], v) for k, v in _TOPIC_FULL_TEXT.items()}
+TOPIC_COMPACT: dict[str, tuple[set[str], str]] = {k: (_TOPIC_MODULES[k], v) for k, v in _TOPIC_COMPACT_TEXT.items()}
 
 # ══════════════════════════════════════
 # Few-shot 예시

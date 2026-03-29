@@ -29,7 +29,7 @@ class NarrativeThread:
 
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDict
+    from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
 
@@ -409,7 +409,7 @@ def _detectEarningsManipulation(company, blockMap) -> NarrativeThread | None:
     ]
 
     # M-Score가 있으면 보조 근거로 추가
-    from dartlab.analysis.strategy.earningsQuality import calcBeneishTimeline
+    from dartlab.analysis.financial.earningsQuality import calcBeneishTimeline
 
     beneish = None
     try:

@@ -10,13 +10,13 @@ from dartlab.review.utils import isTerminal
 
 def buildBlocks(company):
     """블록 사전 -- analysis calc* 결과를 블록으로 변환."""
-    from dartlab.analysis.strategy.asset import (
+    from dartlab.analysis.financial.asset import (
         calcAssetFlags,
         calcAssetStructure,
         calcCapexPattern,
         calcWorkingCapital,
     )
-    from dartlab.analysis.strategy.capital import (
+    from dartlab.analysis.financial.capital import (
         calcCapitalFlags,
         calcCapitalOverview,
         calcCapitalTimeline,
@@ -27,12 +27,12 @@ def buildBlocks(company):
         calcInterestBurden,
         calcLiquidity,
     )
-    from dartlab.analysis.strategy.cashflow import (
+    from dartlab.analysis.financial.cashflow import (
         calcCashFlowFlags,
         calcCashFlowOverview,
         calcCashQuality,
     )
-    from dartlab.analysis.strategy.revenue import (
+    from dartlab.analysis.financial.revenue import (
         calcBreakdown,
         calcCompanyProfile,
         calcConcentration,
@@ -170,28 +170,28 @@ def buildBlocks(company):
     b["cashFlowFlags"] = _safe(lambda: cashFlowFlagsBlock(calcCashFlowFlags(company)))
 
     # ── 2부: 재무비율 분석 ──
-    from dartlab.analysis.strategy.efficiency import (
+    from dartlab.analysis.financial.efficiency import (
         calcCccTrend,
         calcEfficiencyFlags,
         calcTurnoverTrend,
     )
-    from dartlab.analysis.strategy.growthAnalysis import (
+    from dartlab.analysis.financial.growthAnalysis import (
         calcGrowthFlags,
         calcGrowthQuality,
         calcGrowthTrend,
     )
-    from dartlab.analysis.strategy.profitability import (
+    from dartlab.analysis.financial.profitability import (
         calcDupont,
         calcMarginTrend,
         calcProfitabilityFlags,
         calcReturnTrend,
     )
-    from dartlab.analysis.strategy.scorecard import (
+    from dartlab.analysis.financial.scorecard import (
         calcPiotroskiDetail,
         calcScorecard,
         calcSummaryFlags,
     )
-    from dartlab.analysis.strategy.stability import (
+    from dartlab.analysis.financial.stability import (
         calcCoverageTrend,
         calcDistressScore,
         calcLeverageTrend,
@@ -226,38 +226,38 @@ def buildBlocks(company):
     b["summaryFlags"] = _safe(lambda: summaryFlagsBlock(calcSummaryFlags(company)))
 
     # ── 3부: 심화 분석 ──
-    from dartlab.analysis.strategy.capitalAllocation import (
+    from dartlab.analysis.financial.capitalAllocation import (
         calcCapitalAllocationFlags,
         calcDividendPolicy,
         calcFcfUsage,
         calcReinvestment,
         calcShareholderReturn,
     )
-    from dartlab.analysis.strategy.costStructure import (
+    from dartlab.analysis.financial.costStructure import (
         calcBreakevenEstimate,
         calcCostBreakdown,
         calcCostStructureFlags,
         calcOperatingLeverage,
     )
-    from dartlab.analysis.strategy.crossStatement import (
+    from dartlab.analysis.financial.crossStatement import (
         calcAnomalyScore,
         calcCrossStatementFlags,
         calcIsBsDivergence,
         calcIsCfDivergence,
     )
-    from dartlab.analysis.strategy.earningsQuality import (
+    from dartlab.analysis.financial.earningsQuality import (
         calcAccrualAnalysis,
         calcBeneishTimeline,
         calcEarningsPersistence,
         calcEarningsQualityFlags,
     )
-    from dartlab.analysis.strategy.investmentAnalysis import (
+    from dartlab.analysis.financial.investmentAnalysis import (
         calcEvaTimeline,
         calcInvestmentFlags,
         calcInvestmentIntensity,
         calcRoicTimeline,
     )
-    from dartlab.analysis.strategy.taxAnalysis import (
+    from dartlab.analysis.financial.taxAnalysis import (
         calcDeferredTax,
         calcEffectiveTaxRate,
         calcTaxFlags,

@@ -62,7 +62,7 @@ def build_snapshot(company: Any, *, includeInsights: bool = True) -> dict | None
     sectorInfo = getattr(company, "sector", None)
     if sectorInfo is not None:
         try:
-            from dartlab.analysis.comparative.sector.types import Sector
+            from dartlab.core.sector.types import Sector
 
             isFinancial = sectorInfo.sector == Sector.FINANCIALS
         except (ImportError, AttributeError):

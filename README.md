@@ -222,13 +222,15 @@ c = dartlab.Company("005930")
 
 c.index                         # what's available -- topic list + periods
 c.show("BS")                    # view data -- DataFrame per topic
-c.select("IS", ["매출액"])       # extract data -- for analysis
+c.select("IS", ["매출액"])       # extract data -- finance or docs, same pattern
 c.trace("BS")                   # where it came from -- source provenance
 c.diff()                        # what changed -- text changes across periods
 
 c.analysis("수익성")             # analyze -- 14-axis financial analysis
 c.review()                      # report -- structured full report
 ```
+
+`select()` works on any topic — `"IS"`, `"BS"`, `"CF"` for financial statements, or any docs topic like `"productService"`, `"salesOrder"` for disclosure tables. Same pattern, single entry point.
 
 BS/IS/CF/ratios are convenience shortcuts for `show`. Three namespaces (`c.docs`, `c.finance`, `c.report`) are for direct source access when needed.
 
@@ -271,13 +273,25 @@ Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new a
 `analysis()` transforms raw financial statements into **story-ready structured data**. It is the middle layer between raw data and every consumer — Review (reports), AI (interpretation), and humans (direct reading). When analysis quality improves, all three benefit simultaneously.
 
 ```
-Financial Statements (IS/BS/CF)
-    ↓  Company.select()
+All Company Data (finance + docs + report)
+    ↓  Company.select()  ← single access point for everything
 analysis()  →  14-axis structured data (amounts + ratios + YoY + flags)
     ↓              ↓              ↓
  review()       AI(ask)        human
  reports        interpret      interpret
 ```
+
+`select()` is the single data tool for analysis — same pattern for financial statements and disclosure documents:
+
+```python
+c.select("IS", ["매출액", "영업이익"])                # income statement
+c.select("CF", ["depreciation", "interest_paid"])    # cash flow (snake_id)
+c.select("productService", ["DX_매출액"])            # business unit revenue from docs
+c.select("salesOrder", ["TV, 모니터 등"])             # product sales from docs
+```
+
+When IS doesn't have cost details (e.g. non-manufacturing firms), CF adjustment items provide the breakdown:
+`depreciation`, `retirement_benefits`, `stock_compensation_expenses`.
 
 Same 3-step call pattern as scan.
 

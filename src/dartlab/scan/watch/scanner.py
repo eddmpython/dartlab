@@ -197,7 +197,7 @@ def scan_market(
 def _filter_by_sector(codes: list[str], sector: str) -> list[str]:
     """종목코드 목록에서 특정 섹터에 해당하는 것만 필터."""
     try:
-        from dartlab.analysis.comparative.sector.classifier import classify
+        from dartlab.core.sector.classifier import classify
 
         filtered = []
         for code in codes:

@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.analysis.comparative.sector.types import Sector
+from dartlab.core.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import (
     _yoyChange,
     detectBalanceSheetShift,

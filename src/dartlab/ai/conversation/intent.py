@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import re as _re
 
+from .templates.analysis_rules import _CORE_QUESTION_KEYWORDS
+
 _META_KEYWORDS = frozenset(
     {
         "버전",
@@ -82,53 +84,15 @@ _META_KEYWORDS = frozenset(
     }
 )
 
-_ANALYSIS_KEYWORDS = frozenset(
-    {
-        "분석",
-        "건전성",
-        "수익성",
-        "성장성",
-        "배당",
-        "실적",
-        "재무",
-        "매출",
-        "영업이익",
-        "순이익",
-        "부채",
-        "자산",
-        "현금흐름",
-        "ROE",
-        "ROA",
-        "PER",
-        "PBR",
-        "EPS",
-        "EBITDA",
-        "FCF",
-        "리스크",
-        "위험",
-        "감사",
-        "지배구조",
-        "임원",
-        "주주",
-        "비교",
-        "추세",
-        "추이",
-        "트렌드",
-        "전망",
-        "어때",
-        "어떤가",
-        "괜찮",
-        "좋은가",
-        "분석해",
-        "알려줘",
-        "알려 줘",
-        "보여줘",
-        "보여 줘",
-        "해줘",
-        "해 줘",
-        "평가",
-    }
-)
+# analysis_rules._CORE_QUESTION_KEYWORDS에서 자동 도출 + intent 전용 보충어
+_ANALYSIS_KEYWORDS: frozenset[str] = frozenset(
+    kw
+    for keywords in _CORE_QUESTION_KEYWORDS.values()
+    for kw in keywords
+) | frozenset({
+    "분석", "재무", "현금흐름", "자산", "PER", "PBR", "EPS", "FCF",
+    "알려줘", "알려 줘", "해줘", "해 줘", "평가",
+})
 
 _SYSTEM_ENTITIES = frozenset(
     {

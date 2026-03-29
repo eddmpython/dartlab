@@ -14,7 +14,7 @@ from dartlab.ai.context import (
     scan_available_modules,
 )
 from dartlab.ai.metadata import ModuleMeta
-from dartlab.analysis.comparative.sector.types import IndustryGroup, Sector, SectorInfo
+from dartlab.core.sector.types import IndustryGroup, Sector, SectorInfo
 from dartlab.core.registry import ColumnMeta, DataEntry
 
 # ══════════════════════════════════════

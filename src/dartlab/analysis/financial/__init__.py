@@ -1,0 +1,462 @@
+"""재무제표 완전 분석 통합 진입점.
+
+scan()이 시장 전체를 횡단하듯, analysis()는 단일 종목을 심층 분석한다.
+
+사용법::
+
+    import dartlab
+
+    dartlab.analysis()                      # 14축 가이드
+    dartlab.analysis("수익구조")             # 수익구조 축의 분석 항목 목록
+    dartlab.analysis("수익구조", c)          # 삼성전자 수익구조 분석 실행
+    dartlab.analysis("이익품질", c)          # 삼성전자 이익의 질 분석
+
+    c.analysis()                            # 가이드
+    c.analysis("수익성")                     # 수익성 분석
+"""
+
+from __future__ import annotations
+
+import importlib
+from dataclasses import dataclass, field
+from typing import Any
+
+import polars as pl
+
+# ── 분석 항목 레지스트리 ──
+
+
+@dataclass(frozen=True)
+class _CalcEntry:
+    """개별 calc* 함수 메타."""
+
+    fn: str
+    module: str
+    blockKey: str
+    label: str
+
+
+@dataclass(frozen=True)
+class _AxisEntry:
+    """분석 축 메타."""
+
+    section: str
+    partId: str
+    description: str
+    example: str
+    calcs: tuple[_CalcEntry, ...] = field(default_factory=tuple)
+
+
+# ── 14축 레지스트리 ──
+# catalog.py SECTIONS + _BLOCKS + registry.py buildBlocks()에서 매핑.
+
+_AXIS_REGISTRY: dict[str, _AxisEntry] = {
+    "수익구조": _AxisEntry(
+        section="수익구조",
+        partId="1-1",
+        description="이 회사는 무엇으로 돈을 버는가",
+        example='analysis("수익구조", c)',
+        calcs=(
+            _CalcEntry("calcCompanyProfile", "dartlab.analysis.financial.revenue", "profile", "기업 개요"),
+            _CalcEntry(
+                "calcSegmentComposition", "dartlab.analysis.financial.revenue", "segmentComposition", "부문별 매출 구성"
+            ),
+            _CalcEntry("calcSegmentTrend", "dartlab.analysis.financial.revenue", "segmentTrend", "부문별 매출 추이"),
+            _CalcEntry("calcRevenueGrowth", "dartlab.analysis.financial.revenue", "growth", "매출 성장률"),
+            _CalcEntry(
+                "calcGrowthContribution", "dartlab.analysis.financial.revenue", "growthContribution", "성장 기여 분해"
+            ),
+            _CalcEntry("calcConcentration", "dartlab.analysis.financial.revenue", "concentration", "매출 집중도"),
+            _CalcEntry("calcRevenueQuality", "dartlab.analysis.financial.revenue", "revenueQuality", "매출 품질"),
+            _CalcEntry("calcFlags", "dartlab.analysis.financial.revenue", "revenueFlags", "수익구조 플래그"),
+        ),
+    ),
+    "자금조달": _AxisEntry(
+        section="자금조달",
+        partId="1-2",
+        description="돈을 어디서 조달하는가",
+        example='analysis("자금조달", c)',
+        calcs=(
+            _CalcEntry("calcFundingSources", "dartlab.analysis.financial.capital", "fundingSources", "자금 원천 구성"),
+            _CalcEntry("calcCapitalOverview", "dartlab.analysis.financial.capital", "capitalOverview", "자본 구조 개요"),
+            _CalcEntry("calcCapitalTimeline", "dartlab.analysis.financial.capital", "capitalTimeline", "자본 구조 추이"),
+            _CalcEntry("calcDebtTimeline", "dartlab.analysis.financial.capital", "debtTimeline", "부채 추이"),
+            _CalcEntry("calcInterestBurden", "dartlab.analysis.financial.capital", "interestBurden", "이자 부담"),
+            _CalcEntry("calcLiquidity", "dartlab.analysis.financial.capital", "liquidity", "유동성"),
+            _CalcEntry(
+                "calcCashFlowStructure", "dartlab.analysis.financial.capital", "cashFlowStructure", "자금흐름 구조"
+            ),
+            _CalcEntry(
+                "calcDistressIndicators", "dartlab.analysis.financial.capital", "distressIndicators", "재무 위험 지표"
+            ),
+            _CalcEntry("calcCapitalFlags", "dartlab.analysis.financial.capital", "capitalFlags", "자금조달 플래그"),
+        ),
+    ),
+    "자산구조": _AxisEntry(
+        section="자산구조",
+        partId="1-3",
+        description="조달한 돈으로 뭘 준비했는가",
+        example='analysis("자산구조", c)',
+        calcs=(
+            _CalcEntry("calcAssetStructure", "dartlab.analysis.financial.asset", "assetStructure", "자산 재분류"),
+            _CalcEntry("calcWorkingCapital", "dartlab.analysis.financial.asset", "workingCapital", "운전자본 순환"),
+            _CalcEntry("calcCapexPattern", "dartlab.analysis.financial.asset", "capexPattern", "CAPEX 패턴"),
+            _CalcEntry("calcAssetFlags", "dartlab.analysis.financial.asset", "assetFlags", "자산구조 플래그"),
+        ),
+    ),
+    "현금흐름": _AxisEntry(
+        section="현금흐름",
+        partId="1-4",
+        description="실제로 현금은 어떻게 흘렀는가",
+        example='analysis("현금흐름", c)',
+        calcs=(
+            _CalcEntry(
+                "calcCashFlowOverview", "dartlab.analysis.financial.cashflow", "cashFlowOverview", "현금흐름 종합"
+            ),
+            _CalcEntry("calcCashQuality", "dartlab.analysis.financial.cashflow", "cashQuality", "이익의 현금 전환"),
+            _CalcEntry("calcCashFlowFlags", "dartlab.analysis.financial.cashflow", "cashFlowFlags", "현금흐름 플래그"),
+        ),
+    ),
+    "수익성": _AxisEntry(
+        section="수익성",
+        partId="2-1",
+        description="이 회사는 얼마나 잘 벌고 있는가",
+        example='analysis("수익성", c)',
+        calcs=(
+            _CalcEntry("calcMarginTrend", "dartlab.analysis.financial.profitability", "marginTrend", "마진 추이"),
+            _CalcEntry("calcReturnTrend", "dartlab.analysis.financial.profitability", "returnTrend", "ROE 분해 (듀퐁 5요���)"),
+            _CalcEntry(
+                "calcMarginWaterfall", "dartlab.analysis.financial.profitability", "marginWaterfall", "마진 워터폴"
+            ),
+            _CalcEntry(
+                "calcProfitabilityFlags",
+                "dartlab.analysis.financial.profitability",
+                "profitabilityFlags",
+                "수익성 플래그",
+            ),
+        ),
+    ),
+    "성장성": _AxisEntry(
+        section="성장성",
+        partId="2-2",
+        description="이 회사는 얼마나 빨리 성장하는가",
+        example='analysis("성장성", c)',
+        calcs=(
+            _CalcEntry("calcGrowthTrend", "dartlab.analysis.financial.growthAnalysis", "growthTrend", "성장률 추이"),
+            _CalcEntry("calcGrowthQuality", "dartlab.analysis.financial.growthAnalysis", "growthQuality", "성장 품질"),
+            _CalcEntry(
+                "calcSustainableGrowthRate",
+                "dartlab.analysis.financial.growthAnalysis",
+                "sustainableGrowthRate",
+                "지속가능성장률",
+            ),
+            _CalcEntry("calcGrowthFlags", "dartlab.analysis.financial.growthAnalysis", "growthFlags", "성장성 플래그"),
+        ),
+    ),
+    "안정성": _AxisEntry(
+        section="안정성",
+        partId="2-3",
+        description="이 회사는 망하지 않는가",
+        example='analysis("안정성", c)',
+        calcs=(
+            _CalcEntry("calcLeverageTrend", "dartlab.analysis.financial.stability", "leverageTrend", "레버리지 추이"),
+            _CalcEntry("calcCoverageTrend", "dartlab.analysis.financial.stability", "coverageTrend", "이자보상 추이"),
+            _CalcEntry("calcDistressScore", "dartlab.analysis.financial.stability", "distressScore", "부실 판별"),
+            _CalcEntry(
+                "calcDistressEnsemble", "dartlab.analysis.financial.stability", "distressEnsemble", "부실예측 앙상블"
+            ),
+            _CalcEntry("calcDebtMaturity", "dartlab.analysis.financial.stability", "debtMaturity", "부채 만기 구조"),
+            _CalcEntry("calcStabilityFlags", "dartlab.analysis.financial.stability", "stabilityFlags", "안정성 플래그"),
+        ),
+    ),
+    "효율성": _AxisEntry(
+        section="효율성",
+        partId="2-4",
+        description="이 회사는 자산을 잘 굴리는가",
+        example='analysis("효율성", c)',
+        calcs=(
+            _CalcEntry("calcTurnoverTrend", "dartlab.analysis.financial.efficiency", "turnoverTrend", "회전율 + CCC 추이"),
+            _CalcEntry(
+                "calcEfficiencyFlags", "dartlab.analysis.financial.efficiency", "efficiencyFlags", "효율성 플래그"
+            ),
+        ),
+    ),
+    "종합평가": _AxisEntry(
+        section="종합평가",
+        partId="2-5",
+        description="재무 상태를 한마디로",
+        example='analysis("종합평가", c)',
+        calcs=(
+            _CalcEntry("calcScorecard", "dartlab.analysis.financial.scorecard", "scorecard", "재무 스코어카드"),
+            _CalcEntry("calcPiotroskiDetail", "dartlab.analysis.financial.scorecard", "piotroski", "Piotroski F-Score"),
+            _CalcEntry("calcSummaryFlags", "dartlab.analysis.financial.scorecard", "summaryFlags", "종합 플래그"),
+        ),
+    ),
+    "이익품질": _AxisEntry(
+        section="이익품질",
+        partId="3-1",
+        description="이익이 진짜인가",
+        example='analysis("이익품질", c)',
+        calcs=(
+            _CalcEntry(
+                "calcAccrualAnalysis", "dartlab.analysis.financial.earningsQuality", "accrualAnalysis", "발생액 분석"
+            ),
+            _CalcEntry(
+                "calcEarningsPersistence",
+                "dartlab.analysis.financial.earningsQuality",
+                "earningsPersistence",
+                "이익 지속성",
+            ),
+            _CalcEntry(
+                "calcBeneishTimeline", "dartlab.analysis.financial.earningsQuality", "beneishMScore", "Beneish M-Score"
+            ),
+            _CalcEntry(
+                "calcEarningsQualityFlags",
+                "dartlab.analysis.financial.earningsQuality",
+                "earningsQualityFlags",
+                "이익품질 플래그",
+            ),
+        ),
+    ),
+    "비용구조": _AxisEntry(
+        section="비용구조",
+        partId="3-2",
+        description="비용이 어떻게 움직이는가",
+        example='analysis("비용구조", c)',
+        calcs=(
+            _CalcEntry(
+                "calcCostBreakdown", "dartlab.analysis.financial.costStructure", "costBreakdown", "비용 비중 분해"
+            ),
+            _CalcEntry(
+                "calcOperatingLeverage", "dartlab.analysis.financial.costStructure", "operatingLeverage", "영업레버리지"
+            ),
+            _CalcEntry(
+                "calcBreakevenEstimate", "dartlab.analysis.financial.costStructure", "breakevenEstimate", "손익분기점"
+            ),
+            _CalcEntry(
+                "calcCostStructureFlags",
+                "dartlab.analysis.financial.costStructure",
+                "costStructureFlags",
+                "비용구조 플래그",
+            ),
+        ),
+    ),
+    "자본배분": _AxisEntry(
+        section="자본배분",
+        partId="3-3",
+        description="번 돈을 어디에 쓰는가",
+        example='analysis("자본배분", c)',
+        calcs=(
+            _CalcEntry(
+                "calcDividendPolicy", "dartlab.analysis.financial.capitalAllocation", "dividendPolicy", "배당 정책"
+            ),
+            _CalcEntry(
+                "calcShareholderReturn", "dartlab.analysis.financial.capitalAllocation", "shareholderReturn", "주주환원"
+            ),
+            _CalcEntry("calcReinvestment", "dartlab.analysis.financial.capitalAllocation", "reinvestment", "재투자"),
+            _CalcEntry("calcFcfUsage", "dartlab.analysis.financial.capitalAllocation", "fcfUsage", "FCF 사용처"),
+            _CalcEntry(
+                "calcCapitalAllocationFlags",
+                "dartlab.analysis.financial.capitalAllocation",
+                "capitalAllocationFlags",
+                "자본배분 플래그",
+            ),
+        ),
+    ),
+    "투자효율": _AxisEntry(
+        section="투자효율",
+        partId="3-4",
+        description="투자가 가치를 만드는가",
+        example='analysis("투자효율", c)',
+        calcs=(
+            _CalcEntry(
+                "calcRoicTimeline", "dartlab.analysis.financial.investmentAnalysis", "roicTimeline", "ROIC 시계열"
+            ),
+            _CalcEntry(
+                "calcInvestmentIntensity",
+                "dartlab.analysis.financial.investmentAnalysis",
+                "investmentIntensity",
+                "투자 강도",
+            ),
+            _CalcEntry(
+                "calcEvaTimeline", "dartlab.analysis.financial.investmentAnalysis", "evaTimeline", "NOPAT + 투하자본"
+            ),
+            _CalcEntry(
+                "calcInvestmentFlags",
+                "dartlab.analysis.financial.investmentAnalysis",
+                "investmentFlags",
+                "투자효율 플래그",
+            ),
+        ),
+    ),
+    "재무정합성": _AxisEntry(
+        section="재무정합성",
+        partId="3-5",
+        description="재무제표가 서로 맞는가",
+        example='analysis("재무정합성", c)',
+        calcs=(
+            _CalcEntry(
+                "calcIsCfDivergence", "dartlab.analysis.financial.crossStatement", "isCfDivergence", "IS-CF 괴리"
+            ),
+            _CalcEntry(
+                "calcIsBsDivergence", "dartlab.analysis.financial.crossStatement", "isBsDivergence", "IS-BS 괴리"
+            ),
+            _CalcEntry("calcAnomalyScore", "dartlab.analysis.financial.crossStatement", "anomalyScore", "이상 점수"),
+            _CalcEntry("calcEffectiveTaxRate", "dartlab.analysis.financial.taxAnalysis", "effectiveTaxRate", "유효세율"),
+            _CalcEntry("calcDeferredTax", "dartlab.analysis.financial.taxAnalysis", "deferredTax", "이연법인세"),
+        ),
+    ),
+}
+
+
+# ── Alias ──
+
+_ALIASES: dict[str, str] = {
+    "revenue": "수익구조",
+    "capital": "자금조달",
+    "asset": "자산구조",
+    "cashflow": "현금흐름",
+    "profitability": "수익성",
+    "growth": "성장성",
+    "stability": "안정성",
+    "efficiency": "효율성",
+    "scorecard": "종합평가",
+    "earningsQuality": "이익품질",
+    "costStructure": "비용구조",
+    "capitalAllocation": "자본배분",
+    "investment": "투자효율",
+    "crossStatement": "재무정합성",
+}
+
+
+def _resolveAxis(axis: str) -> str:
+    """축 이름 또는 alias -> 정규 축 이름."""
+    if axis in _AXIS_REGISTRY:
+        return axis
+    if axis in _ALIASES:
+        return _ALIASES[axis]
+    lower = axis.lower()
+    if lower in _ALIASES:
+        return _ALIASES[lower]
+    available = ", ".join(sorted(_AXIS_REGISTRY))
+    raise ValueError(f"알 수 없는 분석 축: '{axis}'. 가용 축: {available}")
+
+
+# ── Analysis Class ──
+
+
+class Analysis:
+    """재무제표 완전 분석 — 14축, 단일 종목 심층.
+
+    Capabilities:
+        Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름
+        Part 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가
+        Part 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
+        - 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
+        - review()가 이 결과를 소비하여 구조화 보고서 생성
+
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    AIContext:
+        - reviewer()가 analysis 결과를 소비하여 AI 해석 생성
+        - ask()에서 재무분석 컨텍스트로 활용
+        - 70개 calc* 함수의 개별 결과를 LLM에 주입 가능
+
+    Guide:
+        - "이 회사 수익구조?" -> analysis("수익구조", company) — 매출원가율, 판관비율 등
+        - "재무 건전한가?" -> analysis("안정성", company) — 부채비율, 유동비율, ICR
+        - "이익이 진짜야?" -> analysis("이익품질", company) — 발생주의 비율, OCF/NI
+        - "전체 종합?" -> analysis("종합평가", company) — 14축 통합 스코어
+        - 14축 전부 보고 싶으면 review() 사용 권장
+
+    SeeAlso:
+        - review: analysis 결과를 구조화 보고서로 렌더링
+        - scan: 전종목 비교 (analysis는 단일 종목 심층)
+        - Company.insights: 7영역 인사이트 등급 (빠른 요약)
+
+    Args:
+        axis: 축 이름 ("수익구조", "수익성" 등). None이면 14축 가이드.
+        company: Company 객체. None이면 해당 축의 분석 항목 목록.
+        **kwargs: 축별 옵션.
+
+    Returns:
+        axis=None → pl.DataFrame (14축 가이드)
+        company=None → pl.DataFrame (해당 축 calc 목록)
+        둘 다 있으면 → dict (분석 결과)
+
+    Example::
+
+        import dartlab
+        dartlab.analysis()                      # 14축 가이드
+        dartlab.analysis("수익구조")              # 항목 목록
+        c = dartlab.Company("005930")
+        dartlab.analysis("수익구조", c)           # 삼성전자 수익구조
+        c.analysis("수익성")                     # Company 바인딩
+    """
+
+    def __call__(
+        self,
+        axis: str | None = None,
+        company: Any | None = None,
+        **kwargs: Any,
+    ) -> pl.DataFrame | dict:
+        """축(axis)별 단일 종목 재무분석."""
+        if axis is None:
+            return self._guide()
+
+        resolved = _resolveAxis(axis)
+        entry = _AXIS_REGISTRY[resolved]
+
+        if company is None:
+            return self._listCalcs(resolved, entry)
+
+        return self._run(company, entry)
+
+    def _guide(self) -> pl.DataFrame:
+        """14축 가이드."""
+        rows = []
+        for key, entry in _AXIS_REGISTRY.items():
+            rows.append(
+                {
+                    "축": key,
+                    "partId": entry.partId,
+                    "설명": entry.description,
+                    "항목수": len(entry.calcs),
+                    "예시": entry.example,
+                }
+            )
+        return pl.DataFrame(rows)
+
+    def _listCalcs(self, axis: str, entry: _AxisEntry) -> pl.DataFrame:
+        """해당 축의 분석 항목 목록."""
+        rows = []
+        for calc in entry.calcs:
+            rows.append(
+                {
+                    "blockKey": calc.blockKey,
+                    "함수": calc.fn,
+                    "label": calc.label,
+                }
+            )
+        return pl.DataFrame(rows)
+
+    def _run(self, company: Any, entry: _AxisEntry) -> dict:
+        """해당 축의 calc* 함수 전부 실행."""
+        results: dict[str, Any] = {}
+        for calc in entry.calcs:
+            try:
+                mod = importlib.import_module(calc.module)
+                fn = getattr(mod, calc.fn)
+                results[calc.blockKey] = fn(company)
+            except (KeyError, ValueError, TypeError, AttributeError, ArithmeticError, ImportError):
+                results[calc.blockKey] = None
+        return results
+
+    def __repr__(self) -> str:
+        lines = [f"Analysis -- {len(_AXIS_REGISTRY)}축 재무제표 완전 분석", ""]
+        for key, entry in _AXIS_REGISTRY.items():
+            lines.append(f"  {entry.partId}  {key:8s} {entry.description} ({len(entry.calcs)}항목)")
+        lines.append("")
+        lines.append("사용법: analysis(), analysis('축'), analysis('축', company)")
+        return "\n".join(lines)

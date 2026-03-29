@@ -71,8 +71,8 @@ def test_insight_areas_match_code():
 
 def test_sector_spec_extracts_enums():
     """sector spec이 실제 Sector enum에서 추출하는지."""
-    from dartlab.analysis.comparative.sector.spec import buildSpec
-    from dartlab.analysis.comparative.sector.types import Sector
+    from dartlab.core.sector.spec import buildSpec
+    from dartlab.core.sector.types import Sector
 
     spec = buildSpec()
     sectorCount = len([s for s in Sector if s != Sector.UNKNOWN])

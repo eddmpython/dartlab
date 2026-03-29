@@ -85,7 +85,7 @@ def _calcEfficiencyGrade(company) -> str | None:
 def _calcEarningsQualityGrade(company) -> str | None:
     """이익품질 등급 — 발생액비율 + M-Score 기반."""
     try:
-        from dartlab.analysis.strategy.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
+        from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
 
         accrual = calcAccrualAnalysis(company)
         beneish = calcBeneishTimeline(company)
@@ -149,7 +149,7 @@ def _calcEarningsQualityGrade(company) -> str | None:
 def _calcInvestmentGrade(company) -> str | None:
     """투자효율 등급 -- ROIC 절대값 기반."""
     try:
-        from dartlab.analysis.strategy.investmentAnalysis import calcRoicTimeline
+        from dartlab.analysis.financial.investmentAnalysis import calcRoicTimeline
 
         result = calcRoicTimeline(company)
         if result is None or not result["history"]:
@@ -176,7 +176,7 @@ def _calcInvestmentGrade(company) -> str | None:
 def _calcCrossStatementGrade(company) -> str | None:
     """재무정합성 등급 — anomalyScore 기반."""
     try:
-        from dartlab.analysis.strategy.crossStatement import calcAnomalyScore
+        from dartlab.analysis.financial.crossStatement import calcAnomalyScore
 
         result = calcAnomalyScore(company)
         if result is None or not result["history"]:
@@ -237,10 +237,10 @@ def calcSummaryFlags(company) -> list[str]:
     """전체 경고/기회 요약 -- 8영역 플래그 수집."""
     flags: list[str] = []
 
-    from dartlab.analysis.strategy.efficiency import calcEfficiencyFlags
-    from dartlab.analysis.strategy.growthAnalysis import calcGrowthFlags
-    from dartlab.analysis.strategy.profitability import calcProfitabilityFlags
-    from dartlab.analysis.strategy.stability import calcStabilityFlags
+    from dartlab.analysis.financial.efficiency import calcEfficiencyFlags
+    from dartlab.analysis.financial.growthAnalysis import calcGrowthFlags
+    from dartlab.analysis.financial.profitability import calcProfitabilityFlags
+    from dartlab.analysis.financial.stability import calcStabilityFlags
 
     flags.extend(calcProfitabilityFlags(company))
     flags.extend(calcGrowthFlags(company))
@@ -249,42 +249,42 @@ def calcSummaryFlags(company) -> list[str]:
 
     # 새 영역 플래그
     try:
-        from dartlab.analysis.strategy.earningsQuality import calcEarningsQualityFlags
+        from dartlab.analysis.financial.earningsQuality import calcEarningsQualityFlags
 
         flags.extend(calcEarningsQualityFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
-        from dartlab.analysis.strategy.investmentAnalysis import calcInvestmentFlags
+        from dartlab.analysis.financial.investmentAnalysis import calcInvestmentFlags
 
         flags.extend(calcInvestmentFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
-        from dartlab.analysis.strategy.crossStatement import calcCrossStatementFlags
+        from dartlab.analysis.financial.crossStatement import calcCrossStatementFlags
 
         flags.extend(calcCrossStatementFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
-        from dartlab.analysis.strategy.costStructure import calcCostStructureFlags
+        from dartlab.analysis.financial.costStructure import calcCostStructureFlags
 
         flags.extend(calcCostStructureFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
-        from dartlab.analysis.strategy.capitalAllocation import calcCapitalAllocationFlags
+        from dartlab.analysis.financial.capitalAllocation import calcCapitalAllocationFlags
 
         flags.extend(calcCapitalAllocationFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
-        from dartlab.analysis.strategy.taxAnalysis import calcTaxFlags
+        from dartlab.analysis.financial.taxAnalysis import calcTaxFlags
 
         flags.extend(calcTaxFlags(company))
     except (ImportError, AttributeError, TypeError, ValueError):

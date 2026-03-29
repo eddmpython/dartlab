@@ -4,7 +4,7 @@ KIND 업종명 + 주요제품 키워드로 투자 관점 섹터 분류.
 
 사용법::
 
-    from dartlab.analysis.comparative.sector import classify, getParams
+    from dartlab.core.sector import classify, getParams
 
     info = classify("삼성전자", kindIndustry="통신 및 방송 장비 제조업")
     info.sector       # Sector.IT
@@ -15,9 +15,9 @@ KIND 업종명 + 주요제품 키워드로 투자 관점 섹터 분류.
     params.discountRate  # 13.0
 """
 
-from dartlab.analysis.comparative.sector.classifier import classify
-from dartlab.analysis.comparative.sector.params import getParams
-from dartlab.analysis.comparative.sector.types import (
+from dartlab.core.sector.classifier import classify
+from dartlab.core.sector.params import getParams
+from dartlab.core.sector.types import (
     IndustryGroup,
     Sector,
     SectorInfo,

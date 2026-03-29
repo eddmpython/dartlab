@@ -12,7 +12,7 @@ _MAX_YEARS = 5
 
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDictBySnakeId
+    from dartlab.analysis.financial._helpers import toDictBySnakeId
 
     return toDictBySnakeId(selectResult)
 

@@ -15,7 +15,7 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.analysis.comparative.sector.types import SectorParams
+from dartlab.core.sector.types import SectorParams
 from dartlab.analysis.valuation.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.extract import (
     getAnnualValues,

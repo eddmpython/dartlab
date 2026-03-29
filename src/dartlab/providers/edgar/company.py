@@ -807,7 +807,7 @@ class Company:
             c.analysis()                  # 사용 가능한 축 목록
             c.analysis("financial")       # 재무 분석 실행
         """
-        from dartlab.analysis.strategy import Analysis
+        from dartlab.analysis.financial import Analysis
 
         _analysis = Analysis()
         if axis is None:
@@ -1768,42 +1768,6 @@ class Company:
         if result is None:
             return None
         return result.to_dataframe()
-
-    def eventStudy(
-        self,
-        event_type: str | None = None,
-        *,
-        window: object | None = None,
-    ) -> pl.DataFrame | None:
-        """공시 발표일 전후 주가 비정상 수익률(CAR) 분석.
-
-        Capabilities:
-            - 공시 발표일 기준 이벤트 윈도우 내 CAR(Cumulative Abnormal Return) 계산
-            - event_type으로 form 유형별 필터 가능
-            - window 파라미터로 이벤트 윈도우 커스터마이징
-
-        Args:
-            event_type: form 유형 필터 (예: "10-K"). None이면 전체.
-            window: 이벤트 윈도우 설정 (선택).
-
-        Returns:
-            pl.DataFrame — 이벤트별 CAR, 통계량 등. 없으면 None.
-
-        Requires:
-            데이터: pip install dartlab[event] + 인터넷 연결 (주가 데이터)
-
-        Example::
-
-            c = Company("AAPL")
-            c.eventStudy()           # 전체 공시 → 주가 영향
-            c.eventStudy("10-K")     # 10-K 발표 전후 주가 영향
-        """
-        from dartlab.analysis.comparative.event.study import analyze_events, impacts_to_dataframe
-
-        result = analyze_events(self, event_type=event_type, window=window)
-        if result is None:
-            return None
-        return impacts_to_dataframe(result.impacts)
 
     # ── analyst ──
 

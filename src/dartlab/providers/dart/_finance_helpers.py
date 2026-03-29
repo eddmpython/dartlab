@@ -169,7 +169,7 @@ def _ratioTemplateKeyForIndustryGroup(industryGroup: Any) -> str | None:
         return None
 
     try:
-        from dartlab.analysis.comparative.sector.types import IndustryGroup
+        from dartlab.core.sector.types import IndustryGroup
     except ImportError:
         return None
 
@@ -186,7 +186,7 @@ def _ratioArchetypeOverrideForIndustryGroup(industryGroup: Any) -> str | None:
         return None
 
     try:
-        from dartlab.analysis.comparative.sector.types import IndustryGroup
+        from dartlab.core.sector.types import IndustryGroup
     except ImportError:
         return None
 

@@ -222,13 +222,15 @@ c = dartlab.Company("005930")
 
 c.index                         # 뭐가 있는지 -- topic 목록 + 가용 기간
 c.show("BS")                    # 데이터를 보려면 -- topic별 DataFrame
-c.select("IS", ["매출액"])       # 데이터를 뽑으려면 -- 분석용 선택
+c.select("IS", ["매출액"])       # 데이터를 뽑으려면 -- finance든 docs든 같은 패턴
 c.trace("BS")                   # 어디서 왔는지 -- source provenance
 c.diff()                        # 뭐가 바뀌었는지 -- 기간 간 텍스트 변화
 
 c.analysis("수익성")             # 분석하려면 -- 14축 재무분석
 c.review()                      # 보고서 보려면 -- 구조화된 전체 보고서
 ```
+
+`select()`는 어떤 topic이든 동작한다 — `"IS"`, `"BS"`, `"CF"`는 재무제표, `"productService"`, `"salesOrder"` 같은 docs topic은 사업보고서 테이블. 같은 패턴, 단일 진입점.
 
 BS/IS/CF/ratios 등은 `show`의 편의 바로가기로 존재한다. 3개 namespace(`c.docs`, `c.finance`, `c.report`)는 source별 직접 접근이 필요할 때만 사용한다.
 
@@ -269,13 +271,25 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
 `analysis()`는 원본 재무제표를 **스토리가 가능한 구조화 데이터**로 가공하는 중간 계층이다. Review(보고서), AI(해석), 사람(직접 해석) 세 소비자 모두를 위한 분석의 중간재 -- analysis 품질이 올라가면 셋 다 좋아진다.
 
 ```
-재무제표 (IS/BS/CF)
-    ↓  Company.select()
+Company 전체 데이터 (finance + docs + report)
+    ↓  Company.select()  ← 모든 데이터의 단일 접근 경로
 analysis()  →  14축 구조화 데이터 (금액 + 비율 + YoY + 플래그)
     ↓              ↓              ↓
  review()       AI(ask)        사람
  보고서화        해석           해석
 ```
+
+`select()`는 analysis의 유일한 데이터 도구다 -- 재무제표와 사업보고서를 같은 패턴으로 접근한다:
+
+```python
+c.select("IS", ["매출액", "영업이익"])                # 손익계산서
+c.select("CF", ["depreciation", "interest_paid"])    # 현금흐름표 (snake_id)
+c.select("productService", ["DX_매출액"])            # 사업부별 매출 (docs sections)
+c.select("salesOrder", ["TV, 모니터 등"])             # 제품별 매출 (docs sections)
+```
+
+IS에 비용 세부가 없는 기업(비제조업 등)은 CF 조정항목이 대안이 된다:
+`depreciation`, `retirement_benefits`, `stock_compensation_expenses`.
 
 scan과 동일한 3단계 호출 패턴.
 

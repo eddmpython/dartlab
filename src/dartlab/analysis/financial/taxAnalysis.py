@@ -12,7 +12,7 @@ _MAX_YEARS = 5
 
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDict
+    from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
 
@@ -129,7 +129,7 @@ def calcTaxCashConversion(company) -> dict | None:
     isData, isPeriods = isParsed
     taxExpRow = isData.get("법인세비용", {})
 
-    from dartlab.analysis.strategy._helpers import toDictBySnakeId
+    from dartlab.analysis.financial._helpers import toDictBySnakeId
 
     cfParsed = toDictBySnakeId(cfResult)
     cfData = cfParsed[0] if cfParsed else {}

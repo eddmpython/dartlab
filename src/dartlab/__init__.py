@@ -1218,7 +1218,7 @@ class _Module(sys.modules[__name__].__class__):
             setattr(self, name, instance)
             return instance
         if name == "analysis":
-            from dartlab.analysis.strategy import Analysis
+            from dartlab.analysis.financial import Analysis
 
             instance = Analysis()
             setattr(self, name, instance)

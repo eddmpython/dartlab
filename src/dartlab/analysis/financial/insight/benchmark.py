@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from dartlab.analysis.comparative.sector.types import Sector
+from dartlab.core.sector.types import Sector
 
 
 @dataclass

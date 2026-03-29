@@ -21,7 +21,7 @@ def buildCompactMap(company: Any) -> str:
     # 섹터
     sectorLabel = ""
     try:
-        from dartlab.analysis.comparative.sector import classify
+        from dartlab.core.sector import classify
 
         sectorInfo = classify(stockCode)
         if sectorInfo and hasattr(sectorInfo, "sectorName"):

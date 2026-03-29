@@ -165,7 +165,7 @@ def generateResearch(
     # ── Phase 4: Narrative (v3 — 교차분석 서술) ──
     if aSeries and (wantAll or want & {"narrative", "thesis"}):
         try:
-            from dartlab.analysis.comparative.sector.params import getParams
+            from dartlab.core.sector.params import getParams
             from dartlab.analysis.financial.insight.benchmark import getBenchmark
             from dartlab.analysis.financial.research.narrative import buildNarrative
 
@@ -909,7 +909,7 @@ def _buildPeerAnalysis(
         # 섹터 파라미터에서 배수 가져오기
         sectorMultiples: dict[str, float] = {}
         try:
-            from dartlab.analysis.comparative.sector.params import SECTOR_PARAMS
+            from dartlab.core.sector.params import SECTOR_PARAMS
 
             sp = SECTOR_PARAMS.get(sectorEnum)
             if sp:

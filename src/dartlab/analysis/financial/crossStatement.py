@@ -12,7 +12,7 @@ _MAX_YEARS = 5
 
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDict
+    from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
 
@@ -219,7 +219,7 @@ def calcAnomalyScore(company) -> dict | None:
         return None
 
     # 발생액 정보 (earningsQuality에서 가져오기)
-    from dartlab.analysis.strategy.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
+    from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
 
     accrual = calcAccrualAnalysis(company)
     beneish = calcBeneishTimeline(company)

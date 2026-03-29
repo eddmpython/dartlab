@@ -1004,7 +1004,7 @@ def _dataclassesSection() -> str:
     lines.append(_dataclassTable(Flag, "Flag"))
     lines.append(_dataclassTable(AnalysisResult, "AnalysisResult"))
 
-    from dartlab.analysis.comparative.sector.types import SectorInfo, SectorParams
+    from dartlab.core.sector.types import SectorInfo, SectorParams
 
     lines.append(_dataclassTable(SectorInfo, "SectorInfo"))
     lines.append(_dataclassTable(SectorParams, "SectorParams"))

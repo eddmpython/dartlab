@@ -1987,6 +1987,132 @@ class Company:
 
     _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS", "SCE"})
 
+    # ── docs multi-block select 지원 ──────────────────────────
+
+    def _buildDocsItemIndex(
+        self, topic: str
+    ) -> dict[str, list[tuple[int, pl.DataFrame]]]:
+        """topic의 모든 테이블 블록을 수평화하고 항목명 역인덱스를 빌드."""
+        from dartlab.core.show import normalizeItemKey
+
+        cacheKey = f"_docsItemIdx_{topic}"
+        cached = self._cache.get(cacheKey)
+        if cached is not None:
+            return cached
+
+        sec = self.sections
+        if sec is None:
+            self._cache[cacheKey] = {}
+            return {}
+
+        topicRows = sec.filter(pl.col("topic") == topic)
+        if topicRows.is_empty():
+            self._cache[cacheKey] = {}
+            return {}
+
+        blockIndex = self._buildBlockIndex(topicRows)
+        periodCols = [c for c in topicRows.columns if _isPeriodColumn(c)]
+
+        idx: dict[str, list[tuple[int, pl.DataFrame]]] = {}
+
+        for row in blockIndex.iter_rows(named=True):
+            bo = row["block"]
+            bt = row.get("type", "text")
+            src = row.get("source", "docs")
+            if bt != "table" or src != "docs":
+                continue
+
+            from dartlab.providers.dart._table_horizontalizer import (
+                horizontalizeTableBlock,
+            )
+
+            hDf = horizontalizeTableBlock(topicRows, bo, periodCols)
+            if hDf is None or hDf.is_empty():
+                continue
+
+            itemCol = "항목" if "항목" in hDf.columns else None
+            if itemCol is None:
+                for c in hDf.columns:
+                    if not _isPeriodColumn(c):
+                        itemCol = c
+                        break
+            if itemCol is None:
+                continue
+
+            for val in hDf[itemCol].to_list():
+                if val is None:
+                    continue
+                nk = normalizeItemKey(str(val))
+                idx.setdefault(nk, []).append((bo, hDf))
+
+        self._cache[cacheKey] = idx
+        return idx
+
+    def _selectFromDocsTopic(
+        self,
+        topic: str,
+        indList: list[str],
+        colList: list[str] | None,
+    ) -> pl.DataFrame | None:
+        """역인덱스에서 indList 항목을 cascade 매칭으로 찾아 추출."""
+        from dartlab.core.show import normalizeItemKey, selectFromShow
+
+        idx = self._buildDocsItemIndex(topic)
+        if not idx:
+            return None
+
+        normQueries = [normalizeItemKey(q) for q in indList]
+        allNormKeys = list(idx.keys())
+
+        # cascade: exact → contains → fuzzy
+        matched: list[tuple[int, pl.DataFrame]] = []
+        matchedKeys: set[str] = set()
+
+        # 1) exact
+        for nq in normQueries:
+            if nq in idx and nq not in matchedKeys:
+                matched.extend(idx[nq])
+                matchedKeys.add(nq)
+
+        # 2) contains
+        if not matched:
+            for nq in normQueries:
+                for nk in allNormKeys:
+                    if (nq in nk or nk in nq) and nk not in matchedKeys:
+                        matched.extend(idx[nk])
+                        matchedKeys.add(nk)
+
+        # 3) fuzzy
+        if not matched:
+            import difflib
+
+            for nq in normQueries:
+                close = difflib.get_close_matches(nq, allNormKeys, n=3, cutoff=0.7)
+                for ck in close:
+                    if ck not in matchedKeys:
+                        matched.extend(idx[ck])
+                        matchedKeys.add(ck)
+
+        if not matched:
+            return None
+
+        # 블록별 DataFrame에서 selectFromShow로 행/열 필터
+        parts: list[pl.DataFrame] = []
+        seenBo: set[int] = set()
+        for bo, hDf in matched:
+            if bo in seenBo:
+                continue
+            seenBo.add(bo)
+            filtered = selectFromShow(hDf, indList, colList)
+            if filtered is not None:
+                parts.append(filtered)
+
+        if not parts:
+            return None
+        if len(parts) == 1:
+            return parts[0]
+        return pl.concat(parts, how="diagonal_relaxed")
+
     def select(
         self,
         topic: str,
@@ -2028,7 +2154,19 @@ class Company:
             indList = [indList]
         if isinstance(colList, str):
             colList = [colList]
-        filtered = selectFromShow(df, indList, colList)
+
+        # multi-block docs topic 감지 → 역인덱스 경로
+        isBlockIndex = (
+            isinstance(df, pl.DataFrame)
+            and "block" in df.columns
+            and "type" in df.columns
+            and "preview" in df.columns
+            and topic not in self._FINANCE_TOPICS
+        )
+        if isBlockIndex and indList is not None:
+            filtered = self._selectFromDocsTopic(topic, indList, colList)
+        else:
+            filtered = selectFromShow(df, indList, colList)
         if filtered is None:
             return None
         return SelectResult(
@@ -2272,43 +2410,6 @@ class Company:
             return None
         return result.to_dataframe()
 
-    def eventStudy(
-        self,
-        event_type: str | None = None,
-        *,
-        window: object | None = None,
-    ) -> pl.DataFrame | None:
-        """공시 발표일 전후 주가 비정상 수익률(CAR) 분석.
-
-        Capabilities:
-            - 공시 발표일 전후 주가 비정상 수익률 산출
-            - 이벤트 윈도우 커스텀 가능
-            - 공시 유형별 필터링
-            - 통계적 유의성 검정
-
-        Args:
-            event_type: 공시 유형 필터 ("사업보고서" 등). None이면 전체.
-            window: 이벤트 윈도우 설정.
-
-        Returns:
-            pl.DataFrame | None — 공시별 CAR, t-stat, significance.
-
-        Requires:
-            데이터: docs (자동 다운로드)
-            추가 패키지: pip install dartlab[event]
-
-        Example::
-
-            c.eventStudy()                       # 전체 공시
-            c.eventStudy("사업보고서")              # 유형별 필터
-        """
-        from dartlab.analysis.comparative.event.study import analyze_events, impacts_to_dataframe
-
-        result = analyze_events(self, event_type=event_type, window=window)
-        if result is None:
-            return None
-        return impacts_to_dataframe(result.impacts)
-
     def review(self, section: str | None = None, layout=None, helper: bool | None = None):
         """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
@@ -2407,7 +2508,7 @@ class Company:
             c.analysis()              # 14축 가이드
             c.analysis("수익구조")     # 수익구조 분석
         """
-        from dartlab.analysis.strategy import Analysis
+        from dartlab.analysis.financial import Analysis
 
         _analysis = Analysis()
         if axis is None:
@@ -3376,7 +3477,7 @@ class Company:
         cacheKey = "_sector"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        from dartlab.analysis.comparative.sector import classify
+        from dartlab.core.sector import classify
 
         kindDf = getKindList()
         row = kindDf.filter(pl.col("종목코드") == self.stockCode)
@@ -3409,7 +3510,7 @@ class Company:
         cacheKey = "_sectorParams"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
-        from dartlab.analysis.comparative.sector import getParams
+        from dartlab.core.sector import getParams
 
         result = getParams(self.sector)
         self._cache[cacheKey] = result
