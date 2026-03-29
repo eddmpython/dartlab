@@ -216,9 +216,15 @@ def calcInvestmentIntensity(company) -> dict | None:
 
 
 def calcEvaTimeline(company) -> dict | None:
-    """NOPAT + 투하자본 시계열."""
+    """NOPAT + 투하자본 시계열.
+
+    투하자본 = 자본총계 + 이자부차입금 - 현금 (ROIC와 동일 기준).
+    """
     isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익"])
-    bsResult = company.select("BS", ["자본총계", "부채총계"])
+    bsResult = company.select(
+        "BS",
+        ["자본총계", "단기차입금", "장기차입금", "사채", "현금및현금성자산"],
+    )
 
     isParsed = toDict(isResult)
     bsParsed = toDict(bsResult)
@@ -232,7 +238,10 @@ def calcEvaTimeline(company) -> dict | None:
     taxRow = isData.get("법인세비용", {})
     ptRow = isData.get("법인세차감전순이익", {})
     eqRow = bsData.get("자본총계", {})
-    debtRow = bsData.get("부채총계", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondRow = bsData.get("사채", {})
+    cashRow = bsData.get("현금및현금성자산", {})
 
     yCols = _annualCols(isPeriods, _MAX_YEARS)
     if not yCols:
@@ -251,8 +260,9 @@ def calcEvaTimeline(company) -> dict | None:
         nopat = opIncome * (1 - effectiveTaxRate) if opIncome != 0 else None
 
         equity = _get(eqRow, col)
-        totalDebt = _get(debtRow, col)
-        investedCapital = equity + totalDebt
+        totalBorrowing = _get(stRow, col) + _get(ltRow, col) + _get(bondRow, col)
+        cash = _get(cashRow, col)
+        investedCapital = equity + totalBorrowing - cash
 
         # NOPAT / 투하자본 = 투하자본수익률
         nopatReturn = None

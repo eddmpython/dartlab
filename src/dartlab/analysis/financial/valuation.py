@@ -14,6 +14,42 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 
+# ── IndustryGroup → SECTOR_ELASTICITY 키 매핑 ──
+
+_IG_TO_SECTOR_KEY: dict[str, str] = {
+    "SEMICONDUCTOR": "반도체",
+    "AUTO": "자동차",
+    "CHEMICAL": "화학",
+    "METALS": "철강",
+    "CONSTRUCTION": "건설",
+    "BANK": "금융/은행",
+    "INSURANCE": "금융/보험",
+    "DIVERSIFIED_FINANCIALS": "금융/증권",
+    "SOFTWARE": "IT/소프트웨어",
+    "IT_SERVICE": "IT/소프트웨어",
+    "INTERNET": "IT/소프트웨어",
+    "TELECOM": "통신",
+    "RETAIL": "유통",
+    "FOOD_BEVERAGE": "식품",
+    "PHARMA_BIO": "제약/바이오",
+    "HEALTHCARE_EQUIP": "제약/바이오",
+    "UTILITIES": "전력/에너지",
+    "ELECTRIC": "전력/에너지",
+}
+
+
+def _resolveSectorKey(company: Any) -> str | None:
+    """company.sector에서 SECTOR_ELASTICITY 키를 추출."""
+    try:
+        sectorInfo = company.sector
+        if sectorInfo is None:
+            return None
+        igName = sectorInfo.industryGroup.name
+        return _IG_TO_SECTOR_KEY.get(igName)
+    except (AttributeError, ValueError):
+        return None
+
+
 # ── 시가 연동 헬퍼 ──
 
 
@@ -221,7 +257,7 @@ def calcPriceTarget(company: Any) -> dict | None:
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
     marketCap = price["marketCap"] if price else None
-    sectorKey = getattr(company, "sectorKey", None)
+    sectorKey = _resolveSectorKey(company)
 
     result = compute_price_target(
         series,
