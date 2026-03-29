@@ -32,12 +32,13 @@ if TYPE_CHECKING:
 from dartlab.analysis.forecast.forecast import (
     forecastMetric,
 )
-from dartlab.analysis.valuation.fmt import fmtBig
+from dartlab.core.finance.fmt import fmtBig
 from dartlab.core.finance.extract import (
     getAnnualValues,
     getLatest,
     getTTM,
 )
+from dartlab.core.finance.scenario import getElasticity
 
 log = logging.getLogger(__name__)
 
@@ -483,10 +484,8 @@ def _computeWeights(
     # 매크로 β: 유효 섹터에서 시계열 할당
     if sectorKey and sectorKey not in _MACRO_SKIP_SECTORS and "timeseries" in weights:
         try:
-            from dartlab.analysis.forecast.simulation import getElasticity
-
             beta = getElasticity(sectorKey).revenue_to_gdp
-        except (ImportError, AttributeError):
+        except AttributeError:
             beta = 0
 
         if beta >= 1.2 and sectorKey in _MACRO_VALID_SECTORS:
@@ -516,8 +515,6 @@ def _macroAdjustment(
         return [0.0] * horizon
 
     try:
-        from dartlab.analysis.forecast.simulation import getElasticity
-
         elasticity = getElasticity(sectorKey)
         beta = elasticity.revenue_to_gdp
     except (ImportError, AttributeError, KeyError):
@@ -891,8 +888,6 @@ def _computeFxAdjustment(
     # 섹터별 환율 감응도 (기본 0.5)
     fxBeta = 0.5
     try:
-        from dartlab.analysis.forecast.simulation import getElasticity
-
         elasticity = getElasticity(sectorKey or "")
         if hasattr(elasticity, "revenue_to_fx") and elasticity.revenue_to_fx > 0:
             fxBeta = elasticity.revenue_to_fx
@@ -992,7 +987,7 @@ def forecastRevenue(
     priceImpliedGrowth: float | None = None
     priceImpliedResult = None
     if marketCap and marketCap > 0 and "timeseries" in weights:
-        from dartlab.analysis.valuation.priceImplied import reverseImpliedGrowth
+        from dartlab.core.finance.priceImplied import reverseImpliedGrowth
 
         priceImpliedResult = reverseImpliedGrowth(series, marketCap, horizon=horizon)
         if priceImpliedResult and priceImpliedResult.impliedGrowthRate != 0.0:
@@ -1364,7 +1359,7 @@ def forecastRevenue(
     marketImpliedGap: float | None = None
     investmentSignal: str | None = None
     if priceImpliedResult and priceImpliedGrowth is not None and growthRates:
-        from dartlab.analysis.valuation.priceImplied import computeGap
+        from dartlab.core.finance.priceImplied import computeGap
 
         avgForecastG = sum(growthRates) / len(growthRates)
         computeGap(priceImpliedResult, avgForecastG)

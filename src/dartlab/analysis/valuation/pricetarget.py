@@ -11,24 +11,29 @@ import math
 import random
 from dataclasses import dataclass, field
 
-from dartlab.analysis.forecast.prediction import (
-    ContextSignals,
-    adjustProbabilities,
-    getNoiseSigma,
-)
-from dartlab.analysis.forecast.proforma import (
-    ProFormaResult,
-    build_proforma,
-    compute_company_wacc,
-    extract_historical_ratios,
-)
-from dartlab.analysis.forecast.simulation import (
+from typing import TYPE_CHECKING
+
+from dartlab.core.finance.extract import getLatest, getTTM
+from dartlab.core.finance.scenario import (
     PRESET_SCENARIOS,
     MacroScenario,
     SectorElasticity,
     getElasticity,
+    getNoiseSigma,
 )
-from dartlab.core.finance.extract import getLatest, getTTM
+
+from dartlab.core.finance.proforma import (
+    build_proforma,
+    compute_company_wacc,
+    extract_historical_ratios,
+)
+
+from dartlab.analysis.forecast.prediction import adjustProbabilities
+
+if TYPE_CHECKING:
+    from dartlab.analysis.forecast.prediction import ContextSignals
+    from dartlab.core.finance.proforma import ProFormaResult
+
 
 # ══════════════════════════════════════
 # Cholesky 분해 (순수 Python -- numpy 의존 없음)
@@ -292,7 +297,7 @@ def _monte_carlo_price_distribution(
     tg = terminal_growth / 100
     values: list[float] = []
 
-    # v3: sizeClass별 σ + Cholesky 상관
+    # v3: sizeClass별 sigma + Cholesky 상관
     sigma_growth = getNoiseSigma("growth", size_class)
     sigma_margin = getNoiseSigma("margin", size_class)
     sigma_wacc = getNoiseSigma("wacc", size_class)

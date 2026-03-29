@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from dartlab.analysis.financial.research.quality import calcCoverageScore
 from dartlab.analysis.financial.research.scoring import calcAllScores
 from dartlab.analysis.financial.research.thesis import classifyProfile, synthesizeThesis
+from dartlab.analysis.forecast.forecast import forecastMetric
 from dartlab.analysis.financial.research.types import (
     AnomalySection,
     CompanyOverview,
@@ -871,8 +872,6 @@ def _buildForecast(company: object, aSeries: dict | None) -> ForecastData | None
     # 2) 자체 매출 예측 (analyst.forecast)
     if aSeries:
         try:
-            from dartlab.analysis.forecast.forecast import forecastMetric
-
             ts = getattr(getattr(company, "finance", None), "timeseries", None)
             series = ts[0] if isinstance(ts, tuple) else ts
             if series:

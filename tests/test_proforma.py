@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.analysis.forecast.proforma import (
+from dartlab.core.finance.proforma import (
     ProFormaResult,
     _extract_base_year,
     _median,

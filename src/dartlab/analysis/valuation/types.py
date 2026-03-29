@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from dartlab.analysis.valuation.fmt import fmtPrice
+from dartlab.core.finance.fmt import fmtPrice
 
 
 @dataclass

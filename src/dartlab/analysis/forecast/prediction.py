@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from dartlab.core.finance.scenario import NOISE_CONFIG, getNoiseSigma
+
 # ======================================
 # 데이터 구조
 # ======================================
@@ -36,7 +38,7 @@ class ContextSignals:
     reasoning: list[str] = field(default_factory=list)
 
     def __repr__(self) -> str:
-        lines = ["[Context Signals — 맥락 신호]"]
+        lines = ["[Context Signals -- 맥락 신호]"]
         if self.insightGrades:
             gradesStr = ", ".join(f"{k}={v}" for k, v in self.insightGrades.items())
             lines.append(f"  인사이트 등급: {gradesStr}")
@@ -56,28 +58,6 @@ class ContextSignals:
             for r in self.reasoning:
                 lines.append(f"    - {r}")
         return "\n".join(lines)
-
-
-# ======================================
-# MC 노이즈 설정 — 기업 규모별 σ 차등
-# ======================================
-
-
-NOISE_CONFIG: dict[str, dict[str, float]] = {
-    "growth": {"baseSigma": 1.5, "Small": 1.5, "Mid": 1.0, "Large": 0.8},
-    "margin": {"baseSigma": 2.5, "Small": 1.3, "Mid": 1.0, "Large": 0.9},
-    "wacc": {"baseSigma": 0.8, "Small": 1.5, "Mid": 1.0, "Large": 0.7},
-    "capex": {"baseSigma": 1.0, "Small": 1.2, "Mid": 1.0, "Large": 0.9},
-    "tax": {"baseSigma": 1.0, "Small": 1.0, "Mid": 1.0, "Large": 1.0},
-}
-
-
-def getNoiseSigma(variable: str, sizeClass: str = "Mid") -> float:
-    """변수별 x 규모별 noise sigma 반환."""
-    cfg = NOISE_CONFIG.get(variable, {"baseSigma": 1.0})
-    base = cfg["baseSigma"]
-    mult = cfg.get(sizeClass, 1.0)
-    return base * mult
 
 
 # ======================================
@@ -130,7 +110,7 @@ def collectSignals(company) -> ContextSignals:
 
     # 4. sector 경기민감도
     try:
-        from dartlab.analysis.forecast.simulation import getElasticity as get_elasticity
+        from dartlab.core.finance.scenario import getElasticity as get_elasticity
 
         sectorKey = None
         # sectorInfo dict에서 가져오기

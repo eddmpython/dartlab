@@ -11,6 +11,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dartlab.analysis.valuation.pricetarget import compute_price_target
+from dartlab.analysis.valuation.residualIncome import calcResidualIncome as _rimCalc
+
 log = logging.getLogger(__name__)
 
 
@@ -112,10 +115,15 @@ def _fetchPriceContext(company: Any) -> dict | None:
     return result
 
 
-def _getSeriesAndShares(company: Any) -> tuple[dict, int | None, str]:
-    """company에서 timeseries, shares, currency 추출."""
-    ts = company.finance.timeseries
-    series = ts[0] if isinstance(ts, tuple) else ts
+def _getSeriesAndShares(company: Any) -> tuple[dict | None, int | None, str]:
+    """company에서 annual series, shares, currency 추출."""
+    try:
+        ann = company.annual
+        if ann is None:
+            return None, None, getattr(company, "currency", "KRW") or "KRW"
+        series = ann[0] if isinstance(ann, tuple) else ann
+    except (ValueError, KeyError, AttributeError):
+        return None, None, getattr(company, "currency", "KRW") or "KRW"
 
     shares = None
     profile = getattr(company, "profile", None)
@@ -123,6 +131,15 @@ def _getSeriesAndShares(company: Any) -> tuple[dict, int | None, str]:
         sharesVal = getattr(profile, "sharesOutstanding", None)
         if sharesVal:
             shares = int(sharesVal)
+
+    # fallback: 시가총액/현재가에서 shares 추정
+    if shares is None:
+        price = _fetchPriceContext(company)
+        if price and price.get("marketCap") and price.get("currentPrice"):
+            mc = price["marketCap"]
+            cp = price["currentPrice"]
+            if mc > 0 and cp > 0:
+                shares = int(mc / cp)
 
     currency = getattr(company, "currency", "KRW") or "KRW"
     return series, shares, currency
@@ -141,7 +158,7 @@ def _getSectorParams(company: Any):
 
 def calcDcf(company: Any) -> dict | None:
     """DCF (현금흐름 할인) 밸류에이션."""
-    from dartlab.analysis.valuation.valuation import dcfValuation
+    from dartlab.core.finance.dcf import dcfValuation
 
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
@@ -176,19 +193,38 @@ def calcDcf(company: Any) -> dict | None:
 
 
 def calcDdm(company: Any) -> dict | None:
-    """DDM (배당 할인) 밸류에이션."""
-    from dartlab.analysis.valuation.valuation import ddmValuation
+    """DDM (배당 할인) 밸류에이션.
+
+    calcDividendPolicy의 연간 배당 데이터를 우선 사용하여
+    분기 CF 합산 오류를 방지한다.
+    """
+    from dartlab.core.finance.dcf import ddmValuation
+    from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
 
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
 
+    # calcDividendPolicy에서 연간 배당 추출 (정확한 연간 합산)
+    annualDivs: list[float] | None = None
+    divPolicy = calcDividendPolicy(company)
+    if divPolicy and divPolicy.get("history"):
+        hist = divPolicy["history"]
+        # 의미 있는 배당만 추출 (주당 100원 미만 잡액 제거)
+        minDiv = shares * 100 if shares and shares > 0 else 1e9
+        annualDivs = [
+            h["dividendsPaid"]
+            for h in reversed(hist)
+            if h.get("dividendsPaid") and h["dividendsPaid"] > minDiv
+        ]
+
     result = ddmValuation(
         series,
         shares=shares,
         sectorParams=sp,
         currentPrice=currentPrice,
+        annualDividends=annualDivs,
     )
     if result.modelUsed == "N/A" and not result.warnings:
         return None
@@ -209,7 +245,7 @@ def calcDdm(company: Any) -> dict | None:
 
 def calcRelativeValuation(company: Any) -> dict | None:
     """상대가치 (PER/PBR/EV-EBITDA/PSR/PEG) 밸류에이션."""
-    from dartlab.analysis.valuation.valuation import relativeValuation
+    from dartlab.core.finance.dcf import relativeValuation
 
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
@@ -238,10 +274,6 @@ def calcRelativeValuation(company: Any) -> dict | None:
 
 def calcResidualIncome(company: Any) -> dict | None:
     """RIM (잔여이익모델) 밸류에이션."""
-    from dartlab.analysis.valuation.residualIncome import (
-        calcResidualIncome as _rimCalc,
-    )
-
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
     price = _fetchPriceContext(company)
@@ -273,8 +305,6 @@ def calcResidualIncome(company: Any) -> dict | None:
 
 def calcPriceTarget(company: Any) -> dict | None:
     """확률 가중 주가 목표가 (5 시나리오 + Monte Carlo)."""
-    from dartlab.analysis.valuation.pricetarget import compute_price_target
-
     series, shares, currency = _getSeriesAndShares(company)
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
@@ -317,7 +347,7 @@ def calcPriceTarget(company: Any) -> dict | None:
 
 def calcReverseImplied(company: Any) -> dict | None:
     """역내재성장률 -- 시장이 내재하는 매출 성장률 역산."""
-    from dartlab.analysis.valuation.priceImplied import reverseImpliedGrowth
+    from dartlab.core.finance.priceImplied import reverseImpliedGrowth
 
     series, shares, currency = _getSeriesAndShares(company)
     price = _fetchPriceContext(company)
@@ -344,7 +374,7 @@ def calcReverseImplied(company: Any) -> dict | None:
 
 def calcSensitivity(company: Any) -> dict | None:
     """WACC x 영구성장률 민감도 그리드."""
-    from dartlab.analysis.valuation.valuation import sensitivityAnalysis
+    from dartlab.core.finance.dcf import sensitivityAnalysis
 
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
@@ -422,9 +452,12 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
 
 def calcValuationSynthesis(company: Any) -> dict | None:
     """종합 밸류에이션 -- 기업 유형별 자동 모델 선택 + 가중 합성."""
-    from dartlab.analysis.valuation.valuation import fullValuation
+    from dartlab.core.finance.dcf import fullValuation
 
     series, shares, currency = _getSeriesAndShares(company)
+    if series is None:
+        return None
+
     sp = _getSectorParams(company)
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
@@ -441,19 +474,21 @@ def calcValuationSynthesis(company: Any) -> dict | None:
         currency=currency,
     )
 
+    # 극단값 필터: 현재가 2% 미만 결과는 무의미 → 제외
+    _minVal = currentPrice * 0.02 if currentPrice and currentPrice > 0 else 0
+
     estimates: list[dict] = []
-    if result.dcf and result.dcf.perShareValue and result.dcf.perShareValue > 0:
+    if result.dcf and result.dcf.perShareValue and result.dcf.perShareValue > _minVal:
         estimates.append({"method": "DCF", "value": result.dcf.perShareValue, "weight": weights.get("DCF", 0)})
-    if result.ddm and result.ddm.intrinsicValue and result.ddm.intrinsicValue > 0:
+    if result.ddm and result.ddm.intrinsicValue and result.ddm.intrinsicValue > _minVal:
         estimates.append({"method": "DDM", "value": result.ddm.intrinsicValue, "weight": weights.get("DDM", 0)})
-    if result.relative and result.relative.consensusValue and result.relative.consensusValue > 0:
+    if result.relative and result.relative.consensusValue and result.relative.consensusValue > _minVal:
         estimates.append({"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)})
 
     # RIM 결과도 합성에 포함
-    from dartlab.analysis.valuation.residualIncome import calcResidualIncome as _rimCalc
     beta = sp.beta if sp else None
     rimResult = _rimCalc(series, shares=shares, currentPrice=currentPrice, currency=currency, beta=beta)
-    if rimResult and rimResult.intrinsicValue and rimResult.intrinsicValue > 0:
+    if rimResult and rimResult.intrinsicValue and rimResult.intrinsicValue > _minVal:
         estimates.append({"method": "RIM", "value": rimResult.intrinsicValue, "weight": weights.get("RIM", 0)})
 
     # 가중 합성 적정가
@@ -466,6 +501,16 @@ def calcValuationSynthesis(company: Any) -> dict | None:
             weightedFairValue = sum(e["value"] * e["weight"] * normFactor for e in estimates)
             weightedFairValue = round(weightedFairValue, 0)
 
+    # 역내재성장률 — 모든 모델 실패 시 시장 기대 역산으로 보충
+    reverseImplied = None
+    if not estimates or weightedFairValue is None:
+        ri = calcReverseImplied(company)
+        if ri:
+            reverseImplied = {
+                "impliedGrowthRate": ri.get("impliedGrowthRate"),
+                "signal": ri.get("signal"),
+            }
+
     return {
         "fairValueRange": result.fairValueRange,
         "verdict": result.verdict,
@@ -475,6 +520,7 @@ def calcValuationSynthesis(company: Any) -> dict | None:
         "weightedFairValue": weightedFairValue,
         "modelWeights": weights,
         "currency": currency,
+        "reverseImplied": reverseImplied,
     }
 
 

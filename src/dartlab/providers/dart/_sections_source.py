@@ -36,6 +36,10 @@ class _SectionsSource:
     def frame(self) -> pl.DataFrame | None:
         return self.raw
 
+    def forTopics(self, topics: set[str]) -> pl.DataFrame | None:
+        """특정 topic만 포함하는 부분 sections."""
+        return self._company._get_primary("sections", topics=frozenset(topics))
+
     def topics(self) -> list[str]:
         return self._company._docsSectionTopics()
 

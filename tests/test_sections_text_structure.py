@@ -13,6 +13,7 @@ from dartlab.providers.dart.docs.sections import (
     reorderPeriodColumns,
     textStructure,
 )
+from dartlab.providers.dart.docs.sections import analysis as _analysis
 from dartlab.providers.dart.docs.sections.textStructure import parseTextStructure, parseTextStructureWithState
 
 SAMSUNG = "005930"
@@ -544,7 +545,7 @@ def test_sections_semantic_registry_tracks_raw_path_variants(monkeypatch):
     df = pipeline.sections("TEST")
     assert df is not None
 
-    registry = pipeline.semanticRegistry(df, topic="mdna")
+    registry = _analysis.semanticRegistry(df, topic="mdna")
     body = registry.filter(
         (pl.col("textNodeType") == "body") & (pl.col("textSemanticPathKey") == "@topic:mdna > 조직변경")
     )
@@ -553,7 +554,7 @@ def test_sections_semantic_registry_tracks_raw_path_variants(monkeypatch):
     assert set(body.item(0, "rawPaths")) == {"@topic:mdna > 조직개편", "@topic:mdna > 조직의변경"}
     assert body.item(0, "hasCollision") is True
 
-    collisions = pipeline.semanticCollisions(df, topic="mdna")
+    collisions = _analysis.semanticCollisions(df, topic="mdna")
     assert collisions.filter(pl.col("textSemanticPathKey") == "@topic:mdna > 조직변경").height == 2
 
 
@@ -686,7 +687,7 @@ def test_sections_do_not_merge_distinct_business_unit_segments(monkeypatch):
     assert first["2024"] is None or first["2025"] is None
     assert second["2024"] is None or second["2025"] is None
 
-    collisions = pipeline.structureCollisions(df, topic="businessOverview")
+    collisions = _analysis.structureCollisions(df, topic="businessOverview")
     assert collisions.height >= 1
     target = collisions.filter(pl.col("textComparablePathKey") == first["textComparablePathKey"])
     assert target.height >= 1
@@ -755,7 +756,7 @@ def test_structure_registry_distinguishes_variant_split_merge_and_parallel():
         }
     )
 
-    registry = pipeline.structureRegistry(df, topic="businessOverview")
+    registry = _analysis.structureRegistry(df, topic="businessOverview")
 
     variant = registry.filter(pl.col("textComparablePathKey") == "매출")
     assert variant.height == 1
@@ -784,7 +785,7 @@ def test_structure_registry_distinguishes_variant_split_merge_and_parallel():
     assert parallelRow["activePathCounts"] == [2, 2]
     assert parallelRow["multiPathPeriods"] == ["2024", "2025"]
 
-    bodyOnly = pipeline.structureRegistry(df, topic="businessOverview", nodeType="body")
+    bodyOnly = _analysis.structureRegistry(df, topic="businessOverview", nodeType="body")
     assert bodyOnly.height == registry.height
     assert set(bodyOnly["textNodeType"].unique().to_list()) == {"body"}
 
@@ -817,7 +818,7 @@ def test_structure_registry_marks_same_leaf_multi_parent_concurrency_as_parallel
         }
     )
 
-    registry = pipeline.structureRegistry(df, topic="businessOverview", nodeType="body")
+    registry = _analysis.structureRegistry(df, topic="businessOverview", nodeType="body")
     assert registry.height == 1
     row = registry.row(0, named=True)
     assert row["structurePattern"] == "parallel"
@@ -883,7 +884,7 @@ def test_structure_events_capture_transition_types():
         }
     )
 
-    events = pipeline.structureEvents(df, topic="businessOverview")
+    events = _analysis.structureEvents(df, topic="businessOverview")
     assert events.height == 3
 
     variant = events.filter(pl.col("textComparablePathKey") == "매출").row(0, named=True)
@@ -908,7 +909,7 @@ def test_structure_events_capture_transition_types():
     assert merge["toPathCount"] == 1
     assert merge["removedPaths"] == ["생산및설비 > 가동률"]
 
-    bodyOnly = pipeline.structureEvents(df, topic="businessOverview", nodeType="body")
+    bodyOnly = _analysis.structureEvents(df, topic="businessOverview", nodeType="body")
     assert bodyOnly.height == events.height
     assert set(bodyOnly["textNodeType"].unique().to_list()) == {"body"}
 
@@ -964,7 +965,7 @@ def test_structure_events_capture_reassigned_transition(monkeypatch):
     df = pipeline.sections("TEST")
     assert df is not None
 
-    events = pipeline.structureEvents(df, topic="businessOverview")
+    events = _analysis.structureEvents(df, topic="businessOverview")
     target = events.filter(
         (pl.col("textComparablePathKey") == "@topic:businessOverview > 사업부문현황")
         & (pl.col("textNodeType") == "body")
@@ -978,7 +979,7 @@ def test_structure_events_capture_reassigned_transition(monkeypatch):
     assert row["addedPaths"] == ["@topic:businessOverview > 사업부문현황 > CE부문"]
     assert row["removedPaths"] == ["@topic:businessOverview > 사업부문현황 > DX부문"]
 
-    bodyOnly = pipeline.structureEvents(df, topic="businessOverview", nodeType="body")
+    bodyOnly = _analysis.structureEvents(df, topic="businessOverview", nodeType="body")
     assert bodyOnly.height == 1
     assert bodyOnly.item(0, "eventType") == "reassigned"
 
@@ -1005,7 +1006,7 @@ def test_structure_events_do_not_compare_cross_freq_transitions():
         }
     )
 
-    events = pipeline.structureEvents(df, topic="businessOverview")
+    events = _analysis.structureEvents(df, topic="businessOverview")
     assert events.height == 0
 
 
@@ -1033,7 +1034,7 @@ def test_structure_helpers_respect_requested_freq_lane_on_mixed_rows():
         }
     )
 
-    quarterlySummary = pipeline.structureSummary(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
+    quarterlySummary = _analysis.structureSummary(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
     assert quarterlySummary.height == 1
     quarterlyRow = quarterlySummary.row(0, named=True)
     assert quarterlyRow["latestPeriod"] == "2024Q1"
@@ -1042,13 +1043,13 @@ def test_structure_helpers_respect_requested_freq_lane_on_mixed_rows():
     assert quarterlyRow["latestEventType"] == "variant"
     assert quarterlyRow["latestEventLane"] == "q1"
 
-    quarterlyEvents = pipeline.structureEvents(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
+    quarterlyEvents = _analysis.structureEvents(df, topic="businessOverview", freqScope="quarterly", nodeType="body")
     assert quarterlyEvents.height == 1
     assert quarterlyEvents.item(0, "periodLane") == "q1"
     assert quarterlyEvents.item(0, "fromPeriod") == "2023Q1"
     assert quarterlyEvents.item(0, "toPeriod") == "2024Q1"
 
-    annualSummary = pipeline.structureSummary(df, topic="businessOverview", freqScope="annual", nodeType="body")
+    annualSummary = _analysis.structureSummary(df, topic="businessOverview", freqScope="annual", nodeType="body")
     assert annualSummary.height == 1
     annualRow = annualSummary.row(0, named=True)
     assert annualRow["latestPeriod"] == "2024"
@@ -1114,7 +1115,7 @@ def test_structure_summary_combines_registry_and_latest_event():
         }
     )
 
-    summary = pipeline.structureSummary(df, topic="businessOverview", nodeType="body")
+    summary = _analysis.structureSummary(df, topic="businessOverview", nodeType="body")
     assert summary.height == 4
 
     variant = summary.filter(pl.col("textComparablePathKey") == "매출").row(0, named=True)
@@ -1207,7 +1208,7 @@ def test_structure_changes_focuses_latest_changed_rows():
         }
     )
 
-    changes = pipeline.structureChanges(df, topic="businessOverview", nodeType="body")
+    changes = _analysis.structureChanges(df, topic="businessOverview", nodeType="body")
     assert changes.height == 3
     assert changes["textComparablePathKey"].to_list() == [
         "매출 > 판매경로및판매방법",
@@ -1218,7 +1219,7 @@ def test_structure_changes_focuses_latest_changed_rows():
     assert changes["anchorPeriod"].to_list() == ["2025", "2025", "2025"]
     assert changes["latestEventType"].to_list() == ["split", "merge", "variant"]
 
-    allLatest = pipeline.structureChanges(df, topic="businessOverview", nodeType="body", changedOnly=False)
+    allLatest = _analysis.structureChanges(df, topic="businessOverview", nodeType="body", changedOnly=False)
     assert allLatest.height == 5
     assert allLatest["textComparablePathKey"].to_list() == [
         "매출 > 판매경로및판매방법",
@@ -1327,12 +1328,12 @@ def test_sections_adds_freq_scope_metadata(monkeypatch):
     assert quarter_body.item(0, "latestAnnualPeriod") is None
     assert quarter_body.item(0, "latestQuarterlyPeriod") == "2024Q1"
 
-    annualView = pipeline.projectFreqRows(df, freqScope="annual")
+    annualView = _analysis.projectFreqRows(df, freqScope="annual")
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 공통항목").height == 2
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 연간항목").height == 2
     assert annualView.filter(pl.col("textPathKey") == "@topic:businessOverview > 분기항목").height == 0
 
-    quarterlyView = pipeline.projectFreqRows(df, freqScope="quarterly")
+    quarterlyView = _analysis.projectFreqRows(df, freqScope="quarterly")
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 공통항목").height == 2
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 연간항목").height == 0
     assert quarterlyView.filter(pl.col("textPathKey") == "@topic:businessOverview > 분기항목").height == 2

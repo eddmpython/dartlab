@@ -11,6 +11,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
+from dartlab.analysis.forecast.revenueForecast import CompanyDataBundle, forecastRevenue
+from dartlab.analysis.forecast.simulation import simulateAllScenarios
+
 log = logging.getLogger(__name__)
 
 
@@ -31,8 +35,6 @@ def _getSeriesAndMeta(company: Any) -> tuple[dict, str | None, str | None, str, 
     try:
         sectorInfo = company.sector
         if sectorInfo is not None:
-            from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
-
             igName = sectorInfo.industryGroup.name
             sectorKey = _IG_TO_SECTOR_KEY.get(igName)
     except (AttributeError, ValueError):
@@ -61,8 +63,6 @@ def _getSectorParams(company: Any):
 
 def _buildCompanyDataBundle(company: Any):
     """segments, salesOrder → CompanyDataBundle 조립. 없으면 None."""
-    from dartlab.analysis.forecast.revenueForecast import CompanyDataBundle
-
     segmentRevenue = None
     salesDf = None
     orderDf = None
@@ -105,8 +105,6 @@ def _runForecastRevenue(company: Any):
     _KEY = "_forecastRevenueResult"
     if cache is not None and _KEY in cache:
         return cache[_KEY]
-
-    from dartlab.analysis.forecast.revenueForecast import forecastRevenue
 
     series, stockCode, sectorKey, market, currency = _getSeriesAndMeta(company)
 
@@ -213,7 +211,7 @@ def calcProFormaHighlights(company: Any) -> dict | None:
     if not growthPath:
         return None
 
-    from dartlab.analysis.forecast.proforma import build_proforma
+    from dartlab.core.finance.proforma import build_proforma
 
     try:
         pf = build_proforma(
@@ -257,8 +255,6 @@ def calcScenarioImpact(company: Any) -> dict | None:
     series, _, sectorKey, _, currency = _getSeriesAndMeta(company)
     shares = _getShares(company)
     sp = _getSectorParams(company)
-
-    from dartlab.analysis.forecast.simulation import simulateAllScenarios
 
     try:
         results = simulateAllScenarios(
@@ -313,7 +309,7 @@ def calcHistoricalRatios(company: Any) -> dict | None:
     """Pro-Forma 기반 과거 구조 비율."""
     series, _, _, _, _ = _getSeriesAndMeta(company)
 
-    from dartlab.analysis.forecast.proforma import extract_historical_ratios
+    from dartlab.core.finance.proforma import extract_historical_ratios
 
     try:
         ratios = extract_historical_ratios(series)

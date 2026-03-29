@@ -44,7 +44,7 @@ def _yoy(cur, prev) -> float | None:
 def _estimateWacc(company) -> float | None:
     """company에서 WACC 추정 (compute_company_wacc 래퍼)."""
     try:
-        from dartlab.analysis.forecast.proforma import compute_company_wacc
+        from dartlab.core.finance.proforma import compute_company_wacc
 
         annual = company.finance.annual
         if annual is None:

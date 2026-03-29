@@ -2058,7 +2058,18 @@ class Company:
                 result = self._cleanFinanceDataFrame(result, topic)
             return result if isinstance(result, pl.DataFrame) else None
 
-        sec = self.sections
+        # 전체 sections 캐시가 있으면 재사용, 없으면 해당 topic만 부분 빌드
+        if "_sections" in self._cache:
+            sec = self._cache["_sections"]
+        else:
+            docsSections = self.docs.sections
+            if docsSections is not None:
+                partialDocs = docsSections.forTopics({topic})
+                if partialDocs is not None and "source" not in partialDocs.columns:
+                    partialDocs = partialDocs.with_columns(pl.lit("docs").alias("source"))
+                sec = partialDocs
+            else:
+                sec = None
         if sec is None:
             return self._showDirectTopic(topic, period=period, raw=raw) if block in (None, 0) else None
 

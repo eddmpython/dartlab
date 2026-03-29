@@ -20,7 +20,23 @@ from .synthesizer import synthesize
 from .types import AnalystReport, ValuationMethod
 
 if TYPE_CHECKING:
-    pass
+    from dartlab.analysis.forecast.forecast import (
+        ForecastResult,
+        ScenarioResult,
+        SensitivityResult,
+    )
+    from dartlab.analysis.forecast.revenueForecast import RevenueForecastResult
+    from dartlab.analysis.forecast.simulation import (
+        MonteCarloResult,
+        SimulationResult,
+        StressTestResult,
+    )
+    from dartlab.analysis.valuation.valuation import (
+        DCFResult,
+        DDMResult,
+        RelativeValuationResult,
+        ValuationSummary,
+    )
 
 log = logging.getLogger(__name__)
 
@@ -165,39 +181,6 @@ def _extract_from_company(
     return stock_code, company_name, shares, financials or None
 
 
-from dartlab.analysis.forecast.forecast import (
-    ForecastResult,
-    ScenarioResult,
-    SensitivityResult,
-    forecastAll,
-    forecastMetric,
-    scenarioAnalysis,
-    sensitivityAnalysis,
-)
-from dartlab.analysis.forecast.revenueForecast import (
-    RevenueForecastResult,
-    forecastRevenue,
-)
-from dartlab.analysis.forecast.simulation import (
-    MonteCarloResult,
-    SimulationResult,
-    StressTestResult,
-    monteCarloForecast,
-    simulateAllScenarios,
-    simulateScenario,
-    stressTest,
-)
-from dartlab.analysis.valuation.valuation import (
-    DCFResult,
-    DDMResult,
-    RelativeValuationResult,
-    ValuationSummary,
-    dcfValuation,
-    ddmValuation,
-    fullValuation,
-    relativeValuation,
-)
-
 __all__ = [
     "Analyst",
     "AnalystReport",
@@ -231,3 +214,43 @@ __all__ = [
     "RevenueForecastResult",
     "forecastRevenue",
 ]
+
+
+# ── lazy re-export (순환 의존 방지) ──
+
+_LAZY_MAP: dict[str, tuple[str, str]] = {
+    "ForecastResult": ("dartlab.analysis.forecast.forecast", "ForecastResult"),
+    "ScenarioResult": ("dartlab.analysis.forecast.forecast", "ScenarioResult"),
+    "SensitivityResult": ("dartlab.analysis.forecast.forecast", "SensitivityResult"),
+    "forecastMetric": ("dartlab.analysis.forecast.forecast", "forecastMetric"),
+    "forecastAll": ("dartlab.analysis.forecast.forecast", "forecastAll"),
+    "scenarioAnalysis": ("dartlab.analysis.forecast.forecast", "scenarioAnalysis"),
+    "sensitivityAnalysis": ("dartlab.analysis.forecast.forecast", "sensitivityAnalysis"),
+    "RevenueForecastResult": ("dartlab.analysis.forecast.revenueForecast", "RevenueForecastResult"),
+    "forecastRevenue": ("dartlab.analysis.forecast.revenueForecast", "forecastRevenue"),
+    "SimulationResult": ("dartlab.analysis.forecast.simulation", "SimulationResult"),
+    "MonteCarloResult": ("dartlab.analysis.forecast.simulation", "MonteCarloResult"),
+    "StressTestResult": ("dartlab.analysis.forecast.simulation", "StressTestResult"),
+    "simulateScenario": ("dartlab.analysis.forecast.simulation", "simulateScenario"),
+    "simulateAllScenarios": ("dartlab.analysis.forecast.simulation", "simulateAllScenarios"),
+    "monteCarloForecast": ("dartlab.analysis.forecast.simulation", "monteCarloForecast"),
+    "stressTest": ("dartlab.analysis.forecast.simulation", "stressTest"),
+    "DCFResult": ("dartlab.core.finance.dcf", "DCFResult"),
+    "DDMResult": ("dartlab.core.finance.dcf", "DDMResult"),
+    "RelativeValuationResult": ("dartlab.core.finance.dcf", "RelativeValuationResult"),
+    "ValuationSummary": ("dartlab.core.finance.dcf", "ValuationSummary"),
+    "dcfValuation": ("dartlab.core.finance.dcf", "dcfValuation"),
+    "ddmValuation": ("dartlab.core.finance.dcf", "ddmValuation"),
+    "fullValuation": ("dartlab.core.finance.dcf", "fullValuation"),
+    "relativeValuation": ("dartlab.core.finance.dcf", "relativeValuation"),
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_MAP:
+        import importlib
+
+        modPath, attr = _LAZY_MAP[name]
+        mod = importlib.import_module(modPath)
+        return getattr(mod, attr)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

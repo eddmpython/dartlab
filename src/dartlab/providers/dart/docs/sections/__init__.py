@@ -14,9 +14,8 @@ from dartlab.providers.dart.docs.sections.extractors import (
     parseSubtopicTable,
     topicSubtables,
 )
-from dartlab.providers.dart.docs.sections.pipeline import (
+from dartlab.providers.dart.docs.sections.analysis import (
     projectFreqRows,
-    sections,
     semanticCollisions,
     semanticRegistry,
     structureChanges,
@@ -24,6 +23,9 @@ from dartlab.providers.dart.docs.sections.pipeline import (
     structureEvents,
     structureRegistry,
     structureSummary,
+)
+from dartlab.providers.dart.docs.sections.pipeline import (
+    sections,
 )
 from dartlab.providers.dart.docs.sections.types import (
     SectionChunk,
