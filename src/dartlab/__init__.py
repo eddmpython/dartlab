@@ -33,14 +33,26 @@ def search(keyword: str):
         - 영문 입력 시 EDGAR 종목 검색 (ticker, 회사명)
         - 부분 일치, 초성 검색 지원 (KR)
 
+    Requires:
+        데이터: listing (자동 다운로드)
+
+    AIContext:
+        종목코드를 모를 때 사용. 결과에서 종목코드 확인 후 Company 생성.
+
+    Guide:
+        - "삼성전자 종목코드 뭐야?" -> search("삼성전자")로 종목코드 확인
+        - "애플 티커?" -> search("AAPL")로 EDGAR 종목 검색
+        - API 키 불필요. listing 데이터만으로 동작.
+
+    SeeAlso:
+        - Company: 종목코드 확인 후 Company 생성하여 상세 분석
+        - listing: 전체 상장법인 목록 조회
+
     Args:
         keyword: 종목명, 종목코드, 또는 ticker. 한글이면 KR, 영문이면 US 자동 감지.
 
     Returns:
         pl.DataFrame — 검색 결과 (code, name, market 등).
-
-    Requires:
-        데이터: listing (자동 다운로드)
 
     Example::
 
@@ -68,14 +80,26 @@ def listing(market: str | None = None):
         - 종목코드, 종목명, 시장구분, 업종 포함
         - US listing은 향후 지원 예정
 
+    Requires:
+        데이터: listing (자동 다운로드)
+
+    AIContext:
+        전종목 대상 필터링/통계에 사용. scan()과 조합하여 시장 전체 분석.
+
+    Guide:
+        - "상장된 회사 몇 개야?" -> listing()으로 전체 목록 조회 후 개수
+        - "코스닥 회사 목록?" -> listing()에서 market 필터
+        - API 키 불필요.
+
+    SeeAlso:
+        - search: 키워드로 특정 종목 검색
+        - scan: 전종목 횡단 비교 분석
+
     Args:
         market: "KR" 또는 "US". None이면 KR 기본.
 
     Returns:
         pl.DataFrame — 전체 상장법인 (code, name, market, sector 등).
-
-    Requires:
-        데이터: listing (자동 다운로드)
 
     Example::
 
@@ -106,6 +130,21 @@ def collect(
         - 증분 수집 — 이미 있는 데이터는 건너뜀
         - 카테고리별 선택 수집
 
+    Requires:
+        API 키: DART_API_KEY
+
+    AIContext:
+        사용자가 특정 종목의 최신 데이터를 직접 수집할 때 사용.
+
+    Guide:
+        - "데이터 수집해줘" -> DART_API_KEY 필요. dartlab.setup("dart-key", "YOUR_KEY")로 설정 안내
+        - "삼성전자 재무 데이터 수집" -> collect("005930", categories=["finance"])
+        - 보안: 키는 로컬 .env에만 저장, 외부 전송 절대 없음
+
+    SeeAlso:
+        - Company: 수집된 데이터로 Company 생성하여 분석
+        - search: 종목코드 모를 때 먼저 검색
+
     Args:
         *codes: 종목코드 1개 이상 ("005930", "000660").
         categories: 수집 카테고리 ["finance", "docs", "report"]. None이면 전체.
@@ -113,9 +152,6 @@ def collect(
 
     Returns:
         dict — {종목코드: {카테고리: 수집 건수}}.
-
-    Requires:
-        API 키: DART_API_KEY
 
     Example::
 
@@ -143,6 +179,18 @@ def collectAll(
         - 멀티키 병렬 수집 (DART_API_KEYS 쉼표 구분)
         - 카테고리별 선택 (finance, docs, report)
 
+    Requires:
+        API 키: DART_API_KEY
+
+    Guide:
+        - "전종목 데이터 수집" -> collectAll() 안내. DART_API_KEY 필요
+        - "재무 데이터만 수집" -> collectAll(categories=["finance"])
+        - 보안: 키는 로컬 .env에만 저장, 외부 전송 절대 없음
+
+    SeeAlso:
+        - collect: 특정 종목만 수집
+        - downloadAll: HuggingFace 사전구축 데이터 (API 키 불필요, 더 빠름)
+
     Args:
         categories: 수집 카테고리 ["finance", "docs", "report"]. None이면 전체.
         mode: "new" (미수집만, 기본) 또는 "all" (전체 재수집).
@@ -151,9 +199,6 @@ def collectAll(
 
     Returns:
         dict — {종목코드: {카테고리: 수집 건수}}.
-
-    Requires:
-        API 키: DART_API_KEY
 
     Example::
 
@@ -181,15 +226,24 @@ def downloadAll(category: str = "finance", *, forceUpdate: bool = False) -> None
         - 이어받기/병렬 다운로드 지원 (huggingface_hub)
         - 전사 분석(scanAccount, governance, digest 등)에 필요한 데이터 사전 준비
 
+    Requires:
+        없음 (HuggingFace 공개 데이터셋)
+
+    Guide:
+        - "데이터 어떻게 받아?" -> downloadAll("finance") 안내. API 키 불필요
+        - "scan 쓰려면?" -> downloadAll("finance") + downloadAll("report") 필요
+        - finance 먼저 (600MB), report 다음 (320MB), docs는 대용량 주의 (8GB)
+
+    SeeAlso:
+        - scan: 다운로드된 데이터로 전종목 비교
+        - collect: DART API로 직접 수집 (최신 데이터, API 키 필요)
+
     Args:
         category: "finance" (재무 ~600MB), "docs" (공시 ~8GB), "report" (보고서 ~320MB).
         forceUpdate: True면 이미 있는 파일도 최신으로 갱신.
 
     Returns:
         None.
-
-    Requires:
-        없음 (HuggingFace 공개 데이터셋)
 
     Example::
 
@@ -510,13 +564,25 @@ def ask(
         - 데이터 모듈 include/exclude로 분석 범위 제어
         - 자체 검증 (reflect=True)
 
+    Requires:
+        AI: provider 설정 (dartlab.setup() 참조)
+
     AIContext:
         - 재무비율, 추세, 동종업계 비교를 자동 계산하여 LLM에 제공
         - sections 서술형 데이터 + finance 숫자 데이터 동시 주입
         - tool calling provider에서는 LLM이 추가 데이터 자율 탐색
 
-    Requires:
-        AI: provider 설정 (dartlab.setup() 참조)
+    Guide:
+        - "삼성전자 분석해줘" -> ask("삼성전자 재무건전성 분석해줘")
+        - "이 회사 괜찮아?" -> ask("종목코드", "이 회사 투자해도 괜찮아?")
+        - "AI 설정 어떻게 해?" -> dartlab.setup()으로 provider/키 설정 안내
+        - provider 미설정 시 자동 감지. 설정 방법: dartlab.llm.configure(provider="openai", api_key="sk-...")
+        - 보안: API 키는 로컬 .env에만 저장, 외부 전송 절대 없음
+
+    SeeAlso:
+        - chat: 대화형 연속 분석 (멀티턴)
+        - Company: 프로그래밍 방식 데이터 접근
+        - scan: 전종목 비교 (ask보다 직접적)
 
     Args:
         *args: 자연어 질문 (1개) 또는 (종목, 질문) 2개.
@@ -649,12 +715,21 @@ def chat(
         - 최대 N회 도구 호출 반복 (multi-turn)
         - 도구 호출/결과 콜백으로 UI 연동
 
+    Requires:
+        AI: provider 설정 (tool calling 지원 provider 권장)
+
     AIContext:
         - ask()와 동일한 기본 컨텍스트 + 저수준 도구 접근
         - LLM이 부족하다 판단하면 추가 데이터 자율 수집
 
-    Requires:
-        AI: provider 설정 (tool calling 지원 provider 권장)
+    Guide:
+        - "깊게 분석해줘" -> chat()으로 에이전트 모드 실행
+        - "배당 이상치 찾아줘" -> chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+        - ask()보다 심화 분석이 필요할 때 사용. LLM이 자율적으로 도구 호출
+
+    SeeAlso:
+        - ask: 단일 질문 (간단한 분석)
+        - Company: 프로그래밍 방식 직접 접근
 
     Args:
         codeOrName: 종목코드, 회사명, 또는 US ticker.
@@ -662,6 +737,9 @@ def chat(
         provider: LLM provider.
         model: 모델 override.
         max_turns: 최대 도구 호출 반복 횟수.
+
+    Returns:
+        str: 최종 답변 텍스트.
 
     Example::
 

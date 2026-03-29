@@ -203,23 +203,41 @@ class Scan:
     """시장 전체 횡단분석 — 13축, 전부 Polars DataFrame.
 
     Capabilities:
-        - governance: 최대주주 지분, 사외이사, 감사위원회
+        - governance: 최대주주 지분, 사외이사, 감사위원회 종합 등급
         - workforce: 임직원 수, 평균급여, 근속연수
         - capital: 배당수익률, 배당성향, 자사주
-        - debt: 부채비율, 차입금 의존도, 이자보상
+        - debt: 사채만기, 부채비율, ICR, 위험등급
         - account: 전종목 단일 계정 시계열 (매출액, 영업이익 등)
-        - ratio: 전종목 단일 재무비율 시계열 (ROE, 영업이익률 등)
-        - screen: 재무 조건 스크리닝
-        - peer: 동종업계 피어 그룹
-        - audit: 감사의견, 감사인 변경
-        - insider: 최대주주 변동, 자기주식
-        - network: 기업 관계 네트워크
-        - watch: 공시 변화 모니터링
-        - digest: 시장 전체 변화 다이제스트
+        - ratio: 전종목 단일 재무비율 시계열 (ROE, 부채비율 등)
+        - cashflow: OCF/ICF/FCF + 현금흐름 패턴 분류
+        - audit: 감사의견, 감사인변경, 특기사항
+        - insider: 최대주주 지분변동, 자기주식, 경영권 안정성
+        - quality: Accrual Ratio + CF/NI — 이익의 현금 뒷받침
+        - liquidity: 유동비율 + 당좌비율 — 단기 지급능력
+        - digest: 시장 전체 공시 변화 다이제스트
+        - network: 상장사 관계 네트워크 (출자/지분/계열)
+
+    Requires:
+        데이터: 축별로 다름 (dartlab.downloadAll() 참조)
+        - governance/workforce/capital/debt/audit/insider: report
+        - account/ratio: finance
+        - network/digest: docs
 
     AIContext:
-        - ask()/chat()에서 시장 전체 데이터를 컨텍스트로 주입
-        - 종목간 비교 분석의 데이터 소스
+        시장 전체 비교/순위 질문에 사용. 개별 종목 분석은 Company 메서드 사용.
+
+    Guide:
+        - "다른 회사랑 비교 가능해?" -> scan("account") 또는 scan("ratio") 안내
+        - "거버넌스 좋은 회사?" -> scan("governance")로 등급 A 필터
+        - "배당 많이 주는 회사?" -> scan("capital")로 배당수익률 정렬
+        - "ROE 높은 회사?" -> scan("ratio", "roe")로 전종목 비교
+        - "삼성전자랑 SK하이닉스 비교" -> scan("account", "sales", code="005930,000660")
+        - API 키 불필요. 사전 다운로드 데이터만으로 동작.
+
+    SeeAlso:
+        - analysis: 개별 종목 14축 전략분석
+        - Company.insights: 단일 종목 7영역 종합 분석
+        - gather: 주가/수급 데이터 (모멘텀 보완)
 
     Args:
         axis: 축 이름. None이면 13축 가이드 반환.
@@ -228,12 +246,6 @@ class Scan:
 
     Returns:
         pl.DataFrame — 전종목 횡단 데이터. axis=None이면 13축 가이드 DataFrame.
-
-    Requires:
-        데이터: 축별로 다름 (dartlab.downloadAll() 참조)
-        - governance/workforce/capital/debt/audit/insider: report
-        - account/ratio/screen: finance
-        - network/watch/digest: docs
 
     Example::
 

@@ -86,6 +86,19 @@ class GatherEntry:
         - ask()/chat()에서 주가/수급/거시 데이터를 컨텍스트로 주입 가능
         - 기업 분석 시 시장 데이터 보충 자료로 활용
 
+    Guide:
+        - "주가 추이 보여줘" -> gather("price", "005930")
+        - "외국인 매매 동향" -> gather("flow", "005930")
+        - "금리 추이 알려줘" -> gather("macro", "BASE_RATE") 또는 gather("macro", "FEDFUNDS")
+        - "최근 뉴스 찾아줘" -> gather("news", "삼성전자")
+        - "미국 거시지표 전체" -> gather("macro", market="US") 또는 gather("US")
+        - 주가+수급은 scan과 다름. scan은 재무 기반 횡단, gather는 시장 실시간.
+
+    SeeAlso:
+        - scan: 재무 기반 전종목 횡단분석 (거버넌스, 현금흐름 등)
+        - Company: 개별 종목 공시/재무 데이터
+        - analysis: 14축 전략분석 (재무비율, 수익구조 등)
+
     Args:
         axis: 축 이름 ("price", "flow", "macro", "news"). None이면 가이드 반환.
         target: 종목코드/지표코드/검색어. 축별로 다름.

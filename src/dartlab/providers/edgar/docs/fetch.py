@@ -374,7 +374,7 @@ class _FilingTimeout:
             self._timer.start()
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(self, _exc_type, exc, tb):
         if self.seconds > 0:
             if _HAS_SIGALRM:
                 signal.alarm(0)
@@ -388,7 +388,7 @@ class _FilingTimeout:
         self.timedOut = True
 
     @staticmethod
-    def _handle(signum, frame):
+    def _handle(_signum, frame):
         raise TimeoutError("filing fetch timed out")
 
 

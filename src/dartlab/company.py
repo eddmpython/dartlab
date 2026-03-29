@@ -35,9 +35,56 @@ def _discover() -> None:
 def Company(codeOrName: str) -> CompanyProtocol:
     """종목코드/회사명/ticker → 적절한 Company 인스턴스 생성.
 
-    각 provider의 canHandle()을 priority 순으로 시도하여
-    첫 번째 매칭되는 provider로 인스턴스를 생성한다.
-    새 국가 추가 시 이 파일 수정 불필요 — provider 패키지만 추가하면 됨.
+    Capabilities:
+        - 종목코드 ("005930"), 회사명 ("삼성전자"), 영문 ticker ("AAPL") 모두 지원
+        - canHandle() 체인: provider priority 순 자동 라우팅 (DART → EDGAR)
+        - 새 국가 추가 시 이 파일 수정 불필요 — provider 패키지만 추가
+        - 핵심 인터페이스: show(topic) / index / trace(topic) / diff()
+        - namespace: docs (원문) / finance (숫자) / report (정형공시) / profile (merge)
+        - 바로가기: BS/IS/CF/CIS, ratios, ratioSeries, timeseries
+        - 메타: sections, topics, filings(), insights, market, currency
+
+    Requires:
+        DART: 사전 다운로드 데이터 (dartlab.downloadAll() 또는 자동 다운로드).
+        EDGAR: 인터넷 연결 (On-demand 수집).
+
+    AIContext:
+        개별 종목 분석의 시작점. explore/finance/analysis 수퍼툴이 이 객체를 소비.
+        "삼성전자 분석해줘" → Company("005930") 생성 → briefing → LLM 해석.
+
+    Guide:
+        - "삼성전자 재무제표" -> c = Company("005930"); c.IS
+        - "사업 개요 보여줘" -> c.show("businessOverview")
+        - "어떤 데이터 있어?" -> c.index 또는 c.topics
+        - "출처 추적" -> c.trace("revenue")
+        - "기간 변화" -> c.diff()
+        - "인사이트 등급" -> c.insights
+        - "리뷰 보고서" -> c.review()
+        - "Apple 분석" -> Company("AAPL") (자동 EDGAR 라우팅)
+
+    SeeAlso:
+        - search: 종목 검색 (종목코드 모를 때)
+        - scan: 전종목 횡단분석 (기업 비교)
+        - analysis: 14축 전략분석
+        - gather: 주가/수급/거시 데이터
+
+    Args:
+        codeOrName: 종목코드, 회사명, 또는 영문 ticker.
+
+    Returns:
+        CompanyProtocol — DART 또는 EDGAR Company 인스턴스.
+
+    Example::
+
+        import dartlab
+        c = dartlab.Company("005930")     # 삼성전자 (DART)
+        c = dartlab.Company("삼성전자")    # 회사명으로도 가능
+        c = dartlab.Company("AAPL")       # Apple (EDGAR)
+
+        c.IS                              # 손익계산서
+        c.show("businessOverview")        # 사업 개요
+        c.insights                        # 7영역 인사이트
+        c.review()                        # 분석 보고서
     """
     _discover()
 

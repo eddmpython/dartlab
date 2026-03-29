@@ -240,6 +240,14 @@ def registerAnalysisTool(company: Any, registerTool) -> None:
         "- distress: 부도 예측 4모델 종합\n"
         "- watch: 현재 기업 공시 변화 점수화\n"
         "\n"
+        "Guide:\n"
+        "- '수익구조 분석해줘' -> analysis(action='수익구조')\n"
+        "- '재무 건전한가?' -> analysis(action='안정성') 또는 analysis(action='종합평가')\n"
+        "- '이익이 진짜야?' -> analysis(action='이익품질')\n"
+        "- '투자 가치 있어?' -> analysis(action='valuation') 또는 analysis(action='투자효율')\n"
+        "- '부도 위험은?' -> analysis(action='distress')\n"
+        "- '전체 인사이트' -> analysis(action='insight')\n"
+        "\n"
         "반환: 마크다운 텍스트. 분석 불가 시 '[데이터 없음]' 메시지.",
         {
             "type": "object",

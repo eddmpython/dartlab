@@ -47,7 +47,7 @@ class _TableParser(HTMLParser):
         self._row: list[str] = []
         self._cell = ""
 
-    def handle_starttag(self, tag: str, attrs):
+    def handle_starttag(self, tag: str, _attrs):
         """HTML 여는 태그 처리."""
         if tag == "table":
             self._inTable = True

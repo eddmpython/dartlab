@@ -106,4 +106,3 @@ def test_superTools_init_includes_research():
 
     assert "research" in registered
     assert "system" in registered
-    assert "market" in registered

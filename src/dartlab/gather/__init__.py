@@ -61,6 +61,21 @@ class Gather:
         - circuit breaker: 실패 도메인 자동 격리/복구
         - 시장 지원: KR (Naver/ECOS), US (Yahoo/FRED/FMP)
 
+    Guide:
+        - "주가 보여줘" -> g.price("005930")
+        - "현재가 알려줘" -> g.price("005930", snapshot=True)
+        - "외국인 매매 동향" -> g.flow("005930")
+        - "거시지표 전체" -> g.macro() 또는 g.macro("US")
+        - "금리 추이" -> g.macro("FEDFUNDS") (자동 US 감지)
+        - "뉴스 검색" -> g.news("삼성전자")
+        - "전부 한번에" -> g.collect("005930") (병렬 수집 스냅샷)
+        - 공개 API 진입점은 dartlab.gather(). 내부 엔진은 이 클래스.
+
+    SeeAlso:
+        - GatherEntry: dartlab.gather() 공개 API (3단계 패턴)
+        - scan: 재무 기반 전종목 횡단분석
+        - Company: 개별 종목 공시/재무 데이터
+
     Args:
         client: GatherHttpClient 인스턴스. None이면 내부 생성.
 

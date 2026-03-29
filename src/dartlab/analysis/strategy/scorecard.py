@@ -147,7 +147,7 @@ def _calcEarningsQualityGrade(company) -> str | None:
 
 
 def _calcInvestmentGrade(company) -> str | None:
-    """투자효율 등급 — ROIC-WACC Spread 기반."""
+    """투자효율 등급 -- ROIC 절대값 기반."""
     try:
         from dartlab.analysis.strategy.investmentAnalysis import calcRoicTimeline
 
@@ -156,17 +156,17 @@ def _calcInvestmentGrade(company) -> str | None:
             return None
 
         h0 = result["history"][0]
-        spread = h0.get("spread")
-        if spread is None:
+        roic = h0.get("roic")
+        if roic is None:
             return None
 
-        if spread > 5:
+        if roic > 15:
             return "A"
-        if spread > 2:
+        if roic > 10:
             return "B"
-        if spread > 0:
+        if roic > 5:
             return "C"
-        if spread > -3:
+        if roic > 0:
             return "D"
         return "F"
     except (ImportError, AttributeError, TypeError, ValueError, KeyError):

@@ -30,7 +30,6 @@ sys.path.insert(0, str(SRC))
 
 from dartlab.core.registry import getCategories, getEntries  # noqa: E402
 
-
 # ─── 유틸 ───────────────────────────────────────────────────────
 
 
@@ -86,7 +85,7 @@ def _parseDocstringSections(doc: str | None) -> dict[str, str]:
         return {}
 
     result: dict[str, str] = {}
-    knownSections = {"capabilities", "requires", "aicontext", "args", "returns", "example"}
+    knownSections = {"capabilities", "requires", "aicontext", "guide", "seealso", "args", "returns", "example"}
     currentKey: str | None = None
     currentLines: list[str] = []
 
@@ -147,12 +146,12 @@ def _pythonApiSection() -> str:
 
         # docstring 섹션 파싱
         sections = _parseDocstringSections(doc)
-        if sections.get("capabilities") or sections.get("requires"):
+        if sections.get("capabilities") or sections.get("requires") or sections.get("guide"):
             detailEntries.append((name, sections))
 
     lines.append("")
 
-    # Capabilities/Requires 상세 블록
+    # Capabilities/Requires/Guide/SeeAlso 상세 블록
     if detailEntries:
         lines.append("### Python API 상세\n")
         for name, sections in detailEntries:
@@ -163,6 +162,10 @@ def _pythonApiSection() -> str:
                 lines.append(f"**Requires:** {req}")
             if ctx := sections.get("aicontext"):
                 lines.append(f"**AIContext:** {ctx}")
+            if guide := sections.get("guide"):
+                lines.append(f"**Guide:** {guide}")
+            if seeAlso := sections.get("seealso"):
+                lines.append(f"**SeeAlso:** {seeAlso}")
             lines.append("")
 
     return "\n".join(lines)
@@ -438,14 +441,16 @@ def _parseRegisterToolCalls(filepath: Path) -> list[ToolSpec]:
                 val = _astToValue(kw.value, allLocalVars)
                 priority = val if isinstance(val, int) else 50
 
-        tools.append(ToolSpec(
-            name=name,
-            description=description,
-            schema=schema,
-            category=category,
-            questionTypes=questionTypes,
-            priority=priority,
-        ))
+        tools.append(
+            ToolSpec(
+                name=name,
+                description=description,
+                schema=schema,
+                category=category,
+                questionTypes=questionTypes,
+                priority=priority,
+            )
+        )
     return tools
 
 
@@ -482,8 +487,8 @@ def _runtimeResolveToolEnums(tools: list[ToolSpec]) -> None:
             if schema and isinstance(schema, dict):
                 capturedSchemas[name] = schema
 
-        import dartlab.ai.tools.superTools.scan as _scanMod  # noqa: F811
         import dartlab.ai.tools.superTools.analysis as _analysisMod  # noqa: F811
+        import dartlab.ai.tools.superTools.scan as _scanMod  # noqa: F811
 
         # scan — registerScanTool 실행
         if hasattr(_scanMod, "registerScanTool"):
@@ -960,8 +965,8 @@ def _companyMethodsSection() -> str:
         lines.append(f"| `{name}` | {kind} | {desc} |")
     lines.append("")
 
-    # 상세 블록 (Capabilities/Requires/AIContext가 있는 것만)
-    detailMembers = [(n, s) for n, _, _, s in members if s.get("capabilities") or s.get("requires")]
+    # 상세 블록 (Capabilities/Requires/Guide가 있는 것만)
+    detailMembers = [(n, s) for n, _, _, s in members if s.get("capabilities") or s.get("requires") or s.get("guide")]
     if detailMembers:
         lines.append("### Company 메서드 상세\n")
         for name, sections in detailMembers:
@@ -972,6 +977,10 @@ def _companyMethodsSection() -> str:
                 lines.append(f"**Requires:** {req}")
             if ctx := sections.get("aicontext"):
                 lines.append(f"**AIContext:** {ctx}")
+            if guide := sections.get("guide"):
+                lines.append(f"**Guide:** {guide}")
+            if seeAlso := sections.get("seealso"):
+                lines.append(f"**SeeAlso:** {seeAlso}")
             lines.append("")
 
     return "\n".join(lines)
@@ -1153,14 +1162,14 @@ def generateSkillRef() -> str:
 # ─── _generated_catalog.py 생성 ────────────────────────────────
 
 
-_SUPER_TOOL_NAMES = {"explore", "finance", "analyze", "market", "research", "openapi", "system", "chart"}
+_SUPER_TOOL_NAMES = {"explore", "finance", "analysis", "scan", "gather", "review", "research", "openapi", "system", "chart"}
 
 
 def _generateCatalog() -> str:
     """AI 시스템 프롬프트용 도구 카탈로그 Python 파일 생성.
 
-    Super Tool 8개만 포함 — LLM이 실제 tool calling으로 사용하는 도구만.
-    defaults 도구(99개)는 Super Tool 내부에서 dispatch되므로 여기 불필요.
+    Super Tool 10개만 포함 — LLM이 실제 tool calling으로 사용하는 도구만.
+    defaults 도구는 Super Tool 내부에서 dispatch되므로 여기 불필요.
     """
     allTools = _collectAllToolSpecs()
     superTools = [s for s in allTools if s.name in _SUPER_TOOL_NAMES]
@@ -1174,7 +1183,7 @@ def _generateCatalog() -> str:
         "",
     ]
 
-    # Super Tool 8개 상세 설명
+    # Super Tool 10개 상세 설명
     for spec in superTools:
         descFirst = spec.description.strip().split("\n")[0]
         props = spec.schema.get("properties", {})
@@ -1215,6 +1224,25 @@ def _generateCatalog() -> str:
                 paramStrs.append(f"  [{pName}] {pDesc}" if pDesc else f"  [{pName}]")
             catalogLines.extend(paramStrs)
 
+        # Guide 섹션 추출 (description에 "## Guide" 또는 "Guide:" 포함 시)
+        guideLines: list[str] = []
+        inGuide = False
+        for line in spec.description.split("\n"):
+            stripped = line.strip()
+            if stripped.lower() in ("guide:", "## guide"):
+                inGuide = True
+                continue
+            if inGuide:
+                if stripped.startswith("##") or (stripped.endswith(":") and not stripped.startswith("-")):
+                    break
+                if stripped.startswith("- "):
+                    guideLines.append(f"  {stripped}")
+                elif stripped:
+                    guideLines.append(f"  {stripped}")
+        if guideLines:
+            catalogLines.append("  Guide:")
+            catalogLines.extend(guideLines)
+
         catalogLines.append("")
 
     # 도구 연쇄 패턴
@@ -1231,14 +1259,16 @@ def _generateCatalog() -> str:
         catalogLines.append("")
 
     # 기업 비교 패턴
-    catalogLines.extend([
-        "## 기업 비교 패턴",
-        "두 기업의 매출/이익/비율을 비교하려면 market 도구를 사용:",
-        "1. market(action='scanAccount', snakeId='sales', code='005930,000660') -- 두 기업 매출 시계열",
-        "2. market(action='scanRatio', ratioName='operatingMargin', code='005930,000660') -- 두 기업 영업이익률",
-        "code에 종목코드를 쉼표로 나열하면 해당 종목만 필터링.",
-        "",
-    ])
+    catalogLines.extend(
+        [
+            "## 기업 비교 패턴",
+            "두 기업의 매출/이익/비율을 비교하려면 scan 도구를 사용:",
+            "1. scan(action='account', target='sales', code='005930,000660') -- 두 기업 매출 시계열",
+            "2. scan(action='ratio', target='operatingMargin', code='005930,000660') -- 두 기업 영업이익률",
+            "code에 종목코드를 쉼표로 나열하면 해당 종목만 필터링.",
+            "",
+        ]
+    )
 
     catalogText = "\n".join(catalogLines)
 
@@ -1246,7 +1276,7 @@ def _generateCatalog() -> str:
         '"""AI 시스템 프롬프트용 도구 카탈로그 (자동 생성).\n'
         "\n"
         "이 파일은 scripts/generateSpec.py가 자동 생성합니다. 직접 수정 금지.\n"
-        "Super Tool 8개만 포함 -- LLM이 실제 tool calling으로 사용하는 도구.\n"
+        "Super Tool 10개만 포함 -- LLM이 실제 tool calling으로 사용하는 도구.\n"
         '"""\n'
         "\n"
         f"TOOL_CATALOG = {json.dumps(catalogText, ensure_ascii=False, indent=None)}\n"
@@ -1283,6 +1313,10 @@ def _generateCapabilitiesPy() -> str:
             entry["requires"] = req
         if ctx := sections.get("aicontext"):
             entry["aicontext"] = ctx
+        if guide := sections.get("guide"):
+            entry["guide"] = guide
+        if seeAlso := sections.get("seealso"):
+            entry["seeAlso"] = seeAlso
         entries[name] = entry
 
     # 2) Company 공개 메서드/프로퍼티
@@ -1315,6 +1349,10 @@ def _generateCapabilitiesPy() -> str:
             entry["requires"] = req
         if ctx := sections.get("aicontext"):
             entry["aicontext"] = ctx
+        if guide := sections.get("guide"):
+            entry["guide"] = guide
+        if seeAlso := sections.get("seealso"):
+            entry["seeAlso"] = seeAlso
         entries[f"Company.{memberName}"] = entry
 
     # 3) Scan 축 (AST)

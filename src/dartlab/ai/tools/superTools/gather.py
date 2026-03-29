@@ -71,6 +71,12 @@ def registerGatherTool(registerTool: Callable) -> None:
         "- consensus: 애널리스트 컨센서스 (code 필수)\n"
         "- history: 주가 이력 (code 필수, days로 기간 조절)\n"
         "\n"
+        "Guide:\n"
+        "- '현재 주가 얼마야?' -> gather(action='price', code='005930')\n"
+        "- '목표가/컨센서스?' -> gather(action='consensus', code='005930')\n"
+        "- '최근 6개월 주가 추이' -> gather(action='history', code='005930', days='180')\n"
+        "- 재무 데이터는 finance 도구, 공시 원문은 explore 도구 사용\n"
+        "\n"
         "반환: 마크다운 텍스트. 조회 실패 시 '[오류]' 메시지.",
         {
             "type": "object",

@@ -56,6 +56,7 @@ def _classifyModule(relPath: str) -> str:
 
 # ── AST 스캔 ────────────────────────────────────────────────────
 
+
 def _scanFile(filepath: Path) -> dict:
     """파일 하나를 AST 파싱하여 함수/클래스/import 정보 추출."""
     try:
@@ -89,6 +90,7 @@ def _scanFile(filepath: Path) -> dict:
 
 
 # ── 전체 스캔 ───────────────────────────────────────────────────
+
 
 def _scanAll() -> dict:
     """전체 소스 스캔."""
@@ -135,11 +137,14 @@ def _scanAll() -> dict:
 
 # ── radon 핫스팟 ────────────────────────────────────────────────
 
+
 def _getHotspots() -> list[dict]:
     """radon E/F 등급 함수 목록."""
     result = subprocess.run(
         [sys.executable, "-m", "radon", "cc", str(_SRC), "-j", "-nc"],
-        capture_output=True, text=True, cwd=str(_ROOT),
+        capture_output=True,
+        text=True,
+        cwd=str(_ROOT),
     )
     if not result.stdout.strip():
         return []
@@ -155,13 +160,15 @@ def _getHotspots() -> list[dict]:
         shortPath = filepath.replace("\\", "/").replace(srcPrefix, "")
         for block in blocks:
             if block.get("rank", "A") in ("E", "F"):
-                hotspots.append({
-                    "file": shortPath,
-                    "name": block["name"],
-                    "line": block.get("lineno", 0),
-                    "complexity": block.get("complexity", 0),
-                    "rank": block["rank"],
-                })
+                hotspots.append(
+                    {
+                        "file": shortPath,
+                        "name": block["name"],
+                        "line": block.get("lineno", 0),
+                        "complexity": block.get("complexity", 0),
+                        "rank": block["rank"],
+                    }
+                )
 
     hotspots.sort(key=lambda x: -x["complexity"])
     return hotspots
@@ -169,13 +176,15 @@ def _getHotspots() -> list[dict]:
 
 # ── registry 공개 API ───────────────────────────────────────────
 
+
 def _getRegistryCount() -> int:
     """registry DataEntry 수."""
     try:
         result = subprocess.run(
-            [sys.executable, "-c",
-             "from dartlab.core.registry import getEntries; print(len(getEntries()))"],
-            capture_output=True, text=True, cwd=str(_ROOT),
+            [sys.executable, "-c", "from dartlab.core.registry import getEntries; print(len(getEntries()))"],
+            capture_output=True,
+            text=True,
+            cwd=str(_ROOT),
         )
         return int(result.stdout.strip()) if result.stdout.strip().isdigit() else 0
     except (ValueError, FileNotFoundError):
@@ -184,14 +193,14 @@ def _getRegistryCount() -> int:
 
 # ── 출력 ────────────────────────────────────────────────────────
 
+
 def _buildReport(scan: dict, hotspots: list[dict], registryCount: int) -> str:
     lines = []
     lines.append("# dartlab 구조 맵 (자동 생성)\n")
 
     # 요약
     t = scan["totals"]
-    lines.append(f"**총계**: {t['files']}개 파일, {t['functions']}개 함수, "
-                 f"{t['classes']}개 클래스, {t['lines']:,}줄")
+    lines.append(f"**총계**: {t['files']}개 파일, {t['functions']}개 함수, {t['classes']}개 클래스, {t['lines']:,}줄")
     lines.append(f"**Registry**: {registryCount}개 DataEntry")
     lines.append(f"**복잡도 핫스팟**: E/F 등급 {len(hotspots)}개\n")
 
@@ -200,9 +209,23 @@ def _buildReport(scan: dict, hotspots: list[dict], registryCount: int) -> str:
     lines.append("| 레이어 | 파일 | 함수 | 클래스 | 줄 |")
     lines.append("|--------|------|------|--------|------|")
 
-    layerOrder = ["L0 core", "L1 providers", "L1 gather", "L1 market",
-                  "L2 analysis", "L3 ai", "Server", "CLI", "Export",
-                  "MCP", "Display", "Tools", "Channel", "Review", "Root"]
+    layerOrder = [
+        "L0 core",
+        "L1 providers",
+        "L1 gather",
+        "L1 market",
+        "L2 analysis",
+        "L3 ai",
+        "Server",
+        "CLI",
+        "Export",
+        "MCP",
+        "Display",
+        "Tools",
+        "Channel",
+        "Review",
+        "Root",
+    ]
     for layer in layerOrder:
         if layer in scan["layers"]:
             d = scan["layers"][layer]
@@ -212,13 +235,34 @@ def _buildReport(scan: dict, hotspots: list[dict], registryCount: int) -> str:
     lines.append("\n## 레이어별 외부 import\n")
     for layer in layerOrder:
         if layer in scan["imports"]:
-            externalImports = [i for i in scan["imports"][layer]
-                              if i not in ("__future__", "typing", "collections",
-                                          "dataclasses", "abc", "enum", "pathlib",
-                                          "json", "re", "math", "os", "sys",
-                                          "logging", "functools", "itertools",
-                                          "datetime", "copy", "textwrap",
-                                          "time", "hashlib", "string")]
+            externalImports = [
+                i
+                for i in scan["imports"][layer]
+                if i
+                not in (
+                    "__future__",
+                    "typing",
+                    "collections",
+                    "dataclasses",
+                    "abc",
+                    "enum",
+                    "pathlib",
+                    "json",
+                    "re",
+                    "math",
+                    "os",
+                    "sys",
+                    "logging",
+                    "functools",
+                    "itertools",
+                    "datetime",
+                    "copy",
+                    "textwrap",
+                    "time",
+                    "hashlib",
+                    "string",
+                )
+            ]
             if externalImports:
                 lines.append(f"- **{layer}**: {', '.join(sorted(externalImports)[:15])}")
 

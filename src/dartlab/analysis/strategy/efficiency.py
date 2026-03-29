@@ -1,72 +1,163 @@
-"""2-4 효율성 분석 -- 회전율, CCC."""
+"""2-4 효율성 분석 -- 자산을 얼마나 빨리 돌리는가.
+
+select()로 IS/BS 원본 계정을 가져와서
+회전율 + CCC를 금액과 함께 보여준다.
+재고가 쌓이는지, 매출채권 회수가 느려지는지를 금액으로 파악.
+"""
 
 from __future__ import annotations
 
-from dartlab.analysis.strategy._helpers import buildTimeline, getRatioSeries
+from dartlab.analysis.strategy._helpers import MAX_RATIO_YEARS, toDict
+
+_MAX_YEARS = MAX_RATIO_YEARS
+
+
+def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
+    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
+    if cols:
+        return cols[:maxYears]
+    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+
+
+def _yoy(cur, prev) -> float | None:
+    if cur is None or prev is None or prev == 0:
+        return None
+    return round((cur - prev) / abs(prev) * 100, 2)
+
+
+def _turnover(revenue, balance) -> float | None:
+    if revenue is None or balance is None or balance == 0:
+        return None
+    return round(revenue / balance, 2)
+
+
+def _days(revenue, balance) -> float | None:
+    if revenue is None or balance is None or revenue == 0:
+        return None
+    return round(balance / revenue * 365, 1)
+
+
+# ── 자산 회전 ──
 
 
 def calcTurnoverTrend(company) -> dict | None:
-    """총자산/매출채권/재고 회전율 시계열."""
-    result = getRatioSeries(company)
-    if result is None:
+    """자산 회전 시계열 -- 자산을 얼마나 효율적으로 쓰는가.
+
+    IS(매출) + BS(자산/채권/재고)에서 원본 금액과 회전율을 동시에 본다.
+    """
+    isResult = company.select("IS", ["매출액", "매출원가"])
+    bsResult = company.select(
+        "BS",
+        ["자산총계", "매출채권", "재고자산", "매입채무"],
+    )
+
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
+    if isParsed is None or bsParsed is None:
         return None
 
-    data, years = result
-    totalAsset = buildTimeline(data, "totalAssetTurnover", years)
-    receivables = buildTimeline(data, "receivablesTurnover", years)
-    inventory = buildTimeline(data, "inventoryTurnover", years)
+    isData, isPeriods = isParsed
+    bsData, _ = bsParsed
 
-    if not totalAsset and not receivables and not inventory:
+    rev = isData.get("매출액", {})
+    cogs = isData.get("매출원가", {})
+    ta = bsData.get("자산총계", {})
+    ar = bsData.get("매출채권", {})
+    inv = bsData.get("재고자산", {})
+    ap = bsData.get("매입채무", {})
+
+    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    if len(yCols) < 2:
         return None
 
-    return {
-        "totalAssetTurnover": totalAsset,
-        "receivablesTurnover": receivables,
-        "inventoryTurnover": inventory,
-    }
+    history = []
+    for i, col in enumerate(yCols[:-1]):
+        prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
+        r = rev.get(col)
+        c = cogs.get(col)
+
+        arVal = ar.get(col)
+        invVal = inv.get(col)
+        apVal = ap.get(col)
+        taVal = ta.get(col)
+
+        # 회전율
+        totalAssetTurnover = _turnover(r, taVal)
+        receivablesTurnover = _turnover(r, arVal)
+        inventoryTurnover = _turnover(c, invVal)  # COGS 기준
+
+        # CCC 구성 (일수)
+        dso = _days(r, arVal)
+        dio = _days(c, invVal)
+        dpo = _days(c, apVal)
+        ccc = round(dso + dio - dpo, 1) if dso is not None and dio is not None and dpo is not None else None
+
+        history.append(
+            {
+                "period": col,
+                "revenue": r,
+                "totalAssets": taVal,
+                "receivables": arVal,
+                "receivablesYoy": _yoy(arVal, ar.get(prevCol)) if prevCol else None,
+                "inventory": invVal,
+                "inventoryYoy": _yoy(invVal, inv.get(prevCol)) if prevCol else None,
+                "payables": apVal,
+                "totalAssetTurnover": totalAssetTurnover,
+                "receivablesTurnover": receivablesTurnover,
+                "inventoryTurnover": inventoryTurnover,
+                "dso": dso,
+                "dio": dio,
+                "dpo": dpo,
+                "ccc": ccc,
+            }
+        )
+
+    return {"history": history} if history else None
 
 
-def calcCccTrend(company) -> dict | None:
-    """CCC 구성요소 시계열: DSO + DIO - DPO = CCC."""
-    result = getRatioSeries(company)
-    if result is None:
-        return None
+# calcCccTrend는 calcTurnoverTrend에 통합
+calcCccTrend = calcTurnoverTrend
 
-    data, years = result
-    ccc = buildTimeline(data, "ccc", years)
-    dso = buildTimeline(data, "dso", years)
-    dio = buildTimeline(data, "dio", years)
-    dpo = buildTimeline(data, "dpo", years)
 
-    if not ccc:
-        return None
-
-    return {"ccc": ccc, "dso": dso, "dio": dio, "dpo": dpo}
+# ── 플래그 ──
 
 
 def calcEfficiencyFlags(company) -> list[str]:
     """효율성 경고/기회 플래그."""
     flags: list[str] = []
-    result = getRatioSeries(company)
-    if result is None:
+
+    trend = calcTurnoverTrend(company)
+    if trend is None or len(trend["history"]) < 2:
         return flags
 
-    data, _years = result
+    hist = trend["history"]
 
-    # 총자산회전율 하락 추세
-    tat = data.get("RATIO", {}).get("totalAssetTurnover", [])
-    recent = [v for v in tat[-3:] if v is not None]
-    if len(recent) >= 3 and all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
-        flags.append(f"총자산회전율 3기 연속 하락 ({recent[-1]:.2f}회)")
+    # 총자산회전율 3기 연속 하락
+    if len(hist) >= 3:
+        tats = [h.get("totalAssetTurnover") for h in hist[:3]]
+        if all(v is not None for v in tats) and tats[0] < tats[1] < tats[2]:
+            flags.append(f"총자산회전율 3기 연속 하락 ({tats[0]:.2f}회)")
 
-    # CCC 악화
-    ccc = data.get("RATIO", {}).get("ccc", [])
-    recentCcc = [v for v in ccc[-2:] if v is not None]
-    if len(recentCcc) >= 2:
-        diff = recentCcc[-1] - recentCcc[0]
-        if diff > 20:
-            flags.append(f"CCC {diff:.0f}일 악화 ({recentCcc[-1]:.0f}일)")
-        if recentCcc[-1] < 0:
-            flags.append(f"CCC {recentCcc[-1]:.0f}일 -- 운전자본 유리 구조")
+    # 재고 급증 (매출 대비)
+    h0, h1 = hist[0], hist[1]
+    invYoy = h0.get("inventoryYoy")
+    revYoy = h0.get("revenue")
+    revPrev = h1.get("revenue")
+    if invYoy is not None and revPrev is not None and revPrev > 0:
+        revGrowth = _yoy(revYoy, revPrev)
+        # 여기서는 이미 계산된 inventoryYoy 사용
+        if invYoy is not None and invYoy > 20:
+            flags.append(f"재고자산 +{invYoy:.0f}% 급증")
+
+    # CCC
+    if len(hist) >= 2:
+        ccc0 = hist[0].get("ccc")
+        ccc1 = hist[1].get("ccc")
+        if ccc0 is not None and ccc1 is not None:
+            diff = ccc0 - ccc1
+            if diff > 20:
+                flags.append(f"CCC {diff:.0f}일 악화 ({ccc0:.0f}일)")
+            if ccc0 < 0:
+                flags.append(f"CCC {ccc0:.0f}일 -- 운전자본 유리 구조")
 
     return flags

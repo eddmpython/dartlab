@@ -20,7 +20,6 @@ def buildBriefing(
     company: Any,
     question: str,
     *,
-    maxTokens: int = 0,
     reportMode: bool = False,
 ) -> str:
     """Analysis Briefing 생성.
@@ -28,7 +27,6 @@ def buildBriefing(
     Args:
         company: Company 객체
         question: 사용자 질문
-        maxTokens: 토큰 상한 (0=자동 결정)
         reportMode: 리포트 모드 (더 상세한 분석)
 
     Returns:

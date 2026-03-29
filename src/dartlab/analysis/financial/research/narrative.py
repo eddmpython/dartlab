@@ -222,12 +222,7 @@ def _analyzeMarginTrend(inp: _Input) -> NarrativeParagraph | None:
     gmList = (
         [
             _safeDiv(
-                _safeDiv(
-                    s - c if s and c else None,
-                    1,
-                )
-                if False
-                else (s - c if s is not None and c is not None else None),
+                s - c if s is not None and c is not None else None,
                 s,
             )
             for s, c in zip(sales, cogs)

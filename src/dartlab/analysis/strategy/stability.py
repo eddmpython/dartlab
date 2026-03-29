@@ -1,74 +1,264 @@
-"""2-3 안정성 분석 -- 레버리지, 이자보상, 부실 판별, 부채 만기, 앙상블."""
+"""2-3 안정성 분석 -- 부채 구조와 지급 능력을 추적한다.
+
+select()로 BS/IS/CF 원본 계정을 가져와서
+부채비율 + 이자보상배율 + 부실 판별을 금액과 함께 보여준다.
+레버리지가 늘었는지, 이자를 갚을 수 있는지를 금액으로 파악.
+"""
 
 from __future__ import annotations
 
-from dartlab.analysis.strategy._helpers import (
-    buildTimeline,
-    getRatios,
-    getRatioSeries,
-    toDict,
-)
+from dartlab.analysis.strategy._helpers import MAX_RATIO_YEARS, getRatios, toDict
+
+_MAX_YEARS = MAX_RATIO_YEARS
+
+
+def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
+    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
+    if cols:
+        return cols[:maxYears]
+    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+
+
+def _yoy(cur, prev) -> float | None:
+    if cur is None or prev is None or prev == 0:
+        return None
+    return round((cur - prev) / abs(prev) * 100, 2)
+
+
+def _pctOf(part, total) -> float | None:
+    if part is None or total is None or total == 0:
+        return None
+    return round(part / total * 100, 2)
+
+
+# ── 레버리지 구조 시계열 ──
 
 
 def calcLeverageTrend(company) -> dict | None:
-    """부채비율, 차입금의존도 시계열."""
-    result = getRatioSeries(company)
-    if result is None:
+    """레버리지 구조 시계열 -- 부채로 얼마나 버티는가.
+
+    BS에서 부채/자본/자산 원본 금액을 가져와서
+    부채비율 + 자기자본비율 + 순차입금비율을 금액과 함께 보여준다.
+    """
+    bsResult = company.select(
+        "BS",
+        ["부채총계", "자본총계", "자산총계", "현금및현금성자산", "단기차입금", "장기차입금", "사채"],
+    )
+    parsed = toDict(bsResult)
+    if parsed is None:
         return None
 
-    data, years = result
-    debtRatio = buildTimeline(data, "debtRatio", years)
-    netDebtRatio = buildTimeline(data, "netDebtRatio", years)
-    equityRatio = buildTimeline(data, "equityRatio", years)
+    data, periods = parsed
+    debt = data.get("부채총계", {})
+    equity = data.get("자본총계", {})
+    ta = data.get("자산총계", {})
+    cash = data.get("현금및현금성자산", {})
+    stBorrow = data.get("단기차입금", {})
+    ltBorrow = data.get("장기차입금", {})
+    bonds = data.get("사채", {})
 
-    if not debtRatio:
+    yCols = _annualCols(periods, _MAX_YEARS + 1)
+    if len(yCols) < 2:
         return None
 
-    return {
-        "debtRatio": debtRatio,
-        "netDebtRatio": netDebtRatio,
-        "equityRatio": equityRatio,
-    }
+    history = []
+    for i, col in enumerate(yCols[:-1]):
+        prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
+        d = debt.get(col)
+        e = equity.get(col)
+        a = ta.get(col)
+        c = cash.get(col)
+
+        totalBorrowing = (stBorrow.get(col) or 0) + (ltBorrow.get(col) or 0) + (bonds.get(col) or 0)
+        netDebt = totalBorrowing - (c or 0) if totalBorrowing > 0 else None
+
+        debtRatio = _pctOf(d, e)
+        equityRatio = _pctOf(e, a)
+        netDebtRatio = _pctOf(netDebt, e) if netDebt is not None else None
+
+        history.append(
+            {
+                "period": col,
+                "totalDebt": d,
+                "totalDebtYoy": _yoy(d, debt.get(prevCol)) if prevCol else None,
+                "equity": e,
+                "equityYoy": _yoy(e, equity.get(prevCol)) if prevCol else None,
+                "totalAssets": a,
+                "cash": c,
+                "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
+                "netDebt": netDebt,
+                "debtRatio": debtRatio,
+                "equityRatio": equityRatio,
+                "netDebtRatio": netDebtRatio,
+            }
+        )
+
+    return {"history": history} if history else None
+
+
+# ── 이자보상 시계열 ──
 
 
 def calcCoverageTrend(company) -> dict | None:
-    """이자보상배율 시계열."""
-    result = getRatioSeries(company)
-    if result is None:
+    """이자보상배율 시계열 -- 이자를 갚을 능력이 있는가.
+
+    IS에서 영업이익과 금융비용을 가져와서
+    이자보상배율을 금액과 함께 보여준다.
+    """
+    isResult = company.select("IS", ["영업이익", "금융비용", "이자비용"])
+    parsed = toDict(isResult)
+    if parsed is None:
         return None
 
-    data, years = result
-    coverage = buildTimeline(data, "interestCoverage", years)
+    data, periods = parsed
+    op = data.get("영업이익", {})
+    finCost = data.get("금융비용", {})
+    intCost = data.get("이자비용", {})
 
-    if not coverage:
+    yCols = _annualCols(periods, _MAX_YEARS + 1)
+    if len(yCols) < 2:
         return None
 
-    return {"interestCoverage": coverage}
+    history = []
+    for i, col in enumerate(yCols[:-1]):
+        prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
+        o = op.get(col)
+        # 이자비용 우선, 없으면 금융비용
+        interest = intCost.get(col) or finCost.get(col)
+
+        coverage = None
+        if o is not None and interest is not None and interest != 0:
+            coverage = round(o / abs(interest), 2)
+
+        history.append(
+            {
+                "period": col,
+                "operatingIncome": o,
+                "operatingIncomeYoy": _yoy(o, op.get(prevCol)) if prevCol else None,
+                "interestExpense": interest,
+                "interestCoverage": coverage,
+            }
+        )
+
+    return {"history": history} if history else None
+
+
+# ── 부실 판별 (Altman Z-Score) ──
 
 
 def calcDistressScore(company) -> dict | None:
-    """Altman Z-Score 시계열 + 종합 등급."""
-    result = getRatioSeries(company)
-    if result is None:
+    """Altman Z-Score 시계열 -- 부실 위험은 어디인가.
+
+    BS/IS에서 원본 계정을 가져와 5개 변수를 직접 계산.
+    Z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+    X1 = 운전자본/총자산, X2 = 이익잉여금/총자산, X3 = EBIT/총자산
+    X4 = 시가총액/부채총계, X5 = 매출/총자산
+    """
+    bsResult = company.select(
+        "BS",
+        ["자산총계", "유동자산", "유동부채", "부채총계", "이익잉여금"],
+    )
+    isResult = company.select("IS", ["영업이익", "매출액"])
+
+    bsParsed = toDict(bsResult)
+    isParsed = toDict(isResult)
+    if bsParsed is None or isParsed is None:
         return None
 
-    data, years = result
-    zScore = buildTimeline(data, "altmanZScore", years)
+    bsData, bsPeriods = bsParsed
+    isData, _ = isParsed
 
-    if not zScore:
+    taRow = bsData.get("자산총계", {})
+    caRow = bsData.get("유동자산", {})
+    clRow = bsData.get("유동부채", {})
+    tlRow = bsData.get("부채총계", {})
+    reRow = bsData.get("이익잉여금", {})
+    opRow = isData.get("영업이익", {})
+    revRow = isData.get("매출액", {})
+
+    # 시가총액 (X4용) -- ratios에서 가져옴
+    ratios = getRatios(company)
+    marketCap = ratios.marketCap if ratios else None
+
+    yCols = _annualCols(bsPeriods, _MAX_YEARS)
+    if not yCols:
         return None
 
-    latest = next((v["value"] for v in reversed(zScore) if v["value"] is not None), None)
-    if latest is None:
-        zone = "판별 불가"
-    elif latest > 2.99:
-        zone = "안전 구간"
-    elif latest > 1.81:
-        zone = "회색 구간"
-    else:
-        zone = "위험 구간"
+    history = []
+    for col in yCols:
+        a = taRow.get(col)
+        ca = caRow.get(col)
+        cl = clRow.get(col)
+        tl = tlRow.get(col)
+        re = reRow.get(col)
+        ebit = opRow.get(col)
+        rev = revRow.get(col)
 
-    return {"altmanZScore": zScore, "latestScore": latest, "zone": zone}
+        if a is None or a == 0:
+            continue
+
+        wc = (ca or 0) - (cl or 0)
+        x1 = round(wc / a, 4) if a else None
+        x2 = round(re / a, 4) if re is not None and a else None
+        x3 = round(ebit / a, 4) if ebit is not None and a else None
+        x4 = round(marketCap / tl, 4) if marketCap is not None and tl and tl > 0 else None
+        x5 = round(rev / a, 4) if rev is not None and a else None
+
+        # X4(시가총액/부채) 없으면 Altman Z'' (비제조업) 대체
+        zScore = None
+        zModel = None
+        if all(v is not None for v in [x1, x2, x3, x4, x5]):
+            zScore = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 1.0 * x5, 2)
+            zModel = "Z-Score"
+        elif all(v is not None for v in [x1, x2, x3, x5]):
+            # Z'' = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X5 (book value 기반)
+            zScore = round(6.56 * x1 + 3.26 * x2 + 6.72 * x3 + 1.05 * x5, 2)
+            zModel = "Z''-Score"
+
+        if zScore is not None:
+            safeThreshold = 2.99 if zModel == "Z-Score" else 2.60
+            dangerThreshold = 1.81 if zModel == "Z-Score" else 1.10
+            if zScore > safeThreshold:
+                zone = "안전"
+            elif zScore > dangerThreshold:
+                zone = "회색"
+            else:
+                zone = "위험"
+        else:
+            zone = None
+
+        history.append(
+            {
+                "period": col,
+                "totalAssets": a,
+                "workingCapital": wc,
+                "retainedEarnings": re,
+                "ebit": ebit,
+                "revenue": rev,
+                "totalDebt": tl,
+                "x1_wcTa": x1,
+                "x2_reTa": x2,
+                "x3_ebitTa": x3,
+                "x4_mcapTl": x4,
+                "x5_revTa": x5,
+                "zScore": zScore,
+                "zModel": zModel,
+                "zone": zone,
+            }
+        )
+
+    if not history:
+        return None
+
+    latest = history[0]
+    return {
+        "history": history,
+        "latestScore": latest.get("zScore"),
+        "zone": latest.get("zone") or "판별 불가",
+    }
+
+
+# ── 부실 앙상블 (기존 유지 -- getRatios 사용) ──
 
 
 def calcDistressEnsemble(company) -> dict | None:
@@ -236,8 +426,8 @@ def calcDebtMaturity(company) -> dict | None:
         # 차입금: 업종별 계정 대응
         st = stRow.get(col) or 0
         lt = ltRow.get(col) or 0
-        bonds = bondsRow.get(col) or 0
-        totalBorrowing = st + lt + bonds
+        bondsVal = bondsRow.get(col) or 0
+        totalBorrowing = st + lt + bondsVal
 
         # 금융업 fallback
         if totalBorrowing == 0:
@@ -272,7 +462,7 @@ def calcDebtMaturity(company) -> dict | None:
                 "period": col,
                 "shortTermBorrowing": st,
                 "longTermBorrowing": lt,
-                "bonds": bonds,
+                "bonds": bondsVal,
                 "totalBorrowing": totalBorrowing,
                 "shortTermRatio": shortTermRatio,
                 "currentToTotalDebt": currentToTotal,
@@ -283,37 +473,48 @@ def calcDebtMaturity(company) -> dict | None:
     return {"history": history} if history else None
 
 
+# ── 플래그 ──
+
+
 def calcStabilityFlags(company) -> list[str]:
     """안정성 경고/기회 플래그."""
     flags: list[str] = []
-    result = getRatioSeries(company)
-    if result is None:
-        return flags
 
-    data, _years = result
+    # 레버리지
+    lev = calcLeverageTrend(company)
+    if lev and lev["history"]:
+        hist = lev["history"]
+        h0 = hist[0]
+        dr = h0.get("debtRatio")
+        if dr is not None:
+            if dr > 200:
+                flags.append(f"부채비율 {dr:.0f}% -- 재무 위험")
+            elif dr < 50:
+                flags.append(f"부채비율 {dr:.0f}% -- 매우 안정")
 
-    # 부채비율
-    dr = data.get("RATIO", {}).get("debtRatio", [])
-    latestDr = next((v for v in reversed(dr) if v is not None), None)
-    if latestDr is not None:
-        if latestDr > 200:
-            flags.append(f"부채비율 {latestDr:.0f}% -- 재무 위험")
-        elif latestDr < 50:
-            flags.append(f"부채비율 {latestDr:.0f}% -- 매우 안정")
+        # 부채 3기 연속 증가
+        if len(hist) >= 3:
+            debts = [h.get("totalDebt") for h in hist[:3]]
+            if all(v is not None for v in debts) and debts[0] > debts[1] > debts[2]:
+                yoy = h0.get("totalDebtYoy")
+                flags.append(f"부채 3기 연속 증가 (최근 +{yoy:.0f}%)" if yoy else "부채 3기 연속 증가")
 
-    # 이자보상배율
-    ic = data.get("RATIO", {}).get("interestCoverage", [])
-    latestIc = next((v for v in reversed(ic) if v is not None), None)
-    if latestIc is not None:
-        if latestIc < 1:
-            flags.append(f"이자보상배율 {latestIc:.1f}배 -- 이자 지급 불능 위험")
-        elif latestIc < 3:
-            flags.append(f"이자보상배율 {latestIc:.1f}배 -- 이자 부담 과다")
+    # 이자보상
+    cov = calcCoverageTrend(company)
+    if cov and cov["history"]:
+        h0 = cov["history"][0]
+        ic = h0.get("interestCoverage")
+        if ic is not None:
+            if ic < 1:
+                flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 지급 불능 위험")
+            elif ic < 3:
+                flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
     # Altman Z-Score
-    z = data.get("RATIO", {}).get("altmanZScore", [])
-    latestZ = next((v for v in reversed(z) if v is not None), None)
-    if latestZ is not None and latestZ < 1.81:
-        flags.append(f"Altman Z-Score {latestZ:.2f} -- 부실 위험 구간")
+    distress = calcDistressScore(company)
+    if distress and distress.get("latestScore") is not None:
+        z = distress["latestScore"]
+        if z < 1.81:
+            flags.append(f"Altman Z-Score {z:.2f} -- 부실 위험 구간")
 
     return flags

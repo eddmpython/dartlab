@@ -107,6 +107,13 @@ def registerReviewTool(company: Any, registerTool) -> None:
         "- section: 특정 섹션 리뷰 (section 지정) 또는 전체 섹션 목록\n"
         "- full: 전체 리뷰 보고서 (fmt=markdown/html/json)\n"
         "\n"
+        "Guide:\n"
+        "- '분석 보고서 보여줘' -> review(action='full')\n"
+        "- '어떤 블록 있어?' -> review(action='blocks')로 카탈로그 확인\n"
+        "- '매출 성장률 블록' -> review(action='block', key='growth')\n"
+        "- '수익구조 섹션만' -> review(action='section', section='수익구조')\n"
+        "- 'HTML로 내보내기' -> review(action='full', fmt='html')\n"
+        "\n"
         "반환: 마크다운 텍스트. 실패 시 '[오류]' 메시지.",
         {
             "type": "object",

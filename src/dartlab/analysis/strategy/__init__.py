@@ -280,7 +280,9 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "investmentIntensity",
                 "투자 강도",
             ),
-            _CalcEntry("calcEvaTimeline", "dartlab.analysis.strategy.investmentAnalysis", "evaTimeline", "EVA 시계열"),
+            _CalcEntry(
+                "calcEvaTimeline", "dartlab.analysis.strategy.investmentAnalysis", "evaTimeline", "NOPAT + 투하자본"
+            ),
             _CalcEntry(
                 "calcInvestmentFlags",
                 "dartlab.analysis.strategy.investmentAnalysis",
@@ -355,10 +357,25 @@ class Analysis:
         - 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
         - review()가 이 결과를 소비하여 구조화 보고서 생성
 
+    Requires:
+        데이터: finance (자동 다운로드)
+
     AIContext:
         - reviewer()가 analysis 결과를 소비하여 AI 해석 생성
         - ask()에서 재무분석 컨텍스트로 활용
         - 70개 calc* 함수의 개별 결과를 LLM에 주입 가능
+
+    Guide:
+        - "이 회사 수익구조?" -> analysis("수익구조", company) — 매출원가율, 판관비율 등
+        - "재무 건전한가?" -> analysis("안정성", company) — 부채비율, 유동비율, ICR
+        - "이익이 진짜야?" -> analysis("이익품질", company) — 발생주의 비율, OCF/NI
+        - "전체 종합?" -> analysis("종합평가", company) — 14축 통합 스코어
+        - 14축 전부 보고 싶으면 review() 사용 권장
+
+    SeeAlso:
+        - review: analysis 결과를 구조화 보고서로 렌더링
+        - scan: 전종목 비교 (analysis는 단일 종목 심층)
+        - Company.insights: 7영역 인사이트 등급 (빠른 요약)
 
     Args:
         axis: 축 이름 ("수익구조", "수익성" 등). None이면 14축 가이드.
@@ -369,9 +386,6 @@ class Analysis:
         axis=None → pl.DataFrame (14축 가이드)
         company=None → pl.DataFrame (해당 축 calc 목록)
         둘 다 있으면 → dict (분석 결과)
-
-    Requires:
-        데이터: finance (자동 다운로드)
 
     Example::
 

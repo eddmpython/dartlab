@@ -47,20 +47,24 @@ def _saveBaseline(data: dict) -> None:
 
 # ── 히스토리 ────────────────────────────────────────────────────
 
+
 def _getGitCommit() -> str:
     """현재 git commit hash (short)."""
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, cwd=str(_ROOT),
+            capture_output=True,
+            text=True,
+            cwd=str(_ROOT),
         )
         return result.stdout.strip() or "unknown"
     except FileNotFoundError:
         return "unknown"
 
 
-def _recordHistory(efCount: int, cdefCount: int, vultureCount: int,
-                   totalFiles: int = 0, totalFunctions: int = 0, totalLines: int = 0) -> None:
+def _recordHistory(
+    efCount: int, cdefCount: int, vultureCount: int, totalFiles: int = 0, totalFunctions: int = 0, totalLines: int = 0
+) -> None:
     """qualityHistory.jsonl에 한 줄 추가."""
     record = {
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -74,8 +78,9 @@ def _recordHistory(efCount: int, cdefCount: int, vultureCount: int,
     }
     with open(_HISTORY_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
-    print(f"히스토리 기록: {record['date']} commit={record['commit']} "
-          f"E/F={efCount} C+={cdefCount} vulture={vultureCount}")
+    print(
+        f"히스토리 기록: {record['date']} commit={record['commit']} E/F={efCount} C+={cdefCount} vulture={vultureCount}"
+    )
 
 
 def _showHistory() -> None:
@@ -94,18 +99,23 @@ def _showHistory() -> None:
     print(f"\n{'날짜':>12} {'커밋':>8} {'E/F':>5} {'C+':>5} {'죽은코드':>8} {'파일':>6} {'함수':>6} {'줄':>8}")
     print("-" * 70)
     for r in records[-20:]:  # 최근 20건
-        print(f"{r['date']:>12} {r['commit']:>8} {r['ef']:>5} {r['cdef']:>5} "
-              f"{r['vulture']:>8} {r.get('files', '-'):>6} {r.get('functions', '-'):>6} "
-              f"{r.get('lines', '-'):>8}")
+        print(
+            f"{r['date']:>12} {r['commit']:>8} {r['ef']:>5} {r['cdef']:>5} "
+            f"{r['vulture']:>8} {r.get('files', '-'):>6} {r.get('functions', '-'):>6} "
+            f"{r.get('lines', '-'):>8}"
+        )
 
 
 # ── radon 복잡도 ────────────────────────────────────────────────
+
 
 def _runRadon(paths: list[str]) -> list[dict]:
     """radon cc 실행 → 파싱된 결과 리스트."""
     result = subprocess.run(
         [sys.executable, "-m", "radon", "cc", *paths, "-j", "-nc"],
-        capture_output=True, text=True, cwd=str(_ROOT),
+        capture_output=True,
+        text=True,
+        cwd=str(_ROOT),
     )
     if not result.stdout.strip():
         return []
@@ -114,13 +124,15 @@ def _runRadon(paths: list[str]) -> list[dict]:
     data = json.loads(result.stdout)
     for filepath, blocks in data.items():
         for block in blocks:
-            items.append({
-                "file": filepath,
-                "name": block.get("name", "?"),
-                "lineno": block.get("lineno", 0),
-                "complexity": block.get("complexity", 0),
-                "rank": block.get("rank", "?"),
-            })
+            items.append(
+                {
+                    "file": filepath,
+                    "name": block.get("name", "?"),
+                    "lineno": block.get("lineno", 0),
+                    "complexity": block.get("complexity", 0),
+                    "rank": block.get("rank", "?"),
+                }
+            )
     return items
 
 
@@ -145,15 +157,12 @@ def _checkComplexity(paths: list[str], changedOnly: bool = False) -> list[str]:
         maxEf = baseline.get("ef_count", _DEFAULT_BASELINE["ef_count"])
 
         if efCount > maxEf:
-            errors.append(
-                f"  E/F 등급 함수: {efCount}개 (baseline {maxEf}개 초과)"
-            )
+            errors.append(f"  E/F 등급 함수: {efCount}개 (baseline {maxEf}개 초과)")
             newOnes = [i for i in items if i["rank"] in ("E", "F")]
             newOnes.sort(key=lambda x: -x["complexity"])
             for item in newOnes[:10]:
                 errors.append(
-                    f"    {item['file']}:{item['lineno']} "
-                    f"{item['name']} ({item['rank']}, 복잡도 {item['complexity']})"
+                    f"    {item['file']}:{item['lineno']} {item['name']} ({item['rank']}, 복잡도 {item['complexity']})"
                 )
 
         print(f"복잡도: E/F {efCount}개 (baseline {maxEf}개)")
@@ -163,11 +172,14 @@ def _checkComplexity(paths: list[str], changedOnly: bool = False) -> list[str]:
 
 # ── vulture 죽은 코드 ───────────────────────────────────────────
 
+
 def _runVulture(paths: list[str]) -> list[str]:
     """vulture 실행 → 결과 라인 리스트."""
     result = subprocess.run(
         [sys.executable, "-m", "vulture", *paths, "--min-confidence", "90"],
-        capture_output=True, text=True, cwd=str(_ROOT),
+        capture_output=True,
+        text=True,
+        cwd=str(_ROOT),
     )
     lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
     return lines
@@ -191,15 +203,20 @@ def _checkDeadCode(paths: list[str]) -> list[str]:
 
 # ── git 변경 파일 ───────────────────────────────────────────────
 
+
 def _getChangedPythonFiles() -> list[str]:
     """staged + unstaged 변경된 .py 파일."""
     result = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=ACMR", "HEAD"],
-        capture_output=True, text=True, cwd=str(_ROOT),
+        capture_output=True,
+        text=True,
+        cwd=str(_ROOT),
     )
     staged = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=ACMR", "--cached"],
-        capture_output=True, text=True, cwd=str(_ROOT),
+        capture_output=True,
+        text=True,
+        cwd=str(_ROOT),
     )
     allFiles = set(result.stdout.splitlines() + staged.stdout.splitlines())
     pyFiles = [f for f in allFiles if f.endswith(".py") and f.startswith("src/dartlab/")]
@@ -208,9 +225,11 @@ def _getChangedPythonFiles() -> list[str]:
 
 # ── main ────────────────────────────────────────────────────────
 
+
 def _countSource() -> dict:
     """소스 파일/함수/줄 수 카운트."""
     import ast as _ast
+
     srcPath = Path(_SRC)
     files = 0
     functions = 0
@@ -224,8 +243,7 @@ def _countSource() -> dict:
             source = f.read_text(encoding="utf-8", errors="replace")
             lines += len(source.splitlines())
             tree = _ast.parse(source)
-            functions += sum(1 for n in _ast.walk(tree)
-                            if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef)))
+            functions += sum(1 for n in _ast.walk(tree) if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef)))
         except (SyntaxError, UnicodeDecodeError):
             pass
     return {"files": files, "functions": functions, "lines": lines}
@@ -247,11 +265,13 @@ def main() -> int:
         efCount = sum(1 for i in items if i["rank"] in ("E", "F"))
         cdefCount = sum(1 for i in items if i["rank"] in ("C", "D", "E", "F"))
         vultureCount = len(_runVulture([_SRC]))
-        _saveBaseline({
-            "ef_count": efCount,
-            "cdef_count": cdefCount,
-            "vulture_count": vultureCount,
-        })
+        _saveBaseline(
+            {
+                "ef_count": efCount,
+                "cdef_count": cdefCount,
+                "vulture_count": vultureCount,
+            }
+        )
         print(f"E/F: {efCount}, C+: {cdefCount}, vulture: {vultureCount}")
         return 0
 
@@ -261,8 +281,7 @@ def main() -> int:
         cdefCount = sum(1 for i in items if i["rank"] in ("C", "D", "E", "F"))
         vultureCount = len(_runVulture([_SRC]))
         counts = _countSource()
-        _recordHistory(efCount, cdefCount, vultureCount,
-                      counts["files"], counts["functions"], counts["lines"])
+        _recordHistory(efCount, cdefCount, vultureCount, counts["files"], counts["functions"], counts["lines"])
         return 0
 
     if changedOnly:

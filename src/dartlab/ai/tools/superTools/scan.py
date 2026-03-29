@@ -140,6 +140,14 @@ def registerScanTool(registerTool: Callable) -> None:
         "target: account/ratio 축에서 계정ID 또는 비율명.\n"
         "기업 비교 패턴: scan(action='account', target='sales', code='005930,000660')\n"
         "\n"
+        "Guide:\n"
+        "- '거버넌스 좋은 회사?' -> scan(action='governance')로 등급 A 필터\n"
+        "- 'ROE 높은 회사?' -> scan(action='ratio', target='roe')\n"
+        "- '배당 많이 주는 회사?' -> scan(action='capital')로 배당수익률 정렬\n"
+        "- '삼성전자 SK하이닉스 비교' -> scan(action='account', target='sales', code='005930,000660')\n"
+        "- '부채 위험 종목?' -> scan(action='debt')로 위험등급 필터\n"
+        "- '시장 전체 공시 변화?' -> scan(action='digest')\n"
+        "\n"
         "반환: 마크다운 텍스트. 실패 시 '[오류]' 메시지.",
         {
             "type": "object",

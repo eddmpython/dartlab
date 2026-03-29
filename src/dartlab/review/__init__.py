@@ -78,12 +78,58 @@ def _flattenItems(items) -> list:
 
 @dataclass
 class Review:
-    """분석 리뷰 — AnalysisReport + core/Report 통합.
+    """분석 리뷰 — 14축 전략분석 결과를 구조화 보고서로 렌더링.
 
-    생성 방법:
-    1. buildReview(company) → 템플릿 기반 자동 생성
-    2. Review([blocks...]) → 자유 조립 (리스트 전달)
-    3. Review(stockCode=..., corpName=..., sections=[...]) → 직접 구성
+    Capabilities:
+        - buildReview(company): 템플릿 기반 전체 리뷰 자동 생성 (2부 14축)
+        - Review([blocks...]): 블록 자유 조립 (맞춤 보고서)
+        - Review(stockCode=..., sections=[...]): 직접 구성
+        - render(fmt): rich/html/markdown/json 4종 렌더링
+        - toHtml(), toMarkdown(), toJson() 편의 메서드
+        - Jupyter/Colab/Marimo 자동 HTML 렌더링 (_repr_html_)
+
+    Requires:
+        Company 객체 (buildReview 사용 시) 또는 Block 리스트.
+
+    AIContext:
+        review 수퍼툴이 이 클래스의 기능을 AI에게 노출.
+        blocks action으로 블록 카탈로그, section으로 섹션별 리뷰.
+
+    Guide:
+        - "분석 보고서 보여줘" -> c.review() 또는 buildReview(company)
+        - "수익구조만 보고 싶어" -> c.review("수익구조")
+        - "HTML로 내보내기" -> review.toHtml()
+        - "블록 목록 보여줘" -> blocks(company) (카탈로그 테이블)
+        - "매출 성장률 블록만" -> b = blocks(c); b["growth"]
+
+    SeeAlso:
+        - analysis: 14축 전략분석 엔진 (Review의 데이터 공급원)
+        - blocks: 블록 사전 (한글/영문/tab-complete)
+        - Company.review: Company에서 바로 호출
+
+    Args:
+        itemsOrStockCode: Block 리스트 (자유 조립) 또는 종목코드 문자열.
+        stockCode: 종목코드.
+        corpName: 회사명.
+        sections: Section 리스트.
+        layout: ReviewLayout 설정.
+        aiNote: AI 미설정 시 안내 메시지.
+        circulationSummary: 재무제표 순환 서사 요약.
+
+    Returns:
+        Review 인스턴스. repr/render 호출 시 보고서 텍스트.
+
+    Example::
+
+        import dartlab
+        c = dartlab.Company("005930")
+        c.review()                        # 전체 리뷰
+        c.review("수익구조")               # 수익구조 섹션만
+
+        from dartlab.review import blocks, Review, buildReview
+        b = blocks(c)
+        b["growth"]                       # 매출 성장률 블록
+        Review([b["growth"], b["margin"]])  # 자유 조립
     """
 
     stockCode: str = ""

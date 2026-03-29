@@ -42,7 +42,7 @@ class SlackAdapter(ChannelAdapter):
         adapter = self
 
         @app.event("app_mention")
-        def on_mention(event, say):
+        def on_mention(event, _say):
             text = event.get("text", "")
             # @bot 멘션 제거
             import re
@@ -55,7 +55,7 @@ class SlackAdapter(ChannelAdapter):
             asyncio.run(adapter.handle_ask(channel, text))
 
         @app.event("message")
-        def on_dm(event, say):
+        def on_dm(event, _say):
             # DM에서는 멘션 없이 바로 처리
             if event.get("channel_type") != "im":
                 return
