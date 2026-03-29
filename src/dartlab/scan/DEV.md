@@ -19,12 +19,13 @@ providers/dart/scan/
 │   └── __init__.py          # scan_signal() market-level docs keyword trend
 ├── governance/
 │   ├── __init__.py          # scan_governance() 오케스트레이터
-│   ├── scanner.py           # majorHolder, outsideDirector, executivePay, auditOpinion
-│   └── scorer.py            # 4축 × 25점 = 100점 → A~E 등급
+│   ├── scanner.py           # majorHolder, outsideDirector, executivePay, auditOpinion, minorityHolder
+│   └── scorer.py            # 5축 (지분20+사외25+보수15+감사25+분산15) = 100점 → A~E 등급
 ├── workforce/
 │   ├── __init__.py          # scan_workforce() 오케스트레이터
-│   ├── scanner.py           # employee, executivePayIndividual, revenue_per_employee
-│   └── growth.py            # 급여성장률 vs 매출성장률 → 인건비부담
+│   ├── scanner.py           # employee, executivePayIndividual, revenue_per_employee, total_payroll
+│   ├── efficiency.py        # 인건비율, 1인당부가가치
+│   └── growth.py            # 급여성장률 vs 매출성장률 → 급여매출괴리
 ├── capital/
 │   ├── __init__.py          # scan_capital() 오케스트레이터
 │   ├── scanner.py           # dividend, treasuryStock, capitalChange
@@ -46,7 +47,7 @@ providers/dart/scan/
 data/dart/scan/
 ├── changes.parquet              docs 변화 전종목 5Y (47MB, 1.9M행)
 ├── finance.parquet              finance 전종목 5Y (197MB, 11.7M행)
-└── report/                      apiType별 분리 (10개, 합계 27MB)
+└── report/                      apiType별 분리 (12개)
     ├── majorHolder.parquet
     ├── executive.parquet
     ├── employee.parquet
@@ -56,7 +57,9 @@ data/dart/scan/
     ├── corporateBond.parquet
     ├── auditOpinion.parquet
     ├── executivePayAllTotal.parquet
-    └── executivePayIndividual.parquet
+    ├── executivePayIndividual.parquet
+    ├── outsideDirector.parquet
+    └── minorityHolder.parquet
 ```
 
 ### 빌드/배포 흐름
@@ -177,24 +180,26 @@ data/dart/finance/{stockCode}.parquet × 2700+
 
 ### governance (지배구조)
 
-**소스**: majorHolder, executive(사외이사), executivePayAllTotal + employee(보수비율), auditOpinion
+**소스**: majorHolder, outsideDirector(사외이사+중도사임+겸직), executivePayAllTotal + employee(보수비율), auditOpinion, minorityHolder(소액주주)
 
 | scanner 함수 | 출력 |
 |-------------|------|
 | `scan_major_holder_pct()` | {code: 지분율%} |
-| `scan_outside_directors()` | {code: 사외이사비율%} |
+| `scan_outside_directors()` | {code: {사외이사비율, 중도사임, 겸직}} |
 | `scan_pay_ratio()` | {code: 임원/직원 보수비율} |
 | `scan_audit_opinion()` | {code: 감사의견} |
+| `scan_minority_holder()` | {code: 소액주주지분%} |
 
 **scoring (scorer.py)**:
-- 4축 × 25점 = 100점 만점
-- `score_ownership`: 30~50% 최적(25점), 극단치 감점
-- `score_outside_ratio`: 40%+ 만점(25점), 0% 최저(3점)
-- `score_pay_ratio`: ≤2배 만점(25점), 20배+ 최저(3점)
+- 5축 = 100점 만점 (지분20 + 사외25 + 보수15 + 감사25 + 분산15)
+- `score_ownership`: 30~50% 최적(20점), 극단치 감점
+- `score_outside_ratio`: 40%+ 만점(25점), 중도사임/겸직 페널티(-3점 each)
+- `score_pay_ratio`: ≤2배 만점(15점), 20배+ 최저(1점)
 - `score_audit`: 적정(25점), 한정(5점), 부적정/거절(0점)
+- `score_minority`: 60%+ 만점(15점), 20% 미만 최저(2점)
 - 등급: A(85+) B(70+) C(55+) D(40+) E(<40)
 
-**DataFrame 컬럼**: 종목코드, 지분율, 사외이사비율, pay_ratio, 감사의견, S_지분, S_사외, S_보수, S_감사, 총점, 등급, 유효축수
+**DataFrame 컬럼**: 종목코드, 지분율, 사외이사비율, 중도사임, 겸직, pay_ratio, 감사의견, 소액주주지분, S_지분, S_사외, S_보수, S_감사, S_분산, 총점, 등급, 유효축수
 
 ### workforce (인력/급여)
 
@@ -206,12 +211,17 @@ data/dart/finance/{stockCode}.parquet × 2700+
 | `scan_revenue_per_employee()` | {code: 직원당매출_억} |
 | `scan_salary_growth()` | {code: {급여성장률, 급여_신, 급여_구}} |
 | `scan_revenue_growth()` | {code: 매출성장률%} |
-| `compute_salary_vs_revenue()` | DataFrame(종목코드, 급여성장률, 매출성장률, 인건비부담) |
+| `scan_total_payroll()` | {code: 연간총급여(원)} |
+| `scan_labor_ratio()` | {code: 인건비율(%)} |
+| `scan_value_added()` | {code: 1인당부가가치(억)} |
+| `compute_salary_vs_revenue()` | DataFrame(종목코드, 급여성장률, 매출성장률, 급여매출괴리) |
 | `scan_top_pay()` | {code: {공개인원, 최고보수_억}} |
 
-**인건비부담** = 급여성장률 - 매출성장률 (양수 = 인건비 부담↑)
+**급여매출괴리** = 급여성장률 - 매출성장률 (양수 = 급여 증가가 매출보다 빠름)
+**인건비율** = 총급여 / 매출 * 100 (매출 중 인건비 비중)
+**1인당부가가치** = (영업이익 + 총급여) / 직원수 (직원 1명이 만드는 가치)
 
-**DataFrame 컬럼**: 종목코드, 직원수, 평균급여_만원, 남녀격차, 근속_년, 직원당매출_억, 급여성장률, 매출성장률, 인건비부담, 최고보수_억, 공개인원
+**DataFrame 컬럼**: 종목코드, 직원수, 평균급여_만원, 남녀격차, 근속_년, 직원당매출_억, 인건비율, 1인당부가가치_억, 급여성장률, 매출성장률, 급여매출괴리, 최고보수_억, 공개인원
 
 ### capital (주주환원)
 

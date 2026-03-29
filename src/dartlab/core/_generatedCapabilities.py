@@ -469,8 +469,10 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "한국 상장사 전체 주주환원 스캔."
     },
     "chart": {
-        "kind": "module",
-        "summary": "Plotly 기반 재무 차트 도구."
+        "capabilities": "revenue: 매출 + 영업이익률 콤보\ncashflow: OCF/ICF/FCF 폭포\ndividend: DPS + 배당수익률 + 배당성향\nbalance: 자산/부채/자본 구성\nprofitability: ROE, 영업이익률, 순이익률\nradar: 10영역 인사이트 레이더\nratio: 주요 재무비율 스파크라인\nheatmap: 공시 변화 히트맵\nauto: 가용 데이터 기반 전체 차트",
+        "kind": "function",
+        "requires": "데이터: Company (자동 다운로드)\n패키지: plotly (pip install dartlab[charts])",
+        "summary": "시각화 엔진 -- Plotly 기반 재무 차트."
     },
     "chat": {
         "aicontext": "ask()와 동일한 기본 컨텍스트 + 저수준 도구 접근\nLLM이 부족하다 판단하면 추가 데이터 자율 수집",
@@ -638,8 +640,9 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "경제 시나리오 시뮬레이션."
     },
     "table": {
-        "kind": "module",
-        "summary": "재무 테이블 가공 도구."
+        "capabilities": "yoy: 전년 동기 대비 변동률\nsummary: 평균/CAGR/추세 요약\npivot: 계정별 피벗 테이블\nformat: 한국어 단위 포맷팅\ngrowth: 성장률 행렬\nratio: 재무비율 계산",
+        "kind": "function",
+        "summary": "테이블 가공 엔진 -- DataFrame 변환/포맷팅."
     },
     "text": {
         "kind": "module",

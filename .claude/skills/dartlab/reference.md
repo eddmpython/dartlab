@@ -53,8 +53,8 @@
 | `nameToCode` | function | 회사명 → 종목코드. 정확히 일치하는 첫 번째 결과. |
 | `searchName` | function | 회사명 부분 검색. |
 | `fuzzySearch` | function | 한글 fuzzy 종목 검색 — 초성 매칭 + Levenshtein 거리. |
-| `chart` | module | Plotly 기반 재무 차트 도구. |
-| `table` | module | 재무 테이블 가공 도구. |
+| `chart` | function | 시각화 엔진 -- Plotly 기반 재무 차트. |
+| `table` | function | 테이블 가공 엔진 -- DataFrame 변환/포맷팅. |
 | `text` | module | 텍스트 분석 도구. |
 | `Review` | class | 분석 리뷰 — AnalysisReport + core/Report 통합. |
 | `SelectResult` | class | select() 반환 객체 — DataFrame 위임 + 체이닝. |
@@ -270,6 +270,27 @@ DART(KR) + EDGAR(US) 양쪽 지원
 entry_points 재스캔
 **Requires:** 없음
 
+#### chart
+**Capabilities:** revenue: 매출 + 영업이익률 콤보
+cashflow: OCF/ICF/FCF 폭포
+dividend: DPS + 배당수익률 + 배당성향
+balance: 자산/부채/자본 구성
+profitability: ROE, 영업이익률, 순이익률
+radar: 10영역 인사이트 레이더
+ratio: 주요 재무비율 스파크라인
+heatmap: 공시 변화 히트맵
+auto: 가용 데이터 기반 전체 차트
+**Requires:** 데이터: Company (자동 다운로드)
+패키지: plotly (pip install dartlab[charts])
+
+#### table
+**Capabilities:** yoy: 전년 동기 대비 변동률
+summary: 평균/CAGR/추세 요약
+pivot: 계정별 피벗 테이블
+format: 한국어 단위 포맷팅
+growth: 성장률 행렬
+ratio: 재무비율 계산
+
 ---
 
 ## CLI (18개 명령)
@@ -410,8 +431,8 @@ entry_points 재스캔
 
 | 축 | 한글 | 설명 | target 파라미터 | 필수 | 반환타입 |
 |----|------|------|----------------|------|---------|
-| `governance` | 거버넌스 | 지배구조 (지분율, 사외이사, 보수비율, 감사의견) | stockCode 필터 | - | DataFrame |
-| `workforce` | 인력/급여 | 직원수, 평균급여, 성장률, 고액보수 | stockCode 필터 | - | DataFrame |
+| `governance` | 거버넌스 | 지배구조 (지분율, 사외이사, 보수비율, 감사의견, 소액주주 분산) | stockCode 필터 | - | DataFrame |
+| `workforce` | 인력/급여 | 직원수, 평균급여, 인건비율, 1인당부가가치, 성장률, 고액보수 | stockCode 필터 | - | DataFrame |
 | `capital` | 주주환원 | 배당, 자사주(취득/처분/소각), 증자/감자, 환원 분류 | stockCode 필터 | - | DataFrame |
 | `debt` | 부채구조 | 사채만기, 부채비율, ICR, 위험등급 | stockCode 필터 | - | DataFrame |
 | `account` | 계정 | 전종목 단일 계정 시계열 (매출액, 영업이익 등) | snakeId | O | DataFrame |

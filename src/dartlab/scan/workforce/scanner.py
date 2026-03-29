@@ -81,6 +81,56 @@ def scan_employee() -> dict[str, dict]:
     return result
 
 
+def scan_total_payroll() -> dict[str, float]:
+    """employee → {종목코드: 연간 총급여(원)}.
+
+    fyer_salary_totamt 합산 우선, 없으면 sm*jan_salary_am fallback.
+    Q4 우선 (연간 누적). Q4 없으면 Q2*2 연환산.
+    """
+    PAYROLL_QUARTER_ORDER = {"4분기": 1, "2분기": 2, "3분기": 3, "1분기": 4}
+
+    raw = scan_parquets(
+        "employee",
+        ["stockCode", "year", "quarter", "sm", "jan_salary_am", "fyer_salary_totamt"],
+    )
+    if raw.is_empty():
+        return {}
+
+    latestYear = find_latest_year(raw, "jan_salary_am", 500)
+    if latestYear is None:
+        return {}
+
+    sub = raw.filter(pl.col("year") == latestYear)
+    result: dict[str, float] = {}
+
+    for code, group in sub.group_by("stockCode"):
+        codeVal = code[0]
+        quarters = group["quarter"].unique().to_list()
+        bestQ = sorted(quarters, key=lambda q: PAYROLL_QUARTER_ORDER.get(q, 99))
+        qdf = group.filter(pl.col("quarter") == bestQ[0]) if bestQ else group
+        isHalf = bestQ[0] == "2분기" if bestQ else False
+
+        total = 0.0
+        usedDirect = False
+        for row in qdf.iter_rows(named=True):
+            direct = parse_num(row.get("fyer_salary_totamt"))
+            if direct and direct > 0:
+                total += direct
+                usedDirect = True
+            else:
+                emp = parse_num(row.get("sm"))
+                sal = parse_num(row.get("jan_salary_am"))
+                if emp and emp > 0 and sal and sal > 0:
+                    total += emp * sal
+
+        if total > 0:
+            if isHalf and not usedDirect:
+                total *= 2
+            result[codeVal] = total
+
+    return result
+
+
 def scan_revenue_per_employee() -> dict[str, float]:
     """employee + finance IS → {종목코드: 직원당 매출(억)}.
 

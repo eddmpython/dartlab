@@ -1,4 +1,4 @@
-"""거버넌스 4축 report 스캔."""
+"""거버넌스 6축 report 스캔."""
 
 from __future__ import annotations
 
@@ -38,8 +38,69 @@ def scan_major_holder_pct() -> dict[str, float]:
     return result
 
 
-def scan_outside_directors() -> dict[str, float]:
-    """executive → {종목코드: 사외이사 비율(%)}."""
+def scan_outside_directors() -> dict[str, dict]:
+    """outsideDirector → {종목코드: {사외이사비율, 중도사임, 겸직}}.
+
+    outsideDirector parquet의 drctr_co/otcmp_drctr_co 집계값 사용.
+    fallback: executive parquet의 ofcps 문자열 파싱.
+    """
+    raw = scan_parquets(
+        "outsideDirector",
+        ["stockCode", "year", "quarter", "drctr_co", "otcmp_drctr_co", "mdstrm_resig", "rlsofc"],
+    )
+
+    if not raw.is_empty():
+        return _outsideFromDedicated(raw)
+
+    # fallback: executive parquet
+    return _outsideFromExecutive()
+
+
+def _outsideFromDedicated(raw: pl.DataFrame) -> dict[str, dict]:
+    """outsideDirector parquet → 사외이사 비율 + 중도사임 + 겸직."""
+    latestYear = find_latest_year(raw, "drctr_co", 500)
+    if latestYear is None:
+        return {}
+
+    sub = raw.filter(pl.col("year") == latestYear)
+    result: dict[str, dict] = {}
+
+    for code, group in sub.group_by("stockCode"):
+        codeVal = code[0]
+        qdf = pick_best_quarter(group)
+
+        totalDirectors = 0
+        outsideDirectors = 0
+        resignCount = 0
+        concurrentCount = 0
+
+        for row in qdf.iter_rows(named=True):
+            d = parse_num(row.get("drctr_co"))
+            o = parse_num(row.get("otcmp_drctr_co"))
+            r = parse_num(row.get("mdstrm_resig"))
+            c = parse_num(row.get("rlsofc"))
+
+            if d and d > 0:
+                totalDirectors += int(d)
+            if o and o > 0:
+                outsideDirectors += int(o)
+            if r and r > 0:
+                resignCount += int(r)
+            if c and c > 0:
+                concurrentCount += int(c)
+
+        if totalDirectors > 0:
+            result[codeVal] = {
+                "사외이사비율": outsideDirectors / totalDirectors * 100,
+                "중도사임": resignCount,
+                "겸직": concurrentCount,
+            }
+
+    return result
+
+
+def _outsideFromExecutive() -> dict[str, dict]:
+    """executive parquet fallback → 사외이사 비율만 (중도사임/겸직 없음)."""
     raw = scan_parquets(
         "executive",
         ["stockCode", "year", "quarter", "ofcps"],
@@ -47,16 +108,20 @@ def scan_outside_directors() -> dict[str, float]:
     if raw.is_empty():
         return {}
 
-    latest_year = find_latest_year(raw, "ofcps", 1000)
-    if latest_year is None:
+    latestYear = find_latest_year(raw, "ofcps", 1000)
+    if latestYear is None:
         return {}
 
-    result: dict[str, float] = {}
-    sub = raw.filter(pl.col("year") == latest_year)
+    result: dict[str, dict] = {}
+    sub = raw.filter(pl.col("year") == latestYear)
     for code, group in sub.group_by("stockCode"):
         total = group.shape[0]
         outside = sum(1 for row in group.iter_rows(named=True) if row.get("ofcps") and "사외" in row["ofcps"])
-        result[code[0]] = outside / total * 100 if total > 0 else 0
+        result[code[0]] = {
+            "사외이사비율": outside / total * 100 if total > 0 else 0,
+            "중도사임": 0,
+            "겸직": 0,
+        }
     return result
 
 
@@ -147,4 +212,40 @@ def scan_audit_opinion() -> dict[str, str]:
             if worst_op:
                 result[code[0]] = worst_op
         break
+    return result
+
+
+def scan_minority_holder() -> dict[str, float]:
+    """minorityHolder → {종목코드: 소액주주 지분율(%)}.
+
+    hold_stock_rate가 높을수록 주주 분산이 양호.
+    """
+    raw = scan_parquets(
+        "minorityHolder",
+        ["stockCode", "year", "quarter", "hold_stock_rate"],
+    )
+    if raw.is_empty():
+        return {}
+
+    latestYear = find_latest_year(raw, "hold_stock_rate", 500)
+    if latestYear is None:
+        return {}
+
+    sub = raw.filter(pl.col("year") == latestYear)
+    result: dict[str, float] = {}
+
+    for code, group in sub.group_by("stockCode"):
+        codeVal = code[0]
+        qdf = pick_best_quarter(group)
+        vals = []
+        for row in qdf.iter_rows(named=True):
+            raw_val = row.get("hold_stock_rate")
+            if raw_val is not None:
+                cleaned = str(raw_val).strip().rstrip("%")
+                v = parse_num(cleaned)
+                if v is not None and 0 <= v <= 100:
+                    vals.append(v)
+        if vals:
+            result[codeVal] = max(vals)
+
     return result

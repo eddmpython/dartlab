@@ -13,7 +13,7 @@ from pathlib import Path
 
 import polars as pl
 
-# scanner에서 실제 사용하는 apiType 10개
+# scanner에서 실제 사용하는 apiType 12개
 SCAN_API_TYPES = [
     "majorHolder",
     "executive",
@@ -25,6 +25,8 @@ SCAN_API_TYPES = [
     "treasuryStock",
     "capitalChange",
     "corporateBond",
+    "outsideDirector",
+    "minorityHolder",
 ]
 
 _BATCH = 200

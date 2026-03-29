@@ -50,14 +50,14 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.scan.governance",
         fn="scan_governance",
         label="거버넌스",
-        description="지배구조 (지분율, 사외이사, 보수비율, 감사의견)",
+        description="지배구조 (지분율, 사외이사, 보수비율, 감사의견, 소액주주 분산)",
         example='scan("governance")',
     ),
     "workforce": _AxisEntry(
         module="dartlab.scan.workforce",
         fn="scan_workforce",
         label="인력/급여",
-        description="직원수, 평균급여, 성장률, 고액보수",
+        description="직원수, 평균급여, 인건비율, 1인당부가가치, 성장률, 고액보수",
         example='scan("workforce")',
     ),
     "capital": _AxisEntry(

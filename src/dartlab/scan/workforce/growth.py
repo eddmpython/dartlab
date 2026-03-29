@@ -1,4 +1,4 @@
-"""급여 성장률 vs 매출 성장률 — 인건비 부담 분석."""
+"""급여 성장률 vs 매출 성장률 — 급여-매출 괴리 분석."""
 
 from __future__ import annotations
 
@@ -213,7 +213,7 @@ def compute_salary_vs_revenue(
 ) -> pl.DataFrame:
     """급여성장률 vs 매출성장률 → DataFrame.
 
-    컬럼: 종목코드, 급여성장률, 매출성장률, 인건비부담, 급여>매출
+    컬럼: 종목코드, 급여성장률, 매출성장률, 급여매출괴리, 급여>매출
     """
     if sal_map is None:
         sal_map = scan_salary_growth()
@@ -232,7 +232,7 @@ def compute_salary_vs_revenue(
                 "종목코드": code,
                 "급여성장률": sg,
                 "매출성장률": rg,
-                "인건비부담": round(burden, 1),
+                "급여매출괴리": round(burden, 1),
                 "급여>매출": burden > 0,
             }
         )

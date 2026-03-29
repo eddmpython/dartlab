@@ -250,8 +250,8 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 
 | Axis | Label | What it does |
 |------|-------|--------------|
-| governance | Governance | Ownership, outside directors, pay ratio, audit opinion |
-| workforce | Workforce | Headcount, avg salary, growth rate, top earners |
+| governance | Governance | Ownership, outside directors, pay ratio, audit opinion, minority holder dispersion |
+| workforce | Workforce | Headcount, avg salary, labor cost ratio, value added per employee, growth rate, top earners |
 | capital | Shareholder Return | Dividends, buybacks, cancellations, equity changes |
 | debt | Debt Structure | Bond maturity, CP/short-term bonds, debt ratio, ICR, risk grade |
 | cashflow | Cash Flow | OCF/ICF/FCF + 8-type lifecycle pattern |

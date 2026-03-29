@@ -30,7 +30,7 @@ def test_governance_imports():
     assert grade(60) == "C"
     assert grade(45) == "D"
     assert grade(30) == "E"
-    assert score_ownership(40) == 25
+    assert score_ownership(40) == 20
 
 
 def test_capital_imports():

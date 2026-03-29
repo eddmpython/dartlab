@@ -93,11 +93,11 @@ def workforce_to_insight(row: dict) -> dict | None:
         elif rev_per < 1:
             risks.append({"level": "warning", "category": "workforce", "text": f"직원당 매출 저조 ({rev_per:.1f}억)"})
 
-    burden = row.get("인건비부담")
+    burden = row.get("급여매출괴리")
     if burden is not None:
-        details.append(f"인건비부담 {burden:+.1f}%p")
+        details.append(f"급여매출괴리 {burden:+.1f}%p")
         if burden > 10:
-            risks.append({"level": "warning", "category": "workforce", "text": f"인건비 부담 증가 ({burden:+.1f}%p)"})
+            risks.append({"level": "warning", "category": "workforce", "text": f"급여-매출 괴리 ({burden:+.1f}%p)"})
 
     gender = row.get("남녀격차")
     if gender is not None and gender > 40:
