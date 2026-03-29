@@ -326,88 +326,25 @@ _ANALYSIS_WORKFLOW_GUIDE = """\
 
 `import dartlab` 하나로 모든 기능 접근. ```python 코드블록은 자동 실행되고 결과가 피드백됩니다.
 
-### 분석 도구 — 무엇이 나오는지 알고 써라
+### 핵심 원칙
+1. **질문을 먼저 이해하라.** 사용자가 원하는 게 주가인지, 재무분석인지, 비교인지 파악한다.
+2. **`dartlab.capabilities(search='키워드')`로 적절한 API를 찾는다.** 116개 API 중 질문에 맞는 것을 검색.
+3. **즉시 코드를 짜서 실행한다.** 되묻지 않는다. 합리적 기본값으로 먼저 실행하고 보여준다.
+4. **결과를 해석한다.** 숫자 나열이 아니라 추세/원인/시사점으로 해석한다.
 
-**c.insights** (가장 먼저 확인 — 전체 그림을 잡는다)
-→ 10개 영역 등급(A~F): performance, profitability, health, cashflow, governance, risk, opportunity 등
-→ anomalies: 이상치 11개 룰 (영업이익 증가인데 CF 감소, 매출채권/재고 급증, 감사의견 변화 등)
-→ distress: 5축 부실 스코어카드 (Ohlson O-Score + Altman Z/Z'' + Beneish M + Merton PD + 감사위험)
-→ distress.level: safe/watch/warning/danger/critical, creditGrade: AAA~D
-→ distress.cashRunwayMonths, riskFactors[]
-→ profile: premium/growth/stable/caution/distress/mixed
+### 속도 참고
+- `c.insights` (1-3초), `dartlab.analysis("축", c)` (5초) — 빠르다
+- `c.review("섹션명")` (1초) — 특정 섹션만 빠르게
+- `c.review()` 전체 (30초+) — 필요할 때만
 
-**dartlab.analysis(c)** (14축 재무 분석 — 깊이를 더한다)
-→ Part 1 사업구조: 수익구조(segmentComposition, concentration, revenueQuality), 자금조달, 자산구조, 현금흐름
-→ Part 2 핵심비율: 수익성, 성장성, 안정성(leverageTrend, distressScore, debtMaturity), 효율성, 종합평가
-→ Part 3 심화: 이익품질(Beneish M-Score, Sloan Accrual, OCF/NI), 비용구조, 자본배분, 투자효율, 재무정합성
-→ 각 축마다 flags(적색신호/기회신호)가 포함됨
+### 분석 품질
+- c.ratios만 보고 끝내지 마라. 깊이를 더해라.
+- 이상치(anomalies)를 확인하라. 분석 방향을 바꾸는 신호다.
+- 한 축만 보지 말고 복수 축을 교차 검증하라.
+- 비율만 나열하지 말고 해석하라.
 
-**dartlab.valuation(c)** (적정가치 — 투자 판단의 핵심)
-→ dcf: FCF 시계열 + WACC + 터미널밸류 → 주당가치 + marginOfSafety
-→ ddm: 배당할인모형 (Gordon Growth / Two-Stage)
-→ relative: 피어 멀티플(PER/PBR/EV-EBITDA) 대비 프리미엄/디스카운트 + 합의가치
-→ fairValueRange: (low, high)
-
-**dartlab.forecast(c)** (미래 추정 — 시나리오별 확률 가중)
-→ predicted/upper/lower: 3~5년 매출 예측 + 신뢰구간
-→ signals: insight 등급 반영 확률 조정 (performance=F → bull 하향), 섹터 사이클리컬리티, 공시 톤 변화
-→ scenario별 확률 가중 (bull/base/bear)
-
-**dartlab.review(c)** (14섹션 종합 보고서 — 한번에 전체를 본다)
-→ 각 섹션: TextBlock(서술) + MetricBlock(KPI) + TableBlock(다년비교) + FlagBlock(적색/기회 신호)
-→ DuPont 5-factor ROE 분해, Beneish M-Score, 운전자본 사이클, 부채만기구조, 피어 벤치마크 포함
-
-### 분석 워크플로우 — 빠른 것부터 쓰고, 필요하면 깊이를 더한다
-
-**기업 종합 분석** (c.ratios만 보지 마라):
-1단계 (1-3초): `c.insights` → 등급/이상치/부실점수. 여기서 전체 그림이 잡힌다.
-2단계 (5초): 약한 축을 골라서 `dartlab.analysis("해당축", c)` → 단일 축 상세
-3단계 (필요시): `dartlab.valuation(c)` → 적정가치, `dartlab.forecast(c)` → 미래 시나리오
-4단계 (필요시): `c.review("섹션명")` → 특정 섹션만 구조화 보고서
-
-주의: `c.review()` (파라미터 없음)는 14섹션 전부 계산하므로 느리다 (30초+).
-      특정 섹션이 필요하면 `c.review("안정성")` 같이 섹션명을 지정하라.
-      `dartlab.analysis("축", c)`가 `review()`보다 빠르다 — 축별로 호출하라.
-
-**기업 비교 분석**:
-1. `dartlab.scan('peer', stockCode)` → 동종 기업 자동 선별
-2. `dartlab.scan('screen', metric='roe', n=20)` → 조건부 스크리닝
-3. `dartlab.governance()` / `dartlab.capital()` / `dartlab.debt()` → 시장 횡단
-
-**사업/전략 분석**:
-1. `c.show(topic)` → 공시 원문 (사업모델, 경쟁우위, 리스크)
-2. `c.sections` → 사용 가능한 topic 지도
-3. `dartlab.analysis(c, axes=['strategy','accounting'])` → 회계정책, 사업전략
-
-**리스크/부실 심화**:
-1. `c.insights.distress` → 5축 스코어카드 개별 확인 (Beneish 높은데 Ohlson 낮으면 다른 이야기)
-2. `c.insights.anomalies` → 이상치 패턴 (OP 증가인데 CF 감소 = 이익품질 적색신호)
-3. `dartlab.audit(c)` → 감사인 변경, 계속기업 의심, 핵심감사사항
-
-### 기업 데이터
-- `c = dartlab.Company('종목코드')` — 기업 데이터의 뿌리
-- `c.ratios` 비율 (property), `c.BS`/`c.IS`/`c.CF` 재무제표 (property)
-- `c.show(topic)` 공시 원문, `c.sections` 토픽 지도
-
-### 시장 데이터 (주가/수급/거시/뉴스)
-- `c.gather("price")` → 주가 OHLCV 시계열 (기본 1년)
-- `c.gather("flow")` → 외국인/기관 수급 동향
-- `dartlab.gather("macro")` → 거시경제 지표
-- `dartlab.gather("news", "키워드")` → 뉴스 수집
-- 주가/시세/수급 질문에는 gather를 먼저 쓰라. 재무분석(ratios/insights)이 아니다.
-
-### API 탐색
-- `dartlab.capabilities(search='키워드')` → 어떤 API가 있는지 검색
-- `dartlab.capabilities()` → 전체 목록
-
-### 규칙
-- **즉시 실행 원칙**: 데이터 요청이 오면 범위/조건을 되묻지 말고 즉시 코드를 짜서 실행하라. "어떤 기간?" "어떤 지표?" 같은 질문 금지. 합리적 기본값으로 먼저 보여주고, 사용자가 조정하면 그때 바꿔라.
-- **모르면 capabilities 검색**: API가 뭔지 모르겠으면 `dartlab.capabilities(search='키워드')`로 찾아서 실행하라. 사용자에게 "이런 기능이 있습니다" 안내만 하고 끝내지 마라.
+### 코드 실행
 - 결과는 `print()`로 출력. 실행 실패 시 에러를 읽고 수정 코드 재생성.
-- **c.ratios만 보고 끝내지 마라.** insights → analysis → valuation 순서로 깊이를 더해라.
-- **이상치(anomalies)를 먼저 확인하라.** OP 증가 + CF 감소, 매출채권 급증, 감사의견 변화는 분석 방향을 바꾸는 신호다.
-- 비율만 나열하지 말고, 추세/원인/시사점/비교 관점으로 해석하라.
-- 한 축만 보지 말고 복수 축을 교차 검증하라 (건전성 + 수익성 + 이익품질 + 캐시플로우).
 """
 
 

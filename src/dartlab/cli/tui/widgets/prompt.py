@@ -18,15 +18,15 @@ class Prompt(TextArea):
     Prompt {
         dock: bottom;
         width: 1fr;
-        height: 1;
-        max-height: 6;
+        height: auto;
+        min-height: 2;
+        max-height: 8;
         border: none;
-        padding: 0 0 0 1;
+        padding: 0 1;
         background: $surface;
     }
     Prompt:focus {
         border: none;
-        background: $surface-lighten-1;
     }
     Prompt.-blocked {
         opacity: 0.4;
@@ -69,6 +69,15 @@ class Prompt(TextArea):
     def _onChanged(self, event: TextArea.Changed) -> None:
         if not self._navigating:
             self._historyIdx = -1
+        self._adjustHeight()
+
+    def _adjustHeight(self) -> None:
+        """Grow height to fit content, within min/max bounds."""
+        lineCount = self.document.line_count
+        # +1 for cursor row padding
+        desired = max(2, lineCount + 1)
+        clamped = min(desired, 8)
+        self.styles.height = clamped
 
     def watch_disabled(self, value: bool) -> None:
         self.set_class(value, "-blocked")
@@ -97,6 +106,7 @@ class Prompt(TextArea):
                 self._inputHistory.append(text)
                 self._historyIdx = -1
                 self.clear()
+                self.styles.height = 2
                 self.post_message(Prompt.Submitted(value=text))
             return
 
@@ -113,6 +123,7 @@ class Prompt(TextArea):
             event.prevent_default()
             if self.text:
                 self.clear()
+                self.styles.height = 2
             return
 
         # Pass-through app-level shortcuts
@@ -144,6 +155,7 @@ class Prompt(TextArea):
                 self._historyIdx = -1
                 self._navigating = True
                 self.clear()
+                self.styles.height = 2
                 self._navigating = False
                 return
         self._navigating = True

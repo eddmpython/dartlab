@@ -4,7 +4,7 @@
 
 * {
     scrollbar-size-vertical: 1;
-    scrollbar-size-horizontal: 1;
+    scrollbar-size-horizontal: 0;
     scrollbar-color: $panel-lighten-1;
     scrollbar-color-hover: $panel-lighten-2;
     scrollbar-color-active: $primary;
@@ -50,12 +50,13 @@ ChatContainer {
 
 ChatItem {
     height: auto;
-    margin: 0 0 1 0;
+    margin: 0;
 }
 
 ChatItem.userMessage {
     height: auto;
     padding: 0 1;
+    margin: 0 0 1 0;
     background: $surface;
     border-left: outer $secondary;
 }
@@ -88,7 +89,7 @@ ChatItem .messageText {
 
 .toolGroup {
     height: auto;
-    margin: 0 0 0 2;
+    margin: 0 0 0 1;
     padding: 0 0 0 1;
     border-left: tall $panel-lighten-2;
 }
@@ -104,14 +105,7 @@ ChatItem .messageText {
     text-style: dim;
 }
 
-/* -- Thinking indicator ------------------------------------ */
-
-#thinkingIndicator {
-    height: 1;
-    margin: 0 1;
-    color: $primary;
-    background: transparent;
-}
+/* -- Spinner (SpinnerWidget DEFAULT_CSS handles styling) --- */
 
 /* -- Welcome screen ---------------------------------------- */
 
@@ -133,7 +127,6 @@ WelcomeScreen #welcomeBrand {
     text-align: center;
     width: auto;
     height: auto;
-    margin-bottom: 1;
 }
 
 WelcomeScreen #welcomeTagline {
@@ -163,6 +156,7 @@ WelcomeScreen #welcomeSetupHint {
 /* -- Footer ------------------------------------------------ */
 
 Footer {
+    height: 1;
     background: transparent;
 }
 
@@ -175,8 +169,44 @@ Footer FooterKey {
     background: transparent;
 }
 
-/* -- Markdown ---------------------------------------------- */
+.footer-key--description {
+    color: $text-muted;
+    background: transparent;
+}
+
+/* -- Markdown content -------------------------------------- */
+
+Markdown {
+    margin: 0;
+    padding: 0;
+}
 
 MarkdownFence {
     max-height: 40;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+MarkdownFence > * {
+    overflow: hidden;
+}
+
+Markdown MarkdownH1,
+Markdown MarkdownH2,
+Markdown MarkdownH3,
+Markdown MarkdownH4 {
+    margin: 0;
+    padding: 0;
+}
+
+Markdown MarkdownBulletList,
+Markdown MarkdownOrderedList {
+    margin: 0;
+    padding: 0 0 0 2;
+}
+
+MarkdownTableOfContents {
+    display: none;
 }
