@@ -1133,10 +1133,22 @@ class _Module(sys.modules[__name__].__class__):
             instance = Analysis()
             setattr(self, name, instance)
             return instance
-        if name in ("chart", "table", "text"):
+        if name == "chart":
+            from dartlab.chart import Chart
+
+            instance = Chart()
+            setattr(self, name, instance)
+            return instance
+        if name == "table":
+            from dartlab.table import Table
+
+            instance = Table()
+            setattr(self, name, instance)
+            return instance
+        if name == "text":
             import importlib
 
-            mod = importlib.import_module(f"dartlab.tools.{name}")
+            mod = importlib.import_module("dartlab.tools.text")
             setattr(self, name, mod)
             return mod
         raise AttributeError(f"module 'dartlab' has no attribute {name!r}")

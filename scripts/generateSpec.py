@@ -273,23 +273,23 @@ class ToolSpec:
     priority: int
 
 
-def _astToValue(node: ast.expr) -> Any:
-    """AST 리터럴 노드를 Python 값으로 변환."""
+def _astToValue(node: ast.expr, localVars: dict[str, ast.expr] | None = None) -> Any:
+    """AST 리터럴 노드를 Python 값으로 변환. localVars로 변수 참조 해결."""
     if isinstance(node, ast.Constant):
         return node.value
     if isinstance(node, ast.List):
-        return [_astToValue(el) for el in node.elts]
+        return [_astToValue(el, localVars) for el in node.elts]
     if isinstance(node, ast.Tuple):
-        return tuple(_astToValue(el) for el in node.elts)
+        return tuple(_astToValue(el, localVars) for el in node.elts)
     if isinstance(node, ast.Dict):
         result = {}
         for k, v in zip(node.keys, node.values):
             if k is None:
                 continue
-            result[_astToValue(k)] = _astToValue(v)
+            result[_astToValue(k, localVars)] = _astToValue(v, localVars)
         return result
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-        return -_astToValue(node.operand)
+        return -_astToValue(node.operand, localVars)
     if isinstance(node, ast.Name):
         if node.id in ("True", "true"):
             return True
@@ -297,13 +297,23 @@ def _astToValue(node: ast.expr) -> Any:
             return False
         if node.id in ("None",):
             return None
+        # localVars에서 변수 resolve 시도
+        if localVars and node.id in localVars:
+            return _astToValue(localVars[node.id], localVars)
         return f"<var:{node.id}>"
     if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        left = _astToValue(node.left)
-        right = _astToValue(node.right)
+        left = _astToValue(node.left, localVars)
+        right = _astToValue(node.right, localVars)
         if isinstance(left, str) and isinstance(right, str):
             return left + right
-        return left
+        if isinstance(left, list) and isinstance(right, list):
+            return left + right
+        # 한쪽 resolve 실패 → <var:partial> 마커 포함해서 런타임 fallback 유도
+        if isinstance(right, list):
+            return ["<var:partial>"] + right
+        if isinstance(left, list):
+            return left + ["<var:partial>"]
+        return None
     if isinstance(node, ast.JoinedStr):
         parts = []
         for val in node.values:
@@ -312,6 +322,7 @@ def _astToValue(node: ast.expr) -> Any:
             else:
                 parts.append("{...}")
         return "".join(parts)
+    # ast.Call — list(...) 같은 호출은 resolve 불가
     return None
 
 
@@ -336,15 +347,15 @@ def _resolveSchemaDict(schemaNode: ast.expr, localVars: dict[str, ast.expr]) -> 
         for k, v in zip(schemaNode.keys, schemaNode.values):
             if k is None:
                 continue
-            key = _astToValue(k)
+            key = _astToValue(k, localVars)
             if isinstance(v, ast.Name) and v.id in localVars:
                 result[key] = _resolveSchemaDict(localVars[v.id], localVars)
             elif isinstance(v, ast.Dict):
                 result[key] = _resolveSchemaDict(v, localVars)
             else:
-                result[key] = _astToValue(v)
+                result[key] = _astToValue(v, localVars)
         return result
-    return _astToValue(schemaNode) or {}
+    return _astToValue(schemaNode, localVars) or {}
 
 
 def _collectLocalVarAssigns(funcBody: list[ast.stmt]) -> dict[str, ast.expr]:
@@ -417,14 +428,14 @@ def _parseRegisterToolCalls(filepath: Path) -> list[ToolSpec]:
         priority = 50
         for kw in node.keywords:
             if kw.arg == "category":
-                val = _astToValue(kw.value)
+                val = _astToValue(kw.value, allLocalVars)
                 category = val if isinstance(val, str) else ""
             elif kw.arg == "questionTypes":
-                val = _astToValue(kw.value)
+                val = _astToValue(kw.value, allLocalVars)
                 if isinstance(val, (tuple, list)):
                     questionTypes = tuple(str(v) for v in val)
             elif kw.arg == "priority":
-                val = _astToValue(kw.value)
+                val = _astToValue(kw.value, allLocalVars)
                 priority = val if isinstance(val, int) else 50
 
         tools.append(ToolSpec(
@@ -436,6 +447,70 @@ def _parseRegisterToolCalls(filepath: Path) -> list[ToolSpec]:
             priority=priority,
         ))
     return tools
+
+
+def _hasUnresolvedVar(obj: Any) -> bool:
+    """값 안에 <var:...> 미해결 참조가 있는지 확인."""
+    if isinstance(obj, str):
+        return "<var:" in obj
+    if isinstance(obj, (list, tuple)):
+        return any(_hasUnresolvedVar(v) for v in obj)
+    if isinstance(obj, dict):
+        return any(_hasUnresolvedVar(v) for v in obj.values())
+    return False
+
+
+def _runtimeResolveToolEnums(tools: list[ToolSpec]) -> None:
+    """AST로 해결 못한 enum을 런타임 import로 보충."""
+    needsResolve = []
+    for spec in tools:
+        props = spec.schema.get("properties", {})
+        for propName, propDef in props.items():
+            enumVal = propDef.get("enum")
+            # enum이 None (resolve 실패)이거나 <var:> 미해결 참조 포함
+            if "enum" in propDef and (enumVal is None or _hasUnresolvedVar(enumVal)):
+                needsResolve.append((spec, propName, propDef))
+
+    if not needsResolve:
+        return
+
+    # 런타임으로 실제 registerTool 호출을 가로채서 enum 추출
+    try:
+        capturedSchemas: dict[str, dict] = {}
+
+        def _captureRegister(name: str, _fn, _desc, schema=None, **_kw):
+            if schema and isinstance(schema, dict):
+                capturedSchemas[name] = schema
+
+        import dartlab.ai.tools.superTools.scan as _scanMod  # noqa: F811
+        import dartlab.ai.tools.superTools.analysis as _analysisMod  # noqa: F811
+
+        # scan — registerScanTool 실행
+        if hasattr(_scanMod, "registerScanTool"):
+            try:
+                _scanMod.registerScanTool(_captureRegister)
+            except (ImportError, AttributeError, TypeError, ValueError, OSError):
+                pass
+
+        # analysis — registerAnalysisTool(company, registerTool) 실행
+        if hasattr(_analysisMod, "registerAnalysisTool"):
+            try:
+                _analysisMod.registerAnalysisTool(None, _captureRegister)
+            except (ImportError, AttributeError, TypeError, ValueError, OSError):
+                pass
+
+        # 캡처된 schema로 unresolved enum 교체
+        for spec, propName, propDef in needsResolve:
+            captured = capturedSchemas.get(spec.name)
+            if not captured:
+                continue
+            cProps = captured.get("properties", {})
+            cPropDef = cProps.get(propName, {})
+            cEnum = cPropDef.get("enum")
+            if cEnum and not _hasUnresolvedVar(cEnum):
+                propDef["enum"] = list(cEnum)
+    except (ImportError, AttributeError, TypeError, ValueError, OSError) as e:
+        print(f"  [warn] 런타임 enum resolve 실패: {e}")
 
 
 def _collectAllToolSpecs() -> list[ToolSpec]:
@@ -455,6 +530,9 @@ def _collectAllToolSpecs() -> list[ToolSpec]:
                 if spec.name not in seen:
                     allTools.append(spec)
                     seen.add(spec.name)
+
+    # AST 해결 실패한 enum을 런타임으로 보충
+    _runtimeResolveToolEnums(allTools)
 
     # priority 내림차순 정렬
     allTools.sort(key=lambda s: -s.priority)
