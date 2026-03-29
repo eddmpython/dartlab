@@ -253,7 +253,13 @@ def _streamWithCodeExecution(
         messages.append({"role": "assistant", "content": buffer})
         messages.append({
             "role": "user",
-            "content": f"코드 실행 결과입니다. 이 결과를 분석하고 해석해주세요:\n\n```\n{result}\n```",
+            "content": (
+                "코드 실행 결과:\n\n"
+                f"```\n{result}\n```\n\n"
+                "이 결과를 바탕으로 해석하세요. "
+                "오류가 있으면 수정 코드를 짜서 재실행하세요. "
+                "결과가 잘렸으면 .head()/.filter()로 범위를 좁혀 재실행하세요."
+            ),
         })
 
     # maxRounds 도달 — 마지막 스트리밍으로 종합

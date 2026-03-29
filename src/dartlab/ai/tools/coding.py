@@ -379,6 +379,37 @@ class LocalPythonBackend(CodingBackend):
                 )
 
 
+def _classifyError(stderr: str, stdout: str) -> str:
+    """코드 실행 에러를 분류하고 복구 힌트를 제공한다."""
+    hint = ""
+    if "ImportError" in stderr or "ModuleNotFoundError" in stderr:
+        hint = "\n힌트: 모듈을 찾을 수 없습니다. dartlab 내장 API만 사용 가능합니다."
+    elif "AttributeError" in stderr or "NameError" in stderr:
+        hint = (
+            "\n힌트: API 이름이 틀렸을 수 있습니다."
+            " `dartlab.capabilities(search='키워드')`로 정확한 API를 검색하세요."
+        )
+    elif "TypeError" in stderr:
+        hint = (
+            "\n힌트: 함수 파라미터가 맞지 않습니다."
+            " `help(함수명)`으로 시그니처를 확인하세요."
+        )
+    elif "KeyError" in stderr or "ColumnNotFoundError" in stderr:
+        hint = "\n힌트: 컬럼/키가 없습니다. 먼저 print()로 구조를 확인한 뒤 정확한 이름을 사용하세요."
+
+    parts = [f"[실행 오류]"]
+    if stderr:
+        # traceback에서 마지막 에러 줄만 추출 (전체 traceback은 토큰 낭비)
+        lines = stderr.strip().splitlines()
+        errorLine = lines[-1] if lines else stderr
+        parts.append(errorLine)
+    if stdout:
+        parts.append(f"출력:\n{stdout[:1000]}")
+    if hint:
+        parts.append(hint)
+    return "\n".join(parts)
+
+
 def _stripDuplicateImport(code: str, module: str) -> str:
     """사용자 코드에서 `import <module>` 단독 문을 제거한다 (preamble에서 주입하므로)."""
     try:
@@ -418,12 +449,14 @@ class DartlabCodeExecutor(LocalPythonBackend):
         # 사용자 코드에서 중복 import dartlab 제거 (preamble에서 주입)
         cleanCode = _stripDuplicateImport(code, "dartlab")
 
-        # dartlab context preamble
+        # dartlab context preamble — LLM이 읽을 수 있는 크기로 제한
         preamble = (
             "import dartlab\n"
             "import polars as pl\n"
             "pl.Config.set_fmt_float('full')\n"
-            "pl.Config.set_tbl_cols(20)\n"
+            "pl.Config.set_tbl_cols(10)\n"
+            "pl.Config.set_tbl_rows(25)\n"
+            "pl.Config.set_tbl_width_chars(120)\n"
         )
         if stockCode:
             preamble += f'_c = dartlab.Company("{stockCode}")\n'
@@ -495,17 +528,22 @@ class DartlabCodeExecutor(LocalPythonBackend):
                     env=env,
                 )
 
-                stdout = result.stdout[:8000] if result.stdout else ""
-                stderr = result.stderr[:2000] if result.stderr else ""
+                rawStdout = result.stdout or ""
+                rawStderr = result.stderr or ""
+                _MAX_OUT = 4000
+                stdoutTruncated = len(rawStdout) > _MAX_OUT
+                stdout = rawStdout[:_MAX_OUT]
+                if stdoutTruncated:
+                    stdout += (
+                        f"\n\n... (출력 {len(rawStdout):,}자 중 {_MAX_OUT:,}자만 표시."
+                        " .head()/.filter()로 범위를 좁혀 재실행하세요)"
+                    )
+                stderr = rawStderr[:2000]
 
                 if result.returncode == 0:
                     answer = stdout if stdout else "(실행 완료, 출력 없음)"
                 else:
-                    answer = f"[실행 오류] (exit code {result.returncode})\n"
-                    if stderr:
-                        answer += f"```\n{stderr}\n```\n"
-                    if stdout:
-                        answer += f"\n출력:\n{stdout}"
+                    answer = _classifyError(stderr, stdout)
 
                 return CodingTaskResult(
                     backend=self.name,
@@ -573,8 +611,8 @@ class DartlabCodeExecutor(LocalPythonBackend):
                 return m.group(0)
 
         answer = re.sub(r"-?\d+\.?\d*[eE][+-]?\d+", _replaceScientific, answer)
-        if len(answer) > 6000:
-            return answer[:6000] + "\n\n... (결과 잘림)"
+        if len(answer) > 4000:
+            return answer[:4000] + "\n\n... (결과가 너무 깁니다. .head()/.filter()로 범위를 좁혀주세요)"
         return answer
 
 
