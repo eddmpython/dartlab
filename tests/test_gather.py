@@ -264,12 +264,14 @@ class TestNaverSource:
         mock_client = _make_async_client(
             {
                 "closePrice": "200,000",
-                "per": "12.50",
-                "pbr": "1.30",
-                "dividendYield": "2.10",
-                "marketCap": "3,564,000",
-                "high52wPrice": "250,000",
-                "low52wPrice": "150,000",
+                "totalInfos": [
+                    {"code": "per", "value": "12.50배"},
+                    {"code": "pbr", "value": "1.30배"},
+                    {"code": "marketValue", "value": "3,564,000"},
+                    {"code": "highPriceOf52Weeks", "value": "250,000원"},
+                    {"code": "lowPriceOf52Weeks", "value": "150,000원"},
+                    {"code": "dividendYieldRatio", "value": "2.10%"},
+                ],
             }
         )
 

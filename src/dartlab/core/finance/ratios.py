@@ -551,9 +551,9 @@ def _detectArchetype(series: dict[str, dict[str, list[float | None]]]) -> str:
     if max_score == 0:
         return "general"
 
-    # 일반 기업 시그니처가 있으면 (매출 존재) 금융업 오분류 방지
-    # 최소 3점 이상이어야 금융업 확정. BS 금융자산만으로는 부족.
-    if max_score < 3 and generalSignals >= 1:
+    # 일반 기업 시그니처가 충분하면 (매출+매출원가 등 2개 이상) 금융업 오분류 방지
+    # 최소 3점 이상이어야 금융업 확정. 단, 일반 시그니처가 1개뿐이면 금융업 허용.
+    if max_score < 3 and generalSignals >= 2:
         return "general"
 
     top = [k for k, v in scores.items() if v == max_score]
