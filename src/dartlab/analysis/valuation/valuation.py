@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.core.sector.types import SectorParams
 from dartlab.analysis.valuation.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.extract import (
     getAnnualValues,
@@ -13,6 +12,7 @@ from dartlab.core.finance.extract import (
     getRevenueGrowth3Y,
     getTTM,
 )
+from dartlab.core.sector.types import SectorParams
 
 # ── 결과 타입 ──────────────────────────────────────────────
 
@@ -31,6 +31,9 @@ class DCFResult:
     growthRateInitial: float
     terminalGrowth: float
     marginOfSafety: Optional[float]
+    exitMultipleTv: Optional[float] = None  # Exit Multiple 기반 TV (교차검증)
+    exitMultipleEv: Optional[float] = None  # Exit Multiple 기반 EV
+    exitMultiplePerShare: Optional[float] = None  # Exit Multiple 기반 주당가치
     assumptions: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     currency: str = "KRW"
@@ -51,6 +54,8 @@ class DCFResult:
             lines.append(f"  주당 내재가치: {fmtPrice(self.perShareValue, c)}")
         if self.marginOfSafety is not None:
             lines.append(f"  안전마진: {self.marginOfSafety:.1f}%")
+        if self.exitMultiplePerShare is not None:
+            lines.append(f"  [교차검증] Exit Multiple 주당가치: {fmtPrice(self.exitMultiplePerShare, c)}")
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
@@ -114,11 +119,13 @@ class RelativeValuationResult:
     def __repr__(self) -> str:
         lines = ["[상대가치 밸류에이션]"]
         lines.append("  지표       섹터배수   현재배수   적정가치      할증/할인")
-        for key in ["PER", "PBR", "EV/EBITDA"]:
+        for key in ["PER", "PBR", "EV/EBITDA", "PSR", "PEG"]:
             sm = self.sectorMultiples.get(key)
             cm = self.currentMultiples.get(key)
             iv = self.impliedValues.get(key)
             pd = self.premiumDiscount.get(key)
+            if sm is None and cm is None and iv is None:
+                continue
             smS = f"{sm:.1f}" if sm is not None else "-"
             cmS = f"{cm:.1f}" if cm is not None else "-"
             ivS = fmtPrice(iv, self.currency) if iv is not None else "-"
@@ -277,6 +284,7 @@ def dcfValuation(
         prevFcf = proj
 
     finalFcf = projections[-1]
+    # Gordon Growth TV
     tv = finalFcf * (1 + tg / 100) / (wacc / 100 - tg / 100)
 
     pvFcfs = sum(fcf / (1 + wacc / 100) ** yr for yr, fcf in enumerate(projections, 1))
@@ -294,6 +302,34 @@ def dcfValuation(
     if perShare is not None and currentPrice is not None and currentPrice > 0:
         mos = (perShare - currentPrice) / perShare * 100
 
+    # Exit Multiple TV 교차검증 -- EBITDA × 섹터 exit multiple
+    exitTv = None
+    exitEv = None
+    exitPerShare = None
+    exitMult = sectorParams.exitMultiple if sectorParams and sectorParams.exitMultiple else None
+    if exitMult and exitMult > 0:
+        oi = getTTM(series, "IS", "operating_profit") or getTTM(series, "IS", "operating_income")
+        dep = getTTM(series, "CF", "depreciation_and_amortization")
+        if oi is not None and oi > 0:
+            if dep is None:
+                ta = getLatest(series, "BS", "tangible_assets") or 0
+                ia = getLatest(series, "BS", "intangible_assets") or 0
+                dep = ta * 0.05 + ia * 0.1
+            ebitda = oi + (dep or 0)
+            if ebitda > 0:
+                # 5년차 EBITDA 추정 (현재 EBITDA에 초기성장률 적용)
+                projEbitda = ebitda
+                for yr in range(1, projectionYears + 1):
+                    blend = (yr - 1) / max(projectionYears - 1, 1)
+                    g = initialGrowth * (1 - blend) + tg * blend
+                    projEbitda *= (1 + g / 100)
+                exitTv = projEbitda * exitMult
+                pvExitTv = exitTv / (1 + wacc / 100) ** projectionYears
+                exitEv = pvFcfs + pvExitTv
+                exitEqValue = exitEv - netDebt
+                if shares and shares > 0:
+                    exitPerShare = exitEqValue / shares
+
     assumptions = {
         "할인율": f"{wacc:.1f}%",
         "초기성장률": f"{initialGrowth:.1f}%",
@@ -302,6 +338,8 @@ def dcfValuation(
         "순차입금": fmtBig(netDebt, currency),
         "기준FCF": fmtBig(fcfCurrent, currency),
     }
+    if exitMult:
+        assumptions["Exit Multiple"] = f"EV/EBITDA {exitMult:.1f}x"
 
     return DCFResult(
         fcfHistorical=fcfHist,
@@ -314,6 +352,9 @@ def dcfValuation(
         growthRateInitial=initialGrowth,
         terminalGrowth=tg,
         marginOfSafety=mos,
+        exitMultipleTv=exitTv,
+        exitMultipleEv=exitEv,
+        exitMultiplePerShare=exitPerShare,
         assumptions=assumptions,
         warnings=warnings,
         currency=currency,
@@ -406,6 +447,51 @@ def ddmValuation(
 # ── 상대가치 ──────────────────────────────────────────────
 
 
+def _normalizedEarnings(series: dict, shares: int | None) -> tuple[float | None, float | None, bool]:
+    """경기순환 조정 정규화 수익 -- Damodaran/CFA 표준.
+
+    방법: 과거 3-5년 평균 ROE x 현재 BPS (mid-cycle earnings)
+    Returns: (normalizedNI, normalizedEps, wasNormalized)
+    """
+    niVals = getAnnualValues(series, "IS", "net_profit")
+    if not niVals:
+        niVals = getAnnualValues(series, "IS", "net_income")
+    eqVals = getAnnualValues(series, "BS", "total_stockholders_equity")
+    if not eqVals:
+        eqVals = getAnnualValues(series, "BS", "owners_of_parent_equity")
+
+    if not niVals or not eqVals or len(niVals) < 3 or len(eqVals) < 3:
+        return None, None, False
+
+    # 최근 3-5년 ROE 평균
+    n = min(len(niVals), len(eqVals), 5)
+    roes: list[float] = []
+    for i in range(-n, 0):
+        ni = niVals[i] if abs(i) <= len(niVals) else None
+        eq = eqVals[i] if abs(i) <= len(eqVals) else None
+        if ni is not None and eq is not None and eq > 0:
+            roes.append(ni / eq)
+
+    if len(roes) < 2:
+        return None, None, False
+
+    avgRoe = sum(roes) / len(roes)
+    currentEquity = eqVals[-1]
+    if currentEquity is None or currentEquity <= 0:
+        return None, None, False
+
+    normalizedNi = currentEquity * avgRoe
+    normalizedEps = normalizedNi / shares if shares and shares > 0 else None
+
+    # TTM 대비 30% 이상 차이나면 정규화 적용
+    ttmNi = getTTM(series, "IS", "net_profit") or getTTM(series, "IS", "net_income")
+    if ttmNi and ttmNi > 0 and normalizedNi > 0:
+        divergence = abs(ttmNi - normalizedNi) / max(ttmNi, normalizedNi)
+        return normalizedNi, normalizedEps, divergence > 0.3
+
+    return normalizedNi, normalizedEps, True
+
+
 def relativeValuation(
     series: dict,
     sectorParams: Optional[SectorParams] = None,
@@ -413,7 +499,7 @@ def relativeValuation(
     shares: Optional[int] = None,
     currentPrice: Optional[float] = None,
 ) -> RelativeValuationResult:
-    """섹터 배수 기반 상대가치 추정."""
+    """섹터 배수 기반 상대가치 추정 (Normalized Earnings 지원)."""
     warnings: list[str] = []
     sp = sectorParams or SectorParams(
         discountRate=10.0,
@@ -424,7 +510,7 @@ def relativeValuation(
         label="기타",
     )
 
-    sectorMults = {
+    sectorMults: dict[str, float] = {
         "PER": sp.perMultiple,
         "PBR": sp.pbrMultiple,
         "EV/EBITDA": sp.evEbitdaMultiple,
@@ -432,16 +518,26 @@ def relativeValuation(
 
     netIncome = getTTM(series, "IS", "net_profit") or getTTM(series, "IS", "net_income")
     equity = getLatest(series, "BS", "total_stockholders_equity") or getLatest(series, "BS", "owners_of_parent_equity")
+    revenue = getTTM(series, "IS", "sales") or getTTM(series, "IS", "revenue")
 
-    currentMults: dict[str, Optional[float]] = {"PER": None, "PBR": None, "EV/EBITDA": None}
+    # Normalized Earnings -- 경기순환 조정
+    normNi, normEps, useNormalized = _normalizedEarnings(series, shares)
+    if useNormalized and normNi is not None:
+        netIncome = normNi
+        warnings.append("정규화 수익 적용 (과거 평균 ROE x 현재 BPS)")
+
+    multKeys = ["PER", "PBR", "EV/EBITDA", "PSR", "PEG"]
+    currentMults: dict[str, Optional[float]] = {k: None for k in multKeys}
     if marketCap and marketCap > 0:
         if netIncome and netIncome > 0:
             currentMults["PER"] = round(marketCap / netIncome, 1)
         if equity and equity > 0:
             currentMults["PBR"] = round(marketCap / equity, 1)
+        if revenue and revenue > 0:
+            currentMults["PSR"] = round(marketCap / revenue, 2)
 
-    implied: dict[str, Optional[float]] = {"PER": None, "PBR": None, "EV/EBITDA": None}
-    premiumDisc: dict[str, Optional[float]] = {"PER": None, "PBR": None, "EV/EBITDA": None}
+    implied: dict[str, Optional[float]] = {k: None for k in multKeys}
+    premiumDisc: dict[str, Optional[float]] = {k: None for k in multKeys}
 
     if shares and shares > 0:
         if netIncome is not None and netIncome > 0:
@@ -459,7 +555,7 @@ def relativeValuation(
                 ta = getLatest(series, "BS", "tangible_assets") or 0
                 ia = getLatest(series, "BS", "intangible_assets") or 0
                 dep = ta * 0.05 + ia * 0.1
-                warnings.append("감가상각 미확인 → 추정치 적용")
+                warnings.append("감가상각 미확인 -> 추정치 적용")
             ebitda = oi + (dep or 0)
             if ebitda > 0:
                 nd = _getNetDebt(series)
@@ -468,16 +564,43 @@ def relativeValuation(
                 if impliedEq > 0:
                     implied["EV/EBITDA"] = round(impliedEq / shares, 0)
 
+        # PSR -- 매출 기반 가치
+        if revenue is not None and revenue > 0:
+            sps = revenue / shares  # Sales Per Share
+            sectorPsr = _estimateSectorPsr(sp)
+            sectorMults["PSR"] = sectorPsr
+            implied["PSR"] = round(sps * sectorPsr, 0)
+
+        # PEG -- PER / EPS 성장률
+        epsGrowth = _epsGrowth3Y(series, shares)
+        if epsGrowth is not None and epsGrowth > 0 and currentMults.get("PER"):
+            peg = round(currentMults["PER"] / epsGrowth, 2)
+            currentMults["PEG"] = peg
+            # PEG 1.0 = 적정, 적정가 = EPS × 성장률 × 1.0 (PEG fair = 1)
+            eps = netIncome / shares if netIncome and netIncome > 0 else 0
+            if eps > 0:
+                implied["PEG"] = round(eps * epsGrowth, 0)
+                sectorMults["PEG"] = 1.0  # fair PEG
+
     if currentPrice and currentPrice > 0:
-        for key in ["PER", "PBR", "EV/EBITDA"]:
+        for key in multKeys:
             iv = implied[key]
-            if iv is not None:
+            if iv is not None and iv > 0:
                 premiumDisc[key] = round((currentPrice - iv) / iv * 100, 1)
 
-    validImplied = [v for v in implied.values() if v is not None and v > 0]
-    consensus = round(sum(validImplied) / len(validImplied), 0) if validImplied else None
+    # 가중 합의값 -- EV/EBITDA(자본구조 중립) > PER > PBR > PSR > PEG
+    multWeights = {"EV/EBITDA": 3.0, "PER": 2.5, "PBR": 1.5, "PSR": 1.0, "PEG": 1.0}
+    weightedSum = 0.0
+    totalWeight = 0.0
+    for key in multKeys:
+        iv = implied[key]
+        if iv is not None and iv > 0:
+            w = multWeights.get(key, 1.0)
+            weightedSum += iv * w
+            totalWeight += w
+    consensus = round(weightedSum / totalWeight, 0) if totalWeight > 0 else None
 
-    if not validImplied:
+    if totalWeight == 0:
         warnings.append("상대가치 추정 불가 (재무 데이터 부족)")
 
     return RelativeValuationResult(
@@ -487,6 +610,111 @@ def relativeValuation(
         premiumDiscount=premiumDisc,
         consensusValue=consensus,
         warnings=warnings,
+    )
+
+
+def _estimateSectorPsr(sp: SectorParams) -> float:
+    """섹터 PSR 추정 -- PER × 순이익률 가정으로 역산."""
+    # 일반적으로 PSR = PER × 순이익률
+    # 순이익률 모르면 섹터 평균 5% 가정
+    estimatedMargin = 0.05
+    psr = sp.perMultiple * estimatedMargin
+    return round(max(psr, 0.3), 2)
+
+
+def _epsGrowth3Y(series: dict, shares: int) -> Optional[float]:
+    """EPS 3년 CAGR (%)."""
+    niVals = getAnnualValues(series, "IS", "net_profit")
+    if not niVals:
+        niVals = getAnnualValues(series, "IS", "net_income")
+    if not niVals or len(niVals) < 4 or shares <= 0:
+        return None
+
+    recent = niVals[-4:]
+    validNi = [v for v in recent if v is not None and v > 0]
+    if len(validNi) < 2:
+        return None
+
+    epsStart = validNi[0] / shares
+    epsEnd = validNi[-1] / shares
+    if epsStart <= 0 or epsEnd <= 0:
+        return None
+
+    years = len(validNi) - 1
+    return _cagr(epsStart, epsEnd, years)
+
+
+# ── 민감도 분석 ──────────────────────────────────────────────
+
+
+@dataclass
+class SensitivityResult:
+    """DCF 민감도 분석 결과."""
+
+    grid: list[dict]  # [{wacc, terminalGrowth, perShareValue}, ...]
+    baseWacc: float
+    baseTerminalGrowth: float
+    baseValue: Optional[float]
+
+
+def sensitivityAnalysis(
+    series: dict,
+    shares: Optional[int] = None,
+    sectorParams: Optional[SectorParams] = None,
+    currentPrice: Optional[float] = None,
+    currency: str = "KRW",
+    waccRange: float = 2.0,
+    growthRange: float = 2.0,
+    steps: int = 5,
+) -> SensitivityResult | None:
+    """WACC x 영구성장률 민감도 그리드.
+
+    DCF 결과를 WACC +-waccRange, 영구성장률 +-growthRange로 재계산.
+    """
+    baseDcf = dcfValuation(
+        series,
+        shares=shares,
+        sectorParams=sectorParams,
+        currentPrice=currentPrice,
+        currency=currency,
+    )
+    baseWacc = baseDcf.discountRate
+    baseTg = baseDcf.terminalGrowth
+
+    grid: list[dict] = []
+    waccStep = waccRange * 2 / (steps - 1) if steps > 1 else 0
+    growthStep = growthRange * 2 / (steps - 1) if steps > 1 else 0
+
+    for wi in range(steps):
+        wacc = baseWacc - waccRange + wi * waccStep
+        if wacc <= 0:
+            continue
+        for gi in range(steps):
+            tg = baseTg - growthRange + gi * growthStep
+            if tg >= wacc:
+                continue
+            result = dcfValuation(
+                series,
+                shares=shares,
+                discountRate=wacc,
+                terminalGrowth=tg,
+                currentPrice=currentPrice,
+                currency=currency,
+            )
+            grid.append(
+                {
+                    "wacc": round(wacc, 1),
+                    "terminalGrowth": round(tg, 1),
+                    "perShareValue": result.perShareValue,
+                    "enterpriseValue": result.enterpriseValue,
+                }
+            )
+
+    return SensitivityResult(
+        grid=grid,
+        baseWacc=baseWacc,
+        baseTerminalGrowth=baseTg,
+        baseValue=baseDcf.perShareValue,
     )
 
 

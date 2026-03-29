@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass, field
 
@@ -28,6 +29,35 @@ from dartlab.analysis.forecast.simulation import (
     getElasticity,
 )
 from dartlab.core.finance.extract import getLatest, getTTM
+
+# ══════════════════════════════════════
+# Cholesky 분해 (순수 Python -- numpy 의존 없음)
+# ══════════════════════════════════════
+
+
+def _choleskyDecompose(matrix: list[list[float]]) -> list[list[float]]:
+    """상관행렬 → 하삼각 행렬 L (L × L^T = matrix)."""
+    n = len(matrix)
+    L = [[0.0] * n for _ in range(n)]
+    for i in range(n):
+        for j in range(i + 1):
+            s = sum(L[i][k] * L[j][k] for k in range(j))
+            if i == j:
+                val = matrix[i][i] - s
+                L[i][j] = math.sqrt(max(val, 0.0))
+            else:
+                L[i][j] = (matrix[i][j] - s) / L[j][j] if L[j][j] > 0 else 0.0
+    return L
+
+
+def _choleskyMultiply(L: list[list[float]], z: list[float]) -> list[float]:
+    """L × z = 상관된 난수 벡터."""
+    n = len(z)
+    result = [0.0] * n
+    for i in range(n):
+        result[i] = sum(L[i][j] * z[j] for j in range(i + 1))
+    return result
+
 
 # ══════════════════════════════════════
 # 데이터 구조
@@ -255,20 +285,34 @@ def _monte_carlo_price_distribution(
     tg = terminal_growth / 100
     values: list[float] = []
 
-    # v2: sizeClass별 σ
+    # v3: sizeClass별 σ + Cholesky 상관
     sigma_growth = getNoiseSigma("growth", size_class)
     sigma_margin = getNoiseSigma("margin", size_class)
     sigma_wacc = getNoiseSigma("wacc", size_class)
     sigma_capex = getNoiseSigma("capex", size_class)
     sigma_tax = getNoiseSigma("tax", size_class)
+    sigmas = [sigma_growth, sigma_margin, sigma_wacc, sigma_capex, sigma_tax]
+
+    # 상관행렬: growth-margin 동조, wacc-growth 역상관
+    # [growth, margin, wacc, capex, tax]
+    corr = [
+        [1.0,  0.4, -0.3,  0.2,  0.0],   # growth
+        [0.4,  1.0, -0.2,  0.0,  0.0],   # margin (경기 좋으면 마진도 개선)
+        [-0.3, -0.2, 1.0,  0.0,  0.1],   # wacc (금리 상승 시 성장 둔화)
+        [0.2,  0.0,  0.0,  1.0,  0.0],   # capex
+        [0.0,  0.0,  0.1,  0.0,  1.0],   # tax
+    ]
+    chol = _choleskyDecompose(corr)
 
     for _ in range(iterations):
-        # v2: 5변수 noise
-        growth_noise = random.gauss(0, sigma_growth)
-        margin_noise = random.gauss(0, sigma_margin)
-        wacc_noise = random.gauss(0, sigma_wacc)
-        capex_noise = random.gauss(0, sigma_capex)
-        tax_noise = random.gauss(0, sigma_tax)
+        # v3: Cholesky 기반 상관 noise
+        z = [random.gauss(0, 1) for _ in range(5)]
+        correlated = _choleskyMultiply(chol, z)
+        growth_noise = correlated[0] * sigmas[0]
+        margin_noise = correlated[1] * sigmas[1]
+        wacc_noise = correlated[2] * sigmas[2]
+        capex_noise = correlated[3] * sigmas[3]
+        tax_noise = correlated[4] * sigmas[4]
 
         noisy_growth = base_growth + growth_noise
         noisy_margin = max(5.0, min(ratios.gross_margin + margin_noise, 80.0))

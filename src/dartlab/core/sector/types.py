@@ -108,3 +108,56 @@ class SectorParams:
     evEbitdaMultiple: float
     label: str
     description: str = ""
+    beta: float = 1.0
+    exitMultiple: float = 0.0  # EV/EBITDA exit multiple (TV 교차검증용)
+
+
+# ── 시장 파라미터 (Damodaran 기반 중앙 관리) ──
+
+@dataclass(frozen=True)
+class MarketParams:
+    """국가별 시장 파라미터 -- Rf, ERP, 기본세율 등."""
+
+    riskFreeRate: float  # 무위험이자율 (%)
+    equityRiskPremium: float  # 주식 리스크 프리미엄 (%)
+    countryRiskPremium: float  # 국가 리스크 프리미엄 (%)
+    defaultTaxRate: float  # 기본 법인세율 (%)
+    gdpGrowth: float  # 명목 GDP 성장률 (%) -- 영구성장률 상한 참고
+
+    @property
+    def totalErp(self) -> float:
+        """ERP + CRP = 총 리스크 프리미엄."""
+        return self.equityRiskPremium + self.countryRiskPremium
+
+    def ke(self, beta: float = 1.0) -> float:
+        """CAPM 자기자본비용 = Rf + beta * (ERP + CRP)."""
+        return self.riskFreeRate + beta * self.totalErp
+
+
+# Damodaran 2026 데이터 기준 (반기 업데이트)
+# https://pages.stern.nyu.edu/~adamodar/
+MARKET_KR = MarketParams(
+    riskFreeRate=3.5,  # 한국 10년 국채
+    equityRiskPremium=5.5,  # 성숙시장 ERP
+    countryRiskPremium=0.9,  # 한국 Aa2 등급 CRP
+    defaultTaxRate=22.0,
+    gdpGrowth=4.0,  # 명목 GDP
+)
+
+MARKET_US = MarketParams(
+    riskFreeRate=4.2,  # 미국 10년 국채
+    equityRiskPremium=5.5,  # Damodaran 2026
+    countryRiskPremium=0.0,
+    defaultTaxRate=21.0,
+    gdpGrowth=4.5,
+)
+
+MARKET_PARAMS: dict[str, MarketParams] = {
+    "KRW": MARKET_KR,
+    "USD": MARKET_US,
+}
+
+
+def getMarketParams(currency: str = "KRW") -> MarketParams:
+    """통화 기반 시장 파라미터 반환."""
+    return MARKET_PARAMS.get(currency, MARKET_KR)

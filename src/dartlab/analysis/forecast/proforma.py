@@ -529,14 +529,29 @@ def compute_company_wacc(
     series: dict,
     sector_params=None,
     sector_elasticity: SectorElasticity | None = None,
-    risk_free_rate: float = 3.5,
-    market_premium: float = 6.0,
+    risk_free_rate: float | None = None,
+    market_premium: float | None = None,
     market_cap: float | None = None,
+    currency: str = "KRW",
 ) -> tuple[float, dict[str, float]]:
-    """회사 고유 WACC 계산.
+    """회사 고유 WACC 계산 (Damodaran CAPM 기반).
 
-    WACC = E/(D+E) × Ke + D/(D+E) × Kd × (1-t)
+    Ke = Rf + beta * (ERP + CRP)
+    WACC = E/(D+E) * Ke + D/(D+E) * Kd * (1-t)
     """
+    from dartlab.core.sector.types import getMarketParams
+
+    mkt = getMarketParams(currency)
+    rf = risk_free_rate if risk_free_rate is not None else mkt.riskFreeRate
+    erp = market_premium if market_premium is not None else mkt.totalErp
+
+    # beta: sectorParams 우선, 없으면 elasticity proxy, 최후 1.0
+    beta = 1.0
+    if sector_params and hasattr(sector_params, "beta") and sector_params.beta:
+        beta = sector_params.beta
+    elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
+        beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
+
     # 차입금
     stb = getLatest(series, "BS", "shortterm_borrowings") or 0
     ltb = getLatest(series, "BS", "longterm_borrowings") or 0
@@ -549,24 +564,16 @@ def compute_company_wacc(
     )
     equity_value = market_cap if market_cap else (equity_book or 1)
 
-    # Kd (타인자본비용) — 실제 이자비용 역산
+    # Kd (타인자본비용) -- 실제 이자비용 역산
     fc = getTTM(series, "IS", "finance_costs") or getTTM(series, "IS", "interest_expense")
     if fc and total_debt > 0:
         kd = abs(fc) / total_debt * 100
-        kd = max(2.0, min(kd, 15.0))  # 클램프
+        kd = max(2.0, min(kd, 15.0))
     else:
-        kd = 4.0  # 기본값
+        kd = rf + 1.0  # Rf + 1%p 스프레드 (기존 4.0% 하드코딩 제거)
 
-    # Ke (자기자본비용) — v2: 업종 β 활용
-    if sector_params and hasattr(sector_params, "discountRate"):
-        ke = sector_params.discountRate
-    elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
-        # GDP 감응도를 equity β proxy로 사용
-        beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
-        ke = risk_free_rate + beta * market_premium
-    else:
-        beta = 1.0  # 시장 평균
-        ke = risk_free_rate + beta * market_premium
+    # Ke (자기자본비용) -- CAPM: Rf + beta * (ERP + CRP)
+    ke = rf + beta * erp
 
     # 유효세율
     pbt = getTTM(series, "IS", "profit_before_tax")
@@ -574,7 +581,7 @@ def compute_company_wacc(
     if pbt and tax_exp and pbt > 0:
         tax_rate = min(abs(tax_exp) / pbt, 0.5)
     else:
-        tax_rate = 0.22
+        tax_rate = mkt.defaultTaxRate / 100
 
     # WACC
     total_capital = equity_value + total_debt
@@ -585,11 +592,14 @@ def compute_company_wacc(
         e_weight, d_weight = 1.0, 0.0
 
     wacc = e_weight * ke + d_weight * kd * (1 - tax_rate)
-    wacc = max(5.0, min(wacc, 20.0))  # 현실적 범위로 클램프
+    wacc = max(5.0, min(wacc, 20.0))
 
     details = {
         "ke": ke,
         "kd": kd,
+        "beta": beta,
+        "rf": rf,
+        "erp": erp,
         "tax_rate": tax_rate * 100,
         "equity_weight": e_weight * 100,
         "debt_weight": d_weight * 100,

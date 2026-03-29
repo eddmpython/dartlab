@@ -19,15 +19,19 @@ from dartlab.core.sector.classifier import classify
 from dartlab.core.sector.params import getParams
 from dartlab.core.sector.types import (
     IndustryGroup,
+    MarketParams,
     Sector,
     SectorInfo,
     SectorParams,
+    getMarketParams,
 )
 
 __all__ = [
     "classify",
     "getParams",
+    "getMarketParams",
     "IndustryGroup",
+    "MarketParams",
     "Sector",
     "SectorInfo",
     "SectorParams",

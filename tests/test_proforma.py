@@ -435,17 +435,20 @@ class TestBetaWACC:
 
     @pytest.mark.unit
     def test_sector_params_overrides_elasticity(self):
-        """sector_params가 있으면 elasticity보다 우선."""
+        """sector_params.beta가 있으면 elasticity보다 우선."""
 
         class MockParams:
             discountRate = 15.0
+            beta = 2.0
 
         wacc, details = compute_company_wacc(
             SERIES,
             sector_params=MockParams(),
             sector_elasticity=SectorElasticity(0.3, 0.1, 10, 0, "defensive"),
         )
-        assert details["ke"] == 15.0
+        # Ke = Rf(3.5) + beta(2.0) * totalErp(6.4) = 16.3
+        assert details["beta"] == 2.0
+        assert details["ke"] > 15.0
 
 
 # ── v3: IS 구조 감지 (dep_in_sga) ───────────────────────
