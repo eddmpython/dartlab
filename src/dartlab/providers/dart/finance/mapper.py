@@ -302,10 +302,13 @@ class AccountMapper:
             return self._labelMap
 
         result: dict[str, str] = {}
+        usedKorNames: set[str] = set()
 
         if self._stdAccounts:
             for snakeId, meta in self._stdAccounts.items():
-                result[snakeId] = meta["korName"]
+                korName = meta["korName"]
+                result[snakeId] = korName
+                usedKorNames.add(korName)
 
         if self._mappings:
             reverse: dict[str, list[str]] = {}
@@ -314,7 +317,15 @@ class AccountMapper:
                     reverse.setdefault(snakeId, []).append(name)
             for snakeId, names in reverse.items():
                 if snakeId not in result:
-                    result[snakeId] = min(names, key=len)
+                    candidate = min(names, key=len)
+                    if candidate in usedKorNames:
+                        # korName 충돌 — 다른 이름 시도, 없으면 snakeId 그대로
+                        alt = sorted(names, key=len)
+                        chosen = next((n for n in alt if n not in usedKorNames), snakeId)
+                        result[snakeId] = chosen
+                    else:
+                        result[snakeId] = candidate
+                    usedKorNames.add(result[snakeId])
 
         self._labelMap = result
         return result

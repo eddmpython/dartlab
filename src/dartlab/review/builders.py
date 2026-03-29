@@ -1850,7 +1850,7 @@ def dcfValuationBlock(data: dict) -> list:
     metrics.append(("할인율", f"{data.get('discountRate', 0):.1f}%"))
     metrics.append(("영구성장률", f"{data.get('terminalGrowth', 0):.1f}%"))
     if metrics:
-        blocks.append(MetricBlock("", dict(metrics)))
+        blocks.append(MetricBlock(metrics))
 
     # FCF 추정 테이블
     projections = data.get("fcfProjections", [])
@@ -1880,17 +1880,17 @@ def ddmValuationBlock(data: dict) -> list:
             helper="배당 기반 가치 -- 배당 지속성이 핵심 가정",
         ),
     ]
-    metrics = {}
+    metrics: list[tuple[str, str]] = []
     if data.get("intrinsicValue") is not None:
-        metrics["적정가"] = f"{data['intrinsicValue']:,.0f}"
+        metrics.append(("적정가", f"{data['intrinsicValue']:,.0f}"))
     if data.get("dividendPerShare") is not None:
-        metrics["주당��당금"] = f"{data['dividendPerShare']:,.0f}"
+        metrics.append(("주당배당금", f"{data['dividendPerShare']:,.0f}"))
     if data.get("dividendGrowth") is not None:
-        metrics["배당성장률"] = f"{data['dividendGrowth']:.1f}%"
+        metrics.append(("배당성장률", f"{data['dividendGrowth']:.1f}%"))
     if data.get("payoutRatio") is not None:
-        metrics["배당성향"] = f"{data['payoutRatio']:.1f}%"
+        metrics.append(("배당성향", f"{data['payoutRatio']:.1f}%"))
     if metrics:
-        blocks.append(MetricBlock("", metrics))
+        blocks.append(MetricBlock(metrics))
     return blocks
 
 
@@ -1931,7 +1931,7 @@ def relativeValuationBlock(data: dict) -> list:
 
     consensus = data.get("consensusValue")
     if consensus:
-        blocks.append(MetricBlock("", {"종합 적정가": f"{consensus:,.0f}"}))
+        blocks.append(MetricBlock([("종합 적정가", f"{consensus:,.0f}")]))
     return blocks
 
 
@@ -1946,16 +1946,16 @@ def residualIncomeBlock(data: dict) -> list:
             helper="BPS + 초과이익 현가 -- ���기자본비용 대비 초과수익 평가",
         ),
     ]
-    metrics = {}
+    metrics: list[tuple[str, str]] = []
     if data.get("bps"):
-        metrics["BPS"] = f"{data['bps']:,.0f}"
-    metrics["자기자본비용"] = f"{data.get('coe', 0):.1f}%"
+        metrics.append(("BPS", f"{data['bps']:,.0f}"))
+    metrics.append(("자기자본비용", f"{data.get('coe', 0):.1f}%"))
     if data.get("intrinsicValue") is not None:
-        metrics["적정가"] = f"{data['intrinsicValue']:,.0f}"
+        metrics.append(("적정가", f"{data['intrinsicValue']:,.0f}"))
     if data.get("upside") is not None:
-        metrics["업사이드"] = f"{data['upside']:+.1f}%"
+        metrics.append(("업사이드", f"{data['upside']:+.1f}%"))
     if metrics:
-        blocks.append(MetricBlock("", metrics))
+        blocks.append(MetricBlock(metrics))
     return blocks
 
 
@@ -1970,15 +1970,14 @@ def priceTargetBlock(data: dict) -> list:
             helper="5개 거시 시나리오 x DCF + Monte Carlo 분포",
         ),
     ]
-    metrics = {}
-    metrics["가중 목표가"] = f"{data.get('weightedTarget', 0):,.0f}"
+    metrics: list[tuple[str, str]] = [("가중 목표가", f"{data.get('weightedTarget', 0):,.0f}")]
     if data.get("currentPrice"):
-        metrics["현재가"] = f"{data['currentPrice']:,.0f}"
+        metrics.append(("현재가", f"{data['currentPrice']:,.0f}"))
     if data.get("upside") is not None:
-        metrics["업사이드"] = f"{data['upside']:+.1f}%"
-    metrics["투자 신호"] = data.get("signal", "-")
-    metrics["신뢰도"] = data.get("confidence", "-")
-    blocks.append(MetricBlock("", metrics))
+        metrics.append(("업사이드", f"{data['upside']:+.1f}%"))
+    metrics.append(("투자 신호", data.get("signal", "-")))
+    metrics.append(("신뢰도", data.get("confidence", "-")))
+    blocks.append(MetricBlock(metrics))
 
     # 시나리오 테이블
     scenarios = data.get("scenarios", [])
@@ -2013,15 +2012,15 @@ def reverseImpliedBlock(data: dict) -> list:
             helper="현재 시가총액이 내재하는 매출 성장률 -- 시장 기대와 엔진 예측 비교",
         ),
     ]
-    metrics = {
-        "내재성장률": f"{data.get('impliedGrowthRate', 0):.1f}%",
-        "최근 매출": f"{data.get('latestRevenue', 0) / 1e8:,.0f}억",
-        "가정 WACC": f"{data.get('assumedWacc', 0):.1f}%",
-    }
+    metrics: list[tuple[str, str]] = [
+        ("내재성장률", f"{data.get('impliedGrowthRate', 0):.1f}%"),
+        ("최근 매출", f"{data.get('latestRevenue', 0) / 1e8:,.0f}억"),
+        ("가정 WACC", f"{data.get('assumedWacc', 0):.1f}%"),
+    ]
     signal = data.get("signal")
     if signal:
-        metrics["신호"] = signal
-    blocks.append(MetricBlock("", metrics))
+        metrics.append(("신호", signal))
+    blocks.append(MetricBlock(metrics))
     return blocks
 
 
@@ -2061,7 +2060,7 @@ def sensitivityBlock(data: dict) -> list:
 
     baseVal = data.get("baseValue")
     if baseVal is not None:
-        blocks.append(MetricBlock("", {"기준 적정가": f"{baseVal:,.0f}"}))
+        blocks.append(MetricBlock([("기준 적정가", f"{baseVal:,.0f}")]))
     return blocks
 
 
@@ -2078,13 +2077,13 @@ def valuationSynthesisBlock(data: dict) -> list:
     ]
 
     fvr = data.get("fairValueRange")
-    metrics = {}
+    metrics: list[tuple[str, str]] = []
     if fvr:
-        metrics["적정가 범위"] = f"{fvr[0]:,.0f} ~ {fvr[1]:,.0f}"
+        metrics.append(("적정가 범위", f"{fvr[0]:,.0f} ~ {fvr[1]:,.0f}"))
     if data.get("currentPrice"):
-        metrics["현재가"] = f"{data['currentPrice']:,.0f}"
-    metrics["판정"] = data.get("verdict", "-")
-    blocks.append(MetricBlock("", metrics))
+        metrics.append(("현재가", f"{data['currentPrice']:,.0f}"))
+    metrics.append(("판정", data.get("verdict", "-")))
+    blocks.append(MetricBlock(metrics))
 
     # 모델별 추정치
     estimates = data.get("estimates", [])

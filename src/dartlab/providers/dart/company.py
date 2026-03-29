@@ -2144,20 +2144,23 @@ class Company:
             import logging
 
             dupes = df.group_by("계정명").len().filter(pl.col("len") > 1)
-            logging.getLogger(__name__).warning(
-                "%s: 중복 계정명 %d건 (먼저 나온 값 사용): %s",
+            logging.getLogger(__name__).debug(
+                "%s: 동의어 계정 %d건 병합 (먼저 나온 값 우선): %s",
                 sjDiv,
                 dupes.height,
                 dupes["계정명"].to_list()[:5],
             )
-            groupCols = ["계정명"]
-            if "snakeId" in df.columns:
-                groupCols = ["snakeId", "계정명"]
-            aggCols = [c for c in periodCols if c not in groupCols]
-            merged = df.group_by(groupCols, maintain_order=True).agg(
-                [pl.col(c).drop_nulls().first().alias(c) for c in aggCols]
+            # 계정명 기준으로 병합 — snakeId가 다른 동의어 계정도 합침
+            hasSnakeId = "snakeId" in df.columns
+            aggCols = [c for c in periodCols]
+            extraAgg = []
+            if hasSnakeId:
+                extraAgg = [pl.col("snakeId").first().alias("snakeId")]
+            merged = df.group_by("계정명", maintain_order=True).agg(
+                extraAgg + [pl.col(c).drop_nulls().first().alias(c) for c in aggCols]
             )
-            df = merged
+            # 컬럼 순서 복원
+            df = merged.select([c for c in df.columns if c in merged.columns])
         return df
 
     _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS", "SCE"})

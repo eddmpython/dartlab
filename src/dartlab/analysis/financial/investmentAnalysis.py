@@ -41,6 +41,31 @@ def _yoy(cur, prev) -> float | None:
     return round((cur - prev) / abs(prev) * 100, 2)
 
 
+def _estimateWacc(company) -> float | None:
+    """company에서 WACC 추정 (compute_company_wacc 래퍼)."""
+    try:
+        from dartlab.analysis.forecast.proforma import compute_company_wacc
+
+        annual = company.finance.annual
+        if annual is None:
+            return None
+        series, _ = annual
+        sectorParams = getattr(company, "sectorParams", None)
+        marketCap = None
+        market = getattr(company, "market", None)
+        if market and isinstance(market, dict):
+            marketCap = market.get("marketCap")
+        wacc, _ = compute_company_wacc(
+            series,
+            sector_params=sectorParams,
+            market_cap=marketCap,
+            currency=getattr(company, "currency", "KRW"),
+        )
+        return round(wacc, 2)
+    except (ImportError, AttributeError, TypeError, ValueError):
+        return None
+
+
 # ── ROIC (NOPAT / 투하자본) ──
 
 
@@ -117,6 +142,14 @@ def calcRoicTimeline(company) -> dict | None:
         cur = history[i].get("roic")
         prev = history[i + 1].get("roic")
         history[i]["roicYoy"] = _yoy(cur, prev)
+
+    # WACC 추정 (최신 시점 1회만, 전 기간 동일 적용)
+    waccEstimate = _estimateWacc(company)
+    if waccEstimate is not None:
+        for h in history:
+            h["waccEstimate"] = waccEstimate
+            roic = h.get("roic")
+            h["spread"] = round(roic - waccEstimate, 2) if roic is not None else None
 
     return {"history": history} if history else None
 
@@ -232,8 +265,20 @@ def calcEvaTimeline(company) -> dict | None:
                 "nopat": nopat,
                 "investedCapital": investedCapital,
                 "nopatReturn": nopatReturn,
+                "waccEstimate": None,
+                "eva": None,
             }
         )
+
+    # WACC 추정 + EVA 계산
+    waccEstimate = _estimateWacc(company)
+    if waccEstimate is not None:
+        for h in history:
+            h["waccEstimate"] = waccEstimate
+            nopat = h.get("nopat")
+            ic = h.get("investedCapital")
+            if nopat is not None and ic is not None and ic > 0:
+                h["eva"] = round(nopat - ic * waccEstimate / 100)
 
     return {"history": history} if history else None
 
