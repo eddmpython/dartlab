@@ -79,6 +79,9 @@ _NON_OP_ASSET_ACCOUNTS = [
     "기타비유동금융자산",
 ]
 
+# 관계기업 투자: 기업마다 다른 계정명 사용 → fallback 쌍
+_ASSOCIATES_FALLBACK = ("관계기업등지분관련투자자산", "지분법적용투자지분")
+
 _OP_LIAB_SIMPLE = [
     "선수금",
     "계약부채",
@@ -135,7 +138,14 @@ def calcAssetStructure(company) -> dict | None:
         }
     """
     _allFallback = [k for pair in _OP_ASSET_FALLBACK + _OP_LIAB_FALLBACK for k in pair]
-    allAccounts = ["자산총계", "부채총계"] + _OP_ASSET_SIMPLE + _allFallback + _NON_OP_ASSET_ACCOUNTS + _OP_LIAB_SIMPLE
+    allAccounts = (
+        ["자산총계", "부채총계"]
+        + _OP_ASSET_SIMPLE
+        + _allFallback
+        + _NON_OP_ASSET_ACCOUNTS
+        + list(_ASSOCIATES_FALLBACK)
+        + _OP_LIAB_SIMPLE
+    )
     result = company.select("BS", allAccounts)
     parsed = _toDict(result)
     if parsed is None:
@@ -160,8 +170,16 @@ def calcAssetStructure(company) -> dict | None:
 
         # 영업자산 합산 (fallback 쌍은 하나만 선택)
         opAssets = _sumOp(data, col, _OP_ASSET_SIMPLE, _OP_ASSET_FALLBACK)
-        # 비영업자산 합산
-        nonOpAssets = sum(_get(data.get(k, {}), col) for k in _NON_OP_ASSET_ACCOUNTS)
+        # 비영업자산 합산 (관계기업 투자는 fallback 쌍)
+        nonOpAssets = 0
+        for k in _NON_OP_ASSET_ACCOUNTS:
+            if k == _ASSOCIATES_FALLBACK[0]:
+                v = _get(data.get(k, {}), col)
+                if v == 0:
+                    v = _get(data.get(_ASSOCIATES_FALLBACK[1], {}), col)
+                nonOpAssets += v
+            else:
+                nonOpAssets += _get(data.get(k, {}), col)
         # 나머지 = 총자산 - 영업 - 비영업 (분류 안 된 것)
         otherAssets = ta - opAssets - nonOpAssets
 
@@ -198,7 +216,10 @@ def calcAssetStructure(company) -> dict | None:
         gwVal = _get(data.get("영업권", {}), col)
         rouVal = _get(data.get("사용권자산", {}), col)
         cipVal = _get(data.get("건설중인자산", {}), col)
-        invstVal = _get(data.get("관계기업등지분관련투자자산", {}), col) + _get(data.get("장기금융자산", {}), col)
+        assocVal = _get(data.get(_ASSOCIATES_FALLBACK[0], {}), col)
+        if assocVal == 0:
+            assocVal = _get(data.get(_ASSOCIATES_FALLBACK[1], {}), col)
+        invstVal = assocVal + _get(data.get("장기금융자산", {}), col)
 
         entry = {
             "period": col,

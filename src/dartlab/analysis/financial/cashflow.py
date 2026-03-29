@@ -53,6 +53,11 @@ def _classifyCfPattern(ocf: float, icf: float, fcf: float) -> str | None:
         ("-", "-", "+"): "위기형 — 영업 적자를 외부 차입으로 메움",
         ("-", "+", "+"): "축소형 — 자산 매각 + 차입으로 영업 적자 보전",
         ("-", "+", "-"): "전환형 — 자산 매각으로 부채 상환, 영업 회복 필요",
+        # 재무CF가 0(미보고)인 경우 — 영업/투자만으로 부분 분류
+        ("+", "-", "0"): "성숙형 — 영업으로 벌어 투자 (재무CF 미보고)",
+        ("-", "-", "0"): "위기형 — 영업+투자 모두 유출 (재무CF 미보고)",
+        ("+", "+", "0"): "구조조정형 — 자산 매각 진행 (재무CF 미보고)",
+        ("-", "+", "0"): "축소형 — 자산 매각으로 영업 적자 보전 (재무CF 미보고)",
     }
     return patterns.get((_s(ocf), _s(icf), _s(fcf)))
 
@@ -86,13 +91,15 @@ def calcCashFlowOverview(company) -> dict | None:
     ]
     result = company.select("CF", cfAccounts)
     parsed = _toDict(result)
-    if parsed is None or "영업활동현금흐름" not in parsed[0]:
+    if parsed is None:
         return None
 
     data, allPeriods = parsed
-    ocfRow = data["영업활동현금흐름"]
-    icfRow = data.get("투자활동현금흐름", {})
-    finRow = data.get("재무활동으로인한현금흐름", {})
+    ocfRow = data.get("영업활동현금흐름") or data.get("영업활동으로인한현금흐름")
+    if ocfRow is None:
+        return None
+    icfRow = data.get("투자활동현금흐름") or data.get("투자활동으로인한현금흐름") or {}
+    finRow = data.get("재무활동으로인한현금흐름") or data.get("재무활동현금흐름") or {}
     capexRow = data.get("유형자산의취득", {})
     intCapexRow = data.get("무형자산의취득", {})
 

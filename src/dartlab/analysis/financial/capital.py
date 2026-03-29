@@ -535,15 +535,20 @@ def calcCashFlowStructure(company) -> dict | None:
             "metrics": [(label, value_str), ...] | None,
         }
     """
-    result = company.select("CF", ["영업활동현금흐름", "투자활동현금흐름", "재무활동현금흐름", "유형자산의취득"])
+    result = company.select(
+        "CF",
+        ["영업활동현금흐름", "투자활동현금흐름", "재무활동으로인한현금흐름", "유형자산의취득"],
+    )
     parsed = _toDict(result)
-    if parsed is None or "영업활동현금흐름" not in parsed[0]:
+    if parsed is None:
         return None
 
     data, allPeriods = parsed
-    ocfRow = data["영업활동현금흐름"]
-    icfRow = data.get("투자활동현금흐름")
-    fcfRow = data.get("재무활동현금흐름")
+    ocfRow = data.get("영업활동현금흐름") or data.get("영업활동으로인한현금흐름")
+    if ocfRow is None:
+        return None
+    icfRow = data.get("투자활동현금흐름") or data.get("투자활동으로인한현금흐름")
+    fcfRow = data.get("재무활동으로인한현금흐름") or data.get("재무활동현금흐름")
     capexRow = data.get("유형자산의취득")
 
     qCols = _quarterlyCols(allPeriods, _MAX_QUARTERS)
@@ -568,12 +573,22 @@ def calcCashFlowStructure(company) -> dict | None:
                 freeRow[c] = None
         rawRows.append(freeRow)
 
-    # CF 패턴 분류
+    # CF 패턴 분류 (분기 우선, 분기 데이터 ��으면 연간 fallback)
     latestCol = qCols[0]
     ocfSign = _sign(ocfRow.get(latestCol))
     icfSign = _sign((icfRow or {}).get(latestCol))
     fcfSign = _sign((fcfRow or {}).get(latestCol))
     pattern = _classifyCfPattern(ocfSign, icfSign, fcfSign)
+    if pattern is None:
+        # Q4 기준으로 재시도 (재무CF가 특정 분기에만 있는 기업 대응)
+        q4Cols = sorted([c for c in allPeriods if c.endswith("Q4")], reverse=True)
+        for qc in q4Cols[:3]:
+            ocfA = _sign(ocfRow.get(qc))
+            icfA = _sign((icfRow or {}).get(qc))
+            fcfA = _sign((fcfRow or {}).get(qc))
+            pattern = _classifyCfPattern(ocfA, icfA, fcfA)
+            if pattern is not None:
+                break
 
     # 추가 지표
     ratios = _getRatios(company)
@@ -620,6 +635,11 @@ def _classifyCfPattern(ocf: str, icf: str, fcf: str) -> str | None:
         ("-", "-", "+"): "위기형 — 영업 적자를 외부 차입으로 메움",
         ("-", "+", "+"): "축소형 — 자산 매각 + 차입으로 영업 적자 보전",
         ("-", "+", "-"): "전환형 — 자산 매각으로 부채 상환, 영업 회복 필요",
+        # 재무CF 미보고("?" 또는 "0") — 영업/투자만으로 부분 분류
+        ("+", "-", "?"): "성숙형 — 영업으로 벌어 투자 (재무CF 미보고)",
+        ("+", "-", "0"): "성숙형 — 영업으로 벌어 투자 (재무CF 미보고)",
+        ("-", "-", "?"): "위기형 — 영업+투자 모두 유출 (재무CF 미보고)",
+        ("-", "-", "0"): "위기형 — 영업+투자 모두 유출 (재무CF 미보고)",
     }
     return patterns.get((ocf, icf, fcf))
 
