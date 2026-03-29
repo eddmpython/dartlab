@@ -411,15 +411,36 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
     from dartlab.core.finance.extract import getAnnualValues, getRevenueGrowth3Y
 
     sector = getattr(company, "sector", None)
+    sectorStr = ""
     isFinancial = False
     if sector:
         sectorVal = getattr(sector, "sector", None)
-        if sectorVal and hasattr(sectorVal, "value") and sectorVal.value == "금융":
-            isFinancial = True
+        if sectorVal:
+            sectorStr = sectorVal.value if hasattr(sectorVal, "value") else str(sectorVal)
+            if sectorStr == "금융":
+                isFinancial = True
 
     if isFinancial:
         # 금융업: FCF 무의미, RIM/DDM 우선, DCF 제외
         return "financial", {"DCF": 0.0, "DDM": 0.35, "상대가치": 0.30, "RIM": 0.35}
+
+    # 지주사 판별: 업종명에 "지주" 포함, 또는 IndustryGroup이 HOLDING
+    igVal = getattr(sector, "industryGroup", None) if sector else None
+    igStr = igVal.value if igVal and hasattr(igVal, "value") else str(igVal or "")
+    corpName = getattr(company, "corpName", "")
+    # 지주사: 업종/이름 + 한국 주요 지주사 직접 매칭
+    _holdingCodes = {"034730", "003550", "028260", "005490"}  # SK, LG, 삼성물산, POSCO홀딩스
+    stockCode = getattr(company, "stockCode", "")
+    isHolding = (
+        "HOLDING" in igStr.upper()
+        or "지주" in corpName
+        or "지주" in sectorStr
+        or "홀딩스" in corpName
+        or stockCode in _holdingCodes
+    )
+    if isHolding:
+        # 지주사: DCF(연결 기반) 과대평가 위험 → 상대가치/RIM 우선, DCF 대폭 축소
+        return "holding", {"DCF": 0.10, "DDM": 0.20, "상대가치": 0.35, "RIM": 0.35}
 
     # 성장주 판별: 매출 3Y CAGR > 15%
     revCagr = getRevenueGrowth3Y(series)
