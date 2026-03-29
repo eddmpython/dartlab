@@ -893,6 +893,14 @@ def cashFlowFlagsBlock(flags: list[str]) -> list:
 # ── 2부: 재무비율 분석 빌더 ──
 
 
+def _extractSeries(data: dict, field: str) -> list[dict]:
+    """history 기반 calc 결과에서 [{"period": p, "value": v}, ...] 추출."""
+    history = data.get("history", [])
+    if not history:
+        return data.get(field, [])
+    return [{"period": h["period"], "value": h.get(field)} for h in history if h.get(field) is not None]
+
+
 def _timelineTable(
     specs: list[tuple[list[dict], str]],
     rowLabels: list[str],
@@ -933,9 +941,9 @@ def marginTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("grossMargin", []), "{:.1f}%"),
-            (data.get("operatingMargin", []), "{:.1f}%"),
-            (data.get("netMargin", []), "{:.1f}%"),
+            (_extractSeries(data, "grossMargin"), "{:.1f}%"),
+            (_extractSeries(data, "operatingMargin"), "{:.1f}%"),
+            (_extractSeries(data, "netMargin"), "{:.1f}%"),
         ],
         ["매출총이익률", "영업이익률", "순이익률"],
     )
@@ -959,9 +967,9 @@ def returnTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("roe", []), "{:.1f}%"),
-            (data.get("roa", []), "{:.1f}%"),
-            (data.get("leverage", []), "{:.2f}배"),
+            (_extractSeries(data, "roe"), "{:.1f}%"),
+            (_extractSeries(data, "roa"), "{:.1f}%"),
+            (_extractSeries(data, "leverage"), "{:.2f}배"),
         ],
         ["ROE", "ROA", "레버리지(ROE/ROA)"],
     )
@@ -985,11 +993,11 @@ def dupontBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("margin", []), "{:.1f}%"),
-            (data.get("turnover", []), "{:.2f}"),
-            (data.get("leverage", []), "{:.2f}"),
+            (_extractSeries(data, "operatingMargin"), "{:.1f}%"),
+            (_extractSeries(data, "assetTurnover"), "{:.2f}"),
+            (_extractSeries(data, "leverage"), "{:.2f}"),
         ],
-        ["순이익률(%)", "자산회전율(회)", "재무레버리지(배)"],
+        ["영업이익률(%)", "자산회전율(회)", "재무레버리지(배)"],
     )
     if cols is None:
         return []
@@ -1019,10 +1027,10 @@ def growthTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("revenueGrowth", []), "{:+.1f}%"),
-            (data.get("operatingProfitGrowth", []), "{:+.1f}%"),
-            (data.get("netProfitGrowth", []), "{:+.1f}%"),
-            (data.get("assetGrowth", []), "{:+.1f}%"),
+            (_extractSeries(data, "revenueYoy"), "{:+.1f}%"),
+            (_extractSeries(data, "operatingIncomeYoy"), "{:+.1f}%"),
+            (_extractSeries(data, "netIncomeYoy"), "{:+.1f}%"),
+            (_extractSeries(data, "totalAssetsYoy"), "{:+.1f}%"),
         ],
         ["매출 성장률", "영업이익 성장률", "순이익 성장률", "자산 성장률"],
     )
@@ -1090,9 +1098,9 @@ def leverageTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("debtRatio", []), "{:.0f}%"),
-            (data.get("netDebtRatio", []), "{:.0f}%"),
-            (data.get("equityRatio", []), "{:.0f}%"),
+            (_extractSeries(data, "debtRatio"), "{:.0f}%"),
+            (_extractSeries(data, "netDebtRatio"), "{:.0f}%"),
+            (_extractSeries(data, "equityRatio"), "{:.0f}%"),
         ],
         ["부채비율", "순부채비율", "자기자본비율"],
     )
@@ -1115,7 +1123,7 @@ def coverageTrendBlock(data: dict) -> list:
         return []
 
     cols = _timelineTable(
-        [(data.get("interestCoverage", []), "{:.1f}배")],
+        [(_extractSeries(data, "interestCoverage"), "{:.1f}배")],
         ["이자보상배율"],
     )
     if cols is None:
@@ -1156,7 +1164,7 @@ def distressScoreBlock(data: dict) -> list:
         blocks.append(MetricBlock(metrics))
 
     cols = _timelineTable(
-        [(data.get("altmanZScore", []), "{:.2f}")],
+        [(_extractSeries(data, "altmanZScore"), "{:.2f}")],
         ["Altman Z-Score"],
     )
     if cols is not None:
@@ -1180,9 +1188,9 @@ def turnoverTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("totalAssetTurnover", []), "{:.2f}회"),
-            (data.get("receivablesTurnover", []), "{:.2f}회"),
-            (data.get("inventoryTurnover", []), "{:.2f}회"),
+            (_extractSeries(data, "totalAssetTurnover"), "{:.2f}회"),
+            (_extractSeries(data, "receivablesTurnover"), "{:.2f}회"),
+            (_extractSeries(data, "inventoryTurnover"), "{:.2f}회"),
         ],
         ["총자산회전율", "매출채권회전율", "재고회전율"],
     )
@@ -1206,10 +1214,10 @@ def cccTrendBlock(data: dict) -> list:
 
     cols = _timelineTable(
         [
-            (data.get("dso", []), "{:.0f}일"),
-            (data.get("dio", []), "{:.0f}일"),
-            (data.get("dpo", []), "{:.0f}일"),
-            (data.get("ccc", []), "{:.0f}일"),
+            (_extractSeries(data, "dso"), "{:.0f}일"),
+            (_extractSeries(data, "dio"), "{:.0f}일"),
+            (_extractSeries(data, "dpo"), "{:.0f}일"),
+            (_extractSeries(data, "ccc"), "{:.0f}일"),
         ],
         ["DSO(매출채권일)", "DIO(재고일)", "DPO(매입채무일)", "CCC"],
     )
