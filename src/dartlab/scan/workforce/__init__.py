@@ -61,9 +61,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
     _log(f"  → {len(top_map)}종목")
 
     # 합집합
-    all_codes = (
-        set(emp_map) | set(rpe_map) | set(labor_map) | set(va_map) | set(growth_dict) | set(top_map)
-    )
+    all_codes = set(emp_map) | set(rpe_map) | set(labor_map) | set(va_map) | set(growth_dict) | set(top_map)
 
     results = []
     for code in all_codes:

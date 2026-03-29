@@ -57,9 +57,7 @@ def scan_governance(*, verbose: bool = True) -> pl.DataFrame:
     minority_map = scan_minority_holder()
     _log(f"  → {len(minority_map)}종목")
 
-    all_codes = (
-        set(holder_map) | set(outside_map) | set(pay_ratio_map) | set(audit_map) | set(minority_map)
-    )
+    all_codes = set(holder_map) | set(outside_map) | set(pay_ratio_map) | set(audit_map) | set(minority_map)
 
     results = []
     for code in all_codes:
@@ -79,9 +77,7 @@ def scan_governance(*, verbose: bool = True) -> pl.DataFrame:
         s5 = score_minority(minority)
         total = s1 + s2 + s3 + s4 + s5
         g = grade(total)
-        n_valid = sum(
-            1 for v in [ownership, outside_ratio, pay_r, audit, minority] if v is not None
-        )
+        n_valid = sum(1 for v in [ownership, outside_ratio, pay_r, audit, minority] if v is not None)
 
         results.append(
             {
