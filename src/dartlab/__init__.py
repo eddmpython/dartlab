@@ -1489,6 +1489,15 @@ class _Module(sys.modules[__name__].__class__):
         config.verbose = value
 
     @property
+    def askLog(self):
+        """ask/chat 로그 활성화 조회."""
+        return config.askLog
+
+    @askLog.setter
+    def askLog(self, value):
+        config.askLog = bool(value)
+
+    @property
     def dataDir(self):
         """데이터 저장 디렉토리 경로 조회."""
         return config.dataDir
